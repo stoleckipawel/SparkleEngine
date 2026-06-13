@@ -8,12 +8,14 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
+#include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "RayTracing/RayTracedShadowPassData.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 #include <cassert>
 
@@ -32,13 +34,20 @@ const DirectLightingPass::ParameterMetadata& DirectLightingPass::GetParameterMet
 	return metadata;
 }
 
-ShaderPackageDefinition DirectLightingPass::DescribeShaderPackage() noexcept
+const RenderPassDefinition& DirectLightingPass::GetDefinition() noexcept
 {
-	return ShaderPackageDefinition{
-	    .PackageId = PassName,
-	    .BindingLayoutId = PassName,
-	    .ExpectedStages = ShaderStageMask::Compute,
-	    .RequiredFeatures = CookedShaderPackageFeatureFlags::UsesInlineRayQuery | CookedShaderPackageFeatureFlags::UsesAccelerationStructure};
+	static const RenderPassDefinition definition{
+	    .PassName = PassName,
+	    .PackageDeclarationName = "DirectLightingShaderPackage",
+	    .ShaderPackage = ShaderPackageDefinition{
+	        .PackageId = RendererShaderPackages::DirectLighting.data(),
+	        .BindingLayoutId = RendererShaderPackages::DirectLighting.data(),
+	        .ExpectedStages = ShaderStageMask::Compute,
+	        .RequiredFeatures = CookedShaderPackageFeatureFlags::UsesInlineRayQuery | CookedShaderPackageFeatureFlags::UsesAccelerationStructure},
+	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
+	    .BindingLayoutDebugName = L"DirectLighting_BindingLayout",
+	    .PipelineStateDebugName = L"DirectLighting_PipelineState"};
+	return definition;
 }
 
 void DirectLightingPass::DeclareResources(

@@ -1,5 +1,6 @@
 #include "PCH.h"
 
+#include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include "Resources/RenderConstantBufferData.h"
@@ -12,8 +13,8 @@ class GBufferVS final : public TGlobalShader<GBufferVS>
 {
   public:
 	static constexpr std::string_view kShaderName = "GBufferVS";
-	static constexpr std::string_view kShaderPackageName = "GBuffer";
-	static constexpr std::string_view kBindingLayoutId = "GBuffer";
+	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::GBuffer;
+	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::GBuffer;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
@@ -31,8 +32,8 @@ class GBufferPS final : public TGlobalShader<GBufferPS>
 {
   public:
 	static constexpr std::string_view kShaderName = "GBufferPS";
-	static constexpr std::string_view kShaderPackageName = "GBuffer";
-	static constexpr std::string_view kBindingLayoutId = "GBuffer";
+	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::GBuffer;
+	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::GBuffer;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)

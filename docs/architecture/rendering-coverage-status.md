@@ -109,7 +109,7 @@ These rows were added during the file-level confrontation because module build/s
 | --- | --- | --- | --- | --- | --- | --- |
 | `Engine/Renderer/CMakeLists.txt` | Needs refactor | Renderer module build contract | Build dependencies can hide architecture cycles and make feature ownership unclear. Stage 9 moved NVIDIA DLSS Streamline/Vulkan linkage to `SparkleRendererNvidiaDlssProvider` so common `SparkleRenderer` no longer owns Vulkan policy. | Stage 3, Stage 4, Stage 9, Stage 22 | CMake configure and `SparkleLauncher` build after dependency changes. | Renderer target links only the layers it should own, provider-native linkage is narrow and documented, and dependency intent is documented. |
 | `Engine/Renderer/Private/PCH.h` | Accepted | Renderer private module support | PCH can hide include debt if later refactors are not checked. | Preserve through Stage 22 | Include review during final cleanup. | PCH remains a compile-speed helper only and does not become an architecture dependency shortcut. |
-| `Engine/Renderer/ShaderRegistrations` | Needs refactor | Renderer shader registration ownership | Renderer pass registration moved above RHI in Stage 4, but package declarations still duplicate pass runtime descriptions. | Stage 4, Stage 17, Stage 22 | `ShaderCompiler` package enumeration. | Ordinary renderer shader packages are owned above RHI and final pass definition work removes unnecessary duplication. |
+| `Engine/Renderer/ShaderRegistrations` | Needs refactor | Renderer shader registration ownership | Renderer pass registration moved above RHI in Stage 4 and Stage 17 shares package/layout identity, but registrations still repeat shader class/package/layout/path/entry/stage boilerplate. | Stage 4, Stage 17, Stage 17A, Stage 22 | `ShaderCompiler` package enumeration. | Ordinary renderer shader packages are owned above RHI, manifest/generated registration removes repeated constants, and ShaderCompiler validation still reports every package. |
 | `Engine/RHI/CMakeLists.txt` | Needs refactor | RHI module build contract | Backend-specific dependencies can leak into common RHI or renderer-facing code. | Stage 3, Stage 4, Stage 19, Stage 22 | CMake configure and D3D12/Vulkan runtime builds after dependency changes. | Common RHI, D3D12, Vulkan, shader runtime, and optional SDK dependencies are separated intentionally. |
 | `Engine/RHI/Private/PCH.h` | Accepted | RHI private module support | PCH can hide backend include coupling. | Preserve through Stage 22 | Include review during final cleanup. | PCH remains common support and does not include backend policy. |
 | `Engine/RHI/Public/RHIAPI.h` | Accepted | RHI public ABI/export boundary | Export macro policy is small but must remain the only public module linkage helper. | Preserve through Stage 22 | Header include/build check. | Public API macro remains isolated and has no renderer/backend policy. |
@@ -441,4 +441,30 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Threading readiness handoff | Explicit immutable key construction makes later background PSO warmup, package-generation invalidation, and cache reporting possible without reading live pass instances. |
 | Validation | `ShowcaseEditor` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`; CMake regenerated after discovering the new `PipelineRuntime` files. `architecture_boundary_check` passed with only provider-owned counted DLSS exceptions. A source text hygiene scan over `Engine/Renderer/Private/Pipeline` and `Engine/Renderer/Private/PipelineRuntime` found no stage/provenance planning text. |
 | Format evidence | `clang_format_check` is not generated in the VS2026 build tree; the attempted target build failed with missing `clang_format_check.vcxproj`. |
-| Remaining risk | Stage 17 must remove ordinary-pass dependence on `RenderPassPipelineTraits` and `m_legacyRuntimeStorageByPass`; Stage 20 must include runtime logs as validation artifacts for D3D12/Vulkan lit and debug/normal smoke. |
+| Remaining risk | Stage 17 removed central pass traits and type-index entry identity. Stage 20 must include runtime logs as validation artifacts for D3D12/Vulkan lit and debug/normal smoke. |
+
+## Stage 17 Pass Definition Evidence
+
+| Field | Evidence |
+| --- | --- |
+| Stage / checkpoint | Stage 17 - Introduce Declarative Pass Definition And Migrate Passes. |
+| Status | Fully completed for ordinary renderer passes. |
+| Code evidence | [RenderPassDefinition.h](../../Engine/Renderer/Private/Passes/RenderPassDefinition.h) defines renderer-owned pass intent; [RenderPassDefinitionRuntime.h](../../Engine/Renderer/Private/Pipeline/RenderPassDefinitionRuntime.h) converts definitions to runtime storage and normalized RHI descriptors. |
+| Migrated passes | `ComputeClear`, `GBuffer`, `DirectLighting`, `IndirectLighting`, `LightingComposite`, `Sky`, and `VisualizeBuffers` expose `GetDefinition()` and `PipelineRuntime`. |
+| Removed path | `Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h` was deleted. Source scans over `Engine/Renderer` found no `RenderPassPipelineTraits`, `DescribeShaderPackage`, `DescribeGBufferShaderPackage`, `std::type_index`, or `m_legacyRuntimeStorageByPass` references. |
+| Package identity | [RendererShaderPackages.h](../../Engine/Renderer/ShaderRegistrations/RendererShaderPackages.h) provides shared package/layout names used by pass definitions and renderer shader registrations. |
+| Data transfer contract | Pass intent transfers through `RenderPassDefinition`; shader metadata transfers through renderer-owned shader registrations and cooked package reflection; runtime lookup transfers pass definition data into `PipelineRuntimeLibrary` and RHI pipeline descriptors. |
+| Threading readiness handoff | Definitions are immutable metadata and can later feed PSO warmup, shader cook planning, or worker command-recording preparation without reading live pass instances. |
+| Validation | `ShowcaseEditor`, `ShaderCompiler`, and `architecture_boundary_check` passed in `build/windows-vs2026-stage5`; `ShaderCompiler.exe list-shaders --validate` reported 17 valid typed registrations. A source text hygiene scan over touched pass/pipeline/registration source found no stage/provenance planning text. |
+| Remaining risk | Stage 17A must remove handwritten shader registration boilerplate; Stage 20 must capture D3D12/Vulkan runtime smoke with PSO key logs. Stage 22 can decide whether the Stage 17A manifest/generator becomes the long-term ShaderContracts shape. |
+
+## Stage 17A Shader Registration Boilerplate Target
+
+| Field | Target |
+| --- | --- |
+| Stage / checkpoint | Stage 17A - Remove Shader Registration Boilerplate With Manifest-Driven Authoring. |
+| Status | Not started. |
+| Current evidence | `SkyCS` and sibling renderer shader registration classes still hand-write shader name, package name, binding layout id, shader path, entry point, and stage metadata. |
+| Target evidence | Renderer shader metadata is manifest-driven or generated from one declaration; `ShaderCompiler.exe list-shaders --validate` still reports all expected registrations and catches duplicate package/shader names, missing paths, stage mismatches, and binding-layout mismatches. |
+| Data transfer contract | Shader authoring metadata transfers through generated or manifest records into ShaderCompiler and through shared package/layout identity into `RenderPassDefinition`. |
+| Threading readiness handoff | Deterministic manifest/generated records can feed parallel shader cook jobs without scanning live renderer runtime objects or depending on C++ static initialization order. |

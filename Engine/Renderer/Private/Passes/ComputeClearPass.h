@@ -4,13 +4,13 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <cstdint>
 
 class RenderCommandContext;
 class FrameGraphBuilder;
 class PassParameterLayout;
+struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 
@@ -34,12 +34,13 @@ class ComputeClearPass final
 
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
+	using PipelineRuntime = ComputePassPipelineRuntime;
 
 	explicit ComputeClearPass(const ComputePassPipelineRuntime& runtime) noexcept;
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const PassParameterLayout& GetParameterLayout() noexcept;
-	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
+	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(FrameGraphBuilder& builder, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters);
 	void Execute(
 	    PassExecutionContext& context,

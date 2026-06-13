@@ -1,5 +1,6 @@
 #include "PCH.h"
 
+#include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include "Resources/RenderConstantBufferData.h"
@@ -13,8 +14,8 @@ class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
 {
   public:
 	static constexpr std::string_view kShaderName = "DirectLightingCS";
-	static constexpr std::string_view kShaderPackageName = "DirectLighting";
-	static constexpr std::string_view kBindingLayoutId = "DirectLighting";
+	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::DirectLighting;
+	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::DirectLighting;
 	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures =
 	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure | CookedShaderPackageFeatureFlags::UsesInlineRayQuery;
 

@@ -24,7 +24,7 @@ struct PassRuntimeServices
 	const RenderRayTracingPassServices* RayTracing = nullptr;
 	const RenderUpscalingPassServices* Upscaling = nullptr;
 
-	template <typename TPass> const typename RenderPassPipelineTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
+	template <typename TPass> const typename TPass::PipelineRuntime& GetPassRuntime() const noexcept
 	{
 		return RuntimeManager.GetPassRuntime<TPass>();
 	}

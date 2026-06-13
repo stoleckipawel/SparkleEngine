@@ -6,12 +6,12 @@
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include "RHI/Public/Bindings/RenderBindingSet.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <cstdint>
 #include <memory>
 
 class FrameGraphBuilder;
+struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeServices;
@@ -48,11 +48,12 @@ class IndirectLightingPass final
 	using Parameters = IndirectLightingPassParameters;
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
+	using PipelineRuntime = ComputePassPipelineRuntime;
 
 	explicit IndirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept;
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
-	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
+	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
 	    const LightingRenderTargets& lighting,

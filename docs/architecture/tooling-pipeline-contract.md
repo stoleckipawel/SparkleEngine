@@ -46,6 +46,7 @@ Tooling is refactored through active implementation stages, not only final audit
 
 | Stage | Tooling scope | Required outcome |
 | --- | --- | --- |
+| Stage 17A | Renderer shader registration tooling | Renderer shader registrations become manifest-driven or generated so ShaderCompiler receives typed records without repeated class/package/layout constants. |
 | Stage 27 | Source import | `SourceImportAdapters` migrates toward `SourceImporters`; importers emit imported DTOs and diagnostics. |
 | Stage 28 | Focused cookers and support | Texture/Mesh/Material/Scene cookers own transformations; `CookCommon` splits into precise support/diagnostics owners. |
 | Stage 29 | ShaderCompiler | ShaderCompiler consumes `ShaderContracts` and emits deterministic package/reflection reports without full renderer runtime linkage. |
@@ -60,7 +61,7 @@ Tooling is refactored through active implementation stages, not only final audit
 | --- | --- | --- |
 | `SparkleLauncherCore` | Improve and extract | Keep as workflow/process orchestrator; route data through `ToolContracts` request/report/history types. |
 | SparkleLauncher Qt GUI | Keep and refine | Preserve the model/view-style split; widgets do not own cook/build/shader algorithms. |
-| `ShaderCompiler` | Improve and extract | Consume `ShaderContracts` pass catalogs/manifests and generic package schemas, not full renderer runtime. |
+| `ShaderCompiler` | Improve and extract | Consume generated/manifest shader registration records, then longer-term `ShaderContracts` pass catalogs/manifests and generic package schemas, not full renderer runtime. |
 | `SourceImportAdapters` | Improve and extract | Rename/extract toward `SourceImporters` with per-format importers and imported DTO diagnostics. |
 | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Keep and refine | Preserve focused tools; improve schemas, inspectors, and failure reports. |
 | `AssetCooker` | Improve and extract | Keep project discovery/planning/dispatch; remove any duplicated focused cooker transformations. |
@@ -144,6 +145,7 @@ Tooling should be designed as deterministic jobs even while the first implementa
 | SourceImporters | Each import job owns one source asset/source group and emits imported DTOs plus diagnostics. |
 | Focused cookers | Each cook job owns its temp output, validates it, then publishes the final artifact/manifest. |
 | ShaderCompiler | Shader jobs are keyed by package id, backend format, options, and generation; package output is immutable after publish. |
+| Shader registration generation | Generated records are deterministic and sorted by package/shader identity so repeated runs produce stable list/cook evidence. |
 | AssetCooker | Planning owns the dependency graph; execution owns job requests, dependencies, cancellation, retry, and report aggregation. |
 | LauncherCore | UI intent becomes process/tool requests; long operations report progress/history without Qt widgets owning work. |
 | Reports | Job reports include job id, source path, artifact/package id, profile/backend, output path, failure reason, and elapsed time when available. |

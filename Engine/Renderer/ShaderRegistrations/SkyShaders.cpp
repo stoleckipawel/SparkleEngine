@@ -1,5 +1,6 @@
 #include "PCH.h"
 
+#include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include "Resources/RenderConstantBufferData.h"
@@ -12,8 +13,8 @@ class SkyCS final : public TGlobalShader<SkyCS>
 {
   public:
 	static constexpr std::string_view kShaderName = "SkyCS";
-	static constexpr std::string_view kShaderPackageName = "Sky";
-	static constexpr std::string_view kBindingLayoutId = "Sky";
+	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::Sky;
+	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::Sky;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, SceneColor, SceneColorTexture)

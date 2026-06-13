@@ -126,8 +126,8 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | Scene bridge | Improve and extract | Consume `RenderContracts` snapshots instead of direct mutable GameFramework state. |
 | Frame builders and frame graph | Keep and refine | Preserve renderer ownership and improve diagnostics/resource validation. |
 | Renderer passes | Keep and refine | Preserve pass ownership above RHI; require pass definitions to name graph resources, shader package, PSO intent, and diagnostics. |
-| `RenderPassPipelineTraits` | Replace or redesign | Remove central per-pass traits in favor of pass catalog/runtime registration. |
-| `PipelineStateManager` type-index identity | Replace or redesign | Replace implicit C++ type identity with explicit `PsoKey` and `PipelineRuntimeLibrary`. |
+| `RenderPassDefinition` | Keep and refine | Ordinary passes publish renderer-owned package, pipeline, feature, and diagnostics intent without central traits. |
+| `PipelineStateManager` pass-definition identity | Keep and refine | Runtime lookup uses pass definition names and feeds `PipelineRuntimeLibrary` explicit PSO keys. |
 | RHI broad facade | Improve and extract | Stage 7 introduced first public services for interop, capture/readback, diagnostics, and presentation/UI; Stage 19 removes root-facade bulk after caller migration. |
 | Application D3D12 capture body | Replace or redesign | Move backend-native capture/readback to RHI/backend validation services. |
 | Renderer-level Vulkan linkage for DLSS | Improve and extract | `SparkleRenderer` no longer links Vulkan directly; `SparkleRendererNvidiaDlssProvider` owns the narrow provider SDK/native linkage. |
@@ -141,7 +141,7 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | Scene staging | Conversion from `RenderContracts` snapshots to render-domain data. | Direct mutation/read of GameFramework internals. |
 | Frame graph | Resource lifetime, pass order, barriers, diagnostics. | Silent warnings, hidden resource aliases, pass-specific hacks. |
 | Pass system | Feature-specific draw/dispatch intent and validation names. | Backend-specific pass code or central per-pass boilerplate. |
-| Pipeline runtime | Explicit package/layout/PSO identity and reload diagnostics. | `std::type_index` identity and opaque lazy runtime state. |
+| Pipeline runtime | Explicit package/layout/PSO identity and reload diagnostics. | C++ type identity and opaque lazy runtime state. |
 | Providers | SDK-specific policy and fallback reasons. | Vendor SDK calls in ordinary passes or root RHI policy. |
 
 ## Frame Runtime View
@@ -213,7 +213,7 @@ Threading-ready rules:
 
 ```mermaid
 flowchart LR
-    Reg[ShaderContracts pass catalog]
+    Reg[Renderer pass definitions and shader packages]
     Cook[ShaderCompiler cook plan]
     Reflect[Reflection extraction]
     Package[Cooked shader package]
@@ -233,7 +233,7 @@ flowchart LR
     PSO --> Backend
 ```
 
-Current renderer pass shader registrations live in [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations). The target design improves this into `ShaderContracts` pass catalogs and package manifests so registration identity is not duplicated between pass code and cook metadata. RHI keeps only generic package layout, reflection, cache, and runtime primitives.
+Current renderer pass shader registrations live in [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations). Stage 17 shares package identity through [RendererShaderPackages.h](../../Engine/Renderer/ShaderRegistrations/RendererShaderPackages.h) and feeds runtime through [RenderPassDefinition.h](../../Engine/Renderer/Private/Passes/RenderPassDefinition.h). Future `ShaderContracts` work can turn this into package manifests for tools without reintroducing RHI ownership.
 
 ## Backend Boundary View
 
@@ -263,9 +263,9 @@ The backend boundary is correct only when Renderer talks through `RHI/Public` co
 
 | Gap | Evidence | Owning stage |
 | --- | --- | --- |
-| Renderer pass addition requires central runtime/traits edits. | [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h) specializes each pass. | Stage 16, Stage 17 |
+| Final validation still needs archived PSO key evidence. | Runtime logs now print explicit keys, but Stage 20 must capture them during D3D12/Vulkan smoke. | Stage 20 |
 | RHI root interface is broad. | [RenderHardwareInterface.h](../../Engine/RHI/Public/Device/RenderHardwareInterface.h) contains device, capture, command list, descriptors, constants, resources, memory, ray tracing, views, UI, and presentation. | Stage 6, Stage 7, Stage 19 |
-| PSO identity is implicit. | [PipelineStateManager.h](../../Engine/Renderer/Private/Pipeline/PipelineStateManager.h) keys pass runtimes by `std::type_index`. | Stage 16 |
+| Shader package authoring is not yet manifest-driven. | Runtime pass definitions and shader registrations share package IDs, but tooling still reads static registrations. | Stage 20, Stage 22 |
 
 ## Reviewer Navigation
 
@@ -285,7 +285,8 @@ Then inspect implementation:
 - [Renderer public API](../../Engine/Renderer/Public/Renderer.h)
 - [RHI public facade](../../Engine/RHI/Public/Device/RenderHardwareInterface.h)
 - [Frame graph root](../../Engine/Renderer/Private/FrameGraph/FrameGraph.h)
-- [Pass runtime traits](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h)
+- [Pass definitions](../../Engine/Renderer/Private/Passes/RenderPassDefinition.h)
+- [Pass definition runtime](../../Engine/Renderer/Private/Pipeline/RenderPassDefinitionRuntime.h)
 - [D3D12 backend root](../../Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.h)
 - [Vulkan backend root](../../Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.h)
 

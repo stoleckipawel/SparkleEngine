@@ -1,5 +1,6 @@
 #include "PCH.h"
 
+#include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include "Resources/RenderConstantBufferData.h"
@@ -12,8 +13,8 @@ class LightingCompositeCS final : public TGlobalShader<LightingCompositeCS>
 {
   public:
 	static constexpr std::string_view kShaderName = "LightingCompositeCS";
-	static constexpr std::string_view kShaderPackageName = "LightingComposite";
-	static constexpr std::string_view kBindingLayoutId = "LightingComposite";
+	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::LightingComposite;
+	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::LightingComposite;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, SceneColor, SceneColorTexture)

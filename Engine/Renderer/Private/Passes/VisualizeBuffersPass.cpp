@@ -8,10 +8,12 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
+#include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
+#include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 #include <cassert>
 
@@ -30,9 +32,19 @@ const VisualizeBuffersPass::ParameterMetadata& VisualizeBuffersPass::GetParamete
 	return metadata;
 }
 
-ShaderPackageDefinition VisualizeBuffersPass::DescribeShaderPackage() noexcept
+const RenderPassDefinition& VisualizeBuffersPass::GetDefinition() noexcept
 {
-	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
+	static const RenderPassDefinition definition{
+	    .PassName = PassName,
+	    .PackageDeclarationName = "VisualizeBuffersShaderPackage",
+	    .ShaderPackage = ShaderPackageDefinition{
+	        .PackageId = RendererShaderPackages::VisualizeBuffers.data(),
+	        .BindingLayoutId = RendererShaderPackages::VisualizeBuffers.data(),
+	        .ExpectedStages = ShaderStageMask::Compute},
+	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
+	    .BindingLayoutDebugName = L"VisualizeBuffers_BindingLayout",
+	    .PipelineStateDebugName = L"VisualizeBuffers_PipelineState"};
+	return definition;
 }
 
 void VisualizeBuffersPass::DeclareResources(

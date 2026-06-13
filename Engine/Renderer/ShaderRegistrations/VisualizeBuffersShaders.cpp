@@ -1,5 +1,6 @@
 #include "PCH.h"
 
+#include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include "Resources/RenderConstantBufferData.h"
@@ -12,8 +13,8 @@ class VisualizeBuffersCS final : public TGlobalShader<VisualizeBuffersCS>
 {
   public:
 	static constexpr std::string_view kShaderName = "VisualizeBuffersCS";
-	static constexpr std::string_view kShaderPackageName = "VisualizeBuffers";
-	static constexpr std::string_view kBindingLayoutId = "VisualizeBuffers";
+	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::VisualizeBuffers;
+	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::VisualizeBuffers;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, SceneColor, SceneColorTexture)

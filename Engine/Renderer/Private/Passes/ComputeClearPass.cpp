@@ -9,9 +9,11 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Passes/PassUtilities.h"
+#include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
+#include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 #include <cassert>
 
@@ -34,9 +36,19 @@ const PassParameterLayout& ComputeClearPass::GetParameterLayout() noexcept
 	return GetParameterMetadata().GetLayout();
 }
 
-ShaderPackageDefinition ComputeClearPass::DescribeShaderPackage() noexcept
+const RenderPassDefinition& ComputeClearPass::GetDefinition() noexcept
 {
-	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
+	static const RenderPassDefinition definition{
+	    .PassName = PassName,
+	    .PackageDeclarationName = "ComputeClearShaderPackage",
+	    .ShaderPackage = ShaderPackageDefinition{
+	        .PackageId = RendererShaderPackages::ComputeClear.data(),
+	        .BindingLayoutId = RendererShaderPackages::ComputeClear.data(),
+	        .ExpectedStages = ShaderStageMask::Compute},
+	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
+	    .BindingLayoutDebugName = L"ComputeClear_BindingLayout",
+	    .PipelineStateDebugName = L"ComputeClear_PipelineState"};
+	return definition;
 }
 
 void ComputeClearPass::DeclareResources(FrameGraphBuilder& builder, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters)

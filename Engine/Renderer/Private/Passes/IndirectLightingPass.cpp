@@ -7,11 +7,13 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/PassUtilities.h"
+#include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassBindingOverrides.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
+#include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Resources/Texture.h"
 #include "Textures/TextureManager.h"
@@ -51,9 +53,19 @@ const IndirectLightingPass::ParameterMetadata& IndirectLightingPass::GetParamete
 	return metadata;
 }
 
-ShaderPackageDefinition IndirectLightingPass::DescribeShaderPackage() noexcept
+const RenderPassDefinition& IndirectLightingPass::GetDefinition() noexcept
 {
-	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
+	static const RenderPassDefinition definition{
+	    .PassName = PassName,
+	    .PackageDeclarationName = "IndirectLightingShaderPackage",
+	    .ShaderPackage = ShaderPackageDefinition{
+	        .PackageId = RendererShaderPackages::IndirectLighting.data(),
+	        .BindingLayoutId = RendererShaderPackages::IndirectLighting.data(),
+	        .ExpectedStages = ShaderStageMask::Compute},
+	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
+	    .BindingLayoutDebugName = L"IndirectLighting_BindingLayout",
+	    .PipelineStateDebugName = L"IndirectLighting_PipelineState"};
+	return definition;
 }
 
 void IndirectLightingPass::DeclareResources(

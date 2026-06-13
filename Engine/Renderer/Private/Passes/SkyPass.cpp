@@ -9,11 +9,13 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
+#include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassBindingOverrides.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
+#include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Resources/Texture.h"
 #include "Textures/TextureManager.h"
@@ -54,9 +56,19 @@ const SkyPass::ParameterMetadata& SkyPass::GetParameterMetadata() noexcept
 	return metadata;
 }
 
-ShaderPackageDefinition SkyPass::DescribeShaderPackage() noexcept
+const RenderPassDefinition& SkyPass::GetDefinition() noexcept
 {
-	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
+	static const RenderPassDefinition definition{
+	    .PassName = PassName,
+	    .PackageDeclarationName = "SkyShaderPackage",
+	    .ShaderPackage = ShaderPackageDefinition{
+	        .PackageId = RendererShaderPackages::Sky.data(),
+	        .BindingLayoutId = RendererShaderPackages::Sky.data(),
+	        .ExpectedStages = ShaderStageMask::Compute},
+	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
+	    .BindingLayoutDebugName = L"Sky_BindingLayout",
+	    .PipelineStateDebugName = L"Sky_PipelineState"};
+	return definition;
 }
 
 void SkyPass::DeclareResources(

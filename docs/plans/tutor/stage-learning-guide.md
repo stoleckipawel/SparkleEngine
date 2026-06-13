@@ -39,6 +39,7 @@ For each stage, ask:
 | 15 | Milestone validation turns design into confidence. | Smoke logs, graph diagnostics, D3D12/Vulkan evidence. | The facade/frame graph work is proven before PSO/pass redesign. |
 | 16 | Pipeline identity must be explicit and deterministic. | PSO keys, package identity, binding layouts, cache ownership. | Runtime pipeline behavior is inspectable across backends. |
 | 17 | Pass authoring should be declarative and low-ceremony. | Pass definitions, pass catalog, graph setup, pipeline lookup. | Adding ordinary passes is localized and reviewable. |
+| 17A | Good tooling removes repetition without hiding contracts. | Shader manifests, generated registrations, typed reflection, package identity. | Shader authoring becomes boring, precise, and hard to mistype. |
 | 18 | Ray tracing needs split ownership from scene to AS build. | BLAS/TLAS generations, AS requests, shadow data, RHI RT descriptors. | Renderer owns feature policy; RHI owns API-level AS work. |
 | 19 | Backend symmetry exposes real API differences. | D3D12/Vulkan service maps, CMake scopes, cross-backend includes. | Shared semantics are common; API differences are explicit. |
 | 20 | Full graphics validation should be reproducible. | Builds, shader packages, launcher smoke, captures, feature logs. | Claims about parity/reliability have artifacts behind them. |

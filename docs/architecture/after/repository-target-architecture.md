@@ -101,7 +101,7 @@ The disposition policy changes the target design in concrete ways:
 | D3D12/Vulkan backend trees | Keep and refine | `D3D12Backend`, `VulkanBackend` service implementations | Preserve backend-private roots and improve symmetry; do not cross-include or leak native types upward. |
 | Renderer facade | Improve and extract | Host-facing renderer facade plus frame pipeline/features | Keep the renderer as host entry point, but extract frame orchestration, scene staging, pass authoring, and feature providers into named renderer subsystems. |
 | Renderer central pass traits | Replace or redesign | `PassCatalog` and `PipelineRuntimeLibrary` | Remove the central per-pass traits bottleneck; ordinary pass additions should not edit a global traits registry. |
-| Renderer shader registrations | Improve and extract | `ShaderContracts` pass catalog and package manifests | Keep renderer ownership of pass metadata, but remove duplicate declarations between pass code and registration files. |
+| Renderer shader registrations | Improve and extract | Generated/manifest records backed by `ShaderContracts` pass catalog and package manifests | Keep renderer ownership of pass metadata, remove duplicate declarations between pass code and registration files, and avoid hand-written shader/package/layout boilerplate. |
 | `Engine/GameFramework` as schema owner | Improve and extract | `AssetContracts` and `RenderContracts` consumed by GameFramework | GameFramework remains runtime scene/cooked loading owner, but shared schemas move to neutral contracts when direct tool/runtime edges appear. |
 | `Engine/Application` validation | Replace or redesign | Host validation orchestrator plus RHI/backend capture services | Remove permanent D3D12-native capture logic from Application. |
 | `Tools/Shaders/ShaderCompiler` renderer linkage | Improve and extract | ShaderCompiler consuming `ShaderContracts` | ShaderCompiler should not link full renderer runtime; it consumes pass catalogs, manifests, reflection, and package schemas. |
@@ -323,7 +323,7 @@ The target architecture is accepted only when:
 - Runtime modules do not depend on `Tools/*` implementation headers.
 - Tools do not depend on GameFramework private loaders, Renderer private runtime, or RHI backend-private implementation.
 - Renderer consumes GameFramework data through `RenderContracts`, not mutable gameplay internals.
-- ShaderCompiler consumes a pass catalog or generated manifest, not full Renderer runtime.
+- ShaderCompiler consumes a pass catalog or generated manifest, not full Renderer runtime or hand-written duplicate registration constants.
 - Cooked artifact schemas name producer, schema owner, runtime consumer, inspector, and smoke/load evidence.
 - Boundary checks cover RHI/Renderer, runtime-to-tools, GameFramework/private coupling, launcher/tool ownership, backend-native leakage, and generated/local-only policy.
 - Threading readiness checks pass at the design level: every mutable subsystem has a phase owner and every future parallel handoff has a named contract.

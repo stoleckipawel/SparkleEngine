@@ -1,5 +1,6 @@
 #include "PCH.h"
 
+#include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include <string_view>
@@ -10,8 +11,8 @@ class IndirectLightingCS final : public TGlobalShader<IndirectLightingCS>
 {
   public:
 	static constexpr std::string_view kShaderName = "IndirectLightingCS";
-	static constexpr std::string_view kShaderPackageName = "IndirectLighting";
-	static constexpr std::string_view kBindingLayoutId = "IndirectLighting";
+	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::IndirectLighting;
+	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::IndirectLighting;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, IndirectDiffuse, IndirectDiffuseTexture)

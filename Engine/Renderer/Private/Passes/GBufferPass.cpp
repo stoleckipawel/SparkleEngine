@@ -1,6 +1,8 @@
 #include "../PCH.h"
 #include "Passes/GBufferPass.h"
 
+#include "Config/DepthConvention.h"
+#include "Config/RenderConfig.h"
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Logger.h"
@@ -12,12 +14,14 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/GBufferMeshBatchDrawer.h"
 #include "Passes/PassUtilities.h"
+#include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "SceneData/RenderSceneData.h"
 #include "SceneData/MaterialData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
 #include "Meshes/GPUMesh.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
+#include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
@@ -55,12 +59,36 @@ const GBufferPass::DrawParameterMetadata& GBufferPass::GetDrawParameterMetadata(
 	return metadata;
 }
 
-ShaderPackageDefinition GBufferPass::DescribeGBufferShaderPackage() noexcept
+const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 {
-	return ShaderPackageDefinition{
-	    .PackageId = PassName,
-	    .BindingLayoutId = PassName,
-	    .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel};
+	static const RenderPassDefinition definition{
+	    .PassName = PassName,
+	    .PackageDeclarationName = "GBufferShaderPackage",
+	    .ShaderPackage = ShaderPackageDefinition{
+	        .PackageId = RendererShaderPackages::GBuffer.data(),
+	        .BindingLayoutId = RendererShaderPackages::GBuffer.data(),
+	        .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel},
+	    .PipelineKind = RenderPassDefinitionPipelineKind::Graphics,
+	    .AllowInputAssemblerInputLayout = true,
+	    .BindingLayoutDebugName = L"GBuffer_BindingLayout",
+	    .PipelineStateDebugName = L"GBuffer_PipelineState",
+	    .Graphics = RenderPassGraphicsPipelineDefinition{
+	        .VertexLayout = RhiVertexLayoutKind::StaticMesh,
+	        .DepthTest = RhiDepthTestDesc{
+	            .DepthEnable = true,
+	            .DepthWriteEnable = true,
+	            .DepthFunc = DepthConvention::GetDepthComparisonLessEqualFunc()},
+	        .RenderTargetFormats = {
+	            RenderConfig::GBuffer::BaseColorFormat,
+	            RenderConfig::GBuffer::NormalFormat,
+	            RenderConfig::GBuffer::MaterialFormat,
+	            RenderConfig::GBuffer::EmissiveFormat,
+	            RenderConfig::GBuffer::SubsurfaceFormat,
+	            RenderConfig::GBuffer::DeviceZFormat,
+	            RenderConfig::GBuffer::MotionVectorFormat},
+	        .RenderTargetCount = 7,
+	        .DepthStencilFormat = RenderConfig::DepthStencilFormat}};
+	return definition;
 }
 
 void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

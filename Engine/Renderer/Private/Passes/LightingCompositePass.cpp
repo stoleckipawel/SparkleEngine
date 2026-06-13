@@ -8,10 +8,12 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
+#include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
+#include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 #include <cassert>
 
@@ -30,9 +32,19 @@ const LightingCompositePass::ParameterMetadata& LightingCompositePass::GetParame
 	return metadata;
 }
 
-ShaderPackageDefinition LightingCompositePass::DescribeShaderPackage() noexcept
+const RenderPassDefinition& LightingCompositePass::GetDefinition() noexcept
 {
-	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
+	static const RenderPassDefinition definition{
+	    .PassName = PassName,
+	    .PackageDeclarationName = "LightingCompositeShaderPackage",
+	    .ShaderPackage = ShaderPackageDefinition{
+	        .PackageId = RendererShaderPackages::LightingComposite.data(),
+	        .BindingLayoutId = RendererShaderPackages::LightingComposite.data(),
+	        .ExpectedStages = ShaderStageMask::Compute},
+	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
+	    .BindingLayoutDebugName = L"LightingComposite_BindingLayout",
+	    .PipelineStateDebugName = L"LightingComposite_PipelineState"};
+	return definition;
 }
 
 void LightingCompositePass::DeclareResources(

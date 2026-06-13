@@ -7,13 +7,13 @@
 #include "Frame/Targets/FrameRenderTargets.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cstddef>
 
 class RenderCommandContext;
 struct RasterPassPipelineRuntime;
+struct RenderPassDefinition;
 class FrameGraphBuilder;
 struct PassExecutionContext;
 struct RenderSceneData;
@@ -100,12 +100,13 @@ class GBufferPass final
 	using DrawParameterMetadata = ShaderParameterStructMetadata<DrawParameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 	using DrawParameterInstance = TypedPassParameterInstance<DrawParameters>;
+	using PipelineRuntime = RasterPassPipelineRuntime;
 
 	explicit GBufferPass(const RasterPassPipelineRuntime& runtime) noexcept;
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
-	static ShaderPackageDefinition DescribeGBufferShaderPackage() noexcept;
+	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(FrameGraphBuilder& builder, const GBufferRenderTargets& targets, ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

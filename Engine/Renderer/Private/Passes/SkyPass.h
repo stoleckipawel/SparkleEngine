@@ -7,12 +7,12 @@
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <cstdint>
 #include <memory>
 
 class FrameGraphBuilder;
+struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeServices;
@@ -46,11 +46,12 @@ class SkyPass final
 	using Parameters = SkyPassParameters;
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
+	using PipelineRuntime = ComputePassPipelineRuntime;
 
 	explicit SkyPass(const ComputePassPipelineRuntime& runtime) noexcept;
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
-	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
+	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
 	    const SceneRenderTargets& sceneTargets,
