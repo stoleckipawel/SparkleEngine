@@ -11,7 +11,7 @@ endfunction()
 add_subdirectory(Launcher/SparkleLauncher)
 
 if(SPARKLE_ENABLE_CONTENT_PIPELINE OR SPARKLE_ENABLE_SHADER_COMPILER)
-	add_subdirectory(Cooking/CookCommon)
+	add_subdirectory(Support/ToolConsoleSupport)
 endif()
 
 if(SPARKLE_ENABLE_CONTENT_PIPELINE)

@@ -109,7 +109,7 @@ The disposition policy changes the target design in concrete ways:
 | Focused cookers | Keep and refine | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Preserve focused transformation tools; tighten artifact schemas and inspection/reporting. |
 | `Tools/Cooking/AssetCooker` | Improve and extract | `AssetCooker` orchestration only | Keep project discovery and dispatch; remove any duplicated focused cooker algorithms. |
 | `Tools/Conversion/AssetConverter` | Replace or redesign | Fold into `AssetCooker` or explicit inspection/debug commands | Do not keep a second production cook path. |
-| `Tools/Cooking/CookCommon` | Improve and extract | `ToolConsoleSupport` and/or `CookDiagnostics` | Do not preserve a vague `Common` architecture label; split support helpers from cook policy. |
+| `Tools/Support/ToolConsoleSupport` | Keep and refine | `ToolConsoleSupport` | Do not preserve a vague `Common` architecture label; keep generic support separate from cook policy. |
 | `Engine/Assets` non-code asset root | Replace or redesign | Narrow to `Engine/Assets/BuiltIn`, or move shaders/data to owner-specific roots | Do not keep ambiguous asset roots where engine built-ins, renderer pass shaders, and project content can blur together. |
 | CMake target graph | Improve and extract | Narrow `PRIVATE`/`INTERFACE` usage-requirement graph | Treat broad target links as design bugs. |
 | `.github` workflows | Improve and extract | CI mirrors local boundary/tool checks | CI is validation evidence, not architecture ownership. |

@@ -197,7 +197,7 @@ This table applies the keep/improve/replace rule to the current source roots. It
 | Focused cookers under [Tools/Cooking](../../Tools/Cooking) | Keep and refine | Keep focused transformations; tighten schemas, diagnostics, and inspectors. | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` |
 | [Tools/Cooking/AssetCooker](../../Tools/Cooking/AssetCooker) | Improve and extract | Keep orchestration only; remove duplicated cook algorithms. | `AssetCooker` |
 | [Tools/Conversion/AssetConverter](../../Tools/Conversion/AssetConverter) | Replace or redesign | Fold into AssetCooker or explicit inspect/debug commands. | No production `AssetConverter` path |
-| [Tools/Cooking/CookCommon](../../Tools/Cooking/CookCommon) | Improve and extract | Rename/split vague common helpers into support and diagnostics surfaces. | `ToolConsoleSupport`, `CookDiagnostics` |
+| [Tools/Support/ToolConsoleSupport](../../Tools/Support/ToolConsoleSupport) | Keep and refine | Keep generic console/report formatting outside cook policy. | `ToolConsoleSupport` |
 | [Tools/Launcher/SparkleLauncher](../../Tools/Launcher/SparkleLauncher) core | Improve and extract | Keep workflow orchestration; prevent UI/tool algorithm duplication. | `LauncherCore`, `ToolContracts` |
 | Launcher Qt GUI | Keep and refine | Preserve presentation split; models observe LauncherCore state. | Qt models/widgets |
 | [CMake](../../CMake) | Improve and extract | Make target scopes express ownership and validation. | Narrow target graph |
@@ -223,7 +223,7 @@ This table applies the keep/improve/replace rule to the current source roots. It
 | Focused cookers | Deterministic artifact transforms and schema diagnostics. | Project workflow, UI prompts, runtime mutation. |
 | `AssetCooker` | Planning, dispatch, aggregation, reports. | Reimplemented cooker algorithms. |
 | `AssetConverter` | Only explicit inspect/debug commands that do not mutate cook policy. | A parallel production cook pipeline. |
-| `ToolConsoleSupport` / `CookDiagnostics` | Shared reporting/console behavior with no asset policy. | Broad `Common` helper ownership. |
+| `ToolConsoleSupport` | Shared reporting/console behavior with no asset, shader, project, launcher, or cook-domain policy. | Broad `Common` helper ownership. |
 | Launcher | Process orchestration, operation state, evidence, presentation. | Build/cook/shader algorithms in GUI code. |
 | CMake/CI | Dependency ownership and repeatable validation. | Broad transitive links and hidden CI-only behavior. |
 | `Projects` | Sample content that exercises cook/load/render paths. | Decorative samples that do not validate contracts. |

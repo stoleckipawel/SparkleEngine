@@ -30,9 +30,6 @@ set_target_properties(slang::slang PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${SLANG_INCLUDE_DIR}"
 )
 
-# ShaderCompiler owns offline shader manifest validation and cooked package
-# emission. Keep shader-cooking implementation private to this executable
-# target so scene-cook tooling cannot accidentally absorb it again.
 target_include_directories(ShaderCompiler
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
@@ -60,17 +57,13 @@ sparkle_target_precompile_headers(ShaderCompiler
 
 target_link_libraries(ShaderCompiler
     PRIVATE
-        CookCommon
+        ToolConsoleSupport
         SparkleCore
-    # ShaderCompiler consumes RHI's cooked-shader contract plus Renderer-owned
-    # shader declarations. It does not link the full renderer runtime.
         SparkleRHI
         SparkleRendererShaderRegistrations
-    ${DXC_IMPORT_LIBRARY}
-    # SPIRV-Reflect: SPIR-V → ShaderReflection extractor. Confined to
-    # Backends/Dxc/ by the boundary validator.
-    spirv_reflect
-    slang::slang
+        ${DXC_IMPORT_LIBRARY}
+        spirv_reflect
+        slang::slang
 )
 
 add_custom_command(TARGET ShaderCompiler POST_BUILD

@@ -97,9 +97,6 @@ add_executable(TextureCooker
 sparkle_configure_host_tool_target(TextureCooker)
 sparkle_configure_development_tool_artifacts(TextureCooker)
 
-# TextureCooker owns source-texture loading plus cooked texture-asset emission.
-# Keep the source-decode and serialization implementation private to this
-# executable.
 target_include_directories(TextureCooker
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
@@ -118,7 +115,7 @@ sparkle_target_precompile_headers(TextureCooker
 target_link_libraries(TextureCooker
     PRIVATE
         CMP_Core
-        CookCommon
+        ToolConsoleSupport
         SparkleCore
         TextureCookShared
         TextureCookerMiniz

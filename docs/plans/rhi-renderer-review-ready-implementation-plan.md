@@ -179,7 +179,7 @@ Folder architecture rule:
 
 - Follow [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) when adding, moving, renaming, or deleting folders.
 - A stage prompt must identify which folders are migration sources, which folders are target owners, which old folders are deleted or aliased temporarily, and which folders must not receive code.
-- Owner-specific folders are preferred over generic roots: `Engine/Contracts/Asset`, `Engine/Contracts/Render`, `Engine/Contracts/Shader`, `Tools/Contracts`, `Engine/Renderer/Shaders`, `Engine/RHI/Shaders`, `Projects/*/Data`, `Projects/*/Shaders`, `Tools/Import/SourceImporters`, focused `*Cooker` folders, `Tools/Inspection/AssetInspector`, `Tools/Support/ToolConsoleSupport`, and `Tools/Cooking/CookDiagnostics`.
+- Owner-specific folders are preferred over generic roots: `Engine/Contracts/Asset`, `Engine/Contracts/Render`, `Engine/Contracts/Shader`, `Tools/Contracts`, `Engine/Renderer/Shaders`, `Engine/RHI/Shaders`, `Projects/*/Data`, `Projects/*/Shaders`, `Tools/Import/SourceImporters`, focused `*Cooker` folders, `Tools/Inspection/AssetInspector`, and `Tools/Support/ToolConsoleSupport`.
 
 Threading readiness rule:
 
@@ -218,7 +218,7 @@ This plan is a global repository refactor. The early stages still focus on RHI/R
 | 20 | Full graphics validation | ShaderCompiler, Launcher, Projects/Showcase, Application validation, docs. | Final graphics evidence must be reusable by Stage 34 evidence gate and Stage 35 threading-readiness audit. |
 | 23 | Whole-repository coverage and dependency map | All durable roots. | Every root has owner, allowed dependencies, forbidden dependencies, validation target, and acceptance evidence. |
 | 24 | GameFramework runtime/cooked contract | Renderer snapshots, SourceImporters, cookers, AssetCooker. | GameFramework has no Renderer-private, backend-private, or tool-private dependencies; schema changes name paired producers/consumers. |
-| 25 | Source import/cooking/conversion architecture | SourceImporters, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, AssetCooker, CookCommon, AssetConverter, GameFramework loaders. | SourceImporters remain role-centered; CookCommon becomes ToolConsoleSupport/CookDiagnostics; AssetConverter is removed as a production path; runtime consumes cooked outputs only. |
+| 25 | Source import/cooking/conversion architecture | SourceImporters, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, AssetCooker, ToolConsoleSupport, AssetConverter, GameFramework loaders. | SourceImporters remain role-centered; generic tool console support stays in ToolConsoleSupport; AssetConverter is removed as a production path; runtime consumes cooked outputs only. |
 | 26 | Launcher and host boundaries | LauncherCore, Qt GUI, Application, Editor, tools, smoke validation. | Launcher invokes tools/processes and records evidence; Qt UI remains presentation/model code. |
 | 27 | Shader and cook artifact validation matrix | ShaderCompiler, cookers, GameFramework loaders, Renderer resource managers, Projects. | Every artifact type has producer, schema owner, consumer, inspector, and smoke/load evidence. |
 | 28 | Build, CI, and guardrail expansion | CMake, `.github`, runtime-to-tools dependencies, generated/local-only folders. | Boundary checks cover RHI/Renderer plus runtime-to-tools, GameFramework/launcher/tool ownership, and generated folder policy. |
@@ -384,7 +384,7 @@ Stage-to-reference map:
 | 20 | Donut Samples, NVRHI tutorial, Vulkan validation layers, Streamline/FidelityFX docs | Full backend parity validation | Lit/debug captures, DLSS/RT/frame graph/PSO logs, backend feature reports | Exact image match claims where numeric/API differences require tolerance |
 | 23 | Whole-repository architecture review, CMake target usage requirements, Donut/Falcor/Cauldron repo layout | Repository-wide ownership map | Every durable root has owner, dependency intent, validation target, and acceptance evidence | Treating non-rendering modules as "out of scope" during a graphics refactor |
 | 24 | Donut scene/component graph, Falcor scene/render split, glTF runtime asset delivery | Runtime scene and cooked asset contract | GameFramework owns runtime/cooked loading and emits immutable renderer-facing snapshots | Moving source import, cook algorithms, or renderer pass data into GameFramework |
-| 25 | AMD Compressonator, Cauldron content/sample pipeline, glTF, KTX | Focused import/cook tools plus orchestration | SourceImporters and focused cookers own transformations; AssetCooker orchestrates and reports; ToolConsoleSupport/CookDiagnostics replace vague CookCommon; AssetConverter is not a production path | AssetCooker becoming a second implementation of every cooker, or AssetConverter surviving as a parallel cook pipeline |
+| 25 | AMD Compressonator, Cauldron content/sample pipeline, glTF, KTX | Focused import/cook tools plus orchestration | SourceImporters and focused cookers own transformations; AssetCooker orchestrates and reports; ToolConsoleSupport replaces vague common support; AssetConverter is not a production path | AssetCooker becoming a second implementation of every cooker, or AssetConverter surviving as a parallel cook pipeline |
 | 26 | Qt model/view programming, Compressonator GUI/CLI/SDK split, Streamline integration guides | Workflow core separated from UI and host orchestration | LauncherCore owns operations/processes/evidence; Qt GUI owns presentation; Application/Editor host systems | Widgets or host code duplicating cook/render/backend implementation details |
 | 27 | NVRHI shader packages/validation, Falcor shader/render tooling, KTX/glTF artifact contracts | Artifact producer/schema/consumer validation matrix | Every shader/cooked asset type has producer, owner, consumer, inspector, and smoke/load evidence | Schema changes accepted with only a build or source-level compile |
 | 28 | CMake target usage requirements, NVRHI/NRI/Cauldron backend boundaries, CI workflows in reference repos | Mechanical guardrails beyond RHI/Renderer | Checks cover runtime-to-tools, GameFramework/private coupling, launcher/tool ownership, generated folders | Broad allowlists that hide architecture drift |
@@ -513,7 +513,7 @@ These checkpoints are stage-local acceptance gates. They are intentionally small
 | 25 | Shared schema extraction decision; runtime scene snapshot contract; GameFramework loader/asset ownership; renderer/tool forbidden-edge cleanup; snapshot/load validation. |
 | 26 | Cooked mesh loader; cooked material loader; cooked texture reference path; cooked scene/level manifest loader; animation/skeleton loader; paired cooker/runtime diagnostics. |
 | 27 | Source importer folder/name migration; per-format importer ownership; imported DTO/report contract; runtime/tool-private dependency scan; sample import evidence. |
-| 28 | TextureCooker boundary; MeshCooker boundary; MaterialCooker boundary; SceneCooker boundary; CookDiagnostics/ToolConsoleSupport split; deterministic artifact output proof. |
+| 28 | TextureCooker boundary; MeshCooker boundary; MaterialCooker boundary; SceneCooker boundary; ToolConsoleSupport split; deterministic artifact output proof. |
 | 29 | ShaderCompiler contract input; package manifest/reflection reports; backend target options; deterministic job identity; renderer runtime decoupling proof. |
 | 30 | AssetCooker orchestration-only proof; LauncherCore process request/report contract; Qt model/view presentation boundary; Application host boundary; Editor host boundary; operation history/recovery evidence. |
 | 31 | Shader package matrix; texture artifact matrix; mesh artifact matrix; material artifact matrix; scene/animation/skeleton artifact matrix; inspector commands; smoke/load evidence. |
@@ -2883,12 +2883,23 @@ Validation:
 - Build affected import targets.
 - Run targeted sample import/cook when available.
 
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed. |
+| Folder and target ownership | `Tools/Import/SourceImporters` is the production import folder and CMake target; no production source/CMake references to the retired adapter target remain. |
+| Import report handoff | `SourceImportResult` carries source path and importer id report identity; AssetCooker import summaries and cooked-scene output report `importer=GltfImporter`. |
+| Cooker consumers | `MeshCooker`, `MaterialCooker`, `SceneCooker`, `AssetCooker`, and `AssetConverter` link `SourceImporters` instead of the retired adapter target. |
+| Runtime isolation | Engine runtime source/CMake scan found no source-import tool, importer target, source scene importer, import result, or imported scene dependency. |
+| Validation | `SourceImporters`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, `AssetCooker`, and `AssetConverter` built in `DevelopmentEditor`; Showcase `cook-assets` exited `0`; architecture boundary check and `git diff --check` passed. Historical adapter references remain only in `docs/architecture/before`. |
+
 ## Stage 28 - Focused Cooker And Tool Support Refactor
 
 Goal:
 
 - Apply the same owner/contract/refactor treatment to TextureCooker, MeshCooker, MaterialCooker, SceneCooker, and shared cook support.
-- Split weak support names such as `CookCommon` into precise support/diagnostics owners.
+- Replace weak support names with precise support/diagnostics owners.
 
 Source references:
 
@@ -2906,13 +2917,13 @@ Target shape references:
 Implementation prompt:
 
 ```text
-Refactor focused cookers so TextureCooker, MeshCooker, MaterialCooker, and SceneCooker each own one artifact transformation family, deterministic cooked artifact emission, and actionable diagnostics. Split Tools/Cooking/CookCommon into precise support owners such as Tools/Support/ToolConsoleSupport and Tools/Cooking/CookDiagnostics when current callers justify the split. Do not move orchestration into focused cookers and do not move focused algorithms into AssetCooker or Launcher.
+Refactor focused cookers so TextureCooker, MeshCooker, MaterialCooker, and SceneCooker each own one artifact transformation family, deterministic cooked artifact emission, and actionable diagnostics. Keep generic console/report plumbing in Tools/Support/ToolConsoleSupport; keep cook-domain diagnostics in focused cookers until multiple cookers share real diagnostics or validation records. Do not move orchestration into focused cookers and do not move focused algorithms into AssetCooker or Launcher.
 ```
 
 Positive guardrails:
 
 - TextureCooker, MeshCooker, MaterialCooker, and SceneCooker own focused transformations and cooked artifact emission.
-- CookCommon is renamed/split into precise support surfaces such as ToolConsoleSupport and CookDiagnostics.
+- Generic console/report plumbing lives in ToolConsoleSupport; cook-domain diagnostics remain with focused cookers unless shared ownership is justified.
 - Cooker jobs publish final artifacts only after validation succeeds.
 - Cookers produce deterministic reports with source path, artifact id, schema version, output path, and reason.
 
@@ -2920,7 +2931,7 @@ Negative guardrails:
 
 - Do not let runtime modules include `Tools/Import`, `Tools/Cooking`, or `Tools/Conversion` implementation headers.
 - Do not let focused cookers own project workflow/UI policy.
-- Do not preserve CookCommon as a broad permanent owner name.
+- Do not preserve broad common support names as production architecture.
 - Do not create a generic `Tools/Common`, `Tools/Utils`, or `Tools/Conversion` replacement that hides ownership.
 - Do not put source importers, cookers, or inspectors under `Engine/` to make runtime links easier.
 - Do not hide failures behind generic "cook failed" messages.
@@ -2934,7 +2945,7 @@ Data transfer contracts:
 Acceptance:
 
 - Focused cookers own focused transformations.
-- CookCommon is replaced by precise support/diagnostics surfaces.
+- Tool support is represented by precise support/diagnostics surfaces.
 - Cooker outputs are deterministic and paired with runtime loader expectations.
 
 Validation:
@@ -2942,6 +2953,16 @@ Validation:
 - Build affected cook/import target.
 - Run targeted sample cook when available.
 - Verify failures report source path, asset id, output artifact, and reason.
+
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed. |
+| Support split | `Tools/Cooking/CookCommon` was replaced by `Tools/Support/ToolConsoleSupport`; `AssetCooker`, `TextureCooker`, and `ShaderCompiler` link the precise support target. No production CMake/source references to the retired common support target remain. |
+| Focused cooker ownership | `TextureCooker`, `MeshCooker`, `MaterialCooker`, and `SceneCooker` remain focused transformation targets; orchestration remains in `AssetCooker` and legacy direct conversion remains staged for Stage 30. |
+| Diagnostics policy | Generic console/report formatting lives in `ToolConsoleSupport`; cook-domain diagnostics stay in focused cookers until shared cook diagnostics earn a target. |
+| Validation | `ToolConsoleSupport`, `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, `AssetCooker`, and `ShaderCompiler` built in `DevelopmentEditor`; Showcase `cook-assets` and `cook-textures` exited `0`; controlled invalid texture request exited `7` and reported asset id, source path, output path, and reason; runtime-to-tools dependency scan, stale production support-name scan, architecture boundary check, and `git diff --check` passed. |
 
 ## Stage 29 - Shader Toolchain Contract Refactor
 

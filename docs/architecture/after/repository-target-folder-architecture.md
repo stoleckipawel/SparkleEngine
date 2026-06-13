@@ -48,7 +48,7 @@ Current durable roots have useful foundations, but several names and placements 
 | `Engine/Assets/Meshes`, `Engine/Assets/Shaders`, `Engine/Assets/Textures` | This is a non-code asset root, not an empty root. Its ownership is ambiguous: engine built-ins, renderer shaders, and project content should not share one unqualified policy. | Replace/redesign. Either narrow it to documented built-in engine assets or move content to owner-specific `Engine/*/Shaders` and `Projects/*/Data` roots. |
 | `Engine/GameFramework` | Correct runtime place for gameplay-facing scene and cooked loading, but shared schema gravity can pull tools and renderer into it. | Improve/extract shared schemas to `AssetContracts` and render handoff to `RenderContracts` only when the shared type is real data, not renderer packing constants. |
 | `Tools/Import/SourceImporters` | Role-centered source import owner for source-format families such as glTF and FBX. | Keep/refine per-format importers that emit DTOs, import reports, and diagnostics. |
-| `Tools/Cooking/CookCommon` | Useful support can become a vague policy sink. | Split/rename to `Tools/Support/ToolConsoleSupport` and/or `Tools/Cooking/CookDiagnostics`. |
+| `Tools/Support/ToolConsoleSupport` | Generic console/report support can become a vague policy sink if it grows domain behavior. | Keep as console/report plumbing only; create `Tools/Cooking/CookDiagnostics` only when shared cook-domain diagnostics are real. |
 | `Tools/Conversion/AssetConverter` | A direct conversion CLI can become a second production cook path. | Remove as a production path. Useful read-only commands move to explicit inspection/debug tools or AssetCooker subcommands. |
 | `Tools/Launcher/SparkleLauncher` | Already has useful `Private/Core`, `Private/Gui`, and workflow-oriented folders. | Keep/refine; consider `Private/Workflows` grouping when it makes process ownership clearer. |
 | `Tools/Shaders/ShaderCompiler` | Good backend, cooking, inspection, and verification structure. | Keep/refine; consume `ShaderContracts` instead of full renderer runtime. |
@@ -265,7 +265,7 @@ flowchart TD
 | `Tools/Cooking/*Cooker` | Focused deterministic artifact transforms. | Project workflow UI, runtime mutation, or unrelated format import policy. |
 | `Tools/Cooking/AssetCooker` | Discovery, planning, dispatch, aggregation, reports. | Reimplementation of focused cooker algorithms. |
 | `Tools/Inspection/AssetInspector` | Read-only artifact/package/report inspection commands. | Production cook policy or source import transformation. |
-| `Tools/Support/ToolConsoleSupport` | Console/log/report plumbing reused by tools. | Asset, shader, project, or launcher policy. |
+| `Tools/Support/ToolConsoleSupport` | Console/log/report plumbing reused by tools. | Asset, shader, project, launcher, or cook-domain policy. |
 | `Tools/Launcher/SparkleLauncher/Private/Core` | Workflow catalogs, process requests, execution, history. | Focused cook/import/shader algorithms. |
 | `Tools/Launcher/SparkleLauncher/Private/Gui` | Qt presentation, models, widgets, prompts, styling. | Tool algorithms or build/cook process ownership. |
 | `CMake/Checks` | Local/CI-friendly architecture and validation checks. | Runtime logic or generated artifacts. |
@@ -283,7 +283,7 @@ Each implementation prompt must name the current folders touched, target folders
 | 16-20 | Move pass/package/PSO identity into pass definitions, generated/manifest shader registration records, pass authoring friction budget, `PipelineRuntime`, and `Engine/Contracts/Shader`; keep ray tracing and upscaling as renderer features with RHI interop only through public contracts. |
 | 21-23 | Ensure docs, coverage, and source root inventory agree with actual folder ownership. Every durable root gets an owner, allowed dependencies, forbidden dependencies, and validation command. |
 | 25 | Extract shared cooked/runtime schemas from GameFramework pressure into `Engine/Contracts/Asset`; extract renderer handoff types into `Engine/Contracts/Render` only when the type earns a real shared owner. Stage 25 rejected a contract target for lighting constants and kept GPU capacity in renderer/RHI packing code. |
-| 27-30 | Keep `Tools/Import/SourceImporters` as the role-centered import target; split `Tools/Cooking/CookCommon` into `Tools/Support/ToolConsoleSupport` and/or `Tools/Cooking/CookDiagnostics`; retire `Tools/Conversion/AssetConverter` as a production path. |
+| 27-30 | Keep `Tools/Import/SourceImporters` as the role-centered import target; keep generic support in `Tools/Support/ToolConsoleSupport`; retire `Tools/Conversion/AssetConverter` as a production path. |
 | 26 | Keep launcher workflow code under `SparkleLauncher/Private/Core` or a clear `Private/Workflows` grouping, and keep Qt code under `Private/Gui`. Do not create cooker/compiler implementation folders under Launcher. |
 | 27 | Add or update inspection/validation folders only where they have read-only artifact ownership, such as `Tools/Inspection/AssetInspector` or ShaderCompiler inspection commands. |
 | 28 | Expand CMake and CI guardrail folders: prefer `CMake/Checks`, `CMake/Profiles`, `CMake/Artifacts`, and documented `.github` workflow commands over flat, unowned scripts. |
@@ -300,7 +300,7 @@ Positive folder guardrails:
 - Prefer public `Contracts` roots for shared schemas instead of private includes between systems.
 - Prefer owner-specific shader/data roots: `Engine/RHI/Shaders` for generic RHI fixtures, `Engine/Renderer/Shaders` for renderer pass shaders, and `Projects/*/Shaders` for sample/project shaders.
 - Prefer sibling backend folders with matching service names where D3D12/Vulkan parity matters.
-- Prefer explicit tool folders by role: `SourceImporters`, focused `*Cooker`, `AssetCooker`, `ShaderCompiler`, `AssetInspector`, `ToolConsoleSupport`, and `CookDiagnostics`.
+- Prefer explicit tool folders by role: `SourceImporters`, focused `*Cooker`, `AssetCooker`, `ShaderCompiler`, `AssetInspector`, and `ToolConsoleSupport`.
 
 Negative folder guardrails:
 

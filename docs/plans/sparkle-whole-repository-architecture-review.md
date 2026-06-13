@@ -131,7 +131,7 @@ Avoid names that encode temporary migration paths, duplicate ownership, or conce
 - The repository already has meaningful top-level module boundaries: `Core`, `Platform`, `RHI`, `Renderer`, `GameFramework`, `Editor`, `Application`, focused cooking tools, shader compiler, and launcher.
 - Stage 4 removed the clearest hard violation: RHI-owned renderer shader registration depending on renderer-private data.
 - `Tools/Launcher/SparkleLauncher` already shows a useful split between core workflow code, GUI app/models/shell/widgets, and probe executable.
-- Cooking is already split into focused tools: `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, and `AssetCooker`; current `CookCommon` is useful support code but needs a precise target name.
+- Cooking is already split into focused tools: `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, and `AssetCooker`; generic tool console/report support belongs in `ToolConsoleSupport`.
 - `ShaderCompiler` already has backend, CLI, cooking, cache, inspection, verification, and reflection areas that can become strong reviewer evidence.
 - CMake target names mostly reflect architectural modules, which gives us a practical place to enforce dependency intent.
 
@@ -140,7 +140,7 @@ Avoid names that encode temporary migration paths, duplicate ownership, or conce
 | Area | Disposition result | Concrete target change |
 | --- | --- | --- |
 | `SourceImporters` | Keep and refine | Role-centered per-format importers emit DTOs, import reports, and diagnostics through public source DTO contracts. |
-| `CookCommon` | Improve and extract | No longer accepted as a permanent architecture label; split/rename to `ToolConsoleSupport` and/or `CookDiagnostics`. |
+| `ToolConsoleSupport` | Keep and refine | Generic console/report support only; no asset, shader, project, launcher, or cook-domain policy. |
 | `AssetConverter` | Replace or redesign | Remove as a production path; fold useful commands into `AssetCooker` or explicit inspect/debug commands. |
 | `Engine/Assets` | Replace or redesign | Current `Meshes`, `Shaders`, and `Textures` make this a non-code asset root, not an empty root. Narrow it to documented built-in engine assets or move shaders/data to owner-specific roots. |
 | GameFramework cooked schemas | Improve and extract | Shared producer/consumer schemas move to `AssetContracts`; GameFramework remains runtime loading and scene owner. |
@@ -159,7 +159,7 @@ Avoid names that encode temporary migration paths, duplicate ownership, or conce
 | ShaderCompiler renderer coupling | Replace renderer runtime linkage with `ShaderContracts` pass catalog/package manifest handoff. |
 | GameFramework schema gravity | Extract shared cooked schemas into `AssetContracts`; use `RenderContracts` for renderer handoff. |
 | Source import naming and ownership | Keep `SourceImporters` role-centered and keep source formats out of runtime. |
-| Tool support vagueness | Replace `CookCommon` as architecture label with `ToolConsoleSupport` and/or `CookDiagnostics`. |
+| Tool support vagueness | Keep generic support in `ToolConsoleSupport`; create shared cook diagnostics only when multiple focused cookers justify it. |
 | Parallel conversion pipeline | Retire `AssetConverter` as production path; preserve only explicit inspect/debug commands if they pay for themselves. |
 | Ambiguous asset root | Narrow `Engine/Assets` to built-in assets with manifest/validation, or split renderer shaders, RHI shader fixtures, and project content into owner-specific roots. |
 | Launcher complexity | Keep workflow/process/evidence logic in LauncherCore and presentation in Qt GUI; no tool algorithms in widgets. |
@@ -198,7 +198,7 @@ Avoid names that encode temporary migration paths, duplicate ownership, or conce
 | `Tools/Cooking/MaterialCooker` | Imported material conversion and texture cook request generation. | Material schema can drift from renderer material cache and texture cooker. | glTF PBR material model and Cauldron material support. | Material cook output and texture requests are deterministic and inspectable. |
 | `Tools/Cooking/SceneCooker` | Cooked scene manifest assembly for cameras, lights, instances, skeletons, animations, metadata. | Scene manifest changes can break GameFramework load and Renderer scene snapshots. | Donut scene/component graph and glTF scene delivery. | Scene manifests validate against GameFramework loaders and renderer scene-data builders. |
 | `Tools/Cooking/AssetCooker` | Project discovery, cook planning, dispatch, diagnostics. | Can hide focused cooker failures or duplicate their algorithms. | Compressonator CLI/SDK split and CMake target separation. | AssetCooker orchestrates focused tools and reports source path, artifact path, step, target, and reason on failure. |
-| `Tools/Cooking/CookCommon` -> target `ToolConsoleSupport` / `CookDiagnostics` | Shared tool console/helpers. | Vague common helper can become policy sink. | CMake `PRIVATE`/`PUBLIC` dependency discipline. | Renamed/split support surface with no asset/shader policy. |
+| `Tools/Support/ToolConsoleSupport` | Shared tool console/helpers. | Generic support can become policy sink. | CMake `PRIVATE`/`PUBLIC` dependency discipline. | Support surface has no asset/shader/cook policy. |
 | `Tools/Conversion/AssetConverter` | Debug/direct conversion CLI. | Can become a parallel cook pipeline. | Tool CLI shells over focused libraries. | Replaced as production path; useful commands fold into AssetCooker or explicit inspect/debug commands. |
 | `Tools/Launcher/SparkleLauncherCore` | Build/cook/launch/maintenance workflow planning, tool resolution, process requests, history. | Can duplicate focused build/cook/render logic. | Qt model/view, Compressonator GUI/CLI/SDK separation. | LauncherCore plans and runs processes, captures evidence, and delegates implementation to owning tools. |
 | `Tools/Launcher/SparkleLauncher` GUI | Qt presentation, models, shell, widgets, style, prompts. | UI can absorb operation logic and hide recovery paths. | Qt model/view separation. | GUI models present LauncherCore state and requests; widgets remain presentation. |
@@ -270,7 +270,7 @@ Acceptance:
 
 ### Track D - Tooling And Content Pipeline
 
-Goal: make SourceImporters, focused cookers, AssetCooker, ShaderCompiler, ToolConsoleSupport/CookDiagnostics, and retired AssetConverter commands reviewable as a content toolchain.
+Goal: make SourceImporters, focused cookers, AssetCooker, ShaderCompiler, ToolConsoleSupport, and retired AssetConverter commands reviewable as a content toolchain.
 
 Acceptance:
 

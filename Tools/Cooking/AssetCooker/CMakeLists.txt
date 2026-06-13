@@ -54,7 +54,7 @@ set(ASSET_COOKER_COOKING_LINK_LIBRARIES
     MaterialCooker
     SceneCooker
     TextureCookShared
-    CookCommon
+    ToolConsoleSupport
     SparkleCore
     SparkleGameFramework
 )

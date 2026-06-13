@@ -62,7 +62,7 @@ This index groups the detailed target architecture by subsystem. Use it when you
 | Mesh/Material/Scene cookers | [tooling-pipeline-contract.md](../tooling-pipeline-contract.md), [game-framework-contract.md](../game-framework-contract.md) | 26, 28, 31, 34, 35, 36 | Cooked records and manifests match GameFramework loaders and renderer consumers. |
 | AssetCooker | [tooling-pipeline-contract.md](../tooling-pipeline-contract.md) | 30, 31, 34, 35, 36 | Orchestrates focused tools and reports actionable failure evidence. |
 | AssetConverter | [tooling-pipeline-contract.md](../tooling-pipeline-contract.md) | 30, 34, 35, 36 | Replaced as a production path: fold into AssetCooker or explicit inspect/debug commands; no parallel cook policy. |
-| ToolConsoleSupport / CookDiagnostics | [tooling-pipeline-contract.md](../tooling-pipeline-contract.md) | 28, 31, 34, 35, 36 | Current `CookCommon` is renamed/split so support helpers and diagnostics are not a vague policy sink. |
+| ToolConsoleSupport | [tooling-pipeline-contract.md](../tooling-pipeline-contract.md) | 28, 31, 34, 35, 36 | Generic console/report support is outside cooking; focused cook diagnostics stay with focused cookers until shared logic earns a target. |
 
 ## Launcher, Build, CI, And Samples
 
