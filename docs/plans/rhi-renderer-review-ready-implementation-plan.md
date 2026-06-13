@@ -2803,6 +2803,16 @@ Data transfer contracts:
 - GameFramework transfers validated runtime payloads to scene/runtime owners.
 - Renderer receives render-domain DTOs or cooked/runtime records, not source-import structures.
 
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed. |
+| Loader diagnostics | `CookedAssetLoaderDiagnostics` gives mesh, material, scene manifest, animation, and skeleton runtime loaders a shared asset-oriented failure format with asset id, path, schema name, schema version, record kind, expected feature, and reason. |
+| Schema pairing | `game-framework-contract.md` and `tooling-pipeline-contract.md` now pair cooked mesh, material, texture reference/texture output, scene manifest, animation, and skeleton records with producer cookers, public schema headers, runtime loaders, runtime/renderer consumers, and validation paths. |
+| Schema change policy | No cooked binary schema version or record layout changed in this pass; producer/consumer compatibility is preserved while diagnostics and documentation are strengthened. |
+| Validation evidence | `SparkleGameFramework`, `AssetCooker`, `TextureCooker`, and `ShowcaseRuntime` built; Showcase `cook-assets` cooked 9 scenes; Showcase `cook-textures` cooked 163 texture requests; D3D12 Showcase runtime smoke loaded Sponza cooked payload with 103 mesh refs and 25 materials; boundary check, private-loader include scan, and `git diff --check` passed. |
+
 Acceptance:
 
 - Mesh/material/texture/scene/animation/skeleton loader expectations are paired with producer cooker expectations.

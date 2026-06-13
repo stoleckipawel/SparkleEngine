@@ -137,6 +137,21 @@ Rules:
 - Launcher and AssetCooker orchestrate tool execution; they do not duplicate focused tool algorithms.
 - ShaderCompiler consumes `ShaderContracts` pass catalogs/manifests plus generic shader package primitives, but does not link full renderer runtime.
 
+## Cooked Asset Producer/Consumer Pairing
+
+Stage 26 treats every cooked runtime asset as a producer/schema/loader/consumer contract. Focused cookers may include public cooked schema headers; they must not include `Engine/GameFramework/Private/Assets/Loaders` or use loader code as schema documentation.
+
+| Artifact | Producer | Public schema | Runtime loader/consumer | Inspection or validation evidence |
+| --- | --- | --- | --- | --- |
+| `.smsh` cooked mesh | `MeshCooker` writes mesh assets; `SceneCooker` writes mesh references. | `CookedMeshAsset.h`, `CookedSceneManifest.h` | `MeshAssetLoader`, `SceneAssetPayloadMeshAppender`, renderer mesh scene data. | Build `MeshCooker`, `AssetCooker`, `SparkleGameFramework`; sample Showcase cook/load. |
+| `.smat` cooked material | `MaterialCooker` writes material assets and texture references. | `CookedMaterialAsset.h`, `CookedTextureReference.h` | `MaterialAssetLoader`, material payload appenders, renderer material/texture systems. | Build `MaterialCooker`, `TextureCooker`, `AssetCooker`, `SparkleGameFramework`; inspect generated texture requests. |
+| `.sscn` cooked scene manifest | `SceneCooker` writes scene manifests. | `CookedSceneManifest.h` plus camera/light/metadata records. | `SceneManifestLoader`, `SceneManifestValidator`, `SceneAssetPayloadLoader`. | Build `SceneCooker`, `AssetCooker`, `SparkleGameFramework`; sample Showcase cook/load. |
+| `.sanim` cooked animation | `SceneCooker` animation writer. | `CookedAnimationAsset.h` | `AnimationAssetLoader`, animation payload appender, runtime animation systems. | Build `SceneCooker`, `AssetCooker`, `SparkleGameFramework`; sample animated scene load. |
+| `.sskel` cooked skeleton | `SceneCooker` skeleton writer. | `CookedSkeletonAsset.h` | `SkeletonAssetLoader`, skeleton payload appender, runtime skeleton systems. | Build `SceneCooker`, `AssetCooker`, `SparkleGameFramework`; sample skeletal scene load. |
+| Cooked texture output | `TextureCooker` pipeline and compression stages. | Texture cooker output contract plus `CookedTextureReference.h` references from materials. | Renderer texture manager/runtime texture load path, reached from GameFramework material/texture references. | Build `TextureCooker`, `AssetCooker`, renderer/runtime target; run request inspect/cook for generated texture requests. |
+
+Loader-facing failure evidence must remain asset-oriented: asset id, path, schema name, schema version, record kind, expected feature, and reason. Producer-facing failure evidence must name source path, artifact id, output path, schema/version, and reason.
+
 ## Threading Readiness Contract
 
 Tooling should be designed as deterministic jobs even while the first implementation remains serial.

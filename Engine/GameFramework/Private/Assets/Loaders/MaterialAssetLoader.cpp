@@ -4,6 +4,7 @@
 
 #include "Assets/Cooked/LoadedMaterialAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
+#include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
 #include "Core/Public/Files/FileUtils.h"
 
 #include <utility>
@@ -13,29 +14,36 @@ namespace Assets
 	bool MaterialAssetLoader::Load(const std::filesystem::path& path, LoadedMaterialAsset& outMaterialAsset, std::string& outErrorMessage)
 	    const
 	{
+		const CookedAssetLoaderContext diagnosticsContext =
+		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedMaterialAsset", kCookedMaterialAssetVersion);
+		auto fail = [&](std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) -> bool
+		{
+			CookedAssetLoaderDiagnostics::SetFailure(diagnosticsContext, recordKind, expectedFeature, reason, outErrorMessage);
+			return false;
+		};
+
 		std::vector<std::uint8_t> fileBytes;
 		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
 		{
-			return false;
+			return fail("file", "readable cooked material bytes", outErrorMessage);
 		}
 
 		CookedAssetByteReader reader(fileBytes);
 		if (!reader.Read(outMaterialAsset.header, outErrorMessage))
 		{
-			return false;
+			return fail("header", "CookedMaterialAssetHeader", outErrorMessage);
 		}
 
 		if (!HasValidHeader(outMaterialAsset))
 		{
-			outErrorMessage = "Invalid cooked material asset header";
-			return false;
+			return fail("header", "material magic/version and texture reference version", "Invalid cooked material asset header");
 		}
 
 		std::vector<CookedTextureReferenceRecord> textureReferenceRecords;
 		if (!reader.ReadString(outMaterialAsset.header.nameByteCount, outMaterialAsset.name, outErrorMessage) ||
 		    !reader.ReadArray(outMaterialAsset.header.textureReferenceCount, textureReferenceRecords, outErrorMessage))
 		{
-			return false;
+			return fail("payload", "material name and texture reference records matching header counts", outErrorMessage);
 		}
 
 		outMaterialAsset.textureReferences.clear();
@@ -46,7 +54,7 @@ namespace Assets
 			textureReference.textureGroup = textureReferenceRecord.textureGroup;
 			if (!reader.ReadString(textureReferenceRecord.texturePathByteCount, textureReference.texturePath, outErrorMessage))
 			{
-				return false;
+				return fail("textureReference.path", "texture path string matching reference byte count", outErrorMessage);
 			}
 
 			outMaterialAsset.textureReferences.push_back(std::move(textureReference));
@@ -54,8 +62,7 @@ namespace Assets
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			outErrorMessage = "Cooked material asset contains unexpected trailing bytes";
-			return false;
+			return fail("payload", "no trailing bytes after declared material records", "Cooked material asset contains unexpected trailing bytes");
 		}
 
 		outErrorMessage.clear();

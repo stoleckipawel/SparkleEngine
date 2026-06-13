@@ -4,6 +4,7 @@
 
 #include "Assets/Cooked/LoadedSceneManifest.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
+#include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
 #include "Assets/Loaders/SceneManifestValidator.h"
 #include "Core/Public/Files/FileUtils.h"
 
@@ -14,21 +15,29 @@ namespace Assets
 {
 	bool SceneManifestLoader::Load(const std::filesystem::path& path, LoadedSceneManifest& outManifest, std::string& outErrorMessage) const
 	{
+		const CookedAssetLoaderContext diagnosticsContext =
+		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedSceneManifest", kCookedSceneManifestVersion);
+		auto fail = [&](std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) -> bool
+		{
+			CookedAssetLoaderDiagnostics::SetFailure(diagnosticsContext, recordKind, expectedFeature, reason, outErrorMessage);
+			return false;
+		};
+
 		std::vector<std::uint8_t> fileBytes;
 		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
 		{
-			return false;
+			return fail("file", "readable cooked scene manifest bytes", outErrorMessage);
 		}
 
 		CookedAssetByteReader reader(fileBytes);
 		if (!reader.Read(outManifest.header, outErrorMessage))
 		{
-			return false;
+			return fail("header", "CookedSceneManifestHeader", outErrorMessage);
 		}
 
 		if (!SceneManifestValidator::ValidateHeader(outManifest, outErrorMessage))
 		{
-			return false;
+			return fail("header", "scene manifest magic/version/record counts/features", outErrorMessage);
 		}
 
 		if (!reader.ReadArray(outManifest.header.meshAssetReferenceCount, outManifest.meshAssetReferences, outErrorMessage) ||
@@ -45,19 +54,18 @@ namespace Assets
 		        outManifest.header.materialVariantMappingCount,
 		        outManifest.materialVariantMappings,
 		        outErrorMessage))
-	{
-		return false;
-	}
+		{
+			return fail("records", "all scene manifest arrays matching header counts", outErrorMessage);
+		}
 
 		if (!SceneManifestValidator::ValidateRecords(outManifest, outErrorMessage))
 		{
-			return false;
+			return fail("records", "scene manifest references resolve within declared arrays", outErrorMessage);
 		}
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			outErrorMessage = "Cooked scene manifest contains unexpected trailing bytes";
-			return false;
+			return fail("payload", "no trailing bytes after declared scene manifest records", "Cooked scene manifest contains unexpected trailing bytes");
 		}
 
 		outErrorMessage.clear();

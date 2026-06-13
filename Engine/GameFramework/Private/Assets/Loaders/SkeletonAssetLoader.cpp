@@ -4,6 +4,7 @@
 
 #include "Assets/Cooked/LoadedSkeletonAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
+#include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
 #include "Core/Public/Files/FileUtils.h"
 
 #include <cstdint>
@@ -13,34 +14,40 @@ namespace Assets
 {
 	bool SkeletonAssetLoader::Load(const std::filesystem::path& path, LoadedSkeletonAsset& outSkeletonAsset, std::string& outErrorMessage) const
 	{
+		const CookedAssetLoaderContext diagnosticsContext =
+		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedSkeletonAsset", kCookedSkeletonAssetVersion);
+		auto fail = [&](std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) -> bool
+		{
+			CookedAssetLoaderDiagnostics::SetFailure(diagnosticsContext, recordKind, expectedFeature, reason, outErrorMessage);
+			return false;
+		};
+
 		std::vector<std::uint8_t> fileBytes;
 		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
 		{
-			return false;
+			return fail("file", "readable cooked skeleton bytes", outErrorMessage);
 		}
 
 		CookedAssetByteReader reader(fileBytes);
 		if (!reader.Read(outSkeletonAsset.header, outErrorMessage))
 		{
-			return false;
+			return fail("header", "CookedSkeletonAssetHeader", outErrorMessage);
 		}
 
 		if (!outSkeletonAsset.header.fileHeader.Matches(kCookedSkeletonAssetMagic, kCookedSkeletonAssetVersion) ||
 		    !HasValidHeader(outSkeletonAsset.header.jointStride))
 		{
-			outErrorMessage = "Invalid cooked skeleton asset header";
-			return false;
+			return fail("header", "skeleton magic/version and joint stride", "Invalid cooked skeleton asset header");
 		}
 
 		if (!reader.ReadArray(outSkeletonAsset.header.jointCount, outSkeletonAsset.joints, outErrorMessage))
 		{
-			return false;
+			return fail("joints", "joint array matching header count", outErrorMessage);
 		}
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			outErrorMessage = "Cooked skeleton asset contains unexpected trailing bytes";
-			return false;
+			return fail("payload", "no trailing bytes after declared skeleton records", "Cooked skeleton asset contains unexpected trailing bytes");
 		}
 
 		outErrorMessage.clear();

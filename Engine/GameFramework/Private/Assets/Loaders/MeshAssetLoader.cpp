@@ -4,6 +4,7 @@
 
 #include "Assets/Cooked/CookedMeshAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
+#include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
 #include "Core/Public/Files/FileUtils.h"
 
 #include <algorithm>
@@ -14,24 +15,31 @@ namespace Assets
 {
 	bool MeshAssetLoader::Load(const std::filesystem::path& path, LoadedMeshAsset& outMeshAsset, std::string& outErrorMessage) const
 	{
+		const CookedAssetLoaderContext diagnosticsContext =
+		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedMeshAsset", kCookedMeshAssetVersion);
+		auto fail = [&](std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) -> bool
+		{
+			CookedAssetLoaderDiagnostics::SetFailure(diagnosticsContext, recordKind, expectedFeature, reason, outErrorMessage);
+			return false;
+		};
+
 		std::vector<std::uint8_t> fileBytes;
 		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
 		{
-			return false;
+			return fail("file", "readable cooked mesh bytes", outErrorMessage);
 		}
 
 		CookedAssetByteReader reader(fileBytes);
 		CookedMeshAssetHeader header;
 		if (!reader.Read(header, outErrorMessage))
 		{
-			return false;
+			return fail("header", "CookedMeshAssetHeader", outErrorMessage);
 		}
 
 		if (!header.fileHeader.Matches(kCookedMeshAssetMagic, kCookedMeshAssetVersion) ||
 		    !HasValidHeader(header.vertexStride, header.indexStride))
 		{
-			outErrorMessage = "Invalid cooked mesh asset header";
-			return false;
+			return fail("header", "mesh magic/version plus vertex and index strides", "Invalid cooked mesh asset header");
 		}
 
 		const bool hasSkinInfluences = (header.flags & CookedMeshAssetFlag_HasSkinInfluences) != 0u;
@@ -39,16 +47,14 @@ namespace Assets
 		const bool isSkeletal = header.assetKind == CookedMeshAssetKind::Skeletal;
 		if (header.assetKind != CookedMeshAssetKind::Static && header.assetKind != CookedMeshAssetKind::Skeletal)
 		{
-			outErrorMessage = "Invalid cooked mesh asset kind";
-			return false;
+			return fail("header.assetKind", "Static or Skeletal", "Invalid cooked mesh asset kind");
 		}
 
 		if ((isSkeletal && (!hasSkinInfluences || header.skinInfluenceCount != header.vertexCount)) ||
 		    (!isSkeletal && (hasSkinInfluences || header.skinInfluenceCount != 0u)) ||
 		    header.skinInfluenceStride != sizeof(CookedMeshSkinInfluence))
 		{
-			outErrorMessage = "Invalid cooked mesh skin influence stream";
-			return false;
+			return fail("skinInfluences", "skeletal meshes have one influence record per vertex", "Invalid cooked mesh skin influence stream");
 		}
 		if ((!isSkeletal && hasMorphTargets) ||
 		    (hasMorphTargets && (header.morphTargetCount == 0u || header.morphTargetDeltaCount == 0u)) ||
@@ -56,8 +62,7 @@ namespace Assets
 		    header.morphTargetRecordStride != sizeof(CookedMeshMorphTargetRecord) ||
 		    header.morphTargetDeltaStride != sizeof(CookedMeshMorphTargetDelta))
 		{
-			outErrorMessage = "Invalid cooked mesh morph target stream";
-			return false;
+			return fail("morphTargets", "skeletal morph target flags, counts, and strides are consistent", "Invalid cooked mesh morph target stream");
 		}
 
 		std::vector<CookedMeshVertex> cookedVertices;
@@ -71,13 +76,12 @@ namespace Assets
 		    !reader.ReadArray(header.morphTargetCount, cookedMorphTargets, outErrorMessage) ||
 		    !reader.ReadArray(header.morphTargetDeltaCount, cookedMorphTargetDeltas, outErrorMessage))
 		{
-			return false;
+			return fail("streams", "vertex/index/skinning/morph arrays matching header counts", outErrorMessage);
 		}
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			outErrorMessage = "Cooked mesh asset contains unexpected trailing bytes";
-			return false;
+			return fail("payload", "no trailing bytes after declared mesh streams", "Cooked mesh asset contains unexpected trailing bytes");
 		}
 
 		MeshData geometry;
@@ -97,8 +101,10 @@ namespace Assets
 			    cookedMorphTarget.deltaCount > cookedMorphTargetDeltas.size() - cookedMorphTarget.firstDelta ||
 			    cookedMorphTarget.deltaCount != header.vertexCount)
 			{
-				outErrorMessage = "Cooked mesh morph target references an invalid delta range";
-				return false;
+				return fail(
+				    "morphTargets.deltaRange",
+				    "each morph target references one delta range matching vertex count",
+				    "Cooked mesh morph target references an invalid delta range");
 			}
 
 			MeshMorphTarget morphTarget;

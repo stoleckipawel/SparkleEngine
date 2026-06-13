@@ -145,6 +145,19 @@ Forbidden threading shortcuts:
 
 Tools may use public GameFramework cooked data contracts to write artifacts that GameFramework later loads. Tools must not rely on private GameFramework loader internals as a substitute for a schema.
 
+Stage 26 loader diagnostics are emitted through `CookedAssetLoaderDiagnostics` in `Engine/GameFramework/Private/Assets/Loaders`. Runtime loader failures must name asset id, path, schema name, schema version, record kind, expected feature, and reason before a payload is exposed to scene/runtime owners.
+
+## Cooked Asset Schema Pairing
+
+| Runtime asset | Schema owner today | Producer cooker | Runtime loader | Runtime owner/consumer | Renderer-facing handoff | Validation/inspection path |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mesh asset | `Engine/GameFramework/Public/Assets/Cooked/CookedMeshAsset.h` | `Tools/Cooking/MeshCooker` via `CookedMeshAssetWriter` and `SceneCooker` mesh refs | `MeshAssetLoader` | `SceneAssetPayloadMeshAppender`, `SceneMeshes`, static/skeletal mesh data | Renderer mesh scene builders consume runtime mesh payload/snapshot data, not source importer DTOs. | Build `MeshCooker`, `AssetCooker`, `SparkleGameFramework`; sample cook/load through Showcase. |
+| Material asset and texture references | `CookedMaterialAsset.h` plus `CookedTextureReference.h` | `MaterialCooker`, with texture requests generated for `TextureCooker` | `MaterialAssetLoader` | `SceneAssetPayloadMaterialAppender`, `SceneMaterials`, texture reference collection | Renderer material/texture managers consume material snapshots and cooked texture reference paths. | Build `MaterialCooker`, `TextureCooker`, `AssetCooker`, `SparkleGameFramework`; inspect texture cook requests where generated. |
+| Scene manifest | `CookedSceneManifest.h` and scene record headers | `SceneCooker` | `SceneManifestLoader` and validators | `SceneAssetPayloadLoader` plus mesh/material/camera/light/skeleton/animation appenders | Renderer receives assembled `GameSceneSnapshot`/`RenderSceneSnapshot` data. | Build `SceneCooker`, `AssetCooker`, `SparkleGameFramework`; sample cook/load through Showcase. |
+| Animation asset | `CookedAnimationAsset.h` | `SceneCooker` animation feature writer | `AnimationAssetLoader` | `SceneAssetPayloadAnimationAppender`, `SceneAnimations` | Renderer receives animation/skinning-ready runtime data through scene snapshot paths when needed. | Build `SceneCooker`, `AssetCooker`, `SparkleGameFramework`; sample animated asset load. |
+| Skeleton asset | `CookedSkeletonAsset.h` | `SceneCooker` skeleton feature writer | `SkeletonAssetLoader` | `SceneAssetPayloadSkeletonAppender`, `SceneSkeletons` | Renderer receives skeleton/skinning references through mesh and animation scene handoff. | Build `SceneCooker`, `AssetCooker`, `SparkleGameFramework`; sample skeletal asset load. |
+| Texture asset | Texture artifact schema under `TextureCooker` output plus public cooked texture references from materials | `TextureCooker` | Renderer texture manager/runtime texture loading path, reached from material texture references | `SceneTextures` owns texture reference discovery, not image decoding. | Renderer texture manager consumes cooked texture paths and upload-ready records. | Build `TextureCooker`, `AssetCooker`, renderer/runtime target; use TextureCooker request inspection and sample load. |
+
 Impact checklist for GameFramework schema changes:
 
 | Changed schema | Must update |
