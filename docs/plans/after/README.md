@@ -15,6 +15,8 @@ They should also remove or justify complexity: retained code must have an owner,
 
 - [repository-refactor-stage-map.md](repository-refactor-stage-map.md): grouped Stage 1-30 navigation, status tracker, and before/after evidence.
 - [../rhi-renderer-review-ready-implementation-plan.md](../rhi-renderer-review-ready-implementation-plan.md): canonical detailed execution plan.
+- [../implementation/README.md](../implementation/README.md): Codex-facing prompt packets and stage completion protocol.
+- [../tutor/README.md](../tutor/README.md): human-facing learning path for the same stages.
 - [Stage Contract Coverage Matrix](../rhi-renderer-review-ready-implementation-plan.md#stage-contract-coverage-matrix): contract surfaces and acceptance proof each stage must satisfy.
 - [Mandatory Split Checkpoints For Large Stages](../rhi-renderer-review-ready-implementation-plan.md#mandatory-split-checkpoints-for-large-stages): smaller acceptance gates for broad stages.
 - [../../architecture/after/repository-target-architecture.md](../../architecture/after/repository-target-architecture.md): broad target architecture.
@@ -33,3 +35,4 @@ They should also remove or justify complexity: retained code must have an owner,
 - Which touched systems should be kept, improved, renamed, extracted, rebuilt, or removed?
 - Which data handoffs keep future render, RHI, cook, shader, and launcher parallelism safe?
 - Which broad stage checkpoint must be split into a new numbered stage before implementation continues?
+- Which implementation packet should Codex use, and which tutor note should I read for the same stage?

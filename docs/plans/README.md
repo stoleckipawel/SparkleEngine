@@ -16,6 +16,8 @@ The refactor is allowed to preserve, rename, split, merge, rebuild, or delete sy
 | --- | --- |
 | [before](before/README.md) | Review inputs, current-state reasoning, baseline risks, and acceptance rubric. |
 | [after](after/README.md) | Target execution path, stage map, final gate, and implementation-oriented navigation. |
+| [implementation](implementation/README.md) | Codex-facing prompt packets, stage completion protocol, validation gates, and implementation workflow. |
+| [tutor](tutor/README.md) | Human-facing learning notes that explain each stage's motivation and architecture lesson. |
 | Root plan docs | Canonical review and execution documents that remain stable links while the foldered navigation grows around them. |
 
 ## Primary Reading Paths
@@ -30,9 +32,17 @@ Repository-wide architecture:
 
 Implementation:
 
-1. [rhi-renderer-review-ready-implementation-plan.md](rhi-renderer-review-ready-implementation-plan.md)
-2. [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md): stage groups, status tracker, and implementation navigation.
-3. [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md)
+1. [implementation/README.md](implementation/README.md)
+2. [implementation/stage-prompt-packets.md](implementation/stage-prompt-packets.md)
+3. [rhi-renderer-review-ready-implementation-plan.md](rhi-renderer-review-ready-implementation-plan.md)
+4. [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md): stage groups, status tracker, and implementation navigation.
+5. [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md)
+
+Learning while implementing:
+
+1. [tutor/README.md](tutor/README.md)
+2. [tutor/stage-learning-guide.md](tutor/stage-learning-guide.md)
+3. [tutor/architecture-learning-map.md](tutor/architecture-learning-map.md)
 
 ## Single Source Of Truth
 
@@ -43,6 +53,8 @@ Implementation:
 | Which target docs must be opened for each stage? | [Required Target Documents By Stage](rhi-renderer-review-ready-implementation-plan.md#required-target-documents-by-stage) |
 | What contract surfaces must each stage prove before acceptance? | [Stage Contract Coverage Matrix](rhi-renderer-review-ready-implementation-plan.md#stage-contract-coverage-matrix) |
 | Which broad stages have mandatory split checkpoints? | [Mandatory Split Checkpoints For Large Stages](rhi-renderer-review-ready-implementation-plan.md#mandatory-split-checkpoints-for-large-stages) |
+| What should Codex use as prompt-ready stage context? | [implementation/stage-prompt-packets.md](implementation/stage-prompt-packets.md) |
+| What should I read to learn stage-by-stage? | [tutor/stage-learning-guide.md](tutor/stage-learning-guide.md) |
 | What is each stage status? | [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md) |
 | What does acceptance mean? | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md) |
 | What is the target architecture and folder layout? | [../architecture/after/repository-target-architecture.md](../architecture/after/repository-target-architecture.md) and [../architecture/after/repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) |

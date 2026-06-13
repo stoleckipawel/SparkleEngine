@@ -13,6 +13,8 @@ Folder architecture is tracked in [repository-target-folder-architecture.md](../
 Required target documents for each individual stage live in [Required Target Documents By Stage](../rhi-renderer-review-ready-implementation-plan.md#required-target-documents-by-stage). Open that row before starting the stage.
 Required contract proof and split checkpoints live in [Stage Contract Coverage Matrix](../rhi-renderer-review-ready-implementation-plan.md#stage-contract-coverage-matrix) and [Mandatory Split Checkpoints For Large Stages](../rhi-renderer-review-ready-implementation-plan.md#mandatory-split-checkpoints-for-large-stages). A broad stage cannot be accepted until each listed checkpoint has independent evidence, or the unfinished checkpoint has been promoted into a new numbered stage.
 
+Codex-facing implementation packets live in [../implementation/stage-prompt-packets.md](../implementation/stage-prompt-packets.md). Human-facing learning notes for the same stages live in [../tutor/stage-learning-guide.md](../tutor/stage-learning-guide.md).
+
 Before accepting any stage, classify touched systems as `Keep and refine`, `Improve and extract`, or `Replace or redesign`. The stage may rename, split, merge, rebuild, or delete existing code when that is the cleanest path to the target architecture.
 
 Stage status tracks implementation acceptance, not merely whether planning docs exist. Future-stage design docs may be seeded before the stage starts; the stage status should advance only when implementation work, validation, and cleanup evidence justify it.
@@ -195,6 +197,7 @@ Each stage must show that retained code earns its right to exist.
 For any stage:
 
 - Open the before/current document for the affected subsystem.
+- Open the Codex packet in [../implementation/stage-prompt-packets.md](../implementation/stage-prompt-packets.md) and the tutor note in [../tutor/stage-learning-guide.md](../tutor/stage-learning-guide.md).
 - Open the after/target contract for the subsystem.
 - Open the matching row in [Required Target Documents By Stage](../rhi-renderer-review-ready-implementation-plan.md#required-target-documents-by-stage).
 - Open the matching row in [Stage Contract Coverage Matrix](../rhi-renderer-review-ready-implementation-plan.md#stage-contract-coverage-matrix).
