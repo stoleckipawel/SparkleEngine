@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/PassRuntimeServices.h"
 
 #include <memory>
 #include <string_view>
@@ -36,11 +37,35 @@ class FrameGraphBuilder final
 		m_frameGraph.AddRasterPass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
 	}
 
+	template <typename TPass> void AddRasterShaderPass(typename TPass::ParameterInstance& parameters)
+	{
+		AddRasterPass<TPass>(
+		    TPass::PassName,
+		    parameters,
+		    [](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
+		    {
+			    const TPass pass(context.RuntimeServices.GetPassRuntime<TPass>());
+			    pass.Execute(context, passParameters);
+		    });
+	}
+
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
 	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
 	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		m_frameGraph.AddComputePass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
+	}
+
+	template <typename TPass> void AddComputeShaderPass(typename TPass::ParameterInstance& parameters)
+	{
+		AddComputePass<TPass>(
+		    TPass::PassName,
+		    parameters,
+		    [](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
+		    {
+			    const TPass pass(context.RuntimeServices.GetPassRuntime<TPass>());
+			    pass.Execute(context, passParameters);
+		    });
 	}
 
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()

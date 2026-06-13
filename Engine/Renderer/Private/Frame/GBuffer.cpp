@@ -2,8 +2,6 @@
 #include "Frame/GBuffer.h"
 
 #include "Config/RenderConfig.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/GBufferPass.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
@@ -53,12 +51,5 @@ void AddGBufferPass(FrameGraphBuilder& builder, const GBufferRenderTargets& targ
 {
 	auto& parameters = builder.AllocPassParameters<GBufferPass>();
 	GBufferPass::DeclareResources(builder, targets, parameters);
-	builder.AddRasterPass<GBufferPass>(
-	    GBufferPass::PassName,
-	    parameters,
-	    [](PassExecutionContext& context, GBufferPass::ParameterInstance& passParameters)
-	    {
-		    const GBufferPass pass(context.RuntimeServices.GetPassRuntime<GBufferPass>());
-		    pass.Execute(context, passParameters);
-	    });
+	builder.AddRasterShaderPass<GBufferPass>(parameters);
 }

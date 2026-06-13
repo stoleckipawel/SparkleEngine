@@ -2,20 +2,11 @@
 #include "Frame/IndirectLighting.h"
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/IndirectLightingPass.h"
 
 void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting, const GBufferRenderTargets& gbuffer)
 {
 	auto& parameters = builder.AllocPassParameters<IndirectLightingPass>();
 	IndirectLightingPass::DeclareResources(builder, lighting, gbuffer, parameters);
-	builder.AddComputePass<IndirectLightingPass>(
-	    IndirectLightingPass::PassName,
-	    parameters,
-	    [](PassExecutionContext& context, IndirectLightingPass::ParameterInstance& passParameters)
-	    {
-		    const IndirectLightingPass pass(context.RuntimeServices.GetPassRuntime<IndirectLightingPass>());
-		    pass.Execute(context, passParameters);
-	    });
+	builder.AddComputeShaderPass<IndirectLightingPass>(parameters);
 }

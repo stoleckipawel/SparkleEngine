@@ -2109,7 +2109,7 @@ Validation:
 
 ## Stage 17B - Pass Authoring Friction Budget And One-Command Workflow
 
-Status: not started. Added after Stage 17A because removing shader registration constants is not enough; adding a pass must become measurably simpler from missing shader to running frame.
+Status: started. Frame insertion boilerplate reduction and shader registration validation are implemented; the catalog/scaffolder decision, central registration-list cleanup, and final three/four-touch authoring budget remain.
 
 Goal:
 
@@ -2198,10 +2198,11 @@ Acceptance:
 
 Validation:
 
-- Build `ShaderCompiler`.
-- Run `ShaderCompiler.exe list-shaders --validate`.
-- Build `ShowcaseEditor`.
-- Run `architecture_boundary_check`.
+- `ShowcaseEditor` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`.
+- `ShaderCompiler` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`.
+- `ShaderCompiler.exe list-shaders --validate` reported 17 valid typed registrations after adding authoring-record validation.
+- `architecture_boundary_check` passed with only documented provider-owned DLSS exceptions.
+- `pass-authoring-contract.md` records before/after touch-count evidence for `ComputeClear`, `VisualizeBuffers`, and `GBuffer`.
 - Run targeted launcher-shaped smoke in Stage 20 unless the proof pass is user-visible enough to justify smoke in this stage.
 
 ## Stage 18 - Clean Ray Tracing Ownership And Contracts

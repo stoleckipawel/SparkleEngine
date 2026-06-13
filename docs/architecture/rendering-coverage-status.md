@@ -474,8 +474,8 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Field | Target |
 | --- | --- |
 | Stage / checkpoint | Stage 17B - Pass Authoring Friction Budget And One-Command Workflow. |
-| Status | Not started. |
-| Current evidence | A new ordinary pass currently requires edits across pass header/cpp, shader registration, package identity, central registration, frame insertion, shader source, ShaderCompiler validation, and runtime smoke evidence. |
-| Target evidence | `pass-authoring-contract.md` contains a before/after touch-count table; a proof pass demonstrates the target workflow; simple compute/raster pass additions stay within the authoring budget and require no RHI/backend/central runtime/ShaderCompiler-internal edits. |
-| Data transfer contract | Pass intent transfers from one authoring record into frame graph declaration, generated shader registration, ShaderCompiler package enumeration, pipeline runtime lookup, and validation evidence. |
+| Status | Started. Frame insertion boilerplate reduction and shader registration validation are implemented; catalog/scaffolder and central registration-list cleanup remain. |
+| Current evidence | `FrameGraphBuilder` owns `AddComputeShaderPass` and `AddRasterShaderPass`; `VisualizeBuffers`, `LightingComposite`, `DirectLighting`, `IndirectLighting`, `Sky`, and `GBuffer` frame insertion now allocate parameters, declare resources, and call a typed shader-pass helper instead of repeating pass name/runtime lookup/pass construction/execute lambdas. |
+| Target evidence | `pass-authoring-contract.md` contains current workflow and before/after touch-count evidence for `ComputeClear`, `VisualizeBuffers`, and `GBuffer`. `ShaderCompiler.exe list-shaders --validate` now validates authoring records and still reports 17 valid typed registrations. |
+| Data transfer contract | Pass intent transfers from typed pass definitions into frame graph declaration through `AddComputeShaderPass`/`AddRasterShaderPass`; shader authoring metadata transfers through source metadata registration into ShaderCompiler package enumeration and validation evidence. |
 | Threading readiness handoff | Pass manifests/records are immutable and deterministic, so future parallel shader cook and PSO warmup jobs can consume them without live renderer state or static registration ordering. |
