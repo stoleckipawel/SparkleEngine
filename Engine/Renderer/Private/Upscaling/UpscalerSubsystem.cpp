@@ -42,6 +42,7 @@ void UpscalerSubsystem::Initialize(
 		m_activeProvider = std::move(fallback);
 		m_diagnostics = m_activeProvider->GetDiagnostics();
 		m_diagnostics.Status = fallbackInitialized ? EUpscalerProviderStatus::FailedWithFallback : EUpscalerProviderStatus::Unavailable;
+		m_diagnostics.FailureDomain = failedDiagnostics.FailureDomain;
 		m_diagnostics.Reason = std::format(
 		    "Requested provider {} was unavailable: {} Falling back to {}.",
 		    UpscalerProviderKindToString(m_settings.RequestedProvider),
@@ -59,11 +60,12 @@ void UpscalerSubsystem::Initialize(
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.Upscaling");
 	SPDLOG_LOGGER_INFO(
 	    logger,
-	    "Upscaler provider: requested={} active={} status={} canEvaluate={} externalSdk={} runtimeVersion='{}' runtimeState='{}' "
+	    "Upscaler provider: requested={} active={} status={} failureDomain={} canEvaluate={} externalSdk={} runtimeVersion='{}' runtimeState='{}' "
 	    "qualityMode='{}' featureMatrix='{}' renderExtent={}x{} outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
 	    UpscalerProviderKindToString(m_settings.RequestedProvider),
 	    m_activeProvider->GetName(),
 	    UpscalerProviderStatusToString(m_diagnostics.Status),
+	    UpscalerProviderFailureDomainToString(m_diagnostics.FailureDomain),
 	    BoolToString(m_diagnostics.CanEvaluate),
 	    BoolToString(m_diagnostics.UsesExternalSdk),
 	    m_diagnostics.ExternalRuntimeVersion,
@@ -112,6 +114,7 @@ UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDes
 		return UpscalerEvaluationResult{
 		    .ProducedOutput = false,
 		    .UsedFallback = true,
+		    .FailureDomain = EUpscalerProviderFailureDomain::Backend,
 		    .Reason = "No upscaler provider is active."};
 	}
 
@@ -119,6 +122,7 @@ UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDes
 	if (m_useFrameFallback)
 	{
 		result.UsedFallback = true;
+		result.FailureDomain = EUpscalerProviderFailureDomain::InputContract;
 		result.Reason = m_frameFallbackReason;
 	}
 	return result;

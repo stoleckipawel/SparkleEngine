@@ -50,8 +50,9 @@ Detailed system view:
 5. [pass-authoring-contract.md](pass-authoring-contract.md)
 6. [pipeline-runtime-contract.md](pipeline-runtime-contract.md)
 7. [ray-tracing-contract.md](ray-tracing-contract.md)
-8. [game-framework-contract.md](game-framework-contract.md)
-9. [tooling-pipeline-contract.md](tooling-pipeline-contract.md)
+8. [upscaler-provider-contract.md](upscaler-provider-contract.md)
+9. [game-framework-contract.md](game-framework-contract.md)
+10. [tooling-pipeline-contract.md](tooling-pipeline-contract.md)
 
 Guardrails and acceptance:
 
@@ -73,6 +74,7 @@ Guardrails and acceptance:
 | [rendering-coverage-status.md](rendering-coverage-status.md) | Detailed RHI/Renderer coverage status. |
 | [rendering-glossary.md](rendering-glossary.md) | Shared vocabulary for renderer, RHI, tools, and runtime artifact terms. |
 | [architecture-boundary-guardrails.md](architecture-boundary-guardrails.md) | Mechanical checks and staged exceptions. |
+| [upscaler-provider-contract.md](upscaler-provider-contract.md) | Upscaler provider, native interop, SDK isolation, and failure-domain ownership. |
 | [game-framework-contract.md](game-framework-contract.md) | Runtime scene and cooked asset ownership contract. |
 | [tooling-pipeline-contract.md](tooling-pipeline-contract.md) | Launcher, ShaderCompiler, import, cooking, and conversion ownership contract. |
 

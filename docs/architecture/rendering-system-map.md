@@ -31,6 +31,7 @@ Companion docs:
 - [Pass authoring contract](pass-authoring-contract.md)
 - [Pipeline runtime contract](pipeline-runtime-contract.md)
 - [Threading readiness](after/repository-threading-readiness.md)
+- [Upscaler provider contract](upscaler-provider-contract.md)
 - [Rendering coverage status](rendering-coverage-status.md)
 
 ## Layer Hierarchy
@@ -111,7 +112,7 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | RHI command list | RHI | [RenderCommandList.h](../../Engine/RHI/Public/Commands/RenderCommandList.h) | GPU command operations and diagnostic scopes. | Frame graph scheduling or pass parameter validation. |
 | Backends | RHI backend | [D3D12](../../Engine/RHI/Private/D3D12), [Vulkan](../../Engine/RHI/Private/Vulkan) | API object lifetime, native type conversion, command encoding, descriptors, memory, swap chain, debug layers. | Renderer policy and vendor feature selection. |
 | Ray tracing scene | Renderer | [RayTracing](../../Engine/Renderer/Private/RayTracing) | BLAS cache policy, TLAS instance data, renderer-level capability report, shadow settings. | API-native AS build implementation. |
-| Upscaling | Renderer plus RHI interop | [Upscaling](../../Engine/Renderer/Private/Upscaling), [Interop](../../Engine/RHI/Public/Interop) | Provider selection, DLSS/passthrough behavior, upscaler input contract, fallback reasons. | Backend handle fabrication or API feature enablement. |
+| Upscaling | Renderer providers plus RHI interop | [Upscaling](../../Engine/Renderer/Private/Upscaling), [NvidiaDlss](../../Engine/Renderer/Private/Upscaling/NvidiaDlss), [Interop](../../Engine/RHI/Public/Interop), [upscaler-provider-contract.md](upscaler-provider-contract.md) | Provider selection, provider-neutral input/evaluation contracts, provider diagnostics, DLSS/passthrough behavior, fallback reasons, and provider target isolation. | Backend handle fabrication, API feature enablement, or vendor SDK policy in common renderer/RHI code. |
 | Shader compiler | Tooling | [ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Compile/cook/reflect/package/inspect shader artifacts. | Runtime rendering or backend command recording. |
 
 ## Disposition-Driven Rendering Decisions
@@ -126,6 +127,7 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | `PipelineStateManager` type-index identity | Replace or redesign | Replace implicit C++ type identity with explicit `PsoKey` and `PipelineRuntimeLibrary`. |
 | RHI broad facade | Improve and extract | Stage 7 introduced first public services for interop, capture/readback, diagnostics, and presentation/UI; Stage 19 removes root-facade bulk after caller migration. |
 | Application D3D12 capture body | Replace or redesign | Move backend-native capture/readback to RHI/backend validation services. |
+| Renderer-level Vulkan linkage for DLSS | Improve and extract | `SparkleRenderer` no longer links Vulkan directly; `SparkleRendererNvidiaDlssProvider` owns the narrow provider SDK/native linkage. |
 | ShaderCompiler renderer edge | Improve and extract | Replace renderer target linkage with `ShaderContracts` pass catalog/package manifest consumption. |
 
 ## Rendering Complexity Budget

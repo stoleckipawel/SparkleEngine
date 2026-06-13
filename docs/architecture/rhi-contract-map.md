@@ -27,6 +27,7 @@ Reference basis:
 - Diligent Engine Tutorial 23 demonstrates graphics/compute/transfer queues with fences: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial23_CommandQueues
 - arc42 building-block and interface documentation guidance: https://arc42.org/overview
 - Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
+- Upscaler provider contract: [upscaler-provider-contract.md](upscaler-provider-contract.md)
 
 ## Contract Summary
 
@@ -100,6 +101,7 @@ Service access rule: backend root facades must not inherit from multiple service
 | --- | --- | --- | --- |
 | Native device/queue metadata | `RhiNativeDeviceQueueInterop` plus `RhiNativeInteropRequest` consumer/reason. | RHI interop service. | Providers and validation receive typed backend metadata; they do not invent backend handles. |
 | Texture/native view metadata | `NativeTextureViewInfo` from `RhiInteropService::GetNativeTextureViewInfo`. | RHI interop service and backend descriptor managers. | Renderer FrameGraph supplies the RHI view handle and resource state; RHI fills native layout/view metadata. |
+| External upscaler provider facts | `RhiExternalFeatureInteropCapabilities`, `RhiAdapterIdentity`, provider-owned `UpscalerProviderCapabilities` failure domains. | RHI backend capability builders produce backend facts; renderer provider owns provider interpretation. | RHI reports bridge/native metadata only. DLSS/FSR/NRD policy remains in provider targets and docs. |
 | Capture/readback | `RhiTextureCaptureRequest` to `RhiCaptureResult`. | RHI capture service. | Callers receive backend, status, frame, view mode, artifact path, and failure reason. Application-native capture was removed in Stage 8. |
 | Presentation/UI | `RhiPresentationService` methods. | RHI presentation service and backend swap-chain/UI integrations. | Application/Renderer use presentation operations, not backend-private swap-chain objects. |
 | Diagnostics | `RhiDiagnosticsService::GetDiagnostics`. | RHI diagnostics service. | Diagnostics remain centralized and can become milestone evidence. |

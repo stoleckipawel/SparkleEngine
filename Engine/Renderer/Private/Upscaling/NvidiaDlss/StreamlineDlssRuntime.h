@@ -59,6 +59,7 @@ struct StreamlineDlssRuntimeCapabilities final
 	bool RuntimeAvailable = false;
 	bool FeatureQuerySucceeded = false;
 	bool FeatureSupported = false;
+	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
 	DlssFeatureMatrix FeatureMatrix;
 	std::string SdkVersion;
 	std::string Reason;
@@ -85,6 +86,7 @@ struct StreamlineDlssRuntimeDiagnostics final
 	RenderViewportExtent OutputExtent = {};
 	bool ResetRequested = false;
 	std::string ResetReason;
+	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
 	std::string FailureReason;
 };
 

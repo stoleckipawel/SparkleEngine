@@ -44,6 +44,7 @@ void AddExternalProviderEvaluationPass(
 		    UpscalerEvaluationResult result{
 		        .ProducedOutput = false,
 		        .UsedFallback = true,
+		        .FailureDomain = EUpscalerProviderFailureDomain::Backend,
 		        .Reason = "No upscaler runtime service was provided."};
 
 		    if (context.RuntimeServices.Upscaling != nullptr && context.RuntimeServices.Upscaling->Subsystem != nullptr)

@@ -13,7 +13,7 @@ set(SPARKLE_BOUNDARY_VULKAN_IN_D3D12_REGEX "Vulkan/|<vulkan/vulkan\\.h>|Vk[A-Z]|
 
 set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_FAILURES "")
 set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_EXCEPTION_SUMMARIES "")
-set_property(GLOBAL PROPERTY SPARKLE_RENDERER_CMAKE_VULKAN_EXCEPTION_COUNT 0)
+set_property(GLOBAL PROPERTY SPARKLE_RENDERER_PROVIDER_CMAKE_VULKAN_EXCEPTION_COUNT 0)
 set_property(GLOBAL PROPERTY SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT 0)
 
 function(sparkle_boundary_relative_path out_var absolute_path)
@@ -63,13 +63,13 @@ function(sparkle_boundary_validate_counted_exception label property_name max_cou
 
     if(_count GREATER max_count)
         sparkle_boundary_append_failure_text(
-            "${label}: counted transitional exception grew to ${_count}/${max_count}. Removal stage: ${removal_stage}. ${reason}")
+            "${label}: counted exception grew to ${_count}/${max_count}. Owner: ${removal_stage}. ${reason}")
     elseif(_count LESS max_count)
         sparkle_boundary_append_exception_summary(
-            "${label}: ${_count}/${max_count} transitional matches remain until ${removal_stage}. Count is below the frozen baseline. Remove or tighten this exception in the owning stage.")
+            "${label}: ${_count}/${max_count} counted matches remain. Owner: ${removal_stage}. Count is below the frozen baseline. Remove or tighten this exception if the provider no longer needs it.")
     else()
         sparkle_boundary_append_exception_summary(
-            "${label}: ${_count}/${max_count} transitional matches remain until ${removal_stage}. ${reason}")
+            "${label}: ${_count}/${max_count} counted matches remain. Owner: ${removal_stage}. ${reason}")
     endif()
 endfunction()
 
@@ -114,12 +114,12 @@ function(sparkle_boundary_scan_file absolute_path)
 
         if(_relative_path MATCHES "^Engine/Renderer/" AND _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_API_REGEX}")
             sparkle_boundary_try_counted_exception(
-                _allowed_renderer_cmake_vulkan
+                _allowed_renderer_provider_cmake_vulkan
                 "${_relative_path}"
                 "Engine/Renderer/CMakeLists.txt"
                 "${_line}"
-                "^[ \t]*(if\\(TARGET Vulkan::Vulkan\\)|target_link_libraries\\(SparkleRenderer PRIVATE Vulkan::Vulkan\\))"
-                SPARKLE_RENDERER_CMAKE_VULKAN_EXCEPTION_COUNT)
+                "^[ \t]*(if\\(TARGET Vulkan::Vulkan\\)|target_link_libraries\\(SparkleRendererNvidiaDlssProvider PRIVATE Vulkan::Vulkan\\))"
+                SPARKLE_RENDERER_PROVIDER_CMAKE_VULKAN_EXCEPTION_COUNT)
             sparkle_boundary_try_counted_exception(
                 _allowed_streamline_vulkan
                 "${_relative_path}"
@@ -127,7 +127,7 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}"
                 "^[ \t]*(#include <vulkan/vulkan\\.h>|vulkanInfo\\.(instance|physicalDevice|device) = static_cast<Vk(Instance|PhysicalDevice|Device)>|adapterInfo\\.vkPhysicalDevice =)"
                 SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT)
-            if(_allowed_renderer_cmake_vulkan OR _allowed_streamline_vulkan)
+            if(_allowed_renderer_provider_cmake_vulkan OR _allowed_streamline_vulkan)
             else()
                 sparkle_boundary_append_failure(
                     "RENDERER_NO_BACKEND_NATIVE"
@@ -181,22 +181,22 @@ foreach(_file IN LISTS SPARKLE_BOUNDARY_SOURCE_FILES)
 endforeach()
 
 sparkle_boundary_validate_counted_exception(
-    "RENDERER_NO_BACKEND_NATIVE: Engine/Renderer/CMakeLists.txt Vulkan::Vulkan link"
-    SPARKLE_RENDERER_CMAKE_VULKAN_EXCEPTION_COUNT
+    "RENDERER_NO_BACKEND_NATIVE: NVIDIA DLSS provider Vulkan::Vulkan link"
+    SPARKLE_RENDERER_PROVIDER_CMAKE_VULKAN_EXCEPTION_COUNT
     2
-    "Stage 9"
-    "DLSS/native interop wiring is moved behind RHI/backend-owned metadata.")
+    "Provider contract"
+    "Vulkan linkage is restricted to the NVIDIA DLSS provider target and is not linked by SparkleRenderer directly.")
 
 sparkle_boundary_validate_counted_exception(
     "RENDERER_NO_BACKEND_NATIVE: Streamline DLSS Vulkan bridge"
     SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT
     5
-    "Stage 9"
-    "Provider integration is reviewed and narrowed to documented native interop.")
+    "Provider contract"
+    "Streamline Vulkan identifiers are restricted to the NVIDIA DLSS provider runtime.")
 
 get_property(_exceptions GLOBAL PROPERTY SPARKLE_BOUNDARY_EXCEPTION_SUMMARIES)
 if(_exceptions)
-    message(STATUS "Transitional exceptions:")
+    message(STATUS "Counted exceptions:")
     foreach(_exception IN LISTS _exceptions)
         message(STATUS "  - ${_exception}")
     endforeach()

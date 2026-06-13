@@ -29,10 +29,22 @@ enum class EUpscalerProviderStatus : std::uint8_t
 	FailedWithFallback = 3
 };
 
+enum class EUpscalerProviderFailureDomain : std::uint8_t
+{
+	None = 0,
+	Sdk = 1,
+	Driver = 2,
+	Backend = 3,
+	Feature = 4,
+	ResourceState = 5,
+	InputContract = 6
+};
+
 struct UpscalerProviderCapabilities final
 {
 	EUpscalerProviderKind Kind = EUpscalerProviderKind::Passthrough;
 	EUpscalerProviderStatus Status = EUpscalerProviderStatus::Unavailable;
+	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
 	bool CanInitialize = false;
 	bool CanEvaluate = false;
 	bool UsesExternalSdk = false;
@@ -83,6 +95,7 @@ struct UpscalerEvaluationResult final
 {
 	bool ProducedOutput = false;
 	bool UsedFallback = false;
+	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
 	std::string Reason;
 };
 
@@ -91,9 +104,6 @@ class IUpscalerProvider
   public:
 	virtual ~IUpscalerProvider() = default;
 
-	// Provider implementations own SDK lifetime, settings translation, reset
-	// policy, diagnostics, and fallback decisions. Generic frame code should
-	// schedule through this interface and must not include provider SDK headers.
 	virtual EUpscalerProviderKind GetKind() const noexcept = 0;
 	virtual std::string_view GetName() const noexcept = 0;
 	virtual UpscalerProviderCapabilities QueryCapabilities(const RhiCapabilities& capabilities) const = 0;
@@ -111,3 +121,4 @@ class IUpscalerProvider
 
 const char* UpscalerProviderKindToString(EUpscalerProviderKind kind) noexcept;
 const char* UpscalerProviderStatusToString(EUpscalerProviderStatus status) noexcept;
+const char* UpscalerProviderFailureDomainToString(EUpscalerProviderFailureDomain domain) noexcept;

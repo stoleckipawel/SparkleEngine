@@ -66,11 +66,6 @@ struct RhiAdapterIdentity
 
 struct RhiExternalFeatureInteropCapabilities
 {
-	// Provider-neutral facts used by renderer-owned external feature providers.
-	//
-	// Keep vendor SDK policy out of RHI. RHI may report native handle availability,
-	// queue/command-list readiness, resource interop, and backend bridge shape; it
-	// must not decide whether any concrete provider is enabled.
 	ERhiExternalFeatureBridgeKind BridgeKind = ERhiExternalFeatureBridgeKind::None;
 	RhiAdapterIdentity Adapter;
 	bool ExposesNativeDevice = false;

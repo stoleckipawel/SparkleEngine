@@ -6,6 +6,7 @@ UpscalerProviderCapabilities PassthroughUpscalerProvider::QueryCapabilities(cons
 	return UpscalerProviderCapabilities{
 	    .Kind = EUpscalerProviderKind::Passthrough,
 	    .Status = EUpscalerProviderStatus::Available,
+	    .FailureDomain = EUpscalerProviderFailureDomain::None,
 	    .CanInitialize = true,
 	    .CanEvaluate = true,
 	    .UsesExternalSdk = false,
@@ -39,6 +40,7 @@ UpscalerEvaluationResult PassthroughUpscalerProvider::Evaluate(const UpscalerEva
 	return UpscalerEvaluationResult{
 	    .ProducedOutput = hasInput,
 	    .UsedFallback = true,
+	    .FailureDomain = hasInput ? EUpscalerProviderFailureDomain::None : EUpscalerProviderFailureDomain::InputContract,
 	    .Reason = hasInput ? "Passthrough selected the native scene color product." : "Passthrough has no input scene color product."};
 }
 

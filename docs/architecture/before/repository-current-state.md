@@ -125,9 +125,8 @@ Generated/local-only roots seen in this workspace, such as `build/`, `build-*`, 
 
 | Exception | Current location | Removal stage |
 | --- | --- | --- |
-| Renderer CMake links `Vulkan::Vulkan` for Streamline support. | `Engine/Renderer/CMakeLists.txt` | Stage 9 |
-| Streamline DLSS Vulkan bridge uses native Vulkan identifiers in provider integration. | `Engine/Renderer/Private/Upscaling/NvidiaDlss` | Stage 9 |
-| Application validation owns D3D12-native capture/readback logic. | `Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp` | Stage 8 |
+| NVIDIA DLSS provider target links `Vulkan::Vulkan` for Streamline Vulkan support. | `Engine/Renderer/CMakeLists.txt` | Provider contract |
+| Streamline DLSS Vulkan bridge uses native Vulkan identifiers in provider integration. | `Engine/Renderer/Private/Upscaling/NvidiaDlss` | Provider contract |
 
 ## Current Detailed Risks
 

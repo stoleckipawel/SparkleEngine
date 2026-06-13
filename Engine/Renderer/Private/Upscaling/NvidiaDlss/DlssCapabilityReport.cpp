@@ -72,6 +72,7 @@ DlssCapabilityReport DlssCapabilityReporter::Build(const RhiCapabilities& capabi
 	report.FeatureQuerySucceeded = runtimeCapabilities.FeatureQuerySucceeded;
 	report.FeatureSupported = runtimeCapabilities.FeatureSupported;
 	report.RuntimeState = report.CanCreateFeature() ? EDlssProviderRuntimeState::AvailableNotCreated : EDlssProviderRuntimeState::Unavailable;
+	report.FailureDomain = runtimeCapabilities.FailureDomain;
 	report.SdkVersion = runtimeCapabilities.SdkVersion;
 	report.FeatureMatrix = runtimeCapabilities.FeatureMatrix;
 	report.UnavailableReason = BuildUnavailableReason(capabilities, report);
@@ -84,6 +85,7 @@ void DlssCapabilityReporter::ApplyRuntimeDiagnostics(DlssCapabilityReport& repor
 	report.SdkVersion = diagnostics.SdkVersion;
 	report.SelectedQualityMode = diagnostics.SelectedQualityMode;
 	report.FeatureMatrix = diagnostics.FeatureMatrix;
+	report.FailureDomain = diagnostics.FailureDomain;
 	report.RenderExtent = diagnostics.RenderExtent;
 	report.OutputExtent = diagnostics.OutputExtent;
 	report.ResetRequested = diagnostics.ResetRequested;
@@ -94,6 +96,7 @@ void DlssCapabilityReporter::ApplyRuntimeDiagnostics(DlssCapabilityReport& repor
 	}
 	else if (diagnostics.State == EDlssProviderRuntimeState::Created || diagnostics.State == EDlssProviderRuntimeState::Evaluating)
 	{
+		report.FailureDomain = EUpscalerProviderFailureDomain::None;
 		report.UnavailableReason = "DLSS Super Resolution is active or ready for evaluation.";
 	}
 }
@@ -112,7 +115,7 @@ void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcep
 	    logger,
 	    "DLSS capability summary: backend={} bridge={} adapter='{}' vendorId={:#06x} deviceId={:#06x} driver='{}' "
 	    "rhiBridgeReady={} d3d12BridgeReady={} vulkanBridgeReady={} sdkRuntimeIntegrated={} sdkRuntimeAvailable={} "
-	    "featureQuerySucceeded={} featureSupported={} canCreateFeature={} runtimeState={} sdkVersion='{}' selectedMode='{}' "
+	    "featureQuerySucceeded={} featureSupported={} canCreateFeature={} runtimeState={} failureDomain={} sdkVersion='{}' selectedMode='{}' "
 	    "renderExtent={}x{} outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
 	    RhiBackendApiToString(report.BackendApi),
 	    RhiExternalFeatureBridgeKindToString(report.BridgeKind),
@@ -129,6 +132,7 @@ void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcep
 	    BoolToString(report.FeatureSupported),
 	    BoolToString(report.CanCreateFeature()),
 	    DlssProviderRuntimeStateToString(report.RuntimeState),
+	    UpscalerProviderFailureDomainToString(report.FailureDomain),
 	    report.SdkVersion,
 	    report.SelectedQualityMode,
 	    report.RenderExtent.Width,

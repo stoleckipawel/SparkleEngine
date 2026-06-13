@@ -416,7 +416,7 @@ Stage-local source references name the immediate review/code context. The target
 | 6 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 7 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 8 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
-| 9 | [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 9 | [rendering-system-map.md](../architecture/rendering-system-map.md), [upscaler-provider-contract.md](../architecture/upscaler-provider-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 10 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 11 | [rendering-system-map.md](../architecture/rendering-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 12 | [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
@@ -1156,7 +1156,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 9 row.
-- Primary target docs: [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
+- Primary target docs: [rendering-system-map.md](../architecture/rendering-system-map.md), [upscaler-provider-contract.md](../architecture/upscaler-provider-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1220,6 +1220,19 @@ Acceptance:
 Validation:
 
 - Defer full backend DLSS smoke to Stage 10.
+
+Completion evidence:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for provider/native interop contract, CMake target ownership, structured DLSS diagnostics, and targeted build validation. Full D3D12/Vulkan DLSS runtime smoke remains Stage 10. |
+| Contract doc | [upscaler-provider-contract.md](../architecture/upscaler-provider-contract.md) defines provider-neutral inputs, provider/native metadata flow, failure domains, linkage/header rules, and threading-ready handoffs. |
+| CMake ownership | `SparkleRendererNvidiaDlssProvider` owns `NVIDIA::Streamline` and the narrow `Vulkan::Vulkan` link; common `SparkleRenderer` no longer links `Vulkan::Vulkan` directly. |
+| Runtime diagnostics | `UpscalerProviderCapabilities`, `UpscalerEvaluationResult`, `DlssCapabilityReport`, and `StreamlineDlssRuntimeDiagnostics` carry `EUpscalerProviderFailureDomain` so unavailable/fallback states identify SDK, driver, backend, feature, resource-state, or input-contract cause. |
+| Provider isolation | Streamline/Vulkan-native identifiers remain counted and pattern-limited to `Engine/Renderer/Private/Upscaling/NvidiaDlss/StreamlineDlssRuntime.cpp`; common frame/pass code uses provider-neutral upscaler contracts. |
+| Guardrail evidence | Direct script and configured `architecture_boundary_check` passed with counted provider exceptions only. |
+| Build evidence | VS2026 configure passed; `SparkleApplicationEditor` built in `build/windows-vs2026-stage5` with `DevelopmentEditor`, including `SparkleRendererNvidiaDlssProvider.lib` before `SparkleRenderer.lib`. |
+| Source text hygiene | Source/provenance scan across `Engine/Renderer`, `Engine/RHI`, `Engine/Application`, and `CMake` found no stage/vibe/generated-process text. |
 
 ## Stage 10 - Validation Milestone B: RHI Services, Capture, Interop, Upscaling
 

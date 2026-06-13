@@ -18,6 +18,17 @@ file(GLOB_RECURSE SPARKLE_RENDERER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.h
 )
 
+file(GLOB_RECURSE SPARKLE_RENDERER_NVIDIA_DLSS_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Upscaling/NvidiaDlss/*.cpp
+)
+
+file(GLOB_RECURSE SPARKLE_RENDERER_NVIDIA_DLSS_HEADERS CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Upscaling/NvidiaDlss/*.h
+)
+
+list(FILTER SPARKLE_RENDERER_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Upscaling/NvidiaDlss/")
+list(FILTER SPARKLE_RENDERER_PRIVATE_HEADERS EXCLUDE REGEX "/Private/Upscaling/NvidiaDlss/")
+
 file(GLOB_RECURSE SPARKLE_RENDERER_SHADER_REGISTRATION_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations/*.cpp
 )
@@ -51,6 +62,44 @@ target_link_libraries(SparkleRendererShaderRegistrations
 )
 
 sparkle_target_precompile_headers(SparkleRendererShaderRegistrations
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
+)
+
+add_library(SparkleRendererNvidiaDlssProvider STATIC
+    ${SPARKLE_RENDERER_NVIDIA_DLSS_SOURCES}
+    ${SPARKLE_RENDERER_NVIDIA_DLSS_HEADERS}
+)
+
+target_include_directories(SparkleRendererNvidiaDlssProvider
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Public
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
+)
+
+target_compile_features(SparkleRendererNvidiaDlssProvider PUBLIC cxx_std_20)
+
+target_link_libraries(SparkleRendererNvidiaDlssProvider
+    PUBLIC
+        SparkleCore
+        SparkleRHI
+    PRIVATE
+        SparklePlatform
+)
+
+if(SPARKLE_ENABLE_NVIDIA_STREAMLINE AND TARGET NVIDIA::Streamline)
+    target_link_libraries(SparkleRendererNvidiaDlssProvider PRIVATE NVIDIA::Streamline)
+    target_compile_definitions(SparkleRendererNvidiaDlssProvider PRIVATE SPARKLE_WITH_NVIDIA_STREAMLINE=1)
+    if(TARGET Vulkan::Vulkan)
+        target_link_libraries(SparkleRendererNvidiaDlssProvider PRIVATE Vulkan::Vulkan)
+    endif()
+else()
+    target_compile_definitions(SparkleRendererNvidiaDlssProvider PRIVATE SPARKLE_WITH_NVIDIA_STREAMLINE=0)
+endif()
+
+sparkle_target_precompile_headers(SparkleRendererNvidiaDlssProvider
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
@@ -97,20 +146,12 @@ target_link_libraries(SparkleRenderer
         SparklePlatform
         SparkleGameFramework
         SparkleRendererShaderRegistrations
+        SparkleRendererNvidiaDlssProvider
 )
-
-if(SPARKLE_ENABLE_NVIDIA_STREAMLINE AND TARGET NVIDIA::Streamline)
-    target_link_libraries(SparkleRenderer PRIVATE NVIDIA::Streamline)
-    target_compile_definitions(SparkleRenderer PRIVATE SPARKLE_WITH_NVIDIA_STREAMLINE=1)
-    if(TARGET Vulkan::Vulkan)
-        target_link_libraries(SparkleRenderer PRIVATE Vulkan::Vulkan)
-    endif()
-else()
-    target_compile_definitions(SparkleRenderer PRIVATE SPARKLE_WITH_NVIDIA_STREAMLINE=0)
-endif()
 
 sparkle_configure_runtime_support_artifacts(SparkleRenderer)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_RENDERER_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_RENDERER_PRIVATE_SOURCES} ${SPARKLE_RENDERER_PRIVATE_HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Upscaling/NvidiaDlss PREFIX "Private\\Upscaling\\NvidiaDlss" FILES ${SPARKLE_RENDERER_NVIDIA_DLSS_SOURCES} ${SPARKLE_RENDERER_NVIDIA_DLSS_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations PREFIX "ShaderRegistrations" FILES ${SPARKLE_RENDERER_SHADER_REGISTRATION_SOURCES} ${SPARKLE_RENDERER_SHADER_REGISTRATION_HEADERS})

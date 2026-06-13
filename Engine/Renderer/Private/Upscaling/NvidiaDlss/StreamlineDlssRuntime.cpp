@@ -307,6 +307,7 @@ namespace
 			if (!isD3D12 && !isVulkan)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Backend;
 				m_diagnostics.FailureReason = "Streamline DLSS is only implemented for D3D12 and Vulkan backends.";
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
@@ -314,6 +315,7 @@ namespace
 			if (isD3D12 && !desc.NativeInterop.Device)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Backend;
 				m_diagnostics.FailureReason = "D3D12 native device handle is unavailable.";
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
@@ -324,6 +326,7 @@ namespace
 			                 desc.Capabilities.ExternalFeatureInterop.VulkanGraphicsQueueFamilyIndex == UINT32_MAX))
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Backend;
 				m_diagnostics.FailureReason = "Vulkan native instance, physical device, device, or graphics queue family is unavailable.";
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
@@ -331,6 +334,7 @@ namespace
 			if (isD3D12 && !HasNativeAdapterLuid(desc.Capabilities.ExternalFeatureInterop.Adapter))
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Backend;
 				m_diagnostics.FailureReason = "D3D12 adapter native LUID is unavailable for Streamline feature support query.";
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
@@ -366,6 +370,7 @@ namespace
 			if (result != sl::Result::eOk)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 				m_diagnostics.FailureReason = FormatStreamlineFailure("slInit", result);
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
@@ -379,6 +384,7 @@ namespace
 			        desc.PresentationBridge.UserData))
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 				m_diagnostics.FailureReason = "Streamline failed to upgrade the RHI presentation interface for manual present hooks.";
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
@@ -390,6 +396,7 @@ namespace
 				if (result != sl::Result::eOk)
 				{
 					m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+					m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 					m_diagnostics.FailureReason = FormatStreamlineFailure("slSetD3DDevice", result);
 					m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 					return false;
@@ -409,6 +416,7 @@ namespace
 				if (result != sl::Result::eOk)
 				{
 					m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+					m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 					m_diagnostics.FailureReason = FormatStreamlineFailure("slSetVulkanInfo", result);
 					m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 					return false;
@@ -430,6 +438,7 @@ namespace
 			if (result != sl::Result::eOk)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Feature;
 				m_diagnostics.FailureReason = FormatStreamlineFailure("slIsFeatureSupported(DLSS)", result);
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
@@ -437,6 +446,7 @@ namespace
 
 			m_viewport = sl::ViewportHandle{0u};
 			m_diagnostics.State = EDlssProviderRuntimeState::Created;
+			m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::None;
 			m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(true, "DLSS Super Resolution is supported by Streamline.");
 			return true;
 		}
@@ -456,13 +466,23 @@ namespace
 			if (!m_initialized)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
-				return {.ProducedOutput = false, .UsedFallback = true, .Reason = "Streamline DLSS runtime is not initialized."};
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
+				return {
+				    .ProducedOutput = false,
+				    .UsedFallback = true,
+				    .FailureDomain = m_diagnostics.FailureDomain,
+				    .Reason = "Streamline DLSS runtime is not initialized."};
 			}
 			if (!HasNativeEvaluationContract(evaluation))
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::InputContract;
 				m_diagnostics.FailureReason = "DLSS evaluation contract is missing a native command list or required native resources.";
-				return {.ProducedOutput = false, .UsedFallback = true, .Reason = m_diagnostics.FailureReason};
+				return {
+				    .ProducedOutput = false,
+				    .UsedFallback = true,
+				    .FailureDomain = m_diagnostics.FailureDomain,
+				    .Reason = m_diagnostics.FailureReason};
 			}
 
 			const std::uint32_t frameIndex = static_cast<std::uint32_t>(m_lastFrameContract.FrameIndex);
@@ -471,8 +491,13 @@ namespace
 			if (result != sl::Result::eOk || frameToken == nullptr)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 				m_diagnostics.FailureReason = FormatStreamlineFailure("slGetNewFrameToken", result);
-				return {.ProducedOutput = false, .UsedFallback = true, .Reason = m_diagnostics.FailureReason};
+				return {
+				    .ProducedOutput = false,
+				    .UsedFallback = true,
+				    .FailureDomain = m_diagnostics.FailureDomain,
+				    .Reason = m_diagnostics.FailureReason};
 			}
 
 			const EUpscalerQualityMode frameQualityMode =
@@ -497,8 +522,13 @@ namespace
 			if (result != sl::Result::eOk)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 				m_diagnostics.FailureReason = FormatStreamlineFailure("slDLSSSetOptions", result);
-				return {.ProducedOutput = false, .UsedFallback = true, .Reason = m_diagnostics.FailureReason};
+				return {
+				    .ProducedOutput = false,
+				    .UsedFallback = true,
+				    .FailureDomain = m_diagnostics.FailureDomain,
+				    .Reason = m_diagnostics.FailureReason};
 			}
 
 			sl::Constants constants{};
@@ -507,8 +537,13 @@ namespace
 			if (result != sl::Result::eOk)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 				m_diagnostics.FailureReason = FormatStreamlineFailure("slSetConstants", result);
-				return {.ProducedOutput = false, .UsedFallback = true, .Reason = m_diagnostics.FailureReason};
+				return {
+				    .ProducedOutput = false,
+				    .UsedFallback = true,
+				    .FailureDomain = m_diagnostics.FailureDomain,
+				    .Reason = m_diagnostics.FailureReason};
 			}
 
 			sl::Extent renderExtent{.top = 0, .left = 0, .width = evaluation.RenderExtent.Width, .height = evaluation.RenderExtent.Height};
@@ -552,8 +587,13 @@ namespace
 			if (result != sl::Result::eOk)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 				m_diagnostics.FailureReason = FormatStreamlineFailure("slSetTagForFrame", result);
-				return {.ProducedOutput = false, .UsedFallback = true, .Reason = m_diagnostics.FailureReason};
+				return {
+				    .ProducedOutput = false,
+				    .UsedFallback = true,
+				    .FailureDomain = m_diagnostics.FailureDomain,
+				    .Reason = m_diagnostics.FailureReason};
 			}
 
 			const sl::BaseStructure* inputs[] = {&m_viewport};
@@ -561,13 +601,23 @@ namespace
 			if (result != sl::Result::eOk)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
+				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 				m_diagnostics.FailureReason = FormatStreamlineFailure("slEvaluateFeature(DLSS)", result);
-				return {.ProducedOutput = false, .UsedFallback = true, .Reason = m_diagnostics.FailureReason};
+				return {
+				    .ProducedOutput = false,
+				    .UsedFallback = true,
+				    .FailureDomain = m_diagnostics.FailureDomain,
+				    .Reason = m_diagnostics.FailureReason};
 			}
 
 			m_diagnostics.State = EDlssProviderRuntimeState::Evaluating;
+			m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::None;
 			m_diagnostics.FailureReason.clear();
-			return {.ProducedOutput = true, .UsedFallback = false, .Reason = "Streamline DLSS evaluated successfully."};
+			return {
+			    .ProducedOutput = true,
+			    .UsedFallback = false,
+			    .FailureDomain = EUpscalerProviderFailureDomain::None,
+			    .Reason = "Streamline DLSS evaluated successfully."};
 		}
 
 		void ResetHistory(std::string_view reason) override
@@ -607,6 +657,7 @@ namespace
 			m_diagnostics.SdkVersion = "not-integrated";
 			m_diagnostics.SelectedQualityMode = UpscalerQualityModeToString(desc.QualityMode);
 			m_diagnostics.FeatureMatrix = BuildUnavailableFeatureMatrix(kRuntimeNotIntegratedReason);
+			m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 			m_diagnostics.FailureReason = kRuntimeNotIntegratedReason;
 			return false;
 		}
@@ -626,6 +677,8 @@ namespace
 			m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
 			m_diagnostics.RenderExtent = evaluation.RenderExtent;
 			m_diagnostics.OutputExtent = evaluation.OutputExtent;
+			m_diagnostics.FailureDomain =
+			    HasNativeEvaluationContract(evaluation) ? EUpscalerProviderFailureDomain::Sdk : EUpscalerProviderFailureDomain::InputContract;
 			m_diagnostics.FailureReason =
 			    HasNativeEvaluationContract(evaluation)
 			        ? kRuntimeNotIntegratedReason
@@ -633,6 +686,7 @@ namespace
 			return UpscalerEvaluationResult{
 			    .ProducedOutput = false,
 			    .UsedFallback = true,
+			    .FailureDomain = m_diagnostics.FailureDomain,
 			    .Reason = m_diagnostics.FailureReason};
 		}
 
@@ -740,6 +794,7 @@ StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const R
 	    .RuntimeAvailable = runtimeReady,
 	    .FeatureQuerySucceeded = runtimeReady,
 	    .FeatureSupported = runtimeReady,
+	    .FailureDomain = runtimeReady ? EUpscalerProviderFailureDomain::None : EUpscalerProviderFailureDomain::Backend,
 	    .FeatureMatrix = BuildStreamlineFeatureMatrix(runtimeReady, reason),
 	    .SdkVersion = kStreamlineSdkVersion,
 	    .Reason = reason};
@@ -749,6 +804,7 @@ StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const R
 	    .RuntimeAvailable = false,
 	    .FeatureQuerySucceeded = false,
 	    .FeatureSupported = false,
+	    .FailureDomain = EUpscalerProviderFailureDomain::Sdk,
 	    .FeatureMatrix = BuildUnavailableFeatureMatrix(kRuntimeNotIntegratedReason),
 	    .SdkVersion = "not-integrated",
 	    .Reason = kRuntimeNotIntegratedReason};

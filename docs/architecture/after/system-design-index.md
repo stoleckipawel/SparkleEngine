@@ -47,6 +47,7 @@ This index groups the detailed target architecture by subsystem. Use it when you
 | Pass authoring | [pass-authoring-contract.md](../pass-authoring-contract.md) | 4, 16, 17, 20, 22, 30 | Ordinary pass additions require no RHI edits or central trait duplication. |
 | Pipeline runtime and PSO | [pipeline-runtime-contract.md](../pipeline-runtime-contract.md) | 16, 17, 20, 22, 30 | PSO keys are explicit, printable, and backend-normalized. |
 | Ray tracing | [ray-tracing-contract.md](../ray-tracing-contract.md) | 18, 20, 22, 30 | BLAS/TLAS ownership and pass usage are documented and backend-neutral above RHI. |
+| Upscaling providers | [upscaler-provider-contract.md](../upscaler-provider-contract.md), [rhi-contract-map.md](../rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture-boundary-guardrails.md) | 9, 10, 20, 22, 30 | Common renderer code uses provider-neutral contracts; provider targets own vendor SDK calls and narrow native interop. |
 | GameFramework | [game-framework-contract.md](../game-framework-contract.md), [repository-coverage-status.md](../repository-coverage-status.md) | 13, 24, 27, 29, 30 | Runtime/cooked ownership is clear; renderer consumes immutable snapshots/DTOs. |
 | Editor/Application hosts | [repository-system-map.md](../repository-system-map.md), [tooling-pipeline-contract.md](../tooling-pipeline-contract.md) | 8, 12, 20, 26, 29, 30 | Hosts orchestrate systems and UI without backend-native/cook/import implementation. |
 

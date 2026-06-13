@@ -19,6 +19,7 @@ struct DlssCapabilityReport final
 	bool FeatureQuerySucceeded = false;
 	bool FeatureSupported = false;
 	EDlssProviderRuntimeState RuntimeState = EDlssProviderRuntimeState::NotSelected;
+	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
 	std::string SdkVersion;
 	std::string SelectedQualityMode;
 	DlssFeatureMatrix FeatureMatrix;
