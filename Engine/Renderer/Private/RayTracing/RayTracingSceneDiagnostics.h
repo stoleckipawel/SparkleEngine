@@ -20,7 +20,10 @@ class RayTracingSceneDiagnostics final
 	std::uint32_t m_lastReferencedMeshCount = 0;
 	std::uint32_t m_lastBuiltBlasCount = 0;
 	std::uint32_t m_lastReusedBlasCount = 0;
+	std::uint32_t m_lastCandidateInstanceCount = 0;
 	std::uint32_t m_lastTlasInstanceCount = 0;
+	std::uint32_t m_lastMissingGpuMeshCount = 0;
+	std::uint32_t m_lastRejectedBlasCount = 0;
 	bool m_lastBuiltTlas = false;
 	bool m_hasLoggedSceneSummary = false;
 };

@@ -23,6 +23,7 @@ struct RayTracingCapabilityReport final
 	std::uint32_t InstanceDescSizeInBytes = 0;
 
 	bool CanUseInlineRayQueryShadows() const noexcept;
+	const char* GetInlineRayQueryShadowUnavailableReason() const noexcept;
 };
 
 class RayTracingCapabilityReporter final

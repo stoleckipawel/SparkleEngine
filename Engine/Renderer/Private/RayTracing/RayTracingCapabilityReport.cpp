@@ -18,6 +18,31 @@ bool RayTracingCapabilityReport::CanUseInlineRayQueryShadows() const noexcept
 	       HasInstanceDescSize;
 }
 
+const char* RayTracingCapabilityReport::GetInlineRayQueryShadowUnavailableReason() const noexcept
+{
+	if (!SupportsRayTracing)
+	{
+		return "ray-tracing-unsupported";
+	}
+	if (!SupportsInlineRayQuery)
+	{
+		return "inline-ray-query-unsupported";
+	}
+	if (!HasAccelerationStructureAlignment)
+	{
+		return "missing-acceleration-structure-alignment";
+	}
+	if (!HasScratchBufferAlignment)
+	{
+		return "missing-scratch-buffer-alignment";
+	}
+	if (!HasInstanceDescSize)
+	{
+		return "missing-instance-desc-size";
+	}
+	return "available";
+}
+
 RayTracingCapabilityReport RayTracingCapabilityReporter::Build(const RhiCapabilities& capabilities) noexcept
 {
 	return Build(capabilities.BackendApi, capabilities.RayTracing);
@@ -36,7 +61,7 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	SPDLOG_LOGGER_INFO(
 	    logger,
 	    "Ray tracing capability summary: backend={} rayTracing={} inlineRayQuery={} asAlignment={} scratchAlignment={} "
-	    "instanceDescSize={} maxRecursionDepth={} maxPayloadBytes={} maxAttributeBytes={} inlineShadowReady={}",
+	    "instanceDescSize={} maxRecursionDepth={} maxPayloadBytes={} maxAttributeBytes={} inlineShadowReady={} inlineShadowReason={}",
 	    RhiBackendApiToString(report.BackendApi),
 	    BoolToString(report.SupportsRayTracing),
 	    BoolToString(report.SupportsInlineRayQuery),
@@ -46,7 +71,8 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    report.MaxTraceRecursionDepth,
 	    report.MaxRayPayloadSizeInBytes,
 	    report.MaxRayAttributeSizeInBytes,
-	    BoolToString(report.CanUseInlineRayQueryShadows()));
+	    BoolToString(report.CanUseInlineRayQueryShadows()),
+	    report.GetInlineRayQueryShadowUnavailableReason());
 }
 
 RayTracingCapabilityReport RayTracingCapabilityReporter::Build(

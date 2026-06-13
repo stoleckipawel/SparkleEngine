@@ -18,7 +18,9 @@ void RayTracingSceneDiagnostics::LogSceneUpdate(
 
 	if (m_hasLoggedSceneSummary && m_lastReferencedMeshCount == blasStats.referencedMeshCount &&
 	    m_lastBuiltBlasCount == blasStats.builtBlasCount && m_lastReusedBlasCount == blasStats.reusedBlasCount &&
-	    m_lastTlasInstanceCount == tlasStats.instanceCount && m_lastBuiltTlas == tlasStats.builtTlas)
+	    m_lastCandidateInstanceCount == tlasStats.candidateInstanceCount && m_lastTlasInstanceCount == tlasStats.instanceCount &&
+	    m_lastMissingGpuMeshCount == tlasStats.missingGpuMeshCount && m_lastRejectedBlasCount == tlasStats.rejectedBlasCount &&
+	    m_lastBuiltTlas == tlasStats.builtTlas)
 	{
 		return;
 	}
@@ -27,18 +29,25 @@ void RayTracingSceneDiagnostics::LogSceneUpdate(
 	m_lastReferencedMeshCount = blasStats.referencedMeshCount;
 	m_lastBuiltBlasCount = blasStats.builtBlasCount;
 	m_lastReusedBlasCount = blasStats.reusedBlasCount;
+	m_lastCandidateInstanceCount = tlasStats.candidateInstanceCount;
 	m_lastTlasInstanceCount = tlasStats.instanceCount;
+	m_lastMissingGpuMeshCount = tlasStats.missingGpuMeshCount;
+	m_lastRejectedBlasCount = tlasStats.rejectedBlasCount;
 	m_lastBuiltTlas = tlasStats.builtTlas;
 
 	SPDLOG_LOGGER_INFO(
 	    g_rayTracingSceneLogger,
-	    "RenderRayTracingScene: backend={} supportsRT={} inlineRayQuery={} referencedMeshes={} builtBlas={} reusedBlas={} tlasInstances={} builtTlas={}.",
+	    "RenderRayTracingScene: backend={} supportsRT={} inlineRayQuery={} referencedMeshes={} builtBlas={} reusedBlas={} "
+	    "candidateInstances={} tlasInstances={} missingGpuMeshData={} rejectedBlas={} builtTlas={}.",
 	    RhiBackendApiToString(capabilityReport.BackendApi),
 	    capabilityReport.SupportsRayTracing,
 	    capabilityReport.SupportsInlineRayQuery,
 	    blasStats.referencedMeshCount,
 	    blasStats.builtBlasCount,
 	    blasStats.reusedBlasCount,
+	    tlasStats.candidateInstanceCount,
 	    tlasStats.instanceCount,
+	    tlasStats.missingGpuMeshCount,
+	    tlasStats.rejectedBlasCount,
 	    tlasStats.builtTlas);
 }

@@ -2207,6 +2207,8 @@ Validation:
 
 ## Stage 18 - Clean Ray Tracing Ownership And Contracts
 
+Status: started. Renderer/RHI ownership is aligned in docs and diagnostics; full D3D12/Vulkan visual shadow parity remains Stage 20.
+
 Goal:
 
 - Preserve the useful renderer/RHI ray tracing split while making lifetime and naming contractual.
@@ -2280,7 +2282,10 @@ Acceptance:
 
 Validation:
 
-- Include in Stage 20 full visual parity.
+- `ShowcaseEditor` build is required after Stage 18 code changes.
+- `architecture_boundary_check` must pass with no renderer/backend-native RT leaks.
+- Source scan should confirm `RhiRayTracingDesc.h` contains no shadow/pass concepts.
+- Include D3D12/Vulkan camera-motion shadow parity in Stage 20 full visual parity.
 
 ## Stage 19 - Slim Backend Facades And Enforce D3D12/Vulkan Service Symmetry
 

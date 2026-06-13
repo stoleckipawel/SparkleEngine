@@ -1,6 +1,6 @@
 # Ray Tracing Contract
 
-Status: Stage 2 reviewer contract
+Status: Stage 18 ownership and diagnostics contract
 Date: 2026-06-12
 Last synchronized: 2026-06-13
 
@@ -24,6 +24,9 @@ Reference basis:
 - NVIDIA Donut uses reusable render passes and a graphics abstraction rather than putting renderer feature policy into the API layer: https://github.com/NVIDIA-RTX/Donut
 - NVIDIA async compute guidance discusses AS build overlap candidates and the need for resource/fence measurement: https://developer.nvidia.com/blog/advanced-api-performance-async-compute-and-overlap/
 - Diligent command-queue sample demonstrates explicit compute/transfer/graphics fences: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial23_CommandQueues
+- Microsoft DXR describes the two-level BLAS/TLAS acceleration-structure model and AS synchronization rules: https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html
+- Khronos Vulkan ray tracing samples show the cross-vendor acceleration-structure setup expected by Vulkan backends: https://github.com/KhronosGroup/Vulkan-Samples/blob/main/samples/extensions/ray_tracing_basic/README.adoc
+- NVIDIA Vulkan ray tracing tutorials separate acceleration structures, ray query, and sample phases: https://nvpro-samples.github.io/vk_raytracing_tutorial_KHR/
 - Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
 
 ## Contract Summary
@@ -107,6 +110,16 @@ flowchart LR
     FG --> Shader
 ```
 
+## Lifetime Contract
+
+| Step | Producer | Consumer | Data shape | Failure/diagnostic owner |
+| --- | --- | --- | --- | --- |
+| Render scene snapshot to renderer scene data | GameFramework/Renderer scene handoff | Renderer RT scene | `RenderSceneData`, `MeshDraw`, `GPUMesh` references | Scene data builder logs missing runtime mesh/GPU upload causes. |
+| Mesh geometry to BLAS request | `RayTracingBlasCache` | RHI prebuild/build commands | `RhiRayTracingGeometryDesc`, scratch/result buffers, BLAS GPU address | BLAS cache logs invalid prebuild info and allocation failures. |
+| Scene instances to TLAS request | `RayTracingTlasBuilder` | RHI prebuild/build commands | `RhiRayTracingInstanceDesc`, instance buffer, scratch/result buffers, TLAS GPU address | TLAS builder counts candidate instances, accepted instances, missing GPU mesh data, and rejected BLAS handles. |
+| TLAS to frame graph | `RenderRayTracingScene::Prepare` and `FrameGraphBuilder` | Frame graph compile/execution | `RayTracingSceneFrameData`, persistent AS handle, AS resource state | Frame graph AS registration validates import/bind/use contracts. |
+| TLAS to direct lighting | Frame graph/pass services | `DirectLightingPass` | `ShaderAccelerationStructure` plus `RayTracedShadowUniformData` | Renderer pass diagnostics and shader runtime package validation. |
+
 ## Pass Integration
 
 Current ray tracing pass-facing services:
@@ -172,8 +185,12 @@ Expected smoke evidence:
 - Backend API.
 - Ray tracing support.
 - Inline ray query support.
+- Inline ray-query shadow unavailable reason when not active.
 - Referenced mesh count.
 - Built/reused BLAS count.
+- Candidate TLAS instance count.
+- Missing GPU mesh data count.
+- Rejected BLAS count.
 - TLAS instance count.
 - Whether TLAS was built.
 - Fallback reason when unavailable.
@@ -183,7 +200,7 @@ Expected smoke evidence:
 | Gap | Evidence | Owning stage |
 | --- | --- | --- |
 | Direct lighting shader registration still mirrors pass package identity. | [DirectLightingShaders.cpp](../../Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp) declares the package while `DirectLightingPass` describes it for runtime. | Stage 17 |
-| Ray tracing contract was implicit. | Ownership spread across Renderer/RayTracing, Frame/RT frame data, FrameGraph AS import, RHI RT descs, and backend command lists. | Stage 2 |
+| Ray tracing contract needed concrete diagnostics. | Stage 18 now reports candidate TLAS instances, accepted TLAS instances, missing GPU mesh data, rejected BLAS handles, and inline ray-query shadow unavailable reason. | Stage 18, Stage 20 |
 | Backend parity evidence is not final. | Need lit/debug captures and RT smoke for both APIs. | Stage 18, Stage 20 |
 | Denoiser ownership is still a decision. | Stage 13 removed the empty private denoising placeholder; the public shadow denoise contract remains the current integration point. | Stage 18, Stage 22 |
 

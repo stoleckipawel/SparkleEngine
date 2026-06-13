@@ -71,18 +71,21 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 
 	std::unordered_set<void*> builtBlasResources;
 	std::vector<RhiRayTracingInstanceDesc> instances;
+	stats.candidateInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 	instances.reserve(sceneData.meshInstances.size());
 	for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++index)
 	{
 		const MeshDraw& draw = sceneData.meshInstances[index];
 		if (draw.gpuMesh == nullptr || !draw.gpuMesh->IsValid())
 		{
+			++stats.missingGpuMeshCount;
 			continue;
 		}
 
 		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, *draw.gpuMesh);
 		if (!blas.IsValid())
 		{
+			++stats.rejectedBlasCount;
 			continue;
 		}
 		if (blas.builtThisFrame)

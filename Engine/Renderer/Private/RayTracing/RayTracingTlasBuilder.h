@@ -18,7 +18,10 @@ class RayTracingTlasBuilder final
   public:
 	struct BuildStats final
 	{
+		std::uint32_t candidateInstanceCount = 0;
 		std::uint32_t instanceCount = 0;
+		std::uint32_t missingGpuMeshCount = 0;
+		std::uint32_t rejectedBlasCount = 0;
 		bool builtTlas = false;
 	};
 
