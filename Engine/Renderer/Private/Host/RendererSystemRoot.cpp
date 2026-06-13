@@ -22,7 +22,6 @@
 #include "Scene/GameScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
-#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
@@ -167,7 +166,6 @@ void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noex
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
 	m_viewLightingBuilder = std::make_unique<ViewLightingBuilder>();
-	m_sceneSnapshot = std::make_unique<RenderSceneSnapshot>();
 
 	m_renderCamera = std::make_unique<RenderCamera>();
 
@@ -177,7 +175,6 @@ void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noex
 	    *m_backend,
 	    *m_gpuMeshCache,
 	    *m_textureManager,
-	    *m_sceneSnapshot,
 	    *m_renderCamera,
 	    *m_materialCacheManager);
 }

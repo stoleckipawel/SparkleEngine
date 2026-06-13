@@ -99,7 +99,7 @@ Explicit scope boundary:
 - In scope here: `Engine/Renderer`, `Engine/RHI`, RHI smoke validation under `Engine/Application/Private/Validation`, launcher smoke operations, and `Tools/Shaders/ShaderCompiler`.
 - Whole-repository scope: use [repository-coverage-status.md](repository-coverage-status.md) for Core, Platform, GameFramework, Editor, Application host surfaces outside RHI smoke validation, launcher UI/workflows, source import, cookers, conversion tools, CMake, CI, projects, and docs.
 - If a later implementation stage needs to edit an out-of-scope file, that stage must first update [repository-coverage-status.md](repository-coverage-status.md) or add a linked subsystem status document.
-- Stage 35 revisits every row here for threading-readiness: mutable owner, phase, handoff shape, isolation, ordering/synchronization expectation, diagnostics identity, and deterministic output.
+- Stage 35 revisits every row here for threading-readiness hardening: mutable owner, phase, handoff shape, isolation, ordering/synchronization expectation, diagnostics identity, deterministic output, and any code/data-shape change needed to remove blocking private mutable handoffs.
 
 ## Module Build And Support Coverage
 
@@ -268,7 +268,7 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Refactor disposition | Keep and refine the evidence tables. Do not move, rename, or rewrite runtime/tool source during Stage 1. |
 | Complexity right to exist | This table earns its complexity by preventing forgotten subsystems: every row names owner layer, risk, consumer stage, validation artifact, and final acceptance evidence. Duplicate prose remains delegated to the architecture review and whole-repository coverage map. |
 | Data transfer contract | Architecture state is transferred through this file and linked whole-repository docs. No source dependencies, hidden ownership, or runtime data paths are created by this stage. |
-| Threading readiness handoff | Rows keep future threading-sensitive owners visible: frame orchestration, command recording, frame graph, resources, shader cooking, launcher smoke orchestration, and backend services feed Stage 35's immutable handoff and mutable-owner audit. |
+| Threading readiness handoff | Rows keep future threading-sensitive owners visible: frame orchestration, command recording, frame graph, resources, shader cooking, launcher smoke orchestration, and backend services feed Stage 35's immutable handoff and mutable-owner hardening pass. |
 | Acceptance proof | All rows from `Whole-Codebase Coverage Audit` are represented here or delegated to `repository-coverage-status.md`; every `Needs refactor` row links to a later stage; every `Needs design decision` row has an explicit question; file inventory is 547 tracked files with 0 unmapped files. |
 | Validation | Re-ran the inventory command listed above on 2026-06-13. Docs-only stage; no build or runtime smoke was required. |
 
@@ -504,3 +504,14 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Data transfer contract | Stage 20 evidence transfers through command/build output, shader package validation logs, launcher-shaped smoke logs, deterministic camera-motion smoke logs, BMP capture artifacts, visual comparison JSON, PSO runtime key logs, backend capability reports, and this coverage status packet. |
 | Threading readiness handoff | Validation inputs are deterministic process/environment packets and outputs are immutable logs/artifacts. Backend parity, package enumeration, PSO key construction, frame graph health, DLSS status, and RT scene diagnostics can be consumed by future queued validation without live editor state. |
 | Remaining risk | Stage 19 remains open for deeper backend service slimming, but Stage 20's validation milestone is complete for the renderer/RHI parity evidence it owns. |
+
+## Stage 34 Whole-Repository Evidence Gate Reconciliation
+
+| Field | Evidence |
+| --- | --- |
+| Status | Accepted for the Stage 34 evidence gate. |
+| Coverage reconciliation | Remaining detailed `Needs refactor` and `Needs design decision` rows are not unowned blockers. Backend service slimming is owned by Stage 19; final threading handoff hardening is owned by Stage 35; stale-path/rubric cleanup is owned by Stage 36. |
+| Boundary evidence | `architecture_boundary_check` passed during Stage 34 with only provider-owned NVIDIA DLSS Vulkan/Streamline counted exceptions. |
+| Build evidence | `ShaderCompiler`, `SparkleLauncher`, `AssetCooker`, `TextureCooker`, and `ShowcaseRuntime` built in `DevelopmentEditor` from `build/windows-vs2026-stage5`. |
+| Runtime evidence | Launcher-shaped D3D12 `ShowcaseRuntime` smoke from `Projects/Showcase` exited `0`, completed all `5/5` level switch targets, and reported `frameGraphUnresolvedBarrierWarnings=0`, DLSS active, RT available, and valid TLAS evidence. Stage 20 remains the full D3D12/Vulkan parity evidence packet. |
+| Tool evidence | `ShaderCompiler.exe list-shaders --validate` reported `17` valid typed registrations across `10` packages; `ShaderCompiler.exe inspect-shader Sky` reported the `Sky` package and `SkyCS` compute entry. |

@@ -8,7 +8,6 @@
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
-#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Textures/TextureManager.h"
 
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
@@ -17,14 +16,12 @@ SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     RenderDeviceServices& backendServices,
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
-    RenderSceneSnapshot& sceneSnapshot,
     RenderCamera& renderCamera,
     MaterialCacheManager& materialCache) noexcept :
     m_gameScene(&gameScene),
     m_backendServices(&backendServices),
     m_gpuMeshCache(&gpuMeshCache),
     m_textureManager(&textureManager),
-    m_sceneSnapshot(&sceneSnapshot),
     m_renderCamera(&renderCamera),
     m_materialCache(&materialCache)
 {
@@ -87,24 +84,14 @@ void SceneRenderStateCoordinator::InvalidateSceneScopedRendererState() noexcept
 		m_gpuMeshCache->Clear();
 	}
 
-	if (m_sceneSnapshot)
-	{
-		m_sceneSnapshot->Reset();
-	}
-
 	ReleaseSceneScopedMaterialResources();
 }
 
 void SceneRenderStateCoordinator::RefreshSceneScopedRendererState() noexcept
 {
-	if (m_gameScene && m_sceneSnapshot)
+	if (m_gameScene && m_renderCamera)
 	{
-		m_sceneSnapshot->Capture(m_gameScene->CaptureSnapshot());
-	}
-
-	if (m_renderCamera && m_sceneSnapshot)
-	{
-		m_renderCamera->ForceUpdate(m_sceneSnapshot->camera);
+		m_renderCamera->ForceUpdate(m_gameScene->CaptureSnapshot().camera);
 	}
 }
 

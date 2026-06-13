@@ -5,6 +5,7 @@
 #include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Viewport/ViewportContracts.h"
 
 #include <cstdint>
@@ -77,6 +78,7 @@ class FramePipeline final
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	RendererFrameProductHandles m_frameProducts = {};
+	RenderSceneSnapshot m_sceneSnapshot = {};
 	FrameGraphAccelerationStructureHandle m_frameGraphSceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;

@@ -90,6 +90,8 @@ namespace SparkleLauncher
 		}
 	}
 
+	static std::string BuildPathSortKey(const std::filesystem::path& path);
+
 	static void AddProgramFilesDirectoryMatches(
 	    std::vector<std::filesystem::path>& candidates,
 	    const char* environmentName,
@@ -109,6 +111,7 @@ namespace SparkleLauncher
 			return;
 		}
 
+		std::vector<std::filesystem::path> matches;
 		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(parentDirectory, errorCode))
 		{
 			if (errorCode)
@@ -126,10 +129,18 @@ namespace SparkleLauncher
 			const std::string directoryName = entry.path().filename().string();
 			if (directoryName.rfind(std::string(directoryPrefix), 0) == 0)
 			{
-				candidates.push_back(entry.path() / relativeExecutablePath);
+				matches.push_back(entry.path() / relativeExecutablePath);
 			}
 			errorCode.clear();
 		}
+
+		std::ranges::sort(
+		    matches,
+		    [](const std::filesystem::path& left, const std::filesystem::path& right)
+		    {
+			    return BuildPathSortKey(left) < BuildPathSortKey(right);
+		    });
+		candidates.insert(candidates.end(), matches.begin(), matches.end());
 	}
 
 	static void AddLocalAppDataCandidate(std::vector<std::filesystem::path>& candidates, std::filesystem::path relativePath)
@@ -159,6 +170,20 @@ namespace SparkleLauncher
 		return pathFilename == expected;
 	}
 
+	static std::string BuildPathSortKey(const std::filesystem::path& path)
+	{
+		std::string key = path.lexically_normal().generic_string();
+		std::transform(
+		    key.begin(),
+		    key.end(),
+		    key.begin(),
+		    [](unsigned char value)
+		    {
+			    return static_cast<char>(std::tolower(value));
+		    });
+		return key;
+	}
+
 	static void AddRecursiveExecutableMatches(
 	    std::vector<std::filesystem::path>& candidates,
 	    const std::filesystem::path& root,
@@ -171,6 +196,7 @@ namespace SparkleLauncher
 			return;
 		}
 
+		std::vector<std::filesystem::path> matches;
 		std::filesystem::recursive_directory_iterator iterator(
 		    root,
 		    std::filesystem::directory_options::skip_permission_denied,
@@ -193,11 +219,19 @@ namespace SparkleLauncher
 			const std::filesystem::directory_entry entry = *iterator;
 			if (entry.is_regular_file(errorCode) && PathFilenameEquals(entry.path(), filename))
 			{
-				candidates.push_back(entry.path());
+				matches.push_back(entry.path());
 			}
 			errorCode.clear();
 			iterator.increment(errorCode);
 		}
+
+		std::ranges::sort(
+		    matches,
+		    [](const std::filesystem::path& left, const std::filesystem::path& right)
+		    {
+			    return BuildPathSortKey(left) < BuildPathSortKey(right);
+		    });
+		candidates.insert(candidates.end(), matches.begin(), matches.end());
 	}
 
 	static void AddVisualStudioMSBuildCandidates(std::vector<std::filesystem::path>& candidates)

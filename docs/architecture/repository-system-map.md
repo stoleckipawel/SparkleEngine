@@ -134,7 +134,7 @@ Notes:
 
 ## Stage 23 Dependency Intent
 
-The detailed source-root freeze lives in [repository-coverage-status.md](repository-coverage-status.md). This table is the broad edge policy used before stages 24-33 move code.
+The detailed source-root freeze lives in [repository-coverage-status.md](repository-coverage-status.md). This table is the broad edge policy used before later implementation stages move code.
 
 | Edge family | Allowed contact | Forbidden contact | Data transfer shape |
 | --- | --- | --- | --- |

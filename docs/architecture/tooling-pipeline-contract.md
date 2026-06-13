@@ -56,7 +56,6 @@ Tooling is refactored through active implementation stages, not only final audit
 | Stage 30 | AssetCooker, retired AssetConverter path, Launcher, hosts | AssetCooker owns orchestration/reports and source inspect/debug commands; AssetConverter source/CMake target is removed; LauncherCore/Qt GUI/Application/Editor boundaries are enforced. |
 | Stage 31 | Artifact validation | Shader and cooked artifacts have producer/schema/consumer/inspector/smoke evidence in [artifact-validation-matrix.md](artifact-validation-matrix.md). |
 | Stage 32 | Projects and engine assets | Sample content and built-in assets become owned validation inputs in [project-asset-ownership-contract.md](project-asset-ownership-contract.md), not ambiguous file roots. |
-| Stage 33 | Mechanical guardrails | Runtime-to-tools, launcher-to-tool, generated-root, and CMake target-scope checks become local/CI-friendly. |
 
 ## Disposition Decisions
 
@@ -243,4 +242,4 @@ Smallest meaningful validation by tool area:
 | Which former AssetConverter commands survive as inspect/debug commands? | `inspect-source` and `collect-texture-requests` survive as explicit AssetCooker commands. Direct `cook-scene` does not survive because production scene cooking belongs to project cook planning. | Stage 30 |
 | When should `CookDiagnostics` become a shared target? | Current code justifies `ToolConsoleSupport`; create `CookDiagnostics` only when multiple focused cookers share real cook-domain diagnostics, reports, or validation records. | Stage 31 |
 | What is the stable launcher evidence schema for build/cook/launch/smoke operations? | Final reviewer artifacts should be generated consistently. | Stage 30 |
-| How should shader package validation fixtures be stored and run in CI? | Shader compiler regressions need evidence beyond a build. | Stage 29, Stage 31, Stage 33 |
+| How should shader package validation fixtures be stored and run in CI? | Shader compiler regressions need evidence beyond a build. | Stage 29, Stage 31, Stage 34 |

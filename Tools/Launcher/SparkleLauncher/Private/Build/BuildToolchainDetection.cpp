@@ -70,6 +70,11 @@ namespace SparkleLauncher
 		return value;
 	}
 
+	static std::string BuildPathSortKey(const std::filesystem::path& path)
+	{
+		return ToLower(path.lexically_normal().generic_string());
+	}
+
 	static bool PathLooksLikeQtMsvcKitRoot(const std::filesystem::path& path)
 	{
 		const std::string directoryName = ToLower(path.filename().string());
@@ -172,12 +177,6 @@ namespace SparkleLauncher
 		if (PathLooksLikeQtMsvcKitRoot(root))
 		{
 			discovery.MsvcCandidates.push_back(root);
-			if (!discovery.FoundMsvcKit)
-			{
-				discovery.FoundMsvcKit = true;
-				discovery.QtRootPath = root;
-				discovery.QtQmakePath = root / "bin" / "qmake.exe";
-			}
 			return;
 		}
 
@@ -185,6 +184,20 @@ namespace SparkleLauncher
 		{
 			discovery.MingwCandidates.push_back(root);
 		}
+	}
+
+	static void FinalizeQtKitDiscovery(QtKitDiscovery& discovery)
+	{
+		const auto byPath = [](const std::filesystem::path& left, const std::filesystem::path& right)
+		{
+			return BuildPathSortKey(left) < BuildPathSortKey(right);
+		};
+		std::ranges::sort(discovery.MsvcCandidates, byPath);
+		std::ranges::sort(discovery.MingwCandidates, byPath);
+
+		discovery.FoundMsvcKit = !discovery.MsvcCandidates.empty();
+		discovery.QtRootPath = discovery.FoundMsvcKit ? discovery.MsvcCandidates.front() : std::filesystem::path();
+		discovery.QtQmakePath = discovery.FoundMsvcKit ? discovery.QtRootPath / "bin" / "qmake.exe" : std::filesystem::path();
 	}
 
 	static QtKitDiscovery DiscoverQtKit()
@@ -242,6 +255,7 @@ namespace SparkleLauncher
 			}
 		}
 
+		FinalizeQtKitDiscovery(discovery);
 		return discovery;
 	}
 

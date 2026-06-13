@@ -31,6 +31,7 @@ These sources are used as calibration points for the target shape:
 | AMD Cauldron Vulkan command-list ring | https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/master/src/VK/base/CommandListRing.h | Vulkan command buffers/pools/fences are recycled per frame, making queue and fence ownership visible. |
 | Diligent Samples Tutorial 06 | https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial06_Multithreading | Parallel rendering uses worker threads with their own deferred contexts and command lists; dynamic resources are finished after submission. Sparkle should avoid shared mutable pass state during recording. |
 | Diligent Samples Tutorial 23 | https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial23_CommandQueues | Compute, transfer, and graphics queues use explicit contexts and fences. Sparkle should model queue/fence ownership before adding async compute/transfer. |
+| NVIDIA NVRHI programming guide | https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/ProgrammingGuide.md | Command lists can be recorded in parallel, so resource state cannot be tracked as one global mutable timeline. Sparkle frame graph plans and command batches must carry entry/exit state intent before parallel recording is introduced. |
 | NVIDIA async compute guidance | https://developer.nvidia.com/blog/advanced-api-performance-async-compute-and-overlap/ | Async overlap should be driven by measurement, resource hazards, queue fences, and whole-frame evidence, not by speculative scheduling. |
 
 ## Non-Goals
@@ -76,6 +77,33 @@ These sources are used as calibration points for the target shape:
 Stage 31 artifact validation evidence is tracked in [../artifact-validation-matrix.md](../artifact-validation-matrix.md). It keeps shader packages, cooked textures, materials, meshes, scenes, animations, skeletons, cook plans, and summaries as deterministic producer/consumer records instead of opaque build outputs.
 
 Stage 32 project and engine asset ownership is tracked in [../project-asset-ownership-contract.md](../project-asset-ownership-contract.md). Future parallel cook or smoke jobs should consume project source assets, cook plans, and validation reports; they should not discover work from generated project logs, local UI state, or broken level descriptors.
+
+## Core Engine Receivers
+
+These are the high-value receiver points that must be ready before introducing a render thread, command-recording workers, async queues, or background scene preparation.
+
+| Receiver | Current producer | Data accepted | Mutable owner after Stage 35 | Threading-ready expectation |
+| --- | --- | --- | --- | --- |
+| `GameScene` snapshot capture | GameFramework runtime scene | `GameSceneSnapshot` with camera, animations, lights, textures, meshes, and materials | GameFramework writes during simulation/load; Renderer reads only the captured value | Future simulation and render preparation can separate because Renderer does not read live component internals while recording. |
+| `FramePipeline` scene staging | `GameScene::CaptureSnapshot()` | `RenderSceneSnapshot` | `FramePipeline` owns the render snapshot for the frame phase | Level lifecycle events no longer mutate the frame snapshot through `RendererSystemRoot`; frame setup captures and frame recording consumes one owner-local snapshot. |
+| `RenderSceneDataBuilder` | `FramePipeline` | `RenderSceneSnapshot` | Renderer scene staging builders own transient render-domain data | Future culling, material staging, mesh batching, and skinning preparation can become jobs fed by immutable frame input. |
+| `FrameContext` | Scene staging, camera, lighting, temporal builders | Render-domain frame data, per-view data, mesh instances, skinning data, RT scene data | `FramePipeline::RecordFrame` owns the frame context | Future workers should receive frame-context slices or pass input packets, not reach back into GameFramework or `RendererSystemRoot`. |
+| `FrameGraph` setup/compile | Renderer frame composition and passes | Resource declarations, pass declarations, external imports | Frame graph owns declarations until compile; compiled `FrameGraphPlan` becomes execution input | Future pass setup and command recording can split only after plan/resource/barrier identity is frozen. |
+| RHI command recording | Frame graph execution | RHI descriptors, resolved resources/views, barrier plans, command context | RHI backend owns command lists/allocators by frame and queue | Future worker recording must use explicit command batches with pass/view/batch id, entry/exit state, queue type, and allocator/list ownership. |
+| RHI submission | `FramePipeline::SubmitFrame` | Ordered command batches and presentation/capture handoffs | RHI device/queue service owns submission | Future async compute/transfer must wait/signal through queue packets; workers must not submit directly. |
+| Shader package/runtime publication | Shader registration target and ShaderCompiler | Shader catalogs, backend catalogs, package manifests, reflection, PSO keys | Runtime/compiler consumers read sorted snapshots and immutable package generations | Future shader jobs and PSO warmup can compare stable catalogs without depending on static initialization or filesystem order. |
+| Launcher/tool workflows | Launcher UI and CLI requests | Operation requests, process requests, cook plans, reports | LauncherCore and AssetCooker own orchestration state | Future nonblocking UI/workflow execution can schedule stable process requests and reports instead of widget-owned work. |
+
+## Stage 35 Hardening Evidence
+
+| Edge hardened | Blocking shape found | Change made | Validation |
+| --- | --- | --- | --- |
+| GameFramework -> Renderer -> FrameContext | `RenderSceneSnapshot` lived in `RendererSystemRoot` and could be reset/refreshed by lifecycle coordination outside the frame phase. | `FramePipeline` now owns the render snapshot. `SceneRenderStateCoordinator` only invalidates renderer-owned caches and requests temporal reset; it no longer receives or mutates the frame snapshot. | `ShowcaseRuntime` built in `build-vs2026` with `DevelopmentEditor`. `rg "GetSceneSnapshot\|m_sceneSnapshot"` shows the snapshot is local to `FramePipeline` plus its consumers. |
+| Renderer/RHI shader catalog -> ShaderCompiler/runtime | Consumers read mutable registration vectors whose visible order depended on registration order. | `GlobalShaderRegistry` now publishes sorted shader and hit-group snapshots; `FindByName` reads the frozen snapshot. | `ShaderCompiler` built; `ShaderCompiler.exe list-shaders --validate` reported `17` valid typed registrations and `10` packages. |
+| Shader backend catalog -> ShaderCompiler jobs | Backend registration enumeration returned mutable registration storage directly. | Builtin shader backends now publish a sorted descriptor snapshot to consumers. | `ShaderCompiler` built in `build-vs2026`. |
+| Launcher toolchain discovery -> workflow/process requests | Recursive executable and Qt kit discovery inherited filesystem iterator order. | Tool resolver and Qt kit detection now sort normalized candidate paths before selecting discovered tools/kits. | `SparkleLauncher` built in `build-vs2026`; Qt deploy still reports the existing `VCINSTALLDIR` warning but target exits successfully. |
+| Launcher maintenance clean plans -> process steps | Project-generated cleanup targets and clean process steps inherited project directory iterator order. | Maintenance planning/process request generation now collects and sorts project directories before emitting targets/steps. | `SparkleLauncher` built in `build-vs2026`. |
+| Shader recook status -> diagnostics | Runtime status text used weak internal wording. | Status now names the shader compiler process directly without implementation/provenance phrasing. | `ShowcaseRuntime` built in `build-vs2026`. |
 
 ## Required Data Shapes
 

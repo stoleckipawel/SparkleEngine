@@ -67,9 +67,8 @@ Stage status tracks implementation acceptance, not merely whether planning docs 
 | 30 | Fully completed | `AssetCooker` owns source inspect/debug commands, project cook orchestration, focused-tool dispatch, and diagnostics; `Tools/Conversion/AssetConverter` was removed from the configured tool graph and source; Launcher tool resolution/clean artifacts no longer recognize `AssetConverter`; `AssetCooker`, `SparkleLauncher`, and `SparkleLauncherProbe` built; real Showcase `inspect-source` and `collect-texture-requests` commands passed. | Reopen only if `AssetConverter` returns as a production target, Launcher GUI starts owning tool algorithms, or Application/Editor include tool-private cook/import or backend-native validation code. |
 | 31 | Fully completed | `artifact-validation-matrix.md` maps shader packages, shader registries, cooked textures, cooked materials, cooked meshes, cooked scene manifests, animations, skeletons, scene asset registries, cook plans, and summaries to producer/schema/consumer/inspection/evidence. `ShaderCompiler` build/list/cook/inspect, `TextureCooker` build/inspect/cook, `SparkleGameFramework` build, `AssetCooker cook-assets`, and D3D12 launcher-shaped Showcase runtime smoke passed. | Stage 32 closed the recorded `Bistro/BistroExterior` missing scene-registry sample gap by removing the broken runtime level descriptor until source/evidence exists. |
 | 32 | Fully completed | `project-asset-ownership-contract.md` documents `Engine/Assets`, Showcase assets/levels/source, generated project-local state, validation artifacts, data-transfer rules, and guardrails. Broken `Bistro.level` was removed because it referenced `Bistro/BistroExterior` without a cookable source scene, and Launcher startup-level choices no longer offer Bistro. Showcase cook/load/smoke was rerun after cleanup. | Reopen only if Engine/Assets regains catch-all behavior, generated project-local outputs become source, or Showcase registers runtime levels without cook/load evidence. |
-| 33 | Not started | Future guardrail rules are documented. | Expand local/CI checks for runtime/tools/folder/generated-root policy and threading-hostile handoffs. |
-| 34 | Not started | Whole-repository evidence gate is documented. | Run whole-repo evidence and status reconciliation before the final threading-readiness audit. |
-| 35 | Not started | Threading-readiness contract and final audit stage are documented. | Audit all modules/stages for mutable owners, immutable handoffs, command batches, queue packets, tool jobs, launcher reports, and deterministic diagnostics. |
+| 34 | Fully completed | Repository coverage rows are accepted or explicitly owned by Stage 19/35/36 follow-up risks; boundary check, targeted builds, shader/package validation, AssetCooker cook, TextureCooker inspect/cook, launcher build, and D3D12 launcher-shaped runtime smoke passed. Empty retired `Tools/Conversion/AssetConverter` directories were removed. | Reopen only if a source root regains unowned risk, a duplicate production path returns, or docs/code/CMake evidence contradicts the target architecture. |
+| 35 | Fully completed | Stage 35 hardened runtime and tool handoffs: `RenderSceneSnapshot` is now frame-pipeline owned, lifecycle coordination no longer mutates frame snapshot data, shader and backend catalogs publish sorted snapshots, launcher tool/Qt/project discovery emits deterministic process-facing data, and Stage 35 evidence is recorded in the threading-readiness contract. VS2026 configure, `ShaderCompiler`, `SparkleLauncher`, `ShowcaseRuntime`, `architecture_boundary_check`, shader validation, and `git diff --check` passed or produced only noted non-blocking warnings. | Stage 19 still owns deeper backend service slimming before true multi-worker command recording; Stage 36 owns final stale-path/rubric cleanup. |
 | 36 | Not started | Final whole-repository cleanup and rubric gate is documented. | Delete stale transition paths, score the whole repo, and confirm review-ready evidence across all module families. |
 
 ## Stage Groups
@@ -85,27 +84,26 @@ Stage status tracks implementation acceptance, not merely whether planning docs 
 | 24-26 | Core/Platform and GameFramework/runtime contracts | [current state](../../architecture/before/repository-current-state.md), [GameFramework contract](../../architecture/game-framework-contract.md) | [repository target](../../architecture/after/repository-target-architecture.md), [GameFramework contract](../../architecture/game-framework-contract.md) | Foundation/platform policy is clean; GameFramework runtime/cooked schemas are paired with tools and renderer handoffs. |
 | 27-30 | Importers, cookers, shader tooling, AssetCooker, launcher, and hosts | [tooling pipeline contract](../../architecture/tooling-pipeline-contract.md) | [tooling pipeline contract](../../architecture/tooling-pipeline-contract.md), [target folder architecture](../../architecture/after/repository-target-folder-architecture.md) | Tool roles are split, weak names are replaced, duplicate production paths retire, and launcher/hosts orchestrate through requests/reports. |
 | 31-32 | Artifact matrix, Projects, and Engine assets | [tooling pipeline contract](../../architecture/tooling-pipeline-contract.md), [coverage status](../../architecture/repository-coverage-status.md) | [target system design index](../../architecture/after/system-design-index.md), [validation workflow](../../architecture/validation-workflow-contract.md) | Every artifact/sample asset has producer, schema owner, consumer, inspector, and smoke/load evidence. |
-| 33 | Build, CI, and boundary guardrail expansion | [architecture guardrails](../../architecture/architecture-boundary-guardrails.md) | [repository target](../../architecture/after/repository-target-architecture.md) | Checks cover runtime-to-tools, GameFramework/private coupling, launcher/tool ownership, generated folders, CMake scopes, and threading-hostile handoffs. |
-| 34 | Whole-repository evidence gate | [current state](../../architecture/before/repository-current-state.md), [coverage status](../../architecture/repository-coverage-status.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [system design index](../../architecture/after/system-design-index.md) | No unowned `Needs refactor` rows remain before the final threading-readiness audit. |
-| 35 | Threading-readiness final audit | [current state](../../architecture/before/repository-current-state.md), [repository threading readiness](../../architecture/after/repository-threading-readiness.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [target graphs](../../architecture/after/repository-target-graphs.md), [system design index](../../architecture/after/system-design-index.md) | All modules and stage outputs are safe for future worker threads, render-thread work, async queues, cook jobs, shader jobs, and launcher process workflows without private mutable cross-owner access. |
+| 34 | Whole-repository evidence gate | [current state](../../architecture/before/repository-current-state.md), [coverage status](../../architecture/repository-coverage-status.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [system design index](../../architecture/after/system-design-index.md) | No unowned `Needs refactor` rows remain before the final threading-readiness hardening pass. |
+| 35 | Threading-readiness hardening and final audit | [current state](../../architecture/before/repository-current-state.md), [repository threading readiness](../../architecture/after/repository-threading-readiness.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [target graphs](../../architecture/after/repository-target-graphs.md), [system design index](../../architecture/after/system-design-index.md) | Blocking findings are fixed through explicit snapshots, requests, reports, command batches, manifests, deterministic ordering, or ownership relocation; remaining risks are named and owner-approved. |
 | 36 | Final whole-repository cleanup and rubric gate | [acceptance rubric](../architecture-review-acceptance-rubric.md), [coverage status](../../architecture/repository-coverage-status.md) | [system design index](../../architecture/after/system-design-index.md), [stage map](repository-refactor-stage-map.md) | Stale paths are deleted, rubric scores are recorded, and the repository is review-ready as one cohesive architecture. |
 
 ## Module To Stage Index
 
 | Module or subsystem | Main stages |
 | --- | --- |
-| Core / Platform | 23, 24, 33, 34, 35, 36 |
+| Core / Platform | 23, 24, 34, 35, 36 |
 | RHI common and backends | 3, 6, 7, 8, 9, 19, 20, 28, 29, 30, 36 |
 | Renderer facade/frame/passes/pipeline | 4, 10-17, 20, 29, 30, 36 |
 | Ray tracing | 18, 20, 29, 30, 36 |
 | GameFramework | 13, 25, 26, 31, 34, 35, 36 |
 | Editor/Application | 8, 12, 20, 30, 34, 35, 36 |
 | ShaderCompiler | 4, 5, 16, 17, 20, 29, 31, 34, 35, 36 |
-| SourceImporters | 27, 31, 33, 34, 35, 36 |
+| SourceImporters | 27, 31, 34, 35, 36 |
 | Texture/Mesh/Material/Scene cookers | 26, 28, 31, 34, 35, 36 |
 | AssetCooker / retired AssetConverter commands / ToolConsoleSupport / focused cook diagnostics | 28, 30, 31, 34, 35, 36 |
-| SparkleLauncher | 10, 20, 30, 33, 34, 35, 36 |
-| CMake / CI | 3, 5, 20, 23, 33, 34, 35, 36 |
+| SparkleLauncher | 10, 20, 30, 34, 35, 36 |
+| CMake / CI | 3, 5, 20, 23, 34, 35, 36 |
 | Projects / Showcase | 10, 20, 31, 32, 34, 35, 36 |
 | Folder architecture / source-root ownership | 1-36 |
 | Threading readiness / data isolation | 1-36 |
@@ -125,7 +123,7 @@ Stage status tracks implementation acceptance, not merely whether planning docs 
 | 27-29 | Focused import and shader/tool transforms. | `SourceImporters` emit deterministic DTO/report diagnostics; cookers emit deterministic artifacts; ShaderCompiler consumes `ShaderContracts`. | Runtime source import, shader compiler linking full renderer runtime, or duplicate pass metadata forever. |
 | 30 | AssetCooker orchestration and Qt GUI presentation/model split. | AssetCooker and LauncherCore route operation data through explicit requests/reports; AssetConverter production path is retired. | Launcher widgets owning build/cook/shader algorithms or AssetCooker owning focused transforms. |
 | 31-32 | Showcase/sample content as evidence and artifacts as contracts. | Project/engine asset roots become owned validation inputs with artifact matrices and inspector commands. | Ambiguous `Engine/Assets`, generated outputs in source roots, or sample content as hidden production data. |
-| 33-36 | Existing serial paths that are simpler and validated. | Guardrails, evidence, threading readiness, final cleanup, and rubric scoring prove the whole repo. | Broad global locks, speculative job systems, stale duplicate paths, weak non-rendering module scores, and worker access to private mutable owner state. |
+| 34-36 | Existing serial paths that are simpler and validated. | Evidence, threading readiness, final cleanup, and rubric scoring prove the whole repo. | Broad global locks, speculative job systems, stale duplicate paths, weak non-rendering module scores, and worker access to private mutable owner state. |
 
 ## Stage-By-Stage Folder Architecture Budget
 
@@ -163,9 +161,8 @@ Each implementation prompt must name the current folders touched, the target fol
 | 30 | AssetCooker, LauncherCore/workflow folders, Qt GUI folders, and host folders remain separate. | Launcher folders containing cooker/compiler/render algorithms or AssetConverter as a production path. |
 | 31 | Artifact inspection/validation folders are read-only and tied to contracts. | Inspectors mutating production cook policy. |
 | 32 | Project data/shader roots and Engine built-in asset roots have explicit policies. | Generated outputs in durable roots or `Engine/Assets` as a catch-all. |
-| 33 | `CMake/Checks`, CMake target scopes, and CI/local commands enforce folder edges. | Generated/local roots becoming durable architecture or checks hidden in CI only. |
 | 34 | Final source-root inventory matches target folder architecture or stricter documented alternatives. | Duplicate old/new folders, ambiguous roots, stale aliases, or compatibility shims. |
-| 35 | Optional future `Engine/Contracts/Threading`/`Tools/Contracts` additions only when real callers need job, command-batch, queue-packet, or report primitives. | Premature global scheduler folders, worker code under owner-private folders, or "threading" folders that hide domain policy. |
+| 35 | Add or refine concrete snapshots, job requests, process requests, reports, manifests, deterministic ordering, command batches, or queue packets where current code blocks future parallelism. | Premature global scheduler folders, worker code under owner-private folders, docs-only audits, broad locks, or "threading" folders that hide domain policy. |
 | 36 | Final cleanup deletes stale folders, targets, docs, exceptions, and duplicate paths. | Review-ready claims with stale compatibility folders or weak module scores. |
 
 ## Stage-By-Stage Complexity Budget
@@ -205,9 +202,8 @@ Each stage must show that retained code earns its right to exist.
 | 30 | AssetCooker orchestration, LauncherCore requests/reports/history, and Qt presentation split. | Widgets owning tool algorithms, AssetCooker owning focused transforms, or AssetConverter production path. |
 | 31 | Artifact matrix with producer/schema/consumer/inspector/evidence. | Artifact compatibility proven only by build success. |
 | 32 | Project/sample/engine asset roots as deliberate evidence surfaces. | Engine assets or project data as vague file drops. |
-| 33 | Boundary checks that enforce target edges locally and in CI. | Checks that only document debt but do not fail new drift. |
 | 34 | Final evidence set that removes unearned complexity. | Any duplicate path, vague owner, or exception without an accepted follow-up. |
-| 35 | Threading-readiness evidence that names owners, phases, handoffs, ordering, and diagnostics. | Global locks, speculative schedulers, nondeterministic tool output, or hidden mutable cross-module reads. |
+| 35 | Threading-readiness hardening that names owners, phases, handoffs, ordering, diagnostics, and the code changes made for blocking findings. | Global locks, speculative schedulers, nondeterministic tool output, docs-only findings, or hidden mutable cross-module reads. |
 | 36 | Final cleanup and rubric scoring for the whole repository. | Review-ready claims based only on RHI/Renderer strength while other modules remain weak. |
 
 ## Stage Acceptance Checklist

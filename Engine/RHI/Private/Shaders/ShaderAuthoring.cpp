@@ -30,6 +30,56 @@ static std::vector<RayTracingHitGroupRegistrationDesc>& MutableRayTracingHitGrou
 	return registrations;
 }
 
+static const std::vector<ShaderRegistrationDesc>& GlobalShaderRegistrationSnapshot() noexcept
+{
+	static const std::vector<ShaderRegistrationDesc> registrations = []
+	{
+		EnsureGlobalShaderRegistrationBootstrap();
+		std::vector<ShaderRegistrationDesc> snapshot = MutableGlobalShaderRegistrations();
+		std::ranges::sort(
+		    snapshot,
+		    [](const ShaderRegistrationDesc& left, const ShaderRegistrationDesc& right)
+		    {
+			    if (left.PackageName != right.PackageName)
+			    {
+				    return left.PackageName < right.PackageName;
+			    }
+			    if (left.ShaderName != right.ShaderName)
+			    {
+				    return left.ShaderName < right.ShaderName;
+			    }
+			    if (left.EntryPoint != right.EntryPoint)
+			    {
+				    return left.EntryPoint < right.EntryPoint;
+			    }
+			    return static_cast<std::uint32_t>(left.Stage) < static_cast<std::uint32_t>(right.Stage);
+		    });
+		return snapshot;
+	}();
+	return registrations;
+}
+
+static const std::vector<RayTracingHitGroupRegistrationDesc>& RayTracingHitGroupRegistrationSnapshot() noexcept
+{
+	static const std::vector<RayTracingHitGroupRegistrationDesc> registrations = []
+	{
+		EnsureGlobalShaderRegistrationBootstrap();
+		std::vector<RayTracingHitGroupRegistrationDesc> snapshot = MutableRayTracingHitGroupRegistrations();
+		std::ranges::sort(
+		    snapshot,
+		    [](const RayTracingHitGroupRegistrationDesc& left, const RayTracingHitGroupRegistrationDesc& right)
+		    {
+			    if (left.PackageName != right.PackageName)
+			    {
+				    return left.PackageName < right.PackageName;
+			    }
+			    return left.HitGroupName < right.HitGroupName;
+		    });
+		return snapshot;
+	}();
+	return registrations;
+}
+
 void GlobalShaderRegistry::Register(ShaderRegistrationDesc desc)
 {
 	EnsureGlobalShaderRegistrationBootstrap();
@@ -70,21 +120,17 @@ void GlobalShaderRegistry::RegisterRayTracingHitGroup(RayTracingHitGroupRegistra
 
 std::span<const ShaderRegistrationDesc> GlobalShaderRegistry::GetRegistrations() noexcept
 {
-	EnsureGlobalShaderRegistrationBootstrap();
-	return MutableGlobalShaderRegistrations();
+	return GlobalShaderRegistrationSnapshot();
 }
 
 std::span<const RayTracingHitGroupRegistrationDesc> GlobalShaderRegistry::GetRayTracingHitGroups() noexcept
 {
-	EnsureGlobalShaderRegistrationBootstrap();
-	return MutableRayTracingHitGroupRegistrations();
+	return RayTracingHitGroupRegistrationSnapshot();
 }
 
 const ShaderRegistrationDesc* GlobalShaderRegistry::FindByName(std::string_view shaderName) noexcept
 {
-	EnsureGlobalShaderRegistrationBootstrap();
-
-	const std::vector<ShaderRegistrationDesc>& registrations = MutableGlobalShaderRegistrations();
+	const std::vector<ShaderRegistrationDesc>& registrations = GlobalShaderRegistrationSnapshot();
 	const auto found = std::ranges::find_if(
 	    registrations,
 	    [shaderName](const ShaderRegistrationDesc& desc)

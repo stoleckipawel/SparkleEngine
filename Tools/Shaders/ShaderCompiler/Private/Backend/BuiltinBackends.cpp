@@ -2,6 +2,7 @@
 
 #include "Backend/BuiltinBackends.h"
 
+#include <algorithm>
 #include <vector>
 
 class ShaderBackendRegistrationStore final
@@ -14,6 +15,22 @@ class ShaderBackendRegistrationStore final
 		static std::vector<ShaderBackendRegistration> registrations;
 		return registrations;
 	}
+
+	static const std::vector<ShaderBackendRegistration>& RegistrationSnapshot()
+	{
+		static const std::vector<ShaderBackendRegistration> registrations = []
+		{
+			std::vector<ShaderBackendRegistration> snapshot = MutableRegistrations();
+			std::ranges::sort(
+			    snapshot,
+			    [](const ShaderBackendRegistration& left, const ShaderBackendRegistration& right)
+			    {
+				    return left.Descriptor.Name < right.Descriptor.Name;
+			    });
+			return snapshot;
+		}();
+		return registrations;
+	}
 };
 
 void RegisterBuiltinShaderBackend(ShaderBackendRegistration registration)
@@ -23,5 +40,5 @@ void RegisterBuiltinShaderBackend(ShaderBackendRegistration registration)
 
 std::span<const ShaderBackendRegistration> GetBuiltinShaderBackendRegistrations() noexcept
 {
-	return ShaderBackendRegistrationStore::MutableRegistrations();
+	return ShaderBackendRegistrationStore::RegistrationSnapshot();
 }

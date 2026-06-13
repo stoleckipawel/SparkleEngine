@@ -93,6 +93,30 @@ namespace SparkleLauncher
 		return normalized.find("/third_party/") != std::string::npos;
 	}
 
+	static std::vector<std::filesystem::path> CollectProjectDirectories(const std::filesystem::path& repositoryRoot)
+	{
+		std::vector<std::filesystem::path> projects;
+		std::error_code errorCode;
+		const std::filesystem::path projectsDirectory = repositoryRoot / "Projects";
+		if (!std::filesystem::is_directory(projectsDirectory, errorCode))
+		{
+			return projects;
+		}
+
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsDirectory, errorCode))
+		{
+			if (entry.is_directory(errorCode))
+			{
+				projects.push_back(entry.path());
+			}
+			errorCode.clear();
+		}
+		std::ranges::sort(projects, [](const std::filesystem::path& left, const std::filesystem::path& right) {
+			return Strings::ToLowerCopy(left.filename().string()) < Strings::ToLowerCopy(right.filename().string());
+		});
+		return projects;
+	}
+
 	static void CollectFormatSourcesInDirectory(std::vector<std::filesystem::path>& files, const std::filesystem::path& directory)
 	{
 		std::error_code errorCode;
@@ -132,32 +156,20 @@ namespace SparkleLauncher
 
 	static void AddProjectGeneratedTargets(MaintenanceOperationPlan& plan, bool includeBuild, bool includeLogs, bool includeState)
 	{
-		std::error_code errorCode;
-		const std::filesystem::path projectsDirectory = plan.RepositoryRoot / "Projects";
-		if (!std::filesystem::is_directory(projectsDirectory, errorCode))
+		for (const std::filesystem::path& projectPath : CollectProjectDirectories(plan.RepositoryRoot))
 		{
-			return;
-		}
-
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsDirectory, errorCode))
-		{
-			if (!entry.is_directory(errorCode))
-			{
-				continue;
-			}
-
-			const std::string projectName = entry.path().filename().string();
+			const std::string projectName = projectPath.filename().string();
 			if (includeBuild)
 			{
-				AddCleanTarget(plan, "Project build tree", entry.path() / "build", "Projects/" + projectName + "/build");
+				AddCleanTarget(plan, "Project build tree", projectPath / "build", "Projects/" + projectName + "/build");
 			}
 			if (includeLogs)
 			{
-				AddCleanTarget(plan, "Project logs", entry.path() / "logs", "Projects/" + projectName + "/logs");
+				AddCleanTarget(plan, "Project logs", projectPath / "logs", "Projects/" + projectName + "/logs");
 			}
 			if (includeState)
 			{
-				AddCleanTarget(plan, "Project ImGui state", entry.path() / "imgui.ini", "Projects/" + projectName + "/imgui.ini");
+				AddCleanTarget(plan, "Project ImGui state", projectPath / "imgui.ini", "Projects/" + projectName + "/imgui.ini");
 			}
 		}
 	}
@@ -166,24 +178,14 @@ namespace SparkleLauncher
 	{
 		AddCleanTarget(plan, "Shared cooked outputs", GetSharedCookedProjectDirectory(plan.RepositoryRoot), "Shared cooked domain under artifacts/dev/projects/Shared/cooked.");
 
-		std::error_code errorCode;
-		const std::filesystem::path projectsDirectory = plan.RepositoryRoot / "Projects";
-		if (std::filesystem::is_directory(projectsDirectory, errorCode))
+		for (const std::filesystem::path& projectPath : CollectProjectDirectories(plan.RepositoryRoot))
 		{
-			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsDirectory, errorCode))
+			const std::string projectName = projectPath.filename().string();
+			if (projectName == "TemplateProject")
 			{
-				if (!entry.is_directory(errorCode))
-				{
-					continue;
-				}
-
-				const std::string projectName = entry.path().filename().string();
-				if (projectName == "TemplateProject")
-				{
-					continue;
-				}
-				AddCleanTarget(plan, projectName + " cooked outputs", GetCookedProjectDirectory(plan.RepositoryRoot, projectName), "Project cooked domain under artifacts/dev/projects/" + projectName + "/cooked.");
+				continue;
 			}
+			AddCleanTarget(plan, projectName + " cooked outputs", GetCookedProjectDirectory(plan.RepositoryRoot, projectName), "Project cooked domain under artifacts/dev/projects/" + projectName + "/cooked.");
 		}
 	}
 

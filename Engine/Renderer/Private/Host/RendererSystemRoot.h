@@ -21,7 +21,6 @@ class RenderHardwareInterface;
 class RendererMemoryMonitor;
 class RenderRayTracingScene;
 class RenderSceneDataBuilder;
-class RenderSceneSnapshot;
 class RhiImGuiRenderer;
 class SceneRenderStateCoordinator;
 class TemporalDataBuilder;
@@ -68,7 +67,6 @@ class RendererSystemRoot final
 	RenderCamera& GetRenderCamera() noexcept { return *m_renderCamera; }
 	SceneRenderStateCoordinator* GetSceneRenderStateCoordinator() noexcept { return m_sceneRenderStateCoordinator.get(); }
 	UpscalerSubsystem* GetUpscalerSubsystem() noexcept { return m_upscalerSubsystem.get(); }
-	RenderSceneSnapshot& GetSceneSnapshot() noexcept { return *m_sceneSnapshot; }
 	RayTracedShadowSettings* GetRayTracedShadowSettings() noexcept { return m_rayTracedShadowSettings.get(); }
 
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
@@ -100,6 +98,5 @@ class RendererSystemRoot final
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 	std::unique_ptr<UpscalerSubsystem> m_upscalerSubsystem;
-	std::unique_ptr<RenderSceneSnapshot> m_sceneSnapshot;
 	std::unique_ptr<RayTracedShadowSettings> m_rayTracedShadowSettings;
 };

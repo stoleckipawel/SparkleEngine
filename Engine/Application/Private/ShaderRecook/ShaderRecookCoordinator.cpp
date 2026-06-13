@@ -122,7 +122,7 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 
 		PublishStatus(
 		    std::format(
-		        "Shader recook #{} started for {} via the shader compiler process seam (baselinePublicationId={}).",
+		        "Shader recook #{} started for {} through the shader compiler process (baselinePublicationId={}).",
 		        requestId,
 		        DescribeRequest(request),
 		        baselinePublicationId));

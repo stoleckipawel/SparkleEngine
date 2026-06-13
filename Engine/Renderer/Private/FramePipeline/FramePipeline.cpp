@@ -356,9 +356,9 @@ void FramePipeline::SetupFrame() noexcept
 	timer.Tick();
 	RefreshViewportRenderProducts();
 
-	m_systems->GetSceneSnapshot().Capture(m_systems->GetGameScene().CaptureSnapshot());
-	m_systems->GetTextureManager().LoadSceneTextures(m_systems->GetSceneSnapshot().textures);
-	m_systems->GetRenderCamera().Update(m_systems->GetSceneSnapshot().camera);
+	m_sceneSnapshot.Capture(m_systems->GetGameScene().CaptureSnapshot());
+	m_systems->GetTextureManager().LoadSceneTextures(m_sceneSnapshot.textures);
+	m_systems->GetRenderCamera().Update(m_sceneSnapshot.camera);
 
 	const RenderViewportExtent sceneExtent = m_frameGraphSceneExtent.IsValid() ? m_frameGraphSceneExtent : ResolveSceneExtent();
 	const std::uint32_t viewportWidth = sceneExtent.Width != 0u ? sceneExtent.Width : 1u;
@@ -405,7 +405,7 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.BuildFrameContext");
 		return BuildFrameContext(
-		    m_systems->GetSceneSnapshot(),
+		    m_sceneSnapshot,
 		    renderHardwareInterface,
 		    m_systems->GetRenderCamera(),
 		    m_frameGraphSceneExtent,

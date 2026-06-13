@@ -1,6 +1,7 @@
 #include "MaintenanceOperationProcessRequests.h"
 
 #include "CMakeWorkflowProcessRequests.h"
+#include "Core/Public/Strings/StringUtils.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
 #include <algorithm>
@@ -38,6 +39,30 @@ namespace SparkleLauncher
 		steps.push_back(std::move(step));
 	}
 
+	static std::vector<std::filesystem::path> CollectProjectDirectories(const std::filesystem::path& repositoryRoot)
+	{
+		std::vector<std::filesystem::path> projects;
+		std::error_code errorCode;
+		const std::filesystem::path projectsDirectory = repositoryRoot / "Projects";
+		if (!std::filesystem::is_directory(projectsDirectory, errorCode))
+		{
+			return projects;
+		}
+
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsDirectory, errorCode))
+		{
+			if (entry.is_directory(errorCode))
+			{
+				projects.push_back(entry.path());
+			}
+			errorCode.clear();
+		}
+		std::ranges::sort(projects, [](const std::filesystem::path& left, const std::filesystem::path& right) {
+			return Strings::ToLowerCopy(left.filename().string()) < Strings::ToLowerCopy(right.filename().string());
+		});
+		return projects;
+	}
+
 	static void AddProjectGeneratedCleanSteps(
 	    std::vector<MaintenanceOperationProcessStep>& steps,
 	    const MaintenanceOperationPlan& plan,
@@ -45,32 +70,20 @@ namespace SparkleLauncher
 	    bool includeLogs,
 	    bool includeState)
 	{
-		std::error_code errorCode;
-		const std::filesystem::path projectsDirectory = plan.RepositoryRoot / "Projects";
-		if (!std::filesystem::is_directory(projectsDirectory, errorCode))
+		for (const std::filesystem::path& projectPath : CollectProjectDirectories(plan.RepositoryRoot))
 		{
-			return;
-		}
-
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsDirectory, errorCode))
-		{
-			if (!entry.is_directory(errorCode))
-			{
-				continue;
-			}
-
-			const std::string projectName = entry.path().filename().string();
+			const std::string projectName = projectPath.filename().string();
 			if (includeBuild)
 			{
-				AddCleanStep(steps, "clean-project-build", "Clean project build tree " + projectName, entry.path() / "build", MaintenanceCleanBehavior::RemovePath);
+				AddCleanStep(steps, "clean-project-build", "Clean project build tree " + projectName, projectPath / "build", MaintenanceCleanBehavior::RemovePath);
 			}
 			if (includeLogs)
 			{
-				AddCleanStep(steps, "clean-project-logs", "Clean project logs " + projectName, entry.path() / "logs", MaintenanceCleanBehavior::RemovePath);
+				AddCleanStep(steps, "clean-project-logs", "Clean project logs " + projectName, projectPath / "logs", MaintenanceCleanBehavior::RemovePath);
 			}
 			if (includeState)
 			{
-				AddCleanStep(steps, "clean-project-imgui", "Clean project ImGui state " + projectName, entry.path() / "imgui.ini", MaintenanceCleanBehavior::RemovePath);
+				AddCleanStep(steps, "clean-project-imgui", "Clean project ImGui state " + projectName, projectPath / "imgui.ini", MaintenanceCleanBehavior::RemovePath);
 			}
 		}
 	}
@@ -79,24 +92,14 @@ namespace SparkleLauncher
 	{
 		AddCleanStep(steps, "clean-shared-cooked", "Clean shared cooked outputs", GetSharedCookedProjectDirectory(plan.RepositoryRoot), MaintenanceCleanBehavior::RemovePath);
 
-		std::error_code errorCode;
-		const std::filesystem::path projectsDirectory = plan.RepositoryRoot / "Projects";
-		if (std::filesystem::is_directory(projectsDirectory, errorCode))
+		for (const std::filesystem::path& projectPath : CollectProjectDirectories(plan.RepositoryRoot))
 		{
-			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsDirectory, errorCode))
+			const std::string projectName = projectPath.filename().string();
+			if (projectName == "TemplateProject")
 			{
-				if (!entry.is_directory(errorCode))
-				{
-					continue;
-				}
-
-				const std::string projectName = entry.path().filename().string();
-				if (projectName == "TemplateProject")
-				{
-					continue;
-				}
-				AddCleanStep(steps, "clean-project-cooked", "Clean cooked outputs " + projectName, GetCookedProjectDirectory(plan.RepositoryRoot, projectName), MaintenanceCleanBehavior::RemovePath);
+				continue;
 			}
+			AddCleanStep(steps, "clean-project-cooked", "Clean cooked outputs " + projectName, GetCookedProjectDirectory(plan.RepositoryRoot, projectName), MaintenanceCleanBehavior::RemovePath);
 		}
 	}
 
