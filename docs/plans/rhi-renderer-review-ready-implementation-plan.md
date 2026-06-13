@@ -1311,6 +1311,27 @@ Acceptance:
 - No Application source includes D3D12/Vulkan native headers for smoke capture.
 - Coverage status is updated.
 
+## Stage 10 Evidence Packet
+
+| Field | Evidence |
+| --- | --- |
+| Status | Almost finished. Editor capture, boundary, build, DLSS, and Application ownership evidence pass; runtime Vulkan validation-layer present-layout errors prevent full acceptance. |
+| Build commands | `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target SparkleLauncher -- /nologo /v:minimal /m:1`, `ShaderCompiler`, `ShowcaseEditor`, `ShowcaseRuntime`, and `architecture_boundary_check` passed. `ShaderCompiler` initially hit a parallel Visual Studio `ZERO_CHECK.lastbuildstate` lock and passed when rerun alone. |
+| Format command | `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target clang_format_check -- /nologo /v:minimal` could not run because this build tree does not generate `clang_format_check.vcxproj`. |
+| Boundary command | `cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake` passed with provider-owned counted exceptions only: `SparkleRendererNvidiaDlssProvider` Vulkan linkage and `StreamlineDlssRuntime.cpp` Vulkan identifiers. |
+| Application native-header scan | `rg -n "#include <d3d12|#include <vulkan|ID3D12|D3D12_|Vk[A-Z]|vk[A-Z]|Vulkan/|D3D12/" Engine/Application/Private/Validation` returned no matches. |
+| Editor smoke command shape | Working directory `Projects/Showcase`; executable `artifacts/dev/projects/Showcase/editor/DevelopmentEditor/ShowcaseEditor.exe`; env: `SPARKLE_SMOKE_VALIDATE_RHI=1`, `SPARKLE_SMOKE_FRAME_LIMIT=120`, `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE_FRAME=30`, `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING=1`, backend `D3D12`/`Vulkan`, view mode `0`/`3`, per-run `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE`, `SPARKLE_LOG_FILE`, and console capture. |
+| Editor capture artifacts | `artifacts/validation/stage10/d3d12-lit.bmp`, `d3d12-normal.bmp`, `vulkan-lit.bmp`, and `vulkan-normal.bmp` exist. Each is a 32-bit BMP with `BM` signature, 21,608,214 bytes, and dimensions recorded as width 4578 and top-down height 1180. |
+| Editor D3D12 smoke | Lit and GBufferNormal runs exited `0`; logs report `backend=D3D12`, `frameGraphUnresolvedBarrierWarnings=0`, `upscalerProvider='NVIDIA DLSS'`, `upscalerStatus=Active`, `failureDomain=None`, `rayTracing=true`, `inlineRayQuery=true`, and capture paths at frame 30. |
+| Editor Vulkan smoke | Lit and GBufferNormal runs exited `0`; logs report `backend=Vulkan`, `frameGraphUnresolvedBarrierWarnings=0`, `upscalerProvider='NVIDIA DLSS'`, `upscalerStatus=Active`, `failureDomain=None`, `rayTracing=true`, `inlineRayQuery=true`, and capture paths at frame 30. |
+| Runtime smoke command shape | Working directory `Projects/Showcase`; executable `artifacts/dev/projects/Showcase/runtime/DevelopmentEditor/ShowcaseRuntime.exe`; env: `SPARKLE_SMOKE_VALIDATE_RHI=1`, `SPARKLE_SMOKE_FRAME_LIMIT=120`, `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING=1`, backend `D3D12`/`Vulkan`, per-run `SPARKLE_LOG_FILE`, and console capture. |
+| Runtime D3D12 smoke | Run exited `0`; `artifacts/validation/stage10/d3d12-runtime.log` reports `frameGraphUnresolvedBarrierWarnings=0`, DLSS active, `failureDomain=None`, ray tracing enabled, and no error/critical lines. |
+| Runtime Vulkan smoke | Run exited `0` and reports DLSS active with `failureDomain=None`, ray tracing enabled, and `frameGraphUnresolvedBarrierWarnings=0`, but `artifacts/validation/stage10/vulkan-runtime.log` contains validation-layer errors at `VulkanRhi.cpp:750`: `vkQueueSubmit()` expects swapchain images in `VK_IMAGE_LAYOUT_PRESENT_SRC_KHR` while current layout is `VK_IMAGE_LAYOUT_UNDEFINED`. |
+| Artifact index | Editor matrix: `artifacts/validation/stage10/stage10-smoke-results.json`. Runtime matrix: `artifacts/validation/stage10/stage10-runtime-results.json`. Logs and console output sit beside each BMP using backend/view-mode/runtime names. |
+| Data transfer contract | Milestone evidence transfers through structured logs, BMP capture artifacts, JSON result summaries, backend capability reports, and this coverage update. DLSS state is explicit and not inferred from screenshots. |
+| Threading readiness handoff | Smoke validation uses environment/request packets and immutable log/artifact outputs, which keeps future launcher/process orchestration and render-thread smoke collection separate from backend-private mutable state. |
+| Remaining risk | Runtime Vulkan presentation/swapchain layout ownership is not fully validated. Stage 12, Stage 19, or Stage 20 must either fix the present-layout transition/import path or record a narrower accepted exception with reproduction logs. |
+
 ## Stage 11 - Decompose Renderer Into Facade, System Root, Frame Pipeline
 
 Goal:
