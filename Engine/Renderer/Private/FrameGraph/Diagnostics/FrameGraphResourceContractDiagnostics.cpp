@@ -4,6 +4,7 @@
 
 #include "FrameGraph/FrameGraphPassFlags.h"
 #include "FrameGraph/ResourceUsage.h"
+#include "Core/Public/Diagnostics/Verify.h"
 
 #include <cassert>
 #include <string>
@@ -18,9 +19,7 @@ namespace
 		logMessage.append(passName.begin(), passName.end());
 		logMessage += "': ";
 		logMessage.append(message.begin(), message.end());
-		SPDLOG_LOGGER_ERROR(g_frameGraphContractLogger, "{}", logMessage);
-		assert(false);
-		return false;
+		Diagnostics::Fail(g_frameGraphContractLogger, __FILE__, __LINE__, logMessage);
 	}
 }
 

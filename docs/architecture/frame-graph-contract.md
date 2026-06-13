@@ -46,6 +46,12 @@ The frame graph does not own:
 - Pass-specific feature policy.
 - Vendor SDK behavior.
 
+Stage 14 hardening rule:
+
+- A frame graph contract break is a development validation failure, not a recoverable warning.
+- Invalid external resource imports, incompatible imported UAV usage, invalid acceleration-structure imports/bindings, invalid pass resource usage, unresolved resource barriers, and unresolved transient aliasing barriers stop through `Diagnostics::Fail`.
+- The existing smoke-visible unresolved-barrier counter remains as evidence wiring, but the runtime no longer skips unresolved barriers to keep executing.
+
 Target folder ownership:
 
 | Folder | Owns | Must not own |
@@ -214,13 +220,24 @@ Target policy:
 
 - Development smoke must fail unresolved handles/resources/barriers.
 - Warnings may remain only when classified with a known issue and acceptance owner.
-- Diagnostics must include pass name, resource name/handle, expected usage, and owning stage.
+- Diagnostics must include pass name, resource name/handle, declared label or usage-derived state, resolved state, transient physical block where relevant, and a remediation hint.
+
+Stage 14 validation classes:
+
+| Class | Failure owner | Required diagnostic fields | Remediation direction |
+| --- | --- | --- | --- |
+| Invalid external texture/buffer import | `FrameGraph/Resources` | Operation, resource name, initial state. | Provide a valid native backing resource before import. |
+| Invalid acceleration-structure import/bind | `FrameGraph/Resources` | Operation, resource name/handle, state, backing-resource presence, GPU virtual address. | Bind through a valid graph handle with native resource and GPU address. |
+| Imported resource requires UAV but lacks support | `FrameGraph/Resources` | Resource name, handle, ownership, required usage. | Create/import with UAV support or remove UAV declarations. |
+| Invalid pass resource usage or AS parameter binding | `FrameGraph/Diagnostics` | Pass name, parameter/label, incompatible usage or binding reason. | Declare supported read/write/use intent and bind AS parameters through frame graph handles. |
+| Unresolved compiled barrier | `FrameGraph/Execution` | Pass name, handle, resource name, declaration label, before state, after state. | Declare the resource in setup and ensure it is imported, persistent-bound, or transient-materialized before execution. |
+| Unresolved transient aliasing barrier | `FrameGraph/Execution` | Pass name, physical block, before/after handles, before/after resource names. | Verify transient lifetimes and materialization before barrier playback. |
 
 ## Current Gaps
 
 | Gap | Current evidence | Target stage |
 | --- | --- | --- |
-| Unresolved resource/barrier warnings are possible. | Prior smoke logs showed unresolved handles for passes such as `LightingComposite`, `VisualizeBuffers`, `Sky`, and `EvaluateExternalUpscalerProvider`. | Stage 14, Stage 15, Stage 20 |
+| Stage 15 smoke must prove the hard failures stay absent in normal execution. | Stage 14 converted invalid imports, incompatible resource usages, unresolved resource barriers, and unresolved aliasing barriers into development validation failures with actionable diagnostics. | Stage 15, Stage 20 |
 | Frame graph contract is in code, not reviewer docs. | Implementation spread across `Builder`, `Compiler`, `Execution`, `Resources`, and `Diagnostics`. | Stage 2 |
 | Resource declarations and parameter binding validation are separate concepts. | `PassResourceBuilder` declares graph usage; `PassBinder` validates runtime bindings. | Stage 14, Stage 17 |
 | Persistent acceleration structure binding is specialized. | Persistent AS functions live on `FrameGraph`. | Stage 18 |
@@ -239,7 +256,7 @@ Before changing frame graph code:
 
 The frame graph contract is complete when:
 
-- All unresolved resource/barrier cases become development-smoke failures or explicitly classified known issues.
-- D3D12 and Vulkan smoke logs show no unresolved frame graph warnings.
+- All unresolved resource/barrier cases become development-smoke failures or explicitly classified known issues. Stage 14 satisfies the code path for invalid external resources, invalid AS resources, incompatible imported UAV usage, invalid pass usage, unresolved resource barriers, and unresolved aliasing barriers.
+- D3D12 and Vulkan smoke logs show no unresolved frame graph warnings. Stage 15 owns this runtime evidence.
 - A frame graph plan diagnostic artifact can explain pass order, resource usage, barriers, and transients.
 - Pass authoring docs show how pass parameter usage enters frame graph declarations.

@@ -2,6 +2,10 @@
 
 #include "FrameGraph/FrameGraph.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
+
+#include <format>
+
 static const auto g_frameGraphAccelerationStructureLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
@@ -18,6 +22,33 @@ namespace
 
 		return resolvedDesc;
 	}
+
+	std::string FormatHandle(FrameGraphResourceHandle handle)
+	{
+		return handle.IsValid() ? std::format("{}", handle.index) : "invalid";
+	}
+
+	void FailInvalidAccelerationStructureBinding(
+	    std::string_view operation,
+	    std::string_view resourceName,
+	    FrameGraphResourceHandle handle,
+	    ResourceState state,
+	    bool hasResource,
+	    RhiGpuVirtualAddress gpuAddress) noexcept
+	{
+		Diagnostics::Fail(
+		    g_frameGraphAccelerationStructureLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "FrameGraph acceleration-structure validation failed: operation='{}' resource='{}' handle={} state={} hasResource={} gpuAddress={} remediation='bind acceleration structures through a valid frame-graph handle with a native backing resource and GPU virtual address'",
+		        operation,
+		        resourceName.empty() ? "<unnamed>" : resourceName,
+		        FormatHandle(handle),
+		        ResourceStateToString(state),
+		        hasResource,
+		        gpuAddress));
+	}
 }
 
 FrameGraphAccelerationStructureHandle FrameGraph::ImportAccelerationStructure(
@@ -28,10 +59,13 @@ FrameGraphAccelerationStructureHandle FrameGraph::ImportAccelerationStructure(
 {
 	if (!resource || gpuAddress == 0)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_frameGraphAccelerationStructureLogger,
-		    "FrameGraph::ImportAccelerationStructure: acceleration structure is missing a backing resource or GPU address.");
-		return FrameGraphAccelerationStructureHandle::Invalid();
+		FailInvalidAccelerationStructureBinding(
+		    "ImportAccelerationStructure",
+		    desc.name,
+		    FrameGraphResourceHandle::Invalid(),
+		    initialState,
+		    static_cast<bool>(resource),
+		    gpuAddress);
 	}
 
 	const FrameGraphAccelerationStructureDesc resolvedDesc = ResolveAccelerationStructureDesc(desc, "ImportedAccelerationStructure");
@@ -54,10 +88,13 @@ FrameGraphAccelerationStructureHandle FrameGraph::ImportPersistentAccelerationSt
 {
 	if (!resource || gpuAddress == 0)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_frameGraphAccelerationStructureLogger,
-		    "FrameGraph::ImportPersistentAccelerationStructure: persistent acceleration structure is missing a backing resource or GPU address.");
-		return FrameGraphAccelerationStructureHandle::Invalid();
+		FailInvalidAccelerationStructureBinding(
+		    "ImportPersistentAccelerationStructure",
+		    desc.name,
+		    FrameGraphResourceHandle::Invalid(),
+		    initialState,
+		    static_cast<bool>(resource),
+		    gpuAddress);
 	}
 
 	const FrameGraphAccelerationStructureDesc resolvedDesc = ResolveAccelerationStructureDesc(desc, "PersistentAccelerationStructure");
@@ -98,32 +135,38 @@ void FrameGraph::BindPersistentAccelerationStructure(
 
 	if (!resource || gpuAddress == 0)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_frameGraphAccelerationStructureLogger,
-		    "FrameGraph::BindPersistentAccelerationStructure: acceleration structure binding is missing a backing resource or GPU address.");
-		ClearPersistentAccelerationStructureBinding(handle);
-		return;
+		FailInvalidAccelerationStructureBinding(
+		    "BindPersistentAccelerationStructure",
+		    {},
+		    handle.GetResourceHandle(),
+		    currentState,
+		    static_cast<bool>(resource),
+		    gpuAddress);
 	}
 
 	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
 	if (!m_resourceRegistry.IsRegistered(resourceHandle))
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_frameGraphAccelerationStructureLogger,
-		    "FrameGraph::BindPersistentAccelerationStructure: handle {} is not registered.",
-		    resourceHandle.index);
-		return;
+		FailInvalidAccelerationStructureBinding(
+		    "BindPersistentAccelerationStructure",
+		    {},
+		    resourceHandle,
+		    currentState,
+		    static_cast<bool>(resource),
+		    gpuAddress);
 	}
 
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
 	if (metadata.kind != FrameGraphResourceKind::AccelerationStructure
 	    || metadata.ownership != FrameGraphResourceOwnership::ExternalPersistent)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_frameGraphAccelerationStructureLogger,
-		    "FrameGraph::BindPersistentAccelerationStructure: handle {} is not a persistent acceleration structure.",
-		    resourceHandle.index);
-		return;
+		FailInvalidAccelerationStructureBinding(
+		    "BindPersistentAccelerationStructure",
+		    metadata.debugName,
+		    resourceHandle,
+		    currentState,
+		    static_cast<bool>(resource),
+		    gpuAddress);
 	}
 
 	FrameGraphResourceAccess access{};
@@ -141,8 +184,13 @@ void FrameGraph::BindPersistentAccelerationStructure(
 {
 	if (m_renderHardwareInterface == nullptr || !resource)
 	{
-		ClearPersistentAccelerationStructureBinding(handle);
-		return;
+		FailInvalidAccelerationStructureBinding(
+		    "BindPersistentAccelerationStructure",
+		    {},
+		    handle.GetResourceHandle(),
+		    currentState,
+		    false,
+		    gpuAddress);
 	}
 
 	BindPersistentAccelerationStructure(

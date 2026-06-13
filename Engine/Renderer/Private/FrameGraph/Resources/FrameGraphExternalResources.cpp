@@ -2,13 +2,33 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "Commands/RenderCommandContext.h"
+#include "Core/Public/Diagnostics/Verify.h"
 
 #include <cassert>
+#include <format>
 
 static const auto g_frameGraphExternalLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
 {
+	std::string FormatResourceName(const FrameGraphResourceMetadata& metadata)
+	{
+		return metadata.debugName.empty() ? std::format("handle {}", metadata.handle.index) : metadata.debugName;
+	}
+
+	void FailMissingUnorderedAccessSupport(const FrameGraphResourceMetadata& metadata) noexcept
+	{
+		Diagnostics::Fail(
+		    g_frameGraphExternalLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "FrameGraph external resource validation failed: resource='{}' handle={} ownership={} requiredUsage=UnorderedAccess remediation='create/import the resource with unordered-access support or remove UAV declarations for this pass path'",
+		        FormatResourceName(metadata),
+		        metadata.handle.index,
+		        IsExternalFrameGraphResource(metadata.ownership) ? "External" : "Internal"));
+	}
+
 	bool RequiresUnorderedAccessView(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
 	{
 		for (const FrameGraphPassNode& passRecord : plan.passes)
@@ -67,10 +87,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			{
 				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.resource))
 				{
-					SPDLOG_LOGGER_WARN(
-					    g_frameGraphExternalLogger,
-					    "FrameGraph::SyncImportedResourceAccesses: imported texture is missing unordered-access support.");
-					assert(false);
+					FailMissingUnorderedAccessSupport(metadata);
 				}
 
 				if (!access.unorderedAccessView)
@@ -102,10 +119,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			{
 				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.resource))
 				{
-					SPDLOG_LOGGER_WARN(
-					    g_frameGraphExternalLogger,
-					    "FrameGraph::SyncImportedResourceAccesses: imported buffer is missing unordered-access support.");
-					assert(false);
+					FailMissingUnorderedAccessSupport(metadata);
 				}
 
 				if (!access.unorderedAccessView)

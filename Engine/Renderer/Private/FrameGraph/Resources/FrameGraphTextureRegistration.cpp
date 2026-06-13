@@ -1,7 +1,10 @@
 #include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
+#include "Core/Public/Diagnostics/Verify.h"
 #include "Window/Window.h"
+
+#include <format>
 
 static const auto g_frameGraphTextureLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
@@ -31,6 +34,19 @@ namespace
 
 		return resolvedDesc;
 	}
+
+	void FailMissingBackingResource(std::string_view operation, std::string_view resourceName, ResourceState initialState) noexcept
+	{
+		Diagnostics::Fail(
+		    g_frameGraphTextureLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "FrameGraph external resource validation failed: operation='{}' resource='{}' initialState={} remediation='provide a valid native backing resource before importing it into the frame graph'",
+		        operation,
+		        resourceName.empty() ? "<unnamed>" : resourceName,
+		        ResourceStateToString(initialState)));
+	}
 }  // namespace
 
 FrameGraphTextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
@@ -51,8 +67,7 @@ FrameGraphTextureHandle FrameGraph::ImportTexture(
 {
 	if (!resource)
 	{
-		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportTexture: imported texture has no backing resource.");
-		return FrameGraphTextureHandle::Invalid();
+		FailMissingBackingResource("ImportTexture", desc.name, initialState);
 	}
 
 	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "ImportedTexture");
@@ -71,8 +86,7 @@ FrameGraphTextureHandle FrameGraph::ImportPersistentTexture(
 {
 	if (!resource)
 	{
-		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportPersistentTexture: persistent texture has no backing resource.");
-		return FrameGraphTextureHandle::Invalid();
+		FailMissingBackingResource("ImportPersistentTexture", desc.name, initialState);
 	}
 
 	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "PersistentTexture");
@@ -105,8 +119,7 @@ FrameGraphBufferHandle FrameGraph::ImportBuffer(const FrameGraphBufferDesc& desc
 {
 	if (!resource)
 	{
-		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportBuffer: imported buffer has no backing resource.");
-		return FrameGraphBufferHandle::Invalid();
+		FailMissingBackingResource("ImportBuffer", desc.name, initialState);
 	}
 
 	const FrameGraphBufferDesc resolvedDesc = ResolveBufferDesc(desc, "ImportedBuffer");
@@ -137,8 +150,7 @@ FrameGraphBufferHandle FrameGraph::ImportPersistentBuffer(
 {
 	if (!resource)
 	{
-		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportPersistentBuffer: persistent buffer has no backing resource.");
-		return FrameGraphBufferHandle::Invalid();
+		FailMissingBackingResource("ImportPersistentBuffer", desc.name, initialState);
 	}
 
 	const FrameGraphBufferDesc resolvedDesc = ResolveBufferDesc(desc, "PersistentBuffer");

@@ -1696,6 +1696,24 @@ Validation:
 
 - Defer full build/runtime smoke to Stage 15.
 
+Completion evidence:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for frame graph contract hardening and targeted validation. Full D3D12/Vulkan smoke remains Stage 15. |
+| Target docs opened | [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md). |
+| Contract surfaces touched | Renderer frame graph resource contracts, barrier playback, transient aliasing diagnostics, external resource import validation, acceleration-structure graph binding, pass resource usage validation, smoke-visible unresolved-barrier evidence, and threading-readiness handoff shape. |
+| Ownership/disposition | Keep and refine the existing frame graph folder split. Improve and harden `FrameGraph/Resources`, `FrameGraph/Diagnostics`, and `FrameGraph/Execution` instead of moving pass policy into graph code or adding public graph API. |
+| Complexity right to exist | The remaining validation code earns its complexity by stopping invalid graph state at the boundary where enough context exists to name pass/resource/state/allocation/remediation. Fallback paths that skipped unresolved barriers were removed. |
+| Folder and target plan | Current folders touched: `Engine/Renderer/Private/FrameGraph/Resources`, `Diagnostics`, and `Execution`. Target owner remains Renderer frame graph. No code was moved into RHI, passes, Application, GameFramework, or tools. No CMake target split was required. |
+| Data transfer plan | Pass/resource intent transfers into FrameGraph through typed declarations and usage descriptors; compiled plans transfer barrier/resource/view data to RHI command recording; diagnostics transfer pass name, resource handle/name, label/usage-derived state, physical block where relevant, and remediation hint. |
+| Threading-readiness plan | Frame graph execution remains serial, but the frozen plan cannot silently skip unresolved physical resources. Future worker command batches can treat graph validation failures as deterministic pre-recording failures instead of hidden runtime drift. |
+| Source text discipline | No explanatory/provenance/planning comments were added to source. Runtime strings added in this stage are diagnostic failure text only. |
+| Destination-fit proof | No relocation was needed. Existing files were hardened in place because `Resources` owns imports/bindings, `Diagnostics` owns declaration validation, and `Execution` owns barrier playback. |
+| Acceptance evidence | Invalid external texture/buffer imports, incompatible imported UAV usage, invalid AS imports/bindings, invalid pass resource usages, unresolved compiled barriers, and unresolved aliasing barriers now call `Diagnostics::Fail` with actionable diagnostic payloads. [frame-graph-contract.md](../architecture/frame-graph-contract.md) documents every validation class and remediation path. |
+| Validation evidence | `ShowcaseEditor` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`; `architecture_boundary_check` passed; source text hygiene scan over touched source found no planning/stage/provenance text. |
+| Remaining risk | Stage 15 must run launcher-shaped D3D12/Vulkan editor/runtime smoke and prove normal execution has zero unresolved frame graph counters or hard graph validation failures. |
+
 ## Stage 15 - Validation Milestone C: Renderer Facade, Frame Pipeline, Frame Graph
 
 Goal:
