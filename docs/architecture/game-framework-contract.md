@@ -12,7 +12,7 @@ GameFramework is the runtime owner for levels, scene entities/components, camera
 
 It must stay cooked-data oriented. Source import, authoring conversion, and cook algorithms belong in `Tools/`.
 
-Target folder structure for shared schemas and render handoff is tracked in [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md).
+Target folder structure for shared schemas and render handoff is tracked in [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md). Renderer-facing snapshot ownership is detailed in [render-scene-data-contract.md](render-scene-data-contract.md).
 
 Reference basis:
 
@@ -23,6 +23,7 @@ Reference basis:
 - Khronos glTF runtime asset delivery format: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 - Khronos KTX texture container/tooling model: https://github.com/KhronosGroup/KTX-Software
 - Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
+- Render scene data contract: [render-scene-data-contract.md](render-scene-data-contract.md)
 
 ## Ownership Summary
 
@@ -43,7 +44,7 @@ Reference basis:
 | --- | --- | --- |
 | GameFramework runtime world | Keep and refine | Preserve runtime scene, levels, components, gameplay-facing APIs, and cooked loading responsibilities. |
 | GameFramework as cooked schema owner | Improve and extract | Move shared producer/consumer schemas to `AssetContracts` when tools and runtime both need the type. |
-| Renderer-facing scene state | Improve and extract | Move handoff types to `RenderContracts` snapshots so Renderer does not consume mutable gameplay internals. |
+| Renderer-facing scene state | Improve and extract | Current Stage 13 handoff is `GameSceneSnapshot -> RenderSceneSnapshot`; later `RenderContracts` extraction can move shared snapshot schemas out of GameFramework/Renderer when tool/runtime consumers need the same types. |
 | Source asset handling in runtime | Replace or redesign | Do not add glTF/FBX/image parsing to GameFramework; source formats belong to `SourceImporters` and cookers. |
 | RHI-facing runtime asset data | Improve and extract | Keep only public GPU-adjacent descriptors needed for loading; route final GPU creation through Renderer/RHI contracts. |
 
@@ -89,7 +90,7 @@ flowchart LR
     AssetContracts[AssetContracts schemas]
     GameAssets[GameFramework asset loaders]
     Scene[GameScene and components]
-    Snapshot[RenderContracts snapshots]
+    Snapshot[RenderSceneSnapshot / RenderContracts snapshots]
     Renderer[Renderer SceneData builders]
     GPU[Renderer/RHI resources]
 
@@ -104,7 +105,7 @@ flowchart LR
 Rules:
 
 - GameFramework loads cooked data and exposes runtime scene snapshots.
-- Renderer converts snapshots into render-domain DTOs and GPU resources.
+- Renderer captures those snapshots into `RenderSceneSnapshot`, then converts them into render-domain DTOs and GPU resources.
 - Tools produce cooked assets using public cooked/runtime schemas.
 - RHI remains GPU/API-level; GameFramework should not receive descriptor, command-list, pipeline, or backend-native handles.
 

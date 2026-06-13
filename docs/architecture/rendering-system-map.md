@@ -25,6 +25,7 @@ Companion docs:
 - [GameFramework contract](game-framework-contract.md)
 - [Tooling and content pipeline contract](tooling-pipeline-contract.md)
 - [Rendering glossary](rendering-glossary.md)
+- [Render scene data contract](render-scene-data-contract.md)
 - [RHI contract map](rhi-contract-map.md)
 - [Frame graph contract](frame-graph-contract.md)
 - [Ray tracing contract](ray-tracing-contract.md)
@@ -105,7 +106,7 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | Renderer facade | Renderer | [Renderer.h](../../Engine/Renderer/Public/Renderer.h), [Renderer.cpp](../../Engine/Renderer/Private/Renderer.cpp) | Stable host-facing render lifecycle, diagnostics entry points, shader reload, RHI access, viewport presentation lifecycle, and viewport capture requests. | Subsystem construction, frame graph execution, backend implementation details, shader compiler internals, gameplay entity ownership, frame graph resource-state policy. |
 | Renderer system root | Renderer | [RendererSystemRoot.h](../../Engine/Renderer/Private/Host/RendererSystemRoot.h), [RendererSystemRoot.cpp](../../Engine/Renderer/Private/Host/RendererSystemRoot.cpp) | Renderer subsystem construction/lifetime: backend services, pipeline manager, feature systems, scene builders, caches, memory monitor, and post-load flush. | Per-frame graph execution, host API policy, backend-native implementation. |
 | Frame pipeline | Renderer | [FramePipeline.h](../../Engine/Renderer/Private/FramePipeline/FramePipeline.h), [FramePipeline.cpp](../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) | Begin/setup/record/submit/end frame, resize, frame graph lifetime, viewport products, viewport presentation bridge, frame diagnostics, frame context build, RT/upscaler frame handoff. | Subsystem construction/lifetime, backend command implementation, Application/editor UI policy. |
-| Scene bridge | Renderer | [SceneData](../../Engine/Renderer/Private/SceneData) | Immutable render-domain scene data built from game/editor state. | GPU resource creation policy outside mesh/material/texture feature systems. |
+| Scene bridge | Renderer | [SceneData](../../Engine/Renderer/Private/SceneData), [render-scene-data-contract.md](render-scene-data-contract.md) | Renderer-owned frame snapshot and render-domain scene data built from GameFramework snapshots. | Live gameplay mutation, source import/cook policy, GPU resource creation policy outside mesh/material/texture feature systems. |
 | Frame builders | Renderer | [Frame](../../Engine/Renderer/Private/Frame) | Per-frame camera, lighting, temporal, mesh, skinning, presentation, and pass composition data. | Pass shader binding internals or backend command encoding. |
 | Frame graph | Renderer | [FrameGraph](../../Engine/Renderer/Private/FrameGraph) | Pass/resource declaration, dependency compile, transient planning, barrier planning, execution order, diagnostics. | API-specific barriers beyond RHI `ResourceState` vocabulary. |
 | Passes | Renderer | [Passes](../../Engine/Renderer/Private/Passes) | Feature render work, pass parameters, graph resource use, command recording. | Backend-specific pipeline creation or renderer-wide shader package registry policy. |
@@ -272,11 +273,12 @@ Read in this order:
 
 1. [Rendering glossary](rendering-glossary.md)
 2. [Rendering coverage status](rendering-coverage-status.md)
-3. [RHI contract map](rhi-contract-map.md)
-4. [Frame graph contract](frame-graph-contract.md)
-5. [Pass authoring contract](pass-authoring-contract.md)
-6. [Pipeline runtime contract](pipeline-runtime-contract.md)
-7. [Ray tracing contract](ray-tracing-contract.md)
+3. [Render scene data contract](render-scene-data-contract.md)
+4. [RHI contract map](rhi-contract-map.md)
+5. [Frame graph contract](frame-graph-contract.md)
+6. [Pass authoring contract](pass-authoring-contract.md)
+7. [Pipeline runtime contract](pipeline-runtime-contract.md)
+8. [Ray tracing contract](ray-tracing-contract.md)
 
 Then inspect implementation:
 

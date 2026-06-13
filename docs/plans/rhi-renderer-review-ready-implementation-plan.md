@@ -1602,6 +1602,23 @@ Validation:
 
 - Defer full build to Stage 15.
 
+Completion evidence:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for snapshot-boundary tightening, ownership documentation, and targeted build validation. |
+| Target docs opened | [game-framework-contract.md](../architecture/game-framework-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md), [render-scene-data-contract.md](../architecture/render-scene-data-contract.md). |
+| Contract surfaces touched | RenderContracts-style scene handoff, GameFramework runtime snapshot contract, renderer scene/resource staging, mesh/texture/material/temporal diagnostics plan, folder architecture cleanup, and threading-readiness handoff shape. |
+| Ownership/disposition | Improve and extract renderer scene handoff. `RenderSceneSnapshot` is now a renderer-owned frame snapshot with explicit fields instead of inheriting the full GameFramework snapshot. Empty private denoising placeholder folder was removed. |
+| Folder and target plan | Current folders touched: `Engine/Renderer/Private/SceneData/Lifecycle`, `Engine/Renderer/Private/Denoising`, and architecture docs. Target owner remains Renderer scene data; no code moved into GameFramework, RHI private, tools, or Application. No CMake target split was required. |
+| Data transfer plan | GameFramework produces `GameSceneSnapshot`; Renderer captures it into `RenderSceneSnapshot`; scene builders consume camera, lighting, material, texture, mesh, animation/skinning, and temporal frame data from renderer-owned frame state. GPU work still transfers to RHI through public RHI descriptors/resources. |
+| Threading-readiness plan | Scene mutation stays in GameFramework. Renderer frame setup consumes an explicit snapshot copy. Temporal state remains renderer-owned. Future worker/cook/render-thread work can use the documented producer, frame snapshot, cache owner, diagnostics, and Stage 24 schema extraction plan. |
+| Source text discipline | No explanatory/provenance/planning comments were added to source. Existing source comments outside this stage were not expanded. |
+| Destination-fit proof | Snapshot ownership was reshaped instead of moved: `RenderSceneSnapshot` now names the exact renderer frame fields it owns. The empty private denoising folder was deleted because the actual integration point is the public shadow denoise contract plus frame graph resource registration. |
+| Acceptance evidence | [render-scene-data-contract.md](../architecture/render-scene-data-contract.md) names every current render-domain DTO owner and consumer; [RenderSceneSnapshot.h](../../Engine/Renderer/Private/SceneData/Lifecycle/RenderSceneSnapshot.h) no longer derives from `GameSceneSnapshot`; [rendering-coverage-status.md](../architecture/rendering-coverage-status.md) marks SceneData, Temporal, Textures, public mesh/resource diagnostics, and denoising decisions with Stage 13 evidence. |
+| Remaining pressure | Mesh snapshots still carry runtime `Mesh*` references because morph/dirty geometry and GPU cache keys depend on runtime mesh identity. This is documented as a Stage 24 `RenderContracts`/`AssetContracts` extraction pressure rather than hidden inside Stage 13. |
+| Validation evidence | `ShowcaseEditor` build and boundary/source-hygiene checks were run after implementation. Full D3D12/Vulkan smoke remains Stage 15. |
+
 ## Stage 14 - Harden Frame Graph Contract And Diagnostics
 
 Goal:

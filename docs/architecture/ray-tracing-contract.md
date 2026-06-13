@@ -185,7 +185,7 @@ Expected smoke evidence:
 | Direct lighting shader registration still mirrors pass package identity. | [DirectLightingShaders.cpp](../../Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp) declares the package while `DirectLightingPass` describes it for runtime. | Stage 17 |
 | Ray tracing contract was implicit. | Ownership spread across Renderer/RayTracing, Frame/RT frame data, FrameGraph AS import, RHI RT descs, and backend command lists. | Stage 2 |
 | Backend parity evidence is not final. | Need lit/debug captures and RT smoke for both APIs. | Stage 18, Stage 20 |
-| Denoiser ownership is still a decision. | Public denoise contract exists while private denoising folder is empty. | Stage 13, Stage 22 |
+| Denoiser ownership is still a decision. | Stage 13 removed the empty private denoising placeholder; the public shadow denoise contract remains the current integration point. | Stage 18, Stage 22 |
 
 ## Change Rules
 
