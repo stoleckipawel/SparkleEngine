@@ -9,6 +9,7 @@
 #include "Cooking/Cache/ShaderCompileOptionsHasher.h"
 #include "Cooking/ShaderCookPlanner.h"
 #include "Cooking/ShaderPackageCooker.h"
+#include "Compiler/ShaderCompileProfile.h"
 
 #include <format>
 
@@ -95,6 +96,15 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	}
 
 	const std::uint64_t optionsHash = ShaderCompileOptionsHasher::Compute(compileOptions);
+	const ShaderCacheKey cacheKey = ShaderCacheKey::Compute(
+	    package,
+	    stage,
+	    compileOptions,
+	    includeHashResult.sourceHash,
+	    includeHashResult.includeClosureHash,
+	    optionsHash,
+	    backendName,
+	    backend->GetBackendVersion());
 	plan.nodes.push_back(CookNode{
 	    .packageIndex = packageIndex,
 	    .stageIndex = stageIndex,
@@ -106,15 +116,19 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	    .sourceHash = includeHashResult.sourceHash,
 	    .includeClosureHash = includeHashResult.includeClosureHash,
 	    .optionsHash = optionsHash,
-	    .cacheKey = ShaderCacheKey::Compute(
-	        package,
-	        stage,
-	        compileOptions,
-	        includeHashResult.sourceHash,
-	        includeHashResult.includeClosureHash,
-	        optionsHash,
-	        backendName,
-	        backend->GetBackendVersion())});
+	    .cacheKey = cacheKey,
+	    .jobIdentity = ShaderContractJobIdentity{
+	        .packageId = package.packageId,
+	        .sourcePath = stage.sourcePath,
+	        .entryPoint = stage.entryPoint,
+	        .stage = stage.stage,
+	        .backendName = backendName,
+	        .targetName = GetShaderTargetName(target),
+	        .profileName = ShaderCompileProfile::BuildTargetProfile(compileOptions),
+	        .sourceHash = includeHashResult.sourceHash,
+	        .includeClosureHash = includeHashResult.includeClosureHash,
+	        .optionsHash = optionsHash,
+	        .jobKey = cacheKey.value}});
 
 	outErrorMessage.clear();
 	return true;

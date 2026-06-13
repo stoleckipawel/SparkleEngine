@@ -3023,6 +3023,17 @@ Validation:
 - Build `ShaderCompiler`.
 - Run `list-shaders`, package validation, and any available inspect command.
 
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed. |
+| Contract target | `Tools/Shaders/ShaderContracts` exists as a narrow shader contract target. It defines package catalog, stage, verification failure, and deterministic job identity DTOs without backend compiler implementation. |
+| Catalog ownership | `ShaderCompiler` builds a deterministic `ShaderContractCatalog` from the narrow renderer shader registration target. `list-shaders`, `inspect-shader`, validation, and cook planning consume the catalog instead of enumerating raw registrations directly. |
+| Renderer runtime decoupling | `ShaderCompiler` links `SparkleRendererShaderRegistrations`, not full `SparkleRenderer`; no `Engine/Renderer/Private` or `Renderer/Private` dependency exists in `ShaderCompiler` or `ShaderContracts`. |
+| Job identity | Cook nodes carry package id, source, entry point, stage, backend, target, profile, source hash, include-closure hash, options hash, and job key. Cook progress reports `jobKey`. |
+| Validation | `ShaderCompiler` built in `DevelopmentEditor`; `list-shaders`, `list-shaders --validate`, `inspect-shader Sky`, `cook --package Sky --target DxilSm66`, and `inspect-package` for the cooked Sky package exited `0`; repeated `list-shaders` output matched exactly; package inspection reported package key `0x82428E195CE838B6`, one DXIL binary, one reflection record, and one pipeline layout. |
+
 ## Stage 30 - AssetCooker, Launcher Workflow, And Host Boundary Refactor
 
 Goal:

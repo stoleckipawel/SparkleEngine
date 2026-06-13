@@ -167,12 +167,12 @@ Tools/
     MaterialCooker/
     SceneCooker/
     AssetCooker/
-    CookDiagnostics/
   Inspection/
     AssetInspector/
   Support/
     ToolConsoleSupport/
   Shaders/
+    ShaderContracts/
     ShaderCompiler/
   Launcher/
     SparkleLauncher/
@@ -250,7 +250,7 @@ flowchart TD
 | --- | --- | --- |
 | `Engine/Contracts/Asset` | Versioned cooked/imported schema contracts shared by tools and runtime. | Source import algorithms, runtime loader bodies, renderer resource caches. |
 | `Engine/Contracts/Render` | Immutable renderer-facing snapshots, viewport products, render-domain DTOs. | Frame graph internals, pass code, gameplay mutation. |
-| `Engine/Contracts/Shader` | Pass catalog records, shader package manifests, reflection/binding schema shared by Renderer and ShaderCompiler. | Renderer runtime execution, backend compiler implementation, RHI pass ownership. |
+| `Tools/Shaders/ShaderContracts` | Shader catalog, package, verification failure, and deterministic job identity DTOs consumed by ShaderCompiler and future pass tooling. | Backend compiler implementation, renderer runtime execution, or duplicate pass policy. |
 | `Engine/Contracts/Threading` | Optional future home for public job, command-batch, queue-packet, or report primitives once real callers exist. | A premature global job system, hidden scheduler policy, or domain-specific mutable owner state. |
 | `Tools/Contracts` | Process requests, tool reports, artifact reports, operation history records. | Engine runtime schemas or GUI widget logic. |
 | `Engine/RHI/Private/Services` | API-neutral GPU service implementations that back public RHI contracts. | Renderer pass names, GameFramework scene data, source/cook policy. |

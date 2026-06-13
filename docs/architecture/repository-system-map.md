@@ -192,7 +192,7 @@ This table applies the keep/improve/replace rule to the current source roots. It
 | [Engine/Editor](../../Engine/Editor) | Improve and extract | Keep editor UI; prevent cook/import/backend logic from living in panels. | Editor UI models/panels |
 | [Engine/Application](../../Engine/Application) | Improve and extract | Keep host orchestration; move backend-native capture/readback behind RHI/backend services. | Host validation orchestrator |
 | [Engine/Assets](../../Engine/Assets) | Replace or redesign | Narrow to built-in engine assets with manifest/validation, or move shaders/data to owner-specific roots. | `Engine/Assets/BuiltIn` or owner-specific shader/data roots |
-| [Tools/Shaders/ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Improve and extract | Consume shader/pass contracts, not renderer runtime. | `ShaderCompiler` + `ShaderContracts` |
+| [Tools/Shaders/ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Keep and refine | Consume `ShaderContracts` plus the narrow renderer shader registration target, not renderer runtime. | `ShaderCompiler` + `ShaderContracts` |
 | [Tools/Import/SourceImporters](../../Tools/Import/SourceImporters) | Keep and refine | Role-centered focused source importers emit imported DTOs and reports. | `SourceImporters` |
 | Focused cookers under [Tools/Cooking](../../Tools/Cooking) | Keep and refine | Keep focused transformations; tighten schemas, diagnostics, and inspectors. | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` |
 | [Tools/Cooking/AssetCooker](../../Tools/Cooking/AssetCooker) | Improve and extract | Keep orchestration only; remove duplicated cook algorithms. | `AssetCooker` |

@@ -58,8 +58,9 @@ void ShaderCookProgressReporter::PrintStageProgress(
 	    plan.nodes.size(),
 	    node.package->packageId,
 	    {ToolConsole::Field("status", std::string(status)),
-	     ToolConsole::Field("stage", GetShaderStagePrefix(node.stage->stage)),
-	     ToolConsole::Field("target", GetShaderTargetName(node.compileOptions.Target)),
+	     ToolConsole::Field("stage", GetShaderStagePrefix(node.jobIdentity.stage)),
+	     ToolConsole::Field("target", node.jobIdentity.targetName),
 	     ToolConsole::QuotedField("backend", std::string(backendName)),
-	     ToolConsole::QuotedField("source", node.stage->sourcePath.generic_string())});
+	     ToolConsole::QuotedField("source", node.jobIdentity.sourcePath.generic_string()),
+	     ToolConsole::Field("jobKey", node.cacheKey.ToHex())});
 }

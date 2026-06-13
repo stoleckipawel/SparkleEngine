@@ -3,9 +3,10 @@
 #include "Cli/InspectShaderCommand.h"
 
 #include "Constants/ShaderCompilerConstants.h"
-#include "Shaders/Authoring/GlobalShader.h"
+#include "Contracts/ShaderContractCatalogBuilder.h"
 
 #include <iostream>
+#include <string>
 
 int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 {
@@ -15,35 +16,30 @@ int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 		return kExitCodeUsage;
 	}
 
-	bool foundTypedShader = false;
-	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
+	std::string errorMessage;
+	ShaderContractCatalog catalog =
+	    ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind::ShaderId, args[0], errorMessage);
+	if (!errorMessage.empty())
 	{
-		const std::string packageName = GetShaderRegistrationPackageId(shader);
-		if (packageName != args[0] && shader.ShaderName != args[0])
-		{
-			continue;
-		}
-
-		if (!foundTypedShader)
-		{
-			std::cout << "Typed shader package '" << packageName << "'\n";
-			std::cout << "  bindingLayout='" << GetShaderRegistrationBindingLayoutId(shader) << "'\n";
-		}
-		foundTypedShader = true;
-
-		const ShaderParameterStructDescriptor parameters =
-		    shader.BuildParameterStructDescriptor != nullptr ? shader.BuildParameterStructDescriptor() : ShaderParameterStructDescriptor{};
-
-		std::cout << "  shader='" << shader.ShaderName << "' " << GetShaderStagePrefix(shader.Stage)
-		          << ": " << shader.SourcePath << " entry=" << shader.EntryPoint
-		          << " parameters=" << parameters.Fields.size() << "\n";
+		catalog = ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind::PackageId, args[0], errorMessage);
+	}
+	if (!errorMessage.empty())
+	{
+		std::cerr << "ShaderCompiler: unknown shader id '" << args[0] << "'\n";
+		return kExitCodeUsage;
 	}
 
-	if (foundTypedShader)
+	for (const ShaderContractPackage& package : catalog.packages)
 	{
-		return kExitCodeSuccess;
+		std::cout << "Typed shader package '" << package.packageId << "'\n";
+		std::cout << "  bindingLayout='" << package.bindingLayoutId << "'\n";
+		for (const ShaderContractStage& stage : package.stages)
+		{
+			std::cout << "  shader='" << stage.shaderName << "' " << GetShaderStagePrefix(stage.stage)
+			          << ": " << stage.sourcePath.generic_string() << " entry=" << stage.entryPoint
+			          << " parameters=" << stage.parameterStruct.Fields.size() << "\n";
+		}
 	}
 
-	std::cerr << "ShaderCompiler: unknown shader id '" << args[0] << "'\n";
-	return kExitCodeUsage;
+	return kExitCodeSuccess;
 }

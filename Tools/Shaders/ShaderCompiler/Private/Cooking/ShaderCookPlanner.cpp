@@ -6,8 +6,7 @@
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "Shaders/Authoring/GlobalShader.h"
-#include "Shaders/ShaderPackageLayoutBuilder.h"
+#include "Contracts/ShaderContractCatalogBuilder.h"
 
 #include <algorithm>
 #include <format>
@@ -91,21 +90,29 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildPackages(
 std::optional<ShaderParameterStructDescriptor> ShaderCookPlanner::FindParameterStructDescriptor(
 	const ShaderCompileOptions& options)
 {
-	const std::string sourcePath = options.SourcePath.generic_string();
-	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
+	std::string errorMessage;
+	const ShaderContractCatalog catalog =
+	    ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind::All, {}, errorMessage);
+	if (!errorMessage.empty())
 	{
-		const std::string registeredSourcePath(shader.SourcePath);
+		return std::nullopt;
+	}
+
+	const std::string sourcePath = options.SourcePath.generic_string();
+	for (const ShaderContractStage& stage : catalog.stages)
+	{
+		const std::string registeredSourcePath = stage.sourcePath.generic_string();
 		const bool sourceMatches = sourcePath == registeredSourcePath || sourcePath.ends_with("/" + registeredSourcePath);
-		if (shader.Stage != options.Stage || shader.PackageKind != options.PackageKind || shader.EntryPoint != options.EntryPoint || !sourceMatches)
+		if (stage.stage != options.Stage || stage.packageKind != options.PackageKind || stage.entryPoint != options.EntryPoint || !sourceMatches)
 		{
 			continue;
 		}
 
-		if (shader.BuildParameterStructDescriptor == nullptr)
+		if (!stage.hasParameterStruct)
 		{
 			return ShaderParameterStructDescriptor{};
 		}
-		return shader.BuildParameterStructDescriptor();
+		return stage.parameterStruct;
 	}
 
 	return std::nullopt;
@@ -119,134 +126,91 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 	std::vector<ShaderCookPackageDesc> packages;
 	std::unordered_map<std::string, std::size_t> packageIndices;
 	const std::string requested(requestedId);
-	std::vector<const ShaderRegistrationDesc*> selectedShaders;
-
-	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
+	const ShaderContractSelectionKind contractSelectionKind =
+	    selectionKind == CookSelectionKind::PackageId ? ShaderContractSelectionKind::PackageId :
+	    selectionKind == CookSelectionKind::ShaderId   ? ShaderContractSelectionKind::ShaderId :
+	                                                    ShaderContractSelectionKind::All;
+	const ShaderContractCatalog catalog =
+	    ShaderContractCatalogBuilder::Build(contractSelectionKind, requested, outErrorMessage);
+	if (!outErrorMessage.empty())
 	{
-		const std::string packageId = GetShaderRegistrationPackageId(shader);
-		const std::string shaderName(shader.ShaderName);
-		const bool selected =
-		    selectionKind == CookSelectionKind::All ||
-		    (selectionKind == CookSelectionKind::PackageId && packageId == requested) ||
-		    (selectionKind == CookSelectionKind::ShaderId && shaderName == requested);
-		if (!selected)
-		{
-			continue;
-		}
-
-		selectedShaders.push_back(&shader);
+		return {};
 	}
 
-	for (const ShaderRegistrationDesc* shaderPtr : selectedShaders)
+	for (const ShaderContractPackage& contractPackage : catalog.packages)
 	{
-		const ShaderRegistrationDesc& shader = *shaderPtr;
-		const std::string packageId = GetShaderRegistrationPackageId(shader);
-		const std::string rayTracingExportName =
-		    shader.RayTracingExportName.empty() ? std::string(shader.EntryPoint) : std::string(shader.RayTracingExportName);
-		const std::string bindingLayoutId(GetShaderRegistrationBindingLayoutId(shader));
+		const std::string& packageId = contractPackage.packageId;
 		auto packageIt = packageIndices.find(packageId);
 		if (packageIt == packageIndices.end())
 		{
-			PassParameterLayout bindingLayout;
-			if (!ShaderPackageLayoutBuilder::Build(packageId, GlobalShaderRegistry::GetRegistrations(), bindingLayout, outErrorMessage))
-			{
-				return {};
-			}
-
 			ShaderCookPackageDesc package;
 			package.packageId = packageId;
-			package.bindingLayoutId = bindingLayoutId;
-			package.bindingLayout = std::move(bindingLayout);
-			package.packageKind = shader.PackageKind;
-			package.packageFeatures = shader.PackageFeatures;
-			package.rayTracingPayloadSizeInBytes = shader.RayTracingPayloadSizeInBytes;
-			package.rayTracingAttributeSizeInBytes = shader.RayTracingAttributeSizeInBytes;
-			package.rayTracingMaxRecursionDepth = shader.RayTracingMaxRecursionDepth;
+			package.bindingLayoutId = contractPackage.bindingLayoutId;
+			package.bindingLayout = contractPackage.bindingLayout;
+			package.packageKind = contractPackage.packageKind;
+			package.packageFeatures = contractPackage.packageFeatures;
+			package.rayTracingPayloadSizeInBytes = contractPackage.rayTracingPayloadSizeInBytes;
+			package.rayTracingAttributeSizeInBytes = contractPackage.rayTracingAttributeSizeInBytes;
+			package.rayTracingMaxRecursionDepth = contractPackage.rayTracingMaxRecursionDepth;
 			packages.push_back(std::move(package));
 			packageIt = packageIndices.emplace(packageId, packages.size() - 1).first;
 		}
 
 		ShaderCookPackageDesc& package = packages[packageIt->second];
-		if (package.bindingLayoutId != bindingLayoutId)
+		if (package.bindingLayoutId != contractPackage.bindingLayoutId)
 		{
 			outErrorMessage = std::format(
 			    "Typed shader package '{}' mixes binding layouts '{}' and '{}'",
 			    packageId,
 			    package.bindingLayoutId,
-			    bindingLayoutId);
+			    contractPackage.bindingLayoutId);
 			return {};
 		}
-		if (package.packageKind != shader.PackageKind)
+		if (package.packageKind != contractPackage.packageKind)
 		{
 			outErrorMessage = std::format(
 			    "Typed shader package '{}' mixes package kinds {} and {}",
 			    packageId,
 			    static_cast<std::uint32_t>(package.packageKind),
-			    static_cast<std::uint32_t>(shader.PackageKind));
+			    static_cast<std::uint32_t>(contractPackage.packageKind));
 			return {};
 		}
-		package.packageFeatures |= shader.PackageFeatures;
-		package.rayTracingPayloadSizeInBytes = std::max(package.rayTracingPayloadSizeInBytes, shader.RayTracingPayloadSizeInBytes);
-		package.rayTracingAttributeSizeInBytes = std::max(package.rayTracingAttributeSizeInBytes, shader.RayTracingAttributeSizeInBytes);
-		package.rayTracingMaxRecursionDepth = std::max(package.rayTracingMaxRecursionDepth, shader.RayTracingMaxRecursionDepth);
-
-		const std::uint32_t stageIndex = static_cast<std::uint32_t>(package.stages.size());
-		package.stages.push_back(ShaderCookStageDesc{
-		    .stage = shader.Stage,
-		    .sourcePath = std::filesystem::path(std::string(shader.SourcePath)),
-		    .entryPoint = std::string(shader.EntryPoint),
-		    .packageKind = shader.PackageKind,
-		    .packageFeatures = shader.PackageFeatures,
-		    .rayTracingExportKind = shader.RayTracingExportKind,
-		    .rayTracingExportName = rayTracingExportName});
-
-		if (shader.PackageKind == CookedShaderPackageKind::RayTracingLibrary)
+		for (const ShaderContractStage& stage : contractPackage.stages)
 		{
-			package.rayTracingExports.push_back(ShaderCookRayTracingExportDesc{
-			    .exportLookupName = rayTracingExportName,
-			    .kind = shader.RayTracingExportKind,
-			    .exportName = rayTracingExportName,
-			    .entryPoint = std::string(shader.EntryPoint),
-			    .stageIndex = stageIndex});
-		}
-	}
+			const std::uint32_t stageIndex = static_cast<std::uint32_t>(package.stages.size());
+			package.stages.push_back(ShaderCookStageDesc{
+			    .stage = stage.stage,
+			    .sourcePath = stage.sourcePath,
+			    .entryPoint = stage.entryPoint,
+			    .packageKind = stage.packageKind,
+			    .packageFeatures = stage.packageFeatures,
+			    .rayTracingExportKind = stage.rayTracingExportKind,
+			    .rayTracingExportName = stage.rayTracingExportName});
 
-	for (const RayTracingHitGroupRegistrationDesc& hitGroup : GlobalShaderRegistry::GetRayTracingHitGroups())
-	{
-		const std::string packageId(hitGroup.PackageName);
-		const bool wholePackageSelected = selectionKind == CookSelectionKind::All ||
-		    (selectionKind == CookSelectionKind::PackageId && packageId == requested);
-		if (!wholePackageSelected)
-		{
-			continue;
-		}
-
-		for (ShaderCookPackageDesc& package : packages)
-		{
-			if (package.packageId != packageId)
+			if (stage.packageKind == CookedShaderPackageKind::RayTracingLibrary)
 			{
-				continue;
+				package.rayTracingExports.push_back(ShaderCookRayTracingExportDesc{
+				    .exportLookupName = stage.rayTracingExportName,
+				    .kind = stage.rayTracingExportKind,
+				    .exportName = stage.rayTracingExportName,
+				    .entryPoint = stage.entryPoint,
+				    .stageIndex = stageIndex});
 			}
+		}
+
+		for (const ShaderContractRayTracingHitGroup& hitGroup : contractPackage.rayTracingHitGroups)
+		{
 			if (package.packageKind != CookedShaderPackageKind::RayTracingLibrary)
 			{
-				outErrorMessage = std::format("Ray tracing hit group '{}' targets non-RT shader package '{}'", hitGroup.HitGroupName, packageId);
+				outErrorMessage = std::format("Ray tracing hit group '{}' targets non-RT shader package '{}'", hitGroup.name, packageId);
 				return {};
 			}
-
 			package.rayTracingHitGroups.push_back(ShaderCookRayTracingHitGroupDesc{
-			    .name = std::string(hitGroup.HitGroupName),
-			    .closestHitExportName = std::string(hitGroup.ClosestHitExportName),
-			    .anyHitExportName = std::string(hitGroup.AnyHitExportName),
-			    .intersectionExportName = std::string(hitGroup.IntersectionExportName)});
+			    .name = hitGroup.name,
+			    .closestHitExportName = hitGroup.closestHitExportName,
+			    .anyHitExportName = hitGroup.anyHitExportName,
+			    .intersectionExportName = hitGroup.intersectionExportName});
 		}
-	}
-
-	if (selectionKind != CookSelectionKind::All && packages.empty())
-	{
-		outErrorMessage = selectionKind == CookSelectionKind::PackageId
-		    ? "Unknown typed shader package '" + requested + "'"
-		    : "Unknown registered shader id '" + requested + "'";
-		return {};
 	}
 
 	outErrorMessage.clear();

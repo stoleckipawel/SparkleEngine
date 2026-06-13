@@ -50,7 +50,7 @@ Tooling is refactored through active implementation stages, not only final audit
 | Stage 17B | Pass authoring workflow tooling | A pass-add audit and scaffolder/generator workflow reduce ordinary compute/raster pass authoring to intentional shader, pass intent, and frame insertion inputs while preserving ShaderCompiler validation. |
 | Stage 27 | Source import | `SourceImporters` is the production source import target; importers emit imported DTOs, import reports, and diagnostics. |
 | Stage 28 | Focused cookers and support | Texture/Mesh/Material/Scene cookers own transformations; generic console support lives in `ToolConsoleSupport`; cook-domain diagnostics stay with focused cookers until a shared diagnostics target is justified. |
-| Stage 29 | ShaderCompiler | ShaderCompiler consumes `ShaderContracts` and emits deterministic package/reflection reports without full renderer runtime linkage. |
+| Stage 29 | ShaderCompiler | ShaderCompiler consumes `ShaderContracts` and emits deterministic package/reflection reports without full renderer runtime linkage. Completed with deterministic catalog, job identity, validation, cook, and inspect evidence. |
 | Stage 30 | AssetCooker, AssetConverter, Launcher, hosts | AssetCooker owns orchestration/reports; AssetConverter stops being a production path; LauncherCore/Qt GUI/Application/Editor boundaries are enforced. |
 | Stage 31 | Artifact validation | Shader and cooked artifacts gain producer/schema/consumer/inspector/smoke evidence. |
 | Stage 32 | Projects and engine assets | Sample content and built-in assets become owned validation inputs, not ambiguous file roots. |
@@ -62,7 +62,7 @@ Tooling is refactored through active implementation stages, not only final audit
 | --- | --- | --- |
 | `SparkleLauncherCore` | Improve and extract | Keep as workflow/process orchestrator; route data through `ToolContracts` request/report/history types. |
 | SparkleLauncher Qt GUI | Keep and refine | Preserve the model/view-style split; widgets do not own cook/build/shader algorithms. |
-| `ShaderCompiler` | Improve and extract | Consume generated/manifest shader registration records, pass authoring manifests, then longer-term `ShaderContracts` pass catalogs/manifests and generic package schemas, not full renderer runtime. |
+| `ShaderCompiler` | Keep and refine | Consume `ShaderContracts`, narrow renderer shader registrations, and generic package schemas, not full renderer runtime. |
 | `SourceImporters` | Keep and refine | Per-format importers emit imported DTOs, import reports, and diagnostics through a role-centered target. |
 | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Keep and refine | Preserve focused tools; improve schemas, inspectors, and failure reports. |
 | `AssetCooker` | Improve and extract | Keep project discovery/planning/dispatch; remove any duplicated focused cooker transformations. |
@@ -78,7 +78,7 @@ Tooling is refactored through active implementation stages, not only final audit
 | `Tools/Cooking/AssetCooker` | Keep project discovery, plan construction, dispatch, aggregation, and reports. | Do not duplicate focused cooker algorithms. |
 | `Tools/Support/ToolConsoleSupport` | Keep generic console/report plumbing here. | Do not add asset, shader, project, launcher, source import, or cook-domain policy. |
 | `Tools/Conversion/AssetConverter` | Remove as production path; useful read-only commands move to `Tools/Inspection/AssetInspector` or explicit AssetCooker inspect/debug subcommands. | Do not replace it with another generic conversion folder. |
-| `Tools/Shaders/ShaderCompiler` | Keep as shader compile/reflection/package/inspection tool; consume `Engine/Contracts/Shader`. | Do not link full renderer runtime for package enumeration. |
+| `Tools/Shaders/ShaderCompiler` | Keep as shader compile/reflection/package/inspection tool; consume `Tools/Shaders/ShaderContracts` and public RHI shader package primitives. | Do not link full renderer runtime for package enumeration. |
 | `Tools/Launcher/SparkleLauncher/Private/Core` | Keep workflow/process/evidence ownership here or in a clear `Private/Workflows` grouping. | Do not create cooker/compiler implementation folders under Launcher. |
 | `Tools/Launcher/SparkleLauncher/Private/Gui` | Keep Qt models/widgets/presentation here. | Do not let GUI folders own tool algorithms. |
 | `Tools/Contracts` | Target home for process requests, tool reports, artifact reports, and operation history records. | Do not put engine runtime asset schemas here. |

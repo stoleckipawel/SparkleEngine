@@ -25,6 +25,7 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
 endif()
 
 if(SPARKLE_ENABLE_SHADER_COMPILER)
+	add_subdirectory(Shaders/ShaderContracts)
 	add_subdirectory(Shaders/ShaderCompiler)
 endif()
 
