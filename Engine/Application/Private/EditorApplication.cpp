@@ -34,7 +34,7 @@ void EditorApplication::Initialize()
 	}
 
 	m_runtimeApplication->Initialize();
-	m_runtimeApplication->GetInputSystem().SetAutomaticImGuiCaptureEnabled(false);
+	m_runtimeApplication->GetInputSystem().ClearInputCaptureQuery();
 	m_runtimeApplication->GetInputSystem().BeginInputRoutingFrame(false, false);
 
 	if (!m_ui)
@@ -137,7 +137,6 @@ void EditorApplication::Shutdown()
 	}
 
 	m_ui.reset();
-	m_runtimeApplication->GetInputSystem().SetAutomaticImGuiCaptureEnabled(true);
 	m_runtimeApplication->Shutdown();
 	m_isEditorSessionActive = false;
 }

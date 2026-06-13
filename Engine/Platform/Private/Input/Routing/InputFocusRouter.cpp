@@ -9,7 +9,7 @@ void InputFocusRouter::BeginFrame(bool interactionDisabled, bool textInputActive
 	m_textInputActive = textInputActive;
 	if (m_interactionDisabled)
 	{
-		m_activeTargetLayer = InputLayer::Editor;
+		m_activeTargetLayer = InputLayer::UI;
 	}
 }
 
@@ -36,7 +36,7 @@ InputLayer InputFocusRouter::ResolveTargetLayer(const InputBackendResult& result
 
 	if (m_interactionDisabled)
 	{
-		return InputLayer::Editor;
+		return InputLayer::UI;
 	}
 
 	switch (result.Type)
@@ -59,7 +59,7 @@ InputLayer InputFocusRouter::ResolveTargetLayer(const InputBackendResult& result
 		case InputEventType::Keyboard:
 			if (m_textInputActive && m_activeTargetLayer != InputLayer::Gameplay)
 			{
-				return InputLayer::Editor;
+				return InputLayer::UI;
 			}
 			return GetActiveTargetLayer();
 		default:
@@ -78,7 +78,7 @@ InputLayer InputFocusRouter::GetActiveTargetLayer() const noexcept
 
 	if (m_interactionDisabled)
 	{
-		return InputLayer::Editor;
+		return InputLayer::UI;
 	}
 
 	return m_activeTargetLayer;
@@ -106,15 +106,15 @@ InputLayer InputFocusRouter::ResolvePointTarget(MousePosition position) const no
 		}
 	}
 
-	return InputLayer::Editor;
+	return InputLayer::UI;
 }
 
 InputLayer InputFocusRouter::ResolveMouseMoveTarget(MousePosition position) const noexcept
 {
 	if (m_activeTargetLayer != InputLayer::Gameplay)
 	{
-		return InputLayer::Editor;
+		return InputLayer::UI;
 	}
 
-	return ResolvePointTarget(position) == InputLayer::Gameplay ? InputLayer::Gameplay : InputLayer::Editor;
+	return ResolvePointTarget(position) == InputLayer::Gameplay ? InputLayer::Gameplay : InputLayer::UI;
 }

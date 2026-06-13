@@ -8,9 +8,9 @@
 #endif
 #include <Windows.h>
 
-#include <imgui.h>
 #include <algorithm>
 #include <cstdio>
+#include <utility>
 
 std::unique_ptr<InputSystem> InputSystem::Create()
 {
@@ -58,11 +58,10 @@ void InputSystem::EndFrame()
 
 void InputSystem::ProcessDeferredEvents()
 {
-	if (m_automaticImGuiCaptureEnabled)
+	if (m_captureQuery)
 	{
-		const ImGuiContext* currentContext = ImGui::GetCurrentContext();
-		const bool wantsCaptureInput = currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
-		SetActiveLayer(wantsCaptureInput ? InputLayer::Editor : InputLayer::Gameplay);
+		const bool wantsCaptureInput = m_captureQuery();
+		SetActiveLayer(wantsCaptureInput ? InputLayer::UI : InputLayer::Gameplay);
 	}
 
 	ProcessDeferredEventsForType<KeyboardEvent>();
@@ -197,9 +196,14 @@ void InputSystem::SetLayerEnabled(InputLayer Layer, bool bEnabled)
 	}
 }
 
-void InputSystem::SetAutomaticImGuiCaptureEnabled(bool enabled) noexcept
+void InputSystem::SetInputCaptureQuery(InputCaptureQuery query) noexcept
 {
-	m_automaticImGuiCaptureEnabled = enabled;
+	m_captureQuery = std::move(query);
+}
+
+void InputSystem::ClearInputCaptureQuery() noexcept
+{
+	m_captureQuery = {};
 }
 
 bool InputSystem::IsLayerEnabled(InputLayer Layer) const noexcept

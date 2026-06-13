@@ -51,7 +51,6 @@ target_link_libraries(SparklePlatform
     PUBLIC 
         SparkleCore
     PRIVATE
-        imgui
         dwmapi
 )
 

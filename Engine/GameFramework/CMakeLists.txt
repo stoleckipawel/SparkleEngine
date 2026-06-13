@@ -1,12 +1,3 @@
-# SparkleGameFramework Module (SparkleEngine.dll)
-# Game framework: World, Entities, Components, Scene, Camera, Cooked Meshes, Assets
-# Dependencies: SparkleCore, SparklePlatform, shared render config from SparkleRHI
-# Runtime scene loading here is cooked-data only. Source import and authoring
-# workflows must remain outside runtime modules and under tool-side ownership.
-#
-# This corresponds to "SparkleEngine.dll" in the Unreal-style architecture.
-# It contains the high-level game systems .
-
 file(GLOB_RECURSE SPARKLE_GAMEFRAMEWORK_PUBLIC_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h
 )
@@ -56,12 +47,10 @@ sparkle_target_precompile_headers(SparkleGameFramework
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
-# GameFramework depends on lower-level modules only and the shared render config owner (NO Renderer)
 target_link_libraries(SparkleGameFramework
     PUBLIC
         SparkleCore
         SparklePlatform
-        SparkleRHI
 )
 
 sparkle_configure_runtime_support_artifacts(SparkleGameFramework)

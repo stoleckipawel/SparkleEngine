@@ -14,15 +14,14 @@ namespace RenderLightingBuilder
 	void Build(const LightingSnapshot& lightingSnapshot, RenderSceneData& sceneData) noexcept
 	{
 		sceneData.directionalLights.clear();
-		sceneData.directionalLights.reserve(lightingSnapshot.directionalLightCount);
+		sceneData.directionalLights.reserve(lightingSnapshot.directionalLights.size());
 		sceneData.pointLights.clear();
-		sceneData.pointLights.reserve(lightingSnapshot.pointLightCount);
+		sceneData.pointLights.reserve(lightingSnapshot.pointLights.size());
 		sceneData.spotLights.clear();
-		sceneData.spotLights.reserve(lightingSnapshot.spotLightCount);
+		sceneData.spotLights.reserve(lightingSnapshot.spotLights.size());
 
-		for (std::size_t lightIndex = 0; lightIndex < lightingSnapshot.directionalLightCount; ++lightIndex)
+		for (const DirectionalLightDesc& light : lightingSnapshot.directionalLights)
 		{
-			const DirectionalLightDesc& light = lightingSnapshot.directionalLights[lightIndex];
 			DirectionalLight renderLight = {};
 			renderLight.direction = light.direction;
 			renderLight.intensity = light.intensity;
@@ -32,9 +31,8 @@ namespace RenderLightingBuilder
 			sceneData.directionalLights.push_back(renderLight);
 		}
 
-		for (std::size_t lightIndex = 0; lightIndex < lightingSnapshot.pointLightCount; ++lightIndex)
+		for (const PointLightSnapshotDesc& light : lightingSnapshot.pointLights)
 		{
-			const PointLightSnapshotDesc& light = lightingSnapshot.pointLights[lightIndex];
 			PointLight renderLight = {};
 			renderLight.position = light.position;
 			renderLight.range = light.range;
@@ -45,9 +43,8 @@ namespace RenderLightingBuilder
 			sceneData.pointLights.push_back(renderLight);
 		}
 
-		for (std::size_t lightIndex = 0; lightIndex < lightingSnapshot.spotLightCount; ++lightIndex)
+		for (const SpotLightSnapshotDesc& light : lightingSnapshot.spotLights)
 		{
-			const SpotLightSnapshotDesc& light = lightingSnapshot.spotLights[lightIndex];
 			SpotLight renderLight = {};
 			renderLight.position = light.position;
 			renderLight.range = light.range;

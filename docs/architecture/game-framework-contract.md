@@ -14,6 +14,8 @@ It must stay cooked-data oriented. Source import, authoring conversion, and cook
 
 Target folder structure for shared schemas and render handoff is tracked in [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md). Renderer-facing snapshot ownership is detailed in [render-scene-data-contract.md](render-scene-data-contract.md).
 
+Stage 25 removed the full `SparkleRHI` dependency from `SparkleGameFramework` and kept lighting limits out of GameFramework. Runtime lighting snapshots are dynamic scene data; fixed light capacities remain renderer/RHI GPU packing policy.
+
 Reference basis:
 
 - NVIDIA Donut scene/component framework above NVRHI: https://github.com/NVIDIA-RTX/Donut
@@ -44,7 +46,7 @@ GameFramework work is routed through active implementation stages:
 
 | Stage | Scope | Required outcome |
 | --- | --- | --- |
-| Stage 25 | Runtime scene, render handoff, shared schema ownership | GameFramework remains runtime/cooked-data owned; shared producer/consumer schemas move toward `AssetContracts` and renderer handoff moves toward `RenderContracts` when current callers need it. |
+| Stage 25 | Runtime scene, render handoff, shared schema ownership | GameFramework remains runtime/cooked-data owned; lighting snapshots became dynamic scene data; GameFramework no longer links the full RHI target. |
 | Stage 26 | Runtime cooked asset loaders and schema pairing | Mesh/material/texture/scene/animation/skeleton loader expectations are paired with producer cookers, renderer consumers, and validation/inspection evidence. |
 | Stage 31 | Artifact validation matrix | Cooked artifacts name producer, schema owner, runtime consumer, inspector, and smoke/load evidence. |
 | Stage 34-36 | Final evidence, threading readiness, cleanup | GameFramework has no tool-private, renderer-private, backend-private, or ambiguous schema ownership left unaccepted. |
@@ -64,7 +66,7 @@ GameFramework work is routed through active implementation stages:
 | Current pressure | Target folder rule | Cleanup rule |
 | --- | --- | --- |
 | Shared cooked schemas in GameFramework | Move tool/runtime shared records to `Engine/Contracts/Asset` when cookers and runtime both need them. | Do not let GameFramework become the schema dumping ground for tools. |
-| Renderer-facing scene handoff | Move immutable snapshot/viewport/product types to `Engine/Contracts/Render` when Renderer and hosts consume them. | Do not let Renderer include GameFramework private scene/component folders. |
+| Renderer-facing scene handoff | Move immutable snapshot/viewport/product types to `Engine/Contracts/Render` only when the shared type is real domain data. Stage 25 rejected a contract target for numeric light limits because they are GPU packing policy. | Do not let Renderer include GameFramework private scene/component folders. |
 | Source import assumptions | Keep source-format handling in `Tools/Import/SourceImporters` and focused cookers. | Do not create glTF/FBX/image importer folders under GameFramework. |
 | Runtime loaders | Keep loader bodies in GameFramework private folders and expose only public runtime/cooked contracts. | Do not make tools depend on private loader folders. |
 | Project/sample content | Keep project content under `Projects/*/Data` and `Projects/*/Shaders`. | Do not put project validation content under GameFramework. |
@@ -84,7 +86,7 @@ GameFramework may depend on:
 
 - `SparkleCore` for foundation types, diagnostics, files, math, IDs, strings, and events.
 - `SparklePlatform` for runtime host/platform concepts already exposed through the module.
-- Stable public `AssetContracts`, `RenderContracts`, and narrow RHI data contracts that currently own cooked GPU-adjacent types. Direct RHI use must not grow into descriptors, command recording, backend-native handles, or renderer pass ownership.
+- Stable public `AssetContracts` and `RenderContracts`. Direct RHI target dependencies are not part of the Stage 25 GameFramework boundary; if a future cooked GPU-adjacent type needs to be shared, extract it to a narrow contract owner instead of linking the full RHI implementation target.
 
 GameFramework must not depend on:
 

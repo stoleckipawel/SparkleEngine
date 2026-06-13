@@ -59,13 +59,13 @@ namespace
 
 		for (uint32_t depth = 0; depth < 8 && !currentDir.empty(); ++depth)
 		{
-			const bool hasLauncher = std::filesystem::exists(currentDir / "SparkleLauncher.exe", ec);
+			const bool hasPackageRoot = std::filesystem::exists(currentDir / Filesystem::kWorkspaceMarker, ec);
 			ec.clear();
 			const bool hasPackageManifest = std::filesystem::exists(currentDir / "manifests" / "sparkle-package-manifest.json", ec);
 			ec.clear();
 			const bool hasProjects = std::filesystem::exists(currentDir / "Projects", ec);
 			ec.clear();
-			if (hasLauncher && hasPackageManifest && hasProjects)
+			if (hasPackageRoot && hasPackageManifest && hasProjects)
 			{
 				return Paths::Normalize(currentDir);
 			}

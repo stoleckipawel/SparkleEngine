@@ -56,9 +56,9 @@ These sources are used as calibration points for the target shape:
 
 | Plane | Threading-ready owner | Mutable state rule | Handoff contract | Later parallelism enabled |
 | --- | --- | --- | --- | --- |
-| Core | Foundation primitives only | No domain policy or hidden global scheduler. | Small value types, diagnostics, optional future task primitives. | Shared low-level utilities without cross-module policy leaks. |
-| Platform | OS/window/input owner | UI/window events stay host-owned and are copied into runtime requests. | Input/event snapshots or host requests. | Main-thread host loop plus worker-side preparation. |
-| GameFramework | Runtime scene and cooked loading | Gameplay scene mutates in the runtime phase only. | `RenderContracts` immutable snapshots and `AssetContracts` cooked records. | Simulation/cook loading can run apart from renderer frame preparation. |
+| Core | Foundation primitives only | No domain policy or hidden global scheduler; Stage 24 removed named tool/launcher path policy from Core utilities. | Small value types, diagnostics, optional future task primitives. | Shared low-level utilities without cross-module policy leaks. |
+| Platform | OS/window/input owner | UI/window events stay host-owned and are copied into runtime requests; Stage 24 moved ImGui capture policy to the host through an input capture query. | Input/event snapshots or host requests. | Main-thread host loop plus worker-side preparation. |
+| GameFramework | Runtime scene and cooked loading | Gameplay scene mutates in the runtime phase only; lighting snapshots are dynamic runtime data, while fixed GPU limits stay in renderer/RHI packing code. | Immutable snapshots and `AssetContracts` cooked records. | Simulation/cook loading can run apart from renderer frame preparation. |
 | Renderer scene staging | Renderer frame pipeline | Render-domain scene data is built from snapshots, not live gameplay objects. | Frame-scoped render snapshots, resource update requests. | Parallel culling, skinning prep, material/mesh staging, visibility preparation. |
 | Frame graph | Renderer frame graph | Setup records declarations; compile owns dependency/barrier plan; execution consumes a frozen plan. | `FrameGraphPlan`, pass resource declarations, command batches. | Parallel pass setup/compile analysis and independent command recording batches. |
 | Pass authoring | Renderer passes | Pass setup/execute cannot mutate shared pass-global state without a declared owner. | Pass definitions, parameter blocks, graph resource handles, diagnostics labels. | Per-pass or per-view command recording. |
@@ -137,4 +137,3 @@ The repository is threading-ready when:
 - Import/cook/shader tools can describe work as jobs with deterministic inputs, outputs, dependencies, and reports.
 - Launcher workflow state can be driven asynchronously through process requests and operation history without widgets owning work.
 - No stage keeps a global mutable registry, compatibility path, or service locator without owner, validation value, and removal stage.
-

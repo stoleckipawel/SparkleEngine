@@ -287,21 +287,9 @@ namespace Paths
 			logDirectory =
 			    ResolveLogsRoot(ensureParentExists) / "Projects" / InferProjectNameFromExecutableStem(sanitizedExecutableStem) / "Full";
 		}
-		else if (EndsWithIgnoreCase(sanitizedExecutableStem, "ShaderCompiler"))
-		{
-			logDirectory = ResolveLogsRoot(ensureParentExists) / "Prerequisites" / "ShaderCompilationLog" / "Workspace";
-		}
-		else if (EndsWithIgnoreCase(sanitizedExecutableStem, "TextureCooker"))
-		{
-			logDirectory = ResolveLogsRoot(ensureParentExists) / "Prerequisites" / "TextureCookingLog" / "Workspace";
-		}
-		else if (EndsWithIgnoreCase(sanitizedExecutableStem, "AssetConverter"))
-		{
-			logDirectory = ResolveLogsRoot(ensureParentExists) / "Prerequisites" / "AssetCookingLog" / "Workspace";
-		}
 		else
 		{
-			logDirectory = ResolveLogsRoot(ensureParentExists) / "Applications" / sanitizedExecutableStem / "Full";
+			logDirectory = ResolveLogsRoot(ensureParentExists) / "Processes" / sanitizedExecutableStem / "Full";
 		}
 
 		if (ensureParentExists)

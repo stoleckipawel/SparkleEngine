@@ -559,7 +559,7 @@ int RhiSmokeValidation::RunEditor() noexcept
 	{
 		SPARKLE_LOG_SCOPE(appLogger, spdlog::level::info, "RHI editor smoke UI scope");
 		Renderer& renderer = app.GetRenderer();
-		app.GetInputSystem().SetAutomaticImGuiCaptureEnabled(false);
+		app.GetInputSystem().ClearInputCaptureQuery();
 		app.GetInputSystem().BeginInputRoutingFrame(false, false);
 		UI ui(EditorHostServices{
 		    .RuntimeTimer = app.GetTimer(),
@@ -572,7 +572,6 @@ int RhiSmokeValidation::RunEditor() noexcept
 		while (TickEditor(app, ui, config, state))
 		{
 		}
-		app.GetInputSystem().SetAutomaticImGuiCaptureEnabled(true);
 	}
 
 	app.Shutdown();

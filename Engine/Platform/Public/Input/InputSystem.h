@@ -33,6 +33,7 @@ using KeyboardCallback = InputCallback<KeyboardEvent>;
 using MouseButtonCallback = InputCallback<MouseButtonEvent>;
 using MouseMoveCallback = InputCallback<MouseMoveEvent>;
 using MouseWheelCallback = InputCallback<MouseWheelEvent>;
+using InputCaptureQuery = std::function<bool()>;
 
 class SPARKLE_PLATFORM_API InputSystem
 {
@@ -69,7 +70,8 @@ class SPARKLE_PLATFORM_API InputSystem
 
 	void SetActiveLayer(InputLayer Layer) noexcept;
 	void SetLayerEnabled(InputLayer Layer, bool bEnabled);
-	void SetAutomaticImGuiCaptureEnabled(bool enabled) noexcept;
+	void SetInputCaptureQuery(InputCaptureQuery query) noexcept;
+	void ClearInputCaptureQuery() noexcept;
 
 	bool IsLayerEnabled(InputLayer Layer) const noexcept;
 
@@ -187,7 +189,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	InputLayer m_ActiveLayer = InputLayer::Gameplay;
 	InputLayer m_MouseCaptureLayer = InputLayer::System;
 	InputFocusRouter m_FocusRouter;
-	bool m_automaticImGuiCaptureEnabled = true;
+	InputCaptureQuery m_captureQuery;
 
 	int32_t m_LastMouseX = 0;
 	int32_t m_LastMouseY = 0;

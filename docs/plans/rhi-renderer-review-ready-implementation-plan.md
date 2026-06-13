@@ -2617,6 +2617,16 @@ Validation:
 - Targeted include/dependency scan.
 - Build `SparkleCore`, `SparklePlatform`, and the smallest affected host target.
 
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed. |
+| Core boundary cleanup | Core no longer special-cases `ShaderCompiler`, `TextureCooker`, or `AssetConverter` log directories; non-project executable logs route through generic process paths. Package-root discovery no longer depends on `SparkleLauncher.exe`; it uses the package/workspace marker plus package manifest and project root evidence. |
+| Platform boundary cleanup | `SparklePlatform` no longer links `imgui` or includes ImGui headers. Input capture is supplied by the host through `InputSystem::SetInputCaptureQuery` and cleared for smoke/editor paths when needed. |
+| Vocabulary cleanup | `InputLayer::Editor` was replaced with `InputLayer::UI` so Core/Platform input routing names a generic UI/input layer instead of editor policy. |
+| Validation | Policy scans over `Engine/Core` and `Engine/Platform` found no renderer/RHI/tool/launcher/ImGui ownership hits. `SparkleCore`, `SparklePlatform`, `ShowcaseEditor`, and `ShowcaseRuntime` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`. `architecture_boundary_check` passed with only the existing counted DLSS provider exceptions. `git diff --check` passed with existing line-ending warnings only. `clang_format_check` is not generated in this build tree. |
+
 ## Stage 25 - GameFramework Runtime, Render Contracts, And Shared Schema Refactor
 
 Goal:
@@ -2673,6 +2683,16 @@ Validation:
 - Targeted include scan.
 - Build `SparkleGameFramework` when a compiler is available.
 - Run affected cook/load smoke when schema changes occur.
+
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed. |
+| Runtime/render split | GameFramework lighting snapshots and level lighting descriptions now store dynamic scene light arrays. Renderer scene data keeps dynamic light vectors, and `ViewLightingBuilder` clamps those vectors only when packing shader-visible lighting buffers. |
+| Dependency cleanup | `SparkleGameFramework` no longer links `SparkleRHI`; GameFramework lighting headers no longer include `Config/RenderConfig.h`. No standalone contract target was kept for lighting constants because fixed light limits are GPU packing policy, not runtime scene policy. |
+| Boundary evidence | Scans over `Engine/GameFramework` found no `Renderer/Private`, `RHI/Private`, `Tools/*`, D3D12, Vulkan, source import, cooker, shader compiler, or full RHI target dependency hits. Renderer consumes GameFramework scene state through the existing snapshot/coordinator path rather than private scene mutation paths. |
+| Validation | VS2026 configure passed with existing third-party Assimp/FetchContent dev warnings. `SparkleGameFramework`, `SparkleRHI`, `ShowcaseEditor`, `ShowcaseRuntime`, `SourceImportAdapters`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, and `AssetCooker` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`. |
 
 ## Stage 26 - Runtime Cooked Asset Loader And Schema Pairing Refactor
 

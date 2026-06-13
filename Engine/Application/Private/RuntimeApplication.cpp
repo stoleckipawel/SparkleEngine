@@ -13,6 +13,17 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 
+#include <imgui.h>
+
+namespace
+{
+	bool WantsImGuiInputCapture() noexcept
+	{
+		const ImGuiContext* currentContext = ImGui::GetCurrentContext();
+		return currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
+	}
+}
+
 RuntimeApplication::RuntimeApplication() = default;
 
 RuntimeApplication::RuntimeApplication(RuntimeApplicationOptions options) noexcept : m_options(options) {}
@@ -66,6 +77,7 @@ void RuntimeApplication::Initialize()
 	{
 		SPARKLE_CPU_SCOPE("Application.RuntimeCreateInput");
 		m_inputSystem = InputSystem::Create();
+		m_inputSystem->SetInputCaptureQuery(WantsImGuiInputCapture);
 		m_inputSystem->SubscribeToWindow(*m_window);
 	}
 

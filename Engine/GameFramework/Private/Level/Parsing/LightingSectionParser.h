@@ -142,10 +142,9 @@ namespace LevelParsing
 		std::string_view directionalLightField;
 		if (TryParseDirectionalLightFieldKey(parsedLine.key, directionalLightIndex, directionalLightField))
 		{
-			if (directionalLightIndex >= LevelLightingDesc::MaxDirectionalLights)
+			if (directionalLightIndex >= levelDesc.lightingDesc.directionalLights.size())
 			{
-				errorMessage = "Directional light index out of range";
-				return false;
+				levelDesc.lightingDesc.directionalLights.resize(directionalLightIndex + 1);
 			}
 
 			DirectionalLightDesc& directionalLight = levelDesc.lightingDesc.directionalLights[directionalLightIndex];
@@ -154,8 +153,6 @@ namespace LevelParsing
 				return false;
 			}
 
-			levelDesc.lightingDesc.directionalLightCount =
-			    std::max(levelDesc.lightingDesc.directionalLightCount, static_cast<std::uint32_t>(directionalLightIndex + 1));
 			return true;
 		}
 
@@ -167,7 +164,7 @@ namespace LevelParsing
 		output << std::setprecision(9);
 		output << "[Lighting]\n";
 
-		for (std::size_t lightIndex = 0; lightIndex < levelDesc.lightingDesc.directionalLightCount; ++lightIndex)
+		for (std::size_t lightIndex = 0; lightIndex < levelDesc.lightingDesc.directionalLights.size(); ++lightIndex)
 		{
 			const DirectionalLightDesc& directionalLight = levelDesc.lightingDesc.directionalLights[lightIndex];
 			output << "DirectionalLight" << lightIndex << "Direction = " << directionalLight.direction.x << ", "

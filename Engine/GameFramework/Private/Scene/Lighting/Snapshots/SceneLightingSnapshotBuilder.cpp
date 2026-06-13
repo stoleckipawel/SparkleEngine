@@ -1,18 +1,12 @@
 #include "PCH.h"
 #include "Scene/Lighting/Snapshots/SceneLightingSnapshotBuilder.h"
 
-#include "Config/RenderConfig.h"
 #include "Core/Public/Math/MathUtils.h"
 
 #include <algorithm>
-#include <cstdint>
 
 namespace
 {
-	constexpr std::size_t kMaxDirectionalLights = RenderConfig::Lights::MaxDirectionalLights;
-	constexpr std::size_t kMaxPointLights = RenderConfig::Lights::MaxPointLights;
-	constexpr std::size_t kMaxSpotLights = RenderConfig::Lights::MaxSpotLights;
-
 	DirectX::XMFLOAT3 ExtractWorldPosition(const DirectX::XMFLOAT4X4& transform) noexcept
 	{
 		return {transform._41, transform._42, transform._43};
@@ -61,66 +55,45 @@ namespace
 	template <typename AppendLight>
 	void AppendDirectionalLights(const std::vector<SceneLightDesc>& lights, bool requireVisible, AppendLight appendLight) noexcept
 	{
-		std::size_t appendedCount = 0;
 		for (const SceneLightDesc& light : lights)
 		{
-			if (appendedCount >= kMaxDirectionalLights)
-			{
-				break;
-			}
-
 			const SceneDirectionalLightDesc* directional = light.GetDirectional();
 			if (directional == nullptr || (requireVisible && !light.common.visible))
 			{
 				continue;
 			}
 
-			appendLight(BuildDirectionalLightDesc(light.common, *directional), appendedCount);
-			++appendedCount;
+			appendLight(BuildDirectionalLightDesc(light.common, *directional));
 		}
 	}
 
 	template <typename AppendLight>
 	void AppendPointLights(const std::vector<SceneLightDesc>& lights, bool requireVisible, AppendLight appendLight) noexcept
 	{
-		std::size_t appendedCount = 0;
 		for (const SceneLightDesc& light : lights)
 		{
-			if (appendedCount >= kMaxPointLights)
-			{
-				break;
-			}
-
 			const PointLightDesc* point = light.GetPoint();
 			if (point == nullptr || (requireVisible && !light.common.visible))
 			{
 				continue;
 			}
 
-			appendLight(BuildPointLightDesc(light.common, *point), appendedCount);
-			++appendedCount;
+			appendLight(BuildPointLightDesc(light.common, *point));
 		}
 	}
 
 	template <typename AppendLight>
 	void AppendSpotLights(const std::vector<SceneLightDesc>& lights, bool requireVisible, AppendLight appendLight) noexcept
 	{
-		std::size_t appendedCount = 0;
 		for (const SceneLightDesc& light : lights)
 		{
-			if (appendedCount >= kMaxSpotLights)
-			{
-				break;
-			}
-
 			const SpotLightDesc* spot = light.GetSpot();
 			if (spot == nullptr || (requireVisible && !light.common.visible))
 			{
 				continue;
 			}
 
-			appendLight(BuildSpotLightDesc(light.common, *spot), appendedCount);
-			++appendedCount;
+			appendLight(BuildSpotLightDesc(light.common, *spot));
 		}
 	}
 }  // namespace
@@ -133,10 +106,9 @@ namespace SceneLightingSnapshotBuilder
 		AppendDirectionalLights(
 		    lights,
 		    false,
-		    [&desc](const DirectionalLightDesc& light, std::size_t index) noexcept
+		    [&desc](const DirectionalLightDesc& light) noexcept
 		    {
-			    desc.directionalLights[index] = light;
-			    desc.directionalLightCount = static_cast<std::uint32_t>(index + 1);
+			    desc.directionalLights.push_back(light);
 		    });
 		return desc;
 	}
@@ -147,26 +119,23 @@ namespace SceneLightingSnapshotBuilder
 		AppendDirectionalLights(
 		    lights,
 		    true,
-		    [&snapshot](const DirectionalLightDesc& light, std::size_t index) noexcept
+		    [&snapshot](const DirectionalLightDesc& light) noexcept
 		    {
-			    snapshot.directionalLights[index] = light;
-			    snapshot.directionalLightCount = static_cast<std::uint32_t>(index + 1);
+			    snapshot.directionalLights.push_back(light);
 		    });
 		AppendPointLights(
 		    lights,
 		    true,
-		    [&snapshot](const PointLightSnapshotDesc& light, std::size_t index) noexcept
+		    [&snapshot](const PointLightSnapshotDesc& light) noexcept
 		    {
-			    snapshot.pointLights[index] = light;
-			    snapshot.pointLightCount = static_cast<std::uint32_t>(index + 1);
+			    snapshot.pointLights.push_back(light);
 		    });
 		AppendSpotLights(
 		    lights,
 		    true,
-		    [&snapshot](const SpotLightSnapshotDesc& light, std::size_t index) noexcept
+		    [&snapshot](const SpotLightSnapshotDesc& light) noexcept
 		    {
-			    snapshot.spotLights[index] = light;
-			    snapshot.spotLightCount = static_cast<std::uint32_t>(index + 1);
+			    snapshot.spotLights.push_back(light);
 		    });
 		return snapshot;
 	}

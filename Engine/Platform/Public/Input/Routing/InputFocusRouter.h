@@ -32,7 +32,7 @@ class SPARKLE_PLATFORM_API InputFocusRouter final
 		float Top = 0.0f;
 		float Right = 0.0f;
 		float Bottom = 0.0f;
-		InputLayer TargetLayer = InputLayer::Editor;
+		InputLayer TargetLayer = InputLayer::UI;
 
 		bool IsValid() const noexcept;
 		bool Contains(MousePosition position) const noexcept;
@@ -42,7 +42,7 @@ class SPARKLE_PLATFORM_API InputFocusRouter final
 	InputLayer ResolveMouseMoveTarget(MousePosition position) const noexcept;
 
 	std::vector<TargetRegion> m_targetRegions;
-	InputLayer m_activeTargetLayer = InputLayer::Editor;
+	InputLayer m_activeTargetLayer = InputLayer::UI;
 	bool m_hasRoutingFrame = false;
 	bool m_interactionDisabled = false;
 	bool m_textInputActive = false;
