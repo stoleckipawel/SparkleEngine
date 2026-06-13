@@ -33,7 +33,7 @@ Use this document as the naming source for Stage 2 and later stages. If code use
 | ShaderCompiler | The tool that compiles/cooks shader packages and reflection consumed at runtime. | [ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Tools own source compilation, reflection extraction, package writing, and inspection commands through `ShaderContracts`, not full renderer runtime. |
 | AssetCooker | Project-level cook orchestrator. | [Tools/Cooking/AssetCooker](../../Tools/Cooking/AssetCooker) | AssetCooker owns discovery, planning, dispatch, process isolation, and diagnostics. Focused cookers own actual transformations. |
 | TextureCooker | Focused texture cooking tool. | [Tools/Cooking/TextureCooker](../../Tools/Cooking/TextureCooker) | TextureCooker owns source image loading, texture pipeline stages, compression policy, and cooked texture asset emission. |
-| SourceImporters | Source asset importers for formats such as glTF/FBX. Current path: `Tools/Import/SourceImportAdapters`. | [Tools/Import/SourceImportAdapters](../../Tools/Import/SourceImportAdapters) | Source importers produce imported DTOs and diagnostics. Runtime modules must not read source formats directly. |
+| SourceImporters | Source asset importers for formats such as glTF/FBX. | [Tools/Import/SourceImporters](../../Tools/Import/SourceImporters) | Source importers produce imported DTOs, import reports, and diagnostics. Runtime modules must not read source formats directly. |
 | Vendor provider | Renderer feature adapter for an external SDK such as NVIDIA DLSS. | [Upscaling](../../Engine/Renderer/Private/Upscaling) | Provider owns SDK-level policy; RHI/backend owns native handles and API metadata. |
 
 ## Runtime Terms

@@ -105,7 +105,7 @@ The disposition policy changes the target design in concrete ways:
 | `Engine/GameFramework` as schema owner | Improve and extract | `AssetContracts` and `RenderContracts` consumed by GameFramework | GameFramework remains runtime scene/cooked loading owner, but shared schemas move to neutral contracts when direct tool/runtime edges appear. |
 | `Engine/Application` validation | Replace or redesign | Host validation orchestrator plus RHI/backend capture services | Remove permanent D3D12-native capture logic from Application. |
 | `Tools/Shaders/ShaderCompiler` renderer linkage | Improve and extract | ShaderCompiler consuming `ShaderContracts` | ShaderCompiler should not link full renderer runtime; it consumes pass catalogs, manifests, reflection, and package schemas. |
-| `Tools/Import/SourceImportAdapters` | Improve and extract | `SourceImporters` with per-format importers | Rename away from pattern-centered "Adapters"; importers emit imported DTOs and diagnostics through `AssetContracts`. |
+| `Tools/Import/SourceImporters` | Keep and refine | `SourceImporters` with per-format importers | Role-centered importers emit imported DTOs, import reports, and diagnostics through public source DTO contracts. |
 | Focused cookers | Keep and refine | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Preserve focused transformation tools; tighten artifact schemas and inspection/reporting. |
 | `Tools/Cooking/AssetCooker` | Improve and extract | `AssetCooker` orchestration only | Keep project discovery and dispatch; remove any duplicated focused cooker algorithms. |
 | `Tools/Conversion/AssetConverter` | Replace or redesign | Fold into `AssetCooker` or explicit inspection/debug commands | Do not keep a second production cook path. |

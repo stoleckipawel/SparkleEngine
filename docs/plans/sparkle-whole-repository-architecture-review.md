@@ -139,7 +139,7 @@ Avoid names that encode temporary migration paths, duplicate ownership, or conce
 
 | Area | Disposition result | Concrete target change |
 | --- | --- | --- |
-| `SourceImportAdapters` | Improve and extract | Target name becomes `SourceImporters`; the design centers on per-format importers emitting DTOs and diagnostics through `AssetContracts`. |
+| `SourceImporters` | Keep and refine | Role-centered per-format importers emit DTOs, import reports, and diagnostics through public source DTO contracts. |
 | `CookCommon` | Improve and extract | No longer accepted as a permanent architecture label; split/rename to `ToolConsoleSupport` and/or `CookDiagnostics`. |
 | `AssetConverter` | Replace or redesign | Remove as a production path; fold useful commands into `AssetCooker` or explicit inspect/debug commands. |
 | `Engine/Assets` | Replace or redesign | Current `Meshes`, `Shaders`, and `Textures` make this a non-code asset root, not an empty root. Narrow it to documented built-in engine assets or move shaders/data to owner-specific roots. |
@@ -158,7 +158,7 @@ Avoid names that encode temporary migration paths, duplicate ownership, or conce
 | Renderer pass ceremony | Replace central traits and duplicate registrations with `PassCatalog`, pass definitions, and explicit runtime keys. |
 | ShaderCompiler renderer coupling | Replace renderer runtime linkage with `ShaderContracts` pass catalog/package manifest handoff. |
 | GameFramework schema gravity | Extract shared cooked schemas into `AssetContracts`; use `RenderContracts` for renderer handoff. |
-| Source import naming and ownership | Rename/extract `SourceImportAdapters` to `SourceImporters` and keep source formats out of runtime. |
+| Source import naming and ownership | Keep `SourceImporters` role-centered and keep source formats out of runtime. |
 | Tool support vagueness | Replace `CookCommon` as architecture label with `ToolConsoleSupport` and/or `CookDiagnostics`. |
 | Parallel conversion pipeline | Retire `AssetConverter` as production path; preserve only explicit inspect/debug commands if they pay for themselves. |
 | Ambiguous asset root | Narrow `Engine/Assets` to built-in assets with manifest/validation, or split renderer shaders, RHI shader fixtures, and project content into owner-specific roots. |
@@ -192,7 +192,7 @@ Avoid names that encode temporary migration paths, duplicate ownership, or conce
 | `Engine/Application` | Runtime/editor host lifecycle, validation orchestration, runtime console, shader recook process bridge. | Existing validation debt uses backend-native D3D12 capture. | NVRHI validation/capture ownership, Vulkan validation tooling. | Application orchestrates validation; backend-native capture/readback lives behind RHI/backend services. |
 | `Engine/Assets` | Non-code asset root with current `Meshes`, `Shaders`, and `Textures` subfolders. | Ambiguous asset roots create fake ownership and can mix engine built-ins, renderer pass shaders, and project content. | Falcor/Donut explicit `Shaders` roots, Cauldron `media`, glTF and KTX explicit asset/container specs. | Root is narrowed to built-in engine assets with manifest/validation, or content moves to owner-specific shader/data roots. |
 | `Tools/Shaders/ShaderCompiler` | Shader backend selection, preprocessing, reflection, package cooking, cache, inspection, verification. | Can become tightly linked to full renderer runtime instead of a narrow registry/schema contract. | Falcor shader/tooling productivity model, Donut ShaderMake usage, NVRHI shader package/runtime concepts. | `ShaderCompiler` lists/cooks/inspects packages through `ShaderContracts`, not full renderer runtime. |
-| `Tools/Import/SourceImportAdapters` -> target `SourceImporters` | glTF/FBX/source scene import into imported DTOs and diagnostics. | Pattern-centered adapter naming can hide importer ownership; source format assumptions can leak into runtime loaders. | glTF runtime asset delivery, Cauldron glTF sample pipeline. | Target `SourceImporters` emit DTOs and diagnostics only; runtime modules never parse source formats directly. |
+| `Tools/Import/SourceImporters` | glTF/FBX/source scene import into imported DTOs, import reports, and diagnostics. | Source format assumptions can leak into runtime loaders if importer-private state crosses the DTO/report boundary. | glTF runtime asset delivery, Cauldron glTF sample pipeline. | `SourceImporters` emit DTOs and diagnostics only; runtime modules never parse source formats directly. |
 | `Tools/Cooking/TextureCooker` | Source image loading, texture pipeline stages, compression policy, cooked texture emission. | RHI texture upload contracts and cooked texture schema can drift. | AMD Compressonator CLI/SDK/tool model, KTX texture container model. | Texture cook output includes format/mip/schema diagnostics and is validated against runtime loader/upload expectations. |
 | `Tools/Cooking/MeshCooker` | Imported mesh to cooked mesh conversion. | Mesh schema can drift from GameFramework loaders and Renderer mesh cache. | Cauldron/glTF mesh/material sample handling. | Cooked mesh records have producer, schema owner, runtime loader, renderer consumer, and sample validation. |
 | `Tools/Cooking/MaterialCooker` | Imported material conversion and texture cook request generation. | Material schema can drift from renderer material cache and texture cooker. | glTF PBR material model and Cauldron material support. | Material cook output and texture requests are deterministic and inspectable. |
@@ -270,7 +270,7 @@ Acceptance:
 
 ### Track D - Tooling And Content Pipeline
 
-Goal: make SourceImporters/current SourceImportAdapters, focused cookers, AssetCooker, ShaderCompiler, ToolConsoleSupport/CookDiagnostics, and retired AssetConverter commands reviewable as a content toolchain.
+Goal: make SourceImporters, focused cookers, AssetCooker, ShaderCompiler, ToolConsoleSupport/CookDiagnostics, and retired AssetConverter commands reviewable as a content toolchain.
 
 Acceptance:
 

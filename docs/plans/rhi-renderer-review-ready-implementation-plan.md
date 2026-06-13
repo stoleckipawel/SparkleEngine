@@ -2640,7 +2640,7 @@ Source references:
 - `game-framework-contract.md`
 - `Engine/GameFramework/CMakeLists.txt`
 - `Tools/Cooking/*`
-- `Tools/Import/SourceImportAdapters`
+- `Tools/Import/SourceImporters`
 
 Target shape references:
 
