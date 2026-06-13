@@ -143,6 +143,8 @@ class FRayTracingHitGroup
 
 template <typename TShader> struct TShaderSourceMetadata
 {
+	static constexpr std::string_view kPackageName = "";
+	static constexpr std::string_view kBindingLayoutId = "";
 	static constexpr std::string_view kSourcePath = "";
 	static constexpr std::string_view kEntryPoint = "";
 	static constexpr ShaderStage kStage = ShaderStage::Count;
@@ -170,6 +172,10 @@ template <typename TShader> class TGlobalShader
 		{
 			return TShader::kShaderPackageName;
 		}
+		else if constexpr (!TShaderSourceMetadata<TShader>::kPackageName.empty())
+		{
+			return TShaderSourceMetadata<TShader>::kPackageName;
+		}
 		else
 		{
 			return {};
@@ -180,6 +186,10 @@ template <typename TShader> class TGlobalShader
 		if constexpr (requires { TShader::kBindingLayoutId; })
 		{
 			return TShader::kBindingLayoutId;
+		}
+		else if constexpr (!TShaderSourceMetadata<TShader>::kBindingLayoutId.empty())
+		{
+			return TShaderSourceMetadata<TShader>::kBindingLayoutId;
 		}
 		else
 		{
@@ -313,6 +323,10 @@ template <typename TShader> class TShaderRef final
 		{
 			return std::string(TShader::kShaderPackageName);
 		}
+		else if constexpr (!TShaderSourceMetadata<TShader>::kPackageName.empty())
+		{
+			return std::string(TShaderSourceMetadata<TShader>::kPackageName);
+		}
 		else
 		{
 			return BuildShaderPackageIdFromSourcePath(m_sourcePath);
@@ -329,6 +343,22 @@ template <typename TShader> class TShaderRef final
 #define IMPLEMENT_GLOBAL_SHADER(Class, Path, Entry, StageName)                              \
 	template <> struct TShaderSourceMetadata<Class>                                         \
 	{                                                                                       \
+		static constexpr std::string_view kPackageName = "";                               \
+		static constexpr std::string_view kBindingLayoutId = "";                           \
+		static constexpr std::string_view kSourcePath = Path;                               \
+		static constexpr std::string_view kEntryPoint = Entry;                              \
+		static constexpr ::ShaderStage kStage = ::ShaderStage::StageName;                   \
+	};                                                                                      \
+	inline static const ::TGlobalShaderAutoRegister<Class> AutoRegisterGlobalShader_##Class \
+	{                                                                                       \
+		#Class, Path, Entry, ::ShaderStage::StageName                                       \
+	}
+
+#define IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(Class, Package, Path, Entry, StageName)          \
+	template <> struct TShaderSourceMetadata<Class>                                         \
+	{                                                                                       \
+		static constexpr std::string_view kPackageName = Package;                           \
+		static constexpr std::string_view kBindingLayoutId = Package;                       \
 		static constexpr std::string_view kSourcePath = Path;                               \
 		static constexpr std::string_view kEntryPoint = Entry;                              \
 		static constexpr ::ShaderStage kStage = ::ShaderStage::StageName;                   \
@@ -341,6 +371,8 @@ template <typename TShader> class TShaderRef final
 #define IMPLEMENT_RAY_TRACING_SHADER(Class, Path, Entry)                                            \
 	template <> struct TShaderSourceMetadata<Class>                                                 \
 	{                                                                                               \
+		static constexpr std::string_view kPackageName = "";                                       \
+		static constexpr std::string_view kBindingLayoutId = "";                                   \
 		static constexpr std::string_view kSourcePath = Path;                                       \
 		static constexpr std::string_view kEntryPoint = Entry;                                      \
 		static constexpr ::ShaderStage kStage = ::ShaderStage::Count;                               \

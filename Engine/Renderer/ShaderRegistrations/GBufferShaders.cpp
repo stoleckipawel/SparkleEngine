@@ -5,17 +5,11 @@
 
 #include "Resources/RenderConstantBufferData.h"
 
-#include <string_view>
-
 void RegisterGBufferShaders() noexcept {}
 
 class GBufferVS final : public TGlobalShader<GBufferVS>
 {
   public:
-	static constexpr std::string_view kShaderName = "GBufferVS";
-	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::GBuffer;
-	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::GBuffer;
-
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerTemporal, PerTemporalConstantBufferData, PerTemporalConstantBufferData)
@@ -26,15 +20,16 @@ class GBufferVS final : public TGlobalShader<GBufferVS>
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(GBufferVS, "Passes/Deferred/GBufferVS.hlsl", "main", Vertex);
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
+    GBufferVS,
+    RendererShaderPackages::GBuffer,
+    "Passes/Deferred/GBufferVS.hlsl",
+    "main",
+    Vertex);
 
 class GBufferPS final : public TGlobalShader<GBufferPS>
 {
   public:
-	static constexpr std::string_view kShaderName = "GBufferPS";
-	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::GBuffer;
-	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::GBuffer;
-
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerObjectPS, PerObjectPSConstantBufferData, PerObjectPSConstantBufferData)
@@ -51,4 +46,9 @@ class GBufferPS final : public TGlobalShader<GBufferPS>
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(GBufferPS, "Passes/Deferred/GBufferPS.hlsl", "main", Pixel);
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
+    GBufferPS,
+    RendererShaderPackages::GBuffer,
+    "Passes/Deferred/GBufferPS.hlsl",
+    "main",
+    Pixel);

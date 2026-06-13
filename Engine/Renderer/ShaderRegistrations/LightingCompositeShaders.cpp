@@ -5,17 +5,11 @@
 
 #include "Resources/RenderConstantBufferData.h"
 
-#include <string_view>
-
 void RegisterLightingCompositeShaders() noexcept {}
 
 class LightingCompositeCS final : public TGlobalShader<LightingCompositeCS>
 {
   public:
-	static constexpr std::string_view kShaderName = "LightingCompositeCS";
-	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::LightingComposite;
-	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::LightingComposite;
-
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, SceneColor, SceneColorTexture)
 	SHADER_PARAMETER_TEXTURE(Texture2D, DirectDiffuse)
@@ -35,4 +29,9 @@ class LightingCompositeCS final : public TGlobalShader<LightingCompositeCS>
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(LightingCompositeCS, "Passes/Deferred/LightingComposite.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
+    LightingCompositeCS,
+    RendererShaderPackages::LightingComposite,
+    "Passes/Deferred/LightingComposite.hlsl",
+    "main",
+    Compute);

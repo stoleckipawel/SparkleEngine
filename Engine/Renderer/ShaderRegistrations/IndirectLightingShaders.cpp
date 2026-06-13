@@ -3,17 +3,11 @@
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-#include <string_view>
-
 void RegisterIndirectLightingShaders() noexcept {}
 
 class IndirectLightingCS final : public TGlobalShader<IndirectLightingCS>
 {
   public:
-	static constexpr std::string_view kShaderName = "IndirectLightingCS";
-	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::IndirectLighting;
-	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::IndirectLighting;
-
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, IndirectDiffuse, IndirectDiffuseTexture)
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, IndirectSpecular, IndirectSpecularTexture)
@@ -25,4 +19,9 @@ class IndirectLightingCS final : public TGlobalShader<IndirectLightingCS>
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(IndirectLightingCS, "Passes/Deferred/IndirectLighting.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
+    IndirectLightingCS,
+    RendererShaderPackages::IndirectLighting,
+    "Passes/Deferred/IndirectLighting.hlsl",
+    "main",
+    Compute);

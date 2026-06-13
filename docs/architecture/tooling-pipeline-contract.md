@@ -47,6 +47,7 @@ Tooling is refactored through active implementation stages, not only final audit
 | Stage | Tooling scope | Required outcome |
 | --- | --- | --- |
 | Stage 17A | Renderer shader registration tooling | Renderer shader registrations become manifest-driven or generated so ShaderCompiler receives typed records without repeated class/package/layout constants. |
+| Stage 17B | Pass authoring workflow tooling | A pass-add audit and scaffolder/generator workflow reduce ordinary compute/raster pass authoring to intentional shader, pass intent, and frame insertion inputs while preserving ShaderCompiler validation. |
 | Stage 27 | Source import | `SourceImportAdapters` migrates toward `SourceImporters`; importers emit imported DTOs and diagnostics. |
 | Stage 28 | Focused cookers and support | Texture/Mesh/Material/Scene cookers own transformations; `CookCommon` splits into precise support/diagnostics owners. |
 | Stage 29 | ShaderCompiler | ShaderCompiler consumes `ShaderContracts` and emits deterministic package/reflection reports without full renderer runtime linkage. |
@@ -61,7 +62,7 @@ Tooling is refactored through active implementation stages, not only final audit
 | --- | --- | --- |
 | `SparkleLauncherCore` | Improve and extract | Keep as workflow/process orchestrator; route data through `ToolContracts` request/report/history types. |
 | SparkleLauncher Qt GUI | Keep and refine | Preserve the model/view-style split; widgets do not own cook/build/shader algorithms. |
-| `ShaderCompiler` | Improve and extract | Consume generated/manifest shader registration records, then longer-term `ShaderContracts` pass catalogs/manifests and generic package schemas, not full renderer runtime. |
+| `ShaderCompiler` | Improve and extract | Consume generated/manifest shader registration records, pass authoring manifests, then longer-term `ShaderContracts` pass catalogs/manifests and generic package schemas, not full renderer runtime. |
 | `SourceImportAdapters` | Improve and extract | Rename/extract toward `SourceImporters` with per-format importers and imported DTO diagnostics. |
 | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Keep and refine | Preserve focused tools; improve schemas, inspectors, and failure reports. |
 | `AssetCooker` | Improve and extract | Keep project discovery/planning/dispatch; remove any duplicated focused cooker transformations. |

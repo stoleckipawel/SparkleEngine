@@ -5,17 +5,11 @@
 
 #include "Resources/RenderConstantBufferData.h"
 
-#include <string_view>
-
 void RegisterSkyShaders() noexcept {}
 
 class SkyCS final : public TGlobalShader<SkyCS>
 {
   public:
-	static constexpr std::string_view kShaderName = "SkyCS";
-	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::Sky;
-	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::Sky;
-
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, SceneColor, SceneColorTexture)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
@@ -26,4 +20,9 @@ class SkyCS final : public TGlobalShader<SkyCS>
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(SkyCS, "Passes/Deferred/Sky.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
+    SkyCS,
+    RendererShaderPackages::Sky,
+    "Passes/Deferred/Sky.hlsl",
+    "main",
+    Compute);

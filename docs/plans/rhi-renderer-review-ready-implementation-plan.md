@@ -215,6 +215,7 @@ This plan is a global repository refactor. The early stages still focus on RHI/R
 | 16 | Shader package, binding, PSO runtime | ShaderCompiler, RHI shader primitives, renderer registrations, CMake. | PSO/shader package changes require shader inspection/list/cook evidence or a documented unavailable-tool note. |
 | 17 | Pass authoring model | ShaderCompiler, Editor shader lists, FrameGraph, RHI shader runtime. | Ordinary pass authoring must remain above RHI and must not add central runtime duplication without a migration note. |
 | 17A | Shader registration boilerplate removal | ShaderCompiler, renderer shader registrations, pass definitions, generated/manifest records. | Removing boilerplate must preserve typed parameter/reflection diagnostics and must not hide registration failures behind opaque macros. |
+| 17B | Pass authoring friction budget | ShaderCompiler, pass authoring tools, renderer frame insertion, pass definitions, generated/manifest records, validation workflow. | Adding an ordinary pass must be measured from missing shader to running frame; mechanical code must be generated or centralized only when diagnostics and navigation improve. |
 | 18 | Ray tracing ownership | GameFramework scene snapshots, Renderer passes, RHI RT descs, backend AS builders. | RT changes must not move shadow/pass data into RHI or GameFramework as a shortcut. |
 | 19 | Backend service cleanup | D3D12/Vulkan parity, RHI public contracts, tools using RHI headers. | Backend-private folders must not include each other; public RHI changes must update tool/runtime impact notes. |
 | 20 | Full graphics validation | ShaderCompiler, Launcher, Projects/Showcase, Application validation, docs. | Final graphics evidence must be reusable by Stage 34 evidence gate and Stage 35 threading-readiness audit. |
@@ -384,6 +385,7 @@ Stage-to-reference map:
 | 16 | D3D12 PSO docs, D3D12 pipeline state management, Diligent Core PSO model | Explicit immutable PSO descriptors and cache keys | Printable PSO key, separated package loading, binding layout, validation, and PSO creation | `std::type_index` as final runtime identity |
 | 17 | Falcor RenderPasses, Donut reusable passes, Diligent render state notation ideas | Declarative pass definition | One renderer-owned pass definition should drive graph intent and pipeline runtime lookup | Backend-specific pass definitions or duplicated central traits |
 | 17A | Falcor render-pass tooling, Donut shader build separation, AMD RPS graph authoring, Diligent render-state packager | Manifest/generated shader registrations | One shader/package declaration feeds ShaderCompiler and pass runtime identity | Boilerplate macros that hide errors or duplicate package metadata |
+| 17B | Falcor render-pass scaffolding, Donut reusable pass organization, AMD RPS graph authoring, Diligent render-state notation/packager | Measured one-file or one-command pass authoring workflow | A simple compute/raster pass has an explicit touch-count budget and generated mechanical pieces | Moving boilerplate into another hand-written registry or hiding it in opaque macros |
 | 18 | Microsoft DXR spec, NVIDIA DXR tutorial, Khronos Vulkan ray tracing sample, NVIDIA Vulkan ray tracing tutorial, Donut Samples RT | BLAS/TLAS ownership and API-neutral ray tracing contracts | Clear split between renderer AS scene ownership and RHI AS build descriptors/commands | Shadow/pass concepts in RHI ray tracing structs |
 | 19 | NVRHI, NRI, Cauldron, Diligent Engine | Symmetric backend services under a common abstraction | D3D12/Vulkan service symmetry for commands, descriptors, memory, pipeline, resources, diagnostics | Merging API-specific details into common code too early |
 | 20 | Donut Samples, NVRHI tutorial, Vulkan validation layers, Streamline/FidelityFX docs | Full backend parity validation | Lit/debug captures, DLSS/RT/frame graph/PSO logs, backend feature reports | Exact image match claims where numeric/API differences require tolerance |
@@ -430,6 +432,7 @@ Stage-local source references name the immediate review/code context. The target
 | 16 | [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 17 | [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 17A | [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 17B | [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 18 | [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 19 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 20 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
@@ -480,6 +483,7 @@ This matrix makes the contract burden explicit for each stage. Stage-local promp
 | 16 | PipelineRuntime, ShaderContracts, RhiContracts, ToolContracts | PSO keys are explicit, printable, deterministic, backend-normalized, and tied to package/reflection/layout identity rather than type-index or pass-private state. |
 | 17 | PassCatalog/pass definition, ShaderContracts, frame graph, pipeline runtime | Ordinary pass authoring becomes declarative enough that new passes avoid RHI edits and central trait duplication; pass definitions are immutable runtime/tool inputs. |
 | 17A | Shader authoring manifest/generator, ShaderCompiler, pass definition identity | Shader registration boilerplate is removed without weakening typed reflection diagnostics; package/layout/path/entry/stage metadata is authored once. |
+| 17B | Pass authoring friction budget, pass scaffolding/generation, frame insertion workflow, validation workflow | The current pass-add touch count is enumerated, a target budget is enforced, and ordinary pass authoring removes mechanical edits without weakening graph/shader/PSO diagnostics. |
 | 18 | Ray tracing contract, RhiContracts, RenderContracts, ThreadingReadiness | Renderer owns RT scene/shadow policy; RHI owns API-level AS descriptors/build commands; BLAS/TLAS generations and AS build requests are explicit. |
 | 19 | Backend-private symmetry, RHI services, CMake target scopes | D3D12/Vulkan services are sibling implementations with named differences, no cross-backend includes, and no backend-native details leaking into common RHI/Renderer. |
 | 20 | Full graphics validation, backend parity, ToolContracts, reviewer evidence | Build/smoke/capture/log evidence covers shader compiler, launcher, RT/upscaling/frame graph/PSO diagnostics, and known backend differences without unsupported performance claims. |
@@ -513,6 +517,7 @@ These checkpoints are stage-local acceptance gates. They are intentionally small
 | 16 | Package identity and generation; binding layout/reflection validation; printable PSO key; runtime cache ownership; D3D12/Vulkan normalized descriptor evidence. |
 | 17 | Pass definition schema; pass catalog ownership; graph setup integration; pipeline runtime lookup integration; proof pass migration; old trait/duplicate registration cleanup. |
 | 17A | Shader registration manifest/generator; duplicate constant cleanup; ShaderCompiler enumeration; duplicate/missing/stage/layout validation; pass definition identity handoff. |
+| 17B | Current pass-add touch-count audit; target authoring budget; pass scaffolder or manifest-backed workflow; frame insertion contract; proof pass before/after measurement; ShaderCompiler and boundary validation. |
 | 18 | Renderer RT scene generation; BLAS cache/build request ownership; TLAS frame data ownership; RHI AS descriptor/build command contract; shadow pass data ownership; fallback diagnostics. |
 | 19 | D3D12 service map; Vulkan service map; shared common RHI surface; CMake target scope cleanup; cross-backend include check; parity evidence for named service differences. |
 | 20 | Build/tool validation; shader/package validation; D3D12 smoke artifacts; Vulkan smoke artifacts; feature fallback reports; performance-claim audit; final graphics evidence index. |
@@ -2008,7 +2013,7 @@ Validation:
 
 ## Stage 17A - Remove Shader Registration Boilerplate With Manifest-Driven Authoring
 
-Status: not started. Added after Stage 17 because renderer shader registrations still repeat package/layout/class metadata that should be derived.
+Status: fully completed for renderer shader registration constant removal. Renderer shader classes now keep parameter metadata and real feature flags while package/path/entry/stage metadata is authored once through source metadata registration. Stage 17B owns the remaining whole-pass authoring workflow and central registration friction.
 
 Goal:
 
@@ -2094,11 +2099,110 @@ Acceptance:
 
 Validation:
 
+- `ShaderCompiler` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`.
+- `ShaderCompiler.exe list-shaders --validate` reported 17 valid typed registrations.
+- `ShaderCompiler.exe list-shaders` confirmed renderer packages still enumerate as `GBuffer`, `DirectLighting`, `IndirectLighting`, `LightingComposite`, `Sky`, `VisualizeBuffers`, and `ComputeClear` with matching binding layouts.
+- `ShowcaseEditor` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`.
+- `architecture_boundary_check` passed with only documented provider-owned DLSS exceptions.
+- Source scans over `Engine/Renderer/ShaderRegistrations` found no `kShaderName`, `kShaderPackageName`, `kBindingLayoutId`, or old `IMPLEMENT_GLOBAL_SHADER(` usage.
+- Full D3D12/Vulkan smoke remains assigned to Stage 20 unless registration generation changes runtime package loading semantics.
+
+## Stage 17B - Pass Authoring Friction Budget And One-Command Workflow
+
+Status: not started. Added after Stage 17A because removing shader registration constants is not enough; adding a pass must become measurably simpler from missing shader to running frame.
+
+Goal:
+
+- Enumerate every current file, system, and validation step required to add a new shader pass from no shader source to a pass executing in a frame.
+- Define and enforce a pass-authoring friction budget so ordinary compute/raster passes require the minimum intentional code and no central runtime/RHI/backend edits.
+- Introduce a long-term pass authoring workflow, manifest, or scaffolder that generates mechanical pieces while preserving navigation, diagnostics, and explicit contracts.
+
+Source references:
+
+- `rhi-renderer-architecture-review.md`: `Target Shader Pass Model`, `Shader Pass And PSO Handling`, `Hard Gate: Renderer Shader Passes Must Not Require RHI Edits`
+- `architecture-review-acceptance-rubric.md`: `Shader and pipeline systems`, `Maintainability and naming`, `Documentation and onboarding`, `Testability`, `Role relevance`
+
+Target shape references:
+
+- Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 17B row.
+- Primary target docs: [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
+
+External implementation references:
+
+- NVIDIA Falcor render-pass scaffolding workflow: https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/development/cmake.md
+- NVIDIA Falcor getting-started render pass library workflow: https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/getting-started.md
+- NVIDIA Donut reusable renderer passes and shader build separation: https://github.com/NVIDIA-RTX/Donut
+- AMD Render Pipeline Shaders render graph authoring model: https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders
+- Diligent Render State Notation and render state packager model: https://github.com/DiligentGraphics/DiligentEngine
+
+Code references:
+
+- `Engine/Renderer/Private/Passes`
+- `Engine/Renderer/Private/Frame`
+- `Engine/Renderer/ShaderRegistrations`
+- `Engine/Renderer/Private/Passes/RenderPassDefinition.h`
+- `Engine/Renderer/Private/Pipeline/RenderPassDefinitionRuntime.h`
+- `Engine/RHI/Public/Shaders/Authoring/GlobalShader.h`
+- `Tools/Shaders/ShaderCompiler`
+- Future `Tools/Shaders/PassAuthoring` or equivalent pass scaffolding/generation location if the audit proves the tool earns its right to exist.
+
+Tutor note:
+
+- What is wrong today: Stage 17 made ownership better, but a pass author still needs to know too many files and repeat too much mechanical code before seeing pixels.
+- What changes: we count the whole workflow, then build a supported authoring path where the author states pass intent and shader behavior while tools or shared libraries handle mechanical registration, package identity, diagnostics labels, and validation wiring.
+- Why it improves the engine: shader passes are a high-frequency renderer operation. A reviewer should see a pass authoring path that optimizes for clear intent, low boilerplate, and precise failures rather than ceremony.
+
+Implementation prompt:
+
+```text
+Using Falcor's render-pass scaffolding workflow, Donut's reusable pass organization, AMD RPS's graph-authoring model, and Diligent's render-state notation/packager model, audit Sparkle's current pass-add workflow from no shader source to a pass executing in a frame. Enumerate every required file, central edit, generated/cooked artifact, validation command, and reason for touching it. Then implement or design the smallest long-term authoring workflow that makes a simple compute pass and a simple raster pass require only intentional pass/shader/frame-composition inputs. Prefer a manifest-backed scaffolder or generator when it removes real mechanical edits and improves validation. Do not solve this with opaque macros, duplicate registries, or by moving boilerplate into a different hand-written file.
+```
+
+Positive guardrails:
+
+- Produce a before/after touch-count table for at least `ComputeClear`, `VisualizeBuffers`, and one raster-style pass such as `GBuffer`.
+- Define a hard authoring budget for ordinary passes: shader source, one pass intent record or pass definition, and frame insertion should be the only expected intentional edits for a simple pass.
+- A scaffolder/generator must emit deterministic files or deterministic generated records and must validate duplicate pass names, duplicate package ids, missing shader paths, entry-point mismatch, stage mismatch, and binding-layout mismatch.
+- Keep generated and hand-authored code visually separated by folder and CMake target policy so reviewers can tell what is owned by humans and what is produced by tools.
+- Preserve strong diagnostics: pass name, package id, shader name, shader path, entry point, stage, binding/resource name, expected type, actual reflection type, backend, PSO key, and suggested fix.
+- Treat dispatch/draw helpers, full-screen compute defaults, debug names, package/layout naming, and registration calls as boilerplate unless they express pass-specific behavior.
+
+Negative guardrails:
+
+- Do not hide the workflow behind broad macros that make compiler or reflection errors harder to understand.
+- Do not keep two editable sources of truth for pass identity, shader package identity, binding layout identity, or frame graph resource intent.
+- Do not require ordinary pass authors to edit RHI, D3D12, Vulkan, `PipelineStateManager`, ShaderCompiler internals, or a central renderer registration list.
+- Do not create a broad "pass common" bucket that simply becomes the new place where unrelated boilerplate accumulates.
+- Do not reduce code count by weakening validation, removing diagnostics, or accepting runtime guessing.
+
+Data transfer contracts:
+
+- Pass intent transfers from the authored pass record into frame graph declarations, shader registration records, pipeline runtime lookup, and validation reports.
+- Shader package data transfers from the pass/shader manifest into ShaderCompiler package enumeration, cooked package reflection, and runtime `RenderPassDefinition` identity.
+- Frame insertion transfers only graph resource handles, pass parameters, and execution callbacks; it must not manually rebuild package/PSO/registration metadata.
+- Validation evidence transfers through `ShaderCompiler` list/validate output, boundary checks, target build output, and smoke evidence recorded in coverage status.
+
+Legacy cleanup:
+
+- Remove manual central registration calls when a generated/manifest pass catalog can enumerate registrations deterministically.
+- Remove duplicate package/debug-name/string constants that can be derived from the pass authoring record.
+- Delete unused pass-specific helper skeletons if the shared dispatch/draw helpers cover the ordinary case with better diagnostics.
+
+Acceptance:
+
+- `pass-authoring-contract.md` contains a current pass-add checklist with file paths and reasons for every touch.
+- A target pass authoring budget exists and names the maximum intentional edits for simple compute and raster passes.
+- A proof pass is added or re-migrated through the new workflow with before/after touch counts.
+- Adding a simple compute pass requires no RHI edit, no backend edit, no `PipelineStateManager` edit, no ShaderCompiler internal edit, and no repeated shader/package/layout constants.
+- The workflow validates duplicate names, missing shaders, stage mismatches, binding mismatches, and package/reflection errors before runtime smoke.
+
+Validation:
+
 - Build `ShaderCompiler`.
 - Run `ShaderCompiler.exe list-shaders --validate`.
 - Build `ShowcaseEditor`.
 - Run `architecture_boundary_check`.
-- Full D3D12/Vulkan smoke remains assigned to Stage 20 unless registration generation changes runtime package loading semantics.
+- Run targeted launcher-shaped smoke in Stage 20 unless the proof pass is user-visible enough to justify smoke in this stage.
 
 ## Stage 18 - Clean Ray Tracing Ownership And Contracts
 

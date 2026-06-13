@@ -1,6 +1,6 @@
 # Pass Authoring Contract
 
-Status: Stage 17 implementation contract, Stage 17A boilerplate-reduction target
+Status: Stage 17 implementation contract, Stage 17A boilerplate-reduction target, Stage 17B pass-authoring friction budget target
 Date: 2026-06-12
 Last synchronized: 2026-06-13
 
@@ -80,7 +80,7 @@ This flow removes the Stage 16/17 central traits edit. A regular renderer pass c
 - [Engine/Renderer/Private/Frame](../../Engine/Renderer/Private/Frame)
 - [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations)
 
-The renderer-owned shader registration location keeps pass package identity above RHI. Package and binding layout names are shared through [RendererShaderPackages.h](../../Engine/Renderer/ShaderRegistrations/RendererShaderPackages.h) instead of duplicated per pass. Stage 17A targets the remaining shader registration boilerplate where shader name, package id, binding layout id, shader path, entry point, and stage are still hand-written around `IMPLEMENT_GLOBAL_SHADER`.
+The renderer-owned shader registration location keeps pass package identity above RHI. Package and binding layout names are shared through [RendererShaderPackages.h](../../Engine/Renderer/ShaderRegistrations/RendererShaderPackages.h) instead of duplicated per pass. Stage 17A removed the local shader class constants and moved package/path/entry/stage metadata into one source metadata declaration. Stage 17B extends that target to the whole pass-add workflow so pass authoring is measured from missing shader source to a pass executing in a frame.
 
 ## Target Authoring Flow
 
@@ -154,6 +154,56 @@ Target rule:
 | Shader registration manifest/generator | It removes repeated class-local constants while preserving typed parameter metadata, paths, entry points, stages, feature flags, and diagnostics. | It is only a macro disguise that makes navigation or error reporting worse. |
 | Runtime specialization | It is required for a genuinely unusual pass. | It exists only because central traits require every ordinary pass to add ceremony. |
 
+## Current End-To-End Pass-Add Workflow
+
+This is the current cost of adding an ordinary shader pass from no shader to a running frame. The list is intentionally explicit because pass authoring is a frequent renderer operation and complexity here compounds quickly.
+
+| Touch point | Current file or area | Why it is touched today | Disposition |
+| --- | --- | --- | --- |
+| Shader source | Renderer shader source path referenced by registration, such as `Passes/Deferred/*.hlsl` or `Passes/Compute/*.hlsl`. | Provides shader code and entry point. | Keep as intentional author input. |
+| Pass parameter shape | Pass header in [Engine/Renderer/Private/Passes](../../Engine/Renderer/Private/Passes). | Names shader-visible resources/constants and parameter metadata. | Keep when the pass has unique bindings; generate or default common full-screen/simple cases where safe. |
+| Pass class and runtime alias | Pass header in [Engine/Renderer/Private/Passes](../../Engine/Renderer/Private/Passes). | Declares pass name, runtime type, parameter instance, `GetDefinition()`, `DeclareResources()`, and `Execute()`. | Reduce to intent and execution only; derive pass/runtime boilerplate where possible. |
+| Parameter metadata build | Pass cpp in [Engine/Renderer/Private/Passes](../../Engine/Renderer/Private/Passes). | Builds and validates shader parameter layout. | Keep validation, but centralize repeated skeleton code. |
+| Pass definition | Pass cpp using [RenderPassDefinition.h](../../Engine/Renderer/Private/Passes/RenderPassDefinition.h). | Names package, layout, pipeline kind, feature requirements, render state, and debug names. | Keep as pass intent; derive package/layout/debug names from one authoring record. |
+| Resource declaration | Pass cpp `DeclareResources()` and frame graph helpers. | Converts frame resources into SRV/UAV/RTV/DSV/pass parameters. | Keep close to pass intent; allow generated defaults only for simple patterns. |
+| Parameter update | Pass cpp `SetParameters()` or equivalent. | Copies per-frame/view/feature data into shader-visible parameter blocks. | Keep only data movement that is pass-specific. |
+| Dispatch or draw | Pass cpp `Execute()`. | Records compute dispatch or draw through runtime helpers. | Shared helpers should own ordinary dispatch/draw boilerplate; pass code states dimensions, draw policy, or custom behavior. |
+| Shader registration class | [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations). | Registers shader name, package id, binding layout id, parameters, shader path, entry point, and stage. | Stage 17A removes per-class constants; Stage 17B decides whether a generated/catalog enumerator replaces the remaining hand-authored registration declarations. |
+| Package identity constant | [RendererShaderPackages.h](../../Engine/Renderer/ShaderRegistrations/RendererShaderPackages.h). | Shares package/layout names between registration and pass definition. | Replace with generated/catalog source if it becomes a second editable registry. |
+| Central registration call | [RendererGlobalShaders.cpp](../../Engine/Renderer/ShaderRegistrations/RendererGlobalShaders.cpp). | Forces static registration function references for ShaderCompiler/runtime bootstrap. | Remove when a catalog/generator enumerates registrations deterministically. |
+| Frame insertion function | [Engine/Renderer/Private/Frame](../../Engine/Renderer/Private/Frame). | Allocates parameters, declares resources, adds compute/raster pass, and captures runtime lookup. | Keep as intentional graph composition, but remove repeated boilerplate with typed helpers. |
+| Frame composition edge | Higher-level frame composition file such as [Frame.cpp](../../Engine/Renderer/Private/Frame/Frame.cpp) or feature composition files. | Places the pass in ordering relative to other passes. | Keep as intentional architecture decision. |
+| Shader compiler enumeration | [Tools/Shaders/ShaderCompiler](../../Tools/Shaders/ShaderCompiler). | Lists, validates, cooks, and inspects packages/reflection. | Must consume pass catalog/manifest without internal edits per ordinary pass. |
+| Runtime validation | Launcher-shaped smoke and package validation. | Proves the pass cooks, loads, binds, records, and presents on target backends. | Keep as evidence, automate where practical. |
+
+## Boilerplate Classification
+
+| Current repetition | Why it is a problem | Target owner |
+| --- | --- | --- |
+| `kShaderName`, package id, and binding layout id in each shader registration class. | These values are package metadata, not pass logic; repeated strings create typo and drift risk. | Completed in Stage 17A for renderer registrations. |
+| `RendererShaderPackages` plus pass definition package strings plus registration package strings. | Multiple editable identity surfaces can disagree. | One pass/shader catalog identity source. |
+| Empty `Register*Shaders()` functions plus central `RegisterRendererGlobalShaders()` calls. | Registration ordering and reachability are mechanical. | Generated registration list or manifest enumerator. |
+| Repeated metadata-builder/validation skeletons. | Validation is valuable, but the repeated wrapper is not. | Shared pass authoring/runtime helper. |
+| Repeated debug-name strings derived from pass/package name. | The information is useful, the hand-written duplication is not. | Derived defaults with explicit override support. |
+| Repeated full-screen compute dispatch math for ordinary viewport-sized passes. | It is common pass mechanics and easy to mistype. | Shared dispatch helper fed by pass definition/viewport extent. |
+
+## Pass Authoring Friction Budget
+
+Stage 17B owns this budget. A pass that exceeds it must name the extra complexity and why it earns its right to exist.
+
+| Pass kind | Intended author edits | Forbidden ordinary edits |
+| --- | --- | --- |
+| Simple compute pass | Shader source, one pass intent record or pass definition, one frame insertion/composition edge. | RHI, D3D12, Vulkan, `PipelineStateManager`, ShaderCompiler internals, central shader registration list, duplicated package/layout constants. |
+| Simple raster pass | Shader source(s), one pass intent record or pass definition with render state, one frame insertion/composition edge. | RHI/backend edits, central trait/runtime edits, duplicate shader/package/layout constants, hand-written package registration plumbing. |
+| Special pass | Shader/source inputs, pass intent, frame insertion, plus a documented special-case adapter. | Silent expansion of shared common code or generic registries to serve one unusual pass. |
+
+Target metrics:
+
+- Simple compute pass: no more than three intentional author-owned touch points before validation.
+- Simple raster pass: no more than four intentional author-owned touch points before validation.
+- Zero ordinary-pass edits in RHI, backend folders, `PipelineStateManager`, ShaderCompiler internals, or central registration lists.
+- All generated/mechanical outputs are deterministic and either checked in intentionally or regenerated by a documented local/CI command.
+
 ## Current Checklist
 
 A current ordinary pass usually needs:
@@ -183,6 +233,8 @@ It should not require:
 - RHI private shader registration edits.
 - D3D12/Vulkan backend edits.
 - A central per-pass traits specialization for ordinary compute/raster passes.
+- Hand-written repeated shader/package/layout constants.
+- A central renderer registration list edit when generated/catalog enumeration can prove the same result.
 
 ## Ownership Rules
 
@@ -220,8 +272,9 @@ Forbidden shortcuts:
 | Gap | Evidence | Owning stage |
 | --- | --- | --- |
 | Shader registration and pass definition remain in separate files. | [RendererShaderPackages.h](../../Engine/Renderer/ShaderRegistrations/RendererShaderPackages.h) is now the shared identity source; a future ShaderContracts manifest can remove the remaining split. | Stage 20, Stage 22 |
-| Renderer shader registrations still repeat class/package/layout/path/entry/stage metadata. | `SkyCS` and the other renderer registration classes still carry local `kShaderName`, `kShaderPackageName`, `kBindingLayoutId`, source path, entry point, and stage values. | Stage 17A |
-| Adding a pass still requires understanding cook/runtime/PSO evidence. | Pass definition, shader registration, cook tooling, and binding validation are intentionally separate but documented. | Stage 20, Stage 22 |
+| Renderer shader registrations still require explicit package/path/entry/stage declarations. | Stage 17A removed local `kShaderName`, `kShaderPackageName`, and `kBindingLayoutId`; source metadata declarations still remain until Stage 17B decides whether a pass catalog/scaffolder earns its right to exist. | Stage 17B |
+| Adding a pass still requires too many mechanical edits. | Current workflow touches pass header/cpp, shader registration, package identity, central registration, frame insertion, shader source, cook/list validation, and smoke evidence. | Stage 17B |
+| Adding a pass still requires understanding cook/runtime/PSO evidence. | Pass definition, shader registration, cook tooling, and binding validation are intentionally separate but documented. | Stage 17B, Stage 20, Stage 22 |
 
 ## Stage 4 Completion Packet
 

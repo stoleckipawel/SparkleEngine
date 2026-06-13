@@ -6,16 +6,11 @@
 #include "Resources/RenderConstantBufferData.h"
 #include "Renderer/Private/RayTracing/RayTracedShadowUniformData.h"
 
-#include <string_view>
-
 void RegisterDirectLightingShaders() noexcept {}
 
 class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
 {
   public:
-	static constexpr std::string_view kShaderName = "DirectLightingCS";
-	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::DirectLighting;
-	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::DirectLighting;
 	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures =
 	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure | CookedShaderPackageFeatureFlags::UsesInlineRayQuery;
 
@@ -35,4 +30,9 @@ class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(DirectLightingCS, "Passes/Deferred/DirectLighting.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
+    DirectLightingCS,
+    RendererShaderPackages::DirectLighting,
+    "Passes/Deferred/DirectLighting.hlsl",
+    "main",
+    Compute);

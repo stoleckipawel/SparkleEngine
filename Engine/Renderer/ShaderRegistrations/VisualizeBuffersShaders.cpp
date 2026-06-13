@@ -5,17 +5,11 @@
 
 #include "Resources/RenderConstantBufferData.h"
 
-#include <string_view>
-
 void RegisterVisualizeBuffersShaders() noexcept {}
 
 class VisualizeBuffersCS final : public TGlobalShader<VisualizeBuffersCS>
 {
   public:
-	static constexpr std::string_view kShaderName = "VisualizeBuffersCS";
-	static constexpr std::string_view kShaderPackageName = RendererShaderPackages::VisualizeBuffers;
-	static constexpr std::string_view kBindingLayoutId = RendererShaderPackages::VisualizeBuffers;
-
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, SceneColor, SceneColorTexture)
 	SHADER_PARAMETER_TEXTURE(Texture2D, DirectDiffuse)
@@ -33,4 +27,9 @@ class VisualizeBuffersCS final : public TGlobalShader<VisualizeBuffersCS>
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(VisualizeBuffersCS, "Passes/Deferred/VisualizeBuffers.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
+    VisualizeBuffersCS,
+    RendererShaderPackages::VisualizeBuffers,
+    "Passes/Deferred/VisualizeBuffers.hlsl",
+    "main",
+    Compute);
