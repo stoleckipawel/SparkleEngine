@@ -7,7 +7,6 @@ Scope: whole-repository architecture, with the first implementation track focuse
 
 Navigation:
 
-- Plans index: [README.md](README.md)
 - Whole-repository review: [sparkle-whole-repository-architecture-review.md](sparkle-whole-repository-architecture-review.md)
 - Before/current architecture: [../architecture/before/repository-current-state.md](../architecture/before/repository-current-state.md)
 - After/target architecture: [../architecture/after/repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
@@ -297,7 +296,7 @@ Sparkle should not be considered architecturally reviewed until:
 - Every shader-visible contract has one owner and one source of truth.
 - Every diagnostics/validation path has a named artifact: log, capture, smoke report, screenshot, or test output.
 - Empty or placeholder folders are removed or documented.
-- The final repo README points reviewers to this architecture map and the current status of each area.
+- Final architecture evidence points reviewers to this architecture map and the current status of each area.
 
 High-level structure:
 

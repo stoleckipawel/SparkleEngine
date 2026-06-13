@@ -7,7 +7,6 @@ Scope: all durable SparkleEngine source roots under `Engine/`, `Tools/`, `Projec
 
 Navigation:
 
-- Plans index: [README.md](README.md)
 - Before/current architecture: [../architecture/before/repository-current-state.md](../architecture/before/repository-current-state.md)
 - After/target architecture: [../architecture/after/repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
 - Target folder architecture: [../architecture/after/repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)

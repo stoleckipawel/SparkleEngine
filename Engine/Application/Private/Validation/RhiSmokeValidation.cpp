@@ -6,6 +6,7 @@
 #include "Level/Level.h"
 #include "Level/LevelManager.h"
 #include "Platform/Public/Window/Window.h"
+#include "Validation/RhiSmokeCameraMotion.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "Renderer.h"
 #include "RuntimeApplication.h"
@@ -24,6 +25,7 @@ struct RhiSmokeValidationConfig
 	std::uint32_t ShaderReloadFrame = 0;
 	bool LevelSwitching = true;
 	std::uint32_t LevelSwitchIntervalFrames = 15;
+	RhiSmokeCameraMotionConfig CameraMotion;
 };
 
 struct RhiSmokeValidationState
@@ -39,6 +41,7 @@ struct RhiSmokeValidationState
 	std::uint32_t CompletedLevelSwitches = 0;
 	std::vector<std::string> LevelSwitchOrder;
 	std::string PendingLevelName;
+	RhiSmokeCameraMotionState CameraMotion;
 };
 
 class RhiSmokeValidationRunner final
@@ -84,6 +87,7 @@ RhiSmokeValidationConfig RhiSmokeValidationRunner::LoadConfig() noexcept
 	config.LevelSwitchIntervalFrames = Environment::GetUInt32(
 	    "SPARKLE_SMOKE_LEVEL_SWITCH_INTERVAL_FRAMES",
 	    config.LevelSwitchIntervalFrames);
+	config.CameraMotion = RhiSmokeCameraMotion::LoadConfig();
 	return config;
 }
 
@@ -191,14 +195,16 @@ void RhiSmokeValidationRunner::LogRendererSmokeEvidence(
 	SPDLOG_LOGGER_INFO(
 	    appLogger,
 	    "RHI smoke evidence: backend={} frameGraphUnresolvedBarrierWarnings={} upscalerProvider='{}' upscalerStatus={} "
-	    "upscalerReason='{}' rayTracing={} inlineRayQuery={}",
+	    "upscalerReason='{}' rayTracing={} inlineRayQuery={} tlasValid={} tlasInstances={}",
 	    RhiBackendApiToString(snapshot.BackendApi),
 	    snapshot.FrameGraphUnresolvedBarrierWarnings,
 	    snapshot.UpscalerProvider,
 	    snapshot.UpscalerStatus,
 	    snapshot.UpscalerReason,
 	    snapshot.RayTracingSupported,
-	    snapshot.InlineRayQuerySupported);
+	    snapshot.InlineRayQuerySupported,
+	    snapshot.RayTracingTlasValid,
+	    snapshot.RayTracingTlasInstanceCount);
 
 	if (snapshot.FrameGraphUnresolvedBarrierWarnings > 0)
 	{
@@ -323,6 +329,7 @@ void RhiSmokeValidationRunner::Advance(
 	++state.CompletedRenderFrames;
 	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
 	AdvanceLevelSwitching(config, app, state);
+	RhiSmokeCameraMotion::Advance(config.CameraMotion, app, state.CompletedRenderFrames, state.CameraMotion);
 
 	if (config.ShaderReloadFrame > 0 && state.CompletedRenderFrames == config.ShaderReloadFrame)
 	{
@@ -370,6 +377,12 @@ void RhiSmokeValidationRunner::Advance(
 
 	if (config.FrameLimit > 0 && state.CompletedRenderFrames >= config.FrameLimit)
 	{
+		if (!RhiSmokeCameraMotion::Validate(config.CameraMotion, state.CameraMotion, app.GetRenderer().CaptureSmokeDiagnostics(), "runtime"))
+		{
+			state.Failed = true;
+			SPDLOG_LOGGER_ERROR(appLogger, "RHI smoke validation: camera motion evidence failed validation");
+		}
+
 		if (config.LevelSwitching && !state.LevelSwitchingFinished)
 		{
 			state.Failed = true;

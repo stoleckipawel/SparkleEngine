@@ -3,6 +3,7 @@
 
 #include "FramePipeline/FramePipeline.h"
 #include "Host/RendererSystemRoot.h"
+#include "RayTracing/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Upscaling/UpscalerProvider.h"
 #include "Upscaling/UpscalerSubsystem.h"
@@ -75,6 +76,11 @@ RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 	    m_framePipeline != nullptr ? m_framePipeline->GetLastUnresolvedBarrierWarningCount() : 0u;
 	snapshot.RayTracingSupported = capabilities.RayTracing.SupportsRayTracing;
 	snapshot.InlineRayQuerySupported = capabilities.RayTracing.SupportsInlineRayQuery;
+	if (const RenderRayTracingScene* rayTracingScene = m_systemRoot->GetRenderRayTracingScene())
+	{
+		snapshot.RayTracingTlasValid = rayTracingScene->HasValidTlas();
+		snapshot.RayTracingTlasInstanceCount = rayTracingScene->GetTlasInstanceCount();
+	}
 
 	if (UpscalerSubsystem* upscalerSubsystem = m_systemRoot->GetUpscalerSubsystem())
 	{

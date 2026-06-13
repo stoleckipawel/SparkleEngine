@@ -31,6 +31,7 @@ file(GLOB_RECURSE SPARKLE_APPLICATION_EDITOR_PRIVATE_SOURCES CONFIGURE_DEPENDS
 list(APPEND SPARKLE_APPLICATION_EDITOR_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/EditorApplication.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/EditorApplicationLaunch.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeCameraMotion.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeEditorValidation.cpp
 )
 

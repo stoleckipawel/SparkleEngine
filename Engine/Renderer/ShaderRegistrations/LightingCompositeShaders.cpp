@@ -5,8 +5,6 @@
 
 #include "Resources/RenderConstantBufferData.h"
 
-void RegisterLightingCompositeShaders() noexcept {}
-
 class LightingCompositeCS final : public TGlobalShader<LightingCompositeCS>
 {
   public:

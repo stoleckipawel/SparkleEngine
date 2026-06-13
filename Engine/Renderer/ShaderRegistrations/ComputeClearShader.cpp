@@ -3,8 +3,6 @@
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-void RegisterComputeClearShaders() noexcept {}
-
 class ComputeClearCS final : public TGlobalShader<ComputeClearCS>
 {
   public:

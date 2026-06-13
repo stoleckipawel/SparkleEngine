@@ -5,8 +5,6 @@
 
 #include "Resources/RenderConstantBufferData.h"
 
-void RegisterVisualizeBuffersShaders() noexcept {}
-
 class VisualizeBuffersCS final : public TGlobalShader<VisualizeBuffersCS>
 {
   public:

@@ -13,7 +13,7 @@ This contract complements [tooling-pipeline-contract.md](tooling-pipeline-contra
 
 | Priority | Path | When to use | Evidence required |
 | --- | --- | --- | --- |
-| 1 | Launcher operation plan and execution | User-facing launch, smoke, build/cook/launch workflow, reviewer path, or feature validation that depends on project setup. | Operation id, project id, target, profile, working directory, environment overrides, log path, artifacts, readiness messages, exit code, and failure summary. |
+| 1 | Launcher operation plan and execution | User-facing launch, smoke, build/cook/launch workflow, or feature validation that depends on project setup. | Operation id, project id, target, profile, working directory, environment overrides, log path, artifacts, readiness messages, exit code, and failure summary. |
 | 2 | Launcher-shaped direct execution | Automation or debugging where opening the GUI would slow the loop. | Explicit statement that the command mirrors `LaunchOperationPlan`, including executable path, `Projects/<ProjectId>` working directory, smoke environment, logs, and artifacts. |
 | 3 | Direct tool target command | Tools with no launcher workflow yet, such as shader/package inspection or focused cooker commands. | Target name, command line, input files, output artifacts, report path, exit code, and whether the command should become a launcher workflow. |
 | 4 | Build-only check | Compile or boundary-only validation. | Target/config/generator, command output result, generated target caveats, and reason runtime/tool execution was not needed. |
@@ -37,6 +37,9 @@ Launcher-shaped validation must match these fields:
 | Backend | `SPARKLE_RHI_BACKEND=D3D12` or `SPARKLE_RHI_BACKEND=Vulkan` when backend parity is being validated. |
 | View mode | `SPARKLE_SMOKE_VIEW_MODE`, used by editor smoke captures. Lit is `0`; GBuffer normal is `3`. |
 | Capture path | `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE`, used by editor smoke capture. Artifact names must include backend and view mode. |
+| Camera motion | `SPARKLE_SMOKE_CAMERA_MOTION=1` enables deterministic camera rotation for RT/presentation stability evidence. |
+| Camera motion RT gate | `SPARKLE_SMOKE_CAMERA_MOTION_REQUIRES_RT=1` requires ray tracing support, inline ray query support, a valid TLAS, and nonzero TLAS instance count. |
+| Camera motion window | `SPARKLE_SMOKE_CAMERA_MOTION_START_FRAME`, `SPARKLE_SMOKE_CAMERA_MOTION_END_FRAME`, `SPARKLE_SMOKE_CAMERA_MOTION_YAW_DEGREES`, and `SPARKLE_SMOKE_CAMERA_MOTION_PITCH_DEGREES` define the deterministic camera path. |
 | Trace | `SPARKLE_SMOKE_TRACE=1` only when the stage needs trace-level evidence. |
 | Level switching | `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING=1` when a stage needs a stable single-scene comparison. |
 | Log path | `SPARKLE_LOG_FILE` or the launcher operation log path. Logs are validation artifacts and should sit beside capture artifacts when running directly. |
@@ -47,6 +50,7 @@ Launcher-shaped validation must match these fields:
 - A direct executable run must state whether it followed launcher-shaped execution. If it did not, the result is diagnostic only and cannot close a validation milestone.
 - Backend parity stages must run both D3D12 and Vulkan through the same project, target type, frame count, startup path, and view modes unless the difference is explicitly the subject of the test.
 - Editor capture validation must include Lit and at least one debug/normal mode when the stage touches frame graph, resources, upscaling, presentation, or backend layout/state handling.
+- Ray tracing parity validation must include deterministic camera-motion evidence when the stage claims shadow stability under camera movement.
 - Runtime validation must scan logs for error/critical diagnostics. Exit code `0` does not override validation-layer errors.
 - Unresolved frame graph handles, unresolved barrier warnings, silent upscaler fallback, missing capture artifacts, missing cooked assets, and validation-layer errors are milestone blockers unless a later stage owns a named exception.
 - Generated validation artifacts belong under `artifacts/validation/<stage-or-feature>/`, not source or docs folders.
@@ -78,4 +82,3 @@ Every validation milestone should record:
 | Outputs | Logs, captures, reports, JSON summaries, package lists, screenshots, or cooked artifacts. |
 | Diagnostics | Frame graph warnings, validation-layer errors, DLSS/upscaler status, ray tracing status, backend capabilities, failure domain, and error/critical log scan. |
 | Decision | Passed, failed, unsupported with reason, or blocked with owner stage. |
-

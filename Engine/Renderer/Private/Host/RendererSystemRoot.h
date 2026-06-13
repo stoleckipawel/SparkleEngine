@@ -61,6 +61,7 @@ class RendererSystemRoot final
 	MaterialCacheManager& GetMaterialCacheManager() noexcept { return *m_materialCacheManager; }
 	RenderSceneDataBuilder& GetRenderSceneDataBuilder() noexcept { return *m_renderSceneDataBuilder; }
 	RenderRayTracingScene* GetRenderRayTracingScene() noexcept { return m_renderRayTracingScene.get(); }
+	const RenderRayTracingScene* GetRenderRayTracingScene() const noexcept { return m_renderRayTracingScene.get(); }
 	PerViewDataBuilder& GetPerViewDataBuilder() noexcept { return *m_perViewDataBuilder; }
 	TemporalDataBuilder& GetTemporalDataBuilder() noexcept { return *m_temporalDataBuilder; }
 	ViewLightingBuilder& GetViewLightingBuilder() noexcept { return *m_viewLightingBuilder; }

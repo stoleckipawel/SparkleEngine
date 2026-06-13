@@ -19,7 +19,6 @@
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RayTracing/RenderRayTracingScene.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
-#include "RendererShaderRegistration.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
@@ -122,8 +121,6 @@ void RendererSystemRoot::PostLoad() noexcept
 void RendererSystemRoot::InitializeCoreSystems() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.InitializeCoreSystems");
-
-	RegisterRendererGlobalShaders();
 
 	{
 		SPARKLE_CPU_SCOPE("Renderer.CreateBackend");

@@ -37,15 +37,14 @@ file(GLOB_RECURSE SPARKLE_RENDERER_SHADER_REGISTRATION_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations/*.h
 )
 
-add_library(SparkleRendererShaderRegistrations STATIC
+add_library(SparkleRendererShaderRegistrations OBJECT
     ${SPARKLE_RENDERER_SHADER_REGISTRATION_SOURCES}
     ${SPARKLE_RENDERER_SHADER_REGISTRATION_HEADERS}
 )
 
 target_include_directories(SparkleRendererShaderRegistrations
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         ${CMAKE_CURRENT_SOURCE_DIR}/..
@@ -63,6 +62,18 @@ target_link_libraries(SparkleRendererShaderRegistrations
 
 sparkle_target_precompile_headers(SparkleRendererShaderRegistrations
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
+)
+
+add_library(SparkleRendererShaderRegistrationObjects INTERFACE)
+
+target_sources(SparkleRendererShaderRegistrationObjects
+    INTERFACE
+        $<TARGET_OBJECTS:SparkleRendererShaderRegistrations>
+)
+
+target_link_libraries(SparkleRendererShaderRegistrationObjects
+    INTERFACE
+        SparkleRendererShaderRegistrations
 )
 
 add_library(SparkleRendererNvidiaDlssProvider STATIC
@@ -145,9 +156,14 @@ target_link_libraries(SparkleRenderer
     PRIVATE
         SparklePlatform
         SparkleGameFramework
-        SparkleRendererShaderRegistrations
         SparkleRendererNvidiaDlssProvider
 )
+
+if(SPARKLE_BUILD_SHARED)
+    target_link_libraries(SparkleRenderer PRIVATE SparkleRendererShaderRegistrations)
+else()
+    target_link_libraries(SparkleRenderer PUBLIC SparkleRendererShaderRegistrationObjects)
+endif()
 
 sparkle_configure_runtime_support_artifacts(SparkleRenderer)
 

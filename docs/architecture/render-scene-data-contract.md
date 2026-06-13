@@ -10,7 +10,7 @@ This document defines the GameFramework-to-Renderer handoff used by the current 
 Reference basis:
 
 - NVIDIA Donut keeps scene/component maintenance separate from reusable render passes and NVRHI-backed rendering: https://github.com/NVIDIA-RTX/Donut
-- NVIDIA Falcor presents scene/rendering systems as distinct reviewer-facing concepts: https://github.com/NVIDIAGameWorks/Falcor
+- NVIDIA Falcor presents scene/rendering systems as distinct architecture concepts: https://github.com/NVIDIAGameWorks/Falcor
 - Sparkle threading-readiness contract: [repository-threading-readiness.md](after/repository-threading-readiness.md)
 
 Companion docs:
@@ -116,6 +116,5 @@ Stage 20 validation must include lit and debug/normal captures across D3D12 and 
 | --- | --- | --- |
 | Mesh snapshots still carry runtime `Mesh*` references because morph/dirty geometry and GPU cache keys are tied to runtime mesh objects. | GameFramework/Renderer render handoff | Stage 24 should move toward a render mesh payload/key contract when `RenderContracts`/`AssetContracts` are extracted. |
 | Mesh diagnostics can still inspect live `SceneMeshes` for full visible/invisible counts. | Renderer diagnostics | Stage 15 can decide whether smoke evidence needs snapshot-only diagnostics or a richer snapshot that includes invisible/runtime counts. |
-| Material diagnostics are currently inferred through scene data and mesh binding diagnostics rather than a dedicated material report. | Renderer material cache | Stage 15 or Stage 21 should add/report material cache evidence if reviewer-facing diagnostics need it. |
+| Material diagnostics are currently inferred through scene data and mesh binding diagnostics rather than a dedicated material report. | Renderer material cache | Stage 15 or Stage 20 should add/report material cache evidence if validation diagnostics need it. |
 | Denoising has a public shadow denoise contract but no private denoiser implementation folder. | Renderer ray tracing/frame graph | Keep the public contract as the integration point; Stage 18/22 decides whether to implement a denoiser feature system or keep raw visibility only. |
-

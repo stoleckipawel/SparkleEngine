@@ -3,8 +3,6 @@
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-void RegisterIndirectLightingShaders() noexcept {}
-
 class IndirectLightingCS final : public TGlobalShader<IndirectLightingCS>
 {
   public:

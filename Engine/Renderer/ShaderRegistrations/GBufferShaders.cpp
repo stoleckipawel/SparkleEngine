@@ -5,8 +5,6 @@
 
 #include "Resources/RenderConstantBufferData.h"
 
-void RegisterGBufferShaders() noexcept {}
-
 class GBufferVS final : public TGlobalShader<GBufferVS>
 {
   public:

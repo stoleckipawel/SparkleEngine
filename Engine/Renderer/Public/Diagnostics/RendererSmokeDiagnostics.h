@@ -15,4 +15,6 @@ struct SPARKLE_RENDERER_API RendererSmokeDiagnosticsSnapshot final
 	std::string UpscalerReason;
 	bool RayTracingSupported = false;
 	bool InlineRayQuerySupported = false;
+	bool RayTracingTlasValid = false;
+	std::uint32_t RayTracingTlasInstanceCount = 0;
 };

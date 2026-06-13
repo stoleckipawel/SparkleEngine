@@ -5,8 +5,6 @@
 
 #include "Resources/RenderConstantBufferData.h"
 
-void RegisterSkyShaders() noexcept {}
-
 class SkyCS final : public TGlobalShader<SkyCS>
 {
   public:

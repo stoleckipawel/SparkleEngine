@@ -327,4 +327,4 @@ The target architecture is accepted only when:
 - Cooked artifact schemas name producer, schema owner, runtime consumer, inspector, and smoke/load evidence.
 - Boundary checks cover RHI/Renderer, runtime-to-tools, GameFramework/private coupling, launcher/tool ownership, backend-native leakage, and generated/local-only policy.
 - Threading readiness checks pass at the design level: every mutable subsystem has a phase owner and every future parallel handoff has a named contract.
-- README, plans, graph pages, CMake/CI, sample projects, and validation artifacts describe the same architecture.
+- Plans, graph pages, CMake/CI, sample projects, and validation artifacts describe the same architecture.

@@ -187,7 +187,7 @@ When RHI or Renderer changes, check:
 | Cooked texture format or upload contract | `TextureCooker`, `MaterialCooker`, `AssetCooker`, GameFramework cooked texture references, renderer texture manager. |
 | Scene mesh/material/light/camera DTOs | `SourceImporters`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, GameFramework loaders, renderer scene data builders. |
 | Build targets/profiles/artifact layout | `SparkleLauncherCore`, `AssetCooker` dispatch, CMake artifact contract, CI workflows. |
-| Smoke validation environment variables | Launcher smoke workflows, Application validation, docs and README commands. |
+| Smoke validation environment variables | Launcher smoke workflows, Application validation, and validation docs. |
 
 ## Launcher Smoke Contract
 

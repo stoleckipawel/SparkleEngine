@@ -233,7 +233,7 @@ Before changing RHI or Renderer contracts, check all affected consumers:
 | RHI resource states/native interop | Renderer frame graph, upscaling providers, Application validation, launcher smoke workflows. |
 | Renderer scene DTOs or snapshots | `GameFramework` scene/camera/light/mesh/material data, `SceneCooker`, editor viewport behavior. |
 | GameFramework cooked asset schemas | Import adapters, mesh/material/scene cookers, asset converter, runtime loaders, renderer scene data builders. |
-| Tool target names or artifact paths | Launcher workflow catalog, AssetCooker dispatcher, CMake artifact contract, README/build docs. |
+| Tool target names or artifact paths | Launcher workflow catalog, AssetCooker dispatcher, CMake artifact contract, and build/validation docs. |
 | Build profile or dependency changes | Launcher, cook tools, shader compiler, projects, CI workflows, generated artifact layout. |
 
 ## Whole-Repo Acceptance

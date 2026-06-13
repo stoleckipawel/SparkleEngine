@@ -201,8 +201,8 @@ Expected smoke evidence:
 | --- | --- | --- |
 | Direct lighting shader registration still mirrors pass package identity. | [DirectLightingShaders.cpp](../../Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp) declares the package while `DirectLightingPass` describes it for runtime. | Stage 17 |
 | Ray tracing contract needed concrete diagnostics. | Stage 18 now reports candidate TLAS instances, accepted TLAS instances, missing GPU mesh data, rejected BLAS handles, and inline ray-query shadow unavailable reason. | Stage 18, Stage 20 |
-| Backend parity evidence is not final. | Need lit/debug captures and RT smoke for both APIs. | Stage 18, Stage 20 |
-| Denoiser ownership is still a decision. | Stage 13 removed the empty private denoising placeholder; the public shadow denoise contract remains the current integration point. | Stage 18, Stage 22 |
+| Backend parity evidence is final for the Stage 20 milestone. | D3D12/Vulkan lit/debug smoke and deterministic camera-motion RT smoke passed with valid TLAS evidence and zero unresolved frame graph warnings. | Stage 18, Stage 20 |
+| Denoiser ownership is still a decision. | Stage 13 removed the empty private denoising placeholder; the public shadow denoise contract remains the current integration point. | Stage 18, Stage 36 |
 
 ## Change Rules
 

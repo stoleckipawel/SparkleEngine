@@ -95,7 +95,7 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | Target `Engine/RHI/Private/Services`, `D3D12`, and `Vulkan` | API-neutral RHI services plus sibling backend implementations. | Whether service folders clarify ownership without becoming new broad facades. |
 | [Tools/Shaders/ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Shader compilation, reflection extraction, cook graph, package writing, CLI inspection. | Whether pass authoring and runtime packages can evolve without RHI-specific renderer edits. |
 | [Engine/Application/Private/Validation](../../Engine/Application/Private/Validation) | Smoke validation orchestration. | Whether validation orchestrates systems without owning backend-native implementation details. |
-| [Tools/Launcher/SparkleLauncher/Private/Launch/Smoke](../../Tools/Launcher/SparkleLauncher/Private/Launch/Smoke) | Launcher smoke workflow. | Whether reviewer-facing launch/validation paths are discoverable and repeatable. |
+| [Tools/Launcher/SparkleLauncher/Private/Launch/Smoke](../../Tools/Launcher/SparkleLauncher/Private/Launch/Smoke) | Launcher smoke workflow. | Whether launch/validation paths are discoverable and repeatable through the actual user-facing workflow. |
 | [Engine/GameFramework](../../Engine/GameFramework) | Runtime scene, levels, cooked asset loading, gameplay-facing data contracts. | Whether renderer refactors preserve immutable scene/cooked-data contracts. |
 | [Tools/Cooking](../../Tools/Cooking) and [Tools/Import](../../Tools/Import) | Source import and cooked artifact production. | Whether RHI/Renderer schema changes preserve cook/runtime compatibility. |
 
@@ -265,7 +265,7 @@ The backend boundary is correct only when Renderer talks through `RHI/Public` co
 | --- | --- | --- |
 | Final validation still needs archived PSO key evidence. | Runtime logs now print explicit keys, but Stage 20 must capture them during D3D12/Vulkan smoke. | Stage 20 |
 | RHI root interface is broad. | [RenderHardwareInterface.h](../../Engine/RHI/Public/Device/RenderHardwareInterface.h) contains device, capture, command list, descriptors, constants, resources, memory, ray tracing, views, UI, and presentation. | Stage 6, Stage 7, Stage 19 |
-| Shader package authoring is not yet manifest-driven. | Runtime pass definitions and shader registrations share package IDs, but tooling still reads static registrations. | Stage 20, Stage 22 |
+| Shader package authoring is not yet manifest-driven. | Runtime pass definitions and shader registrations share package IDs, but tooling still reads static registrations. | Stage 20, Stage 29 |
 
 ## Reviewer Navigation
 

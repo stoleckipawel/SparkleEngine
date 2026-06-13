@@ -141,7 +141,7 @@ The whole-repository extension is implementation work, not only audit work. Non-
 | `CMake` | Needs refactor | Build architecture | Target dependencies and artifact layout can hide architectural coupling. | Stage 23, Stage 33, Stage 34, Stage 35, Stage 36 | Fresh configure and target graph review. | CMake target links express ownership; artifacts and dependencies are documented. |
 | `.github` | Needs refactor | CI workflow | CI can lag local architecture checks and miss tool regressions. | Stage 33, Stage 34, Stage 35, Stage 36 | Workflow command review. | CI or documented local equivalent covers boundary, formatting, shader/tool/build checks. |
 | `Projects` | Needs refactor | Runnable sample/content | Showcase content can drift from cook/runtime contracts. | Stage 31, Stage 32, Stage 34, Stage 35, Stage 36 | Showcase cook/load smoke. | Sample project exercises runtime loading, rendering, launcher, and cook paths. |
-| `docs` | Needs refactor | Architecture and action records | Docs can contradict code after staged refactors. | Stage 22, Stage 34, Stage 35, Stage 36 | Link/stale-text scan. | Docs, coverage maps, plans, final evidence, and threading-readiness audit agree with code. |
+| `docs` | Needs refactor | Architecture and action records | Docs can contradict code after staged refactors. | Stage 34, Stage 35, Stage 36 | Link/stale-text scan. | Docs, coverage maps, plans, final evidence, and threading-readiness audit agree with code. |
 
 ## Whole-Repo Acceptance Check
 

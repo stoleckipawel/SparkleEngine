@@ -6,7 +6,6 @@ Last synchronized: 2026-06-13
 
 Navigation:
 
-- Architecture index: [README.md](README.md)
 - Before/current architecture: [before/repository-current-state.md](before/repository-current-state.md)
 - After/target architecture: [after/repository-target-architecture.md](after/repository-target-architecture.md)
 - Target folder architecture: [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md)

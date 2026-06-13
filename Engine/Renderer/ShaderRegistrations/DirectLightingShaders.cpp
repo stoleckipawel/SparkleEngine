@@ -6,8 +6,6 @@
 #include "Resources/RenderConstantBufferData.h"
 #include "Renderer/Private/RayTracing/RayTracedShadowUniformData.h"
 
-void RegisterDirectLightingShaders() noexcept {}
-
 class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
 {
   public:
