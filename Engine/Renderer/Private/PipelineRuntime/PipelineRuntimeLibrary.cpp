@@ -162,7 +162,7 @@ std::unique_ptr<RenderBindingLayout> PipelineRuntimeLibrary::CreateBindingLayout
 	bindingDesc.ShaderPackage = &shaderPackage;
 	bindingDesc.AllowInputAssemblerInputLayout = request.AllowInputAssemblerInputLayout;
 	bindingDesc.DebugName = request.BindingLayoutDebugName;
-	return rhi.CreateBindingLayout(bindingDesc);
+	return rhi.GetPipelineService().CreateBindingLayout(bindingDesc);
 }
 
 std::unique_ptr<RenderPipelineState> PipelineRuntimeLibrary::CreateGraphicsPipelineState(
@@ -174,7 +174,7 @@ std::unique_ptr<RenderPipelineState> PipelineRuntimeLibrary::CreateGraphicsPipel
 {
 	const PipelineRuntimeKey key = BuildGraphicsPipelineKey(rhi, shaderPackageCache, request, shaderPackage, pipelineDesc);
 	LogPipelineKey(key);
-	return rhi.CreateGraphicsPipelineState(pipelineDesc);
+	return rhi.GetPipelineService().CreateGraphicsPipelineState(pipelineDesc);
 }
 
 std::unique_ptr<RenderPipelineState> PipelineRuntimeLibrary::CreateComputePipelineState(
@@ -186,7 +186,7 @@ std::unique_ptr<RenderPipelineState> PipelineRuntimeLibrary::CreateComputePipeli
 {
 	const PipelineRuntimeKey key = BuildComputePipelineKey(rhi, shaderPackageCache, request, shaderPackage);
 	LogPipelineKey(key);
-	return rhi.CreateComputePipelineState(pipelineDesc);
+	return rhi.GetPipelineService().CreateComputePipelineState(pipelineDesc);
 }
 
 PipelineRuntimeKey PipelineRuntimeLibrary::BuildGraphicsPipelineKey(

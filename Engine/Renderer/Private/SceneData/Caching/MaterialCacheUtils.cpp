@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "MaterialCacheUtils.h"
 
 static const auto g_materialCacheUtilsLogger = Logging::GetOrCreateLogger("Renderer.MaterialCache");

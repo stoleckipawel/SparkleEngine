@@ -5,7 +5,8 @@
 
 #include <cstdint>
 
-class RenderHardwareInterface;
+class RhiDescriptorService;
+struct RhiCapabilities;
 
 struct RenderBindingSetDesc
 {
@@ -16,7 +17,7 @@ struct RenderBindingSetDesc
 class SPARKLE_RHI_API RenderBindingSet final
 {
   public:
-	RenderBindingSet(RenderHardwareInterface& renderHardwareInterface, const RenderBindingSetDesc& desc) noexcept;
+	RenderBindingSet(const RhiCapabilities& capabilities, RhiDescriptorService& descriptorService, const RenderBindingSetDesc& desc) noexcept;
 	~RenderBindingSet() noexcept;
 
 	RenderBindingSet(const RenderBindingSet&) = delete;
@@ -34,7 +35,7 @@ class SPARKLE_RHI_API RenderBindingSet final
   private:
 	void Reset() noexcept;
 
-	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
+	RhiDescriptorService* m_descriptorService = nullptr;
 	RhiDescriptorTableHandle m_tableHandle = {};
 	std::uint32_t m_descriptorCount = 0;
 };

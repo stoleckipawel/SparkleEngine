@@ -2,21 +2,25 @@
 
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 
-#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Core/RhiCapabilities.h"
+#include "RHI/Public/Descriptors/RhiDescriptorService.h"
 #include "RHI/Public/Validation/RhiValidation.h"
 
 #include <utility>
 
-RenderBindingSet::RenderBindingSet(RenderHardwareInterface& renderHardwareInterface, const RenderBindingSetDesc& desc) noexcept :
-	m_renderHardwareInterface(&renderHardwareInterface)
+RenderBindingSet::RenderBindingSet(
+    const RhiCapabilities& capabilities,
+    RhiDescriptorService& descriptorService,
+    const RenderBindingSetDesc& desc) noexcept :
+	m_descriptorService(&descriptorService)
 {
-	if (!RhiValidation::ValidateBindingSetDesc(renderHardwareInterface.GetCapabilities(), desc, "RHI.RenderBindingSet"))
+	if (!RhiValidation::ValidateBindingSetDesc(capabilities, desc, "RHI.RenderBindingSet"))
 	{
-		m_renderHardwareInterface = nullptr;
+		m_descriptorService = nullptr;
 		return;
 	}
 
-	m_tableHandle = renderHardwareInterface.AllocateDescriptorTable(desc.DescriptorType, desc.DescriptorCount);
+	m_tableHandle = descriptorService.AllocateDescriptorTable(desc.DescriptorType, desc.DescriptorCount);
 	m_descriptorCount = desc.DescriptorCount;
 }
 
@@ -26,7 +30,7 @@ RenderBindingSet::~RenderBindingSet() noexcept
 }
 
 RenderBindingSet::RenderBindingSet(RenderBindingSet&& other) noexcept :
-	m_renderHardwareInterface(std::exchange(other.m_renderHardwareInterface, nullptr)),
+	m_descriptorService(std::exchange(other.m_descriptorService, nullptr)),
 	m_tableHandle(std::exchange(other.m_tableHandle, RhiDescriptorTableHandle{})),
 	m_descriptorCount(std::exchange(other.m_descriptorCount, 0))
 {
@@ -37,7 +41,7 @@ RenderBindingSet& RenderBindingSet::operator=(RenderBindingSet&& other) noexcept
 	if (this != &other)
 	{
 		Reset();
-		m_renderHardwareInterface = std::exchange(other.m_renderHardwareInterface, nullptr);
+		m_descriptorService = std::exchange(other.m_descriptorService, nullptr);
 		m_tableHandle = std::exchange(other.m_tableHandle, RhiDescriptorTableHandle{});
 		m_descriptorCount = std::exchange(other.m_descriptorCount, 0);
 	}
@@ -52,8 +56,8 @@ RhiCpuDescriptorHandle RenderBindingSet::GetCpuDescriptorHandle(std::uint32_t de
 		return {};
 	}
 
-	return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetDescriptorTableCpuHandle(m_tableHandle, descriptorIndex)
-	                                        : RhiCpuDescriptorHandle{};
+	return m_descriptorService != nullptr ? m_descriptorService->GetDescriptorTableCpuHandle(m_tableHandle, descriptorIndex) :
+	                                       RhiCpuDescriptorHandle{};
 }
 
 RhiDescriptorTableBinding RenderBindingSet::GetTableBinding(std::uint32_t descriptorIndex) const noexcept
@@ -68,12 +72,12 @@ RhiDescriptorTableBinding RenderBindingSet::GetTableBinding(std::uint32_t descri
 
 void RenderBindingSet::Reset() noexcept
 {
-	if (m_renderHardwareInterface != nullptr && m_tableHandle)
+	if (m_descriptorService != nullptr && m_tableHandle)
 	{
-		m_renderHardwareInterface->ReleaseDescriptorTable(m_tableHandle);
+		m_descriptorService->ReleaseDescriptorTable(m_tableHandle);
 	}
 
-	m_renderHardwareInterface = nullptr;
+	m_descriptorService = nullptr;
 	m_tableHandle = {};
 	m_descriptorCount = 0;
 }

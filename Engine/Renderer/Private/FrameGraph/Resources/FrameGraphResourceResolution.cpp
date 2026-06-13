@@ -23,7 +23,7 @@ RhiCpuDescriptorHandle FrameGraph::ResolveRenderTargetView(FrameGraphResourceHan
 		return {};
 	}
 
-	return m_renderHardwareInterface->GetResourceViewCpuHandle(access.renderTargetView);
+	return m_renderHardwareInterface->GetDescriptorService().GetResourceViewCpuHandle(access.renderTargetView);
 }
 
 RhiCpuDescriptorHandle FrameGraph::ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept
@@ -38,7 +38,7 @@ RhiCpuDescriptorHandle FrameGraph::ResolveDepthStencilView(FrameGraphResourceHan
 		return {};
 	}
 
-	return m_renderHardwareInterface->GetResourceViewCpuHandle(access.depthStencilView);
+	return m_renderHardwareInterface->GetDescriptorService().GetResourceViewCpuHandle(access.depthStencilView);
 }
 
 RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(FrameGraphResourceHandle handle) const noexcept
@@ -54,7 +54,7 @@ RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(FrameGraphResourceH
 		return {};
 	}
 
-	return m_renderHardwareInterface->GetResourceViewGpuHandle(access.shaderResourceView);
+	return m_renderHardwareInterface->GetDescriptorService().GetResourceViewGpuHandle(access.shaderResourceView);
 }
 
 RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept
@@ -70,7 +70,7 @@ RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphResource
 		return {};
 	}
 
-	return m_renderHardwareInterface->GetResourceViewGpuHandle(access.unorderedAccessView);
+	return m_renderHardwareInterface->GetDescriptorService().GetResourceViewGpuHandle(access.unorderedAccessView);
 }
 
 std::array<float, 4> FrameGraph::GetClearColor(FrameGraphResourceHandle handle) const noexcept
@@ -154,5 +154,5 @@ NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(FrameGraphResourceHan
 		return {};
 	}
 
-	return m_renderHardwareInterface->GetInteropService().GetNativeTextureViewInfo(view, state);
+	return m_renderHardwareInterface->GetDescriptorService().GetNativeTextureViewInfo(view, state);
 }

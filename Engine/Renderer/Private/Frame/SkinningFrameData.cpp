@@ -60,7 +60,7 @@ SkinningFrameData SkinningFrameData::Build(RenderHardwareInterface& renderHardwa
 
 	RhiOwnedResourceHandle buffer = {};
 	RhiResourceViewHandle view = {};
-	const bool created = renderHardwareInterface.CreateStructuredBuffer(
+	const bool created = renderHardwareInterface.GetResourceService().CreateStructuredBuffer(
 	    matrices.data(),
 	    matrices.size() * sizeof(JointMatrixData),
 	    static_cast<std::uint32_t>(sizeof(JointMatrixData)),
@@ -81,7 +81,7 @@ SkinningFrameData SkinningFrameData::Build(RenderHardwareInterface& renderHardwa
 	frameData.m_renderHardwareInterface = &renderHardwareInterface;
 	frameData.m_buffer = buffer;
 	frameData.m_view = view;
-	frameData.m_shaderResourceView = renderHardwareInterface.GetResourceViewGpuHandle(view);
+	frameData.m_shaderResourceView = renderHardwareInterface.GetDescriptorService().GetResourceViewGpuHandle(view);
 	if (!frameData.m_shaderResourceView)
 	{
 		SPDLOG_LOGGER_WARN(g_skinningFrameDataLogger, "SkinningFrameData::Build: uploaded joint matrix buffer has no shader-resource descriptor.");
@@ -96,11 +96,11 @@ void SkinningFrameData::Release() noexcept
 	{
 		if (m_view)
 		{
-			m_renderHardwareInterface->ReleaseResourceView(m_view);
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_view);
 		}
 		if (m_buffer)
 		{
-			m_renderHardwareInterface->ReleaseOwnedResource(m_buffer);
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_buffer);
 		}
 	}
 

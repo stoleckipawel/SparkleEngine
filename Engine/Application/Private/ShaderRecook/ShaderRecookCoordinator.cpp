@@ -215,7 +215,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ProcessResult r
 CookedShaderReloadResult ShaderRecookCoordinator::ReloadCookedShaders(Renderer& renderer) noexcept
 {
 	PublishStatus("Shader reload accepted; waiting for RHI idle before replacing shader runtime state.");
-	renderer.GetRenderHardwareInterface().WaitForIdle();
+	renderer.GetCommandSubmissionService().WaitForIdle();
 	return renderer.ReloadCookedShaders();
 }
 

@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "RuntimeConsole/RuntimeConsoleOverlay.h"
 
 #include "Core/Public/Console/ConsoleBuiltinCommands.h"
@@ -448,4 +448,3 @@ void RuntimeConsoleOverlay::ReplaceInputText(ImGuiInputTextCallbackData& data, c
 	data.DeleteChars(0, data.BufTextLen);
 	data.InsertChars(0, text.c_str());
 }
-

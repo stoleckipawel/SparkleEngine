@@ -64,7 +64,7 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& rend
 
 	RhiOwnedResourceHandle buffer = {};
 	RhiResourceViewHandle view = {};
-	const bool created = renderHardwareInterface.CreateStructuredBuffer(
+	const bool created = renderHardwareInterface.GetResourceService().CreateStructuredBuffer(
 	    instances.data(),
 	    instances.size() * sizeof(MeshInstanceData),
 	    static_cast<std::uint32_t>(sizeof(MeshInstanceData)),
@@ -85,7 +85,7 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& rend
 	frameData.m_renderHardwareInterface = &renderHardwareInterface;
 	frameData.m_buffer = buffer;
 	frameData.m_view = view;
-	frameData.m_shaderResourceView = renderHardwareInterface.GetResourceViewGpuHandle(view);
+	frameData.m_shaderResourceView = renderHardwareInterface.GetDescriptorService().GetResourceViewGpuHandle(view);
 	if (!frameData.m_shaderResourceView)
 	{
 		SPDLOG_LOGGER_WARN(
@@ -102,11 +102,11 @@ void MeshInstanceFrameData::Release() noexcept
 	{
 		if (m_view)
 		{
-			m_renderHardwareInterface->ReleaseResourceView(m_view);
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_view);
 		}
 		if (m_buffer)
 		{
-			m_renderHardwareInterface->ReleaseOwnedResource(m_buffer);
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_buffer);
 		}
 	}
 

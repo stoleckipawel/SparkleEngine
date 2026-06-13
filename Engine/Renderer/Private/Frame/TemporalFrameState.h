@@ -12,4 +12,3 @@ struct RenderTemporalFrameState
 };
 
 RenderTemporalFrameState BuildRenderTemporalFrameState(const PerTemporalConstantBufferData& temporalData) noexcept;
-

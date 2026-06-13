@@ -1,6 +1,7 @@
 #include "D3D12/Descriptors/D3D12DescriptorService.h"
 
 #include "D3D12/D3D12TypeConversions.h"
+#include "D3D12/Commands/D3D12RenderCommandList.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "D3D12/Device/D3D12Rhi.h"
@@ -10,8 +11,9 @@
 
 D3D12DescriptorService::D3D12DescriptorService(
     D3D12Rhi& rhi,
-    D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
-	m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager)
+    D3D12DescriptorHeapManager& descriptorHeapManager,
+    const RhiCapabilities& capabilities) noexcept :
+	m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_capabilities(&capabilities)
 {
 }
 
@@ -24,6 +26,20 @@ ID3D12DescriptorHeap* D3D12DescriptorService::GetShaderResourceDescriptorHeap() 
 
 	D3D12DescriptorHeap* heap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	return heap != nullptr ? heap->GetRaw() : nullptr;
+}
+
+std::unique_ptr<RenderBindingSet> D3D12DescriptorService::CreateBindingSet(const RenderBindingSetDesc& desc)
+{
+	return m_capabilities != nullptr ? std::make_unique<RenderBindingSet>(*m_capabilities, *this, desc) :
+	                                   std::unique_ptr<RenderBindingSet>{};
+}
+
+void D3D12DescriptorService::BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept
+{
+	if (m_descriptorHeapManager != nullptr && commandList.GetBackendApi() == ERhiBackendApi::D3D12)
+	{
+		m_descriptorHeapManager->BindGlobalDescriptorState(static_cast<D3D12RenderCommandList&>(commandList));
+	}
 }
 
 RhiDescriptorAllocation D3D12DescriptorService::AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType)
@@ -241,6 +257,11 @@ RhiGpuDescriptorHandle D3D12DescriptorService::GetResourceViewGpuHandle(RhiResou
 {
 	const ResourceViewRecord* const record = FindResourceViewRecord(view);
 	return record != nullptr ? record->descriptorAllocation.GpuHandle : RhiGpuDescriptorHandle{};
+}
+
+NativeTextureViewInfo D3D12DescriptorService::GetNativeTextureViewInfo(RhiResourceViewHandle, ResourceState) const noexcept
+{
+	return {};
 }
 
 ERhiDescriptorAllocatorType D3D12DescriptorService::ResolveResourceViewDescriptorAllocatorType(

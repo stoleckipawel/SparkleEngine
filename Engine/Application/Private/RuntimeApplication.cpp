@@ -226,4 +226,3 @@ void RuntimeApplication::Shutdown()
 	m_timer.reset();
 	m_isInitialized = false;
 }
-

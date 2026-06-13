@@ -74,7 +74,7 @@ void VisualizeBuffersPass::SetParameters(
 	const PassRuntimeServices& passRuntimeServices) const
 {
 	(void) viewData;
-	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
 	const bool valid = parameters.Sync();
 	assert(valid);
 }

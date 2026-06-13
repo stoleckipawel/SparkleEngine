@@ -66,7 +66,7 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(RenderCommandCon
 	}
 
 	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
-	    m_renderHardwareInterface->GetBottomLevelAccelerationStructurePrebuildInfo(geometry);
+	    m_renderHardwareInterface->GetRayTracingService().GetBottomLevelAccelerationStructurePrebuildInfo(geometry);
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || prebuildInfo.ScratchDataSizeInBytes == 0)
 	{
 		SPDLOG_LOGGER_WARN(
@@ -85,8 +85,8 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(RenderCommandCon
 	entry.geometry = geometry;
 	cmd.BuildBottomLevelAccelerationStructure(
 	    geometry,
-	    m_renderHardwareInterface->GetResourceGpuVirtualAddress(entry.scratchBuffer),
-	    m_renderHardwareInterface->GetResourceGpuVirtualAddress(entry.accelerationStructureBuffer));
+	    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.scratchBuffer),
+	    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.accelerationStructureBuffer));
 	++m_currentFrameStats.builtBlasCount;
 	BlasHandle handle = BuildHandle(entry);
 	handle.builtThisFrame = true;
@@ -131,11 +131,11 @@ void RayTracingBlasCache::ReleaseEntryResources(Entry& entry) noexcept
 
 	if (entry.scratchBuffer)
 	{
-		m_renderHardwareInterface->ReleaseOwnedResource(entry.scratchBuffer);
+		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(entry.scratchBuffer);
 	}
 	if (entry.accelerationStructureBuffer)
 	{
-		m_renderHardwareInterface->ReleaseOwnedResource(entry.accelerationStructureBuffer);
+		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(entry.accelerationStructureBuffer);
 	}
 
 	entry = {};
@@ -153,13 +153,13 @@ bool RayTracingBlasCache::EnsureEntryResources(
 
 	if (entry.scratchBuffer && entry.scratchBufferSizeInBytes < prebuildInfo.ScratchDataSizeInBytes)
 	{
-		m_renderHardwareInterface->ReleaseOwnedResource(entry.scratchBuffer);
+		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(entry.scratchBuffer);
 		entry.scratchBuffer = {};
 		entry.scratchBufferSizeInBytes = 0;
 	}
 	if (entry.accelerationStructureBuffer && entry.accelerationStructureSizeInBytes < prebuildInfo.ResultDataMaxSizeInBytes)
 	{
-		m_renderHardwareInterface->ReleaseOwnedResource(entry.accelerationStructureBuffer);
+		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(entry.accelerationStructureBuffer);
 		entry.accelerationStructureBuffer = {};
 		entry.accelerationStructureSizeInBytes = 0;
 	}
@@ -169,7 +169,7 @@ bool RayTracingBlasCache::EnsureEntryResources(
 		const std::uint64_t alignedScratchSize = AlignRayTracingBufferSize(
 		    prebuildInfo.ScratchDataSizeInBytes,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.ScratchBufferByteAlignment);
-		entry.scratchBuffer = m_renderHardwareInterface->CreateRayTracingScratchBuffer(
+		entry.scratchBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingScratchBuffer(
 		    alignedScratchSize,
 		    L"RayTracingBlasScratch");
 		entry.scratchBufferSizeInBytes = alignedScratchSize;
@@ -179,7 +179,7 @@ bool RayTracingBlasCache::EnsureEntryResources(
 		const std::uint64_t alignedAccelerationStructureSize = AlignRayTracingBufferSize(
 		    prebuildInfo.ResultDataMaxSizeInBytes,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.AccelerationStructureByteAlignment);
-		entry.accelerationStructureBuffer = m_renderHardwareInterface->CreateRayTracingAccelerationStructureBuffer(
+		entry.accelerationStructureBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingAccelerationStructureBuffer(
 		    alignedAccelerationStructureSize,
 		    ERhiRayTracingAccelerationStructureType::BottomLevel,
 		    L"RayTracingBlas");
@@ -212,6 +212,6 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildHandle(const Entry& en
 	}
 
 	return BlasHandle{
-	    .resource = m_renderHardwareInterface->GetNativeResource(entry.accelerationStructureBuffer),
-	    .gpuAddress = m_renderHardwareInterface->GetResourceGpuVirtualAddress(entry.accelerationStructureBuffer)};
+	    .resource = m_renderHardwareInterface->GetResourceService().GetNativeResource(entry.accelerationStructureBuffer),
+	    .gpuAddress = m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.accelerationStructureBuffer)};
 }

@@ -418,7 +418,7 @@ namespace
 		if (config.ShaderReloadFrame > 0 && state.CompletedRenderFrames == config.ShaderReloadFrame)
 		{
 			Renderer& renderer = app.GetRenderer();
-			renderer.GetRenderHardwareInterface().WaitForIdle();
+			renderer.GetCommandSubmissionService().WaitForIdle();
 			const CookedShaderReloadResult reloadResult = renderer.ReloadCookedShaders();
 			if (appLogger != nullptr)
 			{

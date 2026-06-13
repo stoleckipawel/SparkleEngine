@@ -107,7 +107,7 @@ RhiDescriptorTableBinding IndirectLightingPass::GetSkyTextureBinding(const PassR
 	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
 	if (!m_skyTextureBindingSet)
 	{
-		m_skyTextureBindingSet = renderHardwareInterface.CreateBindingSet(
+		m_skyTextureBindingSet = renderHardwareInterface.GetDescriptorService().CreateBindingSet(
 		    RenderBindingSetDesc{.DescriptorType = ERhiDescriptorAllocatorType::ShaderResource, .DescriptorCount = 1u});
 	}
 

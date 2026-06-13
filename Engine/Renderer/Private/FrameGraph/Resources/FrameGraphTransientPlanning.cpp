@@ -107,8 +107,8 @@ void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const n
 		    isBuffer ? RhiTextureResourceDesc{}
 		             : BuildTransientResourceDesc(transientResource.textureDesc, resourceMetadata.kind, requiresUnorderedAccess);
 		const RhiResourceAllocationInfo allocationInfo = isBuffer
-		                                                     ? m_renderHardwareInterface->GetBufferAllocationInfo(bufferResourceDesc)
-		                                                     : m_renderHardwareInterface->GetTextureAllocationInfo(textureResourceDesc);
+		                                                     ? m_renderHardwareInterface->GetResourceService().GetBufferAllocationInfo(bufferResourceDesc)
+		                                                     : m_renderHardwareInterface->GetResourceService().GetTextureAllocationInfo(textureResourceDesc);
 		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transients.resources.size());
 		plan.transients.resources.push_back(
 		    FrameGraphTransientResourcePlan{

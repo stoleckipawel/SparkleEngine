@@ -58,7 +58,7 @@ FrameContext BuildFrameContext(
 	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(renderCamera, frame.mainView.perViewData.Camera, sceneViewport);
 	frame.mainView.temporalState = BuildRenderTemporalFrameState(frame.mainView.perTemporalData);
 
-	frame.mainView.perViewGpuAddress = renderHardwareInterface.AllocatePerViewConstantBuffer(frame.mainView.perViewData);
+	frame.mainView.perViewGpuAddress = renderHardwareInterface.GetUploadService().AllocatePerViewConstantBuffer(frame.mainView.perViewData);
 
 	return frame;
 }

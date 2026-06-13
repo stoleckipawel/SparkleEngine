@@ -162,7 +162,7 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	m_diagnosticsService = std::make_unique<D3D12DiagnosticsService>(*this);
 	m_presentationService = std::make_unique<D3D12PresentationService>(*this);
 	m_pipelineService = std::make_unique<D3D12PipelineService>(rhi);
-	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager);
+	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);
 	m_resourceService =
 	    std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, descriptorHeapManager, *m_descriptorService, m_capabilities);
 	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator);
@@ -247,6 +247,51 @@ RhiFormatSupport D3D12RenderHardwareInterface::QueryFormatSupport(PixelFormat fo
 std::uint32_t D3D12RenderHardwareInterface::GetCurrentFrameIndex() const noexcept
 {
 	return m_rhi != nullptr ? m_rhi->GetCurrentFrameIndex() : 0u;
+}
+
+RhiResourceService& D3D12RenderHardwareInterface::GetResourceService() noexcept
+{
+	return *m_resourceService;
+}
+
+const RhiResourceService& D3D12RenderHardwareInterface::GetResourceService() const noexcept
+{
+	return *m_resourceService;
+}
+
+RhiDescriptorService& D3D12RenderHardwareInterface::GetDescriptorService() noexcept
+{
+	return *m_descriptorService;
+}
+
+const RhiDescriptorService& D3D12RenderHardwareInterface::GetDescriptorService() const noexcept
+{
+	return *m_descriptorService;
+}
+
+RhiPipelineService& D3D12RenderHardwareInterface::GetPipelineService() noexcept
+{
+	return *m_pipelineService;
+}
+
+RhiUploadService& D3D12RenderHardwareInterface::GetUploadService() noexcept
+{
+	return *m_constantBufferManager;
+}
+
+const RhiUploadService& D3D12RenderHardwareInterface::GetUploadService() const noexcept
+{
+	return *m_constantBufferManager;
+}
+
+RhiRayTracingService& D3D12RenderHardwareInterface::GetRayTracingService() noexcept
+{
+	return *m_rayTracingServices;
+}
+
+const RhiRayTracingService& D3D12RenderHardwareInterface::GetRayTracingService() const noexcept
+{
+	return *m_rayTracingServices;
 }
 
 void D3D12RenderHardwareInterface::WaitForIdle() noexcept
@@ -478,7 +523,7 @@ RhiImGuiRenderer& D3D12RenderHardwareInterface::GetImGuiRenderer() noexcept
 
 std::unique_ptr<RenderBindingSet> D3D12RenderHardwareInterface::CreateBindingSet(const RenderBindingSetDesc& desc)
 {
-	return std::make_unique<RenderBindingSet>(*this, desc);
+	return m_descriptorService != nullptr ? m_descriptorService->CreateBindingSet(desc) : std::unique_ptr<RenderBindingSet>{};
 }
 
 std::unique_ptr<RenderBindingLayout> D3D12RenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)

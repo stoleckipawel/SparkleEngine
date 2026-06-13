@@ -1,41 +1,46 @@
 #pragma once
 
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
-#include "Descriptors/RhiDescriptorHandles.h"
-#include "Resources/RhiResourceView.h"
-#include "Samplers/RhiSamplerDesc.h"
+#include "Descriptors/RhiDescriptorService.h"
 
 #include <cstdint>
 #include <vector>
 
 class D3D12DescriptorHeapManager;
 class D3D12Rhi;
+struct RhiCapabilities;
 struct ID3D12DescriptorHeap;
 
-class D3D12DescriptorService final
+class D3D12DescriptorService final : public RhiDescriptorService
 {
   public:
-	D3D12DescriptorService(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept;
+	D3D12DescriptorService(
+	    D3D12Rhi& rhi,
+	    D3D12DescriptorHeapManager& descriptorHeapManager,
+	    const RhiCapabilities& capabilities) noexcept;
 
 	ID3D12DescriptorHeap* GetShaderResourceDescriptorHeap() const noexcept;
-	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType);
-	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept;
-	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount);
+	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) override;
+	void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept override;
+	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) override;
+	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept override;
+	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount) override;
 	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(
 	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept;
+	    std::uint32_t descriptorIndex = 0) const noexcept override;
 	RhiGpuDescriptorHandle GetDescriptorTableGpuHandle(
 	    RhiDescriptorTableHandle tableHandle,
 	    std::uint32_t descriptorIndex = 0) const noexcept;
-	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept;
-	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle);
-	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept;
-	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept;
+	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
+	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle) override;
+	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept override;
+	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept override;
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
-	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc);
-	void ReleaseResourceView(RhiResourceViewHandle view) noexcept;
-	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept;
-	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept;
+	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) override;
+	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
+	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
+	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
+	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
 
   private:
 	struct DescriptorTableRecord
@@ -65,6 +70,7 @@ class D3D12DescriptorService final
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
+	const RhiCapabilities* m_capabilities = nullptr;
 	RhiDescriptorTableHandle m_samplerTableHandle = {};
 	std::vector<DescriptorTableRecord> m_descriptorTableRecords;
 	std::vector<std::uint32_t> m_freeDescriptorTableIndices;

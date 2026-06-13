@@ -7,13 +7,17 @@
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
+#include "Vulkan/Samplers/VulkanSamplerLibrary.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
 static const auto g_vulkanDescriptorManagerLogger = Logging::GetOrCreateLogger("RHI.Vulkan.DescriptorManager");
 
-VulkanDescriptorManager::VulkanDescriptorManager(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
-    m_rhi(rhi), m_memoryAllocator(memoryAllocator), m_allocator(rhi)
+VulkanDescriptorManager::VulkanDescriptorManager(
+    VulkanRhi& rhi,
+    VulkanGpuMemoryAllocator& memoryAllocator,
+    const RhiCapabilities& capabilities) noexcept :
+    m_rhi(rhi), m_memoryAllocator(memoryAllocator), m_capabilities(capabilities), m_allocator(rhi)
 {
 }
 
@@ -25,6 +29,20 @@ VulkanDescriptorManager::~VulkanDescriptorManager() noexcept
 void VulkanDescriptorManager::BeginFrame(std::uint32_t frameIndex) noexcept
 {
 	m_allocator.BeginFrame(frameIndex);
+}
+
+void VulkanDescriptorManager::SetSamplerLibrary(VulkanSamplerLibrary& samplerLibrary) noexcept
+{
+	m_samplerLibrary = &samplerLibrary;
+}
+
+std::unique_ptr<RenderBindingSet> VulkanDescriptorManager::CreateBindingSet(const RenderBindingSetDesc& desc)
+{
+	return std::make_unique<RenderBindingSet>(m_capabilities, *this, desc);
+}
+
+void VulkanDescriptorManager::BindGlobalDescriptorState(RenderCommandList&) const noexcept
+{
 }
 
 RhiDescriptorAllocation VulkanDescriptorManager::AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType)
@@ -56,6 +74,29 @@ RhiCpuDescriptorHandle VulkanDescriptorManager::GetDescriptorTableCpuHandle(
 void VulkanDescriptorManager::ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept
 {
 	m_allocator.ReleaseDescriptorTable(tableHandle);
+}
+
+void VulkanDescriptorManager::AllocateShaderResourceDescriptor(
+    RhiCpuDescriptorHandle& outCpuHandle,
+    RhiGpuDescriptorHandle& outGpuHandle)
+{
+	const RhiDescriptorAllocation allocation = AllocateDescriptor(ERhiDescriptorAllocatorType::ShaderResource);
+	outCpuHandle = allocation.CpuHandle;
+	outGpuHandle = allocation.GpuHandle;
+}
+
+void VulkanDescriptorManager::ReleaseShaderResourceDescriptor(
+    RhiCpuDescriptorHandle cpuHandle,
+    RhiGpuDescriptorHandle gpuHandle) noexcept
+{
+	ReleaseDescriptor(
+	    ERhiDescriptorAllocatorType::ShaderResource,
+	    RhiDescriptorAllocation{.CpuHandle = cpuHandle, .GpuHandle = gpuHandle});
+}
+
+RhiDescriptorTableBinding VulkanDescriptorManager::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept
+{
+	return m_samplerLibrary != nullptr ? m_samplerLibrary->GetSharedSamplerBinding(samplerDesc) : RhiDescriptorTableBinding{};
 }
 
 RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResourceViewDesc& desc)

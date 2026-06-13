@@ -76,7 +76,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::SubsurfaceColor), DefaultTexture::Black),
 		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::SubsurfaceStrength), DefaultTexture::Black)};
 
-		auto textureBindingSet = m_renderHardwareInterface->CreateBindingSet(
+		auto textureBindingSet = m_renderHardwareInterface->GetDescriptorService().CreateBindingSet(
 		    RenderBindingSetDesc{
 		        .DescriptorType = ERhiDescriptorAllocatorType::ShaderResource,
 		        .DescriptorCount = MaterialTextureSlots::Count});

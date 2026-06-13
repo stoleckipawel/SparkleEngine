@@ -73,26 +73,26 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		{
 			if (!access.renderTargetView)
 			{
-				access.renderTargetView = m_renderHardwareInterface->CreateResourceView(
+				access.renderTargetView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::RenderTarget(access.resource, metadata.textureDesc.format));
 			}
 
 			if (!access.shaderResourceView)
 			{
-				access.shaderResourceView = m_renderHardwareInterface->CreateResourceView(
+				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
 			}
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
-				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.resource))
+				if (!m_renderHardwareInterface->GetResourceService().SupportsUnorderedAccess(access.resource))
 				{
 					FailMissingUnorderedAccessSupport(metadata);
 				}
 
 				if (!access.unorderedAccessView)
 				{
-					access.unorderedAccessView = m_renderHardwareInterface->CreateResourceView(
+					access.unorderedAccessView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 					    RhiResourceViewDesc::TextureUnorderedAccess(access.resource, metadata.textureDesc.format));
 				}
 			}
@@ -101,7 +101,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		{
 			if (!access.depthStencilView)
 			{
-				access.depthStencilView = m_renderHardwareInterface->CreateResourceView(
+				access.depthStencilView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::DepthStencil(access.resource, metadata.textureDesc.format));
 			}
 		}
@@ -109,7 +109,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		{
 			if (!access.shaderResourceView)
 			{
-				access.shaderResourceView = m_renderHardwareInterface->CreateResourceView(RhiResourceViewDesc::BufferShaderResource(
+				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(RhiResourceViewDesc::BufferShaderResource(
 				    access.resource,
 				    metadata.bufferDesc.sizeInBytes,
 				    metadata.bufferDesc.strideInBytes));
@@ -117,14 +117,14 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
-				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.resource))
+				if (!m_renderHardwareInterface->GetResourceService().SupportsUnorderedAccess(access.resource))
 				{
 					FailMissingUnorderedAccessSupport(metadata);
 				}
 
 				if (!access.unorderedAccessView)
 				{
-					access.unorderedAccessView = m_renderHardwareInterface->CreateResourceView(RhiResourceViewDesc::BufferUnorderedAccess(
+					access.unorderedAccessView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(RhiResourceViewDesc::BufferUnorderedAccess(
 					    access.resource,
 					    metadata.bufferDesc.sizeInBytes,
 					    metadata.bufferDesc.strideInBytes));
@@ -152,25 +152,25 @@ void FrameGraph::ReleaseExternalResourceViews() noexcept
 		FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
 		if (access.renderTargetView)
 		{
-			m_renderHardwareInterface->ReleaseResourceView(access.renderTargetView);
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.renderTargetView);
 			access.renderTargetView = {};
 		}
 
 		if (access.depthStencilView)
 		{
-			m_renderHardwareInterface->ReleaseResourceView(access.depthStencilView);
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.depthStencilView);
 			access.depthStencilView = {};
 		}
 
 		if (access.shaderResourceView)
 		{
-			m_renderHardwareInterface->ReleaseResourceView(access.shaderResourceView);
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.shaderResourceView);
 			access.shaderResourceView = {};
 		}
 
 		if (access.unorderedAccessView)
 		{
-			m_renderHardwareInterface->ReleaseResourceView(access.unorderedAccessView);
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.unorderedAccessView);
 			access.unorderedAccessView = {};
 		}
 	}

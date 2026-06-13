@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "EditorApplication.h"
 
 #include "Editor/Public/UI.h"
@@ -140,4 +140,3 @@ void EditorApplication::Shutdown()
 	m_runtimeApplication->Shutdown();
 	m_isEditorSessionActive = false;
 }
-

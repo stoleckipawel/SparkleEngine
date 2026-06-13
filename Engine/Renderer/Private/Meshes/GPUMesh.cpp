@@ -12,13 +12,13 @@ GPUMesh::~GPUMesh() noexcept
 	{
 		if (m_vertexBuffer)
 		{
-			m_renderHardwareInterface->ReleaseOwnedResource(m_vertexBuffer);
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_vertexBuffer);
 			m_vertexBuffer = {};
 		}
 
 		if (m_indexBuffer)
 		{
-			m_renderHardwareInterface->ReleaseOwnedResource(m_indexBuffer);
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_indexBuffer);
 			m_indexBuffer = {};
 		}
 	}
@@ -39,7 +39,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 	}
 
 	m_renderHardwareInterface = &renderHardwareInterface;
-	if (!m_renderHardwareInterface->CreateVertexBuffer(
+	if (!m_renderHardwareInterface->GetResourceService().CreateVertexBuffer(
 	        meshData.GetVertexData(),
 	        meshData.GetVertexBufferSize(),
 	        static_cast<std::uint32_t>(sizeof(VertexData)),
@@ -50,7 +50,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create vertex buffer");
 		return false;
 	}
-	if (!m_renderHardwareInterface->CreateIndexBuffer(
+	if (!m_renderHardwareInterface->GetResourceService().CreateIndexBuffer(
 	        meshData.GetIndexData(),
 	        meshData.GetIndexBufferSize(),
 	        RhiIndexFormat::UInt32,
@@ -59,7 +59,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 	        m_indexBufferView))
 	{
 		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create index buffer");
-		m_renderHardwareInterface->ReleaseOwnedResource(m_vertexBuffer);
+		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_vertexBuffer);
 		m_vertexBuffer = {};
 		return false;
 	}

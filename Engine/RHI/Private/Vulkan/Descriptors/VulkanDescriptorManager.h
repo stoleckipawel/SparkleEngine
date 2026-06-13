@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Descriptors/RhiDescriptorService.h"
 #include "Resources/RhiResourceView.h"
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/VulkanIncludes.h"
@@ -10,11 +11,13 @@
 class VulkanRhi;
 class VulkanSwapChain;
 class VulkanGpuMemoryAllocator;
+class VulkanSamplerLibrary;
+struct RhiCapabilities;
 
-class VulkanDescriptorManager final
+class VulkanDescriptorManager final : public RhiDescriptorService
 {
   public:
-	VulkanDescriptorManager(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
+	VulkanDescriptorManager(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, const RhiCapabilities& capabilities) noexcept;
 	~VulkanDescriptorManager() noexcept;
 
 	VulkanDescriptorManager(const VulkanDescriptorManager&) = delete;
@@ -24,20 +27,26 @@ class VulkanDescriptorManager final
 
 	VulkanDescriptorAllocator& GetAllocator() noexcept { return m_allocator; }
 	const VulkanDescriptorAllocator& GetAllocator() const noexcept { return m_allocator; }
+	void SetSamplerLibrary(VulkanSamplerLibrary& samplerLibrary) noexcept;
 
 	void BeginFrame(std::uint32_t frameIndex) noexcept;
-	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType);
-	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept;
-	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount);
+	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) override;
+	void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept override;
+	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) override;
+	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept override;
+	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount) override;
 	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
-	    const noexcept;
-	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept;
+	    const noexcept override;
+	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
+	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle) override;
+	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept override;
+	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept override;
 
-	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc);
-	void ReleaseResourceView(RhiResourceViewHandle view) noexcept;
-	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept;
-	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept;
-	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept;
+	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) override;
+	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
+	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
+	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
+	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
 	VkImageView GetRegisteredImageView(RhiGpuDescriptorHandle descriptorHandle) const noexcept;
 	void RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept;
 	RhiResourceViewHandle GetSwapChainBackBufferView(std::uint32_t backBufferIndex) const noexcept;
@@ -68,7 +77,9 @@ class VulkanDescriptorManager final
 
 	VulkanRhi& m_rhi;
 	VulkanGpuMemoryAllocator& m_memoryAllocator;
+	const RhiCapabilities& m_capabilities;
 	VulkanDescriptorAllocator m_allocator;
+	VulkanSamplerLibrary* m_samplerLibrary = nullptr;
 	std::vector<ResourceViewRecord> m_resourceViewRecords;
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
 	std::vector<RhiResourceViewHandle> m_swapChainBackBufferViews;

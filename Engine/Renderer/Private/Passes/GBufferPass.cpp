@@ -120,7 +120,7 @@ void GBufferPass::SetParameters(
     const RenderViewData& viewData,
     const PassRuntimeServices& passRuntimeServices) const
 {
-	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
 	const bool valid = parameters.Sync();

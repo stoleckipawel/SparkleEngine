@@ -195,7 +195,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 
 	BindPersistentAccelerationStructure(
 	    handle,
-	    m_renderHardwareInterface->GetNativeResource(resource),
+	    m_renderHardwareInterface->GetResourceService().GetNativeResource(resource),
 	    gpuAddress,
 	    currentState);
 }

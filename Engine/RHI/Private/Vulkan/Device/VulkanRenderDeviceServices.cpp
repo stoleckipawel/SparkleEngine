@@ -34,6 +34,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
+	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	void SubmitFrame() noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
 	void UpdatePerFrameConstants(std::uint32_t renderViewMode, std::uint32_t viewportWidth, std::uint32_t viewportHeight) noexcept override;
@@ -158,6 +159,11 @@ void VulkanRenderDeviceServices::BeginFrame() noexcept
 RenderCommandList& VulkanRenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
 {
 	return m_renderHardwareInterface->GetGraphicsCommandList(m_currentFrameIndex);
+}
+
+RenderCommandList& VulkanRenderDeviceServices::GetGraphicsCommandList(std::uint32_t frameIndex) noexcept
+{
+	return m_renderHardwareInterface->GetGraphicsCommandList(frameIndex);
 }
 
 void VulkanRenderDeviceServices::SubmitFrame() noexcept

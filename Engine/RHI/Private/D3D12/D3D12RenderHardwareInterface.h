@@ -35,142 +35,151 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    D3D12SwapChain& swapChain,
 	    D3D12ConstantBufferManager& constantBufferManager) noexcept;
-	~D3D12RenderHardwareInterface() noexcept override;
+	~D3D12RenderHardwareInterface() noexcept;
 
 	D3D12RenderHardwareInterface(const D3D12RenderHardwareInterface&) = delete;
 	D3D12RenderHardwareInterface& operator=(const D3D12RenderHardwareInterface&) = delete;
 	D3D12RenderHardwareInterface(D3D12RenderHardwareInterface&&) = delete;
 	D3D12RenderHardwareInterface& operator=(D3D12RenderHardwareInterface&&) = delete;
 
-	const RhiCapabilities& GetCapabilities() const noexcept override { return m_capabilities; }
-	ERhiBackendApi GetBackendApi() const noexcept override;
-	CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept override;
-	std::uint32_t GetCurrentFrameIndex() const noexcept override;
-	void WaitForIdle() noexcept override;
-	RhiInteropService& GetInteropService() noexcept override;
-	const RhiInteropService& GetInteropService() const noexcept override;
-	RhiCaptureService& GetCaptureService() noexcept override;
-	RhiDiagnosticsService& GetDiagnosticsService() noexcept override;
-	const RhiDiagnosticsService& GetDiagnosticsService() const noexcept override;
-	RhiPresentationService& GetPresentationService() noexcept override;
-	const RhiPresentationService& GetPresentationService() const noexcept override;
-	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;
-	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
-	bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept override;
+	const RhiCapabilities& GetCapabilities() const noexcept { return m_capabilities; }
+	ERhiBackendApi GetBackendApi() const noexcept;
+	CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept;
+	std::uint32_t GetCurrentFrameIndex() const noexcept;
+	RhiResourceService& GetResourceService() noexcept;
+	const RhiResourceService& GetResourceService() const noexcept;
+	RhiDescriptorService& GetDescriptorService() noexcept;
+	const RhiDescriptorService& GetDescriptorService() const noexcept;
+	RhiPipelineService& GetPipelineService() noexcept;
+	RhiUploadService& GetUploadService() noexcept;
+	const RhiUploadService& GetUploadService() const noexcept;
+	RhiRayTracingService& GetRayTracingService() noexcept;
+	const RhiRayTracingService& GetRayTracingService() const noexcept;
+	void WaitForIdle() noexcept;
+	RhiInteropService& GetInteropService() noexcept;
+	const RhiInteropService& GetInteropService() const noexcept;
+	RhiCaptureService& GetCaptureService() noexcept;
+	RhiDiagnosticsService& GetDiagnosticsService() noexcept;
+	const RhiDiagnosticsService& GetDiagnosticsService() const noexcept;
+	RhiPresentationService& GetPresentationService() noexcept;
+	const RhiPresentationService& GetPresentationService() const noexcept;
+	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept;
+	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept;
+	bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept;
 	bool CaptureTextureToBmp(
 	    NativeResourceHandle resource,
 	    std::uint32_t width,
 	    std::uint32_t height,
-	    const std::filesystem::path& outputPath) noexcept override;
-	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
-	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept override;
-	RenderDiagnostics& GetDiagnostics() noexcept override;
-	const RenderDiagnostics& GetDiagnostics() const noexcept override;
+	    const std::filesystem::path& outputPath) noexcept;
+	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
+	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
+	RenderDiagnostics& GetDiagnostics() noexcept;
+	const RenderDiagnostics& GetDiagnostics() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
-	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) override;
-	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
-	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) override;
-	std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) override;
-	void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept override;
+	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc);
+	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc);
+	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc);
+	std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc);
+	void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept;
 	ID3D12DescriptorHeap* GetD3D12ShaderResourceDescriptorHeap() const noexcept;
-	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) override;
-	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept override;
-	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount) override;
+	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType);
+	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept;
+	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount);
 	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
-	    const noexcept override;
-	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
-	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle) override;
-	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept override;
-	const PerFrameConstantBufferData& GetPerFrameConstantData() const noexcept override;
-	RhiGpuVirtualAddress GetPerFrameConstantGpuAddress() const noexcept override;
-	RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes) override;
-	RhiGpuVirtualAddress AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data) override;
-	RhiGpuVirtualAddress AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data) override;
-	RhiGpuVirtualAddress AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data) override;
-	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept override;
-	RhiViewport GetBackBufferViewport() const noexcept override;
-	RhiRect GetBackBufferScissorRect() const noexcept override;
-	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override;
-	NativeResourceHandle GetBackBufferResource() const noexcept override;
-	std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName) override;
+	    const noexcept;
+	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept;
+	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle);
+	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept;
+	const PerFrameConstantBufferData& GetPerFrameConstantData() const noexcept;
+	RhiGpuVirtualAddress GetPerFrameConstantGpuAddress() const noexcept;
+	RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes);
+	RhiGpuVirtualAddress AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data);
+	RhiGpuVirtualAddress AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data);
+	RhiGpuVirtualAddress AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data);
+	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept;
+	RhiViewport GetBackBufferViewport() const noexcept;
+	RhiRect GetBackBufferScissorRect() const noexcept;
+	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept;
+	NativeResourceHandle GetBackBufferResource() const noexcept;
+	std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName);
 	RhiOwnedResourceHandle CreateTextureResource(
 	    const RhiTextureResourceDesc& desc,
 	    ResourceState initialState,
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
-	    std::wstring_view debugName) override;
+	    std::wstring_view debugName);
 	RhiOwnedResourceHandle CreateBufferResource(
 	    const RhiBufferResourceDesc& desc,
 	    ResourceState initialState,
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
-	    std::wstring_view debugName) override;
+	    std::wstring_view debugName);
 	bool CreateVertexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
-	    RhiVertexBufferView& outView) override;
+	    RhiVertexBufferView& outView);
 	bool CreateStructuredBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
-	    RhiResourceViewHandle& outView) override;
+	    RhiResourceViewHandle& outView);
 	bool CreateIndexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,
 	    RhiIndexFormat format,
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
-	    RhiIndexBufferView& outView) override;
-	void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept override;
-	NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept override;
-	RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept override;
+	    RhiIndexBufferView& outView);
+	void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept;
+	NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept;
+	RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
-	    const RhiRayTracingGeometryDesc& geometry) const noexcept override;
+	    const RhiRayTracingGeometryDesc& geometry) const noexcept;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
-	    std::uint32_t instanceCount) const noexcept override;
-	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
+	    std::uint32_t instanceCount) const noexcept;
+	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName);
 	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
 	    std::uint64_t sizeInBytes,
 	    ERhiRayTracingAccelerationStructureType type,
-	    std::wstring_view debugName) override;
+	    std::wstring_view debugName);
 	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,
-	    std::wstring_view debugName) override;
-	RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept override;
-	RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept override;
+	    std::wstring_view debugName);
+	RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept;
+	RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept;
 	RhiOwnedMemoryBlockHandle CreateTransientMemoryBlock(
 	    RhiTransientAllocationPool pool,
 	    std::uint64_t sizeInBytes,
 	    std::uint64_t alignment,
-	    std::wstring_view debugName) override;
-	void ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept override;
+	    std::wstring_view debugName);
+	void ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept;
 	RhiOwnedResourceHandle CreateAliasingTextureResource(
 	    RhiOwnedMemoryBlockHandle memoryBlock,
 	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientTextureAllocationDesc& desc,
-	    std::wstring_view debugName) override;
+	    std::wstring_view debugName);
 	RhiOwnedResourceHandle CreateAliasingBufferResource(
 	    RhiOwnedMemoryBlockHandle memoryBlock,
 	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientBufferAllocationDesc& desc,
-	    std::wstring_view debugName) override;
-	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) override;
-	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
-	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
-	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
-	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
-	std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
-	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
-	void BeginPresentRenderPass(const float clearColor[4]) noexcept override;
-	void BeginPresentOverlayPass() noexcept override;
-	void EndPresentRenderPass() noexcept override;
-	PixelFormat GetPresentColorFormat() const noexcept override;
+	    std::wstring_view debugName);
+	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc);
+	void ReleaseResourceView(RhiResourceViewHandle view) noexcept;
+	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept;
+	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept;
+	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept;
+	std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept;
+	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept;
+	void BeginPresentRenderPass(const float clearColor[4]) noexcept;
+	void BeginPresentOverlayPass() noexcept;
+	void EndPresentRenderPass() noexcept;
+	PixelFormat GetPresentColorFormat() const noexcept;
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
 
   private:

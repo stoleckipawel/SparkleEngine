@@ -92,7 +92,7 @@ Result:
 
 - No new architecture boundary violations.
 - Counted provider exceptions remain limited to the NVIDIA DLSS provider `Vulkan::Vulkan` link and Streamline DLSS Vulkan bridge.
-- The final review-ready gate remains deferred until Stage 36 reruns after the completed Stage 19 backend service slimming.
+- Stage 36 reran after completed Stage 19 backend service slimming and accepted the current architecture track.
 
 Earlier direct script entry point:
 

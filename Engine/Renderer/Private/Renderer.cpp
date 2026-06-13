@@ -4,6 +4,7 @@
 #include "FramePipeline/FramePipeline.h"
 #include "Host/RendererSystemRoot.h"
 #include "RayTracing/RenderRayTracingScene.h"
+#include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Upscaling/UpscalerProvider.h"
 #include "Upscaling/UpscalerSubsystem.h"
@@ -35,6 +36,11 @@ RenderHardwareInterface& Renderer::GetRenderHardwareInterface() noexcept
 const RenderHardwareInterface& Renderer::GetRenderHardwareInterface() const noexcept
 {
 	return m_systemRoot->GetRenderHardwareInterface();
+}
+
+RhiCommandSubmissionService& Renderer::GetCommandSubmissionService() noexcept
+{
+	return m_systemRoot->GetBackend();
 }
 
 RhiImGuiRenderer& Renderer::GetImGuiRenderer() noexcept

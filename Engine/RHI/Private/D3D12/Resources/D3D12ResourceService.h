@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Device/RenderHardwareInterface.h"
-#include "Memory/RhiMemoryTypes.h"
+#include "Core/RhiCapabilities.h"
+#include "Resources/RhiResourceService.h"
 
 #include <cstdint>
 #include <memory>
@@ -18,7 +18,7 @@ struct D3D12GpuAllocationRecord;
 struct D3D12GpuHeapRecord;
 struct ID3D12Resource;
 
-class D3D12ResourceService final
+class D3D12ResourceService final : public RhiResourceService
 {
   public:
 	D3D12ResourceService(
@@ -28,63 +28,63 @@ class D3D12ResourceService final
 	    D3D12DescriptorService& descriptorService,
 	    const RhiCapabilities& capabilities) noexcept;
 
-	std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName);
+	std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateTextureResource(
 	    const RhiTextureResourceDesc& desc,
 	    ResourceState initialState,
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
-	    std::wstring_view debugName);
+	    std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateBufferResource(
 	    const RhiBufferResourceDesc& desc,
 	    ResourceState initialState,
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
-	    std::wstring_view debugName);
+	    std::wstring_view debugName) override;
 	bool CreateVertexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
-	    RhiVertexBufferView& outView);
+	    RhiVertexBufferView& outView) override;
 	bool CreateStructuredBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
-	    RhiResourceViewHandle& outView);
+	    RhiResourceViewHandle& outView) override;
 	bool CreateIndexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,
 	    RhiIndexFormat format,
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
-	    RhiIndexBufferView& outView);
-	void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept;
+	    RhiIndexBufferView& outView) override;
+	void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept override;
 	void DrainCompletedReleases() noexcept;
-	NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept;
-	RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept;
-	RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept;
-	RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept;
+	NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept override;
+	RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept override;
+	RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept override;
+	RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept override;
 	RhiOwnedMemoryBlockHandle CreateTransientMemoryBlock(
 	    RhiTransientAllocationPool pool,
 	    std::uint64_t sizeInBytes,
 	    std::uint64_t alignment,
-	    std::wstring_view debugName);
-	void ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept;
+	    std::wstring_view debugName) override;
+	void ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept override;
 	RhiOwnedResourceHandle CreateAliasingTextureResource(
 	    RhiOwnedMemoryBlockHandle memoryBlock,
 	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientTextureAllocationDesc& desc,
-	    std::wstring_view debugName);
+	    std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateAliasingBufferResource(
 	    RhiOwnedMemoryBlockHandle memoryBlock,
 	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientBufferAllocationDesc& desc,
-	    std::wstring_view debugName);
-	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept;
+	    std::wstring_view debugName) override;
+	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
 
   private:
 	struct PendingOwnedResourceRelease

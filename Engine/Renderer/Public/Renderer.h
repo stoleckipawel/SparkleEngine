@@ -8,6 +8,7 @@
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
 #include "../../RHI/Public/Capture/RhiCaptureService.h"
+#include "../../RHI/Public/Commands/RhiCommandSubmissionService.h"
 #include "../../RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cstdint>
@@ -38,6 +39,7 @@ class SPARKLE_RENDERER_API Renderer final
 
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
+	RhiCommandSubmissionService& GetCommandSubmissionService() noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept;

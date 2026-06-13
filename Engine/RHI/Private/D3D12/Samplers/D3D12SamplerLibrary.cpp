@@ -34,12 +34,12 @@ bool D3D12SamplerLibrary::TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& ou
 	}
 }
 
-D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RenderHardwareInterface& renderHardwareInterface) :
-    m_rhi(&rhi), m_renderHardwareInterface(&renderHardwareInterface)
+D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RhiDescriptorService& descriptorService) :
+    m_rhi(&rhi), m_descriptorService(&descriptorService)
 {
 	constexpr uint32_t samplerCount = static_cast<uint32_t>(Slot::Count);
 
-	m_tableHandle = m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorAllocatorType::Sampler, samplerCount);
+	m_tableHandle = m_descriptorService->AllocateDescriptorTable(ERhiDescriptorAllocatorType::Sampler, samplerCount);
 	if (!m_tableHandle)
 	{
 		Diagnostics::Fail(g_samplerLibraryLogger, __FILE__, __LINE__, "Failed to allocate sampler descriptor table.");
@@ -89,9 +89,9 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RenderHardwareInterface&
 
 D3D12SamplerLibrary::~D3D12SamplerLibrary() noexcept
 {
-	if (m_tableHandle && m_renderHardwareInterface)
+	if (m_tableHandle && m_descriptorService)
 	{
-		m_renderHardwareInterface->ReleaseDescriptorTable(m_tableHandle);
+		m_descriptorService->ReleaseDescriptorTable(m_tableHandle);
 		m_tableHandle = {};
 	}
 	m_bInitialized = false;
@@ -113,7 +113,7 @@ void D3D12SamplerLibrary::CreateSampler(Slot slot, const SamplerConfig& config)
 	desc.MaxLOD = config.mip == MipFilter::None ? 0.0f : D3D12_FLOAT32_MAX;
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = D3D12TypeConversions::ToCpuDescriptor(
-	    m_renderHardwareInterface->GetDescriptorTableCpuHandle(m_tableHandle, static_cast<uint32_t>(slot)));
+	    m_descriptorService->GetDescriptorTableCpuHandle(m_tableHandle, static_cast<uint32_t>(slot)));
 
 	m_rhi->GetDevice()->CreateSampler(&desc, cpuHandle);
 }

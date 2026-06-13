@@ -213,7 +213,7 @@ void FramePipeline::TransitionRenderProduct(RenderProductHandle handle, Resource
 	}
 
 	RenderHardwareInterface& renderHardware = m_systems->GetRenderHardwareInterface();
-	RenderCommandList& commandList = renderHardware.GetGraphicsCommandList(renderHardware.GetCurrentFrameIndex());
+	RenderCommandList& commandList = m_systems->GetBackend().GetGraphicsCommandList(renderHardware.GetCurrentFrameIndex());
 	commandList.TransitionResource(resource, trackedBefore, after);
 	m_frameGraph->UpdateTrackedResourceState(resourceHandle, after);
 }

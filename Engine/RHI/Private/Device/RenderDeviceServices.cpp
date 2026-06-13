@@ -149,6 +149,11 @@ const RenderDiagnostics& RenderDeviceServices::GetDiagnostics() const noexcept
 	return backend.GetDiagnostics();
 }
 
+void RenderDeviceServices::WaitForIdle() noexcept
+{
+	m_impl->backend->Flush();
+}
+
 void RenderDeviceServices::Flush() noexcept
 {
 	m_impl->backend->Flush();
@@ -167,6 +172,11 @@ void RenderDeviceServices::BeginFrame() noexcept
 RenderCommandList& RenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
 {
 	return m_impl->backend->GetCurrentGraphicsCommandList();
+}
+
+RenderCommandList& RenderDeviceServices::GetGraphicsCommandList(std::uint32_t frameIndex) noexcept
+{
+	return m_impl->backend->GetGraphicsCommandList(frameIndex);
 }
 
 void RenderDeviceServices::SubmitFrame() noexcept

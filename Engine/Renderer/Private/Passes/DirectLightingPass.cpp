@@ -74,7 +74,7 @@ void DirectLightingPass::SetParameters(
     const PassRuntimeServices& passRuntimeServices,
     bool hasSceneTlas) const
 {
-	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(passRuntimeServices.RayTracing, hasSceneTlas);
 	const bool valid = parameters.Sync();

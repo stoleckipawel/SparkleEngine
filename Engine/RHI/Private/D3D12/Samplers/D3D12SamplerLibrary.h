@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Device/RenderHardwareInterface.h"
+#include "Descriptors/RhiDescriptorService.h"
 #include <d3d12.h>
 
 #include <cstdint>
@@ -71,7 +71,7 @@ class D3D12SamplerLibrary
 		Count
 	};
 
-	D3D12SamplerLibrary(D3D12Rhi& rhi, RenderHardwareInterface& renderHardwareInterface);
+	D3D12SamplerLibrary(D3D12Rhi& rhi, RhiDescriptorService& descriptorService);
 	~D3D12SamplerLibrary() noexcept;
 
 	D3D12SamplerLibrary(const D3D12SamplerLibrary&) = delete;
@@ -104,7 +104,7 @@ class D3D12SamplerLibrary
 
 	bool m_bInitialized = false;
 	D3D12Rhi* m_rhi = nullptr;
-	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
+	RhiDescriptorService* m_descriptorService = nullptr;
 	RhiDescriptorTableHandle m_tableHandle = {};
 	uint32_t m_descriptorSize = 0;
 };

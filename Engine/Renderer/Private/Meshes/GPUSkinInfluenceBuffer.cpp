@@ -55,7 +55,7 @@ bool GPUSkinInfluenceBuffer::Upload(
 		gpuSkinInfluences.resize(vertexCount);
 	}
 
-	if (!m_renderHardwareInterface->CreateStructuredBuffer(
+	if (!m_renderHardwareInterface->GetResourceService().CreateStructuredBuffer(
 	        gpuSkinInfluences.data(),
 	        gpuSkinInfluences.size() * sizeof(VertexSkinInfluenceData),
 	        static_cast<std::uint32_t>(sizeof(VertexSkinInfluenceData)),
@@ -68,7 +68,7 @@ bool GPUSkinInfluenceBuffer::Upload(
 		return false;
 	}
 
-	m_shaderResourceView = m_renderHardwareInterface->GetResourceViewGpuHandle(m_view);
+	m_shaderResourceView = m_renderHardwareInterface->GetDescriptorService().GetResourceViewGpuHandle(m_view);
 	if (!m_shaderResourceView)
 	{
 		SPDLOG_LOGGER_ERROR(g_gpuSkinInfluenceBufferLogger, "GPUSkinInfluenceBuffer: uploaded buffer has no shader-resource descriptor");
@@ -88,13 +88,13 @@ void GPUSkinInfluenceBuffer::Release() noexcept
 
 	if (m_view)
 	{
-		m_renderHardwareInterface->ReleaseResourceView(m_view);
+		m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_view);
 		m_view = {};
 	}
 
 	if (m_buffer)
 	{
-		m_renderHardwareInterface->ReleaseOwnedResource(m_buffer);
+		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_buffer);
 		m_buffer = {};
 	}
 

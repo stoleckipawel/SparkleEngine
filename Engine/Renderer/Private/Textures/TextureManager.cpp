@@ -33,7 +33,7 @@ std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesy
 		return {};
 	}
 
-	return m_renderHardwareInterface->CreateTexture(std::move(textureUpload), texturePath.filename().wstring());
+	return m_renderHardwareInterface->GetResourceService().CreateTexture(std::move(textureUpload), texturePath.filename().wstring());
 }
 
 TextureManager::TextureManager(RenderHardwareInterface& renderHardwareInterface) noexcept :

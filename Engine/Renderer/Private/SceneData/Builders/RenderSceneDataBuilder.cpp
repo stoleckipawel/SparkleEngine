@@ -199,4 +199,3 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		    batchBuildResult.diagnostics.RejectedInvalidMaterialCount);
 	}
 }
-

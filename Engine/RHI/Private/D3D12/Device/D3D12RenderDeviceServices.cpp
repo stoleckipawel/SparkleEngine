@@ -35,6 +35,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
+	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	void SubmitFrame() noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
 	void UpdatePerFrameConstants(std::uint32_t renderViewMode, std::uint32_t viewportWidth, std::uint32_t viewportHeight) noexcept override;
@@ -99,7 +100,8 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(Tim
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.CreateSamplerLibrary");
-		services->m_samplerLibrary = std::make_unique<D3D12SamplerLibrary>(*services->m_rhi, *services->m_renderHardwareInterface);
+		services->m_samplerLibrary =
+		    std::make_unique<D3D12SamplerLibrary>(*services->m_rhi, services->m_renderHardwareInterface->GetDescriptorService());
 	}
 	services->m_renderHardwareInterface->SetSamplerTableHandle(services->m_samplerLibrary->GetTableHandle());
 	return services;
@@ -175,6 +177,11 @@ void D3D12RenderDeviceServices::BeginFrame() noexcept
 RenderCommandList& D3D12RenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
 {
 	return m_renderHardwareInterface->GetGraphicsCommandList(m_rhi->GetCurrentFrameIndex());
+}
+
+RenderCommandList& D3D12RenderDeviceServices::GetGraphicsCommandList(std::uint32_t frameIndex) noexcept
+{
+	return m_renderHardwareInterface->GetGraphicsCommandList(frameIndex);
 }
 
 void D3D12RenderDeviceServices::SubmitFrame() noexcept

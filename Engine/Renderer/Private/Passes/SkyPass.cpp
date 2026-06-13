@@ -83,7 +83,7 @@ void SkyPass::DeclareResources(
 
 void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const
 {
-	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
@@ -104,7 +104,7 @@ RhiDescriptorTableBinding SkyPass::GetSkyTextureBinding(const PassRuntimeService
 	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
 	if (!m_skyTextureBindingSet)
 	{
-		m_skyTextureBindingSet = renderHardwareInterface.CreateBindingSet(
+		m_skyTextureBindingSet = renderHardwareInterface.GetDescriptorService().CreateBindingSet(
 		    RenderBindingSetDesc{.DescriptorType = ERhiDescriptorAllocatorType::ShaderResource, .DescriptorCount = 1u});
 	}
 

@@ -159,10 +159,11 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	m_presentationService = std::make_unique<VulkanPresentationService>(*this);
 	m_pipelineService = std::make_unique<VulkanPipelineService>(rhi);
 	m_rayTracingServices = std::make_unique<VulkanRayTracingServices>(rhi, memoryAllocator);
-	m_descriptorManager = std::make_unique<VulkanDescriptorManager>(rhi, memoryAllocator);
+	m_descriptorManager = std::make_unique<VulkanDescriptorManager>(rhi, memoryAllocator, m_capabilities);
 	m_resourceService = std::make_unique<VulkanResourceService>(rhi, commandContext, memoryAllocator, *m_descriptorManager, m_capabilities);
 	m_constantBufferManager = std::make_unique<VulkanConstantBufferManager>(memoryAllocator);
 	m_samplerLibrary = std::make_unique<VulkanSamplerLibrary>(rhi, *m_descriptorManager);
+	m_descriptorManager->SetSamplerLibrary(*m_samplerLibrary);
 	m_imguiBackend = std::make_unique<VulkanImGuiBackend>(*this);
 	for (std::uint32_t frameIndex = 0; frameIndex < RenderConfig::FramesInFlight; ++frameIndex)
 	{
@@ -196,6 +197,51 @@ CookedShaderBinaryFormat VulkanRenderHardwareInterface::GetRequiredShaderBinaryF
 std::uint32_t VulkanRenderHardwareInterface::GetCurrentFrameIndex() const noexcept
 {
 	return m_currentFrameIndex;
+}
+
+RhiResourceService& VulkanRenderHardwareInterface::GetResourceService() noexcept
+{
+	return *m_resourceService;
+}
+
+const RhiResourceService& VulkanRenderHardwareInterface::GetResourceService() const noexcept
+{
+	return *m_resourceService;
+}
+
+RhiDescriptorService& VulkanRenderHardwareInterface::GetDescriptorService() noexcept
+{
+	return *m_descriptorManager;
+}
+
+const RhiDescriptorService& VulkanRenderHardwareInterface::GetDescriptorService() const noexcept
+{
+	return *m_descriptorManager;
+}
+
+RhiPipelineService& VulkanRenderHardwareInterface::GetPipelineService() noexcept
+{
+	return *m_pipelineService;
+}
+
+RhiUploadService& VulkanRenderHardwareInterface::GetUploadService() noexcept
+{
+	return *m_constantBufferManager;
+}
+
+const RhiUploadService& VulkanRenderHardwareInterface::GetUploadService() const noexcept
+{
+	return *m_constantBufferManager;
+}
+
+RhiRayTracingService& VulkanRenderHardwareInterface::GetRayTracingService() noexcept
+{
+	return *m_rayTracingServices;
+}
+
+const RhiRayTracingService& VulkanRenderHardwareInterface::GetRayTracingService() const noexcept
+{
+	return *m_rayTracingServices;
 }
 
 void VulkanRenderHardwareInterface::WaitForIdle() noexcept
@@ -574,7 +620,7 @@ void VulkanRenderHardwareInterface::UpdatePerFrameConstants(const PerFrameConsta
 
 std::unique_ptr<RenderBindingSet> VulkanRenderHardwareInterface::CreateBindingSet(const RenderBindingSetDesc& desc)
 {
-	return std::make_unique<RenderBindingSet>(*this, desc);
+	return m_descriptorManager != nullptr ? m_descriptorManager->CreateBindingSet(desc) : std::unique_ptr<RenderBindingSet>{};
 }
 
 std::unique_ptr<RenderBindingLayout> VulkanRenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)

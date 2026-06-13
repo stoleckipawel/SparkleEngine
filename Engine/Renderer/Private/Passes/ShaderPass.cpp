@@ -106,7 +106,7 @@ void BindComputeShaderPass(
 {
 	if (bindLayout && renderHardwareInterface != nullptr)
 	{
-		renderHardwareInterface->BindGlobalDescriptorState(cmd.GetRenderCommandList());
+		renderHardwareInterface->GetDescriptorService().BindGlobalDescriptorState(cmd.GetRenderCommandList());
 	}
 
 	cmd.SetPipelineState(pipelineState);
@@ -135,7 +135,7 @@ void BindRasterShaderPass(
 {
 	if (bindLayout && renderHardwareInterface != nullptr)
 	{
-		renderHardwareInterface->BindGlobalDescriptorState(cmd.GetRenderCommandList());
+		renderHardwareInterface->GetDescriptorService().BindGlobalDescriptorState(cmd.GetRenderCommandList());
 	}
 
 	cmd.SetPipelineState(pipelineState);

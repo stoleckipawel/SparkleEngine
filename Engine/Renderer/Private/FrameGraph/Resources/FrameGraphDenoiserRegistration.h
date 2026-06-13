@@ -14,4 +14,3 @@ namespace FrameGraphDenoiserRegistration
 	    RenderViewportExtent sceneExtent,
 	    bool requestDenoiser);
 }  // namespace FrameGraphDenoiserRegistration
-

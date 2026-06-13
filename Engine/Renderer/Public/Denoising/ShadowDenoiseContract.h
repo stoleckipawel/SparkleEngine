@@ -57,4 +57,3 @@ namespace ShadowDenoiseContract
 	const char* StageToString(ShadowDenoiseStage stage) noexcept;
 	void LogContractSummary(const ShadowDenoiseContract& contract) noexcept;
 }  // namespace ShadowDenoiseContract
-

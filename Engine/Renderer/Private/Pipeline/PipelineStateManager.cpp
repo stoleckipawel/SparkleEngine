@@ -1,4 +1,4 @@
-﻿#include "../PCH.h"
+#include "../PCH.h"
 #include "PipelineStateManager.h"
 
 #include "Core/Public/Diagnostics/Logger.h"

@@ -21,4 +21,3 @@ RenderTemporalFrameState BuildRenderTemporalFrameState(const PerTemporalConstant
 	    .JitterCurrent = temporalData.JitterCurrent,
 	    .JitterPrevious = temporalData.JitterPrevious};
 }
-

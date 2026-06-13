@@ -212,7 +212,7 @@ void PassBinder::BindCompiledBinding(
 			BindGpuAddress(
 			    cmd,
 			    compiledBinding,
-			    renderHardwareInterface->AllocateUniformConstantBuffer(
+			    renderHardwareInterface->GetUploadService().AllocateUniformConstantBuffer(
 			        uniformData->Data,
 			        uniformData->SizeInBytes),
 			    isCompute);
@@ -313,7 +313,7 @@ void PassBinder::BindCompiledBinding(
 			assert(parameterBinding != nullptr);
 			const PassParameterSamplerBindingData* samplerData = parameterBinding->AsSamplerData();
 			assert(samplerData != nullptr);
-			const RhiDescriptorTableBinding samplerBinding = renderHardwareInterface->GetSharedSamplerBinding(samplerData->Desc);
+			const RhiDescriptorTableBinding samplerBinding = renderHardwareInterface->GetDescriptorService().GetSharedSamplerBinding(samplerData->Desc);
 			assert(static_cast<bool>(samplerBinding));
 			BindDescriptorTable(cmd, compiledBinding, samplerBinding, isCompute);
 			return;
