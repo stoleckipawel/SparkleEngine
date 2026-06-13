@@ -1,8 +1,6 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Scene/Camera/CameraDesc.h"
-#include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
 
 #include <cstddef>
 #include <memory>

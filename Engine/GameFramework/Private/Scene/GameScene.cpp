@@ -27,7 +27,7 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 
 	Clear();
 	m_cameras.Reset(desc.cameraDesc);
-	m_lighting.ApplyFromDesc(desc.lightingDesc);
+	m_lighting.ApplyFromDesc(desc.lights);
 
 	result.status = GameSceneLoadStatus::Succeeded;
 

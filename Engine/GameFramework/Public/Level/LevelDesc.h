@@ -2,7 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
-#include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
+#include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
 
 #include <string>
 #include <vector>
@@ -18,6 +18,6 @@ struct SPARKLE_ENGINE_API LevelDesc
 {
 	std::string name;
 	CameraDesc cameraDesc;
-	LevelLightingDesc lightingDesc;
+	std::vector<SceneLightDesc> lights;
 	std::vector<SceneAssetId> sceneAssetIds;
 };

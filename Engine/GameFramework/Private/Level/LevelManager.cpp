@@ -236,7 +236,7 @@ void LevelManager::CaptureSceneToLevel() noexcept
 
 	LevelDesc desc = m_activeLevel->BuildDescription();
 
-	desc.lightingDesc = m_gameScene->GetLighting().CaptureToDesc();
+	desc.lights = m_gameScene->GetLighting().CaptureToDesc();
 	desc.cameraDesc = m_gameScene->GetCameras().GetActiveCamera().CaptureToDesc();
 
 	m_activeLevel->SetLevelDesc(desc);

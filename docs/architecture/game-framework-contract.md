@@ -14,7 +14,7 @@ It must stay cooked-data oriented. Source import, authoring conversion, and cook
 
 Target folder structure for shared schemas and render handoff is tracked in [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md). Renderer-facing snapshot ownership is detailed in [render-scene-data-contract.md](render-scene-data-contract.md).
 
-Stage 25 removed the full `SparkleRHI` dependency from `SparkleGameFramework` and kept lighting limits out of GameFramework. Runtime lighting snapshots are dynamic scene data; fixed light capacities remain renderer/RHI GPU packing policy.
+Stage 25 removed the full `SparkleRHI` dependency from `SparkleGameFramework` and kept lighting limits out of GameFramework. `LevelDesc` now stores typed `SceneLightDesc` records for directional, point, and spot lights directly; runtime lighting snapshots remain dynamic scene data; fixed light capacities remain renderer/RHI GPU packing policy.
 
 Reference basis:
 
@@ -46,7 +46,7 @@ GameFramework work is routed through active implementation stages:
 
 | Stage | Scope | Required outcome |
 | --- | --- | --- |
-| Stage 25 | Runtime scene, render handoff, shared schema ownership | GameFramework remains runtime/cooked-data owned; lighting snapshots became dynamic scene data; GameFramework no longer links the full RHI target. |
+| Stage 25 | Runtime scene, render handoff, shared schema ownership | GameFramework remains runtime/cooked-data owned; `LevelDesc::lights` supports directional, point, and spot records through typed scene lights; lighting snapshots are dynamic scene data; GameFramework no longer links the full RHI target. |
 | Stage 26 | Runtime cooked asset loaders and schema pairing | Mesh/material/texture/scene/animation/skeleton loader expectations are paired with producer cookers, renderer consumers, and validation/inspection evidence. |
 | Stage 31 | Artifact validation matrix | Cooked artifacts name producer, schema owner, runtime consumer, inspector, and smoke/load evidence. |
 | Stage 34-36 | Final evidence, threading readiness, cleanup | GameFramework has no tool-private, renderer-private, backend-private, or ambiguous schema ownership left unaccepted. |

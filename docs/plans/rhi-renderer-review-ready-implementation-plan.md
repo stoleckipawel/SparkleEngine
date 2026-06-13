@@ -2689,10 +2689,70 @@ Execution status:
 | Field | Evidence |
 | --- | --- |
 | Status | Fully completed. |
-| Runtime/render split | GameFramework lighting snapshots and level lighting descriptions now store dynamic scene light arrays. Renderer scene data keeps dynamic light vectors, and `ViewLightingBuilder` clamps those vectors only when packing shader-visible lighting buffers. |
+| Runtime/render split | `LevelDesc` stores typed `SceneLightDesc` arrays with directional, point, and spot parity. The old directional-only level-lighting builder and one-field `LevelLightingDesc` wrapper were deleted because the level schema already owns runtime scene light records. Lighting snapshots and renderer scene data keep dynamic light vectors, and `ViewLightingBuilder` clamps those vectors only when packing shader-visible lighting buffers. |
 | Dependency cleanup | `SparkleGameFramework` no longer links `SparkleRHI`; GameFramework lighting headers no longer include `Config/RenderConfig.h`. No standalone contract target was kept for lighting constants because fixed light limits are GPU packing policy, not runtime scene policy. |
 | Boundary evidence | Scans over `Engine/GameFramework` found no `Renderer/Private`, `RHI/Private`, `Tools/*`, D3D12, Vulkan, source import, cooker, shader compiler, or full RHI target dependency hits. Renderer consumes GameFramework scene state through the existing snapshot/coordinator path rather than private scene mutation paths. |
 | Validation | VS2026 configure passed with existing third-party Assimp/FetchContent dev warnings. `SparkleGameFramework`, `SparkleRHI`, `ShowcaseEditor`, `ShowcaseRuntime`, `SourceImportAdapters`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, and `AssetCooker` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`. |
+
+## Stage 25C - Shallow Dead Wrapper And Pass-Through Cleanup
+
+Goal:
+
+- Remove obvious one-field wrappers and one-line pass-through helpers introduced or exposed during the GameFramework/runtime schema refactor.
+- Add a recurring implementation rule that code must earn its right to exist through ownership, invariants, validation, or cross-owner data transfer value.
+
+Source references:
+
+- `architecture-review-acceptance-rubric.md`: `Cohesion and interface size`, `Maintainability and naming`, `Communication and design rationale`
+- [game-framework-contract.md](../architecture/game-framework-contract.md)
+- [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+
+Implementation prompt:
+
+```text
+Run a shallow repository scan for structs with one public data member and functions that only forward to another function or return a field. Remove the obvious cases where the wrapper does not own invariants, validation, ABI boundary, serialization versioning, threading handoff, diagnostics identity, or domain vocabulary. Do not remove handle/value types that intentionally encode type safety, backend API boundaries, binary artifact layout, or public ABI. Prefer simplifying the data owner over replacing a dead wrapper with another wrapper.
+```
+
+Positive guardrails:
+
+- Keep small handle/descriptor types when they prevent type confusion or encode an API boundary.
+- Keep wrappers that own validation, versioning, diagnostics, ownership, or future-compatible binary layout.
+- Delete pass-through helpers whose only job is to unwrap and rewrap identical data.
+- When deleting a wrapper, update call sites to use the real owner directly.
+
+Negative guardrails:
+
+- Do not flatten meaningful descriptor, request, result, handle, or snapshot types just because they are small today.
+- Do not replace a one-field wrapper with a differently named one-field wrapper.
+- Do not hide dead wrappers in private helper folders.
+- Do not broaden includes or CMake dependencies to make wrapper deletion compile.
+
+Data transfer contracts:
+
+- Level lighting data transfers directly through `LevelDesc::lights` as typed `SceneLightDesc` records.
+- Runtime scene lighting owns mutable `SceneLightDesc` storage; renderer-facing `LightingSnapshot` remains the split render DTO.
+- Future wrapper types must name the invariant, owner boundary, serialization role, diagnostics role, or threading handoff they protect.
+
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for the current shallow pass. |
+| Cleanup | Removed the one-field `LevelLightingDesc` wrapper and deleted the old directional-only `LevelLightingSceneBuilder` pass-through. `LevelDesc` now owns `std::vector<SceneLightDesc> lights` directly. |
+| Parser ownership | Moved the heavier lighting section parser implementation into `LightingSectionParser.cpp`; the header now exposes only parse/write section functions. |
+| Remaining rule | Later stages must reject new one-field wrappers and pass-through helpers unless they protect a named invariant, ABI, serialization, diagnostics, type-safety, or ownership boundary. |
+
+Acceptance:
+
+- No source references to `LevelLightingDesc`, `LevelLightingSceneBuilder`, or `lightingDesc` remain.
+- Obvious pass-through helper paths introduced by Stage 25 lighting work are deleted.
+- Stage 25 evidence and GameFramework docs name the simplified `LevelDesc::lights` ownership.
+
+Validation:
+
+- Build `SparkleGameFramework`, `ShowcaseEditor`, `ShowcaseRuntime`, and `AssetCooker`.
+- Run architecture boundary check.
+- Run `git diff --check`.
 
 ## Stage 26 - Runtime Cooked Asset Loader And Schema Pairing Refactor
 

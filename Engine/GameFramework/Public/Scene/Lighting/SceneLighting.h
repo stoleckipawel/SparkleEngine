@@ -2,7 +2,6 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Lighting/LightingSnapshot.h"
-#include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
 
 #include <cstddef>
@@ -27,9 +26,9 @@ class SPARKLE_ENGINE_API SceneLighting final
 	void SetLightVisible(std::size_t index, bool visible);
 	bool ApplyLightDesc(std::size_t lightIndex, SceneLightDesc light);
 
-	void ApplyFromDesc(const LevelLightingDesc& desc);
+	void ApplyFromDesc(const std::vector<SceneLightDesc>& lights);
 	void AppendLight(SceneLightDesc light);
-	LevelLightingDesc CaptureToDesc() const noexcept;
+	std::vector<SceneLightDesc> CaptureToDesc() const;
 	LightingSnapshot CaptureSnapshot() const noexcept;
 
 	void Reset() noexcept;

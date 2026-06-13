@@ -100,19 +100,6 @@ namespace
 
 namespace SceneLightingSnapshotBuilder
 {
-	LevelLightingDesc BuildLevelDesc(const std::vector<SceneLightDesc>& lights) noexcept
-	{
-		LevelLightingDesc desc = {};
-		AppendDirectionalLights(
-		    lights,
-		    false,
-		    [&desc](const DirectionalLightDesc& light) noexcept
-		    {
-			    desc.directionalLights.push_back(light);
-		    });
-		return desc;
-	}
-
 	LightingSnapshot BuildSnapshot(const std::vector<SceneLightDesc>& lights) noexcept
 	{
 		LightingSnapshot snapshot = {};

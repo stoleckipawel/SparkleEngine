@@ -1,14 +1,13 @@
 #include "PCH.h"
 #include "Scene/Lighting/SceneLighting.h"
 
-#include "Scene/Lighting/Loading/LevelLightingSceneBuilder.h"
 #include "Scene/Lighting/Snapshots/SceneLightingSnapshotBuilder.h"
 
 #include <utility>
 
-void SceneLighting::ApplyFromDesc(const LevelLightingDesc& desc)
+void SceneLighting::ApplyFromDesc(const std::vector<SceneLightDesc>& lights)
 {
-	m_lights = LevelLightingSceneBuilder::BuildLights(desc);
+	m_lights = lights;
 }
 
 void SceneLighting::AppendLight(SceneLightDesc light)
@@ -48,9 +47,9 @@ bool SceneLighting::ApplyLightDesc(std::size_t lightIndex, SceneLightDesc light)
 	return true;
 }
 
-LevelLightingDesc SceneLighting::CaptureToDesc() const noexcept
+std::vector<SceneLightDesc> SceneLighting::CaptureToDesc() const
 {
-	return SceneLightingSnapshotBuilder::BuildLevelDesc(m_lights);
+	return m_lights;
 }
 
 LightingSnapshot SceneLighting::CaptureSnapshot() const noexcept
