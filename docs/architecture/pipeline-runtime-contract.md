@@ -21,6 +21,7 @@ Primary code references:
 - [D3D12/Pipeline](../../Engine/RHI/Private/D3D12/Pipeline)
 - [Vulkan/Pipeline](../../Engine/RHI/Private/Vulkan/Pipeline)
 - [Target folder architecture](after/repository-target-folder-architecture.md)
+- [Artifact validation matrix](artifact-validation-matrix.md)
 
 Reference basis:
 
@@ -154,6 +155,8 @@ flowchart TD
 ```
 
 `PipelineRuntimeLibrary` is fed by declarative pass definitions after Stage 17. Ordinary passes no longer need central runtime traits.
+
+Stage 31 ties this runtime contract to concrete shader package evidence in [artifact-validation-matrix.md](artifact-validation-matrix.md). Package enumeration, targeted Sky cooking, package inspection, and D3D12 runtime smoke must stay green when package schemas, reflection, binding layout identity, or PSO key inputs change.
 
 ## PSO Key Definition
 

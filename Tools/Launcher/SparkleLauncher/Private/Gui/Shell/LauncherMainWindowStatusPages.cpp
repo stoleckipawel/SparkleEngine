@@ -444,7 +444,6 @@ namespace SparkleLauncher
 			    "Startup level",
 			    CreateValueCombo(
 			        {{"Sponza", "Sponza"},
-			            {"Bistro", "Bistro"},
 			            {"A Beautiful Game", "ABeautifulGame"},
 			            {"Damaged Helmet", "DamagedHelmet"},
 			            {"Cesium Man", "CesiumMan"},

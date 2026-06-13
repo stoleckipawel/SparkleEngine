@@ -22,6 +22,7 @@ Primary code references:
 - [Renderer shader registrations](../../Engine/Renderer/ShaderRegistrations)
 - [ShaderCompiler](../../Tools/Shaders/ShaderCompiler)
 - [Target folder architecture](after/repository-target-folder-architecture.md)
+- [Artifact validation matrix](artifact-validation-matrix.md)
 
 Reference basis:
 
@@ -81,6 +82,8 @@ This flow removes the Stage 16/17 central traits edit. A regular renderer pass c
 - [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations)
 
 The renderer-owned shader registration location keeps pass package identity above RHI. Package and binding layout names are shared through [RendererShaderPackages.h](../../Engine/Renderer/ShaderRegistrations/RendererShaderPackages.h) instead of duplicated per pass. Stage 17A removed the local shader class constants and moved package/path/entry/stage metadata into one source metadata declaration. Stage 17B extends that target to the whole pass-add workflow so pass authoring is measured from missing shader source to a pass executing in a frame.
+
+Stage 31 records the package compatibility evidence in [artifact-validation-matrix.md](artifact-validation-matrix.md): `ShaderCompiler.exe list-shaders --validate` reports `17` typed shader registrations and `10` valid renderer packages, and targeted Sky cook/inspection proves package, reflection, and pipeline layout data are inspectable before runtime smoke.
 
 ## Target Authoring Flow
 

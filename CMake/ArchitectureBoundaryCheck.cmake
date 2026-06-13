@@ -170,6 +170,15 @@ endfunction()
 message(STATUS "Sparkle architecture boundary check")
 message(STATUS "Repository root: ${SPARKLE_REPO_ROOT}")
 
+file(GLOB_RECURSE SPARKLE_ASSET_CONVERTER_FILES LIST_DIRECTORIES false "${SPARKLE_REPO_ROOT}/Tools/Conversion/AssetConverter/*")
+if(SPARKLE_ASSET_CONVERTER_FILES)
+    foreach(_asset_converter_file IN LISTS SPARKLE_ASSET_CONVERTER_FILES)
+        sparkle_boundary_relative_path(_asset_converter_relative "${_asset_converter_file}")
+        sparkle_boundary_append_failure_text(
+            "${_asset_converter_relative}: [NO_PARALLEL_ASSET_CONVERTER_PIPELINE] AssetConverter was retired as a production path. Use AssetCooker inspect/debug commands or focused cookers.")
+    endforeach()
+endif()
+
 sparkle_boundary_collect_source_files(
     SPARKLE_BOUNDARY_SOURCE_FILES
     "Engine/RHI"

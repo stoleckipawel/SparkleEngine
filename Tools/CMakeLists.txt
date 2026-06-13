@@ -21,7 +21,6 @@ if(SPARKLE_ENABLE_CONTENT_PIPELINE)
 	add_subdirectory(Cooking/MaterialCooker)
 	add_subdirectory(Cooking/SceneCooker)
 	add_subdirectory(Cooking/AssetCooker)
-	add_subdirectory(Conversion/AssetConverter)
 endif()
 
 if(SPARKLE_ENABLE_SHADER_COMPILER)

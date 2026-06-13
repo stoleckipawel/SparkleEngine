@@ -1,6 +1,7 @@
 #include "AssetCookerCli.h"
 
 #include "../Api/AssetCookerService.h"
+#include "../Inspection/AssetCookerSourceInspection.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
@@ -17,6 +18,8 @@ struct AssetCookerCliArguments final
 	std::string projectName;
 	std::string configuration = "DevelopmentGame";
 	std::string repositoryRoot;
+	std::string sourceScenePath;
+	std::string outputPath;
 	AssetCookerCategory category = AssetCookerCategory_All;
 };
 
@@ -57,7 +60,9 @@ static void AssetCookerCliPrintUsage(std::ostream& output)
 	       << "  AssetCooker cook-textures <ProjectName> " << kAssetCookerProfileUsage << " [--root <repo-root>]\n"
 	       << "  AssetCooker cook-assets <ProjectName> " << kAssetCookerProfileUsage << " [--root <repo-root>]\n"
 	       << "  AssetCooker capabilities [--root <repo-root>]\n"
-	       << "  AssetCooker recook <ProjectName> <shader|texture|mesh|material|scene|all> " << kAssetCookerProfileUsage << " [--root <repo-root>]\n";
+	       << "  AssetCooker recook <ProjectName> <shader|texture|mesh|material|scene|all> " << kAssetCookerProfileUsage << " [--root <repo-root>]\n"
+	       << "  AssetCooker inspect-source <source-scene-path>\n"
+	       << "  AssetCooker collect-texture-requests <source-scene-path> <request-file-path>\n";
 }
 
 static bool AssetCookerCliParseCategory(std::string_view value, AssetCookerCategory& outCategory)
@@ -219,6 +224,27 @@ static bool AssetCookerCliParse(int argc, char** argv, AssetCookerCliArguments& 
 		return AssetCookerCliParseCommonArguments(argc, argv, 4, arguments);
 	}
 
+	if (arguments.command == "inspect-source")
+	{
+		if (argc != 3)
+		{
+			return false;
+		}
+		arguments.sourceScenePath = argv[2];
+		return true;
+	}
+
+	if (arguments.command == "collect-texture-requests")
+	{
+		if (argc != 4)
+		{
+			return false;
+		}
+		arguments.sourceScenePath = argv[2];
+		arguments.outputPath = argv[3];
+		return true;
+	}
+
 	return false;
 }
 
@@ -267,6 +293,16 @@ int AssetCookerCli::Run(int argc, char** argv) const
 	{
 		AssetCookerCliPrintUsage(std::cerr);
 		return 1;
+	}
+
+	if (arguments.command == "inspect-source")
+	{
+		return AssetCookerSourceInspection::InspectSource(arguments.sourceScenePath);
+	}
+
+	if (arguments.command == "collect-texture-requests")
+	{
+		return AssetCookerSourceInspection::CollectTextureRequests(arguments.sourceScenePath, arguments.outputPath);
 	}
 
 	AssetCookerConfig config = {};

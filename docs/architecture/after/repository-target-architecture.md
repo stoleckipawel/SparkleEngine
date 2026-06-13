@@ -108,7 +108,7 @@ The disposition policy changes the target design in concrete ways:
 | `Tools/Import/SourceImporters` | Keep and refine | `SourceImporters` with per-format importers | Role-centered importers emit imported DTOs, import reports, and diagnostics through public source DTO contracts. |
 | Focused cookers | Keep and refine | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Preserve focused transformation tools; tighten artifact schemas and inspection/reporting. |
 | `Tools/Cooking/AssetCooker` | Improve and extract | `AssetCooker` orchestration only | Keep project discovery and dispatch; remove any duplicated focused cooker algorithms. |
-| `Tools/Conversion/AssetConverter` | Replace or redesign | Fold into `AssetCooker` or explicit inspection/debug commands | Do not keep a second production cook path. |
+| `Tools/Conversion/AssetConverter` | Removed | Useful behavior lives in explicit `AssetCooker` inspection/debug commands | Do not keep a second production cook path. |
 | `Tools/Support/ToolConsoleSupport` | Keep and refine | `ToolConsoleSupport` | Do not preserve a vague `Common` architecture label; keep generic support separate from cook policy. |
 | `Engine/Assets` non-code asset root | Replace or redesign | Narrow to `Engine/Assets/BuiltIn`, or move shaders/data to owner-specific roots | Do not keep ambiguous asset roots where engine built-ins, renderer pass shaders, and project content can blur together. |
 | CMake target graph | Improve and extract | Narrow `PRIVATE`/`INTERFACE` usage-requirement graph | Treat broad target links as design bugs. |
@@ -130,7 +130,7 @@ The disposition policy changes the target design in concrete ways:
 | ShaderCompiler | Compilation, reflection, package emission, inspection through `ShaderContracts`. | Full renderer runtime linkage or duplicated pass registry policy. |
 | SourceImporters | Per-format source reading and imported DTO diagnostics. | Runtime loading, cooked schema policy, renderer resource creation. |
 | Focused cookers | Artifact transformations and schema/version diagnostics. | Project workflow, UI policy, runtime scene mutation. |
-| AssetCooker | Discovery, planning, dispatch, aggregation, reports. | Reimplementing focused cookers or preserving a second `AssetConverter` pipeline. |
+| AssetCooker | Discovery, planning, dispatch, aggregation, reports, and explicit source inspect/debug commands. | Reimplementing focused cookers or preserving a second `AssetConverter` pipeline. |
 | Launcher | Process orchestration, operation state, evidence and UI presentation. | Build/cook/shader algorithms inside widgets or duplicated tool logic. |
 | CMake/CI | Target ownership, validation wiring, reproducible evidence. | Broad transitive links that hide architecture or CI-only magic paths. |
 

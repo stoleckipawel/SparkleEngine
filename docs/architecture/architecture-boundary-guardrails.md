@@ -62,7 +62,7 @@ Stage 3 intentionally checks only the first RHI/Renderer boundary. The whole-rep
 | `TOOLS_NO_GAMEFRAMEWORK_PRIVATE` | `Tools/*` | Importers/cookers depend on GameFramework private loaders instead of `AssetContracts`. |
 | `SHADERCOMPILER_NO_RENDERER_RUNTIME` | `Tools/Shaders/ShaderCompiler` | ShaderCompiler links full renderer runtime instead of `ShaderContracts`/package primitives. |
 | `LAUNCHER_GUI_NO_TOOL_ALGORITHMS` | Launcher Qt GUI folders | Widgets/models include focused cooker/compiler implementation or own build/cook/shader algorithms. |
-| `NO_PARALLEL_ASSET_CONVERTER_PIPELINE` | `Tools/Conversion/AssetConverter`, `Tools/Cooking` | AssetConverter remains a production cook path instead of debug/inspect commands or AssetCooker dispatch. |
+| `NO_PARALLEL_ASSET_CONVERTER_PIPELINE` | `Tools/Conversion/AssetConverter`, `Tools/Cooking` | AssetConverter returns as a production cook path instead of explicit AssetCooker inspect/debug commands or focused cooker dispatch. |
 | `NO_VAGUE_COMMON_POLICY` | Durable source/CMake targets | New permanent `Common`, `Utils`, `Helper`, `Bridge`, or `Manager` owner names appear without a documented contract and stage disposition. |
 | `NO_AMBIGUOUS_ASSET_ROOT` | `Engine/Assets`, `Engine/*/Shaders`, `Projects/*/Data`, `Projects/*/Shaders`, and future content roots | Asset/source roots mix built-ins, renderer shaders, RHI fixtures, project content, or generated output without a concrete owner and validation policy. |
 | `NO_UNOWNED_SOURCE_ROOT` | Durable `Engine`, `Tools`, `Projects`, `CMake`, `.github`, and `docs` roots | A durable root exists without owner, allowed dependencies, forbidden dependencies, and validation command. |

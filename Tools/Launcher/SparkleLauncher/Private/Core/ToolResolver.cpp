@@ -290,7 +290,7 @@ namespace SparkleLauncher
 
 	static bool IsKnownDevelopmentTool(std::string_view executableName)
 	{
-		return executableName == "AssetCooker" || executableName == "TextureCooker" || executableName == "ShaderCompiler" || executableName == "AssetConverter";
+		return executableName == "AssetCooker" || executableName == "TextureCooker" || executableName == "ShaderCompiler";
 	}
 
 	std::string ToString(KnownTool tool)

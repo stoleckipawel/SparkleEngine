@@ -10,6 +10,7 @@ set(ASSET_COOKER_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Discovery/AssetCookerDiscovery.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerDispatcher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerToolProcess.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Inspection/AssetCookerSourceInspection.cpp
 )
 
 set(ASSET_COOKER_CORE_HEADERS
@@ -18,6 +19,7 @@ set(ASSET_COOKER_CORE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Discovery/AssetCookerDiscovery.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerDispatcher.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerToolProcess.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Inspection/AssetCookerSourceInspection.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Planning/ProjectCookPlan.h
 )
 

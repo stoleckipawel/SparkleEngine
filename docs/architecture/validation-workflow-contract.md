@@ -9,6 +9,8 @@ Validation should prove the paths developers and reviewers actually use. For edi
 
 This contract complements [tooling-pipeline-contract.md](tooling-pipeline-contract.md), [rendering-coverage-status.md](rendering-coverage-status.md), and the validation milestone stages in [rhi-renderer-review-ready-implementation-plan.md](../plans/rhi-renderer-review-ready-implementation-plan.md).
 
+Project and engine source-content ownership is defined in [project-asset-ownership-contract.md](project-asset-ownership-contract.md). Smoke validation should use runnable levels from that contract; raw source/reference folders without cook/load evidence are not valid smoke targets.
+
 ## Canonical Validation Order
 
 | Priority | Path | When to use | Evidence required |
@@ -43,6 +45,8 @@ Launcher-shaped validation must match these fields:
 | Trace | `SPARKLE_SMOKE_TRACE=1` only when the stage needs trace-level evidence. |
 | Level switching | `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING=1` when a stage needs a stable single-scene comparison. |
 | Log path | `SPARKLE_LOG_FILE` or the launcher operation log path. Logs are validation artifacts and should sit beside capture artifacts when running directly. |
+
+Level switching may only cover registered runnable levels whose scene asset references resolve through the cooked scene registry, plus intentionally empty levels. If a sample source folder lacks a cookable scene, it can remain source/reference content but must not be registered as a runtime level.
 
 ## Acceptance Rules
 

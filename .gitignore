@@ -19,6 +19,7 @@
 # Project-local generated outputs.
 Projects/**/build/
 Projects/**/logs/
+Projects/**/StreamlineLogs/
 
 # Build results accidentally emitted at the repository root.
 # Nested source folders named Debug/Release are real code and must remain visible.

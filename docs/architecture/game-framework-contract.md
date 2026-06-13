@@ -13,6 +13,7 @@ GameFramework is the runtime owner for levels, scene entities/components, camera
 It must stay cooked-data oriented. Source import, authoring conversion, and cook algorithms belong in `Tools/`.
 
 Target folder structure for shared schemas and render handoff is tracked in [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md). Renderer-facing snapshot ownership is detailed in [render-scene-data-contract.md](render-scene-data-contract.md).
+Cooked artifact producer/consumer validation evidence is tracked in [artifact-validation-matrix.md](artifact-validation-matrix.md).
 
 Stage 25 removed the full `SparkleRHI` dependency from `SparkleGameFramework` and kept lighting limits out of GameFramework. `LevelDesc` now stores typed `SceneLightDesc` records for directional, point, and spot lights directly; runtime lighting snapshots remain dynamic scene data; fixed light capacities remain renderer/RHI GPU packing policy.
 
@@ -48,7 +49,7 @@ GameFramework work is routed through active implementation stages:
 | --- | --- | --- |
 | Stage 25 | Runtime scene, render handoff, shared schema ownership | GameFramework remains runtime/cooked-data owned; `LevelDesc::lights` supports directional, point, and spot records through typed scene lights; lighting snapshots are dynamic scene data; GameFramework no longer links the full RHI target. |
 | Stage 26 | Runtime cooked asset loaders and schema pairing | Mesh/material/texture/scene/animation/skeleton loader expectations are paired with producer cookers, renderer consumers, and validation/inspection evidence. |
-| Stage 31 | Artifact validation matrix | Cooked artifacts name producer, schema owner, runtime consumer, inspector, and smoke/load evidence. |
+| Stage 31 | Artifact validation matrix | Cooked artifacts name producer, schema owner, runtime consumer, inspector, and smoke/load evidence in [artifact-validation-matrix.md](artifact-validation-matrix.md). |
 | Stage 34-36 | Final evidence, threading readiness, cleanup | GameFramework has no tool-private, renderer-private, backend-private, or ambiguous schema ownership left unaccepted. |
 
 ## Disposition Decisions
@@ -148,6 +149,8 @@ Tools may use public GameFramework cooked data contracts to write artifacts that
 Stage 26 loader diagnostics are emitted through `CookedAssetLoaderDiagnostics` in `Engine/GameFramework/Private/Assets/Loaders`. Runtime loader failures must name asset id, path, schema name, schema version, record kind, expected feature, and reason before a payload is exposed to scene/runtime owners.
 
 ## Cooked Asset Schema Pairing
+
+The detailed Stage 31 artifact matrix lives in [artifact-validation-matrix.md](artifact-validation-matrix.md). This section remains the GameFramework-facing owner/loader view; the matrix adds concrete path patterns, command evidence, and runtime smoke/load proof.
 
 | Runtime asset | Schema owner today | Producer cooker | Runtime loader | Runtime owner/consumer | Renderer-facing handoff | Validation/inspection path |
 | --- | --- | --- | --- | --- | --- | --- |

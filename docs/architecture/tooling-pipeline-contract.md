@@ -10,6 +10,8 @@ This document defines the architecture contract for Sparkle's developer tools an
 
 Target folder structure for these tools is tracked in [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md).
 Validation workflow shape is tracked in [validation-workflow-contract.md](validation-workflow-contract.md).
+Shader and cooked artifact compatibility evidence is tracked in [artifact-validation-matrix.md](artifact-validation-matrix.md).
+Project and engine asset ownership is tracked in [project-asset-ownership-contract.md](project-asset-ownership-contract.md).
 
 Reference basis:
 
@@ -37,7 +39,7 @@ Reference basis:
 | [MaterialCooker](../../Tools/Cooking/MaterialCooker) | Imported material to cooked material asset conversion and texture cook request generation. | Source texture decoding, runtime material cache behavior. |
 | [SceneCooker](../../Tools/Cooking/SceneCooker) | Cooked scene manifest assembly for cameras, lights, instances, material variants, skeletons, metadata, animations. | Runtime level switching, renderer frame graph setup. |
 | [AssetCooker](../../Tools/Cooking/AssetCooker) | Project discovery, cook planning, dispatching focused cook tools, diagnostics, process isolation. | Owning each cook algorithm directly. |
-| [AssetConverter](../../Tools/Conversion/AssetConverter) | Transitional direct developer/debug conversion CLI over import/cook modules. | Becoming a production cook path. |
+| AssetConverter retired path | Former direct conversion CLI behavior now lives only as explicit `AssetCooker` inspect/debug commands. | Returning as a production cook target or generic conversion owner. |
 | [ToolConsoleSupport](../../Tools/Support/ToolConsoleSupport) | Shared console/report formatting for tools. | Asset policy, shader policy, launcher state, cook-domain policy, or broad "common" ownership. |
 
 ## Active Refactor Stages
@@ -51,9 +53,9 @@ Tooling is refactored through active implementation stages, not only final audit
 | Stage 27 | Source import | `SourceImporters` is the production source import target; importers emit imported DTOs, import reports, and diagnostics. |
 | Stage 28 | Focused cookers and support | Texture/Mesh/Material/Scene cookers own transformations; generic console support lives in `ToolConsoleSupport`; cook-domain diagnostics stay with focused cookers until a shared diagnostics target is justified. |
 | Stage 29 | ShaderCompiler | ShaderCompiler consumes `ShaderContracts` and emits deterministic package/reflection reports without full renderer runtime linkage. Completed with deterministic catalog, job identity, validation, cook, and inspect evidence. |
-| Stage 30 | AssetCooker, AssetConverter, Launcher, hosts | AssetCooker owns orchestration/reports; AssetConverter stops being a production path; LauncherCore/Qt GUI/Application/Editor boundaries are enforced. |
-| Stage 31 | Artifact validation | Shader and cooked artifacts gain producer/schema/consumer/inspector/smoke evidence. |
-| Stage 32 | Projects and engine assets | Sample content and built-in assets become owned validation inputs, not ambiguous file roots. |
+| Stage 30 | AssetCooker, retired AssetConverter path, Launcher, hosts | AssetCooker owns orchestration/reports and source inspect/debug commands; AssetConverter source/CMake target is removed; LauncherCore/Qt GUI/Application/Editor boundaries are enforced. |
+| Stage 31 | Artifact validation | Shader and cooked artifacts have producer/schema/consumer/inspector/smoke evidence in [artifact-validation-matrix.md](artifact-validation-matrix.md). |
+| Stage 32 | Projects and engine assets | Sample content and built-in assets become owned validation inputs in [project-asset-ownership-contract.md](project-asset-ownership-contract.md), not ambiguous file roots. |
 | Stage 33 | Mechanical guardrails | Runtime-to-tools, launcher-to-tool, generated-root, and CMake target-scope checks become local/CI-friendly. |
 
 ## Disposition Decisions
@@ -65,8 +67,8 @@ Tooling is refactored through active implementation stages, not only final audit
 | `ShaderCompiler` | Keep and refine | Consume `ShaderContracts`, narrow renderer shader registrations, and generic package schemas, not full renderer runtime. |
 | `SourceImporters` | Keep and refine | Per-format importers emit imported DTOs, import reports, and diagnostics through a role-centered target. |
 | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Keep and refine | Preserve focused tools; improve schemas, inspectors, and failure reports. |
-| `AssetCooker` | Improve and extract | Keep project discovery/planning/dispatch; remove any duplicated focused cooker transformations. |
-| `AssetConverter` | Replace or redesign | Fold into `AssetCooker` or explicit inspect/debug commands; never keep as a second production cook policy. |
+| `AssetCooker` | Keep and refine | Keep project discovery/planning/dispatch; source inspect/debug commands may live here when they use the same importer/focused cooker contracts and do not mutate production policy. |
+| `AssetConverter` | Removed as production path | Folded into `AssetCooker` inspect/debug commands; never keep as a second production cook policy. |
 | `ToolConsoleSupport` | Keep and refine | Generic console/report formatting lives outside cooking and has no asset, shader, project, launcher, or cook-domain policy. |
 
 ## Tool Folder Target
@@ -77,7 +79,7 @@ Tooling is refactored through active implementation stages, not only final audit
 | `Tools/Cooking/TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Keep focused cooker folders; each owns one artifact transformation family. | Do not fold focused algorithms into AssetCooker or Launcher. |
 | `Tools/Cooking/AssetCooker` | Keep project discovery, plan construction, dispatch, aggregation, and reports. | Do not duplicate focused cooker algorithms. |
 | `Tools/Support/ToolConsoleSupport` | Keep generic console/report plumbing here. | Do not add asset, shader, project, launcher, source import, or cook-domain policy. |
-| `Tools/Conversion/AssetConverter` | Remove as production path; useful read-only commands move to `Tools/Inspection/AssetInspector` or explicit AssetCooker inspect/debug subcommands. | Do not replace it with another generic conversion folder. |
+| `Tools/Conversion/AssetConverter` | Removed from source/CMake as a production path. Useful read-only behavior is represented by `AssetCooker inspect-source` and `AssetCooker collect-texture-requests`. | Do not replace it with another generic conversion folder. |
 | `Tools/Shaders/ShaderCompiler` | Keep as shader compile/reflection/package/inspection tool; consume `Tools/Shaders/ShaderContracts` and public RHI shader package primitives. | Do not link full renderer runtime for package enumeration. |
 | `Tools/Launcher/SparkleLauncher/Private/Core` | Keep workflow/process/evidence ownership here or in a clear `Private/Workflows` grouping. | Do not create cooker/compiler implementation folders under Launcher. |
 | `Tools/Launcher/SparkleLauncher/Private/Gui` | Keep Qt models/widgets/presentation here. | Do not let GUI folders own tool algorithms. |
@@ -139,7 +141,7 @@ Rules:
 
 ## Cooked Asset Producer/Consumer Pairing
 
-Stage 26 treats every cooked runtime asset as a producer/schema/loader/consumer contract. Focused cookers may include public cooked schema headers; they must not include `Engine/GameFramework/Private/Assets/Loaders` or use loader code as schema documentation.
+Stage 26 treats every cooked runtime asset as a producer/schema/loader/consumer contract. Stage 31 keeps the executable artifact evidence in [artifact-validation-matrix.md](artifact-validation-matrix.md). Focused cookers may include public cooked schema headers; they must not include `Engine/GameFramework/Private/Assets/Loaders` or use loader code as schema documentation.
 
 | Artifact | Producer | Public schema | Runtime loader/consumer | Inspection or validation evidence |
 | --- | --- | --- | --- | --- |
@@ -229,7 +231,7 @@ Smallest meaningful validation by tool area:
 | Shader compiler/cook | Build `ShaderCompiler`; run `list-shaders`, package cook, or inspect command matching the change. |
 | Texture pipeline | Build `TextureCooker`; run targeted texture request inspect/cook when sample requests exist. |
 | Import/cook DTOs | Build affected import/cook library and `AssetCooker`; run a targeted sample cook when available. |
-| AssetCooker orchestration | Build `AssetCooker`; verify dispatch plan/log output and confirm `AssetConverter` is not bypassing the production path. |
+| AssetCooker orchestration | Build `AssetCooker`; verify dispatch plan/log output and confirm retired conversion behavior is only reachable as explicit inspect/debug commands. |
 | GameFramework cooked schema | Build `SparkleGameFramework`, affected cookers, and runtime/editor smoke that loads the cooked asset. |
 
 ## Open Design Questions
@@ -238,7 +240,7 @@ Smallest meaningful validation by tool area:
 | --- | --- | --- |
 | Should cooked asset schemas live in GameFramework, RHI, or a lower neutral runtime asset module? | Texture, material, mesh, scene, and shader packages are consumed by runtime and produced by tools. | Stage 24, Stage 27 |
 | Should AssetCooker call focused tools as processes or link their libraries for all cook paths? | Process isolation improves failure diagnostics but library calls can simplify tests. Either choice must keep focused cooker ownership clear. | Stage 30 |
-| Which current AssetConverter commands survive as inspect/debug commands? | The production target removes AssetConverter as a parallel cook path, but useful developer diagnostics may remain under explicit command names. | Stage 30 |
+| Which former AssetConverter commands survive as inspect/debug commands? | `inspect-source` and `collect-texture-requests` survive as explicit AssetCooker commands. Direct `cook-scene` does not survive because production scene cooking belongs to project cook planning. | Stage 30 |
 | When should `CookDiagnostics` become a shared target? | Current code justifies `ToolConsoleSupport`; create `CookDiagnostics` only when multiple focused cookers share real cook-domain diagnostics, reports, or validation records. | Stage 31 |
 | What is the stable launcher evidence schema for build/cook/launch/smoke operations? | Final reviewer artifacts should be generated consistently. | Stage 30 |
 | How should shader package validation fixtures be stored and run in CI? | Shader compiler regressions need evidence beyond a build. | Stage 29, Stage 31, Stage 33 |

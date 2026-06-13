@@ -73,6 +73,10 @@ These sources are used as calibration points for the target shape:
 | Launcher | Workflow product | Qt models/UI mutate on the UI thread; LauncherCore owns operation state and process evidence. | Process requests, operation reports, history records. | Nonblocking build/cook/launch workflows and cancellation. |
 | CMake/CI | Validation wiring | CI is not a runtime dependency. | Local commands and reports. | Parallel CI jobs without changing architecture ownership. |
 
+Stage 31 artifact validation evidence is tracked in [../artifact-validation-matrix.md](../artifact-validation-matrix.md). It keeps shader packages, cooked textures, materials, meshes, scenes, animations, skeletons, cook plans, and summaries as deterministic producer/consumer records instead of opaque build outputs.
+
+Stage 32 project and engine asset ownership is tracked in [../project-asset-ownership-contract.md](../project-asset-ownership-contract.md). Future parallel cook or smoke jobs should consume project source assets, cook plans, and validation reports; they should not discover work from generated project logs, local UI state, or broken level descriptors.
+
 ## Required Data Shapes
 
 Every cross-system handoff must choose one of these shapes before a threaded implementation is attempted:

@@ -2890,9 +2890,9 @@ Execution status:
 | Status | Fully completed. |
 | Folder and target ownership | `Tools/Import/SourceImporters` is the production import folder and CMake target; no production source/CMake references to the retired adapter target remain. |
 | Import report handoff | `SourceImportResult` carries source path and importer id report identity; AssetCooker import summaries and cooked-scene output report `importer=GltfImporter`. |
-| Cooker consumers | `MeshCooker`, `MaterialCooker`, `SceneCooker`, `AssetCooker`, and `AssetConverter` link `SourceImporters` instead of the retired adapter target. |
+| Cooker consumers | `MeshCooker`, `MaterialCooker`, `SceneCooker`, and `AssetCooker` link `SourceImporters` instead of the retired adapter target. Stage 30 removed the old `AssetConverter` target. |
 | Runtime isolation | Engine runtime source/CMake scan found no source-import tool, importer target, source scene importer, import result, or imported scene dependency. |
-| Validation | `SourceImporters`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, `AssetCooker`, and `AssetConverter` built in `DevelopmentEditor`; Showcase `cook-assets` exited `0`; architecture boundary check and `git diff --check` passed. Historical adapter references remain only in `docs/architecture/before`. |
+| Validation | `SourceImporters`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, and `AssetCooker` built in `DevelopmentEditor`; Showcase `cook-assets` exited `0`; architecture boundary check and `git diff --check` passed. Historical adapter references remain only in `docs/architecture/before`; Stage 30 removed `AssetConverter`. |
 
 ## Stage 28 - Focused Cooker And Tool Support Refactor
 
@@ -2960,7 +2960,7 @@ Execution status:
 | --- | --- |
 | Status | Fully completed. |
 | Support split | `Tools/Cooking/CookCommon` was replaced by `Tools/Support/ToolConsoleSupport`; `AssetCooker`, `TextureCooker`, and `ShaderCompiler` link the precise support target. No production CMake/source references to the retired common support target remain. |
-| Focused cooker ownership | `TextureCooker`, `MeshCooker`, `MaterialCooker`, and `SceneCooker` remain focused transformation targets; orchestration remains in `AssetCooker` and legacy direct conversion remains staged for Stage 30. |
+| Focused cooker ownership | `TextureCooker`, `MeshCooker`, `MaterialCooker`, and `SceneCooker` remain focused transformation targets; orchestration remains in `AssetCooker`. Legacy direct conversion is retired by Stage 30. |
 | Diagnostics policy | Generic console/report formatting lives in `ToolConsoleSupport`; cook-domain diagnostics stay in focused cookers until shared cook diagnostics earn a target. |
 | Validation | `ToolConsoleSupport`, `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, `AssetCooker`, and `ShaderCompiler` built in `DevelopmentEditor`; Showcase `cook-assets` and `cook-textures` exited `0`; controlled invalid texture request exited `7` and reported asset id, source path, output path, and reason; runtime-to-tools dependency scan, stale production support-name scan, architecture boundary check, and `git diff --check` passed. |
 
@@ -3100,6 +3100,18 @@ Validation:
 - Build `AssetCooker` and any affected inspect/debug command.
 - Run launcher workflow inspection or smoke command where available.
 
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for the current host/tool boundary pass. |
+| AssetCooker ownership | `AssetCooker` keeps project discovery, cook planning, focused-tool dispatch, aggregation, diagnostics, and report ownership. Source inspection/debug commands now live under `AssetCooker`, not a separate conversion executable. |
+| Retired conversion path | `Tools/Conversion/AssetConverter` is removed from CMake and source. Launcher tool resolution and clean-target artifact logic no longer know `AssetConverter` as a development tool. |
+| Surviving debug behavior | `AssetCooker inspect-source <source-scene-path>` reports importer, mesh/material/camera/light counts, feature support, and source path. `AssetCooker collect-texture-requests <source-scene-path> <request-file-path>` writes texture request files through the same importer/material cooker contracts used by production cook planning. |
+| Launcher boundary | `SparkleLauncherCore` still owns build/cook/launch process requests and tool resolution; Qt GUI files only had artifact-cleaning classification adjusted for the retired tool. |
+| Host boundary | Scans found no Application/Editor dependency on tool-private cook/import headers and no D3D12/Vulkan native validation growth. |
+| Validation | `AssetCooker`, `SparkleLauncher`, and `SparkleLauncherProbe` built in `DevelopmentEditor`; `AssetCooker inspect-source Projects/Showcase/Assets/Meshes/DamagedHelmet/DamagedHelmet.gltf` exited `0`; `AssetCooker collect-texture-requests Projects/Showcase/Assets/Meshes/DamagedHelmet/DamagedHelmet.gltf artifacts/diagnostics/cook/Temp/stage30-damagedhelmet-texture-requests.txt` exited `0` and reported `textures=6`; live-code scans found no `AssetConverter` references in `Tools`, `Engine`, `Projects`, `CMake`, or `.github`. |
+
 ## Stage 31 - Shader And Cook Artifact Validation Matrix
 
 Goal:
@@ -3155,6 +3167,17 @@ Validation:
 - `TextureCooker` inspect/cook request commands.
 - `AssetCooker` plan/dispatch output.
 - Runtime/editor smoke that loads cooked sample content.
+
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for the current artifact matrix and targeted evidence pass. |
+| Matrix document | [artifact-validation-matrix.md](../architecture/artifact-validation-matrix.md) now maps shader packages, shader registries, cooked textures, cooked materials, cooked meshes, cooked scene manifests, cooked animations, cooked skeletons, scene asset registries, project cook plans, AssetCooker summaries, and TextureCooker summaries to producers, schema/version owners, runtime consumers, inspection commands, diagnostics, and Stage 31 evidence. |
+| Shader evidence | `ShaderCompiler.exe list-shaders --validate` reported `17` typed shader registrations and `10` valid packages; `ShaderCompiler.exe cook --package Sky --target DxilSm66` wrote the Sky package and registry; `inspect-package` reported DXIL compute bytecode, reflection, and pipeline layout. |
+| Cook evidence | `TextureCooker inspect-request-file` found `6` DamagedHelmet texture requests; `TextureCooker cook-request-file` cooked `6/6` textures and wrote a summary; `AssetCooker cook-assets Showcase DevelopmentEditor` planned and dispatched `9` scenes and wrote plan/summary artifacts. |
+| Runtime load evidence | Launcher-shaped direct `ShowcaseRuntime.exe` execution from `Projects/Showcase` with D3D12 smoke validation and level switching skipped exited `0`; it loaded cooked `Sponza/Sponza`, `103` meshes, `25` materials, active renderer shader packages, and `frameGraphUnresolvedBarrierWarnings=0`. |
+| Recorded sample gap | Full level-switching smoke found `Bistro/BistroExterior` missing from the cooked scene asset registry. Stage 32 resolved this by removing the broken Bistro runtime level descriptor until a real source scene and cook/load evidence exist. |
 
 ## Stage 32 - Projects, Engine Assets, And Sample Evidence Refactor
 
@@ -3215,6 +3238,17 @@ Validation:
 
 - Inventory project and engine asset roots.
 - Run targeted cook/load/smoke if content moved.
+
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for the current project/engine asset ownership pass. |
+| Ownership contract | [project-asset-ownership-contract.md](../architecture/project-asset-ownership-contract.md) documents `Engine/Assets`, `Projects/Showcase/Assets`, `Projects/Showcase/Levels`, generated project-local state, validation artifacts, data-transfer rules, and guardrails. |
+| Engine asset policy | `Engine/Assets/Meshes` is documented as engine built-in source mesh fixtures; `Engine/Assets/Textures` is documented as defaults and sky/environment candidates; `Engine/Assets/Shaders` is documented as a transitional shader source root, not a place for project shaders, generated packages, or temporary files. |
+| Project policy | `Projects/Showcase/Assets` is source content for cook/load/render evidence; `Projects/Showcase/Levels` may contain only loadable scene-backed levels or intentionally empty levels; generated logs, Streamline logs, ImGui state, cooked outputs, and validation captures stay out of durable source roots. |
+| Bistro cleanup | Deleted `Projects/Showcase/Levels/Bistro.level` because it referenced `Bistro/BistroExterior` without a cookable source scene. Removed Bistro from launcher startup-level choices. Raw Bistro files remain source/reference content until a real scene source and cook/load evidence exist. |
+| Validation | Inventory completed for `Engine/Assets` and `Projects/Showcase`; `SparkleLauncher` built; `AssetCooker cook-assets Showcase DevelopmentEditor` passed; launcher-shaped D3D12 `ShowcaseRuntime` smoke from `Projects/Showcase` with level switching enabled completed all `5/5` switch targets and exited `0`. |
 
 ## Stage 33 - Build, CI, And Boundary Guardrail Expansion
 
