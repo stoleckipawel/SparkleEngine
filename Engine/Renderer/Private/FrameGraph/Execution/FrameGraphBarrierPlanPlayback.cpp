@@ -35,6 +35,7 @@ void FrameGraph::EmitTransientAliasingBarriers(
 		if (!beforeResource || !afterResource)
 		{
 			assert(false);
+			RecordUnresolvedBarrierWarning();
 			SPDLOG_LOGGER_WARN(
 			    g_frameGraphBarrierLogger,
 			    "FrameGraph::EmitTransientAliasingBarriers: unresolved aliasing barrier resources for pass '{}'.",
@@ -55,6 +56,7 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_vie
 		if (!resource)
 		{
 			assert(false);
+			RecordUnresolvedBarrierWarning();
 			SPDLOG_LOGGER_WARN(
 			    g_frameGraphBarrierLogger,
 			    "FrameGraph::EmitCompiledBarriers: unresolved resource handle for pass '{}'.",

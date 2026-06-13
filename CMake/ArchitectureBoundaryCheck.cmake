@@ -15,7 +15,6 @@ set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_FAILURES "")
 set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_EXCEPTION_SUMMARIES "")
 set_property(GLOBAL PROPERTY SPARKLE_RENDERER_CMAKE_VULKAN_EXCEPTION_COUNT 0)
 set_property(GLOBAL PROPERTY SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT 0)
-set_property(GLOBAL PROPERTY SPARKLE_APP_VALIDATION_NATIVE_EXCEPTION_COUNT 0)
 
 function(sparkle_boundary_relative_path out_var absolute_path)
     file(RELATIVE_PATH _relative "${SPARKLE_REPO_ROOT}" "${absolute_path}")
@@ -158,16 +157,12 @@ function(sparkle_boundary_scan_file absolute_path)
         endif()
 
         if(_relative_path MATCHES "^Engine/Application/Private/Validation/" AND _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_API_REGEX}")
-            if(_relative_path STREQUAL "Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp")
-                sparkle_boundary_increment_property(SPARKLE_APP_VALIDATION_NATIVE_EXCEPTION_COUNT)
-            else()
-                sparkle_boundary_append_failure(
-                    "APPLICATION_VALIDATION_NO_BACKEND_NATIVE"
-                    "${_relative_path}"
-                    "${_line_number}"
-                    "Application validation must not add backend-native capture or API dependencies."
-                    "${_line}")
-            endif()
+            sparkle_boundary_append_failure(
+                "APPLICATION_VALIDATION_NO_BACKEND_NATIVE"
+                "${_relative_path}"
+                "${_line_number}"
+                "Application validation must not add backend-native capture or API dependencies."
+                "${_line}")
         endif()
     endforeach()
 endfunction()
@@ -198,13 +193,6 @@ sparkle_boundary_validate_counted_exception(
     5
     "Stage 9"
     "Provider integration is reviewed and narrowed to documented native interop.")
-
-sparkle_boundary_validate_counted_exception(
-    "APPLICATION_VALIDATION_NO_BACKEND_NATIVE: RhiSmokeEditorValidation.cpp D3D12 capture"
-    SPARKLE_APP_VALIDATION_NATIVE_EXCEPTION_COUNT
-    36
-    "Stage 8"
-    "Backend-native capture/readback moves behind RHI/backend validation services.")
 
 get_property(_exceptions GLOBAL PROPERTY SPARKLE_BOUNDARY_EXCEPTION_SUMMARIES)
 if(_exceptions)

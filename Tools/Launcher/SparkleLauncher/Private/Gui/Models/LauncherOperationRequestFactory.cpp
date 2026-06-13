@@ -115,6 +115,8 @@ namespace SparkleLauncher
 		request.LaunchCVars = settings.LaunchCVars();
 		request.SmokeBackend = settings.SmokeBackend();
 		request.SmokeFrameLimit = settings.SmokeFrameLimit();
+		request.SmokeViewMode = settings.SmokeViewMode();
+		request.SmokeCapturePath = settings.SmokeCapturePath();
 		request.FormatMode = settings.FormatMode();
 		request.CleanScope = settings.CleanScope();
 		request.LaunchSmokeTest = settings.LaunchSmokeTest();

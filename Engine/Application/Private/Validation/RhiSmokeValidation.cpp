@@ -6,6 +6,7 @@
 #include "Level/Level.h"
 #include "Level/LevelManager.h"
 #include "Platform/Public/Window/Window.h"
+#include "RHI/Public/Core/RhiBackendSelection.h"
 #include "Renderer.h"
 #include "RuntimeApplication.h"
 
@@ -29,6 +30,7 @@ struct RhiSmokeValidationState
 {
 	std::uint32_t CompletedRenderFrames = 0;
 	bool DiagnosticsLogged = false;
+	bool RendererEvidenceLogged = false;
 	bool EditorViewportEvidenceLogged = false;
 	bool LevelSwitchingInitialized = false;
 	bool LevelSwitchingFinished = false;
@@ -50,6 +52,10 @@ class RhiSmokeValidationRunner final
 	static void ApplyLoggingConfig(const RhiSmokeValidationConfig& config) noexcept;
 	static std::string GetActiveLevelName(const RuntimeApplication& app);
 	static void LogDiagnosticsCapabilities(
+	    const RhiSmokeValidationConfig& config,
+	    RuntimeApplication& app,
+	    RhiSmokeValidationState& state) noexcept;
+	static void LogRendererSmokeEvidence(
 	    const RhiSmokeValidationConfig& config,
 	    RuntimeApplication& app,
 	    RhiSmokeValidationState& state) noexcept;
@@ -163,6 +169,47 @@ void RhiSmokeValidationRunner::LogDiagnosticsCapabilities(
 	}
 
 	state.DiagnosticsLogged = true;
+}
+
+void RhiSmokeValidationRunner::LogRendererSmokeEvidence(
+    const RhiSmokeValidationConfig& config,
+    RuntimeApplication& app,
+    RhiSmokeValidationState& state) noexcept
+{
+	if (!config.Enabled || state.RendererEvidenceLogged)
+	{
+		return;
+	}
+
+	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
+	if (appLogger == nullptr)
+	{
+		return;
+	}
+
+	const RendererSmokeDiagnosticsSnapshot snapshot = app.GetRenderer().CaptureSmokeDiagnostics();
+	SPDLOG_LOGGER_INFO(
+	    appLogger,
+	    "RHI smoke evidence: backend={} frameGraphUnresolvedBarrierWarnings={} upscalerProvider='{}' upscalerStatus={} "
+	    "upscalerReason='{}' rayTracing={} inlineRayQuery={}",
+	    RhiBackendApiToString(snapshot.BackendApi),
+	    snapshot.FrameGraphUnresolvedBarrierWarnings,
+	    snapshot.UpscalerProvider,
+	    snapshot.UpscalerStatus,
+	    snapshot.UpscalerReason,
+	    snapshot.RayTracingSupported,
+	    snapshot.InlineRayQuerySupported);
+
+	if (snapshot.FrameGraphUnresolvedBarrierWarnings > 0)
+	{
+		state.Failed = true;
+		SPDLOG_LOGGER_ERROR(
+		    appLogger,
+		    "RHI smoke validation: frame graph reported {} unresolved barrier warning(s).",
+		    snapshot.FrameGraphUnresolvedBarrierWarnings);
+	}
+
+	state.RendererEvidenceLogged = true;
 }
 
 void RhiSmokeValidationRunner::InitializeLevelSwitching(
@@ -360,6 +407,7 @@ bool RhiSmokeValidationRunner::TickRuntime(
 
 	app.UpdateRuntime();
 	app.GetRenderer().OnRender();
+	LogRendererSmokeEvidence(config, app, state);
 	app.EndFrame();
 	Advance(config, app, state);
 	return true;

@@ -45,6 +45,8 @@ namespace SparkleLauncher
 		std::vector<std::string> CustomCVars;
 		std::string SmokeBackend;
 		std::string SmokeFrameLimit;
+		std::string SmokeViewMode;
+		std::string SmokeCapturePath;
 		bool SmokeTrace = false;
 		bool SmokeSkipLevelSwitching = false;
 	};

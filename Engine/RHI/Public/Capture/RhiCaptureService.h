@@ -2,9 +2,17 @@
 
 #include "../Interop/RhiNativeHandles.h"
 #include "../RHIAPI.h"
+#include "../Core/RhiBackendApi.h"
 
 #include <cstdint>
 #include <filesystem>
+
+enum class ERhiCaptureStatus : std::uint8_t
+{
+	Unsupported = 0,
+	Failed = 1,
+	Succeeded = 2
+};
 
 struct RhiTextureCaptureRequest final
 {
@@ -12,16 +20,23 @@ struct RhiTextureCaptureRequest final
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
 	std::filesystem::path OutputPath;
+	std::uint32_t FrameIndex = 0;
+	std::uint32_t ViewMode = 0;
+	const char* ViewModeName = "";
 	const char* DebugName = "";
 };
 
 struct RhiCaptureResult final
 {
-	bool Succeeded = false;
+	ERhiCaptureStatus Status = ERhiCaptureStatus::Failed;
+	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
+	std::uint32_t FrameIndex = 0;
+	std::uint32_t ViewMode = 0;
+	const char* ViewModeName = "";
 	std::filesystem::path ArtifactPath;
 	const char* FailureReason = "";
 
-	constexpr explicit operator bool() const noexcept { return Succeeded; }
+	constexpr explicit operator bool() const noexcept { return Status == ERhiCaptureStatus::Succeeded; }
 };
 
 class SPARKLE_RHI_API RhiCaptureService

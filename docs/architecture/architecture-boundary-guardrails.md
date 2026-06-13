@@ -80,7 +80,6 @@ These exceptions are count-limited and stage-labeled. Renderer/provider exceptio
 | --- | ---: | --- | --- |
 | [Engine/Renderer/CMakeLists.txt](../../Engine/Renderer/CMakeLists.txt) links `Vulkan::Vulkan` for Streamline. | 2 | Stage 9 | DLSS/native interop wiring moves behind RHI/backend-owned metadata. |
 | [StreamlineDlssRuntime.cpp](../../Engine/Renderer/Private/Upscaling/NvidiaDlss/StreamlineDlssRuntime.cpp) uses Vulkan native identifiers for DLSS integration. | 5 | Stage 9 | Provider integration is reviewed and narrowed to documented native interop. |
-| [RhiSmokeEditorValidation.cpp](../../Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp) contains D3D12-native capture logic. | 36 | Stage 8 | Backend-native capture/readback moves behind RHI/backend validation services. |
 
 ## Acceptance Snapshot
 
@@ -93,7 +92,8 @@ cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake
 Result:
 
 - No new architecture boundary violations.
-- Three transitional exception groups reported.
+- Two transitional exception groups reported. The former Application validation D3D12 capture exception was removed in Stage 8.
+- Stage 8 validation also passed through the VS2026 build tree with `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target architecture_boundary_check -- /nologo /v:minimal`.
 - Stage 5 build validation used a fresh VS2026 build tree: `cmake -S . -B build/windows-vs2026-stage5 -G "Visual Studio 18 2026" -A x64`.
 - `ShaderCompiler` and `SparkleLauncher` built with `DevelopmentEditor`.
 - `ShaderCompiler list-shaders --validate` reported 17 valid typed shader registrations.

@@ -25,9 +25,10 @@ void FrameGraph::Execute(
     const FrameGraphPlan& plan,
     RenderCommandContext& cmd,
     const FrameContext& frame,
-	const PassRuntimeServices& passRuntimeServices,
+    const PassRuntimeServices& passRuntimeServices,
     FrameExecutionDiagnostics& frameDiagnostics) const
 {
+	m_lastUnresolvedBarrierWarningCount = 0;
 	cmd.EnableDrawDispatchDiagnostics();
 
 	static constexpr auto kFrameGraphExecuteName = Diagnostics::DiagnosticName{"Renderer.FrameGraph.Execute"};

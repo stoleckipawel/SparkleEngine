@@ -27,6 +27,8 @@ namespace SparkleLauncher
 
 		plan.Operation.Inputs.push_back({"smokeBackend", plan.Request.SmokeBackend.empty() ? "default" : plan.Request.SmokeBackend});
 		plan.Operation.Inputs.push_back({"smokeFrameLimit", GetRhiSmokeFrameLimitText(plan.Request)});
+		plan.Operation.Inputs.push_back({"smokeViewMode", plan.Request.SmokeViewMode.empty() ? "default" : plan.Request.SmokeViewMode});
+		plan.Operation.Inputs.push_back({"smokeCapturePath", plan.Request.SmokeCapturePath.empty() ? "disabled" : plan.Request.SmokeCapturePath});
 	}
 
 	static void AddEnvironment(LaunchOperationPlan& plan, std::string name, std::string value)
@@ -58,6 +60,14 @@ namespace SparkleLauncher
 		{
 			AddEnvironment(plan, "SPARKLE_SMOKE_TRACE", "1");
 		}
+		if (!plan.Request.SmokeViewMode.empty())
+		{
+			AddEnvironment(plan, "SPARKLE_SMOKE_VIEW_MODE", plan.Request.SmokeViewMode);
+		}
+		if (!plan.Request.SmokeCapturePath.empty())
+		{
+			AddEnvironment(plan, "SPARKLE_SMOKE_SCENE_COLOR_CAPTURE", plan.Request.SmokeCapturePath);
+		}
 		if (plan.Request.SmokeSkipLevelSwitching)
 		{
 			AddEnvironment(plan, "SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING", "1");
@@ -75,6 +85,15 @@ namespace SparkleLauncher
 			return {};
 		}
 
-		return {"Enable graphics smoke validation for " + GetRhiSmokeFrameLimitText(plan.Request) + " frames."};
+		std::vector<std::string> effects = {"Enable graphics smoke validation for " + GetRhiSmokeFrameLimitText(plan.Request) + " frames."};
+		if (!plan.Request.SmokeViewMode.empty())
+		{
+			effects.push_back("Force render view mode " + plan.Request.SmokeViewMode + " during smoke validation.");
+		}
+		if (!plan.Request.SmokeCapturePath.empty())
+		{
+			effects.push_back("Write scene-color smoke capture to " + plan.Request.SmokeCapturePath + ".");
+		}
+		return effects;
 	}
 }

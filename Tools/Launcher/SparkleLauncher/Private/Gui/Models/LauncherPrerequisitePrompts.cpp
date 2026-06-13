@@ -80,6 +80,8 @@ namespace SparkleLauncher
 			}
 			launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
 			launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
+			launchRequest.SmokeViewMode = request.SmokeViewMode.toStdString();
+			launchRequest.SmokeCapturePath = request.SmokeCapturePath.toStdString();
 			launchRequest.EnableSmokeTest = request.LaunchSmokeTest;
 			launchRequest.SmokeTrace = request.SmokeTrace;
 			launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;

@@ -7,6 +7,7 @@
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "Shaders/CookedShaderReloadResult.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
+#include "Diagnostics/RendererSmokeDiagnostics.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Meshes/MeshDiagnostics.h"
 #include "Resources/Textures/TextureDiagnostics.h"
@@ -64,6 +65,7 @@ class SPARKLE_RENDERER_API Renderer final
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
+	RendererSmokeDiagnosticsSnapshot CaptureSmokeDiagnostics() const;
 	void PrepareHostFrame() noexcept;
 	void RecordHostFrame() noexcept;
 	void SubmitHostFrame() noexcept;

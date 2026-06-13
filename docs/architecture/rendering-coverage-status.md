@@ -288,7 +288,7 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Status | Fully completed for the first boundary/shader-registration validation slice. |
 | Target docs opened | `docs/architecture/architecture-boundary-guardrails.md`, `docs/architecture/pass-authoring-contract.md`, `docs/architecture/pipeline-runtime-contract.md`, `docs/architecture/tooling-pipeline-contract.md`, `docs/architecture/rendering-coverage-status.md`, `docs/architecture/after/repository-threading-readiness.md`, `docs/plans/rhi-renderer-review-ready-implementation-plan.md`. |
 | External validation basis | NVRHI tutorial validation layer mindset, Donut Samples executable-evidence mindset, and Vulkan validation-layer style of explicit diagnostic gates. |
-| Boundary command | `cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake` passed with no new violations. Remaining transitional exceptions are Stage 9 `Renderer`/Streamline Vulkan interop and Stage 8 Application D3D12 capture/readback. |
+| Boundary command | `cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake` passed with no new violations. Stage 8 later removed the Application D3D12 capture/readback exception, leaving only Stage 9 `Renderer`/Streamline native interop exceptions. |
 | RHI-to-Renderer include check | `rg "Renderer/Private" Engine/RHI` returned no matches. There are no permanent RHI-to-Renderer include exceptions. |
 | Configure command | `cmake -S . -B build/windows-vs2026-stage5 -G "Visual Studio 18 2026" -A x64` passed. CMake selected MSVC 19.51.36247.0, Windows SDK 10.0.26100.0, Qt `C:/Qt/6.11.1/msvc2022_64`, and wrote the generated tree to `build/windows-vs2026-stage5`. Configure emitted third-party/dependency developer warnings for Assimp `CMP0175` and FetchContent `CMP0169`; no Sparkle configure failure. |
 | ShaderCompiler build | `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target ShaderCompiler -- /nologo /v:minimal /m:1` passed and produced `artifacts/dev/tools/ShaderCompiler/DevelopmentEditor/ShaderCompiler.exe`. |
@@ -308,7 +308,20 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Status | Fully completed for first public service contracts and caller migration slice. |
 | Service contracts | `Engine/RHI/Public/Interop/RhiInteropService.h`, `Engine/RHI/Public/Capture/RhiCaptureService.h`, `Engine/RHI/Public/Diagnostics/RhiDiagnosticsService.h`, `Engine/RHI/Public/Presentation/RhiPresentationService.h`. |
 | Caller evidence | Renderer upscaling receives `RhiNativeDeviceQueueInterop`; FrameGraph native view and back-buffer resolution use interop/presentation services; Application present/capture/diagnostics paths use services; D3D12/Vulkan backend facades compose service adapters instead of inheriting from all service interfaces. |
-| Remaining exceptions | Stage 8 still owns Application D3D12-native validation capture; Stage 9 still owns Renderer Streamline/Vulkan native interop exceptions. |
+| Remaining exceptions | Stage 8 removed the Application D3D12-native validation capture exception; Stage 9 still owns Renderer Streamline/Vulkan native interop exceptions. |
 | Data transfer contract | Native interop uses consumer-tagged `RhiNativeDeviceQueueInterop`; capture uses `RhiTextureCaptureRequest` and `RhiCaptureResult`; presentation/UI uses `RhiPresentationService`; diagnostics uses `RhiDiagnosticsService`. |
 | Threading readiness handoff | Service request/result packets make later queued capture jobs, provider interop validation, and host presentation protocol work possible without exposing mutable backend roots. |
 | Validation | `architecture_boundary_check` passed; `SparkleLauncher`, `SparkleApplication`, and `ShowcaseEditor` built in `build/windows-vs2026-stage5` with `DevelopmentEditor`. `SparkleRenderer` reached output before the 120s command timeout and was subsequently rebuilt as a dependency of the successful targets. |
+
+## Stage 8 Smoke Capture Ownership Evidence
+
+| Field | Evidence |
+| --- | --- |
+| Stage / checkpoint | Stage 8 - Move Smoke Capture And Backend-Native Validation Behind RHI. |
+| Status | Fully completed for code ownership, boundary exception removal, and targeted builds. Full backend runtime smoke is deferred to Stage 10. |
+| Application validation | `RhiSmokeEditorValidation.cpp` contains no D3D12/Vulkan native headers or native capture implementation. It requests capture through `RhiCaptureService` and logs backend, view mode, frame, path, status, and failure reason. |
+| Renderer diagnostics | `RendererSmokeDiagnosticsSnapshot` reports backend, frame graph unresolved-barrier warnings, upscaler provider/status/reason, and ray tracing/inline ray-query support without Application reading renderer internals. Smoke validation fails if unresolved frame graph barrier warnings are reported. |
+| RHI capture/readback | D3D12 and Vulkan capture services return `RhiCaptureResult` with backend, status, frame, view mode, artifact path, and precise failure reason. |
+| Launcher smoke workflow | Launcher CLI/GUI request data now includes smoke backend, frame limit, view mode, capture path, trace, and level-switching controls. Launch plans transfer view mode through `SPARKLE_SMOKE_VIEW_MODE` and capture path through `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE`. |
+| Boundary evidence | `architecture_boundary_check` passed after removing the `APPLICATION_VALIDATION_NO_BACKEND_NATIVE` counted exception. |
+| Build evidence | `SparkleApplicationEditor` and `SparkleLauncher` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`. Launcher deploy emitted a `VCINSTALLDIR` warning after producing the executable. |

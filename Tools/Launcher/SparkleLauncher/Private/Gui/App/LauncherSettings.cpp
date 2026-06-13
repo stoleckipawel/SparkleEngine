@@ -148,6 +148,16 @@ namespace SparkleLauncher
 		return m_smokeFrameLimit;
 	}
 
+	const QString& LauncherSettings::SmokeViewMode() const
+	{
+		return m_smokeViewMode;
+	}
+
+	const QString& LauncherSettings::SmokeCapturePath() const
+	{
+		return m_smokeCapturePath;
+	}
+
 	const QString& LauncherSettings::FormatMode() const
 	{
 		return m_formatMode;
@@ -434,6 +444,26 @@ namespace SparkleLauncher
 			return;
 		}
 		m_smokeFrameLimit = frameLimit;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetSmokeViewMode(const QString& viewMode)
+	{
+		if (m_smokeViewMode == viewMode)
+		{
+			return;
+		}
+		m_smokeViewMode = viewMode;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetSmokeCapturePath(const QString& path)
+	{
+		if (m_smokeCapturePath == path)
+		{
+			return;
+		}
+		m_smokeCapturePath = path;
 		emit SettingsChanged();
 	}
 

@@ -377,7 +377,11 @@ RhiCaptureResult D3D12RenderHardwareInterface::CaptureService::CaptureTextureToB
 	const bool captured =
 	    m_owner != nullptr && m_owner->CaptureTextureToBmp(request.Resource, request.Width, request.Height, request.OutputPath);
 	return RhiCaptureResult{
-	    .Succeeded = captured,
+	    .Status = captured ? ERhiCaptureStatus::Succeeded : ERhiCaptureStatus::Failed,
+	    .BackendApi = ERhiBackendApi::D3D12,
+	    .FrameIndex = request.FrameIndex,
+	    .ViewMode = request.ViewMode,
+	    .ViewModeName = request.ViewModeName,
 	    .ArtifactPath = captured ? request.OutputPath : std::filesystem::path{},
 	    .FailureReason = captured ? "" : "D3D12 texture capture failed; verify the resource is a valid Texture2D and the output path is writable."};
 }

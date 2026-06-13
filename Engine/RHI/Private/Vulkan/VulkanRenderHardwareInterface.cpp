@@ -333,7 +333,11 @@ RhiCaptureResult VulkanRenderHardwareInterface::CaptureService::CaptureTextureTo
 	const bool captured =
 	    m_owner != nullptr && m_owner->CaptureTextureToBmp(request.Resource, request.Width, request.Height, request.OutputPath);
 	return RhiCaptureResult{
-	    .Succeeded = captured,
+	    .Status = captured ? ERhiCaptureStatus::Succeeded : ERhiCaptureStatus::Failed,
+	    .BackendApi = ERhiBackendApi::Vulkan,
+	    .FrameIndex = request.FrameIndex,
+	    .ViewMode = request.ViewMode,
+	    .ViewModeName = request.ViewModeName,
 	    .ArtifactPath = captured ? request.OutputPath : std::filesystem::path{},
 	    .FailureReason = captured ? "" : "Vulkan texture capture failed; verify the image is valid, RGBA16F-compatible, and the output path is writable."};
 }

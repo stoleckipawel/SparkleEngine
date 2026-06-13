@@ -171,6 +171,19 @@ When RHI or Renderer changes, check:
 | Build targets/profiles/artifact layout | `SparkleLauncherCore`, `AssetCooker` dispatch, CMake artifact contract, CI workflows. |
 | Smoke validation environment variables | Launcher smoke workflows, Application validation, docs and README commands. |
 
+## Launcher Smoke Contract
+
+Launcher smoke workflows transfer validation data through launch request fields and environment variables rather than Application internals.
+
+| Launcher request field | Environment variable | Consumer | Notes |
+| --- | --- | --- | --- |
+| `SmokeBackend` | `SPARKLE_RHI_BACKEND` | RHI backend selection. | Empty means default backend selection. |
+| `SmokeFrameLimit` | `SPARKLE_SMOKE_FRAME_LIMIT` | Runtime/editor smoke validation. | Empty means 120 frames. |
+| `SmokeViewMode` | `SPARKLE_SMOKE_VIEW_MODE` | Editor smoke validation. | Numeric `RenderViewMode` value; GUI exposes common choices. |
+| `SmokeCapturePath` | `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE` | Editor smoke capture orchestration. | RHI/backend capture service writes the artifact or reports a precise failure reason. |
+| `SmokeTrace` | `SPARKLE_SMOKE_TRACE` | Runtime/editor smoke validation. | Enables trace-level smoke logging. |
+| `SmokeSkipLevelSwitching` | `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING` | Runtime/editor smoke validation. | Keeps smoke focused on one level when requested. |
+
 ## Validation Targets
 
 Smallest meaningful validation by tool area:

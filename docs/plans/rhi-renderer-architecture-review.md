@@ -151,7 +151,7 @@ Observed include/module edge counts from local scan:
 Concrete boundary violations or exceptions:
 
 - Stage 4 removed the RHI-to-Renderer shader registration violation by moving renderer pass registrations to `Engine/Renderer/ShaderRegistrations`.
-- `Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp` contains direct D3D12 capture code using `ID3D12Device`, `ID3D12CommandQueue`, and `ID3D12Resource`. This may be acceptable as temporary validation code, but architecturally it should move behind RHI capture/readback services or a backend-owned validation helper.
+- Stage 8 removed Application-owned D3D12 capture code from `Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp`. Application validation now requests capture through the RHI capture service and records backend, view mode, frame, path, and failure evidence.
 - `Engine/Renderer/CMakeLists.txt` and Streamline DLSS runtime still carry documented Stage 9 Vulkan/native interop exceptions.
 
 ## Whole-Codebase Coverage Audit

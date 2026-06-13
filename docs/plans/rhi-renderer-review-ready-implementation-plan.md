@@ -89,6 +89,8 @@ Current code evidence used while writing this plan:
 - Temporary compatibility adapters are allowed only inside a stage. They must be removed before that stage is accepted unless the stage explicitly says otherwise.
 - Do not keep legacy paths "just in case." If the new path replaces the old path and validation passes, delete the old path in the same stage or the immediately following cleanup stage.
 - Rename, split, merge, or rebuild systems when the current shape would require broad exceptions, duplicate owners, private dependency edges, or misleading names.
+- Do not add explanatory, provenance, planning, stage, or refactor-process comments to source code. Source comments are allowed only when they clarify non-obvious runtime behavior, API constraints, or safety/lifetime rules that the code cannot express cleanly. Runtime/user-facing strings must describe behavior or diagnostics, not implementation history.
+- Do not move clutter from one owner to another. A move is accepted only when the destination module, folder, type, or target is the designed owner, the moved code is reshaped to fit that owner's vocabulary and contracts, and the old owner loses the responsibility rather than delegating confusion elsewhere.
 - Do not run full builds after every small edit. Run build/runtime validation at the milestone stages in this document, or earlier only when a local compile failure blocks progress.
 - Every strategic code stage must include the rubric fields from `docs/plans/architecture-review-acceptance-rubric.md`: owner, dependency impact, D3D12/Vulkan impact, validation plan, risks, and rollback path.
 - Every renderer pass or shader change must obey the hard gate from `docs/plans/rhi-renderer-architecture-review.md`: adding an ordinary renderer shader pass must not require editing `Engine/RHI`.
@@ -117,6 +119,8 @@ Every stage implementation prompt is governed by the stage-local positive guardr
 - The folder architecture effect: current path, target path, source root owner, forbidden destination folders, and any CMake target rename or split.
 - The threading-readiness effect: mutable owner, phase, handoff shape, isolation scope, queue/job/batch identity when relevant, ordering rule, and deterministic diagnostics.
 - The transitional exception, if any, including the exact removal stage.
+- The source-text effect: any added source comment or runtime string must be justified as necessary behavior/API/diagnostic text, never as planning, migration, authorship, or stage narration.
+- The destination-fit proof for any moved code: why the new owner is correct, what was renamed/reshaped to fit that context, what responsibility was deleted from the old owner, and what prevents the move from becoming displaced clutter.
 
 Stage completion packet:
 
@@ -132,6 +136,8 @@ Every stage implementation record must include these fields before the stage can
 | Folder and target plan | Current folders, target folders, forbidden destination folders, CMake target changes, and cleanup/deletion paths. |
 | Data transfer plan | Producer, contract shape, schema/package/job/frame id, consumer, diagnostics, and validation command. |
 | Threading-readiness plan | Mutable owner, phase, immutable or versioned handoff, isolation scope, ordering/synchronization expectation, and deterministic output/report behavior. |
+| Source text discipline | Confirmation that no explanatory/provenance/planning comments were added to source, and that new runtime strings are behavior or diagnostic text only. |
+| Destination-fit proof | For moved code, evidence that the destination is the real owner, names/contracts were adapted to that context, and no new catch-all or displaced-clutter owner was created. |
 | Acceptance evidence | Observable file/code/CMake/docs state that proves the stage goal, not only a statement of intent. |
 | Validation evidence | Commands run, artifacts/logs inspected, commands not run and why, and remaining risk owner. |
 
@@ -1096,7 +1102,7 @@ Positive guardrails:
 - Smoke validation can capture lit and debug/normal view modes for D3D12 and Vulkan.
 - Smoke failures should be deterministic and logged with backend, frame, view mode, and output path.
 
-Negative guardrails:
+Negative guardrails: 
 
 - Do not keep a D3D12-only capture fallback in Application.
 - Do not make Vulkan capture a TODO while claiming backend parity.
@@ -1122,6 +1128,18 @@ Acceptance:
 Validation:
 
 - Defer full runtime smoke to Stage 10.
+
+Completion evidence:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for Stage 8 code ownership, guardrail cleanup, launcher smoke controls, and targeted builds. |
+| Source ownership | `RhiSmokeEditorValidation.cpp` no longer includes D3D12/Vulkan native headers and no longer owns Application-local BMP/D3D12 readback helpers. |
+| RHI capture contract | `RhiCaptureService` now returns backend, status, frame, view mode, artifact path, and failure reason through `RhiCaptureResult`. D3D12 and Vulkan adapters fill the same evidence fields. |
+| Renderer evidence | `RendererSmokeDiagnosticsSnapshot` reports backend, frame graph unresolved-barrier warnings, upscaler provider/status/reason, and ray tracing support without Application inspecting renderer internals. Smoke validation fails unresolved frame graph barrier warnings. |
+| Launcher evidence | `SparkleLauncher` exposes smoke view mode and capture path through GUI and CLI, and transfers them through `SPARKLE_SMOKE_VIEW_MODE` and `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE`. |
+| Guardrail cleanup | The `APPLICATION_VALIDATION_NO_BACKEND_NATIVE` counted exception was removed from `CMake/ArchitectureBoundaryCheck.cmake`; future native API usage under `Engine/Application/Private/Validation` fails the check. |
+| Validation | `architecture_boundary_check`, `SparkleApplicationEditor`, and `SparkleLauncher` passed in `build/windows-vs2026-stage5` with `DevelopmentEditor`. `clang_format_check` was not generated in this build tree because `clang-format` was unavailable during configure. Full D3D12/Vulkan runtime smoke remains Stage 10. |
 
 ## Stage 9 - Formalize Upscaling And Native Interop Contracts
 

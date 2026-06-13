@@ -100,7 +100,7 @@ Service access rule: backend root facades must not inherit from multiple service
 | --- | --- | --- | --- |
 | Native device/queue metadata | `RhiNativeDeviceQueueInterop` plus `RhiNativeInteropRequest` consumer/reason. | RHI interop service. | Providers and validation receive typed backend metadata; they do not invent backend handles. |
 | Texture/native view metadata | `NativeTextureViewInfo` from `RhiInteropService::GetNativeTextureViewInfo`. | RHI interop service and backend descriptor managers. | Renderer FrameGraph supplies the RHI view handle and resource state; RHI fills native layout/view metadata. |
-| Capture/readback | `RhiTextureCaptureRequest` to `RhiCaptureResult`. | RHI capture service. | Callers receive success/failure and artifact path; Stage 8 removes the remaining Application-native D3D12 capture body. |
+| Capture/readback | `RhiTextureCaptureRequest` to `RhiCaptureResult`. | RHI capture service. | Callers receive backend, status, frame, view mode, artifact path, and failure reason. Application-native capture was removed in Stage 8. |
 | Presentation/UI | `RhiPresentationService` methods. | RHI presentation service and backend swap-chain/UI integrations. | Application/Renderer use presentation operations, not backend-private swap-chain objects. |
 | Diagnostics | `RhiDiagnosticsService::GetDiagnostics`. | RHI diagnostics service. | Diagnostics remain centralized and can become milestone evidence. |
 
@@ -378,6 +378,20 @@ Hard gate: adding an ordinary renderer shader pass must not require editing `Eng
 | Threading readiness handoff | Interop and capture now carry request identity; capture can become a queued/fenced job in Stage 8/10; presentation is isolated for a future host protocol; diagnostics remain centralized for future worker/job evidence. |
 | Acceptance proof | DLSS/upscaling initialization no longer receives a loose device handle from `RenderHardwareInterface`; Application present/capture/diagnostics use services; D3D12 and Vulkan expose symmetric service methods through composition; backend facades use single inheritance from `RenderHardwareInterface`; boundary check has no new violations. |
 | Validation | `architecture_boundary_check` passed. `SparkleLauncher`, `SparkleApplication`, and `ShowcaseEditor` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`. `SparkleRenderer` reached output before the 120s command timeout and then was rebuilt as a dependency of `SparkleApplication`/`ShowcaseEditor`. |
+
+## Stage 8 Completion Packet
+
+| Field | Evidence |
+| --- | --- |
+| Stage / checkpoint | Stage 8 - Move Smoke Capture And Backend-Native Validation Behind RHI. |
+| Status | Fully completed for Application smoke capture ownership and launcher smoke evidence controls. Full runtime D3D12/Vulkan smoke remains a Stage 10 milestone. |
+| Contract surfaces touched | `RhiCaptureService`, `RhiTextureCaptureRequest`, `RhiCaptureResult`, D3D12/Vulkan capture service adapters, `RendererSmokeDiagnosticsSnapshot`, editor/runtime smoke validation, launcher smoke request/environment plumbing, and `ArchitectureBoundaryCheck.cmake`. |
+| Refactor disposition | Improve and extract. Application validation now orchestrates smoke; RHI/backend services own capture/readback behavior and failure reasons. |
+| Complexity right to exist | The capture result grew only because smoke evidence now needs backend, frame, view mode, artifact path, status, and failure reason. The renderer smoke snapshot exists because Application should not inspect FrameGraph, DLSS, or ray tracing internals. |
+| Data transfer contract | Application sends `RhiTextureCaptureRequest` with resource, extent, output path, frame index, view mode, and debug name. RHI returns `RhiCaptureResult` with backend, status, artifact path, and failure reason. Launcher sends backend/view/capture options through documented environment variables. |
+| Threading readiness handoff | Capture is now a request/result packet that can become a queued readback job with a frame and artifact identity. Renderer diagnostics are read-only snapshots suitable for future worker/host reporting. |
+| Acceptance proof | `RhiSmokeEditorValidation.cpp` has no D3D12/Vulkan native headers or native capture body. `APPLICATION_VALIDATION_NO_BACKEND_NATIVE` now fails any Application validation native API usage instead of counting a Stage 8 exception. Smoke logs include backend, frame graph unresolved-barrier warnings, upscaler status, ray tracing status, view mode, capture path, and backend failure reason. |
+| Validation | `architecture_boundary_check` passed. `SparkleApplicationEditor` and `SparkleLauncher` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`. Launcher deploy emitted an existing `VCINSTALLDIR` warning after the executable was produced. |
 
 ## Stage 6 Completion Packet
 

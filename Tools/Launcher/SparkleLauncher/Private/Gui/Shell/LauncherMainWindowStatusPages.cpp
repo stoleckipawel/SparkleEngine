@@ -349,6 +349,8 @@ namespace SparkleLauncher
 		}
 		launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
 		launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
+		launchRequest.SmokeViewMode = request.SmokeViewMode.toStdString();
+		launchRequest.SmokeCapturePath = request.SmokeCapturePath.toStdString();
 		launchRequest.SmokeTrace = request.SmokeTrace;
 		launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
 
@@ -505,6 +507,29 @@ namespace SparkleLauncher
 		        {{"120 frames", ""}, {"60 frames", "60"}, {"300 frames", "300"}, {"600 frames", "600"}},
 		        m_settings.SmokeFrameLimit(),
 		        &LauncherSettings::SetSmokeFrameLimit));
+		AddOptionField(
+		    *smokeOptionsLayout,
+		    "View mode",
+		    CreateValueCombo(
+		        {
+		            {"Default", ""},
+		            {"Lit", "0"},
+		            {"Wireframe", "1"},
+		            {"GBuffer normal", "3"},
+		            {"Direct diffuse", "10"},
+		            {"Indirect diffuse", "13"},
+		            {"Instance groups", "16"},
+		        },
+		        m_settings.SmokeViewMode(),
+		        &LauncherSettings::SetSmokeViewMode));
+		AddOptionField(
+		    *smokeOptionsLayout,
+		    "Capture path",
+		    CreateBoundLineEdit(
+		        m_settings.SmokeCapturePath(),
+		        "logs/smoke/scene-color.bmp",
+		        "Optional scene-color capture path written by RHI smoke validation.",
+		        &LauncherSettings::SetSmokeCapturePath));
 		AddOptionCheckBox(
 		    *smokeOptionsLayout,
 		    CreateBoundCheckBox(

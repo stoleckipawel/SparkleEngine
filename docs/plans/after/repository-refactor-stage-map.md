@@ -17,6 +17,8 @@ Codex-facing implementation packets live in [../implementation/stage-prompt-pack
 
 Before accepting any stage, classify touched systems as `Keep and refine`, `Improve and extract`, or `Replace or redesign`. The stage may rename, split, merge, rebuild, or delete existing code when that is the cleanest path to the target architecture.
 
+Source text and relocation discipline are part of acceptance. A stage should not add explanatory/provenance/planning comments to source, and moved code must fit the destination owner instead of shifting clutter into a new folder, service, or helper.
+
 Stage status tracks implementation acceptance, not merely whether planning docs exist. Future-stage design docs may be seeded before the stage starts; the stage status should advance only when implementation work, validation, and cleanup evidence justify it.
 
 ## Stage Status Vocabulary
@@ -39,7 +41,7 @@ Stage status tracks implementation acceptance, not merely whether planning docs 
 | 5 | Fully completed | Boundary check passed; VS2026 configure passed; `ShaderCompiler` and `SparkleLauncher` built; `ShaderCompiler list-shaders --validate` reported 17 valid typed registrations; coverage status has Stage 5 evidence. | Install/discover `clang-format` to enable optional `clang_format_check`; Stage 17 removes remaining duplicate pass registration metadata. |
 | 6 | Fully completed | RHI contract map has a Stage 6 completion packet and current root-method ownership table: 74 public declarations after Stage 7 service getters, 70 unique method names, one primary service owner each, backend files, callers, extraction order, and renderer-convenience challenges. | Reopen if a public RHI method is added without an owner/caller/backend/validation row. |
 | 7 | Fully completed | Public service contracts exist for interop, capture/readback, diagnostics, and presentation/UI; D3D12/Vulkan expose symmetric service methods through composed adapters rather than backend facade multiple inheritance; Renderer upscaling and FrameGraph, plus Application present/capture/diagnostics paths, use service edges; boundary check and targeted builds passed. | Stage 8 removes Application-owned D3D12 capture/readback; Stage 9 finishes vendor/native interop exceptions; Stage 12 replaces host presentation internals; Stage 19 slims backend root facades into fuller service objects/folders. |
-| 8 | Not started | Stage 8 D3D12 Application validation exception is counted. | Move backend-native capture/readback behind RHI/backend services and remove exception. |
+| 8 | Fully completed | Application validation no longer contains D3D12/Vulkan native capture code; capture uses `RhiCaptureService`; smoke evidence reports backend, view mode, frame, capture path, frame graph warning status, upscaler status, and ray tracing status; launcher smoke request/environment fields include view mode and capture path; `APPLICATION_VALIDATION_NO_BACKEND_NATIVE` exception was removed; boundary check, `SparkleApplicationEditor`, and `SparkleLauncher` built in `build/windows-vs2026-stage5`. | Stage 10 runs full D3D12/Vulkan runtime smoke and captures backend parity artifacts. |
 | 9 | Not started | Stage 9 Vulkan/native Streamline exceptions are counted. | Formalize provider/native interop and remove Renderer-native exceptions. |
 | 10 | Not started | Backend parity milestone requirements are documented. | Run D3D12/Vulkan milestone validation and record artifacts. |
 | 11 | Not started | Renderer facade target is documented. | Start facade/frame-pipeline decomposition. |
@@ -204,6 +206,8 @@ For any stage:
 - Complete any listed row in [Mandatory Split Checkpoints For Large Stages](../rhi-renderer-review-ready-implementation-plan.md#mandatory-split-checkpoints-for-large-stages), or split the unfinished checkpoint into a new numbered stage before implementation continues.
 - Classify each touched subsystem using the refactor disposition policy in [../../architecture/after/repository-target-architecture.md](../../architecture/after/repository-target-architecture.md).
 - Apply the stage complexity budget above and name the code that earns its right to remain.
+- Confirm no explanatory/provenance/planning comments were added to source. New runtime strings must be behavior or diagnostic text only.
+- For moved code, prove the destination is the correct owner, the code was reshaped to that owner's vocabulary/contracts, and the old responsibility was deleted or simplified.
 - Apply [repository-threading-readiness.md](../../architecture/after/repository-threading-readiness.md) and name mutable owner, phase, handoff shape, isolation, ordering/synchronization expectation, and deterministic diagnostics for changed edges.
 - Check new names against the repository naming canon before adding files, targets, types, commands, or schemas.
 - Confirm the `Global Refactor Stage Impact Matrix` in the canonical implementation plan names the adjacent modules to protect.

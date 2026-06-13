@@ -43,6 +43,8 @@ The target is calibrated against public, recognizable graphics repositories:
 8. Code must earn its right to exist. Extra abstraction, duplicate paths, compatibility layers, and broad helpers are accepted only when they reduce net complexity, improve validation, or protect a clear contract.
 9. Folder architecture is architecture. New folders, renamed folders, deleted folders, and CMake targets must make ownership and data flow easier to infer.
 10. Threading readiness is architecture. Mutable state has a single phase owner, handoffs are immutable or versioned, and future jobs/queues must not need private cross-module state to run safely.
+11. Source code must not carry process narration. Comments are reserved for non-obvious runtime behavior, API constraints, safety/lifetime rules, or unavoidable technical caveats; planning, stage, authorship, and refactor-history text belongs in docs.
+12. Moving code is not architecture by itself. A relocation is accepted only when the destination is the real owner, the code is renamed or reshaped to that owner's contract, and the old owner becomes simpler instead of forwarding the mess.
 
 ## Right-To-Exist Complexity Test
 
@@ -54,9 +56,12 @@ Every durable body of code, target, schema, command, and document must pay for i
 | Can the same behavior be expressed with a smaller contract or existing owner? | Prefer the smaller design unless it hides coupling or loses diagnostics. |
 | Does it make future changes easier or harder? | Keep complexity only when it removes repeated work, clarifies ownership, or improves validation. |
 | What bugs does this complexity prevent or expose? | Keep it only if diagnostics, schema validation, backend parity, or testability improve. |
+| Did it move without changing shape? | Reject it unless the destination already speaks the same vocabulary and owns the same contract. Otherwise reshape the code or design a proper destination first. |
 | What is the removal path? | Temporary compatibility code must have a removal stage before it lands. |
 
 The default answer for duplicated registries, vague helpers, parallel pipelines, generic managers, and compatibility shims is "remove or redesign" unless the stage proves otherwise.
+
+The default answer for source comments that explain the refactor process is "move that information to docs." The default answer for pure code relocation is "not accepted yet" until ownership, naming, contracts, and cleanup prove the destination fits.
 
 ## Refactor Disposition Policy
 

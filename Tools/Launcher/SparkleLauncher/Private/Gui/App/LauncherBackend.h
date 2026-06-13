@@ -61,6 +61,8 @@ namespace SparkleLauncher
 		QString LaunchCVars;
 		QString SmokeBackend;
 		QString SmokeFrameLimit;
+		QString SmokeViewMode;
+		QString SmokeCapturePath;
 		QString FormatMode = "check";
 		QString CleanScope = "selected-cooked";
 		QVector<LauncherCleanTarget> CleanTargets;

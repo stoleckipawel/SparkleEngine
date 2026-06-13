@@ -6,6 +6,7 @@
 #include "Level/LevelManager.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Core/RhiBackendSelection.h"
 #include "Window/Window.h"
 #include "Textures/TextureManager.h"
 #include "Meshes/GPUMeshCache.h"
@@ -119,6 +120,27 @@ TextureDiagnosticsSnapshot Renderer::CaptureTextureDiagnostics() const
 RendererMemoryDiagnosticsSnapshot Renderer::CaptureMemoryDiagnostics() const
 {
 	return m_memoryMonitor != nullptr ? m_memoryMonitor->GetLatestSnapshot() : RendererMemoryDiagnosticsSnapshot{};
+}
+
+RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
+{
+	RendererSmokeDiagnosticsSnapshot snapshot{};
+	const RhiCapabilities capabilities = GetRenderHardwareInterface().GetCapabilities();
+	snapshot.BackendApi = capabilities.BackendApi;
+	snapshot.FrameGraphUnresolvedBarrierWarnings =
+	    m_frameGraph != nullptr ? m_frameGraph->GetLastUnresolvedBarrierWarningCount() : 0u;
+	snapshot.RayTracingSupported = capabilities.RayTracing.SupportsRayTracing;
+	snapshot.InlineRayQuerySupported = capabilities.RayTracing.SupportsInlineRayQuery;
+
+	if (m_upscalerSubsystem != nullptr)
+	{
+		const UpscalerProviderCapabilities upscalerDiagnostics = m_upscalerSubsystem->GetDiagnostics();
+		snapshot.UpscalerProvider = upscalerDiagnostics.ProviderName;
+		snapshot.UpscalerStatus = UpscalerProviderStatusToString(upscalerDiagnostics.Status);
+		snapshot.UpscalerReason = upscalerDiagnostics.Reason;
+	}
+
+	return snapshot;
 }
 
 void Renderer::PrepareHostFrame() noexcept

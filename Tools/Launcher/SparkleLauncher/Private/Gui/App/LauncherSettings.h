@@ -33,6 +33,8 @@ namespace SparkleLauncher
 		const QString& LaunchCVars() const;
 		const QString& SmokeBackend() const;
 		const QString& SmokeFrameLimit() const;
+		const QString& SmokeViewMode() const;
+		const QString& SmokeCapturePath() const;
 		const QString& FormatMode() const;
 		const QString& CleanScope() const;
 		bool LaunchSmokeTest() const;
@@ -78,6 +80,8 @@ namespace SparkleLauncher
 		void SetLaunchCVars(const QString& cvars);
 		void SetSmokeBackend(const QString& backend);
 		void SetSmokeFrameLimit(const QString& frameLimit);
+		void SetSmokeViewMode(const QString& viewMode);
+		void SetSmokeCapturePath(const QString& path);
 		void SetFormatMode(const QString& mode);
 		void SetCleanScope(const QString& scope);
 		void SetLaunchSmokeTest(bool enabled);
@@ -114,6 +118,8 @@ namespace SparkleLauncher
 		QString m_launchCVars;
 		QString m_smokeBackend;
 		QString m_smokeFrameLimit;
+		QString m_smokeViewMode;
+		QString m_smokeCapturePath;
 		QString m_formatMode = "check";
 		QString m_cleanScope = "selected-cooked";
 		bool m_launchSmokeTest = false;

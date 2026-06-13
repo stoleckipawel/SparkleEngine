@@ -12,6 +12,13 @@ Before implementing any row, open:
 - The row in [Stage Contract Coverage Matrix](../rhi-renderer-review-ready-implementation-plan.md#stage-contract-coverage-matrix).
 - Any row in [Mandatory Split Checkpoints For Large Stages](../rhi-renderer-review-ready-implementation-plan.md#mandatory-split-checkpoints-for-large-stages).
 
+Global implementation rules for every packet:
+
+- Do not add explanatory, provenance, planning, stage, or refactor-process comments to source code. Add a source comment only when it documents a non-obvious runtime behavior, API constraint, safety rule, or lifetime rule that cannot be expressed cleanly in code.
+- Runtime/user-facing strings must describe behavior, diagnostics, commands, paths, or failure reasons. They must not mention planning documents, implementation stages, authorship, or refactor history.
+- Do not move code as a cosmetic relocation. Any moved body must land in the designed owner, be renamed or reshaped to that context, use that owner's contracts, and delete or simplify the old responsibility.
+- Reject destination folders, services, or helpers that become new catch-all clutter. If no proper destination exists yet, design the destination first or split the work into a design stage.
+
 ## Stage Packets
 
 | Stage | Implementation focus | Must prove | Split/checkpoint pressure |
@@ -56,4 +63,4 @@ For every stage, final response must include:
 - Validation run.
 - Validation not run and why.
 - Remaining risk, especially for graphics/RHI, shader/compiler/cook, CMake, launcher, and threading-readiness.
-
+- Confirmation that source text discipline and destination-fit rules were respected when source files were touched.

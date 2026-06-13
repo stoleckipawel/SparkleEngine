@@ -29,6 +29,8 @@ namespace SparkleLauncher
 		bool EnableSmokeTest = false;
 		std::string SmokeBackend;
 		std::string SmokeFrameLimit;
+		std::string SmokeViewMode;
+		std::string SmokeCapturePath;
 		CookMode RequestedCookMode = CookMode::Incremental;
 		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;

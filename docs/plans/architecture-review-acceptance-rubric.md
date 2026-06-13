@@ -152,6 +152,8 @@ Use this table for architecture/design proposals. A proposal does not need to be
 | Portability/backend parity | API-specific behavior is contained; shared semantics are explicit. | D3D12/Vulkan differences are mapped at the RHI boundary, with parity tests or known-difference notes. |
 | Maintainability and naming | Names reveal role and ownership; file locations help reviewers navigate. | Orchestration files, implementation files, contracts, and backend files follow documented naming rules. |
 | Complexity right to exist | Complexity is retained only when it pays for itself in clarity, reuse, validation, safety, or reduced future change cost. | Duplicate paths, vague helpers, broad managers, compatibility layers, schemas, commands, and CMake targets name owner, consumer, contract, validation value, smaller alternative, and removal stage when temporary. |
+| Source text discipline | Source code stays focused on behavior rather than process narration. | New source comments are absent unless they document non-obvious runtime behavior, API constraints, safety, or lifetime rules. Runtime strings describe diagnostics or behavior, not planning docs, stages, authorship, or refactor history. |
+| Destination-fit discipline | Moving code improves ownership rather than hiding clutter in a new place. | Any moved body lands in the designed owner, adopts that owner's vocabulary/contracts, deletes or simplifies the old responsibility, and does not create a new catch-all helper/service/folder. |
 | Testability | Claims can be validated repeatedly. | Proposal includes targeted build/smoke/tool tests and, for graphics, capture or log evidence for both APIs where relevant. |
 | Communication/reviewability | The design can be reviewed by someone new to the repo. | Proposal includes diagrams, owner map, decision record, acceptance criteria, and exact files touched. |
 
@@ -212,7 +214,9 @@ Ask these during each design session.
 11. What alternative was rejected, and why?
 12. What code, abstraction, target, schema, command, or compatibility path is being removed or simplified?
 13. If complexity remains, what does it uniquely solve and what validation proves it earns its right to exist?
-14. What future change becomes easier after this?
+14. Did this add source comments or runtime strings? If yes, are they behavior/API/safety/diagnostic text rather than process narration?
+15. Did this move code? If yes, why is the destination the true owner and how was the code reshaped to fit that context?
+16. What future change becomes easier after this?
 
 ## Rubric Template
 
@@ -238,6 +242,8 @@ Copy this into future design notes.
 | Portability/backend parity |  |  |  |
 | Maintainability and naming |  |  |  |
 | Complexity right to exist |  |  |  |
+| Source text discipline |  |  |  |
+| Destination-fit discipline |  |  |  |
 | Testability |  |  |  |
 | Communication/reviewability |  |  |  |
 
