@@ -33,7 +33,7 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	Output.DeviceZ = Input.Position.z;
 
 	Output.MotionVector = MotionVectors::Compute(
-		Input.Position,
+		Input.ClipPosition,
 		Input.PrevClipPosition,
 		ViewportSize);
 }

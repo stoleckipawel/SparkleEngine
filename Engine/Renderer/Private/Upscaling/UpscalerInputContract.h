@@ -19,12 +19,6 @@ enum class EUpscalerMotionVectorDirection : std::uint8_t
 	CurrentMinusPrevious = 1
 };
 
-enum class EUpscalerMotionVectorJitterMode : std::uint8_t
-{
-	Unknown = 0,
-	CurrentAndPreviousClipPositionsAreJittered = 1
-};
-
 enum class EUpscalerDepthConvention : std::uint8_t
 {
 	Unknown = 0,
@@ -36,7 +30,6 @@ struct UpscalerMotionVectorConvention final
 {
 	EUpscalerMotionVectorUnits Units = EUpscalerMotionVectorUnits::Unknown;
 	EUpscalerMotionVectorDirection Direction = EUpscalerMotionVectorDirection::Unknown;
-	EUpscalerMotionVectorJitterMode JitterMode = EUpscalerMotionVectorJitterMode::Unknown;
 };
 
 struct UpscalerInputContract final
@@ -73,5 +66,4 @@ UpscalerInputContractValidation ValidateUpscalerInputContract(const UpscalerInpu
 
 const char* UpscalerMotionVectorUnitsToString(EUpscalerMotionVectorUnits units) noexcept;
 const char* UpscalerMotionVectorDirectionToString(EUpscalerMotionVectorDirection direction) noexcept;
-const char* UpscalerMotionVectorJitterModeToString(EUpscalerMotionVectorJitterMode jitterMode) noexcept;
 const char* UpscalerDepthConventionToString(EUpscalerDepthConvention convention) noexcept;

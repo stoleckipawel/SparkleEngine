@@ -17,7 +17,7 @@ namespace
 
 	ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode(
 	    "r.Upscaler.QualityMode",
-	    EUpscalerQualityMode::Quality,
+	    EUpscalerQualityMode::NativeAA,
 	    "Renderer upscaler quality mode: 0=NativeAA, 1=Quality, 2=Balanced, 3=Performance, 4=UltraPerformance.");
 }
 

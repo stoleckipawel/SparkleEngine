@@ -42,7 +42,6 @@ UpscalerInputContractValidation ValidateUpscalerInputContract(const UpscalerInpu
 	AddMissing(missing, contract.OutputExtent.IsValid(), "valid output extent");
 	AddMissing(missing, contract.MotionVectorConvention.Units != EUpscalerMotionVectorUnits::Unknown, "motion-vector units");
 	AddMissing(missing, contract.MotionVectorConvention.Direction != EUpscalerMotionVectorDirection::Unknown, "motion-vector direction");
-	AddMissing(missing, contract.MotionVectorConvention.JitterMode != EUpscalerMotionVectorJitterMode::Unknown, "motion-vector jitter convention");
 	AddMissing(missing, contract.DepthConvention != EUpscalerDepthConvention::Unknown, "depth convention");
 	if (contract.ExposureRequired)
 	{
@@ -62,7 +61,7 @@ UpscalerInputContractValidation ValidateUpscalerInputContract(const UpscalerInpu
 	                         contract.OutputExtent.Height,
 	                         UpscalerMotionVectorUnitsToString(contract.MotionVectorConvention.Units),
 	                         UpscalerMotionVectorDirectionToString(contract.MotionVectorConvention.Direction),
-	                         UpscalerMotionVectorJitterModeToString(contract.MotionVectorConvention.JitterMode),
+	                         "JitterRemovedFromMotionVectors",
 	                         UpscalerDepthConventionToString(contract.DepthConvention),
 	                         contract.TemporalState.HistoryValid ? "true" : "false",
 	                         contract.ResetRequested ? "true" : "false")
@@ -88,18 +87,6 @@ const char* UpscalerMotionVectorDirectionToString(EUpscalerMotionVectorDirection
 		case EUpscalerMotionVectorDirection::CurrentMinusPrevious:
 			return "CurrentMinusPrevious";
 		case EUpscalerMotionVectorDirection::Unknown:
-		default:
-			return "Unknown";
-	}
-}
-
-const char* UpscalerMotionVectorJitterModeToString(EUpscalerMotionVectorJitterMode jitterMode) noexcept
-{
-	switch (jitterMode)
-	{
-		case EUpscalerMotionVectorJitterMode::CurrentAndPreviousClipPositionsAreJittered:
-			return "CurrentAndPreviousClipPositionsAreJittered";
-		case EUpscalerMotionVectorJitterMode::Unknown:
 		default:
 			return "Unknown";
 	}

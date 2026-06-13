@@ -17,9 +17,10 @@ void main(in VS::Input Input, out VS::Output Output)
 	const float3 bitangentWorld = ComputeBitangent(normalWorld, tangentWorld);
 
 	const float4 positionClip = PositionWorldToClip(positionWorld);
+	const float4 previousClipPosition = mul(positionWorld, PrevViewProjMTX);
 	const float4 jitteredPositionClip = ApplyTemporalJitterClipOffset(positionClip, JitterCurrent);
-	const float4 jitteredPrevClipPosition = ApplyTemporalJitterClipOffset(mul(positionWorld, PrevViewProjMTX), JitterPrevious);
 
+	// Rasterize jittered samples for DLSS/DLAA, but keep motion-vector inputs unjittered.
 	Output.Position = jitteredPositionClip;
 	Output.PositionWorld = positionWorld.xyz;
 	Output.NormalWorld = normalWorld;
@@ -28,6 +29,6 @@ void main(in VS::Input Input, out VS::Output Output)
 	Output.TexCoord = Input.TexCoord;
 	Output.Color = Input.Color;
 	Output.InstanceId = instanceId;
-	Output.ClipPosition = jitteredPositionClip;
-	Output.PrevClipPosition = jitteredPrevClipPosition;
+	Output.ClipPosition = positionClip;
+	Output.PrevClipPosition = previousClipPosition;
 }

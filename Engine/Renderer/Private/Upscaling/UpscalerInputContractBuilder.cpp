@@ -24,7 +24,6 @@ UpscalerInputContract BuildUpscalerInputContract(const UpscalerInputContractBuil
 	    .MotionVectorConvention =
 	        UpscalerMotionVectorConvention{
 	            .Units = EUpscalerMotionVectorUnits::PixelDelta,
-	            .Direction = EUpscalerMotionVectorDirection::CurrentMinusPrevious,
-	            .JitterMode = EUpscalerMotionVectorJitterMode::CurrentAndPreviousClipPositionsAreJittered},
+	            .Direction = EUpscalerMotionVectorDirection::CurrentMinusPrevious},
 	    .DepthConvention = EUpscalerDepthConvention::ReversedDeviceDepth};
 }

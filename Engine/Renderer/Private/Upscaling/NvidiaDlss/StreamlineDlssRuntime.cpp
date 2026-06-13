@@ -285,7 +285,7 @@ namespace
 		constants.cameraMotionIncluded = sl::Boolean::eTrue;
 		constants.motionVectors3D = sl::Boolean::eFalse;
 		constants.reset = inputContract.ResetRequested || !inputContract.TemporalState.HistoryValid ? sl::Boolean::eTrue : sl::Boolean::eFalse;
-		constants.motionVectorsJittered = sl::Boolean::eTrue;
+		constants.motionVectorsJittered = sl::Boolean::eFalse;
 	}
 
 	bool UpgradePresentationInterfaceWithStreamline(void** nativeInterface, void*) noexcept
