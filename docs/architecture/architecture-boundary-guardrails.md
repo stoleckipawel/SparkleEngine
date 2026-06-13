@@ -82,13 +82,25 @@ These exceptions are count-limited and owner-labeled. Renderer/provider exceptio
 
 ## Acceptance Snapshot
 
-Last run in this environment:
+Latest Stage 36 run in this environment:
+
+```text
+cmake --build build-vs2026 --config DevelopmentEditor --target architecture_boundary_check -- /nologo /v:minimal /m:1
+```
+
+Result:
+
+- No new architecture boundary violations.
+- Counted provider exceptions remain limited to the NVIDIA DLSS provider `Vulkan::Vulkan` link and Streamline DLSS Vulkan bridge.
+- The final review-ready gate remains deferred because Stage 19 backend service slimming is not fully complete.
+
+Earlier direct script entry point:
 
 ```text
 cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake
 ```
 
-Result:
+Earlier result:
 
 - No new architecture boundary violations.
 - Stage 9 narrowed the former Renderer CMake Vulkan exception to the NVIDIA DLSS provider target. The former Application validation D3D12 capture exception was removed in Stage 8.

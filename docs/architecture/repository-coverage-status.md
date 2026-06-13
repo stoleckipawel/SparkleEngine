@@ -208,3 +208,17 @@ Stage 35 accepts the current whole-repository threading-readiness hardening pass
 | Launcher/tool handoff | Tool resolver, Qt kit detection, maintenance clean target planning, and maintenance clean process request generation sort discovered candidates/projects before producing process-facing data. |
 | Validation status | VS2026 configure passed in `build-vs2026`; `ShaderCompiler`, `SparkleLauncher`, and `ShowcaseRuntime` built; `architecture_boundary_check` passed; `ShaderCompiler.exe list-shaders --validate` reported `17` valid typed registrations and `10` packages; `git diff --check` reported only line-ending normalization warnings. |
 | Remaining owned follow-up | Stage 19 remains the owner for deeper backend command/descriptor/memory/pipeline service slimming before real multi-worker command recording. Stage 36 owns final cleanup and rubric scoring. |
+
+## Stage 36 Final Gate Attempt
+
+Stage 36 has started and recorded cleanup, validation, and rubric evidence, but it does not accept the repository as final review-ready yet.
+
+| Area | Evidence |
+| --- | --- |
+| Gate decision | Revise/defer final review-ready acceptance. The repository has strong whole-repo evidence, but Stage 19 backend service slimming remains open beyond ray tracing. |
+| Cleanup scan | Live source/CMake scans found no production `Tools/Conversion/AssetConverter`, `Tools/Cooking/CookCommon`, `Tools/Import/SourceImportAdapters`, `RenderPassPipelineTraits`, `RendererGlobalShaders`, `RendererShaderRegistration`, `LevelLightingDesc`, `LevelLightingSceneBuilder`, `Bistro.level`, or `GetSceneSnapshot` paths. |
+| Boundary status | `architecture_boundary_check` passed in `build-vs2026` with no new violations. Counted exceptions remain limited to provider-owned NVIDIA DLSS Vulkan/Streamline integration. |
+| Build status | `ShaderCompiler`, `SparkleLauncher`, and `ShowcaseRuntime` built in `DevelopmentEditor` from `build-vs2026`. `SparkleLauncher` emitted the known non-blocking `VCINSTALLDIR`/system `icuuc.dll` deployment warning. |
+| Artifact validation | `ShaderCompiler.exe list-shaders --validate` reported `17` valid typed registrations and `10` packages. `AssetCooker.exe cook-assets Showcase DevelopmentEditor` cooked `9` scenes. DamagedHelmet texture request inspection found `6` requests and `TextureCooker` cooked `6/6` with summary `artifacts/diagnostics/cook/Summaries/stage36-damagedhelmet-texturecook-summary.json`. |
+| Rubric status | No category scores below `2`; most whole-repository categories score `3`. Source/folder architecture, cohesion/interface size, portability/backend parity, maintainability/naming, and performance reasoning remain `2` because backend service symmetry and profiling evidence are not final. |
+| Blocking owner | Stage 19 owns the remaining D3D12/Vulkan resource and memory lifetime/upload/allocation service slimming. Ray tracing, interop, capture, diagnostics, presentation, pipeline, and D3D12 descriptor state have service-owned evidence. Re-run Stage 36 after Stage 19 reaches `Fully completed`. |

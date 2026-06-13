@@ -9,10 +9,15 @@
 
 class VulkanCommandContext;
 class VulkanConstantBufferManager;
+class VulkanCaptureService;
+class VulkanDiagnosticsService;
 class VulkanDescriptorManager;
 class VulkanGpuMemoryAllocator;
 struct VulkanGpuAllocationRecord;
 class VulkanImGuiBackend;
+class VulkanInteropService;
+class VulkanPipelineService;
+class VulkanPresentationService;
 class VulkanRayTracingServices;
 class VulkanRenderCommandList;
 class VulkanRhi;
@@ -178,63 +183,6 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void RebuildSwapChainBackBufferViews() noexcept;
 
   private:
-	class InteropService final : public RhiInteropService
-	{
-	  public:
-		explicit InteropService(VulkanRenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
-
-		RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept override;
-		NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;
-		NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
-		bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept override;
-		NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
-
-	  private:
-		VulkanRenderHardwareInterface* m_owner = nullptr;
-	};
-
-	class CaptureService final : public RhiCaptureService
-	{
-	  public:
-		explicit CaptureService(VulkanRenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
-
-		RhiCaptureResult CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept override;
-
-	  private:
-		VulkanRenderHardwareInterface* m_owner = nullptr;
-	};
-
-	class DiagnosticsService final : public RhiDiagnosticsService
-	{
-	  public:
-		explicit DiagnosticsService(VulkanRenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
-
-		RenderDiagnostics& GetDiagnostics() noexcept override;
-		const RenderDiagnostics& GetDiagnostics() const noexcept override;
-
-	  private:
-		VulkanRenderHardwareInterface* m_owner = nullptr;
-	};
-
-	class PresentationService final : public RhiPresentationService
-	{
-	  public:
-		explicit PresentationService(VulkanRenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
-
-		RhiViewport GetBackBufferViewport() const noexcept override;
-		RhiRect GetBackBufferScissorRect() const noexcept override;
-		RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override;
-		NativeResourceHandle GetBackBufferResource() const noexcept override;
-		std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
-		void BeginPresentRenderPass(const float clearColor[4]) noexcept override;
-		void BeginPresentOverlayPass() noexcept override;
-		void EndPresentRenderPass() noexcept override;
-		PixelFormat GetPresentColorFormat() const noexcept override;
-
-	  private:
-		VulkanRenderHardwareInterface* m_owner = nullptr;
-	};
-
 	RhiCapabilities BuildCapabilities() const noexcept;
 	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
 	RhiResourceViewHandle GetCurrentBackBufferViewHandle() const noexcept;
@@ -242,10 +190,11 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void EndCurrentBackBufferRendering() noexcept;
 	void TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, ResourceState newState) noexcept;
 
-	InteropService m_interopService;
-	CaptureService m_captureService;
-	DiagnosticsService m_diagnosticsService;
-	PresentationService m_presentationService;
+	std::unique_ptr<VulkanInteropService> m_interopService;
+	std::unique_ptr<VulkanCaptureService> m_captureService;
+	std::unique_ptr<VulkanDiagnosticsService> m_diagnosticsService;
+	std::unique_ptr<VulkanPresentationService> m_presentationService;
+	std::unique_ptr<VulkanPipelineService> m_pipelineService;
 	std::unique_ptr<VulkanRayTracingServices> m_rayTracingServices;
 	VulkanRhi* m_rhi = nullptr;
 	VulkanSwapChain* m_swapChain = nullptr;

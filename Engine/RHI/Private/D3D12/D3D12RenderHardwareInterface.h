@@ -11,9 +11,15 @@
 #include <vector>
 
 class D3D12DescriptorHeapManager;
+class D3D12DescriptorService;
 class D3D12ConstantBufferManager;
+class D3D12CaptureService;
+class D3D12DiagnosticsService;
 class D3D12ImGuiBackend;
+class D3D12InteropService;
 class D3D12GpuMemoryAllocator;
+class D3D12PipelineService;
+class D3D12PresentationService;
 class D3D12RenderCommandList;
 class D3D12Rhi;
 class D3D12RayTracingServices;
@@ -171,81 +177,6 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
   private:
 	friend class D3D12RenderCommandList;
 
-	class InteropService final : public RhiInteropService
-	{
-	  public:
-		explicit InteropService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
-
-		RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept override;
-		NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;
-		NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
-		bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept override;
-		NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
-
-	  private:
-		D3D12RenderHardwareInterface* m_owner = nullptr;
-	};
-
-	class CaptureService final : public RhiCaptureService
-	{
-	  public:
-		explicit CaptureService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
-
-		RhiCaptureResult CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept override;
-
-	  private:
-		D3D12RenderHardwareInterface* m_owner = nullptr;
-	};
-
-	class DiagnosticsService final : public RhiDiagnosticsService
-	{
-	  public:
-		explicit DiagnosticsService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
-
-		RenderDiagnostics& GetDiagnostics() noexcept override;
-		const RenderDiagnostics& GetDiagnostics() const noexcept override;
-
-	  private:
-		D3D12RenderHardwareInterface* m_owner = nullptr;
-	};
-
-	class PresentationService final : public RhiPresentationService
-	{
-	  public:
-		explicit PresentationService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
-
-		RhiViewport GetBackBufferViewport() const noexcept override;
-		RhiRect GetBackBufferScissorRect() const noexcept override;
-		RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override;
-		NativeResourceHandle GetBackBufferResource() const noexcept override;
-		std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
-		void BeginPresentRenderPass(const float clearColor[4]) noexcept override;
-		void BeginPresentOverlayPass() noexcept override;
-		void EndPresentRenderPass() noexcept override;
-		PixelFormat GetPresentColorFormat() const noexcept override;
-
-	  private:
-		D3D12RenderHardwareInterface* m_owner = nullptr;
-	};
-
-	struct DescriptorTableRecord
-	{
-		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
-		std::uint32_t descriptorCount = 0;
-		D3D12DescriptorHandle nativeHandle;
-
-		bool IsAllocated() const noexcept { return nativeHandle.IsValid(); }
-	};
-
-	struct ResourceViewRecord
-	{
-		ERhiResourceViewKind kind = ERhiResourceViewKind::TextureShaderResource;
-		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
-		RhiDescriptorAllocation descriptorAllocation = {};
-
-		bool IsAllocated() const noexcept { return descriptorAllocation.IsValid(); }
-	};
-
 	struct PendingOwnedResourceRelease
 	{
 		std::unique_ptr<D3D12GpuAllocationRecord> Record;
@@ -262,7 +193,6 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
-	static ERhiDescriptorAllocatorType ResolveResourceViewDescriptorAllocatorType(ERhiResourceViewKind kind) noexcept;
 	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);
 	static RhiOwnedResourceHandle WrapOwnedResource(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept;
 	static RhiOwnedResourceHandle WrapOwnedResource(
@@ -272,32 +202,24 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
 	RhiCapabilities BuildCapabilities() const noexcept;
 	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
-	bool WriteD3D12ResourceViewDescriptor(const RhiResourceViewDesc& desc, RhiCpuDescriptorHandle destination) noexcept;
 	void DrainCompletedOwnedResourceReleases() noexcept;
-	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
-	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
-	ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) noexcept;
-	const ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) const noexcept;
 
-	InteropService m_interopService;
-	CaptureService m_captureService;
-	DiagnosticsService m_diagnosticsService;
-	PresentationService m_presentationService;
+	std::unique_ptr<D3D12InteropService> m_interopService;
+	std::unique_ptr<D3D12CaptureService> m_captureService;
+	std::unique_ptr<D3D12DiagnosticsService> m_diagnosticsService;
+	std::unique_ptr<D3D12PresentationService> m_presentationService;
+	std::unique_ptr<D3D12PipelineService> m_pipelineService;
 	std::unique_ptr<D3D12RayTracingServices> m_rayTracingServices;
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
 	D3D12ConstantBufferManager* m_constantBufferManager = nullptr;
+	std::unique_ptr<D3D12DescriptorService> m_descriptorService;
 	std::unique_ptr<D3D12ImGuiBackend> m_imguiBackend;
 	RhiCapabilities m_capabilities;
-	RhiDescriptorTableHandle m_samplerTableHandle = {};
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
 	std::array<std::unique_ptr<RenderCommandList>, RenderConfig::FramesInFlight> m_commandLists;
-	std::vector<DescriptorTableRecord> m_descriptorTableRecords;
-	std::vector<std::uint32_t> m_freeDescriptorTableIndices;
-	std::vector<ResourceViewRecord> m_resourceViewRecords;
-	std::vector<std::uint32_t> m_freeResourceViewIndices;
 	std::vector<PendingOwnedResourceRelease> m_pendingOwnedResourceReleases;
 	std::vector<PendingOwnedMemoryBlockRelease> m_pendingOwnedMemoryBlockReleases;
 };

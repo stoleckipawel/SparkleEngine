@@ -5,6 +5,7 @@
 #include "Config/RenderConfig.h"
 #include "Resources/Texture.h"
 #include "Shaders/CookedShaderPackage.h"
+#include "Vulkan/Capture/VulkanCaptureService.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 #include "Vulkan/Core/VulkanResult.h"
@@ -12,11 +13,13 @@
 #include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Device/VulkanExternalFeatureInteropCapabilities.h"
+#include "Vulkan/Diagnostics/VulkanDiagnosticsService.h"
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
+#include "Vulkan/Interop/VulkanInteropService.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
-#include "Vulkan/Pipeline/VulkanBindingLayout.h"
-#include "Vulkan/Pipeline/VulkanPipelineState.h"
+#include "Vulkan/Pipeline/VulkanPipelineService.h"
+#include "Vulkan/Presentation/VulkanPresentationService.h"
 #include "Vulkan/RayTracing/VulkanRayTracingServices.h"
 #include "Vulkan/Resources/VulkanConstantBufferManager.h"
 #include "Vulkan/Samplers/VulkanSamplerLibrary.h"
@@ -152,9 +155,13 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
     VulkanSwapChain& swapChain,
     VulkanCommandContext& commandContext,
     VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
-    m_interopService(*this), m_captureService(*this), m_diagnosticsService(*this), m_presentationService(*this), m_rhi(&rhi),
-    m_swapChain(&swapChain), m_commandContext(&commandContext), m_memoryAllocator(&memoryAllocator)
+    m_rhi(&rhi), m_swapChain(&swapChain), m_commandContext(&commandContext), m_memoryAllocator(&memoryAllocator)
 {
+	m_interopService = std::make_unique<VulkanInteropService>(*this);
+	m_captureService = std::make_unique<VulkanCaptureService>(*this);
+	m_diagnosticsService = std::make_unique<VulkanDiagnosticsService>(*this);
+	m_presentationService = std::make_unique<VulkanPresentationService>(*this);
+	m_pipelineService = std::make_unique<VulkanPipelineService>(rhi);
 	m_rayTracingServices = std::make_unique<VulkanRayTracingServices>(rhi, memoryAllocator);
 	m_descriptorManager = std::make_unique<VulkanDescriptorManager>(rhi, memoryAllocator);
 	m_constantBufferManager = std::make_unique<VulkanConstantBufferManager>(memoryAllocator);
@@ -217,71 +224,37 @@ void VulkanRenderHardwareInterface::WaitForIdle() noexcept
 
 RhiInteropService& VulkanRenderHardwareInterface::GetInteropService() noexcept
 {
-	return m_interopService;
+	return *m_interopService;
 }
 
 const RhiInteropService& VulkanRenderHardwareInterface::GetInteropService() const noexcept
 {
-	return m_interopService;
+	return *m_interopService;
 }
 
 RhiCaptureService& VulkanRenderHardwareInterface::GetCaptureService() noexcept
 {
-	return m_captureService;
+	return *m_captureService;
 }
 
 RhiDiagnosticsService& VulkanRenderHardwareInterface::GetDiagnosticsService() noexcept
 {
-	return m_diagnosticsService;
+	return *m_diagnosticsService;
 }
 
 const RhiDiagnosticsService& VulkanRenderHardwareInterface::GetDiagnosticsService() const noexcept
 {
-	return m_diagnosticsService;
+	return *m_diagnosticsService;
 }
 
 RhiPresentationService& VulkanRenderHardwareInterface::GetPresentationService() noexcept
 {
-	return m_presentationService;
+	return *m_presentationService;
 }
 
 const RhiPresentationService& VulkanRenderHardwareInterface::GetPresentationService() const noexcept
 {
-	return m_presentationService;
-}
-
-RhiNativeDeviceQueueInterop VulkanRenderHardwareInterface::InteropService::GetDeviceQueueInterop(
-    RhiNativeInteropRequest request) const noexcept
-{
-	return RhiNativeDeviceQueueInterop{
-	    .BackendApi = m_owner != nullptr ? m_owner->GetBackendApi() : ERhiBackendApi::Unknown,
-	    .Device = GetDeviceHandle(),
-	    .GraphicsQueue = GetGraphicsQueueHandle(),
-	    .Request = request};
-}
-
-NativeGraphicsDeviceHandle VulkanRenderHardwareInterface::InteropService::GetDeviceHandle() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{};
-}
-
-NativeGraphicsQueueHandle VulkanRenderHardwareInterface::InteropService::GetGraphicsQueueHandle() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetGraphicsQueueHandle() : NativeGraphicsQueueHandle{};
-}
-
-bool VulkanRenderHardwareInterface::InteropService::UpgradePresentationInterface(
-    RhiNativeInterfaceUpgradeCallback callback,
-    void* userData) noexcept
-{
-	return m_owner != nullptr && m_owner->UpgradePresentationInterface(callback, userData);
-}
-
-NativeTextureViewInfo VulkanRenderHardwareInterface::InteropService::GetNativeTextureViewInfo(
-    RhiResourceViewHandle view,
-    ResourceState state) const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetNativeTextureViewInfo(view, state) : NativeTextureViewInfo{};
+	return *m_presentationService;
 }
 
 NativeGraphicsDeviceHandle VulkanRenderHardwareInterface::GetDeviceHandle() const noexcept
@@ -297,20 +270,6 @@ NativeGraphicsQueueHandle VulkanRenderHardwareInterface::GetGraphicsQueueHandle(
 bool VulkanRenderHardwareInterface::UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback, void*) noexcept
 {
 	return false;
-}
-
-RhiCaptureResult VulkanRenderHardwareInterface::CaptureService::CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept
-{
-	const bool captured =
-	    m_owner != nullptr && m_owner->CaptureTextureToBmp(request.Resource, request.Width, request.Height, request.OutputPath);
-	return RhiCaptureResult{
-	    .Status = captured ? ERhiCaptureStatus::Succeeded : ERhiCaptureStatus::Failed,
-	    .BackendApi = ERhiBackendApi::Vulkan,
-	    .FrameIndex = request.FrameIndex,
-	    .ViewMode = request.ViewMode,
-	    .ViewModeName = request.ViewModeName,
-	    .ArtifactPath = captured ? request.OutputPath : std::filesystem::path{},
-	    .FailureReason = captured ? "" : "Vulkan texture capture failed; verify the image is valid, RGBA16F-compatible, and the output path is writable."};
 }
 
 bool VulkanRenderHardwareInterface::CaptureTextureToBmp(
@@ -608,16 +567,6 @@ const RenderDiagnostics& VulkanRenderHardwareInterface::GetDiagnostics() const n
 	return *m_diagnostics;
 }
 
-RenderDiagnostics& VulkanRenderHardwareInterface::DiagnosticsService::GetDiagnostics() noexcept
-{
-	return m_owner->GetDiagnostics();
-}
-
-const RenderDiagnostics& VulkanRenderHardwareInterface::DiagnosticsService::GetDiagnostics() const noexcept
-{
-	return m_owner->GetDiagnostics();
-}
-
 RhiImGuiRenderer& VulkanRenderHardwareInterface::GetImGuiRenderer() noexcept
 {
 	return *m_imguiBackend;
@@ -638,17 +587,17 @@ std::unique_ptr<RenderBindingSet> VulkanRenderHardwareInterface::CreateBindingSe
 
 std::unique_ptr<RenderBindingLayout> VulkanRenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)
 {
-	return VulkanBindingLayoutCompiler::Compile(*m_rhi, desc);
+	return m_pipelineService != nullptr ? m_pipelineService->CreateBindingLayout(desc) : std::unique_ptr<RenderBindingLayout>{};
 }
 
 std::unique_ptr<RenderPipelineState> VulkanRenderHardwareInterface::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc)
 {
-	return std::make_unique<VulkanPipelineState>(*m_rhi, desc);
+	return m_pipelineService != nullptr ? m_pipelineService->CreateGraphicsPipelineState(desc) : std::unique_ptr<RenderPipelineState>{};
 }
 
 std::unique_ptr<RenderPipelineState> VulkanRenderHardwareInterface::CreateComputePipelineState(const ComputePipelineStateDesc& desc)
 {
-	return std::make_unique<VulkanPipelineState>(*m_rhi, desc);
+	return m_pipelineService != nullptr ? m_pipelineService->CreateComputePipelineState(desc) : std::unique_ptr<RenderPipelineState>{};
 }
 
 void VulkanRenderHardwareInterface::BindGlobalDescriptorState(RenderCommandList&) const noexcept {}
@@ -749,19 +698,9 @@ RhiViewport VulkanRenderHardwareInterface::GetBackBufferViewport() const noexcep
 	return m_swapChain != nullptr ? m_swapChain->GetDefaultViewport() : RhiViewport{};
 }
 
-RhiViewport VulkanRenderHardwareInterface::PresentationService::GetBackBufferViewport() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetBackBufferViewport() : RhiViewport{};
-}
-
 RhiRect VulkanRenderHardwareInterface::GetBackBufferScissorRect() const noexcept
 {
 	return m_swapChain != nullptr ? m_swapChain->GetDefaultScissorRect() : RhiRect{};
-}
-
-RhiRect VulkanRenderHardwareInterface::PresentationService::GetBackBufferScissorRect() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetBackBufferScissorRect() : RhiRect{};
 }
 
 RhiCpuDescriptorHandle VulkanRenderHardwareInterface::GetBackBufferRenderTargetView() const noexcept
@@ -769,19 +708,9 @@ RhiCpuDescriptorHandle VulkanRenderHardwareInterface::GetBackBufferRenderTargetV
 	return GetResourceViewCpuHandle(GetCurrentBackBufferViewHandle());
 }
 
-RhiCpuDescriptorHandle VulkanRenderHardwareInterface::PresentationService::GetBackBufferRenderTargetView() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetBackBufferRenderTargetView() : RhiCpuDescriptorHandle{};
-}
-
 NativeResourceHandle VulkanRenderHardwareInterface::GetBackBufferResource() const noexcept
 {
 	return m_swapChain != nullptr ? m_swapChain->GetCurrentBackBufferResource() : NativeResourceHandle{};
-}
-
-NativeResourceHandle VulkanRenderHardwareInterface::PresentationService::GetBackBufferResource() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetBackBufferResource() : NativeResourceHandle{};
 }
 
 std::unique_ptr<Texture> VulkanRenderHardwareInterface::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
@@ -1196,12 +1125,6 @@ std::uint64_t VulkanRenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescrip
 	return m_imguiBackend->GetTextureId(imageView);
 }
 
-std::uint64_t VulkanRenderHardwareInterface::PresentationService::ResolveImGuiTextureId(
-    RhiGpuDescriptorHandle shaderResourceView) noexcept
-{
-	return m_owner != nullptr ? m_owner->ResolveImGuiTextureId(shaderResourceView) : 0;
-}
-
 bool VulkanRenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle) const noexcept
 {
 	return false;
@@ -1213,25 +1136,9 @@ void VulkanRenderHardwareInterface::BeginPresentRenderPass(const float clearColo
 	BeginCurrentBackBufferRendering(clearColor != nullptr ? clearColor : defaultClearColor, true);
 }
 
-void VulkanRenderHardwareInterface::PresentationService::BeginPresentRenderPass(const float clearColor[4]) noexcept
-{
-	if (m_owner != nullptr)
-	{
-		m_owner->BeginPresentRenderPass(clearColor);
-	}
-}
-
 void VulkanRenderHardwareInterface::BeginPresentOverlayPass() noexcept
 {
 	BeginCurrentBackBufferRendering(nullptr, false);
-}
-
-void VulkanRenderHardwareInterface::PresentationService::BeginPresentOverlayPass() noexcept
-{
-	if (m_owner != nullptr)
-	{
-		m_owner->BeginPresentOverlayPass();
-	}
 }
 
 void VulkanRenderHardwareInterface::EndPresentRenderPass() noexcept
@@ -1239,22 +1146,9 @@ void VulkanRenderHardwareInterface::EndPresentRenderPass() noexcept
 	EndCurrentBackBufferRendering();
 }
 
-void VulkanRenderHardwareInterface::PresentationService::EndPresentRenderPass() noexcept
-{
-	if (m_owner != nullptr)
-	{
-		m_owner->EndPresentRenderPass();
-	}
-}
-
 PixelFormat VulkanRenderHardwareInterface::GetPresentColorFormat() const noexcept
 {
 	return m_swapChain != nullptr ? m_swapChain->GetBackBufferFormat() : PixelFormat::Unknown;
-}
-
-PixelFormat VulkanRenderHardwareInterface::PresentationService::GetPresentColorFormat() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetPresentColorFormat() : PixelFormat::Unknown;
 }
 
 VkInstance VulkanRenderHardwareInterface::GetVulkanInstance() const noexcept
