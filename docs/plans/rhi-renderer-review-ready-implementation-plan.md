@@ -2323,6 +2323,8 @@ Code references:
 - `Engine/RHI/Private/Vulkan/Memory`
 - `Engine/RHI/Private/D3D12/Pipeline`
 - `Engine/RHI/Private/Vulkan/Pipeline`
+- `Engine/RHI/Private/D3D12/RayTracing`
+- `Engine/RHI/Private/Vulkan/RayTracing`
 - `Engine/RHI/Private/D3D12/Resources`
 - `Engine/RHI/Private/Vulkan/Resources`
 
@@ -2372,6 +2374,17 @@ Acceptance:
 Validation:
 
 - Include in Stage 20 full backend validation.
+
+Stage 19 progress evidence:
+
+| Item | Evidence |
+| --- | --- |
+| Status | Started. |
+| Extracted service slice | Ray tracing prebuild queries, scratch/result AS buffer creation, and instance-buffer creation now live in `D3D12RayTracingServices` and `VulkanRayTracingServices`. |
+| Facade shape | D3D12/Vulkan root facades compose the ray tracing services and keep thin forwarding methods only for the existing public `RenderHardwareInterface` API. |
+| Symmetry | Both backends now have sibling `RayTracing` folders and matching service class names/responsibilities. |
+| Validation | `ShowcaseEditor` built in `build/windows-vs2026-stage5`; `architecture_boundary_check` passed with only documented provider exceptions. |
+| Remaining risk | Command, descriptor, memory, pipeline, resource, presentation/UI, and diagnostics implementations still need deeper service slimming; Stage 20 owns runtime D3D12/Vulkan RT parity smoke. |
 
 ## Stage 20 - Validation Milestone D: Full Renderer/RHI Backend Parity
 

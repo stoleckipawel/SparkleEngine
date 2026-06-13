@@ -1,6 +1,6 @@
 # RHI Contract Map
 
-Status: Stage 7 first service extraction slice
+Status: Stage 19 backend ray tracing service extraction slice
 Date: 2026-06-12
 Last synchronized: 2026-06-13
 
@@ -110,10 +110,12 @@ Service access rule: backend root facades must not inherit from multiple service
 
 Stage 6 rule: every public `RenderHardwareInterface` method has exactly one primary service owner. Secondary users may exist, but primary ownership cannot be split. New public methods are forbidden unless this table is updated in the same change.
 
-Backend implementation files for every row are the root backend facades unless the service column names a narrower folder:
+Backend implementation files for every row are the root backend facades unless the service column names a narrower folder. Stage 19 started this cleanup by moving backend ray tracing prebuild/resource work into symmetric service-owned implementation files while preserving root facade forwarding for the public `RenderHardwareInterface` API:
 
 - D3D12 root: [D3D12RenderHardwareInterface.h](../../Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.h), [D3D12RenderHardwareInterface.cpp](../../Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp)
 - Vulkan root: [VulkanRenderHardwareInterface.h](../../Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.h), [VulkanRenderHardwareInterface.cpp](../../Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.cpp)
+- D3D12 ray tracing service: [D3D12RayTracingServices.h](../../Engine/RHI/Private/D3D12/RayTracing/D3D12RayTracingServices.h), [D3D12RayTracingServices.cpp](../../Engine/RHI/Private/D3D12/RayTracing/D3D12RayTracingServices.cpp)
+- Vulkan ray tracing service: [VulkanRayTracingServices.h](../../Engine/RHI/Private/Vulkan/RayTracing/VulkanRayTracingServices.h), [VulkanRayTracingServices.cpp](../../Engine/RHI/Private/Vulkan/RayTracing/VulkanRayTracingServices.cpp)
 
 | Method | Primary service owner | Caller modules / consumers | Backend implementation files | Extraction disposition |
 | --- | --- | --- | --- | --- |
@@ -131,7 +133,7 @@ Backend implementation files for every row are the root backend facades unless t
 | `UpgradePresentationInterface` | Presentation service | Renderer/host presentation setup. | D3D12/Vulkan root and swap chain files. | Move to presentation bridge; this is not a general device method. |
 | `CaptureTextureToBmp` | Capture/readback service | Application smoke/editor validation. | D3D12/Vulkan root; target backend capture/readback service. | Extract in Stage 8; root method should become validation request/result API or disappear. |
 | `GetGraphicsCommandList` | Command queue/list service | Frame graph execution, pass execution, renderer command context. | D3D12/Vulkan root and Commands folders. | Extract to command service; future worker recording must request command batches, not global lists. |
-| `GetRayTracingCapabilities` | Ray tracing service | Renderer ray tracing capability report. | D3D12/Vulkan root and ray tracing feature query files. | Move with RT service/capability report; keep API-neutral. |
+| `GetRayTracingCapabilities` | Ray tracing service | Renderer ray tracing capability report. | D3D12/Vulkan root delegates to `D3D12/RayTracing/D3D12RayTracingServices.*` and `Vulkan/RayTracing/VulkanRayTracingServices.*`; device feature query remains in backend device files. | Stage 19 extracted backend service ownership; root shim remains until public service access is introduced. |
 | `GetDiagnostics` | Diagnostics service | Renderer diagnostics, Application smoke validation. | D3D12/Vulkan root and Diagnostics folders. | Extract to diagnostics service; non-const/const overloads share one owner. |
 | `CreateBindingSet` | Descriptors/views service | Renderer pass binder, material/texture binding. | D3D12/Vulkan root and Descriptors/Pipeline folders. | Extract to descriptor/binding service; not pipeline-owned even when used by pipeline runtime. |
 | `CreateBindingLayout` | Pipelines/binding layouts service | Renderer pipeline runtime, ShaderCompiler/reflection validation consumers. | D3D12/Vulkan root and Pipeline folders. | Extract with pipeline layout service; keep descriptor allocation separate. |
@@ -165,11 +167,11 @@ Backend implementation files for every row are the root backend facades unless t
 | `ReleaseOwnedResource` | Resources service | Frame graph, mesh/texture/ray tracing resource lifetime. | D3D12/Vulkan root and Resources/Memory folders. | Extract to resource lifetime service with diagnostics. |
 | `GetNativeResource` | Interop service | Frame graph, upscaler/provider interop, validation/capture. | D3D12/Vulkan root and Resources folders. | Keep as explicit interop query; require state/lifetime metadata at call sites. |
 | `GetResourceGpuVirtualAddress` | Resources service | Ray tracing builders, pass binding, mesh/skin buffers. | D3D12/Vulkan root and Resources folders. | Keep in resource service; GPU address is typed RHI data, not native escape. |
-| `GetBottomLevelAccelerationStructurePrebuildInfo` | Ray tracing service | RayTracingBlasCache. | D3D12/Vulkan root and ray tracing/resource files. | Extract to RT service. |
-| `GetTopLevelAccelerationStructurePrebuildInfo` | Ray tracing service | RayTracingTlasBuilder. | D3D12/Vulkan root and ray tracing/resource files. | Extract to RT service. |
-| `CreateRayTracingScratchBuffer` | Ray tracing service | RayTracingBlasCache, RayTracingTlasBuilder. | D3D12/Vulkan root and Resources/RayTracing files. | Extract to RT resource service. |
-| `CreateRayTracingAccelerationStructureBuffer` | Ray tracing service | Renderer ray tracing scene. | D3D12/Vulkan root and Resources/RayTracing files. | Extract to RT resource service. |
-| `CreateRayTracingInstanceBuffer` | Ray tracing service | RayTracingTlasBuilder. | D3D12/Vulkan root and Resources/RayTracing files. | Extract to RT resource/upload service. |
+| `GetBottomLevelAccelerationStructurePrebuildInfo` | Ray tracing service | RayTracingBlasCache. | D3D12/Vulkan root delegates to backend `RayTracing/*RayTracingServices.*`. | Stage 19 extracted to RT service; Stage 20 validates parity. |
+| `GetTopLevelAccelerationStructurePrebuildInfo` | Ray tracing service | RayTracingTlasBuilder. | D3D12/Vulkan root delegates to backend `RayTracing/*RayTracingServices.*`. | Stage 19 extracted to RT service; Stage 20 validates parity. |
+| `CreateRayTracingScratchBuffer` | Ray tracing service | RayTracingBlasCache, RayTracingTlasBuilder. | D3D12/Vulkan root delegates to backend `RayTracing/*RayTracingServices.*`. | Stage 19 extracted to RT resource service; Stage 20 validates parity. |
+| `CreateRayTracingAccelerationStructureBuffer` | Ray tracing service | Renderer ray tracing scene. | D3D12/Vulkan root delegates to backend `RayTracing/*RayTracingServices.*`. | Stage 19 extracted to RT resource service; Stage 20 validates parity. |
+| `CreateRayTracingInstanceBuffer` | Ray tracing service | RayTracingTlasBuilder. | D3D12/Vulkan root delegates to backend `RayTracing/*RayTracingServices.*`. | Stage 19 extracted to RT resource/upload service; Stage 20 validates parity. |
 | `GetTextureAllocationInfo` | Memory/transient service | Frame graph transient allocator. | D3D12/Vulkan root and Memory/Textures folders. | Extract to memory/resource planning service. |
 | `GetBufferAllocationInfo` | Memory/transient service | Frame graph transient allocator. | D3D12/Vulkan root and Memory/Resources folders. | Extract to memory/resource planning service. |
 | `CreateTransientMemoryBlock` | Memory/transient service | Frame graph transient allocator. | D3D12/Vulkan root and Memory folders. | Extract to transient memory service with frame/fence owner. |
@@ -205,7 +207,7 @@ Strict extraction order is based on caller pressure and risk, not line-count aes
 | 9 | Memory/transient service | 6 | Depends on resource service shape and frame graph transient planning. |
 | 10 | Pipelines/binding layouts service | 4 | Pair with Stage 16 PSO key/runtime work so extraction follows actual pipeline identity cleanup. |
 | 11 | Constants/uploads service | 6 | Contains renderer-convenience smells; extract only after deciding which per-frame/per-object packing belongs in Renderer. |
-| 12 | Ray tracing service | 6 | Extract with Stage 18 RT ownership so AS prebuild/build resources stay aligned with renderer RT scene policy. |
+| 12 | Ray tracing service | 6 | Stage 19 extracted D3D12/Vulkan backend prebuild/resource work into symmetric ray tracing service objects; root forwarding remains a compatibility shim until public RT service access is designed. |
 | 13 | UI service | 1 | Keep tiny, backend-owned, and presentation-adjacent; do not promote it into general renderer policy. |
 
 Categories above 10 methods require special cleanup proposals:
@@ -279,6 +281,7 @@ The D3D12 and Vulkan folders already have similar service groupings. Stage 19 sh
 | Diagnostics | [D3D12/Diagnostics](../../Engine/RHI/Private/D3D12/Diagnostics) | [Vulkan/Diagnostics](../../Engine/RHI/Private/Vulkan/Diagnostics) | Own debug layers, markers, object names, and backend messages. |
 | Memory | [D3D12/Memory](../../Engine/RHI/Private/D3D12/Memory) | [Vulkan/Memory](../../Engine/RHI/Private/Vulkan/Memory) | Own allocation strategy, alignment, budgets, and external-memory constraints. |
 | Pipeline | [D3D12/Pipeline](../../Engine/RHI/Private/D3D12/Pipeline) | [Vulkan/Pipeline](../../Engine/RHI/Private/Vulkan/Pipeline) | Consume normalized descriptors and reflection; create native PSO/layout objects. |
+| Ray tracing | [D3D12/RayTracing](../../Engine/RHI/Private/D3D12/RayTracing) | [Vulkan/RayTracing](../../Engine/RHI/Private/Vulkan/RayTracing) | Own backend AS prebuild queries, scratch/result/instance buffer creation, and API-specific AS resource metadata without renderer shadow policy. |
 | Resources/textures | [D3D12/Resources](../../Engine/RHI/Private/D3D12/Resources), [D3D12/Textures](../../Engine/RHI/Private/D3D12/Textures) | [Vulkan/Resources](../../Engine/RHI/Private/Vulkan/Resources), [Vulkan/Textures](../../Engine/RHI/Private/Vulkan/Textures) | Own native resource/image/buffer/view creation and upload paths. |
 | Samplers | [D3D12/Samplers](../../Engine/RHI/Private/D3D12/Samplers) | [Vulkan/Samplers](../../Engine/RHI/Private/Vulkan/Samplers) | Map `RhiSamplerDesc` consistently. |
 | Swap chain | [D3D12/SwapChain](../../Engine/RHI/Private/D3D12/SwapChain) | [Vulkan/SwapChain](../../Engine/RHI/Private/Vulkan/SwapChain) | Own back-buffer acquisition, resize, present formats, and presentable state. |

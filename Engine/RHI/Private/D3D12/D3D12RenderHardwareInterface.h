@@ -16,6 +16,7 @@ class D3D12ImGuiBackend;
 class D3D12GpuMemoryAllocator;
 class D3D12RenderCommandList;
 class D3D12Rhi;
+class D3D12RayTracingServices;
 class D3D12SamplerLibrary;
 class D3D12SwapChain;
 class RhiImGuiRenderer;
@@ -282,6 +283,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	CaptureService m_captureService;
 	DiagnosticsService m_diagnosticsService;
 	PresentationService m_presentationService;
+	std::unique_ptr<D3D12RayTracingServices> m_rayTracingServices;
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;

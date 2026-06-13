@@ -48,12 +48,12 @@ Verification snapshot:
 
 | Scope | Files | Coverage result |
 | --- | ---: | --- |
-| `Engine/Renderer` | 241 | Mapped to Renderer private/public/module-support rows, including renderer-owned shader registrations. |
-| `Engine/RHI` | 190 | Mapped to RHI public/common/D3D12/Vulkan/module-support rows. |
+| `Engine/Renderer` | 252 | Mapped to Renderer private/public/module-support rows, including renderer-owned shader registrations. |
+| `Engine/RHI` | 198 | Mapped to RHI public/common/D3D12/Vulkan/module-support rows. |
 | `Engine/Application/Private/Validation` | 3 | Mapped to supporting validation rows. |
 | `Tools/Launcher/SparkleLauncher/Private/Launch/Smoke` | 2 | Mapped to supporting validation rows. |
 | `Tools/Shaders/ShaderCompiler` | 111 | Mapped to shader compiler and cooking rows. |
-| Total tracked files | 547 | 547 mapped. |
+| Total tracked files | 566 | 566 mapped. |
 | Unmapped files | 0 | None. |
 
 Shader-source check:
@@ -81,10 +81,10 @@ Mapping rules:
 | `Engine/RHI/Public/{Bindings,Commands,Config,Core,CVars,Descriptors,Device,Diagnostics,Formats,Interop,Memory,Pipeline,RayTracing,Resources,Samplers,ShaderParameters,Shaders,Textures,UI,Validation}/**` | Matching RHI Public Coverage row. |
 | `Engine/RHI/Private/{Bindings,Config,Core,CVars,Device,Shaders,Validation}/**` | Matching RHI Private Common Coverage row. |
 | `Engine/RHI/Private/D3D12/{D3D12PCH.h,D3D12RenderHardwareInterface.*,D3D12TypeConversions.*}` | D3D12 root facade and type conversions. |
-| `Engine/RHI/Private/D3D12/{Commands,Descriptors,Device,Diagnostics,Memory,Pipeline,Resources,Samplers,SwapChain,ThirdParty,UI}/**` | Matching D3D12 Backend Coverage row. |
+| `Engine/RHI/Private/D3D12/{Commands,Descriptors,Device,Diagnostics,Memory,Pipeline,RayTracing,Resources,Samplers,SwapChain,ThirdParty,UI}/**` | Matching D3D12 Backend Coverage row. |
 | `Engine/RHI/Private/D3D12/Textures/**` | D3D12 `Resources` / `Textures`. |
 | `Engine/RHI/Private/Vulkan/{VulkanIncludes.h,VulkanPCH.h,VulkanRenderHardwareInterface.*,VulkanTypeConversions.*}` | Vulkan root facade, includes, and type conversions. |
-| `Engine/RHI/Private/Vulkan/{Commands,Core,Descriptors,Device,Diagnostics,Memory,Pipeline,Resources,Samplers,SwapChain,UI}/**` | Matching Vulkan Backend Coverage row. |
+| `Engine/RHI/Private/Vulkan/{Commands,Core,Descriptors,Device,Diagnostics,Memory,Pipeline,RayTracing,Resources,Samplers,SwapChain,UI}/**` | Matching Vulkan Backend Coverage row. |
 | `Engine/RHI/Private/Vulkan/Textures/**` | Vulkan `Resources` / `Textures`. |
 | `Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp` | Editor smoke validation surface. |
 | `Engine/Application/Private/Validation/RhiSmokeValidation.*` | Runtime smoke validation surface. |
@@ -189,12 +189,13 @@ These rows were added during the file-level confrontation because module build/s
 
 | Area | Status | Owner layer | Primary risk | Stage / decision question | First validation artifact | Final acceptance evidence |
 | --- | --- | --- | --- | --- | --- | --- |
-| Root facade and type conversions | Needs refactor | D3D12 backend services | Root facade mirrors broad RHI and hides service ownership. | Stage 19, Stage 20 | D3D12 build and service map. | Root facade mostly wires service objects; type conversions are total and tested for public enums/descs. |
+| Root facade and type conversions | Needs refactor | D3D12 backend services | Root facade mirrors broad RHI and hides service ownership; Stage 19 moved ray tracing prebuild/resource work behind a composed backend service while root forwarding remains. | Stage 19, Stage 20 | `ShowcaseEditor` build and service map. | Root facade mostly wires service objects; type conversions are total and tested for public enums/descs. |
 | `Commands` | Needs refactor | D3D12 command service | Command behavior must match RHI semantics and Vulkan parity. | Stage 19, Stage 20 | D3D12 smoke with barrier/draw/dispatch/AS logs. | Commands match RHI semantics for barriers, draw/dispatch, copies, AS builds, and debug markers. |
 | `Descriptors` | Needs refactor | D3D12 descriptor service | Descriptor lifetime/recycling/failure policy needs documentation. | Stage 19, Stage 20 | Descriptor diagnostics. | CPU/GPU descriptor heap policy and recycling are documented and validated. |
 | `Diagnostics` | Needs refactor | D3D12 diagnostics service | Diagnostics are strong but must appear in final evidence. | Stage 10, Stage 20 | D3D12 diagnostic smoke output. | Debug names/events/errors appear in captures and smoke reports. |
 | `Memory` | Needs refactor | D3D12 memory service | Allocation strategy and transient interaction need review evidence. | Stage 19, Stage 20 | D3D12 memory diagnostics. | Heap type mapping, alignment, budgets, and transient interaction are documented. |
 | `Pipeline` | Needs refactor | D3D12 pipeline service | Backend should consume normalized pipeline desc/PSO keys without renderer policy. | Stage 16, Stage 19, Stage 20 | D3D12 PSO key logs. | Root signature/PSO creation is deterministic from common descriptors/reflection. |
+| `RayTracing` | Needs refactor | D3D12 ray tracing service | AS prebuild/resource creation has moved out of the root facade, but runtime camera-motion parity remains unproven. | Stage 18, Stage 19, Stage 20 | `ShowcaseEditor` build after `D3D12RayTracingServices.*`; Stage 20 RT smoke. | D3D12 AS prebuild, scratch/result/instance resources, and AS build commands match API-neutral RHI RT descriptors and renderer RT ownership. |
 | `Resources` / `Textures` | Needs refactor | D3D12 resource service | Constants/upload/resource lifetime should move out of root facade pressure. | Stage 7, Stage 19, Stage 20 | D3D12 resource/capture smoke. | Resource lifetime, state assumptions, upload path, and view creation are documented and validated. |
 | `Samplers` | Needs refactor | D3D12 sampler service | Default sampler set must match Vulkan where possible. | Stage 19, Stage 20 | Sampler parity note. | Default sampler behavior is common or documented as API-specific. |
 | `SwapChain` | Needs refactor | D3D12 presentation service | Presentation states/resize/back-buffer lifetime need explicit contract. | Stage 12, Stage 19, Stage 20 | D3D12 resize/presentation smoke. | Presentation states, resize, back-buffer lifetime, and viewport integration are explicit. |
@@ -205,13 +206,14 @@ These rows were added during the file-level confrontation because module build/s
 
 | Area | Status | Owner layer | Primary risk | Stage / decision question | First validation artifact | Final acceptance evidence |
 | --- | --- | --- | --- | --- | --- | --- |
-| Root facade, includes, type conversions | Needs refactor | Vulkan backend services | Root facade mirrors broad RHI; feature/extension setup is critical for DLSS/RT. | Stage 19, Stage 20 | Vulkan build and service map. | Root facade mostly wires services; feature/extension logs explain optional capabilities. |
+| Root facade, includes, type conversions | Needs refactor | Vulkan backend services | Root facade mirrors broad RHI; Stage 19 moved ray tracing prebuild/resource work behind a composed backend service while root forwarding remains. Feature/extension setup is critical for DLSS/RT. | Stage 19, Stage 20 | `ShowcaseEditor` build and service map. | Root facade mostly wires services; feature/extension logs explain optional capabilities. |
 | `Commands` | Needs refactor | Vulkan command service | Layouts, barriers, descriptors, dynamic rendering, and AS builds are high-risk parity points. | Stage 19, Stage 20 | Vulkan lit/normal/debug smoke logs. | Vulkan commands match RHI semantics and D3D12 captures with diagnosable layouts. |
 | `Core` | Needs refactor | Vulkan core utilities | Result handling should report context for every failed call. | Stage 19, Stage 20 | Vulkan validation/error log. | Failed Vulkan calls include context and result string. |
 | `Descriptors` | Needs refactor | Vulkan descriptor service | Descriptor lifetime/update policy likely affects DLSS/noise/resource binding bugs. | Stage 19, Stage 20 | Vulkan descriptor diagnostics. | Descriptor set/layout lifetime, pool growth, update validation, and future bindless policy are documented. |
 | `Diagnostics` | Needs refactor | Vulkan diagnostics service | Validation warnings must be zero or classified. Stage 10 found runtime present-layout validation errors while editor capture smoke stayed clean. | Stage 10, Stage 12, Stage 19, Stage 20 | Vulkan validation layer smoke output. | Validation warnings are zero in smoke or documented as known exceptions. |
 | `Memory` | Needs refactor | Vulkan memory service | Memory type selection/external memory requirements need explicit docs. | Stage 19, Stage 20 | Vulkan memory diagnostics. | Memory type selection, alignment, budgets, transient compatibility, and external memory requirements are documented. |
 | `Pipeline` | Needs refactor | Vulkan pipeline service | Winding/cull/depth/viewport mapping is a critical parity point. | Stage 16, Stage 19, Stage 20 | Vulkan PSO key and visual parity logs. | Pipeline layout/PSO creation consumes normalized descs and explicitly maps conventions. |
+| `RayTracing` | Needs refactor | Vulkan ray tracing service | AS prebuild/resource creation has moved out of the root facade, but runtime camera-motion parity remains unproven. | Stage 18, Stage 19, Stage 20 | `ShowcaseEditor` build after `VulkanRayTracingServices.*`; Stage 20 RT smoke. | Vulkan AS prebuild, scratch/result/instance resources, and AS build commands match API-neutral RHI RT descriptors and renderer RT ownership. |
 | `Resources` / `Textures` | Needs refactor | Vulkan resource service | Image/view/layout/subresource and native view info need formal ownership. | Stage 7, Stage 9, Stage 19, Stage 20 | Vulkan capture/DLSS resource logs. | Image/view/layout/subresource ownership is documented; native view info is deterministic. |
 | `Samplers` | Needs refactor | Vulkan sampler service | Default sampler behavior must match common desc policy. | Stage 19, Stage 20 | Sampler parity note. | Vulkan sampler library matches common desc behavior or documents differences. |
 | `SwapChain` | Needs refactor | Vulkan presentation service | Stage 15 fixed the runtime smoke present-layout validation error for allocator-untracked acquired swapchain images. Deeper presentation service slimming and documentation remain Stage 19/20. | Stage 12, Stage 15, Stage 19, Stage 20 | Vulkan resize/presentation smoke. | Present layout, resize, acquisition, and back-buffer import into frame graph are documented. |

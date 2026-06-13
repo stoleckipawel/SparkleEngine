@@ -13,6 +13,7 @@ class VulkanDescriptorManager;
 class VulkanGpuMemoryAllocator;
 struct VulkanGpuAllocationRecord;
 class VulkanImGuiBackend;
+class VulkanRayTracingServices;
 class VulkanRenderCommandList;
 class VulkanRhi;
 class VulkanSamplerLibrary;
@@ -245,6 +246,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	CaptureService m_captureService;
 	DiagnosticsService m_diagnosticsService;
 	PresentationService m_presentationService;
+	std::unique_ptr<VulkanRayTracingServices> m_rayTracingServices;
 	VulkanRhi* m_rhi = nullptr;
 	VulkanSwapChain* m_swapChain = nullptr;
 	VulkanCommandContext* m_commandContext = nullptr;

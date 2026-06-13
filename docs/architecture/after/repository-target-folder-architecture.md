@@ -108,6 +108,7 @@ Engine/
         Diagnostics/
         Memory/
         Pipeline/
+        RayTracing/
         Resources/
         SwapChain/
         Textures/
@@ -118,6 +119,7 @@ Engine/
         Diagnostics/
         Memory/
         Pipeline/
+        RayTracing/
         Resources/
         SwapChain/
         Textures/
