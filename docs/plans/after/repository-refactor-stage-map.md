@@ -32,11 +32,11 @@ Stage status tracks implementation acceptance, not merely whether planning docs 
 
 | Stage | Status | Current evidence | Remaining before next status update |
 | --- | --- | --- | --- |
-| 1 | Fully completed | Rendering coverage baseline and repository coverage docs exist and are linked. | Reopen only if a new durable root appears without coverage. |
-| 2 | Fully completed | Glossary, rendering map, RHI, frame graph, pass authoring, pipeline runtime, ray tracing, whole-repo, and folder architecture docs are linked. | Reopen only if vocabulary or maps drift from code. |
+| 1 | Fully completed | Rendering coverage baseline has a Stage 1 completion packet, 547 tracked files mapped, 0 unmapped files, and whole-repository coverage delegated to `repository-coverage-status.md`. | Reopen only if a new durable root appears without coverage. |
+| 2 | Fully completed | Target system design index has a Stage 2 completion packet; glossary, rendering map, RHI, frame graph, pass authoring, pipeline runtime, ray tracing, threading-readiness, whole-repo, and folder architecture docs are linked. | Reopen only if vocabulary, maps, or ownership contracts drift from code. |
 | 3 | Fully completed | `architecture_boundary_check` exists; direct CMake script passes with counted Stage 8/9 transitional exceptions. | Stage 28 expands checks repo-wide. |
-| 4 | Almost finished | Renderer shader registrations are above RHI, and boundary checks show no `RHI -> Renderer/Private` violation. | Stage 5 must validate shader enumeration/build surface and record final evidence. |
-| 5 | Not started | Validation target and acceptance path are documented. | Run boundary, shader compiler, package enumeration, and affected build checks. |
+| 4 | Fully completed | Pass authoring contract has a Stage 4 completion packet; renderer shader registrations are above RHI; `SparkleRendererShaderRegistrations` is the narrow ShaderCompiler handoff; boundary checks show no `RHI -> Renderer/Private` violation. | Stage 5 validates executable package enumeration and smallest affected build surface. |
+| 5 | Fully completed | Boundary check passed; VS2026 configure passed; `ShaderCompiler` and `SparkleLauncher` built; `ShaderCompiler list-shaders --validate` reported 17 valid typed registrations; coverage status has Stage 5 evidence. | Install/discover `clang-format` to enable optional `clang_format_check`; Stage 17 removes remaining duplicate pass registration metadata. |
 | 6 | Not started | RHI contract map defines method ownership categories. | Start RHI method audit and owner table implementation. |
 | 7 | Not started | RHI service/folder target is documented. | Extract first RHI services with caller evidence. |
 | 8 | Not started | Stage 8 D3D12 Application validation exception is counted. | Move backend-native capture/readback behind RHI/backend services and remove exception. |

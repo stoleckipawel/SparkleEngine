@@ -220,6 +220,24 @@ Forbidden shortcuts:
 | Central traits file grows with pass count. | [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h) specializes each pass. | Stage 16, Stage 17 |
 | Adding a pass requires knowing too much about cook/runtime/PSO details. | Pass code, traits, shader registration, cook tooling, and binding validation are separate. | Stage 16, Stage 17 |
 
+## Stage 4 Completion Packet
+
+| Field | Evidence |
+| --- | --- |
+| Stage / checkpoint | Stage 4 - Move Renderer Shader Registration Out Of RHI. Full build and executable package enumeration remain Stage 5 validation work. |
+| Status | Fully completed for ownership movement. Reopen only if `Engine/RHI` regains renderer pass registrations, `Renderer/Private` includes, or ordinary renderer pass additions require RHI edits. |
+| Target docs opened | `docs/architecture/pass-authoring-contract.md`, `docs/architecture/pipeline-runtime-contract.md`, `docs/architecture/tooling-pipeline-contract.md`, `docs/architecture/rhi-contract-map.md`, `docs/architecture/after/repository-target-folder-architecture.md`, `docs/architecture/after/repository-threading-readiness.md`, `docs/plans/rhi-renderer-review-ready-implementation-plan.md`. |
+| Contract surfaces touched | Renderer-owned shader registration target, RHI generic shader authoring primitives, ShaderCompiler registration bootstrap, pass package metadata, and boundary-check evidence. |
+| Ownership proof | `Engine/RHI/Private/Shaders/BuiltinGlobalShaders.cpp` registers only RHI generic hello/test shaders. Renderer pass registrations live under `Engine/Renderer/ShaderRegistrations` and are pulled through `RegisterRendererGlobalShaders()`. |
+| DirectLighting proof | `Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp` owns the DirectLighting shader package and can include renderer-private `RayTracedShadowUniformData.h`; `Engine/RHI` has no `Renderer/Private` include hits. |
+| ShaderCompiler handoff | `Tools/Shaders/ShaderCompiler/Source/main.cpp` calls `RegisterRendererGlobalShaders()`, and `Tools/Shaders/ShaderCompiler/CMakeLists.txt` links `SparkleRendererShaderRegistrations` plus `SparkleRHI`, not the full renderer runtime. |
+| Package identity preserved | Static registration still declares the expected renderer package ids: `GBuffer`, `DirectLighting`, `IndirectLighting`, `LightingComposite`, `Sky`, `VisualizeBuffers`, and `ComputeClear`. |
+| Refactor disposition | Keep and refine `SparkleRendererShaderRegistrations` as a narrow Stage 4 migration target. Replace the duplicate registration/pass-runtime metadata with `PassCatalog`/`ShaderContracts` in Stage 17. |
+| Complexity right to exist | The narrow registration target earns its complexity because it lets ShaderCompiler enumerate renderer packages without linking full renderer runtime behavior. It must not become a second permanent pass registry after Stage 17. |
+| Data transfer contract | Renderer pass metadata transfers through renderer-owned registration APIs and the `SparkleRendererShaderRegistrations` target. RHI receives only generic cooked shader package, reflection, binding layout, and runtime primitives. |
+| Threading readiness handoff | Package registration remains static metadata. Future parallel shader cook jobs should consume immutable pass catalog/package manifests rather than live renderer runtime objects. |
+| Validation | Static checks on 2026-06-13: `rg "Renderer/Private" Engine/RHI` returned no matches; `ArchitectureBoundaryCheck.cmake` passed with no new violations; RHI `RegisterBuiltinGlobalShaders()` contains no renderer pass calls; ShaderCompiler CMake links the narrow registration target. |
+
 ## Acceptance Evidence
 
 The pass authoring contract is accepted when:

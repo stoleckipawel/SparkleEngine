@@ -94,7 +94,10 @@ Result:
 
 - No new architecture boundary violations.
 - Three transitional exception groups reported.
-- Full target build validation was not possible in this shell because Visual Studio and C/C++ compilers were not discoverable.
+- Stage 5 build validation used a fresh VS2026 build tree: `cmake -S . -B build/windows-vs2026-stage5 -G "Visual Studio 18 2026" -A x64`.
+- `ShaderCompiler` and `SparkleLauncher` built with `DevelopmentEditor`.
+- `ShaderCompiler list-shaders --validate` reported 17 valid typed shader registrations.
+- `clang_format_check` was not generated because `clang-format` was not found during configure.
 
 ## Change Rules
 

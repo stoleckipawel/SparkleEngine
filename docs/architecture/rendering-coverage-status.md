@@ -36,7 +36,7 @@ Update rule:
 
 ## File-Level Coverage Verification
 
-The coverage map was confronted against the repository on 2026-06-12 instead of relying only on the prose audit.
+The coverage map was confronted against the repository on 2026-06-12 instead of relying only on the prose audit, then reconfirmed on 2026-06-13 before accepting Stage 1.
 
 Inventory command:
 
@@ -255,12 +255,47 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Cooked texture runtime asset owner | Prevents asset import/cook/runtime upload responsibilities from blurring. | Stage 13, Stage 19 |
 | RHI UI/presentation bridge owner | Prevents ImGui/presentation helpers from becoming renderer/application internals. | Stage 7, Stage 12, Stage 19 |
 
+## Stage 1 Completion Packet
+
+| Field | Evidence |
+| --- | --- |
+| Stage / checkpoint | Stage 1 - Baseline Status And Evidence Freeze. No split checkpoint was required because this stage is documentation-only. |
+| Status | Fully completed. Reopen only if a new durable Renderer/RHI, validation smoke, launcher smoke, or shader compiler/cooking source root appears without a coverage row. |
+| Target docs opened | `docs/plans/rhi-renderer-review-ready-implementation-plan.md`, `docs/plans/rhi-renderer-architecture-review.md`, `docs/plans/architecture-review-acceptance-rubric.md`, `docs/architecture/rendering-coverage-status.md`, `docs/architecture/repository-coverage-status.md`, `docs/architecture/before/repository-current-state.md`, `docs/architecture/after/repository-target-architecture.md`, `docs/architecture/after/repository-threading-readiness.md`, `docs/plans/implementation/stage-prompt-packets.md`, `docs/plans/tutor/stage-learning-guide.md`. |
+| Contract surfaces touched | Documentation state only: rendering coverage, whole-repository coverage delegation, evidence tracking, open decisions, and future validation artifacts. |
+| Refactor disposition | Keep and refine the evidence tables. Do not move, rename, or rewrite runtime/tool source during Stage 1. |
+| Complexity right to exist | This table earns its complexity by preventing forgotten subsystems: every row names owner layer, risk, consumer stage, validation artifact, and final acceptance evidence. Duplicate prose remains delegated to the architecture review and whole-repository coverage map. |
+| Data transfer contract | Architecture state is transferred through this file and linked whole-repository docs. No source dependencies, hidden ownership, or runtime data paths are created by this stage. |
+| Threading readiness handoff | Rows keep future threading-sensitive owners visible: frame orchestration, command recording, frame graph, resources, shader cooking, launcher smoke orchestration, and backend services feed Stage 30's immutable handoff and mutable-owner audit. |
+| Acceptance proof | All rows from `Whole-Codebase Coverage Audit` are represented here or delegated to `repository-coverage-status.md`; every `Needs refactor` row links to a later stage; every `Needs design decision` row has an explicit question; file inventory is 547 tracked files with 0 unmapped files. |
+| Validation | Re-ran the inventory command listed above on 2026-06-13. Docs-only stage; no build or runtime smoke was required. |
+
 ## Stage 1 Acceptance Check
 
 - Every coverage row from `Whole-Codebase Coverage Audit` has a status and owner.
-- File-level confrontation covers 545 tracked files across Renderer, RHI, validation smoke, launcher smoke, and shader compiler/cooking support.
+- File-level confrontation covers 547 tracked files across Renderer, RHI, validation smoke, launcher smoke, and shader compiler/cooking support.
 - Current unmapped file count is 0.
 - Every `Needs refactor` row links to one or more later stages.
 - Every `Needs design decision` row includes an explicit question.
 - Supporting validation and shader compiler/cooking surfaces are tracked because later acceptance depends on them.
 - No runtime code was changed for this stage.
+
+## Stage 5 Validation Milestone A
+
+| Field | Evidence |
+| --- | --- |
+| Stage / checkpoint | Stage 5 - Validation Milestone A: Boundaries And Shader Registration. |
+| Status | Fully completed for the first boundary/shader-registration validation slice. |
+| Target docs opened | `docs/architecture/architecture-boundary-guardrails.md`, `docs/architecture/pass-authoring-contract.md`, `docs/architecture/pipeline-runtime-contract.md`, `docs/architecture/tooling-pipeline-contract.md`, `docs/architecture/rendering-coverage-status.md`, `docs/architecture/after/repository-threading-readiness.md`, `docs/plans/rhi-renderer-review-ready-implementation-plan.md`. |
+| External validation basis | NVRHI tutorial validation layer mindset, Donut Samples executable-evidence mindset, and Vulkan validation-layer style of explicit diagnostic gates. |
+| Boundary command | `cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake` passed with no new violations. Remaining transitional exceptions are Stage 9 `Renderer`/Streamline Vulkan interop and Stage 8 Application D3D12 capture/readback. |
+| RHI-to-Renderer include check | `rg "Renderer/Private" Engine/RHI` returned no matches. There are no permanent RHI-to-Renderer include exceptions. |
+| Configure command | `cmake -S . -B build/windows-vs2026-stage5 -G "Visual Studio 18 2026" -A x64` passed. CMake selected MSVC 19.51.36247.0, Windows SDK 10.0.26100.0, Qt `C:/Qt/6.11.1/msvc2022_64`, and wrote the generated tree to `build/windows-vs2026-stage5`. Configure emitted third-party/dependency developer warnings for Assimp `CMP0175` and FetchContent `CMP0169`; no Sparkle configure failure. |
+| ShaderCompiler build | `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target ShaderCompiler -- /nologo /v:minimal /m:1` passed and produced `artifacts/dev/tools/ShaderCompiler/DevelopmentEditor/ShaderCompiler.exe`. |
+| Renderer registration build surface | The `ShaderCompiler` target built `SparkleRendererShaderRegistrations.lib`, proving the narrow registration handoff compiles without linking the full renderer runtime. |
+| Launcher/editor-facing build surface | `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target SparkleLauncher -- /nologo /v:minimal /m:1` passed and produced `artifacts/dev/launcher/DevelopmentEditor/SparkleLauncher.exe`. Deploy step warned that `VCINSTALLDIR` was not set while deploying runtime dependencies, but the target build completed. |
+| Shader package enumeration | `ShaderCompiler.exe list-shaders --validate` reported `17 typed shader registration(s) valid`. `ShaderCompiler.exe list-shaders` listed RHI generic packages `HelloTriangle`, `HelloInlineRayQuery`, `HelloRayTracingLibrary` and renderer packages `GBuffer`, `DirectLighting`, `IndirectLighting`, `LightingComposite`, `Sky`, `VisualizeBuffers`, and `ComputeClear`. |
+| Format target | `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target clang_format_check -- /nologo /v:minimal` could not run because `clang-format` was not found during configure (`CLANG_FORMAT_EXE-NOTFOUND`), so CMake did not generate `clang_format_check.vcxproj`. |
+| Data transfer contract | Validation evidence transfers through this status row and command outputs. ShaderCompiler consumes renderer package registration through `SparkleRendererShaderRegistrations`; RHI receives only generic cooked shader package/reflection/layout/runtime primitives. |
+| Threading readiness handoff | Package enumeration evidence is read-only/static. Future parallel shader jobs should consume immutable package manifests/catalog records and emit deterministic reports rather than querying live renderer runtime state. |
+| Remaining risk | Build validation used a fresh VS2026 tree because the existing `build` cache targets `Visual Studio 17 2022`, which is not available in this shell. Stage 17 still owns duplicate pass registration versus runtime package metadata cleanup. |
