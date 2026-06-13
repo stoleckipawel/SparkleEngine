@@ -55,7 +55,7 @@ namespace
 	    void* bridgeUserData)
 	{
 		RenderHardwareInterface* const hardware = static_cast<RenderHardwareInterface*>(bridgeUserData);
-		return hardware != nullptr && hardware->UpgradePresentationInterface(callback, callbackUserData);
+		return hardware != nullptr && hardware->GetInteropService().UpgradePresentationInterface(callback, callbackUserData);
 	}
 }
 
@@ -149,7 +149,8 @@ std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle
 	}
 
 	const FrameGraphResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
-	return GetRenderHardwareInterface().ResolveImGuiTextureId(m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}));
+	return GetRenderHardwareInterface().GetPresentationService().ResolveImGuiTextureId(
+	    m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}));
 }
 
 NativeResourceHandle Renderer::ResolveRenderProductResource(RenderProductHandle handle) const noexcept
@@ -209,7 +210,7 @@ void Renderer::InitializeCoreSystems() noexcept
 		m_gpuMeshCache = std::make_unique<GPUMeshCache>(GetRenderHardwareInterface());
 	}
 
-	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnostics();
+	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnosticsService().GetDiagnostics();
 	const RayTracingCapabilityReport rayTracingCapabilities =
 	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
 	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
@@ -218,7 +219,10 @@ void Renderer::InitializeCoreSystems() noexcept
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
 	m_upscalerSubsystem->Initialize(
 	    renderHardware.GetCapabilities(),
-	    renderHardware.GetDeviceHandle(),
+	    renderHardware.GetInteropService().GetDeviceQueueInterop(
+	        RhiNativeInteropRequest{
+	            .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
+	            .Reason = "Renderer upscaler provider initialization"}),
 	    UpscalerPresentationBridge{
 	        .UpgradePresentationInterface = &UpgradePresentationInterfaceThroughRhi,
 	        .UserData = &renderHardware});
@@ -518,7 +522,7 @@ void Renderer::RecordFrame() noexcept
 	    .Subsystem = m_upscalerSubsystem.get()};
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
-	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
+	    .BackendDiagnostics = renderHardwareInterface.GetDiagnosticsService().GetDiagnostics(),
 	    .RuntimeManager = *m_pipelineStateManager,
 	    .Textures = m_textureManager.get(),
 	    .RayTracing = &rayTracingPassServices,

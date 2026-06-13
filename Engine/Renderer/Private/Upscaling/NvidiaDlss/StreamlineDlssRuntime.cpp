@@ -311,7 +311,7 @@ namespace
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
 			}
-			if (isD3D12 && !desc.NativeDevice)
+			if (isD3D12 && !desc.NativeInterop.Device)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
 				m_diagnostics.FailureReason = "D3D12 native device handle is unavailable.";
@@ -386,7 +386,7 @@ namespace
 
 			if (isD3D12)
 			{
-				result = slSetD3DDevice(desc.NativeDevice.Value);
+				result = slSetD3DDevice(desc.NativeInterop.Device.Value);
 				if (result != sl::Result::eOk)
 				{
 					m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;

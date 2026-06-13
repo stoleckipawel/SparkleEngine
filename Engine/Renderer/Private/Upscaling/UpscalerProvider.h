@@ -3,6 +3,7 @@
 #include "Upscaling/UpscalerInputContract.h"
 #include "Viewport/ViewportContracts.h"
 #include "RHI/Public/Core/RhiBackendApi.h"
+#include "RHI/Public/Interop/RhiInteropService.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 
 #include <cstdint>
@@ -98,7 +99,7 @@ class IUpscalerProvider
 	virtual UpscalerProviderCapabilities QueryCapabilities(const RhiCapabilities& capabilities) const = 0;
 	virtual bool Initialize(
 	    const RhiCapabilities& capabilities,
-	    NativeGraphicsDeviceHandle nativeDevice,
+	    RhiNativeDeviceQueueInterop nativeInterop,
 	    UpscalerPresentationBridge presentationBridge) = 0;
 	virtual void SetupFrame(const UpscalerInputContract& inputContract) = 0;
 	virtual UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation) = 0;

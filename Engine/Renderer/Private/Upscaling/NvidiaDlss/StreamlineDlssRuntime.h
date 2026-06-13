@@ -67,7 +67,7 @@ struct StreamlineDlssRuntimeCapabilities final
 struct StreamlineDlssRuntimeDesc final
 {
 	RhiCapabilities Capabilities = {};
-	NativeGraphicsDeviceHandle NativeDevice = {};
+	RhiNativeDeviceQueueInterop NativeInterop = {};
 	UpscalerPresentationBridge PresentationBridge = {};
 	EUpscalerQualityMode QualityMode = EUpscalerQualityMode::Quality;
 	bool DiagnosticsEnabled = false;

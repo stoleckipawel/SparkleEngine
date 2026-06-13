@@ -13,7 +13,8 @@ RhiCpuDescriptorHandle FrameGraph::ResolveRenderTargetView(FrameGraphResourceHan
 
 	if (metadata.kind == FrameGraphResourceKind::BackBuffer)
 	{
-		return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetBackBufferRenderTargetView() : RhiCpuDescriptorHandle{};
+		return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetPresentationService().GetBackBufferRenderTargetView()
+		                                          : RhiCpuDescriptorHandle{};
 	}
 
 	assert(access.renderTargetView);
@@ -99,7 +100,8 @@ NativeResourceHandle FrameGraph::ResolveResource(FrameGraphResourceHandle handle
 	switch (metadata.kind)
 	{
 		case FrameGraphResourceKind::BackBuffer:
-			return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetBackBufferResource() : NativeResourceHandle{};
+			return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetPresentationService().GetBackBufferResource()
+			                                          : NativeResourceHandle{};
 		case FrameGraphResourceKind::DepthStencil:
 		case FrameGraphResourceKind::ColorRenderTarget:
 		case FrameGraphResourceKind::Buffer:
@@ -152,5 +154,5 @@ NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(FrameGraphResourceHan
 		return {};
 	}
 
-	return m_renderHardwareInterface->GetNativeTextureViewInfo(view, state);
+	return m_renderHardwareInterface->GetInteropService().GetNativeTextureViewInfo(view, state);
 }

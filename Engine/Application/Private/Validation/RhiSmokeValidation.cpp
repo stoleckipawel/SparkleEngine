@@ -118,7 +118,8 @@ void RhiSmokeValidationRunner::LogDiagnosticsCapabilities(
 	}
 
 	const RenderHardwareInterface& renderHardware = app.GetRenderer().GetRenderHardwareInterface();
-	const RhiDiagnosticsCapabilities capabilities = renderHardware.GetDiagnostics().GetCapabilities();
+	const RhiDiagnosticsCapabilities capabilities = renderHardware.GetDiagnosticsService().GetDiagnostics().GetCapabilities();
+	
 	SPDLOG_LOGGER_INFO(
 	    appLogger,
 	    "RHI smoke diagnostics capabilities: objectNames={} commandScopes={} timestampQueries={} debugMessages={} liveObjectReports={} "

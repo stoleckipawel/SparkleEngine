@@ -119,10 +119,11 @@ bool EditorApplication::Tick()
 	    ResourceState::ShaderResource);
 
 	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
-	renderHardware.BeginPresentRenderPass(editorClearColor);
+	RhiPresentationService& presentationService = renderHardware.GetPresentationService();
+	presentationService.BeginPresentRenderPass(editorClearColor);
 	m_ui->Render();
 
-	renderHardware.EndPresentRenderPass();
+	presentationService.EndPresentRenderPass();
 
 	renderer.TransitionRenderProduct(
 	    viewportProducts.GetSceneColor().Handle,

@@ -15,7 +15,7 @@ class NvidiaDlssUpscalerProvider final : public IUpscalerProvider
 	UpscalerProviderCapabilities QueryCapabilities(const RhiCapabilities& capabilities) const override;
 	bool Initialize(
 	    const RhiCapabilities& capabilities,
-	    NativeGraphicsDeviceHandle nativeDevice,
+	    RhiNativeDeviceQueueInterop nativeInterop,
 	    UpscalerPresentationBridge presentationBridge) override;
 	void SetupFrame(const UpscalerInputContract& inputContract) override;
 	UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation) override;

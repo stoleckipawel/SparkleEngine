@@ -152,7 +152,8 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12SwapChain& swapChain,
     D3D12ConstantBufferManager& constantBufferManager) noexcept :
-	m_rhi(&rhi), m_memoryAllocator(&memoryAllocator), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain),
+	m_interopService(*this), m_captureService(*this), m_diagnosticsService(*this), m_presentationService(*this), m_rhi(&rhi),
+	m_memoryAllocator(&memoryAllocator), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain),
 	m_constantBufferManager(&constantBufferManager)
 {
 	for (std::uint32_t frameIndex = 0; frameIndex < RenderConfig::FramesInFlight; ++frameIndex)
@@ -287,6 +288,75 @@ void D3D12RenderHardwareInterface::WaitForIdle() noexcept
 	}
 }
 
+RhiInteropService& D3D12RenderHardwareInterface::GetInteropService() noexcept
+{
+	return m_interopService;
+}
+
+const RhiInteropService& D3D12RenderHardwareInterface::GetInteropService() const noexcept
+{
+	return m_interopService;
+}
+
+RhiCaptureService& D3D12RenderHardwareInterface::GetCaptureService() noexcept
+{
+	return m_captureService;
+}
+
+RhiDiagnosticsService& D3D12RenderHardwareInterface::GetDiagnosticsService() noexcept
+{
+	return m_diagnosticsService;
+}
+
+const RhiDiagnosticsService& D3D12RenderHardwareInterface::GetDiagnosticsService() const noexcept
+{
+	return m_diagnosticsService;
+}
+
+RhiPresentationService& D3D12RenderHardwareInterface::GetPresentationService() noexcept
+{
+	return m_presentationService;
+}
+
+const RhiPresentationService& D3D12RenderHardwareInterface::GetPresentationService() const noexcept
+{
+	return m_presentationService;
+}
+
+RhiNativeDeviceQueueInterop D3D12RenderHardwareInterface::InteropService::GetDeviceQueueInterop(
+    RhiNativeInteropRequest request) const noexcept
+{
+	return RhiNativeDeviceQueueInterop{
+	    .BackendApi = m_owner != nullptr ? m_owner->GetBackendApi() : ERhiBackendApi::Unknown,
+	    .Device = GetDeviceHandle(),
+	    .GraphicsQueue = GetGraphicsQueueHandle(),
+	    .Request = request};
+}
+
+NativeGraphicsDeviceHandle D3D12RenderHardwareInterface::InteropService::GetDeviceHandle() const noexcept
+{
+	return m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{};
+}
+
+NativeGraphicsQueueHandle D3D12RenderHardwareInterface::InteropService::GetGraphicsQueueHandle() const noexcept
+{
+	return m_owner != nullptr ? m_owner->GetGraphicsQueueHandle() : NativeGraphicsQueueHandle{};
+}
+
+bool D3D12RenderHardwareInterface::InteropService::UpgradePresentationInterface(
+    RhiNativeInterfaceUpgradeCallback callback,
+    void* userData) noexcept
+{
+	return m_owner != nullptr && m_owner->UpgradePresentationInterface(callback, userData);
+}
+
+NativeTextureViewInfo D3D12RenderHardwareInterface::InteropService::GetNativeTextureViewInfo(
+    RhiResourceViewHandle view,
+    ResourceState state) const noexcept
+{
+	return m_owner != nullptr ? m_owner->GetNativeTextureViewInfo(view, state) : NativeTextureViewInfo{};
+}
+
 NativeGraphicsDeviceHandle D3D12RenderHardwareInterface::GetDeviceHandle() const noexcept
 {
 	return NativeGraphicsDeviceHandle{m_rhi != nullptr ? m_rhi->GetDevice().Get() : nullptr};
@@ -300,6 +370,16 @@ NativeGraphicsQueueHandle D3D12RenderHardwareInterface::GetGraphicsQueueHandle()
 bool D3D12RenderHardwareInterface::UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept
 {
 	return m_swapChain != nullptr && m_swapChain->UpgradeNativeInterface(callback, userData);
+}
+
+RhiCaptureResult D3D12RenderHardwareInterface::CaptureService::CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept
+{
+	const bool captured =
+	    m_owner != nullptr && m_owner->CaptureTextureToBmp(request.Resource, request.Width, request.Height, request.OutputPath);
+	return RhiCaptureResult{
+	    .Succeeded = captured,
+	    .ArtifactPath = captured ? request.OutputPath : std::filesystem::path{},
+	    .FailureReason = captured ? "" : "D3D12 texture capture failed; verify the resource is a valid Texture2D and the output path is writable."};
 }
 
 bool D3D12RenderHardwareInterface::CaptureTextureToBmp(
@@ -457,6 +537,16 @@ RenderDiagnostics& D3D12RenderHardwareInterface::GetDiagnostics() noexcept
 const RenderDiagnostics& D3D12RenderHardwareInterface::GetDiagnostics() const noexcept
 {
 	return *m_diagnostics;
+}
+
+RenderDiagnostics& D3D12RenderHardwareInterface::DiagnosticsService::GetDiagnostics() noexcept
+{
+	return m_owner->GetDiagnostics();
+}
+
+const RenderDiagnostics& D3D12RenderHardwareInterface::DiagnosticsService::GetDiagnostics() const noexcept
+{
+	return m_owner->GetDiagnostics();
 }
 
 RhiImGuiRenderer& D3D12RenderHardwareInterface::GetImGuiRenderer() noexcept
@@ -686,9 +776,19 @@ RhiViewport D3D12RenderHardwareInterface::GetBackBufferViewport() const noexcept
 	return m_swapChain != nullptr ? m_swapChain->GetDefaultViewport() : RhiViewport{};
 }
 
+RhiViewport D3D12RenderHardwareInterface::PresentationService::GetBackBufferViewport() const noexcept
+{
+	return m_owner != nullptr ? m_owner->GetBackBufferViewport() : RhiViewport{};
+}
+
 RhiRect D3D12RenderHardwareInterface::GetBackBufferScissorRect() const noexcept
 {
 	return m_swapChain != nullptr ? m_swapChain->GetDefaultScissorRect() : RhiRect{};
+}
+
+RhiRect D3D12RenderHardwareInterface::PresentationService::GetBackBufferScissorRect() const noexcept
+{
+	return m_owner != nullptr ? m_owner->GetBackBufferScissorRect() : RhiRect{};
 }
 
 RhiCpuDescriptorHandle D3D12RenderHardwareInterface::GetBackBufferRenderTargetView() const noexcept
@@ -696,9 +796,19 @@ RhiCpuDescriptorHandle D3D12RenderHardwareInterface::GetBackBufferRenderTargetVi
 	return m_swapChain != nullptr ? RhiCpuDescriptorHandle{m_swapChain->GetCPUHandle().ptr} : RhiCpuDescriptorHandle{};
 }
 
+RhiCpuDescriptorHandle D3D12RenderHardwareInterface::PresentationService::GetBackBufferRenderTargetView() const noexcept
+{
+	return m_owner != nullptr ? m_owner->GetBackBufferRenderTargetView() : RhiCpuDescriptorHandle{};
+}
+
 NativeResourceHandle D3D12RenderHardwareInterface::GetBackBufferResource() const noexcept
 {
 	return NativeResourceHandle{m_swapChain != nullptr ? m_swapChain->GetCurrentResource() : nullptr};
+}
+
+NativeResourceHandle D3D12RenderHardwareInterface::PresentationService::GetBackBufferResource() const noexcept
+{
+	return m_owner != nullptr ? m_owner->GetBackBufferResource() : NativeResourceHandle{};
 }
 
 std::unique_ptr<Texture> D3D12RenderHardwareInterface::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
@@ -1370,6 +1480,12 @@ std::uint64_t D3D12RenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescript
 	return shaderResourceView.Value;
 }
 
+std::uint64_t D3D12RenderHardwareInterface::PresentationService::ResolveImGuiTextureId(
+    RhiGpuDescriptorHandle shaderResourceView) noexcept
+{
+	return m_owner != nullptr ? m_owner->ResolveImGuiTextureId(shaderResourceView) : 0;
+}
+
 bool D3D12RenderHardwareInterface::WriteD3D12ResourceViewDescriptor(
     const RhiResourceViewDesc& desc,
     RhiCpuDescriptorHandle destination) noexcept
@@ -1572,6 +1688,22 @@ void D3D12RenderHardwareInterface::BeginPresentOverlayPass() noexcept
 	commandList.SetRenderTarget(renderTargetView);
 }
 
+void D3D12RenderHardwareInterface::PresentationService::BeginPresentRenderPass(const float clearColor[4]) noexcept
+{
+	if (m_owner != nullptr)
+	{
+		m_owner->BeginPresentRenderPass(clearColor);
+	}
+}
+
+void D3D12RenderHardwareInterface::PresentationService::BeginPresentOverlayPass() noexcept
+{
+	if (m_owner != nullptr)
+	{
+		m_owner->BeginPresentOverlayPass();
+	}
+}
+
 void D3D12RenderHardwareInterface::EndPresentRenderPass() noexcept
 {
 	if (m_swapChain == nullptr)
@@ -1589,9 +1721,22 @@ void D3D12RenderHardwareInterface::EndPresentRenderPass() noexcept
 	commandList.TransitionResource(presentTexture, ResourceState::RenderTarget, ResourceState::Present);
 }
 
+void D3D12RenderHardwareInterface::PresentationService::EndPresentRenderPass() noexcept
+{
+	if (m_owner != nullptr)
+	{
+		m_owner->EndPresentRenderPass();
+	}
+}
+
 PixelFormat D3D12RenderHardwareInterface::GetPresentColorFormat() const noexcept
 {
 	return m_swapChain != nullptr ? m_swapChain->GetBackBufferFormat() : PixelFormat::Unknown;
+}
+
+PixelFormat D3D12RenderHardwareInterface::PresentationService::GetPresentColorFormat() const noexcept
+{
+	return m_owner != nullptr ? m_owner->GetPresentColorFormat() : PixelFormat::Unknown;
 }
 
 void D3D12RenderHardwareInterface::SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept

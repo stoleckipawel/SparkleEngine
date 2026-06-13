@@ -38,6 +38,7 @@ Implementation constraints:
 - Keep existing excellent code, improve code with good foundations, and redesign/remove code that cannot support the target architecture.
 - Every retained complexity must earn its right to exist.
 - Every changed edge must name mutable owner, phase, handoff shape, isolation, ordering/synchronization expectation, diagnostics identity, and deterministic output/report behavior.
+- Keep planning vocabulary out of source code comments and runtime strings. Code may name product concepts such as plans, stages, generated assets, and cook jobs when they are domain terms, but it must not mention Codex, AI generation, implementation prompts, planning documents, stage numbers, or temporary migration notes.
 
 Required output:
 - Code/docs/CMake changes scoped to the stage.
@@ -74,6 +75,7 @@ Every stage implementation must end with this packet, even if the stage is docs-
 - Tools produce DTOs, manifests, cooked artifacts, package data, job requests, reports, and diagnostics.
 - LauncherCore owns workflow/process state; Qt GUI owns presentation.
 - Future threading readiness is achieved by ownership and data shape, not broad locks.
+- Source code comments and runtime-facing strings read as production code. Planning/stage/Codex/AI context belongs in `docs/`, never in engine/tool source comments or diagnostics.
 
 ## Stop And Split Rules
 
@@ -93,4 +95,4 @@ Stop implementation and split a checkpoint into a new numbered stage when any of
 - Cook/import change: build affected cooker/tool; run focused sample cook/inspect when available.
 - Launcher workflow change: build `SparkleLauncher` or the smallest probe target; inspect operation reports/history.
 - RHI/Renderer runtime change: run targeted build/smoke for the affected backend(s), with D3D12/Vulkan parity evidence at milestone stages.
-
+- Source-comment hygiene: scan touched source for accidental planning/provenance wording, for example `rg -n "Codex|AI|implementation prompt|planning document|Stage [0-9]|stage [0-9]|transitional" <touched source paths>`, then inspect matches for real domain terms before accepting.

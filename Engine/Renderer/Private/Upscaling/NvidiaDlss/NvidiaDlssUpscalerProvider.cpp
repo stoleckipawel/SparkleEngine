@@ -81,7 +81,7 @@ UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::QueryCapabilities(const
 
 bool NvidiaDlssUpscalerProvider::Initialize(
     const RhiCapabilities& capabilities,
-    NativeGraphicsDeviceHandle nativeDevice,
+    RhiNativeDeviceQueueInterop nativeInterop,
     UpscalerPresentationBridge presentationBridge)
 {
 	const UpscalerSettings settings = BuildUpscalerSettingsFromCVars();
@@ -113,7 +113,7 @@ bool NvidiaDlssUpscalerProvider::Initialize(
 	const bool initialized = m_runtime->Initialize(
 	    StreamlineDlssRuntimeDesc{
 	        .Capabilities = capabilities,
-	        .NativeDevice = nativeDevice,
+	        .NativeInterop = nativeInterop,
 	        .PresentationBridge = presentationBridge,
 	        .QualityMode = m_qualityMode,
 	        .DiagnosticsEnabled = settings.DiagnosticsEnabled,

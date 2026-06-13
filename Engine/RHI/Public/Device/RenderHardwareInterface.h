@@ -1,15 +1,19 @@
 #pragma once
 
 #include "../Bindings/RenderBindingSet.h"
+#include "../Capture/RhiCaptureService.h"
 #include "../Commands/RenderCommandList.h"
 #include "../Core/RhiCapabilities.h"
 #include "../Core/RhiBackendApi.h"
 #include "../Descriptors/RhiDescriptorHandles.h"
+#include "../Diagnostics/RhiDiagnosticsService.h"
 #include "../Diagnostics/RhiDiagnostics.h"
 #include "../Formats/PixelFormat.h"
 #include "../Interop/RhiNativeHandles.h"
+#include "../Interop/RhiInteropService.h"
 #include "../Memory/RhiMemoryTypes.h"
 #include "../Pipeline/RhiPipelineStateDesc.h"
+#include "../Presentation/RhiPresentationService.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Resources/RenderConstantBufferData.h"
 #include "../Resources/RhiResourceDesc.h"
@@ -36,6 +40,13 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept = 0;
 	virtual std::uint32_t GetCurrentFrameIndex() const noexcept = 0;
 	virtual void WaitForIdle() noexcept = 0;
+	virtual RhiInteropService& GetInteropService() noexcept = 0;
+	virtual const RhiInteropService& GetInteropService() const noexcept = 0;
+	virtual RhiCaptureService& GetCaptureService() noexcept = 0;
+	virtual RhiDiagnosticsService& GetDiagnosticsService() noexcept = 0;
+	virtual const RhiDiagnosticsService& GetDiagnosticsService() const noexcept = 0;
+	virtual RhiPresentationService& GetPresentationService() noexcept = 0;
+	virtual const RhiPresentationService& GetPresentationService() const noexcept = 0;
 	virtual NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept = 0;
 	virtual NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept = 0;
 	virtual bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept = 0;

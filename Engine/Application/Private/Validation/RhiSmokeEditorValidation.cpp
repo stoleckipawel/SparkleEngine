@@ -173,8 +173,12 @@ namespace
 			return false;
 		}
 
-		ID3D12Device* device = static_cast<ID3D12Device*>(renderHardware.GetDeviceHandle().Value);
-		ID3D12CommandQueue* queue = static_cast<ID3D12CommandQueue*>(renderHardware.GetGraphicsQueueHandle().Value);
+		const RhiNativeDeviceQueueInterop interop = renderHardware.GetInteropService().GetDeviceQueueInterop(
+		    RhiNativeInteropRequest{
+		        .Consumer = ERhiNativeInteropConsumer::Validation,
+		        .Reason = "D3D12 editor smoke capture requires native device and graphics queue access."});
+		ID3D12Device* device = static_cast<ID3D12Device*>(interop.Device.Value);
+		ID3D12CommandQueue* queue = static_cast<ID3D12CommandQueue*>(interop.GraphicsQueue.Value);
 		ID3D12Resource* sourceResource = static_cast<ID3D12Resource*>(resourceHandle.Value);
 		if (device == nullptr || queue == nullptr || sourceResource == nullptr)
 		{
@@ -393,7 +397,7 @@ namespace
 		}
 
 		const RenderHardwareInterface& renderHardware = app.GetRenderer().GetRenderHardwareInterface();
-		const RhiDiagnosticsCapabilities capabilities = renderHardware.GetDiagnostics().GetCapabilities();
+		const RhiDiagnosticsCapabilities capabilities = renderHardware.GetDiagnosticsService().GetDiagnostics().GetCapabilities();
 		SPDLOG_LOGGER_INFO(
 		    appLogger,
 		    "RHI smoke diagnostics capabilities: objectNames={} commandScopes={} timestampQueries={} debugMessages={} liveObjectReports={} crashDiagnostics={}",
@@ -553,13 +557,15 @@ namespace
 		    renderer.ResolveRenderProductResource(viewportProducts.GetSceneColor().Handle);
 
 		const RenderProduct& sceneColorProduct = viewportProducts.GetSceneColor();
-		const bool captured = renderer.GetRenderHardwareInterface().CaptureTextureToBmp(
-		    sceneColorResource,
-		    sceneColorProduct.Extent.Width,
-		    sceneColorProduct.Extent.Height,
-		    std::filesystem::path(config.SceneColorCapturePath));
+		const RhiCaptureResult captureResult = renderer.GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
+		    RhiTextureCaptureRequest{
+		        .Resource = sceneColorResource,
+		        .Width = sceneColorProduct.Extent.Width,
+		        .Height = sceneColorProduct.Extent.Height,
+		        .OutputPath = std::filesystem::path(config.SceneColorCapturePath),
+		        .DebugName = "Editor smoke scene color"});
 
-		if (captured)
+		if (captureResult)
 		{
 			SPDLOG_LOGGER_INFO(
 			    appLogger,
@@ -703,9 +709,10 @@ namespace
 		    ResourceState::ShaderResource);
 
 		constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
-		renderHardware.BeginPresentRenderPass(editorClearColor);
+		RhiPresentationService& presentationService = renderHardware.GetPresentationService();
+		presentationService.BeginPresentRenderPass(editorClearColor);
 		ui.Render();
-		renderHardware.EndPresentRenderPass();
+		presentationService.EndPresentRenderPass();
 
 		renderer.TransitionRenderProduct(
 		    viewportProducts.GetSceneColor().Handle,

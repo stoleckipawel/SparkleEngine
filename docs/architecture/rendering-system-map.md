@@ -107,7 +107,7 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | Frame graph | Renderer | [FrameGraph](../../Engine/Renderer/Private/FrameGraph) | Pass/resource declaration, dependency compile, transient planning, barrier planning, execution order, diagnostics. | API-specific barriers beyond RHI `ResourceState` vocabulary. |
 | Passes | Renderer | [Passes](../../Engine/Renderer/Private/Passes) | Feature render work, pass parameters, graph resource use, command recording. | Backend-specific pipeline creation or renderer-wide shader package registry policy. |
 | Pipeline runtime | Renderer | [Pipeline](../../Engine/Renderer/Private/Pipeline) | Pass runtime lookup, package loading, binding layout creation, PSO request construction. | D3D12/Vulkan native PSO object creation. |
-| RHI facade | RHI | [RenderHardwareInterface.h](../../Engine/RHI/Public/Device/RenderHardwareInterface.h) | API-neutral device/resource/descriptor/pipeline/memory/interop/diagnostic operations. | Renderer feature concepts like shadows, GBuffer, lighting, or pass names except debug labels. |
+| RHI facade and first services | RHI | [RenderHardwareInterface.h](../../Engine/RHI/Public/Device/RenderHardwareInterface.h), [Interop](../../Engine/RHI/Public/Interop), [Capture](../../Engine/RHI/Public/Capture), [Diagnostics](../../Engine/RHI/Public/Diagnostics), [Presentation](../../Engine/RHI/Public/Presentation) | API-neutral device/resource/descriptor/pipeline/memory operations plus first service edges for interop, capture/readback, diagnostics, and presentation/UI. | Renderer feature concepts like shadows, GBuffer, lighting, or pass names except debug labels. |
 | RHI command list | RHI | [RenderCommandList.h](../../Engine/RHI/Public/Commands/RenderCommandList.h) | GPU command operations and diagnostic scopes. | Frame graph scheduling or pass parameter validation. |
 | Backends | RHI backend | [D3D12](../../Engine/RHI/Private/D3D12), [Vulkan](../../Engine/RHI/Private/Vulkan) | API object lifetime, native type conversion, command encoding, descriptors, memory, swap chain, debug layers. | Renderer policy and vendor feature selection. |
 | Ray tracing scene | Renderer | [RayTracing](../../Engine/Renderer/Private/RayTracing) | BLAS cache policy, TLAS instance data, renderer-level capability report, shadow settings. | API-native AS build implementation. |
@@ -124,7 +124,7 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | Renderer passes | Keep and refine | Preserve pass ownership above RHI; require pass definitions to name graph resources, shader package, PSO intent, and diagnostics. |
 | `RenderPassPipelineTraits` | Replace or redesign | Remove central per-pass traits in favor of pass catalog/runtime registration. |
 | `PipelineStateManager` type-index identity | Replace or redesign | Replace implicit C++ type identity with explicit `PsoKey` and `PipelineRuntimeLibrary`. |
-| RHI broad facade | Improve and extract | Split service ownership without moving renderer conveniences into RHI. |
+| RHI broad facade | Improve and extract | Stage 7 introduced first public services for interop, capture/readback, diagnostics, and presentation/UI; Stage 19 removes root-facade bulk after caller migration. |
 | Application D3D12 capture body | Replace or redesign | Move backend-native capture/readback to RHI/backend validation services. |
 | ShaderCompiler renderer edge | Improve and extract | Replace renderer target linkage with `ShaderContracts` pass catalog/package manifest consumption. |
 

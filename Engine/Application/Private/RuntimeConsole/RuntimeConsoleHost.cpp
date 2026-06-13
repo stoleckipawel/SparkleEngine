@@ -35,9 +35,10 @@ void RuntimeConsoleHost::RenderFrameWithOverlay(Renderer& renderer, RuntimeUpdat
 	m_overlay->Update();
 
 	RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-	renderHardware.BeginPresentOverlayPass();
+	RhiPresentationService& presentationService = renderHardware.GetPresentationService();
+	presentationService.BeginPresentOverlayPass();
 	m_overlay->Render();
-	renderHardware.EndPresentRenderPass();
+	presentationService.EndPresentRenderPass();
 
 	renderer.SubmitHostFrame();
 }

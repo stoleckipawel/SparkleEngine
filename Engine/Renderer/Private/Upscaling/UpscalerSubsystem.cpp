@@ -21,10 +21,10 @@ UpscalerSubsystem::~UpscalerSubsystem() noexcept
 
 void UpscalerSubsystem::Initialize(
     const RhiCapabilities& capabilities,
-    NativeGraphicsDeviceHandle nativeDevice,
+    RhiNativeDeviceQueueInterop nativeInterop,
     UpscalerPresentationBridge presentationBridge)
 {
-	m_nativeDevice = nativeDevice;
+	m_nativeInterop = nativeInterop;
 	m_presentationBridge = presentationBridge;
 	m_settings = BuildUpscalerSettingsFromCVars();
 	m_activeProvider = CreateProvider(m_settings.RequestedProvider);
@@ -33,12 +33,12 @@ void UpscalerSubsystem::Initialize(
 		m_activeProvider = CreateFallbackProvider();
 	}
 
-	const bool initialized = m_activeProvider->Initialize(capabilities, m_nativeDevice, m_presentationBridge);
+	const bool initialized = m_activeProvider->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
 	if (!initialized && m_settings.RequestedProvider != EUpscalerProviderKind::Passthrough)
 	{
 		const UpscalerProviderCapabilities failedDiagnostics = m_activeProvider->GetDiagnostics();
 		std::unique_ptr<IUpscalerProvider> fallback = CreateFallbackProvider();
-		const bool fallbackInitialized = fallback->Initialize(capabilities, m_nativeDevice, m_presentationBridge);
+		const bool fallbackInitialized = fallback->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
 		m_activeProvider = std::move(fallback);
 		m_diagnostics = m_activeProvider->GetDiagnostics();
 		m_diagnostics.Status = fallbackInitialized ? EUpscalerProviderStatus::FailedWithFallback : EUpscalerProviderStatus::Unavailable;
@@ -54,7 +54,7 @@ void UpscalerSubsystem::Initialize(
 	}
 
 	m_frameFallbackProvider = CreateFallbackProvider();
-	m_frameFallbackProvider->Initialize(capabilities, m_nativeDevice, m_presentationBridge);
+	m_frameFallbackProvider->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
 	m_shutdown = false;
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.Upscaling");
 	SPDLOG_LOGGER_INFO(

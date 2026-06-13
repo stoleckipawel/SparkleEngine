@@ -82,6 +82,10 @@ Engine/
       Private/
   RHI/
     Public/
+      Capture/
+      Diagnostics/
+      Interop/
+      Presentation/
     Private/
       Services/
         Capability/

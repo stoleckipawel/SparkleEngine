@@ -41,6 +41,13 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept override;
 	std::uint32_t GetCurrentFrameIndex() const noexcept override;
 	void WaitForIdle() noexcept override;
+	RhiInteropService& GetInteropService() noexcept override;
+	const RhiInteropService& GetInteropService() const noexcept override;
+	RhiCaptureService& GetCaptureService() noexcept override;
+	RhiDiagnosticsService& GetDiagnosticsService() noexcept override;
+	const RhiDiagnosticsService& GetDiagnosticsService() const noexcept override;
+	RhiPresentationService& GetPresentationService() noexcept override;
+	const RhiPresentationService& GetPresentationService() const noexcept override;
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
 	bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept override;
@@ -163,6 +170,63 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
   private:
 	friend class D3D12RenderCommandList;
 
+	class InteropService final : public RhiInteropService
+	{
+	  public:
+		explicit InteropService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
+
+		RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept override;
+		NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;
+		NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
+		bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept override;
+		NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
+
+	  private:
+		D3D12RenderHardwareInterface* m_owner = nullptr;
+	};
+
+	class CaptureService final : public RhiCaptureService
+	{
+	  public:
+		explicit CaptureService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
+
+		RhiCaptureResult CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept override;
+
+	  private:
+		D3D12RenderHardwareInterface* m_owner = nullptr;
+	};
+
+	class DiagnosticsService final : public RhiDiagnosticsService
+	{
+	  public:
+		explicit DiagnosticsService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
+
+		RenderDiagnostics& GetDiagnostics() noexcept override;
+		const RenderDiagnostics& GetDiagnostics() const noexcept override;
+
+	  private:
+		D3D12RenderHardwareInterface* m_owner = nullptr;
+	};
+
+	class PresentationService final : public RhiPresentationService
+	{
+	  public:
+		explicit PresentationService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
+
+		RhiViewport GetBackBufferViewport() const noexcept override;
+		RhiRect GetBackBufferScissorRect() const noexcept override;
+		RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override;
+		NativeResourceHandle GetBackBufferResource() const noexcept override;
+		std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
+		void BeginPresentRenderPass(const float clearColor[4]) noexcept override;
+		void BeginPresentOverlayPass() noexcept override;
+		void EndPresentRenderPass() noexcept override;
+		PixelFormat GetPresentColorFormat() const noexcept override;
+
+	  private:
+		D3D12RenderHardwareInterface* m_owner = nullptr;
+	};
+
 	struct DescriptorTableRecord
 	{
 		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
@@ -214,6 +278,10 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) noexcept;
 	const ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) const noexcept;
 
+	InteropService m_interopService;
+	CaptureService m_captureService;
+	DiagnosticsService m_diagnosticsService;
+	PresentationService m_presentationService;
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;

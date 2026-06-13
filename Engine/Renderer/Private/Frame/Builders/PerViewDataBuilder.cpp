@@ -36,6 +36,6 @@ RenderViewData PerViewDataBuilder::BuildMainView(
 	return BuildView(
 	    renderCamera.GetCameraConstantBufferData(),
 	    lightingData,
-	    renderHardwareInterface.GetBackBufferViewport(),
-	    renderHardwareInterface.GetBackBufferScissorRect());
+	    renderHardwareInterface.GetPresentationService().GetBackBufferViewport(),
+	    renderHardwareInterface.GetPresentationService().GetBackBufferScissorRect());
 }
