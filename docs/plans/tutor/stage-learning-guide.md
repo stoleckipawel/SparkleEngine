@@ -44,14 +44,20 @@ For each stage, ask:
 | 20 | Full graphics validation should be reproducible. | Builds, shader packages, launcher smoke, captures, feature logs. | Claims about parity/reliability have artifacts behind them. |
 | 21 | Portfolio presentation is engineering evidence. | README, reviewer path, screenshots, known issues, validation commands. | A stranger can inspect the work quickly and fairly. |
 | 22 | Cleanup and rubric scoring are part of engineering. | Stale exceptions, duplicate paths, rubric scores, evidence index. | The first graphics track closes cleanly instead of leaving debt fog. |
-| 23 | Whole-repo architecture protects adjacent systems. | Every durable root, owner/dependencies, folder policy, validation. | RHI/Renderer work does not damage tools, GameFramework, or launcher. |
-| 24 | GameFramework should own runtime/cooked concepts only. | Runtime scene, cooked loaders, AssetContracts, RenderContracts. | Runtime and content pipeline are connected by schemas, not private code. |
-| 25 | Tools should be focused transformations plus orchestration. | SourceImporters, cookers, AssetCooker, diagnostics, AssetConverter. | Cook pipeline is deterministic, inspectable, and not duplicated. |
-| 26 | Launcher is product tooling, not a pile of buttons. | LauncherCore, Qt models/widgets, process requests, history/recovery. | UI presents workflows; core owns execution evidence. |
-| 27 | Artifacts need producer/schema/consumer proof. | Shader packages, textures, meshes, materials, scenes, inspectors. | Schema changes are validated beyond "it compiled." |
-| 28 | Global guardrails prevent architectural backsliding. | Runtime-to-tools checks, folder checks, generated roots, CI/local wiring. | The repository enforces the design mechanically. |
-| 29 | The evidence gate checks that everything agrees. | Coverage, target docs, code, CMake, tools, samples, validation logs. | The repo is coherent, not just locally fixed. |
-| 30 | Threading-readiness is ownership discipline. | Mutable owners, phases, handoffs, isolation, ordering, diagnostics. | Future parallelism becomes a straightforward implementation step. |
+| 23 | Whole-repo architecture starts with routing every root to active work. | Durable roots, owner/dependencies, folder policy, validation, active stage. | RHI/Renderer work cannot leave other modules as vague follow-up. |
+| 24 | Core and Platform should be boring in the best way. | Foundation helpers, OS/window/input abstractions, diagnostics, events. | Low-level modules are reusable because they do not own domain policy. |
+| 25 | GameFramework should own runtime/cooked concepts only. | Runtime scene, snapshots, AssetContracts, RenderContracts, forbidden edges. | Runtime and content pipeline are connected by schemas, not private code. |
+| 26 | Runtime loaders and cooked schemas are two sides of one contract. | Mesh/material/texture/scene/animation/skeleton loaders and producers. | Loader bugs become diagnosable schema/report failures, not renderer mysteries. |
+| 27 | Source import belongs before cooking and outside runtime. | SourceImporters, imported DTOs, import diagnostics, format-specific code. | Runtime never needs to know how a source format was parsed. |
+| 28 | Focused cookers should transform one artifact family well. | Texture/Mesh/Material/Scene cookers, CookDiagnostics, ToolConsoleSupport. | Cook pipeline is deterministic, inspectable, and not a broad common bucket. |
+| 29 | Shader tooling deserves contract-grade design too. | ShaderContracts, package manifests, reflection reports, backend options. | ShaderCompiler is a deterministic tool, not a renderer-runtime side door. |
+| 30 | Orchestrators should orchestrate, not implement everything. | AssetCooker, AssetConverter, LauncherCore, Qt GUI, Application, Editor. | Workflows are process/report driven and UI/hosts do not own tool algorithms. |
+| 31 | Artifacts need producer/schema/consumer proof. | Shader packages, textures, meshes, materials, scenes, inspectors. | Schema changes are validated beyond "it compiled." |
+| 32 | Samples and built-in assets are architecture evidence. | Projects, Showcase, Engine/Assets, generated outputs, validation artifacts. | Sample content has ownership and proves real workflows. |
+| 33 | Global guardrails prevent architectural backsliding. | Runtime-to-tools checks, folder checks, generated roots, CI/local wiring. | The repository enforces the design mechanically. |
+| 34 | The evidence gate checks that everything agrees. | Coverage, target docs, code, CMake, tools, samples, validation logs. | The repo is coherent, not just locally fixed. |
+| 35 | Threading-readiness is ownership discipline. | Mutable owners, phases, handoffs, isolation, ordering, diagnostics. | Future parallelism becomes a straightforward implementation step. |
+| 36 | Review-ready means the whole repository scores well. | Stale paths, rubric scores, validation commands, known risks. | Non-rendering modules are not hidden behind strong graphics work. |
 
 ## Reflection Prompts
 
@@ -63,4 +69,3 @@ Use these after each stage:
 4. Which future change became safer?
 5. What complexity was removed, renamed, or forced to justify itself?
 6. What would a reviewer still distrust, and what evidence would answer them?
-

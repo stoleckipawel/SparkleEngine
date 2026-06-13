@@ -809,7 +809,7 @@ void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, 
 	}
 	EndDynamicRenderingIfNeeded();
 
-	const VulkanResourceStateMapping sourceState = VulkanTypeConversions::ToResourceStateMapping(before);
+	VulkanResourceStateMapping sourceState = VulkanTypeConversions::ToResourceStateMapping(before);
 	const VulkanResourceStateMapping destinationState = VulkanTypeConversions::ToResourceStateMapping(after);
 	VulkanGpuAllocationRecord* const record = m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
 
@@ -854,6 +854,10 @@ void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, 
 	if (!VulkanTypeConversions::IsImageResourceStateSupported(before) || !VulkanTypeConversions::IsImageResourceStateSupported(after))
 	{
 		return;
+	}
+	if (record == nullptr && before == ResourceState::Present && destinationState.ImageLayout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+	{
+		sourceState = VulkanResourceStateMapping{};
 	}
 
 	const VkImageAspectFlags aspectMask = record != nullptr && record->AspectMask != 0 ? record->AspectMask : VK_IMAGE_ASPECT_COLOR_BIT;

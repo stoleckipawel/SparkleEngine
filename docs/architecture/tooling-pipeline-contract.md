@@ -40,6 +40,20 @@ Reference basis:
 | [AssetConverter](../../Tools/Conversion/AssetConverter) | Transitional direct developer/debug conversion CLI over import/cook modules. | Becoming a production cook path. |
 | [ToolConsoleSupport / CookDiagnostics](../../Tools/Cooking/CookCommon) | Target replacement for current `CookCommon`: shared console/report helpers and focused cook diagnostics. | Asset policy, shader policy, launcher state, or broad "common" ownership. |
 
+## Active Refactor Stages
+
+Tooling is refactored through active implementation stages, not only final audits:
+
+| Stage | Tooling scope | Required outcome |
+| --- | --- | --- |
+| Stage 27 | Source import | `SourceImportAdapters` migrates toward `SourceImporters`; importers emit imported DTOs and diagnostics. |
+| Stage 28 | Focused cookers and support | Texture/Mesh/Material/Scene cookers own transformations; `CookCommon` splits into precise support/diagnostics owners. |
+| Stage 29 | ShaderCompiler | ShaderCompiler consumes `ShaderContracts` and emits deterministic package/reflection reports without full renderer runtime linkage. |
+| Stage 30 | AssetCooker, AssetConverter, Launcher, hosts | AssetCooker owns orchestration/reports; AssetConverter stops being a production path; LauncherCore/Qt GUI/Application/Editor boundaries are enforced. |
+| Stage 31 | Artifact validation | Shader and cooked artifacts gain producer/schema/consumer/inspector/smoke evidence. |
+| Stage 32 | Projects and engine assets | Sample content and built-in assets become owned validation inputs, not ambiguous file roots. |
+| Stage 33 | Mechanical guardrails | Runtime-to-tools, launcher-to-tool, generated-root, and CMake target-scope checks become local/CI-friendly. |
+
 ## Disposition Decisions
 
 | Current area | Disposition | Target decision |
@@ -205,8 +219,8 @@ Smallest meaningful validation by tool area:
 | Question | Why it matters | Owning stage |
 | --- | --- | --- |
 | Should cooked asset schemas live in GameFramework, RHI, or a lower neutral runtime asset module? | Texture, material, mesh, scene, and shader packages are consumed by runtime and produced by tools. | Stage 24, Stage 27 |
-| Should AssetCooker call focused tools as processes or link their libraries for all cook paths? | Process isolation improves failure diagnostics but library calls can simplify tests. Either choice must keep focused cooker ownership clear. | Stage 25 |
-| Which current AssetConverter commands survive as inspect/debug commands? | The production target removes AssetConverter as a parallel cook path, but useful developer diagnostics may remain under explicit command names. | Stage 25 |
-| What exact replacement name should current CookCommon use? | `ToolConsoleSupport` and `CookDiagnostics` are the target roles; Stage 25 should choose one split that matches actual code. | Stage 25 |
-| What is the stable launcher evidence schema for build/cook/launch/smoke operations? | Final reviewer artifacts should be generated consistently. | Stage 26 |
-| How should shader package validation fixtures be stored and run in CI? | Shader compiler regressions need evidence beyond a build. | Stage 27 |
+| Should AssetCooker call focused tools as processes or link their libraries for all cook paths? | Process isolation improves failure diagnostics but library calls can simplify tests. Either choice must keep focused cooker ownership clear. | Stage 30 |
+| Which current AssetConverter commands survive as inspect/debug commands? | The production target removes AssetConverter as a parallel cook path, but useful developer diagnostics may remain under explicit command names. | Stage 30 |
+| What exact replacement name should current CookCommon use? | `ToolConsoleSupport` and `CookDiagnostics` are the target roles; Stage 28 should choose one split that matches actual code. | Stage 28 |
+| What is the stable launcher evidence schema for build/cook/launch/smoke operations? | Final reviewer artifacts should be generated consistently. | Stage 30 |
+| How should shader package validation fixtures be stored and run in CI? | Shader compiler regressions need evidence beyond a build. | Stage 29, Stage 31, Stage 33 |

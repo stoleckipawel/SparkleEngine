@@ -13,7 +13,7 @@ They should also remove or justify complexity: retained code must have an owner,
 
 ## Read First
 
-- [repository-refactor-stage-map.md](repository-refactor-stage-map.md): grouped Stage 1-30 navigation, status tracker, and before/after evidence.
+- [repository-refactor-stage-map.md](repository-refactor-stage-map.md): grouped Stage 1-36 navigation, status tracker, and before/after evidence.
 - [../rhi-renderer-review-ready-implementation-plan.md](../rhi-renderer-review-ready-implementation-plan.md): canonical detailed execution plan.
 - [../implementation/README.md](../implementation/README.md): Codex-facing prompt packets and stage completion protocol.
 - [../tutor/README.md](../tutor/README.md): human-facing learning path for the same stages.

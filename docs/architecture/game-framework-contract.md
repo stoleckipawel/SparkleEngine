@@ -38,6 +38,17 @@ Reference basis:
 | `Scene/Meshes` | Runtime mesh data/components, cooked mesh references, skeletal/static mesh data. | Renderer GPU mesh cache, backend buffers. |
 | `Scene/Skeletons` / `Scene/Animations` | Runtime skeletal/animation data contracts. | Import/cook algorithms and renderer skinning buffer allocation. |
 
+## Active Refactor Stages
+
+GameFramework work is routed through active implementation stages:
+
+| Stage | Scope | Required outcome |
+| --- | --- | --- |
+| Stage 25 | Runtime scene, render handoff, shared schema ownership | GameFramework remains runtime/cooked-data owned; shared producer/consumer schemas move toward `AssetContracts` and renderer handoff moves toward `RenderContracts` when current callers need it. |
+| Stage 26 | Runtime cooked asset loaders and schema pairing | Mesh/material/texture/scene/animation/skeleton loader expectations are paired with producer cookers, renderer consumers, and validation/inspection evidence. |
+| Stage 31 | Artifact validation matrix | Cooked artifacts name producer, schema owner, runtime consumer, inspector, and smoke/load evidence. |
+| Stage 34-36 | Final evidence, threading readiness, cleanup | GameFramework has no tool-private, renderer-private, backend-private, or ambiguous schema ownership left unaccepted. |
+
 ## Disposition Decisions
 
 | Current area | Disposition | Target decision |
