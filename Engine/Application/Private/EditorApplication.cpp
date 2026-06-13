@@ -108,15 +108,11 @@ bool EditorApplication::Tick()
 
 	const ViewportRenderProducts& viewportProducts = m_runtimeApplication->GetViewportRenderProducts();
 	m_ui->SetViewportRenderProducts(viewportProducts);
-	m_ui->SetViewportSceneColorTextureId(renderer.ResolveRenderProductTextureId(viewportProducts.GetSceneColor().Handle));
+	const ViewportPresentationProduct sceneColorPresentation = renderer.BeginViewportPresentation(RenderOutputFlags::SceneColor);
+	m_ui->SetViewportSceneColorTextureId(sceneColorPresentation.TextureId);
 	m_ui->Update();
 
 	RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-
-	renderer.TransitionRenderProduct(
-	    viewportProducts.GetSceneColor().Handle,
-	    ResourceState::RenderTarget,
-	    ResourceState::ShaderResource);
 
 	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
 	RhiPresentationService& presentationService = renderHardware.GetPresentationService();
@@ -125,10 +121,7 @@ bool EditorApplication::Tick()
 
 	presentationService.EndPresentRenderPass();
 
-	renderer.TransitionRenderProduct(
-	    viewportProducts.GetSceneColor().Handle,
-	    ResourceState::ShaderResource,
-	    ResourceState::Common);
+	renderer.EndViewportPresentation(RenderOutputFlags::SceneColor);
 
 	renderer.SubmitHostFrame();
 	m_runtimeApplication->EndFrame();

@@ -3,6 +3,7 @@
 #include "../RendererAPI.h"
 
 #include <cstdint>
+#include <filesystem>
 
 enum class RenderViewKind : std::uint8_t
 {
@@ -112,6 +113,36 @@ struct RenderProduct
 	RenderProductHandle Handle = {};
 	RenderViewportExtent Extent = {};
 	RenderProductFormat Format = RenderProductFormat::Unknown;
+};
+
+enum class ViewportPresentationStatus : std::uint8_t
+{
+	Unavailable = 0,
+	Ready = 1,
+};
+
+struct SPARKLE_RENDERER_API ViewportPresentationProduct
+{
+	RenderOutputFlags Output = RenderOutputFlags::None;
+	RenderProduct Product = {};
+	std::uint64_t TextureId = 0;
+	ViewportPresentationStatus Status = ViewportPresentationStatus::Unavailable;
+	const char* FailureReason = "";
+
+	constexpr explicit operator bool() const noexcept
+	{
+		return Status == ViewportPresentationStatus::Ready && TextureId != 0;
+	}
+};
+
+struct SPARKLE_RENDERER_API ViewportCaptureRequest
+{
+	RenderOutputFlags Output = RenderOutputFlags::SceneColor;
+	std::filesystem::path OutputPath;
+	std::uint32_t FrameIndex = 0;
+	std::uint32_t ViewMode = 0;
+	const char* ViewModeName = "";
+	const char* DebugName = "";
 };
 
 struct SPARKLE_RENDERER_API ViewportRenderRequest

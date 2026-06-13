@@ -2,6 +2,7 @@
 
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "Viewport/ViewportContracts.h"
@@ -34,9 +35,9 @@ class FramePipeline final
 	void SubmitHostFrame() noexcept;
 	void OnRender() noexcept;
 
-	std::uint64_t ResolveRenderProductTextureId(RenderProductHandle handle) noexcept;
-	NativeResourceHandle ResolveRenderProductResource(RenderProductHandle handle) const noexcept;
-	void TransitionRenderProduct(RenderProductHandle handle, ResourceState before, ResourceState after) noexcept;
+	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
+	void EndViewportPresentation(RenderOutputFlags output) noexcept;
+	RhiCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
 	std::uint32_t GetLastUnresolvedBarrierWarningCount() const noexcept;
 
   private:
@@ -58,6 +59,9 @@ class FramePipeline final
 	void BeginFrame() noexcept;
 	void SetupFrame() noexcept;
 	void RefreshViewportRenderProducts() noexcept;
+	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
+	NativeResourceHandle ResolveRenderProductResource(RenderProductHandle handle) const noexcept;
+	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;

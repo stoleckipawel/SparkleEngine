@@ -77,16 +77,98 @@ void FramePipeline::OnRender() noexcept
 	SubmitHostFrame();
 }
 
-std::uint64_t FramePipeline::ResolveRenderProductTextureId(RenderProductHandle handle) noexcept
+ViewportPresentationProduct FramePipeline::BeginViewportPresentation(RenderOutputFlags output) noexcept
 {
-	if (!handle || !m_frameGraph)
+	const RenderProduct* product = m_viewportRenderProducts.FindProduct(output);
+	if (product == nullptr || !product->Handle)
 	{
-		return 0;
+		return ViewportPresentationProduct{
+		    .Output = output,
+		    .FailureReason = "Viewport output is not available"};
 	}
 
-	const FrameGraphResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
-	return m_systems->GetRenderHardwareInterface().GetPresentationService().ResolveImGuiTextureId(
+	if (m_frameGraph == nullptr)
+	{
+		return ViewportPresentationProduct{
+		    .Output = output,
+		    .Product = *product,
+		    .FailureReason = "Frame graph is not available"};
+	}
+
+	TransitionRenderProduct(product->Handle, ResourceState::ShaderResource);
+
+	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(product->Handle);
+	const std::uint64_t textureId = m_systems->GetRenderHardwareInterface().GetPresentationService().ResolveImGuiTextureId(
 	    m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}));
+	if (textureId == 0)
+	{
+		return ViewportPresentationProduct{
+		    .Output = output,
+		    .Product = *product,
+		    .FailureReason = "RHI presentation service did not resolve a texture id"};
+	}
+
+	return ViewportPresentationProduct{
+	    .Output = output,
+	    .Product = *product,
+	    .TextureId = textureId,
+	    .Status = ViewportPresentationStatus::Ready};
+}
+
+void FramePipeline::EndViewportPresentation(RenderOutputFlags output) noexcept
+{
+	const RenderProduct* product = m_viewportRenderProducts.FindProduct(output);
+	if (product == nullptr || !product->Handle)
+	{
+		return;
+	}
+
+	TransitionRenderProduct(product->Handle, ResourceState::Common);
+}
+
+RhiCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
+{
+	RhiCaptureResult result{};
+	result.BackendApi = m_systems->GetRenderHardwareInterface().GetCapabilities().BackendApi;
+	result.FrameIndex = request.FrameIndex;
+	result.ViewMode = request.ViewMode;
+	result.ViewModeName = request.ViewModeName;
+	result.ArtifactPath = request.OutputPath;
+
+	const RenderProduct* product = m_viewportRenderProducts.FindProduct(request.Output);
+	if (product == nullptr || !product->Handle)
+	{
+		result.FailureReason = "Viewport output is not available";
+		return result;
+	}
+
+	const NativeResourceHandle resource = ResolveRenderProductResource(product->Handle);
+	if (!resource)
+	{
+		result.FailureReason = "Viewport output resource is not available";
+		return result;
+	}
+
+	return m_systems->GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
+	    RhiTextureCaptureRequest{
+	        .Resource = resource,
+	        .Width = product->Extent.Width,
+	        .Height = product->Extent.Height,
+	        .OutputPath = request.OutputPath,
+	        .FrameIndex = request.FrameIndex,
+	        .ViewMode = request.ViewMode,
+	        .ViewModeName = request.ViewModeName,
+	        .DebugName = request.DebugName});
+}
+
+FrameGraphResourceHandle FramePipeline::ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept
+{
+	if (!handle)
+	{
+		return FrameGraphResourceHandle::Invalid();
+	}
+
+	return FrameGraphResourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
 }
 
 NativeResourceHandle FramePipeline::ResolveRenderProductResource(RenderProductHandle handle) const noexcept
@@ -96,18 +178,28 @@ NativeResourceHandle FramePipeline::ResolveRenderProductResource(RenderProductHa
 		return NativeResourceHandle{};
 	}
 
-	const FrameGraphResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
+	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(handle);
+	if (!resourceHandle.IsValid())
+	{
+		return NativeResourceHandle{};
+	}
+
 	return m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle});
 }
 
-void FramePipeline::TransitionRenderProduct(RenderProductHandle handle, ResourceState before, ResourceState after) noexcept
+void FramePipeline::TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept
 {
 	if (!handle || !m_frameGraph)
 	{
 		return;
 	}
 
-	const FrameGraphResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
+	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(handle);
+	if (!resourceHandle.IsValid())
+	{
+		return;
+	}
+
 	const NativeResourceHandle resource = m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle});
 	if (!resource)
 	{
@@ -115,15 +207,14 @@ void FramePipeline::TransitionRenderProduct(RenderProductHandle handle, Resource
 	}
 
 	const ResourceState trackedBefore = m_frameGraph->GetTrackedResourceState(resourceHandle);
-	const ResourceState resolvedBefore = trackedBefore != after ? trackedBefore : before;
-	if (resolvedBefore == after)
+	if (trackedBefore == after)
 	{
 		return;
 	}
 
 	RenderHardwareInterface& renderHardware = m_systems->GetRenderHardwareInterface();
 	RenderCommandList& commandList = renderHardware.GetGraphicsCommandList(renderHardware.GetCurrentFrameIndex());
-	commandList.TransitionResource(resource, resolvedBefore, after);
+	commandList.TransitionResource(resource, trackedBefore, after);
 	m_frameGraph->UpdateTrackedResourceState(resourceHandle, after);
 }
 

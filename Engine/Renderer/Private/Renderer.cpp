@@ -102,19 +102,19 @@ void Renderer::SubmitHostFrame() noexcept
 	m_framePipeline->SubmitHostFrame();
 }
 
-std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle) noexcept
+ViewportPresentationProduct Renderer::BeginViewportPresentation(RenderOutputFlags output) noexcept
 {
-	return m_framePipeline->ResolveRenderProductTextureId(handle);
+	return m_framePipeline->BeginViewportPresentation(output);
 }
 
-NativeResourceHandle Renderer::ResolveRenderProductResource(RenderProductHandle handle) const noexcept
+void Renderer::EndViewportPresentation(RenderOutputFlags output) noexcept
 {
-	return m_framePipeline->ResolveRenderProductResource(handle);
+	m_framePipeline->EndViewportPresentation(output);
 }
 
-void Renderer::TransitionRenderProduct(RenderProductHandle handle, ResourceState before, ResourceState after) noexcept
+RhiCaptureResult Renderer::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
 {
-	m_framePipeline->TransitionRenderProduct(handle, before, after);
+	return m_framePipeline->CaptureViewportProductToBmp(request);
 }
 
 void Renderer::OnRender() noexcept

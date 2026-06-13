@@ -1333,7 +1333,7 @@ Acceptance:
 | Artifact index | Editor matrix: `artifacts/validation/stage10/stage10-smoke-results.json`. Runtime matrix: `artifacts/validation/stage10/stage10-runtime-results.json`. Logs and console output sit beside each BMP using backend/view-mode/runtime names. |
 | Data transfer contract | Milestone evidence transfers through structured logs, BMP capture artifacts, JSON result summaries, backend capability reports, and this coverage update. DLSS state is explicit and not inferred from screenshots. |
 | Threading readiness handoff | Smoke validation uses environment/request packets and immutable log/artifact outputs, which keeps future launcher/process orchestration and render-thread smoke collection separate from backend-private mutable state. |
-| Remaining risk | Runtime Vulkan presentation/swapchain layout ownership is not fully validated. Stage 12, Stage 19, or Stage 20 must either fix the present-layout transition/import path or record a narrower accepted exception with reproduction logs. |
+| Remaining risk | Runtime Vulkan presentation/swapchain layout ownership is not fully validated. Stage 19 or Stage 20 must either fix the present-layout transition/import path or record a narrower accepted exception with reproduction logs. |
 
 ## Stage 11 - Decompose Renderer Into Facade, System Root, Frame Pipeline
 
@@ -1423,13 +1423,13 @@ Completion evidence:
 | Renderer facade | `Engine/Renderer/Private/Renderer.cpp` now delegates host API calls to `RendererSystemRoot` and `FramePipeline`. It no longer owns backend construction, scene systems, frame graph construction, resize handling, frame context build, frame graph setup/compile/execute, or frame submission. |
 | System root | `Engine/Renderer/Private/Host/RendererSystemRoot.*` owns subsystem construction/lifetime for backend services, pipeline manager, mesh/texture/material/scene builders, ray tracing scene/settings, upscaler subsystem, memory monitor, and scene coordinator. Dependencies are passed at construction rather than fetched through globals. |
 | Frame pipeline | `Engine/Renderer/Private/FramePipeline/FramePipeline.*` owns resize tracking, frame graph lifetime, viewport products, frame diagnostics, begin/setup/record/submit/end frame, frame context build, frame graph setup/compile/execute, RT/TLAS binding, and upscaler frame setup. |
-| Public API stability | `Renderer.h` keeps the existing host-facing API and RHI include behavior so Application/Editor callers do not need Stage 12 migration yet. Private feature systems are not exposed through `Renderer.h`; the class owns only `RendererSystemRoot` and `FramePipeline`. |
+| Public API stability | Stage 11 kept the existing host-facing API for the next migration step; Stage 12 later replaced the manual render-product helper surface with a viewport presentation protocol. Private feature systems are not exposed through `Renderer.h`; the class owns only `RendererSystemRoot` and `FramePipeline`. |
 | CMake ownership | `Engine/Renderer/CMakeLists.txt` now uses `CONFIGURE_DEPENDS` for renderer public/private source globs so new source files under renderer ownership enter the generated build graph predictably. |
 | Data transfer contract | Host data still enters through `Renderer` public API. Frame state moves into `FramePipeline` through explicit references to `RendererSystemRoot`, `FrameContext`, frame graph products, pass runtime services, and diagnostics. Feature systems receive dependencies from `RendererSystemRoot`; no singleton/global access path was introduced. |
 | Threading readiness handoff | The extraction makes future render-thread work easier by isolating mutable lifetime ownership in `RendererSystemRoot` and per-frame graph/diagnostic state in `FramePipeline`. Frame setup, compile, record, submit, and diagnostics are now named phases. |
 | Validation | `cmake -S . -B build/windows-vs2026-stage5 -G "Visual Studio 18 2026" -A x64` passed; `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target ShowcaseEditor -- /nologo /v:minimal /m:1` passed; `SparkleLauncher` passed; `cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake` passed with only provider-owned counted exceptions. Source text hygiene scan over changed renderer source found no planning/stage/provenance text. |
 | Validation notes | `clang-format` is not discoverable in this shell, so formatting target validation remains unavailable. Configure still emits existing third-party developer warnings from Assimp custom commands and FetchContent deprecation in RHI dependencies. `SparkleLauncher` Qt deploy still warns that `VCINSTALLDIR` is not set after producing the executable. |
-| Remaining risk | Stage 12 still owns public host protocol cleanup for render-product texture/resource resolution and manual transition helpers. Stage 15 owns launcher-shaped D3D12/Vulkan smoke after frame facade/presentation work. |
+| Remaining risk | Stage 15 owns launcher-shaped D3D12/Vulkan smoke after frame facade/presentation work. |
 
 ## Stage 12 - Add Viewport Presentation Bridge And Clean Host Protocol
 
@@ -1458,9 +1458,9 @@ Code references:
 
 - `Engine/Renderer/Public/Viewport/ViewportContracts.h`
 - `Engine/Renderer/Public/Renderer.h`
-- `Renderer::ResolveRenderProductTextureId`
-- `Renderer::ResolveRenderProductResource`
-- `Renderer::TransitionRenderProduct`
+- `Renderer::BeginViewportPresentation`
+- `Renderer::EndViewportPresentation`
+- `Renderer::CaptureViewportProductToBmp`
 - `Engine/Application/Private`
 - Editor UI code that consumes viewport products
 
@@ -1509,6 +1509,22 @@ Acceptance:
 Validation:
 
 - Defer full build to Stage 15.
+
+Completion evidence:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for host protocol cleanup and targeted build validation. |
+| Target docs opened | [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md). |
+| Contract surfaces touched | RenderContracts-style viewport DTOs in [ViewportContracts.h](../../Engine/Renderer/Public/Viewport/ViewportContracts.h), Renderer host protocol in [Renderer.h](../../Engine/Renderer/Public/Renderer.h), RHI presentation/capture service usage behind `FramePipeline`, mechanical guardrails through `architecture_boundary_check`, and threading-readiness handoff through explicit presentation lifecycle/capture request packets. |
+| Ownership/disposition | Improve and extract `Renderer` host protocol: retain lifecycle/diagnostics/RHI access, remove public manual render-product texture/resource/transition helpers, and make `FramePipeline` the private owner of frame graph product resolution and transitions. |
+| Folder and target plan | Current owner folders remain `Engine/Renderer/Public/Viewport`, `Engine/Renderer/Public`, and `Engine/Renderer/Private/FramePipeline`; no code was moved into Application, Editor, RHI private, backend private, or tool folders. No CMake target split was required. |
+| Data transfer plan | Application/Editor submit `ViewportRenderRequest`, receive `ViewportPresentationProduct`, and send `ViewportCaptureRequest` for smoke capture. ImGui texture IDs are resolved inside Renderer through `RhiPresentationService`; native resource handles remain private to FramePipeline/RHI capture service calls. |
+| Threading-readiness plan | Presentation now has explicit begin/end lifecycle and capture request packets named by output, frame, view mode, and artifact path. Future render-thread or queued capture work can consume these packets without reading Application or frame graph private mutable state. |
+| Source text discipline | Touched source was scanned for planning/stage/provenance text; no matches were found. New runtime strings are failure diagnostics for presentation/capture behavior. |
+| Destination-fit proof | Texture ID resolution, native resource lookup, and render-product transitions moved behind `FramePipeline` because it owns frame graph lifetime and tracked resource state. Application remains host orchestration and no new catch-all helper or displaced-clutter owner was added. |
+| Acceptance evidence | [Renderer.h](../../Engine/Renderer/Public/Renderer.h) exposes `BeginViewportPresentation`, `EndViewportPresentation`, and `CaptureViewportProductToBmp`; old public `ResolveRenderProductTextureId`, `ResolveRenderProductResource`, and `TransitionRenderProduct` helpers are gone; [EditorApplication.cpp](../../Engine/Application/Private/EditorApplication.cpp) and [RhiSmokeEditorValidation.cpp](../../Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp) use the viewport presentation protocol. |
+| Validation evidence | `ShowcaseEditor` and `SparkleLauncher` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`; `architecture_boundary_check` passed. `clang_format_check` could not run because the VS2026 build tree has no generated target. Stage 15 still owns launcher-shaped D3D12/Vulkan smoke. |
 
 ## Stage 13 - Clean Scene Data, Mesh, Texture, Temporal Ownership
 

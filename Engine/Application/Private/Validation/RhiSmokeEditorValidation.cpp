@@ -310,8 +310,8 @@ namespace
 
 	void LogEditorViewportEvidence(
 	    const EditorSmokeConfig& config,
-	    RuntimeApplication& app,
 	    const ViewportRenderProducts& viewportProducts,
+	    const ViewportPresentationProduct& sceneColorPresentation,
 	    EditorSmokeState& state) noexcept
 	{
 		if (!config.Enabled || state.EditorViewportEvidenceLogged)
@@ -325,17 +325,17 @@ namespace
 			return;
 		}
 
-		Renderer& renderer = app.GetRenderer();
 		const RenderProduct& sceneColor = viewportProducts.GetSceneColor();
-		const std::uint64_t sceneColorTextureId = renderer.ResolveRenderProductTextureId(sceneColor.Handle);
 		SPDLOG_LOGGER_INFO(
 		    appLogger,
-		    "RHI editor smoke evidence: viewport sceneColorHandle={} textureId={} extent={}x{} outputsMask={}",
+		    "RHI editor smoke evidence: viewport sceneColorHandle={} textureId={} extent={}x{} outputsMask={} presentationStatus={} reason='{}'",
 		    sceneColor.Handle.Value,
-		    sceneColorTextureId,
+		    sceneColorPresentation.TextureId,
 		    sceneColor.Extent.Width,
 		    sceneColor.Extent.Height,
-		    static_cast<std::uint32_t>(viewportProducts.GetAvailableOutputs()));
+		    static_cast<std::uint32_t>(viewportProducts.GetAvailableOutputs()),
+		    static_cast<std::uint32_t>(sceneColorPresentation.Status),
+		    sceneColorPresentation.FailureReason);
 
 		state.EditorViewportEvidenceLogged = true;
 	}
@@ -343,7 +343,6 @@ namespace
 	void CaptureEditorSceneColorIfRequested(
 	    const EditorSmokeConfig& config,
 	    RuntimeApplication& app,
-	    const ViewportRenderProducts& viewportProducts,
 	    EditorSmokeState& state) noexcept
 	{
 		if (!config.Enabled || state.SceneColorCaptured || config.SceneColorCapturePath.empty())
@@ -359,16 +358,10 @@ namespace
 
 		static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
 		Renderer& renderer = app.GetRenderer();
-		const NativeResourceHandle sceneColorResource =
-		    renderer.ResolveRenderProductResource(viewportProducts.GetSceneColor().Handle);
-
-		const RenderProduct& sceneColorProduct = viewportProducts.GetSceneColor();
 		const RenderViewMode viewMode = config.HasViewModeOverride ? config.ViewModeOverride : CVarRenderViewMode.Get();
-		const RhiCaptureResult captureResult = renderer.GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
-		    RhiTextureCaptureRequest{
-		        .Resource = sceneColorResource,
-		        .Width = sceneColorProduct.Extent.Width,
-		        .Height = sceneColorProduct.Extent.Height,
+		const RhiCaptureResult captureResult = renderer.CaptureViewportProductToBmp(
+		    ViewportCaptureRequest{
+		        .Output = RenderOutputFlags::SceneColor,
 		        .OutputPath = std::filesystem::path(config.SceneColorCapturePath),
 		        .FrameIndex = currentFrame,
 		        .ViewMode = static_cast<std::uint32_t>(viewMode),
@@ -516,15 +509,12 @@ namespace
 
 		const ViewportRenderProducts& viewportProducts = app.GetViewportRenderProducts();
 		ui.SetViewportRenderProducts(viewportProducts);
-		ui.SetViewportSceneColorTextureId(renderer.ResolveRenderProductTextureId(viewportProducts.GetSceneColor().Handle));
-		LogEditorViewportEvidence(config, app, viewportProducts, state);
+		const ViewportPresentationProduct sceneColorPresentation = renderer.BeginViewportPresentation(RenderOutputFlags::SceneColor);
+		ui.SetViewportSceneColorTextureId(sceneColorPresentation.TextureId);
+		LogEditorViewportEvidence(config, viewportProducts, sceneColorPresentation, state);
 		ui.Update();
 
 		RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-		renderer.TransitionRenderProduct(
-		    viewportProducts.GetSceneColor().Handle,
-		    ResourceState::RenderTarget,
-		    ResourceState::ShaderResource);
 
 		constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
 		RhiPresentationService& presentationService = renderHardware.GetPresentationService();
@@ -532,13 +522,10 @@ namespace
 		ui.Render();
 		presentationService.EndPresentRenderPass();
 
-		renderer.TransitionRenderProduct(
-		    viewportProducts.GetSceneColor().Handle,
-		    ResourceState::ShaderResource,
-		    ResourceState::Common);
+		renderer.EndViewportPresentation(RenderOutputFlags::SceneColor);
 
 		renderer.SubmitHostFrame();
-		CaptureEditorSceneColorIfRequested(config, app, viewportProducts, state);
+		CaptureEditorSceneColorIfRequested(config, app, state);
 		app.EndFrame();
 		Advance(config, app, state);
 		return true;

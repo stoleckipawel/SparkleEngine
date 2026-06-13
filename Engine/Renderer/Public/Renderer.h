@@ -7,9 +7,8 @@
 #include "Meshes/MeshDiagnostics.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
+#include "../../RHI/Public/Capture/RhiCaptureService.h"
 #include "../../RHI/Public/Device/RenderHardwareInterface.h"
-#include "../../RHI/Public/Interop/ResourceState.h"
-#include "../../RHI/Public/Interop/RhiNativeHandles.h"
 
 #include <cstdint>
 #include <memory>
@@ -49,9 +48,9 @@ class SPARKLE_RENDERER_API Renderer final
 	void PrepareHostFrame() noexcept;
 	void RecordHostFrame() noexcept;
 	void SubmitHostFrame() noexcept;
-	std::uint64_t ResolveRenderProductTextureId(RenderProductHandle handle) noexcept;
-	NativeResourceHandle ResolveRenderProductResource(RenderProductHandle handle) const noexcept;
-	void TransitionRenderProduct(RenderProductHandle handle, ResourceState before, ResourceState after) noexcept;
+	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
+	void EndViewportPresentation(RenderOutputFlags output) noexcept;
+	RhiCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
 
 	void OnRender() noexcept;
 
