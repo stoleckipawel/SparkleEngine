@@ -19,7 +19,7 @@ CookedShaderReloadResult PipelineStateManager::ReloadCookedShaders() noexcept
 
 	CookedShaderPackageCache nextShaderPackages;
 	m_shaderPackages.ReplaceWith(std::move(nextShaderPackages));
-	m_runtimeStorageByPass.clear();
+	m_legacyRuntimeStorageByPass.clear();
 
 	SPDLOG_LOGGER_INFO(logger, "Cooked shader reload complete (generation={})", m_shaderPackages.GetGeneration());
 	return CookedShaderReloadResult::Success();

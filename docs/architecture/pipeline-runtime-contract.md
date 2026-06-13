@@ -1,6 +1,6 @@
 # Pipeline Runtime Contract
 
-Status: Stage 2 reviewer contract
+Status: Stage 16 implementation contract
 Date: 2026-06-12
 Last synchronized: 2026-06-13
 
@@ -13,6 +13,8 @@ Primary code references:
 - [PipelineStateManager.h](../../Engine/Renderer/Private/Pipeline/PipelineStateManager.h)
 - [RenderPassShaderRuntime.h](../../Engine/Renderer/Private/Pipeline/RenderPassShaderRuntime.h)
 - [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h)
+- [PipelineRuntimeLibrary.h](../../Engine/Renderer/Private/PipelineRuntime/PipelineRuntimeLibrary.h)
+- [PipelineRuntimeKey.h](../../Engine/Renderer/Private/PipelineRuntime/PipelineRuntimeKey.h)
 - [PassBinder.cpp](../../Engine/Renderer/Private/Pipeline/PassBinder.cpp)
 - [RhiPipelineStateDesc.h](../../Engine/RHI/Public/Pipeline/RhiPipelineStateDesc.h)
 - [D3D12/Pipeline](../../Engine/RHI/Private/D3D12/Pipeline)
@@ -46,7 +48,7 @@ RHI owns:
 - Backend-neutral binding layout and pipeline objects.
 - D3D12/Vulkan native root signatures, pipeline layouts, shader modules, and PSO objects.
 
-## Current Runtime Flow
+## Current Compatibility Runtime Flow
 
 ```mermaid
 flowchart TD
@@ -55,6 +57,8 @@ flowchart TD
     TypeIndex[std::type_index pass key]
     Traits[RenderPassPipelineTraits specialization]
     Runtime[RenderPassShaderRuntime]
+    Library[PipelineRuntimeLibrary]
+    Key[PipelineRuntimeKey]
     Layout[Build PassParameterLayout]
     Package[Load CookedShaderPackage]
     Caps[Validate capabilities]
@@ -68,23 +72,28 @@ flowchart TD
     TypeIndex --> Traits
     Traits --> Runtime
     Runtime --> Layout
-    Runtime --> Package
-    Runtime --> Caps
-    Runtime --> Binding
+    Runtime --> Library
+    Library --> Package
+    Library --> Caps
+    Library --> Binding
+    Library --> Key
     Runtime --> Desc
-    Desc --> PSO
+    Desc --> Library
+    Library --> PSO
     PSO --> Backend
 ```
 
-This path is functional, but the identity is implicit and pass-specific runtime logic is centralized in a traits header.
+This path is functional and now emits explicit pipeline runtime keys during PSO creation. The remaining compatibility debt is that existing passes still enter through `std::type_index` and `RenderPassPipelineTraits`; Stage 17 removes that ordinary-pass registration path.
 
 ## Current Objects
 
 | Object | Current responsibility | Current issue |
 | --- | --- | --- |
-| `PipelineStateManager` | Lazy runtime cache keyed by pass C++ type; owns `CookedShaderPackageCache`; handles reload by clearing runtimes. | `std::type_index` is not a reviewer-friendly PSO key and cannot explain shader package, backend, formats, or state. |
+| `PipelineStateManager` | Lazy compatibility runtime cache keyed by pass C++ type; owns `CookedShaderPackageCache`; handles reload by replacing the package cache and clearing legacy runtimes. | `std::type_index` remains a temporary adapter until Stage 17 pass definitions replace central traits. |
 | `RenderPassPipelineTraits<TPass>` | Per-pass runtime construction traits. | Every new pass adds central compile-time plumbing. |
-| `RenderPassShaderRuntime` | Validates pipeline kind/stages, builds binding layout, loads package, checks capabilities, creates RHI pipeline state. | Strong utility, but it mixes many steps that should become observable pipeline runtime stages. |
+| `RenderPassShaderRuntime` | Validates pipeline kind/stages, builds binding layout, and adapts existing traits into the runtime library. | It should shrink further once pass definitions feed the runtime library directly. |
+| `PipelineRuntimeLibrary` | Loads cooked packages, validates package/backend capabilities, creates binding layouts, builds printable pipeline keys, and creates RHI PSOs from normalized descriptors. | It must stay a runtime contract owner, not a place for pass-specific policy. |
+| `PipelineRuntimeKey` | Captures pass, package, binding layout, backend, shader format, package generation/hash, pipeline kind, stages, features, and graphics render state. | It does not yet own final cache lookup because Stage 17 still feeds through pass traits. |
 | `PassBinder` | Binds compiled reflection/layout entries to pass parameter data and overrides. | Critical path for runtime errors; diagnostics should remain precise. |
 | `RhiPipelineStateDesc` | Backend-neutral graphics/compute pipeline descriptors. | Needs to become part of an explicit key/diagnostic model. |
 | D3D12/Vulkan pipeline services | Native root signature/layout/shader module/PSO creation. | Should consume normalized descs without renderer pass policy. |
@@ -93,9 +102,9 @@ This path is functional, but the identity is implicit and pass-specific runtime 
 
 | Current object/body | Disposition | Target decision |
 | --- | --- | --- |
-| `PipelineStateManager` | Improve and extract | Preserve cache/reload responsibility, but replace type-index identity with explicit package/layout/backend-aware keys. |
+| `PipelineStateManager` | Improve and extract | Preserve cache/reload responsibility; the current type-index storage is named legacy and will be removed after Stage 17 pass migration. |
 | `RenderPassPipelineTraits<TPass>` | Replace or redesign | Remove as a permanent central per-pass construction registry. |
-| `RenderPassShaderRuntime` | Improve and extract | Preserve useful validation/package-loading work, but expose observable stages and diagnostics through `PipelineRuntimeLibrary`. |
+| `RenderPassShaderRuntime` | Improve and extract | Preserve pass compatibility while package loading, capability validation, binding layout creation, explicit key formatting, and PSO creation live in `PipelineRuntimeLibrary`. |
 | `PassBinder` | Keep and refine | Preserve as the binding error hotspot; improve diagnostics and reflection mismatch reporting. |
 | `RhiPipelineStateDesc` | Keep and refine | Preserve normalized backend-neutral descriptors and make them part of printable PSO identity. |
 | Shader package declaration duplication | Replace or redesign | Replace duplicate declarations with `ShaderContracts` pass catalog/package manifests. |
@@ -143,7 +152,7 @@ flowchart TD
     Library --> Diagnostics
 ```
 
-`PipelineRuntimeLibrary` is a planned Stage 16 concept. It is not implemented today. It is the replacement target for the parts of the current runtime that only exist to preserve implicit C++ type identity.
+`PipelineRuntimeLibrary` exists after Stage 16 as the compatibility bridge used by existing passes. Stage 17 should feed it from declarative pass definitions and remove the `RenderPassPipelineTraits`/type-index entry path.
 
 ## PSO Key Definition
 
@@ -266,9 +275,9 @@ Backend pipeline code may log debug names and native errors. It should not know 
 
 | Gap | Evidence | Owning stage |
 | --- | --- | --- |
-| PSO identity is implicit. | [PipelineStateManager.h](../../Engine/Renderer/Private/Pipeline/PipelineStateManager.h) uses `std::type_index`. | Stage 16 |
+| Pass runtime entry identity still uses legacy type-index storage. | [PipelineStateManager.h](../../Engine/Renderer/Private/Pipeline/PipelineStateManager.h) keeps `m_legacyRuntimeStorageByPass` until declarative pass definitions migrate. | Stage 17 |
 | Central traits file grows with pass count. | [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h) has one specialization per pass. | Stage 17 |
-| Runtime creation mixes package loading, binding validation, capability validation, and PSO construction. | [RenderPassShaderRuntime.h](../../Engine/Renderer/Private/Pipeline/RenderPassShaderRuntime.h) performs all steps. | Stage 16 |
+| Final cache lookup does not yet use explicit pipeline keys. | [PipelineRuntimeLibrary.h](../../Engine/Renderer/Private/PipelineRuntime/PipelineRuntimeLibrary.h) creates and logs keys, but compatibility cache ownership still sits in `PipelineStateManager`. | Stage 17, Stage 20 |
 | Shader package declaration is still duplicated between pass runtime code and renderer registration files. | [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h) consumes pass package descriptions while [ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations) declares cook-time registrations. | Stage 17 |
 | Pipeline diagnostics are not yet final acceptance artifacts. | Logs exist, but final smoke reports need package/key/backend evidence. | Stage 16, Stage 20 |
 

@@ -427,3 +427,18 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Data transfer contract | Validation evidence transfers through smoke logs, BMP captures, the JSON result summary, and this status table. The renderer facade and presentation bridge remain the host-facing protocol; Application does not own frame graph transitions. |
 | Threading readiness handoff | The milestone proves deterministic launcher-shaped process packets and immutable artifacts for future queued validation. Frame graph plans remain frozen before command recording, and Vulkan back-buffer native layout handling stays backend-local. |
 | Remaining risk | Stage 16/17 can start PSO/pass runtime work from a clean renderer/frame graph baseline. Stage 19 still owns deeper backend presentation-service slimming. |
+
+## Stage 16 Pipeline Runtime Key Evidence
+
+| Field | Evidence |
+| --- | --- |
+| Stage / checkpoint | Stage 16 - Introduce Explicit PSO Key And Pipeline Runtime Library. |
+| Status | Completed for the explicit runtime key/library bridge. Stage 17 still owns declarative pass definitions and deletion of central traits/type-index entry identity. |
+| Code evidence | `Engine/Renderer/Private/PipelineRuntime/PipelineRuntimeKey.*` defines printable backend-normalized pipeline runtime identity. `Engine/Renderer/Private/PipelineRuntime/PipelineRuntimeLibrary.*` owns package loading, package capability validation, binding layout creation, explicit key logging, and RHI PSO creation from normalized descriptors. |
+| Compatibility evidence | `RenderPassShaderRuntime.h` now adapts existing pass traits into `PipelineRuntimeLibrary`; `PipelineStateManager.h` names the current type-index storage as legacy until Stage 17 removes that path. |
+| Key evidence | The runtime key records pass name, package declaration, package id, binding layout id, backend, required shader binary format, pipeline kind, shader stages, required/package features, shader package generation, package key, source hash, binding-layout hash, vertex layout, pixel-stage presence, wireframe/cull/winding/depth/stencil state, render-target formats, and depth-stencil format. |
+| Data transfer contract | Shader package data transfers from `CookedShaderPackageCache` and cooked headers into `PipelineRuntimeKey`; binding/layout creation and PSO creation transfer through `PipelineRuntimePackageRequest`, `RenderBindingLayoutCompileDesc`, `GraphicsPipelineStateDesc`, and `ComputePipelineStateDesc`. D3D12/Vulkan backend code continues to consume normalized RHI descriptors rather than renderer pass types. |
+| Threading readiness handoff | Explicit immutable key construction makes later background PSO warmup, package-generation invalidation, and cache reporting possible without reading live pass instances. |
+| Validation | `ShowcaseEditor` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`; CMake regenerated after discovering the new `PipelineRuntime` files. `architecture_boundary_check` passed with only provider-owned counted DLSS exceptions. A source text hygiene scan over `Engine/Renderer/Private/Pipeline` and `Engine/Renderer/Private/PipelineRuntime` found no stage/provenance planning text. |
+| Format evidence | `clang_format_check` is not generated in the VS2026 build tree; the attempted target build failed with missing `clang_format_check.vcxproj`. |
+| Remaining risk | Stage 17 must remove ordinary-pass dependence on `RenderPassPipelineTraits` and `m_legacyRuntimeStorageByPass`; Stage 20 must include runtime logs as validation artifacts for D3D12/Vulkan lit and debug/normal smoke. |

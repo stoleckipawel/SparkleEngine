@@ -1827,6 +1827,8 @@ Completion evidence:
 
 ## Stage 16 - Introduce Explicit PSO Key And Pipeline Runtime Library
 
+Status: fully completed for explicit key/library ownership; Stage 17 removes the remaining pass-trait/type-index compatibility path.
+
 Goal:
 
 - Replace implicit pass-type runtime identity with an explicit PSO/runtime key model.
@@ -1902,7 +1904,10 @@ Acceptance:
 
 Validation:
 
-- Defer full build to Stage 20 unless compile issues block migration.
+- `ShowcaseEditor` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`.
+- `architecture_boundary_check` passed with only documented provider-owned DLSS exceptions.
+- `clang_format_check` could not run because the VS2026 build tree does not generate `clang_format_check.vcxproj`.
+- Full D3D12/Vulkan smoke and runtime log capture remain assigned to Stage 20.
 
 ## Stage 17 - Introduce Declarative Pass Definition And Migrate Passes
 
