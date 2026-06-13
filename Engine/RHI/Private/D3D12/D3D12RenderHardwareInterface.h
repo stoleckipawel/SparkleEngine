@@ -3,12 +3,10 @@
 #include "Config/RenderConfig.h"
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "Device/RenderHardwareInterface.h"
-#include "D3D12/Memory/D3D12GpuAllocation.h"
 
 #include <array>
 #include <memory>
 #include <string>
-#include <vector>
 
 class D3D12DescriptorHeapManager;
 class D3D12DescriptorService;
@@ -21,6 +19,7 @@ class D3D12GpuMemoryAllocator;
 class D3D12PipelineService;
 class D3D12PresentationService;
 class D3D12RenderCommandList;
+class D3D12ResourceService;
 class D3D12Rhi;
 class D3D12RayTracingServices;
 class D3D12SamplerLibrary;
@@ -177,41 +176,21 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
   private:
 	friend class D3D12RenderCommandList;
 
-	struct PendingOwnedResourceRelease
-	{
-		std::unique_ptr<D3D12GpuAllocationRecord> Record;
-		std::uint64_t RetireFenceValue = 0;
-	};
-
-	struct PendingOwnedMemoryBlockRelease
-	{
-		std::unique_ptr<D3D12GpuHeapRecord> Record;
-		std::uint64_t RetireFenceValue = 0;
-	};
-
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
-	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);
-	static RhiOwnedResourceHandle WrapOwnedResource(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept;
-	static RhiOwnedResourceHandle WrapOwnedResource(
-	    Microsoft::WRL::ComPtr<ID3D12Resource>&& resource,
-	    std::wstring debugName) noexcept;
-	static RhiOwnedMemoryBlockHandle WrapOwnedMemoryBlock(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
-	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
 	RhiCapabilities BuildCapabilities() const noexcept;
 	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
-	void DrainCompletedOwnedResourceReleases() noexcept;
 
 	std::unique_ptr<D3D12InteropService> m_interopService;
 	std::unique_ptr<D3D12CaptureService> m_captureService;
 	std::unique_ptr<D3D12DiagnosticsService> m_diagnosticsService;
 	std::unique_ptr<D3D12PresentationService> m_presentationService;
 	std::unique_ptr<D3D12PipelineService> m_pipelineService;
+	std::unique_ptr<D3D12ResourceService> m_resourceService;
 	std::unique_ptr<D3D12RayTracingServices> m_rayTracingServices;
 	D3D12Rhi* m_rhi = nullptr;
-	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
 	D3D12ConstantBufferManager* m_constantBufferManager = nullptr;
@@ -220,6 +199,4 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	RhiCapabilities m_capabilities;
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
 	std::array<std::unique_ptr<RenderCommandList>, RenderConfig::FramesInFlight> m_commandLists;
-	std::vector<PendingOwnedResourceRelease> m_pendingOwnedResourceReleases;
-	std::vector<PendingOwnedMemoryBlockRelease> m_pendingOwnedMemoryBlockReleases;
 };

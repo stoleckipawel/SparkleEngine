@@ -346,7 +346,7 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Artifact index | Editor matrix: `artifacts/validation/stage10/stage10-smoke-results.json`. Runtime matrix: `artifacts/validation/stage10/stage10-runtime-results.json`. Logs and console captures are stored beside the BMP artifacts with backend/view/runtime names. |
 | Data transfer contract | Evidence flows through smoke logs, BMP artifacts, JSON result summaries, backend capability reports, and this status table. Capture and DLSS state are structured log data, not visual inference. |
 | Threading readiness handoff | Smoke requests are environment/process packets and outputs are immutable logs/artifacts, which keeps future launcher orchestration and backend smoke execution compatible with queued jobs or worker-owned validation runs. |
-| Remaining risk | Stage 19 still owns deeper backend presentation-service slimming and documentation, but the Stage 10 validation blocker is closed by Stage 15 smoke evidence. |
+| Remaining risk | Stage 19 has since closed backend presentation/resource service ownership, and the Stage 10 validation blocker is closed by Stage 15 smoke evidence. |
 
 ## Stage 11 Renderer Facade Decomposition Evidence
 
@@ -377,7 +377,7 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Data transfer contract | Application/Editor send viewport requests and receive presentation DTOs. Texture IDs transfer through RHI presentation service inside Renderer/FramePipeline. Smoke capture transfers through `ViewportCaptureRequest` to renderer-owned RHI capture service calls. |
 | Threading readiness handoff | Viewport presentation now has explicit begin/end lifecycle calls and capture request packets. Future render-thread or queued capture work can route by output, frame, view mode, and artifact path without reading Application or frame graph private mutable state. |
 | Validation | `ShowcaseEditor` and `SparkleLauncher` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`; `architecture_boundary_check` passed; source text hygiene scan over touched source found no planning/stage/provenance text. `clang_format_check` could not run because the VS2026 build tree has no generated `clang_format_check` target. |
-| Remaining risk | Stage 15 closed launcher-shaped D3D12/Vulkan runtime/editor smoke for presentation parity. Stage 19 still owns deeper backend presentation-service slimming. |
+| Remaining risk | Stage 15 closed launcher-shaped D3D12/Vulkan runtime/editor smoke for presentation parity. Stage 19 backend presentation/resource service ownership is complete. |
 
 ## Stage 13 Scene Data Ownership Evidence
 
@@ -428,7 +428,7 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Source text discipline | No explanatory/provenance/planning comments were added to source. A source-text scan over the touched Vulkan file found no stage/provenance planning text. |
 | Data transfer contract | Validation evidence transfers through smoke logs, BMP captures, the JSON result summary, and this status table. The renderer facade and presentation bridge remain the host-facing protocol; Application does not own frame graph transitions. |
 | Threading readiness handoff | The milestone proves deterministic launcher-shaped process packets and immutable artifacts for future queued validation. Frame graph plans remain frozen before command recording, and Vulkan back-buffer native layout handling stays backend-local. |
-| Remaining risk | Stage 16/17 can start PSO/pass runtime work from a clean renderer/frame graph baseline. Stage 19 still owns deeper backend presentation-service slimming. |
+| Remaining risk | Stage 16/17 can start PSO/pass runtime work from a clean renderer/frame graph baseline. Stage 19 backend presentation/resource service ownership is complete. |
 
 ## Stage 16 Pipeline Runtime Key Evidence
 
@@ -503,14 +503,14 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 | Format evidence | `clang_format_check` is not generated in the VS2026 build tree; the attempted target build failed with missing `clang_format_check.vcxproj`. |
 | Data transfer contract | Stage 20 evidence transfers through command/build output, shader package validation logs, launcher-shaped smoke logs, deterministic camera-motion smoke logs, BMP capture artifacts, visual comparison JSON, PSO runtime key logs, backend capability reports, and this coverage status packet. |
 | Threading readiness handoff | Validation inputs are deterministic process/environment packets and outputs are immutable logs/artifacts. Backend parity, package enumeration, PSO key construction, frame graph health, DLSS status, and RT scene diagnostics can be consumed by future queued validation without live editor state. |
-| Remaining risk | Stage 19 remains open for deeper backend service slimming, but Stage 20's validation milestone is complete for the renderer/RHI parity evidence it owns. |
+| Remaining risk | Stage 19 backend service slimming is complete, and Stage 20's validation milestone is complete for the renderer/RHI parity evidence it owns. |
 
 ## Stage 34 Whole-Repository Evidence Gate Reconciliation
 
 | Field | Evidence |
 | --- | --- |
 | Status | Accepted for the Stage 34 evidence gate. |
-| Coverage reconciliation | Remaining detailed `Needs refactor` and `Needs design decision` rows are not unowned blockers. Backend service slimming is owned by Stage 19; final threading handoff hardening is owned by Stage 35; stale-path/rubric cleanup is owned by Stage 36. |
+| Coverage reconciliation | Remaining detailed `Needs refactor` and `Needs design decision` rows are not unowned blockers. Backend service slimming, final threading handoff hardening, and stale-path/rubric cleanup are complete for the current Stage 19/35/36 track. |
 | Boundary evidence | `architecture_boundary_check` passed during Stage 34 with only provider-owned NVIDIA DLSS Vulkan/Streamline counted exceptions. |
 | Build evidence | `ShaderCompiler`, `SparkleLauncher`, `AssetCooker`, `TextureCooker`, and `ShowcaseRuntime` built in `DevelopmentEditor` from `build/windows-vs2026-stage5`. |
 | Runtime evidence | Launcher-shaped D3D12 `ShowcaseRuntime` smoke from `Projects/Showcase` exited `0`, completed all `5/5` level switch targets, and reported `frameGraphUnresolvedBarrierWarnings=0`, DLSS active, RT available, and valid TLAS evidence. Stage 20 remains the full D3D12/Vulkan parity evidence packet. |
@@ -520,9 +520,9 @@ These rows were added during the file-level confrontation. They sit outside `Eng
 
 | Field | Evidence |
 | --- | --- |
-| Status | Started, not final review-ready. Stage 36 reconciled stale accepted renderer/tooling rows and reran targeted validation, but detailed backend service rows remain Stage 19-owned. |
+| Status | Fully completed. Stage 36 reconciled stale accepted renderer/tooling rows and reran targeted validation after Stage 19 backend service closure. |
 | Cleanup scan | Source/CMake scans found no retired renderer shader aggregator, pass-traits, shader-registration boilerplate path, one-field lighting wrapper, or old snapshot accessor path. Current `SparkleRendererShaderRegistrations` target names remain valid because they are the narrow renderer shader-registration object target consumed by runtime and ShaderCompiler. |
 | Boundary evidence | `architecture_boundary_check` passed in `build-vs2026` with no RHI-to-Renderer include violation, no Application backend-native validation violation, and only counted provider-owned NVIDIA DLSS Vulkan/Streamline exceptions. |
 | Shader evidence | `ShaderCompiler.exe list-shaders --validate` reported `17` valid typed registrations and `10` packages. |
-| Remaining blocker | Stage 19 still owns the remaining resource/memory lifetime and upload/allocation root-facade slice. Ray tracing, interop, capture, diagnostics, presentation, pipeline, and D3D12 descriptor state have moved into backend-owned services, but the whole backend architecture is not final until resource/memory ownership is equally explicit or deliberately accepted with narrower evidence. |
-| Disposition | Do not mark the final renderer/RHI architecture review-ready until Stage 19 reaches `Fully completed` and Stage 36 is rerun. |
+| Remaining blocker | The Stage 19 backend-service blocker is closed. Ray tracing, interop, capture, diagnostics, presentation, pipeline, D3D12 descriptor state, and D3D12/Vulkan resource/memory ownership now have backend-owned service evidence. |
+| Disposition | Rerun Stage 36 final cleanup, rubric scoring, stale-path scans, and whole-repository validation before marking the repository final review-ready. |

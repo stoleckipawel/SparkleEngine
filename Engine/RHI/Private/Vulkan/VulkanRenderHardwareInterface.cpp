@@ -15,24 +15,20 @@
 #include "Vulkan/Device/VulkanExternalFeatureInteropCapabilities.h"
 #include "Vulkan/Diagnostics/VulkanDiagnosticsService.h"
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
-#include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Interop/VulkanInteropService.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/Pipeline/VulkanPipelineService.h"
 #include "Vulkan/Presentation/VulkanPresentationService.h"
 #include "Vulkan/RayTracing/VulkanRayTracingServices.h"
 #include "Vulkan/Resources/VulkanConstantBufferManager.h"
+#include "Vulkan/Resources/VulkanResourceService.h"
 #include "Vulkan/Samplers/VulkanSamplerLibrary.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
-#include "Vulkan/Textures/VulkanTextureFactory.h"
-#include "Vulkan/Resources/VulkanTexture.h"
 #include "Vulkan/UI/VulkanImGuiBackend.h"
 #include "Vulkan/VulkanTypeConversions.h"
-#include "RHI/Public/Validation/RhiValidation.h"
 
 #include <algorithm>
 #include <array>
-#include <cstring>
 #include <fstream>
 #include <format>
 #include <vector>
@@ -155,7 +151,7 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
     VulkanSwapChain& swapChain,
     VulkanCommandContext& commandContext,
     VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
-    m_rhi(&rhi), m_swapChain(&swapChain), m_commandContext(&commandContext), m_memoryAllocator(&memoryAllocator)
+    m_rhi(&rhi), m_swapChain(&swapChain), m_commandContext(&commandContext)
 {
 	m_interopService = std::make_unique<VulkanInteropService>(*this);
 	m_captureService = std::make_unique<VulkanCaptureService>(*this);
@@ -164,9 +160,9 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	m_pipelineService = std::make_unique<VulkanPipelineService>(rhi);
 	m_rayTracingServices = std::make_unique<VulkanRayTracingServices>(rhi, memoryAllocator);
 	m_descriptorManager = std::make_unique<VulkanDescriptorManager>(rhi, memoryAllocator);
+	m_resourceService = std::make_unique<VulkanResourceService>(rhi, commandContext, memoryAllocator, *m_descriptorManager, m_capabilities);
 	m_constantBufferManager = std::make_unique<VulkanConstantBufferManager>(memoryAllocator);
 	m_samplerLibrary = std::make_unique<VulkanSamplerLibrary>(rhi, *m_descriptorManager);
-	m_textureFactory = std::make_unique<VulkanTextureFactory>(memoryAllocator);
 	m_imguiBackend = std::make_unique<VulkanImGuiBackend>(*this);
 	for (std::uint32_t frameIndex = 0; frameIndex < RenderConfig::FramesInFlight; ++frameIndex)
 	{
@@ -183,12 +179,8 @@ VulkanRenderHardwareInterface::~VulkanRenderHardwareInterface() noexcept
 {
 	m_samplerLibrary.reset();
 	m_imguiBackend.reset();
-	m_textureFactory.reset();
+	m_resourceService.reset();
 	m_constantBufferManager.reset();
-	if (m_memoryAllocator != nullptr)
-	{
-		m_memoryAllocator->FlushPendingReleases();
-	}
 }
 
 ERhiBackendApi VulkanRenderHardwareInterface::GetBackendApi() const noexcept
@@ -216,9 +208,9 @@ void VulkanRenderHardwareInterface::WaitForIdle() noexcept
 	{
 		m_rhi->WaitForIdle();
 	}
-	if (m_memoryAllocator != nullptr)
+	if (m_resourceService != nullptr)
 	{
-		m_memoryAllocator->FlushPendingReleases();
+		m_resourceService->FlushPendingReleases();
 	}
 }
 
@@ -715,17 +707,8 @@ NativeResourceHandle VulkanRenderHardwareInterface::GetBackBufferResource() cons
 
 std::unique_ptr<Texture> VulkanRenderHardwareInterface::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || m_descriptorManager == nullptr || !textureUpload.IsValid())
-	{
-		return {};
-	}
-
-	return std::make_unique<VulkanTexture>(
-	    *m_rhi,
-	    *m_memoryAllocator,
-	    *m_descriptorManager,
-	    std::move(textureUpload),
-	    debugName.empty() ? L"VulkanTexture" : debugName);
+	return m_resourceService != nullptr ? m_resourceService->CreateTexture(std::move(textureUpload), debugName) :
+	                                      std::unique_ptr<Texture>{};
 }
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateTextureResource(
@@ -735,13 +718,8 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateTextureResource(
     RhiMemoryResidencyClass residencyClass,
     std::wstring_view debugName)
 {
-	(void) initialState;
-	if (m_textureFactory == nullptr || !RhiValidation::ValidateTextureResourceDesc(m_capabilities, desc, "RHI.Vulkan.CreateTextureResource"))
-	{
-		return {};
-	}
-
-	return m_textureFactory->CreateTextureResource(desc, category, residencyClass, debugName);
+	return m_resourceService != nullptr ? m_resourceService->CreateTextureResource(desc, initialState, category, residencyClass, debugName) :
+	                                      RhiOwnedResourceHandle{};
 }
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateBufferResource(
@@ -751,16 +729,8 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateBufferResource(
     RhiMemoryResidencyClass residencyClass,
     std::wstring_view debugName)
 {
-	(void) initialState;
-	if (m_memoryAllocator == nullptr || desc.SizeInBytes == 0)
-	{
-		return {};
-	}
-
-	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
-	std::unique_ptr<VulkanGpuAllocationRecord> record =
-	    m_memoryAllocator->CreateBuffer(bufferCreateInfo, category, residencyClass, debugName);
-	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
+	return m_resourceService != nullptr ? m_resourceService->CreateBufferResource(desc, initialState, category, residencyClass, debugName) :
+	                                      RhiOwnedResourceHandle{};
 }
 
 bool VulkanRenderHardwareInterface::CreateVertexBuffer(
@@ -771,34 +741,9 @@ bool VulkanRenderHardwareInterface::CreateVertexBuffer(
     RhiOwnedResourceHandle& outResource,
     RhiVertexBufferView& outView)
 {
-	outResource = {};
-	outView = {};
-	if (m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
-	{
-		return false;
-	}
-
-	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes};
-	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
-	    desc,
-	    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-	        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
-	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
-	    bufferCreateInfo,
-	    RhiMemoryCategory::Mesh,
-	    RhiMemoryResidencyClass::HostUpload,
-	    debugName.empty() ? L"VertexBuffer" : debugName);
-	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
-	{
-		return false;
-	}
-
-	outView = RhiVertexBufferView{
-	    .BufferLocation = record->DeviceAddress != 0 ? record->DeviceAddress : reinterpret_cast<std::uint64_t>(record->Buffer),
-	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
-	    .StrideInBytes = strideInBytes};
-	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
-	return true;
+	return m_resourceService != nullptr ?
+	           m_resourceService->CreateVertexBuffer(data, sizeInBytes, strideInBytes, debugName, outResource, outView) :
+	           false;
 }
 
 bool VulkanRenderHardwareInterface::CreateStructuredBuffer(
@@ -809,35 +754,9 @@ bool VulkanRenderHardwareInterface::CreateStructuredBuffer(
     RhiOwnedResourceHandle& outResource,
     RhiResourceViewHandle& outView)
 {
-	outResource = {};
-	outView = {};
-	if (m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
-	{
-		return false;
-	}
-
-	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes};
-	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
-	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
-	    bufferCreateInfo,
-	    RhiMemoryCategory::Mesh,
-	    RhiMemoryResidencyClass::HostUpload,
-	    debugName.empty() ? L"StructuredBuffer" : debugName);
-	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
-	{
-		return false;
-	}
-
-	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
-	outView = CreateResourceView(RhiResourceViewDesc::BufferShaderResource(GetNativeResource(outResource), sizeInBytes, strideInBytes));
-	if (!outView)
-	{
-		ReleaseOwnedResource(outResource);
-		outResource = {};
-		return false;
-	}
-
-	return true;
+	return m_resourceService != nullptr ?
+	           m_resourceService->CreateStructuredBuffer(data, sizeInBytes, strideInBytes, debugName, outResource, outView) :
+	           false;
 }
 
 bool VulkanRenderHardwareInterface::CreateIndexBuffer(
@@ -848,75 +767,26 @@ bool VulkanRenderHardwareInterface::CreateIndexBuffer(
     RhiOwnedResourceHandle& outResource,
     RhiIndexBufferView& outView)
 {
-	outResource = {};
-	outView = {};
-	if (m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0)
-	{
-		return false;
-	}
-
-	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes};
-	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
-	    desc,
-	    VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-	        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
-	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
-	    bufferCreateInfo,
-	    RhiMemoryCategory::Mesh,
-	    RhiMemoryResidencyClass::HostUpload,
-	    debugName.empty() ? L"IndexBuffer" : debugName);
-	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
-	{
-		return false;
-	}
-
-	outView = RhiIndexBufferView{
-	    .BufferLocation = record->DeviceAddress != 0 ? record->DeviceAddress : reinterpret_cast<std::uint64_t>(record->Buffer),
-	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
-	    .Format = format};
-	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
-	return true;
+	return m_resourceService != nullptr ? m_resourceService->CreateIndexBuffer(data, sizeInBytes, format, debugName, outResource, outView) :
+	                                      false;
 }
 
 void VulkanRenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept
 {
-	if (m_memoryAllocator == nullptr)
+	if (m_resourceService != nullptr)
 	{
-		return;
-	}
-
-	std::unique_ptr<VulkanGpuAllocationRecord> record = TakeVulkanOwnedResourceHandle(resource);
-	if (record == nullptr)
-	{
-		return;
-	}
-
-	const std::uint64_t retireFenceValue = m_commandContext != nullptr ? m_commandContext->GetNextRetireFenceValue() : 0;
-	m_memoryAllocator->QueueDestroyResource(std::move(record), retireFenceValue);
-	if (m_commandContext != nullptr)
-	{
-		m_memoryAllocator->DrainCompletedReleases(m_commandContext->GetCompletedRetireFenceValue());
-	}
-	else
-	{
-		m_memoryAllocator->FlushPendingReleases();
+		m_resourceService->ReleaseOwnedResource(resource);
 	}
 }
 
 NativeResourceHandle VulkanRenderHardwareInterface::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
 {
-	VulkanGpuAllocationRecord* const record = GetVulkanGpuAllocationRecord(resource);
-	return record != nullptr ? GetVulkanNativeResource(*record) : NativeResourceHandle{};
+	return m_resourceService != nullptr ? m_resourceService->GetNativeResource(resource) : NativeResourceHandle{};
 }
 
 RhiGpuVirtualAddress VulkanRenderHardwareInterface::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept
 {
-	VulkanGpuAllocationRecord* const record = GetVulkanGpuAllocationRecord(resource);
-	if (record == nullptr)
-	{
-		return 0;
-	}
-	return record->DeviceAddress != 0 ? record->DeviceAddress : reinterpret_cast<std::uint64_t>(record->Buffer);
+	return m_resourceService != nullptr ? m_resourceService->GetResourceGpuVirtualAddress(resource) : 0;
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo VulkanRenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(
@@ -958,41 +828,12 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateRayTracingInstanceBu
 
 RhiResourceAllocationInfo VulkanRenderHardwareInterface::GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept
 {
-	if (m_rhi == nullptr || desc.Width == 0 || desc.Height == 0 || desc.Format == PixelFormat::Unknown)
-	{
-		return {};
-	}
-
-	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc);
-	const VkDeviceImageMemoryRequirements requirementsInfo{
-	    .sType = VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS,
-	    .pNext = nullptr,
-	    .pCreateInfo = &imageCreateInfo,
-	    .planeAspect = static_cast<VkImageAspectFlagBits>(0)};
-	VkMemoryRequirements2 memoryRequirements{.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
-	vkGetDeviceImageMemoryRequirements(m_rhi->GetDevice(), &requirementsInfo, &memoryRequirements);
-	return RhiResourceAllocationInfo{
-	    .SizeInBytes = memoryRequirements.memoryRequirements.size,
-	    .Alignment = memoryRequirements.memoryRequirements.alignment};
+	return m_resourceService != nullptr ? m_resourceService->GetTextureAllocationInfo(desc) : RhiResourceAllocationInfo{};
 }
 
 RhiResourceAllocationInfo VulkanRenderHardwareInterface::GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept
 {
-	if (m_rhi == nullptr || desc.SizeInBytes == 0)
-	{
-		return {};
-	}
-
-	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
-	const VkDeviceBufferMemoryRequirements requirementsInfo{
-	    .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS,
-	    .pNext = nullptr,
-	    .pCreateInfo = &bufferCreateInfo};
-	VkMemoryRequirements2 memoryRequirements{.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
-	vkGetDeviceBufferMemoryRequirements(m_rhi->GetDevice(), &requirementsInfo, &memoryRequirements);
-	return RhiResourceAllocationInfo{
-	    .SizeInBytes = memoryRequirements.memoryRequirements.size,
-	    .Alignment = memoryRequirements.memoryRequirements.alignment};
+	return m_resourceService != nullptr ? m_resourceService->GetBufferAllocationInfo(desc) : RhiResourceAllocationInfo{};
 }
 
 RhiOwnedMemoryBlockHandle VulkanRenderHardwareInterface::CreateTransientMemoryBlock(
@@ -1001,38 +842,15 @@ RhiOwnedMemoryBlockHandle VulkanRenderHardwareInterface::CreateTransientMemoryBl
     std::uint64_t alignment,
     std::wstring_view debugName)
 {
-	if (m_memoryAllocator == nullptr || sizeInBytes == 0)
-	{
-		return {};
-	}
-
-	std::unique_ptr<VulkanGpuMemoryBlockRecord> record =
-	    m_memoryAllocator->CreateTransientMemoryBlock(pool, sizeInBytes, alignment, debugName);
-	return record != nullptr ? MakeVulkanOwnedMemoryBlockHandle(std::move(record)) : RhiOwnedMemoryBlockHandle{};
+	return m_resourceService != nullptr ? m_resourceService->CreateTransientMemoryBlock(pool, sizeInBytes, alignment, debugName) :
+	                                      RhiOwnedMemoryBlockHandle{};
 }
 
 void VulkanRenderHardwareInterface::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept
 {
-	if (m_memoryAllocator == nullptr)
+	if (m_resourceService != nullptr)
 	{
-		return;
-	}
-
-	std::unique_ptr<VulkanGpuMemoryBlockRecord> record = TakeVulkanOwnedMemoryBlockHandle(memoryBlock);
-	if (record == nullptr)
-	{
-		return;
-	}
-
-	const std::uint64_t retireFenceValue = m_commandContext != nullptr ? m_commandContext->GetNextRetireFenceValue() : 0;
-	m_memoryAllocator->QueueDestroyMemoryBlock(std::move(record), retireFenceValue);
-	if (m_commandContext != nullptr)
-	{
-		m_memoryAllocator->DrainCompletedReleases(m_commandContext->GetCompletedRetireFenceValue());
-	}
-	else
-	{
-		m_memoryAllocator->FlushPendingReleases();
+		m_resourceService->ReleaseTransientMemoryBlock(memoryBlock);
 	}
 }
 
@@ -1042,24 +860,9 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateAliasingTextureResou
     const RhiTransientTextureAllocationDesc& desc,
     std::wstring_view debugName)
 {
-	(void) desc.InitialState;
-	(void) desc.ClearValue;
-	if (m_memoryAllocator == nullptr || !memoryBlock ||
-	    !RhiValidation::ValidateTextureResourceDesc(m_capabilities, desc.ResourceDesc, "RHI.Vulkan.CreateAliasingTextureResource"))
-	{
-		return {};
-	}
-
-	VulkanGpuMemoryBlockRecord* const memoryBlockRecord = GetVulkanGpuMemoryBlockRecord(memoryBlock);
-	if (memoryBlockRecord == nullptr)
-	{
-		return {};
-	}
-
-	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc.ResourceDesc);
-	std::unique_ptr<VulkanGpuAllocationRecord> record =
-	    m_memoryAllocator->CreateAliasingImage(*memoryBlockRecord, memoryBlockOffset, imageCreateInfo, debugName);
-	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
+	return m_resourceService != nullptr ?
+	           m_resourceService->CreateAliasingTextureResource(memoryBlock, memoryBlockOffset, desc, debugName) :
+	           RhiOwnedResourceHandle{};
 }
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateAliasingBufferResource(
@@ -1068,22 +871,9 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateAliasingBufferResour
     const RhiTransientBufferAllocationDesc& desc,
     std::wstring_view debugName)
 {
-	(void) desc.InitialState;
-	if (m_memoryAllocator == nullptr || !memoryBlock || desc.ResourceDesc.SizeInBytes == 0)
-	{
-		return {};
-	}
-
-	VulkanGpuMemoryBlockRecord* const memoryBlockRecord = GetVulkanGpuMemoryBlockRecord(memoryBlock);
-	if (memoryBlockRecord == nullptr)
-	{
-		return {};
-	}
-
-	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc.ResourceDesc);
-	std::unique_ptr<VulkanGpuAllocationRecord> record =
-	    m_memoryAllocator->CreateAliasingBuffer(*memoryBlockRecord, memoryBlockOffset, bufferCreateInfo, debugName);
-	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
+	return m_resourceService != nullptr ?
+	           m_resourceService->CreateAliasingBufferResource(memoryBlock, memoryBlockOffset, desc, debugName) :
+	           RhiOwnedResourceHandle{};
 }
 
 RhiResourceViewHandle VulkanRenderHardwareInterface::CreateResourceView(const RhiResourceViewDesc& desc)
@@ -1125,9 +915,9 @@ std::uint64_t VulkanRenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescrip
 	return m_imguiBackend->GetTextureId(imageView);
 }
 
-bool VulkanRenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle) const noexcept
+bool VulkanRenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept
 {
-	return false;
+	return m_resourceService != nullptr && m_resourceService->SupportsUnorderedAccess(resource);
 }
 
 void VulkanRenderHardwareInterface::BeginPresentRenderPass(const float clearColor[4]) noexcept

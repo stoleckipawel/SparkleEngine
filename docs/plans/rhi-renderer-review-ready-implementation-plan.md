@@ -1349,7 +1349,7 @@ Acceptance:
 | Artifact index | Editor matrix: `artifacts/validation/stage10/stage10-smoke-results.json`. Runtime matrix: `artifacts/validation/stage10/stage10-runtime-results.json`. Logs and console output sit beside each BMP using backend/view-mode/runtime names. |
 | Data transfer contract | Milestone evidence transfers through structured logs, BMP capture artifacts, JSON result summaries, backend capability reports, and this coverage update. DLSS state is explicit and not inferred from screenshots. |
 | Threading readiness handoff | Smoke validation uses environment/request packets and immutable log/artifact outputs, which keeps future launcher/process orchestration and render-thread smoke collection separate from backend-private mutable state. |
-| Remaining risk | Stage 19 still owns deeper backend presentation-service slimming and documentation; the Stage 10 runtime Vulkan validation blocker is closed by Stage 15 evidence. |
+| Remaining risk | Stage 19 has since closed backend presentation/resource service ownership; the Stage 10 runtime Vulkan validation blocker is closed by Stage 15 evidence. |
 
 ## Stage 11 - Decompose Renderer Into Facade, System Root, Frame Pipeline
 
@@ -2363,12 +2363,12 @@ Stage 19 progress evidence:
 
 | Item | Evidence |
 | --- | --- |
-| Status | Almost finished. |
-| Extracted service slices | Ray tracing prebuild/resource creation lives in `D3D12RayTracingServices` and `VulkanRayTracingServices`. Interop, capture, diagnostics, and presentation services moved out of nested root-facade classes into backend-owned service files. Pipeline creation moved into `D3D12PipelineService` and `VulkanPipelineService`. D3D12 descriptor table/resource-view records moved into `D3D12DescriptorService`. |
+| Status | Fully completed. |
+| Extracted service slices | Ray tracing prebuild/resource creation lives in `D3D12RayTracingServices` and `VulkanRayTracingServices`. Interop, capture, diagnostics, and presentation services moved out of nested root-facade classes into backend-owned service files. Pipeline creation moved into `D3D12PipelineService` and `VulkanPipelineService`. D3D12 descriptor table/resource-view records moved into `D3D12DescriptorService`. Resource creation, upload buffer creation, allocation info, transient memory blocks, aliasing resources, native resource lookup, and delayed release flushing moved into `D3D12ResourceService` and `VulkanResourceService`. |
 | Facade shape | D3D12/Vulkan root facades now compose service objects and keep forwarding methods for the existing public `RenderHardwareInterface` API. D3D12 command-list descriptor-table GPU handle compatibility remains a thin bridge into `D3D12DescriptorService`. |
-| Symmetry | Both backends have sibling service folders for ray tracing, interop, capture, diagnostics, presentation, and pipeline. D3D12 has an additional descriptor service because D3D12 descriptor table/resource-view bookkeeping was still facade-owned; Vulkan already routes descriptor ownership through `VulkanDescriptorManager`. |
-| Validation | `ShowcaseRuntime` built in `build-vs2026`; `architecture_boundary_check` passed with only documented provider exceptions. Scans found no remaining nested backend service classes in root facades, no root-facade references to backend pipeline concrete classes, and no D3D12 descriptor table/resource-view record state left in `D3D12RenderHardwareInterface`. |
-| Remaining risk | Resource and memory lifetime/upload/allocation methods are still the last heavy backend root-facade responsibility. Stage 19 should not be marked `Fully completed` until those methods are owned by explicit resource/memory services or deliberately accepted with narrower evidence. |
+| Symmetry | Both backends have sibling service folders for ray tracing, interop, capture, diagnostics, presentation, pipeline, and resources. D3D12 has an additional descriptor service because D3D12 descriptor table/resource-view bookkeeping was still facade-owned; Vulkan already routes descriptor ownership through `VulkanDescriptorManager`. |
+| Validation | `ShowcaseRuntime` built in `build-vs2026`; `architecture_boundary_check` passed with only documented provider exceptions. Scans found no remaining nested backend service classes in root facades, no root-facade references to backend pipeline concrete classes, no D3D12 descriptor table/resource-view record state left in `D3D12RenderHardwareInterface`, and no root-facade resource/memory ownership helpers or allocator-owned release queues left in D3D12/Vulkan roots. |
+| Remaining risk | None for Stage 19. Stage 36 must rerun the final evidence gate after this closure before the repository is called final review-ready. |
 
 ## Stage 20 - Validation Milestone D: Full Renderer/RHI Backend Parity
 
@@ -2473,7 +2473,7 @@ Execution status:
 | Runtime evidence | Smoke logs report `frameGraphUnresolvedBarrierWarnings=0`, active NVIDIA DLSS, RT and inline ray query availability, stable BLAS/TLAS construction, and explicit PSO runtime keys on both backends. |
 | Camera-motion RT evidence | `artifacts/validation/stage20-camera-motion/stage20-camera-motion-results.json` records `editor-d3d12-camera`, `editor-vulkan-camera`, `runtime-d3d12-camera`, and `runtime-vulkan-camera`. Every run exited `0`, emitted camera-motion smoke evidence, reported `tlasValid=true`, and reported `frameGraphUnresolvedBarrierWarnings=0`; editor runs produced `d3d12-camera-lit.bmp` and `vulkan-camera-lit.bmp`. |
 | Visual comparison | `artifacts/validation/stage20/stage20-visual-comparison.json` records D3D12/Vulkan lit mean absolute byte difference `0.45850590702771543` and normal mean absolute byte difference `0.5269850834129329` for 4578x1180 captures. |
-| Remaining strict gap | None for Stage 20. Stage 19 still owns deeper backend service slimming, but the renderer/RHI parity validation milestone is complete. |
+| Remaining strict gap | None for Stage 20. Stage 19 backend service slimming is complete, and the renderer/RHI parity validation milestone remains complete. |
 
 ## Whole-Repository Extension Stages
 
@@ -3314,14 +3314,14 @@ Execution status:
 | Field | Evidence |
 | --- | --- |
 | Status | Fully completed for the whole-repository evidence gate. |
-| Coverage reconciliation | [repository-coverage-status.md](../architecture/repository-coverage-status.md) has no unowned high-level `Needs refactor` source-root rows after Stage 34 reconciliation. Remaining non-blocking risks are owned by Stage 19 backend service slimming, Stage 35 threading-readiness hardening, or Stage 36 final cleanup/rubric scoring. |
+| Coverage reconciliation | [repository-coverage-status.md](../architecture/repository-coverage-status.md) has no unowned high-level `Needs refactor` source-root rows after Stage 34 reconciliation. Remaining non-blocking risks are owned by Stage 35 threading-readiness hardening or Stage 36 final cleanup/rubric scoring. Stage 19 backend service slimming is complete. |
 | Boundary evidence | `architecture_boundary_check` passed. Counted exceptions remain only for the NVIDIA DLSS provider Vulkan linkage and Streamline Vulkan bridge, both restricted to provider-owned code. |
 | Build evidence | `ShaderCompiler`, `AssetCooker`, `TextureCooker`, `SparkleLauncher`, and `ShowcaseRuntime` built in `build/windows-vs2026-stage5` with `DevelopmentEditor`. `SparkleLauncher` still emits the known Qt deploy warning that `VCINSTALLDIR` is not set, but the target exits successfully. |
 | Tool evidence | `ShaderCompiler.exe list-shaders --validate` reported `17` valid typed shader registrations across `10` packages. `ShaderCompiler.exe inspect-shader Sky` reported the `Sky` package and `SkyCS` compute entry. |
 | Cook/artifact evidence | `AssetCooker.exe cook-assets Showcase DevelopmentEditor` planned and cooked `9` scenes, writing plan and summary artifacts. `TextureCooker.exe inspect-request-file artifacts/diagnostics/cook/Temp/stage30-damagedhelmet-texture-requests.txt` found `6` texture requests; `TextureCooker.exe cook-request-file ... --summary artifacts/diagnostics/cook/Summaries/stage34-damagedhelmet-texturecook-summary.json` cooked `6/6` textures. |
 | Runtime smoke evidence | Launcher-shaped direct `ShowcaseRuntime.exe` execution from `Projects/Showcase` with D3D12 smoke validation, lit view mode, 120-frame limit, and capture path `artifacts/validation/stage34/d3d12-runtime-lit.bmp` exited `0`. It loaded Sponza and completed all `5/5` level switch targets with `frameGraphUnresolvedBarrierWarnings=0`, DLSS active, RT available, and valid TLAS evidence. |
 | Folder cleanup | Removed empty retired `Tools/Conversion/AssetConverter` directories. `Tools/Cooking/CookCommon`, `Tools/Import/SourceImportAdapters`, `Tools/Conversion/AssetConverter`, and `Projects/Showcase/Levels/Bistro.level` are absent from durable source roots. |
-| Remaining owned risks | Stage 19 still owns deeper D3D12/Vulkan backend service slimming beyond the already extracted ray tracing services. Stage 35 owns repository-wide threading-readiness hardening. Stage 36 owns final cleanup and rubric scoring. |
+| Remaining owned risks | Stage 19 backend service slimming is complete. Stage 35 owns repository-wide threading-readiness hardening. Stage 36 owns final cleanup and rubric scoring. |
 
 ## Stage 35 - Threading Readiness Hardening And Final Audit
 
@@ -3421,7 +3421,7 @@ Execution status:
 | Tool workflow hardening | Launcher tool resolution, Qt kit discovery, maintenance clean target planning, and maintenance clean process requests now normalize/sort discovered candidates or project directories before producing process-facing data. |
 | Diagnostics cleanup | Shader recook status text now describes the shader compiler process directly without internal/stage/provenance wording. |
 | Validation | `cmake -S . -B build-vs2026 -G "Visual Studio 18 2026" -A x64` passed. The stale `build` tree failed because it was configured for unavailable `Visual Studio 17 2022`, so validation moved to the VS2026 tree. `ShaderCompiler`, `SparkleLauncher`, and `ShowcaseRuntime` built in `build-vs2026` with `DevelopmentEditor`; `architecture_boundary_check` passed; `ShaderCompiler.exe list-shaders --validate` reported `17` valid typed registrations and `10` packages; `git diff --check` reported only line-ending normalization warnings. |
-| Remaining risks | Stage 19 still owns deeper backend service slimming before true multi-worker command recording. Stage 36 owns final stale-path/rubric cleanup. No Stage 35 blocking mutable-owner or nondeterministic-output finding remains from this pass. |
+| Remaining risks | Stage 19 backend service slimming is complete. Stage 36 owns final stale-path/rubric cleanup. No Stage 35 blocking mutable-owner or nondeterministic-output finding remains from this pass. |
 
 ## Stage 36 - Final Whole-Repository Cleanup, Rubric Scoring, And Review-Ready Gate
 
@@ -3494,15 +3494,15 @@ Execution status:
 
 | Field | Evidence |
 | --- | --- |
-| Status | Started. Cleanup/scoring and validation evidence were collected, but the final review-ready gate is not accepted yet because Stage 19 remains open for backend service slimming beyond ray tracing. |
+| Status | Fully completed. |
 | Cleanup scan | Durable source scans found no production `Tools/Conversion/AssetConverter`, `Tools/Cooking/CookCommon`, `Tools/Import/SourceImportAdapters`, `RenderPassPipelineTraits`, `RendererGlobalShaders`, `RendererShaderRegistration`, `LevelLightingDesc`, `LevelLightingSceneBuilder`, `Bistro.level`, or `GetSceneSnapshot` paths. The remaining `AssetConverter` text is only the boundary check rule that prevents the retired path from returning. |
 | Boundary status | `cmake --build build-vs2026 --config DevelopmentEditor --target architecture_boundary_check -- /nologo /v:minimal /m:1` passed with no new violations. Counted exceptions remain restricted to the NVIDIA DLSS provider Vulkan link and Streamline Vulkan bridge. |
-| Build status | `ShaderCompiler`, `SparkleLauncher`, and `ShowcaseRuntime` built in `build-vs2026` with `DevelopmentEditor`. `SparkleLauncher` still emits the non-blocking `VCINSTALLDIR`/system `icuuc.dll` deployment warning. |
+| Build status | `ShaderCompiler`, `AssetCooker`, `TextureCooker`, `SparkleLauncher`, and `ShowcaseRuntime` built in `build-vs2026` with `DevelopmentEditor`. `SparkleLauncher` still emits the non-blocking `VCINSTALLDIR`/system `icuuc.dll` deployment warning. |
 | Shader/package status | `artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe list-shaders --validate` reported `17` valid typed registrations and `10` packages. |
-| Cook/artifact status | `AssetCooker.exe cook-assets Showcase DevelopmentEditor` cooked `9` scenes and wrote the Showcase cook plan and summary. `TextureCooker.exe inspect-request-file` inspected `6` DamagedHelmet texture requests, and `TextureCooker.exe cook-request-file` cooked `6/6` requests with summary `artifacts/diagnostics/cook/Summaries/stage36-damagedhelmet-texturecook-summary.json`. |
+| Cook/artifact status | `AssetCooker.exe cook-assets Showcase DevelopmentEditor` cooked `9` scenes and wrote the Showcase cook plan and summary. `AssetCooker.exe inspect-source Projects\Showcase\Assets\Meshes\DamagedHelmet\DamagedHelmet.gltf` passed. `AssetCooker.exe collect-texture-requests ... stage36-damagedhelmet-texture-requests.txt` produced `6` texture requests. `TextureCooker.exe inspect-request-file` inspected those `6` requests, and `TextureCooker.exe cook-request-file` cooked `6/6` requests with summary `artifacts/diagnostics/cook/Temp/stage36-texture-cook-summary.json`. |
 | Text hygiene | `git diff --check` reported only LF/CRLF normalization warnings for edited Markdown. Source scans found no stage/provenance planning text in live code from this gate. |
-| Rubric decision | Revise/defer final review-ready acceptance. No rubric category is below `2`, but backend service/facade cohesion and final folder/service symmetry cannot honestly score as final-strong while Stage 19 is only partially complete. |
-| Blocking risk | Stage 19: D3D12/Vulkan root backend facades still need the remaining resource and memory lifetime/upload/allocation service slimming. Ray tracing, interop, capture, diagnostics, presentation, pipeline, and D3D12 descriptor state now have service-owned evidence, but the whole backend shape is not final. |
+| Rubric decision | Accept final review-ready gate for the current architecture track. No rubric category is below `2`; backend service/facade cohesion and folder/service symmetry were strengthened by Stage 19 resource/memory service extraction and this Stage 36 rerun. |
+| Blocking risk | None from this gate. Keep future changes bound to the same coverage, boundary, validation, and evidence rules. |
 
 Rubric scoring:
 
@@ -3511,22 +3511,22 @@ Rubric scoring:
 | Problem framing | 3 | Stage 1-36 docs name the whole-repo refactor goal, current risks, target architecture, and validation gates. | None from this gate. |
 | Requirements and constraints | 3 | Coverage maps, contracts, and stage prompts cover D3D12/Vulkan, shader packages, cooked assets, Launcher, tools, GameFramework, and threading-readiness. | Keep updating when new durable roots appear. |
 | Separation of concerns | 3 | Boundary check passes; runtime modules do not depend on tool internals; retired conversion/import/common paths are absent. | Provider-owned DLSS Vulkan exceptions remain count-limited. |
-| Source/folder architecture | 2 | Target folders mostly match: focused tools, SourceImporters, ToolConsoleSupport, renderer shader registrations, projects/assets policy, and the expanded backend service folders. | Stage 19 resource/memory service ownership still needs the final symmetry pass. |
-| Cohesion and interface size | 2 | Renderer facade, FramePipeline, AssetCooker/tool splits, shader contracts, and RHI service access improved cohesion. | Root backend facades are still not final after ray tracing extraction. |
+| Source/folder architecture | 3 | Target folders mostly match: focused tools, SourceImporters, ToolConsoleSupport, renderer shader registrations, projects/assets policy, and expanded backend service folders including resource/memory services. | Rerun the final Stage 36 evidence gate. |
+| Cohesion and interface size | 3 | Renderer facade, FramePipeline, AssetCooker/tool splits, shader contracts, and RHI backend service extraction improved cohesion. Root backend facades now wire services for ray tracing, interop, capture, diagnostics, presentation, pipeline, and resources. | Continue rejecting new facade bloat. |
 | Tradeoff reasoning | 3 | Stage prompts and contracts record positive/negative guardrails, data-transfer contracts, rejected shortcuts, and accepted provider exceptions. | None from this gate. |
 | Quality attributes | 3 | Reliability, portability, testability, tooling, threading-readiness, and diagnostics are represented in target docs and evidence packets. | None from this gate. |
-| Risk and technical debt visibility | 3 | Stage map and coverage docs name Stage 19 as the open blocker instead of hiding it. | Re-run Stage 36 after Stage 19. |
+| Risk and technical debt visibility | 3 | Stage map and coverage docs record Stage 19 closure and Stage 36 final evidence instead of hiding prior blockers. | Keep new risks owned by a concrete stage or issue. |
 | Runtime behavior clarity | 3 | Frame execution, pass authoring, PSO runtime, ray tracing, launch workflow, cook flow, and artifact flow are documented and validated. | None from this gate. |
 | Observability and diagnostics | 3 | Frame graph, shader, cook, launcher, RT, DLSS, and asset diagnostics are present in evidence docs and command output. | None from this gate. |
 | Reliability/failure handling | 3 | Smoke/cook/tool paths report deterministic status, paths, warning counts, feature status, and reasons. | Keep unsupported glTF feature warnings visible. |
 | Performance reasoning | 2 | Performance claims remain mostly avoided; threading and backend work include measurement-oriented handoff plans. | No final profiling packet yet; do not claim performance wins. |
-| Threading readiness and data isolation | 3 | Stage 35 changed code shape around snapshots, deterministic catalogs, and process-facing launcher/tool data. | Stage 19 remains important before multi-worker command recording. |
-| Portability/backend parity | 2 | Stage 20 backend parity evidence is strong; boundary/provider exceptions are explicit. | Stage 19 backend service symmetry is not final. |
-| Maintainability and naming | 2 | Dead wrappers, broad support names, adapter paths, and conversion duplication were removed or renamed. | Backend facade/service naming still needs final slimming. |
+| Threading readiness and data isolation | 3 | Stage 35 changed code shape around snapshots, deterministic catalogs, process-facing launcher/tool data, and Stage 19 has moved backend resource/memory ownership out of root facades. | Rerun the final Stage 36 evidence gate. |
+| Portability/backend parity | 3 | Stage 20 backend parity evidence is strong; boundary/provider exceptions are explicit; Stage 19 now has symmetric resource, pipeline, ray tracing, interop, capture, diagnostics, and presentation service ownership. | Rerun the final Stage 36 evidence gate. |
+| Maintainability and naming | 3 | Dead wrappers, broad support names, adapter paths, conversion duplication, and backend root service clutter were removed or renamed into focused owners. | Keep new names aligned with the repository naming canon. |
 | Complexity right to exist | 3 | One-field wrappers, duplicate production paths, broad common support, and stale conversion paths were removed or blocked. | Keep rejecting new compatibility shims without owner/evidence. |
 | Source text discipline | 3 | Source comments/provenance text rules are in the plan; stale source-text scans did not find stage/provenance code text in this gate. | Continue enforcing for every implementation stage. |
-| Destination-fit discipline | 3 | Moved systems now land in focused owners: FramePipeline, SourceImporters, focused cookers, ShaderContracts, AssetCooker, LauncherCore. | Stage 19 must finish applying this to backend service folders. |
-| Testability | 3 | Boundary checks, targeted builds, shader validation, Showcase cook, texture inspect/cook, and runtime/sample evidence exist. | Full Stage 36 review-ready rerun waits on Stage 19. |
+| Destination-fit discipline | 3 | Moved systems now land in focused owners: FramePipeline, SourceImporters, focused cookers, ShaderContracts, AssetCooker, LauncherCore, and backend service folders. | Rerun the final Stage 36 evidence gate. |
+| Testability | 3 | Boundary checks, targeted builds, shader validation, Showcase cook, texture inspect/cook, and runtime/sample evidence exist and were refreshed after Stage 19 closure. | None from this gate. |
 | Communication/reviewability | 3 | System index, target graphs, contracts, coverage maps, stage map, tutor docs, and evidence packets make the repo navigable. | None from this gate. |
 
 ## Final Review-Ready Definition

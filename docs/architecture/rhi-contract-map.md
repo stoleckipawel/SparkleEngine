@@ -363,7 +363,7 @@ Hard gate: adding an ordinary renderer shader pass must not require editing `Eng
 
 | Decision | Why it matters | Owning stage |
 | --- | --- | --- |
-| RHI service extraction order | Stage 7 confirmed the first service slice; Stage 19 owns root-facade slimming and implementation object symmetry. | Stage 19 |
+| RHI service extraction order | Stage 7 confirmed the first service slice; Stage 19 completed root-facade slimming and implementation object symmetry for the current track. | Stage 19 |
 | Shader parameter authoring owner | Prevents overlap between Renderer public shader parameters and RHI parameter layout. | Stage 4, Stage 17 |
 | Native capture/readback service shape | Moves backend-native capture out of Application validation. | Stage 8, Stage 10 |
 | Final public interop surface for DLSS/Vulkan | Keeps provider SDK code out of backend internals while preserving correct metadata. | Stage 9, Stage 10 |
