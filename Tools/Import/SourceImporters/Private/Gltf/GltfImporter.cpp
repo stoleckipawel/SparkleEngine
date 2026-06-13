@@ -18,6 +18,11 @@
 
 #include <cgltf.h>
 
+std::string_view GltfImporter::GetImporterId() const noexcept
+{
+	return "GltfImporter";
+}
+
 bool GltfImporter::SupportsExtension(std::wstring_view extension) const noexcept
 {
 	return extension == L".gltf" || extension == L".glb";
@@ -26,7 +31,9 @@ bool GltfImporter::SupportsExtension(std::wstring_view extension) const noexcept
 SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) const
 {
 	SourceImportResult result;
-	result.scene.importerName = "GltfImporter";
+	result.report.sourcePath = filePath;
+	result.report.importerId = std::string(GetImporterId());
+	result.scene.importerName = result.report.importerId;
 	result.scene.sourcePath = filePath;
 
 	GltfScene scene;

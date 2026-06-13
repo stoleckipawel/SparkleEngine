@@ -4,12 +4,21 @@
 #include "SourceImportDiagnostics.h"
 
 #include <cstddef>
+#include <filesystem>
+#include <string>
 #include <string_view>
+
+struct SourceImportReport
+{
+	std::filesystem::path sourcePath;
+	std::string importerId;
+};
 
 struct SourceImportResult
 {
 	ImportedScene scene;
 	SourceImportDiagnostics diagnostics;
+	SourceImportReport report;
 	bool succeeded = false;
 
 	bool IsValid() const noexcept { return succeeded && !scene.meshPrimitives.empty() && !scene.meshInstances.empty(); }
@@ -24,6 +33,8 @@ struct SourceImportResult
 	std::size_t GetMaterialVariantCount() const noexcept { return scene.GetMaterialVariantCount(); }
 	std::size_t GetMaterialVariantMappingCount() const noexcept { return scene.GetMaterialVariantMappingCount(); }
 	std::string_view GetImporterName() const noexcept { return scene.importerName; }
+	std::string_view GetImporterId() const noexcept { return report.importerId; }
+	const std::filesystem::path& GetSourcePath() const noexcept { return report.sourcePath; }
 
 	void ReserveMeshPrimitives(std::size_t primitiveCount)
 	{

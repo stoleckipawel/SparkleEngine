@@ -52,6 +52,8 @@ SourceImportResult SourceSceneImporter::Import(const std::filesystem::path& file
 
 	if (!handledByImporter)
 	{
+		result.report.sourcePath = filePath;
+		result.report.importerId = "UnsupportedSourceImporter";
 		SourceImportDiagnosticLog::ReportUnsupportedExtension(extension, filePath, result);
 	}
 

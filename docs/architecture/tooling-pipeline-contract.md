@@ -31,7 +31,7 @@ Reference basis:
 | [SparkleLauncherCore](../../Tools/Launcher/SparkleLauncher) | Build/cook/launch/maintenance operation planning, process requests, project discovery, artifact/tool resolution. | CMake internals beyond invoking commands, cooking algorithms, renderer/RHI behavior. |
 | SparkleLauncher Qt GUI | Launcher UI shell, models, widgets, visual style, action history, user prompts. | Tool business logic that belongs in `SparkleLauncherCore`, cook/import/render code. |
 | [ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Shader backend selection, source preprocessing, reflection extraction, package cooking, verification, CLI inspection. | Runtime rendering, backend command encoding, renderer frame graph execution. |
-| [SourceImporters](../../Tools/Import/SourceImportAdapters) | glTF/FBX/source scene reading into imported DTOs with diagnostics. Current path is `SourceImportAdapters`; target name is role-based importers. | Cooked runtime loading, RHI resource creation, renderer scene data mutation. |
+| [SourceImporters](../../Tools/Import/SourceImporters) | glTF/FBX/source scene reading into imported DTOs with diagnostics. | Cooked runtime loading, RHI resource creation, renderer scene data mutation. |
 | [TextureCooker](../../Tools/Cooking/TextureCooker) | Source image loading, texture pipeline stages, compression policy, cooked texture asset emission. | Material/scene semantics, runtime texture manager policy, renderer resource residency. |
 | [MeshCooker](../../Tools/Cooking/MeshCooker) | Imported mesh to cooked mesh asset conversion. | Source importer ownership, runtime mesh component behavior, renderer GPU mesh cache. |
 | [MaterialCooker](../../Tools/Cooking/MaterialCooker) | Imported material to cooked material asset conversion and texture cook request generation. | Source texture decoding, runtime material cache behavior. |
@@ -48,7 +48,7 @@ Tooling is refactored through active implementation stages, not only final audit
 | --- | --- | --- |
 | Stage 17A | Renderer shader registration tooling | Renderer shader registrations become manifest-driven or generated so ShaderCompiler receives typed records without repeated class/package/layout constants. |
 | Stage 17B | Pass authoring workflow tooling | A pass-add audit and scaffolder/generator workflow reduce ordinary compute/raster pass authoring to intentional shader, pass intent, and frame insertion inputs while preserving ShaderCompiler validation. |
-| Stage 27 | Source import | `SourceImportAdapters` migrates toward `SourceImporters`; importers emit imported DTOs and diagnostics. |
+| Stage 27 | Source import | `SourceImporters` is the production source import target; importers emit imported DTOs, import reports, and diagnostics. |
 | Stage 28 | Focused cookers and support | Texture/Mesh/Material/Scene cookers own transformations; `CookCommon` splits into precise support/diagnostics owners. |
 | Stage 29 | ShaderCompiler | ShaderCompiler consumes `ShaderContracts` and emits deterministic package/reflection reports without full renderer runtime linkage. |
 | Stage 30 | AssetCooker, AssetConverter, Launcher, hosts | AssetCooker owns orchestration/reports; AssetConverter stops being a production path; LauncherCore/Qt GUI/Application/Editor boundaries are enforced. |
@@ -63,7 +63,7 @@ Tooling is refactored through active implementation stages, not only final audit
 | `SparkleLauncherCore` | Improve and extract | Keep as workflow/process orchestrator; route data through `ToolContracts` request/report/history types. |
 | SparkleLauncher Qt GUI | Keep and refine | Preserve the model/view-style split; widgets do not own cook/build/shader algorithms. |
 | `ShaderCompiler` | Improve and extract | Consume generated/manifest shader registration records, pass authoring manifests, then longer-term `ShaderContracts` pass catalogs/manifests and generic package schemas, not full renderer runtime. |
-| `SourceImportAdapters` | Improve and extract | Rename/extract toward `SourceImporters` with per-format importers and imported DTO diagnostics. |
+| `SourceImporters` | Keep and refine | Per-format importers emit imported DTOs, import reports, and diagnostics through a role-centered target. |
 | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Keep and refine | Preserve focused tools; improve schemas, inspectors, and failure reports. |
 | `AssetCooker` | Improve and extract | Keep project discovery/planning/dispatch; remove any duplicated focused cooker transformations. |
 | `AssetConverter` | Replace or redesign | Fold into `AssetCooker` or explicit inspect/debug commands; never keep as a second production cook policy. |
@@ -73,7 +73,7 @@ Tooling is refactored through active implementation stages, not only final audit
 
 | Current folder | Target folder rule | Cleanup rule |
 | --- | --- | --- |
-| `Tools/Import/SourceImportAdapters` | Migrate toward `Tools/Import/SourceImporters` with per-format importer folders and DTO diagnostics. | Do not keep adapter and importer folders as parallel production paths. |
+| `Tools/Import/SourceImporters` | Keep role-centered per-format importer folders and DTO/report diagnostics. | Do not reintroduce adapter and importer folders as parallel production paths. |
 | `Tools/Cooking/TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` | Keep focused cooker folders; each owns one artifact transformation family. | Do not fold focused algorithms into AssetCooker or Launcher. |
 | `Tools/Cooking/AssetCooker` | Keep project discovery, plan construction, dispatch, aggregation, and reports. | Do not duplicate focused cooker algorithms. |
 | `Tools/Cooking/CookCommon` | Split to `Tools/Support/ToolConsoleSupport` for generic console/report plumbing and/or `Tools/Cooking/CookDiagnostics` for cook-domain diagnostics. | Do not preserve `CookCommon` as a permanent policy owner. |
@@ -178,7 +178,7 @@ Forbidden threading shortcuts:
 
 Positive guardrails:
 
-- Keep source format handling in `SourceImporters`/current `SourceImportAdapters` or source-loading stages inside focused cookers.
+- Keep source format handling in `SourceImporters` or source-loading stages inside focused cookers.
 - Keep cooked artifact schemas stable and documented before changing runtime loaders.
 - Keep tool targets runnable without building the editor when practical.
 - Keep failure output actionable: file path, asset id/package id, target profile, backend/format, and reason.

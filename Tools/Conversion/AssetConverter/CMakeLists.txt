@@ -32,7 +32,7 @@ sparkle_target_precompile_headers(AssetConverter
 target_link_libraries(AssetConverter
     PRIVATE
         ole32
-    SourceImportAdapters
+    SourceImporters
     MeshCooker
     MaterialCooker
     SceneCooker

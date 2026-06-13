@@ -7,7 +7,7 @@
 
 #include <format>
 
-static const auto g_sourceImportDiagnosticLogger = Logging::GetOrCreateLogger("Tools.SourceImportAdapters");
+static const auto g_sourceImportDiagnosticLogger = Logging::GetOrCreateLogger("Tools.SourceImporters");
 
 void SourceImportDiagnosticLog::ReportUnsupportedExtension(
     std::wstring_view extension,

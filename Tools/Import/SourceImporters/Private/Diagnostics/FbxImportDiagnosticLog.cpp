@@ -7,7 +7,7 @@
 
 #include <format>
 
-static const auto g_fbxImportDiagnosticLogger = Logging::GetOrCreateLogger("Tools.SourceImportAdapters.Fbx");
+static const auto g_fbxImportDiagnosticLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Fbx");
 
 void FbxImportDiagnosticLog::ReportMissingFile(const std::filesystem::path& filePath, SourceImportResult& result)
 {

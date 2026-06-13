@@ -10,6 +10,11 @@
 
 #include <assimp/Importer.hpp>
 
+std::string_view FbxImporter::GetImporterId() const noexcept
+{
+	return "FbxImporter";
+}
+
 bool FbxImporter::SupportsExtension(std::wstring_view extension) const noexcept
 {
 	return extension == L".fbx";
@@ -18,7 +23,9 @@ bool FbxImporter::SupportsExtension(std::wstring_view extension) const noexcept
 SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) const
 {
 	SourceImportResult result;
-	result.scene.importerName = "FbxImporter";
+	result.report.sourcePath = filePath;
+	result.report.importerId = std::string(GetImporterId());
+	result.scene.importerName = result.report.importerId;
 	result.scene.sourcePath = filePath;
 
 	Assimp::Importer importer;

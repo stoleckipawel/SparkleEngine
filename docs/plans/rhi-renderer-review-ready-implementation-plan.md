@@ -71,7 +71,7 @@ Current code evidence used while writing this plan:
 - `Tools/Shaders/ShaderCompiler/CMakeLists.txt`
 - `Tools/Cooking/TextureCooker/CMakeLists.txt`
 - `Tools/Cooking/AssetCooker/CMakeLists.txt`
-- `Tools/Import/SourceImportAdapters/CMakeLists.txt`
+- `Tools/Import/SourceImporters/CMakeLists.txt`
 
 ## Execution Rules
 
@@ -94,7 +94,7 @@ Current code evidence used while writing this plan:
 - Every strategic code stage must include the rubric fields from `docs/plans/architecture-review-acceptance-rubric.md`: owner, dependency impact, D3D12/Vulkan impact, validation plan, risks, and rollback path.
 - Every renderer pass or shader change must obey the hard gate from `docs/plans/rhi-renderer-architecture-review.md`: adding an ordinary renderer shader pass must not require editing `Engine/RHI`.
 - Every RHI change must answer whether it introduces a GPU/API concept, a backend implementation detail, or a renderer convenience. Renderer conveniences do not belong in RHI.
-- Every RHI/Renderer change must check GameFramework and tool blast radius: ShaderCompiler, TextureCooker, AssetCooker, SourceImporters/current SourceImportAdapters, Launcher workflows, Application validation, and project/sample content where relevant.
+- Every RHI/Renderer change must check GameFramework and tool blast radius: ShaderCompiler, TextureCooker, AssetCooker, SourceImporters, Launcher workflows, Application validation, and project/sample content where relevant.
 - Every stage must satisfy the `Global Refactor Stage Impact Matrix` below. A stage is not accepted until its local work and its whole-repository protection checks are both addressed.
 - Every stage must satisfy the threading-readiness contract in `docs/architecture/after/repository-threading-readiness.md`. A stage does not need to add threads, but it must not leave a data shape that would require future workers to read private mutable owner state.
 - Every stage must satisfy its row in `Stage Contract Coverage Matrix` below. If the row names a contract surface, the implementation prompt, acceptance evidence, and validation notes must prove that surface was preserved or improved.
@@ -206,7 +206,7 @@ This plan is a global repository refactor. The early stages still focus on RHI/R
 | 10 | Backend parity milestone | Launcher smoke workflows, Projects/Showcase, validation artifacts, docs. | D3D12/Vulkan evidence must use the same scene/camera path and record artifact paths for later Stage 34 evidence and Stage 35 threading-readiness review. |
 | 11 | Renderer facade decomposition | Application, Editor viewport, GameFramework snapshots, launcher smoke. | Public renderer host protocol must stay stable or update all host callers and docs together. |
 | 12 | Presentation/viewport bridge | Editor panels, Application hosts, RHI present resources, launcher smoke. | Editor/Application must receive presentation products through the bridge, not frame graph internals or backend resources. |
-| 13 | Scene and resource ownership | GameFramework scene/assets, SourceImporters/current SourceImportAdapters, cookers, renderer texture/mesh managers. | Renderer scene DTO changes require GameFramework snapshot/schema impact notes and affected cooker checks. |
+| 13 | Scene and resource ownership | GameFramework scene/assets, SourceImporters, cookers, renderer texture/mesh managers. | Renderer scene DTO changes require GameFramework snapshot/schema impact notes and affected cooker checks. |
 | 14 | Frame graph contract | Renderer passes, RHI resources/barriers, diagnostics, smoke validation. | Frame graph warnings must stay diagnosable from launcher/Application smoke output. |
 | 15 | Frame graph validation milestone | D3D12/Vulkan backends, Projects/Showcase, docs. | Validation artifacts must include unresolved-resource/barrier status and sample scene path. |
 | 16 | Shader package, binding, PSO runtime | ShaderCompiler, RHI shader primitives, renderer registrations, CMake. | PSO/shader package changes require shader inspection/list/cook evidence or a documented unavailable-tool note. |
@@ -217,8 +217,8 @@ This plan is a global repository refactor. The early stages still focus on RHI/R
 | 19 | Backend service cleanup | D3D12/Vulkan parity, RHI public contracts, tools using RHI headers. | Backend-private folders must not include each other; public RHI changes must update tool/runtime impact notes. |
 | 20 | Full graphics validation | ShaderCompiler, Launcher, Projects/Showcase, Application validation, docs. | Final graphics evidence must be reusable by Stage 34 evidence gate and Stage 35 threading-readiness audit. |
 | 23 | Whole-repository coverage and dependency map | All durable roots. | Every root has owner, allowed dependencies, forbidden dependencies, validation target, and acceptance evidence. |
-| 24 | GameFramework runtime/cooked contract | Renderer snapshots, SourceImporters/current SourceImportAdapters, cookers, AssetCooker. | GameFramework has no Renderer-private, backend-private, or tool-private dependencies; schema changes name paired producers/consumers. |
-| 25 | Source import/cooking/conversion architecture | SourceImporters/current SourceImportAdapters, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, AssetCooker, CookCommon, AssetConverter, GameFramework loaders. | SourceImportAdapters rename/extract toward SourceImporters; CookCommon becomes ToolConsoleSupport/CookDiagnostics; AssetConverter is removed as a production path; runtime consumes cooked outputs only. |
+| 24 | GameFramework runtime/cooked contract | Renderer snapshots, SourceImporters, cookers, AssetCooker. | GameFramework has no Renderer-private, backend-private, or tool-private dependencies; schema changes name paired producers/consumers. |
+| 25 | Source import/cooking/conversion architecture | SourceImporters, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, AssetCooker, CookCommon, AssetConverter, GameFramework loaders. | SourceImporters remain role-centered; CookCommon becomes ToolConsoleSupport/CookDiagnostics; AssetConverter is removed as a production path; runtime consumes cooked outputs only. |
 | 26 | Launcher and host boundaries | LauncherCore, Qt GUI, Application, Editor, tools, smoke validation. | Launcher invokes tools/processes and records evidence; Qt UI remains presentation/model code. |
 | 27 | Shader and cook artifact validation matrix | ShaderCompiler, cookers, GameFramework loaders, Renderer resource managers, Projects. | Every artifact type has producer, schema owner, consumer, inspector, and smoke/load evidence. |
 | 28 | Build, CI, and guardrail expansion | CMake, `.github`, runtime-to-tools dependencies, generated/local-only folders. | Boundary checks cover RHI/Renderer plus runtime-to-tools, GameFramework/launcher/tool ownership, and generated folder policy. |
@@ -2692,7 +2692,7 @@ Execution status:
 | Runtime/render split | `LevelDesc` stores typed `SceneLightDesc` arrays with directional, point, and spot parity. The old directional-only level-lighting builder and one-field `LevelLightingDesc` wrapper were deleted because the level schema already owns runtime scene light records. Lighting snapshots and renderer scene data keep dynamic light vectors, and `ViewLightingBuilder` clamps those vectors only when packing shader-visible lighting buffers. |
 | Dependency cleanup | `SparkleGameFramework` no longer links `SparkleRHI`; GameFramework lighting headers no longer include `Config/RenderConfig.h`. No standalone contract target was kept for lighting constants because fixed light limits are GPU packing policy, not runtime scene policy. |
 | Boundary evidence | Scans over `Engine/GameFramework` found no `Renderer/Private`, `RHI/Private`, `Tools/*`, D3D12, Vulkan, source import, cooker, shader compiler, or full RHI target dependency hits. Renderer consumes GameFramework scene state through the existing snapshot/coordinator path rather than private scene mutation paths. |
-| Validation | VS2026 configure passed with existing third-party Assimp/FetchContent dev warnings. `SparkleGameFramework`, `SparkleRHI`, `ShowcaseEditor`, `ShowcaseRuntime`, `SourceImportAdapters`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, and `AssetCooker` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`. |
+| Validation | VS2026 configure passed with existing third-party Assimp/FetchContent dev warnings. `SparkleGameFramework`, `SparkleRHI`, `ShowcaseEditor`, `ShowcaseRuntime`, `SourceImporters`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, and `AssetCooker` built with `DevelopmentEditor` in `build/windows-vs2026-stage5`. |
 
 ## Stage 25C - Shallow Dead Wrapper And Pass-Through Cleanup
 
@@ -2828,13 +2828,13 @@ Validation:
 
 Goal:
 
-- Replace pattern-centered `SourceImportAdapters` architecture with role-centered source importers.
+- Replace pattern-centered source import adapter architecture with role-centered source importers.
 - Keep source-format assumptions out of runtime and focused cookers.
 
 Source references:
 
 - `tooling-pipeline-contract.md`
-- `Tools/Import/SourceImportAdapters`
+- `Tools/Import/SourceImporters`
 - `Tools/Cooking/*Cooker`
 
 Target shape references:
@@ -2851,7 +2851,7 @@ External implementation references:
 Implementation prompt:
 
 ```text
-Refactor Tools/Import/SourceImportAdapters toward Tools/Import/SourceImporters. Each importer should own one source-format family and emit imported DTOs plus diagnostics. Focused cookers consume imported DTOs, not source-loader internals. Runtime modules must not include importer headers.
+Refactor source import around `Tools/Import/SourceImporters`. Each importer should own one source-format family and emit imported DTOs, import reports, and diagnostics. Focused cookers consume imported DTOs, not source-loader internals. Runtime modules must not include importer headers.
 ```
 
 Positive guardrails:
@@ -2894,7 +2894,7 @@ Source references:
 
 - `tooling-pipeline-contract.md`
 - `repository-target-folder-architecture.md`
-- `Tools/Import/SourceImportAdapters`
+- `Tools/Import/SourceImporters`
 - `Tools/Cooking`
 - `Tools/Conversion/AssetConverter`
 
@@ -3273,7 +3273,7 @@ Run the repository-wide architecture evidence gate before the final threading-re
 Positive guardrails:
 
 - Score the whole repository, not only RHI/Renderer.
-- Require final evidence for GameFramework, Launcher, ShaderCompiler, AssetCooker, TextureCooker, SourceImporters/current SourceImportAdapters, CMake, CI/local checks, Projects, and docs.
+- Require final evidence for GameFramework, Launcher, ShaderCompiler, AssetCooker, TextureCooker, SourceImporters, CMake, CI/local checks, Projects, and docs.
 - Require final folder evidence for contract roots, backend roots, renderer pass/shader roots, tool role roots, project data/shader roots, CMake checks, and generated/local-only exclusions.
 - Keep known non-blocking risks visible with owner, reason, and follow-up stage or issue.
 

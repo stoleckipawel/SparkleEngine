@@ -34,7 +34,7 @@ sparkle_target_precompile_headers(MaterialCooker
 
 target_link_libraries(MaterialCooker
     PUBLIC
-        SourceImportAdapters
+        SourceImporters
         TextureCookShared
         SparkleCore
         SparkleGameFramework

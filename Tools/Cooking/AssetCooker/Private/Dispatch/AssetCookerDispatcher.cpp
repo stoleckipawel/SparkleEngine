@@ -100,6 +100,7 @@ static void AssetCookerPrintImportFeatureSummary(const AssetCookerSceneEntry& sc
 	    ToolConsoleSeverity::Info,
 	    "Import feature summary",
 	    {ToolConsole::QuotedField("source", sceneEntry.relativePath),
+	     ToolConsole::Field("importer", std::string(importResult.GetImporterId())),
 	     ToolConsole::Field("animations", AssetCookerFeatureCapabilityValue(features.animations)),
 	     ToolConsole::Field("cameraNodes", AssetCookerFeatureCapabilityValue(features.cameraNodes)),
 	     ToolConsole::Field("lightNodes", AssetCookerFeatureCapabilityValue(features.lightNodes)),
@@ -434,7 +435,10 @@ static bool AssetCookerRunWithImportedScene(
 			CoUninitialize();
 		}
 
-		diagnostics.AddError(category, "Failed to import source scene.", sceneEntry.sourcePath);
+		diagnostics.AddError(
+		    category,
+		    "Failed to import source scene with importer '" + std::string(importResult.GetImporterId()) + "'.",
+		    importResult.GetSourcePath().empty() ? sceneEntry.sourcePath : importResult.GetSourcePath());
 		return false;
 	}
 
@@ -521,7 +525,7 @@ static bool AssetCookerCookImportedScene(
 	    ToolConsoleSeverity::Info,
 	    "Cooked scene",
 	    {ToolConsole::QuotedField("name", sceneEntry.relativePath),
-	     ToolConsole::Field("importer", std::string(importResult.GetImporterName())),
+	     ToolConsole::Field("importer", std::string(importResult.GetImporterId())),
 	     ToolConsole::Field("meshPrimitives", std::to_string(importResult.GetMeshPrimitiveCount())),
 	     ToolConsole::Field("meshInstances", std::to_string(importResult.GetMeshInstanceCount())),
 	     ToolConsole::Field("cameras", std::to_string(importResult.GetCameraCount())),

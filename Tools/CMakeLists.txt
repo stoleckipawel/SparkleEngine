@@ -16,7 +16,7 @@ endif()
 
 if(SPARKLE_ENABLE_CONTENT_PIPELINE)
 	add_subdirectory(Cooking/TextureCooker)
-	add_subdirectory(Import/SourceImportAdapters)
+	add_subdirectory(Import/SourceImporters)
 	add_subdirectory(Cooking/MeshCooker)
 	add_subdirectory(Cooking/MaterialCooker)
 	add_subdirectory(Cooking/SceneCooker)

@@ -7,7 +7,7 @@
 
 #include <format>
 
-static const auto g_gltfImportDiagnosticLogger = Logging::GetOrCreateLogger("Tools.SourceImportAdapters.Gltf");
+static const auto g_gltfImportDiagnosticLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
 
 void GltfImportDiagnosticLog::ReportMissingFile(const std::filesystem::path& filePath, SourceImportResult& result)
 {

@@ -76,7 +76,7 @@ flowchart TD
 
     Launcher[SparkleLauncher]
     ShaderCompiler[ShaderCompiler]
-    Import[SourceImportAdapters]
+    Import[SourceImporters]
     Texture[TextureCooker]
     Mesh[MeshCooker]
     Material[MaterialCooker]
@@ -167,7 +167,7 @@ The detailed source-root freeze lives in [repository-coverage-status.md](reposit
 | [Engine/Application](../../Engine/Application) | Runtime/editor host | App lifecycle, runtime/editor composition, validation orchestration, console commands. | Backend-native validation implementation, cook/import logic, renderer internals. |
 | [Tools/Launcher/SparkleLauncher](../../Tools/Launcher/SparkleLauncher) | Developer workflow product | Build/cook/launch/maintenance workflows, process orchestration, Qt UI models/shell/widgets. | Actual cook/import/render implementation. |
 | [Tools/Shaders/ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Shader toolchain | Shader compile, reflection, cook packages, verification, package inspection. | Runtime rendering, backend command recording, launcher UI. |
-| [Tools/Import/SourceImportAdapters](../../Tools/Import/SourceImportAdapters) | Source asset adapters | glTF/FBX/source scene translation into imported DTOs and diagnostics. | Cooked runtime loading, renderer GPU resources. |
+| [Tools/Import/SourceImporters](../../Tools/Import/SourceImporters) | Source asset importers | glTF/FBX/source scene translation into imported DTOs, import reports, and diagnostics. | Cooked runtime loading, renderer GPU resources. |
 | [Tools/Cooking](../../Tools/Cooking) | Cook pipeline | Texture/mesh/material/scene cooking, cook orchestration, common tool console. | Runtime scene mutation, renderer frame graph, backend command encoding. |
 | [Tools/Conversion/AssetConverter](../../Tools/Conversion/AssetConverter) | Direct conversion/debug CLI | Developer command surface over focused import/cook modules. | Owning import/cook algorithms long term. |
 | [Projects](../../Projects) | Sample project content | Runnable project manifests, assets, showcase content. | Engine/tool architecture policy. |
@@ -193,7 +193,7 @@ This table applies the keep/improve/replace rule to the current source roots. It
 | [Engine/Application](../../Engine/Application) | Improve and extract | Keep host orchestration; move backend-native capture/readback behind RHI/backend services. | Host validation orchestrator |
 | [Engine/Assets](../../Engine/Assets) | Replace or redesign | Narrow to built-in engine assets with manifest/validation, or move shaders/data to owner-specific roots. | `Engine/Assets/BuiltIn` or owner-specific shader/data roots |
 | [Tools/Shaders/ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Improve and extract | Consume shader/pass contracts, not renderer runtime. | `ShaderCompiler` + `ShaderContracts` |
-| [Tools/Import/SourceImportAdapters](../../Tools/Import/SourceImportAdapters) | Improve and extract | Rename/extract from pattern-centered adapters to focused source importers. | `SourceImporters` |
+| [Tools/Import/SourceImporters](../../Tools/Import/SourceImporters) | Keep and refine | Role-centered focused source importers emit imported DTOs and reports. | `SourceImporters` |
 | Focused cookers under [Tools/Cooking](../../Tools/Cooking) | Keep and refine | Keep focused transformations; tighten schemas, diagnostics, and inspectors. | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` |
 | [Tools/Cooking/AssetCooker](../../Tools/Cooking/AssetCooker) | Improve and extract | Keep orchestration only; remove duplicated cook algorithms. | `AssetCooker` |
 | [Tools/Conversion/AssetConverter](../../Tools/Conversion/AssetConverter) | Replace or redesign | Fold into AssetCooker or explicit inspect/debug commands. | No production `AssetConverter` path |

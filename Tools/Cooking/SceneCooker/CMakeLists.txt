@@ -36,7 +36,7 @@ target_link_libraries(SceneCooker
     PUBLIC
         MeshCooker
         MaterialCooker
-        SourceImportAdapters
+        SourceImporters
         SparkleCore
         SparkleGameFramework
 )
