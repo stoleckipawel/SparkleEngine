@@ -12,6 +12,37 @@
 
 static const auto g_vulkanDescriptorAllocatorLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Descriptors");
 
+namespace VulkanDescriptorAllocatorDiagnostics
+{
+	const char* ToString(ShaderParameterSemanticKind semanticKind) noexcept
+	{
+		switch (semanticKind)
+		{
+			case ShaderParameterSemanticKind::ReadTexture:
+				return "ReadTexture";
+			case ShaderParameterSemanticKind::ReadBuffer:
+				return "ReadBuffer";
+			case ShaderParameterSemanticKind::RWTexture:
+				return "RWTexture";
+			case ShaderParameterSemanticKind::RWBuffer:
+				return "RWBuffer";
+			case ShaderParameterSemanticKind::UniformData:
+				return "UniformData";
+			case ShaderParameterSemanticKind::SamplerSet:
+				return "SamplerSet";
+			case ShaderParameterSemanticKind::AccelerationStructure:
+				return "AccelerationStructure";
+			case ShaderParameterSemanticKind::RenderTarget:
+				return "RenderTarget";
+			case ShaderParameterSemanticKind::DepthTarget:
+				return "DepthTarget";
+			default:
+				return "Unknown";
+		}
+	}
+
+}  // namespace VulkanDescriptorAllocatorDiagnostics
+
 VulkanDescriptorAllocator::VulkanDescriptorAllocator(VulkanRhi& rhi) noexcept : m_rhi(rhi) {}
 
 VulkanDescriptorAllocator::~VulkanDescriptorAllocator() noexcept
@@ -719,8 +750,11 @@ void VulkanDescriptorAllocator::WriteEntries(
 	{
 		SPDLOG_LOGGER_ERROR(
 		    g_vulkanDescriptorAllocatorLogger,
-		    "Refused Vulkan descriptor write for binding '{}' because entry kind does not match compiled semantic.",
-		    binding.Name != nullptr ? binding.Name : "<unnamed>");
+		    "Refused Vulkan descriptor write for binding '{}' because entry kind does not match compiled semantic "
+		    "(semantic='{}', entryKind={}).",
+		    binding.Name != nullptr ? binding.Name : "<unnamed>",
+		    VulkanDescriptorAllocatorDiagnostics::ToString(binding.SemanticKind),
+		    static_cast<std::uint32_t>(entryKind));
 		return;
 	}
 

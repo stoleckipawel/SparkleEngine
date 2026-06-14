@@ -79,6 +79,7 @@ namespace SparkleLauncher::RhiSmokeParityProcessRequest
 		    GetRhiSmokeParityArtifactPath(plan, parityCase, viewMode, ".timing.csv").string());
 		RhiSmokeParityStepEnvironment::AddOrReplace(request, "SPARKLE_SMOKE_SCENE_COLOR_CAPTURE_FRAME", "50");
 		RhiSmokeParityStepEnvironment::AddOrReplace(request, "SPARKLE_SMOKE_FRAME_LIMIT", GetRhiSmokeFrameLimitText(plan.Request));
+		RhiSmokeParityStepEnvironment::AddOrReplace(request, "SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING", "1");
 		RhiSmokeParityStepEnvironment::AddOrReplace(request, "SPARKLE_SMOKE_CAMERA_MOTION", "1");
 		RhiSmokeParityStepEnvironment::AddOrReplace(request, "SPARKLE_SMOKE_CAMERA_MOTION_REQUIRES_RT", "1");
 		RhiSmokeParityStepEnvironment::AddOrReplace(request, "SPARKLE_SMOKE_CAMERA_MOTION_START_FRAME", "10");

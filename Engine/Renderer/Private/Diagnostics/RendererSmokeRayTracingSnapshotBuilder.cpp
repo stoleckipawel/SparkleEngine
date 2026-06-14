@@ -5,7 +5,7 @@
 #include "RayTracing/RayTracingPerformanceMetrics.h"
 #include "RayTracing/RenderRayTracingScene.h"
 
-namespace
+namespace RendererSmokeRayTracingSnapshotBuilderDetails
 {
 	RendererSmokeRayTracingBlasDiagnostics BuildBlasDiagnostics(const RayTracingPerformanceMetrics& metrics) noexcept
 	{
@@ -33,11 +33,13 @@ namespace
 		    .GpuMilliseconds = metrics.ClassicTlas.GpuMilliseconds};
 	}
 
-	RendererSmokeRayTracingPtlasPlannerDiagnostics BuildPtlasPlannerDiagnostics(const RayTracingPerformanceMetrics& metrics) noexcept
+	RendererSmokeRayTracingPtlasPlannerDiagnostics BuildPtlasPlannerDiagnostics(
+	    const RhiRayTracingCapabilities& capabilities,
+	    const RayTracingPerformanceMetrics& metrics) noexcept
 	{
 		return RendererSmokeRayTracingPtlasPlannerDiagnostics{
-		    .Provider = metrics.Providers.PartitionedTlasProvider,
-		    .Supported = metrics.Providers.SupportsPartitionedTlas,
+		    .Provider = capabilities.Groups.PartitionedTlas.Provider,
+		    .Supported = capabilities.Groups.PartitionedTlas.Supported,
 		    .PartitionCount = metrics.PtlasPlanner.PartitionCount,
 		    .DirtyTransformCount = metrics.PtlasPlanner.DirtyTransformCount,
 		    .MovedPartitionCount = metrics.PtlasPlanner.MovedPartitionCount,
@@ -83,9 +85,9 @@ RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build
 	diagnostics.FrameTimings.ScenePrepareCpuMilliseconds = metrics.Timings.ScenePrepareCpuMilliseconds;
 	diagnostics.FrameTimings.SceneBuildCpuMilliseconds = metrics.Timings.SceneBuildCpuMilliseconds;
 	diagnostics.FrameTimings.RayTracingPassGpuMilliseconds = metrics.Timings.RayTracingPassGpuMilliseconds;
-	diagnostics.Blas = BuildBlasDiagnostics(metrics);
-	diagnostics.ClassicTlas = BuildClassicTlasDiagnostics(*rayTracingScene, metrics);
-	diagnostics.PtlasPlanner = BuildPtlasPlannerDiagnostics(metrics);
-	diagnostics.PtlasGpuUpdates = BuildPtlasGpuUpdateDiagnostics(metrics);
+	diagnostics.Blas = RendererSmokeRayTracingSnapshotBuilderDetails::BuildBlasDiagnostics(metrics);
+	diagnostics.ClassicTlas = RendererSmokeRayTracingSnapshotBuilderDetails::BuildClassicTlasDiagnostics(*rayTracingScene, metrics);
+	diagnostics.PtlasPlanner = RendererSmokeRayTracingSnapshotBuilderDetails::BuildPtlasPlannerDiagnostics(capabilities, metrics);
+	diagnostics.PtlasGpuUpdates = RendererSmokeRayTracingSnapshotBuilderDetails::BuildPtlasGpuUpdateDiagnostics(metrics);
 	return diagnostics;
 }

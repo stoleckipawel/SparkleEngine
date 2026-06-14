@@ -7,17 +7,6 @@
 #include "RayTracing/RayTracingClassicTlasStrategy.h"
 #include "RayTracing/RayTracingPartitionedTlasStrategy.h"
 
-namespace RayTracingTopLevelAccelerationStructureStrategyDetails
-{
-	RayTracingSceneTlasShaderAccessMode ResolveShaderAccessMode(const RayTracingCapabilityReport& capabilityReport) noexcept
-	{
-		return capabilityReport.BackendApi == ERhiBackendApi::Vulkan &&
-		               capabilityReport.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath
-		           ? RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress
-		           : RayTracingSceneTlasShaderAccessMode::Descriptor;
-	}
-}  // namespace RayTracingTopLevelAccelerationStructureStrategyDetails
-
 RayTracingTopLevelAccelerationStructureStrategy::RayTracingTopLevelAccelerationStructureStrategy() noexcept = default;
 
 RayTracingTopLevelAccelerationStructureStrategy::~RayTracingTopLevelAccelerationStructureStrategy() noexcept = default;
@@ -33,5 +22,5 @@ std::unique_ptr<RayTracingTopLevelAccelerationStructureStrategy> CreateRayTracin
 
 	return std::make_unique<RayTracingClassicTlasStrategy>(
 	    renderHardwareInterface,
-	    RayTracingTopLevelAccelerationStructureStrategyDetails::ResolveShaderAccessMode(capabilityReport));
+	    RayTracingSceneTlasShaderAccessMode::Descriptor);
 }

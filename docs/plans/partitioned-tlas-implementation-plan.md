@@ -1673,16 +1673,20 @@ Reference-quality completion stages:
    - Vulkan PTLAS native records now follow the NVIDIA sample more closely:
      - `VkPartitionedAccelerationStructureFlagsNV` is chained into `VkPartitionedAccelerationStructureInstancesInputNV`.
      - PTLAS instance write records resolve BLAS storage buffer device addresses instead of reusing classic acceleration-structure device addresses.
-   - Vulkan NV PTLAS is no longer advertised as shader-visible through the current descriptor-based HLSL inline ray query path.
-   - Requested Vulkan PTLAS currently falls back to classic TLAS with the explicit reason `partitioned-tlas-shader-visible-address-path-not-implemented`.
+   - Vulkan PTLAS now uses the shader-device-address inline ray query path through the dedicated `DirectLightingVulkanAddress` shader package and pass binding layout.
+   - Classic Vulkan TLAS remains on the normal acceleration-structure descriptor path; the Vulkan RHI no longer skips descriptor writes merely because the device also supports shader-device-address traversal.
+   - Vulkan NV PTLAS becomes the active conceptual `SceneTlas` when selected by CVar policy and capability.
    - Added renderer command-context forwarding for `BuildPartitionedTopLevelAccelerationStructure`.
    - Added PTLAS CPU-pack timing and `Partitioned TLAS Build` GPU timing publication.
-   - Validation run: `ShowcaseEditor`, `SparkleLauncher`, `SparkleRHI_Vulkan`, and `architecture_boundary_check`.
-   - Launcher parity artifacts were produced for D3D12 classic, D3D12 requested-PTLAS fallback, Vulkan classic, and Vulkan requested-PTLAS fallback.
-   - Requested PTLAS fallback captures are byte-identical to their classic references, which proves the fallback is stable but does not prove active PTLAS rendering.
-   - Cross-backend classic comparison still fails under the current strict comparator: D3D12 classic vs Vulkan classic average channel difference is approximately `0.601`, with `2,737,801` differing pixels in the captured frame.
-   - Stage verdict: **not accepted yet**. Active Vulkan PTLAS rendered output is blocked by the missing shader-visible PTLAS traversal contract.
-   - Remaining acceptance gap: implement the NVIDIA-reference-style shader-visible PTLAS traversal path, or an equivalent validated RHI contract, then capture real `topLevelProvider=PartitionedTlas` Vulkan artifacts and compare them against Vulkan classic TLAS.
+   - Validation run: `ShowcaseEditor`, `SparkleLauncher`, launcher-owned `project.run.rhi-raytracing-parity`, and `architecture_boundary_check`.
+   - Launcher parity artifacts were produced for D3D12 classic, D3D12 requested-PTLAS fallback, Vulkan classic, and active Vulkan PTLAS.
+   - Vulkan classic `Lit.bmp` and Vulkan PTLAS `Lit.bmp` are byte-identical in the launcher parity artifact set:
+     - SHA256 `CCA552EDE7D1347B35B563AC43931C5F2543F64710201C266021BB32307567A3`.
+   - D3D12 requested PTLAS falls back to classic TLAS because NVAPI PTLAS headers are not compiled; D3D12 classic and requested-PTLAS fallback captures are byte-identical:
+     - SHA256 `16D505215D9C77134F8D47009B677871F4850ECE5D3D57E9ECA322F2DA635CEB`.
+   - Launcher parity logs report zero fatal graphics markers and the artifacts report zero unresolved frame-graph barrier warnings.
+   - Stage verdict: **accepted for Vulkan PTLAS CPU-pack active provider bring-up**.
+   - Remaining follow-up: GPU-driven PTLAS operation writers are still a later stage; current Vulkan acceptance is the CPU-packed active provider path.
 
 4. **D3D12 NVAPI PTLAS Active Provider**
 

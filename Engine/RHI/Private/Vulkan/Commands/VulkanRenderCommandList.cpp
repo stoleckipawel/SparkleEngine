@@ -145,10 +145,6 @@ void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIn
 	}
 	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
 	{
-		if (UsesShaderDeviceAddressAccelerationStructureBinding())
-		{
-			return;
-		}
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
 		VulkanGpuAllocationRecord* const record =
@@ -185,10 +181,6 @@ void VulkanRenderCommandList::BindGraphicsShaderResource(std::uint32_t bindingIn
 	}
 	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
 	{
-		if (UsesShaderDeviceAddressAccelerationStructureBinding())
-		{
-			return;
-		}
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
 		VulkanGpuAllocationRecord* const record =
@@ -282,10 +274,6 @@ void VulkanRenderCommandList::BindComputeConstantBuffer(std::uint32_t bindingInd
 	}
 	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
 	{
-		if (UsesShaderDeviceAddressAccelerationStructureBinding())
-		{
-			return;
-		}
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
 		VulkanGpuAllocationRecord* const record =
@@ -322,10 +310,6 @@ void VulkanRenderCommandList::BindComputeShaderResource(std::uint32_t bindingInd
 	}
 	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
 	{
-		if (UsesShaderDeviceAddressAccelerationStructureBinding())
-		{
-			return;
-		}
 		VkDescriptorSet descriptorSet =
 		    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
 		VulkanGpuAllocationRecord* const record =
@@ -356,19 +340,6 @@ void VulkanRenderCommandList::BindComputeShaderResource(std::uint32_t bindingInd
 void VulkanRenderCommandList::BindComputeUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	BindComputeShaderResource(bindingIndex, gpuAddress);
-}
-
-bool VulkanRenderCommandList::UsesShaderDeviceAddressAccelerationStructureBinding() const noexcept
-{
-	if (m_rhi == nullptr)
-	{
-		return false;
-	}
-	const VulkanFeatureStatus& features = m_rhi->GetFeatureStatus();
-	return features.RayTracing.EnabledBackend &&
-	       features.EnabledShaderInt64 &&
-	       features.RayTracing.SupportsRayTracingPipelineExtension &&
-	       features.RayTracing.SupportsRayTracingPipelineFeature;
 }
 
 void VulkanRenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept

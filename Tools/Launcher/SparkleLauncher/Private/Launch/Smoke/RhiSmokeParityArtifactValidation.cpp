@@ -27,8 +27,28 @@ namespace SparkleLauncher::RhiSmokeBitmapComparison
 	{
 		double AverageAbsoluteDifference = 0.0;
 		std::uint64_t DifferentPixels = 0;
-		bool Passed = false;
+		double DifferentPixelRatio = 0.0;
 	};
+
+	struct ImageComparisonThresholds final
+	{
+		double MaxAverageAbsoluteDifference = 0.0;
+		double MaxDifferentPixelRatio = 0.0;
+		bool RequireExactPixels = true;
+	};
+
+	constexpr ImageComparisonThresholds ExactImageMatchThresholds() noexcept
+	{
+		return ImageComparisonThresholds{};
+	}
+
+	constexpr ImageComparisonThresholds CrossBackendBaselineThresholds() noexcept
+	{
+		return ImageComparisonThresholds{
+		    .MaxAverageAbsoluteDifference = 1.0,
+		    .MaxDifferentPixelRatio = 0.75,
+		    .RequireExactPixels = false};
+	}
 
 	bool ReadFileBytes(const std::filesystem::path& path, std::vector<std::uint8_t>& outBytes)
 	{
@@ -130,8 +150,18 @@ namespace SparkleLauncher::RhiSmokeBitmapComparison
 
 		outResult.AverageAbsoluteDifference = static_cast<double>(totalDifference) / static_cast<double>(pixelCount * 3u);
 		outResult.DifferentPixels = differentPixels;
-		outResult.Passed = outResult.AverageAbsoluteDifference <= 1.0 && outResult.DifferentPixels == 0;
+		outResult.DifferentPixelRatio = pixelCount > 0 ? static_cast<double>(differentPixels) / static_cast<double>(pixelCount) : 1.0;
 		return true;
+	}
+
+	bool PassesThresholds(const ImageComparisonResult& result, const ImageComparisonThresholds& thresholds) noexcept
+	{
+		if (result.AverageAbsoluteDifference > thresholds.MaxAverageAbsoluteDifference ||
+		    result.DifferentPixelRatio > thresholds.MaxDifferentPixelRatio)
+		{
+			return false;
+		}
+		return !thresholds.RequireExactPixels || result.DifferentPixels == 0;
 	}
 }
 
@@ -158,6 +188,18 @@ namespace SparkleLauncher::RhiSmokeProviderMetadataValidation
 		}
 
 		return metadata.find("\"topLevelProvider\": \"PartitionedTlas\"") != std::string::npos;
+	}
+
+	bool MetadataReportsUnsupportedPartitionedTlasFallback(const std::filesystem::path& metadataPath)
+	{
+		std::string metadata;
+		if (!ReadTextFile(metadataPath, metadata))
+		{
+			return false;
+		}
+
+		return metadata.find("\"topLevelProvider\": \"ClassicTlas\"") != std::string::npos &&
+		       metadata.find("\"ptlasSupported\": false") != std::string::npos;
 	}
 
 	bool MetadataReportsRequestedWriterPath(
@@ -252,6 +294,7 @@ namespace SparkleLauncher::RhiSmokeParityValidation
 	    std::string_view referenceCase,
 	    std::string_view candidateCase,
 	    bool requirePartitionedTlasCandidate,
+	    const RhiSmokeBitmapComparison::ImageComparisonThresholds& thresholds,
 	    std::string& outFailureSummary)
 	{
 		const std::filesystem::path artifactDirectory = GetRhiSmokeParityArtifactDirectory(plan);
@@ -261,7 +304,13 @@ namespace SparkleLauncher::RhiSmokeParityValidation
 		if (requirePartitionedTlasCandidate &&
 		    !RhiSmokeProviderMetadataValidation::MetadataSelectsPartitionedTlas(candidateMetadataPath))
 		{
-			return true;
+			if (!RhiSmokeProviderMetadataValidation::MetadataReportsUnsupportedPartitionedTlasFallback(candidateMetadataPath))
+			{
+				outFailureSummary = "RHI ray tracing parity candidate did not select PTLAS and did not report an explicit "
+				                    "unsupported-provider fallback: " +
+				                    candidateMetadataPath.string();
+				return false;
+			}
 		}
 
 		RhiSmokeBitmapComparison::ImageComparisonResult comparison;
@@ -271,12 +320,13 @@ namespace SparkleLauncher::RhiSmokeParityValidation
 			outFailureSummary = error;
 			return false;
 		}
-		if (!comparison.Passed)
+		if (!RhiSmokeBitmapComparison::PassesThresholds(comparison, thresholds))
 		{
 			outFailureSummary = "RHI ray tracing parity failed for " + std::string(candidateCase) +
 			                    " vs " + std::string(referenceCase) + ": avgAbsDiff=" +
 			                    std::to_string(comparison.AverageAbsoluteDifference) +
-			                    " differentPixels=" + std::to_string(comparison.DifferentPixels);
+			                    " differentPixels=" + std::to_string(comparison.DifferentPixels) +
+			                    " differentPixelRatio=" + std::to_string(comparison.DifferentPixelRatio);
 			return false;
 		}
 		return true;
@@ -292,8 +342,26 @@ namespace SparkleLauncher
 			return false;
 		}
 
-		return RhiSmokeParityValidation::ValidateComparison(plan, "vulkan-classic", "vulkan-ptlas", true, outFailureSummary) &&
-		       RhiSmokeParityValidation::ValidateComparison(plan, "d3d12-classic", "d3d12-ptlas", true, outFailureSummary) &&
-		       RhiSmokeParityValidation::ValidateComparison(plan, "d3d12-classic", "vulkan-classic", false, outFailureSummary);
+		return RhiSmokeParityValidation::ValidateComparison(
+		           plan,
+		           "vulkan-classic",
+		           "vulkan-ptlas",
+		           true,
+		           RhiSmokeBitmapComparison::ExactImageMatchThresholds(),
+		           outFailureSummary) &&
+		       RhiSmokeParityValidation::ValidateComparison(
+		           plan,
+		           "d3d12-classic",
+		           "d3d12-ptlas",
+		           true,
+		           RhiSmokeBitmapComparison::ExactImageMatchThresholds(),
+		           outFailureSummary) &&
+		       RhiSmokeParityValidation::ValidateComparison(
+		           plan,
+		           "d3d12-classic",
+		           "vulkan-classic",
+		           false,
+		           RhiSmokeBitmapComparison::CrossBackendBaselineThresholds(),
+		           outFailureSummary);
 	}
 }
