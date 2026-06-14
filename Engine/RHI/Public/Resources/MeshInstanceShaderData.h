@@ -15,7 +15,7 @@ struct MeshInstanceData
 	uint32_t MaterialSlot = 0;
 	uint32_t Flags = 0;
 	uint32_t JointMatrixOffset = 0;
-	uint32_t PackedRayTracingPtlasDebugVisualizationData = 0;
+	uint32_t PackedDebugData = 0;
 };
 static_assert(std::is_standard_layout_v<MeshInstanceData>, "MeshInstanceData must be standard-layout");
 static_assert(std::is_trivially_copyable_v<MeshInstanceData>, "MeshInstanceData must be trivially-copyable");

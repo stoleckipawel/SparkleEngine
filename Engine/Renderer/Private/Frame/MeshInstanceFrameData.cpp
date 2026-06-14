@@ -2,7 +2,7 @@
 #include "Frame/MeshInstanceFrameData.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
-#include "RayTracing/RayTracingPtlasPartitionPlanner.h"
+#include "RayTracing/RayTracingSceneFramePlan.h"
 #include "SceneData/RenderSceneData.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -44,7 +44,7 @@ MeshInstanceFrameData& MeshInstanceFrameData::operator=(MeshInstanceFrameData&& 
 MeshInstanceFrameData MeshInstanceFrameData::Build(
     RenderHardwareInterface& renderHardwareInterface,
     const RenderSceneData& sceneData,
-    const RayTracingPtlasPartitionPlan* partitionPlan)
+    const RayTracingSceneFramePlan* rayTracingFramePlan)
 {
 	if (sceneData.meshInstances.empty())
 	{
@@ -64,9 +64,9 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(
 		                     ? MeshInstanceFlag_Skinned
 		                     : 0u,
 		        .JointMatrixOffset = draw.Skinning.JointMatrixOffset,
-		        .PackedRayTracingPtlasDebugVisualizationData =
-		            partitionPlan != nullptr
-		                ? partitionPlan->GetPackedDebugVisualizationDataForRenderInstance(
+		        .PackedDebugData =
+		            rayTracingFramePlan != nullptr
+		                ? rayTracingFramePlan->MeshInstanceDebugData.GetPackedDebugVisualizationData(
 		                      static_cast<std::uint32_t>(instances.size()))
 		                : 0u});
 	}

@@ -5,7 +5,6 @@
 #include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
-#include "RayTracing/RayTracingPtlasPartitionPlanner.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Viewport/ViewportContracts.h"
 
@@ -80,7 +79,6 @@ class FramePipeline final
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	RendererFrameProductHandles m_frameProducts = {};
 	RenderSceneSnapshot m_sceneSnapshot = {};
-	RayTracingPtlasPartitionPlanner m_rayTracingPtlasPartitionPlanner;
 	FrameGraphAccelerationStructureHandle m_frameGraphSceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;

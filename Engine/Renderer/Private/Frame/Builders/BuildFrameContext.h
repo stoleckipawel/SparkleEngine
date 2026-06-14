@@ -7,7 +7,7 @@ class RenderCamera;
 class RenderHardwareInterface;
 class TemporalDataBuilder;
 class RenderSceneDataBuilder;
-class RayTracingPtlasPartitionPlanner;
+class RenderRayTracingScene;
 class ViewLightingBuilder;
 struct FrameContext;
 struct RenderSceneSnapshot;
@@ -18,7 +18,7 @@ FrameContext BuildFrameContext(
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,
     RenderSceneDataBuilder& renderSceneDataBuilder,
-    RayTracingPtlasPartitionPlanner& rayTracingPtlasPartitionPlanner,
+    RenderRayTracingScene* renderRayTracingScene,
     PerViewDataBuilder& perViewDataBuilder,
     ViewLightingBuilder& viewLightingBuilder,
     TemporalDataBuilder& temporalDataBuilder);

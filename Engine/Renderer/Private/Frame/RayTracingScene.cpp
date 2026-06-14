@@ -34,10 +34,6 @@ void AddRayTracingSceneBuildPass(FrameGraphBuilder& builder, FrameGraphAccelerat
 			    return;
 		    }
 
-		    context.RuntimeServices.RayTracing->Scene->Build(
-		        context.Commands,
-		        context.Frame.sceneData,
-		        &context.Frame.rayTracingPtlasPartitionPlan,
-		        &context.Diagnostics);
+		    context.RuntimeServices.RayTracing->Scene->Build(context.Commands, context.Frame.sceneData, &context.Diagnostics);
 	    });
 }

@@ -3,8 +3,10 @@
 #include "RayTracing/RenderRayTracingScene.h"
 
 #include "Commands/RenderCommandContext.h"
+#include "RayTracing/RayTracingBlasCache.h"
+#include "RayTracing/RayTracingClassicTlasBuilder.h"
 #include "RayTracing/RayTracingPerformanceDiagnostics.h"
-#include "RayTracing/RayTracingPtlasPartitionPlanner.h"
+#include "RayTracing/RayTracingTopLevelScenePlanner.h"
 #include "SceneData/RenderSceneData.h"
 
 RenderRayTracingScene::RenderRayTracingScene(
@@ -15,6 +17,7 @@ RenderRayTracingScene::RenderRayTracingScene(
 	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
 	m_performanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
 	m_performanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
+	m_topLevelScenePlanner = std::make_unique<RayTracingTopLevelScenePlanner>();
 
 	if (!m_capabilityReport.Core.SupportsRayTracing)
 	{
@@ -25,7 +28,14 @@ RenderRayTracingScene::RenderRayTracingScene(
 	m_classicTlasBuilder = std::make_unique<RayTracingClassicTlasBuilder>(renderHardwareInterface);
 }
 
-RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& sceneData, const RayTracingPtlasPartitionPlan* partitionPlan) noexcept
+RenderRayTracingScene::~RenderRayTracingScene() noexcept = default;
+
+RayTracingSceneFramePlan RenderRayTracingScene::PlanFrame(const RenderSceneData& sceneData) noexcept
+{
+	return m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->PlanFrame(sceneData) : RayTracingSceneFramePlan{};
+}
+
+RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& sceneData) noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.RayTracing.ScenePrepare");
 	m_performanceMetrics.Timings.ScenePrepareCpuMilliseconds = 0.0;
@@ -44,17 +54,15 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 		m_classicTlasBuilder->Clear();
 		m_performanceMetrics.Blas = {};
 		m_performanceMetrics.ClassicTlas = {};
-		m_performanceMetrics.PtlasPlanner.PartitionCount = partitionPlan != nullptr ? partitionPlan->Counts.PartitionCount : 0u;
-		m_performanceMetrics.PtlasPlanner.DirtyTransformCount =
-		    partitionPlan != nullptr ? partitionPlan->Counts.DirtyTransformCount : 0u;
-		m_performanceMetrics.PtlasPlanner.MovedPartitionCount =
-		    partitionPlan != nullptr ? partitionPlan->Counts.MovedPartitionCount : 0u;
-		m_performanceMetrics.PtlasPlanner.GlobalPartitionInstanceCount =
-		    partitionPlan != nullptr ? partitionPlan->Counts.GlobalPartitionInstanceCount : 0u;
-		m_performanceMetrics.PtlasPlanner.DuplicateStableIndexCount =
-		    partitionPlan != nullptr ? partitionPlan->Counts.DuplicateStableIndexCount : 0u;
-		m_performanceMetrics.PtlasPlanner.Overflow =
-		    partitionPlan != nullptr && partitionPlan->Validation.HasPartitionOverflow;
+		const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
+		    m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->GetCurrentPlannerMetrics() : RayTracingTopLevelScenePlannerMetrics{};
+		m_performanceMetrics.PtlasPlanner = RayTracingPtlasPlannerMetrics{
+		    .PartitionCount = plannerMetrics.PartitionCount,
+		    .DirtyTransformCount = plannerMetrics.DirtyTransformCount,
+		    .MovedPartitionCount = plannerMetrics.MovedPartitionCount,
+		    .GlobalPartitionInstanceCount = plannerMetrics.GlobalPartitionInstanceCount,
+		    .DuplicateStableIndexCount = plannerMetrics.DuplicateStableIndexCount,
+		    .Overflow = plannerMetrics.Overflow};
 		return frameData;
 	}
 
@@ -73,7 +81,6 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 void RenderRayTracingScene::Build(
     RenderCommandContext& cmd,
     const RenderSceneData& sceneData,
-    const RayTracingPtlasPartitionPlan* partitionPlan,
     PassExecutionDiagnostics* diagnostics) noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.RayTracing.SceneBuild");
@@ -96,7 +103,9 @@ void RenderRayTracingScene::Build(
 
 	m_blasCache->BeginFrame();
 	const RayTracingClassicTlasBuilder::BuildStats tlasStats =
-	    m_classicTlasBuilder->Build(cmd, sceneData, partitionPlan, *m_blasCache, &performanceDiagnostics);
+	    m_topLevelScenePlanner != nullptr
+	        ? m_topLevelScenePlanner->BuildClassicTlas(cmd, sceneData, *m_classicTlasBuilder, *m_blasCache, &performanceDiagnostics)
+	        : m_classicTlasBuilder->Build(cmd, sceneData, nullptr, *m_blasCache, &performanceDiagnostics);
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
 
 	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
@@ -130,6 +139,15 @@ void RenderRayTracingScene::Clear() noexcept
 	{
 		m_blasCache->Clear();
 	}
+	if (m_topLevelScenePlanner != nullptr)
+	{
+		m_topLevelScenePlanner->Clear();
+	}
+}
+
+bool RenderRayTracingScene::HasValidTlas() const noexcept
+{
+	return m_classicTlasBuilder != nullptr && m_classicTlasBuilder->GetTlas().IsValid();
 }
 
 RhiOwnedResourceHandle RenderRayTracingScene::GetTlasResource() const noexcept

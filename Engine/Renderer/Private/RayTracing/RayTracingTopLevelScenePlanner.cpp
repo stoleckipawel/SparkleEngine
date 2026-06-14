@@ -1,0 +1,82 @@
+#include "PCH.h"
+
+#include "RayTracing/RayTracingTopLevelScenePlanner.h"
+
+#include "Debug/RendererCVars.h"
+#include "RayTracing/RayTracingPtlasPartitionPlanner.h"
+
+struct RayTracingTopLevelScenePlanner::Impl final
+{
+	RayTracingPtlasPartitionPlanner PartitionPlanner;
+	RayTracingPtlasPartitionPlan CurrentPartitionPlan;
+};
+
+RayTracingTopLevelScenePlanner::RayTracingTopLevelScenePlanner() noexcept :
+    m_impl(std::make_unique<Impl>())
+{
+}
+
+RayTracingTopLevelScenePlanner::~RayTracingTopLevelScenePlanner() noexcept = default;
+
+RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(const RenderSceneData& sceneData) noexcept
+{
+	if (m_impl == nullptr)
+	{
+		return {};
+	}
+
+	m_impl->CurrentPartitionPlan = m_impl->PartitionPlanner.Build(
+	    sceneData,
+	    RayTracingPtlasPartitionPlannerConfig{
+	        .PartitionsPerAxis = CVarRayTracingPartitionsPerAxis.Get(),
+	        .EnableGlobalPartition = CVarRayTracingGlobalPartition.Get()});
+
+	RayTracingSceneFramePlan framePlan{};
+	framePlan.MeshInstanceDebugData.PackedDebugVisualizationDataByRenderInstance.reserve(
+	    m_impl->CurrentPartitionPlan.Indices.Entries.size());
+	for (const RayTracingPtlasPartitionEntry& entry : m_impl->CurrentPartitionPlan.Indices.Entries)
+	{
+		framePlan.MeshInstanceDebugData.PackedDebugVisualizationDataByRenderInstance.push_back(entry.DebugVisualization.PackedData);
+	}
+	return framePlan;
+}
+
+RayTracingClassicTlasBuilder::BuildStats RayTracingTopLevelScenePlanner::BuildClassicTlas(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    RayTracingClassicTlasBuilder& classicTlasBuilder,
+    RayTracingBlasCache& blasCache,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
+{
+	return classicTlasBuilder.Build(
+	    cmd,
+	    sceneData,
+	    m_impl != nullptr ? &m_impl->CurrentPartitionPlan : nullptr,
+	    blasCache,
+	    diagnostics);
+}
+
+RayTracingTopLevelScenePlannerMetrics RayTracingTopLevelScenePlanner::GetCurrentPlannerMetrics() const noexcept
+{
+	if (m_impl == nullptr)
+	{
+		return {};
+	}
+
+	return RayTracingTopLevelScenePlannerMetrics{
+	    .PartitionCount = m_impl->CurrentPartitionPlan.Counts.PartitionCount,
+	    .DirtyTransformCount = m_impl->CurrentPartitionPlan.Counts.DirtyTransformCount,
+	    .MovedPartitionCount = m_impl->CurrentPartitionPlan.Counts.MovedPartitionCount,
+	    .GlobalPartitionInstanceCount = m_impl->CurrentPartitionPlan.Counts.GlobalPartitionInstanceCount,
+	    .DuplicateStableIndexCount = m_impl->CurrentPartitionPlan.Counts.DuplicateStableIndexCount,
+	    .Overflow = m_impl->CurrentPartitionPlan.Validation.HasPartitionOverflow};
+}
+
+void RayTracingTopLevelScenePlanner::Clear() noexcept
+{
+	if (m_impl != nullptr)
+	{
+		m_impl->PartitionPlanner.Clear();
+		m_impl->CurrentPartitionPlan = {};
+	}
+}
