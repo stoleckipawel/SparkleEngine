@@ -1426,3 +1426,344 @@ Maintainability:
 - Classic TLAS remains available as fallback and reference.
 - PTLAS code is organized by policy, resource ownership, native backend implementation, and diagnostics.
 - Shader pass authors do not need to know whether the scene top-level AS is classic or partitioned.
+
+## Final Acceptance Audit - 2026-06-14
+
+Strict verdict:
+
+- Overall status: **Not done / not review-final yet**.
+- The implementation has strong architecture scaffolding, backend-neutral RHI contracts, backend-private native PTLAS service work, diagnostics, viewmodes, and launcher-owned smoke/parity workflow plumbing.
+- The final PTLAS feature cannot be accepted yet because the renderer still builds and binds classic TLAS as the active scene top-level acceleration structure, and no successful PTLAS-vs-classic capture evidence has been recorded.
+
+Reference direction used for the audit:
+
+- NVIDIA Falcor: framework-owned render/test workflows with reusable rendering infrastructure.
+- NVIDIA Donut: reusable rendering framework plus sample-level feature demonstrations.
+- AMD Cauldron: DX12/Vulkan framework structure for backend-aware rendering samples.
+- Sparkle should keep following the same shape: launcher-owned smoke workflows, renderer-owned scene policy, backend-private native execution, and evidence artifacts as first-class review output.
+
+Acceptance status table:
+
+| Criterion | Status | Evidence / gap |
+|---|---:|---|
+| Classic TLAS and PTLAS produce equivalent ray tracing results in deterministic scenes. | **Not finished** | Launcher parity workflow exists, but no PTLAS-selected capture set proves equivalence. `RenderRayTracingScene` still routes active build through classic TLAS. |
+| Fallbacks are visible and never silently change quality. | **Partial** | Provider/capability metadata exists. Parity validation skips PTLAS comparison when metadata does not report `PartitionedTlas`, which is honest but not final proof. |
+| Duplicate instance indices and partition overflow are detected. | **Partial** | Planner metrics expose duplicate stable index count and overflow. Need validation failure/artifact proving the conditions are caught. |
+| Renderer contains no native Vulkan or D3D12 PTLAS structs. | **Done** | Boundary check passes. Renderer sees logical/RHI data; native PTLAS structs remain backend-private. Existing Renderer native references are the documented Streamline/DLSS provider exception. |
+| RHI exposes backend-neutral PTLAS capabilities and commands. | **Done** | `RhiPartitionedTlasDesc`, `RhiPartitionedTlasService`, and `BuildPartitionedTopLevelAccelerationStructure` exist. |
+| Backend-specific packing/descriptors remain in backend-private folders. | **Partial** | Vulkan/D3D12 native packing and descriptor handling are backend-private. Full GPU-native packing is not proven end-to-end. |
+| Frame graph represents PTLAS build/update as acceleration structure usage. | **Partial** | Frame graph has generic `AccelerationStructureBuild` usage for scene TLAS. It does not yet model PTLAS operation buffers/count/native-pack/update dependencies as first-class enough for final acceptance. |
+| Partition and update behavior is visible in viewmodes. | **Mostly done** | PTLAS partition/provider/update viewmodes exist and expose planner/provider state. |
+| Build/update cost is visible in UI and capture tools. | **Partial** | Classic TLAS/BLAS/ray tracing timings exist; PTLAS timing fields exist. Real PTLAS build/update timing capture is not proven. |
+| Every performance claim has a capture or metric artifact. | **Not finished** | No final captured PTLAS performance/parity artifact set exists yet. |
+| D3D12 classic TLAS remains the current cross-backend reference. | **Done as design** | Launcher parity workflow uses D3D12 classic as the cross-backend reference. |
+| Vulkan PTLAS is compared against Vulkan classic TLAS first. | **Partial** | Launcher workflow encodes this comparison, but PTLAS active rendering evidence is missing. |
+| D3D12 NVAPI PTLAS is accepted when NVAPI header, driver, command list, and runtime support exists. | **Partial** | NVAPI capability/provider path exists. Needs supported-machine capture proving provider selection and matching output. |
+| D3D12 public DXR PTLAS is added only when public SDK symbols and runtime support exist. | **Done** | Current implementation keeps public DXR PTLAS as a future provider and does not fake SDK support. |
+| NVIDIA-gated PTLAS providers are treated as first-class supported paths, not experimental hacks. | **Partial** | Capability model treats Vulkan NV and D3D12 NVAPI as first-class providers. Runtime path still lacks full end-to-end proof. |
+| Non-NVIDIA or non-PTLAS-capable configurations report a precise provider-selection reason and continue through classic TLAS. | **Partial** | Status reasons exist. Need artifact evidence from at least one fallback run. |
+| Classic TLAS remains available as fallback and reference. | **Done** | Classic TLAS remains implemented and is currently the active path. |
+| PTLAS code is organized by policy, resource ownership, native backend implementation, and diagnostics. | **Partial** | Structure is much better, but active renderer top-level strategy still mixes PTLAS planner diagnostics with classic TLAS execution. Need a real top-level AS strategy abstraction. |
+| Shader pass authors do not need to know whether the scene top-level AS is classic or partitioned. | **Architecturally intended, not proven** | Shader binding remains conceptual `AccelerationStructure`. This must be proven once PTLAS becomes the active scene TLAS. |
+
+Blocking issues before calling the feature done:
+
+1. **Active top-level AS selection is incomplete.**
+   - `RenderRayTracingScene::Prepare()` and `RenderRayTracingScene::Build()` still expose/build classic TLAS.
+   - PTLAS planner data exists, but PTLAS is not yet the selected runtime top-level acceleration structure.
+
+2. **Parity harness is infrastructure, not evidence.**
+   - Launcher-owned parity flow exists and is the correct ownership model.
+   - Final acceptance needs actual artifacts: D3D12 classic, Vulkan classic, Vulkan PTLAS, and D3D12 NVAPI PTLAS where available.
+
+3. **GPU-driven PTLAS update path is not complete.**
+   - RHI hooks, metrics, and logical update streams exist.
+   - Full GPU-native pack and consume-without-readback is not proven; current diagnostics report CPU/logical planning rather than submitted GPU-native pack.
+
+4. **Frame graph PTLAS resource modeling is under-specified.**
+   - Scene TLAS build is represented generically.
+   - PTLAS operation count buffers, native operation buffers, logical update buffers, native pack, and update barriers need explicit frame-graph representation or a documented equivalent contract.
+
+5. **Negative validation is missing.**
+   - Duplicate stable index and partition overflow detection need deterministic validation cases and artifact metadata.
+
+## Reference Implementation Refinement Goals
+
+This section raises the bar from "feature implemented" to "reference-quality implementation." The goal is to make the PTLAS work understandable, extensible, measurable, and credible to a senior graphics reviewer.
+
+Reference repository strengths to emulate:
+
+- NVIDIA Falcor describes itself as a real-time rendering framework for DirectX 12 and Vulkan research/prototyping, and its documented workflow centers on render passes, render graphs, and rendering through Mogwai.
+  - Reference: https://github.com/NVIDIAGameWorks/Falcor
+  - Reference: https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/getting-started.md
+  - Sparkle takeaway: PTLAS should be a frame/render-graph-visible strategy, not hidden imperative work inside one scene class.
+
+- NVIDIA Donut is a reusable rendering framework used by NVIDIA DevTech samples, with reusable rendering passes and a scene/component loading system.
+  - Reference: https://github.com/NVIDIA-RTX/Donut
+  - Reference: https://github.com/NVIDIA-RTX/Donut-Samples
+  - Sparkle takeaway: the PTLAS implementation should separate reusable renderer/RHI services from demo scenes, smoke cases, and presentation workflows.
+
+- NVIDIA RTX Mega Geometry is a DX12/Vulkan sample and learning tool for acceleration-structure-heavy rendering.
+  - Reference: https://github.com/NVIDIA-RTX/RTXMG
+  - Reference: https://github.com/NVIDIA-RTX/RTXMG/blob/main/docs/QuickStart.md
+  - Sparkle takeaway: acceleration structure features need profiler-style metrics, visual explanation, API capability gates, and clear learning artifacts, not only API calls.
+
+- AMD Cauldron is a framework for graphics samples and backend-aware rendering experiments.
+  - Reference: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
+  - Sparkle takeaway: backend parity should be explicit in the framework layer, and provider-specific code should stay isolated behind shared contracts.
+
+- CMU SEI ATAM evaluates architectures against quality attribute goals and exposes tradeoffs and risks.
+  - Reference: https://www.sei.cmu.edu/library/architecture-tradeoff-analysis-method-collection/
+  - Sparkle takeaway: each PTLAS decision should state the quality attribute it improves, the tradeoff it creates, and the evidence required to accept it.
+
+Current Sparkle strengths:
+
+- RHI already has backend-neutral PTLAS capability and descriptor scaffolding.
+- Renderer has logical partition planning and debug metadata without native API structs.
+- Backend-private Vulkan and D3D12 NVAPI provider code exists.
+- Viewmodes and smoke metadata make provider state inspectable.
+- Launcher smoke tests now have categorized C++ ownership instead of external scripts.
+- Architecture boundary checks protect against renderer/RHI native dependency drift.
+
+Current Sparkle weaknesses:
+
+- The renderer still does not have a real top-level AS strategy object; classic TLAS execution and PTLAS diagnostics are mixed.
+- PTLAS is not yet selected as the active `SceneTlas` resource.
+- Frame graph resource usage does not yet make PTLAS operation buffers and update dependencies explicit enough.
+- GPU-driven PTLAS operation generation is represented by contracts and metrics, not by a proven no-readback GPU path.
+- The parity harness exists as infrastructure, but there is no captured evidence set.
+- Negative validation is not yet strong enough for duplicate indices, overflow, fallback, and descriptor/provider mismatch.
+- Documentation explains intent well, but does not yet include final run commands, capture index, screenshots, and known-runtime matrix.
+
+Quality attributes to rank during the next implementation round:
+
+| Attribute | Target quality | Current rank | Required evidence |
+|---|---|---:|---|
+| Correctness | PTLAS and classic TLAS produce equivalent ray results in deterministic scenes. | 2/5 | Launcher parity captures and image diffs. |
+| Modifiability | Adding a new top-level AS provider does not affect shader passes or renderer frame orchestration. | 3/5 | Strategy interface with classic, Vulkan PTLAS, D3D12 NVAPI PTLAS providers. |
+| Testability | Every provider/fallback path can be invoked and validated from launcher smoke workflows. | 3/5 | Launcher test category artifacts plus failure metadata. |
+| Observability | Provider selection, partition updates, native operations, and timings are visible in UI and captures. | 3/5 | Viewmode screenshots, JSON metadata, CSV timings, capture markers. |
+| Portability | D3D12/Vulkan behavior is comparable; NVIDIA-only paths are explicit but not architectural exceptions. | 3/5 | Capability matrix across D3D12 classic, Vulkan classic, Vulkan PTLAS, D3D12 NVAPI PTLAS. |
+| Performance credibility | Claims are tied to GPU/CPU timing artifacts and capture markers. | 2/5 | Before/after timing artifacts and Nsight/PIX-friendly markers. |
+| Maintainability | TLAS, BLAS, PTLAS policy, resources, native backend code, diagnostics, and tests are separately owned. | 3/5 | Folder/class map plus boundary checks and no god-file regressions. |
+| Teachability | A reviewer or colleague can understand the feature without reading all backend code first. | 3/5 | Architecture note, diagrams, demo sequence, screenshot index, known limitations. |
+
+Reference-quality completion stages:
+
+1. **Top-Level AS Strategy Layer**
+
+   Goal:
+
+   - Make classic TLAS and PTLAS implementations interchangeable behind a renderer-owned strategy interface.
+   - Remove the current split where PTLAS planning exists but classic TLAS is always the active execution path.
+
+   Reference pattern:
+
+   - Falcor-style render workflow: a feature is represented by explicit passes/graphs and runtime strategy, not by hidden backend branches.
+   - Donut-style reusable pass/framework separation: scene policy should sit above backend detail.
+
+   Implementation guidance:
+
+   - Add a `RayTracingTopLevelAccelerationStructureStrategy` or equivalent orchestration layer.
+   - Provide `ClassicTlasStrategy` and `PartitionedTlasStrategy` implementations.
+   - `RenderRayTracingScene` should ask the selected strategy for prepare/build/resource/diagnostic outputs.
+   - Keep BLAS cache shared.
+   - Keep shader-visible output as one conceptual `SceneTlas`.
+
+   Acceptance:
+
+   - `RenderRayTracingScene` no longer directly assumes classic TLAS in `Prepare()`, `Build()`, `HasValidTlas()`, or resource getters.
+   - Classic TLAS remains the fallback/reference strategy.
+   - PTLAS can be selected by capability and CVar policy without changing shader pass code.
+
+   Tutor note:
+
+   - What changes: the renderer stops knowing "classic TLAS is the one real path."
+   - Why it matters: strategy selection is the architectural seam that lets PTLAS be a provider instead of a feature leak.
+
+2. **Frame Graph PTLAS Resource Contract**
+
+   Goal:
+
+   - Make PTLAS build/update dependencies reviewable in the frame graph.
+
+   Reference pattern:
+
+   - Falcor render graphs expose render work and resource dependencies.
+   - ATAM-style quality tradeoff: explicit graph modeling improves correctness/testability at the cost of a slightly richer contract.
+
+   Implementation guidance:
+
+   - Represent scene top-level AS usage as `AccelerationStructureBuild`/read regardless of provider.
+   - Add explicit resource declarations or a documented equivalent for logical update buffers, native op count buffers, native op record buffers, scratch, and PTLAS storage.
+   - Ensure native pack writes complete before PTLAS build/update consumes them.
+   - Ensure PTLAS build/update completes before ray query/trace reads.
+
+   Acceptance:
+
+   - Frame graph or frame execution diagnostics can show PTLAS operation-buffer dependencies.
+   - Barrier warnings stay zero in classic and PTLAS modes.
+
+   Tutor note:
+
+   - What changes: synchronization becomes part of the feature contract.
+   - Why it matters: acceleration structure bugs often look like random rendering bugs; resource ownership visibility prevents that.
+
+3. **Vulkan PTLAS Active Provider**
+
+   Goal:
+
+   - Make Vulkan PTLAS a real selected top-level AS provider.
+
+   Reference pattern:
+
+   - NVIDIA PTLAS sample pattern: persistent PTLAS storage plus indirect operation records and partitioned descriptor binding.
+   - RTXMG pattern: acceleration structure feature comes with debug/profiling context.
+
+   Implementation guidance:
+
+   - Use the existing Vulkan PTLAS service to allocate PTLAS storage and operation buffers.
+   - CPU pack may remain the first accepted bring-up path.
+   - Bind PTLAS through the same shader-visible `AccelerationStructure` parameter path.
+   - Emit provider status, native operation count, and timing artifacts.
+
+   Acceptance:
+
+   - Vulkan PTLAS becomes the active `SceneTlas` when supported and selected.
+   - Vulkan PTLAS renders the same lit/ray query result as Vulkan classic TLAS in the launcher parity workflow.
+   - Fallback to Vulkan classic TLAS is explicit when the extension/provider is unavailable.
+
+   Tutor note:
+
+   - What changes: PTLAS moves from planned/debug data to the actual acceleration structure used by rays.
+   - Why it matters: this is the moment the implementation becomes a feature rather than architecture scaffolding.
+
+4. **D3D12 NVAPI PTLAS Active Provider**
+
+   Goal:
+
+   - Make D3D12 NVAPI PTLAS use the same renderer strategy and artifact workflow as Vulkan PTLAS.
+
+   Reference pattern:
+
+   - Cauldron-style backend parity: the shared feature is backend-neutral, while DX12/Vulkan implementation details stay private.
+   - RTXMG-style NVIDIA-gated path: NVIDIA APIs are first-class providers where they are the real production route.
+
+   Implementation guidance:
+
+   - Keep NVAPI headers/types entirely in D3D12-private code.
+   - Require NVAPI headers, runtime initialization, NVIDIA device, capability query, and command-list compatibility.
+   - Use the same logical PTLAS scene data as Vulkan.
+   - Keep public DXR PTLAS as a future provider until SDK/runtime symbols exist.
+
+   Acceptance:
+
+   - D3D12 NVAPI PTLAS becomes active only when all gates are satisfied.
+   - D3D12 NVAPI PTLAS matches D3D12 classic TLAS in launcher parity captures.
+   - Non-supported systems record precise provider-selection reasons and continue with classic TLAS.
+
+   Tutor note:
+
+   - What changes: NVIDIA-specific D3D12 support becomes a provider, not an exception.
+   - Why it matters: top-tier reviewer expectation is not "avoid vendor APIs"; it is "isolate and prove them."
+
+5. **GPU-Driven PTLAS Operation Path**
+
+   Goal:
+
+   - Move from CPU-packed PTLAS operations to a proven GPU-driven update path.
+
+   Reference pattern:
+
+   - NVIDIA sample pattern: GPU-visible operation count and operation records drive update work.
+   - ATAM quality target: performance credibility requires eliminating CPU readback/synchronization from the target path.
+
+   Implementation guidance:
+
+   - Renderer writes logical update intent only.
+   - Backend-private compute/native pack writes provider-specific operation records.
+   - PTLAS update consumes GPU-written counts/records without CPU readback.
+   - CPU pack remains as validation oracle and fallback.
+
+   Acceptance:
+
+   - Metrics distinguish CPU pack, GPU logical dirty detection, GPU native pack, and PTLAS update.
+   - CPU and GPU pack produce equivalent PTLAS output in deterministic scenes.
+   - Launcher artifacts identify selected operation writer path.
+
+   Tutor note:
+
+   - What changes: PTLAS starts delivering its real value: update locality without CPU-managed native records each frame.
+   - Why it matters: otherwise PTLAS is mostly an API demo, not an engine-quality system.
+
+6. **Negative Validation And Failure-Mode Artifacts**
+
+   Goal:
+
+   - Prove the system fails visibly and safely.
+
+   Reference pattern:
+
+   - ATAM exposes architectural risks and tradeoffs instead of hiding them.
+   - Reference samples are strongest when they show feature availability and limitations clearly.
+
+   Implementation guidance:
+
+   - Add launcher smoke cases for duplicate stable index, partition overflow, classic fallback, provider unavailable, and descriptor/provider mismatch.
+   - Emit JSON metadata for each failure mode.
+   - Treat silent fallback as a test failure unless the fallback reason is explicitly recorded.
+
+   Acceptance:
+
+   - Duplicate index and overflow are captured as structured validation artifacts.
+   - Provider fallback is visible in the launcher artifact directory.
+   - Parity workflow distinguishes skipped unsupported PTLAS from failed supported PTLAS.
+
+   Tutor note:
+
+   - What changes: edge cases become part of the product, not ad hoc console observations.
+   - Why it matters: senior reviewers trust systems that explain their failure modes.
+
+7. **Reference Demo And Documentation Package**
+
+   Goal:
+
+   - Make the implementation teachable and reviewable.
+
+   Reference pattern:
+
+   - Donut/RTXMG samples are not just code; they are runnable examples with quick-start context and feature explanation.
+   - Falcor-style workflows make render techniques inspectable through passes/graphs/tools.
+
+   Implementation guidance:
+
+   - Add final PTLAS architecture note with diagrams:
+     - provider selection,
+     - strategy selection,
+     - frame graph resources,
+     - classic vs PTLAS build,
+     - CPU pack vs GPU pack,
+     - launcher parity flow.
+   - Add screenshot/capture index for every PTLAS viewmode.
+   - Add "known unsupported configurations" matrix.
+   - Add exact launcher workflow instructions.
+
+   Acceptance:
+
+   - A colleague can run one launcher workflow and inspect all required artifacts.
+   - A reviewer can understand the design before reading backend files.
+   - Every performance/correctness claim points to a capture, metric, or documented limitation.
+
+   Tutor note:
+
+   - What changes: the feature becomes a reference implementation artifact.
+   - Why it matters: strong graphics engineering is partly implementation and partly making the implementation legible.
+
+Minimum next round to reach acceptance:
+
+1. Add a renderer top-level AS strategy abstraction that selects classic TLAS or PTLAS from capability and CVar policy.
+2. Make Vulkan PTLAS become the active `SceneTlas` resource through the same shader-visible acceleration structure binding.
+3. Record launcher parity artifacts proving Vulkan PTLAS matches Vulkan classic TLAS.
+4. Enable D3D12 NVAPI PTLAS through the same strategy path when NVAPI capability is present, then record matching D3D12 artifacts.
+5. Add negative smoke cases for duplicate stable indices, partition overflow, and explicit classic fallback.
+6. Promote PTLAS operation/update resources into the frame graph contract or document a reviewable equivalent synchronization/resource-lifetime contract.
