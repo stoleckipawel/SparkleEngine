@@ -34,10 +34,14 @@ namespace SparkleLauncher
 	const std::vector<RhiSmokeParityCase>& GetRhiSmokeParityCases()
 	{
 		static const std::vector<RhiSmokeParityCase> cases = {
-		    {"d3d12-classic", "d3d12", false},
-		    {"d3d12-ptlas", "d3d12", true},
-		    {"vulkan-classic", "vulkan", false},
-		    {"vulkan-ptlas", "vulkan", true},
+		    {"d3d12-classic", "d3d12", false, "1", "CpuPack"},
+		    {"d3d12-ptlas", "d3d12", true, "1", "CpuPack"},
+		    {"d3d12-ptlas-gpu-logical", "d3d12", true, "2", "GpuLogicalDirtyCpuNativePack"},
+		    {"d3d12-ptlas-gpu-native", "d3d12", true, "3", "FullGpuNativePack"},
+		    {"vulkan-classic", "vulkan", false, "1", "CpuPack"},
+		    {"vulkan-ptlas", "vulkan", true, "1", "CpuPack"},
+		    {"vulkan-ptlas-gpu-logical", "vulkan", true, "2", "GpuLogicalDirtyCpuNativePack"},
+		    {"vulkan-ptlas-gpu-native", "vulkan", true, "3", "FullGpuNativePack"},
 		};
 		return cases;
 	}

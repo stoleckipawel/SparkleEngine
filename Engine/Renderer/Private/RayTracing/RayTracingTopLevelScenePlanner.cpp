@@ -4,6 +4,7 @@
 
 #include "Debug/RendererCVars.h"
 #include "RayTracing/RayTracingPtlasLogicalUpdateStream.h"
+#include "RayTracing/RayTracingPtlasOperationWriterPolicy.h"
 #include "RayTracing/RayTracingPtlasPartitionPlanner.h"
 
 struct RayTracingTopLevelScenePlanner::Impl final
@@ -77,6 +78,8 @@ RayTracingTopLevelScenePlannerMetrics RayTracingTopLevelScenePlanner::GetCurrent
 		return {};
 	}
 
+	const ERhiPartitionedTlasOperationWriterPath requestedWriterPath =
+	    RayTracingPtlasOperationWriterPolicyResolver::ResolveRequestedPath();
 	return RayTracingTopLevelScenePlannerMetrics{
 	    .PartitionCount = m_impl->CurrentPartitionPlan.Counts.PartitionCount,
 	    .DirtyTransformCount = m_impl->CurrentPartitionPlan.Counts.DirtyTransformCount,
@@ -86,7 +89,9 @@ RayTracingTopLevelScenePlannerMetrics RayTracingTopLevelScenePlanner::GetCurrent
 	    .Overflow = m_impl->CurrentPartitionPlan.Validation.HasPartitionOverflow,
 	    .GpuUpdates =
 	        RayTracingPtlasGpuUpdateMetrics{
+	            .RequestedWriterPath = requestedWriterPath,
 	            .SelectedWriterPath = ERhiPartitionedTlasOperationWriterPath::CpuPack,
+	            .WriterSelectionReason = RayTracingPtlasOperationWriterPolicyResolver::ResolveUnsupportedReason(requestedWriterPath),
 	            .LogicalUpdateCount = m_impl->CurrentLogicalUpdateStream.LogicalUpdateCount,
 	            .NativeOperationCount = 0,
 	            .ValidationMismatchCount = m_impl->CurrentLogicalUpdateStream.SkippedInvalidInstanceCount,

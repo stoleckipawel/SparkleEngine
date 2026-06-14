@@ -50,6 +50,7 @@ struct RayTracingPartitionedTlasCapabilityReport final
 	bool SupportsD3D12CommandListInterface = false;
 	bool SupportsD3D12PublicDxrProvider = false;
 	bool SupportsD3D12PublicDxrHeaders = false;
+	bool SupportsCpuPackedOperations = false;
 	bool SupportsGpuDrivenOperations = false;
 	const char* CapabilityStatusReason = "not-queried";
 };

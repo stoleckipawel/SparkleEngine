@@ -6,7 +6,9 @@
 
 struct RayTracingPtlasGpuUpdateMetrics final
 {
+	ERhiPartitionedTlasOperationWriterPath RequestedWriterPath = ERhiPartitionedTlasOperationWriterPath::CpuPack;
 	ERhiPartitionedTlasOperationWriterPath SelectedWriterPath = ERhiPartitionedTlasOperationWriterPath::CpuPack;
+	const char* WriterSelectionReason = "ptlas-operation-writer-cpu-pack-selected";
 	std::uint32_t LogicalUpdateCount = 0;
 	std::uint32_t NativeOperationCount = 0;
 	std::uint32_t ValidationMismatchCount = 0;

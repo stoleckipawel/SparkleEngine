@@ -81,8 +81,12 @@ void ViewportRayTracingDebugOverlay::Draw(
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Native ops", rayTracing.PtlasGpuUpdates.NativeOperationCount);
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Logical updates", rayTracing.PtlasGpuUpdates.LogicalUpdateCount);
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
+	    "Requested writer",
+	    RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.RequestedWriterPath));
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
 	    "Writer path",
 	    RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.SelectedWriterPath));
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Writer reason", rayTracing.PtlasGpuUpdates.WriterSelectionReason);
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
 	    "GPU pack ready",
 	    ViewportRayTracingDebugOverlayRows::YesNo(rayTracing.PtlasGpuUpdates.FullGpuNativePackSupported));

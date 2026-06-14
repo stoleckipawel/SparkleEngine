@@ -50,7 +50,9 @@ namespace
 	    const RayTracingPerformanceMetrics& metrics) noexcept
 	{
 		return RendererSmokeRayTracingPtlasGpuUpdateDiagnostics{
+		    .RequestedWriterPath = metrics.PtlasGpuUpdates.RequestedWriterPath,
 		    .SelectedWriterPath = metrics.PtlasGpuUpdates.SelectedWriterPath,
+		    .WriterSelectionReason = metrics.PtlasGpuUpdates.WriterSelectionReason,
 		    .LogicalUpdateCount = metrics.PtlasGpuUpdates.LogicalUpdateCount,
 		    .NativeOperationCount = metrics.PtlasGpuUpdates.NativeOperationCount,
 		    .ValidationMismatchCount = metrics.PtlasGpuUpdates.ValidationMismatchCount,

@@ -1782,6 +1782,35 @@ Reference-quality completion stages:
    - What to measure: CPU pack can be simpler and easier to debug, but it can bottleneck on CPU work, uploads, synchronization, and scalability with many dirty instances. GPU pack should reduce CPU involvement and make update cost track changed partitions/instances more closely, but it adds compute work, barriers, native layout complexity, and possible trace-performance tradeoffs if partitioning is poor.
    - What to be honest about: PTLAS is not automatically faster. Partition count, dirty ratio, dynamic-object policy, global partition use, ray traversal behavior, and backend provider overhead all decide whether the frame wins.
 
+   Implementation status - 2026-06-14:
+
+   - Added durable PTLAS operation writer policy with `r.RayTracing.Ptlas.OperationWriterPath`.
+   - Supported policy values are:
+     - `1` / `CpuPack`.
+     - `2` / `GpuLogicalDirtyCpuNativePack`.
+     - `3` / `FullGpuNativePack`.
+   - Renderer diagnostics now expose requested writer path, selected writer path, and writer selection reason.
+   - Smoke JSON and timing CSV artifacts now include requested writer path, selected writer path, writer reason, CPU pack time, GPU dirty time, GPU native pack time, and PTLAS update GPU time.
+   - Editor ray tracing overlay now shows requested writer, selected writer, and writer reason.
+   - Launcher parity workflow now captures:
+     - D3D12 classic.
+     - D3D12 PTLAS CPU-pack request.
+     - D3D12 PTLAS GPU-logical-dirty request.
+     - D3D12 PTLAS full-GPU-native request.
+     - Vulkan classic.
+     - Vulkan PTLAS CPU-pack request.
+     - Vulkan PTLAS GPU-logical-dirty request.
+     - Vulkan PTLAS full-GPU-native request.
+   - Launcher artifact validation now checks that each capture reports the requested writer path in metadata.
+   - Current behavior is intentionally conservative:
+     - `CpuPack` remains the selected writer path.
+     - `GpuLogicalDirtyCpuNativePack` falls back to `CpuPack` with `ptlas-gpu-logical-dirty-writer-not-implemented`.
+     - `FullGpuNativePack` falls back to `CpuPack` with `ptlas-full-gpu-native-pack-not-implemented`.
+   - Validation run: `ShowcaseEditor`, `SparkleLauncher`, `architecture_boundary_check`, and launcher `project.run.rhi-raytracing-parity`.
+   - Launcher parity produced the expanded artifact set and no fatal graphics markers were found.
+   - Launcher parity still returns failure because the existing strict D3D12 classic vs Vulkan classic image comparison fails.
+   - Stage verdict: **partially complete / not accepted yet**. Policy, diagnostics, metadata, and workflow coverage are in place. Backend-private GPU dirty detection/native pack shaders and active PTLAS output parity are still required for full acceptance.
+
 6. **Negative Validation And Failure-Mode Artifacts**
 
    Goal:

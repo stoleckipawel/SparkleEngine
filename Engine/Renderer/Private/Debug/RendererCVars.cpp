@@ -15,3 +15,7 @@ ConsoleVariable<bool> CVarRayTracingGlobalPartition(
     "r.RayTracing.Ptlas.GlobalPartition",
     true,
     "Allow dynamic ray tracing instances to move into the logical global partition.");
+ConsoleVariable<ERhiPartitionedTlasOperationWriterPath> CVarRayTracingPtlasOperationWriterPath(
+    "r.RayTracing.Ptlas.OperationWriterPath",
+    ERhiPartitionedTlasOperationWriterPath::CpuPack,
+    "PTLAS operation writer path: 1=CPU pack, 2=GPU logical dirty plus CPU native pack, 3=full GPU native pack.");

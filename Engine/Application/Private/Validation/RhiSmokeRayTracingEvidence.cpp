@@ -65,11 +65,14 @@ namespace RhiSmokeRayTracingEvidence
 
 		SPDLOG_LOGGER_INFO(
 		    logger,
-		    "{} rayTracing.ptlasGpuUpdates: writerPath={} logicalUpdates={} nativeOperations={} validationMismatches={} "
+		    "{} rayTracing.ptlasGpuUpdates: requestedWriterPath={} selectedWriterPath={} reason={} logicalUpdates={} "
+		    "nativeOperations={} validationMismatches={} "
 		    "fullGpuNativePackSupported={} fullGpuNativePackSubmitted={} cpuPackMs={:.3f} gpuDirtyMs={:.3f} "
 		    "gpuNativePackMs={:.3f} ptlasUpdateGpuMs={:.3f}",
 		    evidenceLabel,
+		    RhiPartitionedTlasOperationWriterPathToString(diagnostics.PtlasGpuUpdates.RequestedWriterPath),
 		    RhiPartitionedTlasOperationWriterPathToString(diagnostics.PtlasGpuUpdates.SelectedWriterPath),
+		    diagnostics.PtlasGpuUpdates.WriterSelectionReason,
 		    diagnostics.PtlasGpuUpdates.LogicalUpdateCount,
 		    diagnostics.PtlasGpuUpdates.NativeOperationCount,
 		    diagnostics.PtlasGpuUpdates.ValidationMismatchCount,

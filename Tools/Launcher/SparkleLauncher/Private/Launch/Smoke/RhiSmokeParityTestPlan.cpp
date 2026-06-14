@@ -59,6 +59,9 @@ namespace SparkleLauncher::RhiSmokeParityProcessRequest
 		    request,
 		    std::string("r.RayTracing.PreferPartitionedTlas=") +
 		        (parityCase.PreferPartitionedTlas ? "true" : "false"));
+		AddCVar(
+		    request,
+		    std::string("r.RayTracing.Ptlas.OperationWriterPath=") + parityCase.PtlasOperationWriterPath);
 
 		RhiSmokeParityStepEnvironment::AddOrReplace(request, "SPARKLE_RHI_BACKEND", parityCase.Backend);
 		RhiSmokeParityStepEnvironment::AddOrReplace(request, "SPARKLE_SMOKE_VIEW_MODE_NAME", viewMode.Name);

@@ -114,8 +114,11 @@ namespace RhiSmokeCaptureArtifacts
 		file << "    \"globalPartitionInstances\": " << rayTracing.PtlasPlanner.GlobalPartitionInstanceCount << ",\n";
 		file << "    \"nativeOperations\": " << rayTracing.PtlasGpuUpdates.NativeOperationCount << ",\n";
 		file << "    \"logicalUpdates\": " << rayTracing.PtlasGpuUpdates.LogicalUpdateCount << ",\n";
+		file << "    \"requestedOperationWriterPath\": \""
+		     << RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.RequestedWriterPath) << "\",\n";
 		file << "    \"operationWriterPath\": \""
 		     << RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.SelectedWriterPath) << "\",\n";
+		file << "    \"operationWriterReason\": \"" << EscapeJson(rayTracing.PtlasGpuUpdates.WriterSelectionReason) << "\",\n";
 		file << "    \"gpuNativePackSupported\": " << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSupported ? "true" : "false") << ",\n";
 		file << "    \"gpuNativePackSubmitted\": " << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false") << ",\n";
 		file << "    \"timingsMs\": {\n";
@@ -142,12 +145,16 @@ namespace RhiSmokeCaptureArtifacts
 			return;
 		}
 
-		file << "backend,viewMode,topLevelProvider,ptlasProvider,scenePrepareCpuMs,sceneBuildCpuMs,blasCpuMs,blasGpuMs,"
-		        "classicTlasCpuMs,classicTlasGpuMs,rayTracingPassGpuMs,logicalUpdates,nativeOperations\n";
+		file << "backend,viewMode,topLevelProvider,ptlasProvider,requestedWriterPath,selectedWriterPath,writerReason,"
+		        "scenePrepareCpuMs,sceneBuildCpuMs,blasCpuMs,blasGpuMs,classicTlasCpuMs,classicTlasGpuMs,rayTracingPassGpuMs,"
+		        "logicalUpdates,nativeOperations,cpuPackMs,gpuDirtyMs,gpuNativePackMs,ptlasUpdateGpuMs\n";
 		file << RhiBackendApiToString(request.Diagnostics.BackendApi) << ',';
 		file << request.CaptureResult.ViewModeName << ',';
 		file << RhiRayTracingTopLevelProviderToString(rayTracing.Capability.TopLevelProvider) << ',';
 		file << RhiPartitionedTlasProviderToString(rayTracing.PtlasPlanner.Provider) << ',';
+		file << RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.RequestedWriterPath) << ',';
+		file << RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.SelectedWriterPath) << ',';
+		file << rayTracing.PtlasGpuUpdates.WriterSelectionReason << ',';
 		file << rayTracing.FrameTimings.ScenePrepareCpuMilliseconds << ',';
 		file << rayTracing.FrameTimings.SceneBuildCpuMilliseconds << ',';
 		file << rayTracing.Blas.CpuMilliseconds << ',';
@@ -156,7 +163,11 @@ namespace RhiSmokeCaptureArtifacts
 		file << rayTracing.ClassicTlas.GpuMilliseconds << ',';
 		file << rayTracing.FrameTimings.RayTracingPassGpuMilliseconds << ',';
 		file << rayTracing.PtlasGpuUpdates.LogicalUpdateCount << ',';
-		file << rayTracing.PtlasGpuUpdates.NativeOperationCount << '\n';
+		file << rayTracing.PtlasGpuUpdates.NativeOperationCount << ',';
+		file << rayTracing.PtlasGpuUpdates.CpuPackMilliseconds << ',';
+		file << rayTracing.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds << ',';
+		file << rayTracing.PtlasGpuUpdates.GpuNativePackMilliseconds << ',';
+		file << rayTracing.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds << '\n';
 	}
 
 	void Write(const RhiSmokeCaptureArtifactRequest& request) noexcept

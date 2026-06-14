@@ -6,6 +6,7 @@
 #include "Meshes/GPUMesh.h"
 #include "RayTracing/RayTracingBlasCache.h"
 #include "RayTracing/RayTracingPerformanceDiagnostics.h"
+#include "RayTracing/RayTracingPtlasOperationWriterPolicy.h"
 #include "RayTracing/RayTracingPtlasPartitionPlanner.h"
 #include "RayTracing/RayTracingTopLevelScenePlanner.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -415,7 +416,11 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	result.ActiveProvider = ERhiRayTracingTopLevelProvider::PartitionedTlas;
 	result.ActiveProviderReason = GetActiveProviderReason();
 	result.Stats.Candidates.InstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
-	result.PtlasGpuUpdates.SelectedWriterPath = ERhiPartitionedTlasOperationWriterPath::CpuPack;
+	const RayTracingPtlasOperationWriterPolicy writerPolicy =
+	    RayTracingPtlasOperationWriterPolicyResolver::ResolveForCapability(m_capabilityReport.PartitionedTlas);
+	result.PtlasGpuUpdates.RequestedWriterPath = writerPolicy.RequestedPath;
+	result.PtlasGpuUpdates.SelectedWriterPath = writerPolicy.SelectedPath;
+	result.PtlasGpuUpdates.WriterSelectionReason = writerPolicy.SelectionReason;
 	result.PtlasGpuUpdates.FullGpuNativePackSupported = m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
 
 	const RayTracingPtlasPartitionPlan* partitionPlan =
@@ -470,6 +475,13 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	result.Stats.Build.InstanceCount = static_cast<std::uint32_t>(instanceWrites.size());
 	if (instanceWrites.empty())
 	{
+		return result;
+	}
+
+	if (writerPolicy.SelectedPath != ERhiPartitionedTlasOperationWriterPath::CpuPack)
+	{
+		result.ActiveProvider = ERhiRayTracingTopLevelProvider::None;
+		result.ActiveProviderReason = writerPolicy.SelectionReason;
 		return result;
 	}
 

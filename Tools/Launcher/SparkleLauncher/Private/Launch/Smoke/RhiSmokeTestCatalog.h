@@ -20,6 +20,8 @@ namespace SparkleLauncher
 		const char* Name = "";
 		const char* Backend = "";
 		bool PreferPartitionedTlas = false;
+		const char* PtlasOperationWriterPath = "1";
+		const char* ExpectedRequestedWriterPathName = "CpuPack";
 	};
 
 	struct RhiSmokeParityViewMode final

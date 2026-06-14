@@ -159,6 +159,21 @@ namespace SparkleLauncher::RhiSmokeProviderMetadataValidation
 
 		return metadata.find("\"topLevelProvider\": \"PartitionedTlas\"") != std::string::npos;
 	}
+
+	bool MetadataReportsRequestedWriterPath(
+	    const std::filesystem::path& metadataPath,
+	    std::string_view expectedWriterPathName)
+	{
+		std::string metadata;
+		if (!ReadTextFile(metadataPath, metadata))
+		{
+			return false;
+		}
+
+		const std::string expected =
+		    "\"requestedOperationWriterPath\": \"" + std::string(expectedWriterPathName) + "\"";
+		return metadata.find(expected) != std::string::npos;
+	}
 }
 
 namespace SparkleLauncher::RhiSmokeParityValidation
@@ -217,6 +232,14 @@ namespace SparkleLauncher::RhiSmokeParityValidation
 				}
 				if (LogContainsFatalGraphicsIssue(logPath, outFailureSummary))
 				{
+					return false;
+				}
+				if (!RhiSmokeProviderMetadataValidation::MetadataReportsRequestedWriterPath(
+				        metadataPath,
+				        parityCase.ExpectedRequestedWriterPathName))
+				{
+					outFailureSummary = "RHI ray tracing parity metadata does not report requested PTLAS writer path: " +
+					                    metadataPath.string();
 					return false;
 				}
 			}
