@@ -977,3 +977,10 @@ D3D12_GPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTable
 	                                   : RhiGpuDescriptorHandle{};
 	return D3D12_GPU_DESCRIPTOR_HANDLE{handle.Value};
 }
+
+bool D3D12RenderHardwareInterface::BuildPartitionedTopLevelAccelerationStructure(
+    ID3D12GraphicsCommandList7* commandList,
+    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept
+{
+	return m_rayTracingServices != nullptr && m_rayTracingServices->BuildPartitionedTopLevelAccelerationStructure(commandList, desc);
+}

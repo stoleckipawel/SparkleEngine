@@ -72,6 +72,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 	    std::uint32_t instanceCount,
 	    RhiGpuVirtualAddress scratchGpuAddress,
 	    RhiGpuVirtualAddress resultGpuAddress) noexcept override;
+	void BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept override;
 	void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept override;
 	void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept override;
 	void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept override;

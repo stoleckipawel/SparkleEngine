@@ -12,9 +12,8 @@
 #include <d3d12.h>
 #include <memory>
 #include <string>
-#include <vector>
 
-namespace
+namespace D3D12RayTracingText
 {
 	std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName)
 	{
@@ -23,13 +22,41 @@ namespace
 }
 
 D3D12RayTracingServices::D3D12RayTracingServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator) noexcept :
-    m_rhi(&rhi), m_memoryAllocator(&memoryAllocator)
+    m_rhi(&rhi),
+    m_memoryAllocator(&memoryAllocator),
+    m_classicTlasServices(rhi, memoryAllocator),
+    m_partitionedTlasServices(rhi, memoryAllocator, m_nvapiProvider)
 {
+}
+
+RhiClassicTlasService& D3D12RayTracingServices::GetClassicTlasService() noexcept
+{
+	return m_classicTlasServices;
+}
+
+const RhiClassicTlasService& D3D12RayTracingServices::GetClassicTlasService() const noexcept
+{
+	return m_classicTlasServices;
+}
+
+RhiPartitionedTlasService& D3D12RayTracingServices::GetPartitionedTlasService() noexcept
+{
+	return m_partitionedTlasServices;
+}
+
+const RhiPartitionedTlasService& D3D12RayTracingServices::GetPartitionedTlasService() const noexcept
+{
+	return m_partitionedTlasServices;
 }
 
 RhiRayTracingCapabilities D3D12RayTracingServices::GetCapabilities() const noexcept
 {
 	return m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+}
+
+RhiRayTracingCapabilities D3D12RayTracingServices::GetRayTracingCapabilities() const noexcept
+{
+	return GetCapabilities();
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBottomLevelAccelerationStructurePrebuildInfo(
@@ -75,32 +102,27 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBotto
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetTopLevelAccelerationStructurePrebuildInfo(
     std::uint32_t instanceCount) const noexcept
 {
-	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing)
-	{
-		return {};
-	}
-	if (instanceCount == 0)
-	{
-		(void)RhiValidation::ValidateRayTracingInstanceDescs(nullptr, instanceCount, "D3D12.GetTopLevelAccelerationStructurePrebuildInfo");
-		return {};
-	}
+	return m_classicTlasServices.GetClassicTopLevelAccelerationStructurePrebuildInfo(instanceCount);
+}
 
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
-	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-	inputs.NumDescs = instanceCount;
+RhiPartitionedTlasBuildSizes D3D12RayTracingServices::GetPartitionedTopLevelAccelerationStructureBuildSizes(
+    const RhiPartitionedTlasDesc& desc) const noexcept
+{
+	return m_partitionedTlasServices.GetPartitionedTopLevelAccelerationStructureBuildSizes(desc);
+}
 
-	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO nativeInfo{};
-	m_rhi->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &nativeInfo);
-	RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo{
-	    .ResultDataMaxSizeInBytes = nativeInfo.ResultDataMaxSizeInBytes,
-	    .ScratchDataSizeInBytes = nativeInfo.ScratchDataSizeInBytes,
-	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
-	(void)RhiValidation::ValidateRayTracingAccelerationStructurePrebuildInfo(
-	    prebuildInfo,
-	    "D3D12.GetTopLevelAccelerationStructurePrebuildInfo");
-	return prebuildInfo;
+RhiOwnedResourceHandle D3D12RayTracingServices::CreatePartitionedTopLevelAccelerationStructureBuffer(
+    const RhiPartitionedTlasBuildSizes& sizes,
+    std::wstring_view debugName)
+{
+	return m_partitionedTlasServices.CreatePartitionedTopLevelAccelerationStructureBuffer(sizes, debugName);
+}
+
+RhiOwnedResourceHandle D3D12RayTracingServices::CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
+    const RhiPartitionedTlasOperationPackDesc& operationPack,
+    std::wstring_view debugName)
+{
+	return m_partitionedTlasServices.CreatePartitionedTopLevelAccelerationStructureOperationBuffer(operationPack, debugName);
 }
 
 RhiOwnedResourceHandle D3D12RayTracingServices::CreateScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName)
@@ -119,8 +141,15 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateScratchBuffer(std::uint64_
 	    D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::DeviceLocal,
-	    CopyDebugName(debugName, L"RayTracingScratch"));
+	    D3D12RayTracingText::CopyDebugName(debugName, L"RayTracingScratch"));
 	return ownedRecord != nullptr ? MakeD3D12OwnedResourceHandle(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
+}
+
+RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingScratchBuffer(
+    std::uint64_t sizeInBytes,
+    std::wstring_view debugName)
+{
+	return CreateScratchBuffer(sizeInBytes, debugName);
 }
 
 RhiOwnedResourceHandle D3D12RayTracingServices::CreateAccelerationStructureBuffer(
@@ -143,8 +172,16 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateAccelerationStructureBuffe
 	    D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::DeviceLocal,
-	    CopyDebugName(debugName, L"RayTracingAccelerationStructure"));
+	    D3D12RayTracingText::CopyDebugName(debugName, L"RayTracingAccelerationStructure"));
 	return ownedRecord != nullptr ? MakeD3D12OwnedResourceHandle(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
+}
+
+RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingAccelerationStructureBuffer(
+    std::uint64_t sizeInBytes,
+    ERhiRayTracingAccelerationStructureType type,
+    std::wstring_view debugName)
+{
+	return CreateAccelerationStructureBuffer(sizeInBytes, type, debugName);
 }
 
 RhiOwnedResourceHandle D3D12RayTracingServices::CreateInstanceBuffer(
@@ -152,54 +189,25 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateInstanceBuffer(
     std::uint32_t instanceCount,
     std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    !RhiValidation::ValidateRayTracingInstanceDescs(instances, instanceCount, "D3D12.CreateRayTracingInstanceBuffer"))
-	{
-		return {};
-	}
+	return m_classicTlasServices.CreateClassicTopLevelAccelerationStructureInstanceBuffer(instances, instanceCount, debugName);
+}
 
-	std::vector<D3D12_RAYTRACING_INSTANCE_DESC> nativeInstances(instanceCount);
-	for (std::uint32_t instanceIndex = 0; instanceIndex < instanceCount; ++instanceIndex)
-	{
-		D3D12_RAYTRACING_INSTANCE_DESC& nativeInstance = nativeInstances[instanceIndex];
-		const RhiRayTracingInstanceDesc& source = instances[instanceIndex];
-		for (std::uint32_t transformIndex = 0; transformIndex < 12; ++transformIndex)
-		{
-			nativeInstance.Transform[transformIndex / 4][transformIndex % 4] = source.Transform[transformIndex];
-		}
-		nativeInstance.InstanceID = source.InstanceID;
-		nativeInstance.InstanceMask = source.InstanceMask;
-		nativeInstance.InstanceContributionToHitGroupIndex = source.InstanceContributionToHitGroupIndex;
-		nativeInstance.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-		nativeInstance.AccelerationStructure = source.AccelerationStructure;
-	}
+RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingInstanceBuffer(
+    const RhiRayTracingInstanceDesc* instances,
+    std::uint32_t instanceCount,
+    std::wstring_view debugName)
+{
+	return CreateInstanceBuffer(instances, instanceCount, debugName);
+}
 
-	const std::uint64_t sizeInBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * static_cast<std::uint64_t>(nativeInstances.size());
-	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes});
-	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
-	    resourceDesc,
-	    D3D12_RESOURCE_STATE_GENERIC_READ,
-	    RhiMemoryCategory::RayTracing,
-	    RhiMemoryResidencyClass::HostUpload,
-	    CopyDebugName(debugName, L"RayTracingInstanceBuffer"));
-	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
+bool D3D12RayTracingServices::BuildPartitionedTopLevelAccelerationStructure(
+    ID3D12GraphicsCommandList7* commandList,
+    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept
+{
+	const RhiRayTracingCapabilities capabilities = GetCapabilities();
+	if (!capabilities.Groups.PartitionedTlas.Supported)
 	{
-		return {};
+		return false;
 	}
-
-	ID3D12Resource* const ownedResource = ownedRecord->Resource.Get();
-	void* mappedData = nullptr;
-	const D3D12_RANGE readRange{0, 0};
-	if (FAILED(ownedResource->Map(0, &readRange, &mappedData)))
-	{
-		return {};
-	}
-
-	ownedRecord->IsMapped = true;
-	ownedRecord->CpuMappedAddress = mappedData;
-	std::memcpy(mappedData, nativeInstances.data(), static_cast<std::size_t>(sizeInBytes));
-	ownedResource->Unmap(0, nullptr);
-	ownedRecord->IsMapped = false;
-	ownedRecord->CpuMappedAddress = nullptr;
-	return MakeD3D12OwnedResourceHandle(std::move(ownedRecord));
+	return m_nvapiProvider.BuildPartitionedTlas(commandList, desc);
 }

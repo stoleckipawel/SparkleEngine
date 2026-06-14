@@ -189,6 +189,9 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
+	bool BuildPartitionedTopLevelAccelerationStructure(
+	    ID3D12GraphicsCommandList7* commandList,
+	    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;
 	RhiCapabilities BuildCapabilities() const noexcept;
 	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
 

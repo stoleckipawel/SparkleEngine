@@ -6,6 +6,9 @@
 include(FetchContent)
 
 option(SPARKLE_RHI_WITH_D3D12 "Enable the D3D12 RHI backend" ON)
+option(SPARKLE_RHI_WITH_D3D12_NVAPI "Enable NVIDIA NVAPI integration inside the D3D12 RHI backend" OFF)
+set(SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR "" CACHE PATH "Directory containing NVIDIA NVAPI headers, used only by SparkleRHI_D3D12")
+set(SPARKLE_RHI_D3D12_NVAPI_LIBRARY "" CACHE FILEPATH "NVIDIA NVAPI import library, used only by SparkleRHI_D3D12")
 find_package(Vulkan QUIET)
 if(Vulkan_FOUND)
     set(SPARKLE_RHI_WITH_VULKAN_DEFAULT ON)
@@ -118,6 +121,15 @@ sparkle_target_precompile_headers(SparkleRHICommon
 set(SPARKLE_RHI_BACKEND_TARGETS "")
 
 if(SPARKLE_RHI_WITH_D3D12)
+    if(SPARKLE_RHI_WITH_D3D12_NVAPI)
+        if(NOT SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR)
+            message(FATAL_ERROR "SPARKLE_RHI_WITH_D3D12_NVAPI is ON, but SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR is empty.")
+        endif()
+        if(NOT SPARKLE_RHI_D3D12_NVAPI_LIBRARY)
+            message(FATAL_ERROR "SPARKLE_RHI_WITH_D3D12_NVAPI is ON, but SPARKLE_RHI_D3D12_NVAPI_LIBRARY is empty.")
+        endif()
+    endif()
+
     FetchContent_Declare(sparkle_d3d12ma
         GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator.git
         GIT_TAG        0fa62ed3a0a69b73230a8ec1faa752d4061c8dc8 # v3.1.0
@@ -189,6 +201,22 @@ if(SPARKLE_RHI_WITH_D3D12)
         PRIVATE
             SparklePlatform
     )
+
+    target_compile_definitions(SparkleRHI_D3D12
+        PRIVATE
+            SPARKLE_RHI_WITH_D3D12_NVAPI=$<BOOL:${SPARKLE_RHI_WITH_D3D12_NVAPI}>
+    )
+
+    if(SPARKLE_RHI_WITH_D3D12_NVAPI)
+        target_include_directories(SparkleRHI_D3D12
+            PRIVATE
+                ${SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR}
+        )
+        target_link_libraries(SparkleRHI_D3D12
+            PRIVATE
+                ${SPARKLE_RHI_D3D12_NVAPI_LIBRARY}
+        )
+    endif()
 
     sparkle_target_precompile_headers(SparkleRHI_D3D12
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12/D3D12PCH.h

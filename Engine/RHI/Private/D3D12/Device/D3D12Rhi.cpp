@@ -2,6 +2,7 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Diagnostics/D3D12DebugLayer.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
+#include "D3D12/RayTracing/D3D12NvapiRayTracingProvider.h"
 #include "CVars/RHICVars.h"
 #include "Window/Window.h"
 
@@ -240,19 +241,27 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		    .Provider = ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas,
 		    .RequiresNvidiaDevice = true,
 		    .RunsOnNvidiaDevice = IsNvidiaAdapter(m_adapter.Get()),
-		    .SupportsD3D12NvapiPartitionedTlas = false,
-		    .SupportsD3D12NvapiHeaders = false,
-		    .SupportsD3D12NvapiRuntime = false,
 		    .SupportsD3D12DeviceInterface = m_device != nullptr,
-		    .SupportsD3D12CommandListInterface = false,
 		    .SupportsD3D12PublicDxrPartitionedTlas = false,
 		    .SupportsD3D12PublicDxrHeaders = false,
-		    .CapabilityStatusReason = "d3d12-nvapi-ptlas-provider-not-implemented"};
+		    .CapabilityStatusReason = "d3d12-nvapi-ptlas-provider-not-queried"};
+		D3D12NvapiRayTracingProvider nvapiProvider;
+		m_rayTracingCapabilities.Groups.PartitionedTlas = nvapiProvider.QueryPartitionedTlasCapabilities(
+		    m_device.Get(),
+		    IsNvidiaAdapter(m_adapter.Get()),
+		    m_rayTracingCapabilities.SupportsRayTracing);
+		m_rayTracingCapabilities.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas = false;
+		m_rayTracingCapabilities.Groups.PartitionedTlas.SupportsD3D12PublicDxrHeaders = false;
+
+		const bool partitionedTlasRequestedAndSupported =
+		    CVarRhiRayTracingPreferPartitionedTlas.Get() && m_rayTracingCapabilities.Groups.PartitionedTlas.Supported;
 		m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
-		    .SelectedTopLevelProvider = m_rayTracingCapabilities.SupportsRayTracing ? ERhiRayTracingTopLevelProvider::ClassicTlas
-		                                                                            : ERhiRayTracingTopLevelProvider::None,
+		    .SelectedTopLevelProvider =
+		        m_rayTracingCapabilities.SupportsRayTracing ? ERhiRayTracingTopLevelProvider::ClassicTlas : ERhiRayTracingTopLevelProvider::None,
 		    .SelectedTopLevelProviderReason =
-		        m_rayTracingCapabilities.SupportsRayTracing ? "classic-tlas-baseline-selected" : "ray-tracing-unavailable"};
+		        partitionedTlasRequestedAndSupported
+		            ? "d3d12-nvapi-ptlas-supported-but-renderer-selection-not-wired"
+		            : (m_rayTracingCapabilities.SupportsRayTracing ? "classic-tlas-baseline-selected" : "ray-tracing-unavailable")};
 
 		SPDLOG_LOGGER_INFO(
 		    g_d3d12RhiLogger,

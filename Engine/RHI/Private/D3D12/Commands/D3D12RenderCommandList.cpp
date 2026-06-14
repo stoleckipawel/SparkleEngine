@@ -463,6 +463,22 @@ void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
 	m_commandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 
+void D3D12RenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept
+{
+	if (m_commandList == nullptr || m_owner == nullptr)
+	{
+		return;
+	}
+
+	BeginDiagnosticScope("RayTracing.PTLAS.Build", RhiDiagnosticLabelColor{92, 148, 255, 255});
+	const bool submitted = m_owner->BuildPartitionedTopLevelAccelerationStructure(m_commandList, desc);
+	EndDiagnosticScope();
+	if (submitted)
+	{
+		UnorderedAccessBarrier(NativeResourceHandle{nullptr});
+	}
+}
+
 void D3D12RenderCommandList::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
 {
 	if (m_commandList != nullptr)
