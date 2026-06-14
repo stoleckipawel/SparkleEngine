@@ -5,12 +5,14 @@
 #include "Frame/MeshInstanceFrameData.h"
 #include "Frame/RayTracingSceneFrameData.h"
 #include "Frame/SkinningFrameData.h"
+#include "RayTracing/RayTracingPtlasPartitionPlanner.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/RenderSceneData.h"
 
 struct SPARKLE_RENDERER_API FrameContext
 {
 	RenderSceneData sceneData = {};
+	RayTracingPtlasPartitionPlan rayTracingPtlasPartitionPlan = {};
 	RayTracingSceneFrameData rayTracingScene = {};
 	RenderViewData mainView = {};
 	MeshInstanceFrameData meshInstances = {};

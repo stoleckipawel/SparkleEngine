@@ -111,11 +111,11 @@ bool RhiSmokeCameraMotion::Validate(
 		    config.EndFrame,
 		    config.YawDegrees,
 		    config.PitchDegrees,
-		    snapshot.RayTracingSupported,
-		    snapshot.InlineRayQuerySupported,
-		    snapshot.RayTracingTlasValid,
-		    snapshot.RayTracingTlasInstanceCount,
-		    snapshot.FrameGraphUnresolvedBarrierWarnings);
+		    snapshot.RayTracing.Capability.Supported,
+		    snapshot.RayTracing.Capability.InlineRayQuerySupported,
+		    snapshot.RayTracing.ClassicTlas.Valid,
+		    snapshot.RayTracing.ClassicTlas.InstanceCount,
+		    snapshot.FrameGraph.UnresolvedBarrierWarnings);
 	}
 
 	if (state.MissingScene || !state.Started || !state.Completed || state.AppliedFrames == 0)
@@ -123,11 +123,11 @@ bool RhiSmokeCameraMotion::Validate(
 		return false;
 	}
 
-	if (config.RequiresRayTracing && (!snapshot.RayTracingSupported || !snapshot.InlineRayQuerySupported || !snapshot.RayTracingTlasValid ||
-	                                 snapshot.RayTracingTlasInstanceCount == 0))
+	if (config.RequiresRayTracing && (!snapshot.RayTracing.Capability.Supported || !snapshot.RayTracing.Capability.InlineRayQuerySupported ||
+	                                 !snapshot.RayTracing.ClassicTlas.Valid || snapshot.RayTracing.ClassicTlas.InstanceCount == 0))
 	{
 		return false;
 	}
 
-	return snapshot.FrameGraphUnresolvedBarrierWarnings == 0;
+	return snapshot.FrameGraph.UnresolvedBarrierWarnings == 0;
 }

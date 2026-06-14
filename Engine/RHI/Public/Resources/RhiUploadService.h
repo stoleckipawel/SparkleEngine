@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../Resources/RenderConstantBufferData.h"
+#include "../Resources/PerFrameConstantBufferData.h"
+#include "../Resources/PerObjectConstantBufferData.h"
+#include "../Resources/PerViewConstantBufferData.h"
 #include "../Resources/RhiResourceDesc.h"
 #include "../RHIAPI.h"
 

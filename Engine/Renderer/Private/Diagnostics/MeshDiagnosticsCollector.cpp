@@ -121,14 +121,24 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		renderItems.push_back(
 		    MeshRenderItem{
 		        .draw = MeshDraw{
-		            .worldMatrix = meshInstance.worldMatrix,
-		            .worldInvTranspose = meshInstance.worldInvTranspose,
-		            .materialSlot = meshInstance.materialHandle.IsValid() ? meshInstance.materialHandle.GetIndex() : 0u,
-		            .skeletonAssetId = meshInstance.skeletonAssetId,
-		            .meshKind = RenderMeshSnapshotAdapter::ToRenderMeshKind(meshInstance.meshKind),
-		            .gpuMesh = gpuMesh},
-		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex),
-		        .sourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())});
+		            .Transform =
+		                MeshDrawTransform{
+		                    .WorldMatrix = meshInstance.worldMatrix,
+		                    .WorldInvTranspose = meshInstance.worldInvTranspose},
+		            .Material =
+		                MeshDrawMaterial{
+		                    .Slot = meshInstance.materialHandle.IsValid() ? meshInstance.materialHandle.GetIndex() : 0u},
+		            .Skinning =
+		                MeshDrawSkinning{
+		                    .SkeletonAssetId = meshInstance.skeletonAssetId},
+		            .Source =
+		                MeshDrawSourceIdentity{
+		                    .SourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())},
+		                    .Geometry =
+		                        MeshDrawGeometry{
+		                            .MeshKind = RenderMeshSnapshotAdapter::ToRenderMeshKind(meshInstance.meshKind),
+		                            .GpuMesh = gpuMesh}},
+		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex)});
 	}
 
 	MeshInstanceBatchBuilder batchBuilder;

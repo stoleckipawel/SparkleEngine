@@ -12,18 +12,40 @@
 
 class RenderCommandContext;
 class RayTracingPerformanceDiagnostics;
+struct RayTracingPtlasPartitionPlan;
 struct RenderSceneData;
 
-class RayTracingTlasBuilder final
+class RayTracingClassicTlasBuilder final
 {
   public:
 	struct BuildStats final
 	{
-		std::uint32_t candidateInstanceCount = 0;
-		std::uint32_t instanceCount = 0;
-		std::uint32_t missingGpuMeshCount = 0;
-		std::uint32_t rejectedBlasCount = 0;
-		bool builtTlas = false;
+		struct CandidateCounters final
+		{
+			std::uint32_t InstanceCount = 0;
+			std::uint32_t MissingGpuMeshCount = 0;
+			std::uint32_t RejectedBlasCount = 0;
+		};
+
+		struct BuildCounters final
+		{
+			std::uint32_t InstanceCount = 0;
+			bool Built = false;
+		};
+
+		struct PtlasPlannerCounters final
+		{
+			std::uint32_t PartitionCount = 0;
+			std::uint32_t DirtyTransformCount = 0;
+			std::uint32_t MovedPartitionCount = 0;
+			std::uint32_t GlobalPartitionInstanceCount = 0;
+			std::uint32_t DuplicateStableIndexCount = 0;
+			bool Overflow = false;
+		};
+
+		CandidateCounters Candidates;
+		BuildCounters Build;
+		PtlasPlannerCounters PtlasPlanner;
 	};
 
 	struct TlasHandle final
@@ -35,18 +57,19 @@ class RayTracingTlasBuilder final
 		bool IsValid() const noexcept { return resource && gpuAddress != 0 && instanceCount > 0; }
 	};
 
-	explicit RayTracingTlasBuilder(RenderHardwareInterface& renderHardwareInterface) noexcept;
-	~RayTracingTlasBuilder() noexcept;
+	explicit RayTracingClassicTlasBuilder(RenderHardwareInterface& renderHardwareInterface) noexcept;
+	~RayTracingClassicTlasBuilder() noexcept;
 
-	RayTracingTlasBuilder(const RayTracingTlasBuilder&) = delete;
-	RayTracingTlasBuilder& operator=(const RayTracingTlasBuilder&) = delete;
-	RayTracingTlasBuilder(RayTracingTlasBuilder&&) = delete;
-	RayTracingTlasBuilder& operator=(RayTracingTlasBuilder&&) = delete;
+	RayTracingClassicTlasBuilder(const RayTracingClassicTlasBuilder&) = delete;
+	RayTracingClassicTlasBuilder& operator=(const RayTracingClassicTlasBuilder&) = delete;
+	RayTracingClassicTlasBuilder(RayTracingClassicTlasBuilder&&) = delete;
+	RayTracingClassicTlasBuilder& operator=(RayTracingClassicTlasBuilder&&) = delete;
 
 	bool Prepare(std::uint32_t instanceCapacity) noexcept;
 	BuildStats Build(
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,
+	    const RayTracingPtlasPartitionPlan* partitionPlan,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingPerformanceDiagnostics* diagnostics = nullptr) noexcept;
 	const TlasHandle& GetTlas() const noexcept { return m_tlas; }

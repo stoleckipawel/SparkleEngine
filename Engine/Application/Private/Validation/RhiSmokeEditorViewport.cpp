@@ -53,6 +53,12 @@ namespace
 				return "IndirectSubsurface";
 			case RenderViewMode::InstanceGroups:
 				return "InstanceGroups";
+			case RenderViewMode::RayTracingPartitions:
+				return "RayTracingPartitions";
+			case RenderViewMode::RayTracingPartitionUpdates:
+				return "RayTracingPartitionUpdates";
+			case RenderViewMode::RayTracingInstanceMovement:
+				return "RayTracingInstanceMovement";
 			case RenderViewMode::Count:
 				break;
 		}

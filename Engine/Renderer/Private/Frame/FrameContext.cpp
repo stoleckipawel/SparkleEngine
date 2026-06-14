@@ -9,6 +9,8 @@
 #include "Frame/Builders/ViewLightingBuilder.h"
 #include "Frame/TemporalFrameState.h"
 #include "Camera/RenderCamera.h"
+#include "Debug/RendererCVars.h"
+#include "RayTracing/RayTracingPtlasPartitionPlanner.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 
@@ -44,13 +46,19 @@ FrameContext BuildFrameContext(
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,
     RenderSceneDataBuilder& renderSceneDataBuilder,
+    RayTracingPtlasPartitionPlanner& rayTracingPtlasPartitionPlanner,
     PerViewDataBuilder& perViewDataBuilder,
     ViewLightingBuilder& viewLightingBuilder,
     TemporalDataBuilder& temporalDataBuilder)
 {
 	FrameContext frame{};
 	frame.sceneData = renderSceneDataBuilder.Build(sceneSnapshot);
-	frame.meshInstances = MeshInstanceFrameData::Build(renderHardwareInterface, frame.sceneData);
+	frame.rayTracingPtlasPartitionPlan = rayTracingPtlasPartitionPlanner.Build(
+	    frame.sceneData,
+	    RayTracingPtlasPartitionPlannerConfig{
+	        .PartitionsPerAxis = CVarRayTracingPartitionsPerAxis.Get(),
+	        .EnableGlobalPartition = CVarRayTracingGlobalPartition.Get()});
+	frame.meshInstances = MeshInstanceFrameData::Build(renderHardwareInterface, frame.sceneData, &frame.rayTracingPtlasPartitionPlan);
 	frame.skinning = SkinningFrameData::Build(renderHardwareInterface, frame.sceneData);
 	const PerViewLightingConstantBufferData lighting = viewLightingBuilder.Build(frame.sceneData);
 	const RhiViewport sceneViewport = BuildSceneViewport(sceneExtent);

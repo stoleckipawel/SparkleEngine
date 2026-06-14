@@ -9,6 +9,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Diagnostics/RhiDiagnosticsService.h"
 #include "RuntimeApplication.h"
+#include "Validation/RhiSmokeRayTracingEvidence.h"
 
 namespace
 {
@@ -62,38 +63,16 @@ namespace
 		SPDLOG_LOGGER_INFO(
 		    logger,
 		    "{}: backend={} frameGraphUnresolvedBarrierWarnings={} upscalerProvider='{}' upscalerStatus={} upscalerReason='{}' "
-		    "rayTracing={} inlineRayQuery={} topLevelProvider={} partitionedProvider={} partitionedSupported={} tlasValid={} "
-		    "tlasInstances={} referencedMeshes={} builtBlas={} reusedBlas={} candidateInstances={} missingGpuMesh={} rejectedBlas={} "
-		    "builtTlas={} cpuMs(scenePrepare={:.3f}, sceneBuild={:.3f}, blas={:.3f}, tlas={:.3f}, instancePrep={:.3f}) "
-		    "gpuMs(blas={:.3f}, classicTlas={:.3f}, rayTracingPass={:.3f})",
+		    "rayTracing={} inlineRayQuery={}",
 		    evidenceLabel,
 		    RhiBackendApiToString(snapshot.BackendApi),
-		    snapshot.FrameGraphUnresolvedBarrierWarnings,
-		    snapshot.UpscalerProvider,
-		    snapshot.UpscalerStatus,
-		    snapshot.UpscalerReason,
-		    snapshot.RayTracingSupported,
-		    snapshot.InlineRayQuerySupported,
-		    RhiRayTracingTopLevelProviderToString(snapshot.RayTracingTopLevelProvider),
-		    RhiPartitionedTlasProviderToString(snapshot.RayTracingPartitionedTlasProvider),
-		    snapshot.RayTracingPartitionedTlasSupported,
-		    snapshot.RayTracingTlasValid,
-		    snapshot.RayTracingTlasInstanceCount,
-		    snapshot.RayTracingReferencedMeshCount,
-		    snapshot.RayTracingBuiltBlasCount,
-		    snapshot.RayTracingReusedBlasCount,
-		    snapshot.RayTracingCandidateInstanceCount,
-		    snapshot.RayTracingMissingGpuMeshCount,
-		    snapshot.RayTracingRejectedBlasCount,
-		    snapshot.RayTracingBuiltTlas,
-		    snapshot.RayTracingScenePrepareCpuMilliseconds,
-		    snapshot.RayTracingSceneBuildCpuMilliseconds,
-		    snapshot.RayTracingBlasCpuMilliseconds,
-		    snapshot.RayTracingTlasCpuMilliseconds,
-		    snapshot.RayTracingTlasInstancePreparationCpuMilliseconds,
-		    snapshot.RayTracingBlasGpuMilliseconds,
-		    snapshot.RayTracingClassicTlasGpuMilliseconds,
-		    snapshot.RayTracingPassGpuMilliseconds);
+		    snapshot.FrameGraph.UnresolvedBarrierWarnings,
+		    snapshot.Upscaler.Provider,
+		    snapshot.Upscaler.Status,
+		    snapshot.Upscaler.Reason,
+		    snapshot.RayTracing.Capability.Supported,
+		    snapshot.RayTracing.Capability.InlineRayQuerySupported);
+		RhiSmokeRayTracingEvidence::Log(snapshot.RayTracing, evidenceLabel, logger);
 	}
 }
 
@@ -150,14 +129,18 @@ namespace RhiSmokeRendererEvidence
 		LogRendererSnapshot(snapshot, evidenceLabel, logger);
 
 		bool passed = true;
-		if (snapshot.FrameGraphUnresolvedBarrierWarnings > 0)
+		if (snapshot.FrameGraph.UnresolvedBarrierWarnings > 0)
 		{
 			passed = false;
 			SPDLOG_LOGGER_ERROR(
 			    logger,
 			    "{}: frame graph reported {} unresolved barrier warning(s).",
 			    validationLabel,
-			    snapshot.FrameGraphUnresolvedBarrierWarnings);
+			    snapshot.FrameGraph.UnresolvedBarrierWarnings);
+		}
+		if (!RhiSmokeRayTracingEvidence::Validate(snapshot.RayTracing, validationLabel, logger))
+		{
+			passed = false;
 		}
 
 		logged = true;

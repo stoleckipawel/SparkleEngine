@@ -48,10 +48,7 @@ ScopedGpuTimer RayTracingPerformanceDiagnostics::BeginGpuTimer(std::string_view 
 #endif
 }
 
-RayTracingPerformanceDiagnostics::CpuScope::CpuScope(
-    RayTracingPerformanceMetrics* metrics,
-    double RayTracingPerformanceMetrics::* target) noexcept :
-    m_metrics(metrics),
+RayTracingPerformanceDiagnostics::CpuScope::CpuScope(double* target) noexcept :
     m_target(target),
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
     m_startMicroseconds(NowMicroseconds())
@@ -67,9 +64,8 @@ RayTracingPerformanceDiagnostics::CpuScope::~CpuScope() noexcept
 }
 
 RayTracingPerformanceDiagnostics::CpuScope::CpuScope(CpuScope&& other) noexcept :
-    m_metrics(other.m_metrics), m_target(other.m_target), m_startMicroseconds(other.m_startMicroseconds)
+    m_target(other.m_target), m_startMicroseconds(other.m_startMicroseconds)
 {
-	other.m_metrics = nullptr;
 	other.m_target = nullptr;
 	other.m_startMicroseconds = 0;
 }
@@ -79,10 +75,8 @@ RayTracingPerformanceDiagnostics::CpuScope& RayTracingPerformanceDiagnostics::Cp
 	if (this != &other)
 	{
 		Reset();
-		m_metrics = other.m_metrics;
 		m_target = other.m_target;
 		m_startMicroseconds = other.m_startMicroseconds;
-		other.m_metrics = nullptr;
 		other.m_target = nullptr;
 		other.m_startMicroseconds = 0;
 	}
@@ -93,24 +87,23 @@ RayTracingPerformanceDiagnostics::CpuScope& RayTracingPerformanceDiagnostics::Cp
 void RayTracingPerformanceDiagnostics::CpuScope::Reset() noexcept
 {
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
-	if (m_metrics != nullptr && m_target != nullptr)
+	if (m_target != nullptr)
 	{
 		const std::uint64_t endMicroseconds = NowMicroseconds();
 		if (endMicroseconds >= m_startMicroseconds)
 		{
-			m_metrics->*m_target += static_cast<double>(endMicroseconds - m_startMicroseconds) / 1000.0;
+			*m_target += static_cast<double>(endMicroseconds - m_startMicroseconds) / 1000.0;
 		}
 	}
 #endif
 
-	m_metrics = nullptr;
 	m_target = nullptr;
 }
 
 RayTracingPerformanceDiagnostics::CpuScope RayTracingPerformanceDiagnostics::BeginScenePrepareCpuScope() noexcept
 {
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
-	return CpuScope{m_metrics, &RayTracingPerformanceMetrics::ScenePrepareCpuMilliseconds};
+	return CpuScope{m_metrics != nullptr ? &m_metrics->Timings.ScenePrepareCpuMilliseconds : nullptr};
 #else
 	return {};
 #endif
@@ -119,7 +112,7 @@ RayTracingPerformanceDiagnostics::CpuScope RayTracingPerformanceDiagnostics::Beg
 RayTracingPerformanceDiagnostics::CpuScope RayTracingPerformanceDiagnostics::BeginSceneBuildCpuScope() noexcept
 {
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
-	return CpuScope{m_metrics, &RayTracingPerformanceMetrics::SceneBuildCpuMilliseconds};
+	return CpuScope{m_metrics != nullptr ? &m_metrics->Timings.SceneBuildCpuMilliseconds : nullptr};
 #else
 	return {};
 #endif
@@ -128,7 +121,7 @@ RayTracingPerformanceDiagnostics::CpuScope RayTracingPerformanceDiagnostics::Beg
 RayTracingPerformanceDiagnostics::CpuScope RayTracingPerformanceDiagnostics::BeginBlasCpuScope() noexcept
 {
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
-	return CpuScope{m_metrics, &RayTracingPerformanceMetrics::BlasCpuMilliseconds};
+	return CpuScope{m_metrics != nullptr ? &m_metrics->Blas.CpuMilliseconds : nullptr};
 #else
 	return {};
 #endif
@@ -137,7 +130,7 @@ RayTracingPerformanceDiagnostics::CpuScope RayTracingPerformanceDiagnostics::Beg
 RayTracingPerformanceDiagnostics::CpuScope RayTracingPerformanceDiagnostics::BeginTlasCpuScope() noexcept
 {
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
-	return CpuScope{m_metrics, &RayTracingPerformanceMetrics::TlasCpuMilliseconds};
+	return CpuScope{m_metrics != nullptr ? &m_metrics->ClassicTlas.CpuMilliseconds : nullptr};
 #else
 	return {};
 #endif
@@ -146,7 +139,7 @@ RayTracingPerformanceDiagnostics::CpuScope RayTracingPerformanceDiagnostics::Beg
 RayTracingPerformanceDiagnostics::CpuScope RayTracingPerformanceDiagnostics::BeginTlasInstancePreparationCpuScope() noexcept
 {
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
-	return CpuScope{m_metrics, &RayTracingPerformanceMetrics::TlasInstancePreparationCpuMilliseconds};
+	return CpuScope{m_metrics != nullptr ? &m_metrics->ClassicTlas.InstancePreparationCpuMilliseconds : nullptr};
 #else
 	return {};
 #endif
@@ -157,7 +150,7 @@ void RayTracingPerformanceDiagnostics::AddBlasGpuMilliseconds(double millisecond
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
 	if (m_metrics != nullptr)
 	{
-		m_metrics->BlasGpuMilliseconds += milliseconds;
+		m_metrics->Blas.GpuMilliseconds += milliseconds;
 	}
 #else
 	(void) milliseconds;
@@ -169,7 +162,7 @@ void RayTracingPerformanceDiagnostics::SetClassicTlasGpuMilliseconds(double mill
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
 	if (m_metrics != nullptr)
 	{
-		m_metrics->ClassicTlasGpuMilliseconds = milliseconds;
+		m_metrics->ClassicTlas.GpuMilliseconds = milliseconds;
 	}
 #else
 	(void) milliseconds;
@@ -181,7 +174,7 @@ void RayTracingPerformanceDiagnostics::SetRayTracingPassGpuMilliseconds(double m
 #if SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
 	if (m_metrics != nullptr)
 	{
-		m_metrics->RayTracingPassGpuMilliseconds = milliseconds;
+		m_metrics->Timings.RayTracingPassGpuMilliseconds = milliseconds;
 	}
 #else
 	(void) milliseconds;
@@ -190,9 +183,9 @@ void RayTracingPerformanceDiagnostics::SetRayTracingPassGpuMilliseconds(double m
 
 void RayTracingPerformanceDiagnostics::BeginResolvedGpuTimingFrame(RayTracingPerformanceMetrics& metrics) noexcept
 {
-	metrics.BlasGpuMilliseconds = 0.0;
-	metrics.ClassicTlasGpuMilliseconds = 0.0;
-	metrics.RayTracingPassGpuMilliseconds = 0.0;
+	metrics.Blas.GpuMilliseconds = 0.0;
+	metrics.ClassicTlas.GpuMilliseconds = 0.0;
+	metrics.Timings.RayTracingPassGpuMilliseconds = 0.0;
 }
 
 void RayTracingPerformanceDiagnostics::PublishResolvedGpuTiming(
@@ -203,17 +196,17 @@ void RayTracingPerformanceDiagnostics::PublishResolvedGpuTiming(
 	const std::string_view label{timing.Label};
 	if (label.find("BLAS Build") != std::string_view::npos)
 	{
-		metrics.BlasGpuMilliseconds += timing.DurationMilliseconds;
+		metrics.Blas.GpuMilliseconds += timing.DurationMilliseconds;
 		return;
 	}
 	if (label.find("Classic TLAS Build") != std::string_view::npos)
 	{
-		metrics.ClassicTlasGpuMilliseconds = timing.DurationMilliseconds;
+		metrics.ClassicTlas.GpuMilliseconds = timing.DurationMilliseconds;
 		return;
 	}
 	if (label.find("Ray Query Dispatch") != std::string_view::npos)
 	{
-		metrics.RayTracingPassGpuMilliseconds = timing.DurationMilliseconds;
+		metrics.Timings.RayTracingPassGpuMilliseconds = timing.DurationMilliseconds;
 		return;
 	}
 #else

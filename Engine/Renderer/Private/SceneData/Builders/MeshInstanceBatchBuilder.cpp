@@ -145,7 +145,7 @@ bool MeshInstanceBatchBuilder::IsValidCandidate(
     const MeshInstanceBatchBuildOptions& options,
     MeshGeometryInstancingDiagnostics& diagnostics) noexcept
 {
-	if (item.draw.gpuMesh == nullptr || !item.draw.gpuMesh->IsValid())
+	if (item.draw.Geometry.GpuMesh == nullptr || !item.draw.Geometry.GpuMesh->IsValid())
 	{
 		if (options.collectDiagnostics)
 		{
@@ -181,11 +181,11 @@ bool MeshInstanceBatchBuilder::IsValidCandidate(
 MeshInstanceBatchBuilder::BatchKey MeshInstanceBatchBuilder::MakeBatchKey(const MeshRenderItem& item) noexcept
 {
 	return BatchKey{
-	    .gpuMesh = item.draw.gpuMesh,
+	    .gpuMesh = item.draw.Geometry.GpuMesh,
 	    .materialBindingSet = item.materialBindingSet,
-	    .materialSlot = item.draw.materialSlot,
-	    .skeletonAssetId = item.draw.skeletonAssetId,
-	    .meshKind = item.draw.meshKind,
+	    .materialSlot = item.draw.Material.Slot,
+	    .skeletonAssetId = item.draw.Skinning.SkeletonAssetId,
+	    .meshKind = item.draw.Geometry.MeshKind,
 	    .renderStateKey = item.renderStateKey,
 	    .renderLayer = item.renderLayer};
 }
@@ -222,11 +222,11 @@ void MeshInstanceBatchBuilder::AppendBatch(
 	const MeshRenderItem& firstItem = renderItems[itemIndices.front()];
 	result.batches.push_back(
 	    MeshInstanceBatch{
-	        .gpuMesh = firstItem.draw.gpuMesh,
-	        .materialSlot = firstItem.draw.materialSlot,
+	        .gpuMesh = firstItem.draw.Geometry.GpuMesh,
+	        .materialSlot = firstItem.draw.Material.Slot,
 	        .firstInstance = firstInstance,
 	        .instanceCount = static_cast<std::uint32_t>(itemIndices.size()),
-	        .meshKind = firstItem.draw.meshKind,
+	        .meshKind = firstItem.draw.Geometry.MeshKind,
 	        .source = source});
 
 	if (collectDiagnostics)

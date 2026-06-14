@@ -97,6 +97,9 @@ float3 PreviewHdr(float3 color)
 			outputColor = PreviewHdr(indirectSubsurface);
 			break;
 		case ViewMode::InstanceGroups:
+		case ViewMode::RayTracingPartitions:
+		case ViewMode::RayTracingPartitionUpdates:
+		case ViewMode::RayTracingInstanceMovement:
 			outputColor = saturate(gBuffer.BaseColor);
 			break;
 		default:

@@ -31,7 +31,7 @@ class RayTracingPerformanceDiagnostics final
 	{
 	  public:
 		CpuScope() noexcept = default;
-		CpuScope(RayTracingPerformanceMetrics* metrics, double RayTracingPerformanceMetrics::* target) noexcept;
+		explicit CpuScope(double* target) noexcept;
 		~CpuScope() noexcept;
 
 		CpuScope(const CpuScope&) = delete;
@@ -42,8 +42,7 @@ class RayTracingPerformanceDiagnostics final
 	  private:
 		void Reset() noexcept;
 
-		RayTracingPerformanceMetrics* m_metrics = nullptr;
-		double RayTracingPerformanceMetrics::* m_target = nullptr;
+		double* m_target = nullptr;
 		std::uint64_t m_startMicroseconds = 0;
 	};
 

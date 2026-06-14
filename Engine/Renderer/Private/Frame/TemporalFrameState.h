@@ -1,6 +1,8 @@
 #pragma once
 
-#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Resources/PerTemporalConstantBufferData.h"
+
+#include <DirectXMath.h>
 
 struct RenderTemporalFrameState
 {

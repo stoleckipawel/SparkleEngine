@@ -1,16 +1,17 @@
 #include "PCH.h"
 
-#include "RayTracing/RayTracingTlasBuilder.h"
+#include "RayTracing/RayTracingClassicTlasBuilder.h"
 
 #include "Commands/RenderCommandContext.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Meshes/GPUMesh.h"
 #include "RayTracing/RayTracingPerformanceDiagnostics.h"
+#include "RayTracing/RayTracingPtlasPartitionPlanner.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <unordered_set>
 
-static const auto g_rayTracingTlasBuilderLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
+static const auto g_rayTracingClassicTlasBuilderLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
 
 namespace
 {
@@ -20,17 +21,17 @@ namespace
 	}
 }
 
-RayTracingTlasBuilder::RayTracingTlasBuilder(RenderHardwareInterface& renderHardwareInterface) noexcept :
+RayTracingClassicTlasBuilder::RayTracingClassicTlasBuilder(RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface)
 {
 }
 
-RayTracingTlasBuilder::~RayTracingTlasBuilder() noexcept
+RayTracingClassicTlasBuilder::~RayTracingClassicTlasBuilder() noexcept
 {
 	Clear();
 }
 
-bool RayTracingTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexcept
+bool RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexcept
 {
 	if (m_renderHardwareInterface == nullptr || instanceCapacity == 0)
 	{
@@ -59,9 +60,10 @@ bool RayTracingTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexcept
 	return m_tlas.resource && m_tlas.gpuAddress != 0;
 }
 
-RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
+RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
     RenderCommandContext& cmd,
     const RenderSceneData& sceneData,
+    const RayTracingPtlasPartitionPlan* partitionPlan,
     RayTracingBlasCache& blasCache,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
@@ -74,7 +76,17 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 
 	std::unordered_set<void*> builtBlasResources;
 	std::vector<RhiRayTracingInstanceDesc> instances;
-	stats.candidateInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
+	stats.Candidates.InstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
+	if (partitionPlan != nullptr)
+	{
+		stats.PtlasPlanner.PartitionCount = partitionPlan->Counts.PartitionCount;
+		stats.PtlasPlanner.DirtyTransformCount = partitionPlan->Counts.DirtyTransformCount;
+		stats.PtlasPlanner.MovedPartitionCount = partitionPlan->Counts.MovedPartitionCount;
+		stats.PtlasPlanner.GlobalPartitionInstanceCount = partitionPlan->Counts.GlobalPartitionInstanceCount;
+		stats.PtlasPlanner.DuplicateStableIndexCount = partitionPlan->Counts.DuplicateStableIndexCount;
+		stats.PtlasPlanner.Overflow =
+		    partitionPlan->Validation.HasPartitionOverflow || partitionPlan->Validation.HasInvalidPartition;
+	}
 	instances.reserve(sceneData.meshInstances.size());
 	{
 		auto instancePrepCpuScope =
@@ -82,16 +94,16 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 		for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++index)
 		{
 			const MeshDraw& draw = sceneData.meshInstances[index];
-			if (draw.gpuMesh == nullptr || !draw.gpuMesh->IsValid())
+			if (draw.Geometry.GpuMesh == nullptr || !draw.Geometry.GpuMesh->IsValid())
 			{
-				++stats.missingGpuMeshCount;
+				++stats.Candidates.MissingGpuMeshCount;
 				continue;
 			}
 
-			const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, *draw.gpuMesh, diagnostics);
+			const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, *draw.Geometry.GpuMesh, diagnostics);
 			if (!blas.IsValid())
 			{
-				++stats.rejectedBlasCount;
+				++stats.Candidates.RejectedBlasCount;
 				continue;
 			}
 			if (blas.builtThisFrame)
@@ -101,7 +113,7 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 
 			instances.push_back(
 			    RhiRayTracingInstanceDesc{
-			        .Transform = BuildInstanceTransform(draw.worldMatrix),
+			        .Transform = BuildInstanceTransform(draw.Transform.WorldMatrix),
 			        .InstanceID = index,
 			        .InstanceMask = 0xFFu,
 			        .InstanceContributionToHitGroupIndex = 0u,
@@ -109,7 +121,7 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 		}
 	}
 
-	stats.instanceCount = static_cast<std::uint32_t>(instances.size());
+	stats.Build.InstanceCount = static_cast<std::uint32_t>(instances.size());
 	if (instances.empty())
 	{
 		m_tlas = {};
@@ -122,14 +134,14 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 	}
 
 	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
-	    m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(stats.instanceCount);
+	    m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(stats.Build.InstanceCount);
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || prebuildInfo.ScratchDataSizeInBytes == 0)
 	{
 		m_tlas = {};
 		SPDLOG_LOGGER_WARN(
-		    g_rayTracingTlasBuilderLogger,
-		    "RayTracingTlasBuilder: skipping TLAS build because prebuild info was invalid (instanceCount={}).",
-		    stats.instanceCount);
+		    g_rayTracingClassicTlasBuilderLogger,
+		    "RayTracingClassicTlasBuilder: skipping TLAS build because prebuild info was invalid (instanceCount={}).",
+		    stats.Build.InstanceCount);
 		return stats;
 	}
 
@@ -147,15 +159,15 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 
 	m_instanceBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingInstanceBuffer(
 	    instances.data(),
-	    stats.instanceCount,
+	    stats.Build.InstanceCount,
 	    L"RayTracingTlasInstances");
 	if (!m_instanceBuffer)
 	{
 		m_tlas = {};
 		SPDLOG_LOGGER_WARN(
-		    g_rayTracingTlasBuilderLogger,
-		    "RayTracingTlasBuilder: failed to upload {} TLAS instances.",
-		    stats.instanceCount);
+		    g_rayTracingClassicTlasBuilderLogger,
+		    "RayTracingClassicTlasBuilder: failed to upload {} TLAS instances.",
+		    stats.Build.InstanceCount);
 		return stats;
 	}
 
@@ -169,7 +181,7 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 		auto tlasGpuTimer = diagnostics != nullptr ? diagnostics->BeginGpuTimer("Classic TLAS Build") : ScopedGpuTimer{};
 		cmd.BuildTopLevelAccelerationStructure(
 		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_instanceBuffer),
-		    stats.instanceCount,
+		    stats.Build.InstanceCount,
 		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_scratchBuffer),
 		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_accelerationStructureBuffer));
 	}
@@ -177,18 +189,18 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 	m_tlas = TlasHandle{
 	    .resource = m_accelerationStructureBuffer,
 	    .gpuAddress = m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_accelerationStructureBuffer),
-	    .instanceCount = stats.instanceCount};
-	stats.builtTlas = m_tlas.IsValid();
+	    .instanceCount = stats.Build.InstanceCount};
+	stats.Build.Built = m_tlas.IsValid();
 	return stats;
 }
 
-void RayTracingTlasBuilder::Clear() noexcept
+void RayTracingClassicTlasBuilder::Clear() noexcept
 {
 	ReleaseResources();
 	m_tlas = {};
 }
 
-std::array<float, 12> RayTracingTlasBuilder::BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept
+std::array<float, 12> RayTracingClassicTlasBuilder::BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept
 {
 	return {
 	    worldMatrix._11,
@@ -205,7 +217,7 @@ std::array<float, 12> RayTracingTlasBuilder::BuildInstanceTransform(const Direct
 	    worldMatrix._34};
 }
 
-void RayTracingTlasBuilder::ReleaseResources() noexcept
+void RayTracingClassicTlasBuilder::ReleaseResources() noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -237,7 +249,7 @@ void RayTracingTlasBuilder::ReleaseResources() noexcept
 	m_accelerationStructureSizeInBytes = 0;
 }
 
-bool RayTracingTlasBuilder::EnsureResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo) noexcept
+bool RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo) noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -280,7 +292,9 @@ bool RayTracingTlasBuilder::EnsureResources(const RhiRayTracingAccelerationStruc
 
 	if (!m_scratchBuffer || !m_accelerationStructureBuffer)
 	{
-		SPDLOG_LOGGER_WARN(g_rayTracingTlasBuilderLogger, "RayTracingTlasBuilder: failed to allocate TLAS scratch or result buffers.");
+		SPDLOG_LOGGER_WARN(
+		    g_rayTracingClassicTlasBuilderLogger,
+		    "RayTracingClassicTlasBuilder: failed to allocate TLAS scratch or result buffers.");
 		return false;
 	}
 

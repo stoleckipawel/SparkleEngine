@@ -1,5 +1,6 @@
 #include "CommonPS.hlsli"
 #include "Debug/InstanceView.hlsli"
+#include "Debug/PTLAS/RayTracingPtlasDebugVisualization.hlsli"
 #include "MotionVector.hlsli"
 
 struct GBufferOutput
@@ -18,7 +19,12 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	PS::PrepareInput(Input);
 
 	Material::Properties MatProps = Material::Sample(Input);
-	MatProps.BaseColor = InstanceView::ApplyInstanceGroupVisualization(MatProps.BaseColor, Input.InstanceId);
+	MatProps.BaseColor = InstanceView::ApplyInstanceDebugVisualization(
+	    MatProps.BaseColor,
+	    Input.InstanceId);
+	MatProps.BaseColor = RayTracingPtlasDebugVisualization::ApplyDebugVisualization(
+	    MatProps.BaseColor,
+	    MeshInstances[Input.InstanceId].PackedRayTracingPtlasDebugVisualizationData);
 
 	const float outputAlpha = (MatProps.AlphaMode == Material::AlphaModeBlend) ? MatProps.Alpha : 1.0f;
 	Output.BaseColor = float4(MatProps.BaseColor, outputAlpha);

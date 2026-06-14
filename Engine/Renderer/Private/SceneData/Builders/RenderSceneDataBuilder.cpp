@@ -3,6 +3,7 @@
 #include "RenderSceneDataBuilder.h"
 
 #include "Meshes/GPUMeshCache.h"
+#include "RHI/Public/Resources/MeshInstanceShaderData.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "SceneData/RenderSceneData.h"
 #include "SceneData/Builders/MeshInstanceBatchBuilder.h"
@@ -25,7 +26,7 @@ namespace
 	{
 		for (const MeshDraw& meshInstance : meshInstances)
 		{
-			if (meshInstance.meshKind == RenderMeshKind::Skeletal)
+			if (meshInstance.Geometry.MeshKind == RenderMeshKind::Skeletal)
 			{
 				++outWorkload.skinnedInstanceCount;
 			}
@@ -110,8 +111,10 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		sceneData.jointMatrices.insert(sceneData.jointMatrices.end(), pose.skinningMatrices.begin(), pose.skinningMatrices.end());
 	}
 
-	for (const MeshInstanceSnapshot& meshInstance : sceneSnapshot.meshes.meshInstances)
+	for (std::uint32_t sourceInstanceIndex = 0; sourceInstanceIndex < static_cast<std::uint32_t>(sceneSnapshot.meshes.meshInstances.size());
+	     ++sourceInstanceIndex)
 	{
+		const MeshInstanceSnapshot& meshInstance = sceneSnapshot.meshes.meshInstances[sourceInstanceIndex];
 		const Mesh* mesh = meshInstance.mesh;
 		if (mesh == nullptr)
 		{
@@ -125,28 +128,28 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		}
 
 		MeshDraw draw = {};
-		draw.worldMatrix = meshInstance.worldMatrix;
-		draw.worldInvTranspose = meshInstance.worldInvTranspose;
-		draw.materialSlot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
-		draw.skeletonAssetId = meshInstance.skeletonAssetId;
-		draw.jointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;
+		draw.Transform.WorldMatrix = meshInstance.worldMatrix;
+		draw.Transform.WorldInvTranspose = meshInstance.worldInvTranspose;
+		draw.Material.Slot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
+		draw.Source.SourceInstanceIndex = sourceInstanceIndex;
+		draw.Skinning.SkeletonAssetId = meshInstance.skeletonAssetId;
+		draw.Skinning.JointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;
 		if (meshInstance.meshKind == SceneMeshKind::Skeletal)
 		{
 			if (const auto it = jointMatrixOffsets.find(meshInstance.skeletonAssetId); it != jointMatrixOffsets.end())
 			{
-				draw.jointMatrixOffset = it->second;
+				draw.Skinning.JointMatrixOffset = it->second;
 			}
 		}
-		draw.meshKind = RenderMeshSnapshotAdapter::ToRenderMeshKind(meshInstance.meshKind);
-		draw.gpuMesh = gpuMesh;
+		draw.Geometry.MeshKind = RenderMeshSnapshotAdapter::ToRenderMeshKind(meshInstance.meshKind);
+		draw.Geometry.GpuMesh = gpuMesh;
 
 		renderItems.push_back(
 		    MeshRenderItem{
 		        .draw = draw,
-		        .materialBindingSet = draw.materialSlot < sceneData.materials.size() ? sceneData.materials[draw.materialSlot].textureBindingSet
+		        .materialBindingSet = draw.Material.Slot < sceneData.materials.size() ? sceneData.materials[draw.Material.Slot].textureBindingSet
 		                                                                           : nullptr,
-		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex),
-		        .sourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())});
+		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex)});
 	}
 
 	const std::vector<RenderMeshInstanceGroup> renderInstanceGroups = RenderMeshSnapshotAdapter::BuildRenderMeshInstanceGroups(sceneSnapshot.meshes);

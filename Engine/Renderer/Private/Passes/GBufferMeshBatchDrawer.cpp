@@ -92,7 +92,7 @@ namespace
 		for (std::uint32_t instanceOffset = 0; instanceOffset < batch.instanceCount; ++instanceOffset)
 		{
 			const MeshDraw& draw = sceneData.meshInstances[batch.firstInstance + instanceOffset];
-			if (draw.meshKind != RenderMeshKind::Skeletal || draw.jointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset)
+			if (draw.Geometry.MeshKind != RenderMeshKind::Skeletal || draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset)
 			{
 				return false;
 			}

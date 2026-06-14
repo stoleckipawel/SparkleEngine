@@ -1,9 +1,9 @@
 #include "PCH.h"
 #include "Renderer.h"
 
+#include "Diagnostics/RendererSmokeRayTracingSnapshotBuilder.h"
 #include "FramePipeline/FramePipeline.h"
 #include "Host/RendererSystemRoot.h"
-#include "RayTracing/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Upscaling/UpscalerProvider.h"
@@ -78,41 +78,17 @@ RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 	RendererSmokeDiagnosticsSnapshot snapshot{};
 	const RhiCapabilities capabilities = GetRenderHardwareInterface().GetCapabilities();
 	snapshot.BackendApi = capabilities.BackendApi;
-	snapshot.FrameGraphUnresolvedBarrierWarnings =
+	snapshot.FrameGraph.UnresolvedBarrierWarnings =
 	    m_framePipeline != nullptr ? m_framePipeline->GetLastUnresolvedBarrierWarningCount() : 0u;
-	snapshot.RayTracingSupported = capabilities.RayTracing.SupportsRayTracing;
-	snapshot.InlineRayQuerySupported = capabilities.RayTracing.SupportsInlineRayQuery;
-	if (const RenderRayTracingScene* rayTracingScene = m_systemRoot->GetRenderRayTracingScene())
-	{
-		snapshot.RayTracingTlasValid = rayTracingScene->HasValidTlas();
-		snapshot.RayTracingTlasInstanceCount = rayTracingScene->GetTlasInstanceCount();
-		const RayTracingPerformanceMetrics& metrics = rayTracingScene->GetPerformanceMetrics();
-		snapshot.RayTracingTopLevelProvider = metrics.TopLevelProvider;
-		snapshot.RayTracingPartitionedTlasProvider = metrics.PartitionedTlasProvider;
-		snapshot.RayTracingPartitionedTlasSupported = metrics.SupportsPartitionedTlas;
-		snapshot.RayTracingReferencedMeshCount = metrics.ReferencedMeshCount;
-		snapshot.RayTracingBuiltBlasCount = metrics.BuiltBlasCount;
-		snapshot.RayTracingReusedBlasCount = metrics.ReusedBlasCount;
-		snapshot.RayTracingCandidateInstanceCount = metrics.CandidateInstanceCount;
-		snapshot.RayTracingMissingGpuMeshCount = metrics.MissingGpuMeshCount;
-		snapshot.RayTracingRejectedBlasCount = metrics.RejectedBlasCount;
-		snapshot.RayTracingBuiltTlas = metrics.BuiltTlas;
-		snapshot.RayTracingScenePrepareCpuMilliseconds = metrics.ScenePrepareCpuMilliseconds;
-		snapshot.RayTracingSceneBuildCpuMilliseconds = metrics.SceneBuildCpuMilliseconds;
-		snapshot.RayTracingBlasCpuMilliseconds = metrics.BlasCpuMilliseconds;
-		snapshot.RayTracingTlasCpuMilliseconds = metrics.TlasCpuMilliseconds;
-		snapshot.RayTracingTlasInstancePreparationCpuMilliseconds = metrics.TlasInstancePreparationCpuMilliseconds;
-		snapshot.RayTracingBlasGpuMilliseconds = metrics.BlasGpuMilliseconds;
-		snapshot.RayTracingClassicTlasGpuMilliseconds = metrics.ClassicTlasGpuMilliseconds;
-		snapshot.RayTracingPassGpuMilliseconds = metrics.RayTracingPassGpuMilliseconds;
-	}
+	snapshot.RayTracing =
+	    RendererSmokeRayTracingSnapshotBuilder::Build(capabilities.RayTracing, m_systemRoot->GetRenderRayTracingScene());
 
 	if (UpscalerSubsystem* upscalerSubsystem = m_systemRoot->GetUpscalerSubsystem())
 	{
 		const UpscalerProviderCapabilities upscalerDiagnostics = upscalerSubsystem->GetDiagnostics();
-		snapshot.UpscalerProvider = upscalerDiagnostics.ProviderName;
-		snapshot.UpscalerStatus = UpscalerProviderStatusToString(upscalerDiagnostics.Status);
-		snapshot.UpscalerReason = upscalerDiagnostics.Reason;
+		snapshot.Upscaler.Provider = upscalerDiagnostics.ProviderName;
+		snapshot.Upscaler.Status = UpscalerProviderStatusToString(upscalerDiagnostics.Status);
+		snapshot.Upscaler.Reason = upscalerDiagnostics.Reason;
 	}
 
 	return snapshot;

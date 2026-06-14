@@ -14,29 +14,29 @@ namespace
 
 bool RayTracingCapabilityReport::CanUseInlineRayQueryShadows() const noexcept
 {
-	return SupportsRayTracing && SupportsInlineRayQuery && HasAccelerationStructureAlignment && HasScratchBufferAlignment &&
-	       HasInstanceDescSize;
+	return Core.SupportsRayTracing && Core.SupportsInlineRayQuery && AccelerationStructures.HasAccelerationStructureAlignment &&
+	       AccelerationStructures.HasScratchBufferAlignment && AccelerationStructures.HasInstanceDescSize;
 }
 
 const char* RayTracingCapabilityReport::GetInlineRayQueryShadowUnavailableReason() const noexcept
 {
-	if (!SupportsRayTracing)
+	if (!Core.SupportsRayTracing)
 	{
 		return "ray-tracing-unsupported";
 	}
-	if (!SupportsInlineRayQuery)
+	if (!Core.SupportsInlineRayQuery)
 	{
 		return "inline-ray-query-unsupported";
 	}
-	if (!HasAccelerationStructureAlignment)
+	if (!AccelerationStructures.HasAccelerationStructureAlignment)
 	{
 		return "missing-acceleration-structure-alignment";
 	}
-	if (!HasScratchBufferAlignment)
+	if (!AccelerationStructures.HasScratchBufferAlignment)
 	{
 		return "missing-scratch-buffer-alignment";
 	}
-	if (!HasInstanceDescSize)
+	if (!AccelerationStructures.HasInstanceDescSize)
 	{
 		return "missing-instance-desc-size";
 	}
@@ -67,36 +67,36 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    "d3d12Nvapi={} d3d12NvapiHeaders={} d3d12NvapiRuntime={} d3d12DeviceInterface={} d3d12CommandListInterface={} "
 	    "d3d12PublicDxr={} d3d12PublicDxrHeaders={} gpuDrivenOps={} partitionedReason={}",
 	    RhiBackendApiToString(report.BackendApi),
-	    BoolToString(report.SupportsRayTracing),
-	    BoolToString(report.SupportsInlineRayQuery),
-	    report.AccelerationStructureByteAlignment,
-	    report.ScratchBufferByteAlignment,
-	    report.InstanceDescSizeInBytes,
-	    report.MaxTraceRecursionDepth,
-	    report.MaxRayPayloadSizeInBytes,
-	    report.MaxRayAttributeSizeInBytes,
+	    BoolToString(report.Core.SupportsRayTracing),
+	    BoolToString(report.Core.SupportsInlineRayQuery),
+	    report.AccelerationStructures.AccelerationStructureByteAlignment,
+	    report.AccelerationStructures.ScratchBufferByteAlignment,
+	    report.AccelerationStructures.InstanceDescSizeInBytes,
+	    report.Core.MaxTraceRecursionDepth,
+	    report.Core.MaxRayPayloadSizeInBytes,
+	    report.Core.MaxRayAttributeSizeInBytes,
 	    BoolToString(report.CanUseInlineRayQueryShadows()),
 	    report.GetInlineRayQueryShadowUnavailableReason(),
-	    RhiRayTracingTopLevelProviderToString(report.SelectedTopLevelProvider),
-	    report.SelectedTopLevelProviderReason,
-	    RhiPartitionedTlasProviderToString(report.PartitionedTlasProvider),
-	    BoolToString(report.SupportsPartitionedTlas),
-	    BoolToString(report.PartitionedTlasRequiresNvidiaDevice),
-	    BoolToString(report.PartitionedTlasRunsOnNvidiaDevice),
-	    BoolToString(report.SupportsVulkanNativePartitionedTlas),
-	    BoolToString(report.SupportsVulkanPartitionedTlasExtension),
-	    BoolToString(report.SupportsVulkanPartitionedTlasFeatureQuery),
-	    BoolToString(report.SupportsVulkanPartitionedTlasFunctionLoading),
-	    BoolToString(report.SupportsVulkanPartitionedTlasDescriptorPath),
-	    BoolToString(report.SupportsD3D12NvapiPartitionedTlas),
-	    BoolToString(report.SupportsD3D12NvapiPartitionedTlasHeaders),
-	    BoolToString(report.SupportsD3D12NvapiPartitionedTlasRuntime),
-	    BoolToString(report.SupportsD3D12PartitionedTlasDeviceInterface),
-	    BoolToString(report.SupportsD3D12PartitionedTlasCommandListInterface),
-	    BoolToString(report.SupportsD3D12PublicDxrPartitionedTlas),
-	    BoolToString(report.SupportsD3D12PublicDxrPartitionedTlasHeaders),
-	    BoolToString(report.SupportsGpuDrivenPartitionedTlasOperations),
-	    report.PartitionedTlasCapabilityStatusReason);
+	    RhiRayTracingTopLevelProviderToString(report.TopLevelProvider.SelectedProvider),
+	    report.TopLevelProvider.SelectionReason,
+	    RhiPartitionedTlasProviderToString(report.PartitionedTlas.Provider),
+	    BoolToString(report.PartitionedTlas.Supported),
+	    BoolToString(report.PartitionedTlas.RequiresNvidiaDevice),
+	    BoolToString(report.PartitionedTlas.RunsOnNvidiaDevice),
+	    BoolToString(report.PartitionedTlas.SupportsVulkanNativeProvider),
+	    BoolToString(report.PartitionedTlas.SupportsVulkanExtension),
+	    BoolToString(report.PartitionedTlas.SupportsVulkanFeatureQuery),
+	    BoolToString(report.PartitionedTlas.SupportsVulkanFunctionLoading),
+	    BoolToString(report.PartitionedTlas.SupportsVulkanDescriptorPath),
+	    BoolToString(report.PartitionedTlas.SupportsD3D12NvapiProvider),
+	    BoolToString(report.PartitionedTlas.SupportsD3D12NvapiHeaders),
+	    BoolToString(report.PartitionedTlas.SupportsD3D12NvapiRuntime),
+	    BoolToString(report.PartitionedTlas.SupportsD3D12DeviceInterface),
+	    BoolToString(report.PartitionedTlas.SupportsD3D12CommandListInterface),
+	    BoolToString(report.PartitionedTlas.SupportsD3D12PublicDxrProvider),
+	    BoolToString(report.PartitionedTlas.SupportsD3D12PublicDxrHeaders),
+	    BoolToString(report.PartitionedTlas.SupportsGpuDrivenOperations),
+	    report.PartitionedTlas.CapabilityStatusReason);
 }
 
 RayTracingCapabilityReport RayTracingCapabilityReporter::Build(
@@ -105,35 +105,44 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::Build(
 {
 	return RayTracingCapabilityReport{
 	    .BackendApi = backendApi,
-	    .SupportsRayTracing = rayTracing.SupportsRayTracing,
-	    .SupportsInlineRayQuery = rayTracing.SupportsInlineRayQuery,
-	    .HasAccelerationStructureAlignment = rayTracing.AccelerationStructureByteAlignment != 0,
-	    .HasScratchBufferAlignment = rayTracing.ScratchBufferByteAlignment != 0,
-	    .HasInstanceDescSize = rayTracing.InstanceDescSizeInBytes != 0,
-	    .MaxTraceRecursionDepth = rayTracing.MaxTraceRecursionDepth,
-	    .MaxRayPayloadSizeInBytes = rayTracing.MaxRayPayloadSizeInBytes,
-	    .MaxRayAttributeSizeInBytes = rayTracing.MaxRayAttributeSizeInBytes,
-	    .AccelerationStructureByteAlignment = rayTracing.AccelerationStructureByteAlignment,
-	    .ScratchBufferByteAlignment = rayTracing.ScratchBufferByteAlignment,
-	    .InstanceDescSizeInBytes = rayTracing.InstanceDescSizeInBytes,
-	    .SelectedTopLevelProvider = rayTracing.Groups.Provider.SelectedTopLevelProvider,
-	    .SelectedTopLevelProviderReason = rayTracing.Groups.Provider.SelectedTopLevelProviderReason,
-	    .PartitionedTlasProvider = rayTracing.Groups.PartitionedTlas.Provider,
-	    .SupportsPartitionedTlas = rayTracing.Groups.PartitionedTlas.Supported,
-	    .PartitionedTlasRequiresNvidiaDevice = rayTracing.Groups.PartitionedTlas.RequiresNvidiaDevice,
-	    .PartitionedTlasRunsOnNvidiaDevice = rayTracing.Groups.PartitionedTlas.RunsOnNvidiaDevice,
-	    .SupportsVulkanNativePartitionedTlas = rayTracing.Groups.PartitionedTlas.SupportsVulkanNativePartitionedAccelerationStructure,
-	    .SupportsVulkanPartitionedTlasExtension = rayTracing.Groups.PartitionedTlas.SupportsVulkanExtension,
-	    .SupportsVulkanPartitionedTlasFeatureQuery = rayTracing.Groups.PartitionedTlas.SupportsVulkanFeatureQuery,
-	    .SupportsVulkanPartitionedTlasFunctionLoading = rayTracing.Groups.PartitionedTlas.SupportsVulkanFunctionLoading,
-	    .SupportsVulkanPartitionedTlasDescriptorPath = rayTracing.Groups.PartitionedTlas.SupportsVulkanDescriptorPath,
-	    .SupportsD3D12NvapiPartitionedTlas = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiPartitionedTlas,
-	    .SupportsD3D12NvapiPartitionedTlasHeaders = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiHeaders,
-	    .SupportsD3D12NvapiPartitionedTlasRuntime = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiRuntime,
-	    .SupportsD3D12PartitionedTlasDeviceInterface = rayTracing.Groups.PartitionedTlas.SupportsD3D12DeviceInterface,
-	    .SupportsD3D12PartitionedTlasCommandListInterface = rayTracing.Groups.PartitionedTlas.SupportsD3D12CommandListInterface,
-	    .SupportsD3D12PublicDxrPartitionedTlas = rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas,
-	    .SupportsD3D12PublicDxrPartitionedTlasHeaders = rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrHeaders,
-	    .SupportsGpuDrivenPartitionedTlasOperations = rayTracing.Groups.PartitionedTlas.SupportsGpuDrivenOperations,
-	    .PartitionedTlasCapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason};
+	    .Core =
+	        RayTracingCoreCapabilityReport{
+	            .SupportsRayTracing = rayTracing.SupportsRayTracing,
+	            .SupportsInlineRayQuery = rayTracing.SupportsInlineRayQuery,
+	            .MaxTraceRecursionDepth = rayTracing.MaxTraceRecursionDepth,
+	            .MaxRayPayloadSizeInBytes = rayTracing.MaxRayPayloadSizeInBytes,
+	            .MaxRayAttributeSizeInBytes = rayTracing.MaxRayAttributeSizeInBytes},
+	    .AccelerationStructures =
+	        RayTracingAccelerationStructureCapabilityReport{
+	            .HasAccelerationStructureAlignment = rayTracing.AccelerationStructureByteAlignment != 0,
+	            .HasScratchBufferAlignment = rayTracing.ScratchBufferByteAlignment != 0,
+	            .HasInstanceDescSize = rayTracing.InstanceDescSizeInBytes != 0,
+	            .AccelerationStructureByteAlignment = rayTracing.AccelerationStructureByteAlignment,
+	            .ScratchBufferByteAlignment = rayTracing.ScratchBufferByteAlignment,
+	            .InstanceDescSizeInBytes = rayTracing.InstanceDescSizeInBytes},
+	    .TopLevelProvider =
+	        RayTracingTopLevelProviderCapabilityReport{
+	            .SelectedProvider = rayTracing.Groups.Provider.SelectedTopLevelProvider,
+	            .SelectionReason = rayTracing.Groups.Provider.SelectedTopLevelProviderReason},
+	    .PartitionedTlas =
+	        RayTracingPartitionedTlasCapabilityReport{
+	            .Provider = rayTracing.Groups.PartitionedTlas.Provider,
+	            .Supported = rayTracing.Groups.PartitionedTlas.Supported,
+	            .RequiresNvidiaDevice = rayTracing.Groups.PartitionedTlas.RequiresNvidiaDevice,
+	            .RunsOnNvidiaDevice = rayTracing.Groups.PartitionedTlas.RunsOnNvidiaDevice,
+	            .SupportsVulkanNativeProvider =
+	                rayTracing.Groups.PartitionedTlas.SupportsVulkanNativePartitionedAccelerationStructure,
+	            .SupportsVulkanExtension = rayTracing.Groups.PartitionedTlas.SupportsVulkanExtension,
+	            .SupportsVulkanFeatureQuery = rayTracing.Groups.PartitionedTlas.SupportsVulkanFeatureQuery,
+	            .SupportsVulkanFunctionLoading = rayTracing.Groups.PartitionedTlas.SupportsVulkanFunctionLoading,
+	            .SupportsVulkanDescriptorPath = rayTracing.Groups.PartitionedTlas.SupportsVulkanDescriptorPath,
+	            .SupportsD3D12NvapiProvider = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiPartitionedTlas,
+	            .SupportsD3D12NvapiHeaders = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiHeaders,
+	            .SupportsD3D12NvapiRuntime = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiRuntime,
+	            .SupportsD3D12DeviceInterface = rayTracing.Groups.PartitionedTlas.SupportsD3D12DeviceInterface,
+	            .SupportsD3D12CommandListInterface = rayTracing.Groups.PartitionedTlas.SupportsD3D12CommandListInterface,
+	            .SupportsD3D12PublicDxrProvider = rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas,
+	            .SupportsD3D12PublicDxrHeaders = rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrHeaders,
+	            .SupportsGpuDrivenOperations = rayTracing.Groups.PartitionedTlas.SupportsGpuDrivenOperations,
+	            .CapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason}};
 }

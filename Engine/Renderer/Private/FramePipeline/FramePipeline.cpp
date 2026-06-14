@@ -410,6 +410,7 @@ void FramePipeline::RecordFrame() noexcept
 		    m_systems->GetRenderCamera(),
 		    m_frameGraphSceneExtent,
 		    m_systems->GetRenderSceneDataBuilder(),
+		    m_rayTracingPtlasPartitionPlanner,
 		    m_systems->GetPerViewDataBuilder(),
 		    m_systems->GetViewLightingBuilder(),
 		    m_systems->GetTemporalDataBuilder());
@@ -438,7 +439,7 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		if (RenderRayTracingScene* renderRayTracingScene = m_systems->GetRenderRayTracingScene())
 		{
-			frame.rayTracingScene = renderRayTracingScene->Prepare(frame.sceneData);
+			frame.rayTracingScene = renderRayTracingScene->Prepare(frame.sceneData, &frame.rayTracingPtlasPartitionPlan);
 			if (frame.rayTracingScene.HasBoundTlas())
 			{
 				m_frameGraph->BindPersistentAccelerationStructure(

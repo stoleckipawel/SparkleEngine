@@ -3,9 +3,9 @@
 #include "Frame/RayTracingSceneFrameData.h"
 #include "RayTracing/RayTracingBlasCache.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
+#include "RayTracing/RayTracingClassicTlasBuilder.h"
 #include "RayTracing/RayTracingPerformanceMetrics.h"
 #include "RayTracing/RayTracingSceneDiagnostics.h"
-#include "RayTracing/RayTracingTlasBuilder.h"
 
 #include <memory>
 
@@ -13,6 +13,7 @@ class RenderCommandContext;
 class RenderHardwareInterface;
 class PassExecutionDiagnostics;
 struct ResolvedGpuTiming;
+struct RayTracingPtlasPartitionPlan;
 struct RenderSceneData;
 
 class RenderRayTracingScene final
@@ -26,14 +27,18 @@ class RenderRayTracingScene final
 	RenderRayTracingScene(RenderRayTracingScene&&) = delete;
 	RenderRayTracingScene& operator=(RenderRayTracingScene&&) = delete;
 
-	RayTracingSceneFrameData Prepare(const RenderSceneData& sceneData) noexcept;
-	void Build(RenderCommandContext& cmd, const RenderSceneData& sceneData, PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
+	RayTracingSceneFrameData Prepare(const RenderSceneData& sceneData, const RayTracingPtlasPartitionPlan* partitionPlan = nullptr) noexcept;
+	void Build(
+	    RenderCommandContext& cmd,
+	    const RenderSceneData& sceneData,
+	    const RayTracingPtlasPartitionPlan* partitionPlan = nullptr,
+	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
 	void BeginResolvedGpuTimingFrame() noexcept;
 	void PublishResolvedGpuTiming(const ResolvedGpuTiming& timing) noexcept;
 
-	bool IsAvailable() const noexcept { return m_capabilityReport.SupportsRayTracing; }
-	bool HasValidTlas() const noexcept { return m_tlasBuilder != nullptr && m_tlasBuilder->GetTlas().IsValid(); }
+	bool IsAvailable() const noexcept { return m_capabilityReport.Core.SupportsRayTracing; }
+	bool HasValidTlas() const noexcept { return m_classicTlasBuilder != nullptr && m_classicTlasBuilder->GetTlas().IsValid(); }
 	RhiOwnedResourceHandle GetTlasResource() const noexcept;
 	RhiGpuVirtualAddress GetTlasGpuAddress() const noexcept;
 	std::uint32_t GetTlasInstanceCount() const noexcept;
@@ -44,6 +49,6 @@ class RenderRayTracingScene final
 	RayTracingCapabilityReport m_capabilityReport = {};
 	RayTracingPerformanceMetrics m_performanceMetrics = {};
 	std::unique_ptr<RayTracingBlasCache> m_blasCache;
-	std::unique_ptr<RayTracingTlasBuilder> m_tlasBuilder;
+	std::unique_ptr<RayTracingClassicTlasBuilder> m_classicTlasBuilder;
 	RayTracingSceneDiagnostics m_diagnostics;
 };

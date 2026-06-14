@@ -19,4 +19,7 @@ namespace ViewMode
 	static const uint IndirectSpecular = 14u;
 	static const uint IndirectSubsurface = 15u;
 	static const uint InstanceGroups = 16u;
+	static const uint RayTracingPartitions = 17u;
+	static const uint RayTracingPartitionUpdates = 18u;
+	static const uint RayTracingInstanceMovement = 19u;
 }

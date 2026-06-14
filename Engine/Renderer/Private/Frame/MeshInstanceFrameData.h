@@ -5,6 +5,7 @@
 #include "RHI/Public/Resources/RhiResourceView.h"
 
 class RenderHardwareInterface;
+struct RayTracingPtlasPartitionPlan;
 struct RenderSceneData;
 
 class MeshInstanceFrameData final
@@ -21,7 +22,10 @@ class MeshInstanceFrameData final
 	bool IsValid() const noexcept { return static_cast<bool>(m_shaderResourceView); }
 	RhiGpuDescriptorHandle GetShaderResourceView() const noexcept { return m_shaderResourceView; }
 
-	static MeshInstanceFrameData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
+	static MeshInstanceFrameData Build(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const RenderSceneData& sceneData,
+	    const RayTracingPtlasPartitionPlan* partitionPlan = nullptr);
 
   private:
 	void Release() noexcept;

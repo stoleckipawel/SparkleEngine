@@ -25,8 +25,14 @@ namespace InstanceView
 		return 0.25f.xxx + color * 0.75f;
 	}
 
-	float3 ApplyInstanceGroupVisualization(float3 baseColor, uint instanceId)
+	float3 ApplyInstanceDebugVisualization(float3 baseColor, uint instanceId)
 	{
-		return ViewModeIndex == ViewMode::InstanceGroups ? saturate(MakeInstanceColor(instanceId)) : baseColor;
+		switch (ViewModeIndex)
+		{
+			case ViewMode::InstanceGroups:
+				return saturate(MakeInstanceColor(instanceId));
+			default:
+				return baseColor;
+		}
 	}
 }  // namespace InstanceView

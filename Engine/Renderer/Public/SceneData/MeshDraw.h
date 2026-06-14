@@ -17,15 +17,41 @@ enum class MeshInstanceBatchSource : std::uint32_t
 	SingleInstance = 3,
 };
 
+struct SPARKLE_RENDERER_API MeshDrawTransform final
+{
+	DirectX::XMFLOAT4X4 WorldMatrix = {};
+	DirectX::XMFLOAT3X4 WorldInvTranspose = {};
+};
+
+struct SPARKLE_RENDERER_API MeshDrawMaterial final
+{
+	std::uint32_t Slot = 0;
+};
+
+struct SPARKLE_RENDERER_API MeshDrawSkinning final
+{
+	std::uint64_t SkeletonAssetId = 0;
+	std::uint32_t JointMatrixOffset = (std::numeric_limits<std::uint32_t>::max)();
+};
+
+struct SPARKLE_RENDERER_API MeshDrawSourceIdentity final
+{
+	std::uint32_t SourceInstanceIndex = 0;
+};
+
+struct SPARKLE_RENDERER_API MeshDrawGeometry final
+{
+	RenderMeshKind MeshKind = RenderMeshKind::Static;
+	const GPUMesh* GpuMesh = nullptr;
+};
+
 struct SPARKLE_RENDERER_API MeshDraw
 {
-	DirectX::XMFLOAT4X4 worldMatrix = {};
-	DirectX::XMFLOAT3X4 worldInvTranspose = {};
-	std::uint32_t materialSlot = 0;
-	std::uint64_t skeletonAssetId = 0;
-	std::uint32_t jointMatrixOffset = (std::numeric_limits<std::uint32_t>::max)();
-	RenderMeshKind meshKind = RenderMeshKind::Static;
-	const GPUMesh* gpuMesh = nullptr;
+	MeshDrawTransform Transform;
+	MeshDrawMaterial Material;
+	MeshDrawSkinning Skinning;
+	MeshDrawSourceIdentity Source;
+	MeshDrawGeometry Geometry;
 };
 
 struct SPARKLE_RENDERER_API MeshInstanceBatch

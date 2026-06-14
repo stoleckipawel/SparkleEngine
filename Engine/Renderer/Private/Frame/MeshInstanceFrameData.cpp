@@ -2,6 +2,7 @@
 #include "Frame/MeshInstanceFrameData.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
+#include "RayTracing/RayTracingPtlasPartitionPlanner.h"
 #include "SceneData/RenderSceneData.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -40,7 +41,10 @@ MeshInstanceFrameData& MeshInstanceFrameData::operator=(MeshInstanceFrameData&& 
 	return *this;
 }
 
-MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData)
+MeshInstanceFrameData MeshInstanceFrameData::Build(
+    RenderHardwareInterface& renderHardwareInterface,
+    const RenderSceneData& sceneData,
+    const RayTracingPtlasPartitionPlan* partitionPlan)
 {
 	if (sceneData.meshInstances.empty())
 	{
@@ -53,13 +57,18 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& rend
 	{
 		instances.push_back(
 		    MeshInstanceData{
-		        .WorldMTX = draw.worldMatrix,
-		        .WorldInvTransposeMTX = draw.worldInvTranspose,
-		        .MaterialSlot = draw.materialSlot,
-		        .Flags = draw.meshKind == RenderMeshKind::Skeletal && draw.jointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset
+		        .WorldMTX = draw.Transform.WorldMatrix,
+		        .WorldInvTransposeMTX = draw.Transform.WorldInvTranspose,
+		        .MaterialSlot = draw.Material.Slot,
+		        .Flags = draw.Geometry.MeshKind == RenderMeshKind::Skeletal && draw.Skinning.JointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset
 		                     ? MeshInstanceFlag_Skinned
 		                     : 0u,
-		        .JointMatrixOffset = draw.jointMatrixOffset});
+		        .JointMatrixOffset = draw.Skinning.JointMatrixOffset,
+		        .PackedRayTracingPtlasDebugVisualizationData =
+		            partitionPlan != nullptr
+		                ? partitionPlan->GetPackedDebugVisualizationDataForRenderInstance(
+		                      static_cast<std::uint32_t>(instances.size()))
+		                : 0u});
 	}
 
 	RhiOwnedResourceHandle buffer = {};

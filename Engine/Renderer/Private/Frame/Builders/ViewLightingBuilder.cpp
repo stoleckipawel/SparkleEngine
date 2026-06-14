@@ -2,6 +2,7 @@
 
 #include "ViewLightingBuilder.h"
 
+#include "RHI/Public/Resources/RenderViewLightingData.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <algorithm>

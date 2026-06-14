@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frame/TemporalFrameState.h"
+#include "RHI/Public/Resources/RenderViewCameraData.h"
 #include "Viewport/ViewportContracts.h"
 
 #include <cstdint>
