@@ -19,6 +19,12 @@ Primary API references:
   - It currently names support through `D3D12_FEATURE_OPTIONS_NNN` / `ClustersAndPTLASSupported`, so Sparkle should support NVAPI first and keep a future public-DXR backend path clean.
 - NVIDIA RTX Mega Geometry reference: https://github.com/NVIDIA-RTX/RTXMG
   - RTXMG proves the DX12/Vulkan NVIDIA pattern for advanced ray tracing acceleration-structure work: DX12 through NVAPI and D3D12 Agility SDK, Vulkan through NVIDIA Vulkan extensions.
+- NVIDIA RTX Mega Geometry / Vulkan samples article: https://developer.nvidia.com/blog/nvidia-rtx-mega-geometry-now-available-with-new-vulkan-samples/
+  - Article anchor: PTLAS is presented as rebuilding parts of a TLAS when only part of a scene changes, not as a generic "always faster" replacement.
+- NVIDIA Nsight Graphics documentation hub: https://docs.nvidia.com/nsight-graphics/index.html
+  - Tooling anchor: Ray Tracing debugging should inspect acceleration-structure efficiency, build flags, world-space overlap, traversal hot spots, and performance markers.
+- NVIDIA Nsight Graphics GPU Trace UI reference: https://docs.nvidia.com/nsight-graphics/UserGuide/gpu-trace-ui.html
+  - Tooling anchor: GPU Trace metrics and marker trees are expected evidence for GPU performance claims.
 - Current Sparkle classic TLAS path:
   - `Engine/Renderer/Private/RayTracing/RayTracingTlasBuilder.cpp`
   - `Engine/Renderer/Private/RayTracing/RayTracingBlasCache.cpp`
@@ -1581,6 +1587,14 @@ Reference-quality completion stages:
    - What changes: the renderer stops knowing "classic TLAS is the one real path."
    - Why it matters: strategy selection is the architectural seam that lets PTLAS be a provider instead of a feature leak.
 
+   Status:
+
+   - Implemented as an initial architecture seam on 2026-06-14.
+   - `RenderRayTracingScene` now delegates prepare/build/resource queries through `RayTracingTopLevelAccelerationStructureStrategy`.
+   - `RayTracingClassicTlasStrategy` is the fallback/reference implementation.
+   - `RayTracingPartitionedTlasStrategy` exists but deliberately reports classic fallback until it owns a real PTLAS scene resource.
+   - Validation run: `ShowcaseEditor` build and `architecture_boundary_check`.
+
 2. **Frame Graph PTLAS Resource Contract**
 
    Goal:
@@ -1672,11 +1686,15 @@ Reference-quality completion stages:
    Goal:
 
    - Move from CPU-packed PTLAS operations to a proven GPU-driven update path.
+   - Keep CPU and GPU operation update modes selectable so Sparkle can measure, profile, compare, and explain the tradeoff.
+   - Make the mode choice a durable runtime policy, not temporary article instrumentation.
 
    Reference pattern:
 
    - NVIDIA sample pattern: GPU-visible operation count and operation records drive update work.
    - ATAM quality target: performance credibility requires eliminating CPU readback/synchronization from the target path.
+   - `VK_NV_partitioned_acceleration_structure`: PTLAS is managed through a host-side size query and a multi-indirect command that consumes device-memory operation data.
+   - NVIDIA Nsight Graphics: acceleration structure inspection and performance markers are expected tools for proving ray tracing optimization work.
 
    Implementation guidance:
 
@@ -1684,17 +1702,36 @@ Reference-quality completion stages:
    - Backend-private compute/native pack writes provider-specific operation records.
    - PTLAS update consumes GPU-written counts/records without CPU readback.
    - CPU pack remains as validation oracle and fallback.
+   - Add a long-term operation writer policy:
+     - `CpuPack`: CPU creates native operation buffers; used for bring-up, debugging, deterministic validation, and fallback.
+     - `GpuLogicalDirtyCpuNativePack`: GPU identifies logical dirty records, CPU still packs native provider records; used as a transition and profiling split.
+     - `FullGpuNativePack`: GPU writes provider-native operation counts and operation records; target production update path.
+   - Expose the selected writer path through renderer smoke diagnostics, editor overlay, launcher metadata, and timing CSV.
+   - Collect per-frame counters for logical update count, native operation count, validation mismatch count, moved partitions, global partition use, and partition overflow.
+   - Collect timings for CPU pack, GPU dirty detection, GPU native pack, PTLAS update, ray tracing pass, and total frame cost.
+   - Ensure capture markers use stable names across D3D12 and Vulkan:
+     - `RayTracing.BLAS.Build`
+     - `RayTracing.TLAS.Classic.Build`
+     - `RayTracing.PTLAS.LogicalDirty`
+     - `RayTracing.PTLAS.NativePack`
+     - `RayTracing.PTLAS.Update`
+     - `RayTracing.TraceOrRayQuery`
 
    Acceptance:
 
    - Metrics distinguish CPU pack, GPU logical dirty detection, GPU native pack, and PTLAS update.
    - CPU and GPU pack produce equivalent PTLAS output in deterministic scenes.
    - Launcher artifacts identify selected operation writer path.
+   - A single launcher workflow can run classic TLAS, PTLAS CPU pack, PTLAS GPU logical dirty plus CPU native pack, and PTLAS full GPU native pack when supported.
+   - GPU native pack consumes GPU-written operation count without CPU readback in the production path.
+   - Unsupported GPU paths fall back with explicit reason metadata, not silent mode switching.
 
    Tutor note:
 
    - What changes: PTLAS starts delivering its real value: update locality without CPU-managed native records each frame.
    - Why it matters: otherwise PTLAS is mostly an API demo, not an engine-quality system.
+   - What to measure: CPU pack can be simpler and easier to debug, but it can bottleneck on CPU work, uploads, synchronization, and scalability with many dirty instances. GPU pack should reduce CPU involvement and make update cost track changed partitions/instances more closely, but it adds compute work, barriers, native layout complexity, and possible trace-performance tradeoffs if partitioning is poor.
+   - What to be honest about: PTLAS is not automatically faster. Partition count, dirty ratio, dynamic-object policy, global partition use, ray traversal behavior, and backend provider overhead all decide whether the frame wins.
 
 6. **Negative Validation And Failure-Mode Artifacts**
 
@@ -1759,11 +1796,178 @@ Reference-quality completion stages:
    - What changes: the feature becomes a reference implementation artifact.
    - Why it matters: strong graphics engineering is partly implementation and partly making the implementation legible.
 
+8. **PTLAS Benchmark Matrix And Evidence Schema**
+
+   Goal:
+
+   - Make every performance/correctness claim reproducible from launcher-owned artifacts.
+   - Design the benchmark data around article-quality graphs before final profiling starts.
+
+   Reference pattern:
+
+   - `nvpro-samples/vk_partitioned_tlas` demonstrates a large mostly-static scene with a smaller dynamic set and visual partition/update explanation.
+   - NVIDIA RTX Mega Geometry material frames acceleration-structure work around build/update scalability, high geometric density, and measurable profiler evidence.
+   - Nsight Graphics documentation emphasizes acceleration-structure inspection, ray tracing efficiency, and performance markers.
+
+   Implementation guidance:
+
+   - Add a `RayTracingPtlasBenchmark` smoke category in the launcher, separate from correctness parity and single-capture smoke tests.
+   - Keep the implementation in launcher C++ smoke workflow files; do not add PowerShell or batch scripts.
+   - Benchmark cases should cover:
+     - D3D12 classic TLAS.
+     - Vulkan classic TLAS.
+     - Vulkan PTLAS CPU pack.
+     - Vulkan PTLAS GPU logical dirty plus CPU native pack.
+     - Vulkan PTLAS full GPU native pack.
+     - D3D12 NVAPI PTLAS CPU pack when supported.
+     - D3D12 NVAPI PTLAS full GPU native pack when supported.
+     - explicit unsupported-provider fallback.
+   - Scene variables should be recorded in metadata:
+     - total render instances,
+     - traceable instances,
+     - static instances,
+     - dynamic instances,
+     - dirty transform count,
+     - dirty ratio,
+     - partition count,
+     - partitions per axis,
+     - moved partition count,
+     - global partition instance count,
+     - native operation count,
+     - selected top-level provider,
+     - selected operation writer path,
+     - backend API,
+     - adapter name/vendor/device id,
+     - driver/runtime capability reason.
+   - Timing CSV/JSON should include:
+     - scene prepare CPU,
+     - scene build CPU,
+     - BLAS CPU/GPU,
+     - classic TLAS CPU/GPU,
+     - PTLAS CPU pack CPU,
+     - GPU dirty detection GPU,
+     - GPU native pack GPU,
+     - PTLAS update GPU,
+     - ray tracing pass GPU,
+     - final frame GPU if available.
+   - Artifact folders should be stable and article-friendly:
+     - `artifacts/validation/rhi-raytracing/parity/...`
+     - `artifacts/validation/rhi-raytracing/ptlas-benchmark/...`
+     - `artifacts/validation/rhi-raytracing/ptlas-article/...`
+
+   Acceptance:
+
+   - Benchmark metadata can produce graphs without scraping logs.
+   - The launcher can run benchmark cases repeatedly with deterministic camera/object motion.
+   - Artifacts include enough data to plot update cost against dirty ratio, partition count, and writer path.
+   - Unsupported cases are represented as skipped-with-reason rows, not missing data.
+
+   Tutor note:
+
+   - What changes: profiling becomes a first-class workflow rather than a one-off manual session.
+   - Why it matters: a strong technical article needs the reader to trust the experiment. Clean metadata and repeatable launch cases make the results defensible.
+
+9. **Article Visual Storyboard And Capture Pack**
+
+   Goal:
+
+   - Make the implementation capable of producing the visuals needed for a high-quality PTLAS article and work presentation.
+   - Keep the visuals useful for engine debugging after the article is written.
+
+   Reference pattern:
+
+   - NVIDIA samples typically explain the problem visually before showing API mechanics.
+   - `vk_partitioned_tlas` uses partition colors and touched-partition highlighting to make the algorithm understandable.
+   - Nsight Graphics Ray Tracing Inspector is a useful external validation companion for acceleration-structure correctness and overlap/traversal analysis.
+
+   Implementation guidance:
+
+   - Add a launcher article capture preset that records the same deterministic scene in:
+     - lit output,
+     - normal/GBuffer sanity view,
+     - `RayTracingPartitions`,
+     - `RayTracingPartitionUpdates`,
+     - `RayTracingInstanceMovement`,
+     - `RayTracingTopLevelMode`,
+     - `RayTracingNativeOperations`,
+     - `RayTracingGpuDrivenUpdates`,
+     - `RayTracingProviderStatus`.
+   - Add metadata fields that describe each screenshot's purpose so the artifact directory is self-explaining.
+   - Add a markdown capture index generated or written by launcher workflow code, not by an external script.
+   - Add optional external-capture notes for Nsight/PIX:
+     - expected marker names,
+     - frames to capture,
+     - what to inspect in acceleration structures,
+     - how to correlate markers with CSV rows.
+   - Keep logs secondary. The primary article evidence should be screenshots, structured metadata, timing CSV/JSON, and optional profiler captures.
+
+   Acceptance:
+
+   - One launcher workflow produces a folder that can be used as the raw material for a PTLAS article.
+   - Each screenshot has a matching metadata row.
+   - Each graph can be traced back to a CSV/JSON artifact.
+   - The same capture pack works when PTLAS is active and when the machine falls back to classic TLAS, with fallback reasons visible.
+
+   Tutor note:
+
+   - What changes: visual explanation becomes a product feature.
+   - Why it matters: reviewers and colleagues usually trust what they can see, reproduce, and correlate with numbers.
+
+10. **Performance Claim Gate And Article Acceptance Review**
+
+   Goal:
+
+   - Prevent unsupported performance claims from entering docs, articles, or portfolio material.
+   - Rank the implementation against senior graphics/software engineering criteria before calling it portfolio-ready.
+
+   Reference pattern:
+
+   - ATAM-style review: every claim is tied to a quality attribute, tradeoff, risk, and evidence.
+   - NVIDIA-style technical writing: explain problem, architecture, implementation, measurements, tradeoffs, tooling, and reproducibility.
+
+   Implementation guidance:
+
+   - Add an article-readiness checklist to this document or a dedicated architecture note.
+   - For each claim, record:
+     - claim text,
+     - source artifact,
+     - backend/provider,
+     - hardware/driver,
+     - scene configuration,
+     - metric used,
+     - comparison baseline,
+     - known caveats.
+   - Candidate article structure:
+     - problem statement: why classic TLAS updates can be wasteful for sparse dynamic changes,
+     - architecture: renderer strategy, RHI provider contract, frame graph resources,
+     - implementation: CPU pack, GPU logical dirty, GPU native pack,
+     - visualization: partitions, updates, global partition, provider status,
+     - validation: classic-vs-PTLAS parity and fallback cases,
+     - performance: update cost vs dirty ratio/partition count/writer path,
+     - tradeoffs: partition granularity, global partition, trace traversal cost, backend gating,
+     - tooling: launcher workflows, Nsight/PIX markers, artifact schema,
+     - lessons learned: what belongs in renderer, RHI, frame graph, and tools.
+   - Do not publish claims such as "PTLAS is faster" without specifying scene, dirty ratio, backend, hardware, and the metric that improved.
+
+   Acceptance:
+
+   - Every article graph has a source artifact.
+   - Every performance claim has a baseline and caveat.
+   - Every unsupported provider path is documented honestly.
+   - The repo contains enough run instructions for another reviewer to regenerate the evidence.
+
+   Tutor note:
+
+   - What changes: the article becomes a consequence of good engineering evidence, not a marketing layer on top.
+   - Why it matters: job/portfolio reviewers can tell when a feature is implemented, measured, and understood versus merely integrated.
+
 Minimum next round to reach acceptance:
 
-1. Add a renderer top-level AS strategy abstraction that selects classic TLAS or PTLAS from capability and CVar policy.
-2. Make Vulkan PTLAS become the active `SceneTlas` resource through the same shader-visible acceleration structure binding.
+1. Finish making Vulkan PTLAS become the active `SceneTlas` resource through the same shader-visible acceleration structure binding.
+2. Add CPU/GPU operation writer policy selection and artifact metadata before optimizing either path.
 3. Record launcher parity artifacts proving Vulkan PTLAS matches Vulkan classic TLAS.
 4. Enable D3D12 NVAPI PTLAS through the same strategy path when NVAPI capability is present, then record matching D3D12 artifacts.
-5. Add negative smoke cases for duplicate stable indices, partition overflow, and explicit classic fallback.
-6. Promote PTLAS operation/update resources into the frame graph contract or document a reviewable equivalent synchronization/resource-lifetime contract.
+5. Add launcher benchmark cases for classic TLAS, PTLAS CPU pack, PTLAS GPU logical dirty plus CPU native pack, and full GPU native pack.
+6. Add negative smoke cases for duplicate stable indices, partition overflow, and explicit classic fallback.
+7. Promote PTLAS operation/update resources into the frame graph contract or document a reviewable equivalent synchronization/resource-lifetime contract.
+8. Produce the article capture pack and performance claim gate before calling the implementation portfolio-ready.

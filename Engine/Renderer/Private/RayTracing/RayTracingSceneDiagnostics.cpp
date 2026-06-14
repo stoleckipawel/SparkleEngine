@@ -8,8 +8,10 @@ static const auto g_rayTracingSceneLogger = Logging::GetOrCreateLogger("Renderer
 
 void RayTracingSceneDiagnostics::LogSceneUpdate(
     const RayTracingCapabilityReport& capabilityReport,
+    ERhiRayTracingTopLevelProvider activeProvider,
+    const char* activeProviderReason,
     const RayTracingBlasCache::BuildStats& blasStats,
-    const RayTracingClassicTlasBuilder::BuildStats& tlasStats) noexcept
+    const RayTracingTopLevelAccelerationStructureBuildStats& topLevelStats) noexcept
 {
 	if (!capabilityReport.Core.SupportsRayTracing)
 	{
@@ -18,17 +20,17 @@ void RayTracingSceneDiagnostics::LogSceneUpdate(
 
 	if (m_hasLoggedSceneSummary && m_lastReferencedMeshCount == blasStats.referencedMeshCount &&
 	    m_lastBuiltBlasCount == blasStats.builtBlasCount && m_lastReusedBlasCount == blasStats.reusedBlasCount &&
-	    m_lastCandidateInstanceCount == tlasStats.Candidates.InstanceCount &&
-	    m_lastTlasInstanceCount == tlasStats.Build.InstanceCount &&
-	    m_lastMissingGpuMeshCount == tlasStats.Candidates.MissingGpuMeshCount &&
-	    m_lastRejectedBlasCount == tlasStats.Candidates.RejectedBlasCount &&
-	    m_lastPartitionCount == tlasStats.PtlasPlanner.PartitionCount &&
-	    m_lastDirtyTransformCount == tlasStats.PtlasPlanner.DirtyTransformCount &&
-	    m_lastMovedPartitionCount == tlasStats.PtlasPlanner.MovedPartitionCount &&
-	    m_lastGlobalPartitionInstanceCount == tlasStats.PtlasPlanner.GlobalPartitionInstanceCount &&
-	    m_lastDuplicateStableIndexCount == tlasStats.PtlasPlanner.DuplicateStableIndexCount &&
-	    m_lastPartitionOverflow == tlasStats.PtlasPlanner.Overflow &&
-	    m_lastBuiltTlas == tlasStats.Build.Built)
+	    m_lastCandidateInstanceCount == topLevelStats.Candidates.InstanceCount &&
+	    m_lastTlasInstanceCount == topLevelStats.Build.InstanceCount &&
+	    m_lastMissingGpuMeshCount == topLevelStats.Candidates.MissingGpuMeshCount &&
+	    m_lastRejectedBlasCount == topLevelStats.Candidates.RejectedBlasCount &&
+	    m_lastPartitionCount == topLevelStats.PtlasPlanner.PartitionCount &&
+	    m_lastDirtyTransformCount == topLevelStats.PtlasPlanner.DirtyTransformCount &&
+	    m_lastMovedPartitionCount == topLevelStats.PtlasPlanner.MovedPartitionCount &&
+	    m_lastGlobalPartitionInstanceCount == topLevelStats.PtlasPlanner.GlobalPartitionInstanceCount &&
+	    m_lastDuplicateStableIndexCount == topLevelStats.PtlasPlanner.DuplicateStableIndexCount &&
+	    m_lastPartitionOverflow == topLevelStats.PtlasPlanner.Overflow &&
+	    m_lastBuiltTlas == topLevelStats.Build.Built)
 	{
 		return;
 	}
@@ -37,17 +39,17 @@ void RayTracingSceneDiagnostics::LogSceneUpdate(
 	m_lastReferencedMeshCount = blasStats.referencedMeshCount;
 	m_lastBuiltBlasCount = blasStats.builtBlasCount;
 	m_lastReusedBlasCount = blasStats.reusedBlasCount;
-	m_lastCandidateInstanceCount = tlasStats.Candidates.InstanceCount;
-	m_lastTlasInstanceCount = tlasStats.Build.InstanceCount;
-	m_lastMissingGpuMeshCount = tlasStats.Candidates.MissingGpuMeshCount;
-	m_lastRejectedBlasCount = tlasStats.Candidates.RejectedBlasCount;
-	m_lastPartitionCount = tlasStats.PtlasPlanner.PartitionCount;
-	m_lastDirtyTransformCount = tlasStats.PtlasPlanner.DirtyTransformCount;
-	m_lastMovedPartitionCount = tlasStats.PtlasPlanner.MovedPartitionCount;
-	m_lastGlobalPartitionInstanceCount = tlasStats.PtlasPlanner.GlobalPartitionInstanceCount;
-	m_lastDuplicateStableIndexCount = tlasStats.PtlasPlanner.DuplicateStableIndexCount;
-	m_lastPartitionOverflow = tlasStats.PtlasPlanner.Overflow;
-	m_lastBuiltTlas = tlasStats.Build.Built;
+	m_lastCandidateInstanceCount = topLevelStats.Candidates.InstanceCount;
+	m_lastTlasInstanceCount = topLevelStats.Build.InstanceCount;
+	m_lastMissingGpuMeshCount = topLevelStats.Candidates.MissingGpuMeshCount;
+	m_lastRejectedBlasCount = topLevelStats.Candidates.RejectedBlasCount;
+	m_lastPartitionCount = topLevelStats.PtlasPlanner.PartitionCount;
+	m_lastDirtyTransformCount = topLevelStats.PtlasPlanner.DirtyTransformCount;
+	m_lastMovedPartitionCount = topLevelStats.PtlasPlanner.MovedPartitionCount;
+	m_lastGlobalPartitionInstanceCount = topLevelStats.PtlasPlanner.GlobalPartitionInstanceCount;
+	m_lastDuplicateStableIndexCount = topLevelStats.PtlasPlanner.DuplicateStableIndexCount;
+	m_lastPartitionOverflow = topLevelStats.PtlasPlanner.Overflow;
+	m_lastBuiltTlas = topLevelStats.Build.Built;
 
 	SPDLOG_LOGGER_INFO(
 	    g_rayTracingSceneLogger,
@@ -61,20 +63,20 @@ void RayTracingSceneDiagnostics::LogSceneUpdate(
 	    blasStats.referencedMeshCount,
 	    blasStats.builtBlasCount,
 	    blasStats.reusedBlasCount,
-	    tlasStats.Candidates.InstanceCount,
-	    tlasStats.Build.InstanceCount,
-	    tlasStats.Candidates.MissingGpuMeshCount,
-	    tlasStats.Candidates.RejectedBlasCount,
-	    tlasStats.Build.Built,
-	    RhiRayTracingTopLevelProviderToString(capabilityReport.TopLevelProvider.SelectedProvider),
-	    capabilityReport.TopLevelProvider.SelectionReason,
+	    topLevelStats.Candidates.InstanceCount,
+	    topLevelStats.Build.InstanceCount,
+	    topLevelStats.Candidates.MissingGpuMeshCount,
+	    topLevelStats.Candidates.RejectedBlasCount,
+	    topLevelStats.Build.Built,
+	    RhiRayTracingTopLevelProviderToString(activeProvider),
+	    activeProviderReason != nullptr ? activeProviderReason : "not-reported",
 	    RhiPartitionedTlasProviderToString(capabilityReport.PartitionedTlas.Provider),
 	    capabilityReport.PartitionedTlas.Supported,
-	    tlasStats.PtlasPlanner.PartitionCount,
-	    tlasStats.PtlasPlanner.DirtyTransformCount,
-	    tlasStats.PtlasPlanner.MovedPartitionCount,
-	    tlasStats.PtlasPlanner.GlobalPartitionInstanceCount,
-	    tlasStats.PtlasPlanner.DuplicateStableIndexCount,
-	    tlasStats.PtlasPlanner.Overflow,
+	    topLevelStats.PtlasPlanner.PartitionCount,
+	    topLevelStats.PtlasPlanner.DirtyTransformCount,
+	    topLevelStats.PtlasPlanner.MovedPartitionCount,
+	    topLevelStats.PtlasPlanner.GlobalPartitionInstanceCount,
+	    topLevelStats.PtlasPlanner.DuplicateStableIndexCount,
+	    topLevelStats.PtlasPlanner.Overflow,
 	    capabilityReport.PartitionedTlas.CapabilityStatusReason);
 }

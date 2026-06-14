@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RayTracing/RayTracingBlasCache.h"
+#include "RayTracing/RayTracingTopLevelAccelerationStructureBuildStats.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
@@ -18,35 +19,7 @@ struct RenderSceneData;
 class RayTracingClassicTlasBuilder final
 {
   public:
-	struct BuildStats final
-	{
-		struct CandidateCounters final
-		{
-			std::uint32_t InstanceCount = 0;
-			std::uint32_t MissingGpuMeshCount = 0;
-			std::uint32_t RejectedBlasCount = 0;
-		};
-
-		struct BuildCounters final
-		{
-			std::uint32_t InstanceCount = 0;
-			bool Built = false;
-		};
-
-		struct PtlasPlannerCounters final
-		{
-			std::uint32_t PartitionCount = 0;
-			std::uint32_t DirtyTransformCount = 0;
-			std::uint32_t MovedPartitionCount = 0;
-			std::uint32_t GlobalPartitionInstanceCount = 0;
-			std::uint32_t DuplicateStableIndexCount = 0;
-			bool Overflow = false;
-		};
-
-		CandidateCounters Candidates;
-		BuildCounters Build;
-		PtlasPlannerCounters PtlasPlanner;
-	};
+	using BuildStats = RayTracingTopLevelAccelerationStructureBuildStats;
 
 	struct TlasHandle final
 	{

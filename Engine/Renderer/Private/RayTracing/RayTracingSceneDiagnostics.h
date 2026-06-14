@@ -2,7 +2,7 @@
 
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RayTracing/RayTracingBlasCache.h"
-#include "RayTracing/RayTracingClassicTlasBuilder.h"
+#include "RayTracing/RayTracingTopLevelAccelerationStructureBuildStats.h"
 
 #include <cstdint>
 
@@ -13,8 +13,10 @@ class RayTracingSceneDiagnostics final
 
 	void LogSceneUpdate(
 	    const RayTracingCapabilityReport& capabilityReport,
+	    ERhiRayTracingTopLevelProvider activeProvider,
+	    const char* activeProviderReason,
 	    const RayTracingBlasCache::BuildStats& blasStats,
-	    const RayTracingClassicTlasBuilder::BuildStats& tlasStats) noexcept;
+	    const RayTracingTopLevelAccelerationStructureBuildStats& topLevelStats) noexcept;
 
   private:
 	std::uint32_t m_lastReferencedMeshCount = 0;

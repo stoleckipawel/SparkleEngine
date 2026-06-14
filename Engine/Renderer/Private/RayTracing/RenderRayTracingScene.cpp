@@ -4,8 +4,8 @@
 
 #include "Commands/RenderCommandContext.h"
 #include "RayTracing/RayTracingBlasCache.h"
-#include "RayTracing/RayTracingClassicTlasBuilder.h"
 #include "RayTracing/RayTracingPerformanceDiagnostics.h"
+#include "RayTracing/RayTracingTopLevelAccelerationStructureStrategy.h"
 #include "RayTracing/RayTracingTopLevelScenePlanner.h"
 #include "SceneData/RenderSceneData.h"
 
@@ -25,7 +25,8 @@ RenderRayTracingScene::RenderRayTracingScene(
 	}
 
 	m_blasCache = std::make_unique<RayTracingBlasCache>(renderHardwareInterface);
-	m_classicTlasBuilder = std::make_unique<RayTracingClassicTlasBuilder>(renderHardwareInterface);
+	m_topLevelAccelerationStructureStrategy =
+	    CreateRayTracingTopLevelAccelerationStructureStrategy(renderHardwareInterface, m_capabilityReport);
 }
 
 RenderRayTracingScene::~RenderRayTracingScene() noexcept = default;
@@ -42,16 +43,15 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 	RayTracingPerformanceDiagnostics diagnostics{m_performanceMetrics};
 	auto cpuScope = diagnostics.BeginScenePrepareCpuScope();
 
-	if (m_classicTlasBuilder == nullptr)
+	if (m_topLevelAccelerationStructureStrategy == nullptr)
 	{
 		return {};
 	}
 
-	RayTracingSceneFrameData frameData{};
 	const std::uint32_t estimatedInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 	if (estimatedInstanceCount == 0)
 	{
-		m_classicTlasBuilder->Clear();
+		m_topLevelAccelerationStructureStrategy->Clear();
 		m_performanceMetrics.Blas = {};
 		m_performanceMetrics.ClassicTlas = {};
 		m_performanceMetrics.PtlasGpuUpdates = {};
@@ -67,19 +67,10 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 		m_performanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
 		m_performanceMetrics.PtlasGpuUpdates.FullGpuNativePackSupported =
 		    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
-		return frameData;
+		return {};
 	}
 
-	if (!m_classicTlasBuilder->Prepare(estimatedInstanceCount))
-	{
-		return frameData;
-	}
-
-	frameData.IsAvailable = true;
-	frameData.TlasResource = m_classicTlasBuilder->GetTlas().resource;
-	frameData.TlasGpuAddress = m_classicTlasBuilder->GetTlas().gpuAddress;
-	frameData.EstimatedInstanceCount = estimatedInstanceCount;
-	return frameData;
+	return m_topLevelAccelerationStructureStrategy->Prepare(sceneData);
 }
 
 void RenderRayTracingScene::Build(
@@ -95,7 +86,7 @@ void RenderRayTracingScene::Build(
 	RayTracingPerformanceDiagnostics performanceDiagnostics{m_performanceMetrics, diagnostics};
 	auto cpuScope = performanceDiagnostics.BeginSceneBuildCpuScope();
 
-	if (m_blasCache == nullptr || m_classicTlasBuilder == nullptr)
+	if (m_blasCache == nullptr || m_topLevelAccelerationStructureStrategy == nullptr)
 	{
 		return;
 	}
@@ -106,42 +97,51 @@ void RenderRayTracingScene::Build(
 	}
 
 	m_blasCache->BeginFrame();
-	const RayTracingClassicTlasBuilder::BuildStats tlasStats =
-	    m_topLevelScenePlanner != nullptr
-	        ? m_topLevelScenePlanner->BuildClassicTlas(cmd, sceneData, *m_classicTlasBuilder, *m_blasCache, &performanceDiagnostics)
-	        : m_classicTlasBuilder->Build(cmd, sceneData, nullptr, *m_blasCache, &performanceDiagnostics);
+	const RayTracingTopLevelAccelerationStructureBuildResult topLevelBuild =
+	    m_topLevelAccelerationStructureStrategy->Build(
+	        cmd,
+	        sceneData,
+	        *m_blasCache,
+	        m_topLevelScenePlanner.get(),
+	        &performanceDiagnostics);
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
+	const RayTracingTopLevelAccelerationStructureBuildStats& topLevelStats = topLevelBuild.Stats;
 
-	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
+	m_performanceMetrics.Providers.TopLevelProvider = topLevelBuild.ActiveProvider;
 	m_performanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
 	m_performanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
 	m_performanceMetrics.Blas.ReferencedMeshCount = blasStats.referencedMeshCount;
 	m_performanceMetrics.Blas.BuiltCount = blasStats.builtBlasCount;
 	m_performanceMetrics.Blas.ReusedCount = blasStats.reusedBlasCount;
-	m_performanceMetrics.ClassicTlas.CandidateInstanceCount = tlasStats.Candidates.InstanceCount;
-	m_performanceMetrics.ClassicTlas.InstanceCount = tlasStats.Build.InstanceCount;
-	m_performanceMetrics.ClassicTlas.MissingGpuMeshCount = tlasStats.Candidates.MissingGpuMeshCount;
-	m_performanceMetrics.ClassicTlas.RejectedBlasCount = tlasStats.Candidates.RejectedBlasCount;
-	m_performanceMetrics.ClassicTlas.Built = tlasStats.Build.Built;
-	m_performanceMetrics.PtlasPlanner.PartitionCount = tlasStats.PtlasPlanner.PartitionCount;
-	m_performanceMetrics.PtlasPlanner.DirtyTransformCount = tlasStats.PtlasPlanner.DirtyTransformCount;
-	m_performanceMetrics.PtlasPlanner.MovedPartitionCount = tlasStats.PtlasPlanner.MovedPartitionCount;
-	m_performanceMetrics.PtlasPlanner.GlobalPartitionInstanceCount = tlasStats.PtlasPlanner.GlobalPartitionInstanceCount;
-	m_performanceMetrics.PtlasPlanner.DuplicateStableIndexCount = tlasStats.PtlasPlanner.DuplicateStableIndexCount;
-	m_performanceMetrics.PtlasPlanner.Overflow = tlasStats.PtlasPlanner.Overflow;
+	m_performanceMetrics.ClassicTlas.CandidateInstanceCount = topLevelStats.Candidates.InstanceCount;
+	m_performanceMetrics.ClassicTlas.InstanceCount = topLevelStats.Build.InstanceCount;
+	m_performanceMetrics.ClassicTlas.MissingGpuMeshCount = topLevelStats.Candidates.MissingGpuMeshCount;
+	m_performanceMetrics.ClassicTlas.RejectedBlasCount = topLevelStats.Candidates.RejectedBlasCount;
+	m_performanceMetrics.ClassicTlas.Built = topLevelStats.Build.Built;
+	m_performanceMetrics.PtlasPlanner.PartitionCount = topLevelStats.PtlasPlanner.PartitionCount;
+	m_performanceMetrics.PtlasPlanner.DirtyTransformCount = topLevelStats.PtlasPlanner.DirtyTransformCount;
+	m_performanceMetrics.PtlasPlanner.MovedPartitionCount = topLevelStats.PtlasPlanner.MovedPartitionCount;
+	m_performanceMetrics.PtlasPlanner.GlobalPartitionInstanceCount = topLevelStats.PtlasPlanner.GlobalPartitionInstanceCount;
+	m_performanceMetrics.PtlasPlanner.DuplicateStableIndexCount = topLevelStats.PtlasPlanner.DuplicateStableIndexCount;
+	m_performanceMetrics.PtlasPlanner.Overflow = topLevelStats.PtlasPlanner.Overflow;
 	const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
 	    m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->GetCurrentPlannerMetrics() : RayTracingTopLevelScenePlannerMetrics{};
 	m_performanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
 	m_performanceMetrics.PtlasGpuUpdates.FullGpuNativePackSupported =
 	    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
-	m_diagnostics.LogSceneUpdate(m_capabilityReport, blasStats, tlasStats);
+	m_diagnostics.LogSceneUpdate(
+	    m_capabilityReport,
+	    topLevelBuild.ActiveProvider,
+	    topLevelBuild.ActiveProviderReason,
+	    blasStats,
+	    topLevelStats);
 }
 
 void RenderRayTracingScene::Clear() noexcept
 {
-	if (m_classicTlasBuilder != nullptr)
+	if (m_topLevelAccelerationStructureStrategy != nullptr)
 	{
-		m_classicTlasBuilder->Clear();
+		m_topLevelAccelerationStructureStrategy->Clear();
 	}
 
 	if (m_blasCache != nullptr)
@@ -156,22 +156,29 @@ void RenderRayTracingScene::Clear() noexcept
 
 bool RenderRayTracingScene::HasValidTlas() const noexcept
 {
-	return m_classicTlasBuilder != nullptr && m_classicTlasBuilder->GetTlas().IsValid();
+	return m_topLevelAccelerationStructureStrategy != nullptr &&
+	       m_topLevelAccelerationStructureStrategy->HasValidSceneTlas();
 }
 
 RhiOwnedResourceHandle RenderRayTracingScene::GetTlasResource() const noexcept
 {
-	return m_classicTlasBuilder != nullptr ? m_classicTlasBuilder->GetTlas().resource : RhiOwnedResourceHandle{};
+	return m_topLevelAccelerationStructureStrategy != nullptr
+	           ? m_topLevelAccelerationStructureStrategy->GetSceneTlasResource()
+	           : RhiOwnedResourceHandle{};
 }
 
 RhiGpuVirtualAddress RenderRayTracingScene::GetTlasGpuAddress() const noexcept
 {
-	return m_classicTlasBuilder != nullptr ? m_classicTlasBuilder->GetTlas().gpuAddress : 0;
+	return m_topLevelAccelerationStructureStrategy != nullptr
+	           ? m_topLevelAccelerationStructureStrategy->GetSceneTlasGpuAddress()
+	           : 0;
 }
 
 std::uint32_t RenderRayTracingScene::GetTlasInstanceCount() const noexcept
 {
-	return m_classicTlasBuilder != nullptr ? m_classicTlasBuilder->GetTlas().instanceCount : 0;
+	return m_topLevelAccelerationStructureStrategy != nullptr
+	           ? m_topLevelAccelerationStructureStrategy->GetSceneTlasInstanceCount()
+	           : 0;
 }
 
 void RenderRayTracingScene::BeginResolvedGpuTimingFrame() noexcept

@@ -12,7 +12,7 @@ class RenderCommandContext;
 class RenderHardwareInterface;
 class PassExecutionDiagnostics;
 class RayTracingBlasCache;
-class RayTracingClassicTlasBuilder;
+class RayTracingTopLevelAccelerationStructureStrategy;
 class RayTracingTopLevelScenePlanner;
 struct ResolvedGpuTiming;
 struct RenderSceneData;
@@ -50,7 +50,7 @@ class RenderRayTracingScene final
 	RayTracingCapabilityReport m_capabilityReport = {};
 	RayTracingPerformanceMetrics m_performanceMetrics = {};
 	std::unique_ptr<RayTracingBlasCache> m_blasCache;
-	std::unique_ptr<RayTracingClassicTlasBuilder> m_classicTlasBuilder;
+	std::unique_ptr<RayTracingTopLevelAccelerationStructureStrategy> m_topLevelAccelerationStructureStrategy;
 	std::unique_ptr<RayTracingTopLevelScenePlanner> m_topLevelScenePlanner;
 	RayTracingSceneDiagnostics m_diagnostics;
 };
