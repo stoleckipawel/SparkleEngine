@@ -118,6 +118,14 @@ namespace
 			}
 			result += "accelerationStructure";
 		}
+		if (HasCookedShaderPackageFeature(flags, CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress))
+		{
+			if (!result.empty())
+			{
+				result += "|";
+			}
+			result += "accelerationStructureDeviceAddress";
+		}
 		if (result.empty())
 		{
 			result = "none";

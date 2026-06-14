@@ -2,6 +2,7 @@
 
 #include "Frame/RayTracingSceneFrameData.h"
 #include "RayTracing/RayTracingPtlasGpuUpdateMetrics.h"
+#include "RayTracing/RayTracingSceneTlasShaderAccessMode.h"
 #include "RayTracing/RayTracingTopLevelAccelerationStructureBuildStats.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
@@ -58,6 +59,7 @@ class RayTracingTopLevelAccelerationStructureStrategy
 	virtual bool HasValidSceneTlas() const noexcept = 0;
 	virtual RhiOwnedResourceHandle GetSceneTlasResource() const noexcept = 0;
 	virtual RhiGpuVirtualAddress GetSceneTlasGpuAddress() const noexcept = 0;
+	virtual RayTracingSceneTlasShaderAccessMode GetSceneTlasShaderAccessMode() const noexcept = 0;
 	virtual std::uint32_t GetSceneTlasInstanceCount() const noexcept = 0;
 	virtual void Clear() noexcept = 0;
 

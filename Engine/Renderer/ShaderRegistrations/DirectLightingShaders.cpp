@@ -28,9 +28,39 @@ class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
 	END_SHADER_PARAMETER_STRUCT()
 };
 
+class DirectLightingVulkanAddressCS final : public TGlobalShader<DirectLightingVulkanAddressCS>
+{
+  public:
+	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures =
+	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
+	    CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress |
+	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery;
+
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectDiffuse, DirectDiffuseTexture)
+	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectSpecular, DirectSpecularTexture)
+	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectSubsurface, DirectSubsurfaceTexture)
+	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
+	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
+	SHADER_PARAMETER_CBUFFER_NAMED(RayTracedShadows, RayTracedShadowUniformData, RayTracedShadowUniformData)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferSubsurface)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	END_SHADER_PARAMETER_STRUCT()
+};
+
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     DirectLightingCS,
     RendererShaderPackages::DirectLighting,
     "Passes/Deferred/DirectLighting.hlsl",
+    "main",
+    Compute);
+
+IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
+    DirectLightingVulkanAddressCS,
+    RendererShaderPackages::DirectLightingVulkanAddress,
+    "Passes/Deferred/DirectLightingVulkanAddress.hlsl",
     "main",
     Compute);

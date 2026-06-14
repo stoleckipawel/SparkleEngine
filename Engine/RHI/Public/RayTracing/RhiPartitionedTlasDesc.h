@@ -26,6 +26,7 @@ struct RhiPartitionedTlasCapabilities
 	bool SupportsVulkanFeatureQuery = false;
 	bool SupportsVulkanFunctionLoading = false;
 	bool SupportsVulkanDescriptorPath = false;
+	bool SupportsVulkanShaderDeviceAddressPath = false;
 	bool SupportsD3D12NvapiPartitionedTlas = false;
 	bool SupportsD3D12NvapiHeaders = false;
 	bool SupportsD3D12NvapiRuntime = false;

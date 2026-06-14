@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <array>
+#include <unordered_set>
 #include <vector>
 
 static const auto g_rayTracingPartitionedTlasStrategyLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
@@ -96,7 +97,7 @@ namespace RayTracingPartitionedTlasStrategyDetails
 	{
 		return capabilityReport.Supported &&
 		       capabilityReport.Provider == ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure &&
-		       capabilityReport.SupportsVulkanDescriptorPath;
+		       (capabilityReport.SupportsVulkanDescriptorPath || capabilityReport.SupportsVulkanShaderDeviceAddressPath);
 	}
 
 	const char* ResolveInactiveProviderReason(const RayTracingPartitionedTlasCapabilityReport& capabilityReport) noexcept
@@ -109,9 +110,9 @@ namespace RayTracingPartitionedTlasStrategyDetails
 		switch (capabilityReport.Provider)
 		{
 			case ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure:
-				return capabilityReport.SupportsVulkanDescriptorPath
+				return capabilityReport.SupportsVulkanDescriptorPath || capabilityReport.SupportsVulkanShaderDeviceAddressPath
 				           ? "vulkan-nv-partitioned-tlas-provider-not-active-for-this-backend-stage"
-				           : "partitioned-tlas-shader-visible-address-path-not-implemented";
+				           : "vulkan-nv-partitioned-tlas-shader-binding-path-unavailable";
 			case ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas:
 				if (!capabilityReport.SupportsD3D12NvapiHeaders)
 				{
@@ -153,6 +154,15 @@ namespace RayTracingPartitionedTlasStrategyDetails
 				return "partitioned-tlas-selected";
 		}
 	}
+
+	RayTracingSceneTlasShaderAccessMode ResolveVulkanFallbackShaderAccessMode(
+	    const RayTracingCapabilityReport& capabilityReport) noexcept
+	{
+		return capabilityReport.BackendApi == ERhiBackendApi::Vulkan &&
+		               capabilityReport.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath
+		           ? RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress
+		           : RayTracingSceneTlasShaderAccessMode::Descriptor;
+	}
 }
 
 bool RayTracingPartitionedTlasStrategy::PartitionedTlasResources::HasSceneTlas() const noexcept
@@ -170,7 +180,9 @@ RayTracingPartitionedTlasStrategy::RayTracingPartitionedTlasStrategy(
     const RayTracingCapabilityReport& capabilityReport) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface),
     m_capabilityReport(capabilityReport),
-    m_classicFallbackStrategy(renderHardwareInterface)
+    m_classicFallbackStrategy(
+        renderHardwareInterface,
+        RayTracingPartitionedTlasStrategyDetails::ResolveVulkanFallbackShaderAccessMode(capabilityReport))
 {
 }
 
@@ -279,6 +291,16 @@ RhiGpuVirtualAddress RayTracingPartitionedTlasStrategy::GetSceneTlasGpuAddress()
 {
 	return m_currentFrameMode == FrameMode::PartitionedTlas ? m_partitionedResources.StorageAddress
 	                                                        : m_classicFallbackStrategy.GetSceneTlasGpuAddress();
+}
+
+RayTracingSceneTlasShaderAccessMode RayTracingPartitionedTlasStrategy::GetSceneTlasShaderAccessMode() const noexcept
+{
+	if (m_currentFrameMode != FrameMode::PartitionedTlas)
+	{
+		return m_classicFallbackStrategy.GetSceneTlasShaderAccessMode();
+	}
+	return m_capabilityReport.PartitionedTlas.SupportsVulkanDescriptorPath ? RayTracingSceneTlasShaderAccessMode::Descriptor
+	                                                                       : RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress;
 }
 
 std::uint32_t RayTracingPartitionedTlasStrategy::GetSceneTlasInstanceCount() const noexcept
@@ -401,6 +423,7 @@ RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::BuildPartitionedTlas
 	frameData.IsAvailable = m_partitionedResources.Storage && m_partitionedResources.StorageAddress != 0;
 	frameData.TlasResource = m_partitionedResources.Storage;
 	frameData.TlasGpuAddress = m_partitionedResources.StorageAddress;
+	frameData.TlasShaderAccessMode = GetSceneTlasShaderAccessMode();
 	frameData.EstimatedInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 	return frameData;
 }
@@ -434,6 +457,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	}
 
 	std::vector<RhiPartitionedTlasInstanceWriteDesc> instanceWrites;
+	std::unordered_set<void*> builtBlasResources;
 	instanceWrites.reserve(sceneData.meshInstances.size());
 	{
 		auto instancePrepCpuScope =
@@ -454,6 +478,10 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 			{
 				++result.Stats.Candidates.RejectedBlasCount;
 				continue;
+			}
+			if (blas.builtThisFrame)
+			{
+				builtBlasResources.insert(blas.resource.Value);
 			}
 
 			const RayTracingPtlasPartitionEntry* entry =
@@ -534,6 +562,11 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		result.ActiveProvider = ERhiRayTracingTopLevelProvider::None;
 		result.ActiveProviderReason = "partitioned-tlas-operation-buffer-address-missing";
 		return result;
+	}
+
+	for (void* resourceValue : builtBlasResources)
+	{
+		cmd.UnorderedAccessBarrier(NativeResourceHandle{resourceValue});
 	}
 
 	{

@@ -5,8 +5,11 @@
 #include "RayTracing/RayTracingTopLevelScenePlanner.h"
 #include "SceneData/RenderSceneData.h"
 
-RayTracingClassicTlasStrategy::RayTracingClassicTlasStrategy(RenderHardwareInterface& renderHardwareInterface) noexcept :
-    m_classicTlasBuilder(renderHardwareInterface)
+RayTracingClassicTlasStrategy::RayTracingClassicTlasStrategy(
+    RenderHardwareInterface& renderHardwareInterface,
+    RayTracingSceneTlasShaderAccessMode shaderAccessMode) noexcept :
+    m_classicTlasBuilder(renderHardwareInterface),
+    m_shaderAccessMode(shaderAccessMode)
 {
 }
 
@@ -48,6 +51,7 @@ RayTracingSceneFrameData RayTracingClassicTlasStrategy::Prepare(
 	frameData.IsAvailable = true;
 	frameData.TlasResource = m_classicTlasBuilder.GetTlas().resource;
 	frameData.TlasGpuAddress = m_classicTlasBuilder.GetTlas().gpuAddress;
+	frameData.TlasShaderAccessMode = m_shaderAccessMode;
 	frameData.EstimatedInstanceCount = estimatedInstanceCount;
 	return frameData;
 }
@@ -105,6 +109,11 @@ RhiOwnedResourceHandle RayTracingClassicTlasStrategy::GetSceneTlasResource() con
 RhiGpuVirtualAddress RayTracingClassicTlasStrategy::GetSceneTlasGpuAddress() const noexcept
 {
 	return m_classicTlasBuilder.GetTlas().gpuAddress;
+}
+
+RayTracingSceneTlasShaderAccessMode RayTracingClassicTlasStrategy::GetSceneTlasShaderAccessMode() const noexcept
+{
+	return m_shaderAccessMode;
 }
 
 std::uint32_t RayTracingClassicTlasStrategy::GetSceneTlasInstanceCount() const noexcept

@@ -438,6 +438,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_featureStatus.SupportsDynamicRendering = selected.Features13.dynamicRendering == VK_TRUE;
 	m_featureStatus.SupportsSamplerAnisotropy = selected.Features.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.SupportsFillModeNonSolid = selected.Features.features.fillModeNonSolid == VK_TRUE;
+	m_featureStatus.SupportsShaderInt64 = selected.Features.features.shaderInt64 == VK_TRUE;
 	m_featureStatus.SupportsMutableDescriptorType = QueryMutableDescriptorTypeFeature(m_physicalDevice);
 	m_featureStatus.RayTracing = VulkanRayTracingFeatureQuery::Query(m_physicalDevice);
 
@@ -482,6 +483,11 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		deviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 		deviceExtensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
 		deviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+		if (m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
+		    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature)
+		{
+			deviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		}
 		if (m_adapterInfo.ApiVersion < VK_API_VERSION_1_2 && m_featureStatus.RayTracing.SupportsBufferDeviceAddressExtension)
 		{
 			deviceExtensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -514,8 +520,10 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	VkPhysicalDeviceFeatures2 enabledFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
 	enabledFeatures.features.samplerAnisotropy = m_featureStatus.SupportsSamplerAnisotropy ? VK_TRUE : VK_FALSE;
 	enabledFeatures.features.fillModeNonSolid = m_featureStatus.SupportsFillModeNonSolid ? VK_TRUE : VK_FALSE;
+	enabledFeatures.features.shaderInt64 = m_featureStatus.SupportsShaderInt64 ? VK_TRUE : VK_FALSE;
 	m_featureStatus.EnabledSamplerAnisotropy = enabledFeatures.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.EnabledFillModeNonSolid = enabledFeatures.features.fillModeNonSolid == VK_TRUE;
+	m_featureStatus.EnabledShaderInt64 = enabledFeatures.features.shaderInt64 == VK_TRUE;
 	VkPhysicalDeviceVulkan13Features enabledFeatures13{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
 	void** enabledNext = &enabledFeatures.pNext;
 	if (m_adapterInfo.ApiVersion >= VK_API_VERSION_1_3)
@@ -531,6 +539,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES};
 	VkPhysicalDeviceAccelerationStructureFeaturesKHR enabledAccelerationStructureFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR};
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR enabledRayTracingPipelineFeatures{
+	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR};
 	VkPhysicalDeviceRayQueryFeaturesKHR enabledRayQueryFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR};
 	VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV enabledPartitionedAccelerationStructureFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV};
@@ -545,6 +555,13 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		enabledNext = &enabledBufferDeviceAddressFeatures.pNext;
 		*enabledNext = &enabledAccelerationStructureFeatures;
 		enabledNext = &enabledAccelerationStructureFeatures.pNext;
+		if (m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
+		    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature)
+		{
+			enabledRayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+			*enabledNext = &enabledRayTracingPipelineFeatures;
+			enabledNext = &enabledRayTracingPipelineFeatures.pNext;
+		}
 		*enabledNext = &enabledRayQueryFeatures;
 		enabledNext = &enabledRayQueryFeatures.pNext;
 		if (m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure)
@@ -664,6 +681,7 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .SupportsVulkanFeatureQuery = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature,
 	    .SupportsVulkanFunctionLoading = false,
 	    .SupportsVulkanDescriptorPath = false,
+	    .SupportsVulkanShaderDeviceAddressPath = false,
 	    .CapabilityStatusReason = m_adapterInfo.VendorId != kNvidiaVendorId
 	                                  ? "vulkan-nv-ptlas-requires-nvidia-device"
 	                                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
@@ -728,6 +746,11 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .SupportsVulkanFunctionLoading = m_getPartitionedAccelerationStructureBuildSizes != nullptr &&
 	                                     m_cmdBuildPartitionedAccelerationStructures != nullptr,
 	    .SupportsVulkanDescriptorPath = false,
+	    .SupportsVulkanShaderDeviceAddressPath = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
+	                                            m_featureStatus.EnabledShaderInt64 &&
+	                                            m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
+	                                            m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature &&
+	                                            m_rayTracingCapabilities.SupportsInlineRayQuery,
 	    .SupportsCpuPackedOperations = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
 	    .SupportsGpuDrivenOperations = false,
 	    .SupportsGpuOperationCount = true,

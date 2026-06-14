@@ -42,6 +42,7 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	bool HasValidSceneTlas() const noexcept override;
 	RhiOwnedResourceHandle GetSceneTlasResource() const noexcept override;
 	RhiGpuVirtualAddress GetSceneTlasGpuAddress() const noexcept override;
+	RayTracingSceneTlasShaderAccessMode GetSceneTlasShaderAccessMode() const noexcept override;
 	std::uint32_t GetSceneTlasInstanceCount() const noexcept override;
 	void Clear() noexcept override;
 

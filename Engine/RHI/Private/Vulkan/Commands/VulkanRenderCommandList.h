@@ -100,6 +100,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	    const RhiPartitionedTlasDesc& desc,
 	    VkPartitionedAccelerationStructureInstancesInputNV& input,
 	    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
+	bool UsesShaderDeviceAddressAccelerationStructureBinding() const noexcept;
 	VkBuffer ResolveBuffer(RhiGpuVirtualAddress gpuAddress) const noexcept;
 	void BeginDynamicRenderingIfNeeded() noexcept;
 	void EndDynamicRenderingIfNeeded() noexcept;

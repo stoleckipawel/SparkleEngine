@@ -223,6 +223,13 @@ RhiGpuVirtualAddress RenderRayTracingScene::GetTlasGpuAddress() const noexcept
 	           : 0;
 }
 
+RayTracingSceneTlasShaderAccessMode RenderRayTracingScene::GetTlasShaderAccessMode() const noexcept
+{
+	return m_topLevelAccelerationStructureStrategy != nullptr
+	           ? m_topLevelAccelerationStructureStrategy->GetSceneTlasShaderAccessMode()
+	           : RayTracingSceneTlasShaderAccessMode::Descriptor;
+}
+
 std::uint32_t RenderRayTracingScene::GetTlasInstanceCount() const noexcept
 {
 	return m_topLevelAccelerationStructureStrategy != nullptr

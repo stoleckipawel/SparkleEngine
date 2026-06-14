@@ -30,11 +30,13 @@ struct VulkanFeatureStatus final
 	bool SupportsDynamicRendering = false;
 	bool SupportsSamplerAnisotropy = false;
 	bool SupportsFillModeNonSolid = false;
+	bool SupportsShaderInt64 = false;
 	bool SupportsMutableDescriptorType = false;
 	bool EnabledSynchronization2 = false;
 	bool EnabledDynamicRendering = false;
 	bool EnabledSamplerAnisotropy = false;
 	bool EnabledFillModeNonSolid = false;
+	bool EnabledShaderInt64 = false;
 	bool EnabledMutableDescriptorType = false;
 	VulkanRayTracingFeatureStatus RayTracing;
 };

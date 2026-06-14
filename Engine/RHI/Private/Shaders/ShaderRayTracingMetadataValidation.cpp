@@ -34,6 +34,13 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 		outErrorMessage = "Inline ray query validation currently expects a compute shader package.";
 		return false;
 	}
+	const bool usesAccelerationStructureDeviceAddress =
+	    HasCookedShaderPackageFeature(features, CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress);
+	if (usesAccelerationStructureDeviceAddress && requiredBinaryFormat != CookedShaderBinaryFormat::SpirV)
+	{
+		outErrorMessage = "Acceleration-structure device-address inline ray query packages are currently supported only for SPIR-V.";
+		return false;
+	}
 
 	bool hasRequiredBinary = false;
 	for (const CookedShaderBinaryRecord& binary : package.GetBinaryRecords())
@@ -63,8 +70,11 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	}
 	if (!hasAccelerationStructureLayoutBinding)
 	{
-		outErrorMessage = "Inline ray query shader package has no acceleration-structure binding in pipeline layout metadata.";
-		return false;
+		if (!usesAccelerationStructureDeviceAddress)
+		{
+			outErrorMessage = "Inline ray query shader package has no acceleration-structure binding in pipeline layout metadata.";
+			return false;
+		}
 	}
 
 	bool hasAccelerationStructureReflectionBinding = false;
@@ -78,8 +88,11 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	}
 	if (!hasAccelerationStructureReflectionBinding)
 	{
-		outErrorMessage = "Inline ray query shader package has no reflected acceleration-structure resource binding.";
-		return false;
+		if (!usesAccelerationStructureDeviceAddress)
+		{
+			outErrorMessage = "Inline ray query shader package has no reflected acceleration-structure resource binding.";
+			return false;
+		}
 	}
 
 	outErrorMessage.clear();

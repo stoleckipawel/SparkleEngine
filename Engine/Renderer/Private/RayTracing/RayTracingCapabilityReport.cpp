@@ -63,7 +63,7 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    "Ray tracing capability summary: backend={} rayTracing={} inlineRayQuery={} asAlignment={} scratchAlignment={} "
 	    "instanceDescSize={} maxRecursionDepth={} maxPayloadBytes={} maxAttributeBytes={} inlineShadowReady={} inlineShadowReason={} "
 	    "topLevelProvider={}({}) partitionedTlasProvider={} supported={} requiresNvidia={} nvidiaDevice={} "
-	    "vulkanNv={} vulkanExtension={} vulkanFeature={} vulkanFunctions={} vulkanDescriptors={} "
+	    "vulkanNv={} vulkanExtension={} vulkanFeature={} vulkanFunctions={} vulkanDescriptors={} vulkanShaderDeviceAddress={} "
 	    "d3d12Nvapi={} d3d12NvapiHeaders={} d3d12NvapiRuntime={} d3d12DeviceInterface={} d3d12CommandListInterface={} "
 	    "d3d12PublicDxr={} d3d12PublicDxrHeaders={} cpuPackOps={} gpuDrivenOps={} partitionedReason={}",
 	    RhiBackendApiToString(report.BackendApi),
@@ -88,6 +88,7 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    BoolToString(report.PartitionedTlas.SupportsVulkanFeatureQuery),
 	    BoolToString(report.PartitionedTlas.SupportsVulkanFunctionLoading),
 	    BoolToString(report.PartitionedTlas.SupportsVulkanDescriptorPath),
+	    BoolToString(report.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath),
 	    BoolToString(report.PartitionedTlas.SupportsD3D12NvapiProvider),
 	    BoolToString(report.PartitionedTlas.SupportsD3D12NvapiHeaders),
 	    BoolToString(report.PartitionedTlas.SupportsD3D12NvapiRuntime),
@@ -137,6 +138,8 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::Build(
 	            .SupportsVulkanFeatureQuery = rayTracing.Groups.PartitionedTlas.SupportsVulkanFeatureQuery,
 	            .SupportsVulkanFunctionLoading = rayTracing.Groups.PartitionedTlas.SupportsVulkanFunctionLoading,
 	            .SupportsVulkanDescriptorPath = rayTracing.Groups.PartitionedTlas.SupportsVulkanDescriptorPath,
+	            .SupportsVulkanShaderDeviceAddressPath =
+	                rayTracing.Groups.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath,
 	            .SupportsD3D12NvapiProvider = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiPartitionedTlas,
 	            .SupportsD3D12NvapiHeaders = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiHeaders,
 	            .SupportsD3D12NvapiRuntime = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiRuntime,

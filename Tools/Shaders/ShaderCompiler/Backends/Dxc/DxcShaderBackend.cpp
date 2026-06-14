@@ -316,6 +316,10 @@ void DxcShaderBackend::BuildCompileArguments(
 		{
 			outArgs.push_back(L"-fspv-extension=SPV_KHR_ray_query");
 		}
+		if (HasCookedShaderPackageFeature(options.PackageFeatures, CookedShaderPackageFeatureFlags::UsesAccelerationStructure))
+		{
+			outArgs.push_back(L"-fspv-extension=SPV_KHR_ray_tracing");
+		}
 	}
 }
 

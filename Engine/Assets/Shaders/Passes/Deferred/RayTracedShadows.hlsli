@@ -5,7 +5,16 @@
 #include "Passes/Deferred/RayTracedShadowSampling.hlsli"
 #include "Passes/Deferred/RayTracedShadowSignals.hlsli"
 
+#ifndef SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS
 RaytracingAccelerationStructure SceneTlas;
+#endif
+
+#if defined(SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS) && defined(__spirv__)
+[[vk::ext_extension("SPV_KHR_ray_tracing")]]
+[[vk::ext_capability(4479)]]
+[[vk::ext_instruction(4447, "")]]
+RaytracingAccelerationStructure SparkleConvertAddressToAccelerationStructure(uint64_t address);
+#endif
 
 cbuffer RayTracedShadowUniformData
 {
@@ -17,10 +26,16 @@ cbuffer RayTracedShadowUniformData
 	float RayTracedShadowMaxDistance;
 	float RayTracedShadowPadding0;
 	float RayTracedShadowPadding1;
+	uint RayTracedShadowSceneTlasGpuAddressLow;
+	uint RayTracedShadowSceneTlasGpuAddressHigh;
+	uint RayTracedShadowTlasAccessMode;
+	uint RayTracedShadowPadding2;
 };
 
 namespace RayTracedShadows
 {
+	static const uint TlasAccessModeDescriptor = 0u;
+	static const uint TlasAccessModeShaderDeviceAddress = 1u;
 	static const uint ShadowInstanceMask = 0xFFu;
 	static const uint ShadowRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES;
 	static const float MinimumShadowTMin = 0.001f;
@@ -57,7 +72,17 @@ namespace RayTracedShadows
 		shadowRay.TMax = clampedMaxDistance;
 
 		RayQuery<ShadowRayFlags> query;
+#if defined(SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS) && defined(__spirv__)
+		const uint64_t sceneTlasAddress =
+		    (uint64_t(RayTracedShadowSceneTlasGpuAddressHigh) << 32u) | uint64_t(RayTracedShadowSceneTlasGpuAddressLow);
+		query.TraceRayInline(
+		    SparkleConvertAddressToAccelerationStructure(sceneTlasAddress),
+		    ShadowRayFlags,
+		    ShadowInstanceMask,
+		    shadowRay);
+#else
 		query.TraceRayInline(SceneTlas, ShadowRayFlags, ShadowInstanceMask, shadowRay);
+#endif
 		while (query.Proceed())
 		{
 		}

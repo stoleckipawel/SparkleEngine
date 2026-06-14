@@ -261,6 +261,14 @@ std::string CookedPackageInspection::FormatPackageFeatures(CookedShaderPackageFe
 		}
 		output += "acceleration-structure";
 	}
+	if (HasCookedShaderPackageFeature(features, CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress))
+	{
+		if (!output.empty())
+		{
+			output += ", ";
+		}
+		output += "acceleration-structure-device-address";
+	}
 	if (output.empty())
 	{
 		output = "none";

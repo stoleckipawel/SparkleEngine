@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RayTracing/RayTracingSceneTlasShaderAccessMode.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 
@@ -37,6 +38,7 @@ struct RayTracingSceneFrameData
 	bool IsAvailable = false;
 	RhiOwnedResourceHandle TlasResource = {};
 	RhiGpuVirtualAddress TlasGpuAddress = 0;
+	RayTracingSceneTlasShaderAccessMode TlasShaderAccessMode = RayTracingSceneTlasShaderAccessMode::Descriptor;
 	std::uint32_t EstimatedInstanceCount = 0;
 	RayTracingPtlasFrameGraphResourceBindings PtlasFrameGraphResources = {};
 

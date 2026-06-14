@@ -15,22 +15,23 @@ struct RayTracedShadowSettings final
 	RayTracedShadowDenoiserMode DenoiserMode = RayTracedShadowDenoiserMode::NrdSigma;
 	float NormalBias = 0.0f;
 	float MaxDistance = 0.0f;
+	bool Enabled = true;
 	bool DiagnosticsEnabled = false;
 
 	bool RequiresDenoiser() const noexcept
 	{
-		return QualityMode == RayTracedShadowQualityMode::SoftAreaLights &&
+		return Enabled && QualityMode == RayTracedShadowQualityMode::SoftAreaLights &&
 		       DenoiserMode != RayTracedShadowDenoiserMode::Off;
 	}
 
 	bool UsesHardShadowVisibility() const noexcept
 	{
-		return QualityMode == RayTracedShadowQualityMode::Hard;
+		return Enabled && QualityMode == RayTracedShadowQualityMode::Hard;
 	}
 
 	bool UsesStochasticSoftShadowVisibility() const noexcept
 	{
-		return QualityMode == RayTracedShadowQualityMode::SoftAreaLights;
+		return Enabled && QualityMode == RayTracedShadowQualityMode::SoftAreaLights;
 	}
 };
 

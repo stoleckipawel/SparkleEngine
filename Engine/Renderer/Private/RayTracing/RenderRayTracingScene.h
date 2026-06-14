@@ -5,6 +5,7 @@
 #include "RayTracing/RayTracingPerformanceMetrics.h"
 #include "RayTracing/RayTracingSceneDiagnostics.h"
 #include "RayTracing/RayTracingSceneFramePlan.h"
+#include "RayTracing/RayTracingSceneTlasShaderAccessMode.h"
 
 #include <memory>
 
@@ -50,6 +51,7 @@ class RenderRayTracingScene final
 	bool HasValidTlas() const noexcept;
 	RhiOwnedResourceHandle GetTlasResource() const noexcept;
 	RhiGpuVirtualAddress GetTlasGpuAddress() const noexcept;
+	RayTracingSceneTlasShaderAccessMode GetTlasShaderAccessMode() const noexcept;
 	std::uint32_t GetTlasInstanceCount() const noexcept;
 	const RayTracingCapabilityReport& GetCapabilities() const noexcept { return m_capabilityReport; }
 	const RayTracingPerformanceMetrics& GetPerformanceMetrics() const noexcept { return m_performanceMetrics; }

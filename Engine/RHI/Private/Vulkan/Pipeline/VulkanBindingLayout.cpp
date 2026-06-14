@@ -382,10 +382,6 @@ class VulkanBindingLayoutCompilerImpl final
 			case ShaderParameterSemanticKind::SamplerSet:
 				return VK_DESCRIPTOR_TYPE_SAMPLER;
 			case ShaderParameterSemanticKind::AccelerationStructure:
-				if (rhi.GetFeatureStatus().EnabledMutableDescriptorType)
-				{
-					return VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-				}
 				return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 			default:
 				return VK_DESCRIPTOR_TYPE_MAX_ENUM;

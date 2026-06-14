@@ -11,6 +11,7 @@ RayTracedShadowSettings BuildRayTracedShadowSettingsFromCVars() noexcept
 	    .DenoiserMode = CVarRayTracedShadowDenoiserMode.Get(),
 	    .NormalBias = CVarRayTracedShadowNormalBias.Get(),
 	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get(),
+	    .Enabled = CVarRayTracedShadowsEnabled.Get(),
 	    .DiagnosticsEnabled = CVarRayTracedShadowDiagnosticsEnabled.Get()};
 }
 
@@ -28,8 +29,9 @@ void LogRayTracedShadowSettingsOnce(
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.RayTracing");
 	SPDLOG_LOGGER_INFO(
 	    logger,
-	    "Ray traced shadow settings: quality={} denoiser={} normalBias={} maxDistance={} raysPerPixel={} diagnostics={} "
+	    "Ray traced shadow settings: enabled={} quality={} denoiser={} normalBias={} maxDistance={} raysPerPixel={} diagnostics={} "
 	    "requiresTlas=true requiresDenoiser={}",
+	    settings.Enabled ? "true" : "false",
 	    RayTracedShadowQualityModeToString(settings.QualityMode),
 	    RayTracedShadowDenoiserModeToString(settings.DenoiserMode),
 	    settings.NormalBias,
