@@ -130,7 +130,9 @@ RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::Prepare(
 	if (!CanUseActivePartitionedTlasProvider())
 	{
 		m_currentFrameMode = FrameMode::ClassicFallback;
-		m_activeProviderReason = "partitioned-tlas-provider-not-active-for-this-backend-stage";
+		m_activeProviderReason = m_capabilityReport.PartitionedTlas.SupportsVulkanDescriptorPath
+		                             ? "partitioned-tlas-provider-not-active-for-this-backend-stage"
+		                             : "partitioned-tlas-shader-visible-address-path-not-implemented";
 		return m_classicFallbackStrategy.Prepare(sceneData, scenePlanner);
 	}
 
@@ -224,7 +226,8 @@ void RayTracingPartitionedTlasStrategy::Clear() noexcept
 bool RayTracingPartitionedTlasStrategy::CanUseActivePartitionedTlasProvider() const noexcept
 {
 	return m_renderHardwareInterface != nullptr && m_capabilityReport.PartitionedTlas.Supported &&
-	       m_capabilityReport.PartitionedTlas.Provider == ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure;
+	       m_capabilityReport.PartitionedTlas.Provider == ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure &&
+	       m_capabilityReport.PartitionedTlas.SupportsVulkanDescriptorPath;
 }
 
 bool RayTracingPartitionedTlasStrategy::EnsurePartitionedTlasResources(

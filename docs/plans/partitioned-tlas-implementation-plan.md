@@ -1670,12 +1670,19 @@ Reference-quality completion stages:
 
    - Added renderer strategy preparation/build plumbing so `Prepare()` receives the current top-level scene plan before frame graph resource binding.
    - `RayTracingPartitionedTlasStrategy` now allocates Vulkan PTLAS storage, scratch, logical update resources, and CPU-packed native operation buffers through backend-neutral RHI services.
-   - Vulkan NV PTLAS can become the active conceptual `SceneTlas` when `CVarRhiRayTracingPreferPartitionedTlas` is enabled and the capability provider is `VulkanNvPartitionedAccelerationStructure`.
-   - Non-active providers still fall back to classic TLAS with explicit provider reasons instead of silently pretending PTLAS is active.
+   - Vulkan PTLAS native records now follow the NVIDIA sample more closely:
+     - `VkPartitionedAccelerationStructureFlagsNV` is chained into `VkPartitionedAccelerationStructureInstancesInputNV`.
+     - PTLAS instance write records resolve BLAS storage buffer device addresses instead of reusing classic acceleration-structure device addresses.
+   - Vulkan NV PTLAS is no longer advertised as shader-visible through the current descriptor-based HLSL inline ray query path.
+   - Requested Vulkan PTLAS currently falls back to classic TLAS with the explicit reason `partitioned-tlas-shader-visible-address-path-not-implemented`.
    - Added renderer command-context forwarding for `BuildPartitionedTopLevelAccelerationStructure`.
    - Added PTLAS CPU-pack timing and `Partitioned TLAS Build` GPU timing publication.
-   - Validation run: `ShowcaseEditor` build and `architecture_boundary_check`.
-   - Remaining acceptance gap: launcher parity artifacts still need to prove Vulkan PTLAS lit/ray-query output matches Vulkan classic TLAS.
+   - Validation run: `ShowcaseEditor`, `SparkleLauncher`, `SparkleRHI_Vulkan`, and `architecture_boundary_check`.
+   - Launcher parity artifacts were produced for D3D12 classic, D3D12 requested-PTLAS fallback, Vulkan classic, and Vulkan requested-PTLAS fallback.
+   - Requested PTLAS fallback captures are byte-identical to their classic references, which proves the fallback is stable but does not prove active PTLAS rendering.
+   - Cross-backend classic comparison still fails under the current strict comparator: D3D12 classic vs Vulkan classic average channel difference is approximately `0.601`, with `2,737,801` differing pixels in the captured frame.
+   - Stage verdict: **not accepted yet**. Active Vulkan PTLAS rendered output is blocked by the missing shader-visible PTLAS traversal contract.
+   - Remaining acceptance gap: implement the NVIDIA-reference-style shader-visible PTLAS traversal path, or an equivalent validated RHI contract, then capture real `topLevelProvider=PartitionedTlas` Vulkan artifacts and compare them against Vulkan classic TLAS.
 
 4. **D3D12 NVAPI PTLAS Active Provider**
 

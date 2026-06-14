@@ -8,6 +8,7 @@
 #include "Vulkan/Device/VulkanRhi.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <format>
 #include <map>
@@ -66,7 +67,7 @@ class VulkanBindingLayoutCompilerImpl final
 				continue;
 			}
 
-			const VkDescriptorType descriptorType = ToVkDescriptorType(bindingRecord.SemanticKind);
+			const VkDescriptorType descriptorType = ToVkDescriptorType(bindingRecord.SemanticKind, rhi);
 			if (descriptorType == VK_DESCRIPTOR_TYPE_MAX_ENUM)
 			{
 				continue;
@@ -96,8 +97,12 @@ class VulkanBindingLayoutCompilerImpl final
 
 			std::vector<VkDescriptorSetLayoutBinding> nativeBindings;
 			std::vector<VkSampler> nativeImmutableSamplers;
+			std::vector<MutableDescriptorTypeStorage> mutableDescriptorTypes;
+			std::vector<VkMutableDescriptorTypeListEXT> mutableDescriptorTypeLists;
 			nativeBindings.reserve(descriptorBindings.size());
 			nativeImmutableSamplers.reserve(descriptorBindings.size());
+			mutableDescriptorTypes.resize(descriptorBindings.size());
+			mutableDescriptorTypeLists.resize(descriptorBindings.size());
 			for (const PendingDescriptorBinding& descriptorBinding : descriptorBindings)
 			{
 				nativeBindings.push_back(descriptorBinding.Binding);
@@ -106,11 +111,30 @@ class VulkanBindingLayoutCompilerImpl final
 					nativeImmutableSamplers.push_back(descriptorBinding.ImmutableSampler);
 					nativeBindings.back().pImmutableSamplers = &nativeImmutableSamplers.back();
 				}
+				if (descriptorBinding.Binding.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT)
+				{
+					const std::size_t nativeBindingIndex = nativeBindings.size() - 1u;
+					mutableDescriptorTypes[nativeBindingIndex] = MutableDescriptorTypeStorage{
+					    VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+					    VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV};
+					mutableDescriptorTypeLists[nativeBindingIndex] = VkMutableDescriptorTypeListEXT{
+					    .descriptorTypeCount = static_cast<std::uint32_t>(mutableDescriptorTypes[nativeBindingIndex].size()),
+					    .pDescriptorTypes = mutableDescriptorTypes[nativeBindingIndex].data()};
+				}
 			}
 
+			const bool hasMutableDescriptorTypes = std::any_of(
+			    mutableDescriptorTypeLists.begin(),
+			    mutableDescriptorTypeLists.end(),
+			    [](const VkMutableDescriptorTypeListEXT& typeList) noexcept { return typeList.descriptorTypeCount > 0; });
+			const VkMutableDescriptorTypeCreateInfoEXT mutableDescriptorCreateInfo{
+			    .sType = VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT,
+			    .pNext = nullptr,
+			    .mutableDescriptorTypeListCount = static_cast<std::uint32_t>(mutableDescriptorTypeLists.size()),
+			    .pMutableDescriptorTypeLists = mutableDescriptorTypeLists.empty() ? nullptr : mutableDescriptorTypeLists.data()};
 			const VkDescriptorSetLayoutCreateInfo createInfo{
 			    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-			    .pNext = nullptr,
+			    .pNext = hasMutableDescriptorTypes ? &mutableDescriptorCreateInfo : nullptr,
 			    .flags = 0,
 			    .bindingCount = static_cast<std::uint32_t>(nativeBindings.size()),
 			    .pBindings = nativeBindings.data()};
@@ -177,6 +201,7 @@ class VulkanBindingLayoutCompilerImpl final
 		VkDescriptorSetLayoutBinding Binding = {};
 		VkSampler ImmutableSampler = VK_NULL_HANDLE;
 	};
+	using MutableDescriptorTypeStorage = std::array<VkDescriptorType, 2>;
 
 	static const PassParameterDesc* FindParameter(const PassParameterLayout& layout, std::string_view name) noexcept
 	{
@@ -340,7 +365,7 @@ class VulkanBindingLayoutCompilerImpl final
 		return sampler;
 	}
 
-	static VkDescriptorType ToVkDescriptorType(ShaderParameterSemanticKind semanticKind) noexcept
+	static VkDescriptorType ToVkDescriptorType(ShaderParameterSemanticKind semanticKind, const VulkanRhi& rhi) noexcept
 	{
 		switch (semanticKind)
 		{
@@ -357,6 +382,10 @@ class VulkanBindingLayoutCompilerImpl final
 			case ShaderParameterSemanticKind::SamplerSet:
 				return VK_DESCRIPTOR_TYPE_SAMPLER;
 			case ShaderParameterSemanticKind::AccelerationStructure:
+				if (rhi.GetFeatureStatus().EnabledMutableDescriptorType)
+				{
+					return VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
+				}
 				return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 			default:
 				return VK_DESCRIPTOR_TYPE_MAX_ENUM;

@@ -27,6 +27,7 @@ struct VulkanGpuAllocationRecord final
 	VkImage Image = VK_NULL_HANDLE;
 	VkAccelerationStructureKHR AccelerationStructure = VK_NULL_HANDLE;
 	VkDeviceAddress DeviceAddress = 0;
+	VkDeviceAddress BufferDeviceAddress = 0;
 	VkAccelerationStructureTypeKHR AccelerationStructureType = VK_ACCELERATION_STRUCTURE_TYPE_MAX_ENUM_KHR;
 	bool IsPartitionedAccelerationStructure = false;
 	VmaAllocation_T* Allocation = nullptr;

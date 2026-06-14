@@ -137,21 +137,93 @@ namespace SparkleLauncher::RhiSmokeBitmapComparison
 
 namespace SparkleLauncher::RhiSmokeProviderMetadataValidation
 {
-	bool MetadataSelectsPartitionedTlas(const std::filesystem::path& metadataPath)
+	bool ReadTextFile(const std::filesystem::path& path, std::string& outText)
 	{
 		std::vector<std::uint8_t> bytes;
-		if (!RhiSmokeBitmapComparison::ReadFileBytes(metadataPath, bytes))
+		if (!RhiSmokeBitmapComparison::ReadFileBytes(path, bytes))
 		{
 			return false;
 		}
 
-		const std::string metadata(bytes.begin(), bytes.end());
+		outText.assign(bytes.begin(), bytes.end());
+		return true;
+	}
+
+	bool MetadataSelectsPartitionedTlas(const std::filesystem::path& metadataPath)
+	{
+		std::string metadata;
+		if (!ReadTextFile(metadataPath, metadata))
+		{
+			return false;
+		}
+
 		return metadata.find("\"topLevelProvider\": \"PartitionedTlas\"") != std::string::npos;
 	}
 }
 
 namespace SparkleLauncher::RhiSmokeParityValidation
 {
+	bool FileExistsAndIsNotEmpty(const std::filesystem::path& path)
+	{
+		std::error_code errorCode;
+		return std::filesystem::is_regular_file(path, errorCode) && std::filesystem::file_size(path, errorCode) > 0;
+	}
+
+	bool LogContainsFatalGraphicsIssue(const std::filesystem::path& logPath, std::string& outFailureSummary)
+	{
+		std::string logText;
+		if (!RhiSmokeProviderMetadataValidation::ReadTextFile(logPath, logText))
+		{
+			outFailureSummary = "Missing log artifact: " + logPath.string();
+			return true;
+		}
+
+		const std::vector<std::string_view> fatalMarkers = {
+		    "[error]",
+		    "VUID",
+		    "descriptorType mismatch",
+		    "invalid or has been destroyed",
+		    "vkCreateComputePipelines():"};
+		for (std::string_view fatalMarker : fatalMarkers)
+		{
+			if (logText.find(fatalMarker) != std::string::npos)
+			{
+				outFailureSummary = "Fatal graphics issue found in smoke artifact log: " + logPath.string() +
+				                    " marker='" + std::string(fatalMarker) + "'";
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool ValidateRequiredArtifacts(const LaunchOperationPlan& plan, std::string& outFailureSummary)
+	{
+		for (const RhiSmokeParityCase& parityCase : GetRhiSmokeParityCases())
+		{
+			for (const RhiSmokeParityViewMode& viewMode : GetRhiSmokeParityViewModes())
+			{
+				const std::filesystem::path bmpPath = GetRhiSmokeParityArtifactPath(plan, parityCase, viewMode, ".bmp");
+				const std::filesystem::path metadataPath = GetRhiSmokeParityArtifactPath(plan, parityCase, viewMode, ".json");
+				const std::filesystem::path timingPath = GetRhiSmokeParityArtifactPath(plan, parityCase, viewMode, ".timing.csv");
+				const std::filesystem::path logPath = GetRhiSmokeParityArtifactPath(plan, parityCase, viewMode, ".log");
+				for (const std::filesystem::path& requiredPath : {bmpPath, metadataPath, timingPath, logPath})
+				{
+					if (!FileExistsAndIsNotEmpty(requiredPath))
+					{
+						outFailureSummary = "Missing or empty RHI ray tracing parity artifact: " + requiredPath.string();
+						return false;
+					}
+				}
+				if (LogContainsFatalGraphicsIssue(logPath, outFailureSummary))
+				{
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	bool ValidateComparison(
 	    const LaunchOperationPlan& plan,
 	    std::string_view referenceCase,
@@ -192,6 +264,11 @@ namespace SparkleLauncher
 {
 	bool ValidateRhiSmokeRayTracingParityArtifacts(const LaunchOperationPlan& plan, std::string& outFailureSummary)
 	{
+		if (!RhiSmokeParityValidation::ValidateRequiredArtifacts(plan, outFailureSummary))
+		{
+			return false;
+		}
+
 		return RhiSmokeParityValidation::ValidateComparison(plan, "vulkan-classic", "vulkan-ptlas", true, outFailureSummary) &&
 		       RhiSmokeParityValidation::ValidateComparison(plan, "d3d12-classic", "d3d12-ptlas", true, outFailureSummary) &&
 		       RhiSmokeParityValidation::ValidateComparison(plan, "d3d12-classic", "vulkan-classic", false, outFailureSummary);

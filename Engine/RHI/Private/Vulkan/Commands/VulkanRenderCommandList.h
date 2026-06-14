@@ -96,7 +96,10 @@ class VulkanRenderCommandList final : public RenderCommandList
   private:
 	static const CompiledBinding* FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept;
 	static VkShaderStageFlags ToVkShaderStages(ShaderStageMask visibilityMask) noexcept;
-	static VkPartitionedAccelerationStructureInstancesInputNV BuildPartitionedTlasInput(const RhiPartitionedTlasDesc& desc) noexcept;
+	static void ConfigurePartitionedTlasInput(
+	    const RhiPartitionedTlasDesc& desc,
+	    VkPartitionedAccelerationStructureInstancesInputNV& input,
+	    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
 	VkBuffer ResolveBuffer(RhiGpuVirtualAddress gpuAddress) const noexcept;
 	void BeginDynamicRenderingIfNeeded() noexcept;
 	void EndDynamicRenderingIfNeeded() noexcept;

@@ -3,6 +3,7 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/LauncherProjectDefaults.h"
 #include "SparkleLauncher/LauncherPaths.h"
+#include "SparkleLauncher/ProcessRunner.h"
 
 #include <algorithm>
 #include <chrono>
@@ -365,6 +366,27 @@ namespace SparkleLauncher
 		state.Activity.push_back({GetCurrentTimeText(), plan.Operation.DisplayName + " dry-run planned for " + state.SelectedProjectId});
 	}
 
+	static LaunchOperationRequest BuildLaunchOperationRequest(
+	    const LauncherShellState& state,
+	    const LauncherShellArguments& arguments)
+	{
+		LaunchOperationRequest launchRequest;
+		launchRequest.RepositoryRoot = state.Repository.RootPath;
+		launchRequest.ProjectId = state.SelectedProjectId;
+		launchRequest.EditorProfile = state.EditorProfile;
+		launchRequest.RuntimeProfile = state.RuntimeProfile;
+		launchRequest.Target = arguments.LaunchTarget;
+		launchRequest.StartupLevel = arguments.LaunchStartupLevel;
+		launchRequest.EnableSmokeTest = arguments.EnableSmokeTest;
+		launchRequest.SmokeBackend = arguments.SmokeBackend;
+		launchRequest.SmokeFrameLimit = arguments.SmokeFrameLimit;
+		launchRequest.SmokeViewMode = arguments.SmokeViewMode;
+		launchRequest.SmokeCapturePath = arguments.SmokeCapturePath;
+		launchRequest.SmokeTrace = arguments.SmokeTrace;
+		launchRequest.SmokeSkipLevelSwitching = arguments.SmokeSkipLevelSwitching;
+		return launchRequest;
+	}
+
 	static void ApplyDryRun(LauncherShellState& state, const LauncherShellArguments& arguments)
 	{
 		const std::string operationId = arguments.DryRunOperationId.empty() ? std::string(kDefaultDryRunOperationId) : arguments.DryRunOperationId;
@@ -438,6 +460,41 @@ namespace SparkleLauncher
 		state.JobOutput.push_back(record.DisplayName + " [Preview]");
 		state.JobOutput.push_back(record.DryRunText);
 		state.Activity.push_back({GetCurrentTimeText(), record.DisplayName + " dry-run for " + state.SelectedProjectId});
+	}
+
+	static int RunShellLaunchOperation(
+	    LauncherShellState& state,
+	    const LauncherShellArguments& arguments,
+	    std::ostream& output,
+	    std::ostream& error)
+	{
+		if (!FindLaunchOperationDefinition(arguments.RunOperationId).has_value())
+		{
+			error << "SparkleLauncher: --run currently supports launch operations only: " << arguments.RunOperationId << '\n';
+			return 1;
+		}
+
+		LaunchOperationPlan plan =
+		    PlanLaunchOperation(arguments.RunOperationId, BuildLaunchOperationRequest(state, arguments));
+		NativeProcessRunner processRunner;
+		const OperationRecord operation = RunLaunchOperationPlan(
+		    std::move(plan),
+		    processRunner,
+		    [&output](std::string_view text)
+		    {
+			    output << text;
+		    });
+
+		output << "Operation " << operation.DisplayName << " finished with status " << ToString(operation.Status) << ".\n";
+		if (!operation.LogPath.empty())
+		{
+			output << "Latest log: " << operation.LogPath.string() << '\n';
+		}
+		if (!operation.FailureSummary.empty())
+		{
+			error << operation.FailureSummary << '\n';
+		}
+		return operation.Status == OperationStatus::Succeeded ? 0 : 1;
 	}
 
 	static void RenderProjectTiles(const LauncherShellState& state, std::ostream& output)
@@ -548,6 +605,10 @@ namespace SparkleLauncher
 		state.WorkspaceIdePreference = arguments.WorkspaceIdePreference;
 		state.Operations = GetLauncherOperationRows();
 		AppendLocalActivity(state);
+		if (!arguments.RunOperationId.empty())
+		{
+			return RunShellLaunchOperation(state, arguments, output, error);
+		}
 		if (!arguments.DryRunOperationId.empty())
 		{
 			ApplyDryRun(state, arguments);
@@ -636,6 +697,17 @@ namespace SparkleLauncher
 				{
 					outArguments.DryRunOperationId = std::string(kDefaultDryRunOperationId);
 				}
+				continue;
+			}
+
+			if (argument == "--run")
+			{
+				if (index + 1 >= argc || argv[index + 1][0] == '-')
+				{
+					error << "SparkleLauncher: --run requires an operation id.\n";
+					return false;
+				}
+				outArguments.RunOperationId = argv[++index];
 				continue;
 			}
 
@@ -814,13 +886,14 @@ namespace SparkleLauncher
 	void LauncherShell::PrintUsage(std::ostream& output) const
 	{
 		output << "Usage:\n"
-		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--smoke-test] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-view-mode <name-or-index>] [--smoke-capture <path>] [--smoke-trace] [--smoke-skip-level-switching] [--dry-run [operation-id]]\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--smoke-test] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-view-mode <name-or-index>] [--smoke-capture <path>] [--smoke-trace] [--smoke-skip-level-switching] [--dry-run [operation-id]] [--run <operation-id>]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level Sponza --smoke-test --smoke-backend d3d12 --smoke-view-mode 3 --smoke-capture logs/smoke/scene-color.bmp --dry-run project.run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --dry-run project.run.rhi-raytracing-parity\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --run project.run.rhi-raytracing-parity\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n";

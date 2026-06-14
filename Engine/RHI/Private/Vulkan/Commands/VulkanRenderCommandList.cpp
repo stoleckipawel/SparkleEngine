@@ -17,12 +17,18 @@
 
 static const auto g_vulkanRenderCommandListLogger = Logging::GetOrCreateLogger("RHI.Vulkan.CommandList");
 
-VkPartitionedAccelerationStructureInstancesInputNV VulkanRenderCommandList::BuildPartitionedTlasInput(
-    const RhiPartitionedTlasDesc& desc) noexcept
+void VulkanRenderCommandList::ConfigurePartitionedTlasInput(
+    const RhiPartitionedTlasDesc& desc,
+    VkPartitionedAccelerationStructureInstancesInputNV& input,
+    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept
 {
-	return VkPartitionedAccelerationStructureInstancesInputNV{
-	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV,
+	flags = VkPartitionedAccelerationStructureFlagsNV{
+	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_FLAGS_NV,
 	    .pNext = nullptr,
+	    .enablePartitionTranslation = desc.AllowPartitionTranslation ? VK_TRUE : VK_FALSE};
+	input = VkPartitionedAccelerationStructureInstancesInputNV{
+	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV,
+	    .pNext = &flags,
 	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
 	    .instanceCount = desc.InstanceCapacity,
 	    .maxInstancePerPartitionCount = desc.MaxInstancesPerPartition,
@@ -756,7 +762,9 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 	}
 	EndDynamicRenderingIfNeeded();
 
-	const VkPartitionedAccelerationStructureInstancesInputNV input = BuildPartitionedTlasInput(desc.Layout);
+	VkPartitionedAccelerationStructureFlagsNV partitionedTlasFlags{};
+	VkPartitionedAccelerationStructureInstancesInputNV input{};
+	ConfigurePartitionedTlasInput(desc.Layout, input, partitionedTlasFlags);
 	const VkBuildPartitionedAccelerationStructureInfoNV buildInfo{
 	    .sType = VK_STRUCTURE_TYPE_BUILD_PARTITIONED_ACCELERATION_STRUCTURE_INFO_NV,
 	    .pNext = nullptr,

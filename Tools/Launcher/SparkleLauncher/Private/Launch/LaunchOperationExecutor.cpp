@@ -3,7 +3,9 @@
 #include "LaunchOperationProcessRequests.h"
 #include "Smoke/RhiSmokeLaunchOperations.h"
 #include "Smoke/RhiSmokeParityArtifactValidation.h"
+#include "Smoke/RhiSmokeTestCatalog.h"
 
+#include <filesystem>
 #include <optional>
 
 namespace SparkleLauncher
@@ -18,6 +20,18 @@ namespace SparkleLauncher
 			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Launch operation is not ready to run." : plan.ReadinessMessages.front();
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
+		}
+
+		if (IsRhiParitySmokeLaunchOperation(plan.Kind))
+		{
+			std::error_code errorCode;
+			std::filesystem::remove_all(GetRhiSmokeParityArtifactDirectory(plan), errorCode);
+			if (errorCode)
+			{
+				operation.FailureSummary = "Could not clear RHI ray tracing parity artifacts: " + errorCode.message();
+				MarkOperationFinished(operation, OperationStatus::Failed, 1);
+				return operation;
+			}
 		}
 
 		for (LaunchOperationProcessStep& step : BuildLaunchProcessStepsForPlan(plan))

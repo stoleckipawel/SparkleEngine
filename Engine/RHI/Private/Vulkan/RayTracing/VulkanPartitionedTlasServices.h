@@ -42,13 +42,17 @@ class VulkanPartitionedTlasServices final : public RhiPartitionedTlasService
 	static VkPartitionedAccelerationStructureInstanceFlagsNV ToVkPartitionedInstanceFlags(
 	    RhiPartitionedTlasInstanceFlags flags) noexcept;
 	static VkPartitionedAccelerationStructureOpTypeNV ToVkPartitionedOperationType(ERhiPartitionedTlasOperationType type) noexcept;
-	static VkPartitionedAccelerationStructureInstancesInputNV BuildPartitionedTlasInput(const RhiPartitionedTlasDesc& desc) noexcept;
+	static void ConfigurePartitionedTlasInput(
+	    const RhiPartitionedTlasDesc& desc,
+	    VkPartitionedAccelerationStructureInstancesInputNV& input,
+	    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
 	static std::uint64_t ResolveOperationArgumentGpuAddress(
 	    const RhiPartitionedTlasOperationHeader& operation,
 	    RhiGpuVirtualAddress instanceWriteAddress,
 	    RhiGpuVirtualAddress instanceUpdateAddress,
 	    RhiGpuVirtualAddress partitionTranslationAddress) noexcept;
 	static std::uint64_t ResolveOperationArgumentStride(const RhiPartitionedTlasOperationHeader& operation) noexcept;
+	RhiGpuVirtualAddress ResolvePartitionedInstanceAccelerationStructureAddress(RhiGpuVirtualAddress accelerationStructure) const noexcept;
 
 	VulkanRhi* m_rhi = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;

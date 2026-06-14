@@ -23,6 +23,49 @@ namespace
 	constexpr const char* kNvidiaBinaryImportExtensionName = "VK_NVX_binary_import";
 	constexpr const char* kNvidiaImageViewHandleExtensionName = "VK_NVX_image_view_handle";
 
+	bool IsVulkanDeviceExtensionAvailable(VkPhysicalDevice physicalDevice, const char* extensionName) noexcept
+	{
+		if (physicalDevice == VK_NULL_HANDLE || extensionName == nullptr)
+		{
+			return false;
+		}
+
+		std::uint32_t extensionCount = 0;
+		VkResult result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+		if (!VulkanResult::Succeeded(result))
+		{
+			return false;
+		}
+
+		std::vector<VkExtensionProperties> extensions(extensionCount);
+		result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data());
+		if (!VulkanResult::Succeeded(result))
+		{
+			return false;
+		}
+
+		return std::any_of(
+		    extensions.begin(),
+		    extensions.end(),
+		    [extensionName](const VkExtensionProperties& extension) noexcept {
+			    return std::strcmp(extension.extensionName, extensionName) == 0;
+		    });
+	}
+
+	bool QueryMutableDescriptorTypeFeature(VkPhysicalDevice physicalDevice) noexcept
+	{
+		if (!IsVulkanDeviceExtensionAvailable(physicalDevice, VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME))
+		{
+			return false;
+		}
+
+		VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptorFeatures{
+		    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT};
+		VkPhysicalDeviceFeatures2 features{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &mutableDescriptorFeatures};
+		vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
+		return mutableDescriptorFeatures.mutableDescriptorType == VK_TRUE;
+	}
+
 	bool AppendAvailableDeviceExtension(
 	    VkPhysicalDevice physicalDevice,
 	    std::vector<const char*>& extensions,
@@ -395,6 +438,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_featureStatus.SupportsDynamicRendering = selected.Features13.dynamicRendering == VK_TRUE;
 	m_featureStatus.SupportsSamplerAnisotropy = selected.Features.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.SupportsFillModeNonSolid = selected.Features.features.fillModeNonSolid == VK_TRUE;
+	m_featureStatus.SupportsMutableDescriptorType = QueryMutableDescriptorTypeFeature(m_physicalDevice);
 	m_featureStatus.RayTracing = VulkanRayTracingFeatureQuery::Query(m_physicalDevice);
 
 	SPDLOG_LOGGER_INFO(
@@ -427,6 +471,11 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	if (IsDeviceExtensionAvailable(m_physicalDevice, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME))
 	{
 		deviceExtensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+	}
+	if (m_featureStatus.SupportsMutableDescriptorType)
+	{
+		deviceExtensions.push_back(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+		m_featureStatus.EnabledMutableDescriptorType = true;
 	}
 	if (m_featureStatus.RayTracing.EnabledBackend)
 	{
@@ -485,6 +534,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	VkPhysicalDeviceRayQueryFeaturesKHR enabledRayQueryFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR};
 	VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV enabledPartitionedAccelerationStructureFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV};
+	VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT enabledMutableDescriptorTypeFeatures{
+	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT};
 	if (m_featureStatus.RayTracing.EnabledBackend)
 	{
 		enabledBufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
@@ -500,7 +551,14 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		{
 			enabledPartitionedAccelerationStructureFeatures.partitionedAccelerationStructure = VK_TRUE;
 			*enabledNext = &enabledPartitionedAccelerationStructureFeatures;
+			enabledNext = &enabledPartitionedAccelerationStructureFeatures.pNext;
 		}
+	}
+	if (m_featureStatus.EnabledMutableDescriptorType)
+	{
+		enabledMutableDescriptorTypeFeatures.mutableDescriptorType = VK_TRUE;
+		*enabledNext = &enabledMutableDescriptorTypeFeatures;
+		enabledNext = &enabledMutableDescriptorTypeFeatures.pNext;
 	}
 
 	const VkDeviceCreateInfo createInfo{
@@ -605,7 +663,7 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .SupportsVulkanExtension = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
 	    .SupportsVulkanFeatureQuery = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature,
 	    .SupportsVulkanFunctionLoading = false,
-	    .SupportsVulkanDescriptorPath = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
+	    .SupportsVulkanDescriptorPath = false,
 	    .CapabilityStatusReason = m_adapterInfo.VendorId != kNvidiaVendorId
 	                                  ? "vulkan-nv-ptlas-requires-nvidia-device"
 	                                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
@@ -669,7 +727,7 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .SupportsVulkanFeatureQuery = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature,
 	    .SupportsVulkanFunctionLoading = m_getPartitionedAccelerationStructureBuildSizes != nullptr &&
 	                                     m_cmdBuildPartitionedAccelerationStructures != nullptr,
-	    .SupportsVulkanDescriptorPath = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
+	    .SupportsVulkanDescriptorPath = false,
 	    .SupportsCpuPackedOperations = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
 	    .SupportsGpuDrivenOperations = false,
 	    .SupportsGpuOperationCount = true,
@@ -733,6 +791,7 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	const std::string deviceExtensions = std::format("Enabled Vulkan device extensions: {}", m_enabledDeviceExtensions.size());
 	const std::string featureSummary = std::format(
 	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, dynamicRendering supported/enabled={}/{}, "
+	    "mutableDescriptorType supported/enabled={}/{}, "
 	    "samplerAnisotropy supported/enabled={}/{}, fillModeNonSolid supported/enabled={}/{}, "
 	    "rtExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}, bda={}, partitionedTlasNv={}), "
 	    "rtFeatures(as={}, pipeline={}, rayQuery={}, bda={}, partitionedTlasNv={}), rtBackendEnabled={}, ptlasNvEnabled={}",
@@ -741,6 +800,8 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    m_featureStatus.EnabledSynchronization2,
 	    m_featureStatus.SupportsDynamicRendering,
 	    m_featureStatus.EnabledDynamicRendering,
+	    m_featureStatus.SupportsMutableDescriptorType,
+	    m_featureStatus.EnabledMutableDescriptorType,
 	    m_featureStatus.SupportsSamplerAnisotropy,
 	    m_featureStatus.EnabledSamplerAnisotropy,
 	    m_featureStatus.SupportsFillModeNonSolid,

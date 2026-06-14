@@ -375,7 +375,8 @@ std::unique_ptr<VulkanGpuAllocationRecord> VulkanGpuMemoryAllocator::CreateBuffe
 		if ((bufferCreateInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0 && m_rhi.GetGetBufferDeviceAddress() != nullptr)
 		{
 			const VkBufferDeviceAddressInfo addressInfo{.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, .pNext = nullptr, .buffer = buffer};
-			record->DeviceAddress = m_rhi.GetGetBufferDeviceAddress()(m_rhi.GetDevice(), &addressInfo);
+			record->BufferDeviceAddress = m_rhi.GetGetBufferDeviceAddress()(m_rhi.GetDevice(), &addressInfo);
+			record->DeviceAddress = record->BufferDeviceAddress;
 		}
 	}
 	return record;
@@ -565,7 +566,7 @@ VulkanGpuAllocationRecord* VulkanGpuMemoryAllocator::FindAllocationRecordByDevic
 	std::scoped_lock lock(m_impl->RecordsMutex);
 	for (VulkanGpuAllocationRecord* record : m_impl->LiveRecords)
 	{
-		if (record != nullptr && record->DeviceAddress == deviceAddress)
+		if (record != nullptr && (record->DeviceAddress == deviceAddress || record->BufferDeviceAddress == deviceAddress))
 		{
 			return record;
 		}
@@ -671,6 +672,7 @@ void VulkanGpuMemoryAllocator::DestroyAllocation(VulkanGpuAllocationRecord& reco
 		record.Image = VK_NULL_HANDLE;
 		record.AccelerationStructure = VK_NULL_HANDLE;
 		record.DeviceAddress = 0;
+		record.BufferDeviceAddress = 0;
 		record.AccelerationStructureType = VK_ACCELERATION_STRUCTURE_TYPE_MAX_ENUM_KHR;
 		record.IsPartitionedAccelerationStructure = false;
 		record.Allocation = nullptr;
@@ -712,6 +714,7 @@ void VulkanGpuMemoryAllocator::DestroyAllocation(VulkanGpuAllocationRecord& reco
 	record.Image = VK_NULL_HANDLE;
 	record.AccelerationStructure = VK_NULL_HANDLE;
 	record.DeviceAddress = 0;
+	record.BufferDeviceAddress = 0;
 	record.AccelerationStructureType = VK_ACCELERATION_STRUCTURE_TYPE_MAX_ENUM_KHR;
 	record.IsPartitionedAccelerationStructure = false;
 	record.Allocation = nullptr;

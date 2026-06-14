@@ -553,6 +553,10 @@ VkDescriptorPool VulkanDescriptorAllocator::CreatePoolPage()
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = 512},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 256},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = 128}};
+	if (m_rhi.GetFeatureStatus().EnabledMutableDescriptorType)
+	{
+		poolSizes.push_back(VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT, .descriptorCount = 128});
+	}
 	if (m_rhi.GetRayTracingCapabilities().Groups.PartitionedTlas.Supported)
 	{
 		poolSizes.push_back(

@@ -61,12 +61,18 @@ VkPartitionedAccelerationStructureOpTypeNV VulkanPartitionedTlasServices::ToVkPa
 	}
 }
 
-VkPartitionedAccelerationStructureInstancesInputNV VulkanPartitionedTlasServices::BuildPartitionedTlasInput(
-    const RhiPartitionedTlasDesc& desc) noexcept
+void VulkanPartitionedTlasServices::ConfigurePartitionedTlasInput(
+    const RhiPartitionedTlasDesc& desc,
+    VkPartitionedAccelerationStructureInstancesInputNV& input,
+    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept
 {
-	return VkPartitionedAccelerationStructureInstancesInputNV{
-	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV,
+	flags = VkPartitionedAccelerationStructureFlagsNV{
+	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_FLAGS_NV,
 	    .pNext = nullptr,
+	    .enablePartitionTranslation = desc.AllowPartitionTranslation ? VK_TRUE : VK_FALSE};
+	input = VkPartitionedAccelerationStructureInstancesInputNV{
+	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV,
+	    .pNext = &flags,
 	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
 	    .instanceCount = desc.InstanceCapacity,
 	    .maxInstancePerPartitionCount = desc.MaxInstancesPerPartition,
@@ -115,6 +121,23 @@ std::uint64_t VulkanPartitionedTlasServices::ResolveOperationArgumentStride(
 	}
 }
 
+RhiGpuVirtualAddress VulkanPartitionedTlasServices::ResolvePartitionedInstanceAccelerationStructureAddress(
+    RhiGpuVirtualAddress accelerationStructure) const noexcept
+{
+	if (m_memoryAllocator == nullptr || accelerationStructure == 0)
+	{
+		return accelerationStructure;
+	}
+
+	const VulkanGpuAllocationRecord* const record = m_memoryAllocator->FindAllocationRecordByDeviceAddress(accelerationStructure);
+	if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE || record->BufferDeviceAddress == 0)
+	{
+		return accelerationStructure;
+	}
+
+	return record->BufferDeviceAddress;
+}
+
 VulkanPartitionedTlasServices::VulkanPartitionedTlasServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
     m_rhi(&rhi), m_memoryAllocator(&memoryAllocator)
 {
@@ -130,7 +153,9 @@ RhiPartitionedTlasBuildSizes VulkanPartitionedTlasServices::GetPartitionedTopLev
 		return {};
 	}
 
-	const VkPartitionedAccelerationStructureInstancesInputNV input = BuildPartitionedTlasInput(desc);
+	VkPartitionedAccelerationStructureFlagsNV partitionedTlasFlags{};
+	VkPartitionedAccelerationStructureInstancesInputNV input{};
+	ConfigurePartitionedTlasInput(desc, input, partitionedTlasFlags);
 	VkAccelerationStructureBuildSizesInfoKHR nativeInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR,
 	    .pNext = nullptr};
@@ -285,7 +310,7 @@ RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelA
 		target.instanceFlags = ToVkPartitionedInstanceFlags(source.Flags);
 		target.instanceIndex = source.InstanceIndex;
 		target.partitionIndex = source.PartitionIndex;
-		target.accelerationStructure = source.AccelerationStructure;
+		target.accelerationStructure = ResolvePartitionedInstanceAccelerationStructureAddress(source.AccelerationStructure);
 	}
 
 	for (std::uint32_t instanceIndex = 0; instanceIndex < operationPack.InstanceUpdateCount; ++instanceIndex)
