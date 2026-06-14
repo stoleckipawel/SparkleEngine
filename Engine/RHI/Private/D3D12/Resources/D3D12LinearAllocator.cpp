@@ -71,6 +71,15 @@ void D3D12LinearAllocator::Reset() noexcept
 	m_HighWaterMark = 0;
 }
 
+float D3D12LinearAllocator::GetUsagePercent() const noexcept
+{
+	if (m_Capacity == 0)
+	{
+		return 0.0f;
+	}
+	return static_cast<float>(GetCurrentOffset()) / static_cast<float>(m_Capacity) * 100.0f;
+}
+
 D3D12LinearAllocation D3D12LinearAllocator::Allocate(uint64_t size, uint64_t alignment)
 {
 	assert(m_bInitialized && "D3D12LinearAllocator not initialized");

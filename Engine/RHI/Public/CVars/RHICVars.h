@@ -5,3 +5,4 @@
 
 extern SPARKLE_RHI_API ConsoleVariable<bool> CVarRhiVSync;
 extern SPARKLE_RHI_API ConsoleVariable<bool> CVarRhiPreferHighPerformanceAdapter;
+extern SPARKLE_RHI_API ConsoleVariable<bool> CVarRhiRayTracingPreferPartitionedTlas;

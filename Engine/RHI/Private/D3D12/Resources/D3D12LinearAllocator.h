@@ -57,12 +57,7 @@ class D3D12LinearAllocator
 
 	uint64_t GetHighWaterMark() const noexcept { return m_HighWaterMark.load(std::memory_order_relaxed); }
 
-	float GetUsagePercent() const noexcept
-	{
-		if (m_Capacity == 0)
-			return 0.0f;
-		return static_cast<float>(GetCurrentOffset()) / static_cast<float>(m_Capacity) * 100.0f;
-	}
+	float GetUsagePercent() const noexcept;
 
 	bool IsInitialized() const noexcept { return m_bInitialized; }
 

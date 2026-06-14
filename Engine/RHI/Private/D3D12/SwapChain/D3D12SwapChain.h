@@ -57,10 +57,7 @@ class D3D12SwapChain final
 
 	UINT GetAllowTearingFlag() const;
 
-	UINT GetFrameLatencyWaitableFlag() const
-	{
-		return (RenderConfig::FramesInFlight > 1) ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0u;
-	}
+	UINT GetFrameLatencyWaitableFlag() const;
 
 	UINT ComputeSwapChainFlags() const;
 

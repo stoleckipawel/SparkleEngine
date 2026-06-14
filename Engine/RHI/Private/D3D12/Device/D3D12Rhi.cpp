@@ -340,6 +340,76 @@ void D3D12Rhi::CreateFenceAndEvent()
 	}
 }
 
+void D3D12Rhi::SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept
+{
+	m_currentFrameIndex = frameInFlightIndex;
+}
+
+uint32_t D3D12Rhi::GetCurrentFrameIndex() const noexcept
+{
+	return m_currentFrameIndex;
+}
+
+RhiRayTracingCapabilities D3D12Rhi::GetRayTracingCapabilities() const noexcept
+{
+	return m_rayTracingCapabilities;
+}
+
+const ComPtr<IDXGIFactory7>& D3D12Rhi::GetDxgiFactory() const noexcept
+{
+	return m_dxgiFactory;
+}
+
+const ComPtr<IDXGIAdapter1>& D3D12Rhi::GetAdapter() const noexcept
+{
+	return m_adapter;
+}
+
+const ComPtr<ID3D12Device10>& D3D12Rhi::GetDevice() const noexcept
+{
+	return m_device;
+}
+
+const ComPtr<ID3D12CommandQueue>& D3D12Rhi::GetCommandQueue() const noexcept
+{
+	return m_cmdQueue;
+}
+
+const ComPtr<ID3D12CommandAllocator>& D3D12Rhi::GetCommandAllocator(uint32_t frameInFlightIndex) const noexcept
+{
+	return m_cmdAllocator[frameInFlightIndex];
+}
+
+const ComPtr<ID3D12GraphicsCommandList7>& D3D12Rhi::GetCommandList(uint32_t frameInFlightIndex) const noexcept
+{
+	return m_cmdList[frameInFlightIndex];
+}
+
+const ComPtr<ID3D12Fence1>& D3D12Rhi::GetFence() const noexcept
+{
+	return m_fence;
+}
+
+HANDLE D3D12Rhi::GetFenceEvent() const noexcept
+{
+	return m_fenceEvent;
+}
+
+uint64_t D3D12Rhi::GetNextFenceValue() const noexcept
+{
+	return m_nextFenceValue;
+}
+
+D3D12GpuMemoryAllocator& D3D12Rhi::GetMemoryAllocator() noexcept
+{
+	return *m_memoryAllocator;
+}
+
+const D3D12GpuMemoryAllocator& D3D12Rhi::GetMemoryAllocator() const noexcept
+{
+	return *m_memoryAllocator;
+}
+
 void D3D12Rhi::CloseCommandList(uint32_t frameInFlightIndex) noexcept
 {
 	CHECK(m_cmdList[frameInFlightIndex]->Close());

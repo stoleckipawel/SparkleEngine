@@ -10,51 +10,77 @@
 #include "Vulkan/VulkanTypeConversions.h"
 
 #include <memory>
-#include <vector>
 
-namespace
+VkAccelerationStructureTypeKHR VulkanRayTracingServices::ToVkAccelerationStructureType(
+    ERhiRayTracingAccelerationStructureType type) noexcept
 {
-	VkAccelerationStructureTypeKHR ToVkAccelerationStructureType(ERhiRayTracingAccelerationStructureType type) noexcept
+	switch (type)
 	{
-		switch (type)
-		{
-			case ERhiRayTracingAccelerationStructureType::TopLevel:
-				return VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-			case ERhiRayTracingAccelerationStructureType::BottomLevel:
-			default:
-				return VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		}
-	}
-
-	VkAccelerationStructureGeometryKHR BuildBottomLevelGeometry(const RhiRayTracingGeometryDesc& geometry) noexcept
-	{
-		const VkAccelerationStructureGeometryTrianglesDataKHR triangles{
-		    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
-		    .pNext = nullptr,
-		    .vertexFormat = VK_FORMAT_R32G32B32_SFLOAT,
-		    .vertexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.VertexBuffer},
-		    .vertexStride = geometry.VertexStrideInBytes,
-		    .maxVertex = geometry.VertexCount > 0 ? geometry.VertexCount - 1u : 0u,
-		    .indexType = VulkanTypeConversions::ToVkIndexType(geometry.IndexFormat),
-		    .indexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.IndexBuffer},
-		    .transformData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0}};
-		return VkAccelerationStructureGeometryKHR{
-		    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
-		    .pNext = nullptr,
-		    .geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR,
-		    .geometry = VkAccelerationStructureGeometryDataKHR{.triangles = triangles},
-		    .flags = geometry.Opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0u};
+		case ERhiRayTracingAccelerationStructureType::TopLevel:
+			return VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		case ERhiRayTracingAccelerationStructureType::BottomLevel:
+		default:
+			return VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 	}
 }
 
-VulkanRayTracingServices::VulkanRayTracingServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
-    m_rhi(&rhi), m_memoryAllocator(&memoryAllocator)
+VkAccelerationStructureGeometryKHR VulkanRayTracingServices::BuildBottomLevelGeometry(
+    const RhiRayTracingGeometryDesc& geometry) noexcept
 {
+	const VkAccelerationStructureGeometryTrianglesDataKHR triangles{
+	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
+	    .pNext = nullptr,
+	    .vertexFormat = VK_FORMAT_R32G32B32_SFLOAT,
+	    .vertexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.VertexBuffer},
+	    .vertexStride = geometry.VertexStrideInBytes,
+	    .maxVertex = geometry.VertexCount > 0 ? geometry.VertexCount - 1u : 0u,
+	    .indexType = VulkanTypeConversions::ToVkIndexType(geometry.IndexFormat),
+	    .indexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.IndexBuffer},
+	    .transformData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0}};
+	return VkAccelerationStructureGeometryKHR{
+	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
+	    .pNext = nullptr,
+	    .geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR,
+	    .geometry = VkAccelerationStructureGeometryDataKHR{.triangles = triangles},
+	    .flags = geometry.Opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0u};
+}
+
+VulkanRayTracingServices::VulkanRayTracingServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
+    m_rhi(&rhi),
+    m_memoryAllocator(&memoryAllocator),
+    m_classicTlasServices(rhi, memoryAllocator),
+    m_partitionedTlasServices(rhi, memoryAllocator)
+{
+}
+
+RhiClassicTlasService& VulkanRayTracingServices::GetClassicTlasService() noexcept
+{
+	return m_classicTlasServices;
+}
+
+const RhiClassicTlasService& VulkanRayTracingServices::GetClassicTlasService() const noexcept
+{
+	return m_classicTlasServices;
+}
+
+RhiPartitionedTlasService& VulkanRayTracingServices::GetPartitionedTlasService() noexcept
+{
+	return m_partitionedTlasServices;
+}
+
+const RhiPartitionedTlasService& VulkanRayTracingServices::GetPartitionedTlasService() const noexcept
+{
+	return m_partitionedTlasServices;
 }
 
 RhiRayTracingCapabilities VulkanRayTracingServices::GetCapabilities() const noexcept
 {
 	return m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+}
+
+RhiRayTracingCapabilities VulkanRayTracingServices::GetRayTracingCapabilities() const noexcept
+{
+	return GetCapabilities();
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetBottomLevelAccelerationStructurePrebuildInfo(
@@ -98,47 +124,27 @@ RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetBott
 RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetTopLevelAccelerationStructurePrebuildInfo(
     std::uint32_t instanceCount) const noexcept
 {
-	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
-	    m_rhi->GetAccelerationStructureBuildSizes() == nullptr || instanceCount == 0)
-	{
-		return {};
-	}
+	return m_classicTlasServices.GetClassicTopLevelAccelerationStructurePrebuildInfo(instanceCount);
+}
 
-	const VkAccelerationStructureGeometryInstancesDataKHR instances{
-	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR,
-	    .pNext = nullptr,
-	    .arrayOfPointers = VK_FALSE,
-	    .data = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0}};
-	const VkAccelerationStructureGeometryKHR geometry{
-	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
-	    .pNext = nullptr,
-	    .geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR,
-	    .geometry = VkAccelerationStructureGeometryDataKHR{.instances = instances},
-	    .flags = VK_GEOMETRY_OPAQUE_BIT_KHR};
-	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
-	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
-	    .pNext = nullptr,
-	    .type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR,
-	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
-	    .mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
-	    .srcAccelerationStructure = VK_NULL_HANDLE,
-	    .dstAccelerationStructure = VK_NULL_HANDLE,
-	    .geometryCount = 1,
-	    .pGeometries = &geometry,
-	    .ppGeometries = nullptr,
-	    .scratchData = VkDeviceOrHostAddressKHR{.deviceAddress = 0}};
-	VkAccelerationStructureBuildSizesInfoKHR nativeInfo{
-	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR};
-	m_rhi->GetAccelerationStructureBuildSizes()(
-	    m_rhi->GetDevice(),
-	    VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-	    &buildInfo,
-	    &instanceCount,
-	    &nativeInfo);
-	return RhiRayTracingAccelerationStructurePrebuildInfo{
-	    .ResultDataMaxSizeInBytes = nativeInfo.accelerationStructureSize,
-	    .ScratchDataSizeInBytes = nativeInfo.buildScratchSize,
-	    .UpdateScratchDataSizeInBytes = nativeInfo.updateScratchSize};
+RhiPartitionedTlasBuildSizes VulkanRayTracingServices::GetPartitionedTopLevelAccelerationStructureBuildSizes(
+    const RhiPartitionedTlasDesc& desc) const noexcept
+{
+	return m_partitionedTlasServices.GetPartitionedTopLevelAccelerationStructureBuildSizes(desc);
+}
+
+RhiOwnedResourceHandle VulkanRayTracingServices::CreatePartitionedTopLevelAccelerationStructureBuffer(
+    const RhiPartitionedTlasBuildSizes& sizes,
+    std::wstring_view debugName)
+{
+	return m_partitionedTlasServices.CreatePartitionedTopLevelAccelerationStructureBuffer(sizes, debugName);
+}
+
+RhiOwnedResourceHandle VulkanRayTracingServices::CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
+    const RhiPartitionedTlasOperationPackDesc& operationPack,
+    std::wstring_view debugName)
+{
+	return m_partitionedTlasServices.CreatePartitionedTopLevelAccelerationStructureOperationBuffer(operationPack, debugName);
 }
 
 RhiOwnedResourceHandle VulkanRayTracingServices::CreateScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName)
@@ -159,6 +165,13 @@ RhiOwnedResourceHandle VulkanRayTracingServices::CreateScratchBuffer(std::uint64
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    debugName.empty() ? L"RayTracingScratch" : debugName);
 	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
+}
+
+RhiOwnedResourceHandle VulkanRayTracingServices::CreateRayTracingScratchBuffer(
+    std::uint64_t sizeInBytes,
+    std::wstring_view debugName)
+{
+	return CreateScratchBuffer(sizeInBytes, debugName);
 }
 
 RhiOwnedResourceHandle VulkanRayTracingServices::CreateAccelerationStructureBuffer(
@@ -219,47 +232,26 @@ RhiOwnedResourceHandle VulkanRayTracingServices::CreateAccelerationStructureBuff
 	return record->DeviceAddress != 0 ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
+RhiOwnedResourceHandle VulkanRayTracingServices::CreateRayTracingAccelerationStructureBuffer(
+    std::uint64_t sizeInBytes,
+    ERhiRayTracingAccelerationStructureType type,
+    std::wstring_view debugName)
+{
+	return CreateAccelerationStructureBuffer(sizeInBytes, type, debugName);
+}
+
 RhiOwnedResourceHandle VulkanRayTracingServices::CreateInstanceBuffer(
     const RhiRayTracingInstanceDesc* instances,
     std::uint32_t instanceCount,
     std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
-	    !RhiValidation::ValidateRayTracingInstanceDescs(instances, instanceCount, "Vulkan.CreateRayTracingInstanceBuffer"))
-	{
-		return {};
-	}
+	return m_classicTlasServices.CreateClassicTopLevelAccelerationStructureInstanceBuffer(instances, instanceCount, debugName);
+}
 
-	std::vector<VkAccelerationStructureInstanceKHR> nativeInstances(instanceCount);
-	for (std::uint32_t instanceIndex = 0; instanceIndex < instanceCount; ++instanceIndex)
-	{
-		const RhiRayTracingInstanceDesc& source = instances[instanceIndex];
-		VkAccelerationStructureInstanceKHR& nativeInstance = nativeInstances[instanceIndex];
-		for (std::uint32_t transformIndex = 0; transformIndex < source.Transform.size(); ++transformIndex)
-		{
-			nativeInstance.transform.matrix[transformIndex / 4][transformIndex % 4] = source.Transform[transformIndex];
-		}
-		nativeInstance.instanceCustomIndex = source.InstanceID & 0x00FFFFFFu;
-		nativeInstance.mask = source.InstanceMask & 0xFFu;
-		nativeInstance.instanceShaderBindingTableRecordOffset = source.InstanceContributionToHitGroupIndex & 0x00FFFFFFu;
-		nativeInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-		nativeInstance.accelerationStructureReference = source.AccelerationStructure;
-	}
-
-	const std::uint64_t sizeInBytes = sizeof(VkAccelerationStructureInstanceKHR) * static_cast<std::uint64_t>(nativeInstances.size());
-	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes};
-	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
-	    desc,
-	    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
-	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
-	    bufferCreateInfo,
-	    RhiMemoryCategory::RayTracing,
-	    RhiMemoryResidencyClass::HostUpload,
-	    debugName.empty() ? L"RayTracingInstanceBuffer" : debugName);
-	if (record == nullptr || record->Buffer == VK_NULL_HANDLE ||
-	    !m_memoryAllocator->WriteAllocation(*record, nativeInstances.data(), static_cast<std::size_t>(sizeInBytes)))
-	{
-		return {};
-	}
-	return MakeVulkanOwnedResourceHandle(std::move(record));
+RhiOwnedResourceHandle VulkanRayTracingServices::CreateRayTracingInstanceBuffer(
+    const RhiRayTracingInstanceDesc* instances,
+    std::uint32_t instanceCount,
+    std::wstring_view debugName)
+{
+	return CreateInstanceBuffer(instances, instanceCount, debugName);
 }

@@ -38,8 +38,8 @@ class D3D12Rhi final
 
 	void ExecuteCommandList(uint32_t frameInFlightIndex) noexcept;
 
-	void SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept { m_currentFrameIndex = frameInFlightIndex; }
-	uint32_t GetCurrentFrameIndex() const noexcept { return m_currentFrameIndex; }
+	void SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept;
+	uint32_t GetCurrentFrameIndex() const noexcept;
 
 	void Signal(uint32_t frameInFlightIndex) noexcept;
 
@@ -55,25 +55,19 @@ class D3D12Rhi final
 	void CollectCrashDiagnostics() noexcept;
 
 	void CheckShaderModel6Support() const noexcept;
-	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept { return m_rayTracingCapabilities; }
+	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
 
-	const ComPtr<IDXGIFactory7>& GetDxgiFactory() const noexcept { return m_dxgiFactory; }
-	const ComPtr<IDXGIAdapter1>& GetAdapter() const noexcept { return m_adapter; }
-	const ComPtr<ID3D12Device10>& GetDevice() const noexcept { return m_device; }
-	const ComPtr<ID3D12CommandQueue>& GetCommandQueue() const noexcept { return m_cmdQueue; }
-	const ComPtr<ID3D12CommandAllocator>& GetCommandAllocator(uint32_t frameInFlightIndex) const noexcept
-	{
-		return m_cmdAllocator[frameInFlightIndex];
-	}
-	const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList(uint32_t frameInFlightIndex) const noexcept
-	{
-		return m_cmdList[frameInFlightIndex];
-	}
-	const ComPtr<ID3D12Fence1>& GetFence() const noexcept { return m_fence; }
-	HANDLE GetFenceEvent() const noexcept { return m_fenceEvent; }
-	uint64_t GetNextFenceValue() const noexcept { return m_nextFenceValue; }
-	D3D12GpuMemoryAllocator& GetMemoryAllocator() noexcept { return *m_memoryAllocator; }
-	const D3D12GpuMemoryAllocator& GetMemoryAllocator() const noexcept { return *m_memoryAllocator; }
+	const ComPtr<IDXGIFactory7>& GetDxgiFactory() const noexcept;
+	const ComPtr<IDXGIAdapter1>& GetAdapter() const noexcept;
+	const ComPtr<ID3D12Device10>& GetDevice() const noexcept;
+	const ComPtr<ID3D12CommandQueue>& GetCommandQueue() const noexcept;
+	const ComPtr<ID3D12CommandAllocator>& GetCommandAllocator(uint32_t frameInFlightIndex) const noexcept;
+	const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList(uint32_t frameInFlightIndex) const noexcept;
+	const ComPtr<ID3D12Fence1>& GetFence() const noexcept;
+	HANDLE GetFenceEvent() const noexcept;
+	uint64_t GetNextFenceValue() const noexcept;
+	D3D12GpuMemoryAllocator& GetMemoryAllocator() noexcept;
+	const D3D12GpuMemoryAllocator& GetMemoryAllocator() const noexcept;
 
   private:
 	void SelectAdapter() noexcept;

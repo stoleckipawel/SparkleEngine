@@ -52,33 +52,29 @@ class VulkanRhi final
 	bool TryPopDiagnosticMessage(RhiDiagnosticMessage& outMessage) noexcept;
 	void ClearDiagnosticMessages() noexcept;
 
-	VkInstance GetInstance() const noexcept { return m_instance; }
-	VkPhysicalDevice GetPhysicalDevice() const noexcept { return m_physicalDevice; }
-	VkDevice GetDevice() const noexcept { return m_device; }
-	VkQueue GetGraphicsQueue() const noexcept { return m_graphicsQueue; }
-	std::uint32_t GetGraphicsQueueFamilyIndex() const noexcept { return m_graphicsQueueFamilyIndex; }
-	PFN_vkSetDebugUtilsObjectNameEXT GetSetDebugUtilsObjectName() const noexcept { return m_setDebugUtilsObjectName; }
-	PFN_vkCmdBeginDebugUtilsLabelEXT GetCmdBeginDebugUtilsLabel() const noexcept { return m_cmdBeginDebugUtilsLabel; }
-	PFN_vkCmdEndDebugUtilsLabelEXT GetCmdEndDebugUtilsLabel() const noexcept { return m_cmdEndDebugUtilsLabel; }
-	PFN_vkCmdInsertDebugUtilsLabelEXT GetCmdInsertDebugUtilsLabel() const noexcept { return m_cmdInsertDebugUtilsLabel; }
-	const VulkanAdapterInfo& GetAdapterInfo() const noexcept { return m_adapterInfo; }
-	const VulkanFeatureStatus& GetFeatureStatus() const noexcept { return m_featureStatus; }
-	const std::vector<std::string>& GetEnabledInstanceExtensions() const noexcept { return m_enabledInstanceExtensions; }
-	const std::vector<std::string>& GetEnabledDeviceExtensions() const noexcept { return m_enabledDeviceExtensions; }
-	bool IsValidationEnabled() const noexcept { return m_validationEnabled; }
-	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept { return m_rayTracingCapabilities; }
-	PFN_vkGetBufferDeviceAddress GetGetBufferDeviceAddress() const noexcept { return m_getBufferDeviceAddress; }
-	PFN_vkCreateAccelerationStructureKHR GetCreateAccelerationStructure() const noexcept { return m_createAccelerationStructure; }
-	PFN_vkDestroyAccelerationStructureKHR GetDestroyAccelerationStructure() const noexcept { return m_destroyAccelerationStructure; }
-	PFN_vkGetAccelerationStructureBuildSizesKHR GetAccelerationStructureBuildSizes() const noexcept
-	{
-		return m_getAccelerationStructureBuildSizes;
-	}
-	PFN_vkCmdBuildAccelerationStructuresKHR GetCmdBuildAccelerationStructures() const noexcept { return m_cmdBuildAccelerationStructures; }
-	PFN_vkGetAccelerationStructureDeviceAddressKHR GetAccelerationStructureDeviceAddress() const noexcept
-	{
-		return m_getAccelerationStructureDeviceAddress;
-	}
+	VkInstance GetInstance() const noexcept;
+	VkPhysicalDevice GetPhysicalDevice() const noexcept;
+	VkDevice GetDevice() const noexcept;
+	VkQueue GetGraphicsQueue() const noexcept;
+	std::uint32_t GetGraphicsQueueFamilyIndex() const noexcept;
+	PFN_vkSetDebugUtilsObjectNameEXT GetSetDebugUtilsObjectName() const noexcept;
+	PFN_vkCmdBeginDebugUtilsLabelEXT GetCmdBeginDebugUtilsLabel() const noexcept;
+	PFN_vkCmdEndDebugUtilsLabelEXT GetCmdEndDebugUtilsLabel() const noexcept;
+	PFN_vkCmdInsertDebugUtilsLabelEXT GetCmdInsertDebugUtilsLabel() const noexcept;
+	const VulkanAdapterInfo& GetAdapterInfo() const noexcept;
+	const VulkanFeatureStatus& GetFeatureStatus() const noexcept;
+	const std::vector<std::string>& GetEnabledInstanceExtensions() const noexcept;
+	const std::vector<std::string>& GetEnabledDeviceExtensions() const noexcept;
+	bool IsValidationEnabled() const noexcept;
+	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
+	PFN_vkGetBufferDeviceAddress GetGetBufferDeviceAddress() const noexcept;
+	PFN_vkCreateAccelerationStructureKHR GetCreateAccelerationStructure() const noexcept;
+	PFN_vkDestroyAccelerationStructureKHR GetDestroyAccelerationStructure() const noexcept;
+	PFN_vkGetAccelerationStructureBuildSizesKHR GetAccelerationStructureBuildSizes() const noexcept;
+	PFN_vkCmdBuildAccelerationStructuresKHR GetCmdBuildAccelerationStructures() const noexcept;
+	PFN_vkGetAccelerationStructureDeviceAddressKHR GetAccelerationStructureDeviceAddress() const noexcept;
+	PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV GetPartitionedAccelerationStructureBuildSizes() const noexcept;
+	PFN_vkCmdBuildPartitionedAccelerationStructuresNV GetCmdBuildPartitionedAccelerationStructures() const noexcept;
 
   private:
 	struct PhysicalDeviceCandidate final
@@ -136,6 +132,8 @@ class VulkanRhi final
 	PFN_vkGetAccelerationStructureBuildSizesKHR m_getAccelerationStructureBuildSizes = nullptr;
 	PFN_vkCmdBuildAccelerationStructuresKHR m_cmdBuildAccelerationStructures = nullptr;
 	PFN_vkGetAccelerationStructureDeviceAddressKHR m_getAccelerationStructureDeviceAddress = nullptr;
+	PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV m_getPartitionedAccelerationStructureBuildSizes = nullptr;
+	PFN_vkCmdBuildPartitionedAccelerationStructuresNV m_cmdBuildPartitionedAccelerationStructures = nullptr;
 	std::vector<std::string> m_enabledInstanceExtensions;
 	std::vector<std::string> m_enabledDeviceExtensions;
 	std::vector<std::string> m_enabledLayers;

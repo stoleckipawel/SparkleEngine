@@ -41,6 +41,7 @@ class VulkanDescriptorAllocator final
 	    std::uint64_t offsetInBytes,
 	    std::uint64_t sizeInBytes);
 	RhiGpuDescriptorHandle RegisterAccelerationStructureDescriptor(VkAccelerationStructureKHR accelerationStructure);
+	RhiGpuDescriptorHandle RegisterPartitionedAccelerationStructureDescriptor(VkDeviceAddress accelerationStructureAddress);
 	void ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept;
 	void WriteImageDescriptor(RhiCpuDescriptorHandle destination, ERhiResourceViewKind viewKind, VkImageView imageView) noexcept;
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
@@ -62,6 +63,10 @@ class VulkanDescriptorAllocator final
 	    VkDescriptorSet descriptorSet,
 	    const CompiledBinding& binding,
 	    VkAccelerationStructureKHR accelerationStructure) noexcept;
+	void WritePartitionedAccelerationStructureDescriptor(
+	    VkDescriptorSet descriptorSet,
+	    const CompiledBinding& binding,
+	    VkDeviceAddress accelerationStructureAddress) noexcept;
 
   private:
 	enum class EntryKind : std::uint8_t
@@ -73,6 +78,7 @@ class VulkanDescriptorAllocator final
 		StorageBuffer,
 		Sampler,
 		AccelerationStructure,
+		PartitionedAccelerationStructure,
 	};
 
 	struct DescriptorEntry final
@@ -81,6 +87,7 @@ class VulkanDescriptorAllocator final
 		VkDescriptorImageInfo Image = {};
 		VkDescriptorBufferInfo Buffer = {};
 		VkAccelerationStructureKHR AccelerationStructure = VK_NULL_HANDLE;
+		VkDeviceAddress PartitionedAccelerationStructureAddress = 0;
 	};
 
 	struct DescriptorTableRecord final

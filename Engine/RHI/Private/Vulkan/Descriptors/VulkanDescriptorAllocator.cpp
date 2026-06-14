@@ -207,6 +207,31 @@ RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterAccelerationStructureD
 	return VulkanDescriptorHandles::MakeGpuDescriptorHandle(static_cast<std::uint32_t>(m_registeredDescriptors.size() - 1));
 }
 
+RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterPartitionedAccelerationStructureDescriptor(
+    VkDeviceAddress accelerationStructureAddress)
+{
+	if (accelerationStructureAddress == 0)
+	{
+		return {};
+	}
+
+	DescriptorEntry entry{};
+	entry.Kind = EntryKind::PartitionedAccelerationStructure;
+	entry.PartitionedAccelerationStructureAddress = accelerationStructureAddress;
+
+	std::scoped_lock lock(m_mutex);
+	if (!m_freeRegisteredDescriptorIndices.empty())
+	{
+		const std::uint32_t index = m_freeRegisteredDescriptorIndices.back();
+		m_freeRegisteredDescriptorIndices.pop_back();
+		m_registeredDescriptors[index] = entry;
+		return VulkanDescriptorHandles::MakeGpuDescriptorHandle(index);
+	}
+
+	m_registeredDescriptors.push_back(entry);
+	return VulkanDescriptorHandles::MakeGpuDescriptorHandle(static_cast<std::uint32_t>(m_registeredDescriptors.size() - 1));
+}
+
 void VulkanDescriptorAllocator::ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept
 {
 	std::uint32_t index = 0;
@@ -410,6 +435,22 @@ void VulkanDescriptorAllocator::WriteAccelerationStructureDescriptor(
 	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
 }
 
+void VulkanDescriptorAllocator::WritePartitionedAccelerationStructureDescriptor(
+    VkDescriptorSet descriptorSet,
+    const CompiledBinding& binding,
+    VkDeviceAddress accelerationStructureAddress) noexcept
+{
+	if (descriptorSet == VK_NULL_HANDLE || accelerationStructureAddress == 0)
+	{
+		return;
+	}
+
+	DescriptorEntry entry{};
+	entry.Kind = EntryKind::PartitionedAccelerationStructure;
+	entry.PartitionedAccelerationStructureAddress = accelerationStructureAddress;
+	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
+}
+
 VkDescriptorType VulkanDescriptorAllocator::ToDescriptorType(EntryKind kind) noexcept
 {
 	switch (kind)
@@ -426,6 +467,8 @@ VkDescriptorType VulkanDescriptorAllocator::ToDescriptorType(EntryKind kind) noe
 			return VK_DESCRIPTOR_TYPE_SAMPLER;
 		case EntryKind::AccelerationStructure:
 			return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		case EntryKind::PartitionedAccelerationStructure:
+			return VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV;
 		case EntryKind::Empty:
 		default:
 			return VK_DESCRIPTOR_TYPE_MAX_ENUM;
@@ -503,13 +546,18 @@ const VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::Fin
 
 VkDescriptorPool VulkanDescriptorAllocator::CreatePoolPage()
 {
-	static constexpr std::array<VkDescriptorPoolSize, 6> poolSizes = {
+	std::vector<VkDescriptorPoolSize> poolSizes{
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 1024},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = 1024},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .descriptorCount = 1024},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = 512},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 256},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = 128}};
+	if (m_rhi.GetRayTracingCapabilities().Groups.PartitionedTlas.Supported)
+	{
+		poolSizes.push_back(
+		    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV, .descriptorCount = 128});
+	}
 	const VkDescriptorPoolCreateInfo createInfo{
 	    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 	    .pNext = nullptr,
@@ -661,7 +709,8 @@ void VulkanDescriptorAllocator::WriteEntries(
 	    (binding.SemanticKind == ShaderParameterSemanticKind::RWTexture && entryKind == EntryKind::StorageImage) ||
 	    (binding.SemanticKind == ShaderParameterSemanticKind::UniformData && entryKind == EntryKind::UniformBuffer) ||
 	    (binding.SemanticKind == ShaderParameterSemanticKind::SamplerSet && entryKind == EntryKind::Sampler) ||
-	    (binding.SemanticKind == ShaderParameterSemanticKind::AccelerationStructure && entryKind == EntryKind::AccelerationStructure);
+	    (binding.SemanticKind == ShaderParameterSemanticKind::AccelerationStructure &&
+	     (entryKind == EntryKind::AccelerationStructure || entryKind == EntryKind::PartitionedAccelerationStructure));
 	if (!entryMatchesBinding)
 	{
 		SPDLOG_LOGGER_ERROR(
@@ -674,9 +723,11 @@ void VulkanDescriptorAllocator::WriteEntries(
 	std::vector<VkDescriptorImageInfo> imageInfos;
 	std::vector<VkDescriptorBufferInfo> bufferInfos;
 	std::vector<VkAccelerationStructureKHR> accelerationStructures;
+	std::vector<VkDeviceAddress> partitionedAccelerationStructureAddresses;
 	imageInfos.reserve(entries.size());
 	bufferInfos.reserve(entries.size());
 	accelerationStructures.reserve(entries.size());
+	partitionedAccelerationStructureAddresses.reserve(entries.size());
 	for (const DescriptorEntry& entry : entries)
 	{
 		if (entry.Kind != entryKind)
@@ -692,6 +743,10 @@ void VulkanDescriptorAllocator::WriteEntries(
 		{
 			accelerationStructures.push_back(entry.AccelerationStructure);
 		}
+		else if (entryKind == EntryKind::PartitionedAccelerationStructure)
+		{
+			partitionedAccelerationStructureAddresses.push_back(entry.PartitionedAccelerationStructureAddress);
+		}
 		else
 		{
 			bufferInfos.push_back(entry.Buffer);
@@ -703,9 +758,19 @@ void VulkanDescriptorAllocator::WriteEntries(
 	    .pNext = nullptr,
 	    .accelerationStructureCount = static_cast<std::uint32_t>(accelerationStructures.size()),
 	    .pAccelerationStructures = accelerationStructures.empty() ? nullptr : accelerationStructures.data()};
+	const VkWriteDescriptorSetPartitionedAccelerationStructureNV partitionedAccelerationStructureWrite{
+	    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV,
+	    .pNext = nullptr,
+	    .accelerationStructureCount = static_cast<std::uint32_t>(partitionedAccelerationStructureAddresses.size()),
+	    .pAccelerationStructures =
+	        partitionedAccelerationStructureAddresses.empty() ? nullptr : partitionedAccelerationStructureAddresses.data()};
 	const VkWriteDescriptorSet write{
 	    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-	    .pNext = entryKind == EntryKind::AccelerationStructure ? &accelerationStructureWrite : nullptr,
+	    .pNext = entryKind == EntryKind::AccelerationStructure
+	                 ? static_cast<const void*>(&accelerationStructureWrite)
+	                 : (entryKind == EntryKind::PartitionedAccelerationStructure
+	                        ? static_cast<const void*>(&partitionedAccelerationStructureWrite)
+	                        : nullptr),
 	    .dstSet = descriptorSet,
 	    .dstBinding = binding.BindingPoint.Binding,
 	    .dstArrayElement = 0,

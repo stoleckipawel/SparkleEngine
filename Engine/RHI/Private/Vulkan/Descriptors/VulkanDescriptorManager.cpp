@@ -161,13 +161,16 @@ RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResou
 		{
 			VulkanGpuAllocationRecord* const record =
 			    m_memoryAllocator.FindAllocationRecordByDeviceAddress(desc.AccelerationStructureGpuAddress);
-			if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+			if (record == nullptr ||
+			    (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
 			{
 				return {};
 			}
 
 			const RhiGpuDescriptorHandle descriptorHandle =
-			    m_allocator.RegisterAccelerationStructureDescriptor(record->AccelerationStructure);
+			    record->IsPartitionedAccelerationStructure ?
+			        m_allocator.RegisterPartitionedAccelerationStructureDescriptor(record->DeviceAddress) :
+			        m_allocator.RegisterAccelerationStructureDescriptor(record->AccelerationStructure);
 			return AddResourceView(
 			    ResourceViewRecord{
 			        .Kind = desc.Kind,

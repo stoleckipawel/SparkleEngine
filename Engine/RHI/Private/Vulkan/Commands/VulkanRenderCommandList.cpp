@@ -17,6 +17,19 @@
 
 static const auto g_vulkanRenderCommandListLogger = Logging::GetOrCreateLogger("RHI.Vulkan.CommandList");
 
+VkPartitionedAccelerationStructureInstancesInputNV VulkanRenderCommandList::BuildPartitionedTlasInput(
+    const RhiPartitionedTlasDesc& desc) noexcept
+{
+	return VkPartitionedAccelerationStructureInstancesInputNV{
+	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV,
+	    .pNext = nullptr,
+	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+	    .instanceCount = desc.InstanceCapacity,
+	    .maxInstancePerPartitionCount = desc.MaxInstancesPerPartition,
+	    .partitionCount = desc.PartitionCount,
+	    .maxInstanceInGlobalPartitionCount = desc.MaxInstancesInGlobalPartition};
+}
+
 void VulkanRenderCommandList::CloseOpenRendering() noexcept
 {
 	EndDynamicRenderingIfNeeded();
@@ -130,11 +143,18 @@ void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIn
 	{
 		VulkanGpuAllocationRecord* const record =
 		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
-		if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+		if (record == nullptr || (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
 		{
 			return;
 		}
-		m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+		if (record->IsPartitionedAccelerationStructure)
+		{
+			m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, *binding, record->DeviceAddress);
+		}
+		else
+		{
+			m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+		}
 	}
 	else
 	{
@@ -157,11 +177,18 @@ void VulkanRenderCommandList::BindGraphicsShaderResource(std::uint32_t bindingIn
 	{
 		VulkanGpuAllocationRecord* const record =
 		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
-		if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+		if (record == nullptr || (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
 		{
 			return;
 		}
-		m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+		if (record->IsPartitionedAccelerationStructure)
+		{
+			m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, *binding, record->DeviceAddress);
+		}
+		else
+		{
+			m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+		}
 	}
 	else
 	{
@@ -241,11 +268,18 @@ void VulkanRenderCommandList::BindComputeConstantBuffer(std::uint32_t bindingInd
 	{
 		VulkanGpuAllocationRecord* const record =
 		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
-		if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+		if (record == nullptr || (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
 		{
 			return;
 		}
-		m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+		if (record->IsPartitionedAccelerationStructure)
+		{
+			m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, *binding, record->DeviceAddress);
+		}
+		else
+		{
+			m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+		}
 	}
 	else
 	{
@@ -268,11 +302,18 @@ void VulkanRenderCommandList::BindComputeShaderResource(std::uint32_t bindingInd
 	{
 		VulkanGpuAllocationRecord* const record =
 		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
-		if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+		if (record == nullptr || (record->AccelerationStructure == VK_NULL_HANDLE && !record->IsPartitionedAccelerationStructure))
 		{
 			return;
 		}
-		m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+		if (record->IsPartitionedAccelerationStructure)
+		{
+			m_descriptorAllocator->WritePartitionedAccelerationStructureDescriptor(descriptorSet, *binding, record->DeviceAddress);
+		}
+		else
+		{
+			m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+		}
 	}
 	else
 	{
@@ -692,6 +733,50 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	    .srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
 	    .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
 	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR};
+	const VkDependencyInfo dependencyInfo{
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .pNext = nullptr,
+	    .dependencyFlags = 0,
+	    .memoryBarrierCount = 1,
+	    .pMemoryBarriers = &buildBarrier,
+	    .bufferMemoryBarrierCount = 0,
+	    .pBufferMemoryBarriers = nullptr,
+	    .imageMemoryBarrierCount = 0,
+	    .pImageMemoryBarriers = nullptr};
+	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
+}
+
+void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept
+{
+	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_rhi->GetCmdBuildPartitionedAccelerationStructures() == nullptr ||
+	    desc.DestinationAccelerationStructure == 0 || desc.Scratch == 0 || desc.OperationHeaders == 0 || desc.OperationCount == 0 ||
+	    desc.Layout.InstanceCapacity == 0 || desc.Layout.PartitionCount == 0)
+	{
+		return;
+	}
+	EndDynamicRenderingIfNeeded();
+
+	const VkPartitionedAccelerationStructureInstancesInputNV input = BuildPartitionedTlasInput(desc.Layout);
+	const VkBuildPartitionedAccelerationStructureInfoNV buildInfo{
+	    .sType = VK_STRUCTURE_TYPE_BUILD_PARTITIONED_ACCELERATION_STRUCTURE_INFO_NV,
+	    .pNext = nullptr,
+	    .input = input,
+	    .srcAccelerationStructureData = desc.SourceAccelerationStructure,
+	    .dstAccelerationStructureData = desc.DestinationAccelerationStructure,
+	    .scratchData = desc.Scratch,
+	    .srcInfos = desc.OperationHeaders,
+	    .srcInfosCount = desc.OperationCount};
+	m_rhi->GetCmdBuildPartitionedAccelerationStructures()(m_commandBuffer, &buildInfo);
+
+	const VkMemoryBarrier2 buildBarrier{
+	    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+	    .pNext = nullptr,
+	    .srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+	    .srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+	    .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
+	                    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |
+	                     VK_ACCESS_2_SHADER_STORAGE_READ_BIT};
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,

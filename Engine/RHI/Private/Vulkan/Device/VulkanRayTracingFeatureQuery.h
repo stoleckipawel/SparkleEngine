@@ -14,6 +14,8 @@ struct VulkanRayTracingFeatureStatus final
 	bool SupportsAccelerationStructureFeature = false;
 	bool SupportsRayTracingPipelineFeature = false;
 	bool SupportsRayQueryFeature = false;
+	bool SupportsPartitionedAccelerationStructureFeature = false;
+	bool EnabledPartitionedAccelerationStructure = false;
 	bool EnabledBackend = false;
 };
 

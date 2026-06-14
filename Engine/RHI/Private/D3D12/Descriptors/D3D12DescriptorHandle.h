@@ -23,10 +23,7 @@ class D3D12DescriptorHandle
 
 	void SetIndex(UINT idx) noexcept { m_index = idx; }
 	bool IsValid() const noexcept { return (m_index != InvalidIndex) && (m_cpuHandle.ptr != 0); }
-	bool IsShaderVisible() const noexcept
-	{
-		return (m_descriptorType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) || (m_descriptorType == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-	}
+	bool IsShaderVisible() const noexcept;
 
 	static constexpr UINT InvalidIndex = ~0u;
 

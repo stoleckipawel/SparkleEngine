@@ -57,6 +57,8 @@ VulkanRayTracingFeatureStatus VulkanRayTracingFeatureQuery::Query(VkPhysicalDevi
 	VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR};
 	VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR};
+	VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV partitionedAccelerationStructureFeatures{
+	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV};
 
 	void** next = &features.pNext;
 	*next = &bufferDeviceAddressFeatures;
@@ -74,6 +76,11 @@ VulkanRayTracingFeatureStatus VulkanRayTracingFeatureQuery::Query(VkPhysicalDevi
 	if (status.SupportsRayQueryExtension)
 	{
 		*next = &rayQueryFeatures;
+		next = &rayQueryFeatures.pNext;
+	}
+	if (status.SupportsPartitionedAccelerationStructureExtension)
+	{
+		*next = &partitionedAccelerationStructureFeatures;
 	}
 
 	vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
@@ -81,6 +88,8 @@ VulkanRayTracingFeatureStatus VulkanRayTracingFeatureQuery::Query(VkPhysicalDevi
 	status.SupportsAccelerationStructureFeature = accelerationStructureFeatures.accelerationStructure == VK_TRUE;
 	status.SupportsRayTracingPipelineFeature = rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE;
 	status.SupportsRayQueryFeature = rayQueryFeatures.rayQuery == VK_TRUE;
+	status.SupportsPartitionedAccelerationStructureFeature =
+	    partitionedAccelerationStructureFeatures.partitionedAccelerationStructure == VK_TRUE;
 	status.EnabledBackend = status.SupportsAccelerationStructureExtension && status.SupportsRayQueryExtension &&
 	                        status.SupportsDeferredHostOperationsExtension && status.SupportsBufferDeviceAddressFeature &&
 	                        status.SupportsAccelerationStructureFeature && status.SupportsRayQueryFeature;

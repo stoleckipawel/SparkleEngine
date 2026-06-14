@@ -8,3 +8,8 @@ ConsoleVariable<bool> CVarRhiPreferHighPerformanceAdapter(
     "r.PreferHighPerformanceAdapter",
     true,
     "Prefer the high-performance GPU when selecting a DXGI adapter.");
+
+ConsoleVariable<bool> CVarRhiRayTracingPreferPartitionedTlas(
+    "r.RayTracing.PreferPartitionedTlas",
+    false,
+    "Prefer partitioned top-level acceleration structures when a backend provider is available.");

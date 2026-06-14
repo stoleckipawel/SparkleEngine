@@ -142,6 +142,121 @@ void VulkanRhi::ClearDiagnosticMessages() noexcept
 	m_diagnosticMessages.clear();
 }
 
+VkInstance VulkanRhi::GetInstance() const noexcept
+{
+	return m_instance;
+}
+
+VkPhysicalDevice VulkanRhi::GetPhysicalDevice() const noexcept
+{
+	return m_physicalDevice;
+}
+
+VkDevice VulkanRhi::GetDevice() const noexcept
+{
+	return m_device;
+}
+
+VkQueue VulkanRhi::GetGraphicsQueue() const noexcept
+{
+	return m_graphicsQueue;
+}
+
+std::uint32_t VulkanRhi::GetGraphicsQueueFamilyIndex() const noexcept
+{
+	return m_graphicsQueueFamilyIndex;
+}
+
+PFN_vkSetDebugUtilsObjectNameEXT VulkanRhi::GetSetDebugUtilsObjectName() const noexcept
+{
+	return m_setDebugUtilsObjectName;
+}
+
+PFN_vkCmdBeginDebugUtilsLabelEXT VulkanRhi::GetCmdBeginDebugUtilsLabel() const noexcept
+{
+	return m_cmdBeginDebugUtilsLabel;
+}
+
+PFN_vkCmdEndDebugUtilsLabelEXT VulkanRhi::GetCmdEndDebugUtilsLabel() const noexcept
+{
+	return m_cmdEndDebugUtilsLabel;
+}
+
+PFN_vkCmdInsertDebugUtilsLabelEXT VulkanRhi::GetCmdInsertDebugUtilsLabel() const noexcept
+{
+	return m_cmdInsertDebugUtilsLabel;
+}
+
+const VulkanAdapterInfo& VulkanRhi::GetAdapterInfo() const noexcept
+{
+	return m_adapterInfo;
+}
+
+const VulkanFeatureStatus& VulkanRhi::GetFeatureStatus() const noexcept
+{
+	return m_featureStatus;
+}
+
+const std::vector<std::string>& VulkanRhi::GetEnabledInstanceExtensions() const noexcept
+{
+	return m_enabledInstanceExtensions;
+}
+
+const std::vector<std::string>& VulkanRhi::GetEnabledDeviceExtensions() const noexcept
+{
+	return m_enabledDeviceExtensions;
+}
+
+bool VulkanRhi::IsValidationEnabled() const noexcept
+{
+	return m_validationEnabled;
+}
+
+RhiRayTracingCapabilities VulkanRhi::GetRayTracingCapabilities() const noexcept
+{
+	return m_rayTracingCapabilities;
+}
+
+PFN_vkGetBufferDeviceAddress VulkanRhi::GetGetBufferDeviceAddress() const noexcept
+{
+	return m_getBufferDeviceAddress;
+}
+
+PFN_vkCreateAccelerationStructureKHR VulkanRhi::GetCreateAccelerationStructure() const noexcept
+{
+	return m_createAccelerationStructure;
+}
+
+PFN_vkDestroyAccelerationStructureKHR VulkanRhi::GetDestroyAccelerationStructure() const noexcept
+{
+	return m_destroyAccelerationStructure;
+}
+
+PFN_vkGetAccelerationStructureBuildSizesKHR VulkanRhi::GetAccelerationStructureBuildSizes() const noexcept
+{
+	return m_getAccelerationStructureBuildSizes;
+}
+
+PFN_vkCmdBuildAccelerationStructuresKHR VulkanRhi::GetCmdBuildAccelerationStructures() const noexcept
+{
+	return m_cmdBuildAccelerationStructures;
+}
+
+PFN_vkGetAccelerationStructureDeviceAddressKHR VulkanRhi::GetAccelerationStructureDeviceAddress() const noexcept
+{
+	return m_getAccelerationStructureDeviceAddress;
+}
+
+PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV VulkanRhi::GetPartitionedAccelerationStructureBuildSizes() const noexcept
+{
+	return m_getPartitionedAccelerationStructureBuildSizes;
+}
+
+PFN_vkCmdBuildPartitionedAccelerationStructuresNV VulkanRhi::GetCmdBuildPartitionedAccelerationStructures() const noexcept
+{
+	return m_cmdBuildPartitionedAccelerationStructures;
+}
+
 void VulkanRhi::CreateInstance() noexcept
 {
 	std::uint32_t loaderApiVersion = VK_API_VERSION_1_0;
@@ -322,6 +437,13 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		{
 			deviceExtensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 		}
+		if (m_adapterInfo.VendorId == kNvidiaVendorId &&
+		    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension &&
+		    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature)
+		{
+			deviceExtensions.push_back(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+			m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure = true;
+		}
 	}
 	const bool enabledNvidiaBinaryImport =
 	    AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, kNvidiaBinaryImportExtensionName);
@@ -361,6 +483,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	VkPhysicalDeviceAccelerationStructureFeaturesKHR enabledAccelerationStructureFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR};
 	VkPhysicalDeviceRayQueryFeaturesKHR enabledRayQueryFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR};
+	VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV enabledPartitionedAccelerationStructureFeatures{
+	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV};
 	if (m_featureStatus.RayTracing.EnabledBackend)
 	{
 		enabledBufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
@@ -371,6 +495,12 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		*enabledNext = &enabledAccelerationStructureFeatures;
 		enabledNext = &enabledAccelerationStructureFeatures.pNext;
 		*enabledNext = &enabledRayQueryFeatures;
+		enabledNext = &enabledRayQueryFeatures.pNext;
+		if (m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure)
+		{
+			enabledPartitionedAccelerationStructureFeatures.partitionedAccelerationStructure = VK_TRUE;
+			*enabledNext = &enabledPartitionedAccelerationStructureFeatures;
+		}
 	}
 
 	const VkDeviceCreateInfo createInfo{
@@ -438,6 +568,14 @@ void VulkanRhi::LoadRayTracingFunctions() noexcept
 	    vkGetDeviceProcAddr(m_device, "vkCmdBuildAccelerationStructuresKHR"));
 	m_getAccelerationStructureDeviceAddress = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
 	    vkGetDeviceProcAddr(m_device, "vkGetAccelerationStructureDeviceAddressKHR"));
+	if (m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure)
+	{
+		m_getPartitionedAccelerationStructureBuildSizes =
+		    reinterpret_cast<PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV>(
+		        vkGetDeviceProcAddr(m_device, "vkGetPartitionedAccelerationStructuresBuildSizesNV"));
+		m_cmdBuildPartitionedAccelerationStructures = reinterpret_cast<PFN_vkCmdBuildPartitionedAccelerationStructuresNV>(
+		    vkGetDeviceProcAddr(m_device, "vkCmdBuildPartitionedAccelerationStructuresNV"));
+	}
 
 	const bool loaded = m_getBufferDeviceAddress != nullptr && m_createAccelerationStructure != nullptr &&
 	                    m_destroyAccelerationStructure != nullptr && m_getAccelerationStructureBuildSizes != nullptr &&
@@ -445,6 +583,12 @@ void VulkanRhi::LoadRayTracingFunctions() noexcept
 	if (!loaded)
 	{
 		m_featureStatus.RayTracing.EnabledBackend = false;
+		m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure = false;
+	}
+	if (m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
+	    (m_getPartitionedAccelerationStructureBuildSizes == nullptr || m_cmdBuildPartitionedAccelerationStructures == nullptr))
+	{
+		m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure = false;
 	}
 }
 
@@ -459,12 +603,16 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .SupportsVulkanNativePartitionedAccelerationStructure =
 	        m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
 	    .SupportsVulkanExtension = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
-	    .SupportsVulkanFeatureQuery = false,
+	    .SupportsVulkanFeatureQuery = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature,
 	    .SupportsVulkanFunctionLoading = false,
-	    .SupportsVulkanDescriptorPath = false,
-	    .CapabilityStatusReason = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
-	                                  ? "vulkan-nv-ptlas-provider-not-implemented"
-	                                  : "vulkan-nv-partitioned-acceleration-structure-extension-not-present"};
+	    .SupportsVulkanDescriptorPath = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
+	    .CapabilityStatusReason = m_adapterInfo.VendorId != kNvidiaVendorId
+	                                  ? "vulkan-nv-ptlas-requires-nvidia-device"
+	                                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
+	                                         ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"
+	                                         : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature
+	                                                ? "vulkan-nv-partitioned-acceleration-structure-feature-not-present"
+	                                                : "vulkan-ray-tracing-backend-not-enabled"))};
 	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
 	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,
 	    .SelectedTopLevelProviderReason = "ray-tracing-not-enabled"};
@@ -509,22 +657,53 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .SupportsGpuReadableInstanceBuffer = true,
 	    .InstanceDescSizeInBytes = m_rayTracingCapabilities.InstanceDescSizeInBytes};
 	m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
-	    .Supported = false,
+	    .Supported = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
+	                 m_getPartitionedAccelerationStructureBuildSizes != nullptr &&
+	                 m_cmdBuildPartitionedAccelerationStructures != nullptr,
 	    .Provider = ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure,
 	    .RequiresNvidiaDevice = true,
 	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == kNvidiaVendorId,
 	    .SupportsVulkanNativePartitionedAccelerationStructure =
 	        m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
 	    .SupportsVulkanExtension = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
-	    .SupportsVulkanFeatureQuery = false,
-	    .SupportsVulkanFunctionLoading = false,
-	    .SupportsVulkanDescriptorPath = false,
-	    .CapabilityStatusReason = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
-	                                  ? "vulkan-nv-ptlas-provider-not-implemented"
-	                                  : "vulkan-nv-partitioned-acceleration-structure-extension-not-present"};
+	    .SupportsVulkanFeatureQuery = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature,
+	    .SupportsVulkanFunctionLoading = m_getPartitionedAccelerationStructureBuildSizes != nullptr &&
+	                                     m_cmdBuildPartitionedAccelerationStructures != nullptr,
+	    .SupportsVulkanDescriptorPath = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
+	    .SupportsCpuPackedOperations = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure,
+	    .SupportsGpuDrivenOperations = false,
+	    .SupportsGpuOperationCount = true,
+	    .SupportsGpuWrittenInstanceRecords = false,
+	    .SupportsGpuWrittenPartitionRecords = false,
+	    .SupportsPartitionTranslation = true,
+	    .SupportsGlobalPartition = true,
+	    .SupportsExplicitInstanceAabb = true,
+	    .MaxOperationsPerBuild = std::numeric_limits<std::uint32_t>::max(),
+	    .InstanceWriteDataSizeInBytes = static_cast<std::uint32_t>(sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV)),
+	    .InstanceUpdateDataSizeInBytes = static_cast<std::uint32_t>(sizeof(VkPartitionedAccelerationStructureUpdateInstanceDataNV)),
+	    .PartitionWriteDataSizeInBytes =
+	        static_cast<std::uint32_t>(sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV)),
+	    .OperationDataSizeInBytes = static_cast<std::uint32_t>(sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV)),
+	    .OperationCountDataSizeInBytes = static_cast<std::uint32_t>(sizeof(std::uint32_t)),
+	    .CapabilityStatusReason =
+	        m_adapterInfo.VendorId != kNvidiaVendorId
+	            ? "vulkan-nv-ptlas-requires-nvidia-device"
+	            : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
+	                   ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"
+	                   : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature
+	                          ? "vulkan-nv-partitioned-acceleration-structure-feature-not-present"
+	                          : (!m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure
+	                                 ? "vulkan-nv-partitioned-acceleration-structure-not-enabled"
+	                                 : (m_getPartitionedAccelerationStructureBuildSizes == nullptr ||
+	                                            m_cmdBuildPartitionedAccelerationStructures == nullptr
+	                                        ? "vulkan-nv-ptlas-functions-not-loaded"
+	                                        : "vulkan-nv-ptlas-provider-ready"))))};
 	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
 	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::ClassicTlas,
-	    .SelectedTopLevelProviderReason = "classic-tlas-baseline-selected"};
+	    .SelectedTopLevelProviderReason =
+	        CVarRhiRayTracingPreferPartitionedTlas.Get() && m_rayTracingCapabilities.Groups.PartitionedTlas.Supported
+	            ? "partitioned-tlas-supported-but-renderer-selection-not-wired"
+	            : "classic-tlas-baseline-selected"};
 }
 
 void VulkanRhi::NameBootstrapObjects() noexcept
@@ -556,7 +735,7 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, dynamicRendering supported/enabled={}/{}, "
 	    "samplerAnisotropy supported/enabled={}/{}, fillModeNonSolid supported/enabled={}/{}, "
 	    "rtExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}, bda={}, partitionedTlasNv={}), "
-	    "rtFeatures(as={}, pipeline={}, rayQuery={}, bda={}), rtBackendEnabled={}",
+	    "rtFeatures(as={}, pipeline={}, rayQuery={}, bda={}, partitionedTlasNv={}), rtBackendEnabled={}, ptlasNvEnabled={}",
 	    m_validationEnabled,
 	    m_featureStatus.SupportsSynchronization2,
 	    m_featureStatus.EnabledSynchronization2,
@@ -576,7 +755,9 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature,
 	    m_featureStatus.RayTracing.SupportsRayQueryFeature,
 	    m_featureStatus.RayTracing.SupportsBufferDeviceAddressFeature,
-	    m_featureStatus.RayTracing.EnabledBackend);
+	    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature,
+	    m_featureStatus.RayTracing.EnabledBackend,
+	    m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure);
 	const std::string adapterSummary = std::format(
 	    "Vulkan adapter: name='{}', api={}, driver={}, queueFamily={}",
 	    m_adapterInfo.Name,

@@ -153,6 +153,11 @@ UINT D3D12SwapChain::GetAllowTearingFlag() const
 	return (allowTearing == TRUE) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
 }
 
+UINT D3D12SwapChain::GetFrameLatencyWaitableFlag() const
+{
+	return (RenderConfig::FramesInFlight > 1) ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0u;
+}
+
 UINT D3D12SwapChain::ComputeSwapChainFlags() const
 {
 	UINT flags = 0u;

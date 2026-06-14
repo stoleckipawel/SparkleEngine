@@ -87,6 +87,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	    std::uint32_t instanceCount,
 	    RhiGpuVirtualAddress scratchGpuAddress,
 	    RhiGpuVirtualAddress resultGpuAddress) noexcept override;
+	void BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept override;
 	void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept override;
 	void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept override;
 	void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept override;
@@ -95,6 +96,7 @@ class VulkanRenderCommandList final : public RenderCommandList
   private:
 	static const CompiledBinding* FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept;
 	static VkShaderStageFlags ToVkShaderStages(ShaderStageMask visibilityMask) noexcept;
+	static VkPartitionedAccelerationStructureInstancesInputNV BuildPartitionedTlasInput(const RhiPartitionedTlasDesc& desc) noexcept;
 	VkBuffer ResolveBuffer(RhiGpuVirtualAddress gpuAddress) const noexcept;
 	void BeginDynamicRenderingIfNeeded() noexcept;
 	void EndDynamicRenderingIfNeeded() noexcept;
