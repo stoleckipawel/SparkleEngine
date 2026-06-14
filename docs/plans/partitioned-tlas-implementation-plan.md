@@ -1,0 +1,1426 @@
+# Partitioned TLAS Implementation Plan
+
+Status: design document, no runtime code implemented in this stage.
+
+Primary reference implementation: [NVIDIA nvpro-samples/vk_partitioned_tlas](https://github.com/nvpro-samples/vk_partitioned_tlas)
+
+Primary API references:
+
+- Vulkan SDK / Khronos extension: `VK_NV_partitioned_acceleration_structure`
+- Vulkan headers available locally in `C:/VulkanSDK/1.4.350.0/Include/vulkan/vulkan_core.h`
+- NVIDIA NVAPI R595 public headers:
+  - `NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo`
+  - `NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect`
+  - `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_DESC`
+- Microsoft DXR Part 2 draft/spec reference: https://microsoft.github.io/DirectX-Specs/d3d/Raytracing2.html
+  - The spec describes Partitioned TLAS and indirect RTAS operations.
+  - It currently names support through `D3D12_FEATURE_OPTIONS_NNN` / `ClustersAndPTLASSupported`, so Sparkle should support NVAPI first and keep a future public-DXR backend path clean.
+- NVIDIA RTX Mega Geometry reference: https://github.com/NVIDIA-RTX/RTXMG
+  - RTXMG proves the DX12/Vulkan NVIDIA pattern for advanced ray tracing acceleration-structure work: DX12 through NVAPI and D3D12 Agility SDK, Vulkan through NVIDIA Vulkan extensions.
+- Current Sparkle classic TLAS path:
+  - `Engine/Renderer/Private/RayTracing/RayTracingTlasBuilder.cpp`
+  - `Engine/Renderer/Private/RayTracing/RayTracingBlasCache.cpp`
+  - `Engine/Renderer/Private/RayTracing/RenderRayTracingScene.cpp`
+  - `Engine/Renderer/Private/Frame/RayTracingScene.cpp`
+  - `Engine/RHI/Public/RayTracing/RhiRayTracingDesc.h`
+  - `Engine/RHI/Public/RayTracing/RhiRayTracingService.h`
+  - `Engine/RHI/Public/Commands/RenderCommandList.h`
+  - `Engine/RHI/Private/Vulkan/RayTracing/VulkanRayTracingServices.cpp`
+  - `Engine/RHI/Private/Vulkan/Commands/VulkanRenderCommandList.cpp`
+  - `Engine/RHI/Private/Vulkan/Descriptors/VulkanDescriptorAllocator.cpp`
+  - `Engine/RHI/Private/D3D12/RayTracing/D3D12RayTracingServices.cpp`
+  - `Engine/RHI/Private/D3D12/Commands/D3D12RenderCommandList.cpp`
+
+## Executive Summary
+
+Partitioned TLAS, or PTLAS, solves a very specific ray tracing scaling problem: classic TLAS update cost grows with the whole instance set even when only a small subset of instances moved. PTLAS divides the top-level acceleration structure into partitions so the renderer can update only the instances and partitions that changed. The NVIDIA sample demonstrates this with many static objects plus a smaller set of dynamic dominoes.
+
+For Sparkle, PTLAS should not be treated as a Vulkan sample pasted into the renderer. It should become a ray tracing scene build strategy selected by renderer policy and implemented by backend-specific RHI services. The renderer should understand partitions, dirty instance sets, visual diagnostics, and quality/performance goals. The RHI should own native API details such as `VkPartitionedAccelerationStructureWriteInstanceDataNV`, indirect operation buffers, descriptor writes, D3D12 NVAPI PTLAS entry points, and future public-DXR PTLAS entry points.
+
+The recommended delivery path is:
+
+1. Add architecture and capability scaffolding without changing the visible output.
+2. Implement a classic TLAS vs PTLAS correctness harness.
+3. Implement Vulkan PTLAS first behind capability checks.
+4. Implement GPU-driven PTLAS update generation as a first-class path, with CPU packing retained as a validation and fallback path.
+5. Add visual debug viewmodes and GPU/CPU measurements.
+6. Add D3D12 PTLAS through NVAPI, while keeping the public DXR Part 2 route as a future backend implementation when SDK/runtime symbols land.
+
+## Problem This Solves
+
+Classic TLAS update:
+
+```mermaid
+flowchart LR
+    Scene[Scene instances] --> Instances[Full instance buffer]
+    Instances --> Build[Build/Refit whole TLAS]
+    Build --> Trace[Trace rays]
+```
+
+If 20 instances move in a 100000 instance scene, the classic path still presents the whole top-level instance set to the build/refit command. This is simple and robust, but it weakens the story for large dynamic scenes.
+
+PTLAS update:
+
+```mermaid
+flowchart LR
+    Scene[Scene instances] --> Partitions[Stable partition map]
+    Scene --> Dirty[Dirty moving instances]
+    Dirty --> GpuWriter[GPU operation writer]
+    Partitions --> PTLAS[Partitioned TLAS storage]
+    GpuWriter --> Ops[Indirect update operations]
+    Ops --> PTLAS
+    PTLAS --> Trace[Trace rays]
+```
+
+The goal is to make update cost scale with the changed region, not the entire scene, while keeping trace quality and shader binding behavior equivalent from the shader author's perspective.
+
+GPU-driven updates are part of the target feature, not an optional polish item. The initial CPU operation packer is still valuable because it gives us deterministic correctness checks and an easier first Vulkan bring-up, but the review-ready end state should let GPU work identify dirty instances, write native PTLAS operation records, increment operation counts, and launch the PTLAS update without synchronizing per-frame update details back to the CPU.
+
+## What The NVIDIA Sample Teaches
+
+The sample is useful because it shows PTLAS as a productized debugging/teaching feature, not just an API call. The important takeaways are:
+
+- It keeps BLAS creation common between classic TLAS and PTLAS.
+- It separates scene partitioning from acceleration structure build mechanics.
+- It uses a uniform grid partition model plus a global partition for dynamic objects that are expensive to keep spatially local.
+- It exposes multiple update policies:
+  - Always update the original partition.
+  - Move dynamic objects to a global partition.
+  - Use a distance threshold to update nearby partitions and move far dynamic objects to the global partition.
+- It writes PTLAS operation records into GPU-visible buffers.
+- It calls `vkCmdBuildPartitionedAccelerationStructuresNV` every animation step; the work performed depends on the indirect operation buffers.
+- It provides visual explanation through partition colors, highlighted touched partitions, and visible behavior differences.
+
+The sample's helper `src/partitioned_acceleration_structures.hpp` shows the API structure:
+
+- Query sizes with `vkGetPartitionedAccelerationStructuresBuildSizesNV`.
+- Allocate AS storage, build scratch, update scratch, operation count, operation info, instance write info, optional instance update info, and optional partition write info buffers.
+- Upload or generate `VkBuildPartitionedAccelerationStructureIndirectCommandNV` records.
+- Build or update with `vkCmdBuildPartitionedAccelerationStructuresNV`.
+- Bind with descriptor type `VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV` and `VkWriteDescriptorSetPartitionedAccelerationStructureNV`.
+
+That last descriptor detail is especially important for Sparkle: a Vulkan PTLAS is not represented by `VkAccelerationStructureKHR` in the same way our current Vulkan descriptor path expects.
+
+## Existing Implementation Patterns To Follow
+
+These patterns are the reference behavior for the implementation stages below:
+
+| Pattern | Reference | Sparkle interpretation |
+|---|---|---|
+| Capability-first provider selection | `VK_NV_partitioned_acceleration_structure`, NVAPI R595 PTLAS caps, Microsoft DXR Part 2 feature options | Query provider support before creating resources. Report active provider and capability reason instead of branching ad hoc in renderer code. |
+| Persistent PTLAS storage plus indirect operations | `vk_partitioned_tlas/src/partitioned_acceleration_structures.hpp`, NVAPI `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_DESC` | Allocate PTLAS storage, scratch, op count, op metadata, instance records, and partition records as explicit RHI-owned resources. |
+| CPU pack as bring-up/reference, GPU pack as target | `vk_partitioned_tlas/shaders/animation_update_instances.comp.glsl` | Start with deterministic CPU pack inside backend code, then add GPU-written logical records and backend-native GPU pack. Keep CPU pack permanently for validation. |
+| Renderer owns partition meaning, RHI owns native records | NVIDIA sample separates animation/partition policy from Vulkan record submission | Renderer emits logical partition/update intent. RHI translates it to `Vk*NV` or `NVAPI_D3D12_*` records. |
+| Visual explanation is part of the feature | `vk_partitioned_tlas/shaders/raytrace.rchit.glsl`, RTXMG debug highlighting/profiler UI | Add viewmodes, overlays, counters, and capture markers in the same implementation plan as the runtime feature. |
+| Classic TLAS remains a comparison path | Existing Sparkle D3D12/Vulkan classic TLAS builders | Keep classic TLAS selectable on every backend for correctness, profiling, and provider-status explanation. |
+| Provider-specific code stays private | NVRHI/NRI-style backend abstraction and RTXMG NVAPI integration | Renderer must not include Vulkan, D3D12, or NVAPI PTLAS structs. Native packing lives in backend-private folders. |
+
+Implementation prompts should explicitly cite the relevant pattern from this table. A stage is not ready to implement if the prompt does not say which provider boundary, validation artifact, and visual diagnostic it must preserve.
+
+## Current Sparkle State
+
+Sparkle currently has a classic TLAS path:
+
+```mermaid
+flowchart TD
+    FramePipeline[FramePipeline prepares frame] --> RTScene[RenderRayTracingScene::Prepare]
+    RTScene --> Reserve[FrameGraph persistent SceneTlas]
+    Reserve --> Pass[RayTracingSceneBuild pass]
+    Pass --> Blas[RayTracingBlasCache::EnsureBlas]
+    Blas --> Tlas[RayTracingTlasBuilder::Build]
+    Tlas --> RHI[RHI BuildTopLevelAccelerationStructure]
+    RHI --> D3D12[D3D12 BuildRaytracingAccelerationStructure]
+    RHI --> VK[Vulkan vkCmdBuildAccelerationStructuresKHR]
+```
+
+Current strengths:
+
+- BLAS and TLAS ownership is already isolated in `Engine/Renderer/Private/RayTracing`.
+- The frame graph already models acceleration structure resources and build usage.
+- Both Vulkan and D3D12 implement a shared classic TLAS command.
+- Acceleration structures already bind through shader parameter semantics rather than ad-hoc renderer descriptors.
+
+Current gaps:
+
+- `RhiRayTracingCapabilities` does not describe PTLAS support, operation limits, global partition support, or required buffer layouts.
+- `RhiRayTracingService` only exposes classic BLAS/TLAS sizing and simple buffer creation.
+- `RenderCommandList` only exposes `BuildBottomLevelAccelerationStructure` and `BuildTopLevelAccelerationStructure`.
+- `RayTracingTlasBuilder` rebuilds/uploads a full instance buffer from CPU-visible data each frame.
+- Vulkan descriptor binding assumes a normal `VkAccelerationStructureKHR`; PTLAS needs a partitioned descriptor write using a device address.
+- Public D3D12 headers installed locally in Windows SDK `10.0.26100.0` do not expose the documented public DXR Part 2 PTLAS symbols yet. D3D12 PTLAS can still be implemented in this checkout through NVIDIA NVAPI R595 partitioned TLAS indirect functions, with the public DXR route kept as a later backend provider.
+- Diagnostics are currently mostly logs; PTLAS needs visual and capture-friendly diagnostics.
+
+## Backend Parity Position
+
+Parity should mean identical renderer behavior and comparable acceptance artifacts, not identical backend availability on day one.
+
+| Capability | Vulkan | D3D12 |
+|---|---|---|
+| Classic TLAS | Already implemented | Already implemented |
+| PTLAS API surface | Available through `VK_NV_partitioned_acceleration_structure` in local Vulkan SDK headers | Available through NVAPI R595 partitioned TLAS indirect functions; public DXR Part 2 route is documented but not exposed by local Windows SDK headers |
+| First implementation target | Yes | Yes, through NVAPI after RHI contract and Vulkan bring-up clarify the shared model |
+| Correctness parity target | Classic TLAS output equals PTLAS output on Vulkan | D3D12 NVAPI PTLAS output equals D3D12 classic TLAS, then matches Vulkan PTLAS within backend tolerance |
+| Performance parity target | GPU timestamp comparison between classic TLAS and Vulkan PTLAS | GPU timestamp comparison between classic TLAS and NVAPI PTLAS |
+
+Do not route D3D12 PTLAS through public SDK structs until the public DXR Part 2 headers and runtime support are present. The near-term D3D12 implementation should use an NVAPI backend path, isolated behind the same RHI PTLAS contract used by Vulkan.
+
+## Support And Gating Policy
+
+PTLAS is new enough that not every GPU, driver, API, or SDK will expose it at the same time. This is an architecture challenge, not a product problem. Sparkle should make the feature first-class where it is real today and provide a clean capability negotiation path everywhere else.
+
+Support tiers:
+
+| Tier | Requirement | Expected behavior |
+|---|---|---|
+| Universal ray tracing path | Backend supports Sparkle's existing classic BLAS/TLAS path | Use classic TLAS. This remains the correctness baseline and fallback everywhere. |
+| NVIDIA Vulkan PTLAS | NVIDIA GPU, supporting driver, and `VK_NV_partitioned_acceleration_structure` | Enable Vulkan PTLAS and GPU-driven PTLAS updates. |
+| NVIDIA D3D12 PTLAS | NVIDIA GPU, supporting driver, NVAPI R595+ PTLAS symbols, and compatible D3D12 device/command list interfaces | Enable D3D12 NVAPI PTLAS and GPU-driven PTLAS updates. |
+| Future public D3D12 PTLAS | Public DXR Part 2 SDK symbols and runtime support | Add a public-DXR provider behind the same RHI contract without removing the NVAPI provider. |
+
+Policy:
+
+- Use NVIDIA-specific APIs when they are the only production path for PTLAS.
+- Keep NVIDIA-specific code in backend-private RHI folders.
+- Make hardware/API capability combinations visible as negotiated capability state, not runtime errors.
+- Keep classic TLAS available even on NVIDIA hardware for debugging, parity testing, and baseline comparison.
+- Do not make shader authors or renderer passes branch on Vulkan, D3D12, or NVAPI details.
+- Do not block the Vulkan and D3D12 NVAPI implementation waiting for future public DXR headers.
+
+Architecture challenge:
+
+- The renderer needs one conceptual feature: "build and update the top-level ray tracing scene efficiently."
+- Backends expose that feature through different provider surfaces: classic TLAS, Vulkan NV PTLAS, D3D12 NVAPI PTLAS, and future public DXR PTLAS.
+- The RHI should select and describe the active provider. It should not force the renderer to treat NVIDIA-only availability as an error case.
+- Feature UI, validation captures, and debug viewmodes should explain which provider is active and why, so the same engine build is reviewable on both NVIDIA and non-NVIDIA machines.
+
+## Target Architecture
+
+```mermaid
+flowchart TD
+    SceneData[RenderSceneData] --> PartitionPlanner[Renderer RayTracingPartitionPlanner]
+    PartitionPlanner --> LogicalScene[RayTracingScenePartitionMap]
+    PartitionPlanner --> DirtySet[RayTracingDirtyInstanceSet]
+    LogicalScene --> Strategy[RayTracingTlasBuildStrategy]
+    DirtySet --> Strategy
+    Strategy --> Classic[ClassicTlasBuilder]
+    Strategy --> Partitioned[PartitionedTlasBuilder]
+    Classic --> RHIClassic[RHI classic AS commands]
+    Partitioned --> RHIPtlas[RHI partitioned AS service]
+    RHIPtlas --> VkPtlas[Vulkan PTLAS backend]
+    RHIPtlas --> D3D12Nvapi[D3D12 NVAPI PTLAS backend]
+    RHIPtlas --> D3D12Public[D3D12 public DXR PTLAS backend later]
+    RHIPtlas --> ClassicBaseline[Classic TLAS baseline provider]
+```
+
+Layer ownership:
+
+- Renderer owns scene meaning: which instances belong together, which moved, which partition policy is active, what the user sees in debug viewmodes.
+- RHI owns native execution: API structures, native operation buffers, descriptor writes, command entry points, barriers, and capability reporting.
+- Frame graph owns scheduling and resource lifetime visibility.
+- Application/Editor owns toggles, overlays, capture workflows, and benchmark launch presets.
+
+Important boundary rule:
+
+`Engine/Renderer` must not include `vulkan_core.h`, `d3d12.h`, `VkPartitionedAccelerationStructure*`, or D3D12 PTLAS structs. Renderer emits logical PTLAS intent; backend code packs native records.
+
+## Proposed RHI Contract
+
+Add backend-neutral types to `Engine/RHI/Public/RayTracing/RhiRayTracingDesc.h`.
+
+Capability model:
+
+```mermaid
+flowchart TD
+    RT[RhiRayTracingCapabilities] --> Generic[Generic acceleration structure capabilities]
+    RT --> Classic[Classic TLAS capabilities]
+    RT --> Partitioned[PTLAS-only capabilities]
+    Generic --> BLAS[BLAS build support]
+    Generic --> ASRead[Acceleration structure shader binding]
+    Classic --> TlasBuild[Classic TLAS build/update]
+    Partitioned --> PtlasBuild[Partitioned TLAS build/update]
+    Partitioned --> GpuOps[GPU-driven operation records]
+    Partitioned --> Global[Global partition]
+    Partitioned --> Translation[Partition translation]
+```
+
+Generic TLAS and acceleration structure capabilities answer: "Can this backend build and bind normal ray tracing acceleration structures?"
+
+PTLAS-specific capabilities answer: "Can this backend maintain a persistent partitioned top-level structure with indirect operation records?"
+
+Do not mix these buckets. A backend can support ray tracing and classic TLAS while not supporting PTLAS.
+
+Proposed concepts:
+
+```cpp
+enum class ERhiRayTracingTopLevelMode : std::uint8_t
+{
+    Classic,
+    Partitioned
+};
+
+struct RhiAccelerationStructureCapabilities
+{
+    bool SupportsRayTracing = false;
+    bool SupportsInlineRayQuery = false;
+    bool SupportsAccelerationStructureShaderBinding = false;
+    std::uint32_t MaxTraceRecursionDepth = 0;
+    std::uint32_t MaxRayPayloadSizeInBytes = 0;
+    std::uint32_t MaxRayAttributeSizeInBytes = 0;
+    std::uint64_t AccelerationStructureByteAlignment = 0;
+    std::uint64_t ScratchBufferByteAlignment = 0;
+};
+
+struct RhiClassicTlasCapabilities
+{
+    bool SupportsClassicTlasBuild = false;
+    bool SupportsClassicTlasUpdate = false;
+    bool SupportsGpuReadableInstanceBuffer = false;
+    std::uint32_t InstanceDescSizeInBytes = 0;
+};
+
+enum class ERhiPartitionedTlasProvider : std::uint8_t
+{
+    None,
+    VulkanNvPartitionedAccelerationStructure,
+    D3D12NvapiPartitionedTlas,
+    D3D12PublicDxrRtasOperations
+};
+
+struct RhiPartitionedTlasCapabilities
+{
+    bool Supported = false;
+    ERhiPartitionedTlasProvider Provider = ERhiPartitionedTlasProvider::None;
+    bool RequiresNvidiaDevice = false;
+    bool SupportsVulkanNativePartitionedAccelerationStructure = false;
+    bool SupportsD3D12NvapiPartitionedTlas = false;
+    bool SupportsD3D12PublicDxrPartitionedTlas = false;
+    bool SupportsCpuPackedOperations = false;
+    bool SupportsGpuDrivenOperations = false;
+    bool SupportsGpuOperationCount = false;
+    bool SupportsGpuWrittenInstanceRecords = false;
+    bool SupportsGpuWrittenPartitionRecords = false;
+    bool SupportsPartitionTranslation = false;
+    bool SupportsGlobalPartition = false;
+    bool SupportsExplicitInstanceAabb = false;
+    std::uint32_t MaxOperationsPerBuild = 0;
+    std::uint32_t InstanceWriteDataSizeInBytes = 0;
+    std::uint32_t InstanceUpdateDataSizeInBytes = 0;
+    std::uint32_t PartitionWriteDataSizeInBytes = 0;
+    std::uint32_t OperationDataSizeInBytes = 0;
+    std::uint32_t OperationCountDataSizeInBytes = 0;
+    const char* CapabilityStatusReason = nullptr;
+};
+
+struct RhiRayTracingCapabilities
+{
+    RhiAccelerationStructureCapabilities AccelerationStructures = {};
+    RhiClassicTlasCapabilities ClassicTlas = {};
+    RhiPartitionedTlasCapabilities PartitionedTlas = {};
+};
+
+struct RhiPartitionedTlasDesc
+{
+    std::uint32_t InstanceCapacity = 0;
+    std::uint32_t PartitionCount = 0;
+    std::uint32_t MaxInstancesPerPartition = 0;
+    std::uint32_t MaxInstancesInGlobalPartition = 0;
+    std::uint32_t MaxOperations = 0;
+    bool AllowInstanceUpdates = true;
+    bool AllowPartitionTranslation = false;
+    bool AllowGpuDrivenOperations = true;
+};
+
+struct RhiPartitionedTlasBuildSizes
+{
+    std::uint64_t AccelerationStructureSizeInBytes = 0;
+    std::uint64_t BuildScratchSizeInBytes = 0;
+    std::uint64_t UpdateScratchSizeInBytes = 0;
+    std::uint64_t OperationInfoSizeInBytes = 0;
+    std::uint64_t OperationCountSizeInBytes = 0;
+    std::uint64_t InstanceWriteInfoSizeInBytes = 0;
+    std::uint64_t InstanceUpdateInfoSizeInBytes = 0;
+    std::uint64_t PartitionWriteInfoSizeInBytes = 0;
+};
+```
+
+`Provider` and `CapabilityStatusReason` are review-facing fields, not just UI polish. They make it obvious which top-level ray tracing provider is active and, when PTLAS is not selected, whether the reason is non-NVIDIA hardware, missing `VK_NV_partitioned_acceleration_structure`, NVAPI initialization state, or a future public DXR provider that is not compiled in yet. That turns capability variance into explicit system information rather than a hidden backend branch.
+
+Add service operations to `RhiRayTracingService`:
+
+- Query generic acceleration structure support and limits.
+- Query classic TLAS support and limits.
+- Query PTLAS support and limits.
+- Query PTLAS build sizes.
+- Create PTLAS storage and operation buffers.
+- Upload/pack initial logical instance writes.
+- Upload/pack dynamic logical updates.
+- Create GPU-writable logical update buffers.
+- Create GPU-writable native operation buffers.
+- Create or clear GPU operation count buffers.
+- Register/bind a partitioned acceleration structure descriptor.
+
+Add command operations to `RenderCommandList`:
+
+- `BuildPartitionedTopLevelAccelerationStructure`
+- `UpdatePartitionedTopLevelAccelerationStructure`
+- `ClearPartitionedTlasOperationCount` or a more general buffer clear command if not already available
+- `DispatchPartitionedTlasOperationWriter` should not be a hard-coded RHI command; it should be a normal compute dispatch using renderer/RHI-owned shaders and buffers.
+
+Avoid exposing native operation structs to renderer code. For GPU-driven updates, the renderer should write backend-neutral logical update records. Backend-private compute shaders or backend-owned packers translate those records into `VkPartitionedAccelerationStructureWriteInstanceDataNV`, `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP` records, or future public-DXR RTAS operation records. CPU-side packing remains required as a validation reference and fallback path.
+
+Capability classification:
+
+| Capability | Classification | Why |
+|---|---|---|
+| Supports ray tracing / ray query | Generic AS | Needed before either classic TLAS or PTLAS can be useful |
+| Acceleration structure storage alignment | Generic AS | Applies to BLAS, classic TLAS, and PTLAS storage |
+| Scratch alignment | Generic AS | Applies to all AS build/update work |
+| Classic top-level build | Classic TLAS | Builds a normal whole top-level AS from an instance buffer |
+| Classic top-level update/refit | Classic TLAS | Updates a normal TLAS, still not partition-aware |
+| Instance descriptor size | Classic TLAS | Native classic instance buffer layout differs by backend |
+| Partition count / max instances per partition | PTLAS-only | Meaningless for classic TLAS |
+| Global partition | PTLAS-only | Special PTLAS update/trace tradeoff |
+| Partition translation | PTLAS-only | Moves whole partitions without rewriting every instance |
+| PTLAS operation info/count buffers | PTLAS-only | Specific to indirect partitioned update commands |
+| GPU-driven operation generation | PTLAS-only in this feature | Writes PTLAS operation records and operation counts |
+| Native PTLAS descriptor binding | PTLAS-only | Vulkan uses a different descriptor type for partitioned AS |
+| `VK_NV_partitioned_acceleration_structure` provider | PTLAS backend provider | Vulkan-specific implementation route |
+| D3D12 NVAPI partitioned TLAS provider | PTLAS backend provider | D3D12 NVIDIA implementation route available through NVAPI |
+| D3D12 public DXR RTAS provider | PTLAS backend provider | Future/public implementation route once SDK/runtime support lands |
+
+## Renderer Design
+
+Add a renderer-side partitioning layer beside the current TLAS builder:
+
+- `RayTracingTopLevelSceneBuilder`
+- `ClassicRayTracingTlasBuilder`
+- `PartitionedRayTracingTlasBuilder`
+- `RayTracingPartitionPlanner`
+- `RayTracingPartitionMap`
+- `RayTracingPartitionDebugData`
+- `RayTracingAccelerationStructureMetrics`
+
+Partition planner responsibilities:
+
+- Assign every traceable instance a stable `instanceIndex`.
+- Assign every instance to a partition.
+- Track previous transform, current transform, BLAS address, material/SBT contribution, and movement state.
+- Produce an initial build dataset.
+- Produce a per-frame dirty set.
+- Decide whether a dynamic object stays in its original partition or moves to the global partition.
+- Emit debug metadata for viewmodes.
+
+Initial partitioning should be simple and explainable:
+
+- World-space XZ grid.
+- One optional global partition.
+- Configurable partitions per axis.
+- Configurable max instances per partition.
+- Overflow policy: either increase capacity before build or explicitly mark overflow fallback to classic TLAS.
+
+Do not start with a BVH-based or portal/room-aware partitioner. The grid is the right first implementation because it is teachable, visually debuggable, and matches the NVIDIA sample.
+
+## GPU-Driven PTLAS Updates
+
+GPU-driven PTLAS updates are important because they preserve the core advantage of PTLAS: the CPU should not have to read back, count, sort, or synchronize dynamic update details every frame. The CPU should choose policy and allocate capacity. The GPU should produce per-frame native operation data from logical scene state.
+
+Target data flow:
+
+```mermaid
+flowchart LR
+    LogicalState[Logical per-instance state buffer] --> DirtyShader[Dirty instance / partition compute]
+    PreviousState[Previous transforms and partitions] --> DirtyShader
+    DirtyShader --> LogicalUpdates[Backend-neutral logical update buffer]
+    LogicalUpdates --> NativePack[Backend-private native operation writer]
+    NativePack --> OperationCount[GPU operation count]
+    NativePack --> OperationInfo[Native operation info buffer]
+    NativePack --> InstanceRecords[Native instance write/update records]
+    NativePack --> PartitionRecords[Native partition records]
+    OperationCount --> PtlasUpdate[PTLAS update command]
+    OperationInfo --> PtlasUpdate
+    InstanceRecords --> PtlasUpdate
+    PartitionRecords --> PtlasUpdate
+```
+
+Renderer-owned logical GPU buffers:
+
+- `RayTracingInstanceState`
+  - stable instance index,
+  - current transform,
+  - previous transform,
+  - current partition,
+  - desired partition,
+  - BLAS logical handle or backend-resolved address token,
+  - material/SBT contribution,
+  - movement flags.
+- `RayTracingPartitionState`
+  - partition index,
+  - bounds or grid coordinate,
+  - last modified frame,
+  - static instance count,
+  - dynamic instance count,
+  - debug heat value.
+- `RayTracingLogicalPtlasUpdate`
+  - operation kind: write instance, update instance, move instance, translate partition,
+  - instance index,
+  - source partition,
+  - destination partition,
+  - transform,
+  - logical BLAS reference.
+
+Backend-owned native GPU buffers:
+
+- PTLAS operation count buffer.
+- PTLAS operation info buffer.
+- PTLAS native instance write buffer.
+- PTLAS native instance update buffer.
+- PTLAS native partition translation/write buffer.
+
+Important design choice:
+
+The renderer should never write `VkPartitionedAccelerationStructureWriteInstanceDataNV` directly. For Vulkan, a backend-private packing shader may include a Vulkan-layout-compatible HLSL/GLSL header, but that shader and its layout contract belong to the Vulkan RHI package. The renderer dispatches a generic "pack logical PTLAS updates" pass through an RHI-owned pipeline or a backend-private service.
+
+Implementation modes:
+
+| Mode | Purpose | Expected lifetime |
+|---|---|---|
+| CPU pack | Bring-up, deterministic validation, selected path when GPU writer is not active | Permanent baseline/reference |
+| GPU logical dirty detection + CPU native pack | Transitional mode to validate dirty tracking independently | Temporary |
+| GPU logical dirty detection + GPU native pack | Review-ready target path | Permanent primary path when supported |
+
+GPU-driven acceptance:
+
+- The CPU does not need to know per-frame native operation counts before submitting the PTLAS update.
+- Operation count and operation records are GPU-visible and written before the PTLAS update command.
+- CPU pack and GPU pack produce equivalent PTLAS output for deterministic scenes.
+- Debug overlays show both logical dirty counts and native operation counts.
+- GPU pack work has its own timestamp/capture marker, separate from PTLAS build/update.
+
+Synchronization requirements:
+
+- Logical state writes must complete before native operation packing reads them.
+- Native operation packing writes must complete before `BuildPartitionedTopLevelAccelerationStructure` or `UpdatePartitionedTopLevelAccelerationStructure` consumes operation buffers.
+- PTLAS build/update writes must complete before ray tracing or ray query reads the top-level AS.
+- These transitions should be represented through frame graph/RHI resource usage, not one-off backend barriers in renderer code.
+
+## Vulkan Implementation Plan
+
+Vulkan feature prerequisites:
+
+- Add `VK_NV_partitioned_acceleration_structure` to device extension discovery.
+- Query extension availability in `VulkanRayTracingFeatureQuery`.
+- Enable the extension only when base ray tracing and buffer device address requirements are present.
+- Load:
+  - `vkGetPartitionedAccelerationStructuresBuildSizesNV`
+  - `vkCmdBuildPartitionedAccelerationStructuresNV`
+- Extend `VulkanRhi::BuildRayTracingCapabilities` with PTLAS capability flags.
+
+Vulkan resource prerequisites:
+
+- Add a way for ray tracing services to create GPU-addressable storage buffers used by PTLAS operation data.
+- Add a way for renderer/frame graph passes to allocate GPU-writable logical PTLAS update buffers.
+- Create acceleration structure storage as a raw buffer with `VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR`.
+- Store enough metadata in `VulkanGpuAllocationRecord` to distinguish:
+  - BLAS/TLAS `VkAccelerationStructureKHR`
+  - PTLAS raw acceleration structure device address
+  - PTLAS descriptor binding mode
+
+Vulkan build flow:
+
+```mermaid
+sequenceDiagram
+    participant Renderer
+    participant RHI
+    participant Vulkan
+    Renderer->>RHI: QueryPartitionedTlasBuildSizes(desc)
+    RHI->>Vulkan: vkGetPartitionedAccelerationStructuresBuildSizesNV
+    Renderer->>RHI: Create PTLAS buffers
+    Renderer->>RHI: Upload logical initial instances
+    RHI->>Vulkan: Pack VkPartitionedAccelerationStructureWriteInstanceDataNV
+    RHI->>Vulkan: Write operation count + operation info
+    Renderer->>RHI: BuildPartitionedTopLevelAccelerationStructure
+    RHI->>Vulkan: vkCmdBuildPartitionedAccelerationStructuresNV
+```
+
+Vulkan GPU-driven update flow:
+
+```mermaid
+sequenceDiagram
+    participant Renderer
+    participant Compute
+    participant VulkanRHI
+    participant Vulkan
+    Renderer->>Compute: Dispatch logical dirty/update pass
+    Compute->>Compute: Write logical update buffer
+    Renderer->>VulkanRHI: Dispatch backend native PTLAS pack pass
+    VulkanRHI->>Compute: Write Vk-compatible operation buffers
+    Renderer->>VulkanRHI: UpdatePartitionedTopLevelAccelerationStructure
+    VulkanRHI->>Vulkan: vkCmdBuildPartitionedAccelerationStructuresNV with GPU-written srcInfos/srcInfosCount
+```
+
+Vulkan descriptor prerequisites:
+
+- Extend `VulkanDescriptorAllocator::EntryKind` with `PartitionedAccelerationStructure`.
+- Add `RegisterPartitionedAccelerationStructureDescriptor(RhiGpuVirtualAddress ptlasAddress)`.
+- Add descriptor writing path using:
+  - `VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV`
+  - `VkWriteDescriptorSetPartitionedAccelerationStructureNV`
+- Ensure existing shader parameter semantic `AccelerationStructure` can bind either classic TLAS or PTLAS without shader author changes.
+
+Vulkan barriers:
+
+- Add explicit barriers after PTLAS build/update:
+  - source stage: acceleration structure build
+  - source access: acceleration structure write
+  - destination stages: ray tracing, compute shader, fragment shader as needed
+  - destination access: acceleration structure read
+
+Vulkan guardrails:
+
+- If PTLAS extension or functions are not available, report the active provider as classic TLAS with a precise capability reason.
+- If any partition has duplicate `instanceIndex`, reject the PTLAS update before native packing.
+- If any operation buffer exceeds allocated capacity, reject the PTLAS update and select the classic TLAS baseline for the frame with visible reason metadata.
+- If descriptor binding sees a PTLAS address through the classic TLAS path, emit a validation error.
+- If GPU-driven packing is requested but the backend pack pipeline is not available, select CPU pack for that provider and report the capability reason in metrics.
+
+## D3D12 Implementation Plan
+
+D3D12 must be treated as an NVAPI-backed parity path first, with a public DXR Part 2 path later when the SDK/runtime surface becomes available.
+
+Current local evidence:
+
+- `Engine/RHI/Private/D3D12/RayTracing/D3D12RayTracingServices.cpp` uses classic `GetRaytracingAccelerationStructurePrebuildInfo`.
+- `Engine/RHI/Private/D3D12/Commands/D3D12RenderCommandList.cpp` uses classic `BuildRaytracingAccelerationStructure`.
+- Microsoft DXR Part 2 describes PTLAS through indirect RTAS operations such as `ExecuteIndirectRTASOperations`, `D3D12_RTAS_PARTITIONED_TLAS_INPUTS_DESC`, and `D3D12_RTAS_PARTITIONED_TLAS_OPERATION`.
+- The same spec currently reports support through future `D3D12_FEATURE_OPTIONS_NNN` / `ClustersAndPTLASSupported` wording.
+- Local Windows SDK `10.0.26100.0` search did not find those PTLAS/RTAS operation symbols in `d3d12.h`.
+- NVAPI R595 headers do expose:
+  - `NvAPI_D3D12_GetRaytracingCaps`
+  - `NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS`
+  - `NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAP_STANDARD`
+  - `NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo`
+  - `NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect`
+  - `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_INPUTS`
+  - `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_DESC`
+  - `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP`
+  - `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_INSTANCE`
+  - `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE`
+  - `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION`
+- The NVAPI indirect descriptor uses GPU virtual addresses for `indirectOpCount` and `indirectOps`, so it can support the same GPU-driven update model as Vulkan: compute can write the operation count and operation records, then the backend can submit the PTLAS update without CPU readback.
+- RTXMG uses the same NVIDIA ecosystem pattern for advanced ray tracing acceleration structures: DX12 path through NVAPI and D3D12 Agility SDK, Vulkan path through NVIDIA Vulkan extensions.
+
+Recommended route:
+
+1. Add public RHI capability fields now.
+2. Add an NVAPI feature probe for D3D12 PTLAS using `NvAPI_D3D12_GetRaytracingCaps` with `NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS`.
+3. Use D3D12 classic TLAS as the correctness reference while bringing up NVAPI PTLAS.
+4. Add compile-time detection for NVAPI headers and runtime initialization:
+   - if NVAPI PTLAS symbols are available and runtime reports success, enable D3D12 PTLAS;
+   - otherwise compile/run a provider stub that reports classic TLAS as the active provider with a precise capability reason.
+5. Add compile-time detection for future public DXR headers:
+   - if D3D12 PTLAS symbols exist, compile the backend implementation;
+   - otherwise compile a provider stub that explains why the public DXR PTLAS provider is not active.
+6. When public headers land, implement the public-DXR backend behind the same renderer/RHI contract and keep NVAPI as a vendor path where useful.
+
+D3D12 NVAPI flow:
+
+```mermaid
+sequenceDiagram
+    participant Renderer
+    participant D3D12RHI
+    participant NVAPI
+    Renderer->>D3D12RHI: QueryPartitionedTlasBuildSizes(desc)
+    D3D12RHI->>NVAPI: NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo
+    Renderer->>D3D12RHI: Create PTLAS storage and operation buffers
+    Renderer->>D3D12RHI: CPU or GPU writes logical updates
+    D3D12RHI->>D3D12RHI: Pack NVAPI op buffers or dispatch backend pack shader
+    Renderer->>D3D12RHI: Build/UpdatePartitionedTopLevelAccelerationStructure
+    D3D12RHI->>NVAPI: NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect
+```
+
+NVAPI-specific guardrails:
+
+- Initialize and shutdown NVAPI in a D3D12 backend-owned subsystem, not renderer code.
+  - Keep all `NVAPI_D3D12_*` types in `Engine/RHI/Private/D3D12`.
+  - Add a capability reason enum:
+  - NVAPI headers not present,
+  - NVAPI initialization status,
+  - driver does not support PTLAS,
+  - D3D12 device/command list interface too old,
+  - Agility SDK/runtime mismatch,
+  - PTLAS prebuild query status.
+- Record exact NVAPI status codes in diagnostics, but expose renderer-facing state as backend-neutral capabilities.
+- Keep public DXR Part 2 and NVAPI implementations behind the same RHI entry points.
+
+D3D12 NVAPI acceptance:
+
+- Vulkan PTLAS and Vulkan classic TLAS render the same result.
+- D3D12 NVAPI PTLAS and D3D12 classic TLAS render the same result when NVAPI support is present.
+- D3D12 classic TLAS and Vulkan classic TLAS remain cross-backend references.
+- Feature UI shows the active D3D12 top-level provider and the precise capability reason when NVAPI PTLAS is not selected.
+
+## Debug And Teaching Features
+
+The implementation should be easy to explain visually. Logs are not enough.
+
+Sparkle already has a viewmode pipeline:
+
+- C++ enum: `Engine/Renderer/Public/Debug/RenderViewMode.h`
+- Shader constants: `Engine/Assets/Shaders/Debug/RenderViewModeConstants.hlsli`
+- GBuffer instance color hook: `Engine/Assets/Shaders/Debug/InstanceView.hlsli`
+- GBuffer usage: `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl`
+- Deferred debug composite: `Engine/Assets/Shaders/Passes/Deferred/VisualizeBuffers.hlsl`
+- Existing smoke override path: `Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp`
+
+PTLAS visualization should extend this existing viewmode stack rather than inventing a separate debug UI path.
+
+Add viewmodes:
+
+1. `RayTracingPartitions`
+   - Color instances by partition ID.
+   - Draw grid boundaries.
+   - Show global partition objects in a reserved color.
+
+2. `RayTracingPartitionUpdates`
+   - Highlight partitions touched this frame.
+   - Use intensity for update count.
+   - Fade over time so colleagues can see motion history.
+
+3. `RayTracingTopLevelMode`
+   - Green overlay when tracing through PTLAS.
+   - Blue overlay when tracing through classic TLAS.
+   - Amber overlay when PTLAS requested but fallback was used.
+
+4. `RayTracingInstanceMovement`
+   - Static instances: desaturated.
+   - Dirty dynamic instances: hot color.
+   - Moved-to-global instances: special color.
+
+5. `RayTracingBuildCost`
+   - Small in-editor graph of CPU partition planning, CPU packing/upload, GPU TLAS/PTLAS build/update, and ray tracing pass time.
+
+6. `RayTracingNativeOperations`
+   - Visualize native operation slots written this frame.
+   - Color write-instance, update-instance, write-partition, and no-op entries differently.
+   - Show over-capacity or dropped operations in an error color.
+
+7. `RayTracingGpuDrivenUpdates`
+   - Show logical dirty records generated by the GPU.
+   - Show whether the frame used CPU pack, GPU logical dirty + CPU native pack, or full GPU native pack.
+   - Highlight mismatch frames when CPU and GPU pack validation disagree.
+
+8. `RayTracingProviderStatus`
+   - Amber: classic TLAS baseline selected because PTLAS provider requirements are not met.
+   - Red: validation stop such as duplicate instance index or partition overflow.
+   - Purple: CPU pack selected because GPU-driven native pack is not active.
+   - Green: PTLAS active and fully GPU-driven.
+
+Viewmode data sources:
+
+| Viewmode | Required renderer data | Required GPU/RHI data | Suggested implementation |
+|---|---|---|---|
+| `RayTracingPartitions` | per-instance partition ID, grid bounds | none | GBuffer colors from a partition metadata buffer indexed by instance ID |
+| `RayTracingPartitionUpdates` | partition last-modified frame, dirty partition count | optional native op count | Deferred overlay or GBuffer debug target with temporal fade |
+| `RayTracingTopLevelMode` | selected top-level mode and provider state | backend capability bit | fullscreen tint/composite in `VisualizeBuffers.hlsl` |
+| `RayTracingInstanceMovement` | static/dynamic/global movement class | logical dirty flag | GBuffer instance visualization |
+| `RayTracingBuildCost` | timing metrics | timestamp queries | editor overlay graph, not encoded into scene color only |
+| `RayTracingNativeOperations` | logical op type mapping | native operation count and capacity | storage-buffer debug visualization pass |
+| `RayTracingGpuDrivenUpdates` | CPU/GPU pack mode and validation mismatch bit | GPU-written logical update count | overlay plus metrics panel |
+| `RayTracingProviderStatus` | provider-selection enum | backend capability status reason | fullscreen categorical debug color plus details panel |
+
+Do not rely only on logs for any PTLAS state. Every important PTLAS decision should have a visual or capture-visible representation:
+
+- selected mode,
+- backend capability state,
+- dirty instance count,
+- dirty partition count,
+- operation count,
+- global partition occupancy,
+- provider-selection reason,
+- CPU pack vs GPU pack path,
+- validation mismatch.
+
+Add inspectable debug panels:
+
+- Total instances.
+- Partition count.
+- Max instances per partition.
+- Dirty instance count.
+- Dirty partition count.
+- Global partition count.
+- Operation count.
+- Operation buffer capacity.
+- GPU logical update count.
+- GPU native operation count.
+- CPU/GPU pack mismatch count.
+- Selected pack path.
+- PTLAS storage size.
+- PTLAS scratch size.
+- Classic TLAS storage size.
+- Fallback reason for current frame.
+
+Add capture markers:
+
+- `RT: BLAS Build`
+- `RT: Classic TLAS Build`
+- `RT: PTLAS Logical Dirty Detection`
+- `RT: PTLAS Operation Pack`
+- `RT: PTLAS Native GPU Pack`
+- `RT: PTLAS Build`
+- `RT: PTLAS Update`
+- `RT: RayQuery Shadows`
+
+These should show up in Nsight Graphics, RenderDoc, and PIX where supported.
+
+## Performance Measurement Plan
+
+Measure before claiming speedups.
+
+Test scenes:
+
+1. Static large scene
+   - Expected: PTLAS should not do meaningful update work after initial build.
+
+2. Sparse dynamic scene
+   - Many static instances, few moving instances.
+   - Expected: PTLAS update time should scale with dirty instances/partitions, classic TLAS remains close to full rebuild/refit cost.
+
+3. Dense dynamic scene
+   - Many moving instances.
+   - Expected: PTLAS advantage shrinks; fallback or classic may be competitive.
+
+4. Global partition stress
+   - Many objects moved into global partition.
+   - Expected: update is faster, trace may get slower.
+
+5. Camera near/far threshold scene
+   - Validate the hybrid policy: nearby partitions update in place; far partitions move dynamic objects to global.
+
+Metrics:
+
+- CPU partition planner time.
+- CPU native operation pack time.
+- CPU upload bytes.
+- GPU logical dirty detection time.
+- GPU native operation pack time.
+- GPU classic TLAS build/update timestamp.
+- GPU PTLAS build/update timestamp.
+- Ray tracing pass time.
+- Number of rays or ray queries if available.
+- Dirty instance count.
+- Dirty partition count.
+- Logical update count.
+- Native operation count.
+- Global partition occupancy.
+- Fallback count and reason.
+
+Acceptance:
+
+- Correctness first: image output and ray traced shadow visibility must match classic TLAS for static and deterministic dynamic frames.
+- In sparse dynamic scenes, PTLAS build/update GPU time must decrease with lower dirty counts.
+- In dense dynamic scenes, PTLAS may be equal/slower; the system must report this honestly.
+- Debug overlays must explain why a frame was fast or slow.
+
+## Correctness Tests
+
+Add an automated smoke path that can run both modes in the same scene:
+
+```mermaid
+flowchart LR
+    Scene[Deterministic scene] --> D3D12Classic[D3D12 classic TLAS]
+    Scene --> VulkanClassic[Vulkan classic TLAS]
+    Scene --> VulkanPtlas[Vulkan PTLAS]
+    D3D12Classic --> CompareA[Compare lit output]
+    VulkanClassic --> CompareA
+    VulkanClassic --> CompareB[Compare ray tracing debug output]
+    VulkanPtlas --> CompareB
+```
+
+Recommended validation artifacts:
+
+- Screenshot: D3D12 classic lit.
+- Screenshot: Vulkan classic lit.
+- Screenshot: Vulkan PTLAS lit.
+- Screenshot: Vulkan PTLAS partition debug.
+- Screenshot: Vulkan PTLAS update heatmap.
+- CSV or JSON: GPU timings and counters.
+- Capture: one Nsight Graphics capture showing PTLAS build/update markers.
+- Capture: one RenderDoc capture showing descriptors and buffers when possible.
+
+Tolerance:
+
+- For pure partition debug colors, exact visual output is expected.
+- For lit/ray traced output, accept small floating point noise only if the ray tracing path is stochastic. If deterministic shadows are used, expect identical visibility.
+
+## Implementation Stages
+
+1. Baseline and references
+
+   Goal: Commit this document and add a short PTLAS architecture note to the ray tracing docs once the docs tree is restored.
+
+   Reference patterns:
+
+   - Capability-first provider selection.
+   - Classic TLAS remains a comparison path.
+   - Visual explanation is part of the feature.
+
+   Implementation prompt:
+
+   ```text
+   Freeze the PTLAS evidence baseline before runtime implementation. Record which PTLAS providers are known today, which headers expose them, which Sparkle files own the current classic TLAS path, and which visual/debug artifacts must exist at the end. Do not change runtime behavior in this stage.
+   ```
+
+   Tutor note:
+
+   - What changes: we turn research into a stable map of APIs, files, risks, and expected artifacts.
+   - Why it matters: advanced ray tracing features fail slowly when architecture assumptions live only in memory. This stage makes the assumptions reviewable.
+   - Pattern to notice: NVIDIA samples are not just API snippets; they include scene policy, debug views, and profiling context. Capture that whole shape.
+
+   Work:
+
+   - Keep the NVIDIA sample cloned only under generated research folders, not in engine source.
+   - Record API availability:
+     - Vulkan extension present in local Vulkan SDK.
+     - D3D12 NVAPI PTLAS symbols present in NVAPI R595+ headers.
+     - Public D3D12 SDK headers do not expose public DXR PTLAS symbols in the locally checked SDK.
+   - Record implementation evidence:
+     - Vulkan PTLAS function and descriptor names.
+     - D3D12 NVAPI function and op-record names.
+     - Current Sparkle classic TLAS files.
+     - Existing Sparkle viewmode files to extend.
+   - Add a feature issue/ADR later if this docs set is restored.
+
+   Acceptance:
+
+   - Document exists.
+   - No runtime code changed.
+   - Clear go/no-go criteria for Vulkan and D3D12.
+   - Clear distinction between NVIDIA-gated PTLAS providers and the universal classic TLAS fallback.
+
+   Debug/visualization requirement:
+
+   - Define the minimum screenshots/captures required by later stages before implementation starts.
+
+2. Capability and RHI scaffolding
+
+   Goal: Make PTLAS a first-class RHI capability without enabling it.
+
+   Reference patterns:
+
+   - Capability-first provider selection.
+   - Provider-specific code stays private.
+   - Classic TLAS remains a comparison path.
+
+   Implementation prompt:
+
+   ```text
+   Add backend-neutral RHI capability and descriptor structures for generic acceleration structures, classic TLAS, and PTLAS. Report the selected top-level provider and capability status reason for every backend. Add inactive-provider stubs for providers that are not compiled or not supported. Do not expose Vulkan, D3D12, or NVAPI PTLAS structs outside backend-private RHI code.
+   ```
+
+   Tutor note:
+
+   - What changes: capability detection becomes data the renderer can inspect, not a set of backend-specific if-statements.
+   - Why it matters: provider selection is the core architecture challenge. A reviewer should immediately see whether the machine is running classic TLAS, Vulkan PTLAS, D3D12 NVAPI PTLAS, or future public DXR PTLAS.
+   - Pattern to notice: NVRHI/NRI-style boundaries keep native API details behind a narrow contract. Sparkle should do the same for PTLAS records and descriptors.
+
+   Work:
+
+   - Extend `RhiRayTracingCapabilities`.
+   - Split generic acceleration-structure, classic TLAS, and PTLAS-specific capability fields.
+   - Add `ERhiPartitionedTlasProvider`.
+   - Add PTLAS descriptors/build-size structs.
+   - Add inactive-provider stubs that report capability status.
+   - Extend diagnostics to report PTLAS availability.
+   - Report provider-specific gating:
+     - NVIDIA Vulkan extension not present,
+     - non-NVIDIA device,
+     - NVAPI headers not present,
+     - NVAPI runtime initialization status,
+     - D3D12 command list/device interface capability,
+     - future public DXR PTLAS provider not compiled.
+   - Add architecture boundary tests that forbid native PTLAS structs in `Engine/Renderer`.
+
+   Positive guardrails:
+
+   - Renderer sees only RHI structs.
+   - D3D12 reports NVAPI PTLAS support only when NVAPI headers, initialization, driver, and command list requirements are met.
+   - Vulkan reports supported only when extension, features, functions, and descriptor path are ready.
+
+   Negative guardrails:
+
+   - Do not add `#include <vulkan/...>` to renderer files.
+   - Do not change shader authoring yet.
+   - Do not change default rendering behavior.
+
+   Debug/visualization requirement:
+
+   - Add provider/capability state to a structured diagnostics object that later UI/viewmodes can consume.
+
+3. Classic TLAS instrumentation
+
+   Goal: Establish a performance and correctness baseline before PTLAS.
+
+   Reference patterns:
+
+   - Classic TLAS remains a comparison path.
+   - Visual explanation is part of the feature.
+
+   Implementation prompt:
+
+   ```text
+   Instrument the existing classic TLAS path on D3D12 and Vulkan with CPU timers, GPU timestamp scopes, structured counters, and capture markers. Preserve output. Make the metrics available to editor overlays and smoke artifacts so PTLAS has a fair baseline.
+   ```
+
+   Tutor note:
+
+   - What changes: the current path becomes measurable instead of merely functional.
+   - Why it matters: PTLAS is not always faster. Without a baseline, you cannot explain when it helps, when it does not, or whether a regression is real.
+   - Pattern to notice: RTXMG exposes profiler-style data around acceleration-structure work. Sparkle should give similar visibility for BLAS, TLAS, PTLAS pack, and update phases.
+
+   Work:
+
+   - Add GPU timestamp scopes for BLAS, classic TLAS, direct lighting/ray query.
+   - Add CPU timers for `RayTracingBlasCache`, `RayTracingTlasBuilder`, and scene data preparation.
+   - Emit structured metrics object consumed by UI/debug overlay.
+   - Add a deterministic validation scene or camera path.
+
+   Acceptance:
+
+   - D3D12 and Vulkan classic TLAS can produce timing artifacts.
+   - Current ray tracing visuals remain unchanged.
+
+   Debug/visualization requirement:
+
+   - Add or reserve overlay slots for BLAS time, classic TLAS time, ray tracing pass time, instance count, and backend provider.
+
+4. Partition planner
+
+   Goal: Build renderer-side partition data without changing the acceleration structure path.
+
+   Reference patterns:
+
+   - Renderer owns partition meaning, RHI owns native records.
+   - Visual explanation is part of the feature.
+
+   Implementation prompt:
+
+   ```text
+   Implement renderer-owned logical partition planning for ray tracing instances while continuing to render through classic TLAS. Produce stable instance indices, partition IDs, dirty transform tracking, global-partition eligibility, and debug metadata. Do not generate native PTLAS records in renderer code.
+   ```
+
+   Tutor note:
+
+   - What changes: Sparkle learns the scene-level meaning of partitions before touching Vulkan or D3D12 PTLAS commands.
+   - Why it matters: partitioning is renderer policy. Native APIs only consume the result. This split keeps future partition strategies possible without rewriting backend code.
+   - Pattern to notice: the NVIDIA sample uses a grid and a global partition policy. We can start with that because it is explainable, visual, and maps well to sparse dynamic updates.
+
+   Work:
+
+   - Add `RayTracingPartitionPlanner`.
+   - Add stable `instanceIndex` assignment.
+   - Add grid partitioning and optional global partition policy.
+   - Track dirty transforms frame to frame.
+   - Add partition debug metadata.
+
+   Acceptance:
+
+   - Classic TLAS still renders.
+   - Partition debug view can show the planned partitions even before PTLAS is active.
+   - Overflow and duplicate-index validation exists.
+
+   Debug/visualization requirement:
+
+   - `RayTracingPartitions`, `RayTracingPartitionUpdates`, and `RayTracingInstanceMovement` can display logical planner data before native PTLAS is enabled.
+
+5. Vulkan PTLAS backend
+
+   Goal: Implement initial Vulkan PTLAS build/update behind a feature flag.
+
+   Reference patterns:
+
+   - Persistent PTLAS storage plus indirect operations.
+   - CPU pack as bring-up/reference, GPU pack as target.
+   - Provider-specific code stays private.
+
+   Implementation prompt:
+
+   ```text
+   Implement the Vulkan PTLAS provider using VK_NV_partitioned_acceleration_structure. Add feature/function loading, PTLAS size queries, resource allocation, CPU-packed initial writes and updates, build/update commands, barriers, and partitioned acceleration-structure descriptor binding. Feed it only backend-neutral logical PTLAS data from the renderer.
+   ```
+
+   Tutor note:
+
+   - What changes: Vulkan gains a real PTLAS provider without changing shader authoring or renderer native dependencies.
+   - Why it matters: this proves the RHI contract can represent a PTLAS that is not a normal `VkAccelerationStructureKHR` descriptor path.
+   - Pattern to notice: `vk_partitioned_tlas` allocates operation count, operation info, instance write/update, partition write, scratch, and AS storage as separate resources. Do not hide those resources inside a vague buffer blob.
+
+   Work:
+
+   - Enable and load `VK_NV_partitioned_acceleration_structure`.
+   - Implement PTLAS size queries.
+   - Allocate PTLAS storage and auxiliary buffers.
+   - CPU-pack initial instance write records in Vulkan RHI.
+   - CPU-pack update operation records in Vulkan RHI.
+   - Implement build/update command.
+   - Implement partitioned acceleration structure descriptor binding.
+
+   Acceptance:
+
+   - Vulkan can switch between classic TLAS and PTLAS at runtime or launch time.
+   - Shader-side binding remains the same conceptual `AccelerationStructure` parameter.
+   - Renderer contains no Vulkan native PTLAS structs.
+
+   Debug/visualization requirement:
+
+   - Visualize active partitions, partition IDs, native operation count, PTLAS descriptor/provider status, and classic-vs-PTLAS selected mode.
+
+6. D3D12 NVAPI PTLAS backend
+
+   Goal: Implement D3D12 PTLAS through NVAPI while preserving the same RHI contract as Vulkan.
+
+   Reference patterns:
+
+   - Capability-first provider selection.
+   - Persistent PTLAS storage plus indirect operations.
+   - Provider-specific code stays private.
+
+   Implementation prompt:
+
+   ```text
+   Implement the D3D12 NVIDIA PTLAS provider through NVAPI R595+ partitioned TLAS indirect APIs. Wire NVAPI only in the D3D12 backend, probe `NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS`, require `NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAP_STANDARD`, query prebuild sizes, allocate PTLAS/scratch/op buffers, pack NVAPI operation records in D3D12-private code, and submit NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect through the same RHI contract used by Vulkan PTLAS.
+   ```
+
+   Tutor note:
+
+   - What changes: D3D12 reaches feature parity through the actual NVIDIA production path available today.
+   - Why it matters: public DXR PTLAS support can arrive later without changing renderer policy. NVAPI is a provider, not an architecture exception.
+   - Pattern to notice: NVAPI's indirect descriptor takes GPU virtual addresses for op count and op arrays, which makes GPU-driven update parity possible with Vulkan.
+
+   Work:
+
+   - Add NVAPI dependency wiring behind a D3D12-only build option.
+   - Initialize NVAPI in D3D12 backend services.
+   - Query `NvAPI_D3D12_GetRaytracingCaps` for `NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS`.
+   - Query `NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo`.
+   - Implement `NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect`.
+   - Pack `NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP` buffers in D3D12-private code.
+   - Treat NVAPI PTLAS as the production D3D12 PTLAS path for NVIDIA GPUs until public DXR support is available.
+   - Add precise provider-selection reasons for NVAPI/header/driver/runtime capability status.
+   - Add D3D12 capture markers matching Vulkan marker names.
+
+   Acceptance:
+
+   - D3D12 can switch between classic TLAS and NVAPI PTLAS when supported.
+   - D3D12 NVAPI PTLAS output matches D3D12 classic TLAS.
+   - Renderer contains no NVAPI headers or NVAPI type names.
+   - The same logical PTLAS scene data feeds Vulkan and D3D12.
+
+   Debug/visualization requirement:
+
+   - The same `RayTracingProviderStatus`, `RayTracingNativeOperations`, and timing views work on D3D12 NVAPI PTLAS and Vulkan PTLAS.
+
+7. GPU-driven operation writer
+
+   Goal: Move from CPU-packed PTLAS updates to the sample's GPU-driven model without leaking native layout into renderer shaders.
+
+   Reference patterns:
+
+   - CPU pack as bring-up/reference, GPU pack as target.
+   - Renderer owns partition meaning, RHI owns native records.
+   - Persistent PTLAS storage plus indirect operations.
+
+   Implementation prompt:
+
+   ```text
+   Add GPU-driven PTLAS update generation in two layers: renderer-visible logical dirty/update buffers and backend-private native pack shaders. The GPU should write logical dirty records, native op counts, and native op records, then the backend should submit PTLAS update commands without per-frame CPU readback. Keep CPU packing as a validation oracle and selected path when GPU pack is not active.
+   ```
+
+   Tutor note:
+
+   - What changes: PTLAS stops being a CPU-packed demo and becomes a GPU-driven scene update path.
+   - Why it matters: the feature's value is update locality without CPU synchronization. If the CPU counts and uploads everything each frame, we have only moved complexity around.
+   - Pattern to notice: the Vulkan sample's compute shader increments operation counts and writes records. Sparkle should preserve that idea while keeping native layouts private to the backend.
+
+   Work:
+
+   - Add backend-neutral logical dirty instance/update buffers.
+   - Add GPU logical dirty detection pass.
+   - Add RHI-owned native packing path:
+     - Vulkan pack compute writes `VkPartitionedAccelerationStructureWriteInstanceDataNV` layout.
+     - Vulkan pack compute writes operation count and operation info consumed by `vkCmdBuildPartitionedAccelerationStructuresNV`.
+     - D3D12 pack compute writes NVAPI partitioned TLAS operation records when NVAPI PTLAS exists.
+   - Add resource barriers from logical update writes to native operation packing.
+   - Add resource barriers from native operation packing to PTLAS build/update.
+   - Keep CPU pack path as fallback and validation reference.
+
+   Acceptance:
+
+   - Renderer writes logical update intent only.
+   - RHI/private code owns native PTLAS record layouts.
+   - CPU and GPU operation writer paths produce equivalent PTLAS results.
+   - GPU operation counts are consumed without CPU readback.
+   - Metrics distinguish CPU pack, GPU dirty detection, GPU native pack, and PTLAS update time.
+
+   Debug/visualization requirement:
+
+   - `RayTracingGpuDrivenUpdates` shows CPU pack, GPU logical dirty plus CPU native pack, full GPU native pack, validation mismatch, logical count, native op count, and selected provider.
+
+8. Visual debug productization
+
+   Goal: Make PTLAS explainable during a work presentation.
+
+   Reference patterns:
+
+   - Visual explanation is part of the feature.
+   - RTXMG debug highlighting/profiler style.
+   - Existing Sparkle viewmode pipeline.
+
+   Implementation prompt:
+
+   ```text
+   Productize PTLAS visualization through Sparkle's existing viewmode system. Add renderer data buffers, shader constants, viewmode enum entries, overlay panels, capture markers, smoke capture presets, and artifact metadata so a reviewer can see provider selection, partitioning, updates, global partition behavior, native operation pressure, GPU-driven path selection, and timing.
+   ```
+
+   Tutor note:
+
+   - What changes: PTLAS becomes demonstrable, not invisible infrastructure.
+   - Why it matters: if a colleague cannot see which partitions changed, why the global partition was used, or which provider is active, they cannot trust the feature during review.
+   - Pattern to notice: NVIDIA's sample colors partitions and recently touched areas. RTXMG highlights debug surfaces and exposes profiler data. Sparkle should do the same in its own viewmode language.
+
+   Work:
+
+   - Add viewmodes listed above.
+   - Add C++ enum entries in `RenderViewMode.h`.
+   - Add matching HLSL constants in `RenderViewModeConstants.hlsli`.
+   - Extend `InstanceView.hlsli` and/or a PTLAS debug visualization shader to color by partition/debug state.
+   - Extend smoke validation viewmode names and capture overrides.
+   - Add a compact UI panel for partition and build metrics.
+   - Add capture markers.
+   - Add screenshot presets for before/after comparisons.
+
+   Acceptance:
+
+   - A colleague can see which partitions update and why.
+   - A colleague can see when dynamic objects move to the global partition.
+   - A colleague can correlate visuals with timing counters.
+   - Smoke validation can capture at least `RayTracingPartitions`, `RayTracingPartitionUpdates`, `RayTracingTopLevelMode`, `RayTracingNativeOperations`, `RayTracingGpuDrivenUpdates`, and `RayTracingProviderStatus`.
+
+   Debug/visualization requirement:
+
+   - This stage is not complete until visualizations work for classic TLAS baseline, Vulkan PTLAS, and D3D12 NVAPI PTLAS capability states.
+
+9. Correctness parity harness
+
+   Goal: Prove PTLAS is not changing render results.
+
+   Reference patterns:
+
+   - Classic TLAS remains a comparison path.
+   - Capability-first provider selection.
+
+   Implementation prompt:
+
+   ```text
+   Add deterministic smoke/launch flows that render the same scene through D3D12 classic TLAS, Vulkan classic TLAS, Vulkan PTLAS, and D3D12 NVAPI PTLAS when available. Capture lit output, ray tracing debug output, partition/debug viewmodes, provider metadata, and timing JSON/CSV. Compare images with strict thresholds and record active provider state in artifacts.
+   ```
+
+   Tutor note:
+
+   - What changes: the feature earns trust with repeatable output comparisons instead of subjective inspection.
+   - Why it matters: PTLAS changes build/update structure, not shading semantics. The rendered result should match classic TLAS unless the scene is intentionally visualizing partitions.
+   - Pattern to notice: a provider architecture needs acceptance artifacts per provider. A pass on Vulkan does not prove D3D12 NVAPI, and vice versa.
+
+   Work:
+
+   - Add launch/smoke options:
+     - D3D12 classic TLAS
+     - D3D12 NVAPI PTLAS when supported
+     - Vulkan classic TLAS
+     - Vulkan PTLAS
+   - Capture lit and ray tracing debug outputs.
+   - Add deterministic camera path and deterministic dynamic object sequence.
+   - Compare outputs with thresholded image diff.
+
+   Acceptance:
+
+   - Vulkan PTLAS matches Vulkan classic TLAS.
+   - D3D12 NVAPI PTLAS matches D3D12 classic TLAS when supported.
+   - Vulkan classic TLAS matches D3D12 classic TLAS within existing backend tolerances.
+   - Any classic-baseline provider selection is visible in the artifact metadata.
+
+   Debug/visualization requirement:
+
+   - Validation captures include both final lit output and at least one PTLAS diagnostic viewmode so failures are explainable.
+
+10. D3D12 public DXR PTLAS implementation
+
+   Goal: Add the public DXR RTAS-operation PTLAS backend when headers, SDK, runtime, and driver support are all present.
+
+   Reference patterns:
+
+   - Capability-first provider selection.
+   - Provider-specific code stays private.
+
+   Implementation prompt:
+
+   ```text
+   Add a public DXR Part 2 PTLAS provider only when public D3D12 symbols and runtime support are present. Reuse the same RHI contract, logical renderer data, viewmodes, metrics, and parity harness used by Vulkan PTLAS and D3D12 NVAPI PTLAS. Keep NVAPI as an NVIDIA provider where useful.
+   ```
+
+   Tutor note:
+
+   - What changes: Sparkle gains a future standards-track provider without redesigning the renderer.
+   - Why it matters: this proves the provider model was correct. New API surfaces slot in below RHI instead of forcing pass authors or renderer code to change.
+   - Pattern to notice: capability-first architecture lets vendor and public API paths coexist.
+
+   Work:
+
+   - Add compile-time detection for the required public D3D12 symbols.
+   - Implement D3D12 size queries/build/update/descriptors behind the same RHI interface.
+   - Extend parity harness to include D3D12 public DXR PTLAS beside NVAPI PTLAS.
+
+   Acceptance:
+
+   - Public-DXR inactive-provider path stays clean on older SDKs.
+   - D3D12 public DXR PTLAS output matches D3D12 classic TLAS and D3D12 NVAPI PTLAS.
+   - D3D12 public DXR PTLAS metrics are comparable to Vulkan PTLAS and NVAPI PTLAS metrics.
+
+   Debug/visualization requirement:
+
+   - `RayTracingProviderStatus` distinguishes D3D12 public DXR PTLAS from D3D12 NVAPI PTLAS.
+
+11. Review-ready polish
+
+   Goal: Make the feature reviewable by NVIDIA/AMD-style graphics reviewers.
+
+   Reference patterns:
+
+   - Visual explanation is part of the feature.
+   - Capability-first provider selection.
+   - Provider-specific code stays private.
+
+   Implementation prompt:
+
+   ```text
+   Polish the feature into a review-ready package: docs, diagrams, run commands, captures, screenshots, metrics, negative tests, source boundaries, and known limitations. The final story should explain what PTLAS solves, how Sparkle selects providers, how Vulkan and D3D12 NVAPI map to the same contract, how GPU-driven updates work, and how to validate correctness and performance.
+   ```
+
+   Tutor note:
+
+   - What changes: implementation knowledge becomes transferable to colleagues and reviewers.
+   - Why it matters: top-tier graphics review is not only "does it run"; it is whether the design, evidence, diagnostics, and failure modes are understandable.
+   - Pattern to notice: the best sample repos are teachable. They show controls, visuals, counters, and boundaries. Sparkle should feel the same.
+
+   Work:
+
+   - Add a short README under ray tracing docs:
+     - challenge solved,
+     - architecture diagram,
+     - feature availability matrix,
+     - how to run,
+     - how to capture,
+     - known limitations.
+   - Add comments only around native API contracts and non-obvious synchronization.
+   - Add negative tests:
+     - duplicate instance index,
+     - partition overflow,
+     - classic-baseline provider selection,
+     - descriptor kind mismatch.
+
+   Acceptance:
+
+   - A reviewer can understand the feature without reading every backend file first.
+   - A reviewer can run one command to capture evidence.
+   - Renderer/RHI separation remains mechanically enforceable.
+
+   Debug/visualization requirement:
+
+   - Final docs include a screenshot set or capture index for every PTLAS viewmode and provider state.
+
+## Runtime Controls
+
+Suggested CVars or launch settings:
+
+- `r.RayTracing.TopLevelMode=Classic|Partitioned|Auto`
+- `r.RayTracing.Ptlas.Enabled=0|1`
+- `r.RayTracing.Ptlas.Provider=Auto|Classic|VulkanNv|D3D12Nvapi|D3D12PublicDxr`
+- `r.RayTracing.Ptlas.PartitionsPerAxis=N`
+- `r.RayTracing.Ptlas.GlobalPartition=0|1`
+- `r.RayTracing.Ptlas.DynamicPolicy=UpdatePartition|MoveToGlobal|Hybrid`
+- `r.RayTracing.Ptlas.HybridDistance=Meters`
+- `r.RayTracing.Ptlas.UpdatePacking=Auto|CpuPack|GpuLogicalCpuNative|GpuNative`
+- `r.RayTracing.Ptlas.DebugView=Off|Partitions|Updates|TopLevelMode|Movement|BuildCost|NativeOperations|GpuDrivenUpdates|ProviderStatus`
+- `r.RayTracing.Ptlas.ClassicBaselineOnOverflow=0|1`
+- `r.RayTracing.Ptlas.RecordProviderStatus=0|1`
+
+Defaults:
+
+- Default shipping/editor path should stay `Auto`.
+- `Auto` means the RHI selects the best validated provider for the active backend and hardware.
+- Classic TLAS remains the baseline and correctness reference.
+- Provider status is always available to diagnostics, even when debug views are off.
+
+## Demo Plan For Colleagues
+
+Recommended presentation sequence:
+
+1. Show the scaling challenge with a static-plus-dynamic scene.
+   - Explain that classic TLAS sees the whole top-level instance set.
+
+2. Show partition overlay.
+   - Explain that partitioning is a spatial contract, not a rendering material trick.
+
+3. Toggle a single dynamic object.
+   - Show dirty instance and dirty partition heatmap.
+
+4. Toggle global partition mode.
+   - Show faster update path and explain trace performance tradeoff.
+
+5. Show timing graph.
+   - Compare classic TLAS update vs PTLAS update.
+
+6. Show capture markers.
+   - Point to `RT: Classic TLAS Build` and `RT: PTLAS Update`.
+
+7. Show correctness comparison.
+   - Same scene, same shadow/ray result, different build strategy.
+
+The story to tell:
+
+> PTLAS is not "faster TLAS" in every scene. It is a control system for where update work happens. It trades partition management complexity for update locality. Sparkle's architecture keeps that policy in the renderer and native execution details in the RHI.
+
+## Final Acceptance Criteria
+
+Correctness:
+
+- Classic TLAS and PTLAS produce equivalent ray tracing results in deterministic scenes.
+- Fallbacks are visible and never silently change quality.
+- Duplicate instance indices and partition overflow are detected.
+
+Architecture:
+
+- Renderer contains no native Vulkan or D3D12 PTLAS structs.
+- RHI exposes backend-neutral PTLAS capabilities and commands.
+- Backend-specific packing/descriptors remain in backend-private folders.
+- Frame graph represents PTLAS build/update as acceleration structure usage.
+
+Debuggability:
+
+- Partition and update behavior is visible in viewmodes.
+- Build/update cost is visible in UI and capture tools.
+- Every performance claim has a capture or metric artifact.
+
+Parity:
+
+- D3D12 classic TLAS remains the current cross-backend reference.
+- Vulkan PTLAS is compared against Vulkan classic TLAS first.
+- D3D12 NVAPI PTLAS is accepted when NVAPI header, driver, command list, and runtime support exists.
+- D3D12 public DXR PTLAS is added only when public SDK symbols and runtime support exist.
+- NVIDIA-gated PTLAS providers are treated as first-class supported paths, not experimental hacks.
+- Non-NVIDIA or non-PTLAS-capable configurations report a precise provider-selection reason and continue through classic TLAS.
+
+Maintainability:
+
+- Classic TLAS remains available as fallback and reference.
+- PTLAS code is organized by policy, resource ownership, native backend implementation, and diagnostics.
+- Shader pass authors do not need to know whether the scene top-level AS is classic or partitioned.
