@@ -158,6 +158,8 @@ namespace SparkleLauncher
 		{
 		case LaunchOperationKind::RunProject:
 			return "RunProject";
+		case LaunchOperationKind::RunRhiRayTracingParitySmoke:
+			return "RunRhiRayTracingParitySmoke";
 		}
 
 		return "Unknown";
@@ -169,6 +171,7 @@ namespace SparkleLauncher
 		    {LaunchOperationKind::RunProject, "project.open.editor", "Launch", "Open Editor", "Launch the selected project in editor mode using available runtime components."},
 		    {LaunchOperationKind::RunProject, "project.open.runtime", "Launch", "Open Runtime", "Launch the selected project in runtime mode using available runtime components."},
 		    {LaunchOperationKind::RunProject, "project.run.smoke", "Test", "Run Smoke Test", "Run the selected project with smoke validation enabled."},
+		    {LaunchOperationKind::RunRhiRayTracingParitySmoke, "project.run.rhi-raytracing-parity", "Test", "Run RHI Ray Tracing Parity", "Run D3D12/Vulkan classic TLAS and PTLAS smoke captures and compare parity artifacts."},
 		    {LaunchOperationKind::RunProject, "project.run", "Launch", "Launch Project", "Launch the selected project in editor or runtime mode using shared launch options."},
 		};
 		return definitions;
@@ -198,60 +201,66 @@ namespace SparkleLauncher
 		plan.Kind = definition->Kind;
 		plan.RepositoryRoot = request.RepositoryRoot;
 		plan.Request = request;
-		plan.Profile = ResolveLaunchProfile(plan.Kind, request);
-		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
-		plan.Operation.Inputs.push_back({"project", request.ProjectId});
-		plan.Operation.Inputs.push_back({"target", IsRuntimeLaunchTarget(request) ? "runtime" : "editor"});
-		plan.Operation.Inputs.push_back({"profile", plan.Profile});
-		if (!request.StartupLevel.empty())
+		if (definition->Kind == LaunchOperationKind::RunRhiRayTracingParitySmoke)
 		{
-			plan.Operation.Inputs.push_back({"startupLevel", request.StartupLevel});
+			plan.Request.EnableSmokeTest = true;
+			plan.Request.SmokeSkipLevelSwitching = true;
+			plan.Request.Target = "editor";
 		}
-		if (request.EnableSmokeTest)
+		plan.Profile = ResolveLaunchProfile(plan.Kind, plan.Request);
+		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
+		plan.Operation.Inputs.push_back({"project", plan.Request.ProjectId});
+		plan.Operation.Inputs.push_back({"target", IsRuntimeLaunchTarget(plan.Request) ? "runtime" : "editor"});
+		plan.Operation.Inputs.push_back({"profile", plan.Profile});
+		if (!plan.Request.StartupLevel.empty())
+		{
+			plan.Operation.Inputs.push_back({"startupLevel", plan.Request.StartupLevel});
+		}
+		if (plan.Request.EnableSmokeTest)
 		{
 			plan.Operation.Inputs.push_back({"smokeTest", "enabled"});
 		}
-		if (!request.GraphicsBackend.empty())
+		if (!plan.Request.GraphicsBackend.empty())
 		{
-			plan.Operation.Inputs.push_back({"graphicsBackend", request.GraphicsBackend});
+			plan.Operation.Inputs.push_back({"graphicsBackend", plan.Request.GraphicsBackend});
 		}
-		if (!request.VSync.empty())
+		if (!plan.Request.VSync.empty())
 		{
-			plan.Operation.Inputs.push_back({"r.VSync", request.VSync});
+			plan.Operation.Inputs.push_back({"r.VSync", plan.Request.VSync});
 		}
-		if (!request.PreferHighPerformanceAdapter.empty())
+		if (!plan.Request.PreferHighPerformanceAdapter.empty())
 		{
-			plan.Operation.Inputs.push_back({"r.PreferHighPerformanceAdapter", request.PreferHighPerformanceAdapter});
+			plan.Operation.Inputs.push_back({"r.PreferHighPerformanceAdapter", plan.Request.PreferHighPerformanceAdapter});
 		}
-		if (!request.MeshAutoBatching.empty())
+		if (!plan.Request.MeshAutoBatching.empty())
 		{
-			plan.Operation.Inputs.push_back({"r.MeshAutoBatching", request.MeshAutoBatching});
+			plan.Operation.Inputs.push_back({"r.MeshAutoBatching", plan.Request.MeshAutoBatching});
 		}
-		if (!request.CustomArguments.empty())
+		if (!plan.Request.CustomArguments.empty())
 		{
-			plan.Operation.Inputs.push_back({"customArguments", std::to_string(request.CustomArguments.size())});
+			plan.Operation.Inputs.push_back({"customArguments", std::to_string(plan.Request.CustomArguments.size())});
 		}
-		if (!request.CustomCVars.empty())
+		if (!plan.Request.CustomCVars.empty())
 		{
-			plan.Operation.Inputs.push_back({"customCVars", std::to_string(request.CustomCVars.size())});
+			plan.Operation.Inputs.push_back({"customCVars", std::to_string(plan.Request.CustomCVars.size())});
 		}
 		PopulateRhiSmokeLaunchInputs(plan);
-		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
+		plan.Operation.LogPath = GetLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
 
-		const std::optional<BuildProfile> profile = ResolveProfileForLaunch(request, plan.Profile);
+		const std::optional<BuildProfile> profile = ResolveProfileForLaunch(plan.Request, plan.Profile);
 		if (!profile.has_value())
 		{
 			AddReadiness(plan, "Launch profile does not match the requested launch target: " + plan.Profile);
 			return plan;
 		}
 
-		plan.TargetName = BuildProjectTargetName(request.ProjectId, *profile);
-		plan.ExecutablePath = ResolveLaunchExecutablePath(request, plan.Profile, plan.TargetName);
-		plan.WorkingDirectory = request.RepositoryRoot / "Projects" / request.ProjectId;
+		plan.TargetName = BuildProjectTargetName(plan.Request.ProjectId, *profile);
+		plan.ExecutablePath = ResolveLaunchExecutablePath(plan.Request, plan.Profile, plan.TargetName);
+		plan.WorkingDirectory = plan.Request.RepositoryRoot / "Projects" / plan.Request.ProjectId;
 		PopulateRhiSmokeLaunchEnvironment(plan);
-		if (!request.StartupLevel.empty())
+		if (!plan.Request.StartupLevel.empty())
 		{
-			AddEnvironment(plan, "SPARKLE_STARTUP_LEVEL", request.StartupLevel);
+			AddEnvironment(plan, "SPARKLE_STARTUP_LEVEL", plan.Request.StartupLevel);
 		}
 
 		std::error_code errorCode;
@@ -259,41 +268,41 @@ namespace SparkleLauncher
 		errorCode.clear();
 		const bool projectMarkerExists = std::filesystem::exists(plan.WorkingDirectory / ".sparkle-project", errorCode);
 		errorCode.clear();
-		const std::filesystem::path cookedProjectDirectory = GetCookedProjectDirectory(request.RepositoryRoot, request.ProjectId);
-		const bool cookedMeshesReady = CookedAssetScopeHasFiles(request.RepositoryRoot, request.ProjectId, "Meshes");
-		const bool cookedTexturesReady = CookedAssetScopeHasFiles(request.RepositoryRoot, request.ProjectId, "Textures");
-		const bool cookedShadersReady = CookedAssetScopeHasFiles(request.RepositoryRoot, request.ProjectId, "Shaders");
+		const std::filesystem::path cookedProjectDirectory = GetCookedProjectDirectory(plan.Request.RepositoryRoot, plan.Request.ProjectId);
+		const bool cookedMeshesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Meshes");
+		const bool cookedTexturesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Textures");
+		const bool cookedShadersReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Shaders");
 		AddReadiness(plan, executableExists ? "Executable is ready." : "Executable is missing; compile the target first: " + plan.TargetName);
 		AddReadiness(plan, projectMarkerExists ? "Project working directory is valid." : "Project working directory is missing or is not a Sparkle project: " + plan.WorkingDirectory.string());
 		AddReadiness(plan, cookedMeshesReady ? "Cooked scenes and meshes are ready." : "Cooked scenes and meshes are missing; run Cook Scenes And Meshes before launching.");
 		AddReadiness(plan, cookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing; run Cook Textures before launching.");
 		AddReadiness(plan, cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; run Cook Shaders before launching.");
-		AddPlannedEffect(plan, std::string("Launch ") + (IsRuntimeLaunchTarget(request) ? "runtime" : "editor") + " executable " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
-		if (!request.GraphicsBackend.empty())
+		AddPlannedEffect(plan, std::string("Launch ") + (IsRuntimeLaunchTarget(plan.Request) ? "runtime" : "editor") + " executable " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
+		if (!plan.Request.GraphicsBackend.empty())
 		{
-			AddPlannedEffect(plan, "Use graphics backend: " + request.GraphicsBackend + ".");
+			AddPlannedEffect(plan, "Use graphics backend: " + plan.Request.GraphicsBackend + ".");
 		}
-		if (!request.VSync.empty())
+		if (!plan.Request.VSync.empty())
 		{
-			AddPlannedEffect(plan, "Set r.VSync=" + request.VSync + ".");
+			AddPlannedEffect(plan, "Set r.VSync=" + plan.Request.VSync + ".");
 		}
-		if (!request.PreferHighPerformanceAdapter.empty())
+		if (!plan.Request.PreferHighPerformanceAdapter.empty())
 		{
-			AddPlannedEffect(plan, "Set r.PreferHighPerformanceAdapter=" + request.PreferHighPerformanceAdapter + ".");
+			AddPlannedEffect(plan, "Set r.PreferHighPerformanceAdapter=" + plan.Request.PreferHighPerformanceAdapter + ".");
 		}
-		if (!request.MeshAutoBatching.empty())
+		if (!plan.Request.MeshAutoBatching.empty())
 		{
-			AddPlannedEffect(plan, "Set r.MeshAutoBatching=" + request.MeshAutoBatching + ".");
+			AddPlannedEffect(plan, "Set r.MeshAutoBatching=" + plan.Request.MeshAutoBatching + ".");
 		}
-		if (!request.StartupLevel.empty())
+		if (!plan.Request.StartupLevel.empty())
 		{
-			AddPlannedEffect(plan, "Use startup level: " + request.StartupLevel + ".");
+			AddPlannedEffect(plan, "Use startup level: " + plan.Request.StartupLevel + ".");
 		}
-		if (!request.CustomArguments.empty())
+		if (!plan.Request.CustomArguments.empty())
 		{
-			AddPlannedEffect(plan, "Append " + std::to_string(request.CustomArguments.size()) + " custom command-line argument(s).");
+			AddPlannedEffect(plan, "Append " + std::to_string(plan.Request.CustomArguments.size()) + " custom command-line argument(s).");
 		}
-		for (const std::string& customCVar : request.CustomCVars)
+		for (const std::string& customCVar : plan.Request.CustomCVars)
 		{
 			AddPlannedEffect(plan, "Set " + customCVar + ".");
 		}

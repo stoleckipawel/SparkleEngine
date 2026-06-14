@@ -3,6 +3,7 @@
 #include "EditorAPI.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
+#include "../../Renderer/Public/Diagnostics/RendererSmokeDiagnostics.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
@@ -46,6 +47,7 @@ struct EditorDiagnosticsProviders final
 	std::function<MeshDiagnosticsSnapshot()> MeshDiagnostics;
 	std::function<TextureDiagnosticsSnapshot()> TextureDiagnostics;
 	std::function<RendererMemoryDiagnosticsSnapshot()> MemoryDiagnostics;
+	std::function<RendererSmokeDiagnosticsSnapshot()> RendererSmokeDiagnostics;
 };
 
 class SPARKLE_EDITOR_API UI final
@@ -113,6 +115,7 @@ class SPARKLE_EDITOR_API UI final
 	std::function<MeshDiagnosticsSnapshot()> m_meshDiagnosticsProvider;
 	std::function<TextureDiagnosticsSnapshot()> m_textureDiagnosticsProvider;
 	std::function<RendererMemoryDiagnosticsSnapshot()> m_memoryDiagnosticsProvider;
+	std::function<RendererSmokeDiagnosticsSnapshot()> m_rendererSmokeDiagnosticsProvider;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;
 	bool m_isImGuiContextInitialized = false;

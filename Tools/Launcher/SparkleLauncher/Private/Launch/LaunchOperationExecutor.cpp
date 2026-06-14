@@ -1,6 +1,8 @@
 #include "SparkleLauncher/LaunchOperations.h"
 
 #include "LaunchOperationProcessRequests.h"
+#include "Smoke/RhiSmokeLaunchOperations.h"
+#include "Smoke/RhiSmokeParityArtifactValidation.h"
 
 #include <optional>
 
@@ -38,6 +40,17 @@ namespace SparkleLauncher
 			{
 				operation.FailureSummary = result.FailureReason.empty() ? step.DisplayName + " failed." : result.FailureReason;
 				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
+				return operation;
+			}
+		}
+
+		if (IsRhiParitySmokeLaunchOperation(plan.Kind))
+		{
+			std::string failureSummary;
+			if (!ValidateRhiSmokeRayTracingParityArtifacts(plan, failureSummary))
+			{
+				operation.FailureSummary = failureSummary.empty() ? "RHI ray tracing parity artifact validation failed." : failureSummary;
+				MarkOperationFinished(operation, OperationStatus::Failed, 1);
 				return operation;
 			}
 		}

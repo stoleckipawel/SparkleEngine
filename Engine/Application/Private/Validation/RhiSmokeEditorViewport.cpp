@@ -5,6 +5,8 @@
 #include "Renderer.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RuntimeApplication.h"
+#include "Validation/RhiSmokeCaptureArtifacts.h"
+#include "Validation/RhiSmokeRenderViewModeNames.h"
 
 #include <algorithm>
 
@@ -13,59 +15,6 @@ namespace
 	std::shared_ptr<spdlog::logger> GetSmokeLogger()
 	{
 		return Logging::GetOrCreateLogger("Application.SmokeValidation");
-	}
-
-	const char* RenderViewModeName(RenderViewMode viewMode) noexcept
-	{
-		switch (viewMode)
-		{
-			case RenderViewMode::Lit:
-				return "Lit";
-			case RenderViewMode::Wireframe:
-				return "Wireframe";
-			case RenderViewMode::GBufferDiffuse:
-				return "GBufferDiffuse";
-			case RenderViewMode::GBufferNormal:
-				return "GBufferNormal";
-			case RenderViewMode::GBufferRoughness:
-				return "GBufferRoughness";
-			case RenderViewMode::GBufferMetallic:
-				return "GBufferMetallic";
-			case RenderViewMode::GBufferEmissive:
-				return "GBufferEmissive";
-			case RenderViewMode::GBufferAmbientOcclusion:
-				return "GBufferAmbientOcclusion";
-			case RenderViewMode::GBufferSubsurfaceColor:
-				return "GBufferSubsurfaceColor";
-			case RenderViewMode::GBufferSubsurfaceStrength:
-				return "GBufferSubsurfaceStrength";
-			case RenderViewMode::DirectDiffuse:
-				return "DirectDiffuse";
-			case RenderViewMode::DirectSpecular:
-				return "DirectSpecular";
-			case RenderViewMode::DirectSubsurface:
-				return "DirectSubsurface";
-			case RenderViewMode::IndirectDiffuse:
-				return "IndirectDiffuse";
-			case RenderViewMode::IndirectSpecular:
-				return "IndirectSpecular";
-			case RenderViewMode::IndirectSubsurface:
-				return "IndirectSubsurface";
-			case RenderViewMode::InstanceGroups:
-				return "InstanceGroups";
-			case RenderViewMode::RayTracingPartitions:
-				return "RayTracingPartitions";
-			case RenderViewMode::RayTracingPartitionUpdates:
-				return "RayTracingPartitionUpdates";
-			case RenderViewMode::RayTracingInstanceMovement:
-				return "RayTracingInstanceMovement";
-			case RenderViewMode::RayTracingGpuDrivenUpdates:
-				return "RayTracingGpuDrivenUpdates";
-			case RenderViewMode::Count:
-				break;
-		}
-
-		return "Unknown";
 	}
 }
 
@@ -82,7 +31,11 @@ namespace RhiSmokeEditorViewport
 		if (!state.ViewModeOverrideLogged)
 		{
 			const std::shared_ptr<spdlog::logger> logger = GetSmokeLogger();
-			SPDLOG_LOGGER_INFO(logger, "RHI editor smoke: forced render view mode {}", static_cast<std::uint32_t>(config.ViewModeOverride));
+			SPDLOG_LOGGER_INFO(
+			    logger,
+			    "RHI editor smoke: forced render view mode {}({})",
+			    RhiSmokeRenderViewModeNames::ToString(config.ViewModeOverride),
+			    static_cast<std::uint32_t>(config.ViewModeOverride));
 			state.ViewModeOverrideLogged = true;
 		}
 	}
@@ -148,8 +101,15 @@ namespace RhiSmokeEditorViewport
 		        .OutputPath = std::filesystem::path(config.SceneColorCapturePath),
 		        .FrameIndex = currentFrame,
 		        .ViewMode = static_cast<std::uint32_t>(viewMode),
-		        .ViewModeName = RenderViewModeName(viewMode),
+		        .ViewModeName = RhiSmokeRenderViewModeNames::ToString(viewMode),
 		        .DebugName = "Editor smoke scene color"});
+		RhiSmokeCaptureArtifacts::Write(
+		    RhiSmokeCaptureArtifactRequest{
+		        .CaptureResult = captureResult,
+		        .Diagnostics = renderer.CaptureSmokeDiagnostics(),
+		        .CapturePath = std::filesystem::path(config.SceneColorCapturePath),
+		        .MetadataPath = std::filesystem::path(config.MetadataPath),
+		        .TimingCsvPath = std::filesystem::path(config.TimingCsvPath)});
 
 		if (captureResult)
 		{

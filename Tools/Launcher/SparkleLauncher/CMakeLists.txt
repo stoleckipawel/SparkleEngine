@@ -68,11 +68,17 @@ set(SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperationProcessRequests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperations.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeLaunchOperations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeParityArtifactValidation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeTestCatalog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeParityTestPlan.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperationProcessRequests.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeLaunchOperations.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeParityArtifactValidation.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeTestCatalog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeParityTestPlan.h
 )
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS Widgets)

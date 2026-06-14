@@ -11,6 +11,7 @@
 #include "Validation/RhiSmokeEditorViewport.h"
 #include "Validation/RhiSmokeFrameControl.h"
 #include "Validation/RhiSmokeRendererEvidence.h"
+#include "Validation/RhiSmokeRenderViewModeNames.h"
 
 #include <string>
 
@@ -55,9 +56,23 @@ namespace
 		config.Viewport.SceneColorCaptureFrame =
 		    Environment::GetUInt32("SPARKLE_SMOKE_SCENE_COLOR_CAPTURE_FRAME", config.Viewport.SceneColorCaptureFrame);
 		Environment::TryGetVariable("SPARKLE_SMOKE_SCENE_COLOR_CAPTURE", config.Viewport.SceneColorCapturePath);
+		Environment::TryGetVariable("SPARKLE_SMOKE_METADATA_PATH", config.Viewport.MetadataPath);
+		Environment::TryGetVariable("SPARKLE_SMOKE_TIMING_CSV", config.Viewport.TimingCsvPath);
 		std::string viewModeValue;
+		std::string viewModeName;
+		std::string ptlasCapturePreset;
 		std::uint32_t viewModeOverride = 0;
-		if (Environment::TryGetVariable("SPARKLE_SMOKE_VIEW_MODE", viewModeValue) &&
+		if (Environment::TryGetVariable("SPARKLE_SMOKE_VIEW_MODE_NAME", viewModeName) &&
+		    RhiSmokeRenderViewModeNames::TryParse(viewModeName, config.Viewport.ViewModeOverride))
+		{
+			config.Viewport.HasViewModeOverride = true;
+		}
+		else if (Environment::TryGetVariable("SPARKLE_SMOKE_PTLAS_CAPTURE_PRESET", ptlasCapturePreset) &&
+		         RhiSmokeRenderViewModeNames::TryParse(ptlasCapturePreset, config.Viewport.ViewModeOverride))
+		{
+			config.Viewport.HasViewModeOverride = true;
+		}
+		else if (Environment::TryGetVariable("SPARKLE_SMOKE_VIEW_MODE", viewModeValue) &&
 		    Strings::TryParseNumber(viewModeValue, viewModeOverride) &&
 		    viewModeOverride < static_cast<std::uint32_t>(RenderViewMode::Count))
 		{
@@ -182,6 +197,11 @@ int RhiSmokeValidation::RunEditor() noexcept
 		        .ImGuiRenderer = renderer.GetImGuiRenderer(),
 		        .HostWindow = app.GetWindow(),
 		        .Input = app.GetInputSystem()});
+		ui.SetDiagnosticsProviders(EditorDiagnosticsProviders{
+		    .RendererSmokeDiagnostics = [&renderer]()
+		    {
+			    return renderer.CaptureSmokeDiagnostics();
+		    }});
 
 		while (TickEditor(app, ui, config, state))
 		{

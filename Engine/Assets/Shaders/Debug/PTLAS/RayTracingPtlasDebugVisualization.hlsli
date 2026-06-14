@@ -55,6 +55,45 @@ namespace RayTracingPtlasDebugVisualization
 		return baseColor * 0.2f;
 	}
 
+	float3 ApplyTopLevelModeVisualization(float3 baseColor, uint rayTracingPtlasDebugVisualizationData)
+	{
+		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugInvalid) != 0u)
+		{
+			return float3(1.0f, 0.0f, 1.0f);
+		}
+		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugGlobalPartition) != 0u)
+		{
+			return float3(0.7f, 0.2f, 1.0f);
+		}
+		return lerp(baseColor, float3(0.1f, 0.45f, 1.0f), 0.65f);
+	}
+
+	float3 ApplyNativeOperationVisualization(float3 baseColor, uint rayTracingPtlasDebugVisualizationData)
+	{
+		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugMovedPartition) != 0u)
+		{
+			return float3(1.0f, 0.2f, 0.05f);
+		}
+		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugDirtyTransform) != 0u)
+		{
+			return float3(1.0f, 0.85f, 0.0f);
+		}
+		return baseColor * 0.18f;
+	}
+
+	float3 ApplyProviderStatusVisualization(float3 baseColor, uint rayTracingPtlasDebugVisualizationData)
+	{
+		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugInvalid) != 0u)
+		{
+			return float3(1.0f, 0.0f, 1.0f);
+		}
+		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugGlobalPartition) != 0u)
+		{
+			return float3(0.85f, 0.0f, 1.0f);
+		}
+		return lerp(baseColor, MakePartitionColor(rayTracingPtlasDebugVisualizationData), 0.75f);
+	}
+
 	float3 ApplyDebugVisualization(float3 baseColor, uint rayTracingPtlasDebugVisualizationData)
 	{
 		switch (ViewModeIndex)
@@ -67,6 +106,12 @@ namespace RayTracingPtlasDebugVisualization
 				return saturate(ApplyInstanceMovementVisualization(baseColor, rayTracingPtlasDebugVisualizationData));
 			case ViewMode::RayTracingGpuDrivenUpdates:
 				return saturate(ApplyPartitionUpdateVisualization(baseColor, rayTracingPtlasDebugVisualizationData));
+			case ViewMode::RayTracingTopLevelMode:
+				return saturate(ApplyTopLevelModeVisualization(baseColor, rayTracingPtlasDebugVisualizationData));
+			case ViewMode::RayTracingNativeOperations:
+				return saturate(ApplyNativeOperationVisualization(baseColor, rayTracingPtlasDebugVisualizationData));
+			case ViewMode::RayTracingProviderStatus:
+				return saturate(ApplyProviderStatusVisualization(baseColor, rayTracingPtlasDebugVisualizationData));
 			default:
 				return baseColor;
 		}

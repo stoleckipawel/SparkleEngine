@@ -6,7 +6,17 @@ namespace SparkleLauncher
 {
 	bool IsRhiSmokeLaunchOperation(LaunchOperationKind kind)
 	{
-		return kind == LaunchOperationKind::RunProject;
+		return kind == LaunchOperationKind::RunProject || kind == LaunchOperationKind::RunRhiRayTracingParitySmoke;
+	}
+
+	bool IsRhiParitySmokeLaunchOperation(LaunchOperationKind kind)
+	{
+		return kind == LaunchOperationKind::RunRhiRayTracingParitySmoke;
+	}
+
+	bool IsRhiSmokeTestEnabled(const LaunchOperationPlan& plan) noexcept
+	{
+		return GetRhiSmokeTestCategory(plan) != RhiSmokeTestCategory::None;
 	}
 
 	std::string GetRhiSmokeFrameLimitText(const LaunchOperationRequest& request)
@@ -20,11 +30,12 @@ namespace SparkleLauncher
 		{
 			return;
 		}
-		if (!plan.Request.EnableSmokeTest)
+		if (!IsRhiSmokeTestEnabled(plan))
 		{
 			return;
 		}
 
+		plan.Operation.Inputs.push_back({"smokeCategory", RhiSmokeTestCategoryToString(GetRhiSmokeTestCategory(plan))});
 		plan.Operation.Inputs.push_back({"smokeBackend", plan.Request.SmokeBackend.empty() ? "default" : plan.Request.SmokeBackend});
 		plan.Operation.Inputs.push_back({"smokeFrameLimit", GetRhiSmokeFrameLimitText(plan.Request)});
 		plan.Operation.Inputs.push_back({"smokeViewMode", plan.Request.SmokeViewMode.empty() ? "default" : plan.Request.SmokeViewMode});
@@ -45,7 +56,7 @@ namespace SparkleLauncher
 		{
 			return;
 		}
-		if (!plan.Request.EnableSmokeTest)
+		if (!IsRhiSmokeTestEnabled(plan))
 		{
 			return;
 		}
@@ -62,6 +73,7 @@ namespace SparkleLauncher
 		}
 		if (!plan.Request.SmokeViewMode.empty())
 		{
+			AddEnvironment(plan, "SPARKLE_SMOKE_VIEW_MODE_NAME", plan.Request.SmokeViewMode);
 			AddEnvironment(plan, "SPARKLE_SMOKE_VIEW_MODE", plan.Request.SmokeViewMode);
 		}
 		if (!plan.Request.SmokeCapturePath.empty())
@@ -80,12 +92,18 @@ namespace SparkleLauncher
 		{
 			return {};
 		}
-		if (!plan.Request.EnableSmokeTest)
+		if (!IsRhiSmokeTestEnabled(plan))
 		{
 			return {};
 		}
 
-		std::vector<std::string> effects = {"Enable graphics smoke validation for " + GetRhiSmokeFrameLimitText(plan.Request) + " frames."};
+		std::vector<std::string> effects = {
+		    std::string("Enable ") + RhiSmokeTestCategoryToString(GetRhiSmokeTestCategory(plan)) +
+		    " graphics smoke validation for " + GetRhiSmokeFrameLimitText(plan.Request) + " frames."};
+		if (GetRhiSmokeTestCategory(plan) == RhiSmokeTestCategory::RayTracingParity)
+		{
+			effects.push_back("Run D3D12/Vulkan classic TLAS and PTLAS parity captures with provider metadata and timing artifacts.");
+		}
 		if (!plan.Request.SmokeViewMode.empty())
 		{
 			effects.push_back("Force render view mode " + plan.Request.SmokeViewMode + " during smoke validation.");

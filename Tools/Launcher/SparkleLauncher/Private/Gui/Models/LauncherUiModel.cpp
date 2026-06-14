@@ -94,6 +94,19 @@ namespace SparkleLauncher
 			    "Uses the selected project, target, startup level, and runtime options from this page.",
 			    "workflow-project-run-editor.png");
 		}
+		if (operationId == "project.run.rhi-raytracing-parity")
+		{
+			return MakeOperationUiModel(
+			    operationId,
+			    "Run RHI Ray Tracing Parity",
+			    "Run",
+			    LauncherWorkflowPageKind::Launch,
+			    LauncherActionImpactKind::LaunchProcess,
+			    "Smoke workflow: captures D3D12/Vulkan classic TLAS and PTLAS outputs, metadata, timing artifacts, and parity diffs.",
+			    "Ray tracing parity",
+			    "Runs deterministic smoke captures through the launcher-owned smoke validation pipeline.",
+			    "workflow-project-run-editor.png");
+		}
 		if (operationId == "workspace.open-ide")
 		{
 			return MakeOperationUiModel(

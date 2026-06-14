@@ -76,6 +76,7 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 	m_meshDiagnosticsProvider = std::move(providers.MeshDiagnostics);
 	m_textureDiagnosticsProvider = std::move(providers.TextureDiagnostics);
 	m_memoryDiagnosticsProvider = std::move(providers.MemoryDiagnostics);
+	m_rendererSmokeDiagnosticsProvider = std::move(providers.RendererSmokeDiagnostics);
 
 	if (m_usedShadersPanel)
 	{
@@ -402,6 +403,8 @@ void UI::Build()
 		m_viewportPanel->SetTopInset(mainMenuBarHeight + viewportTopPanelHeight);
 		m_viewportPanel->SetBottomInset(consoleDockHeight);
 		m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
+		m_viewportPanel->SetRendererSmokeDiagnostics(
+		    m_rendererSmokeDiagnosticsProvider ? m_rendererSmokeDiagnosticsProvider() : RendererSmokeDiagnosticsSnapshot{});
 		m_viewportPanel->BuildUI(disableInteraction);
 		if (m_inputSystem != nullptr)
 		{

@@ -63,6 +63,10 @@ void EditorApplication::Initialize()
 		    .MemoryDiagnostics = [&renderer]()
 		    {
 			    return renderer.CaptureMemoryDiagnostics();
+		    },
+		    .RendererSmokeDiagnostics = [&renderer]()
+		    {
+			    return renderer.CaptureSmokeDiagnostics();
 		    }});
 		ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
 	}

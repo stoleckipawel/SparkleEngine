@@ -23,4 +23,7 @@ namespace ViewMode
 	static const uint RayTracingPartitionUpdates = 18u;
 	static const uint RayTracingInstanceMovement = 19u;
 	static const uint RayTracingGpuDrivenUpdates = 20u;
+	static const uint RayTracingTopLevelMode = 21u;
+	static const uint RayTracingNativeOperations = 22u;
+	static const uint RayTracingProviderStatus = 23u;
 }
