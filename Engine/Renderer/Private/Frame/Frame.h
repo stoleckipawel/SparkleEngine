@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Frame/Targets/FrameRenderTargets.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "Frame/RayTracingSceneFrameGraphResources.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
@@ -10,7 +10,7 @@ struct FrameBuildResult
 {
 	SceneRenderTargets Scene;
 	GBufferRenderTargets GBuffer;
-	FrameGraphAccelerationStructureHandle SceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
+	RayTracingSceneFrameGraphResources RayTracing;
 };
 
 FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, bool presentToBackBuffer);

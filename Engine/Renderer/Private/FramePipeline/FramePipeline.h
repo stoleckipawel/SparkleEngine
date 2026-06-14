@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Public/Events/ScopedEventHandle.h"
+#include "Frame/RayTracingSceneFrameGraphResources.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"
@@ -16,6 +17,7 @@ class FrameExecutionDiagnostics;
 class FrameGraph;
 class RendererSystemRoot;
 struct ResolvedGpuTiming;
+struct RayTracingSceneFrameData;
 
 class FramePipeline final
 {
@@ -64,6 +66,8 @@ class FramePipeline final
 	NativeResourceHandle ResolveRenderProductResource(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
+	void BindRayTracingFrameGraphResources(const RayTracingSceneFrameData& rayTracingScene) noexcept;
+	void ClearRayTracingFrameGraphResources() noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
@@ -80,6 +84,7 @@ class FramePipeline final
 	RendererFrameProductHandles m_frameProducts = {};
 	RenderSceneSnapshot m_sceneSnapshot = {};
 	FrameGraphAccelerationStructureHandle m_frameGraphSceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
+	RayTracingSceneFrameGraphResources m_frameGraphRayTracingResources = {};
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;
 };

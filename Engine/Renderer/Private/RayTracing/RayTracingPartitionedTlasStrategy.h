@@ -23,6 +23,16 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
+	void BuildPartitionedTlasLogicalUpdateResources(
+	    RenderCommandContext& cmd,
+	    const RenderSceneData& sceneData,
+	    RayTracingTopLevelScenePlanner* scenePlanner,
+	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
+	void PackPartitionedTlasNativeOperations(
+	    RenderCommandContext& cmd,
+	    const RenderSceneData& sceneData,
+	    RayTracingTopLevelScenePlanner* scenePlanner,
+	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
 	bool HasValidSceneTlas() const noexcept override;
 	RhiOwnedResourceHandle GetSceneTlasResource() const noexcept override;
 	RhiGpuVirtualAddress GetSceneTlasGpuAddress() const noexcept override;

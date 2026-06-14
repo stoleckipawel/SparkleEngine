@@ -223,6 +223,59 @@ std::uint32_t FramePipeline::GetLastUnresolvedBarrierWarningCount() const noexce
 	return m_frameGraph != nullptr ? m_frameGraph->GetLastUnresolvedBarrierWarningCount() : 0u;
 }
 
+void FramePipeline::BindRayTracingFrameGraphResources(const RayTracingSceneFrameData& rayTracingScene) noexcept
+{
+	if (m_frameGraph == nullptr)
+	{
+		return;
+	}
+
+	if (rayTracingScene.PtlasFrameGraphResources.HasLogicalUpdateRecords())
+	{
+		m_frameGraph->BindPersistentBuffer(
+		    m_frameGraphRayTracingResources.PtlasLogicalUpdateRecords,
+		    rayTracingScene.PtlasFrameGraphResources.LogicalUpdateRecords);
+	}
+	else
+	{
+		m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasLogicalUpdateRecords);
+	}
+
+	if (rayTracingScene.PtlasFrameGraphResources.HasNativeOperationData())
+	{
+		m_frameGraph->BindPersistentBuffer(
+		    m_frameGraphRayTracingResources.PtlasNativeOperationData,
+		    rayTracingScene.PtlasFrameGraphResources.NativeOperationData);
+	}
+	else
+	{
+		m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasNativeOperationData);
+	}
+
+	if (rayTracingScene.PtlasFrameGraphResources.HasScratch())
+	{
+		m_frameGraph->BindPersistentBuffer(
+		    m_frameGraphRayTracingResources.PtlasScratch,
+		    rayTracingScene.PtlasFrameGraphResources.Scratch);
+	}
+	else
+	{
+		m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasScratch);
+	}
+}
+
+void FramePipeline::ClearRayTracingFrameGraphResources() noexcept
+{
+	if (m_frameGraph == nullptr)
+	{
+		return;
+	}
+
+	m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasLogicalUpdateRecords);
+	m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasNativeOperationData);
+	m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasScratch);
+}
+
 RenderViewportExtent FramePipeline::ResolveSceneExtent() const noexcept
 {
 	const Window& window = m_systems->GetWindow();
@@ -274,6 +327,7 @@ void FramePipeline::InitializeFrameGraph(RenderViewportExtent sceneExtent) noexc
 	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.MotionVectors.GetResourceHandle().index) + 1ull}
 	        : RenderProductHandle{};
 	m_frameGraphSceneTlas = buildResult.SceneTlas;
+	m_frameGraphRayTracingResources = buildResult.RayTracing;
 	m_frameGraph = std::move(buildResult.Graph);
 }
 
@@ -446,15 +500,18 @@ void FramePipeline::RecordFrame() noexcept
 				    m_frameGraphSceneTlas,
 				    frame.rayTracingScene.TlasResource,
 				    frame.rayTracingScene.TlasGpuAddress);
+				BindRayTracingFrameGraphResources(frame.rayTracingScene);
 			}
 			else
 			{
 				m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameGraphSceneTlas);
+				ClearRayTracingFrameGraphResources();
 			}
 		}
 		else
 		{
 			m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameGraphSceneTlas);
+			ClearRayTracingFrameGraphResources();
 		}
 	}
 

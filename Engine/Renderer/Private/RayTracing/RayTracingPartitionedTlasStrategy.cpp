@@ -48,6 +48,24 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	return result;
 }
 
+void RayTracingPartitionedTlasStrategy::BuildPartitionedTlasLogicalUpdateResources(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    RayTracingTopLevelScenePlanner* scenePlanner,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
+{
+	m_classicFallbackStrategy.BuildPartitionedTlasLogicalUpdateResources(cmd, sceneData, scenePlanner, diagnostics);
+}
+
+void RayTracingPartitionedTlasStrategy::PackPartitionedTlasNativeOperations(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    RayTracingTopLevelScenePlanner* scenePlanner,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
+{
+	m_classicFallbackStrategy.PackPartitionedTlasNativeOperations(cmd, sceneData, scenePlanner, diagnostics);
+}
+
 bool RayTracingPartitionedTlasStrategy::HasValidSceneTlas() const noexcept
 {
 	return m_classicFallbackStrategy.HasValidSceneTlas();

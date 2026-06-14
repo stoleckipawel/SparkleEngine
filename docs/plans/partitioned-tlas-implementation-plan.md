@@ -1623,6 +1623,20 @@ Reference-quality completion stages:
    - What changes: synchronization becomes part of the feature contract.
    - Why it matters: acceleration structure bugs often look like random rendering bugs; resource ownership visibility prevents that.
 
+   Status:
+
+   - Implemented as a frame-graph contract seam on 2026-06-14.
+   - Added reserved persistent buffer support to the frame graph so backend/strategy-owned PTLAS buffers can be bound before setup, mirroring the existing persistent `SceneTlas` lifecycle.
+   - Added grouped `RayTracingSceneFrameGraphResources` containing `SceneTlas`, `PtlasLogicalUpdateRecords`, `PtlasNativeOperationData`, and `PtlasScratch`.
+   - Split ray tracing scene work into explicit frame graph stages:
+     - `RayTracingPtlasLogicalUpdates`
+     - `RayTracingPtlasNativeOperationPack`
+     - `RayTracingSceneBuild`
+   - The PTLAS stages declare resources only when the active frame data exposes PTLAS operation resources, so classic TLAS remains clean and warning-free.
+   - Added renderer strategy hooks for logical update generation and native operation packing; classic currently no-ops them.
+   - Validation run: `ShowcaseEditor` build and `architecture_boundary_check`.
+   - Remaining work: the active PTLAS strategy must allocate/bind real PTLAS logical/native/scratch resources and execute those stage hooks before this can count as full PTLAS runtime synchronization proof.
+
 3. **Vulkan PTLAS Active Provider**
 
    Goal:

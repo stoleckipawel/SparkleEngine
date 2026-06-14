@@ -34,6 +34,14 @@ class RenderRayTracingScene final
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,
 	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
+	void BuildPartitionedTlasLogicalUpdateResources(
+	    RenderCommandContext& cmd,
+	    const RenderSceneData& sceneData,
+	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
+	void PackPartitionedTlasNativeOperations(
+	    RenderCommandContext& cmd,
+	    const RenderSceneData& sceneData,
+	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
 	void BeginResolvedGpuTimingFrame() noexcept;
 	void PublishResolvedGpuTiming(const ResolvedGpuTiming& timing) noexcept;

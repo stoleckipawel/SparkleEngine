@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "Frame/RayTracingSceneFrameGraphResources.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
@@ -90,6 +91,9 @@ class FrameGraphBuilder final
 	    const FrameGraphBufferDesc& desc,
 	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
+	FrameGraphBufferHandle ReservePersistentBuffer(
+	    const FrameGraphBufferDesc& desc,
+	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
 	FrameGraphAccelerationStructureHandle ImportAccelerationStructure(
 	    const FrameGraphAccelerationStructureDesc& desc,
@@ -115,6 +119,15 @@ class FrameGraphBuilder final
 	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept;
+	void BindPersistentBuffer(
+	    FrameGraphBufferHandle handle,
+	    NativeResourceHandle resource,
+	    ResourceState currentState = ResourceState::Common) noexcept;
+	void BindPersistentBuffer(
+	    FrameGraphBufferHandle handle,
+	    RhiOwnedResourceHandle resource,
+	    ResourceState currentState = ResourceState::Common) noexcept;
+	void ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept
 	{
@@ -182,6 +195,7 @@ struct FrameGraphBuildResult
 	FrameGraphTextureHandle SceneDepth;
 	FrameGraphTextureHandle MotionVectors;
 	FrameGraphAccelerationStructureHandle SceneTlas;
+	RayTracingSceneFrameGraphResources RayTracing;
 };
 
 class FrameGraphFactory final

@@ -49,6 +49,13 @@ FrameGraphBufferHandle FrameGraphBuilder::ImportPersistentBuffer(
 	return m_frameGraph.ImportPersistentBuffer(desc, resource, initialState);
 }
 
+FrameGraphBufferHandle FrameGraphBuilder::ReservePersistentBuffer(
+    const FrameGraphBufferDesc& desc,
+    ResourceState initialState) noexcept
+{
+	return m_frameGraph.ReservePersistentBuffer(desc, initialState);
+}
+
 FrameGraphBufferHandle FrameGraphBuilder::CreateBuffer(const FrameGraphBufferDesc& desc) noexcept
 {
 	return m_frameGraph.CreateBuffer(desc);
@@ -102,6 +109,27 @@ void FrameGraphBuilder::ClearPersistentAccelerationStructureBinding(FrameGraphAc
 	m_frameGraph.ClearPersistentAccelerationStructureBinding(handle);
 }
 
+void FrameGraphBuilder::BindPersistentBuffer(
+    FrameGraphBufferHandle handle,
+    NativeResourceHandle resource,
+    ResourceState currentState) noexcept
+{
+	m_frameGraph.BindPersistentBuffer(handle, resource, currentState);
+}
+
+void FrameGraphBuilder::BindPersistentBuffer(
+    FrameGraphBufferHandle handle,
+    RhiOwnedResourceHandle resource,
+    ResourceState currentState) noexcept
+{
+	m_frameGraph.BindPersistentBuffer(handle, resource, currentState);
+}
+
+void FrameGraphBuilder::ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept
+{
+	m_frameGraph.ClearPersistentBufferBinding(handle);
+}
+
 ShaderRenderTarget FrameGraphBuilder::CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept
 {
 	return m_frameGraph.CreateRenderTarget(handle);
@@ -127,7 +155,8 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	result.FinalSceneColor = frameLoop.Scene.FinalSceneColor;
 	result.SceneDepth = frameLoop.Scene.MainDepth;
 	result.MotionVectors = frameLoop.GBuffer.MotionVector;
-	result.SceneTlas = frameLoop.SceneTlas;
+	result.SceneTlas = frameLoop.RayTracing.SceneTlas;
+	result.RayTracing = frameLoop.RayTracing;
 	result.Graph = std::move(frameGraph);
 	return result;
 }

@@ -9,7 +9,6 @@
 #include "Frame/RayTracingScene.h"
 #include "Frame/Upscaling.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
@@ -37,12 +36,11 @@ FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sce
 	const GBufferRenderTargets gbuffer = CreateGBufferRenderTargets(builder, sceneExtent, sceneTargets);
 	AddGBufferPass(builder, gbuffer);
 
-	const FrameGraphAccelerationStructureHandle sceneTlas =
-	    builder.ReservePersistentAccelerationStructure(FrameGraphAccelerationStructureDesc::Create("SceneTlas"));
-	AddRayTracingSceneBuildPass(builder, sceneTlas);
+	const RayTracingSceneFrameGraphResources rayTracingResources = CreateRayTracingSceneFrameGraphResources(builder);
+	AddRayTracingSceneBuildPasses(builder, rayTracingResources);
 
 	const LightingRenderTargets lighting = CreateLightingRenderTargets(builder, sceneExtent);
-	AddLightingPasses(builder, sceneTargets, lighting, gbuffer, sceneTlas);
+	AddLightingPasses(builder, sceneTargets, lighting, gbuffer, rayTracingResources.SceneTlas);
 	AddExternalProviderEvaluationPass(builder, sceneExtent, sceneTargets, gbuffer);
 
 	if (presentToBackBuffer)
@@ -50,5 +48,5 @@ FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sce
 		AddPresentationPass(builder, sceneTargets);
 	}
 
-	return FrameBuildResult{.Scene = sceneTargets, .GBuffer = gbuffer, .SceneTlas = sceneTlas};
+	return FrameBuildResult{.Scene = sceneTargets, .GBuffer = gbuffer, .RayTracing = rayTracingResources};
 }

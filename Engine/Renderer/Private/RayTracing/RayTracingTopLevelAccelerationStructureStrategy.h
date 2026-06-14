@@ -41,6 +41,16 @@ class RayTracingTopLevelAccelerationStructureStrategy
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
+	virtual void BuildPartitionedTlasLogicalUpdateResources(
+	    RenderCommandContext& cmd,
+	    const RenderSceneData& sceneData,
+	    RayTracingTopLevelScenePlanner* scenePlanner,
+	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
+	virtual void PackPartitionedTlasNativeOperations(
+	    RenderCommandContext& cmd,
+	    const RenderSceneData& sceneData,
+	    RayTracingTopLevelScenePlanner* scenePlanner,
+	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
 	virtual bool HasValidSceneTlas() const noexcept = 0;
 	virtual RhiOwnedResourceHandle GetSceneTlasResource() const noexcept = 0;
 	virtual RhiGpuVirtualAddress GetSceneTlasGpuAddress() const noexcept = 0;

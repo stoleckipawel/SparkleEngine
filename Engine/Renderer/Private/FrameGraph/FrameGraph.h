@@ -182,6 +182,9 @@ class FrameGraph
 	    const FrameGraphBufferDesc& desc,
 	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
+	FrameGraphBufferHandle ReservePersistentBuffer(
+	    const FrameGraphBufferDesc& desc,
+	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
 	FrameGraphAccelerationStructureHandle ImportAccelerationStructure(
 	    const FrameGraphAccelerationStructureDesc& desc,
@@ -207,6 +210,15 @@ class FrameGraph
 	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept;
+	void BindPersistentBuffer(
+	    FrameGraphBufferHandle handle,
+	    NativeResourceHandle resource,
+	    ResourceState currentState = ResourceState::Common) noexcept;
+	void BindPersistentBuffer(
+	    FrameGraphBufferHandle handle,
+	    RhiOwnedResourceHandle resource,
+	    ResourceState currentState = ResourceState::Common) noexcept;
+	void ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept;
 	ResourceState GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept;
 	void UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(

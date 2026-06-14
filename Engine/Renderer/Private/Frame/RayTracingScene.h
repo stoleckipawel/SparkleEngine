@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "Frame/RayTracingSceneFrameGraphResources.h"
 
 class FrameGraphBuilder;
 
-void AddRayTracingSceneBuildPass(FrameGraphBuilder& builder, FrameGraphAccelerationStructureHandle sceneTlas);
+RayTracingSceneFrameGraphResources CreateRayTracingSceneFrameGraphResources(FrameGraphBuilder& builder);
+void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, const RayTracingSceneFrameGraphResources& resources);

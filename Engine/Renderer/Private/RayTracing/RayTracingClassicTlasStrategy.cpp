@@ -65,6 +65,30 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingClassicTlasStrategy
 	return result;
 }
 
+void RayTracingClassicTlasStrategy::BuildPartitionedTlasLogicalUpdateResources(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    RayTracingTopLevelScenePlanner* scenePlanner,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
+{
+	(void)cmd;
+	(void)sceneData;
+	(void)scenePlanner;
+	(void)diagnostics;
+}
+
+void RayTracingClassicTlasStrategy::PackPartitionedTlasNativeOperations(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    RayTracingTopLevelScenePlanner* scenePlanner,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
+{
+	(void)cmd;
+	(void)sceneData;
+	(void)scenePlanner;
+	(void)diagnostics;
+}
+
 bool RayTracingClassicTlasStrategy::HasValidSceneTlas() const noexcept
 {
 	return m_classicTlasBuilder.GetTlas().IsValid();

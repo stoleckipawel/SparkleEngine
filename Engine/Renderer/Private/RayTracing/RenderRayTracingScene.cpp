@@ -137,6 +137,42 @@ void RenderRayTracingScene::Build(
 	    topLevelStats);
 }
 
+void RenderRayTracingScene::BuildPartitionedTlasLogicalUpdateResources(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    PassExecutionDiagnostics* diagnostics) noexcept
+{
+	if (m_topLevelAccelerationStructureStrategy == nullptr)
+	{
+		return;
+	}
+
+	RayTracingPerformanceDiagnostics performanceDiagnostics{m_performanceMetrics, diagnostics};
+	m_topLevelAccelerationStructureStrategy->BuildPartitionedTlasLogicalUpdateResources(
+	    cmd,
+	    sceneData,
+	    m_topLevelScenePlanner.get(),
+	    &performanceDiagnostics);
+}
+
+void RenderRayTracingScene::PackPartitionedTlasNativeOperations(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    PassExecutionDiagnostics* diagnostics) noexcept
+{
+	if (m_topLevelAccelerationStructureStrategy == nullptr)
+	{
+		return;
+	}
+
+	RayTracingPerformanceDiagnostics performanceDiagnostics{m_performanceMetrics, diagnostics};
+	m_topLevelAccelerationStructureStrategy->PackPartitionedTlasNativeOperations(
+	    cmd,
+	    sceneData,
+	    m_topLevelScenePlanner.get(),
+	    &performanceDiagnostics);
+}
+
 void RenderRayTracingScene::Clear() noexcept
 {
 	if (m_topLevelAccelerationStructureStrategy != nullptr)
