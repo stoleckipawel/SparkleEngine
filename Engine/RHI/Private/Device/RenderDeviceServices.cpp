@@ -30,6 +30,8 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	    "RHI capabilities: backend={} shaderFormat={} descriptorModel={} allocator={} present={} upload(buffer={}, texture={}) readback={} "
 	    "timestampQueries={} rayTracing={} inlineRayQuery={} rtLimits(recursion={}, payloadBytes={}, attributeBytes={}, "
 	    "shaderIdBytes={}, tableAlign={}, recordAlign={}, asAlign={}, scratchAlign={}, instanceDescBytes={}) "
+	    "rtProvider(topLevel={} reason={} partitioned={} supported={} requiresNvidia={} nvidiaDevice={} gpuDrivenOps={} "
+	    "partitionedReason={}) "
 	    "meshShaders={} taskShaders={} queues(graphics={}, compute={}, copy={}) "
 	    "limits(descriptorSets={}, shaderResources={}, samplers={}, tableEntries={}, pushConstantsBytes={}) {}",
 	    RhiBackendApiToString(capabilities.BackendApi),
@@ -52,6 +54,14 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	    capabilities.RayTracing.AccelerationStructureByteAlignment,
 	    capabilities.RayTracing.ScratchBufferByteAlignment,
 	    capabilities.RayTracing.InstanceDescSizeInBytes,
+	    RhiRayTracingTopLevelProviderToString(capabilities.RayTracing.Groups.Provider.SelectedTopLevelProvider),
+	    capabilities.RayTracing.Groups.Provider.SelectedTopLevelProviderReason,
+	    RhiPartitionedTlasProviderToString(capabilities.RayTracing.Groups.PartitionedTlas.Provider),
+	    capabilities.RayTracing.Groups.PartitionedTlas.Supported,
+	    capabilities.RayTracing.Groups.PartitionedTlas.RequiresNvidiaDevice,
+	    capabilities.RayTracing.Groups.PartitionedTlas.RunsOnNvidiaDevice,
+	    capabilities.RayTracing.Groups.PartitionedTlas.SupportsGpuDrivenOperations,
+	    capabilities.RayTracing.Groups.PartitionedTlas.CapabilityStatusReason,
 	    capabilities.SupportsMeshShaders,
 	    capabilities.SupportsTaskShaders,
 	    capabilities.Queues.SupportsGraphics,

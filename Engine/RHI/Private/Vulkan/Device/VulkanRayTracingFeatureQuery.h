@@ -9,6 +9,7 @@ struct VulkanRayTracingFeatureStatus final
 	bool SupportsRayQueryExtension = false;
 	bool SupportsDeferredHostOperationsExtension = false;
 	bool SupportsBufferDeviceAddressExtension = false;
+	bool SupportsPartitionedAccelerationStructureExtension = false;
 	bool SupportsBufferDeviceAddressFeature = false;
 	bool SupportsAccelerationStructureFeature = false;
 	bool SupportsRayTracingPipelineFeature = false;

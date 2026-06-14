@@ -4,6 +4,8 @@ Status: design document, no runtime code implemented in this stage.
 
 Primary reference implementation: [NVIDIA nvpro-samples/vk_partitioned_tlas](https://github.com/nvpro-samples/vk_partitioned_tlas)
 
+Stage 1 evidence baseline: [Partitioned TLAS Baseline Evidence](../architecture/partitioned-tlas-baseline.md)
+
 Primary API references:
 
 - Vulkan SDK / Khronos extension: `VK_NV_partitioned_acceleration_structure`

@@ -19,6 +19,7 @@ static const auto g_vulkanRhiLogger = Logging::GetOrCreateLogger("RHI.Vulkan");
 
 namespace
 {
+	constexpr std::uint32_t kNvidiaVendorId = 0x10DE;
 	constexpr const char* kNvidiaBinaryImportExtensionName = "VK_NVX_binary_import";
 	constexpr const char* kNvidiaImageViewHandleExtensionName = "VK_NVX_image_view_handle";
 
@@ -450,6 +451,23 @@ void VulkanRhi::LoadRayTracingFunctions() noexcept
 void VulkanRhi::BuildRayTracingCapabilities() noexcept
 {
 	m_rayTracingCapabilities = {};
+	m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
+	    .Supported = false,
+	    .Provider = ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure,
+	    .RequiresNvidiaDevice = true,
+	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == kNvidiaVendorId,
+	    .SupportsVulkanNativePartitionedAccelerationStructure =
+	        m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
+	    .SupportsVulkanExtension = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
+	    .SupportsVulkanFeatureQuery = false,
+	    .SupportsVulkanFunctionLoading = false,
+	    .SupportsVulkanDescriptorPath = false,
+	    .CapabilityStatusReason = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
+	                                  ? "vulkan-nv-ptlas-provider-not-implemented"
+	                                  : "vulkan-nv-partitioned-acceleration-structure-extension-not-present"};
+	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
+	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,
+	    .SelectedTopLevelProviderReason = "ray-tracing-not-enabled"};
 	if (m_physicalDevice == VK_NULL_HANDLE || !m_featureStatus.RayTracing.EnabledBackend)
 	{
 		return;
@@ -473,6 +491,40 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .AccelerationStructureByteAlignment = 256,
 	    .ScratchBufferByteAlignment = accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment,
 	    .InstanceDescSizeInBytes = static_cast<std::uint32_t>(sizeof(VkAccelerationStructureInstanceKHR))};
+	m_rayTracingCapabilities.Groups.AccelerationStructures = RhiAccelerationStructureCapabilities{
+	    .SupportsRayTracing = m_rayTracingCapabilities.SupportsRayTracing,
+	    .SupportsInlineRayQuery = m_rayTracingCapabilities.SupportsInlineRayQuery,
+	    .SupportsAccelerationStructureShaderBinding = m_rayTracingCapabilities.SupportsRayTracing,
+	    .MaxTraceRecursionDepth = m_rayTracingCapabilities.MaxTraceRecursionDepth,
+	    .MaxRayPayloadSizeInBytes = m_rayTracingCapabilities.MaxRayPayloadSizeInBytes,
+	    .MaxRayAttributeSizeInBytes = m_rayTracingCapabilities.MaxRayAttributeSizeInBytes,
+	    .ShaderGroupHandleSizeInBytes = m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes,
+	    .ShaderTableAlignmentInBytes = m_rayTracingCapabilities.ShaderTableAlignmentInBytes,
+	    .ShaderTableRecordAlignmentInBytes = m_rayTracingCapabilities.ShaderTableRecordAlignmentInBytes,
+	    .AccelerationStructureByteAlignment = m_rayTracingCapabilities.AccelerationStructureByteAlignment,
+	    .ScratchBufferByteAlignment = m_rayTracingCapabilities.ScratchBufferByteAlignment};
+	m_rayTracingCapabilities.Groups.ClassicTlas = RhiClassicTlasCapabilities{
+	    .SupportsClassicTlasBuild = true,
+	    .SupportsClassicTlasUpdate = false,
+	    .SupportsGpuReadableInstanceBuffer = true,
+	    .InstanceDescSizeInBytes = m_rayTracingCapabilities.InstanceDescSizeInBytes};
+	m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
+	    .Supported = false,
+	    .Provider = ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure,
+	    .RequiresNvidiaDevice = true,
+	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == kNvidiaVendorId,
+	    .SupportsVulkanNativePartitionedAccelerationStructure =
+	        m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
+	    .SupportsVulkanExtension = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
+	    .SupportsVulkanFeatureQuery = false,
+	    .SupportsVulkanFunctionLoading = false,
+	    .SupportsVulkanDescriptorPath = false,
+	    .CapabilityStatusReason = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
+	                                  ? "vulkan-nv-ptlas-provider-not-implemented"
+	                                  : "vulkan-nv-partitioned-acceleration-structure-extension-not-present"};
+	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
+	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::ClassicTlas,
+	    .SelectedTopLevelProviderReason = "classic-tlas-baseline-selected"};
 }
 
 void VulkanRhi::NameBootstrapObjects() noexcept
@@ -503,7 +555,7 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	const std::string featureSummary = std::format(
 	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, dynamicRendering supported/enabled={}/{}, "
 	    "samplerAnisotropy supported/enabled={}/{}, fillModeNonSolid supported/enabled={}/{}, "
-	    "rtExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}, bda={}), "
+	    "rtExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}, bda={}, partitionedTlasNv={}), "
 	    "rtFeatures(as={}, pipeline={}, rayQuery={}, bda={}), rtBackendEnabled={}",
 	    m_validationEnabled,
 	    m_featureStatus.SupportsSynchronization2,
@@ -519,6 +571,7 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    m_featureStatus.RayTracing.SupportsRayQueryExtension,
 	    m_featureStatus.RayTracing.SupportsDeferredHostOperationsExtension,
 	    m_featureStatus.RayTracing.SupportsBufferDeviceAddressExtension,
+	    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
 	    m_featureStatus.RayTracing.SupportsAccelerationStructureFeature,
 	    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature,
 	    m_featureStatus.RayTracing.SupportsRayQueryFeature,
@@ -530,13 +583,22 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    FormatApiVersion(m_adapterInfo.ApiVersion),
 	    m_adapterInfo.Driver,
 	    m_graphicsQueueFamilyIndex);
+	const std::string providerSummary = std::format(
+	    "Vulkan ray tracing provider: topLevel={}({}), partitionedTlasProvider={} supported={} reason={}",
+	    RhiRayTracingTopLevelProviderToString(m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider),
+	    m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProviderReason,
+	    RhiPartitionedTlasProviderToString(m_rayTracingCapabilities.Groups.PartitionedTlas.Provider),
+	    m_rayTracingCapabilities.Groups.PartitionedTlas.Supported,
+	    m_rayTracingCapabilities.Groups.PartitionedTlas.CapabilityStatusReason);
 
 	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", adapterSummary);
 	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", featureSummary);
+	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", providerSummary);
 	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", instanceExtensions);
 	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", deviceExtensions);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Driver, adapterSummary);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Validation, featureSummary);
+	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Validation, providerSummary);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Driver, instanceExtensions);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Driver, deviceExtensions);
 

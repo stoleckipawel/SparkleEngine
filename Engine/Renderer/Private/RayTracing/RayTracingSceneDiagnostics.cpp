@@ -38,7 +38,8 @@ void RayTracingSceneDiagnostics::LogSceneUpdate(
 	SPDLOG_LOGGER_INFO(
 	    g_rayTracingSceneLogger,
 	    "RenderRayTracingScene: backend={} supportsRT={} inlineRayQuery={} referencedMeshes={} builtBlas={} reusedBlas={} "
-	    "candidateInstances={} tlasInstances={} missingGpuMeshData={} rejectedBlas={} builtTlas={}.",
+	    "candidateInstances={} tlasInstances={} missingGpuMeshData={} rejectedBlas={} builtTlas={} topLevelProvider={}({}) "
+	    "partitionedTlasProvider={} supported={} reason={}.",
 	    RhiBackendApiToString(capabilityReport.BackendApi),
 	    capabilityReport.SupportsRayTracing,
 	    capabilityReport.SupportsInlineRayQuery,
@@ -49,5 +50,10 @@ void RayTracingSceneDiagnostics::LogSceneUpdate(
 	    tlasStats.instanceCount,
 	    tlasStats.missingGpuMeshCount,
 	    tlasStats.rejectedBlasCount,
-	    tlasStats.builtTlas);
+	    tlasStats.builtTlas,
+	    RhiRayTracingTopLevelProviderToString(capabilityReport.SelectedTopLevelProvider),
+	    capabilityReport.SelectedTopLevelProviderReason,
+	    RhiPartitionedTlasProviderToString(capabilityReport.PartitionedTlasProvider),
+	    capabilityReport.SupportsPartitionedTlas,
+	    capabilityReport.PartitionedTlasCapabilityStatusReason);
 }

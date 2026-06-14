@@ -9,6 +9,18 @@
 
 static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
 static constexpr std::uint32_t kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes = 4096;
+static constexpr std::uint32_t kNvidiaVendorId = 0x10DE;
+
+static bool IsNvidiaAdapter(IDXGIAdapter1* adapter) noexcept
+{
+	if (adapter == nullptr)
+	{
+		return false;
+	}
+
+	DXGI_ADAPTER_DESC1 adapterDesc{};
+	return SUCCEEDED(adapter->GetDesc1(&adapterDesc)) && adapterDesc.VendorId == kNvidiaVendorId;
+}
 
 static const char* RaytracingTierToString(D3D12_RAYTRACING_TIER tier) noexcept
 {
@@ -172,6 +184,15 @@ void D3D12Rhi::CreateMemoryAllocator()
 void D3D12Rhi::CheckRayTracingSupport() noexcept
 {
 	m_rayTracingCapabilities = {};
+	m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
+	    .Supported = false,
+	    .Provider = ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas,
+	    .RequiresNvidiaDevice = true,
+	    .RunsOnNvidiaDevice = IsNvidiaAdapter(m_adapter.Get()),
+	    .CapabilityStatusReason = "d3d12-options5-not-queried"};
+	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
+	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,
+	    .SelectedTopLevelProviderReason = "ray-tracing-not-queried"};
 	if (!m_device)
 	{
 		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "CheckRayTracingSupport called before device creation");
@@ -197,11 +218,47 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 			m_rayTracingCapabilities.InstanceDescSizeInBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
 		}
 
+		m_rayTracingCapabilities.Groups.AccelerationStructures = RhiAccelerationStructureCapabilities{
+		    .SupportsRayTracing = m_rayTracingCapabilities.SupportsRayTracing,
+		    .SupportsInlineRayQuery = m_rayTracingCapabilities.SupportsInlineRayQuery,
+		    .SupportsAccelerationStructureShaderBinding = m_rayTracingCapabilities.SupportsRayTracing,
+		    .MaxTraceRecursionDepth = m_rayTracingCapabilities.MaxTraceRecursionDepth,
+		    .MaxRayPayloadSizeInBytes = m_rayTracingCapabilities.MaxRayPayloadSizeInBytes,
+		    .MaxRayAttributeSizeInBytes = m_rayTracingCapabilities.MaxRayAttributeSizeInBytes,
+		    .ShaderGroupHandleSizeInBytes = m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes,
+		    .ShaderTableAlignmentInBytes = m_rayTracingCapabilities.ShaderTableAlignmentInBytes,
+		    .ShaderTableRecordAlignmentInBytes = m_rayTracingCapabilities.ShaderTableRecordAlignmentInBytes,
+		    .AccelerationStructureByteAlignment = m_rayTracingCapabilities.AccelerationStructureByteAlignment,
+		    .ScratchBufferByteAlignment = m_rayTracingCapabilities.ScratchBufferByteAlignment};
+		m_rayTracingCapabilities.Groups.ClassicTlas = RhiClassicTlasCapabilities{
+		    .SupportsClassicTlasBuild = m_rayTracingCapabilities.SupportsRayTracing,
+		    .SupportsClassicTlasUpdate = false,
+		    .SupportsGpuReadableInstanceBuffer = m_rayTracingCapabilities.SupportsRayTracing,
+		    .InstanceDescSizeInBytes = m_rayTracingCapabilities.InstanceDescSizeInBytes};
+		m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
+		    .Supported = false,
+		    .Provider = ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas,
+		    .RequiresNvidiaDevice = true,
+		    .RunsOnNvidiaDevice = IsNvidiaAdapter(m_adapter.Get()),
+		    .SupportsD3D12NvapiPartitionedTlas = false,
+		    .SupportsD3D12NvapiHeaders = false,
+		    .SupportsD3D12NvapiRuntime = false,
+		    .SupportsD3D12DeviceInterface = m_device != nullptr,
+		    .SupportsD3D12CommandListInterface = false,
+		    .SupportsD3D12PublicDxrPartitionedTlas = false,
+		    .SupportsD3D12PublicDxrHeaders = false,
+		    .CapabilityStatusReason = "d3d12-nvapi-ptlas-provider-not-implemented"};
+		m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
+		    .SelectedTopLevelProvider = m_rayTracingCapabilities.SupportsRayTracing ? ERhiRayTracingTopLevelProvider::ClassicTlas
+		                                                                            : ERhiRayTracingTopLevelProvider::None,
+		    .SelectedTopLevelProviderReason =
+		        m_rayTracingCapabilities.SupportsRayTracing ? "classic-tlas-baseline-selected" : "ray-tracing-unavailable"};
+
 		SPDLOG_LOGGER_INFO(
 		    g_d3d12RhiLogger,
 		    "DXR capability: tier={}({}), SupportsPipelineRayTracing={}, SupportsInlineRayQuery={}, maxRecursionDepth={}, "
 		    "maxPayloadBytes={}, maxAttributeBytes={}, shaderIdentifierBytes={}, shaderTableAlign={}, shaderRecordAlign={}, asAlign={}, "
-		    "scratchAlign={}, instanceDescBytes={}",
+		    "scratchAlign={}, instanceDescBytes={}, topLevelProvider={}({}), partitionedTlasProvider={} supported={} reason={}",
 		    static_cast<int>(options5.RaytracingTier),
 		    RaytracingTierToString(options5.RaytracingTier),
 		    m_rayTracingCapabilities.SupportsRayTracing,
@@ -214,10 +271,18 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		    m_rayTracingCapabilities.ShaderTableRecordAlignmentInBytes,
 		    m_rayTracingCapabilities.AccelerationStructureByteAlignment,
 		    m_rayTracingCapabilities.ScratchBufferByteAlignment,
-		    m_rayTracingCapabilities.InstanceDescSizeInBytes);
+		    m_rayTracingCapabilities.InstanceDescSizeInBytes,
+		    RhiRayTracingTopLevelProviderToString(m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider),
+		    m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProviderReason,
+		    RhiPartitionedTlasProviderToString(m_rayTracingCapabilities.Groups.PartitionedTlas.Provider),
+		    m_rayTracingCapabilities.Groups.PartitionedTlas.Supported,
+		    m_rayTracingCapabilities.Groups.PartitionedTlas.CapabilityStatusReason);
 	}
 	else
 	{
+		m_rayTracingCapabilities.Groups.PartitionedTlas.CapabilityStatusReason = "d3d12-options5-query-failed";
+		m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None;
+		m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProviderReason = "d3d12-options5-query-failed";
 		SPDLOG_LOGGER_WARN(
 		    g_d3d12RhiLogger,
 		    "CheckFeatureSupport(OPTIONS5) failed hr={:#010x}; ray tracing assumed unsupported.",
