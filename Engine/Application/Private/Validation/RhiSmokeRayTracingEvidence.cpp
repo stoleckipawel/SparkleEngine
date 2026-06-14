@@ -62,6 +62,23 @@ namespace RhiSmokeRayTracingEvidence
 		    diagnostics.PtlasPlanner.GlobalPartitionInstanceCount,
 		    diagnostics.PtlasPlanner.DuplicateStableIndexCount,
 		    diagnostics.PtlasPlanner.Overflow);
+
+		SPDLOG_LOGGER_INFO(
+		    logger,
+		    "{} rayTracing.ptlasGpuUpdates: writerPath={} logicalUpdates={} nativeOperations={} validationMismatches={} "
+		    "fullGpuNativePackSupported={} fullGpuNativePackSubmitted={} cpuPackMs={:.3f} gpuDirtyMs={:.3f} "
+		    "gpuNativePackMs={:.3f} ptlasUpdateGpuMs={:.3f}",
+		    evidenceLabel,
+		    RhiPartitionedTlasOperationWriterPathToString(diagnostics.PtlasGpuUpdates.SelectedWriterPath),
+		    diagnostics.PtlasGpuUpdates.LogicalUpdateCount,
+		    diagnostics.PtlasGpuUpdates.NativeOperationCount,
+		    diagnostics.PtlasGpuUpdates.ValidationMismatchCount,
+		    diagnostics.PtlasGpuUpdates.FullGpuNativePackSupported,
+		    diagnostics.PtlasGpuUpdates.FullGpuNativePackSubmitted,
+		    diagnostics.PtlasGpuUpdates.CpuPackMilliseconds,
+		    diagnostics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds,
+		    diagnostics.PtlasGpuUpdates.GpuNativePackMilliseconds,
+		    diagnostics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds);
 	}
 
 	bool Validate(

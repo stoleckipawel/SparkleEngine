@@ -2,6 +2,7 @@
 
 #include "RayTracing/RayTracingBlasMetrics.h"
 #include "RayTracing/RayTracingClassicTlasMetrics.h"
+#include "RayTracing/RayTracingPtlasGpuUpdateMetrics.h"
 #include "RayTracing/RayTracingPtlasPlannerMetrics.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
@@ -28,4 +29,5 @@ struct RayTracingPerformanceMetrics final
 	RayTracingBlasMetrics Blas;
 	RayTracingClassicTlasMetrics ClassicTlas;
 	RayTracingPtlasPlannerMetrics PtlasPlanner;
+	RayTracingPtlasGpuUpdateMetrics PtlasGpuUpdates;
 };

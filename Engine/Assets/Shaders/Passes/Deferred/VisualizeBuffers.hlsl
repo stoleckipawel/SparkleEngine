@@ -100,6 +100,7 @@ float3 PreviewHdr(float3 color)
 		case ViewMode::RayTracingPartitions:
 		case ViewMode::RayTracingPartitionUpdates:
 		case ViewMode::RayTracingInstanceMovement:
+		case ViewMode::RayTracingGpuDrivenUpdates:
 			outputColor = saturate(gBuffer.BaseColor);
 			break;
 		default:

@@ -24,5 +24,6 @@ enum class RenderViewMode : std::uint32_t
 	RayTracingPartitions,
 	RayTracingPartitionUpdates,
 	RayTracingInstanceMovement,
+	RayTracingGpuDrivenUpdates,
 	Count
 };

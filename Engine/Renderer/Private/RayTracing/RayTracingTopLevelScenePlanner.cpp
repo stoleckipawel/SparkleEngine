@@ -3,12 +3,15 @@
 #include "RayTracing/RayTracingTopLevelScenePlanner.h"
 
 #include "Debug/RendererCVars.h"
+#include "RayTracing/RayTracingPtlasLogicalUpdateStream.h"
 #include "RayTracing/RayTracingPtlasPartitionPlanner.h"
 
 struct RayTracingTopLevelScenePlanner::Impl final
 {
 	RayTracingPtlasPartitionPlanner PartitionPlanner;
+	RayTracingPtlasLogicalUpdateStream LogicalUpdateStream;
 	RayTracingPtlasPartitionPlan CurrentPartitionPlan;
+	RayTracingPtlasLogicalUpdateStreamResult CurrentLogicalUpdateStream;
 };
 
 RayTracingTopLevelScenePlanner::RayTracingTopLevelScenePlanner() noexcept :
@@ -30,6 +33,7 @@ RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(const RenderS
 	    RayTracingPtlasPartitionPlannerConfig{
 	        .PartitionsPerAxis = CVarRayTracingPartitionsPerAxis.Get(),
 	        .EnableGlobalPartition = CVarRayTracingGlobalPartition.Get()});
+	m_impl->CurrentLogicalUpdateStream = m_impl->LogicalUpdateStream.Build(sceneData, m_impl->CurrentPartitionPlan);
 
 	RayTracingSceneFramePlan framePlan{};
 	framePlan.MeshInstanceDebugData.PackedDebugVisualizationDataByRenderInstance.reserve(
@@ -69,7 +73,15 @@ RayTracingTopLevelScenePlannerMetrics RayTracingTopLevelScenePlanner::GetCurrent
 	    .MovedPartitionCount = m_impl->CurrentPartitionPlan.Counts.MovedPartitionCount,
 	    .GlobalPartitionInstanceCount = m_impl->CurrentPartitionPlan.Counts.GlobalPartitionInstanceCount,
 	    .DuplicateStableIndexCount = m_impl->CurrentPartitionPlan.Counts.DuplicateStableIndexCount,
-	    .Overflow = m_impl->CurrentPartitionPlan.Validation.HasPartitionOverflow};
+	    .Overflow = m_impl->CurrentPartitionPlan.Validation.HasPartitionOverflow,
+	    .GpuUpdates =
+	        RayTracingPtlasGpuUpdateMetrics{
+	            .SelectedWriterPath = ERhiPartitionedTlasOperationWriterPath::CpuPack,
+	            .LogicalUpdateCount = m_impl->CurrentLogicalUpdateStream.LogicalUpdateCount,
+	            .NativeOperationCount = 0,
+	            .ValidationMismatchCount = m_impl->CurrentLogicalUpdateStream.SkippedInvalidInstanceCount,
+	            .FullGpuNativePackSupported = false,
+	            .FullGpuNativePackSubmitted = false}};
 }
 
 void RayTracingTopLevelScenePlanner::Clear() noexcept
@@ -78,5 +90,6 @@ void RayTracingTopLevelScenePlanner::Clear() noexcept
 	{
 		m_impl->PartitionPlanner.Clear();
 		m_impl->CurrentPartitionPlan = {};
+		m_impl->CurrentLogicalUpdateStream = {};
 	}
 }

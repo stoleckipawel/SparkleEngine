@@ -313,3 +313,115 @@ RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelA
 	}
 	return MakeVulkanOwnedResourceHandle(std::move(record));
 }
+
+RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelAccelerationStructureLogicalUpdateBuffer(
+    const RhiPartitionedTlasLogicalUpdateBufferDesc& desc,
+    const RhiPartitionedTlasLogicalUpdateRecord* records,
+    std::uint32_t recordCount,
+    std::wstring_view debugName)
+{
+	const RhiRayTracingCapabilities capabilities = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !capabilities.Groups.PartitionedTlas.Supported ||
+	    desc.MaxLogicalUpdateCount == 0 || recordCount > desc.MaxLogicalUpdateCount ||
+	    (recordCount > 0 && records == nullptr))
+	{
+		return {};
+	}
+
+	const std::uint64_t totalSize =
+	    sizeof(RhiPartitionedTlasLogicalUpdateRecord) * static_cast<std::uint64_t>(desc.MaxLogicalUpdateCount);
+	const RhiBufferResourceDesc bufferDesc{
+	    .SizeInBytes = totalSize,
+	    .StrideInBytes = sizeof(RhiPartitionedTlasLogicalUpdateRecord),
+	    .AllowUnorderedAccess = desc.AllowGpuWrites};
+	const VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+	                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(bufferDesc, usage);
+	const RhiMemoryResidencyClass residency =
+	    desc.AllowCpuUploadReference ? RhiMemoryResidencyClass::HostUpload : RhiMemoryResidencyClass::DeviceLocal;
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
+	    bufferCreateInfo,
+	    RhiMemoryCategory::RayTracing,
+	    residency,
+	    debugName.empty() ? L"RayTracingPartitionedTlasLogicalUpdates" : debugName);
+	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || record->DeviceAddress == 0)
+	{
+		return {};
+	}
+
+	if (recordCount > 0 &&
+	    !m_memoryAllocator->WriteAllocation(*record, records, sizeof(RhiPartitionedTlasLogicalUpdateRecord) * recordCount))
+	{
+		return {};
+	}
+
+	return MakeVulkanOwnedResourceHandle(std::move(record));
+}
+
+RhiPartitionedTlasGpuOperationBufferLayout
+VulkanPartitionedTlasServices::GetPartitionedTopLevelAccelerationStructureGpuOperationBufferLayout(
+    const RhiPartitionedTlasDesc& desc) const noexcept
+{
+	const RhiRayTracingCapabilities capabilities = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+	if (m_rhi == nullptr || !capabilities.Groups.PartitionedTlas.Supported || desc.MaxOperations == 0)
+	{
+		return {};
+	}
+
+	RhiPartitionedTlasGpuOperationBufferLayout layout{};
+	layout.OperationCountOffsetInBytes = 0;
+	layout.OperationHeaderStrideInBytes = sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV);
+	layout.InstanceWriteStrideInBytes = sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV);
+	layout.InstanceUpdateStrideInBytes = sizeof(VkPartitionedAccelerationStructureUpdateInstanceDataNV);
+	layout.PartitionTranslationStrideInBytes = sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV);
+	layout.OperationHeadersOffsetInBytes = AlignUp(sizeof(std::uint32_t), alignof(VkBuildPartitionedAccelerationStructureIndirectCommandNV));
+	layout.InstanceWriteRecordsOffsetInBytes =
+	    AlignUp(layout.OperationHeadersOffsetInBytes + layout.OperationHeaderStrideInBytes * desc.MaxOperations,
+	        alignof(VkPartitionedAccelerationStructureWriteInstanceDataNV));
+	layout.InstanceUpdateRecordsOffsetInBytes =
+	    AlignUp(layout.InstanceWriteRecordsOffsetInBytes + layout.InstanceWriteStrideInBytes * desc.InstanceCapacity,
+	        alignof(VkPartitionedAccelerationStructureUpdateInstanceDataNV));
+	layout.PartitionTranslationRecordsOffsetInBytes =
+	    AlignUp(layout.InstanceUpdateRecordsOffsetInBytes + layout.InstanceUpdateStrideInBytes * desc.InstanceCapacity,
+	        alignof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV));
+	layout.TotalSizeInBytes =
+	    AlignUp(layout.PartitionTranslationRecordsOffsetInBytes + layout.PartitionTranslationStrideInBytes * desc.PartitionCount, 16);
+	return layout;
+}
+
+RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelAccelerationStructureGpuOperationBuffer(
+    const RhiPartitionedTlasGpuOperationBufferDesc& desc,
+    std::wstring_view debugName)
+{
+	const RhiRayTracingCapabilities capabilities = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !capabilities.Groups.PartitionedTlas.Supported ||
+	    desc.Layout.TotalSizeInBytes == 0)
+	{
+		return {};
+	}
+
+	const RhiBufferResourceDesc bufferDesc{
+	    .SizeInBytes = desc.Layout.TotalSizeInBytes,
+	    .AllowUnorderedAccess = desc.AllowGpuWrites};
+	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
+	    bufferDesc,
+	    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+	        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
+	    bufferCreateInfo,
+	    RhiMemoryCategory::RayTracing,
+	    desc.AllowCpuValidationReadback ? RhiMemoryResidencyClass::HostUpload : RhiMemoryResidencyClass::DeviceLocal,
+	    debugName.empty() ? L"RayTracingPartitionedTlasGpuOperations" : debugName);
+	return record != nullptr && record->Buffer != VK_NULL_HANDLE && record->DeviceAddress != 0
+	           ? MakeVulkanOwnedResourceHandle(std::move(record))
+	           : RhiOwnedResourceHandle{};
+}
+
+bool VulkanPartitionedTlasServices::PackPartitionedTopLevelAccelerationStructureGpuOperations(
+    RenderCommandList& commandList,
+    const RhiPartitionedTlasGpuOperationPackDesc& desc) noexcept
+{
+	static_cast<void>(commandList);
+	static_cast<void>(desc);
+	return false;
+}

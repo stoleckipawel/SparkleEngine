@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RayTracing/RayTracingClassicTlasBuilder.h"
+#include "RayTracing/RayTracingPtlasGpuUpdateMetrics.h"
 #include "RayTracing/RayTracingSceneFramePlan.h"
 
 #include <cstdint>
@@ -19,6 +20,7 @@ struct RayTracingTopLevelScenePlannerMetrics final
 	std::uint32_t GlobalPartitionInstanceCount = 0;
 	std::uint32_t DuplicateStableIndexCount = 0;
 	bool Overflow = false;
+	RayTracingPtlasGpuUpdateMetrics GpuUpdates;
 };
 
 class RayTracingTopLevelScenePlanner final

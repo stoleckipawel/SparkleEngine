@@ -54,6 +54,7 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 		m_classicTlasBuilder->Clear();
 		m_performanceMetrics.Blas = {};
 		m_performanceMetrics.ClassicTlas = {};
+		m_performanceMetrics.PtlasGpuUpdates = {};
 		const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
 		    m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->GetCurrentPlannerMetrics() : RayTracingTopLevelScenePlannerMetrics{};
 		m_performanceMetrics.PtlasPlanner = RayTracingPtlasPlannerMetrics{
@@ -63,6 +64,9 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 		    .GlobalPartitionInstanceCount = plannerMetrics.GlobalPartitionInstanceCount,
 		    .DuplicateStableIndexCount = plannerMetrics.DuplicateStableIndexCount,
 		    .Overflow = plannerMetrics.Overflow};
+		m_performanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
+		m_performanceMetrics.PtlasGpuUpdates.FullGpuNativePackSupported =
+		    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
 		return frameData;
 	}
 
@@ -125,6 +129,11 @@ void RenderRayTracingScene::Build(
 	m_performanceMetrics.PtlasPlanner.GlobalPartitionInstanceCount = tlasStats.PtlasPlanner.GlobalPartitionInstanceCount;
 	m_performanceMetrics.PtlasPlanner.DuplicateStableIndexCount = tlasStats.PtlasPlanner.DuplicateStableIndexCount;
 	m_performanceMetrics.PtlasPlanner.Overflow = tlasStats.PtlasPlanner.Overflow;
+	const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
+	    m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->GetCurrentPlannerMetrics() : RayTracingTopLevelScenePlannerMetrics{};
+	m_performanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
+	m_performanceMetrics.PtlasGpuUpdates.FullGpuNativePackSupported =
+	    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
 	m_diagnostics.LogSceneUpdate(m_capabilityReport, blasStats, tlasStats);
 }
 

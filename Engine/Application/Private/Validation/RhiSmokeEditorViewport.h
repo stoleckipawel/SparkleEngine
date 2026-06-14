@@ -8,7 +8,7 @@
 
 class RuntimeApplication;
 struct ViewportPresentationProduct;
-class ViewportRenderProducts;
+struct ViewportRenderProducts;
 
 struct RhiSmokeEditorViewportConfig final
 {

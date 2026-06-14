@@ -65,6 +65,8 @@ namespace RayTracingPtlasDebugVisualization
 				return saturate(ApplyPartitionUpdateVisualization(baseColor, rayTracingPtlasDebugVisualizationData));
 			case ViewMode::RayTracingInstanceMovement:
 				return saturate(ApplyInstanceMovementVisualization(baseColor, rayTracingPtlasDebugVisualizationData));
+			case ViewMode::RayTracingGpuDrivenUpdates:
+				return saturate(ApplyPartitionUpdateVisualization(baseColor, rayTracingPtlasDebugVisualizationData));
 			default:
 				return baseColor;
 		}

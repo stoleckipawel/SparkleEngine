@@ -45,6 +45,22 @@ namespace
 		    .DuplicateStableIndexCount = metrics.PtlasPlanner.DuplicateStableIndexCount,
 		    .Overflow = metrics.PtlasPlanner.Overflow};
 	}
+
+	RendererSmokeRayTracingPtlasGpuUpdateDiagnostics BuildPtlasGpuUpdateDiagnostics(
+	    const RayTracingPerformanceMetrics& metrics) noexcept
+	{
+		return RendererSmokeRayTracingPtlasGpuUpdateDiagnostics{
+		    .SelectedWriterPath = metrics.PtlasGpuUpdates.SelectedWriterPath,
+		    .LogicalUpdateCount = metrics.PtlasGpuUpdates.LogicalUpdateCount,
+		    .NativeOperationCount = metrics.PtlasGpuUpdates.NativeOperationCount,
+		    .ValidationMismatchCount = metrics.PtlasGpuUpdates.ValidationMismatchCount,
+		    .FullGpuNativePackSupported = metrics.PtlasGpuUpdates.FullGpuNativePackSupported,
+		    .FullGpuNativePackSubmitted = metrics.PtlasGpuUpdates.FullGpuNativePackSubmitted,
+		    .CpuPackMilliseconds = metrics.PtlasGpuUpdates.CpuPackMilliseconds,
+		    .GpuDirtyDetectionMilliseconds = metrics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds,
+		    .GpuNativePackMilliseconds = metrics.PtlasGpuUpdates.GpuNativePackMilliseconds,
+		    .PtlasUpdateGpuMilliseconds = metrics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds};
+	}
 }
 
 RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build(
@@ -68,5 +84,6 @@ RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build
 	diagnostics.Blas = BuildBlasDiagnostics(metrics);
 	diagnostics.ClassicTlas = BuildClassicTlasDiagnostics(*rayTracingScene, metrics);
 	diagnostics.PtlasPlanner = BuildPtlasPlannerDiagnostics(metrics);
+	diagnostics.PtlasGpuUpdates = BuildPtlasGpuUpdateDiagnostics(metrics);
 	return diagnostics;
 }

@@ -59,6 +59,8 @@ namespace
 				return "RayTracingPartitionUpdates";
 			case RenderViewMode::RayTracingInstanceMovement:
 				return "RayTracingInstanceMovement";
+			case RenderViewMode::RayTracingGpuDrivenUpdates:
+				return "RayTracingGpuDrivenUpdates";
 			case RenderViewMode::Count:
 				break;
 		}
