@@ -2,7 +2,6 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Diagnostics/D3D12DebugLayer.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
-#include "D3D12/RayTracing/D3D12NvapiRayTracingProvider.h"
 #include "CVars/RHICVars.h"
 #include "Window/Window.h"
 
@@ -76,6 +75,10 @@ D3D12Rhi::D3D12Rhi() noexcept
 	{
 		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateCommandLists");
 		CreateCommandLists();
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.D3D12.RefreshPartitionedTlasCommandListCapability");
+		RefreshPartitionedTlasCommandListCapability();
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateFence");
@@ -245,8 +248,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		    .SupportsD3D12PublicDxrPartitionedTlas = false,
 		    .SupportsD3D12PublicDxrHeaders = false,
 		    .CapabilityStatusReason = "d3d12-nvapi-ptlas-provider-not-queried"};
-		D3D12NvapiRayTracingProvider nvapiProvider;
-		m_rayTracingCapabilities.Groups.PartitionedTlas = nvapiProvider.QueryPartitionedTlasCapabilities(
+		m_rayTracingCapabilities.Groups.PartitionedTlas = m_nvapiRayTracingProvider.QueryPartitionedTlasCapabilities(
 		    m_device.Get(),
 		    IsNvidiaAdapter(m_adapter.Get()),
 		    m_rayTracingCapabilities.SupportsRayTracing);
@@ -296,6 +298,47 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		    g_d3d12RhiLogger,
 		    "CheckFeatureSupport(OPTIONS5) failed hr={:#010x}; ray tracing assumed unsupported.",
 		    static_cast<uint32_t>(hr));
+	}
+}
+
+void D3D12Rhi::RefreshPartitionedTlasCommandListCapability() noexcept
+{
+	RhiPartitionedTlasCapabilities& partitionedTlas = m_rayTracingCapabilities.Groups.PartitionedTlas;
+	if (partitionedTlas.Provider != ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas)
+	{
+		return;
+	}
+
+	const bool supportsCommandListInterface = m_cmdList[0] != nullptr;
+	partitionedTlas.SupportsD3D12CommandListInterface = supportsCommandListInterface;
+	if (!supportsCommandListInterface)
+	{
+		if (partitionedTlas.SupportsD3D12NvapiPartitionedTlas)
+		{
+			partitionedTlas.Supported = false;
+			partitionedTlas.CapabilityStatusReason = "d3d12-command-list-interface-missing";
+		}
+		return;
+	}
+
+	const bool canUseNvapiPartitionedTlas =
+	    partitionedTlas.SupportsD3D12NvapiPartitionedTlas &&
+	    partitionedTlas.SupportsD3D12NvapiHeaders &&
+	    partitionedTlas.SupportsD3D12NvapiRuntime &&
+	    partitionedTlas.SupportsD3D12DeviceInterface;
+	if (canUseNvapiPartitionedTlas)
+	{
+		partitionedTlas.Supported = true;
+		partitionedTlas.CapabilityStatusReason = "d3d12-nvapi-ptlas-standard-supported";
+	}
+
+	const bool partitionedTlasRequestedAndSupported = CVarRhiRayTracingPreferPartitionedTlas.Get() && partitionedTlas.Supported;
+	if (m_rayTracingCapabilities.SupportsRayTracing)
+	{
+		m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::ClassicTlas;
+		m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProviderReason =
+		    partitionedTlasRequestedAndSupported ? "d3d12-nvapi-ptlas-supported-but-renderer-selection-not-wired"
+		                                         : "classic-tlas-baseline-selected";
 	}
 }
 
@@ -407,6 +450,16 @@ HANDLE D3D12Rhi::GetFenceEvent() const noexcept
 uint64_t D3D12Rhi::GetNextFenceValue() const noexcept
 {
 	return m_nextFenceValue;
+}
+
+D3D12NvapiRayTracingProvider& D3D12Rhi::GetNvapiRayTracingProvider() noexcept
+{
+	return m_nvapiRayTracingProvider;
+}
+
+const D3D12NvapiRayTracingProvider& D3D12Rhi::GetNvapiRayTracingProvider() const noexcept
+{
+	return m_nvapiRayTracingProvider;
 }
 
 D3D12GpuMemoryAllocator& D3D12Rhi::GetMemoryAllocator() noexcept

@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "Config/RenderConfig.h"
+#include "D3D12/RayTracing/D3D12NvapiRayTracingProvider.h"
 #include "Device/RenderHardwareInterface.h"
 
 using Microsoft::WRL::ComPtr;
@@ -66,6 +67,8 @@ class D3D12Rhi final
 	const ComPtr<ID3D12Fence1>& GetFence() const noexcept;
 	HANDLE GetFenceEvent() const noexcept;
 	uint64_t GetNextFenceValue() const noexcept;
+	D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() noexcept;
+	const D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() const noexcept;
 	D3D12GpuMemoryAllocator& GetMemoryAllocator() noexcept;
 	const D3D12GpuMemoryAllocator& GetMemoryAllocator() const noexcept;
 
@@ -75,6 +78,7 @@ class D3D12Rhi final
 	void CreateDevice();
 	void CreateMemoryAllocator();
 	void CheckRayTracingSupport() noexcept;
+	void RefreshPartitionedTlasCommandListCapability() noexcept;
 	void CreateCommandQueue();
 	void CreateCommandAllocators();
 	void CreateCommandLists();
@@ -87,6 +91,7 @@ class D3D12Rhi final
 	ComPtr<IDXGIFactory7> m_dxgiFactory = nullptr;
 	ComPtr<IDXGIAdapter1> m_adapter = nullptr;
 	ComPtr<ID3D12Device10> m_device = nullptr;
+	D3D12NvapiRayTracingProvider m_nvapiRayTracingProvider;
 	std::unique_ptr<D3D12GpuMemoryAllocator> m_memoryAllocator;
 	ComPtr<ID3D12CommandQueue> m_cmdQueue = nullptr;
 	ComPtr<ID3D12CommandAllocator> m_cmdAllocator[RenderConfig::FramesInFlight] = {};

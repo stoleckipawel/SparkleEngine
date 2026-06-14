@@ -1713,6 +1713,23 @@ Reference-quality completion stages:
    - What changes: NVIDIA-specific D3D12 support becomes a provider, not an exception.
    - Why it matters: top-tier reviewer expectation is not "avoid vendor APIs"; it is "isolate and prove them."
 
+   Implementation status - 2026-06-14:
+
+   - D3D12 NVAPI PTLAS capability probing and runtime execution now share the same `D3D12NvapiRayTracingProvider` owned by `D3D12Rhi`.
+   - `D3D12RayTracingServices` receives the provider by reference instead of constructing a second NVAPI wrapper, so capability status and command submission use one provider lifecycle.
+   - D3D12 command-list compatibility is refreshed after command-list creation; capability reports now distinguish device support from command-list availability.
+   - `RayTracingPartitionedTlasStrategy` now recognizes D3D12 NVAPI PTLAS as a valid partitioned provider only when all D3D12 gates are true:
+     - NVAPI PTLAS symbols/headers.
+     - NVAPI runtime initialization.
+     - NVIDIA device.
+     - D3D12 device interface.
+     - D3D12 command-list interface.
+   - The current local build still reports D3D12 requested-PTLAS fallback because NVAPI PTLAS headers are not compiled: `d3d12-nvapi-headers-not-compiled`.
+   - Launcher parity artifacts were produced for D3D12 classic and D3D12 requested-PTLAS fallback; the captures are byte-identical, proving the fallback is stable.
+   - Validation run: `SparkleRHI_D3D12`, `ShowcaseEditor`, `SparkleLauncher`, `architecture_boundary_check`, and launcher `project.run.rhi-raytracing-parity`.
+   - Launcher parity still returns failure because the existing strict cross-backend classic comparison fails: D3D12 classic vs Vulkan classic average channel difference is approximately `0.601`, with `2,737,801` differing pixels in the captured frame.
+   - Stage verdict: **not accepted yet**. D3D12 NVAPI PTLAS cannot be accepted until NVAPI PTLAS headers/runtime support are compiled, the provider becomes active, and D3D12 NVAPI PTLAS output is captured against D3D12 classic TLAS.
+
 5. **GPU-Driven PTLAS Operation Path**
 
    Goal:

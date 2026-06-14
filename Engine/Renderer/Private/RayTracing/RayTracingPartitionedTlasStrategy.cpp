@@ -79,6 +79,79 @@ namespace RayTracingPartitionedTlasStrategyDetails
 
 		return (std::max)(1u, instanceCapacity);
 	}
+
+	bool CanUseD3D12NvapiPartitionedTlasProvider(const RayTracingPartitionedTlasCapabilityReport& capabilityReport) noexcept
+	{
+		return capabilityReport.Supported &&
+		       capabilityReport.Provider == ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas &&
+		       capabilityReport.SupportsD3D12NvapiProvider &&
+		       capabilityReport.SupportsD3D12NvapiHeaders &&
+		       capabilityReport.SupportsD3D12NvapiRuntime &&
+		       capabilityReport.SupportsD3D12DeviceInterface &&
+		       capabilityReport.SupportsD3D12CommandListInterface;
+	}
+
+	bool CanUseVulkanPartitionedTlasProvider(const RayTracingPartitionedTlasCapabilityReport& capabilityReport) noexcept
+	{
+		return capabilityReport.Supported &&
+		       capabilityReport.Provider == ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure &&
+		       capabilityReport.SupportsVulkanDescriptorPath;
+	}
+
+	const char* ResolveInactiveProviderReason(const RayTracingPartitionedTlasCapabilityReport& capabilityReport) noexcept
+	{
+		if (!capabilityReport.Supported)
+		{
+			return capabilityReport.CapabilityStatusReason;
+		}
+
+		switch (capabilityReport.Provider)
+		{
+			case ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure:
+				return capabilityReport.SupportsVulkanDescriptorPath
+				           ? "vulkan-nv-partitioned-tlas-provider-not-active-for-this-backend-stage"
+				           : "partitioned-tlas-shader-visible-address-path-not-implemented";
+			case ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas:
+				if (!capabilityReport.SupportsD3D12NvapiHeaders)
+				{
+					return "d3d12-nvapi-headers-not-compiled";
+				}
+				if (!capabilityReport.SupportsD3D12NvapiRuntime)
+				{
+					return "d3d12-nvapi-runtime-unavailable";
+				}
+				if (!capabilityReport.SupportsD3D12DeviceInterface)
+				{
+					return "d3d12-device-interface-missing";
+				}
+				if (!capabilityReport.SupportsD3D12CommandListInterface)
+				{
+					return "d3d12-command-list-interface-missing";
+				}
+				return "d3d12-nvapi-partitioned-tlas-provider-not-active-for-this-backend-stage";
+			case ERhiPartitionedTlasProvider::D3D12PublicDxrRtasOperations:
+				return "d3d12-public-dxr-ptlas-provider-not-implemented";
+			case ERhiPartitionedTlasProvider::None:
+			default:
+				return "partitioned-tlas-provider-none";
+		}
+	}
+
+	const char* ResolveActiveProviderReason(const RayTracingPartitionedTlasCapabilityReport& capabilityReport) noexcept
+	{
+		switch (capabilityReport.Provider)
+		{
+			case ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas:
+				return "d3d12-nvapi-partitioned-tlas-selected";
+			case ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure:
+				return "vulkan-nv-partitioned-tlas-selected";
+			case ERhiPartitionedTlasProvider::D3D12PublicDxrRtasOperations:
+				return "d3d12-public-dxr-partitioned-tlas-selected";
+			case ERhiPartitionedTlasProvider::None:
+			default:
+				return "partitioned-tlas-selected";
+		}
+	}
 }
 
 bool RayTracingPartitionedTlasStrategy::PartitionedTlasResources::HasSceneTlas() const noexcept
@@ -130,9 +203,7 @@ RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::Prepare(
 	if (!CanUseActivePartitionedTlasProvider())
 	{
 		m_currentFrameMode = FrameMode::ClassicFallback;
-		m_activeProviderReason = m_capabilityReport.PartitionedTlas.SupportsVulkanDescriptorPath
-		                             ? "partitioned-tlas-provider-not-active-for-this-backend-stage"
-		                             : "partitioned-tlas-shader-visible-address-path-not-implemented";
+		m_activeProviderReason = RayTracingPartitionedTlasStrategyDetails::ResolveInactiveProviderReason(m_capabilityReport.PartitionedTlas);
 		return m_classicFallbackStrategy.Prepare(sceneData, scenePlanner);
 	}
 
@@ -144,7 +215,7 @@ RayTracingSceneFrameData RayTracingPartitionedTlasStrategy::Prepare(
 	}
 
 	m_currentFrameMode = FrameMode::PartitionedTlas;
-	m_activeProviderReason = "vulkan-nv-partitioned-tlas-selected";
+	m_activeProviderReason = RayTracingPartitionedTlasStrategyDetails::ResolveActiveProviderReason(m_capabilityReport.PartitionedTlas);
 	return BuildPartitionedTlasFrameData(sceneData);
 }
 
@@ -225,9 +296,9 @@ void RayTracingPartitionedTlasStrategy::Clear() noexcept
 
 bool RayTracingPartitionedTlasStrategy::CanUseActivePartitionedTlasProvider() const noexcept
 {
-	return m_renderHardwareInterface != nullptr && m_capabilityReport.PartitionedTlas.Supported &&
-	       m_capabilityReport.PartitionedTlas.Provider == ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure &&
-	       m_capabilityReport.PartitionedTlas.SupportsVulkanDescriptorPath;
+	return m_renderHardwareInterface != nullptr &&
+	       (RayTracingPartitionedTlasStrategyDetails::CanUseVulkanPartitionedTlasProvider(m_capabilityReport.PartitionedTlas) ||
+	        RayTracingPartitionedTlasStrategyDetails::CanUseD3D12NvapiPartitionedTlasProvider(m_capabilityReport.PartitionedTlas));
 }
 
 bool RayTracingPartitionedTlasStrategy::EnsurePartitionedTlasResources(

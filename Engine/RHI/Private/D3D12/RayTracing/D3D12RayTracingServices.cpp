@@ -21,11 +21,15 @@ namespace D3D12RayTracingText
 	}
 }
 
-D3D12RayTracingServices::D3D12RayTracingServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator) noexcept :
+D3D12RayTracingServices::D3D12RayTracingServices(
+    D3D12Rhi& rhi,
+    D3D12GpuMemoryAllocator& memoryAllocator,
+    D3D12NvapiRayTracingProvider& nvapiProvider) noexcept :
     m_rhi(&rhi),
     m_memoryAllocator(&memoryAllocator),
+    m_nvapiProvider(&nvapiProvider),
     m_classicTlasServices(rhi, memoryAllocator),
-    m_partitionedTlasServices(rhi, memoryAllocator, m_nvapiProvider)
+    m_partitionedTlasServices(rhi, memoryAllocator, nvapiProvider)
 {
 }
 
@@ -209,5 +213,5 @@ bool D3D12RayTracingServices::BuildPartitionedTopLevelAccelerationStructure(
 	{
 		return false;
 	}
-	return m_nvapiProvider.BuildPartitionedTlas(commandList, desc);
+	return m_nvapiProvider != nullptr && m_nvapiProvider->BuildPartitionedTlas(commandList, desc);
 }
