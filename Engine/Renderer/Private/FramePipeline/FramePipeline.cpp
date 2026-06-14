@@ -528,6 +528,14 @@ void FramePipeline::ReportResolvedTimings(std::uint32_t frameIndex, const FrameE
 	const auto& resolvedTimers = frameDiagnostics.GetResolvedTimings();
 
 	PublishLiveGpuTimings(resolvedTimers);
+	if (RenderRayTracingScene* rayTracingScene = m_systems->GetRenderRayTracingScene())
+	{
+		rayTracingScene->BeginResolvedGpuTimingFrame();
+		for (const ResolvedGpuTiming& resolvedTimer : resolvedTimers)
+		{
+			rayTracingScene->PublishResolvedGpuTiming(resolvedTimer);
+		}
+	}
 
 	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
 

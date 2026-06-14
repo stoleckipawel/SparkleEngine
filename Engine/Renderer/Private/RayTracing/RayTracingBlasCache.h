@@ -8,6 +8,7 @@
 #include <unordered_set>
 
 class GPUMesh;
+class RayTracingPerformanceDiagnostics;
 class RenderCommandContext;
 
 class RayTracingBlasCache final
@@ -38,7 +39,10 @@ class RayTracingBlasCache final
 	RayTracingBlasCache& operator=(RayTracingBlasCache&&) = delete;
 
 	void BeginFrame() noexcept;
-	BlasHandle EnsureBlas(RenderCommandContext& cmd, const GPUMesh& gpuMesh) noexcept;
+	BlasHandle EnsureBlas(
+	    RenderCommandContext& cmd,
+	    const GPUMesh& gpuMesh,
+	    RayTracingPerformanceDiagnostics* diagnostics = nullptr) noexcept;
 	BuildStats EndFrame() noexcept;
 	void Clear() noexcept;
 

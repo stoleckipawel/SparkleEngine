@@ -86,6 +86,25 @@ RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 	{
 		snapshot.RayTracingTlasValid = rayTracingScene->HasValidTlas();
 		snapshot.RayTracingTlasInstanceCount = rayTracingScene->GetTlasInstanceCount();
+		const RayTracingPerformanceMetrics& metrics = rayTracingScene->GetPerformanceMetrics();
+		snapshot.RayTracingTopLevelProvider = metrics.TopLevelProvider;
+		snapshot.RayTracingPartitionedTlasProvider = metrics.PartitionedTlasProvider;
+		snapshot.RayTracingPartitionedTlasSupported = metrics.SupportsPartitionedTlas;
+		snapshot.RayTracingReferencedMeshCount = metrics.ReferencedMeshCount;
+		snapshot.RayTracingBuiltBlasCount = metrics.BuiltBlasCount;
+		snapshot.RayTracingReusedBlasCount = metrics.ReusedBlasCount;
+		snapshot.RayTracingCandidateInstanceCount = metrics.CandidateInstanceCount;
+		snapshot.RayTracingMissingGpuMeshCount = metrics.MissingGpuMeshCount;
+		snapshot.RayTracingRejectedBlasCount = metrics.RejectedBlasCount;
+		snapshot.RayTracingBuiltTlas = metrics.BuiltTlas;
+		snapshot.RayTracingScenePrepareCpuMilliseconds = metrics.ScenePrepareCpuMilliseconds;
+		snapshot.RayTracingSceneBuildCpuMilliseconds = metrics.SceneBuildCpuMilliseconds;
+		snapshot.RayTracingBlasCpuMilliseconds = metrics.BlasCpuMilliseconds;
+		snapshot.RayTracingTlasCpuMilliseconds = metrics.TlasCpuMilliseconds;
+		snapshot.RayTracingTlasInstancePreparationCpuMilliseconds = metrics.TlasInstancePreparationCpuMilliseconds;
+		snapshot.RayTracingBlasGpuMilliseconds = metrics.BlasGpuMilliseconds;
+		snapshot.RayTracingClassicTlasGpuMilliseconds = metrics.ClassicTlasGpuMilliseconds;
+		snapshot.RayTracingPassGpuMilliseconds = metrics.RayTracingPassGpuMilliseconds;
 	}
 
 	if (UpscalerSubsystem* upscalerSubsystem = m_systemRoot->GetUpscalerSubsystem())

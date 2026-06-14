@@ -39,11 +39,13 @@ const RenderPassDefinition& DirectLightingPass::GetDefinition() noexcept
 	static const RenderPassDefinition definition{
 	    .PassName = PassName,
 	    .PackageDeclarationName = "DirectLightingShaderPackage",
-	    .ShaderPackage = ShaderPackageDefinition{
-	        .PackageId = RendererShaderPackages::DirectLighting.data(),
-	        .BindingLayoutId = RendererShaderPackages::DirectLighting.data(),
-	        .ExpectedStages = ShaderStageMask::Compute,
-	        .RequiredFeatures = CookedShaderPackageFeatureFlags::UsesInlineRayQuery | CookedShaderPackageFeatureFlags::UsesAccelerationStructure},
+	    .ShaderPackage =
+	        ShaderPackageDefinition{
+	            .PackageId = RendererShaderPackages::DirectLighting.data(),
+	            .BindingLayoutId = RendererShaderPackages::DirectLighting.data(),
+	            .ExpectedStages = ShaderStageMask::Compute,
+	            .RequiredFeatures =
+	                CookedShaderPackageFeatureFlags::UsesInlineRayQuery | CookedShaderPackageFeatureFlags::UsesAccelerationStructure},
 	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
 	    .BindingLayoutDebugName = L"DirectLighting_BindingLayout",
 	    .PipelineStateDebugName = L"DirectLighting_PipelineState"};
@@ -90,13 +92,18 @@ void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstanc
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
 	    1};
-	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<DirectLightingPass>(
-	    context.Resources,
-	    context.Commands,
-	    context.RuntimeServices.HardwareInterface,
-	    m_runtime,
-	    parameters,
-	    dispatch,
-	    PassName);
+	const bool dispatched = [&]() noexcept
+	{
+		auto rayQueryScope = context.Diagnostics.BeginGpuEvent("Ray Query Dispatch");
+		auto rayQueryTimer = context.Diagnostics.BeginTimer("Ray Query Dispatch");
+		return PassUtilities::DispatchComputePassWithRuntime<DirectLightingPass>(
+		    context.Resources,
+		    context.Commands,
+		    context.RuntimeServices.HardwareInterface,
+		    m_runtime,
+		    parameters,
+		    dispatch,
+		    PassName);
+	}();
 	assert(dispatched);
 }

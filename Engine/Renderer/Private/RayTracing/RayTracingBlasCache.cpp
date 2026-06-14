@@ -5,6 +5,7 @@
 #include "Commands/RenderCommandContext.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Meshes/GPUMesh.h"
+#include "RayTracing/RayTracingPerformanceDiagnostics.h"
 
 #include <utility>
 
@@ -44,8 +45,13 @@ void RayTracingBlasCache::BeginFrame() noexcept
 	}
 }
 
-RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(RenderCommandContext& cmd, const GPUMesh& gpuMesh) noexcept
+RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
+    RenderCommandContext& cmd,
+    const GPUMesh& gpuMesh,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
+	auto cpuScope = diagnostics != nullptr ? diagnostics->BeginBlasCpuScope() : RayTracingPerformanceDiagnostics::CpuScope{};
+
 	if (m_renderHardwareInterface == nullptr || !gpuMesh.IsValid())
 	{
 		return {};
@@ -83,10 +89,14 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(RenderCommandCon
 	}
 
 	entry.geometry = geometry;
-	cmd.BuildBottomLevelAccelerationStructure(
-	    geometry,
-	    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.scratchBuffer),
-	    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.accelerationStructureBuffer));
+	{
+		auto blasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuEvent("BLAS Build") : ScopedGpuEvent{};
+		auto blasGpuTimer = diagnostics != nullptr ? diagnostics->BeginGpuTimer("BLAS Build") : ScopedGpuTimer{};
+		cmd.BuildBottomLevelAccelerationStructure(
+		    geometry,
+		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.scratchBuffer),
+		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.accelerationStructureBuffer));
+	}
 	++m_currentFrameStats.builtBlasCount;
 	BlasHandle handle = BuildHandle(entry);
 	handle.builtThisFrame = true;
@@ -169,9 +179,8 @@ bool RayTracingBlasCache::EnsureEntryResources(
 		const std::uint64_t alignedScratchSize = AlignRayTracingBufferSize(
 		    prebuildInfo.ScratchDataSizeInBytes,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.ScratchBufferByteAlignment);
-		entry.scratchBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingScratchBuffer(
-		    alignedScratchSize,
-		    L"RayTracingBlasScratch");
+		entry.scratchBuffer =
+		    m_renderHardwareInterface->GetRayTracingService().CreateRayTracingScratchBuffer(alignedScratchSize, L"RayTracingBlasScratch");
 		entry.scratchBufferSizeInBytes = alignedScratchSize;
 	}
 	if (!entry.accelerationStructureBuffer)

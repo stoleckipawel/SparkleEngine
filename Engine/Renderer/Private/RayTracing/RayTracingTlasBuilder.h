@@ -11,6 +11,7 @@
 #include <vector>
 
 class RenderCommandContext;
+class RayTracingPerformanceDiagnostics;
 struct RenderSceneData;
 
 class RayTracingTlasBuilder final
@@ -43,7 +44,11 @@ class RayTracingTlasBuilder final
 	RayTracingTlasBuilder& operator=(RayTracingTlasBuilder&&) = delete;
 
 	bool Prepare(std::uint32_t instanceCapacity) noexcept;
-	BuildStats Build(RenderCommandContext& cmd, const RenderSceneData& sceneData, RayTracingBlasCache& blasCache) noexcept;
+	BuildStats Build(
+	    RenderCommandContext& cmd,
+	    const RenderSceneData& sceneData,
+	    RayTracingBlasCache& blasCache,
+	    RayTracingPerformanceDiagnostics* diagnostics = nullptr) noexcept;
 	const TlasHandle& GetTlas() const noexcept { return m_tlas; }
 	void Clear() noexcept;
 

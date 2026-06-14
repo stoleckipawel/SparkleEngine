@@ -5,6 +5,7 @@
 #include "Commands/RenderCommandContext.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Meshes/GPUMesh.h"
+#include "RayTracing/RayTracingPerformanceDiagnostics.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <unordered_set>
@@ -61,9 +62,11 @@ bool RayTracingTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexcept
 RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
     RenderCommandContext& cmd,
     const RenderSceneData& sceneData,
-    RayTracingBlasCache& blasCache) noexcept
+    RayTracingBlasCache& blasCache,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	BuildStats stats{};
+	auto tlasCpuScope = diagnostics != nullptr ? diagnostics->BeginTlasCpuScope() : RayTracingPerformanceDiagnostics::CpuScope{};
 	if (m_renderHardwareInterface == nullptr)
 	{
 		return stats;
@@ -73,33 +76,37 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 	std::vector<RhiRayTracingInstanceDesc> instances;
 	stats.candidateInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 	instances.reserve(sceneData.meshInstances.size());
-	for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++index)
 	{
-		const MeshDraw& draw = sceneData.meshInstances[index];
-		if (draw.gpuMesh == nullptr || !draw.gpuMesh->IsValid())
+		auto instancePrepCpuScope =
+		    diagnostics != nullptr ? diagnostics->BeginTlasInstancePreparationCpuScope() : RayTracingPerformanceDiagnostics::CpuScope{};
+		for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++index)
 		{
-			++stats.missingGpuMeshCount;
-			continue;
-		}
+			const MeshDraw& draw = sceneData.meshInstances[index];
+			if (draw.gpuMesh == nullptr || !draw.gpuMesh->IsValid())
+			{
+				++stats.missingGpuMeshCount;
+				continue;
+			}
 
-		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, *draw.gpuMesh);
-		if (!blas.IsValid())
-		{
-			++stats.rejectedBlasCount;
-			continue;
-		}
-		if (blas.builtThisFrame)
-		{
-			builtBlasResources.insert(blas.resource.Value);
-		}
+			const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, *draw.gpuMesh, diagnostics);
+			if (!blas.IsValid())
+			{
+				++stats.rejectedBlasCount;
+				continue;
+			}
+			if (blas.builtThisFrame)
+			{
+				builtBlasResources.insert(blas.resource.Value);
+			}
 
-		instances.push_back(
-		    RhiRayTracingInstanceDesc{
-		        .Transform = BuildInstanceTransform(draw.worldMatrix),
-		        .InstanceID = index,
-		        .InstanceMask = 0xFFu,
-		        .InstanceContributionToHitGroupIndex = 0u,
-		        .AccelerationStructure = blas.gpuAddress});
+			instances.push_back(
+			    RhiRayTracingInstanceDesc{
+			        .Transform = BuildInstanceTransform(draw.worldMatrix),
+			        .InstanceID = index,
+			        .InstanceMask = 0xFFu,
+			        .InstanceContributionToHitGroupIndex = 0u,
+			        .AccelerationStructure = blas.gpuAddress});
+		}
 	}
 
 	stats.instanceCount = static_cast<std::uint32_t>(instances.size());
@@ -157,11 +164,15 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 		cmd.UnorderedAccessBarrier(NativeResourceHandle{resourceValue});
 	}
 
-	cmd.BuildTopLevelAccelerationStructure(
-	    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_instanceBuffer),
-	    stats.instanceCount,
-	    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_scratchBuffer),
-	    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_accelerationStructureBuffer));
+	{
+		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuEvent("Classic TLAS Build") : ScopedGpuEvent{};
+		auto tlasGpuTimer = diagnostics != nullptr ? diagnostics->BeginGpuTimer("Classic TLAS Build") : ScopedGpuTimer{};
+		cmd.BuildTopLevelAccelerationStructure(
+		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_instanceBuffer),
+		    stats.instanceCount,
+		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_scratchBuffer),
+		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_accelerationStructureBuffer));
+	}
 
 	m_tlas = TlasHandle{
 	    .resource = m_accelerationStructureBuffer,
