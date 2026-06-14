@@ -45,6 +45,16 @@ RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(const RenderS
 	return framePlan;
 }
 
+const RayTracingPtlasPartitionPlan* RayTracingTopLevelScenePlanner::GetCurrentPartitionPlan() const noexcept
+{
+	return m_impl != nullptr ? &m_impl->CurrentPartitionPlan : nullptr;
+}
+
+const RayTracingPtlasLogicalUpdateStreamResult* RayTracingTopLevelScenePlanner::GetCurrentLogicalUpdateStream() const noexcept
+{
+	return m_impl != nullptr ? &m_impl->CurrentLogicalUpdateStream : nullptr;
+}
+
 RayTracingClassicTlasBuilder::BuildStats RayTracingTopLevelScenePlanner::BuildClassicTlas(
     RenderCommandContext& cmd,
     const RenderSceneData& sceneData,

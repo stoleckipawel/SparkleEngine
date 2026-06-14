@@ -27,8 +27,11 @@ const char* RayTracingClassicTlasStrategy::GetActiveProviderReason() const noexc
 	return "classic-tlas-strategy-selected";
 }
 
-RayTracingSceneFrameData RayTracingClassicTlasStrategy::Prepare(const RenderSceneData& sceneData) noexcept
+RayTracingSceneFrameData RayTracingClassicTlasStrategy::Prepare(
+    const RenderSceneData& sceneData,
+    RayTracingTopLevelScenePlanner* scenePlanner) noexcept
 {
+	(void)scenePlanner;
 	RayTracingSceneFrameData frameData{};
 	const std::uint32_t estimatedInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 	if (estimatedInstanceCount == 0)

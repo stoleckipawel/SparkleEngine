@@ -14,7 +14,9 @@ class RayTracingClassicTlasStrategy final : public RayTracingTopLevelAcceleratio
 	const char* GetStrategyName() const noexcept override;
 	ERhiRayTracingTopLevelProvider GetActiveProvider() const noexcept override;
 	const char* GetActiveProviderReason() const noexcept override;
-	RayTracingSceneFrameData Prepare(const RenderSceneData& sceneData) noexcept override;
+	RayTracingSceneFrameData Prepare(
+	    const RenderSceneData& sceneData,
+	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept override;
 	RayTracingTopLevelAccelerationStructureBuildResult Build(
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,

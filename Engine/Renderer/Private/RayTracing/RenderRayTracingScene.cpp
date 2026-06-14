@@ -70,7 +70,7 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 		return {};
 	}
 
-	return m_topLevelAccelerationStructureStrategy->Prepare(sceneData);
+	return m_topLevelAccelerationStructureStrategy->Prepare(sceneData, m_topLevelScenePlanner.get());
 }
 
 void RenderRayTracingScene::Build(
@@ -83,6 +83,10 @@ void RenderRayTracingScene::Build(
 	m_performanceMetrics.Blas.CpuMilliseconds = 0.0;
 	m_performanceMetrics.ClassicTlas.CpuMilliseconds = 0.0;
 	m_performanceMetrics.ClassicTlas.InstancePreparationCpuMilliseconds = 0.0;
+	m_performanceMetrics.PtlasGpuUpdates.CpuPackMilliseconds = 0.0;
+	m_performanceMetrics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds = 0.0;
+	m_performanceMetrics.PtlasGpuUpdates.GpuNativePackMilliseconds = 0.0;
+	m_performanceMetrics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds = 0.0;
 	RayTracingPerformanceDiagnostics performanceDiagnostics{m_performanceMetrics, diagnostics};
 	auto cpuScope = performanceDiagnostics.BeginSceneBuildCpuScope();
 
@@ -126,7 +130,16 @@ void RenderRayTracingScene::Build(
 	m_performanceMetrics.PtlasPlanner.Overflow = topLevelStats.PtlasPlanner.Overflow;
 	const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
 	    m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->GetCurrentPlannerMetrics() : RayTracingTopLevelScenePlannerMetrics{};
+	const RayTracingPtlasGpuUpdateMetrics measuredPtlasTimings = m_performanceMetrics.PtlasGpuUpdates;
 	m_performanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
+	if (topLevelBuild.ActiveProvider == ERhiRayTracingTopLevelProvider::PartitionedTlas)
+	{
+		m_performanceMetrics.PtlasGpuUpdates = topLevelBuild.PtlasGpuUpdates;
+	}
+	m_performanceMetrics.PtlasGpuUpdates.CpuPackMilliseconds = measuredPtlasTimings.CpuPackMilliseconds;
+	m_performanceMetrics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds = measuredPtlasTimings.GpuDirtyDetectionMilliseconds;
+	m_performanceMetrics.PtlasGpuUpdates.GpuNativePackMilliseconds = measuredPtlasTimings.GpuNativePackMilliseconds;
+	m_performanceMetrics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds = measuredPtlasTimings.PtlasUpdateGpuMilliseconds;
 	m_performanceMetrics.PtlasGpuUpdates.FullGpuNativePackSupported =
 	    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
 	m_diagnostics.LogSceneUpdate(

@@ -90,6 +90,7 @@ class SPARKLE_RENDERER_API RenderCommandContext final
 	    std::uint32_t instanceCount,
 	    RhiGpuVirtualAddress scratchGpuAddress,
 	    RhiGpuVirtualAddress resultGpuAddress) noexcept;
+	void BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept;
 	bool SupportsDiagnosticScopes() const noexcept;
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 	void EndDiagnosticScope() noexcept;

@@ -9,14 +9,6 @@
 
 class PassExecutionDiagnostics;
 
-#ifndef SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS
-	#if SPARKLE_BUILD_SHIPPING
-		#define SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS 0
-	#else
-		#define SPARKLE_RENDERER_RAYTRACING_PERF_DIAGNOSTICS 1
-	#endif
-#endif
-
 class RayTracingPerformanceDiagnostics final
 {
   public:
@@ -51,10 +43,31 @@ class RayTracingPerformanceDiagnostics final
 	CpuScope BeginBlasCpuScope() noexcept;
 	CpuScope BeginTlasCpuScope() noexcept;
 	CpuScope BeginTlasInstancePreparationCpuScope() noexcept;
+	CpuScope BeginPartitionedTlasCpuPackScope() noexcept;
 
-	void AddBlasGpuMilliseconds(double milliseconds) noexcept;
-	void SetClassicTlasGpuMilliseconds(double milliseconds) noexcept;
-	void SetRayTracingPassGpuMilliseconds(double milliseconds) noexcept;
+	void AddBlasGpuMilliseconds(double milliseconds) noexcept
+	{
+		if (m_metrics != nullptr)
+		{
+			m_metrics->Blas.GpuMilliseconds += milliseconds;
+		}
+	}
+
+	void SetClassicTlasGpuMilliseconds(double milliseconds) noexcept
+	{
+		if (m_metrics != nullptr)
+		{
+			m_metrics->ClassicTlas.GpuMilliseconds = milliseconds;
+		}
+	}
+
+	void SetRayTracingPassGpuMilliseconds(double milliseconds) noexcept
+	{
+		if (m_metrics != nullptr)
+		{
+			m_metrics->Timings.RayTracingPassGpuMilliseconds = milliseconds;
+		}
+	}
 
 	static void BeginResolvedGpuTimingFrame(RayTracingPerformanceMetrics& metrics) noexcept;
 	static void PublishResolvedGpuTiming(RayTracingPerformanceMetrics& metrics, const ResolvedGpuTiming& timing) noexcept;

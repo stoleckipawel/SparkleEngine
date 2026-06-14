@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frame/RayTracingSceneFrameData.h"
+#include "RayTracing/RayTracingPtlasGpuUpdateMetrics.h"
 #include "RayTracing/RayTracingTopLevelAccelerationStructureBuildStats.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
@@ -17,6 +18,7 @@ struct RenderSceneData;
 struct RayTracingTopLevelAccelerationStructureBuildResult final
 {
 	RayTracingTopLevelAccelerationStructureBuildStats Stats;
+	RayTracingPtlasGpuUpdateMetrics PtlasGpuUpdates;
 	ERhiRayTracingTopLevelProvider ActiveProvider = ERhiRayTracingTopLevelProvider::None;
 	const char* ActiveProviderReason = "not-built";
 };
@@ -34,7 +36,9 @@ class RayTracingTopLevelAccelerationStructureStrategy
 	virtual const char* GetStrategyName() const noexcept = 0;
 	virtual ERhiRayTracingTopLevelProvider GetActiveProvider() const noexcept = 0;
 	virtual const char* GetActiveProviderReason() const noexcept = 0;
-	virtual RayTracingSceneFrameData Prepare(const RenderSceneData& sceneData) noexcept = 0;
+	virtual RayTracingSceneFrameData Prepare(
+	    const RenderSceneData& sceneData,
+	    RayTracingTopLevelScenePlanner* scenePlanner) noexcept = 0;
 	virtual RayTracingTopLevelAccelerationStructureBuildResult Build(
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,

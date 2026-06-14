@@ -10,6 +10,8 @@
 class RayTracingBlasCache;
 class RayTracingPerformanceDiagnostics;
 class RenderCommandContext;
+struct RayTracingPtlasLogicalUpdateStreamResult;
+struct RayTracingPtlasPartitionPlan;
 struct RenderSceneData;
 
 struct RayTracingTopLevelScenePlannerMetrics final
@@ -35,6 +37,8 @@ class RayTracingTopLevelScenePlanner final
 	RayTracingTopLevelScenePlanner& operator=(RayTracingTopLevelScenePlanner&&) = delete;
 
 	RayTracingSceneFramePlan PlanFrame(const RenderSceneData& sceneData) noexcept;
+	const RayTracingPtlasPartitionPlan* GetCurrentPartitionPlan() const noexcept;
+	const RayTracingPtlasLogicalUpdateStreamResult* GetCurrentLogicalUpdateStream() const noexcept;
 	RayTracingClassicTlasBuilder::BuildStats BuildClassicTlas(
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,

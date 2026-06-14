@@ -227,6 +227,14 @@ void RenderCommandContext::BuildTopLevelAccelerationStructure(
 	}
 }
 
+void RenderCommandContext::BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept
+{
+	if (m_commandList != nullptr)
+	{
+		m_commandList->BuildPartitionedTopLevelAccelerationStructure(desc);
+	}
+}
+
 bool RenderCommandContext::SupportsDiagnosticScopes() const noexcept
 {
 	return m_commandList->SupportsDiagnosticScopes();

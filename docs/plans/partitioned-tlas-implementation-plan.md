@@ -1666,6 +1666,17 @@ Reference-quality completion stages:
    - What changes: PTLAS moves from planned/debug data to the actual acceleration structure used by rays.
    - Why it matters: this is the moment the implementation becomes a feature rather than architecture scaffolding.
 
+   Implementation status - 2026-06-14:
+
+   - Added renderer strategy preparation/build plumbing so `Prepare()` receives the current top-level scene plan before frame graph resource binding.
+   - `RayTracingPartitionedTlasStrategy` now allocates Vulkan PTLAS storage, scratch, logical update resources, and CPU-packed native operation buffers through backend-neutral RHI services.
+   - Vulkan NV PTLAS can become the active conceptual `SceneTlas` when `CVarRhiRayTracingPreferPartitionedTlas` is enabled and the capability provider is `VulkanNvPartitionedAccelerationStructure`.
+   - Non-active providers still fall back to classic TLAS with explicit provider reasons instead of silently pretending PTLAS is active.
+   - Added renderer command-context forwarding for `BuildPartitionedTopLevelAccelerationStructure`.
+   - Added PTLAS CPU-pack timing and `Partitioned TLAS Build` GPU timing publication.
+   - Validation run: `ShowcaseEditor` build and `architecture_boundary_check`.
+   - Remaining acceptance gap: launcher parity artifacts still need to prove Vulkan PTLAS lit/ray-query output matches Vulkan classic TLAS.
+
 4. **D3D12 NVAPI PTLAS Active Provider**
 
    Goal:
