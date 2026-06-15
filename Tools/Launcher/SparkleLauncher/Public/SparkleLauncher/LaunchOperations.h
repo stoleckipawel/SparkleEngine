@@ -16,7 +16,9 @@ namespace SparkleLauncher
 	enum class LaunchOperationKind
 	{
 		RunProject,
-		RunRhiRayTracingParitySmoke
+		RunRhiRayTracingParitySmoke,
+		RunRhiRayTracingPtlasBenchmarkSmoke,
+		RunRhiRayTracingPtlasArticleSmoke
 	};
 
 	struct LaunchOperationDefinition

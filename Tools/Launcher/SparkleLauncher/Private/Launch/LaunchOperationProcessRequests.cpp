@@ -1,7 +1,9 @@
 #include "LaunchOperationProcessRequests.h"
 
 #include "Smoke/RhiSmokeLaunchOperations.h"
+#include "Smoke/RhiSmokePtlasArticleTestPlan.h"
 #include "Smoke/RhiSmokeParityTestPlan.h"
+#include "Smoke/RhiSmokePtlasBenchmarkTestPlan.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
 #include <utility>
@@ -18,6 +20,14 @@ namespace SparkleLauncher
 		if (IsRhiParitySmokeLaunchOperation(plan.Kind))
 		{
 			return BuildRhiSmokeRayTracingParityProcessSteps(plan);
+		}
+		if (IsRhiPtlasBenchmarkSmokeLaunchOperation(plan.Kind))
+		{
+			return BuildRhiSmokePtlasBenchmarkProcessSteps(plan);
+		}
+		if (IsRhiPtlasArticleSmokeLaunchOperation(plan.Kind))
+		{
+			return BuildRhiSmokePtlasArticleProcessSteps(plan);
 		}
 
 		ProcessRequest request;

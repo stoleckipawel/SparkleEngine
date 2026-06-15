@@ -160,6 +160,10 @@ namespace SparkleLauncher
 			return "RunProject";
 		case LaunchOperationKind::RunRhiRayTracingParitySmoke:
 			return "RunRhiRayTracingParitySmoke";
+		case LaunchOperationKind::RunRhiRayTracingPtlasBenchmarkSmoke:
+			return "RunRhiRayTracingPtlasBenchmarkSmoke";
+		case LaunchOperationKind::RunRhiRayTracingPtlasArticleSmoke:
+			return "RunRhiRayTracingPtlasArticleSmoke";
 		}
 
 		return "Unknown";
@@ -172,6 +176,8 @@ namespace SparkleLauncher
 		    {LaunchOperationKind::RunProject, "project.open.runtime", "Launch", "Open Runtime", "Launch the selected project in runtime mode using available runtime components."},
 		    {LaunchOperationKind::RunProject, "project.run.smoke", "Test", "Run Smoke Test", "Run the selected project with smoke validation enabled."},
 		    {LaunchOperationKind::RunRhiRayTracingParitySmoke, "project.run.rhi-raytracing-parity", "Test", "Run RHI Ray Tracing Parity", "Run D3D12/Vulkan classic TLAS and PTLAS smoke captures and compare parity artifacts."},
+		    {LaunchOperationKind::RunRhiRayTracingPtlasBenchmarkSmoke, "project.run.rhi-raytracing-ptlas-benchmark", "Test", "Run PTLAS Benchmark", "Run launcher-owned PTLAS benchmark captures and emit graph-ready benchmark artifacts."},
+		    {LaunchOperationKind::RunRhiRayTracingPtlasArticleSmoke, "project.run.rhi-raytracing-ptlas-article", "Test", "Run PTLAS Article Capture Pack", "Run launcher-owned PTLAS article captures and emit screenshots, metadata, timing artifacts, and capture index notes."},
 		    {LaunchOperationKind::RunProject, "project.run", "Launch", "Launch Project", "Launch the selected project in editor or runtime mode using shared launch options."},
 		};
 		return definitions;
@@ -201,7 +207,9 @@ namespace SparkleLauncher
 		plan.Kind = definition->Kind;
 		plan.RepositoryRoot = request.RepositoryRoot;
 		plan.Request = request;
-		if (definition->Kind == LaunchOperationKind::RunRhiRayTracingParitySmoke)
+		if (definition->Kind == LaunchOperationKind::RunRhiRayTracingParitySmoke ||
+		    definition->Kind == LaunchOperationKind::RunRhiRayTracingPtlasBenchmarkSmoke ||
+		    definition->Kind == LaunchOperationKind::RunRhiRayTracingPtlasArticleSmoke)
 		{
 			plan.Request.EnableSmokeTest = true;
 			plan.Request.SmokeSkipLevelSwitching = true;

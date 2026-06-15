@@ -6,12 +6,24 @@ namespace SparkleLauncher
 {
 	bool IsRhiSmokeLaunchOperation(LaunchOperationKind kind)
 	{
-		return kind == LaunchOperationKind::RunProject || kind == LaunchOperationKind::RunRhiRayTracingParitySmoke;
+		return kind == LaunchOperationKind::RunProject || kind == LaunchOperationKind::RunRhiRayTracingParitySmoke ||
+		       kind == LaunchOperationKind::RunRhiRayTracingPtlasBenchmarkSmoke ||
+		       kind == LaunchOperationKind::RunRhiRayTracingPtlasArticleSmoke;
 	}
 
 	bool IsRhiParitySmokeLaunchOperation(LaunchOperationKind kind)
 	{
 		return kind == LaunchOperationKind::RunRhiRayTracingParitySmoke;
+	}
+
+	bool IsRhiPtlasBenchmarkSmokeLaunchOperation(LaunchOperationKind kind)
+	{
+		return kind == LaunchOperationKind::RunRhiRayTracingPtlasBenchmarkSmoke;
+	}
+
+	bool IsRhiPtlasArticleSmokeLaunchOperation(LaunchOperationKind kind)
+	{
+		return kind == LaunchOperationKind::RunRhiRayTracingPtlasArticleSmoke;
 	}
 
 	bool IsRhiSmokeTestEnabled(const LaunchOperationPlan& plan) noexcept
@@ -103,6 +115,14 @@ namespace SparkleLauncher
 		if (GetRhiSmokeTestCategory(plan) == RhiSmokeTestCategory::RayTracingParity)
 		{
 			effects.push_back("Run D3D12/Vulkan classic TLAS and PTLAS parity captures with provider metadata and timing artifacts.");
+		}
+		if (GetRhiSmokeTestCategory(plan) == RhiSmokeTestCategory::RayTracingPtlasBenchmark)
+		{
+			effects.push_back("Run launcher-owned PTLAS benchmark captures and emit graph-ready benchmark artifacts.");
+		}
+		if (GetRhiSmokeTestCategory(plan) == RhiSmokeTestCategory::RayTracingPtlasArticle)
+		{
+			effects.push_back("Run launcher-owned PTLAS article capture pack and emit screenshots, metadata, timing artifacts, and capture index notes.");
 		}
 		if (!plan.Request.SmokeViewMode.empty())
 		{

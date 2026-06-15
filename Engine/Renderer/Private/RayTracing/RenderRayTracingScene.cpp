@@ -15,8 +15,10 @@ RenderRayTracingScene::RenderRayTracingScene(
     m_capabilityReport(capabilityReport)
 {
 	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
+	m_performanceMetrics.Providers.TopLevelProviderReason = m_capabilityReport.TopLevelProvider.SelectionReason;
 	m_performanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
 	m_performanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
+	m_performanceMetrics.Providers.PartitionedTlasCapabilityReason = m_capabilityReport.PartitionedTlas.CapabilityStatusReason;
 	m_topLevelScenePlanner = std::make_unique<RayTracingTopLevelScenePlanner>();
 
 	if (!m_capabilityReport.Core.SupportsRayTracing)
@@ -58,9 +60,16 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 		const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
 		    m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->GetCurrentPlannerMetrics() : RayTracingTopLevelScenePlannerMetrics{};
 		m_performanceMetrics.PtlasPlanner = RayTracingPtlasPlannerMetrics{
+		    .TotalRenderInstanceCount = plannerMetrics.TotalRenderInstanceCount,
+		    .TraceableInstanceCount = plannerMetrics.TraceableInstanceCount,
+		    .StaticTraceableInstanceCount = plannerMetrics.StaticTraceableInstanceCount,
+		    .DynamicTraceableInstanceCount = plannerMetrics.DynamicTraceableInstanceCount,
+		    .PartitionsPerAxis = plannerMetrics.PartitionsPerAxis,
 		    .PartitionCount = plannerMetrics.PartitionCount,
+		    .GridPartitionCount = plannerMetrics.GridPartitionCount,
 		    .DirtyTransformCount = plannerMetrics.DirtyTransformCount,
 		    .MovedPartitionCount = plannerMetrics.MovedPartitionCount,
+		    .GlobalPartitionEligibleCount = plannerMetrics.GlobalPartitionEligibleCount,
 		    .GlobalPartitionInstanceCount = plannerMetrics.GlobalPartitionInstanceCount,
 		    .DuplicateStableIndexCount = plannerMetrics.DuplicateStableIndexCount,
 		    .Overflow = plannerMetrics.Overflow};
@@ -116,8 +125,10 @@ void RenderRayTracingScene::Build(
 	const RayTracingTopLevelAccelerationStructureBuildStats& topLevelStats = topLevelBuild.Stats;
 
 	m_performanceMetrics.Providers.TopLevelProvider = topLevelBuild.ActiveProvider;
+	m_performanceMetrics.Providers.TopLevelProviderReason = topLevelBuild.ActiveProviderReason;
 	m_performanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
 	m_performanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
+	m_performanceMetrics.Providers.PartitionedTlasCapabilityReason = m_capabilityReport.PartitionedTlas.CapabilityStatusReason;
 	m_performanceMetrics.Blas.ReferencedMeshCount = blasStats.referencedMeshCount;
 	m_performanceMetrics.Blas.BuiltCount = blasStats.builtBlasCount;
 	m_performanceMetrics.Blas.ReusedCount = blasStats.reusedBlasCount;
@@ -126,9 +137,16 @@ void RenderRayTracingScene::Build(
 	m_performanceMetrics.ClassicTlas.MissingGpuMeshCount = topLevelStats.Candidates.MissingGpuMeshCount;
 	m_performanceMetrics.ClassicTlas.RejectedBlasCount = topLevelStats.Candidates.RejectedBlasCount;
 	m_performanceMetrics.ClassicTlas.Built = topLevelStats.Build.Built;
+	m_performanceMetrics.PtlasPlanner.TotalRenderInstanceCount = topLevelStats.PtlasPlanner.TotalRenderInstanceCount;
+	m_performanceMetrics.PtlasPlanner.TraceableInstanceCount = topLevelStats.PtlasPlanner.TraceableInstanceCount;
+	m_performanceMetrics.PtlasPlanner.StaticTraceableInstanceCount = topLevelStats.PtlasPlanner.StaticTraceableInstanceCount;
+	m_performanceMetrics.PtlasPlanner.DynamicTraceableInstanceCount = topLevelStats.PtlasPlanner.DynamicTraceableInstanceCount;
+	m_performanceMetrics.PtlasPlanner.PartitionsPerAxis = topLevelStats.PtlasPlanner.PartitionsPerAxis;
 	m_performanceMetrics.PtlasPlanner.PartitionCount = topLevelStats.PtlasPlanner.PartitionCount;
+	m_performanceMetrics.PtlasPlanner.GridPartitionCount = topLevelStats.PtlasPlanner.GridPartitionCount;
 	m_performanceMetrics.PtlasPlanner.DirtyTransformCount = topLevelStats.PtlasPlanner.DirtyTransformCount;
 	m_performanceMetrics.PtlasPlanner.MovedPartitionCount = topLevelStats.PtlasPlanner.MovedPartitionCount;
+	m_performanceMetrics.PtlasPlanner.GlobalPartitionEligibleCount = topLevelStats.PtlasPlanner.GlobalPartitionEligibleCount;
 	m_performanceMetrics.PtlasPlanner.GlobalPartitionInstanceCount = topLevelStats.PtlasPlanner.GlobalPartitionInstanceCount;
 	m_performanceMetrics.PtlasPlanner.DuplicateStableIndexCount = topLevelStats.PtlasPlanner.DuplicateStableIndexCount;
 	m_performanceMetrics.PtlasPlanner.Overflow = topLevelStats.PtlasPlanner.Overflow;

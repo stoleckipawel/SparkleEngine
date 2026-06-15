@@ -223,6 +223,21 @@ std::uint32_t FramePipeline::GetLastUnresolvedBarrierWarningCount() const noexce
 	return m_frameGraph != nullptr ? m_frameGraph->GetLastUnresolvedBarrierWarningCount() : 0u;
 }
 
+bool FramePipeline::TryGetLastResolvedGpuTimingMilliseconds(std::string_view label, double& outMilliseconds) const noexcept
+{
+	const std::vector<ResolvedGpuTiming>& resolvedTimings = GetCurrentFrameDiagnostics().GetResolvedTimings();
+	for (const ResolvedGpuTiming& resolvedTiming : resolvedTimings)
+	{
+		if (resolvedTiming.Label == label)
+		{
+			outMilliseconds = resolvedTiming.DurationMilliseconds;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void FramePipeline::BindRayTracingFrameGraphResources(const RayTracingSceneFrameData& rayTracingScene) noexcept
 {
 	if (m_frameGraph == nullptr)

@@ -40,9 +40,16 @@ namespace RendererSmokeRayTracingSnapshotBuilderDetails
 		return RendererSmokeRayTracingPtlasPlannerDiagnostics{
 		    .Provider = capabilities.Groups.PartitionedTlas.Provider,
 		    .Supported = capabilities.Groups.PartitionedTlas.Supported,
+		    .TotalRenderInstanceCount = metrics.PtlasPlanner.TotalRenderInstanceCount,
+		    .TraceableInstanceCount = metrics.PtlasPlanner.TraceableInstanceCount,
+		    .StaticTraceableInstanceCount = metrics.PtlasPlanner.StaticTraceableInstanceCount,
+		    .DynamicTraceableInstanceCount = metrics.PtlasPlanner.DynamicTraceableInstanceCount,
+		    .PartitionsPerAxis = metrics.PtlasPlanner.PartitionsPerAxis,
 		    .PartitionCount = metrics.PtlasPlanner.PartitionCount,
+		    .GridPartitionCount = metrics.PtlasPlanner.GridPartitionCount,
 		    .DirtyTransformCount = metrics.PtlasPlanner.DirtyTransformCount,
 		    .MovedPartitionCount = metrics.PtlasPlanner.MovedPartitionCount,
+		    .GlobalPartitionEligibleCount = metrics.PtlasPlanner.GlobalPartitionEligibleCount,
 		    .GlobalPartitionInstanceCount = metrics.PtlasPlanner.GlobalPartitionInstanceCount,
 		    .DuplicateStableIndexCount = metrics.PtlasPlanner.DuplicateStableIndexCount,
 		    .Overflow = metrics.PtlasPlanner.Overflow};
@@ -84,6 +91,8 @@ RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build
 
 	const RayTracingPerformanceMetrics& metrics = rayTracingScene->GetPerformanceMetrics();
 	diagnostics.Capability.TopLevelProvider = metrics.Providers.TopLevelProvider;
+	diagnostics.Capability.TopLevelProviderReason = metrics.Providers.TopLevelProviderReason;
+	diagnostics.Capability.PartitionedTlasCapabilityReason = metrics.Providers.PartitionedTlasCapabilityReason;
 	diagnostics.FrameTimings.ScenePrepareCpuMilliseconds = metrics.Timings.ScenePrepareCpuMilliseconds;
 	diagnostics.FrameTimings.SceneBuildCpuMilliseconds = metrics.Timings.SceneBuildCpuMilliseconds;
 	diagnostics.FrameTimings.RayTracingPassGpuMilliseconds = metrics.Timings.RayTracingPassGpuMilliseconds;

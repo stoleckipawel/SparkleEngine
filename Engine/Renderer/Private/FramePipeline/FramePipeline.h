@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
 #include <vector>
 
 class FrameExecutionDiagnostics;
@@ -42,6 +43,7 @@ class FramePipeline final
 	void EndViewportPresentation(RenderOutputFlags output) noexcept;
 	RhiCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
 	std::uint32_t GetLastUnresolvedBarrierWarningCount() const noexcept;
+	bool TryGetLastResolvedGpuTimingMilliseconds(std::string_view label, double& outMilliseconds) const noexcept;
 
   private:
 	struct RendererFrameProductHandles

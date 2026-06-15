@@ -78,8 +78,19 @@ RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 	RendererSmokeDiagnosticsSnapshot snapshot{};
 	const RhiCapabilities capabilities = GetRenderHardwareInterface().GetCapabilities();
 	snapshot.BackendApi = capabilities.BackendApi;
+	snapshot.Adapter.Name = capabilities.ExternalFeatureInterop.Adapter.Name;
+	snapshot.Adapter.DriverDescription = capabilities.ExternalFeatureInterop.Adapter.DriverDescription;
+	snapshot.Adapter.VendorId = capabilities.ExternalFeatureInterop.Adapter.VendorId;
+	snapshot.Adapter.DeviceId = capabilities.ExternalFeatureInterop.Adapter.DeviceId;
 	snapshot.FrameGraph.UnresolvedBarrierWarnings =
 	    m_framePipeline != nullptr ? m_framePipeline->GetLastUnresolvedBarrierWarningCount() : 0u;
+	if (m_framePipeline != nullptr)
+	{
+		double finalFrameGpuMilliseconds = 0.0;
+		snapshot.FrameTimings.HasFinalFrameGpuMilliseconds =
+		    m_framePipeline->TryGetLastResolvedGpuTimingMilliseconds("GPU Frame", finalFrameGpuMilliseconds);
+		snapshot.FrameTimings.FinalFrameGpuMilliseconds = finalFrameGpuMilliseconds;
+	}
 	snapshot.RayTracing =
 	    RendererSmokeRayTracingSnapshotBuilder::Build(capabilities.RayTracing, m_systemRoot->GetRenderRayTracingScene());
 

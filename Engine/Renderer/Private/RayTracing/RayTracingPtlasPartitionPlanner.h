@@ -73,6 +73,9 @@ struct RayTracingPtlasPartitionPlanIndices final
 struct RayTracingPtlasPartitionPlanCounts final
 {
 	std::uint32_t CandidateInstanceCount = 0;
+	std::uint32_t StaticInstanceCount = 0;
+	std::uint32_t DynamicInstanceCount = 0;
+	std::uint32_t PartitionsPerAxis = 0;
 	std::uint32_t PartitionCount = 0;
 	std::uint32_t GridPartitionCount = 0;
 	std::uint32_t DirtyTransformCount = 0;

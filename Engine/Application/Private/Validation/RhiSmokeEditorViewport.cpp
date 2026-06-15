@@ -109,7 +109,9 @@ namespace RhiSmokeEditorViewport
 		        .Diagnostics = renderer.CaptureSmokeDiagnostics(),
 		        .CapturePath = std::filesystem::path(config.SceneColorCapturePath),
 		        .MetadataPath = std::filesystem::path(config.MetadataPath),
-		        .TimingCsvPath = std::filesystem::path(config.TimingCsvPath)});
+		        .TimingCsvPath = std::filesystem::path(config.TimingCsvPath),
+		        .CapturePurpose = config.CapturePurpose,
+		        .CaptureStoryLabel = config.CaptureStoryLabel});
 
 		if (captureResult)
 		{

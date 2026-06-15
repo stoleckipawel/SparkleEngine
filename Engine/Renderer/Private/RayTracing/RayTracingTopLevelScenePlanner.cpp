@@ -6,6 +6,7 @@
 #include "RayTracing/RayTracingPtlasLogicalUpdateStream.h"
 #include "RayTracing/RayTracingPtlasOperationWriterPolicy.h"
 #include "RayTracing/RayTracingPtlasPartitionPlanner.h"
+#include "SceneData/RenderSceneData.h"
 
 struct RayTracingTopLevelScenePlanner::Impl final
 {
@@ -13,6 +14,7 @@ struct RayTracingTopLevelScenePlanner::Impl final
 	RayTracingPtlasLogicalUpdateStream LogicalUpdateStream;
 	RayTracingPtlasPartitionPlan CurrentPartitionPlan;
 	RayTracingPtlasLogicalUpdateStreamResult CurrentLogicalUpdateStream;
+	std::uint32_t LastRenderInstanceCount = 0;
 };
 
 RayTracingTopLevelScenePlanner::RayTracingTopLevelScenePlanner() noexcept :
@@ -35,6 +37,7 @@ RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(const RenderS
 	        .PartitionsPerAxis = CVarRayTracingPartitionsPerAxis.Get(),
 	        .EnableGlobalPartition = CVarRayTracingGlobalPartition.Get()});
 	m_impl->CurrentLogicalUpdateStream = m_impl->LogicalUpdateStream.Build(sceneData, m_impl->CurrentPartitionPlan);
+	m_impl->LastRenderInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 
 	RayTracingSceneFramePlan framePlan{};
 	framePlan.MeshInstanceDebugData.PackedDebugVisualizationDataByRenderInstance.reserve(
@@ -81,9 +84,16 @@ RayTracingTopLevelScenePlannerMetrics RayTracingTopLevelScenePlanner::GetCurrent
 	const ERhiPartitionedTlasOperationWriterPath requestedWriterPath =
 	    RayTracingPtlasOperationWriterPolicyResolver::ResolveRequestedPath();
 	return RayTracingTopLevelScenePlannerMetrics{
+	    .TotalRenderInstanceCount = m_impl->LastRenderInstanceCount,
+	    .TraceableInstanceCount = m_impl->CurrentPartitionPlan.Counts.CandidateInstanceCount,
+	    .StaticTraceableInstanceCount = m_impl->CurrentPartitionPlan.Counts.StaticInstanceCount,
+	    .DynamicTraceableInstanceCount = m_impl->CurrentPartitionPlan.Counts.DynamicInstanceCount,
+	    .PartitionsPerAxis = m_impl->CurrentPartitionPlan.Counts.PartitionsPerAxis,
 	    .PartitionCount = m_impl->CurrentPartitionPlan.Counts.PartitionCount,
+	    .GridPartitionCount = m_impl->CurrentPartitionPlan.Counts.GridPartitionCount,
 	    .DirtyTransformCount = m_impl->CurrentPartitionPlan.Counts.DirtyTransformCount,
 	    .MovedPartitionCount = m_impl->CurrentPartitionPlan.Counts.MovedPartitionCount,
+	    .GlobalPartitionEligibleCount = m_impl->CurrentPartitionPlan.Counts.GlobalPartitionEligibleCount,
 	    .GlobalPartitionInstanceCount = m_impl->CurrentPartitionPlan.Counts.GlobalPartitionInstanceCount,
 	    .DuplicateStableIndexCount = m_impl->CurrentPartitionPlan.Counts.DuplicateStableIndexCount,
 	    .Overflow = m_impl->CurrentPartitionPlan.Validation.HasPartitionOverflow,
@@ -108,5 +118,6 @@ void RayTracingTopLevelScenePlanner::Clear() noexcept
 		m_impl->PartitionPlanner.Clear();
 		m_impl->CurrentPartitionPlan = {};
 		m_impl->CurrentLogicalUpdateStream = {};
+		m_impl->LastRenderInstanceCount = 0;
 	}
 }

@@ -48,9 +48,16 @@ namespace RayTracingPartitionedTlasStrategyDetails
 			return;
 		}
 
+		stats.PtlasPlanner.TotalRenderInstanceCount = partitionPlan->Counts.CandidateInstanceCount;
+		stats.PtlasPlanner.TraceableInstanceCount = partitionPlan->Counts.CandidateInstanceCount;
+		stats.PtlasPlanner.StaticTraceableInstanceCount = partitionPlan->Counts.StaticInstanceCount;
+		stats.PtlasPlanner.DynamicTraceableInstanceCount = partitionPlan->Counts.DynamicInstanceCount;
+		stats.PtlasPlanner.PartitionsPerAxis = partitionPlan->Counts.PartitionsPerAxis;
 		stats.PtlasPlanner.PartitionCount = partitionPlan->Counts.PartitionCount;
+		stats.PtlasPlanner.GridPartitionCount = partitionPlan->Counts.GridPartitionCount;
 		stats.PtlasPlanner.DirtyTransformCount = partitionPlan->Counts.DirtyTransformCount;
 		stats.PtlasPlanner.MovedPartitionCount = partitionPlan->Counts.MovedPartitionCount;
+		stats.PtlasPlanner.GlobalPartitionEligibleCount = partitionPlan->Counts.GlobalPartitionEligibleCount;
 		stats.PtlasPlanner.GlobalPartitionInstanceCount = partitionPlan->Counts.GlobalPartitionInstanceCount;
 		stats.PtlasPlanner.DuplicateStableIndexCount = partitionPlan->Counts.DuplicateStableIndexCount;
 		stats.PtlasPlanner.Overflow =

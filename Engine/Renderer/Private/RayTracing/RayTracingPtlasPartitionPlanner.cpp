@@ -100,6 +100,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	const RayTracingPtlasPartitionPlannerConfig config = SanitizeConfig(inputConfig);
 	RayTracingPtlasPartitionPlan plan{};
 	plan.Counts.CandidateInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
+	plan.Counts.PartitionsPerAxis = config.PartitionsPerAxis;
 	plan.Indices.RenderInstanceToEntry.assign(sceneData.meshInstances.size(), kInvalidEntryIndex);
 
 	const std::uint64_t gridPartitionCount64 =
@@ -131,6 +132,15 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	     ++renderInstanceIndex)
 	{
 		const MeshDraw& draw = sceneData.meshInstances[renderInstanceIndex];
+		if (draw.Geometry.MeshKind == RenderMeshKind::Static)
+		{
+			++plan.Counts.StaticInstanceCount;
+		}
+		else
+		{
+			++plan.Counts.DynamicInstanceCount;
+		}
+
 		const std::uint32_t stableIndex = draw.Source.SourceInstanceIndex;
 		const DirectX::XMFLOAT3 position = ExtractTranslation(draw.Transform.WorldMatrix);
 		const std::uint32_t gridPartitionId =

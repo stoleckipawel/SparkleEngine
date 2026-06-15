@@ -16,6 +16,8 @@ struct RhiSmokeEditorViewportConfig final
 	std::string SceneColorCapturePath;
 	std::string MetadataPath;
 	std::string TimingCsvPath;
+	std::string CapturePurpose;
+	std::string CaptureStoryLabel;
 	bool HasViewModeOverride = false;
 	RenderViewMode ViewModeOverride = RenderViewMode::Lit;
 };

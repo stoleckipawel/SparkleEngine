@@ -2,7 +2,9 @@
 
 #include "LaunchOperationProcessRequests.h"
 #include "Smoke/RhiSmokeLaunchOperations.h"
+#include "Smoke/RhiSmokePtlasArticleArtifactValidation.h"
 #include "Smoke/RhiSmokeParityArtifactValidation.h"
+#include "Smoke/RhiSmokePtlasBenchmarkArtifactValidation.h"
 #include "Smoke/RhiSmokeTestCatalog.h"
 
 #include <filesystem>
@@ -29,6 +31,28 @@ namespace SparkleLauncher
 			if (errorCode)
 			{
 				operation.FailureSummary = "Could not clear RHI ray tracing parity artifacts: " + errorCode.message();
+				MarkOperationFinished(operation, OperationStatus::Failed, 1);
+				return operation;
+			}
+		}
+		if (IsRhiPtlasBenchmarkSmokeLaunchOperation(plan.Kind))
+		{
+			std::error_code errorCode;
+			std::filesystem::remove_all(GetRhiSmokePtlasBenchmarkArtifactDirectory(plan), errorCode);
+			if (errorCode)
+			{
+				operation.FailureSummary = "Could not clear PTLAS benchmark artifacts: " + errorCode.message();
+				MarkOperationFinished(operation, OperationStatus::Failed, 1);
+				return operation;
+			}
+		}
+		if (IsRhiPtlasArticleSmokeLaunchOperation(plan.Kind))
+		{
+			std::error_code errorCode;
+			std::filesystem::remove_all(GetRhiSmokePtlasArticleArtifactDirectory(plan), errorCode);
+			if (errorCode)
+			{
+				operation.FailureSummary = "Could not clear PTLAS article artifacts: " + errorCode.message();
 				MarkOperationFinished(operation, OperationStatus::Failed, 1);
 				return operation;
 			}
@@ -64,6 +88,26 @@ namespace SparkleLauncher
 			if (!ValidateRhiSmokeRayTracingParityArtifacts(plan, failureSummary))
 			{
 				operation.FailureSummary = failureSummary.empty() ? "RHI ray tracing parity artifact validation failed." : failureSummary;
+				MarkOperationFinished(operation, OperationStatus::Failed, 1);
+				return operation;
+			}
+		}
+		if (IsRhiPtlasBenchmarkSmokeLaunchOperation(plan.Kind))
+		{
+			std::string failureSummary;
+			if (!ValidateRhiSmokePtlasBenchmarkArtifacts(plan, failureSummary))
+			{
+				operation.FailureSummary = failureSummary.empty() ? "PTLAS benchmark artifact validation failed." : failureSummary;
+				MarkOperationFinished(operation, OperationStatus::Failed, 1);
+				return operation;
+			}
+		}
+		if (IsRhiPtlasArticleSmokeLaunchOperation(plan.Kind))
+		{
+			std::string failureSummary;
+			if (!ValidateRhiSmokePtlasArticleArtifacts(plan, failureSummary))
+			{
+				operation.FailureSummary = failureSummary.empty() ? "PTLAS article artifact validation failed." : failureSummary;
 				MarkOperationFinished(operation, OperationStatus::Failed, 1);
 				return operation;
 			}

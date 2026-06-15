@@ -1999,6 +1999,44 @@ Reference-quality completion stages:
    - What changes: profiling becomes a first-class workflow rather than a one-off manual session.
    - Why it matters: a strong technical article needs the reader to trust the experiment. Clean metadata and repeatable launch cases make the results defensible.
 
+   Implementation status - 2026-06-15:
+
+   - Added a dedicated launcher smoke workflow `project.run.rhi-raytracing-ptlas-benchmark` with its own `RayTracingPtlasBenchmark` category, separate from single-capture smoke and parity smoke.
+   - Kept the implementation in launcher C++ workflow files:
+     - `RhiSmokePtlasBenchmarkTestPlan`
+     - `RhiSmokePtlasBenchmarkArtifactValidation`
+     - shared `RhiSmokeProcessRequestBuilder`
+   - Moved parity and benchmark artifacts to stable validation roots:
+     - `artifacts/validation/rhi-raytracing/parity/...`
+     - `artifacts/validation/rhi-raytracing/ptlas-benchmark/...`
+   - Extended smoke diagnostics/artifacts so every benchmark capture now records graph-ready metadata and timings without scraping logs:
+     - adapter name, driver description, vendor id, device id,
+     - top-level provider plus provider reason,
+     - PTLAS capability reason,
+     - total render instances, traceable instances, static traceable instances, dynamic traceable instances,
+     - partitions per axis, partition count, grid partition count,
+     - dirty transform count plus dirty ratio,
+     - moved partitions, global-partition eligible count, global-partition instance count,
+     - logical update count, native operation count, validation mismatch count,
+     - requested/selected operation writer path and writer reason,
+     - scene prepare/build CPU, BLAS CPU/GPU, classic TLAS CPU/instance-prep/GPU,
+     - PTLAS CPU pack, GPU dirty detection, GPU native pack, PTLAS update GPU,
+     - ray tracing pass GPU and final frame GPU when resolved timing is available.
+   - Added launcher-side benchmark summary generation:
+     - `artifacts/validation/rhi-raytracing/ptlas-benchmark/benchmark-summary.csv`
+     - summary rows include requested backend, requested top-level mode, requested writer path, capture status, and skipped-with-reason fallback rows.
+   - Added benchmark workflow visibility to launcher operation definitions and Test workflow catalog.
+   - Validation run:
+     - `SparkleLauncher` build
+     - `ShowcaseEditor` build
+     - `cmake -P CMake/ArchitectureBoundaryCheck.cmake`
+
+   Stage verdict:
+
+   - **Substantially implemented, but not accepted as fully complete yet.**
+   - The benchmark schema, stable artifact roots, launcher-owned workflow split, and graph-ready summary artifact are in place.
+   - Remaining acceptance gap: the new benchmark launcher workflow still needs a full runtime evidence pass on target hardware so we can confirm deterministic capture behavior, unsupported-case summary rows, and article-ready benchmark output end to end.
+
 9. **Article Visual Storyboard And Capture Pack**
 
    Goal:
@@ -2044,6 +2082,48 @@ Reference-quality completion stages:
 
    - What changes: visual explanation becomes a product feature.
    - Why it matters: reviewers and colleagues usually trust what they can see, reproduce, and correlate with numbers.
+
+   Implementation status - 2026-06-15:
+
+   - Added a dedicated launcher workflow `project.run.rhi-raytracing-ptlas-article` with a separate smoke category for article/storyboard captures.
+   - Kept article-capture orchestration in launcher C++ workflow files:
+     - `RhiSmokePtlasArticleTestPlan`
+     - `RhiSmokePtlasArticleArtifactValidation`
+   - Added capture-purpose metadata plumbing in the application smoke capture path:
+     - `SPARKLE_SMOKE_CAPTURE_PURPOSE`
+     - `SPARKLE_SMOKE_CAPTURE_STORY_LABEL`
+     - these are now written into per-shot JSON metadata so the artifact directory explains itself.
+   - The article workflow now captures the requested deterministic scene in:
+     - `Lit`
+     - `GBufferNormal`
+     - `RayTracingPartitions`
+     - `RayTracingPartitionUpdates`
+     - `RayTracingInstanceMovement`
+     - `RayTracingTopLevelMode`
+     - `RayTracingNativeOperations`
+     - `RayTracingGpuDrivenUpdates`
+     - `RayTracingProviderStatus`
+   - The launcher now writes article-friendly outputs under:
+     - `artifacts/validation/rhi-raytracing/ptlas-article/...`
+   - Added launcher-generated package indices:
+     - `capture-index.md`
+     - `capture-summary.csv`
+   - The generated markdown index includes:
+     - per-case and per-view screenshot links,
+     - per-view explanation purpose,
+     - expected marker names for Nsight/PIX,
+     - suggested capture frame guidance,
+     - notes on how to inspect acceleration structures and correlate markers with CSV rows.
+   - Validation run:
+     - `SparkleLauncher` build
+     - `ShowcaseEditor` build
+     - `cmake -P CMake/ArchitectureBoundaryCheck.cmake`
+
+   Stage verdict:
+
+   - **Implemented in code, but not yet accepted as fully complete.**
+   - The launcher workflow, metadata schema, and capture-index generation are in place.
+   - Remaining acceptance gap: we still need one successful end-to-end runtime execution of `project.run.rhi-raytracing-ptlas-article` to verify that the folder is actually article-ready on a real machine, including PTLAS-active and explicit-classic-fallback capture states.
 
 10. **Performance Claim Gate And Article Acceptance Review**
 

@@ -58,6 +58,8 @@ namespace
 		Environment::TryGetVariable("SPARKLE_SMOKE_SCENE_COLOR_CAPTURE", config.Viewport.SceneColorCapturePath);
 		Environment::TryGetVariable("SPARKLE_SMOKE_METADATA_PATH", config.Viewport.MetadataPath);
 		Environment::TryGetVariable("SPARKLE_SMOKE_TIMING_CSV", config.Viewport.TimingCsvPath);
+		Environment::TryGetVariable("SPARKLE_SMOKE_CAPTURE_PURPOSE", config.Viewport.CapturePurpose);
+		Environment::TryGetVariable("SPARKLE_SMOKE_CAPTURE_STORY_LABEL", config.Viewport.CaptureStoryLabel);
 		std::string viewModeValue;
 		std::string viewModeName;
 		std::string ptlasCapturePreset;
