@@ -42,6 +42,48 @@ namespace ViewportRayTracingDebugOverlayRows
 		std::snprintf(buffer, sizeof(buffer), "%.3f ms", value);
 		DrawMetricRow(label, buffer);
 	}
+
+	const char* GetCurrentViewModeSummary(RenderViewMode viewMode) noexcept
+	{
+		switch (viewMode)
+		{
+			case RenderViewMode::RayTracingPartitions:
+				return "Each mesh is colored by its logical PTLAS partition.";
+			case RenderViewMode::RayTracingPartitionUpdates:
+				return "Yellow marks dirty transforms; orange/magenta mark partition movement.";
+			case RenderViewMode::RayTracingInstanceMovement:
+				return "Cyan marks transform updates; red marks partition crossings.";
+			case RenderViewMode::RayTracingGpuDrivenUpdates:
+				return "Shows whether the requested update writer can use GPU-side paths.";
+			case RenderViewMode::RayTracingTopLevelMode:
+				return "Blue means partitioned TLAS is selected; classic TLAS should not dominate.";
+			case RenderViewMode::RayTracingNativeOperations:
+				return "Bright instances are the operations submitted for PTLAS update.";
+			case RenderViewMode::RayTracingProviderStatus:
+				return "Provider/partition status view for backend support and fallback checks.";
+			case RenderViewMode::Lit:
+			case RenderViewMode::Wireframe:
+			case RenderViewMode::GBufferDiffuse:
+			case RenderViewMode::GBufferNormal:
+			case RenderViewMode::GBufferRoughness:
+			case RenderViewMode::GBufferMetallic:
+			case RenderViewMode::GBufferEmissive:
+			case RenderViewMode::GBufferAmbientOcclusion:
+			case RenderViewMode::GBufferSubsurfaceColor:
+			case RenderViewMode::GBufferSubsurfaceStrength:
+			case RenderViewMode::DirectDiffuse:
+			case RenderViewMode::DirectSpecular:
+			case RenderViewMode::DirectSubsurface:
+			case RenderViewMode::IndirectDiffuse:
+			case RenderViewMode::IndirectSpecular:
+			case RenderViewMode::IndirectSubsurface:
+			case RenderViewMode::InstanceGroups:
+			case RenderViewMode::Count:
+				break;
+		}
+
+		return "";
+	}
 }
 
 void ViewportRayTracingDebugOverlay::Draw(
@@ -65,6 +107,12 @@ void ViewportRayTracingDebugOverlay::Draw(
 
 	ImGui::TextUnformatted("Ray Tracing PTLAS");
 	ImGui::Separator();
+	const RenderViewMode currentViewMode = CVarRenderViewMode.Get();
+	ImGui::TextWrapped("%s", ViewportRayTracingDebugOverlayRows::GetCurrentViewModeSummary(currentViewMode));
+	const bool hasLiveUpdates =
+	    rayTracing.PtlasPlanner.DirtyTransformCount > 0 || rayTracing.PtlasPlanner.MovedPartitionCount > 0 ||
+	    rayTracing.PtlasGpuUpdates.LogicalUpdateCount > 0 || rayTracing.PtlasGpuUpdates.NativeOperationCount > 0;
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Demo workload", hasLiveUpdates ? "live transform updates" : "static scene / waiting");
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
 	    "Top level",
 	    RhiRayTracingTopLevelProviderToString(rayTracing.Capability.TopLevelProvider));

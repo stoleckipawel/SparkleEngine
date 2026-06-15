@@ -43,6 +43,7 @@ cbuffer PerObjectVSConstantBufferData
 struct MeshInstanceData
 {
 	row_major float4x4 WorldMTX;
+	row_major float4x4 PreviousWorldMTX;
 	row_major float3x4 WorldInvTransposeMTX;
 	uint MaterialSlot;
 	uint Flags;

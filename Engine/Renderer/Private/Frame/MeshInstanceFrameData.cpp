@@ -58,6 +58,7 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(
 		instances.push_back(
 		    MeshInstanceData{
 		        .WorldMTX = draw.Transform.WorldMatrix,
+		        .PreviousWorldMTX = draw.Transform.PreviousWorldMatrix,
 		        .WorldInvTransposeMTX = draw.Transform.WorldInvTranspose,
 		        .MaterialSlot = draw.Material.Slot,
 		        .Flags = draw.Geometry.MeshKind == RenderMeshKind::Skeletal && draw.Skinning.JointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset

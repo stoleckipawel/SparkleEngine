@@ -88,15 +88,18 @@ void RenderSceneDataBuilder::BuildMaterials(const RenderSceneSnapshot& sceneSnap
 	m_materialCache->BuildMaterials(sceneSnapshot.materials, sceneData);
 }
 
-void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const
+void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData)
 {
 	if (!sceneSnapshot.meshes.HasMeshes() || m_gpuMeshCache == nullptr)
 	{
+		m_previousMeshWorldMatrices.clear();
 		return;
 	}
 
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(sceneSnapshot.meshes.meshInstances.size());
+	std::vector<DirectX::XMFLOAT4X4> currentMeshWorldMatrices;
+	currentMeshWorldMatrices.reserve(sceneSnapshot.meshes.meshInstances.size());
 
 	std::unordered_map<Assets::CookedAssetId, std::uint32_t> jointMatrixOffsets;
 	for (const SceneAnimationPoseSnapshot& pose : sceneSnapshot.animations.poses)
@@ -115,6 +118,7 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 	     ++sourceInstanceIndex)
 	{
 		const MeshInstanceSnapshot& meshInstance = sceneSnapshot.meshes.meshInstances[sourceInstanceIndex];
+		currentMeshWorldMatrices.push_back(meshInstance.worldMatrix);
 		const Mesh* mesh = meshInstance.mesh;
 		if (mesh == nullptr)
 		{
@@ -129,6 +133,8 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 
 		MeshDraw draw = {};
 		draw.Transform.WorldMatrix = meshInstance.worldMatrix;
+		draw.Transform.PreviousWorldMatrix =
+		    sourceInstanceIndex < m_previousMeshWorldMatrices.size() ? m_previousMeshWorldMatrices[sourceInstanceIndex] : meshInstance.worldMatrix;
 		draw.Transform.WorldInvTranspose = meshInstance.worldInvTranspose;
 		draw.Material.Slot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
 		draw.Source.SourceInstanceIndex = sourceInstanceIndex;
@@ -163,6 +169,7 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 	        .collectDiagnostics = true});
 	sceneData.meshInstances = std::move(batchBuildResult.batchInstances);
 	sceneData.meshInstanceBatches = std::move(batchBuildResult.batches);
+	m_previousMeshWorldMatrices = std::move(currentMeshWorldMatrices);
 	sceneData.meshWorkload = {};
 	sceneData.meshWorkload.jointMatrixCount = static_cast<std::uint32_t>(sceneData.jointMatrices.size());
 	CountMeshInstanceWorkload(sceneData.meshInstances, sceneData.meshWorkload);

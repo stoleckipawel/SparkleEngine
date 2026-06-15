@@ -2,6 +2,9 @@
 
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 
+#include <DirectXMath.h>
+#include <vector>
+
 class GPUMeshCache;
 class MaterialCacheManager;
 struct RenderSceneData;
@@ -21,8 +24,9 @@ class RenderSceneDataBuilder final
 
  private:
 	void BuildMaterials(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const;
-	void BuildMeshInstanceBatches(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const;
+	void BuildMeshInstanceBatches(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData);
 
 	MaterialCacheManager* m_materialCache = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
+	std::vector<DirectX::XMFLOAT4X4> m_previousMeshWorldMatrices;
 };

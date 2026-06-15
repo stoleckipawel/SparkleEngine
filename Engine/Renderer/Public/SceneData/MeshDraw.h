@@ -20,6 +20,7 @@ enum class MeshInstanceBatchSource : std::uint32_t
 struct SPARKLE_RENDERER_API MeshDrawTransform final
 {
 	DirectX::XMFLOAT4X4 WorldMatrix = {};
+	DirectX::XMFLOAT4X4 PreviousWorldMatrix = {};
 	DirectX::XMFLOAT3X4 WorldInvTranspose = {};
 };
 
