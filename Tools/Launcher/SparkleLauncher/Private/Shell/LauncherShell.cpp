@@ -894,6 +894,8 @@ namespace SparkleLauncher
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level Sponza --smoke-test --smoke-backend d3d12 --smoke-view-mode 3 --smoke-capture logs/smoke/scene-color.bmp --dry-run project.run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --dry-run project.run.rhi-raytracing-parity\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --run project.run.rhi-raytracing-parity\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --run project.run.rhi-raytracing-ptlas-benchmark\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --run project.run.rhi-raytracing-ptlas-article\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n";
