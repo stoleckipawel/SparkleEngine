@@ -6,6 +6,8 @@ Primary reference implementation: [NVIDIA nvpro-samples/vk_partitioned_tlas](htt
 
 Stage 1 evidence baseline: [Partitioned TLAS Baseline Evidence](../architecture/partitioned-tlas-baseline.md)
 
+Reference demo package: [Partitioned TLAS Reference Demo Package](../architecture/partitioned-tlas-reference-demo.md)
+
 Primary API references:
 
 - Vulkan SDK / Khronos extension: `VK_NV_partitioned_acceleration_structure`
@@ -1823,31 +1825,39 @@ Reference-quality completion stages:
 
    Implementation status - 2026-06-15:
 
-   - `GpuLogicalDirtyCpuNativePack` is now a selectable durable transition writer path when the active PTLAS provider supports CPU native operation packing.
-   - `RayTracingPartitionedTlasStrategy` no longer rejects the transition writer path. It builds the active PTLAS through the same native CPU operation pack while preserving the requested/selected writer metadata.
-   - Logical update intent is now published into an RHI-owned `RayTracingPartitionedTlasLogicalUpdates` buffer from the renderer-owned partition planner stream.
+   - The operation-writer policy now distinguishes provider/API GPU-driven capability from Sparkle's implemented GPU writer availability.
+   - `GpuLogicalDirtyCpuNativePack` now requires a real GPU logical update writer before it can be selected. Until then, it falls back to `CpuPack` with `ptlas-gpu-logical-dirty-writer-not-implemented`.
+   - `FullGpuNativePack` now requires both GPU logical update record writes and backend-native GPU operation packing before it can be selected. Until then, it falls back to `CpuPack` with `ptlas-full-gpu-native-pack-backend-pack-shader-not-implemented`.
+   - Logical update intent remains available as renderer-owned planner data and CPU reference input, but it is not claimed as a GPU-written logical stream.
    - PTLAS build metrics now report logical update count from the planner stream rather than pretending that the full native operation write count is the dirty-update count.
    - Active provider reasons distinguish:
      - Vulkan/D3D12 PTLAS CPU pack.
-     - Vulkan/D3D12 PTLAS logical-update stream plus CPU-native pack.
+     - Requested GPU logical dirty writer fallback.
      - Full GPU-native pack fallback because backend-private native pack shaders are not implemented yet.
-   - `FullGpuNativePack` remains deliberately unaccepted. The RHI services still expose the command hook, but Vulkan and D3D12 backend services return false from native GPU operation packing until provider-private compute pack shaders exist.
+   - Smoke metadata now separates:
+     - `gpuDrivenOperationApiSupported`.
+     - `gpuLogicalUpdateWriterAvailable`.
+     - `gpuNativePackAvailable`.
+     - `gpuNativePackSubmitted`.
+   - Launcher parity validation now checks requested writer path, selected writer path, and writer reason, so unsupported GPU writer requests must prove explicit fallback instead of passing silently.
+   - GPU writer paths remain deliberately unaccepted. The RHI services still expose the command hook, but Vulkan and D3D12 backend services return false from native GPU operation packing until provider-private compute pack shaders exist.
    - Validation run:
      - `git diff --check`.
      - `cmake -P CMake/ArchitectureBoundaryCheck.cmake`.
      - `cmake --build build-vs2026 --config DevelopmentEditor --target ShowcaseEditor -- /nologo /v:minimal /m:1`.
      - `cmake --build build-vs2026 --config DevelopmentEditor --target SparkleLauncher -- /nologo /v:minimal /m:1`.
      - `cmake --build build-nvapi-check --config DevelopmentEditor --target ShowcaseEditor -- /nologo /v:minimal /m:1`.
-     - Focused D3D12 NVAPI smoke capture with `r.RayTracing.PreferPartitionedTlas=true` and `r.RayTracing.Ptlas.OperationWriterPath=2`.
+     - Focused D3D12 NVAPI smoke capture with `r.RayTracing.PreferPartitionedTlas=true` and `r.RayTracing.Ptlas.OperationWriterPath=2` before the stricter writer-availability split.
    - Focused D3D12 NVAPI evidence:
      - Artifact: `artifacts/dev/launcher-state/Logs/manual-stage5-d3d12-gpu-logical.json`.
      - `topLevelProvider=PartitionedTlas`.
      - `ptlasProvider=D3D12NvapiPartitionedTlas`.
      - `requestedOperationWriterPath=GpuLogicalDirtyCpuNativePack`.
-     - `operationWriterPath=GpuLogicalDirtyCpuNativePack`.
-     - `operationWriterReason=ptlas-gpu-logical-dirty-cpu-native-pack-selected`.
+     - Previous transient result: `operationWriterPath=GpuLogicalDirtyCpuNativePack`.
+     - Current expected strict result after the writer-availability split: `operationWriterPath=CpuPack`.
+     - Current expected strict reason: `ptlas-gpu-logical-dirty-writer-not-implemented`.
      - `frameGraphUnresolvedBarrierWarnings=0`.
-   - Stage verdict: **stronger partial / still not accepted**. The policy, metadata, logical update stream, and active PTLAS execution path are now coherent enough for profiling CPU-pack and transition behavior. Final acceptance still requires a real backend-private GPU dirty/native-pack implementation that consumes GPU-written operation counts without CPU readback and parity artifacts for that path.
+   - Stage verdict: **honest partial / still not accepted**. CPU-pack PTLAS and fallback metadata are coherent. Final acceptance still requires a real backend-private GPU logical writer/native-pack implementation that consumes GPU-written operation counts without CPU readback and parity artifacts for that path.
 
 6. **Negative Validation And Failure-Mode Artifacts**
 
@@ -1906,6 +1916,12 @@ Reference-quality completion stages:
    - A colleague can run one launcher workflow and inspect all required artifacts.
    - A reviewer can understand the design before reading backend files.
    - Every performance/correctness claim points to a capture, metric, or documented limitation.
+
+   Implementation status - 2026-06-15:
+
+   - Added the reference/demo package: [Partitioned TLAS Reference Demo Package](../architecture/partitioned-tlas-reference-demo.md).
+   - The package documents provider selection, strategy selection, frame graph resources, classic-vs-PTLAS build, CPU-pack-vs-GPU-pack policy, launcher parity flow, PTLAS viewmode capture index, known unsupported configurations, and evidence/claim rules.
+   - Stage verdict: **documentation package created / runtime evidence still required**. The package is reviewable and runnable from existing launcher workflow instructions, but final acceptance still depends on current artifacts being regenerated after implementation changes.
 
    Tutor note:
 
