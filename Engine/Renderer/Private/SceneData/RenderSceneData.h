@@ -20,6 +20,7 @@ struct SPARKLE_RENDERER_API RenderSceneData
 	std::vector<MeshDraw> meshInstances;
 	std::vector<MeshInstanceBatch> meshInstanceBatches;
 	std::vector<DirectX::XMFLOAT4X4> jointMatrices;
+	std::vector<DirectX::XMFLOAT4X4> previousJointMatrices;
 	RenderMeshWorkloadSummary meshWorkload;
 	std::vector<MaterialData> materials;
 };

@@ -10,9 +10,11 @@ void main(in VS::Input Input, out VS::Output Output)
 	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
 
 	const SkinnedVertexAttributes localVertex = ApplySkinning(meshInstance, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
+	const SkinnedVertexAttributes previousLocalVertex =
+	    ApplyPreviousSkinning(meshInstance, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
 
 	const float4 positionWorld = mul(float4(localVertex.Position, 1.0f), worldMatrix);
-	const float4 previousPositionWorld = mul(float4(localVertex.Position, 1.0f), previousWorldMatrix);
+	const float4 previousPositionWorld = mul(float4(previousLocalVertex.Position, 1.0f), previousWorldMatrix);
 	const float3 normalWorld = normalize(mul(localVertex.Normal, worldInvTransposeMatrix));
 	const float4 tangentWorld = float4(mul(localVertex.Tangent, (float3x3) worldMatrix), Input.Tangent.w);
 

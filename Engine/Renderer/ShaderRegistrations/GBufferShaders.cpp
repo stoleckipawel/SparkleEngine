@@ -15,6 +15,7 @@ class GBufferVS final : public TGlobalShader<GBufferVS>
 	SHADER_PARAMETER_RDG_BUFFER_SRV(MeshInstanceData, MeshInstances)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(VertexSkinInfluenceData, SkinInfluences)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(JointMatrixData, JointMatrices)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(JointMatrixData, PreviousJointMatrices)
 	END_SHADER_PARAMETER_STRUCT()
 };
 

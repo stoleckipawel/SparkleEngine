@@ -143,6 +143,7 @@ namespace
 		overrides.SetDescriptorTable("MeshInstances", frame.meshInstances.GetShaderResourceView());
 		overrides.SetDescriptorTable("SkinInfluences", gpuMesh->GetSkinInfluencesShaderResourceView());
 		overrides.SetDescriptorTable("JointMatrices", frame.skinning.GetShaderResourceView());
+		overrides.SetDescriptorTable("PreviousJointMatrices", frame.skinning.GetPreviousShaderResourceView());
 		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    resources,
 		    cmd,

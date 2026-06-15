@@ -74,6 +74,7 @@ cbuffer MeshInstanceDrawConstantBufferData
 StructuredBuffer<MeshInstanceData> MeshInstances;
 StructuredBuffer<VertexSkinInfluenceData> SkinInfluences;
 StructuredBuffer<JointMatrixData> JointMatrices;
+StructuredBuffer<JointMatrixData> PreviousJointMatrices;
 
 cbuffer PerObjectPSConstantBufferData
 {

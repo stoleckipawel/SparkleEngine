@@ -61,6 +61,7 @@ struct GBufferDrawParameters
 	ShaderBuffer<MeshInstanceData> MeshInstances;
 	ShaderBuffer<VertexSkinInfluenceData> SkinInfluences;
 	ShaderBuffer<JointMatrixData> JointMatrices;
+	ShaderBuffer<JointMatrixData> PreviousJointMatrices;
 	ShaderUniform<PerObjectPSConstantBufferData> PerObjectPS;
 	ShaderTexture2DSRV TextureBaseColor;
 	ShaderTexture2DSRV TextureNormal;
@@ -77,6 +78,7 @@ struct GBufferDrawParameters
 		builder.ReadBuffer("MeshInstances", &GBufferDrawParameters::MeshInstances, ShaderStageVisibility::Vertex);
 		builder.ReadBuffer("SkinInfluences", &GBufferDrawParameters::SkinInfluences, ShaderStageVisibility::Vertex);
 		builder.ReadBuffer("JointMatrices", &GBufferDrawParameters::JointMatrices, ShaderStageVisibility::Vertex);
+		builder.ReadBuffer("PreviousJointMatrices", &GBufferDrawParameters::PreviousJointMatrices, ShaderStageVisibility::Vertex);
 		builder.Uniform("PerObjectPS", &GBufferDrawParameters::PerObjectPS, ShaderStageVisibility::Pixel);
 		builder.ReadTexture("TextureBaseColor", &GBufferDrawParameters::TextureBaseColor, ShaderStageVisibility::Pixel);
 		builder.ReadTexture("TextureNormal", &GBufferDrawParameters::TextureNormal, ShaderStageVisibility::Pixel);

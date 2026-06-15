@@ -20,6 +20,7 @@ class SkinningFrameData final
 
 	bool IsValid() const noexcept { return static_cast<bool>(m_shaderResourceView); }
 	RhiGpuDescriptorHandle GetShaderResourceView() const noexcept { return m_shaderResourceView; }
+	RhiGpuDescriptorHandle GetPreviousShaderResourceView() const noexcept { return m_previousShaderResourceView; }
 
 	static SkinningFrameData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
@@ -28,6 +29,9 @@ class SkinningFrameData final
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	RhiOwnedResourceHandle m_buffer = {};
+	RhiOwnedResourceHandle m_previousBuffer = {};
 	RhiResourceViewHandle m_view = {};
+	RhiResourceViewHandle m_previousView = {};
 	RhiGpuDescriptorHandle m_shaderResourceView = {};
+	RhiGpuDescriptorHandle m_previousShaderResourceView = {};
 };

@@ -29,4 +29,5 @@ class RenderSceneDataBuilder final
 	MaterialCacheManager* m_materialCache = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
 	std::vector<DirectX::XMFLOAT4X4> m_previousMeshWorldMatrices;
+	std::vector<DirectX::XMFLOAT4X4> m_previousJointMatrices;
 };

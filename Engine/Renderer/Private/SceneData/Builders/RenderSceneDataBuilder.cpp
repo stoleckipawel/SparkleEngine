@@ -93,6 +93,7 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 	if (!sceneSnapshot.meshes.HasMeshes() || m_gpuMeshCache == nullptr)
 	{
 		m_previousMeshWorldMatrices.clear();
+		m_previousJointMatrices.clear();
 		return;
 	}
 
@@ -113,6 +114,8 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		jointMatrixOffsets.emplace(pose.skeletonAssetId, offset);
 		sceneData.jointMatrices.insert(sceneData.jointMatrices.end(), pose.skinningMatrices.begin(), pose.skinningMatrices.end());
 	}
+	sceneData.previousJointMatrices =
+	    m_previousJointMatrices.size() == sceneData.jointMatrices.size() ? m_previousJointMatrices : sceneData.jointMatrices;
 
 	for (std::uint32_t sourceInstanceIndex = 0; sourceInstanceIndex < static_cast<std::uint32_t>(sceneSnapshot.meshes.meshInstances.size());
 	     ++sourceInstanceIndex)
@@ -170,6 +173,7 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 	sceneData.meshInstances = std::move(batchBuildResult.batchInstances);
 	sceneData.meshInstanceBatches = std::move(batchBuildResult.batches);
 	m_previousMeshWorldMatrices = std::move(currentMeshWorldMatrices);
+	m_previousJointMatrices = sceneData.jointMatrices;
 	sceneData.meshWorkload = {};
 	sceneData.meshWorkload.jointMatrixCount = static_cast<std::uint32_t>(sceneData.jointMatrices.size());
 	CountMeshInstanceWorkload(sceneData.meshInstances, sceneData.meshWorkload);
