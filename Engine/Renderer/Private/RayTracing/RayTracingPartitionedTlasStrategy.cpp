@@ -155,13 +155,9 @@ namespace RayTracingPartitionedTlasStrategyDetails
 		}
 	}
 
-	RayTracingSceneTlasShaderAccessMode ResolveVulkanFallbackShaderAccessMode(
-	    const RayTracingCapabilityReport& capabilityReport) noexcept
+	constexpr RayTracingSceneTlasShaderAccessMode ClassicFallbackShaderAccessMode() noexcept
 	{
-		return capabilityReport.BackendApi == ERhiBackendApi::Vulkan &&
-		               capabilityReport.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath
-		           ? RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress
-		           : RayTracingSceneTlasShaderAccessMode::Descriptor;
+		return RayTracingSceneTlasShaderAccessMode::Descriptor;
 	}
 }
 
@@ -182,7 +178,7 @@ RayTracingPartitionedTlasStrategy::RayTracingPartitionedTlasStrategy(
     m_capabilityReport(capabilityReport),
     m_classicFallbackStrategy(
         renderHardwareInterface,
-        RayTracingPartitionedTlasStrategyDetails::ResolveVulkanFallbackShaderAccessMode(capabilityReport))
+        RayTracingPartitionedTlasStrategyDetails::ClassicFallbackShaderAccessMode())
 {
 }
 
