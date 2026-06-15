@@ -31,4 +31,5 @@ void main(in VS::Input Input, out VS::Output Output)
 	Output.InstanceId = instanceId;
 	Output.ClipPosition = positionClip;
 	Output.PrevClipPosition = previousClipPosition;
+	Output.PackedDebugData = meshInstance.PackedDebugData;
 }

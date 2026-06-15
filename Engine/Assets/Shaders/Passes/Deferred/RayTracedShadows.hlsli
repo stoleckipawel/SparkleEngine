@@ -5,7 +5,7 @@
 #include "Passes/Deferred/RayTracedShadowSampling.hlsli"
 #include "Passes/Deferred/RayTracedShadowSignals.hlsli"
 
-#ifndef SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS
+#if !defined(SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS) || !defined(__spirv__)
 RaytracingAccelerationStructure SceneTlas;
 #endif
 

@@ -14,6 +14,7 @@ namespace PS
 		nointerpolation uint InstanceId : TEXCOORD5;
 		float4 ClipPosition : TEXCOORD6;
 		float4 PrevClipPosition : TEXCOORD7;
+		nointerpolation uint PackedDebugData : TEXCOORD8;
 		bool IsFrontFace : SV_IsFrontFace;
 	};
 

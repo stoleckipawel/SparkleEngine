@@ -24,7 +24,7 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	    Input.InstanceId);
 	MatProps.BaseColor = RayTracingPtlasDebugVisualization::ApplyDebugVisualization(
 	    MatProps.BaseColor,
-	    MeshInstances[Input.InstanceId].PackedDebugData);
+	    Input.PackedDebugData);
 
 	const float outputAlpha = (MatProps.AlphaMode == Material::AlphaModeBlend) ? MatProps.Alpha : 1.0f;
 	Output.BaseColor = float4(MatProps.BaseColor, outputAlpha);
