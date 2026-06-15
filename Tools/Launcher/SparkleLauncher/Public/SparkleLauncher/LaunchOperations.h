@@ -44,6 +44,7 @@ namespace SparkleLauncher
 		std::string VSync;
 		std::string PreferHighPerformanceAdapter;
 		std::string MeshAutoBatching;
+		std::string PreferPartitionedTlas = "true";
 		std::vector<std::string> CustomArguments;
 		std::vector<std::string> CustomCVars;
 		std::string SmokeBackend;

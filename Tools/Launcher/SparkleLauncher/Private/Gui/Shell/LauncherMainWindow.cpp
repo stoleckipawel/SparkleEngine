@@ -139,6 +139,18 @@ namespace SparkleLauncher
 		return "This workflow is currently blocked.";
 	}
 
+	static bool ReadinessContains(const std::vector<std::string>& readinessMessages, const QString& phrase)
+	{
+		for (const std::string& message : readinessMessages)
+		{
+			if (QString::fromStdString(message).contains(phrase, Qt::CaseInsensitive))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	LauncherMainWindow::LauncherMainWindow(
 	    std::filesystem::path repositoryRoot,
 	    LauncherProjectModel& projectModel,
@@ -481,7 +493,11 @@ namespace SparkleLauncher
 			const BuildWorkspaceOperationRequest request = BuildWorkspacePlanRequest(m_repositoryRoot, m_projectModel, m_settings);
 			const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(m_selectedOperationId.toStdString(), request);
 			const QString reason = plan.CanRun ? "Run " + DisplayNameForOperation(m_selectedOperationId) + ". Existing runs keep going." : FirstBlockingReadinessMessage(plan);
-			m_runButton->setEnabled(plan.CanRun);
+			const bool canRetryWorkspacePrerequisite =
+			    !plan.CanRun && plan.Toolchain.RequiredToolsAvailable &&
+			    (ReadinessContains(plan.ReadinessMessages, "Generated build files are not current") ||
+			     ReadinessContains(plan.ReadinessMessages, "Run Generate Build Files first") || ReadinessContains(plan.ReadinessMessages, "not current"));
+			m_runButton->setEnabled(plan.CanRun || canRetryWorkspacePrerequisite);
 			m_runButton->setToolTip(reason);
 			m_runButton->setAccessibleDescription(reason);
 			return;

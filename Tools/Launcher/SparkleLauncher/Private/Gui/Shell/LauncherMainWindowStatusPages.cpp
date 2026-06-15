@@ -332,6 +332,7 @@ namespace SparkleLauncher
 		launchRequest.VSync = request.LaunchVSync.toStdString();
 		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
 		launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
+		launchRequest.PreferPartitionedTlas = request.LaunchPreferPartitionedTlas.toStdString();
 		for (const QString& argument : QProcess::splitCommand(request.LaunchCommandLineArguments))
 		{
 			if (!argument.isEmpty())
@@ -478,6 +479,13 @@ namespace SparkleLauncher
 		        {{"High performance", ""}, {"System default", "false"}},
 		        m_settings.LaunchHighPerformanceAdapter(),
 		        &LauncherSettings::SetLaunchHighPerformanceAdapter));
+		AddOptionField(
+		    *appOptionsLayout,
+		    "Ray tracing TLAS",
+		    CreateValueCombo(
+		        {{"Partitioned TLAS", "true"}, {"Classic TLAS", "false"}},
+		        m_settings.LaunchPreferPartitionedTlas(),
+		        &LauncherSettings::SetLaunchPreferPartitionedTlas));
 		AddOptionField(
 		    *appOptionsLayout,
 		    "Arguments",

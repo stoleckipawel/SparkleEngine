@@ -55,6 +55,11 @@ namespace SparkleLauncher
 			request.Arguments.push_back("--cvar");
 			request.Arguments.push_back("r.MeshAutoBatching=" + plan.Request.MeshAutoBatching);
 		}
+		if (!plan.Request.PreferPartitionedTlas.empty())
+		{
+			request.Arguments.push_back("--cvar");
+			request.Arguments.push_back("r.RayTracing.PreferPartitionedTlas=" + plan.Request.PreferPartitionedTlas);
+		}
 		for (const std::string& customArgument : plan.Request.CustomArguments)
 		{
 			if (!customArgument.empty())

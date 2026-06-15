@@ -57,6 +57,7 @@ namespace SparkleLauncher
 		QString LaunchVSync;
 		QString LaunchHighPerformanceAdapter;
 		QString LaunchMeshAutoBatching;
+		QString LaunchPreferPartitionedTlas = "true";
 		QString LaunchCommandLineArguments;
 		QString LaunchCVars;
 		QString SmokeBackend;
