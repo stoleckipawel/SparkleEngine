@@ -112,6 +112,7 @@ namespace SparkleLauncher
 		request.LaunchHighPerformanceAdapter = settings.LaunchHighPerformanceAdapter();
 		request.LaunchMeshAutoBatching = settings.LaunchMeshAutoBatching();
 		request.LaunchPreferPartitionedTlas = settings.LaunchPreferPartitionedTlas();
+		request.LaunchPtlasOperationWriterPath = settings.LaunchPtlasOperationWriterPath();
 		request.LaunchCommandLineArguments = settings.LaunchCommandLineArguments();
 		request.LaunchCVars = settings.LaunchCVars();
 		request.SmokeBackend = settings.SmokeBackend();

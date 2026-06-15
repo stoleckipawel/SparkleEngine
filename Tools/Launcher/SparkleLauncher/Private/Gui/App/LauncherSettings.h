@@ -30,6 +30,7 @@ namespace SparkleLauncher
 		const QString& LaunchHighPerformanceAdapter() const;
 		const QString& LaunchMeshAutoBatching() const;
 		const QString& LaunchPreferPartitionedTlas() const;
+		const QString& LaunchPtlasOperationWriterPath() const;
 		const QString& LaunchCommandLineArguments() const;
 		const QString& LaunchCVars() const;
 		const QString& SmokeBackend() const;
@@ -78,6 +79,7 @@ namespace SparkleLauncher
 		void SetLaunchHighPerformanceAdapter(const QString& value);
 		void SetLaunchMeshAutoBatching(const QString& value);
 		void SetLaunchPreferPartitionedTlas(const QString& value);
+		void SetLaunchPtlasOperationWriterPath(const QString& value);
 		void SetLaunchCommandLineArguments(const QString& arguments);
 		void SetLaunchCVars(const QString& cvars);
 		void SetSmokeBackend(const QString& backend);
@@ -117,6 +119,7 @@ namespace SparkleLauncher
 		QString m_launchHighPerformanceAdapter;
 		QString m_launchMeshAutoBatching;
 		QString m_launchPreferPartitionedTlas = "true";
+		QString m_launchPtlasOperationWriterPath = "1";
 		QString m_launchCommandLineArguments;
 		QString m_launchCVars;
 		QString m_smokeBackend;
