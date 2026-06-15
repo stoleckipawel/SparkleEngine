@@ -4,6 +4,7 @@
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 
 class Timer;
@@ -29,6 +30,7 @@ enum class RuntimeApplicationFrameResult : std::uint8_t
 struct RuntimeApplicationOptions final
 {
 	bool EnableRuntimeConsole = true;
+	std::function<void(GameScene&, float)> SceneUpdateCallback;
 };
 
 class SPARKLE_APPLICATION_API RuntimeApplication final : public Application

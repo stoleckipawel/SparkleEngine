@@ -1,6 +1,16 @@
 #include "EditorApplicationLaunch.h"
+#include "ShowcaseSceneBehavior.h"
 
 int main()
 {
-	return RunEditorApplication();
+	ShowcaseSceneBehavior sceneBehavior;
+	return RunEditorApplication(
+	    EditorApplicationOptions{
+	        .RuntimeOptions =
+	            RuntimeApplicationOptions{
+	                .SceneUpdateCallback =
+	                    [&sceneBehavior](GameScene& scene, float deltaSeconds)
+	                    {
+		                    sceneBehavior.Update(scene, deltaSeconds);
+	                    }}});
 }

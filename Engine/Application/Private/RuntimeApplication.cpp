@@ -140,7 +140,12 @@ void RuntimeApplication::UpdateRuntime() noexcept
 	SPARKLE_CPU_SCOPE("Application.RuntimeUpdate");
 	if (m_gameScene && m_timer)
 	{
-		m_gameScene->Update(static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds)));
+		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
+		m_gameScene->Update(deltaSeconds);
+		if (m_options.SceneUpdateCallback)
+		{
+			m_options.SceneUpdateCallback(*m_gameScene, deltaSeconds);
+		}
 	}
 	if (m_gameCameraController)
 	{

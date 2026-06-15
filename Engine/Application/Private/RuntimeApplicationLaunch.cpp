@@ -9,6 +9,11 @@
 
 int RunRuntimeApplication()
 {
+	return RunRuntimeApplication(RuntimeApplicationOptions{});
+}
+
+int RunRuntimeApplication(RuntimeApplicationOptions options)
+{
 	Application::ConfigureProcessFromCommandLine();
 
 	if (RhiSmokeValidation::IsRequested())
@@ -16,7 +21,7 @@ int RunRuntimeApplication()
 		return RhiSmokeValidation::RunProject();
 	}
 
-	RuntimeApplication app;
+	RuntimeApplication app(std::move(options));
 	app.Run();
 	return 0;
 }

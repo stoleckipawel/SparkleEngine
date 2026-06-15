@@ -16,7 +16,6 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <vector>
 
 class LevelAsset;
 struct SceneAssetPayload;
@@ -56,6 +55,7 @@ class SPARKLE_ENGINE_API GameScene final
 	void Update(float deltaSeconds);
 	bool AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload);
 	GameSceneSnapshot CaptureSnapshot() const;
+	std::string_view GetActiveLevelName() const noexcept { return m_activeLevelName; }
 
 	void Clear();
 
@@ -73,15 +73,6 @@ class SPARKLE_ENGINE_API GameScene final
 	const SceneAnimations& GetAnimations() const noexcept { return m_animations; }
 
   private:
-	struct PtlasShowcaseAnimatedMesh final
-	{
-		std::size_t MeshIndex = 0;
-		Transform BaseTransform;
-	};
-
-	void CapturePtlasShowcaseBaseTransforms() noexcept;
-	void UpdatePtlasShowcaseMotion(float deltaSeconds) noexcept;
-
 	SceneCameras m_cameras;
 	SceneAnimations m_animations;
 	SceneLighting m_lighting;
@@ -91,7 +82,4 @@ class SPARKLE_ENGINE_API GameScene final
 	SceneSkeletons m_skeletons;
 	SceneTextures m_textures;
 	std::string m_activeLevelName;
-	float m_ptlasShowcaseTimeSeconds = 0.0f;
-	bool m_ptlasShowcaseMotionEnabled = false;
-	std::vector<PtlasShowcaseAnimatedMesh> m_ptlasShowcaseAnimatedMeshes;
 };

@@ -13,6 +13,8 @@
 
 EditorApplication::EditorApplication() = default;
 
+EditorApplication::EditorApplication(EditorApplicationOptions options) noexcept : m_options(std::move(options)) {}
+
 EditorApplication::~EditorApplication() = default;
 
 void EditorApplication::Initialize()
@@ -25,7 +27,9 @@ void EditorApplication::Initialize()
 
 	if (!m_runtimeApplication)
 	{
-		m_runtimeApplication = std::make_unique<RuntimeApplication>(RuntimeApplicationOptions{.EnableRuntimeConsole = false});
+		RuntimeApplicationOptions runtimeOptions = m_options.RuntimeOptions;
+		runtimeOptions.EnableRuntimeConsole = false;
+		m_runtimeApplication = std::make_unique<RuntimeApplication>(std::move(runtimeOptions));
 	}
 
 	if (!m_shaderRecookCoordinator)

@@ -8,6 +8,11 @@
 
 int RunEditorApplication()
 {
+	return RunEditorApplication(EditorApplicationOptions{});
+}
+
+int RunEditorApplication(EditorApplicationOptions options)
+{
 	Application::ConfigureProcessFromCommandLine();
 
 	if (RhiSmokeValidation::IsRequested())
@@ -15,7 +20,7 @@ int RunEditorApplication()
 		return RhiSmokeValidation::RunEditor();
 	}
 
-	EditorApplication app;
+	EditorApplication app(std::move(options));
 	app.Run();
 	return 0;
 }

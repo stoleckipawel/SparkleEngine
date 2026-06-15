@@ -3,6 +3,7 @@
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 
 #include <DirectXMath.h>
+#include <unordered_map>
 #include <vector>
 
 class GPUMeshCache;
@@ -29,5 +30,5 @@ class RenderSceneDataBuilder final
 	MaterialCacheManager* m_materialCache = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
 	std::vector<DirectX::XMFLOAT4X4> m_previousMeshWorldMatrices;
-	std::vector<DirectX::XMFLOAT4X4> m_previousJointMatrices;
+	std::unordered_map<Assets::CookedAssetId, std::vector<DirectX::XMFLOAT4X4>> m_previousSkinningMatricesBySkeletonAsset;
 };

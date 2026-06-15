@@ -4,10 +4,12 @@
 # project boundary instead of hiding it behind a single mixed executable.
 add_executable(ShowcaseEditor
     Src/EditorMain.cpp
+    Src/ShowcaseSceneBehavior.cpp
 )
 
 add_executable(ShowcaseRuntime
     Src/RuntimeMain.cpp
+    Src/ShowcaseSceneBehavior.cpp
 )
 
 target_compile_features(ShowcaseEditor PRIVATE cxx_std_20)
@@ -15,10 +17,12 @@ target_compile_features(ShowcaseRuntime PRIVATE cxx_std_20)
 
 target_link_libraries(ShowcaseEditor PRIVATE
     SparkleApplicationEditor
+    SparkleGameFramework
 )
 
 target_link_libraries(ShowcaseRuntime PRIVATE
     SparkleApplication
+    SparkleGameFramework
 )
 
 sparkle_configure_project_artifacts(ShowcaseEditor Showcase editor)
