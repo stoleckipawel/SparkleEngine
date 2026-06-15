@@ -13,8 +13,7 @@
 static const auto g_d3d12NvapiRayTracingLogger = Logging::GetOrCreateLogger("RHI.D3D12.NVAPI.RayTracing");
 
 #if SPARKLE_RHI_WITH_D3D12_NVAPI
-	#if defined(NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS) && \
-	    defined(NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_VER) && \
+	#if defined(NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_VER) && \
 	    defined(NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_VER)
 		#define SPARKLE_RHI_D3D12_NVAPI_HAS_PARTITIONED_TLAS 1
 	#else
@@ -49,6 +48,11 @@ D3D12NvapiRayTracingProvider::~D3D12NvapiRayTracingProvider() noexcept
 		}
 	}
 #endif
+}
+
+std::uint64_t D3D12NvapiRayTracingProvider::AlignUp(std::uint64_t value, std::uint64_t alignment) noexcept
+{
+	return alignment == 0 ? value : ((value + alignment - 1u) / alignment) * alignment;
 }
 
 const char* D3D12NvapiRayTracingProvider::ToNvapiStatusReason(int status) noexcept
@@ -207,10 +211,12 @@ RhiPartitionedTlasBuildSizes D3D12NvapiRayTracingProvider::GetPartitionedTlasBui
 		return {};
 	}
 
+	constexpr std::uint64_t scratchAlignment = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT;
 	return RhiPartitionedTlasBuildSizes{
-	    .AccelerationStructureSizeInBytes = nativeInfo.resultDataMaxSizeInBytes,
-	    .BuildScratchSizeInBytes = nativeInfo.scratchDataSizeInBytes,
-	    .UpdateScratchSizeInBytes = nativeInfo.scratchDataSizeInBytes,
+	    .AccelerationStructureSizeInBytes =
+	        AlignUp(nativeInfo.resultDataMaxSizeInBytes, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT),
+	    .BuildScratchSizeInBytes = AlignUp(nativeInfo.scratchDataSizeInBytes, scratchAlignment),
+	    .UpdateScratchSizeInBytes = AlignUp(nativeInfo.scratchDataSizeInBytes, scratchAlignment),
 	    .OperationInfoSizeInBytes =
 	        sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP) * static_cast<std::uint64_t>(desc.MaxOperations),
 	    .OperationCountSizeInBytes = sizeof(NvU32),

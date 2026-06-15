@@ -155,6 +155,33 @@ namespace RayTracingPartitionedTlasStrategyDetails
 		}
 	}
 
+	const char* ResolveActiveCpuPackReason(const RayTracingPartitionedTlasCapabilityReport& capabilityReport) noexcept
+	{
+		switch (capabilityReport.Provider)
+		{
+			case ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas:
+				return "d3d12-nvapi-partitioned-tlas-active-cpu-pack";
+			case ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure:
+				return "vulkan-nv-partitioned-tlas-active-cpu-pack";
+			case ERhiPartitionedTlasProvider::D3D12PublicDxrRtasOperations:
+				return "d3d12-public-dxr-partitioned-tlas-active-cpu-pack";
+			case ERhiPartitionedTlasProvider::None:
+			default:
+				return "partitioned-tlas-active-cpu-pack";
+		}
+	}
+
+	RayTracingSceneTlasShaderAccessMode ResolveActiveShaderAccessMode(
+	    const RayTracingPartitionedTlasCapabilityReport& capabilityReport) noexcept
+	{
+		if (capabilityReport.Provider == ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas)
+		{
+			return RayTracingSceneTlasShaderAccessMode::Descriptor;
+		}
+		return capabilityReport.SupportsVulkanDescriptorPath ? RayTracingSceneTlasShaderAccessMode::Descriptor
+		                                                     : RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress;
+	}
+
 	constexpr RayTracingSceneTlasShaderAccessMode ClassicFallbackShaderAccessMode() noexcept
 	{
 		return RayTracingSceneTlasShaderAccessMode::Descriptor;
@@ -295,8 +322,7 @@ RayTracingSceneTlasShaderAccessMode RayTracingPartitionedTlasStrategy::GetSceneT
 	{
 		return m_classicFallbackStrategy.GetSceneTlasShaderAccessMode();
 	}
-	return m_capabilityReport.PartitionedTlas.SupportsVulkanDescriptorPath ? RayTracingSceneTlasShaderAccessMode::Descriptor
-	                                                                       : RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress;
+	return RayTracingPartitionedTlasStrategyDetails::ResolveActiveShaderAccessMode(m_capabilityReport.PartitionedTlas);
 }
 
 std::uint32_t RayTracingPartitionedTlasStrategy::GetSceneTlasInstanceCount() const noexcept
@@ -586,7 +612,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	result.Stats.Build.Built = true;
 	m_partitionedResources.InstanceCount = result.Stats.Build.InstanceCount;
 	m_partitionedResources.Built = true;
-	m_activeProviderReason = "vulkan-nv-partitioned-tlas-active-cpu-pack";
+	m_activeProviderReason = RayTracingPartitionedTlasStrategyDetails::ResolveActiveCpuPackReason(m_capabilityReport.PartitionedTlas);
 	result.ActiveProviderReason = m_activeProviderReason;
 	return result;
 }

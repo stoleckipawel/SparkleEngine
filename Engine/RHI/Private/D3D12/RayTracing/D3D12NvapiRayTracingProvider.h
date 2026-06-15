@@ -34,6 +34,7 @@ class D3D12NvapiRayTracingProvider final
 	const char* GetRuntimeStatusReason() const noexcept;
 
   private:
+	static std::uint64_t AlignUp(std::uint64_t value, std::uint64_t alignment) noexcept;
 	static const char* ToNvapiStatusReason(int status) noexcept;
 
 	bool m_runtimeInitialized = false;

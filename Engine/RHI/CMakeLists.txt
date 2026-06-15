@@ -7,6 +7,8 @@ include(FetchContent)
 
 option(SPARKLE_RHI_WITH_D3D12 "Enable the D3D12 RHI backend" ON)
 option(SPARKLE_RHI_WITH_D3D12_NVAPI "Enable NVIDIA NVAPI integration inside the D3D12 RHI backend" OFF)
+option(SPARKLE_RHI_D3D12_NVAPI_FETCH_FROM_GITHUB "Fetch the official NVIDIA NVAPI SDK when D3D12 NVAPI is enabled and no local SDK paths are provided" ON)
+set(SPARKLE_RHI_D3D12_NVAPI_GIT_TAG "9b181ea572f680327fe01a14a0f1f41c78034104" CACHE STRING "Official NVIDIA NVAPI repository revision used when fetching NVAPI")
 set(SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR "" CACHE PATH "Directory containing NVIDIA NVAPI headers, used only by SparkleRHI_D3D12")
 set(SPARKLE_RHI_D3D12_NVAPI_LIBRARY "" CACHE FILEPATH "NVIDIA NVAPI import library, used only by SparkleRHI_D3D12")
 find_package(Vulkan QUIET)
@@ -122,11 +124,36 @@ set(SPARKLE_RHI_BACKEND_TARGETS "")
 
 if(SPARKLE_RHI_WITH_D3D12)
     if(SPARKLE_RHI_WITH_D3D12_NVAPI)
+        if(SPARKLE_RHI_D3D12_NVAPI_FETCH_FROM_GITHUB AND
+           (NOT SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR OR NOT SPARKLE_RHI_D3D12_NVAPI_LIBRARY))
+            FetchContent_Declare(sparkle_nvapi
+                GIT_REPOSITORY https://github.com/NVIDIA/nvapi.git
+                GIT_TAG        ${SPARKLE_RHI_D3D12_NVAPI_GIT_TAG}
+                GIT_SHALLOW    TRUE
+                GIT_PROGRESS   ${SPARKLE_GIT_PROGRESS}
+            )
+
+            FetchContent_MakeAvailable(sparkle_nvapi)
+
+            if(NOT SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR)
+                set(SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR "${sparkle_nvapi_SOURCE_DIR}" CACHE PATH "Directory containing NVIDIA NVAPI headers, used only by SparkleRHI_D3D12" FORCE)
+            endif()
+            if(NOT SPARKLE_RHI_D3D12_NVAPI_LIBRARY)
+                set(SPARKLE_RHI_D3D12_NVAPI_LIBRARY "${sparkle_nvapi_SOURCE_DIR}/amd64/nvapi64.lib" CACHE FILEPATH "NVIDIA NVAPI import library, used only by SparkleRHI_D3D12" FORCE)
+            endif()
+        endif()
+
         if(NOT SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR)
             message(FATAL_ERROR "SPARKLE_RHI_WITH_D3D12_NVAPI is ON, but SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR is empty.")
         endif()
         if(NOT SPARKLE_RHI_D3D12_NVAPI_LIBRARY)
             message(FATAL_ERROR "SPARKLE_RHI_WITH_D3D12_NVAPI is ON, but SPARKLE_RHI_D3D12_NVAPI_LIBRARY is empty.")
+        endif()
+        if(NOT EXISTS "${SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR}/nvapi.h")
+            message(FATAL_ERROR "SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR does not contain nvapi.h: ${SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR}")
+        endif()
+        if(NOT EXISTS "${SPARKLE_RHI_D3D12_NVAPI_LIBRARY}")
+            message(FATAL_ERROR "SPARKLE_RHI_D3D12_NVAPI_LIBRARY does not exist: ${SPARKLE_RHI_D3D12_NVAPI_LIBRARY}")
         endif()
     endif()
 
