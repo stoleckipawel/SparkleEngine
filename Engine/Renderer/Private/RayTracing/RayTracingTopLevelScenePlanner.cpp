@@ -95,7 +95,9 @@ RayTracingTopLevelScenePlannerMetrics RayTracingTopLevelScenePlanner::GetCurrent
 	            .LogicalUpdateCount = m_impl->CurrentLogicalUpdateStream.LogicalUpdateCount,
 	            .NativeOperationCount = 0,
 	            .ValidationMismatchCount = m_impl->CurrentLogicalUpdateStream.SkippedInvalidInstanceCount,
-	            .FullGpuNativePackSupported = false,
+	            .GpuDrivenOperationApiSupported = false,
+	            .GpuLogicalUpdateWriterAvailable = false,
+	            .FullGpuNativePackAvailable = false,
 	            .FullGpuNativePackSubmitted = false}};
 }
 

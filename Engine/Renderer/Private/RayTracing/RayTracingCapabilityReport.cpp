@@ -65,7 +65,8 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    "topLevelProvider={}({}) partitionedTlasProvider={} supported={} requiresNvidia={} nvidiaDevice={} "
 	    "vulkanNv={} vulkanExtension={} vulkanFeature={} vulkanFunctions={} vulkanDescriptors={} vulkanShaderDeviceAddress={} "
 	    "d3d12Nvapi={} d3d12NvapiHeaders={} d3d12NvapiRuntime={} d3d12DeviceInterface={} d3d12CommandListInterface={} "
-	    "d3d12PublicDxr={} d3d12PublicDxrHeaders={} cpuPackOps={} gpuDrivenOps={} partitionedReason={}",
+	    "d3d12PublicDxr={} d3d12PublicDxrHeaders={} cpuPackOps={} gpuDrivenOps={} gpuLogicalWrites={} gpuNativePack={} "
+	    "partitionedReason={}",
 	    RhiBackendApiToString(report.BackendApi),
 	    BoolToString(report.Core.SupportsRayTracing),
 	    BoolToString(report.Core.SupportsInlineRayQuery),
@@ -98,6 +99,8 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    BoolToString(report.PartitionedTlas.SupportsD3D12PublicDxrHeaders),
 	    BoolToString(report.PartitionedTlas.SupportsCpuPackedOperations),
 	    BoolToString(report.PartitionedTlas.SupportsGpuDrivenOperations),
+	    BoolToString(report.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites),
+	    BoolToString(report.PartitionedTlas.SupportsGpuNativeOperationPacking),
 	    report.PartitionedTlas.CapabilityStatusReason);
 }
 
@@ -149,5 +152,8 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::Build(
 	            .SupportsD3D12PublicDxrHeaders = rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrHeaders,
 	            .SupportsCpuPackedOperations = rayTracing.Groups.PartitionedTlas.SupportsCpuPackedOperations,
 	            .SupportsGpuDrivenOperations = rayTracing.Groups.PartitionedTlas.SupportsGpuDrivenOperations,
+	            .SupportsGpuLogicalUpdateRecordWrites =
+	                rayTracing.Groups.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites,
+	            .SupportsGpuNativeOperationPacking = rayTracing.Groups.PartitionedTlas.SupportsGpuNativeOperationPacking,
 	            .CapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason}};
 }

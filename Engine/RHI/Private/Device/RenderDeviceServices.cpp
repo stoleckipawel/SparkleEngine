@@ -31,7 +31,7 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	    "timestampQueries={} rayTracing={} inlineRayQuery={} rtLimits(recursion={}, payloadBytes={}, attributeBytes={}, "
 	    "shaderIdBytes={}, tableAlign={}, recordAlign={}, asAlign={}, scratchAlign={}, instanceDescBytes={}) "
 	    "rtProvider(topLevel={} reason={} partitioned={} supported={} requiresNvidia={} nvidiaDevice={} gpuDrivenOps={} "
-	    "partitionedReason={}) "
+	    "gpuLogicalWrites={} gpuNativePack={} partitionedReason={}) "
 	    "meshShaders={} taskShaders={} queues(graphics={}, compute={}, copy={}) "
 	    "limits(descriptorSets={}, shaderResources={}, samplers={}, tableEntries={}, pushConstantsBytes={}) {}",
 	    RhiBackendApiToString(capabilities.BackendApi),
@@ -61,6 +61,8 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	    capabilities.RayTracing.Groups.PartitionedTlas.RequiresNvidiaDevice,
 	    capabilities.RayTracing.Groups.PartitionedTlas.RunsOnNvidiaDevice,
 	    capabilities.RayTracing.Groups.PartitionedTlas.SupportsGpuDrivenOperations,
+	    capabilities.RayTracing.Groups.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites,
+	    capabilities.RayTracing.Groups.PartitionedTlas.SupportsGpuNativeOperationPacking,
 	    capabilities.RayTracing.Groups.PartitionedTlas.CapabilityStatusReason,
 	    capabilities.SupportsMeshShaders,
 	    capabilities.SupportsTaskShaders,

@@ -67,7 +67,8 @@ namespace RhiSmokeRayTracingEvidence
 		    logger,
 		    "{} rayTracing.ptlasGpuUpdates: requestedWriterPath={} selectedWriterPath={} reason={} logicalUpdates={} "
 		    "nativeOperations={} validationMismatches={} "
-		    "fullGpuNativePackSupported={} fullGpuNativePackSubmitted={} cpuPackMs={:.3f} gpuDirtyMs={:.3f} "
+		    "gpuDrivenApiSupported={} gpuLogicalWriterAvailable={} fullGpuNativePackAvailable={} "
+		    "fullGpuNativePackSubmitted={} cpuPackMs={:.3f} gpuDirtyMs={:.3f} "
 		    "gpuNativePackMs={:.3f} ptlasUpdateGpuMs={:.3f}",
 		    evidenceLabel,
 		    RhiPartitionedTlasOperationWriterPathToString(diagnostics.PtlasGpuUpdates.RequestedWriterPath),
@@ -76,7 +77,9 @@ namespace RhiSmokeRayTracingEvidence
 		    diagnostics.PtlasGpuUpdates.LogicalUpdateCount,
 		    diagnostics.PtlasGpuUpdates.NativeOperationCount,
 		    diagnostics.PtlasGpuUpdates.ValidationMismatchCount,
-		    diagnostics.PtlasGpuUpdates.FullGpuNativePackSupported,
+		    diagnostics.PtlasGpuUpdates.GpuDrivenOperationApiSupported,
+		    diagnostics.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable,
+		    diagnostics.PtlasGpuUpdates.FullGpuNativePackAvailable,
 		    diagnostics.PtlasGpuUpdates.FullGpuNativePackSubmitted,
 		    diagnostics.PtlasGpuUpdates.CpuPackMilliseconds,
 		    diagnostics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds,

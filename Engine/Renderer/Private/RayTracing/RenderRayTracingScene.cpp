@@ -65,8 +65,12 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 		    .DuplicateStableIndexCount = plannerMetrics.DuplicateStableIndexCount,
 		    .Overflow = plannerMetrics.Overflow};
 		m_performanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
-		m_performanceMetrics.PtlasGpuUpdates.FullGpuNativePackSupported =
+		m_performanceMetrics.PtlasGpuUpdates.GpuDrivenOperationApiSupported =
 		    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
+		m_performanceMetrics.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable =
+		    m_capabilityReport.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites;
+		m_performanceMetrics.PtlasGpuUpdates.FullGpuNativePackAvailable =
+		    m_capabilityReport.PartitionedTlas.SupportsGpuNativeOperationPacking;
 		return {};
 	}
 
@@ -140,8 +144,12 @@ void RenderRayTracingScene::Build(
 	m_performanceMetrics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds = measuredPtlasTimings.GpuDirtyDetectionMilliseconds;
 	m_performanceMetrics.PtlasGpuUpdates.GpuNativePackMilliseconds = measuredPtlasTimings.GpuNativePackMilliseconds;
 	m_performanceMetrics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds = measuredPtlasTimings.PtlasUpdateGpuMilliseconds;
-	m_performanceMetrics.PtlasGpuUpdates.FullGpuNativePackSupported =
+	m_performanceMetrics.PtlasGpuUpdates.GpuDrivenOperationApiSupported =
 	    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
+	m_performanceMetrics.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable =
+	    m_capabilityReport.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites;
+	m_performanceMetrics.PtlasGpuUpdates.FullGpuNativePackAvailable =
+	    m_capabilityReport.PartitionedTlas.SupportsGpuNativeOperationPacking;
 	m_diagnostics.LogSceneUpdate(
 	    m_capabilityReport,
 	    topLevelBuild.ActiveProvider,

@@ -88,8 +88,14 @@ void ViewportRayTracingDebugOverlay::Draw(
 	    RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.SelectedWriterPath));
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Writer reason", rayTracing.PtlasGpuUpdates.WriterSelectionReason);
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
-	    "GPU pack ready",
-	    ViewportRayTracingDebugOverlayRows::YesNo(rayTracing.PtlasGpuUpdates.FullGpuNativePackSupported));
+	    "GPU op API",
+	    ViewportRayTracingDebugOverlayRows::YesNo(rayTracing.PtlasGpuUpdates.GpuDrivenOperationApiSupported));
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
+	    "GPU logical writer",
+	    ViewportRayTracingDebugOverlayRows::YesNo(rayTracing.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable));
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
+	    "GPU native writer",
+	    ViewportRayTracingDebugOverlayRows::YesNo(rayTracing.PtlasGpuUpdates.FullGpuNativePackAvailable));
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
 	    "GPU pack used",
 	    ViewportRayTracingDebugOverlayRows::YesNo(rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted));

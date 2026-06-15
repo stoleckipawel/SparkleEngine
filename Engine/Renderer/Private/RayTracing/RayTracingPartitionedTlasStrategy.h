@@ -8,6 +8,7 @@
 
 class RenderHardwareInterface;
 struct RayTracingPtlasPartitionPlan;
+struct RayTracingPtlasLogicalUpdateStreamResult;
 
 class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAccelerationStructureStrategy
 {
@@ -65,6 +66,7 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 		RhiPartitionedTlasDesc Layout = {};
 		RhiPartitionedTlasGpuOperationBufferLayout NativeOperationLayout = {};
 		std::uint32_t InstanceCount = 0;
+		std::uint32_t LogicalUpdateCount = 0;
 		std::uint32_t NativeOperationCount = 0;
 		bool Built = false;
 
@@ -83,6 +85,9 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	    const RenderSceneData& sceneData,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,
+	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
+	bool UploadLogicalUpdateRecords(
+	    const RayTracingPtlasLogicalUpdateStreamResult* logicalUpdates,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
 	void ReleasePartitionedTlasResources() noexcept;
 

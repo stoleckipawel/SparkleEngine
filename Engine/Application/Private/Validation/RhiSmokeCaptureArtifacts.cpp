@@ -119,7 +119,11 @@ namespace RhiSmokeCaptureArtifacts
 		file << "    \"operationWriterPath\": \""
 		     << RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.SelectedWriterPath) << "\",\n";
 		file << "    \"operationWriterReason\": \"" << EscapeJson(rayTracing.PtlasGpuUpdates.WriterSelectionReason) << "\",\n";
-		file << "    \"gpuNativePackSupported\": " << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSupported ? "true" : "false") << ",\n";
+		file << "    \"gpuDrivenOperationApiSupported\": "
+		     << (rayTracing.PtlasGpuUpdates.GpuDrivenOperationApiSupported ? "true" : "false") << ",\n";
+		file << "    \"gpuLogicalUpdateWriterAvailable\": "
+		     << (rayTracing.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable ? "true" : "false") << ",\n";
+		file << "    \"gpuNativePackAvailable\": " << (rayTracing.PtlasGpuUpdates.FullGpuNativePackAvailable ? "true" : "false") << ",\n";
 		file << "    \"gpuNativePackSubmitted\": " << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false") << ",\n";
 		file << "    \"timingsMs\": {\n";
 		file << "      \"scenePrepareCpu\": " << rayTracing.FrameTimings.ScenePrepareCpuMilliseconds << ",\n";
@@ -147,7 +151,8 @@ namespace RhiSmokeCaptureArtifacts
 
 		file << "backend,viewMode,topLevelProvider,ptlasProvider,requestedWriterPath,selectedWriterPath,writerReason,"
 		        "scenePrepareCpuMs,sceneBuildCpuMs,blasCpuMs,blasGpuMs,classicTlasCpuMs,classicTlasGpuMs,rayTracingPassGpuMs,"
-		        "logicalUpdates,nativeOperations,cpuPackMs,gpuDirtyMs,gpuNativePackMs,ptlasUpdateGpuMs\n";
+		        "logicalUpdates,nativeOperations,gpuDrivenApiSupported,gpuLogicalWriterAvailable,gpuNativePackAvailable,"
+		        "gpuNativePackSubmitted,cpuPackMs,gpuDirtyMs,gpuNativePackMs,ptlasUpdateGpuMs\n";
 		file << RhiBackendApiToString(request.Diagnostics.BackendApi) << ',';
 		file << request.CaptureResult.ViewModeName << ',';
 		file << RhiRayTracingTopLevelProviderToString(rayTracing.Capability.TopLevelProvider) << ',';
@@ -164,6 +169,10 @@ namespace RhiSmokeCaptureArtifacts
 		file << rayTracing.FrameTimings.RayTracingPassGpuMilliseconds << ',';
 		file << rayTracing.PtlasGpuUpdates.LogicalUpdateCount << ',';
 		file << rayTracing.PtlasGpuUpdates.NativeOperationCount << ',';
+		file << (rayTracing.PtlasGpuUpdates.GpuDrivenOperationApiSupported ? "true" : "false") << ',';
+		file << (rayTracing.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable ? "true" : "false") << ',';
+		file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackAvailable ? "true" : "false") << ',';
+		file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false") << ',';
 		file << rayTracing.PtlasGpuUpdates.CpuPackMilliseconds << ',';
 		file << rayTracing.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds << ',';
 		file << rayTracing.PtlasGpuUpdates.GpuNativePackMilliseconds << ',';

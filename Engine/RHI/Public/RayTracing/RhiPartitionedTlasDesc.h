@@ -36,6 +36,8 @@ struct RhiPartitionedTlasCapabilities
 	bool SupportsD3D12PublicDxrHeaders = false;
 	bool SupportsCpuPackedOperations = false;
 	bool SupportsGpuDrivenOperations = false;
+	bool SupportsGpuLogicalUpdateRecordWrites = false;
+	bool SupportsGpuNativeOperationPacking = false;
 	bool SupportsGpuOperationCount = false;
 	bool SupportsGpuWrittenInstanceRecords = false;
 	bool SupportsGpuWrittenPartitionRecords = false;

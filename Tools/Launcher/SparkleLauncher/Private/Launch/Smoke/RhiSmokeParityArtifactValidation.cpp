@@ -216,6 +216,35 @@ namespace SparkleLauncher::RhiSmokeProviderMetadataValidation
 		    "\"requestedOperationWriterPath\": \"" + std::string(expectedWriterPathName) + "\"";
 		return metadata.find(expected) != std::string::npos;
 	}
+
+	bool MetadataReportsSelectedWriterPath(
+	    const std::filesystem::path& metadataPath,
+	    std::string_view expectedWriterPathName)
+	{
+		std::string metadata;
+		if (!ReadTextFile(metadataPath, metadata))
+		{
+			return false;
+		}
+
+		const std::string expected =
+		    "\"operationWriterPath\": \"" + std::string(expectedWriterPathName) + "\"";
+		return metadata.find(expected) != std::string::npos;
+	}
+
+	bool MetadataReportsWriterReason(
+	    const std::filesystem::path& metadataPath,
+	    std::string_view expectedWriterReason)
+	{
+		std::string metadata;
+		if (!ReadTextFile(metadataPath, metadata))
+		{
+			return false;
+		}
+
+		const std::string expected = "\"operationWriterReason\": \"" + std::string(expectedWriterReason) + "\"";
+		return metadata.find(expected) != std::string::npos;
+	}
 }
 
 namespace SparkleLauncher::RhiSmokeParityValidation
@@ -281,6 +310,22 @@ namespace SparkleLauncher::RhiSmokeParityValidation
 				        parityCase.ExpectedRequestedWriterPathName))
 				{
 					outFailureSummary = "RHI ray tracing parity metadata does not report requested PTLAS writer path: " +
+					                    metadataPath.string();
+					return false;
+				}
+				if (!RhiSmokeProviderMetadataValidation::MetadataReportsSelectedWriterPath(
+				        metadataPath,
+				        parityCase.ExpectedSelectedWriterPathName))
+				{
+					outFailureSummary = "RHI ray tracing parity metadata does not report selected PTLAS writer path: " +
+					                    metadataPath.string();
+					return false;
+				}
+				if (!RhiSmokeProviderMetadataValidation::MetadataReportsWriterReason(
+				        metadataPath,
+				        parityCase.ExpectedWriterReason))
+				{
+					outFailureSummary = "RHI ray tracing parity metadata does not report expected PTLAS writer reason: " +
 					                    metadataPath.string();
 					return false;
 				}

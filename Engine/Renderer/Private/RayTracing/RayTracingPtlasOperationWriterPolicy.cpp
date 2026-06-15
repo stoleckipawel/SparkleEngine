@@ -32,7 +32,7 @@ const char* RayTracingPtlasOperationWriterPolicyResolver::ResolveUnsupportedReas
 		case ERhiPartitionedTlasOperationWriterPath::GpuLogicalDirtyCpuNativePack:
 			return "ptlas-gpu-logical-dirty-writer-not-implemented";
 		case ERhiPartitionedTlasOperationWriterPath::FullGpuNativePack:
-			return "ptlas-full-gpu-native-pack-not-implemented";
+			return "ptlas-full-gpu-native-pack-backend-pack-shader-not-implemented";
 		case ERhiPartitionedTlasOperationWriterPath::None:
 			return "ptlas-operation-writer-none-requested";
 		case ERhiPartitionedTlasOperationWriterPath::CpuPack:
@@ -59,8 +59,30 @@ RayTracingPtlasOperationWriterPolicy RayTracingPtlasOperationWriterPolicyResolve
 		return policy;
 	}
 
-	policy.SelectedPath = capabilityReport.SupportsCpuPackedOperations ? ERhiPartitionedTlasOperationWriterPath::CpuPack
-	                                                                   : ERhiPartitionedTlasOperationWriterPath::None;
+	if (policy.RequestedPath == ERhiPartitionedTlasOperationWriterPath::GpuLogicalDirtyCpuNativePack)
+	{
+		const bool canUseGpuLogicalDirtyCpuNativePack =
+		    capabilityReport.Supported &&
+		    capabilityReport.SupportsGpuLogicalUpdateRecordWrites &&
+		    capabilityReport.SupportsCpuPackedOperations;
+		policy.SelectedPath = canUseGpuLogicalDirtyCpuNativePack
+		                          ? ERhiPartitionedTlasOperationWriterPath::GpuLogicalDirtyCpuNativePack
+		                          : ERhiPartitionedTlasOperationWriterPath::CpuPack;
+		policy.SelectionReason = policy.SelectedPath == ERhiPartitionedTlasOperationWriterPath::GpuLogicalDirtyCpuNativePack
+		                             ? "ptlas-gpu-logical-dirty-cpu-native-pack-selected"
+		                             : ResolveUnsupportedReason(policy.RequestedPath);
+		return policy;
+	}
+
+	const bool canUseFullGpuNativePack =
+	    capabilityReport.Supported &&
+	    capabilityReport.SupportsGpuDrivenOperations &&
+	    capabilityReport.SupportsGpuLogicalUpdateRecordWrites &&
+	    capabilityReport.SupportsGpuNativeOperationPacking;
+	policy.SelectedPath = canUseFullGpuNativePack
+	                          ? ERhiPartitionedTlasOperationWriterPath::FullGpuNativePack
+	                          : (capabilityReport.SupportsCpuPackedOperations ? ERhiPartitionedTlasOperationWriterPath::CpuPack
+	                                                                          : ERhiPartitionedTlasOperationWriterPath::None);
 	policy.SelectionReason = ResolveUnsupportedReason(policy.RequestedPath);
 	return policy;
 }

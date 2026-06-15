@@ -47,7 +47,9 @@ struct SPARKLE_RENDERER_API RendererSmokeRayTracingPtlasGpuUpdateDiagnostics fin
 	std::uint32_t LogicalUpdateCount = 0;
 	std::uint32_t NativeOperationCount = 0;
 	std::uint32_t ValidationMismatchCount = 0;
-	bool FullGpuNativePackSupported = false;
+	bool GpuDrivenOperationApiSupported = false;
+	bool GpuLogicalUpdateWriterAvailable = false;
+	bool FullGpuNativePackAvailable = false;
 	bool FullGpuNativePackSubmitted = false;
 	double CpuPackMilliseconds = 0.0;
 	double GpuDirtyDetectionMilliseconds = 0.0;

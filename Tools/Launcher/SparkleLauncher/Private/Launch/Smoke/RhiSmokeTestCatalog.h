@@ -22,6 +22,8 @@ namespace SparkleLauncher
 		bool PreferPartitionedTlas = false;
 		const char* PtlasOperationWriterPath = "1";
 		const char* ExpectedRequestedWriterPathName = "CpuPack";
+		const char* ExpectedSelectedWriterPathName = "CpuPack";
+		const char* ExpectedWriterReason = "ptlas-operation-writer-cpu-pack-selected";
 	};
 
 	struct RhiSmokeParityViewMode final

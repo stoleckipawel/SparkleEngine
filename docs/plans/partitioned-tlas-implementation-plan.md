@@ -1821,6 +1821,34 @@ Reference-quality completion stages:
    - Launcher parity now exits successfully with strict same-backend comparisons and tolerant cross-backend baseline comparison.
    - Stage verdict: **partially complete / not accepted yet**. Policy, diagnostics, metadata, and workflow coverage are in place. Backend-private GPU dirty detection/native pack shaders and GPU-writer parity artifacts are still required for full acceptance.
 
+   Implementation status - 2026-06-15:
+
+   - `GpuLogicalDirtyCpuNativePack` is now a selectable durable transition writer path when the active PTLAS provider supports CPU native operation packing.
+   - `RayTracingPartitionedTlasStrategy` no longer rejects the transition writer path. It builds the active PTLAS through the same native CPU operation pack while preserving the requested/selected writer metadata.
+   - Logical update intent is now published into an RHI-owned `RayTracingPartitionedTlasLogicalUpdates` buffer from the renderer-owned partition planner stream.
+   - PTLAS build metrics now report logical update count from the planner stream rather than pretending that the full native operation write count is the dirty-update count.
+   - Active provider reasons distinguish:
+     - Vulkan/D3D12 PTLAS CPU pack.
+     - Vulkan/D3D12 PTLAS logical-update stream plus CPU-native pack.
+     - Full GPU-native pack fallback because backend-private native pack shaders are not implemented yet.
+   - `FullGpuNativePack` remains deliberately unaccepted. The RHI services still expose the command hook, but Vulkan and D3D12 backend services return false from native GPU operation packing until provider-private compute pack shaders exist.
+   - Validation run:
+     - `git diff --check`.
+     - `cmake -P CMake/ArchitectureBoundaryCheck.cmake`.
+     - `cmake --build build-vs2026 --config DevelopmentEditor --target ShowcaseEditor -- /nologo /v:minimal /m:1`.
+     - `cmake --build build-vs2026 --config DevelopmentEditor --target SparkleLauncher -- /nologo /v:minimal /m:1`.
+     - `cmake --build build-nvapi-check --config DevelopmentEditor --target ShowcaseEditor -- /nologo /v:minimal /m:1`.
+     - Focused D3D12 NVAPI smoke capture with `r.RayTracing.PreferPartitionedTlas=true` and `r.RayTracing.Ptlas.OperationWriterPath=2`.
+   - Focused D3D12 NVAPI evidence:
+     - Artifact: `artifacts/dev/launcher-state/Logs/manual-stage5-d3d12-gpu-logical.json`.
+     - `topLevelProvider=PartitionedTlas`.
+     - `ptlasProvider=D3D12NvapiPartitionedTlas`.
+     - `requestedOperationWriterPath=GpuLogicalDirtyCpuNativePack`.
+     - `operationWriterPath=GpuLogicalDirtyCpuNativePack`.
+     - `operationWriterReason=ptlas-gpu-logical-dirty-cpu-native-pack-selected`.
+     - `frameGraphUnresolvedBarrierWarnings=0`.
+   - Stage verdict: **stronger partial / still not accepted**. The policy, metadata, logical update stream, and active PTLAS execution path are now coherent enough for profiling CPU-pack and transition behavior. Final acceptance still requires a real backend-private GPU dirty/native-pack implementation that consumes GPU-written operation counts without CPU readback and parity artifacts for that path.
+
 6. **Negative Validation And Failure-Mode Artifacts**
 
    Goal:
