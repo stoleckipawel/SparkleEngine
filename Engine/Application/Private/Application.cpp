@@ -5,6 +5,7 @@
 #include "ApplicationCommandLineCVars.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Environment/EnvironmentVariables.h"
+#include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
 #include <cstdlib>
 
@@ -16,6 +17,7 @@ void Application::ConfigureProcessFromCommandLine() noexcept
 		_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 	}
 
+	ApplyPersistedEngineRenderingSettingsToCVars();
 	ApplicationCommandLineCVars::Apply();
 }
 

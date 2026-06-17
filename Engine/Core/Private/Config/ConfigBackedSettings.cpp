@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Settings/EditorSettingsService.h"
+#include "Core/Public/Config/ConfigBackedSettings.h"
 
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
@@ -10,12 +10,12 @@
 #include <string>
 #include <vector>
 
-std::filesystem::path EditorSettingsDetail::GetEditorSettingsConfigPath()
+std::filesystem::path ConfigBackedSettings::DefaultProjectConfigPath(std::string_view categoryName)
 {
-	return Paths::WorkspaceRoot() / "Config" / "DefaultEditor.ini";
+	return Paths::WorkspaceRoot() / "Config" / ("Default" + std::string(categoryName) + ".ini");
 }
 
-void EditorSettingsDetail::LoadConfigSectionValues(
+void ConfigBackedSettings::LoadSectionValues(
     const std::filesystem::path& configPath,
     std::string_view sectionName,
     const std::function<void(std::string_view key, std::string_view value)>& onValue)
@@ -58,7 +58,7 @@ void EditorSettingsDetail::LoadConfigSectionValues(
 	}
 }
 
-void EditorSettingsDetail::WriteConfigSectionValues(
+void ConfigBackedSettings::WriteSectionValues(
     const std::filesystem::path& configPath,
     std::string_view sectionName,
     const std::vector<std::pair<std::string, std::string>>& values)

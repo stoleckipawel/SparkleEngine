@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EditorAPI.h"
+#include "CoreAPI.h"
 
 #include <filesystem>
 #include <functional>
@@ -9,29 +9,34 @@
 #include <utility>
 #include <vector>
 
-namespace EditorSettingsDetail
+namespace ConfigBackedSettings
 {
-	SPARKLE_EDITOR_API std::filesystem::path GetEditorSettingsConfigPath();
-	SPARKLE_EDITOR_API void LoadConfigSectionValues(
+	SPARKLE_CORE_API std::filesystem::path DefaultProjectConfigPath(std::string_view categoryName);
+	SPARKLE_CORE_API void LoadSectionValues(
 	    const std::filesystem::path& configPath,
 	    std::string_view sectionName,
 	    const std::function<void(std::string_view key, std::string_view value)>& onValue);
-	SPARKLE_EDITOR_API void WriteConfigSectionValues(
+	SPARKLE_CORE_API void WriteSectionValues(
 	    const std::filesystem::path& configPath,
 	    std::string_view sectionName,
 	    const std::vector<std::pair<std::string, std::string>>& values);
 }
 
-template <typename TState> class EditorConfigBackedSettingsSection
+template <typename TState> class ConfigBackedSettingsSection
 {
   public:
-	explicit EditorConfigBackedSettingsSection(std::string_view configSectionName) : m_configSectionName(configSectionName) {}
-	virtual ~EditorConfigBackedSettingsSection() = default;
+	ConfigBackedSettingsSection(std::filesystem::path configPath, std::string_view configSectionName) :
+	    m_configPath(std::move(configPath)),
+	    m_configSectionName(configSectionName)
+	{
+	}
 
-	EditorConfigBackedSettingsSection(const EditorConfigBackedSettingsSection&) = delete;
-	EditorConfigBackedSettingsSection& operator=(const EditorConfigBackedSettingsSection&) = delete;
-	EditorConfigBackedSettingsSection(EditorConfigBackedSettingsSection&&) = delete;
-	EditorConfigBackedSettingsSection& operator=(EditorConfigBackedSettingsSection&&) = delete;
+	virtual ~ConfigBackedSettingsSection() = default;
+
+	ConfigBackedSettingsSection(const ConfigBackedSettingsSection&) = delete;
+	ConfigBackedSettingsSection& operator=(const ConfigBackedSettingsSection&) = delete;
+	ConfigBackedSettingsSection(ConfigBackedSettingsSection&&) = delete;
+	ConfigBackedSettingsSection& operator=(ConfigBackedSettingsSection&&) = delete;
 
 	const TState& GetState() const noexcept { return m_state; }
 
@@ -44,8 +49,8 @@ template <typename TState> class EditorConfigBackedSettingsSection
 	void ApplyPersistedValuesToRuntimeState() noexcept
 	{
 		TState persistedState = CaptureRuntimeState();
-		EditorSettingsDetail::LoadConfigSectionValues(
-		    EditorSettingsDetail::GetEditorSettingsConfigPath(),
+		ConfigBackedSettings::LoadSectionValues(
+		    m_configPath,
 		    m_configSectionName,
 		    [this, &persistedState](std::string_view key, std::string_view value)
 		    {
@@ -75,10 +80,7 @@ template <typename TState> class EditorConfigBackedSettingsSection
   private:
 	void PersistState(const TState& state)
 	{
-		EditorSettingsDetail::WriteConfigSectionValues(
-		    EditorSettingsDetail::GetEditorSettingsConfigPath(),
-		    m_configSectionName,
-		    BuildConfigValues(state));
+		ConfigBackedSettings::WriteSectionValues(m_configPath, m_configSectionName, BuildConfigValues(state));
 	}
 
 	virtual TState CaptureRuntimeState() const noexcept = 0;
@@ -88,6 +90,7 @@ template <typename TState> class EditorConfigBackedSettingsSection
 	virtual bool ComputePendingRestart(const TState& baseline, const TState& current) const noexcept = 0;
 	virtual std::string DescribePendingRestart(const TState& baseline, const TState& current) const = 0;
 
+	std::filesystem::path m_configPath;
 	std::string m_configSectionName;
 	TState m_state{};
 	TState m_sessionBaseline{};

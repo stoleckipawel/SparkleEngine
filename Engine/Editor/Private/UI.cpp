@@ -17,7 +17,7 @@
 #include "Panels/UsedTexturesPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Panels/ViewportTopPanel.h"
-#include "Settings/EditorRenderingSettings.h"
+#include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Style/SparkleUiTheme.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
@@ -195,7 +195,7 @@ void UI::InitializeDefaultPanels()
 	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelManager);
 	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
 	m_profilerPanel = std::make_unique<ProfilerPanel>();
-	m_renderingSettings = std::make_unique<EditorRenderingSettingsSection>();
+	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>();
 	m_settingsPanel = std::make_unique<SettingsPanel>();
 	m_settingsPanel->SetRenderingSettings(m_renderingSettings.get());
 	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();

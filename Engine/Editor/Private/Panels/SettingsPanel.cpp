@@ -2,54 +2,15 @@
 
 #include "Panels/SettingsPanel.h"
 
-#include "Settings/EditorRenderingSettings.h"
-#include "Style/SparkleUiPalette.h"
+#include "Panels/RenderingSettingsPanel.h"
 #include "Util/UiUtil.h"
 
 #include <imgui.h>
 
 #include <string>
 
-namespace
-{
-	int ToTlasModeIndex(EditorRayTracingTopLevelMode mode) noexcept
-	{
-		return mode == EditorRayTracingTopLevelMode::PartitionedTlas ? 1 : 0;
-	}
-
-	EditorRayTracingTopLevelMode FromTlasModeIndex(int index) noexcept
-	{
-		return index == 1 ? EditorRayTracingTopLevelMode::PartitionedTlas : EditorRayTracingTopLevelMode::ClassicTlas;
-	}
-
-	int ToPtlasUpdatePathIndex(EditorPtlasUpdatePath path) noexcept
-	{
-		switch (path)
-		{
-			case EditorPtlasUpdatePath::GpuLogicalDirtyCpuNativePack:
-				return 1;
-			case EditorPtlasUpdatePath::FullGpuNativePack:
-				return 2;
-			case EditorPtlasUpdatePath::CpuPack:
-			default:
-				return 0;
-		}
-	}
-
-	EditorPtlasUpdatePath FromPtlasUpdatePathIndex(int index) noexcept
-	{
-		switch (index)
-		{
-			case 1:
-				return EditorPtlasUpdatePath::GpuLogicalDirtyCpuNativePack;
-			case 2:
-				return EditorPtlasUpdatePath::FullGpuNativePack;
-			case 0:
-			default:
-				return EditorPtlasUpdatePath::CpuPack;
-		}
-	}
-}
+SettingsPanel::SettingsPanel() = default;
+SettingsPanel::~SettingsPanel() = default;
 
 void SettingsPanel::SetOpen(bool open) noexcept
 {
@@ -60,9 +21,14 @@ void SettingsPanel::SetOpen(bool open) noexcept
 	m_isOpen = open;
 }
 
-void SettingsPanel::SetRenderingSettings(EditorRenderingSettingsSection* renderingSettings) noexcept
+void SettingsPanel::SetRenderingSettings(EngineRenderingSettingsSection* renderingSettings) noexcept
 {
 	m_renderingSettings = renderingSettings;
+	if (!m_renderingPanel)
+	{
+		m_renderingPanel = std::make_unique<RenderingSettingsPanel>();
+	}
+	m_renderingPanel->SetSettings(renderingSettings);
 }
 
 void SettingsPanel::BuildUI(bool disableInteraction)
@@ -74,7 +40,10 @@ void SettingsPanel::BuildUI(bool disableInteraction)
 
 	if (m_refreshFromRuntimeOnNextOpen)
 	{
-		m_renderingSettings->RefreshFromRuntimeState();
+		if (m_renderingPanel != nullptr)
+		{
+			m_renderingPanel->RefreshFromRuntimeState();
+		}
 		m_refreshFromRuntimeOnNextOpen = false;
 	}
 
@@ -94,7 +63,10 @@ void SettingsPanel::BuildUI(bool disableInteraction)
 	{
 		case Section::Rendering:
 		default:
-			DrawRenderingSection(disableInteraction);
+			if (m_renderingPanel != nullptr)
+			{
+				m_renderingPanel->BuildUI(disableInteraction);
+			}
 			break;
 	}
 	ImGui::EndChild();
@@ -116,61 +88,4 @@ void SettingsPanel::DrawNavigation()
 
 	ImGui::PopStyleVar(2);
 	ImGui::EndChild();
-}
-
-void SettingsPanel::DrawRenderingSection(bool disableInteraction)
-{
-	const EditorRenderingSettingsState& settings = m_renderingSettings->GetState();
-
-	ImGui::TextUnformatted("Engine - Rendering");
-	ImGui::Spacing();
-
-	if (m_renderingSettings->HasPendingRestart())
-	{
-		const std::string restartMessage = m_renderingSettings->BuildPendingRestartMessage();
-		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::AccentStrong());
-		ImGui::TextWrapped("%s", restartMessage.c_str());
-		ImGui::PopStyleColor();
-		ImGui::Spacing();
-	}
-
-	ImGui::BeginDisabled(disableInteraction);
-
-	bool vsync = settings.VSync;
-	if (ImGui::Checkbox("VSync", &vsync))
-	{
-		m_renderingSettings->SetVSync(vsync);
-	}
-
-	bool highPerformanceAdapter = settings.PreferHighPerformanceAdapter;
-	if (ImGui::Checkbox("Prefer high-performance adapter", &highPerformanceAdapter))
-	{
-		m_renderingSettings->SetPreferHighPerformanceAdapter(highPerformanceAdapter);
-	}
-
-	bool meshAutoBatching = settings.MeshAutoBatching;
-	if (ImGui::Checkbox("Mesh auto batching", &meshAutoBatching))
-	{
-		m_renderingSettings->SetMeshAutoBatching(meshAutoBatching);
-	}
-
-	static constexpr const char* tlasModeLabels[] = {"Classic TLAS", "Partitioned TLAS"};
-	int tlasModeIndex = ToTlasModeIndex(settings.RayTracingTopLevelMode);
-	if (ImGui::Combo("Ray tracing TLAS", &tlasModeIndex, tlasModeLabels, IM_ARRAYSIZE(tlasModeLabels)))
-	{
-		m_renderingSettings->SetRayTracingTopLevelMode(FromTlasModeIndex(tlasModeIndex));
-	}
-
-	static constexpr const char* ptlasPathLabels[] = {
-	    "CPU pack",
-	    "GPU dirty + CPU native pack",
-	    "Full GPU native pack",
-	};
-	int ptlasPathIndex = ToPtlasUpdatePathIndex(settings.PtlasUpdatePath);
-	if (ImGui::Combo("PTLAS update path", &ptlasPathIndex, ptlasPathLabels, IM_ARRAYSIZE(ptlasPathLabels)))
-	{
-		m_renderingSettings->SetPtlasUpdatePath(FromPtlasUpdatePathIndex(ptlasPathIndex));
-	}
-
-	ImGui::EndDisabled();
 }

@@ -1,13 +1,19 @@
 #pragma once
 
-class EditorRenderingSettingsSection;
+#include <memory>
+
+class EngineRenderingSettingsSection;
+class RenderingSettingsPanel;
 
 class SettingsPanel final
 {
   public:
+	SettingsPanel();
+	~SettingsPanel();
+
 	void SetOpen(bool open) noexcept;
 	bool IsOpen() const noexcept { return m_isOpen; }
-	void SetRenderingSettings(EditorRenderingSettingsSection* renderingSettings) noexcept;
+	void SetRenderingSettings(EngineRenderingSettingsSection* renderingSettings) noexcept;
 	void BuildUI(bool disableInteraction);
 
   private:
@@ -17,9 +23,9 @@ class SettingsPanel final
 	};
 
 	void DrawNavigation();
-	void DrawRenderingSection(bool disableInteraction);
 
-	EditorRenderingSettingsSection* m_renderingSettings = nullptr;
+	EngineRenderingSettingsSection* m_renderingSettings = nullptr;
+	std::unique_ptr<RenderingSettingsPanel> m_renderingPanel;
 	Section m_activeSection = Section::Rendering;
 	bool m_isOpen = false;
 	bool m_refreshFromRuntimeOnNextOpen = true;

@@ -25,7 +25,7 @@ class SettingsPanel;
 class UsedShadersPanel;
 class UsedMeshesPanel;
 class UsedTexturesPanel;
-class EditorRenderingSettingsSection;
+class EngineRenderingSettingsSection;
 class InputSystem;
 class LevelManager;
 class GameScene;
@@ -107,7 +107,7 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<UsedShadersPanel> m_usedShadersPanel;
 	std::unique_ptr<UsedMeshesPanel> m_usedMeshesPanel;
 	std::unique_ptr<UsedTexturesPanel> m_usedTexturesPanel;
-	std::unique_ptr<EditorRenderingSettingsSection> m_renderingSettings;
+	std::unique_ptr<EngineRenderingSettingsSection> m_renderingSettings;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
 	GameScene* m_gameScene = nullptr;

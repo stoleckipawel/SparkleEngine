@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Settings/EditorRenderingSettings.h"
+#include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
 #include "Core/Public/Strings/StringUtils.h"
 #include "RHI/Public/CVars/RHICVars.h"
@@ -13,85 +13,86 @@
 
 namespace
 {
-	constexpr std::string_view kRenderingSettingsSection = "/Script/SparkleEditor.EditorRenderingSettings";
+	constexpr std::string_view kRenderingSettingsSection = "/Script/SparkleRenderer.EngineRenderingSettings";
 
-	EditorRayTracingTopLevelMode ParseRayTracingTopLevelMode(std::string_view text) noexcept
+	EngineRayTracingTopLevelMode ParseRayTracingTopLevelMode(std::string_view text) noexcept
 	{
-		return Strings::EqualsIgnoreCase(Strings::TrimAsciiWhitespace(text), "PartitionedTlas") ? EditorRayTracingTopLevelMode::PartitionedTlas :
-		                                                                                           EditorRayTracingTopLevelMode::ClassicTlas;
+		return Strings::EqualsIgnoreCase(Strings::TrimAsciiWhitespace(text), "PartitionedTlas") ? EngineRayTracingTopLevelMode::PartitionedTlas :
+		                                                                                           EngineRayTracingTopLevelMode::ClassicTlas;
 	}
 
-	EditorPtlasUpdatePath ParsePtlasUpdatePath(std::string_view text) noexcept
+	EnginePtlasUpdatePath ParsePtlasUpdatePath(std::string_view text) noexcept
 	{
 		const std::string_view trimmed = Strings::TrimAsciiWhitespace(text);
 		if (Strings::EqualsIgnoreCase(trimmed, "GpuLogicalDirtyCpuNativePack"))
 		{
-			return EditorPtlasUpdatePath::GpuLogicalDirtyCpuNativePack;
+			return EnginePtlasUpdatePath::GpuLogicalDirtyCpuNativePack;
 		}
 		if (Strings::EqualsIgnoreCase(trimmed, "FullGpuNativePack"))
 		{
-			return EditorPtlasUpdatePath::FullGpuNativePack;
+			return EnginePtlasUpdatePath::FullGpuNativePack;
 		}
-		return EditorPtlasUpdatePath::CpuPack;
+		return EnginePtlasUpdatePath::CpuPack;
 	}
 
-	const char* ToConfigString(EditorRayTracingTopLevelMode mode) noexcept
+	const char* ToConfigString(EngineRayTracingTopLevelMode mode) noexcept
 	{
-		return mode == EditorRayTracingTopLevelMode::PartitionedTlas ? "PartitionedTlas" : "ClassicTlas";
+		return mode == EngineRayTracingTopLevelMode::PartitionedTlas ? "PartitionedTlas" : "ClassicTlas";
 	}
 
-	const char* ToConfigString(EditorPtlasUpdatePath path) noexcept
+	const char* ToConfigString(EnginePtlasUpdatePath path) noexcept
 	{
 		switch (path)
 		{
-			case EditorPtlasUpdatePath::GpuLogicalDirtyCpuNativePack:
+			case EnginePtlasUpdatePath::GpuLogicalDirtyCpuNativePack:
 				return "GpuLogicalDirtyCpuNativePack";
-			case EditorPtlasUpdatePath::FullGpuNativePack:
+			case EnginePtlasUpdatePath::FullGpuNativePack:
 				return "FullGpuNativePack";
-			case EditorPtlasUpdatePath::CpuPack:
+			case EnginePtlasUpdatePath::CpuPack:
 			default:
 				return "CpuPack";
 		}
 	}
 
-	ERhiPartitionedTlasOperationWriterPath ToRhiPtlasPath(EditorPtlasUpdatePath path) noexcept
+	ERhiPartitionedTlasOperationWriterPath ToRhiPtlasPath(EnginePtlasUpdatePath path) noexcept
 	{
 		switch (path)
 		{
-			case EditorPtlasUpdatePath::GpuLogicalDirtyCpuNativePack:
+			case EnginePtlasUpdatePath::GpuLogicalDirtyCpuNativePack:
 				return ERhiPartitionedTlasOperationWriterPath::GpuLogicalDirtyCpuNativePack;
-			case EditorPtlasUpdatePath::FullGpuNativePack:
+			case EnginePtlasUpdatePath::FullGpuNativePack:
 				return ERhiPartitionedTlasOperationWriterPath::FullGpuNativePack;
-			case EditorPtlasUpdatePath::CpuPack:
+			case EnginePtlasUpdatePath::CpuPack:
 			default:
 				return ERhiPartitionedTlasOperationWriterPath::CpuPack;
 		}
 	}
 
-	EditorPtlasUpdatePath FromRhiPtlasPath(ERhiPartitionedTlasOperationWriterPath path) noexcept
+	EnginePtlasUpdatePath FromRhiPtlasPath(ERhiPartitionedTlasOperationWriterPath path) noexcept
 	{
 		switch (path)
 		{
 			case ERhiPartitionedTlasOperationWriterPath::GpuLogicalDirtyCpuNativePack:
-				return EditorPtlasUpdatePath::GpuLogicalDirtyCpuNativePack;
+				return EnginePtlasUpdatePath::GpuLogicalDirtyCpuNativePack;
 			case ERhiPartitionedTlasOperationWriterPath::FullGpuNativePack:
-				return EditorPtlasUpdatePath::FullGpuNativePack;
+				return EnginePtlasUpdatePath::FullGpuNativePack;
 			case ERhiPartitionedTlasOperationWriterPath::CpuPack:
 			case ERhiPartitionedTlasOperationWriterPath::None:
 			default:
-				return EditorPtlasUpdatePath::CpuPack;
+				return EnginePtlasUpdatePath::CpuPack;
 		}
 	}
 }
 
-EditorRenderingSettingsSection::EditorRenderingSettingsSection() : EditorConfigBackedSettingsSection(kRenderingSettingsSection)
+EngineRenderingSettingsSection::EngineRenderingSettingsSection() :
+	ConfigBackedSettingsSection(ConfigBackedSettings::DefaultProjectConfigPath("Engine"), kRenderingSettingsSection)
 {
 	RefreshFromRuntimeState();
 }
 
-void EditorRenderingSettingsSection::SetVSync(bool enabled)
+void EngineRenderingSettingsSection::SetVSync(bool enabled)
 {
-	EditorRenderingSettingsState state = GetState();
+	EngineRenderingSettingsState state = GetState();
 	if (state.VSync == enabled)
 	{
 		return;
@@ -100,9 +101,9 @@ void EditorRenderingSettingsSection::SetVSync(bool enabled)
 	UpdateState(state);
 }
 
-void EditorRenderingSettingsSection::SetPreferHighPerformanceAdapter(bool enabled)
+void EngineRenderingSettingsSection::SetPreferHighPerformanceAdapter(bool enabled)
 {
-	EditorRenderingSettingsState state = GetState();
+	EngineRenderingSettingsState state = GetState();
 	if (state.PreferHighPerformanceAdapter == enabled)
 	{
 		return;
@@ -111,9 +112,9 @@ void EditorRenderingSettingsSection::SetPreferHighPerformanceAdapter(bool enable
 	UpdateState(state);
 }
 
-void EditorRenderingSettingsSection::SetMeshAutoBatching(bool enabled)
+void EngineRenderingSettingsSection::SetMeshAutoBatching(bool enabled)
 {
-	EditorRenderingSettingsState state = GetState();
+	EngineRenderingSettingsState state = GetState();
 	if (state.MeshAutoBatching == enabled)
 	{
 		return;
@@ -122,9 +123,9 @@ void EditorRenderingSettingsSection::SetMeshAutoBatching(bool enabled)
 	UpdateState(state);
 }
 
-void EditorRenderingSettingsSection::SetRayTracingTopLevelMode(EditorRayTracingTopLevelMode mode)
+void EngineRenderingSettingsSection::SetRayTracingTopLevelMode(EngineRayTracingTopLevelMode mode)
 {
-	EditorRenderingSettingsState state = GetState();
+	EngineRenderingSettingsState state = GetState();
 	if (state.RayTracingTopLevelMode == mode)
 	{
 		return;
@@ -133,9 +134,9 @@ void EditorRenderingSettingsSection::SetRayTracingTopLevelMode(EditorRayTracingT
 	UpdateState(state);
 }
 
-void EditorRenderingSettingsSection::SetPtlasUpdatePath(EditorPtlasUpdatePath path)
+void EngineRenderingSettingsSection::SetPtlasUpdatePath(EnginePtlasUpdatePath path)
 {
-	EditorRenderingSettingsState state = GetState();
+	EngineRenderingSettingsState state = GetState();
 	if (state.PtlasUpdatePath == path)
 	{
 		return;
@@ -144,29 +145,29 @@ void EditorRenderingSettingsSection::SetPtlasUpdatePath(EditorPtlasUpdatePath pa
 	UpdateState(state);
 }
 
-EditorRenderingSettingsState EditorRenderingSettingsSection::CaptureRuntimeState() const noexcept
+EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState() const noexcept
 {
-	EditorRenderingSettingsState state;
+	EngineRenderingSettingsState state;
 	state.VSync = CVarRhiVSync.Get();
 	state.PreferHighPerformanceAdapter = CVarRhiPreferHighPerformanceAdapter.Get();
 	state.MeshAutoBatching = CVarRendererMeshAutoBatching.Get();
 	state.RayTracingTopLevelMode =
-	    CVarRhiRayTracingPreferPartitionedTlas.Get() ? EditorRayTracingTopLevelMode::PartitionedTlas : EditorRayTracingTopLevelMode::ClassicTlas;
+	    CVarRhiRayTracingPreferPartitionedTlas.Get() ? EngineRayTracingTopLevelMode::PartitionedTlas : EngineRayTracingTopLevelMode::ClassicTlas;
 	state.PtlasUpdatePath = FromRhiPtlasPath(CVarRayTracingPtlasOperationWriterPath.Get());
 	return state;
 }
 
-void EditorRenderingSettingsSection::ApplyStateToRuntime(const EditorRenderingSettingsState& state) const noexcept
+void EngineRenderingSettingsSection::ApplyStateToRuntime(const EngineRenderingSettingsState& state) const noexcept
 {
 	CVarRhiVSync.Set(state.VSync);
 	CVarRhiPreferHighPerformanceAdapter.Set(state.PreferHighPerformanceAdapter);
 	CVarRendererMeshAutoBatching.Set(state.MeshAutoBatching);
-	CVarRhiRayTracingPreferPartitionedTlas.Set(state.RayTracingTopLevelMode == EditorRayTracingTopLevelMode::PartitionedTlas);
+	CVarRhiRayTracingPreferPartitionedTlas.Set(state.RayTracingTopLevelMode == EngineRayTracingTopLevelMode::PartitionedTlas);
 	CVarRayTracingPtlasOperationWriterPath.Set(ToRhiPtlasPath(state.PtlasUpdatePath));
 }
 
-void EditorRenderingSettingsSection::ReadConfigValue(
-    EditorRenderingSettingsState& state,
+void EngineRenderingSettingsSection::ReadConfigValue(
+    EngineRenderingSettingsState& state,
     std::string_view key,
     std::string_view value) const
 {
@@ -194,8 +195,8 @@ void EditorRenderingSettingsSection::ReadConfigValue(
 	}
 }
 
-std::vector<std::pair<std::string, std::string>> EditorRenderingSettingsSection::BuildConfigValues(
-    const EditorRenderingSettingsState& state) const
+std::vector<std::pair<std::string, std::string>> EngineRenderingSettingsSection::BuildConfigValues(
+    const EngineRenderingSettingsState& state) const
 {
 	return {
 	    {"VSync", state.VSync ? "true" : "false"},
@@ -206,17 +207,17 @@ std::vector<std::pair<std::string, std::string>> EditorRenderingSettingsSection:
 	};
 }
 
-bool EditorRenderingSettingsSection::ComputePendingRestart(
-    const EditorRenderingSettingsState& baseline,
-    const EditorRenderingSettingsState& current) const noexcept
+bool EngineRenderingSettingsSection::ComputePendingRestart(
+    const EngineRenderingSettingsState& baseline,
+    const EngineRenderingSettingsState& current) const noexcept
 {
 	return baseline.PreferHighPerformanceAdapter != current.PreferHighPerformanceAdapter ||
 	       baseline.RayTracingTopLevelMode != current.RayTracingTopLevelMode;
 }
 
-std::string EditorRenderingSettingsSection::DescribePendingRestart(
-    const EditorRenderingSettingsState& baseline,
-    const EditorRenderingSettingsState& current) const
+std::string EngineRenderingSettingsSection::DescribePendingRestart(
+    const EngineRenderingSettingsState& baseline,
+    const EngineRenderingSettingsState& current) const
 {
 	std::vector<std::string> reasons;
 	if (baseline.PreferHighPerformanceAdapter != current.PreferHighPerformanceAdapter)
@@ -233,7 +234,7 @@ std::string EditorRenderingSettingsSection::DescribePendingRestart(
 	}
 
 	std::ostringstream stream;
-	stream << "Restart the editor to apply ";
+	stream << "Restart the application to apply ";
 	for (std::size_t index = 0; index < reasons.size(); ++index)
 	{
 		if (index > 0)
@@ -244,4 +245,10 @@ std::string EditorRenderingSettingsSection::DescribePendingRestart(
 	}
 	stream << ".";
 	return stream.str();
+}
+
+void ApplyPersistedEngineRenderingSettingsToCVars() noexcept
+{
+	EngineRenderingSettingsSection renderingSettings;
+	renderingSettings.ApplyPersistedValuesToRuntimeState();
 }

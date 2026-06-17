@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "EditorApplication.h"
-#include "Editor/Public/Settings/EditorSettingsBootstrap.h"
 #include "Validation/RhiSmokeValidation.h"
 
 int RunEditorApplication()
@@ -14,7 +13,6 @@ int RunEditorApplication()
 
 int RunEditorApplication(EditorApplicationOptions options)
 {
-	ApplyPersistedEditorSettingsToCVars();
 	Application::ConfigureProcessFromCommandLine();
 
 	if (RhiSmokeValidation::IsRequested())
