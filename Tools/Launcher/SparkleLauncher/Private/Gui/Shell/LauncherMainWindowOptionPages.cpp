@@ -273,13 +273,13 @@ namespace SparkleLauncher
 			AddSmokeValidationOptions(layout);
 			QVBoxLayout* gateLayout = AddDetailsGroup(
 			    layout,
-			    "Quality Gate Coverage",
-			    "One smoke runner exposes real launcher-backed checks here through explicit capability toggles. Additional gates should appear only after the repo has a real runner or preset behind them.",
+			    "Validation Coverage",
+			    "This panel mirrors the smoke runner's real capabilities. The launcher should only expose checks that have a concrete execution path and a defined artifact story.",
 			    false);
-			AddStatusRow(*gateLayout, "Core smoke validation", "Available", "Runs the selected editor or runtime with smoke validation enabled.", "ok");
-			AddStatusRow(*gateLayout, "Backend/PTLAS parity matrix", "Available", "Optional checkbox-driven suite that validates D3D12/Vulkan parity and PTLAS fallback behavior.", "ok");
-			AddStatusRow(*gateLayout, "PTLAS benchmark matrix", "Available", "Optional checkbox-driven suite that emits benchmark summary diagnostics.", "ok");
-			AddStatusRow(*gateLayout, "PTLAS diagnostic captures", "Available", "Optional checkbox-driven suite that emits a reusable PTLAS diagnostics manifest and summary without article-specific workflow code.", "ok");
+			AddStatusRow(*gateLayout, "Core smoke validation", "Available", "Runs the selected editor or runtime with the shared smoke validation harness enabled.", "ok");
+			AddStatusRow(*gateLayout, "Backend/PTLAS parity", "Available", "Optional suite for deterministic backend parity and PTLAS-versus-fallback validation.", "ok");
+			AddStatusRow(*gateLayout, "PTLAS benchmark scenarios", "Available", "Optional suite for timing-oriented PTLAS benchmark diagnostics.", "ok");
+			AddStatusRow(*gateLayout, "PTLAS diagnostic views", "Available", "Optional suite for capture-oriented PTLAS artifact bundles and review-ready manifests.", "ok");
 			AddStatusRow(*gateLayout, "Sanitizer builds", "Configured in CMake", "Root CMake exposes ENABLE_SANITIZERS and SANITIZER_TYPE for Clang-based ASan, UBSan, TSan, MSan, and LSan builds; launcher presets still need a dedicated workflow before this becomes one-click.", "neutral");
 			AddStatusRow(*gateLayout, "Unit / integration / coverage", "Not wired", "No launcher-backed test or coverage runner is currently configured. Add a real CTest/coverage pipeline before exposing executable buttons here.", "neutral");
 			AddLaunchEnvironmentStatus(layout, operationId);

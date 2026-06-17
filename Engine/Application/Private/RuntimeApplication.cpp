@@ -84,13 +84,13 @@ void RuntimeApplication::Initialize()
 	{
 		SPARKLE_CPU_SCOPE("Application.RuntimeCreateScene");
 		m_gameScene = std::make_unique<GameScene>();
+		m_gameScene->RegisterController(std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window));
 		if (m_options.SceneSetupCallback)
 		{
 			m_options.SceneSetupCallback(*m_gameScene);
 		}
 		m_sceneAssetManager = std::make_unique<Assets::SceneAssetManager>();
 		m_levelManager = std::make_unique<LevelManager>(*m_gameScene, *m_sceneAssetManager);
-		m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetCameras().GetActiveCamera());
 	}
 
 	{
@@ -146,10 +146,6 @@ void RuntimeApplication::UpdateRuntime() noexcept
 	{
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
 		m_gameScene->Update(deltaSeconds);
-	}
-	if (m_gameCameraController)
-	{
-		m_gameCameraController->Update();
 	}
 }
 
@@ -222,7 +218,6 @@ void RuntimeApplication::Shutdown()
 
 	m_runtimeConsoleHost.reset();
 	m_renderer.reset();
-	m_gameCameraController.reset();
 	m_levelManager.reset();
 	m_sceneAssetManager.reset();
 	m_gameScene.reset();

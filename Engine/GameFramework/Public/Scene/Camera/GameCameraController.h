@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
+#include "GameFramework/Public/Scene/GameSceneController.h"
 
 #include "Events/EventHandle.h"
 #include "Events/ScopedEventHandle.h"
@@ -9,15 +10,16 @@ class Timer;
 class InputSystem;
 class Window;
 class SceneCamera;
+class GameScene;
 struct KeyboardEvent;
 struct MouseButtonEvent;
 struct MouseMoveEvent;
 struct MouseWheelEvent;
 
-class SPARKLE_ENGINE_API GameCameraController final
+class SPARKLE_ENGINE_API GameCameraController final : public GameSceneController
 {
   public:
-	GameCameraController(Timer& timer, InputSystem& inputSystem, Window& window, SceneCamera& camera) noexcept;
+	GameCameraController(Timer& timer, InputSystem& inputSystem, Window& window) noexcept;
 	~GameCameraController() noexcept;
 
 	GameCameraController(const GameCameraController&) = delete;
@@ -25,9 +27,14 @@ class SPARKLE_ENGINE_API GameCameraController final
 	GameCameraController(GameCameraController&&) = delete;
 	GameCameraController& operator=(GameCameraController&&) = delete;
 
-	void Update() noexcept;
+	void OnSceneReset(GameScene& scene) override;
+	void OnLevelLoaded(GameScene& scene, const LevelDesc& levelDesc) override;
+	void OnSceneAssetsAppended(GameScene& scene) override;
+	void Update(GameScene& scene, const GameSceneUpdateContext& context) override;
 
   private:
+	void RefreshActiveCamera(GameScene& scene) noexcept;
+	void ApplyAspectRatio() noexcept;
 	void OnMouseButtonPressed(const MouseButtonEvent& event) noexcept;
 	void OnMouseButtonReleased(const MouseButtonEvent& event) noexcept;
 	void OnKeyboardEvent(const KeyboardEvent& event) noexcept;
@@ -39,7 +46,7 @@ class SPARKLE_ENGINE_API GameCameraController final
 	Timer& m_timer;
 	InputSystem& m_inputSystem;
 	Window& m_window;
-	SceneCamera& m_camera;
+	SceneCamera* m_camera = nullptr;
 
 	ScopedEventHandle m_windowResizeHandle;
 	EventHandle m_mouseButtonPressedHandle;

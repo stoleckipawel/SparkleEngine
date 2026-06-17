@@ -549,36 +549,69 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddSmokeValidationOptions(QVBoxLayout& layout)
 	{
-		QVBoxLayout* smokeOptionsLayout = AddOptionGroup(layout, "Smoke Test Options", "Smoke-test controls for capture length, matrix selection, and diagnostic behavior.");
-		AddOptionCheckBox(
-		    *smokeOptionsLayout,
-		    CreateBoundCheckBox(
-		        "Run backend/PTLAS parity matrix",
-		        "Execute deterministic D3D12/Vulkan PTLAS parity scenarios and validate image comparisons.",
-		        m_settings.SmokeRunRayTracingParity(),
-		        &LauncherSettings::SetSmokeRunRayTracingParity));
-		AddOptionCheckBox(
-		    *smokeOptionsLayout,
-		    CreateBoundCheckBox(
-		        "Run PTLAS benchmark matrix",
-		        "Execute PTLAS benchmark scenarios and emit benchmark summary diagnostics.",
-		        m_settings.SmokeRunPtlasBenchmark(),
-		        &LauncherSettings::SetSmokeRunPtlasBenchmark));
-		AddOptionCheckBox(
-		    *smokeOptionsLayout,
-		    CreateBoundCheckBox(
-		        "Run PTLAS diagnostic capture matrix",
-		        "Capture multi-view PTLAS diagnostics and emit a generic artifact manifest and summary.",
-		        m_settings.SmokeRunDiagnosticCaptures(),
-		        &LauncherSettings::SetSmokeRunDiagnosticCaptures));
-		AddOptionField(
+		QVBoxLayout* smokeOptionsLayout = AddOptionGroup(
+		    layout,
+		    "Smoke Tests",
+		    "Shared smoke controls first, PTLAS-specific suites last.");
+
+		auto addCompactCheckBoxRow = [this](QVBoxLayout& sectionLayout, QCheckBox* checkBox, int maxWidth = 520) {
+			QFrame* row = new QFrame(this);
+			row->setObjectName("OptionRow");
+			row->setMaximumWidth(maxWidth);
+			QHBoxLayout* rowLayout = new QHBoxLayout(row);
+			rowLayout->setContentsMargins(0, 0, 0, 0);
+			rowLayout->setSpacing(0);
+
+			QFrame* valueCell = new QFrame(row);
+			valueCell->setObjectName("OptionValueCell");
+			QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
+			valueLayout->setContentsMargins(0, 0, 0, 0);
+			valueLayout->setSpacing(0);
+			valueLayout->addWidget(checkBox, 1);
+
+			rowLayout->addWidget(valueCell, 1);
+			sectionLayout.addWidget(row, 0, Qt::AlignLeft);
+		};
+
+		auto addCompactFieldRow = [this](QVBoxLayout& sectionLayout, const QString& label, QWidget* control, int maxWidth = 820) {
+			QFrame* row = new QFrame(this);
+			row->setObjectName("OptionRow");
+			row->setMaximumWidth(maxWidth);
+			QHBoxLayout* rowLayout = new QHBoxLayout(row);
+			rowLayout->setContentsMargins(0, 0, 0, 0);
+			rowLayout->setSpacing(0);
+
+			QFrame* labelCell = new QFrame(row);
+			labelCell->setObjectName("OptionLabelCell");
+			labelCell->setFixedWidth(108);
+			QHBoxLayout* labelLayout = new QHBoxLayout(labelCell);
+			labelLayout->setContentsMargins(8, 0, 8, 0);
+			labelLayout->setSpacing(0);
+
+			QLabel* fieldLabel = CreateFieldLabel(label);
+			fieldLabel->setBuddy(control);
+			labelLayout->addWidget(fieldLabel);
+
+			QFrame* valueCell = new QFrame(row);
+			valueCell->setObjectName("OptionValueCell");
+			QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
+			valueLayout->setContentsMargins(0, 0, 0, 0);
+			valueLayout->setSpacing(0);
+			valueLayout->addWidget(control, 1);
+
+			rowLayout->addWidget(labelCell, 0);
+			rowLayout->addWidget(valueCell, 1);
+			sectionLayout.addWidget(row, 0, Qt::AlignLeft);
+		};
+
+		addCompactFieldRow(
 		    *smokeOptionsLayout,
 		    "Frame limit",
 		    CreateValueCombo(
 		        {{"120 frames", ""}, {"60 frames", "60"}, {"300 frames", "300"}, {"600 frames", "600"}},
 		        m_settings.SmokeFrameLimit(),
 		        &LauncherSettings::SetSmokeFrameLimit));
-		AddOptionField(
+		addCompactFieldRow(
 		    *smokeOptionsLayout,
 		    "View mode",
 		    CreateValueCombo(
@@ -593,28 +626,55 @@ namespace SparkleLauncher
 		        },
 		        m_settings.SmokeViewMode(),
 		        &LauncherSettings::SetSmokeViewMode));
-		AddOptionField(
+		addCompactFieldRow(
 		    *smokeOptionsLayout,
 		    "Capture path",
 		    CreateBoundLineEdit(
 		        m_settings.SmokeCapturePath(),
 		        "logs/smoke/scene-color.bmp",
-		        "Optional scene-color capture path written by RHI smoke validation.",
+		        "Optional base scene-color capture path. Suite-specific diagnostics still write their own artifacts.",
 		        &LauncherSettings::SetSmokeCapturePath));
-		AddOptionCheckBox(
+		addCompactCheckBoxRow(
 		    *smokeOptionsLayout,
 		    CreateBoundCheckBox(
 		        "Capture trace",
-		        "Write smoke trace output.",
+		        "Write smoke trace output to help diagnose failures or correlate capture artifacts with runtime events.",
 		        m_settings.SmokeTrace(),
-		        &LauncherSettings::SetSmokeTrace));
-		AddOptionCheckBox(
+		        &LauncherSettings::SetSmokeTrace),
+		    420);
+		addCompactCheckBoxRow(
 		    *smokeOptionsLayout,
 		    CreateBoundCheckBox(
 		        "Skip level switching",
-		        "Do not switch levels during smoke. Matrix suites force this on automatically.",
+		        "Do not switch levels during smoke. Matrix-oriented suites force this behavior when deterministic comparisons require a fixed scene.",
 		        m_settings.SmokeSkipLevelSwitching(),
-		        &LauncherSettings::SetSmokeSkipLevelSwitching));
+		        &LauncherSettings::SetSmokeSkipLevelSwitching),
+		    420);
+
+		QLabel* ptlasLabel = CreateSectionLabel("PTLAS Suites");
+		smokeOptionsLayout->addWidget(ptlasLabel);
+
+		addCompactCheckBoxRow(
+		    *smokeOptionsLayout,
+		    CreateBoundCheckBox(
+		        "Backend/PTLAS parity checks",
+		        "Validates deterministic D3D12 and Vulkan parity and confirms PTLAS stays aligned with the fallback path.",
+		        m_settings.SmokeRunRayTracingParity(),
+		        &LauncherSettings::SetSmokeRunRayTracingParity));
+		addCompactCheckBoxRow(
+		    *smokeOptionsLayout,
+		    CreateBoundCheckBox(
+		        "PTLAS benchmark timings",
+		        "Runs PTLAS benchmark scenarios and emits timing-oriented diagnostics for performance review.",
+		        m_settings.SmokeRunPtlasBenchmark(),
+		        &LauncherSettings::SetSmokeRunPtlasBenchmark));
+		addCompactCheckBoxRow(
+		    *smokeOptionsLayout,
+		    CreateBoundCheckBox(
+		        "PTLAS diagnostic captures",
+		        "Generates capture-oriented PTLAS diagnostic views and writes a reusable artifact bundle for inspection.",
+		        m_settings.SmokeRunDiagnosticCaptures(),
+		        &LauncherSettings::SetSmokeRunDiagnosticCaptures));
 	}
 
 	void LauncherMainWindow::AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)

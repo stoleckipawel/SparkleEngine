@@ -11,7 +11,6 @@ class Timer;
 class Window;
 class InputSystem;
 class GameScene;
-class GameCameraController;
 class Renderer;
 class LevelManager;
 class RuntimeConsoleHost;
@@ -67,7 +66,6 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	std::unique_ptr<GameScene> m_gameScene;
 	std::unique_ptr<Assets::SceneAssetManager> m_sceneAssetManager;
 	std::unique_ptr<LevelManager> m_levelManager;
-	std::unique_ptr<GameCameraController> m_gameCameraController;
 	std::unique_ptr<Renderer> m_renderer;
 	std::unique_ptr<RuntimeConsoleHost> m_runtimeConsoleHost;
 	RuntimeApplicationOptions m_options;

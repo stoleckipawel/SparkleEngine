@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Scene/Camera/GameCameraController.h"
 #include "Input/InputSystem.h"
+#include "Scene/GameScene.h"
 #include "Scene/Camera/SceneCamera.h"
 #include "Window/Window.h"
 #include "Events/ScopedEventHandle.h"
@@ -14,11 +15,9 @@
 
 #include <DirectXMath.h>
 
-GameCameraController::GameCameraController(Timer& timer, InputSystem& inputSystem, Window& window, SceneCamera& camera) noexcept :
-    m_timer(timer), m_inputSystem(inputSystem), m_window(window), m_camera(camera)
+GameCameraController::GameCameraController(Timer& timer, InputSystem& inputSystem, Window& window) noexcept :
+    m_timer(timer), m_inputSystem(inputSystem), m_window(window)
 {
-	OnWindowResized();
-
 	auto resizeHandle = m_window.OnResized.Add(
 	    [this]()
 	    {
@@ -83,11 +82,38 @@ GameCameraController::~GameCameraController() noexcept
 	}
 }
 
-void GameCameraController::Update() noexcept
+void GameCameraController::OnSceneReset(GameScene& scene)
 {
+	m_camera = nullptr;
+	ResetMovementIntent();
+}
+
+void GameCameraController::OnLevelLoaded(GameScene& scene, const LevelDesc& levelDesc)
+{
+	RefreshActiveCamera(scene);
+}
+
+void GameCameraController::OnSceneAssetsAppended(GameScene& scene)
+{
+	RefreshActiveCamera(scene);
+}
+
+void GameCameraController::Update(GameScene& scene, const GameSceneUpdateContext& context)
+{
+	if (context.phase != GameSceneUpdatePhase::PreAnimation)
+	{
+		return;
+	}
+
+	RefreshActiveCamera(scene);
+	if (m_camera == nullptr)
+	{
+		return;
+	}
+
 	const float deltaTime = static_cast<float>(m_timer.GetDelta(TimeDomain::Scaled));
-	CameraComponent& cameraComponent = m_camera.GetCameraComponent();
-	const CameraMovementSettings& settings = m_camera.GetSettings();
+	CameraComponent& cameraComponent = m_camera->GetCameraComponent();
+	const CameraMovementSettings& settings = m_camera->GetSettings();
 
 	if (deltaTime <= 0.0f)
 	{
@@ -111,6 +137,27 @@ void GameCameraController::Update() noexcept
 	if (upAxis != 0.0f)
 	{
 		cameraComponent.MoveUp(distance * upAxis);
+	}
+}
+
+void GameCameraController::RefreshActiveCamera(GameScene& scene) noexcept
+{
+	m_camera = &scene.GetCameras().GetActiveCamera();
+	ApplyAspectRatio();
+}
+
+void GameCameraController::ApplyAspectRatio() noexcept
+{
+	if (m_camera == nullptr)
+	{
+		return;
+	}
+
+	const float width = static_cast<float>(m_window.GetWidth());
+	const float height = static_cast<float>(m_window.GetHeight());
+	if (width > 0.0f && height > 0.0f)
+	{
+		m_camera->GetCameraComponent().SetAspectRatio(width / height);
 	}
 }
 
@@ -184,9 +231,13 @@ void GameCameraController::OnMouseMove(const MouseMoveEvent& event) noexcept
 	{
 		return;
 	}
+	if (m_camera == nullptr)
+	{
+		return;
+	}
 
-	CameraComponent& cameraComponent = m_camera.GetCameraComponent();
-	const CameraMovementSettings& settings = m_camera.GetSettings();
+	CameraComponent& cameraComponent = m_camera->GetCameraComponent();
+	const CameraMovementSettings& settings = m_camera->GetSettings();
 	const DirectX::XMFLOAT3 rotationEuler = cameraComponent.GetTransform().GetRotationEuler();
 	const float ySign = settings.invertY ? 1.0f : -1.0f;
 	const float yawDelta = static_cast<float>(event.Delta.X) * settings.mouseSensitivity;
@@ -197,12 +248,7 @@ void GameCameraController::OnMouseMove(const MouseMoveEvent& event) noexcept
 
 void GameCameraController::OnWindowResized() noexcept
 {
-	const float width = static_cast<float>(m_window.GetWidth());
-	const float height = static_cast<float>(m_window.GetHeight());
-	if (width > 0.0f && height > 0.0f)
-	{
-		m_camera.GetCameraComponent().SetAspectRatio(width / height);
-	}
+	ApplyAspectRatio();
 }
 
 void GameCameraController::OnMouseWheel(const MouseWheelEvent& event) noexcept
@@ -211,10 +257,14 @@ void GameCameraController::OnMouseWheel(const MouseWheelEvent& event) noexcept
 	{
 		return;
 	}
+	if (m_camera == nullptr)
+	{
+		return;
+	}
 
-	CameraMovementSettings settings = m_camera.GetSettings();
+	CameraMovementSettings settings = m_camera->GetSettings();
 	settings.moveSpeed += event.Delta * settings.speedStep;
-	m_camera.SetSettings(settings);
+	m_camera->SetSettings(settings);
 }
 
 void GameCameraController::ResetMovementIntent() noexcept
