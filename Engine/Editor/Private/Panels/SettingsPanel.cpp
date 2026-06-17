@@ -65,11 +65,11 @@ void SettingsPanel::BuildUI(bool disableInteraction)
 	}
 
 	const bool showRestartBar = HasPendingRestart();
-	const float restartBarHeight = showRestartBar ? 38.0f : 0.0f;
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0f, 12.0f));
+	const float restartBarHeight = showRestartBar ? 34.0f : 0.0f;
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0f, 10.0f));
 	ImGui::BeginChild("##SettingsContent", ImVec2(0.0f, -restartBarHeight));
 	DrawToolbar();
-	ImGui::Dummy(ImVec2(0.0f, 8.0f));
+	ImGui::Dummy(ImVec2(0.0f, 4.0f));
 	if (m_renderingPanel != nullptr)
 	{
 		m_renderingPanel->BuildUI(disableInteraction, m_filterText.c_str());
@@ -79,11 +79,10 @@ void SettingsPanel::BuildUI(bool disableInteraction)
 	if (showRestartBar)
 	{
 		ImGui::Separator();
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 6.0f));
-		ImGui::BeginChild("##SettingsFooter", ImVec2(0.0f, restartBarHeight - 8.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 4.0f));
+		ImGui::BeginChild("##SettingsFooter", ImVec2(0.0f, restartBarHeight - 6.0f));
 		ImGui::BeginDisabled(!m_restartHandler);
 		const float buttonWidth = 96.0f;
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
 		ImGui::SetCursorPosX((std::max)(0.0f, ImGui::GetContentRegionAvail().x - buttonWidth));
 		if (ImGui::Button("Restart", ImVec2(buttonWidth, 0.0f)) && m_restartHandler)
 		{

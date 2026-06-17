@@ -157,7 +157,7 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
 	ImGui::TextUnformatted("Rendering settings.");
 	ImGui::PopStyleColor();
-	ImGui::Dummy(ImVec2(0.0f, 6.0f));
+	ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
 	if (HasPendingRestart())
 	{
@@ -165,7 +165,7 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::AccentStrong());
 		ImGui::TextWrapped("%s", restartMessage.c_str());
 		ImGui::PopStyleColor();
-		ImGui::Dummy(ImVec2(0.0f, 6.0f));
+		ImGui::Dummy(ImVec2(0.0f, 4.0f));
 	}
 
 	ImGui::BeginDisabled(disableInteraction);
@@ -182,7 +182,7 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    [this](bool value) { m_settings->SetPreferHighPerformanceAdapter(value); });
 			ImGui::EndTable();
 		}
-		ImGui::Dummy(ImVec2(0.0f, 6.0f));
+		ImGui::Dummy(ImVec2(0.0f, 4.0f));
 	}
 
 	if (MatchesFilter(filterText, "Geometry", "geometry mesh auto batching") && BeginSettingsCategory("Geometry"))
@@ -196,7 +196,7 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    [this](bool value) { m_settings->SetMeshAutoBatching(value); });
 			ImGui::EndTable();
 		}
-		ImGui::Dummy(ImVec2(0.0f, 6.0f));
+		ImGui::Dummy(ImVec2(0.0f, 4.0f));
 	}
 
 	static constexpr const char* tlasModeLabels[] = {"Classic TLAS", "Partitioned TLAS"};

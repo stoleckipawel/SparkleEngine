@@ -8,48 +8,47 @@
 #include <shellapi.h>
 
 #include <string>
+#include <vector>
 
 namespace
 {
-	std::wstring BuildRelaunchArguments()
+	std::wstring QuoteCommandLineArgument(const std::wstring& argument)
 	{
-		int argumentCount = 0;
-		LPWSTR* arguments = CommandLineToArgvW(GetCommandLineW(), &argumentCount);
-		if (arguments == nullptr || argumentCount <= 1)
+		const bool needsQuotes = argument.find_first_of(L" \t\"") != std::wstring::npos;
+		if (!needsQuotes)
 		{
-			if (arguments != nullptr)
-			{
-				LocalFree(arguments);
-			}
-			return {};
+			return argument;
 		}
 
 		std::wstring result;
+		result.reserve(argument.size() + 2);
+		result += L'"';
+		for (const wchar_t character : argument)
+		{
+			if (character == L'"')
+			{
+				result += L'\\';
+			}
+			result += character;
+		}
+		result += L'"';
+		return result;
+	}
+
+	std::wstring BuildRelaunchCommandLine(const std::filesystem::path& executablePath)
+	{
+		int argumentCount = 0;
+		LPWSTR* arguments = CommandLineToArgvW(GetCommandLineW(), &argumentCount);
+		std::wstring result = QuoteCommandLineArgument(executablePath.wstring());
+		if (arguments == nullptr)
+		{
+			return result;
+		}
+
 		for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
 		{
-			if (!result.empty())
-			{
-				result += L' ';
-			}
-
-			const std::wstring argument = arguments[argumentIndex];
-			const bool needsQuotes = argument.find_first_of(L" \t\"") != std::wstring::npos;
-			if (!needsQuotes)
-			{
-				result += argument;
-				continue;
-			}
-
-			result += L'"';
-			for (const wchar_t character : argument)
-			{
-				if (character == L'"')
-				{
-					result += L'\\';
-				}
-				result += character;
-			}
-			result += L'"';
+			result += L' ';
+			result += QuoteCommandLineArgument(arguments[argumentIndex]);
 		}
 
 		LocalFree(arguments);
@@ -60,18 +59,32 @@ namespace
 bool EditorRestartService::Restart(Window& hostWindow) const
 {
 	const std::filesystem::path executablePath = Paths::ExecutablePath();
-	const std::wstring arguments = BuildRelaunchArguments();
-	const HINSTANCE launched = ShellExecuteW(
-	    nullptr,
-	    L"open",
+	const std::wstring commandLine = BuildRelaunchCommandLine(executablePath);
+	std::vector<wchar_t> mutableCommandLine(commandLine.begin(), commandLine.end());
+	mutableCommandLine.push_back(L'\0');
+
+	const std::wstring workingDirectory = Paths::WorkingDirectory().wstring();
+	STARTUPINFOW startupInfo{};
+	startupInfo.cb = sizeof(startupInfo);
+	PROCESS_INFORMATION processInfo{};
+	const BOOL launched = CreateProcessW(
 	    executablePath.c_str(),
-	    arguments.empty() ? nullptr : arguments.c_str(),
-	    executablePath.parent_path().c_str(),
-	    SW_SHOWNORMAL);
-	if (reinterpret_cast<std::intptr_t>(launched) <= 32)
+	    mutableCommandLine.data(),
+	    nullptr,
+	    nullptr,
+	    FALSE,
+	    0,
+	    nullptr,
+	    workingDirectory.empty() ? nullptr : workingDirectory.c_str(),
+	    &startupInfo,
+	    &processInfo);
+	if (launched == FALSE)
 	{
 		return false;
 	}
+
+	CloseHandle(processInfo.hThread);
+	CloseHandle(processInfo.hProcess);
 
 	hostWindow.RequestClose();
 	return true;
