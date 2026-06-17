@@ -107,7 +107,7 @@ namespace SparkleLauncher
 		m_actionHistory.Save(m_repositoryRoot);
 		UpdateActionHistoryDisplay();
 		ShowRunOutput(runId);
-		SetActivityLogExpanded(!succeeded);
+		SetActivityLogExpanded(true);
 		UpdateProgress();
 		RefreshProjects();
 		RebuildOptionsPages();
