@@ -105,7 +105,6 @@ namespace SparkleLauncher
 		++m_finishedRunCount;
 		m_actionHistory.RecordCompletion(operationId, QDateTime::currentDateTimeUtc().toString(Qt::ISODate), statusText, exitCode);
 		m_actionHistory.Save(m_repositoryRoot);
-		UpdateActionHistoryDisplay();
 		ShowRunOutput(runId);
 		SetActivityLogExpanded(true);
 		UpdateProgress();
@@ -124,37 +123,6 @@ namespace SparkleLauncher
 			{
 				StartOperation(followUp.Request, followUp.Title);
 			}
-		}
-	}
-
-
-	void LauncherMainWindow::UpdateActionHistoryDisplay()
-	{
-		if (m_lastRunSummaryLabel == nullptr || m_lastRunResultLabel == nullptr)
-		{
-			return;
-		}
-
-		const LauncherActionHistoryRecord* found = m_actionHistory.Find(m_selectedOperationId);
-		if (found == nullptr)
-		{
-			m_lastRunSummaryLabel->clear();
-			m_lastRunResultLabel->clear();
-			return;
-		}
-
-		const QDateTime completedAt = QDateTime::fromString(found->CompletedAtUtc, Qt::ISODate);
-		const QString completedAtText = completedAt.isValid() ? completedAt.toLocalTime().toString("MMMM d, yyyy HH:mm") : found->CompletedAtUtc;
-		const bool failed = found->ExitCode != 0;
-		m_lastRunSummaryLabel->setText(QStringLiteral("%1 on %2").arg(failed ? "Last failed" : "Last completed", completedAtText));
-		if (failed)
-		{
-			const QString recoveryHint = FailureRecoveryHint(m_selectedOperationId, found->ResultText);
-			m_lastRunResultLabel->setText(QStringLiteral("Recovery: %1").arg(recoveryHint.isEmpty() ? found->ResultText : recoveryHint));
-		}
-		else
-		{
-			m_lastRunResultLabel->setText(QStringLiteral("Result: %1").arg(found->ResultText));
 		}
 	}
 

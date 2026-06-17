@@ -177,22 +177,7 @@ namespace SparkleLauncher
 		QHBoxLayout* actionMetaRowLayout = new QHBoxLayout(m_actionMetaPanel);
 		actionMetaRowLayout->setContentsMargins(LauncherUi::ActionMeta::Margins());
 		actionMetaRowLayout->setSpacing(LauncherUi::ActionMeta::Spacing);
-
-		QVBoxLayout* actionMetaLayout = new QVBoxLayout();
-		actionMetaLayout->setContentsMargins(0, 0, 0, 0);
-		actionMetaLayout->setSpacing(kSpaceTiny);
-		QLabel* actionMetaTitle = new QLabel("Last completed run", m_actionMetaPanel);
-		actionMetaTitle->setObjectName("ActionMetaTitle");
-		actionMetaLayout->addWidget(actionMetaTitle);
-		m_lastRunSummaryLabel = new QLabel(QString(), m_actionMetaPanel);
-		m_lastRunSummaryLabel->setObjectName("ActionMetaText");
-		m_lastRunSummaryLabel->setWordWrap(true);
-		actionMetaLayout->addWidget(m_lastRunSummaryLabel);
-		m_lastRunResultLabel = new QLabel(QString(), m_actionMetaPanel);
-		m_lastRunResultLabel->setObjectName("ActionMetaDetail");
-		m_lastRunResultLabel->setWordWrap(true);
-		actionMetaLayout->addWidget(m_lastRunResultLabel);
-		actionMetaRowLayout->addLayout(actionMetaLayout, 1);
+		actionMetaRowLayout->addStretch(1);
 
 		m_cleanButton = new QPushButton("Clean", panel);
 		m_cleanButton->setObjectName("SecondaryButton");
@@ -214,7 +199,6 @@ namespace SparkleLauncher
 		connect(m_runButton, &QPushButton::clicked, this, &LauncherMainWindow::RunSelectedOperation);
 		actionMetaRowLayout->addWidget(m_runButton, 0, Qt::AlignRight | Qt::AlignVCenter);
 		layout->addWidget(m_actionMetaPanel);
-		UpdateActionHistoryDisplay();
 		return panel;
 	}
 

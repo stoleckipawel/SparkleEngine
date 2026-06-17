@@ -127,7 +127,6 @@ namespace SparkleLauncher
 		void RebuildOptionsPages();
 		void ScheduleUiRefresh(bool refreshProjects);
 		void ApplyScheduledUiRefresh();
-		void UpdateActionHistoryDisplay();
 		QIcon WorkflowIconForKey(const QString& iconKey) const;
 		QIcon ActivityIconForState(RunState state) const;
 		void RegisterFocusable(QWidget* widget);
@@ -191,8 +190,6 @@ namespace SparkleLauncher
 		QPushButton* m_toggleOutputButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
 		QFrame* m_actionMetaPanel = nullptr;
-		QLabel* m_lastRunSummaryLabel = nullptr;
-		QLabel* m_lastRunResultLabel = nullptr;
 		QLabel* m_progressLabel = nullptr;
 		QWidget* m_activityPanel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;

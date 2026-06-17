@@ -272,8 +272,6 @@ namespace SparkleLauncher
 		PopulateProjectSelectors();
 		RebuildOptionsPages();
 		UpdateRunAvailability();
-		UpdateActionHistoryDisplay();
-
 		m_isApplyingUiRefresh = false;
 		if (m_refreshProjectsRequested)
 		{
@@ -603,7 +601,6 @@ namespace SparkleLauncher
 			}
 		}
 		SetControlsEnabled(true);
-		UpdateActionHistoryDisplay();
 		const bool isStaticPage = operationId == LauncherHomeOperationId();
 		if (m_activeOperationLabel != nullptr)
 		{

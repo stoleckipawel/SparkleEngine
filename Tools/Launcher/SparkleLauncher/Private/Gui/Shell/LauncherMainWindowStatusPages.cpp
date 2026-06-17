@@ -118,53 +118,6 @@ namespace SparkleLauncher
 				                    CreateDisabledSourceTierActions(group));
 			}
 		};
-		const auto addHostDependencyStatus = [this, &plan, &request, &workspaceIdeName](QVBoxLayout& targetLayout, const QString& detailText) {
-			QVBoxLayout* hostLayout = AddDetailsGroup(
-			    targetLayout,
-			    "Host Rebuild Dependency Details",
-			    detailText,
-			    !plan.Toolchain.RequiredToolsAvailable);
-			AddStatusRow(
-			    *hostLayout,
-			    "Dependency set",
-			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed",
-			    BuildGeneratorSummary(plan.Toolchain),
-			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad",
-			    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
-			if (plan.Toolchain.RequiredToolsAvailable)
-			{
-				AddStatusRow(
-				    *hostLayout,
-				    "Tool details",
-				    "Available in host audit",
-				    "Open Verify Host Environment for the full installed-tool inventory.",
-				    "neutral",
-				    CreateActionDependencyActions("toolchain.check", "Verify Host Environment", QString(), QString(), true));
-				return;
-			}
-			for (const ToolchainItemStatus& item : plan.Toolchain.Items)
-			{
-				QString detail = QString::fromStdString(item.Detail);
-				const QString path = FormatStatusPath(item.Path);
-				if (!path.isEmpty())
-				{
-					detail = CombineStatusDetail(detail, path);
-				}
-				AddStatusRow(
-				    *hostLayout,
-				    QString::fromStdString(item.DisplayName) + (item.Required ? "" : " (optional)"),
-				    ToolchainStatusText(item.State, item.Required),
-				    detail,
-				    ToolchainStatusState(item.State, item.Required));
-			}
-			AddStatusRow(
-			    *hostLayout,
-			    "Selected IDE",
-			    workspaceIdeName,
-			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : QString::fromStdString(plan.Toolchain.RiderPath.string())) :
-			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : QString::fromStdString(plan.Freshness.SolutionPath.string())),
-			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
-		};
 		if (isToolchainCheck)
 		{
 			QVBoxLayout* hostDetailsLayout = AddOptionGroup(
@@ -353,11 +306,6 @@ namespace SparkleLauncher
 		if (isBuildWorkflow)
 		{
 			const bool buildNeedsAttention = !plan.Toolchain.RequiredToolsAvailable || !plan.Freshness.Current;
-			addHostDependencyStatus(
-			    layout,
-			    operationId == "launcher.build.self" ?
-			        "Even if this launcher came from a ready-to-run package, rebuilding it locally still requires Visual Studio/MSVC, a Qt 6 MSVC kit, CMake, Git, and the Windows SDK." :
-			        "Prebuilt package binaries do not remove the local host dependencies needed to rebuild this workspace.");
 			QVBoxLayout* buildLayout = AddDetailsGroup(
 			    layout,
 			    buildNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
@@ -384,9 +332,6 @@ namespace SparkleLauncher
 		if (isCookWorkflow)
 		{
 			const bool cookNeedsAttention = !plan.Toolchain.RequiredToolsAvailable || !plan.Freshness.Current;
-			addHostDependencyStatus(
-			    layout,
-			    "Cook workflows may ship ready-to-use outputs, but rebuilding or recooking them locally still requires the same host build dependencies and any enabled optional dependency groups.");
 			QVBoxLayout* cookLayout = AddDetailsGroup(
 			    layout,
 			    cookNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
@@ -555,7 +500,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddLaunchApplicationOptions(QVBoxLayout& layout)
 	{
-		QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Options", "Arguments and runtime CVars passed to the selected process.");
+		QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Options", QString());
 		AddOptionField(
 		    *appOptionsLayout,
 		    "Graphics backend",
