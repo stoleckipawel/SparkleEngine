@@ -1,19 +1,66 @@
 #include "LauncherDependencyUiModel.h"
 
-#include <system_error>
+#include "SparkleLauncher/SourceDependencyState.h"
+
+#include <QtCore/QStringList>
+
+#include <string_view>
+#include <utility>
 
 namespace SparkleLauncher
 {
 	namespace
 	{
-		bool DirectoryHasEntries(const std::filesystem::path& path)
+		QString ToQString(std::string_view text)
 		{
-			std::error_code errorCode;
-			if (!std::filesystem::is_directory(path, errorCode))
+			return QString::fromStdString(std::string(text));
+		}
+
+		ThirdPartyDependencyUiEntry ToUiDependency(const SourceDependencyEntry& dependency)
+		{
+			return {
+			    ToQString(dependency.Id),
+			    ToQString(dependency.Label),
+			    ToQString(dependency.Version),
+			    ToQString(dependency.Purpose),
+			    ToQString(dependency.CacheDirectoryName),
+			};
+		}
+
+		SourceDependencyValidation ValidateDependency(const ThirdPartyDependencyUiEntry& dependency, const std::filesystem::path& dependencyCachePath)
+		{
+			if (const SourceDependencyEntry* sourceDependency = FindSourceDependency(dependency.Id.toStdString()))
 			{
-				return false;
+				return ValidateSourceDependency(*sourceDependency, dependencyCachePath);
 			}
-			return std::filesystem::directory_iterator(path, errorCode) != std::filesystem::directory_iterator();
+
+			SourceDependencyValidation validation;
+			validation.CachePath = dependencyCachePath / dependency.CacheDirectoryName.toStdString();
+			validation.MissingRelativePaths.push_back(dependency.CacheDirectoryName.toStdString());
+			return validation;
+		}
+
+		QString FormatMissingRelativePaths(const std::vector<std::string>& missingRelativePaths)
+		{
+			QStringList parts;
+			for (const std::string& path : missingRelativePaths)
+			{
+				parts.push_back(QString::fromStdString(path));
+			}
+			return parts.join(", ");
+		}
+
+		QString FormatIncompleteDependencyLabels(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath)
+		{
+			QStringList labels;
+			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
+			{
+				if (!ValidateDependency(dependency, dependencyCachePath).Ready)
+				{
+					labels.push_back(dependency.Label);
+				}
+			}
+			return labels.join(", ");
 		}
 	}
 
@@ -21,88 +68,22 @@ namespace SparkleLauncher
 	{
 		static const std::vector<DependencyGroupUiEntry> groups = [] {
 			std::vector<DependencyGroupUiEntry> entries;
-			entries.push_back({
-			    "core-workspace",
-			    "Core Workspace Source Tier",
-			    "Baseline shared dependencies used by the launcher, engine, and project builds.",
-			    "Required source tier for local rebuilds. Runtime packages can still launch bundled components without rebuilding this tier.",
-			    QString(),
-			    true,
-			    true,
-			    {
-			        {"Dear ImGui", "v1.92.5", "Immediate-mode UI core and Win32 platform backend.", "imgui-src"},
-			        {"spdlog", "v1.14.1", "Repo-wide logging backend.", "spdlog-src"},
-			        {"Font Awesome Free Solid", "v6.7.1", "Launcher/editor icon font asset and license.", "editor-icons"},
-			    }});
-#if SPARKLE_ENABLE_CONTENT_PIPELINE
-			const bool contentPipelineEnabled = true;
-#else
-			const bool contentPipelineEnabled = false;
-#endif
-			entries.push_back({
-			    "content-pipeline",
-			    "Content Pipeline Source Tier",
-			    "Optional source import, mesh cook, and texture cook dependencies.",
-			    "Unlocks Build Cooking Tools, Cook Textures, Cook Scenes And Meshes, and the content phase of Cook All.",
-			    "SPARKLE_ENABLE_CONTENT_PIPELINE",
-			    false,
-			    contentPipelineEnabled,
-			    {
-			        {"cgltf", "v1.15", "Single-header glTF 2.0 parser for source scene imports.", "cgltf-src"},
-			        {"stb", "master", "Header-only image loading and mip resize helpers.", "stb-src"},
-			        {"tinyexr", "v1.0.7", "Header-only OpenEXR image loading support.", "tinyexr-src"},
-			        {"zlib", "v1.3.1", "Compression backend used by Assimp.", "zlib-src"},
-			        {"Assimp", "v5.4.3", "FBX and DCC scene import support.", "assimp-src"},
-			        {"Compressonator", "master (sparse)", "AMD BC1-BC7 texture block compression support.", "compressonator-src"},
-			    }});
-#if SPARKLE_ENABLE_KTX_SUPPORT
-			const bool ktxSupportEnabled = true;
-#else
-			const bool ktxSupportEnabled = false;
-#endif
-			entries.push_back({
-			    "ktx-support",
-			    "KTX Container Source Tier",
-			    "Optional KTX2 container support layered on top of the texture pipeline.",
-			    "Extends texture workflows when the repo is configured for KTX support.",
-			    "SPARKLE_ENABLE_KTX_SUPPORT",
-			    false,
-			    ktxSupportEnabled,
-			    {
-			        {"KTX-Software", "v4.3.2", "KTX2 texture container read/write support.", "ktx-src"},
-			    }});
-#if SPARKLE_ENABLE_SHADER_COMPILER
-			const bool shaderCompilerEnabled = true;
-#else
-			const bool shaderCompilerEnabled = false;
-#endif
-			entries.push_back({
-			    "shader-compiler",
-			    "Shader Compiler Source Tier",
-			    "Optional offline shader compiler dependencies.",
-			    "Unlocks Build Cooking Tools, Cook Shaders, and the shader phase of Cook All.",
-			    "SPARKLE_ENABLE_SHADER_COMPILER",
-			    false,
-			    shaderCompilerEnabled,
-			    {
-			        {"SPIRV-Reflect", "vulkan-sdk-1.3.290.0", "SPIR-V reflection for offline shader compiler backends.", "spirv_reflect-src"},
-			    }});
-#if SPARKLE_ENABLE_NVIDIA_STREAMLINE
-			const bool nvidiaStreamlineEnabled = true;
-#else
-			const bool nvidiaStreamlineEnabled = false;
-#endif
-			entries.push_back({
-			    "nvidia-streamline",
-			    "NVIDIA Streamline Runtime Tier",
-			    "Optional NVIDIA Streamline SDK dependency used by the DLSS provider.",
-			    "Unlocks DLSS Super Resolution runtime integration and stages signed Streamline/DLSS DLLs beside editor and runtime executables.",
-			    "SPARKLE_ENABLE_NVIDIA_STREAMLINE",
-			    false,
-			    nvidiaStreamlineEnabled,
-			    {
-			        {"NVIDIA Streamline SDK", "v2.11.1", "Headers, import library, Streamline plugins, and DLSS runtime redistributables.", "streamline-sdk-src"},
-			    }});
+			for (const SourceDependencyGroup& group : GetSourceDependencyGroups())
+			{
+				DependencyGroupUiEntry entry;
+				entry.Id = ToQString(group.Id);
+				entry.Label = ToQString(group.Label);
+				entry.Summary = ToQString(group.Summary);
+				entry.UnlockSummary = ToQString(group.UnlockSummary);
+				entry.ConfigureOption = ToQString(group.ConfigureOption);
+				entry.Required = group.Required;
+				entry.Enabled = group.Enabled;
+				for (const SourceDependencyEntry& dependency : group.Dependencies)
+				{
+					entry.Dependencies.push_back(ToUiDependency(dependency));
+				}
+				entries.push_back(std::move(entry));
+			}
 			return entries;
 		}();
 		return groups;
@@ -123,24 +104,9 @@ namespace SparkleLauncher
 
 	QString FormatTrackedDependencySummary(const std::filesystem::path& dependencyCachePath)
 	{
-		int readyCount = 0;
-		int trackedCount = 0;
-		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
-		{
-			if (!group.Enabled)
-			{
-				continue;
-			}
-			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
-			{
-				++trackedCount;
-				if (DirectoryHasEntries(dependencyCachePath / dependency.CacheDirectoryName.toStdString()))
-				{
-					++readyCount;
-				}
-			}
-		}
-
+		const SourceDependencyInventoryStatus status = InspectSourceDependencyCache(dependencyCachePath);
+		const int readyCount = status.ReadyDependencyCount;
+		const int trackedCount = status.EnabledDependencyCount;
 		return QStringLiteral("%1 of %2 enabled tracked dependencies are cached.")
 		    .arg(readyCount)
 		    .arg(trackedCount);
@@ -148,15 +114,11 @@ namespace SparkleLauncher
 
 	int CountReadyDependencies(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath)
 	{
-		int readyCount = 0;
-		for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
+		if (const SourceDependencyGroup* sourceGroup = FindSourceDependencyGroup(group.Id.toStdString()))
 		{
-			if (DirectoryHasEntries(dependencyCachePath / dependency.CacheDirectoryName.toStdString()))
-			{
-				++readyCount;
-			}
+			return CountReadySourceDependencies(*sourceGroup, dependencyCachePath);
 		}
-		return readyCount;
+		return 0;
 	}
 
 	QString DependencyGroupStatusText(const DependencyGroupUiEntry& group, int readyCount)
@@ -191,15 +153,23 @@ namespace SparkleLauncher
 
 	QString FormatDependencyGroupDetail(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath, int readyCount)
 	{
-		Q_UNUSED(dependencyCachePath);
 		QString detail = group.Summary + " " + group.UnlockSummary;
 		if (!group.Enabled)
 		{
 			return detail + QStringLiteral(" Disabled by %1=OFF in this workspace configuration.").arg(group.ConfigureOption);
 		}
-		return detail + QStringLiteral(" %1 of %2 tracked dependencies are cached.")
-		                    .arg(readyCount)
-		                    .arg(group.Dependencies.size());
+		detail += QStringLiteral(" %1 of %2 tracked dependencies are cached.")
+		              .arg(readyCount)
+		              .arg(group.Dependencies.size());
+		if (readyCount < static_cast<int>(group.Dependencies.size()))
+		{
+			const QString incompleteLabels = FormatIncompleteDependencyLabels(group, dependencyCachePath);
+			if (!incompleteLabels.isEmpty())
+			{
+				detail += QStringLiteral(" Incomplete dependencies: %1.").arg(incompleteLabels);
+			}
+		}
+		return detail;
 	}
 
 	QString FormatDependencyEntryDetail(
@@ -207,12 +177,17 @@ namespace SparkleLauncher
 	    const ThirdPartyDependencyUiEntry& dependency,
 	    const std::filesystem::path& dependencyPath)
 	{
+		const SourceDependencyValidation validation = ValidateDependency(dependency, dependencyPath.parent_path());
 		QString detail = QStringLiteral("%1 Cache directory: %2 under the source dependency cache.")
 		                     .arg(dependency.Purpose)
 		                     .arg(QString::fromStdString(dependencyPath.filename().generic_string()));
 		if (!group.Enabled)
 		{
-			detail += QStringLiteral(" Disabled by %1=OFF in this workspace configuration.").arg(group.ConfigureOption);
+			return detail + QStringLiteral(" Disabled by %1=OFF in this workspace configuration.").arg(group.ConfigureOption);
+		}
+		if (!validation.Ready)
+		{
+			detail += QStringLiteral(" Missing required files: %1.").arg(FormatMissingRelativePaths(validation.MissingRelativePaths));
 		}
 		return detail;
 	}

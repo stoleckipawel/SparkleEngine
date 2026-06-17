@@ -3,6 +3,7 @@
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 #include "SparkleLauncher/LauncherProjectDefaults.h"
+#include "SparkleLauncher/SourceDependencyState.h"
 
 #include <filesystem>
 #include <optional>
@@ -42,9 +43,19 @@ namespace SparkleLauncher
 		std::filesystem::path VswherePath;
 		std::filesystem::path QtRootPath;
 		std::filesystem::path QtQmakePath;
+		std::filesystem::path ShaderCompilerSdkRoot;
 		std::string WindowsSdkVersion;
 		std::vector<ToolchainItemStatus> Items;
 		bool RequiredToolsAvailable = false;
+		bool ConfigurePrerequisitesAvailable = true;
+	};
+
+	struct WorkspaceFeatureSettings
+	{
+		bool ContentPipelineEnabled = false;
+		bool ShaderCompilerEnabled = false;
+		bool KtxSupportEnabled = false;
+		bool NvidiaStreamlineEnabled = false;
 	};
 
 	enum class WorkspaceIde
@@ -60,6 +71,7 @@ namespace SparkleLauncher
 		CMakeCacheMissing,
 		SolutionMissing,
 		GeneratorMismatch,
+		FeatureSetMismatch,
 		FreshnessStampMissing,
 		FreshnessStampMismatch,
 		SourceListChanged,
@@ -129,6 +141,7 @@ namespace SparkleLauncher
 		BuildWorkspaceOperationKind Kind = BuildWorkspaceOperationKind::CheckToolchain;
 		BuildToolchainStatus Toolchain;
 		BuildFilesFreshnessStatus Freshness;
+		SourceDependencyInventoryStatus SourceDependencies;
 		std::vector<BuildWorkspaceOperationStep> Steps;
 		std::vector<std::string> PlannedEffects;
 		std::vector<std::string> ReadinessMessages;
@@ -142,6 +155,9 @@ namespace SparkleLauncher
 	std::string DisplayName(WorkspaceIde ide);
 	std::string WorkspaceIdeCommandLineValue(WorkspaceIde ide);
 	bool TryParseWorkspaceIde(std::string_view text, WorkspaceIde& outIde);
+	WorkspaceFeatureSettings GetLauncherWorkspaceFeatureSettings();
+	bool HasIncompleteEnabledSourceDependencies(const BuildWorkspaceOperationPlan& plan);
+	bool BuildWorkspaceOperationRequiresConfigureStep(const BuildWorkspaceOperationPlan& plan);
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions();
 	std::optional<BuildWorkspaceOperationDefinition> FindBuildWorkspaceOperationDefinition(std::string_view operationId);
 	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot, WorkspaceIde preferredIde);

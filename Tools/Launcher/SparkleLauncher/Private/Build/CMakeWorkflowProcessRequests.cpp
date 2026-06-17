@@ -9,6 +9,11 @@ namespace SparkleLauncher
 		return {"/nologo", "/v:minimal", "/m:1", "/p:UseMultiToolTask=false", "/p:TrackFileAccess=false", "/nodeReuse:false"};
 	}
 
+	static std::string ToCMakeBool(bool value)
+	{
+		return value ? "ON" : "OFF";
+	}
+
 	ProcessRequest MakeCMakeConfigureRequest(
 	    const std::filesystem::path& repositoryRoot,
 	    const BuildToolchainStatus& toolchain,
@@ -34,6 +39,11 @@ namespace SparkleLauncher
 			process.Arguments.push_back("-DGIT_EXECUTABLE=" + toolchain.GitPath.generic_string());
 			process.Arguments.push_back("-DSPARKLE_GIT_EXE=" + toolchain.GitPath.generic_string());
 		}
+		const WorkspaceFeatureSettings featureSettings = GetLauncherWorkspaceFeatureSettings();
+		process.Arguments.push_back("-DSPARKLE_ENABLE_CONTENT_PIPELINE=" + ToCMakeBool(featureSettings.ContentPipelineEnabled));
+		process.Arguments.push_back("-DSPARKLE_ENABLE_SHADER_COMPILER=" + ToCMakeBool(featureSettings.ShaderCompilerEnabled));
+		process.Arguments.push_back("-DSPARKLE_ENABLE_KTX_SUPPORT=" + ToCMakeBool(featureSettings.KtxSupportEnabled));
+		process.Arguments.push_back("-DSPARKLE_ENABLE_NVIDIA_STREAMLINE=" + ToCMakeBool(featureSettings.NvidiaStreamlineEnabled));
 		process.Arguments.push_back("-Wno-dev");
 		process.Arguments.push_back(repositoryRoot.string());
 		return process;

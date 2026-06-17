@@ -124,8 +124,31 @@ set(SPARKLE_RHI_BACKEND_TARGETS "")
 
 if(SPARKLE_RHI_WITH_D3D12)
     if(SPARKLE_RHI_WITH_D3D12_NVAPI)
+        set(_sparkle_nvapi_header_path "${SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR}/nvapi.h")
+        set(_sparkle_nvapi_library_exists FALSE)
+        if(EXISTS "${SPARKLE_RHI_D3D12_NVAPI_LIBRARY}")
+            set(_sparkle_nvapi_library_exists TRUE)
+        endif()
+
         if(SPARKLE_RHI_D3D12_NVAPI_FETCH_FROM_GITHUB AND
-           (NOT SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR OR NOT SPARKLE_RHI_D3D12_NVAPI_LIBRARY))
+           (NOT SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR OR
+            NOT SPARKLE_RHI_D3D12_NVAPI_LIBRARY OR
+            NOT EXISTS "${_sparkle_nvapi_header_path}" OR
+            NOT _sparkle_nvapi_library_exists))
+            set(_sparkle_nvapi_fetch_root "${FETCHCONTENT_BASE_DIR}")
+            set(_sparkle_nvapi_fetch_source_dir "${_sparkle_nvapi_fetch_root}/sparkle_nvapi-src")
+            set(_sparkle_nvapi_fetch_binary_dir "${_sparkle_nvapi_fetch_root}/sparkle_nvapi-build")
+            set(_sparkle_nvapi_fetch_subbuild_dir "${_sparkle_nvapi_fetch_root}/sparkle_nvapi-subbuild")
+            sparkle_prepare_git_fetchcontent_source(
+                "sparkle_nvapi"
+                DISPLAY_NAME "NVIDIA NVAPI"
+                SOURCE_DIR "${_sparkle_nvapi_fetch_source_dir}"
+                BINARY_DIR "${_sparkle_nvapi_fetch_binary_dir}"
+                SUBBUILD_DIR "${_sparkle_nvapi_fetch_subbuild_dir}"
+                REQUIRED_PATHS
+                    "nvapi.h"
+                    "amd64/nvapi64.lib")
+
             FetchContent_Declare(sparkle_nvapi
                 GIT_REPOSITORY https://github.com/NVIDIA/nvapi.git
                 GIT_TAG        ${SPARKLE_RHI_D3D12_NVAPI_GIT_TAG}
@@ -135,12 +158,8 @@ if(SPARKLE_RHI_WITH_D3D12)
 
             FetchContent_MakeAvailable(sparkle_nvapi)
 
-            if(NOT SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR)
-                set(SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR "${sparkle_nvapi_SOURCE_DIR}" CACHE PATH "Directory containing NVIDIA NVAPI headers, used only by SparkleRHI_D3D12" FORCE)
-            endif()
-            if(NOT SPARKLE_RHI_D3D12_NVAPI_LIBRARY)
-                set(SPARKLE_RHI_D3D12_NVAPI_LIBRARY "${sparkle_nvapi_SOURCE_DIR}/amd64/nvapi64.lib" CACHE FILEPATH "NVIDIA NVAPI import library, used only by SparkleRHI_D3D12" FORCE)
-            endif()
+            set(SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR "${sparkle_nvapi_SOURCE_DIR}" CACHE PATH "Directory containing NVIDIA NVAPI headers, used only by SparkleRHI_D3D12" FORCE)
+            set(SPARKLE_RHI_D3D12_NVAPI_LIBRARY "${sparkle_nvapi_SOURCE_DIR}/amd64/nvapi64.lib" CACHE FILEPATH "NVIDIA NVAPI import library, used only by SparkleRHI_D3D12" FORCE)
         endif()
 
         if(NOT SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR)

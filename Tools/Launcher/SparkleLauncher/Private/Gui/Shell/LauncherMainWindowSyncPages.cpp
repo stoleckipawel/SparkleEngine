@@ -22,6 +22,7 @@
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
+#include "SparkleLauncher/SourceDependencyState.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QProcess>
@@ -56,7 +57,9 @@ namespace SparkleLauncher
 	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
 	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
 	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
-	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;	QFrame* LauncherMainWindow::CreateSourceTierCard(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath)
+	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
+
+	QFrame* LauncherMainWindow::CreateSourceTierCard(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath)
 	{
 		const int readyCount = CountReadyDependencies(group, dependencyCachePath);
 		const QString state = DependencyGroupStatusState(group, readyCount);
@@ -145,13 +148,19 @@ namespace SparkleLauncher
 			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
 			{
 				const std::filesystem::path dependencyPath = dependencyCachePath / dependency.CacheDirectoryName.toStdString();
-				const bool dependencyReady = DirectoryHasEntries(dependencyPath);
+				const SourceDependencyEntry* sourceDependency = FindSourceDependency(dependency.Id.toStdString());
+				const SourceDependencyValidation validation = sourceDependency != nullptr ?
+				                                                 ValidateSourceDependency(*sourceDependency, dependencyCachePath) :
+				                                                 SourceDependencyValidation{dependencyPath, false, {dependency.CacheDirectoryName.toStdString()}};
+				std::error_code errorCode;
+				const bool cachePathExists = std::filesystem::exists(dependencyPath, errorCode) && !errorCode;
+				const bool dependencyReady = validation.Ready;
 				AddStatusRow(
 				    *dependenciesLayout,
 				    QStringLiteral("%1 (%2)").arg(dependency.Label, dependency.Version),
-				    !group.Enabled ? "Disabled" : dependencyReady ? "Cached" : "Pending sync",
+				    !group.Enabled ? "Disabled" : dependencyReady ? "Cached" : cachePathExists ? "Incomplete" : "Pending sync",
 				    FormatDependencyEntryDetail(group, dependency, dependencyPath),
-				    !group.Enabled ? "neutral" : dependencyReady ? "ok" : "warning",
+				    !group.Enabled ? "neutral" : dependencyReady ? "ok" : cachePathExists ? "bad" : "warning",
 				    group.Enabled ? CreateTrackedDependencyActions(dependency) : CreateDisabledSourceTierActions(group));
 			}
 		}

@@ -56,7 +56,9 @@ namespace SparkleLauncher
 	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
 	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
 	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
-	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
+	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
+
+	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
 	{
 		BuildWorkspaceOperationRequest request;
 		request.RepositoryRoot = m_repositoryRoot;
@@ -75,7 +77,8 @@ namespace SparkleLauncher
 		const bool isBuildWorkflow = operationId == "workspace.build-all" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
 		const bool isCookWorkflow = operationId.startsWith("cook.") && operationId != "cook.tools.prepare";
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
-		const bool dependencyCacheReady = DirectoryHasEntries(dependencyCachePath);
+		const SourceDependencyInventoryStatus dependencyStatus = plan.SourceDependencies;
+		const bool dependencyCacheReady = dependencyStatus.AllEnabledDependenciesReady;
 		const auto addRelevantDependencyGroups = [this, &dependencyCachePath, &operationId](QVBoxLayout& targetLayout) {
 			for (const DependencyGroupUiEntry& group : GetDependencyGroups())
 			{
@@ -189,6 +192,7 @@ namespace SparkleLauncher
 
 		if (isSyncWorkflow)
 		{
+			const bool syncWillRunConfigure = BuildWorkspaceOperationRequiresConfigureStep(plan);
 			const QString buildFilesLabel = operationId == "workspace.generate-build-files" ? "Generated build files" :
 			                               operationId == "workspace.open-ide" ? "IDE build files" :
 			                                                                        "Configured build files";
@@ -203,14 +207,27 @@ namespace SparkleLauncher
 			                                 isOpenIdeWorkflow ?
 			                                     "Open the selected IDE only after generated build files match the current toolchain selection." :
 			                                     "Sync enabled source-tier capability groups and configure state. This does not install Visual Studio, Qt, CMake, Git, the Windows SDK, or other host prerequisites.";
+			const QString sourceDependencyRepairDetail = syncWillRunConfigure && plan.Freshness.Current && !dependencyStatus.AllEnabledDependenciesReady ?
+			                                                 QString("Configure will rerun to repair missing or incomplete enabled source dependencies.") :
+			                                                 QString();
 			const QString buildFilesDetail = CombineStatusDetail(
 			    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesRecoveryHint(plan.Freshness)),
-			    request.PreferredIde == WorkspaceIde::Rider ? QString("Repository root") : ToDisplayPath(m_repositoryRoot, plan.Freshness.SolutionPath));
-			const QString cacheStatus = dependencyCacheReady ? "Ready" : "Will be created";
-			const QString cacheDetail = dependencyCacheReady ?
-			                               QString("Source dependency cache is available.") :
+			    CombineStatusDetail(
+			        sourceDependencyRepairDetail,
+			        request.PreferredIde == WorkspaceIde::Rider ? QString("Repository root") : ToDisplayPath(m_repositoryRoot, plan.Freshness.SolutionPath)));
+			const QString cacheStatus = dependencyStatus.AllEnabledDependenciesReady ? "Ready" :
+			                           dependencyStatus.ReadyDependencyCount > 0 ? "Repair needed" :
+			                                                                  "Will be created";
+			const QString cacheDetail = dependencyStatus.AllEnabledDependenciesReady ?
+			                               QString("Enabled source dependency cache is available.") :
+			                           dependencyStatus.ReadyDependencyCount > 0 ?
+			                               QString("Sync Source Tiers will repair missing or incomplete enabled source dependencies.") :
 			                               QString("Source dependency cache will be populated when Sync Source Tiers runs.");
-			const bool setupNeedsAttention = !plan.Toolchain.RequiredToolsAvailable || (isSourceSyncWorkflow && !dependencyCacheReady) || !plan.Freshness.Current;
+			const QString configurePrerequisiteDetail = !plan.CanRun && !plan.ReadinessMessages.empty() ?
+			                                               QString::fromStdString(plan.ReadinessMessages.back()) :
+			                                               QString();
+			const bool setupNeedsAttention =
+			    !plan.Toolchain.RequiredToolsAvailable || !plan.CanRun || (isSourceSyncWorkflow && !dependencyCacheReady) || !plan.Freshness.Current || syncWillRunConfigure;
 			if (operationId == "workspace.sync-source-tiers")
 			{
 				AddSourceTierCards(
@@ -227,10 +244,11 @@ namespace SparkleLauncher
 			AddStatusRow(
 			    *workspaceLayout,
 			    buildFilesLabel,
-			    isGenerateBuildFilesWorkflow ? (plan.Freshness.Current ? "Current" : "Will be refreshed") :
-			                                (plan.Freshness.Current ? "Ready" : "Needs refresh"),
+			    isGenerateBuildFilesWorkflow ? (plan.Freshness.Current && !syncWillRunConfigure ? "Current" : "Will be refreshed") :
+			    isSourceSyncWorkflow ? (syncWillRunConfigure ? "Will be refreshed" : "Ready") :
+			                           (plan.Freshness.Current ? "Ready" : "Needs refresh"),
 			    buildFilesDetail,
-			    plan.Freshness.Current ? "ok" : "warning",
+			    plan.Freshness.Current && !syncWillRunConfigure ? "ok" : "warning",
 			    isGenerateBuildFilesWorkflow ? nullptr :
 			                                  CreateActionDependencyActions("workspace.generate-build-files", "Generate Build Files", "build-tree", "Clean Build Files"));
 			if (isSourceSyncWorkflow)
@@ -250,6 +268,16 @@ namespace SparkleLauncher
 				    "Required tools",
 				    "Blocked",
 				    RequiredToolProblemSummary(plan.Toolchain),
+				    "bad",
+				    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
+			}
+			else if (!plan.CanRun && !configurePrerequisiteDetail.isEmpty())
+			{
+				AddStatusRow(
+				    *workspaceLayout,
+				    "Workspace configure prerequisites",
+				    "Blocked",
+				    configurePrerequisiteDetail,
 				    "bad",
 				    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
 			}

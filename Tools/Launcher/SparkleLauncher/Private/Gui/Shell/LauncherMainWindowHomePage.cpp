@@ -56,7 +56,9 @@ namespace SparkleLauncher
 	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
 	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
 	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
-	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;	void LauncherMainWindow::AddHomeQuickStart(QVBoxLayout& layout)
+	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
+
+	void LauncherMainWindow::AddHomeQuickStart(QVBoxLayout& layout)
 	{
 		const BuildWorkspaceOperationRequest workspaceRequest = BuildWorkspacePlanRequest(m_repositoryRoot, m_projectModel, m_settings);
 		const BuildWorkspaceOperationPlan packagePlan = PlanBuildWorkspaceOperation("package.release", workspaceRequest);
@@ -118,27 +120,15 @@ namespace SparkleLauncher
 		    ReadinessContains(runtimePlan.ReadinessMessages, "Cooked shaders are missing");
 		const int missingCookDomains = static_cast<int>(cookedMeshesMissing) + static_cast<int>(cookedTexturesMissing) + static_cast<int>(cookedShadersMissing);
 
-		int enabledDependencyCount = 0;
-		int readyDependencyCount = 0;
-		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
-		{
-			if (!group.Enabled)
-			{
-				continue;
-			}
-			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
-			{
-				++enabledDependencyCount;
-				if (DirectoryHasEntries(dependencyCachePath / dependency.CacheDirectoryName.toStdString()))
-				{
-					++readyDependencyCount;
-				}
-			}
-		}
+		const SourceDependencyInventoryStatus dependencyStatus = InspectSourceDependencyCache(dependencyCachePath);
+		const int enabledDependencyCount = dependencyStatus.EnabledDependencyCount;
+		const int readyDependencyCount = dependencyStatus.ReadyDependencyCount;
 
 		const bool architectureDoc = PathExists(m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md");
 		const bool uxDoc = PathExists(m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md");
 		const bool dependencyDoc = PathExists(m_repositoryRoot / "docs" / "dependency-capability-tiers.md");
+		const bool dependencyCacheHealthy = readyDependencyCount == enabledDependencyCount;
+		const bool dependencyCacheNeedsRepair = readyDependencyCount > 0 && !dependencyCacheHealthy;
 		const std::filesystem::path validationReportPath = m_repositoryRoot / "docs" / "plans" / "build-artifacts-phase6-final-validation-report.md";
 		const bool validationReport = PathExists(validationReportPath);
 		const int storedFailureCount = m_actionHistory.FailureCount();
@@ -253,11 +243,13 @@ namespace SparkleLauncher
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
 		    m_repositoryRoot,
 		    "Dependency Tiers",
-		    dependencyDoc ? "Available" : "Pending",
-		    readyDependencyCount == enabledDependencyCount ? "Enabled source tiers are cached; optional tiers unlock more build and cook capability." :
-		                                                  "Sync source tiers only when you need the extra local build or cook capability.",
-		    dependencyDoc ? "ok" : "warning",
-		    dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") : CreateCommandActionButton("workspace.sync-source-tiers", "Sync Source Tiers", false),
+		    dependencyCacheHealthy ? "Ready" : dependencyCacheNeedsRepair ? "Repair needed" : dependencyDoc ? "Available" : "Pending",
+		    dependencyCacheHealthy ? "Enabled source tiers are cached; optional tiers unlock more build and cook capability." :
+		    dependencyCacheNeedsRepair ? "Some enabled source tiers need repair. Sync Source Tiers will restore local rebuild and cook capability." :
+		                                 "Sync source tiers when you want the extra local build or cook capability.",
+		    dependencyCacheHealthy && dependencyDoc ? "ok" : "warning",
+		    dependencyCacheHealthy && dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") :
+		                                             CreateCommandActionButton("workspace.sync-source-tiers", "Sync Source Tiers", false),
 		    "discover",
 		    "sparkle-source-tiers.png",
 		    this));

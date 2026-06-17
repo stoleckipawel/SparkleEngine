@@ -353,7 +353,7 @@ namespace SparkleLauncher
 				{
 					record = plan.Operation;
 					record.Status = OperationStatus::Skipped;
-					record.FailureSummary = "Operation readiness failed.";
+					record.FailureSummary = plan.ReadinessMessages.empty() ? "Operation readiness failed." : plan.ReadinessMessages.back();
 					break;
 				}
 				record = RunBuildWorkspaceOperationPlan(std::move(plan), *processRunner, outputCallback);
@@ -366,7 +366,7 @@ namespace SparkleLauncher
 				{
 					record = plan.Operation;
 					record.Status = OperationStatus::Skipped;
-					record.FailureSummary = "Operation readiness failed.";
+					record.FailureSummary = plan.ReadinessMessages.empty() ? "Operation readiness failed." : plan.ReadinessMessages.back();
 					break;
 				}
 				record = RunCookOperationPlan(std::move(plan), *processRunner, outputCallback);
@@ -379,7 +379,7 @@ namespace SparkleLauncher
 				{
 					record = plan.Operation;
 					record.Status = OperationStatus::Skipped;
-					record.FailureSummary = "Operation readiness failed.";
+					record.FailureSummary = plan.ReadinessMessages.empty() ? "Operation readiness failed." : plan.ReadinessMessages.back();
 					break;
 				}
 				record = RunMaintenanceOperationPlan(std::move(plan), *processRunner, outputCallback);
@@ -392,7 +392,7 @@ namespace SparkleLauncher
 				{
 					record = plan.Operation;
 					record.Status = OperationStatus::Skipped;
-					record.FailureSummary = "Operation readiness failed.";
+					record.FailureSummary = plan.ReadinessMessages.empty() ? "Operation readiness failed." : plan.ReadinessMessages.back();
 					break;
 				}
 				record = RunLaunchOperationPlan(std::move(plan), *processRunner, outputCallback);

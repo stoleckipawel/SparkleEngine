@@ -88,7 +88,25 @@ namespace SparkleLauncher
 
 	std::filesystem::path GetBuildSolutionPath(const std::filesystem::path& repositoryRoot)
 	{
-		return GetBuildDirectory(repositoryRoot) / (ReadRootCMakeProjectName(repositoryRoot).value_or("Sparkle") + ".slnx");
+		const std::filesystem::path solutionBasePath =
+		    GetBuildDirectory(repositoryRoot) / ReadRootCMakeProjectName(repositoryRoot).value_or("Sparkle");
+		std::filesystem::path candidate = solutionBasePath;
+		candidate += ".sln";
+		if (std::filesystem::exists(candidate))
+		{
+			return candidate;
+		}
+
+		candidate = solutionBasePath;
+		candidate += ".slnx";
+		if (std::filesystem::exists(candidate))
+		{
+			return candidate;
+		}
+
+		candidate = solutionBasePath;
+		candidate += ".sln";
+		return candidate;
 	}
 
 	std::string BuildUtcTimestamp()

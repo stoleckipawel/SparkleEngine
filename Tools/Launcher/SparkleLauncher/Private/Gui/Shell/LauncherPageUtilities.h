@@ -132,6 +132,7 @@ namespace SparkleLauncher
 		switch (freshness.State)
 		{
 		case BuildFilesFreshnessState::GeneratorMismatch:
+		case BuildFilesFreshnessState::FeatureSetMismatch:
 			return "Recovery: clean Build Outputs or choose a different build directory before running Generate Build Files again.";
 		case BuildFilesFreshnessState::BuildDirectoryMissing:
 		case BuildFilesFreshnessState::CMakeCacheMissing:

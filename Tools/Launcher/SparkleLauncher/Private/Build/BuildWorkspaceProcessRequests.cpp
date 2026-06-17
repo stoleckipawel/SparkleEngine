@@ -128,13 +128,12 @@ namespace SparkleLauncher
 			return steps;
 		}
 
-		const bool needsConfigure = plan.Request.ForceConfigure || !plan.Freshness.Current;
 		switch (plan.Kind)
 		{
 		case BuildWorkspaceOperationKind::CheckToolchain:
 			return steps;
 		case BuildWorkspaceOperationKind::SyncSourceTiers:
-			if (needsConfigure)
+			if (BuildWorkspaceOperationRequiresConfigureStep(plan))
 			{
 				AddConfigureStep(steps, plan);
 			}

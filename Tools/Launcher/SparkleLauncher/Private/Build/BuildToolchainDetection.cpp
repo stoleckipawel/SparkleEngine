@@ -87,6 +87,17 @@ namespace SparkleLauncher
 		return directoryName.find("mingw") != std::string::npos;
 	}
 
+	static std::optional<std::filesystem::path> TryGetEnvironmentPath(std::string_view variableName)
+	{
+		std::string value;
+		const std::string variableNameText(variableName);
+		if (!Environment::TryGetVariable(variableNameText.c_str(), value) || value.empty())
+		{
+			return std::nullopt;
+		}
+		return std::filesystem::path(value);
+	}
+
 	static std::optional<std::filesystem::path> NormalizeQtKitRootCandidate(std::filesystem::path path)
 	{
 		std::error_code errorCode;
@@ -307,6 +318,80 @@ namespace SparkleLauncher
 		return latestVersion;
 	}
 
+	struct ShaderCompilerSdkStatus
+	{
+		bool Available = false;
+		std::filesystem::path Root;
+		std::string Detail;
+	};
+
+	static ShaderCompilerSdkStatus DetectShaderCompilerSdk()
+	{
+		ShaderCompilerSdkStatus status;
+		const std::optional<std::filesystem::path> sdkRoot = TryGetEnvironmentPath("VULKAN_SDK");
+		if (!sdkRoot.has_value())
+		{
+			status.Detail = "VULKAN_SDK is not set. Install the Vulkan SDK so the enabled ShaderCompiler workspace tier can find DXC and Slang.";
+			return status;
+		}
+
+		status.Root = sdkRoot->lexically_normal();
+		const std::filesystem::path dxcHeader = status.Root / "Include" / "dxc" / "dxcapi.h";
+		const std::filesystem::path dxcLibrary = status.Root / "Lib" / "dxcompiler.lib";
+		const std::filesystem::path slangHeader = status.Root / "Include" / "slang" / "slang.h";
+		const std::filesystem::path slangLibrary = status.Root / "Lib" / "slang.lib";
+		const std::filesystem::path slangRuntime = status.Root / "Bin" / "slang.dll";
+
+		std::vector<std::string> missingEntries;
+		std::error_code errorCode;
+		if (!std::filesystem::exists(dxcHeader, errorCode))
+		{
+			missingEntries.push_back("Include/dxc/dxcapi.h");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(dxcLibrary, errorCode))
+		{
+			missingEntries.push_back("Lib/dxcompiler.lib");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(slangHeader, errorCode))
+		{
+			missingEntries.push_back("Include/slang/slang.h");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(slangLibrary, errorCode))
+		{
+			missingEntries.push_back("Lib/slang.lib");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(slangRuntime, errorCode))
+		{
+			missingEntries.push_back("Bin/slang.dll");
+		}
+
+		if (missingEntries.empty())
+		{
+			status.Available = true;
+			status.Detail = "Using VULKAN_SDK root: " + status.Root.string();
+			return status;
+		}
+
+		std::vector<std::string_view> missingEntryViews;
+		missingEntryViews.reserve(missingEntries.size());
+		for (const std::string& entry : missingEntries)
+		{
+			missingEntryViews.push_back(entry);
+		}
+
+		std::ostringstream detail;
+		detail << "VULKAN_SDK is set to " << status.Root.string()
+		       << ", but the enabled ShaderCompiler workspace tier is missing: "
+		       << Strings::Join(missingEntryViews, ", ")
+		       << ".";
+		status.Detail = detail.str();
+		return status;
+	}
+
 	static std::string ResolveGenerator(const std::filesystem::path& repositoryRoot)
 	{
 		std::string overrideGenerator;
@@ -470,6 +555,21 @@ namespace SparkleLauncher
 		    qtKit.FoundMsvcKit,
 		    qtKit.FoundMsvcKit ? qtKit.QtRootPath : (!qtKit.MingwCandidates.empty() ? qtKit.MingwCandidates.front() : std::filesystem::path()),
 		    BuildQtStatusDetail(qtKit)));
+
+#if SPARKLE_ENABLE_SHADER_COMPILER
+		const ShaderCompilerSdkStatus shaderCompilerSdk = DetectShaderCompilerSdk();
+		status.ShaderCompilerSdkRoot = shaderCompilerSdk.Root;
+		status.ConfigurePrerequisitesAvailable = shaderCompilerSdk.Available;
+		status.Items.push_back(MakeToolStatus(
+		    "shader-compiler-sdk",
+		    "Shader compiler SDK (DXC + Slang)",
+		    false,
+		    shaderCompilerSdk.Available,
+		    shaderCompilerSdk.Root,
+		    shaderCompilerSdk.Detail));
+#else
+		status.ConfigurePrerequisitesAvailable = true;
+#endif
 
 		status.RequiredToolsAvailable = AreRequiredToolsAvailable(status.Items);
 		return status;

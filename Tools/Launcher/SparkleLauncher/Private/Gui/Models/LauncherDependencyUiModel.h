@@ -9,6 +9,7 @@ namespace SparkleLauncher
 {
 	struct ThirdPartyDependencyUiEntry
 	{
+		QString Id;
 		QString Label;
 		QString Version;
 		QString Purpose;

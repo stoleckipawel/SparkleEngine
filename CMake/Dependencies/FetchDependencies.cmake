@@ -177,6 +177,141 @@ function(download_sparkle_editor_asset url output_path display_name)
     endif()
 endfunction()
 
+function(sparkle_collect_missing_relative_paths root_path out_missing_paths)
+    set(missing_paths "")
+    foreach(relative_path IN LISTS ARGN)
+        if(NOT EXISTS "${root_path}/${relative_path}")
+            list(APPEND missing_paths "${relative_path}")
+        endif()
+    endforeach()
+    set(${out_missing_paths} "${missing_paths}" PARENT_SCOPE)
+endfunction()
+
+function(sparkle_prepare_git_fetchcontent_source dependency_name)
+    set(options)
+    set(oneValueArgs DISPLAY_NAME SOURCE_DIR BINARY_DIR SUBBUILD_DIR)
+    set(multiValueArgs REQUIRED_PATHS)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if("${ARG_DISPLAY_NAME}" STREQUAL "")
+        set(ARG_DISPLAY_NAME "${dependency_name}")
+    endif()
+    if("${ARG_SOURCE_DIR}" STREQUAL "")
+        set(ARG_SOURCE_DIR "${FETCHCONTENT_BASE_DIR}/${dependency_name}-src")
+    endif()
+    if("${ARG_SUBBUILD_DIR}" STREQUAL "")
+        set(ARG_SUBBUILD_DIR "${FETCHCONTENT_BASE_DIR}/${dependency_name}-subbuild")
+    endif()
+
+    string(TOUPPER "${dependency_name}" dependency_upper)
+    set(fetchcontent_source_cache_key "FETCHCONTENT_SOURCE_DIR_${dependency_upper}")
+    set(fetchcontent_source_cache_value "${${fetchcontent_source_cache_key}}")
+
+    if(NOT EXISTS "${ARG_SOURCE_DIR}" AND NOT "${fetchcontent_source_cache_value}" STREQUAL "")
+        if(SPARKLE_VERBOSE_DEPENDENCIES)
+            message(STATUS "  Clearing stale FetchContent source override: ${dependency_name}")
+        endif()
+        set(${fetchcontent_source_cache_key} "" CACHE PATH "" FORCE)
+        set(fetchcontent_source_cache_value "")
+    endif()
+
+    if(NOT EXISTS "${ARG_SOURCE_DIR}")
+        return()
+    endif()
+
+    set(needs_recovery FALSE)
+    set(recovery_reason "")
+
+    if(NOT EXISTS "${ARG_SOURCE_DIR}/.git")
+        set(needs_recovery TRUE)
+        set(recovery_reason "no .git directory")
+    else()
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" rev-parse --is-inside-work-tree
+            WORKING_DIRECTORY "${ARG_SOURCE_DIR}"
+            RESULT_VARIABLE git_rc
+            OUTPUT_QUIET ERROR_QUIET
+        )
+        if(NOT git_rc EQUAL 0)
+            set(needs_recovery TRUE)
+            set(recovery_reason "git metadata is invalid")
+        else()
+            execute_process(
+                COMMAND "${GIT_EXECUTABLE}" reset --hard HEAD
+                WORKING_DIRECTORY "${ARG_SOURCE_DIR}"
+                RESULT_VARIABLE git_reset_rc
+                OUTPUT_QUIET ERROR_QUIET
+            )
+            if(NOT git_reset_rc EQUAL 0)
+                set(needs_recovery TRUE)
+                set(recovery_reason "git reset failed")
+            endif()
+        endif()
+    endif()
+
+    if(NOT needs_recovery AND ARG_REQUIRED_PATHS)
+        sparkle_collect_missing_relative_paths("${ARG_SOURCE_DIR}" missing_required_paths ${ARG_REQUIRED_PATHS})
+        if(missing_required_paths)
+            list(JOIN missing_required_paths ", " missing_required_paths_text)
+            set(needs_recovery TRUE)
+            set(recovery_reason "missing required paths: ${missing_required_paths_text}")
+        endif()
+    endif()
+
+    if(needs_recovery)
+        message(WARNING "Corrupt or incomplete ${ARG_DISPLAY_NAME} source cache detected (${recovery_reason}). Removing for re-download...")
+        set(paths_to_remove "${ARG_SOURCE_DIR}" "${ARG_SUBBUILD_DIR}")
+        if(NOT "${ARG_BINARY_DIR}" STREQUAL "")
+            list(APPEND paths_to_remove "${ARG_BINARY_DIR}")
+        endif()
+        file(REMOVE_RECURSE ${paths_to_remove})
+        set(${fetchcontent_source_cache_key} "" CACHE PATH "" FORCE)
+        return()
+    endif()
+
+    if(SPARKLE_VERBOSE_DEPENDENCIES)
+        message(STATUS "  Reusing existing clone: ${dependency_name}")
+    endif()
+    set(${fetchcontent_source_cache_key} "${ARG_SOURCE_DIR}" CACHE PATH "" FORCE)
+endfunction()
+
+function(sparkle_ensure_archive_dependency)
+    set(options)
+    set(oneValueArgs DISPLAY_NAME URL ARCHIVE_PATH ROOT_PATH EXPECTED_HASH)
+    set(multiValueArgs REQUIRED_PATHS)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    sparkle_collect_missing_relative_paths("${ARG_ROOT_PATH}" missing_paths ${ARG_REQUIRED_PATHS})
+    if(missing_paths)
+        file(MAKE_DIRECTORY "${FETCHCONTENT_BASE_DIR}")
+        file(DOWNLOAD
+            "${ARG_URL}"
+            "${ARG_ARCHIVE_PATH}"
+            EXPECTED_HASH "${ARG_EXPECTED_HASH}"
+            STATUS download_status
+            TLS_VERIFY ON
+            SHOW_PROGRESS
+        )
+        list(GET download_status 0 download_code)
+        list(GET download_status 1 download_message)
+        if(NOT download_code EQUAL 0)
+            file(REMOVE "${ARG_ARCHIVE_PATH}")
+            message(FATAL_ERROR "Failed to download ${ARG_DISPLAY_NAME}: ${download_message}")
+        endif()
+
+        file(REMOVE_RECURSE "${ARG_ROOT_PATH}")
+        file(MAKE_DIRECTORY "${ARG_ROOT_PATH}")
+        file(ARCHIVE_EXTRACT INPUT "${ARG_ARCHIVE_PATH}" DESTINATION "${ARG_ROOT_PATH}")
+
+        sparkle_collect_missing_relative_paths("${ARG_ROOT_PATH}" missing_paths ${ARG_REQUIRED_PATHS})
+    endif()
+
+    if(missing_paths)
+        list(JOIN missing_paths ", " missing_paths_text)
+        message(FATAL_ERROR "${ARG_DISPLAY_NAME} recovery is incomplete. Missing: ${missing_paths_text} under '${ARG_ROOT_PATH}'.")
+    endif()
+endfunction()
+
 # ---------------------------------------------------------------------------
 # Recovery: Remove partial/corrupt clones from interrupted downloads.
 # If someone kills the process mid-clone, the src dir may exist but not be a
@@ -192,31 +327,7 @@ endfunction()
 # ---------------------------------------------------------------------------
 # Note: compressonator is handled separately below via sparse checkout.
 foreach(_dep imgui cgltf stb tinyexr spdlog zlib assimp ktx spirv_reflect)
-    set(_src_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-src")
-    set(_subbuild_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-subbuild")
-    if(EXISTS "${_src_dir}" AND NOT EXISTS "${_src_dir}/.git")
-        message(WARNING "Corrupt/partial clone detected: ${_dep}-src (no .git directory). Removing for re-download...")
-        file(REMOVE_RECURSE "${_src_dir}")
-        file(REMOVE_RECURSE "${_subbuild_dir}")
-    elseif(EXISTS "${_src_dir}/.git")
-        # Valid clone exists - tell FetchContent to reuse it instead of re-cloning.
-        # FetchContent creates empty FETCHCONTENT_SOURCE_DIR_<NAME> cache entries
-        # by default, so we must check the value, not just DEFINED.
-        string(TOUPPER "${_dep}" _dep_upper)
-        if("${FETCHCONTENT_SOURCE_DIR_${_dep_upper}}" STREQUAL "")
-            # Ensure checkout is complete (may have been interrupted by LFS errors).
-            execute_process(
-                COMMAND "${_git_exe}" reset --hard HEAD
-                WORKING_DIRECTORY "${_src_dir}"
-                RESULT_VARIABLE _git_rc
-                OUTPUT_QUIET ERROR_QUIET
-            )
-            if(SPARKLE_VERBOSE_DEPENDENCIES)
-                message(STATUS "  Reusing existing clone: ${_dep}-src")
-            endif()
-            set(FETCHCONTENT_SOURCE_DIR_${_dep_upper} "${_src_dir}" CACHE PATH "" FORCE)
-        endif()
-    endif()
+    sparkle_prepare_git_fetchcontent_source("${_dep}" DISPLAY_NAME "${_dep}")
 endforeach()
 
 # ============================================================================
@@ -767,38 +878,23 @@ if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
     set(_sparkle_streamline_url "https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.11.1/streamline-sdk-v2.11.1.zip")
     set(_sparkle_streamline_zip "${FETCHCONTENT_BASE_DIR}/streamline-sdk-v2.11.1.zip")
     set(_sparkle_streamline_root "${FETCHCONTENT_BASE_DIR}/streamline-sdk-src")
+    set(_sparkle_streamline_required_paths
+        "include/sl.h"
+        "lib/x64/sl.interposer.lib"
+        "bin/x64/sl.interposer.dll"
+        "bin/x64/sl.common.dll"
+        "bin/x64/sl.dlss.dll"
+        "bin/x64/nvngx_dlss.dll"
+    )
 
-    if(NOT EXISTS "${_sparkle_streamline_root}/include/sl.h" OR NOT EXISTS "${_sparkle_streamline_root}/bin/x64/sl.dlss.dll")
-        file(MAKE_DIRECTORY "${FETCHCONTENT_BASE_DIR}")
-        file(DOWNLOAD
-            "${_sparkle_streamline_url}"
-            "${_sparkle_streamline_zip}"
-            EXPECTED_HASH SHA256=0C1D562E59557434CABFB8997157CB8C04FC7D23F077C8BDF5260975B73DFB89
-            STATUS _streamline_download_status
-            TLS_VERIFY ON
-            SHOW_PROGRESS
-        )
-        list(GET _streamline_download_status 0 _streamline_download_code)
-        list(GET _streamline_download_status 1 _streamline_download_message)
-        if(NOT _streamline_download_code EQUAL 0)
-            file(REMOVE "${_sparkle_streamline_zip}")
-            message(FATAL_ERROR "Failed to download NVIDIA Streamline SDK v2.11.1: ${_streamline_download_message}")
-        endif()
-
-        file(REMOVE_RECURSE "${_sparkle_streamline_root}")
-        file(MAKE_DIRECTORY "${_sparkle_streamline_root}")
-        file(ARCHIVE_EXTRACT INPUT "${_sparkle_streamline_zip}" DESTINATION "${_sparkle_streamline_root}")
-    endif()
-
-    if(NOT EXISTS "${_sparkle_streamline_root}/include/sl.h")
-        message(FATAL_ERROR "NVIDIA Streamline SDK extraction is missing include/sl.h at '${_sparkle_streamline_root}'.")
-    endif()
-    if(NOT EXISTS "${_sparkle_streamline_root}/lib/x64/sl.interposer.lib")
-        message(FATAL_ERROR "NVIDIA Streamline SDK extraction is missing lib/x64/sl.interposer.lib at '${_sparkle_streamline_root}'.")
-    endif()
-    if(NOT EXISTS "${_sparkle_streamline_root}/bin/x64/sl.dlss.dll" OR NOT EXISTS "${_sparkle_streamline_root}/bin/x64/nvngx_dlss.dll")
-        message(FATAL_ERROR "NVIDIA Streamline SDK extraction is missing required DLSS runtime DLLs at '${_sparkle_streamline_root}/bin/x64'.")
-    endif()
+    sparkle_ensure_archive_dependency(
+        DISPLAY_NAME "NVIDIA Streamline SDK"
+        URL "${_sparkle_streamline_url}"
+        ARCHIVE_PATH "${_sparkle_streamline_zip}"
+        ROOT_PATH "${_sparkle_streamline_root}"
+        EXPECTED_HASH "SHA256=0C1D562E59557434CABFB8997157CB8C04FC7D23F077C8BDF5260975B73DFB89"
+        REQUIRED_PATHS ${_sparkle_streamline_required_paths}
+    )
 
     set(SPARKLE_NVIDIA_STREAMLINE_ROOT "${_sparkle_streamline_root}" CACHE PATH "NVIDIA Streamline SDK root used by Sparkle DLSS integration." FORCE)
     set(SPARKLE_NVIDIA_STREAMLINE_BIN_DIR "${_sparkle_streamline_root}/bin/x64" CACHE PATH "NVIDIA Streamline runtime DLL directory." FORCE)

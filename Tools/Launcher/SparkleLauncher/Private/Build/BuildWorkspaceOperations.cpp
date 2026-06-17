@@ -31,6 +31,8 @@ namespace SparkleLauncher
 			return "SolutionMissing";
 		case BuildFilesFreshnessState::GeneratorMismatch:
 			return "GeneratorMismatch";
+		case BuildFilesFreshnessState::FeatureSetMismatch:
+			return "FeatureSetMismatch";
 		case BuildFilesFreshnessState::FreshnessStampMissing:
 			return "FreshnessStampMissing";
 		case BuildFilesFreshnessState::FreshnessStampMismatch:
@@ -44,6 +46,24 @@ namespace SparkleLauncher
 		}
 
 		return "Unknown";
+	}
+
+	WorkspaceFeatureSettings GetLauncherWorkspaceFeatureSettings()
+	{
+		WorkspaceFeatureSettings settings;
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
+		settings.ContentPipelineEnabled = true;
+#endif
+#if SPARKLE_ENABLE_SHADER_COMPILER
+		settings.ShaderCompilerEnabled = true;
+#endif
+#if SPARKLE_ENABLE_KTX_SUPPORT
+		settings.KtxSupportEnabled = true;
+#endif
+#if SPARKLE_ENABLE_NVIDIA_STREAMLINE
+		settings.NvidiaStreamlineEnabled = true;
+#endif
+		return settings;
 	}
 
 	std::string ToString(BuildWorkspaceOperationKind kind)
@@ -127,5 +147,23 @@ namespace SparkleLauncher
 			return true;
 		}
 		return false;
+	}
+
+	bool HasIncompleteEnabledSourceDependencies(const BuildWorkspaceOperationPlan& plan)
+	{
+		return plan.SourceDependencies.ReadyDependencyCount < plan.SourceDependencies.EnabledDependencyCount;
+	}
+
+	bool BuildWorkspaceOperationRequiresConfigureStep(const BuildWorkspaceOperationPlan& plan)
+	{
+		switch (plan.Kind)
+		{
+		case BuildWorkspaceOperationKind::SyncSourceTiers:
+			return plan.Request.ForceConfigure || !plan.Freshness.Current || HasIncompleteEnabledSourceDependencies(plan);
+		case BuildWorkspaceOperationKind::GenerateBuildFiles:
+			return true;
+		default:
+			return false;
+		}
 	}
 }

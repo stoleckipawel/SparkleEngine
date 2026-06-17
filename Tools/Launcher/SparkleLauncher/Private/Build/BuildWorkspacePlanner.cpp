@@ -34,6 +34,24 @@ namespace SparkleLauncher
 		return false;
 	}
 
+	static bool RequireConfigurePrerequisites(BuildWorkspaceOperationPlan& plan)
+	{
+		if (plan.Toolchain.ConfigurePrerequisitesAvailable)
+		{
+			return true;
+		}
+
+		AddReadiness(plan, "Enabled workspace configure prerequisites are incomplete.");
+		for (const ToolchainItemStatus& item : plan.Toolchain.Items)
+		{
+			if (item.Id == "shader-compiler-sdk" && item.State != ToolchainItemState::Found && !item.Detail.empty())
+			{
+				AddReadiness(plan, item.Detail);
+			}
+		}
+		return false;
+	}
+
 	static bool IsPreferredIdeAvailable(const BuildToolchainStatus& toolchain, WorkspaceIde ide)
 	{
 		switch (ide)
@@ -93,7 +111,8 @@ namespace SparkleLauncher
 			return;
 		}
 
-		const bool needsConfigure = request.ForceConfigure || !plan.Freshness.Current;
+		const bool sourceDependenciesMissing = HasIncompleteEnabledSourceDependencies(plan);
+		const bool needsConfigure = BuildWorkspaceOperationRequiresConfigureStep(plan);
 		switch (plan.Kind)
 		{
 		case BuildWorkspaceOperationKind::CheckToolchain:
@@ -101,6 +120,14 @@ namespace SparkleLauncher
 			plan.CanRun = true;
 			return;
 		case BuildWorkspaceOperationKind::SyncSourceTiers:
+			if (!RequireConfigurePrerequisites(plan))
+			{
+				return;
+			}
+			if (sourceDependenciesMissing)
+			{
+				AddPlannedEffect(plan, "Repair incomplete enabled source dependency caches before the next local rebuild or cook workflow.");
+			}
 			if (needsConfigure)
 			{
 				AddConfigureStep(plan);
@@ -112,6 +139,14 @@ namespace SparkleLauncher
 			plan.CanRun = true;
 			return;
 		case BuildWorkspaceOperationKind::GenerateBuildFiles:
+			if (!RequireConfigurePrerequisites(plan))
+			{
+				return;
+			}
+			if (sourceDependenciesMissing)
+			{
+				AddPlannedEffect(plan, "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
+			}
 			AddConfigureStep(plan);
 			plan.CanRun = true;
 			return;
@@ -291,9 +326,17 @@ namespace SparkleLauncher
 		plan.Request = request;
 		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot, request.PreferredIde);
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
+		plan.SourceDependencies = InspectSourceDependencyCache(GetBuildDirectory(request.RepositoryRoot) / "_deps");
 
 		AddReadiness(plan, plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
 		AddReadiness(plan, plan.Freshness.Summary);
+		if (!plan.SourceDependencies.AllEnabledDependenciesReady)
+		{
+			for (const std::string& message : plan.SourceDependencies.ReadinessMessages)
+			{
+				AddReadiness(plan, message);
+			}
+		}
 		PopulatePlanSteps(plan, request);
 		if (plan.CanRun)
 		{

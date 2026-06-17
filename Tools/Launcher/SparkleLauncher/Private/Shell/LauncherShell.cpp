@@ -387,6 +387,47 @@ namespace SparkleLauncher
 		return launchRequest;
 	}
 
+	static BuildWorkspaceOperationRequest BuildWorkspaceShellRequest(
+	    const LauncherShellState& state,
+	    const LauncherShellArguments& arguments)
+	{
+		BuildWorkspaceOperationRequest request;
+		request.RepositoryRoot = state.Repository.RootPath;
+		request.ProjectId = state.SelectedProjectId;
+		request.EditorProfile = state.EditorProfile;
+		request.RuntimeProfile = state.RuntimeProfile;
+		request.PreferredIde = state.WorkspaceIdePreference;
+		request.ForceConfigure = false;
+		return request;
+	}
+
+	static CookOperationRequest BuildCookShellRequest(
+	    const LauncherShellState& state,
+	    const LauncherShellArguments& arguments)
+	{
+		CookOperationRequest request;
+		request.RepositoryRoot = state.Repository.RootPath;
+		request.ProjectId = state.SelectedProjectId;
+		request.RuntimeProfile = state.RuntimeProfile;
+		request.Mode = arguments.RequestedCookMode;
+		request.ForceRecookConfirmed = arguments.ForceRecookConfirmed;
+		return request;
+	}
+
+	static MaintenanceOperationRequest BuildMaintenanceShellRequest(
+	    const LauncherShellState& state,
+	    const LauncherShellArguments& arguments)
+	{
+		MaintenanceOperationRequest request;
+		request.RepositoryRoot = state.Repository.RootPath;
+		request.ProjectId = state.SelectedProjectId;
+		request.EditorProfile = state.EditorProfile;
+		request.RequestedFormatMode = arguments.RequestedFormatMode;
+		request.RequestedCleanScope = arguments.RequestedCleanScope;
+		request.DestructiveActionConfirmed = arguments.CleanConfirmed;
+		return request;
+	}
+
 	static void ApplyDryRun(LauncherShellState& state, const LauncherShellArguments& arguments)
 	{
 		const std::string operationId = arguments.DryRunOperationId.empty() ? std::string(kDefaultDryRunOperationId) : arguments.DryRunOperationId;
@@ -398,60 +439,27 @@ namespace SparkleLauncher
 			return;
 		}
 
-		BuildWorkspaceOperationRequest buildRequest;
-		buildRequest.RepositoryRoot = state.Repository.RootPath;
-		buildRequest.ProjectId = state.SelectedProjectId;
-		buildRequest.EditorProfile = state.EditorProfile;
-		buildRequest.RuntimeProfile = state.RuntimeProfile;
-		buildRequest.PreferredIde = state.WorkspaceIdePreference;
 		if (FindBuildWorkspaceOperationDefinition(operationId).has_value())
 		{
-			AppendBuildPlanDryRun(state, PlanBuildWorkspaceOperation(operationId, buildRequest));
+			AppendBuildPlanDryRun(state, PlanBuildWorkspaceOperation(operationId, BuildWorkspaceShellRequest(state, arguments)));
 			return;
 		}
 
-		CookOperationRequest cookRequest;
-		cookRequest.RepositoryRoot = state.Repository.RootPath;
-		cookRequest.ProjectId = state.SelectedProjectId;
-		cookRequest.RuntimeProfile = state.RuntimeProfile;
-		cookRequest.Mode = arguments.RequestedCookMode;
-		cookRequest.ForceRecookConfirmed = arguments.ForceRecookConfirmed;
 		if (FindCookOperationDefinition(operationId).has_value())
 		{
-			AppendCookPlanDryRun(state, PlanCookOperation(operationId, cookRequest));
+			AppendCookPlanDryRun(state, PlanCookOperation(operationId, BuildCookShellRequest(state, arguments)));
 			return;
 		}
 
-		MaintenanceOperationRequest maintenanceRequest;
-		maintenanceRequest.RepositoryRoot = state.Repository.RootPath;
-		maintenanceRequest.ProjectId = state.SelectedProjectId;
-		maintenanceRequest.EditorProfile = state.EditorProfile;
-		maintenanceRequest.RequestedFormatMode = arguments.RequestedFormatMode;
-		maintenanceRequest.RequestedCleanScope = arguments.RequestedCleanScope;
-		maintenanceRequest.DestructiveActionConfirmed = arguments.CleanConfirmed;
 		if (FindMaintenanceOperationDefinition(operationId).has_value())
 		{
-			AppendMaintenancePlanDryRun(state, PlanMaintenanceOperation(operationId, maintenanceRequest));
+			AppendMaintenancePlanDryRun(state, PlanMaintenanceOperation(operationId, BuildMaintenanceShellRequest(state, arguments)));
 			return;
 		}
 
-		LaunchOperationRequest launchRequest;
-		launchRequest.RepositoryRoot = state.Repository.RootPath;
-		launchRequest.ProjectId = state.SelectedProjectId;
-		launchRequest.EditorProfile = state.EditorProfile;
-		launchRequest.RuntimeProfile = state.RuntimeProfile;
-		launchRequest.Target = arguments.LaunchTarget;
-		launchRequest.StartupLevel = arguments.LaunchStartupLevel;
-		launchRequest.EnableSmokeTest = arguments.EnableSmokeTest;
-		launchRequest.SmokeBackend = arguments.SmokeBackend;
-		launchRequest.SmokeFrameLimit = arguments.SmokeFrameLimit;
-		launchRequest.SmokeViewMode = arguments.SmokeViewMode;
-		launchRequest.SmokeCapturePath = arguments.SmokeCapturePath;
-		launchRequest.SmokeTrace = arguments.SmokeTrace;
-		launchRequest.SmokeSkipLevelSwitching = arguments.SmokeSkipLevelSwitching;
 		if (FindLaunchOperationDefinition(operationId).has_value())
 		{
-			AppendLaunchPlanDryRun(state, PlanLaunchOperation(operationId, launchRequest));
+			AppendLaunchPlanDryRun(state, PlanLaunchOperation(operationId, BuildLaunchOperationRequest(state, arguments)));
 			return;
 		}
 
@@ -462,29 +470,11 @@ namespace SparkleLauncher
 		state.Activity.push_back({GetCurrentTimeText(), record.DisplayName + " dry-run for " + state.SelectedProjectId});
 	}
 
-	static int RunShellLaunchOperation(
-	    LauncherShellState& state,
-	    const LauncherShellArguments& arguments,
+	static int ReportShellOperationResult(
+	    const OperationRecord& operation,
 	    std::ostream& output,
 	    std::ostream& error)
 	{
-		if (!FindLaunchOperationDefinition(arguments.RunOperationId).has_value())
-		{
-			error << "SparkleLauncher: --run currently supports launch operations only: " << arguments.RunOperationId << '\n';
-			return 1;
-		}
-
-		LaunchOperationPlan plan =
-		    PlanLaunchOperation(arguments.RunOperationId, BuildLaunchOperationRequest(state, arguments));
-		NativeProcessRunner processRunner;
-		const OperationRecord operation = RunLaunchOperationPlan(
-		    std::move(plan),
-		    processRunner,
-		    [&output](std::string_view text)
-		    {
-			    output << text;
-		    });
-
 		output << "Operation " << operation.DisplayName << " finished with status " << ToString(operation.Status) << ".\n";
 		if (!operation.LogPath.empty())
 		{
@@ -495,6 +485,65 @@ namespace SparkleLauncher
 			error << operation.FailureSummary << '\n';
 		}
 		return operation.Status == OperationStatus::Succeeded ? 0 : 1;
+	}
+
+	static int RunShellOperation(
+	    LauncherShellState& state,
+	    const LauncherShellArguments& arguments,
+	    std::ostream& output,
+	    std::ostream& error)
+	{
+		NativeProcessRunner processRunner;
+		if (FindBuildWorkspaceOperationDefinition(arguments.RunOperationId).has_value())
+		{
+		    const OperationRecord operation = RunBuildWorkspaceOperationPlan(
+			    PlanBuildWorkspaceOperation(arguments.RunOperationId, BuildWorkspaceShellRequest(state, arguments)),
+			    processRunner,
+			    [&output](std::string_view text)
+			    {
+				    output << text;
+			    });
+			return ReportShellOperationResult(operation, output, error);
+		}
+
+		if (FindCookOperationDefinition(arguments.RunOperationId).has_value())
+		{
+		    const OperationRecord operation = RunCookOperationPlan(
+			    PlanCookOperation(arguments.RunOperationId, BuildCookShellRequest(state, arguments)),
+			    processRunner,
+			    [&output](std::string_view text)
+			    {
+				    output << text;
+			    });
+			return ReportShellOperationResult(operation, output, error);
+		}
+
+		if (FindMaintenanceOperationDefinition(arguments.RunOperationId).has_value())
+		{
+		    const OperationRecord operation = RunMaintenanceOperationPlan(
+			    PlanMaintenanceOperation(arguments.RunOperationId, BuildMaintenanceShellRequest(state, arguments)),
+			    processRunner,
+			    [&output](std::string_view text)
+			    {
+				    output << text;
+			    });
+			return ReportShellOperationResult(operation, output, error);
+		}
+
+		if (FindLaunchOperationDefinition(arguments.RunOperationId).has_value())
+		{
+			const OperationRecord operation = RunLaunchOperationPlan(
+			    PlanLaunchOperation(arguments.RunOperationId, BuildLaunchOperationRequest(state, arguments)),
+			    processRunner,
+			    [&output](std::string_view text)
+			    {
+				    output << text;
+			    });
+			return ReportShellOperationResult(operation, output, error);
+		}
+
+		error << "SparkleLauncher: unknown --run operation: " << arguments.RunOperationId << '\n';
+		return 1;
 	}
 
 	static void RenderProjectTiles(const LauncherShellState& state, std::ostream& output)
@@ -607,7 +656,7 @@ namespace SparkleLauncher
 		AppendLocalActivity(state);
 		if (!arguments.RunOperationId.empty())
 		{
-			return RunShellLaunchOperation(state, arguments, output, error);
+			return RunShellOperation(state, arguments, output, error);
 		}
 		if (!arguments.DryRunOperationId.empty())
 		{

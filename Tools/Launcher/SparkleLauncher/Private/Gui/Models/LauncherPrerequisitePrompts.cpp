@@ -158,7 +158,11 @@ namespace SparkleLauncher
 		}
 		else
 		{
-			return ReadyDecision();
+			QMessageBox::information(
+			    parent,
+			    "Workflow Blocked",
+			    "This workspace workflow is currently blocked.\n\n" + ToQStringList(plan.ReadinessMessages).join('\n'));
+			return BlockedDecision();
 		}
 
 		if (!ConfirmPrerequisitePrompt(parent, "Prerequisite Missing", promptAction, ToQStringList(plan.ReadinessMessages)))

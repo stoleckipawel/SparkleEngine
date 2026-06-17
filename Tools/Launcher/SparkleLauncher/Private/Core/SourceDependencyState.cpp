@@ -1,0 +1,228 @@
+#include "SparkleLauncher/SourceDependencyState.h"
+
+#include <cstdint>
+#include <sstream>
+#include <system_error>
+
+namespace SparkleLauncher
+{
+	namespace
+	{
+		bool PathHasContent(const std::filesystem::path& path)
+		{
+			std::error_code errorCode;
+			if (!std::filesystem::exists(path, errorCode) || errorCode)
+			{
+				return false;
+			}
+
+			if (std::filesystem::is_regular_file(path, errorCode))
+			{
+				const std::uintmax_t size = std::filesystem::file_size(path, errorCode);
+				return !errorCode && size > 0;
+			}
+
+			return true;
+		}
+
+		std::string JoinPaths(const std::vector<std::string>& paths)
+		{
+			std::ostringstream stream;
+			for (std::size_t index = 0; index < paths.size(); ++index)
+			{
+				if (index > 0)
+				{
+					stream << ", ";
+				}
+				stream << paths[index];
+			}
+			return stream.str();
+		}
+	}
+
+	const std::vector<SourceDependencyGroup>& GetSourceDependencyGroups()
+	{
+		static const std::vector<SourceDependencyGroup> groups = [] {
+			std::vector<SourceDependencyGroup> entries;
+			entries.push_back({
+			    "core-workspace",
+			    "Core Workspace Source Tier",
+			    "Baseline shared dependencies used by the launcher, engine, and project builds.",
+			    "Required source tier for local rebuilds. Runtime packages can still launch bundled components without rebuilding this tier.",
+			    "",
+			    true,
+			    true,
+			    {
+			        {"imgui", "Dear ImGui", "v1.92.5", "Immediate-mode UI core and Win32 platform backend.", "imgui-src", {"imgui.h", "imgui.cpp", "backends/imgui_impl_win32.cpp"}},
+			        {"spdlog", "spdlog", "v1.14.1", "Repo-wide logging backend.", "spdlog-src", {"include/spdlog/spdlog.h"}},
+			        {"editor-icons", "Font Awesome Free Solid", "v6.7.1", "Launcher/editor icon font asset and license.", "editor-icons", {"fontawesome-6.7.1/fa-solid-900.ttf", "fontawesome-6.7.1/LICENSE.txt"}},
+			    }});
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
+			const bool contentPipelineEnabled = true;
+#else
+			const bool contentPipelineEnabled = false;
+#endif
+			entries.push_back({
+			    "content-pipeline",
+			    "Content Pipeline Source Tier",
+			    "Optional source import, mesh cook, and texture cook dependencies.",
+			    "Unlocks Build Cooking Tools, Cook Textures, Cook Scenes And Meshes, and the content phase of Cook All.",
+			    "SPARKLE_ENABLE_CONTENT_PIPELINE",
+			    false,
+			    contentPipelineEnabled,
+			    {
+			        {"cgltf", "cgltf", "v1.15", "Single-header glTF 2.0 parser for source scene imports.", "cgltf-src", {"cgltf.h"}},
+			        {"stb", "stb", "master", "Header-only image loading and mip resize helpers.", "stb-src", {"stb_image.h", "stb_image_resize2.h"}},
+			        {"tinyexr", "tinyexr", "v1.0.7", "Header-only OpenEXR image loading support.", "tinyexr-src", {"tinyexr.h", "deps/miniz/miniz.h"}},
+			        {"zlib", "zlib", "v1.3.1", "Compression backend used by Assimp.", "zlib-src", {"zlib.h", "CMakeLists.txt"}},
+			        {"assimp", "Assimp", "v5.4.3", "FBX and DCC scene import support.", "assimp-src", {"include/assimp/Importer.hpp", "CMakeLists.txt"}},
+			        {"compressonator", "Compressonator", "master (sparse)", "AMD BC1-BC7 texture block compression support.", "compressonator-src", {"cmp_core/source/cmp_core.cpp", "applications/_libs/cmp_math/cmp_math_common.cpp"}},
+			    }});
+#if SPARKLE_ENABLE_KTX_SUPPORT
+			const bool ktxSupportEnabled = true;
+#else
+			const bool ktxSupportEnabled = false;
+#endif
+			entries.push_back({
+			    "ktx-support",
+			    "KTX Container Source Tier",
+			    "Optional KTX2 container support layered on top of the texture pipeline.",
+			    "Extends texture workflows when the repo is configured for KTX support.",
+			    "SPARKLE_ENABLE_KTX_SUPPORT",
+			    false,
+			    ktxSupportEnabled,
+			    {
+			        {"ktx", "KTX-Software", "v4.3.2", "KTX2 texture container read/write support.", "ktx-src", {"include/ktx.h", "CMakeLists.txt"}},
+			    }});
+#if SPARKLE_ENABLE_SHADER_COMPILER
+			const bool shaderCompilerEnabled = true;
+#else
+			const bool shaderCompilerEnabled = false;
+#endif
+			entries.push_back({
+			    "shader-compiler",
+			    "Shader Compiler Source Tier",
+			    "Optional offline shader compiler dependencies.",
+			    "Unlocks Build Cooking Tools, Cook Shaders, and the shader phase of Cook All.",
+			    "SPARKLE_ENABLE_SHADER_COMPILER",
+			    false,
+			    shaderCompilerEnabled,
+			    {
+			        {"spirv-reflect", "SPIRV-Reflect", "vulkan-sdk-1.3.290.0", "SPIR-V reflection for offline shader compiler backends.", "spirv_reflect-src", {"spirv_reflect.h", "spirv_reflect.c"}},
+			    }});
+#if SPARKLE_ENABLE_NVIDIA_STREAMLINE
+			const bool nvidiaStreamlineEnabled = true;
+#else
+			const bool nvidiaStreamlineEnabled = false;
+#endif
+			entries.push_back({
+			    "nvidia-streamline",
+			    "NVIDIA Runtime And SDK Tier",
+			    "Optional NVIDIA SDK dependencies used by DLSS and D3D12 NVAPI integration.",
+			    "Unlocks DLSS Super Resolution runtime integration, stages signed Streamline/DLSS DLLs, and keeps NVAPI/PTLAS source integration available for local rebuilds.",
+			    "SPARKLE_ENABLE_NVIDIA_STREAMLINE",
+			    false,
+			    nvidiaStreamlineEnabled,
+			    {
+			        {"nvidia-nvapi", "NVIDIA NVAPI SDK", "git 9b181ea", "Headers and import library used by D3D12 NVAPI integration and PTLAS capability support.", "sparkle_nvapi-src", {"nvapi.h", "amd64/nvapi64.lib"}},
+			        {"nvidia-streamline", "NVIDIA Streamline SDK", "v2.11.1", "Headers, import library, Streamline plugins, and DLSS runtime redistributables.", "streamline-sdk-src", {"include/sl.h", "lib/x64/sl.interposer.lib", "bin/x64/sl.interposer.dll", "bin/x64/sl.common.dll", "bin/x64/sl.dlss.dll", "bin/x64/nvngx_dlss.dll"}},
+			    }});
+			return entries;
+		}();
+		return groups;
+	}
+
+	const SourceDependencyGroup* FindSourceDependencyGroup(std::string_view id)
+	{
+		for (const SourceDependencyGroup& group : GetSourceDependencyGroups())
+		{
+			if (group.Id == id)
+			{
+				return &group;
+			}
+		}
+		return nullptr;
+	}
+
+	const SourceDependencyEntry* FindSourceDependency(std::string_view id)
+	{
+		for (const SourceDependencyGroup& group : GetSourceDependencyGroups())
+		{
+			for (const SourceDependencyEntry& dependency : group.Dependencies)
+			{
+				if (dependency.Id == id)
+				{
+					return &dependency;
+				}
+			}
+		}
+		return nullptr;
+	}
+
+	SourceDependencyValidation ValidateSourceDependency(
+	    const SourceDependencyEntry& dependency,
+	    const std::filesystem::path& dependencyCacheRoot)
+	{
+		SourceDependencyValidation validation;
+		validation.CachePath = dependencyCacheRoot / dependency.CacheDirectoryName;
+		for (const std::string& relativePath : dependency.RequiredRelativePaths)
+		{
+			if (!PathHasContent(validation.CachePath / relativePath))
+			{
+				validation.MissingRelativePaths.push_back(relativePath);
+			}
+		}
+
+		validation.Ready = validation.MissingRelativePaths.empty();
+		return validation;
+	}
+
+	int CountReadySourceDependencies(const SourceDependencyGroup& group, const std::filesystem::path& dependencyCacheRoot)
+	{
+		int readyCount = 0;
+		for (const SourceDependencyEntry& dependency : group.Dependencies)
+		{
+			if (ValidateSourceDependency(dependency, dependencyCacheRoot).Ready)
+			{
+				++readyCount;
+			}
+		}
+		return readyCount;
+	}
+
+	SourceDependencyInventoryStatus InspectSourceDependencyCache(const std::filesystem::path& dependencyCacheRoot)
+	{
+		SourceDependencyInventoryStatus status;
+		status.CacheRoot = dependencyCacheRoot;
+
+		for (const SourceDependencyGroup& group : GetSourceDependencyGroups())
+		{
+			if (!group.Enabled)
+			{
+				continue;
+			}
+
+			for (const SourceDependencyEntry& dependency : group.Dependencies)
+			{
+				++status.EnabledDependencyCount;
+				const SourceDependencyValidation validation = ValidateSourceDependency(dependency, dependencyCacheRoot);
+				if (validation.Ready)
+				{
+					++status.ReadyDependencyCount;
+					continue;
+				}
+
+				status.AllEnabledDependenciesReady = false;
+				status.ReadinessMessages.push_back(
+				    dependency.Label + " cache is incomplete. Missing: " + JoinPaths(validation.MissingRelativePaths) + ".");
+			}
+		}
+
+		if (status.EnabledDependencyCount == 0)
+		{
+			status.AllEnabledDependenciesReady = true;
+		}
+
+		return status;
+	}
+}

@@ -344,6 +344,30 @@ namespace SparkleLauncher
 		{
 			return "Enable Confirm clean cook, then retry.";
 		}
+		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
+		    (statusText.contains("dxcapi.h", Qt::CaseInsensitive) || statusText.contains("slang", Qt::CaseInsensitive) ||
+		     statusText.contains("VULKAN_SDK", Qt::CaseInsensitive) || statusText.contains("ShaderCompiler", Qt::CaseInsensitive)))
+		{
+			return "Install the Vulkan SDK so the enabled shader compiler tier can find DXC and Slang, then run Sync > Verify Host Environment and retry.";
+		}
+		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
+		    (statusText.contains("NVIDIA Streamline SDK", Qt::CaseInsensitive) || statusText.contains("sl.interposer.lib", Qt::CaseInsensitive) ||
+		     statusText.contains("sl.dlss.dll", Qt::CaseInsensitive) || statusText.contains("nvngx_dlss.dll", Qt::CaseInsensitive)))
+		{
+			return "Sync fetches the NVIDIA Streamline SDK automatically. If this still fails after retry, verify network access to GitHub releases, then clean the source dependency cache and run Sync Source Tiers again.";
+		}
+		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
+		    (statusText.contains("NVAPI", Qt::CaseInsensitive) || statusText.contains("nvapi.h", Qt::CaseInsensitive) ||
+		     statusText.contains("nvapi64.lib", Qt::CaseInsensitive)))
+		{
+			return "Sync fetches NVAPI automatically. If this still fails after retry, clean the source dependency cache and rerun Sync Source Tiers so the launcher can re-download a clean NVIDIA SDK checkout.";
+		}
+		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
+		    (statusText.contains("FetchContent", Qt::CaseInsensitive) || statusText.contains("not a git repository", Qt::CaseInsensitive) ||
+		     statusText.contains("source directory is missing", Qt::CaseInsensitive) || statusText.contains("nvapi.h", Qt::CaseInsensitive)))
+		{
+			return "Run Clean Source Dependency Cache, then retry Sync Source Tiers. The launcher will repopulate stale dependency checkouts automatically.";
+		}
 		if (operationId.startsWith("project.build") || statusText.contains("cmake", Qt::CaseInsensitive) || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("tool", Qt::CaseInsensitive))
 		{
 			return "Run Sync > Verify Host Environment, then retry this workflow.";

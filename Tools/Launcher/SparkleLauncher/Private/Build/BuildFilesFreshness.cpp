@@ -21,6 +21,11 @@ namespace SparkleLauncher
 		return Strings::ToLowerCopy(value);
 	}
 
+	static std::string ToCMakeBool(bool value)
+	{
+		return value ? "ON" : "OFF";
+	}
+
 	BuildFilesFreshnessStatus CheckBuildFilesFreshness(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain)
 	{
 		BuildFilesFreshnessStatus status;
@@ -63,6 +68,25 @@ namespace SparkleLauncher
 			return status;
 		}
 
+		const WorkspaceFeatureSettings featureSettings = GetLauncherWorkspaceFeatureSettings();
+		const std::string selectedContentPipeline = ToCMakeBool(featureSettings.ContentPipelineEnabled);
+		const std::string selectedShaderCompiler = ToCMakeBool(featureSettings.ShaderCompilerEnabled);
+		const std::string selectedKtxSupport = ToCMakeBool(featureSettings.KtxSupportEnabled);
+		const std::string selectedNvidiaStreamline = ToCMakeBool(featureSettings.NvidiaStreamlineEnabled);
+		const std::string cacheContentPipeline = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_CONTENT_PIPELINE").value_or(std::string());
+		const std::string cacheShaderCompiler = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_SHADER_COMPILER").value_or(std::string());
+		const std::string cacheKtxSupport = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_KTX_SUPPORT").value_or(std::string());
+		const std::string cacheNvidiaStreamline = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_NVIDIA_STREAMLINE").value_or(std::string());
+		if (cacheContentPipeline != selectedContentPipeline ||
+		    cacheShaderCompiler != selectedShaderCompiler ||
+		    cacheKtxSupport != selectedKtxSupport ||
+		    cacheNvidiaStreamline != selectedNvidiaStreamline)
+		{
+			status.State = BuildFilesFreshnessState::FeatureSetMismatch;
+			status.Summary = "CMake cache workspace feature toggles differ from the launcher feature set.";
+			return status;
+		}
+
 		if (!std::filesystem::is_regular_file(status.StampPath, errorCode))
 		{
 			status.State = BuildFilesFreshnessState::FreshnessStampMissing;
@@ -77,6 +101,15 @@ namespace SparkleLauncher
 		{
 			status.State = BuildFilesFreshnessState::FreshnessStampMismatch;
 			status.Summary = "Freshness stamp generator/platform/toolset/Qt prefix differs from selected launcher toolchain.";
+			return status;
+		}
+		if (ReadBuildFilesFreshnessStampValue(status.StampPath, "contentPipeline").value_or(std::string()) != selectedContentPipeline ||
+		    ReadBuildFilesFreshnessStampValue(status.StampPath, "shaderCompiler").value_or(std::string()) != selectedShaderCompiler ||
+		    ReadBuildFilesFreshnessStampValue(status.StampPath, "ktxSupport").value_or(std::string()) != selectedKtxSupport ||
+		    ReadBuildFilesFreshnessStampValue(status.StampPath, "nvidiaStreamline").value_or(std::string()) != selectedNvidiaStreamline)
+		{
+			status.State = BuildFilesFreshnessState::FeatureSetMismatch;
+			status.Summary = "Build-file freshness stamp workspace feature toggles differ from the launcher feature set.";
 			return status;
 		}
 
@@ -123,6 +156,8 @@ namespace SparkleLauncher
 			return false;
 		}
 
+		const WorkspaceFeatureSettings featureSettings = GetLauncherWorkspaceFeatureSettings();
+
 		const std::filesystem::path stampPath = GetBuildDirectory(repositoryRoot) / "BuildFilesFreshness.json";
 		std::error_code errorCode;
 		std::filesystem::create_directories(stampPath.parent_path(), errorCode);
@@ -145,6 +180,10 @@ namespace SparkleLauncher
 		       << "    \"platform\": \"" << Strings::EscapeJsonString(toolchain.Platform) << "\",\n"
 		       << "    \"toolset\": \"" << Strings::EscapeJsonString(toolchain.Toolset) << "\",\n"
 		       << "    \"qtRoot\": \"" << Strings::EscapeJsonString(toolchain.QtRootPath.generic_string()) << "\",\n"
+		       << "    \"contentPipeline\": \"" << ToCMakeBool(featureSettings.ContentPipelineEnabled) << "\",\n"
+		       << "    \"shaderCompiler\": \"" << ToCMakeBool(featureSettings.ShaderCompilerEnabled) << "\",\n"
+		       << "    \"ktxSupport\": \"" << ToCMakeBool(featureSettings.KtxSupportEnabled) << "\",\n"
+		       << "    \"nvidiaStreamline\": \"" << ToCMakeBool(featureSettings.NvidiaStreamlineEnabled) << "\",\n"
 		       << "    \"sourceListHash\": \"" << *sourceListHash << "\",\n"
 		       << "    \"updatedUtc\": \"" << BuildUtcTimestamp() << "\"\n"
 		       << "}\n";
