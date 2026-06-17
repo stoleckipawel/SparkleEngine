@@ -89,9 +89,9 @@ namespace SparkleLauncher
 			    "Run",
 			    LauncherWorkflowPageKind::Launch,
 			    LauncherActionImpactKind::LaunchProcess,
-			    "Launch workflow: runs the selected editor or runtime target with shared graphics, startup level, and argument options.",
+			    "Launch workflow: runs the selected editor or runtime target with shared graphics, startup level, smoke validation, and PTLAS test options.",
 			    "Launch view",
-			    "Uses the selected project, target, startup level, and runtime options from this page.",
+			    "Uses the selected project, target, startup level, runtime options, and optional smoke validation controls from this page.",
 			    "workflow-project-run-editor.png");
 		}
 		if (operationId == "workspace.open-ide")
@@ -269,11 +269,11 @@ namespace SparkleLauncher
 			    operationId,
 			    "Run Smoke Test",
 			    "Run",
-			    LauncherWorkflowPageKind::Test,
+			    LauncherWorkflowPageKind::Launch,
 			    LauncherActionImpactKind::TestRun,
-			    "Test workflow: runs one smoke entry point, then optionally executes selected PTLAS parity, benchmark, and diagnostic capture matrices.",
+			    "Compatibility launch workflow: runs smoke validation from the same launch path used by Launch Project.",
 			    "Validation run",
-			    "Runs a focused confidence check using the same launch parameters as the product path, with optional capability-driven PTLAS diagnostics.",
+			    "Runs a focused confidence check using the same launch parameters as the product path, with optional PTLAS diagnostics.",
 			    "workflow-smoke-test.png");
 		}
 		if (operationId == "quality.format")
@@ -282,7 +282,7 @@ namespace SparkleLauncher
 			    operationId,
 			    "Format Check",
 			    "Run",
-			    LauncherWorkflowPageKind::Test,
+			    LauncherWorkflowPageKind::Build,
 			    LauncherActionImpactKind::Diagnostics,
 			    "Quality gate: checks or applies clang-format for source files; it does not build, cook, or sync dependencies.",
 			    "Code quality",

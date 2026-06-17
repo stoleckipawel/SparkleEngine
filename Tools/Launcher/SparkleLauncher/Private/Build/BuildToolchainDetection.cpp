@@ -126,6 +126,39 @@ namespace SparkleLauncher
 		return latestDirectory;
 	}
 
+	static bool HasDirectChildDirectoryWithPrefix(const std::filesystem::path& root, std::string_view prefix)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(root, errorCode))
+		{
+			return false;
+		}
+
+		const std::string prefixKey = ToLower(std::string(prefix));
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(root, errorCode))
+		{
+			if (errorCode)
+			{
+				errorCode.clear();
+				continue;
+			}
+
+			if (!entry.is_directory(errorCode))
+			{
+				errorCode.clear();
+				continue;
+			}
+
+			if (BuildPathSortKey(entry.path().filename()).rfind(prefixKey, 0) == 0)
+			{
+				return true;
+			}
+			errorCode.clear();
+		}
+
+		return false;
+	}
+
 	static std::optional<std::filesystem::path> DetectInstalledVulkanSdkRoot()
 	{
 		if (const std::optional<std::filesystem::path> envRoot = TryGetEnvironmentPath("VULKAN_SDK"))
@@ -401,9 +434,16 @@ namespace SparkleLauncher
 		status.Root = sdkRoot->lexically_normal();
 		const std::filesystem::path dxcHeader = status.Root / "Include" / "dxc" / "dxcapi.h";
 		const std::filesystem::path dxcLibrary = status.Root / "Lib" / "dxcompiler.lib";
+		const std::filesystem::path dxcRuntime = status.Root / "Bin" / "dxcompiler.dll";
 		const std::filesystem::path slangHeader = status.Root / "Include" / "slang" / "slang.h";
 		const std::filesystem::path slangLibrary = status.Root / "Lib" / "slang.lib";
 		const std::filesystem::path slangRuntime = status.Root / "Bin" / "slang.dll";
+		const std::filesystem::path slangCompilerRuntime = status.Root / "Bin" / "slang-compiler.dll";
+		const std::filesystem::path slangGlslModuleRuntime = status.Root / "Bin" / "slang-glsl-module.dll";
+		const std::filesystem::path slangGlslangRuntime = status.Root / "Bin" / "slang-glslang.dll";
+		const std::filesystem::path slangRtRuntime = status.Root / "Bin" / "slang-rt.dll";
+		const std::filesystem::path slangStandardLibrary = status.Root / "Bin" / "slang.slang";
+		const std::filesystem::path shaderCompilerRuntimeRoot = status.Root / "Bin";
 
 		std::vector<std::string> missingEntries;
 		std::error_code errorCode;
@@ -415,6 +455,11 @@ namespace SparkleLauncher
 		if (!std::filesystem::exists(dxcLibrary, errorCode))
 		{
 			missingEntries.push_back("Lib/dxcompiler.lib");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(dxcRuntime, errorCode))
+		{
+			missingEntries.push_back("Bin/dxcompiler.dll");
 		}
 		errorCode.clear();
 		if (!std::filesystem::exists(slangHeader, errorCode))
@@ -430,6 +475,35 @@ namespace SparkleLauncher
 		if (!std::filesystem::exists(slangRuntime, errorCode))
 		{
 			missingEntries.push_back("Bin/slang.dll");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(slangCompilerRuntime, errorCode))
+		{
+			missingEntries.push_back("Bin/slang-compiler.dll");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(slangGlslModuleRuntime, errorCode))
+		{
+			missingEntries.push_back("Bin/slang-glsl-module.dll");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(slangGlslangRuntime, errorCode))
+		{
+			missingEntries.push_back("Bin/slang-glslang.dll");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(slangRtRuntime, errorCode))
+		{
+			missingEntries.push_back("Bin/slang-rt.dll");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(slangStandardLibrary, errorCode))
+		{
+			missingEntries.push_back("Bin/slang.slang");
+		}
+		if (!HasDirectChildDirectoryWithPrefix(shaderCompilerRuntimeRoot, "slang-standard-module-"))
+		{
+			missingEntries.push_back("Bin/slang-standard-module-*");
 		}
 
 		if (missingEntries.empty())
@@ -448,7 +522,7 @@ namespace SparkleLauncher
 
 		std::ostringstream detail;
 		detail << "Detected Vulkan SDK root " << status.Root.string()
-		       << ", but the enabled ShaderCompiler workspace tier is missing: "
+		       << ", but the shader compiler runtime bundle is missing: "
 		       << Strings::Join(missingEntryViews, ", ")
 		       << ".";
 		status.Detail = detail.str();
@@ -675,8 +749,8 @@ namespace SparkleLauncher
 		status.ConfigurePrerequisitesAvailable = shaderCompilerSdk.Available;
 		status.Items.push_back(MakeToolStatus(
 		    "shader-compiler-sdk",
-		    "Shader compiler SDK (DXC + Slang)",
-		    false,
+		    "Shader compiler SDK (DXC + Slang bundle)",
+		    true,
 		    shaderCompilerSdk.Available,
 		    shaderCompilerSdk.Root,
 		    shaderCompilerSdk.Detail));
@@ -690,7 +764,7 @@ namespace SparkleLauncher
 		status.Items.push_back(MakeToolStatus(
 		    "vulkan-sdk",
 		    "Vulkan SDK",
-		    false,
+		    vulkanSdkRequired,
 		    vulkanSdk.Available,
 		    vulkanSdk.Root,
 		    vulkanSdkRequired ?

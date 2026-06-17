@@ -271,20 +271,9 @@ namespace SparkleLauncher
 
 		if (operationId == "project.run.smoke")
 		{
-			AddLaunchTargetOptions(layout, "Smoke Target", QString(), false);
+			AddLaunchTargetOptions(layout, "Launch Project", QString(), false);
 			AddLaunchApplicationOptions(layout);
 			AddSmokeValidationOptions(layout);
-			QVBoxLayout* gateLayout = AddDetailsGroup(
-			    layout,
-			    "Validation Coverage",
-			    "This panel mirrors the smoke runner's real capabilities. The launcher should only expose checks that have a concrete execution path and a defined artifact story.",
-			    false);
-			AddStatusRow(*gateLayout, "Core smoke validation", "Available", "Runs the selected editor or runtime with the shared smoke validation harness enabled.", "ok");
-			AddStatusRow(*gateLayout, "Backend/PTLAS parity", "Available", "Optional suite for deterministic backend parity and PTLAS-versus-fallback validation.", "ok");
-			AddStatusRow(*gateLayout, "PTLAS benchmark scenarios", "Available", "Optional suite for timing-oriented PTLAS benchmark diagnostics.", "ok");
-			AddStatusRow(*gateLayout, "PTLAS diagnostic views", "Available", "Optional suite for capture-oriented PTLAS artifact bundles and review-ready manifests.", "ok");
-			AddStatusRow(*gateLayout, "Sanitizer builds", "Configured in CMake", "Root CMake exposes ENABLE_SANITIZERS and SANITIZER_TYPE for Clang-based ASan, UBSan, TSan, MSan, and LSan builds; launcher presets still need a dedicated workflow before this becomes one-click.", "neutral");
-			AddStatusRow(*gateLayout, "Unit / integration / coverage", "Not wired", "No launcher-backed test or coverage runner is currently configured. Add a real CTest/coverage pipeline before exposing executable buttons here.", "neutral");
 			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}
@@ -293,6 +282,7 @@ namespace SparkleLauncher
 		{
 			AddLaunchTargetOptions(layout, "Launch Project", QString(), true);
 			AddLaunchApplicationOptions(layout);
+			AddSmokeValidationOptions(layout);
 			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}

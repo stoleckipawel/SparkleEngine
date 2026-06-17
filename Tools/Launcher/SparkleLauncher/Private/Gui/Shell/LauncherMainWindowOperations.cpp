@@ -363,9 +363,11 @@ namespace SparkleLauncher
 		}
 		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
 		    (statusText.contains("dxcapi.h", Qt::CaseInsensitive) || statusText.contains("slang", Qt::CaseInsensitive) ||
-		     statusText.contains("VULKAN_SDK", Qt::CaseInsensitive) || statusText.contains("ShaderCompiler", Qt::CaseInsensitive)))
+		     statusText.contains("dxcompiler.dll", Qt::CaseInsensitive) || statusText.contains("slang-compiler.dll", Qt::CaseInsensitive) ||
+		     statusText.contains("VULKAN_SDK", Qt::CaseInsensitive) ||
+		     statusText.contains("ShaderCompiler", Qt::CaseInsensitive)))
 		{
-			return "Install or expose the Vulkan SDK so Vulkan-backed editor/runtime builds and the enabled shader compiler tier can resolve DXC, Slang, and Vulkan headers, then open Sync and retry.";
+			return "Install or expose the Vulkan SDK so Vulkan-backed editor/runtime builds and the enabled shader compiler tier can resolve DXC, Slang, Vulkan headers, and the required DXC/Slang runtime support bundle, then open Sync and retry.";
 		}
 		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
 		    (statusText.contains("NVIDIA Streamline SDK", Qt::CaseInsensitive) || statusText.contains("sl.interposer.lib", Qt::CaseInsensitive) ||
@@ -397,6 +399,12 @@ namespace SparkleLauncher
 		    statusText.contains("No cook tool groups are enabled", Qt::CaseInsensitive))
 		{
 			return "This workflow is disabled by the current dependency-group configuration. Reconfigure the workspace with the matching group enabled, then sync and build again.";
+		}
+		if (statusText.contains("dxcompiler.dll", Qt::CaseInsensitive) || statusText.contains("slang-compiler.dll", Qt::CaseInsensitive) ||
+		    statusText.contains("runtime dll is missing", Qt::CaseInsensitive) || statusText.contains("runtime dependency is missing", Qt::CaseInsensitive) ||
+		    statusText.contains("runtime support bundle is incomplete", Qt::CaseInsensitive))
+		{
+			return "Run Build > Build Cooking Tools after Sync shows the Vulkan SDK and shader compiler bundle as ready, then retry this workflow.";
 		}
 		if (statusText.contains("shader package", Qt::CaseInsensitive) || statusText.contains("shader", Qt::CaseInsensitive))
 		{

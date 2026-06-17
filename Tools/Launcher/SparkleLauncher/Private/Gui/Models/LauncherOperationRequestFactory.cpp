@@ -146,10 +146,6 @@ namespace SparkleLauncher
 		{
 			request.LaunchSmokeTest = true;
 		}
-		else if (operationId == "project.run")
-		{
-			request.LaunchSmokeTest = false;
-		}
 
 		return request;
 	}

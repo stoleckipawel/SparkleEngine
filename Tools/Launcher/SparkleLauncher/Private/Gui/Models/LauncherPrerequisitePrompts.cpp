@@ -279,6 +279,7 @@ namespace SparkleLauncher
 
 		bool workspaceMissing = false;
 		bool cookToolsMissing = false;
+		bool cookToolRuntimeMissing = false;
 		bool dependencyGroupDisabled = false;
 		QStringList readiness;
 		for (const std::string& message : plan.ReadinessMessages)
@@ -287,6 +288,8 @@ namespace SparkleLauncher
 			readiness.push_back(readinessMessage);
 			workspaceMissing = workspaceMissing || readinessMessage.contains("Run Generate Build Files first", Qt::CaseInsensitive);
 			cookToolsMissing = cookToolsMissing || readinessMessage.contains("run Build Cooking Tools first", Qt::CaseInsensitive);
+			cookToolRuntimeMissing = cookToolRuntimeMissing || readinessMessage.contains("runtime dependency is missing", Qt::CaseInsensitive) ||
+			    readinessMessage.contains("runtime support bundle is incomplete", Qt::CaseInsensitive);
 			dependencyGroupDisabled = dependencyGroupDisabled || readinessMessage.contains("disabled in this workspace configuration", Qt::CaseInsensitive) ||
 			    readinessMessage.contains("No cook tool groups are enabled", Qt::CaseInsensitive);
 		}
@@ -309,11 +312,13 @@ namespace SparkleLauncher
 			promptTitle = "Generate Build Files";
 			promptAction = "Generated build files are not current. Run Generate Build Files now?";
 		}
-		else if (cookToolsMissing)
+		else if (cookToolsMissing || cookToolRuntimeMissing)
 		{
 			prerequisiteOperationId = "cook.tools.prepare";
 			promptTitle = "Build Cooking Tools";
-			promptAction = "Required cooking tools are missing. Run Build Cooking Tools now?";
+			promptAction = cookToolRuntimeMissing ?
+			                   "Required cooking tool runtime support files are missing. Run Build Cooking Tools now?" :
+			                   "Required cooking tools are missing. Run Build Cooking Tools now?";
 		}
 		else
 		{

@@ -373,7 +373,7 @@ set(SPARKLE_DEPENDENCY_MANIFEST "${SPARKLE_RUNTIME_PACKAGE_ROOT}/manifests/spark
 file(WRITE "${SPARKLE_DEPENDENCY_MANIFEST}" "{\n")
 sparkle_append_line("${SPARKLE_DEPENDENCY_MANIFEST}" "  \"dependencyPackName\": \"${SPARKLE_DEPENDENCY_PACK_ID}-${SPARKLE_PACKAGE_VERSION}-${SPARKLE_RELEASE_CHANNEL}-${SPARKLE_PACKAGE_PLATFORM}\",")
 sparkle_append_line("${SPARKLE_DEPENDENCY_MANIFEST}" "  \"groups\": [ \"core-workspace\", \"content-pipeline\", \"shader-compiler\", \"ktx-support\" ],")
-sparkle_append_line("${SPARKLE_DEPENDENCY_MANIFEST}" "  \"runtimeRedistributables\": [ \"Qt runtime beside package-root SparkleLauncher.exe\", \"slang.dll beside ShaderCompiler in development package when present\", \"Sparkle runtime DLLs copied by declared product ownership when shared builds are enabled\" ],")
+sparkle_append_line("${SPARKLE_DEPENDENCY_MANIFEST}" "  \"runtimeRedistributables\": [ \"Qt runtime beside package-root SparkleLauncher.exe\", \"dxcompiler.dll plus the staged Slang runtime support bundle beside ShaderCompiler in development packages when present\", \"Sparkle runtime DLLs copied by declared product ownership when shared builds are enabled\" ],")
 sparkle_append_line("${SPARKLE_DEPENDENCY_MANIFEST}" "  \"notes\": \"Phase 5 records package dependency naming and expected redistributable ownership. Final verification is Phase 6.\"")
 sparkle_append_line("${SPARKLE_DEPENDENCY_MANIFEST}" "}")
 

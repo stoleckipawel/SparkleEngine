@@ -76,7 +76,14 @@ namespace SparkleLauncher
 		    "VULKAN_SDK is not set",
 		    "VULKAN_SDK is set to",
 		    "dxcapi.h",
+		    "dxcompiler.dll",
 		    "slang.dll",
+		    "slang-compiler.dll",
+		    "slang-glsl-module.dll",
+		    "slang-glslang.dll",
+		    "slang-rt.dll",
+		    "slang.slang",
+		    "slang-standard-module",
 		};
 
 		std::istringstream stream{std::string(text)};

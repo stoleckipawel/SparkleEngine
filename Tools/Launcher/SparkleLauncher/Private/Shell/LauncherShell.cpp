@@ -610,7 +610,6 @@ namespace SparkleLauncher
 		RenderOperationGroup(state, "Sync", output);
 		RenderOperationGroup(state, "Build", output);
 		RenderOperationGroup(state, "Cook", output);
-		RenderOperationGroup(state, "Test", output);
 		RenderOperationGroup(state, "Package", output);
 		RenderOperationGroup(state, "Clean", output);
 
@@ -980,8 +979,8 @@ namespace SparkleLauncher
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level Sponza --smoke-test --smoke-backend d3d12 --smoke-view-mode 3 --smoke-capture logs/smoke/scene-color.bmp --dry-run project.run\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --smoke-parity --run project.run.smoke\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --smoke-benchmark --smoke-diagnostics --run project.run.smoke\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --smoke-parity --run project.run\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --smoke-benchmark --smoke-diagnostics --run project.run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n"

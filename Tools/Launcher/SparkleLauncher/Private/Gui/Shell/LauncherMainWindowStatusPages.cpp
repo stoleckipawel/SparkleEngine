@@ -563,7 +563,7 @@ namespace SparkleLauncher
 		QVBoxLayout* smokeOptionsLayout = AddOptionGroup(
 		    layout,
 		    "Smoke Tests",
-		    "Shared smoke controls first, PTLAS-specific suites last.");
+		    QString());
 
 		auto addCompactCheckBoxRow = [this](QVBoxLayout& sectionLayout, QCheckBox* checkBox, int maxWidth = 520) {
 			QFrame* row = new QFrame(this);
@@ -615,6 +615,13 @@ namespace SparkleLauncher
 			sectionLayout.addWidget(row, 0, Qt::AlignLeft);
 		};
 
+		addCompactCheckBoxRow(
+		    *smokeOptionsLayout,
+		    CreateBoundCheckBox(
+		        "Enable smoke validation",
+		        "Run the shared smoke harness with the selected launch target and options.",
+		        m_settings.LaunchSmokeTest(),
+		        &LauncherSettings::SetLaunchSmokeTest));
 		addCompactFieldRow(
 		    *smokeOptionsLayout,
 		    "Frame limit",

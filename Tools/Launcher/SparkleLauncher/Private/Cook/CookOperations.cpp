@@ -7,12 +7,119 @@
 #include "SparkleLauncher/ToolResolver.h"
 
 #include <algorithm>
+#include <array>
 #include <optional>
 #include <sstream>
+#include <system_error>
 #include <utility>
 
 namespace SparkleLauncher
 {
+	namespace
+	{
+		struct CookToolRuntimeReadiness
+		{
+			bool Ready = true;
+			std::vector<std::string> MissingSupportEntries;
+		};
+
+		std::vector<std::string> GetRequiredCookToolRuntimeFiles(const std::filesystem::path& toolPath)
+		{
+			const std::string toolName = toolPath.stem().string();
+			if (toolName == "ShaderCompiler")
+			{
+				return {
+				    "dxcompiler.dll",
+				    "slang.dll",
+				    "slang-compiler.dll",
+				    "slang-glsl-module.dll",
+				    "slang-glslang.dll",
+				    "slang-rt.dll",
+				    "slang.slang",
+				};
+			}
+
+			return {};
+		}
+
+		std::vector<std::string> GetRequiredCookToolRuntimeDirectoryPrefixes(const std::filesystem::path& toolPath)
+		{
+			const std::string toolName = toolPath.stem().string();
+			if (toolName == "ShaderCompiler")
+			{
+				return {"slang-standard-module-"};
+			}
+
+			return {};
+		}
+
+		bool HasDirectChildDirectoryWithPrefix(const std::filesystem::path& root, std::string_view prefix)
+		{
+			std::error_code errorCode;
+			if (!std::filesystem::is_directory(root, errorCode))
+			{
+				return false;
+			}
+
+			const std::string prefixText(prefix);
+			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(root, errorCode))
+			{
+				if (errorCode)
+				{
+					errorCode.clear();
+					continue;
+				}
+
+				if (!entry.is_directory(errorCode))
+				{
+					errorCode.clear();
+					continue;
+				}
+
+				const std::string name = entry.path().filename().string();
+				if (name.rfind(prefixText, 0) == 0)
+				{
+					return true;
+				}
+				errorCode.clear();
+			}
+
+			return false;
+		}
+
+		CookToolRuntimeReadiness InspectCookToolRuntimeReadiness(const std::filesystem::path& toolPath)
+		{
+			CookToolRuntimeReadiness readiness;
+			const std::filesystem::path toolDirectory = toolPath.parent_path();
+			std::error_code errorCode;
+			for (const std::string& runtimeFileName : GetRequiredCookToolRuntimeFiles(toolPath))
+			{
+				errorCode.clear();
+				if (std::filesystem::exists(toolDirectory / runtimeFileName, errorCode) && !errorCode)
+				{
+					continue;
+				}
+
+				readiness.Ready = false;
+				readiness.MissingSupportEntries.push_back(runtimeFileName);
+			}
+
+			for (const std::string& runtimeDirectoryPrefix : GetRequiredCookToolRuntimeDirectoryPrefixes(toolPath))
+			{
+				errorCode.clear();
+				if (HasDirectChildDirectoryWithPrefix(toolDirectory, runtimeDirectoryPrefix))
+				{
+					continue;
+				}
+
+				readiness.Ready = false;
+				readiness.MissingSupportEntries.push_back(runtimeDirectoryPrefix + "*");
+			}
+
+			return readiness;
+		}
+	}
+
 	static void AddReadiness(CookOperationPlan& plan, std::string message)
 	{
 		plan.ReadinessMessages.push_back(std::move(message));
@@ -310,8 +417,32 @@ namespace SparkleLauncher
 		{
 			std::error_code errorCode;
 			const bool toolExists = std::filesystem::exists(toolPath, errorCode);
-			requiredCookToolsAvailable = requiredCookToolsAvailable && toolExists && !errorCode;
-			AddReadiness(plan, toolExists && !errorCode ? ("Cook tool is ready: " + toolPath.string()) : ("Cook tool is missing; run Build Cooking Tools first: " + toolPath.string()));
+			if (!toolExists || errorCode)
+			{
+				requiredCookToolsAvailable = false;
+				AddReadiness(plan, "Cook tool is missing; run Build Cooking Tools first: " + toolPath.string());
+				continue;
+			}
+
+			const CookToolRuntimeReadiness runtimeReadiness = InspectCookToolRuntimeReadiness(toolPath);
+			requiredCookToolsAvailable = requiredCookToolsAvailable && runtimeReadiness.Ready;
+			if (runtimeReadiness.Ready)
+			{
+				AddReadiness(plan, "Cook tool is ready: " + toolPath.string());
+				continue;
+			}
+
+			std::vector<std::string_view> missingSupportEntryViews;
+			missingSupportEntryViews.reserve(runtimeReadiness.MissingSupportEntries.size());
+			for (const std::string& supportEntry : runtimeReadiness.MissingSupportEntries)
+			{
+				missingSupportEntryViews.push_back(supportEntry);
+			}
+
+			AddReadiness(
+			    plan,
+			    "Cook tool runtime support bundle is incomplete beside " + toolPath.filename().string() +
+			        "; run Build Cooking Tools first after Sync shows the Vulkan SDK as ready: " + Strings::Join(missingSupportEntryViews, ", "));
 		}
 		if (request.Mode == CookMode::Force && !request.ForceRecookConfirmed)
 		{
