@@ -18,6 +18,7 @@
 #include "Panels/ViewportPanel.h"
 #include "Panels/ViewportTopPanel.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
+#include "Settings/EditorRestartService.h"
 #include "Style/SparkleUiTheme.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
@@ -196,8 +197,19 @@ void UI::InitializeDefaultPanels()
 	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
 	m_profilerPanel = std::make_unique<ProfilerPanel>();
 	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>();
+	m_restartService = std::make_unique<EditorRestartService>();
 	m_settingsPanel = std::make_unique<SettingsPanel>();
 	m_settingsPanel->SetRenderingSettings(m_renderingSettings.get());
+	m_settingsPanel->SetRestartHandler(
+	    [this]()
+	    {
+		    if (m_window == nullptr || m_restartService == nullptr)
+		    {
+			    return;
+		    }
+
+		    (void) m_restartService->Restart(*m_window);
+	    });
 	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();
 	m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
 	m_usedMeshesPanel = std::make_unique<UsedMeshesPanel>();

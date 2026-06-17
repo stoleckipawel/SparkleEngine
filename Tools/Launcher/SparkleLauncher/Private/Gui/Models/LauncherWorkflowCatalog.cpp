@@ -13,9 +13,9 @@ namespace SparkleLauncher
 	{
 		return {
 		    {"Quick Start", "Launch first", {LauncherHomeOperationId()}, "home"},
-		    {"Launch", "Open what is ready", {"project.run", "workspace.open-ide"}, "launch"},
 		    {"Sync", "Prepare this checkout", {"workspace.sync-source-tiers"}, "sync"},
 		    {"Build", "Optional local rebuilds", {"workspace.generate-build-files", "launcher.build.self", "project.build.editor", "project.build.runtime", "cook.tools.prepare", "quality.format"}, "build"},
+		    {"Launch", "Open what is ready", {"project.run", "workspace.open-ide"}, "launch"},
 		    {"Cook", "Optional content refresh", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}, "cook"},
 		    {"Package", "Release assembly", {"package.release"}, "package"},
 		    {"Clean", "Clean generated state", {"workspace.clean"}, "clean"},

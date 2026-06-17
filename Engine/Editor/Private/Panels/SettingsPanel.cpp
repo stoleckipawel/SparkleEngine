@@ -7,7 +7,11 @@
 
 #include <imgui.h>
 
+#include <algorithm>
+#include <array>
+#include <cfloat>
 #include <string>
+#include <utility>
 
 SettingsPanel::SettingsPanel() = default;
 SettingsPanel::~SettingsPanel() = default;
@@ -31,6 +35,11 @@ void SettingsPanel::SetRenderingSettings(EngineRenderingSettingsSection* renderi
 	m_renderingPanel->SetSettings(renderingSettings);
 }
 
+void SettingsPanel::SetRestartHandler(std::function<void()> restartHandler)
+{
+	m_restartHandler = std::move(restartHandler);
+}
+
 void SettingsPanel::BuildUI(bool disableInteraction)
 {
 	if (!m_isOpen || m_renderingSettings == nullptr)
@@ -47,7 +56,7 @@ void SettingsPanel::BuildUI(bool disableInteraction)
 		m_refreshFromRuntimeOnNextOpen = false;
 	}
 
-	ImGui::SetNextWindowSize(ImVec2(1040.0f, 760.0f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(1120.0f, 780.0f), ImGuiCond_FirstUseEver);
 	const std::string windowTitle = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Settings, "Settings") + "##EditorSettings";
 	if (!ImGui::Begin(windowTitle.c_str(), &m_isOpen))
 	{
@@ -55,37 +64,64 @@ void SettingsPanel::BuildUI(bool disableInteraction)
 		return;
 	}
 
-	DrawNavigation();
-	ImGui::SameLine();
-
-	ImGui::BeginChild("##SettingsContent", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
-	switch (m_activeSection)
+	const bool showRestartBar = HasPendingRestart();
+	const float restartBarHeight = showRestartBar ? 38.0f : 0.0f;
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0f, 12.0f));
+	ImGui::BeginChild("##SettingsContent", ImVec2(0.0f, -restartBarHeight));
+	DrawToolbar();
+	ImGui::Dummy(ImVec2(0.0f, 8.0f));
+	if (m_renderingPanel != nullptr)
 	{
-		case Section::Rendering:
-		default:
-			if (m_renderingPanel != nullptr)
-			{
-				m_renderingPanel->BuildUI(disableInteraction);
-			}
-			break;
+		m_renderingPanel->BuildUI(disableInteraction, m_filterText.c_str());
 	}
 	ImGui::EndChild();
+
+	if (showRestartBar)
+	{
+		ImGui::Separator();
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 6.0f));
+		ImGui::BeginChild("##SettingsFooter", ImVec2(0.0f, restartBarHeight - 8.0f));
+		ImGui::BeginDisabled(!m_restartHandler);
+		const float buttonWidth = 96.0f;
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
+		ImGui::SetCursorPosX((std::max)(0.0f, ImGui::GetContentRegionAvail().x - buttonWidth));
+		if (ImGui::Button("Restart", ImVec2(buttonWidth, 0.0f)) && m_restartHandler)
+		{
+			m_restartHandler();
+		}
+		ImGui::EndDisabled();
+		ImGui::EndChild();
+		ImGui::PopStyleVar();
+	}
+
+	ImGui::PopStyleVar();
 
 	ImGui::End();
 }
 
-void SettingsPanel::DrawNavigation()
+void SettingsPanel::DrawToolbar()
 {
-	ImGui::BeginChild("##SettingsNavigation", ImVec2(210.0f, 0.0f), ImGuiChildFlags_Borders);
-	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 10.0f));
-
-	const bool renderingSelected = m_activeSection == Section::Rendering;
-	if (ImGui::Selectable(UiUtil::MakeIconLabel(UiUtil::EditorIcon::Material, "Rendering").c_str(), renderingSelected, 0, ImVec2(-1.0f, 0.0f)))
+	std::array<char, 128> filterBuffer{};
+	const std::size_t copyLength = (std::min)(m_filterText.size(), filterBuffer.size() - 1);
+	if (copyLength > 0)
 	{
-		m_activeSection = Section::Rendering;
+		m_filterText.copy(filterBuffer.data(), copyLength);
 	}
 
-	ImGui::PopStyleVar(2);
-	ImGui::EndChild();
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	if (ImGui::InputTextWithHint(
+	        "##SettingsSearch",
+	        UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Search").c_str(),
+	        filterBuffer.data(),
+	        filterBuffer.size()))
+	{
+		m_filterText = filterBuffer.data();
+	}
+	ImGui::PopStyleVar();
+}
+
+bool SettingsPanel::HasPendingRestart() const noexcept
+{
+	return m_renderingPanel != nullptr && m_renderingPanel->HasPendingRestart();
 }
