@@ -13,7 +13,7 @@ namespace SparkleLauncher
 		Cook,
 		Test,
 		Package,
-		Maintain,
+		Clean,
 		Unknown
 	};
 

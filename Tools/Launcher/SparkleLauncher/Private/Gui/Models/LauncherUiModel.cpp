@@ -308,7 +308,7 @@ namespace SparkleLauncher
 			    operationId,
 			    "Clean Workspace",
 			    "Clean",
-			    LauncherWorkflowPageKind::Maintain,
+			    LauncherWorkflowPageKind::Clean,
 			    LauncherActionImpactKind::GeneratedState,
 			    "Clean: removes selected generated outputs, caches, logs, or local workspace state after confirmation.",
 			    "Generated files",
@@ -364,7 +364,7 @@ namespace SparkleLauncher
 			return "Test";
 		case LauncherWorkflowPageKind::Package:
 			return "Package";
-		case LauncherWorkflowPageKind::Maintain:
+		case LauncherWorkflowPageKind::Clean:
 			return "Clean";
 		case LauncherWorkflowPageKind::Unknown:
 			return "Unknown";

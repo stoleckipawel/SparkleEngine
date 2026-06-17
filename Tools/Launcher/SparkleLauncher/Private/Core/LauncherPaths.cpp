@@ -55,7 +55,7 @@ namespace SparkleLauncher
 			return candidate.is_absolute() ? candidate : (repositoryRoot / candidate);
 		}
 
-		return repositoryRoot / "build" / "windows-msvc-x64-dev";
+		return repositoryRoot / "build";
 	}
 
 	LauncherStatePaths GetLauncherStatePaths(const std::filesystem::path& repositoryRoot)

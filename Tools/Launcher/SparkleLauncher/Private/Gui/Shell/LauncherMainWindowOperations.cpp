@@ -97,7 +97,7 @@ namespace SparkleLauncher
 			    m_repositoryRoot,
 			    m_projectModel,
 			    m_settings,
-			    "pristine",
+			    "clean-all",
 			    std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()));
 			if (!ConfirmRunRequest(request))
 			{

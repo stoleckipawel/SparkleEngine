@@ -184,11 +184,11 @@ namespace SparkleLauncher
 		QLabel* actionMetaTitle = new QLabel("Last completed run", m_actionMetaPanel);
 		actionMetaTitle->setObjectName("ActionMetaTitle");
 		actionMetaLayout->addWidget(actionMetaTitle);
-		m_lastRunSummaryLabel = new QLabel("No recorded run for this workflow yet.", m_actionMetaPanel);
+		m_lastRunSummaryLabel = new QLabel(QString(), m_actionMetaPanel);
 		m_lastRunSummaryLabel->setObjectName("ActionMetaText");
 		m_lastRunSummaryLabel->setWordWrap(true);
 		actionMetaLayout->addWidget(m_lastRunSummaryLabel);
-		m_lastRunResultLabel = new QLabel("Result data will persist between launcher sessions.", m_actionMetaPanel);
+		m_lastRunResultLabel = new QLabel(QString(), m_actionMetaPanel);
 		m_lastRunResultLabel->setObjectName("ActionMetaDetail");
 		m_lastRunResultLabel->setWordWrap(true);
 		actionMetaLayout->addWidget(m_lastRunResultLabel);
@@ -202,15 +202,6 @@ namespace SparkleLauncher
 		RegisterFocusable(m_cleanButton);
 		connect(m_cleanButton, &QPushButton::clicked, this, &LauncherMainWindow::CleanSelectedOperation);
 		actionMetaRowLayout->addWidget(m_cleanButton, 0, Qt::AlignRight | Qt::AlignVCenter);
-
-		m_dismissHistoryButton = new QPushButton("Dismiss", panel);
-		m_dismissHistoryButton->setObjectName("SecondaryButton");
-		m_dismissHistoryButton->setToolTip("Hide the stored result summary for this workflow. Log files remain available.");
-		m_dismissHistoryButton->setEnabled(false);
-		m_dismissHistoryButton->setAccessibleName("Dismiss stored workflow result");
-		RegisterFocusable(m_dismissHistoryButton);
-		connect(m_dismissHistoryButton, &QPushButton::clicked, this, &LauncherMainWindow::DismissSelectedActionHistory);
-		actionMetaRowLayout->addWidget(m_dismissHistoryButton, 0, Qt::AlignRight | Qt::AlignVCenter);
 
 		m_runButton = new QPushButton("Run", panel);
 		m_runButton->setObjectName("PrimaryActionButton");

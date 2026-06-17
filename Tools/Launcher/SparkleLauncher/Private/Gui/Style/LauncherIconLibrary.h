@@ -14,7 +14,7 @@ namespace SparkleLauncher
 		Cook,
 		Run,
 		Package,
-		Maintain,
+		Clean,
 		Queued,
 		Running,
 		Done,

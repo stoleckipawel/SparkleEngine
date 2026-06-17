@@ -198,8 +198,12 @@ namespace SparkleLauncher
 	{
 		const std::string extension = path.extension().string();
 		const std::string filename = path.filename().string();
+		static constexpr std::string_view kRiderSettingsSuffix = ".DotSettings.user";
+		const bool isRiderSettingsFile =
+		    filename.size() >= kRiderSettingsSuffix.size() &&
+		    filename.compare(filename.size() - kRiderSettingsSuffix.size(), kRiderSettingsSuffix.size(), kRiderSettingsSuffix) == 0;
 		return extension == ".sln" || extension == ".slnx" || extension == ".vcxproj" || extension == ".filters" || extension == ".user" ||
-		    filename == "CMakeCache.txt" || filename == "cmake_install.cmake" || filename == "Makefile";
+		    filename == "CMakeCache.txt" || filename == "cmake_install.cmake" || filename == "Makefile" || isRiderSettingsFile;
 	}
 
 	static bool RemoveRootGeneratedFiles(const std::filesystem::path& repositoryRoot, std::string& outErrorMessage)
@@ -324,7 +328,7 @@ namespace SparkleLauncher
 
 		if (!plan.CanRun)
 		{
-			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Maintain operation is not ready to run." : plan.ReadinessMessages.front();
+			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Clean operation is not ready to run." : plan.ReadinessMessages.front();
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}

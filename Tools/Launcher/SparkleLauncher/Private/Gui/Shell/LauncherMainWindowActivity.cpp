@@ -109,8 +109,7 @@ namespace SparkleLauncher
 		ShowRunOutput(runId);
 		SetActivityLogExpanded(true);
 		UpdateProgress();
-		RefreshProjects();
-		RebuildOptionsPages();
+		ScheduleUiRefresh(true);
 
 		if (succeeded && operationId == "launcher.build.self" && !m_pendingRestartRunIds.contains(runId))
 		{
@@ -139,13 +138,8 @@ namespace SparkleLauncher
 		const LauncherActionHistoryRecord* found = m_actionHistory.Find(m_selectedOperationId);
 		if (found == nullptr)
 		{
-			m_lastRunSummaryLabel->setText("No recorded run for this workflow yet.");
-			m_lastRunResultLabel->setText("Result data will persist between launcher sessions.");
-			if (m_dismissHistoryButton != nullptr)
-			{
-				m_dismissHistoryButton->setEnabled(false);
-				m_dismissHistoryButton->setVisible(false);
-			}
+			m_lastRunSummaryLabel->clear();
+			m_lastRunResultLabel->clear();
 			return;
 		}
 
@@ -161,26 +155,6 @@ namespace SparkleLauncher
 		else
 		{
 			m_lastRunResultLabel->setText(QStringLiteral("Result: %1").arg(found->ResultText));
-		}
-		if (m_dismissHistoryButton != nullptr)
-		{
-			m_dismissHistoryButton->setEnabled(true);
-			m_dismissHistoryButton->setVisible(true);
-		}
-	}
-
-	void LauncherMainWindow::DismissSelectedActionHistory()
-	{
-		if (m_selectedOperationId.isEmpty())
-		{
-			return;
-		}
-
-		if (m_actionHistory.Dismiss(m_selectedOperationId))
-		{
-			m_actionHistory.Save(m_repositoryRoot);
-			UpdateActionHistoryDisplay();
-			RebuildOptionsPages();
 		}
 	}
 

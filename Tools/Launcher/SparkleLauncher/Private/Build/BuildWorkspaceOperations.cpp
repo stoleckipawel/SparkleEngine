@@ -136,7 +136,7 @@ namespace SparkleLauncher
 
 	bool TryParseWorkspaceIde(std::string_view text, WorkspaceIde& outIde)
 	{
-		if (text == "visual-studio" || text == "visualstudio" || text == "vs")
+		if (text == "visual-studio")
 		{
 			outIde = WorkspaceIde::VisualStudio;
 			return true;

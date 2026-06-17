@@ -54,6 +54,18 @@ namespace SparkleLauncher
 		{
 			return CleanScope::BuildTree;
 		}
+		if (text == "artifacts")
+		{
+			return CleanScope::ArtifactOutputs;
+		}
+		if (text == "packages")
+		{
+			return CleanScope::PackageOutputs;
+		}
+		if (text == "workspace-state")
+		{
+			return CleanScope::WorkspaceState;
+		}
 		if (text == "shader-cache")
 		{
 			return CleanScope::ShaderCache;
@@ -66,7 +78,7 @@ namespace SparkleLauncher
 		{
 			return CleanScope::Logs;
 		}
-		if (text == "pristine")
+		if (text == "clean-all")
 		{
 			return CleanScope::PristineGeneratedWorkspace;
 		}

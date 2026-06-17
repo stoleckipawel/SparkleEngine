@@ -58,6 +58,7 @@ namespace SparkleLauncher
 		void DisplaySelectedRunOutput(QListWidgetItem* currentItem, QListWidgetItem* previousItem);
 		void CopySelectedRunOutput();
 		void ToggleActivityLogPanel();
+		void HandleApplicationStateChanged(Qt::ApplicationState state);
 		void RunSelectedOperation();
 		void CleanSelectedOperation();
 		void DisplayOperationStarted(const QString& runId, const QString& operationId, const QString& title);
@@ -124,8 +125,9 @@ namespace SparkleLauncher
 		void SetControlsEnabled(bool enabled);
 		void EnsureOptionsPage(const QString& operationId);
 		void RebuildOptionsPages();
+		void ScheduleUiRefresh(bool refreshProjects);
+		void ApplyScheduledUiRefresh();
 		void UpdateActionHistoryDisplay();
-		void DismissSelectedActionHistory();
 		QIcon WorkflowIconForKey(const QString& iconKey) const;
 		QIcon ActivityIconForState(RunState state) const;
 		void RegisterFocusable(QWidget* widget);
@@ -191,7 +193,6 @@ namespace SparkleLauncher
 		QFrame* m_actionMetaPanel = nullptr;
 		QLabel* m_lastRunSummaryLabel = nullptr;
 		QLabel* m_lastRunResultLabel = nullptr;
-		QPushButton* m_dismissHistoryButton = nullptr;
 		QLabel* m_progressLabel = nullptr;
 		QWidget* m_activityPanel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;
@@ -209,6 +210,10 @@ namespace SparkleLauncher
 		QString m_activeRunId;
 		QString m_selectedOperationId;
 		bool m_isRebuildingOptions = false;
+		bool m_isApplyingUiRefresh = false;
+		bool m_uiRefreshQueued = false;
+		bool m_refreshProjectsRequested = false;
+		qint64 m_lastActivationRefreshMs = 0;
 		bool m_activityLogExpanded = false;
 		int m_nextRunIndex = 0;
 		int m_startedRunCount = 0;

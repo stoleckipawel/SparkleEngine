@@ -21,6 +21,18 @@ namespace SparkleLauncher
 		{
 			return GetBuildDirectory(repositoryRoot);
 		}
+		if (scope == "artifacts")
+		{
+			return GetArtifactDirectory(repositoryRoot);
+		}
+		if (scope == "packages")
+		{
+			return repositoryRoot / "dist";
+		}
+		if (scope == "workspace-state")
+		{
+			return repositoryRoot;
+		}
 		if (scope == "shader-cache")
 		{
 			return GetBuildDirectory(repositoryRoot) / "Cache" / "Shaders";
@@ -50,6 +62,18 @@ namespace SparkleLauncher
 		{
 			return "Build Outputs";
 		}
+		if (scopeValue == "artifacts")
+		{
+			return "Generated Artifacts";
+		}
+		if (scopeValue == "packages")
+		{
+			return "Packaged Outputs";
+		}
+		if (scopeValue == "workspace-state")
+		{
+			return "IDE And Workspace State";
+		}
 		if (scopeValue == "shader-cache")
 		{
 			return "Shader Cache";
@@ -62,9 +86,9 @@ namespace SparkleLauncher
 		{
 			return "Log Files";
 		}
-		if (scopeValue == "pristine")
+		if (scopeValue == "clean-all")
 		{
-			return "Generated Workspace";
+			return "Clean All";
 		}
 		return scopeValue;
 	}

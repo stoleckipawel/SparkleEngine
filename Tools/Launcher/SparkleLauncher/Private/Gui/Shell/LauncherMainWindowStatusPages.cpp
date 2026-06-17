@@ -361,7 +361,7 @@ namespace SparkleLauncher
 			QVBoxLayout* buildLayout = AddDetailsGroup(
 			    layout,
 			    buildNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
-			    "Requirements this build workflow depends on before a local rebuild can run successfully.",
+			    QString(),
 			    false);
 			AddStatusRow(
 			    *buildLayout,
@@ -390,7 +390,7 @@ namespace SparkleLauncher
 			QVBoxLayout* cookLayout = AddDetailsGroup(
 			    layout,
 			    cookNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
-			    "Requirements this cook workflow depends on before local recook operations can run successfully.",
+			    QString(),
 			    false);
 			AddStatusRow(
 			    *cookLayout,
@@ -482,7 +482,7 @@ namespace SparkleLauncher
 		QVBoxLayout* launchLayout = AddDetailsGroup(
 		    layout,
 		    launchNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
-		    "Launch workflows use bundled runtime components when packages provide them, then local rebuild outputs when developing from source.",
+		    QString(),
 		    false);
 		AddStatusRow(
 		    *launchLayout,
@@ -759,7 +759,7 @@ namespace SparkleLauncher
 			QVBoxLayout* maintenanceLayout = AddDetailsGroup(
 			    layout,
 			    formatNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
-			    "Formatting depends on clang-format being installed and source files being discoverable in Engine/ and Projects/.",
+			    QString(),
 			    false);
 			AddStatusRow(
 			    *maintenanceLayout,
@@ -782,7 +782,7 @@ namespace SparkleLauncher
 			QVBoxLayout* maintenanceLayout = AddDetailsGroup(
 			    layout,
 			    m_settings.ConfirmClean() ? "Action Dependencies - Ready" : "Action Dependencies - Confirmation required",
-			    "Cleaning generated outputs does not require the build toolchain, but destructive scopes still require explicit confirmation.",
+			    QString(),
 			    false);
 			AddStatusRow(
 			    *maintenanceLayout,

@@ -216,12 +216,12 @@ namespace SparkleLauncher
 
 	static bool TryParseCleanScope(std::string_view text, CleanScope& outScope)
 	{
-		if (text == "selected-cooked" || text == "selected-project-cooked-outputs")
+		if (text == "selected-cooked")
 		{
 			outScope = CleanScope::SelectedProjectCookedOutputs;
 			return true;
 		}
-		if (text == "all-cooked" || text == "all-cooked-outputs")
+		if (text == "all-cooked")
 		{
 			outScope = CleanScope::AllCookedOutputs;
 			return true;
@@ -231,12 +231,27 @@ namespace SparkleLauncher
 			outScope = CleanScope::BuildTree;
 			return true;
 		}
+		if (text == "artifacts")
+		{
+			outScope = CleanScope::ArtifactOutputs;
+			return true;
+		}
+		if (text == "packages")
+		{
+			outScope = CleanScope::PackageOutputs;
+			return true;
+		}
+		if (text == "workspace-state")
+		{
+			outScope = CleanScope::WorkspaceState;
+			return true;
+		}
 		if (text == "shader-cache")
 		{
 			outScope = CleanScope::ShaderCache;
 			return true;
 		}
-		if (text == "deps" || text == "third-party-dependency-cache")
+		if (text == "deps")
 		{
 			outScope = CleanScope::ThirdPartyDependencyCache;
 			return true;
@@ -246,7 +261,7 @@ namespace SparkleLauncher
 			outScope = CleanScope::Logs;
 			return true;
 		}
-		if (text == "pristine" || text == "pristine-generated-workspace")
+		if (text == "clean-all")
 		{
 			outScope = CleanScope::PristineGeneratedWorkspace;
 			return true;
@@ -597,7 +612,7 @@ namespace SparkleLauncher
 		RenderOperationGroup(state, "Cook", output);
 		RenderOperationGroup(state, "Test", output);
 		RenderOperationGroup(state, "Package", output);
-		RenderOperationGroup(state, "Maintain", output);
+		RenderOperationGroup(state, "Clean", output);
 
 		output << "\nRecent Activity\n";
 		for (const LauncherActivityEntry& entry : state.Activity)
@@ -969,6 +984,7 @@ namespace SparkleLauncher
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --smoke-benchmark --smoke-diagnostics --run project.run.smoke\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
-		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n";
+		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n"
+		       << "  SparkleLauncher --clean-scope clean-all --dry-run workspace.clean\n";
 	}
 }

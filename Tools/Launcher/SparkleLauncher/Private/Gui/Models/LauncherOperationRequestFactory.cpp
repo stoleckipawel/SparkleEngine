@@ -195,7 +195,7 @@ namespace SparkleLauncher
 		request.CleanScope = cleanScope;
 		request.CleanTargets.clear();
 		request.PreservedPaths.clear();
-		if (cleanScope == "pristine" && !runningLauncherPath.empty())
+		if (cleanScope == "clean-all" && !runningLauncherPath.empty())
 		{
 			std::error_code errorCode;
 			const std::filesystem::path absoluteRunningPath = std::filesystem::absolute(runningLauncherPath, errorCode);

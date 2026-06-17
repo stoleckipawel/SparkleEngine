@@ -39,7 +39,7 @@ Workflow banner asset slots:
 - `workflow-smoke-test.png`: Smoke validation workflow banner.
 - `workflow-format-check.png`: Format check workflow banner.
 - `workflow-package-release.png`: Release package workflow banner.
-- `workflow-clean-workspace.png`: Maintain cleanup workflow banner.
+- `workflow-clean-workspace.png`: Clean workspace workflow banner.
 - `workflow-build-generic.png`: Generic build fallback banner.
 - `workflow-cook-generic.png`: Generic cook fallback banner.
 - `workflow-fallback-tools.png`: Unknown workflow fallback banner.

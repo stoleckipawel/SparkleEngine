@@ -62,6 +62,12 @@ namespace SparkleLauncher
 			return "AllCookedOutputs";
 		case OperationDestructiveScope::BuildTree:
 			return "BuildTree";
+		case OperationDestructiveScope::ArtifactOutputs:
+			return "ArtifactOutputs";
+		case OperationDestructiveScope::PackageOutputs:
+			return "PackageOutputs";
+		case OperationDestructiveScope::WorkspaceState:
+			return "WorkspaceState";
 		case OperationDestructiveScope::ShaderCache:
 			return "ShaderCache";
 		case OperationDestructiveScope::DependencyCache:

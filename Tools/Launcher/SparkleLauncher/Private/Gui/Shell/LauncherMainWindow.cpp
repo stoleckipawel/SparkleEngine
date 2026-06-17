@@ -100,6 +100,7 @@ namespace SparkleLauncher
 	static constexpr const char* kColorStateSuccess = LauncherUi::Color::StateSuccess;
 	static constexpr const char* kColorStateDestructive = LauncherUi::Color::StateDestructive;
 	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
+	static constexpr qint64 kActivationRefreshIntervalMs = 1500;
 	static QString FirstReadinessContaining(const std::vector<std::string>& messages, const QString& needle)
 	{
 		for (const std::string& message : messages)
@@ -190,23 +191,40 @@ namespace SparkleLauncher
 		ApplyVisualStyle();
 		ApplyNativeDarkTitleBar(*this);
 
-		connect(&m_projectModel, &LauncherProjectModel::ProjectsChanged, this, &LauncherMainWindow::PopulateProjectSelectors);
+		connect(&m_projectModel, &LauncherProjectModel::ProjectsChanged, this, [this]() {
+			ScheduleUiRefresh(false);
+		});
 		connect(&m_projectModel, &LauncherProjectModel::SelectionChanged, this, [this](const QString&) {
-			PopulateProjectSelectors();
-			RebuildOptionsPages();
-			UpdateRunAvailability();
+			ScheduleUiRefresh(false);
 		});
 		connect(&m_projectModel, &LauncherProjectModel::ProjectDiscoveryFailed, this, &LauncherMainWindow::SetStartupNotice);
 		connect(&m_settings, &LauncherSettings::SettingsChanged, this, [this]() {
-			RebuildOptionsPages();
-			UpdateRunAvailability();
+			ScheduleUiRefresh(false);
 		});
 		connect(&m_backend, &LauncherBackend::OperationStarted, this, &LauncherMainWindow::DisplayOperationStarted);
 		connect(&m_backend, &LauncherBackend::OperationOutputReceived, this, &LauncherMainWindow::AppendOperationOutput);
 		connect(&m_backend, &LauncherBackend::OperationFinished, this, &LauncherMainWindow::DisplayOperationFinished);
+		connect(qApp, &QGuiApplication::applicationStateChanged, this, &LauncherMainWindow::HandleApplicationStateChanged);
 
 		UpdateProgress();
 		QTimer::singleShot(0, this, &LauncherMainWindow::RefreshProjects);
+	}
+
+	void LauncherMainWindow::HandleApplicationStateChanged(Qt::ApplicationState state)
+	{
+		if (state != Qt::ApplicationActive)
+		{
+			return;
+		}
+
+		const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+		if (m_lastActivationRefreshMs != 0 && nowMs - m_lastActivationRefreshMs < kActivationRefreshIntervalMs)
+		{
+			return;
+		}
+
+		m_lastActivationRefreshMs = nowMs;
+		ScheduleUiRefresh(true);
 	}
 
 	void LauncherMainWindow::SetStartupNotice(const QString& message)
@@ -219,7 +237,48 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::RefreshProjects()
 	{
-		m_projectModel.Refresh(m_repositoryRoot);
+		ScheduleUiRefresh(true);
+	}
+
+	void LauncherMainWindow::ScheduleUiRefresh(bool refreshProjects)
+	{
+		m_refreshProjectsRequested = m_refreshProjectsRequested || refreshProjects;
+		if (m_isApplyingUiRefresh || m_uiRefreshQueued)
+		{
+			return;
+		}
+
+		m_uiRefreshQueued = true;
+		QTimer::singleShot(0, this, &LauncherMainWindow::ApplyScheduledUiRefresh);
+	}
+
+	void LauncherMainWindow::ApplyScheduledUiRefresh()
+	{
+		if (m_isApplyingUiRefresh)
+		{
+			return;
+		}
+
+		m_uiRefreshQueued = false;
+		const bool refreshProjects = m_refreshProjectsRequested;
+		m_refreshProjectsRequested = false;
+		m_isApplyingUiRefresh = true;
+
+		if (refreshProjects)
+		{
+			m_projectModel.Refresh(m_repositoryRoot);
+		}
+
+		PopulateProjectSelectors();
+		RebuildOptionsPages();
+		UpdateRunAvailability();
+		UpdateActionHistoryDisplay();
+
+		m_isApplyingUiRefresh = false;
+		if (m_refreshProjectsRequested)
+		{
+			ScheduleUiRefresh(false);
+		}
 	}
 
 	void LauncherMainWindow::SelectWorkflowGroupButton(QAbstractButton* button)
@@ -373,9 +432,9 @@ namespace SparkleLauncher
 		{
 			return m_icons.Icon(LauncherIcon::Package, QColor(kColorStateQueued));
 		}
-		if (iconKey == "maintain")
+		if (iconKey == "clean")
 		{
-			return m_icons.Icon(LauncherIcon::Maintain, QColor(kColorStateQueued));
+			return m_icons.Icon(LauncherIcon::Clean, QColor(kColorStateQueued));
 		}
 		return {};
 	}

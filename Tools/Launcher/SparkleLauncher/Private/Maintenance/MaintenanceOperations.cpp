@@ -201,9 +201,21 @@ namespace SparkleLauncher
 			return;
 		case CleanScope::BuildTree:
 			AddCleanTarget(plan, "Build tree contents", GetBuildDirectory(plan.RepositoryRoot), "Contents are removed except build/_deps.");
-			AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
 			AddCleanTarget(plan, "Root generated CMake/VS files", plan.RepositoryRoot, "Root *.sln, *.slnx, *.vcxproj, CMakeCache.txt, cmake_install.cmake, Makefile, and CMakeFiles.");
 			AddProjectGeneratedTargets(plan, true, false, false);
+			return;
+		case CleanScope::ArtifactOutputs:
+			AddCleanTarget(plan, "Generated artifacts", GetArtifactDirectory(plan.RepositoryRoot), "Generated runnable artifacts, diagnostics, libraries, symbols, and cooked outputs.");
+			return;
+		case CleanScope::PackageOutputs:
+			AddCleanTarget(plan, "Package outputs", plan.RepositoryRoot / "dist", "Assembled package layouts and release archives.");
+			return;
+		case CleanScope::WorkspaceState:
+			AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
+			AddCleanTarget(plan, "VS Code workspace state", plan.RepositoryRoot / ".vscode", ".vscode directory.");
+			AddCleanTarget(plan, "Rider workspace state", plan.RepositoryRoot / ".idea", ".idea directory.");
+			AddCleanTarget(plan, "Root ImGui state", plan.RepositoryRoot / "imgui.ini", "Root imgui.ini.");
+			AddProjectGeneratedTargets(plan, false, false, true);
 			return;
 		case CleanScope::ShaderCache:
 			AddCleanTarget(plan, "Shader cache", GetBuildDirectory(plan.RepositoryRoot) / "Cache" / "Shaders", "Local shader cache, recook signal, debug artifacts, and transient shader outputs.");
@@ -222,7 +234,9 @@ namespace SparkleLauncher
 			AddCleanTarget(plan, "Package outputs", plan.RepositoryRoot / "dist", "Assembled package layouts and release archives.");
 			AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
 			AddCleanTarget(plan, "VS Code workspace state", plan.RepositoryRoot / ".vscode", ".vscode directory.");
+			AddCleanTarget(plan, "Rider workspace state", plan.RepositoryRoot / ".idea", ".idea directory.");
 			AddCleanTarget(plan, "Repository logs", plan.RepositoryRoot / "logs", "Root structured logs.");
+			AddCleanTarget(plan, "Launcher state", GetLauncherStatePaths(plan.RepositoryRoot).RootDirectory, "Per-repository launcher logs, activity history, and cached workflow state.");
 			AddCleanTarget(plan, "Root ImGui state", plan.RepositoryRoot / "imgui.ini", "Root imgui.ini.");
 			AddCleanTarget(plan, "Root generated CMake/VS files", plan.RepositoryRoot, "Root *.sln, *.slnx, *.vcxproj, CMakeCache.txt, cmake_install.cmake, Makefile, and CMakeFiles.");
 			AddProjectGeneratedTargets(plan, true, true, true);
@@ -286,6 +300,12 @@ namespace SparkleLauncher
 			return OperationDestructiveScope::AllCookedOutputs;
 		case CleanScope::BuildTree:
 			return OperationDestructiveScope::BuildTree;
+		case CleanScope::ArtifactOutputs:
+			return OperationDestructiveScope::ArtifactOutputs;
+		case CleanScope::PackageOutputs:
+			return OperationDestructiveScope::PackageOutputs;
+		case CleanScope::WorkspaceState:
+			return OperationDestructiveScope::WorkspaceState;
 		case CleanScope::ShaderCache:
 			return OperationDestructiveScope::ShaderCache;
 		case CleanScope::ThirdPartyDependencyCache:
@@ -359,19 +379,25 @@ namespace SparkleLauncher
 		switch (scope)
 		{
 		case CleanScope::SelectedProjectCookedOutputs:
-			return "selected-project-cooked-outputs";
+			return "selected-cooked";
 		case CleanScope::AllCookedOutputs:
-			return "all-cooked-outputs";
+			return "all-cooked";
 		case CleanScope::BuildTree:
 			return "build-tree";
+		case CleanScope::ArtifactOutputs:
+			return "artifact-outputs";
+		case CleanScope::PackageOutputs:
+			return "package-outputs";
+		case CleanScope::WorkspaceState:
+			return "workspace-state";
 		case CleanScope::ShaderCache:
 			return "shader-cache";
 		case CleanScope::ThirdPartyDependencyCache:
-			return "third-party-dependency-cache";
+			return "deps";
 		case CleanScope::Logs:
 			return "logs";
 		case CleanScope::PristineGeneratedWorkspace:
-			return "pristine-generated-workspace";
+			return "clean-all";
 		}
 
 		return "unknown";
@@ -381,7 +407,7 @@ namespace SparkleLauncher
 	{
 		static const std::vector<MaintenanceOperationDefinition> definitions = {
 		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Test", "Format Check", "Check or apply code formatting for engine and project source files."},
-		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Maintain", "Clean Workspace", "Remove generated files for the selected confirmed scope."},
+		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Clean", "Clean Workspace", "Remove generated files for the selected confirmed scope."},
 		};
 		return definitions;
 	}

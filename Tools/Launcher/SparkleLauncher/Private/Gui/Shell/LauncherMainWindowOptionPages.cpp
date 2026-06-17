@@ -271,7 +271,7 @@ namespace SparkleLauncher
 
 		if (operationId == "project.run.smoke")
 		{
-			AddLaunchTargetOptions(layout, "Smoke Target", "Choose which project executable should run with smoke validation.", false);
+			AddLaunchTargetOptions(layout, "Smoke Target", QString(), false);
 			AddLaunchApplicationOptions(layout);
 			AddSmokeValidationOptions(layout);
 			QVBoxLayout* gateLayout = AddDetailsGroup(
@@ -291,7 +291,7 @@ namespace SparkleLauncher
 
 		if (operationId == "project.run")
 		{
-			AddLaunchTargetOptions(layout, "Launch Project", "Choose target and startup level for the selected project.", true);
+			AddLaunchTargetOptions(layout, "Launch Project", QString(), true);
 			AddLaunchApplicationOptions(layout);
 			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
@@ -313,23 +313,25 @@ namespace SparkleLauncher
 
 		if (operationId == "workspace.clean")
 		{
-			const std::array<CleanScopeUiOption, 7> cleanScopes = {{
+			const std::array<CleanScopeUiOption, 9> cleanScopes = {{
 			    {"Selected project cooked content", "selected-cooked", "Cooked asset outputs for only the selected project under artifacts/dev/projects/<Project>/cooked.", QString(), "Cooked content"},
 			    {"All cooked content", "all-cooked", "Cooked asset domains for every project plus the shared cooked domain. Keeps editor/runtime artifacts and source dependency caches.", "artifacts/dev/projects/*/cooked", "Cooked content"},
-			    {"Build outputs and generated build files", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and local IDE state. Keeps the source dependency cache.", "build content except build/_deps, .vs, root generated project files, project generated files", "Build state"},
+			    {"Build outputs and generated build files", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and project build trees. Keeps the source dependency cache.", "build content except build/_deps, root generated project files, project generated files", "Build and packages"},
+			    {"Generated artifacts", "artifacts", "Runnable artifacts, libraries, symbols, diagnostics, and generated project outputs under artifacts/.", QString(), "Build and packages"},
+			    {"Packaged outputs", "packages", "Release layouts and assembled package outputs under dist/.", "dist", "Build and packages"},
+			    {"IDE and workspace state", "workspace-state", "Local IDE state and ImGui workspace state generated on this machine.", ".vs, .vscode, imgui.ini, Projects/*/imgui.ini", "Workspace state"},
 			    {"Shader cache", "shader-cache", "Transient shader cache, recook signal, debug artifacts, and shader outputs.", QString(), "Caches"},
 			    {"Source dependency cache", "deps", "Downloaded source dependency cache. Configure will re-download source dependency groups.", QString(), "Caches"},
 			    {"Logs", "logs", "Repository, launcher, and project logs.", "logs, user-local launcher logs, Projects/*/logs", "Logs"},
-			    {"Reset generated workspace", "pristine", "All generated repository workspace state, including build trees, artifacts, packages, dependency cache, cooked data, IDE state, logs, and generated project files.", "build, artifacts, dist, .vs, .vscode, logs, imgui.ini, root generated project files, project generated files", "Reset"},
 			}};
 
 			QVector<QCheckBox*> scopeBoxes;
 			const QString selectedProjectId = m_projectModel.SelectedProjectId();
 			const QStringList selectedScopes = m_settings.CleanScope().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
 			const std::array<QPair<QString, QString>, 5> cleanGroups = {{
-			    {"Reset", "Full generated workspace reset"},
 			    {"Cooked content", "Cooked assets"},
-			    {"Build state", "Build products and IDE state"},
+			    {"Build and packages", "Build products, artifacts, and packaged outputs"},
+			    {"Workspace state", "IDE and local workspace state"},
 			    {"Caches", "Regeneratable caches"},
 			    {"Logs", "Launcher and project logs"},
 			}};
@@ -339,7 +341,7 @@ namespace SparkleLauncher
 				scopeBox->setToolTip(scope.Detail);
 				scopeBox->setProperty("CleanScope", scope.Value);
 				scopeBox->setProperty("CleanLabel", scope.Label);
-				scopeBox->setChecked(selectedScopes.contains(scope.Value) || (selectedScopes.empty() && scope.Value == "selected-cooked"));
+				scopeBox->setChecked(selectedScopes.contains(scope.Value) || (selectedScopes.empty() && scope.Value == "build-tree"));
 				RegisterFocusable(scopeBox);
 
 				QFrame* scopeRow = new QFrame(this);
@@ -394,7 +396,7 @@ namespace SparkleLauncher
 						const QSignalBlocker blocker(scopeBoxes.front());
 						scopeBoxes.front()->setChecked(true);
 					}
-					selectedValues.push_back("selected-cooked");
+					selectedValues.push_back("build-tree");
 				}
 				m_settings.SetCleanScope(selectedValues.join(';'));
 				UpdateRunAvailability();

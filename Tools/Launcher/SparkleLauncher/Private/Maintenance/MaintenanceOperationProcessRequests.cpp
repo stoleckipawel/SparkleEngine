@@ -177,9 +177,21 @@ namespace SparkleLauncher
 			return;
 		case CleanScope::BuildTree:
 			AddCleanStep(steps, "clean-build-tree", "Clean build tree except dependency cache", GetBuildDirectory(plan.RepositoryRoot), MaintenanceCleanBehavior::RemoveBuildDirectoryContentsPreservingDependencies);
-			AddCleanStep(steps, "clean-dot-vs", "Clean Visual Studio workspace state", plan.RepositoryRoot / ".vs", MaintenanceCleanBehavior::RemovePath);
 			AddCleanStep(steps, "clean-root-generated", "Clean root CMake and Visual Studio generated files", plan.RepositoryRoot, MaintenanceCleanBehavior::RemoveRootGeneratedFiles);
 			AddProjectGeneratedCleanSteps(steps, plan, true, false, false);
+			return;
+		case CleanScope::ArtifactOutputs:
+			AddCleanStep(steps, "clean-artifacts", "Clean generated artifacts", GetArtifactDirectory(plan.RepositoryRoot), MaintenanceCleanBehavior::RemovePath);
+			return;
+		case CleanScope::PackageOutputs:
+			AddCleanStep(steps, "clean-packages", "Clean packaged outputs", plan.RepositoryRoot / "dist", MaintenanceCleanBehavior::RemovePath);
+			return;
+		case CleanScope::WorkspaceState:
+			AddCleanStep(steps, "clean-dot-vs", "Clean Visual Studio workspace state", plan.RepositoryRoot / ".vs", MaintenanceCleanBehavior::RemovePath);
+			AddCleanStep(steps, "clean-dot-vscode", "Clean VS Code workspace state", plan.RepositoryRoot / ".vscode", MaintenanceCleanBehavior::RemovePath);
+			AddCleanStep(steps, "clean-dot-idea", "Clean Rider workspace state", plan.RepositoryRoot / ".idea", MaintenanceCleanBehavior::RemovePath);
+			AddCleanStep(steps, "clean-root-imgui", "Clean root ImGui state", plan.RepositoryRoot / "imgui.ini", MaintenanceCleanBehavior::RemovePath);
+			AddProjectGeneratedCleanSteps(steps, plan, false, false, true);
 			return;
 		case CleanScope::ShaderCache:
 			AddCleanStep(steps, "clean-shader-cache", "Clean shader cache", GetBuildDirectory(plan.RepositoryRoot) / "Cache" / "Shaders", MaintenanceCleanBehavior::RemovePath);
@@ -198,7 +210,9 @@ namespace SparkleLauncher
 			AddCleanStep(steps, "clean-dist", "Clean package outputs", plan.RepositoryRoot / "dist", MaintenanceCleanBehavior::RemovePath);
 			AddCleanStep(steps, "clean-dot-vs", "Clean Visual Studio workspace state", plan.RepositoryRoot / ".vs", MaintenanceCleanBehavior::RemovePath);
 			AddCleanStep(steps, "clean-dot-vscode", "Clean VS Code workspace state", plan.RepositoryRoot / ".vscode", MaintenanceCleanBehavior::RemovePath);
+			AddCleanStep(steps, "clean-dot-idea", "Clean Rider workspace state", plan.RepositoryRoot / ".idea", MaintenanceCleanBehavior::RemovePath);
 			AddCleanStep(steps, "clean-logs", "Clean repository logs", plan.RepositoryRoot / "logs", MaintenanceCleanBehavior::RemovePath);
+			AddCleanStep(steps, "clean-launcher-state", "Clean launcher state", GetLauncherStatePaths(plan.RepositoryRoot).RootDirectory, MaintenanceCleanBehavior::RemovePath);
 			AddCleanStep(steps, "clean-root-imgui", "Clean root ImGui state", plan.RepositoryRoot / "imgui.ini", MaintenanceCleanBehavior::RemovePath);
 			AddCleanStep(steps, "clean-root-generated", "Clean root CMake and Visual Studio generated files", plan.RepositoryRoot, MaintenanceCleanBehavior::RemoveRootGeneratedFiles);
 			AddProjectGeneratedCleanSteps(steps, plan, true, true, true);

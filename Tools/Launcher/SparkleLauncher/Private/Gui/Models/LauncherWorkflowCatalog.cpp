@@ -19,7 +19,7 @@ namespace SparkleLauncher
 		    {"Cook", "Optional content refresh", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}, "cook"},
 		    {"Test", "Quality gates", {"project.run.smoke", "quality.format"}, "test"},
 		    {"Package", "Release assembly", {"package.release"}, "package"},
-		    {"Clean", "Clean generated state", {"workspace.clean"}, "maintain"},
+		    {"Clean", "Clean generated state", {"workspace.clean"}, "clean"},
 		};
 	}
 
