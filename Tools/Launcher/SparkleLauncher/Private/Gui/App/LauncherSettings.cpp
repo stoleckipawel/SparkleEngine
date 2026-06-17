@@ -128,16 +128,6 @@ namespace SparkleLauncher
 		return m_launchMeshAutoBatching;
 	}
 
-	const QString& LauncherSettings::LaunchPreferPartitionedTlas() const
-	{
-		return m_launchPreferPartitionedTlas;
-	}
-
-	const QString& LauncherSettings::LaunchPtlasOperationWriterPath() const
-	{
-		return m_launchPtlasOperationWriterPath;
-	}
-
 	const QString& LauncherSettings::LaunchCommandLineArguments() const
 	{
 		return m_launchCommandLineArguments;
@@ -429,26 +419,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_launchMeshAutoBatching = value;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetLaunchPreferPartitionedTlas(const QString& value)
-	{
-		if (m_launchPreferPartitionedTlas == value)
-		{
-			return;
-		}
-		m_launchPreferPartitionedTlas = value;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetLaunchPtlasOperationWriterPath(const QString& value)
-	{
-		if (m_launchPtlasOperationWriterPath == value)
-		{
-			return;
-		}
-		m_launchPtlasOperationWriterPath = value;
 		emit SettingsChanged();
 	}
 

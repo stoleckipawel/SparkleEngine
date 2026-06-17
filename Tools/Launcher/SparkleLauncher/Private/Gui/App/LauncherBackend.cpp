@@ -230,8 +230,6 @@ namespace SparkleLauncher
 		launchRequest.VSync = request.LaunchVSync.toStdString();
 		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
 		launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
-		launchRequest.PreferPartitionedTlas = request.LaunchPreferPartitionedTlas.toStdString();
-		launchRequest.PtlasOperationWriterPath = request.LaunchPtlasOperationWriterPath.toStdString();
 		launchRequest.CustomArguments = SplitCommandLineArguments(request.LaunchCommandLineArguments);
 		launchRequest.CustomCVars = SplitOptionList(request.LaunchCVars);
 		launchRequest.SmokeBackend = request.SmokeBackend.toStdString();

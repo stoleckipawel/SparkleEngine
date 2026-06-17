@@ -237,14 +237,6 @@ namespace SparkleLauncher
 		{
 			plan.Operation.Inputs.push_back({"r.MeshAutoBatching", plan.Request.MeshAutoBatching});
 		}
-		if (!plan.Request.PreferPartitionedTlas.empty())
-		{
-			plan.Operation.Inputs.push_back({"r.RayTracing.PreferPartitionedTlas", plan.Request.PreferPartitionedTlas});
-		}
-		if (!plan.Request.PtlasOperationWriterPath.empty())
-		{
-			plan.Operation.Inputs.push_back({"r.RayTracing.Ptlas.OperationWriterPath", plan.Request.PtlasOperationWriterPath});
-		}
 		if (!plan.Request.CustomArguments.empty())
 		{
 			plan.Operation.Inputs.push_back({"customArguments", std::to_string(plan.Request.CustomArguments.size())});
@@ -302,14 +294,6 @@ namespace SparkleLauncher
 		if (!plan.Request.MeshAutoBatching.empty())
 		{
 			AddPlannedEffect(plan, "Set r.MeshAutoBatching=" + plan.Request.MeshAutoBatching + ".");
-		}
-		if (!plan.Request.PreferPartitionedTlas.empty())
-		{
-			AddPlannedEffect(plan, "Set r.RayTracing.PreferPartitionedTlas=" + plan.Request.PreferPartitionedTlas + ".");
-		}
-		if (!plan.Request.PtlasOperationWriterPath.empty())
-		{
-			AddPlannedEffect(plan, "Set r.RayTracing.Ptlas.OperationWriterPath=" + plan.Request.PtlasOperationWriterPath + ".");
 		}
 		if (!plan.Request.StartupLevel.empty())
 		{

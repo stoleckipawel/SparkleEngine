@@ -78,8 +78,6 @@ namespace SparkleLauncher
 			launchRequest.VSync = request.LaunchVSync.toStdString();
 			launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
 			launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
-			launchRequest.PreferPartitionedTlas = request.LaunchPreferPartitionedTlas.toStdString();
-			launchRequest.PtlasOperationWriterPath = request.LaunchPtlasOperationWriterPath.toStdString();
 			for (const QString& argument : QProcess::splitCommand(request.LaunchCommandLineArguments))
 			{
 				if (!argument.isEmpty())

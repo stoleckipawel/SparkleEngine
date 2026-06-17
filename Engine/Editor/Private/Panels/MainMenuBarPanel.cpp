@@ -105,6 +105,11 @@ void MainMenuBarPanel::SetProfilerOpenHandler(std::function<void()> handler)
 	m_profilerOpenHandler = std::move(handler);
 }
 
+void MainMenuBarPanel::SetSettingsOpenHandler(std::function<void()> handler)
+{
+	m_settingsOpenHandler = std::move(handler);
+}
+
 void MainMenuBarPanel::BuildOpenLevelMenu() noexcept
 {
 	if (m_levelManager == nullptr)
@@ -156,6 +161,14 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 
 void MainMenuBarPanel::BuildWindowsMenu() noexcept
 {
+	const std::string settingsLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Settings, "Settings");
+	if (ImGui::MenuItem(settingsLabel.c_str(), nullptr, false, static_cast<bool>(m_settingsOpenHandler)))
+	{
+		m_settingsOpenHandler();
+	}
+
+	ImGui::Separator();
+
 	const std::string profilerLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Profiler, "Profiler");
 	if (ImGui::MenuItem(profilerLabel.c_str(), nullptr, false, static_cast<bool>(m_profilerOpenHandler)))
 	{

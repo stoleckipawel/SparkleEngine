@@ -371,8 +371,6 @@ namespace SparkleLauncher
 		launchRequest.VSync = request.LaunchVSync.toStdString();
 		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
 		launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
-		launchRequest.PreferPartitionedTlas = request.LaunchPreferPartitionedTlas.toStdString();
-		launchRequest.PtlasOperationWriterPath = request.LaunchPtlasOperationWriterPath.toStdString();
 		for (const QString& argument : QProcess::splitCommand(request.LaunchCommandLineArguments))
 		{
 			if (!argument.isEmpty())
@@ -522,24 +520,6 @@ namespace SparkleLauncher
 		        {{"High performance", ""}, {"System default", "false"}},
 		        m_settings.LaunchHighPerformanceAdapter(),
 		        &LauncherSettings::SetLaunchHighPerformanceAdapter));
-		AddOptionField(
-		    *appOptionsLayout,
-		    "Ray tracing TLAS",
-		    CreateValueCombo(
-		        {{"Partitioned TLAS", "true"}, {"Classic TLAS", "false"}},
-		        m_settings.LaunchPreferPartitionedTlas(),
-		        &LauncherSettings::SetLaunchPreferPartitionedTlas));
-		AddOptionField(
-		    *appOptionsLayout,
-		    "PTLAS update path",
-		    CreateValueCombo(
-		        {
-		            {"CPU pack", "1"},
-		            {"GPU dirty + CPU native pack", "2"},
-		            {"Full GPU native pack", "3"},
-		        },
-		        m_settings.LaunchPtlasOperationWriterPath(),
-		        &LauncherSettings::SetLaunchPtlasOperationWriterPath));
 		AddOptionField(
 		    *appOptionsLayout,
 		    "Arguments",
