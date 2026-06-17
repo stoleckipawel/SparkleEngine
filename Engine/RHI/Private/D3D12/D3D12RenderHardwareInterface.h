@@ -141,7 +141,8 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
 	    const RhiRayTracingGeometryDesc& geometry) const noexcept;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
-	    std::uint32_t instanceCount) const noexcept;
+	    std::uint32_t instanceCount,
+	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept;
 	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName);
 	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
 	    std::uint64_t sizeInBytes,

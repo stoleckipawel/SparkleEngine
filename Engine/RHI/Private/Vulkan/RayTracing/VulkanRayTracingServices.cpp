@@ -122,9 +122,10 @@ RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetBott
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetTopLevelAccelerationStructurePrebuildInfo(
-    std::uint32_t instanceCount) const noexcept
+    std::uint32_t instanceCount,
+    ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
-	return m_classicTlasServices.GetClassicTopLevelAccelerationStructurePrebuildInfo(instanceCount);
+	return m_classicTlasServices.GetClassicTopLevelAccelerationStructurePrebuildInfo(instanceCount, buildFlags);
 }
 
 RhiPartitionedTlasBuildSizes VulkanRayTracingServices::GetPartitionedTopLevelAccelerationStructureBuildSizes(

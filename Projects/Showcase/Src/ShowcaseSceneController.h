@@ -20,6 +20,7 @@ class ShowcaseSceneController final : public GameSceneController
 	{
 		std::size_t MeshIndex = 0;
 		Transform BaseTransform;
+		std::size_t LaneIndex = 0;
 	};
 
 	void Reset() noexcept;

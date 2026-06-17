@@ -124,17 +124,17 @@ const char* ViewportTopPanel::GetViewModeLabel(RenderViewMode viewMode) noexcept
 		case RenderViewMode::InstanceGroups:
 			return "Instance Groups";
 		case RenderViewMode::RayTracingPartitions:
-			return "RT PTLAS Partitions";
+			return "RT AS Partitions";
 		case RenderViewMode::RayTracingPartitionUpdates:
-			return "RT PTLAS Partition Updates";
+			return "RT AS Partition Activity";
 		case RenderViewMode::RayTracingInstanceMovement:
-			return "RT PTLAS Instance Movement";
+			return "RT AS Instance Movement";
 		case RenderViewMode::RayTracingGpuDrivenUpdates:
-			return "RT PTLAS GPU Updates";
+			return "RT AS GPU Updates";
 		case RenderViewMode::RayTracingTopLevelMode:
 			return "RT Top Level Mode";
 		case RenderViewMode::RayTracingNativeOperations:
-			return "RT PTLAS Native Operations";
+			return "RT AS Native Operations";
 		case RenderViewMode::RayTracingProviderStatus:
 			return "RT Provider Status";
 		case RenderViewMode::Count:
@@ -153,7 +153,7 @@ void ViewportTopPanel::DrawViewModeCategory(const char* label) noexcept
 	{
 		icon = UiUtil::EditorIcon::Light;
 	}
-	else if (std::strcmp(label, "Ray Tracing PTLAS") == 0)
+	else if (std::strcmp(label, "Ray Tracing Acceleration Structure") == 0)
 	{
 		icon = UiUtil::EditorIcon::ViewMode;
 	}
@@ -232,7 +232,7 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 		DrawViewModeOption(RenderViewMode::IndirectSubsurface, currentViewMode);
 		ImGui::Unindent(8.0f);
 
-		DrawViewModeCategory("Ray Tracing PTLAS");
+		DrawViewModeCategory("Ray Tracing Acceleration Structure");
 		ImGui::Indent(8.0f);
 		DrawViewModeOption(RenderViewMode::RayTracingPartitions, currentViewMode);
 		DrawViewModeOption(RenderViewMode::RayTracingPartitionUpdates, currentViewMode);

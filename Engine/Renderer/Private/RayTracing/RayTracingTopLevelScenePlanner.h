@@ -7,6 +7,11 @@
 #include <cstdint>
 #include <memory>
 
+namespace DirectX
+{
+	struct XMFLOAT3;
+}
+
 class RayTracingBlasCache;
 class RayTracingPerformanceDiagnostics;
 class RenderCommandContext;
@@ -27,6 +32,8 @@ struct RayTracingTopLevelScenePlannerMetrics final
 	std::uint32_t MovedPartitionCount = 0;
 	std::uint32_t GlobalPartitionEligibleCount = 0;
 	std::uint32_t GlobalPartitionInstanceCount = 0;
+	std::uint32_t ActivePartitionCount = 0;
+	std::uint32_t MaxPartitionActivityCount = 0;
 	std::uint32_t DuplicateStableIndexCount = 0;
 	bool Overflow = false;
 	RayTracingPtlasGpuUpdateMetrics GpuUpdates;
@@ -43,7 +50,7 @@ class RayTracingTopLevelScenePlanner final
 	RayTracingTopLevelScenePlanner(RayTracingTopLevelScenePlanner&&) = delete;
 	RayTracingTopLevelScenePlanner& operator=(RayTracingTopLevelScenePlanner&&) = delete;
 
-	RayTracingSceneFramePlan PlanFrame(const RenderSceneData& sceneData) noexcept;
+	RayTracingSceneFramePlan PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept;
 	const RayTracingPtlasPartitionPlan* GetCurrentPartitionPlan() const noexcept;
 	const RayTracingPtlasLogicalUpdateStreamResult* GetCurrentLogicalUpdateStream() const noexcept;
 	RayTracingClassicTlasBuilder::BuildStats BuildClassicTlas(

@@ -692,7 +692,8 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress instanceDescsGpuAddress,
     std::uint32_t instanceCount,
     RhiGpuVirtualAddress scratchGpuAddress,
-    RhiGpuVirtualAddress resultGpuAddress) noexcept
+    RhiGpuVirtualAddress resultGpuAddress,
+    ERhiClassicTlasBuildMode buildMode) noexcept
 {
 	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr ||
 	    m_rhi->GetCmdBuildAccelerationStructures() == nullptr || instanceDescsGpuAddress == 0 || instanceCount == 0 ||
@@ -720,13 +721,18 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	    .geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR,
 	    .geometry = VkAccelerationStructureGeometryDataKHR{.instances = instances},
 	    .flags = VK_GEOMETRY_OPAQUE_BIT_KHR};
+	const VkBuildAccelerationStructureFlagsKHR nativeBuildFlags =
+	    VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
+	    (buildMode == ERhiClassicTlasBuildMode::Update ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+	                                                   : static_cast<VkBuildAccelerationStructureFlagsKHR>(0));
 	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
 	    .pNext = nullptr,
 	    .type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR,
-	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
-	    .mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
-	    .srcAccelerationStructure = VK_NULL_HANDLE,
+	    .flags = nativeBuildFlags,
+	    .mode = buildMode == ERhiClassicTlasBuildMode::Update ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
+	                                                          : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
+	    .srcAccelerationStructure = buildMode == ERhiClassicTlasBuildMode::Update ? resultRecord->AccelerationStructure : VK_NULL_HANDLE,
 	    .dstAccelerationStructure = resultRecord->AccelerationStructure,
 	    .geometryCount = 1,
 	    .pGeometries = &geometry,

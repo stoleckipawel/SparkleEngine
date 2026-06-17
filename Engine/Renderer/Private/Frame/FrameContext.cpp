@@ -52,15 +52,16 @@ FrameContext BuildFrameContext(
 {
 	FrameContext frame{};
 	frame.sceneData = renderSceneDataBuilder.Build(sceneSnapshot);
+	const PerViewCameraConstantBufferData cameraData = renderCamera.GetCameraConstantBufferData();
 	if (renderRayTracingScene != nullptr)
 	{
-		frame.rayTracingFramePlan = renderRayTracingScene->PlanFrame(frame.sceneData);
+		frame.rayTracingFramePlan = renderRayTracingScene->PlanFrame(frame.sceneData, cameraData.Position);
 	}
 	frame.meshInstances = MeshInstanceFrameData::Build(renderHardwareInterface, frame.sceneData, &frame.rayTracingFramePlan);
 	frame.skinning = SkinningFrameData::Build(renderHardwareInterface, frame.sceneData);
 	const PerViewLightingConstantBufferData lighting = viewLightingBuilder.Build(frame.sceneData);
 	const RhiViewport sceneViewport = BuildSceneViewport(sceneExtent);
-	frame.mainView = perViewDataBuilder.BuildView(renderCamera.GetCameraConstantBufferData(), lighting, sceneViewport, BuildSceneScissorRect(sceneExtent));
+	frame.mainView = perViewDataBuilder.BuildView(cameraData, lighting, sceneViewport, BuildSceneScissorRect(sceneExtent));
 	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(renderCamera, frame.mainView.perViewData.Camera, sceneViewport);
 	frame.mainView.temporalState = BuildRenderTemporalFrameState(frame.mainView.perTemporalData);
 

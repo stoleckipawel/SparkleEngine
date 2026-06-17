@@ -15,42 +15,42 @@ namespace
 {
 	constexpr float kLabelColumnWidth = 340.0f;
 
-	int ToTlasModeIndex(EngineRayTracingTopLevelMode mode) noexcept
+	int ToPtlasPartitionUpdateModeIndex(EnginePtlasPartitionUpdateMode mode) noexcept
 	{
-		return mode == EngineRayTracingTopLevelMode::PartitionedTlas ? 1 : 0;
-	}
-
-	EngineRayTracingTopLevelMode FromTlasModeIndex(int index) noexcept
-	{
-		return index == 1 ? EngineRayTracingTopLevelMode::PartitionedTlas : EngineRayTracingTopLevelMode::ClassicTlas;
-	}
-
-	int ToPtlasUpdatePathIndex(EnginePtlasUpdatePath path) noexcept
-	{
-		switch (path)
+		switch (mode)
 		{
-			case EnginePtlasUpdatePath::GpuLogicalDirtyCpuNativePack:
+			case EnginePtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal:
 				return 1;
-			case EnginePtlasUpdatePath::FullGpuNativePack:
+			case EnginePtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise:
 				return 2;
-			case EnginePtlasUpdatePath::CpuPack:
+			case EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition:
 			default:
 				return 0;
 		}
 	}
 
-	EnginePtlasUpdatePath FromPtlasUpdatePathIndex(int index) noexcept
+	EnginePtlasPartitionUpdateMode FromPtlasPartitionUpdateModeIndex(int index) noexcept
 	{
 		switch (index)
 		{
 			case 1:
-				return EnginePtlasUpdatePath::GpuLogicalDirtyCpuNativePack;
+				return EnginePtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal;
 			case 2:
-				return EnginePtlasUpdatePath::FullGpuNativePack;
+				return EnginePtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise;
 			case 0:
 			default:
-				return EnginePtlasUpdatePath::CpuPack;
+				return EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition;
 		}
+	}
+
+	int ToPtlasPartitionTopologyIndex(EnginePtlasPartitionTopology topology) noexcept
+	{
+		return topology == EnginePtlasPartitionTopology::XYZ3D ? 1 : 0;
+	}
+
+	EnginePtlasPartitionTopology FromPtlasPartitionTopologyIndex(int index) noexcept
+	{
+		return index == 1 ? EnginePtlasPartitionTopology::XYZ3D : EnginePtlasPartitionTopology::XZ2D;
 	}
 
 	bool MatchesFilter(const char* filterText, const char* title, const char* keywords)
@@ -120,6 +120,48 @@ namespace
 		ImGui::SetNextItemWidth(-FLT_MIN);
 		int updatedValue = value;
 		if (ImGui::Combo(id, &updatedValue, labels, labelCount))
+		{
+			onChanged(updatedValue);
+		}
+	}
+
+	template <typename OnChanged>
+	void DrawUnsignedIntSliderRow(
+	    const char* id,
+	    const char* label,
+	    std::uint32_t value,
+	    std::uint32_t minValue,
+	    std::uint32_t maxValue,
+	    OnChanged&& onChanged)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(label);
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		int updatedValue = static_cast<int>(value);
+		const int minInt = static_cast<int>(minValue);
+		const int maxInt = static_cast<int>(maxValue);
+		if (ImGui::SliderInt(id, &updatedValue, minInt, maxInt))
+		{
+			onChanged(static_cast<std::uint32_t>(updatedValue));
+		}
+	}
+
+	template <typename OnChanged>
+	void DrawFloatInputRow(const char* id, const char* label, float value, OnChanged&& onChanged)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(label);
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		float updatedValue = value;
+		if (ImGui::InputFloat(id, &updatedValue, 1.0f, 10.0f, "%.3f"))
 		{
 			onChanged(updatedValue);
 		}
@@ -199,30 +241,66 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));
 	}
 
-	static constexpr const char* tlasModeLabels[] = {"Classic TLAS", "Partitioned TLAS"};
-	static constexpr const char* ptlasPathLabels[] = {
-	    "CPU pack",
-	    "GPU dirty + CPU native pack",
-	    "Full GPU native pack",
+	static constexpr const char* ptlasPartitionTopologyLabels[] = {
+	    "2D X/Z",
+	    "3D X/Y/Z",
 	};
-	if (MatchesFilter(filterText, "Ray Tracing", "ray tracing tlas ptlas update path") && BeginSettingsCategory("Ray Tracing"))
+	static constexpr const char* ptlasPartitionUpdateModeLabels[] = {
+	    "Always update partition",
+	    "Always move dynamic to global",
+	    "Update partition nearby, move to global otherwise",
+	};
+	if (MatchesFilter(
+	        filterText,
+	        "Ray Tracing",
+	        "ray tracing tlas refit ptlas active partition update mode partitions topology xz xyz dynamic distance") &&
+	    BeginSettingsCategory("Ray Tracing"))
 	{
 		if (BeginSettingsTable("##RenderingRayTracingSettings"))
 		{
+			DrawBooleanRow(
+			    "##PtlasActive",
+			    "PTLAS Active",
+			    settings.PtlasActive,
+			    [this](bool value) { m_settings->SetPtlasActive(value); });
+			ImGui::BeginDisabled(settings.PtlasActive);
+			DrawBooleanRow(
+			    "##RefitTlas",
+			    "Refit TLAS",
+			    settings.RefitTlas,
+			    [this](bool value) { m_settings->SetRefitTlas(value); });
+			ImGui::EndDisabled();
+			DrawUnsignedIntSliderRow(
+			    "##PtlasPartitionsPerAxis",
+			    "PTLAS partitions per axis",
+			    settings.PtlasPartitionsPerAxis,
+			    1u,
+			    64u,
+			    [this](std::uint32_t value) { m_settings->SetPtlasPartitionsPerAxis(value); });
 			DrawComboRow(
-			    "##RayTracingTlas",
-			    "Ray tracing TLAS",
-			    ToTlasModeIndex(settings.RayTracingTopLevelMode),
-			    tlasModeLabels,
-			    IM_ARRAYSIZE(tlasModeLabels),
-			    [this](int value) { m_settings->SetRayTracingTopLevelMode(FromTlasModeIndex(value)); });
+			    "##PtlasPartitionTopology",
+			    "PTLAS partition topology",
+			    ToPtlasPartitionTopologyIndex(settings.PtlasPartitionTopology),
+			    ptlasPartitionTopologyLabels,
+			    IM_ARRAYSIZE(ptlasPartitionTopologyLabels),
+			    [this](int value) { m_settings->SetPtlasPartitionTopology(FromPtlasPartitionTopologyIndex(value)); });
 			DrawComboRow(
-			    "##PtlasUpdatePath",
-			    "PTLAS update path",
-			    ToPtlasUpdatePathIndex(settings.PtlasUpdatePath),
-			    ptlasPathLabels,
-			    IM_ARRAYSIZE(ptlasPathLabels),
-			    [this](int value) { m_settings->SetPtlasUpdatePath(FromPtlasUpdatePathIndex(value)); });
+			    "##PtlasPartitionUpdateMode",
+			    "Partition update mode",
+			    ToPtlasPartitionUpdateModeIndex(settings.PtlasPartitionUpdateMode),
+			    ptlasPartitionUpdateModeLabels,
+			    IM_ARRAYSIZE(ptlasPartitionUpdateModeLabels),
+			    [this](int value) { m_settings->SetPtlasPartitionUpdateMode(FromPtlasPartitionUpdateModeIndex(value)); });
+			DrawBooleanRow(
+			    "##PtlasMarkAllDynamicInPartition",
+			    "Mark all dynamic in partition",
+			    settings.PtlasMarkAllDynamicInPartition,
+			    [this](bool value) { m_settings->SetPtlasMarkAllDynamicInPartition(value); });
+			DrawFloatInputRow(
+			    "##PtlasModeChangeDistance",
+			    "Mode change distance",
+			    settings.PtlasModeChangeDistance,
+			    [this](float value) { m_settings->SetPtlasModeChangeDistance(value); });
 			ImGui::EndTable();
 		}
 	}

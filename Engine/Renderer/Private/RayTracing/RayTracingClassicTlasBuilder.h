@@ -59,5 +59,6 @@ class RayTracingClassicTlasBuilder final
 	RhiOwnedResourceHandle m_accelerationStructureBuffer = {};
 	std::uint64_t m_scratchBufferSizeInBytes = 0;
 	std::uint64_t m_accelerationStructureSizeInBytes = 0;
+	bool m_resourcesAllowUpdate = false;
 	TlasHandle m_tlas = {};
 };

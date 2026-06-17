@@ -7,12 +7,21 @@
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
 
+#include <DirectXMath.h>
+
 #include <cstdint>
 #include <span>
 
 class RenderCommandContext;
 struct MeshData;
 struct VertexSkinInfluence;
+
+struct GPUMeshBounds final
+{
+	DirectX::XMFLOAT3 Min = {};
+	DirectX::XMFLOAT3 Max = {};
+	bool Valid = false;
+};
 
 struct GPUMeshUploadDesc
 {
@@ -47,6 +56,7 @@ class SPARKLE_RENDERER_API GPUMesh final
 	RhiOwnedResourceHandle GetIndexBufferResource() const noexcept { return m_indexBuffer; }
 	RhiGpuDescriptorHandle GetSkinInfluencesShaderResourceView() const noexcept { return m_skinInfluences.GetShaderResourceView(); }
 	RhiRayTracingGeometryDesc GetRayTracingGeometry() const noexcept;
+	const GPUMeshBounds& GetLocalBounds() const noexcept { return m_localBounds; }
 
   private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
@@ -58,4 +68,5 @@ class SPARKLE_RENDERER_API GPUMesh final
 
 	std::uint32_t m_vertexCount = 0;
 	std::uint32_t m_indexCount = 0;
+	GPUMeshBounds m_localBounds = {};
 };

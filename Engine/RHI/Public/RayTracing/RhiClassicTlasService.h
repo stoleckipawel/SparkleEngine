@@ -13,7 +13,8 @@ class SPARKLE_RHI_API RhiClassicTlasService
 	virtual ~RhiClassicTlasService() noexcept = default;
 
 	virtual RhiRayTracingAccelerationStructurePrebuildInfo GetClassicTopLevelAccelerationStructurePrebuildInfo(
-	    std::uint32_t instanceCount) const noexcept = 0;
+	    std::uint32_t instanceCount,
+	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept = 0;
 	virtual RhiOwnedResourceHandle CreateClassicTopLevelAccelerationStructureInstanceBuffer(
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,

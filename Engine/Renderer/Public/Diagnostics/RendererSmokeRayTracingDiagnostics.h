@@ -43,6 +43,8 @@ struct SPARKLE_RENDERER_API RendererSmokeRayTracingPtlasPlannerDiagnostics final
 	std::uint32_t MovedPartitionCount = 0;
 	std::uint32_t GlobalPartitionEligibleCount = 0;
 	std::uint32_t GlobalPartitionInstanceCount = 0;
+	std::uint32_t ActivePartitionCount = 0;
+	std::uint32_t MaxPartitionActivityCount = 0;
 	std::uint32_t DuplicateStableIndexCount = 0;
 	bool Overflow = false;
 };

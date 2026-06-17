@@ -6,6 +6,8 @@
 namespace RayTracingPtlasDebugVisualization
 {
 	static const uint PartitionDebugPartitionMask = 0x000FFFFFu;
+	static const uint PartitionDebugActivityShift = 20u;
+	static const uint PartitionDebugActivityMask = 0x0FF00000u;
 	static const uint PartitionDebugDirtyTransform = 1u << 28u;
 	static const uint PartitionDebugMovedPartition = 1u << 29u;
 	static const uint PartitionDebugGlobalPartition = 1u << 30u;
@@ -17,6 +19,17 @@ namespace RayTracingPtlasDebugVisualization
 		return InstanceView::MakeInstanceColor(partitionId);
 	}
 
+	float GetPartitionActivity(uint rayTracingPtlasDebugVisualizationData)
+	{
+		return (float)((rayTracingPtlasDebugVisualizationData & PartitionDebugActivityMask) >> PartitionDebugActivityShift) / 255.0f;
+	}
+
+	float3 Desaturate(float3 color, float saturation)
+	{
+		const float luminance = dot(color, float3(0.2126f, 0.7152f, 0.0722f));
+		return lerp(luminance.xxx, color, saturation);
+	}
+
 	float3 ApplyPartitionUpdateVisualization(float3 baseColor, uint rayTracingPtlasDebugVisualizationData)
 	{
 		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugInvalid) != 0u)
@@ -25,17 +38,23 @@ namespace RayTracingPtlasDebugVisualization
 		}
 		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugGlobalPartition) != 0u)
 		{
-			return float3(0.9f, 0.1f, 1.0f);
+			const float activity = max(GetPartitionActivity(rayTracingPtlasDebugVisualizationData), 0.55f);
+			return lerp(float3(0.42f, 0.08f, 0.65f), float3(1.0f, 0.1f, 1.0f), activity);
 		}
-		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugMovedPartition) != 0u)
+
+		const float3 partitionColor = MakePartitionColor(rayTracingPtlasDebugVisualizationData);
+		float activity = GetPartitionActivity(rayTracingPtlasDebugVisualizationData);
+		if ((rayTracingPtlasDebugVisualizationData & (PartitionDebugMovedPartition | PartitionDebugDirtyTransform)) != 0u)
 		{
-			return float3(1.0f, 0.45f, 0.05f);
+			activity = max(activity, 0.8f);
 		}
-		if ((rayTracingPtlasDebugVisualizationData & PartitionDebugDirtyTransform) != 0u)
-		{
-			return float3(1.0f, 0.9f, 0.1f);
-		}
-		return baseColor * 0.25f;
+
+		const float inactiveSaturation = 0.18f;
+		const float activeSaturation = lerp(0.42f, 1.0f, activity);
+		const float activeBrightness = lerp(0.34f, 1.18f, activity);
+		const float3 inactiveColor = Desaturate(partitionColor, inactiveSaturation) * 0.42f;
+		const float3 activeColor = Desaturate(partitionColor, activeSaturation) * activeBrightness;
+		return lerp(inactiveColor, activeColor, saturate(activity));
 	}
 
 	float3 ApplyInstanceMovementVisualization(float3 baseColor, uint rayTracingPtlasDebugVisualizationData)

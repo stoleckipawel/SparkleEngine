@@ -24,7 +24,9 @@ RayTracingTopLevelScenePlanner::RayTracingTopLevelScenePlanner() noexcept :
 
 RayTracingTopLevelScenePlanner::~RayTracingTopLevelScenePlanner() noexcept = default;
 
-RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(const RenderSceneData& sceneData) noexcept
+RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(
+    const RenderSceneData& sceneData,
+    const DirectX::XMFLOAT3& cameraPosition) noexcept
 {
 	if (m_impl == nullptr)
 	{
@@ -35,7 +37,12 @@ RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(const RenderS
 	    sceneData,
 	    RayTracingPtlasPartitionPlannerConfig{
 	        .PartitionsPerAxis = CVarRayTracingPartitionsPerAxis.Get(),
-	        .EnableGlobalPartition = CVarRayTracingGlobalPartition.Get()});
+	        .PartitionTopology = CVarRayTracingPtlasPartitionTopology.Get(),
+	        .PartitionUpdateMode = CVarRayTracingPtlasPartitionUpdateMode.Get(),
+	        .EnableGlobalPartition = true,
+	        .MarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get(),
+	        .CameraPosition = cameraPosition,
+	        .ModeChangeDistance = CVarRayTracingPtlasModeChangeDistance.Get()});
 	m_impl->CurrentLogicalUpdateStream = m_impl->LogicalUpdateStream.Build(sceneData, m_impl->CurrentPartitionPlan);
 	m_impl->LastRenderInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 
@@ -95,6 +102,8 @@ RayTracingTopLevelScenePlannerMetrics RayTracingTopLevelScenePlanner::GetCurrent
 	    .MovedPartitionCount = m_impl->CurrentPartitionPlan.Counts.MovedPartitionCount,
 	    .GlobalPartitionEligibleCount = m_impl->CurrentPartitionPlan.Counts.GlobalPartitionEligibleCount,
 	    .GlobalPartitionInstanceCount = m_impl->CurrentPartitionPlan.Counts.GlobalPartitionInstanceCount,
+	    .ActivePartitionCount = m_impl->CurrentPartitionPlan.Counts.ActivePartitionCount,
+	    .MaxPartitionActivityCount = m_impl->CurrentPartitionPlan.Counts.MaxPartitionActivityCount,
 	    .DuplicateStableIndexCount = m_impl->CurrentPartitionPlan.Counts.DuplicateStableIndexCount,
 	    .Overflow = m_impl->CurrentPartitionPlan.Validation.HasPartitionOverflow,
 	    .GpuUpdates =

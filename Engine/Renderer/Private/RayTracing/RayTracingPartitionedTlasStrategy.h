@@ -68,6 +68,8 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 		std::uint32_t InstanceCount = 0;
 		std::uint32_t LogicalUpdateCount = 0;
 		std::uint32_t NativeOperationCount = 0;
+		std::uint64_t StableInstanceFingerprint = 0;
+		bool IncrementalUpdatesAllowed = false;
 		bool Built = false;
 
 		bool HasSceneTlas() const noexcept;
@@ -89,6 +91,7 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	bool UploadLogicalUpdateRecords(
 	    const RayTracingPtlasLogicalUpdateStreamResult* logicalUpdates,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
+	void InvalidatePartitionedTlasSceneState() noexcept;
 	void ReleasePartitionedTlasResources() noexcept;
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;

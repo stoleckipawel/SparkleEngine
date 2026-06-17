@@ -3,19 +3,20 @@
 #include "Core/Public/Config/ConfigBackedSettings.h"
 #include "RendererAPI.h"
 
+#include <cstdint>
 #include <string>
 
-enum class EngineRayTracingTopLevelMode
+enum class EnginePtlasPartitionTopology
 {
-	ClassicTlas,
-	PartitionedTlas,
+	XZ2D,
+	XYZ3D,
 };
 
-enum class EnginePtlasUpdatePath
+enum class EnginePtlasPartitionUpdateMode
 {
-	CpuPack,
-	GpuLogicalDirtyCpuNativePack,
-	FullGpuNativePack,
+	AlwaysUpdatePartition,
+	AlwaysMoveDynamicToGlobal,
+	UpdatePartitionNearbyMoveToGlobalOtherwise,
 };
 
 struct EngineRenderingSettingsState final
@@ -23,8 +24,13 @@ struct EngineRenderingSettingsState final
 	bool VSync = true;
 	bool PreferHighPerformanceAdapter = true;
 	bool MeshAutoBatching = true;
-	EngineRayTracingTopLevelMode RayTracingTopLevelMode = EngineRayTracingTopLevelMode::ClassicTlas;
-	EnginePtlasUpdatePath PtlasUpdatePath = EnginePtlasUpdatePath::CpuPack;
+	bool RefitTlas = true;
+	bool PtlasActive = false;
+	std::uint32_t PtlasPartitionsPerAxis = 8;
+	EnginePtlasPartitionTopology PtlasPartitionTopology = EnginePtlasPartitionTopology::XYZ3D;
+	EnginePtlasPartitionUpdateMode PtlasPartitionUpdateMode = EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition;
+	bool PtlasMarkAllDynamicInPartition = false;
+	float PtlasModeChangeDistance = 100.0f;
 };
 
 class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigBackedSettingsSection<EngineRenderingSettingsState>
@@ -35,8 +41,13 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigB
 	void SetVSync(bool enabled);
 	void SetPreferHighPerformanceAdapter(bool enabled);
 	void SetMeshAutoBatching(bool enabled);
-	void SetRayTracingTopLevelMode(EngineRayTracingTopLevelMode mode);
-	void SetPtlasUpdatePath(EnginePtlasUpdatePath path);
+	void SetRefitTlas(bool enabled);
+	void SetPtlasActive(bool active);
+	void SetPtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis);
+	void SetPtlasPartitionTopology(EnginePtlasPartitionTopology topology);
+	void SetPtlasPartitionUpdateMode(EnginePtlasPartitionUpdateMode mode);
+	void SetPtlasMarkAllDynamicInPartition(bool enabled);
+	void SetPtlasModeChangeDistance(float distance);
 
   private:
 	EngineRenderingSettingsState CaptureRuntimeState() const noexcept override;

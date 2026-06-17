@@ -27,7 +27,8 @@ D3D12ClassicTlasServices::D3D12ClassicTlasServices(D3D12Rhi& rhi, D3D12GpuMemory
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12ClassicTlasServices::GetClassicTopLevelAccelerationStructurePrebuildInfo(
-    std::uint32_t instanceCount) const noexcept
+    std::uint32_t instanceCount,
+    ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
 	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing)
 	{
@@ -43,6 +44,10 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12ClassicTlasServices::GetClas
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
 	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+	if (HasFlag(buildFlags, ERhiClassicTlasBuildFlags::AllowUpdate))
+	{
+		inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+	}
 	inputs.NumDescs = instanceCount;
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO nativeInfo{};

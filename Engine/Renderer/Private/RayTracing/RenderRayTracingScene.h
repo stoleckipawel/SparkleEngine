@@ -9,6 +9,11 @@
 
 #include <memory>
 
+namespace DirectX
+{
+	struct XMFLOAT3;
+}
+
 class RenderCommandContext;
 class RenderHardwareInterface;
 class PassExecutionDiagnostics;
@@ -29,7 +34,7 @@ class RenderRayTracingScene final
 	RenderRayTracingScene(RenderRayTracingScene&&) = delete;
 	RenderRayTracingScene& operator=(RenderRayTracingScene&&) = delete;
 
-	RayTracingSceneFramePlan PlanFrame(const RenderSceneData& sceneData) noexcept;
+	RayTracingSceneFramePlan PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept;
 	RayTracingSceneFrameData Prepare(const RenderSceneData& sceneData) noexcept;
 	void Build(
 	    RenderCommandContext& cmd,
@@ -57,10 +62,14 @@ class RenderRayTracingScene final
 	const RayTracingPerformanceMetrics& GetPerformanceMetrics() const noexcept { return m_performanceMetrics; }
 
   private:
+	void EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept;
+
+	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	RayTracingCapabilityReport m_capabilityReport = {};
 	RayTracingPerformanceMetrics m_performanceMetrics = {};
 	std::unique_ptr<RayTracingBlasCache> m_blasCache;
 	std::unique_ptr<RayTracingTopLevelAccelerationStructureStrategy> m_topLevelAccelerationStructureStrategy;
 	std::unique_ptr<RayTracingTopLevelScenePlanner> m_topLevelScenePlanner;
 	RayTracingSceneDiagnostics m_diagnostics;
+	bool m_topLevelStrategyPrefersPartitionedTlas = false;
 };

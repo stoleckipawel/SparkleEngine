@@ -24,8 +24,9 @@ class VulkanRayTracingServices final : public RhiRayTracingService
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept override;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
 	    const RhiRayTracingGeometryDesc& geometry) const noexcept override;
-	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(std::uint32_t instanceCount)
-	    const noexcept override;
+	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
+	    std::uint32_t instanceCount,
+	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept override;
 	RhiPartitionedTlasBuildSizes GetPartitionedTopLevelAccelerationStructureBuildSizes(
 	    const RhiPartitionedTlasDesc& desc) const noexcept override;
 	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureBuffer(

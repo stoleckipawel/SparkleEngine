@@ -14,7 +14,8 @@ class D3D12ClassicTlasServices final : public RhiClassicTlasService
 	D3D12ClassicTlasServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator) noexcept;
 
 	RhiRayTracingAccelerationStructurePrebuildInfo GetClassicTopLevelAccelerationStructurePrebuildInfo(
-	    std::uint32_t instanceCount) const noexcept override;
+	    std::uint32_t instanceCount,
+	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept override;
 	RhiOwnedResourceHandle CreateClassicTopLevelAccelerationStructureInstanceBuffer(
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,

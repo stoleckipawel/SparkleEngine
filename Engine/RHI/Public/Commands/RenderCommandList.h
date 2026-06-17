@@ -79,7 +79,8 @@ class SPARKLE_RHI_API RenderCommandList
 	    RhiGpuVirtualAddress instanceDescsGpuAddress,
 	    std::uint32_t instanceCount,
 	    RhiGpuVirtualAddress scratchGpuAddress,
-	    RhiGpuVirtualAddress resultGpuAddress) noexcept = 0;
+	    RhiGpuVirtualAddress resultGpuAddress,
+	    ERhiClassicTlasBuildMode buildMode = ERhiClassicTlasBuildMode::Build) noexcept = 0;
 	virtual void BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc&) noexcept {}
 	virtual void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept = 0;
 	virtual void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept = 0;

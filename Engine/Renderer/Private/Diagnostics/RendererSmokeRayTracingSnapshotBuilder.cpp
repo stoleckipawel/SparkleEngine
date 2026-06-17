@@ -51,6 +51,8 @@ namespace RendererSmokeRayTracingSnapshotBuilderDetails
 		    .MovedPartitionCount = metrics.PtlasPlanner.MovedPartitionCount,
 		    .GlobalPartitionEligibleCount = metrics.PtlasPlanner.GlobalPartitionEligibleCount,
 		    .GlobalPartitionInstanceCount = metrics.PtlasPlanner.GlobalPartitionInstanceCount,
+		    .ActivePartitionCount = metrics.PtlasPlanner.ActivePartitionCount,
+		    .MaxPartitionActivityCount = metrics.PtlasPlanner.MaxPartitionActivityCount,
 		    .DuplicateStableIndexCount = metrics.PtlasPlanner.DuplicateStableIndexCount,
 		    .Overflow = metrics.PtlasPlanner.Overflow};
 	}

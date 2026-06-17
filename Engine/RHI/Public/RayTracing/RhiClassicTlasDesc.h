@@ -13,6 +13,30 @@ struct RhiClassicTlasCapabilities
 	std::uint32_t InstanceDescSizeInBytes = 0;
 };
 
+enum class ERhiClassicTlasBuildFlags : std::uint8_t
+{
+	None = 0,
+	AllowUpdate = 1 << 0,
+};
+
+enum class ERhiClassicTlasBuildMode : std::uint8_t
+{
+	Build,
+	Update,
+};
+
+constexpr ERhiClassicTlasBuildFlags operator|(
+    ERhiClassicTlasBuildFlags lhs,
+    ERhiClassicTlasBuildFlags rhs) noexcept
+{
+	return static_cast<ERhiClassicTlasBuildFlags>(static_cast<std::uint8_t>(lhs) | static_cast<std::uint8_t>(rhs));
+}
+
+constexpr bool HasFlag(ERhiClassicTlasBuildFlags flags, ERhiClassicTlasBuildFlags flag) noexcept
+{
+	return (static_cast<std::uint8_t>(flags) & static_cast<std::uint8_t>(flag)) != 0;
+}
+
 struct RhiRayTracingInstanceDesc
 {
 	std::array<float, 12> Transform = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};

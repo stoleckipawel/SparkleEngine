@@ -26,7 +26,8 @@ class SPARKLE_RHI_API RhiRayTracingService
 	virtual RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
 	    const RhiRayTracingGeometryDesc& geometry) const noexcept = 0;
 	virtual RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
-	    std::uint32_t instanceCount) const noexcept;
+	    std::uint32_t instanceCount,
+	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept;
 	virtual RhiPartitionedTlasBuildSizes GetPartitionedTopLevelAccelerationStructureBuildSizes(
 	    const RhiPartitionedTlasDesc& desc) const noexcept;
 	virtual RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureBuffer(

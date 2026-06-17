@@ -86,7 +86,8 @@ class VulkanRenderCommandList final : public RenderCommandList
 	    RhiGpuVirtualAddress instanceDescsGpuAddress,
 	    std::uint32_t instanceCount,
 	    RhiGpuVirtualAddress scratchGpuAddress,
-	    RhiGpuVirtualAddress resultGpuAddress) noexcept override;
+	    RhiGpuVirtualAddress resultGpuAddress,
+	    ERhiClassicTlasBuildMode buildMode = ERhiClassicTlasBuildMode::Build) noexcept override;
 	void BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept override;
 	void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept override;
 	void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept override;

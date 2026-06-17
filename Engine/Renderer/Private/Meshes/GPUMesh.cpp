@@ -4,7 +4,35 @@
 #include "Commands/RenderCommandContext.h"
 #include "Scene/Meshes/MeshData.h"
 
+#include <algorithm>
+
 static const auto g_gpuMeshLogger = Logging::GetOrCreateLogger("Renderer.GPUMesh");
+
+namespace
+{
+	GPUMeshBounds ComputeLocalBounds(const MeshData& meshData) noexcept
+	{
+		GPUMeshBounds bounds{};
+		for (const VertexData& vertex : meshData.vertices)
+		{
+			if (!bounds.Valid)
+			{
+				bounds.Min = vertex.position;
+				bounds.Max = vertex.position;
+				bounds.Valid = true;
+				continue;
+			}
+
+			bounds.Min.x = (std::min)(bounds.Min.x, vertex.position.x);
+			bounds.Min.y = (std::min)(bounds.Min.y, vertex.position.y);
+			bounds.Min.z = (std::min)(bounds.Min.z, vertex.position.z);
+			bounds.Max.x = (std::max)(bounds.Max.x, vertex.position.x);
+			bounds.Max.y = (std::max)(bounds.Max.y, vertex.position.y);
+			bounds.Max.z = (std::max)(bounds.Max.z, vertex.position.z);
+		}
+		return bounds;
+	}
+}
 
 GPUMesh::~GPUMesh() noexcept
 {
@@ -66,6 +94,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
+	m_localBounds = ComputeLocalBounds(meshData);
 
 	if (!m_skinInfluences.Upload(renderHardwareInterface, m_vertexCount, uploadDesc.skinInfluences))
 	{

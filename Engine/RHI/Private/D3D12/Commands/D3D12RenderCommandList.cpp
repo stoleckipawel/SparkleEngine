@@ -428,7 +428,8 @@ void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress instanceDescsGpuAddress,
     std::uint32_t instanceCount,
     RhiGpuVirtualAddress scratchGpuAddress,
-    RhiGpuVirtualAddress resultGpuAddress) noexcept
+    RhiGpuVirtualAddress resultGpuAddress,
+    ERhiClassicTlasBuildMode buildMode) noexcept
 {
 	if (m_commandList == nullptr ||
 	    !RhiValidation::ValidateRayTracingScratchOrResultAddress(
@@ -453,6 +454,11 @@ void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
 	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
 	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+	if (buildMode == ERhiClassicTlasBuildMode::Update)
+	{
+		inputs.Flags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE |
+		                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+	}
 	inputs.NumDescs = instanceCount;
 	inputs.InstanceDescs = instanceDescsGpuAddress;
 
@@ -460,6 +466,7 @@ void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
 	buildDesc.Inputs = inputs;
 	buildDesc.ScratchAccelerationStructureData = scratchGpuAddress;
 	buildDesc.DestAccelerationStructureData = resultGpuAddress;
+	buildDesc.SourceAccelerationStructureData = buildMode == ERhiClassicTlasBuildMode::Update ? resultGpuAddress : 0;
 	m_commandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 

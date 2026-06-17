@@ -2,8 +2,6 @@
 
 #include "RayTracing/RayTracingPtlasOperationWriterPolicy.h"
 
-#include "Debug/RendererCVars.h"
-
 bool RayTracingPtlasOperationWriterPolicyResolver::IsRecognizedPath(ERhiPartitionedTlasOperationWriterPath path) noexcept
 {
 	switch (path)
@@ -20,8 +18,7 @@ bool RayTracingPtlasOperationWriterPolicyResolver::IsRecognizedPath(ERhiPartitio
 
 ERhiPartitionedTlasOperationWriterPath RayTracingPtlasOperationWriterPolicyResolver::ResolveRequestedPath() noexcept
 {
-	const ERhiPartitionedTlasOperationWriterPath requestedPath = CVarRayTracingPtlasOperationWriterPath.Get();
-	return IsRecognizedPath(requestedPath) ? requestedPath : ERhiPartitionedTlasOperationWriterPath::CpuPack;
+	return ERhiPartitionedTlasOperationWriterPath::CpuPack;
 }
 
 const char* RayTracingPtlasOperationWriterPolicyResolver::ResolveUnsupportedReason(

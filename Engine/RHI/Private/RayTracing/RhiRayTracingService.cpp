@@ -11,7 +11,8 @@ namespace RhiRayTracingServiceFallback
 	{
 	  public:
 		RhiRayTracingAccelerationStructurePrebuildInfo GetClassicTopLevelAccelerationStructurePrebuildInfo(
-		    std::uint32_t) const noexcept override
+		    std::uint32_t,
+		    ERhiClassicTlasBuildFlags) const noexcept override
 		{
 			return {};
 		}
@@ -63,9 +64,10 @@ const RhiPartitionedTlasService& RhiRayTracingService::GetPartitionedTlasService
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo RhiRayTracingService::GetTopLevelAccelerationStructurePrebuildInfo(
-    std::uint32_t instanceCount) const noexcept
+    std::uint32_t instanceCount,
+    ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
-	return GetClassicTlasService().GetClassicTopLevelAccelerationStructurePrebuildInfo(instanceCount);
+	return GetClassicTlasService().GetClassicTopLevelAccelerationStructurePrebuildInfo(instanceCount, buildFlags);
 }
 
 RhiPartitionedTlasBuildSizes RhiRayTracingService::GetPartitionedTopLevelAccelerationStructureBuildSizes(

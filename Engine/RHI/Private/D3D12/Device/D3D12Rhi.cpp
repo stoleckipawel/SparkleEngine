@@ -236,7 +236,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		    .ScratchBufferByteAlignment = m_rayTracingCapabilities.ScratchBufferByteAlignment};
 		m_rayTracingCapabilities.Groups.ClassicTlas = RhiClassicTlasCapabilities{
 		    .SupportsClassicTlasBuild = m_rayTracingCapabilities.SupportsRayTracing,
-		    .SupportsClassicTlasUpdate = false,
+		    .SupportsClassicTlasUpdate = m_rayTracingCapabilities.SupportsRayTracing,
 		    .SupportsGpuReadableInstanceBuffer = m_rayTracingCapabilities.SupportsRayTracing,
 		    .InstanceDescSizeInBytes = m_rayTracingCapabilities.InstanceDescSizeInBytes};
 		m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{

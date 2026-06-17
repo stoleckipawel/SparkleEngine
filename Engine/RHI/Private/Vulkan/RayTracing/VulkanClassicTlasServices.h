@@ -15,7 +15,8 @@ class VulkanClassicTlasServices final : public RhiClassicTlasService
 	VulkanClassicTlasServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
 
 	RhiRayTracingAccelerationStructurePrebuildInfo GetClassicTopLevelAccelerationStructurePrebuildInfo(
-	    std::uint32_t instanceCount) const noexcept override;
+	    std::uint32_t instanceCount,
+	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept override;
 	RhiOwnedResourceHandle CreateClassicTopLevelAccelerationStructureInstanceBuffer(
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,

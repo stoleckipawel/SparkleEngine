@@ -14,6 +14,25 @@ namespace ViewportRayTracingDebugOverlayRows
 		return value ? "yes" : "no";
 	}
 
+	const char* PartitionTopologyLabel(RayTracingPtlasPartitionTopology topology) noexcept
+	{
+		return topology == RayTracingPtlasPartitionTopology::XZ2D ? "2D X/Z" : "3D X/Y/Z";
+	}
+
+	const char* PartitionUpdateModeLabel(RayTracingPtlasPartitionUpdateMode mode) noexcept
+	{
+		switch (mode)
+		{
+			case RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal:
+				return "always move dynamic to global";
+			case RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise:
+				return "nearby update, far global";
+			case RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition:
+			default:
+				return "always update partition";
+		}
+	}
+
 	bool IsRayTracingDebugViewMode(RenderViewMode viewMode) noexcept
 	{
 		return viewMode == RenderViewMode::RayTracingPartitions || viewMode == RenderViewMode::RayTracingPartitionUpdates ||
@@ -48,17 +67,17 @@ namespace ViewportRayTracingDebugOverlayRows
 		switch (viewMode)
 		{
 			case RenderViewMode::RayTracingPartitions:
-				return "Each mesh is colored by its logical PTLAS partition.";
+				return "Acceleration-structure partition hue: stable unique color per logical partition.";
 			case RenderViewMode::RayTracingPartitionUpdates:
-				return "Yellow marks dirty transforms; orange/magenta mark partition movement.";
+				return "Partition activity view: hue identifies partition, saturation/brightness shows update pressure.";
 			case RenderViewMode::RayTracingInstanceMovement:
 				return "Cyan marks transform updates; red marks partition crossings.";
 			case RenderViewMode::RayTracingGpuDrivenUpdates:
 				return "Shows whether the requested update writer can use GPU-side paths.";
 			case RenderViewMode::RayTracingTopLevelMode:
-				return "Blue means partitioned TLAS is selected; classic TLAS should not dominate.";
+				return "Shows whether rendering is currently using classic TLAS or partitioned TLAS.";
 			case RenderViewMode::RayTracingNativeOperations:
-				return "Bright instances are the operations submitted for PTLAS update.";
+				return "Bright instances are native writes submitted for acceleration-structure update.";
 			case RenderViewMode::RayTracingProviderStatus:
 				return "Provider/partition status view for backend support and fallback checks.";
 			case RenderViewMode::Lit:
@@ -100,12 +119,12 @@ void ViewportRayTracingDebugOverlay::Draw(
 	ImGui::SetNextWindowPos(ImVec2(viewportMin.x + 12.0f, viewportMin.y + 12.0f), ImGuiCond_Always);
 	ImGui::SetNextWindowBgAlpha(0.78f);
 	ImGui::Begin(
-	    "Ray Tracing PTLAS Overlay",
+	    "Ray Tracing AS Overlay",
 	    nullptr,
 	    ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
 	        ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
 
-	ImGui::TextUnformatted("Ray Tracing PTLAS");
+	ImGui::TextUnformatted("Ray Tracing Acceleration Structure");
 	ImGui::Separator();
 	const RenderViewMode currentViewMode = CVarRenderViewMode.Get();
 	ImGui::TextWrapped("%s", ViewportRayTracingDebugOverlayRows::GetCurrentViewModeSummary(currentViewMode));
@@ -117,15 +136,26 @@ void ViewportRayTracingDebugOverlay::Draw(
 	    "Top level",
 	    RhiRayTracingTopLevelProviderToString(rayTracing.Capability.TopLevelProvider));
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
+	    "Classic refit",
+	    ViewportRayTracingDebugOverlayRows::YesNo(CVarRayTracingClassicTlasRefit.Get()));
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
 	    "PTLAS provider",
 	    RhiPartitionedTlasProviderToString(rayTracing.PtlasPlanner.Provider));
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
 	    "PTLAS supported",
 	    ViewportRayTracingDebugOverlayRows::YesNo(rayTracing.PtlasPlanner.Supported));
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
+	    "Partition topology",
+	    ViewportRayTracingDebugOverlayRows::PartitionTopologyLabel(CVarRayTracingPtlasPartitionTopology.Get()));
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
+	    "Update mode",
+	    ViewportRayTracingDebugOverlayRows::PartitionUpdateModeLabel(CVarRayTracingPtlasPartitionUpdateMode.Get()));
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Partitions", rayTracing.PtlasPlanner.PartitionCount);
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Active partitions", rayTracing.PtlasPlanner.ActivePartitionCount);
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Peak partition activity", rayTracing.PtlasPlanner.MaxPartitionActivityCount);
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Dirty transforms", rayTracing.PtlasPlanner.DirtyTransformCount);
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Moved partitions", rayTracing.PtlasPlanner.MovedPartitionCount);
-	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Global partition", rayTracing.PtlasPlanner.GlobalPartitionInstanceCount);
+	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Moved to global", rayTracing.PtlasPlanner.GlobalPartitionInstanceCount);
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Native ops", rayTracing.PtlasGpuUpdates.NativeOperationCount);
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Logical updates", rayTracing.PtlasGpuUpdates.LogicalUpdateCount);
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow(

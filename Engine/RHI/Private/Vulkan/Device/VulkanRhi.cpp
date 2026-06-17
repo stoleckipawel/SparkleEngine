@@ -729,7 +729,7 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .ScratchBufferByteAlignment = m_rayTracingCapabilities.ScratchBufferByteAlignment};
 	m_rayTracingCapabilities.Groups.ClassicTlas = RhiClassicTlasCapabilities{
 	    .SupportsClassicTlasBuild = true,
-	    .SupportsClassicTlasUpdate = false,
+	    .SupportsClassicTlasUpdate = true,
 	    .SupportsGpuReadableInstanceBuffer = true,
 	    .InstanceDescSizeInBytes = m_rayTracingCapabilities.InstanceDescSizeInBytes};
 	m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{

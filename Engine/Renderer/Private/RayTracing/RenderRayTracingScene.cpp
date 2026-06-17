@@ -3,6 +3,7 @@
 #include "RayTracing/RenderRayTracingScene.h"
 
 #include "Commands/RenderCommandContext.h"
+#include "RHI/Public/CVars/RHICVars.h"
 #include "RayTracing/RayTracingBlasCache.h"
 #include "RayTracing/RayTracingPerformanceDiagnostics.h"
 #include "RayTracing/RayTracingTopLevelAccelerationStructureStrategy.h"
@@ -12,6 +13,7 @@
 RenderRayTracingScene::RenderRayTracingScene(
     RenderHardwareInterface& renderHardwareInterface,
     const RayTracingCapabilityReport& capabilityReport) noexcept :
+    m_renderHardwareInterface(&renderHardwareInterface),
     m_capabilityReport(capabilityReport)
 {
 	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
@@ -27,15 +29,19 @@ RenderRayTracingScene::RenderRayTracingScene(
 	}
 
 	m_blasCache = std::make_unique<RayTracingBlasCache>(renderHardwareInterface);
+	m_topLevelStrategyPrefersPartitionedTlas =
+	    CVarRhiRayTracingPreferPartitionedTlas.Get() && m_capabilityReport.PartitionedTlas.Supported;
 	m_topLevelAccelerationStructureStrategy =
 	    CreateRayTracingTopLevelAccelerationStructureStrategy(renderHardwareInterface, m_capabilityReport);
 }
 
 RenderRayTracingScene::~RenderRayTracingScene() noexcept = default;
 
-RayTracingSceneFramePlan RenderRayTracingScene::PlanFrame(const RenderSceneData& sceneData) noexcept
+RayTracingSceneFramePlan RenderRayTracingScene::PlanFrame(
+    const RenderSceneData& sceneData,
+    const DirectX::XMFLOAT3& cameraPosition) noexcept
 {
-	return m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->PlanFrame(sceneData) : RayTracingSceneFramePlan{};
+	return m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->PlanFrame(sceneData, cameraPosition) : RayTracingSceneFramePlan{};
 }
 
 RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& sceneData) noexcept
@@ -49,6 +55,7 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 	{
 		return {};
 	}
+	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
 
 	const std::uint32_t estimatedInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 	if (estimatedInstanceCount == 0)
@@ -71,6 +78,8 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 		    .MovedPartitionCount = plannerMetrics.MovedPartitionCount,
 		    .GlobalPartitionEligibleCount = plannerMetrics.GlobalPartitionEligibleCount,
 		    .GlobalPartitionInstanceCount = plannerMetrics.GlobalPartitionInstanceCount,
+		    .ActivePartitionCount = plannerMetrics.ActivePartitionCount,
+		    .MaxPartitionActivityCount = plannerMetrics.MaxPartitionActivityCount,
 		    .DuplicateStableIndexCount = plannerMetrics.DuplicateStableIndexCount,
 		    .Overflow = plannerMetrics.Overflow};
 		m_performanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
@@ -148,6 +157,8 @@ void RenderRayTracingScene::Build(
 	m_performanceMetrics.PtlasPlanner.MovedPartitionCount = topLevelStats.PtlasPlanner.MovedPartitionCount;
 	m_performanceMetrics.PtlasPlanner.GlobalPartitionEligibleCount = topLevelStats.PtlasPlanner.GlobalPartitionEligibleCount;
 	m_performanceMetrics.PtlasPlanner.GlobalPartitionInstanceCount = topLevelStats.PtlasPlanner.GlobalPartitionInstanceCount;
+	m_performanceMetrics.PtlasPlanner.ActivePartitionCount = topLevelStats.PtlasPlanner.ActivePartitionCount;
+	m_performanceMetrics.PtlasPlanner.MaxPartitionActivityCount = topLevelStats.PtlasPlanner.MaxPartitionActivityCount;
 	m_performanceMetrics.PtlasPlanner.DuplicateStableIndexCount = topLevelStats.PtlasPlanner.DuplicateStableIndexCount;
 	m_performanceMetrics.PtlasPlanner.Overflow = topLevelStats.PtlasPlanner.Overflow;
 	const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
@@ -271,4 +282,30 @@ void RenderRayTracingScene::BeginResolvedGpuTimingFrame() noexcept
 void RenderRayTracingScene::PublishResolvedGpuTiming(const ResolvedGpuTiming& timing) noexcept
 {
 	RayTracingPerformanceDiagnostics::PublishResolvedGpuTiming(m_performanceMetrics, timing);
+}
+
+void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept
+{
+	if (m_renderHardwareInterface == nullptr || !m_capabilityReport.Core.SupportsRayTracing)
+	{
+		return;
+	}
+
+	const bool wantsPartitionedTlas = CVarRhiRayTracingPreferPartitionedTlas.Get() && m_capabilityReport.PartitionedTlas.Supported;
+	if (m_topLevelAccelerationStructureStrategy != nullptr && wantsPartitionedTlas == m_topLevelStrategyPrefersPartitionedTlas)
+	{
+		return;
+	}
+
+	if (m_topLevelAccelerationStructureStrategy != nullptr)
+	{
+		m_topLevelAccelerationStructureStrategy->Clear();
+	}
+	if (m_topLevelScenePlanner != nullptr)
+	{
+		m_topLevelScenePlanner->Clear();
+	}
+	m_topLevelAccelerationStructureStrategy =
+	    CreateRayTracingTopLevelAccelerationStructureStrategy(*m_renderHardwareInterface, m_capabilityReport);
+	m_topLevelStrategyPrefersPartitionedTlas = wantsPartitionedTlas;
 }

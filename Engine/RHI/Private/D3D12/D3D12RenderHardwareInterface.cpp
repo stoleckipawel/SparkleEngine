@@ -766,9 +766,10 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::Get
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetTopLevelAccelerationStructurePrebuildInfo(
-    std::uint32_t instanceCount) const noexcept
+    std::uint32_t instanceCount,
+    ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
-	return m_rayTracingServices != nullptr ? m_rayTracingServices->GetTopLevelAccelerationStructurePrebuildInfo(instanceCount) :
+	return m_rayTracingServices != nullptr ? m_rayTracingServices->GetTopLevelAccelerationStructurePrebuildInfo(instanceCount, buildFlags) :
 	                                        RhiRayTracingAccelerationStructurePrebuildInfo{};
 }
 

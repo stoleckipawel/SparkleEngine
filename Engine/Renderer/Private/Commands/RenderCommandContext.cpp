@@ -219,11 +219,17 @@ void RenderCommandContext::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress instanceDescsGpuAddress,
     std::uint32_t instanceCount,
     RhiGpuVirtualAddress scratchGpuAddress,
-    RhiGpuVirtualAddress resultGpuAddress) noexcept
+    RhiGpuVirtualAddress resultGpuAddress,
+    ERhiClassicTlasBuildMode buildMode) noexcept
 {
 	if (m_commandList != nullptr)
 	{
-		m_commandList->BuildTopLevelAccelerationStructure(instanceDescsGpuAddress, instanceCount, scratchGpuAddress, resultGpuAddress);
+		m_commandList->BuildTopLevelAccelerationStructure(
+		    instanceDescsGpuAddress,
+		    instanceCount,
+		    scratchGpuAddress,
+		    resultGpuAddress,
+		    buildMode);
 	}
 }
 
