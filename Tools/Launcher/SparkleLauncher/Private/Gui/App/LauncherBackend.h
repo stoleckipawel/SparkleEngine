@@ -68,6 +68,7 @@ namespace SparkleLauncher
 		QString FormatMode = "check";
 		QString CleanScope = "selected-cooked";
 		QVector<LauncherCleanTarget> CleanTargets;
+		QVector<QString> PreservedPaths;
 		bool LaunchSmokeTest = false;
 		bool ShaderUseCache = true;
 		bool ShaderEnableDebugInfo = false;

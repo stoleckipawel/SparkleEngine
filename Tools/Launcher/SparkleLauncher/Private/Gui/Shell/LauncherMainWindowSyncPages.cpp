@@ -85,7 +85,7 @@ namespace SparkleLauncher
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		QVBoxLayout* bundlesLayout = AddOptionGroup(
 		    layout,
-		    "Repository packages",
+		    "Repository dependency groups",
 		    QString());
 		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
 		{
@@ -107,7 +107,7 @@ namespace SparkleLauncher
 
 		QVBoxLayout* inventoryLayout = AddDetailsGroup(
 		    layout,
-		    "Advanced package inventory",
+		    "Advanced dependency inventory",
 		    "Raw cache status for individual third-party packages. Open this only when a specific package needs inspection or repair.",
 		    false);
 		for (const DependencyGroupUiEntry& group : GetDependencyGroups())

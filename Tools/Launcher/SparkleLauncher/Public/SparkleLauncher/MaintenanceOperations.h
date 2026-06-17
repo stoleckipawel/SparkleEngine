@@ -73,6 +73,7 @@ namespace SparkleLauncher
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
 		std::vector<CleanScope> RequestedCleanScopes;
 		std::vector<MaintenanceCleanPathSpec> RequestedCleanTargets;
+		std::vector<std::filesystem::path> PreservedPaths;
 		bool DestructiveActionConfirmed = false;
 	};
 

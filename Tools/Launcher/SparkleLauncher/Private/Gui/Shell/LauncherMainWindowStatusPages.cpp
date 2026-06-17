@@ -211,9 +211,6 @@ namespace SparkleLauncher
 		if (isSyncWorkflow)
 		{
 			const bool syncWillRunConfigure = BuildWorkspaceOperationRequiresConfigureStep(plan);
-			const QString buildFilesLabel = operationId == "workspace.generate-build-files" ? "Build files" :
-			                               operationId == "workspace.open-ide" ? "IDE files" :
-			                                                                        "Build files";
 			const bool isGenerateBuildFilesWorkflow = operationId == "workspace.generate-build-files";
 			const bool isSourceSyncWorkflow = operationId == "workspace.sync-source-tiers";
 			const QString sourceDependencyRepairDetail = syncWillRunConfigure && plan.Freshness.Current && !dependencyStatus.AllEnabledDependenciesReady ?
@@ -255,44 +252,51 @@ namespace SparkleLauncher
 			const QString overallState = (!plan.Toolchain.RequiredToolsAvailable || !plan.CanRun || !dependencyCacheReady) ? "bad" :
 			                            (syncWillRunConfigure || !plan.Freshness.Current) ? "warning" :
 			                                                                             "ok";
-			const QString overallDetail = QStringLiteral("Machine %1 | Files %2 | Packages %3/%4 cached")
-			                                  .arg(plan.Toolchain.RequiredToolsAvailable ? "ready" : "blocked")
-			                                  .arg(plan.Freshness.Current && !syncWillRunConfigure ? "current" : "updating")
-			                                  .arg(dependencyStatus.ReadyDependencyCount)
-			                                  .arg(dependencyStatus.EnabledDependencyCount);
+			const QString overallDetail = isSourceSyncWorkflow ?
+			                                 QStringLiteral("Host prerequisites %1 | Repository packages %2/%3 cached")
+			                                     .arg(plan.Toolchain.RequiredToolsAvailable ? "ready" : "blocked")
+			                                     .arg(dependencyStatus.ReadyDependencyCount)
+			                                     .arg(dependencyStatus.EnabledDependencyCount) :
+			                                 QStringLiteral("Machine %1 | Files %2 | Packages %3/%4 cached")
+			                                     .arg(plan.Toolchain.RequiredToolsAvailable ? "ready" : "blocked")
+			                                     .arg(plan.Freshness.Current && !syncWillRunConfigure ? "current" : "updating")
+			                                     .arg(dependencyStatus.ReadyDependencyCount)
+			                                     .arg(dependencyStatus.EnabledDependencyCount);
 			QVBoxLayout* summaryLayout = AddOptionGroup(
 			    layout,
-			    "Sync status",
+			    isSourceSyncWorkflow ? "Sync readiness overview" : "Workspace readiness overview",
 			    QString());
 			AddStatusRow(
 			    *summaryLayout,
-			    "Overall",
+			    isSourceSyncWorkflow ? "Sync readiness" : "Workspace readiness",
 			    overallStatus,
 			    overallDetail,
 			    overallState);
 			AddStatusRow(
 			    *summaryLayout,
-			    "Machine",
+			    isSourceSyncWorkflow ? "Host-installed prerequisites" : "Build toolchain and IDE",
 			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked",
 			    plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain),
 			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
+			if (!isSourceSyncWorkflow)
+			{
+				AddStatusRow(
+				    *summaryLayout,
+				    "Generated workspace files",
+				    isGenerateBuildFilesWorkflow ? (plan.Freshness.Current && !syncWillRunConfigure ? "Current" : "Will be refreshed") :
+				                           (plan.Freshness.Current ? "Ready" : "Needs refresh"),
+				    buildFilesDetail,
+				    plan.Freshness.Current && !syncWillRunConfigure ? "ok" : "warning");
+			}
 			AddStatusRow(
 			    *summaryLayout,
-			    "Build files",
-			    isGenerateBuildFilesWorkflow ? (plan.Freshness.Current && !syncWillRunConfigure ? "Current" : "Will be refreshed") :
-			    isSourceSyncWorkflow ? (syncWillRunConfigure ? "Will be refreshed" : "Ready") :
-			                           (plan.Freshness.Current ? "Ready" : "Needs refresh"),
-			    buildFilesDetail,
-			    plan.Freshness.Current && !syncWillRunConfigure ? "ok" : "warning");
-			AddStatusRow(
-			    *summaryLayout,
-			    "Required packages",
+			    isSourceSyncWorkflow ? "Synced repository packages" : "Required repository dependencies",
 			    cacheStatus,
 			    CombineStatusDetail(cacheDetail, FormatTrackedDependencySummary(dependencyCachePath)),
 			    dependencyCacheReady ? "ok" : "warning");
 			AddStatusRow(
 			    *summaryLayout,
-			    "Optional features",
+			    isSourceSyncWorkflow ? "Optional repository feature packs" : "Optional feature dependency groups",
 			    enabledOptionalGroups == 0 ? "None enabled" : (readyOptionalGroups == enabledOptionalGroups ? "Ready" : "Partial"),
 			    enabledOptionalGroups == 0 ?
 			        QString("All optional package groups are off in this workspace.") :
@@ -301,7 +305,7 @@ namespace SparkleLauncher
 
 			QVBoxLayout* machineLayout = AddOptionGroup(
 			    layout,
-			    "Machine and tools",
+			    isSourceSyncWorkflow ? "Installed host tools" : "Detected host tools",
 			    QString());
 			for (const ToolchainItemStatus& item : plan.Toolchain.Items)
 			{
@@ -334,7 +338,7 @@ namespace SparkleLauncher
 			{
 				AddStatusRow(
 				    *machineLayout,
-				    "Renderer prerequisites",
+				    isSourceSyncWorkflow ? "Missing host prerequisite" : "Renderer prerequisites",
 				    "Blocked",
 				    configurePrerequisiteDetail,
 				    "bad");

@@ -193,6 +193,13 @@ namespace SparkleLauncher
 			cleanTarget.Detail = target.Detail.toStdString();
 			maintenanceRequest.RequestedCleanTargets.push_back(std::move(cleanTarget));
 		}
+		for (const QString& preservedPath : request.PreservedPaths)
+		{
+			if (!preservedPath.trimmed().isEmpty())
+			{
+				maintenanceRequest.PreservedPaths.push_back(preservedPath.toStdString());
+			}
+		}
 		maintenanceRequest.DestructiveActionConfirmed = request.ConfirmClean;
 		return maintenanceRequest;
 	}

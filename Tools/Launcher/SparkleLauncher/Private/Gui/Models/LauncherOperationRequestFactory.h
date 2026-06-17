@@ -52,7 +52,8 @@ namespace SparkleLauncher
 	    const std::filesystem::path& repositoryRoot,
 	    const LauncherProjectModel& projectModel,
 	    const LauncherSettings& settings,
-	    const QString& cleanScope);
+	    const QString& cleanScope,
+	    const std::filesystem::path& runningLauncherPath = {});
 
 	LauncherOperationRequest BuildDependencyCleanOperationRequest(
 	    const std::filesystem::path& repositoryRoot,

@@ -93,7 +93,12 @@ namespace SparkleLauncher
 
 		if (m_selectedOperationId == "workspace.clean")
 		{
-			LauncherOperationRequest request = BuildScopedCleanOperationRequest(m_repositoryRoot, m_projectModel, m_settings, "pristine");
+			LauncherOperationRequest request = BuildScopedCleanOperationRequest(
+			    m_repositoryRoot,
+			    m_projectModel,
+			    m_settings,
+			    "pristine",
+			    std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()));
 			if (!ConfirmRunRequest(request))
 			{
 				return;

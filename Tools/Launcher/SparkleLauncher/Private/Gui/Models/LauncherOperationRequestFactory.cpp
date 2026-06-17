@@ -188,11 +188,24 @@ namespace SparkleLauncher
 	    const std::filesystem::path& repositoryRoot,
 	    const LauncherProjectModel& projectModel,
 	    const LauncherSettings& settings,
-	    const QString& cleanScope)
+	    const QString& cleanScope,
+	    const std::filesystem::path& runningLauncherPath)
 	{
 		LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, "workspace.clean");
 		request.CleanScope = cleanScope;
 		request.CleanTargets.clear();
+		request.PreservedPaths.clear();
+		if (cleanScope == "pristine" && !runningLauncherPath.empty())
+		{
+			std::error_code errorCode;
+			const std::filesystem::path absoluteRunningPath = std::filesystem::absolute(runningLauncherPath, errorCode);
+			const std::filesystem::path candidatePath = errorCode ? runningLauncherPath : absoluteRunningPath;
+			const std::filesystem::path launcherDirectory = candidatePath.parent_path();
+			if (!launcherDirectory.empty())
+			{
+				request.PreservedPaths.push_back(QString::fromStdString(launcherDirectory.string()));
+			}
+		}
 		request.ConfirmClean = false;
 		return request;
 	}
