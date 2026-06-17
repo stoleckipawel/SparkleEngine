@@ -222,6 +222,9 @@ namespace SparkleLauncher
 		launchRequest.EnableSmokeTest = request.LaunchSmokeTest;
 		launchRequest.SmokeTrace = request.SmokeTrace;
 		launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
+		launchRequest.SmokeRunRayTracingParity = request.SmokeRunRayTracingParity;
+		launchRequest.SmokeRunPtlasBenchmark = request.SmokeRunPtlasBenchmark;
+		launchRequest.SmokeRunDiagnosticCaptures = request.SmokeRunDiagnosticCaptures;
 		return launchRequest;
 	}
 

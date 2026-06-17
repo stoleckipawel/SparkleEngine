@@ -1,57 +1,37 @@
 #include "Smoke/RhiSmokeLaunchOperations.h"
 
+#include "Smoke/RhiSmokeTestCatalog.h"
+
 #include <utility>
 
 namespace SparkleLauncher
 {
 	bool IsRhiSmokeLaunchOperation(LaunchOperationKind kind)
 	{
-		return kind == LaunchOperationKind::RunProject || kind == LaunchOperationKind::RunRhiRayTracingParitySmoke ||
-		       kind == LaunchOperationKind::RunRhiRayTracingPtlasBenchmarkSmoke ||
-		       kind == LaunchOperationKind::RunRhiRayTracingPtlasArticleSmoke;
-	}
-
-	bool IsRhiParitySmokeLaunchOperation(LaunchOperationKind kind)
-	{
-		return kind == LaunchOperationKind::RunRhiRayTracingParitySmoke;
-	}
-
-	bool IsRhiPtlasBenchmarkSmokeLaunchOperation(LaunchOperationKind kind)
-	{
-		return kind == LaunchOperationKind::RunRhiRayTracingPtlasBenchmarkSmoke;
-	}
-
-	bool IsRhiPtlasArticleSmokeLaunchOperation(LaunchOperationKind kind)
-	{
-		return kind == LaunchOperationKind::RunRhiRayTracingPtlasArticleSmoke;
+		return kind == LaunchOperationKind::RunProject;
 	}
 
 	bool IsRhiSmokeTestEnabled(const LaunchOperationPlan& plan) noexcept
 	{
-		return GetRhiSmokeTestCategory(plan) != RhiSmokeTestCategory::None;
+		return plan.Request.EnableSmokeTest;
+	}
+
+	bool HasRhiSmokeScenarioMatrix(const LaunchOperationPlan& plan) noexcept
+	{
+		for (const RhiSmokeSuite suite : GetEnabledRhiSmokeSuites(plan))
+		{
+			if (suite != RhiSmokeSuite::SingleViewportCapture)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	std::string GetRhiSmokeFrameLimitText(const LaunchOperationRequest& request)
 	{
 		return request.SmokeFrameLimit.empty() ? std::string("120") : request.SmokeFrameLimit;
-	}
-
-	void PopulateRhiSmokeLaunchInputs(LaunchOperationPlan& plan)
-	{
-		if (!IsRhiSmokeLaunchOperation(plan.Kind))
-		{
-			return;
-		}
-		if (!IsRhiSmokeTestEnabled(plan))
-		{
-			return;
-		}
-
-		plan.Operation.Inputs.push_back({"smokeCategory", RhiSmokeTestCategoryToString(GetRhiSmokeTestCategory(plan))});
-		plan.Operation.Inputs.push_back({"smokeBackend", plan.Request.SmokeBackend.empty() ? "default" : plan.Request.SmokeBackend});
-		plan.Operation.Inputs.push_back({"smokeFrameLimit", GetRhiSmokeFrameLimitText(plan.Request)});
-		plan.Operation.Inputs.push_back({"smokeViewMode", plan.Request.SmokeViewMode.empty() ? "default" : plan.Request.SmokeViewMode});
-		plan.Operation.Inputs.push_back({"smokeCapturePath", plan.Request.SmokeCapturePath.empty() ? "disabled" : plan.Request.SmokeCapturePath});
 	}
 
 	static void AddEnvironment(LaunchOperationPlan& plan, std::string name, std::string value)
@@ -62,13 +42,23 @@ namespace SparkleLauncher
 		plan.Environment.push_back(std::move(overrideValue));
 	}
 
-	void PopulateRhiSmokeLaunchEnvironment(LaunchOperationPlan& plan)
+	void PopulateRhiSmokeLaunchInputs(LaunchOperationPlan& plan)
 	{
-		if (!IsRhiSmokeLaunchOperation(plan.Kind))
+		if (!IsRhiSmokeLaunchOperation(plan.Kind) || !IsRhiSmokeTestEnabled(plan))
 		{
 			return;
 		}
-		if (!IsRhiSmokeTestEnabled(plan))
+
+		plan.Operation.Inputs.push_back({"smokeSuites", GetRhiSmokeSuiteSummary(plan)});
+		plan.Operation.Inputs.push_back({"smokeBackend", plan.Request.SmokeBackend.empty() ? "default" : plan.Request.SmokeBackend});
+		plan.Operation.Inputs.push_back({"smokeFrameLimit", GetRhiSmokeFrameLimitText(plan.Request)});
+		plan.Operation.Inputs.push_back({"smokeViewMode", plan.Request.SmokeViewMode.empty() ? "default" : plan.Request.SmokeViewMode});
+		plan.Operation.Inputs.push_back({"smokeCapturePath", plan.Request.SmokeCapturePath.empty() ? "disabled" : plan.Request.SmokeCapturePath});
+	}
+
+	void PopulateRhiSmokeLaunchEnvironment(LaunchOperationPlan& plan)
+	{
+		if (!IsRhiSmokeLaunchOperation(plan.Kind) || !IsRhiSmokeTestEnabled(plan))
 		{
 			return;
 		}
@@ -92,7 +82,7 @@ namespace SparkleLauncher
 		{
 			AddEnvironment(plan, "SPARKLE_SMOKE_SCENE_COLOR_CAPTURE", plan.Request.SmokeCapturePath);
 		}
-		if (plan.Request.SmokeSkipLevelSwitching)
+		if (plan.Request.SmokeSkipLevelSwitching || HasRhiSmokeScenarioMatrix(plan))
 		{
 			AddEnvironment(plan, "SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING", "1");
 		}
@@ -100,29 +90,29 @@ namespace SparkleLauncher
 
 	std::vector<std::string> GetRhiSmokeLaunchPlannedEffects(const LaunchOperationPlan& plan)
 	{
-		if (!IsRhiSmokeLaunchOperation(plan.Kind))
-		{
-			return {};
-		}
-		if (!IsRhiSmokeTestEnabled(plan))
+		if (!IsRhiSmokeLaunchOperation(plan.Kind) || !IsRhiSmokeTestEnabled(plan))
 		{
 			return {};
 		}
 
 		std::vector<std::string> effects = {
-		    std::string("Enable ") + RhiSmokeTestCategoryToString(GetRhiSmokeTestCategory(plan)) +
-		    " graphics smoke validation for " + GetRhiSmokeFrameLimitText(plan.Request) + " frames."};
-		if (GetRhiSmokeTestCategory(plan) == RhiSmokeTestCategory::RayTracingParity)
+		    "Enable graphics smoke validation for " + GetRhiSmokeFrameLimitText(plan.Request) + " frames.",
+		    "Run smoke suites: " + GetRhiSmokeSuiteSummary(plan) + "."};
+		if (plan.Request.SmokeRunRayTracingParity)
 		{
-			effects.push_back("Run D3D12/Vulkan classic TLAS and PTLAS parity captures with provider metadata and timing artifacts.");
+			effects.push_back("Capture backend/PTLAS parity evidence and validate cross-backend image comparisons.");
 		}
-		if (GetRhiSmokeTestCategory(plan) == RhiSmokeTestCategory::RayTracingPtlasBenchmark)
+		if (plan.Request.SmokeRunPtlasBenchmark)
 		{
-			effects.push_back("Run launcher-owned PTLAS benchmark captures and emit graph-ready benchmark artifacts.");
+			effects.push_back("Capture PTLAS timing and metadata evidence and write benchmark summary diagnostics.");
 		}
-		if (GetRhiSmokeTestCategory(plan) == RhiSmokeTestCategory::RayTracingPtlasArticle)
+		if (plan.Request.SmokeRunDiagnosticCaptures)
 		{
-			effects.push_back("Run launcher-owned PTLAS article capture pack and emit screenshots, metadata, timing artifacts, and capture index notes.");
+			effects.push_back("Capture multi-view PTLAS diagnostics and write a generic artifact manifest for later inspection.");
+		}
+		if (!HasRhiSmokeScenarioMatrix(plan))
+		{
+			effects.push_back("Run a focused single-launch smoke pass using the selected target and launch parameters.");
 		}
 		if (!plan.Request.SmokeViewMode.empty())
 		{

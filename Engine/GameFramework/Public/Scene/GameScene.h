@@ -7,6 +7,7 @@
 #include "GameFramework/Public/Scene/Lighting/SceneLighting.h"
 #include "GameFramework/Public/Scene/Materials/SceneMaterials.h"
 #include "GameFramework/Public/Scene/Materials/SceneMaterialVariants.h"
+#include "GameFramework/Public/Scene/GameSceneController.h"
 #include "GameFramework/Public/Scene/Meshes/SceneMeshes.h"
 #include "GameFramework/Public/Scene/Skeletons/SceneSkeletons.h"
 #include "GameFramework/Public/Scene/GameSceneSnapshot.h"
@@ -14,8 +15,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 class LevelAsset;
 struct SceneAssetPayload;
@@ -56,6 +59,7 @@ class SPARKLE_ENGINE_API GameScene final
 	bool AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload);
 	GameSceneSnapshot CaptureSnapshot() const;
 	std::string_view GetActiveLevelName() const noexcept { return m_activeLevelName; }
+	void RegisterController(std::unique_ptr<GameSceneController>&& controller);
 
 	void Clear();
 
@@ -82,4 +86,6 @@ class SPARKLE_ENGINE_API GameScene final
 	SceneSkeletons m_skeletons;
 	SceneTextures m_textures;
 	std::string m_activeLevelName;
+	LevelDesc m_activeLevelDesc;
+	std::vector<std::unique_ptr<GameSceneController>> m_controllers;
 };

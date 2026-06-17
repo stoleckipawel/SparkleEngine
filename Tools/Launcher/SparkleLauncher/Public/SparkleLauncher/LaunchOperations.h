@@ -15,10 +15,7 @@ namespace SparkleLauncher
 {
 	enum class LaunchOperationKind
 	{
-		RunProject,
-		RunRhiRayTracingParitySmoke,
-		RunRhiRayTracingPtlasBenchmarkSmoke,
-		RunRhiRayTracingPtlasArticleSmoke
+		RunProject
 	};
 
 	struct LaunchOperationDefinition
@@ -54,6 +51,9 @@ namespace SparkleLauncher
 		std::string SmokeCapturePath;
 		bool SmokeTrace = false;
 		bool SmokeSkipLevelSwitching = false;
+		bool SmokeRunRayTracingParity = false;
+		bool SmokeRunPtlasBenchmark = false;
+		bool SmokeRunDiagnosticCaptures = false;
 	};
 
 	struct LaunchOperationStep

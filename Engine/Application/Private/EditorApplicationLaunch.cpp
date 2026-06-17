@@ -17,7 +17,7 @@ int RunEditorApplication(EditorApplicationOptions options)
 
 	if (RhiSmokeValidation::IsRequested())
 	{
-		return RhiSmokeValidation::RunEditor();
+		return RhiSmokeValidation::RunEditor(std::move(options));
 	}
 
 	EditorApplication app(std::move(options));

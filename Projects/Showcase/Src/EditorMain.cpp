@@ -1,16 +1,17 @@
 #include "EditorApplicationLaunch.h"
-#include "ShowcaseSceneBehavior.h"
+#include "ShowcaseSceneController.h"
+
+#include <memory>
 
 int main()
 {
-	ShowcaseSceneBehavior sceneBehavior;
 	return RunEditorApplication(
 	    EditorApplicationOptions{
 	        .RuntimeOptions =
 	            RuntimeApplicationOptions{
-	                .SceneUpdateCallback =
-	                    [&sceneBehavior](GameScene& scene, float deltaSeconds)
+	                .SceneSetupCallback =
+	                    [](GameScene& scene)
 	                    {
-		                    sceneBehavior.Update(scene, deltaSeconds);
+		                    scene.RegisterController(std::make_unique<ShowcaseSceneController>());
 	                    }}});
 }

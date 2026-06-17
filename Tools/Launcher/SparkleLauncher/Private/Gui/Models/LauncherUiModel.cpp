@@ -94,45 +94,6 @@ namespace SparkleLauncher
 			    "Uses the selected project, target, startup level, and runtime options from this page.",
 			    "workflow-project-run-editor.png");
 		}
-		if (operationId == "project.run.rhi-raytracing-parity")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Run RHI Ray Tracing Parity",
-			    "Run",
-			    LauncherWorkflowPageKind::Launch,
-			    LauncherActionImpactKind::LaunchProcess,
-			    "Smoke workflow: captures D3D12/Vulkan classic TLAS and PTLAS outputs, metadata, timing artifacts, and parity diffs.",
-			    "Ray tracing parity",
-			    "Runs deterministic smoke captures through the launcher-owned smoke validation pipeline.",
-			    "workflow-project-run-editor.png");
-		}
-		if (operationId == "project.run.rhi-raytracing-ptlas-benchmark")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Run PTLAS Benchmark",
-			    "Run",
-			    LauncherWorkflowPageKind::Launch,
-			    LauncherActionImpactKind::TestRun,
-			    "Benchmark workflow: captures benchmark-ready PTLAS metadata, timings, screenshots, and summary CSV artifacts from the launcher-owned smoke pipeline.",
-			    "PTLAS benchmark",
-			    "Runs deterministic benchmark captures and writes graph-ready evidence artifacts for PTLAS analysis.",
-			    "workflow-project-run-editor.png");
-		}
-		if (operationId == "project.run.rhi-raytracing-ptlas-article")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Run PTLAS Article Capture Pack",
-			    "Run",
-			    LauncherWorkflowPageKind::Launch,
-			    LauncherActionImpactKind::TestRun,
-			    "Article workflow: captures article-ready PTLAS screenshots, metadata, timing artifacts, and launcher-generated capture index notes.",
-			    "PTLAS article pack",
-			    "Runs deterministic presentation captures and writes a self-explaining PTLAS article evidence folder.",
-			    "workflow-project-run-editor.png");
-		}
 		if (operationId == "workspace.open-ide")
 		{
 			return MakeOperationUiModel(
@@ -310,9 +271,9 @@ namespace SparkleLauncher
 			    "Run",
 			    LauncherWorkflowPageKind::Test,
 			    LauncherActionImpactKind::TestRun,
-			    "Test workflow: runs the selected target with smoke validation enabled.",
+			    "Test workflow: runs one smoke entry point, then optionally executes selected PTLAS parity, benchmark, and diagnostic capture matrices.",
 			    "Validation run",
-			    "Runs a focused confidence check using the same launch parameters as the product path.",
+			    "Runs a focused confidence check using the same launch parameters as the product path, with optional capability-driven PTLAS diagnostics.",
 			    "workflow-smoke-test.png");
 		}
 		if (operationId == "quality.format")

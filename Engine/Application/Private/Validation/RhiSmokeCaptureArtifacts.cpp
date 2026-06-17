@@ -126,7 +126,7 @@ namespace RhiSmokeCaptureArtifacts
 		file << "    \"frameIndex\": " << request.CaptureResult.FrameIndex << ",\n";
 		file << "    \"viewMode\": " << request.CaptureResult.ViewMode << ",\n";
 		file << "    \"viewModeName\": \"" << EscapeJson(request.CaptureResult.ViewModeName) << "\",\n";
-		file << "    \"storyLabel\": \"" << EscapeJson(request.CaptureStoryLabel) << "\",\n";
+		file << "    \"captureLabel\": \"" << EscapeJson(request.CaptureLabel) << "\",\n";
 		file << "    \"purpose\": \"" << EscapeJson(request.CapturePurpose) << "\"\n";
 		file << "  },\n";
 		file << "  \"renderer\": {\n";

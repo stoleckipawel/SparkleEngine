@@ -30,7 +30,7 @@ enum class RuntimeApplicationFrameResult : std::uint8_t
 struct RuntimeApplicationOptions final
 {
 	bool EnableRuntimeConsole = true;
-	std::function<void(GameScene&, float)> SceneUpdateCallback;
+	std::function<void(GameScene&)> SceneSetupCallback;
 };
 
 class SPARKLE_APPLICATION_API RuntimeApplication final : public Application

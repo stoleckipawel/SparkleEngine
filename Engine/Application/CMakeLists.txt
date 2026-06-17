@@ -24,7 +24,7 @@ list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/EditorApplicationLaunch\\.cpp$")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Validation/RhiSmokeCaptureArtifacts\\.cpp$")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Validation/RhiSmokeEditorValidation\\.cpp$")
-list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Validation/RhiSmokeEditorViewport\\.cpp$")
+list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Validation/RhiSmokeViewportCapture\\.cpp$")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Validation/RhiSmokeRenderViewModeNames\\.cpp$")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/ShaderRecook/")
 
@@ -37,8 +37,8 @@ list(APPEND SPARKLE_APPLICATION_EDITOR_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeCameraMotion.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeCaptureArtifacts.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeEditorValidation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeEditorViewport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeRenderViewModeNames.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeViewportCapture.cpp
 )
 
 file(GLOB_RECURSE SPARKLE_APPLICATION_EDITOR_PRIVATE_HEADERS CONFIGURE_DEPENDS
@@ -47,6 +47,7 @@ file(GLOB_RECURSE SPARKLE_APPLICATION_EDITOR_PRIVATE_HEADERS CONFIGURE_DEPENDS
 list(APPEND SPARKLE_APPLICATION_EDITOR_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeCaptureArtifacts.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeRenderViewModeNames.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeViewportCapture.h
 )
 
 if(SPARKLE_BUILD_SHARED)

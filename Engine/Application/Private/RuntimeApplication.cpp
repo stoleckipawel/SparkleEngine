@@ -84,6 +84,10 @@ void RuntimeApplication::Initialize()
 	{
 		SPARKLE_CPU_SCOPE("Application.RuntimeCreateScene");
 		m_gameScene = std::make_unique<GameScene>();
+		if (m_options.SceneSetupCallback)
+		{
+			m_options.SceneSetupCallback(*m_gameScene);
+		}
 		m_sceneAssetManager = std::make_unique<Assets::SceneAssetManager>();
 		m_levelManager = std::make_unique<LevelManager>(*m_gameScene, *m_sceneAssetManager);
 		m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetCameras().GetActiveCamera());
@@ -142,10 +146,6 @@ void RuntimeApplication::UpdateRuntime() noexcept
 	{
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
 		m_gameScene->Update(deltaSeconds);
-		if (m_options.SceneUpdateCallback)
-		{
-			m_options.SceneUpdateCallback(*m_gameScene, deltaSeconds);
-		}
 	}
 	if (m_gameCameraController)
 	{

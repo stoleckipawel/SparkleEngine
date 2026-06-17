@@ -9,10 +9,8 @@
 namespace SparkleLauncher
 {
 	bool IsRhiSmokeLaunchOperation(LaunchOperationKind kind);
-	bool IsRhiParitySmokeLaunchOperation(LaunchOperationKind kind);
-	bool IsRhiPtlasBenchmarkSmokeLaunchOperation(LaunchOperationKind kind);
-	bool IsRhiPtlasArticleSmokeLaunchOperation(LaunchOperationKind kind);
 	bool IsRhiSmokeTestEnabled(const LaunchOperationPlan& plan) noexcept;
+	bool HasRhiSmokeScenarioMatrix(const LaunchOperationPlan& plan) noexcept;
 	std::string GetRhiSmokeFrameLimitText(const LaunchOperationRequest& request);
 	void PopulateRhiSmokeLaunchInputs(LaunchOperationPlan& plan);
 	void PopulateRhiSmokeLaunchEnvironment(LaunchOperationPlan& plan);

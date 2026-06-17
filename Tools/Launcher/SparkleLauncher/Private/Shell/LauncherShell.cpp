@@ -384,6 +384,9 @@ namespace SparkleLauncher
 		launchRequest.SmokeCapturePath = arguments.SmokeCapturePath;
 		launchRequest.SmokeTrace = arguments.SmokeTrace;
 		launchRequest.SmokeSkipLevelSwitching = arguments.SmokeSkipLevelSwitching;
+		launchRequest.SmokeRunRayTracingParity = arguments.SmokeRunRayTracingParity;
+		launchRequest.SmokeRunPtlasBenchmark = arguments.SmokeRunPtlasBenchmark;
+		launchRequest.SmokeRunDiagnosticCaptures = arguments.SmokeRunDiagnosticCaptures;
 		return launchRequest;
 	}
 
@@ -847,6 +850,27 @@ namespace SparkleLauncher
 				continue;
 			}
 
+			if (argument == "--smoke-parity")
+			{
+				outArguments.EnableSmokeTest = true;
+				outArguments.SmokeRunRayTracingParity = true;
+				continue;
+			}
+
+			if (argument == "--smoke-benchmark")
+			{
+				outArguments.EnableSmokeTest = true;
+				outArguments.SmokeRunPtlasBenchmark = true;
+				continue;
+			}
+
+			if (argument == "--smoke-diagnostics")
+			{
+				outArguments.EnableSmokeTest = true;
+				outArguments.SmokeRunDiagnosticCaptures = true;
+				continue;
+			}
+
 			if (argument == "--smoke-backend")
 			{
 				if (index + 1 >= argc)
@@ -935,16 +959,14 @@ namespace SparkleLauncher
 	void LauncherShell::PrintUsage(std::ostream& output) const
 	{
 		output << "Usage:\n"
-		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--smoke-test] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-view-mode <name-or-index>] [--smoke-capture <path>] [--smoke-trace] [--smoke-skip-level-switching] [--dry-run [operation-id]] [--run <operation-id>]\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--smoke-test] [--smoke-parity] [--smoke-benchmark] [--smoke-diagnostics] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-view-mode <name-or-index>] [--smoke-capture <path>] [--smoke-trace] [--smoke-skip-level-switching] [--dry-run [operation-id]] [--run <operation-id>]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level Sponza --smoke-test --smoke-backend d3d12 --smoke-view-mode 3 --smoke-capture logs/smoke/scene-color.bmp --dry-run project.run\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --dry-run project.run.rhi-raytracing-parity\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --run project.run.rhi-raytracing-parity\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --run project.run.rhi-raytracing-ptlas-benchmark\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --run project.run.rhi-raytracing-ptlas-article\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --smoke-parity --run project.run.smoke\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --smoke-benchmark --smoke-diagnostics --run project.run.smoke\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n";

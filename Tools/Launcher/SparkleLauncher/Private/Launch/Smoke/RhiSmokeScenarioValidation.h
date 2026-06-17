@@ -6,5 +6,5 @@
 
 namespace SparkleLauncher
 {
-	bool ValidateRhiSmokePtlasArticleArtifacts(const LaunchOperationPlan& plan, std::string& outFailureSummary);
+	bool ValidateRhiSmokeScenarioArtifacts(const LaunchOperationPlan& plan, std::string& outFailureSummary);
 }

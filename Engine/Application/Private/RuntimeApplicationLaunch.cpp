@@ -18,7 +18,7 @@ int RunRuntimeApplication(RuntimeApplicationOptions options)
 
 	if (RhiSmokeValidation::IsRequested())
 	{
-		return RhiSmokeValidation::RunProject();
+		return RhiSmokeValidation::RunProject(std::move(options));
 	}
 
 	RuntimeApplication app(std::move(options));

@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Validation/RhiSmokeEditorViewport.h"
+#include "Validation/RhiSmokeViewportCapture.h"
 
 #include "Renderer.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
@@ -18,9 +18,9 @@ namespace
 	}
 }
 
-namespace RhiSmokeEditorViewport
+namespace RhiSmokeViewportCapture
 {
-	void ApplyViewModeOverride(const RhiSmokeEditorViewportConfig& config, RhiSmokeEditorViewportState& state) noexcept
+	void ApplyViewModeOverride(const RhiSmokeViewportCaptureConfig& config, RhiSmokeViewportCaptureState& state) noexcept
 	{
 		if (!config.HasViewModeOverride)
 		{
@@ -33,7 +33,7 @@ namespace RhiSmokeEditorViewport
 			const std::shared_ptr<spdlog::logger> logger = GetSmokeLogger();
 			SPDLOG_LOGGER_INFO(
 			    logger,
-			    "RHI editor smoke: forced render view mode {}({})",
+			    "RHI smoke: forced render view mode {}({})",
 			    RhiSmokeRenderViewModeNames::ToString(config.ViewModeOverride),
 			    static_cast<std::uint32_t>(config.ViewModeOverride));
 			state.ViewModeOverrideLogged = true;
@@ -44,7 +44,7 @@ namespace RhiSmokeEditorViewport
 	    bool enabled,
 	    const ViewportRenderProducts& viewportProducts,
 	    const ViewportPresentationProduct& sceneColorPresentation,
-	    RhiSmokeEditorViewportState& state) noexcept
+	    RhiSmokeViewportCaptureState& state) noexcept
 	{
 		if (!enabled || state.ViewportEvidenceLogged)
 		{
@@ -60,8 +60,7 @@ namespace RhiSmokeEditorViewport
 		const RenderProduct& sceneColor = viewportProducts.GetSceneColor();
 		SPDLOG_LOGGER_INFO(
 		    logger,
-		    "RHI editor smoke evidence: viewport sceneColorHandle={} textureId={} extent={}x{} outputsMask={} presentationStatus={} "
-		    "reason='{}'",
+		    "RHI smoke viewport evidence: sceneColorHandle={} textureId={} extent={}x{} outputsMask={} presentationStatus={} reason='{}'",
 		    sceneColor.Handle.Value,
 		    sceneColorPresentation.TextureId,
 		    sceneColor.Extent.Width,
@@ -75,10 +74,10 @@ namespace RhiSmokeEditorViewport
 
 	void CaptureSceneColorIfRequested(
 	    bool enabled,
-	    const RhiSmokeEditorViewportConfig& config,
+	    const RhiSmokeViewportCaptureConfig& config,
 	    RuntimeApplication& app,
 	    std::uint32_t completedRenderFrames,
-	    RhiSmokeEditorViewportState& state,
+	    RhiSmokeViewportCaptureState& state,
 	    bool& failed) noexcept
 	{
 		if (!enabled || state.SceneColorCaptured || config.SceneColorCapturePath.empty())
@@ -102,7 +101,7 @@ namespace RhiSmokeEditorViewport
 		        .FrameIndex = currentFrame,
 		        .ViewMode = static_cast<std::uint32_t>(viewMode),
 		        .ViewModeName = RhiSmokeRenderViewModeNames::ToString(viewMode),
-		        .DebugName = "Editor smoke scene color"});
+		        .DebugName = "Smoke scene color"});
 		RhiSmokeCaptureArtifacts::Write(
 		    RhiSmokeCaptureArtifactRequest{
 		        .CaptureResult = captureResult,
@@ -111,13 +110,13 @@ namespace RhiSmokeEditorViewport
 		        .MetadataPath = std::filesystem::path(config.MetadataPath),
 		        .TimingCsvPath = std::filesystem::path(config.TimingCsvPath),
 		        .CapturePurpose = config.CapturePurpose,
-		        .CaptureStoryLabel = config.CaptureStoryLabel});
+		        .CaptureLabel = config.CaptureLabel});
 
 		if (captureResult)
 		{
 			SPDLOG_LOGGER_INFO(
 			    logger,
-			    "RHI editor smoke: captured scene color backend={} viewMode={}({}) path='{}' frame={}",
+			    "RHI smoke: captured scene color backend={} viewMode={}({}) path='{}' frame={}",
 			    RhiBackendApiToString(captureResult.BackendApi),
 			    captureResult.ViewModeName,
 			    captureResult.ViewMode,
@@ -129,7 +128,7 @@ namespace RhiSmokeEditorViewport
 		{
 			SPDLOG_LOGGER_ERROR(
 			    logger,
-			    "RHI editor smoke: failed to capture scene color backend={} viewMode={}({}) path='{}' frame={} reason='{}'",
+			    "RHI smoke: failed to capture scene color backend={} viewMode={}({}) path='{}' frame={} reason='{}'",
 			    RhiBackendApiToString(captureResult.BackendApi),
 			    captureResult.ViewModeName,
 			    captureResult.ViewMode,

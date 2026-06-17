@@ -274,9 +274,12 @@ namespace SparkleLauncher
 			QVBoxLayout* gateLayout = AddDetailsGroup(
 			    layout,
 			    "Quality Gate Coverage",
-			    "Real launcher-backed checks are shown here. Additional gates should appear only after the repo has a real runner or preset behind them.",
+			    "One smoke runner exposes real launcher-backed checks here through explicit capability toggles. Additional gates should appear only after the repo has a real runner or preset behind them.",
 			    false);
-			AddStatusRow(*gateLayout, "Smoke validation", "Available", "Runs the selected editor or runtime with smoke validation enabled.", "ok");
+			AddStatusRow(*gateLayout, "Core smoke validation", "Available", "Runs the selected editor or runtime with smoke validation enabled.", "ok");
+			AddStatusRow(*gateLayout, "Backend/PTLAS parity matrix", "Available", "Optional checkbox-driven suite that validates D3D12/Vulkan parity and PTLAS fallback behavior.", "ok");
+			AddStatusRow(*gateLayout, "PTLAS benchmark matrix", "Available", "Optional checkbox-driven suite that emits benchmark summary diagnostics.", "ok");
+			AddStatusRow(*gateLayout, "PTLAS diagnostic captures", "Available", "Optional checkbox-driven suite that emits a reusable PTLAS diagnostics manifest and summary without article-specific workflow code.", "ok");
 			AddStatusRow(*gateLayout, "Sanitizer builds", "Configured in CMake", "Root CMake exposes ENABLE_SANITIZERS and SANITIZER_TYPE for Clang-based ASan, UBSan, TSan, MSan, and LSan builds; launcher presets still need a dedicated workflow before this becomes one-click.", "neutral");
 			AddStatusRow(*gateLayout, "Unit / integration / coverage", "Not wired", "No launcher-backed test or coverage runner is currently configured. Add a real CTest/coverage pipeline before exposing executable buttons here.", "neutral");
 			AddLaunchEnvironmentStatus(layout, operationId);

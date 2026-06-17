@@ -13,7 +13,7 @@ struct RhiSmokeCaptureArtifactRequest final
 	std::filesystem::path MetadataPath;
 	std::filesystem::path TimingCsvPath;
 	std::string CapturePurpose;
-	std::string CaptureStoryLabel;
+	std::string CaptureLabel;
 };
 
 namespace RhiSmokeCaptureArtifacts

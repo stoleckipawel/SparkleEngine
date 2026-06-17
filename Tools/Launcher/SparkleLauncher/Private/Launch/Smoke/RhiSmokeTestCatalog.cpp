@@ -2,189 +2,236 @@
 
 #include "SparkleLauncher/LauncherPaths.h"
 
+#include <sstream>
+
 namespace SparkleLauncher
 {
-	std::filesystem::path GetRhiSmokeRayTracingValidationDirectory(const std::filesystem::path& repositoryRoot)
+	namespace
 	{
-		return GetArtifactDirectory(repositoryRoot) / "validation" / "rhi-raytracing";
-	}
-
-	RhiSmokeTestCategory GetRhiSmokeTestCategory(const LaunchOperationPlan& plan) noexcept
-	{
-		if (plan.Kind == LaunchOperationKind::RunRhiRayTracingParitySmoke)
+		const RhiSmokeSuiteDefinition& SingleViewportSuiteDefinition()
 		{
-			return RhiSmokeTestCategory::RayTracingParity;
+			static const RhiSmokeSuiteDefinition definition = {
+			    RhiSmokeSuite::SingleViewportCapture,
+			    "single-viewport",
+			    "Single viewport smoke",
+			    "single-viewport",
+			    50,
+			    0,
+			    0,
+			    0,
+			    0};
+			return definition;
 		}
-		if (plan.Kind == LaunchOperationKind::RunRhiRayTracingPtlasBenchmarkSmoke)
+
+		const RhiSmokeSuiteDefinition& ParitySuiteDefinition()
 		{
-			return RhiSmokeTestCategory::RayTracingPtlasBenchmark;
+			static const RhiSmokeSuiteDefinition definition = {
+			    RhiSmokeSuite::RayTracingParity,
+			    "parity",
+			    "Ray tracing parity",
+			    "parity",
+			    50,
+			    10,
+			    40,
+			    12,
+			    0};
+			return definition;
 		}
-		if (plan.Kind == LaunchOperationKind::RunRhiRayTracingPtlasArticleSmoke)
+
+		const RhiSmokeSuiteDefinition& BenchmarkSuiteDefinition()
 		{
-			return RhiSmokeTestCategory::RayTracingPtlasArticle;
+			static const RhiSmokeSuiteDefinition definition = {
+			    RhiSmokeSuite::PtlasBenchmark,
+			    "ptlas-benchmark",
+			    "PTLAS benchmark",
+			    "ptlas-benchmark",
+			    80,
+			    10,
+			    70,
+			    24,
+			    0};
+			return definition;
 		}
-		if (plan.Kind == LaunchOperationKind::RunProject && plan.Request.EnableSmokeTest)
+
+		const RhiSmokeSuiteDefinition& DiagnosticSuiteDefinition()
 		{
-			return RhiSmokeTestCategory::SingleViewportCapture;
+			static const RhiSmokeSuiteDefinition definition = {
+			    RhiSmokeSuite::DiagnosticCaptures,
+			    "diagnostic-captures",
+			    "PTLAS diagnostic captures",
+			    "diagnostic-captures",
+			    80,
+			    10,
+			    70,
+			    24,
+			    0};
+			return definition;
 		}
-		return RhiSmokeTestCategory::None;
 	}
 
-	const char* RhiSmokeTestCategoryToString(RhiSmokeTestCategory category) noexcept
+	std::vector<RhiSmokeSuite> GetEnabledRhiSmokeSuites(const LaunchOperationPlan& plan)
 	{
-		switch (category)
+		std::vector<RhiSmokeSuite> suites;
+		if (!plan.Request.EnableSmokeTest)
 		{
-		case RhiSmokeTestCategory::None:
-			return "None";
-		case RhiSmokeTestCategory::SingleViewportCapture:
-			return "SingleViewportCapture";
-		case RhiSmokeTestCategory::RayTracingParity:
-			return "RayTracingParity";
-		case RhiSmokeTestCategory::RayTracingPtlasBenchmark:
-			return "RayTracingPtlasBenchmark";
-		case RhiSmokeTestCategory::RayTracingPtlasArticle:
-			return "RayTracingPtlasArticle";
+			return suites;
 		}
-		return "Unknown";
+
+		if (plan.Request.SmokeRunRayTracingParity)
+		{
+			suites.push_back(RhiSmokeSuite::RayTracingParity);
+		}
+		if (plan.Request.SmokeRunPtlasBenchmark)
+		{
+			suites.push_back(RhiSmokeSuite::PtlasBenchmark);
+		}
+		if (plan.Request.SmokeRunDiagnosticCaptures)
+		{
+			suites.push_back(RhiSmokeSuite::DiagnosticCaptures);
+		}
+		if (suites.empty())
+		{
+			suites.push_back(RhiSmokeSuite::SingleViewportCapture);
+		}
+
+		return suites;
 	}
 
-	const std::vector<RhiSmokeParityCase>& GetRhiSmokeParityCases()
+	std::string GetRhiSmokeSuiteSummary(const LaunchOperationPlan& plan)
 	{
-		static const std::vector<RhiSmokeParityCase> cases = {
-		    {"d3d12-classic", "d3d12", false, "1", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected"},
-		    {"d3d12-ptlas", "d3d12", true, "1", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected"},
-		    {"d3d12-ptlas-gpu-logical",
-		        "d3d12",
-		        true,
-		        "2",
-		        "GpuLogicalDirtyCpuNativePack",
-		        "CpuPack",
-		        "ptlas-gpu-logical-dirty-writer-not-implemented"},
-		    {"d3d12-ptlas-gpu-native",
-		        "d3d12",
-		        true,
-		        "3",
-		        "FullGpuNativePack",
-		        "CpuPack",
-		        "ptlas-full-gpu-native-pack-backend-pack-shader-not-implemented"},
-		    {"vulkan-classic", "vulkan", false, "1", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected"},
-		    {"vulkan-ptlas", "vulkan", true, "1", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected"},
-		    {"vulkan-ptlas-gpu-logical",
-		        "vulkan",
-		        true,
-		        "2",
-		        "GpuLogicalDirtyCpuNativePack",
-		        "CpuPack",
-		        "ptlas-gpu-logical-dirty-writer-not-implemented"},
-		    {"vulkan-ptlas-gpu-native",
-		        "vulkan",
-		        true,
-		        "3",
-		        "FullGpuNativePack",
-		        "CpuPack",
-		        "ptlas-full-gpu-native-pack-backend-pack-shader-not-implemented"},
+		const std::vector<RhiSmokeSuite> suites = GetEnabledRhiSmokeSuites(plan);
+		std::ostringstream stream;
+		for (std::size_t index = 0; index < suites.size(); ++index)
+		{
+			if (index > 0)
+			{
+				stream << ", ";
+			}
+			stream << GetRhiSmokeSuiteDefinition(suites[index]).Id;
+		}
+		return stream.str();
+	}
+
+	const RhiSmokeSuiteDefinition& GetRhiSmokeSuiteDefinition(RhiSmokeSuite suite)
+	{
+		switch (suite)
+		{
+		case RhiSmokeSuite::SingleViewportCapture:
+			return SingleViewportSuiteDefinition();
+		case RhiSmokeSuite::RayTracingParity:
+			return ParitySuiteDefinition();
+		case RhiSmokeSuite::PtlasBenchmark:
+			return BenchmarkSuiteDefinition();
+		case RhiSmokeSuite::DiagnosticCaptures:
+			return DiagnosticSuiteDefinition();
+		}
+
+		return SingleViewportSuiteDefinition();
+	}
+
+	const std::vector<RhiSmokeScenarioCase>& GetRhiSmokeCases(RhiSmokeSuite suite)
+	{
+		static const std::vector<RhiSmokeScenarioCase> singleViewportCases = {
+		    {"selected-launch", "", false, "1", "ClassicTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", ""},
 		};
-		return cases;
-	}
-
-	const std::vector<RhiSmokeParityViewMode>& GetRhiSmokeParityViewModes()
-	{
-		static const std::vector<RhiSmokeParityViewMode> viewModes = {
-		    {"Lit"},
-		    {"RayTracingProviderStatus"},
+		static const std::vector<RhiSmokeScenarioCase> parityCases = {
+		    {"d3d12-classic", "d3d12", false, "1", "ClassicTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", ""},
+		    {"d3d12-ptlas", "d3d12", true, "1", "PartitionedTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", ""},
+		    {"d3d12-ptlas-gpu-logical", "d3d12", true, "2", "PartitionedTlas", "GpuLogicalDirtyCpuNativePack", "CpuPack", "ptlas-gpu-logical-dirty-writer-not-implemented", ""},
+		    {"d3d12-ptlas-gpu-native", "d3d12", true, "3", "PartitionedTlas", "FullGpuNativePack", "CpuPack", "ptlas-full-gpu-native-pack-backend-pack-shader-not-implemented", ""},
+		    {"vulkan-classic", "vulkan", false, "1", "ClassicTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", ""},
+		    {"vulkan-ptlas", "vulkan", true, "1", "PartitionedTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", ""},
+		    {"vulkan-ptlas-gpu-logical", "vulkan", true, "2", "PartitionedTlas", "GpuLogicalDirtyCpuNativePack", "CpuPack", "ptlas-gpu-logical-dirty-writer-not-implemented", ""},
+		    {"vulkan-ptlas-gpu-native", "vulkan", true, "3", "PartitionedTlas", "FullGpuNativePack", "CpuPack", "ptlas-full-gpu-native-pack-backend-pack-shader-not-implemented", ""},
 		};
-		return viewModes;
-	}
-
-	const std::vector<RhiSmokePtlasBenchmarkCase>& GetRhiSmokePtlasBenchmarkCases()
-	{
-		static const std::vector<RhiSmokePtlasBenchmarkCase> cases = {
-		    {"d3d12-classic", "d3d12", false, "1", "ClassicTlas", "CpuPack"},
-		    {"d3d12-ptlas-cpu-pack", "d3d12", true, "1", "PartitionedTlas", "CpuPack"},
-		    {"d3d12-ptlas-full-gpu-native", "d3d12", true, "3", "PartitionedTlas", "FullGpuNativePack"},
-		    {"vulkan-classic", "vulkan", false, "1", "ClassicTlas", "CpuPack"},
-		    {"vulkan-ptlas-cpu-pack", "vulkan", true, "1", "PartitionedTlas", "CpuPack"},
-		    {"vulkan-ptlas-gpu-logical", "vulkan", true, "2", "PartitionedTlas", "GpuLogicalDirtyCpuNativePack"},
-		    {"vulkan-ptlas-full-gpu-native", "vulkan", true, "3", "PartitionedTlas", "FullGpuNativePack"},
+		static const std::vector<RhiSmokeScenarioCase> benchmarkCases = {
+		    {"d3d12-classic", "d3d12", false, "1", "ClassicTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", ""},
+		    {"d3d12-ptlas-cpu-pack", "d3d12", true, "1", "PartitionedTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", ""},
+		    {"d3d12-ptlas-full-gpu-native", "d3d12", true, "3", "PartitionedTlas", "FullGpuNativePack", "CpuPack", "ptlas-full-gpu-native-pack-backend-pack-shader-not-implemented", ""},
+		    {"vulkan-classic", "vulkan", false, "1", "ClassicTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", ""},
+		    {"vulkan-ptlas-cpu-pack", "vulkan", true, "1", "PartitionedTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", ""},
+		    {"vulkan-ptlas-gpu-logical", "vulkan", true, "2", "PartitionedTlas", "GpuLogicalDirtyCpuNativePack", "CpuPack", "ptlas-gpu-logical-dirty-writer-not-implemented", ""},
+		    {"vulkan-ptlas-full-gpu-native", "vulkan", true, "3", "PartitionedTlas", "FullGpuNativePack", "CpuPack", "ptlas-full-gpu-native-pack-backend-pack-shader-not-implemented", ""},
 		};
-		return cases;
-	}
-
-	const std::vector<RhiSmokePtlasBenchmarkViewMode>& GetRhiSmokePtlasBenchmarkViewModes()
-	{
-		static const std::vector<RhiSmokePtlasBenchmarkViewMode> viewModes = {
-		    {"Lit"},
-		    {"RayTracingProviderStatus"},
+		static const std::vector<RhiSmokeScenarioCase> diagnosticCases = {
+		    {"d3d12-classic-reference", "d3d12", false, "1", "ClassicTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", "D3D12 classic TLAS reference"},
+		    {"d3d12-partitioned-request", "d3d12", true, "1", "PartitionedTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", "D3D12 partitioned TLAS request"},
+		    {"vulkan-classic-reference", "vulkan", false, "1", "ClassicTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", "Vulkan classic TLAS reference"},
+		    {"vulkan-partitioned-request", "vulkan", true, "1", "PartitionedTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", "Vulkan partitioned TLAS request"},
 		};
-		return viewModes;
+
+		switch (suite)
+		{
+		case RhiSmokeSuite::SingleViewportCapture:
+			return singleViewportCases;
+		case RhiSmokeSuite::RayTracingParity:
+			return parityCases;
+		case RhiSmokeSuite::PtlasBenchmark:
+			return benchmarkCases;
+		case RhiSmokeSuite::DiagnosticCaptures:
+			return diagnosticCases;
+		}
+
+		return singleViewportCases;
 	}
 
-	const std::vector<RhiSmokePtlasArticleCase>& GetRhiSmokePtlasArticleCases()
+	const std::vector<RhiSmokeScenarioViewMode>& GetRhiSmokeViewModes(RhiSmokeSuite suite)
 	{
-		static const std::vector<RhiSmokePtlasArticleCase> cases = {
-		    {"d3d12-classic-reference", "d3d12", false, "1", "ClassicTlas", "CpuPack", "D3D12 classic TLAS reference"},
-		    {"d3d12-partitioned-request", "d3d12", true, "1", "PartitionedTlas", "CpuPack", "D3D12 PTLAS request"},
-		    {"vulkan-classic-reference", "vulkan", false, "1", "ClassicTlas", "CpuPack", "Vulkan classic TLAS reference"},
-		    {"vulkan-partitioned-request", "vulkan", true, "1", "PartitionedTlas", "CpuPack", "Vulkan PTLAS request"},
+		static const std::vector<RhiSmokeScenarioViewMode> singleViewportViewModes = {
+		    {"Selected", "Launcher-selected smoke validation view."},
 		};
-		return cases;
-	}
-
-	const std::vector<RhiSmokePtlasArticleViewMode>& GetRhiSmokePtlasArticleViewModes()
-	{
-		static const std::vector<RhiSmokePtlasArticleViewMode> viewModes = {
-		    {"Lit", "Final lit output used as the primary visual reference for article comparisons."},
-		    {"GBufferNormal", "Normal buffer sanity view used to verify orientation, geometry coherence, and backend parity."},
-		    {"RayTracingPartitions", "Partition ownership view used to explain logical PTLAS partitioning across the scene."},
+		static const std::vector<RhiSmokeScenarioViewMode> parityViewModes = {
+		    {"Lit", "Primary shaded output used for backend and PTLAS parity comparisons."},
+		    {"RayTracingProviderStatus", "Provider capability and fallback status view used to validate active PTLAS provider selection."},
+		};
+		static const std::vector<RhiSmokeScenarioViewMode> benchmarkViewModes = {
+		    {"Lit", "Primary shaded output used for timing comparisons and benchmark summaries."},
+		    {"RayTracingProviderStatus", "Provider capability view used to correlate timing data with selected PTLAS provider state."},
+		};
+		static const std::vector<RhiSmokeScenarioViewMode> diagnosticViewModes = {
+		    {"Lit", "Final lit output used as the primary visual reference."},
+		    {"GBufferNormal", "Normal buffer sanity view used to verify orientation and geometry coherence."},
+		    {"RayTracingPartitions", "Partition ownership view used to inspect logical PTLAS partitioning."},
 		    {"RayTracingPartitionUpdates", "Partition update heatmap showing which logical partitions were touched by motion."},
 		    {"RayTracingInstanceMovement", "Instance movement debug view that highlights objects contributing to PTLAS updates."},
-		    {"RayTracingTopLevelMode", "Top-level acceleration structure mode view that makes classic TLAS versus PTLAS selection visible."},
-		    {"RayTracingNativeOperations", "Native PTLAS operation pressure view used to correlate logical updates with backend-native work."},
-		    {"RayTracingGpuDrivenUpdates", "GPU-driven update mode view used to explain writer-path selection and GPU update state."},
-		    {"RayTracingProviderStatus", "Provider capability and fallback status view used to explain which backend/provider path is active."},
+		    {"RayTracingTopLevelMode", "Top-level acceleration structure mode view exposing classic TLAS versus PTLAS selection."},
+		    {"RayTracingNativeOperations", "Native PTLAS operation pressure view for backend-native work inspection."},
+		    {"RayTracingGpuDrivenUpdates", "GPU-driven update mode view used to inspect writer-path selection and GPU update state."},
+		    {"RayTracingProviderStatus", "Provider capability and fallback status view for active backend/provider diagnostics."},
 		};
-		return viewModes;
+
+		switch (suite)
+		{
+		case RhiSmokeSuite::SingleViewportCapture:
+			return singleViewportViewModes;
+		case RhiSmokeSuite::RayTracingParity:
+			return parityViewModes;
+		case RhiSmokeSuite::PtlasBenchmark:
+			return benchmarkViewModes;
+		case RhiSmokeSuite::DiagnosticCaptures:
+			return diagnosticViewModes;
+		}
+
+		return singleViewportViewModes;
 	}
 
-	std::filesystem::path GetRhiSmokeParityArtifactDirectory(const LaunchOperationPlan& plan)
+	std::filesystem::path GetRhiSmokeValidationDirectory(const LaunchOperationPlan& plan)
 	{
-		return GetRhiSmokeRayTracingValidationDirectory(plan.RepositoryRoot) / "parity";
+		return GetArtifactDirectory(plan.RepositoryRoot) / "validation" / "rhi-raytracing";
 	}
 
-	std::filesystem::path GetRhiSmokeParityArtifactPath(
+	std::filesystem::path GetRhiSmokeArtifactDirectory(const LaunchOperationPlan& plan, RhiSmokeSuite suite)
+	{
+		return GetRhiSmokeValidationDirectory(plan) / GetRhiSmokeSuiteDefinition(suite).ArtifactDirectoryName;
+	}
+
+	std::filesystem::path GetRhiSmokeArtifactPath(
 	    const LaunchOperationPlan& plan,
-	    const RhiSmokeParityCase& parityCase,
-	    const RhiSmokeParityViewMode& viewMode,
+	    RhiSmokeSuite suite,
+	    const RhiSmokeScenarioCase& scenarioCase,
+	    const RhiSmokeScenarioViewMode& viewMode,
 	    std::string_view extension)
 	{
-		return GetRhiSmokeParityArtifactDirectory(plan) / parityCase.Name / (std::string(viewMode.Name) + std::string(extension));
-	}
-
-	std::filesystem::path GetRhiSmokePtlasBenchmarkArtifactDirectory(const LaunchOperationPlan& plan)
-	{
-		return GetRhiSmokeRayTracingValidationDirectory(plan.RepositoryRoot) / "ptlas-benchmark";
-	}
-
-	std::filesystem::path GetRhiSmokePtlasBenchmarkArtifactPath(
-	    const LaunchOperationPlan& plan,
-	    const RhiSmokePtlasBenchmarkCase& benchmarkCase,
-	    const RhiSmokePtlasBenchmarkViewMode& viewMode,
-	    std::string_view extension)
-	{
-		return GetRhiSmokePtlasBenchmarkArtifactDirectory(plan) / benchmarkCase.Name / (std::string(viewMode.Name) + std::string(extension));
-	}
-
-	std::filesystem::path GetRhiSmokePtlasArticleArtifactDirectory(const LaunchOperationPlan& plan)
-	{
-		return GetRhiSmokeRayTracingValidationDirectory(plan.RepositoryRoot) / "ptlas-article";
-	}
-
-	std::filesystem::path GetRhiSmokePtlasArticleArtifactPath(
-	    const LaunchOperationPlan& plan,
-	    const RhiSmokePtlasArticleCase& articleCase,
-	    const RhiSmokePtlasArticleViewMode& viewMode,
-	    std::string_view extension)
-	{
-		return GetRhiSmokePtlasArticleArtifactDirectory(plan) / articleCase.Name / (std::string(viewMode.Name) + std::string(extension));
+		return GetRhiSmokeArtifactDirectory(plan, suite) / scenarioCase.Name / (std::string(viewMode.Name) + std::string(extension));
 	}
 }

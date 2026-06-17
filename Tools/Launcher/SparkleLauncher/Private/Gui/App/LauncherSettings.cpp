@@ -253,6 +253,21 @@ namespace SparkleLauncher
 		return m_smokeSkipLevelSwitching;
 	}
 
+	bool LauncherSettings::SmokeRunRayTracingParity() const
+	{
+		return m_smokeRunRayTracingParity;
+	}
+
+	bool LauncherSettings::SmokeRunPtlasBenchmark() const
+	{
+		return m_smokeRunPtlasBenchmark;
+	}
+
+	bool LauncherSettings::SmokeRunDiagnosticCaptures() const
+	{
+		return m_smokeRunDiagnosticCaptures;
+	}
+
 	void LauncherSettings::SetBuildConfiguration(const QString& configuration)
 	{
 		const QString normalized = NormalizeBuildConfiguration(configuration);
@@ -664,6 +679,36 @@ namespace SparkleLauncher
 			return;
 		}
 		m_smokeSkipLevelSwitching = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetSmokeRunRayTracingParity(bool enabled)
+	{
+		if (m_smokeRunRayTracingParity == enabled)
+		{
+			return;
+		}
+		m_smokeRunRayTracingParity = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetSmokeRunPtlasBenchmark(bool enabled)
+	{
+		if (m_smokeRunPtlasBenchmark == enabled)
+		{
+			return;
+		}
+		m_smokeRunPtlasBenchmark = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetSmokeRunDiagnosticCaptures(bool enabled)
+	{
+		if (m_smokeRunDiagnosticCaptures == enabled)
+		{
+			return;
+		}
+		m_smokeRunDiagnosticCaptures = enabled;
 		emit SettingsChanged();
 	}
 }

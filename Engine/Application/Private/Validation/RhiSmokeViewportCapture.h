@@ -10,38 +10,38 @@ class RuntimeApplication;
 struct ViewportPresentationProduct;
 struct ViewportRenderProducts;
 
-struct RhiSmokeEditorViewportConfig final
+struct RhiSmokeViewportCaptureConfig final
 {
 	std::uint32_t SceneColorCaptureFrame = 20;
 	std::string SceneColorCapturePath;
 	std::string MetadataPath;
 	std::string TimingCsvPath;
 	std::string CapturePurpose;
-	std::string CaptureStoryLabel;
+	std::string CaptureLabel;
 	bool HasViewModeOverride = false;
 	RenderViewMode ViewModeOverride = RenderViewMode::Lit;
 };
 
-struct RhiSmokeEditorViewportState final
+struct RhiSmokeViewportCaptureState final
 {
 	bool ViewportEvidenceLogged = false;
 	bool SceneColorCaptured = false;
 	bool ViewModeOverrideLogged = false;
 };
 
-namespace RhiSmokeEditorViewport
+namespace RhiSmokeViewportCapture
 {
-	void ApplyViewModeOverride(const RhiSmokeEditorViewportConfig& config, RhiSmokeEditorViewportState& state) noexcept;
+	void ApplyViewModeOverride(const RhiSmokeViewportCaptureConfig& config, RhiSmokeViewportCaptureState& state) noexcept;
 	void LogEvidence(
 	    bool enabled,
 	    const ViewportRenderProducts& viewportProducts,
 	    const ViewportPresentationProduct& sceneColorPresentation,
-	    RhiSmokeEditorViewportState& state) noexcept;
+	    RhiSmokeViewportCaptureState& state) noexcept;
 	void CaptureSceneColorIfRequested(
 	    bool enabled,
-	    const RhiSmokeEditorViewportConfig& config,
+	    const RhiSmokeViewportCaptureConfig& config,
 	    RuntimeApplication& app,
 	    std::uint32_t completedRenderFrames,
-	    RhiSmokeEditorViewportState& state,
+	    RhiSmokeViewportCaptureState& state,
 	    bool& failed) noexcept;
 }

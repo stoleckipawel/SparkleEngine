@@ -383,6 +383,9 @@ namespace SparkleLauncher
 		launchRequest.SmokeCapturePath = request.SmokeCapturePath.toStdString();
 		launchRequest.SmokeTrace = request.SmokeTrace;
 		launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
+		launchRequest.SmokeRunRayTracingParity = request.SmokeRunRayTracingParity;
+		launchRequest.SmokeRunPtlasBenchmark = request.SmokeRunPtlasBenchmark;
+		launchRequest.SmokeRunDiagnosticCaptures = request.SmokeRunDiagnosticCaptures;
 
 		const LaunchOperationPlan plan = PlanLaunchOperation(operationId.toStdString(), launchRequest);
 		const bool runtimeTarget = launchRequest.Target == "runtime";
@@ -546,7 +549,28 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddSmokeValidationOptions(QVBoxLayout& layout)
 	{
-		QVBoxLayout* smokeOptionsLayout = AddOptionGroup(layout, "Smoke Test Options", "Smoke-test controls for capture length and diagnostic behavior.");
+		QVBoxLayout* smokeOptionsLayout = AddOptionGroup(layout, "Smoke Test Options", "Smoke-test controls for capture length, matrix selection, and diagnostic behavior.");
+		AddOptionCheckBox(
+		    *smokeOptionsLayout,
+		    CreateBoundCheckBox(
+		        "Run backend/PTLAS parity matrix",
+		        "Execute deterministic D3D12/Vulkan PTLAS parity scenarios and validate image comparisons.",
+		        m_settings.SmokeRunRayTracingParity(),
+		        &LauncherSettings::SetSmokeRunRayTracingParity));
+		AddOptionCheckBox(
+		    *smokeOptionsLayout,
+		    CreateBoundCheckBox(
+		        "Run PTLAS benchmark matrix",
+		        "Execute PTLAS benchmark scenarios and emit benchmark summary diagnostics.",
+		        m_settings.SmokeRunPtlasBenchmark(),
+		        &LauncherSettings::SetSmokeRunPtlasBenchmark));
+		AddOptionCheckBox(
+		    *smokeOptionsLayout,
+		    CreateBoundCheckBox(
+		        "Run PTLAS diagnostic capture matrix",
+		        "Capture multi-view PTLAS diagnostics and emit a generic artifact manifest and summary.",
+		        m_settings.SmokeRunDiagnosticCaptures(),
+		        &LauncherSettings::SetSmokeRunDiagnosticCaptures));
 		AddOptionField(
 		    *smokeOptionsLayout,
 		    "Frame limit",
@@ -588,7 +612,7 @@ namespace SparkleLauncher
 		    *smokeOptionsLayout,
 		    CreateBoundCheckBox(
 		        "Skip level switching",
-		        "Do not switch levels during smoke.",
+		        "Do not switch levels during smoke. Matrix suites force this on automatically.",
 		        m_settings.SmokeSkipLevelSwitching(),
 		        &LauncherSettings::SetSmokeSkipLevelSwitching));
 	}

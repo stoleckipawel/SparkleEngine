@@ -14,6 +14,28 @@ namespace SparkleLauncher
 		request.Arguments.push_back("--graphics-api");
 		request.Arguments.push_back("");
 		AddRhiSmokeCVar(request, "r.VSync=false");
+		if (!plan.Request.PreferHighPerformanceAdapter.empty())
+		{
+			AddRhiSmokeCVar(request, "r.PreferHighPerformanceAdapter=" + plan.Request.PreferHighPerformanceAdapter);
+		}
+		if (!plan.Request.MeshAutoBatching.empty())
+		{
+			AddRhiSmokeCVar(request, "r.MeshAutoBatching=" + plan.Request.MeshAutoBatching);
+		}
+		for (const std::string& customArgument : plan.Request.CustomArguments)
+		{
+			if (!customArgument.empty())
+			{
+				request.Arguments.push_back(customArgument);
+			}
+		}
+		for (const std::string& customCVar : plan.Request.CustomCVars)
+		{
+			if (!customCVar.empty())
+			{
+				AddRhiSmokeCVar(request, customCVar);
+			}
+		}
 		return request;
 	}
 
