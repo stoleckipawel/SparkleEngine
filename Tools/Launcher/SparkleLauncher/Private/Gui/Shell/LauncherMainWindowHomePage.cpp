@@ -245,14 +245,14 @@ namespace SparkleLauncher
 		    this));
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
 		    m_repositoryRoot,
-		    "Dependency Tiers",
+		    "Workspace Setup",
 		    dependencyCacheHealthy ? "Ready" : dependencyCacheNeedsRepair ? "Repair needed" : dependencyDoc ? "Available" : "Pending",
-		    dependencyCacheHealthy ? "Enabled source tiers are cached; optional tiers unlock more build and cook capability." :
-		    dependencyCacheNeedsRepair ? "Some enabled source tiers need repair. Sync Source Tiers will restore local rebuild and cook capability." :
-		                                 "Sync source tiers when you want the extra local build or cook capability.",
+		    dependencyCacheHealthy ? "Repository dependencies are cached and ready for local build and cook workflows." :
+		    dependencyCacheNeedsRepair ? "Some repository packages need repair. Prepare Workspace will restore local build and cook capability." :
+		                                 "Prepare Workspace to download the repository packages needed for local rebuilds and optional tooling.",
 		    dependencyCacheHealthy && dependencyDoc ? "ok" : "warning",
 		    dependencyCacheHealthy && dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") :
-		                                             CreateCommandActionButton("workspace.sync-source-tiers", "Sync Source Tiers", false),
+		                                             CreateCommandActionButton("workspace.sync-source-tiers", "Prepare Workspace", false),
 		    "discover",
 		    "sparkle-source-tiers.png",
 		    this));

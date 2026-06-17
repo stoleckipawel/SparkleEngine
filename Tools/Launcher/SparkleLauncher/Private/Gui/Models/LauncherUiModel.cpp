@@ -124,13 +124,13 @@ namespace SparkleLauncher
 		{
 			return MakeOperationUiModel(
 			    operationId,
-			    "Sync Source Tiers",
+			    "Prepare Workspace",
 			    "Sync",
 			    LauncherWorkflowPageKind::Sync,
 			    LauncherActionImpactKind::SourceDependencies,
-			    "Source tiers: populates enabled workspace source tiers and configure state; it does not install host tools.",
-			    "Source tiers",
-			    "Sync only the capability tiers you need; optional tiers unlock build and cook paths without becoming first-run blockers.",
+			    "Downloads and repairs enabled repository dependencies, then refreshes workspace configure state; it does not install host tools.",
+			    "Workspace setup",
+			    "Fetch the repository packages needed for local builds, content tools, and optional renderer integrations.",
 			    "workflow-source-sync.png");
 		}
 		if (operationId == "workspace.generate-build-files")
@@ -310,7 +310,7 @@ namespace SparkleLauncher
 			    "Clean",
 			    LauncherWorkflowPageKind::Maintain,
 			    LauncherActionImpactKind::GeneratedState,
-			    "Maintain: removes selected generated outputs, caches, logs, or local workspace state after confirmation.",
+			    "Clean: removes selected generated outputs, caches, logs, or local workspace state after confirmation.",
 			    "Generated files",
 			    "Shows what generated state will be removed and what will stay before destructive cleanup.",
 			    "workflow-clean-workspace.png");
@@ -365,7 +365,7 @@ namespace SparkleLauncher
 		case LauncherWorkflowPageKind::Package:
 			return "Package";
 		case LauncherWorkflowPageKind::Maintain:
-			return "Maintain";
+			return "Clean";
 		case LauncherWorkflowPageKind::Unknown:
 			return "Unknown";
 		}

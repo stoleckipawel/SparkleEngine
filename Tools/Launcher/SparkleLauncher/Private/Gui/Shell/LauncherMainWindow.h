@@ -108,8 +108,7 @@ namespace SparkleLauncher
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
 		QVBoxLayout* AddDetailsGroup(QVBoxLayout& layout, const QString& title, const QString& detail, bool expanded = false);
 		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
-		QFrame* CreateSourceTierCard(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath);
-		void AddSourceTierCards(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeDependencyDetails);
+		void AddSyncDependencyBundles(QVBoxLayout& layout, bool includeDependencyDetails);
 		void AddWorkflowVisualBanner(QVBoxLayout& layout, const QString& operationId);
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
 		void AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId);

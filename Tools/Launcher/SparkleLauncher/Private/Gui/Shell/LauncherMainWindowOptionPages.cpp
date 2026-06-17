@@ -65,7 +65,10 @@ namespace SparkleLauncher
 		}
 
 		AddWorkflowPageHeader(layout, operationId);
-		AddWorkflowVisualBanner(layout, operationId);
+		if (operationId != "toolchain.check" && operationId != "workspace.sync-source-tiers")
+		{
+			AddWorkflowVisualBanner(layout, operationId);
+		}
 
 		if (operationId == "package.release")
 		{
@@ -316,33 +319,20 @@ namespace SparkleLauncher
 			    {"Build outputs and generated build files", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and local IDE state. Keeps the source dependency cache.", "build content except build/_deps, .vs, root generated project files, project generated files", "Build state"},
 			    {"Shader cache", "shader-cache", "Transient shader cache, recook signal, debug artifacts, and shader outputs.", QString(), "Caches"},
 			    {"Source dependency cache", "deps", "Downloaded source dependency cache. Configure will re-download source dependency groups.", QString(), "Caches"},
-			    {"Logs", "logs", "Repository, launcher, and project logs.", "logs, artifacts/dev/launcher-state/Logs, Projects/*/logs", "Logs"},
-			    {"Reset generated workspace", "pristine", "All generated workspace state, including build trees, artifacts, packages, dependency cache, cooked data, IDE state, logs, and generated project files. Close the launcher for absolute pristine cleanup of its live artifact copy.", "build, artifacts, dist, .vs, .vscode, logs, imgui.ini, root generated project files, project generated files", "Reset"},
+			    {"Logs", "logs", "Repository, launcher, and project logs.", "logs, user-local launcher logs, Projects/*/logs", "Logs"},
+			    {"Reset generated workspace", "pristine", "All generated repository workspace state, including build trees, artifacts, packages, dependency cache, cooked data, IDE state, logs, and generated project files.", "build, artifacts, dist, .vs, .vscode, logs, imgui.ini, root generated project files, project generated files", "Reset"},
 			}};
 
 			QVector<QCheckBox*> scopeBoxes;
 			const QString selectedProjectId = m_projectModel.SelectedProjectId();
 			const QStringList selectedScopes = m_settings.CleanScope().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
 			const std::array<QPair<QString, QString>, 5> cleanGroups = {{
-			    {"Cooked content", "Remove cooked assets for one project or every project."},
-			    {"Build state", "Remove generated build products and local IDE workspace state."},
-			    {"Caches", "Remove caches that will be recreated by later workflows."},
-			    {"Logs", "Remove repository, launcher, and project logs."},
-			    {"Reset", "Clear nearly all generated workspace state in one pass."},
+			    {"Reset", "Full generated workspace reset"},
+			    {"Cooked content", "Cooked assets"},
+			    {"Build state", "Build products and IDE state"},
+			    {"Caches", "Regeneratable caches"},
+			    {"Logs", "Launcher and project logs"},
 			}};
-
-			QVBoxLayout* planLayout = AddOptionGroup(
-			    layout,
-			    "Cleanup Plan",
-			    "Select exactly the generated state you want to remove. The plan separates what will be cleaned from what will be kept before you run anything.");
-			QLabel* selectedPlanLabel = new QLabel(planLayout->parentWidget());
-			selectedPlanLabel->setObjectName("CleanPlanText");
-			selectedPlanLabel->setWordWrap(true);
-			planLayout->addWidget(selectedPlanLabel);
-			QLabel* keptPlanLabel = new QLabel(planLayout->parentWidget());
-			keptPlanLabel->setObjectName("CleanPlanText");
-			keptPlanLabel->setWordWrap(true);
-			planLayout->addWidget(keptPlanLabel);
 
 			const auto addCleanScopeRow = [this, &scopeBoxes, &selectedProjectId, &selectedScopes](QGridLayout& groupGrid, const CleanScopeUiOption& scope, int row, int column) {
 				QCheckBox* scopeBox = new QCheckBox(scope.Label, this);
@@ -368,9 +358,10 @@ namespace SparkleLauncher
 				scopeBoxes.push_back(scopeBox);
 			};
 
+			QVBoxLayout* cleanScopesLayout = AddInlineOptionsSection(layout);
 			for (const QPair<QString, QString>& cleanGroup : cleanGroups)
 			{
-				QVBoxLayout* cleanGroupLayout = AddOptionGroup(layout, cleanGroup.first, cleanGroup.second);
+				cleanScopesLayout->addWidget(CreateSectionLabel(cleanGroup.first));
 				QGridLayout* cleanGrid = new QGridLayout();
 				cleanGrid->setContentsMargins(LauncherUi::Clean::GridMargins());
 				cleanGrid->setHorizontalSpacing(LauncherUi::Clean::GridSpacing);
@@ -384,23 +375,16 @@ namespace SparkleLauncher
 						++groupScopeIndex;
 					}
 				}
-				cleanGroupLayout->addLayout(cleanGrid);
+				cleanScopesLayout->addLayout(cleanGrid);
 			}
 
-			const auto updateCleanScopeSetting = [scopeBoxes, selectedPlanLabel, keptPlanLabel, this]() {
+			const auto updateCleanScopeSetting = [scopeBoxes, this]() {
 				QStringList selectedValues;
-				QStringList selectedLabels;
-				QStringList keptLabels;
 				for (QCheckBox* scopeBox : scopeBoxes)
 				{
 					if (scopeBox != nullptr && scopeBox->isChecked())
 					{
 						selectedValues.push_back(scopeBox->property("CleanScope").toString());
-						selectedLabels.push_back(scopeBox->property("CleanLabel").toString());
-					}
-					else if (scopeBox != nullptr)
-					{
-						keptLabels.push_back(scopeBox->property("CleanLabel").toString());
 					}
 				}
 				if (selectedValues.empty())
@@ -411,14 +395,7 @@ namespace SparkleLauncher
 						scopeBoxes.front()->setChecked(true);
 					}
 					selectedValues.push_back("selected-cooked");
-					selectedLabels.push_back("Selected project cooked content");
-					if (!keptLabels.empty())
-					{
-						keptLabels.removeAll("Selected project cooked content");
-					}
 				}
-				selectedPlanLabel->setText("Will clean: " + selectedLabels.join(", "));
-				keptPlanLabel->setText("Will keep: " + (keptLabels.isEmpty() ? QString("No generated scopes outside the selected plan.") : keptLabels.join(", ")));
 				m_settings.SetCleanScope(selectedValues.join(';'));
 				UpdateRunAvailability();
 			};

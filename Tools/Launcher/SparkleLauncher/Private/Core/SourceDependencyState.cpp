@@ -46,9 +46,9 @@ namespace SparkleLauncher
 			std::vector<SourceDependencyGroup> entries;
 			entries.push_back({
 			    "core-workspace",
-			    "Core Workspace Source Tier",
-			    "Baseline shared dependencies used by the launcher, engine, and project builds.",
-			    "Required source tier for local rebuilds. Runtime packages can still launch bundled components without rebuilding this tier.",
+			    "Core build dependencies",
+			    "Baseline packages shared by the launcher, engine, and project builds.",
+			    "Required for local rebuilds. Packaged binaries can still launch without rebuilding from source.",
 			    "",
 			    true,
 			    true,
@@ -64,9 +64,9 @@ namespace SparkleLauncher
 #endif
 			entries.push_back({
 			    "content-pipeline",
-			    "Content Pipeline Source Tier",
-			    "Optional source import, mesh cook, and texture cook dependencies.",
-			    "Unlocks Build Cooking Tools, Cook Textures, Cook Scenes And Meshes, and the content phase of Cook All.",
+			    "Content pipeline tools",
+			    "Optional packages for source import, mesh cooking, and texture cooking.",
+			    "Enables Build Cooking Tools, Cook Textures, Cook Scenes And Meshes, and the content phase of Cook All.",
 			    "SPARKLE_ENABLE_CONTENT_PIPELINE",
 			    false,
 			    contentPipelineEnabled,
@@ -85,9 +85,9 @@ namespace SparkleLauncher
 #endif
 			entries.push_back({
 			    "ktx-support",
-			    "KTX Container Source Tier",
+			    "KTX texture support",
 			    "Optional KTX2 container support layered on top of the texture pipeline.",
-			    "Extends texture workflows when the repo is configured for KTX support.",
+			    "Extends texture workflows when KTX support is enabled for this workspace.",
 			    "SPARKLE_ENABLE_KTX_SUPPORT",
 			    false,
 			    ktxSupportEnabled,
@@ -101,9 +101,9 @@ namespace SparkleLauncher
 #endif
 			entries.push_back({
 			    "shader-compiler",
-			    "Shader Compiler Source Tier",
+			    "Shader compiler support",
 			    "Optional offline shader compiler dependencies.",
-			    "Unlocks Build Cooking Tools, Cook Shaders, and the shader phase of Cook All.",
+			    "Enables Build Cooking Tools, Cook Shaders, and the shader phase of Cook All.",
 			    "SPARKLE_ENABLE_SHADER_COMPILER",
 			    false,
 			    shaderCompilerEnabled,
@@ -117,9 +117,9 @@ namespace SparkleLauncher
 #endif
 			entries.push_back({
 			    "nvidia-streamline",
-			    "NVIDIA Runtime And SDK Tier",
+			    "NVIDIA DLSS and NVAPI",
 			    "Optional NVIDIA SDK dependencies used by DLSS and D3D12 NVAPI integration.",
-			    "Unlocks DLSS Super Resolution runtime integration, stages signed Streamline/DLSS DLLs, and keeps NVAPI/PTLAS source integration available for local rebuilds.",
+			    "Stages Streamline and DLSS runtime files, keeps NVAPI/PTLAS source integration available for local rebuilds, and expects the Vulkan SDK on the host for renderer builds.",
 			    "SPARKLE_ENABLE_NVIDIA_STREAMLINE",
 			    false,
 			    nvidiaStreamlineEnabled,

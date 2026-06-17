@@ -7,6 +7,7 @@
 #include "SparkleLauncher/ToolResolver.h"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <optional>
 #include <sstream>
@@ -96,6 +97,61 @@ namespace SparkleLauncher
 			return std::nullopt;
 		}
 		return std::filesystem::path(value);
+	}
+
+	static std::optional<std::filesystem::path> FindLatestVersionedDirectory(const std::filesystem::path& root)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(root, errorCode))
+		{
+			return std::nullopt;
+		}
+
+		std::optional<std::filesystem::path> latestDirectory;
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(root, errorCode))
+		{
+			if (!entry.is_directory(errorCode))
+			{
+				errorCode.clear();
+				continue;
+			}
+
+			if (!latestDirectory.has_value() || BuildPathSortKey(latestDirectory->filename()) < BuildPathSortKey(entry.path().filename()))
+			{
+				latestDirectory = entry.path();
+			}
+			errorCode.clear();
+		}
+
+		return latestDirectory;
+	}
+
+	static std::optional<std::filesystem::path> DetectInstalledVulkanSdkRoot()
+	{
+		if (const std::optional<std::filesystem::path> envRoot = TryGetEnvironmentPath("VULKAN_SDK"))
+		{
+			return envRoot->lexically_normal();
+		}
+		if (const std::optional<std::filesystem::path> envRoot = TryGetEnvironmentPath("VK_SDK_PATH"))
+		{
+			return envRoot->lexically_normal();
+		}
+
+		const std::array<std::filesystem::path, 3> candidateRoots = {
+		    std::filesystem::path("C:\\VulkanSDK"),
+		    std::filesystem::path("C:\\Program Files\\VulkanSDK"),
+		    std::filesystem::path("C:\\Program Files (x86)\\VulkanSDK"),
+		};
+
+		for (const std::filesystem::path& candidateRoot : candidateRoots)
+		{
+			if (const std::optional<std::filesystem::path> versionRoot = FindLatestVersionedDirectory(candidateRoot))
+			{
+				return versionRoot->lexically_normal();
+			}
+		}
+
+		return std::nullopt;
 	}
 
 	static std::optional<std::filesystem::path> NormalizeQtKitRootCandidate(std::filesystem::path path)
@@ -325,13 +381,20 @@ namespace SparkleLauncher
 		std::string Detail;
 	};
 
+	struct VulkanSdkStatus
+	{
+		bool Available = false;
+		std::filesystem::path Root;
+		std::string Detail;
+	};
+
 	static ShaderCompilerSdkStatus DetectShaderCompilerSdk()
 	{
 		ShaderCompilerSdkStatus status;
-		const std::optional<std::filesystem::path> sdkRoot = TryGetEnvironmentPath("VULKAN_SDK");
+		const std::optional<std::filesystem::path> sdkRoot = DetectInstalledVulkanSdkRoot();
 		if (!sdkRoot.has_value())
 		{
-			status.Detail = "VULKAN_SDK is not set. Install the Vulkan SDK so the enabled ShaderCompiler workspace tier can find DXC and Slang.";
+			status.Detail = "Vulkan SDK was not detected. Install it or define VULKAN_SDK so the enabled ShaderCompiler workspace tier can find DXC and Slang.";
 			return status;
 		}
 
@@ -384,8 +447,57 @@ namespace SparkleLauncher
 		}
 
 		std::ostringstream detail;
-		detail << "VULKAN_SDK is set to " << status.Root.string()
+		detail << "Detected Vulkan SDK root " << status.Root.string()
 		       << ", but the enabled ShaderCompiler workspace tier is missing: "
+		       << Strings::Join(missingEntryViews, ", ")
+		       << ".";
+		status.Detail = detail.str();
+		return status;
+	}
+
+	static VulkanSdkStatus DetectVulkanSdk()
+	{
+		VulkanSdkStatus status;
+		const std::optional<std::filesystem::path> sdkRoot = DetectInstalledVulkanSdkRoot();
+		if (!sdkRoot.has_value())
+		{
+			status.Detail = "Vulkan SDK was not detected. Install it or define VULKAN_SDK so Vulkan and NVIDIA Streamline builds can resolve Vulkan headers and import libraries.";
+			return status;
+		}
+
+		status.Root = sdkRoot->lexically_normal();
+		const std::filesystem::path vulkanHeader = status.Root / "Include" / "vulkan" / "vulkan.h";
+		const std::filesystem::path vulkanLibrary = status.Root / "Lib" / "vulkan-1.lib";
+
+		std::vector<std::string> missingEntries;
+		std::error_code errorCode;
+		if (!std::filesystem::exists(vulkanHeader, errorCode))
+		{
+			missingEntries.push_back("Include/vulkan/vulkan.h");
+		}
+		errorCode.clear();
+		if (!std::filesystem::exists(vulkanLibrary, errorCode))
+		{
+			missingEntries.push_back("Lib/vulkan-1.lib");
+		}
+
+		if (missingEntries.empty())
+		{
+			status.Available = true;
+			status.Detail = "Using VULKAN_SDK root: " + status.Root.string();
+			return status;
+		}
+
+		std::vector<std::string_view> missingEntryViews;
+		missingEntryViews.reserve(missingEntries.size());
+		for (const std::string& entry : missingEntries)
+		{
+			missingEntryViews.push_back(entry);
+		}
+
+		std::ostringstream detail;
+		detail << "Detected Vulkan SDK root " << status.Root.string()
+		       << ", but required Vulkan SDK files are missing: "
 		       << Strings::Join(missingEntryViews, ", ")
 		       << ".";
 		status.Detail = detail.str();
@@ -506,6 +618,7 @@ namespace SparkleLauncher
 	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot, WorkspaceIde preferredIde)
 	{
 		BuildToolchainStatus status;
+		const WorkspaceFeatureSettings featureSettings = GetLauncherWorkspaceFeatureSettings();
 		status.Generator = ResolveGenerator(repositoryRoot);
 		status.Platform = ResolvePlatform();
 		status.Toolset = ResolveToolset();
@@ -570,6 +683,23 @@ namespace SparkleLauncher
 #else
 		status.ConfigurePrerequisitesAvailable = true;
 #endif
+
+		const bool vulkanSdkRequired = featureSettings.NvidiaStreamlineEnabled;
+		const VulkanSdkStatus vulkanSdk = DetectVulkanSdk();
+		status.VulkanSdkRoot = vulkanSdk.Root;
+		status.Items.push_back(MakeToolStatus(
+		    "vulkan-sdk",
+		    "Vulkan SDK",
+		    false,
+		    vulkanSdk.Available,
+		    vulkanSdk.Root,
+		    vulkanSdkRequired ?
+		        (vulkanSdk.Available ? "Required for enabled NVIDIA Streamline and Vulkan-backed renderer integrations. " + vulkanSdk.Detail : vulkanSdk.Detail) :
+		        (vulkanSdk.Available ? "Optional Vulkan SDK root: " + vulkanSdk.Root.string() : "Optional unless Vulkan-backed integrations are enabled.")));
+		if (vulkanSdkRequired)
+		{
+			status.ConfigurePrerequisitesAvailable = status.ConfigurePrerequisitesAvailable && vulkanSdk.Available;
+		}
 
 		status.RequiredToolsAvailable = AreRequiredToolsAvailable(status.Items);
 		return status;

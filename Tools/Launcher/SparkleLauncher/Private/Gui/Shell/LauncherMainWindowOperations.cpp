@@ -91,6 +91,18 @@ namespace SparkleLauncher
 			return;
 		}
 
+		if (m_selectedOperationId == "workspace.clean")
+		{
+			LauncherOperationRequest request = BuildScopedCleanOperationRequest(m_repositoryRoot, m_projectModel, m_settings, "pristine");
+			if (!ConfirmRunRequest(request))
+			{
+				return;
+			}
+
+			StartOperation(std::move(request), "Clean All");
+			return;
+		}
+
 		if (!SupportsActionSpecificClean(m_selectedOperationId))
 		{
 			return;
@@ -153,7 +165,7 @@ namespace SparkleLauncher
 			    }});
 		}
 		entries.push_back(LauncherActionMenuEntry{
-		    "Open source tier guide",
+		    "Open dependency guide",
 		    [this]() {
 			    OpenLocalPath(m_repositoryRoot / "docs" / "dependency-capability-tiers.md");
 		    }});
@@ -261,7 +273,7 @@ namespace SparkleLauncher
 		const QMessageBox::StandardButton regenerateResult = QMessageBox::question(
 		    this,
 		    "Refresh Dependency Cache",
-		    QStringLiteral("This will clean only the cached %1 source folder first, then run the source-tier sync workflow to refill any missing enabled tier content. Continue?").arg(dependency.Label),
+		    QStringLiteral("This will clean only the cached %1 source folder first, then run Prepare Workspace to refill any missing enabled package content. Continue?").arg(dependency.Label),
 		    QMessageBox::Ok | QMessageBox::Cancel,
 		    QMessageBox::Ok);
 		if (regenerateResult != QMessageBox::Ok)
@@ -348,25 +360,25 @@ namespace SparkleLauncher
 		    (statusText.contains("dxcapi.h", Qt::CaseInsensitive) || statusText.contains("slang", Qt::CaseInsensitive) ||
 		     statusText.contains("VULKAN_SDK", Qt::CaseInsensitive) || statusText.contains("ShaderCompiler", Qt::CaseInsensitive)))
 		{
-			return "Install the Vulkan SDK so the enabled shader compiler tier can find DXC and Slang, then run Sync > Verify Host Environment and retry.";
+			return "Install or expose the Vulkan SDK so Vulkan-backed editor/runtime builds and the enabled shader compiler tier can resolve DXC, Slang, and Vulkan headers, then run Sync > Verify Host Environment and retry.";
 		}
 		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
 		    (statusText.contains("NVIDIA Streamline SDK", Qt::CaseInsensitive) || statusText.contains("sl.interposer.lib", Qt::CaseInsensitive) ||
 		     statusText.contains("sl.dlss.dll", Qt::CaseInsensitive) || statusText.contains("nvngx_dlss.dll", Qt::CaseInsensitive)))
 		{
-			return "Sync fetches the NVIDIA Streamline SDK automatically. If this still fails after retry, verify network access to GitHub releases, then clean the source dependency cache and run Sync Source Tiers again.";
+			return "Sync fetches the NVIDIA Streamline SDK automatically. If this still fails after retry, verify network access to GitHub releases, then clean the source dependency cache and run Prepare Workspace again.";
 		}
 		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
 		    (statusText.contains("NVAPI", Qt::CaseInsensitive) || statusText.contains("nvapi.h", Qt::CaseInsensitive) ||
 		     statusText.contains("nvapi64.lib", Qt::CaseInsensitive)))
 		{
-			return "Sync fetches NVAPI automatically. If this still fails after retry, clean the source dependency cache and rerun Sync Source Tiers so the launcher can re-download a clean NVIDIA SDK checkout.";
+			return "Sync fetches NVAPI automatically. If this still fails after retry, clean the source dependency cache and rerun Prepare Workspace so the launcher can re-download a clean NVIDIA SDK checkout.";
 		}
 		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
 		    (statusText.contains("FetchContent", Qt::CaseInsensitive) || statusText.contains("not a git repository", Qt::CaseInsensitive) ||
 		     statusText.contains("source directory is missing", Qt::CaseInsensitive) || statusText.contains("nvapi.h", Qt::CaseInsensitive)))
 		{
-			return "Run Clean Source Dependency Cache, then retry Sync Source Tiers. The launcher will repopulate stale dependency checkouts automatically.";
+			return "Run Clean Source Dependency Cache, then retry Prepare Workspace. The launcher will repopulate stale dependency checkouts automatically.";
 		}
 		if (operationId.startsWith("project.build") || statusText.contains("cmake", Qt::CaseInsensitive) || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("tool", Qt::CaseInsensitive))
 		{

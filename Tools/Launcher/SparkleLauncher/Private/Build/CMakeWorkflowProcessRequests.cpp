@@ -39,6 +39,13 @@ namespace SparkleLauncher
 			process.Arguments.push_back("-DGIT_EXECUTABLE=" + toolchain.GitPath.generic_string());
 			process.Arguments.push_back("-DSPARKLE_GIT_EXE=" + toolchain.GitPath.generic_string());
 		}
+		if (!toolchain.VulkanSdkRoot.empty())
+		{
+			process.Arguments.push_back("-DVulkan_INCLUDE_DIR=" + (toolchain.VulkanSdkRoot / "Include").generic_string());
+			process.Arguments.push_back("-DVulkan_LIBRARY=" + (toolchain.VulkanSdkRoot / "Lib" / "vulkan-1.lib").generic_string());
+			process.Environment.push_back({"VULKAN_SDK", toolchain.VulkanSdkRoot.generic_string()});
+			process.Environment.push_back({"VK_SDK_PATH", toolchain.VulkanSdkRoot.generic_string()});
+		}
 		const WorkspaceFeatureSettings featureSettings = GetLauncherWorkspaceFeatureSettings();
 		process.Arguments.push_back("-DSPARKLE_ENABLE_CONTENT_PIPELINE=" + ToCMakeBool(featureSettings.ContentPipelineEnabled));
 		process.Arguments.push_back("-DSPARKLE_ENABLE_SHADER_COMPILER=" + ToCMakeBool(featureSettings.ShaderCompilerEnabled));

@@ -44,11 +44,22 @@ namespace SparkleLauncher
 		AddReadiness(plan, "Enabled workspace configure prerequisites are incomplete.");
 		for (const ToolchainItemStatus& item : plan.Toolchain.Items)
 		{
-			if (item.Id == "shader-compiler-sdk" && item.State != ToolchainItemState::Found && !item.Detail.empty())
+			if ((item.Id == "shader-compiler-sdk" || item.Id == "vulkan-sdk") && item.State != ToolchainItemState::Found && !item.Detail.empty())
 			{
 				AddReadiness(plan, item.Detail);
 			}
 		}
+		return false;
+	}
+
+	static bool RequireSyncedSourceDependencies(BuildWorkspaceOperationPlan& plan)
+	{
+		if (!HasIncompleteEnabledSourceDependencies(plan))
+		{
+			return true;
+		}
+
+		AddReadiness(plan, "Enabled repository dependencies are incomplete. Run Prepare Workspace before local build workflows.");
 		return false;
 	}
 
@@ -105,9 +116,9 @@ namespace SparkleLauncher
 
 	static void PopulatePlanSteps(BuildWorkspaceOperationPlan& plan, const BuildWorkspaceOperationRequest& request)
 	{
-		if (!plan.Toolchain.RequiredToolsAvailable)
+		if (!plan.Toolchain.RequiredToolsAvailable && plan.Kind != BuildWorkspaceOperationKind::CheckToolchain)
 		{
-			AddReadiness(plan, "Required Visual Studio Windows build tools are missing or unsupported. ClangCL remains supported when selected as the CMake toolset.");
+			AddReadiness(plan, "Required host prerequisites are missing or unsupported. Review Verify Host Environment and Prepare Workspace before local build workflows.");
 			return;
 		}
 
@@ -171,6 +182,14 @@ namespace SparkleLauncher
 			plan.CanRun = true;
 			return;
 		case BuildWorkspaceOperationKind::BuildAll:
+			if (!RequireSyncedSourceDependencies(plan))
+			{
+				return;
+			}
+			if (!RequireConfigurePrerequisites(plan))
+			{
+				return;
+			}
 			if (!RequireCurrentWorkspace(plan))
 			{
 				return;
@@ -209,6 +228,10 @@ namespace SparkleLauncher
 			plan.CanRun = true;
 			return;
 		case BuildWorkspaceOperationKind::CompileLauncher:
+			if (!RequireSyncedSourceDependencies(plan))
+			{
+				return;
+			}
 			if (!RequireCurrentWorkspace(plan))
 			{
 				return;
@@ -219,6 +242,14 @@ namespace SparkleLauncher
 			return;
 		case BuildWorkspaceOperationKind::CompileEditor:
 		{
+			if (!RequireSyncedSourceDependencies(plan))
+			{
+				return;
+			}
+			if (!RequireConfigurePrerequisites(plan))
+			{
+				return;
+			}
 			if (!RequireCurrentWorkspace(plan))
 			{
 				return;
@@ -235,6 +266,14 @@ namespace SparkleLauncher
 		}
 		case BuildWorkspaceOperationKind::CompileRuntime:
 		{
+			if (!RequireSyncedSourceDependencies(plan))
+			{
+				return;
+			}
+			if (!RequireConfigurePrerequisites(plan))
+			{
+				return;
+			}
 			if (!RequireCurrentWorkspace(plan))
 			{
 				return;
@@ -250,6 +289,14 @@ namespace SparkleLauncher
 			return;
 		}
 		case BuildWorkspaceOperationKind::BuildCookTools:
+			if (!RequireSyncedSourceDependencies(plan))
+			{
+				return;
+			}
+			if (!RequireConfigurePrerequisites(plan))
+			{
+				return;
+			}
 			if (!RequireCurrentWorkspace(plan))
 			{
 				return;
@@ -280,10 +327,10 @@ namespace SparkleLauncher
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions()
 	{
 		static const std::vector<BuildWorkspaceOperationDefinition> definitions = {
-		    {BuildWorkspaceOperationKind::SyncSourceTiers, "workspace.sync-source-tiers", "Sync", std::string(ArtifactNaming::kActionSyncSourceDependencies), "Populate enabled source tiers and configure workspace state without installing host tools."},
+		    {BuildWorkspaceOperationKind::SyncSourceTiers, "workspace.sync-source-tiers", "Sync", std::string(ArtifactNaming::kActionSyncSourceDependencies), "Download enabled repository dependencies and refresh workspace configure state without installing host tools."},
 		    {BuildWorkspaceOperationKind::GenerateBuildFiles, "workspace.generate-build-files", "Build", std::string(ArtifactNaming::kActionGenerateProjectFiles), "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
 		    {BuildWorkspaceOperationKind::OpenIde, "workspace.open-ide", "Launch", "Open IDE", "Open the selected IDE after generated build files are current."},
-		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Sync", std::string(ArtifactNaming::kActionVerifyHostEnvironment), "Audit installed host prerequisites without syncing source tiers or changing build files."},
+		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Sync", std::string(ArtifactNaming::kActionVerifyHostEnvironment), "Audit installed host prerequisites without downloading repository dependencies or changing build files."},
 		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Optional local rebuild of launcher, project editor/runtime targets, and enabled cook tools."},
 		    {BuildWorkspaceOperationKind::CompileLauncher, "launcher.build.self", "Build", "Build Launcher", "Optional local rebuild of Sparkle Launcher for development or customization."},
 		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Build Editor", "Optional local rebuild of the selected project's editor target."},

@@ -44,6 +44,7 @@ namespace SparkleLauncher
 		std::filesystem::path QtRootPath;
 		std::filesystem::path QtQmakePath;
 		std::filesystem::path ShaderCompilerSdkRoot;
+		std::filesystem::path VulkanSdkRoot;
 		std::string WindowsSdkVersion;
 		std::vector<ToolchainItemStatus> Items;
 		bool RequiredToolsAvailable = false;

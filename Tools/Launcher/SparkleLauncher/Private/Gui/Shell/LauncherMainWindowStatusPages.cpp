@@ -79,6 +79,16 @@ namespace SparkleLauncher
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		const SourceDependencyInventoryStatus dependencyStatus = plan.SourceDependencies;
 		const bool dependencyCacheReady = dependencyStatus.AllEnabledDependenciesReady;
+		const auto findToolItem = [&plan](std::string_view itemId) -> const ToolchainItemStatus* {
+			for (const ToolchainItemStatus& item : plan.Toolchain.Items)
+			{
+				if (item.Id == itemId)
+				{
+					return &item;
+				}
+			}
+			return nullptr;
+		};
 		const auto addRelevantDependencyGroups = [this, &dependencyCachePath, &operationId](QVBoxLayout& targetLayout) {
 			for (const DependencyGroupUiEntry& group : GetDependencyGroups())
 			{
@@ -94,7 +104,7 @@ namespace SparkleLauncher
 				    DependencyGroupStatusText(group, readyCount),
 				    FormatDependencyGroupDetail(group, dependencyCachePath, readyCount),
 				    DependencyGroupStatusState(group, readyCount),
-				    group.Enabled ? CreateActionDependencyActions("workspace.sync-source-tiers", "Sync Source Tiers", "deps", "Clean Source Dependency Cache") :
+				    group.Enabled ? CreateActionDependencyActions("workspace.sync-source-tiers", "Prepare Workspace", "deps", "Clean Source Dependency Cache") :
 				                    CreateDisabledSourceTierActions(group));
 			}
 		};
@@ -147,11 +157,10 @@ namespace SparkleLauncher
 		};
 		if (isToolchainCheck)
 		{
-			QVBoxLayout* hostDetailsLayout = AddDetailsGroup(
+			QVBoxLayout* hostDetailsLayout = AddOptionGroup(
 			    layout,
-			    "Host Tool Details",
-			    "Full installed-tool inventory and raw tool paths for diagnostics.",
-			    !plan.Toolchain.RequiredToolsAvailable);
+			    "Machine support",
+			    "Installed tools and detected paths used for local builds, IDE integration, and optional renderer features.");
 			for (const ToolchainItemStatus& item : plan.Toolchain.Items)
 			{
 				QString detail = QString::fromStdString(item.Detail);
@@ -174,11 +183,10 @@ namespace SparkleLauncher
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : QString::fromStdString(plan.Toolchain.RiderPath.string())) :
 			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : QString::fromStdString(plan.Freshness.SolutionPath.string())),
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
-			QVBoxLayout* toolchainLayout = AddDetailsGroup(
+			QVBoxLayout* toolchainLayout = AddOptionGroup(
 			    layout,
-			    plan.Toolchain.RequiredToolsAvailable ? "Action Dependencies - Ready" : "Action Dependencies - Needs action",
-			    "Authoritative machine audit for local rebuilds, workspace generation, cook tooling, and IDE integration.",
-			    false);
+			    "Readiness summary",
+			    "Use this audit to confirm the machine can generate workspace files, open the IDE, and rebuild locally.");
 			AddStatusRow(*toolchainLayout, "Dependency set", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", BuildGeneratorSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
 			AddStatusRow(
 			    *toolchainLayout,
@@ -193,20 +201,20 @@ namespace SparkleLauncher
 		if (isSyncWorkflow)
 		{
 			const bool syncWillRunConfigure = BuildWorkspaceOperationRequiresConfigureStep(plan);
-			const QString buildFilesLabel = operationId == "workspace.generate-build-files" ? "Generated build files" :
-			                               operationId == "workspace.open-ide" ? "IDE build files" :
-			                                                                        "Configured build files";
+			const QString buildFilesLabel = operationId == "workspace.generate-build-files" ? "Build files" :
+			                               operationId == "workspace.open-ide" ? "IDE files" :
+			                                                                        "Build files";
 			const bool isGenerateBuildFilesWorkflow = operationId == "workspace.generate-build-files";
 			const bool isSourceSyncWorkflow = operationId == "workspace.sync-source-tiers";
 			const bool isOpenIdeWorkflow = operationId == "workspace.open-ide";
-			const QString setupGroupTitle = isGenerateBuildFilesWorkflow ? "Build File Generation" :
-			                                isOpenIdeWorkflow ? "IDE Launch Readiness" :
-			                                                    "Source Tier Sync";
+			const QString setupGroupTitle = isGenerateBuildFilesWorkflow ? "Build files" :
+			                                isOpenIdeWorkflow ? "IDE readiness" :
+			                                                    "Setup checklist";
 			const QString setupGroupDetail = isGenerateBuildFilesWorkflow ?
-			                                     "Refresh generated CMake and IDE build-system files to match the selected generator, platform, toolset, and Qt kit." :
+			                                     "Refresh generated CMake and IDE files to match the selected generator, platform, toolset, and Qt kit." :
 			                                 isOpenIdeWorkflow ?
-			                                     "Open the selected IDE only after generated build files match the current toolchain selection." :
-			                                     "Sync enabled source-tier capability groups and configure state. This does not install Visual Studio, Qt, CMake, Git, the Windows SDK, or other host prerequisites.";
+			                                     "Open the selected IDE only after the workspace files match the current toolchain selection." :
+			                                     "Check the machine, download repository packages, and refresh workspace files. Host tools are still installed separately.";
 			const QString sourceDependencyRepairDetail = syncWillRunConfigure && plan.Freshness.Current && !dependencyStatus.AllEnabledDependenciesReady ?
 			                                                 QString("Configure will rerun to repair missing or incomplete enabled source dependencies.") :
 			                                                 QString();
@@ -219,28 +227,17 @@ namespace SparkleLauncher
 			                           dependencyStatus.ReadyDependencyCount > 0 ? "Repair needed" :
 			                                                                  "Will be created";
 			const QString cacheDetail = dependencyStatus.AllEnabledDependenciesReady ?
-			                               QString("Enabled source dependency cache is available.") :
+			                               QString("Repository dependency cache is available.") :
 			                           dependencyStatus.ReadyDependencyCount > 0 ?
-			                               QString("Sync Source Tiers will repair missing or incomplete enabled source dependencies.") :
-			                               QString("Source dependency cache will be populated when Sync Source Tiers runs.");
+			                               QString("Prepare Workspace will repair missing or incomplete repository packages.") :
+			                               QString("Repository dependency cache will be created when Prepare Workspace runs.");
 			const QString configurePrerequisiteDetail = !plan.CanRun && !plan.ReadinessMessages.empty() ?
 			                                               QString::fromStdString(plan.ReadinessMessages.back()) :
 			                                               QString();
-			const bool setupNeedsAttention =
-			    !plan.Toolchain.RequiredToolsAvailable || !plan.CanRun || (isSourceSyncWorkflow && !dependencyCacheReady) || !plan.Freshness.Current || syncWillRunConfigure;
-			if (operationId == "workspace.sync-source-tiers")
-			{
-				AddSourceTierCards(
-				    layout,
-				    "Source Tier Workloads",
-				    "Capability cards show what each tier unlocks. Individual dependency rows stay in details so Sync Source Tiers does not become a dependency log by default.",
-				    true);
-			}
-			QVBoxLayout* workspaceLayout = AddDetailsGroup(
+			QVBoxLayout* workspaceLayout = AddOptionGroup(
 			    layout,
-			    setupNeedsAttention ? setupGroupTitle + " - Needs action" : setupGroupTitle + " - Ready",
-			    setupGroupDetail,
-			    setupNeedsAttention);
+			    setupGroupTitle,
+			    setupGroupDetail);
 			AddStatusRow(
 			    *workspaceLayout,
 			    buildFilesLabel,
@@ -255,17 +252,33 @@ namespace SparkleLauncher
 			{
 				AddStatusRow(
 				    *workspaceLayout,
-				    "Local source dependency cache",
+				    "Repository packages",
 				    cacheStatus,
 				    CombineStatusDetail(cacheDetail, FormatTrackedDependencySummary(dependencyCachePath)),
 				    dependencyCacheReady ? "ok" : "warning",
-				    CreateActionDependencyActions("workspace.sync-source-tiers", "Sync Source Tiers", "deps", "Clean Source Dependency Cache"));
+				    CreateActionDependencyActions("workspace.sync-source-tiers", "Prepare Workspace", "deps", "Clean Source Dependency Cache"));
+				if (const ToolchainItemStatus* vulkanSdk = findToolItem("vulkan-sdk"))
+				{
+					QString detail = QString::fromStdString(vulkanSdk->Detail);
+					const QString path = FormatStatusPath(vulkanSdk->Path);
+					if (!path.isEmpty())
+					{
+						detail = CombineStatusDetail(detail, path);
+					}
+					AddStatusRow(
+					    *workspaceLayout,
+					    "Vulkan SDK",
+					    ToolchainStatusText(vulkanSdk->State, true),
+					    detail,
+					    ToolchainStatusState(vulkanSdk->State, true),
+					    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
+				}
 			}
 			if (!plan.Toolchain.RequiredToolsAvailable)
 			{
 				AddStatusRow(
 				    *workspaceLayout,
-				    "Required tools",
+				    "Machine support",
 				    "Blocked",
 				    RequiredToolProblemSummary(plan.Toolchain),
 				    "bad",
@@ -275,11 +288,15 @@ namespace SparkleLauncher
 			{
 				AddStatusRow(
 				    *workspaceLayout,
-				    "Workspace configure prerequisites",
+				    "Renderer prerequisites",
 				    "Blocked",
 				    configurePrerequisiteDetail,
 				    "bad",
 				    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
+			}
+			if (operationId == "workspace.sync-source-tiers")
+			{
+				AddSyncDependencyBundles(layout, true);
 			}
 			return;
 		}

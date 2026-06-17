@@ -2,8 +2,49 @@
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
 
+#include <sstream>
+
 namespace SparkleLauncher
 {
+	static std::filesystem::path ResolveLauncherUserDataRoot()
+	{
+		std::string configuredPath;
+		if (Environment::TryGetVariable("SPARKLE_LAUNCHER_STATE_DIR", configuredPath) ||
+		    Environment::TryGetVariable("SPARKLE_LAUNCHER_STATE_DIRECTORY", configuredPath))
+		{
+			return std::filesystem::path(configuredPath);
+		}
+
+#if defined(_WIN32)
+		std::string localAppData;
+		if (Environment::TryGetVariable("LOCALAPPDATA", localAppData) && !localAppData.empty())
+		{
+			return std::filesystem::path(localAppData) / "SparkleEngine" / "LauncherState";
+		}
+#endif
+
+		std::string homeDirectory;
+		if (Environment::TryGetVariable("HOME", homeDirectory) && !homeDirectory.empty())
+		{
+			return std::filesystem::path(homeDirectory) / ".sparkle" / "launcher-state";
+		}
+
+		return std::filesystem::temp_directory_path() / "SparkleEngine" / "LauncherState";
+	}
+
+	static std::string MakeRepositoryStateKey(const std::filesystem::path& repositoryRoot)
+	{
+		std::error_code errorCode;
+		const std::filesystem::path normalizedRoot = std::filesystem::weakly_canonical(repositoryRoot, errorCode);
+		const std::string normalizedText = (errorCode ? repositoryRoot : normalizedRoot).generic_string();
+		const std::size_t hashValue = std::hash<std::string>{}(normalizedText);
+
+		std::ostringstream key;
+		key << repositoryRoot.filename().string() << '-';
+		key << std::hex << hashValue;
+		return key.str();
+	}
+
 	static std::filesystem::path ResolveConfiguredBuildDirectory(const std::filesystem::path& repositoryRoot)
 	{
 		std::string configuredPath;
@@ -30,7 +71,7 @@ namespace SparkleLauncher
 
 	std::filesystem::path GetLauncherStateDirectory(const std::filesystem::path& repositoryRoot)
 	{
-		return GetDeveloperArtifactDirectory(repositoryRoot) / "launcher-state";
+		return ResolveLauncherUserDataRoot() / MakeRepositoryStateKey(repositoryRoot);
 	}
 
 	std::filesystem::path GetLauncherOperationLogPath(

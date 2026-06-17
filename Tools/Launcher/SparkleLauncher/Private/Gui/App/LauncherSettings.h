@@ -110,7 +110,7 @@ namespace SparkleLauncher
 
 	private:
 		QString m_buildConfiguration = "development";
-		QString m_workspaceIde = "visual-studio";
+		QString m_workspaceIde = "rider";
 		QString m_selectedTargets;
 		QString m_shaderPackages;
 		QString m_shaderBackend = "auto";

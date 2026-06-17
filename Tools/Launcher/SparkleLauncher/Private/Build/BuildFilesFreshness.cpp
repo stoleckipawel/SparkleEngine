@@ -61,6 +61,7 @@ namespace SparkleLauncher
 		const std::string cacheToolset = ReadCMakeCacheValue(status.CachePath, "CMAKE_GENERATOR_TOOLSET").value_or(std::string());
 		const std::string cacheQtPrefixPath = ReadCMakeCacheValue(status.CachePath, "CMAKE_PREFIX_PATH").value_or(std::string());
 		const std::string selectedQtPrefixPath = toolchain.QtRootPath.generic_string();
+		const std::string selectedVulkanSdkRoot = toolchain.VulkanSdkRoot.generic_string();
 		if (cacheGenerator != toolchain.Generator || cachePlatform != toolchain.Platform || cacheToolset != toolchain.Toolset || cacheQtPrefixPath != selectedQtPrefixPath)
 		{
 			status.State = BuildFilesFreshnessState::GeneratorMismatch;
@@ -97,10 +98,11 @@ namespace SparkleLauncher
 		if (ReadBuildFilesFreshnessStampValue(status.StampPath, "generator").value_or(std::string()) != toolchain.Generator ||
 		    ReadBuildFilesFreshnessStampValue(status.StampPath, "platform").value_or(std::string()) != toolchain.Platform ||
 		    ReadBuildFilesFreshnessStampValue(status.StampPath, "toolset").value_or(std::string()) != toolchain.Toolset ||
-		    ReadBuildFilesFreshnessStampValue(status.StampPath, "qtRoot").value_or(std::string()) != selectedQtPrefixPath)
+		    ReadBuildFilesFreshnessStampValue(status.StampPath, "qtRoot").value_or(std::string()) != selectedQtPrefixPath ||
+		    ReadBuildFilesFreshnessStampValue(status.StampPath, "vulkanSdkRoot").value_or(std::string()) != selectedVulkanSdkRoot)
 		{
 			status.State = BuildFilesFreshnessState::FreshnessStampMismatch;
-			status.Summary = "Freshness stamp generator/platform/toolset/Qt prefix differs from selected launcher toolchain.";
+			status.Summary = "Freshness stamp generator/platform/toolset/Qt prefix/Vulkan SDK differs from selected launcher toolchain.";
 			return status;
 		}
 		if (ReadBuildFilesFreshnessStampValue(status.StampPath, "contentPipeline").value_or(std::string()) != selectedContentPipeline ||
@@ -180,6 +182,7 @@ namespace SparkleLauncher
 		       << "    \"platform\": \"" << Strings::EscapeJsonString(toolchain.Platform) << "\",\n"
 		       << "    \"toolset\": \"" << Strings::EscapeJsonString(toolchain.Toolset) << "\",\n"
 		       << "    \"qtRoot\": \"" << Strings::EscapeJsonString(toolchain.QtRootPath.generic_string()) << "\",\n"
+		       << "    \"vulkanSdkRoot\": \"" << Strings::EscapeJsonString(toolchain.VulkanSdkRoot.generic_string()) << "\",\n"
 		       << "    \"contentPipeline\": \"" << ToCMakeBool(featureSettings.ContentPipelineEnabled) << "\",\n"
 		       << "    \"shaderCompiler\": \"" << ToCMakeBool(featureSettings.ShaderCompilerEnabled) << "\",\n"
 		       << "    \"ktxSupport\": \"" << ToCMakeBool(featureSettings.KtxSupportEnabled) << "\",\n"

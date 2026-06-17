@@ -1,5 +1,6 @@
 #include "EditorApplicationLaunch.h"
 #include "ShowcaseSceneController.h"
+#include "GameFramework/Public/Scene/GameScene.h"
 
 #include <memory>
 

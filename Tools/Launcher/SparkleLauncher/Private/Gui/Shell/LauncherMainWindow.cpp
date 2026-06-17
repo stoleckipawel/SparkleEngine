@@ -460,7 +460,7 @@ namespace SparkleLauncher
 		}
 
 		m_runButton->setVisible(true);
-		m_cleanButton->setVisible(SupportsActionSpecificClean(m_selectedOperationId));
+		m_cleanButton->setVisible(m_selectedOperationId == "workspace.clean" || SupportsActionSpecificClean(m_selectedOperationId));
 
 		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty())
 		{
@@ -483,9 +483,13 @@ namespace SparkleLauncher
 		            std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()),
 		            m_selectedOperationId)) :
 		        QVector<LauncherCleanTarget>();
-		const bool canClean = !cleanTargets.isEmpty();
+		const bool cleanWorkspaceSelected = m_selectedOperationId == "workspace.clean";
+		const bool canClean = cleanWorkspaceSelected || !cleanTargets.isEmpty();
 		m_cleanButton->setEnabled(canClean);
-		m_cleanButton->setToolTip(canClean ? "Clean only the generated outputs tied to " + DisplayNameForOperation(m_selectedOperationId) + "." : "Clean is not available for this workflow.");
+		m_cleanButton->setToolTip(
+		    cleanWorkspaceSelected ?
+		        "Clean all generated repository state." :
+		        (canClean ? "Clean only the generated outputs tied to " + DisplayNameForOperation(m_selectedOperationId) + "." : "Clean is not available for this workflow."));
 		m_cleanButton->setAccessibleDescription(m_cleanButton->toolTip());
 
 		if (FindBuildWorkspaceOperationDefinition(m_selectedOperationId.toStdString()).has_value())
@@ -553,7 +557,12 @@ namespace SparkleLauncher
 		}
 		if (m_runButton != nullptr)
 		{
-			m_runButton->setText(PrimaryActionLabelForOperationId(operationId));
+			m_runButton->setText(operationId == "workspace.clean" ? "Clean Selected" : PrimaryActionLabelForOperationId(operationId));
+		}
+		if (m_cleanButton != nullptr)
+		{
+			m_cleanButton->setText(operationId == "workspace.clean" ? "Clean All" : "Clean");
+			m_cleanButton->setAccessibleName(operationId == "workspace.clean" ? "Clean all generated repository state" : "Clean selected workflow outputs");
 		}
 		if (m_optionsStack != nullptr)
 		{
