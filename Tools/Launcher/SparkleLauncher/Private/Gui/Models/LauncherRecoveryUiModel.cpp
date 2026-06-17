@@ -14,7 +14,7 @@ namespace SparkleLauncher
 		if (statusText.contains("tool", Qt::CaseInsensitive) || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("Visual Studio", Qt::CaseInsensitive) ||
 		    statusText.contains("Qt", Qt::CaseInsensitive))
 		{
-			return {"toolchain.check", "Verify Host Environment", "Audit installed host prerequisites and selected toolchain.", true};
+			return {"workspace.sync-source-tiers", "Open Sync", "Inspect machine readiness and repository dependency status.", true};
 		}
 		if (operationId == "project.open.editor" || (operationId == "project.run" && statusText.contains("Editor", Qt::CaseInsensitive)))
 		{
@@ -42,7 +42,7 @@ namespace SparkleLauncher
 		}
 		if (operationId.startsWith("project.build") || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId == "cook.tools.prepare")
 		{
-			return {"toolchain.check", "Verify Host Environment", "Audit installed host prerequisites before retrying the build.", true};
+			return {"workspace.sync-source-tiers", "Open Sync", "Inspect machine readiness before retrying the build.", true};
 		}
 		return {};
 	}

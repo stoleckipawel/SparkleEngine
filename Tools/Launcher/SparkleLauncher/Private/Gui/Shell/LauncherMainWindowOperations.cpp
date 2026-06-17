@@ -360,7 +360,7 @@ namespace SparkleLauncher
 		    (statusText.contains("dxcapi.h", Qt::CaseInsensitive) || statusText.contains("slang", Qt::CaseInsensitive) ||
 		     statusText.contains("VULKAN_SDK", Qt::CaseInsensitive) || statusText.contains("ShaderCompiler", Qt::CaseInsensitive)))
 		{
-			return "Install or expose the Vulkan SDK so Vulkan-backed editor/runtime builds and the enabled shader compiler tier can resolve DXC, Slang, and Vulkan headers, then run Sync > Verify Host Environment and retry.";
+			return "Install or expose the Vulkan SDK so Vulkan-backed editor/runtime builds and the enabled shader compiler tier can resolve DXC, Slang, and Vulkan headers, then open Sync and retry.";
 		}
 		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
 		    (statusText.contains("NVIDIA Streamline SDK", Qt::CaseInsensitive) || statusText.contains("sl.interposer.lib", Qt::CaseInsensitive) ||
@@ -382,7 +382,7 @@ namespace SparkleLauncher
 		}
 		if (operationId.startsWith("project.build") || statusText.contains("cmake", Qt::CaseInsensitive) || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("tool", Qt::CaseInsensitive))
 		{
-			return "Run Sync > Verify Host Environment, then retry this workflow.";
+			return "Open Sync, review the missing machine prerequisites, then retry this workflow.";
 		}
 		if (statusText.contains("Rider", Qt::CaseInsensitive))
 		{

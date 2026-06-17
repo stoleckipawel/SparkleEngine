@@ -60,11 +60,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddHomeQuickStart(QVBoxLayout& layout)
 	{
-		const BuildWorkspaceOperationRequest workspaceRequest = BuildWorkspacePlanRequest(m_repositoryRoot, m_projectModel, m_settings);
-		const BuildWorkspaceOperationPlan packagePlan = PlanBuildWorkspaceOperation("package.release", workspaceRequest);
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
-		const std::filesystem::path releaseRoot = m_repositoryRoot / "dist" / "releases";
-		const bool sourceRoot = PathExists(m_repositoryRoot / "CMakeLists.txt");
 		const bool packageRoot = PathExists(m_repositoryRoot / "SparkleLauncher.exe") && DirectoryHasEntries(m_repositoryRoot / "manifests");
 
 		const auto planLaunch = [this](const QString& operationId) {
@@ -115,38 +111,7 @@ namespace SparkleLauncher
 		const LaunchOperationPlan runtimePlan = planLaunch("project.open.runtime");
 		const bool editorExecutableMissing = ReadinessContains(editorPlan.ReadinessMessages, "Executable is missing");
 		const bool runtimeExecutableMissing = ReadinessContains(runtimePlan.ReadinessMessages, "Executable is missing");
-		const bool cookedMeshesMissing = ReadinessContains(editorPlan.ReadinessMessages, "Cooked scene assets are missing") ||
-		    ReadinessContains(runtimePlan.ReadinessMessages, "Cooked scene assets are missing");
-		const bool cookedTexturesMissing = ReadinessContains(editorPlan.ReadinessMessages, "Cooked textures are missing") ||
-		    ReadinessContains(runtimePlan.ReadinessMessages, "Cooked textures are missing");
-		const bool cookedShadersMissing = ReadinessContains(editorPlan.ReadinessMessages, "Cooked shaders are missing") ||
-		    ReadinessContains(runtimePlan.ReadinessMessages, "Cooked shaders are missing");
-		const int missingCookDomains = static_cast<int>(cookedMeshesMissing) + static_cast<int>(cookedTexturesMissing) + static_cast<int>(cookedShadersMissing);
-
 		const SourceDependencyInventoryStatus dependencyStatus = InspectSourceDependencyCache(dependencyCachePath);
-		const int enabledDependencyCount = dependencyStatus.EnabledDependencyCount;
-		const int readyDependencyCount = dependencyStatus.ReadyDependencyCount;
-
-		const bool architectureDoc = PathExists(m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md");
-		const bool uxDoc = PathExists(m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md");
-		const bool dependencyDoc = PathExists(m_repositoryRoot / "docs" / "dependency-capability-tiers.md");
-		const bool dependencyCacheHealthy = readyDependencyCount == enabledDependencyCount;
-		const bool dependencyCacheNeedsRepair = readyDependencyCount > 0 && !dependencyCacheHealthy;
-		const std::filesystem::path validationReportPath = m_repositoryRoot / "docs" / "plans" / "build-artifacts-phase6-final-validation-report.md";
-		const bool validationReport = PathExists(validationReportPath);
-		const int storedFailureCount = m_actionHistory.FailureCount();
-		const auto createOpenButton = [this](const QString& label, const std::filesystem::path& path) {
-			QPushButton* button = new QPushButton(label, this);
-			button->setObjectName("CommandSecondaryButton");
-			button->setMinimumHeight(LauncherUi::Button::SecondaryMinHeight);
-			button->setToolTip("Open the referenced file or folder.");
-			button->setAccessibleName(label);
-			RegisterFocusable(button);
-			connect(button, &QPushButton::clicked, this, [this, path]() {
-				OpenLocalPath(path);
-			});
-			return button;
-		};
 		QWidget* quickStartBody = new QWidget(this);
 		quickStartBody->setObjectName("QuickStartBody");
 		quickStartBody->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -223,81 +188,6 @@ namespace SparkleLauncher
 			delete libraryGrid;
 		}
 
-		addHomeSection("Discover");
-		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(
-		    LauncherUi::Home::DiscoverCardMinWidth,
-		    LauncherUi::Home::DiscoverCardMaxWidth,
-		    LauncherUi::Home::DiscoverCardMaxColumns,
-		    LauncherUi::Home::TileSpacing,
-		    LauncherUi::Home::TileSpacing,
-		    quickStartBody);
-
-		const bool packagePresent = DirectoryHasEntries(releaseRoot);
-		discoverGrid->AddCard(CreateHomeCapabilityCard(
-		    m_repositoryRoot,
-		    "Architecture",
-		    architectureDoc ? "Available" : "Pending",
-		    "Product boundaries, artifact layout, packaging model, and launcher workflow intent.",
-		    architectureDoc ? "ok" : "warning",
-		    architectureDoc ? createOpenButton("Open Architecture", m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md") : nullptr,
-		    "discover",
-		    "sparkle-architecture.png",
-		    this));
-		discoverGrid->AddCard(CreateHomeCapabilityCard(
-		    m_repositoryRoot,
-		    "Workspace Setup",
-		    dependencyCacheHealthy ? "Ready" : dependencyCacheNeedsRepair ? "Repair needed" : dependencyDoc ? "Available" : "Pending",
-		    dependencyCacheHealthy ? "Repository dependencies are cached and ready for local build and cook workflows." :
-		    dependencyCacheNeedsRepair ? "Some repository packages need repair. Prepare Workspace will restore local build and cook capability." :
-		                                 "Prepare Workspace to download the repository packages needed for local rebuilds and optional tooling.",
-		    dependencyCacheHealthy && dependencyDoc ? "ok" : "warning",
-		    dependencyCacheHealthy && dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") :
-		                                             CreateCommandActionButton("workspace.sync-source-tiers", "Prepare Workspace", false),
-		    "discover",
-		    "sparkle-source-tiers.png",
-		    this));
-		discoverGrid->AddCard(CreateHomeCapabilityCard(
-		    m_repositoryRoot,
-		    "Validation",
-		    validationReport ? "Available" : (storedFailureCount == 0 ? "No active issue" : "Review activity"),
-		    validationReport ? "Open the latest final validation report." :
-		                       "Run smoke tests or open Activity when you want runtime confidence.",
-		    validationReport || storedFailureCount == 0 ? "ok" : "warning",
-		    validationReport ? createOpenButton("Open Report", validationReportPath) : CreateCommandActionButton("project.run.smoke", "Run Smoke Test", false),
-		    "discover",
-		    "sparkle-validation.png",
-		    this));
-		discoverGrid->AddCard(CreateHomeCapabilityCard(
-		    m_repositoryRoot,
-		    "Package",
-		    packagePresent ? "Present" : (packagePlan.CanRun ? "Ready" : "Blocked"),
-		    packagePresent ? "Open assembled release folders." : "Assemble a release package from artifacts; publishing remains separate.",
-		    packagePresent || packagePlan.CanRun ? "ok" : "warning",
-		    packagePresent ? createOpenButton("Open Packages", releaseRoot) : CreateCommandActionButton("package.release", "Assemble", false),
-		    "discover",
-		    "sparkle-package.png",
-		    this));
-		discoverGrid->AddCard(CreateHomeCapabilityCard(
-		    m_repositoryRoot,
-		    "Content",
-		    missingCookDomains == 0 ? "Ready" : QStringLiteral("%1 missing").arg(missingCookDomains),
-		    missingCookDomains == 0 ? "Cooked content is ready for launch workflows." : "Cook only the missing generated content when local artifacts need it.",
-		    missingCookDomains == 0 ? "ok" : "warning",
-		    CreateCommandActionButton("cook.project", missingCookDomains == 0 ? QStringLiteral("Cook All") : QStringLiteral("Cook Missing"), false),
-		    "discover",
-		    "showcase-content.png",
-		    this));
-		discoverGrid->AddCard(CreateHomeCapabilityCard(
-		    m_repositoryRoot,
-		    "Tools",
-		    uxDoc ? "Available" : "Pending",
-		    "Open UX notes or continue into Sync, Build, Cook, Test, Package, and Maintain workflows from the rail.",
-		    uxDoc ? "ok" : "warning",
-		    uxDoc ? createOpenButton("Open UX Notes", m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md") : nullptr,
-		    "discover",
-		    "sparkle-tools.png",
-		    this));
-		bodyLayout->addWidget(discoverGrid);
 		layout.addWidget(quickStartBody);
 	}
 }

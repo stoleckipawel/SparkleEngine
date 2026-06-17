@@ -57,11 +57,11 @@ namespace SparkleLauncher
 		{
 			if (!group.Enabled)
 			{
-				return QStringLiteral("Off in this workspace. Enable %1 to include this package set.")
+				return QStringLiteral("Optional. Off in this workspace.")
 				    .arg(group.ConfigureOption);
 			}
 
-			QString detail = group.UnlockSummary;
+			QString detail = group.Required ? QStringLiteral("Required.") : QStringLiteral("Optional and enabled.");
 			detail += QStringLiteral(" %1 of %2 packages cached.")
 			              .arg(readyCount)
 			              .arg(group.Dependencies.size());
@@ -85,8 +85,8 @@ namespace SparkleLauncher
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		QVBoxLayout* bundlesLayout = AddOptionGroup(
 		    layout,
-		    "Dependency bundles",
-		    "Repository packages are grouped by capability so it is easy to see what will be downloaded and what stays optional.");
+		    "Repository packages",
+		    QString());
 		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
 		{
 			const int readyCount = CountReadyDependencies(group, dependencyCachePath);

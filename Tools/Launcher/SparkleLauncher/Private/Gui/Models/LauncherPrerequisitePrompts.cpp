@@ -144,8 +144,8 @@ namespace SparkleLauncher
 		if (!plan.Toolchain.RequiredToolsAvailable)
 		{
 			prerequisiteOperationId = "toolchain.check";
-			promptTitle = "Verify Host Environment";
-			promptAction = "Required host prerequisites are missing. Run Sync > Verify Host Environment now?";
+			promptTitle = "Sync Diagnostics";
+			promptAction = "Required host prerequisites are missing. Run a sync diagnostics check now?";
 		}
 		else if ((operationId == "workspace.open-ide" || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare") && !plan.Freshness.Current)
 		{
@@ -156,8 +156,8 @@ namespace SparkleLauncher
 		else if (operationId == "workspace.open-ide")
 		{
 			prerequisiteOperationId = "toolchain.check";
-			promptTitle = "Verify Host Environment";
-			promptAction = QString("%1 is not currently available. Run Sync > Verify Host Environment now and verify the Visual Studio, Qt, and optional ClangCL toolchain?").arg(ResolveSelectedWorkspaceIdeName(settings));
+			promptTitle = "Sync Diagnostics";
+			promptAction = QString("%1 is not currently available. Run a sync diagnostics check now and verify the Visual Studio, Qt, and optional ClangCL toolchain?").arg(ResolveSelectedWorkspaceIdeName(settings));
 		}
 		else
 		{
