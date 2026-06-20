@@ -41,9 +41,9 @@ Goal:
 Make the existing engine architecture understandable to a principal-level NVIDIA/AMD rendering reviewer in the first 10 minutes.
 
 Context to read first:
-- Docs/Architecture/A_PrincipalRoleRequirements.md
-- Docs/Architecture/B_EngineArchitectureScorecard.md
-- Docs/Architecture/C_FoundationStagedPlan.md
+- Docs/Architecture/00-Review/A_PrincipalRoleRequirements.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/C_FoundationStagedPlan.md
 - CMake/ArchitectureBoundaryCheck.cmake
 - Engine/RHI/CMakeLists.txt
 - Engine/Renderer/CMakeLists.txt
@@ -104,15 +104,15 @@ Make the CMake architecture boundary checks understandable to a human reviewer a
 Context to read first:
 - CMake/ArchitectureBoundaryCheck.cmake
 - Docs/Architecture/README.md if it exists
-- Docs/Architecture/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 - Engine/RHI/CMakeLists.txt
 - Engine/Renderer/CMakeLists.txt
 - Engine/Application/CMakeLists.txt
 
 Deliverables:
-- Create Docs/Architecture/BoundaryRules.md.
-- Create Docs/Architecture/ADR/README.md.
-- Create Docs/Architecture/ADR/0001-renderer-native-api-provider-exceptions.md.
+- Create Docs/Architecture/01-Boundaries/BoundaryRules.md.
+- Create Docs/Architecture/01-Boundaries/ADR/README.md.
+- Create Docs/Architecture/01-Boundaries/ADR/0001-renderer-native-api-provider-exceptions.md.
 
 BoundaryRules.md must include:
 - Purpose of the boundary check.
@@ -158,8 +158,8 @@ Goal:
 Make RHI ownership, lifetime, backend responsibilities, and extension rules clear before adding more rendering features.
 
 Context to read first:
-- Docs/Architecture/A_PrincipalRoleRequirements.md
-- Docs/Architecture/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/A_PrincipalRoleRequirements.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 - Engine/RHI/CMakeLists.txt
 - Engine/RHI/Public/**/*.h
 - Engine/RHI/Private/D3D12/**/*.h and a representative set of .cpp files
@@ -167,7 +167,7 @@ Context to read first:
 - CMake/ArchitectureBoundaryCheck.cmake
 
 Deliverable:
-- Create Docs/Architecture/RHIContract.md.
+- Create Docs/Architecture/02-Contracts/RHIContract.md.
 
 Required sections:
 - Purpose and non-goals.
@@ -224,7 +224,7 @@ Goal:
 Make renderer extension safe and predictable before adding new passes, SDK features, ray tracing features, or neural rendering paths.
 
 Context to read first:
-- Docs/Architecture/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 - Engine/Renderer/CMakeLists.txt
 - Engine/Renderer/Public/**/*.h
 - Engine/Renderer/Private/FrameGraph/**/*.h
@@ -236,7 +236,7 @@ Context to read first:
 - Engine/Renderer/Private/Diagnostics/**/*.h
 
 Deliverable:
-- Create Docs/Architecture/RendererFrameGraph.md.
+- Create Docs/Architecture/02-Contracts/RendererFrameGraph.md.
 
 Required sections:
 - Purpose and non-goals.
@@ -290,8 +290,8 @@ Goal:
 Prevent SDK integrations from defining renderer architecture accidentally.
 
 Context to read first:
-- Docs/Architecture/A_PrincipalRoleRequirements.md
-- Docs/Architecture/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/A_PrincipalRoleRequirements.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 - Engine/Renderer/CMakeLists.txt
 - Engine/Renderer/Private/Upscaling/NvidiaDlss/**/*.h
 - Engine/Renderer/Private/Upscaling/NvidiaDlss/**/*.cpp
@@ -301,7 +301,7 @@ Context to read first:
 - Tools/Launcher/SparkleLauncher/Private/Core/HostGraphicsCapabilities.cpp if present
 
 Deliverable:
-- Create Docs/Architecture/RendererProviderContract.md.
+- Create Docs/Architecture/02-Contracts/RendererProviderContract.md.
 
 Required sections:
 - Purpose and non-goals.
@@ -365,8 +365,8 @@ Goal:
 Make SparkleEngine's shader compiler/cook/runtime path reviewable as a principal-level tooling and rendering-system strength.
 
 Context to read first:
-- Docs/Architecture/A_PrincipalRoleRequirements.md
-- Docs/Architecture/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/A_PrincipalRoleRequirements.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 - Tools/Shaders/ShaderCompiler/CMakeLists.txt
 - Tools/Shaders/ShaderCompiler/**/*.h
 - Tools/Shaders/ShaderCompiler/**/*.cpp
@@ -377,7 +377,7 @@ Context to read first:
 - Engine/RHI/Public/**/*Pipeline*.h
 
 Deliverable:
-- Create Docs/Architecture/ShaderPipeline.md.
+- Create Docs/Architecture/02-Contracts/ShaderPipeline.md.
 
 Required sections:
 - Purpose and non-goals.
@@ -432,7 +432,7 @@ Goal:
 Keep runtime scene/asset ownership clear so future renderer features do not couple GameFramework to RHI or backend APIs.
 
 Context to read first:
-- Docs/Architecture/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 - Engine/GameFramework/CMakeLists.txt
 - Engine/GameFramework/Public/**/*.h
 - Engine/GameFramework/Private/**/*.h
@@ -441,7 +441,7 @@ Context to read first:
 - Engine/Application/CMakeLists.txt
 
 Deliverable:
-- Create Docs/Architecture/RuntimeSceneData.md.
+- Create Docs/Architecture/02-Contracts/RuntimeSceneData.md.
 
 Required sections:
 - Purpose and non-goals.
@@ -492,7 +492,7 @@ Goal:
 Make runtime/editor startup, backend creation, validation, project load, frame loop, and shutdown easy to reason about.
 
 Context to read first:
-- Docs/Architecture/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 - Engine/Application/CMakeLists.txt
 - Engine/Application/Public/**/*.h
 - Engine/Application/Private/**/*.h
@@ -501,7 +501,7 @@ Context to read first:
 - Tools/Launcher/SparkleLauncher/Private/Build/**/*.cpp
 
 Deliverable:
-- Create Docs/Architecture/ApplicationLifecycle.md.
+- Create Docs/Architecture/02-Contracts/ApplicationLifecycle.md.
 
 Required sections:
 - Purpose and non-goals.
@@ -559,8 +559,8 @@ Goal:
 Make "the engine still works" demonstrable through commands, coverage, artifacts, and ownership.
 
 Context to read first:
-- Docs/Architecture/B_EngineArchitectureScorecard.md
-- Docs/Architecture/C_FoundationStagedPlan.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/C_FoundationStagedPlan.md
 - CMake/ArchitectureBoundaryCheck.cmake
 - Engine/Application/Private/Validation/**/* if present
 - Engine/RHI/Public/**/*Validation*.h
@@ -569,7 +569,7 @@ Context to read first:
 - CMakeLists.txt
 
 Deliverable:
-- Create Docs/Architecture/ValidationMatrix.md.
+- Create Docs/Architecture/03-Validation/ValidationMatrix.md.
 
 Required sections:
 - Purpose and non-goals.
@@ -636,8 +636,8 @@ Goal:
 Prepare reviewable GPU/CPU/memory evidence before adding heavier rendering, SDK, ray tracing, or neural features.
 
 Context to read first:
-- Docs/Architecture/A_PrincipalRoleRequirements.md
-- Docs/Architecture/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/A_PrincipalRoleRequirements.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 - Engine/RHI/Public/**/*Diagnostic*.h
 - Engine/RHI/Public/**/*Memory*.h
 - Engine/RHI/Private/D3D12/**/*Memory*.h
@@ -647,7 +647,7 @@ Context to read first:
 - Engine/Editor/Private/**/*Rendering*.h
 
 Deliverable:
-- Create Docs/Architecture/PerformanceDiagnosticsPlan.md.
+- Create Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md.
 
 Required sections:
 - Purpose and non-goals.
@@ -717,17 +717,17 @@ Package the architecture and validation path so a principal-level reviewer can e
 
 Context to read first:
 - Docs/Architecture/README.md
-- Docs/Architecture/A_PrincipalRoleRequirements.md
-- Docs/Architecture/B_EngineArchitectureScorecard.md
-- Docs/Architecture/C_FoundationStagedPlan.md
-- Docs/Architecture/RHIContract.md if it exists
-- Docs/Architecture/RendererFrameGraph.md if it exists
-- Docs/Architecture/ShaderPipeline.md if it exists
-- Docs/Architecture/RendererProviderContract.md if it exists
-- Docs/Architecture/ValidationMatrix.md if it exists
+- Docs/Architecture/00-Review/A_PrincipalRoleRequirements.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/C_FoundationStagedPlan.md
+- Docs/Architecture/02-Contracts/RHIContract.md if it exists
+- Docs/Architecture/02-Contracts/RendererFrameGraph.md if it exists
+- Docs/Architecture/02-Contracts/ShaderPipeline.md if it exists
+- Docs/Architecture/02-Contracts/RendererProviderContract.md if it exists
+- Docs/Architecture/03-Validation/ValidationMatrix.md if it exists
 
 Deliverable:
-- Create Docs/Architecture/ReviewerGuide.md.
+- Create Docs/Architecture/00-Review/ReviewerGuide.md.
 
 Required sections:
 - Purpose.
@@ -776,8 +776,8 @@ Goal:
 Make the launcher a reliable reviewer path for generating, building, cooking, validating, and understanding dependency/backend availability.
 
 Context to read first:
-- Docs/Architecture/B_EngineArchitectureScorecard.md
-- Docs/Architecture/C_FoundationStagedPlan.md
+- Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
+- Docs/Architecture/00-Review/C_FoundationStagedPlan.md
 - Tools/Launcher/SparkleLauncher/Public/SparkleLauncher/BuildWorkspaceOperations.h
 - Tools/Launcher/SparkleLauncher/Public/SparkleLauncher/ToolResolver.h
 - Tools/Launcher/SparkleLauncher/Private/Build/**/*.cpp
@@ -787,7 +787,7 @@ Context to read first:
 - Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindowSyncPages.cpp
 
 Deliverable:
-- Create Docs/Architecture/LauncherWorkflowReadiness.md.
+- Create Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md.
 
 Required sections:
 - Purpose and non-goals.

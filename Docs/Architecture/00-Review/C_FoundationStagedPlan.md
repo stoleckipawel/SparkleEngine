@@ -4,7 +4,7 @@ Status: first-pass execution plan
 Date: 2026-06-20  
 Scope: staged foundation work before adding major renderer, SDK, ray tracing, or neural rendering features
 
-Implementation prompts for each staged work item are maintained in `Docs/Architecture/D_ImplementationPrompts.md`. Use those prompts when delegating the work to weaker models; they include explicit context files, constraints, deliverables, validation steps, and acceptance criteria.
+Implementation prompts for each staged work item are maintained in `Docs/Architecture/00-Review/D_ImplementationPrompts.md`. Use those prompts when delegating the work to weaker models; they include explicit context files, constraints, deliverables, validation steps, and acceptance criteria.
 
 ## Planning Principle
 
@@ -48,12 +48,12 @@ Goal: extension points are clear before features arrive.
 
 Actions:
 
-- Write `RHIContract.md`.
-- Write `RendererFrameGraph.md`.
-- Write `RendererProviderContract.md`.
-- Write `ShaderPipeline.md`.
-- Write `RuntimeSceneData.md`.
-- Write `ApplicationLifecycle.md`.
+- Write `Docs/Architecture/02-Contracts/RHIContract.md`.
+- Write `Docs/Architecture/02-Contracts/RendererFrameGraph.md`.
+- Write `Docs/Architecture/02-Contracts/RendererProviderContract.md`.
+- Write `Docs/Architecture/02-Contracts/ShaderPipeline.md`.
+- Write `Docs/Architecture/02-Contracts/RuntimeSceneData.md`.
+- Write `Docs/Architecture/02-Contracts/ApplicationLifecycle.md`.
 - Add backend, provider, pass, shader feature, and validation checklists.
 
 Exit criteria:

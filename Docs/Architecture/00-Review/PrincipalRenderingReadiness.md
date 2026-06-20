@@ -7,9 +7,9 @@ Non-goal: adding new rendering features before the engine foundation is easier t
 
 This is the combined audit. The requested A/B/C documents are split here:
 
-- `Docs/Architecture/A_PrincipalRoleRequirements.md`
-- `Docs/Architecture/B_EngineArchitectureScorecard.md`
-- `Docs/Architecture/C_FoundationStagedPlan.md`
+- `Docs/Architecture/00-Review/A_PrincipalRoleRequirements.md`
+- `Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md`
+- `Docs/Architecture/00-Review/C_FoundationStagedPlan.md`
 
 ## Why This Exists
 
@@ -429,13 +429,13 @@ Foundation work:
 
 - Build a docs tree:
   - `Docs/Architecture/README.md`
-  - `Docs/Architecture/RHIContract.md`
-  - `Docs/Architecture/RendererFrameGraph.md`
-  - `Docs/Architecture/ShaderPipeline.md`
-  - `Docs/Architecture/RuntimeSceneData.md`
-  - `Docs/Architecture/ApplicationLifecycle.md`
-  - `Docs/Architecture/ValidationMatrix.md`
-  - `Docs/Architecture/ADR/`
+  - `Docs/Architecture/02-Contracts/RHIContract.md`
+  - `Docs/Architecture/02-Contracts/RendererFrameGraph.md`
+  - `Docs/Architecture/02-Contracts/ShaderPipeline.md`
+  - `Docs/Architecture/02-Contracts/RuntimeSceneData.md`
+  - `Docs/Architecture/02-Contracts/ApplicationLifecycle.md`
+  - `Docs/Architecture/03-Validation/ValidationMatrix.md`
+  - `Docs/Architecture/01-Boundaries/ADR/`
 
 ## Requirement Coverage Matrix
 
