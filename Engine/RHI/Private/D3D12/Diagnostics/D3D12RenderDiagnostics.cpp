@@ -70,9 +70,7 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 		if (record != nullptr)
 		{
 			SetD3D12AllocationRecordDebugName(*record, debugName);
-			return;
 		}
-		SetD3D12ObjectDebugName(record != nullptr ? record->Resource.Get() : nullptr, debugName);
 	}
 
   private:

@@ -47,6 +47,7 @@ class D3D12Rhi final
 	void WaitForGPU(uint32_t frameInFlightIndex) noexcept;
 
 	void Flush() noexcept;
+	bool IsValidationEnabled() const noexcept;
 	bool SupportsDebugMessages() const noexcept;
 	bool TryPopDebugMessage(RhiDiagnosticMessage& outMessage) noexcept;
 	void ClearDebugMessages() noexcept;
@@ -67,6 +68,7 @@ class D3D12Rhi final
 	const ComPtr<ID3D12Fence1>& GetFence() const noexcept;
 	HANDLE GetFenceEvent() const noexcept;
 	uint64_t GetNextFenceValue() const noexcept;
+	D3D_FEATURE_LEVEL GetDeviceFeatureLevel() const noexcept;
 	D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() noexcept;
 	const D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() const noexcept;
 	D3D12GpuMemoryAllocator& GetMemoryAllocator() noexcept;

@@ -23,6 +23,13 @@ enum class ERhiMemoryAllocatorBackend : std::uint8_t
 	VulkanManaged,
 };
 
+enum class ERhiBackendVersionSemantic : std::uint8_t
+{
+	Unknown = 0,
+	ApiVersion,
+	FeatureLevel,
+};
+
 struct RhiBindingLimits
 {
 	std::uint32_t MaxDescriptorSets = 0;
@@ -44,6 +51,38 @@ struct RhiQueueCapabilities
 	bool SupportsGraphics = false;
 	bool SupportsCompute = false;
 	bool SupportsCopy = false;
+};
+
+struct RhiBackendVersionInfo
+{
+	ERhiBackendVersionSemantic Semantic = ERhiBackendVersionSemantic::Unknown;
+	std::uint32_t Major = 0;
+	std::uint32_t Minor = 0;
+	std::uint32_t Patch = 0;
+	std::uint32_t PackedValue = 0;
+
+	constexpr bool IsKnown() const noexcept { return Semantic != ERhiBackendVersionSemantic::Unknown; }
+};
+
+struct RhiBackendDiagnosticsSupport
+{
+	bool ValidationEnabled = false;
+	bool SupportsDebugLayer = false;
+	bool SupportsObjectNames = false;
+	bool SupportsGpuEvents = false;
+	bool SupportsTimestampQueries = false;
+	bool SupportsDebugMessages = false;
+	bool SupportsLiveObjectReports = false;
+	bool SupportsCrashDiagnostics = false;
+	bool SupportsCapture = false;
+};
+
+struct RhiBackendMemorySupport
+{
+	bool SupportsMemoryDiagnostics = false;
+	bool SupportsBudgetQueries = false;
+	bool SupportsJsonDump = false;
+	bool SupportsResidencyPressure = false;
 };
 
 enum class ERhiExternalFeatureBridgeKind : std::uint8_t
@@ -113,17 +152,20 @@ struct RhiCapabilities
 {
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
 	CookedShaderBinaryFormat RequiredShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
+	RhiBackendVersionInfo BackendVersion;
 	ERhiDescriptorModel DescriptorModel = ERhiDescriptorModel::Unknown;
 	RhiBindingLimits BindingLimits;
 	RhiUploadReadbackCapabilities UploadReadback;
 	std::array<RhiFormatSupport, kRhiCapabilityPixelFormats.size()> FormatSupport = {};
 	bool SupportsTimestampQueries = false;
+	RhiBackendDiagnosticsSupport Diagnostics;
 	RhiRayTracingCapabilities RayTracing;
 	bool SupportsMeshShaders = false;
 	bool SupportsTaskShaders = false;
 	RhiQueueCapabilities Queues;
 	bool SupportsPresent = false;
 	ERhiMemoryAllocatorBackend MemoryAllocator = ERhiMemoryAllocatorBackend::Unknown;
+	RhiBackendMemorySupport MemorySupport;
 	RhiExternalFeatureInteropCapabilities ExternalFeatureInterop;
 
 	const RhiFormatSupport* FindFormatSupport(PixelFormat format) const noexcept
@@ -181,5 +223,19 @@ constexpr const char* RhiExternalFeatureBridgeKindToString(ERhiExternalFeatureBr
 		case ERhiExternalFeatureBridgeKind::None:
 		default:
 			return "None";
+	}
+}
+
+constexpr const char* RhiBackendVersionSemanticToString(ERhiBackendVersionSemantic semantic) noexcept
+{
+	switch (semantic)
+	{
+		case ERhiBackendVersionSemantic::ApiVersion:
+			return "ApiVersion";
+		case ERhiBackendVersionSemantic::FeatureLevel:
+			return "FeatureLevel";
+		case ERhiBackendVersionSemantic::Unknown:
+		default:
+			return "Unknown";
 	}
 }

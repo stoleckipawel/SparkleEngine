@@ -9,6 +9,7 @@
 #include "D3D12/SwapChain/D3D12SwapChain.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Diagnostics/D3D12DiagnosticsService.h"
+#include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Diagnostics/D3D12RenderDiagnostics.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
@@ -191,8 +192,22 @@ CookedShaderBinaryFormat D3D12RenderHardwareInterface::GetRequiredShaderBinaryFo
 RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 {
 	RhiCapabilities capabilities{};
+	const D3D_FEATURE_LEVEL featureLevel = m_rhi != nullptr ? m_rhi->GetDeviceFeatureLevel() : D3D_FEATURE_LEVEL_1_0_CORE;
+	const std::uint32_t featureLevelMajor = featureLevel >= D3D_FEATURE_LEVEL_12_0 ? 12u : featureLevel >= D3D_FEATURE_LEVEL_11_0 ? 11u : 0u;
+	const std::uint32_t featureLevelMinor = featureLevel == D3D_FEATURE_LEVEL_12_2 ? 2u
+	                                     : featureLevel == D3D_FEATURE_LEVEL_12_1 ? 1u
+	                                     : featureLevel == D3D_FEATURE_LEVEL_12_0 ? 0u
+	                                     : featureLevel == D3D_FEATURE_LEVEL_11_1 ? 1u
+	                                     : featureLevel == D3D_FEATURE_LEVEL_11_0 ? 0u
+	                                                                               : 0u;
 	capabilities.BackendApi = ERhiBackendApi::D3D12;
 	capabilities.RequiredShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
+	capabilities.BackendVersion = RhiBackendVersionInfo{
+	    .Semantic = ERhiBackendVersionSemantic::FeatureLevel,
+	    .Major = featureLevelMajor,
+	    .Minor = featureLevelMinor,
+	    .Patch = 0,
+	    .PackedValue = static_cast<std::uint32_t>(featureLevel)};
 	capabilities.DescriptorModel = ERhiDescriptorModel::DescriptorTables;
 	capabilities.BindingLimits = RhiBindingLimits{
 	    .MaxDescriptorSets = 1,
@@ -209,12 +224,27 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
 	}
 	capabilities.SupportsTimestampQueries = m_rhi != nullptr && m_rhi->GetCommandQueue() != nullptr;
+	capabilities.Diagnostics = RhiBackendDiagnosticsSupport{
+	    .ValidationEnabled = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
+	    .SupportsDebugLayer = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
+	    .SupportsObjectNames = m_rhi != nullptr && m_rhi->GetDevice() != nullptr,
+	    .SupportsGpuEvents = D3D12PixEvents::IsAvailable(),
+	    .SupportsTimestampQueries = capabilities.SupportsTimestampQueries,
+	    .SupportsDebugMessages = m_rhi != nullptr && m_rhi->SupportsDebugMessages(),
+	    .SupportsLiveObjectReports = m_rhi != nullptr && m_rhi->SupportsLiveObjectReports(),
+	    .SupportsCrashDiagnostics = m_rhi != nullptr && m_rhi->SupportsCrashDiagnostics(),
+	    .SupportsCapture = m_captureService != nullptr};
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
 	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12Managed;
+	capabilities.MemorySupport = RhiBackendMemorySupport{
+	    .SupportsMemoryDiagnostics = m_rhi != nullptr,
+	    .SupportsBudgetQueries = m_rhi != nullptr && m_rhi->GetMemoryAllocator().SupportsBudgetQueries(),
+	    .SupportsJsonDump = m_rhi != nullptr && m_rhi->GetMemoryAllocator().SupportsJsonDump(),
+	    .SupportsResidencyPressure = m_rhi != nullptr && m_rhi->GetMemoryAllocator().SupportsBudgetQueries()};
 	capabilities.ExternalFeatureInterop = BuildD3D12ExternalFeatureInteropCapabilities(
 	    m_rhi,
 	    !m_commandLists.empty() && m_commandLists[0] != nullptr);

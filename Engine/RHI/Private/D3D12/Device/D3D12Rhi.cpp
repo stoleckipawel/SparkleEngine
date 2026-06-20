@@ -452,6 +452,11 @@ uint64_t D3D12Rhi::GetNextFenceValue() const noexcept
 	return m_nextFenceValue;
 }
 
+D3D_FEATURE_LEVEL D3D12Rhi::GetDeviceFeatureLevel() const noexcept
+{
+	return m_desiredD3DFeatureLevel;
+}
+
 D3D12NvapiRayTracingProvider& D3D12Rhi::GetNvapiRayTracingProvider() noexcept
 {
 	return m_nvapiRayTracingProvider;
@@ -551,6 +556,15 @@ void D3D12Rhi::Flush() noexcept
 		Signal(i);
 		WaitForGPU(i);
 	}
+}
+
+bool D3D12Rhi::IsValidationEnabled() const noexcept
+{
+#if ENGINE_GPU_VALIDATION
+	return m_debugLayer != nullptr;
+#else
+	return false;
+#endif
 }
 
 bool D3D12Rhi::SupportsDebugMessages() const noexcept

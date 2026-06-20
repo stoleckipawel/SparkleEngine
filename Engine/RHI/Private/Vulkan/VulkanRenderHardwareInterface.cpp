@@ -541,6 +541,13 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	RhiCapabilities capabilities{};
 	capabilities.BackendApi = ERhiBackendApi::Vulkan;
 	capabilities.RequiredShaderBinaryFormat = CookedShaderBinaryFormat::SpirV;
+	const std::uint32_t apiVersion = m_rhi != nullptr ? m_rhi->GetAdapterInfo().ApiVersion : 0u;
+	capabilities.BackendVersion = RhiBackendVersionInfo{
+	    .Semantic = ERhiBackendVersionSemantic::ApiVersion,
+	    .Major = VK_VERSION_MAJOR(apiVersion),
+	    .Minor = VK_VERSION_MINOR(apiVersion),
+	    .Patch = VK_VERSION_PATCH(apiVersion),
+	    .PackedValue = apiVersion};
 	capabilities.DescriptorModel = ERhiDescriptorModel::DescriptorSets;
 	capabilities.BindingLimits = RhiBindingLimits{
 	    .MaxDescriptorSets = properties.limits.maxBoundDescriptorSets,
@@ -558,12 +565,29 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
 	}
 	capabilities.SupportsTimestampQueries = false;
+	capabilities.Diagnostics = RhiBackendDiagnosticsSupport{
+	    .ValidationEnabled = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
+	    .SupportsDebugLayer = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
+	    .SupportsObjectNames = m_rhi != nullptr && m_rhi->GetSetDebugUtilsObjectName() != nullptr,
+	    .SupportsGpuEvents = m_rhi != nullptr && m_rhi->GetCmdBeginDebugUtilsLabel() != nullptr &&
+	                         m_rhi->GetCmdEndDebugUtilsLabel() != nullptr && m_rhi->GetCmdInsertDebugUtilsLabel() != nullptr,
+	    .SupportsTimestampQueries = false,
+	    .SupportsDebugMessages = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
+	    .SupportsLiveObjectReports = false,
+	    .SupportsCrashDiagnostics = false,
+	    .SupportsCapture = m_captureService != nullptr};
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
 	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VulkanManaged;
+	const RhiDiagnosticsCapabilities diagnosticsCapabilities = m_diagnostics != nullptr ? m_diagnostics->GetCapabilities() : RhiDiagnosticsCapabilities{};
+	capabilities.MemorySupport = RhiBackendMemorySupport{
+	    .SupportsMemoryDiagnostics = diagnosticsCapabilities.SupportsMemoryDiagnostics,
+	    .SupportsBudgetQueries = diagnosticsCapabilities.SupportsMemoryBudgetQueries,
+	    .SupportsJsonDump = diagnosticsCapabilities.SupportsMemoryJsonDump,
+	    .SupportsResidencyPressure = diagnosticsCapabilities.SupportsMemoryBudgetQueries};
 	capabilities.ExternalFeatureInterop = BuildVulkanExternalFeatureInteropCapabilities(m_rhi, m_commandContext != nullptr);
 	return capabilities;
 }

@@ -91,7 +91,7 @@ class VulkanRenderMessageDiagnostics final : public RenderMessageDiagnostics
   public:
 	explicit VulkanRenderMessageDiagnostics(VulkanRhi& rhi) noexcept : m_rhi(rhi) {}
 
-	bool SupportsDebugMessages() const noexcept override { return true; }
+	bool SupportsDebugMessages() const noexcept override { return m_rhi.IsValidationEnabled(); }
 
 	bool TryPopMessage(RhiDiagnosticMessage& outMessage) noexcept override { return m_rhi.TryPopDiagnosticMessage(outMessage); }
 
@@ -144,17 +144,19 @@ class VulkanRenderDiagnostics final : public RenderDiagnostics
 {
   public:
 	VulkanRenderDiagnostics(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
-	    m_objectDiagnostics(rhi), m_messageDiagnostics(rhi), m_memoryDiagnostics(memoryAllocator)
+	    m_rhi(rhi), m_objectDiagnostics(rhi), m_messageDiagnostics(rhi), m_memoryDiagnostics(memoryAllocator)
 	{
 	}
 
 	RhiDiagnosticsCapabilities GetCapabilities() const noexcept override
 	{
+		const bool supportsGpuEvents = m_objectDiagnostics.SupportsObjectNames() && m_rhi.GetCmdBeginDebugUtilsLabel() != nullptr &&
+		                               m_rhi.GetCmdEndDebugUtilsLabel() != nullptr && m_rhi.GetCmdInsertDebugUtilsLabel() != nullptr;
 		return RhiDiagnosticsCapabilities{
 		    .SupportsObjectNames = m_objectDiagnostics.SupportsObjectNames(),
-		    .SupportsGpuEvents = false,
+		    .SupportsGpuEvents = supportsGpuEvents,
 		    .SupportsTimestampQueries = false,
-		    .SupportsDebugMessages = true,
+		    .SupportsDebugMessages = m_messageDiagnostics.SupportsDebugMessages(),
 		    .SupportsLiveObjectReports = false,
 		    .SupportsCrashDiagnostics = false,
 		    .SupportsMemoryDiagnostics = true,
@@ -183,6 +185,7 @@ class VulkanRenderDiagnostics final : public RenderDiagnostics
 	const RenderMemoryDiagnostics* GetMemoryDiagnostics() const noexcept override { return &m_memoryDiagnostics; }
 
   private:
+	VulkanRhi& m_rhi;
 	VulkanRenderObjectDiagnostics m_objectDiagnostics;
 	VulkanRenderMessageDiagnostics m_messageDiagnostics;
 	VulkanRenderFailureDiagnostics m_failureDiagnostics;

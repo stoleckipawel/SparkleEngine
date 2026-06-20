@@ -28,7 +28,7 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	SPDLOG_LOGGER_INFO(
 	    g_rhiServicesLogger,
 	    "RHI capabilities: backend={} shaderFormat={} descriptorModel={} allocator={} present={} upload(buffer={}, texture={}) readback={} "
-	    "timestampQueries={} rayTracing={} inlineRayQuery={} rtLimits(recursion={}, payloadBytes={}, attributeBytes={}, "
+	    "timestampQueries={} {} {} {} rayTracing={} inlineRayQuery={} rtLimits(recursion={}, payloadBytes={}, attributeBytes={}, "
 	    "shaderIdBytes={}, tableAlign={}, recordAlign={}, asAlign={}, scratchAlign={}, instanceDescBytes={}) "
 	    "rtProvider(topLevel={} reason={} partitioned={} supported={} requiresNvidia={} nvidiaDevice={} gpuDrivenOps={} "
 	    "gpuLogicalWrites={} gpuNativePack={} partitionedReason={}) "
@@ -43,6 +43,9 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	    capabilities.UploadReadback.SupportsTextureUpload,
 	    capabilities.UploadReadback.SupportsReadback,
 	    capabilities.SupportsTimestampQueries,
+	    FormatBackendVersionInfo(capabilities.BackendVersion),
+	    FormatBackendDiagnosticsSupport(capabilities.Diagnostics),
+	    FormatBackendMemorySupport(capabilities.MemorySupport),
 	    capabilities.RayTracing.SupportsRayTracing,
 	    capabilities.RayTracing.SupportsInlineRayQuery,
 	    capabilities.RayTracing.MaxTraceRecursionDepth,
