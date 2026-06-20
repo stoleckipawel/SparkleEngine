@@ -4,24 +4,10 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
+#include "Frame/RenderProductHandleUtils.h"
 #include "Commands/RenderCommandContext.h"
 #include "Upscaling/UpscalerProvider.h"
 #include "Upscaling/UpscalerSubsystem.h"
-
-#include <cstdint>
-
-namespace
-{
-	RenderProductHandle ToRenderProductHandle(FrameGraphTextureHandle handle) noexcept
-	{
-		if (!handle.IsValid())
-		{
-			return {};
-		}
-
-		return RenderProductHandle{static_cast<std::uint64_t>(handle.GetResourceHandle().index) + 1ull};
-	}
-}
 
 void AddExternalProviderEvaluationPass(
     FrameGraphBuilder& builder,

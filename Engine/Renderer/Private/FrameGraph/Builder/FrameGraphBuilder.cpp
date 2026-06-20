@@ -151,12 +151,7 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	const FrameBuildResult frameLoop = BuildFrame(builder, m_dependencies.sceneExtent, m_dependencies.presentSceneToBackBuffer);
 
 	FrameGraphBuildResult result{};
-	result.SceneColor = frameLoop.Scene.SceneColor;
-	result.FinalSceneColor = frameLoop.Scene.FinalSceneColor;
-	result.SceneDepth = frameLoop.Scene.MainDepth;
-	result.MotionVectors = frameLoop.GBuffer.MotionVector;
-	result.SceneTlas = frameLoop.RayTracing.SceneTlas;
-	result.RayTracing = frameLoop.RayTracing;
+	result.Resources = frameLoop.Resources;
 	result.Graph = std::move(frameGraph);
 	return result;
 }

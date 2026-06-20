@@ -14,6 +14,8 @@
 
 FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, bool presentToBackBuffer)
 {
+	FrameAssemblyResourceLayout resources = {};
+
 	const FrameGraphTextureDesc sceneColorDesc = FrameGraphTextureDesc::CreateColor("SceneColor", sceneExtent.Width, sceneExtent.Height, RenderConfig::SceneColorFormat);
 	const FrameGraphTextureHandle sceneColor = builder.CreateTexture(sceneColorDesc);
 
@@ -23,30 +25,51 @@ FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sce
 
 	const FrameGraphTextureDesc backBufferDesc = FrameGraphTextureDesc::CreateColor("BackBuffer", sceneExtent.Width, sceneExtent.Height, RenderConfig::BackBufferFormat);
 	const FrameGraphTextureHandle backBuffer = builder.ImportTexture(backBufferDesc, ResourceState::Present);
+	resources.Imported.BackBuffer = backBuffer;
 
 	const FrameGraphTextureDesc mainDepthDesc = FrameGraphTextureDesc::CreateDepthStencil("MainDepth", sceneExtent.Width, sceneExtent.Height);
 	const FrameGraphTextureHandle mainDepth = builder.CreateTexture(mainDepthDesc);
 
-	const SceneRenderTargets sceneTargets{
+	resources.Transient.Scene = SceneRenderTargets{
 	    .SceneColor = sceneColor,
 	    .FinalSceneColor = finalSceneColor,
 	    .BackBuffer = backBuffer,
 	    .MainDepth = mainDepth};
+	resources.ViewportProducts.SceneColor = sceneColor;
+	resources.ViewportProducts.FinalSceneColor = finalSceneColor;
+	resources.ViewportProducts.SceneDepth = mainDepth;
 
-	const GBufferRenderTargets gbuffer = CreateGBufferRenderTargets(builder, sceneExtent, sceneTargets);
-	AddGBufferPass(builder, gbuffer);
+	resources.Transient.GBuffer = CreateGBufferRenderTargets(builder, sceneExtent, resources.Transient.Scene);
+	resources.ViewportProducts.Normals = resources.Transient.GBuffer.Normal;
+	resources.ViewportProducts.MotionVectors = resources.Transient.GBuffer.MotionVector;
+	AddGBufferPass(builder, resources.Transient.GBuffer);
 
-	const RayTracingSceneFrameGraphResources rayTracingResources = CreateRayTracingSceneFrameGraphResources(builder);
-	AddRayTracingSceneBuildPasses(builder, rayTracingResources);
+	resources.Persistent.RayTracing = CreateRayTracingSceneFrameGraphResources(builder);
+	resources.Persistent.SceneTlas = resources.Persistent.RayTracing.SceneTlas;
+	AddRayTracingSceneBuildPasses(builder, resources.Persistent.RayTracing);
 
-	const LightingRenderTargets lighting = CreateLightingRenderTargets(builder, sceneExtent);
-	AddLightingPasses(builder, sceneTargets, lighting, gbuffer, rayTracingResources.SceneTlas);
-	AddExternalProviderEvaluationPass(builder, sceneExtent, sceneTargets, gbuffer);
+	resources.Transient.Lighting = CreateLightingRenderTargets(builder, sceneExtent);
+	
+	AddLightingPasses(
+	    builder,
+	    resources.Transient.Scene,
+	    resources.Transient.Lighting,
+	    resources.Transient.GBuffer,
+	    resources.Persistent.RayTracing.SceneTlas);
+
+	AddExternalProviderEvaluationPass(builder, sceneExtent, resources.Transient.Scene, resources.Transient.GBuffer);
+
+	resources.ProviderInputs = FrameAssemblyProviderResources{
+	    .HudlessSceneColor = resources.Transient.Scene.SceneColor,
+	    .Depth = resources.Transient.Scene.MainDepth,
+	    .MotionVectors = resources.Transient.GBuffer.MotionVector,
+	    .FinalOutputColor = resources.Transient.Scene.FinalSceneColor,
+	    .Exposure = FrameGraphTextureHandle::Invalid()};
 
 	if (presentToBackBuffer)
 	{
-		AddPresentationPass(builder, sceneTargets);
+		AddPresentationPass(builder, resources.Transient.Scene);
 	}
 
-	return FrameBuildResult{.Scene = sceneTargets, .GBuffer = gbuffer, .RayTracing = rayTracingResources};
+	return FrameBuildResult{.Resources = resources};
 }

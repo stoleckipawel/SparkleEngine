@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Public/Events/ScopedEventHandle.h"
-#include "Frame/RayTracingSceneFrameGraphResources.h"
+#include "Frame/FrameAssembly.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"
@@ -43,17 +43,14 @@ class FramePipeline final
 	void EndViewportPresentation(RenderOutputFlags output) noexcept;
 	RhiCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
 	std::uint32_t GetLastUnresolvedBarrierWarningCount() const noexcept;
+	std::uint32_t GetLastMissingExecutionBindingCount() const noexcept;
+	std::uint32_t GetCompiledTransientResourceCount() const noexcept;
+	std::uint32_t GetCompiledImportedResourceCount() const noexcept;
+	std::uint32_t GetCompiledPersistentResourceCount() const noexcept;
+	std::uint32_t GetAvailableViewportProductCount() const noexcept;
 	bool TryGetLastResolvedGpuTimingMilliseconds(std::string_view label, double& outMilliseconds) const noexcept;
 
   private:
-	struct RendererFrameProductHandles
-	{
-		RenderProductHandle SceneColor = {};
-		RenderProductHandle FinalSceneColor = {};
-		RenderProductHandle SceneDepth = {};
-		RenderProductHandle MotionVectors = {};
-	};
-
 	void InitializeFrameGraph() noexcept;
 	void InitializeFrameGraph(RenderViewportExtent sceneExtent) noexcept;
 	void BindWindowResizeEvent() noexcept;
@@ -83,10 +80,8 @@ class FramePipeline final
 	RenderViewportExtent m_frameGraphSceneExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
-	RendererFrameProductHandles m_frameProducts = {};
+	FrameAssemblyResourceLayout m_frameResources = {};
 	RenderSceneSnapshot m_sceneSnapshot = {};
-	FrameGraphAccelerationStructureHandle m_frameGraphSceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
-	RayTracingSceneFrameGraphResources m_frameGraphRayTracingResources = {};
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;
 };

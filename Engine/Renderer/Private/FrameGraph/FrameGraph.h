@@ -127,6 +127,10 @@ class FrameGraph
 
 	FrameGraphPlan Compile();
 	std::uint32_t GetLastUnresolvedBarrierWarningCount() const noexcept { return m_lastUnresolvedBarrierWarningCount; }
+	std::uint32_t GetLastMissingExecutionBindingCount() const noexcept { return m_lastMissingExecutionBindingCount; }
+	std::uint32_t GetCompiledTransientResourceCount() const noexcept;
+	std::uint32_t GetCompiledImportedResourceCount() const noexcept;
+	std::uint32_t GetCompiledPersistentResourceCount() const noexcept;
 
 	void Execute(
 	    const FrameGraphPlan& plan,
@@ -382,6 +386,8 @@ class FrameGraph
 	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
 	void RecordUnresolvedBarrierWarning() const noexcept { ++m_lastUnresolvedBarrierWarningCount; }
+	void RecordMissingExecutionBinding() const noexcept { ++m_lastMissingExecutionBindingCount; }
+	void ValidateExecutionBindings(const FrameGraphPlan& plan) const noexcept;
 	FrameGraphResourceHandle AllocateDynamicResourceHandle() noexcept;
 
 	struct VirtualTransientResource
@@ -409,6 +415,7 @@ class FrameGraph
 	mutable FrameGraphResourceResolver m_resourceResolver;
 	FrameGraphPlan m_compiledPlan;
 	mutable std::uint32_t m_lastUnresolvedBarrierWarningCount = 0;
+	mutable std::uint32_t m_lastMissingExecutionBindingCount = 0;
 	std::uint32_t m_nextDynamicResourceIndex = 0;
 	std::vector<VirtualTransientResource> m_virtualTransientResources;
 	mutable std::unique_ptr<FrameGraphTransientAllocator> m_transientAllocator;

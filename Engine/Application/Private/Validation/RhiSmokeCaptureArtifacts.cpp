@@ -138,6 +138,11 @@ namespace RhiSmokeCaptureArtifacts
 		file << "      \"deviceId\": " << diagnostics.Adapter.DeviceId << "\n";
 		file << "    },\n";
 		file << "    \"frameGraphUnresolvedBarrierWarnings\": " << diagnostics.FrameGraph.UnresolvedBarrierWarnings << ",\n";
+		file << "    \"frameGraphMissingExecutionBindings\": " << diagnostics.FrameGraph.MissingExecutionBindings << ",\n";
+		file << "    \"frameGraphTransientResources\": " << diagnostics.FrameGraph.TransientResources << ",\n";
+		file << "    \"frameGraphImportedResources\": " << diagnostics.FrameGraph.ImportedResources << ",\n";
+		file << "    \"frameGraphPersistentResources\": " << diagnostics.FrameGraph.PersistentResources << ",\n";
+		file << "    \"frameGraphViewportProducts\": " << diagnostics.FrameGraph.ViewportProducts << ",\n";
 		file << "    \"finalFrameGpuAvailable\": " << (diagnostics.FrameTimings.HasFinalFrameGpuMilliseconds ? "true" : "false") << ",\n";
 		file << "    \"finalFrameGpuMs\": " << diagnostics.FrameTimings.FinalFrameGpuMilliseconds << ",\n";
 		file << "    \"upscalerProvider\": \"" << EscapeJson(diagnostics.Upscaler.Provider) << "\",\n";

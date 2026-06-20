@@ -41,6 +41,39 @@ FrameGraphPlan FrameGraph::Compile()
 	return m_compiledPlan;
 }
 
+std::uint32_t FrameGraph::GetCompiledTransientResourceCount() const noexcept
+{
+	return static_cast<std::uint32_t>(std::count_if(
+	    m_compiledPlan.resources.begin(),
+	    m_compiledPlan.resources.end(),
+	    [](const FrameGraphResourceNode& resource) noexcept
+	    {
+		    return resource.ownership == FrameGraphResourceOwnership::Transient;
+	    }));
+}
+
+std::uint32_t FrameGraph::GetCompiledImportedResourceCount() const noexcept
+{
+	return static_cast<std::uint32_t>(std::count_if(
+	    m_compiledPlan.resources.begin(),
+	    m_compiledPlan.resources.end(),
+	    [](const FrameGraphResourceNode& resource) noexcept
+	    {
+		    return resource.ownership == FrameGraphResourceOwnership::Imported;
+	    }));
+}
+
+std::uint32_t FrameGraph::GetCompiledPersistentResourceCount() const noexcept
+{
+	return static_cast<std::uint32_t>(std::count_if(
+	    m_compiledPlan.resources.begin(),
+	    m_compiledPlan.resources.end(),
+	    [](const FrameGraphResourceNode& resource) noexcept
+	    {
+		    return resource.ownership == FrameGraphResourceOwnership::ExternalPersistent;
+	    }));
+}
+
 ResourceState FrameGraph::GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept
 {
 	if (!handle.IsValid() || !m_resourceRegistry.IsRegistered(handle))

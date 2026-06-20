@@ -13,6 +13,7 @@
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"
 #include "Frame/FrameContext.h"
+#include "Frame/RenderProductHandleUtils.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
@@ -163,12 +164,7 @@ RhiCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportCaptur
 
 FrameGraphResourceHandle FramePipeline::ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept
 {
-	if (!handle)
-	{
-		return FrameGraphResourceHandle::Invalid();
-	}
-
-	return FrameGraphResourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
+	return ToFrameGraphResourceHandle(handle);
 }
 
 NativeResourceHandle FramePipeline::ResolveRenderProductResource(RenderProductHandle handle) const noexcept
@@ -223,6 +219,37 @@ std::uint32_t FramePipeline::GetLastUnresolvedBarrierWarningCount() const noexce
 	return m_frameGraph != nullptr ? m_frameGraph->GetLastUnresolvedBarrierWarningCount() : 0u;
 }
 
+std::uint32_t FramePipeline::GetLastMissingExecutionBindingCount() const noexcept
+{
+	return m_frameGraph != nullptr ? m_frameGraph->GetLastMissingExecutionBindingCount() : 0u;
+}
+
+std::uint32_t FramePipeline::GetCompiledTransientResourceCount() const noexcept
+{
+	return m_frameGraph != nullptr ? m_frameGraph->GetCompiledTransientResourceCount() : 0u;
+}
+
+std::uint32_t FramePipeline::GetCompiledImportedResourceCount() const noexcept
+{
+	return m_frameGraph != nullptr ? m_frameGraph->GetCompiledImportedResourceCount() : 0u;
+}
+
+std::uint32_t FramePipeline::GetCompiledPersistentResourceCount() const noexcept
+{
+	return m_frameGraph != nullptr ? m_frameGraph->GetCompiledPersistentResourceCount() : 0u;
+}
+
+std::uint32_t FramePipeline::GetAvailableViewportProductCount() const noexcept
+{
+	std::uint32_t count = 0;
+	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::SceneColor) ? 1u : 0u;
+	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::SceneDepth) ? 1u : 0u;
+	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::Normals) ? 1u : 0u;
+	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::ObjectId) ? 1u : 0u;
+	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::OverlayMask) ? 1u : 0u;
+	return count;
+}
+
 bool FramePipeline::TryGetLastResolvedGpuTimingMilliseconds(std::string_view label, double& outMilliseconds) const noexcept
 {
 	const std::vector<ResolvedGpuTiming>& resolvedTimings = GetCurrentFrameDiagnostics().GetResolvedTimings();
@@ -248,34 +275,34 @@ void FramePipeline::BindRayTracingFrameGraphResources(const RayTracingSceneFrame
 	if (rayTracingScene.PtlasFrameGraphResources.HasLogicalUpdateRecords())
 	{
 		m_frameGraph->BindPersistentBuffer(
-		    m_frameGraphRayTracingResources.PtlasLogicalUpdateRecords,
+		    m_frameResources.Persistent.RayTracing.PtlasLogicalUpdateRecords,
 		    rayTracingScene.PtlasFrameGraphResources.LogicalUpdateRecords);
 	}
 	else
 	{
-		m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasLogicalUpdateRecords);
+		m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasLogicalUpdateRecords);
 	}
 
 	if (rayTracingScene.PtlasFrameGraphResources.HasNativeOperationData())
 	{
 		m_frameGraph->BindPersistentBuffer(
-		    m_frameGraphRayTracingResources.PtlasNativeOperationData,
+		    m_frameResources.Persistent.RayTracing.PtlasNativeOperationData,
 		    rayTracingScene.PtlasFrameGraphResources.NativeOperationData);
 	}
 	else
 	{
-		m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasNativeOperationData);
+		m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasNativeOperationData);
 	}
 
 	if (rayTracingScene.PtlasFrameGraphResources.HasScratch())
 	{
 		m_frameGraph->BindPersistentBuffer(
-		    m_frameGraphRayTracingResources.PtlasScratch,
+		    m_frameResources.Persistent.RayTracing.PtlasScratch,
 		    rayTracingScene.PtlasFrameGraphResources.Scratch);
 	}
 	else
 	{
-		m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasScratch);
+		m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasScratch);
 	}
 }
 
@@ -286,9 +313,9 @@ void FramePipeline::ClearRayTracingFrameGraphResources() noexcept
 		return;
 	}
 
-	m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasLogicalUpdateRecords);
-	m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasNativeOperationData);
-	m_frameGraph->ClearPersistentBufferBinding(m_frameGraphRayTracingResources.PtlasScratch);
+	m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasLogicalUpdateRecords);
+	m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasNativeOperationData);
+	m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasScratch);
 }
 
 RenderViewportExtent FramePipeline::ResolveSceneExtent() const noexcept
@@ -324,25 +351,7 @@ void FramePipeline::InitializeFrameGraph(RenderViewportExtent sceneExtent) noexc
 	FrameGraphFactory frameGraphFactory(dependencies);
 	FrameGraphBuildResult buildResult = frameGraphFactory.Build();
 	m_frameGraphSceneExtent = dependencies.sceneExtent;
-
-	m_frameProducts.SceneColor =
-	    buildResult.SceneColor.IsValid()
-	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneColor.GetResourceHandle().index) + 1ull}
-	        : RenderProductHandle{};
-	m_frameProducts.FinalSceneColor =
-	    buildResult.FinalSceneColor.IsValid()
-	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.FinalSceneColor.GetResourceHandle().index) + 1ull}
-	        : RenderProductHandle{};
-	m_frameProducts.SceneDepth =
-	    buildResult.SceneDepth.IsValid()
-	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneDepth.GetResourceHandle().index) + 1ull}
-	        : RenderProductHandle{};
-	m_frameProducts.MotionVectors =
-	    buildResult.MotionVectors.IsValid()
-	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.MotionVectors.GetResourceHandle().index) + 1ull}
-	        : RenderProductHandle{};
-	m_frameGraphSceneTlas = buildResult.SceneTlas;
-	m_frameGraphRayTracingResources = buildResult.RayTracing;
+	m_frameResources = buildResult.Resources;
 	m_frameGraph = std::move(buildResult.Graph);
 }
 
@@ -446,13 +455,22 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	m_viewportRenderProducts.Clear();
 	m_viewportRenderProducts.SetProduct(
 	    RenderOutputFlags::SceneColor,
-	    RenderProduct{m_frameProducts.FinalSceneColor, extent, RenderProductFormat::ColorLdr});
+	    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.FinalSceneColor), extent, RenderProductFormat::ColorLdr});
 
-	if (m_frameProducts.SceneDepth && HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
+	if (m_frameResources.ViewportProducts.SceneDepth.IsValid() &&
+	    HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::SceneDepth,
-		    RenderProduct{m_frameProducts.SceneDepth, extent, RenderProductFormat::DepthStencil});
+		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth), extent, RenderProductFormat::DepthStencil});
+	}
+
+	if (m_frameResources.ViewportProducts.Normals.IsValid() &&
+	    HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::Normals))
+	{
+		m_viewportRenderProducts.SetProduct(
+		    RenderOutputFlags::Normals,
+		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.Normals), extent, RenderProductFormat::ColorHdr});
 	}
 }
 
@@ -491,10 +509,10 @@ void FramePipeline::RecordFrame() noexcept
 		const UpscalerInputContract upscalerInputContract =
 		    BuildUpscalerInputContract(
 		        UpscalerInputContractBuildDesc{
-		            .HudlessSceneColor = m_frameProducts.SceneColor,
-		            .Depth = m_frameProducts.SceneDepth,
-		            .MotionVectors = m_frameProducts.MotionVectors,
-		            .FinalOutput = m_frameProducts.FinalSceneColor,
+		            .HudlessSceneColor = ToRenderProductHandle(m_frameResources.ProviderInputs.HudlessSceneColor),
+		            .Depth = ToRenderProductHandle(m_frameResources.ProviderInputs.Depth),
+		            .MotionVectors = ToRenderProductHandle(m_frameResources.ProviderInputs.MotionVectors),
+		            .FinalOutput = ToRenderProductHandle(m_frameResources.ProviderInputs.FinalOutputColor),
 		            .RenderExtent = m_frameGraphSceneExtent,
 		            .OutputExtent = m_frameGraphSceneExtent,
 		            .FrameIndex = m_systems->GetTimer().GetFrameCount(),
@@ -504,7 +522,7 @@ void FramePipeline::RecordFrame() noexcept
 		upscalerSubsystem->SetupFrame(upscalerInputContract);
 	}
 
-	if (m_frameGraph != nullptr && m_frameGraphSceneTlas.IsValid())
+	if (m_frameGraph != nullptr && m_frameResources.Persistent.SceneTlas.IsValid())
 	{
 		if (RenderRayTracingScene* renderRayTracingScene = m_systems->GetRenderRayTracingScene())
 		{
@@ -512,20 +530,20 @@ void FramePipeline::RecordFrame() noexcept
 			if (frame.rayTracingScene.HasBoundTlas())
 			{
 				m_frameGraph->BindPersistentAccelerationStructure(
-				    m_frameGraphSceneTlas,
+				    m_frameResources.Persistent.SceneTlas,
 				    frame.rayTracingScene.TlasResource,
 				    frame.rayTracingScene.TlasGpuAddress);
 				BindRayTracingFrameGraphResources(frame.rayTracingScene);
 			}
 			else
 			{
-				m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameGraphSceneTlas);
+				m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameResources.Persistent.SceneTlas);
 				ClearRayTracingFrameGraphResources();
 			}
 		}
 		else
 		{
-			m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameGraphSceneTlas);
+			m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameResources.Persistent.SceneTlas);
 			ClearRayTracingFrameGraphResources();
 		}
 	}

@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "Frame/RayTracingSceneFrameGraphResources.h"
+#include "Frame/FrameAssembly.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
@@ -190,12 +191,7 @@ struct FrameGraphDependencies
 struct FrameGraphBuildResult
 {
 	std::unique_ptr<FrameGraph> Graph;
-	FrameGraphTextureHandle SceneColor;
-	FrameGraphTextureHandle FinalSceneColor;
-	FrameGraphTextureHandle SceneDepth;
-	FrameGraphTextureHandle MotionVectors;
-	FrameGraphAccelerationStructureHandle SceneTlas;
-	RayTracingSceneFrameGraphResources RayTracing;
+	FrameAssemblyResourceLayout Resources = {};
 };
 
 class FrameGraphFactory final

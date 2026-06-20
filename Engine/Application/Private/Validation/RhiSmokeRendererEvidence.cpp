@@ -62,11 +62,17 @@ namespace
 	{
 		SPDLOG_LOGGER_INFO(
 		    logger,
-		    "{}: backend={} frameGraphUnresolvedBarrierWarnings={} upscalerProvider='{}' upscalerStatus={} upscalerReason='{}' "
-		    "rayTracing={} inlineRayQuery={}",
+		    "{}: backend={} frameGraphUnresolvedBarrierWarnings={} frameGraphMissingExecutionBindings={} transientResources={} "
+		    "importedResources={} persistentResources={} viewportProducts={} upscalerProvider='{}' upscalerStatus={} "
+		    "upscalerReason='{}' rayTracing={} inlineRayQuery={}",
 		    evidenceLabel,
 		    RhiBackendApiToString(snapshot.BackendApi),
 		    snapshot.FrameGraph.UnresolvedBarrierWarnings,
+		    snapshot.FrameGraph.MissingExecutionBindings,
+		    snapshot.FrameGraph.TransientResources,
+		    snapshot.FrameGraph.ImportedResources,
+		    snapshot.FrameGraph.PersistentResources,
+		    snapshot.FrameGraph.ViewportProducts,
 		    snapshot.Upscaler.Provider,
 		    snapshot.Upscaler.Status,
 		    snapshot.Upscaler.Reason,
@@ -137,6 +143,15 @@ namespace RhiSmokeRendererEvidence
 			    "{}: frame graph reported {} unresolved barrier warning(s).",
 			    validationLabel,
 			    snapshot.FrameGraph.UnresolvedBarrierWarnings);
+		}
+		if (snapshot.FrameGraph.MissingExecutionBindings > 0)
+		{
+			passed = false;
+			SPDLOG_LOGGER_ERROR(
+			    logger,
+			    "{}: frame graph reported {} missing execution binding(s).",
+			    validationLabel,
+			    snapshot.FrameGraph.MissingExecutionBindings);
 		}
 		if (!RhiSmokeRayTracingEvidence::Validate(snapshot.RayTracing, validationLabel, logger))
 		{

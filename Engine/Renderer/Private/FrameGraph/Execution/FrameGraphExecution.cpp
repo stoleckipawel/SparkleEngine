@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cassert>
+#include <format>
 #include <string>
 
 struct FrameGraphFramebuffer final
@@ -21,6 +22,34 @@ struct FrameGraphFramebuffer final
 	bool HasDepthStencil() const noexcept { return static_cast<bool>(depthStencilView); }
 };
 
+namespace
+{
+	static const auto g_frameGraphExecutionLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
+
+	void FailMissingExecutionBinding(
+	    std::string_view passName,
+	    const FrameGraphResourceMetadata& resource,
+	    bool hasResource,
+	    RhiGpuVirtualAddress gpuAddress) noexcept
+	{
+		Diagnostics::Fail(
+		    g_frameGraphExecutionLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "FrameGraph execution binding validation failed: pass='{}' resource='{}' ownership={} kind={} hasResource={} gpuAddress={} remediation='bind the external/persistent resource before execution or gate the pass so it does not declare the missing resource'",
+		        passName,
+		        resource.debugName.empty() ? "<unnamed>" : resource.debugName,
+		        resource.ownership == FrameGraphResourceOwnership::Imported ? "Imported" : "ExternalPersistent",
+		        resource.kind == FrameGraphResourceKind::AccelerationStructure ? "AccelerationStructure"
+		        : resource.kind == FrameGraphResourceKind::Buffer              ? "Buffer"
+		        : resource.kind == FrameGraphResourceKind::DepthStencil        ? "DepthStencil"
+		                                                                      : "ColorRenderTarget",
+		        hasResource,
+		        gpuAddress));
+	}
+}
+
 void FrameGraph::Execute(
     const FrameGraphPlan& plan,
     RenderCommandContext& cmd,
@@ -29,12 +58,14 @@ void FrameGraph::Execute(
     FrameExecutionDiagnostics& frameDiagnostics) const
 {
 	m_lastUnresolvedBarrierWarningCount = 0;
+	m_lastMissingExecutionBindingCount = 0;
 	cmd.EnableDrawDispatchDiagnostics();
 
 	static constexpr auto kFrameGraphExecuteName = Diagnostics::DiagnosticName{"Renderer.FrameGraph.Execute"};
 	SPARKLE_CPU_SCOPE(kFrameGraphExecuteName);
 
 	EnsureTransientResourcesMaterialized(plan);
+	ValidateExecutionBindings(plan);
 
 	for (const FrameGraphPassIndex passIndex : plan.executionOrder)
 	{
@@ -76,6 +107,42 @@ void FrameGraph::Execute(
 		frameDiagnostics.InsertGpuMarker(cmd, "Renderer.FrameGraph.FrameEnd.ResourceBarriers");
 	}
 	EmitCompiledBarriers(cmd, "FrameEnd", plan.finalBarriers);
+}
+
+void FrameGraph::ValidateExecutionBindings(const FrameGraphPlan& plan) const noexcept
+{
+	for (const FrameGraphPassIndex passIndex : plan.executionOrder)
+	{
+		const FrameGraphPassNode& passRecord = plan.passes[passIndex];
+		for (const PassResourceDeclaration& declaration : passRecord.declarations)
+		{
+			if (!declaration.handle.IsValid() || !m_resourceRegistry.IsRegistered(declaration.handle))
+			{
+				continue;
+			}
+
+			const FrameGraphResourceMetadata& resource = m_resourceRegistry.GetMetadata(declaration.handle);
+			if (!IsExternalFrameGraphResource(resource.ownership) || resource.kind == FrameGraphResourceKind::BackBuffer)
+			{
+				continue;
+			}
+
+			const FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(resource.handle);
+			const bool requiresGpuAddress = resource.kind == FrameGraphResourceKind::AccelerationStructure;
+			const bool hasRequiredBinding = access.resource && (!requiresGpuAddress || access.accelerationStructureGpuAddress != 0);
+			if (hasRequiredBinding)
+			{
+				continue;
+			}
+
+			RecordMissingExecutionBinding();
+			FailMissingExecutionBinding(
+			    passRecord.passName,
+			    resource,
+			    static_cast<bool>(access.resource),
+			    access.accelerationStructureGpuAddress);
+		}
+	}
 }
 
 FrameGraphResourceCommands::FrameGraphResourceCommands(const FrameGraph& frameGraph) noexcept : m_frameGraph(&frameGraph)

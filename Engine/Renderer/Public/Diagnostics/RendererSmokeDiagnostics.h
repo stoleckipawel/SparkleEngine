@@ -18,6 +18,11 @@ struct SPARKLE_RENDERER_API RendererSmokeAdapterDiagnostics final
 struct SPARKLE_RENDERER_API RendererSmokeFrameGraphDiagnostics final
 {
 	std::uint32_t UnresolvedBarrierWarnings = 0;
+	std::uint32_t MissingExecutionBindings = 0;
+	std::uint32_t TransientResources = 0;
+	std::uint32_t ImportedResources = 0;
+	std::uint32_t PersistentResources = 0;
+	std::uint32_t ViewportProducts = 0;
 };
 
 struct SPARKLE_RENDERER_API RendererSmokeFrameTimingDiagnostics final

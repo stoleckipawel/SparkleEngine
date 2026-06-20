@@ -84,6 +84,16 @@ RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 	snapshot.Adapter.DeviceId = capabilities.ExternalFeatureInterop.Adapter.DeviceId;
 	snapshot.FrameGraph.UnresolvedBarrierWarnings =
 	    m_framePipeline != nullptr ? m_framePipeline->GetLastUnresolvedBarrierWarningCount() : 0u;
+	snapshot.FrameGraph.MissingExecutionBindings =
+	    m_framePipeline != nullptr ? m_framePipeline->GetLastMissingExecutionBindingCount() : 0u;
+	snapshot.FrameGraph.TransientResources =
+	    m_framePipeline != nullptr ? m_framePipeline->GetCompiledTransientResourceCount() : 0u;
+	snapshot.FrameGraph.ImportedResources =
+	    m_framePipeline != nullptr ? m_framePipeline->GetCompiledImportedResourceCount() : 0u;
+	snapshot.FrameGraph.PersistentResources =
+	    m_framePipeline != nullptr ? m_framePipeline->GetCompiledPersistentResourceCount() : 0u;
+	snapshot.FrameGraph.ViewportProducts =
+	    m_framePipeline != nullptr ? m_framePipeline->GetAvailableViewportProductCount() : 0u;
 	if (m_framePipeline != nullptr)
 	{
 		double finalFrameGpuMilliseconds = 0.0;
