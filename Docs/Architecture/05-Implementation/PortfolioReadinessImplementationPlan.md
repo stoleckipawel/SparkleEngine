@@ -66,6 +66,78 @@ The implementation work should move the repository toward these review outcomes.
 - Milestone tag format used below: `M0` through `M10`
 - Practical progress rule: when `Prompt 08 of 32` is complete, you are `8 / 32` through the prompt plan.
 
+## Production Reference Discipline
+
+Every implementation prompt must start by comparing SparkleEngine against production-proven public repositories. The goal is not to copy code. The goal is to prevent architecture from being invented in isolation.
+
+Reference-backed execution means:
+
+- Before coding, inspect the prompt-specific reference repositories in the table below.
+- Extract the concrete pattern being used: ownership boundary, service shape, lifetime rule, validation hook, artifact shape, or pass/pipeline layout.
+- Apply the pattern only where it improves SparkleEngine's existing code path.
+- Do not add a new abstraction only because a requirement says "make this visible."
+- Do not add a parallel descriptive layer that mirrors existing code unless a reference repo has the same kind of runtime-consumed layer and SparkleEngine will consume it in validation or diagnostics.
+- If no reference supports the intended design, stop and choose a smaller change against existing code.
+- The report for every prompt must include `Reference evidence used` and `Reference patterns rejected`.
+
+Reference gate:
+Each row in the prompt reference matrix is part of that prompt's acceptance criteria. Before editing code, the agent must
+write a short implementation note listing the reference repositories inspected, the concrete pattern being adopted, and
+the patterns rejected. If the intended architecture shape has no public reference precedent in the listed repositories or
+an equally strong source named in the report, the agent must not invent it. It should reduce the task to a smaller,
+source-backed refactor against SparkleEngine's existing code.
+
+Core reference repositories:
+
+- [NRI](https://github.com/NVIDIA-RTX/NRI): low-level D3D12/Vulkan-style explicit rendering interface, useful when a prompt touches RHI boundaries, queues, descriptors, memory, barriers, or backend parity.
+- [NVRHI](https://github.com/NVIDIA-RTX/NVRHI) and [NVRHI Programming Guide](https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/ProgrammingGuide.md): resource states, command lists, binding sets, lifetime, barriers, descriptor/resource usage, pipeline APIs, and portability tradeoffs.
+- [NVIDIA Donut](https://github.com/NVIDIA-RTX/Donut) and [Donut Samples](https://github.com/NVIDIA-RTX/Donut-Samples): practical renderer/app framework shape over NVRHI, device manager, scene loading, render passes, threaded rendering, and ray tracing samples.
+- [AMD Cauldron](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron): AMD production sample framework for DirectX 12/Vulkan prototyping, useful for backend abstraction, render modules, FidelityFX integration, and sample workflow shape.
+- [FidelityFX SDK](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK): provider integration, AMD SDK sample structure, shader/runtime packaging expectations.
+- [Falcor](https://github.com/NVIDIAGameWorks/Falcor): render graph, ray tracing, path tracing, shader, scene, diagnostics, and research/prototype renderer architecture.
+- [RTXPT](https://github.com/NVIDIA-RTX/RTXPT): path tracing integration, neural-graphics-adjacent renderer structure, and high-end RT/path tracing proof shape.
+- [Streamline](https://github.com/NVIDIA-RTX/Streamline) and [Streamline Sample](https://github.com/NVIDIA-RTX/Streamline_Sample): provider-style SDK integration and capability checks.
+- [NRD](https://github.com/NVIDIA-RTX/NRD): denoiser input contracts, low ray-per-pixel path tracing denoise expectations, and temporal/resource requirements.
+- [RTXNTC](https://github.com/NVIDIA-RTX/RTXNTC): neural texture compression readiness, material/texture channel grouping, and runtime integration constraints.
+- [Slang](https://github.com/shader-slang/slang) and [Neural Shading SIGGRAPH 2025 examples](https://github.com/shader-slang/neural-shading-s25): shader profile gates, Slang-based neural shading experiments, and cooperative-vector readiness.
+
+Prompt reference matrix:
+
+| Prompt | Required reference starting points |
+| --- | --- |
+| Prompt 01 | NRI, NVRHI Programming Guide, Donut DeviceManager/App shape, Cauldron device/backend abstractions |
+| Prompt 02 | NRI backend contracts, NVRHI backend capabilities, Cauldron D3D12/Vulkan device layers |
+| Prompt 03 | Donut render passes, Donut Samples, Falcor RenderGraph, NVRHI command/resource state patterns |
+| Prompt 04 | Streamline, Streamline Sample, FidelityFX SDK, Cauldron FidelityFX integration |
+| Prompt 05 | NVRHI shader/pipeline APIs, Donut shader compiler usage, Cauldron shader/runtime patterns, Slang |
+| Prompt 06 | Donut scene/component graph, Cauldron scene/content systems, Falcor scene model |
+| Prompt 07 | NVRHI validation/lifetime diagnostics, Cauldron diagnostics patterns, Falcor profiling/graph evidence |
+| Prompt 08 | Donut app/device manager lifecycle, Cauldron sample lifecycle, Falcor application/sample lifecycle |
+| Prompt 09 | NVRHI pipeline state APIs, NRI pipeline abstractions, Cauldron PSO/shader runtime handling |
+| Prompt 10 | NVRHI ray tracing tutorial/samples, Donut ray tracing samples, Falcor ray tracing, RTXPT |
+| Prompt 11 | Falcor path tracer docs, RTXPT, NRD, Donut ray tracing samples |
+| Prompt 12 | Slang, neural-shading-s25, RTXNTC, Streamline, FidelityFX SDK |
+| Prompt 13 | Donut Samples, Falcor sample graphs, RTXPT sample scenarios, NRD sample expectations |
+| Prompt 14 | Donut threaded rendering sample, NVRHI parallel command list guidance, Falcor task/render graph scheduling |
+| Prompt 15 | Donut/Cauldron sample workflow commands, existing SparkleLauncher patterns |
+| Prompt 16 | Donut/Cauldron configuration/readiness reporting patterns, existing SparkleLauncher reports |
+| Prompt 17 | Donut headless/basic samples, Falcor sample graph loading, Cauldron sample startup |
+| Prompt 18 | NRI/NVRHI backend startup, Donut DeviceManager, Cauldron device creation |
+| Prompt 19 | NRI/NVRHI capability reporting, Cauldron D3D12/Vulkan parity, Falcor device feature reporting |
+| Prompt 20 | Falcor diagnostics/profiling, NVRHI validation, Cauldron profiler/metrics |
+| Prompt 21 | NVRHI descriptor/resource lifetime, Cauldron descriptor/resource pools, NRI descriptors |
+| Prompt 22 | NVRHI pipeline APIs, Cauldron shader/PSO handling, Donut shader compilation |
+| Prompt 23 | Donut shader compiler, NVRHI shader reflection/pipelines, Slang/DXC usage in references |
+| Prompt 24 | Streamline capability checks, FidelityFX SDK feature availability, Cauldron SDK backend |
+| Prompt 25 | Streamline resource tags/contracts, NRD inputs, FidelityFX SDK input resources |
+| Prompt 26 | Falcor RenderGraph validation, NVRHI resource state tracking, Donut pass conventions |
+| Prompt 27 | Donut scene graph, Cauldron content systems, Falcor scene invalidation patterns |
+| Prompt 28 | Donut/Cauldron app failure paths, SparkleLauncher recovery patterns |
+| Prompt 29 | Donut Samples, Cauldron samples, Falcor sample scenes |
+| Prompt 30 | Falcor/Mogwai inspection workflow, Cauldron sample UI, existing Sparkle editor UI |
+| Prompt 31 | Donut/Cauldron sample runner expectations, SparkleLauncher operation orchestration |
+| Prompt 32 | The implemented code plus all references used by completed prompts |
+
 | Target | Source | Implementation meaning |
 | --- | --- | --- |
 | A reviewer can run architecture, generate, build, cook, smoke, shader inspection, and diagnostics through stable commands. | [ReviewerGuide.md](../00-Review/ReviewerGuide.md), [ValidationMatrix.md](../03-Validation/ValidationMatrix.md) | Add missing launcher/CLI operations and artifacts instead of relying on oral instructions. |
@@ -112,6 +184,8 @@ You are working in the SparkleEngine repository.
 
 Hard constraints:
 - Read the review folder first, especially `A_PrincipalRoleRequirements.md`, `B_EngineArchitectureScorecard.md`, and `PrincipalRenderingReadiness.md`.
+- Read the prompt's required production references from the `Prompt reference matrix` before coding.
+- Start from patterns that exist in NRI, NVRHI, Donut, Cauldron, Falcor, RTXPT, Streamline, FidelityFX SDK, NRD, RTXNTC, or Slang. Do not invent a new architecture shape without source precedent.
 - Do not add major rendering features unless the prompt explicitly asks for a validation, diagnostics, or baseline asset path.
 - Do not add new third-party SDK integrations.
 - Do not weaken architecture boundary checks.
@@ -119,11 +193,12 @@ Hard constraints:
 - Keep GameFramework free of Renderer/RHI dependencies.
 - Keep backend-native code inside RHI backend-private folders or provider-scoped exceptions documented by ADR.
 - Do not satisfy a review requirement by adding only a wrapper, report, or launcher action when the scorecard calls for architectural code movement.
+- Do not satisfy a review requirement by adding a parallel descriptive model that mirrors existing code. If a new type is added, it must be owned by the real subsystem and consumed by runtime, validation, diagnostics, or tooling.
 - Do not parallelize unclear ownership. Multithreading/job-system work must land after RHI, Renderer, PSO, RT/path tracing, neural-readiness, diagnostics, and scene snapshot MVP contracts are stable.
 - Prefer existing module patterns, existing launcher operation models, existing diagnostics types, and existing CMake target conventions.
 - Add source-backed tests or validation commands when the prompt changes behavior.
 - Update architecture docs only when the code change changes the actual contract or current status.
-- Report changed files, validation commands, acceptance criteria pass/fail, and follow-ups.
+- Report changed files, production references inspected, reference patterns adopted/rejected, validation commands, acceptance criteria pass/fail, and follow-ups.
 ```
 
 ## Stage Order
@@ -195,6 +270,12 @@ Supporting docs:
 - Docs/Architecture/01-Boundaries/BoundaryRules.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
+Production references to inspect first:
+- NVIDIA NRI for explicit D3D12/Vulkan-level ownership surfaces and low-overhead backend contracts.
+- NVRHI Programming Guide for resource state tracking, command list lifetime, binding sets, deferred destruction, and native escape hatches.
+- NVIDIA Donut `DeviceManager` and Donut Samples for a production sample framework that keeps device ownership in the app/RHI host rather than adding a separate descriptive ownership graph.
+- AMD Cauldron device/backend/resource abstractions for a cross-IHV DirectX 12/Vulkan framework pattern.
+
 Code to inspect:
 - Engine/RHI/Public/**/*.h
 - Engine/RHI/Private/D3D12/**/*.h
@@ -204,8 +285,20 @@ Code to inspect:
 - Engine/Renderer/Private/**/*.cpp only where it consumes public RHI contracts
 
 Implementation requirements:
+- Before editing code, write short implementation notes in the report:
+  - Which reference files/classes were inspected.
+  - Which concrete pattern is being applied.
+  - Which tempting abstraction was rejected and why.
 - Audit the public RHI surface and identify where ownership is implicit or scattered.
-- Add or refine source-level types/functions so ownership is visible for:
+- Harden the actual ownership-bearing surfaces, not a parallel description of them:
+  - `RenderDeviceServices` for backend creation, frame lifecycle, command submission, and shutdown.
+  - D3D12/Vulkan backend RHI classes for device, adapter, queues, command allocators/lists, fences, and native handles.
+  - `RhiResourceService` implementations for owned resources, transient memory blocks, aliasing resources, delayed destruction, initial state, and native resource access.
+  - `RhiDescriptorService` implementations for descriptor allocations, descriptor tables, resource views, and release rules.
+  - `RhiPipelineService` implementations for binding layouts, graphics PSOs, compute PSOs, shader binary compatibility, and creation failure reporting.
+  - `RhiDiagnosticsService` and existing diagnostics types for validation, debug messages, object names, memory diagnostics, and timing.
+  - `RhiInteropService` for native handle access by explicit consumer and reason.
+- Add or refine functions/types only when they replace ambiguity at the real owner boundary for:
   - device and adapter identity
   - queue support and queue ownership
   - command list/command context lifetime
@@ -217,13 +310,20 @@ Implementation requirements:
   - memory allocator identity and budget support
   - diagnostics and validation support
   - native interop consumers and capability state
-- Prefer small cohesive structs and service methods over broad global helpers.
+- Prefer small cohesive service methods, named policy structs, validation checks, or diagnostics emitted by the owning service over broad global helpers.
+- Do not add an `RhiOwnershipModel`-style inventory, global ownership graph, or meta-report as the main implementation. If an ownership fact needs to be reported, expose it from the subsystem that owns the fact and consume it in a validation/reporting path.
+- Do not add a type merely to make prose true. Every new public type must either:
+  - replace unclear ownership at a call site
+  - carry backend capability data that affects behavior
+  - feed an existing/new validation artifact
+  - remove duplicated backend-specific logic from consumers
 - Keep backend-native implementation inside backend-private folders.
 - Preserve Renderer access through public RHI services only.
 - Add comments only where ownership would otherwise be unclear.
 
 Acceptance criteria:
-- A reviewer can identify ownership of devices, queues, command submission, fences, resources, barriers, descriptors, memory, diagnostics, and interop from public RHI types and backend service boundaries.
+- A reviewer can identify ownership of devices, queues, command submission, fences, resources, barriers, descriptors, memory, diagnostics, and interop from the actual public RHI types and backend service boundaries.
+- At least one implicit ownership hazard is removed or made enforceable in the actual service/call path, not only documented.
 - D3D12 and Vulkan report truthful capability data through the same public shape.
 - Renderer code does not gain direct backend-native dependencies.
 - Any missing backend capability is explicit, not silently assumed.
@@ -237,6 +337,8 @@ Validation:
 
 Report:
 - Changed files.
+- Production references inspected.
+- Reference patterns adopted and rejected.
 - Ownership surfaces changed.
 - Backend parity notes.
 - Commands run.
