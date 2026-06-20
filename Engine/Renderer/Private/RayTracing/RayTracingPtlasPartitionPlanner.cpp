@@ -542,6 +542,10 @@ std::uint32_t RayTracingPtlasPartitionPlanner::PackDebugVisualizationData(const 
 	{
 		packedDebugVisualizationData |= kRayTracingPtlasPartitionDebugGlobalPartition;
 	}
+	if (entry.Update.GlobalPartitionEligible)
+	{
+		packedDebugVisualizationData |= kRayTracingPtlasPartitionDebugDynamicInstance;
+	}
 	if (!entry.Validation.Valid)
 	{
 		packedDebugVisualizationData |= kRayTracingPtlasPartitionDebugInvalid;
