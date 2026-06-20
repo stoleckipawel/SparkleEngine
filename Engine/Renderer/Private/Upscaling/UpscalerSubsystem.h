@@ -39,6 +39,7 @@ class UpscalerSubsystem final
   private:
 	static std::unique_ptr<IUpscalerProvider> CreateProvider(EUpscalerProviderKind kind);
 	static std::unique_ptr<IUpscalerProvider> CreateFallbackProvider();
+	void RefreshDiagnostics(IUpscalerProvider* provider) noexcept;
 
 	UpscalerSettings m_settings = {};
 	std::unique_ptr<IUpscalerProvider> m_activeProvider;

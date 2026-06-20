@@ -108,7 +108,7 @@ RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 	{
 		const UpscalerProviderCapabilities upscalerDiagnostics = upscalerSubsystem->GetDiagnostics();
 		snapshot.Upscaler.Provider = upscalerDiagnostics.ProviderName;
-		snapshot.Upscaler.Status = UpscalerProviderStatusToString(upscalerDiagnostics.Status);
+		snapshot.Upscaler.Status = RendererProviderCapabilityStateToString(upscalerDiagnostics.CapabilityState);
 		snapshot.Upscaler.Reason = upscalerDiagnostics.Reason;
 	}
 

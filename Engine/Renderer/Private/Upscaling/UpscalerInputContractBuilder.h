@@ -7,6 +7,7 @@ struct UpscalerInputContractBuildDesc final
 	RenderProductHandle HudlessSceneColor = {};
 	RenderProductHandle Depth = {};
 	RenderProductHandle MotionVectors = {};
+	RenderProductHandle Normals = {};
 	RenderProductHandle FinalOutput = {};
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};

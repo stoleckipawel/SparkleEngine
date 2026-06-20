@@ -64,7 +64,8 @@ FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sce
 	    .Depth = resources.Transient.Scene.MainDepth,
 	    .MotionVectors = resources.Transient.GBuffer.MotionVector,
 	    .FinalOutputColor = resources.Transient.Scene.FinalSceneColor,
-	    .Exposure = FrameGraphTextureHandle::Invalid()};
+	    .Exposure = FrameGraphTextureHandle::Invalid(),
+	    .Normals = resources.Transient.GBuffer.Normal};
 
 	if (presentToBackBuffer)
 	{

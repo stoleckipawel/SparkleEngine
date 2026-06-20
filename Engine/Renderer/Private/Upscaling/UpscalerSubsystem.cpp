@@ -19,6 +19,14 @@ UpscalerSubsystem::~UpscalerSubsystem() noexcept
 	Shutdown();
 }
 
+void UpscalerSubsystem::RefreshDiagnostics(IUpscalerProvider* provider) noexcept
+{
+	if (provider != nullptr)
+	{
+		m_diagnostics = provider->GetDiagnostics();
+	}
+}
+
 void UpscalerSubsystem::Initialize(
     const RhiCapabilities& capabilities,
     RhiNativeDeviceQueueInterop nativeInterop,
@@ -40,8 +48,9 @@ void UpscalerSubsystem::Initialize(
 		std::unique_ptr<IUpscalerProvider> fallback = CreateFallbackProvider();
 		const bool fallbackInitialized = fallback->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
 		m_activeProvider = std::move(fallback);
-		m_diagnostics = m_activeProvider->GetDiagnostics();
-		m_diagnostics.Status = fallbackInitialized ? EUpscalerProviderStatus::FailedWithFallback : EUpscalerProviderStatus::Unavailable;
+		RefreshDiagnostics(m_activeProvider.get());
+		m_diagnostics.CapabilityState =
+		    fallbackInitialized ? ERendererProviderCapabilityState::RuntimeFailed : ERendererProviderCapabilityState::Unavailable;
 		m_diagnostics.FailureDomain = failedDiagnostics.FailureDomain;
 		m_diagnostics.Reason = std::format(
 		    "Requested provider {} was unavailable: {} Falling back to {}.",
@@ -51,7 +60,7 @@ void UpscalerSubsystem::Initialize(
 	}
 	else
 	{
-		m_diagnostics = m_activeProvider->GetDiagnostics();
+		RefreshDiagnostics(m_activeProvider.get());
 	}
 
 	m_frameFallbackProvider = CreateFallbackProvider();
@@ -60,14 +69,17 @@ void UpscalerSubsystem::Initialize(
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.Upscaling");
 	SPDLOG_LOGGER_INFO(
 	    logger,
-	    "Upscaler provider: requested={} active={} status={} failureDomain={} canEvaluate={} externalSdk={} runtimeVersion='{}' runtimeState='{}' "
-	    "qualityMode='{}' featureMatrix='{}' renderExtent={}x{} outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
+	    "Upscaler provider: requested={} active={} category={} capabilityState={} failureDomain={} canEvaluate={} externalSdk={} "
+	    "resourceContract='{}' runtimeVersion='{}' runtimeState='{}' qualityMode='{}' featureMatrix='{}' renderExtent={}x{} "
+	    "outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
 	    UpscalerProviderKindToString(m_settings.RequestedProvider),
 	    m_activeProvider->GetName(),
-	    UpscalerProviderStatusToString(m_diagnostics.Status),
+	    RendererProviderCategoryToString(m_diagnostics.Category),
+	    RendererProviderCapabilityStateToString(m_diagnostics.CapabilityState),
 	    UpscalerProviderFailureDomainToString(m_diagnostics.FailureDomain),
 	    BoolToString(m_diagnostics.CanEvaluate),
 	    BoolToString(m_diagnostics.UsesExternalSdk),
+	    m_diagnostics.ResourceContractSummary,
 	    m_diagnostics.ExternalRuntimeVersion,
 	    m_diagnostics.RuntimeState,
 	    m_diagnostics.SelectedQualityMode,
@@ -103,6 +115,7 @@ void UpscalerSubsystem::SetupFrame(const UpscalerInputContract& inputContract)
 	if (provider != nullptr)
 	{
 		provider->SetupFrame(inputContract);
+		RefreshDiagnostics(provider);
 	}
 }
 
@@ -119,11 +132,15 @@ UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDes
 	}
 
 	UpscalerEvaluationResult result = provider->Evaluate(evaluation);
+	RefreshDiagnostics(provider);
 	if (m_useFrameFallback)
 	{
 		result.UsedFallback = true;
 		result.FailureDomain = EUpscalerProviderFailureDomain::InputContract;
 		result.Reason = m_frameFallbackReason;
+		m_diagnostics.CapabilityState = ERendererProviderCapabilityState::RuntimeFailed;
+		m_diagnostics.FailureDomain = result.FailureDomain;
+		m_diagnostics.Reason = result.Reason;
 	}
 	return result;
 }
@@ -133,6 +150,7 @@ void UpscalerSubsystem::OnResize(RenderViewportExtent renderExtent, RenderViewpo
 	if (m_activeProvider != nullptr)
 	{
 		m_activeProvider->OnResize(renderExtent, outputExtent);
+		RefreshDiagnostics(m_activeProvider.get());
 	}
 	if (m_frameFallbackProvider != nullptr)
 	{
@@ -145,6 +163,7 @@ void UpscalerSubsystem::ResetHistory(std::string_view reason)
 	if (m_activeProvider != nullptr)
 	{
 		m_activeProvider->ResetHistory(reason);
+		RefreshDiagnostics(m_activeProvider.get());
 	}
 	if (m_frameFallbackProvider != nullptr)
 	{

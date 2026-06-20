@@ -14,23 +14,6 @@ const char* UpscalerProviderKindToString(EUpscalerProviderKind kind) noexcept
 	return "Unknown";
 }
 
-const char* UpscalerProviderStatusToString(EUpscalerProviderStatus status) noexcept
-{
-	switch (status)
-	{
-		case EUpscalerProviderStatus::Unavailable:
-			return "Unavailable";
-		case EUpscalerProviderStatus::Available:
-			return "Available";
-		case EUpscalerProviderStatus::Active:
-			return "Active";
-		case EUpscalerProviderStatus::FailedWithFallback:
-			return "FailedWithFallback";
-	}
-
-	return "Unknown";
-}
-
 const char* UpscalerProviderFailureDomainToString(EUpscalerProviderFailureDomain domain) noexcept
 {
 	switch (domain)

@@ -37,6 +37,7 @@ struct FrameAssemblyProviderResources final
 	FrameGraphTextureHandle MotionVectors = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle FinalOutputColor = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle Normals = FrameGraphTextureHandle::Invalid();
 };
 
 struct FrameAssemblyViewportProducts final
@@ -57,4 +58,3 @@ struct FrameAssemblyResourceLayout final
 	FrameAssemblyProviderResources ProviderInputs = {};
 	FrameAssemblyViewportProducts ViewportProducts = {};
 };
-

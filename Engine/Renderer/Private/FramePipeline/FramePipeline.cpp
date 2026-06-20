@@ -512,6 +512,7 @@ void FramePipeline::RecordFrame() noexcept
 		            .HudlessSceneColor = ToRenderProductHandle(m_frameResources.ProviderInputs.HudlessSceneColor),
 		            .Depth = ToRenderProductHandle(m_frameResources.ProviderInputs.Depth),
 		            .MotionVectors = ToRenderProductHandle(m_frameResources.ProviderInputs.MotionVectors),
+		            .Normals = ToRenderProductHandle(m_frameResources.ProviderInputs.Normals),
 		            .FinalOutput = ToRenderProductHandle(m_frameResources.ProviderInputs.FinalOutputColor),
 		            .RenderExtent = m_frameGraphSceneExtent,
 		            .OutputExtent = m_frameGraphSceneExtent,

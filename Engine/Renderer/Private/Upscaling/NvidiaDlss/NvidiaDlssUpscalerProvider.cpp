@@ -9,6 +9,54 @@ namespace
 {
 	constexpr std::uint32_t kStableExtentFramesBeforeDlssEvaluation = 2;
 
+	RendererProviderResourceContract BuildDlssResourceContract(const UpscalerInputContract* inputContract = nullptr) noexcept
+	{
+		const bool hasInputContract = inputContract != nullptr;
+		return RendererProviderResourceContract{
+		    .Color = {.Requirement = ERendererProviderResourceRequirement::Required,
+		              .Available = hasInputContract ? static_cast<bool>(inputContract->HudlessSceneColor) : false},
+		    .Depth = {.Requirement = ERendererProviderResourceRequirement::Required,
+		              .Available = hasInputContract ? static_cast<bool>(inputContract->Depth) : false},
+		    .MotionVectors = {.Requirement = ERendererProviderResourceRequirement::Required,
+		                      .Available = hasInputContract ? static_cast<bool>(inputContract->MotionVectors) : false},
+		    .Exposure = {.Requirement = ERendererProviderResourceRequirement::Optional,
+		                 .Available = hasInputContract ? static_cast<bool>(inputContract->Exposure) : false},
+		    .Normals = {.Requirement = ERendererProviderResourceRequirement::Optional,
+		                .Available = hasInputContract ? static_cast<bool>(inputContract->Normals) : false},
+		    .History = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = hasInputContract},
+		    .Jitter = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = hasInputContract},
+		    .CameraMatrices = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = hasInputContract},
+		    .FrameIndex = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = hasInputContract},
+		};
+	}
+
+	ERendererProviderCapabilityState MapDlssCapabilityState(const DlssCapabilityReport& dlss) noexcept
+	{
+		switch (dlss.RuntimeState)
+		{
+			case EDlssProviderRuntimeState::AvailableNotCreated:
+				return ERendererProviderCapabilityState::Available;
+			case EDlssProviderRuntimeState::Created:
+			case EDlssProviderRuntimeState::Evaluating:
+				return ERendererProviderCapabilityState::Enabled;
+			case EDlssProviderRuntimeState::FailedWithFallback:
+				return ERendererProviderCapabilityState::RuntimeFailed;
+			case EDlssProviderRuntimeState::Unavailable:
+				if (!dlss.SdkRuntimeIntegrated || !dlss.SdkRuntimeAvailable)
+				{
+					return ERendererProviderCapabilityState::MissingDependency;
+				}
+				if (dlss.FeatureQuerySucceeded && !dlss.FeatureSupported)
+				{
+					return ERendererProviderCapabilityState::UnsupportedHardware;
+				}
+				return ERendererProviderCapabilityState::Unavailable;
+			case EDlssProviderRuntimeState::NotSelected:
+			default:
+				return dlss.CanCreateFeature() ? ERendererProviderCapabilityState::Available : ERendererProviderCapabilityState::Unavailable;
+		}
+	}
+
 	EDlssFeatureKind GetSelectedDlssFeature(EUpscalerQualityMode qualityMode) noexcept
 	{
 		return qualityMode == EUpscalerQualityMode::NativeAA ? EDlssFeatureKind::NativeAA : EDlssFeatureKind::SuperResolution;
@@ -66,14 +114,18 @@ UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::QueryCapabilities(const
 {
 	const DlssCapabilityReport dlss = DlssCapabilityReporter::Build(capabilities);
 	const bool canCreate = dlss.CanCreateFeature();
+	const RendererProviderResourceContract resourceContract = BuildDlssResourceContract();
 	return UpscalerProviderCapabilities{
 	    .Kind = EUpscalerProviderKind::NvidiaDlss,
-	    .Status = canCreate ? EUpscalerProviderStatus::Available : EUpscalerProviderStatus::Unavailable,
+	    .Category = ERendererProviderCategory::Upscaler,
+	    .CapabilityState = canCreate ? ERendererProviderCapabilityState::Available : MapDlssCapabilityState(dlss),
 	    .FailureDomain = canCreate ? EUpscalerProviderFailureDomain::None : dlss.FailureDomain,
 	    .CanInitialize = canCreate,
 	    .CanEvaluate = canCreate,
 	    .UsesExternalSdk = true,
 	    .ProviderName = "NVIDIA DLSS",
+	    .ResourceContract = resourceContract,
+	    .ResourceContractSummary = BuildProviderResourceContractSummary(resourceContract),
 	    .ExternalRuntimeVersion = dlss.SdkVersion,
 	    .RuntimeState = DlssProviderRuntimeStateToString(dlss.RuntimeState),
 	    .FeatureMatrixSummary = BuildFeatureMatrixSummary(dlss.FeatureMatrix),
@@ -104,7 +156,7 @@ bool NvidiaDlssUpscalerProvider::Initialize(
 	{
 		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::FailedWithFallback;
 		m_dlssCapabilities.UnavailableReason = "DLSS runtime factory returned no runtime instance.";
-		m_diagnostics.Status = EUpscalerProviderStatus::Unavailable;
+		m_diagnostics.CapabilityState = ERendererProviderCapabilityState::MissingDependency;
 		m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 		m_diagnostics.CanEvaluate = false;
 		m_diagnostics.Reason = m_dlssCapabilities.UnavailableReason;
@@ -158,6 +210,8 @@ void NvidiaDlssUpscalerProvider::SetupFrame(const UpscalerInputContract& inputCo
 	m_dlssCapabilities.OutputExtent = m_outputExtent;
 	m_dlssCapabilities.ResetRequested = inputContract.ResetRequested;
 	m_dlssCapabilities.ResetReason = inputContract.ResetReason;
+	m_diagnostics.ResourceContract = BuildDlssResourceContract(&inputContract);
+	m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
 	if (m_qualityMode == EUpscalerQualityMode::NativeAA && !NativeAAExtentContractValid(inputContract))
 	{
 		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::FailedWithFallback;
@@ -251,37 +305,21 @@ void NvidiaDlssUpscalerProvider::Shutdown() noexcept
 
 UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::GetDiagnostics() const
 {
-	EUpscalerProviderStatus status = EUpscalerProviderStatus::Unavailable;
-	switch (m_dlssCapabilities.RuntimeState)
-	{
-		case EDlssProviderRuntimeState::AvailableNotCreated:
-			status = EUpscalerProviderStatus::Available;
-			break;
-		case EDlssProviderRuntimeState::Created:
-		case EDlssProviderRuntimeState::Evaluating:
-			status = EUpscalerProviderStatus::Active;
-			break;
-		case EDlssProviderRuntimeState::FailedWithFallback:
-			status = EUpscalerProviderStatus::FailedWithFallback;
-			break;
-		case EDlssProviderRuntimeState::NotSelected:
-		case EDlssProviderRuntimeState::Unavailable:
-		default:
-			status = EUpscalerProviderStatus::Unavailable;
-			break;
-	}
-
 	const bool canEvaluate =
 	    m_dlssCapabilities.RuntimeState == EDlssProviderRuntimeState::Created ||
 	    m_dlssCapabilities.RuntimeState == EDlssProviderRuntimeState::Evaluating;
+	const RendererProviderResourceContract resourceContract = BuildDlssResourceContract(&m_lastInputContract);
 	return UpscalerProviderCapabilities{
 	    .Kind = EUpscalerProviderKind::NvidiaDlss,
-	    .Status = status,
+	    .Category = ERendererProviderCategory::Upscaler,
+	    .CapabilityState = MapDlssCapabilityState(m_dlssCapabilities),
 	    .FailureDomain = m_dlssCapabilities.FailureDomain,
 	    .CanInitialize = m_dlssCapabilities.CanCreateFeature(),
 	    .CanEvaluate = canEvaluate,
 	    .UsesExternalSdk = true,
 	    .ProviderName = "NVIDIA DLSS",
+	    .ResourceContract = resourceContract,
+	    .ResourceContractSummary = BuildProviderResourceContractSummary(resourceContract),
 	    .ExternalRuntimeVersion = m_dlssCapabilities.SdkVersion,
 	    .RuntimeState = DlssProviderRuntimeStateToString(m_dlssCapabilities.RuntimeState),
 	    .SelectedQualityMode = m_dlssCapabilities.SelectedQualityMode,

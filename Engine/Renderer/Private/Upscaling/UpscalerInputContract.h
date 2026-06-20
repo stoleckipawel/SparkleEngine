@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frame/TemporalFrameState.h"
+#include "Upscaling/RenderProviderModel.h"
 #include "RHI/Public/Resources/RenderViewCameraData.h"
 #include "Viewport/ViewportContracts.h"
 
@@ -39,6 +40,7 @@ struct UpscalerInputContract final
 	RenderProductHandle Depth = {};
 	RenderProductHandle MotionVectors = {};
 	RenderProductHandle Exposure = {};
+	RenderProductHandle Normals = {};
 	RenderProductHandle FinalOutput = {};
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
@@ -63,6 +65,7 @@ struct UpscalerInputContractValidation final
 	std::string Summary;
 };
 
+RendererProviderResourceContract BuildUpscalerProviderResourceContract(const UpscalerInputContract& contract) noexcept;
 UpscalerInputContractValidation ValidateUpscalerInputContract(const UpscalerInputContract& contract);
 
 const char* UpscalerMotionVectorUnitsToString(EUpscalerMotionVectorUnits units) noexcept;

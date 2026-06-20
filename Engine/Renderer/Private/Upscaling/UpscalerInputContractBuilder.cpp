@@ -8,6 +8,7 @@ UpscalerInputContract BuildUpscalerInputContract(const UpscalerInputContractBuil
 	    .HudlessSceneColor = desc.HudlessSceneColor,
 	    .Depth = desc.Depth,
 	    .MotionVectors = desc.MotionVectors,
+	    .Normals = desc.Normals,
 	    .FinalOutput = desc.FinalOutput,
 	    .RenderExtent = desc.RenderExtent,
 	    .OutputExtent = desc.OutputExtent,

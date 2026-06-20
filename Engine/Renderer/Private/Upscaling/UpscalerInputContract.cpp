@@ -31,21 +31,38 @@ namespace
 	}
 }
 
+RendererProviderResourceContract BuildUpscalerProviderResourceContract(const UpscalerInputContract& contract) noexcept
+{
+	return RendererProviderResourceContract{
+	    .Color = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = static_cast<bool>(contract.HudlessSceneColor)},
+	    .Depth = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = static_cast<bool>(contract.Depth)},
+	    .MotionVectors = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = static_cast<bool>(contract.MotionVectors)},
+	    .Exposure = {.Requirement = contract.ExposureRequired ? ERendererProviderResourceRequirement::Required : ERendererProviderResourceRequirement::Optional,
+	                 .Available = static_cast<bool>(contract.Exposure)},
+	    .Normals = {.Requirement = ERendererProviderResourceRequirement::Optional, .Available = static_cast<bool>(contract.Normals)},
+	    .History = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = true},
+	    .Jitter = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = contract.RenderExtent.IsValid()},
+	    .CameraMatrices = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = true},
+	    .FrameIndex = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = true},
+	};
+}
+
 UpscalerInputContractValidation ValidateUpscalerInputContract(const UpscalerInputContract& contract)
 {
 	std::vector<std::string> missing;
-	AddMissing(missing, static_cast<bool>(contract.HudlessSceneColor), "HUD-less scene color");
-	AddMissing(missing, static_cast<bool>(contract.Depth), "depth");
-	AddMissing(missing, static_cast<bool>(contract.MotionVectors), "motion vectors");
+	const RendererProviderResourceContract resourceContract = BuildUpscalerProviderResourceContract(contract);
+	AddMissing(missing, resourceContract.Color.Available, "HUD-less scene color");
+	AddMissing(missing, resourceContract.Depth.Available, "depth");
+	AddMissing(missing, resourceContract.MotionVectors.Available, "motion vectors");
 	AddMissing(missing, static_cast<bool>(contract.FinalOutput), "final output target");
 	AddMissing(missing, contract.RenderExtent.IsValid(), "valid render extent");
 	AddMissing(missing, contract.OutputExtent.IsValid(), "valid output extent");
 	AddMissing(missing, contract.MotionVectorConvention.Units != EUpscalerMotionVectorUnits::Unknown, "motion-vector units");
 	AddMissing(missing, contract.MotionVectorConvention.Direction != EUpscalerMotionVectorDirection::Unknown, "motion-vector direction");
 	AddMissing(missing, contract.DepthConvention != EUpscalerDepthConvention::Unknown, "depth convention");
-	if (contract.ExposureRequired)
+	if (resourceContract.Exposure.Requirement == ERendererProviderResourceRequirement::Required)
 	{
-		AddMissing(missing, static_cast<bool>(contract.Exposure), "exposure texture");
+		AddMissing(missing, resourceContract.Exposure.Available, "exposure texture");
 	}
 
 	const bool valid = missing.empty();
@@ -54,18 +71,22 @@ UpscalerInputContractValidation ValidateUpscalerInputContract(const UpscalerInpu
 	    .MissingRequirements = std::move(missing),
 	    .Summary = valid
 	                   ? std::format(
-	                         "valid renderExtent={}x{} outputExtent={}x{} motionVectors={} {} {} depth={} historyValid={} resetRequested={}",
+	                         "valid renderExtent={}x{} outputExtent={}x{} resources={} motionVectors={} {} {} depth={} historyValid={} resetRequested={}",
 	                         contract.RenderExtent.Width,
 	                         contract.RenderExtent.Height,
 	                         contract.OutputExtent.Width,
 	                         contract.OutputExtent.Height,
+	                         BuildProviderResourceContractSummary(resourceContract),
 	                         UpscalerMotionVectorUnitsToString(contract.MotionVectorConvention.Units),
 	                         UpscalerMotionVectorDirectionToString(contract.MotionVectorConvention.Direction),
 	                         "JitterRemovedFromMotionVectors",
 	                         UpscalerDepthConventionToString(contract.DepthConvention),
 	                         contract.TemporalState.HistoryValid ? "true" : "false",
 	                         contract.ResetRequested ? "true" : "false")
-	                   : std::format("invalid missing={}", JoinRequirements(missing))};
+	                   : std::format(
+	                         "invalid missing={} resources={}",
+	                         JoinRequirements(missing),
+	                         BuildProviderResourceContractSummary(resourceContract))};
 }
 
 const char* UpscalerMotionVectorUnitsToString(EUpscalerMotionVectorUnits units) noexcept

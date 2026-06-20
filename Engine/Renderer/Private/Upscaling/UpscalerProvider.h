@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Upscaling/RenderProviderModel.h"
 #include "Upscaling/UpscalerInputContract.h"
 #include "Viewport/ViewportContracts.h"
 #include "RHI/Public/Core/RhiBackendApi.h"
@@ -21,14 +22,6 @@ enum class EUpscalerProviderKind : std::uint8_t
 	NvidiaDlss = 1
 };
 
-enum class EUpscalerProviderStatus : std::uint8_t
-{
-	Unavailable = 0,
-	Available = 1,
-	Active = 2,
-	FailedWithFallback = 3
-};
-
 enum class EUpscalerProviderFailureDomain : std::uint8_t
 {
 	None = 0,
@@ -43,12 +36,15 @@ enum class EUpscalerProviderFailureDomain : std::uint8_t
 struct UpscalerProviderCapabilities final
 {
 	EUpscalerProviderKind Kind = EUpscalerProviderKind::Passthrough;
-	EUpscalerProviderStatus Status = EUpscalerProviderStatus::Unavailable;
+	ERendererProviderCategory Category = ERendererProviderCategory::Upscaler;
+	ERendererProviderCapabilityState CapabilityState = ERendererProviderCapabilityState::Unavailable;
 	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
 	bool CanInitialize = false;
 	bool CanEvaluate = false;
 	bool UsesExternalSdk = false;
 	std::string ProviderName;
+	RendererProviderResourceContract ResourceContract = {};
+	std::string ResourceContractSummary;
 	std::string ExternalRuntimeVersion;
 	std::string RuntimeState;
 	std::string SelectedQualityMode;
@@ -120,5 +116,4 @@ class IUpscalerProvider
 };
 
 const char* UpscalerProviderKindToString(EUpscalerProviderKind kind) noexcept;
-const char* UpscalerProviderStatusToString(EUpscalerProviderStatus status) noexcept;
 const char* UpscalerProviderFailureDomainToString(EUpscalerProviderFailureDomain domain) noexcept;
