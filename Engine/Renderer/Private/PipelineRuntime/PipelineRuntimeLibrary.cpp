@@ -1,6 +1,7 @@
 #include "../PCH.h"
 #include "PipelineRuntimeLibrary.h"
 
+#include "Core/Public/Formatting/HexFormat.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
@@ -87,9 +88,10 @@ bool PipelineRuntimeLibrary::LoadShaderPackage(
 	const CookedShaderBinaryFormat requiredBinaryFormat = capabilities.RequiredShaderBinaryFormat;
 	if (!shaderPackageCache.LoadPackage(request.Package, *request.BindingLayout, requiredBinaryFormat, outErrorMessage, outLoadedPackage))
 	{
+		const CookedShaderPackageLoadReport& loadReport = shaderPackageCache.GetLastLoadReport();
 		outErrorMessage = std::format(
 		    "Runtime validation rejected cooked shader package '{}' for pass '{}' ({}) with backend='{}' requiredFormat='{}' "
-		    "bindingLayout='{}' expectedStages='{}' - {}",
+		    "bindingLayout='{}' expectedStages='{}' loadTimeUs={} packagePath='{}' - {}",
 		    FormatPackageId(request.Package),
 		    request.PassName,
 		    request.PackageDeclarationName,
@@ -97,6 +99,8 @@ bool PipelineRuntimeLibrary::LoadShaderPackage(
 		    CookedShaderBinaryFormatToString(requiredBinaryFormat),
 		    FormatBindingLayoutId(request),
 		    FormatShaderStageMask(request.Package.ExpectedStages),
+		    loadReport.ElapsedMicroseconds,
+		    loadReport.PackagePath.string(),
 		    outErrorMessage);
 		RhiValidation::ReportContractViolation(
 		    "Renderer.Pipeline",
@@ -106,6 +110,24 @@ bool PipelineRuntimeLibrary::LoadShaderPackage(
 	}
 
 	assert(outLoadedPackage != nullptr);
+	const CookedShaderPackageLoadReport& loadReport = shaderPackageCache.GetLastLoadReport();
+	SPDLOG_LOGGER_INFO(
+	    GetLogger(),
+	    "Loaded shader package '{}' for pass '{}' backend='{}' format='{}' key={} cacheHit={} reload={} loadTimeUs={} "
+	    "binaries={} pipelineLayouts={} reflections={} generation={} path='{}'",
+	    FormatPackageId(request.Package),
+	    request.PassName,
+	    RhiBackendApiToString(capabilities.BackendApi),
+	    CookedShaderBinaryFormatToString(requiredBinaryFormat),
+	    Formatting::FormatHexUInt64(loadReport.PackageKey),
+	    loadReport.WasCacheHit,
+	    loadReport.WasReload,
+	    loadReport.ElapsedMicroseconds,
+	    loadReport.BinaryRecordCount,
+	    loadReport.PipelineLayoutRecordCount,
+	    loadReport.ReflectionRecordCount,
+	    loadReport.CacheGeneration,
+	    loadReport.PackagePath.string());
 	outErrorMessage.clear();
 	return true;
 }

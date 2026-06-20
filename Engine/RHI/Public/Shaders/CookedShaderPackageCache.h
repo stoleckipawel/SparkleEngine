@@ -18,6 +18,20 @@
 
 class PassParameterLayout;
 
+struct CookedShaderPackageLoadReport final
+{
+	std::uint64_t PackageKey = 0;
+	std::filesystem::path PackagePath;
+	std::uint64_t CacheGeneration = 0;
+	std::uint64_t ElapsedMicroseconds = 0;
+	std::uint32_t BinaryRecordCount = 0;
+	std::uint32_t PipelineLayoutRecordCount = 0;
+	std::uint32_t ReflectionRecordCount = 0;
+	bool WasCacheHit = false;
+	bool WasReload = false;
+	bool Succeeded = false;
+};
+
 class SPARKLE_RHI_API LoadedShaderPackage final
 {
   public:
@@ -93,6 +107,7 @@ class SPARKLE_RHI_API CookedShaderPackageCache final
 {
   public:
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
+	const CookedShaderPackageLoadReport& GetLastLoadReport() const noexcept { return m_lastLoadReport; }
 	void Clear() noexcept;
 	void ReplaceWith(CookedShaderPackageCache&& replacement) noexcept;
 
@@ -119,5 +134,6 @@ class SPARKLE_RHI_API CookedShaderPackageCache final
 	    std::string& outErrorMessage);
 
 	std::unordered_map<std::uint64_t, std::unique_ptr<LoadedShaderPackage>> m_packages;
+	CookedShaderPackageLoadReport m_lastLoadReport;
 	std::uint64_t m_generation = 1;
 };

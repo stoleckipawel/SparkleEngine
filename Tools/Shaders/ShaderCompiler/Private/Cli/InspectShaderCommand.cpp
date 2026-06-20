@@ -4,6 +4,9 @@
 
 #include "Constants/ShaderCompilerConstants.h"
 #include "Contracts/ShaderContractCatalogBuilder.h"
+#include "Core/Public/Formatting/HexFormat.h"
+#include "Inspection/CookedPackageInspection.h"
+#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <iostream>
 #include <string>
@@ -32,7 +35,12 @@ int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 	for (const ShaderContractPackage& package : catalog.packages)
 	{
 		std::cout << "Typed shader package '" << package.packageId << "'\n";
-		std::cout << "  bindingLayout='" << package.bindingLayoutId << "'\n";
+		std::cout << "  packageKey=" << Formatting::FormatPrefixedHexUInt64(BuildShaderPackageKey(package.packageId)) << "\n";
+		std::cout << "  bindingLayout='" << package.bindingLayoutId << "'"
+		          << " layoutHash=" << Formatting::FormatPrefixedHexUInt64(BuildPassParameterLayoutHash(package.bindingLayout))
+		          << " parameters=" << package.bindingLayout.GetParameters().size() << "\n";
+		std::cout << "  kind=" << CookedPackageInspection::GetPackageKindName(package.packageKind)
+		          << " features='" << CookedPackageInspection::FormatPackageFeatures(package.packageFeatures) << "'\n";
 		for (const ShaderContractStage& stage : package.stages)
 		{
 			std::cout << "  shader='" << stage.shaderName << "' " << GetShaderStagePrefix(stage.stage)

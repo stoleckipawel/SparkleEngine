@@ -5,6 +5,8 @@
 #include "Constants/ShaderCompilerConstants.h"
 #include "Contracts/ShaderContractCatalogBuilder.h"
 #include "Contracts/ShaderContractValidator.h"
+#include "Core/Public/Formatting/HexFormat.h"
+#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <iostream>
 #include <string>
@@ -47,6 +49,17 @@ int ListShadersCommand::Run(std::span<const std::string_view> args) const
 
 	if (!catalog.stages.empty())
 	{
+		std::cout << "Typed shader packages:\n";
+		for (const ShaderContractPackage& package : catalog.packages)
+		{
+			std::cout << package.packageId
+			          << " key=" << Formatting::FormatPrefixedHexUInt64(BuildShaderPackageKey(package.packageId))
+			          << " layout=" << package.bindingLayoutId
+			          << " layoutHash=" << Formatting::FormatPrefixedHexUInt64(BuildPassParameterLayoutHash(package.bindingLayout))
+			          << " stages=" << package.stages.size()
+			          << " parameters=" << package.bindingLayout.GetParameters().size() << "\n";
+		}
+
 		std::cout << "Typed shader registrations:\n";
 		for (const ShaderContractStage& stage : catalog.stages)
 		{

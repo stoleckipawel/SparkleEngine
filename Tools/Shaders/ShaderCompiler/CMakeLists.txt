@@ -118,5 +118,16 @@ endforeach()
 sparkle_configure_development_tool_artifacts(ShaderCompiler)
 sparkle_declare_runtime_dll_owner(ShaderCompiler SparkleCore)
 
+add_custom_target(ShaderCompilerCliValidation
+    COMMAND ${CMAKE_COMMAND}
+        "-DSHADER_COMPILER_EXECUTABLE=$<TARGET_FILE:ShaderCompiler>"
+        "-DWORKING_DIRECTORY=${CMAKE_SOURCE_DIR}"
+        "-DREPRESENTATIVE_PACKAGE=ComputeClear"
+        "-DREPRESENTATIVE_PACKAGE_KEY=A5C7ADD3A0B8D443"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/ValidateShaderCompilerCli.cmake"
+    DEPENDS ShaderCompiler
+    USES_TERMINAL
+)
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX "" FILES ${SHADER_COMPILER_PRIVATE_SOURCES} ${SHADER_COMPILER_PRIVATE_HEADERS})
