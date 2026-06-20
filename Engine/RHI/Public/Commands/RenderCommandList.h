@@ -19,7 +19,7 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual ~RenderCommandList() noexcept = default;
 
 	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
-	virtual NativeGraphicsCommandListHandle GetNativeHandle() const noexcept = 0;
+	virtual NativeGraphicsCommandListHandle GetNativeHandle(const struct RhiNativeInteropRequest& request) const noexcept = 0;
 	virtual bool SupportsDiagnosticScopes() const noexcept = 0;
 	virtual void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept = 0;
 	virtual void EndDiagnosticScope() noexcept = 0;

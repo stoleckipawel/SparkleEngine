@@ -50,7 +50,12 @@ void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	}
 
 	RenderCommandList& commandList = m_renderHardware->GetGraphicsCommandList(m_renderHardware->GetCurrentFrameIndex());
-	Render(commandList.GetNativeHandle(), drawData);
+	Render(
+	    commandList.GetNativeHandle(
+	        RhiNativeInteropRequest{
+	            .Consumer = ERhiNativeInteropConsumer::PresentationBridge,
+	            .Reason = "Render ImGui draw data through D3D12 backend"}),
+	    drawData);
 }
 
 void D3D12ImGuiBackend::Render(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept

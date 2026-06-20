@@ -111,7 +111,12 @@ void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	}
 
 	RenderCommandList& commandList = m_renderHardware->GetGraphicsCommandList(m_renderHardware->GetCurrentFrameIndex());
-	VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(commandList.GetNativeHandle().Value);
+	VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(
+	    commandList.GetNativeHandle(
+	        RhiNativeInteropRequest{
+	            .Consumer = ERhiNativeInteropConsumer::PresentationBridge,
+	            .Reason = "Render ImGui draw data through Vulkan backend"})
+	        .Value);
 	if (commandBuffer == VK_NULL_HANDLE)
 	{
 		return;

@@ -56,7 +56,10 @@ void AddExternalProviderEvaluationPass(
 			            .MotionVectors = ToRenderProductHandle(gbuffer.MotionVector),
 			            .OutputColor = ToRenderProductHandle(sceneTargets.FinalSceneColor),
 			            .BackendApi = context.Commands.GetRenderCommandList().GetBackendApi(),
-			            .NativeCommandList = context.Commands.GetRenderCommandList().GetNativeHandle(),
+			            .NativeCommandList = context.Commands.GetRenderCommandList().GetNativeHandle(
+			                RhiNativeInteropRequest{
+			                    .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
+			                    .Reason = "Evaluate external upscaler provider pass"}),
 			            .NativeInputColor = context.Resources.ResolveResource(sceneTargets.SceneColor),
 			            .NativeDepth = context.Resources.ResolveResource(sceneTargets.MainDepth),
 			            .NativeMotionVectors = context.Resources.ResolveResource(gbuffer.MotionVector),

@@ -8,19 +8,9 @@ RhiNativeDeviceQueueInterop D3D12InteropService::GetDeviceQueueInterop(RhiNative
 {
 	return RhiNativeDeviceQueueInterop{
 	    .BackendApi = m_owner != nullptr ? m_owner->GetBackendApi() : ERhiBackendApi::Unknown,
-	    .Device = GetDeviceHandle(),
-	    .GraphicsQueue = GetGraphicsQueueHandle(),
+	    .Device = m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{},
+	    .GraphicsQueue = m_owner != nullptr ? m_owner->GetGraphicsQueueHandle() : NativeGraphicsQueueHandle{},
 	    .Request = request};
-}
-
-NativeGraphicsDeviceHandle D3D12InteropService::GetDeviceHandle() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{};
-}
-
-NativeGraphicsQueueHandle D3D12InteropService::GetGraphicsQueueHandle() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetGraphicsQueueHandle() : NativeGraphicsQueueHandle{};
 }
 
 bool D3D12InteropService::UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept

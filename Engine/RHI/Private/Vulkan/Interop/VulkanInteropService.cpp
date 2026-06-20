@@ -8,19 +8,9 @@ RhiNativeDeviceQueueInterop VulkanInteropService::GetDeviceQueueInterop(RhiNativ
 {
 	return RhiNativeDeviceQueueInterop{
 	    .BackendApi = m_owner != nullptr ? m_owner->GetBackendApi() : ERhiBackendApi::Unknown,
-	    .Device = GetDeviceHandle(),
-	    .GraphicsQueue = GetGraphicsQueueHandle(),
+	    .Device = m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{},
+	    .GraphicsQueue = m_owner != nullptr ? m_owner->GetGraphicsQueueHandle() : NativeGraphicsQueueHandle{},
 	    .Request = request};
-}
-
-NativeGraphicsDeviceHandle VulkanInteropService::GetDeviceHandle() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{};
-}
-
-NativeGraphicsQueueHandle VulkanInteropService::GetGraphicsQueueHandle() const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetGraphicsQueueHandle() : NativeGraphicsQueueHandle{};
 }
 
 bool VulkanInteropService::UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept

@@ -40,7 +40,13 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 
 	void SetDebugName(const RenderCommandList& commandList, std::wstring_view debugName) noexcept override
 	{
-		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(commandList.GetNativeHandle().Value), debugName);
+		SetD3D12ObjectDebugName(
+		    static_cast<ID3D12Object*>(commandList.GetNativeHandle(
+		                                       RhiNativeInteropRequest{
+		                                           .Consumer = ERhiNativeInteropConsumer::Validation,
+		                                           .Reason = "Assign D3D12 command list debug name"})
+		                                       .Value),
+		    debugName);
 	}
 
 	void SetDebugName(NativeResourceHandle resource, std::wstring_view debugName) noexcept override
@@ -167,7 +173,11 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 		}
 
 		FrameTimingState& frameState = m_frameStates[location.FrameIndex];
-		ID3D12GraphicsCommandList* const nativeCommandList = D3D12TypeConversions::ToGraphicsCommandList(commandList.GetNativeHandle());
+		ID3D12GraphicsCommandList* const nativeCommandList =
+		    D3D12TypeConversions::ToGraphicsCommandList(commandList.GetNativeHandle(
+		        RhiNativeInteropRequest{
+		            .Consumer = ERhiNativeInteropConsumer::Validation,
+		            .Reason = "Write D3D12 timestamp query"}));
 		ID3D12Resource* const readbackBuffer = frameState.ReadbackAllocation != nullptr
 		                                           ? frameState.ReadbackAllocation->Resource.Get()
 		                                           : nullptr;

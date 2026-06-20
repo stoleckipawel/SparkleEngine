@@ -70,7 +70,7 @@ ERhiBackendApi VulkanRenderCommandList::GetBackendApi() const noexcept
 	return ERhiBackendApi::Vulkan;
 }
 
-NativeGraphicsCommandListHandle VulkanRenderCommandList::GetNativeHandle() const noexcept
+NativeGraphicsCommandListHandle VulkanRenderCommandList::GetNativeHandle(const RhiNativeInteropRequest&) const noexcept
 {
 	return NativeGraphicsCommandListHandle{m_commandBuffer};
 }

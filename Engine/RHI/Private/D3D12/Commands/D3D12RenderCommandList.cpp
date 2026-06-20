@@ -23,7 +23,7 @@ ERhiBackendApi D3D12RenderCommandList::GetBackendApi() const noexcept
 	return ERhiBackendApi::D3D12;
 }
 
-NativeGraphicsCommandListHandle D3D12RenderCommandList::GetNativeHandle() const noexcept
+NativeGraphicsCommandListHandle D3D12RenderCommandList::GetNativeHandle(const RhiNativeInteropRequest&) const noexcept
 {
 	return NativeGraphicsCommandListHandle{m_commandList};
 }

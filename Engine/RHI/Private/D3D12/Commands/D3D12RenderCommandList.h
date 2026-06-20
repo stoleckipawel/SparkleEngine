@@ -13,7 +13,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 	D3D12RenderCommandList(D3D12RenderHardwareInterface& owner, ID3D12GraphicsCommandList7* commandList) noexcept;
 
 	ERhiBackendApi GetBackendApi() const noexcept override;
-	NativeGraphicsCommandListHandle GetNativeHandle() const noexcept override;
+	NativeGraphicsCommandListHandle GetNativeHandle(const RhiNativeInteropRequest& request) const noexcept override;
 	bool SupportsDiagnosticScopes() const noexcept override;
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept override;
 	void EndDiagnosticScope() noexcept override;

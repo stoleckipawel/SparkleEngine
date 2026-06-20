@@ -33,7 +33,14 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 
 	void SetDebugName(const RenderCommandList& commandList, std::wstring_view debugName) noexcept override
 	{
-		SetDebugName(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<std::uint64_t>(commandList.GetNativeHandle().Value), debugName);
+		SetDebugName(
+		    VK_OBJECT_TYPE_COMMAND_BUFFER,
+		    reinterpret_cast<std::uint64_t>(commandList.GetNativeHandle(
+		                                        RhiNativeInteropRequest{
+		                                            .Consumer = ERhiNativeInteropConsumer::Validation,
+		                                            .Reason = "Assign Vulkan command buffer debug name"})
+		                                        .Value),
+		    debugName);
 	}
 
 	void SetDebugName(NativeResourceHandle resource, std::wstring_view debugName) noexcept override

@@ -39,8 +39,6 @@ class SPARKLE_RHI_API RhiInteropService
 	virtual ~RhiInteropService() noexcept = default;
 
 	virtual RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept = 0;
-	virtual NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept = 0;
-	virtual NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept = 0;
 	virtual bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept = 0;
 	virtual NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept = 0;
 };

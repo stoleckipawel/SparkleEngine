@@ -194,6 +194,9 @@ Hard constraints:
 - Keep backend-native code inside RHI backend-private folders or provider-scoped exceptions documented by ADR.
 - Do not satisfy a review requirement by adding only a wrapper, report, or launcher action when the scorecard calls for architectural code movement.
 - Do not satisfy a review requirement by adding a parallel descriptive model that mirrors existing code. If a new type is added, it must be owned by the real subsystem and consumed by runtime, validation, diagnostics, or tooling.
+- Daily refactor principle: every touched file must leave in better form than it was found. Prefer deleting, replacing, or simplifying unnecessary code over adding new code beside it.
+- When adding a new type/function/path, state which existing complexity, ambiguity, duplication, or unsafe behavior it removes.
+- Remove no-longer-needed code in the same touched path. Do not keep obsolete wrappers, stale comments, dead helpers, or misleading names just to minimize the diff.
 - Do not parallelize unclear ownership. Multithreading/job-system work must land after RHI, Renderer, PSO, RT/path tracing, neural-readiness, diagnostics, and scene snapshot MVP contracts are stable.
 - Prefer existing module patterns, existing launcher operation models, existing diagnostics types, and existing CMake target conventions.
 - Add source-backed tests or validation commands when the prompt changes behavior.
@@ -285,6 +288,12 @@ Code to inspect:
 - Engine/Renderer/Private/**/*.cpp only where it consumes public RHI contracts
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Before editing code, write short implementation notes in the report:
   - Which reference files/classes were inspected.
   - Which concrete pattern is being applied.
@@ -376,6 +385,12 @@ Code to inspect:
 - Engine/RHI/Public/**/*Memory*.h
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add or refine backend capability fields for:
   - API version or feature level
   - validation/debug layer state
@@ -450,6 +465,12 @@ Code to inspect:
 - Engine/Renderer/Private/RayTracing/**/*.h
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Identify frame assembly entry points and make pass registration/resource ownership obvious.
 - Separate or name:
   - transient frame graph resources
@@ -520,6 +541,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Core/HostGraphicsCapabilities.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add provider-neutral capability state mapping for exactly:
   - `unavailable`
   - `missing dependency`
@@ -595,6 +622,12 @@ Code to inspect:
 - Engine/Renderer/Private/**/*Shader*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Identify the canonical shader package ABI structs and runtime load path.
 - Make package metadata, target/profile, reflection, binding layout hash, feature flags, and cache identity explicit and inspectable.
 - Add regression coverage for representative shader packages.
@@ -658,6 +691,12 @@ Code to inspect:
 - Engine/Renderer/Private/FramePipeline/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Identify mutable GameFramework scene ownership and renderer snapshot consumption.
 - Make snapshot creation, renderer translation, and invalidation rules explicit in code.
 - Add or refine types for stable asset ids/handles, material snapshots, mesh snapshots, texture snapshots, camera snapshots, lighting snapshots, and animation/skeleton references where needed.
@@ -721,6 +760,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Keep three layers distinct:
   - backend allocator/native truth
   - renderer interpretation/summaries
@@ -792,6 +837,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add structured failure categories for:
   - missing SDK
   - missing source dependency
@@ -877,6 +928,12 @@ Code to inspect:
 - Tools/Shaders/ShaderCompiler/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a backend-neutral PSO identity model that includes:
   - shader package id
   - shader entry/stage set
@@ -956,6 +1013,12 @@ Code to inspect:
 - Tools/Shaders/ShaderCompiler/**/*RayTracing* if present
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Make the RT ownership model explicit in code:
   - BLAS input ownership
   - BLAS build/update flags
@@ -1038,6 +1101,12 @@ Code to inspect:
 - Tools/Shaders/ShaderCompiler/**/*
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add renderer-owned path tracing readiness contracts for:
   - camera state and jitter/reset interaction
   - sample index and accumulation frame index
@@ -1109,6 +1178,12 @@ Code to inspect:
 - Engine/Renderer/Private/Diagnostics/**/*.h
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add source-backed neural-readiness capability fields, not fake feature support:
   - Slang backend available
   - target/profile support
@@ -1173,6 +1248,12 @@ Code/assets to inspect:
 - Tools/Cooking/**/*
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add or reuse small scenarios named explicitly for:
   - PSO creation/cache baseline
   - RT capability/AS lifecycle baseline
@@ -1249,6 +1330,12 @@ Code to inspect:
 - CMake target structure for Core/Application/Renderer
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a small engine-owned job system in the lowest appropriate module, likely Core, with:
   - worker lifecycle
   - task submission
@@ -1324,6 +1411,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Shell/LauncherShell.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a launcher operation id for architecture boundary validation, for example `validation.architecture-boundaries`.
 - Put it in a new or explicit `Validation` workflow category.
 - Execute the existing CMake architecture check; do not reimplement the scanner in launcher code.
@@ -1382,6 +1475,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Shell/LauncherShell.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a CLI-accessible report operation, for example `validation.readiness-report`.
 - Emit `summary.json` and `summary.md` under `artifacts/diagnostics/launcher/readiness/<timestamp-or-run-id>/`.
 - Include:
@@ -1449,6 +1548,12 @@ Code to inspect:
 - Projects/Showcase or existing project smoke fixtures
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a stable smoke mode or launcher option that runs a minimal frame without requiring feature-heavy scene content.
 - Prefer using existing smoke/session infrastructure.
 - Emit artifacts:
@@ -1510,6 +1615,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a small validation executable, CMake target, or launcher operation that:
   - selects backend
   - creates RHI/device services
@@ -1569,6 +1680,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a report command or validation mode that compares D3D12 and Vulkan capability snapshots.
 - Emit:
   - `backend-parity.json`
@@ -1640,6 +1757,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a typed diagnostics snapshot structure owned by the appropriate module boundary.
 - Keep backend allocator truth separate from renderer summaries.
 - Add an artifact writer that emits:
@@ -1710,6 +1833,12 @@ Code to inspect:
 - Engine/Renderer/Private/SceneData/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add descriptor occupancy counters or snapshots at the RHI descriptor service layer.
 - Expose limits and current usage separately.
 - Add warning thresholds without failing normal runs.
@@ -1768,6 +1897,12 @@ Code to inspect:
 - Engine/Editor/Private/**/*Shader*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Find the runtime shader package load/reload path.
 - Add timing scopes around package load, reflection/metadata load, pipeline creation, and reload replacement where applicable.
 - Add pipeline cache counters if a cache exists; if no cache exists, add an explicit `pipeline cache not implemented` field rather than fake stats.
@@ -1822,6 +1957,12 @@ Code to inspect:
 - Tests or CMake test conventions if present
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a regression test or validation command that covers:
   - `list-shaders --validate`
   - reflection output for representative shaders
@@ -1882,6 +2023,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Core/HostGraphicsCapabilities.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add an engine-facing provider capability state enum or adapter that maps to exactly:
   - `unavailable`
   - `missing dependency`
@@ -1942,6 +2089,12 @@ Code to inspect:
 - Engine/Renderer/Private/Diagnostics/**/*.h
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Audit current upscaler input contract for:
   - color
   - depth
@@ -2004,6 +2157,12 @@ Code to inspect:
 - Engine/Renderer/Private/FrameGraph/Diagnostics/**/*.h
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Identify existing frame graph diagnostics for undeclared resources, invalid bindings, unresolved barriers, and invalid viewport products.
 - Add missing diagnostic counters or messages where the contract expects them.
 - Surface diagnostic summary in smoke/baseline artifacts.
@@ -2058,6 +2217,12 @@ Code to inspect:
 - CMake/ArchitectureBoundaryCheck.cmake
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add tests, validation, or architecture-check coverage that confirms GameFramework does not depend on Renderer/RHI.
 - Add source-level validation or debug diagnostics for scene snapshot capture and renderer translation if appropriate.
 - Document or enforce invalidation on:
@@ -2113,6 +2278,12 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Introduce typed or structured categories for:
   - missing SDK
   - missing source dependency
@@ -2173,6 +2344,12 @@ Project/assets to inspect:
 - existing Showcase project conventions
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add or reuse a small reviewer project or scenario set with:
   - empty frame
   - one static mesh/material
@@ -2237,6 +2414,12 @@ Code to inspect:
 - Engine/Renderer/Private/Diagnostics/**/*.h
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Reuse existing panels and diagnostics providers where possible.
 - Add a compact dashboard view that shows:
   - active backend
@@ -2300,6 +2483,12 @@ Code to inspect:
 - Tools/Shaders/ShaderCompiler/Private/Cli/**/*.cpp
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Add a portfolio review operation, for example `validation.portfolio-review`.
 - The operation should orchestrate or clearly dry-run:
   - architecture boundary check
@@ -2359,6 +2548,12 @@ Production references to inspect first:
 - Do not update statuses from external reference repos alone; update only when SparkleEngine source and validation artifacts prove the status.
 
 Implementation requirements:
+- Daily refactor principle for every touched file:
+  - Leave the file simpler, clearer, or more enforceable than it was before the change.
+  - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
+  - Replace bad local patterns when they are in the touched path; do not preserve them just because they already exist.
+  - Every new type/function must either reduce existing complexity, remove ambiguity, enforce a real contract, or feed runtime/validation/diagnostics/tooling.
+  - Report what code was removed, simplified, or deliberately left unchanged because it was outside scope.
 - Update statuses from `planned` or `partial` only when source and commands prove the change.
 - Add generated command names and artifact paths.
 - Update README planned docs if they are implemented or no longer needed.
