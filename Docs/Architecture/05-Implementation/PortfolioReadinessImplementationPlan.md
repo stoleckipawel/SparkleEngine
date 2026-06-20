@@ -363,6 +363,11 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RHIContract.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
+Production references to inspect first:
+- NVIDIA NRI backend contracts for explicit device/backend capability patterns.
+- NVRHI backend capability and device abstractions for backend-neutral feature reporting.
+- AMD Cauldron D3D12/Vulkan device layers for cross-IHV debug, capture, memory, and unavailable-state reporting.
+
 Code to inspect:
 - Engine/RHI/Private/D3D12/**/*.cpp
 - Engine/RHI/Private/Vulkan/**/*.cpp
@@ -425,6 +430,12 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 - Docs/Architecture/02-Contracts/RuntimeSceneData.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
+
+Production references to inspect first:
+- NVIDIA Donut render passes and sample frame flow for practical pass/resource ownership patterns.
+- Donut Samples for reviewer-friendly sample pass integration and frame lifecycle shape.
+- Falcor RenderGraph for explicit resource declaration, pass registration, and graph diagnostics.
+- NVRHI command/resource state patterns for renderer-to-RHI barrier and lifetime boundaries.
 
 Code to inspect:
 - Engine/Renderer/Public/**/*.h
@@ -492,6 +503,12 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RendererProviderContract.md
 - Docs/Architecture/01-Boundaries/BoundaryRules.md
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
+
+Production references to inspect first:
+- NVIDIA Streamline for provider-style SDK integration and capability checks.
+- Streamline Sample for concrete runtime/provider wiring and failure handling.
+- FidelityFX SDK for AMD provider integration and feature availability shape.
+- AMD Cauldron FidelityFX integration for cross-IHV provider/backend boundaries.
 
 Code to inspect:
 - Engine/Renderer/Private/Upscaling/**/*.h
@@ -562,6 +579,12 @@ Supporting docs:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 
+Production references to inspect first:
+- NVRHI shader and pipeline APIs for runtime shader/pipeline object relationships.
+- NVIDIA Donut shader compiler usage for practical shader cook/runtime registration patterns.
+- AMD Cauldron shader/runtime patterns for sample-framework shader packaging.
+- Slang for profile, target, reflection, and future neural shader readiness constraints.
+
 Code to inspect:
 - Tools/Shaders/ShaderCompiler/**/*.h
 - Tools/Shaders/ShaderCompiler/**/*.cpp
@@ -620,6 +643,11 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 - Docs/Architecture/01-Boundaries/BoundaryRules.md
 
+Production references to inspect first:
+- NVIDIA Donut scene/component graph for renderer-facing scene translation patterns.
+- AMD Cauldron scene/content systems for asset and runtime data boundaries.
+- Falcor scene model for scene snapshots, renderer-owned data, and invalidation patterns.
+
 Code to inspect:
 - Engine/GameFramework/CMakeLists.txt
 - Engine/GameFramework/Public/Scene/**/*.h
@@ -676,6 +704,11 @@ Supporting docs:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 - Docs/Architecture/02-Contracts/RHIContract.md
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
+
+Production references to inspect first:
+- NVRHI validation and lifetime diagnostics for source-backed GPU object evidence.
+- AMD Cauldron diagnostics/profiler patterns for backend and renderer metrics.
+- Falcor profiling and graph evidence for renderer-facing performance diagnostics.
 
 Code to inspect:
 - Engine/RHI/Public/**/*Diagnostic*.h
@@ -744,6 +777,11 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/ApplicationLifecycle.md
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
 - Docs/Architecture/03-Validation/ValidationMatrix.md
+
+Production references to inspect first:
+- NVIDIA Donut app/device manager lifecycle for device creation, frame loop, and shutdown shape.
+- AMD Cauldron sample lifecycle for startup/backend/failure separation.
+- Falcor application/sample lifecycle for runtime/editor-style validation and diagnostics flow.
 
 Code to inspect:
 - Engine/Application/Public/**/*.h
@@ -823,6 +861,11 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/ShaderPipeline.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
+Production references to inspect first:
+- NVRHI pipeline state APIs for backend-neutral graphics/compute pipeline identity.
+- NVIDIA NRI pipeline abstractions for low-level pipeline creation and backend parity.
+- AMD Cauldron PSO and shader runtime handling for practical cache/timing diagnostics.
+
 Code to inspect:
 - Engine/RHI/Public/**/*Pipeline*.h
 - Engine/RHI/Public/**/*Shader*.h
@@ -895,6 +938,12 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 - Docs/Architecture/02-Contracts/ShaderPipeline.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
+
+Production references to inspect first:
+- NVRHI ray tracing tutorial/sample patterns for BLAS/TLAS, RT pipelines, and shader table expectations.
+- NVIDIA Donut ray tracing samples for practical renderer integration.
+- Falcor ray tracing architecture for scene-to-AS and graph-based RT diagnostics.
+- RTXPT for high-end path/ray tracing proof structure and artifact expectations.
 
 Code to inspect:
 - Engine/RHI/Public/**/*RayTracing*.h
@@ -972,6 +1021,12 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/ShaderPipeline.md
 - Docs/Architecture/02-Contracts/RendererProviderContract.md
 
+Production references to inspect first:
+- Falcor path tracer structure for accumulation, scene inputs, denoising hooks, and diagnostics.
+- RTXPT for modern high-end path tracing integration and validation proof shape.
+- NRD for denoiser input contracts and temporal/resource expectations.
+- NVIDIA Donut ray tracing samples for a smaller sample-framework path to RT/path tracing readiness.
+
 Code to inspect:
 - Engine/Renderer/Private/RayTracing/**/*.h
 - Engine/Renderer/Private/Passes/**/*.h
@@ -1039,6 +1094,12 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RHIContract.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
+Production references to inspect first:
+- Slang for shader profile gates, target capabilities, and reflection constraints.
+- Neural Shading SIGGRAPH 2025 examples for Slang-based neural shading experiment structure.
+- RTXNTC for neural texture compression integration constraints and material/texture data expectations.
+- Streamline and FidelityFX SDK for provider capability/failure-state patterns without hardwiring a single vendor.
+
 Code to inspect:
 - Tools/Shaders/ShaderCompiler/Backends/Slang/**/*.h
 - Tools/Shaders/ShaderCompiler/Backends/Slang/**/*.cpp
@@ -1097,6 +1158,12 @@ Supporting docs:
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
+
+Production references to inspect first:
+- Donut Samples for compact feature proof scenarios that are useful without becoming a showcase detour.
+- Falcor sample graphs for scenario-driven renderer validation.
+- RTXPT sample scenarios for path tracing/RT proof artifact expectations.
+- NRD sample expectations for denoiser and temporal input validation.
 
 Code/assets to inspect:
 - Projects/*
@@ -1159,6 +1226,11 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RuntimeSceneData.md
 - Docs/Architecture/02-Contracts/ApplicationLifecycle.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
+
+Production references to inspect first:
+- NVIDIA Donut threaded rendering/sample infrastructure for practical low-risk parallel renderer work.
+- NVRHI parallel command list guidance for command recording and submission constraints.
+- Falcor task/render graph scheduling for graph-aware multithreaded preparation patterns.
 
 Prerequisites:
 - Prompt 01 through Prompt 13 complete or intentionally deferred with documented reason.
@@ -1237,6 +1309,11 @@ Source docs to read first:
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
 - Docs/Architecture/00-Review/ReviewerGuide.md
 
+Production references to inspect first:
+- NVIDIA Donut sample workflow shape for reviewer-facing validation/build actions.
+- AMD Cauldron sample workflow conventions for build/run validation grouping.
+- Existing SparkleLauncher workflow catalog and operation patterns; prefer extending these over inventing a second launcher workflow model.
+
 Code to inspect:
 - CMakeLists.txt
 - CMake/ArchitectureBoundaryCheck.cmake
@@ -1290,6 +1367,11 @@ Source docs to read first:
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 - Docs/Architecture/02-Contracts/RendererProviderContract.md
+
+Production references to inspect first:
+- NVIDIA Donut configuration/readiness reporting patterns for device/tool setup evidence.
+- AMD Cauldron configuration and runtime capability reporting patterns.
+- Existing SparkleLauncher readiness/toolchain reports; extend current launcher reporting instead of creating a parallel report system.
 
 Code to inspect:
 - Tools/Launcher/SparkleLauncher/Public/SparkleLauncher/BuildWorkspaceOperations.h
@@ -1353,6 +1435,11 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 - Docs/Architecture/02-Contracts/ApplicationLifecycle.md
 
+Production references to inspect first:
+- NVIDIA Donut headless/basic samples for minimal renderer startup and frame validation.
+- Falcor sample graph loading for small graph-backed smoke scenarios.
+- AMD Cauldron sample startup path for backend-aware smoke behavior.
+
 Code to inspect:
 - Engine/Application/Private/Validation/**/* if present
 - Engine/Renderer/Private/FramePipeline/**/*.cpp
@@ -1409,6 +1496,12 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
+Production references to inspect first:
+- NVIDIA NRI backend startup and device creation flow for low-level backend conformance.
+- NVRHI backend startup/device abstractions for backend-neutral validation expectations.
+- NVIDIA Donut `DeviceManager` for practical app-hosted device startup/shutdown.
+- AMD Cauldron device creation flow for D3D12/Vulkan startup parity.
+
 Code to inspect:
 - Engine/RHI/Public/**/*.h
 - Engine/RHI/Private/D3D12/**/*.cpp
@@ -1461,6 +1554,12 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RHIContract.md
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 - Docs/Architecture/00-Review/ReviewerGuide.md
+
+Production references to inspect first:
+- NVIDIA NRI capability reporting and backend-specific support surfaces.
+- NVRHI backend capability/device feature reporting.
+- AMD Cauldron D3D12/Vulkan parity and unavailable-feature handling.
+- Falcor device feature reporting for reviewer-facing backend evidence.
 
 Code to inspect:
 - Engine/RHI/Public/**/*Capabilities*.h
@@ -1527,6 +1626,11 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 - Docs/Architecture/02-Contracts/RendererProviderContract.md
 
+Production references to inspect first:
+- Falcor diagnostics/profiling output for unified renderer/backend evidence.
+- NVRHI validation diagnostics for backend and lifetime status.
+- AMD Cauldron profiler/metrics patterns for memory/timing artifacts.
+
 Code to inspect:
 - Engine/RHI/Public/**/*Diagnostic*.h
 - Engine/RHI/Public/**/*Memory*.h
@@ -1591,6 +1695,11 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RHIContract.md
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 
+Production references to inspect first:
+- NVRHI descriptor/resource lifetime patterns for descriptor pressure accounting.
+- AMD Cauldron descriptor/resource pool patterns for cross-backend usage reporting.
+- NVIDIA NRI descriptor abstractions for low-level descriptor ownership and capability shape.
+
 Code to inspect:
 - Engine/RHI/Public/**/*Descriptor*.h
 - Engine/RHI/Private/D3D12/**/*Descriptor*.cpp
@@ -1645,6 +1754,11 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 
+Production references to inspect first:
+- NVRHI pipeline APIs for cacheable pipeline state and backend-neutral pipeline handles.
+- AMD Cauldron shader/PSO handling for runtime timing and shader-package compatibility.
+- NVIDIA Donut shader compilation/runtime usage for practical shader package load evidence.
+
 Code to inspect:
 - Tools/Shaders/ShaderCompiler/Private/Cooking/**/*.cpp
 - Engine/Renderer/ShaderRegistrations/**/*.cpp
@@ -1693,6 +1807,11 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/ShaderPipeline.md
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 - Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
+
+Production references to inspect first:
+- NVIDIA Donut shader compiler usage for concrete shader validation and packaging patterns.
+- NVRHI shader reflection/pipeline expectations for runtime ABI compatibility.
+- Slang and DXC reference usage in public shader tooling for profile/target/reflection validation.
 
 Code to inspect:
 - Tools/Shaders/ShaderCompiler/Private/Cli/**/*.cpp
@@ -1749,6 +1868,11 @@ Source docs to read first:
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
 - Docs/Architecture/01-Boundaries/BoundaryRules.md
 
+Production references to inspect first:
+- NVIDIA Streamline capability checks and runtime state handling.
+- FidelityFX SDK feature availability reporting and provider state shape.
+- AMD Cauldron SDK backend/provider integration patterns.
+
 Code to inspect:
 - Engine/Renderer/Private/Upscaling/UpscalerProvider.h
 - Engine/Renderer/Private/Upscaling/**/*.cpp
@@ -1803,6 +1927,11 @@ Ensure future upscalers, denoisers, frame generation, and neural paths can depen
 Source docs to read first:
 - Docs/Architecture/02-Contracts/RendererProviderContract.md
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
+
+Production references to inspect first:
+- NVIDIA Streamline resource tagging/contracts for provider input validation.
+- NRD input contracts for denoiser resource requirements and temporal inputs.
+- FidelityFX SDK input resource contracts for provider-specific required/optional resources.
 
 Code to inspect:
 - Engine/Renderer/Private/Upscaling/UpscalerInputContract.h
@@ -1862,6 +1991,11 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 
+Production references to inspect first:
+- Falcor RenderGraph validation for pass/resource diagnostics.
+- NVRHI resource state tracking for barrier and resource-state evidence.
+- NVIDIA Donut pass conventions for sample-framework pass authoring checks.
+
 Code to inspect:
 - Engine/Renderer/Private/FrameGraph/**/*.h
 - Engine/Renderer/Private/FrameGraph/**/*.cpp
@@ -1909,6 +2043,11 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RuntimeSceneData.md
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 - Docs/Architecture/01-Boundaries/BoundaryRules.md
+
+Production references to inspect first:
+- NVIDIA Donut scene graph for scene-to-renderer data translation patterns.
+- AMD Cauldron content systems for asset/runtime data invalidation behavior.
+- Falcor scene invalidation patterns for renderer snapshot refresh and diagnostics.
 
 Code to inspect:
 - Engine/GameFramework/CMakeLists.txt
@@ -1960,6 +2099,11 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/ApplicationLifecycle.md
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
 - Docs/Architecture/03-Validation/ValidationMatrix.md
+
+Production references to inspect first:
+- NVIDIA Donut app failure/startup paths for backend and project-load failure separation.
+- AMD Cauldron app/sample failure paths for dependency/backend readiness behavior.
+- Existing SparkleLauncher recovery model; improve it instead of replacing it with unrelated failure routing.
 
 Code to inspect:
 - Engine/Application/Public/**/*.h
@@ -2017,6 +2161,11 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 - Docs/Architecture/02-Contracts/RuntimeSceneData.md
 
+Production references to inspect first:
+- Donut Samples for small stable reviewer scenarios and source-control-friendly sample content.
+- AMD Cauldron samples for compact validation scenes and sample metadata conventions.
+- Falcor sample scenes for scenario selection and diagnostics-driven sample validation.
+
 Project/assets to inspect:
 - Projects/*
 - Tools/Cooking/**/*
@@ -2071,6 +2220,11 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 - Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 - Docs/Architecture/00-Review/ReviewerGuide.md
+
+Production references to inspect first:
+- Falcor/Mogwai inspection workflow for compact rendering diagnostics review.
+- AMD Cauldron sample UI for feature/backend diagnostics presentation.
+- Existing Sparkle editor diagnostics UI; extend existing panels/data providers instead of creating a disconnected showcase panel.
 
 Code to inspect:
 - Engine/Editor/Private/**/*Profiler*.h
@@ -2133,6 +2287,11 @@ Source docs to read first:
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
+Production references to inspect first:
+- NVIDIA Donut sample runner/workflow expectations for repeatable reviewer paths.
+- AMD Cauldron sample runner/workflow conventions for build/run/capture organization.
+- Existing SparkleLauncher operation orchestration; aggregate current operations rather than duplicating them.
+
 Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Shell/LauncherShell.cpp
 - Tools/Launcher/SparkleLauncher/Private/Build/**/*.cpp
@@ -2193,6 +2352,11 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
+
+Production references to inspect first:
+- The implemented SparkleEngine code and artifacts produced by Prompts 01 through 31.
+- The production references named in each completed prompt's report.
+- Do not update statuses from external reference repos alone; update only when SparkleEngine source and validation artifacts prove the status.
 
 Implementation requirements:
 - Update statuses from `planned` or `partial` only when source and commands prove the change.
