@@ -10,6 +10,8 @@ The architecture review documents now describe what SparkleEngine is aiming for 
 
 This plan does not add mature rendering features for their own sake. It prepares feature-ready foundations and MVP proof paths for PSO management, high-end ray tracing, path tracing, neural rendering readiness, and eventually multithreaded execution. The goal is to make the existing engine easier to validate, easier to inspect, harder to break, and ready for those major features to land one by one.
 
+The current risk is under-scoped implementation. A prompt is not complete because it added a validator, a report, a log line, or a thin metadata object. Those are only evidence layers. The prompt is complete only when the underlying ownership, runtime path, data flow, lifetime rule, cache, pass graph, provider seam, or workflow orchestration has actually moved toward the architecture described by the review folder.
+
 ## Primary Review Sources
 
 The implementation plan is governed by the review folder. These documents define what "ready" means:
@@ -95,46 +97,119 @@ Core reference repositories:
 - [AMD Cauldron](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron): AMD production sample framework for DirectX 12/Vulkan prototyping, useful for backend abstraction, render modules, FidelityFX integration, and sample workflow shape.
 - [FidelityFX SDK](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK): provider integration, AMD SDK sample structure, shader/runtime packaging expectations.
 - [Falcor](https://github.com/NVIDIAGameWorks/Falcor): render graph, ray tracing, path tracing, shader, scene, diagnostics, and research/prototype renderer architecture.
+- [Epic Unreal Engine source](https://github.com/EpicGames/UnrealEngine) when local licensed access is available: RHI, RenderCore, RDG, shader pipeline, renderer module boundaries, asset/runtime/editor separation, and production-scale feature integration. If local access is not available, use Epic's official public docs below as reference constraints and do not invent private-source claims.
+- [Epic Render Dependency Graph documentation](https://dev.epicgames.com/documentation/unreal-engine/render-dependency-graph-in-unreal-engine): pass/resource lifetime, graph compilation, memory/barrier ownership, and CPU/GPU parallelization expectations.
+- [Epic Lyra Sample Game documentation](https://dev.epicgames.com/documentation/unreal-engine/lyra-sample-game-in-unreal-engine): modular gameplay/project architecture, plugin boundaries, sample project organization, and portfolio-readable Unreal-scale project shape.
 - [RTXPT](https://github.com/NVIDIA-RTX/RTXPT): path tracing integration, neural-graphics-adjacent renderer structure, and high-end RT/path tracing proof shape.
 - [Streamline](https://github.com/NVIDIA-RTX/Streamline) and [Streamline Sample](https://github.com/NVIDIA-RTX/Streamline_Sample): provider-style SDK integration and capability checks.
 - [NRD](https://github.com/NVIDIA-RTX/NRD): denoiser input contracts, low ray-per-pixel path tracing denoise expectations, and temporal/resource requirements.
 - [RTXNTC](https://github.com/NVIDIA-RTX/RTXNTC): neural texture compression readiness, material/texture channel grouping, and runtime integration constraints.
 - [Slang](https://github.com/shader-slang/slang) and [Neural Shading SIGGRAPH 2025 examples](https://github.com/shader-slang/neural-shading-s25): shader profile gates, Slang-based neural shading experiments, and cooperative-vector readiness.
 
-Prompt reference matrix:
+## Mandatory Prompt Execution Contract
+
+This contract applies to every prompt below and overrides any weaker wording inside an individual prompt.
+
+Before editing code, the agent must produce a short implementation note in its report with:
+
+- `Sparkle current shape`: the concrete source files/classes/functions that currently own the behavior.
+- `Reference evidence used`: exact reference repository files/classes/docs inspected. Use AMD/NVIDIA/Epic production references first. If Epic Unreal source is not locally accessible, say so and use Epic public docs only for architectural constraints.
+- `Target architecture shape`: the intended ownership/data-flow/lifetime/caching/pass/provider/job-system shape after the change.
+- `Architecture movement scale`: one of `major refactor`, `foundation MVP`, `contract extraction`, `workflow orchestration`, or `evidence only`.
+- `Rejected approaches`: at least one tempting thin layer, report-only change, or speculative abstraction that was deliberately not implemented.
+
+During implementation, the agent must:
+
+- Change the real runtime/tool path, not a parallel descriptive path.
+- Prefer replacing unclear ownership with a simpler owner/call path over adding wrapper objects beside the old code.
+- Delete, merge, or simplify obsolete code when the touched path reveals duplication or accidental complexity.
+- Keep new public types small and runtime-consumed. A public type that exists only to make documentation true is not acceptable.
+- Move logic toward the module that owns the data or lifetime. Do not move renderer/RHI concepts into GameFramework, launcher concepts into Renderer, or provider-native concepts into general Renderer/RHI surfaces.
+- Keep validation/logging/reporting as proof of the refactor, not as the refactor itself.
+
+Acceptance criteria for every prompt are amended with these global failure rules:
+
+- The prompt fails if the only meaningful changes are logs, diagnostics, reports, docs, command wrappers, or validation checks.
+- The prompt fails if it adds a new abstraction while leaving the old ambiguous ownership path in place.
+- The prompt fails if it increases the number of concepts a reviewer must understand without removing or consolidating an older concept.
+- The prompt fails if the implementation cannot name the production reference pattern it follows.
+- The prompt fails if it claims parity, readiness, feature support, or performance behavior that source and commands do not prove.
+
+Validation/reporting prompts are allowed to be evidence-heavy, but they still must prove or orchestrate an existing real architecture path. They must not be used to disguise missing RHI, Renderer, scene, shader, provider, PSO, ray tracing, path tracing, or job-system work.
+
+## Architecture Movement Scale Matrix
+
+Each prompt has a minimum expected movement. If an agent cannot reach that scale safely, it must stop and propose a narrower source-backed prompt instead of shipping a cosmetic change.
+
+| Prompt | Minimum scale | Expected architectural movement |
+| --- | --- | --- |
+| 01 | major refactor | Replace implicit RHI ownership with real service/backend ownership boundaries for device, queues, commands, fences, descriptors, resources, barriers, memory, diagnostics, and interop. |
+| 02 | contract extraction | Move backend parity into shared capability/debug/memory surfaces consumed by startup/reporting paths; do not merely print existing booleans. |
+| 03 | major refactor | Reshape frame assembly/pass/resource ownership so new passes declare resources and lifetimes through the actual frame graph path. |
+| 04 | contract extraction | Move SDK/provider assumptions out of NVIDIA-only code into a provider seam used by DLSS now and frame-generation/denoiser families later. |
+| 05 | contract extraction | Harden shader package ABI/runtime loading/PSO relationship through existing package/cache/pipeline paths with regression coverage. |
+| 06 | contract extraction | Make GameFramework snapshot revision/invalidation a real boundary consumed by Renderer without introducing renderer/RHI concepts into GameFramework. |
+| 07 | foundation MVP | Create a diagnostics data plane consumed by runtime/artifact/editor paths, not one-off string dumps. |
+| 08 | major refactor | Reshape lifecycle/failure ownership so startup/backend/project/shader/editor failures have typed categories at the throwing/originating layer. |
+| 09 | foundation MVP | Introduce PSO identity/cache/invalidation/timing as runtime pipeline infrastructure, not pass-local bookkeeping. |
+| 10 | foundation MVP | Build the minimal AS/RT-pipeline/SBT lifecycle path that future high-end ray tracing can extend. |
+| 11 | foundation MVP | Build a minimal path-tracing readiness path with accumulation/history/sampling/reset ownership, even if final quality is not the goal. |
+| 12 | foundation MVP | Add source-backed neural/profile/provider gates and shader/runtime contracts that future neural features can target. |
+| 13 | workflow orchestration | Exercise multiple real foundations together through scenarios; no showcase-only scene path. |
+| 14 | major refactor | Add a job-system/scheduling foundation only after ownership boundaries are stable, with single-thread fallback and deterministic ownership. |
+| 15 | workflow orchestration | Make architecture boundary validation a first-class launcher/build action wired to the real CMake check. |
+| 16 | workflow orchestration | Export readiness from real tool/backend/dependency/provider state, not copied UI strings. |
+| 17 | foundation MVP | Add a real empty-frame render path and artifact proof through Renderer/RHI, not a dummy screenshot. |
+| 18 | foundation MVP | Add backend startup/shutdown harnesses that exercise actual D3D12/Vulkan device paths. |
+| 19 | workflow orchestration | Generate backend parity evidence from real capability/debug/memory surfaces. |
+| 20 | foundation MVP | Create unified diagnostics snapshots and artifacts from typed subsystem data. |
+| 21 | contract extraction | Surface descriptor/upload pressure from allocator/queue/resource owners. |
+| 22 | contract extraction | Connect pipeline cache stats and shader package load timing to runtime PSO/package creation. |
+| 23 | foundation MVP | Add shader regression corpus and golden package/reflection checks based on actual registered shaders. |
+| 24 | contract extraction | Normalize provider capability state at the provider boundary and launcher/report consumers. |
+| 25 | contract extraction | Enforce provider resource contracts at the frame/provider handoff. |
+| 26 | contract extraction | Move frame graph validation into compile/execute ownership, not post-hoc warnings only. |
+| 27 | foundation MVP | Prove scene snapshot/invalidation behavior with tests/smoke/artifacts, not only metadata. |
+| 28 | major refactor | Move failure taxonomy to lifecycle origin points and recovery routing. |
+| 29 | foundation MVP | Add small durable assets/scenarios that exercise real cook/runtime paths. |
+| 30 | workflow orchestration | Build editor review UI over real diagnostics providers; no disconnected dashboard state. |
+| 31 | workflow orchestration | Aggregate the real reviewer path and artifact outputs with honest pass/fail/skipped state. |
+| 32 | evidence only | Refresh docs from implemented code/artifacts only; no planned-status inflation. |
+
+## Prompt Reference Matrix
 
 | Prompt | Required reference starting points |
 | --- | --- |
 | Prompt 01 | NRI, NVRHI Programming Guide, Donut DeviceManager/App shape, Cauldron device/backend abstractions |
 | Prompt 02 | NRI backend contracts, NVRHI backend capabilities, Cauldron D3D12/Vulkan device layers |
-| Prompt 03 | Donut render passes, Donut Samples, Falcor RenderGraph, NVRHI command/resource state patterns |
+| Prompt 03 | Donut render passes, Donut Samples, Falcor RenderGraph, Epic RDG, NVRHI command/resource state patterns |
 | Prompt 04 | Streamline, Streamline Sample, FidelityFX SDK, Cauldron FidelityFX integration |
 | Prompt 05 | NVRHI shader/pipeline APIs, Donut shader compiler usage, Cauldron shader/runtime patterns, Slang |
-| Prompt 06 | Donut scene/component graph, Cauldron scene/content systems, Falcor scene model |
+| Prompt 06 | Donut scene/component graph, Cauldron scene/content systems, Falcor scene model, Epic Lyra/Unreal gameplay-to-renderer separation |
 | Prompt 07 | NVRHI validation/lifetime diagnostics, Cauldron diagnostics patterns, Falcor profiling/graph evidence |
-| Prompt 08 | Donut app/device manager lifecycle, Cauldron sample lifecycle, Falcor application/sample lifecycle |
-| Prompt 09 | NVRHI pipeline state APIs, NRI pipeline abstractions, Cauldron PSO/shader runtime handling |
+| Prompt 08 | Donut app/device manager lifecycle, Cauldron sample lifecycle, Falcor application/sample lifecycle, Unreal/Lyra lifecycle and module boundaries |
+| Prompt 09 | NVRHI pipeline state APIs, NRI pipeline abstractions, Cauldron PSO/shader runtime handling, Epic RHI/RDG PSO usage where source/docs are available |
 | Prompt 10 | NVRHI ray tracing tutorial/samples, Donut ray tracing samples, Falcor ray tracing, RTXPT |
 | Prompt 11 | Falcor path tracer docs, RTXPT, NRD, Donut ray tracing samples |
 | Prompt 12 | Slang, neural-shading-s25, RTXNTC, Streamline, FidelityFX SDK |
 | Prompt 13 | Donut Samples, Falcor sample graphs, RTXPT sample scenarios, NRD sample expectations |
-| Prompt 14 | Donut threaded rendering sample, NVRHI parallel command list guidance, Falcor task/render graph scheduling |
+| Prompt 14 | Donut threaded rendering sample, NVRHI parallel command list guidance, Falcor task/render graph scheduling, Unreal render-thread/RDG parallelization model |
 | Prompt 15 | Donut/Cauldron sample workflow commands, existing SparkleLauncher patterns |
 | Prompt 16 | Donut/Cauldron configuration/readiness reporting patterns, existing SparkleLauncher reports |
-| Prompt 17 | Donut headless/basic samples, Falcor sample graph loading, Cauldron sample startup |
+| Prompt 17 | Donut headless/basic samples, Falcor sample graph loading, Cauldron sample startup, Epic RDG empty-pass/resource lifecycle expectations |
 | Prompt 18 | NRI/NVRHI backend startup, Donut DeviceManager, Cauldron device creation |
 | Prompt 19 | NRI/NVRHI capability reporting, Cauldron D3D12/Vulkan parity, Falcor device feature reporting |
-| Prompt 20 | Falcor diagnostics/profiling, NVRHI validation, Cauldron profiler/metrics |
+| Prompt 20 | Falcor diagnostics/profiling, NVRHI validation, Cauldron profiler/metrics, Unreal Insights/RDG diagnostics where source/docs are available |
 | Prompt 21 | NVRHI descriptor/resource lifetime, Cauldron descriptor/resource pools, NRI descriptors |
 | Prompt 22 | NVRHI pipeline APIs, Cauldron shader/PSO handling, Donut shader compilation |
 | Prompt 23 | Donut shader compiler, NVRHI shader reflection/pipelines, Slang/DXC usage in references |
 | Prompt 24 | Streamline capability checks, FidelityFX SDK feature availability, Cauldron SDK backend |
 | Prompt 25 | Streamline resource tags/contracts, NRD inputs, FidelityFX SDK input resources |
-| Prompt 26 | Falcor RenderGraph validation, NVRHI resource state tracking, Donut pass conventions |
-| Prompt 27 | Donut scene graph, Cauldron content systems, Falcor scene invalidation patterns |
+| Prompt 26 | Falcor RenderGraph validation, Epic RDG validation model, NVRHI resource state tracking, Donut pass conventions |
+| Prompt 27 | Donut scene graph, Cauldron content systems, Falcor scene invalidation patterns, Epic Lyra/Unreal scene or gameplay invalidation patterns |
 | Prompt 28 | Donut/Cauldron app failure paths, SparkleLauncher recovery patterns |
 | Prompt 29 | Donut Samples, Cauldron samples, Falcor sample scenes |
-| Prompt 30 | Falcor/Mogwai inspection workflow, Cauldron sample UI, existing Sparkle editor UI |
+| Prompt 30 | Falcor/Mogwai inspection workflow, Cauldron sample UI, Unreal editor diagnostics/Insights patterns where available, existing Sparkle editor UI |
 | Prompt 31 | Donut/Cauldron sample runner expectations, SparkleLauncher operation orchestration |
 | Prompt 32 | The implemented code plus all references used by completed prompts |
 
@@ -274,6 +349,7 @@ Supporting docs:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA NRI for explicit D3D12/Vulkan-level ownership surfaces and low-overhead backend contracts.
 - NVRHI Programming Guide for resource state tracking, command list lifetime, binding sets, deferred destruction, and native escape hatches.
 - NVIDIA Donut `DeviceManager` and Donut Samples for a production sample framework that keeps device ownership in the app/RHI host rather than adding a separate descriptive ownership graph.
@@ -288,6 +364,7 @@ Code to inspect:
 - Engine/Renderer/Private/**/*.cpp only where it consumes public RHI contracts
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -373,6 +450,7 @@ Supporting docs:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA NRI backend contracts for explicit device/backend capability patterns.
 - NVRHI backend capability and device abstractions for backend-neutral feature reporting.
 - AMD Cauldron D3D12/Vulkan device layers for cross-IHV debug, capture, memory, and unavailable-state reporting.
@@ -385,6 +463,7 @@ Code to inspect:
 - Engine/RHI/Public/**/*Memory*.h
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -447,6 +526,7 @@ Supporting docs:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut render passes and sample frame flow for practical pass/resource ownership patterns.
 - Donut Samples for reviewer-friendly sample pass integration and frame lifecycle shape.
 - Falcor RenderGraph for explicit resource declaration, pass registration, and graph diagnostics.
@@ -465,6 +545,7 @@ Code to inspect:
 - Engine/Renderer/Private/RayTracing/**/*.h
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -535,6 +616,7 @@ Supporting docs:
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Streamline for provider-style SDK integration and capability checks.
 - Streamline Sample for concrete runtime/provider wiring and failure handling.
 - FidelityFX SDK for AMD provider integration and feature availability shape.
@@ -550,6 +632,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Core/HostGraphicsCapabilities.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -617,6 +700,7 @@ Supporting docs:
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVRHI shader and pipeline APIs for runtime shader/pipeline object relationships.
 - NVIDIA Donut shader compiler usage for practical shader cook/runtime registration patterns.
 - AMD Cauldron shader/runtime patterns for sample-framework shader packaging.
@@ -632,6 +716,7 @@ Code to inspect:
 - Engine/Renderer/Private/**/*Shader*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -687,6 +772,7 @@ Supporting docs:
 - Docs/Architecture/01-Boundaries/BoundaryRules.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut scene/component graph for renderer-facing scene translation patterns.
 - AMD Cauldron scene/content systems for asset and runtime data boundaries.
 - Falcor scene model for scene snapshots, renderer-owned data, and invalidation patterns.
@@ -701,6 +787,7 @@ Code to inspect:
 - Engine/Renderer/Private/FramePipeline/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -755,6 +842,7 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVRHI validation and lifetime diagnostics for source-backed GPU object evidence.
 - AMD Cauldron diagnostics/profiler patterns for backend and renderer metrics.
 - Falcor profiling and graph evidence for renderer-facing performance diagnostics.
@@ -770,6 +858,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -834,6 +923,7 @@ Supporting docs:
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut app/device manager lifecycle for device creation, frame loop, and shutdown shape.
 - AMD Cauldron sample lifecycle for startup/backend/failure separation.
 - Falcor application/sample lifecycle for runtime/editor-style validation and diagnostics flow.
@@ -847,6 +937,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -923,6 +1014,7 @@ Supporting docs:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVRHI pipeline state APIs for backend-neutral graphics/compute pipeline identity.
 - NVIDIA NRI pipeline abstractions for low-level pipeline creation and backend parity.
 - AMD Cauldron PSO and shader runtime handling for practical cache/timing diagnostics.
@@ -938,6 +1030,7 @@ Code to inspect:
 - Tools/Shaders/ShaderCompiler/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1007,6 +1100,7 @@ Supporting docs:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVRHI ray tracing tutorial/sample patterns for BLAS/TLAS, RT pipelines, and shader table expectations.
 - NVIDIA Donut ray tracing samples for practical renderer integration.
 - Falcor ray tracing architecture for scene-to-AS and graph-based RT diagnostics.
@@ -1023,6 +1117,7 @@ Code to inspect:
 - Tools/Shaders/ShaderCompiler/**/*RayTracing* if present
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1095,6 +1190,7 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RendererProviderContract.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - Falcor path tracer structure for accumulation, scene inputs, denoising hooks, and diagnostics.
 - RTXPT for modern high-end path tracing integration and validation proof shape.
 - NRD for denoiser input contracts and temporal/resource expectations.
@@ -1111,6 +1207,7 @@ Code to inspect:
 - Tools/Shaders/ShaderCompiler/**/*
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1174,6 +1271,7 @@ Supporting docs:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - Slang for shader profile gates, target capabilities, and reflection constraints.
 - Neural Shading SIGGRAPH 2025 examples for Slang-based neural shading experiment structure.
 - RTXNTC for neural texture compression integration constraints and material/texture data expectations.
@@ -1188,6 +1286,7 @@ Code to inspect:
 - Engine/Renderer/Private/Diagnostics/**/*.h
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1245,6 +1344,7 @@ Supporting docs:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - Donut Samples for compact feature proof scenarios that are useful without becoming a showcase detour.
 - Falcor sample graphs for scenario-driven renderer validation.
 - RTXPT sample scenarios for path tracing/RT proof artifact expectations.
@@ -1258,6 +1358,7 @@ Code/assets to inspect:
 - Tools/Cooking/**/*
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1319,6 +1420,7 @@ Supporting docs:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut threaded rendering/sample infrastructure for practical low-risk parallel renderer work.
 - NVRHI parallel command list guidance for command recording and submission constraints.
 - Falcor task/render graph scheduling for graph-aware multithreaded preparation patterns.
@@ -1340,6 +1442,7 @@ Code to inspect:
 - CMake target structure for Core/Application/Renderer
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1407,6 +1510,7 @@ Source docs to read first:
 - Docs/Architecture/00-Review/ReviewerGuide.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut sample workflow shape for reviewer-facing validation/build actions.
 - AMD Cauldron sample workflow conventions for build/run validation grouping.
 - Existing SparkleLauncher workflow catalog and operation patterns; prefer extending these over inventing a second launcher workflow model.
@@ -1421,6 +1525,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Shell/LauncherShell.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1472,6 +1577,7 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RendererProviderContract.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut configuration/readiness reporting patterns for device/tool setup evidence.
 - AMD Cauldron configuration and runtime capability reporting patterns.
 - Existing SparkleLauncher readiness/toolchain reports; extend current launcher reporting instead of creating a parallel report system.
@@ -1485,6 +1591,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Shell/LauncherShell.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1545,6 +1652,7 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/ApplicationLifecycle.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut headless/basic samples for minimal renderer startup and frame validation.
 - Falcor sample graph loading for small graph-backed smoke scenarios.
 - AMD Cauldron sample startup path for backend-aware smoke behavior.
@@ -1558,6 +1666,7 @@ Code to inspect:
 - Projects/Showcase or existing project smoke fixtures
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1612,6 +1721,7 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA NRI backend startup and device creation flow for low-level backend conformance.
 - NVRHI backend startup/device abstractions for backend-neutral validation expectations.
 - NVIDIA Donut `DeviceManager` for practical app-hosted device startup/shutdown.
@@ -1625,6 +1735,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1677,6 +1788,7 @@ Source docs to read first:
 - Docs/Architecture/00-Review/ReviewerGuide.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA NRI capability reporting and backend-specific support surfaces.
 - NVRHI backend capability/device feature reporting.
 - AMD Cauldron D3D12/Vulkan parity and unavailable-feature handling.
@@ -1690,6 +1802,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1754,6 +1867,7 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RendererProviderContract.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - Falcor diagnostics/profiling output for unified renderer/backend evidence.
 - NVRHI validation diagnostics for backend and lifetime status.
 - AMD Cauldron profiler/metrics patterns for memory/timing artifacts.
@@ -1767,6 +1881,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1829,6 +1944,7 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVRHI descriptor/resource lifetime patterns for descriptor pressure accounting.
 - AMD Cauldron descriptor/resource pool patterns for cross-backend usage reporting.
 - NVIDIA NRI descriptor abstractions for low-level descriptor ownership and capability shape.
@@ -1843,6 +1959,7 @@ Code to inspect:
 - Engine/Renderer/Private/SceneData/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1894,6 +2011,7 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVRHI pipeline APIs for cacheable pipeline state and backend-neutral pipeline handles.
 - AMD Cauldron shader/PSO handling for runtime timing and shader-package compatibility.
 - NVIDIA Donut shader compilation/runtime usage for practical shader package load evidence.
@@ -1907,6 +2025,7 @@ Code to inspect:
 - Engine/Editor/Private/**/*Shader*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -1954,6 +2073,7 @@ Source docs to read first:
 - Docs/Architecture/00-Review/B_EngineArchitectureScorecard.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut shader compiler usage for concrete shader validation and packaging patterns.
 - NVRHI shader reflection/pipeline expectations for runtime ABI compatibility.
 - Slang and DXC reference usage in public shader tooling for profile/target/reflection validation.
@@ -1967,6 +2087,7 @@ Code to inspect:
 - Tests or CMake test conventions if present
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -2020,6 +2141,7 @@ Source docs to read first:
 - Docs/Architecture/01-Boundaries/BoundaryRules.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Streamline capability checks and runtime state handling.
 - FidelityFX SDK feature availability reporting and provider state shape.
 - AMD Cauldron SDK backend/provider integration patterns.
@@ -2035,6 +2157,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Core/HostGraphicsCapabilities.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -2095,6 +2218,7 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RendererFrameGraph.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Streamline resource tagging/contracts for provider input validation.
 - NRD input contracts for denoiser resource requirements and temporal inputs.
 - FidelityFX SDK input resource contracts for provider-specific required/optional resources.
@@ -2110,6 +2234,7 @@ Code to inspect:
 - Engine/Renderer/Private/Diagnostics/**/*.h
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -2172,6 +2297,7 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - Falcor RenderGraph validation for pass/resource diagnostics.
 - NVRHI resource state tracking for barrier and resource-state evidence.
 - NVIDIA Donut pass conventions for sample-framework pass authoring checks.
@@ -2184,6 +2310,7 @@ Code to inspect:
 - Engine/Renderer/Private/FrameGraph/Diagnostics/**/*.h
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -2231,6 +2358,7 @@ Source docs to read first:
 - Docs/Architecture/01-Boundaries/BoundaryRules.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut scene graph for scene-to-renderer data translation patterns.
 - AMD Cauldron content systems for asset/runtime data invalidation behavior.
 - Falcor scene invalidation patterns for renderer snapshot refresh and diagnostics.
@@ -2244,6 +2372,7 @@ Code to inspect:
 - CMake/ArchitectureBoundaryCheck.cmake
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -2293,6 +2422,7 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/ValidationMatrix.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut app failure/startup paths for backend and project-load failure separation.
 - AMD Cauldron app/sample failure paths for dependency/backend readiness behavior.
 - Existing SparkleLauncher recovery model; improve it instead of replacing it with unrelated failure routing.
@@ -2305,6 +2435,7 @@ Code to inspect:
 - Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -2360,6 +2491,7 @@ Source docs to read first:
 - Docs/Architecture/02-Contracts/RuntimeSceneData.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - Donut Samples for small stable reviewer scenarios and source-control-friendly sample content.
 - AMD Cauldron samples for compact validation scenes and sample metadata conventions.
 - Falcor sample scenes for scenario selection and diagnostics-driven sample validation.
@@ -2371,6 +2503,7 @@ Project/assets to inspect:
 - existing Showcase project conventions
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -2426,6 +2559,7 @@ Source docs to read first:
 - Docs/Architecture/00-Review/ReviewerGuide.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - Falcor/Mogwai inspection workflow for compact rendering diagnostics review.
 - AMD Cauldron sample UI for feature/backend diagnostics presentation.
 - Existing Sparkle editor diagnostics UI; extend existing panels/data providers instead of creating a disconnected showcase panel.
@@ -2441,6 +2575,7 @@ Code to inspect:
 - Engine/Renderer/Private/Diagnostics/**/*.h
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -2498,6 +2633,7 @@ Source docs to read first:
 - Docs/Architecture/03-Validation/PerformanceDiagnosticsPlan.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - NVIDIA Donut sample runner/workflow expectations for repeatable reviewer paths.
 - AMD Cauldron sample runner/workflow conventions for build/run/capture organization.
 - Existing SparkleLauncher operation orchestration; aggregate current operations rather than duplicating them.
@@ -2510,6 +2646,7 @@ Code to inspect:
 - Tools/Shaders/ShaderCompiler/Private/Cli/**/*.cpp
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
@@ -2570,11 +2707,13 @@ Source docs to read first:
 - Docs/Architecture/04-Workflows/LauncherWorkflowReadiness.md
 
 Production references to inspect first:
+- Also inspect the Prompt Reference Matrix row above for this prompt; those references are mandatory when stronger or more specific than this local list.
 - The implemented SparkleEngine code and artifacts produced by Prompts 01 through 31.
 - The production references named in each completed prompt's report.
 - Do not update statuses from external reference repos alone; update only when SparkleEngine source and validation artifacts prove the status.
 
 Implementation requirements:
+- Apply the Mandatory Prompt Execution Contract and Architecture Movement Scale Matrix above. This prompt cannot pass through validation/reporting-only changes unless its minimum scale is evidence only, and even then it must update docs from proven source/artifacts only.
 - Daily refactor principle for every touched file:
   - Leave the file simpler, clearer, or more enforceable than it was before the change.
   - Prefer removing obsolete, duplicated, unused, or misleading code over adding new layers beside it.
