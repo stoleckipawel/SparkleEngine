@@ -154,9 +154,9 @@ namespace SparkleLauncher
 			    "Build",
 			    LauncherWorkflowPageKind::Build,
 			    LauncherActionImpactKind::BuildOutputs,
-			    "Build outputs: optional local rebuild that can replace ready-to-use bundled binaries for development work.",
+			    "Build outputs: refreshes generated workspace files, then runs the full local build set for development work.",
 			    "Build outputs",
-			    "Creates local artifacts that can replace packaged binaries during daily development.",
+			    "Refreshes workspace files, then creates local artifacts that can replace packaged binaries during daily development.",
 			    "workflow-build-all.png");
 		}
 		if (operationId == "launcher.build.self")
@@ -282,7 +282,7 @@ namespace SparkleLauncher
 			    operationId,
 			    "Format Check",
 			    "Run",
-			    LauncherWorkflowPageKind::Build,
+			    LauncherWorkflowPageKind::Clean,
 			    LauncherActionImpactKind::Diagnostics,
 			    "Quality gate: checks or applies clang-format for source files; it does not build, cook, or sync dependencies.",
 			    "Code quality",

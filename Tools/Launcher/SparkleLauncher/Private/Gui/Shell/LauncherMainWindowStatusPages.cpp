@@ -358,6 +358,13 @@ namespace SparkleLauncher
 	void LauncherMainWindow::AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
 	{
 		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_projectModel, m_settings, operationId);
+		BuildWorkspaceOperationRequest workspaceRequest;
+		workspaceRequest.RepositoryRoot = m_repositoryRoot;
+		workspaceRequest.ProjectId = m_projectModel.ActiveProjectId().toStdString();
+		workspaceRequest.EditorProfile = m_settings.EditorProfile().toStdString();
+		workspaceRequest.RuntimeProfile = m_settings.RuntimeProfile().toStdString();
+		workspaceRequest.PreferredIde = ResolveSelectedWorkspaceIde(m_settings);
+		workspaceRequest.ForceConfigure = m_settings.ForceConfigure();
 		LaunchOperationRequest launchRequest;
 		launchRequest.RepositoryRoot = request.RepositoryRoot;
 		launchRequest.OperationId = operationId.toStdString();
@@ -397,6 +404,7 @@ namespace SparkleLauncher
 		launchRequest.SmokeRunDiagnosticCaptures = request.SmokeRunDiagnosticCaptures;
 
 		const LaunchOperationPlan plan = PlanLaunchOperation(operationId.toStdString(), launchRequest);
+		const BuildToolchainStatus toolchainStatus = DetectBuildToolchain(workspaceRequest.RepositoryRoot, workspaceRequest.PreferredIde);
 		const bool runtimeTarget = launchRequest.Target == "runtime";
 		const auto findReadiness = [&plan](const QString& prefix) {
 			for (const std::string& message : plan.ReadinessMessages)
@@ -433,6 +441,16 @@ namespace SparkleLauncher
 		    "Supported",
 		    "Package-root launches use bundled editor/runtime components and cooked assets from dist/; source checkouts use product artifacts under artifacts/dev.",
 		    "neutral");
+		if (launchRequest.GraphicsBackend == "vulkan" && toolchainStatus.VulkanSdkRoot.empty())
+		{
+			AddStatusRow(
+			    *launchLayout,
+			    "Graphics backend",
+			    "Needs SDK",
+			    "Vulkan was selected, but the Vulkan SDK is not available on this machine yet, so Vulkan-backed workflows remain unavailable until Verify Host Environment shows the Vulkan SDK as ready.",
+			    "warning",
+			    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
+		}
 		AddStatusRow(
 		    *launchLayout,
 		    runtimeTarget ? "Runtime executable" : "Editor executable",

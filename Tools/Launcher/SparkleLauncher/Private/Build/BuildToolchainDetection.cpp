@@ -1,6 +1,6 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
-#include "BuildWorkspaceStateFiles.h"
+#include "CMakeGeneratorModel.h"
 #include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "SparkleLauncher/LauncherPaths.h"
@@ -19,11 +19,6 @@ namespace SparkleLauncher
 	static constexpr std::string_view kVisualStudioCppComponent = "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
 	static constexpr std::string_view kMinimumCMakeVersion = "3.20.0";
 	static constexpr std::string_view kMinimumGitVersion = "2.25.0";
-
-	static bool IsVisualStudioGenerator(std::string_view generator)
-	{
-		return generator.find("Visual Studio") != std::string_view::npos;
-	}
 
 	static std::optional<std::filesystem::path> ResolveProgramFilesX86()
 	{
@@ -61,6 +56,47 @@ namespace SparkleLauncher
 		const std::filesystem::path path = *programFiles / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
 		std::error_code errorCode;
 		return std::filesystem::exists(path, errorCode) ? std::optional<std::filesystem::path>(path) : std::nullopt;
+	}
+
+	static std::vector<std::filesystem::path> GetProgramFilesRoots()
+	{
+		std::vector<std::filesystem::path> roots;
+		std::string programFiles;
+		if (Environment::TryGetVariable("ProgramFiles", programFiles))
+		{
+			roots.emplace_back(programFiles);
+		}
+		std::string programFilesX86;
+		if (Environment::TryGetVariable("ProgramFiles(x86)", programFilesX86))
+		{
+			roots.emplace_back(programFilesX86);
+		}
+		return roots;
+	}
+
+	static std::optional<std::filesystem::path> FindVisualStudioInstallWithCppTools()
+	{
+		const std::vector<std::string> versions = {"18", "2026", "17", "2022"};
+		const std::vector<std::string> editions = {"Community", "Professional", "Enterprise", "BuildTools"};
+		for (const std::filesystem::path& root : GetProgramFilesRoots())
+		{
+			const std::filesystem::path visualStudioRoot = root / "Microsoft Visual Studio";
+			for (const std::string& version : versions)
+			{
+				for (const std::string& edition : editions)
+				{
+					const std::filesystem::path installRoot = visualStudioRoot / version / edition;
+					const std::filesystem::path vcToolsRoot = installRoot / "VC" / "Tools" / "MSVC";
+					const std::filesystem::path msbuild = installRoot / "MSBuild" / "Current" / "Bin" / "MSBuild.exe";
+					std::error_code errorCode;
+					if (std::filesystem::is_directory(vcToolsRoot, errorCode) && std::filesystem::is_regular_file(msbuild, errorCode))
+					{
+						return installRoot;
+					}
+				}
+			}
+		}
+		return std::nullopt;
 	}
 
 	static std::string ToLower(std::string value)
@@ -578,31 +614,12 @@ namespace SparkleLauncher
 		return status;
 	}
 
-	static std::string ResolveGenerator(const std::filesystem::path& repositoryRoot)
+	static std::string ResolveVisualStudioGenerator()
 	{
-		std::string overrideGenerator;
-		if (Environment::TryGetVariable("SPARKLE_CMAKE_GENERATOR", overrideGenerator))
+		for (const std::filesystem::path& root : GetProgramFilesRoots())
 		{
-			return overrideGenerator;
-		}
-
-		const std::filesystem::path cachePath = GetBuildDirectory(repositoryRoot) / "CMakeCache.txt";
-		if (const std::optional<std::string> cacheGenerator = ReadCMakeCacheValue(cachePath, "CMAKE_GENERATOR"))
-		{
-			return *cacheGenerator;
-		}
-
-		const std::filesystem::path stampPath = GetBuildDirectory(repositoryRoot) / "BuildFilesFreshness.json";
-		if (const std::optional<std::string> stampedGenerator = ReadBuildFilesFreshnessStampValue(stampPath, "generator"))
-		{
-			return *stampedGenerator;
-		}
-
-		const std::optional<std::filesystem::path> programFiles = ResolveProgramFilesX86();
-		if (programFiles.has_value())
-		{
+			const std::filesystem::path visualStudioRoot = root / "Microsoft Visual Studio";
 			std::error_code errorCode;
-			const std::filesystem::path visualStudioRoot = *programFiles / "Microsoft Visual Studio";
 			if (std::filesystem::exists(visualStudioRoot / "18", errorCode) ||
 			    std::filesystem::exists(visualStudioRoot / "2026", errorCode))
 			{
@@ -611,6 +628,17 @@ namespace SparkleLauncher
 		}
 
 		return "Visual Studio 17 2022";
+	}
+
+	static std::string ResolveGenerator()
+	{
+		std::string overrideGenerator;
+		if (Environment::TryGetVariable("SPARKLE_CMAKE_GENERATOR", overrideGenerator))
+		{
+			return overrideGenerator;
+		}
+
+		return ResolveVisualStudioGenerator();
 	}
 
 	static std::string ResolvePlatform()
@@ -670,6 +698,9 @@ namespace SparkleLauncher
 		case KnownTool::MSBuild:
 			status.MSBuildPath = resolvedTool.Path;
 			break;
+		case KnownTool::Ninja:
+			status.NinjaPath = resolvedTool.Path;
+			break;
 		case KnownTool::Rider:
 			status.RiderPath = resolvedTool.Path;
 			break;
@@ -691,27 +722,31 @@ namespace SparkleLauncher
 
 	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot, WorkspaceIde preferredIde)
 	{
+		(void)repositoryRoot;
 		BuildToolchainStatus status;
 		const WorkspaceFeatureSettings featureSettings = GetLauncherWorkspaceFeatureSettings();
-		status.Generator = ResolveGenerator(repositoryRoot);
+		status.Generator = ResolveGenerator();
 		status.Platform = ResolvePlatform();
 		status.Toolset = ResolveToolset();
-		const bool visualStudioGenerator = IsVisualStudioGenerator(status.Generator);
+		const bool visualStudioGenerator = GetCMakeGeneratorFamily(status.Generator) == CMakeGeneratorFamily::VisualStudio;
+		const bool ninjaGenerator = CMakeGeneratorUsesNinjaMakeProgram(status.Generator);
 
 		AppendKnownToolStatus(status, KnownTool::CMake, true, "Minimum required version: " + std::string(kMinimumCMakeVersion));
 		AppendKnownToolStatus(status, KnownTool::MSBuild, visualStudioGenerator, visualStudioGenerator ? "Required by the selected CMake generator." : "Optional for non-Visual Studio generators.");
+		AppendKnownToolStatus(status, KnownTool::Ninja, ninjaGenerator, ninjaGenerator ? "Required by the selected CMake generator." : "Optional for Ninja generators.");
 		AppendKnownToolStatus(status, KnownTool::Rider, preferredIde == WorkspaceIde::Rider, preferredIde == WorkspaceIde::Rider ? "Required for the selected IDE." : "Optional IDE integration.");
 		AppendKnownToolStatus(status, KnownTool::Git, true, "Minimum required version: " + std::string(kMinimumGitVersion));
 		AppendKnownToolStatus(status, KnownTool::ClangFormat, false, "Required only for format operations.");
 
-		status.VswherePath = ResolveVswherePath().value_or(std::filesystem::path());
+		status.VswherePath = ResolveVswherePath().value_or(FindVisualStudioInstallWithCppTools().value_or(std::filesystem::path()));
 		status.Items.push_back(MakeToolStatus(
 		    "visualstudio",
 		    "Visual Studio C++ tools",
 		    visualStudioGenerator,
 		    !status.VswherePath.empty(),
 		    status.VswherePath,
-		    !status.VswherePath.empty() ? "vswhere is available for C++ workload discovery: " + std::string(kVisualStudioCppComponent) : "vswhere was not found."));
+		    !status.VswherePath.empty() ? "Visual Studio C++ tools are available for generator/workload discovery: " + std::string(kVisualStudioCppComponent) :
+		                                  "Visual Studio C++ tools were not found."));
 
 		status.WindowsSdkVersion = FindWindowsSdkVersion().value_or(std::string());
 		status.Items.push_back(MakeToolStatus(

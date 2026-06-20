@@ -37,6 +37,7 @@ namespace SparkleLauncher
 		std::string Toolset;
 		std::filesystem::path CMakePath;
 		std::filesystem::path MSBuildPath;
+		std::filesystem::path NinjaPath;
 		std::filesystem::path RiderPath;
 		std::filesystem::path GitPath;
 		std::filesystem::path ClangFormatPath;

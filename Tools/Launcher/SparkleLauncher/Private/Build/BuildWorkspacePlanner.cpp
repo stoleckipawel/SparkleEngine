@@ -190,10 +190,11 @@ namespace SparkleLauncher
 			{
 				return;
 			}
-			if (!RequireCurrentWorkspace(plan))
+			if (sourceDependenciesMissing)
 			{
-				return;
+				AddPlannedEffect(plan, "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
 			}
+			AddConfigureStep(plan);
 			AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
 			{
 				std::vector<std::string> editorTargets = ResolveProjectTargets(request.ProjectId, request.EditorProfile);
@@ -218,11 +219,11 @@ namespace SparkleLauncher
 				if (!cookToolTargets.empty())
 				{
 					AddBuildStep(plan, request.EditorProfile, cookToolTargets);
-					AddPlannedEffect(plan, "Build launcher, selected project editor/runtime, and enabled cook tools in one pass.");
+					AddPlannedEffect(plan, "Refresh generated workspace files, then build launcher, selected project editor/runtime, and enabled cook tools in one pass.");
 				}
 				else
 				{
-					AddPlannedEffect(plan, "Build launcher plus selected project editor/runtime targets. Optional cook tools are disabled in this workspace.");
+					AddPlannedEffect(plan, "Refresh generated workspace files, then build launcher plus selected project editor/runtime targets. Optional cook tools are disabled in this workspace.");
 				}
 			}
 			plan.CanRun = true;
@@ -331,7 +332,7 @@ namespace SparkleLauncher
 		    {BuildWorkspaceOperationKind::GenerateBuildFiles, "workspace.generate-build-files", "Build", std::string(ArtifactNaming::kActionGenerateProjectFiles), "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
 		    {BuildWorkspaceOperationKind::OpenIde, "workspace.open-ide", "Launch", "Open IDE", "Open the selected IDE after generated build files are current."},
 		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Sync", std::string(ArtifactNaming::kActionVerifyHostEnvironment), "Audit installed host prerequisites without downloading repository dependencies or changing build files."},
-		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Optional local rebuild of launcher, project editor/runtime targets, and enabled cook tools."},
+		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Refresh generated workspace files, then rebuild launcher, project editor/runtime targets, and enabled cook tools."},
 		    {BuildWorkspaceOperationKind::CompileLauncher, "launcher.build.self", "Build", "Build Launcher", "Optional local rebuild of Sparkle Launcher for development or customization."},
 		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Build Editor", "Optional local rebuild of the selected project's editor target."},
 		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Build Runtime", "Optional local rebuild of the selected project's runtime target."},

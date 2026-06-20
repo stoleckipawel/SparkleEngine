@@ -1,5 +1,6 @@
 #include "CMakeWorkflowProcessRequests.h"
 
+#include "CMakeGeneratorModel.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
 namespace SparkleLauncher
@@ -24,11 +25,20 @@ namespace SparkleLauncher
 		process.ExecutablePath = toolchain.CMakePath;
 		process.WorkingDirectory = GetBuildDirectory(repositoryRoot);
 		process.LogPath = GetLauncherOperationLogPath(repositoryRoot, operationId, logFileName);
-		process.Arguments = {"-G", toolchain.Generator, "-A", toolchain.Platform};
-		if (!toolchain.Toolset.empty())
+		process.Arguments = {"-G", toolchain.Generator};
+		if (CMakeGeneratorUsesPlatformArgument(toolchain.Generator))
+		{
+			process.Arguments.push_back("-A");
+			process.Arguments.push_back(toolchain.Platform);
+		}
+		if (!toolchain.Toolset.empty() && CMakeGeneratorUsesToolsetArgument(toolchain.Generator))
 		{
 			process.Arguments.push_back("-T");
 			process.Arguments.push_back(toolchain.Toolset);
+		}
+		if (!toolchain.NinjaPath.empty() && CMakeGeneratorUsesNinjaMakeProgram(toolchain.Generator))
+		{
+			process.Arguments.push_back("-DCMAKE_MAKE_PROGRAM=" + toolchain.NinjaPath.generic_string());
 		}
 		if (!toolchain.QtRootPath.empty())
 		{
@@ -70,9 +80,12 @@ namespace SparkleLauncher
 		process.LogPath = GetLauncherOperationLogPath(repositoryRoot, operationId, logFileName);
 		process.Arguments = {"--build", GetBuildDirectory(repositoryRoot).string(), "--config", std::string(profileName), "--target"};
 		process.Arguments.insert(process.Arguments.end(), targets.begin(), targets.end());
-		process.Arguments.push_back("--");
-		const std::vector<std::string> buildToolArguments = GetDefaultBuildToolArguments();
-		process.Arguments.insert(process.Arguments.end(), buildToolArguments.begin(), buildToolArguments.end());
+		if (CMakeGeneratorUsesMsBuildArguments(toolchain.Generator))
+		{
+			process.Arguments.push_back("--");
+			const std::vector<std::string> buildToolArguments = GetDefaultBuildToolArguments();
+			process.Arguments.insert(process.Arguments.end(), buildToolArguments.begin(), buildToolArguments.end());
+		}
 		return process;
 	}
 }

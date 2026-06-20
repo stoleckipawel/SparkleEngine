@@ -24,6 +24,7 @@ namespace SparkleLauncher
 		std::string Summary;
 		std::string UnlockSummary;
 		std::string ConfigureOption;
+		std::string EnablementDetail;
 		bool Required = false;
 		bool Enabled = false;
 		std::vector<SourceDependencyEntry> Dependencies;

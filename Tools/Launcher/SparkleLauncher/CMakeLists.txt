@@ -23,6 +23,7 @@ set(SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/ProjectDiscovery.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/RepositoryLocator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/SourceDependencyState.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/HostGraphicsCapabilities.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/ToolResolver.cpp
 )
 
@@ -35,6 +36,7 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspacePlanner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceProcessRequests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceStateFiles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeGeneratorModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.cpp
 )
 
@@ -42,6 +44,7 @@ set(SPARKLE_LAUNCHER_CORE_BUILD_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildFreshnessSignature.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceProcessRequests.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceStateFiles.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeGeneratorModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.h
 )
 

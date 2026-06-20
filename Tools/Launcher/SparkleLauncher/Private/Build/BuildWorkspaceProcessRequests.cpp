@@ -145,6 +145,7 @@ namespace SparkleLauncher
 			AddOpenIdeStep(steps, plan);
 			return steps;
 		case BuildWorkspaceOperationKind::BuildAll:
+			AddConfigureStep(steps, plan);
 			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
 			AddBuildStep(steps, plan, plan.Request.EditorProfile, ResolveProjectTargets(plan.Request.ProjectId, plan.Request.EditorProfile));
 			AddBuildStep(steps, plan, plan.Request.RuntimeProfile, ResolveProjectTargets(plan.Request.ProjectId, plan.Request.RuntimeProfile));

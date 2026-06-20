@@ -23,6 +23,7 @@ namespace SparkleLauncher
 		QString Summary;
 		QString UnlockSummary;
 		QString ConfigureOption;
+		QString EnablementDetail;
 		bool Required = false;
 		bool Enabled = false;
 		std::vector<ThirdPartyDependencyUiEntry> Dependencies;

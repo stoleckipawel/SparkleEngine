@@ -51,6 +51,8 @@ namespace SparkleLauncher
 			return {"cmake.exe", "cmake"};
 		case KnownTool::MSBuild:
 			return {"MSBuild.exe", "msbuild.exe", "MSBuild"};
+		case KnownTool::Ninja:
+			return {"ninja.exe", "ninja"};
 		case KnownTool::Rider:
 			return {"rider64.exe", "rider.exe", "rider.bat", "rider"};
 		case KnownTool::Git:
@@ -70,6 +72,8 @@ namespace SparkleLauncher
 			return {"SPARKLE_CMAKE_EXE"};
 		case KnownTool::MSBuild:
 			return {"SPARKLE_MSBUILD_EXE"};
+		case KnownTool::Ninja:
+			return {"SPARKLE_NINJA_EXE"};
 		case KnownTool::Rider:
 			return {"SPARKLE_RIDER_EXE"};
 		case KnownTool::Git:
@@ -236,7 +240,7 @@ namespace SparkleLauncher
 
 	static void AddVisualStudioMSBuildCandidates(std::vector<std::filesystem::path>& candidates)
 	{
-		const std::vector<std::string> versions = {"18", "2022"};
+		const std::vector<std::string> versions = {"18", "2026", "17", "2022"};
 		const std::vector<std::string> editions = {"Community", "Professional", "Enterprise", "BuildTools"};
 		for (const std::string& version : versions)
 		{
@@ -294,6 +298,9 @@ namespace SparkleLauncher
 		case KnownTool::MSBuild:
 			AddVisualStudioMSBuildCandidates(candidates);
 			break;
+		case KnownTool::Ninja:
+			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("CMake") / "bin" / "ninja.exe");
+			break;
 		case KnownTool::Rider:
 			AddJetBrainsRiderCandidates(candidates);
 			break;
@@ -335,6 +342,8 @@ namespace SparkleLauncher
 			return "CMake";
 		case KnownTool::MSBuild:
 			return "MSBuild";
+		case KnownTool::Ninja:
+			return "Ninja";
 		case KnownTool::Rider:
 			return "Rider";
 		case KnownTool::Git:

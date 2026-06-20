@@ -72,8 +72,7 @@ namespace SparkleLauncher
 		{
 			if (!group.Enabled)
 			{
-				return QStringLiteral("Skipped because %1 is off in this workspace configuration.")
-				    .arg(group.ConfigureOption);
+				return group.EnablementDetail.isEmpty() ? QStringLiteral("Skipped for this workspace configuration.") : group.EnablementDetail;
 			}
 
 			return FormatDependencyGroupDetail(group, dependencyCachePath, CountReadyDependencies(group, dependencyCachePath));

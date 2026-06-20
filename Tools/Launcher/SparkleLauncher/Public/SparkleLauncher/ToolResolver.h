@@ -12,6 +12,7 @@ namespace SparkleLauncher
 	{
 		CMake,
 		MSBuild,
+		Ninja,
 		Rider,
 		Git,
 		ClangFormat

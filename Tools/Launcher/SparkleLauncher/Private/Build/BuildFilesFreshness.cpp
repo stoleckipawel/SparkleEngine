@@ -1,6 +1,7 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
 #include "BuildFreshnessSignature.h"
+#include "CMakeGeneratorModel.h"
 #include "BuildWorkspaceStateFiles.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
@@ -49,7 +50,7 @@ namespace SparkleLauncher
 			return status;
 		}
 
-		if (!std::filesystem::is_regular_file(status.SolutionPath, errorCode))
+		if (CMakeGeneratorProducesSolution(toolchain.Generator) && !std::filesystem::is_regular_file(status.SolutionPath, errorCode))
 		{
 			status.State = BuildFilesFreshnessState::SolutionMissing;
 			status.Summary = "Solution file is missing.";
@@ -60,9 +61,11 @@ namespace SparkleLauncher
 		const std::string cachePlatform = ReadCMakeCacheValue(status.CachePath, "CMAKE_GENERATOR_PLATFORM").value_or(std::string());
 		const std::string cacheToolset = ReadCMakeCacheValue(status.CachePath, "CMAKE_GENERATOR_TOOLSET").value_or(std::string());
 		const std::string cacheQtPrefixPath = ReadCMakeCacheValue(status.CachePath, "CMAKE_PREFIX_PATH").value_or(std::string());
+		const std::string selectedPlatform = GetCMakeCachePlatformValue(toolchain);
+		const std::string selectedToolset = GetCMakeCacheToolsetValue(toolchain);
 		const std::string selectedQtPrefixPath = toolchain.QtRootPath.generic_string();
 		const std::string selectedVulkanSdkRoot = toolchain.VulkanSdkRoot.generic_string();
-		if (cacheGenerator != toolchain.Generator || cachePlatform != toolchain.Platform || cacheToolset != toolchain.Toolset || cacheQtPrefixPath != selectedQtPrefixPath)
+		if (cacheGenerator != toolchain.Generator || cachePlatform != selectedPlatform || cacheToolset != selectedToolset || cacheQtPrefixPath != selectedQtPrefixPath)
 		{
 			status.State = BuildFilesFreshnessState::GeneratorMismatch;
 			status.Summary = "CMake cache generator/platform/toolset/Qt prefix differs from selected launcher toolchain.";

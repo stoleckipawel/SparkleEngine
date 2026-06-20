@@ -1,5 +1,7 @@
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 
+#include "HostGraphicsCapabilities.h"
+
 namespace SparkleLauncher
 {
 	std::string ToString(ToolchainItemState state)
@@ -51,6 +53,7 @@ namespace SparkleLauncher
 	WorkspaceFeatureSettings GetLauncherWorkspaceFeatureSettings()
 	{
 		WorkspaceFeatureSettings settings;
+		const HostGraphicsCapabilities& hostGraphics = GetHostGraphicsCapabilities();
 #if SPARKLE_ENABLE_CONTENT_PIPELINE
 		settings.ContentPipelineEnabled = true;
 #endif
@@ -61,7 +64,7 @@ namespace SparkleLauncher
 		settings.KtxSupportEnabled = true;
 #endif
 #if SPARKLE_ENABLE_NVIDIA_STREAMLINE
-		settings.NvidiaStreamlineEnabled = true;
+		settings.NvidiaStreamlineEnabled = hostGraphics.HasNvidiaAdapter;
 #endif
 		return settings;
 	}

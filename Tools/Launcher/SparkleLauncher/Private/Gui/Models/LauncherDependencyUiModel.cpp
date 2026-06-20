@@ -76,6 +76,7 @@ namespace SparkleLauncher
 				entry.Summary = ToQString(group.Summary);
 				entry.UnlockSummary = ToQString(group.UnlockSummary);
 				entry.ConfigureOption = ToQString(group.ConfigureOption);
+				entry.EnablementDetail = ToQString(group.EnablementDetail);
 				entry.Required = group.Required;
 				entry.Enabled = group.Enabled;
 				for (const SourceDependencyEntry& dependency : group.Dependencies)
@@ -156,7 +157,7 @@ namespace SparkleLauncher
 		QString detail = group.Summary + " " + group.UnlockSummary;
 		if (!group.Enabled)
 		{
-			return detail + QStringLiteral(" Disabled by %1=OFF in this workspace configuration.").arg(group.ConfigureOption);
+			return detail + (group.EnablementDetail.isEmpty() ? QString() : QStringLiteral(" %1").arg(group.EnablementDetail));
 		}
 		detail += QStringLiteral(" %1 of %2 tracked dependencies are cached.")
 		              .arg(readyCount)
@@ -183,7 +184,7 @@ namespace SparkleLauncher
 		                     .arg(QString::fromStdString(dependencyPath.filename().generic_string()));
 		if (!group.Enabled)
 		{
-			return detail + QStringLiteral(" Disabled by %1=OFF in this workspace configuration.").arg(group.ConfigureOption);
+			return detail + (group.EnablementDetail.isEmpty() ? QString() : QStringLiteral(" %1").arg(group.EnablementDetail));
 		}
 		if (!validation.Ready)
 		{
