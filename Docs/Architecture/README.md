@@ -29,8 +29,10 @@ Docs/Architecture
 |-- 03-Validation
 |   |-- ValidationMatrix.md
 |   `-- PerformanceDiagnosticsPlan.md
-`-- 04-Workflows
-    `-- LauncherWorkflowReadiness.md
+|-- 04-Workflows
+|   `-- LauncherWorkflowReadiness.md
+`-- 05-Implementation
+    `-- PortfolioReadinessImplementationPlan.md
 ```
 
 ## Where To Start
@@ -54,6 +56,12 @@ For implementation planning:
 For launcher/build/cook workflow readiness:
 
 1. [LauncherWorkflowReadiness.md](./04-Workflows/LauncherWorkflowReadiness.md)
+2. [ValidationMatrix.md](./03-Validation/ValidationMatrix.md)
+3. [PerformanceDiagnosticsPlan.md](./03-Validation/PerformanceDiagnosticsPlan.md)
+
+For code and asset execution planning:
+
+1. [PortfolioReadinessImplementationPlan.md](./05-Implementation/PortfolioReadinessImplementationPlan.md)
 2. [ValidationMatrix.md](./03-Validation/ValidationMatrix.md)
 3. [PerformanceDiagnosticsPlan.md](./03-Validation/PerformanceDiagnosticsPlan.md)
 
@@ -83,6 +91,11 @@ For launcher/build/cook workflow readiness:
 
 - Launcher workflow, dependency, toolchain, generator, backend, and provider readiness policy.
 - This is where reviewer-facing generate/build/cook/sync behavior is explained.
+
+`05-Implementation`
+
+- Staged code and asset implementation prompts derived from the review, contract, validation, diagnostics, and workflow docs.
+- This is where the repository moves from documented readiness goals to executable portfolio evidence.
 
 ## Dependency Direction
 
@@ -167,6 +180,10 @@ Validation and diagnostics:
 Workflows:
 
 - [LauncherWorkflowReadiness.md](./04-Workflows/LauncherWorkflowReadiness.md)
+
+Implementation:
+
+- [PortfolioReadinessImplementationPlan.md](./05-Implementation/PortfolioReadinessImplementationPlan.md)
 
 Planned docs:
 
