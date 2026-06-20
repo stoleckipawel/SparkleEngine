@@ -166,7 +166,7 @@ These are ordered by principal rendering readiness impact, not by how easy they 
 | 1. RHI explicit control | Requirement cluster: D3D12/Vulkan explicit control. Scorecard: RHI, D3D12, Vulkan. | Make device, queues, command lists, fences, resources, descriptors, barriers, memory, interop, diagnostics, and capability reporting easier to inspect and harder to bypass. |
 | 2. Renderer architecture | Requirement cluster: render architecture. Scorecard: renderer frame graph/passes. | Tighten pass registration, resource declaration, persistent/transient ownership, history resources, barrier diagnostics, and frame assembly contracts in code. |
 | 3. Hardware-aware performance | Requirement cluster: hardware-aware performance. Scorecard: validation/performance evidence, D3D12/Vulkan. | Add typed diagnostics for memory budget, descriptor pressure, upload pressure, pass GPU timings, CPU timings, shader/package timing, and baseline scenarios. |
-| 4. SDK/provider architecture | Requirement cluster: cross-IHV SDK integration and neural readiness. Scorecard: SDK/upscaling/provider. | Move SDK assumptions behind provider-neutral capability/resource contracts and state mappings before adding FidelityFX, denoisers, frame generation, or neural features. |
+| 4. SDK/provider architecture | Requirement cluster: cross-IHV SDK integration and neural readiness. Scorecard: SDK/upscaling/provider. | Move SDK assumptions behind provider-neutral capability/resource contracts and state mappings before adding FidelityFX upscaling, DLSS/FSR frame generation, DLSS Ray Reconstruction / NRD-style denoising, or FidelityFX-style denoisers. Neural readiness stays in shader/profile/backend capability gates until Prompt 12 has source-backed data. |
 | 5. Shader/compiler pipeline | Requirement cluster: shader/compiler pipeline. Scorecard: shader compiler/contracts/cook. | Add source-backed ABI tests, golden reflection/package coverage, feature/profile matrices, and runtime load timing. |
 | 6. Runtime data boundary | Requirement cluster: render architecture and production modularity. Scorecard: GameFramework runtime data. | Preserve GameFramework independence while making scene snapshots, renderer translation, invalidation, and cooked compatibility explicit in code/tests. |
 | 7. Ray tracing and path tracing foundations | Requirement cluster: ray tracing readiness. Scorecard: RHI, renderer, validation/performance evidence. | Prove AS lifecycle, RT pipeline/SBT contracts, path-tracing pass scaffolding, accumulation/history, sampling, and denoiser/provider hooks before advanced RT/path tracing work. |
@@ -241,7 +241,7 @@ The "cool thing" for each milestone is intentionally practical. It should make t
 | M2. Frame assembly and renderer ownership | Renderer pass/resource/frame ownership becomes explicit enough to extend safely. | Empty-frame smoke emits frame graph/resource/timing artifacts that prove the frame can be assembled without hidden backend ownership. | Prompt 03, Prompt 17, Prompt 20, Prompt 26 | A new pass has an obvious place to declare resources, diagnostics, history, and failure state. |
 | M3. Shader and PSO runtime | Shader packages and PSOs become runtime assets with identity, compatibility, cache, and timing evidence. | A shader/PSO inspection path shows package metadata, reflection, pipeline identity, cache status, compile/create timing, and failure reasons. | Prompt 05, Prompt 09, Prompt 22, Prompt 23 | PSO creation is no longer an opaque side effect inside passes. |
 | M4. Runtime scene and asset baselines | GameFramework feeds renderer snapshots without learning RHI/Renderer details. | Curated tiny scenes exercise empty frame, one mesh, many materials, descriptor pressure, upload pressure, and shader cache hit/miss. | Prompt 06, Prompt 27, Prompt 29 | Scene mutation, snapshot, invalidation, and asset compatibility are visible in code/tests/artifacts. |
-| M5. Provider and neural readiness | SDK integration becomes provider-neutral and neural readiness becomes capability/profile data. | Provider diagnostics report the six capability states for current SDKs and future neural paths using the same vocabulary. | Prompt 04, Prompt 12, Prompt 24, Prompt 25 | DLSS/Streamline are examples of the provider architecture, not the architecture itself. |
+| M5. Provider readiness | SDK integration becomes provider-neutral for upscaling, frame generation, and denoising before additional SDKs arrive. | Provider diagnostics report the six capability states for the current DLSS upscaler path and planned DLSS/FSR frame-generation and denoiser families using the same vocabulary. | Prompt 04, Prompt 24, Prompt 25 | DLSS/Streamline are examples of the provider architecture, not the architecture itself. |
 | M6. High-end ray tracing foundation MVP | Ray tracing has explicit AS lifecycle, RT pipeline, SBT, capability, and diagnostics ownership. | Supported hardware can run an RT readiness/AS lifecycle smoke; unsupported hardware produces a clean unavailable artifact. | Prompt 10 | BLAS/TLAS, scratch memory, AS memory, RT pipeline identity, and backend parity are reviewable. |
 | M7. Path tracing foundation MVP | Path tracing can arrive as a renderer feature without redoing RHI, scene, shader, or provider contracts. | A path tracing readiness scenario proves accumulation/history reset, sampling frame index, material/light inputs, and denoiser hook state. | Prompt 11 | The next prompt can implement a minimal path tracer against named contracts instead of inventing architecture. |
 | M8. Cross-feature proof | The feature foundations are wired together instead of living as isolated types. | One curated scenario set emits PSO, RT, path tracing readiness, neural readiness, descriptor, upload, memory, and timing sections. | Prompt 07, Prompt 13, Prompt 21, Prompt 30 | The editor or artifact bundle can show the engine is ready for heavy rendering work. |
@@ -510,10 +510,19 @@ Report:
 
 ```text
 Task:
-Refactor provider integration so upscalers, denoisers, frame generation, ray tracing extensions, and future neural providers share a provider-neutral architecture.
+Refactor provider integration so upscalers, frame generation, and denoisers share a provider-neutral architecture.
 
 Goal:
 Prevent DLSS/Streamline from becoming the architecture and prepare the repo for NVIDIA/AMD SDK review without adding new SDK features.
+
+Planned provider families for this milestone:
+- upscaling: current DLSS/Streamline path first, later FSR-style AMD upscaling
+- frame generation: future DLSS Frame Generation on NVIDIA and FSR Frame Generation on AMD
+- denoising: future DLSS Ray Reconstruction / NRD-style NVIDIA denoising and FidelityFX-style AMD alternatives
+
+Out of scope for this prompt:
+- neural rendering provider category support; Prompt 12 adds neural readiness only when shader/profile/backend gates are source-backed
+- ray tracing extension as a standalone provider category; ray tracing backend features stay in RHI/renderer ray tracing contracts unless a concrete SDK integration requires a provider boundary
 
 Primary review sources:
 - Docs/Architecture/00-Review/A_PrincipalRoleRequirements.md
@@ -558,16 +567,17 @@ Implementation requirements:
   - upscaler
   - denoiser
   - frame generation
-  - ray tracing extension
-  - neural rendering
+- Do not add provider categories that are not part of the staged implementation path. `neural rendering` is introduced later by Prompt 12 only if it is tied to concrete shader/profile/backend readiness data.
 - Keep current DLSS implementation as one provider implementation.
 - Add resource contract validation vocabulary for color, depth, motion vectors, exposure, normals, history, jitter, camera matrices, and frame index.
 - Move provider-independent assumptions out of NVIDIA-specific files where practical.
 - Keep native interop access routed through RHI interop services.
 - Do not add FidelityFX or a new provider yet.
+- Do not add DLSS Frame Generation, FSR Frame Generation, DLSS Ray Reconstruction, NRD, or FidelityFX denoiser implementations yet. This prompt only makes the shared provider model ready for those follow-up categories.
 
 Acceptance criteria:
 - Provider-neutral types exist outside NVIDIA-specific code.
+- Shared provider category code includes only staged categories: upscaler, denoiser, and frame generation.
 - DLSS maps into the shared provider model without behavior regression.
 - Missing SDK, unsupported hardware, available, enabled, and runtime-failed states are distinguishable in diagnostics.
 - Required/optional resource contract state is visible in code.
@@ -2015,6 +2025,8 @@ Production references to inspect first:
 - AMD Cauldron SDK backend/provider integration patterns.
 
 Code to inspect:
+- Engine/Renderer/Private/Providers/RenderProviderModel.h if present
+- Engine/Renderer/Private/Providers/RenderProviderModel.cpp if present
 - Engine/Renderer/Private/Upscaling/UpscalerProvider.h
 - Engine/Renderer/Private/Upscaling/**/*.cpp
 - Engine/Renderer/Private/Upscaling/NvidiaDlss/**/*.cpp
@@ -2037,6 +2049,12 @@ Implementation requirements:
   - `enabled`
   - `runtime failed`
 - Preserve existing provider-specific enums if they carry extra detail.
+- Keep provider categories scoped to staged code:
+  - `upscaler` is operational in this prompt set
+  - `denoiser` is staged for DLSS Ray Reconstruction / NRD-style NVIDIA paths and FidelityFX-style AMD alternatives
+  - `frame generation` is staged for DLSS Frame Generation and FSR Frame Generation
+  - do not add `neural rendering` here; Prompt 12 owns that category when neural readiness is source-backed
+  - do not add `ray tracing extension` here unless a concrete SDK integration requires it
 - Add mapping functions and reviewer-readable reason strings.
 - Add diagnostics output for requested provider, active provider, mapped state, failure domain, reason, runtime version when known, and fallback reason.
 - Add launcher/readiness report mapping where source dependency and hardware states imply provider states.
@@ -2045,6 +2063,7 @@ Implementation requirements:
 Acceptance criteria:
 - The six state strings appear exactly and consistently in diagnostics/report output.
 - DLSS/Streamline maps into the shared state model without becoming the architecture.
+- The shared category model does not include unstaged categories.
 - Missing SDK, unsupported hardware, runtime failure, available, and enabled are distinguishable.
 - Provider fallback remains deterministic.
 - Architecture boundary check passes.
@@ -2081,6 +2100,8 @@ Production references to inspect first:
 - FidelityFX SDK input resource contracts for provider-specific required/optional resources.
 
 Code to inspect:
+- Engine/Renderer/Private/Providers/RenderProviderModel.h if present
+- Engine/Renderer/Private/Providers/RenderProviderModel.cpp if present
 - Engine/Renderer/Private/Upscaling/UpscalerInputContract.h
 - Engine/Renderer/Private/Upscaling/UpscalerInputContractBuilder.cpp
 - Engine/Renderer/Private/Upscaling/**/*.cpp
@@ -2109,10 +2130,16 @@ Implementation requirements:
 - Do not force every current provider to require every resource.
 - Add diagnostics showing which resources were present, optional, required, or missing.
 - Add room for normals/exposure/history to be validated provider-by-provider.
+- Add staged resource-contract profiles for planned provider families without implementing the providers:
+  - upscaler profile: color, depth, motion vectors, history, jitter, camera matrices, frame index; exposure optional; normals optional
+  - frame-generation profile: color, depth, motion vectors, history, jitter, camera matrices, frame index; exposure optional; normals optional until a concrete provider requires them
+  - denoiser profile: color or signal input, depth, normals, history, jitter, camera matrices, frame index; motion vectors optional/required per denoiser; exposure optional
+- Do not make every resource globally required just because one future provider may need it.
 - Avoid hidden globals or provider-side discovery of renderer resources.
 
 Acceptance criteria:
 - Provider input diagnostics list all required resource vocabulary entries.
+- Resource-contract profiles exist for staged upscaler, frame-generation, and denoiser families, even if only the upscaler profile is executed today.
 - Missing required provider resources produce clear validation failure or fallback reason.
 - Optional resources are explicitly optional, not silently ignored.
 - Existing DLSS behavior remains functionally equivalent unless it previously relied on invalid hidden state.
@@ -2585,7 +2612,7 @@ The repository is ready for principal-level portfolio evaluation when the follow
 - RHI code makes device, queue, command list, fence, descriptor, resource, barrier, memory, diagnostics, and native interop ownership explicit.
 - D3D12 and Vulkan backend capabilities, debug/capture support, allocator stats, and unsupported features are comparable through backend-neutral data.
 - Renderer frame assembly makes pass registration, resource declaration, transient/persistent ownership, history resources, barriers, and viewport products explicit.
-- Provider architecture is neutral enough for DLSS, FidelityFX, denoisers, frame generation, ray tracing extensions, and future neural providers without reshaping Renderer.
+- Provider architecture is neutral enough for the staged upscaler, frame-generation, and denoiser families without reshaping Renderer. Neural rendering readiness is handled separately through shader/profile/backend gates until a concrete provider category is justified.
 - Shader compiler/runtime code has visible ABI, reflection, cache identity, package inspection, runtime loading, and regression evidence.
 - PSO management has explicit identity, cache/library support status, compile timing, hit/miss or unavailable state, shader package compatibility checks, and invalidation behavior.
 - Ray tracing foundations expose backend capabilities, BLAS/TLAS lifecycle, scratch/AS memory ownership, RT pipeline identity, shader table expectations, and diagnostics.

@@ -1,5 +1,5 @@
 #include "../PCH.h"
-#include "Upscaling/RenderProviderModel.h"
+#include "Providers/RenderProviderModel.h"
 
 #include <array>
 #include <format>
@@ -72,10 +72,6 @@ const char* RendererProviderCategoryToString(ERendererProviderCategory category)
 			return "denoiser";
 		case ERendererProviderCategory::FrameGeneration:
 			return "frame generation";
-		case ERendererProviderCategory::RayTracingExtension:
-			return "ray tracing extension";
-		case ERendererProviderCategory::NeuralRendering:
-			return "neural rendering";
 	}
 
 	return "unknown";

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Upscaling/RenderProviderModel.h"
+#include "Providers/RenderProviderModel.h"
 #include "Upscaling/UpscalerInputContract.h"
 #include "Viewport/ViewportContracts.h"
 #include "RHI/Public/Core/RhiBackendApi.h"
