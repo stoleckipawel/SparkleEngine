@@ -264,12 +264,12 @@ void D3D12ResourceService::ReleaseOwnedResource(RhiOwnedResourceHandle resource)
 		retireFenceValue = m_rhi->GetNextFenceValue();
 	}
 
-	DrainCompletedReleases();
+	DrainCompletedResourceReleases();
 	m_pendingOwnedResourceReleases.push_back(
 	    PendingOwnedResourceRelease{.Record = std::move(ownedRecord), .RetireFenceValue = retireFenceValue});
 }
 
-void D3D12ResourceService::DrainCompletedReleases() noexcept
+void D3D12ResourceService::DrainCompletedResourceReleases() noexcept
 {
 	if (m_pendingOwnedResourceReleases.empty() && m_pendingOwnedMemoryBlockReleases.empty())
 	{
@@ -299,6 +299,11 @@ void D3D12ResourceService::DrainCompletedReleases() noexcept
 		    return pendingRelease.Record == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
 	    });
 	m_pendingOwnedMemoryBlockReleases.erase(heapEraseBegin, m_pendingOwnedMemoryBlockReleases.end());
+}
+
+void D3D12ResourceService::FlushDeferredResourceReleases() noexcept
+{
+	DrainCompletedResourceReleases();
 }
 
 NativeResourceHandle D3D12ResourceService::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
@@ -367,7 +372,7 @@ void D3D12ResourceService::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle
 		retireFenceValue = m_rhi->GetNextFenceValue();
 	}
 
-	DrainCompletedReleases();
+	DrainCompletedResourceReleases();
 	m_pendingOwnedMemoryBlockReleases.push_back(
 	    PendingOwnedMemoryBlockRelease{.Record = std::move(ownedMemoryBlock), .RetireFenceValue = retireFenceValue});
 }

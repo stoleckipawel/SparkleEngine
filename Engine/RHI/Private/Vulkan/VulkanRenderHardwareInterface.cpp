@@ -37,6 +37,50 @@ static const auto g_vulkanRenderHardwareInterfaceLogger = Logging::GetOrCreateLo
 
 namespace
 {
+	RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport(
+	    const RenderDiagnostics* diagnostics,
+	    bool validationEnabled,
+	    bool supportsDebugLayer,
+	    bool supportsCapture) noexcept
+	{
+		if (diagnostics == nullptr)
+		{
+			return RhiBackendDiagnosticsSupport{
+			    .ValidationEnabled = validationEnabled,
+			    .SupportsDebugLayer = supportsDebugLayer,
+			    .SupportsCapture = supportsCapture};
+		}
+
+		const RhiDiagnosticsCapabilities diagnosticsCapabilities = diagnostics->GetCapabilities();
+		return RhiBackendDiagnosticsSupport{
+		    .ValidationEnabled = validationEnabled,
+		    .SupportsDebugLayer = supportsDebugLayer,
+		    .SupportsObjectNames = diagnosticsCapabilities.SupportsObjectNames,
+		    .SupportsGpuEvents = diagnosticsCapabilities.SupportsGpuEvents,
+		    .SupportsTimestampQueries = diagnosticsCapabilities.SupportsTimestampQueries,
+		    .SupportsDebugMessages = diagnosticsCapabilities.SupportsDebugMessages,
+		    .SupportsLiveObjectReports = diagnosticsCapabilities.SupportsLiveObjectReports,
+		    .SupportsCrashDiagnostics = diagnosticsCapabilities.SupportsCrashDiagnostics,
+		    .SupportsCapture = supportsCapture};
+	}
+
+	RhiBackendMemorySupport BuildBackendMemorySupport(const RenderDiagnostics* diagnostics) noexcept
+	{
+		if (diagnostics == nullptr)
+		{
+			return {};
+		}
+
+		const RenderMemoryDiagnostics* const memoryDiagnostics = diagnostics->GetMemoryDiagnostics();
+		return RhiBackendMemorySupport{
+		    .SupportsMemoryDiagnostics = memoryDiagnostics != nullptr,
+		    .SupportsBudgetQueries = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries(),
+		    .SupportsJsonDump = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsJsonDump(),
+		    .SupportsAllocationDetails = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsAllocationDetails(),
+		    .SupportsDelayedDestructionTracking = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsDelayedDestructionTracking(),
+		    .SupportsResidencyPressure = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries()};
+	}
+
 #pragma pack(push, 1)
 	struct DiagnosticBmpFileHeader final
 	{
@@ -256,7 +300,7 @@ void VulkanRenderHardwareInterface::WaitForIdle() noexcept
 	}
 	if (m_resourceService != nullptr)
 	{
-		m_resourceService->FlushPendingReleases();
+		m_resourceService->FlushDeferredResourceReleases();
 	}
 }
 
@@ -522,6 +566,10 @@ bool VulkanRenderHardwareInterface::CaptureTextureToBmp(
 
 RenderCommandList& VulkanRenderHardwareInterface::GetGraphicsCommandList(std::uint32_t) noexcept
 {
+	if (m_resourceService != nullptr)
+	{
+		m_resourceService->DrainCompletedResourceReleases();
+	}
 	return m_commandContext->GetCommandList(m_currentFrameIndex);
 }
 
@@ -564,30 +612,19 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
 	}
-	capabilities.SupportsTimestampQueries = false;
-	capabilities.Diagnostics = RhiBackendDiagnosticsSupport{
-	    .ValidationEnabled = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
-	    .SupportsDebugLayer = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
-	    .SupportsObjectNames = m_rhi != nullptr && m_rhi->GetSetDebugUtilsObjectName() != nullptr,
-	    .SupportsGpuEvents = m_rhi != nullptr && m_rhi->GetCmdBeginDebugUtilsLabel() != nullptr &&
-	                         m_rhi->GetCmdEndDebugUtilsLabel() != nullptr && m_rhi->GetCmdInsertDebugUtilsLabel() != nullptr,
-	    .SupportsTimestampQueries = false,
-	    .SupportsDebugMessages = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
-	    .SupportsLiveObjectReports = false,
-	    .SupportsCrashDiagnostics = false,
-	    .SupportsCapture = m_captureService != nullptr};
+	capabilities.Diagnostics = BuildBackendDiagnosticsSupport(
+	    m_diagnostics.get(),
+	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
+	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
+	    m_captureService != nullptr);
+	capabilities.SupportsTimestampQueries = capabilities.Diagnostics.SupportsTimestampQueries;
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
 	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VulkanManaged;
-	const RhiDiagnosticsCapabilities diagnosticsCapabilities = m_diagnostics != nullptr ? m_diagnostics->GetCapabilities() : RhiDiagnosticsCapabilities{};
-	capabilities.MemorySupport = RhiBackendMemorySupport{
-	    .SupportsMemoryDiagnostics = diagnosticsCapabilities.SupportsMemoryDiagnostics,
-	    .SupportsBudgetQueries = diagnosticsCapabilities.SupportsMemoryBudgetQueries,
-	    .SupportsJsonDump = diagnosticsCapabilities.SupportsMemoryJsonDump,
-	    .SupportsResidencyPressure = diagnosticsCapabilities.SupportsMemoryBudgetQueries};
+	capabilities.MemorySupport = BuildBackendMemorySupport(m_diagnostics.get());
 	capabilities.ExternalFeatureInterop = BuildVulkanExternalFeatureInteropCapabilities(m_rhi, m_commandContext != nullptr);
 	return capabilities;
 }

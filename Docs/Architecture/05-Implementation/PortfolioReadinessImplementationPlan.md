@@ -584,7 +584,7 @@ Do not advance a milestone just because a report exists. Advance it only when th
 Use these prompts before or alongside the validation prompts. They are the main work. The later validation and workflow prompts prove this work happened.
 
 ## Prompt 01 of 32 (M1): RHI Explicit Ownership And Capability Refactor
-Prompt grade: TBD, Needs regrade | Milestone grade: M1 3/5, Graded
+Prompt grade: 2/5, In progress | Milestone grade: M1 3/5, Graded
 
 ```text
 Task:
@@ -663,6 +663,8 @@ Implementation requirements:
 - Add comments only where ownership would otherwise be unclear.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A reviewer can identify ownership of devices, queues, command submission, fences, resources, barriers, descriptors, memory, diagnostics, and interop from the actual public RHI types and backend service boundaries.
 - At least one implicit ownership hazard is removed or made enforceable in the actual service/call path, not only documented.
 - D3D12 and Vulkan report truthful capability data through the same public shape.
@@ -743,6 +745,8 @@ Implementation requirements:
 - Do not implement new rendering features; this is capability/debug/memory surface work.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - D3D12 and Vulkan produce comparable capability snapshots.
 - Unsupported or unavailable Vulkan features are represented honestly.
 - D3D12 debug/capture/live-object capabilities are visible through backend-neutral diagnostics.
@@ -824,6 +828,8 @@ Implementation requirements:
 - Avoid introducing backend-native access into Renderer.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A reviewer can trace how color, depth, normals, motion vectors, exposure, history, jitter, camera matrices, and frame index enter frame assembly.
 - New passes have an obvious registration and resource declaration pattern.
 - Persistent resources and transient resources are distinguishable in code.
@@ -917,6 +923,8 @@ Implementation requirements:
 - Do not add DLSS Frame Generation, FSR Frame Generation, DLSS Ray Reconstruction, NRD, or FidelityFX denoiser implementations yet. This prompt only makes the shared provider model ready for those follow-up categories.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Provider-neutral types exist outside NVIDIA-specific code.
 - Shared provider category code includes only staged categories: upscaler, denoiser, and frame generation.
 - DLSS maps into the shared provider model without behavior regression.
@@ -991,6 +999,8 @@ Implementation requirements:
 - Avoid changing shader semantics unless needed to fix discovered ABI issues.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A reviewer can trace shader source to reflection to cooked package to runtime pipeline creation.
 - `list-shaders --validate`, `inspect-shader`, and `inspect-package` are covered by regression or validation flow.
 - Runtime load timing is visible in diagnostics or reports.
@@ -1062,6 +1072,8 @@ Implementation requirements:
 - Do not add Renderer/RHI dependencies to GameFramework.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - GameFramework still links only to allowed lower-level modules.
 - Renderer consumes snapshots or renderer-owned translated data, not mutable GameFramework internals as render-owned state.
 - Invalidation paths are named and testable or logged.
@@ -1145,6 +1157,8 @@ Implementation requirements:
 - Do not collapse backend allocator data into renderer-only summaries.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A reviewer can inspect where each metric originates.
 - Missing metrics are explicitly unavailable, planned, or unsupported.
 - D3D12MA/VMA-backed memory data remains identifiable.
@@ -1221,6 +1235,8 @@ Implementation requirements:
 - Route recovery suggestions from category plus context, not brittle string matching where practical.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Failure reports include a category and detailed reason.
 - Backend creation failure is distinguishable from invalid project and missing SDK.
 - Editor-only failures are not treated as runtime requirements.
@@ -1320,6 +1336,8 @@ Implementation requirements:
 - Do not change shader semantics.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A reviewer can identify how a PSO is keyed, created, reused, invalidated, and diagnosed.
 - Pipeline creation timing is visible in diagnostics or artifacts.
 - Missing pipeline cache support is explicit, not silent.
@@ -1410,6 +1428,8 @@ Implementation requirements:
 - Do not add a full path tracer in this prompt.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A reviewer can trace AS lifecycle from scene data to RHI services to frame graph binding.
 - D3D12/Vulkan RT capability differences are visible and honest.
 - RT pipeline/shader-table expectations are named even if not fully implemented on every backend.
@@ -1494,6 +1514,8 @@ Implementation requirements:
 - Do not implement a full path tracing algorithm here unless explicitly requested by a later prompt.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Future path tracing can be added as a renderer pass/provider path against named contracts.
 - Accumulation/history ownership is explicit and resettable.
 - Scene/material/light data requirements are listed in code-facing structs or diagnostics.
@@ -1571,6 +1593,8 @@ Implementation requirements:
 - Do not add model loading, training, inference, tensor kernels, or neural assets in this prompt.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Neural readiness is represented as capability/profile data, not as a hidden TODO.
 - Slang/profile gating is visible to shader tooling and diagnostics.
 - Provider resource contracts include neural-relevant inputs without forcing current providers to consume them.
@@ -1645,6 +1669,8 @@ Implementation requirements:
 - Prefer one curated project/scenario set over many disconnected demos.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Each foundation area has at least one scenario or artifact proving its readiness state.
 - Missing hardware/SDK support is represented as unavailable/skipped, not as a generic failure.
 - Artifacts include backend, adapter, capabilities, memory, descriptor, PSO, RT, provider/neural-readiness, and timing sections where supported.
@@ -1738,6 +1764,8 @@ Implementation requirements:
 - Add diagnostics for job count, worker utilization, wait time, and frame scheduling cost.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Job system lives in an appropriate low-level module and does not create dependency cycles.
 - Single-thread fallback is available for debugging and deterministic validation.
 - Initial parallel work operates on immutable snapshots or clearly owned data.
@@ -1810,6 +1838,8 @@ Implementation requirements:
 - Preserve the existing `architecture_boundary_check` CMake target.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A reviewer can run the boundary check from launcher CLI.
 - The GUI workflow catalog exposes a Validation category or equivalent validation grouping.
 - The operation uses existing CMake architecture check behavior.
@@ -1886,6 +1916,8 @@ Implementation requirements:
 - Do not create fake readiness for unavailable SDKs.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - The operation can be dry-run and run from CLI.
 - The report includes required, optional, hardware-gated, backend-gated, and provider-gated categories.
 - Missing Vulkan SDK is represented as optional or required according to current feature/backend state.
@@ -1958,6 +1990,8 @@ Implementation requirements:
 - Keep the path deterministic and short.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - `Renderer empty frame` in the validation matrix can be updated from `planned` to `existing` or `partial` with a real command.
 - Command runs without requiring authored showcase content beyond a minimal project shell.
 - Artifacts are written to a deterministic diagnostics path.
@@ -2026,6 +2060,8 @@ Implementation requirements:
 - Do not add backend-native dependencies outside RHI backend-private code.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - D3D12 startup/shutdown validation has a stable command.
 - Vulkan startup/shutdown validation has a stable command when Vulkan SDK/backend are available.
 - Missing Vulkan support reports unavailable/skipped clearly.
@@ -2104,6 +2140,8 @@ Implementation requirements:
 - Mark each item as `same`, `different`, `unsupported`, `unavailable`, or `needs source confirmation`.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Report can be generated by one command.
 - Markdown is readable in a reviewer packet.
 - JSON is stable enough for automation.
@@ -2185,6 +2223,8 @@ Implementation requirements:
 - Mark missing metrics explicitly as unavailable or planned.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A baseline run emits a single folder with reviewer-readable and machine-readable summaries.
 - Data ownership is preserved: RHI allocator data, renderer summaries, editor/tool presentation remain distinct.
 - The output can be attached to a portfolio review without screenshots.
@@ -2253,6 +2293,8 @@ Implementation requirements:
   - frame-local or rolling status
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Descriptor pressure metric moves from `planned` to `existing` or `partial`.
 - Upload pressure metric moves from `partial` toward `existing`.
 - D3D12 and Vulkan coverage is reported honestly.
@@ -2316,6 +2358,8 @@ Implementation requirements:
 - Keep cook-time and runtime-load-time metrics separate.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - `shader package load timing` becomes source-backed in diagnostics output.
 - `pipeline cache stats` reports real stats or an explicit unavailable state.
 - Shader inspection commands still work.
@@ -2384,6 +2428,8 @@ Implementation requirements:
 - Emit test artifacts under a predictable diagnostics/test path.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Shader validation can be run by a reviewer or CI command.
 - At least one representative package is cooked and inspected.
 - Reflection contract failures fail the validation.
@@ -2462,6 +2508,8 @@ Implementation requirements:
 - Do not add a new provider implementation.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - The six state strings appear exactly and consistently in diagnostics/report output.
 - DLSS/Streamline maps into the shared state model without becoming the architecture.
 - The shared category model does not include unstaged categories.
@@ -2542,6 +2590,8 @@ Implementation requirements:
 - Avoid hidden globals or provider-side discovery of renderer resources.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Provider input diagnostics list all required resource vocabulary entries.
 - Resource-contract profiles exist for staged upscaler, frame-generation, and denoiser families, even if only the upscaler profile is executed today.
 - Missing required provider resources produce clear validation failure or fallback reason.
@@ -2604,6 +2654,8 @@ Implementation requirements:
 - Avoid broad refactors of frame graph scheduling.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A pass with missing resource declaration can be detected by existing or new validation.
 - Unresolved barrier warning count is visible in diagnostics output.
 - Viewport product failures explain the missing product/resource.
@@ -2670,6 +2722,8 @@ Implementation requirements:
 - Avoid adding runtime data features unless required to prove the boundary.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - GameFramework remains linked only to Core/Platform-level dependencies.
 - Snapshot-to-renderer translation ownership is visible in code or diagnostics.
 - Invalidation events are named and testable or logged.
@@ -2739,6 +2793,8 @@ Implementation requirements:
 - Avoid moving editor-only code into runtime targets.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Failure artifacts include one of the taxonomy categories where applicable.
 - Existing recovery messages still appear.
 - Backend creation failure has a clear category even if exact backend reason is nested.
@@ -2808,6 +2864,8 @@ Implementation requirements:
 - Ensure baseline names are stable for launcher/smoke commands.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - Each baseline scenario has a stable id/name.
 - Cook all can prepare the scenario assets.
 - Runtime/editor smoke can select at least the empty frame and one static mesh scenario.
@@ -2882,6 +2940,8 @@ Implementation requirements:
 - Do not make Editor own RHI allocator truth or renderer summaries.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - A reviewer can find the dashboard from the editor UI.
 - The dashboard uses existing diagnostics data providers or the new unified snapshot.
 - Missing metrics are displayed as unavailable, not fabricated.
@@ -2954,6 +3014,8 @@ Implementation requirements:
 - Emit a final `portfolio-review.md` and `portfolio-review.json` manifest with pass/fail/skipped statuses and artifact paths.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - One command describes or runs the reviewer path.
 - Each sub-step has a stable status: passed, failed, skipped, unavailable.
 - Failure owner and log path are recorded.
@@ -3013,6 +3075,8 @@ Implementation requirements:
 - Do not rewrite contracts into marketing language.
 
 Acceptance criteria:
+- `5/5` completion target: this prompt is complete only when its final completion grade is `5 / 5` under the review-folder rubric.
+- If the prompt is below `5 / 5`, the final report must state the exact missing work still required for prompt completion. Do not treat the prompt as complete before that list is empty.
 - No doc claims coverage that code does not provide.
 - Validation matrix rows reflect current commands and artifact outputs.
 - Performance diagnostics metrics reflect current source status.

@@ -25,7 +25,7 @@ VulkanResourceService::VulkanResourceService(
 VulkanResourceService::~VulkanResourceService() noexcept
 {
 	m_textureFactory.reset();
-	FlushPendingReleases();
+	FlushDeferredResourceReleases();
 }
 
 std::unique_ptr<Texture> VulkanResourceService::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
@@ -210,10 +210,10 @@ void VulkanResourceService::ReleaseOwnedResource(RhiOwnedResourceHandle resource
 
 	const std::uint64_t retireFenceValue = m_commandContext != nullptr ? m_commandContext->GetNextRetireFenceValue() : 0;
 	m_memoryAllocator->QueueDestroyResource(std::move(record), retireFenceValue);
-	DrainCompletedReleases();
+	DrainCompletedResourceReleases();
 }
 
-void VulkanResourceService::FlushPendingReleases() noexcept
+void VulkanResourceService::FlushDeferredResourceReleases() noexcept
 {
 	if (m_memoryAllocator != nullptr)
 	{
@@ -221,7 +221,7 @@ void VulkanResourceService::FlushPendingReleases() noexcept
 	}
 }
 
-void VulkanResourceService::DrainCompletedReleases() noexcept
+void VulkanResourceService::DrainCompletedResourceReleases() noexcept
 {
 	if (m_memoryAllocator == nullptr)
 	{
@@ -324,7 +324,7 @@ void VulkanResourceService::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandl
 
 	const std::uint64_t retireFenceValue = m_commandContext != nullptr ? m_commandContext->GetNextRetireFenceValue() : 0;
 	m_memoryAllocator->QueueDestroyMemoryBlock(std::move(record), retireFenceValue);
-	DrainCompletedReleases();
+	DrainCompletedResourceReleases();
 }
 
 RhiOwnedResourceHandle VulkanResourceService::CreateAliasingTextureResource(

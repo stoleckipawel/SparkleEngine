@@ -35,6 +35,50 @@
 
 namespace
 {
+	RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport(
+	    const RenderDiagnostics* diagnostics,
+	    bool validationEnabled,
+	    bool supportsDebugLayer,
+	    bool supportsCapture) noexcept
+	{
+		if (diagnostics == nullptr)
+		{
+			return RhiBackendDiagnosticsSupport{
+			    .ValidationEnabled = validationEnabled,
+			    .SupportsDebugLayer = supportsDebugLayer,
+			    .SupportsCapture = supportsCapture};
+		}
+
+		const RhiDiagnosticsCapabilities diagnosticsCapabilities = diagnostics->GetCapabilities();
+		return RhiBackendDiagnosticsSupport{
+		    .ValidationEnabled = validationEnabled,
+		    .SupportsDebugLayer = supportsDebugLayer,
+		    .SupportsObjectNames = diagnosticsCapabilities.SupportsObjectNames,
+		    .SupportsGpuEvents = diagnosticsCapabilities.SupportsGpuEvents,
+		    .SupportsTimestampQueries = diagnosticsCapabilities.SupportsTimestampQueries,
+		    .SupportsDebugMessages = diagnosticsCapabilities.SupportsDebugMessages,
+		    .SupportsLiveObjectReports = diagnosticsCapabilities.SupportsLiveObjectReports,
+		    .SupportsCrashDiagnostics = diagnosticsCapabilities.SupportsCrashDiagnostics,
+		    .SupportsCapture = supportsCapture};
+	}
+
+	RhiBackendMemorySupport BuildBackendMemorySupport(const RenderDiagnostics* diagnostics) noexcept
+	{
+		if (diagnostics == nullptr)
+		{
+			return {};
+		}
+
+		const RenderMemoryDiagnostics* const memoryDiagnostics = diagnostics->GetMemoryDiagnostics();
+		return RhiBackendMemorySupport{
+		    .SupportsMemoryDiagnostics = memoryDiagnostics != nullptr,
+		    .SupportsBudgetQueries = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries(),
+		    .SupportsJsonDump = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsJsonDump(),
+		    .SupportsAllocationDetails = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsAllocationDetails(),
+		    .SupportsDelayedDestructionTracking = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsDelayedDestructionTracking(),
+		    .SupportsResidencyPressure = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries()};
+	}
+
 #pragma pack(push, 1)
 	struct DiagnosticBmpFileHeader final
 	{
@@ -172,8 +216,8 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 		m_commandLists[frameIndex] = std::make_unique<D3D12RenderCommandList>(*this, rhi.GetCommandList(frameIndex).Get());
 	}
 
-	m_capabilities = BuildCapabilities();
 	m_diagnostics = CreateD3D12RenderDiagnostics(rhi);
+	m_capabilities = BuildCapabilities();
 	m_imguiBackend = std::make_unique<D3D12ImGuiBackend>(*this);
 }
 
@@ -223,28 +267,19 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
 	}
-	capabilities.SupportsTimestampQueries = m_rhi != nullptr && m_rhi->GetCommandQueue() != nullptr;
-	capabilities.Diagnostics = RhiBackendDiagnosticsSupport{
-	    .ValidationEnabled = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
-	    .SupportsDebugLayer = m_rhi != nullptr && m_rhi->IsValidationEnabled(),
-	    .SupportsObjectNames = m_rhi != nullptr && m_rhi->GetDevice() != nullptr,
-	    .SupportsGpuEvents = D3D12PixEvents::IsAvailable(),
-	    .SupportsTimestampQueries = capabilities.SupportsTimestampQueries,
-	    .SupportsDebugMessages = m_rhi != nullptr && m_rhi->SupportsDebugMessages(),
-	    .SupportsLiveObjectReports = m_rhi != nullptr && m_rhi->SupportsLiveObjectReports(),
-	    .SupportsCrashDiagnostics = m_rhi != nullptr && m_rhi->SupportsCrashDiagnostics(),
-	    .SupportsCapture = m_captureService != nullptr};
+	capabilities.Diagnostics = BuildBackendDiagnosticsSupport(
+	    m_diagnostics.get(),
+	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
+	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
+	    m_captureService != nullptr);
+	capabilities.SupportsTimestampQueries = capabilities.Diagnostics.SupportsTimestampQueries;
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
 	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12Managed;
-	capabilities.MemorySupport = RhiBackendMemorySupport{
-	    .SupportsMemoryDiagnostics = m_rhi != nullptr,
-	    .SupportsBudgetQueries = m_rhi != nullptr && m_rhi->GetMemoryAllocator().SupportsBudgetQueries(),
-	    .SupportsJsonDump = m_rhi != nullptr && m_rhi->GetMemoryAllocator().SupportsJsonDump(),
-	    .SupportsResidencyPressure = m_rhi != nullptr && m_rhi->GetMemoryAllocator().SupportsBudgetQueries()};
+	capabilities.MemorySupport = BuildBackendMemorySupport(m_diagnostics.get());
 	capabilities.ExternalFeatureInterop = BuildD3D12ExternalFeatureInteropCapabilities(
 	    m_rhi,
 	    !m_commandLists.empty() && m_commandLists[0] != nullptr);
@@ -331,7 +366,7 @@ void D3D12RenderHardwareInterface::WaitForIdle() noexcept
 		m_rhi->Flush();
 		if (m_resourceService != nullptr)
 		{
-			m_resourceService->DrainCompletedReleases();
+			m_resourceService->FlushDeferredResourceReleases();
 		}
 	}
 }
@@ -526,7 +561,7 @@ RenderCommandList& D3D12RenderHardwareInterface::GetGraphicsCommandList(std::uin
 {
 	if (m_resourceService != nullptr)
 	{
-		m_resourceService->DrainCompletedReleases();
+		m_resourceService->DrainCompletedResourceReleases();
 	}
 	return *m_commandLists[frameIndex];
 }

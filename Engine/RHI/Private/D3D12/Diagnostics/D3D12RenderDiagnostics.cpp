@@ -369,6 +369,10 @@ class D3D12RenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 
 	bool SupportsJsonDump() const noexcept override { return m_allocator.SupportsJsonDump(); }
 
+	bool SupportsAllocationDetails() const noexcept override { return true; }
+
+	bool SupportsDelayedDestructionTracking() const noexcept override { return false; }
+
 	RhiMemoryUsageSnapshot GetLatestMemorySnapshot() const override { return m_allocator.CreateMemoryUsageSnapshot(); }
 
 	bool WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap = true) const noexcept override

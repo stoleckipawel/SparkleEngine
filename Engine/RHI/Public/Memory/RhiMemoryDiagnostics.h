@@ -33,6 +33,9 @@ struct RhiMemoryAllocationInfo
 struct RhiMemoryUsageSnapshot
 {
 	ERhiMemoryAllocatorBackend AllocatorBackend = ERhiMemoryAllocatorBackend::Unknown;
+	bool HasBudgetData = false;
+	bool HasAllocationDetails = false;
+	bool HasDelayedDestructionTracking = false;
 	std::uint64_t TotalUsedBytes = 0;
 	std::uint64_t TotalAllocatedBytes = 0;
 	std::uint64_t TotalBudgetBytes = 0;
@@ -53,6 +56,8 @@ class SPARKLE_RHI_API RenderMemoryDiagnostics
 
 	virtual bool SupportsBudgetQueries() const noexcept = 0;
 	virtual bool SupportsJsonDump() const noexcept = 0;
+	virtual bool SupportsAllocationDetails() const noexcept = 0;
+	virtual bool SupportsDelayedDestructionTracking() const noexcept = 0;
 	virtual RhiMemoryUsageSnapshot GetLatestMemorySnapshot() const = 0;
 	virtual bool WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap = true) const noexcept = 0;
 };

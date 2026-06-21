@@ -211,6 +211,9 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 	VmaTotalStatistics totalStats = {};
 	vmaCalculateStatistics(m_impl->Allocator, &totalStats);
 	snapshot.AllocatorBackend = ERhiMemoryAllocatorBackend::VulkanManaged;
+	snapshot.HasBudgetData = true;
+	snapshot.HasAllocationDetails = true;
+	snapshot.HasDelayedDestructionTracking = true;
 	snapshot.TotalUsedBytes = totalStats.total.statistics.allocationBytes;
 	snapshot.TotalAllocatedBytes = totalStats.total.statistics.blockBytes;
 

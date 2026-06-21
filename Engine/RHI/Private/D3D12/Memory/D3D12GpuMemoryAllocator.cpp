@@ -177,6 +177,9 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 	D3D12MA::TotalStatistics totalStats = {};
 	m_impl->allocator->CalculateStatistics(&totalStats);
 	snapshot.AllocatorBackend = ERhiMemoryAllocatorBackend::D3D12Managed;
+	snapshot.HasBudgetData = true;
+	snapshot.HasAllocationDetails = true;
+	snapshot.HasDelayedDestructionTracking = false;
 	snapshot.TotalUsedBytes = totalStats.Total.Stats.AllocationBytes;
 	snapshot.TotalAllocatedBytes = totalStats.Total.Stats.BlockBytes;
 	snapshot.TotalBudgetBytes = localBudget.BudgetBytes + nonLocalBudget.BudgetBytes;

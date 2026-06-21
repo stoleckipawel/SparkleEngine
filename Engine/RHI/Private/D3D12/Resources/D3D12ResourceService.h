@@ -63,7 +63,8 @@ class D3D12ResourceService final : public RhiResourceService
 	    RhiOwnedResourceHandle& outResource,
 	    RhiIndexBufferView& outView) override;
 	void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept override;
-	void DrainCompletedReleases() noexcept;
+	void DrainCompletedResourceReleases() noexcept override;
+	void FlushDeferredResourceReleases() noexcept override;
 	NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept override;
 	RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept override;
 	RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept override;

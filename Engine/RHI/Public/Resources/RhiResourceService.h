@@ -54,6 +54,8 @@ class SPARKLE_RHI_API RhiResourceService
 	    RhiOwnedResourceHandle& outResource,
 	    RhiIndexBufferView& outView) = 0;
 	virtual void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept = 0;
+	virtual void DrainCompletedResourceReleases() noexcept = 0;
+	virtual void FlushDeferredResourceReleases() noexcept = 0;
 	virtual NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept = 0;
 	virtual RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept = 0;
 	virtual RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept = 0;
