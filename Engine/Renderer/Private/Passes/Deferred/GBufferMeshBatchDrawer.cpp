@@ -1,0 +1,264 @@
+#include "../../PCH.h"
+
+#include "Passes/Deferred/GBufferMeshBatchDrawer.h"
+
+#include "Commands/RenderCommandContext.h"
+#include "Frame/Core/FrameContext.h"
+#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/PassRuntimeServices.h"
+#include "Meshes/GPUMesh.h"
+#include "Passes/Core/PassUtilities.h"
+#include "Pipeline/PassPipelineRuntime.h"
+#include "RHI/Public/Bindings/RenderBindingSet.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "SceneData/MaterialData.h"
+#include "SceneData/RenderSceneData.h"
+
+#include <cassert>
+
+static const auto g_gbufferMeshBatchDrawerLogger = Logging::GetOrCreateLogger("Renderer.GBufferMeshBatchDrawer");
+
+namespace
+{
+	constexpr const char* ToMeshKindLabel(RenderMeshKind meshKind) noexcept
+	{
+		return meshKind == RenderMeshKind::Skeletal ? "skinned" : "static";
+	}
+
+	bool BindMaterial(
+	    const RenderSceneData& sceneData,
+	    GBufferPass::DrawParameterInstance& drawParameters,
+	    std::uint32_t materialSlot)
+	{
+		if (materialSlot >= sceneData.materials.size())
+		{
+			return false;
+		}
+
+		const RenderBindingSet* materialTextureBindingSet = sceneData.materials[materialSlot].textureBindingSet;
+		if (materialTextureBindingSet == nullptr || !*materialTextureBindingSet)
+		{
+			return false;
+		}
+
+		drawParameters->PerObjectPS = sceneData.materials[materialSlot].ToPerObjectPSData();
+		drawParameters->TextureBaseColor = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::BaseColor);
+		drawParameters->TextureNormal = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Normal);
+		drawParameters->TextureRoughness = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Roughness);
+		drawParameters->TextureMetallic = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Metallic);
+		drawParameters->TextureOcclusion = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Occlusion);
+		drawParameters->TextureEmissive = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Emissive);
+		drawParameters->TextureSubsurfaceColor = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::SubsurfaceColor);
+		drawParameters->TextureSubsurfaceStrength = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::SubsurfaceStrength);
+		return true;
+	}
+
+	bool ValidateBatch(
+	    const RenderSceneData& sceneData,
+	    const MeshInstanceBatch& batch,
+	    std::size_t batchIndex)
+	{
+		if (batch.instanceCount == 0)
+		{
+			SPDLOG_LOGGER_WARN(g_gbufferMeshBatchDrawerLogger, "GBuffer: {} batch {} is empty; skipped.", ToMeshKindLabel(batch.meshKind), batchIndex);
+			return false;
+		}
+
+		if (batch.firstInstance >= sceneData.meshInstances.size() ||
+		    batch.instanceCount > sceneData.meshInstances.size() - batch.firstInstance)
+		{
+			SPDLOG_LOGGER_WARN(
+			    g_gbufferMeshBatchDrawerLogger,
+			    "GBuffer: {} batch {} references instance range [{}..{}) outside {} uploaded instances; skipped.",
+			    ToMeshKindLabel(batch.meshKind),
+			    batchIndex,
+			    batch.firstInstance,
+			    batch.firstInstance + batch.instanceCount,
+			    sceneData.meshInstances.size());
+			return false;
+		}
+
+		if (batch.gpuMesh == nullptr || !batch.gpuMesh->IsValid())
+		{
+			SPDLOG_LOGGER_WARN(g_gbufferMeshBatchDrawerLogger, "GBuffer: {} batch {} has no valid GPU mesh; skipped.", ToMeshKindLabel(batch.meshKind), batchIndex);
+			return false;
+		}
+
+		return true;
+	}
+
+	bool HasValidSkinnedInstanceRange(const RenderSceneData& sceneData, const MeshInstanceBatch& batch) noexcept
+	{
+		for (std::uint32_t instanceOffset = 0; instanceOffset < batch.instanceCount; ++instanceOffset)
+		{
+			const MeshDraw& draw = sceneData.meshInstances[batch.firstInstance + instanceOffset];
+			if (draw.Geometry.MeshKind != RenderMeshKind::Skeletal || draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool DrawBatch(
+	    const FrameGraphResourceCommands& resources,
+	    RenderCommandContext& cmd,
+	    const FrameContext& frame,
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const RasterPassPipelineRuntime& runtime,
+	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
+	    const MeshInstanceBatch& batch,
+	    std::size_t batchIndex)
+	{
+		const RenderSceneData& sceneData = frame.sceneData;
+		const GPUMesh* gpuMesh = batch.gpuMesh;
+		assert(gpuMesh != nullptr);
+
+		cmd.BindVertexBuffer(gpuMesh->GetVertexBufferView());
+		cmd.BindIndexBuffer(gpuMesh->GetIndexBufferView());
+
+		GBufferPass::DrawParameterInstance drawParameters(drawParameterMetadata);
+		drawParameters->MeshInstanceDraw = MeshInstanceDrawConstantBufferData{.FirstInstance = batch.firstInstance};
+		if (!BindMaterial(sceneData, drawParameters, batch.materialSlot))
+		{
+			SPDLOG_LOGGER_WARN(
+			    g_gbufferMeshBatchDrawerLogger,
+			    "GBuffer: {} batch {} material slot {} has no valid texture binding set; skipped.",
+			    ToMeshKindLabel(batch.meshKind),
+			    batchIndex,
+			    batch.materialSlot);
+			return false;
+		}
+
+		const bool useTwoSidedPipeline =
+		    batch.materialSlot < sceneData.materials.size() && sceneData.materials[batch.materialSlot].doubleSided &&
+		    runtime.TwoSidedPipelineState != nullptr;
+		RasterPassPipelineRuntime batchRuntime{
+		    runtime.BindingLayout,
+		    useTwoSidedPipeline ? *runtime.TwoSidedPipelineState : runtime.PipelineState,
+		    runtime.WireframePipelineState,
+		    runtime.TwoSidedPipelineState};
+
+		PassBindingOverrides overrides;
+		overrides.SetDescriptorTable("MeshInstances", frame.meshInstances.GetShaderResourceView());
+		overrides.SetDescriptorTable("SkinInfluences", gpuMesh->GetSkinInfluencesShaderResourceView());
+		overrides.SetDescriptorTable("JointMatrices", frame.skinning.GetShaderResourceView());
+		overrides.SetDescriptorTable("PreviousJointMatrices", frame.skinning.GetPreviousShaderResourceView());
+		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
+		    resources,
+		    cmd,
+		    &renderHardwareInterface,
+		    batchRuntime,
+		    drawParameters.GetPassParameterSet(),
+		    &overrides,
+		    GBufferPass::PassName,
+		    false);
+		if (!bound)
+		{
+			SPDLOG_LOGGER_WARN(
+			    g_gbufferMeshBatchDrawerLogger,
+			    "GBuffer: shader binding layout rejected {} batch {}; skipped.",
+			    ToMeshKindLabel(batch.meshKind),
+			    batchIndex);
+			assert(bound);
+			return false;
+		}
+
+		cmd.DrawIndexedInstanced(gpuMesh->GetIndexCount(), batch.instanceCount, 0, 0, 0);
+		return true;
+	}
+
+	void DrawStaticBatch(
+	    const FrameGraphResourceCommands& resources,
+	    RenderCommandContext& cmd,
+	    const FrameContext& frame,
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const RasterPassPipelineRuntime& runtime,
+	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
+	    const MeshInstanceBatch& batch,
+	    std::size_t batchIndex)
+	{
+		(void) DrawBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex);
+	}
+
+	void DrawSkinnedBatch(
+	    const FrameGraphResourceCommands& resources,
+	    RenderCommandContext& cmd,
+	    const FrameContext& frame,
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const RasterPassPipelineRuntime& runtime,
+	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
+	    const MeshInstanceBatch& batch,
+	    std::size_t batchIndex)
+	{
+		if (!frame.skinning.IsValid())
+		{
+			SPDLOG_LOGGER_WARN(g_gbufferMeshBatchDrawerLogger, "GBuffer: skinned batch {} skipped because the frame skinning buffer is unavailable.", batchIndex);
+			return;
+		}
+
+		if (!HasValidSkinnedInstanceRange(frame.sceneData, batch))
+		{
+			SPDLOG_LOGGER_WARN(g_gbufferMeshBatchDrawerLogger, "GBuffer: skinned batch {} has an invalid joint palette binding; skipped.", batchIndex);
+			return;
+		}
+
+		(void) DrawBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex);
+	}
+}
+
+void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
+    const FrameGraphResourceCommands& resources,
+    RenderCommandContext& cmd,
+    const FrameContext& frame,
+    const PassRuntimeServices& passRuntimeServices,
+    const RasterPassPipelineRuntime& runtime,
+    const GBufferPass::DrawParameterMetadata& drawParameterMetadata)
+{
+	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
+	const RenderSceneData& sceneData = frame.sceneData;
+
+	if (!frame.meshInstances.IsValid())
+	{
+		if (!sceneData.meshInstanceBatches.empty())
+		{
+			SPDLOG_LOGGER_WARN(
+			    g_gbufferMeshBatchDrawerLogger,
+			    "GBuffer: {} instance batches skipped because the frame instance buffer is unavailable.",
+			    sceneData.meshInstanceBatches.size());
+		}
+		return;
+	}
+
+	static bool loggedFirstDrawSummary = false;
+	if (!loggedFirstDrawSummary && !sceneData.meshInstanceBatches.empty())
+	{
+		loggedFirstDrawSummary = true;
+		SPDLOG_LOGGER_INFO(
+		    g_gbufferMeshBatchDrawerLogger,
+		    "GBuffer: submitting staticInstances={} skinnedInstances={} staticBatches={} skinnedBatches={} jointMatrices={}.",
+		    sceneData.meshWorkload.staticInstanceCount,
+		    sceneData.meshWorkload.skinnedInstanceCount,
+		    sceneData.meshWorkload.staticBatchCount,
+		    sceneData.meshWorkload.skinnedBatchCount,
+		    sceneData.meshWorkload.jointMatrixCount);
+	}
+
+	for (std::size_t batchIndex = 0; batchIndex < sceneData.meshInstanceBatches.size(); ++batchIndex)
+	{
+		const MeshInstanceBatch& batch = sceneData.meshInstanceBatches[batchIndex];
+		if (!ValidateBatch(sceneData, batch, batchIndex))
+		{
+			continue;
+		}
+
+		if (batch.meshKind == RenderMeshKind::Skeletal)
+		{
+			DrawSkinnedBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex);
+		}
+		else
+		{
+			DrawStaticBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex);
+		}
+	}
+}

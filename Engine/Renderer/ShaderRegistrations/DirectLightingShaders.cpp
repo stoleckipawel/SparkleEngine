@@ -4,7 +4,7 @@
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include "Resources/RenderConstantBufferData.h"
-#include "Renderer/Private/RayTracing/RayTracedShadowUniformData.h"
+#include "Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 
 class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
 {

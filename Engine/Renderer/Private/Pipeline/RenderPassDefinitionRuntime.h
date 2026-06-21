@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Passes/RenderPassDefinition.h"
+#include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Pipeline/RenderPassShaderRuntime.h"
 

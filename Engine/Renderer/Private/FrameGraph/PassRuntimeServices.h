@@ -3,7 +3,7 @@
 #include "Pipeline/PipelineStateManager.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RayTracing/RenderRayTracingPassServices.h"
+#include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "Upscaling/RenderUpscalingPassServices.h"
 
 class TextureManager;

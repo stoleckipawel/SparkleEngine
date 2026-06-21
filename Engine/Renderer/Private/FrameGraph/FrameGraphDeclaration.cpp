@@ -2,7 +2,7 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "FrameGraph/Diagnostics/FrameGraphResourceContractDiagnostics.h"
-#include "Frame/FrameContext.h"
+#include "Frame/Core/FrameContext.h"
 
 #include <string>
 #include <utility>

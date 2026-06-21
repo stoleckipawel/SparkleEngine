@@ -1,0 +1,12 @@
+#include "../../PCH.h"
+#include "Frame/Lighting/Sky.h"
+
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
+#include "Passes/Deferred/SkyPass.h"
+
+void AddSkyPass(FrameGraphBuilder& builder, const SceneRenderTargets& sceneTargets, const GBufferRenderTargets& gbuffer)
+{
+	auto& parameters = builder.AllocPassParameters<SkyPass>();
+	SkyPass::DeclareResources(builder, sceneTargets, gbuffer, parameters);
+	builder.AddComputeShaderPass<SkyPass>(parameters);
+}

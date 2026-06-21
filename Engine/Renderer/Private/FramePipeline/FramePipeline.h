@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Public/Events/ScopedEventHandle.h"
-#include "Frame/FrameAssembly.h"
+#include "Frame/Core/FrameAssembly.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"

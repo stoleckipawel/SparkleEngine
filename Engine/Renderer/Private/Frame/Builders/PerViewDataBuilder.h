@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/RenderViewData.h"
+#include "Frame/Core/RenderViewData.h"
 
 class RenderCamera;
 class RenderHardwareInterface;

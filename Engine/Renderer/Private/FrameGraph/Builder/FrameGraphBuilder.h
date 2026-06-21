@@ -8,8 +8,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "Frame/RayTracingSceneFrameGraphResources.h"
-#include "Frame/FrameAssembly.h"
+#include "Frame/RayTracing/RayTracingSceneFrameGraphResources.h"
+#include "Frame/Core/FrameAssembly.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"

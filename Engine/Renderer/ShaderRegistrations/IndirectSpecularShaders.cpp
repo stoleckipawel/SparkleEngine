@@ -5,7 +5,7 @@
 
 #include "Resources/RenderConstantBufferData.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
-#include "Renderer/Private/RayTracing/IndirectSpecularUniformData.h"
+#include "Renderer/Private/RayTracing/Effects/IndirectSpecular/IndirectSpecularUniformData.h"
 #include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
 
 class IndirectSpecularCS final : public TGlobalShader<IndirectSpecularCS>

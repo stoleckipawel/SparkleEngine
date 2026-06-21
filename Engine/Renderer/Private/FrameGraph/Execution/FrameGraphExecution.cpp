@@ -4,7 +4,7 @@
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
-#include "Frame/FrameContext.h"
+#include "Frame/Core/FrameContext.h"
 #include "FrameGraph/Diagnostics/FrameGraphExecutionDiagnostics.h"
 
 #include "Core/Public/Diagnostics/Trace.h"

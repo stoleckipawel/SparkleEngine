@@ -1,7 +1,7 @@
 #include "../../PCH.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
-#include "Frame/Frame.h"
+#include "Frame/Core/Frame.h"
 
 #include "Window/Window.h"
 

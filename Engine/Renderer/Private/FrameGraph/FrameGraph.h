@@ -16,7 +16,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
-#include "Passes/ShaderPass.h"
+#include "Passes/Core/ShaderPass.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"

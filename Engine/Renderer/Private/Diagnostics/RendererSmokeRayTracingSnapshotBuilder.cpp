@@ -2,9 +2,9 @@
 
 #include "Diagnostics/RendererSmokeRayTracingSnapshotBuilder.h"
 
-#include "RayTracing/RayTracingPerformanceMetrics.h"
-#include "RayTracing/RenderRayTracingScene.h"
-#include "RayTracing/IndirectSpecularRuntimeDiagnostics.h"
+#include "RayTracing/Diagnostics/RayTracingPerformanceMetrics.h"
+#include "RayTracing/Scene/RenderRayTracingScene.h"
+#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularRuntimeDiagnostics.h"
 
 namespace RendererSmokeRayTracingSnapshotBuilderDetails
 {
@@ -109,3 +109,4 @@ RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build
 	diagnostics.PtlasGpuUpdates = RendererSmokeRayTracingSnapshotBuilderDetails::BuildPtlasGpuUpdateDiagnostics(metrics);
 	return diagnostics;
 }
+

@@ -1,13 +1,11 @@
 #include "PCH.h"
 #include "Renderer.h"
 
-#include "Diagnostics/RendererSmokeRayTracingSnapshotBuilder.h"
+#include "Diagnostics/RendererSmokeDiagnosticsBuilder.h"
 #include "FramePipeline/FramePipeline.h"
 #include "Host/RendererSystemRoot.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Upscaling/UpscalerProvider.h"
-#include "Upscaling/UpscalerSubsystem.h"
 
 Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept
 {
@@ -114,46 +112,8 @@ RendererDiagnosticsSnapshot Renderer::CaptureDiagnosticsSnapshot() const
 
 RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 {
-	RendererSmokeDiagnosticsSnapshot snapshot{};
-	const RhiCapabilities capabilities = GetRenderHardwareInterface().GetCapabilities();
-	snapshot.BackendApi = capabilities.BackendApi;
-	snapshot.Adapter.Name = capabilities.ExternalFeatureInterop.Adapter.Name;
-	snapshot.Adapter.DriverDescription = capabilities.ExternalFeatureInterop.Adapter.DriverDescription;
-	snapshot.Adapter.VendorId = capabilities.ExternalFeatureInterop.Adapter.VendorId;
-	snapshot.Adapter.DeviceId = capabilities.ExternalFeatureInterop.Adapter.DeviceId;
-	snapshot.FrameGraph.UnresolvedBarrierWarnings =
-	    m_framePipeline != nullptr ? m_framePipeline->GetLastUnresolvedBarrierWarningCount() : 0u;
-	snapshot.FrameGraph.MissingExecutionBindings =
-	    m_framePipeline != nullptr ? m_framePipeline->GetLastMissingExecutionBindingCount() : 0u;
-	snapshot.FrameGraph.TransientResources =
-	    m_framePipeline != nullptr ? m_framePipeline->GetCompiledTransientResourceCount() : 0u;
-	snapshot.FrameGraph.ImportedResources =
-	    m_framePipeline != nullptr ? m_framePipeline->GetCompiledImportedResourceCount() : 0u;
-	snapshot.FrameGraph.PersistentResources =
-	    m_framePipeline != nullptr ? m_framePipeline->GetCompiledPersistentResourceCount() : 0u;
-	snapshot.FrameGraph.ViewportProducts =
-	    m_framePipeline != nullptr ? m_framePipeline->GetAvailableViewportProductCount() : 0u;
-	if (m_framePipeline != nullptr)
-	{
-		const RendererFrameTimingDiagnosticsSnapshot frameTimings = m_framePipeline->CaptureFrameTimingDiagnosticsSnapshot();
-		double finalFrameGpuMilliseconds = 0.0;
-		snapshot.FrameTimings.HasFinalFrameGpuMilliseconds =
-		    TryGetRendererGpuTimingMilliseconds(frameTimings, "GPU Frame", finalFrameGpuMilliseconds);
-		snapshot.FrameTimings.FinalFrameGpuMilliseconds = finalFrameGpuMilliseconds;
-		snapshot.FrameTimings.GpuTimings = frameTimings.GpuTimings;
-	}
-	snapshot.RayTracing =
-	    RendererSmokeRayTracingSnapshotBuilder::Build(capabilities.RayTracing, m_systemRoot->GetRenderRayTracingScene());
-
-	if (UpscalerSubsystem* upscalerSubsystem = m_systemRoot->GetUpscalerSubsystem())
-	{
-		const UpscalerProviderCapabilities upscalerDiagnostics = upscalerSubsystem->GetDiagnostics();
-		snapshot.Upscaler.Provider = upscalerDiagnostics.ProviderName;
-		snapshot.Upscaler.Status = RendererProviderCapabilityStateToString(upscalerDiagnostics.CapabilityState);
-		snapshot.Upscaler.Reason = upscalerDiagnostics.Reason;
-	}
-
-	return snapshot;
+	return m_systemRoot != nullptr ? RendererSmokeDiagnosticsBuilder::Build(*m_systemRoot, m_framePipeline.get()) :
+	                                RendererSmokeDiagnosticsSnapshot{};
 }
 
 void Renderer::PrepareHostFrame() noexcept

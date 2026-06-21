@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/TemporalFrameState.h"
+#include "Frame/Temporal/TemporalFrameState.h"
 #include "Providers/RenderProviderModel.h"
 #include "RHI/Public/Resources/RenderViewCameraData.h"
 #include "Viewport/ViewportContracts.h"
