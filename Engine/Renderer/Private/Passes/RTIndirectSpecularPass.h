@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frame/Targets/FrameRenderTargets.h"
+#include "RayTracing/RTIndirectSpecularHitData.h"
 #include "RayTracing/RTIndirectSpecularUniformData.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
@@ -28,6 +29,11 @@ struct RTIndirectSpecularPassParameters
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderBuffer<RTIndirectSpecularHitVertex> RTIndirectSpecularHitVertices;
+	ShaderBuffer<std::uint32_t> RTIndirectSpecularHitIndices;
+	ShaderBuffer<RTIndirectSpecularHitInstance> RTIndirectSpecularHitInstances;
+	ShaderBuffer<RTIndirectSpecularHitMaterial> RTIndirectSpecularHitMaterials;
+	ShaderBuffer<MeshInstanceData> MeshInstances;
 
 	static void Describe(ShaderParameterStructBuilder<RTIndirectSpecularPassParameters>& builder)
 	{
@@ -40,6 +46,11 @@ struct RTIndirectSpecularPassParameters
 		builder.ReadTexture("GBufferNormal", &RTIndirectSpecularPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &RTIndirectSpecularPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferDeviceZ", &RTIndirectSpecularPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RTIndirectSpecularHitVertices", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitVertices, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RTIndirectSpecularHitIndices", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitIndices, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RTIndirectSpecularHitInstances", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitInstances, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RTIndirectSpecularHitMaterials", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitMaterials, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("MeshInstances", &RTIndirectSpecularPassParameters::MeshInstances, ShaderStageVisibility::Compute);
 	}
 };
 

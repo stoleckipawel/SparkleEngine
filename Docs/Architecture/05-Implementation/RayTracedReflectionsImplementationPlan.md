@@ -29,6 +29,31 @@ Not yet available as a clean shader-visible reflection hit contract:
 
 Stage order remains valid, but Stage 3 is not optional for "proper material & lighting to the hits." Stage 2 can produce mirror/debug ray hits using TLAS and GBuffer data. Stage 4 should wait until Stage 3 provides a renderer-owned `InstanceID -> hit geometry/material` shader contract.
 
+## Production Hit-Shading Reference Note
+
+Deep-dive updated on 2026-06-21 after checking NVIDIA, AMD, Epic, Khronos, and Microsoft ray tracing references. The current Stage 3 implementation is a useful first contract, but it should be treated as a bootstrap/debug contract, not the final production material-hit ABI.
+
+Reference patterns to carry into the production solution:
+
+- Microsoft DXR ray queries are appropriate for compute-stage inline tracing, but the application owns coherence, resource organization, and shading complexity. Avoid turning one inline compute shader into an unbounded material uber-shader.
+- NVIDIA DXR/OptiX/Falcor references all separate intersection identity from material evaluation. A hit returns instance/primitive/barycentrics; engine-owned scene data then reconstructs geometric quantities, evaluates material, and returns radiance.
+- NVIDIA Donut samples show two viable production directions: local-root/material records for ray tracing pipeline shaders, or bindless scene/material resources for ray tracing and raster parity. Sparkle's inline ray-query path should converge on the bindless/scene-data flavor because the pass is compute-owned and backend-neutral.
+- AMD SSSR and Far Cry 6 reflection references emphasize roughness-aware reflection policy, GGX importance sampling, ray budgets, environment fallback, and clear integration into a later composite pass. The Sparkle plan should keep `IndirectSpecular` source-agnostic and expose roughness/max-distance/intensity controls.
+- Epic's real-time ray tracing documentation treats max roughness, max ray distance, per-material ray-traced shadow behavior, culling, and geometry class limitations as product controls, not hidden shader constants.
+- Khronos hybrid ray tracing guidance calls out the same hit path: GBuffer depth/normal/material launch data, reflection ray based on roughness, environment on miss, and deferred composite integration.
+- Falcor's texture LOD helpers are a reminder that production ray-hit material sampling needs an explicit texture LOD policy. Sparkle can start with constant material data, but textured hits need UV/tangent interpolation and either ray cones, ray differentials, or a conservative explicit mip strategy.
+
+Production implications for Sparkle:
+
+- `CommittedInstanceID()` and `CommittedPrimitiveIndex()` must be treated as keys into renderer-owned tables whose lifetime, ordering, and validation are tied to the TLAS build.
+- The hit geometry ABI must include position, normal, tangent/sign, UV0, and index format/count metadata before textured material parity is considered complete.
+- Material hit shading must reuse the same material packing semantics as `Material.hlsli` and the GBuffer path: base color, alpha, roughness, metallic, emissive, normal map policy, two-sided policy, alpha mode/cutoff, and texture flags.
+- Hit material texture sampling needs a renderer-owned texture table or bindless descriptor contract. Per-draw texture bindings from the raster GBuffer path are not enough for arbitrary ray hits.
+- Alpha-tested geometry requires an any-hit-equivalent policy. With inline `RayQuery`, that means either accepting opaque-only geometry for the first production milestone, or using candidate hit inspection plus alpha sampling before committing. Do not silently treat alpha-masked foliage/fences as fully opaque and call the result production.
+- Skinned, morphed, instanced, and world-position-offset geometry must be explicitly classified as supported, frozen/static fallback, or excluded from the reflection TLAS/hit-data table.
+- Reflection hit lighting should produce incident radiance at the hit, then the primary surface should apply the specular BRDF/PDF weight. Do not bake primary-surface Fresnel/roughness twice in both the trace pass and `LightingComposite`.
+- Validation must include parity scenes where the same material is visible directly in GBuffer and indirectly through `RTIndirectSpecular`.
+
 ## Goal
 
 Add a renderer-owned ray traced reflection effect that uses the existing ray tracing scene and frame graph contracts. The first shipped shape should be:
@@ -67,6 +92,19 @@ Relevant source entry points from the current tree:
 - `Engine/Assets/Shaders/Passes/Deferred/DirectLightingVulkanAddress.hlsl`
 - `Engine/Renderer/Private/Frame/RayTracingScene.cpp`
 - `Engine/Renderer/Private/RayTracing/RenderRayTracingPassServices.h`
+
+External references used to shape the production plan:
+
+- Microsoft DXR Functional Spec: https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html
+- NVIDIA, Introduction to NVIDIA RTX and DirectX Ray Tracing: https://developer.nvidia.com/blog/introduction-nvidia-rtx-directx-ray-tracing/
+- NVIDIA, DX12 Raytracing Tutorial Part 2: https://developer.nvidia.com/rtx/raytracing/dxr/dx12-raytracing-tutorial-part-2
+- NVIDIA Falcor Path Tracer documentation: https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/usage/path-tracer.md
+- NVIDIA Falcor texture LOD helpers: https://github.com/NVIDIAGameWorks/Falcor/blob/master/Source/Falcor/Rendering/Materials/TexLODHelpers.slang
+- NVIDIA Donut Samples: https://github.com/NVIDIA-RTX/Donut-Samples
+- AMD FidelityFX Stochastic Screen-Space Reflections: https://gpuopen.com/manuals/fidelityfx_sdk/techniques/stochastic-screen-space-reflections/
+- AMD Far Cry 6 Hybrid Ray Traced Reflections presentation: https://gpuopen.com/download/GDC_Performant_Reflective_Beauty_Hybrid_Ray_Traced_Reflections_In_Far_Cry_6.pdf
+- Epic Real-Time Ray Tracing documentation: https://dev.epicgames.com/documentation/en-us/unreal-engine/real-time-ray-tracing
+- Khronos Vulkan Ray Tracing Best Practices for Hybrid Rendering: https://www.khronos.org/blog/vulkan-ray-tracing-best-practices-for-hybrid-rendering
 
 ## Non-Goals For The First Version
 
@@ -137,6 +175,15 @@ The initial implementation should not stop at visibility. It should compute refl
 
 If the current TLAS/BLAS build path does not expose enough geometry/material data to shaders, add a narrow renderer-owned GPU hit data contract first. Do not make the reflection shader scrape gameplay data or backend-native AS internals.
 
+For production parity, the hit-data path must also answer:
+
+- are the sampled hit material constants and textures identical in meaning to the raster GBuffer material path?
+- which geometry classes are included in the reflection TLAS and which are deliberately excluded?
+- how are alpha-tested hits rejected or accepted?
+- how are two-sided surfaces oriented at a hit?
+- which mip level is used for material textures when there are no screen-space derivatives?
+- is the value written to `IndirectSpecular` incident reflected radiance, already-weighted primary BRDF contribution, or a deliberately documented intermediate?
+
 ## Sampling Requirements
 
 Start simple, but keep the stochastic foundation correct:
@@ -146,6 +193,8 @@ Start simple, but keep the stochastic foundation correct:
 - compute view vector and reflection basis
 - sample a GGX visible-normal or half-vector distribution using roughness
 - trace one ray per pixel by default
+- shade the ray hit into incident radiance, then weight it by the primary surface BRDF/pdf throughput
+- use Schlick Fresnel, GGX distribution, and the same geometry visibility convention as the engine BRDF helpers unless a deliberate difference is documented
 - apply a minimum roughness clamp to avoid pathological fireflies
 - offset ray origin along the geometric normal to reduce self-intersection
 - cap ray distance through a renderer setting
@@ -270,6 +319,16 @@ Turn RTIndirectSpecular from black output into a full-resolution mirror ray-quer
 
 ### Stage 3: Shader-Visible Hit Data Contract
 
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- `RTIndirectSpecular` now has a renderer-owned hit-data contract made of packed static hit vertices, packed triangle indices, per-render-instance hit offsets, existing `MeshInstances`, and compact material constants.
+- The frame hit-data upload is built from `RenderSceneData` after snapshot translation; the pass receives only renderer-owned GPU SRVs and does not read GameFramework scene state or backend-native acceleration-structure internals.
+- Stage 3 supports static mesh hit reconstruction. Skinned meshes, missing retained mesh hit data, invalid material slots, or unavailable upload buffers are marked invalid and fall back to Stage 2 debug/black behavior with renderer diagnostics.
+- The shader reconstructs hit normals from interpolated triangle attributes plus the instance world-inverse-transpose matrix, resolves material id through the hit instance table, and uses material base color/roughness as the temporary real-material hit signal.
+- This is intentionally a bootstrap hit contract. It is not yet production material parity because it does not expose UVs, tangents, normal maps, material texture descriptors, explicit texture LOD, alpha-tested candidate-hit rejection, or skinned/deformed geometry support.
+
 Goal: make ray hits shadeable using real mesh/material data instead of debug colors.
 
 Implementation tasks:
@@ -298,13 +357,60 @@ Implement Stage 3 from Docs/Architecture/05-Implementation/RayTracedReflectionsI
 Add the smallest renderer-owned shader-visible hit-data contract needed for RTIndirectSpecular to shade ray hits with real scene materials. Reuse existing RenderSceneData, material cache, GPU mesh cache, and ray tracing scene data where possible. Do not expose GameFramework mutable data or backend-native acceleration structure details to the pass. Bind all hit-data buffers through typed shader parameters and frame/pass runtime services, and add guarded fallback behavior when the data is unavailable.
 ```
 
-### Stage 4: Proper Hit Material And Direct Lighting
+### Stage 3.5: Production Hit Data ABI Hardening
+
+Goal: turn the Stage 3 bootstrap buffers into a production-ready ray-hit data ABI that can match raster material sampling.
+
+Implementation tasks:
+
+- define one versioned `RTIndirectSpecularHitVertex`/mesh layout that includes at least position, normal, tangent/sign, and UV0
+- document coordinate conventions for barycentrics, tangent basis reconstruction, normal-map space, handedness, and non-uniform scale
+- add explicit per-hit mesh metadata: vertex offset/count, index offset/count, material slot, geometry flags, alpha mode, two-sided flag, skinned/deformed support flag, and debug reason bits
+- prove TLAS `InstanceID` ordering matches the hit instance table for every BLAS/TLAS build path, including classic and partitioned paths once PTLAS compiles again
+- decide the first production alpha policy:
+  - opaque-only supported, alpha-tested excluded from TLAS/hit table, or
+  - inline `RayQuery` candidate-hit alpha test using UV/material texture before `CommitNonOpaqueTriangleHit`
+- decide the first production skinned/deformed policy:
+  - excluded/fallback with diagnostics, or
+  - build/upload deformed ray-hit buffers from the same snapshot used by the TLAS
+- add bounds and ABI validation for mismatched vertex/index/material counts, stale TLAS instance ids, missing texture descriptors, and unsupported geometry classes
+- add debug visualizations for hit UV, hit normal, material id, geometry support class, alpha rejection, and fallback reason
+- update Stage 3 source note with the exact supported/unsupported geometry and material classes
+
+Acceptance criteria:
+
+- the hit vertex ABI has all attributes required for textured PBR material sampling
+- TLAS instance id to hit table mapping is validated and logged
+- alpha-tested and skinned/deformed geometry behavior is explicit and testable
+- unsupported geometry cannot silently shade as the wrong material
+- debug modes can explain every black/fallback hit
+
+Implementation prompt:
+
+```text
+Implement Stage 3.5 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Harden the RTIndirectSpecular hit-data ABI from a bootstrap static-material path into a production ray-hit contract. Add UV0 and tangent/sign data, explicit mesh/material/geometry flags, TLAS InstanceID validation, unsupported-geometry diagnostics, and debug modes for UV/material/fallback reasons. Decide and implement the first alpha-tested and skinned/deformed geometry policy without leaking GameFramework or backend-native data into the pass. Keep all resources declared through typed pass parameters and preserve deterministic fallback behavior.
+```
+
+### Stage 4: Material Sampling Parity And Direct Lighting
 
 Goal: evaluate a plausible direct-lighting contribution at the reflection hit.
 
 Implementation tasks:
 
-- interpolate hit normal and material data
+- interpolate hit position, geometric normal, shading normal, tangent basis, UV0, and material data
+- sample material constants through the same value semantics as `Material.hlsli`
+- add the first production material texture access strategy:
+  - preferred: renderer-owned material texture descriptor table or bindless table indexed by material slot and texture group
+  - fallback: constants-only material shading, explicitly documented as not texture-parity complete
+- choose an explicit texture LOD strategy for ray-hit material samples:
+  - start with a conservative fixed or roughness-biased mip if ray cones/differentials are not ready
+  - document expected blur/aliasing limitations
+  - later upgrade to ray-cone/ray-differential mip selection when reflection sampling broadens
+- apply alpha mode and alpha cutoff according to the Stage 3.5 policy
+- apply two-sided material normal handling deliberately
+- sample normal maps only after tangent basis and texture LOD policy are validated
 - evaluate the same or intentionally matched BRDF terms used by direct lighting
 - evaluate directional, point, and spot lights according to current renderer lighting data
 - apply visibility policy deliberately:
@@ -312,12 +418,15 @@ Implementation tasks:
   - later option: shadow ray from hit point to light when budget allows
 - include emissive material contribution
 - add sky/environment miss lighting if a renderer-owned source exists
+- clearly separate hit-surface incident radiance from primary-surface specular weighting so Fresnel/roughness is not applied twice
 
 Acceptance criteria:
 
 - mirror reflections show material color and direct lighting from hit surfaces
 - material roughness/metallic or current engine material parameters influence reflection color
 - emissive hit surfaces contribute visibly
+- textured materials match the raster GBuffer path for supported material classes, or constants-only limitations are explicitly visible in diagnostics
+- normal-map, alpha-test, two-sided, and unsupported geometry behavior are intentional rather than accidental
 - debug views still work
 
 Implementation prompt:
@@ -325,7 +434,7 @@ Implementation prompt:
 ```text
 Implement Stage 4 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Extend RTIndirectSpecular so ray hits are shaded with real material data and renderer lighting. Interpolate hit attributes, fetch the hit material, evaluate the engine's current BRDF-compatible direct lighting, include emissive contribution, and use a deterministic miss fallback. Keep secondary shadow rays optional and disabled unless the existing ray tracing budget/settings make them clean. Keep LightingComposite source-agnostic by consuming IndirectSpecular.
+Extend RTIndirectSpecular so ray hits are shaded with production material semantics and renderer lighting. Interpolate hit attributes including UV/tangent data, fetch material constants and supported textures through a renderer-owned material texture table or an explicitly documented constants-only fallback, apply the Stage 3.5 alpha/two-sided policy, evaluate the engine's current BRDF-compatible direct lighting, include emissive contribution, and use a deterministic miss fallback. Keep secondary shadow rays optional and disabled unless the existing ray tracing budget/settings make them clean. Keep LightingComposite source-agnostic by consuming IndirectSpecular.
 ```
 
 ### Stage 5: Stochastic GGX Importance Sampling
@@ -336,17 +445,21 @@ Implementation tasks:
 
 - add a reflection settings uniform
 - generate deterministic per-pixel/per-frame random values
-- importance sample GGX from roughness
-- compute sample PDF and BRDF weight correctly enough for one-sample stochastic output
+- importance sample the primary surface specular lobe from roughness, using a documented GGX half-vector or visible-normal distribution
+- compute sample PDF and primary-surface BRDF throughput explicitly
+- trace the sampled direction and evaluate hit/miss incident radiance separately from the primary-surface throughput
+- keep mirror mode as a deterministic limit/debug path for very low roughness
 - blend/fade reflections by roughness cutoff to avoid unusable noise on very rough materials
 - add mirror debug mode to compare against stochastic mode
 - clamp or otherwise control extreme contribution values
+- record whether the current estimator is unbiased, biased for stability, or intentionally energy-normalized for one-sample/no-denoiser output
 
 Acceptance criteria:
 
 - smooth materials behave close to mirror mode
 - rough materials produce stochastic spread
 - sample weighting is energy-aware and does not obviously brighten/darken with roughness
+- debug views can show sample direction, PDF, throughput, hit radiance, and final contribution separately
 - no denoiser or history dependency is introduced
 
 Implementation prompt:
@@ -354,7 +467,7 @@ Implementation prompt:
 ```text
 Implement Stage 5 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Replace mirror-only sampling with a stochastic GGX importance-sampled reflection mode while keeping mirror as a debug mode. Use deterministic per-pixel/per-frame random seeds, material roughness, a correct PDF/BRDF weighting path, max ray distance, roughness fade/cutoff, and contribution clamping. Do not add denoising or temporal accumulation. Keep the pass full resolution and inline ray-query based.
+Replace mirror-only sampling with a stochastic GGX importance-sampled reflection mode while keeping mirror as a debug mode. Sample the primary surface specular lobe, trace the sampled direction, shade hit/miss incident radiance, and apply an explicit BRDF/pdf throughput. Use deterministic per-pixel/per-frame random seeds, material roughness, max ray distance, roughness fade/cutoff, and contribution clamping. Add debug views for sample direction, PDF, throughput, hit radiance, and final contribution. Do not add denoising or temporal accumulation. Keep the pass full resolution and inline ray-query based.
 ```
 
 ### Stage 6: Controls, Diagnostics, And Validation
@@ -433,6 +546,24 @@ Runtime validation should cover:
 - reflections disabled
 - mirror debug mode
 - stochastic GGX mode
+- direct-vs-reflected material parity scene:
+  - one material visible directly in GBuffer and through reflection
+  - constants-only material
+  - base-color textured material
+  - roughness/metallic textured material once texture tables are supported
+  - emissive material
+- geometry policy scene:
+  - opaque static mesh
+  - two-sided surface
+  - alpha-tested material
+  - skinned/deformed mesh or explicit fallback object
+  - non-uniform scale transform
+- debug/fallback scene:
+  - missing hit data
+  - invalid material slot
+  - unsupported geometry class
+  - missing texture descriptor
+  - TLAS instance id out of hit-table range
 
 ## First-Implementation Defaults
 
@@ -453,6 +584,10 @@ Recommended defaults for the first usable version:
 - If Vulkan inline ray query support or acceleration structure binding differs from D3D12, keep that in capability checks and shader package features rather than adding renderer-native backend branches.
 - Reflections can double count specular if the composite path does not clearly separate screen/local lighting from ray traced reflected lighting.
 - If material data used by GBuffer and reflection hit shading diverges, visual mismatch will be obvious; prefer reusing the same renderer material packing where possible.
+- Texture sampling at ray hits has no implicit screen-space derivatives. A naive `Sample` path can alias or pick inconsistent mips; require explicit LOD or ray-cone/ray-differential policy before claiming texture parity.
+- Alpha-tested materials need an any-hit-equivalent policy with inline ray queries. Treating masked geometry as opaque can look acceptable in simple scenes and fail badly on foliage, fences, decals, and hair-like cards.
+- Skinned/deformed geometry can desynchronize TLAS geometry, hit-data buffers, and raster output if not sourced from the same snapshot.
+- Material/lights evaluated at the hit can become expensive quickly. Keep light loops bounded by existing renderer limits, expose diagnostics, and document when secondary shadow rays are disabled.
 
 ## Done Definition
 

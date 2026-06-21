@@ -4,6 +4,5 @@
 
 namespace RTIndirectSpecularPassData
 {
-	RTIndirectSpecularUniformData Build() noexcept;
+	RTIndirectSpecularUniformData Build(bool hitDataAvailable, std::uint32_t hitInstanceCount, std::uint32_t hitMaterialCount) noexcept;
 }
-

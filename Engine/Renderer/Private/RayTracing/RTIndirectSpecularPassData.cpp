@@ -7,13 +7,19 @@
 
 namespace RTIndirectSpecularPassData
 {
-	RTIndirectSpecularUniformData Build() noexcept
+	RTIndirectSpecularUniformData Build(
+	    bool hitDataAvailable,
+	    std::uint32_t hitInstanceCount,
+	    std::uint32_t hitMaterialCount) noexcept
 	{
 		return RTIndirectSpecularUniformData{
 		    .DebugMode = static_cast<std::uint32_t>(CVarRTIndirectSpecularDebugMode.Get()),
+		    .HitDataAvailable = hitDataAvailable ? 1u : 0u,
 		    .NormalBias = std::max(CVarRTIndirectSpecularNormalBias.Get(), 0.0f),
 		    .MaxDistance = std::max(CVarRTIndirectSpecularMaxDistance.Get(), 0.001f),
-		    .Padding0 = 0.0f};
+		    .HitInstanceCount = hitInstanceCount,
+		    .HitMaterialCount = hitMaterialCount,
+		    .Padding0 = 0u,
+		    .Padding1 = 0u};
 	}
 }
-

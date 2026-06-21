@@ -95,6 +95,16 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
 	m_localBounds = ComputeLocalBounds(meshData);
+	m_rtIndirectSpecularHitVertices.clear();
+	m_rtIndirectSpecularHitVertices.reserve(meshData.vertices.size());
+	for (const VertexData& vertex : meshData.vertices)
+	{
+		m_rtIndirectSpecularHitVertices.push_back(
+		    RTIndirectSpecularHitVertex{
+		        .Position = vertex.position,
+		        .Normal = vertex.normal});
+	}
+	m_rtIndirectSpecularHitIndices.assign(meshData.indices.begin(), meshData.indices.end());
 
 	if (!m_skinInfluences.Upload(renderHardwareInterface, m_vertexCount, uploadDesc.skinInfluences))
 	{

@@ -4,6 +4,7 @@
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include "Resources/RenderConstantBufferData.h"
+#include "Renderer/Private/RayTracing/RTIndirectSpecularHitData.h"
 #include "Renderer/Private/RayTracing/RTIndirectSpecularUniformData.h"
 
 class RTIndirectSpecularCS final : public TGlobalShader<RTIndirectSpecularCS>
@@ -22,6 +23,11 @@ class RTIndirectSpecularCS final : public TGlobalShader<RTIndirectSpecularCS>
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(RTIndirectSpecularHitVertex, RTIndirectSpecularHitVertices)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(uint32_t, RTIndirectSpecularHitIndices)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(RTIndirectSpecularHitInstance, RTIndirectSpecularHitInstances)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(RTIndirectSpecularHitMaterial, RTIndirectSpecularHitMaterials)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(MeshInstanceData, MeshInstances)
 	END_SHADER_PARAMETER_STRUCT()
 };
 

@@ -4,19 +4,31 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
+#include "Frame/FrameContext.h"
 #include "Frame/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
+#include "Pipeline/PassBindingOverrides.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/RTIndirectSpecularPassData.h"
+#include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 #include <cassert>
+
+namespace
+{
+	template <typename TData>
+	FrameGraphBufferHandle CreatePlaceholderBuffer(FrameGraphBuilder& builder, const char* name)
+	{
+		return builder.CreateBuffer(FrameGraphBufferDesc::Create(name, sizeof(TData), static_cast<std::uint32_t>(sizeof(TData))));
+	}
+}
 
 RTIndirectSpecularPass::RTIndirectSpecularPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -64,6 +76,16 @@ void RTIndirectSpecularPass::DeclareResources(
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
+	parameters->RTIndirectSpecularHitVertices =
+	    builder.CreateSRV<RTIndirectSpecularHitVertex>(CreatePlaceholderBuffer<RTIndirectSpecularHitVertex>(builder, "RTIndirectSpecularHitVerticesPlaceholder"));
+	parameters->RTIndirectSpecularHitIndices =
+	    builder.CreateSRV<std::uint32_t>(CreatePlaceholderBuffer<std::uint32_t>(builder, "RTIndirectSpecularHitIndicesPlaceholder"));
+	parameters->RTIndirectSpecularHitInstances =
+	    builder.CreateSRV<RTIndirectSpecularHitInstance>(CreatePlaceholderBuffer<RTIndirectSpecularHitInstance>(builder, "RTIndirectSpecularHitInstancesPlaceholder"));
+	parameters->RTIndirectSpecularHitMaterials =
+	    builder.CreateSRV<RTIndirectSpecularHitMaterial>(CreatePlaceholderBuffer<RTIndirectSpecularHitMaterial>(builder, "RTIndirectSpecularHitMaterialsPlaceholder"));
+	parameters->MeshInstances =
+	    builder.CreateSRV<MeshInstanceData>(CreatePlaceholderBuffer<MeshInstanceData>(builder, "RTIndirectSpecularMeshInstancesPlaceholder"));
 }
 
 void RTIndirectSpecularPass::SetParameters(
@@ -73,9 +95,6 @@ void RTIndirectSpecularPass::SetParameters(
 {
 	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
-	parameters->RTIndirectSpecular = RTIndirectSpecularPassData::Build();
-	const bool valid = parameters.Sync();
-	assert(valid);
 }
 
 void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
@@ -88,6 +107,23 @@ void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterIns
 	}
 
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
+	parameters->RTIndirectSpecular = RTIndirectSpecularPassData::Build(
+	    context.Frame.rtIndirectSpecularHitData.IsValid() && context.Frame.meshInstances.IsValid(),
+	    context.Frame.rtIndirectSpecularHitData.GetInstanceCount(),
+	    context.Frame.rtIndirectSpecularHitData.GetMaterialCount());
+	const bool valid = parameters.Sync();
+	assert(valid);
+
+	PassBindingOverrides overrides;
+	if (context.Frame.rtIndirectSpecularHitData.IsValid() && context.Frame.meshInstances.IsValid())
+	{
+		overrides.SetDescriptorTable("RTIndirectSpecularHitVertices", context.Frame.rtIndirectSpecularHitData.GetVertexShaderResourceView());
+		overrides.SetDescriptorTable("RTIndirectSpecularHitIndices", context.Frame.rtIndirectSpecularHitData.GetIndexShaderResourceView());
+		overrides.SetDescriptorTable("RTIndirectSpecularHitInstances", context.Frame.rtIndirectSpecularHitData.GetInstanceShaderResourceView());
+		overrides.SetDescriptorTable("RTIndirectSpecularHitMaterials", context.Frame.rtIndirectSpecularHitData.GetMaterialShaderResourceView());
+		overrides.SetDescriptorTable("MeshInstances", context.Frame.meshInstances.GetShaderResourceView());
+	}
+
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
@@ -96,13 +132,14 @@ void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterIns
 	{
 		auto rayQueryScope = context.Diagnostics.BeginGpuEvent("RT Indirect Specular Mirror Ray Query");
 		auto rayQueryTimer = context.Diagnostics.BeginTimer("RT Indirect Specular Mirror Ray Query");
-		return PassUtilities::DispatchComputePassWithRuntime<RTIndirectSpecularPass>(
+		return PassUtilities::DispatchAvailableComputePassWithRuntime<RTIndirectSpecularPass>(
 		    context.Resources,
 		    context.Commands,
 		    context.RuntimeServices.HardwareInterface,
 		    m_runtime,
-		    parameters,
+		    parameters.GetPassParameterSet(),
 		    dispatch,
+		    &overrides,
 		    PassName);
 	}();
 	assert(dispatched);

@@ -7,10 +7,52 @@ RaytracingAccelerationStructure SceneTlas;
 cbuffer RTIndirectSpecularUniformData
 {
 	uint RTIndirectSpecularDebugMode;
+	uint RTIndirectSpecularHitDataAvailable;
 	float RTIndirectSpecularNormalBias;
 	float RTIndirectSpecularMaxDistance;
-	float RTIndirectSpecularPadding0;
+	uint RTIndirectSpecularHitInstanceCount;
+	uint RTIndirectSpecularHitMaterialCount;
+	uint RTIndirectSpecularPadding0;
+	uint RTIndirectSpecularPadding1;
 };
+
+struct RTIndirectSpecularHitVertex
+{
+	float3 Position;
+	float3 Normal;
+};
+
+struct RTIndirectSpecularHitInstance
+{
+	uint FirstVertex;
+	uint FirstIndex;
+	uint VertexCount;
+	uint IndexCount;
+	uint MaterialSlot;
+	uint Flags;
+	uint Padding0;
+	uint Padding1;
+};
+
+struct RTIndirectSpecularHitMaterial
+{
+	float4 BaseColor;
+	float3 EmissiveColor;
+	float Metallic;
+	float Roughness;
+	float F0;
+	float AlphaCutoff;
+	uint AlphaMode;
+	uint TextureFlags;
+	float3 SubsurfaceColor;
+	float SubsurfaceStrength;
+	float3 Padding0;
+};
+
+StructuredBuffer<RTIndirectSpecularHitVertex> RTIndirectSpecularHitVertices;
+StructuredBuffer<uint> RTIndirectSpecularHitIndices;
+StructuredBuffer<RTIndirectSpecularHitInstance> RTIndirectSpecularHitInstances;
+StructuredBuffer<RTIndirectSpecularHitMaterial> RTIndirectSpecularHitMaterials;
 
 static const uint RTIndirectSpecularRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
 static const uint RTIndirectSpecularInstanceMask = 0xFFu;
@@ -18,6 +60,7 @@ static const uint RTIndirectSpecularDebugOff = 0u;
 static const uint RTIndirectSpecularDebugHitMask = 1u;
 static const uint RTIndirectSpecularDebugHitDistance = 2u;
 static const uint RTIndirectSpecularDebugMirrorDirection = 3u;
+static const uint RTIndirectSpecularHitInstanceFlagValid = 1u << 0u;
 static const float RTIndirectSpecularMinimumTMin = 0.001f;
 
 struct RTIndirectSpecularTraceResult
@@ -26,6 +69,18 @@ struct RTIndirectSpecularTraceResult
 	float RayT;
 	uint InstanceId;
 	uint PrimitiveIndex;
+	float2 Barycentrics;
+};
+
+struct RTIndirectSpecularHitSurface
+{
+	bool Valid;
+	float3 PositionWorld;
+	float3 NormalWorld;
+	uint MaterialSlot;
+	float3 BaseColor;
+	float Roughness;
+	float Metallic;
 };
 
 float3 HashIdColor(uint instanceId, uint primitiveIndex)
@@ -56,7 +111,63 @@ RTIndirectSpecularTraceResult TraceMirrorReflection(float3 positionWorld, float3
 	result.RayT = result.Hit ? query.CommittedRayT() : ray.TMax;
 	result.InstanceId = result.Hit ? query.CommittedInstanceID() : 0u;
 	result.PrimitiveIndex = result.Hit ? query.CommittedPrimitiveIndex() : 0u;
+	result.Barycentrics = result.Hit ? query.CommittedTriangleBarycentrics() : 0.0f.xx;
 	return result;
+}
+
+RTIndirectSpecularHitSurface ReconstructHitSurface(RTIndirectSpecularTraceResult trace, float3 rayOriginWorld, float3 rayDirectionWorld)
+{
+	RTIndirectSpecularHitSurface surface;
+	surface.Valid = false;
+	surface.PositionWorld = rayOriginWorld + rayDirectionWorld * trace.RayT;
+	surface.NormalWorld = 0.0f.xxx;
+	surface.MaterialSlot = 0u;
+	surface.BaseColor = 0.0f.xxx;
+	surface.Roughness = 1.0f;
+	surface.Metallic = 0.0f;
+
+	if (!trace.Hit || RTIndirectSpecularHitDataAvailable == 0u || trace.InstanceId >= RTIndirectSpecularHitInstanceCount)
+	{
+		return surface;
+	}
+
+	const RTIndirectSpecularHitInstance hitInstance = RTIndirectSpecularHitInstances[trace.InstanceId];
+	if ((hitInstance.Flags & RTIndirectSpecularHitInstanceFlagValid) == 0u || hitInstance.MaterialSlot >= RTIndirectSpecularHitMaterialCount)
+	{
+		return surface;
+	}
+
+	const uint primitiveFirstLocalIndex = trace.PrimitiveIndex * 3u;
+	if (primitiveFirstLocalIndex + 2u >= hitInstance.IndexCount)
+	{
+		return surface;
+	}
+
+	const uint i0 = hitInstance.FirstVertex + RTIndirectSpecularHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 0u];
+	const uint i1 = hitInstance.FirstVertex + RTIndirectSpecularHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 1u];
+	const uint i2 = hitInstance.FirstVertex + RTIndirectSpecularHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 2u];
+	const uint vertexEnd = hitInstance.FirstVertex + hitInstance.VertexCount;
+	if (i0 >= vertexEnd || i1 >= vertexEnd || i2 >= vertexEnd)
+	{
+		return surface;
+	}
+
+	const float3 barycentricWeights = float3(1.0f - trace.Barycentrics.x - trace.Barycentrics.y, trace.Barycentrics.x, trace.Barycentrics.y);
+	const float3 localNormal =
+	    RTIndirectSpecularHitVertices[i0].Normal * barycentricWeights.x +
+	    RTIndirectSpecularHitVertices[i1].Normal * barycentricWeights.y +
+	    RTIndirectSpecularHitVertices[i2].Normal * barycentricWeights.z;
+	const MeshInstanceData meshInstance = MeshInstances[trace.InstanceId];
+	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
+	const RTIndirectSpecularHitMaterial material = RTIndirectSpecularHitMaterials[hitInstance.MaterialSlot];
+
+	surface.Valid = true;
+	surface.NormalWorld = normalize(mul(localNormal, worldInvTransposeMatrix));
+	surface.MaterialSlot = hitInstance.MaterialSlot;
+	surface.BaseColor = saturate(material.BaseColor.rgb);
+	surface.Roughness = saturate(material.Roughness);
+	surface.Metallic = saturate(material.Metallic);
+	return surface;
 }
 
 float3 BuildMirrorDebugColor(RTIndirectSpecularTraceResult trace, float3 reflectionDirectionWorld)
@@ -115,8 +226,16 @@ float3 BuildMirrorDebugColor(RTIndirectSpecularTraceResult trace, float3 reflect
 	const float3 reflectionDirectionWorld = normalize(reflect(-viewDirWorld, normalWorld));
 	const RTIndirectSpecularTraceResult trace =
 	    TraceMirrorReflection(positionWorld, normalWorld, reflectionDirectionWorld);
+	const RTIndirectSpecularHitSurface hitSurface =
+	    ReconstructHitSurface(trace, positionWorld + normalWorld * max(RTIndirectSpecularNormalBias, 0.0f), reflectionDirectionWorld);
 	const float3 debugColor = BuildMirrorDebugColor(trace, reflectionDirectionWorld) * lerp(0.65f.xxx, baseColor, 0.35f);
+	const float NoV = hitSurface.Valid ? saturate(dot(hitSurface.NormalWorld, -reflectionDirectionWorld)) : 0.0f;
+	const float3 hitMaterialColor =
+	    hitSurface.Valid
+	        ? hitSurface.BaseColor * lerp(0.35f, 1.0f, NoV) * lerp(1.0f, 0.65f, hitSurface.Roughness)
+	        : debugColor;
+	const float3 reflectionColor = RTIndirectSpecularDebugMode == RTIndirectSpecularDebugOff ? hitMaterialColor : debugColor;
 	const float bindingKeepAliveSignal = float(FrameIndex & 1u) * 1.0e-6f + roughness * 1.0e-9f;
 
-	IndirectSpecularTexture[dispatchThreadId.xy] = float4(debugColor, trace.Hit ? 1.0f : bindingKeepAliveSignal);
+	IndirectSpecularTexture[dispatchThreadId.xy] = float4(reflectionColor, hitSurface.Valid ? 1.0f : bindingKeepAliveSignal);
 }
