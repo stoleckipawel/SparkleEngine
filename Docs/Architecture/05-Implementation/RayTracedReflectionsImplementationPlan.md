@@ -501,6 +501,22 @@ Replace mirror-only sampling with a stochastic GGX importance-sampled reflection
 
 ### Stage 6: Controls, Diagnostics, And Validation
 
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- Reviewer controls now use the renderer ray tracing settings path through `RTIndirectSpecularSettings` and `RenderRayTracingPassServices`.
+- User-facing CVars are:
+  - `r.RayTracing.Reflections.Enabled`: toggles the pass; disabled mode is a deterministic no-op that leaves the existing `IndirectSpecular` producer intact.
+  - `r.RayTracing.Reflections.SampleMode`: `0=Mirror`, `1=StochasticGGX`.
+  - `r.RayTracing.Reflections.MaxDistance`: physical ray length limit.
+  - `r.RayTracing.Reflections.DebugMode`: `0=Off`, `1=HitMask`, `2=HitDistance`, `3=MirrorDirection`, `4=HitUV`, `5=HitNormal`, `6=MaterialId`, `7=GeometryClass`, `8=FallbackReason`, `9=AlphaPolicy`, `10=SampleDirection`, `11=SamplePdf`, `12=SampleThroughput`, `13=HitRadiance`, `14=FinalContribution`.
+  - `r.RayTracing.Reflections.NormalBias`: ray origin bias; this is a geometric robustness control, not a lighting scale.
+- The feature intentionally has no roughness cutoff/fade, intensity multiplier, or contribution clamp control.
+- `RTIndirectSpecular` publishes status reasons through renderer smoke diagnostics: `disabled`, `unsupported`, `missing-tlas`, `missing-hit-data`, and `running`.
+- Smoke diagnostics include enabled state, sample/debug modes, max distance, hit-data availability, hit instance/material counts, and the GPU timing label `RT Indirect Specular Ray Query`.
+- Ray tracing frame timings now include `RTIndirectSpecularGpuMilliseconds` once timestamp results resolve.
+
 Goal: make the feature easy to review, tune, and test.
 
 Implementation tasks:
@@ -527,6 +543,17 @@ Add user/reviewer-facing controls and diagnostics for RTIndirectSpecular. Expose
 ```
 
 ### Stage 7: Quality Cleanup Before Denoising
+
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- Ray origins now use a direction-aware normal bias plus a small ray-direction offset. Grazing rays scale the normal offset up to reduce immediate self-intersections without adding any lighting clamp or intensity control.
+- Hit normal reconstruction now uses safe inverse-transpose normalization, tangent reconstruction is re-orthonormalized against the final shading normal, and degenerate tangents fall back to a generated basis.
+- One-sided backface hits are now an explicit shader fallback reason (`OneSidedBackface`) instead of being accidentally shaded. Two-sided hits orient the normal and tangent toward the incoming ray before lighting.
+- The stochastic path still supports the full material roughness range. Fireflies/noise are left visible for analysis and future denoising; no roughness fade, intensity scale, contribution clamp, temporal history, or denoiser resource was added.
+- Blue-noise sampling is deferred. The current renderer has texture-manager and scene/default texture paths, but this pass does not yet have a clean renderer-owned imported blue-noise texture contract; hash/interleaved-gradient sampling remains the deterministic baseline.
+- Known limitations before denoising: one sample per full-resolution pixel is noisy on rough materials, direct hit lighting has no secondary shadow rays, material textures and normal maps remain deferred to the bindless/material-texture stage, sky/environment miss lighting is still black unless a renderer-owned source is added, and unsupported geometry/material classes rely on fallback debug modes.
 
 Goal: stabilize the stochastic base before any denoiser or temporal reuse is designed.
 
@@ -593,11 +620,14 @@ Add the final material texture parity layer for RTIndirectSpecular. Build a rend
 Exact command names can differ by local build output, so confirm paths from the current build tree before wiring these into automation:
 
 ```powershell
-ShaderCompiler list-shaders --validate
-ShaderCompiler inspect-shader RTIndirectSpecularCS
-ShaderCompiler cook --package RTIndirectSpecular --backend dxc --target DxilSm66
-ShaderCompiler inspect-package <path-to-RTIndirectSpecular-cooked-package>
-cmake --build <build-dir> --target ArchitectureBoundaryCheck
+cmake --build build --target ShaderCompiler --config DevelopmentEditor
+.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe list-shaders --validate
+.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe inspect-shader RTIndirectSpecularCS
+.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe cook --package RTIndirectSpecular --backend dxc --target DxilSm66
+.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe cook --package RTIndirectSpecular --backend dxc --target SpirV16
+.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe inspect-package <path-to-RTIndirectSpecular-cooked-package>
+cmake --build build --target architecture_boundary_check --config DevelopmentEditor
+cmake --build build --target SparkleRenderer --config DevelopmentEditor
 ```
 
 Runtime validation should cover:
@@ -606,9 +636,13 @@ Runtime validation should cover:
 - Vulkan with ray tracing enabled if supported in the local build
 - unsupported or missing ray tracing capability
 - no scene TLAS / empty scene
-- reflections disabled
-- mirror debug mode
-- stochastic GGX mode
+- reflections disabled: set `r.RayTracing.Reflections.Enabled=0` and verify smoke status `disabled` plus visual equivalence to the previous renderer output
+- missing TLAS: use an empty/no-traceable scene and verify smoke status `missing-tlas`
+- unsupported descriptor-TLAS path/backend: verify smoke status `unsupported`
+- missing hit data: force or reproduce missing RT hit buffers and verify smoke status `missing-hit-data` plus deterministic shader fallback
+- mirror debug mode: set `r.RayTracing.Reflections.Enabled=1`, `r.RayTracing.Reflections.SampleMode=0`
+- stochastic GGX mode: set `r.RayTracing.Reflections.Enabled=1`, `r.RayTracing.Reflections.SampleMode=1`
+- status/timing metadata: capture smoke diagnostics and verify `RayTracing.RTIndirectSpecular.StatusReason`, `HitInstanceCount`, `HitMaterialCount`, and `FrameTimings.RTIndirectSpecularGpuMilliseconds`
 - direct-vs-reflected material parity scene:
   - one material visible directly in GBuffer and through reflection
   - constants-only material

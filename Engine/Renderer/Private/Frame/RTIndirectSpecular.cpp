@@ -7,6 +7,9 @@
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/RTIndirectSpecularPass.h"
 #include "Passes/ShaderPass.h"
+#include "RayTracing/RenderRayTracingPassServices.h"
+#include "RayTracing/RTIndirectSpecularRuntimeDiagnostics.h"
+#include "RayTracing/RTIndirectSpecularSettings.h"
 #include "RayTracing/RayTracingSceneTlasShaderAccessMode.h"
 
 namespace RTIndirectSpecularFramePasses
@@ -44,6 +47,21 @@ void AddRTIndirectSpecularPass(
 	    {
 		    if (!RTIndirectSpecularFramePasses::UsesDescriptorSceneTlas(context.Frame))
 		    {
+			    const RenderRayTracingPassServices* rayTracingServices = context.RuntimeServices.RayTracing;
+			    const RTIndirectSpecularSettings settings =
+			        rayTracingServices != nullptr && rayTracingServices->IndirectSpecularSettings != nullptr
+			            ? *rayTracingServices->IndirectSpecularSettings
+			            : BuildRTIndirectSpecularSettingsFromCVars();
+			    RTIndirectSpecularRuntimeDiagnostics::Publish(
+			        RTIndirectSpecularRuntimeDiagnosticsSnapshot{
+			            .Status = settings.Enabled ? RTIndirectSpecularStatusReason::Unsupported : RTIndirectSpecularStatusReason::Disabled,
+			            .Enabled = settings.Enabled,
+			            .SampleMode = settings.SampleMode,
+			            .DebugMode = settings.DebugMode,
+			            .MaxDistance = settings.MaxDistance,
+			            .HitDataAvailable = context.Frame.rtIndirectSpecularHitData.IsValid() && context.Frame.meshInstances.IsValid(),
+			            .HitInstanceCount = context.Frame.rtIndirectSpecularHitData.GetInstanceCount(),
+			            .HitMaterialCount = context.Frame.rtIndirectSpecularHitData.GetMaterialCount()});
 			    return;
 		    }
 

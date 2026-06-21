@@ -2,7 +2,13 @@
 
 #include "RayTracing/RTIndirectSpecularUniformData.h"
 
+struct RTIndirectSpecularSettings;
+
 namespace RTIndirectSpecularPassData
 {
-	RTIndirectSpecularUniformData Build(bool hitDataAvailable, std::uint32_t hitInstanceCount, std::uint32_t hitMaterialCount) noexcept;
+	RTIndirectSpecularUniformData Build(
+	    const RTIndirectSpecularSettings& settings,
+	    bool hitDataAvailable,
+	    std::uint32_t hitInstanceCount,
+	    std::uint32_t hitMaterialCount) noexcept;
 }

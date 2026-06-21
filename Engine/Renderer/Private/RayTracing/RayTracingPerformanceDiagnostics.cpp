@@ -113,6 +113,7 @@ void RayTracingPerformanceDiagnostics::BeginResolvedGpuTimingFrame(RayTracingPer
 	metrics.Blas.GpuMilliseconds = 0.0;
 	metrics.ClassicTlas.GpuMilliseconds = 0.0;
 	metrics.Timings.RayTracingPassGpuMilliseconds = 0.0;
+	metrics.Timings.RTIndirectSpecularGpuMilliseconds = 0.0;
 }
 
 void RayTracingPerformanceDiagnostics::PublishResolvedGpuTiming(
@@ -138,6 +139,11 @@ void RayTracingPerformanceDiagnostics::PublishResolvedGpuTiming(
 	if (label.find("Ray Query Dispatch") != std::string_view::npos)
 	{
 		metrics.Timings.RayTracingPassGpuMilliseconds = timing.DurationMilliseconds;
+		return;
+	}
+	if (label.find("RT Indirect Specular Ray Query") != std::string_view::npos)
+	{
+		metrics.Timings.RTIndirectSpecularGpuMilliseconds = timing.DurationMilliseconds;
 		return;
 	}
 }

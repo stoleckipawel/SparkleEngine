@@ -45,6 +45,7 @@ inline constexpr std::uint32_t RTIndirectSpecularHitFallbackReason_UnsupportedAl
 inline constexpr std::uint32_t RTIndirectSpecularHitFallbackReason_MissingMeshHitData = 8u;
 inline constexpr std::uint32_t RTIndirectSpecularHitFallbackReason_InvalidPrimitive = 9u;
 inline constexpr std::uint32_t RTIndirectSpecularHitFallbackReason_InvalidVertexIndex = 10u;
+inline constexpr std::uint32_t RTIndirectSpecularHitFallbackReason_OneSidedBackface = 11u;
 
 inline constexpr std::uint32_t RTIndirectSpecularHitMaterialFlag_DoubleSided = 1u << 0u;
 inline constexpr std::uint32_t RTIndirectSpecularHitMaterialFlag_Opaque = 1u << 1u;

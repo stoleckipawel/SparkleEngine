@@ -102,6 +102,7 @@ static const uint RTIndirectSpecularHitFallbackReasonUnsupportedAlphaMode = 7u;
 static const uint RTIndirectSpecularHitFallbackReasonMissingMeshHitData = 8u;
 static const uint RTIndirectSpecularHitFallbackReasonInvalidPrimitive = 9u;
 static const uint RTIndirectSpecularHitFallbackReasonInvalidVertexIndex = 10u;
+static const uint RTIndirectSpecularHitFallbackReasonOneSidedBackface = 11u;
 static const float RTIndirectSpecularMinimumTMin = 0.001f;
 
 struct RTIndirectSpecularTraceResult
@@ -163,6 +164,16 @@ float3 SafeNormalize(float3 value, float3 fallback)
 	return lengthSquared > 1.0e-8f ? value * rsqrt(lengthSquared) : fallback;
 }
 
+float3 SafeTransformNormal(float3 localNormal, float3x3 worldInvTransposeMatrix, float3 fallback)
+{
+	return SafeNormalize(mul(localNormal, worldInvTransposeMatrix), fallback);
+}
+
+float3 SafeTransformDirection(float3 localDirection, float3x3 worldMatrix, float3 fallback)
+{
+	return SafeNormalize(mul(localDirection, worldMatrix), fallback);
+}
+
 void BuildOrthonormalBasis(float3 normalWorld, out float3 tangentWorld, out float3 bitangentWorld)
 {
 	const float sign = normalWorld.z >= 0.0f ? 1.0f : -1.0f;
@@ -170,6 +181,15 @@ void BuildOrthonormalBasis(float3 normalWorld, out float3 tangentWorld, out floa
 	const float b = normalWorld.x * normalWorld.y * a;
 	tangentWorld = SafeNormalize(float3(1.0f + sign * normalWorld.x * normalWorld.x * a, sign * b, -sign * normalWorld.x), float3(1.0f, 0.0f, 0.0f));
 	bitangentWorld = SafeNormalize(float3(b, sign + normalWorld.y * normalWorld.y * a, -normalWorld.y), float3(0.0f, 1.0f, 0.0f));
+}
+
+float3 OrthonormalizeTangent(float3 tangentWorld, float3 normalWorld)
+{
+	const float3 projectedTangent = tangentWorld - normalWorld * dot(tangentWorld, normalWorld);
+	float3 fallbackTangent = 0.0f.xxx;
+	float3 fallbackBitangent = 0.0f.xxx;
+	BuildOrthonormalBasis(normalWorld, fallbackTangent, fallbackBitangent);
+	return SafeNormalize(projectedTangent, fallbackTangent);
 }
 
 float2 BuildReflectionRandomSample(uint2 pixelCoord)
@@ -243,11 +263,19 @@ RTIndirectSpecularSampleResult BuildReflectionSample(uint2 pixelCoord, float3 no
 	return result;
 }
 
-RTIndirectSpecularTraceResult TraceMirrorReflection(float3 positionWorld, float3 normalWorld, float3 reflectionDirectionWorld)
+float3 ComputeRayOrigin(float3 positionWorld, float3 normalWorld, float3 rayDirectionWorld)
+{
+	const float bias = max(RTIndirectSpecularNormalBias, 0.0f);
+	const float NoR = abs(dot(normalWorld, rayDirectionWorld));
+	const float grazingScale = rcp(max(NoR, 0.25f));
+	return positionWorld + normalWorld * bias * grazingScale + rayDirectionWorld * RTIndirectSpecularMinimumTMin;
+}
+
+RTIndirectSpecularTraceResult TraceReflection(float3 positionWorld, float3 normalWorld, float3 reflectionDirectionWorld)
 {
 	RayDesc ray;
-	ray.Origin = positionWorld + normalWorld * max(RTIndirectSpecularNormalBias, 0.0f);
-	ray.Direction = normalize(reflectionDirectionWorld);
+	ray.Direction = SafeNormalize(reflectionDirectionWorld, normalWorld);
+	ray.Origin = ComputeRayOrigin(positionWorld, normalWorld, ray.Direction);
 	ray.TMin = RTIndirectSpecularMinimumTMin;
 	ray.TMax = max(RTIndirectSpecularMaxDistance, RTIndirectSpecularMinimumTMin);
 
@@ -344,13 +372,21 @@ RTIndirectSpecularHitSurface ReconstructHitSurface(RTIndirectSpecularTraceResult
 	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
 	const float3x3 worldMatrix = (float3x3) meshInstance.WorldMTX;
 	const RTIndirectSpecularHitMaterial material = RTIndirectSpecularHitMaterials[hitInstance.MaterialSlot];
-	float3 normalWorld = normalize(mul(localNormal, worldInvTransposeMatrix));
-	float3 tangentWorld = normalize(mul(localTangent.xyz, worldMatrix));
-	if ((hitInstance.Flags & RTIndirectSpecularHitInstanceFlagTwoSided) != 0u && dot(normalWorld, -rayDirectionWorld) < 0.0f)
+	float3 normalWorld = SafeTransformNormal(localNormal, worldInvTransposeMatrix, -rayDirectionWorld);
+	float3 tangentWorld = SafeTransformDirection(localTangent.xyz, worldMatrix, 0.0f.xxx);
+	const bool twoSided = (hitInstance.Flags & RTIndirectSpecularHitInstanceFlagTwoSided) != 0u;
+	const bool frontFacing = dot(normalWorld, -rayDirectionWorld) >= 0.0f;
+	if (!frontFacing && !twoSided)
+	{
+		surface.FallbackReason = RTIndirectSpecularHitFallbackReasonOneSidedBackface;
+		return surface;
+	}
+	if (!frontFacing)
 	{
 		normalWorld = -normalWorld;
 		tangentWorld = -tangentWorld;
 	}
+	tangentWorld = OrthonormalizeTangent(tangentWorld, normalWorld);
 
 	surface.Valid = true;
 	surface.PositionWorld =
@@ -483,6 +519,10 @@ float3 FallbackReasonColor(uint reason)
 	if (reason == RTIndirectSpecularHitFallbackReasonInvalidPrimitive || reason == RTIndirectSpecularHitFallbackReasonInvalidVertexIndex)
 	{
 		return float3(1.0f, 1.0f, 0.0f);
+	}
+	if (reason == RTIndirectSpecularHitFallbackReasonOneSidedBackface)
+	{
+		return float3(0.0f, 0.85f, 0.95f);
 	}
 	return float3(0.2f, 0.65f, 1.0f);
 }
@@ -637,9 +677,9 @@ float3 BuildMirrorDebugColor(
 	const RTIndirectSpecularSampleResult sample =
 	    BuildReflectionSample(dispatchThreadId.xy, normalWorld, viewDirWorld, roughness);
 	const RTIndirectSpecularTraceResult trace =
-	    TraceMirrorReflection(positionWorld, normalWorld, sample.DirectionWorld);
+	    TraceReflection(positionWorld, normalWorld, sample.DirectionWorld);
 	const RTIndirectSpecularHitSurface hitSurface =
-	    ReconstructHitSurface(trace, positionWorld + normalWorld * max(RTIndirectSpecularNormalBias, 0.0f), sample.DirectionWorld);
+	    ReconstructHitSurface(trace, ComputeRayOrigin(positionWorld, normalWorld, sample.DirectionWorld), sample.DirectionWorld);
 	const float3 hitIncidentRadiance = hitSurface.Valid ? ShadeHitIncidentRadiance(hitSurface, sample.DirectionWorld) : 0.0f.xxx;
 	RTIndirectSpecularResolvedContribution resolved;
 	resolved.HitRadiance = hitIncidentRadiance;

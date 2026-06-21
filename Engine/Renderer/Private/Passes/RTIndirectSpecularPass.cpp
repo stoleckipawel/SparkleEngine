@@ -15,6 +15,9 @@
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/RTIndirectSpecularPassData.h"
+#include "RayTracing/RenderRayTracingPassServices.h"
+#include "RayTracing/RTIndirectSpecularRuntimeDiagnostics.h"
+#include "RayTracing/RTIndirectSpecularSettings.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
@@ -23,10 +26,79 @@
 
 namespace
 {
+	constexpr const char* DispatchTimingLabel = "RT Indirect Specular Ray Query";
+
 	template <typename TData>
 	FrameGraphBufferHandle CreatePlaceholderBuffer(FrameGraphBuilder& builder, const char* name)
 	{
 		return builder.CreateBuffer(FrameGraphBufferDesc::Create(name, sizeof(TData), static_cast<std::uint32_t>(sizeof(TData))));
+	}
+
+	RTIndirectSpecularSettings ResolveSettings(const PassRuntimeServices& services) noexcept
+	{
+		const RenderRayTracingPassServices* rayTracingServices = services.RayTracing;
+		if (rayTracingServices != nullptr && rayTracingServices->IndirectSpecularSettings != nullptr)
+		{
+			return *rayTracingServices->IndirectSpecularSettings;
+		}
+
+		return BuildRTIndirectSpecularSettingsFromCVars();
+	}
+
+	void PublishStatus(
+	    RTIndirectSpecularStatusReason status,
+	    const RTIndirectSpecularSettings& settings,
+	    bool hitDataAvailable,
+	    std::uint32_t hitInstanceCount,
+	    std::uint32_t hitMaterialCount) noexcept
+	{
+		RTIndirectSpecularRuntimeDiagnostics::Publish(
+		    RTIndirectSpecularRuntimeDiagnosticsSnapshot{
+		        .Status = status,
+		        .Enabled = settings.Enabled,
+		        .SampleMode = settings.SampleMode,
+		        .DebugMode = settings.DebugMode,
+		        .MaxDistance = settings.MaxDistance,
+		        .HitDataAvailable = hitDataAvailable,
+		        .HitInstanceCount = hitInstanceCount,
+		        .HitMaterialCount = hitMaterialCount});
+	}
+
+	void LogStatusChange(const RTIndirectSpecularRuntimeDiagnosticsSnapshot& snapshot) noexcept
+	{
+		static RTIndirectSpecularStatusReason s_lastStatus = RTIndirectSpecularStatusReason::NotEvaluated;
+		static bool s_logged = false;
+		if (s_logged && s_lastStatus == snapshot.Status)
+		{
+			return;
+		}
+
+		s_logged = true;
+		s_lastStatus = snapshot.Status;
+		const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.RTIndirectSpecular");
+		SPDLOG_LOGGER_INFO(
+		    logger,
+		    "RT indirect specular status: reason={} enabled={} sampleMode={} debugMode={} maxDistance={} hitData={} "
+		    "hitInstances={} hitMaterials={}",
+		    snapshot.StatusReason,
+		    snapshot.Enabled ? "true" : "false",
+		    static_cast<std::uint32_t>(snapshot.SampleMode),
+		    static_cast<std::uint32_t>(snapshot.DebugMode),
+		    snapshot.MaxDistance,
+		    snapshot.HitDataAvailable ? "true" : "false",
+		    snapshot.HitInstanceCount,
+		    snapshot.HitMaterialCount);
+	}
+
+	void PublishAndLogStatus(
+	    RTIndirectSpecularStatusReason status,
+	    const RTIndirectSpecularSettings& settings,
+	    bool hitDataAvailable,
+	    std::uint32_t hitInstanceCount,
+	    std::uint32_t hitMaterialCount) noexcept
+	{
+		PublishStatus(status, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
+		LogStatusChange(RTIndirectSpecularRuntimeDiagnostics::Capture());
 	}
 }
 
@@ -101,21 +173,33 @@ void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterIns
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.RTIndirectSpecular.Execute");
 
+	const RTIndirectSpecularSettings settings = ResolveSettings(context.RuntimeServices);
+	const bool hitDataAvailable = context.Frame.rtIndirectSpecularHitData.IsValid() && context.Frame.meshInstances.IsValid();
+	const std::uint32_t hitInstanceCount = context.Frame.rtIndirectSpecularHitData.GetInstanceCount();
+	const std::uint32_t hitMaterialCount = context.Frame.rtIndirectSpecularHitData.GetMaterialCount();
+	if (!settings.Enabled)
+	{
+		PublishAndLogStatus(RTIndirectSpecularStatusReason::Disabled, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
+		return;
+	}
+
 	if (!context.Frame.rayTracingScene.HasBoundTlas())
 	{
+		PublishAndLogStatus(RTIndirectSpecularStatusReason::MissingTlas, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
 		return;
 	}
 
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	parameters->RTIndirectSpecular = RTIndirectSpecularPassData::Build(
-	    context.Frame.rtIndirectSpecularHitData.IsValid() && context.Frame.meshInstances.IsValid(),
-	    context.Frame.rtIndirectSpecularHitData.GetInstanceCount(),
-	    context.Frame.rtIndirectSpecularHitData.GetMaterialCount());
+	    settings,
+	    hitDataAvailable,
+	    hitInstanceCount,
+	    hitMaterialCount);
 	const bool valid = parameters.Sync();
 	assert(valid);
 
 	PassBindingOverrides overrides;
-	if (context.Frame.rtIndirectSpecularHitData.IsValid() && context.Frame.meshInstances.IsValid())
+	if (hitDataAvailable)
 	{
 		overrides.SetDescriptorTable("RTIndirectSpecularHitVertices", context.Frame.rtIndirectSpecularHitData.GetVertexShaderResourceView());
 		overrides.SetDescriptorTable("RTIndirectSpecularHitIndices", context.Frame.rtIndirectSpecularHitData.GetIndexShaderResourceView());
@@ -128,10 +212,16 @@ void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterIns
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
 	    1};
+	PublishAndLogStatus(
+	    hitDataAvailable ? RTIndirectSpecularStatusReason::Running : RTIndirectSpecularStatusReason::MissingHitData,
+	    settings,
+	    hitDataAvailable,
+	    hitInstanceCount,
+	    hitMaterialCount);
 	const bool dispatched = [&]() noexcept
 	{
-		auto rayQueryScope = context.Diagnostics.BeginGpuEvent("RT Indirect Specular Mirror Ray Query");
-		auto rayQueryTimer = context.Diagnostics.BeginTimer("RT Indirect Specular Mirror Ray Query");
+		auto rayQueryScope = context.Diagnostics.BeginGpuEvent(DispatchTimingLabel);
+		auto rayQueryTimer = context.Diagnostics.BeginTimer(DispatchTimingLabel);
 		return PassUtilities::DispatchAvailableComputePassWithRuntime<RTIndirectSpecularPass>(
 		    context.Resources,
 		    context.Commands,

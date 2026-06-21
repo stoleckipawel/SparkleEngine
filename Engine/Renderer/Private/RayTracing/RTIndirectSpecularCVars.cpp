@@ -1,6 +1,10 @@
 #include "../PCH.h"
 #include "RayTracing/RTIndirectSpecularCVars.h"
 
+ConsoleVariable<bool> CVarRTIndirectSpecularEnabled(
+    "r.RayTracing.Reflections.Enabled",
+    false,
+    "Enable full-resolution RT indirect specular ray queries.");
 ConsoleVariable<RTIndirectSpecularDebugMode> CVarRTIndirectSpecularDebugMode(
     "r.RayTracing.Reflections.DebugMode",
     RTIndirectSpecularDebugMode::Off,

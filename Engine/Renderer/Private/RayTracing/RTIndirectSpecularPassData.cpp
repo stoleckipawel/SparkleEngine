@@ -1,25 +1,24 @@
 #include "../PCH.h"
 #include "RayTracing/RTIndirectSpecularPassData.h"
 
-#include "RayTracing/RTIndirectSpecularCVars.h"
-
-#include <algorithm>
+#include "RayTracing/RTIndirectSpecularSettings.h"
 
 namespace RTIndirectSpecularPassData
 {
 	RTIndirectSpecularUniformData Build(
+	    const RTIndirectSpecularSettings& settings,
 	    bool hitDataAvailable,
 	    std::uint32_t hitInstanceCount,
 	    std::uint32_t hitMaterialCount) noexcept
 	{
 		return RTIndirectSpecularUniformData{
-		    .DebugMode = static_cast<std::uint32_t>(CVarRTIndirectSpecularDebugMode.Get()),
+		    .DebugMode = static_cast<std::uint32_t>(settings.DebugMode),
 		    .HitDataAvailable = hitDataAvailable ? 1u : 0u,
-		    .NormalBias = std::max(CVarRTIndirectSpecularNormalBias.Get(), 0.0f),
-		    .MaxDistance = std::max(CVarRTIndirectSpecularMaxDistance.Get(), 0.001f),
+		    .NormalBias = settings.NormalBias,
+		    .MaxDistance = settings.MaxDistance,
 		    .HitInstanceCount = hitInstanceCount,
 		    .HitMaterialCount = hitMaterialCount,
-		    .SampleMode = static_cast<std::uint32_t>(CVarRTIndirectSpecularSampleMode.Get()),
+		    .SampleMode = static_cast<std::uint32_t>(settings.SampleMode),
 		    .Padding0 = 0u};
 	}
 }
