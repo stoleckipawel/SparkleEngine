@@ -8,7 +8,6 @@
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
-#include "Frame/Builders/ViewLightingBuilder.h"
 #include "Level/LevelManager.h"
 #include "Meshes/GPUMeshCache.h"
 #include "Pipeline/PipelineStateManager.h"
@@ -181,7 +180,6 @@ void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noex
 	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
-	m_viewLightingBuilder = std::make_unique<ViewLightingBuilder>();
 
 	m_renderCamera = std::make_unique<RenderCamera>();
 

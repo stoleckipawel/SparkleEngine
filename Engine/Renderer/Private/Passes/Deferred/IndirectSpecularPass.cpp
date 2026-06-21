@@ -9,8 +9,8 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
-#include "Pipeline/PassBindingOverrides.h"
 #include "Passes/Core/PassUtilities.h"
+#include "Passes/Bindings/LightingPassBinding.h"
 #include "Passes/Bindings/MaterialTextureTablePassBinding.h"
 #include "Passes/Bindings/RayTracingHitDataPassBinding.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -147,16 +147,18 @@ void IndirectSpecularPass::DeclareResources(
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
-	RayTracingHitDataPassBinding::DeclareResources(builder, parameters);
 }
 
 void IndirectSpecularPass::SetParameters(
     ParameterInstance& parameters,
+    const FrameContext& frame,
     const RenderViewData& viewData,
     const PassRuntimeServices& passRuntimeServices) const
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
+	LightingPassBinding::SetParameters(parameters, frame);
+	RayTracingHitDataPassBinding::SetParameters(parameters, frame);
 	parameters->MaterialTextureSampler =
 	    RhiSamplerDesc{
 	        .MinMagFilter = RhiSamplerMinMagFilter::Linear,
@@ -187,6 +189,11 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 		PublishAndLogStatus(IndirectSpecularStatusReason::Unsupported, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
 		return;
 	}
+	if (!hitDataAvailable)
+	{
+		PublishAndLogStatus(IndirectSpecularStatusReason::MissingHitData, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
+		return;
+	}
 
 	const bool materialTextureTableAvailable = MaterialTextureTablePassBinding::Bind(parameters, context.Frame);
 	if (!materialTextureTableAvailable)
@@ -195,10 +202,10 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 		return;
 	}
 
-	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
+	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
 	parameters->IndirectSpecularConstants = IndirectSpecularPassData::Build(
 	    settings,
-	    hitDataAvailable,
+	    true,
 	    hitInstanceCount,
 	    hitMaterialCount,
 	    materialTextureTableAvailable,
@@ -207,18 +214,12 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 	const bool valid = parameters.Sync();
 	assert(valid);
 
-	PassBindingOverrides overrides;
-	if (hitDataAvailable)
-	{
-		RayTracingHitDataPassBinding::Bind(overrides, context.Frame);
-	}
-
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
 	    1};
 	PublishAndLogStatus(
-	    hitDataAvailable ? IndirectSpecularStatusReason::Running : IndirectSpecularStatusReason::MissingHitData,
+	    IndirectSpecularStatusReason::Running,
 	    settings,
 	    hitDataAvailable,
 	    hitInstanceCount,
@@ -226,14 +227,13 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 	const bool dispatched = [&]() noexcept
 	{
 		SPARKLE_GPU_SCOPE(context.Diagnostics, DispatchTimingLabel);
-		return PassUtilities::DispatchAvailableComputePassWithRuntime<IndirectSpecularPass>(
+		return PassUtilities::DispatchComputePassWithRuntime<IndirectSpecularPass>(
 		    context.Resources,
 		    context.Commands,
 		    context.RuntimeServices.HardwareInterface,
 		    m_runtime,
 		    parameters.GetPassParameterSet(),
 		    dispatch,
-		    &overrides,
 		    PassName);
 	}();
 	assert(dispatched);

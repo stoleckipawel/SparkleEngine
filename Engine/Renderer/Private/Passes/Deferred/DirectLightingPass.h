@@ -8,6 +8,7 @@
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Resources/RenderViewLightingData.h"
 
 #include <cstdint>
 
@@ -16,6 +17,7 @@ struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeServices;
+struct FrameContext;
 struct RenderViewData;
 
 struct DirectLightingPassParameters
@@ -31,7 +33,11 @@ struct DirectLightingPassParameters
 	ShaderAccelerationStructure SceneTlas;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
+	ShaderBufferSRV DirectionalLights;
+	ShaderBufferSRV PointLights;
+	ShaderBufferSRV SpotLights;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightingPassParameters>& builder)
 	{
@@ -46,7 +52,11 @@ struct DirectLightingPassParameters
 		builder.AccelerationStructure("SceneTlas", &DirectLightingPassParameters::SceneTlas, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DirectLightingPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectLightingPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewLighting", &DirectLightingPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 		builder.Uniform("RayTracedShadows", &DirectLightingPassParameters::RayTracedShadows, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("DirectionalLights", &DirectLightingPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("PointLights", &DirectLightingPassParameters::PointLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("SpotLights", &DirectLightingPassParameters::SpotLights, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -62,7 +72,11 @@ struct DirectLightingVulkanAddressPassParameters
 	ShaderTexture2D<void> GBufferDeviceZ;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
+	ShaderBufferSRV DirectionalLights;
+	ShaderBufferSRV PointLights;
+	ShaderBufferSRV SpotLights;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightingVulkanAddressPassParameters>& builder)
 	{
@@ -100,10 +114,14 @@ struct DirectLightingVulkanAddressPassParameters
 		    ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DirectLightingVulkanAddressPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectLightingVulkanAddressPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewLighting", &DirectLightingVulkanAddressPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 		builder.Uniform(
 		    "RayTracedShadows",
 		    &DirectLightingVulkanAddressPassParameters::RayTracedShadows,
 		    ShaderStageVisibility::Compute);
+		builder.ReadBuffer("DirectionalLights", &DirectLightingVulkanAddressPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("PointLights", &DirectLightingVulkanAddressPassParameters::PointLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("SpotLights", &DirectLightingVulkanAddressPassParameters::SpotLights, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -133,6 +151,7 @@ class DirectLightingPass final
   private:
 	void SetParameters(
 	    ParameterInstance& parameters,
+	    const FrameContext& frame,
 	    const RenderViewData& viewData,
 	    const PassRuntimeServices& passRuntimeServices,
 	    bool hasSceneTlas) const;
@@ -165,6 +184,7 @@ class DirectLightingVulkanAddressPass final
   private:
 	void SetParameters(
 	    ParameterInstance& parameters,
+	    const FrameContext& frame,
 	    const RenderViewData& viewData,
 	    const PassRuntimeServices& passRuntimeServices,
 	    bool hasSceneTlas) const;

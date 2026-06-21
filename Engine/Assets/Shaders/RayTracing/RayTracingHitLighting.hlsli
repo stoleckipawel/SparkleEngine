@@ -45,20 +45,20 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, floa
 
 	float3 incidentRadiance = max(surface.EmissiveColor, 0.0f.xxx);
 	const float3 viewDirWorld = normalize(-rayDirectionWorld);
-	const uint directionalLightCount = min(ViewLighting.DirectionalLightCount, MAX_DIRECTIONAL_LIGHTS);
-	const uint pointLightCount = min(ViewLighting.PointLightCount, MAX_POINT_LIGHTS);
-	const uint spotLightCount = min(ViewLighting.SpotLightCount, MAX_SPOT_LIGHTS);
+	const uint directionalLightCount = ViewLighting.DirectionalLightCount;
+	const uint pointLightCount = ViewLighting.PointLightCount;
+	const uint spotLightCount = ViewLighting.SpotLightCount;
 
 	[loop] for (uint lightIndex = 0u; lightIndex < directionalLightCount; ++lightIndex)
 	{
 		const float3 lightDirection = DirectLighting::GetDirectionalLightDirection(lightIndex);
-		const float3 radiance = ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
+		const float3 radiance = DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Intensity;
 		AccumulateRayTracingHitDirectLight(surface, viewDirWorld, lightDirection, radiance, incidentRadiance);
 	}
 
 	[loop] for (uint lightIndex = 0u; lightIndex < pointLightCount; ++lightIndex)
 	{
-		const PointLightConstantBufferData light = ViewLighting.PointLights[lightIndex];
+		const PointLightConstantBufferData light = PointLights[lightIndex];
 		float distanceToLight = 0.0f;
 		const float3 lightDirection = DirectLighting::GetPointLightDirection(surface.PositionWorld, lightIndex, distanceToLight);
 		const float attenuation = DirectLighting::ComputeDistanceAttenuation(distanceToLight, light.Range);
@@ -68,7 +68,7 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, floa
 
 	[loop] for (uint lightIndex = 0u; lightIndex < spotLightCount; ++lightIndex)
 	{
-		const SpotLightConstantBufferData light = ViewLighting.SpotLights[lightIndex];
+		const SpotLightConstantBufferData light = SpotLights[lightIndex];
 		float distanceToLight = 0.0f;
 		const float3 lightDirection = DirectLighting::GetSpotLightDirection(surface.PositionWorld, lightIndex, distanceToLight);
 		const float3 lightToSurfaceDirection = -lightDirection;

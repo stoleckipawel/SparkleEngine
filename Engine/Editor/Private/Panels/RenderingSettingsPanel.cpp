@@ -2,13 +2,13 @@
 
 #include "Panels/RenderingSettingsPanel.h"
 
-#include "RHI/Public/Resources/RenderLightingLimits.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <cfloat>
 #include <string>
 
@@ -159,6 +159,27 @@ namespace
 	}
 
 	template <typename OnChanged>
+	void DrawUnsignedIntInputRow(
+	    const char* id,
+	    const char* label,
+	    std::uint32_t value,
+	    OnChanged&& onChanged)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(label);
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		int updatedValue = static_cast<int>(value);
+		if (ImGui::InputInt(id, &updatedValue, 1, 16))
+		{
+			onChanged(static_cast<std::uint32_t>((std::max)(updatedValue, 0)));
+		}
+	}
+
+	template <typename OnChanged>
 	void DrawUnsignedIntSliderRow(
 	    const char* id,
 	    const char* label,
@@ -292,26 +313,20 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	{
 		if (BeginSettingsTable("##RenderingLightingSettings"))
 		{
-			DrawUnsignedIntSliderRow(
+			DrawUnsignedIntInputRow(
 			    "##MaxDirectionalLights",
 			    "Max directional lights",
 			    settings.MaxDirectionalLights,
-			    0u,
-			    static_cast<std::uint32_t>(RenderLightingLimits::MaxDirectionalLights),
 			    [this](std::uint32_t value) { m_settings->SetMaxDirectionalLights(value); });
-			DrawUnsignedIntSliderRow(
+			DrawUnsignedIntInputRow(
 			    "##MaxPointLights",
 			    "Max point lights",
 			    settings.MaxPointLights,
-			    0u,
-			    static_cast<std::uint32_t>(RenderLightingLimits::MaxPointLights),
 			    [this](std::uint32_t value) { m_settings->SetMaxPointLights(value); });
-			DrawUnsignedIntSliderRow(
+			DrawUnsignedIntInputRow(
 			    "##MaxSpotLights",
 			    "Max spot lights",
 			    settings.MaxSpotLights,
-			    0u,
-			    static_cast<std::uint32_t>(RenderLightingLimits::MaxSpotLights),
 			    [this](std::uint32_t value) { m_settings->SetMaxSpotLights(value); });
 			ImGui::EndTable();
 		}

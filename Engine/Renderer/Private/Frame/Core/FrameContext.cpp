@@ -3,10 +3,9 @@
 #include "Frame/Core/FrameContext.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RHI/Public/Resources/RenderViewLightingData.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
-#include "Frame/Builders/ViewLightingBuilder.h"
+#include "Frame/Lighting/FrameLightingData.h"
 #include "Frame/Temporal/TemporalFrameState.h"
 #include "Camera/RenderCamera.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
@@ -47,7 +46,6 @@ FrameContext BuildFrameContext(
     RenderSceneDataBuilder& renderSceneDataBuilder,
     RenderRayTracingScene* renderRayTracingScene,
     PerViewDataBuilder& perViewDataBuilder,
-    ViewLightingBuilder& viewLightingBuilder,
     TemporalDataBuilder& temporalDataBuilder)
 {
 	FrameContext frame{};
@@ -60,9 +58,9 @@ FrameContext BuildFrameContext(
 	frame.meshInstances = MeshInstanceFrameData::Build(renderHardwareInterface, frame.sceneData, &frame.rayTracingFramePlan);
 	frame.rayTracingHitData = RayTracingHitDataFrameData::Build(renderHardwareInterface, frame.sceneData);
 	frame.skinning = SkinningFrameData::Build(renderHardwareInterface, frame.sceneData);
-	const PerViewLightingConstantBufferData lighting = viewLightingBuilder.Build(frame.sceneData);
+	frame.lighting = FrameLightingData::Build(renderHardwareInterface, frame.sceneData);
 	const RhiViewport sceneViewport = BuildSceneViewport(sceneExtent);
-	frame.mainView = perViewDataBuilder.BuildView(cameraData, lighting, sceneViewport, BuildSceneScissorRect(sceneExtent));
+	frame.mainView = perViewDataBuilder.BuildView(cameraData, sceneViewport, BuildSceneScissorRect(sceneExtent));
 	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(renderCamera, frame.mainView.perViewData.Camera, sceneViewport);
 	frame.mainView.temporalState = BuildRenderTemporalFrameState(frame.mainView.perTemporalData);
 

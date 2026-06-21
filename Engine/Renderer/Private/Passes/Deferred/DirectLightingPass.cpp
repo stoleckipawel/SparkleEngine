@@ -3,10 +3,12 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Math/MathUtils.h"
+#include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
+#include "Passes/Bindings/LightingPassBinding.h"
 #include "Passes/Core/PassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Passes/Core/ShaderPass.h"
@@ -140,12 +142,14 @@ void DirectLightingVulkanAddressPass::DeclareResources(
 
 void DirectLightingPass::SetParameters(
     ParameterInstance& parameters,
+    const FrameContext& frame,
     const RenderViewData& viewData,
     const PassRuntimeServices& passRuntimeServices,
     bool hasSceneTlas) const
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
+	LightingPassBinding::SetParameters(parameters, frame);
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(passRuntimeServices.RayTracing, hasSceneTlas);
 	const bool valid = parameters.Sync();
 	assert(valid);
@@ -153,12 +157,14 @@ void DirectLightingPass::SetParameters(
 
 void DirectLightingVulkanAddressPass::SetParameters(
     ParameterInstance& parameters,
+    const FrameContext& frame,
     const RenderViewData& viewData,
     const PassRuntimeServices& passRuntimeServices,
     bool hasSceneTlas) const
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
+	LightingPassBinding::SetParameters(parameters, frame);
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(passRuntimeServices.RayTracing, hasSceneTlas);
 	const bool valid = parameters.Sync();
 	assert(valid);
@@ -166,7 +172,7 @@ void DirectLightingVulkanAddressPass::SetParameters(
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
+	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
 	const ComputeDispatchDesc dispatch = DirectLightingPassDetails::BuildDispatchDesc(context.Frame.mainView);
 	const bool dispatched = [&]() noexcept
 	{
@@ -176,7 +182,7 @@ void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstanc
 		    context.Commands,
 		    context.RuntimeServices.HardwareInterface,
 		    m_runtime,
-		    parameters,
+		    parameters.GetPassParameterSet(),
 		    dispatch,
 		    PassName);
 	}();
@@ -185,7 +191,7 @@ void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstanc
 
 void DirectLightingVulkanAddressPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
+	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
 	const ComputeDispatchDesc dispatch = DirectLightingPassDetails::BuildDispatchDesc(context.Frame.mainView);
 	const bool dispatched = [&]() noexcept
 	{
@@ -195,7 +201,7 @@ void DirectLightingVulkanAddressPass::Execute(PassExecutionContext& context, Par
 		    context.Commands,
 		    context.RuntimeServices.HardwareInterface,
 		    m_runtime,
-		    parameters,
+		    parameters.GetPassParameterSet(),
 		    dispatch,
 		    PassName);
 	}();

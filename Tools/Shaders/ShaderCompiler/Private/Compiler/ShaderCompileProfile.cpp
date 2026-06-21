@@ -2,7 +2,7 @@
 
 #include "Compiler/ShaderCompileProfile.h"
 
-#include "RHI/Public/Config/RenderConfig.h"
+#include "RHI/Public/Shaders/CookedShaderPackageContract.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
 
 #include <cstdint>
@@ -31,7 +31,7 @@ namespace
 			case ShaderTarget::DxilSm67:
 				return 7;
 			default:
-				return RenderConfig::ShaderModelMinor;
+				return CookedShaderPackageContract::ShaderModelMinor;
 		}
 	}
 }
@@ -87,7 +87,7 @@ std::string ShaderCompileProfile::BuildTargetProfile(const ShaderCompileOptions&
 	profile.reserve(8);
 	profile += options.PackageKind == CookedShaderPackageKind::RayTracingLibrary ? "lib" : GetShaderStagePrefix(options.Stage);
 	profile += '_';
-	profile += std::to_string(RenderConfig::ShaderModelMajor);
+	profile += std::to_string(CookedShaderPackageContract::ShaderModelMajor);
 	profile += '_';
 	profile += std::to_string(GetProfileShaderModelMinor(options.Target));
 	return profile;

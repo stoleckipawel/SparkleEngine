@@ -258,7 +258,14 @@ void PassBinder::BindCompiledBinding(
 			assert(parameterBinding != nullptr);
 			if (const PassParameterDescriptorTableBindingData* descriptorTableData = parameterBinding->AsDescriptorTableData())
 			{
-				BindDescriptorTable(cmd, compiledBinding, descriptorTableData->Table, isCompute);
+				if (descriptorTableData->Table)
+				{
+					BindDescriptorTable(cmd, compiledBinding, descriptorTableData->Table, isCompute);
+				}
+				else
+				{
+					BindDescriptorTable(cmd, compiledBinding, descriptorTableData->GpuHandle, isCompute);
+				}
 				return;
 			}
 
@@ -285,7 +292,14 @@ void PassBinder::BindCompiledBinding(
 			assert(parameterBinding != nullptr);
 			if (const PassParameterDescriptorTableBindingData* descriptorTableData = parameterBinding->AsDescriptorTableData())
 			{
-				BindDescriptorTable(cmd, compiledBinding, descriptorTableData->Table, isCompute);
+				if (descriptorTableData->Table)
+				{
+					BindDescriptorTable(cmd, compiledBinding, descriptorTableData->Table, isCompute);
+				}
+				else
+				{
+					BindDescriptorTable(cmd, compiledBinding, descriptorTableData->GpuHandle, isCompute);
+				}
 				return;
 			}
 

@@ -8,19 +8,19 @@ namespace DirectLighting
 {
 	float3 GetDirectionalLightDirection(uint lightIndex)
 	{
-		return normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
+		return normalize(-DirectionalLights[lightIndex].Direction);
 	}
 
 	float3 GetPointLightDirection(float3 positionWorld, uint lightIndex, out float distanceToLight)
 	{
-		const float3 surfaceToLight = ViewLighting.PointLights[lightIndex].Position - positionWorld;
+		const float3 surfaceToLight = PointLights[lightIndex].Position - positionWorld;
 		distanceToLight = length(surfaceToLight);
 		return surfaceToLight / max(distanceToLight, 0.0001f);
 	}
 
 	float3 GetSpotLightDirection(float3 positionWorld, uint lightIndex, out float distanceToLight)
 	{
-		const float3 surfaceToLight = ViewLighting.SpotLights[lightIndex].Position - positionWorld;
+		const float3 surfaceToLight = SpotLights[lightIndex].Position - positionWorld;
 		distanceToLight = length(surfaceToLight);
 		return surfaceToLight / max(distanceToLight, 0.0001f);
 	}
@@ -92,7 +92,7 @@ namespace DirectLighting
 	{
 		const float3 lightDirection = GetDirectionalLightDirection(lightIndex);
 		const float3 radiance =
-		    ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity * shadowVisibility;
+		    DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Intensity * shadowVisibility;
 		EvaluateDirectLight(viewDirWorld, normalWorld, roughness, evaluateSubsurface, lightDirection, radiance, outDiffuse, outSpecular, outSubsurface);
 	}
 
@@ -108,7 +108,7 @@ namespace DirectLighting
 	    out float3 outSpecular,
 	    out float3 outSubsurface)
 	{
-		const PointLightConstantBufferData light = ViewLighting.PointLights[lightIndex];
+		const PointLightConstantBufferData light = PointLights[lightIndex];
 		float distanceToLight = 0.0f;
 		const float3 lightDirection = GetPointLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float attenuation = ComputeDistanceAttenuation(distanceToLight, light.Range);
@@ -128,7 +128,7 @@ namespace DirectLighting
 	    out float3 outSpecular,
 	    out float3 outSubsurface)
 	{
-		const SpotLightConstantBufferData light = ViewLighting.SpotLights[lightIndex];
+		const SpotLightConstantBufferData light = SpotLights[lightIndex];
 		float distanceToLight = 0.0f;
 		const float3 lightDirection = GetSpotLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float3 lightToSurfaceDirection = -lightDirection;

@@ -11,7 +11,7 @@
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringTableBuilder.h"
 
-#include "RHI/Public/Config/RenderConfig.h"
+#include "RHI/Public/Shaders/CookedShaderPackageContract.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <fstream>
@@ -361,8 +361,8 @@ bool CookedPackageWriter::Write(
 	{
 		header.PackageFeatures |= CookedShaderPackageFeatureFlags::UsesAccelerationStructure;
 	}
-	header.ShaderModelMajor = static_cast<std::uint16_t>(RenderConfig::ShaderModelMajor);
-	header.ShaderModelMinor = static_cast<std::uint16_t>(RenderConfig::ShaderModelMinor);
+	header.ShaderModelMajor = CookedShaderPackageContract::ShaderModelMajor;
+	header.ShaderModelMinor = CookedShaderPackageContract::ShaderModelMinor;
 	header.BinaryRecordCount = static_cast<std::uint32_t>(binaryRecords.size());
 	header.BindingRecordCount = static_cast<std::uint32_t>(bindingRecords.size());
 	header.PipelineLayoutRecordCount = static_cast<std::uint32_t>(pipelineLayoutRecords.size());

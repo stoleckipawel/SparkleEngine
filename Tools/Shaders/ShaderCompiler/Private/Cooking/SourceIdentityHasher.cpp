@@ -5,7 +5,7 @@
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
-#include "RHI/Public/Config/RenderConfig.h"
+#include "RHI/Public/Shaders/CookedShaderPackageContract.h"
 
 #include <string>
 
@@ -23,9 +23,9 @@ std::uint64_t SourceIdentityHasher::Compute(
 	canonical += '|';
 	canonical += std::to_string(static_cast<std::uint32_t>(package.packageFeatures));
 	canonical += '|';
-	canonical += std::to_string(RenderConfig::ShaderModelMajor);
+	canonical += std::to_string(CookedShaderPackageContract::ShaderModelMajor);
 	canonical += '.';
-	canonical += std::to_string(RenderConfig::ShaderModelMinor);
+	canonical += std::to_string(CookedShaderPackageContract::ShaderModelMinor);
 	canonical += '|';
 	canonical += std::to_string(package.rayTracingPayloadSizeInBytes);
 	canonical += '|';

@@ -8,7 +8,6 @@ class RenderHardwareInterface;
 class TemporalDataBuilder;
 class RenderSceneDataBuilder;
 class RenderRayTracingScene;
-class ViewLightingBuilder;
 struct FrameContext;
 struct RenderSceneSnapshot;
 
@@ -20,5 +19,4 @@ FrameContext BuildFrameContext(
     RenderSceneDataBuilder& renderSceneDataBuilder,
     RenderRayTracingScene* renderRayTracingScene,
     PerViewDataBuilder& perViewDataBuilder,
-    ViewLightingBuilder& viewLightingBuilder,
     TemporalDataBuilder& temporalDataBuilder);

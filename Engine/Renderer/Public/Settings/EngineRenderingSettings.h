@@ -2,7 +2,6 @@
 
 #include "Core/Public/Config/ConfigBackedSettings.h"
 #include "RHI/Public/Presentation/RhiPresentationDefaults.h"
-#include "RHI/Public/Resources/RenderLightingLimits.h"
 #include "RendererAPI.h"
 
 #include <cstdint>
@@ -26,9 +25,9 @@ struct EngineRenderingSettingsState final
 	bool VSync = true;
 	PixelFormat BackBufferFormat = RhiPresentationDefaults::BackBufferFormat;
 	bool PreferHighPerformanceAdapter = true;
-	std::uint32_t MaxDirectionalLights = static_cast<std::uint32_t>(RenderLightingLimits::MaxDirectionalLights);
-	std::uint32_t MaxPointLights = static_cast<std::uint32_t>(RenderLightingLimits::MaxPointLights);
-	std::uint32_t MaxSpotLights = static_cast<std::uint32_t>(RenderLightingLimits::MaxSpotLights);
+	std::uint32_t MaxDirectionalLights = 2;
+	std::uint32_t MaxPointLights = 512;
+	std::uint32_t MaxSpotLights = 512;
 	bool MeshAutoBatching = true;
 	bool RefitTlas = true;
 	bool PtlasActive = false;

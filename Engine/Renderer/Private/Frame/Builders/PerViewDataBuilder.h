@@ -4,7 +4,6 @@
 
 class RenderCamera;
 class RenderHardwareInterface;
-struct PerViewLightingConstantBufferData;
 
 class PerViewDataBuilder final
 {
@@ -19,17 +18,13 @@ class PerViewDataBuilder final
 
 	RenderViewData BuildView(
 	    const PerViewCameraConstantBufferData& cameraData,
-	    const PerViewLightingConstantBufferData& lightingData,
 	    const RhiViewport& viewport,
 	    const RhiRect& scissorRect) const noexcept;
 
 	RenderViewData BuildMainView(
 	    const RenderCamera& renderCamera,
-	    const PerViewLightingConstantBufferData& lightingData,
 	    const RenderHardwareInterface& renderHardwareInterface) const noexcept;
 
   private:
-	static PerViewConstantBufferData BuildPerViewData(
-	    const PerViewCameraConstantBufferData& cameraData,
-	    const PerViewLightingConstantBufferData& lightingData) noexcept;
+	static PerViewConstantBufferData BuildPerViewData(const PerViewCameraConstantBufferData& cameraData) noexcept;
 };

@@ -8,6 +8,7 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Resources/RenderViewLightingData.h"
 #include "SceneData/MaterialTextureTableCapability.h"
 
 #include <cstdint>
@@ -26,16 +27,20 @@ struct IndirectSpecularPassParameters
 	ShaderAccelerationStructure SceneTlas;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderUniform<IndirectSpecularUniformData> IndirectSpecularConstants;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferDeviceZ;
-	ShaderBuffer<RayTracingHitVertex> RayTracingHitVertices;
-	ShaderBuffer<std::uint32_t> RayTracingHitIndices;
-	ShaderBuffer<RayTracingHitInstance> RayTracingHitInstances;
-	ShaderBuffer<RayTracingHitMaterial> RayTracingHitMaterials;
-	ShaderBuffer<MeshInstanceData> MeshInstances;
+	ShaderBufferSRV RayTracingHitVertices;
+	ShaderBufferSRV RayTracingHitIndices;
+	ShaderBufferSRV RayTracingHitInstances;
+	ShaderBufferSRV RayTracingHitMaterials;
+	ShaderBufferSRV MeshInstances;
+	ShaderBufferSRV DirectionalLights;
+	ShaderBufferSRV PointLights;
+	ShaderBufferSRV SpotLights;
 	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
 	ShaderSamplerSet MaterialTextureSampler;
 
@@ -45,6 +50,7 @@ struct IndirectSpecularPassParameters
 		builder.AccelerationStructure("SceneTlas", &IndirectSpecularPassParameters::SceneTlas, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &IndirectSpecularPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &IndirectSpecularPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewLighting", &IndirectSpecularPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 		builder.Uniform("IndirectSpecularConstants", &IndirectSpecularPassParameters::IndirectSpecularConstants, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &IndirectSpecularPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &IndirectSpecularPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
@@ -55,6 +61,9 @@ struct IndirectSpecularPassParameters
 		builder.ReadBuffer("RayTracingHitInstances", &IndirectSpecularPassParameters::RayTracingHitInstances, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("RayTracingHitMaterials", &IndirectSpecularPassParameters::RayTracingHitMaterials, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("MeshInstances", &IndirectSpecularPassParameters::MeshInstances, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("DirectionalLights", &IndirectSpecularPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("PointLights", &IndirectSpecularPassParameters::PointLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("SpotLights", &IndirectSpecularPassParameters::SpotLights, ShaderStageVisibility::Compute);
 		builder.ReadTexture("MaterialTextureTable", &IndirectSpecularPassParameters::MaterialTextureTable, ShaderStageVisibility::Compute);
 		builder.Sampler("MaterialTextureSampler", &IndirectSpecularPassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
 	}
@@ -86,6 +95,7 @@ class IndirectSpecularPass final
   private:
 	void SetParameters(
 	    ParameterInstance& parameters,
+	    const FrameContext& frame,
 	    const RenderViewData& viewData,
 	    const PassRuntimeServices& passRuntimeServices) const;
 

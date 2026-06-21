@@ -11,7 +11,6 @@
 #include "Frame/Builders/BuildFrameContext.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
-#include "Frame/Builders/ViewLightingBuilder.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -505,7 +504,6 @@ void FramePipeline::RecordFrame() noexcept
 		    m_systems->GetRenderSceneDataBuilder(),
 		    m_systems->GetRenderRayTracingScene(),
 		    m_systems->GetPerViewDataBuilder(),
-		    m_systems->GetViewLightingBuilder(),
 		    m_systems->GetTemporalDataBuilder());
 	}();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");

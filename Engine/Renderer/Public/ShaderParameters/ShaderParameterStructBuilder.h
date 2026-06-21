@@ -185,7 +185,11 @@ template <typename TParameters> class ShaderParameterStructBuilder final
 			        return BindParameterField(parameterSet, bindingName, parameters.*member);
 		        }});
 
-		return m_layout.Add<ActualSemantic>(name, visibility, ShaderParameterFieldTraits<TField>::FieldArrayCount);
+		return m_layout.Add<ActualSemantic>(
+		    name,
+		    visibility,
+		    ShaderParameterFieldTraits<TField>::FieldArrayCount,
+		    ShaderParameterFieldTraits<TField>::FrameGraphTracked);
 	}
 
 	PassParameterLayout m_layout;

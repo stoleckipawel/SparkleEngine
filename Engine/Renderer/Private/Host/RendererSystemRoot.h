@@ -28,7 +28,6 @@ class TemporalDataBuilder;
 class TextureManager;
 class Timer;
 class UpscalerSubsystem;
-class ViewLightingBuilder;
 class Window;
 struct RayTracedShadowSettings;
 
@@ -66,7 +65,6 @@ class RendererSystemRoot final
 	const RenderRayTracingScene* GetRenderRayTracingScene() const noexcept { return m_renderRayTracingScene.get(); }
 	PerViewDataBuilder& GetPerViewDataBuilder() noexcept { return *m_perViewDataBuilder; }
 	TemporalDataBuilder& GetTemporalDataBuilder() noexcept { return *m_temporalDataBuilder; }
-	ViewLightingBuilder& GetViewLightingBuilder() noexcept { return *m_viewLightingBuilder; }
 	RenderCamera& GetRenderCamera() noexcept { return *m_renderCamera; }
 	SceneRenderStateCoordinator* GetSceneRenderStateCoordinator() noexcept { return m_sceneRenderStateCoordinator.get(); }
 	UpscalerSubsystem* GetUpscalerSubsystem() noexcept { return m_upscalerSubsystem.get(); }
@@ -100,7 +98,6 @@ class RendererSystemRoot final
 	std::unique_ptr<RenderRayTracingScene> m_renderRayTracingScene;
 	std::unique_ptr<PerViewDataBuilder> m_perViewDataBuilder;
 	std::unique_ptr<TemporalDataBuilder> m_temporalDataBuilder;
-	std::unique_ptr<ViewLightingBuilder> m_viewLightingBuilder;
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 	std::unique_ptr<UpscalerSubsystem> m_upscalerSubsystem;

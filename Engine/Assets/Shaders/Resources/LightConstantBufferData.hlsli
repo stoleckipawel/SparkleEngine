@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Resources/RenderConfig.hlsli"
-
 struct DirectionalLightConstantBufferData
 {
 	float3 Direction;
@@ -44,14 +42,10 @@ struct SpotLightConstantBufferData
 	uint Padding;
 };
 
-struct PerViewLightingConstantBufferData
+struct ViewLightingData
 {
 	uint DirectionalLightCount;
 	uint PointLightCount;
 	uint SpotLightCount;
 	uint PaddingCount;
-
-	DirectionalLightConstantBufferData DirectionalLights[MAX_DIRECTIONAL_LIGHTS];
-	PointLightConstantBufferData PointLights[MAX_POINT_LIGHTS];
-	SpotLightConstantBufferData SpotLights[MAX_SPOT_LIGHTS];
 };

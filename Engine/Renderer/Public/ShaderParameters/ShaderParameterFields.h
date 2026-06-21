@@ -114,6 +114,43 @@ class ShaderTexture2DSRV final
 using ShaderTexture3DSRV = ShaderTexture2DSRV;
 using ShaderTextureCubeSRV = ShaderTexture2DSRV;
 
+class ShaderBufferSRV final
+{
+  public:
+	using Semantic = ReadBuffer;
+
+	ShaderBufferSRV() = default;
+
+	ShaderBufferSRV& operator=(RhiDescriptorTableBinding descriptorTable) noexcept
+	{
+		m_descriptorTable = descriptorTable;
+		m_gpuDescriptor = {};
+		return *this;
+	}
+
+	ShaderBufferSRV& operator=(RhiGpuDescriptorHandle descriptorTable) noexcept
+	{
+		m_descriptorTable = {};
+		m_gpuDescriptor = descriptorTable;
+		return *this;
+	}
+
+	RhiDescriptorTableBinding GetDescriptorTable() const noexcept { return m_descriptorTable; }
+	RhiGpuDescriptorHandle GetGpuDescriptor() const noexcept { return m_gpuDescriptor; }
+
+	bool IsBound() const noexcept { return static_cast<bool>(m_descriptorTable) || static_cast<bool>(m_gpuDescriptor); }
+
+	void Reset() noexcept
+	{
+		m_descriptorTable = {};
+		m_gpuDescriptor = {};
+	}
+
+  private:
+	RhiDescriptorTableBinding m_descriptorTable = {};
+	RhiGpuDescriptorHandle m_gpuDescriptor = {};
+};
+
 template <std::size_t ArrayCount> class ShaderTexture2DTableSRV final
 {
   public:
@@ -320,84 +357,105 @@ template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTr
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+	static constexpr bool FrameGraphTracked = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTexture3D<TValue, ArrayCount>>
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+	static constexpr bool FrameGraphTracked = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTextureCube<TValue, ArrayCount>>
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+	static constexpr bool FrameGraphTracked = true;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderTexture2DSRV>
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = 1;
+	static constexpr bool FrameGraphTracked = false;
 };
 
 template <std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTexture2DTableSRV<ArrayCount>>
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+	static constexpr bool FrameGraphTracked = false;
+};
+
+template <> struct ShaderParameterFieldTraits<ShaderBufferSRV>
+{
+	using Semantic = ReadBuffer;
+	static constexpr std::uint32_t FieldArrayCount = 1;
+	static constexpr bool FrameGraphTracked = false;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderTexture2DUAV>
 {
 	using Semantic = RWTexture;
 	static constexpr std::uint32_t FieldArrayCount = 1;
+	static constexpr bool FrameGraphTracked = false;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderAccelerationStructure>
 {
 	using Semantic = AccelerationStructure;
 	static constexpr std::uint32_t FieldArrayCount = 1;
+	static constexpr bool FrameGraphTracked = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderRWTexture2D<TValue, ArrayCount>>
 {
 	using Semantic = RWTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+	static constexpr bool FrameGraphTracked = true;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderRenderTarget>
 {
 	using Semantic = RenderTarget;
 	static constexpr std::uint32_t FieldArrayCount = 1;
+	static constexpr bool FrameGraphTracked = true;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderDepthTarget>
 {
 	using Semantic = DepthTarget;
 	static constexpr std::uint32_t FieldArrayCount = 1;
+	static constexpr bool FrameGraphTracked = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderBuffer<TValue, ArrayCount>>
 {
 	using Semantic = ReadBuffer;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+	static constexpr bool FrameGraphTracked = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderRWBuffer<TValue, ArrayCount>>
 {
 	using Semantic = RWBuffer;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+	static constexpr bool FrameGraphTracked = true;
 };
 
 template <typename TValue> struct ShaderParameterFieldTraits<ShaderUniform<TValue>>
 {
 	using Semantic = UniformData<TValue>;
 	static constexpr std::uint32_t FieldArrayCount = 1;
+	static constexpr bool FrameGraphTracked = false;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderSamplerSet>
 {
 	using Semantic = SamplerSet;
 	static constexpr std::uint32_t FieldArrayCount = 1;
+	static constexpr bool FrameGraphTracked = false;
 };
 
 template <typename T, typename = void> struct IsShaderParameterField : std::false_type
@@ -467,6 +525,16 @@ std::enable_if_t<(ArrayCount > 1), bool> BindParameterField(
 inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DSRV& field)
 {
 	return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
+}
+
+inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderBufferSRV& field)
+{
+	if (field.GetDescriptorTable())
+	{
+		return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
+	}
+
+	return parameterSet.SetShaderResourceView(name, field.GetGpuDescriptor());
 }
 
 template <std::size_t ArrayCount>

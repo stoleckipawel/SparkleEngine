@@ -19,7 +19,6 @@ cbuffer PerFrameConstantBufferData
 cbuffer PerViewConstantBufferData
 {
 	PerViewCameraConstantBufferData Camera;
-	PerViewLightingConstantBufferData ViewLighting;
 };
 
 cbuffer PerTemporalConstantBufferData
@@ -75,6 +74,10 @@ StructuredBuffer<MeshInstanceData> MeshInstances;
 StructuredBuffer<VertexSkinInfluenceData> SkinInfluences;
 StructuredBuffer<JointMatrixData> JointMatrices;
 StructuredBuffer<JointMatrixData> PreviousJointMatrices;
+ConstantBuffer<ViewLightingData> ViewLighting;
+StructuredBuffer<DirectionalLightConstantBufferData> DirectionalLights;
+StructuredBuffer<PointLightConstantBufferData> PointLights;
+StructuredBuffer<SpotLightConstantBufferData> SpotLights;
 
 cbuffer PerObjectPSConstantBufferData
 {

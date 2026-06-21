@@ -44,8 +44,9 @@ struct PassParameterBufferBindingData
 struct PassParameterDescriptorTableBindingData
 {
 	RhiDescriptorTableBinding Table = {};
+	RhiGpuDescriptorHandle GpuHandle = {};
 
-	bool IsBound() const noexcept { return static_cast<bool>(Table); }
+	bool IsBound() const noexcept { return static_cast<bool>(Table) || static_cast<bool>(GpuHandle); }
 };
 
 struct PassParameterAccelerationStructureBindingData
@@ -301,6 +302,25 @@ class PassParameterSet final
 		return true;
 	}
 
+	bool SetShaderResourceView(const char* name, RhiGpuDescriptorHandle descriptorTable)
+	{
+		std::uint32_t index = 0;
+		const PassParameterDesc* parameter = FindParameter(name, index);
+		if (parameter == nullptr ||
+		    (parameter->Kind != ShaderParameterSemanticKind::ReadTexture && parameter->Kind != ShaderParameterSemanticKind::ReadBuffer))
+		{
+			return false;
+		}
+
+		if (!descriptorTable)
+		{
+			return false;
+		}
+
+		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.GpuHandle = descriptorTable});
+		return true;
+	}
+
 	bool SetUnorderedAccessView(const char* name, RhiDescriptorTableBinding descriptorTable)
 	{
 		std::uint32_t index = 0;
@@ -317,6 +337,25 @@ class PassParameterSet final
 		}
 
 		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.Table = descriptorTable});
+		return true;
+	}
+
+	bool SetUnorderedAccessView(const char* name, RhiGpuDescriptorHandle descriptorTable)
+	{
+		std::uint32_t index = 0;
+		const PassParameterDesc* parameter = FindParameter(name, index);
+		if (parameter == nullptr ||
+		    (parameter->Kind != ShaderParameterSemanticKind::RWTexture && parameter->Kind != ShaderParameterSemanticKind::RWBuffer))
+		{
+			return false;
+		}
+
+		if (!descriptorTable)
+		{
+			return false;
+		}
+
+		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.GpuHandle = descriptorTable});
 		return true;
 	}
 

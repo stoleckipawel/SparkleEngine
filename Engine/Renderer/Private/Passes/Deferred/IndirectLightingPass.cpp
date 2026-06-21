@@ -9,7 +9,6 @@
 #include "Passes/Core/PassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Passes/Core/ShaderPass.h"
-#include "Pipeline/PassBindingOverrides.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
@@ -79,7 +78,6 @@ void IndirectLightingPass::DeclareResources(
 	parameters->IndirectSubsurface = builder.CreateUAV(lighting.IndirectSubsurface);
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
-	parameters->SkyTexture = builder.CreateSRV(gbuffer.Normal);
 	parameters->SamplerLinearNoMipClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Point,
@@ -92,6 +90,7 @@ void IndirectLightingPass::SetParameters(ParameterInstance& parameters, const Pa
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Point,
 	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
+	parameters->SkyTexture = GetSkyTextureBinding(passRuntimeServices);
 	const bool valid = parameters.Sync();
 	assert(valid);
 }
@@ -128,20 +127,17 @@ RhiDescriptorTableBinding IndirectLightingPass::GetSkyTextureBinding(const PassR
 void IndirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	SetParameters(parameters, context.RuntimeServices);
-	PassBindingOverrides overrides;
-	overrides.SetDescriptorTable("SkyTexture", GetSkyTextureBinding(context.RuntimeServices));
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
 	    1};
-	const bool dispatched = PassUtilities::DispatchAvailableComputePassWithRuntime<IndirectLightingPass>(
+	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<IndirectLightingPass>(
 	    context.Resources,
 	    context.Commands,
 	    context.RuntimeServices.HardwareInterface,
 	    m_runtime,
 	    parameters.GetPassParameterSet(),
 	    dispatch,
-	    &overrides,
 	    PassName);
 	assert(dispatched);
 }

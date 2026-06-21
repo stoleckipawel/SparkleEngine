@@ -268,6 +268,11 @@ bool PassResourceBuilder::DeclareParameterUsages(const PassParameterSet& paramet
 
 bool PassResourceBuilder::HasFrameGraphUsage(const PassParameterDesc& parameter) noexcept
 {
+	if (!parameter.FrameGraphTracked)
+	{
+		return false;
+	}
+
 	switch (parameter.Kind)
 	{
 		case ShaderParameterSemanticKind::ReadTexture:

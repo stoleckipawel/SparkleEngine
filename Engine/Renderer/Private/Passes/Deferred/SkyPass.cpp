@@ -11,7 +11,6 @@
 #include "Passes/Core/PassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Passes/Core/ShaderPass.h"
-#include "Pipeline/PassBindingOverrides.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
@@ -85,6 +84,7 @@ void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData&
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
+	parameters->SkyTexture = GetSkyTextureBinding(passRuntimeServices);
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -125,20 +125,17 @@ RhiDescriptorTableBinding SkyPass::GetSkyTextureBinding(const PassRuntimeService
 void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
-	PassBindingOverrides overrides;
-	overrides.SetDescriptorTable("SkyTexture", GetSkyTextureBinding(context.RuntimeServices));
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
 	    1};
-	const bool dispatched = PassUtilities::DispatchAvailableComputePassWithRuntime<SkyPass>(
+	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<SkyPass>(
 	    context.Resources,
 	    context.Commands,
 	    context.RuntimeServices.HardwareInterface,
 	    m_runtime,
 	    parameters.GetPassParameterSet(),
 	    dispatch,
-	    &overrides,
 	    PassName);
 	assert(dispatched);
 }

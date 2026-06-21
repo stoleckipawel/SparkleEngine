@@ -216,6 +216,11 @@ class SPARKLE_RENDERER_API ShaderPass
 
 	static bool IsFrameGraphParameter(const PassParameterDesc& parameter) noexcept
 	{
+		if (!parameter.FrameGraphTracked)
+		{
+			return false;
+		}
+
 		switch (parameter.Kind)
 		{
 			case ShaderParameterSemanticKind::ReadTexture:

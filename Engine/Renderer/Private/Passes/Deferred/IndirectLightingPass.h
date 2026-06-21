@@ -24,7 +24,7 @@ struct IndirectLightingPassParameters
 	ShaderRWTexture2D<void> IndirectSubsurface;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferDeviceZ;
-	ShaderTexture2D<void> SkyTexture;
+	ShaderTexture2DSRV SkyTexture;
 	ShaderSamplerSet SamplerLinearNoMipClamp;
 
 	static void Describe(ShaderParameterStructBuilder<IndirectLightingPassParameters>& builder)

@@ -35,9 +35,9 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 	float3 directSpecular = 0.0f;
 	float3 directSubsurface = 0.0f;
 	const bool evaluateSubsurface = any(gBuffer.SubsurfaceColor > 0.0f.xxx) && gBuffer.SubsurfaceStrength > 0.0f;
-	const uint directionalLightCount = min(ViewLighting.DirectionalLightCount, MAX_DIRECTIONAL_LIGHTS);
-	const uint pointLightCount = min(ViewLighting.PointLightCount, MAX_POINT_LIGHTS);
-	const uint spotLightCount = min(ViewLighting.SpotLightCount, MAX_SPOT_LIGHTS);
+	const uint directionalLightCount = ViewLighting.DirectionalLightCount;
+	const uint pointLightCount = ViewLighting.PointLightCount;
+	const uint spotLightCount = ViewLighting.SpotLightCount;
 
 	[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
@@ -46,10 +46,10 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    positionWorld,
 		    gBuffer.NormalWorld,
 		    lightDirection,
-		    ViewLighting.DirectionalLights[lightIndex].AngularDiameter,
+		    DirectionalLights[lightIndex].AngularDiameter,
 		    dispatchThreadId.xy,
 		    lightIndex,
-		    ViewLighting.DirectionalLights[lightIndex].CastShadow != 0u);
+		    DirectionalLights[lightIndex].CastShadow != 0u);
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
@@ -74,12 +74,12 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		const ShadowVisibilitySignal pointShadow = RayTracedShadows::TracePointShadowSignal(
 		    positionWorld,
 		    gBuffer.NormalWorld,
-		    ViewLighting.PointLights[lightIndex].Position,
-		    ViewLighting.PointLights[lightIndex].Range,
-		    ViewLighting.PointLights[lightIndex].SourceRadius,
+		    PointLights[lightIndex].Position,
+		    PointLights[lightIndex].Range,
+		    PointLights[lightIndex].SourceRadius,
 		    dispatchThreadId.xy,
 		    lightIndex,
-		    ViewLighting.PointLights[lightIndex].CastShadow != 0u);
+		    PointLights[lightIndex].CastShadow != 0u);
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
@@ -105,14 +105,14 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		const ShadowVisibilitySignal spotShadow = RayTracedShadows::TraceSpotShadowSignal(
 		    positionWorld,
 		    gBuffer.NormalWorld,
-		    ViewLighting.SpotLights[lightIndex].Position,
-		    ViewLighting.SpotLights[lightIndex].Direction,
-		    ViewLighting.SpotLights[lightIndex].Range,
-		    ViewLighting.SpotLights[lightIndex].SourceRadius,
-		    ViewLighting.SpotLights[lightIndex].OuterConeCosine,
+		    SpotLights[lightIndex].Position,
+		    SpotLights[lightIndex].Direction,
+		    SpotLights[lightIndex].Range,
+		    SpotLights[lightIndex].SourceRadius,
+		    SpotLights[lightIndex].OuterConeCosine,
 		    dispatchThreadId.xy,
 		    lightIndex,
-		    ViewLighting.SpotLights[lightIndex].CastShadow != 0u);
+		    SpotLights[lightIndex].CastShadow != 0u);
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;

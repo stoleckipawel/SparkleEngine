@@ -51,6 +51,7 @@ struct PassParameterDesc
 	ShaderStageVisibility Visibility = ShaderStageVisibility::All;
 	std::uint32_t ArrayCount = 1;
 	std::uint32_t ValueSizeInBytes = 0;
+	bool FrameGraphTracked = true;
 
 	std::string_view GetShaderName() const noexcept { return ShaderName.empty() ? std::string_view(Name) : std::string_view(ShaderName); }
 
@@ -116,7 +117,11 @@ class PassParameterLayout final
 	}
 
 	template <typename T>
-	std::uint32_t Add(const char* name, ShaderStageVisibility visibility = ShaderStageVisibility::All, std::uint32_t arrayCount = 1)
+	std::uint32_t Add(
+	    const char* name,
+	    ShaderStageVisibility visibility = ShaderStageVisibility::All,
+	    std::uint32_t arrayCount = 1,
+	    bool frameGraphTracked = true)
 	{
 		static_assert(IsShaderParameterSemanticV<T>, "Add<T> requires a shader-parameter semantic type.");
 
@@ -129,6 +134,7 @@ class PassParameterLayout final
 		parameter.Visibility = visibility;
 		parameter.ArrayCount = arrayCount;
 		parameter.ValueSizeInBytes = PassParameterValueSize<T>::Value;
+		parameter.FrameGraphTracked = frameGraphTracked;
 		return AddParameter(std::move(parameter));
 	}
 
