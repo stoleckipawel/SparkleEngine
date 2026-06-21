@@ -12,6 +12,17 @@ PipelineStateManager::PipelineStateManager(RenderHardwareInterface& renderHardwa
 
 PipelineStateManager::~PipelineStateManager() noexcept = default;
 
+RendererPipelineDiagnosticsSnapshot PipelineStateManager::CaptureDiagnosticsSnapshot() const
+{
+	return RendererPipelineDiagnosticsSnapshot{
+	    .Status = ERendererDiagnosticStatus::Available,
+	    .ShaderPackageGeneration = m_shaderPackages.GetGeneration(),
+	    .LazyRuntimeCount = static_cast<std::uint32_t>(m_runtimeStorageByPassName.size()),
+	    .LastShaderPackageLoad = m_shaderPackages.GetLastLoadReport(),
+	    .PipelineCacheStatus = ERendererDiagnosticStatus::Planned,
+	    .PipelineCacheReason = "Pipeline cache stats are planned; shader package cache timing is available now."};
+}
+
 CookedShaderReloadResult PipelineStateManager::ReloadCookedShaders() noexcept
 {
 	static const std::shared_ptr<spdlog::logger>& logger = Logging::GetOrCreateLogger("Renderer");

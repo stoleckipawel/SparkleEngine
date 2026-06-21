@@ -179,6 +179,10 @@ namespace
 			        .HostWindow = app.GetWindow(),
 			        .Input = app.GetInputSystem()});
 			ui.SetDiagnosticsProviders(EditorDiagnosticsProviders{
+			    .RendererDiagnostics = [&renderer]()
+			    {
+				    return renderer.CaptureDiagnosticsSnapshot();
+			    },
 			    .RendererSmokeDiagnostics = [&renderer]()
 			    {
 				    return renderer.CaptureSmokeDiagnostics();

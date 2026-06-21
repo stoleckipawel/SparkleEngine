@@ -5,7 +5,15 @@
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorAllocator.h"
 
+#include <array>
+
 class D3D12RenderCommandList;
+
+struct D3D12DescriptorHeapUsage
+{
+	D3D12_DESCRIPTOR_HEAP_TYPE HeapType = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	D3D12DescriptorAllocatorStats Stats = {};
+};
 
 class D3D12DescriptorHeapManager final
 {
@@ -44,6 +52,7 @@ class D3D12DescriptorHeapManager final
 
 	D3D12DescriptorHeap* GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept;
 	D3D12DescriptorAllocator* GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept;
+	std::array<D3D12DescriptorHeapUsage, 4> CaptureUsage() const noexcept;
 
   private:
 	D3D12Rhi* m_rhi = nullptr;

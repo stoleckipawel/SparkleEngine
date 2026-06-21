@@ -2,6 +2,7 @@
 
 #include "EditorAPI.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
+#include "../../Renderer/Public/Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
 #include "../../Renderer/Public/Diagnostics/RendererSmokeDiagnostics.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
@@ -50,6 +51,7 @@ struct EditorDiagnosticsProviders final
 	std::function<MeshDiagnosticsSnapshot()> MeshDiagnostics;
 	std::function<TextureDiagnosticsSnapshot()> TextureDiagnostics;
 	std::function<RendererMemoryDiagnosticsSnapshot()> MemoryDiagnostics;
+	std::function<RendererDiagnosticsSnapshot()> RendererDiagnostics;
 	std::function<RendererSmokeDiagnosticsSnapshot()> RendererSmokeDiagnostics;
 };
 
@@ -70,6 +72,7 @@ class SPARKLE_EDITOR_API UI final
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
+	RendererDiagnosticsSnapshot CaptureRendererDiagnostics() const;
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
@@ -121,6 +124,7 @@ class SPARKLE_EDITOR_API UI final
 	std::function<MeshDiagnosticsSnapshot()> m_meshDiagnosticsProvider;
 	std::function<TextureDiagnosticsSnapshot()> m_textureDiagnosticsProvider;
 	std::function<RendererMemoryDiagnosticsSnapshot()> m_memoryDiagnosticsProvider;
+	std::function<RendererDiagnosticsSnapshot()> m_rendererDiagnosticsProvider;
 	std::function<RendererSmokeDiagnosticsSnapshot()> m_rendererSmokeDiagnosticsProvider;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;

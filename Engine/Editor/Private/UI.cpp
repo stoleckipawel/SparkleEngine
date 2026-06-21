@@ -79,6 +79,7 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 	m_meshDiagnosticsProvider = std::move(providers.MeshDiagnostics);
 	m_textureDiagnosticsProvider = std::move(providers.TextureDiagnostics);
 	m_memoryDiagnosticsProvider = std::move(providers.MemoryDiagnostics);
+	m_rendererDiagnosticsProvider = std::move(providers.RendererDiagnostics);
 	m_rendererSmokeDiagnosticsProvider = std::move(providers.RendererSmokeDiagnostics);
 
 	if (m_usedShadersPanel)
@@ -101,6 +102,11 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 RendererMemoryDiagnosticsSnapshot UI::CaptureMemoryDiagnostics() const
 {
 	return m_memoryDiagnosticsProvider ? m_memoryDiagnosticsProvider() : RendererMemoryDiagnosticsSnapshot{};
+}
+
+RendererDiagnosticsSnapshot UI::CaptureRendererDiagnostics() const
+{
+	return m_rendererDiagnosticsProvider ? m_rendererDiagnosticsProvider() : RendererDiagnosticsSnapshot{};
 }
 
 bool UI::ConsumeShaderReloadRequest() noexcept

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Pipeline/RenderPassDefinitionRuntime.h"
+#include "Renderer/Public/Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "Shaders/CookedShaderReloadResult.h"
 
 #include <cassert>
@@ -25,6 +26,7 @@ class PipelineStateManager final
 	PipelineStateManager& operator=(PipelineStateManager&&) = delete;
 
 	std::uint64_t GetShaderPackageGeneration() const noexcept { return m_shaderPackages.GetGeneration(); }
+	RendererPipelineDiagnosticsSnapshot CaptureDiagnosticsSnapshot() const;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 
 	template <typename TPass> const typename TPass::PipelineRuntime& GetPassRuntime() const noexcept

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RendererAPI.h"
+#include "Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "Shaders/CookedShaderReloadResult.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Diagnostics/RendererSmokeDiagnostics.h"
@@ -46,6 +47,7 @@ class SPARKLE_RENDERER_API Renderer final
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
+	RendererDiagnosticsSnapshot CaptureDiagnosticsSnapshot() const;
 	RendererSmokeDiagnosticsSnapshot CaptureSmokeDiagnostics() const;
 	void PrepareHostFrame() noexcept;
 	void RecordHostFrame() noexcept;

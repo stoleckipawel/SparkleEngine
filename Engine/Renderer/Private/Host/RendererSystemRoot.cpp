@@ -5,6 +5,7 @@
 #include "Config/RenderConfig.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Diagnostics/MeshDiagnosticsCollector.h"
+#include "Diagnostics/RendererDiagnosticsCollector.h"
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
@@ -109,6 +110,19 @@ TextureDiagnosticsSnapshot RendererSystemRoot::CaptureTextureDiagnostics() const
 RendererMemoryDiagnosticsSnapshot RendererSystemRoot::CaptureMemoryDiagnostics() const
 {
 	return m_memoryMonitor != nullptr ? m_memoryMonitor->GetLatestSnapshot() : RendererMemoryDiagnosticsSnapshot{};
+}
+
+RendererDiagnosticsSnapshot RendererSystemRoot::CaptureDiagnosticsSnapshot() const
+{
+	return RendererDiagnosticsCollector::Capture(*this);
+}
+
+void RendererSystemRoot::TickDiagnostics(std::uint64_t frameIndex) noexcept
+{
+	if (m_memoryMonitor != nullptr)
+	{
+		m_memoryMonitor->Tick(frameIndex);
+	}
 }
 
 void RendererSystemRoot::PostLoad() noexcept

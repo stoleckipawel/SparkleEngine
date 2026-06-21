@@ -73,6 +73,45 @@ RendererMemoryDiagnosticsSnapshot Renderer::CaptureMemoryDiagnostics() const
 	return m_systemRoot->CaptureMemoryDiagnostics();
 }
 
+RendererDiagnosticsSnapshot Renderer::CaptureDiagnosticsSnapshot() const
+{
+	RendererDiagnosticsSnapshot snapshot =
+	    m_systemRoot != nullptr ? m_systemRoot->CaptureDiagnosticsSnapshot() : RendererDiagnosticsSnapshot{};
+	if (m_framePipeline != nullptr)
+	{
+		snapshot.FrameTiming = m_framePipeline->CaptureFrameTimingDiagnosticsSnapshot();
+		snapshot.Metrics.push_back(
+		    RendererDiagnosticMetric{
+		        .Name = "frame.gpuTimingScopeCount",
+		        .Origin = ERendererDiagnosticOrigin::RendererFrame,
+		        .Status = snapshot.FrameTiming.GpuTimingStatus,
+		        .Unit = ERendererDiagnosticUnit::Count,
+		        .IntegerValue = static_cast<std::uint64_t>(snapshot.FrameTiming.GpuTimings.size())});
+
+		double finalFrameGpuMilliseconds = 0.0;
+		const bool hasFinalFrameGpuTiming =
+		    m_framePipeline->TryGetLastResolvedGpuTimingMilliseconds("GPU Frame", finalFrameGpuMilliseconds);
+		snapshot.Metrics.push_back(
+		    RendererDiagnosticMetric{
+		        .Name = "frame.gpuFrameTime",
+		        .Origin = ERendererDiagnosticOrigin::RendererFrame,
+		        .Status = hasFinalFrameGpuTiming ? ERendererDiagnosticStatus::Available : ERendererDiagnosticStatus::Unavailable,
+		        .Unit = ERendererDiagnosticUnit::Milliseconds,
+		        .NumericValue = finalFrameGpuMilliseconds,
+		        .Detail = hasFinalFrameGpuTiming ? "" : "No resolved GPU Frame timestamp is available yet."});
+	}
+
+	snapshot.Metrics.push_back(
+	    RendererDiagnosticMetric{
+	        .Name = "frame.cpuTimingSource",
+	        .Origin = ERendererDiagnosticOrigin::CoreProfiler,
+	        .Status = snapshot.FrameTiming.CpuFrameTimingStatus,
+	        .Unit = ERendererDiagnosticUnit::Text,
+	        .TextValue = "Core LiveProfiler",
+	        .Detail = snapshot.FrameTiming.CpuFrameTimingReason});
+	return snapshot;
+}
+
 RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 {
 	RendererSmokeDiagnosticsSnapshot snapshot{};

@@ -265,6 +265,30 @@ bool FramePipeline::TryGetLastResolvedGpuTimingMilliseconds(std::string_view lab
 	return false;
 }
 
+RendererFrameTimingDiagnosticsSnapshot FramePipeline::CaptureFrameTimingDiagnosticsSnapshot() const
+{
+	const FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
+	RendererFrameTimingDiagnosticsSnapshot snapshot;
+	snapshot.GpuTimingStatus =
+	    frameDiagnostics.SupportsTimestampQueries() ? ERendererDiagnosticStatus::Available : ERendererDiagnosticStatus::Unsupported;
+	const std::vector<ResolvedGpuTiming>& resolvedTimings = frameDiagnostics.GetResolvedTimings();
+	snapshot.GpuTimings.reserve(resolvedTimings.size());
+	for (const ResolvedGpuTiming& resolvedTiming : resolvedTimings)
+	{
+		snapshot.GpuTimings.push_back(
+		    RendererGpuTimingMetric{
+		        .Label = resolvedTiming.Label,
+		        .BeginTicks = resolvedTiming.BeginTicks,
+		        .EndTicks = resolvedTiming.EndTicks,
+		        .DurationTicks = resolvedTiming.DurationTicks,
+		        .DurationMilliseconds = resolvedTiming.DurationMilliseconds,
+		        .Depth = resolvedTiming.Depth});
+	}
+	snapshot.CpuFrameTimingStatus = ERendererDiagnosticStatus::Available;
+	snapshot.CpuFrameTimingReason = "CPU frame scopes are owned by Core LiveProfiler; renderer snapshot keeps GPU frame timings here.";
+	return snapshot;
+}
+
 void FramePipeline::BindRayTracingFrameGraphResources(const RayTracingSceneFrameData& rayTracingScene) noexcept
 {
 	if (m_frameGraph == nullptr)
@@ -419,6 +443,7 @@ void FramePipeline::BeginFrame() noexcept
 	}
 
 	backend.BeginFrame();
+	m_systems->TickDiagnostics(m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex());
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 	frameDiagnostics.ResolveTimings();
 	ReportResolvedTimings(m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex(), frameDiagnostics);

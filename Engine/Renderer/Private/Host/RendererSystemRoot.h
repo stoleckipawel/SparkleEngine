@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
 #include "Resources/Textures/TextureDiagnostics.h"
@@ -50,11 +51,13 @@ class RendererSystemRoot final
 
 	RenderDeviceServices& GetBackend() noexcept { return *m_backend; }
 	const RenderDeviceServices& GetBackend() const noexcept { return *m_backend; }
+	bool HasBackend() const noexcept { return m_backend != nullptr; }
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 
 	PipelineStateManager& GetPipelineStateManager() noexcept { return *m_pipelineStateManager; }
+	const PipelineStateManager& GetPipelineStateManager() const noexcept { return *m_pipelineStateManager; }
 	GPUMeshCache& GetGpuMeshCache() noexcept { return *m_gpuMeshCache; }
 	TextureManager& GetTextureManager() noexcept { return *m_textureManager; }
 	MaterialCacheManager& GetMaterialCacheManager() noexcept { return *m_materialCacheManager; }
@@ -67,6 +70,7 @@ class RendererSystemRoot final
 	RenderCamera& GetRenderCamera() noexcept { return *m_renderCamera; }
 	SceneRenderStateCoordinator* GetSceneRenderStateCoordinator() noexcept { return m_sceneRenderStateCoordinator.get(); }
 	UpscalerSubsystem* GetUpscalerSubsystem() noexcept { return m_upscalerSubsystem.get(); }
+	const UpscalerSubsystem* GetUpscalerSubsystem() const noexcept { return m_upscalerSubsystem.get(); }
 	RayTracedShadowSettings* GetRayTracedShadowSettings() noexcept { return m_rayTracedShadowSettings.get(); }
 
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
@@ -74,6 +78,8 @@ class RendererSystemRoot final
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
+	RendererDiagnosticsSnapshot CaptureDiagnosticsSnapshot() const;
+	void TickDiagnostics(std::uint64_t frameIndex) noexcept;
 	void PostLoad() noexcept;
 
   private:

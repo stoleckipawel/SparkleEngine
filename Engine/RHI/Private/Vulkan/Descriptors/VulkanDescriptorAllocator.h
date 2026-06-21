@@ -15,6 +15,19 @@
 class VulkanRhi;
 struct CompiledBinding;
 
+struct VulkanDescriptorAllocatorStats
+{
+	std::uint32_t DescriptorTableCapacity = 0;
+	std::uint32_t DescriptorTableAllocated = 0;
+	std::uint32_t DescriptorTableFree = 0;
+	std::uint32_t RegisteredDescriptorCapacity = 0;
+	std::uint32_t RegisteredDescriptorAllocated = 0;
+	std::uint32_t RegisteredDescriptorFree = 0;
+	std::uint32_t TransientDescriptorSetCapacity = 0;
+	std::uint32_t TransientDescriptorSetAllocated = 0;
+	std::uint32_t TransientDescriptorPoolPages = 0;
+};
+
 class VulkanDescriptorAllocator final
 {
   public:
@@ -67,6 +80,7 @@ class VulkanDescriptorAllocator final
 	    VkDescriptorSet descriptorSet,
 	    const CompiledBinding& binding,
 	    VkDeviceAddress accelerationStructureAddress) noexcept;
+	VulkanDescriptorAllocatorStats CaptureStats() const noexcept;
 
   private:
 	enum class EntryKind : std::uint8_t

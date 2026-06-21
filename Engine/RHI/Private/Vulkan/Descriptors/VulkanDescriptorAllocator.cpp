@@ -819,3 +819,35 @@ void VulkanDescriptorAllocator::WriteEntries(
 	    .pTexelBufferView = nullptr};
 	vkUpdateDescriptorSets(m_rhi.GetDevice(), 1, &write, 0, nullptr);
 }
+
+VulkanDescriptorAllocatorStats VulkanDescriptorAllocator::CaptureStats() const noexcept
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	std::uint32_t transientPageCount = 0;
+	std::uint32_t transientAllocatedSets = 0;
+	for (const std::vector<DescriptorPoolPage>& framePages : m_framePoolPages)
+	{
+		transientPageCount += static_cast<std::uint32_t>(framePages.size());
+		for (const DescriptorPoolPage& page : framePages)
+		{
+			transientAllocatedSets += page.AllocatedSets;
+		}
+	}
+
+	const std::uint32_t tableCapacity = static_cast<std::uint32_t>(m_tables.size());
+	const std::uint32_t tableFree = static_cast<std::uint32_t>(m_freeTableIndices.size());
+	const std::uint32_t registeredCapacity = static_cast<std::uint32_t>(m_registeredDescriptors.size());
+	const std::uint32_t registeredFree = static_cast<std::uint32_t>(m_freeRegisteredDescriptorIndices.size());
+
+	return VulkanDescriptorAllocatorStats{
+	    .DescriptorTableCapacity = tableCapacity,
+	    .DescriptorTableAllocated = tableCapacity >= tableFree ? tableCapacity - tableFree : 0u,
+	    .DescriptorTableFree = tableFree,
+	    .RegisteredDescriptorCapacity = registeredCapacity,
+	    .RegisteredDescriptorAllocated = registeredCapacity >= registeredFree ? registeredCapacity - registeredFree : 0u,
+	    .RegisteredDescriptorFree = registeredFree,
+	    .TransientDescriptorSetCapacity = transientPageCount * DescriptorSetsPerPage,
+	    .TransientDescriptorSetAllocated = transientAllocatedSets,
+	    .TransientDescriptorPoolPages = transientPageCount};
+}

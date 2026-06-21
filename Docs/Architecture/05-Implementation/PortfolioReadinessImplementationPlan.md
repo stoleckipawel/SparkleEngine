@@ -89,6 +89,19 @@ the patterns rejected. If the intended architecture shape has no public referenc
 an equally strong source named in the report, the agent must not invent it. It should reduce the task to a smaller,
 source-backed refactor against SparkleEngine's existing code.
 
+Sparkle counterpart gate:
+Each row in the Sparkle counterpart decision matrix is also part of that prompt's acceptance criteria. Before adding a new
+system, type, manager, report, artifact model, or validation path, the agent must inspect the named existing Sparkle
+counterparts and choose one of four actions: `extend`, `replace`, `merge`, or `remove/avoid`. A prompt fails if it creates
+a parallel system for a responsibility already owned by one of the named counterparts without deleting or merging the old
+path in the same change.
+
+Complexity denoising gate:
+Each prompt must keep the local codebase simpler or at least no noisier after the change. This does not mean deleting
+important behavior. It means every added concept must pay rent by removing, merging, naming, localizing, or simplifying
+complexity in the same ownership area. The prompt-specific denoising matrix below defines what "pay rent" means in each
+domain so this rule is contextual, not random cleanup.
+
 Core reference repositories:
 
 - [NRI](https://github.com/NVIDIA-RTX/NRI): low-level D3D12/Vulkan-style explicit rendering interface, useful when a prompt touches RHI boundaries, queues, descriptors, memory, barriers, or backend parity.
@@ -113,6 +126,8 @@ This contract applies to every prompt below and overrides any weaker wording ins
 Before editing code, the agent must produce a short implementation note in its report with:
 
 - `Sparkle current shape`: the concrete source files/classes/functions that currently own the behavior.
+- `Sparkle counterpart decision`: the prompt row from the Sparkle counterpart decision matrix, including whether the change will extend, replace, merge, or remove/avoid existing code.
+- `Complexity denoising decision`: the prompt row from the complexity denoising matrix, including what complexity will be removed, merged, simplified, or explicitly left unchanged because it is outside scope.
 - `Reference evidence used`: exact reference repository files/classes/docs inspected. Use AMD/NVIDIA/Epic production references first. If Epic Unreal source is not locally accessible, say so and use Epic public docs only for architectural constraints.
 - `Target architecture shape`: the intended ownership/data-flow/lifetime/caching/pass/provider/job-system shape after the change.
 - `Architecture movement scale`: one of `major refactor`, `foundation MVP`, `contract extraction`, `workflow orchestration`, or `evidence only`.
@@ -123,6 +138,9 @@ During implementation, the agent must:
 - Change the real runtime/tool path, not a parallel descriptive path.
 - Prefer replacing unclear ownership with a simpler owner/call path over adding wrapper objects beside the old code.
 - Delete, merge, or simplify obsolete code when the touched path reveals duplication or accidental complexity.
+- When adding complexity to a class, file, function, or workflow, reduce nearby complexity in the same prompt. Prefer simplifying control flow, deleting stale helpers, merging duplicate state, improving names, narrowing responsibilities, or routing callers through one owner over adding parallel code.
+- Search neighboring code before adding a new concept. If a similar concept exists, the default action is to extend or merge that concept, not to add a sibling with a broader name.
+- Do not introduce a `*Manager`, `*Registry`, `*Snapshot`, `*Report`, `*Collector`, `*Service`, or `*Model` until the report explains why the existing counterpart cannot own the responsibility.
 - Keep new public types small and runtime-consumed. A public type that exists only to make documentation true is not acceptable.
 - Move logic toward the module that owns the data or lifetime. Do not move renderer/RHI concepts into GameFramework, launcher concepts into Renderer, or provider-native concepts into general Renderer/RHI surfaces.
 - Keep validation/logging/reporting as proof of the refactor, not as the refactor itself.
@@ -132,10 +150,153 @@ Acceptance criteria for every prompt are amended with these global failure rules
 - The prompt fails if the only meaningful changes are logs, diagnostics, reports, docs, command wrappers, or validation checks.
 - The prompt fails if it adds a new abstraction while leaving the old ambiguous ownership path in place.
 - The prompt fails if it increases the number of concepts a reviewer must understand without removing or consolidating an older concept.
+- The prompt fails if it adds non-trivial complexity and cannot identify the compensating simplification, removal, merge, or ownership clarification in the same domain.
+- The prompt fails if it creates a duplicate of a Sparkle counterpart listed in the matrix below.
 - The prompt fails if the implementation cannot name the production reference pattern it follows.
 - The prompt fails if it claims parity, readiness, feature support, or performance behavior that source and commands do not prove.
 
 Validation/reporting prompts are allowed to be evidence-heavy, but they still must prove or orchestrate an existing real architecture path. They must not be used to disguise missing RHI, Renderer, scene, shader, provider, PSO, ray tracing, path tracing, or job-system work.
+
+## Prompt Completion Grading
+
+Every prompt must end with a self-grade from `0` to `5`. This grade is not a morale score; it is a readiness score
+against the prompt goal, review-folder requirements, acceptance criteria, validation evidence, counterpart decision, and
+complexity denoising result.
+
+The grading source of truth is the review folder:
+
+- [A_PrincipalRoleRequirements.md](../00-Review/A_PrincipalRoleRequirements.md) defines the requirement clusters the work must support.
+- [B_EngineArchitectureScorecard.md](../00-Review/B_EngineArchitectureScorecard.md) defines the score meanings and review areas.
+- [PrincipalRenderingReadiness.md](../00-Review/PrincipalRenderingReadiness.md) defines the principal-rendering readiness interpretation of those scores.
+
+Every prompt grade must explicitly map the completed work back to the relevant requirement clusters:
+
+- explicit D3D12/Vulkan graphics API control
+- render architecture
+- RHI design discipline
+- shader/compiler pipeline
+- performance and diagnostics
+- ray tracing and neural readiness
+- production reviewability
+
+Grade rubric, inherited from the review scorecards:
+
+- `0`: Missing. No meaningful work landed for the prompt goal or requirement cluster.
+- `1`: Present only as early scaffolding or isolated implementation. The real owner/path is mostly unchanged.
+- `2`: Feature exists, but ownership, extension, or failure modes are hard to reason about.
+- `3`: Functional and promising, but important behavior is implicit or scattered.
+- `4`: Strong foundation. Mostly reviewable, with focused documentation, validation, parity, or cleanup gaps.
+- `5`: Reviewer-ready. Clear contracts, validation, diagnostics, docs, known extension path, source-backed production pattern, and no known prompt-scoped architecture gaps.
+
+The final step in every implementation prompt is:
+
+```text
+Final completion grade:
+- Score: <0-5>
+- Why this score is honest:
+- Review requirement clusters satisfied:
+- Scorecard/readiness areas affected:
+- What is still required to reach 5, if the score is below 5:
+- Evidence used for this grade:
+```
+
+Completion rules:
+
+- A prompt cannot receive `5` if any acceptance criterion is failed, unverified, or only satisfied by documentation.
+- A prompt cannot receive `5` if the affected target does not build for prompt-caused reasons.
+- A prompt cannot receive `5` if architecture boundary checks fail.
+- A prompt cannot receive `5` if it added duplicate ownership, duplicate state, or unresolved complexity that the denoising matrix said to remove or merge.
+- A prompt cannot receive `5` unless it materially improves at least one scorecard/readiness area from [B_EngineArchitectureScorecard.md](../00-Review/B_EngineArchitectureScorecard.md) or [PrincipalRenderingReadiness.md](../00-Review/PrincipalRenderingReadiness.md) in code, assets, tools, validation, or artifacts.
+- A prompt cannot score above `2` if the implemented feature exists but its ownership, extension path, or failure modes remain hard to reason about.
+- A prompt cannot score above `3` if the implementation is functional but the important behavior remains implicit, scattered, or unproven by validation.
+- A prompt cannot score above `4` if the architecture is strong but still lacks focused validation, diagnostics, documentation, backend/provider parity, or reviewer-facing proof required by the review docs.
+- A prompt scored below `5` must list concrete follow-up tasks. Vague phrases such as "needs polish" are not acceptable.
+- A milestone reaches `5` only when every prompt assigned to that milestone is `5` and the milestone's "Done when" condition is proven by commands or artifacts.
+
+## Grade Tracking Rules
+
+Prompt grades and milestone grades are tracked separately.
+
+Prompt grade:
+
+- Measures one implementation prompt against its goal, acceptance criteria, validation, counterpart decision, denoising result, and relevant review requirement clusters.
+- Can be updated only after the prompt has a final implementation report with the `Final completion grade` block.
+- Must cite the command, artifact, source diff, or review evidence used for the grade.
+
+Milestone grade:
+
+- Measures the combined engine state for that milestone, not the average of prompt grades.
+- Must pay special attention to whether the milestone outcome is coherent, buildable, reviewer-visible, and useful without a guided explanation.
+- Cannot be higher than the lowest unresolved blocking prompt if that prompt prevents the milestone's `Done when` condition.
+- Can be lower than the average prompt score if the prompt work exists but is not integrated into one clear architecture path.
+- Reaches `5` only when every prompt in the milestone is `5`, the milestone `Done when` condition is proven, and the review-folder scorecard/readiness criteria are satisfied.
+
+Grade status vocabulary:
+
+- `Not started`: no meaningful prompt-scoped implementation has been reported.
+- `In progress`: implementation exists but final grade evidence is missing or incomplete.
+- `Blocked`: work cannot be graded higher until a named build, architecture, dependency, or design blocker is fixed.
+- `Graded`: a numeric grade was assigned from source-backed evidence.
+- `Needs regrade`: code changed after the last grade, so the grade is stale.
+
+## Current Prompt Grade Ledger
+
+This table is the working prompt-level status board. Update it when a prompt report lands. Do not silently promote a prompt
+from `In progress` to `Graded`; paste the final grade evidence into the row.
+
+| Prompt | Milestone | Prompt focus | Status | Current grade | Grade evidence | To reach 5 |
+| --- | --- | --- | --- | ---: | --- | --- |
+| 01 | M1 | RHI explicit ownership and capability refactor | Needs regrade | TBD | Partial RHI ownership/capability work exists in the working tree, but no final grade block has been recorded in this ledger. | Re-audit against RHI scorecard, build RHI targets, run boundary check, prove ownership/interop/diagnostics movement without duplicate systems. |
+| 02 | M1 | Backend capability, debug, capture, and memory parity | Needs regrade | TBD | D3D12/Vulkan capability and diagnostics surfaces exist, but no final grade block has been recorded in this ledger. | Produce backend parity evidence from source-backed capability/debug/memory data. |
+| 03 | M2 | Renderer frame assembly and resource ownership | Blocked | TBD | Frame graph/frame assembly work exists, but `SparkleRenderer` currently fails to build in PTLAS/ray tracing planner code. | Restore renderer build, then prove pass/resource/history/barrier ownership through frame graph diagnostics. |
+| 04 | M5 | Provider-neutral SDK architecture | Needs regrade | TBD | Provider model and upscaler contracts exist, but no final grade block has been recorded in this ledger. | Prove DLSS maps into shared provider states and resource contracts without provider-vocabulary duplication. |
+| 05 | M3 | Shader ABI and runtime pipeline hardening | Needs regrade | TBD | Shader compiler/package/runtime pipeline evidence exists, but no final grade block has been recorded in this ledger. | Run shader validation/inspection and prove package ABI, cache identity, and runtime pipeline creation. |
+| 06 | M4 | Runtime scene snapshot boundary | Needs regrade | TBD | GameSceneSnapshot/RenderSceneSnapshot/invalidation work exists, but no final grade block has been recorded in this ledger. | Prove snapshot/invalidation/asset compatibility through tests, smoke, or artifacts while keeping GameFramework free of Renderer/RHI. |
+| 07 | M8 | Diagnostics data plane | Needs regrade | TBD | Diagnostics snapshot work exists in the working tree, but no final grade block has been recorded in this ledger. | Prove typed data flow from RHI/backend truth through renderer/editor/artifacts. |
+| 08 | M0 | Application lifecycle and typed failure | Not started | TBD | No final prompt report recorded. | Implement lifecycle/failure taxonomy at origin points and connect recovery/reporting. |
+| 09 | M3 | PSO management foundation MVP | Not started | TBD | No final prompt report recorded. | Add PSO identity/cache/invalidation/timing through existing pipeline runtime path. |
+| 10 | M6 | High-end ray tracing foundation MVP | Blocked | TBD | Existing RT/PTLAS code is substantial, but renderer build currently fails in PTLAS planner code. | Restore build, then prove AS lifecycle, RT pipeline/SBT expectations, diagnostics, and backend parity. |
+| 11 | M7 | Path tracing foundation MVP | Not started | TBD | No path tracing MVP report recorded. | Add path tracing readiness path through frame graph, RT, shader, temporal/history, and provider seams. |
+| 12 | M5 | Neural rendering foundation MVP | Not started | TBD | No final prompt report recorded. | Add source-backed Slang/profile/provider gates without speculative neural runtime objects. |
+| 13 | M8 | Cross-feature foundation MVP proof scenarios | Not started | TBD | No final prompt report recorded. | Exercise PSO, RT, path tracing readiness, neural readiness, diagnostics, descriptor/upload pressure together. |
+| 14 | M9 | Job system and multithreading foundation last | Not started | TBD | No final prompt report recorded. | Add scheduler only after ownership foundations are stable and smoke paths are deterministic. |
+| 15 | M0 | Launcher validation category and architecture boundary action | Not started | TBD | No final prompt report recorded. | Expose existing CMake architecture boundary check through launcher workflow. |
+| 16 | M0 | Launcher readiness report artifact | Not started | TBD | No final prompt report recorded. | Export readiness from real toolchain/source/backend/provider planner state. |
+| 17 | M2 | Renderer empty frame smoke path | Blocked | TBD | Renderer build failure blocks smoke proof. | Restore renderer build and run real empty-frame Renderer/RHI artifact path. |
+| 18 | M1 | RHI backend startup/shutdown conformance harness | Not started | TBD | No final prompt report recorded. | Exercise actual D3D12/Vulkan `RenderDeviceServices` startup/shutdown paths. |
+| 19 | M1 | Backend parity review report | Not started | TBD | No final prompt report recorded. | Generate parity report from Prompt 02/07 source-backed capability data. |
+| 20 | M2 | Unified diagnostics snapshot and baseline artifact writer | Needs regrade | TBD | Diagnostics snapshot work exists, but no final prompt report recorded. | Prove artifact writer consumes the same typed data model as runtime/editor diagnostics. |
+| 21 | M8 | Descriptor pressure and upload pressure diagnostics | Needs regrade | TBD | Descriptor pressure work appears in RHI descriptor services/allocators, but no final prompt report recorded. | Prove descriptor/upload pressure from allocator/resource owners and route to common diagnostics. |
+| 22 | M3 | Pipeline cache stats and shader package load timing | Not started | TBD | No final prompt report recorded. | Connect timing/stats to `PipelineRuntimeLibrary`, `PipelineStateManager`, and `CookedShaderPackageCache`. |
+| 23 | M3 | Shader golden reflection and package regression corpus | Not started | TBD | No final prompt report recorded. | Add source-backed golden shader package/reflection regression flow. |
+| 24 | M5 | Provider capability state mapping | Needs regrade | TBD | Provider states exist, but no final prompt report recorded. | Normalize renderer/provider/launcher states without duplicate enums or copied strings. |
+| 25 | M5 | Provider resource contract validation | Needs regrade | TBD | Upscaler input contract exists, but no final prompt report recorded. | Enforce shared provider resource contracts at frame/provider handoff. |
+| 26 | M2 | Frame graph contract diagnostics hardening | Needs regrade | TBD | Frame graph diagnostics exist, but renderer build failure blocks proof. | Move validation into frame graph compile/execute ownership and restore renderer build. |
+| 27 | M4 | Runtime scene snapshot and invalidation validation | Not started | TBD | No final prompt report recorded. | Prove level unload/change/asset append/scene reset/render-state reset behavior. |
+| 28 | M0 | Application error taxonomy and structured failure reporting | Not started | TBD | No final prompt report recorded. | Merge lifecycle categories with launcher recovery and process result reporting. |
+| 29 | M4 | Curated portfolio baseline assets and scenarios | Not started | TBD | No final prompt report recorded. | Add curated assets through existing importer/cooker/project layout and prove runtime/cook paths. |
+| 30 | M8 | Editor principal review dashboard | Not started | TBD | No final prompt report recorded. | Consume common diagnostics snapshot in editor UI without copied dashboard state. |
+| 31 | M10 | Portfolio review run aggregator | Not started | TBD | No final prompt report recorded. | Orchestrate existing build/cook/smoke/shader/backend/diagnostics operations into one manifest. |
+| 32 | M10 | Documentation status refresh after code implementation | Not started | TBD | No final prompt report recorded. | Refresh docs only from implemented source-backed state after previous prompts land. |
+
+## Current Milestone Grade Ledger
+
+This table is the milestone-level status board. Milestone grades require stricter review than individual prompt grades
+because they judge whether the bundle produces a coherent engine evolution.
+
+| Milestone | Status | Current grade | Current evidence | To reach 5 |
+| --- | --- | ---: | --- | --- |
+| M0. Reviewer spine and baseline truth | Graded | 2 | Launcher readiness/failure plumbing exists, but portfolio-grade lifecycle taxonomy, readiness report, boundary action, and run aggregator are not complete. | Complete Prompts 08, 15, 16, 28, 31, and 32 with one dry-runnable reviewer evidence path. |
+| M1. Hardware and RHI truth layer | Graded | 3 | `SparkleRHI_D3D12`, `SparkleRHI_Vulkan`, and `architecture_boundary_check` pass; capability/diagnostic surfaces exist. | Complete startup/shutdown harness and parity artifact from source-backed D3D12/Vulkan capability/debug/memory data. |
+| M2. Frame assembly and renderer ownership | Blocked | 2 | Frame graph/frame assembly systems exist, but `SparkleRenderer` currently fails to build in PTLAS/ray tracing planner code. | Restore renderer build, then prove empty-frame smoke, frame graph resource contracts, diagnostics, and artifact output. |
+| M3. Shader and PSO runtime | Graded | 3 | Shader compiler/package/runtime pipeline is strong, but PSO cache/stat proof and golden regression corpus are incomplete. | Complete PSO identity/cache/timing and shader golden package/reflection validation. |
+| M4. Runtime scene and asset baselines | Graded | 3 | GameScene snapshots, renderer scene snapshots, asset payloads, and cook/load paths exist. | Prove invalidation and curated baseline scenarios through tests, smoke, or artifacts. |
+| M5. Provider readiness | Graded | 2 | Provider model, DLSS/passthrough upscaler path, and input contracts exist. | Prove provider-neutral upscaler/frame-generation/denoiser capability/resource contracts across renderer and launcher/reporting. |
+| M6. High-end ray tracing foundation MVP | Blocked | 2 | RT/PTLAS services, smoke catalog entries, and diagnostics exist, but renderer build failure blocks proof. | Restore RT/PTLAS build, then prove AS lifecycle, RT pipeline/SBT expectations, backend parity, and unsupported-hardware artifact. |
+| M7. Path tracing foundation MVP | Graded | 1 | Temporal, RT, sampling, and denoiser hooks exist, but no path tracing MVP is implemented. | Add path tracing readiness path for accumulation/history reset, sampling frame index, material/light input, and denoiser hook state. |
+| M8. Cross-feature proof | Not started | TBD | No milestone-grade evidence recorded. | Complete diagnostics data plane, cross-feature proof scenarios, descriptor/upload pressure diagnostics, and editor review dashboard. |
+| M9. Job system and multithreading last | Not started | TBD | No milestone-grade evidence recorded. | Complete job-system foundation only after M0-M8 ownership and proof paths are stable. |
+| M10. Portfolio-ready review run | Not started | TBD | No milestone-grade evidence recorded. | Complete portfolio review run aggregator and final source-backed documentation refresh. |
 
 ## Architecture Movement Scale Matrix
 
@@ -213,6 +374,92 @@ Each prompt has a minimum expected movement. If an agent cannot reach that scale
 | Prompt 31 | Donut/Cauldron sample runner expectations, SparkleLauncher operation orchestration |
 | Prompt 32 | The implemented code plus all references used by completed prompts |
 
+## Sparkle Counterpart Decision Matrix
+
+This matrix is mandatory for every prompt. It is the guardrail against building duplicate "almost the same" systems.
+
+Action vocabulary:
+
+- `Extend`: keep the existing owner and add the missing responsibility there.
+- `Replace`: remove an unclear or obsolete path and route callers through the better existing/new owner.
+- `Merge`: consolidate two similar Sparkle concepts so there is one reviewer-visible source of truth.
+- `Remove/avoid`: delete stale code in the touched path, or avoid creating a new concept because the existing owner is already sufficient.
+
+| Prompt | Existing Sparkle counterparts to inspect first | Required integration decision |
+| --- | --- | --- |
+| 01 | `RenderHardwareInterface`, `RenderDeviceServices`, `RenderDeviceBackendServices`, `RhiCommandSubmissionService`, `RenderCommandList`, `RhiResourceService`, `RhiDescriptorService`, `RhiPipelineService`, `RhiDiagnosticsService`, `RhiInteropService`, `RhiMemoryDiagnostics`, D3D12/Vulkan `*Rhi` and allocator classes. | Extend the real RHI service owners. Replace any `RhiOwnershipModel`-style inventory or ownership mirror with owner methods, capability facts, diagnostics, or validation emitted from the service that owns the resource. Remove/avoid global ownership graphs. |
+| 02 | `RhiCapabilities`, `RhiCapabilityLogFormatting`, `RhiDiagnostics`, D3D12/Vulkan `*RenderDiagnostics`, `*DebugLayer`, `*CaptureService`, `D3D12GpuMemoryAllocator`, `VulkanGpuMemoryAllocator`. | Extend shared RHI capability/diagnostics/memory structs and backend implementations. Merge backend parity facts into those surfaces. Remove/avoid separate parity structs that duplicate `RhiCapabilities` unless they are generated views over that data. |
+| 03 | `FramePipeline`, `Frame`, `FrameAssembly`, `FrameGraph`, `FrameGraphBuilder`, `PassResourceBuilder`, `PassResourceDeclaration`, `FrameGraphCompiler`, `FrameGraphResourceRegistry`, `FrameGraphTransientAllocator`, `TemporalFrameState`, `FrameRenderTargets`, `FrameGraphPlanDiagnostics`. | Extend the existing frame graph and frame assembly path. Replace implicit resource setup inside frame-side helpers with declarations consumed by `FrameGraphBuilder`/compiler. Remove/avoid a second frame graph, pass registry, resource registry, or transient allocator. |
+| 04 | `Engine/Renderer/Private/Providers/RenderProviderModel.*`, `UpscalerSubsystem`, `UpscalerProvider`, `UpscalerInputContract`, `RenderUpscalingPassServices`, `PassthroughUpscalerProvider`, `NvidiaDlssUpscalerProvider`, `StreamlineDlssRuntime`. | Merge provider-neutral vocabulary into `Private/Providers` and keep upscaling-specific execution in `Private/Upscaling`. Extend DLSS as one provider implementation. Remove/avoid duplicate `RenderProviderModel` files under feature folders or provider state enums that repeat the shared model. |
+| 05 | Shader compiler CLI/cooking/cache/contract/verification code, `ShaderContracts`, `CookedShaderPackage`, `CookedShaderPackageCache`, `ShaderPackageLayoutBuilder`, renderer `ShaderRegistrations`, `PipelineRuntimeLibrary`, `PipelineRuntimeKey`, `PipelineStateManager`, RHI pipeline descriptors. | Extend the existing shader cook/package/cache/runtime path. Merge ABI/cache identity and pipeline creation evidence into `CookedShaderPackageCache`, `PipelineRuntimeLibrary`, and `PipelineStateManager`. Remove/avoid a second shader registry, package ABI, or runtime pipeline loader. |
+| 06 | `GameScene`, `GameSceneSnapshot`, `Scene*` collections/snapshots, `AssetId`, cooked asset loaders/validators, `SceneAssetPayload*Appender`, `RenderSceneSnapshot`, `SceneRenderStateCoordinator`, `RenderSceneDataBuilder`, `MaterialCacheManager`. | Extend GameFramework snapshots and Renderer translation/invalidation. Replace direct reads of mutable scene internals only where renderer ownership is unclear. Remove/avoid adding Renderer/RHI concepts, resource states, GPU handles, or frame graph handles to GameFramework. |
+| 07 | `RhiDiagnostics`, `RhiMemoryDiagnostics`, `RendererMemoryMonitor`, `FrameExecutionDiagnostics`, `PassExecutionDiagnostics`, `RayTracingPerformanceDiagnostics`, `RendererDiagnosticsSnapshot` if present, `ProfilerPanel`, `RhiSmokeRendererEvidence`, `RhiSmokeCaptureArtifacts`. | Merge diagnostics into one typed data plane from owner truth to renderer/editor/artifacts. Extend existing diagnostics providers and artifact writers. Remove/avoid one-off string reports, disconnected editor state, or per-feature snapshot types that cannot feed the common artifact/editor path. |
+| 08 | `Application`, `RuntimeApplication`, `EditorApplication`, `RuntimeConsoleOverlay`, `ShaderRecookCoordinator`, smoke validation entry points, launcher `OperationModel`, `LauncherRecoveryUiModel`, process result models. | Extend lifecycle origin points with typed failure categories while preserving existing detail strings. Replace only ambiguous failure routing. Remove/avoid a global error bus that catches failures after ownership information has already been lost. |
+| 09 | `PipelineStateManager`, `PipelineRuntimeLibrary`, `PipelineRuntimeKey`, `RhiPipelineService`, D3D12/Vulkan `*PipelineState`, `CookedShaderPackageCache`, pass runtime structs. | Extend the existing runtime pipeline path into PSO identity/cache/timing. Merge pass-local PSO bookkeeping into `PipelineRuntimeLibrary`/`PipelineStateManager` where possible. Remove/avoid a standalone PSO manager that bypasses shader package compatibility or RHI pipeline services. |
+| 10 | `RhiRayTracingService`, `RhiClassicTlasService`, `RhiPartitionedTlasService`, D3D12/Vulkan ray tracing services, `RenderRayTracingScene`, `RayTracingBlasCache`, classic/PTLAS strategies/builders, `RayTracingPerformanceDiagnostics`, smoke RT catalog/artifacts. | Extend and repair the existing AS/RT pipeline path. Replace duplicated classic/PTLAS preparation only when it can be routed through the existing strategy/service layer. Remove/avoid a second ray tracing scene, BLAS cache, TLAS planner, or smoke harness. |
+| 11 | Existing frame graph, `TemporalFrameState`, `RenderRayTracingScene`, ray tracing services, shader compiler/package path, denoiser registration hooks such as `FrameGraphDenoiserRegistration`, provider model. | Add the path-tracing MVP through existing frame graph, temporal/history, shader, RT, and provider seams. Remove/avoid a separate path-tracing render loop, standalone accumulation store, or denoiser abstraction disconnected from provider/resource contracts. |
+| 12 | Slang backend/capability code, `ShaderTarget`, shader profile handling, shader contracts, `RhiCapabilities`, provider model, `RendererProviderContract` vocabulary. | Extend existing capability/profile/provider gates only. Merge neural readiness facts into shader backend and provider capability surfaces. Remove/avoid a `NeuralRenderer`, tensor runtime, or cooperative-vector wrapper until source-backed backend/shader support exists. |
+| 13 | `RhiSmokeTestCatalog`, `RhiSmokeScenarioValidation`, `RhiSmokeSession`, `RhiSmokeCaptureArtifacts`, `Projects/Showcase` levels/assets, renderer diagnostics artifacts. | Extend smoke scenarios and existing Showcase fixtures. Merge cross-feature proof into the same catalog/artifact conventions. Remove/avoid a separate showcase runner or assets that bypass cook/runtime/diagnostics paths. |
+| 14 | Existing absence of a general job system, `LiveProfiler` thread snapshots, `ShaderRecookCoordinator` background process/future usage, renderer immutable snapshot boundaries. | Add one Core-owned job/scheduler foundation only if needed. Replace ad hoc async in touched paths only when the new scheduler actually owns that work. Remove/avoid renderer-local thread pools, RHI-local task systems, or parallel work over mutable GameFramework state. |
+| 15 | `CMake/ArchitectureBoundaryCheck.cmake`, `architecture_boundary_check` target, launcher `BuildWorkspaceOperations`, `MaintenanceOperations`, `LauncherWorkflowCatalog`, `LauncherBackend`, shell dry-run plumbing. | Extend launcher operation models to invoke the existing CMake check. Remove/avoid reimplementing the scanner or adding a launcher-only boundary rule model. |
+| 16 | Launcher `BuildToolchainDetection`, `SourceDependencyState`, `HostGraphicsCapabilities`, `LauncherDependencyUiModel`, `BuildWorkspacePlanner`, `OperationModel`, artifact naming/log paths. | Extend existing readiness data and operation dry-run/report paths. Merge dependency/backend/provider readiness into one exported report view. Remove/avoid copied UI strings or a report model that does not come from planner/toolchain/source-dependency state. |
+| 17 | `RhiSmokeValidation`, `RuntimeApplication`, `FramePipeline`, viewport products/capture, `RhiSmokeViewportCapture`, `RhiSmokeCaptureArtifacts`, `Projects/Showcase/Levels/Empty.level`. | Extend the smoke path to exercise the real renderer/RHI empty frame. Remove/avoid dummy screenshots, fake frame artifacts, or a second runtime harness. |
+| 18 | `RenderDeviceServices`, D3D12/Vulkan backend service creation, backend RHI constructors/destructors, RHI smoke validation, launcher smoke catalog. | Extend the real backend startup/shutdown path and smoke harness. Remove/avoid backend creation stubs that do not instantiate actual D3D12/Vulkan services. |
+| 19 | Prompt 02 capability surfaces, `RhiCapabilityLogFormatting`, `RhiDiagnostics`, `RhiMemoryDiagnostics`, renderer diagnostics snapshot, smoke/launcher artifacts. | Generate parity reports as views over RHI-owned data. Merge with Prompt 07/20 diagnostics artifacts when they exist. Remove/avoid a hand-maintained backend support table. |
+| 20 | Prompt 07 diagnostics data plane, `RendererMemoryMonitor`, `FrameExecutionDiagnostics`, `PassExecutionDiagnostics`, `RhiSmokeCaptureArtifacts`, editor diagnostics providers. | Extend the same `RendererDiagnosticsSnapshot`/artifact writer if it exists. If Prompt 07 did not create it yet, create one common model here. Remove/avoid `UnifiedDiagnosticsSnapshot` as a parallel type beside `RendererDiagnosticsSnapshot`. |
+| 21 | `RhiDescriptorService`, D3D12/Vulkan descriptor allocators/managers, `RhiUploadService`, RHI memory diagnostics, `RendererMemoryMonitor`, Prompt 07 diagnostics snapshot. | Extend allocator/resource owners to expose pressure. Merge renderer summaries into the common diagnostics model. Remove/avoid renderer-side descriptor guessing or upload-pressure calculations without allocator/source data. |
+| 22 | Prompt 09 PSO surface, `PipelineRuntimeLibrary`, `PipelineRuntimeKey`, `PipelineStateManager`, `CookedShaderPackageCache`, D3D12/Vulkan pipeline services/states. | Extend the same PSO/runtime package model with stats and timing. Remove/avoid a separate pipeline cache stats table disconnected from PSO creation and shader package loads. |
+| 23 | Shader compiler `CommandRegistry`, `list-shaders`, `inspect-shader`, `inspect-package`, verification classes, `ShaderDebugArtifactWriter`, `ShaderContracts`, CMake validation script. | Extend existing CLI and verification/artifact flow. Merge golden corpus checks into shader compiler validation. Remove/avoid a second shader test runner unless it delegates to the existing commands. |
+| 24 | `RenderProviderModel`, `UpscalerProviderCapabilities`, `UpscalerSubsystem`, `HostGraphicsCapabilities`, `SourceDependencyState`, `LauncherDependencyUiModel`, Prompt 04 provider seam. | Normalize provider states once at the provider boundary, then let launcher/UI/report consumers read that state. Remove/avoid separate launcher provider enums that can drift from renderer provider state. |
+| 25 | `UpscalerInputContract`, `UpscalerInputContractBuilder`, `RenderUpscalingPassServices`, `FrameGraphDenoiserRegistration`, provider model, frame resources from Prompt 03. | Enforce resource contracts at the existing frame/provider handoff. Merge denoiser/frame-generation contract vocabulary into provider resources. Remove/avoid per-provider resource validators that cannot share color/depth/motion/exposure/history/jitter/camera/frame-index requirements. |
+| 26 | `FrameGraphResourceContractDiagnostics`, `FrameGraphPlanDiagnostics`, `FrameGraphCompiler`, `FrameGraphExecution`, resource state tracker/resolver, `PassResourceDeclaration`. | Extend compile/execute validation in the frame graph itself. Replace post-hoc warnings with errors or structured diagnostics where ownership is known. Remove/avoid an external frame graph scanner that re-parses pass behavior. |
+| 27 | `GameSceneSnapshot`, scene collections, `SceneRenderStateCoordinator`, level switching smoke, cooked asset loaders/validators, scene asset payload appenders. | Extend existing scene mutation/snapshot/invalidation proof paths. Remove/avoid duplicate snapshot IDs or invalidation tokens if `GameSceneSnapshot`/coordinator can own the revision. |
+| 28 | Prompt 08 lifecycle categories, `Application`, `RuntimeApplication`, `EditorApplication`, launcher `RecoveryUiModel`, `OperationModel`, process results, shader recook failure results. | Merge structured failure reporting with lifecycle and launcher recovery owners. Remove/avoid a second taxonomy file or global failure wrapper that strips module-specific detail. |
+| 29 | `Projects/Showcase` levels/assets, `AssetCooker`, `SceneCooker`, `MaterialCooker`, `MeshCooker`, `TextureCooker`, source importers, existing cooked manifests. | Add curated assets through existing importer/cooker/project conventions. Remove/avoid manual cooked outputs, new asset layout rules, or sample assets that do not exercise cook/runtime loading. |
+| 30 | `UI`, `EditorDiagnosticsProviders`, `ProfilerPanel`, `UsedShadersPanel`, `UsedMeshesPanel`, `UsedTexturesPanel`, viewport debug overlays, Prompt 07/20 diagnostics model. | Extend existing editor panels/providers or add a section that consumes the common diagnostics snapshot. Remove/avoid a disconnected dashboard state model or panel that copies data from logs. |
+| 31 | Launcher `LauncherBackend`, shell, build/cook/maintenance/launch operation planners/executors, `RhiSmokeTestCatalog`, process runner, artifact/log path conventions. | Aggregate existing operations and artifacts. Remove/avoid a parallel portfolio script runner unless it only orchestrates existing launcher/CMake/smoke commands. |
+| 32 | Implemented code, generated artifacts, validation matrix, review docs, architecture contracts. | Refresh docs only from source-backed current state. Remove/avoid planned-status inflation, aspirational parity claims, or documentation that describes unimplemented architecture as complete. |
+
+## Complexity Denoising Matrix
+
+This matrix contextualizes the denoising principle for each prompt. The agent must use the row for the prompt it is
+executing and report the result under `Complexity denoising decision`.
+
+| Prompt | Contextual denoising expectation |
+| --- | --- |
+| 01 | Any added RHI ownership/capability surface must remove or replace an implicit ownership path, stale wrapper, duplicated backend-specific consumer branch, or descriptive ownership inventory. Do not add RHI public API without simplifying at least one real owner/caller relationship. |
+| 02 | Any new backend capability/debug/memory field must consolidate scattered D3D12/Vulkan booleans, logs, or unsupported-state checks into the shared capability/diagnostics surface. Remove duplicated backend formatting when moving facts into shared reporting. |
+| 03 | Any new frame/pass/resource contract must replace implicit resource touching, ad hoc frame-side setup, or duplicated transient/history ownership. Prefer deleting pass-local validation once the frame graph compiler can own the rule. |
+| 04 | Any new provider-neutral type must absorb duplicated DLSS/upscaler assumptions or provider state strings. Remove feature-folder copies of provider vocabulary and keep provider-specific files focused on SDK execution. |
+| 05 | Any shader ABI/cache/runtime addition must remove ambiguous package metadata, duplicated cache identity logic, or pass-local shader load behavior. Do not create a second package or runtime pipeline abstraction beside `CookedShaderPackageCache` and `PipelineRuntimeLibrary`. |
+| 06 | Any new scene snapshot/invalidation contract must remove direct mutable scene reads from Renderer or duplicate asset compatibility checks. Keep GameFramework simpler by naming runtime data boundaries without adding renderer-facing noise. |
+| 07 | Any diagnostics data-plane addition must merge an existing one-off diagnostic/log/artifact path or route it through the common snapshot. Do not add a new collector/report unless it removes scattered metric assembly from a less appropriate owner. |
+| 08 | Any typed lifecycle failure addition must simplify origin/recovery routing and preserve existing detail strings. Remove catch-all string-only failure branches only when the typed origin now carries the same information. |
+| 09 | Any PSO/cache/timing addition must collapse pass-local pipeline bookkeeping or duplicated key creation into the runtime pipeline path. Avoid adding cache stats that do not simplify PSO creation, invalidation, or package compatibility. |
+| 10 | Any RT foundation addition must simplify the existing BLAS/TLAS/classic/PTLAS strategy split or make one duplicated AS lifecycle rule shared. Do not add a second ray tracing scene, planner, or smoke path. |
+| 11 | Any path-tracing readiness addition must reuse and simplify existing temporal/history, frame graph, RT, shader, or provider paths. Avoid standalone accumulation, sampling, or denoiser state that future renderer passes would need to understand separately. |
+| 12 | Any neural readiness addition must reduce speculative future conditionals by centralizing profile/capability gates. Do not add neural runtime objects unless they replace source-backed shader/provider capability plumbing. |
+| 13 | Any cross-feature scenario addition must reuse existing smoke/catalog/artifact conventions and remove duplicated scenario setup if it appears. Avoid scenario-only data models that do not exercise real runtime/cook/diagnostics paths. |
+| 14 | Any job-system addition must replace ad hoc async in a touched path or centralize scheduling that would otherwise duplicate across Renderer/Application/tools. Do not add threads where ownership is still mutable or unclear. |
+| 15 | Any launcher boundary action must reuse CMake target execution and existing operation planning. Remove/avoid launcher-local boundary parsing, duplicated rule names, or hand-copied exception state. |
+| 16 | Any readiness report addition must consolidate planner/toolchain/dependency/provider state already computed by launcher models. Remove duplicated UI strings or report-only readiness decisions that can drift from the operation planner. |
+| 17 | Any empty-frame smoke addition must simplify the existing smoke/session/capture flow or reuse it directly. Avoid a dummy path that avoids `RuntimeApplication`, `FramePipeline`, viewport products, or RHI capture. |
+| 18 | Any backend startup/shutdown harness must exercise and clarify existing `RenderDeviceServices` construction/destruction. Remove fake backend stubs or duplicate startup wrappers if the real service path can own the evidence. |
+| 19 | Any backend parity artifact must be a generated view over Prompt 02/07 data and should remove hand-maintained parity prose or duplicated support tables where possible. |
+| 20 | Any unified diagnostics work must extend the Prompt 07/common diagnostics model if present. Remove separate metric structs, artifact writers, or editor providers that can consume the common snapshot instead. |
+| 21 | Any descriptor/upload pressure metric must come from allocator/resource/upload owners and simplify renderer-side guessing. Remove duplicate pressure thresholds or status translation outside the shared diagnostics path. |
+| 22 | Any pipeline cache or shader load timing metric must simplify `PipelineRuntimeLibrary`, `PipelineStateManager`, or `CookedShaderPackageCache` ownership. Do not add a disconnected stats object beside PSO creation. |
+| 23 | Any shader regression corpus addition must reuse shader compiler CLI/verification/artifact code and reduce manual inspection steps. Remove duplicate scripts or test commands that do not delegate to existing compiler commands. |
+| 24 | Any provider state mapping must reduce enum/string duplication across renderer, launcher, and dependency UI. Do not add launcher-only provider states that repeat renderer provider capability states. |
+| 25 | Any provider resource-contract validation must replace per-provider resource checks or frame-side assumptions with a shared handoff rule. Remove duplicated color/depth/motion/history/exposure/jitter/camera/frame-index checks where possible. |
+| 26 | Any frame graph diagnostic hardening must move validation into compile/execute ownership and remove post-hoc warnings or external scans that duplicate compiler knowledge. |
+| 27 | Any scene invalidation validation must reuse `GameSceneSnapshot`, `SceneRenderStateCoordinator`, and smoke paths. Remove duplicate revision/invalidation tokens if an existing owner can carry the state. |
+| 28 | Any structured failure reporting must merge with Prompt 08 lifecycle categories and launcher recovery state. Remove redundant taxonomy names or string-only wrappers once typed failure preserves the detail. |
+| 29 | Any curated asset/scenario addition must use existing importer/cooker/project layout and reduce manual asset/cooked-output maintenance. Remove stale or redundant sample metadata if the new baseline supersedes it. |
+| 30 | Any editor dashboard addition must consume existing diagnostics providers/panels and simplify presentation state. Remove copied dashboard data, duplicate polling, or panel-local metric translation when the common snapshot can provide it. |
+| 31 | Any portfolio run aggregation must orchestrate existing launcher/build/cook/smoke operations and remove duplicated command sequencing. Avoid a parallel script runner unless it delegates to the same operation planners. |
+| 32 | Any documentation refresh must remove stale planned claims, duplicated guidance, or obsolete status tables. Do not add new aspirational prose unless implemented code/artifacts prove it. |
+
 | Target | Source | Implementation meaning |
 | --- | --- | --- |
 | A reviewer can run architecture, generate, build, cook, smoke, shader inspection, and diagnostics through stable commands. | [ReviewerGuide.md](../00-Review/ReviewerGuide.md), [ValidationMatrix.md](../03-Validation/ValidationMatrix.md) | Add missing launcher/CLI operations and artifacts instead of relying on oral instructions. |
@@ -260,7 +507,11 @@ You are working in the SparkleEngine repository.
 Hard constraints:
 - Read the review folder first, especially `A_PrincipalRoleRequirements.md`, `B_EngineArchitectureScorecard.md`, and `PrincipalRenderingReadiness.md`.
 - Read the prompt's required production references from the `Prompt reference matrix` before coding.
+- Read the prompt's row in the `Sparkle Counterpart Decision Matrix` before coding.
+- Read the prompt's row in the `Complexity Denoising Matrix` before coding.
 - Start from patterns that exist in NRI, NVRHI, Donut, Cauldron, Falcor, RTXPT, Streamline, FidelityFX SDK, NRD, RTXNTC, or Slang. Do not invent a new architecture shape without source precedent.
+- Start from Sparkle's existing owner for the same responsibility. Decide and report whether you will extend, replace, merge, or remove/avoid that existing code.
+- If the prompt adds new complexity, identify the local complexity it will remove, merge, simplify, rename, or move to the rightful owner.
 - Do not add major rendering features unless the prompt explicitly asks for a validation, diagnostics, or baseline asset path.
 - Do not add new third-party SDK integrations.
 - Do not weaken architecture boundary checks.
@@ -271,12 +522,15 @@ Hard constraints:
 - Do not satisfy a review requirement by adding a parallel descriptive model that mirrors existing code. If a new type is added, it must be owned by the real subsystem and consumed by runtime, validation, diagnostics, or tooling.
 - Daily refactor principle: every touched file must leave in better form than it was found. Prefer deleting, replacing, or simplifying unnecessary code over adding new code beside it.
 - When adding a new type/function/path, state which existing complexity, ambiguity, duplication, or unsafe behavior it removes.
+- Complexity denoising principle: added complexity must pay rent in the same subsystem. Prefer fewer concepts, fewer duplicated states, clearer ownership, narrower functions, and fewer special cases after the change.
+- When a similar Sparkle system already exists, either extend it or merge/replace it. Do not leave two systems with overlapping ownership.
 - Remove no-longer-needed code in the same touched path. Do not keep obsolete wrappers, stale comments, dead helpers, or misleading names just to minimize the diff.
 - Do not parallelize unclear ownership. Multithreading/job-system work must land after RHI, Renderer, PSO, RT/path tracing, neural-readiness, diagnostics, and scene snapshot MVP contracts are stable.
 - Prefer existing module patterns, existing launcher operation models, existing diagnostics types, and existing CMake target conventions.
 - Add source-backed tests or validation commands when the prompt changes behavior.
 - Update architecture docs only when the code change changes the actual contract or current status.
 - Report changed files, production references inspected, reference patterns adopted/rejected, validation commands, acceptance criteria pass/fail, and follow-ups.
+- End the report with `Final completion grade`, scored from 0 to 5 using the review-folder rubric from `B_EngineArchitectureScorecard.md` and `PrincipalRenderingReadiness.md`. Include the requirement clusters and scorecard/readiness areas affected. If the score is below 5, list the exact work still required to reach 5.
 ```
 
 ## Stage Order
@@ -309,19 +563,19 @@ The "cool thing" for each milestone is intentionally practical. It should make t
 
 ## Milestone Roadmap
 
-| Milestone | Engine evolution | Cool but non-showcase outcome | Main prompt bundle | Done when |
-| --- | --- | --- | --- | --- |
-| M0. Reviewer spine and baseline truth | The repository can explain what it is, what is available, and what is missing. | One launcher/report path can summarize toolchain, backend, dependency, provider, failure taxonomy, and boundary status with honest unavailable states. | Prompt 08, Prompt 15, Prompt 16, Prompt 28, Prompt 31, Prompt 32 | A reviewer can run or dry-run the evidence path before deeper rendering work starts. |
-| M1. Hardware and RHI truth layer | RHI owns device, queue, fence, descriptor, memory, barrier, diagnostics, and native interop truth. | Backend capability and memory reports show D3D12/Vulkan support, debug/capture state, allocator stats, and unsupported features without source spelunking. | Prompt 01, Prompt 02, Prompt 18, Prompt 19 | Backend startup/shutdown and parity artifacts are source-backed and architecture boundaries pass. |
-| M2. Frame assembly and renderer ownership | Renderer pass/resource/frame ownership becomes explicit enough to extend safely. | Empty-frame smoke emits frame graph/resource/timing artifacts that prove the frame can be assembled without hidden backend ownership. | Prompt 03, Prompt 17, Prompt 20, Prompt 26 | A new pass has an obvious place to declare resources, diagnostics, history, and failure state. |
-| M3. Shader and PSO runtime | Shader packages and PSOs become runtime assets with identity, compatibility, cache, and timing evidence. | A shader/PSO inspection path shows package metadata, reflection, pipeline identity, cache status, compile/create timing, and failure reasons. | Prompt 05, Prompt 09, Prompt 22, Prompt 23 | PSO creation is no longer an opaque side effect inside passes. |
-| M4. Runtime scene and asset baselines | GameFramework feeds renderer snapshots without learning RHI/Renderer details. | Curated tiny scenes exercise empty frame, one mesh, many materials, descriptor pressure, upload pressure, and shader cache hit/miss. | Prompt 06, Prompt 27, Prompt 29 | Scene mutation, snapshot, invalidation, and asset compatibility are visible in code/tests/artifacts. |
-| M5. Provider readiness | SDK integration becomes provider-neutral for upscaling, frame generation, and denoising before additional SDKs arrive. | Provider diagnostics report the six capability states for the current DLSS upscaler path and planned DLSS/FSR frame-generation and denoiser families using the same vocabulary. | Prompt 04, Prompt 24, Prompt 25 | DLSS/Streamline are examples of the provider architecture, not the architecture itself. |
-| M6. High-end ray tracing foundation MVP | Ray tracing has explicit AS lifecycle, RT pipeline, SBT, capability, and diagnostics ownership. | Supported hardware can run an RT readiness/AS lifecycle smoke; unsupported hardware produces a clean unavailable artifact. | Prompt 10 | BLAS/TLAS, scratch memory, AS memory, RT pipeline identity, and backend parity are reviewable. |
-| M7. Path tracing foundation MVP | Path tracing can arrive as a renderer feature without redoing RHI, scene, shader, or provider contracts. | A path tracing readiness scenario proves accumulation/history reset, sampling frame index, material/light inputs, and denoiser hook state. | Prompt 11 | The next prompt can implement a minimal path tracer against named contracts instead of inventing architecture. |
-| M8. Cross-feature proof | The feature foundations are wired together instead of living as isolated types. | One curated scenario set emits PSO, RT, path tracing readiness, neural readiness, descriptor, upload, memory, and timing sections. | Prompt 07, Prompt 13, Prompt 21, Prompt 30 | The editor or artifact bundle can show the engine is ready for heavy rendering work. |
-| M9. Job system and multithreading last | Concurrency follows stable ownership instead of hiding unclear lifetime bugs. | Single-thread and multithread modes run the same smoke paths while diagnostics show job count, wait time, utilization, and CPU scheduling cost. | Prompt 14 | Initial parallel work operates on immutable snapshots or clearly owned data, with deterministic fallback. |
-| M10. Portfolio-ready review run | All previous milestones are packaged into a repeatable reviewer path. | One portfolio review operation collects build/cook/smoke/shader/backend/diagnostics artifacts and writes a manifest. | Prompt 31, Prompt 32 | The repository can be evaluated under time pressure without a guided tour. |
+| Milestone | Grade/status | Engine evolution | Cool but non-showcase outcome | Main prompt bundle | Done when |
+| --- | --- | --- | --- | --- | --- |
+| M0. Reviewer spine and baseline truth | 2/5, Graded | The repository can explain what it is, what is available, and what is missing. | One launcher/report path can summarize toolchain, backend, dependency, provider, failure taxonomy, and boundary status with honest unavailable states. | Prompt 08, Prompt 15, Prompt 16, Prompt 28, Prompt 31, Prompt 32 | A reviewer can run or dry-run the evidence path before deeper rendering work starts. |
+| M1. Hardware and RHI truth layer | 3/5, Graded | RHI owns device, queue, fence, descriptor, memory, barrier, diagnostics, and native interop truth. | Backend capability and memory reports show D3D12/Vulkan support, debug/capture state, allocator stats, and unsupported features without source spelunking. | Prompt 01, Prompt 02, Prompt 18, Prompt 19 | Backend startup/shutdown and parity artifacts are source-backed and architecture boundaries pass. |
+| M2. Frame assembly and renderer ownership | 2/5, Blocked | Renderer pass/resource/frame ownership becomes explicit enough to extend safely. | Empty-frame smoke emits frame graph/resource/timing artifacts that prove the frame can be assembled without hidden backend ownership. | Prompt 03, Prompt 17, Prompt 20, Prompt 26 | A new pass has an obvious place to declare resources, diagnostics, history, and failure state. |
+| M3. Shader and PSO runtime | 3/5, Graded | Shader packages and PSOs become runtime assets with identity, compatibility, cache, and timing evidence. | A shader/PSO inspection path shows package metadata, reflection, pipeline identity, cache status, compile/create timing, and failure reasons. | Prompt 05, Prompt 09, Prompt 22, Prompt 23 | PSO creation is no longer an opaque side effect inside passes. |
+| M4. Runtime scene and asset baselines | 3/5, Graded | GameFramework feeds renderer snapshots without learning RHI/Renderer details. | Curated tiny scenes exercise empty frame, one mesh, many materials, descriptor pressure, upload pressure, and shader cache hit/miss. | Prompt 06, Prompt 27, Prompt 29 | Scene mutation, snapshot, invalidation, and asset compatibility are visible in code/tests/artifacts. |
+| M5. Provider readiness | 2/5, Graded | SDK integration becomes provider-neutral for upscaling, frame generation, and denoising before additional SDKs arrive. | Provider diagnostics report the six capability states for the current DLSS upscaler path and planned DLSS/FSR frame-generation and denoiser families using the same vocabulary. | Prompt 04, Prompt 24, Prompt 25 | DLSS/Streamline are examples of the provider architecture, not the architecture itself. |
+| M6. High-end ray tracing foundation MVP | 2/5, Blocked | Ray tracing has explicit AS lifecycle, RT pipeline, SBT, capability, and diagnostics ownership. | Supported hardware can run an RT readiness/AS lifecycle smoke; unsupported hardware produces a clean unavailable artifact. | Prompt 10 | BLAS/TLAS, scratch memory, AS memory, RT pipeline identity, and backend parity are reviewable. |
+| M7. Path tracing foundation MVP | 1/5, Graded | Path tracing can arrive as a renderer feature without redoing RHI, scene, shader, or provider contracts. | A path tracing readiness scenario proves accumulation/history reset, sampling frame index, material/light inputs, and denoiser hook state. | Prompt 11 | The next prompt can implement a minimal path tracer against named contracts instead of inventing architecture. |
+| M8. Cross-feature proof | TBD, Not started | The feature foundations are wired together instead of living as isolated types. | One curated scenario set emits PSO, RT, path tracing readiness, neural readiness, descriptor, upload, memory, and timing sections. | Prompt 07, Prompt 13, Prompt 21, Prompt 30 | The editor or artifact bundle can show the engine is ready for heavy rendering work. |
+| M9. Job system and multithreading last | TBD, Not started | Concurrency follows stable ownership instead of hiding unclear lifetime bugs. | Single-thread and multithread modes run the same smoke paths while diagnostics show job count, wait time, utilization, and CPU scheduling cost. | Prompt 14 | Initial parallel work operates on immutable snapshots or clearly owned data, with deterministic fallback. |
+| M10. Portfolio-ready review run | TBD, Not started | All previous milestones are packaged into a repeatable reviewer path. | One portfolio review operation collects build/cook/smoke/shader/backend/diagnostics artifacts and writes a manifest. | Prompt 31, Prompt 32 | The repository can be evaluated under time pressure without a guided tour. |
 
 Do not advance a milestone just because a report exists. Advance it only when the report is backed by the underlying RHI, Renderer, shader, provider, scene, or workflow changes the milestone requires.
 
@@ -330,6 +584,7 @@ Do not advance a milestone just because a report exists. Advance it only when th
 Use these prompts before or alongside the validation prompts. They are the main work. The later validation and workflow prompts prove this work happened.
 
 ## Prompt 01 of 32 (M1): RHI Explicit Ownership And Capability Refactor
+Prompt grade: TBD, Needs regrade | Milestone grade: M1 3/5, Graded
 
 ```text
 Task:
@@ -432,6 +687,7 @@ Report:
 ```
 
 ## Prompt 02 of 32 (M1): Backend Capability, Debug, Capture, And Memory Parity Refactor
+Prompt grade: TBD, Needs regrade | Milestone grade: M1 3/5, Graded
 
 ```text
 Task:
@@ -507,6 +763,7 @@ Report:
 ```
 
 ## Prompt 03 of 32 (M2): Renderer Frame Assembly And Resource Ownership Refactor
+Prompt grade: TBD, Blocked | Milestone grade: M2 2/5, Blocked
 
 ```text
 Task:
@@ -588,6 +845,7 @@ Report:
 ```
 
 ## Prompt 04 of 32 (M5): Provider-Neutral SDK Architecture Refactor
+Prompt grade: TBD, Needs regrade | Milestone grade: M5 2/5, Graded
 
 ```text
 Task:
@@ -681,6 +939,7 @@ Report:
 ```
 
 ## Prompt 05 of 32 (M3): Shader ABI And Runtime Pipeline Hardening Refactor
+Prompt grade: TBD, Needs regrade | Milestone grade: M3 3/5, Graded
 
 ```text
 Task:
@@ -753,6 +1012,7 @@ Report:
 ```
 
 ## Prompt 06 of 32 (M4): Runtime Scene Snapshot Boundary Refactor
+Prompt grade: TBD, Needs regrade | Milestone grade: M4 3/5, Graded
 
 ```text
 Task:
@@ -823,6 +1083,7 @@ Report:
 ```
 
 ## Prompt 07 of 32 (M8): Diagnostics Data Plane Refactor
+Prompt grade: TBD, Needs regrade | Milestone grade: M8 TBD, Not started
 
 ```text
 Task:
@@ -904,6 +1165,7 @@ Report:
 ```
 
 ## Prompt 08 of 32 (M0): Application Lifecycle And Typed Failure Refactor
+Prompt grade: TBD, Not started | Milestone grade: M0 2/5, Graded
 
 ```text
 Task:
@@ -995,6 +1257,7 @@ The required order is intentional:
 Multithreading is last because parallel execution will magnify unclear lifetime, ownership, barrier, PSO, scene snapshot, and diagnostics contracts. The engine should first know what work exists before it starts spreading that work across threads.
 
 ## Prompt 09 of 32 (M3): PSO Management Foundation MVP
+Prompt grade: TBD, Not started | Milestone grade: M3 3/5, Graded
 
 ```text
 Task:
@@ -1080,6 +1343,7 @@ Report:
 ```
 
 ## Prompt 10 of 32 (M6): High-End Ray Tracing Foundation MVP
+Prompt grade: TBD, Blocked | Milestone grade: M6 2/5, Blocked
 
 ```text
 Task:
@@ -1169,6 +1433,7 @@ Report:
 ```
 
 ## Prompt 11 of 32 (M7): Path Tracing Foundation MVP
+Prompt grade: TBD, Not started | Milestone grade: M7 1/5, Graded
 
 ```text
 Task:
@@ -1251,6 +1516,7 @@ Report:
 ```
 
 ## Prompt 12 of 32 (M5): Neural Rendering Foundation MVP
+Prompt grade: TBD, Not started | Milestone grade: M5 2/5, Graded
 
 ```text
 Task:
@@ -1325,6 +1591,7 @@ Report:
 ```
 
 ## Prompt 13 of 32 (M8): Cross-Feature Foundation MVP Proof Scenarios
+Prompt grade: TBD, Not started | Milestone grade: M8 TBD, Not started
 
 ```text
 Task:
@@ -1399,6 +1666,7 @@ Report:
 ```
 
 ## Prompt 14 of 32 (M9): Job System And Multithreading Foundation Last
+Prompt grade: TBD, Not started | Milestone grade: M9 TBD, Not started
 
 ```text
 Task:
@@ -1495,6 +1763,7 @@ Report:
 ```
 
 ## Prompt 15 of 32 (M0): Launcher Validation Category And Architecture Boundary Action
+Prompt grade: TBD, Not started | Milestone grade: M0 2/5, Graded
 
 ```text
 Task:
@@ -1563,6 +1832,7 @@ Report:
 ```
 
 ## Prompt 16 of 32 (M0): Launcher Readiness Report Artifact
+Prompt grade: TBD, Not started | Milestone grade: M0 2/5, Graded
 
 ```text
 Task:
@@ -1637,6 +1907,7 @@ Report:
 ```
 
 ## Prompt 17 of 32 (M2): Renderer Empty Frame Smoke Path
+Prompt grade: TBD, Blocked | Milestone grade: M2 2/5, Blocked
 
 ```text
 Task:
@@ -1707,6 +1978,7 @@ Report:
 ```
 
 ## Prompt 18 of 32 (M1): RHI Backend Startup/Shutdown Conformance Harness
+Prompt grade: TBD, Not started | Milestone grade: M1 3/5, Graded
 
 ```text
 Task:
@@ -1774,6 +2046,7 @@ Report:
 ```
 
 ## Prompt 19 of 32 (M1): Backend Parity Review Report
+Prompt grade: TBD, Not started | Milestone grade: M1 3/5, Graded
 
 ```text
 Task:
@@ -1851,6 +2124,7 @@ Report:
 ```
 
 ## Prompt 20 of 32 (M2): Unified Diagnostics Snapshot And Baseline Artifact Writer
+Prompt grade: TBD, Needs regrade | Milestone grade: M2 2/5, Blocked
 
 ```text
 Task:
@@ -1930,6 +2204,7 @@ Report:
 ```
 
 ## Prompt 21 of 32 (M8): Descriptor Pressure And Upload Pressure Diagnostics
+Prompt grade: TBD, Needs regrade | Milestone grade: M8 TBD, Not started
 
 ```text
 Task:
@@ -1997,6 +2272,7 @@ Report:
 ```
 
 ## Prompt 22 of 32 (M3): Pipeline Cache Stats And Shader Package Load Timing
+Prompt grade: TBD, Not started | Milestone grade: M3 3/5, Graded
 
 ```text
 Task:
@@ -2059,6 +2335,7 @@ Report:
 ```
 
 ## Prompt 23 of 32 (M3): Shader Golden Reflection And Package Regression Corpus
+Prompt grade: TBD, Not started | Milestone grade: M3 3/5, Graded
 
 ```text
 Task:
@@ -2127,6 +2404,7 @@ Report:
 ```
 
 ## Prompt 24 of 32 (M5): Provider Capability State Mapping
+Prompt grade: TBD, Needs regrade | Milestone grade: M5 2/5, Graded
 
 ```text
 Task:
@@ -2205,6 +2483,7 @@ Report:
 ```
 
 ## Prompt 25 of 32 (M5): Provider Resource Contract Validation
+Prompt grade: TBD, Needs regrade | Milestone grade: M5 2/5, Graded
 
 ```text
 Task:
@@ -2284,6 +2563,7 @@ Report:
 ```
 
 ## Prompt 26 of 32 (M2): Frame Graph Contract Diagnostics Hardening
+Prompt grade: TBD, Needs regrade | Milestone grade: M2 2/5, Blocked
 
 ```text
 Task:
@@ -2344,6 +2624,7 @@ Report:
 ```
 
 ## Prompt 27 of 32 (M4): Runtime Scene Snapshot And Invalidation Validation
+Prompt grade: TBD, Not started | Milestone grade: M4 3/5, Graded
 
 ```text
 Task:
@@ -2408,6 +2689,7 @@ Report:
 ```
 
 ## Prompt 28 of 32 (M0): Application Error Taxonomy And Structured Failure Reporting
+Prompt grade: TBD, Not started | Milestone grade: M0 2/5, Graded
 
 ```text
 Task:
@@ -2477,6 +2759,7 @@ Report:
 ```
 
 ## Prompt 29 of 32 (M4): Curated Portfolio Baseline Assets And Scenarios
+Prompt grade: TBD, Not started | Milestone grade: M4 3/5, Graded
 
 ```text
 Task:
@@ -2545,6 +2828,7 @@ Report:
 ```
 
 ## Prompt 30 of 32 (M8): Editor Principal Review Dashboard
+Prompt grade: TBD, Not started | Milestone grade: M8 TBD, Not started
 
 ```text
 Task:
@@ -2618,6 +2902,7 @@ Report:
 ```
 
 ## Prompt 31 of 32 (M10): Portfolio Review Run Aggregator
+Prompt grade: TBD, Not started | Milestone grade: M10 TBD, Not started
 
 ```text
 Task:
@@ -2690,6 +2975,7 @@ Report:
 ```
 
 ## Prompt 32 of 32 (M10): Documentation Status Refresh After Code Implementation
+Prompt grade: TBD, Not started | Milestone grade: M10 TBD, Not started
 
 ```text
 Task:

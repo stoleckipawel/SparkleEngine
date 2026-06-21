@@ -6,6 +6,7 @@
 #include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "Renderer/Public/Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Viewport/ViewportContracts.h"
 
@@ -49,6 +50,7 @@ class FramePipeline final
 	std::uint32_t GetCompiledPersistentResourceCount() const noexcept;
 	std::uint32_t GetAvailableViewportProductCount() const noexcept;
 	bool TryGetLastResolvedGpuTimingMilliseconds(std::string_view label, double& outMilliseconds) const noexcept;
+	RendererFrameTimingDiagnosticsSnapshot CaptureFrameTimingDiagnosticsSnapshot() const;
 
   private:
 	void InitializeFrameGraph() noexcept;

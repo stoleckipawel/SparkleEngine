@@ -8,6 +8,45 @@
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 
 #include <d3d12.h>
+#include <array>
+
+namespace
+{
+	ERhiDescriptorAllocatorType ToRhiAllocatorType(D3D12_DESCRIPTOR_HEAP_TYPE type) noexcept
+	{
+		switch (type)
+		{
+			case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
+				return ERhiDescriptorAllocatorType::ShaderResource;
+			case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
+				return ERhiDescriptorAllocatorType::Sampler;
+			case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
+				return ERhiDescriptorAllocatorType::RenderTarget;
+			case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
+				return ERhiDescriptorAllocatorType::DepthStencil;
+			default:
+				return ERhiDescriptorAllocatorType::ShaderResource;
+		}
+	}
+
+	RhiDescriptorAllocatorUsage ToRhiUsage(const D3D12DescriptorHeapUsage& usage)
+	{
+		const ERhiDescriptorAllocatorType type = ToRhiAllocatorType(usage.HeapType);
+		const float occupancyRatio = usage.Stats.Capacity != 0u
+		                               ? static_cast<float>(usage.Stats.Allocated) / static_cast<float>(usage.Stats.Capacity)
+		                               : 0.0f;
+		return RhiDescriptorAllocatorUsage{
+		    .Type = type,
+		    .Status = usage.Stats.Capacity != 0u ? ERhiDescriptorUsageStatus::Available : ERhiDescriptorUsageStatus::Unavailable,
+		    .Name = RhiDescriptorAllocatorTypeToString(type),
+		    .Capacity = usage.Stats.Capacity,
+		    .Allocated = usage.Stats.Allocated,
+		    .Free = usage.Stats.Free,
+		    .HighWatermark = usage.Stats.HighWatermark,
+		    .OccupancyRatio = occupancyRatio,
+		    .Reason = usage.Stats.Capacity != 0u ? "" : "D3D12 descriptor allocator is not initialized."};
+	}
+}
 
 D3D12DescriptorService::D3D12DescriptorService(
     D3D12Rhi& rhi,
@@ -262,6 +301,30 @@ RhiGpuDescriptorHandle D3D12DescriptorService::GetResourceViewGpuHandle(RhiResou
 NativeTextureViewInfo D3D12DescriptorService::GetNativeTextureViewInfo(RhiResourceViewHandle, ResourceState) const noexcept
 {
 	return {};
+}
+
+RhiDescriptorUsageSnapshot D3D12DescriptorService::CaptureDescriptorUsageSnapshot() const
+{
+	RhiDescriptorUsageSnapshot snapshot;
+	snapshot.DescriptorModel = ERhiDescriptorModel::DescriptorTables;
+	if (m_descriptorHeapManager == nullptr)
+	{
+		snapshot.Allocators.push_back(
+		    RhiDescriptorAllocatorUsage{
+		        .Type = ERhiDescriptorAllocatorType::ShaderResource,
+		        .Status = ERhiDescriptorUsageStatus::Unavailable,
+		        .Name = RhiDescriptorAllocatorTypeToString(ERhiDescriptorAllocatorType::ShaderResource),
+		        .Reason = "D3D12 descriptor heap manager is not initialized."});
+		return snapshot;
+	}
+
+	const std::array<D3D12DescriptorHeapUsage, 4> usage = m_descriptorHeapManager->CaptureUsage();
+	snapshot.Allocators.reserve(usage.size());
+	for (const D3D12DescriptorHeapUsage& allocatorUsage : usage)
+	{
+		snapshot.Allocators.push_back(ToRhiUsage(allocatorUsage));
+	}
+	return snapshot;
 }
 
 ERhiDescriptorAllocatorType D3D12DescriptorService::ResolveResourceViewDescriptorAllocatorType(

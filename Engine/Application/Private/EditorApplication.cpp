@@ -68,6 +68,10 @@ void EditorApplication::Initialize()
 		    {
 			    return renderer.CaptureMemoryDiagnostics();
 		    },
+		    .RendererDiagnostics = [&renderer]()
+		    {
+			    return renderer.CaptureDiagnosticsSnapshot();
+		    },
 		    .RendererSmokeDiagnostics = [&renderer]()
 		    {
 			    return renderer.CaptureSmokeDiagnostics();
