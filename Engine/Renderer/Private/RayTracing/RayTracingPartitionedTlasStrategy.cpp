@@ -695,8 +695,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		return true;
 	};
 	{
-		auto instancePrepCpuScope =
-		    diagnostics != nullptr ? diagnostics->BeginTlasInstancePreparationCpuScope() : RayTracingPerformanceDiagnostics::CpuScope{};
+		SPARKLE_CPU_SCOPE("Renderer.RayTracing.PartitionedTlas.InstancePreparation");
 		if (useFullBuild)
 		{
 			appendFullBuildWrites();
@@ -767,8 +766,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		m_partitionedResources.NativeOperationData = {};
 	}
 	{
-		auto cpuPackScope =
-		    diagnostics != nullptr ? diagnostics->BeginPartitionedTlasCpuPackScope() : RayTracingPerformanceDiagnostics::CpuScope{};
+		SPARKLE_CPU_SCOPE("Renderer.RayTracing.PartitionedTlas.CpuPack");
 		m_partitionedResources.NativeOperationData =
 		    rayTracingService.CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
 		        operationPack,
@@ -812,7 +810,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	}
 
 	{
-		auto tlasCpuScope = diagnostics != nullptr ? diagnostics->BeginTlasCpuScope() : RayTracingPerformanceDiagnostics::CpuScope{};
+		SPARKLE_CPU_SCOPE("Renderer.RayTracing.PartitionedTlas.Build");
 		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope("Partitioned TLAS Build") : ScopedGpuScope{};
 		cmd.BuildPartitionedTopLevelAccelerationStructure(
 		    RhiPartitionedTlasBuildCommandDesc{

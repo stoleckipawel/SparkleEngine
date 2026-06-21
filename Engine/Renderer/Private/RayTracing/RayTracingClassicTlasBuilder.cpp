@@ -104,7 +104,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	BuildStats stats{};
-	auto tlasCpuScope = diagnostics != nullptr ? diagnostics->BeginTlasCpuScope() : RayTracingPerformanceDiagnostics::CpuScope{};
+	SPARKLE_CPU_SCOPE("Renderer.RayTracing.ClassicTlas.Build");
 	if (m_renderHardwareInterface == nullptr)
 	{
 		return stats;
@@ -134,8 +134,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	}
 	instances.reserve(sceneData.meshInstances.size());
 	{
-		auto instancePrepCpuScope =
-		    diagnostics != nullptr ? diagnostics->BeginTlasInstancePreparationCpuScope() : RayTracingPerformanceDiagnostics::CpuScope{};
+		SPARKLE_CPU_SCOPE("Renderer.RayTracing.ClassicTlas.InstancePreparation");
 		for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++index)
 		{
 			const MeshDraw& draw = sceneData.meshInstances[index];

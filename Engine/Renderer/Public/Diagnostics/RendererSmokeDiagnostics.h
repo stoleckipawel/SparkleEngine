@@ -1,11 +1,13 @@
 #pragma once
 
 #include "../RendererAPI.h"
+#include "RendererDiagnosticsSnapshot.h"
 #include "RendererSmokeRayTracingDiagnostics.h"
 #include "../../../RHI/Public/Core/RhiBackendApi.h"
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 struct SPARKLE_RENDERER_API RendererSmokeAdapterDiagnostics final
 {
@@ -29,6 +31,7 @@ struct SPARKLE_RENDERER_API RendererSmokeFrameTimingDiagnostics final
 {
 	bool HasFinalFrameGpuMilliseconds = false;
 	double FinalFrameGpuMilliseconds = 0.0;
+	std::vector<RendererGpuTimingMetric> GpuTimings;
 };
 
 struct SPARKLE_RENDERER_API RendererSmokeUpscalerDiagnostics final

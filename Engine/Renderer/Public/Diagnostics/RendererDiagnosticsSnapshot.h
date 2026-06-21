@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 enum class ERendererDiagnosticStatus : std::uint8_t
@@ -142,6 +143,13 @@ SPARKLE_RENDERER_API const char* RendererDiagnosticStatusToString(ERendererDiagn
 SPARKLE_RENDERER_API const char* RendererDiagnosticUnitToString(ERendererDiagnosticUnit unit) noexcept;
 SPARKLE_RENDERER_API const char* RendererDiagnosticOriginToString(ERendererDiagnosticOrigin origin) noexcept;
 SPARKLE_RENDERER_API const char* RendererBackendApiToString(ERhiBackendApi backend) noexcept;
+SPARKLE_RENDERER_API const RendererGpuTimingMetric* FindRendererGpuTiming(
+    const RendererFrameTimingDiagnosticsSnapshot& snapshot,
+    std::string_view label) noexcept;
+SPARKLE_RENDERER_API bool TryGetRendererGpuTimingMilliseconds(
+    const RendererFrameTimingDiagnosticsSnapshot& snapshot,
+    std::string_view label,
+    double& outMilliseconds) noexcept;
 SPARKLE_RENDERER_API std::string FormatRendererBackendVersion(const RhiBackendVersionInfo& version);
 SPARKLE_RENDERER_API bool WriteRendererDiagnosticsTextArtifact(
     const RendererDiagnosticsSnapshot& snapshot,

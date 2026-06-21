@@ -177,9 +177,5 @@ void ViewportRayTracingDebugOverlay::Draw(
 	ViewportRayTracingDebugOverlayRows::DrawMetricRow(
 	    "GPU pack used",
 	    ViewportRayTracingDebugOverlayRows::YesNo(rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted));
-	ImGui::Separator();
-	ViewportRayTracingDebugOverlayRows::DrawMetricRow("BLAS GPU", rayTracing.Blas.GpuMilliseconds);
-	ViewportRayTracingDebugOverlayRows::DrawMetricRow("Classic TLAS GPU", rayTracing.ClassicTlas.GpuMilliseconds);
-	ViewportRayTracingDebugOverlayRows::DrawMetricRow("RT pass GPU", rayTracing.FrameTimings.RayTracingPassGpuMilliseconds);
 	ImGui::End();
 }

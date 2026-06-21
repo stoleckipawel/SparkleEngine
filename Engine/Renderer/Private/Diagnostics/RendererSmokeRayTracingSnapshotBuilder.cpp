@@ -13,9 +13,7 @@ namespace RendererSmokeRayTracingSnapshotBuilderDetails
 		return RendererSmokeRayTracingBlasDiagnostics{
 		    .ReferencedMeshCount = metrics.Blas.ReferencedMeshCount,
 		    .BuiltCount = metrics.Blas.BuiltCount,
-		    .ReusedCount = metrics.Blas.ReusedCount,
-		    .CpuMilliseconds = metrics.Blas.CpuMilliseconds,
-		    .GpuMilliseconds = metrics.Blas.GpuMilliseconds};
+		    .ReusedCount = metrics.Blas.ReusedCount};
 	}
 
 	RendererSmokeRayTracingClassicTlasDiagnostics BuildClassicTlasDiagnostics(
@@ -28,10 +26,7 @@ namespace RendererSmokeRayTracingSnapshotBuilderDetails
 		    .CandidateInstanceCount = metrics.ClassicTlas.CandidateInstanceCount,
 		    .MissingGpuMeshCount = metrics.ClassicTlas.MissingGpuMeshCount,
 		    .RejectedBlasCount = metrics.ClassicTlas.RejectedBlasCount,
-		    .Built = metrics.ClassicTlas.Built,
-		    .CpuMilliseconds = metrics.ClassicTlas.CpuMilliseconds,
-		    .InstancePreparationCpuMilliseconds = metrics.ClassicTlas.InstancePreparationCpuMilliseconds,
-		    .GpuMilliseconds = metrics.ClassicTlas.GpuMilliseconds};
+		    .Built = metrics.ClassicTlas.Built};
 	}
 
 	RendererSmokeRayTracingPtlasPlannerDiagnostics BuildPtlasPlannerDiagnostics(
@@ -71,11 +66,7 @@ namespace RendererSmokeRayTracingSnapshotBuilderDetails
 		    .GpuDrivenOperationApiSupported = metrics.PtlasGpuUpdates.GpuDrivenOperationApiSupported,
 		    .GpuLogicalUpdateWriterAvailable = metrics.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable,
 		    .FullGpuNativePackAvailable = metrics.PtlasGpuUpdates.FullGpuNativePackAvailable,
-		    .FullGpuNativePackSubmitted = metrics.PtlasGpuUpdates.FullGpuNativePackSubmitted,
-		    .CpuPackMilliseconds = metrics.PtlasGpuUpdates.CpuPackMilliseconds,
-		    .GpuDirtyDetectionMilliseconds = metrics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds,
-		    .GpuNativePackMilliseconds = metrics.PtlasGpuUpdates.GpuNativePackMilliseconds,
-		    .PtlasUpdateGpuMilliseconds = metrics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds};
+		    .FullGpuNativePackSubmitted = metrics.PtlasGpuUpdates.FullGpuNativePackSubmitted};
 	}
 
 	RendererSmokeIndirectSpecularDiagnostics BuildIndirectSpecularDiagnostics() noexcept
@@ -90,7 +81,7 @@ namespace RendererSmokeRayTracingSnapshotBuilderDetails
 		    .HitDataAvailable = snapshot.HitDataAvailable,
 		    .HitInstanceCount = snapshot.HitInstanceCount,
 		    .HitMaterialCount = snapshot.HitMaterialCount,
-		    .GpuTimingLabel = "RT Indirect Specular Ray Query"};
+		    .GpuTimingName = "Indirect Specular Ray Query"};
 	}
 }
 
@@ -112,10 +103,6 @@ RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build
 	diagnostics.Capability.TopLevelProvider = metrics.Providers.TopLevelProvider;
 	diagnostics.Capability.TopLevelProviderReason = metrics.Providers.TopLevelProviderReason;
 	diagnostics.Capability.PartitionedTlasCapabilityReason = metrics.Providers.PartitionedTlasCapabilityReason;
-	diagnostics.FrameTimings.ScenePrepareCpuMilliseconds = metrics.Timings.ScenePrepareCpuMilliseconds;
-	diagnostics.FrameTimings.SceneBuildCpuMilliseconds = metrics.Timings.SceneBuildCpuMilliseconds;
-	diagnostics.FrameTimings.RayTracingPassGpuMilliseconds = metrics.Timings.RayTracingPassGpuMilliseconds;
-	diagnostics.FrameTimings.IndirectSpecularGpuMilliseconds = metrics.Timings.IndirectSpecularGpuMilliseconds;
 	diagnostics.Blas = RendererSmokeRayTracingSnapshotBuilderDetails::BuildBlasDiagnostics(metrics);
 	diagnostics.ClassicTlas = RendererSmokeRayTracingSnapshotBuilderDetails::BuildClassicTlasDiagnostics(*rayTracingScene, metrics);
 	diagnostics.PtlasPlanner = RendererSmokeRayTracingSnapshotBuilderDetails::BuildPtlasPlannerDiagnostics(capabilities, metrics);

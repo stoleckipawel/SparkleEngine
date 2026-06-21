@@ -1244,6 +1244,15 @@ Implement Stage 9.2 from Docs/Architecture/05-Implementation/RayTracedReflection
 Build the optional internal timing sink on top of the `SPARKLE_CPU_SCOPE`/`SPARKLE_GPU_SCOPE` contract from Stage 9.1. Derive GPU timings from timestamp queries around GPU scopes and CPU timings from CPU scopes where available. Replace per-effect millisecond fields with a generic timing snapshot and lookup API, keep smoke diagnostics focused on functional status and other data that profiler markers cannot provide, and remove duplicated manual pass timers/milestones. Run the Stage 9.0 end-state verification queries and delete all duplicated instrumentation that does not align with the cleanup map, documenting only intentional exceptions with owners. Do not weaken profiler marker visibility.
 ```
 
+Implementation note:
+
+- The existing `RendererFrameTimingDiagnosticsSnapshot` is the automatic GPU timing sink. It now has `FindRendererGpuTiming(...)` and `TryGetRendererGpuTimingMilliseconds(...)` helpers so smoke/tests can query stable scope labels without effect-owned timing fields.
+- Ray tracing performance/smoke diagnostics no longer store per-effect CPU/GPU milliseconds. They keep capability state, provider choices, counts, planner state, validation mismatch counts, writer path, and IndirectSpecular status/hit-data facts.
+- `FramePipeline` no longer republishes resolved GPU timings into `RenderRayTracingScene`; resolved GPU timings go to the generic renderer timing snapshot and LiveProfiler.
+- Ray tracing CPU stopwatch scopes were removed. Ray tracing CPU work now uses `SPARKLE_CPU_SCOPE` at scene prepare/build, BLAS ensure, classic TLAS build/instance preparation, and partitioned TLAS preparation/pack/build boundaries.
+- Smoke capture artifacts now write generic GPU timing rows from `RendererSmokeFrameTimingDiagnostics::GpuTimings` instead of ray tracing-owned timing fields.
+- `Docs/Architecture/03-Validation/MeasurementCleanupValidation.md` records the end-state grep checks and intentional exceptions.
+
 ## Suggested Validation Commands
 
 Exact command names can differ by local build output, so confirm paths from the current build tree before wiring these into automation:

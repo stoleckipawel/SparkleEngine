@@ -47,9 +47,6 @@ RayTracingSceneFramePlan RenderRayTracingScene::PlanFrame(
 RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& sceneData) noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.RayTracing.ScenePrepare");
-	m_performanceMetrics.Timings.ScenePrepareCpuMilliseconds = 0.0;
-	RayTracingPerformanceDiagnostics diagnostics{m_performanceMetrics};
-	auto cpuScope = diagnostics.BeginScenePrepareCpuScope();
 
 	if (m_topLevelAccelerationStructureStrategy == nullptr)
 	{
@@ -101,16 +98,7 @@ void RenderRayTracingScene::Build(
     PassExecutionDiagnostics* diagnostics) noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.RayTracing.SceneBuild");
-	m_performanceMetrics.Timings.SceneBuildCpuMilliseconds = 0.0;
-	m_performanceMetrics.Blas.CpuMilliseconds = 0.0;
-	m_performanceMetrics.ClassicTlas.CpuMilliseconds = 0.0;
-	m_performanceMetrics.ClassicTlas.InstancePreparationCpuMilliseconds = 0.0;
-	m_performanceMetrics.PtlasGpuUpdates.CpuPackMilliseconds = 0.0;
-	m_performanceMetrics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds = 0.0;
-	m_performanceMetrics.PtlasGpuUpdates.GpuNativePackMilliseconds = 0.0;
-	m_performanceMetrics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds = 0.0;
-	RayTracingPerformanceDiagnostics performanceDiagnostics{m_performanceMetrics, diagnostics};
-	auto cpuScope = performanceDiagnostics.BeginSceneBuildCpuScope();
+	RayTracingPerformanceDiagnostics performanceDiagnostics{diagnostics};
 
 	if (m_blasCache == nullptr || m_topLevelAccelerationStructureStrategy == nullptr)
 	{
@@ -163,16 +151,11 @@ void RenderRayTracingScene::Build(
 	m_performanceMetrics.PtlasPlanner.Overflow = topLevelStats.PtlasPlanner.Overflow;
 	const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
 	    m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->GetCurrentPlannerMetrics() : RayTracingTopLevelScenePlannerMetrics{};
-	const RayTracingPtlasGpuUpdateMetrics measuredPtlasTimings = m_performanceMetrics.PtlasGpuUpdates;
 	m_performanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
 	if (topLevelBuild.ActiveProvider == ERhiRayTracingTopLevelProvider::PartitionedTlas)
 	{
 		m_performanceMetrics.PtlasGpuUpdates = topLevelBuild.PtlasGpuUpdates;
 	}
-	m_performanceMetrics.PtlasGpuUpdates.CpuPackMilliseconds = measuredPtlasTimings.CpuPackMilliseconds;
-	m_performanceMetrics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds = measuredPtlasTimings.GpuDirtyDetectionMilliseconds;
-	m_performanceMetrics.PtlasGpuUpdates.GpuNativePackMilliseconds = measuredPtlasTimings.GpuNativePackMilliseconds;
-	m_performanceMetrics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds = measuredPtlasTimings.PtlasUpdateGpuMilliseconds;
 	m_performanceMetrics.PtlasGpuUpdates.GpuDrivenOperationApiSupported =
 	    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
 	m_performanceMetrics.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable =
@@ -197,7 +180,7 @@ void RenderRayTracingScene::BuildPartitionedTlasLogicalUpdateResources(
 		return;
 	}
 
-	RayTracingPerformanceDiagnostics performanceDiagnostics{m_performanceMetrics, diagnostics};
+	RayTracingPerformanceDiagnostics performanceDiagnostics{diagnostics};
 	m_topLevelAccelerationStructureStrategy->BuildPartitionedTlasLogicalUpdateResources(
 	    cmd,
 	    sceneData,
@@ -215,7 +198,7 @@ void RenderRayTracingScene::PackPartitionedTlasNativeOperations(
 		return;
 	}
 
-	RayTracingPerformanceDiagnostics performanceDiagnostics{m_performanceMetrics, diagnostics};
+	RayTracingPerformanceDiagnostics performanceDiagnostics{diagnostics};
 	m_topLevelAccelerationStructureStrategy->PackPartitionedTlasNativeOperations(
 	    cmd,
 	    sceneData,
@@ -272,16 +255,6 @@ std::uint32_t RenderRayTracingScene::GetTlasInstanceCount() const noexcept
 	return m_topLevelAccelerationStructureStrategy != nullptr
 	           ? m_topLevelAccelerationStructureStrategy->GetSceneTlasInstanceCount()
 	           : 0;
-}
-
-void RenderRayTracingScene::BeginResolvedGpuTimingFrame() noexcept
-{
-	RayTracingPerformanceDiagnostics::BeginResolvedGpuTimingFrame(m_performanceMetrics);
-}
-
-void RenderRayTracingScene::PublishResolvedGpuTiming(const ResolvedGpuTiming& timing) noexcept
-{
-	RayTracingPerformanceDiagnostics::PublishResolvedGpuTiming(m_performanceMetrics, timing);
 }
 
 void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept

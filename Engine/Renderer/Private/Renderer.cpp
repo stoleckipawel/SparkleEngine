@@ -135,10 +135,12 @@ RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 	    m_framePipeline != nullptr ? m_framePipeline->GetAvailableViewportProductCount() : 0u;
 	if (m_framePipeline != nullptr)
 	{
+		const RendererFrameTimingDiagnosticsSnapshot frameTimings = m_framePipeline->CaptureFrameTimingDiagnosticsSnapshot();
 		double finalFrameGpuMilliseconds = 0.0;
 		snapshot.FrameTimings.HasFinalFrameGpuMilliseconds =
-		    m_framePipeline->TryGetLastResolvedGpuTimingMilliseconds("GPU Frame", finalFrameGpuMilliseconds);
+		    TryGetRendererGpuTimingMilliseconds(frameTimings, "GPU Frame", finalFrameGpuMilliseconds);
 		snapshot.FrameTimings.FinalFrameGpuMilliseconds = finalFrameGpuMilliseconds;
+		snapshot.FrameTimings.GpuTimings = frameTimings.GpuTimings;
 	}
 	snapshot.RayTracing =
 	    RendererSmokeRayTracingSnapshotBuilder::Build(capabilities.RayTracing, m_systemRoot->GetRenderRayTracingScene());

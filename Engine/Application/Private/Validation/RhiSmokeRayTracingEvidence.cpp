@@ -14,40 +14,30 @@ namespace RhiSmokeRayTracingEvidence
 	{
 		SPDLOG_LOGGER_INFO(
 		    logger,
-		    "{} rayTracing: supported={} inlineRayQuery={} topLevelProvider={} sceneCpuMs(prepare={:.3f}, build={:.3f}) "
-		    "rayTracingPassGpuMs={:.3f}",
+		    "{} rayTracing: supported={} inlineRayQuery={} topLevelProvider={}",
 		    evidenceLabel,
 		    diagnostics.Capability.Supported,
 		    diagnostics.Capability.InlineRayQuerySupported,
-		    RhiRayTracingTopLevelProviderToString(diagnostics.Capability.TopLevelProvider),
-		    diagnostics.FrameTimings.ScenePrepareCpuMilliseconds,
-		    diagnostics.FrameTimings.SceneBuildCpuMilliseconds,
-		    diagnostics.FrameTimings.RayTracingPassGpuMilliseconds);
+		    RhiRayTracingTopLevelProviderToString(diagnostics.Capability.TopLevelProvider));
 
 		SPDLOG_LOGGER_INFO(
 		    logger,
-		    "{} rayTracing.blas: referencedMeshes={} built={} reused={} cpuMs={:.3f} gpuMs={:.3f}",
+		    "{} rayTracing.blas: referencedMeshes={} built={} reused={}",
 		    evidenceLabel,
 		    diagnostics.Blas.ReferencedMeshCount,
 		    diagnostics.Blas.BuiltCount,
-		    diagnostics.Blas.ReusedCount,
-		    diagnostics.Blas.CpuMilliseconds,
-		    diagnostics.Blas.GpuMilliseconds);
+		    diagnostics.Blas.ReusedCount);
 
 		SPDLOG_LOGGER_INFO(
 		    logger,
-		    "{} rayTracing.classicTlas: valid={} instances={} candidates={} missingGpuMesh={} rejectedBlas={} built={} cpuMs={:.3f} "
-		    "instancePrepCpuMs={:.3f} gpuMs={:.3f}",
+		    "{} rayTracing.classicTlas: valid={} instances={} candidates={} missingGpuMesh={} rejectedBlas={} built={}",
 		    evidenceLabel,
 		    diagnostics.ClassicTlas.Valid,
 		    diagnostics.ClassicTlas.InstanceCount,
 		    diagnostics.ClassicTlas.CandidateInstanceCount,
 		    diagnostics.ClassicTlas.MissingGpuMeshCount,
 		    diagnostics.ClassicTlas.RejectedBlasCount,
-		    diagnostics.ClassicTlas.Built,
-		    diagnostics.ClassicTlas.CpuMilliseconds,
-		    diagnostics.ClassicTlas.InstancePreparationCpuMilliseconds,
-		    diagnostics.ClassicTlas.GpuMilliseconds);
+		    diagnostics.ClassicTlas.Built);
 
 		SPDLOG_LOGGER_INFO(
 		    logger,
@@ -68,8 +58,7 @@ namespace RhiSmokeRayTracingEvidence
 		    "{} rayTracing.ptlasGpuUpdates: requestedWriterPath={} selectedWriterPath={} reason={} logicalUpdates={} "
 		    "nativeOperations={} validationMismatches={} "
 		    "gpuDrivenApiSupported={} gpuLogicalWriterAvailable={} fullGpuNativePackAvailable={} "
-		    "fullGpuNativePackSubmitted={} cpuPackMs={:.3f} gpuDirtyMs={:.3f} "
-		    "gpuNativePackMs={:.3f} ptlasUpdateGpuMs={:.3f}",
+		    "fullGpuNativePackSubmitted={}",
 		    evidenceLabel,
 		    RhiPartitionedTlasOperationWriterPathToString(diagnostics.PtlasGpuUpdates.RequestedWriterPath),
 		    RhiPartitionedTlasOperationWriterPathToString(diagnostics.PtlasGpuUpdates.SelectedWriterPath),
@@ -80,11 +69,7 @@ namespace RhiSmokeRayTracingEvidence
 		    diagnostics.PtlasGpuUpdates.GpuDrivenOperationApiSupported,
 		    diagnostics.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable,
 		    diagnostics.PtlasGpuUpdates.FullGpuNativePackAvailable,
-		    diagnostics.PtlasGpuUpdates.FullGpuNativePackSubmitted,
-		    diagnostics.PtlasGpuUpdates.CpuPackMilliseconds,
-		    diagnostics.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds,
-		    diagnostics.PtlasGpuUpdates.GpuNativePackMilliseconds,
-		    diagnostics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds);
+		    diagnostics.PtlasGpuUpdates.FullGpuNativePackSubmitted);
 	}
 
 	bool Validate(

@@ -11,8 +11,6 @@ struct SPARKLE_RENDERER_API RendererSmokeRayTracingBlasDiagnostics final
 	std::uint32_t ReferencedMeshCount = 0;
 	std::uint32_t BuiltCount = 0;
 	std::uint32_t ReusedCount = 0;
-	double CpuMilliseconds = 0.0;
-	double GpuMilliseconds = 0.0;
 };
 
 struct SPARKLE_RENDERER_API RendererSmokeRayTracingClassicTlasDiagnostics final
@@ -23,9 +21,6 @@ struct SPARKLE_RENDERER_API RendererSmokeRayTracingClassicTlasDiagnostics final
 	std::uint32_t MissingGpuMeshCount = 0;
 	std::uint32_t RejectedBlasCount = 0;
 	bool Built = false;
-	double CpuMilliseconds = 0.0;
-	double InstancePreparationCpuMilliseconds = 0.0;
-	double GpuMilliseconds = 0.0;
 };
 
 struct SPARKLE_RENDERER_API RendererSmokeRayTracingPtlasPlannerDiagnostics final
@@ -61,10 +56,6 @@ struct SPARKLE_RENDERER_API RendererSmokeRayTracingPtlasGpuUpdateDiagnostics fin
 	bool GpuLogicalUpdateWriterAvailable = false;
 	bool FullGpuNativePackAvailable = false;
 	bool FullGpuNativePackSubmitted = false;
-	double CpuPackMilliseconds = 0.0;
-	double GpuDirtyDetectionMilliseconds = 0.0;
-	double GpuNativePackMilliseconds = 0.0;
-	double PtlasUpdateGpuMilliseconds = 0.0;
 };
 
 struct SPARKLE_RENDERER_API RendererSmokeRayTracingCapabilityDiagnostics final
@@ -74,14 +65,6 @@ struct SPARKLE_RENDERER_API RendererSmokeRayTracingCapabilityDiagnostics final
 	ERhiRayTracingTopLevelProvider TopLevelProvider = ERhiRayTracingTopLevelProvider::None;
 	std::string TopLevelProviderReason;
 	std::string PartitionedTlasCapabilityReason;
-};
-
-struct SPARKLE_RENDERER_API RendererSmokeRayTracingFrameTimingDiagnostics final
-{
-	double ScenePrepareCpuMilliseconds = 0.0;
-	double SceneBuildCpuMilliseconds = 0.0;
-	double RayTracingPassGpuMilliseconds = 0.0;
-	double IndirectSpecularGpuMilliseconds = 0.0;
 };
 
 struct SPARKLE_RENDERER_API RendererSmokeIndirectSpecularDiagnostics final
@@ -94,13 +77,12 @@ struct SPARKLE_RENDERER_API RendererSmokeIndirectSpecularDiagnostics final
 	bool HitDataAvailable = false;
 	std::uint32_t HitInstanceCount = 0;
 	std::uint32_t HitMaterialCount = 0;
-	std::string GpuTimingLabel;
+	std::string GpuTimingName;
 };
 
 struct SPARKLE_RENDERER_API RendererSmokeRayTracingDiagnostics final
 {
 	RendererSmokeRayTracingCapabilityDiagnostics Capability;
-	RendererSmokeRayTracingFrameTimingDiagnostics FrameTimings;
 	RendererSmokeIndirectSpecularDiagnostics IndirectSpecular;
 	RendererSmokeRayTracingBlasDiagnostics Blas;
 	RendererSmokeRayTracingClassicTlasDiagnostics ClassicTlas;

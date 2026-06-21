@@ -16,8 +16,4 @@ struct RayTracingPtlasGpuUpdateMetrics final
 	bool GpuLogicalUpdateWriterAvailable = false;
 	bool FullGpuNativePackAvailable = false;
 	bool FullGpuNativePackSubmitted = false;
-	double CpuPackMilliseconds = 0.0;
-	double GpuDirtyDetectionMilliseconds = 0.0;
-	double GpuNativePackMilliseconds = 0.0;
-	double PtlasUpdateGpuMilliseconds = 0.0;
 };

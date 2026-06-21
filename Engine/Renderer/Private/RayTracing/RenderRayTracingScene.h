@@ -20,7 +20,6 @@ class PassExecutionDiagnostics;
 class RayTracingBlasCache;
 class RayTracingTopLevelAccelerationStructureStrategy;
 class RayTracingTopLevelScenePlanner;
-struct ResolvedGpuTiming;
 struct RenderSceneData;
 
 class RenderRayTracingScene final
@@ -49,8 +48,6 @@ class RenderRayTracingScene final
 	    const RenderSceneData& sceneData,
 	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
-	void BeginResolvedGpuTimingFrame() noexcept;
-	void PublishResolvedGpuTiming(const ResolvedGpuTiming& timing) noexcept;
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.Core.SupportsRayTracing; }
 	bool HasValidTlas() const noexcept;

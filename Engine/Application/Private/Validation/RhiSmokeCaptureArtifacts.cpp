@@ -186,23 +186,21 @@ namespace RhiSmokeCaptureArtifacts
 		file << "    \"gpuLogicalUpdateWriterAvailable\": "
 		     << (rayTracing.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable ? "true" : "false") << ",\n";
 		file << "    \"gpuNativePackAvailable\": " << (rayTracing.PtlasGpuUpdates.FullGpuNativePackAvailable ? "true" : "false") << ",\n";
-		file << "    \"gpuNativePackSubmitted\": " << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false") << ",\n";
-		file << "    \"timingsMs\": {\n";
-		file << "      \"scenePrepareCpu\": " << rayTracing.FrameTimings.ScenePrepareCpuMilliseconds << ",\n";
-		file << "      \"sceneBuildCpu\": " << rayTracing.FrameTimings.SceneBuildCpuMilliseconds << ",\n";
-		file << "      \"blasCpu\": " << rayTracing.Blas.CpuMilliseconds << ",\n";
-		file << "      \"blasGpu\": " << rayTracing.Blas.GpuMilliseconds << ",\n";
-		file << "      \"classicTlasCpu\": " << rayTracing.ClassicTlas.CpuMilliseconds << ",\n";
-		file << "      \"classicTlasInstancePreparationCpu\": " << rayTracing.ClassicTlas.InstancePreparationCpuMilliseconds << ",\n";
-		file << "      \"classicTlasGpu\": " << rayTracing.ClassicTlas.GpuMilliseconds << ",\n";
-		file << "      \"ptlasCpuPackCpu\": " << rayTracing.PtlasGpuUpdates.CpuPackMilliseconds << ",\n";
-		file << "      \"ptlasGpuDirtyDetectionGpu\": " << rayTracing.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds << ",\n";
-		file << "      \"ptlasGpuNativePackGpu\": " << rayTracing.PtlasGpuUpdates.GpuNativePackMilliseconds << ",\n";
-		file << "      \"ptlasUpdateGpu\": " << rayTracing.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds << ",\n";
-		file << "      \"finalFrameGpu\": " << diagnostics.FrameTimings.FinalFrameGpuMilliseconds << ",\n";
-		file << "      \"rayTracingPassGpu\": " << rayTracing.FrameTimings.RayTracingPassGpuMilliseconds << "\n";
-		file << "    }\n";
-		file << "  }\n";
+		file << "    \"gpuNativePackSubmitted\": " << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false") << "\n";
+		file << "  },\n";
+		file << "  \"gpuTimings\": [\n";
+		for (std::size_t timingIndex = 0; timingIndex < diagnostics.FrameTimings.GpuTimings.size(); ++timingIndex)
+		{
+			const RendererGpuTimingMetric& timing = diagnostics.FrameTimings.GpuTimings[timingIndex];
+			file << "    {\"label\": \"" << EscapeJson(timing.Label) << "\", \"depth\": " << timing.Depth
+			     << ", \"durationMs\": " << timing.DurationMilliseconds << ", \"durationTicks\": " << timing.DurationTicks << "}";
+			if (timingIndex + 1u < diagnostics.FrameTimings.GpuTimings.size())
+			{
+				file << ',';
+			}
+			file << '\n';
+		}
+		file << "  ]\n";
 		file << "}\n";
 	}
 
@@ -223,9 +221,8 @@ namespace RhiSmokeCaptureArtifacts
 		        "gridPartitionCount,dirtyTransforms,dirtyRatio,movedPartitions,globalPartitionEligibleInstances,"
 		        "globalPartitionInstances,duplicateStableIndices,partitionOverflow,requestedWriterPath,selectedWriterPath,"
 		        "writerReason,logicalUpdates,nativeOperations,validationMismatches,gpuDrivenApiSupported,"
-		        "gpuLogicalWriterAvailable,gpuNativePackAvailable,gpuNativePackSubmitted,scenePrepareCpuMs,sceneBuildCpuMs,"
-		        "blasCpuMs,blasGpuMs,classicTlasCpuMs,classicTlasInstancePreparationCpuMs,classicTlasGpuMs,cpuPackMs,"
-		        "gpuDirtyMs,gpuNativePackMs,ptlasUpdateGpuMs,rayTracingPassGpuMs,finalFrameGpuAvailable,finalFrameGpuMs\n";
+		        "gpuLogicalWriterAvailable,gpuNativePackAvailable,gpuNativePackSubmitted,finalFrameGpuAvailable,finalFrameGpuMs,"
+		        "timingLabel,timingDepth,timingDurationMs,timingDurationTicks\n";
 		const double dirtyRatio =
 		    rayTracing.PtlasPlanner.TraceableInstanceCount > 0
 		        ? static_cast<double>(rayTracing.PtlasPlanner.DirtyTransformCount) /
@@ -268,20 +265,62 @@ namespace RhiSmokeCaptureArtifacts
 		file << (rayTracing.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable ? "true" : "false") << ',';
 		file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackAvailable ? "true" : "false") << ',';
 		file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false") << ',';
-		file << rayTracing.FrameTimings.ScenePrepareCpuMilliseconds << ',';
-		file << rayTracing.FrameTimings.SceneBuildCpuMilliseconds << ',';
-		file << rayTracing.Blas.CpuMilliseconds << ',';
-		file << rayTracing.Blas.GpuMilliseconds << ',';
-		file << rayTracing.ClassicTlas.CpuMilliseconds << ',';
-		file << rayTracing.ClassicTlas.InstancePreparationCpuMilliseconds << ',';
-		file << rayTracing.ClassicTlas.GpuMilliseconds << ',';
-		file << rayTracing.PtlasGpuUpdates.CpuPackMilliseconds << ',';
-		file << rayTracing.PtlasGpuUpdates.GpuDirtyDetectionMilliseconds << ',';
-		file << rayTracing.PtlasGpuUpdates.GpuNativePackMilliseconds << ',';
-		file << rayTracing.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds << ',';
-		file << rayTracing.FrameTimings.RayTracingPassGpuMilliseconds << ',';
 		file << (request.Diagnostics.FrameTimings.HasFinalFrameGpuMilliseconds ? "true" : "false") << ',';
-		file << request.Diagnostics.FrameTimings.FinalFrameGpuMilliseconds << '\n';
+		file << request.Diagnostics.FrameTimings.FinalFrameGpuMilliseconds;
+		if (request.Diagnostics.FrameTimings.GpuTimings.empty())
+		{
+			file << ",,,\n";
+			return;
+		}
+
+		for (std::size_t timingIndex = 0; timingIndex < request.Diagnostics.FrameTimings.GpuTimings.size(); ++timingIndex)
+		{
+			const RendererGpuTimingMetric& timing = request.Diagnostics.FrameTimings.GpuTimings[timingIndex];
+			if (timingIndex > 0)
+			{
+				file << EscapeCsv(RhiBackendApiToString(request.Diagnostics.BackendApi)) << ',';
+				file << EscapeCsv(request.Diagnostics.Adapter.Name) << ',';
+				file << request.Diagnostics.Adapter.VendorId << ',';
+				file << request.Diagnostics.Adapter.DeviceId << ',';
+				file << EscapeCsv(request.Diagnostics.Adapter.DriverDescription) << ',';
+				file << EscapeCsv(request.CaptureResult.ViewModeName) << ',';
+				file << EscapeCsv(RhiRayTracingTopLevelProviderToString(rayTracing.Capability.TopLevelProvider)) << ',';
+				file << EscapeCsv(rayTracing.Capability.TopLevelProviderReason) << ',';
+				file << EscapeCsv(RhiPartitionedTlasProviderToString(rayTracing.PtlasPlanner.Provider)) << ',';
+				file << (rayTracing.PtlasPlanner.Supported ? "true" : "false") << ',';
+				file << EscapeCsv(rayTracing.Capability.PartitionedTlasCapabilityReason) << ',';
+				file << (rayTracing.ClassicTlas.Valid ? "true" : "false") << ',';
+				file << (rayTracing.ClassicTlas.Built ? "true" : "false") << ',';
+				file << rayTracing.PtlasPlanner.TotalRenderInstanceCount << ',';
+				file << rayTracing.PtlasPlanner.TraceableInstanceCount << ',';
+				file << rayTracing.PtlasPlanner.StaticTraceableInstanceCount << ',';
+				file << rayTracing.PtlasPlanner.DynamicTraceableInstanceCount << ',';
+				file << rayTracing.PtlasPlanner.PartitionsPerAxis << ',';
+				file << rayTracing.PtlasPlanner.PartitionCount << ',';
+				file << rayTracing.PtlasPlanner.GridPartitionCount << ',';
+				file << rayTracing.PtlasPlanner.DirtyTransformCount << ',';
+				file << dirtyRatio << ',';
+				file << rayTracing.PtlasPlanner.MovedPartitionCount << ',';
+				file << rayTracing.PtlasPlanner.GlobalPartitionEligibleCount << ',';
+				file << rayTracing.PtlasPlanner.GlobalPartitionInstanceCount << ',';
+				file << rayTracing.PtlasPlanner.DuplicateStableIndexCount << ',';
+				file << (rayTracing.PtlasPlanner.Overflow ? "true" : "false") << ',';
+				file << EscapeCsv(RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.RequestedWriterPath)) << ',';
+				file << EscapeCsv(RhiPartitionedTlasOperationWriterPathToString(rayTracing.PtlasGpuUpdates.SelectedWriterPath)) << ',';
+				file << EscapeCsv(rayTracing.PtlasGpuUpdates.WriterSelectionReason) << ',';
+				file << rayTracing.PtlasGpuUpdates.LogicalUpdateCount << ',';
+				file << rayTracing.PtlasGpuUpdates.NativeOperationCount << ',';
+				file << rayTracing.PtlasGpuUpdates.ValidationMismatchCount << ',';
+				file << (rayTracing.PtlasGpuUpdates.GpuDrivenOperationApiSupported ? "true" : "false") << ',';
+				file << (rayTracing.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable ? "true" : "false") << ',';
+				file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackAvailable ? "true" : "false") << ',';
+				file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false") << ',';
+				file << (request.Diagnostics.FrameTimings.HasFinalFrameGpuMilliseconds ? "true" : "false") << ',';
+				file << request.Diagnostics.FrameTimings.FinalFrameGpuMilliseconds;
+			}
+			file << ',' << EscapeCsv(timing.Label) << ',' << timing.Depth << ',' << timing.DurationMilliseconds << ','
+			     << timing.DurationTicks << '\n';
+		}
 	}
 
 	void Write(const RhiSmokeCaptureArtifactRequest& request) noexcept

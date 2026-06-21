@@ -121,6 +121,36 @@ const char* RendererBackendApiToString(ERhiBackendApi backend) noexcept
 	}
 }
 
+const RendererGpuTimingMetric* FindRendererGpuTiming(
+    const RendererFrameTimingDiagnosticsSnapshot& snapshot,
+    std::string_view label) noexcept
+{
+	for (const RendererGpuTimingMetric& timing : snapshot.GpuTimings)
+	{
+		if (timing.Label == label)
+		{
+			return &timing;
+		}
+	}
+
+	return nullptr;
+}
+
+bool TryGetRendererGpuTimingMilliseconds(
+    const RendererFrameTimingDiagnosticsSnapshot& snapshot,
+    std::string_view label,
+    double& outMilliseconds) noexcept
+{
+	const RendererGpuTimingMetric* timing = FindRendererGpuTiming(snapshot, label);
+	if (timing == nullptr)
+	{
+		return false;
+	}
+
+	outMilliseconds = timing->DurationMilliseconds;
+	return true;
+}
+
 std::string FormatRendererBackendVersion(const RhiBackendVersionInfo& version)
 {
 	if (!version.IsKnown())
