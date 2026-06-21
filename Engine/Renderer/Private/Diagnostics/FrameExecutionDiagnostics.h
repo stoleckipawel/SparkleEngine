@@ -118,9 +118,6 @@ class FrameExecutionDiagnostics final
 	FrameExecutionDiagnostics(FrameExecutionDiagnostics&&) = delete;
 	FrameExecutionDiagnostics& operator=(FrameExecutionDiagnostics&&) = delete;
 
-	RenderDiagnostics& GetBackendDiagnostics() noexcept { return *m_backendDiagnostics; }
-	const RenderDiagnostics& GetBackendDiagnostics() const noexcept { return *m_backendDiagnostics; }
-
 	bool IsGpuTimingAvailable() const noexcept;
 	ScopedGpuScope BeginGpuScope(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 	ScopedGpuScope BeginGpuScope(

@@ -173,6 +173,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	void BeginPresentOverlayPass() noexcept;
 	void EndPresentRenderPass() noexcept;
 	PixelFormat GetPresentColorFormat() const noexcept;
+	PixelFormat GetPresentDepthStencilFormat() const noexcept;
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
 
   private:

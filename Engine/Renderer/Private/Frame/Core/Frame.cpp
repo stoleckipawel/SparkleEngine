@@ -1,7 +1,7 @@
 #include "../../PCH.h"
 #include "Frame/Core/Frame.h"
 
-#include "Config/RenderConfig.h"
+#include "Frame/Core/FrameRenderFormats.h"
 #include "Frame/Deferred/GBuffer.h"
 #include "Frame/Lighting/Lighting.h"
 #include "Frame/Lighting/LightingRenderTargets.h"
@@ -12,22 +12,29 @@
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
-FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, bool presentToBackBuffer)
+FrameBuildResult BuildFrame(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    PixelFormat backBufferFormat,
+    bool presentToBackBuffer)
 {
 	FrameAssemblyResourceLayout resources = {};
 
-	const FrameGraphTextureDesc sceneColorDesc = FrameGraphTextureDesc::CreateColor("SceneColor", sceneExtent.Width, sceneExtent.Height, RenderConfig::SceneColorFormat);
+	const FrameGraphTextureDesc sceneColorDesc =
+	    FrameGraphTextureDesc::CreateColor("SceneColor", sceneExtent.Width, sceneExtent.Height, FrameRenderFormats::SceneColor);
 	const FrameGraphTextureHandle sceneColor = builder.CreateTexture(sceneColorDesc);
 
 	const FrameGraphTextureDesc finalSceneColorDesc =
-	    FrameGraphTextureDesc::CreateColor("FinalSceneColor", sceneExtent.Width, sceneExtent.Height, RenderConfig::SceneColorFormat);
+	    FrameGraphTextureDesc::CreateColor("FinalSceneColor", sceneExtent.Width, sceneExtent.Height, FrameRenderFormats::SceneColor);
 	const FrameGraphTextureHandle finalSceneColor = builder.CreateTexture(finalSceneColorDesc);
 
-	const FrameGraphTextureDesc backBufferDesc = FrameGraphTextureDesc::CreateColor("BackBuffer", sceneExtent.Width, sceneExtent.Height, RenderConfig::BackBufferFormat);
+	const FrameGraphTextureDesc backBufferDesc =
+	    FrameGraphTextureDesc::CreateColor("BackBuffer", sceneExtent.Width, sceneExtent.Height, backBufferFormat);
 	const FrameGraphTextureHandle backBuffer = builder.ImportTexture(backBufferDesc, ResourceState::Present);
 	resources.Imported.BackBuffer = backBuffer;
 
-	const FrameGraphTextureDesc mainDepthDesc = FrameGraphTextureDesc::CreateDepthStencil("MainDepth", sceneExtent.Width, sceneExtent.Height);
+	const FrameGraphTextureDesc mainDepthDesc =
+	    FrameGraphTextureDesc::CreateDepthStencil("MainDepth", sceneExtent.Width, sceneExtent.Height, FrameRenderFormats::DepthStencil);
 	const FrameGraphTextureHandle mainDepth = builder.CreateTexture(mainDepthDesc);
 
 	resources.Transient.Scene = SceneRenderTargets{

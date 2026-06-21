@@ -3,6 +3,7 @@
 
 #include "Frame/Core/Frame.h"
 
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
 FrameGraphBuilder::FrameGraphBuilder(FrameGraph& frameGraph) noexcept : m_frameGraph(frameGraph) {}
@@ -148,7 +149,11 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	    std::make_unique<FrameGraph>(&m_dependencies.renderHardwareInterface, &m_dependencies.window, m_dependencies.sceneExtent);
 
 	FrameGraphBuilder builder(*frameGraph);
-	const FrameBuildResult frameLoop = BuildFrame(builder, m_dependencies.sceneExtent, m_dependencies.presentSceneToBackBuffer);
+	const FrameBuildResult frameLoop = BuildFrame(
+	    builder,
+	    m_dependencies.sceneExtent,
+	    m_dependencies.renderHardwareInterface.GetPresentationService().GetPresentColorFormat(),
+	    m_dependencies.presentSceneToBackBuffer);
 
 	FrameGraphBuildResult result{};
 	result.Resources = frameLoop.Resources;

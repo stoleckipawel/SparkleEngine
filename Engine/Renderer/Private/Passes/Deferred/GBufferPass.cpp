@@ -2,12 +2,12 @@
 #include "Passes/Deferred/GBufferPass.h"
 
 #include "Config/DepthConvention.h"
-#include "Config/RenderConfig.h"
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/Core/FrameContext.h"
+#include "Frame/Core/FrameRenderFormats.h"
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Deferred/GBufferFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -88,7 +88,7 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 	            GBufferFormats::DeviceZ,
 	            GBufferFormats::MotionVector},
 	        .RenderTargetCount = 7,
-	        .DepthStencilFormat = RenderConfig::DepthStencilFormat}};
+	        .DepthStencilFormat = FrameRenderFormats::DepthStencil}};
 	return definition;
 }
 

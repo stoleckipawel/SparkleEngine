@@ -22,7 +22,7 @@ bool D3D12ImGuiBackend::Initialize()
 	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardware->GetGraphicsQueueHandle());
 	initInfo.NumFramesInFlight = static_cast<int>(RenderConfig::FramesInFlight);
 	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardware->GetPresentColorFormat());
-	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(RenderConfig::DepthStencilFormat);
+	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardware->GetPresentDepthStencilFormat());
 	initInfo.SrvDescriptorHeap = m_renderHardware->GetD3D12ShaderResourceDescriptorHeap();
 	initInfo.SrvDescriptorAllocFn = &D3D12ImGuiBackend::AllocateDescriptor;
 	initInfo.SrvDescriptorFreeFn = &D3D12ImGuiBackend::ReleaseDescriptor;

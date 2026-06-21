@@ -1,7 +1,7 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/LightingRenderTargets.h"
 
-#include "Config/RenderConfig.h"
+#include "Frame/Core/FrameRenderFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 
@@ -10,7 +10,7 @@ namespace
 	FrameGraphTextureHandle CreateLightingTexture(FrameGraphBuilder& builder, const char* name, RenderViewportExtent sceneExtent)
 	{
 		return builder.CreateTexture(
-		    FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, RenderConfig::SceneColorFormat));
+		    FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, FrameRenderFormats::SceneColor));
 	}
 }
 

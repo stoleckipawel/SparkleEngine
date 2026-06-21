@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Public/Events/ScopedEventHandle.h"
+#include "Frame/Builders/PerFrameDataBuilder.h"
 #include "Frame/Core/FrameAssembly.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
@@ -78,6 +79,7 @@ class FramePipeline final
 
 	RendererSystemRoot* m_systems = nullptr;
 	std::unique_ptr<FrameGraph> m_frameGraph;
+	PerFrameDataBuilder m_perFrameDataBuilder;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
 	RenderViewportExtent m_frameGraphSceneExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};

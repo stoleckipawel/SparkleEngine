@@ -19,7 +19,6 @@ class TextureManager;
 struct PassRuntimeServices
 {
 	RenderHardwareInterface& HardwareInterface;
-	RenderDiagnostics& BackendDiagnostics;
 	const PipelineStateManager& RuntimeManager;
 	const PerFrameConstantBufferData& PerFrame;
 	const TextureManager* Textures = nullptr;

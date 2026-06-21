@@ -977,6 +977,11 @@ PixelFormat D3D12RenderHardwareInterface::GetPresentColorFormat() const noexcept
 	return m_swapChain != nullptr ? m_swapChain->GetBackBufferFormat() : PixelFormat::Unknown;
 }
 
+PixelFormat D3D12RenderHardwareInterface::GetPresentDepthStencilFormat() const noexcept
+{
+	return PixelFormat::Unknown;
+}
+
 void D3D12RenderHardwareInterface::SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept
 {
 	if (m_descriptorService != nullptr)
