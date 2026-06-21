@@ -8,7 +8,7 @@ ConsoleVariable<bool> CVarRTIndirectSpecularEnabled(
 ConsoleVariable<RTIndirectSpecularDebugMode> CVarRTIndirectSpecularDebugMode(
     "r.RayTracing.Reflections.DebugMode",
     RTIndirectSpecularDebugMode::Off,
-    "RT indirect specular debug mode: 0=Off, 1=HitMask, 2=HitDistance, 3=MirrorDirection, 4=HitUV, 5=HitNormal, 6=MaterialId, 7=GeometryClass, 8=FallbackReason, 9=AlphaPolicy, 10=SampleDirection, 11=SamplePdf, 12=SampleThroughput, 13=HitRadiance, 14=FinalContribution, 15=MaterialTextureBaseColor, 16=MaterialTextureRoughnessMetallic, 17=MaterialTextureEmissive, 18=MaterialTextureMip, 19=MaterialTextureInvalidDescriptor, 20=HitTangent, 21=HitBitangent, 22=HitNormalTangent, 23=HitSampledNormal, 24=AlphaAcceptedRejected, 25=AlphaSample, 26=AlphaCutoff, 27=AlphaCandidateFallback.");
+    "RT reflection debug mode. Reflection: 3=MirrorDirection, 10=SampleDirection, 11=SamplePdf, 12=SampleThroughput, 13=HitRadiance, 14=FinalContribution. Shared ray-hit/material: 0=Off, 1=HitMask, 2=HitDistance, 4=HitUV, 5=HitNormal, 6=MaterialId, 7=GeometryClass, 8=HitRejectionReason, 15=MaterialBaseColor, 16=MaterialRoughnessMetallic, 17=MaterialEmissive, 20=HitTangent, 21=HitBitangent, 22=HitNormalTangent, 23=HitSampledNormal, 24=AlphaAcceptedRejected, 25=AlphaSample, 26=AlphaCutoff.");
 ConsoleVariable<RTIndirectSpecularSampleMode> CVarRTIndirectSpecularSampleMode(
     "r.RayTracing.Reflections.SampleMode",
     RTIndirectSpecularSampleMode::StochasticGGX,

@@ -58,7 +58,7 @@ FrameContext BuildFrameContext(
 		frame.rayTracingFramePlan = renderRayTracingScene->PlanFrame(frame.sceneData, cameraData.Position);
 	}
 	frame.meshInstances = MeshInstanceFrameData::Build(renderHardwareInterface, frame.sceneData, &frame.rayTracingFramePlan);
-	frame.rtIndirectSpecularHitData = RTIndirectSpecularHitDataFrameData::Build(renderHardwareInterface, frame.sceneData);
+	frame.rayTracingHitData = RayTracingHitDataFrameData::Build(renderHardwareInterface, frame.sceneData);
 	frame.skinning = SkinningFrameData::Build(renderHardwareInterface, frame.sceneData);
 	const PerViewLightingConstantBufferData lighting = viewLightingBuilder.Build(frame.sceneData);
 	const RhiViewport sceneViewport = BuildSceneViewport(sceneExtent);

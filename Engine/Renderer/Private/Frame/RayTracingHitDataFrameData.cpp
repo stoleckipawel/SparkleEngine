@@ -1,5 +1,5 @@
 #include "../PCH.h"
-#include "Frame/RTIndirectSpecularHitDataFrameData.h"
+#include "Frame/RayTracingHitDataFrameData.h"
 
 #include "Meshes/GPUMesh.h"
 #include "SceneData/RenderSceneData.h"
@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-static const auto g_rtIndirectSpecularHitDataLogger = Logging::GetOrCreateLogger("Renderer.RTIndirectSpecular");
+static const auto g_rayTracingHitDataLogger = Logging::GetOrCreateLogger("Renderer.RayTracingHitData");
 
 namespace
 {
@@ -27,23 +27,23 @@ namespace
 		std::uint32_t flags = 0u;
 		if (material.doubleSided)
 		{
-			flags |= RTIndirectSpecularHitMaterialFlag_DoubleSided;
+			flags |= RayTracingHitData::MaterialFlag_DoubleSided;
 		}
 		if (material.alphaMode == 0u)
 		{
-			flags |= RTIndirectSpecularHitMaterialFlag_Opaque;
+			flags |= RayTracingHitData::MaterialFlag_Opaque;
 		}
 		else if (material.alphaMode == 1u)
 		{
-			flags |= RTIndirectSpecularHitMaterialFlag_AlphaTested;
+			flags |= RayTracingHitData::MaterialFlag_AlphaTested;
 		}
 		else if (material.alphaMode == 2u)
 		{
-			flags |= RTIndirectSpecularHitMaterialFlag_AlphaBlended;
+			flags |= RayTracingHitData::MaterialFlag_AlphaBlended;
 		}
 		if (material.textureFlags != 0u)
 		{
-			flags |= RTIndirectSpecularHitMaterialFlag_Textured;
+			flags |= RayTracingHitData::MaterialFlag_Textured;
 		}
 		return flags;
 	}
@@ -53,43 +53,43 @@ namespace
 		std::uint32_t flags = 0u;
 		if (draw.Geometry.MeshKind == RenderMeshKind::Skeletal)
 		{
-			flags |= RTIndirectSpecularHitGeometryFlag_SkinnedMesh;
+			flags |= RayTracingHitData::GeometryFlag_SkinnedMesh;
 		}
 		else
 		{
-			flags |= RTIndirectSpecularHitGeometryFlag_StaticMesh;
+			flags |= RayTracingHitData::GeometryFlag_StaticMesh;
 		}
 		if (material != nullptr)
 		{
 			if (material->alphaMode == 1u)
 			{
-				flags |= RTIndirectSpecularHitGeometryFlag_AlphaTested;
+				flags |= RayTracingHitData::GeometryFlag_AlphaTested;
 			}
 			else if (material->alphaMode == 2u)
 			{
-				flags |= RTIndirectSpecularHitGeometryFlag_AlphaBlended;
+				flags |= RayTracingHitData::GeometryFlag_AlphaBlended;
 			}
 			if (material->textureFlags != 0u)
 			{
-				flags |= RTIndirectSpecularHitGeometryFlag_TexturedMaterial;
+				flags |= RayTracingHitData::GeometryFlag_TexturedMaterial;
 			}
 			if (material->doubleSided)
 			{
-				flags |= RTIndirectSpecularHitGeometryFlag_DoubleSided;
+				flags |= RayTracingHitData::GeometryFlag_DoubleSided;
 			}
 		}
 		return flags;
 	}
 
-	RTIndirectSpecularHitInstance BuildInvalidHitInstance(
+	RayTracingHitInstance BuildInvalidHitInstance(
 	    const MeshDraw& draw,
 	    const MaterialData* material,
-	    std::uint32_t fallbackReason) noexcept
+	    std::uint32_t rejectionReason) noexcept
 	{
-		return RTIndirectSpecularHitInstance{
+		return RayTracingHitInstance{
 		    .MaterialSlot = draw.Material.Slot,
 		    .GeometryFlags = BuildHitGeometryFlags(draw, material),
-		    .FallbackReason = fallbackReason,
+		    .RejectionReason = rejectionReason,
 		    .AlphaMode = material != nullptr ? material->alphaMode : 0u,
 		    .MaterialTextureFlags = material != nullptr ? material->textureFlags : 0u};
 	}
@@ -128,17 +128,17 @@ namespace
 	}
 }
 
-RTIndirectSpecularHitDataFrameData::~RTIndirectSpecularHitDataFrameData() noexcept
+RayTracingHitDataFrameData::~RayTracingHitDataFrameData() noexcept
 {
 	Release();
 }
 
-RTIndirectSpecularHitDataFrameData::RTIndirectSpecularHitDataFrameData(RTIndirectSpecularHitDataFrameData&& other) noexcept
+RayTracingHitDataFrameData::RayTracingHitDataFrameData(RayTracingHitDataFrameData&& other) noexcept
 {
 	*this = std::move(other);
 }
 
-RTIndirectSpecularHitDataFrameData& RTIndirectSpecularHitDataFrameData::operator=(RTIndirectSpecularHitDataFrameData&& other) noexcept
+RayTracingHitDataFrameData& RayTracingHitDataFrameData::operator=(RayTracingHitDataFrameData&& other) noexcept
 {
 	if (this == &other)
 	{
@@ -180,14 +180,14 @@ RTIndirectSpecularHitDataFrameData& RTIndirectSpecularHitDataFrameData::operator
 	return *this;
 }
 
-bool RTIndirectSpecularHitDataFrameData::IsValid() const noexcept
+bool RayTracingHitDataFrameData::IsValid() const noexcept
 {
 	return static_cast<bool>(m_vertexShaderResourceView) && static_cast<bool>(m_indexShaderResourceView) &&
 	       static_cast<bool>(m_instanceShaderResourceView) && static_cast<bool>(m_materialShaderResourceView) && m_instanceCount > 0u &&
 	       m_materialCount > 0u;
 }
 
-RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
+RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
     RenderHardwareInterface& renderHardwareInterface,
     const RenderSceneData& sceneData)
 {
@@ -196,15 +196,15 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		return {};
 	}
 
-	std::vector<RTIndirectSpecularHitVertex> vertices;
+	std::vector<RayTracingHitVertex> vertices;
 	std::vector<std::uint32_t> indices;
-	std::vector<RTIndirectSpecularHitInstance> instances(sceneData.meshInstances.size());
-	std::vector<RTIndirectSpecularHitMaterial> materials;
+	std::vector<RayTracingHitInstance> instances(sceneData.meshInstances.size());
+	std::vector<RayTracingHitMaterial> materials;
 	materials.reserve(sceneData.materials.size());
 	for (const MaterialData& material : sceneData.materials)
 	{
 		materials.push_back(
-		    RTIndirectSpecularHitMaterial{
+		    RayTracingHitMaterial{
 		        .BaseColor = material.baseColor,
 		        .EmissiveColor = material.emissiveColor,
 		        .Metallic = material.metallic,
@@ -243,30 +243,30 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		if (draw.Material.Slot >= materials.size() || material == nullptr)
 		{
 			instances[instanceIndex] =
-			    BuildInvalidHitInstance(draw, nullptr, RTIndirectSpecularHitFallbackReason_InvalidMaterial);
+			    BuildInvalidHitInstance(draw, nullptr, RayTracingHitData::Reason_InvalidMaterial);
 			++skippedInvalidMaterialCount;
 			continue;
 		}
 		if (draw.Geometry.MeshKind == RenderMeshKind::Skeletal)
 		{
 			instances[instanceIndex] =
-			    BuildInvalidHitInstance(draw, material, RTIndirectSpecularHitFallbackReason_UnsupportedSkinned);
+			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_UnsupportedSkinned);
 			++skippedSkinnedInstanceCount;
 			continue;
 		}
 		if (material->alphaMode == 2u)
 		{
 			instances[instanceIndex] =
-			    BuildInvalidHitInstance(draw, material, RTIndirectSpecularHitFallbackReason_UnsupportedAlphaMode);
+			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_UnsupportedAlphaMode);
 			++skippedUnsupportedAlphaCount;
 			continue;
 		}
 
 		const GPUMesh* gpuMesh = draw.Geometry.GpuMesh;
-		if (gpuMesh == nullptr || !gpuMesh->HasRTIndirectSpecularHitData())
+		if (gpuMesh == nullptr || !gpuMesh->HasRayTracingHitData())
 		{
 			instances[instanceIndex] =
-			    BuildInvalidHitInstance(draw, material, RTIndirectSpecularHitFallbackReason_MissingMeshHitData);
+			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_MissingMeshHitData);
 			++skippedMissingHitDataCount;
 			continue;
 		}
@@ -282,31 +282,31 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 			offsets = MeshHitDataOffsets{
 			    .FirstVertex = static_cast<std::uint32_t>(vertices.size()),
 			    .FirstIndex = static_cast<std::uint32_t>(indices.size()),
-			    .VertexCount = static_cast<std::uint32_t>(gpuMesh->GetRTIndirectSpecularHitVertices().size()),
-			    .IndexCount = static_cast<std::uint32_t>(gpuMesh->GetRTIndirectSpecularHitIndices().size())};
+			    .VertexCount = static_cast<std::uint32_t>(gpuMesh->GetRayTracingHitVertices().size()),
+			    .IndexCount = static_cast<std::uint32_t>(gpuMesh->GetRayTracingHitIndices().size())};
 			vertices.insert(
 			    vertices.end(),
-			    gpuMesh->GetRTIndirectSpecularHitVertices().begin(),
-			    gpuMesh->GetRTIndirectSpecularHitVertices().end());
+			    gpuMesh->GetRayTracingHitVertices().begin(),
+			    gpuMesh->GetRayTracingHitVertices().end());
 			indices.insert(
 			    indices.end(),
-			    gpuMesh->GetRTIndirectSpecularHitIndices().begin(),
-			    gpuMesh->GetRTIndirectSpecularHitIndices().end());
+			    gpuMesh->GetRayTracingHitIndices().begin(),
+			    gpuMesh->GetRayTracingHitIndices().end());
 			meshOffsets.emplace(gpuMesh, offsets);
 		}
 
-		instances[instanceIndex] = RTIndirectSpecularHitInstance{
+		instances[instanceIndex] = RayTracingHitInstance{
 		    .FirstVertex = offsets.FirstVertex,
 		    .FirstIndex = offsets.FirstIndex,
 		    .VertexCount = offsets.VertexCount,
 		    .IndexCount = offsets.IndexCount,
 		    .MaterialSlot = draw.Material.Slot,
-		    .Flags = RTIndirectSpecularHitInstanceFlag_Valid |
-		             (material->alphaMode == 0u ? RTIndirectSpecularHitInstanceFlag_Opaque : 0u) |
-		             RTIndirectSpecularHitInstanceFlag_StaticMesh |
-		             (material->doubleSided ? RTIndirectSpecularHitInstanceFlag_TwoSided : 0u),
+		    .Flags = RayTracingHitData::InstanceFlag_Valid |
+		             (material->alphaMode == 0u ? RayTracingHitData::InstanceFlag_Opaque : 0u) |
+		             RayTracingHitData::InstanceFlag_StaticMesh |
+		             (material->doubleSided ? RayTracingHitData::InstanceFlag_TwoSided : 0u),
 		    .GeometryFlags = BuildHitGeometryFlags(draw, material),
-		    .FallbackReason = RTIndirectSpecularHitFallbackReason_None,
+		    .RejectionReason = RayTracingHitData::Reason_None,
 		    .AlphaMode = material->alphaMode,
 		    .MaterialTextureFlags = material->textureFlags};
 		++validInstanceCount;
@@ -319,8 +319,8 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		{
 			loggedNoHitData = true;
 			SPDLOG_LOGGER_WARN(
-			    g_rtIndirectSpecularHitDataLogger,
-			    "RTIndirectSpecular hit-data unavailable: validInstances=0 totalInstances={} skippedSkinned={} skippedUnsupportedAlpha={} skippedMissingHitData={} skippedInvalidMaterial={}.",
+			    g_rayTracingHitDataLogger,
+			    "Ray tracing hit-data unavailable: validInstances=0 totalInstances={} skippedSkinned={} skippedUnsupportedAlpha={} skippedMissingHitData={} skippedInvalidMaterial={}.",
 			    sceneData.meshInstances.size(),
 			    skippedSkinnedInstanceCount,
 			    skippedUnsupportedAlphaCount,
@@ -330,42 +330,42 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		return {};
 	}
 
-	RTIndirectSpecularHitDataFrameData frameData;
+	RayTracingHitDataFrameData frameData;
 	frameData.m_renderHardwareInterface = &renderHardwareInterface;
 	frameData.m_instanceCount = static_cast<std::uint32_t>(instances.size());
 	frameData.m_materialCount = static_cast<std::uint32_t>(materials.size());
 	if (!UploadStructuredBuffer(
 	        renderHardwareInterface,
 	        vertices,
-	        L"RTIndirectSpecularHitVertices",
+	        L"RayTracingHitVertices",
 	        frameData.m_vertexBuffer,
 	        frameData.m_vertexView,
 	        frameData.m_vertexShaderResourceView) ||
 	    !UploadStructuredBuffer(
 	        renderHardwareInterface,
 	        indices,
-	        L"RTIndirectSpecularHitIndices",
+	        L"RayTracingHitIndices",
 	        frameData.m_indexBuffer,
 	        frameData.m_indexView,
 	        frameData.m_indexShaderResourceView) ||
 	    !UploadStructuredBuffer(
 	        renderHardwareInterface,
 	        instances,
-	        L"RTIndirectSpecularHitInstances",
+	        L"RayTracingHitInstances",
 	        frameData.m_instanceBuffer,
 	        frameData.m_instanceView,
 	        frameData.m_instanceShaderResourceView) ||
 	    !UploadStructuredBuffer(
 	        renderHardwareInterface,
 	        materials,
-	        L"RTIndirectSpecularHitMaterials",
+	        L"RayTracingHitMaterials",
 	        frameData.m_materialBuffer,
 	        frameData.m_materialView,
 	        frameData.m_materialShaderResourceView))
 	{
 		SPDLOG_LOGGER_WARN(
-		    g_rtIndirectSpecularHitDataLogger,
-		    "RTIndirectSpecular hit-data upload failed: vertices={} indices={} instances={} materials={}.",
+		    g_rayTracingHitDataLogger,
+		    "Ray tracing hit-data upload failed: vertices={} indices={} instances={} materials={}.",
 		    vertices.size(),
 		    indices.size(),
 		    instances.size(),
@@ -379,8 +379,8 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 	{
 		loggedFirstHitData = true;
 		SPDLOG_LOGGER_INFO(
-		    g_rtIndirectSpecularHitDataLogger,
-		    "RTIndirectSpecular hit-data ready: validInstances={} totalInstances={} uniqueMeshes={} vertices={} indices={} materials={} skippedSkinned={} skippedUnsupportedAlpha={} skippedMissingHitData={} skippedInvalidMaterial={} abiVersion={}.",
+		    g_rayTracingHitDataLogger,
+		    "Ray tracing hit-data ready: validInstances={} totalInstances={} uniqueMeshes={} vertices={} indices={} materials={} skippedSkinned={} skippedUnsupportedAlpha={} skippedMissingHitData={} skippedInvalidMaterial={} abiVersion={}.",
 		    validInstanceCount,
 		    sceneData.meshInstances.size(),
 		    meshOffsets.size(),
@@ -391,13 +391,13 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		    skippedUnsupportedAlphaCount,
 		    skippedMissingHitDataCount,
 		    skippedInvalidMaterialCount,
-		    RTIndirectSpecularHitDataAbiVersion);
+		    RayTracingHitData::AbiVersion);
 	}
 
 	return frameData;
 }
 
-void RTIndirectSpecularHitDataFrameData::Release() noexcept
+void RayTracingHitDataFrameData::Release() noexcept
 {
 	if (m_renderHardwareInterface != nullptr)
 	{

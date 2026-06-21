@@ -11,6 +11,8 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Pipeline/PassBindingOverrides.h"
 #include "Passes/PassUtilities.h"
+#include "Passes/MaterialTextureTablePassBinding.h"
+#include "Passes/RayTracingHitDataPassBinding.h"
 #include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -18,10 +20,9 @@
 #include "RayTracing/RenderRayTracingPassServices.h"
 #include "RayTracing/RTIndirectSpecularRuntimeDiagnostics.h"
 #include "RayTracing/RTIndirectSpecularSettings.h"
-#include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
+#include "RayTracing/RayTracingSceneTlasShaderAccessMode.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-#include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
 #include <cassert>
@@ -29,12 +30,6 @@
 namespace
 {
 	constexpr const char* DispatchTimingLabel = "RT Indirect Specular Ray Query";
-
-	template <typename TData>
-	FrameGraphBufferHandle CreatePlaceholderBuffer(FrameGraphBuilder& builder, const char* name)
-	{
-		return builder.CreateBuffer(FrameGraphBufferDesc::Create(name, sizeof(TData), static_cast<std::uint32_t>(sizeof(TData))));
-	}
 
 	RTIndirectSpecularSettings ResolveSettings(const PassRuntimeServices& services) noexcept
 	{
@@ -139,24 +134,6 @@ const RenderPassDefinition& RTIndirectSpecularPass::GetDefinition() noexcept
 	return definition;
 }
 
-bool RTIndirectSpecularPass::BindMaterialTextureTable(ParameterInstance& parameters, const FrameContext& frame) noexcept
-{
-	const RenderBindingSet* materialTextureTable = frame.sceneData.materialTextureTable;
-	if (!frame.sceneData.materialTextureTableValid || materialTextureTable == nullptr || !*materialTextureTable)
-	{
-		return false;
-	}
-
-	const std::uint32_t descriptorCount = frame.sceneData.materialTextureTableDescriptorCount;
-	if (descriptorCount == 0u || descriptorCount > MaterialTextureTableFixedCapacity || materialTextureTable->GetDescriptorCount() < descriptorCount)
-	{
-		return false;
-	}
-
-	parameters->MaterialTextureTable = materialTextureTable->GetTableBinding(0);
-	return true;
-}
-
 void RTIndirectSpecularPass::DeclareResources(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
@@ -170,16 +147,7 @@ void RTIndirectSpecularPass::DeclareResources(
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
-	parameters->RTIndirectSpecularHitVertices =
-	    builder.CreateSRV<RTIndirectSpecularHitVertex>(CreatePlaceholderBuffer<RTIndirectSpecularHitVertex>(builder, "RTIndirectSpecularHitVerticesPlaceholder"));
-	parameters->RTIndirectSpecularHitIndices =
-	    builder.CreateSRV<std::uint32_t>(CreatePlaceholderBuffer<std::uint32_t>(builder, "RTIndirectSpecularHitIndicesPlaceholder"));
-	parameters->RTIndirectSpecularHitInstances =
-	    builder.CreateSRV<RTIndirectSpecularHitInstance>(CreatePlaceholderBuffer<RTIndirectSpecularHitInstance>(builder, "RTIndirectSpecularHitInstancesPlaceholder"));
-	parameters->RTIndirectSpecularHitMaterials =
-	    builder.CreateSRV<RTIndirectSpecularHitMaterial>(CreatePlaceholderBuffer<RTIndirectSpecularHitMaterial>(builder, "RTIndirectSpecularHitMaterialsPlaceholder"));
-	parameters->MeshInstances =
-	    builder.CreateSRV<MeshInstanceData>(CreatePlaceholderBuffer<MeshInstanceData>(builder, "RTIndirectSpecularMeshInstancesPlaceholder"));
+	RayTracingHitDataPassBinding::DeclareResources(builder, parameters);
 }
 
 void RTIndirectSpecularPass::SetParameters(
@@ -202,9 +170,9 @@ void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterIns
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.RTIndirectSpecular.Execute");
 
 	const RTIndirectSpecularSettings settings = ResolveSettings(context.RuntimeServices);
-	const bool hitDataAvailable = context.Frame.rtIndirectSpecularHitData.IsValid() && context.Frame.meshInstances.IsValid();
-	const std::uint32_t hitInstanceCount = context.Frame.rtIndirectSpecularHitData.GetInstanceCount();
-	const std::uint32_t hitMaterialCount = context.Frame.rtIndirectSpecularHitData.GetMaterialCount();
+	const bool hitDataAvailable = RayTracingHitDataPassBinding::IsAvailable(context.Frame);
+	const std::uint32_t hitInstanceCount = context.Frame.rayTracingHitData.GetInstanceCount();
+	const std::uint32_t hitMaterialCount = context.Frame.rayTracingHitData.GetMaterialCount();
 	if (!settings.Enabled)
 	{
 		PublishAndLogStatus(RTIndirectSpecularStatusReason::Disabled, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
@@ -216,8 +184,13 @@ void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterIns
 		PublishAndLogStatus(RTIndirectSpecularStatusReason::MissingTlas, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
 		return;
 	}
+	if (context.Frame.rayTracingScene.TlasShaderAccessMode != RayTracingSceneTlasShaderAccessMode::Descriptor)
+	{
+		PublishAndLogStatus(RTIndirectSpecularStatusReason::Unsupported, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
+		return;
+	}
 
-	const bool materialTextureTableAvailable = BindMaterialTextureTable(parameters, context.Frame);
+	const bool materialTextureTableAvailable = MaterialTextureTablePassBinding::Bind(parameters, context.Frame);
 	if (!materialTextureTableAvailable)
 	{
 		PublishAndLogStatus(RTIndirectSpecularStatusReason::Unsupported, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
@@ -239,11 +212,7 @@ void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterIns
 	PassBindingOverrides overrides;
 	if (hitDataAvailable)
 	{
-		overrides.SetDescriptorTable("RTIndirectSpecularHitVertices", context.Frame.rtIndirectSpecularHitData.GetVertexShaderResourceView());
-		overrides.SetDescriptorTable("RTIndirectSpecularHitIndices", context.Frame.rtIndirectSpecularHitData.GetIndexShaderResourceView());
-		overrides.SetDescriptorTable("RTIndirectSpecularHitInstances", context.Frame.rtIndirectSpecularHitData.GetInstanceShaderResourceView());
-		overrides.SetDescriptorTable("RTIndirectSpecularHitMaterials", context.Frame.rtIndirectSpecularHitData.GetMaterialShaderResourceView());
-		overrides.SetDescriptorTable("MeshInstances", context.Frame.meshInstances.GetShaderResourceView());
+		RayTracingHitDataPassBinding::Bind(overrides, context.Frame);
 	}
 
 	const ComputeDispatchDesc dispatch{

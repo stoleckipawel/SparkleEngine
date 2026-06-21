@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RHI/Public/Core/RhiCapabilities.h"
+#include "SceneData/MaterialBindingMode.h"
 
 #include <cstdint>
 
@@ -31,11 +32,15 @@ struct MaterialTextureTableCapabilityReport final
 {
 	bool Supported = false;
 	MaterialTextureTablePath SelectedPath = MaterialTextureTablePath::Unsupported;
-	bool SupportsRaytracingOnly = false;
-	bool SupportsEverything = false;
 	bool SupportsRuntimeSizedBindless = false;
+	std::uint32_t SupportedMaterialBindingModeMask = 0u;
 	std::uint32_t MaxTextureDescriptors = 0;
 	const char* StatusReason = "not-queried";
+
+	bool SupportsMaterialBindingMode(MaterialBindingMode mode) const noexcept
+	{
+		return (SupportedMaterialBindingModeMask & MaterialBindingModeMask(mode)) != 0u;
+	}
 };
 
 MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(

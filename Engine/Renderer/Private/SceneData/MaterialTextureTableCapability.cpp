@@ -47,9 +47,8 @@ MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(
 	return MaterialTextureTableCapabilityReport{
 	    .Supported = true,
 	    .SelectedPath = MaterialTextureTablePath::FixedCapacityDescriptorArray,
-	    .SupportsRaytracingOnly = true,
-	    .SupportsEverything = false,
 	    .SupportsRuntimeSizedBindless = false,
+	    .SupportedMaterialBindingModeMask = MaterialBindingModeMask(MaterialBindingMode::RaytracingOnly),
 	    .MaxTextureDescriptors = MaterialTextureTableFixedCapacity,
 	    .StatusReason = "fixed-capacity-descriptor-array-selected"};
 }

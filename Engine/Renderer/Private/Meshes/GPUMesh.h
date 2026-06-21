@@ -2,7 +2,7 @@
 
 #include "Renderer/Public/RendererAPI.h"
 #include "Meshes/GPUSkinInfluenceBuffer.h"
-#include "RayTracing/RTIndirectSpecularHitData.h"
+#include "RayTracing/RayTracingHitData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
@@ -59,9 +59,9 @@ class SPARKLE_RENDERER_API GPUMesh final
 	RhiGpuDescriptorHandle GetSkinInfluencesShaderResourceView() const noexcept { return m_skinInfluences.GetShaderResourceView(); }
 	RhiRayTracingGeometryDesc GetRayTracingGeometry() const noexcept;
 	const GPUMeshBounds& GetLocalBounds() const noexcept { return m_localBounds; }
-	bool HasRTIndirectSpecularHitData() const noexcept { return !m_rtIndirectSpecularHitVertices.empty() && !m_rtIndirectSpecularHitIndices.empty(); }
-	std::span<const RTIndirectSpecularHitVertex> GetRTIndirectSpecularHitVertices() const noexcept { return m_rtIndirectSpecularHitVertices; }
-	std::span<const std::uint32_t> GetRTIndirectSpecularHitIndices() const noexcept { return m_rtIndirectSpecularHitIndices; }
+	bool HasRayTracingHitData() const noexcept { return !m_rayTracingHitVertices.empty() && !m_rayTracingHitIndices.empty(); }
+	std::span<const RayTracingHitVertex> GetRayTracingHitVertices() const noexcept { return m_rayTracingHitVertices; }
+	std::span<const std::uint32_t> GetRayTracingHitIndices() const noexcept { return m_rayTracingHitIndices; }
 
   private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
@@ -74,6 +74,6 @@ class SPARKLE_RENDERER_API GPUMesh final
 	std::uint32_t m_vertexCount = 0;
 	std::uint32_t m_indexCount = 0;
 	GPUMeshBounds m_localBounds = {};
-	std::vector<RTIndirectSpecularHitVertex> m_rtIndirectSpecularHitVertices;
-	std::vector<std::uint32_t> m_rtIndirectSpecularHitIndices;
+	std::vector<RayTracingHitVertex> m_rayTracingHitVertices;
+	std::vector<std::uint32_t> m_rayTracingHitIndices;
 };

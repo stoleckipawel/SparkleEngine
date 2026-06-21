@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Frame/Targets/FrameRenderTargets.h"
-#include "RayTracing/RTIndirectSpecularHitData.h"
+#include "RayTracing/RayTracingHitData.h"
 #include "RayTracing/RTIndirectSpecularUniformData.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
@@ -31,10 +31,10 @@ struct RTIndirectSpecularPassParameters
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferDeviceZ;
-	ShaderBuffer<RTIndirectSpecularHitVertex> RTIndirectSpecularHitVertices;
-	ShaderBuffer<std::uint32_t> RTIndirectSpecularHitIndices;
-	ShaderBuffer<RTIndirectSpecularHitInstance> RTIndirectSpecularHitInstances;
-	ShaderBuffer<RTIndirectSpecularHitMaterial> RTIndirectSpecularHitMaterials;
+	ShaderBuffer<RayTracingHitVertex> RayTracingHitVertices;
+	ShaderBuffer<std::uint32_t> RayTracingHitIndices;
+	ShaderBuffer<RayTracingHitInstance> RayTracingHitInstances;
+	ShaderBuffer<RayTracingHitMaterial> RayTracingHitMaterials;
 	ShaderBuffer<MeshInstanceData> MeshInstances;
 	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
 	ShaderSamplerSet MaterialTextureSampler;
@@ -50,10 +50,10 @@ struct RTIndirectSpecularPassParameters
 		builder.ReadTexture("GBufferNormal", &RTIndirectSpecularPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &RTIndirectSpecularPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferDeviceZ", &RTIndirectSpecularPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("RTIndirectSpecularHitVertices", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitVertices, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("RTIndirectSpecularHitIndices", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitIndices, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("RTIndirectSpecularHitInstances", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitInstances, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("RTIndirectSpecularHitMaterials", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitMaterials, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitVertices", &RTIndirectSpecularPassParameters::RayTracingHitVertices, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitIndices", &RTIndirectSpecularPassParameters::RayTracingHitIndices, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitInstances", &RTIndirectSpecularPassParameters::RayTracingHitInstances, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitMaterials", &RTIndirectSpecularPassParameters::RayTracingHitMaterials, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("MeshInstances", &RTIndirectSpecularPassParameters::MeshInstances, ShaderStageVisibility::Compute);
 		builder.ReadTexture("MaterialTextureTable", &RTIndirectSpecularPassParameters::MaterialTextureTable, ShaderStageVisibility::Compute);
 		builder.Sampler("MaterialTextureSampler", &RTIndirectSpecularPassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
@@ -75,7 +75,6 @@ class RTIndirectSpecularPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static bool BindMaterialTextureTable(ParameterInstance& parameters, const FrameContext& frame) noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
 	    const LightingRenderTargets& lighting,

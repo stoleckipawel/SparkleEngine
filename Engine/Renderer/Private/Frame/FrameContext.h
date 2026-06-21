@@ -4,7 +4,7 @@
 #include "Frame/RenderViewData.h"
 #include "Frame/MeshInstanceFrameData.h"
 #include "Frame/RayTracingSceneFrameData.h"
-#include "Frame/RTIndirectSpecularHitDataFrameData.h"
+#include "Frame/RayTracingHitDataFrameData.h"
 #include "Frame/SkinningFrameData.h"
 #include "RayTracing/RayTracingSceneFramePlan.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -17,6 +17,6 @@ struct SPARKLE_RENDERER_API FrameContext
 	RayTracingSceneFrameData rayTracingScene = {};
 	RenderViewData mainView = {};
 	MeshInstanceFrameData meshInstances = {};
-	RTIndirectSpecularHitDataFrameData rtIndirectSpecularHitData = {};
+	RayTracingHitDataFrameData rayTracingHitData = {};
 	SkinningFrameData skinning = {};
 };

@@ -370,7 +370,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- `RTIndirectSpecularHitDataAbiVersion` is now `2`. The hit vertex ABI carries local position, local normal, tangent/sign, and `UV0`; shader reconstruction interpolates barycentrics as `(1 - x - y, x, y)`.
+- `RayTracingHitData::AbiVersion` is now `3`. The hit vertex ABI carries local position, local normal, tangent/sign, and `UV0`; shader reconstruction interpolates barycentrics as `(1 - x - y, x, y)`.
 - Normal reconstruction transforms local normals by `MeshInstanceData::WorldInvTransposeMTX`. Tangents transform by `WorldMTX`; two-sided materials orient the reconstructed basis against the reflection ray before later normal-map work is added.
 - The production policy for this stage is intentionally conservative: opaque static meshes are supported; alpha-tested, alpha-blended, skinned/deformed, missing mesh-hit-data, invalid material, invalid primitive, and invalid vertex-index cases are marked in the instance table with explicit fallback reasons.
 - TLAS `InstanceID` continues to map to the render mesh instance index through the current classic TLAS path. Partitioned/PTLAS parity remains a validation item once the PTLAS compile drift is repaired.
@@ -380,7 +380,7 @@ Goal: turn the Stage 3 bootstrap buffers into a production-ready ray-hit data AB
 
 Implementation tasks:
 
-- define one versioned `RTIndirectSpecularHitVertex`/mesh layout that includes at least position, normal, tangent/sign, and UV0
+- define one versioned `RayTracingHitVertex`/mesh layout that includes at least position, normal, tangent/sign, and UV0
 - document coordinate conventions for barycentrics, tangent basis reconstruction, normal-map space, handedness, and non-uniform scale
 - add explicit per-hit mesh metadata: vertex offset/count, index offset/count, material slot, geometry flags, alpha mode, two-sided flag, skinned/deformed support flag, and debug reason bits
 - prove TLAS `InstanceID` ordering matches the hit instance table for every BLAS/TLAS build path, including classic and partitioned paths once PTLAS compiles again
@@ -510,7 +510,7 @@ Implementation note:
   - `r.RayTracing.Reflections.Enabled`: toggles the pass; disabled mode is a deterministic no-op that leaves the existing `IndirectSpecular` producer intact.
   - `r.RayTracing.Reflections.SampleMode`: `0=Mirror`, `1=StochasticGGX`.
   - `r.RayTracing.Reflections.MaxDistance`: physical ray length limit.
-  - `r.RayTracing.Reflections.DebugMode`: `0=Off`, `1=HitMask`, `2=HitDistance`, `3=MirrorDirection`, `4=HitUV`, `5=HitNormal`, `6=MaterialId`, `7=GeometryClass`, `8=FallbackReason`, `9=AlphaPolicy`, `10=SampleDirection`, `11=SamplePdf`, `12=SampleThroughput`, `13=HitRadiance`, `14=FinalContribution`.
+  - `r.RayTracing.Reflections.DebugMode`: reflection-owned modes are `3=MirrorDirection`, `10=SampleDirection`, `11=SamplePdf`, `12=SampleThroughput`, `13=HitRadiance`, `14=FinalContribution`; shared ray-hit/material modes are `0=Off`, `1=HitMask`, `2=HitDistance`, `4=HitUV`, `5=HitNormal`, `6=MaterialId`, `7=GeometryClass`, `8=HitRejectionReason`, `15=MaterialBaseColor`, `16=MaterialRoughnessMetallic`, `17=MaterialEmissive`, `20=HitTangent`, `21=HitBitangent`, `22=HitNormalTangent`, `23=HitSampledNormal`, `24=AlphaAcceptedRejected`, `25=AlphaSample`, `26=AlphaCutoff`.
   - `r.RayTracing.Reflections.NormalBias`: ray origin bias; this is a geometric robustness control, not a lighting scale.
 - The feature intentionally has no roughness cutoff/fade, intensity multiplier, or contribution clamp control.
 - `RTIndirectSpecular` publishes status reasons through renderer smoke diagnostics: `disabled`, `unsupported`, `missing-tlas`, `missing-hit-data`, and `running`.
@@ -668,7 +668,7 @@ Implementation tasks:
 - create a renderer-owned `MaterialTextureTable` or equivalent owned by Renderer scene/material cache
 - resolve missing material textures to the same default textures used by raster materials
 - add table generation validation for material count, slot count, default fallback coverage, descriptor allocation failure, and overflow
-- extend `RTIndirectSpecularHitMaterial` with texture slot indices or an index-table base offset
+- extend `RayTracingHitMaterial` with texture slot indices or an index-table base offset
 - keep shader material-texture sampling disabled in this stage; do not advertise the RT material texture mode as supported yet
 
 Acceptance criteria:
@@ -744,7 +744,7 @@ Implementation note:
 - `RTIndirectSpecular` now resolves base color, roughness, metallic, and emissive from the renderer material texture table during hit reconstruction before hit lighting.
 - Value semantics match `Material.hlsli` for the first parity set: base color texture multiplies `BaseColor`, roughness and metallic use the texture red channel multiplied by their constants, and emissive texture RGB multiplies `EmissiveColor`.
 - Explicit LOD policy for this stage is fixed mip 0 through `SampleLevel`. This avoids relying on unavailable ray-hit derivatives and keeps first texture parity deterministic; roughness-biased or cone/mip selection is left for a later quality stage.
-- Untextured materials use their authored constants because that is their complete material. Textured material slots require valid descriptor indices; invalid flagged texture slots mark the hit with `InvalidMaterialTextureDescriptor` rather than silently falling back to constants.
+- Untextured materials use their authored constants because that is their complete material. Textured material slots require valid descriptor indices before the material texture table is enabled; descriptor correctness is a renderer material-table contract, not a per-hit shader fallback.
 - Debug modes now include resolved sampled base color, roughness/metallic, emissive, selected mip, and invalid descriptor visualization.
 
 Goal: make ray-hit material constants match raster material value semantics for the first texture set.
@@ -785,7 +785,7 @@ Implementation note:
 - `RTIndirectSpecular` now samples the normal texture when the material normal-map flag is present, using the same `Material.hlsli` unpacking convention: `xy * 2 - 1`, reconstructed positive `z`, normalized.
 - The hit tangent basis is reconstructed from the Stage 3.5 ABI as `T = orthonormalized hit tangent`, `B = tangentSign * normalize(cross(N, T))`, and `N = geometric world normal`. The tangent-space normal is transformed with the same `mul(normalTangent, float3x3(T, B, N))` convention as raster.
 - Two-sided backface handling is applied after normal-map transformation: one-sided backfaces still fail closed, while two-sided hits flip the final sampled normal and debug basis toward the incoming ray.
-- Normal-map descriptor failures use the existing `InvalidMaterialTextureDescriptor` fallback reason, so flagged normal-mapped materials cannot silently shade as if the normal map were absent.
+- Normal-map descriptors use the same material-table contract as the other texture slots. Flagged normal-mapped materials must have valid descriptor indices before texture parity is enabled.
 - Debug modes now expose hit tangent, hit bitangent, sampled tangent-space normal, and final sampled world normal.
 
 Goal: add ray-hit normal map sampling after base material texture parity is stable.
@@ -853,6 +853,19 @@ Add alpha-tested candidate-hit support to RTIndirectSpecular using inline RayQue
 
 #### Stage 8.6: Material Parity Validation Scenes And Defaults
 
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- Added Showcase validation startup levels:
+  - `RTIndirectSpecularMaterialParity_DamagedHelmet`
+  - `RTIndirectSpecularMaterialParity_AlphaTest`
+  - `RTIndirectSpecularMaterialParity_RoughnessRange`
+- Added the validation recipe at [RTIndirectSpecularMaterialParityValidation.md](../03-Validation/RTIndirectSpecularMaterialParityValidation.md). It maps each material-parity requirement to a startup level, RT reflection mode, debug mode, and backend path.
+- `RaytracingOnly` remains the primary debug binding mode because raster/GBuffer stays bindful and acts as the direct-material baseline.
+- `Everything` remains deferred until raster bindless opt-in exists and can be toggled against the bindful baseline.
+- The current Showcase content does not include a dedicated synthetic constant-only swatch scene. The validation note documents that gap explicitly rather than claiming full synthetic material-grid coverage.
+
 Goal: close the final reflection material-parity stage with repeatable scenes and documented defaults.
 
 Implementation tasks:
@@ -905,6 +918,7 @@ Runtime validation should cover:
 
 - D3D12 with ray tracing enabled
 - Vulkan with ray tracing enabled if supported in the local build
+- material texture parity levels and commands from [RTIndirectSpecularMaterialParityValidation.md](../03-Validation/RTIndirectSpecularMaterialParityValidation.md)
 - unsupported or missing ray tracing capability
 - no scene TLAS / empty scene
 - reflections disabled: set `r.RayTracing.Reflections.Enabled=0` and verify smoke status `disabled` plus visual equivalence to the previous renderer output
@@ -962,7 +976,7 @@ The feature is done for this plan when:
 - `RTIndirectSpecular` is a full-resolution inline ray-query compute pass
 - it importance samples reflection directions from material roughness
 - it shades ray hits with real renderer material and lighting data
-- it reaches texture material parity through the final bindless/material texture table stage, or documents constants-only mode as the active platform fallback
+- it reaches texture material parity through the final renderer-owned material texture table stage and fails closed when that table is unavailable
 - it composes into the lighting path through declared frame-graph resources
 - it has deterministic no-op/fallback paths
 - it exposes controls and diagnostics

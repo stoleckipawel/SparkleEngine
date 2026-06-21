@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RayTracing/RTIndirectSpecularHitData.h"
+#include "RayTracing/RayTracingHitData.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
@@ -10,16 +10,16 @@
 class RenderHardwareInterface;
 struct RenderSceneData;
 
-class RTIndirectSpecularHitDataFrameData final
+class RayTracingHitDataFrameData final
 {
   public:
-	RTIndirectSpecularHitDataFrameData() noexcept = default;
-	~RTIndirectSpecularHitDataFrameData() noexcept;
+	RayTracingHitDataFrameData() noexcept = default;
+	~RayTracingHitDataFrameData() noexcept;
 
-	RTIndirectSpecularHitDataFrameData(const RTIndirectSpecularHitDataFrameData&) = delete;
-	RTIndirectSpecularHitDataFrameData& operator=(const RTIndirectSpecularHitDataFrameData&) = delete;
-	RTIndirectSpecularHitDataFrameData(RTIndirectSpecularHitDataFrameData&& other) noexcept;
-	RTIndirectSpecularHitDataFrameData& operator=(RTIndirectSpecularHitDataFrameData&& other) noexcept;
+	RayTracingHitDataFrameData(const RayTracingHitDataFrameData&) = delete;
+	RayTracingHitDataFrameData& operator=(const RayTracingHitDataFrameData&) = delete;
+	RayTracingHitDataFrameData(RayTracingHitDataFrameData&& other) noexcept;
+	RayTracingHitDataFrameData& operator=(RayTracingHitDataFrameData&& other) noexcept;
 
 	bool IsValid() const noexcept;
 	std::uint32_t GetInstanceCount() const noexcept { return m_instanceCount; }
@@ -29,7 +29,7 @@ class RTIndirectSpecularHitDataFrameData final
 	RhiGpuDescriptorHandle GetInstanceShaderResourceView() const noexcept { return m_instanceShaderResourceView; }
 	RhiGpuDescriptorHandle GetMaterialShaderResourceView() const noexcept { return m_materialShaderResourceView; }
 
-	static RTIndirectSpecularHitDataFrameData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
+	static RayTracingHitDataFrameData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
   private:
 	void Release() noexcept;
@@ -50,4 +50,3 @@ class RTIndirectSpecularHitDataFrameData final
 	std::uint32_t m_instanceCount = 0u;
 	std::uint32_t m_materialCount = 0u;
 };
-

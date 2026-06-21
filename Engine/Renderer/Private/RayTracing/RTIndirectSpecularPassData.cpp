@@ -16,11 +16,11 @@ namespace RTIndirectSpecularPassData
 	{
 		return RTIndirectSpecularUniformData{
 		    .DebugMode = static_cast<std::uint32_t>(settings.DebugMode),
-		    .HitDataAvailable = hitDataAvailable ? 1u : 0u,
+		    .RayTracingHitDataAvailable = hitDataAvailable ? 1u : 0u,
 		    .NormalBias = settings.NormalBias,
 		    .MaxDistance = settings.MaxDistance,
-		    .HitInstanceCount = hitInstanceCount,
-		    .HitMaterialCount = hitMaterialCount,
+		    .RayTracingHitInstanceCount = hitInstanceCount,
+		    .RayTracingHitMaterialCount = hitMaterialCount,
 		    .SampleMode = static_cast<std::uint32_t>(settings.SampleMode),
 		    .MaterialTextureTableAvailable = materialTextureTableAvailable ? 1u : 0u,
 		    .MaterialTextureTableDescriptorCount = materialTextureTableDescriptorCount,

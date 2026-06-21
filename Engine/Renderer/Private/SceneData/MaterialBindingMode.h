@@ -20,3 +20,8 @@ constexpr const char* MaterialBindingModeToString(MaterialBindingMode mode) noex
 			return "Unknown";
 	}
 }
+
+constexpr std::uint32_t MaterialBindingModeMask(MaterialBindingMode mode) noexcept
+{
+	return 1u << static_cast<std::uint32_t>(mode);
+}

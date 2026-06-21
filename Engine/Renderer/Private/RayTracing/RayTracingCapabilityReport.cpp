@@ -67,7 +67,7 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    "d3d12Nvapi={} d3d12NvapiHeaders={} d3d12NvapiRuntime={} d3d12DeviceInterface={} d3d12CommandListInterface={} "
 	    "d3d12PublicDxr={} d3d12PublicDxrHeaders={} cpuPackOps={} gpuDrivenOps={} gpuLogicalWrites={} gpuNativePack={} "
 	    "partitionedReason={} materialTextureTableSupported={} materialTextureTablePath={} materialTextureTableCapacity={} "
-	    "materialTextureTableRuntimeSized={} materialTextureRaytracingOnly={} materialTextureEverything={} "
+	    "materialTextureTableRuntimeSized={} materialTextureBindingModeMask={} "
 	    "materialTextureTableReason={}",
 	    RhiBackendApiToString(report.BackendApi),
 	    BoolToString(report.Core.SupportsRayTracing),
@@ -108,8 +108,7 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    MaterialTextureTablePathToString(report.MaterialTextureTable.SelectedPath),
 	    report.MaterialTextureTable.MaxTextureDescriptors,
 	    BoolToString(report.MaterialTextureTable.SupportsRuntimeSizedBindless),
-	    BoolToString(report.MaterialTextureTable.SupportsRaytracingOnly),
-	    BoolToString(report.MaterialTextureTable.SupportsEverything),
+	    report.MaterialTextureTable.SupportedMaterialBindingModeMask,
 	    report.MaterialTextureTable.StatusReason);
 }
 

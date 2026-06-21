@@ -50,7 +50,7 @@ void LogRTIndirectSpecularSettingsOnce(
 	}
 
 	if (settings.Enabled && settings.MaterialMode == MaterialBindingMode::Everything &&
-	    !capabilities.MaterialTextureTable.SupportsEverything)
+	    !capabilities.MaterialTextureTable.SupportsMaterialBindingMode(settings.MaterialMode))
 	{
 		SPDLOG_LOGGER_WARN(
 		    logger,
