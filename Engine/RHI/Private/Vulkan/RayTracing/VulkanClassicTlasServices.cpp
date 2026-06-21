@@ -13,6 +13,27 @@
 #include <memory>
 #include <vector>
 
+namespace
+{
+	VkGeometryInstanceFlagsKHR ToNativeInstanceFlags(RhiRayTracingInstanceFlags flags) noexcept
+	{
+		VkGeometryInstanceFlagsKHR nativeFlags = 0;
+		if (HasFlag(flags, RhiRayTracingInstanceFlags::TriangleFacingCullDisable))
+		{
+			nativeFlags |= VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+		}
+		if (HasFlag(flags, RhiRayTracingInstanceFlags::ForceOpaque))
+		{
+			nativeFlags |= VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR;
+		}
+		if (HasFlag(flags, RhiRayTracingInstanceFlags::ForceNonOpaque))
+		{
+			nativeFlags |= VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR;
+		}
+		return nativeFlags;
+	}
+}
+
 VulkanClassicTlasServices::VulkanClassicTlasServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
     m_rhi(&rhi), m_memoryAllocator(&memoryAllocator)
 {
@@ -93,7 +114,7 @@ RhiOwnedResourceHandle VulkanClassicTlasServices::CreateClassicTopLevelAccelerat
 		nativeInstance.instanceCustomIndex = source.InstanceID & 0x00FFFFFFu;
 		nativeInstance.mask = source.InstanceMask & 0xFFu;
 		nativeInstance.instanceShaderBindingTableRecordOffset = source.InstanceContributionToHitGroupIndex & 0x00FFFFFFu;
-		nativeInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+		nativeInstance.flags = ToNativeInstanceFlags(source.Flags);
 		nativeInstance.accelerationStructureReference = source.AccelerationStructure;
 	}
 

@@ -47,6 +47,19 @@ std::array<float, 12> RayTracingPtlasLogicalUpdateStream::BuildInstanceTransform
 	    worldMatrix._34};
 }
 
+namespace
+{
+	RhiPartitionedTlasInstanceFlags ResolveInstanceFlags(const RenderSceneData& sceneData, const MeshDraw& draw) noexcept
+	{
+		RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;
+		if (draw.Material.Slot < sceneData.materials.size() && sceneData.materials[draw.Material.Slot].alphaMode == 1u)
+		{
+			flags = flags | RhiPartitionedTlasInstanceFlags::ForceNoOpaque;
+		}
+		return flags;
+	}
+}
+
 RayTracingPtlasLogicalUpdateStreamResult RayTracingPtlasLogicalUpdateStream::Build(
     const RenderSceneData& sceneData,
     const RayTracingPtlasPartitionPlan& partitionPlan) const
@@ -79,7 +92,7 @@ RayTracingPtlasLogicalUpdateStreamResult RayTracingPtlasLogicalUpdateStream::Bui
 		        .InstanceMask = 0xFFu,
 		        .InstanceContributionToHitGroupIndex = 0u,
 		        .AccelerationStructure = 0,
-		        .InstanceFlags = RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable,
+		        .InstanceFlags = ResolveInstanceFlags(sceneData, draw),
 		        .UpdateFlags = BuildUpdateFlags(entry)});
 	}
 

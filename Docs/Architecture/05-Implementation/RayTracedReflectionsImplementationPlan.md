@@ -815,6 +815,17 @@ Add normal-map sampling to RTIndirectSpecular material texture parity. Use the e
 
 #### Stage 8.5: Alpha-Tested Candidate-Hit Policy
 
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- `RTIndirectSpecular` now uses inline `RayQuery` candidate-hit handling for alpha-tested geometry. The pass no longer uses `RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH`; non-opaque candidates reconstruct instance, primitive, barycentrics, UV0, and material before deciding whether to commit.
+- Classic TLAS now has backend-neutral per-instance flags, mapped to D3D12/Vulkan force-non-opaque instance flags. Alpha-tested render instances set the non-opaque bit so candidate hits are visible to inline ray queries. Partitioned TLAS full builds and logical updates set the existing `ForceNoOpaque` flag for the same alpha-tested material class.
+- Candidate alpha uses the same base-color alpha value semantics as Stage 8.3: base-color texture alpha multiplied by the material base-color alpha constant, sampled at explicit mip 0. Non-textured alpha-tested materials use their authored base-color alpha.
+- Candidates with sampled alpha below `AlphaCutoff` are rejected and traversal continues. Candidates with invalid hit data, invalid material, unsupported blended alpha mode, or invalid required texture descriptors are committed deliberately so the final hit fails closed instead of silently revealing geometry behind it.
+- Alpha-blended geometry remains unsupported and reports `UnsupportedAlphaMode`; it is not treated as cutout transparency.
+- Debug modes now expose alpha accepted/rejected state, sampled alpha, cutoff, and candidate fallback reason.
+
 Goal: support alpha-tested geometry only after base-color alpha can be sampled through the material texture table.
 
 Implementation tasks:

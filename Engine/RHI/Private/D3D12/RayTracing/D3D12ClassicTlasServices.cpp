@@ -19,6 +19,24 @@ namespace D3D12ClassicTlasText
 	{
 		return debugName.empty() ? std::wstring(fallbackName) : std::wstring(debugName);
 	}
+
+	D3D12_RAYTRACING_INSTANCE_FLAGS ToNativeInstanceFlags(RhiRayTracingInstanceFlags flags) noexcept
+	{
+		D3D12_RAYTRACING_INSTANCE_FLAGS nativeFlags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+		if (HasFlag(flags, RhiRayTracingInstanceFlags::TriangleFacingCullDisable))
+		{
+			nativeFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE;
+		}
+		if (HasFlag(flags, RhiRayTracingInstanceFlags::ForceOpaque))
+		{
+			nativeFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+		}
+		if (HasFlag(flags, RhiRayTracingInstanceFlags::ForceNonOpaque))
+		{
+			nativeFlags |= D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_NON_OPAQUE;
+		}
+		return nativeFlags;
+	}
 }
 
 D3D12ClassicTlasServices::D3D12ClassicTlasServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator) noexcept :
@@ -83,7 +101,7 @@ RhiOwnedResourceHandle D3D12ClassicTlasServices::CreateClassicTopLevelAccelerati
 		nativeInstance.InstanceID = source.InstanceID;
 		nativeInstance.InstanceMask = source.InstanceMask;
 		nativeInstance.InstanceContributionToHitGroupIndex = source.InstanceContributionToHitGroupIndex;
-		nativeInstance.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+		nativeInstance.Flags = D3D12ClassicTlasText::ToNativeInstanceFlags(source.Flags);
 		nativeInstance.AccelerationStructure = source.AccelerationStructure;
 	}
 

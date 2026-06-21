@@ -254,7 +254,7 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 			++skippedSkinnedInstanceCount;
 			continue;
 		}
-		if (material->alphaMode != 0u)
+		if (material->alphaMode == 2u)
 		{
 			instances[instanceIndex] =
 			    BuildInvalidHitInstance(draw, material, RTIndirectSpecularHitFallbackReason_UnsupportedAlphaMode);
@@ -301,7 +301,8 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		    .VertexCount = offsets.VertexCount,
 		    .IndexCount = offsets.IndexCount,
 		    .MaterialSlot = draw.Material.Slot,
-		    .Flags = RTIndirectSpecularHitInstanceFlag_Valid | RTIndirectSpecularHitInstanceFlag_Opaque |
+		    .Flags = RTIndirectSpecularHitInstanceFlag_Valid |
+		             (material->alphaMode == 0u ? RTIndirectSpecularHitInstanceFlag_Opaque : 0u) |
 		             RTIndirectSpecularHitInstanceFlag_StaticMesh |
 		             (material->doubleSided ? RTIndirectSpecularHitInstanceFlag_TwoSided : 0u),
 		    .GeometryFlags = BuildHitGeometryFlags(draw, material),

@@ -587,6 +587,14 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	bool useFullBuild =
 	    !m_partitionedResources.Built || !m_partitionedResources.IncrementalUpdatesAllowed || partitionPlanRequiresFullBuild ||
 	    m_partitionedResources.StableInstanceFingerprint != stableInstanceFingerprint;
+	auto resolveInstanceFlags = [&](const MeshDraw& draw) noexcept {
+		RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;
+		if (draw.Material.Slot < sceneData.materials.size() && sceneData.materials[draw.Material.Slot].alphaMode == 1u)
+		{
+			flags = flags | RhiPartitionedTlasInstanceFlags::ForceNoOpaque;
+		}
+		return flags;
+	};
 
 	std::vector<RhiPartitionedTlasInstanceWriteDesc> instanceWrites;
 	std::unordered_set<void*> builtBlasResources;
@@ -629,7 +637,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 			        .InstanceID = renderInstanceIndex,
 			        .InstanceMask = 0xFFu,
 			        .InstanceContributionToHitGroupIndex = 0u,
-			        .Flags = RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable,
+			        .Flags = resolveInstanceFlags(draw),
 			        .InstanceIndex = draw.Source.SourceInstanceIndex,
 			        .PartitionIndex = entry != nullptr ? entry->Assignment.PartitionId : 0u,
 			        .AccelerationStructure = blas.gpuAddress});

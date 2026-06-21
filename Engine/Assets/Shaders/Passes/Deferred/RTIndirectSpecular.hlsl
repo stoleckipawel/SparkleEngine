@@ -71,7 +71,7 @@ StructuredBuffer<RTIndirectSpecularHitMaterial> RTIndirectSpecularHitMaterials;
 Texture2D MaterialTextureTable[4096];
 SamplerState MaterialTextureSampler;
 
-static const uint RTIndirectSpecularRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
+static const uint RTIndirectSpecularRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
 static const uint RTIndirectSpecularInstanceMask = 0xFFu;
 static const uint RTIndirectSpecularDebugOff = 0u;
 static const uint RTIndirectSpecularDebugHitMask = 1u;
@@ -97,9 +97,16 @@ static const uint RTIndirectSpecularDebugHitTangent = 20u;
 static const uint RTIndirectSpecularDebugHitBitangent = 21u;
 static const uint RTIndirectSpecularDebugHitNormalTangent = 22u;
 static const uint RTIndirectSpecularDebugHitSampledNormal = 23u;
+static const uint RTIndirectSpecularDebugAlphaAcceptedRejected = 24u;
+static const uint RTIndirectSpecularDebugAlphaSample = 25u;
+static const uint RTIndirectSpecularDebugAlphaCutoff = 26u;
+static const uint RTIndirectSpecularDebugAlphaCandidateFallback = 27u;
 static const uint RTIndirectSpecularSampleModeMirror = 0u;
 static const uint RTIndirectSpecularSampleModeStochasticGGX = 1u;
 static const float RTIndirectSpecularMaterialTextureMip = 0.0f;
+static const uint RTIndirectSpecularAlphaModeOpaque = 0u;
+static const uint RTIndirectSpecularAlphaModeTested = 1u;
+static const uint RTIndirectSpecularAlphaModeBlended = 2u;
 static const uint MaterialTextureSlotBaseColor = 0u;
 static const uint MaterialTextureSlotNormal = 1u;
 static const uint MaterialTextureSlotRoughness = 2u;
@@ -129,6 +136,7 @@ static const uint RTIndirectSpecularHitFallbackReasonInvalidPrimitive = 9u;
 static const uint RTIndirectSpecularHitFallbackReasonInvalidVertexIndex = 10u;
 static const uint RTIndirectSpecularHitFallbackReasonOneSidedBackface = 11u;
 static const uint RTIndirectSpecularHitFallbackReasonInvalidMaterialTextureDescriptor = 12u;
+static const uint RTIndirectSpecularHitFallbackReasonAlphaRejected = 13u;
 static const float RTIndirectSpecularMinimumTMin = 0.001f;
 
 struct RTIndirectSpecularTraceResult
@@ -138,6 +146,12 @@ struct RTIndirectSpecularTraceResult
 	uint InstanceId;
 	uint PrimitiveIndex;
 	float2 Barycentrics;
+	bool AlphaCandidateSeen;
+	bool AlphaCandidateAccepted;
+	bool AlphaCandidateRejected;
+	float AlphaCandidateValue;
+	float AlphaCandidateCutoff;
+	uint AlphaCandidateFallbackReason;
 };
 
 struct RTIndirectSpecularHitSurface
@@ -324,6 +338,135 @@ float3 ComputeRayOrigin(float3 positionWorld, float3 normalWorld, float3 rayDire
 	return positionWorld + normalWorld * bias * grazingScale + rayDirectionWorld * RTIndirectSpecularMinimumTMin;
 }
 
+bool TryGetMaterialTextureIndex(RTIndirectSpecularHitMaterial material, uint textureSlot, out uint textureIndex);
+bool HasMaterialTexture(RTIndirectSpecularHitMaterial material, uint textureSlot);
+float4 SampleMaterialTextureLevel(uint textureIndex, float2 uv);
+
+bool TryLoadHitTriangle(
+    uint instanceId,
+    uint primitiveIndex,
+    float2 barycentrics,
+    out RTIndirectSpecularHitInstance hitInstance,
+    out RTIndirectSpecularHitMaterial material,
+    out float3 barycentricWeights,
+    out RTIndirectSpecularHitVertex v0,
+    out RTIndirectSpecularHitVertex v1,
+    out RTIndirectSpecularHitVertex v2,
+    out uint fallbackReason)
+{
+	hitInstance = (RTIndirectSpecularHitInstance) 0;
+	material = (RTIndirectSpecularHitMaterial) 0;
+	barycentricWeights = 0.0f.xxx;
+	v0 = (RTIndirectSpecularHitVertex) 0;
+	v1 = (RTIndirectSpecularHitVertex) 0;
+	v2 = (RTIndirectSpecularHitVertex) 0;
+	fallbackReason = RTIndirectSpecularHitFallbackReasonNone;
+
+	if (RTIndirectSpecularHitDataAvailable == 0u)
+	{
+		fallbackReason = RTIndirectSpecularHitFallbackReasonHitDataUnavailable;
+		return false;
+	}
+	if (instanceId >= RTIndirectSpecularHitInstanceCount)
+	{
+		fallbackReason = RTIndirectSpecularHitFallbackReasonInstanceOutOfRange;
+		return false;
+	}
+
+	hitInstance = RTIndirectSpecularHitInstances[instanceId];
+	if ((hitInstance.Flags & RTIndirectSpecularHitInstanceFlagValid) == 0u)
+	{
+		fallbackReason = hitInstance.FallbackReason;
+		return false;
+	}
+	if (hitInstance.MaterialSlot >= RTIndirectSpecularHitMaterialCount)
+	{
+		fallbackReason = RTIndirectSpecularHitFallbackReasonInvalidMaterial;
+		return false;
+	}
+
+	const uint primitiveFirstLocalIndex = primitiveIndex * 3u;
+	if (primitiveFirstLocalIndex + 2u >= hitInstance.IndexCount)
+	{
+		fallbackReason = RTIndirectSpecularHitFallbackReasonInvalidPrimitive;
+		return false;
+	}
+
+	const uint i0 = hitInstance.FirstVertex + RTIndirectSpecularHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 0u];
+	const uint i1 = hitInstance.FirstVertex + RTIndirectSpecularHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 1u];
+	const uint i2 = hitInstance.FirstVertex + RTIndirectSpecularHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 2u];
+	const uint vertexEnd = hitInstance.FirstVertex + hitInstance.VertexCount;
+	if (i0 >= vertexEnd || i1 >= vertexEnd || i2 >= vertexEnd)
+	{
+		fallbackReason = RTIndirectSpecularHitFallbackReasonInvalidVertexIndex;
+		return false;
+	}
+
+	barycentricWeights = float3(1.0f - barycentrics.x - barycentrics.y, barycentrics.x, barycentrics.y);
+	v0 = RTIndirectSpecularHitVertices[i0];
+	v1 = RTIndirectSpecularHitVertices[i1];
+	v2 = RTIndirectSpecularHitVertices[i2];
+	material = RTIndirectSpecularHitMaterials[hitInstance.MaterialSlot];
+	return true;
+}
+
+bool ResolveCandidateAlpha(
+    uint instanceId,
+    uint primitiveIndex,
+    float2 barycentrics,
+    out float sampledAlpha,
+    out float alphaCutoff,
+    out uint fallbackReason)
+{
+	sampledAlpha = 1.0f;
+	alphaCutoff = 0.5f;
+	fallbackReason = RTIndirectSpecularHitFallbackReasonNone;
+
+	RTIndirectSpecularHitInstance hitInstance = (RTIndirectSpecularHitInstance) 0;
+	RTIndirectSpecularHitMaterial material = (RTIndirectSpecularHitMaterial) 0;
+	float3 barycentricWeights = 0.0f.xxx;
+	RTIndirectSpecularHitVertex v0 = (RTIndirectSpecularHitVertex) 0;
+	RTIndirectSpecularHitVertex v1 = (RTIndirectSpecularHitVertex) 0;
+	RTIndirectSpecularHitVertex v2 = (RTIndirectSpecularHitVertex) 0;
+	if (!TryLoadHitTriangle(instanceId, primitiveIndex, barycentrics, hitInstance, material, barycentricWeights, v0, v1, v2, fallbackReason))
+	{
+		return true;
+	}
+
+	if (material.AlphaMode == RTIndirectSpecularAlphaModeBlended)
+	{
+		fallbackReason = RTIndirectSpecularHitFallbackReasonUnsupportedAlphaMode;
+		return true;
+	}
+	if (material.AlphaMode != RTIndirectSpecularAlphaModeTested)
+	{
+		return true;
+	}
+
+	const float2 uv = v0.TexCoord0 * barycentricWeights.x + v1.TexCoord0 * barycentricWeights.y + v2.TexCoord0 * barycentricWeights.z;
+	float4 baseColor = material.BaseColor;
+	uint textureIndex = 0u;
+	if (HasMaterialTexture(material, MaterialTextureSlotBaseColor))
+	{
+		if (!TryGetMaterialTextureIndex(material, MaterialTextureSlotBaseColor, textureIndex))
+		{
+			fallbackReason = RTIndirectSpecularHitFallbackReasonInvalidMaterialTextureDescriptor;
+			return true;
+		}
+		baseColor = SampleMaterialTextureLevel(textureIndex, uv) * material.BaseColor;
+	}
+
+	sampledAlpha = saturate(baseColor.a);
+	alphaCutoff = saturate(material.AlphaCutoff);
+	if (sampledAlpha < alphaCutoff)
+	{
+		fallbackReason = RTIndirectSpecularHitFallbackReasonAlphaRejected;
+		return false;
+	}
+
+	return true;
+}
+
 RTIndirectSpecularTraceResult TraceReflection(float3 positionWorld, float3 normalWorld, float3 reflectionDirectionWorld)
 {
 	RayDesc ray;
@@ -334,8 +477,34 @@ RTIndirectSpecularTraceResult TraceReflection(float3 positionWorld, float3 norma
 
 	RayQuery<RTIndirectSpecularRayFlags> query;
 	query.TraceRayInline(SceneTlas, RTIndirectSpecularRayFlags, RTIndirectSpecularInstanceMask, ray);
+	float alphaCandidateValue = 1.0f;
+	float alphaCandidateCutoff = 0.5f;
+	uint alphaCandidateFallbackReason = RTIndirectSpecularHitFallbackReasonNone;
+	bool alphaCandidateSeen = false;
+	bool alphaCandidateAccepted = false;
+	bool alphaCandidateRejected = false;
 	while (query.Proceed())
 	{
+		if (query.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE)
+		{
+			alphaCandidateSeen = true;
+			const bool commitCandidate = ResolveCandidateAlpha(
+			    query.CandidateInstanceID(),
+			    query.CandidatePrimitiveIndex(),
+			    query.CandidateTriangleBarycentrics(),
+			    alphaCandidateValue,
+			    alphaCandidateCutoff,
+			    alphaCandidateFallbackReason);
+			if (commitCandidate)
+			{
+				alphaCandidateAccepted = true;
+				query.CommitNonOpaqueTriangleHit();
+			}
+			else
+			{
+				alphaCandidateRejected = true;
+			}
+		}
 	}
 
 	RTIndirectSpecularTraceResult result;
@@ -344,6 +513,12 @@ RTIndirectSpecularTraceResult TraceReflection(float3 positionWorld, float3 norma
 	result.InstanceId = result.Hit ? query.CommittedInstanceID() : 0u;
 	result.PrimitiveIndex = result.Hit ? query.CommittedPrimitiveIndex() : 0u;
 	result.Barycentrics = result.Hit ? query.CommittedTriangleBarycentrics() : 0.0f.xx;
+	result.AlphaCandidateSeen = alphaCandidateSeen;
+	result.AlphaCandidateAccepted = alphaCandidateAccepted && result.Hit;
+	result.AlphaCandidateRejected = alphaCandidateRejected;
+	result.AlphaCandidateValue = alphaCandidateValue;
+	result.AlphaCandidateCutoff = alphaCandidateCutoff;
+	result.AlphaCandidateFallbackReason = alphaCandidateFallbackReason;
 	return result;
 }
 
@@ -383,59 +558,40 @@ RTIndirectSpecularHitSurface ReconstructHitSurface(RTIndirectSpecularTraceResult
 	{
 		return surface;
 	}
-	if (RTIndirectSpecularHitDataAvailable == 0u)
+	RTIndirectSpecularHitInstance hitInstance = (RTIndirectSpecularHitInstance) 0;
+	RTIndirectSpecularHitMaterial material = (RTIndirectSpecularHitMaterial) 0;
+	float3 barycentricWeights = 0.0f.xxx;
+	RTIndirectSpecularHitVertex v0 = (RTIndirectSpecularHitVertex) 0;
+	RTIndirectSpecularHitVertex v1 = (RTIndirectSpecularHitVertex) 0;
+	RTIndirectSpecularHitVertex v2 = (RTIndirectSpecularHitVertex) 0;
+	uint fallbackReason = RTIndirectSpecularHitFallbackReasonNone;
+	if (!TryLoadHitTriangle(
+	        trace.InstanceId,
+	        trace.PrimitiveIndex,
+	        trace.Barycentrics,
+	        hitInstance,
+	        material,
+	        barycentricWeights,
+	        v0,
+	        v1,
+	        v2,
+	        fallbackReason))
 	{
-		surface.FallbackReason = RTIndirectSpecularHitFallbackReasonHitDataUnavailable;
+		surface.MaterialSlot = hitInstance.MaterialSlot;
+		surface.GeometryFlags = hitInstance.GeometryFlags;
+		surface.FallbackReason = fallbackReason;
 		return surface;
 	}
-	if (trace.InstanceId >= RTIndirectSpecularHitInstanceCount)
-	{
-		surface.FallbackReason = RTIndirectSpecularHitFallbackReasonInstanceOutOfRange;
-		return surface;
-	}
-
-	const RTIndirectSpecularHitInstance hitInstance = RTIndirectSpecularHitInstances[trace.InstanceId];
 	surface.MaterialSlot = hitInstance.MaterialSlot;
 	surface.GeometryFlags = hitInstance.GeometryFlags;
 	surface.FallbackReason = hitInstance.FallbackReason;
-	if ((hitInstance.Flags & RTIndirectSpecularHitInstanceFlagValid) == 0u)
-	{
-		return surface;
-	}
-	if (hitInstance.MaterialSlot >= RTIndirectSpecularHitMaterialCount)
-	{
-		surface.FallbackReason = RTIndirectSpecularHitFallbackReasonInvalidMaterial;
-		return surface;
-	}
 
-	const uint primitiveFirstLocalIndex = trace.PrimitiveIndex * 3u;
-	if (primitiveFirstLocalIndex + 2u >= hitInstance.IndexCount)
-	{
-		surface.FallbackReason = RTIndirectSpecularHitFallbackReasonInvalidPrimitive;
-		return surface;
-	}
-
-	const uint i0 = hitInstance.FirstVertex + RTIndirectSpecularHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 0u];
-	const uint i1 = hitInstance.FirstVertex + RTIndirectSpecularHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 1u];
-	const uint i2 = hitInstance.FirstVertex + RTIndirectSpecularHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 2u];
-	const uint vertexEnd = hitInstance.FirstVertex + hitInstance.VertexCount;
-	if (i0 >= vertexEnd || i1 >= vertexEnd || i2 >= vertexEnd)
-	{
-		surface.FallbackReason = RTIndirectSpecularHitFallbackReasonInvalidVertexIndex;
-		return surface;
-	}
-
-	const float3 barycentricWeights = float3(1.0f - trace.Barycentrics.x - trace.Barycentrics.y, trace.Barycentrics.x, trace.Barycentrics.y);
-	const RTIndirectSpecularHitVertex v0 = RTIndirectSpecularHitVertices[i0];
-	const RTIndirectSpecularHitVertex v1 = RTIndirectSpecularHitVertices[i1];
-	const RTIndirectSpecularHitVertex v2 = RTIndirectSpecularHitVertices[i2];
 	const float3 localNormal = v0.Normal * barycentricWeights.x + v1.Normal * barycentricWeights.y + v2.Normal * barycentricWeights.z;
 	const float4 localTangent =
 	    v0.Tangent * barycentricWeights.x + v1.Tangent * barycentricWeights.y + v2.Tangent * barycentricWeights.z;
 	const MeshInstanceData meshInstance = MeshInstances[trace.InstanceId];
 	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
 	const float3x3 worldMatrix = (float3x3) meshInstance.WorldMTX;
-	const RTIndirectSpecularHitMaterial material = RTIndirectSpecularHitMaterials[hitInstance.MaterialSlot];
 	float3 normalWorld = SafeTransformNormal(localNormal, worldInvTransposeMatrix, -rayDirectionWorld);
 	float3 tangentWorld = SafeTransformDirection(localTangent.xyz, worldMatrix, 0.0f.xxx);
 	const float tangentSign = localTangent.w >= 0.0f ? 1.0f : -1.0f;
@@ -616,6 +772,10 @@ float3 FallbackReasonColor(uint reason)
 	if (reason == RTIndirectSpecularHitFallbackReasonInvalidMaterialTextureDescriptor)
 	{
 		return float3(1.0f, 0.0f, 1.0f);
+	}
+	if (reason == RTIndirectSpecularHitFallbackReasonAlphaRejected)
+	{
+		return float3(0.05f, 0.25f, 1.0f);
 	}
 	return float3(0.2f, 0.65f, 1.0f);
 }
@@ -879,6 +1039,38 @@ float3 BuildMirrorDebugColor(
 	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugHitSampledNormal)
 	{
 		return hitSurface.Valid ? hitSurface.NormalWorld * 0.5f + 0.5f : FallbackReasonColor(hitSurface.FallbackReason);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugAlphaAcceptedRejected)
+	{
+		if (!trace.AlphaCandidateSeen)
+		{
+			return 0.0f.xxx;
+		}
+		if (trace.AlphaCandidateAccepted)
+		{
+			return float3(0.0f, 0.85f, 0.2f);
+		}
+		if (trace.AlphaCandidateRejected)
+		{
+			return float3(0.05f, 0.25f, 1.0f);
+		}
+		return float3(1.0f, 0.85f, 0.0f);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugAlphaSample)
+	{
+		return trace.AlphaCandidateSeen ? saturate(trace.AlphaCandidateValue).xxx : 0.0f.xxx;
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugAlphaCutoff)
+	{
+		return trace.AlphaCandidateSeen ? saturate(trace.AlphaCandidateCutoff).xxx : 0.0f.xxx;
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugAlphaCandidateFallback)
+	{
+		return trace.AlphaCandidateSeen ? FallbackReasonColor(trace.AlphaCandidateFallbackReason) : 0.0f.xxx;
 	}
 
 	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugFallbackReason)

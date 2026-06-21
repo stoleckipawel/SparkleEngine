@@ -28,4 +28,8 @@ enum class RTIndirectSpecularDebugMode : std::uint32_t
 	HitBitangent = 21u,
 	HitNormalTangent = 22u,
 	HitSampledNormal = 23u,
+	AlphaAcceptedRejected = 24u,
+	AlphaSample = 25u,
+	AlphaCutoff = 26u,
+	AlphaCandidateFallback = 27u,
 };

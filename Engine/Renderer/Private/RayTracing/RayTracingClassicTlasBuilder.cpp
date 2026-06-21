@@ -43,6 +43,16 @@ namespace
 		}
 		return (std::max)(prebuildInfo.ScratchDataSizeInBytes, prebuildInfo.UpdateScratchDataSizeInBytes);
 	}
+
+	RhiRayTracingInstanceFlags ResolveInstanceFlags(const RenderSceneData& sceneData, const MeshDraw& draw) noexcept
+	{
+		RhiRayTracingInstanceFlags flags = RhiRayTracingInstanceFlags::TriangleFacingCullDisable;
+		if (draw.Material.Slot < sceneData.materials.size() && sceneData.materials[draw.Material.Slot].alphaMode == 1u)
+		{
+			flags = flags | RhiRayTracingInstanceFlags::ForceNonOpaque;
+		}
+		return flags;
+	}
 }
 
 RayTracingClassicTlasBuilder::RayTracingClassicTlasBuilder(RenderHardwareInterface& renderHardwareInterface) noexcept :
@@ -152,6 +162,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 			        .InstanceID = index,
 			        .InstanceMask = 0xFFu,
 			        .InstanceContributionToHitGroupIndex = 0u,
+			        .Flags = ResolveInstanceFlags(sceneData, draw),
 			        .AccelerationStructure = blas.gpuAddress});
 		}
 	}
