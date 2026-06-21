@@ -90,8 +90,7 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
 
 	entry.geometry = geometry;
 	{
-		auto blasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuEvent("BLAS Build") : ScopedGpuEvent{};
-		auto blasGpuTimer = diagnostics != nullptr ? diagnostics->BeginGpuTimer("BLAS Build") : ScopedGpuTimer{};
+		auto blasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope("BLAS Build") : ScopedGpuScope{};
 		cmd.BuildBottomLevelAccelerationStructure(
 		    geometry,
 		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.scratchBuffer),

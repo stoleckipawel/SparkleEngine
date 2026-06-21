@@ -81,8 +81,6 @@ void VisualizeBuffersPass::SetParameters(
 
 void VisualizeBuffersPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.VisualizeBuffers.Execute");
-
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),

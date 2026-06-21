@@ -62,8 +62,6 @@ void ComputeClearPass::Execute(
 	std::uint32_t width,
 	std::uint32_t height) const noexcept
 {
-	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.ComputeClear.Execute");
-
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(width, ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(height, ThreadGroupSizeY),

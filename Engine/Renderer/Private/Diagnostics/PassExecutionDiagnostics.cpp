@@ -2,6 +2,8 @@
 
 #include "Diagnostics/PassExecutionDiagnostics.h"
 
+#include "Renderer/Public/Debug/RendererCVars.h"
+
 PassExecutionDiagnostics::PassExecutionDiagnostics(
     FrameExecutionDiagnostics& frameDiagnostics,
     RenderCommandContext& commands,
@@ -48,6 +50,16 @@ ScopedGpuTimer PassExecutionDiagnostics::BeginPassTimer() noexcept
 	return m_frameDiagnostics->BeginTimer(*m_commands, m_passDisplayLabel);
 }
 
+ScopedGpuScope PassExecutionDiagnostics::BeginPassGpuScope() noexcept
+{
+	if (m_frameDiagnostics == nullptr || m_commands == nullptr)
+	{
+		return {};
+	}
+
+	return m_frameDiagnostics->BeginGpuScope(*m_commands, m_passScopeLabel, m_passColor);
+}
+
 ScopedGpuEvent PassExecutionDiagnostics::BeginGpuEvent(std::string_view label) noexcept
 {
 	if (m_frameDiagnostics == nullptr || m_commands == nullptr)
@@ -76,6 +88,23 @@ ScopedGpuEvent PassExecutionDiagnostics::BeginGpuEvent(const Diagnostics::Diagno
 ScopedGpuTimer PassExecutionDiagnostics::BeginTimer(const Diagnostics::DiagnosticName& name) noexcept
 {
 	return BeginTimer(name.GetCanonicalName());
+}
+
+ScopedGpuScope PassExecutionDiagnostics::BeginGpuScope(std::string_view label) noexcept
+{
+	if (m_frameDiagnostics == nullptr || m_commands == nullptr ||
+	    CVarRendererDiagnosticMarkerVerbosity.Get() != RendererDiagnosticMarkerVerbosity::Detailed)
+	{
+		return {};
+	}
+
+	const std::string eventLabel = FormatEventScopeLabel(label);
+	return m_frameDiagnostics->BeginGpuScope(*m_commands, eventLabel, m_passColor);
+}
+
+ScopedGpuScope PassExecutionDiagnostics::BeginGpuScope(const Diagnostics::DiagnosticName& name) noexcept
+{
+	return BeginGpuScope(name.GetCanonicalName());
 }
 
 void PassExecutionDiagnostics::InsertGpuMarker(std::string_view label) const noexcept

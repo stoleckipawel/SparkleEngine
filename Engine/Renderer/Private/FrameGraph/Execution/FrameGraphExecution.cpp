@@ -5,6 +5,7 @@
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Frame/FrameContext.h"
+#include "FrameGraph/Diagnostics/FrameGraphExecutionDiagnostics.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
 
@@ -59,10 +60,14 @@ void FrameGraph::Execute(
 {
 	m_lastUnresolvedBarrierWarningCount = 0;
 	m_lastMissingExecutionBindingCount = 0;
-	cmd.EnableDrawDispatchDiagnostics();
 
 	static constexpr auto kFrameGraphExecuteName = Diagnostics::DiagnosticName{"Renderer.FrameGraph.Execute"};
 	SPARKLE_CPU_SCOPE(kFrameGraphExecuteName);
+	FrameGraphExecutionDiagnostics graphDiagnostics(frameDiagnostics, cmd);
+	if (graphDiagnostics.ShouldEmitDetailedMarkers())
+	{
+		cmd.EnableDrawDispatchDiagnostics();
+	}
 
 	EnsureTransientResourcesMaterialized(plan);
 	ValidateExecutionBindings(plan);
@@ -70,19 +75,9 @@ void FrameGraph::Execute(
 	for (const FrameGraphPassIndex passIndex : plan.executionOrder)
 	{
 		const FrameGraphPassNode& passRecord = plan.passes[passIndex];
-		if (!passRecord.transientAliasingBarriers.empty())
-		{
-			std::string aliasBarrierMarker = passRecord.diagnosticName;
-			aliasBarrierMarker += ".AliasingBarriers";
-			frameDiagnostics.InsertGpuMarker(cmd, aliasBarrierMarker);
-		}
+		graphDiagnostics.InsertPassAliasingBarrierMarker(passRecord);
 		EmitTransientAliasingBarriers(cmd, passRecord.passName, passRecord.transientAliasingBarriers);
-		if (!passRecord.compiledBarriers.empty())
-		{
-			std::string barrierMarker = passRecord.diagnosticName;
-			barrierMarker += ".ResourceBarriers";
-			frameDiagnostics.InsertGpuMarker(cmd, barrierMarker);
-		}
+		graphDiagnostics.InsertPassResourceBarrierMarker(passRecord);
 		EmitCompiledBarriers(cmd, passRecord.passName, passRecord.compiledBarriers);
 		PassExecutionDiagnostics passDiagnostics(
 		    frameDiagnostics,
@@ -91,20 +86,19 @@ void FrameGraph::Execute(
 		    passRecord.displayLabel,
 		    passRecord.eventScopeLabel,
 		    passRecord.passKind);
-		auto passScope = passDiagnostics.BeginPassGpuEvent();
-		auto passTimer = passDiagnostics.BeginPassTimer();
+		auto passScope = graphDiagnostics.BeginPassScope(passDiagnostics);
 		PassExecutionContext passContext{cmd, frame, passRuntimeServices, passDiagnostics, FrameGraphResourceCommands{*this}};
 		m_passes[passIndex].executeCallback(passContext);
 	}
 
 	if (!plan.finalTransientAliasingBarriers.empty())
 	{
-		frameDiagnostics.InsertGpuMarker(cmd, "Renderer.FrameGraph.FrameEnd.AliasingBarriers");
+		graphDiagnostics.InsertFrameEndAliasingBarrierMarker();
 	}
 	EmitTransientAliasingBarriers(cmd, "FrameEnd", plan.finalTransientAliasingBarriers);
 	if (!plan.finalBarriers.empty())
 	{
-		frameDiagnostics.InsertGpuMarker(cmd, "Renderer.FrameGraph.FrameEnd.ResourceBarriers");
+		graphDiagnostics.InsertFrameEndResourceBarrierMarker();
 	}
 	EmitCompiledBarriers(cmd, "FrameEnd", plan.finalBarriers);
 }

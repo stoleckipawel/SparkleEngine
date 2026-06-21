@@ -153,6 +153,27 @@ void ScopedGpuTimer::Reset() noexcept
 	m_depthAccounted = false;
 }
 
+ScopedGpuScope::ScopedGpuScope(ScopedGpuEvent eventScope, ScopedGpuTimer timerScope) noexcept :
+    m_eventScope(std::move(eventScope)), m_timerScope(std::move(timerScope))
+{
+}
+
+ScopedGpuScope::ScopedGpuScope(ScopedGpuScope&& other) noexcept :
+    m_eventScope(std::move(other.m_eventScope)), m_timerScope(std::move(other.m_timerScope))
+{
+}
+
+ScopedGpuScope& ScopedGpuScope::operator=(ScopedGpuScope&& other) noexcept
+{
+	if (this != &other)
+	{
+		m_eventScope = std::move(other.m_eventScope);
+		m_timerScope = std::move(other.m_timerScope);
+	}
+
+	return *this;
+}
+
 FrameExecutionDiagnostics::FrameExecutionDiagnostics(RenderDiagnostics& backendDiagnostics) noexcept :
     m_backendDiagnostics(&backendDiagnostics), m_timingDiagnostics(backendDiagnostics.GetTimingDiagnostics())
 {
@@ -216,6 +237,22 @@ ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
 ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(RenderCommandContext& commands, const Diagnostics::DiagnosticName& name) noexcept
 {
 	return BeginTimer(commands, name.GetCanonicalName());
+}
+
+ScopedGpuScope FrameExecutionDiagnostics::BeginGpuScope(
+    RenderCommandContext& commands,
+    std::string_view label,
+    RhiDiagnosticLabelColor color) noexcept
+{
+	return ScopedGpuScope{BeginGpuEvent(commands, label, color), BeginTimer(commands, label)};
+}
+
+ScopedGpuScope FrameExecutionDiagnostics::BeginGpuScope(
+    RenderCommandContext& commands,
+    const Diagnostics::DiagnosticName& name,
+    RhiDiagnosticLabelColor color) noexcept
+{
+	return BeginGpuScope(commands, name.GetCanonicalName(), color);
 }
 
 void FrameExecutionDiagnostics::InsertGpuMarker(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color)

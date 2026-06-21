@@ -25,10 +25,13 @@ class PassExecutionDiagnostics final
 
 	ScopedGpuEvent BeginPassGpuEvent() noexcept;
 	ScopedGpuTimer BeginPassTimer() noexcept;
+	ScopedGpuScope BeginPassGpuScope() noexcept;
 	ScopedGpuEvent BeginGpuEvent(std::string_view label) noexcept;
 	ScopedGpuEvent BeginGpuEvent(const Diagnostics::DiagnosticName& name) noexcept;
 	ScopedGpuTimer BeginTimer(std::string_view label) noexcept;
 	ScopedGpuTimer BeginTimer(const Diagnostics::DiagnosticName& name) noexcept;
+	ScopedGpuScope BeginGpuScope(std::string_view label) noexcept;
+	ScopedGpuScope BeginGpuScope(const Diagnostics::DiagnosticName& name) noexcept;
 	void InsertGpuMarker(std::string_view label) const noexcept;
 	void InsertGpuMarker(const Diagnostics::DiagnosticName& name) const noexcept;
 
@@ -49,5 +52,5 @@ class PassExecutionDiagnostics final
 	#define SPARKLE_GPU_PASS_SCOPE(diagnostics, nameStr)                                          \
 		const auto SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__) = SPARKLE_DIAGNOSTIC_NAME(nameStr); \
 		SPARKLE_CPU_SCOPE(SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__));                            \
-		auto SPARKLE_PP_CONCAT(_gpuPassScope_, __LINE__) = (diagnostics).BeginGpuEvent(SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__))
+		auto SPARKLE_PP_CONCAT(_gpuPassScope_, __LINE__) = (diagnostics).BeginGpuScope(SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__))
 #endif

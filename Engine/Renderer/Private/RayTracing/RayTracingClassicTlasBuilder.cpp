@@ -232,8 +232,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	const ERhiClassicTlasBuildMode buildMode = canRefit ? ERhiClassicTlasBuildMode::Update : ERhiClassicTlasBuildMode::Build;
 	const char* const tlasEventName = canRefit ? "Classic TLAS Refit" : "Classic TLAS Build";
 	{
-		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuEvent(tlasEventName) : ScopedGpuEvent{};
-		auto tlasGpuTimer = diagnostics != nullptr ? diagnostics->BeginGpuTimer(tlasEventName) : ScopedGpuTimer{};
+		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope(tlasEventName) : ScopedGpuScope{};
 		cmd.BuildTopLevelAccelerationStructure(
 		    m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(m_instanceBuffer),
 		    stats.Build.InstanceCount,

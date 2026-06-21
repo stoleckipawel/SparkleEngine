@@ -514,8 +514,8 @@ Implementation note:
   - `r.RayTracing.Reflections.NormalBias`: ray origin bias; this is a geometric robustness control, not a lighting scale.
 - The feature intentionally has no roughness cutoff/fade, intensity multiplier, or contribution clamp control.
 - `IndirectSpecular` publishes status reasons through renderer smoke diagnostics: `disabled`, `unsupported`, `missing-tlas`, `missing-hit-data`, and `running`.
-- Smoke diagnostics include enabled state, sample/debug modes, max distance, hit-data availability, hit instance/material counts, and the GPU timing label `RT Indirect Specular Ray Query`.
-- Ray tracing frame timings now include `IndirectSpecularGpuMilliseconds` once timestamp results resolve.
+- Smoke diagnostics include enabled state, sample/debug modes, max distance, hit-data availability, hit instance/material counts, and the stable diagnostic timing name for the reflection pass.
+- Stage 9 deprecates the older per-effect `IndirectSpecularGpuMilliseconds` storage; timing validation should use generic frame timing lookup once the measurement cleanup lands.
 
 Goal: make the feature easy to review, tune, and test.
 
@@ -899,6 +899,351 @@ Implement Stage 8.6 from Docs/Architecture/05-Implementation/RayTracedReflection
 Add focused validation scenes and documentation for IndirectSpecular material texture parity. Cover mirror and stochastic GGX modes across the full roughness range, direct-vs-reflected material comparisons, textured material slots, normal maps, alpha-tested geometry if implemented, D3D12, supported Vulkan, and unsupported bindless fail-closed behavior. Keep this as validation coverage and documentation, not new rendering behavior.
 ```
 
+### Stage 9: Measurement And Marker Cleanup
+
+Goal: replace the current mix of scopes, GPU timers, GPU milestones, smoke timing fields, manual PIX events, and module-specific timing structs with a scope-first measurement contract.
+
+Reference findings:
+
+- NVIDIA's GPU performance event guidance recommends keeping GPU performance events enabled broadly, decoupling marker generation from internal profiling, adding one top-level `Frame` range, keeping ranges balanced, using stable names, avoiding excessive nesting, and grouping small workloads instead of giving every tiny operation a top-level event.
+- AMD RGP can consume user markers; for D3D12, AMD documents native PIX3 event instrumentation as the recommended marker path, and newer D3D12 Agility SDK support can make PIX markers visible to RGP without AMD-specific headers.
+- Microsoft PIX marker APIs label CPU/GPU work with begin/end/set-marker calls, and newer D3D12 annotation modes are meant to make markers and object names visible beyond PIX to driver/IHV tooling.
+- AMD's Unreal profiling guidance emphasizes repeatable profiling, avoiding high-overhead editor/debug configurations for GPU profiling, and using profiler views to identify CPU-vs-GPU bottlenecks.
+- Unreal's practical pattern is not "each feature owns a bespoke timing system"; passes and render graph scopes supply stable GPU event labels, while engine stats/Insights consume structured events separately.
+
+Reference links:
+
+- NVIDIA: GPU Performance Events Best Practices - https://developer.nvidia.com/blog/best-practices-gpu-performance-events/
+- AMD: RGP User Debug Markers - https://gpuopen.com/manuals/rgp_manual/user_debug_markers/
+- AMD: Unreal Engine Performance Guide - https://gpuopen.com/learn/unreal-engine-performance-guide/
+- Microsoft: WinPixEventRuntime - https://devblogs.microsoft.com/pix/winpixeventruntime/
+- Microsoft: D3D12 PIX Markers - https://microsoft.github.io/DirectX-Specs/d3d/D3D12PIXMarkers.html
+- Epic: Unreal Performance And Profiling Overview - https://dev.epicgames.com/documentation/en-us/unreal-engine/performance-and-profiling?application_version=4.27
+
+Design constraints:
+
+- Profiler visibility is mandatory. PIX, Nsight Graphics/Systems, RGP, RenderDoc, and Vulkan debug tooling should see the frame/pass hierarchy without requiring Sparkle's internal timing UI.
+- Automated scope emission is the core measurement system. The normal case should be covered because frame graph, frame pipeline, RHI submission, resource systems, tools, and scene systems already know what work is happening.
+- Manual scopes are the exception. `SPARKLE_CPU_SCOPE` and `SPARKLE_GPU_SCOPE` exist for meaningful nested work that automation cannot infer, not as the primary way to get coverage.
+- Feature code should not call PIX/Nsight/RGP APIs, raw timestamp timers, GPU milestones, or per-effect millisecond sinks directly.
+- Frame-graph marker emission should be implemented as a dedicated frame-graph diagnostics/marker subsystem, not as profiling policy scattered through the main frame-graph execution path. The frame graph supplies pass identity, ordering, pass kind, barriers, and resource metadata; the marker subsystem decides what scopes/markers/timestamps to emit for the active verbosity.
+- Scope emission should be automated wherever the engine already has structure: frame execution, frame-graph passes, command-list regions, shader compilation batches, resource uploads, scene build steps, TLAS/BLAS builds, asset cooking/import, gameplay/system ticks, job batches, and smoke capture phases.
+- Internal timing is optional and should be derived from the same scope events used for profiler markers when it measures the same workload. Do not maintain one marker hierarchy and a second manually named timing hierarchy for the same pass or workload.
+- Separate diagnostic streams are allowed when they deliver data that profiler markers cannot physically provide: pass status reasons, capability decisions, ray/instance/material counts, residency pressure, query availability, validation failures, capture metadata, and smoke-test verdicts. These streams must reference the same stable diagnostic names instead of inventing parallel identities.
+- CPU and GPU need different backend mechanics, but they should share names, categories, and ownership rules.
+- The frame graph should be the default source of render-pass GPU scopes, external profiler markers, and optional GPU timestamp timings. Individual passes should not hand-write begin/end/timer boilerplate for normal pass timing.
+- CPU profiling should follow the same automation-first shape: engine loops, tool pipelines, frame setup/record/submit, scene snapshot/build/update phases, jobs, and validation phases should emit scopes from their orchestration layer by default. Manual `SPARKLE_CPU_SCOPE` placement should fill intentional gaps, not compensate for absent system-level coverage.
+- Per-effect timing storage in feature structs should be removed. Module-specific timing structs should be replaced by a generic timing snapshot keyed by stable diagnostic names. Feature-specific smoke diagnostics may keep functional state and non-timing data, but not bespoke per-feature millisecond fields.
+- Keep names stable across APIs and runs. Dynamic labels are allowed only for explicitly bounded diagnostic detail, not for core pass identity.
+- Prefer fewer, better scopes. Do not annotate every draw, barrier, fence, or small helper if tools already expose that data or if the scope is below the useful threshold.
+
+#### Stage 9.0: Measurement Options And Contract Decision
+
+Goal: audit current measurement systems and choose the shared ownership contract before deleting code.
+
+Options to document:
+
+| Option | Shape | Pros | Cons | Recommendation |
+| --- | --- | --- | --- | --- |
+| Automated scopes plus profiler markers only | engine subsystems emit scope events automatically; GPU scope events become PIX/Nsight/RGP/debug labels; no internal GPU timing | cleanest code, broad profiler coverage, no per-effect timing storage, least manual placement | no automated smoke/perf numbers | good manual-profiling baseline |
+| Automated scopes plus automatic timing sink | same automated scope events drive profiler markers plus optional GPU timestamps and CPU durations | broad coverage by default, profiler-visible, supports smoke/perf automation without duplicate names | needs timestamp lifetime/resolution policy | preferred default |
+| Full internal profiler everywhere | every subsystem emits custom stats, timings, milestones, and UI data | maximum in-engine detail | highest code clutter and easiest to desynchronize from profiler captures | reject as the default timing model, but keep distinct non-timing diagnostics where markers cannot represent the data |
+
+Stage 9.0 source audit result:
+
+| Current path | Source | Current role | Decision | Migration note |
+| --- | --- | --- | --- | --- |
+| `SPARKLE_CPU_SCOPE` / `Diagnostics::ScopedTrace` | `Engine/Core/Public/Diagnostics/Trace.h`, `Engine/Core/Private/Diagnostics/Trace.cpp` | CPU scope front end; routes to trace JSON and `LiveProfiler` | keep as canonical CPU front end | use for engine and tool CPU work; prefer `DiagnosticName` constants for stable names |
+| Core `LiveProfiler` CPU/GPU stores | `Engine/Core/Public/Diagnostics/LiveProfiler.h` | in-memory editor profiler tree; CPU scopes and resolved GPU timing producer surface | keep as consumer, not feature-owned storage | feed it from the unified scope/timing sink; do not add effect-specific timing structs for editor display |
+| `SPARKLE_GPU_SCOPE` | not currently present as a repo-wide macro/API | desired GPU scope front end | add in Stage 9.1 | one GPU scope should emit profiler markers and optionally timestamp timings; feature code should not call event and timer APIs separately |
+| `SPARKLE_GPU_PASS_SCOPE` | `Engine/Renderer/Private/Diagnostics/PassExecutionDiagnostics.h` | pass-local macro that opens a CPU scope and a GPU event only | fold into `SPARKLE_GPU_SCOPE` or delete | frame graph already opens pass scopes automatically, so pass-local usage should become rare detailed subscopes |
+| `FrameExecutionDiagnostics::BeginGpuEvent` | `Engine/Renderer/Private/Diagnostics/FrameExecutionDiagnostics.h/.cpp` | GPU profiler marker scope only | fold under `SPARKLE_GPU_SCOPE` implementation | keep as internal implementation detail if useful; stop exposing as normal feature API |
+| `FrameExecutionDiagnostics::BeginTimer` | `Engine/Renderer/Private/Diagnostics/FrameExecutionDiagnostics.h/.cpp` | timestamp-query GPU timer scope only | fold under optional timing sink | the caller should not manually pair a marker scope with a timer scope |
+| `FrameExecutionDiagnostics::InsertGpuMarker` | `Engine/Renderer/Private/Diagnostics/FrameExecutionDiagnostics.h/.cpp` | instantaneous GPU marker | keep only for bounded detailed diagnostics | barriers/one-off markers should be `Detailed` verbosity, not normal pass timing |
+| `PassExecutionDiagnostics::BeginGpuEvent` / `BeginTimer` | `Engine/Renderer/Private/Diagnostics/PassExecutionDiagnostics.h/.cpp` | pass-relative wrappers over frame event/timer APIs | fold under `SPARKLE_GPU_SCOPE` and frame graph automation | keep pass display/diagnostic-name formatting, but remove duplicate user-facing timer/event choices |
+| RHI diagnostics capabilities and timestamp queries | `Engine/RHI/Public/Diagnostics/RhiDiagnostics.h` | backend capability, object names, timestamp query API, message/failure/memory diagnostics | keep as backend layer | RHI owns native marker/timestamp mechanics; renderer owns scope intent |
+| D3D12 PIX events | `Engine/RHI/Private/D3D12/Diagnostics/D3D12PixEvents.*` | WinPixEventRuntime command-list begin/end/set-marker bridge | keep behind RHI | `SPARKLE_GPU_SCOPE` should reach this path automatically on D3D12 |
+| Vulkan debug events | `Engine/RHI/Private/Vulkan/Diagnostics/VulkanDebugEvents.*` | `VK_EXT_debug_utils` command-buffer labels | keep behind RHI | `SPARKLE_GPU_SCOPE` should reach this path automatically on supported Vulkan devices |
+| Frame graph pass scopes/timers | `Engine/Renderer/Private/FrameGraph/Execution/FrameGraphExecution.cpp` | automatically opens pass GPU event and pass GPU timer per graph pass | keep as primary GPU automation point | convert to the new unified GPU scope once Stage 9.1 exists |
+| Frame-level GPU scope/timer and timing snapshot | `Engine/Renderer/Private/FramePipeline/FramePipeline.cpp`, `Engine/Renderer/Public/Diagnostics/RendererDiagnosticsSnapshot.h` | manual `GPU Frame` event/timer plus generic `RendererFrameTimingDiagnosticsSnapshot` list | keep and generalize | `RendererFrameTimingDiagnosticsSnapshot` is the right generic timing shape; extend it instead of adding feature timing fields |
+| `FramePipeline::ReportResolvedTimings` ray tracing publication | `Engine/Renderer/Private/FramePipeline/FramePipeline.cpp` | publishes generic timings to `LiveProfiler`, then republishes them into ray tracing metrics | delete ray-tracing timing republish path | consumers should query generic timings by stable diagnostic name |
+| `RayTracingPerformanceMetrics` timing fields | `Engine/Renderer/Private/RayTracing/RayTracingPerformanceMetrics.h` and related metric structs | stores CPU/GPU milliseconds inside ray tracing domain metrics | delete timing fields; keep non-timing metrics | provider choices, counts, validation state, and capability reasons remain ray tracing diagnostics |
+| `RayTracingPerformanceDiagnostics::CpuScope` and GPU timing string matching | `Engine/Renderer/Private/RayTracing/RayTracingPerformanceDiagnostics.*` | separate CPU stopwatch, event/timer wrapper, resolved GPU timing string matching | delete or reduce to non-timing helpers | replace CPU stopwatch calls with `SPARKLE_CPU_SCOPE`; replace GPU label matching with generic timing lookup |
+| Ray tracing smoke timing fields | `Engine/Renderer/Public/Diagnostics/RendererSmokeRayTracingDiagnostics.h`, `Engine/Renderer/Private/Diagnostics/RendererSmokeRayTracingSnapshotBuilder.cpp` | copies per-effect/per-subsystem milliseconds into public smoke diagnostics | delete timing fields | smoke keeps capability/status/count data and references generic timing names when needed |
+| Smoke capture timing artifacts | `Engine/Application/Private/Validation/RhiSmokeCaptureArtifacts.cpp`, `Engine/Application/Private/Validation/RhiSmokeRayTracingEvidence.cpp` | writes duplicated ray tracing timing values to JSON/CSV/log evidence | migrate to generic timing export | evidence can include timing rows from `RendererFrameTimingDiagnosticsSnapshot` rather than bespoke fields |
+| Tool elapsed-millisecond helpers | `Tools/Cooking/AssetCooker`, `Tools/Cooking/TextureCooker` | CLI/report artifact elapsed time calculations alongside existing CPU scopes | fold where practical, keep artifact-specific totals if needed | CLI summaries may need elapsed numbers, but new tool timing should prefer CPU scopes plus a small report extractor |
+
+Selected Stage 9.0 contract:
+
+- Use automation as the primary measurement surface:
+  - frame graph emits render-pass GPU scopes through a diagnostics/marker subsystem
+  - frame pipeline emits frame-level CPU/GPU scopes
+  - RHI/resource/tool/scene orchestration emits coarse CPU/GPU scopes where it owns real work boundaries
+- Use two manual measurement surfaces only when automation cannot infer the work:
+  - `SPARKLE_CPU_SCOPE` for CPU work.
+  - `SPARKLE_GPU_SCOPE` for GPU work.
+- `SPARKLE_GPU_SCOPE` must fan out automatically to external profiler markers and, when enabled/supported, timestamp-query timing records.
+- Feature code should mostly have no measurement code unless it owns a genuinely meaningful nested workload.
+- Keep `RendererFrameTimingDiagnosticsSnapshot`-style generic timing export as the internal automation path. Extend it with stable names/paths and lookup helpers instead of copying timings into feature structs.
+- Distinct non-timing diagnostics stay in their owning domains: capability decisions, provider choices, counts, validation failures, skip reasons, descriptor/resource pressure, and smoke verdicts.
+
+Deprecation target:
+
+- Deprecate direct feature calls to:
+  - `BeginGpuEvent`
+  - `BeginTimer`
+  - `BeginGpuTimer`
+  - `InsertGpuMarker` outside detailed diagnostics
+  - custom CPU stopwatch scopes that write into feature metrics
+  - per-effect `*GpuMilliseconds` / `*CpuMilliseconds` fields
+- Delete the ray tracing timing republish path that string-matches resolved GPU labels into `RayTracingPerformanceMetrics`.
+- Delete `RendererSmokeRayTracingFrameTimingDiagnostics` and per-subsystem ray tracing smoke timing fields once generic timing export is available to smoke artifacts.
+- Keep ray tracing non-timing metrics: BLAS/TLAS counts, PTLAS planner state, provider/capability reasons, validation mismatch counts, support flags, and IndirectSpecular status/hit-data counts.
+
+Automation points:
+
+| Scope owner | Automatic scopes to add or keep |
+| --- | --- |
+| Frame pipeline | host prepare/record/submit CPU scopes, top-level GPU frame scope excluding present |
+| Frame graph diagnostics/marker subsystem | graph execute CPU scope, pass GPU scopes/timestamps, optional detailed barrier/resource markers, pass-kind coloring, phase grouping |
+| RHI command submission | command-list/queue submit scopes if backend command batching hides meaningful work |
+| Resource systems | upload/streaming batches, descriptor table update batches, transient allocation pressure phases |
+| Shader tooling | shader compile/cook batches and package validation phases |
+| Ray tracing scene | BLAS build, classic TLAS build, partitioned TLAS update, hit-data/table upload phases as GPU scopes plus CPU scopes for preparation |
+| CPU engine systems | application tick, game scene snapshot, render scene translation, animation update, asset import/load, job batches |
+| Smoke/validation | capture setup, frame wait, readback, artifact write phases as CPU scopes; use generic GPU timings for frame/pass data |
+
+Engine-wide cleanup map:
+
+| Engine area | End-state owner | Keep | Remove or fold |
+| --- | --- | --- | --- |
+| Core diagnostics | owns `SPARKLE_CPU_SCOPE`, trace export, LiveProfiler CPU storage, shared diagnostic names | `ScopedTrace`, `DiagnosticName`, trace session, LiveProfiler consumer API | ad hoc CPU stopwatches that duplicate scope duration recording |
+| RHI diagnostics | owns native object names, backend marker calls, timestamp query mechanics, debug messages, memory diagnostics | PIX bridge, Vulkan debug utils labels, timestamp-query API, backend capabilities | renderer/feature code that reaches backend marker APIs directly |
+| Renderer frame pipeline | owns top-level frame CPU/GPU orchestration scopes and generic timing snapshot publication | frame prepare/record/submit scopes, `RendererFrameTimingDiagnosticsSnapshot` shape | feature-specific timing publication from frame pipeline |
+| Frame graph | owns render-pass metadata and execution order | pass identity, pass kind, display label, diagnostic name, resource/barrier facts | marker/timing policy embedded directly in core graph execution |
+| Frame-graph diagnostics/marker subsystem | owns render-pass marker/timing policy | pass scope emission, verbosity, optional barrier/resource markers, pass-kind coloring/grouping | pass-local marker/timer boilerplate for normal pass coverage |
+| Render passes | own only meaningful nested scopes that frame graph cannot infer | rare `SPARKLE_GPU_SCOPE` / `SPARKLE_CPU_SCOPE` subscopes for large internal phases | default per-pass `SPARKLE_GPU_PASS_SCOPE`, manual begin/end timers, manual PIX markers |
+| Ray tracing scene | owns ray tracing state/capability/count diagnostics | provider choices, BLAS/TLAS counts, PTLAS planner state, validation mismatch counts, status reasons | `RayTracingPerformanceMetrics` timing fields, string-matched GPU timing publication, ray tracing CPU stopwatch scopes |
+| Smoke diagnostics | owns functional validation state and artifact-friendly evidence | enabled/status/capability/counts/reasons plus references to generic timing names | per-effect/per-subsystem millisecond fields copied from feature metrics |
+| Editor profiler | consumes Core/Renderer snapshots | LiveProfiler tree, generic GPU timing tree/list | effect-specific timing rows that bypass generic timing data |
+| Tools/import/cooking | own tool pipeline scopes and CLI artifact summaries | automated CPU scopes around stages; explicit elapsed totals only when required by CLI/report contract | new stopwatch helpers where CPU scopes plus report extraction can provide the same data |
+| GameFramework/application/job systems | own high-level CPU work boundaries | automated scopes for tick/update/job batches when central orchestration exists | hand-placed scopes spread through low-level leaf functions to compensate for missing owner-level coverage |
+
+End-state verification queries:
+
+- no normal feature/pass code should call `BeginGpuEvent`, `BeginTimer`, `BeginGpuTimer`, or backend PIX/Vulkan marker APIs directly
+- no ray tracing or effect metrics should expose `*GpuMilliseconds` or `*CpuMilliseconds`
+- no smoke diagnostics should store per-effect/per-subsystem millisecond fields when generic timing lookup exists
+- no frame graph pass should need `SPARKLE_GPU_PASS_SCOPE` for its default pass marker
+- every remaining manual `SPARKLE_CPU_SCOPE` or `SPARKLE_GPU_SCOPE` should be justified as nested work that automation cannot infer
+- every retained non-timing diagnostic stream should map to a data class unavailable from profiler markers or generic timing snapshots
+
+Migration order:
+
+1. Add `SPARKLE_GPU_SCOPE` as the canonical GPU RAII front end over the existing event/timer implementation.
+2. Add a frame-graph diagnostics/marker subsystem that receives pass execution metadata and owns pass marker/timestamp emission policy.
+3. Convert frame-level and frame-graph pass event/timer pairs to one GPU scope call that can emit both profiler markers and optional timestamps.
+4. Remove pass-local `SPARKLE_GPU_PASS_SCOPE` usage where frame graph already provides the pass scope; keep only meaningful detailed subscopes.
+5. Extend generic timing export with stable diagnostic name/path lookup.
+6. Move smoke/perf artifacts to generic timing lookup/export.
+7. Remove ray tracing timing fields and string-matched timing publication.
+8. Replace ray tracing CPU stopwatch scopes with `SPARKLE_CPU_SCOPE`.
+9. Add CPU automation coverage for high-level engine/tool orchestration gaps before adding manual scopes.
+10. Review tool elapsed helpers and fold them into CPU scopes where they are not required as explicit CLI artifact totals.
+11. Run the end-state verification queries, delete remaining duplicated instrumentation, and document any intentional exceptions with owner and reason.
+
+Implementation tasks:
+
+- inventory all current timing and marker entry points:
+  - `SPARKLE_CPU_SCOPE`
+  - `SPARKLE_GPU_SCOPE`
+  - `SPARKLE_GPU_PASS_SCOPE`
+  - `FrameExecutionDiagnostics::BeginGpuEvent`
+  - `FrameExecutionDiagnostics::BeginTimer`
+  - `PassExecutionDiagnostics::BeginGpuEvent`
+  - `PassExecutionDiagnostics::BeginTimer`
+  - `InsertGpuMarker`
+  - ray tracing performance metrics and smoke timing fields
+  - ad hoc elapsed-millisecond helpers in tools
+  - backend diagnostic marker APIs
+- document which entries are marker-only, timing-only, both, or smoke-reporting-only
+- decide the canonical front-end API:
+  - keep `SPARKLE_CPU_SCOPE`
+  - keep or rename existing GPU scope macros into one `SPARKLE_GPU_SCOPE`
+  - treat pass-specific GPU scope macros as wrappers only if they add useful compile-time metadata
+  - deprecate raw manual timer/event/milestone calls in feature code
+- document which entries carry distinct non-marker data that must survive the cleanup:
+  - capability decisions
+  - skip/failure reasons
+  - resource and descriptor counts
+  - ray tracing scene counts
+  - validation/smoke verdicts
+  - capture metadata
+- choose one canonical diagnostic name type and naming convention for CPU and GPU scopes
+- choose the initial scope ownership rules:
+  - frame graph diagnostics/marker subsystem automatically owns pass-level GPU scopes/timestamps
+  - RHI owns API marker emission from scope events
+  - Core diagnostics owns CPU scope storage
+  - engine systems automatically emit coarse CPU/GPU scopes at known orchestration boundaries
+  - features own only coarse optional subscopes when they are large enough to matter
+- decide whether internal GPU timing is enabled by default, cvar-gated, or smoke-only
+- decide the rule for keeping parallel data streams: each kept stream must have a distinct consumer or data class that cannot be recovered from profiler markers or generic timing snapshots
+- decide the first export shape for automated data:
+  - flat list of `{name, path, cpuMs, gpuMs, frameIndex}`
+  - hierarchical tree matching profiler ranges
+  - both, with tree as source and flat list as derived view
+- update docs with the exact migration target and deprecation list
+- make deleting per-effect timing storage a required migration target
+- add engine-wide cleanup ownership so every old measurement path has an end-state owner or deletion target
+- add verification queries that prove the old duplicated paths are gone or explicitly justified
+
+Acceptance criteria:
+
+- a source-backed table of every current measurement path and its owner
+- one chosen ownership contract for markers, CPU timings, GPU timings, and separate non-timing diagnostics
+- a keep/delete/fold decision that distinguishes duplicate timing plumbing from useful non-marker telemetry
+- a clear deprecation path for per-effect timing structs and manual pass timing calls
+- a clear automation plan for frame, frame-graph pass, command-list, upload, shader compile, acceleration-structure build, and smoke-capture scopes
+- a clear CPU automation plan for high-level engine loops, scene systems, tools, jobs, and validation paths
+- an engine-wide cleanup map that assigns every measurement path to keep, fold, or delete
+- explicit end-state verification queries for duplicate timing fields, manual pass timers, raw marker calls, and unjustified manual scopes
+- no code migration yet except documentation or naming notes
+- clear list of systems to delete, keep, or fold into the new contract
+
+Implementation prompt:
+
+```text
+Implement Stage 9.0 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Audit Sparkle's current CPU/GPU measurement and marker paths across Core, RHI, Renderer, frame graph, ray tracing diagnostics, smoke diagnostics, and tools. Compare the available options against NVIDIA GPU performance event guidance, AMD RGP user-marker guidance, Microsoft PIX marker behavior, and Unreal-style render graph instrumentation. Do not rewrite instrumentation yet. Update the plan with the selected `SPARKLE_CPU_SCOPE`/`SPARKLE_GPU_SCOPE` front-end contract, the automation points that should emit scopes without feature code, the distinct-data rule for telemetry that profiler markers cannot provide, the per-effect timing storage deprecation list, and the migration order.
+```
+
+#### Stage 9.1: Profiler-First Scope And Marker Unification
+
+Goal: make automated engine-owned scopes the default measurement surface, with `SPARKLE_CPU_SCOPE` and `SPARKLE_GPU_SCOPE` reserved for gaps automation cannot infer.
+
+Implementation tasks:
+
+- introduce or harden one public GPU scope API, exposed as `SPARKLE_GPU_SCOPE`, that emits balanced profiler ranges through RHI:
+  - D3D12: PIX-compatible command-list/queue markers
+  - Vulkan: debug utils labels where available
+  - no-op backend path with the same call site contract
+- keep `SPARKLE_CPU_SCOPE` as the public CPU scope API and align names/categories with GPU scopes
+- add a frame-graph diagnostics/marker subsystem that owns marker/timing emission policy separately from core graph execution:
+  - input: frame-graph pass metadata, execution order, pass kind, display label, diagnostic name, barrier/resource metadata, frame index
+  - output: scope events, backend profiler markers, optional timestamp records
+  - controls: marker verbosity, timing enabled state, detailed barrier/resource marker policy
+  - ownership: frame graph provides facts; diagnostics subsystem decides emission
+- make the frame-graph diagnostics/marker subsystem automatically emit:
+  - one top-level `Frame` range that excludes present
+  - one range per frame-graph pass using the stable pass name
+  - optional group ranges for larger graph phases if useful
+  - optional detailed barrier/resource markers only at detailed verbosity
+- make other high-value orchestration layers automatically emit scopes where coverage is currently narrow:
+  - command-list submission batches
+  - resource upload/streaming batches
+  - shader compilation/cook batches
+  - render scene update phases
+  - BLAS/TLAS build phases
+  - application/game/editor tick phases
+  - asset load/import/cook phases
+  - job-system batches if a central scheduler exists
+  - smoke capture phases
+- remove normal pass-level manual marker, timer, and milestone boilerplate from render passes
+- keep pass-specific subscopes only when they represent meaningful nested GPU work, not "because the feature wants a timing"
+- use the same stable diagnostic names on D3D12 and Vulkan
+- prevent unmatched begin/end pairs by using RAII handles only; no raw `Begin`/`End` in feature code
+- add marker verbosity levels:
+  - `Off`: no internal marker calls if platform/build requires it
+  - `FramePass`: frame plus frame-graph passes
+  - `Detailed`: explicit pass-owned subscopes
+- make CPU scope naming follow the same convention, but do not force every GPU scope to have a CPU scope
+- before adding a manual scope, prefer adding automation at the owning subsystem boundary
+
+Acceptance criteria:
+
+- PIX, Nsight, and RGP-visible captures show a clean frame/pass hierarchy
+- normal render passes no longer call both "GPU event" and "GPU timer" by hand
+- normal feature code uses no measurement code unless automation cannot infer the nested work; when needed it uses only `SPARKLE_CPU_SCOPE` or `SPARKLE_GPU_SCOPE`
+- broad capture coverage improves through automatic scopes at engine orchestration boundaries
+- CPU profiler coverage improves through automated scopes on engine/tool orchestration boundaries, not only hand-placed scopes
+- frame-graph marker verbosity is controlled through the diagnostics/marker subsystem without cluttering main graph execution
+- all profiler marker calls are balanced by construction
+- dynamic labels are absent from the core pass hierarchy
+- backend-specific marker implementation remains behind RHI/diagnostics boundaries
+
+Implementation prompt:
+
+```text
+Implement Stage 9.1 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Unify Sparkle's profiler-visible marker path around automation-first CPU/GPU scopes. Add a frame-graph diagnostics/marker subsystem that receives graph execution metadata and owns pass marker/timestamp emission policy, including verbosity. Make frame graph pass execution and other high-value orchestration layers automatically emit stable scopes, route GPU scopes to D3D12 PIX-compatible markers and Vulkan debug utils labels where supported, and remove pass-level marker/timer/milestone boilerplate that duplicates frame-graph scope ownership. Keep manual `SPARKLE_CPU_SCOPE`/`SPARKLE_GPU_SCOPE` placement only for meaningful nested work automation cannot infer. Keep internal timings out of this stage except where existing code must be adapted to the new scope API.
+```
+
+Implementation note:
+
+- `FrameExecutionDiagnostics` now exposes one RAII GPU scope (`ScopedGpuScope`) and the public `SPARKLE_GPU_SCOPE` macro. The scope opens the profiler event range and the existing timestamp timer together, so feature code no longer needs paired event/timer calls.
+- `FrameGraphExecutionDiagnostics` owns frame-graph marker policy. Frame graph execution now provides pass facts and execution order; the diagnostics subsystem decides whether to emit frame/pass ranges, detailed barrier/resource markers, and draw/dispatch diagnostics according to `r.Diagnostics.MarkerVerbosity`.
+- Normal render passes no longer place pass-level GPU scope boilerplate. Frame graph pass execution automatically owns those ranges. Manual scopes remain only for meaningful nested work such as ray-query dispatches and acceleration-structure builds.
+- `r.Diagnostics.MarkerVerbosity` has the planned `Off`, `FramePass`, and `Detailed` levels. `FramePass` is the default capture-friendly path; `Detailed` enables manual nested GPU subscopes, barrier/resource markers, and low-level draw/dispatch diagnostics.
+- Remaining raw event/timer entry points are compatibility APIs for existing diagnostics plumbing. Stage 9.2 should delete or fold them after the optional timing sink is derived from the unified scope stream.
+
+#### Stage 9.2: Automatic Timing Sink And Smoke Metadata Simplification
+
+Goal: make internal timing data optional, automated, and derived from `SPARKLE_CPU_SCOPE`/`SPARKLE_GPU_SCOPE` events instead of per-effect timing storage.
+
+Implementation tasks:
+
+- add one optional timing collector that subscribes to the canonical CPU/GPU scope stream:
+  - CPU duration from the existing CPU scope clock path
+  - GPU duration from timestamp queries around frame/pass scopes
+  - same stable name/path for both
+- store timings in a generic frame timing snapshot instead of feature-owned millisecond fields
+- remove hardcoded fields such as per-effect `*GpuMilliseconds`, `*CpuMilliseconds`, and milestone timing arrays from feature structs
+- route smoke/perf automation through generic timing lookup by diagnostic name instead of feature-owned timing fields
+- keep feature smoke diagnostics focused on functional state:
+  - enabled/disabled
+  - running/skipped status reason
+  - relevant counts
+  - capability reason
+  - not duplicated pass timing
+- expose a small helper for tests and smoke captures:
+  - `FindTiming("Renderer.FrameGraph.Pass.IndirectSpecular")`
+  - or equivalent stable diagnostic name lookup
+- add cvars for timing collection only if needed:
+  - `r.Diagnostics.GpuTiming=0/1`
+  - `r.Diagnostics.CpuTiming=0/1`
+  - `r.Diagnostics.MarkerVerbosity=FramePass/Detailed`
+- remove duplicate timer calls from passes after the automatic collector is working
+- remove or fold all old measurement paths that do not match the Stage 9.0 cleanup map:
+  - pass-local default timing macros
+  - ray tracing timing fields
+  - smoke timing fields
+  - string-matched timing publication
+  - feature-owned CPU stopwatch scopes
+  - raw marker/timer calls in feature code
+- add a small measurement cleanup validation report or checklist artifact that records remaining exceptions and their owners
+- document that profiling builds should rely on external tools first, and internal timing is for smoke/perf automation only
+
+Acceptance criteria:
+
+- a captured frame can report GPU timings for frame-graph passes without pass-specific timing code
+- smoke metadata no longer carries per-effect CPU/GPU timing fields
+- automated timing coverage comes from the same CPU/GPU scopes that feed profiler markers
+- existing functionality diagnostics remain intact
+- profiler markers and internal timings cannot disagree on names when they describe the same scope because they share the same stable diagnostic metadata
+- timestamp-query unsupported backends still emit profiler markers and report timing unavailable rather than adding fallback timers
+- end-state verification queries from Stage 9.0 pass, or every remaining hit is documented as an intentional exception with a clear owner
+- old per-effect timing structs and smoke timing fields are deleted rather than merely unused
+
+Implementation prompt:
+
+```text
+Implement Stage 9.2 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Build the optional internal timing sink on top of the `SPARKLE_CPU_SCOPE`/`SPARKLE_GPU_SCOPE` contract from Stage 9.1. Derive GPU timings from timestamp queries around GPU scopes and CPU timings from CPU scopes where available. Replace per-effect millisecond fields with a generic timing snapshot and lookup API, keep smoke diagnostics focused on functional status and other data that profiler markers cannot provide, and remove duplicated manual pass timers/milestones. Run the Stage 9.0 end-state verification queries and delete all duplicated instrumentation that does not align with the cleanup map, documenting only intentional exceptions with owners. Do not weaken profiler marker visibility.
+```
+
 ## Suggested Validation Commands
 
 Exact command names can differ by local build output, so confirm paths from the current build tree before wiring these into automation:
@@ -927,7 +1272,7 @@ Runtime validation should cover:
 - missing hit data: force or reproduce missing RT hit buffers and verify smoke status `missing-hit-data` plus deterministic shader fallback
 - mirror debug mode: set `r.RayTracing.Reflections.Enabled=1`, `r.RayTracing.Reflections.SampleMode=0`
 - stochastic GGX mode: set `r.RayTracing.Reflections.Enabled=1`, `r.RayTracing.Reflections.SampleMode=1`
-- status/timing metadata: capture smoke diagnostics and verify `RayTracing.IndirectSpecular.StatusReason`, `HitInstanceCount`, `HitMaterialCount`, and `FrameTimings.IndirectSpecularGpuMilliseconds`
+- status/timing metadata: capture smoke diagnostics and verify `RayTracing.IndirectSpecular.StatusReason`, `HitInstanceCount`, `HitMaterialCount`, and the generic timing entry for the IndirectSpecular frame-graph pass
 - direct-vs-reflected material parity scene:
   - one material visible directly in GBuffer and through reflection
   - constants-only material

@@ -33,6 +33,11 @@ ScopedGpuTimer RayTracingPerformanceDiagnostics::BeginGpuTimer(std::string_view 
 	return m_passDiagnostics != nullptr ? m_passDiagnostics->BeginTimer(label) : ScopedGpuTimer{};
 }
 
+ScopedGpuScope RayTracingPerformanceDiagnostics::BeginGpuScope(std::string_view label) noexcept
+{
+	return m_passDiagnostics != nullptr ? m_passDiagnostics->BeginGpuScope(label) : ScopedGpuScope{};
+}
+
 RayTracingPerformanceDiagnostics::CpuScope::CpuScope(double* target) noexcept :
     m_target(target), m_startMicroseconds(RayTracingPerformanceDiagnosticsClock::NowMicroseconds())
 {

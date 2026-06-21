@@ -167,8 +167,6 @@ void IndirectSpecularPass::SetParameters(
 
 void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.IndirectSpecular.Execute");
-
 	const IndirectSpecularSettings settings = ResolveSettings(context.RuntimeServices);
 	const bool hitDataAvailable = RayTracingHitDataPassBinding::IsAvailable(context.Frame);
 	const std::uint32_t hitInstanceCount = context.Frame.rayTracingHitData.GetInstanceCount();
@@ -227,8 +225,7 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 	    hitMaterialCount);
 	const bool dispatched = [&]() noexcept
 	{
-		auto rayQueryScope = context.Diagnostics.BeginGpuEvent(DispatchTimingLabel);
-		auto rayQueryTimer = context.Diagnostics.BeginTimer(DispatchTimingLabel);
+		SPARKLE_GPU_SCOPE(context.Diagnostics, DispatchTimingLabel);
 		return PassUtilities::DispatchAvailableComputePassWithRuntime<IndirectSpecularPass>(
 		    context.Resources,
 		    context.Commands,

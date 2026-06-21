@@ -93,8 +93,6 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 
 void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.GBuffer.Execute");
-
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	ConfigurePipeline(context.Commands, context.Frame.mainView);
 	PrepareTargets(context, parameters.GetFields());

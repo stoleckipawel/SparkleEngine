@@ -7,6 +7,10 @@ ConsoleVariable<bool> CVarRendererMeshAutoBatching(
 	"r.MeshAutoBatching",
 	true,
 	"Build renderer-side auto batches for compatible flat mesh instances.");
+ConsoleVariable<RendererDiagnosticMarkerVerbosity> CVarRendererDiagnosticMarkerVerbosity(
+    "r.Diagnostics.MarkerVerbosity",
+    RendererDiagnosticMarkerVerbosity::FramePass,
+    "Renderer diagnostic marker verbosity: 0=off, 1=frame and frame-graph passes, 2=detailed markers.");
 ConsoleVariable<bool> CVarRayTracingClassicTlasRefit(
     "r.RayTracing.Tlas.Refit",
     true,

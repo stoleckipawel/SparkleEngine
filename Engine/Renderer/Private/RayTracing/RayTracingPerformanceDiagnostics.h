@@ -18,6 +18,7 @@ class RayTracingPerformanceDiagnostics final
 
 	ScopedGpuEvent BeginGpuEvent(std::string_view label) noexcept;
 	ScopedGpuTimer BeginGpuTimer(std::string_view label) noexcept;
+	ScopedGpuScope BeginGpuScope(std::string_view label) noexcept;
 
 	class CpuScope final
 	{

@@ -124,8 +124,6 @@ RhiDescriptorTableBinding SkyPass::GetSkyTextureBinding(const PassRuntimeService
 
 void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.Sky.Execute");
-
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	PassBindingOverrides overrides;
 	overrides.SetDescriptorTable("SkyTexture", GetSkyTextureBinding(context.RuntimeServices));

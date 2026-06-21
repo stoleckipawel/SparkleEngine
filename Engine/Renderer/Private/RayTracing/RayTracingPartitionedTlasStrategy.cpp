@@ -813,8 +813,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 
 	{
 		auto tlasCpuScope = diagnostics != nullptr ? diagnostics->BeginTlasCpuScope() : RayTracingPerformanceDiagnostics::CpuScope{};
-		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuEvent("Partitioned TLAS Build") : ScopedGpuEvent{};
-		auto tlasGpuTimer = diagnostics != nullptr ? diagnostics->BeginGpuTimer("Partitioned TLAS Build") : ScopedGpuTimer{};
+		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope("Partitioned TLAS Build") : ScopedGpuScope{};
 		cmd.BuildPartitionedTopLevelAccelerationStructure(
 		    RhiPartitionedTlasBuildCommandDesc{
 		        .Layout = m_partitionedResources.Layout,
@@ -849,6 +848,7 @@ bool RayTracingPartitionedTlasStrategy::UploadLogicalUpdateRecords(
     const RayTracingPtlasLogicalUpdateStreamResult* logicalUpdates,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
+	(void)diagnostics;
 	if (m_renderHardwareInterface == nullptr || m_partitionedResources.Layout.InstanceCapacity == 0)
 	{
 		return false;
@@ -865,8 +865,6 @@ bool RayTracingPartitionedTlasStrategy::UploadLogicalUpdateRecords(
 	const std::uint32_t logicalUpdateCount = logicalUpdates != nullptr ? logicalUpdates->LogicalUpdateCount : 0;
 	const RhiPartitionedTlasLogicalUpdateRecord* records =
 	    logicalUpdateCount > 0 && logicalUpdates != nullptr ? logicalUpdates->Records.data() : nullptr;
-	auto logicalDirtyScope =
-	    diagnostics != nullptr ? diagnostics->BeginGpuEvent("RayTracing.PTLAS.LogicalDirty") : ScopedGpuEvent{};
 	m_partitionedResources.LogicalUpdateRecords =
 	    rayTracingService.CreatePartitionedTopLevelAccelerationStructureLogicalUpdateBuffer(
 	        RhiPartitionedTlasLogicalUpdateBufferDesc{

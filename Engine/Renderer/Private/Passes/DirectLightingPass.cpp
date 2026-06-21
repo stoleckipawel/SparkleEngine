@@ -166,14 +166,11 @@ void DirectLightingVulkanAddressPass::SetParameters(
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.DirectLighting.Execute");
-
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
 	const ComputeDispatchDesc dispatch = DirectLightingPassDetails::BuildDispatchDesc(context.Frame.mainView);
 	const bool dispatched = [&]() noexcept
 	{
-		auto rayQueryScope = context.Diagnostics.BeginGpuEvent("Ray Query Dispatch");
-		auto rayQueryTimer = context.Diagnostics.BeginTimer("Ray Query Dispatch");
+		SPARKLE_GPU_SCOPE(context.Diagnostics, "Ray Query Dispatch");
 		return PassUtilities::DispatchComputePassWithRuntime<DirectLightingPass>(
 		    context.Resources,
 		    context.Commands,
@@ -188,14 +185,11 @@ void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstanc
 
 void DirectLightingVulkanAddressPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.DirectLightingVulkanAddress.Execute");
-
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
 	const ComputeDispatchDesc dispatch = DirectLightingPassDetails::BuildDispatchDesc(context.Frame.mainView);
 	const bool dispatched = [&]() noexcept
 	{
-		auto rayQueryScope = context.Diagnostics.BeginGpuEvent("Ray Query Dispatch");
-		auto rayQueryTimer = context.Diagnostics.BeginTimer("Ray Query Dispatch");
+		SPARKLE_GPU_SCOPE(context.Diagnostics, "Ray Query Dispatch");
 		return PassUtilities::DispatchComputePassWithRuntime<DirectLightingVulkanAddressPass>(
 		    context.Resources,
 		    context.Commands,

@@ -606,8 +606,12 @@ void FramePipeline::RecordFrame() noexcept
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
 	auto gpuFrameScope =
-	    frameDiagnostics.BeginGpuEvent(cmd, "GPU Frame", RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255});
-	auto gpuFrameTimer = frameDiagnostics.BeginTimer(cmd, "GPU Frame");
+	    CVarRendererDiagnosticMarkerVerbosity.Get() != RendererDiagnosticMarkerVerbosity::Off
+	        ? frameDiagnostics.BeginGpuScope(
+	              cmd,
+	              "GPU Frame",
+	              RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255})
+	        : ScopedGpuScope{};
 
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute begin");
 	m_frameGraph->Execute(compiledPlan, cmd, frame, passRuntimeServices, frameDiagnostics);

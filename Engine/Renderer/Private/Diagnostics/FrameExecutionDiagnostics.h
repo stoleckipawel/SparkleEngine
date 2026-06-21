@@ -83,6 +83,25 @@ class ScopedGpuTimer final
 	bool m_depthAccounted = false;
 };
 
+class ScopedGpuScope final
+{
+  public:
+	ScopedGpuScope() noexcept = default;
+	ScopedGpuScope(ScopedGpuEvent eventScope, ScopedGpuTimer timerScope) noexcept;
+	~ScopedGpuScope() noexcept = default;
+
+	ScopedGpuScope(const ScopedGpuScope&) = delete;
+	ScopedGpuScope& operator=(const ScopedGpuScope&) = delete;
+	ScopedGpuScope(ScopedGpuScope&& other) noexcept;
+	ScopedGpuScope& operator=(ScopedGpuScope&& other) noexcept;
+
+	bool IsActive() const noexcept { return m_eventScope.IsActive() || m_timerScope.IsActive(); }
+
+  private:
+	ScopedGpuEvent m_eventScope;
+	ScopedGpuTimer m_timerScope;
+};
+
 class FrameExecutionDiagnostics final
 {
   public:
@@ -107,6 +126,11 @@ class FrameExecutionDiagnostics final
 	    RhiDiagnosticLabelColor color = {}) noexcept;
 	ScopedGpuTimer BeginTimer(RenderCommandContext& commands, std::string_view label) noexcept;
 	ScopedGpuTimer BeginTimer(RenderCommandContext& commands, const Diagnostics::DiagnosticName& name) noexcept;
+	ScopedGpuScope BeginGpuScope(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
+	ScopedGpuScope BeginGpuScope(
+	    RenderCommandContext& commands,
+	    const Diagnostics::DiagnosticName& name,
+	    RhiDiagnosticLabelColor color = {}) noexcept;
 	void InsertGpuMarker(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) const noexcept;
 	void InsertGpuMarker(RenderCommandContext& commands, const Diagnostics::DiagnosticName& name, RhiDiagnosticLabelColor color = {})
 	    const noexcept;
@@ -143,4 +167,9 @@ class FrameExecutionDiagnostics final
 		{                                 \
 			(name)                        \
 		}
+#endif
+
+#ifndef SPARKLE_GPU_SCOPE
+	#define SPARKLE_GPU_SCOPE(scopeOwner, ...) \
+		auto SPARKLE_PP_CONCAT(_sparkleGpuScope_, __LINE__) = (scopeOwner).BeginGpuScope(__VA_ARGS__)
 #endif
