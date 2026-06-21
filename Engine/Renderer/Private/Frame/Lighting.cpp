@@ -4,6 +4,7 @@
 #include "Frame/DirectLighting.h"
 #include "Frame/IndirectLighting.h"
 #include "Frame/LightingComposite.h"
+#include "Frame/RTIndirectSpecular.h"
 #include "Frame/Sky.h"
 #include "Frame/VisualizeBuffers.h"
 
@@ -16,6 +17,7 @@ void AddLightingPasses(
 {
 	AddDirectLightingPass(builder, lighting, gbuffer, sceneTlas);
 	AddIndirectLightingPass(builder, lighting, gbuffer);
+	AddRTIndirectSpecularPass(builder, lighting, gbuffer, sceneTlas);
 	AddLightingCompositePass(builder, sceneTargets, lighting, gbuffer);
 	AddVisualizeBuffersPass(builder, sceneTargets, lighting, gbuffer);
 	AddSkyPass(builder, sceneTargets, gbuffer);
