@@ -7,7 +7,7 @@
 #include "RHI/Public/Core/RhiBackendApi.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RHI/Public/Diagnostics/RhiDiagnosticsService.h"
+#include "RHI/Public/Diagnostics/RhiDiagnostics.h"
 #include "RuntimeApplication.h"
 #include "Validation/RhiSmokeRayTracingEvidence.h"
 
@@ -98,7 +98,7 @@ namespace RhiSmokeRendererEvidence
 		}
 
 		const RenderHardwareInterface& renderHardware = app.GetRenderer().GetRenderHardwareInterface();
-		const RhiDiagnosticsCapabilities capabilities = renderHardware.GetDiagnosticsService().GetDiagnostics().GetCapabilities();
+		const RhiDiagnosticsCapabilities capabilities = renderHardware.GetDiagnostics().GetCapabilities();
 		SPDLOG_LOGGER_INFO(
 		    logger,
 		    "RHI smoke diagnostics capabilities: objectNames={} commandScopes={} timestampQueries={} debugMessages={} liveObjectReports={} "
