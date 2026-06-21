@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frame/Targets/FrameRenderTargets.h"
+#include "RayTracing/RTIndirectSpecularUniformData.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
@@ -22,6 +23,7 @@ struct RTIndirectSpecularPassParameters
 	ShaderAccelerationStructure SceneTlas;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<RTIndirectSpecularUniformData> RTIndirectSpecular;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
@@ -33,6 +35,7 @@ struct RTIndirectSpecularPassParameters
 		builder.AccelerationStructure("SceneTlas", &RTIndirectSpecularPassParameters::SceneTlas, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &RTIndirectSpecularPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &RTIndirectSpecularPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("RTIndirectSpecular", &RTIndirectSpecularPassParameters::RTIndirectSpecular, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &RTIndirectSpecularPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &RTIndirectSpecularPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &RTIndirectSpecularPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);

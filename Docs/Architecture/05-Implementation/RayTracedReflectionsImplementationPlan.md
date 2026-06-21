@@ -233,6 +233,14 @@ Add a renderer-owned full-resolution compute pass named RTIndirectSpecular that 
 
 ### Stage 2: Mirror Reflection Ray Query
 
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- `RTIndirectSpecular` now reconstructs world position from `GBufferDeviceZ`, decodes world-space GBuffer normals through shared GBuffer helpers, traces a mirror ray against the descriptor `SceneTlas`, and writes a visible temporary debug signal into `LightingRenderTargets::IndirectSpecular`.
+- Debug mode is controlled by `r.RayTracing.Reflections.DebugMode`: `0=Off` uses stable hit-id color, `1=HitMask`, `2=HitDistance`, and `3=MirrorDirection`.
+- Stage 2 intentionally keeps material-hit shading out of the pass; hit visualization is based on ray-query committed hit metadata until renderer-owned hit material buffers are introduced.
+
 Goal: produce a visible full-resolution mirror reflection without stochastic roughness yet.
 
 Implementation tasks:

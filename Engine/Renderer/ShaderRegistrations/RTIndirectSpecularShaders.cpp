@@ -4,6 +4,7 @@
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include "Resources/RenderConstantBufferData.h"
+#include "Renderer/Private/RayTracing/RTIndirectSpecularUniformData.h"
 
 class RTIndirectSpecularCS final : public TGlobalShader<RTIndirectSpecularCS>
 {
@@ -16,6 +17,7 @@ class RTIndirectSpecularCS final : public TGlobalShader<RTIndirectSpecularCS>
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
+	SHADER_PARAMETER_CBUFFER_NAMED(RTIndirectSpecular, RTIndirectSpecularUniformData, RTIndirectSpecularUniformData)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)

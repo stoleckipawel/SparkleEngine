@@ -12,6 +12,7 @@
 #include "Passes/RenderPassDefinition.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
+#include "RayTracing/RTIndirectSpecularPassData.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
@@ -72,6 +73,7 @@ void RTIndirectSpecularPass::SetParameters(
 {
 	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
+	parameters->RTIndirectSpecular = RTIndirectSpecularPassData::Build();
 	const bool valid = parameters.Sync();
 	assert(valid);
 }
@@ -92,8 +94,8 @@ void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterIns
 	    1};
 	const bool dispatched = [&]() noexcept
 	{
-		auto rayQueryScope = context.Diagnostics.BeginGpuEvent("RT Indirect Specular Black Output");
-		auto rayQueryTimer = context.Diagnostics.BeginTimer("RT Indirect Specular Black Output");
+		auto rayQueryScope = context.Diagnostics.BeginGpuEvent("RT Indirect Specular Mirror Ray Query");
+		auto rayQueryTimer = context.Diagnostics.BeginTimer("RT Indirect Specular Mirror Ray Query");
 		return PassUtilities::DispatchComputePassWithRuntime<RTIndirectSpecularPass>(
 		    context.Resources,
 		    context.Commands,
