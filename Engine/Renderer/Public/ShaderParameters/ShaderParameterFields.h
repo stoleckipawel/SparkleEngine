@@ -114,6 +114,32 @@ class ShaderTexture2DSRV final
 using ShaderTexture3DSRV = ShaderTexture2DSRV;
 using ShaderTextureCubeSRV = ShaderTexture2DSRV;
 
+template <std::size_t ArrayCount> class ShaderTexture2DTableSRV final
+{
+  public:
+	static_assert(ArrayCount > 0, "Shader texture descriptor tables must contain at least one element.");
+
+	using Semantic = ReadTexture;
+	static constexpr std::size_t Count = ArrayCount;
+
+	ShaderTexture2DTableSRV() = default;
+
+	ShaderTexture2DTableSRV& operator=(RhiDescriptorTableBinding descriptorTable) noexcept
+	{
+		m_descriptorTable = descriptorTable;
+		return *this;
+	}
+
+	RhiDescriptorTableBinding GetDescriptorTable() const noexcept { return m_descriptorTable; }
+
+	bool IsBound() const noexcept { return static_cast<bool>(m_descriptorTable); }
+
+	void Reset() noexcept { m_descriptorTable = {}; }
+
+  private:
+	RhiDescriptorTableBinding m_descriptorTable = {};
+};
+
 class ShaderTexture2DUAV final
 {
   public:
@@ -314,6 +340,12 @@ template <> struct ShaderParameterFieldTraits<ShaderTexture2DSRV>
 	static constexpr std::uint32_t FieldArrayCount = 1;
 };
 
+template <std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTexture2DTableSRV<ArrayCount>>
+{
+	using Semantic = ReadTexture;
+	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+};
+
 template <> struct ShaderParameterFieldTraits<ShaderTexture2DUAV>
 {
 	using Semantic = RWTexture;
@@ -433,6 +465,12 @@ std::enable_if_t<(ArrayCount > 1), bool> BindParameterField(
 }
 
 inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DSRV& field)
+{
+	return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
+}
+
+template <std::size_t ArrayCount>
+inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DTableSRV<ArrayCount>& field)
 {
 	return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
 }

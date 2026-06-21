@@ -21,6 +21,8 @@
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
+#include "RHI/Public/Bindings/RenderBindingSet.h"
+#include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
 #include <cassert>
 
@@ -128,11 +130,31 @@ const RenderPassDefinition& RTIndirectSpecularPass::GetDefinition() noexcept
 	            .BindingLayoutId = RendererShaderPackages::RTIndirectSpecular.data(),
 	            .ExpectedStages = ShaderStageMask::Compute,
 	            .RequiredFeatures =
-	                CookedShaderPackageFeatureFlags::UsesInlineRayQuery | CookedShaderPackageFeatureFlags::UsesAccelerationStructure},
+	                CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
+	                CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
+	                CookedShaderPackageFeatureFlags::UsesDescriptorIndexing},
 	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
 	    .BindingLayoutDebugName = L"RTIndirectSpecular_BindingLayout",
 	    .PipelineStateDebugName = L"RTIndirectSpecular_PipelineState"};
 	return definition;
+}
+
+bool RTIndirectSpecularPass::BindMaterialTextureTable(ParameterInstance& parameters, const FrameContext& frame) noexcept
+{
+	const RenderBindingSet* materialTextureTable = frame.sceneData.materialTextureTable;
+	if (!frame.sceneData.materialTextureTableValid || materialTextureTable == nullptr || !*materialTextureTable)
+	{
+		return false;
+	}
+
+	const std::uint32_t descriptorCount = frame.sceneData.materialTextureTableDescriptorCount;
+	if (descriptorCount == 0u || descriptorCount > MaterialTextureTableFixedCapacity || materialTextureTable->GetDescriptorCount() < descriptorCount)
+	{
+		return false;
+	}
+
+	parameters->MaterialTextureTable = materialTextureTable->GetTableBinding(0);
+	return true;
 }
 
 void RTIndirectSpecularPass::DeclareResources(
@@ -167,6 +189,12 @@ void RTIndirectSpecularPass::SetParameters(
 {
 	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
+	parameters->MaterialTextureSampler =
+	    RhiSamplerDesc{
+	        .MinMagFilter = RhiSamplerMinMagFilter::Linear,
+	        .MipFilter = RhiSamplerMipFilter::Linear,
+	        .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
+	        .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 }
 
 void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
@@ -189,12 +217,22 @@ void RTIndirectSpecularPass::Execute(PassExecutionContext& context, ParameterIns
 		return;
 	}
 
+	const bool materialTextureTableAvailable = BindMaterialTextureTable(parameters, context.Frame);
+	if (!materialTextureTableAvailable)
+	{
+		PublishAndLogStatus(RTIndirectSpecularStatusReason::Unsupported, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
+		return;
+	}
+
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	parameters->RTIndirectSpecular = RTIndirectSpecularPassData::Build(
 	    settings,
 	    hitDataAvailable,
 	    hitInstanceCount,
-	    hitMaterialCount);
+	    hitMaterialCount,
+	    materialTextureTableAvailable,
+	    context.Frame.sceneData.materialTextureTableDescriptorCount,
+	    MaterialTextureTableFixedCapacity);
 	const bool valid = parameters.Sync();
 	assert(valid);
 

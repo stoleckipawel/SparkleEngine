@@ -692,6 +692,18 @@ Implement this first for `RaytracingOnly`: raster keeps existing per-material bi
 
 #### Stage 8.2: Bind Texture Table Through Typed Pass Parameters
 
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- The material texture table is still generic renderer scene/material infrastructure; `RTIndirectSpecular` is only the first table-aware consumer.
+- `ShaderTexture2DTableSRV<N>` now represents a renderer-owned descriptor table through typed pass parameters without pretending the table is a frame-graph-owned texture array.
+- The first concrete shader contract is a fixed-capacity descriptor array of 4096 `Texture2D` entries plus `MaterialTextureSampler`. Capability reporting now fails closed when the backend cannot support that fixed capacity.
+- The shader package declares descriptor-indexing usage so DXC enables `SPV_EXT_descriptor_indexing` for SPIR-V cooks. Vulkan runtime support still fails closed until the Vulkan RHI reports descriptor-indexing capability explicitly.
+- In `RaytracingOnly`, the table is bound only by `RTIndirectSpecularPass`; GBuffer/raster keeps the existing per-material bindful `RenderBindingSet` path.
+- Production material texture shading is still disabled. `r.RayTracing.Reflections.DebugMode=15` samples hit base-color texture at hit `UV0` through the table to prove descriptor indexing by material slot and texture slot.
+- Missing, invalid, empty, or overflowing table state prevents the RT material-texture path from running instead of silently shading textured hits as constants.
+
 Goal: make the descriptor table visible to `RTIndirectSpecular` without changing final material output.
 
 Implementation tasks:

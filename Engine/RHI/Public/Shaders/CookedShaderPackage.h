@@ -31,6 +31,7 @@ enum class CookedShaderPackageFeatureFlags : std::uint32_t
 	UsesInlineRayQuery = 1u << 0u,
 	UsesAccelerationStructure = 1u << 1u,
 	UsesAccelerationStructureDeviceAddress = 1u << 2u,
+	UsesDescriptorIndexing = 1u << 3u,
 };
 
 constexpr CookedShaderPackageFeatureFlags operator|(CookedShaderPackageFeatureFlags lhs, CookedShaderPackageFeatureFlags rhs) noexcept

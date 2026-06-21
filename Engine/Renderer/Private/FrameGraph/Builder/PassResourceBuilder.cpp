@@ -237,6 +237,11 @@ bool PassResourceBuilder::DeclareParameterUsages(const PassParameterSet& paramet
 			return false;
 		}
 
+		if (binding->AsDescriptorTableData() != nullptr)
+		{
+			continue;
+		}
+
 		if (parameter.ResourceDomain == ShaderParameterResourceDomain::Texture)
 		{
 			DeclareTextureBinding(parameter, *binding);

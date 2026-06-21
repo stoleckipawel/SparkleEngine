@@ -269,6 +269,14 @@ std::string CookedPackageInspection::FormatPackageFeatures(CookedShaderPackageFe
 		}
 		output += "acceleration-structure-device-address";
 	}
+	if (HasCookedShaderPackageFeature(features, CookedShaderPackageFeatureFlags::UsesDescriptorIndexing))
+	{
+		if (!output.empty())
+		{
+			output += ", ";
+		}
+		output += "descriptor-indexing";
+	}
 	if (output.empty())
 	{
 		output = "none";

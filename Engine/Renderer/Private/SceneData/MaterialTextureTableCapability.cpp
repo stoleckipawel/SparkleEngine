@@ -5,8 +5,6 @@
 
 namespace
 {
-	constexpr std::uint32_t kMaterialTextureTablePreferredFixedCapacity = 4096u;
-
 	std::uint32_t ResolveShaderResourceDescriptorCapacity(const RhiBindingLimits& limits) noexcept
 	{
 		std::uint32_t capacity = limits.MaxShaderResourceDescriptors;
@@ -26,6 +24,11 @@ MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(
 		return MaterialTextureTableCapabilityReport{
 		    .StatusReason = "backend-descriptor-model-unknown"};
 	}
+	if (capabilities.BackendApi == ERhiBackendApi::Vulkan)
+	{
+		return MaterialTextureTableCapabilityReport{
+		    .StatusReason = "vulkan-descriptor-indexing-capability-not-reported"};
+	}
 
 	const std::uint32_t shaderResourceCapacity = ResolveShaderResourceDescriptorCapacity(capabilities.BindingLimits);
 	if (shaderResourceCapacity == 0)
@@ -34,13 +37,19 @@ MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(
 		    .StatusReason = "shader-resource-descriptor-limit-unavailable"};
 	}
 
-	const std::uint32_t fixedCapacity = std::min(shaderResourceCapacity, kMaterialTextureTablePreferredFixedCapacity);
+	if (shaderResourceCapacity < MaterialTextureTableFixedCapacity)
+	{
+		return MaterialTextureTableCapabilityReport{
+		    .MaxTextureDescriptors = shaderResourceCapacity,
+		    .StatusReason = "shader-resource-descriptor-limit-below-material-texture-table-capacity"};
+	}
+
 	return MaterialTextureTableCapabilityReport{
 	    .Supported = true,
 	    .SelectedPath = MaterialTextureTablePath::FixedCapacityDescriptorArray,
 	    .SupportsRaytracingOnly = true,
 	    .SupportsEverything = false,
 	    .SupportsRuntimeSizedBindless = false,
-	    .MaxTextureDescriptors = fixedCapacity,
+	    .MaxTextureDescriptors = MaterialTextureTableFixedCapacity,
 	    .StatusReason = "fixed-capacity-descriptor-array-selected"};
 }

@@ -37,6 +37,10 @@ void AddRTIndirectSpecularPass(
 		    {
 			    return;
 		    }
+		    if (!RTIndirectSpecularPass::BindMaterialTextureTable(parameters, frame))
+		    {
+			    return;
+		    }
 
 		    ComputeShaderPass<RTIndirectSpecularPass::Parameters>::Setup(
 		        resourceBuilder,

@@ -6,12 +6,14 @@
 #include "Resources/RenderConstantBufferData.h"
 #include "Renderer/Private/RayTracing/RTIndirectSpecularHitData.h"
 #include "Renderer/Private/RayTracing/RTIndirectSpecularUniformData.h"
+#include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
 
 class RTIndirectSpecularCS final : public TGlobalShader<RTIndirectSpecularCS>
 {
   public:
 	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures =
-	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure | CookedShaderPackageFeatureFlags::UsesInlineRayQuery;
+	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure | CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
+	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, IndirectSpecular, IndirectSpecularTexture)
@@ -28,6 +30,8 @@ class RTIndirectSpecularCS final : public TGlobalShader<RTIndirectSpecularCS>
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RTIndirectSpecularHitInstance, RTIndirectSpecularHitInstances)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RTIndirectSpecularHitMaterial, RTIndirectSpecularHitMaterials)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(MeshInstanceData, MeshInstances)
+	SHADER_PARAMETER_TEXTURE_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
+	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	END_SHADER_PARAMETER_STRUCT()
 };
 

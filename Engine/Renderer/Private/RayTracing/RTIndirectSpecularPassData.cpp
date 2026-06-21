@@ -9,7 +9,10 @@ namespace RTIndirectSpecularPassData
 	    const RTIndirectSpecularSettings& settings,
 	    bool hitDataAvailable,
 	    std::uint32_t hitInstanceCount,
-	    std::uint32_t hitMaterialCount) noexcept
+	    std::uint32_t hitMaterialCount,
+	    bool materialTextureTableAvailable,
+	    std::uint32_t materialTextureTableDescriptorCount,
+	    std::uint32_t materialTextureTableCapacity) noexcept
 	{
 		return RTIndirectSpecularUniformData{
 		    .DebugMode = static_cast<std::uint32_t>(settings.DebugMode),
@@ -19,6 +22,10 @@ namespace RTIndirectSpecularPassData
 		    .HitInstanceCount = hitInstanceCount,
 		    .HitMaterialCount = hitMaterialCount,
 		    .SampleMode = static_cast<std::uint32_t>(settings.SampleMode),
-		    .Padding0 = 0u};
+		    .MaterialTextureTableAvailable = materialTextureTableAvailable ? 1u : 0u,
+		    .MaterialTextureTableDescriptorCount = materialTextureTableDescriptorCount,
+		    .MaterialTextureTableCapacity = materialTextureTableCapacity,
+		    .Padding0 = 0u,
+		    .Padding1 = 0u};
 	}
 }

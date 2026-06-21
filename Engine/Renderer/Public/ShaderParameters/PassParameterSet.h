@@ -292,7 +292,7 @@ class PassParameterSet final
 			return false;
 		}
 
-		if (!descriptorTable || parameter->ArrayCount != 1u)
+		if (!descriptorTable)
 		{
 			return false;
 		}
@@ -311,7 +311,7 @@ class PassParameterSet final
 			return false;
 		}
 
-		if (!descriptorTable || parameter->ArrayCount != 1u)
+		if (!descriptorTable)
 		{
 			return false;
 		}

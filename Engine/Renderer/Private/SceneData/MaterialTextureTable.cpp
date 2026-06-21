@@ -2,6 +2,7 @@
 #include "SceneData/MaterialTextureTable.h"
 
 #include "Resources/Texture.h"
+#include "SceneData/MaterialTextureTableCapability.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
@@ -47,6 +48,10 @@ MaterialTextureTableBuildResult MaterialTextureTable::BuildBindingSet(RenderHard
 	if (m_textures.empty())
 	{
 		return MaterialTextureTableBuildResult{.FailureReason = "empty-texture-table"};
+	}
+	if (m_textures.size() > MaterialTextureTableFixedCapacity)
+	{
+		return MaterialTextureTableBuildResult{.FailureReason = "fixed-capacity-descriptor-array-overflow"};
 	}
 
 	for (const Texture* texture : m_textures)

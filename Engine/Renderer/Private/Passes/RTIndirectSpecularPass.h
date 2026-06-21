@@ -8,10 +8,12 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "SceneData/MaterialTextureTableCapability.h"
 
 #include <cstdint>
 
 class FrameGraphBuilder;
+struct FrameContext;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeServices;
@@ -34,6 +36,8 @@ struct RTIndirectSpecularPassParameters
 	ShaderBuffer<RTIndirectSpecularHitInstance> RTIndirectSpecularHitInstances;
 	ShaderBuffer<RTIndirectSpecularHitMaterial> RTIndirectSpecularHitMaterials;
 	ShaderBuffer<MeshInstanceData> MeshInstances;
+	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
+	ShaderSamplerSet MaterialTextureSampler;
 
 	static void Describe(ShaderParameterStructBuilder<RTIndirectSpecularPassParameters>& builder)
 	{
@@ -51,6 +55,8 @@ struct RTIndirectSpecularPassParameters
 		builder.ReadBuffer("RTIndirectSpecularHitInstances", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitInstances, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("RTIndirectSpecularHitMaterials", &RTIndirectSpecularPassParameters::RTIndirectSpecularHitMaterials, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("MeshInstances", &RTIndirectSpecularPassParameters::MeshInstances, ShaderStageVisibility::Compute);
+		builder.ReadTexture("MaterialTextureTable", &RTIndirectSpecularPassParameters::MaterialTextureTable, ShaderStageVisibility::Compute);
+		builder.Sampler("MaterialTextureSampler", &RTIndirectSpecularPassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -69,6 +75,7 @@ class RTIndirectSpecularPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
+	static bool BindMaterialTextureTable(ParameterInstance& parameters, const FrameContext& frame) noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
 	    const LightingRenderTargets& lighting,

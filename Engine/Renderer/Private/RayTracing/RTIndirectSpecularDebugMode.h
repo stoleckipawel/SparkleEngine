@@ -19,4 +19,5 @@ enum class RTIndirectSpecularDebugMode : std::uint32_t
 	SampleThroughput = 12u,
 	HitRadiance = 13u,
 	FinalContribution = 14u,
+	MaterialTextureBaseColor = 15u,
 };

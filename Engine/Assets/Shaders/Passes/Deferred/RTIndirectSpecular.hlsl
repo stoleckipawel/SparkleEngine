@@ -15,7 +15,11 @@ cbuffer RTIndirectSpecularUniformData
 	uint RTIndirectSpecularHitInstanceCount;
 	uint RTIndirectSpecularHitMaterialCount;
 	uint RTIndirectSpecularSampleMode;
+	uint RTIndirectSpecularMaterialTextureTableAvailable;
+	uint RTIndirectSpecularMaterialTextureTableDescriptorCount;
+	uint RTIndirectSpecularMaterialTextureTableCapacity;
 	uint RTIndirectSpecularPadding0;
+	uint RTIndirectSpecularPadding1;
 };
 
 struct RTIndirectSpecularHitVertex
@@ -64,6 +68,8 @@ StructuredBuffer<RTIndirectSpecularHitVertex> RTIndirectSpecularHitVertices;
 StructuredBuffer<uint> RTIndirectSpecularHitIndices;
 StructuredBuffer<RTIndirectSpecularHitInstance> RTIndirectSpecularHitInstances;
 StructuredBuffer<RTIndirectSpecularHitMaterial> RTIndirectSpecularHitMaterials;
+Texture2D MaterialTextureTable[4096];
+SamplerState MaterialTextureSampler;
 
 static const uint RTIndirectSpecularRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
 static const uint RTIndirectSpecularInstanceMask = 0xFFu;
@@ -82,8 +88,17 @@ static const uint RTIndirectSpecularDebugSamplePdf = 11u;
 static const uint RTIndirectSpecularDebugSampleThroughput = 12u;
 static const uint RTIndirectSpecularDebugHitRadiance = 13u;
 static const uint RTIndirectSpecularDebugFinalContribution = 14u;
+static const uint RTIndirectSpecularDebugMaterialTextureBaseColor = 15u;
 static const uint RTIndirectSpecularSampleModeMirror = 0u;
 static const uint RTIndirectSpecularSampleModeStochasticGGX = 1u;
+static const uint MaterialTextureSlotBaseColor = 0u;
+static const uint MaterialTextureSlotNormal = 1u;
+static const uint MaterialTextureSlotRoughness = 2u;
+static const uint MaterialTextureSlotMetallic = 3u;
+static const uint MaterialTextureSlotOcclusion = 4u;
+static const uint MaterialTextureSlotEmissive = 5u;
+static const uint MaterialTextureSlotSubsurfaceColor = 6u;
+static const uint MaterialTextureSlotSubsurfaceStrength = 7u;
 static const uint RTIndirectSpecularHitInstanceFlagValid = 1u << 0u;
 static const uint RTIndirectSpecularHitInstanceFlagTwoSided = 1u << 2u;
 static const uint RTIndirectSpecularHitGeometryFlagStaticMesh = 1u << 0u;
@@ -554,6 +569,48 @@ float3 GeometryClassColor(uint geometryFlags)
 	return float3(0.2f, 0.2f, 0.2f);
 }
 
+bool TryGetMaterialTextureIndex(RTIndirectSpecularHitMaterial material, uint textureSlot, out uint textureIndex)
+{
+	textureIndex = 0u;
+	if (RTIndirectSpecularMaterialTextureTableAvailable == 0u)
+	{
+		return false;
+	}
+
+	if (textureSlot < 4u)
+	{
+		textureIndex = material.TextureIndices0[textureSlot];
+	}
+	else if (textureSlot < 8u)
+	{
+		textureIndex = material.TextureIndices1[textureSlot - 4u];
+	}
+	else
+	{
+		return false;
+	}
+
+	return textureIndex < RTIndirectSpecularMaterialTextureTableDescriptorCount &&
+	       textureIndex < RTIndirectSpecularMaterialTextureTableCapacity;
+}
+
+float3 DebugSampleMaterialTextureBaseColor(RTIndirectSpecularHitSurface hitSurface)
+{
+	if (!hitSurface.Valid || hitSurface.MaterialSlot >= RTIndirectSpecularHitMaterialCount)
+	{
+		return FallbackReasonColor(hitSurface.FallbackReason);
+	}
+
+	const RTIndirectSpecularHitMaterial material = RTIndirectSpecularHitMaterials[hitSurface.MaterialSlot];
+	uint textureIndex = 0u;
+	if (!TryGetMaterialTextureIndex(material, MaterialTextureSlotBaseColor, textureIndex))
+	{
+		return float3(1.0f, 0.0f, 1.0f);
+	}
+
+	return MaterialTextureTable[NonUniformResourceIndex(textureIndex)].SampleLevel(MaterialTextureSampler, hitSurface.TexCoord0, 0.0f).rgb;
+}
+
 float3 PreviewHdr(float3 value)
 {
 	return value / (1.0f.xxx + value);
@@ -594,6 +651,11 @@ float3 BuildMirrorDebugColor(
 	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugFinalContribution)
 	{
 		return PreviewHdr(resolved.FinalContribution);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugMaterialTextureBaseColor)
+	{
+		return DebugSampleMaterialTextureBaseColor(hitSurface);
 	}
 
 	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugFallbackReason)

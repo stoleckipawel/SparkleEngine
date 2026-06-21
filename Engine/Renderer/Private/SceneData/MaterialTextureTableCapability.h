@@ -4,6 +4,8 @@
 
 #include <cstdint>
 
+inline constexpr std::uint32_t MaterialTextureTableFixedCapacity = 4096u;
+
 enum class MaterialTextureTablePath : std::uint8_t
 {
 	Unsupported = 0,
