@@ -85,18 +85,6 @@ RendererDiagnosticsSnapshot Renderer::CaptureDiagnosticsSnapshot() const
 		        .Status = snapshot.FrameTiming.GpuTimingStatus,
 		        .Unit = ERendererDiagnosticUnit::Count,
 		        .IntegerValue = static_cast<std::uint64_t>(snapshot.FrameTiming.GpuTimings.size())});
-
-		double finalFrameGpuMilliseconds = 0.0;
-		const bool hasFinalFrameGpuTiming =
-		    m_framePipeline->TryGetLastResolvedGpuTimingMilliseconds("GPU Frame", finalFrameGpuMilliseconds);
-		snapshot.Metrics.push_back(
-		    RendererDiagnosticMetric{
-		        .Name = "frame.gpuFrameTime",
-		        .Origin = ERendererDiagnosticOrigin::RendererFrame,
-		        .Status = hasFinalFrameGpuTiming ? ERendererDiagnosticStatus::Available : ERendererDiagnosticStatus::Unavailable,
-		        .Unit = ERendererDiagnosticUnit::Milliseconds,
-		        .NumericValue = finalFrameGpuMilliseconds,
-		        .Detail = hasFinalFrameGpuTiming ? "" : "No resolved GPU Frame timestamp is available yet."});
 	}
 
 	snapshot.Metrics.push_back(

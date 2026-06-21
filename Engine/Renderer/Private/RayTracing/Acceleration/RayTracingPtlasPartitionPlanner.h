@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Renderer/Public/Debug/RendererCVars.h"
 #include "Renderer/Public/SceneData/RenderMeshClassification.h"
 
 #include <DirectXMath.h>
@@ -11,6 +12,7 @@ struct MeshDraw;
 struct RenderSceneData;
 
 inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugPartitionMask = 0x000FFFFFu;
+inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugActivityShift = 20u;
 inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugDynamicInstance = 1u << 27u;
 inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugDirtyTransform = 1u << 28u;
 inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugMovedPartition = 1u << 29u;
@@ -20,7 +22,12 @@ inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugInvalid = 1u << 31u
 struct RayTracingPtlasPartitionPlannerConfig final
 {
 	std::uint32_t PartitionsPerAxis = 8;
+	RayTracingPtlasPartitionTopology PartitionTopology = RayTracingPtlasPartitionTopology::XYZ3D;
+	RayTracingPtlasPartitionUpdateMode PartitionUpdateMode = RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition;
 	bool EnableGlobalPartition = true;
+	bool MarkAllDynamicInPartition = false;
+	DirectX::XMFLOAT3 CameraPosition = {};
+	float ModeChangeDistance = 100.0f;
 	float TransformDirtyEpsilon = 0.0001f;
 };
 
@@ -54,6 +61,7 @@ struct RayTracingPtlasPartitionValidation final
 struct RayTracingPtlasPartitionDebugVisualization final
 {
 	std::uint32_t PackedData = 0;
+	std::uint32_t ActivityLevel = 0;
 };
 
 struct RayTracingPtlasPartitionEntry final
@@ -83,6 +91,8 @@ struct RayTracingPtlasPartitionPlanCounts final
 	std::uint32_t MovedPartitionCount = 0;
 	std::uint32_t GlobalPartitionEligibleCount = 0;
 	std::uint32_t GlobalPartitionInstanceCount = 0;
+	std::uint32_t ActivePartitionCount = 0;
+	std::uint32_t MaxPartitionActivityCount = 0;
 	std::uint32_t DuplicateStableIndexCount = 0;
 };
 
@@ -115,8 +125,17 @@ class RayTracingPtlasPartitionPlanner final
 	struct PreviousInstanceState final
 	{
 		DirectX::XMFLOAT4X4 WorldMatrix = {};
+		std::uint32_t LocalPartitionId = 0;
 		std::uint32_t PartitionId = 0;
 		bool Valid = false;
+	};
+
+	struct PartitionRuntimeState final
+	{
+		std::uint32_t LastModifiedFrame = 0;
+		std::uint32_t ActivityCountThisFrame = 0;
+		bool TouchedThisFrame = false;
+		bool FarFromCamera = false;
 	};
 
 	static RayTracingPtlasPartitionPlannerConfig SanitizeConfig(RayTracingPtlasPartitionPlannerConfig config) noexcept;
@@ -129,4 +148,6 @@ class RayTracingPtlasPartitionPlanner final
 	static std::uint32_t PackDebugVisualizationData(const RayTracingPtlasPartitionEntry& entry) noexcept;
 
 	std::vector<PreviousInstanceState> m_previousInstances;
+	std::vector<PartitionRuntimeState> m_partitionStates;
+	std::uint32_t m_frameIndex = 0;
 };

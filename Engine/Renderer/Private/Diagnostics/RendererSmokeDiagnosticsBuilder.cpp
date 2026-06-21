@@ -35,10 +35,6 @@ namespace
 		}
 
 		const RendererFrameTimingDiagnosticsSnapshot frameTimings = framePipeline->CaptureFrameTimingDiagnosticsSnapshot();
-		double finalFrameGpuMilliseconds = 0.0;
-		snapshot.FrameTimings.HasFinalFrameGpuMilliseconds =
-		    TryGetRendererGpuTimingMilliseconds(frameTimings, "GPU Frame", finalFrameGpuMilliseconds);
-		snapshot.FrameTimings.FinalFrameGpuMilliseconds = finalFrameGpuMilliseconds;
 		snapshot.FrameTimings.GpuTimings = frameTimings.GpuTimings;
 	}
 

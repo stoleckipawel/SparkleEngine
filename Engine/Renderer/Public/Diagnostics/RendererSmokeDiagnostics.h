@@ -29,8 +29,6 @@ struct SPARKLE_RENDERER_API RendererSmokeFrameGraphDiagnostics final
 
 struct SPARKLE_RENDERER_API RendererSmokeFrameTimingDiagnostics final
 {
-	bool HasFinalFrameGpuMilliseconds = false;
-	double FinalFrameGpuMilliseconds = 0.0;
 	std::vector<RendererGpuTimingMetric> GpuTimings;
 };
 

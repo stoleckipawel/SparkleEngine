@@ -49,7 +49,6 @@ class FramePipeline final
 	std::uint32_t GetCompiledImportedResourceCount() const noexcept;
 	std::uint32_t GetCompiledPersistentResourceCount() const noexcept;
 	std::uint32_t GetAvailableViewportProductCount() const noexcept;
-	bool TryGetLastResolvedGpuTimingMilliseconds(std::string_view label, double& outMilliseconds) const noexcept;
 	RendererFrameTimingDiagnosticsSnapshot CaptureFrameTimingDiagnosticsSnapshot() const;
 
   private:

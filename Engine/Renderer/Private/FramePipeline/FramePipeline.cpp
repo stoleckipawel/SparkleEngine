@@ -251,12 +251,6 @@ std::uint32_t FramePipeline::GetAvailableViewportProductCount() const noexcept
 	return count;
 }
 
-bool FramePipeline::TryGetLastResolvedGpuTimingMilliseconds(std::string_view label, double& outMilliseconds) const noexcept
-{
-	const RendererFrameTimingDiagnosticsSnapshot snapshot = CaptureFrameTimingDiagnosticsSnapshot();
-	return TryGetRendererGpuTimingMilliseconds(snapshot, label, outMilliseconds);
-}
-
 RendererFrameTimingDiagnosticsSnapshot FramePipeline::CaptureFrameTimingDiagnosticsSnapshot() const
 {
 	const FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();

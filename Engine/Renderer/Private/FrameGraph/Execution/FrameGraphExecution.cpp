@@ -82,8 +82,6 @@ void FrameGraph::Execute(
 		PassExecutionDiagnostics passDiagnostics(
 		    frameDiagnostics,
 		    cmd,
-		    passRecord.diagnosticName,
-		    passRecord.displayLabel,
 		    passRecord.eventScopeLabel,
 		    passRecord.passKind);
 		auto passScope = graphDiagnostics.BeginPassScope(passDiagnostics);

@@ -143,8 +143,6 @@ namespace RhiSmokeCaptureArtifacts
 		file << "    \"frameGraphImportedResources\": " << diagnostics.FrameGraph.ImportedResources << ",\n";
 		file << "    \"frameGraphPersistentResources\": " << diagnostics.FrameGraph.PersistentResources << ",\n";
 		file << "    \"frameGraphViewportProducts\": " << diagnostics.FrameGraph.ViewportProducts << ",\n";
-		file << "    \"finalFrameGpuAvailable\": " << (diagnostics.FrameTimings.HasFinalFrameGpuMilliseconds ? "true" : "false") << ",\n";
-		file << "    \"finalFrameGpuMs\": " << diagnostics.FrameTimings.FinalFrameGpuMilliseconds << ",\n";
 		file << "    \"upscalerProvider\": \"" << EscapeJson(diagnostics.Upscaler.Provider) << "\",\n";
 		file << "    \"upscalerStatus\": \"" << EscapeJson(diagnostics.Upscaler.Status) << "\",\n";
 		file << "    \"upscalerReason\": \"" << EscapeJson(diagnostics.Upscaler.Reason) << "\"\n";
@@ -221,7 +219,7 @@ namespace RhiSmokeCaptureArtifacts
 		        "gridPartitionCount,dirtyTransforms,dirtyRatio,movedPartitions,globalPartitionEligibleInstances,"
 		        "globalPartitionInstances,duplicateStableIndices,partitionOverflow,requestedWriterPath,selectedWriterPath,"
 		        "writerReason,logicalUpdates,nativeOperations,validationMismatches,gpuDrivenApiSupported,"
-		        "gpuLogicalWriterAvailable,gpuNativePackAvailable,gpuNativePackSubmitted,finalFrameGpuAvailable,finalFrameGpuMs,"
+		        "gpuLogicalWriterAvailable,gpuNativePackAvailable,gpuNativePackSubmitted,"
 		        "timingLabel,timingDepth,timingDurationMs,timingDurationTicks\n";
 		const double dirtyRatio =
 		    rayTracing.PtlasPlanner.TraceableInstanceCount > 0
@@ -264,12 +262,10 @@ namespace RhiSmokeCaptureArtifacts
 		file << (rayTracing.PtlasGpuUpdates.GpuDrivenOperationApiSupported ? "true" : "false") << ',';
 		file << (rayTracing.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable ? "true" : "false") << ',';
 		file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackAvailable ? "true" : "false") << ',';
-		file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false") << ',';
-		file << (request.Diagnostics.FrameTimings.HasFinalFrameGpuMilliseconds ? "true" : "false") << ',';
-		file << request.Diagnostics.FrameTimings.FinalFrameGpuMilliseconds;
+		file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false");
 		if (request.Diagnostics.FrameTimings.GpuTimings.empty())
 		{
-			file << ",,,\n";
+			file << ",,,,\n";
 			return;
 		}
 
@@ -314,9 +310,7 @@ namespace RhiSmokeCaptureArtifacts
 				file << (rayTracing.PtlasGpuUpdates.GpuDrivenOperationApiSupported ? "true" : "false") << ',';
 				file << (rayTracing.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable ? "true" : "false") << ',';
 				file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackAvailable ? "true" : "false") << ',';
-				file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false") << ',';
-				file << (request.Diagnostics.FrameTimings.HasFinalFrameGpuMilliseconds ? "true" : "false") << ',';
-				file << request.Diagnostics.FrameTimings.FinalFrameGpuMilliseconds;
+				file << (rayTracing.PtlasGpuUpdates.FullGpuNativePackSubmitted ? "true" : "false");
 			}
 			file << ',' << EscapeCsv(timing.Label) << ',' << timing.Depth << ',' << timing.DurationMilliseconds << ','
 			     << timing.DurationTicks << '\n';
