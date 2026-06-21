@@ -14,4 +14,9 @@ enum class RTIndirectSpecularDebugMode : std::uint32_t
 	GeometryClass = 7u,
 	FallbackReason = 8u,
 	AlphaPolicy = 9u,
+	SampleDirection = 10u,
+	SamplePdf = 11u,
+	SampleThroughput = 12u,
+	HitRadiance = 13u,
+	FinalContribution = 14u,
 };

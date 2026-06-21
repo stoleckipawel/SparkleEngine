@@ -11,8 +11,8 @@ struct RTIndirectSpecularUniformData
 	float MaxDistance = 0.0f;
 	std::uint32_t HitInstanceCount = 0u;
 	std::uint32_t HitMaterialCount = 0u;
+	std::uint32_t SampleMode = 0u;
 	std::uint32_t Padding0 = 0u;
-	std::uint32_t Padding1 = 0u;
 };
 
 static_assert(std::is_standard_layout_v<RTIndirectSpecularUniformData>, "RTIndirectSpecularUniformData must be standard-layout");

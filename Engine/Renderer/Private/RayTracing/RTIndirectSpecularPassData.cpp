@@ -19,7 +19,7 @@ namespace RTIndirectSpecularPassData
 		    .MaxDistance = std::max(CVarRTIndirectSpecularMaxDistance.Get(), 0.001f),
 		    .HitInstanceCount = hitInstanceCount,
 		    .HitMaterialCount = hitMaterialCount,
-		    .Padding0 = 0u,
-		    .Padding1 = 0u};
+		    .SampleMode = static_cast<std::uint32_t>(CVarRTIndirectSpecularSampleMode.Get()),
+		    .Padding0 = 0u};
 	}
 }

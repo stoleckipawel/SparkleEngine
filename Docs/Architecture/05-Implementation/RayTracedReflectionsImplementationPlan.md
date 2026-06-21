@@ -38,7 +38,7 @@ Reference patterns to carry into the production solution:
 - Microsoft DXR ray queries are appropriate for compute-stage inline tracing, but the application owns coherence, resource organization, and shading complexity. Avoid turning one inline compute shader into an unbounded material uber-shader.
 - NVIDIA DXR/OptiX/Falcor references all separate intersection identity from material evaluation. A hit returns instance/primitive/barycentrics; engine-owned scene data then reconstructs geometric quantities, evaluates material, and returns radiance.
 - NVIDIA Donut samples show two viable production directions: local-root/material records for ray tracing pipeline shaders, or bindless scene/material resources for ray tracing and raster parity. Sparkle's inline ray-query path should converge on the bindless/scene-data flavor because the pass is compute-owned and backend-neutral.
-- AMD SSSR and Far Cry 6 reflection references emphasize roughness-aware reflection policy, GGX importance sampling, ray budgets, environment fallback, and clear integration into a later composite pass. The Sparkle plan should keep `IndirectSpecular` source-agnostic and expose roughness/max-distance/intensity controls.
+- AMD SSSR and Far Cry 6 reflection references emphasize roughness-aware reflection policy, GGX importance sampling, ray budgets, environment fallback, and clear integration into a later composite pass. The Sparkle plan should keep `IndirectSpecular` source-agnostic and expose mode/max-distance/debug controls without non-physical intensity or roughness cutoff knobs.
 - Epic's real-time ray tracing documentation treats max roughness, max ray distance, per-material ray-traced shadow behavior, culling, and geometry class limitations as product controls, not hidden shader constants.
 - Khronos hybrid ray tracing guidance calls out the same hit path: GBuffer depth/normal/material launch data, reflection ray based on roughness, environment on miss, and deferred composite integration.
 - Falcor's texture LOD helpers are a reminder that production ray-hit material sampling needs an explicit texture LOD policy. Sparkle can start with constant material data, but textured hits need UV/tangent interpolation and either ray cones, ray differentials, or a conservative explicit mip strategy.
@@ -204,18 +204,16 @@ Start simple, but keep the stochastic foundation correct:
 - trace one ray per pixel by default
 - shade the ray hit into incident radiance, then weight it by the primary surface BRDF/pdf throughput
 - use Schlick Fresnel, GGX distribution, and the same geometry visibility convention as the engine BRDF helpers unless a deliberate difference is documented
-- apply a minimum roughness clamp to avoid pathological fireflies
+- support the full material roughness range; use only numerical epsilons where required to avoid division by zero
 - offset ray origin along the geometric normal to reduce self-intersection
 - cap ray distance through a renderer setting
 - return black for invalid depth, invalid normal, unsupported material, or missing TLAS
 - use deterministic per-pixel/per-frame random seeds from frame index and pixel coordinate
 
-Because there is no denoiser yet, expose conservative settings:
+Because there is no denoiser yet, expose review settings without changing physical energy:
 
 - enable/disable ray traced reflections
 - max ray distance
-- roughness cutoff or fade
-- intensity
 - sample mode: mirror/debug and stochastic GGX
 - optional debug view for hit/miss or sample direction
 
@@ -414,6 +412,15 @@ Harden the RTIndirectSpecular hit-data ABI from a bootstrap static-material path
 
 ### Stage 4: Constants-Only Hit Material And Direct Lighting
 
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- `RTIndirectSpecular` now reconstructs constants-only hit material data: base color, alpha, roughness, metallic, dielectric F0, emissive, and subsurface constants.
+- Hit shading evaluates directional, point, and spot lights from `ViewLighting` using the engine BRDF helpers and no secondary shadow rays. This produces outgoing/incident radiance from the reflected hit and includes hit emissive contribution.
+- Material texture sampling, normal-map sampling, and alpha-tested candidate-hit rejection remain deferred to Stage 8. Textured materials still use material constants and existing debug/fallback diagnostics.
+- Primary-surface Fresnel/roughness weighting remains outside this hit-lighting step, so the pass does not intentionally double-apply the primary surface specular response.
+
 Goal: evaluate a plausible direct-lighting contribution at the reflection hit.
 
 Implementation tasks:
@@ -453,6 +460,16 @@ Extend RTIndirectSpecular so ray hits are shaded with production constants-only 
 
 ### Stage 5: Stochastic GGX Importance Sampling
 
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- `RTIndirectSpecular` now has `r.RayTracing.Reflections.SampleMode`: `0=Mirror`, `1=StochasticGGX`. Stochastic GGX is the default, with mirror forced for the low-roughness limit.
+- The shader uses deterministic per-pixel/per-frame interleaved gradient noise, samples a GGX half-vector with `alpha = roughness * roughness`, traces the sampled direction, shades hit/miss incident radiance separately, and applies explicit PDF/throughput weighting.
+- Because `LightingComposite` still applies the primary-surface Fresnel and indirect-specular occlusion to `IndirectSpecular`, the Stage 5 estimator writes a Fresnel-free primary specular throughput. This is intentionally biased toward current pipeline compatibility rather than a fully standalone unbiased path.
+- The full roughness range is supported. The shader does not apply roughness fade, an intensity multiplier, or contribution clamping; exact zero roughness takes the deterministic mirror path and nonzero roughness uses GGX sampling with numerical epsilons only.
+- Debug modes now include sample direction, sample PDF, sample throughput, hit radiance, and final contribution.
+
 Goal: move from mirror-only rays to rough-specular stochastic importance sampling.
 
 Implementation tasks:
@@ -463,10 +480,8 @@ Implementation tasks:
 - compute sample PDF and primary-surface BRDF throughput explicitly
 - trace the sampled direction and evaluate hit/miss incident radiance separately from the primary-surface throughput
 - keep mirror mode as a deterministic limit/debug path for very low roughness
-- blend/fade reflections by roughness cutoff to avoid unusable noise on very rough materials
 - add mirror debug mode to compare against stochastic mode
-- clamp or otherwise control extreme contribution values
-- record whether the current estimator is unbiased, biased for stability, or intentionally energy-normalized for one-sample/no-denoiser output
+- record whether the current estimator is unbiased, biased for current pipeline composition, or intentionally energy-normalized for one-sample/no-denoiser output
 
 Acceptance criteria:
 
@@ -481,7 +496,7 @@ Implementation prompt:
 ```text
 Implement Stage 5 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Replace mirror-only sampling with a stochastic GGX importance-sampled reflection mode while keeping mirror as a debug mode. Sample the primary surface specular lobe, trace the sampled direction, shade hit/miss incident radiance, and apply an explicit BRDF/pdf throughput. Use deterministic per-pixel/per-frame random seeds, material roughness, max ray distance, roughness fade/cutoff, and contribution clamping. Add debug views for sample direction, PDF, throughput, hit radiance, and final contribution. Do not add denoising or temporal accumulation. Keep the pass full resolution and inline ray-query based.
+Replace mirror-only sampling with a stochastic GGX importance-sampled reflection mode while keeping mirror as a debug mode. Sample the primary surface specular lobe across the full material roughness range, trace the sampled direction, shade hit/miss incident radiance, and apply an explicit BRDF/pdf throughput. Use deterministic per-pixel/per-frame random seeds, material roughness, and max ray distance. Do not add roughness fade, intensity scaling, contribution clamping, denoising, or temporal accumulation. Add debug views for sample direction, PDF, throughput, hit radiance, and final contribution. Keep the pass full resolution and inline ray-query based.
 ```
 
 ### Stage 6: Controls, Diagnostics, And Validation
@@ -490,7 +505,7 @@ Goal: make the feature easy to review, tune, and test.
 
 Implementation tasks:
 
-- add renderer settings for enable, mode, max distance, roughness cutoff, intensity, and debug visualization
+- add renderer settings for enable, mode, max distance, and debug visualization
 - surface pass timing and basic counters in existing diagnostics
 - include ray tracing reflection status in smoke capture metadata if that validation path is available
 - add shader compiler inspection commands to documentation
@@ -508,7 +523,7 @@ Implementation prompt:
 ```text
 Implement Stage 6 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Add user/reviewer-facing controls and diagnostics for RTIndirectSpecular. Expose enable, sample mode, max ray distance, roughness cutoff, intensity, and debug visualization through the renderer settings path already used by similar features. Publish pass timing and a clear status reason for running, disabled, unsupported, missing TLAS, or missing hit data. Add smoke/validation metadata if that path exists, and document the shader compiler and runtime validation commands.
+Add user/reviewer-facing controls and diagnostics for RTIndirectSpecular. Expose enable, sample mode, max ray distance, and debug visualization through the renderer settings path already used by similar features. Do not add non-physical roughness cutoff, intensity, or contribution clamp controls. Publish pass timing and a clear status reason for running, disabled, unsupported, missing TLAS, or missing hit data. Add smoke/validation metadata if that path exists, and document the shader compiler and runtime validation commands.
 ```
 
 ### Stage 7: Quality Cleanup Before Denoising
@@ -518,9 +533,9 @@ Goal: stabilize the stochastic base before any denoiser or temporal reuse is des
 Implementation tasks:
 
 - improve ray origin bias and normal handling
-- reduce fireflies with material-aware clamps
+- investigate fireflies through diagnostics, sampling quality, and future denoising rather than material-aware contribution clamps
 - handle backfaces and thin geometry deliberately
-- tune roughness fade defaults
+- preserve full roughness-range support
 - add optional blue-noise texture input only if the engine already has a clean texture path for it
 - record known noise limitations honestly
 
@@ -536,7 +551,41 @@ Implementation prompt:
 ```text
 Implement Stage 7 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Polish the no-denoiser stochastic RTIndirectSpecular baseline. Improve ray biasing, backface handling, roughness fade, firefly control, and debug views without adding history or denoising. If a blue-noise resource can be integrated through existing renderer texture contracts, add it as an optional input; otherwise keep hash-based sampling. Update the docs with known quality limitations and recommended defaults.
+Polish the no-denoiser stochastic RTIndirectSpecular baseline. Improve ray biasing, backface handling, sampling diagnostics, and debug views without adding history, denoising, roughness fade, intensity scaling, or contribution clamps. If a blue-noise resource can be integrated through existing renderer texture contracts, add it as an optional input; otherwise keep hash-based sampling. Update the docs with known quality limitations and recommended defaults.
+```
+
+### Stage 8: Bindless Material Texture Parity
+
+Goal: add the renderer-owned descriptor-indexed or bindless material texture contract needed for ray-hit material sampling parity with the raster GBuffer path.
+
+Implementation tasks:
+
+- add a backend-neutral renderer material texture table indexed by material slot and `MaterialTextureSlots`/texture group
+- expose capability checks for descriptor indexing/bindless resource access on D3D12 and Vulkan
+- bind the material texture table and sampler set through typed pass parameters and frame/pass runtime services
+- extend `RTIndirectSpecularHitMaterial` with stable texture indices or table offsets rather than per-draw texture bindings
+- sample base color, roughness, metallic, emissive, and later normal maps at the ray hit through explicit texture LOD
+- choose and document the first texture LOD policy:
+  - conservative fixed/roughness-biased mip for the first version, or
+  - ray-cone/ray-differential based mip if the required data is available
+- add alpha-tested candidate-hit policy only after base-color alpha can be sampled through this texture table
+- validate that textured materials visible directly in the GBuffer match the same materials through `RTIndirectSpecular`
+- keep a constants-only fallback when bindless/material texture table support is unavailable
+
+Acceptance criteria:
+
+- ray-hit base color, roughness, metallic, and emissive texture sampling matches raster material semantics for supported material classes
+- missing descriptor table, unsupported backend capability, missing texture descriptor, or invalid texture index falls back deterministically with diagnostics
+- texture LOD policy is explicit and does not rely on implicit screen-space derivatives
+- constants-only mode still works on platforms without the material texture table path
+- architecture boundary check still passes with no backend-native renderer dependency
+
+Implementation prompt:
+
+```text
+Implement Stage 8 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Add the final material texture parity layer for RTIndirectSpecular. Build a renderer-owned descriptor-indexed or bindless material texture table keyed by material slot and MaterialTextureSlots, expose backend-neutral capability/fallback checks, bind the table through typed pass parameters, and sample supported material textures at ray hits with an explicit LOD policy. Keep constants-only fallback behavior for unsupported platforms or missing descriptors, and preserve Renderer/RHI/backend boundaries.
 ```
 
 ## Suggested Validation Commands
@@ -563,8 +612,8 @@ Runtime validation should cover:
 - direct-vs-reflected material parity scene:
   - one material visible directly in GBuffer and through reflection
   - constants-only material
-  - base-color textured material
-  - roughness/metallic textured material once texture tables are supported
+  - base-color textured material after Stage 8
+  - roughness/metallic textured material after Stage 8
   - emissive material
 - geometry policy scene:
   - opaque static mesh
@@ -587,14 +636,12 @@ Recommended defaults for the first usable version:
 - mode: mirror debug for Stage 2, stochastic GGX after Stage 5
 - samples per pixel: 1
 - max ray distance: 50 meters or current renderer world-unit equivalent
-- roughness cutoff/fade: begin fading around 0.45, fully fade by 0.65
-- intensity: 1.0
 - miss lighting: black unless a renderer-owned sky/environment lookup is already cleanly available
 
 ## Known Risks
 
 - Inline ray queries can prove the effect quickly, but hit shading requires shader-visible geometry/material data that may not be exposed yet.
-- One sample per pixel without denoising will be noisy on rough materials; the plan handles this with roughness fade and conservative defaults.
+- One sample per pixel without denoising will be noisy on rough materials. The plan intentionally does not hide that with roughness fade, intensity scaling, or contribution clamps; future quality work should address it through sampling and denoising.
 - If Vulkan inline ray query support or acceleration structure binding differs from D3D12, keep that in capability checks and shader package features rather than adding renderer-native backend branches.
 - Reflections can double count specular if the composite path does not clearly separate screen/local lighting from ray traced reflected lighting.
 - If material data used by GBuffer and reflection hit shading diverges, visual mismatch will be obvious; prefer reusing the same renderer material packing where possible.
@@ -610,6 +657,7 @@ The feature is done for this plan when:
 - `RTIndirectSpecular` is a full-resolution inline ray-query compute pass
 - it importance samples reflection directions from material roughness
 - it shades ray hits with real renderer material and lighting data
+- it reaches texture material parity through the final bindless/material texture table stage, or documents constants-only mode as the active platform fallback
 - it composes into the lighting path through declared frame-graph resources
 - it has deterministic no-op/fallback paths
 - it exposes controls and diagnostics
