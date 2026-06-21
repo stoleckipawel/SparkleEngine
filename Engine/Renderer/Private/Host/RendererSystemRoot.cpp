@@ -2,7 +2,6 @@
 #include "Host/RendererSystemRoot.h"
 
 #include "Camera/RenderCamera.h"
-#include "Config/RenderConfig.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Diagnostics/MeshDiagnosticsCollector.h"
 #include "Diagnostics/RendererDiagnosticsCollector.h"
@@ -25,6 +24,7 @@
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
+#include "Settings/RenderDeviceSettingsResolver.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
 #include "Upscaling/UpscalerSubsystem.h"
@@ -138,7 +138,7 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 
 	{
 		SPARKLE_CPU_SCOPE("Renderer.CreateBackend");
-		m_backend = RenderDeviceServices::Create(*m_window);
+		m_backend = RenderDeviceServices::Create(*m_window, BuildRenderDeviceSettingsFromCVars());
 	}
 	{
 		SPARKLE_CPU_SCOPE("Renderer.CreatePipelineStateManager");

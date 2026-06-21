@@ -2,7 +2,7 @@
 
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "Resources/Texture.h"
 #include "Shaders/CookedShaderPackage.h"
 #include "Vulkan/Capture/VulkanCaptureService.h"
@@ -207,7 +207,7 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	m_samplerLibrary = std::make_unique<VulkanSamplerLibrary>(rhi, *m_descriptorManager);
 	m_descriptorManager->SetSamplerLibrary(*m_samplerLibrary);
 	m_imguiBackend = std::make_unique<VulkanImGuiBackend>(*this);
-	for (std::uint32_t frameIndex = 0; frameIndex < RenderConfig::FramesInFlight; ++frameIndex)
+	for (std::uint32_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
 	{
 		commandContext.GetCommandList(frameIndex).SetRhi(&rhi);
 		commandContext.GetCommandList(frameIndex).SetMemoryAllocator(&memoryAllocator);

@@ -5,6 +5,7 @@
 #include "Device/RenderDeviceBackendServices.h"
 #include "Device/RhiCapabilityLogFormatting.h"
 
+#include "Presentation/RhiPresentationDefaults.h"
 #include "Shaders/CookedShaderPackageUtils.h"
 
 #include "Window/Window.h"
@@ -80,6 +81,16 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	    FormatExternalFeatureInteropCapabilities(capabilities.ExternalFeatureInterop));
 }
 
+static void ValidateRenderDeviceSettings(const RenderDeviceSettings& settings) noexcept
+{
+	if (!RhiPresentationDefaults::IsSupportedBackBufferFormat(settings.BackBufferFormat))
+	{
+		const std::string message =
+		    std::string("Unsupported back buffer format for present swapchain: ") + PixelFormatName(settings.BackBufferFormat);
+		Diagnostics::Fail(g_rhiServicesLogger, __FILE__, __LINE__, message);
+	}
+}
+
 struct RenderDeviceServices::Impl
 {
 	std::unique_ptr<RenderDeviceBackendServices> backend;
@@ -91,12 +102,28 @@ RenderDeviceServices::~RenderDeviceServices() noexcept = default;
 
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window) noexcept
 {
-	return Create(window, ResolveDefaultRhiBackendSelection());
+	return Create(window, ResolveDefaultRhiBackendSelection(), RenderDeviceSettings{});
 }
 
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window, RhiBackendSelection selection) noexcept
 {
+	return Create(window, selection, RenderDeviceSettings{});
+}
+
+std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
+    Window& window,
+    const RenderDeviceSettings& settings) noexcept
+{
+	return Create(window, ResolveDefaultRhiBackendSelection(), settings);
+}
+
+std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
+    Window& window,
+    RhiBackendSelection selection,
+    const RenderDeviceSettings& settings) noexcept
+{
 	SPARKLE_CPU_SCOPE("RHI.CreateBackend");
+	ValidateRenderDeviceSettings(settings);
 	SPDLOG_LOGGER_INFO(g_rhiServicesLogger, "Creating RHI backend: {}", RhiBackendApiToString(selection.Api));
 
 	auto services = std::unique_ptr<RenderDeviceServices>(new RenderDeviceServices());
@@ -105,7 +132,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& windo
 	{
 		case ERhiBackendApi::D3D12:
 		#if SPARKLE_RHI_WITH_D3D12
-			services->m_impl->backend = CreateD3D12RenderDeviceServices(window);
+			services->m_impl->backend = CreateD3D12RenderDeviceServices(window, settings);
 			break;
 		#else
 			FailUnsupportedRhiBackend(selection.Api);
@@ -113,7 +140,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& windo
 		#endif
 		case ERhiBackendApi::Vulkan:
 		#if SPARKLE_RHI_WITH_VULKAN
-			services->m_impl->backend = CreateVulkanRenderDeviceServices(window);
+			services->m_impl->backend = CreateVulkanRenderDeviceServices(window, settings);
 			break;
 		#else
 			FailUnsupportedRhiBackend(selection.Api);

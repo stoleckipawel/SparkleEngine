@@ -2,7 +2,7 @@
 
 #include "D3D12/Diagnostics/D3D12RenderDiagnostics.h"
 
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
@@ -314,7 +314,7 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 	}
 
 	D3D12Rhi* m_rhi = nullptr;
-	std::array<FrameTimingState, RenderConfig::FramesInFlight> m_frameStates;
+	std::array<FrameTimingState, RhiFrameConstants::FramesInFlight> m_frameStates;
 	std::unordered_map<std::uint32_t, QueryLocation> m_queryLocations;
 	std::uint32_t m_nextHandleValue = 1;
 	std::uint64_t m_timestampFrequencyHz = 0;

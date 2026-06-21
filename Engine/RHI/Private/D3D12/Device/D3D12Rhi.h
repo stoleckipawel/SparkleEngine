@@ -5,7 +5,7 @@
 #include <wrl/client.h>
 #include <memory>
 
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "D3D12/RayTracing/D3D12NvapiRayTracingProvider.h"
 #include "Device/RenderHardwareInterface.h"
 
@@ -96,11 +96,11 @@ class D3D12Rhi final
 	D3D12NvapiRayTracingProvider m_nvapiRayTracingProvider;
 	std::unique_ptr<D3D12GpuMemoryAllocator> m_memoryAllocator;
 	ComPtr<ID3D12CommandQueue> m_cmdQueue = nullptr;
-	ComPtr<ID3D12CommandAllocator> m_cmdAllocator[RenderConfig::FramesInFlight] = {};
-	ComPtr<ID3D12GraphicsCommandList7> m_cmdList[RenderConfig::FramesInFlight] = {};
+	ComPtr<ID3D12CommandAllocator> m_cmdAllocator[RhiFrameConstants::FramesInFlight] = {};
+	ComPtr<ID3D12GraphicsCommandList7> m_cmdList[RhiFrameConstants::FramesInFlight] = {};
 	uint32_t m_currentFrameIndex = 0;
 
-	uint64_t m_fenceValues[RenderConfig::FramesInFlight] = {0};
+	uint64_t m_fenceValues[RhiFrameConstants::FramesInFlight] = {0};
 	uint64_t m_nextFenceValue = 1;
 	ComPtr<ID3D12Fence1> m_fence = nullptr;
 	HANDLE m_fenceEvent = nullptr;

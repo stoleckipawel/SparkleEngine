@@ -782,7 +782,7 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
 	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::ClassicTlas,
 	    .SelectedTopLevelProviderReason =
-	        CVarRhiRayTracingPreferPartitionedTlas.Get() && m_rayTracingCapabilities.Groups.PartitionedTlas.Supported
+	        CVarRayTracingPreferPartitionedTlas.Get() && m_rayTracingCapabilities.Groups.PartitionedTlas.Supported
 	            ? "partitioned-tlas-supported-but-renderer-selection-not-wired"
 	            : "classic-tlas-baseline-selected"};
 }
@@ -975,7 +975,7 @@ std::uint32_t VulkanRhi::FindGraphicsQueueFamily(VkPhysicalDevice device) noexce
 
 std::uint32_t VulkanRhi::ScorePhysicalDevice(const VkPhysicalDeviceProperties& properties) noexcept
 {
-	if (CVarRhiPreferHighPerformanceAdapter.Get())
+	if (CVarPreferHighPerformanceAdapter.Get())
 	{
 		if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		{

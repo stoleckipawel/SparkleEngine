@@ -6,7 +6,7 @@
 #include <array>
 #include <cassert>
 #include "D3D12LinearAllocator.h"
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "D3D12/Device/D3D12Rhi.h"
 
 struct D3D12FrameResource
@@ -38,7 +38,7 @@ class D3D12FrameResourceManager final
 	explicit D3D12FrameResourceManager(D3D12Rhi& rhi, uint64_t capacityPerFrame = DefaultCapacityPerFrame) :
 	    m_capacityPerFrame(capacityPerFrame)
 	{
-		for (uint32_t i = 0; i < RenderConfig::FramesInFlight; ++i)
+		for (uint32_t i = 0; i < RhiFrameConstants::FramesInFlight; ++i)
 		{
 			m_frameResources[i].Initialize(rhi, capacityPerFrame, i);
 		}
@@ -99,7 +99,7 @@ class D3D12FrameResourceManager final
 	uint64_t GetCapacityPerFrame() const noexcept { return m_capacityPerFrame; }
 
   private:
-	std::array<D3D12FrameResource, RenderConfig::FramesInFlight> m_frameResources;
+	std::array<D3D12FrameResource, RhiFrameConstants::FramesInFlight> m_frameResources;
 	uint64_t m_capacityPerFrame = DefaultCapacityPerFrame;
 	uint32_t m_currentFrameIndex = 0;
 };

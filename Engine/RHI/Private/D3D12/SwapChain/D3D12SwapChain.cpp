@@ -6,13 +6,17 @@
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
-D3D12SwapChain::D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager) :
-    m_rhi(rhi), m_window(&window), m_descriptorHeapManager(&descriptorHeapManager)
+D3D12SwapChain::D3D12SwapChain(
+    D3D12Rhi& rhi,
+    Window& window,
+    D3D12DescriptorHeapManager& descriptorHeapManager,
+    PixelFormat backBufferFormat) :
+    m_rhi(rhi), m_backBufferFormat(backBufferFormat), m_window(&window), m_descriptorHeapManager(&descriptorHeapManager)
 {
 	AllocateHandles();
 	Create();
 
-	m_swapChain->SetMaximumFrameLatency(RenderConfig::FramesInFlight);
+	m_swapChain->SetMaximumFrameLatency(RhiFrameConstants::FramesInFlight);
 	m_waitableObject = m_swapChain->GetFrameLatencyWaitableObject();
 
 	UpdateFrameInFlightIndex();
@@ -47,12 +51,12 @@ void D3D12SwapChain::Create()
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	swapChainDesc.Width = GetWindowWidth();
 	swapChainDesc.Height = GetWindowHeight();
-	swapChainDesc.Format = D3D12TypeConversions::ToDxgiFormat(RenderConfig::BackBufferFormat);
+	swapChainDesc.Format = D3D12TypeConversions::ToDxgiFormat(m_backBufferFormat);
 	swapChainDesc.Stereo = false;
 	swapChainDesc.SampleDesc.Quality = 0;
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.BufferCount = RenderConfig::FramesInFlight;
+	swapChainDesc.BufferCount = RhiFrameConstants::FramesInFlight;
 	swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
@@ -113,29 +117,29 @@ bool D3D12SwapChain::UpgradeNativeInterface(RhiNativeInterfaceUpgradeCallback ca
 void D3D12SwapChain::ResizeBuffersToWindow()
 {
 	CHECK(m_swapChain->ResizeBuffers(
-	    RenderConfig::FramesInFlight,
+	    RhiFrameConstants::FramesInFlight,
 	    GetWindowWidth(),
 	    GetWindowHeight(),
-	    D3D12TypeConversions::ToDxgiFormat(RenderConfig::BackBufferFormat),
+	    D3D12TypeConversions::ToDxgiFormat(m_backBufferFormat),
 	    ComputeSwapChainFlags()));
 }
 
 void D3D12SwapChain::AllocateHandles()
 {
-	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
+	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; i++)
 	{
 		m_rtvHandles[i] = m_descriptorHeapManager->GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)->Allocate();
 	}
 }
 void D3D12SwapChain::CreateRenderTargetViews()
 {
-	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
+	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; i++)
 	{
 		CHECK(m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_buffers[i].ReleaseAndGetAddressOf())));
 		m_buffers[i]->SetName(L"RHI_BackBuffer");
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
-		rtvDesc.Format = D3D12TypeConversions::ToDxgiFormat(RenderConfig::BackBufferFormat);
+		rtvDesc.Format = D3D12TypeConversions::ToDxgiFormat(m_backBufferFormat);
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = 0;
 		rtvDesc.Texture2D.PlaneSlice = 0;
@@ -155,7 +159,7 @@ UINT D3D12SwapChain::GetAllowTearingFlag() const
 
 UINT D3D12SwapChain::GetFrameLatencyWaitableFlag() const
 {
-	return (RenderConfig::FramesInFlight > 1) ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0u;
+	return (RhiFrameConstants::FramesInFlight > 1) ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0u;
 }
 
 UINT D3D12SwapChain::ComputeSwapChainFlags() const
@@ -188,7 +192,7 @@ RhiRect D3D12SwapChain::GetDefaultScissorRect() const
 
 void D3D12SwapChain::Present()
 {
-	const bool bVSync = CVarRhiVSync.Get();
+	const bool bVSync = CVarVSync.Get();
 	UINT presentInterval = bVSync ? 1u : 0u;
 	UINT presentFlags = 0u;
 	if (!bVSync)
@@ -202,7 +206,7 @@ void D3D12SwapChain::Present()
 
 void D3D12SwapChain::ReleaseBuffers()
 {
-	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
+	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; i++)
 	{
 		m_buffers[i].Reset();
 	}
@@ -210,7 +214,7 @@ void D3D12SwapChain::ReleaseBuffers()
 
 void D3D12SwapChain::ReleaseRenderTargetHandles() noexcept
 {
-	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
+	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; i++)
 	{
 		if (m_rtvHandles[i].IsValid())
 		{

@@ -2,6 +2,7 @@
 
 #include "Panels/RenderingSettingsPanel.h"
 
+#include "RHI/Public/Resources/RenderLightingLimits.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
@@ -14,6 +15,38 @@
 namespace
 {
 	constexpr float kLabelColumnWidth = 340.0f;
+
+	int ToBackBufferFormatIndex(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+			case PixelFormat::R8G8B8A8_UNorm_Srgb:
+				return 1;
+			case PixelFormat::B8G8R8A8_UNorm:
+				return 2;
+			case PixelFormat::B8G8R8A8_UNorm_Srgb:
+				return 3;
+			case PixelFormat::R8G8B8A8_UNorm:
+			default:
+				return 0;
+		}
+	}
+
+	PixelFormat FromBackBufferFormatIndex(int index) noexcept
+	{
+		switch (index)
+		{
+			case 1:
+				return PixelFormat::R8G8B8A8_UNorm_Srgb;
+			case 2:
+				return PixelFormat::B8G8R8A8_UNorm;
+			case 3:
+				return PixelFormat::B8G8R8A8_UNorm_Srgb;
+			case 0:
+			default:
+				return PixelFormat::R8G8B8A8_UNorm;
+		}
+	}
 
 	int ToPtlasPartitionUpdateModeIndex(EnginePtlasPartitionUpdateMode mode) noexcept
 	{
@@ -212,11 +245,25 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 
 	ImGui::BeginDisabled(disableInteraction);
 
-	if (MatchesFilter(filterText, "Display", "display vsync high-performance adapter gpu") && BeginSettingsCategory("Display"))
+	static constexpr const char* backBufferFormatLabels[] = {
+	    "R8G8B8A8 UNorm",
+	    "R8G8B8A8 sRGB",
+	    "B8G8R8A8 UNorm",
+	    "B8G8R8A8 sRGB",
+	};
+	if (MatchesFilter(filterText, "Display", "display vsync high-performance adapter gpu back buffer format") &&
+	    BeginSettingsCategory("Display"))
 	{
 		if (BeginSettingsTable("##RenderingDisplaySettings"))
 		{
 			DrawBooleanRow("##VSync", "VSync", settings.VSync, [this](bool value) { m_settings->SetVSync(value); });
+			DrawComboRow(
+			    "##BackBufferFormat",
+			    "Back buffer format",
+			    ToBackBufferFormatIndex(settings.BackBufferFormat),
+			    backBufferFormatLabels,
+			    IM_ARRAYSIZE(backBufferFormatLabels),
+			    [this](int value) { m_settings->SetBackBufferFormat(FromBackBufferFormatIndex(value)); });
 			DrawBooleanRow(
 			    "##PreferHighPerformanceAdapter",
 			    "Prefer high-performance adapter",
@@ -236,6 +283,36 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    "Mesh auto batching",
 			    settings.MeshAutoBatching,
 			    [this](bool value) { m_settings->SetMeshAutoBatching(value); });
+			ImGui::EndTable();
+		}
+		ImGui::Dummy(ImVec2(0.0f, 4.0f));
+	}
+
+	if (MatchesFilter(filterText, "Lighting", "lighting light budget directional point spot") && BeginSettingsCategory("Lighting"))
+	{
+		if (BeginSettingsTable("##RenderingLightingSettings"))
+		{
+			DrawUnsignedIntSliderRow(
+			    "##MaxDirectionalLights",
+			    "Max directional lights",
+			    settings.MaxDirectionalLights,
+			    0u,
+			    static_cast<std::uint32_t>(RenderLightingLimits::MaxDirectionalLights),
+			    [this](std::uint32_t value) { m_settings->SetMaxDirectionalLights(value); });
+			DrawUnsignedIntSliderRow(
+			    "##MaxPointLights",
+			    "Max point lights",
+			    settings.MaxPointLights,
+			    0u,
+			    static_cast<std::uint32_t>(RenderLightingLimits::MaxPointLights),
+			    [this](std::uint32_t value) { m_settings->SetMaxPointLights(value); });
+			DrawUnsignedIntSliderRow(
+			    "##MaxSpotLights",
+			    "Max spot lights",
+			    settings.MaxSpotLights,
+			    0u,
+			    static_cast<std::uint32_t>(RenderLightingLimits::MaxSpotLights),
+			    [this](std::uint32_t value) { m_settings->SetMaxSpotLights(value); });
 			ImGui::EndTable();
 		}
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));

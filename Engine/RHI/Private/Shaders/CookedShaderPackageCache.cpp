@@ -2,13 +2,13 @@
 
 #include "Shaders/CookedShaderPackageCache.h"
 
-#include "Config/RenderConfig.h"
 #include "Core/Public/Files/BinarySpanReader.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "ShaderParameters/PassParameterLayout.h"
+#include "Shaders/CookedShaderPackageContract.h"
 #include "Shaders/ShaderRayTracingMetadataValidation.h"
 
 #include <array>
@@ -941,14 +941,14 @@ bool CookedShaderPackageCache::ValidatePackage(
 		return false;
 	}
 
-	if (package.GetHeader().ShaderModelMajor != static_cast<std::uint16_t>(RenderConfig::ShaderModelMajor) ||
-	    package.GetHeader().ShaderModelMinor != static_cast<std::uint16_t>(RenderConfig::ShaderModelMinor))
+	if (package.GetHeader().ShaderModelMajor != CookedShaderPackageContract::ShaderModelMajor ||
+	    package.GetHeader().ShaderModelMinor != CookedShaderPackageContract::ShaderModelMinor)
 	{
 		outErrorMessage = std::format(
 		    "Cooked shader package '{}' failed package contract check: field=ShaderModel expected={}.{} actual={}.{}",
 		    definition.PackageId,
-		    RenderConfig::ShaderModelMajor,
-		    RenderConfig::ShaderModelMinor,
+		    CookedShaderPackageContract::ShaderModelMajor,
+		    CookedShaderPackageContract::ShaderModelMinor,
 		    package.GetHeader().ShaderModelMajor,
 		    package.GetHeader().ShaderModelMinor);
 		return false;

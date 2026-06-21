@@ -16,8 +16,10 @@
 
 class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 {
-  public:
-	static std::unique_ptr<D3D12RenderDeviceServices> Create(Window& window) noexcept;
+ public:
+	static std::unique_ptr<D3D12RenderDeviceServices> Create(
+	    Window& window,
+	    const RenderDeviceSettings& settings) noexcept;
 	~D3D12RenderDeviceServices() noexcept override;
 
 	D3D12RenderDeviceServices(const D3D12RenderDeviceServices&) = delete;
@@ -49,12 +51,16 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
 };
 
-std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(Window& window) noexcept
+std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(
+    Window& window,
+    const RenderDeviceSettings& settings) noexcept
 {
-	return D3D12RenderDeviceServices::Create(window);
+	return D3D12RenderDeviceServices::Create(window, settings);
 }
 
-std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(Window& window) noexcept
+std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
+    Window& window,
+    const RenderDeviceSettings& settings) noexcept
 {
 	auto services = std::unique_ptr<D3D12RenderDeviceServices>(new D3D12RenderDeviceServices());
 
@@ -68,7 +74,11 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(Win
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.CreateSwapChain");
-		services->m_swapChain = std::make_unique<D3D12SwapChain>(*services->m_rhi, window, *services->m_descriptorHeapManager);
+		services->m_swapChain = std::make_unique<D3D12SwapChain>(
+		    *services->m_rhi,
+		    window,
+		    *services->m_descriptorHeapManager,
+		    settings.BackBufferFormat);
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.CreateFrameResources");

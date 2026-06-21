@@ -2,11 +2,11 @@
 
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
-#include "Core/Public/Strings/StringUtils.h"
-#include "RHI/Public/CVars/RHICVars.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Settings/EngineRenderingDisplaySettings.h"
+#include "Settings/EngineRenderingGeometrySettings.h"
+#include "Settings/EngineRenderingLightingSettings.h"
+#include "Settings/EngineRenderingRayTracingSettings.h"
 
-#include <algorithm>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -14,104 +14,6 @@
 namespace
 {
 	constexpr std::string_view kRenderingSettingsSection = "/Script/SparkleRenderer.EngineRenderingSettings";
-
-	EnginePtlasPartitionTopology ParsePtlasPartitionTopology(std::string_view text) noexcept
-	{
-		const std::string_view trimmed = Strings::TrimAsciiWhitespace(text);
-		if (Strings::EqualsIgnoreCase(trimmed, "XZ2D") || Strings::EqualsIgnoreCase(trimmed, "2D_XZ") ||
-		    Strings::EqualsIgnoreCase(trimmed, "2D X/Z"))
-		{
-			return EnginePtlasPartitionTopology::XZ2D;
-		}
-		return EnginePtlasPartitionTopology::XYZ3D;
-	}
-
-	EnginePtlasPartitionUpdateMode ParsePtlasPartitionUpdateMode(std::string_view text) noexcept
-	{
-		const std::string_view trimmed = Strings::TrimAsciiWhitespace(text);
-		if (Strings::EqualsIgnoreCase(trimmed, "AlwaysMoveDynamicToGlobal") ||
-		    Strings::EqualsIgnoreCase(trimmed, "MoveToGlobal") ||
-		    Strings::EqualsIgnoreCase(trimmed, "Always move dynamic to global"))
-		{
-			return EnginePtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal;
-		}
-		if (Strings::EqualsIgnoreCase(trimmed, "UpdatePartitionNearbyMoveToGlobalOtherwise") ||
-		    Strings::EqualsIgnoreCase(trimmed, "UpdateOrMoveToGlobal") ||
-		    Strings::EqualsIgnoreCase(trimmed, "Update partition nearby, move to global otherwise"))
-		{
-			return EnginePtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise;
-		}
-		return EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition;
-	}
-
-	const char* ToConfigString(EnginePtlasPartitionTopology topology) noexcept
-	{
-		return topology == EnginePtlasPartitionTopology::XZ2D ? "XZ2D" : "XYZ3D";
-	}
-
-	const char* ToConfigString(EnginePtlasPartitionUpdateMode mode) noexcept
-	{
-		switch (mode)
-		{
-			case EnginePtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal:
-				return "AlwaysMoveDynamicToGlobal";
-			case EnginePtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise:
-				return "UpdatePartitionNearbyMoveToGlobalOtherwise";
-			case EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition:
-			default:
-				return "AlwaysUpdatePartition";
-		}
-	}
-
-	RayTracingPtlasPartitionTopology ToRuntimePartitionTopology(EnginePtlasPartitionTopology topology) noexcept
-	{
-		return topology == EnginePtlasPartitionTopology::XZ2D ? RayTracingPtlasPartitionTopology::XZ2D
-		                                                      : RayTracingPtlasPartitionTopology::XYZ3D;
-	}
-
-	EnginePtlasPartitionTopology FromRuntimePartitionTopology(RayTracingPtlasPartitionTopology topology) noexcept
-	{
-		return topology == RayTracingPtlasPartitionTopology::XZ2D ? EnginePtlasPartitionTopology::XZ2D
-		                                                          : EnginePtlasPartitionTopology::XYZ3D;
-	}
-
-	RayTracingPtlasPartitionUpdateMode ToRuntimePartitionUpdateMode(EnginePtlasPartitionUpdateMode mode) noexcept
-	{
-		switch (mode)
-		{
-			case EnginePtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal:
-				return RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal;
-			case EnginePtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise:
-				return RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise;
-			case EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition:
-			default:
-				return RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition;
-		}
-	}
-
-	EnginePtlasPartitionUpdateMode FromRuntimePartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode) noexcept
-	{
-		switch (mode)
-		{
-			case RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal:
-				return EnginePtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal;
-			case RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise:
-				return EnginePtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise;
-			case RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition:
-			default:
-				return EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition;
-		}
-	}
-
-	std::uint32_t SanitizePtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis) noexcept
-	{
-		return std::clamp(partitionsPerAxis, 1u, 64u);
-	}
-
-	float SanitizePtlasModeChangeDistance(float distance) noexcept
-	{
-		return (std::max)(distance, 0.0f);
-	}
 }
 
 EngineRenderingSettingsSection::EngineRenderingSettingsSection() :
@@ -131,6 +33,17 @@ void EngineRenderingSettingsSection::SetVSync(bool enabled)
 	UpdateState(state);
 }
 
+void EngineRenderingSettingsSection::SetBackBufferFormat(PixelFormat format)
+{
+	EngineRenderingSettingsState state = GetState();
+	if (state.BackBufferFormat == format)
+	{
+		return;
+	}
+	state.BackBufferFormat = format;
+	UpdateState(state);
+}
+
 void EngineRenderingSettingsSection::SetPreferHighPerformanceAdapter(bool enabled)
 {
 	EngineRenderingSettingsState state = GetState();
@@ -139,6 +52,39 @@ void EngineRenderingSettingsSection::SetPreferHighPerformanceAdapter(bool enable
 		return;
 	}
 	state.PreferHighPerformanceAdapter = enabled;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetMaxDirectionalLights(std::uint32_t count)
+{
+	EngineRenderingSettingsState state = GetState();
+	if (state.MaxDirectionalLights == count)
+	{
+		return;
+	}
+	state.MaxDirectionalLights = count;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetMaxPointLights(std::uint32_t count)
+{
+	EngineRenderingSettingsState state = GetState();
+	if (state.MaxPointLights == count)
+	{
+		return;
+	}
+	state.MaxPointLights = count;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetMaxSpotLights(std::uint32_t count)
+{
+	EngineRenderingSettingsState state = GetState();
+	if (state.MaxSpotLights == count)
+	{
+		return;
+	}
+	state.MaxSpotLights = count;
 	UpdateState(state);
 }
 
@@ -177,7 +123,8 @@ void EngineRenderingSettingsSection::SetPtlasActive(bool active)
 
 void EngineRenderingSettingsSection::SetPtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis)
 {
-	const std::uint32_t sanitizedPartitionsPerAxis = SanitizePtlasPartitionsPerAxis(partitionsPerAxis);
+	const std::uint32_t sanitizedPartitionsPerAxis =
+	    EngineRenderingRayTracingSettings::SanitizePtlasPartitionsPerAxis(partitionsPerAxis);
 	EngineRenderingSettingsState state = GetState();
 	if (state.PtlasPartitionsPerAxis == sanitizedPartitionsPerAxis)
 	{
@@ -222,7 +169,7 @@ void EngineRenderingSettingsSection::SetPtlasMarkAllDynamicInPartition(bool enab
 
 void EngineRenderingSettingsSection::SetPtlasModeChangeDistance(float distance)
 {
-	const float sanitizedDistance = SanitizePtlasModeChangeDistance(distance);
+	const float sanitizedDistance = EngineRenderingRayTracingSettings::SanitizePtlasModeChangeDistance(distance);
 	EngineRenderingSettingsState state = GetState();
 	if (state.PtlasModeChangeDistance == sanitizedDistance)
 	{
@@ -235,31 +182,19 @@ void EngineRenderingSettingsSection::SetPtlasModeChangeDistance(float distance)
 EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState() const noexcept
 {
 	EngineRenderingSettingsState state;
-	state.VSync = CVarRhiVSync.Get();
-	state.PreferHighPerformanceAdapter = CVarRhiPreferHighPerformanceAdapter.Get();
-	state.MeshAutoBatching = CVarRendererMeshAutoBatching.Get();
-	state.RefitTlas = CVarRayTracingClassicTlasRefit.Get();
-	state.PtlasActive = CVarRhiRayTracingPreferPartitionedTlas.Get();
-	state.PtlasPartitionsPerAxis = SanitizePtlasPartitionsPerAxis(CVarRayTracingPartitionsPerAxis.Get());
-	state.PtlasPartitionTopology = FromRuntimePartitionTopology(CVarRayTracingPtlasPartitionTopology.Get());
-	state.PtlasPartitionUpdateMode = FromRuntimePartitionUpdateMode(CVarRayTracingPtlasPartitionUpdateMode.Get());
-	state.PtlasMarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get();
-	state.PtlasModeChangeDistance = SanitizePtlasModeChangeDistance(CVarRayTracingPtlasModeChangeDistance.Get());
+	EngineRenderingDisplaySettings::Capture(state);
+	EngineRenderingLightingSettings::Capture(state);
+	EngineRenderingGeometrySettings::Capture(state);
+	EngineRenderingRayTracingSettings::Capture(state);
 	return state;
 }
 
 void EngineRenderingSettingsSection::ApplyStateToRuntime(const EngineRenderingSettingsState& state) const noexcept
 {
-	CVarRhiVSync.Set(state.VSync);
-	CVarRhiPreferHighPerformanceAdapter.Set(state.PreferHighPerformanceAdapter);
-	CVarRendererMeshAutoBatching.Set(state.MeshAutoBatching);
-	CVarRayTracingClassicTlasRefit.Set(state.RefitTlas);
-	CVarRhiRayTracingPreferPartitionedTlas.Set(state.PtlasActive);
-	CVarRayTracingPartitionsPerAxis.Set(SanitizePtlasPartitionsPerAxis(state.PtlasPartitionsPerAxis));
-	CVarRayTracingPtlasPartitionTopology.Set(ToRuntimePartitionTopology(state.PtlasPartitionTopology));
-	CVarRayTracingPtlasPartitionUpdateMode.Set(ToRuntimePartitionUpdateMode(state.PtlasPartitionUpdateMode));
-	CVarRayTracingPtlasMarkAllDynamicInPartition.Set(state.PtlasMarkAllDynamicInPartition);
-	CVarRayTracingPtlasModeChangeDistance.Set(SanitizePtlasModeChangeDistance(state.PtlasModeChangeDistance));
+	EngineRenderingDisplaySettings::Apply(state);
+	EngineRenderingLightingSettings::Apply(state);
+	EngineRenderingGeometrySettings::Apply(state);
+	EngineRenderingRayTracingSettings::Apply(state);
 }
 
 void EngineRenderingSettingsSection::ReadConfigValue(
@@ -267,84 +202,32 @@ void EngineRenderingSettingsSection::ReadConfigValue(
     std::string_view key,
     std::string_view value) const
 {
-	const std::string trimmedKey = Strings::TrimCopy(key);
-	const std::string trimmedValue = Strings::TrimCopy(value);
-	if (trimmedKey == "VSync")
+	if (EngineRenderingDisplaySettings::ReadConfigValue(state, key, value) ||
+	    EngineRenderingLightingSettings::ReadConfigValue(state, key, value) ||
+	    EngineRenderingGeometrySettings::ReadConfigValue(state, key, value) ||
+	    EngineRenderingRayTracingSettings::ReadConfigValue(state, key, value))
 	{
-		(void) Strings::TryParseBool(trimmedValue, state.VSync);
-	}
-	else if (trimmedKey == "PreferHighPerformanceAdapter")
-	{
-		(void) Strings::TryParseBool(trimmedValue, state.PreferHighPerformanceAdapter);
-	}
-	else if (trimmedKey == "MeshAutoBatching")
-	{
-		(void) Strings::TryParseBool(trimmedValue, state.MeshAutoBatching);
-	}
-	else if (trimmedKey == "RefitTlas")
-	{
-		(void) Strings::TryParseBool(trimmedValue, state.RefitTlas);
-	}
-	else if (trimmedKey == "PtlasActive")
-	{
-		(void) Strings::TryParseBool(trimmedValue, state.PtlasActive);
-	}
-	else if (trimmedKey == "RayTracingTopLevelMode")
-	{
-		state.PtlasActive = Strings::EqualsIgnoreCase(Strings::TrimAsciiWhitespace(trimmedValue), "PartitionedTlas");
-	}
-	else if (trimmedKey == "PtlasPartitionsPerAxis")
-	{
-		std::uint32_t partitionsPerAxis = state.PtlasPartitionsPerAxis;
-		if (Strings::TryParseNumber(trimmedValue, partitionsPerAxis))
-		{
-			state.PtlasPartitionsPerAxis = SanitizePtlasPartitionsPerAxis(partitionsPerAxis);
-		}
-	}
-	else if (trimmedKey == "PtlasPartitionTopology")
-	{
-		state.PtlasPartitionTopology = ParsePtlasPartitionTopology(trimmedValue);
-	}
-	else if (trimmedKey == "PtlasPartitionUpdateMode")
-	{
-		state.PtlasPartitionUpdateMode = ParsePtlasPartitionUpdateMode(trimmedValue);
-	}
-	else if (trimmedKey == "PtlasMarkAllDynamicInPartition")
-	{
-		(void) Strings::TryParseBool(trimmedValue, state.PtlasMarkAllDynamicInPartition);
-	}
-	else if (trimmedKey == "PtlasModeChangeDistance")
-	{
-		float distance = state.PtlasModeChangeDistance;
-		if (Strings::TryParseFloat(trimmedValue, distance))
-		{
-			state.PtlasModeChangeDistance = SanitizePtlasModeChangeDistance(distance);
-		}
+		return;
 	}
 }
 
 std::vector<std::pair<std::string, std::string>> EngineRenderingSettingsSection::BuildConfigValues(
     const EngineRenderingSettingsState& state) const
 {
-	return {
-	    {"VSync", state.VSync ? "true" : "false"},
-	    {"PreferHighPerformanceAdapter", state.PreferHighPerformanceAdapter ? "true" : "false"},
-	    {"MeshAutoBatching", state.MeshAutoBatching ? "true" : "false"},
-	    {"RefitTlas", state.RefitTlas ? "true" : "false"},
-	    {"PtlasActive", state.PtlasActive ? "true" : "false"},
-	    {"PtlasPartitionsPerAxis", std::to_string(SanitizePtlasPartitionsPerAxis(state.PtlasPartitionsPerAxis))},
-	    {"PtlasPartitionTopology", ToConfigString(state.PtlasPartitionTopology)},
-	    {"PtlasPartitionUpdateMode", ToConfigString(state.PtlasPartitionUpdateMode)},
-	    {"PtlasMarkAllDynamicInPartition", state.PtlasMarkAllDynamicInPartition ? "true" : "false"},
-	    {"PtlasModeChangeDistance", std::to_string(SanitizePtlasModeChangeDistance(state.PtlasModeChangeDistance))},
-	};
+	std::vector<std::pair<std::string, std::string>> values;
+	values.reserve(14);
+	EngineRenderingDisplaySettings::AppendConfigValues(state, values);
+	EngineRenderingLightingSettings::AppendConfigValues(state, values);
+	EngineRenderingGeometrySettings::AppendConfigValues(state, values);
+	EngineRenderingRayTracingSettings::AppendConfigValues(state, values);
+	return values;
 }
 
 bool EngineRenderingSettingsSection::ComputePendingRestart(
     const EngineRenderingSettingsState& baseline,
     const EngineRenderingSettingsState& current) const noexcept
 {
-	return baseline.PreferHighPerformanceAdapter != current.PreferHighPerformanceAdapter;
+	return EngineRenderingDisplaySettings::RequiresRestart(baseline, current);
 }
 
 std::string EngineRenderingSettingsSection::DescribePendingRestart(
@@ -352,10 +235,7 @@ std::string EngineRenderingSettingsSection::DescribePendingRestart(
     const EngineRenderingSettingsState& current) const
 {
 	std::vector<std::string> reasons;
-	if (baseline.PreferHighPerformanceAdapter != current.PreferHighPerformanceAdapter)
-	{
-		reasons.emplace_back("GPU adapter preference");
-	}
+	EngineRenderingDisplaySettings::AppendRestartReasons(baseline, current, reasons);
 	if (reasons.empty())
 	{
 		return {};

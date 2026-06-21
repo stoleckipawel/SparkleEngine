@@ -11,7 +11,7 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "Device/RenderHardwareInterface.h"
 
@@ -24,7 +24,11 @@ class D3D12Rhi;
 class D3D12SwapChain final
 {
   public:
-	D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager);
+	D3D12SwapChain(
+	    D3D12Rhi& rhi,
+	    Window& window,
+	    D3D12DescriptorHeapManager& descriptorHeapManager,
+	    PixelFormat backBufferFormat);
 
 	~D3D12SwapChain() noexcept;
 
@@ -53,7 +57,7 @@ class D3D12SwapChain final
 
 	RhiRect GetDefaultScissorRect() const;
 
-	PixelFormat GetBackBufferFormat() const { return RenderConfig::BackBufferFormat; }
+	PixelFormat GetBackBufferFormat() const { return m_backBufferFormat; }
 
 	UINT GetAllowTearingFlag() const;
 
@@ -75,8 +79,9 @@ class D3D12SwapChain final
 	D3D12Rhi& m_rhi;
 	UINT m_frameInFlightIndex = 0;
 	ComPtr<IDXGISwapChain3> m_swapChain = nullptr;
-	ComPtr<ID3D12Resource2> m_buffers[RenderConfig::FramesInFlight];
-	D3D12DescriptorHandle m_rtvHandles[RenderConfig::FramesInFlight];
+	ComPtr<ID3D12Resource2> m_buffers[RhiFrameConstants::FramesInFlight];
+	D3D12DescriptorHandle m_rtvHandles[RhiFrameConstants::FramesInFlight];
+	PixelFormat m_backBufferFormat = PixelFormat::Unknown;
 	HANDLE m_waitableObject = nullptr;
 	Window* m_window = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;

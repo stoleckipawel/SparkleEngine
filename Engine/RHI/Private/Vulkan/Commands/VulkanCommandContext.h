@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "Vulkan/VulkanIncludes.h"
 
 #include <array>
@@ -53,7 +53,7 @@ class VulkanCommandContext final
 	void NameFrameState(std::uint32_t frameIndex, FrameState& frameState) noexcept;
 
 	VulkanRhi& m_rhi;
-	std::array<FrameState, RenderConfig::FramesInFlight> m_frames;
+	std::array<FrameState, RhiFrameConstants::FramesInFlight> m_frames;
 	std::uint64_t m_nextRetireFenceValue = 1;
 	std::uint64_t m_completedRetireFenceValue = 0;
 };

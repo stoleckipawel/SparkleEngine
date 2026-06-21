@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Diagnostics/D3D12DebugLayer.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
@@ -94,7 +94,7 @@ D3D12Rhi::D3D12Rhi() noexcept
 void D3D12Rhi::SelectAdapter() noexcept
 {
 	const DXGI_GPU_PREFERENCE pref =
-	    CVarRhiPreferHighPerformanceAdapter.Get() ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_MINIMUM_POWER;
+	    CVarPreferHighPerformanceAdapter.Get() ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_MINIMUM_POWER;
 
 	for (UINT i = 0;; ++i)
 	{
@@ -256,7 +256,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		m_rayTracingCapabilities.Groups.PartitionedTlas.SupportsD3D12PublicDxrHeaders = false;
 
 		const bool partitionedTlasRequestedAndSupported =
-		    CVarRhiRayTracingPreferPartitionedTlas.Get() && m_rayTracingCapabilities.Groups.PartitionedTlas.Supported;
+		    CVarRayTracingPreferPartitionedTlas.Get() && m_rayTracingCapabilities.Groups.PartitionedTlas.Supported;
 		m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
 		    .SelectedTopLevelProvider =
 		        m_rayTracingCapabilities.SupportsRayTracing ? ERhiRayTracingTopLevelProvider::ClassicTlas : ERhiRayTracingTopLevelProvider::None,
@@ -332,7 +332,7 @@ void D3D12Rhi::RefreshPartitionedTlasCommandListCapability() noexcept
 		partitionedTlas.CapabilityStatusReason = "d3d12-nvapi-ptlas-standard-supported";
 	}
 
-	const bool partitionedTlasRequestedAndSupported = CVarRhiRayTracingPreferPartitionedTlas.Get() && partitionedTlas.Supported;
+	const bool partitionedTlasRequestedAndSupported = CVarRayTracingPreferPartitionedTlas.Get() && partitionedTlas.Supported;
 	if (m_rayTracingCapabilities.SupportsRayTracing)
 	{
 		m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::ClassicTlas;
@@ -354,7 +354,7 @@ void D3D12Rhi::CreateCommandQueue()
 
 void D3D12Rhi::CreateCommandAllocators()
 {
-	for (size_t i = 0; i < RenderConfig::FramesInFlight; ++i)
+	for (size_t i = 0; i < RhiFrameConstants::FramesInFlight; ++i)
 	{
 		CHECK(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(m_cmdAllocator[i].ReleaseAndGetAddressOf())));
 	}
@@ -362,7 +362,7 @@ void D3D12Rhi::CreateCommandAllocators()
 
 void D3D12Rhi::CreateCommandLists()
 {
-	for (UINT i = 0; i < RenderConfig::FramesInFlight; ++i)
+	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; ++i)
 	{
 		CHECK(m_device->CreateCommandList(
 		    0,
@@ -377,7 +377,7 @@ void D3D12Rhi::CreateCommandLists()
 
 void D3D12Rhi::CreateFenceAndEvent()
 {
-	for (UINT i = 0; i < RenderConfig::FramesInFlight; ++i)
+	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; ++i)
 	{
 		m_fenceValues[i] = 0;
 	}
@@ -551,7 +551,7 @@ void D3D12Rhi::Signal(uint32_t frameInFlightIndex) noexcept
 
 void D3D12Rhi::Flush() noexcept
 {
-	for (UINT i = 0; i < RenderConfig::FramesInFlight; ++i)
+	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; ++i)
 	{
 		Signal(i);
 		WaitForGPU(i);
@@ -636,7 +636,7 @@ void D3D12Rhi::CollectCrashDiagnostics() noexcept
 
 D3D12Rhi::~D3D12Rhi() noexcept
 {
-	for (UINT i = 0; i < RenderConfig::FramesInFlight; ++i)
+	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; ++i)
 	{
 		m_cmdList[i].Reset();
 		m_cmdAllocator[i].Reset();

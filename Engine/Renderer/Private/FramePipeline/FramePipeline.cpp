@@ -3,7 +3,7 @@
 
 #include "Camera/RenderCamera.h"
 #include "Commands/RenderCommandContext.h"
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Debug/RendererCVars.h"
@@ -38,7 +38,7 @@
 FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
     m_systems(&systems)
 {
-	m_frameExecutionDiagnostics.resize(RenderConfig::FramesInFlight);
+	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
 	RenderDiagnostics& backendDiagnostics =
 	    m_systems->GetRenderHardwareInterface().GetDiagnostics();
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)

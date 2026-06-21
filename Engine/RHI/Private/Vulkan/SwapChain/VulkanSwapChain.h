@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Config/RenderConfig.h"
 #include "Device/RenderHardwareInterface.h"
+#include "Formats/PixelFormat.h"
 #include "Vulkan/VulkanIncludes.h"
 
 #include <array>
@@ -14,7 +14,7 @@ class Window;
 class VulkanSwapChain final
 {
   public:
-	VulkanSwapChain(VulkanRhi& rhi, Window& window);
+	VulkanSwapChain(VulkanRhi& rhi, Window& window, PixelFormat backBufferFormat);
 	~VulkanSwapChain() noexcept;
 
 	VulkanSwapChain(const VulkanSwapChain&) = delete;

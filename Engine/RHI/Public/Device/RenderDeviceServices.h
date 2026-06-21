@@ -3,6 +3,7 @@
 #include "../Core/RhiBackendSelection.h"
 #include "../Commands/RhiCommandSubmissionService.h"
 #include "../RHIAPI.h"
+#include "RenderDeviceSettings.h"
 #include "RenderHardwareInterface.h"
 
 #include <cstdint>
@@ -16,6 +17,13 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
   public:
 	static std::unique_ptr<RenderDeviceServices> Create(Window& window) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(Window& window, RhiBackendSelection selection) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(
+	    Window& window,
+	    const RenderDeviceSettings& settings) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(
+	    Window& window,
+	    RhiBackendSelection selection,
+	    const RenderDeviceSettings& settings) noexcept;
 
 	~RenderDeviceServices() noexcept;
 

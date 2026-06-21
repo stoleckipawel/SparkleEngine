@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RenderLightingLimits.h"
+
 #include <DirectXMath.h>
 
 #include <cstddef>
@@ -49,18 +51,14 @@ struct SpotLightConstantBufferData
 
 struct PerViewLightingConstantBufferData
 {
-	static constexpr std::size_t MaxDirectionalLights = 2;
-	static constexpr std::size_t MaxPointLights = 512;
-	static constexpr std::size_t MaxSpotLights = 512;
-
 	std::uint32_t DirectionalLightCount = 0;
 	std::uint32_t PointLightCount = 0;
 	std::uint32_t SpotLightCount = 0;
 	std::uint32_t PaddingCount = 0;
 
-	DirectionalLightConstantBufferData DirectionalLights[MaxDirectionalLights] = {};
-	PointLightConstantBufferData PointLights[MaxPointLights] = {};
-	SpotLightConstantBufferData SpotLights[MaxSpotLights] = {};
+	DirectionalLightConstantBufferData DirectionalLights[RenderLightingLimits::MaxDirectionalLights] = {};
+	PointLightConstantBufferData PointLights[RenderLightingLimits::MaxPointLights] = {};
+	SpotLightConstantBufferData SpotLights[RenderLightingLimits::MaxSpotLights] = {};
 };
 
 static_assert(sizeof(DirectionalLightConstantBufferData) == 48, "Directional light constant buffer data must be 48 bytes");

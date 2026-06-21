@@ -2,7 +2,7 @@
 
 #include "Device/RenderDeviceBackendFactory.h"
 
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
@@ -15,8 +15,10 @@
 
 class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 {
-  public:
-	static std::unique_ptr<VulkanRenderDeviceServices> Create(Window& window) noexcept;
+ public:
+	static std::unique_ptr<VulkanRenderDeviceServices> Create(
+	    Window& window,
+	    const RenderDeviceSettings& settings) noexcept;
 	~VulkanRenderDeviceServices() noexcept override;
 
 	VulkanRenderDeviceServices(const VulkanRenderDeviceServices&) = delete;
@@ -48,12 +50,16 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	bool m_hasAcquiredBackBuffer = false;
 };
 
-std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(Window& window) noexcept
+std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(
+    Window& window,
+    const RenderDeviceSettings& settings) noexcept
 {
-	return VulkanRenderDeviceServices::Create(window);
+	return VulkanRenderDeviceServices::Create(window, settings);
 }
 
-std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(Window& window) noexcept
+std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(
+    Window& window,
+    const RenderDeviceSettings& settings) noexcept
 {
 	auto services = std::unique_ptr<VulkanRenderDeviceServices>(new VulkanRenderDeviceServices());
 	{
@@ -66,7 +72,7 @@ std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(W
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateSwapChain");
-		services->m_swapChain = std::make_unique<VulkanSwapChain>(*services->m_rhi, window);
+		services->m_swapChain = std::make_unique<VulkanSwapChain>(*services->m_rhi, window, settings.BackBufferFormat);
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateCommandContext");
@@ -167,7 +173,7 @@ void VulkanRenderDeviceServices::SubmitFrame() noexcept
 
 void VulkanRenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
-	m_currentFrameIndex = (m_currentFrameIndex + 1u) % RenderConfig::FramesInFlight;
+	m_currentFrameIndex = (m_currentFrameIndex + 1u) % RhiFrameConstants::FramesInFlight;
 	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
 }
 

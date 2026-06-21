@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "Device/RenderHardwareInterface.h"
 
@@ -203,5 +203,5 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	std::unique_ptr<D3D12ImGuiBackend> m_imguiBackend;
 	RhiCapabilities m_capabilities;
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
-	std::array<std::unique_ptr<RenderCommandList>, RenderConfig::FramesInFlight> m_commandLists;
+	std::array<std::unique_ptr<RenderCommandList>, RhiFrameConstants::FramesInFlight> m_commandLists;
 };

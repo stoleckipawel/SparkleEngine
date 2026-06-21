@@ -2,7 +2,6 @@
 
 #include "Vulkan/UI/VulkanImGuiBackend.h"
 
-#include "Config/RenderConfig.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 #include "Vulkan/VulkanRenderHardwareInterface.h"

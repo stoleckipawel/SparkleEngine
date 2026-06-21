@@ -2,7 +2,7 @@
 
 #include "D3D12/UI/D3D12ImGuiBackend.h"
 
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "D3D12/D3D12RenderHardwareInterface.h"
 #include "D3D12/D3D12TypeConversions.h"
 
@@ -20,7 +20,7 @@ bool D3D12ImGuiBackend::Initialize()
 	ImGui_ImplDX12_InitInfo initInfo = {};
 	initInfo.Device = ToD3D12Device(m_renderHardware->GetDeviceHandle());
 	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardware->GetGraphicsQueueHandle());
-	initInfo.NumFramesInFlight = static_cast<int>(RenderConfig::FramesInFlight);
+	initInfo.NumFramesInFlight = static_cast<int>(RhiFrameConstants::FramesInFlight);
 	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardware->GetPresentColorFormat());
 	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardware->GetPresentDepthStencilFormat());
 	initInfo.SrvDescriptorHeap = m_renderHardware->GetD3D12ShaderResourceDescriptorHeap();

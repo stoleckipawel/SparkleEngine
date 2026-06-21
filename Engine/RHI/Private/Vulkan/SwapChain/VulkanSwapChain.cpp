@@ -3,6 +3,7 @@
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 
 #include "CVars/RHICVars.h"
+#include "Frame/RhiFrameConstants.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/VulkanTypeConversions.h"
@@ -16,7 +17,8 @@
 
 static const auto g_vulkanSwapChainLogger = Logging::GetOrCreateLogger("RHI.Vulkan.SwapChain");
 
-VulkanSwapChain::VulkanSwapChain(VulkanRhi& rhi, Window& window) : m_rhi(rhi), m_window(&window)
+VulkanSwapChain::VulkanSwapChain(VulkanRhi& rhi, Window& window, PixelFormat backBufferFormat) :
+    m_rhi(rhi), m_window(&window), m_backBufferFormat(backBufferFormat)
 {
 	CreateSurface();
 	CreateSwapChain();
@@ -196,7 +198,6 @@ void VulkanSwapChain::CreateSwapChain(VkSwapchainKHR oldSwapChain)
 	m_surfaceFormat = SelectSurfaceFormat();
 	m_presentMode = SelectPresentMode();
 	m_extent = SelectExtent(capabilities);
-	m_backBufferFormat = VulkanTypeConversions::ToPixelFormat(m_surfaceFormat.format);
 
 	const VkSwapchainCreateInfoKHR createInfo{
 	    .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -320,31 +321,25 @@ VkSurfaceFormatKHR VulkanSwapChain::SelectSurfaceFormat() const
 		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfaceFormatsKHR", result));
 	}
 
-	const VkFormat preferredFormat = VulkanTypeConversions::ToVkFormat(RenderConfig::BackBufferFormat);
-	const auto preferredIt = std::find_if(formats.begin(), formats.end(), [preferredFormat](const VkSurfaceFormatKHR& format) noexcept {
-		return format.format == preferredFormat && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+	const VkFormat requestedFormat = VulkanTypeConversions::ToVkFormat(m_backBufferFormat);
+	const auto requestedIt = std::find_if(formats.begin(), formats.end(), [requestedFormat](const VkSurfaceFormatKHR& format) noexcept {
+		return format.format == requestedFormat && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 	});
-	if (preferredIt != formats.end())
+	if (requestedIt != formats.end())
 	{
-		return *preferredIt;
+		return *requestedIt;
 	}
 
-	const auto bgraIt = std::find_if(formats.begin(), formats.end(), [](const VkSurfaceFormatKHR& format) noexcept {
-		return format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-	});
-	if (bgraIt != formats.end())
-	{
-		SPDLOG_LOGGER_WARN(g_vulkanSwapChainLogger, "Preferred Vulkan present format unavailable; using BGRA8 UNorm fallback.");
-		return *bgraIt;
-	}
-
-	SPDLOG_LOGGER_WARN(g_vulkanSwapChainLogger, "Preferred Vulkan present color space unavailable; using first reported surface format.");
-	return formats.front();
+	Diagnostics::Fail(
+	    g_vulkanSwapChainLogger,
+	    __FILE__,
+	    __LINE__,
+	    std::format("Requested Vulkan present format '{}' is not supported by the surface.", PixelFormatName(m_backBufferFormat)));
 }
 
 VkPresentModeKHR VulkanSwapChain::SelectPresentMode() const
 {
-	if (CVarRhiVSync.Get())
+	if (CVarVSync.Get())
 	{
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
@@ -391,7 +386,7 @@ VkExtent2D VulkanSwapChain::SelectExtent(const VkSurfaceCapabilitiesKHR& capabil
 
 std::uint32_t VulkanSwapChain::SelectImageCount(const VkSurfaceCapabilitiesKHR& capabilities) const noexcept
 {
-	std::uint32_t imageCount = std::max(capabilities.minImageCount + 1u, static_cast<std::uint32_t>(RenderConfig::FramesInFlight));
+	std::uint32_t imageCount = std::max(capabilities.minImageCount + 1u, static_cast<std::uint32_t>(RhiFrameConstants::FramesInFlight));
 	if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
 	{
 		imageCount = capabilities.maxImageCount;

@@ -32,7 +32,7 @@ RenderRayTracingScene::RenderRayTracingScene(
 
 	m_blasCache = std::make_unique<RayTracingBlasCache>(renderHardwareInterface);
 	m_topLevelStrategyPrefersPartitionedTlas =
-	    CVarRhiRayTracingPreferPartitionedTlas.Get() && m_capabilityReport.PartitionedTlas.Supported;
+	    CVarRayTracingPreferPartitionedTlas.Get() && m_capabilityReport.PartitionedTlas.Supported;
 	m_topLevelAccelerationStructureStrategy =
 	    CreateRayTracingTopLevelAccelerationStructureStrategy(renderHardwareInterface, m_capabilityReport);
 }
@@ -271,7 +271,7 @@ void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRu
 		return;
 	}
 
-	const bool wantsPartitionedTlas = CVarRhiRayTracingPreferPartitionedTlas.Get() && m_capabilityReport.PartitionedTlas.Supported;
+	const bool wantsPartitionedTlas = CVarRayTracingPreferPartitionedTlas.Get() && m_capabilityReport.PartitionedTlas.Supported;
 	if (m_topLevelAccelerationStructureStrategy != nullptr && wantsPartitionedTlas == m_topLevelStrategyPrefersPartitionedTlas)
 	{
 		return;

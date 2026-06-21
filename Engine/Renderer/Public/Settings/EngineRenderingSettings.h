@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Core/Public/Config/ConfigBackedSettings.h"
+#include "RHI/Public/Presentation/RhiPresentationDefaults.h"
+#include "RHI/Public/Resources/RenderLightingLimits.h"
 #include "RendererAPI.h"
 
 #include <cstdint>
@@ -22,7 +24,11 @@ enum class EnginePtlasPartitionUpdateMode
 struct EngineRenderingSettingsState final
 {
 	bool VSync = true;
+	PixelFormat BackBufferFormat = RhiPresentationDefaults::BackBufferFormat;
 	bool PreferHighPerformanceAdapter = true;
+	std::uint32_t MaxDirectionalLights = static_cast<std::uint32_t>(RenderLightingLimits::MaxDirectionalLights);
+	std::uint32_t MaxPointLights = static_cast<std::uint32_t>(RenderLightingLimits::MaxPointLights);
+	std::uint32_t MaxSpotLights = static_cast<std::uint32_t>(RenderLightingLimits::MaxSpotLights);
 	bool MeshAutoBatching = true;
 	bool RefitTlas = true;
 	bool PtlasActive = false;
@@ -39,7 +45,11 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigB
 	EngineRenderingSettingsSection();
 
 	void SetVSync(bool enabled);
+	void SetBackBufferFormat(PixelFormat format);
 	void SetPreferHighPerformanceAdapter(bool enabled);
+	void SetMaxDirectionalLights(std::uint32_t count);
+	void SetMaxPointLights(std::uint32_t count);
+	void SetMaxSpotLights(std::uint32_t count);
 	void SetMeshAutoBatching(bool enabled);
 	void SetRefitTlas(bool enabled);
 	void SetPtlasActive(bool active);

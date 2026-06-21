@@ -2,14 +2,14 @@
 
 #include "Vulkan/Resources/VulkanLinearAllocator.h"
 
-#include "Config/RenderConfig.h"
+#include "Frame/RhiFrameConstants.h"
 #include "Resources/RhiResourceDesc.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
 VulkanLinearAllocator::VulkanLinearAllocator(VulkanGpuMemoryAllocator& memoryAllocator) : m_memoryAllocator(memoryAllocator)
 {
-	m_uploadRecordsByFrame.resize(RenderConfig::FramesInFlight);
+	m_uploadRecordsByFrame.resize(RhiFrameConstants::FramesInFlight);
 }
 
 void VulkanLinearAllocator::BeginFrame(std::uint32_t frameIndex) noexcept
