@@ -737,6 +737,16 @@ Honor the active material binding mode. In the preferred `RaytracingOnly` mode, 
 
 #### Stage 8.3: Base Color, Roughness, Metallic, Emissive Texture Parity
 
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- `RTIndirectSpecular` now resolves base color, roughness, metallic, and emissive from the renderer material texture table during hit reconstruction before hit lighting.
+- Value semantics match `Material.hlsli` for the first parity set: base color texture multiplies `BaseColor`, roughness and metallic use the texture red channel multiplied by their constants, and emissive texture RGB multiplies `EmissiveColor`.
+- Explicit LOD policy for this stage is fixed mip 0 through `SampleLevel`. This avoids relying on unavailable ray-hit derivatives and keeps first texture parity deterministic; roughness-biased or cone/mip selection is left for a later quality stage.
+- Untextured materials use their authored constants because that is their complete material. Textured material slots require valid descriptor indices; invalid flagged texture slots mark the hit with `InvalidMaterialTextureDescriptor` rather than silently falling back to constants.
+- Debug modes now include resolved sampled base color, roughness/metallic, emissive, selected mip, and invalid descriptor visualization.
+
 Goal: make ray-hit material constants match raster material value semantics for the first texture set.
 
 Implementation tasks:
@@ -767,6 +777,16 @@ Use the RTIndirectSpecular material texture table to sample base color, roughnes
 ```
 
 #### Stage 8.4: Normal Map And Tangent-Space Parity
+
+Status: implemented on 2026-06-21.
+
+Implementation note:
+
+- `RTIndirectSpecular` now samples the normal texture when the material normal-map flag is present, using the same `Material.hlsli` unpacking convention: `xy * 2 - 1`, reconstructed positive `z`, normalized.
+- The hit tangent basis is reconstructed from the Stage 3.5 ABI as `T = orthonormalized hit tangent`, `B = tangentSign * normalize(cross(N, T))`, and `N = geometric world normal`. The tangent-space normal is transformed with the same `mul(normalTangent, float3x3(T, B, N))` convention as raster.
+- Two-sided backface handling is applied after normal-map transformation: one-sided backfaces still fail closed, while two-sided hits flip the final sampled normal and debug basis toward the incoming ray.
+- Normal-map descriptor failures use the existing `InvalidMaterialTextureDescriptor` fallback reason, so flagged normal-mapped materials cannot silently shade as if the normal map were absent.
+- Debug modes now expose hit tangent, hit bitangent, sampled tangent-space normal, and final sampled world normal.
 
 Goal: add ray-hit normal map sampling after base material texture parity is stable.
 

@@ -20,4 +20,12 @@ enum class RTIndirectSpecularDebugMode : std::uint32_t
 	HitRadiance = 13u,
 	FinalContribution = 14u,
 	MaterialTextureBaseColor = 15u,
+	MaterialTextureRoughnessMetallic = 16u,
+	MaterialTextureEmissive = 17u,
+	MaterialTextureMip = 18u,
+	MaterialTextureInvalidDescriptor = 19u,
+	HitTangent = 20u,
+	HitBitangent = 21u,
+	HitNormalTangent = 22u,
+	HitSampledNormal = 23u,
 };

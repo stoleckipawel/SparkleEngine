@@ -89,8 +89,17 @@ static const uint RTIndirectSpecularDebugSampleThroughput = 12u;
 static const uint RTIndirectSpecularDebugHitRadiance = 13u;
 static const uint RTIndirectSpecularDebugFinalContribution = 14u;
 static const uint RTIndirectSpecularDebugMaterialTextureBaseColor = 15u;
+static const uint RTIndirectSpecularDebugMaterialTextureRoughnessMetallic = 16u;
+static const uint RTIndirectSpecularDebugMaterialTextureEmissive = 17u;
+static const uint RTIndirectSpecularDebugMaterialTextureMip = 18u;
+static const uint RTIndirectSpecularDebugMaterialTextureInvalidDescriptor = 19u;
+static const uint RTIndirectSpecularDebugHitTangent = 20u;
+static const uint RTIndirectSpecularDebugHitBitangent = 21u;
+static const uint RTIndirectSpecularDebugHitNormalTangent = 22u;
+static const uint RTIndirectSpecularDebugHitSampledNormal = 23u;
 static const uint RTIndirectSpecularSampleModeMirror = 0u;
 static const uint RTIndirectSpecularSampleModeStochasticGGX = 1u;
+static const float RTIndirectSpecularMaterialTextureMip = 0.0f;
 static const uint MaterialTextureSlotBaseColor = 0u;
 static const uint MaterialTextureSlotNormal = 1u;
 static const uint MaterialTextureSlotRoughness = 2u;
@@ -119,6 +128,7 @@ static const uint RTIndirectSpecularHitFallbackReasonMissingMeshHitData = 8u;
 static const uint RTIndirectSpecularHitFallbackReasonInvalidPrimitive = 9u;
 static const uint RTIndirectSpecularHitFallbackReasonInvalidVertexIndex = 10u;
 static const uint RTIndirectSpecularHitFallbackReasonOneSidedBackface = 11u;
+static const uint RTIndirectSpecularHitFallbackReasonInvalidMaterialTextureDescriptor = 12u;
 static const float RTIndirectSpecularMinimumTMin = 0.001f;
 
 struct RTIndirectSpecularTraceResult
@@ -136,6 +146,8 @@ struct RTIndirectSpecularHitSurface
 	float3 PositionWorld;
 	float3 NormalWorld;
 	float3 TangentWorld;
+	float3 BitangentWorld;
+	float3 NormalTangent;
 	float TangentSign;
 	float2 TexCoord0;
 	uint MaterialSlot;
@@ -206,6 +218,31 @@ float3 OrthonormalizeTangent(float3 tangentWorld, float3 normalWorld)
 	float3 fallbackBitangent = 0.0f.xxx;
 	BuildOrthonormalBasis(normalWorld, fallbackTangent, fallbackBitangent);
 	return SafeNormalize(projectedTangent, fallbackTangent);
+}
+
+float3 ComputeHitBitangent(float3 normalWorld, float3 tangentWorld, float tangentSign)
+{
+	float3 fallbackTangent = 0.0f.xxx;
+	float3 fallbackBitangent = 0.0f.xxx;
+	BuildOrthonormalBasis(normalWorld, fallbackTangent, fallbackBitangent);
+	return SafeNormalize(tangentSign * cross(normalWorld, tangentWorld), fallbackBitangent);
+}
+
+float3 UnpackMaterialNormal(float2 encodedNormal)
+{
+	const float2 normalXY = encodedNormal * 2.0f - 1.0f;
+	const float normalZ = sqrt(saturate(1.0f - dot(normalXY, normalXY)));
+	return normalize(float3(normalXY, normalZ));
+}
+
+float3 TransformHitNormalToWorld(
+    float3 normalTangent,
+    float3 normalWorld,
+    float3 tangentWorld,
+    float3 bitangentWorld)
+{
+	const float3x3 TBN = float3x3(tangentWorld, bitangentWorld, normalWorld);
+	return SafeNormalize(mul(normalTangent, TBN), normalWorld);
 }
 
 float2 BuildReflectionRandomSample(uint2 pixelCoord)
@@ -310,6 +347,15 @@ RTIndirectSpecularTraceResult TraceReflection(float3 positionWorld, float3 norma
 	return result;
 }
 
+bool ResolveHitMaterialTextures(
+    RTIndirectSpecularHitMaterial material,
+    float2 uv,
+    out float4 baseColor,
+    out float roughness,
+    out float metallic,
+    out float3 emissive,
+    out float3 normalTangent);
+
 RTIndirectSpecularHitSurface ReconstructHitSurface(RTIndirectSpecularTraceResult trace, float3 rayOriginWorld, float3 rayDirectionWorld)
 {
 	RTIndirectSpecularHitSurface surface;
@@ -317,6 +363,8 @@ RTIndirectSpecularHitSurface ReconstructHitSurface(RTIndirectSpecularTraceResult
 	surface.PositionWorld = rayOriginWorld + rayDirectionWorld * trace.RayT;
 	surface.NormalWorld = 0.0f.xxx;
 	surface.TangentWorld = 0.0f.xxx;
+	surface.BitangentWorld = 0.0f.xxx;
+	surface.NormalTangent = float3(0.0f, 0.0f, 1.0f);
 	surface.TangentSign = 1.0f;
 	surface.TexCoord0 = 0.0f.xx;
 	surface.MaterialSlot = 0u;
@@ -390,6 +438,7 @@ RTIndirectSpecularHitSurface ReconstructHitSurface(RTIndirectSpecularTraceResult
 	const RTIndirectSpecularHitMaterial material = RTIndirectSpecularHitMaterials[hitInstance.MaterialSlot];
 	float3 normalWorld = SafeTransformNormal(localNormal, worldInvTransposeMatrix, -rayDirectionWorld);
 	float3 tangentWorld = SafeTransformDirection(localTangent.xyz, worldMatrix, 0.0f.xxx);
+	const float tangentSign = localTangent.w >= 0.0f ? 1.0f : -1.0f;
 	const bool twoSided = (hitInstance.Flags & RTIndirectSpecularHitInstanceFlagTwoSided) != 0u;
 	const bool frontFacing = dot(normalWorld, -rayDirectionWorld) >= 0.0f;
 	if (!frontFacing && !twoSided)
@@ -397,12 +446,8 @@ RTIndirectSpecularHitSurface ReconstructHitSurface(RTIndirectSpecularTraceResult
 		surface.FallbackReason = RTIndirectSpecularHitFallbackReasonOneSidedBackface;
 		return surface;
 	}
-	if (!frontFacing)
-	{
-		normalWorld = -normalWorld;
-		tangentWorld = -tangentWorld;
-	}
 	tangentWorld = OrthonormalizeTangent(tangentWorld, normalWorld);
+	const float3 bitangentWorld = ComputeHitBitangent(normalWorld, tangentWorld, tangentSign);
 
 	surface.Valid = true;
 	surface.PositionWorld =
@@ -411,18 +456,46 @@ RTIndirectSpecularHitSurface ReconstructHitSurface(RTIndirectSpecularTraceResult
 	        .xyz;
 	surface.NormalWorld = normalWorld;
 	surface.TangentWorld = tangentWorld;
-	surface.TangentSign = localTangent.w >= 0.0f ? 1.0f : -1.0f;
+	surface.BitangentWorld = bitangentWorld;
+	surface.TangentSign = tangentSign;
 	surface.TexCoord0 = v0.TexCoord0 * barycentricWeights.x + v1.TexCoord0 * barycentricWeights.y + v2.TexCoord0 * barycentricWeights.z;
 	surface.MaterialSlot = hitInstance.MaterialSlot;
 	surface.GeometryFlags = hitInstance.GeometryFlags;
 	surface.FallbackReason = RTIndirectSpecularHitFallbackReasonNone;
-	surface.BaseColor = saturate(material.BaseColor.rgb);
-	surface.EmissiveColor = max(material.EmissiveColor, 0.0f.xxx);
+	float4 resolvedBaseColor = material.BaseColor;
+	float resolvedRoughness = material.Roughness;
+	float resolvedMetallic = material.Metallic;
+	float3 resolvedEmissive = material.EmissiveColor;
+	float3 resolvedNormalTangent = float3(0.0f, 0.0f, 1.0f);
+	if (!ResolveHitMaterialTextures(
+	        material,
+	        surface.TexCoord0,
+	        resolvedBaseColor,
+	        resolvedRoughness,
+	        resolvedMetallic,
+	        resolvedEmissive,
+	        resolvedNormalTangent))
+	{
+		surface.Valid = false;
+		surface.FallbackReason = RTIndirectSpecularHitFallbackReasonInvalidMaterialTextureDescriptor;
+		return surface;
+	}
+
+	surface.NormalTangent = resolvedNormalTangent;
+	surface.NormalWorld = TransformHitNormalToWorld(resolvedNormalTangent, normalWorld, tangentWorld, bitangentWorld);
+	if (!frontFacing)
+	{
+		surface.NormalWorld = -surface.NormalWorld;
+		surface.TangentWorld = -surface.TangentWorld;
+		surface.BitangentWorld = -surface.BitangentWorld;
+	}
+	surface.BaseColor = saturate(resolvedBaseColor.rgb);
+	surface.EmissiveColor = max(resolvedEmissive, 0.0f.xxx);
 	surface.SubsurfaceColor = saturate(material.SubsurfaceColor);
-	surface.Roughness = saturate(material.Roughness);
-	surface.Metallic = saturate(material.Metallic);
+	surface.Roughness = saturate(resolvedRoughness);
+	surface.Metallic = saturate(resolvedMetallic);
 	surface.DielectricF0 = saturate(material.F0) * 0.08f;
-	surface.Alpha = saturate(material.BaseColor.a);
+	surface.Alpha = saturate(resolvedBaseColor.a);
 	surface.SubsurfaceStrength = saturate(material.SubsurfaceStrength);
 	return surface;
 }
@@ -540,6 +613,10 @@ float3 FallbackReasonColor(uint reason)
 	{
 		return float3(0.0f, 0.85f, 0.95f);
 	}
+	if (reason == RTIndirectSpecularHitFallbackReasonInvalidMaterialTextureDescriptor)
+	{
+		return float3(1.0f, 0.0f, 1.0f);
+	}
 	return float3(0.2f, 0.65f, 1.0f);
 }
 
@@ -594,21 +671,125 @@ bool TryGetMaterialTextureIndex(RTIndirectSpecularHitMaterial material, uint tex
 	       textureIndex < RTIndirectSpecularMaterialTextureTableCapacity;
 }
 
-float3 DebugSampleMaterialTextureBaseColor(RTIndirectSpecularHitSurface hitSurface)
+bool HasMaterialTexture(RTIndirectSpecularHitMaterial material, uint textureSlot)
+{
+	return (material.TextureFlags & (1u << (textureSlot + 1u))) != 0u;
+}
+
+float4 SampleMaterialTextureLevel(uint textureIndex, float2 uv)
+{
+	return MaterialTextureTable[NonUniformResourceIndex(textureIndex)].SampleLevel(
+	    MaterialTextureSampler,
+	    uv,
+	    RTIndirectSpecularMaterialTextureMip);
+}
+
+bool ResolveHitMaterialTextures(
+    RTIndirectSpecularHitMaterial material,
+    float2 uv,
+    out float4 baseColor,
+    out float roughness,
+    out float metallic,
+    out float3 emissive,
+    out float3 normalTangent)
+{
+	baseColor = material.BaseColor;
+	roughness = material.Roughness;
+	metallic = material.Metallic;
+	emissive = material.EmissiveColor;
+	normalTangent = float3(0.0f, 0.0f, 1.0f);
+
+	uint textureIndex = 0u;
+	if (HasMaterialTexture(material, MaterialTextureSlotNormal))
+	{
+		if (!TryGetMaterialTextureIndex(material, MaterialTextureSlotNormal, textureIndex))
+		{
+			return false;
+		}
+		normalTangent = UnpackMaterialNormal(SampleMaterialTextureLevel(textureIndex, uv).xy);
+	}
+
+	if (HasMaterialTexture(material, MaterialTextureSlotBaseColor))
+	{
+		if (!TryGetMaterialTextureIndex(material, MaterialTextureSlotBaseColor, textureIndex))
+		{
+			return false;
+		}
+		baseColor = SampleMaterialTextureLevel(textureIndex, uv) * material.BaseColor;
+	}
+
+	if (HasMaterialTexture(material, MaterialTextureSlotRoughness))
+	{
+		if (!TryGetMaterialTextureIndex(material, MaterialTextureSlotRoughness, textureIndex))
+		{
+			return false;
+		}
+		roughness = SampleMaterialTextureLevel(textureIndex, uv).r * material.Roughness;
+	}
+
+	if (HasMaterialTexture(material, MaterialTextureSlotMetallic))
+	{
+		if (!TryGetMaterialTextureIndex(material, MaterialTextureSlotMetallic, textureIndex))
+		{
+			return false;
+		}
+		metallic = SampleMaterialTextureLevel(textureIndex, uv).r * material.Metallic;
+	}
+
+	if (HasMaterialTexture(material, MaterialTextureSlotEmissive))
+	{
+		if (!TryGetMaterialTextureIndex(material, MaterialTextureSlotEmissive, textureIndex))
+		{
+			return false;
+		}
+		emissive = SampleMaterialTextureLevel(textureIndex, uv).rgb * material.EmissiveColor;
+	}
+
+	return true;
+}
+
+bool HasInvalidMaterialTextureDescriptor(RTIndirectSpecularHitMaterial material)
+{
+	uint textureIndex = 0u;
+	if (HasMaterialTexture(material, MaterialTextureSlotBaseColor) &&
+	    !TryGetMaterialTextureIndex(material, MaterialTextureSlotBaseColor, textureIndex))
+	{
+		return true;
+	}
+	if (HasMaterialTexture(material, MaterialTextureSlotNormal) &&
+	    !TryGetMaterialTextureIndex(material, MaterialTextureSlotNormal, textureIndex))
+	{
+		return true;
+	}
+	if (HasMaterialTexture(material, MaterialTextureSlotRoughness) &&
+	    !TryGetMaterialTextureIndex(material, MaterialTextureSlotRoughness, textureIndex))
+	{
+		return true;
+	}
+	if (HasMaterialTexture(material, MaterialTextureSlotMetallic) &&
+	    !TryGetMaterialTextureIndex(material, MaterialTextureSlotMetallic, textureIndex))
+	{
+		return true;
+	}
+	if (HasMaterialTexture(material, MaterialTextureSlotEmissive) &&
+	    !TryGetMaterialTextureIndex(material, MaterialTextureSlotEmissive, textureIndex))
+	{
+		return true;
+	}
+	return false;
+}
+
+float3 DebugSampleMaterialTextureInvalidDescriptor(RTIndirectSpecularHitSurface hitSurface)
 {
 	if (!hitSurface.Valid || hitSurface.MaterialSlot >= RTIndirectSpecularHitMaterialCount)
 	{
-		return FallbackReasonColor(hitSurface.FallbackReason);
+		return hitSurface.FallbackReason == RTIndirectSpecularHitFallbackReasonInvalidMaterialTextureDescriptor
+		           ? float3(1.0f, 0.0f, 1.0f)
+		           : FallbackReasonColor(hitSurface.FallbackReason);
 	}
 
 	const RTIndirectSpecularHitMaterial material = RTIndirectSpecularHitMaterials[hitSurface.MaterialSlot];
-	uint textureIndex = 0u;
-	if (!TryGetMaterialTextureIndex(material, MaterialTextureSlotBaseColor, textureIndex))
-	{
-		return float3(1.0f, 0.0f, 1.0f);
-	}
-
-	return MaterialTextureTable[NonUniformResourceIndex(textureIndex)].SampleLevel(MaterialTextureSampler, hitSurface.TexCoord0, 0.0f).rgb;
+	return HasInvalidMaterialTextureDescriptor(material) ? float3(1.0f, 0.0f, 1.0f) : float3(0.0f, 0.8f, 0.2f);
 }
 
 float3 PreviewHdr(float3 value)
@@ -655,7 +836,49 @@ float3 BuildMirrorDebugColor(
 
 	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugMaterialTextureBaseColor)
 	{
-		return DebugSampleMaterialTextureBaseColor(hitSurface);
+		return hitSurface.Valid ? hitSurface.BaseColor : FallbackReasonColor(hitSurface.FallbackReason);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugMaterialTextureRoughnessMetallic)
+	{
+		return hitSurface.Valid ? float3(hitSurface.Roughness, hitSurface.Metallic, 0.0f)
+		                        : FallbackReasonColor(hitSurface.FallbackReason);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugMaterialTextureEmissive)
+	{
+		return hitSurface.Valid ? PreviewHdr(hitSurface.EmissiveColor) : FallbackReasonColor(hitSurface.FallbackReason);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugMaterialTextureMip)
+	{
+		return hitSurface.Valid ? saturate(RTIndirectSpecularMaterialTextureMip / 8.0f).xxx
+		                        : FallbackReasonColor(hitSurface.FallbackReason);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugMaterialTextureInvalidDescriptor)
+	{
+		return DebugSampleMaterialTextureInvalidDescriptor(hitSurface);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugHitTangent)
+	{
+		return hitSurface.Valid ? hitSurface.TangentWorld * 0.5f + 0.5f : FallbackReasonColor(hitSurface.FallbackReason);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugHitBitangent)
+	{
+		return hitSurface.Valid ? hitSurface.BitangentWorld * 0.5f + 0.5f : FallbackReasonColor(hitSurface.FallbackReason);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugHitNormalTangent)
+	{
+		return hitSurface.Valid ? hitSurface.NormalTangent * 0.5f + 0.5f : FallbackReasonColor(hitSurface.FallbackReason);
+	}
+
+	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugHitSampledNormal)
+	{
+		return hitSurface.Valid ? hitSurface.NormalWorld * 0.5f + 0.5f : FallbackReasonColor(hitSurface.FallbackReason);
 	}
 
 	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugFallbackReason)
