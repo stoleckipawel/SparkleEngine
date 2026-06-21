@@ -11,31 +11,12 @@
 #include <cmath>
 #include <utility>
 
-namespace
-{
-	void LogPlaybackDiagnostics(
-	    std::span<const SceneAnimationClipDesc> clips,
-	    std::span<const SceneAnimationPoseSnapshot> activePoses,
-	    std::span<const SceneMorphWeightSnapshot> activeMorphWeights,
-	    std::uint32_t& inOutDiagnosticLogCount)
-	{
-		if (inOutDiagnosticLogCount >= 3u || (activePoses.empty() && activeMorphWeights.empty()))
-		{
-			return;
-		}
-
-		++inOutDiagnosticLogCount;
-		SceneAnimationDiagnostics::LogPlayback(clips, activePoses, activeMorphWeights);
-	}
-}
-
 void SceneAnimations::Clear() noexcept
 {
 	m_clips.clear();
 	m_playbackStates.clear();
 	m_activePoses.clear();
 	m_activeMorphWeights.clear();
-	m_playbackDiagnosticLogCount = 0;
 }
 
 void SceneAnimations::AppendClips(std::vector<SceneAnimationClipDesc>&& clips)
@@ -74,8 +55,6 @@ void SceneAnimations::Update(float deltaSeconds, const SceneSkeletons& skeletons
 		SceneAnimationPoseEvaluator::AppendMatchingPose(clip, playback.playbackTimeSeconds, skeletons, m_activePoses);
 		SceneMorphWeightEvaluator::AppendSnapshots(clip, playback.playbackTimeSeconds, m_activeMorphWeights);
 	}
-
-	LogPlaybackDiagnostics(m_clips, m_activePoses, m_activeMorphWeights, m_playbackDiagnosticLogCount);
 }
 
 SceneAnimationSnapshot SceneAnimations::CaptureSnapshot() const

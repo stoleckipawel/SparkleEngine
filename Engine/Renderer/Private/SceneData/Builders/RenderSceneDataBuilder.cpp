@@ -185,27 +185,8 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 	CountMeshInstanceWorkload(sceneData.meshInstances, sceneData.meshWorkload);
 	CountMeshBatchWorkload(sceneData.meshInstanceBatches, sceneData.meshWorkload);
 
-	static bool loggedFirstMeshBatchSummary = false;
 	static bool loggedMissingMeshBatchWarning = false;
-	if (!loggedFirstMeshBatchSummary && !sceneData.meshInstances.empty())
-	{
-		loggedFirstMeshBatchSummary = true;
-		SPDLOG_LOGGER_INFO(
-		    g_renderSceneDataBuilderLogger,
-		    "RenderSceneDataBuilder: prepared {} renderable mesh instances in {} batches from {} scene mesh instances (staticInstances={}, skinnedInstances={}, staticBatches={}, skinnedBatches={}, jointMatrices={}, rejected={}, missingGpuMesh={}, invalidMaterial={}).",
-		    sceneData.meshInstances.size(),
-		    sceneData.meshInstanceBatches.size(),
-		    sceneSnapshot.meshes.meshInstances.size(),
-		    sceneData.meshWorkload.staticInstanceCount,
-		    sceneData.meshWorkload.skinnedInstanceCount,
-		    sceneData.meshWorkload.staticBatchCount,
-		    sceneData.meshWorkload.skinnedBatchCount,
-		    sceneData.meshWorkload.jointMatrixCount,
-		    batchBuildResult.diagnostics.RejectedCandidateCount,
-		    batchBuildResult.diagnostics.RejectedMissingGpuMeshCount,
-		    batchBuildResult.diagnostics.RejectedInvalidMaterialCount);
-	}
-	else if (!loggedMissingMeshBatchWarning && !sceneSnapshot.meshes.meshInstances.empty() && sceneData.meshInstanceBatches.empty())
+	if (!loggedMissingMeshBatchWarning && !sceneSnapshot.meshes.meshInstances.empty() && sceneData.meshInstanceBatches.empty())
 	{
 		loggedMissingMeshBatchWarning = true;
 		SPDLOG_LOGGER_WARN(

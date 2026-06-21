@@ -6,6 +6,7 @@
 #include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
+#include "RHI/Public/Diagnostics/RhiDiagnostics.h"
 
 static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
 static constexpr std::uint32_t kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes = 4096;
@@ -267,27 +268,13 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 
 		SPDLOG_LOGGER_INFO(
 		    g_d3d12RhiLogger,
-		    "DXR capability: tier={}({}), SupportsPipelineRayTracing={}, SupportsInlineRayQuery={}, maxRecursionDepth={}, "
-		    "maxPayloadBytes={}, maxAttributeBytes={}, shaderIdentifierBytes={}, shaderTableAlign={}, shaderRecordAlign={}, asAlign={}, "
-		    "scratchAlign={}, instanceDescBytes={}, topLevelProvider={}({}), partitionedTlasProvider={} supported={} reason={}",
+		    "DXR capability: tier={}({}) rayTracing={} inlineRayQuery={} topLevelProvider={} partitionedTlasSupported={}",
 		    static_cast<int>(options5.RaytracingTier),
 		    RaytracingTierToString(options5.RaytracingTier),
 		    m_rayTracingCapabilities.SupportsRayTracing,
 		    m_rayTracingCapabilities.SupportsInlineRayQuery,
-		    m_rayTracingCapabilities.MaxTraceRecursionDepth,
-		    m_rayTracingCapabilities.MaxRayPayloadSizeInBytes,
-		    m_rayTracingCapabilities.MaxRayAttributeSizeInBytes,
-		    m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes,
-		    m_rayTracingCapabilities.ShaderTableAlignmentInBytes,
-		    m_rayTracingCapabilities.ShaderTableRecordAlignmentInBytes,
-		    m_rayTracingCapabilities.AccelerationStructureByteAlignment,
-		    m_rayTracingCapabilities.ScratchBufferByteAlignment,
-		    m_rayTracingCapabilities.InstanceDescSizeInBytes,
 		    RhiRayTracingTopLevelProviderToString(m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider),
-		    m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProviderReason,
-		    RhiPartitionedTlasProviderToString(m_rayTracingCapabilities.Groups.PartitionedTlas.Provider),
-		    m_rayTracingCapabilities.Groups.PartitionedTlas.Supported,
-		    m_rayTracingCapabilities.Groups.PartitionedTlas.CapabilityStatusReason);
+		    m_rayTracingCapabilities.Groups.PartitionedTlas.Supported);
 	}
 	else
 	{
@@ -479,7 +466,16 @@ const D3D12GpuMemoryAllocator& D3D12Rhi::GetMemoryAllocator() const noexcept
 
 void D3D12Rhi::CloseCommandList(uint32_t frameInFlightIndex) noexcept
 {
-	CHECK(m_cmdList[frameInFlightIndex]->Close());
+	const HRESULT closeResult = m_cmdList[frameInFlightIndex]->Close();
+	if (FAILED(closeResult))
+	{
+		RhiDiagnosticMessage message;
+		while (TryPopDebugMessage(message))
+		{
+			SPDLOG_LOGGER_ERROR(g_d3d12RhiLogger, "D3D12 debug message before command-list close failure: {}", message.Text);
+		}
+	}
+	CHECK(closeResult);
 }
 
 void D3D12Rhi::ResetCommandAllocator(uint32_t frameInFlightIndex) noexcept

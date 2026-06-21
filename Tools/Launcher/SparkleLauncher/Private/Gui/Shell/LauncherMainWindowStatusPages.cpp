@@ -420,7 +420,7 @@ namespace SparkleLauncher
 
 		const QString executableDetail = findReadiness("Executable ");
 		const QString projectDetail = findReadiness("Project working directory ");
-		const QString cookedMeshesDetail = findReadiness("Cooked scene assets ");
+		const QString cookedMeshesDetail = findReadiness("Cooked scenes and meshes ");
 		const QString cookedTexturesDetail = findReadiness("Cooked textures ");
 		const QString cookedShadersDetail = findReadiness("Cooked shaders ");
 

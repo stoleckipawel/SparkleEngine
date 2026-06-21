@@ -4,14 +4,6 @@
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 
-namespace
-{
-	constexpr const char* BoolToString(bool value) noexcept
-	{
-		return value ? "true" : "false";
-	}
-}  // namespace
-
 bool RayTracingCapabilityReport::CanUseInlineRayQueryShadows() const noexcept
 {
 	return Core.SupportsRayTracing && Core.SupportsInlineRayQuery && AccelerationStructures.HasAccelerationStructureAlignment &&
@@ -57,59 +49,7 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	}
 
 	s_logged = true;
-	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.RayTracing");
-	SPDLOG_LOGGER_INFO(
-	    logger,
-	    "Ray tracing capability summary: backend={} rayTracing={} inlineRayQuery={} asAlignment={} scratchAlignment={} "
-	    "instanceDescSize={} maxRecursionDepth={} maxPayloadBytes={} maxAttributeBytes={} inlineShadowReady={} inlineShadowReason={} "
-	    "topLevelProvider={}({}) partitionedTlasProvider={} supported={} requiresNvidia={} nvidiaDevice={} "
-	    "vulkanNv={} vulkanExtension={} vulkanFeature={} vulkanFunctions={} vulkanDescriptors={} vulkanShaderDeviceAddress={} "
-	    "d3d12Nvapi={} d3d12NvapiHeaders={} d3d12NvapiRuntime={} d3d12DeviceInterface={} d3d12CommandListInterface={} "
-	    "d3d12PublicDxr={} d3d12PublicDxrHeaders={} cpuPackOps={} gpuDrivenOps={} gpuLogicalWrites={} gpuNativePack={} "
-	    "partitionedReason={} materialTextureTableSupported={} materialTextureTablePath={} materialTextureTableCapacity={} "
-	    "materialTextureTableRuntimeSized={} materialTextureBindingModeMask={} "
-	    "materialTextureTableReason={}",
-	    RhiBackendApiToString(report.BackendApi),
-	    BoolToString(report.Core.SupportsRayTracing),
-	    BoolToString(report.Core.SupportsInlineRayQuery),
-	    report.AccelerationStructures.AccelerationStructureByteAlignment,
-	    report.AccelerationStructures.ScratchBufferByteAlignment,
-	    report.AccelerationStructures.InstanceDescSizeInBytes,
-	    report.Core.MaxTraceRecursionDepth,
-	    report.Core.MaxRayPayloadSizeInBytes,
-	    report.Core.MaxRayAttributeSizeInBytes,
-	    BoolToString(report.CanUseInlineRayQueryShadows()),
-	    report.GetInlineRayQueryShadowUnavailableReason(),
-	    RhiRayTracingTopLevelProviderToString(report.TopLevelProvider.SelectedProvider),
-	    report.TopLevelProvider.SelectionReason,
-	    RhiPartitionedTlasProviderToString(report.PartitionedTlas.Provider),
-	    BoolToString(report.PartitionedTlas.Supported),
-	    BoolToString(report.PartitionedTlas.RequiresNvidiaDevice),
-	    BoolToString(report.PartitionedTlas.RunsOnNvidiaDevice),
-	    BoolToString(report.PartitionedTlas.SupportsVulkanNativeProvider),
-	    BoolToString(report.PartitionedTlas.SupportsVulkanExtension),
-	    BoolToString(report.PartitionedTlas.SupportsVulkanFeatureQuery),
-	    BoolToString(report.PartitionedTlas.SupportsVulkanFunctionLoading),
-	    BoolToString(report.PartitionedTlas.SupportsVulkanDescriptorPath),
-	    BoolToString(report.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath),
-	    BoolToString(report.PartitionedTlas.SupportsD3D12NvapiProvider),
-	    BoolToString(report.PartitionedTlas.SupportsD3D12NvapiHeaders),
-	    BoolToString(report.PartitionedTlas.SupportsD3D12NvapiRuntime),
-	    BoolToString(report.PartitionedTlas.SupportsD3D12DeviceInterface),
-	    BoolToString(report.PartitionedTlas.SupportsD3D12CommandListInterface),
-	    BoolToString(report.PartitionedTlas.SupportsD3D12PublicDxrProvider),
-	    BoolToString(report.PartitionedTlas.SupportsD3D12PublicDxrHeaders),
-	    BoolToString(report.PartitionedTlas.SupportsCpuPackedOperations),
-	    BoolToString(report.PartitionedTlas.SupportsGpuDrivenOperations),
-	    BoolToString(report.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites),
-	    BoolToString(report.PartitionedTlas.SupportsGpuNativeOperationPacking),
-	    report.PartitionedTlas.CapabilityStatusReason,
-	    BoolToString(report.MaterialTextureTable.Supported),
-	    MaterialTextureTablePathToString(report.MaterialTextureTable.SelectedPath),
-	    report.MaterialTextureTable.MaxTextureDescriptors,
-	    BoolToString(report.MaterialTextureTable.SupportsRuntimeSizedBindless),
-	    report.MaterialTextureTable.SupportedMaterialBindingModeMask,
-	    report.MaterialTextureTable.StatusReason);
+	static_cast<void>(report);
 }
 
 RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(const RhiCapabilities& capabilities) noexcept

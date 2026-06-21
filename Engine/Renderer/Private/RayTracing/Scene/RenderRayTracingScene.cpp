@@ -43,7 +43,10 @@ RayTracingSceneFramePlan RenderRayTracingScene::PlanFrame(
     const RenderSceneData& sceneData,
     const DirectX::XMFLOAT3& cameraPosition) noexcept
 {
-	return m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->PlanFrame(sceneData, cameraPosition) : RayTracingSceneFramePlan{};
+	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
+	return m_topLevelScenePlanner != nullptr
+	           ? m_topLevelScenePlanner->PlanFrame(sceneData, cameraPosition, m_topLevelStrategyPrefersPartitionedTlas)
+	           : RayTracingSceneFramePlan{};
 }
 
 RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& sceneData) noexcept

@@ -26,7 +26,8 @@ RayTracingTopLevelScenePlanner::~RayTracingTopLevelScenePlanner() noexcept = def
 
 RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(
     const RenderSceneData& sceneData,
-    const DirectX::XMFLOAT3& cameraPosition) noexcept
+    const DirectX::XMFLOAT3& cameraPosition,
+    bool buildPartitionedTlasUpdateStream) noexcept
 {
 	if (m_impl == nullptr)
 	{
@@ -43,7 +44,9 @@ RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(
 	        .MarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get(),
 	        .CameraPosition = cameraPosition,
 	        .ModeChangeDistance = CVarRayTracingPtlasModeChangeDistance.Get()});
-	m_impl->CurrentLogicalUpdateStream = m_impl->LogicalUpdateStream.Build(sceneData, m_impl->CurrentPartitionPlan);
+	m_impl->CurrentLogicalUpdateStream =
+	    buildPartitionedTlasUpdateStream ? m_impl->LogicalUpdateStream.Build(sceneData, m_impl->CurrentPartitionPlan)
+	                                     : RayTracingPtlasLogicalUpdateStreamResult{};
 	m_impl->LastRenderInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 
 	RayTracingSceneFramePlan framePlan{};

@@ -503,11 +503,14 @@ void D3D12RenderCommandList::AliasResource(NativeResourceHandle beforeResource, 
 		return;
 	}
 
+	(void) beforeResource;
+	(void) afterResource;
+
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Aliasing.pResourceBefore = D3D12TypeConversions::ToResource(beforeResource);
-	barrier.Aliasing.pResourceAfter = D3D12TypeConversions::ToResource(afterResource);
+	barrier.Aliasing.pResourceBefore = nullptr;
+	barrier.Aliasing.pResourceAfter = nullptr;
 	m_commandList->ResourceBarrier(1, &barrier);
 }
 

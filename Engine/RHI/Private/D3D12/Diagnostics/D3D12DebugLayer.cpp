@@ -532,14 +532,6 @@ void D3D12DebugLayer::ConfigureInfoQueue(ID3D12Device* device)
 		m_infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, debuggerAttached);
 		m_infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, debuggerAttached);
 		m_infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, debuggerAttached);
-
-		if (!debuggerAttached)
-		{
-			SPDLOG_LOGGER_INFO(
-			    g_d3d12DiagnosticsLogger,
-			    "D3D12 info-queue breakpoints disabled because no debugger is attached; diagnostics will be reported through log "
-			    "collection instead.");
-		}
 	}
 }
 

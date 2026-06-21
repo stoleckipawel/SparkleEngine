@@ -3,6 +3,7 @@
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
+#include "Core/Public/Formatting/HexFormat.h"
 
 #include <D3D12MemAlloc.h>
 
@@ -436,6 +437,23 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateResourc
 	    IID_PPV_ARGS(resource.ReleaseAndGetAddressOf()));
 	if (FAILED(hr) || allocation == nullptr || resource == nullptr)
 	{
+		std::size_t liveAllocationCount = 0;
+		std::size_t liveHeapCount = 0;
+		{
+			std::scoped_lock lock(m_impl->recordsMutex);
+			liveAllocationCount = m_impl->liveRecords.size();
+			liveHeapCount = m_impl->liveHeapRecords.size();
+		}
+		SPDLOG_LOGGER_WARN(
+		    g_d3d12MemoryLogger,
+		    "D3D12 allocation failed: hr={} bytes={} category={} residency={} liveAllocations={} liveHeaps={} name='{}'",
+		    Formatting::FormatPrefixedHexUInt32(static_cast<std::uint32_t>(hr)),
+		    static_cast<std::uint64_t>(resourceDesc.Width),
+		    RhiMemoryCategoryName(category),
+		    RhiMemoryResidencyClassName(residencyClass),
+		    liveAllocationCount,
+		    liveHeapCount,
+		    WideStringToUtf8(std::wstring(debugName).c_str()));
 		if (allocation != nullptr)
 		{
 			allocation->Release();

@@ -50,7 +50,10 @@ class RayTracingTopLevelScenePlanner final
 	RayTracingTopLevelScenePlanner(RayTracingTopLevelScenePlanner&&) = delete;
 	RayTracingTopLevelScenePlanner& operator=(RayTracingTopLevelScenePlanner&&) = delete;
 
-	RayTracingSceneFramePlan PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept;
+	RayTracingSceneFramePlan PlanFrame(
+	    const RenderSceneData& sceneData,
+	    const DirectX::XMFLOAT3& cameraPosition,
+	    bool buildPartitionedTlasUpdateStream) noexcept;
 	const RayTracingPtlasPartitionPlan* GetCurrentPartitionPlan() const noexcept;
 	const RayTracingPtlasLogicalUpdateStreamResult* GetCurrentLogicalUpdateStream() const noexcept;
 	RayTracingClassicTlasBuilder::BuildStats BuildClassicTlas(

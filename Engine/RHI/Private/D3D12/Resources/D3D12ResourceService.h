@@ -104,6 +104,7 @@ class D3D12ResourceService final : public RhiResourceService
 	static RhiOwnedResourceHandle WrapOwnedResource(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept;
 	static RhiOwnedMemoryBlockHandle WrapOwnedMemoryBlock(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
 	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
+	void CollectCrashDiagnosticsOnce() noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
@@ -112,4 +113,5 @@ class D3D12ResourceService final : public RhiResourceService
 	const RhiCapabilities* m_capabilities = nullptr;
 	std::vector<PendingOwnedResourceRelease> m_pendingOwnedResourceReleases;
 	std::vector<PendingOwnedMemoryBlockRelease> m_pendingOwnedMemoryBlockReleases;
+	bool m_crashDiagnosticsCollected = false;
 };

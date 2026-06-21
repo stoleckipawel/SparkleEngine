@@ -17,7 +17,6 @@ FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window*
     m_transientAllocator(
         renderHardwareInterface != nullptr ? std::make_unique<FrameGraphTransientAllocator>(*renderHardwareInterface) : nullptr)
 {
-	SPDLOG_LOGGER_INFO(g_frameGraphLogger, "FrameGraph created");
 }
 
 FrameGraph::~FrameGraph()
@@ -28,7 +27,6 @@ FrameGraph::~FrameGraph()
 	}
 
 	ReleaseExternalResourceViews();
-	SPDLOG_LOGGER_INFO(g_frameGraphLogger, "FrameGraph destroyed");
 }
 
 FrameGraphPlan FrameGraph::Compile()

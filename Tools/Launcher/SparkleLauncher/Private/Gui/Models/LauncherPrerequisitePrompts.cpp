@@ -190,20 +190,16 @@ namespace SparkleLauncher
 			return ReadyDecision();
 		}
 
-		bool executableMissing = false;
-		bool cookedMeshesMissing = false;
-		bool cookedTexturesMissing = false;
-		bool cookedShadersMissing = false;
 		QStringList readiness;
 		for (const std::string& message : plan.ReadinessMessages)
 		{
-			const QString readinessMessage = QString::fromStdString(message);
-			readiness.push_back(readinessMessage);
-			executableMissing = executableMissing || readinessMessage.contains("Executable is missing", Qt::CaseInsensitive);
-			cookedMeshesMissing = cookedMeshesMissing || readinessMessage.contains("Cooked scene assets are missing", Qt::CaseInsensitive);
-			cookedTexturesMissing = cookedTexturesMissing || readinessMessage.contains("Cooked textures are missing", Qt::CaseInsensitive);
-			cookedShadersMissing = cookedShadersMissing || readinessMessage.contains("Cooked shaders are missing", Qt::CaseInsensitive);
+			readiness.push_back(QString::fromStdString(message));
 		}
+
+		const bool executableMissing = !plan.Readiness.ExecutableReady;
+		const bool cookedMeshesMissing = !plan.Readiness.CookedMeshesReady;
+		const bool cookedTexturesMissing = !plan.Readiness.CookedTexturesReady;
+		const bool cookedShadersMissing = !plan.Readiness.CookedShadersReady;
 
 		QString prerequisiteOperationId;
 		QString promptTitle;

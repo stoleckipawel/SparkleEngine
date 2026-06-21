@@ -11,6 +11,10 @@ ConsoleVariable<RendererDiagnosticMarkerVerbosity> CVarRendererDiagnosticMarkerV
     "r.Diagnostics.MarkerVerbosity",
     RendererDiagnosticMarkerVerbosity::FramePass,
     "Renderer diagnostic marker verbosity: 0=off, 1=frame and frame-graph passes, 2=detailed markers.");
+ConsoleVariable<bool> CVarRendererDiagnosticGpuTiming(
+    "r.Diagnostics.GpuTiming",
+    false,
+    "Collect internal GPU timestamp timings from renderer diagnostic scopes. Profiler markers remain controlled by r.Diagnostics.MarkerVerbosity.");
 ConsoleVariable<bool> CVarRayTracingClassicTlasRefit(
     "r.RayTracing.Tlas.Refit",
     true,

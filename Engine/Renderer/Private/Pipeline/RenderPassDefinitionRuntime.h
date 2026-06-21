@@ -41,9 +41,9 @@ class RenderPassDefinitionRuntime final
 			    shaderPackageCache,
 			    runtimeDesc,
 			    storage,
-			    [&definition](GraphicsPipelineStateDesc& pipelineDesc)
+			    [&definition, &rhi](GraphicsPipelineStateDesc& pipelineDesc)
 			    {
-				    ApplyGraphicsDefinition(definition.Graphics, pipelineDesc);
+				    ApplyGraphicsDefinition(rhi, definition.Graphics, pipelineDesc);
 			    },
 			    outErrorMessage);
 		}
@@ -115,7 +115,10 @@ class RenderPassDefinitionRuntime final
 		return true;
 	}
 
-	static void ApplyGraphicsDefinition(const RenderPassGraphicsPipelineDefinition& definition, GraphicsPipelineStateDesc& pipelineDesc) noexcept
+	static void ApplyGraphicsDefinition(
+	    RenderHardwareInterface& rhi,
+	    const RenderPassGraphicsPipelineDefinition& definition,
+	    GraphicsPipelineStateDesc& pipelineDesc) noexcept
 	{
 		pipelineDesc.VertexLayout = definition.VertexLayout;
 		pipelineDesc.RenderWireframe = definition.RenderWireframe;
@@ -125,6 +128,10 @@ class RenderPassDefinitionRuntime final
 		pipelineDesc.StencilTest = definition.StencilTest;
 		pipelineDesc.RenderTargetFormats = definition.RenderTargetFormats;
 		pipelineDesc.RenderTargetCount = definition.RenderTargetCount;
+		if (definition.UsePresentColorFormat && definition.RenderTargetCount > 0)
+		{
+			pipelineDesc.RenderTargetFormats[0] = rhi.GetPresentationService().GetPresentColorFormat();
+		}
 		pipelineDesc.DepthStencilFormat = definition.DepthStencilFormat;
 	}
 };

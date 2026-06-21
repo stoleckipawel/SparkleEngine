@@ -5,6 +5,7 @@
 #include "Meshes/GPUMeshCache.h"
 #include "Camera/RenderCamera.h"
 #include "Level/LevelChangeEvents.h"
+#include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
@@ -17,13 +18,15 @@ SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
     RenderCamera& renderCamera,
-    MaterialCacheManager& materialCache) noexcept :
+    MaterialCacheManager& materialCache,
+    RenderRayTracingScene& rayTracingScene) noexcept :
     m_gameScene(&gameScene),
     m_backendServices(&backendServices),
     m_gpuMeshCache(&gpuMeshCache),
     m_textureManager(&textureManager),
     m_renderCamera(&renderCamera),
-    m_materialCache(&materialCache)
+    m_materialCache(&materialCache),
+    m_rayTracingScene(&rayTracingScene)
 {
 	SubscribeToLevelLifecycleEvents(levelChangeEvents);
 }
@@ -79,6 +82,10 @@ void SceneRenderStateCoordinator::InvalidateSceneScopedRendererState() noexcept
 		m_backendServices->Flush();
 	}
 
+	if (m_rayTracingScene)
+	{
+		m_rayTracingScene->Clear();
+	}
 	if (m_gpuMeshCache)
 	{
 		m_gpuMeshCache->Clear();

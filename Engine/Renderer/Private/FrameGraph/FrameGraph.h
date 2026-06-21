@@ -385,6 +385,10 @@ class FrameGraph
 	    const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
+	void InitializeTransientColorUavFirstUses(
+	    RenderCommandContext& cmd,
+	    const FrameGraphPlan& plan,
+	    const FrameGraphPassNode& passRecord) const noexcept;
 	void RecordUnresolvedBarrierWarning() const noexcept { ++m_lastUnresolvedBarrierWarningCount; }
 	void RecordMissingExecutionBinding() const noexcept { ++m_lastMissingExecutionBindingCount; }
 	void ValidateExecutionBindings(const FrameGraphPlan& plan) const noexcept;

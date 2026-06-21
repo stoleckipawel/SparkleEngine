@@ -7,6 +7,7 @@
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "D3D12/Textures/TextureFactory.h"
+#include "RHI/Public/Diagnostics/RhiDiagnostics.h"
 #include "Resources/Texture.h"
 #include "RHI/Public/Validation/RhiValidation.h"
 
@@ -110,6 +111,7 @@ bool D3D12ResourceService::CreateVertexBuffer(
 	    ownedDebugName);
 	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
 	{
+		CollectCrashDiagnosticsOnce();
 		return false;
 	}
 
@@ -163,6 +165,7 @@ bool D3D12ResourceService::CreateStructuredBuffer(
 	    ownedDebugName.empty() ? L"StructuredBuffer" : ownedDebugName);
 	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
 	{
+		CollectCrashDiagnosticsOnce();
 		return false;
 	}
 
@@ -219,6 +222,7 @@ bool D3D12ResourceService::CreateIndexBuffer(
 	    ownedDebugName);
 	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
 	{
+		CollectCrashDiagnosticsOnce();
 		return false;
 	}
 
@@ -455,4 +459,21 @@ RhiOwnedMemoryBlockHandle D3D12ResourceService::WrapOwnedMemoryBlock(std::unique
 bool D3D12ResourceService::ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept
 {
 	return resource != nullptr && (resource->GetDesc().Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) != 0;
+}
+
+void D3D12ResourceService::CollectCrashDiagnosticsOnce() noexcept
+{
+	if (m_crashDiagnosticsCollected || m_rhi == nullptr || !m_rhi->SupportsCrashDiagnostics())
+	{
+		return;
+	}
+
+	m_crashDiagnosticsCollected = true;
+	m_rhi->CollectCrashDiagnostics();
+
+	RhiDiagnosticMessage message{};
+	while (m_rhi->TryPopDebugMessage(message))
+	{
+		SPDLOG_LOGGER_WARN(Logging::GetOrCreateLogger("RHI.D3D12.Diagnostics"), "{}", message.Text);
+	}
 }

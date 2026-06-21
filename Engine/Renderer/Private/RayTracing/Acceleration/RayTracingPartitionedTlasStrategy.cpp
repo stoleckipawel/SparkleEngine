@@ -585,7 +585,8 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	const std::uint64_t stableInstanceFingerprint =
 	    RayTracingPartitionedTlasStrategyDetails::ResolveStableInstanceFingerprint(sceneData);
 	bool useFullBuild =
-	    !m_partitionedResources.Built || !m_partitionedResources.IncrementalUpdatesAllowed || partitionPlanRequiresFullBuild ||
+	    writerPolicy.SelectedPath == ERhiPartitionedTlasOperationWriterPath::CpuPack || !m_partitionedResources.Built ||
+	    !m_partitionedResources.IncrementalUpdatesAllowed || partitionPlanRequiresFullBuild ||
 	    m_partitionedResources.StableInstanceFingerprint != stableInstanceFingerprint;
 	auto resolveInstanceFlags = [&](const MeshDraw& draw) noexcept {
 		RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;

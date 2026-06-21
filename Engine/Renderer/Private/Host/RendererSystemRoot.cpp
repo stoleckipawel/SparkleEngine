@@ -190,5 +190,6 @@ void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noex
 	    *m_gpuMeshCache,
 	    *m_textureManager,
 	    *m_renderCamera,
-	    *m_materialCacheManager);
+	    *m_materialCacheManager,
+	    *m_renderRayTracingScene);
 }

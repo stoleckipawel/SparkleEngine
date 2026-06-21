@@ -14,8 +14,6 @@
 
 #include <format>
 
-static const auto g_sceneAssetPayloadLoaderLogger = Logging::GetOrCreateLogger("GameFramework.SceneAssets");
-
 namespace Assets
 {
 	bool SceneAssetPayloadLoader::AppendSceneAsset(
@@ -78,23 +76,6 @@ namespace Assets
 
 		SceneAssetPayloadMetadataAppender::AppendSceneMetadata(sceneManifest, sceneAssetPayload);
 		SceneAssetPayloadMetadataAppender::RecordDiagnostics(sceneManifest, sceneAssetPayload);
-
-		SPDLOG_LOGGER_INFO(
-		    g_sceneAssetPayloadLoaderLogger,
-		    "SceneAssetManager: Loaded scene asset '{}' - meshAssetRefs={}, meshInstances={}, instanceGroups={}, materials={}, materialVariants={}, variantMappings={}, cameras={}, lights={}, skeletonRefs={}, loadedSkeletons={}, animationRefs={}, featureFlags=0x{:08X}",
-		    sceneAssetId.value,
-		    sceneManifest.meshAssetReferences.size(),
-		    sceneManifest.instances.size(),
-		    sceneManifest.instanceGroups.size(),
-		    sceneManifest.materialAssetReferences.size(),
-		    sceneManifest.materialVariants.size(),
-		    sceneManifest.materialVariantMappings.size(),
-		    sceneManifest.cameras.size(),
-		    sceneManifest.lights.size(),
-		    sceneManifest.skeletonRefs.size(),
-		    sceneManifest.skeletonRefs.size(),
-		    sceneManifest.animationRefs.size(),
-		    sceneManifest.header.featureFlags);
 
 		materialBaseIndex += static_cast<std::uint32_t>(sceneManifest.materialAssetReferences.size());
 		errorMessage.clear();

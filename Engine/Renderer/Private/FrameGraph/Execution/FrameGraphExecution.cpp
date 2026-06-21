@@ -9,6 +9,7 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <format>
@@ -79,6 +80,7 @@ void FrameGraph::Execute(
 		EmitTransientAliasingBarriers(cmd, passRecord.passName, passRecord.transientAliasingBarriers);
 		graphDiagnostics.InsertPassResourceBarrierMarker(passRecord);
 		EmitCompiledBarriers(cmd, passRecord.passName, passRecord.compiledBarriers);
+		InitializeTransientColorUavFirstUses(cmd, plan, passRecord);
 		PassExecutionDiagnostics passDiagnostics(
 		    frameDiagnostics,
 		    cmd,
@@ -346,4 +348,42 @@ void FrameGraph::CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandl
 	assert(destinationResource);
 	assert(sourceResource);
 	cmd.CopyResource(destinationResource, sourceResource);
+}
+
+void FrameGraph::InitializeTransientColorUavFirstUses(
+    RenderCommandContext& cmd,
+    const FrameGraphPlan& plan,
+    const FrameGraphPassNode& passRecord) const noexcept
+{
+	for (const PassResourceDeclaration& declaration : passRecord.declarations)
+	{
+		if (!declaration.handle.IsValid() || !UsesUnorderedAccess(declaration.usage))
+		{
+			continue;
+		}
+
+		const auto transientIt = std::find_if(
+		    plan.transients.resources.begin(),
+		    plan.transients.resources.end(),
+		    [handle = declaration.handle](const FrameGraphTransientResourcePlan& transientPlan)
+		    {
+			    return transientPlan.handle == handle;
+		    });
+		if (transientIt == plan.transients.resources.end() ||
+		    transientIt->kind != FrameGraphResourceKind::ColorRenderTarget ||
+		    transientIt->lifetime.firstUserPass != passRecord.index)
+		{
+			continue;
+		}
+
+		const NativeResourceHandle resource = ResolveResource(declaration.handle);
+		if (!resource)
+		{
+			continue;
+		}
+
+		cmd.TransitionResource(resource, ResourceState::UnorderedAccess, ResourceState::RenderTarget);
+		ClearRenderTarget(cmd, FrameGraphTextureHandle{declaration.handle});
+		cmd.TransitionResource(resource, ResourceState::RenderTarget, ResourceState::UnorderedAccess);
+	}
 }

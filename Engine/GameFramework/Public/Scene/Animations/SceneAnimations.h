@@ -36,5 +36,4 @@ class SPARKLE_ENGINE_API SceneAnimations final
 	std::vector<PlaybackState> m_playbackStates;
 	std::vector<SceneAnimationPoseSnapshot> m_activePoses;
 	std::vector<SceneMorphWeightSnapshot> m_activeMorphWeights;
-	std::uint32_t m_playbackDiagnosticLogCount = 0;
 };

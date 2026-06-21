@@ -3,8 +3,6 @@
 #include "Device/RenderDeviceServices.h"
 #include "Device/RenderDeviceBackendFactory.h"
 #include "Device/RenderDeviceBackendServices.h"
-#include "Device/RhiCapabilityLogFormatting.h"
-
 #include "Presentation/RhiPresentationDefaults.h"
 #include "Shaders/CookedShaderPackageUtils.h"
 
@@ -22,63 +20,6 @@ static void FailUnsupportedRhiBackend(ERhiBackendApi api) noexcept
 	const std::string message =
 	    std::string("RHI backend '") + RhiBackendApiToString(api) + "' is not available in this RenderDeviceServices build.";
 	Diagnostics::Fail(g_rhiServicesLogger, __FILE__, __LINE__, message);
-}
-
-static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
-{
-	SPDLOG_LOGGER_INFO(
-	    g_rhiServicesLogger,
-	    "RHI capabilities: backend={} shaderFormat={} descriptorModel={} allocator={} present={} upload(buffer={}, texture={}) readback={} "
-	    "timestampQueries={} {} {} {} rayTracing={} inlineRayQuery={} rtLimits(recursion={}, payloadBytes={}, attributeBytes={}, "
-	    "shaderIdBytes={}, tableAlign={}, recordAlign={}, asAlign={}, scratchAlign={}, instanceDescBytes={}) "
-	    "rtProvider(topLevel={} reason={} partitioned={} supported={} requiresNvidia={} nvidiaDevice={} gpuDrivenOps={} "
-	    "gpuLogicalWrites={} gpuNativePack={} partitionedReason={}) "
-	    "meshShaders={} taskShaders={} queues(graphics={}, compute={}, copy={}) "
-	    "limits(descriptorSets={}, shaderResources={}, samplers={}, tableEntries={}, pushConstantsBytes={}) {}",
-	    RhiBackendApiToString(capabilities.BackendApi),
-	    CookedShaderBinaryFormatToString(capabilities.RequiredShaderBinaryFormat),
-	    RhiDescriptorModelToString(capabilities.DescriptorModel),
-	    RhiMemoryAllocatorBackendToString(capabilities.MemoryAllocator),
-	    capabilities.SupportsPresent,
-	    capabilities.UploadReadback.SupportsBufferUpload,
-	    capabilities.UploadReadback.SupportsTextureUpload,
-	    capabilities.UploadReadback.SupportsReadback,
-	    capabilities.SupportsTimestampQueries,
-	    FormatBackendVersionInfo(capabilities.BackendVersion),
-	    FormatBackendDiagnosticsSupport(capabilities.Diagnostics),
-	    FormatBackendMemorySupport(capabilities.MemorySupport),
-	    capabilities.RayTracing.SupportsRayTracing,
-	    capabilities.RayTracing.SupportsInlineRayQuery,
-	    capabilities.RayTracing.MaxTraceRecursionDepth,
-	    capabilities.RayTracing.MaxRayPayloadSizeInBytes,
-	    capabilities.RayTracing.MaxRayAttributeSizeInBytes,
-	    capabilities.RayTracing.ShaderGroupHandleSizeInBytes,
-	    capabilities.RayTracing.ShaderTableAlignmentInBytes,
-	    capabilities.RayTracing.ShaderTableRecordAlignmentInBytes,
-	    capabilities.RayTracing.AccelerationStructureByteAlignment,
-	    capabilities.RayTracing.ScratchBufferByteAlignment,
-	    capabilities.RayTracing.InstanceDescSizeInBytes,
-	    RhiRayTracingTopLevelProviderToString(capabilities.RayTracing.Groups.Provider.SelectedTopLevelProvider),
-	    capabilities.RayTracing.Groups.Provider.SelectedTopLevelProviderReason,
-	    RhiPartitionedTlasProviderToString(capabilities.RayTracing.Groups.PartitionedTlas.Provider),
-	    capabilities.RayTracing.Groups.PartitionedTlas.Supported,
-	    capabilities.RayTracing.Groups.PartitionedTlas.RequiresNvidiaDevice,
-	    capabilities.RayTracing.Groups.PartitionedTlas.RunsOnNvidiaDevice,
-	    capabilities.RayTracing.Groups.PartitionedTlas.SupportsGpuDrivenOperations,
-	    capabilities.RayTracing.Groups.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites,
-	    capabilities.RayTracing.Groups.PartitionedTlas.SupportsGpuNativeOperationPacking,
-	    capabilities.RayTracing.Groups.PartitionedTlas.CapabilityStatusReason,
-	    capabilities.SupportsMeshShaders,
-	    capabilities.SupportsTaskShaders,
-	    capabilities.Queues.SupportsGraphics,
-	    capabilities.Queues.SupportsCompute,
-	    capabilities.Queues.SupportsCopy,
-	    capabilities.BindingLimits.MaxDescriptorSets,
-	    capabilities.BindingLimits.MaxShaderResourceDescriptors,
-	    capabilities.BindingLimits.MaxSamplerDescriptors,
-	    capabilities.BindingLimits.MaxDescriptorTableEntries,
-	    capabilities.BindingLimits.MaxPushConstantBytes,
-	    FormatExternalFeatureInteropCapabilities(capabilities.ExternalFeatureInterop));
 }
 
 static void ValidateRenderDeviceSettings(const RenderDeviceSettings& settings) noexcept
@@ -151,10 +92,6 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 			FailUnsupportedRhiBackend(selection.Api);
 	}
 
-	if (services->m_impl->backend != nullptr)
-	{
-		LogRhiCapabilities(services->m_impl->backend->GetRenderHardwareInterface().GetCapabilities());
-	}
 	return services;
 }
 

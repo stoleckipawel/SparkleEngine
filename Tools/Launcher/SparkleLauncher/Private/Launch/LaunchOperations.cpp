@@ -269,10 +269,14 @@ namespace SparkleLauncher
 		errorCode.clear();
 		const bool projectMarkerExists = std::filesystem::exists(plan.WorkingDirectory / ".sparkle-project", errorCode);
 		errorCode.clear();
-		const std::filesystem::path cookedProjectDirectory = GetCookedProjectDirectory(plan.Request.RepositoryRoot, plan.Request.ProjectId);
 		const bool cookedMeshesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Meshes");
 		const bool cookedTexturesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Textures");
 		const bool cookedShadersReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Shaders");
+		plan.Readiness.ExecutableReady = executableExists;
+		plan.Readiness.ProjectDirectoryReady = projectMarkerExists;
+		plan.Readiness.CookedMeshesReady = cookedMeshesReady;
+		plan.Readiness.CookedTexturesReady = cookedTexturesReady;
+		plan.Readiness.CookedShadersReady = cookedShadersReady;
 		AddReadiness(plan, executableExists ? "Executable is ready." : "Executable is missing; compile the target first: " + plan.TargetName);
 		AddReadiness(plan, projectMarkerExists ? "Project working directory is valid." : "Project working directory is missing or is not a Sparkle project: " + plan.WorkingDirectory.string());
 		AddReadiness(plan, cookedMeshesReady ? "Cooked scenes and meshes are ready." : "Cooked scenes and meshes are missing; run Cook Scenes And Meshes before launching.");

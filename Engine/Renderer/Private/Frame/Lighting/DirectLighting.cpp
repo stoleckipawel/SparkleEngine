@@ -11,14 +11,21 @@
 
 namespace DirectLightingFramePasses
 {
+	bool UsesNoRayQuery(const FrameContext& frame) noexcept
+	{
+		return !frame.rayTracingScene.HasTraceableInstances();
+	}
+
 	bool UsesDescriptorSceneTlas(const FrameContext& frame) noexcept
 	{
-		return frame.rayTracingScene.TlasShaderAccessMode == RayTracingSceneTlasShaderAccessMode::Descriptor;
+		return frame.rayTracingScene.HasTraceableInstances() &&
+		       frame.rayTracingScene.TlasShaderAccessMode == RayTracingSceneTlasShaderAccessMode::Descriptor;
 	}
 
 	bool UsesShaderDeviceAddressSceneTlas(const FrameContext& frame) noexcept
 	{
-		return frame.rayTracingScene.TlasShaderAccessMode == RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress;
+		return frame.rayTracingScene.HasTraceableInstances() &&
+		       frame.rayTracingScene.TlasShaderAccessMode == RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress;
 	}
 }  // namespace DirectLightingFramePasses
 
@@ -28,6 +35,34 @@ void AddDirectLightingPass(
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas)
 {
+	auto& noRayParameters = builder.AllocPassParameters<DirectLightingNoRayQueryPass>();
+	DirectLightingNoRayQueryPass::DeclareResources(builder, lighting, gbuffer, noRayParameters);
+	builder.AddPass(
+	    DirectLightingNoRayQueryPass::PassName,
+	    EFrameGraphPassFlags::Compute,
+	    [&noRayParameters](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
+	    {
+		    if (!DirectLightingFramePasses::UsesNoRayQuery(frame))
+		    {
+			    return;
+		    }
+
+		    ComputeShaderPass<DirectLightingNoRayQueryPass::Parameters>::Setup(
+		        resourceBuilder,
+		        noRayParameters,
+		        DirectLightingNoRayQueryPass::PassName);
+	    },
+	    [&noRayParameters](PassExecutionContext& context)
+	    {
+		    if (!DirectLightingFramePasses::UsesNoRayQuery(context.Frame))
+		    {
+			    return;
+		    }
+
+		    const DirectLightingNoRayQueryPass pass(context.RuntimeServices.GetPassRuntime<DirectLightingNoRayQueryPass>());
+		    pass.Execute(context, noRayParameters);
+	    });
+
 	auto& descriptorParameters = builder.AllocPassParameters<DirectLightingPass>();
 	DirectLightingPass::DeclareResources(builder, lighting, gbuffer, sceneTlas, descriptorParameters);
 	builder.AddPass(

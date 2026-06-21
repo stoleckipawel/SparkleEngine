@@ -3,6 +3,7 @@
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 
 #include "Commands/RenderCommandContext.h"
+#include "Renderer/Public/Debug/RendererCVars.h"
 
 #include <algorithm>
 #include <utility>
@@ -196,7 +197,7 @@ bool FrameExecutionDiagnostics::SupportsTimestampQueries() const noexcept
 
 bool FrameExecutionDiagnostics::IsGpuTimingAvailable() const noexcept
 {
-	return SupportsTimestampQueries();
+	return CVarRendererDiagnosticGpuTiming.Get() && SupportsTimestampQueries();
 }
 
 ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
@@ -214,7 +215,7 @@ ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
 
 ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(RenderCommandContext& commands, std::string_view label) noexcept
 {
-	if (!SupportsTimestampQueries() || label.empty())
+	if (!CVarRendererDiagnosticGpuTiming.Get() || !SupportsTimestampQueries() || label.empty())
 	{
 		return {};
 	}

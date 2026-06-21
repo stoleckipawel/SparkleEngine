@@ -38,6 +38,7 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
     m_systems(&systems)
 {
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
+	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
 	RenderDiagnostics& backendDiagnostics =
 	    m_systems->GetRenderHardwareInterface().GetDiagnostics();
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
@@ -383,6 +384,10 @@ void FramePipeline::RefreshFrameExecution(RenderViewportExtent sceneExtent) noex
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	backend.Flush();
+	for (std::unique_ptr<FrameContext>& frameContext : m_frameContexts)
+	{
+		frameContext.reset();
+	}
 
 	m_frameGraph.reset();
 	InitializeFrameGraph(sceneExtent);
@@ -428,6 +433,7 @@ void FramePipeline::BeginFrame() noexcept
 	}
 
 	backend.BeginFrame();
+	m_frameContexts[m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex()].reset();
 	m_systems->TickDiagnostics(m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex());
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 	frameDiagnostics.ResolveTimings();
@@ -493,19 +499,22 @@ void FramePipeline::RecordFrame() noexcept
 		m_systems->GetTemporalDataBuilder().ResetHistory(temporalResetReason);
 	}
 
-	FrameContext frame = [&]()
+	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[renderHardwareInterface.GetCurrentFrameIndex()];
+	frameSlot = [&]()
 	{
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.BuildFrameContext");
-		return BuildFrameContext(
-		    m_sceneSnapshot,
-		    renderHardwareInterface,
-		    m_systems->GetRenderCamera(),
-		    m_frameGraphSceneExtent,
-		    m_systems->GetRenderSceneDataBuilder(),
-		    m_systems->GetRenderRayTracingScene(),
-		    m_systems->GetPerViewDataBuilder(),
-		    m_systems->GetTemporalDataBuilder());
+		return std::make_unique<FrameContext>(
+		    BuildFrameContext(
+		        m_sceneSnapshot,
+		        renderHardwareInterface,
+		        m_systems->GetRenderCamera(),
+		        m_frameGraphSceneExtent,
+		        m_systems->GetRenderSceneDataBuilder(),
+		        m_systems->GetRenderRayTracingScene(),
+		        m_systems->GetPerViewDataBuilder(),
+		        m_systems->GetTemporalDataBuilder()));
 	}();
+	FrameContext& frame = *frameSlot;
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
 	if (UpscalerSubsystem* upscalerSubsystem = m_systems->GetUpscalerSubsystem())

@@ -160,6 +160,7 @@ void D3D12RenderDeviceServices::BeginFrame() noexcept
 	m_rhi->SetCurrentFrameIndex(frameIndex);
 	m_frameResourceManager->BeginFrame(m_rhi->GetFence().Get(), m_rhi->GetFenceEvent(), frameIndex);
 	m_rhi->WaitForGPU(frameIndex);
+	m_renderHardwareInterface->GetResourceService().DrainCompletedResourceReleases();
 	m_rhi->ResetCommandAllocator(frameIndex);
 	m_rhi->ResetCommandList(frameIndex);
 }

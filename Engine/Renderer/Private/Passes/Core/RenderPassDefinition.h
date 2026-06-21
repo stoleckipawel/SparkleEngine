@@ -19,6 +19,7 @@ struct RenderPassGraphicsPipelineDefinition final
 	RhiStencilTestDesc StencilTest = {};
 	std::array<PixelFormat, 8> RenderTargetFormats = {};
 	std::uint32_t RenderTargetCount = 0;
+	bool UsePresentColorFormat = false;
 	PixelFormat DepthStencilFormat = PixelFormat::Unknown;
 };
 

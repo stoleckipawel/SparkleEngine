@@ -51,6 +51,41 @@ namespace DirectLightingPassDetails
 
 DirectLightingPass::DirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
+DirectLightingNoRayQueryPass::DirectLightingNoRayQueryPass(const ComputePassPipelineRuntime& runtime) noexcept :
+    m_runtime(runtime)
+{
+}
+
+const DirectLightingNoRayQueryPass::ParameterMetadata& DirectLightingNoRayQueryPass::GetParameterMetadata() noexcept
+{
+	static const ParameterMetadata metadata = []
+	{
+		const ParameterMetadata localMetadata = ShaderParameterStructBuilder<Parameters>::BuildMetadata(PassName);
+		const bool valid = ValidateShaderPassLayout(localMetadata.GetLayout(), ShaderPassKind::Compute, PassName);
+		assert(valid);
+		return localMetadata;
+	}();
+
+	return metadata;
+}
+
+const RenderPassDefinition& DirectLightingNoRayQueryPass::GetDefinition() noexcept
+{
+	static const RenderPassDefinition definition{
+	    .PassName = PassName,
+	    .PackageDeclarationName = "DirectLightingNoRayQueryShaderPackage",
+	    .ShaderPackage =
+	        ShaderPackageDefinition{
+	            .PackageId = RendererShaderPackages::DirectLightingNoRayQuery.data(),
+	            .BindingLayoutId = RendererShaderPackages::DirectLightingNoRayQuery.data(),
+	            .ExpectedStages = ShaderStageMask::Compute,
+	            .RequiredFeatures = CookedShaderPackageFeatureFlags::None},
+	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
+	    .BindingLayoutDebugName = L"DirectLightingNoRayQuery_BindingLayout",
+	    .PipelineStateDebugName = L"DirectLightingNoRayQuery_PipelineState"};
+	return definition;
+}
+
 const DirectLightingPass::ParameterMetadata& DirectLightingPass::GetParameterMetadata() noexcept
 {
 	static const ParameterMetadata metadata = []
@@ -120,6 +155,15 @@ const RenderPassDefinition& DirectLightingVulkanAddressPass::GetDefinition() noe
 	return definition;
 }
 
+void DirectLightingNoRayQueryPass::DeclareResources(
+    FrameGraphBuilder& builder,
+    const LightingRenderTargets& lighting,
+    const GBufferRenderTargets& gbuffer,
+    ParameterInstance& parameters)
+{
+	DirectLightingPassDetails::PopulateCommonResources(builder, lighting, gbuffer, parameters);
+}
+
 void DirectLightingPass::DeclareResources(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
@@ -129,6 +173,19 @@ void DirectLightingPass::DeclareResources(
 {
 	DirectLightingPassDetails::PopulateCommonResources(builder, lighting, gbuffer, parameters);
 	parameters->SceneTlas = builder.Read(sceneTlas);
+}
+
+void DirectLightingNoRayQueryPass::SetParameters(
+    ParameterInstance& parameters,
+    const FrameContext& frame,
+    const RenderViewData& viewData,
+    const PassRuntimeServices& passRuntimeServices) const
+{
+	parameters->PerFrame = passRuntimeServices.PerFrame;
+	parameters->PerView = viewData.perViewData;
+	LightingPassBinding::SetParameters(parameters, frame);
+	const bool valid = parameters.Sync();
+	assert(valid);
 }
 
 void DirectLightingVulkanAddressPass::DeclareResources(
@@ -168,6 +225,21 @@ void DirectLightingVulkanAddressPass::SetParameters(
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(passRuntimeServices.RayTracing, hasSceneTlas);
 	const bool valid = parameters.Sync();
 	assert(valid);
+}
+
+void DirectLightingNoRayQueryPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
+{
+	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
+	const ComputeDispatchDesc dispatch = DirectLightingPassDetails::BuildDispatchDesc(context.Frame.mainView);
+	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<DirectLightingNoRayQueryPass>(
+	    context.Resources,
+	    context.Commands,
+	    context.RuntimeServices.HardwareInterface,
+	    m_runtime,
+	    parameters.GetPassParameterSet(),
+	    dispatch,
+	    PassName);
+	assert(dispatched);
 }
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

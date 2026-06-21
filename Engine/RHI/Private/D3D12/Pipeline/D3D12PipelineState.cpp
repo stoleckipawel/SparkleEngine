@@ -179,6 +179,33 @@ namespace
 				return "general";
 		}
 	}
+
+	void LogDiagnosticMessage(const RhiDiagnosticMessage& diagnosticMessage) noexcept
+	{
+		const std::string message = std::format(
+		    "D3D12 diagnostic [{}:{}] {}",
+		    GetDiagnosticSeverityLabel(diagnosticMessage.Severity),
+		    GetDiagnosticCategoryLabel(diagnosticMessage.Category),
+		    diagnosticMessage.Text);
+
+		switch (diagnosticMessage.Severity)
+		{
+			case ERhiDiagnosticMessageSeverity::Fatal:
+			case ERhiDiagnosticMessageSeverity::Error:
+				SPDLOG_LOGGER_ERROR(g_pipelineStateLogger, "{}", message);
+				break;
+			case ERhiDiagnosticMessageSeverity::Warning:
+				SPDLOG_LOGGER_WARN(g_pipelineStateLogger, "{}", message);
+				break;
+			case ERhiDiagnosticMessageSeverity::Info:
+				SPDLOG_LOGGER_INFO(g_pipelineStateLogger, "{}", message);
+				break;
+			case ERhiDiagnosticMessageSeverity::Verbose:
+			default:
+				SPDLOG_LOGGER_DEBUG(g_pipelineStateLogger, "{}", message);
+				break;
+		}
+	}
 }
 
 void D3D12PipelineState::SetRasterizerState(
@@ -345,12 +372,7 @@ void D3D12PipelineState::HandlePsoCreateFailure(HRESULT hr) const noexcept
 	RhiDiagnosticMessage diagnosticMessage{};
 	while (m_rhi.TryPopDebugMessage(diagnosticMessage))
 	{
-		SPDLOG_LOGGER_ERROR(
-		    g_pipelineStateLogger,
-		    "D3D12 diagnostic [{}:{}] {}",
-		    GetDiagnosticSeverityLabel(diagnosticMessage.Severity),
-		    GetDiagnosticCategoryLabel(diagnosticMessage.Category),
-		    diagnosticMessage.Text);
+		LogDiagnosticMessage(diagnosticMessage);
 	}
 
 	char buf[256];

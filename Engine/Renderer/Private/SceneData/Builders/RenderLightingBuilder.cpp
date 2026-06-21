@@ -7,8 +7,6 @@
 
 #include <cmath>
 
-static const auto g_renderLightingBuilderLogger = Logging::GetOrCreateLogger("Renderer.SceneData");
-
 namespace RenderLightingBuilder
 {
 	void Build(const LightingSnapshot& lightingSnapshot, RenderSceneData& sceneData) noexcept
@@ -58,17 +56,5 @@ namespace RenderLightingBuilder
 			sceneData.spotLights.push_back(renderLight);
 		}
 
-		static bool loggedFirstLightingSummary = false;
-		if (!loggedFirstLightingSummary &&
-		    (!sceneData.directionalLights.empty() || !sceneData.pointLights.empty() || !sceneData.spotLights.empty()))
-		{
-			loggedFirstLightingSummary = true;
-			SPDLOG_LOGGER_INFO(
-			    g_renderLightingBuilderLogger,
-			    "RenderLightingBuilder: prepared scene lighting (directionalLights={}, pointLights={}, spotLights={}).",
-			    sceneData.directionalLights.size(),
-			    sceneData.pointLights.size(),
-			    sceneData.spotLights.size());
-		}
 	}
 }

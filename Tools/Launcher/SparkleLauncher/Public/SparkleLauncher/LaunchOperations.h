@@ -62,6 +62,15 @@ namespace SparkleLauncher
 		std::filesystem::path LogPath;
 	};
 
+	struct LaunchReadinessState
+	{
+		bool ExecutableReady = false;
+		bool ProjectDirectoryReady = false;
+		bool CookedMeshesReady = false;
+		bool CookedTexturesReady = false;
+		bool CookedShadersReady = false;
+	};
+
 	struct LaunchOperationPlan
 	{
 		OperationRecord Operation;
@@ -76,6 +85,7 @@ namespace SparkleLauncher
 		std::vector<LaunchOperationStep> Steps;
 		std::vector<std::string> PlannedEffects;
 		std::vector<std::string> ReadinessMessages;
+		LaunchReadinessState Readiness;
 		bool CanRun = false;
 	};
 

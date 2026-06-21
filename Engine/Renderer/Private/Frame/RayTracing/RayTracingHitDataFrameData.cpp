@@ -374,26 +374,6 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 		return {};
 	}
 
-	static bool loggedFirstHitData = false;
-	if (!loggedFirstHitData)
-	{
-		loggedFirstHitData = true;
-		SPDLOG_LOGGER_INFO(
-		    g_rayTracingHitDataLogger,
-		    "Ray tracing hit-data ready: validInstances={} totalInstances={} uniqueMeshes={} vertices={} indices={} materials={} skippedSkinned={} skippedUnsupportedAlpha={} skippedMissingHitData={} skippedInvalidMaterial={} abiVersion={}.",
-		    validInstanceCount,
-		    sceneData.meshInstances.size(),
-		    meshOffsets.size(),
-		    vertices.size(),
-		    indices.size(),
-		    materials.size(),
-		    skippedSkinnedInstanceCount,
-		    skippedUnsupportedAlphaCount,
-		    skippedMissingHitDataCount,
-		    skippedInvalidMaterialCount,
-		    RayTracingHitData::AbiVersion);
-	}
-
 	return frameData;
 }
 

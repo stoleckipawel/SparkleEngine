@@ -18,6 +18,7 @@
 #include <vector>
 
 class FrameExecutionDiagnostics;
+struct FrameContext;
 class FrameGraph;
 class RendererSystemRoot;
 struct ResolvedGpuTiming;
@@ -81,6 +82,7 @@ class FramePipeline final
 	std::unique_ptr<FrameGraph> m_frameGraph;
 	PerFrameDataBuilder m_perFrameDataBuilder;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
+	std::vector<std::unique_ptr<FrameContext>> m_frameContexts;
 	RenderViewportExtent m_frameGraphSceneExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};

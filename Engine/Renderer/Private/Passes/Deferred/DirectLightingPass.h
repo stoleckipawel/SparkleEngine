@@ -60,6 +60,42 @@ struct DirectLightingPassParameters
 	}
 };
 
+struct DirectLightingNoRayQueryPassParameters
+{
+	ShaderRWTexture2D<void> DirectDiffuse;
+	ShaderRWTexture2D<void> DirectSpecular;
+	ShaderRWTexture2D<void> DirectSubsurface;
+	ShaderTexture2D<void> GBufferBaseColor;
+	ShaderTexture2D<void> GBufferNormal;
+	ShaderTexture2D<void> GBufferMaterial;
+	ShaderTexture2D<void> GBufferSubsurface;
+	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderUniform<PerFrameConstantBufferData> PerFrame;
+	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<ViewLightingData> ViewLighting;
+	ShaderBufferSRV DirectionalLights;
+	ShaderBufferSRV PointLights;
+	ShaderBufferSRV SpotLights;
+
+	static void Describe(ShaderParameterStructBuilder<DirectLightingNoRayQueryPassParameters>& builder)
+	{
+		builder.RWTexture("DirectDiffuse", &DirectLightingNoRayQueryPassParameters::DirectDiffuse, ShaderStageVisibility::Compute);
+		builder.RWTexture("DirectSpecular", &DirectLightingNoRayQueryPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
+		builder.RWTexture("DirectSubsurface", &DirectLightingNoRayQueryPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferBaseColor", &DirectLightingNoRayQueryPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferNormal", &DirectLightingNoRayQueryPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferMaterial", &DirectLightingNoRayQueryPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferSubsurface", &DirectLightingNoRayQueryPassParameters::GBufferSubsurface, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferDeviceZ", &DirectLightingNoRayQueryPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.Uniform("PerFrame", &DirectLightingNoRayQueryPassParameters::PerFrame, ShaderStageVisibility::Compute);
+		builder.Uniform("PerView", &DirectLightingNoRayQueryPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewLighting", &DirectLightingNoRayQueryPassParameters::ViewLighting, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("DirectionalLights", &DirectLightingNoRayQueryPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("PointLights", &DirectLightingNoRayQueryPassParameters::PointLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("SpotLights", &DirectLightingNoRayQueryPassParameters::SpotLights, ShaderStageVisibility::Compute);
+	}
+};
+
 struct DirectLightingVulkanAddressPassParameters
 {
 	ShaderRWTexture2D<void> DirectDiffuse;
@@ -123,6 +159,38 @@ struct DirectLightingVulkanAddressPassParameters
 		builder.ReadBuffer("PointLights", &DirectLightingVulkanAddressPassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &DirectLightingVulkanAddressPassParameters::SpotLights, ShaderStageVisibility::Compute);
 	}
+};
+
+class DirectLightingNoRayQueryPass final
+{
+  public:
+	static constexpr const char* PassName = "DirectLightingNoRayQuery";
+	static constexpr std::uint32_t ThreadGroupSizeX = 8;
+	static constexpr std::uint32_t ThreadGroupSizeY = 8;
+	using Parameters = DirectLightingNoRayQueryPassParameters;
+	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
+	using ParameterInstance = TypedPassParameterInstance<Parameters>;
+	using PipelineRuntime = ComputePassPipelineRuntime;
+
+	explicit DirectLightingNoRayQueryPass(const ComputePassPipelineRuntime& runtime) noexcept;
+
+	static const ParameterMetadata& GetParameterMetadata() noexcept;
+	static const RenderPassDefinition& GetDefinition() noexcept;
+	static void DeclareResources(
+	    FrameGraphBuilder& builder,
+	    const LightingRenderTargets& lighting,
+	    const GBufferRenderTargets& gbuffer,
+	    ParameterInstance& parameters);
+	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
+
+  private:
+	void SetParameters(
+	    ParameterInstance& parameters,
+	    const FrameContext& frame,
+	    const RenderViewData& viewData,
+	    const PassRuntimeServices& passRuntimeServices) const;
+
+	const ComputePassPipelineRuntime& m_runtime;
 };
 
 class DirectLightingPass final

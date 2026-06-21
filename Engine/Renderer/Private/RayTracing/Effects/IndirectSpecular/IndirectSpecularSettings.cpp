@@ -30,16 +30,6 @@ void LogIndirectSpecularSettingsOnce(
 
 	s_logged = true;
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.IndirectSpecular");
-	SPDLOG_LOGGER_INFO(
-	    logger,
-	    "Indirect specular settings: enabled={} sampleMode={} debugMode={} materialBindingMode={} normalBias={} maxDistance={} "
-	    "requiresInlineRayQuery=true requiresDescriptorTlas=true",
-	    settings.Enabled ? "true" : "false",
-	    static_cast<std::uint32_t>(settings.SampleMode),
-	    static_cast<std::uint32_t>(settings.DebugMode),
-	    MaterialBindingModeToString(settings.MaterialMode),
-	    settings.NormalBias,
-	    settings.MaxDistance);
 
 	if (settings.Enabled && !capabilities.CanUseInlineRayQueryShadows())
 	{

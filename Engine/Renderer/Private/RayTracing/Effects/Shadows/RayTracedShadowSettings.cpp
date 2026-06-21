@@ -27,18 +27,6 @@ void LogRayTracedShadowSettingsOnce(
 
 	s_logged = true;
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.RayTracing");
-	SPDLOG_LOGGER_INFO(
-	    logger,
-	    "Ray traced shadow settings: enabled={} quality={} denoiser={} normalBias={} maxDistance={} raysPerPixel={} diagnostics={} "
-	    "requiresTlas=true requiresDenoiser={}",
-	    settings.Enabled ? "true" : "false",
-	    RayTracedShadowQualityModeToString(settings.QualityMode),
-	    RayTracedShadowDenoiserModeToString(settings.DenoiserMode),
-	    settings.NormalBias,
-	    settings.MaxDistance,
-	    RayTracedShadowSettings::RaysPerPixel,
-	    settings.DiagnosticsEnabled ? "true" : "false",
-	    settings.RequiresDenoiser() ? "true" : "false");
 
 	if (!capabilities.CanUseInlineRayQueryShadows())
 	{

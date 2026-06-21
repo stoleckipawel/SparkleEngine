@@ -9,6 +9,7 @@ class LevelChangeEvents;
 class MaterialCacheManager;
 class RenderCamera;
 class RenderDeviceServices;
+class RenderRayTracingScene;
 class GameScene;
 class TextureManager;
 
@@ -22,7 +23,8 @@ class SceneRenderStateCoordinator final
 	    GPUMeshCache& gpuMeshCache,
 	    TextureManager& textureManager,
 	    RenderCamera& renderCamera,
-	    MaterialCacheManager& materialCache) noexcept;
+	    MaterialCacheManager& materialCache,
+	    RenderRayTracingScene& rayTracingScene) noexcept;
 	~SceneRenderStateCoordinator() noexcept = default;
 
 	SceneRenderStateCoordinator(const SceneRenderStateCoordinator&) = delete;
@@ -46,6 +48,7 @@ class SceneRenderStateCoordinator final
 	TextureManager* m_textureManager = nullptr;
 	RenderCamera* m_renderCamera = nullptr;
 	MaterialCacheManager* m_materialCache = nullptr;
+	RenderRayTracingScene* m_rayTracingScene = nullptr;
 	ScopedEventHandle m_levelWillUnloadHandle;
 	ScopedEventHandle m_levelChangedHandle;
 	bool m_temporalHistoryResetRequested = false;

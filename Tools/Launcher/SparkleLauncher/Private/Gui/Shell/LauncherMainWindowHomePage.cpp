@@ -107,8 +107,10 @@ namespace SparkleLauncher
 
 		const LaunchOperationPlan editorPlan = planLaunch("project.open.editor");
 		const LaunchOperationPlan runtimePlan = planLaunch("project.open.runtime");
-		const bool editorExecutableMissing = ReadinessContains(editorPlan.ReadinessMessages, "Executable is missing");
-		const bool runtimeExecutableMissing = ReadinessContains(runtimePlan.ReadinessMessages, "Executable is missing");
+		const bool editorExecutableMissing = !editorPlan.Readiness.ExecutableReady;
+		const bool runtimeExecutableMissing = !runtimePlan.Readiness.ExecutableReady;
+		const bool editorCanBuild = !editorPlan.CanRun && editorExecutableMissing;
+		const bool runtimeCanBuild = !runtimePlan.CanRun && runtimeExecutableMissing;
 		const SourceDependencyInventoryStatus dependencyStatus = InspectSourceDependencyCache(dependencyCachePath);
 		QWidget* quickStartBody = new QWidget(this);
 		quickStartBody->setObjectName("QuickStartBody");
@@ -149,30 +151,32 @@ namespace SparkleLauncher
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
 		const QString editorDetail = editorPlan.CanRun ?
 		    QStringLiteral("Launch the selected project editor from %1.").arg(launchProvenance) :
-		    "Editor output is not ready yet. Build the editor target to unlock this launch path.";
-		const QString editorCardOperationId = editorPlan.CanRun ? "project.open.editor" : "project.build.editor";
+		    (editorExecutableMissing ? "Editor output is not ready yet. Build the editor target to unlock this launch path." :
+		                               "Editor output exists. Resolve the remaining cooked-content prerequisites to launch.");
+		const QString editorCardOperationId = editorCanBuild ? "project.build.editor" : "project.open.editor";
 		libraryGrid->AddCard(CreateHomeCapabilityCard(
 		    m_repositoryRoot,
 		    "Editor",
 		    editorStatus,
 		    editorDetail,
 		    editorPlan.CanRun ? "ok" : "warning",
-		    CreateCommandActionButton(editorCardOperationId, editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun),
+		    CreateCommandActionButton(editorCardOperationId, editorPlan.CanRun ? "Open Editor" : (editorCanBuild ? "Build Editor" : "Resolve"), false, editorPlan.CanRun || !editorCanBuild),
 		    "library",
 		    "showcase-editor.png",
 		    this));
 		const QString runtimeStatus = runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked");
 		const QString runtimeDetail = runtimePlan.CanRun ?
 		    QStringLiteral("Run the selected project runtime from %1.").arg(launchProvenance) :
-		    "Runtime output is not ready yet. Build the runtime target to unlock the standalone path.";
-		const QString runtimeCardOperationId = runtimePlan.CanRun ? "project.open.runtime" : "project.build.runtime";
+		    (runtimeExecutableMissing ? "Runtime output is not ready yet. Build the runtime target to unlock the standalone path." :
+		                                "Runtime output exists. Resolve the remaining cooked-content prerequisites to launch.");
+		const QString runtimeCardOperationId = runtimeCanBuild ? "project.build.runtime" : "project.open.runtime";
 		libraryGrid->AddCard(CreateHomeCapabilityCard(
 		    m_repositoryRoot,
 		    "Runtime",
 		    runtimeStatus,
 		    runtimeDetail,
 		    runtimePlan.CanRun ? "ok" : "warning",
-		    CreateCommandActionButton(runtimeCardOperationId, runtimePlan.CanRun ? "Open Runtime" : "Build Runtime", false, runtimePlan.CanRun),
+		    CreateCommandActionButton(runtimeCardOperationId, runtimePlan.CanRun ? "Open Runtime" : (runtimeCanBuild ? "Build Runtime" : "Resolve"), false, runtimePlan.CanRun || !runtimeCanBuild),
 		    "library",
 		    "showcase-runtime.png",
 		    this));

@@ -7,6 +7,16 @@
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Deferred/IndirectSpecularPass.h"
 #include "Passes/Core/ShaderPass.h"
+#include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
+
+namespace
+{
+	bool CanUseDescriptorSceneTlas(const FrameContext& frame) noexcept
+	{
+		return frame.rayTracingScene.HasBoundTlas() &&
+		       frame.rayTracingScene.TlasShaderAccessMode == RayTracingSceneTlasShaderAccessMode::Descriptor;
+	}
+}
 
 void AddIndirectSpecularPass(
     FrameGraphBuilder& builder,
@@ -19,8 +29,13 @@ void AddIndirectSpecularPass(
 	builder.AddPass(
 	    IndirectSpecularPass::PassName,
 	    EFrameGraphPassFlags::Compute,
-	    [&parameters](PassResourceBuilder& resourceBuilder, const FrameContext&)
+	    [&parameters](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
 	    {
+		    if (!CanUseDescriptorSceneTlas(frame))
+		    {
+			    return;
+		    }
+
 		    ComputeShaderPass<IndirectSpecularPass::Parameters>::Setup(
 		        resourceBuilder,
 		        parameters,
@@ -28,6 +43,11 @@ void AddIndirectSpecularPass(
 	    },
 	    [&parameters](PassExecutionContext& context)
 	    {
+		    if (!CanUseDescriptorSceneTlas(context.Frame))
+		    {
+			    return;
+		    }
+
 		    const IndirectSpecularPass pass(context.RuntimeServices.GetPassRuntime<IndirectSpecularPass>());
 		    pass.Execute(context, parameters);
 	    });

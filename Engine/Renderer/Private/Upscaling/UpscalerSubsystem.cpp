@@ -6,14 +6,6 @@
 
 #include <format>
 
-namespace
-{
-	constexpr const char* BoolToString(bool value) noexcept
-	{
-		return value ? "true" : "false";
-	}
-}
-
 UpscalerSubsystem::~UpscalerSubsystem() noexcept
 {
 	Shutdown();
@@ -66,31 +58,6 @@ void UpscalerSubsystem::Initialize(
 	m_frameFallbackProvider = CreateFallbackProvider();
 	m_frameFallbackProvider->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
 	m_shutdown = false;
-	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.Upscaling");
-	SPDLOG_LOGGER_INFO(
-	    logger,
-	    "Upscaler provider: requested={} active={} category={} capabilityState={} failureDomain={} canEvaluate={} externalSdk={} "
-	    "resourceContract='{}' runtimeVersion='{}' runtimeState='{}' qualityMode='{}' featureMatrix='{}' renderExtent={}x{} "
-	    "outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
-	    UpscalerProviderKindToString(m_settings.RequestedProvider),
-	    m_activeProvider->GetName(),
-	    RendererProviderCategoryToString(m_diagnostics.Category),
-	    RendererProviderCapabilityStateToString(m_diagnostics.CapabilityState),
-	    UpscalerProviderFailureDomainToString(m_diagnostics.FailureDomain),
-	    BoolToString(m_diagnostics.CanEvaluate),
-	    BoolToString(m_diagnostics.UsesExternalSdk),
-	    m_diagnostics.ResourceContractSummary,
-	    m_diagnostics.ExternalRuntimeVersion,
-	    m_diagnostics.RuntimeState,
-	    m_diagnostics.SelectedQualityMode,
-	    m_diagnostics.FeatureMatrixSummary,
-	    m_diagnostics.RenderExtent.Width,
-	    m_diagnostics.RenderExtent.Height,
-	    m_diagnostics.OutputExtent.Width,
-	    m_diagnostics.OutputExtent.Height,
-	    BoolToString(m_diagnostics.ResetRequested),
-	    m_diagnostics.ResetReason,
-	    m_diagnostics.Reason);
 }
 
 void UpscalerSubsystem::SetupFrame(const UpscalerInputContract& inputContract)

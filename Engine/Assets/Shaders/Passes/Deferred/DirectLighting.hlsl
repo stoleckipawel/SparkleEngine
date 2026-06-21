@@ -1,7 +1,11 @@
 #include "Resources/ConstantBuffers.hlsli"
 #include "Passes/Deferred/DirectLightingCommon.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
+#if defined(SPARKLE_DIRECT_LIGHTING_NO_RAY_QUERY)
+#include "Passes/Deferred/RayTracedShadowSignals.hlsli"
+#else
 #include "Passes/Deferred/RayTracedShadows.hlsli"
+#endif
 
 RWTexture2D<float4> DirectDiffuseTexture;
 RWTexture2D<float4> DirectSpecularTexture;
@@ -42,6 +46,9 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 	[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
 		const float3 lightDirection = DirectLighting::GetDirectionalLightDirection(lightIndex);
+#if defined(SPARKLE_DIRECT_LIGHTING_NO_RAY_QUERY)
+		const ShadowVisibilitySignal directionalShadow = RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
+#else
 		const ShadowVisibilitySignal directionalShadow = RayTracedShadows::TraceDirectionalShadowSignal(
 		    positionWorld,
 		    gBuffer.NormalWorld,
@@ -50,6 +57,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    dispatchThreadId.xy,
 		    lightIndex,
 		    DirectionalLights[lightIndex].CastShadow != 0u);
+#endif
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
@@ -71,6 +79,9 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 
 	[loop] for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
 	{
+#if defined(SPARKLE_DIRECT_LIGHTING_NO_RAY_QUERY)
+		const ShadowVisibilitySignal pointShadow = RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
+#else
 		const ShadowVisibilitySignal pointShadow = RayTracedShadows::TracePointShadowSignal(
 		    positionWorld,
 		    gBuffer.NormalWorld,
@@ -80,6 +91,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    dispatchThreadId.xy,
 		    lightIndex,
 		    PointLights[lightIndex].CastShadow != 0u);
+#endif
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
@@ -102,6 +114,9 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 
 	[loop] for (uint lightIndex = 0; lightIndex < spotLightCount; ++lightIndex)
 	{
+#if defined(SPARKLE_DIRECT_LIGHTING_NO_RAY_QUERY)
+		const ShadowVisibilitySignal spotShadow = RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
+#else
 		const ShadowVisibilitySignal spotShadow = RayTracedShadows::TraceSpotShadowSignal(
 		    positionWorld,
 		    gBuffer.NormalWorld,
@@ -113,6 +128,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    dispatchThreadId.xy,
 		    lightIndex,
 		    SpotLights[lightIndex].CastShadow != 0u);
+#endif
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
