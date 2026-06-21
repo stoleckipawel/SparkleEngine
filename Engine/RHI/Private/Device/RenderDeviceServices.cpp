@@ -19,7 +19,8 @@ static std::shared_ptr<spdlog::logger> g_rhiServicesLogger = Logging::GetOrCreat
 
 static void FailUnsupportedRhiBackend(ERhiBackendApi api) noexcept
 {
-	const std::string message = std::string("RHI backend '") + RhiBackendApiToString(api) + "' is not implemented by RenderDeviceServices yet.";
+	const std::string message =
+	    std::string("RHI backend '") + RhiBackendApiToString(api) + "' is not available in this RenderDeviceServices build.";
 	Diagnostics::Fail(g_rhiServicesLogger, __FILE__, __LINE__, message);
 }
 

@@ -194,6 +194,11 @@ bool FrameExecutionDiagnostics::SupportsTimestampQueries() const noexcept
 	return m_timingDiagnostics != nullptr && m_timingDiagnostics->SupportsTimestampQueries();
 }
 
+bool FrameExecutionDiagnostics::IsGpuTimingAvailable() const noexcept
+{
+	return SupportsTimestampQueries();
+}
+
 ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
     RenderCommandContext& commands,
     std::string_view label,
@@ -226,19 +231,6 @@ ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(RenderCommandContext& comma
 	return ScopedGpuTimer(*this, commands, std::string(label), beginQuery, endQuery);
 }
 
-ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
-    RenderCommandContext& commands,
-    const Diagnostics::DiagnosticName& name,
-    RhiDiagnosticLabelColor color) noexcept
-{
-	return BeginGpuEvent(commands, name.GetCanonicalName(), color);
-}
-
-ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(RenderCommandContext& commands, const Diagnostics::DiagnosticName& name) noexcept
-{
-	return BeginTimer(commands, name.GetCanonicalName());
-}
-
 ScopedGpuScope FrameExecutionDiagnostics::BeginGpuScope(
     RenderCommandContext& commands,
     std::string_view label,
@@ -264,14 +256,6 @@ void FrameExecutionDiagnostics::InsertGpuMarker(RenderCommandContext& commands, 
 	}
 
 	commands.InsertDiagnosticMarker(label, color);
-}
-
-void FrameExecutionDiagnostics::InsertGpuMarker(
-    RenderCommandContext& commands,
-    const Diagnostics::DiagnosticName& name,
-    RhiDiagnosticLabelColor color) const noexcept
-{
-	InsertGpuMarker(commands, name.GetCanonicalName(), color);
 }
 
 void FrameExecutionDiagnostics::ResolveTimings() noexcept

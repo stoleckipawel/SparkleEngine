@@ -256,7 +256,7 @@ RendererFrameTimingDiagnosticsSnapshot FramePipeline::CaptureFrameTimingDiagnost
 	const FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 	RendererFrameTimingDiagnosticsSnapshot snapshot;
 	snapshot.GpuTimingStatus =
-	    frameDiagnostics.SupportsTimestampQueries() ? ERendererDiagnosticStatus::Available : ERendererDiagnosticStatus::Unsupported;
+	    frameDiagnostics.IsGpuTimingAvailable() ? ERendererDiagnosticStatus::Available : ERendererDiagnosticStatus::Unsupported;
 	const std::vector<ResolvedGpuTiming>& resolvedTimings = frameDiagnostics.GetResolvedTimings();
 	snapshot.GpuTimings.reserve(resolvedTimings.size());
 	for (const ResolvedGpuTiming& resolvedTiming : resolvedTimings)

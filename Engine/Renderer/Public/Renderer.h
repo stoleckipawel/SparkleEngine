@@ -6,11 +6,11 @@
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Diagnostics/RendererSmokeDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
+#include "RHI/Public/Capture/RhiCaptureService.h"
+#include "RHI/Public/Commands/RhiCommandSubmissionService.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
-#include "../../RHI/Public/Capture/RhiCaptureService.h"
-#include "../../RHI/Public/Commands/RhiCommandSubmissionService.h"
-#include "../../RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cstdint>
 #include <memory>
