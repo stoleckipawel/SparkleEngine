@@ -22,6 +22,78 @@ namespace
 		std::uint32_t IndexCount = 0u;
 	};
 
+	std::uint32_t BuildHitMaterialFlags(const MaterialData& material) noexcept
+	{
+		std::uint32_t flags = 0u;
+		if (material.doubleSided)
+		{
+			flags |= RTIndirectSpecularHitMaterialFlag_DoubleSided;
+		}
+		if (material.alphaMode == 0u)
+		{
+			flags |= RTIndirectSpecularHitMaterialFlag_Opaque;
+		}
+		else if (material.alphaMode == 1u)
+		{
+			flags |= RTIndirectSpecularHitMaterialFlag_AlphaTested;
+		}
+		else if (material.alphaMode == 2u)
+		{
+			flags |= RTIndirectSpecularHitMaterialFlag_AlphaBlended;
+		}
+		if (material.textureFlags != 0u)
+		{
+			flags |= RTIndirectSpecularHitMaterialFlag_Textured;
+		}
+		return flags;
+	}
+
+	std::uint32_t BuildHitGeometryFlags(const MeshDraw& draw, const MaterialData* material) noexcept
+	{
+		std::uint32_t flags = 0u;
+		if (draw.Geometry.MeshKind == RenderMeshKind::Skeletal)
+		{
+			flags |= RTIndirectSpecularHitGeometryFlag_SkinnedMesh;
+		}
+		else
+		{
+			flags |= RTIndirectSpecularHitGeometryFlag_StaticMesh;
+		}
+		if (material != nullptr)
+		{
+			if (material->alphaMode == 1u)
+			{
+				flags |= RTIndirectSpecularHitGeometryFlag_AlphaTested;
+			}
+			else if (material->alphaMode == 2u)
+			{
+				flags |= RTIndirectSpecularHitGeometryFlag_AlphaBlended;
+			}
+			if (material->textureFlags != 0u)
+			{
+				flags |= RTIndirectSpecularHitGeometryFlag_TexturedMaterial;
+			}
+			if (material->doubleSided)
+			{
+				flags |= RTIndirectSpecularHitGeometryFlag_DoubleSided;
+			}
+		}
+		return flags;
+	}
+
+	RTIndirectSpecularHitInstance BuildInvalidHitInstance(
+	    const MeshDraw& draw,
+	    const MaterialData* material,
+	    std::uint32_t fallbackReason) noexcept
+	{
+		return RTIndirectSpecularHitInstance{
+		    .MaterialSlot = draw.Material.Slot,
+		    .GeometryFlags = BuildHitGeometryFlags(draw, material),
+		    .FallbackReason = fallbackReason,
+		    .AlphaMode = material != nullptr ? material->alphaMode : 0u,
+		    .MaterialTextureFlags = material != nullptr ? material->textureFlags : 0u};
+	}
+
 	template <typename TData>
 	bool UploadStructuredBuffer(
 	    RenderHardwareInterface& renderHardwareInterface,
@@ -142,31 +214,47 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		        .AlphaMode = material.alphaMode,
 		        .TextureFlags = material.textureFlags,
 		        .SubsurfaceColor = material.subsurfaceColor,
-		        .SubsurfaceStrength = material.subsurfaceStrength});
+		        .SubsurfaceStrength = material.subsurfaceStrength,
+		        .Flags = BuildHitMaterialFlags(material)});
 	}
 
 	std::unordered_map<const GPUMesh*, MeshHitDataOffsets> meshOffsets;
 	std::uint32_t validInstanceCount = 0u;
 	std::uint32_t skippedSkinnedInstanceCount = 0u;
+	std::uint32_t skippedUnsupportedAlphaCount = 0u;
 	std::uint32_t skippedMissingHitDataCount = 0u;
 	std::uint32_t skippedInvalidMaterialCount = 0u;
 	for (std::uint32_t instanceIndex = 0u; instanceIndex < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++instanceIndex)
 	{
 		const MeshDraw& draw = sceneData.meshInstances[instanceIndex];
+		const MaterialData* material = draw.Material.Slot < materials.size() ? &sceneData.materials[draw.Material.Slot] : nullptr;
+		if (draw.Material.Slot >= materials.size() || material == nullptr)
+		{
+			instances[instanceIndex] =
+			    BuildInvalidHitInstance(draw, nullptr, RTIndirectSpecularHitFallbackReason_InvalidMaterial);
+			++skippedInvalidMaterialCount;
+			continue;
+		}
 		if (draw.Geometry.MeshKind == RenderMeshKind::Skeletal)
 		{
+			instances[instanceIndex] =
+			    BuildInvalidHitInstance(draw, material, RTIndirectSpecularHitFallbackReason_UnsupportedSkinned);
 			++skippedSkinnedInstanceCount;
 			continue;
 		}
-		if (draw.Material.Slot >= materials.size())
+		if (material->alphaMode != 0u)
 		{
-			++skippedInvalidMaterialCount;
+			instances[instanceIndex] =
+			    BuildInvalidHitInstance(draw, material, RTIndirectSpecularHitFallbackReason_UnsupportedAlphaMode);
+			++skippedUnsupportedAlphaCount;
 			continue;
 		}
 
 		const GPUMesh* gpuMesh = draw.Geometry.GpuMesh;
 		if (gpuMesh == nullptr || !gpuMesh->HasRTIndirectSpecularHitData())
 		{
+			instances[instanceIndex] =
+			    BuildInvalidHitInstance(draw, material, RTIndirectSpecularHitFallbackReason_MissingMeshHitData);
 			++skippedMissingHitDataCount;
 			continue;
 		}
@@ -201,7 +289,13 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		    .VertexCount = offsets.VertexCount,
 		    .IndexCount = offsets.IndexCount,
 		    .MaterialSlot = draw.Material.Slot,
-		    .Flags = RTIndirectSpecularHitInstanceFlag_Valid};
+		    .Flags = RTIndirectSpecularHitInstanceFlag_Valid | RTIndirectSpecularHitInstanceFlag_Opaque |
+		             RTIndirectSpecularHitInstanceFlag_StaticMesh |
+		             (material->doubleSided ? RTIndirectSpecularHitInstanceFlag_TwoSided : 0u),
+		    .GeometryFlags = BuildHitGeometryFlags(draw, material),
+		    .FallbackReason = RTIndirectSpecularHitFallbackReason_None,
+		    .AlphaMode = material->alphaMode,
+		    .MaterialTextureFlags = material->textureFlags};
 		++validInstanceCount;
 	}
 
@@ -213,9 +307,10 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 			loggedNoHitData = true;
 			SPDLOG_LOGGER_WARN(
 			    g_rtIndirectSpecularHitDataLogger,
-			    "RTIndirectSpecular hit-data unavailable: validInstances=0 totalInstances={} skippedSkinned={} skippedMissingHitData={} skippedInvalidMaterial={}.",
+			    "RTIndirectSpecular hit-data unavailable: validInstances=0 totalInstances={} skippedSkinned={} skippedUnsupportedAlpha={} skippedMissingHitData={} skippedInvalidMaterial={}.",
 			    sceneData.meshInstances.size(),
 			    skippedSkinnedInstanceCount,
+			    skippedUnsupportedAlphaCount,
 			    skippedMissingHitDataCount,
 			    skippedInvalidMaterialCount);
 		}
@@ -272,7 +367,7 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		loggedFirstHitData = true;
 		SPDLOG_LOGGER_INFO(
 		    g_rtIndirectSpecularHitDataLogger,
-		    "RTIndirectSpecular hit-data ready: validInstances={} totalInstances={} uniqueMeshes={} vertices={} indices={} materials={} skippedSkinned={} skippedMissingHitData={} skippedInvalidMaterial={}.",
+		    "RTIndirectSpecular hit-data ready: validInstances={} totalInstances={} uniqueMeshes={} vertices={} indices={} materials={} skippedSkinned={} skippedUnsupportedAlpha={} skippedMissingHitData={} skippedInvalidMaterial={} abiVersion={}.",
 		    validInstanceCount,
 		    sceneData.meshInstances.size(),
 		    meshOffsets.size(),
@@ -280,8 +375,10 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		    indices.size(),
 		    materials.size(),
 		    skippedSkinnedInstanceCount,
+		    skippedUnsupportedAlphaCount,
 		    skippedMissingHitDataCount,
-		    skippedInvalidMaterialCount);
+		    skippedInvalidMaterialCount,
+		    RTIndirectSpecularHitDataAbiVersion);
 	}
 
 	return frameData;

@@ -102,7 +102,9 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 		m_rtIndirectSpecularHitVertices.push_back(
 		    RTIndirectSpecularHitVertex{
 		        .Position = vertex.position,
-		        .Normal = vertex.normal});
+		        .Normal = vertex.normal,
+		        .Tangent = vertex.tangent,
+		        .TexCoord0 = vertex.uv});
 	}
 	m_rtIndirectSpecularHitIndices.assign(meshData.indices.begin(), meshData.indices.end());
 
