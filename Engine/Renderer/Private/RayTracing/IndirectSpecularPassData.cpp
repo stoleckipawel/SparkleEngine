@@ -1,12 +1,12 @@
 #include "../PCH.h"
-#include "RayTracing/RTIndirectSpecularPassData.h"
+#include "RayTracing/IndirectSpecularPassData.h"
 
-#include "RayTracing/RTIndirectSpecularSettings.h"
+#include "RayTracing/IndirectSpecularSettings.h"
 
-namespace RTIndirectSpecularPassData
+namespace IndirectSpecularPassData
 {
-	RTIndirectSpecularUniformData Build(
-	    const RTIndirectSpecularSettings& settings,
+	IndirectSpecularUniformData Build(
+	    const IndirectSpecularSettings& settings,
 	    bool hitDataAvailable,
 	    std::uint32_t hitInstanceCount,
 	    std::uint32_t hitMaterialCount,
@@ -14,7 +14,7 @@ namespace RTIndirectSpecularPassData
 	    std::uint32_t materialTextureTableDescriptorCount,
 	    std::uint32_t materialTextureTableCapacity) noexcept
 	{
-		return RTIndirectSpecularUniformData{
+		return IndirectSpecularUniformData{
 		    .DebugMode = static_cast<std::uint32_t>(settings.DebugMode),
 		    .RayTracingHitDataAvailable = hitDataAvailable ? 1u : 0u,
 		    .NormalBias = settings.NormalBias,

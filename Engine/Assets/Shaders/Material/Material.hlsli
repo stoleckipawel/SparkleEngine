@@ -4,6 +4,7 @@
 #include "Resources/Samplers.hlsli"
 #include "Geometry/PixelInput.hlsli"
 #include "Geometry/Transforms.hlsli"
+#include "Material/MaterialNormal.hlsli"
 
 Texture2D TextureBaseColor;
 Texture2D TextureNormal;
@@ -52,9 +53,7 @@ namespace Material
 
 	float3 UnpackNormal(float2 encodedNormal)
 	{
-		const float2 normalXY = encodedNormal * 2.0f - 1.0f;
-		const float normalZ = sqrt(saturate(1.0f - dot(normalXY, normalXY)));
-		return normalize(float3(normalXY, normalZ));
+		return UnpackMaterialNormal(encodedNormal);
 	}
 
 	void ApplyAlphaMode(float alpha)

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <type_traits>
 
-struct RTIndirectSpecularUniformData
+struct IndirectSpecularUniformData
 {
 	std::uint32_t DebugMode = 0u;
 	std::uint32_t RayTracingHitDataAvailable = 0u;
@@ -19,6 +19,6 @@ struct RTIndirectSpecularUniformData
 	std::uint32_t Padding1 = 0u;
 };
 
-static_assert(std::is_standard_layout_v<RTIndirectSpecularUniformData>, "RTIndirectSpecularUniformData must be standard-layout");
-static_assert(std::is_trivially_copyable_v<RTIndirectSpecularUniformData>, "RTIndirectSpecularUniformData must be trivially copyable");
-static_assert(sizeof(RTIndirectSpecularUniformData) == 48, "RTIndirectSpecularUniformData must match the shader layout");
+static_assert(std::is_standard_layout_v<IndirectSpecularUniformData>, "IndirectSpecularUniformData must be standard-layout");
+static_assert(std::is_trivially_copyable_v<IndirectSpecularUniformData>, "IndirectSpecularUniformData must be trivially copyable");
+static_assert(sizeof(IndirectSpecularUniformData) == 48, "IndirectSpecularUniformData must match the shader layout");

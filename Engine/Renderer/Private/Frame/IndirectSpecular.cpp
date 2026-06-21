@@ -1,34 +1,34 @@
 #include "../PCH.h"
-#include "Frame/RTIndirectSpecular.h"
+#include "Frame/IndirectSpecular.h"
 
 #include "Frame/FrameContext.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/RTIndirectSpecularPass.h"
+#include "Passes/IndirectSpecularPass.h"
 #include "Passes/ShaderPass.h"
 
-void AddRTIndirectSpecularPass(
+void AddIndirectSpecularPass(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas)
 {
-	auto& parameters = builder.AllocPassParameters<RTIndirectSpecularPass>();
-	RTIndirectSpecularPass::DeclareResources(builder, lighting, gbuffer, sceneTlas, parameters);
+	auto& parameters = builder.AllocPassParameters<IndirectSpecularPass>();
+	IndirectSpecularPass::DeclareResources(builder, lighting, gbuffer, sceneTlas, parameters);
 	builder.AddPass(
-	    RTIndirectSpecularPass::PassName,
+	    IndirectSpecularPass::PassName,
 	    EFrameGraphPassFlags::Compute,
 	    [&parameters](PassResourceBuilder& resourceBuilder, const FrameContext&)
 	    {
-		    ComputeShaderPass<RTIndirectSpecularPass::Parameters>::Setup(
+		    ComputeShaderPass<IndirectSpecularPass::Parameters>::Setup(
 		        resourceBuilder,
 		        parameters,
-		        RTIndirectSpecularPass::PassName);
+		        IndirectSpecularPass::PassName);
 	    },
 	    [&parameters](PassExecutionContext& context)
 	    {
-		    const RTIndirectSpecularPass pass(context.RuntimeServices.GetPassRuntime<RTIndirectSpecularPass>());
+		    const IndirectSpecularPass pass(context.RuntimeServices.GetPassRuntime<IndirectSpecularPass>());
 		    pass.Execute(context, parameters);
 	    });
 }

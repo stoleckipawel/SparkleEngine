@@ -2,11 +2,11 @@
 
 class RenderRayTracingScene;
 struct RayTracedShadowSettings;
-struct RTIndirectSpecularSettings;
+struct IndirectSpecularSettings;
 
 struct RenderRayTracingPassServices
 {
 	RenderRayTracingScene* Scene = nullptr;
 	const RayTracedShadowSettings* ShadowSettings = nullptr;
-	const RTIndirectSpecularSettings* IndirectSpecularSettings = nullptr;
+	const IndirectSpecularSettings* IndirectSpecularSettings = nullptr;
 };

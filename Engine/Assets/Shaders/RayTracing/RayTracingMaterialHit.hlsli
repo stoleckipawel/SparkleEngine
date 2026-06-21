@@ -1,7 +1,9 @@
 #pragma once
 
+#include "Common/Math.hlsli"
+#include "Geometry/Basis.hlsli"
+#include "Material/MaterialNormal.hlsli"
 #include "Material/MaterialTextureTable.hlsli"
-#include "RayTracing/RayTracingCommon.hlsli"
 #include "RayTracing/RayTracingHitSurface.hlsli"
 
 struct RayTracingHitVertex
@@ -330,8 +332,8 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	const MeshInstanceData meshInstance = MeshInstances[trace.InstanceId];
 	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
 	const float3x3 worldMatrix = (float3x3) meshInstance.WorldMTX;
-	float3 normalWorld = SafeTransformNormal(localNormal, worldInvTransposeMatrix, -rayDirectionWorld);
-	float3 tangentWorld = SafeTransformDirection(localTangent.xyz, worldMatrix, 0.0f.xxx);
+	float3 normalWorld = SafeNormalize(mul(localNormal, worldInvTransposeMatrix), -rayDirectionWorld);
+	float3 tangentWorld = SafeNormalize(mul(localTangent.xyz, worldMatrix), 0.0f.xxx);
 	const float tangentSign = localTangent.w >= 0.0f ? 1.0f : -1.0f;
 	const bool twoSided = (hitInstance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 	const bool frontFacing = dot(normalWorld, -rayDirectionWorld) >= 0.0f;
@@ -341,7 +343,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 		return surface;
 	}
 	tangentWorld = OrthonormalizeTangent(tangentWorld, normalWorld);
-	const float3 bitangentWorld = ComputeHitBitangent(normalWorld, tangentWorld, tangentSign);
+	const float3 bitangentWorld = ComputeBitangentFromSign(normalWorld, tangentWorld, tangentSign);
 
 	surface.Valid = true;
 	surface.PositionWorld =
@@ -372,7 +374,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	    resolvedNormalTangent);
 
 	surface.NormalTangent = resolvedNormalTangent;
-	surface.NormalWorld = TransformHitNormalToWorld(resolvedNormalTangent, normalWorld, tangentWorld, bitangentWorld);
+	surface.NormalWorld = TransformTangentNormalToWorld(resolvedNormalTangent, normalWorld, tangentWorld, bitangentWorld);
 	if (!frontFacing)
 	{
 		surface.NormalWorld = -surface.NormalWorld;

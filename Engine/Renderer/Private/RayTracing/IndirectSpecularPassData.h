@@ -1,13 +1,13 @@
 #pragma once
 
-#include "RayTracing/RTIndirectSpecularUniformData.h"
+#include "RayTracing/IndirectSpecularUniformData.h"
 
-struct RTIndirectSpecularSettings;
+struct IndirectSpecularSettings;
 
-namespace RTIndirectSpecularPassData
+namespace IndirectSpecularPassData
 {
-	RTIndirectSpecularUniformData Build(
-	    const RTIndirectSpecularSettings& settings,
+	IndirectSpecularUniformData Build(
+	    const IndirectSpecularSettings& settings,
 	    bool hitDataAvailable,
 	    std::uint32_t hitInstanceCount,
 	    std::uint32_t hitMaterialCount,

@@ -14,6 +14,12 @@ float3 SafeNormalize(float3 v)
 	return len > EPSILON ? v / len : float3(0.0f, 0.0f, 1.0f);
 }
 
+float3 SafeNormalize(float3 v, float3 fallback)
+{
+	const float lengthSquared = dot(v, v);
+	return lengthSquared > 1.0e-8f ? v * rsqrt(lengthSquared) : fallback;
+}
+
 float Remap(float value, float inMin, float inMax, float outMin, float outMax)
 {
 	return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin);

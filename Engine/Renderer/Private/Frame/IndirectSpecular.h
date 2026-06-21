@@ -5,7 +5,7 @@
 
 class FrameGraphBuilder;
 
-void AddRTIndirectSpecularPass(
+void AddIndirectSpecularPass(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
     const GBufferRenderTargets& gbuffer,

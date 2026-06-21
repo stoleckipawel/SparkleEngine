@@ -21,7 +21,7 @@
 #include "Pipeline/PipelineStateManager.h"
 #include "RayTracing/RenderRayTracingPassServices.h"
 #include "RayTracing/RenderRayTracingScene.h"
-#include "RayTracing/RTIndirectSpecularSettings.h"
+#include "RayTracing/IndirectSpecularSettings.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/GameScene.h"
@@ -589,11 +589,11 @@ void FramePipeline::RecordFrame() noexcept
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph compile end (passes={})", compiledPlan.executionOrder.size());
 	RenderCommandList& commandList = m_systems->GetBackend().GetCurrentGraphicsCommandList();
 	RenderCommandContext cmd(commandList);
-	const RTIndirectSpecularSettings rtIndirectSpecularSettings = BuildRTIndirectSpecularSettingsFromCVars();
+	const IndirectSpecularSettings indirectSpecularSettings = BuildIndirectSpecularSettingsFromCVars();
 	const RenderRayTracingPassServices rayTracingPassServices{
 	    .Scene = m_systems->GetRenderRayTracingScene(),
 	    .ShadowSettings = m_systems->GetRayTracedShadowSettings(),
-	    .IndirectSpecularSettings = &rtIndirectSpecularSettings};
+	    .IndirectSpecularSettings = &indirectSpecularSettings};
 	const RenderUpscalingPassServices upscalingPassServices{
 	    .Subsystem = m_systems->GetUpscalerSubsystem()};
 	const PassRuntimeServices passRuntimeServices{

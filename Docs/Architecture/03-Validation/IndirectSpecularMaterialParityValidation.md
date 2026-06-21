@@ -1,18 +1,18 @@
-# RTIndirectSpecular Material Parity Validation
+# IndirectSpecular Material Parity Validation
 
-This note defines the Stage 8.6 validation coverage for `RTIndirectSpecular` material texture parity. It is validation coverage only; it does not introduce new rendering behavior.
+This note defines the Stage 8.6 validation coverage for `IndirectSpecular` material texture parity. It is validation coverage only; it does not introduce new rendering behavior.
 
 ## Validation Levels
 
 Use the Showcase validation levels below as stable startup levels:
 
-- `RTIndirectSpecularMaterialParity_DamagedHelmet`
+- `IndirectSpecularMaterialParity_DamagedHelmet`
   - asset: `DamagedHelmet/DamagedHelmet`
   - covers base-color texture, roughness texture, metallic texture, emissive texture, normal map, and direct-vs-reflected material comparison on a compact PBR asset
-- `RTIndirectSpecularMaterialParity_AlphaTest`
+- `IndirectSpecularMaterialParity_AlphaTest`
   - asset: `DiffuseTransmissionPlant/DiffuseTransmissionPlant`
   - covers alpha-tested candidate-hit handling after Stage 8.5
-- `RTIndirectSpecularMaterialParity_RoughnessRange`
+- `IndirectSpecularMaterialParity_RoughnessRange`
   - asset: `ABeautifulGame/ABeautifulGame`
   - covers a broader textured scene for mirror and stochastic GGX review across varied material roughness
 
@@ -62,39 +62,39 @@ Material debug views:
 D3D12 mirror material parity:
 
 ```powershell
-.\artifacts\dev\tools\SparkleLauncher\DevelopmentEditor\SparkleLauncher.exe --project Showcase --launch-target runtime --startup-level RTIndirectSpecularMaterialParity_DamagedHelmet --smoke-test --smoke-backend d3d12 --smoke-view-mode Lit --smoke-skip-level-switching --cvar r.RayTracing.Reflections.Enabled=1 --cvar r.RayTracing.Reflections.SampleMode=0 --cvar r.Material.BindingMode=0
+.\artifacts\dev\tools\SparkleLauncher\DevelopmentEditor\SparkleLauncher.exe --project Showcase --launch-target runtime --startup-level IndirectSpecularMaterialParity_DamagedHelmet --smoke-test --smoke-backend d3d12 --smoke-view-mode Lit --smoke-skip-level-switching --cvar r.RayTracing.Reflections.Enabled=1 --cvar r.RayTracing.Reflections.SampleMode=0 --cvar r.Material.BindingMode=0
 ```
 
 D3D12 stochastic material parity:
 
 ```powershell
-.\artifacts\dev\tools\SparkleLauncher\DevelopmentEditor\SparkleLauncher.exe --project Showcase --launch-target runtime --startup-level RTIndirectSpecularMaterialParity_DamagedHelmet --smoke-test --smoke-backend d3d12 --smoke-view-mode Lit --smoke-skip-level-switching --cvar r.RayTracing.Reflections.Enabled=1 --cvar r.RayTracing.Reflections.SampleMode=1 --cvar r.Material.BindingMode=0
+.\artifacts\dev\tools\SparkleLauncher\DevelopmentEditor\SparkleLauncher.exe --project Showcase --launch-target runtime --startup-level IndirectSpecularMaterialParity_DamagedHelmet --smoke-test --smoke-backend d3d12 --smoke-view-mode Lit --smoke-skip-level-switching --cvar r.RayTracing.Reflections.Enabled=1 --cvar r.RayTracing.Reflections.SampleMode=1 --cvar r.Material.BindingMode=0
 ```
 
 D3D12 alpha-tested candidate-hit validation:
 
 ```powershell
-.\artifacts\dev\tools\SparkleLauncher\DevelopmentEditor\SparkleLauncher.exe --project Showcase --launch-target runtime --startup-level RTIndirectSpecularMaterialParity_AlphaTest --smoke-test --smoke-backend d3d12 --smoke-view-mode Lit --smoke-skip-level-switching --cvar r.RayTracing.Reflections.Enabled=1 --cvar r.RayTracing.Reflections.SampleMode=0 --cvar r.RayTracing.Reflections.DebugMode=24 --cvar r.Material.BindingMode=0
+.\artifacts\dev\tools\SparkleLauncher\DevelopmentEditor\SparkleLauncher.exe --project Showcase --launch-target runtime --startup-level IndirectSpecularMaterialParity_AlphaTest --smoke-test --smoke-backend d3d12 --smoke-view-mode Lit --smoke-skip-level-switching --cvar r.RayTracing.Reflections.Enabled=1 --cvar r.RayTracing.Reflections.SampleMode=0 --cvar r.RayTracing.Reflections.DebugMode=24 --cvar r.Material.BindingMode=0
 ```
 
 Supported Vulkan path:
 
 ```powershell
-.\artifacts\dev\tools\SparkleLauncher\DevelopmentEditor\SparkleLauncher.exe --project Showcase --launch-target runtime --startup-level RTIndirectSpecularMaterialParity_DamagedHelmet --smoke-test --smoke-backend vulkan --smoke-view-mode Lit --smoke-skip-level-switching --cvar r.RayTracing.Reflections.Enabled=1 --cvar r.RayTracing.Reflections.SampleMode=0 --cvar r.Material.BindingMode=0
+.\artifacts\dev\tools\SparkleLauncher\DevelopmentEditor\SparkleLauncher.exe --project Showcase --launch-target runtime --startup-level IndirectSpecularMaterialParity_DamagedHelmet --smoke-test --smoke-backend vulkan --smoke-view-mode Lit --smoke-skip-level-switching --cvar r.RayTracing.Reflections.Enabled=1 --cvar r.RayTracing.Reflections.SampleMode=0 --cvar r.Material.BindingMode=0
 ```
 
 ## Coverage Matrix
 
 | Requirement | Level | Mode / Debug |
 | --- | --- | --- |
-| direct-vs-reflected base material | `RTIndirectSpecularMaterialParity_DamagedHelmet` | mirror and stochastic |
-| base-color texture parity | `RTIndirectSpecularMaterialParity_DamagedHelmet` | debug 15 |
-| roughness texture parity | `RTIndirectSpecularMaterialParity_DamagedHelmet` | debug 16 |
-| metallic texture parity | `RTIndirectSpecularMaterialParity_DamagedHelmet` | debug 16 |
-| emissive texture parity | `RTIndirectSpecularMaterialParity_DamagedHelmet` | debug 17 |
-| normal-map parity | `RTIndirectSpecularMaterialParity_DamagedHelmet` | debug 20-23 |
-| alpha-tested candidate rejection | `RTIndirectSpecularMaterialParity_AlphaTest` | debug 24-26 |
-| broad roughness-scale review | `RTIndirectSpecularMaterialParity_RoughnessRange` | mirror and stochastic |
+| direct-vs-reflected base material | `IndirectSpecularMaterialParity_DamagedHelmet` | mirror and stochastic |
+| base-color texture parity | `IndirectSpecularMaterialParity_DamagedHelmet` | debug 15 |
+| roughness texture parity | `IndirectSpecularMaterialParity_DamagedHelmet` | debug 16 |
+| metallic texture parity | `IndirectSpecularMaterialParity_DamagedHelmet` | debug 16 |
+| emissive texture parity | `IndirectSpecularMaterialParity_DamagedHelmet` | debug 17 |
+| normal-map parity | `IndirectSpecularMaterialParity_DamagedHelmet` | debug 20-23 |
+| alpha-tested candidate rejection | `IndirectSpecularMaterialParity_AlphaTest` | debug 24-26 |
+| broad roughness-scale review | `IndirectSpecularMaterialParity_RoughnessRange` | mirror and stochastic |
 | D3D12 backend | all levels | `--smoke-backend d3d12` |
 | Vulkan backend | all levels when supported | `--smoke-backend vulkan` |
 | primary debug binding mode | all levels | `r.Material.BindingMode=0` |

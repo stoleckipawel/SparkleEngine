@@ -19,7 +19,7 @@
 #include "RayTracing/RayTracedShadowSettings.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RayTracing/RenderRayTracingScene.h"
-#include "RayTracing/RTIndirectSpecularSettings.h"
+#include "RayTracing/IndirectSpecularSettings.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
@@ -167,7 +167,7 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 	        .UserData = &renderHardware});
 	m_rayTracedShadowSettings = std::make_unique<RayTracedShadowSettings>(BuildRayTracedShadowSettingsFromCVars());
 	LogRayTracedShadowSettingsOnce(*m_rayTracedShadowSettings, rayTracingCapabilities);
-	LogRTIndirectSpecularSettingsOnce(BuildRTIndirectSpecularSettingsFromCVars(), rayTracingCapabilities);
+	LogIndirectSpecularSettingsOnce(BuildIndirectSpecularSettingsFromCVars(), rayTracingCapabilities);
 	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);
 
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);

@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-enum class RTIndirectSpecularDebugMode : std::uint32_t
+enum class IndirectSpecularDebugMode : std::uint32_t
 {
 	Off = RayTracingDebugMode::Off,
 	HitMask = RayTracingDebugMode::HitMask,

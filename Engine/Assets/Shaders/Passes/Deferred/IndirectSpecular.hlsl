@@ -1,42 +1,44 @@
 #include "Resources/ConstantBuffers.hlsli"
+#include "Common/Math.hlsli"
 #include "Common/Random.hlsli"
+#include "Geometry/Basis.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
 #include "RayTracing/RayTracingDebugModes.hlsli"
 
 RWTexture2D<float4> IndirectSpecularTexture;
 RaytracingAccelerationStructure SceneTlas;
 
-cbuffer RTIndirectSpecularUniformData
+cbuffer IndirectSpecularUniformData
 {
-	uint RTIndirectSpecularDebugMode;
+	uint IndirectSpecularDebugMode;
 	uint RayTracingHitDataAvailable;
-	float RTIndirectSpecularNormalBias;
-	float RTIndirectSpecularMaxDistance;
+	float IndirectSpecularNormalBias;
+	float IndirectSpecularMaxDistance;
 	uint RayTracingHitInstanceCount;
 	uint RayTracingHitMaterialCount;
-	uint RTIndirectSpecularSampleMode;
-	uint RTIndirectSpecularMaterialTextureTableAvailable;
-	uint RTIndirectSpecularMaterialTextureTableDescriptorCount;
-	uint RTIndirectSpecularMaterialTextureTableCapacity;
-	uint RTIndirectSpecularPadding0;
-	uint RTIndirectSpecularPadding1;
+	uint IndirectSpecularSampleMode;
+	uint IndirectSpecularMaterialTextureTableAvailable;
+	uint IndirectSpecularMaterialTextureTableDescriptorCount;
+	uint IndirectSpecularMaterialTextureTableCapacity;
+	uint IndirectSpecularPadding0;
+	uint IndirectSpecularPadding1;
 };
 
 #include "RayTracing/RayTracingHitLighting.hlsli"
 
-static const uint RTIndirectSpecularRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
-static const uint RTIndirectSpecularInstanceMask = 0xFFu;
-static const uint RTIndirectSpecularDebugMirrorDirection = 3u;
-static const uint RTIndirectSpecularDebugSampleDirection = 10u;
-static const uint RTIndirectSpecularDebugSamplePdf = 11u;
-static const uint RTIndirectSpecularDebugSampleThroughput = 12u;
-static const uint RTIndirectSpecularDebugHitRadiance = 13u;
-static const uint RTIndirectSpecularDebugFinalContribution = 14u;
-static const uint RTIndirectSpecularSampleModeMirror = 0u;
-static const uint RTIndirectSpecularSampleModeStochasticGGX = 1u;
-static const float RTIndirectSpecularMinimumTMin = 0.001f;
+static const uint IndirectSpecularRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
+static const uint IndirectSpecularInstanceMask = 0xFFu;
+static const uint IndirectSpecularDebugMirrorDirection = 3u;
+static const uint IndirectSpecularDebugSampleDirection = 10u;
+static const uint IndirectSpecularDebugSamplePdf = 11u;
+static const uint IndirectSpecularDebugSampleThroughput = 12u;
+static const uint IndirectSpecularDebugHitRadiance = 13u;
+static const uint IndirectSpecularDebugFinalContribution = 14u;
+static const uint IndirectSpecularSampleModeMirror = 0u;
+static const uint IndirectSpecularSampleModeStochasticGGX = 1u;
+static const float IndirectSpecularMinimumTMin = 0.001f;
 
-struct RTIndirectSpecularSampleResult
+struct IndirectSpecularSampleResult
 {
 	float3 DirectionWorld;
 	float Pdf;
@@ -44,7 +46,7 @@ struct RTIndirectSpecularSampleResult
 	bool Mirror;
 };
 
-struct RTIndirectSpecularResolvedContribution
+struct IndirectSpecularResolvedContribution
 {
 	float3 HitRadiance;
 	float3 FinalContribution;
@@ -59,7 +61,7 @@ float3 SampleGGXHalfVector(float3 normalWorld, float roughness, float2 sample)
 {
 	float3 tangentWorld;
 	float3 bitangentWorld;
-	BuildOrthonormalBasis(normalWorld, tangentWorld, bitangentWorld);
+	CommonSampling::BuildOrthonormalBasis(normalWorld, tangentWorld, bitangentWorld);
 
 	const float alpha = max(roughness * roughness, 1.0e-4f);
 	const float alphaSquared = alpha * alpha;
@@ -72,13 +74,13 @@ float3 SampleGGXHalfVector(float3 normalWorld, float roughness, float2 sample)
 	    normalWorld);
 }
 
-RTIndirectSpecularSampleResult BuildReflectionSample(uint2 pixelCoord, float3 normalWorld, float3 viewDirWorld, float roughness)
+IndirectSpecularSampleResult BuildReflectionSample(uint2 pixelCoord, float3 normalWorld, float3 viewDirWorld, float roughness)
 {
-	RTIndirectSpecularSampleResult result;
+	IndirectSpecularSampleResult result;
 	const float safeRoughness = max(roughness, 1.0e-4f);
 	const float3 mirrorDirection = SafeNormalize(reflect(-viewDirWorld, normalWorld), normalWorld);
 	const bool forceMirror =
-	    RTIndirectSpecularSampleMode == RTIndirectSpecularSampleModeMirror || roughness <= 1.0e-4f;
+	    IndirectSpecularSampleMode == IndirectSpecularSampleModeMirror || roughness <= 1.0e-4f;
 
 	result.DirectionWorld = mirrorDirection;
 	result.Pdf = 1.0f;
@@ -123,10 +125,10 @@ RTIndirectSpecularSampleResult BuildReflectionSample(uint2 pixelCoord, float3 no
 
 float3 ComputeRayOrigin(float3 positionWorld, float3 normalWorld, float3 rayDirectionWorld)
 {
-	const float bias = max(RTIndirectSpecularNormalBias, 0.0f);
+	const float bias = max(IndirectSpecularNormalBias, 0.0f);
 	const float NoR = abs(dot(normalWorld, rayDirectionWorld));
 	const float grazingScale = rcp(max(NoR, 0.25f));
-	return positionWorld + normalWorld * bias * grazingScale + rayDirectionWorld * RTIndirectSpecularMinimumTMin;
+	return positionWorld + normalWorld * bias * grazingScale + rayDirectionWorld * IndirectSpecularMinimumTMin;
 }
 
 RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 normalWorld, float3 reflectionDirectionWorld)
@@ -134,11 +136,11 @@ RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 norm
 	RayDesc ray;
 	ray.Direction = SafeNormalize(reflectionDirectionWorld, normalWorld);
 	ray.Origin = ComputeRayOrigin(positionWorld, normalWorld, ray.Direction);
-	ray.TMin = RTIndirectSpecularMinimumTMin;
-	ray.TMax = max(RTIndirectSpecularMaxDistance, RTIndirectSpecularMinimumTMin);
+	ray.TMin = IndirectSpecularMinimumTMin;
+	ray.TMax = max(IndirectSpecularMaxDistance, IndirectSpecularMinimumTMin);
 
-	RayQuery<RTIndirectSpecularRayFlags> query;
-	query.TraceRayInline(SceneTlas, RTIndirectSpecularRayFlags, RTIndirectSpecularInstanceMask, ray);
+	RayQuery<IndirectSpecularRayFlags> query;
+	query.TraceRayInline(SceneTlas, IndirectSpecularRayFlags, IndirectSpecularInstanceMask, ray);
 	float alphaCandidateValue = 1.0f;
 	float alphaCandidateCutoff = 0.5f;
 	bool alphaCandidateSeen = false;
@@ -181,7 +183,7 @@ RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 norm
 	return result;
 }
 
-#include "Passes/Deferred/RTIndirectSpecularDebug.hlsli"
+#include "Passes/Deferred/IndirectSpecularDebug.hlsli"
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -209,20 +211,20 @@ RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 norm
 	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, deviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const float3 viewDirWorld = normalize(Camera.Position - positionWorld);
 	const float3 mirrorDirectionWorld = normalize(reflect(-viewDirWorld, normalWorld));
-	const RTIndirectSpecularSampleResult sample =
+	const IndirectSpecularSampleResult sample =
 	    BuildReflectionSample(dispatchThreadId.xy, normalWorld, viewDirWorld, roughness);
 	const RayTracingTraceResult trace =
 	    TraceIndirectSpecularRay(positionWorld, normalWorld, sample.DirectionWorld);
 	const RayTracingHitSurfaceData hitSurface =
 	    ReconstructRayTracingHitSurface(trace, ComputeRayOrigin(positionWorld, normalWorld, sample.DirectionWorld), sample.DirectionWorld);
 	const float3 hitIncidentRadiance = hitSurface.Valid ? ShadeRayTracingHitIncidentRadiance(hitSurface, sample.DirectionWorld) : 0.0f.xxx;
-	RTIndirectSpecularResolvedContribution resolved;
+	IndirectSpecularResolvedContribution resolved;
 	resolved.HitRadiance = hitIncidentRadiance;
 	resolved.FinalContribution = hitIncidentRadiance * sample.ThroughputNoF;
 	const float3 debugColor =
-	    BuildRTIndirectSpecularDebugColor(trace, hitSurface, sample, resolved, mirrorDirectionWorld) *
+	    BuildIndirectSpecularDebugColor(trace, hitSurface, sample, resolved, mirrorDirectionWorld) *
 	    lerp(0.65f.xxx, baseColor, 0.35f);
-	const float3 reflectionColor = RTIndirectSpecularDebugMode == RayTracingDebugModes::Off ? resolved.FinalContribution : debugColor;
+	const float3 reflectionColor = IndirectSpecularDebugMode == RayTracingDebugModes::Off ? resolved.FinalContribution : debugColor;
 	const float bindingKeepAliveSignal = float(FrameIndex & 1u) * 1.0e-6f + roughness * 1.0e-9f;
 
 	IndirectSpecularTexture[dispatchThreadId.xy] = float4(reflectionColor, hitSurface.Valid ? 1.0f : bindingKeepAliveSignal);

@@ -48,16 +48,16 @@ Production implications for Sparkle:
 - `CommittedInstanceID()` and `CommittedPrimitiveIndex()` must be treated as keys into renderer-owned tables whose lifetime, ordering, and validation are tied to the TLAS build.
 - The hit geometry ABI must include position, normal, tangent/sign, UV0, and index format/count metadata before textured material parity is considered complete.
 - Material hit shading must reuse the same material packing semantics as `Material.hlsli` and the GBuffer path: base color, alpha, roughness, metallic, emissive, normal map policy, two-sided policy, alpha mode/cutoff, and texture flags.
-- Hit material texture sampling eventually needs a renderer-owned texture table or bindless descriptor contract. Per-draw texture bindings from the raster GBuffer path are not enough for arbitrary ray hits, but this should be the final material-parity stage rather than a blocker for the first RT reflection introduction.
+- Hit material texture sampling eventually needs a renderer-owned texture table or bindless descriptor contract. Per-draw texture bindings from the raster GBuffer path are not enough for arbitrary ray hits, but this should be the final material-parity stage rather than a blocker for the first ray-traced reflection introduction.
 - Alpha-tested geometry requires an any-hit-equivalent policy. With inline `RayQuery`, that means either accepting opaque-only geometry for the first production milestone, or using candidate hit inspection plus alpha sampling before committing. Do not silently treat alpha-masked foliage/fences as fully opaque and call the result production.
 - Skinned, morphed, instanced, and world-position-offset geometry must be explicitly classified as supported, frozen/static fallback, or excluded from the reflection TLAS/hit-data table.
 - Reflection hit lighting should produce incident radiance at the hit, then the primary surface should apply the specular BRDF/PDF weight. Do not bake primary-surface Fresnel/roughness twice in both the trace pass and `LightingComposite`.
-- Validation must include parity scenes where the same material is visible directly in GBuffer and indirectly through `RTIndirectSpecular`.
+- Validation must include parity scenes where the same material is visible directly in GBuffer and indirectly through `IndirectSpecular`.
 
 Payload model note:
 
 - Unreal's ray tracing material paths commonly use DXR payload structs because ray generation, closest-hit, any-hit, and miss shaders need a shared packet of ray state and shading results.
-- Sparkle's current `RTIndirectSpecular` path uses inline `RayQuery` in a compute shader, so there is no cross-shader DXR payload object. The equivalent concept is the local shader contract made of `RTIndirectSpecularTraceResult`, `RTIndirectSpecularHitSurface`, fallback reason bits, and the final incident-radiance/reflection contribution.
+- Sparkle's current `IndirectSpecular` path uses inline `RayQuery` in a compute shader, so there is no cross-shader DXR payload object. The equivalent concept is the local shader contract made of `IndirectSpecularTraceResult`, `IndirectSpecularHitSurface`, fallback reason bits, and the final incident-radiance/reflection contribution.
 - Keep that local contract payload-shaped: small, explicit, versionable, and separated into trace identity, reconstructed surface, material sample, lighting result, and debug/fallback state.
 - If Sparkle later adds a ray generation or closest-hit shader pipeline for reflections, this local contract should become the starting point for the real DXR payload rather than inventing a second material-hit representation.
 
@@ -126,7 +126,7 @@ External references used to shape the production plan:
 
 ## Technical Direction
 
-The first implementation should add a new compute shader pass named `RTIndirectSpecular` before `LightingComposite`.
+The first implementation should add a new compute shader pass named `IndirectSpecular` before `LightingComposite`.
 
 The pass should read:
 
@@ -161,7 +161,7 @@ Keep its stable debug/resource name as `"IndirectSpecular"`.
 The first composite behavior should be:
 
 - use existing `DirectSpecular` and `IndirectSpecular` as before
-- let `RTIndirectSpecular` write `IndirectSpecular` when the feature is enabled and the pass produced valid output
+- let `IndirectSpecular` write `IndirectSpecular` when the feature is enabled and the pass produced valid output
 - preserve the current indirect-specular path, or clear/write black according to renderer settings, when the pass is disabled or unavailable
 
 Avoid introducing `RayTracedSpecular`, `ReflectionsSpecular`, or other source-specific frame-graph resource names for the main lighting product. If a temporary debug texture is later needed, name it as a debug artifact rather than as the lighting contract.
@@ -254,7 +254,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- `RTIndirectSpecular` is registered as a compute shader package with `inline-ray-query` and `acceleration-structure` features.
+- `IndirectSpecular` is registered as a compute shader package with `inline-ray-query` and `acceleration-structure` features.
 - The pass writes the existing `LightingRenderTargets::IndirectSpecular` resource and is inserted after `IndirectLighting` and before `LightingComposite`.
 - Stage 1 RGB output is black. The shader performs a minimal inline ray-query path and writes only a tiny alpha/debug signal so the declared acceleration structure, GBuffer, `PerFrame`, and `PerView` bindings remain reflected and validated.
 - Descriptor-TLAS access is wired for this skeleton. Shader-device-address specialization should be handled deliberately in a later stage if Vulkan requires it for the active TLAS mode.
@@ -262,10 +262,10 @@ Implementation note:
 Implementation tasks:
 
 - route the existing `LightingRenderTargets::IndirectSpecular` through the new pass ownership path
-- add `RTIndirectSpecularPass` parameter struct and compute pass class
-- add `AddRTIndirectSpecularPass(...)` frame assembly helper
-- register an `RTIndirectSpecular` shader package using inline ray query and acceleration structure feature flags
-- add `Engine/Assets/Shaders/Passes/Deferred/RTIndirectSpecular.hlsl`
+- add `IndirectSpecularPass` parameter struct and compute pass class
+- add `AddIndirectSpecularPass(...)` frame assembly helper
+- register an `IndirectSpecular` shader package using inline ray query and acceleration structure feature flags
+- add `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
 - insert the pass after lighting inputs are available and before `LightingComposite`
 - update `LightingComposite` to read the new reflection texture, initially black
 - guard execution when ray tracing is unavailable or the scene TLAS is not bound
@@ -284,7 +284,7 @@ Implementation prompt:
 ```text
 Implement Stage 1 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Add a renderer-owned full-resolution compute pass named RTIndirectSpecular that declares all frame-graph resources, registers an RTIndirectSpecular shader package, writes LightingRenderTargets::IndirectSpecular, and feeds that existing texture into LightingComposite. The shader should output black for now. Keep the pass backend-neutral, use existing shader/pass patterns from DirectLightingPass, and guard missing ray tracing/TLAS support with a deterministic no-op path. Run shader validation/cook checks and the architecture boundary check if available.
+Add a renderer-owned full-resolution compute pass named IndirectSpecular that declares all frame-graph resources, registers an IndirectSpecular shader package, writes LightingRenderTargets::IndirectSpecular, and feeds that existing texture into LightingComposite. The shader should output black for now. Keep the pass backend-neutral, use existing shader/pass patterns from DirectLightingPass, and guard missing ray tracing/TLAS support with a deterministic no-op path. Run shader validation/cook checks and the architecture boundary check if available.
 ```
 
 ### Stage 2: Mirror Reflection Ray Query
@@ -293,7 +293,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- `RTIndirectSpecular` now reconstructs world position from `GBufferDeviceZ`, decodes world-space GBuffer normals through shared GBuffer helpers, traces a mirror ray against the descriptor `SceneTlas`, and writes a visible temporary debug signal into `LightingRenderTargets::IndirectSpecular`.
+- `IndirectSpecular` now reconstructs world position from `GBufferDeviceZ`, decodes world-space GBuffer normals through shared GBuffer helpers, traces a mirror ray against the descriptor `SceneTlas`, and writes a visible temporary debug signal into `LightingRenderTargets::IndirectSpecular`.
 - Debug mode is controlled by `r.RayTracing.Reflections.DebugMode`: `0=Off` uses stable hit-id color, `1=HitMask`, `2=HitDistance`, and `3=MirrorDirection`.
 - Stage 2 intentionally keeps material-hit shading out of the pass; hit visualization is based on ray-query committed hit metadata until renderer-owned hit material buffers are introduced.
 
@@ -321,7 +321,7 @@ Implementation prompt:
 ```text
 Implement Stage 2 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Turn RTIndirectSpecular from black output into a full-resolution mirror ray-query pass. Reconstruct world position from depth, use GBuffer normals, trace a reflection ray against SceneTlas, and write a visible debug reflection signal into IndirectSpecular. Add debug modes for hit mask and hit distance. Keep material hit shading out of this stage unless the required hit-data buffers already exist cleanly. Preserve the no-op path for missing ray tracing or missing TLAS.
+Turn IndirectSpecular from black output into a full-resolution mirror ray-query pass. Reconstruct world position from depth, use GBuffer normals, trace a reflection ray against SceneTlas, and write a visible debug reflection signal into IndirectSpecular. Add debug modes for hit mask and hit distance. Keep material hit shading out of this stage unless the required hit-data buffers already exist cleanly. Preserve the no-op path for missing ray tracing or missing TLAS.
 ```
 
 ### Stage 3: Shader-Visible Hit Data Contract
@@ -330,7 +330,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- `RTIndirectSpecular` now has a renderer-owned hit-data contract made of packed static hit vertices, packed triangle indices, per-render-instance hit offsets, existing `MeshInstances`, and compact material constants.
+- `IndirectSpecular` now has a renderer-owned hit-data contract made of packed static hit vertices, packed triangle indices, per-render-instance hit offsets, existing `MeshInstances`, and compact material constants.
 - The frame hit-data upload is built from `RenderSceneData` after snapshot translation; the pass receives only renderer-owned GPU SRVs and does not read GameFramework scene state or backend-native acceleration-structure internals.
 - Stage 3 supports static mesh hit reconstruction. Skinned meshes, missing retained mesh hit data, invalid material slots, or unavailable upload buffers are marked invalid and fall back to Stage 2 debug/black behavior with renderer diagnostics.
 - The shader reconstructs hit normals from interpolated triangle attributes plus the instance world-inverse-transpose matrix, resolves material id through the hit instance table, and uses material base color/roughness as the temporary real-material hit signal.
@@ -361,7 +361,7 @@ Implementation prompt:
 ```text
 Implement Stage 3 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Add the smallest renderer-owned shader-visible hit-data contract needed for RTIndirectSpecular to shade ray hits with real scene materials. Reuse existing RenderSceneData, material cache, GPU mesh cache, and ray tracing scene data where possible. Do not expose GameFramework mutable data or backend-native acceleration structure details to the pass. Bind all hit-data buffers through typed shader parameters and frame/pass runtime services, and add guarded fallback behavior when the data is unavailable.
+Add the smallest renderer-owned shader-visible hit-data contract needed for IndirectSpecular to shade ray hits with real scene materials. Reuse existing RenderSceneData, material cache, GPU mesh cache, and ray tracing scene data where possible. Do not expose GameFramework mutable data or backend-native acceleration structure details to the pass. Bind all hit-data buffers through typed shader parameters and frame/pass runtime services, and add guarded fallback behavior when the data is unavailable.
 ```
 
 ### Stage 3.5: Production Hit Data ABI Hardening
@@ -407,7 +407,7 @@ Implementation prompt:
 ```text
 Implement Stage 3.5 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Harden the RTIndirectSpecular hit-data ABI from a bootstrap static-material path into a production ray-hit contract. Add UV0 and tangent/sign data, explicit mesh/material/geometry flags, TLAS InstanceID validation, unsupported-geometry diagnostics, and debug modes for UV/material/fallback reasons. Decide and implement the first alpha-tested and skinned/deformed geometry policy without leaking GameFramework or backend-native data into the pass. Keep all resources declared through typed pass parameters and preserve deterministic fallback behavior.
+Harden the IndirectSpecular hit-data ABI from a bootstrap static-material path into a production ray-hit contract. Add UV0 and tangent/sign data, explicit mesh/material/geometry flags, TLAS InstanceID validation, unsupported-geometry diagnostics, and debug modes for UV/material/fallback reasons. Decide and implement the first alpha-tested and skinned/deformed geometry policy without leaking GameFramework or backend-native data into the pass. Keep all resources declared through typed pass parameters and preserve deterministic fallback behavior.
 ```
 
 ### Stage 4: Constants-Only Hit Material And Direct Lighting
@@ -416,7 +416,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- `RTIndirectSpecular` now reconstructs constants-only hit material data: base color, alpha, roughness, metallic, dielectric F0, emissive, and subsurface constants.
+- `IndirectSpecular` now reconstructs constants-only hit material data: base color, alpha, roughness, metallic, dielectric F0, emissive, and subsurface constants.
 - Hit shading evaluates directional, point, and spot lights from `ViewLighting` using the engine BRDF helpers and no secondary shadow rays. This produces outgoing/incident radiance from the reflected hit and includes hit emissive contribution.
 - Material texture sampling, normal-map sampling, and alpha-tested candidate-hit rejection remain deferred to Stage 8. Textured materials still use material constants and existing debug/fallback diagnostics.
 - Primary-surface Fresnel/roughness weighting remains outside this hit-lighting step, so the pass does not intentionally double-apply the primary surface specular response.
@@ -455,7 +455,7 @@ Implementation prompt:
 ```text
 Implement Stage 4 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Extend RTIndirectSpecular so ray hits are shaded with production constants-only material semantics and renderer lighting. Interpolate hit attributes including UV/tangent data, fetch material constants, apply the Stage 3.5 alpha/two-sided policy, evaluate the engine's current BRDF-compatible direct lighting, include emissive contribution, and use a deterministic miss fallback. Do not add bindless/material texture sampling in this stage; keep textured materials on explicit constants-only fallback diagnostics. Keep secondary shadow rays optional and disabled unless the existing ray tracing budget/settings make them clean. Keep LightingComposite source-agnostic by consuming IndirectSpecular.
+Extend IndirectSpecular so ray hits are shaded with production constants-only material semantics and renderer lighting. Interpolate hit attributes including UV/tangent data, fetch material constants, apply the Stage 3.5 alpha/two-sided policy, evaluate the engine's current BRDF-compatible direct lighting, include emissive contribution, and use a deterministic miss fallback. Do not add bindless/material texture sampling in this stage; keep textured materials on explicit constants-only fallback diagnostics. Keep secondary shadow rays optional and disabled unless the existing ray tracing budget/settings make them clean. Keep LightingComposite source-agnostic by consuming IndirectSpecular.
 ```
 
 ### Stage 5: Stochastic GGX Importance Sampling
@@ -464,7 +464,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- `RTIndirectSpecular` now has `r.RayTracing.Reflections.SampleMode`: `0=Mirror`, `1=StochasticGGX`. Stochastic GGX is the default, with mirror forced for the low-roughness limit.
+- `IndirectSpecular` now has `r.RayTracing.Reflections.SampleMode`: `0=Mirror`, `1=StochasticGGX`. Stochastic GGX is the default, with mirror forced for the low-roughness limit.
 - The shader uses deterministic per-pixel/per-frame interleaved gradient noise, samples a GGX half-vector with `alpha = roughness * roughness`, traces the sampled direction, shades hit/miss incident radiance separately, and applies explicit PDF/throughput weighting.
 - Because `LightingComposite` still applies the primary-surface Fresnel and indirect-specular occlusion to `IndirectSpecular`, the Stage 5 estimator writes a Fresnel-free primary specular throughput. This is intentionally biased toward current pipeline compatibility rather than a fully standalone unbiased path.
 - The full roughness range is supported. The shader does not apply roughness fade, an intensity multiplier, or contribution clamping; exact zero roughness takes the deterministic mirror path and nonzero roughness uses GGX sampling with numerical epsilons only.
@@ -505,7 +505,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- Reviewer controls now use the renderer ray tracing settings path through `RTIndirectSpecularSettings` and `RenderRayTracingPassServices`.
+- Reviewer controls now use the renderer ray tracing settings path through `IndirectSpecularSettings` and `RenderRayTracingPassServices`.
 - User-facing CVars are:
   - `r.RayTracing.Reflections.Enabled`: toggles the pass; disabled mode is a deterministic no-op that leaves the existing `IndirectSpecular` producer intact.
   - `r.RayTracing.Reflections.SampleMode`: `0=Mirror`, `1=StochasticGGX`.
@@ -513,9 +513,9 @@ Implementation note:
   - `r.RayTracing.Reflections.DebugMode`: reflection-owned modes are `3=MirrorDirection`, `10=SampleDirection`, `11=SamplePdf`, `12=SampleThroughput`, `13=HitRadiance`, `14=FinalContribution`; shared ray-hit/material modes are `0=Off`, `1=HitMask`, `2=HitDistance`, `4=HitUV`, `5=HitNormal`, `6=MaterialId`, `7=GeometryClass`, `8=HitRejectionReason`, `15=MaterialBaseColor`, `16=MaterialRoughnessMetallic`, `17=MaterialEmissive`, `20=HitTangent`, `21=HitBitangent`, `22=HitNormalTangent`, `23=HitSampledNormal`, `24=AlphaAcceptedRejected`, `25=AlphaSample`, `26=AlphaCutoff`.
   - `r.RayTracing.Reflections.NormalBias`: ray origin bias; this is a geometric robustness control, not a lighting scale.
 - The feature intentionally has no roughness cutoff/fade, intensity multiplier, or contribution clamp control.
-- `RTIndirectSpecular` publishes status reasons through renderer smoke diagnostics: `disabled`, `unsupported`, `missing-tlas`, `missing-hit-data`, and `running`.
+- `IndirectSpecular` publishes status reasons through renderer smoke diagnostics: `disabled`, `unsupported`, `missing-tlas`, `missing-hit-data`, and `running`.
 - Smoke diagnostics include enabled state, sample/debug modes, max distance, hit-data availability, hit instance/material counts, and the GPU timing label `RT Indirect Specular Ray Query`.
-- Ray tracing frame timings now include `RTIndirectSpecularGpuMilliseconds` once timestamp results resolve.
+- Ray tracing frame timings now include `IndirectSpecularGpuMilliseconds` once timestamp results resolve.
 
 Goal: make the feature easy to review, tune, and test.
 
@@ -539,7 +539,7 @@ Implementation prompt:
 ```text
 Implement Stage 6 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Add user/reviewer-facing controls and diagnostics for RTIndirectSpecular. Expose enable, sample mode, max ray distance, and debug visualization through the renderer settings path already used by similar features. Do not add non-physical roughness cutoff, intensity, or contribution clamp controls. Publish pass timing and a clear status reason for running, disabled, unsupported, missing TLAS, or missing hit data. Add smoke/validation metadata if that path exists, and document the shader compiler and runtime validation commands.
+Add user/reviewer-facing controls and diagnostics for IndirectSpecular. Expose enable, sample mode, max ray distance, and debug visualization through the renderer settings path already used by similar features. Do not add non-physical roughness cutoff, intensity, or contribution clamp controls. Publish pass timing and a clear status reason for running, disabled, unsupported, missing TLAS, or missing hit data. Add smoke/validation metadata if that path exists, and document the shader compiler and runtime validation commands.
 ```
 
 ### Stage 7: Quality Cleanup Before Denoising
@@ -578,17 +578,17 @@ Implementation prompt:
 ```text
 Implement Stage 7 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Polish the no-denoiser stochastic RTIndirectSpecular baseline. Improve ray biasing, backface handling, sampling diagnostics, and debug views without adding history, denoising, roughness fade, intensity scaling, or contribution clamps. If a blue-noise resource can be integrated through existing renderer texture contracts, add it as an optional input; otherwise keep hash-based sampling. Update the docs with known quality limitations and recommended defaults.
+Polish the no-denoiser stochastic IndirectSpecular baseline. Improve ray biasing, backface handling, sampling diagnostics, and debug views without adding history, denoising, roughness fade, intensity scaling, or contribution clamps. If a blue-noise resource can be integrated through existing renderer texture contracts, add it as an optional input; otherwise keep hash-based sampling. Update the docs with known quality limitations and recommended defaults.
 ```
 
 ### Stage 8: Bindless Material Texture Parity
 
-Goal: add a renderer-owned descriptor-indexed or bindless material texture contract that can serve all material consumers, with `RTIndirectSpecular` as the first consumer that needs arbitrary material lookup after traversal.
+Goal: add a renderer-owned descriptor-indexed or bindless material texture contract that can serve all material consumers, with `IndirectSpecular` as the first consumer that needs arbitrary material lookup after traversal.
 
 Reference and source findings:
 
 - Sparkle's current raster material path is bindful per draw: `MaterialCacheManager` resolves each material texture slot to a `RenderBindingSet`, and `GBufferMeshBatchDrawer` binds `TextureBaseColor`, `TextureNormal`, `TextureRoughness`, `TextureMetallic`, `TextureOcclusion`, `TextureEmissive`, `TextureSubsurfaceColor`, and `TextureSubsurfaceStrength` for the current material batch.
-- `RTIndirectSpecular` cannot reuse per-draw texture bindings because a ray hit can land on any material after traversal. This is the first strong use case for a renderer material texture table, but the table itself must not be RT-owned.
+- `IndirectSpecular` cannot reuse per-draw texture bindings because a ray hit can land on any material after traversal. This is the first strong use case for a renderer material texture table, but the table itself must not be RT-owned.
 - RHI already has early bindless metadata placeholders (`RhiBindlessBindingMetadata`) but no source-confirmed renderer pass parameter type for runtime-sized descriptor arrays yet. This means the final stage must start with RHI/compiler capability plumbing before shader sampling.
 - DirectX Shader Model 6.6 dynamic resources allow shaders to index descriptor heaps directly, but require explicit root-signature/global flags and backend support.
 - Vulkan descriptor indexing/bindless requires feature-gated descriptor arrays and non-uniform indexing semantics. Per-hit material indices are non-uniform by nature, so shader code must use the correct non-uniform indexing form once the cross-compile path supports it.
@@ -599,7 +599,7 @@ Design constraints:
 - After Stage 8 material parity is enabled, every supported material texture table consumer path must be fully functional. Do not keep constants-only as a supported final fallback for textured materials.
 - During bring-up substages, constants-only behavior is allowed only as a temporary disabled/not-yet-enabled state before texture sampling is wired. Once material texture table sampling is advertised as supported for a consumer, unsupported capability or invalid descriptor setup must fail closed with an explicit reason, not by silently shading textured materials as constants.
 - Support renderer material binding modes deliberately:
-  - `RaytracingOnly`: keep GBuffer/raster material bindings exactly as they are today and build a renderer material texture table that is bound only by ray tracing consumers such as `RTIndirectSpecular`. The table remains generic renderer material infrastructure; this mode only scopes its current consumers. This is the preferred bring-up and debug mode because direct raster material output stays a known-good comparison.
+  - `RaytracingOnly`: keep GBuffer/raster material bindings exactly as they are today and build a renderer material texture table that is bound only by ray tracing consumers such as `IndirectSpecular`. The table remains generic renderer material infrastructure; this mode only scopes its current consumers. This is the preferred bring-up and debug mode because direct raster material output stays a known-good comparison.
   - `Everything`: allow raster and RT to share the bindless material table once the table, shader compiler, RHI binding layouts, and validation scenes are stable.
 - Do not add a `ConstantsOnlyFallback` final mode. If material texture table support is unavailable, texture sampling through that table is unsupported for that backend/configuration.
 - Do not replace the existing GBuffer per-draw bindful path as part of table bring-up. Any raster bindless migration must be optional and separately switchable.
@@ -615,7 +615,7 @@ Goal: prove the backend/compiler/RHI contract needed for bindless material textu
 
 Implementation note:
 
-- Status: implemented as an audit/contract stage. `RTIndirectSpecular` does not sample material textures yet.
+- Status: implemented as an audit/contract stage. `IndirectSpecular` does not sample material textures yet.
 - Source-backed decision: use a fixed-capacity descriptor-indexed material texture array as the first cross-backend path. `ShaderTexture2D<T, ArrayCount>`, `PassParameterLayout::ArrayCount`, `PassParameterSet` array binding, and both D3D12/Vulkan binding layout compilers already carry fixed descriptor counts from shader reflection.
 - Source-backed rejection for first pass: true runtime-sized bindless is not ready in the current source. `RhiBindlessBindingMetadata` exists as metadata only; D3D12 binding layout compilation does not set Shader Model 6.6 direct heap root signature flags or expose `ResourceDescriptorHeap`/`SamplerDescriptorHeap`; Vulkan binding layout compilation does not use descriptor-indexing layout flags such as variable descriptor count, partially bound, or update-after-bind; and the typed shader parameter system has fixed array counts rather than runtime-sized arrays.
 - Active bring-up mode: `RaytracingOnly`. Raster/GBuffer keeps the current per-draw `MaterialCacheManager`/`GBufferMeshBatchDrawer` binding path while ray tracing consumers use the renderer-owned material texture table in later substages.
@@ -651,7 +651,7 @@ Implementation prompt:
 ```text
 Implement Stage 8.0 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Audit and add the minimum backend-neutral capability contract for renderer material texture tables. Confirm whether Sparkle can safely expose a fixed-capacity descriptor array or true runtime-sized bindless table through existing shader reflection, binding layouts, D3D12, and Vulkan. Do not sample textures in RTIndirectSpecular yet. Add capability reporting and fail-closed unsupported reasons, then update this plan with the selected first path.
+Audit and add the minimum backend-neutral capability contract for renderer material texture tables. Confirm whether Sparkle can safely expose a fixed-capacity descriptor array or true runtime-sized bindless table through existing shader reflection, binding layouts, D3D12, and Vulkan. Do not sample textures in IndirectSpecular yet. Add capability reporting and fail-closed unsupported reasons, then update this plan with the selected first path.
 
 Keep raster bindful plus a renderer material texture table as the preferred bring-up/debug configuration. Add a material binding mode setting so later work can choose full bindless for raster and other consumers without rewriting the feature. Do not add constants-only as a supported final mode.
 ```
@@ -685,7 +685,7 @@ Implementation prompt:
 ```text
 Implement Stage 8.1 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Build the renderer-owned material texture index table. Reuse MaterialCacheManager and TextureManager resolution semantics so every material slot has stable indices for BaseColor, Normal, Roughness, Metallic, Occlusion, Emissive, SubsurfaceColor, and SubsurfaceStrength. Keep GBuffer's per-draw material binding path intact and keep RTIndirectSpecular material texture sampling disabled until the table is validated.
+Build the renderer-owned material texture index table. Reuse MaterialCacheManager and TextureManager resolution semantics so every material slot has stable indices for BaseColor, Normal, Roughness, Metallic, Occlusion, Emissive, SubsurfaceColor, and SubsurfaceStrength. Keep GBuffer's per-draw material binding path intact and keep IndirectSpecular material texture sampling disabled until the table is validated.
 
 Implement this first for `RaytracingOnly`: raster keeps existing per-material bindful `RenderBindingSet` usage, while ray tracing consumers receive the new material texture index table. Do not remove or rewrite the bindful GBuffer path.
 ```
@@ -696,20 +696,20 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- The material texture table is still generic renderer scene/material infrastructure; `RTIndirectSpecular` is only the first table-aware consumer.
+- The material texture table is still generic renderer scene/material infrastructure; `IndirectSpecular` is only the first table-aware consumer.
 - `ShaderTexture2DTableSRV<N>` now represents a renderer-owned descriptor table through typed pass parameters without pretending the table is a frame-graph-owned texture array.
 - The first concrete shader contract is a fixed-capacity descriptor array of 4096 `Texture2D` entries plus `MaterialTextureSampler`. Capability reporting now fails closed when the backend cannot support that fixed capacity.
 - The shader package declares descriptor-indexing usage so DXC enables `SPV_EXT_descriptor_indexing` for SPIR-V cooks. Vulkan runtime support still fails closed until the Vulkan RHI reports descriptor-indexing capability explicitly.
-- In `RaytracingOnly`, the table is bound only by `RTIndirectSpecularPass`; GBuffer/raster keeps the existing per-material bindful `RenderBindingSet` path.
+- In `RaytracingOnly`, the table is bound only by `IndirectSpecularPass`; GBuffer/raster keeps the existing per-material bindful `RenderBindingSet` path.
 - Production material texture shading is still disabled. `r.RayTracing.Reflections.DebugMode=15` samples hit base-color texture at hit `UV0` through the table to prove descriptor indexing by material slot and texture slot.
 - Missing, invalid, empty, or overflowing table state prevents the RT material-texture path from running instead of silently shading textured hits as constants.
 
-Goal: make the descriptor table visible to `RTIndirectSpecular` without changing final material output.
+Goal: make the descriptor table visible to `IndirectSpecular` without changing final material output.
 
 Implementation tasks:
 
 - add typed shader parameter support for the selected descriptor table shape
-- bind the material texture table and sampler through the first table-aware consumer, `RTIndirectSpecularPass`
+- bind the material texture table and sampler through the first table-aware consumer, `IndirectSpecularPass`
 - route binding through the active material binding mode:
   - `RaytracingOnly`: bind the table only for ray tracing consumers such as RT passes
   - `Everything`: bind the same table for RT and any opt-in raster path
@@ -730,7 +730,7 @@ Implementation prompt:
 ```text
 Implement Stage 8.2 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Expose the renderer-owned material texture table to RTIndirectSpecular through typed pass parameters and backend-neutral pass services. Add shader helpers and debug-only table lookup validation, but keep production texture shading disabled until valid descriptor indexing is proven. Fail closed on unsupported backend, missing table, invalid material slot, invalid texture slot, or descriptor overflow; do not provide constants-only as a supported final fallback.
+Expose the renderer-owned material texture table to IndirectSpecular through typed pass parameters and backend-neutral pass services. Add shader helpers and debug-only table lookup validation, but keep production texture shading disabled until valid descriptor indexing is proven. Fail closed on unsupported backend, missing table, invalid material slot, invalid texture slot, or descriptor overflow; do not provide constants-only as a supported final fallback.
 
 Honor the active material binding mode. In the preferred `RaytracingOnly` mode, do not bind or consume the table from GBuffer/raster passes.
 ```
@@ -741,7 +741,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- `RTIndirectSpecular` now resolves base color, roughness, metallic, and emissive from the renderer material texture table during hit reconstruction before hit lighting.
+- `IndirectSpecular` now resolves base color, roughness, metallic, and emissive from the renderer material texture table during hit reconstruction before hit lighting.
 - Value semantics match `Material.hlsli` for the first parity set: base color texture multiplies `BaseColor`, roughness and metallic use the texture red channel multiplied by their constants, and emissive texture RGB multiplies `EmissiveColor`.
 - Explicit LOD policy for this stage is fixed mip 0 through `SampleLevel`. This avoids relying on unavailable ray-hit derivatives and keeps first texture parity deterministic; roughness-biased or cone/mip selection is left for a later quality stage.
 - Untextured materials use their authored constants because that is their complete material. Textured material slots require valid descriptor indices before the material texture table is enabled; descriptor correctness is a renderer material-table contract, not a per-hit shader fallback.
@@ -773,7 +773,7 @@ Implementation prompt:
 ```text
 Implement Stage 8.3 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Use the RTIndirectSpecular material texture table to sample base color, roughness, metallic, and emissive textures at ray-hit UV0 with explicit LOD. Match Material.hlsli value semantics exactly for these slots and fail closed for unsupported or invalid texture access. Add debug views for sampled material values and selected mip. Do not add normal maps, alpha-tested candidate hits, denoising, roughness fades, contribution clamps, intensity scaling, or constants-only fallback mode.
+Use the IndirectSpecular material texture table to sample base color, roughness, metallic, and emissive textures at ray-hit UV0 with explicit LOD. Match Material.hlsli value semantics exactly for these slots and fail closed for unsupported or invalid texture access. Add debug views for sampled material values and selected mip. Do not add normal maps, alpha-tested candidate hits, denoising, roughness fades, contribution clamps, intensity scaling, or constants-only fallback mode.
 ```
 
 #### Stage 8.4: Normal Map And Tangent-Space Parity
@@ -782,7 +782,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- `RTIndirectSpecular` now samples the normal texture when the material normal-map flag is present, using the same `Material.hlsli` unpacking convention: `xy * 2 - 1`, reconstructed positive `z`, normalized.
+- `IndirectSpecular` now samples the normal texture when the material normal-map flag is present, using the same `Material.hlsli` unpacking convention: `xy * 2 - 1`, reconstructed positive `z`, normalized.
 - The hit tangent basis is reconstructed from the Stage 3.5 ABI as `T = orthonormalized hit tangent`, `B = tangentSign * normalize(cross(N, T))`, and `N = geometric world normal`. The tangent-space normal is transformed with the same `mul(normalTangent, float3x3(T, B, N))` convention as raster.
 - Two-sided backface handling is applied after normal-map transformation: one-sided backfaces still fail closed, while two-sided hits flip the final sampled normal and debug basis toward the incoming ray.
 - Normal-map descriptors use the same material-table contract as the other texture slots. Flagged normal-mapped materials must have valid descriptor indices before texture parity is enabled.
@@ -810,7 +810,7 @@ Implementation prompt:
 ```text
 Implement Stage 8.4 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Add normal-map sampling to RTIndirectSpecular material texture parity. Use the existing hit tangent/sign ABI, reconstruct bitangent, match Material.hlsli normal unpacking and tangent-to-world semantics, and keep robust fallback for degenerate tangents or missing normal descriptors. Add debug views for tangent basis and final sampled normal.
+Add normal-map sampling to IndirectSpecular material texture parity. Use the existing hit tangent/sign ABI, reconstruct bitangent, match Material.hlsli normal unpacking and tangent-to-world semantics, and keep robust fallback for degenerate tangents or missing normal descriptors. Add debug views for tangent basis and final sampled normal.
 ```
 
 #### Stage 8.5: Alpha-Tested Candidate-Hit Policy
@@ -819,7 +819,7 @@ Status: implemented on 2026-06-21.
 
 Implementation note:
 
-- `RTIndirectSpecular` now uses inline `RayQuery` candidate-hit handling for alpha-tested geometry. The pass no longer uses `RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH`; non-opaque candidates reconstruct instance, primitive, barycentrics, UV0, and material before deciding whether to commit.
+- `IndirectSpecular` now uses inline `RayQuery` candidate-hit handling for alpha-tested geometry. The pass no longer uses `RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH`; non-opaque candidates reconstruct instance, primitive, barycentrics, UV0, and material before deciding whether to commit.
 - Classic TLAS now has backend-neutral per-instance flags, mapped to D3D12/Vulkan force-non-opaque instance flags. Alpha-tested render instances set the non-opaque bit so candidate hits are visible to inline ray queries. Partitioned TLAS full builds and logical updates set the existing `ForceNoOpaque` flag for the same alpha-tested material class.
 - Candidate alpha uses the same base-color alpha value semantics as Stage 8.3: base-color texture alpha multiplied by the material base-color alpha constant, sampled at explicit mip 0. Non-textured alpha-tested materials use their authored base-color alpha.
 - Candidates with sampled alpha below `AlphaCutoff` are rejected and traversal continues. Candidates with invalid hit data, invalid material, unsupported blended alpha mode, or invalid required texture descriptors are committed deliberately so the final hit fails closed instead of silently revealing geometry behind it.
@@ -848,7 +848,7 @@ Implementation prompt:
 ```text
 Implement Stage 8.5 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Add alpha-tested candidate-hit support to RTIndirectSpecular using inline RayQuery candidate hit handling. Reconstruct candidate UV/material, sample base-color alpha through the material texture table with explicit LOD, compare against alpha cutoff, and commit or reject the candidate hit. Keep alpha-blended materials unsupported with explicit fallback.
+Add alpha-tested candidate-hit support to IndirectSpecular using inline RayQuery candidate hit handling. Reconstruct candidate UV/material, sample base-color alpha through the material texture table with explicit LOD, compare against alpha cutoff, and commit or reject the candidate hit. Keep alpha-blended materials unsupported with explicit fallback.
 ```
 
 #### Stage 8.6: Material Parity Validation Scenes And Defaults
@@ -858,10 +858,10 @@ Status: implemented on 2026-06-21.
 Implementation note:
 
 - Added Showcase validation startup levels:
-  - `RTIndirectSpecularMaterialParity_DamagedHelmet`
-  - `RTIndirectSpecularMaterialParity_AlphaTest`
-  - `RTIndirectSpecularMaterialParity_RoughnessRange`
-- Added the validation recipe at [RTIndirectSpecularMaterialParityValidation.md](../03-Validation/RTIndirectSpecularMaterialParityValidation.md). It maps each material-parity requirement to a startup level, RT reflection mode, debug mode, and backend path.
+  - `IndirectSpecularMaterialParity_DamagedHelmet`
+  - `IndirectSpecularMaterialParity_AlphaTest`
+  - `IndirectSpecularMaterialParity_RoughnessRange`
+- Added the validation recipe at [IndirectSpecularMaterialParityValidation.md](../03-Validation/IndirectSpecularMaterialParityValidation.md). It maps each material-parity requirement to a startup level, ray-traced reflection mode, debug mode, and backend path.
 - `RaytracingOnly` remains the primary debug binding mode because raster/GBuffer stays bindful and acts as the direct-material baseline.
 - `Everything` remains deferred until raster bindless opt-in exists and can be toggled against the bindful baseline.
 - The current Showcase content does not include a dedicated synthetic constant-only swatch scene. The validation note documents that gap explicitly rather than claiming full synthetic material-grid coverage.
@@ -896,7 +896,7 @@ Implementation prompt:
 ```text
 Implement Stage 8.6 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Add focused validation scenes and documentation for RTIndirectSpecular material texture parity. Cover mirror and stochastic GGX modes across the full roughness range, direct-vs-reflected material comparisons, textured material slots, normal maps, alpha-tested geometry if implemented, D3D12, supported Vulkan, and unsupported bindless fail-closed behavior. Keep this as validation coverage and documentation, not new rendering behavior.
+Add focused validation scenes and documentation for IndirectSpecular material texture parity. Cover mirror and stochastic GGX modes across the full roughness range, direct-vs-reflected material comparisons, textured material slots, normal maps, alpha-tested geometry if implemented, D3D12, supported Vulkan, and unsupported bindless fail-closed behavior. Keep this as validation coverage and documentation, not new rendering behavior.
 ```
 
 ## Suggested Validation Commands
@@ -906,10 +906,10 @@ Exact command names can differ by local build output, so confirm paths from the 
 ```powershell
 cmake --build build --target ShaderCompiler --config DevelopmentEditor
 .\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe list-shaders --validate
-.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe inspect-shader RTIndirectSpecularCS
-.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe cook --package RTIndirectSpecular --backend dxc --target DxilSm66
-.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe cook --package RTIndirectSpecular --backend dxc --target SpirV16
-.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe inspect-package <path-to-RTIndirectSpecular-cooked-package>
+.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe inspect-shader IndirectSpecularCS
+.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe cook --package IndirectSpecular --backend dxc --target DxilSm66
+.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe cook --package IndirectSpecular --backend dxc --target SpirV16
+.\artifacts\dev\tools\ShaderCompiler\DevelopmentEditor\ShaderCompiler.exe inspect-package <path-to-IndirectSpecular-cooked-package>
 cmake --build build --target architecture_boundary_check --config DevelopmentEditor
 cmake --build build --target SparkleRenderer --config DevelopmentEditor
 ```
@@ -918,7 +918,7 @@ Runtime validation should cover:
 
 - D3D12 with ray tracing enabled
 - Vulkan with ray tracing enabled if supported in the local build
-- material texture parity levels and commands from [RTIndirectSpecularMaterialParityValidation.md](../03-Validation/RTIndirectSpecularMaterialParityValidation.md)
+- material texture parity levels and commands from [IndirectSpecularMaterialParityValidation.md](../03-Validation/IndirectSpecularMaterialParityValidation.md)
 - unsupported or missing ray tracing capability
 - no scene TLAS / empty scene
 - reflections disabled: set `r.RayTracing.Reflections.Enabled=0` and verify smoke status `disabled` plus visual equivalence to the previous renderer output
@@ -927,7 +927,7 @@ Runtime validation should cover:
 - missing hit data: force or reproduce missing RT hit buffers and verify smoke status `missing-hit-data` plus deterministic shader fallback
 - mirror debug mode: set `r.RayTracing.Reflections.Enabled=1`, `r.RayTracing.Reflections.SampleMode=0`
 - stochastic GGX mode: set `r.RayTracing.Reflections.Enabled=1`, `r.RayTracing.Reflections.SampleMode=1`
-- status/timing metadata: capture smoke diagnostics and verify `RayTracing.RTIndirectSpecular.StatusReason`, `HitInstanceCount`, `HitMaterialCount`, and `FrameTimings.RTIndirectSpecularGpuMilliseconds`
+- status/timing metadata: capture smoke diagnostics and verify `RayTracing.IndirectSpecular.StatusReason`, `HitInstanceCount`, `HitMaterialCount`, and `FrameTimings.IndirectSpecularGpuMilliseconds`
 - direct-vs-reflected material parity scene:
   - one material visible directly in GBuffer and through reflection
   - constants-only material
@@ -973,7 +973,7 @@ Recommended defaults for the first usable version:
 
 The feature is done for this plan when:
 
-- `RTIndirectSpecular` is a full-resolution inline ray-query compute pass
+- `IndirectSpecular` is a full-resolution inline ray-query compute pass
 - it importance samples reflection directions from material roughness
 - it shades ray hits with real renderer material and lighting data
 - it reaches texture material parity through the final renderer-owned material texture table stage and fails closed when that table is unavailable

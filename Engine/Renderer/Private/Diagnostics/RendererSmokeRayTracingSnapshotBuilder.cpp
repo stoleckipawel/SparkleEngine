@@ -4,7 +4,7 @@
 
 #include "RayTracing/RayTracingPerformanceMetrics.h"
 #include "RayTracing/RenderRayTracingScene.h"
-#include "RayTracing/RTIndirectSpecularRuntimeDiagnostics.h"
+#include "RayTracing/IndirectSpecularRuntimeDiagnostics.h"
 
 namespace RendererSmokeRayTracingSnapshotBuilderDetails
 {
@@ -78,10 +78,10 @@ namespace RendererSmokeRayTracingSnapshotBuilderDetails
 		    .PtlasUpdateGpuMilliseconds = metrics.PtlasGpuUpdates.PtlasUpdateGpuMilliseconds};
 	}
 
-	RendererSmokeRTIndirectSpecularDiagnostics BuildRTIndirectSpecularDiagnostics() noexcept
+	RendererSmokeIndirectSpecularDiagnostics BuildIndirectSpecularDiagnostics() noexcept
 	{
-		const RTIndirectSpecularRuntimeDiagnosticsSnapshot snapshot = RTIndirectSpecularRuntimeDiagnostics::Capture();
-		return RendererSmokeRTIndirectSpecularDiagnostics{
+		const IndirectSpecularRuntimeDiagnosticsSnapshot snapshot = IndirectSpecularRuntimeDiagnostics::Capture();
+		return RendererSmokeIndirectSpecularDiagnostics{
 		    .StatusReason = snapshot.StatusReason,
 		    .Enabled = snapshot.Enabled,
 		    .SampleMode = static_cast<std::uint32_t>(snapshot.SampleMode),
@@ -101,7 +101,7 @@ RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build
 	RendererSmokeRayTracingDiagnostics diagnostics{};
 	diagnostics.Capability.Supported = capabilities.SupportsRayTracing;
 	diagnostics.Capability.InlineRayQuerySupported = capabilities.SupportsInlineRayQuery;
-	diagnostics.RTIndirectSpecular = RendererSmokeRayTracingSnapshotBuilderDetails::BuildRTIndirectSpecularDiagnostics();
+	diagnostics.IndirectSpecular = RendererSmokeRayTracingSnapshotBuilderDetails::BuildIndirectSpecularDiagnostics();
 
 	if (rayTracingScene == nullptr)
 	{
@@ -115,7 +115,7 @@ RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build
 	diagnostics.FrameTimings.ScenePrepareCpuMilliseconds = metrics.Timings.ScenePrepareCpuMilliseconds;
 	diagnostics.FrameTimings.SceneBuildCpuMilliseconds = metrics.Timings.SceneBuildCpuMilliseconds;
 	diagnostics.FrameTimings.RayTracingPassGpuMilliseconds = metrics.Timings.RayTracingPassGpuMilliseconds;
-	diagnostics.FrameTimings.RTIndirectSpecularGpuMilliseconds = metrics.Timings.RTIndirectSpecularGpuMilliseconds;
+	diagnostics.FrameTimings.IndirectSpecularGpuMilliseconds = metrics.Timings.IndirectSpecularGpuMilliseconds;
 	diagnostics.Blas = RendererSmokeRayTracingSnapshotBuilderDetails::BuildBlasDiagnostics(metrics);
 	diagnostics.ClassicTlas = RendererSmokeRayTracingSnapshotBuilderDetails::BuildClassicTlasDiagnostics(*rayTracingScene, metrics);
 	diagnostics.PtlasPlanner = RendererSmokeRayTracingSnapshotBuilderDetails::BuildPtlasPlannerDiagnostics(capabilities, metrics);

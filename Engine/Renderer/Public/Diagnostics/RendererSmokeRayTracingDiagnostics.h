@@ -81,10 +81,10 @@ struct SPARKLE_RENDERER_API RendererSmokeRayTracingFrameTimingDiagnostics final
 	double ScenePrepareCpuMilliseconds = 0.0;
 	double SceneBuildCpuMilliseconds = 0.0;
 	double RayTracingPassGpuMilliseconds = 0.0;
-	double RTIndirectSpecularGpuMilliseconds = 0.0;
+	double IndirectSpecularGpuMilliseconds = 0.0;
 };
 
-struct SPARKLE_RENDERER_API RendererSmokeRTIndirectSpecularDiagnostics final
+struct SPARKLE_RENDERER_API RendererSmokeIndirectSpecularDiagnostics final
 {
 	std::string StatusReason;
 	bool Enabled = false;
@@ -101,7 +101,7 @@ struct SPARKLE_RENDERER_API RendererSmokeRayTracingDiagnostics final
 {
 	RendererSmokeRayTracingCapabilityDiagnostics Capability;
 	RendererSmokeRayTracingFrameTimingDiagnostics FrameTimings;
-	RendererSmokeRTIndirectSpecularDiagnostics RTIndirectSpecular;
+	RendererSmokeIndirectSpecularDiagnostics IndirectSpecular;
 	RendererSmokeRayTracingBlasDiagnostics Blas;
 	RendererSmokeRayTracingClassicTlasDiagnostics ClassicTlas;
 	RendererSmokeRayTracingPtlasPlannerDiagnostics PtlasPlanner;

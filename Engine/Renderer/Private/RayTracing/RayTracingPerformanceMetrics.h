@@ -22,7 +22,7 @@ struct RayTracingFrameTimingMetrics final
 	double ScenePrepareCpuMilliseconds = 0.0;
 	double SceneBuildCpuMilliseconds = 0.0;
 	double RayTracingPassGpuMilliseconds = 0.0;
-	double RTIndirectSpecularGpuMilliseconds = 0.0;
+	double IndirectSpecularGpuMilliseconds = 0.0;
 };
 
 struct RayTracingPerformanceMetrics final

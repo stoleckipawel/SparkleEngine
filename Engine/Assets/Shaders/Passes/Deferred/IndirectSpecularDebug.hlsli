@@ -2,68 +2,68 @@
 
 #include "RayTracing/RayTracingHitDebug.hlsli"
 
-float3 BuildRTIndirectSpecularDebugColor(
+float3 BuildIndirectSpecularDebugColor(
     RayTracingTraceResult trace,
     RayTracingHitSurfaceData hitSurface,
-    RTIndirectSpecularSampleResult sample,
-    RTIndirectSpecularResolvedContribution resolved,
+    IndirectSpecularSampleResult sample,
+    IndirectSpecularResolvedContribution resolved,
     float3 mirrorDirectionWorld)
 {
-	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugMirrorDirection)
+	if (IndirectSpecularDebugMode == IndirectSpecularDebugMirrorDirection)
 	{
 		return mirrorDirectionWorld * 0.5f + 0.5f;
 	}
-	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugSampleDirection)
+	if (IndirectSpecularDebugMode == IndirectSpecularDebugSampleDirection)
 	{
 		return sample.DirectionWorld * 0.5f + 0.5f;
 	}
-	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugSamplePdf)
+	if (IndirectSpecularDebugMode == IndirectSpecularDebugSamplePdf)
 	{
 		return saturate(sample.Pdf * 4.0f).xxx;
 	}
-	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugSampleThroughput)
+	if (IndirectSpecularDebugMode == IndirectSpecularDebugSampleThroughput)
 	{
 		return saturate(sample.ThroughputNoF).xxx;
 	}
-	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugHitRadiance)
+	if (IndirectSpecularDebugMode == IndirectSpecularDebugHitRadiance)
 	{
 		return RayTracingDebugPreviewHdr(resolved.HitRadiance);
 	}
-	if (RTIndirectSpecularDebugMode == RTIndirectSpecularDebugFinalContribution)
+	if (IndirectSpecularDebugMode == IndirectSpecularDebugFinalContribution)
 	{
 		return RayTracingDebugPreviewHdr(resolved.FinalContribution);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::MaterialBaseColor)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::MaterialBaseColor)
 	{
 		return hitSurface.Valid ? hitSurface.BaseColor : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::MaterialRoughnessMetallic)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::MaterialRoughnessMetallic)
 	{
 		return hitSurface.Valid ? float3(hitSurface.Roughness, hitSurface.Metallic, 0.0f)
 		                        : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::MaterialEmissive)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::MaterialEmissive)
 	{
 		return hitSurface.Valid ? RayTracingDebugPreviewHdr(hitSurface.EmissiveColor)
 		                        : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::HitTangent)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::HitTangent)
 	{
 		return hitSurface.Valid ? hitSurface.TangentWorld * 0.5f + 0.5f : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::HitBitangent)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::HitBitangent)
 	{
 		return hitSurface.Valid ? hitSurface.BitangentWorld * 0.5f + 0.5f : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::HitNormalTangent)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::HitNormalTangent)
 	{
 		return hitSurface.Valid ? hitSurface.NormalTangent * 0.5f + 0.5f : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::HitSampledNormal)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::HitSampledNormal)
 	{
 		return hitSurface.Valid ? hitSurface.NormalWorld * 0.5f + 0.5f : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::AlphaAcceptedRejected)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::AlphaAcceptedRejected)
 	{
 		if (!trace.AlphaCandidateSeen)
 		{
@@ -71,15 +71,15 @@ float3 BuildRTIndirectSpecularDebugColor(
 		}
 		return trace.AlphaCandidateAccepted ? float3(0.0f, 0.85f, 0.2f) : float3(0.05f, 0.25f, 1.0f);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::AlphaSample)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::AlphaSample)
 	{
 		return trace.AlphaCandidateSeen ? saturate(trace.AlphaCandidateValue).xxx : 0.0f.xxx;
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::AlphaCutoff)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::AlphaCutoff)
 	{
 		return trace.AlphaCandidateSeen ? saturate(trace.AlphaCandidateCutoff).xxx : 0.0f.xxx;
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::HitRejectionReason)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::HitRejectionReason)
 	{
 		return RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
@@ -87,28 +87,28 @@ float3 BuildRTIndirectSpecularDebugColor(
 	{
 		return 0.0f.xxx;
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::HitMask)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::HitMask)
 	{
 		return 1.0f.xxx;
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::HitDistance)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::HitDistance)
 	{
-		const float normalizedDistance = saturate(trace.RayT / max(RTIndirectSpecularMaxDistance, RTIndirectSpecularMinimumTMin));
+		const float normalizedDistance = saturate(trace.RayT / max(IndirectSpecularMaxDistance, IndirectSpecularMinimumTMin));
 		return lerp(float3(0.05f, 0.25f, 1.0f), float3(1.0f, 0.85f, 0.05f), normalizedDistance);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::HitUV)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::HitUV)
 	{
 		return hitSurface.Valid ? float3(frac(hitSurface.TexCoord0), 0.0f) : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::HitNormal)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::HitNormal)
 	{
 		return hitSurface.Valid ? hitSurface.NormalWorld * 0.5f + 0.5f : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::MaterialId)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::MaterialId)
 	{
 		return hitSurface.Valid ? HashIdColor(hitSurface.MaterialSlot, 0u) : RayTracingDebugReasonColor(hitSurface.RejectionReason);
 	}
-	if (RTIndirectSpecularDebugMode == RayTracingDebugModes::GeometryClass)
+	if (IndirectSpecularDebugMode == RayTracingDebugModes::GeometryClass)
 	{
 		return RayTracingDebugGeometryClassColor(hitSurface.GeometryFlags);
 	}

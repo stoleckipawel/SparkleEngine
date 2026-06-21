@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common/Hash.hlsli"
 #include "RayTracing/RayTracingDebugModes.hlsli"
 #include "RayTracing/RayTracingHitSurface.hlsli"
 

@@ -5,10 +5,10 @@
 
 #include "Resources/RenderConstantBufferData.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
-#include "Renderer/Private/RayTracing/RTIndirectSpecularUniformData.h"
+#include "Renderer/Private/RayTracing/IndirectSpecularUniformData.h"
 #include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
 
-class RTIndirectSpecularCS final : public TGlobalShader<RTIndirectSpecularCS>
+class IndirectSpecularCS final : public TGlobalShader<IndirectSpecularCS>
 {
   public:
 	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures =
@@ -20,7 +20,7 @@ class RTIndirectSpecularCS final : public TGlobalShader<RTIndirectSpecularCS>
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
-	SHADER_PARAMETER_CBUFFER_NAMED(RTIndirectSpecular, RTIndirectSpecularUniformData, RTIndirectSpecularUniformData)
+	SHADER_PARAMETER_CBUFFER_NAMED(IndirectSpecularConstants, IndirectSpecularUniformData, IndirectSpecularUniformData)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
@@ -36,8 +36,8 @@ class RTIndirectSpecularCS final : public TGlobalShader<RTIndirectSpecularCS>
 };
 
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
-    RTIndirectSpecularCS,
-    RendererShaderPackages::RTIndirectSpecular,
-    "Passes/Deferred/RTIndirectSpecular.hlsl",
+    IndirectSpecularCS,
+    RendererShaderPackages::IndirectSpecular,
+    "Passes/Deferred/IndirectSpecular.hlsl",
     "main",
     Compute);
