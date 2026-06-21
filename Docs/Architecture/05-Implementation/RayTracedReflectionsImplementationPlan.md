@@ -583,36 +583,264 @@ Polish the no-denoiser stochastic RTIndirectSpecular baseline. Improve ray biasi
 
 ### Stage 8: Bindless Material Texture Parity
 
-Goal: add the renderer-owned descriptor-indexed or bindless material texture contract needed for ray-hit material sampling parity with the raster GBuffer path.
+Goal: add a renderer-owned descriptor-indexed or bindless material texture contract that can serve all material consumers, with `RTIndirectSpecular` as the first consumer that needs arbitrary material lookup after traversal.
+
+Reference and source findings:
+
+- Sparkle's current raster material path is bindful per draw: `MaterialCacheManager` resolves each material texture slot to a `RenderBindingSet`, and `GBufferMeshBatchDrawer` binds `TextureBaseColor`, `TextureNormal`, `TextureRoughness`, `TextureMetallic`, `TextureOcclusion`, `TextureEmissive`, `TextureSubsurfaceColor`, and `TextureSubsurfaceStrength` for the current material batch.
+- `RTIndirectSpecular` cannot reuse per-draw texture bindings because a ray hit can land on any material after traversal. This is the first strong use case for a renderer material texture table, but the table itself must not be RT-owned.
+- RHI already has early bindless metadata placeholders (`RhiBindlessBindingMetadata`) but no source-confirmed renderer pass parameter type for runtime-sized descriptor arrays yet. This means the final stage must start with RHI/compiler capability plumbing before shader sampling.
+- DirectX Shader Model 6.6 dynamic resources allow shaders to index descriptor heaps directly, but require explicit root-signature/global flags and backend support.
+- Vulkan descriptor indexing/bindless requires feature-gated descriptor arrays and non-uniform indexing semantics. Per-hit material indices are non-uniform by nature, so shader code must use the correct non-uniform indexing form once the cross-compile path supports it.
+- NVIDIA Donut's relevant pattern is a scene-level bindless resource table populated from loaded scene resources. Sparkle should follow that shape: one renderer-owned material texture table plus compact per-material texture indices, not backend-native handles exposed to individual passes.
+
+Design constraints:
+
+- After Stage 8 material parity is enabled, every supported material texture table consumer path must be fully functional. Do not keep constants-only as a supported final fallback for textured materials.
+- During bring-up substages, constants-only behavior is allowed only as a temporary disabled/not-yet-enabled state before texture sampling is wired. Once material texture table sampling is advertised as supported for a consumer, unsupported capability or invalid descriptor setup must fail closed with an explicit reason, not by silently shading textured materials as constants.
+- Support renderer material binding modes deliberately:
+  - `RaytracingOnly`: keep GBuffer/raster material bindings exactly as they are today and build a renderer material texture table that is bound only by ray tracing consumers such as `RTIndirectSpecular`. The table remains generic renderer material infrastructure; this mode only scopes its current consumers. This is the preferred bring-up and debug mode because direct raster material output stays a known-good comparison.
+  - `Everything`: allow raster and RT to share the bindless material table once the table, shader compiler, RHI binding layouts, and validation scenes are stable.
+- Do not add a `ConstantsOnlyFallback` final mode. If material texture table support is unavailable, texture sampling through that table is unsupported for that backend/configuration.
+- Do not replace the existing GBuffer per-draw bindful path as part of table bring-up. Any raster bindless migration must be optional and separately switchable.
+- Do not add roughness fades, intensity multipliers, contribution clamps, temporal history, or denoising as part of bindless material parity.
+- Keep `LightingComposite` source-agnostic; it continues to consume `LightingRenderTargets::IndirectSpecular`.
+- Keep GameFramework data behind snapshots and renderer scene translation. The shader sees compact renderer-owned material texture indices, not asset references or mutable scene objects.
+- Texture sampling must use explicit LOD. Ray-hit shaders do not have reliable screen-space derivatives for arbitrary hit UVs.
+- Texture parity should start with base color/roughness/metallic/emissive. Normal maps are a separate substage after tangent basis and LOD behavior are verified.
+
+#### Stage 8.0: Bindless Capability And Shader Contract Audit
+
+Goal: prove the backend/compiler/RHI contract needed for bindless material textures before touching the reflection shader.
+
+Implementation note:
+
+- Status: implemented as an audit/contract stage. `RTIndirectSpecular` does not sample material textures yet.
+- Source-backed decision: use a fixed-capacity descriptor-indexed material texture array as the first cross-backend path. `ShaderTexture2D<T, ArrayCount>`, `PassParameterLayout::ArrayCount`, `PassParameterSet` array binding, and both D3D12/Vulkan binding layout compilers already carry fixed descriptor counts from shader reflection.
+- Source-backed rejection for first pass: true runtime-sized bindless is not ready in the current source. `RhiBindlessBindingMetadata` exists as metadata only; D3D12 binding layout compilation does not set Shader Model 6.6 direct heap root signature flags or expose `ResourceDescriptorHeap`/`SamplerDescriptorHeap`; Vulkan binding layout compilation does not use descriptor-indexing layout flags such as variable descriptor count, partially bound, or update-after-bind; and the typed shader parameter system has fixed array counts rather than runtime-sized arrays.
+- Active bring-up mode: `RaytracingOnly`. Raster/GBuffer keeps the current per-draw `MaterialCacheManager`/`GBufferMeshBatchDrawer` binding path while ray tracing consumers use the renderer-owned material texture table in later substages.
+- `Everything` is available as a renderer material mode setting for future work, but the capability report currently marks it unsupported until raster has an explicit bindless path too.
+- Capability reporting now exposes a generic `MaterialTextureTableCapabilityReport` with selected path, descriptor capacity, runtime-sized support, hybrid-mode support, full-bindless support, and a fail-closed reason. `RayTracingCapabilityReport` includes this generic material capability because ray tracing is the first consumer.
+- Current fail-closed reasons include `backend-descriptor-model-unknown` and `shader-resource-descriptor-limit-unavailable`. Later table-building substages must add descriptor overflow and missing descriptor reasons before advertising texture parity as supported.
+- No constants-only final material-texture mode is introduced. Constants-only behavior remains only an earlier-stage/not-yet-enabled RT material state, not a supported Stage 8 parity fallback.
 
 Implementation tasks:
 
-- add a backend-neutral renderer material texture table indexed by material slot and `MaterialTextureSlots`/texture group
-- expose capability checks for descriptor indexing/bindless resource access on D3D12 and Vulkan
-- bind the material texture table and sampler set through typed pass parameters and frame/pass runtime services
-- extend `RTIndirectSpecularHitMaterial` with stable texture indices or table offsets rather than per-draw texture bindings
-- sample base color, roughness, metallic, emissive, and later normal maps at the ray hit through explicit texture LOD
-- choose and document the first texture LOD policy:
-  - conservative fixed/roughness-biased mip for the first version, or
-  - ray-cone/ray-differential based mip if the required data is available
-- add alpha-tested candidate-hit policy only after base-color alpha can be sampled through this texture table
-- validate that textured materials visible directly in the GBuffer match the same materials through `RTIndirectSpecular`
-- keep a constants-only fallback when bindless/material texture table support is unavailable
+- inspect D3D12 binding-layout compilation for Shader Model 6.6 dynamic resources, descriptor heap flags, and resource descriptor heap indexing
+- inspect Vulkan descriptor indexing support, descriptor array count limits, partially-bound/update-after-bind support, and non-uniform indexing codegen
+- inspect shader reflection and `ShaderParameterStructBuilder` support for fixed-size texture arrays versus runtime-sized descriptor arrays
+- add a renderer material binding mode enum/setting with at least `RaytracingOnly` and `Everything`
+- decide the first supported cross-backend shape:
+  - fixed-capacity descriptor array bound through typed pass parameters, or
+  - true runtime-sized bindless descriptor heap/table
+- make `RaytracingOnly` the first implementation target unless the audit proves `Everything` is already lower-risk
+- add a renderer/RHI capability report field for material texture table support
+- document exact fail-closed reasons for unsupported backend, unsupported compiler target, descriptor table overflow, and missing descriptors
 
 Acceptance criteria:
 
-- ray-hit base color, roughness, metallic, and emissive texture sampling matches raster material semantics for supported material classes
-- missing descriptor table, unsupported backend capability, missing texture descriptor, or invalid texture index falls back deterministically with diagnostics
-- texture LOD policy is explicit and does not rely on implicit screen-space derivatives
-- constants-only mode still works on platforms without the material texture table path
-- architecture boundary check still passes with no backend-native renderer dependency
+- no reflection shader material sampling yet
+- source-backed decision on fixed-array versus runtime-sized bindless path
+- source-backed decision on active material binding mode, with `RaytracingOnly` available for debug comparisons
+- no constants-only fallback is listed as a supported final material-texture mode
+- D3D12 and Vulkan capability gates are explicit
+- architecture boundary check still passes
 
 Implementation prompt:
 
 ```text
-Implement Stage 8 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+Implement Stage 8.0 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
 
-Add the final material texture parity layer for RTIndirectSpecular. Build a renderer-owned descriptor-indexed or bindless material texture table keyed by material slot and MaterialTextureSlots, expose backend-neutral capability/fallback checks, bind the table through typed pass parameters, and sample supported material textures at ray hits with an explicit LOD policy. Keep constants-only fallback behavior for unsupported platforms or missing descriptors, and preserve Renderer/RHI/backend boundaries.
+Audit and add the minimum backend-neutral capability contract for renderer material texture tables. Confirm whether Sparkle can safely expose a fixed-capacity descriptor array or true runtime-sized bindless table through existing shader reflection, binding layouts, D3D12, and Vulkan. Do not sample textures in RTIndirectSpecular yet. Add capability reporting and fail-closed unsupported reasons, then update this plan with the selected first path.
+
+Keep raster bindful plus a renderer material texture table as the preferred bring-up/debug configuration. Add a material binding mode setting so later work can choose full bindless for raster and other consumers without rewriting the feature. Do not add constants-only as a supported final mode.
+```
+
+#### Stage 8.1: Renderer-Owned Material Texture Index Table
+
+Goal: build a material-slot-indexed table of texture descriptor indices without changing reflection shading yet.
+
+Implementation tasks:
+
+- extend renderer material cache output with compact texture indices per `MaterialTextureSlots` entry
+- keep per-draw `RenderBindingSet` creation for GBuffer unchanged in `RaytracingOnly`
+- if `Everything` is selected later, add a separate raster binding path rather than deleting the bindful path
+- create a renderer-owned `MaterialTextureTable` or equivalent owned by Renderer scene/material cache
+- resolve missing material textures to the same default textures used by raster materials
+- add table generation validation for material count, slot count, default fallback coverage, descriptor allocation failure, and overflow
+- extend `RTIndirectSpecularHitMaterial` with texture slot indices or an index-table base offset
+- keep shader material-texture sampling disabled in this stage; do not advertise the RT material texture mode as supported yet
+
+Acceptance criteria:
+
+- every render material has stable texture indices for all `MaterialTextureSlots`
+- existing GBuffer material rendering is unchanged in `RaytracingOnly`
+- full bindless raster path, if enabled, can be toggled off for direct comparison
+- RT hit material data carries texture indices but does not sample them yet
+- missing textures resolve to raster-equivalent defaults
+- descriptor allocation failure or overflow prevents enabling RT material-texture parity rather than falling back to constants
+
+Implementation prompt:
+
+```text
+Implement Stage 8.1 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Build the renderer-owned material texture index table. Reuse MaterialCacheManager and TextureManager resolution semantics so every material slot has stable indices for BaseColor, Normal, Roughness, Metallic, Occlusion, Emissive, SubsurfaceColor, and SubsurfaceStrength. Keep GBuffer's per-draw material binding path intact and keep RTIndirectSpecular material texture sampling disabled until the table is validated.
+
+Implement this first for `RaytracingOnly`: raster keeps existing per-material bindful `RenderBindingSet` usage, while ray tracing consumers receive the new material texture index table. Do not remove or rewrite the bindful GBuffer path.
+```
+
+#### Stage 8.2: Bind Texture Table Through Typed Pass Parameters
+
+Goal: make the descriptor table visible to `RTIndirectSpecular` without changing final material output.
+
+Implementation tasks:
+
+- add typed shader parameter support for the selected descriptor table shape
+- bind the material texture table and sampler through the first table-aware consumer, `RTIndirectSpecularPass`
+- route binding through the active material binding mode:
+  - `RaytracingOnly`: bind the table only for ray tracing consumers such as RT passes
+  - `Everything`: bind the same table for RT and any opt-in raster path
+- add shader-side helper declarations guarded by capability defines or table availability
+- add debug-only shader reads that prove a descriptor can be addressed by material slot and texture slot
+- fail closed when the table is unavailable, invalid, or unsupported; do not silently shade textured materials as constants in a supported material-texture mode
+- avoid per-material branching explosions; indexing must be table-driven
+
+Acceptance criteria:
+
+- shader package validates and cooks for DXIL and supported SPIR-V target
+- no backend-native handles leak into Renderer pass code
+- debug view can prove table indexing without changing normal rendering
+- missing table or unsupported capability reports an unavailable RT material-texture mode instead of producing a half-correct constants path
+
+Implementation prompt:
+
+```text
+Implement Stage 8.2 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Expose the renderer-owned material texture table to RTIndirectSpecular through typed pass parameters and backend-neutral pass services. Add shader helpers and debug-only table lookup validation, but keep production texture shading disabled until valid descriptor indexing is proven. Fail closed on unsupported backend, missing table, invalid material slot, invalid texture slot, or descriptor overflow; do not provide constants-only as a supported final fallback.
+
+Honor the active material binding mode. In the preferred `RaytracingOnly` mode, do not bind or consume the table from GBuffer/raster passes.
+```
+
+#### Stage 8.3: Base Color, Roughness, Metallic, Emissive Texture Parity
+
+Goal: make ray-hit material constants match raster material value semantics for the first texture set.
+
+Implementation tasks:
+
+- sample base color, roughness, metallic, and emissive textures at hit `UV0`
+- match current `Material.hlsli` multiplication semantics:
+  - base color texture multiplied by material base color constant
+  - roughness texture red channel multiplied by material roughness constant
+  - metallic texture red channel multiplied by material metallic constant
+  - emissive texture RGB multiplied by material emissive constant
+- use explicit texture LOD; first policy should be fixed mip 0 or a conservative roughness-biased LOD, documented before implementation
+- keep occlusion, subsurface texture, normal map, and alpha-tested candidate-hit behavior deferred unless trivial after base parity
+- add debug views for sampled base color, sampled roughness/metallic, sampled emissive, selected mip, and invalid descriptor
+
+Acceptance criteria:
+
+- textured base color/roughness/metallic/emissive materials visible in mirrors and stochastic reflections match direct GBuffer material semantics closely
+- invalid or unavailable texture table disables RT material texture parity with an explicit reason
+- full roughness range remains supported
+- no contribution clamp/intensity/roughness fade is introduced
+
+Implementation prompt:
+
+```text
+Implement Stage 8.3 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Use the RTIndirectSpecular material texture table to sample base color, roughness, metallic, and emissive textures at ray-hit UV0 with explicit LOD. Match Material.hlsli value semantics exactly for these slots and fail closed for unsupported or invalid texture access. Add debug views for sampled material values and selected mip. Do not add normal maps, alpha-tested candidate hits, denoising, roughness fades, contribution clamps, intensity scaling, or constants-only fallback mode.
+```
+
+#### Stage 8.4: Normal Map And Tangent-Space Parity
+
+Goal: add ray-hit normal map sampling after base material texture parity is stable.
+
+Implementation tasks:
+
+- sample normal texture using the same unpacking semantics as `Material.hlsli`
+- reconstruct bitangent from hit normal, tangent, and tangent sign
+- transform tangent-space normal to world space using the same convention as raster materials
+- deliberately handle two-sided normal orientation after normal-map application
+- add debug views for tangent, bitangent, normal-map tangent normal, and final world normal
+- validate non-uniform scale and mirrored tangent sign with parity scenes
+
+Acceptance criteria:
+
+- normal-mapped materials reflect with the same lighting orientation as direct GBuffer surfaces
+- tangent/sign and two-sided behavior are explicit and debug-visible
+- degenerate tangent fallback remains deterministic
+
+Implementation prompt:
+
+```text
+Implement Stage 8.4 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Add normal-map sampling to RTIndirectSpecular material texture parity. Use the existing hit tangent/sign ABI, reconstruct bitangent, match Material.hlsli normal unpacking and tangent-to-world semantics, and keep robust fallback for degenerate tangents or missing normal descriptors. Add debug views for tangent basis and final sampled normal.
+```
+
+#### Stage 8.5: Alpha-Tested Candidate-Hit Policy
+
+Goal: support alpha-tested geometry only after base-color alpha can be sampled through the material texture table.
+
+Implementation tasks:
+
+- choose inline `RayQuery` candidate-hit handling for alpha-tested triangles
+- during candidate hit, reconstruct hit UV/material enough to sample base-color alpha
+- compare sampled alpha against material alpha cutoff
+- commit or reject candidate hits deliberately
+- keep alpha-blended geometry unsupported/fallback unless a separate transmission/refraction policy exists
+- add debug views for alpha accepted/rejected, sampled alpha, cutoff, and candidate-hit fallback reason
+
+Acceptance criteria:
+
+- alpha-tested geometry no longer shades as opaque in reflections
+- alpha rejection cannot silently select the wrong material
+- alpha-blended geometry remains explicitly unsupported/fallback
+
+Implementation prompt:
+
+```text
+Implement Stage 8.5 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Add alpha-tested candidate-hit support to RTIndirectSpecular using inline RayQuery candidate hit handling. Reconstruct candidate UV/material, sample base-color alpha through the material texture table with explicit LOD, compare against alpha cutoff, and commit or reject the candidate hit. Keep alpha-blended materials unsupported with explicit fallback.
+```
+
+#### Stage 8.6: Material Parity Validation Scenes And Defaults
+
+Goal: close the final reflection material-parity stage with repeatable scenes and documented defaults.
+
+Implementation tasks:
+
+- add validation scene coverage for direct-vs-reflected:
+  - constants-only material
+  - base-color textured material
+  - roughness textured material
+  - metallic textured material
+  - emissive textured material
+  - normal-mapped material
+  - alpha-tested material after Stage 8.5
+- validate mirror mode and stochastic GGX full roughness range
+- validate D3D12 path and supported Vulkan path separately
+- validate unsupported bindless capability disables RT material texture parity with an explicit reason
+- validate `RaytracingOnly` against direct GBuffer output as the primary debug configuration
+- validate `Everything` only after raster opt-in exists and can be toggled against the bindful baseline
+- document known remaining differences from raster material evaluation
+
+Acceptance criteria:
+
+- reviewer can see mirror and importance-sampled reflections across the full roughness scale with proper lighting and material textures
+- unsupported bindless/material-table configurations fail closed instead of presenting half-correct constants-only textured materials
+- known mismatches are documented rather than hidden
+
+Implementation prompt:
+
+```text
+Implement Stage 8.6 from Docs/Architecture/05-Implementation/RayTracedReflectionsImplementationPlan.md.
+
+Add focused validation scenes and documentation for RTIndirectSpecular material texture parity. Cover mirror and stochastic GGX modes across the full roughness range, direct-vs-reflected material comparisons, textured material slots, normal maps, alpha-tested geometry if implemented, D3D12, supported Vulkan, and unsupported bindless fail-closed behavior. Keep this as validation coverage and documentation, not new rendering behavior.
 ```
 
 ## Suggested Validation Commands
@@ -697,3 +925,4 @@ The feature is done for this plan when:
 - it exposes controls and diagnostics
 - it has validation coverage for enabled, disabled, unsupported, and missing-data paths
 - no denoiser, temporal history, or backend-native renderer dependency has been introduced
+

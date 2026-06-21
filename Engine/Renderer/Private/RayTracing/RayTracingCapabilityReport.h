@@ -2,6 +2,7 @@
 
 #include "RHI/Public/Core/RhiBackendApi.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
+#include "SceneData/MaterialTextureTableCapability.h"
 
 #include <cstdint>
 
@@ -65,6 +66,7 @@ struct RayTracingCapabilityReport final
 	RayTracingAccelerationStructureCapabilityReport AccelerationStructures;
 	RayTracingTopLevelProviderCapabilityReport TopLevelProvider;
 	RayTracingPartitionedTlasCapabilityReport PartitionedTlas;
+	MaterialTextureTableCapabilityReport MaterialTextureTable;
 
 	bool CanUseInlineRayQueryShadows() const noexcept;
 	const char* GetInlineRayQueryShadowUnavailableReason() const noexcept;
@@ -77,5 +79,5 @@ class RayTracingCapabilityReporter final
 	static void LogOnce(const RayTracingCapabilityReport& report) noexcept;
 
   private:
-	static RayTracingCapabilityReport Build(ERhiBackendApi backendApi, const RhiRayTracingCapabilities& rayTracing) noexcept;
+	static RayTracingCapabilityReport BuildFromCapabilities(const RhiCapabilities& capabilities) noexcept;
 };

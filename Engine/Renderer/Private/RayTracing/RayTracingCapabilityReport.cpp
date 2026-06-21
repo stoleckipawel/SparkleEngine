@@ -45,7 +45,7 @@ const char* RayTracingCapabilityReport::GetInlineRayQueryShadowUnavailableReason
 
 RayTracingCapabilityReport RayTracingCapabilityReporter::Build(const RhiCapabilities& capabilities) noexcept
 {
-	return Build(capabilities.BackendApi, capabilities.RayTracing);
+	return BuildFromCapabilities(capabilities);
 }
 
 void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& report) noexcept
@@ -66,7 +66,9 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    "vulkanNv={} vulkanExtension={} vulkanFeature={} vulkanFunctions={} vulkanDescriptors={} vulkanShaderDeviceAddress={} "
 	    "d3d12Nvapi={} d3d12NvapiHeaders={} d3d12NvapiRuntime={} d3d12DeviceInterface={} d3d12CommandListInterface={} "
 	    "d3d12PublicDxr={} d3d12PublicDxrHeaders={} cpuPackOps={} gpuDrivenOps={} gpuLogicalWrites={} gpuNativePack={} "
-	    "partitionedReason={}",
+	    "partitionedReason={} materialTextureTableSupported={} materialTextureTablePath={} materialTextureTableCapacity={} "
+	    "materialTextureTableRuntimeSized={} materialTextureRaytracingOnly={} materialTextureEverything={} "
+	    "materialTextureTableReason={}",
 	    RhiBackendApiToString(report.BackendApi),
 	    BoolToString(report.Core.SupportsRayTracing),
 	    BoolToString(report.Core.SupportsInlineRayQuery),
@@ -101,13 +103,20 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	    BoolToString(report.PartitionedTlas.SupportsGpuDrivenOperations),
 	    BoolToString(report.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites),
 	    BoolToString(report.PartitionedTlas.SupportsGpuNativeOperationPacking),
-	    report.PartitionedTlas.CapabilityStatusReason);
+	    report.PartitionedTlas.CapabilityStatusReason,
+	    BoolToString(report.MaterialTextureTable.Supported),
+	    MaterialTextureTablePathToString(report.MaterialTextureTable.SelectedPath),
+	    report.MaterialTextureTable.MaxTextureDescriptors,
+	    BoolToString(report.MaterialTextureTable.SupportsRuntimeSizedBindless),
+	    BoolToString(report.MaterialTextureTable.SupportsRaytracingOnly),
+	    BoolToString(report.MaterialTextureTable.SupportsEverything),
+	    report.MaterialTextureTable.StatusReason);
 }
 
-RayTracingCapabilityReport RayTracingCapabilityReporter::Build(
-    ERhiBackendApi backendApi,
-    const RhiRayTracingCapabilities& rayTracing) noexcept
+RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(const RhiCapabilities& capabilities) noexcept
 {
+	const ERhiBackendApi backendApi = capabilities.BackendApi;
+	const RhiRayTracingCapabilities& rayTracing = capabilities.RayTracing;
 	return RayTracingCapabilityReport{
 	    .BackendApi = backendApi,
 	    .Core =
@@ -155,5 +164,6 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::Build(
 	            .SupportsGpuLogicalUpdateRecordWrites =
 	                rayTracing.Groups.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites,
 	            .SupportsGpuNativeOperationPacking = rayTracing.Groups.PartitionedTlas.SupportsGpuNativeOperationPacking,
-	            .CapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason}};
+	            .CapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason},
+	    .MaterialTextureTable = BuildMaterialTextureTableCapabilityReport(capabilities)};
 }

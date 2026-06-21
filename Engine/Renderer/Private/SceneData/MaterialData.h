@@ -5,6 +5,7 @@
 #include "RHI/Public/Resources/PerObjectConstantBufferData.h"
 
 #include <DirectXMath.h>
+#include <array>
 #include <cstdint>
 
 struct MaterialDesc;
@@ -23,6 +24,8 @@ namespace MaterialTextureSlots
 	constexpr std::uint32_t Count = 8;
 }
 
+inline constexpr std::uint32_t InvalidMaterialTextureIndex = UINT32_MAX;
+
 struct SPARKLE_RENDERER_API MaterialData
 {
 	DirectX::XMFLOAT4 baseColor = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -36,6 +39,15 @@ struct SPARKLE_RENDERER_API MaterialData
 	float alphaCutoff = 0.5f;
 	std::uint32_t textureFlags = 0;
 	bool doubleSided = false;
+	std::array<std::uint32_t, MaterialTextureSlots::Count> materialTextureIndices = {
+	    InvalidMaterialTextureIndex,
+	    InvalidMaterialTextureIndex,
+	    InvalidMaterialTextureIndex,
+	    InvalidMaterialTextureIndex,
+	    InvalidMaterialTextureIndex,
+	    InvalidMaterialTextureIndex,
+	    InvalidMaterialTextureIndex,
+	    InvalidMaterialTextureIndex};
 
 	const RenderBindingSet* textureBindingSet = nullptr;
 

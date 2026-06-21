@@ -41,6 +41,7 @@ void MaterialCacheManager::BuildMaterials(const MaterialSnapshot& materialSnapsh
 	if (!m_cachedMaterialData.empty())
 	{
 		sceneData.materials = m_cachedMaterialData;
+		PublishMaterialTextureTable(sceneData);
 	}
 }
 
@@ -57,6 +58,8 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 	}
 
 	ReleaseMaterialTextureBindingSets();
+	m_materialTextureTable.Reset();
+	m_materialTextureTableBuildResult = {};
 	m_cachedMaterialData.clear();
 	m_cachedMaterialSnapshot.Reset();
 	m_materialCacheBuilt = false;
@@ -102,6 +105,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 			}
 
 			textures[slot]->WriteShaderResourceView(textureBindingSet->GetCpuDescriptorHandle(slot));
+			material.materialTextureIndices[slot] = m_materialTextureTable.GetOrAddTextureIndex(textures[slot]);
 		}
 
 		material.textureBindingSet = textureBindingSet.get();
@@ -130,12 +134,23 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		buildMaterialTable(defaultMaterial);
 	}
 
+	m_materialTextureTableBuildResult = m_materialTextureTable.BuildBindingSet(*m_renderHardwareInterface);
+	if (!m_materialTextureTableBuildResult.Valid)
+	{
+		SPDLOG_LOGGER_WARN(
+		    g_materialCacheManagerLogger,
+		    "MaterialCacheManager::Rebuild: material texture table unavailable: reason={}.",
+		    m_materialTextureTableBuildResult.FailureReason);
+	}
+
 	m_materialCacheBuilt = true;
 }
 
 void MaterialCacheManager::Reset() noexcept
 {
 	ReleaseMaterialTextureBindingSets();
+	m_materialTextureTable.Reset();
+	m_materialTextureTableBuildResult = {};
 	m_cachedMaterialData.clear();
 	m_cachedMaterialSnapshot.Reset();
 	m_materialCacheBuilt = false;
@@ -145,4 +160,12 @@ void MaterialCacheManager::Reset() noexcept
 void MaterialCacheManager::ReleaseMaterialTextureBindingSets() noexcept
 {
 	m_materialTextureBindingSets.clear();
+}
+
+void MaterialCacheManager::PublishMaterialTextureTable(RenderSceneData& sceneData) const noexcept
+{
+	sceneData.materialTextureTable = m_materialTextureTable.GetBindingSet();
+	sceneData.materialTextureTableDescriptorCount = m_materialTextureTable.GetTextureCount();
+	sceneData.materialTextureTableValid = m_materialTextureTableBuildResult.Valid && m_materialTextureTable.IsValid();
+	sceneData.materialTextureTableStatusReason = m_materialTextureTableBuildResult.FailureReason;
 }

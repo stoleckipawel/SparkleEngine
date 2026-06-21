@@ -12,6 +12,8 @@
 
 #include <vector>
 
+class RenderBindingSet;
+
 struct SPARKLE_RENDERER_API RenderSceneData
 {
 	std::vector<DirectionalLight> directionalLights;
@@ -23,4 +25,8 @@ struct SPARKLE_RENDERER_API RenderSceneData
 	std::vector<DirectX::XMFLOAT4X4> previousJointMatrices;
 	RenderMeshWorkloadSummary meshWorkload;
 	std::vector<MaterialData> materials;
+	const RenderBindingSet* materialTextureTable = nullptr;
+	std::uint32_t materialTextureTableDescriptorCount = 0u;
+	bool materialTextureTableValid = false;
+	const char* materialTextureTableStatusReason = "not-built";
 };

@@ -215,7 +215,19 @@ RTIndirectSpecularHitDataFrameData RTIndirectSpecularHitDataFrameData::Build(
 		        .TextureFlags = material.textureFlags,
 		        .SubsurfaceColor = material.subsurfaceColor,
 		        .SubsurfaceStrength = material.subsurfaceStrength,
-		        .Flags = BuildHitMaterialFlags(material)});
+		        .Flags = BuildHitMaterialFlags(material),
+		        .TextureIndices0 =
+		            DirectX::XMUINT4{
+		                material.materialTextureIndices[MaterialTextureSlots::BaseColor],
+		                material.materialTextureIndices[MaterialTextureSlots::Normal],
+		                material.materialTextureIndices[MaterialTextureSlots::Roughness],
+		                material.materialTextureIndices[MaterialTextureSlots::Metallic]},
+		        .TextureIndices1 =
+		            DirectX::XMUINT4{
+		                material.materialTextureIndices[MaterialTextureSlots::Occlusion],
+		                material.materialTextureIndices[MaterialTextureSlots::Emissive],
+		                material.materialTextureIndices[MaterialTextureSlots::SubsurfaceColor],
+		                material.materialTextureIndices[MaterialTextureSlots::SubsurfaceStrength]}});
 	}
 
 	std::unordered_map<const GPUMesh*, MeshHitDataOffsets> meshOffsets;

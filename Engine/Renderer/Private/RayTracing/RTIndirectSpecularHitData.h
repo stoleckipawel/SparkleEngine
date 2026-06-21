@@ -20,7 +20,7 @@ static_assert(std::is_standard_layout_v<RTIndirectSpecularHitVertex>, "RTIndirec
 static_assert(std::is_trivially_copyable_v<RTIndirectSpecularHitVertex>, "RTIndirectSpecularHitVertex must be trivially copyable");
 static_assert(sizeof(RTIndirectSpecularHitVertex) == 56, "RTIndirectSpecularHitVertex must match the shader layout");
 
-inline constexpr std::uint32_t RTIndirectSpecularHitDataAbiVersion = 2u;
+inline constexpr std::uint32_t RTIndirectSpecularHitDataAbiVersion = 3u;
 
 inline constexpr std::uint32_t RTIndirectSpecularHitInstanceFlag_Valid = 1u << 0u;
 inline constexpr std::uint32_t RTIndirectSpecularHitInstanceFlag_Opaque = 1u << 1u;
@@ -86,9 +86,10 @@ struct RTIndirectSpecularHitMaterial
 	DirectX::XMFLOAT3 SubsurfaceColor = {};
 	float SubsurfaceStrength = 0.0f;
 	std::uint32_t Flags = 0u;
-	DirectX::XMFLOAT2 Padding0 = {};
+	DirectX::XMUINT4 TextureIndices0 = {UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX};
+	DirectX::XMUINT4 TextureIndices1 = {UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX};
 };
 
 static_assert(std::is_standard_layout_v<RTIndirectSpecularHitMaterial>, "RTIndirectSpecularHitMaterial must be standard-layout");
 static_assert(std::is_trivially_copyable_v<RTIndirectSpecularHitMaterial>, "RTIndirectSpecularHitMaterial must be trivially copyable");
-static_assert(sizeof(RTIndirectSpecularHitMaterial) == 80, "RTIndirectSpecularHitMaterial must match the shader layout");
+static_assert(sizeof(RTIndirectSpecularHitMaterial) == 104, "RTIndirectSpecularHitMaterial must match the shader layout");

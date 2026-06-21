@@ -56,7 +56,8 @@ struct RTIndirectSpecularHitMaterial
 	float3 SubsurfaceColor;
 	float SubsurfaceStrength;
 	uint Flags;
-	float2 Padding0;
+	uint4 TextureIndices0;
+	uint4 TextureIndices1;
 };
 
 StructuredBuffer<RTIndirectSpecularHitVertex> RTIndirectSpecularHitVertices;

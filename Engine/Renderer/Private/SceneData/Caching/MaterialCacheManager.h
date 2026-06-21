@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SceneData/MaterialTextureTable.h"
 #include "Scene/Materials/MaterialSnapshot.h"
 #include "SceneData/MaterialData.h"
 
@@ -27,14 +28,17 @@ class MaterialCacheManager final
 	void Rebuild(const MaterialSnapshot& materialSnapshot);
 	void Reset() noexcept;
 
-  private:
+ private:
 	void ReleaseMaterialTextureBindingSets() noexcept;
+	void PublishMaterialTextureTable(RenderSceneData& sceneData) const noexcept;
 
 	TextureManager* m_textureManager = nullptr;
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	MaterialSnapshot m_cachedMaterialSnapshot;
 	std::vector<MaterialData> m_cachedMaterialData;
 	std::vector<std::unique_ptr<RenderBindingSet>> m_materialTextureBindingSets;
+	MaterialTextureTable m_materialTextureTable;
+	MaterialTextureTableBuildResult m_materialTextureTableBuildResult = {};
 	bool m_materialCacheBuilt = false;
 	bool m_cachedFromSceneMaterials = false;
 };

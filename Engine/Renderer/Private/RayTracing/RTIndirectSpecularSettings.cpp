@@ -3,6 +3,7 @@
 
 #include "RayTracing/RTIndirectSpecularCVars.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
+#include "SceneData/MaterialCVars.h"
 
 #include <algorithm>
 
@@ -12,6 +13,7 @@ RTIndirectSpecularSettings BuildRTIndirectSpecularSettingsFromCVars() noexcept
 	    .Enabled = CVarRTIndirectSpecularEnabled.Get(),
 	    .SampleMode = CVarRTIndirectSpecularSampleMode.Get(),
 	    .DebugMode = CVarRTIndirectSpecularDebugMode.Get(),
+	    .MaterialMode = CVarRendererMaterialBindingMode.Get(),
 	    .NormalBias = std::max(CVarRTIndirectSpecularNormalBias.Get(), 0.0f),
 	    .MaxDistance = std::max(CVarRTIndirectSpecularMaxDistance.Get(), 0.001f)};
 }
@@ -30,11 +32,12 @@ void LogRTIndirectSpecularSettingsOnce(
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.RTIndirectSpecular");
 	SPDLOG_LOGGER_INFO(
 	    logger,
-	    "RT indirect specular settings: enabled={} sampleMode={} debugMode={} normalBias={} maxDistance={} "
+	    "RT indirect specular settings: enabled={} sampleMode={} debugMode={} materialBindingMode={} normalBias={} maxDistance={} "
 	    "requiresInlineRayQuery=true requiresDescriptorTlas=true",
 	    settings.Enabled ? "true" : "false",
 	    static_cast<std::uint32_t>(settings.SampleMode),
 	    static_cast<std::uint32_t>(settings.DebugMode),
+	    MaterialBindingModeToString(settings.MaterialMode),
 	    settings.NormalBias,
 	    settings.MaxDistance);
 
@@ -44,5 +47,14 @@ void LogRTIndirectSpecularSettingsOnce(
 		    logger,
 		    "RT indirect specular is enabled but inline ray query support is unavailable: {}.",
 		    capabilities.GetInlineRayQueryShadowUnavailableReason());
+	}
+
+	if (settings.Enabled && settings.MaterialMode == MaterialBindingMode::Everything &&
+	    !capabilities.MaterialTextureTable.SupportsEverything)
+	{
+		SPDLOG_LOGGER_WARN(
+		    logger,
+		    "RT indirect specular requested renderer Everything material binding, but this source path is unavailable: {}.",
+		    capabilities.MaterialTextureTable.StatusReason);
 	}
 }
