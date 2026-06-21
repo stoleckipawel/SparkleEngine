@@ -108,7 +108,8 @@ namespace
 	    const RasterPassPipelineRuntime& runtime,
 	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
 	    const MeshInstanceBatch& batch,
-	    std::size_t batchIndex)
+	    std::size_t batchIndex,
+	    std::uint32_t viewModeIndex)
 	{
 		const RenderSceneData& sceneData = frame.sceneData;
 		const GPUMesh* gpuMesh = batch.gpuMesh;
@@ -152,7 +153,8 @@ namespace
 		    drawParameters.GetPassParameterSet(),
 		    &overrides,
 		    GBufferPass::PassName,
-		    false);
+		    false,
+		    viewModeIndex);
 		if (!bound)
 		{
 			SPDLOG_LOGGER_WARN(
@@ -176,9 +178,10 @@ namespace
 	    const RasterPassPipelineRuntime& runtime,
 	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
 	    const MeshInstanceBatch& batch,
-	    std::size_t batchIndex)
+	    std::size_t batchIndex,
+	    std::uint32_t viewModeIndex)
 	{
-		(void) DrawBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex);
+		(void) DrawBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex, viewModeIndex);
 	}
 
 	void DrawSkinnedBatch(
@@ -189,7 +192,8 @@ namespace
 	    const RasterPassPipelineRuntime& runtime,
 	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
 	    const MeshInstanceBatch& batch,
-	    std::size_t batchIndex)
+	    std::size_t batchIndex,
+	    std::uint32_t viewModeIndex)
 	{
 		if (!frame.skinning.IsValid())
 		{
@@ -203,7 +207,7 @@ namespace
 			return;
 		}
 
-		(void) DrawBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex);
+		(void) DrawBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex, viewModeIndex);
 	}
 }
 
@@ -217,6 +221,7 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 {
 	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
 	const RenderSceneData& sceneData = frame.sceneData;
+	const std::uint32_t viewModeIndex = passRuntimeServices.PerFrame.ViewModeIndex;
 
 	if (!frame.meshInstances.IsValid())
 	{
@@ -254,11 +259,11 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 
 		if (batch.meshKind == RenderMeshKind::Skeletal)
 		{
-			DrawSkinnedBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex);
+			DrawSkinnedBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex, viewModeIndex);
 		}
 		else
 		{
-			DrawStaticBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex);
+			DrawStaticBatch(resources, cmd, frame, renderHardwareInterface, runtime, drawParameterMetadata, batch, batchIndex, viewModeIndex);
 		}
 	}
 }

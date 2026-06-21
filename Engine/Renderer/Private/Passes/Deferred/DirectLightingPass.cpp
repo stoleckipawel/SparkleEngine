@@ -144,7 +144,7 @@ void DirectLightingPass::SetParameters(
     const PassRuntimeServices& passRuntimeServices,
     bool hasSceneTlas) const
 {
-	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(passRuntimeServices.RayTracing, hasSceneTlas);
 	const bool valid = parameters.Sync();
@@ -157,7 +157,7 @@ void DirectLightingVulkanAddressPass::SetParameters(
     const PassRuntimeServices& passRuntimeServices,
     bool hasSceneTlas) const
 {
-	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(passRuntimeServices.RayTracing, hasSceneTlas);
 	const bool valid = parameters.Sync();

@@ -8,7 +8,7 @@ enum class RhiMemoryCategory : std::uint8_t
 	Texture,
 	Mesh,
 	RayTracing,
-	FrameGraphTransient,
+	TransientResource,
 	Upload,
 	Readback,
 	ConstantBuffer,
@@ -33,8 +33,8 @@ constexpr std::string_view RhiMemoryCategoryName(RhiMemoryCategory category) noe
 			return "Mesh";
 		case RhiMemoryCategory::RayTracing:
 			return "RayTracing";
-		case RhiMemoryCategory::FrameGraphTransient:
-			return "FrameGraphTransient";
+		case RhiMemoryCategory::TransientResource:
+			return "TransientResource";
 		case RhiMemoryCategory::Upload:
 			return "Upload";
 		case RhiMemoryCategory::Readback:

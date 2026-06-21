@@ -4,7 +4,7 @@
 #include "../Core/RhiBackendApi.h"
 #include "../Core/RhiCapabilities.h"
 #include "../Descriptors/RhiDescriptorService.h"
-#include "../Diagnostics/RhiDiagnosticsService.h"
+#include "../Diagnostics/RhiDiagnostics.h"
 #include "../Interop/RhiInteropService.h"
 #include "../Pipeline/RhiPipelineService.h"
 #include "../Presentation/RhiPresentationService.h"
@@ -37,8 +37,8 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual RhiInteropService& GetInteropService() noexcept = 0;
 	virtual const RhiInteropService& GetInteropService() const noexcept = 0;
 	virtual RhiCaptureService& GetCaptureService() noexcept = 0;
-	virtual RhiDiagnosticsService& GetDiagnosticsService() noexcept = 0;
-	virtual const RhiDiagnosticsService& GetDiagnosticsService() const noexcept = 0;
+	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;
+	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
 	virtual RhiPresentationService& GetPresentationService() noexcept = 0;
 	virtual const RhiPresentationService& GetPresentationService() const noexcept = 0;
 };

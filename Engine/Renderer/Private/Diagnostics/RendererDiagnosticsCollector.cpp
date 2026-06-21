@@ -111,7 +111,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 
 	const RenderHardwareInterface& renderHardware = systems.GetRenderHardwareInterface();
 	const RhiCapabilities& capabilities = renderHardware.GetCapabilities();
-	const RenderDiagnostics& diagnostics = renderHardware.GetDiagnosticsService().GetDiagnostics();
+	const RenderDiagnostics& diagnostics = renderHardware.GetDiagnostics();
 
 	snapshot.FrameIndex = renderHardware.GetCurrentFrameIndex();
 	snapshot.Backend = RendererBackendDiagnosticsSnapshot{
@@ -137,6 +137,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 	        .Status = capabilities.BackendVersion.IsKnown() ? ERendererDiagnosticStatus::Available : ERendererDiagnosticStatus::Unavailable,
 	        .Unit = ERendererDiagnosticUnit::Text,
 	        .TextValue = snapshot.Backend.VersionText});
+			
 	snapshot.Metrics.push_back(
 	    RendererDiagnosticMetric{
 	        .Name = "backend.validationState",
@@ -145,6 +146,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 	        .Unit = ERendererDiagnosticUnit::Boolean,
 	        .IntegerValue = capabilities.Diagnostics.ValidationEnabled ? 1u : 0u,
 	        .TextValue = capabilities.Diagnostics.ValidationEnabled ? "enabled" : "disabled"});
+
 	snapshot.Metrics.push_back(
 	    RendererDiagnosticMetric{
 	        .Name = "providers.requested",
@@ -152,6 +154,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 	        .Status = snapshot.Provider.RequestedProvider.empty() ? ERendererDiagnosticStatus::Unavailable : ERendererDiagnosticStatus::Available,
 	        .Unit = ERendererDiagnosticUnit::Text,
 	        .TextValue = snapshot.Provider.RequestedProvider});
+
 	snapshot.Metrics.push_back(
 	    RendererDiagnosticMetric{
 	        .Name = "providers.active",
@@ -159,6 +162,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 	        .Status = snapshot.Provider.ActiveProvider.empty() ? ERendererDiagnosticStatus::Unavailable : ERendererDiagnosticStatus::Available,
 	        .Unit = ERendererDiagnosticUnit::Text,
 	        .TextValue = snapshot.Provider.ActiveProvider});
+
 	snapshot.Metrics.push_back(
 	    RendererDiagnosticMetric{
 	        .Name = "descriptors.allocated",
@@ -166,6 +170,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 	        .Status = snapshot.Descriptors.Allocators.empty() ? ERendererDiagnosticStatus::Unavailable : ERendererDiagnosticStatus::Available,
 	        .Unit = ERendererDiagnosticUnit::Count,
 	        .IntegerValue = CountAllocatedDescriptors(snapshot.Descriptors)});
+
 	snapshot.Metrics.push_back(
 	    RendererDiagnosticMetric{
 	        .Name = "pipeline.lazyRuntimeCount",
@@ -173,6 +178,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 	        .Status = snapshot.Pipeline.Status,
 	        .Unit = ERendererDiagnosticUnit::Count,
 	        .IntegerValue = snapshot.Pipeline.LazyRuntimeCount});
+
 	snapshot.Metrics.push_back(
 	    RendererDiagnosticMetric{
 	        .Name = "shaderPackage.lastLoadTime",
@@ -182,6 +188,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 	        .Unit = ERendererDiagnosticUnit::Microseconds,
 	        .IntegerValue = snapshot.Pipeline.LastShaderPackageLoad.ElapsedMicroseconds,
 	        .Detail = snapshot.Pipeline.LastShaderPackageLoad.PackagePath.string()});
+
 	snapshot.Metrics.push_back(
 	    RendererDiagnosticMetric{
 	        .Name = "upload.usedBytes",
@@ -190,6 +197,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 	        .Unit = ERendererDiagnosticUnit::Bytes,
 	        .IntegerValue = snapshot.UploadPressure.UsedBytes,
 	        .Detail = snapshot.UploadPressure.Reason});
+
 	snapshot.Metrics.push_back(
 	    RendererDiagnosticMetric{
 	        .Name = "upload.pressureRatio",

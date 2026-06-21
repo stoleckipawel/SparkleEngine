@@ -138,7 +138,7 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 
 	{
 		SPARKLE_CPU_SCOPE("Renderer.CreateBackend");
-		m_backend = RenderDeviceServices::Create(*m_timer, *m_window);
+		m_backend = RenderDeviceServices::Create(*m_window);
 	}
 	{
 		SPARKLE_CPU_SCOPE("Renderer.CreatePipelineStateManager");
@@ -149,7 +149,7 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 		m_gpuMeshCache = std::make_unique<GPUMeshCache>(GetRenderHardwareInterface());
 	}
 
-	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnosticsService().GetDiagnostics();
+	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnostics();
 	const RayTracingCapabilityReport rayTracingCapabilities =
 	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
 	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);

@@ -1,4 +1,4 @@
-#include "../../PCH.h"
+#include "PCH.h"
 #include "Passes/Deferred/GBufferPass.h"
 
 #include "Config/DepthConvention.h"
@@ -9,6 +9,7 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
+#include "Frame/Deferred/GBufferFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
@@ -79,13 +80,13 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 	            .DepthWriteEnable = true,
 	            .DepthFunc = DepthConvention::GetDepthComparisonLessEqualFunc()},
 	        .RenderTargetFormats = {
-	            RenderConfig::GBuffer::BaseColorFormat,
-	            RenderConfig::GBuffer::NormalFormat,
-	            RenderConfig::GBuffer::MaterialFormat,
-	            RenderConfig::GBuffer::EmissiveFormat,
-	            RenderConfig::GBuffer::SubsurfaceFormat,
-	            RenderConfig::GBuffer::DeviceZFormat,
-	            RenderConfig::GBuffer::MotionVectorFormat},
+	            GBufferFormats::BaseColor,
+	            GBufferFormats::Normal,
+	            GBufferFormats::Material,
+	            GBufferFormats::Emissive,
+	            GBufferFormats::Subsurface,
+	            GBufferFormats::DeviceZ,
+	            GBufferFormats::MotionVector},
 	        .RenderTargetCount = 7,
 	        .DepthStencilFormat = RenderConfig::DepthStencilFormat}};
 	return definition;
@@ -118,7 +119,7 @@ void GBufferPass::SetParameters(
     const RenderViewData& viewData,
     const PassRuntimeServices& passRuntimeServices) const
 {
-	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
 	const bool valid = parameters.Sync();
@@ -164,7 +165,9 @@ void GBufferPass::BindPassResources(
 	    m_runtime,
 	    parameters.GetPassParameterSet(),
 	    nullptr,
-	    PassName);
+	    PassName,
+	    true,
+	    passRuntimeServices.PerFrame.ViewModeIndex);
 	assert(bound);
 }
 

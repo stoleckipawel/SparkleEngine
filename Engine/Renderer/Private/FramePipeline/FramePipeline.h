@@ -6,6 +6,7 @@
 #include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "RHI/Public/Resources/PerFrameConstantBufferData.h"
 #include "Renderer/Public/Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Viewport/ViewportContracts.h"
@@ -82,6 +83,7 @@ class FramePipeline final
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	FrameAssemblyResourceLayout m_frameResources = {};
+	PerFrameConstantBufferData m_perFrameData = {};
 	RenderSceneSnapshot m_sceneSnapshot = {};
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;

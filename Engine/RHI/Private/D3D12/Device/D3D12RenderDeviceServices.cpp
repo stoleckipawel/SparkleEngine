@@ -10,7 +10,6 @@
 #include "D3D12/Resources/D3D12FrameResource.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 
-#include "Time/Timer.h"
 #include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
@@ -18,7 +17,7 @@
 class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 {
   public:
-	static std::unique_ptr<D3D12RenderDeviceServices> Create(Timer& timer, Window& window) noexcept;
+	static std::unique_ptr<D3D12RenderDeviceServices> Create(Window& window) noexcept;
 	~D3D12RenderDeviceServices() noexcept override;
 
 	D3D12RenderDeviceServices(const D3D12RenderDeviceServices&) = delete;
@@ -29,8 +28,6 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept override;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
-	RenderDiagnostics& GetDiagnostics() noexcept override;
-	const RenderDiagnostics& GetDiagnostics() const noexcept override;
 	void Flush() noexcept override;
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame() noexcept override;
@@ -38,7 +35,6 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	void SubmitFrame() noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
-	void UpdatePerFrameConstants(std::uint32_t renderViewMode, std::uint32_t viewportWidth, std::uint32_t viewportHeight) noexcept override;
 	void CloseExecuteAndFlushCurrentFrame() noexcept override;
 
   private:
@@ -53,12 +49,12 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
 };
 
-std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(Timer& timer, Window& window) noexcept
+std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(Window& window) noexcept
 {
-	return D3D12RenderDeviceServices::Create(timer, window);
+	return D3D12RenderDeviceServices::Create(window);
 }
 
-std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(Timer& timer, Window& window) noexcept
+std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(Window& window) noexcept
 {
 	auto services = std::unique_ptr<D3D12RenderDeviceServices>(new D3D12RenderDeviceServices());
 
@@ -81,13 +77,7 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(Tim
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.CreateConstantBuffers");
-		services->m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
-		    timer,
-		    *services->m_rhi,
-		    window,
-		    *services->m_descriptorHeapManager,
-		    *services->m_frameResourceManager,
-		    *services->m_swapChain);
+		services->m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(*services->m_frameResourceManager);
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.CreateHardwareInterface");
@@ -144,16 +134,6 @@ RhiImGuiRenderer& D3D12RenderDeviceServices::GetImGuiRenderer() noexcept
 	return m_renderHardwareInterface->GetImGuiRenderer();
 }
 
-RenderDiagnostics& D3D12RenderDeviceServices::GetDiagnostics() noexcept
-{
-	return m_renderHardwareInterface->GetDiagnostics();
-}
-
-const RenderDiagnostics& D3D12RenderDeviceServices::GetDiagnostics() const noexcept
-{
-	return m_renderHardwareInterface->GetDiagnostics();
-}
-
 void D3D12RenderDeviceServices::Flush() noexcept
 {
 	m_renderHardwareInterface->WaitForIdle();
@@ -197,14 +177,6 @@ void D3D12RenderDeviceServices::SubmitFrame() noexcept
 void D3D12RenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
 	m_swapChain->UpdateFrameInFlightIndex();
-}
-
-void D3D12RenderDeviceServices::UpdatePerFrameConstants(
-    std::uint32_t renderViewMode,
-    std::uint32_t viewportWidth,
-    std::uint32_t viewportHeight) noexcept
-{
-	m_constantBufferManager->UpdatePerFrame(renderViewMode, viewportWidth, viewportHeight);
 }
 
 void D3D12RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept

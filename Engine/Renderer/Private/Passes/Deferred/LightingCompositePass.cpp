@@ -74,7 +74,7 @@ void LightingCompositePass::SetParameters(
     const RenderViewData& viewData,
 	const PassRuntimeServices& passRuntimeServices) const
 {
-	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetUploadService().GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	const bool valid = parameters.Sync();
 	assert(valid);

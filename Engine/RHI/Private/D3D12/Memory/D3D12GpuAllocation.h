@@ -46,7 +46,7 @@ struct D3D12GpuHeapRecord final
 	Microsoft::WRL::ComPtr<ID3D12Heap> NativeHeap;
 	D3D12MA::Allocation* Allocation = nullptr;
 	D3D12MA::Pool* Pool = nullptr;
-	RhiMemoryCategory Category = RhiMemoryCategory::FrameGraphTransient;
+	RhiMemoryCategory Category = RhiMemoryCategory::TransientResource;
 	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::Transient;
 	std::wstring DebugName;
 	D3D12GpuMemoryAllocator* Owner = nullptr;

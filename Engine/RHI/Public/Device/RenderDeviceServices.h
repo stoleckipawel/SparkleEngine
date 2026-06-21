@@ -8,15 +8,14 @@
 #include <cstdint>
 #include <memory>
 
-class Timer;
 class Window;
 class RhiImGuiRenderer;
 
 class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionService
 {
   public:
-	static std::unique_ptr<RenderDeviceServices> Create(Timer& timer, Window& window) noexcept;
-	static std::unique_ptr<RenderDeviceServices> Create(Timer& timer, Window& window, RhiBackendSelection selection) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(Window& window) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(Window& window, RhiBackendSelection selection) noexcept;
 
 	~RenderDeviceServices() noexcept;
 
@@ -29,8 +28,6 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
-	RenderDiagnostics& GetDiagnostics() noexcept;
-	const RenderDiagnostics& GetDiagnostics() const noexcept;
 	void WaitForIdle() noexcept override;
 	void Flush() noexcept override;
 	void ResizeSwapChain() noexcept override;
@@ -39,7 +36,6 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	void SubmitFrame() noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
-	void UpdatePerFrameConstants(std::uint32_t renderViewMode, std::uint32_t viewportWidth, std::uint32_t viewportHeight) noexcept;
 	void CloseExecuteAndFlushCurrentFrame() noexcept override;
 
   private:

@@ -1,7 +1,7 @@
-#include "../../PCH.h"
+#include "PCH.h"
 #include "Frame/Deferred/GBuffer.h"
 
-#include "Config/RenderConfig.h"
+#include "Frame/Deferred/GBufferFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Deferred/GBufferPass.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
@@ -14,35 +14,35 @@ GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, Rend
 	        "GBufferBaseColor",
 	        sceneExtent.Width,
 	        sceneExtent.Height,
-	        RenderConfig::GBuffer::BaseColorFormat));
+	        GBufferFormats::BaseColor));
 	targets.Normal = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor("GBufferNormal", sceneExtent.Width, sceneExtent.Height, RenderConfig::GBuffer::NormalFormat));
+	    FrameGraphTextureDesc::CreateColor("GBufferNormal", sceneExtent.Width, sceneExtent.Height, GBufferFormats::Normal));
 	targets.Material = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "GBufferMaterial",
 	        sceneExtent.Width,
 	        sceneExtent.Height,
-	        RenderConfig::GBuffer::MaterialFormat));
+	        GBufferFormats::Material));
 	targets.Emissive = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "GBufferEmissive",
 	        sceneExtent.Width,
 	        sceneExtent.Height,
-	        RenderConfig::GBuffer::EmissiveFormat));
+	        GBufferFormats::Emissive));
 	targets.Subsurface = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "GBufferSubsurface",
 	        sceneExtent.Width,
 	        sceneExtent.Height,
-	        RenderConfig::GBuffer::SubsurfaceFormat));
+	        GBufferFormats::Subsurface));
 	targets.MotionVector = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "GBufferMotionVector",
 	        sceneExtent.Width,
 	        sceneExtent.Height,
-	        RenderConfig::GBuffer::MotionVectorFormat));
+	        GBufferFormats::MotionVector));
 	targets.DeviceZ = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateDepth("GBufferDeviceZ", sceneExtent.Width, sceneExtent.Height, RenderConfig::GBuffer::DeviceZFormat));
+	    FrameGraphTextureDesc::CreateDepth("GBufferDeviceZ", sceneExtent.Width, sceneExtent.Height, GBufferFormats::DeviceZ));
 	targets.MainDepth = sceneTargets.MainDepth;
 	return targets;
 }

@@ -4,8 +4,7 @@
 
 #include <memory>
 
-class Timer;
 class Window;
 
-std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(Timer& timer, Window& window) noexcept;
-std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(Timer& timer, Window& window) noexcept;
+std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(Window& window) noexcept;
+std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(Window& window) noexcept;

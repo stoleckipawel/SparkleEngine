@@ -2,6 +2,7 @@
 
 #include "Pipeline/PipelineStateManager.h"
 
+#include "RHI/Public/Resources/PerFrameConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "Upscaling/RenderUpscalingPassServices.h"
@@ -20,6 +21,7 @@ struct PassRuntimeServices
 	RenderHardwareInterface& HardwareInterface;
 	RenderDiagnostics& BackendDiagnostics;
 	const PipelineStateManager& RuntimeManager;
+	const PerFrameConstantBufferData& PerFrame;
 	const TextureManager* Textures = nullptr;
 	const RenderRayTracingPassServices* RayTracing = nullptr;
 	const RenderUpscalingPassServices* Upscaling = nullptr;

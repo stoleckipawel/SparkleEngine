@@ -7,7 +7,6 @@
 
 #include "Shaders/CookedShaderPackageUtils.h"
 
-#include "Time/Timer.h"
 #include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
@@ -90,12 +89,12 @@ RenderDeviceServices::RenderDeviceServices() noexcept = default;
 
 RenderDeviceServices::~RenderDeviceServices() noexcept = default;
 
-std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Timer& timer, Window& window) noexcept
+std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window) noexcept
 {
-	return Create(timer, window, ResolveDefaultRhiBackendSelection());
+	return Create(window, ResolveDefaultRhiBackendSelection());
 }
 
-std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Timer& timer, Window& window, RhiBackendSelection selection) noexcept
+std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window, RhiBackendSelection selection) noexcept
 {
 	SPARKLE_CPU_SCOPE("RHI.CreateBackend");
 	SPDLOG_LOGGER_INFO(g_rhiServicesLogger, "Creating RHI backend: {}", RhiBackendApiToString(selection.Api));
@@ -106,7 +105,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Timer& timer,
 	{
 		case ERhiBackendApi::D3D12:
 		#if SPARKLE_RHI_WITH_D3D12
-			services->m_impl->backend = CreateD3D12RenderDeviceServices(timer, window);
+			services->m_impl->backend = CreateD3D12RenderDeviceServices(window);
 			break;
 		#else
 			FailUnsupportedRhiBackend(selection.Api);
@@ -114,7 +113,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Timer& timer,
 		#endif
 		case ERhiBackendApi::Vulkan:
 		#if SPARKLE_RHI_WITH_VULKAN
-			services->m_impl->backend = CreateVulkanRenderDeviceServices(timer, window);
+			services->m_impl->backend = CreateVulkanRenderDeviceServices(window);
 			break;
 		#else
 			FailUnsupportedRhiBackend(selection.Api);
@@ -152,17 +151,6 @@ const RenderHardwareInterface& RenderDeviceServices::GetRenderHardwareInterface(
 RhiImGuiRenderer& RenderDeviceServices::GetImGuiRenderer() noexcept
 {
 	return m_impl->backend->GetImGuiRenderer();
-}
-
-RenderDiagnostics& RenderDeviceServices::GetDiagnostics() noexcept
-{
-	return m_impl->backend->GetDiagnostics();
-}
-
-const RenderDiagnostics& RenderDeviceServices::GetDiagnostics() const noexcept
-{
-	const RenderDeviceBackendServices& backend = *m_impl->backend;
-	return backend.GetDiagnostics();
 }
 
 void RenderDeviceServices::WaitForIdle() noexcept
@@ -203,14 +191,6 @@ void RenderDeviceServices::SubmitFrame() noexcept
 void RenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
 	m_impl->backend->AdvanceFrameInFlight();
-}
-
-void RenderDeviceServices::UpdatePerFrameConstants(
-    std::uint32_t renderViewMode,
-    std::uint32_t viewportWidth,
-    std::uint32_t viewportHeight) noexcept
-{
-	m_impl->backend->UpdatePerFrameConstants(renderViewMode, viewportWidth, viewportHeight);
 }
 
 void RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept

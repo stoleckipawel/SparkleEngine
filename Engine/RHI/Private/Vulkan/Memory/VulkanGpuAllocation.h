@@ -63,7 +63,7 @@ struct VulkanGpuAllocationRecord final
 struct VulkanGpuMemoryBlockRecord final
 {
 	VmaAllocation_T* Allocation = nullptr;
-	RhiMemoryCategory Category = RhiMemoryCategory::FrameGraphTransient;
+	RhiMemoryCategory Category = RhiMemoryCategory::TransientResource;
 	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::Transient;
 	std::uint64_t UsedBytes = 0;
 	std::uint64_t AllocatedBytes = 0;

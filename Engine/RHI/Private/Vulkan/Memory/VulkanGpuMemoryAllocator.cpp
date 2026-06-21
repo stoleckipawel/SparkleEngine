@@ -242,7 +242,7 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 			aggregation.Stats.UsedBytes += record->UsedBytes;
 			aggregation.Stats.AllocatedBytes += record->AllocatedBytes;
 			snapshot.CommittedUsageBytes += record->AllocatedBytes;
-			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::FrameGraphTransient)
+			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::TransientResource)
 			{
 				snapshot.TransientUsageBytes += record->AllocatedBytes;
 			}
@@ -269,7 +269,7 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 			aggregation.Stats.UsedBytes += record->UsedBytes;
 			aggregation.Stats.AllocatedBytes += record->AllocatedBytes;
 			snapshot.PlacedUsageBytes += record->AllocatedBytes;
-			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::FrameGraphTransient)
+			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::TransientResource)
 			{
 				snapshot.TransientUsageBytes += record->AllocatedBytes;
 			}
@@ -430,7 +430,7 @@ std::unique_ptr<VulkanGpuMemoryBlockRecord> VulkanGpuMemoryAllocator::CreateTran
 	}
 
 	auto record = std::make_unique<VulkanGpuMemoryBlockRecord>();
-	record->Category = RhiMemoryCategory::FrameGraphTransient;
+	record->Category = RhiMemoryCategory::TransientResource;
 	record->ResidencyClass = RhiMemoryResidencyClass::Transient;
 	record->RequestedSizeInBytes = sizeInBytes;
 	record->UsedBytes = sizeInBytes;

@@ -207,7 +207,7 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			{
 				snapshot.PlacedUsageBytes += allocationBytes;
 			}
-			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::FrameGraphTransient)
+			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::TransientResource)
 			{
 				snapshot.TransientUsageBytes += allocationBytes;
 			}
@@ -243,7 +243,7 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 
 			const std::uint64_t allocationBytes = record->Allocation->GetSize();
 			snapshot.PlacedUsageBytes += allocationBytes;
-			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::FrameGraphTransient)
+			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::TransientResource)
 			{
 				snapshot.TransientUsageBytes += allocationBytes;
 			}
@@ -374,7 +374,7 @@ std::unique_ptr<D3D12GpuHeapRecord> D3D12GpuMemoryAllocator::CreateTransientHeap
 	auto record = std::make_unique<D3D12GpuHeapRecord>();
 	record->NativeHeap = allocation->GetHeap();
 	record->Allocation = allocation;
-	record->Category = RhiMemoryCategory::FrameGraphTransient;
+	record->Category = RhiMemoryCategory::TransientResource;
 	record->ResidencyClass = RhiMemoryResidencyClass::Transient;
 	record->Owner = this;
 	record->DebugName = std::wstring(debugName);
@@ -491,7 +491,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateAliasin
 	record->Allocation = heap.Allocation;
 	record->Allocation->AddRef();
 	record->ParentHeap = &heap;
-	record->Category = RhiMemoryCategory::FrameGraphTransient;
+	record->Category = RhiMemoryCategory::TransientResource;
 	record->ResidencyClass = RhiMemoryResidencyClass::Transient;
 	record->DebugName = std::wstring(debugName);
 	++heap.AliasingResourceCount;

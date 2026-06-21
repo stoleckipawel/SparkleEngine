@@ -12,7 +12,6 @@ class D3D12DescriptorHeapManager;
 class D3D12DescriptorService;
 class D3D12ConstantBufferManager;
 class D3D12CaptureService;
-class D3D12DiagnosticsService;
 class D3D12ImGuiBackend;
 class D3D12InteropService;
 class D3D12GpuMemoryAllocator;
@@ -59,8 +58,8 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	RhiInteropService& GetInteropService() noexcept;
 	const RhiInteropService& GetInteropService() const noexcept;
 	RhiCaptureService& GetCaptureService() noexcept;
-	RhiDiagnosticsService& GetDiagnosticsService() noexcept;
-	const RhiDiagnosticsService& GetDiagnosticsService() const noexcept;
+	RenderDiagnostics& GetDiagnostics() noexcept;
+	const RenderDiagnostics& GetDiagnostics() const noexcept;
 	RhiPresentationService& GetPresentationService() noexcept;
 	const RhiPresentationService& GetPresentationService() const noexcept;
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept;
@@ -73,8 +72,6 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    const std::filesystem::path& outputPath) noexcept;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
-	RenderDiagnostics& GetDiagnostics() noexcept;
-	const RenderDiagnostics& GetDiagnostics() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc);
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc);
@@ -90,12 +87,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept;
 	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle);
 	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept;
-	const PerFrameConstantBufferData& GetPerFrameConstantData() const noexcept;
-	RhiGpuVirtualAddress GetPerFrameConstantGpuAddress() const noexcept;
 	RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes);
-	RhiGpuVirtualAddress AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data);
-	RhiGpuVirtualAddress AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data);
-	RhiGpuVirtualAddress AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data);
 	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept;
 	RhiViewport GetBackBufferViewport() const noexcept;
 	RhiRect GetBackBufferScissorRect() const noexcept;
@@ -198,7 +190,6 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 
 	std::unique_ptr<D3D12InteropService> m_interopService;
 	std::unique_ptr<D3D12CaptureService> m_captureService;
-	std::unique_ptr<D3D12DiagnosticsService> m_diagnosticsService;
 	std::unique_ptr<D3D12PresentationService> m_presentationService;
 	std::unique_ptr<D3D12PipelineService> m_pipelineService;
 	std::unique_ptr<D3D12ResourceService> m_resourceService;

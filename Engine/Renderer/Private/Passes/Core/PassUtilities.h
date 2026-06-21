@@ -90,13 +90,12 @@ namespace PassUtilities
 
 	template <typename TRasterPipelineRuntime>
 	const RenderPipelineState& ResolveRasterPipelineState(
-	    RenderHardwareInterface* renderHardwareInterface,
-	    const TRasterPipelineRuntime& runtime) noexcept
+	    const TRasterPipelineRuntime& runtime,
+	    std::uint32_t viewModeIndex) noexcept
 	{
 		if constexpr (requires { runtime.WireframePipelineState; })
 		{
-			if (renderHardwareInterface != nullptr && runtime.WireframePipelineState != nullptr &&
-			    renderHardwareInterface->GetUploadService().GetPerFrameConstantData().ViewModeIndex == static_cast<std::uint32_t>(RenderViewMode::Wireframe))
+			if (runtime.WireframePipelineState != nullptr && viewModeIndex == static_cast<std::uint32_t>(RenderViewMode::Wireframe))
 			{
 				return *runtime.WireframePipelineState;
 			}
@@ -116,14 +115,15 @@ namespace PassUtilities
 	    std::uint32_t bindingNameCount = 0,
 	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr,
-	    bool bindLayout = true) noexcept
+	    bool bindLayout = true,
+	    std::uint32_t viewModeIndex = 0u) noexcept
 	{
 		return RasterShaderPass<PassParameterSet>::Bind(
 		    resources,
 		    cmd,
 		    renderHardwareInterface,
 		    runtime.BindingLayout,
-		    ResolveRasterPipelineState(renderHardwareInterface, runtime),
+		    ResolveRasterPipelineState(runtime, viewModeIndex),
 		    parameters,
 		    bindingNames,
 		    bindingNameCount,
@@ -141,7 +141,8 @@ namespace PassUtilities
 	    const PassParameterSet& parameters,
 	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr,
-	    bool bindLayout = true) noexcept
+	    bool bindLayout = true,
+	    std::uint32_t viewModeIndex = 0u) noexcept
 	{
 		const std::vector<const char*> bindingNames = BuildBoundBindingNames(runtime.BindingLayout, parameters, overrides);
 		return BindRasterPassWithRuntime(
@@ -154,7 +155,8 @@ namespace PassUtilities
 		    static_cast<std::uint32_t>(bindingNames.size()),
 		    overrides,
 		    passName,
-		    bindLayout);
+		    bindLayout,
+		    viewModeIndex);
 	}
 
 	template <typename TRasterPipelineRuntime, std::size_t N>

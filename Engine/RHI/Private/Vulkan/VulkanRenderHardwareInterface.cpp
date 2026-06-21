@@ -13,7 +13,6 @@
 #include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Device/VulkanExternalFeatureInteropCapabilities.h"
-#include "Vulkan/Diagnostics/VulkanDiagnosticsService.h"
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 #include "Vulkan/Interop/VulkanInteropService.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
@@ -199,7 +198,6 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 {
 	m_interopService = std::make_unique<VulkanInteropService>(*this);
 	m_captureService = std::make_unique<VulkanCaptureService>(*this);
-	m_diagnosticsService = std::make_unique<VulkanDiagnosticsService>(*this);
 	m_presentationService = std::make_unique<VulkanPresentationService>(*this);
 	m_pipelineService = std::make_unique<VulkanPipelineService>(rhi);
 	m_rayTracingServices = std::make_unique<VulkanRayTracingServices>(rhi, memoryAllocator);
@@ -317,16 +315,6 @@ const RhiInteropService& VulkanRenderHardwareInterface::GetInteropService() cons
 RhiCaptureService& VulkanRenderHardwareInterface::GetCaptureService() noexcept
 {
 	return *m_captureService;
-}
-
-RhiDiagnosticsService& VulkanRenderHardwareInterface::GetDiagnosticsService() noexcept
-{
-	return *m_diagnosticsService;
-}
-
-const RhiDiagnosticsService& VulkanRenderHardwareInterface::GetDiagnosticsService() const noexcept
-{
-	return *m_diagnosticsService;
 }
 
 RhiPresentationService& VulkanRenderHardwareInterface::GetPresentationService() noexcept
@@ -671,14 +659,6 @@ RhiImGuiRenderer& VulkanRenderHardwareInterface::GetImGuiRenderer() noexcept
 	return *m_imguiBackend;
 }
 
-void VulkanRenderHardwareInterface::UpdatePerFrameConstants(const PerFrameConstantBufferData& data) noexcept
-{
-	if (m_constantBufferManager != nullptr)
-	{
-		m_constantBufferManager->UpdatePerFrame(data);
-	}
-}
-
 std::unique_ptr<RenderBindingSet> VulkanRenderHardwareInterface::CreateBindingSet(const RenderBindingSetDesc& desc)
 {
 	return m_descriptorManager != nullptr ? m_descriptorManager->CreateBindingSet(desc) : std::unique_ptr<RenderBindingSet>{};
@@ -756,35 +736,9 @@ void VulkanRenderHardwareInterface::ReleaseShaderResourceDescriptor(
 	ReleaseDescriptor(ERhiDescriptorAllocatorType::ShaderResource, RhiDescriptorAllocation{.CpuHandle = cpuHandle, .GpuHandle = gpuHandle});
 }
 
-const PerFrameConstantBufferData& VulkanRenderHardwareInterface::GetPerFrameConstantData() const noexcept
-{
-	static const PerFrameConstantBufferData emptyPerFrameConstants = {};
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->GetPerFrameData() : emptyPerFrameConstants;
-}
-
-RhiGpuVirtualAddress VulkanRenderHardwareInterface::GetPerFrameConstantGpuAddress() const noexcept
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->GetPerFrameGpuAddress() : RhiGpuVirtualAddress{};
-}
-
 RhiGpuVirtualAddress VulkanRenderHardwareInterface::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes)
 {
 	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocateUniform(data, sizeInBytes) : RhiGpuVirtualAddress{};
-}
-
-RhiGpuVirtualAddress VulkanRenderHardwareInterface::AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data)
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocatePerView(data) : RhiGpuVirtualAddress{};
-}
-
-RhiGpuVirtualAddress VulkanRenderHardwareInterface::AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data)
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocatePerObjectVertexConstants(data) : RhiGpuVirtualAddress{};
-}
-
-RhiGpuVirtualAddress VulkanRenderHardwareInterface::AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data)
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocatePerObjectPixelConstants(data) : RhiGpuVirtualAddress{};
 }
 
 RhiDescriptorTableBinding VulkanRenderHardwareInterface::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept

@@ -1,4 +1,4 @@
-#include "../../PCH.h"
+#include "PCH.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
 #include "Frame/Core/Frame.h"

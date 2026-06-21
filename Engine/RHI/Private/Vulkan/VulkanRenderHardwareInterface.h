@@ -10,7 +10,6 @@
 class VulkanCommandContext;
 class VulkanConstantBufferManager;
 class VulkanCaptureService;
-class VulkanDiagnosticsService;
 class VulkanDescriptorManager;
 class VulkanGpuMemoryAllocator;
 class VulkanImGuiBackend;
@@ -57,8 +56,8 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	RhiInteropService& GetInteropService() noexcept;
 	const RhiInteropService& GetInteropService() const noexcept;
 	RhiCaptureService& GetCaptureService() noexcept;
-	RhiDiagnosticsService& GetDiagnosticsService() noexcept;
-	const RhiDiagnosticsService& GetDiagnosticsService() const noexcept;
+	RenderDiagnostics& GetDiagnostics() noexcept;
+	const RenderDiagnostics& GetDiagnostics() const noexcept;
 	RhiPresentationService& GetPresentationService() noexcept;
 	const RhiPresentationService& GetPresentationService() const noexcept;
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept;
@@ -71,10 +70,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	    const std::filesystem::path& outputPath) noexcept;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
-	RenderDiagnostics& GetDiagnostics() noexcept;
-	const RenderDiagnostics& GetDiagnostics() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
-	void UpdatePerFrameConstants(const PerFrameConstantBufferData& data) noexcept;
 	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc);
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc);
 	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc);
@@ -88,12 +84,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept;
 	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle);
 	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept;
-	const PerFrameConstantBufferData& GetPerFrameConstantData() const noexcept;
-	RhiGpuVirtualAddress GetPerFrameConstantGpuAddress() const noexcept;
 	RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes);
-	RhiGpuVirtualAddress AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data);
-	RhiGpuVirtualAddress AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data);
-	RhiGpuVirtualAddress AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data);
 	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept;
 	RhiViewport GetBackBufferViewport() const noexcept;
 	RhiRect GetBackBufferScissorRect() const noexcept;
@@ -201,7 +192,6 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 
 	std::unique_ptr<VulkanInteropService> m_interopService;
 	std::unique_ptr<VulkanCaptureService> m_captureService;
-	std::unique_ptr<VulkanDiagnosticsService> m_diagnosticsService;
 	std::unique_ptr<VulkanPresentationService> m_presentationService;
 	std::unique_ptr<VulkanPipelineService> m_pipelineService;
 	std::unique_ptr<VulkanResourceService> m_resourceService;

@@ -8,7 +8,6 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/SwapChain/D3D12SwapChain.h"
 #include "D3D12/D3D12TypeConversions.h"
-#include "D3D12/Diagnostics/D3D12DiagnosticsService.h"
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Diagnostics/D3D12RenderDiagnostics.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
@@ -204,7 +203,6 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 {
 	m_interopService = std::make_unique<D3D12InteropService>(*this);
 	m_captureService = std::make_unique<D3D12CaptureService>(*this);
-	m_diagnosticsService = std::make_unique<D3D12DiagnosticsService>(*this);
 	m_presentationService = std::make_unique<D3D12PresentationService>(*this);
 	m_pipelineService = std::make_unique<D3D12PipelineService>(rhi);
 	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);
@@ -384,16 +382,6 @@ const RhiInteropService& D3D12RenderHardwareInterface::GetInteropService() const
 RhiCaptureService& D3D12RenderHardwareInterface::GetCaptureService() noexcept
 {
 	return *m_captureService;
-}
-
-RhiDiagnosticsService& D3D12RenderHardwareInterface::GetDiagnosticsService() noexcept
-{
-	return *m_diagnosticsService;
-}
-
-const RhiDiagnosticsService& D3D12RenderHardwareInterface::GetDiagnosticsService() const noexcept
-{
-	return *m_diagnosticsService;
 }
 
 RhiPresentationService& D3D12RenderHardwareInterface::GetPresentationService() noexcept
@@ -681,36 +669,9 @@ void D3D12RenderHardwareInterface::ReleaseShaderResourceDescriptor(
 	}
 }
 
-const PerFrameConstantBufferData& D3D12RenderHardwareInterface::GetPerFrameConstantData() const noexcept
-{
-	static const PerFrameConstantBufferData emptyData{};
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->GetPerFrameData() : emptyData;
-}
-
-RhiGpuVirtualAddress D3D12RenderHardwareInterface::GetPerFrameConstantGpuAddress() const noexcept
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->GetPerFrameGpuAddress() : 0;
-}
-
-
 RhiGpuVirtualAddress D3D12RenderHardwareInterface::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes)
 {
 	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocateUniform(data, sizeInBytes) : 0;
-}
-
-RhiGpuVirtualAddress D3D12RenderHardwareInterface::AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data)
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocatePerView(data) : 0;
-}
-
-RhiGpuVirtualAddress D3D12RenderHardwareInterface::AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data)
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->UpdatePerObjectVS(data) : 0;
-}
-
-RhiGpuVirtualAddress D3D12RenderHardwareInterface::AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data)
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->UpdatePerObjectPS(data) : 0;
 }
 
 RhiDescriptorTableBinding D3D12RenderHardwareInterface::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept

@@ -24,6 +24,7 @@
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Resources/PerFrameConstantBufferData.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
@@ -35,12 +36,35 @@
 #include "Upscaling/UpscalerSubsystem.h"
 #include "Window/Window.h"
 
+namespace
+{
+	PerFrameConstantBufferData BuildPerFrameConstants(
+	    const Timer& timer,
+	    RenderViewMode viewMode,
+	    RenderViewportExtent sceneExtent) noexcept
+	{
+		const float width = static_cast<float>(sceneExtent.Width != 0u ? sceneExtent.Width : 1u);
+		const float height = static_cast<float>(sceneExtent.Height != 0u ? sceneExtent.Height : 1u);
+
+		PerFrameConstantBufferData data{};
+		data.FrameIndex = timer.GetFrameCount();
+		data.TotalTime = static_cast<float>(timer.GetTotalTime(TimeDomain::Unscaled, TimeUnit::Seconds));
+		data.DeltaTime = static_cast<float>(timer.GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds));
+		data.ScaledTotalTime = static_cast<float>(timer.GetTotalTime(TimeDomain::Scaled, TimeUnit::Seconds));
+		data.ScaledDeltaTime = static_cast<float>(timer.GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
+		data.ViewModeIndex = static_cast<std::uint32_t>(viewMode);
+		data.ViewportSize = DirectX::XMFLOAT2(width, height);
+		data.ViewportSizeInv = DirectX::XMFLOAT2(1.0f / width, 1.0f / height);
+		return data;
+	}
+}
+
 FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
     m_systems(&systems)
 {
 	m_frameExecutionDiagnostics.resize(RenderConfig::FramesInFlight);
 	RenderDiagnostics& backendDiagnostics =
-	    m_systems->GetRenderHardwareInterface().GetDiagnosticsService().GetDiagnostics();
+	    m_systems->GetRenderHardwareInterface().GetDiagnostics();
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
 	{
 		frameDiagnostics = std::make_unique<FrameExecutionDiagnostics>(backendDiagnostics);
@@ -450,12 +474,7 @@ void FramePipeline::SetupFrame() noexcept
 	m_systems->GetRenderCamera().Update(m_sceneSnapshot.camera);
 
 	const RenderViewportExtent sceneExtent = m_frameGraphSceneExtent.IsValid() ? m_frameGraphSceneExtent : ResolveSceneExtent();
-	const std::uint32_t viewportWidth = sceneExtent.Width != 0u ? sceneExtent.Width : 1u;
-	const std::uint32_t viewportHeight = sceneExtent.Height != 0u ? sceneExtent.Height : 1u;
-	m_systems->GetBackend().UpdatePerFrameConstants(
-	    static_cast<std::uint32_t>(CVarRenderViewMode.Get()),
-	    viewportWidth,
-	    viewportHeight);
+	m_perFrameData = BuildPerFrameConstants(timer, CVarRenderViewMode.Get(), sceneExtent);
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SetupFrame end");
 }
 
@@ -583,8 +602,9 @@ void FramePipeline::RecordFrame() noexcept
 	    .Subsystem = m_systems->GetUpscalerSubsystem()};
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
-	    .BackendDiagnostics = renderHardwareInterface.GetDiagnosticsService().GetDiagnostics(),
+	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
 	    .RuntimeManager = m_systems->GetPipelineStateManager(),
+	    .PerFrame = m_perFrameData,
 	    .Textures = &m_systems->GetTextureManager(),
 	    .RayTracing = &rayTracingPassServices,
 	    .Upscaling = &upscalingPassServices};
