@@ -27,6 +27,8 @@ class IndirectSpecularCS final : public TGlobalShader<IndirectSpecularCS>
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SkyTexture)
+	SHADER_PARAMETER_SAMPLER(SamplerState, SamplerLinearClamp)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(uint32_t, RayTracingHitIndices)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitInstance, RayTracingHitInstances)

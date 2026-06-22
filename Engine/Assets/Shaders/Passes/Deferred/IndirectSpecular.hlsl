@@ -7,6 +7,8 @@
 
 RWTexture2D<float4> IndirectSpecularTexture;
 RaytracingAccelerationStructure SceneTlas;
+Texture2D SkyTexture;
+SamplerState SamplerLinearClamp;
 
 cbuffer IndirectSpecularUniformData
 {
@@ -183,6 +185,21 @@ RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 norm
 	return result;
 }
 
+float2 ComputeIndirectSpecularSkyUv(float3 worldDirection)
+{
+	const float clampedY = clamp(worldDirection.y, -1.0f, 1.0f);
+	const float u = atan2(-worldDirection.z, worldDirection.x) * 0.15915494309189535f + 0.5f;
+	const float v = acos(clampedY) * 0.3183098861837907f;
+	return float2(frac(u), saturate(v));
+}
+
+float3 SampleIndirectSpecularMissRadiance(float3 rayDirectionWorld)
+{
+	const float3 skyRadiance =
+	    SkyTexture.SampleLevel(SamplerLinearClamp, ComputeIndirectSpecularSkyUv(normalize(rayDirectionWorld)), 0.0f).rgb;
+	return skyRadiance / (skyRadiance + 1.0f.xxx);
+}
+
 #include "Passes/Deferred/IndirectSpecularDebug.hlsli"
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
@@ -217,7 +234,8 @@ RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 norm
 	    TraceIndirectSpecularRay(positionWorld, normalWorld, sample.DirectionWorld);
 	const RayTracingHitSurfaceData hitSurface =
 	    ReconstructRayTracingHitSurface(trace, ComputeRayOrigin(positionWorld, normalWorld, sample.DirectionWorld), sample.DirectionWorld);
-	const float3 hitIncidentRadiance = hitSurface.Valid ? ShadeRayTracingHitIncidentRadiance(hitSurface, sample.DirectionWorld) : 0.0f.xxx;
+	const float3 hitIncidentRadiance =
+	    hitSurface.Valid ? ShadeRayTracingHitIncidentRadiance(hitSurface, sample.DirectionWorld) : SampleIndirectSpecularMissRadiance(sample.DirectionWorld);
 	IndirectSpecularResolvedContribution resolved;
 	resolved.HitRadiance = hitIncidentRadiance;
 	resolved.FinalContribution = hitIncidentRadiance * sample.ThroughputNoF;
