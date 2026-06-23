@@ -1,7 +1,7 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/IndirectLighting.h"
 
-#include "Frame/Lighting/AmbientIndirectLighting.h"
+#include "Frame/Lighting/IndirectDiffuse.h"
 #include "Frame/Lighting/IndirectSpecular.h"
 
 void AddIndirectLightingPasses(
@@ -10,6 +10,6 @@ void AddIndirectLightingPasses(
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas)
 {
-	AddAmbientIndirectLightingPass(builder, lighting, gbuffer);
+	AddIndirectDiffusePass(builder, lighting, gbuffer, sceneTlas);
 	AddIndirectSpecularPass(builder, lighting, gbuffer, sceneTlas);
 }

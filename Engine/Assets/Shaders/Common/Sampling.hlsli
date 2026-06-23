@@ -75,4 +75,32 @@ namespace CommonSampling
 		BuildOrthonormalBasis(normal, tangent, bitangent);
 		return center + tangent * (sampleRadius * cos(phi)) + bitangent * (sampleRadius * sin(phi));
 	}
+
+	struct CosineHemisphereSample
+	{
+		float3 DirectionWorld;
+		float Pdf;
+		float Cosine;
+	};
+
+	CosineHemisphereSample SampleCosineHemisphere(float3 normal, float2 sample)
+	{
+		const float phi = TwoPi * sample.x;
+		const float cosTheta = sqrt(saturate(1.0f - sample.y));
+		const float sinTheta = sqrt(saturate(sample.y));
+
+		float3 tangent;
+		float3 bitangent;
+		BuildOrthonormalBasis(normal, tangent, bitangent);
+
+		CosineHemisphereSample result;
+		result.DirectionWorld = SafeNormalize(
+		    tangent * (cos(phi) * sinTheta) +
+		    bitangent * (sin(phi) * sinTheta) +
+		    SafeNormalize(normal) * cosTheta,
+		    SafeNormalize(normal));
+		result.Cosine = saturate(dot(SafeNormalize(normal), result.DirectionWorld));
+		result.Pdf = max(result.Cosine * INV_PI, 1.0e-4f);
+		return result;
+	}
 }
