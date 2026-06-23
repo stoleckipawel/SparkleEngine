@@ -4,21 +4,17 @@
 #include "Frame/Lighting/DirectLighting.h"
 #include "Frame/Lighting/IndirectLighting.h"
 #include "Frame/Lighting/LightingComposite.h"
-#include "Frame/Lighting/IndirectSpecular.h"
+#include "Frame/Lighting/LightingRenderTargets.h"
+#include "Frame/Lighting/LightingTargetClear.h"
 #include "Frame/Lighting/Sky.h"
-#include "Frame/Debug/VisualizeBuffers.h"
 
-void AddLightingPasses(
-    FrameGraphBuilder& builder,
-    const SceneRenderTargets& sceneTargets,
-    const LightingRenderTargets& lighting,
-    const GBufferRenderTargets& gbuffer,
-    FrameGraphAccelerationStructureHandle sceneTlas)
+void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
 {
-	AddDirectLightingPass(builder, lighting, gbuffer, sceneTlas);
-	AddIndirectLightingPass(builder, lighting, gbuffer);
-	AddIndirectSpecularPass(builder, lighting, gbuffer, sceneTlas);
-	AddLightingCompositePass(builder, sceneTargets, lighting, gbuffer);
-	AddVisualizeBuffersPass(builder, sceneTargets, lighting, gbuffer);
-	AddSkyPass(builder, sceneTargets, gbuffer);
+	resources.Transient.Lighting = CreateLightingRenderTargets(builder, sceneExtent);
+
+	AddLightingTargetClearPass(builder, resources.Transient.Lighting);
+	AddDirectLightingPass(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.Persistent.SceneTlas);
+	AddIndirectLightingPasses(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.Persistent.SceneTlas);
+	AddLightingCompositePass(builder, resources.Transient.Scene, resources.Transient.Lighting, resources.Transient.GBuffer);
+	AddSkyPass(builder, resources.Transient.Scene, resources.Transient.GBuffer);
 }

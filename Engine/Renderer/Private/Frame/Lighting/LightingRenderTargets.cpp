@@ -9,8 +9,10 @@ namespace
 {
 	FrameGraphTextureHandle CreateLightingTexture(FrameGraphBuilder& builder, const char* name, RenderViewportExtent sceneExtent)
 	{
-		return builder.CreateTexture(
-		    FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, FrameRenderFormats::SceneColor));
+		FrameGraphTextureDesc desc =
+		    FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, FrameRenderFormats::SceneColor);
+		desc.clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
+		return builder.CreateTexture(desc);
 	}
 }
 

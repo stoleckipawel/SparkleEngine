@@ -20,8 +20,6 @@ class Texture;
 struct IndirectLightingPassParameters
 {
 	ShaderRWTexture2D<void> IndirectDiffuse;
-	ShaderRWTexture2D<void> IndirectSpecular;
-	ShaderRWTexture2D<void> IndirectSubsurface;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferDeviceZ;
 	ShaderTexture2DSRV SkyTexture;
@@ -30,8 +28,6 @@ struct IndirectLightingPassParameters
 	static void Describe(ShaderParameterStructBuilder<IndirectLightingPassParameters>& builder)
 	{
 		builder.RWTexture("IndirectDiffuse", &IndirectLightingPassParameters::IndirectDiffuse, ShaderStageVisibility::Compute);
-		builder.RWTexture("IndirectSpecular", &IndirectLightingPassParameters::IndirectSpecular, ShaderStageVisibility::Compute);
-		builder.RWTexture("IndirectSubsurface", &IndirectLightingPassParameters::IndirectSubsurface, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &IndirectLightingPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferDeviceZ", &IndirectLightingPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
 		builder.ReadTexture("SkyTexture", &IndirectLightingPassParameters::SkyTexture, ShaderStageVisibility::Compute);

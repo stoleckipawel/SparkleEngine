@@ -144,3 +144,10 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, const RayTracingS
 		    context.RuntimeServices.RayTracing->Scene->Build(context.Commands, context.Frame.sceneData, &context.Diagnostics);
 	    });
 }
+
+void AddRayTracingInfrastructurePasses(FrameGraphBuilder& builder, FrameAssemblyResourceLayout& resources)
+{
+	resources.Persistent.RayTracing = CreateRayTracingSceneFrameGraphResources(builder);
+	resources.Persistent.SceneTlas = resources.Persistent.RayTracing.SceneTlas;
+	AddRayTracingSceneBuildPasses(builder, resources.Persistent.RayTracing);
+}

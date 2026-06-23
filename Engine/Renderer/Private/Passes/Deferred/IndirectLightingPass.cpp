@@ -74,8 +74,6 @@ void IndirectLightingPass::DeclareResources(
     ParameterInstance& parameters)
 {
 	parameters->IndirectDiffuse = builder.CreateUAV(lighting.IndirectDiffuse);
-	parameters->IndirectSpecular = builder.CreateUAV(lighting.IndirectSpecular);
-	parameters->IndirectSubsurface = builder.CreateUAV(lighting.IndirectSubsurface);
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 	parameters->SamplerLinearNoMipClamp = RhiSamplerDesc{

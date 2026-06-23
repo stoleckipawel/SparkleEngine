@@ -165,7 +165,7 @@ The current registration shape is centralized in frame building code, not dynami
 Observed source-backed pattern:
 
 - `BuildFrame(...)` creates top-level frame resources.
-- `BuildFrame(...)` calls frame assembly helpers such as `AddGBufferPass(...)`, `AddLightingPasses(...)`, `AddRayTracingSceneBuildPasses(...)`, `AddExternalProviderEvaluationPass(...)`, and `AddPresentationPass(...)`.
+- `BuildFrame(...)` calls frame assembly helpers such as `AddGBufferPasses(...)`, `AddRayTracingInfrastructurePasses(...)`, `AddLightingPasses(...)`, `AddPostProcessingPasses(...)`, `AddDebugPasses(...)`, and `AddPresentationPass(...)`.
 - Those helpers allocate typed pass parameters and register typed shader passes through `FrameGraphBuilder`.
 
 Contract rule:

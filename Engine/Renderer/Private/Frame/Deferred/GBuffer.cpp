@@ -53,3 +53,11 @@ void AddGBufferPass(FrameGraphBuilder& builder, const GBufferRenderTargets& targ
 	GBufferPass::DeclareResources(builder, targets, parameters);
 	builder.AddRasterShaderPass<GBufferPass>(parameters);
 }
+
+void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
+{
+	resources.Transient.GBuffer = CreateGBufferRenderTargets(builder, sceneExtent, resources.Transient.Scene);
+	resources.ViewportProducts.Normals = resources.Transient.GBuffer.Normal;
+	resources.ViewportProducts.MotionVectors = resources.Transient.GBuffer.MotionVector;
+	AddGBufferPass(builder, resources.Transient.GBuffer);
+}

@@ -1,8 +1,6 @@
 #include "Resources/Samplers.hlsli"
 
 RWTexture2D<float4> IndirectDiffuseTexture;
-RWTexture2D<float4> IndirectSpecularTexture;
-RWTexture2D<float4> IndirectSubsurfaceTexture;
 Texture2D GBufferNormal;
 Texture2D GBufferDeviceZ;
 Texture2D SkyTexture;
@@ -50,8 +48,6 @@ float3 SampleSkyAmbient(float3 normalWorld)
 	if (IsSkyPixel(deviceZ))
 	{
 		IndirectDiffuseTexture[dispatchThreadId.xy] = 0.0f.xxxx;
-		IndirectSpecularTexture[dispatchThreadId.xy] = 0.0f.xxxx;
-		IndirectSubsurfaceTexture[dispatchThreadId.xy] = 0.0f.xxxx;
 		return;
 	}
 
@@ -59,6 +55,4 @@ float3 SampleSkyAmbient(float3 normalWorld)
 	const float3 ambientDiffuse = SampleSkyAmbient(normalWorld);
 
 	IndirectDiffuseTexture[dispatchThreadId.xy] = float4(ambientDiffuse, 1.0f);
-	IndirectSpecularTexture[dispatchThreadId.xy] = 0.0f.xxxx;
-	IndirectSubsurfaceTexture[dispatchThreadId.xy] = 0.0f.xxxx;
 }

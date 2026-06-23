@@ -1,12 +1,15 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/IndirectLighting.h"
 
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/Deferred/IndirectLightingPass.h"
+#include "Frame/Lighting/AmbientIndirectLighting.h"
+#include "Frame/Lighting/IndirectSpecular.h"
 
-void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting, const GBufferRenderTargets& gbuffer)
+void AddIndirectLightingPasses(
+    FrameGraphBuilder& builder,
+    const LightingRenderTargets& lighting,
+    const GBufferRenderTargets& gbuffer,
+    FrameGraphAccelerationStructureHandle sceneTlas)
 {
-	auto& parameters = builder.AllocPassParameters<IndirectLightingPass>();
-	IndirectLightingPass::DeclareResources(builder, lighting, gbuffer, parameters);
-	builder.AddComputeShaderPass<IndirectLightingPass>(parameters);
+	AddAmbientIndirectLightingPass(builder, lighting, gbuffer);
+	AddIndirectSpecularPass(builder, lighting, gbuffer, sceneTlas);
 }
