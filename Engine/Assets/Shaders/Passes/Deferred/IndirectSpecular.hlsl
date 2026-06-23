@@ -27,6 +27,7 @@ cbuffer IndirectSpecularUniformData
 	uint IndirectSpecularPadding1;
 };
 
+#include "RayTracing/RayTracingTraceQuery.hlsli"
 #include "RayTracing/RayTracingHitLighting.hlsli"
 
 static const uint IndirectSpecularRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
@@ -136,54 +137,15 @@ float3 ComputeRayOrigin(float3 positionWorld, float3 normalWorld, float3 rayDire
 
 RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 normalWorld, float3 reflectionDirectionWorld)
 {
-	RayDesc ray;
-	ray.Direction = SafeNormalize(reflectionDirectionWorld, normalWorld);
-	ray.Origin = ComputeRayOrigin(positionWorld, normalWorld, ray.Direction);
-	ray.TMin = IndirectSpecularMinimumTMin;
-	ray.TMax = max(IndirectSpecularMaxDistance, IndirectSpecularMinimumTMin);
-
-	RayQuery<IndirectSpecularRayFlags> query;
-	query.TraceRayInline(SceneTlas, IndirectSpecularRayFlags, IndirectSpecularInstanceMask, ray);
-	float alphaCandidateValue = 1.0f;
-	float alphaCandidateCutoff = 0.5f;
-	bool alphaCandidateSeen = false;
-	bool alphaCandidateAccepted = false;
-	bool alphaCandidateRejected = false;
-	while (query.Proceed())
-	{
-		if (query.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE)
-		{
-			alphaCandidateSeen = true;
-			const bool commitCandidate = ResolveRayTracingCandidateAlpha(
-			    query.CandidateInstanceID(),
-			    query.CandidatePrimitiveIndex(),
-			    query.CandidateTriangleBarycentrics(),
-			    alphaCandidateValue,
-			    alphaCandidateCutoff);
-			if (commitCandidate)
-			{
-				alphaCandidateAccepted = true;
-				query.CommitNonOpaqueTriangleHit();
-			}
-			else
-			{
-				alphaCandidateRejected = true;
-			}
-		}
-	}
-
-	RayTracingTraceResult result;
-	result.Hit = query.CommittedStatus() == COMMITTED_TRIANGLE_HIT;
-	result.RayT = result.Hit ? query.CommittedRayT() : ray.TMax;
-	result.InstanceId = result.Hit ? query.CommittedInstanceID() : 0u;
-	result.PrimitiveIndex = result.Hit ? query.CommittedPrimitiveIndex() : 0u;
-	result.Barycentrics = result.Hit ? query.CommittedTriangleBarycentrics() : 0.0f.xx;
-	result.AlphaCandidateSeen = alphaCandidateSeen;
-	result.AlphaCandidateAccepted = alphaCandidateAccepted && result.Hit;
-	result.AlphaCandidateRejected = alphaCandidateRejected;
-	result.AlphaCandidateValue = alphaCandidateValue;
-	result.AlphaCandidateCutoff = alphaCandidateCutoff;
-	return result;
+	const float3 rayDirectionWorld = SafeNormalize(reflectionDirectionWorld, normalWorld);
+	return TraceRayQueryWithAlphaTest(
+	    SceneTlas,
+	    ComputeRayOrigin(positionWorld, normalWorld, rayDirectionWorld),
+	    rayDirectionWorld,
+	    IndirectSpecularMinimumTMin,
+	    max(IndirectSpecularMaxDistance, IndirectSpecularMinimumTMin),
+	    IndirectSpecularRayFlags,
+	    IndirectSpecularInstanceMask);
 }
 
 float3 SampleIndirectSpecularMissRadiance(float3 rayDirectionWorld)

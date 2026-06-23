@@ -26,6 +26,7 @@ cbuffer IndirectDiffuseUniformData
 	uint IndirectDiffusePadding1;
 };
 
+#include "RayTracing/RayTracingTraceQuery.hlsli"
 #include "RayTracing/RayTracingHitLighting.hlsli"
 #include "Passes/Deferred/IndirectDiffuseDebug.hlsli"
 
@@ -63,54 +64,14 @@ float3 ComputeIndirectDiffuseRayOrigin(float3 positionWorld, float3 normalWorld,
 
 RayTracingTraceResult TraceIndirectDiffuseRay(float3 rayOriginWorld, float3 rayDirectionWorld)
 {
-	RayDesc ray;
-	ray.Direction = normalize(rayDirectionWorld);
-	ray.Origin = rayOriginWorld;
-	ray.TMin = IndirectDiffuseMinimumTMin;
-	ray.TMax = max(IndirectDiffuseMaxDistance, IndirectDiffuseMinimumTMin);
-
-	RayQuery<IndirectDiffuseRayFlags> query;
-	query.TraceRayInline(SceneTlas, IndirectDiffuseRayFlags, IndirectDiffuseInstanceMask, ray);
-	float alphaCandidateValue = 1.0f;
-	float alphaCandidateCutoff = 0.5f;
-	bool alphaCandidateSeen = false;
-	bool alphaCandidateAccepted = false;
-	bool alphaCandidateRejected = false;
-	while (query.Proceed())
-	{
-		if (query.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE)
-		{
-			alphaCandidateSeen = true;
-			const bool commitCandidate = ResolveRayTracingCandidateAlpha(
-			    query.CandidateInstanceID(),
-			    query.CandidatePrimitiveIndex(),
-			    query.CandidateTriangleBarycentrics(),
-			    alphaCandidateValue,
-			    alphaCandidateCutoff);
-			if (commitCandidate)
-			{
-				alphaCandidateAccepted = true;
-				query.CommitNonOpaqueTriangleHit();
-			}
-			else
-			{
-				alphaCandidateRejected = true;
-			}
-		}
-	}
-
-	RayTracingTraceResult result;
-	result.Hit = query.CommittedStatus() == COMMITTED_TRIANGLE_HIT;
-	result.RayT = result.Hit ? query.CommittedRayT() : ray.TMax;
-	result.InstanceId = result.Hit ? query.CommittedInstanceID() : 0u;
-	result.PrimitiveIndex = result.Hit ? query.CommittedPrimitiveIndex() : 0u;
-	result.Barycentrics = result.Hit ? query.CommittedTriangleBarycentrics() : 0.0f.xx;
-	result.AlphaCandidateSeen = alphaCandidateSeen;
-	result.AlphaCandidateAccepted = alphaCandidateAccepted && result.Hit;
-	result.AlphaCandidateRejected = alphaCandidateRejected;
-	result.AlphaCandidateValue = alphaCandidateValue;
-	result.AlphaCandidateCutoff = alphaCandidateCutoff;
-	return result;
+	return TraceRayQueryWithAlphaTest(
+	    SceneTlas,
+	    rayOriginWorld,
+	    rayDirectionWorld,
+	    IndirectDiffuseMinimumTMin,
+	    max(IndirectDiffuseMaxDistance, IndirectDiffuseMinimumTMin),
+	    IndirectDiffuseRayFlags,
+	    IndirectDiffuseInstanceMask);
 }
 
 RayTracingPathSample::LightingResult ResolveIndirectDiffuseLighting(
