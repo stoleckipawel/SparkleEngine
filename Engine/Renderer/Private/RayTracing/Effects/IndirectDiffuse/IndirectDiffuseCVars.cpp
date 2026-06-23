@@ -8,7 +8,7 @@ ConsoleVariable<bool> CVarIndirectDiffuseEnabled(
 ConsoleVariable<IndirectDiffuseDebugMode> CVarIndirectDiffuseDebugMode(
     "r.RayTracing.IndirectDiffuse.DebugMode",
     IndirectDiffuseDebugMode::Off,
-    "Indirect diffuse debug mode: 0=Off, 1=HitMask, 2=HitDistance, 3=SampleDirection, 4=SamplePdf, 5=HitRadiance, 6=FinalContribution.");
+    "Indirect diffuse debug mode: 0=Off, 1=HitMask, 2=HitDistance, 3=SampleDirection, 4=SamplePdf, 5=HitRadiance, 6=FinalContribution, 7=HitNormal, 8=MaterialBaseColor, 9=MissSkyRadiance, 10=RejectionReason.");
 ConsoleVariable<float> CVarIndirectDiffuseNormalBias(
     "r.RayTracing.IndirectDiffuse.NormalBias",
     0.01f,

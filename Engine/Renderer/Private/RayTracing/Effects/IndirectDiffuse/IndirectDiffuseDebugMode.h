@@ -13,4 +13,8 @@ enum class IndirectDiffuseDebugMode : std::uint32_t
 	SamplePdf = 4u,
 	HitRadiance = 5u,
 	FinalContribution = 6u,
+	HitNormal = 7u,
+	MaterialBaseColor = 8u,
+	MissSkyRadiance = 9u,
+	RejectionReason = 10u,
 };

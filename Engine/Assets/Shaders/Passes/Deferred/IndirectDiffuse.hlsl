@@ -27,6 +27,7 @@ cbuffer IndirectDiffuseUniformData
 };
 
 #include "RayTracing/RayTracingHitLighting.hlsli"
+#include "Passes/Deferred/IndirectDiffuseDebug.hlsli"
 
 static const uint IndirectDiffuseRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
 static const uint IndirectDiffuseInstanceMask = 0xFFu;
@@ -118,11 +119,16 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffuseLighting(
     float3 rayOriginWorld)
 {
 	RayTracingPathSample::LightingResult result;
+	result.TraceHit = trace.Hit;
 	result.Hit = trace.Hit;
 	result.HitDistance = trace.RayT;
 	result.RejectionReason = sample.RejectionReason;
 	result.IncidentRadiance = 0.0f.xxx;
 	result.Contribution = 0.0f.xxx;
+	result.HitNormalWorld = 0.0f.xxx;
+	result.MaterialBaseColor = 0.0f.xxx;
+	result.MissRadiance = 0.0f.xxx;
+	result.SurfaceRejectionReason = trace.Hit ? RayTracingHitSurface::ReasonHitDataUnavailable : RayTracingHitSurface::ReasonNoHit;
 
 	if (sample.RejectionReason != RayTracingPathSample::RejectionReasonNone)
 	{
@@ -137,6 +143,9 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffuseLighting(
 		result.RejectionReason = hitSurface.Valid
 		                             ? RayTracingPathSample::RejectionReasonNone
 		                             : RayTracingPathSample::RejectionReasonHitSurfaceRejected;
+		result.SurfaceRejectionReason = hitSurface.RejectionReason;
+		result.HitNormalWorld = hitSurface.Valid ? hitSurface.NormalWorld : 0.0f.xxx;
+		result.MaterialBaseColor = hitSurface.Valid ? hitSurface.BaseColor : 0.0f.xxx;
 		result.IncidentRadiance = hitSurface.Valid
 		                              ? ShadeRayTracingHitIncidentRadiance(hitSurface, sample.DirectionWorld)
 		                              : 0.0f.xxx;
@@ -144,7 +153,9 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffuseLighting(
 	else
 	{
 		result.RejectionReason = RayTracingPathSample::RejectionReasonTraceMiss;
-		result.IncidentRadiance = SampleSkyEnvironment(SkyTexture, SamplerLinearClamp, sample.DirectionWorld);
+		result.SurfaceRejectionReason = RayTracingHitSurface::ReasonNoHit;
+		result.MissRadiance = SampleSkyEnvironment(SkyTexture, SamplerLinearClamp, sample.DirectionWorld);
+		result.IncidentRadiance = result.MissRadiance;
 	}
 
 	result.Contribution = result.IncidentRadiance * (sample.CosineTerm * rcp(max(sample.Pdf, 1.0e-4f)) * INV_PI);
@@ -184,6 +195,14 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffuseLighting(
 	    ResolveIndirectDiffuseLighting(trace, sample, rayOriginWorld);
 	const float bindingKeepAliveSignal = dot(baseColor, float3(0.25f, 0.5f, 0.25f)) * 1.0e-9f + roughness * 1.0e-9f;
 	const float alphaSignal = (lighting.Hit ? 1.0f : 0.0f) + bindingKeepAliveSignal;
+	const float3 finalContribution = lighting.Contribution * IndirectDiffuseIntensity;
+	const float3 outputColor = IndirectDiffuseDebugMode == IndirectDiffuseDebug::Off
+	                               ? finalContribution
+	                               : IndirectDiffuseDebug::BuildColor(
+	                                     IndirectDiffuseDebugMode,
+	                                     sample,
+	                                     lighting,
+	                                     IndirectDiffuseMaxDistance);
 
-	IndirectDiffuseTexture[pixelCoord] = float4(lighting.Contribution * IndirectDiffuseIntensity, alphaSignal);
+	IndirectDiffuseTexture[pixelCoord] = float4(outputColor, alphaSignal);
 }
