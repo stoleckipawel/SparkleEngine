@@ -63,7 +63,7 @@ Naming rules:
 
 - If a helper can be used by shadows, indirect specular, indirect diffuse, path tracing, or future GI, name it after the underlying concept, not the first caller.
 - Files under `RayTracing/Effects/IndirectDiffuse` may mention indirect diffuse settings, CVars, debug modes, and uniform layout.
-- Files under generic `RayTracing`, `Passes/Bindings`, `Common`, `BRDF`, or `Lighting` must not depend on `IndirectDiffuse` settings, status, debug enums, or CVars.
+- Files under generic `RayTracing`, `Passes/Bindings`, `Common`, `BRDF`, or `Lighting` must not depend on `IndirectDiffuse` settings, debug enums, or CVars.
 - Effect passes must not rediscover backend support through local backend-name branches when neutral capability facts can provide the answer.
 - Shader package feature flags must describe actual resource use. Do not load a package variant that cannot bind its required TLAS/material resources.
 
@@ -230,7 +230,7 @@ Inspect current indirect lighting, indirect specular, ray tracing scene, frame g
 ### Acceptance
 
 - No source edits.
-- A short implementation note can name the current startup command and baseline indirect specular status line.
+- A short implementation note can name the current startup command and baseline indirect specular behavior.
 
 ## Stage 1A - Pass Family Composition Hierarchy
 
@@ -690,7 +690,7 @@ The helper must:
 
 ### Implementation Prompt
 
-Make the first indirect diffuse release descriptor-TLAS only, matching current indirect specular, using the neutral ray tracing capability query from Stage 3A. Add explicit unsupported status for address-only TLAS access. Do not add a Vulkan address shader variant in this stage.
+Make the first indirect diffuse release descriptor-TLAS only, matching current indirect specular, using the neutral ray tracing capability query from Stage 3A. Address-only TLAS access must fail closed without a Vulkan address shader variant in this stage.
 
 ### Files
 
@@ -757,7 +757,7 @@ Stage 8C:
 Stage 8D:
 
 - Add skinned mesh hit-data support from the deformed geometry snapshot.
-- Keep unsupported status for skinned meshes until BLAS geometry and hit buffers consume the same deformed data.
+- Keep skinned meshes out of the traced path until BLAS geometry and hit buffers consume the same deformed data.
 
 Stage 8E:
 

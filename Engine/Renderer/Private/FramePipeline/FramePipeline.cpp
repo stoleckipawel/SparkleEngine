@@ -581,6 +581,9 @@ void FramePipeline::RecordFrame() noexcept
 	const IndirectSpecularSettings indirectSpecularSettings = BuildIndirectSpecularSettingsFromCVars();
 	const RenderRayTracingPassServices rayTracingPassServices{
 	    .Scene = m_systems->GetRenderRayTracingScene(),
+	    .CapabilityReport = m_systems->GetRenderRayTracingScene() != nullptr
+	                            ? &m_systems->GetRenderRayTracingScene()->GetCapabilities()
+	                            : nullptr,
 	    .ShadowSettings = m_systems->GetRayTracedShadowSettings(),
 	    .IndirectDiffuseSettings = &indirectDiffuseSettings,
 	    .IndirectSpecularSettings = &indirectSpecularSettings};

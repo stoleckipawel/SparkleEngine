@@ -56,6 +56,11 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(c
 {
 	const ERhiBackendApi backendApi = capabilities.BackendApi;
 	const RhiRayTracingCapabilities& rayTracing = capabilities.RayTracing;
+	const bool supportsClassicDescriptorTlas = rayTracing.Groups.ClassicTlas.SupportsClassicTlasBuild;
+	const bool supportsPartitionedDescriptorTlas =
+	    rayTracing.Groups.PartitionedTlas.SupportsVulkanDescriptorPath ||
+	    rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiPartitionedTlas ||
+	    rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas;
 	return RayTracingCapabilityReport{
 	    .BackendApi = backendApi,
 	    .Core =
@@ -104,5 +109,11 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(c
 	                rayTracing.Groups.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites,
 	            .SupportsGpuNativeOperationPacking = rayTracing.Groups.PartitionedTlas.SupportsGpuNativeOperationPacking,
 	            .CapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason},
+	    .TlasShaderAccess =
+	        RayTracingTlasShaderAccessCapabilityReport{
+	            .SupportsDescriptor = rayTracing.SupportsRayTracing &&
+	                                  (supportsClassicDescriptorTlas || supportsPartitionedDescriptorTlas),
+	            .SupportsShaderDeviceAddress = rayTracing.SupportsRayTracing &&
+	                                           rayTracing.Groups.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath},
 	    .MaterialTextureTable = BuildMaterialTextureTableCapabilityReport(capabilities)};
 }

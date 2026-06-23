@@ -13,13 +13,14 @@
 #include "Passes/Bindings/LightingPassBinding.h"
 #include "Passes/Bindings/MaterialTextureTablePassBinding.h"
 #include "Passes/Bindings/RayTracingHitDataPassBinding.h"
+#include "Passes/Bindings/RayTracingScenePassBinding.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Passes/Core/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
+#include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularPassData.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
-#include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
@@ -86,7 +87,11 @@ void IndirectSpecularPass::DeclareResources(
     ParameterInstance& parameters)
 {
 	parameters->IndirectSpecular = builder.CreateUAV(lighting.IndirectSpecular);
-	parameters->SceneTlas = builder.Read(sceneTlas);
+	(void)RayTracingScenePassBinding::BindSceneTlas(
+	    builder,
+	    sceneTlas,
+	    RayTracingSceneTlasShaderAccessMode::Descriptor,
+	    parameters);
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
@@ -119,7 +124,8 @@ void IndirectSpecularPass::SetParameters(
 void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	const IndirectSpecularSettings settings = ResolveSettings(context.RuntimeServices);
-	const bool hitDataAvailable = RayTracingHitDataPassBinding::IsAvailable(context.Frame);
+	const RayTracingPassCapabilities rayTracingCapabilities =
+	    RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
 	const std::uint32_t hitInstanceCount = context.Frame.rayTracingHitData.GetInstanceCount();
 	const std::uint32_t hitMaterialCount = context.Frame.rayTracingHitData.GetMaterialCount();
 	if (!settings.Enabled)
@@ -127,15 +133,12 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 		return;
 	}
 
-	if (!context.Frame.rayTracingScene.HasBoundTlas())
+	if (!rayTracingCapabilities.InlineRayQueryAvailable ||
+	    !RayTracingScenePassBinding::CanUseSceneTlas(rayTracingCapabilities, RayTracingSceneTlasShaderAccessMode::Descriptor))
 	{
 		return;
 	}
-	if (context.Frame.rayTracingScene.TlasShaderAccessMode != RayTracingSceneTlasShaderAccessMode::Descriptor)
-	{
-		return;
-	}
-	if (!hitDataAvailable)
+	if (!rayTracingCapabilities.HitDataAvailable || !rayTracingCapabilities.MaterialTextureTableAvailable)
 	{
 		return;
 	}
@@ -149,11 +152,9 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
 	parameters->IndirectSpecularConstants = IndirectSpecularPassData::Build(
 	    settings,
-	    true,
+	    rayTracingCapabilities,
 	    hitInstanceCount,
 	    hitMaterialCount,
-	    materialTextureTableAvailable,
-	    context.Frame.sceneData.materialTextureTableDescriptorCount,
 	    MaterialTextureTableFixedCapacity);
 	const bool valid = parameters.Sync();
 	assert(valid);

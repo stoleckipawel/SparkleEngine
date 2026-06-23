@@ -59,6 +59,12 @@ struct RayTracingPartitionedTlasCapabilityReport final
 	const char* CapabilityStatusReason = "not-queried";
 };
 
+struct RayTracingTlasShaderAccessCapabilityReport final
+{
+	bool SupportsDescriptor = false;
+	bool SupportsShaderDeviceAddress = false;
+};
+
 struct RayTracingCapabilityReport final
 {
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
@@ -66,6 +72,7 @@ struct RayTracingCapabilityReport final
 	RayTracingAccelerationStructureCapabilityReport AccelerationStructures;
 	RayTracingTopLevelProviderCapabilityReport TopLevelProvider;
 	RayTracingPartitionedTlasCapabilityReport PartitionedTlas;
+	RayTracingTlasShaderAccessCapabilityReport TlasShaderAccess;
 	MaterialTextureTableCapabilityReport MaterialTextureTable;
 
 	bool CanUseInlineRayQueryShadows() const noexcept;

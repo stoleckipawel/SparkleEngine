@@ -6,15 +6,16 @@
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Deferred/IndirectSpecularPass.h"
+#include "Passes/Bindings/RayTracingScenePassBinding.h"
 #include "Passes/Core/ShaderPass.h"
-#include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 
 namespace
 {
 	bool CanUseDescriptorSceneTlas(const FrameContext& frame) noexcept
 	{
-		return frame.rayTracingScene.HasBoundTlas() &&
-		       frame.rayTracingScene.TlasShaderAccessMode == RayTracingSceneTlasShaderAccessMode::Descriptor;
+		return RayTracingScenePassBinding::FrameUsesSceneTlasAccessMode(
+		    frame,
+		    RayTracingSceneTlasShaderAccessMode::Descriptor);
 	}
 }
 

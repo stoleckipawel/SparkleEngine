@@ -134,7 +134,7 @@ The current indirect specular path already provides most of the per-pixel ray-qu
 - material texture table lookup
 - hit-surface direct lighting and emissive evaluation through `RayTracingHitLighting.hlsli`
 - sky miss handling after the recent fix
-- settings, CVars, and one centralized runtime status snapshot
+- settings and CVars
 
 The indirect diffuse integration should reuse this shape, then extract shared pieces as soon as duplication appears.
 
@@ -189,19 +189,18 @@ Required cleanup:
 - Route upscaler evaluation through a post-processing family.
 - Do not split debug into HDR/SDR families unless separate color-space debug passes actually exist.
 
-### 2. Indirect Diffuse Has No Ray Tracing Settings Or Status Snapshot
+### 2. Indirect Diffuse Has No Ray Tracing Settings Or CVars
 
-There is no `IndirectDiffuseSettings`, `IndirectDiffuseCVars`, or centralized `IndirectDiffuseRuntimeStatus` snapshot.
+There is no `IndirectDiffuseSettings` or `IndirectDiffuseCVars`.
 
 Problem:
 
-- The feature cannot fail closed with a reason string.
+- The feature has no explicit control surface yet.
 - Debug view output can be mistaken for final lighting, as happened with indirect specular.
 
 Required cleanup:
 
-- Mirror the indirect specular settings/status-snapshot pattern.
-- Use explicit status reasons: `disabled`, `unsupported`, `missing-tlas`, `missing-hit-data`, `missing-sky-texture`, `running`.
+- Mirror the indirect specular settings/CVar pattern without adding runtime status files.
 
 ### 3. Environment Map Binding Is Duplicated
 
@@ -265,7 +264,7 @@ Impact on indirect diffuse:
 
 Required cleanup:
 
-- Add centralized status fields that report diffuse hit-data counts and rejection categories only when a stage needs them.
+- Keep hit-data rejection categories named in neutral hit-data code when a stage needs them.
 - Do not hide unsupported materials by returning plausible-looking black.
 - Plan persistent/cached hit data as a later infrastructure stage.
 
@@ -284,13 +283,12 @@ Indirect specular currently uses only descriptor TLAS and gates out otherwise.
 Problem:
 
 - Indirect diffuse needs an explicit backend policy up front.
-- If the first implementation is descriptor-only, Vulkan address mode must fail with a clear status reason.
+- If the first implementation is descriptor-only, Vulkan address mode must fail closed without plausible-looking output.
 - If Vulkan support is required in the first milestone, the shader package and pass variants must be planned before implementation.
 
 Required cleanup:
 
 - Start with descriptor TLAS only if that matches current indirect specular.
-- State the limitation in the centralized runtime status snapshot.
 - Add Vulkan address parity as a separate stage, not as an accidental omission.
 
 ### 6A. Reusable Ray Tracing Architecture Is Not Yet Explicit Enough
@@ -316,7 +314,7 @@ Required cleanup:
 - Treat ray tracing as a renderer capability that any pass family can consume.
 - Put backend and TLAS access facts behind reusable ray tracing capability/query code.
 - Keep reusable descriptor and frame-graph bindings in neutral `Passes/Bindings` or `RayTracing/*` files.
-- Keep effect-specific settings, CVars, status snapshots, uniforms, and debug enums under `RayTracing/Effects/<EffectName>`.
+- Keep effect-specific settings, CVars, uniforms, and debug enums under `RayTracing/Effects/<EffectName>`.
 - Keep reusable shader code under `Engine/Assets/Shaders/RayTracing`, `Engine/Assets/Shaders/Common`, `Engine/Assets/Shaders/BRDF`, or `Engine/Assets/Shaders/Lighting`.
 - Do not create a reusable file whose name is derived from its first caller. If shadows, specular, diffuse, path tracing, or future GI could use it, name it after the underlying concept.
 
@@ -386,9 +384,9 @@ Required cleanup:
 Instrumentation rule:
 
 - Do not add scattered logs, per-frame validation spam, or new ad hoc diagnostics panels.
-- Keep runtime instrumentation limited to one effect status snapshot and explicit debug view modes.
+- Keep runtime instrumentation limited to explicit debug view modes.
 - Prefer deterministic debug views over additional logging.
-- Add counters only when an implementation stage has a concrete failure mode that cannot be diagnosed from the existing status snapshot.
+- Do not add counters unless they directly drive a visible debug view or implementation decision.
 
 ## Recommended Architectural DirectionStage 2 - Environment Map Binding Helper
 Implementation Prompt
@@ -420,7 +418,6 @@ float3 SampleSkyEnvironment(Texture2D texture, SamplerState sampler, float3 worl
 Existing visible sky and indirect specular miss colors remain visually consistent.
 Acceptance
 No duplicated ResolveSkyTexture(...) function remains in sky, indirect lighting, or indirect specular pass implementation files.
-IndirectSpecular still reports reason=running.
 The sky miss fix from indirect specular remains active.
 
 The feature should introduce a new ray-traced diffuse effect under:
@@ -520,8 +517,7 @@ Recommendation:
 - Do not integrate NRD, SVGF, DLSS-RR, ReSTIR GI, ReSTIR PT, RTXGI DDGI, NRC, or SHaRC in the first indirect diffuse milestone.
 - Do not add a hidden temporal accumulator and call it "not a denoiser".
 - Do not make `IndirectDiffuse` multiply by base color if `LightingComposite` continues to multiply by base color.
-- Do not add diffuse ray tracing without the single centralized status snapshot described above.
-- Do not add diffuse ray tracing with scattered runtime instrumentation, noisy per-frame logs, or validation plumbing outside the existing status/debug-view pattern.
+- Do not add diffuse ray tracing with scattered runtime instrumentation, noisy per-frame logs, or validation plumbing outside the existing CVar/debug-view pattern.
 - Do not make a lighting producer pass write unrelated lighting targets to zero.
 - Do not add more unrelated work to `Lighting.cpp`; create or use a family helper instead.
 - Do not split debug into HDR/SDR families without a concrete color-space need.

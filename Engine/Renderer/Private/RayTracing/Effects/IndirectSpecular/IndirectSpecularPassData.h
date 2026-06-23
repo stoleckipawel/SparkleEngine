@@ -3,15 +3,14 @@
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularUniformData.h"
 
 struct IndirectSpecularSettings;
+struct RayTracingPassCapabilities;
 
 namespace IndirectSpecularPassData
 {
 	IndirectSpecularUniformData Build(
 	    const IndirectSpecularSettings& settings,
-	    bool hitDataAvailable,
+	    const RayTracingPassCapabilities& capabilities,
 	    std::uint32_t hitInstanceCount,
 	    std::uint32_t hitMaterialCount,
-	    bool materialTextureTableAvailable,
-	    std::uint32_t materialTextureTableDescriptorCount,
 	    std::uint32_t materialTextureTableCapacity) noexcept;
 }
