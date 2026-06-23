@@ -18,7 +18,6 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularPassData.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
-#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularRuntimeDiagnostics.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
 #include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
@@ -42,61 +41,6 @@ namespace
 		return BuildIndirectSpecularSettingsFromCVars();
 	}
 
-	void PublishStatus(
-	    IndirectSpecularStatusReason status,
-	    const IndirectSpecularSettings& settings,
-	    bool hitDataAvailable,
-	    std::uint32_t hitInstanceCount,
-	    std::uint32_t hitMaterialCount) noexcept
-	{
-		IndirectSpecularRuntimeDiagnostics::Publish(
-		    IndirectSpecularRuntimeDiagnosticsSnapshot{
-		        .Status = status,
-		        .Enabled = settings.Enabled,
-		        .SampleMode = settings.SampleMode,
-		        .DebugMode = settings.DebugMode,
-		        .MaxDistance = settings.MaxDistance,
-		        .HitDataAvailable = hitDataAvailable,
-		        .HitInstanceCount = hitInstanceCount,
-		        .HitMaterialCount = hitMaterialCount});
-	}
-
-	void LogStatusChange(const IndirectSpecularRuntimeDiagnosticsSnapshot& snapshot) noexcept
-	{
-		static IndirectSpecularStatusReason s_lastStatus = IndirectSpecularStatusReason::NotEvaluated;
-		static bool s_logged = false;
-		if (s_logged && s_lastStatus == snapshot.Status)
-		{
-			return;
-		}
-
-		s_logged = true;
-		s_lastStatus = snapshot.Status;
-		const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.IndirectSpecular");
-		SPDLOG_LOGGER_INFO(
-	    logger,
-	    "Indirect specular status: reason={} enabled={} sampleMode={} debugMode={} maxDistance={} hitData={} "
-		    "hitInstances={} hitMaterials={}",
-		    snapshot.StatusReason,
-		    snapshot.Enabled ? "true" : "false",
-		    static_cast<std::uint32_t>(snapshot.SampleMode),
-		    static_cast<std::uint32_t>(snapshot.DebugMode),
-		    snapshot.MaxDistance,
-		    snapshot.HitDataAvailable ? "true" : "false",
-		    snapshot.HitInstanceCount,
-		    snapshot.HitMaterialCount);
-	}
-
-	void PublishAndLogStatus(
-	    IndirectSpecularStatusReason status,
-	    const IndirectSpecularSettings& settings,
-	    bool hitDataAvailable,
-	    std::uint32_t hitInstanceCount,
-	    std::uint32_t hitMaterialCount) noexcept
-	{
-		PublishStatus(status, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
-		LogStatusChange(IndirectSpecularRuntimeDiagnostics::Capture());
-	}
 }
 
 IndirectSpecularPass::IndirectSpecularPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
@@ -180,30 +124,25 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 	const std::uint32_t hitMaterialCount = context.Frame.rayTracingHitData.GetMaterialCount();
 	if (!settings.Enabled)
 	{
-		PublishAndLogStatus(IndirectSpecularStatusReason::Disabled, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
 		return;
 	}
 
 	if (!context.Frame.rayTracingScene.HasBoundTlas())
 	{
-		PublishAndLogStatus(IndirectSpecularStatusReason::MissingTlas, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
 		return;
 	}
 	if (context.Frame.rayTracingScene.TlasShaderAccessMode != RayTracingSceneTlasShaderAccessMode::Descriptor)
 	{
-		PublishAndLogStatus(IndirectSpecularStatusReason::Unsupported, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
 		return;
 	}
 	if (!hitDataAvailable)
 	{
-		PublishAndLogStatus(IndirectSpecularStatusReason::MissingHitData, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
 		return;
 	}
 
 	const bool materialTextureTableAvailable = MaterialTextureTablePassBinding::Bind(parameters, context.Frame);
 	if (!materialTextureTableAvailable)
 	{
-		PublishAndLogStatus(IndirectSpecularStatusReason::Unsupported, settings, hitDataAvailable, hitInstanceCount, hitMaterialCount);
 		return;
 	}
 
@@ -223,12 +162,6 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
 	    1};
-	PublishAndLogStatus(
-	    IndirectSpecularStatusReason::Running,
-	    settings,
-	    hitDataAvailable,
-	    hitInstanceCount,
-	    hitMaterialCount);
 	const bool dispatched = [&]() noexcept
 	{
 		SPARKLE_GPU_SCOPE(context.Diagnostics, DispatchTimingLabel);

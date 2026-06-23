@@ -25,7 +25,7 @@ At the end of this plan, SparkleEngine should have:
 - explicit lighting target initialization
 - current sky-ambient indirect diffuse isolated as fallback or legacy ambient
 - a new ray-traced `IndirectDiffuse` pass
-- `IndirectDiffuse` CVars, settings, and one centralized runtime status snapshot
+- `IndirectDiffuse` CVars and settings
 - full-resolution one-sample stochastic diffuse ray tracing
 - cosine hemisphere sampling only
 - no-denoiser live output
@@ -47,7 +47,7 @@ Layer ownership:
 - `Engine/Renderer/Private/RayTracing/RayTracingCapabilityReport.*` and any new ray tracing capability query files own backend feature facts.
 - `Engine/Renderer/Private/RayTracing/RayTracingHitData.*` owns hit-data buffer contracts and rejection vocabulary.
 - `Engine/Renderer/Private/Passes/Bindings/*` owns reusable pass parameter binding helpers.
-- `Engine/Renderer/Private/RayTracing/Effects/<EffectName>/*` owns only effect settings, CVars, status snapshots, uniform data, and pass-data assembly.
+- `Engine/Renderer/Private/RayTracing/Effects/<EffectName>/*` owns only effect settings, CVars, debug modes, uniform data, and pass-data assembly.
 - `Engine/Renderer/Private/Passes/Deferred/<EffectName>Pass.*` owns the leaf frame-graph pass wrapper and resource reads/writes for that effect.
 - `Engine/Renderer/ShaderRegistrations/*Shaders.cpp` owns shader package registration and feature flags only.
 
@@ -62,16 +62,16 @@ Shader ownership:
 Naming rules:
 
 - If a helper can be used by shadows, indirect specular, indirect diffuse, path tracing, or future GI, name it after the underlying concept, not the first caller.
-- Files under `RayTracing/Effects/IndirectDiffuse` may mention indirect diffuse settings, CVars, debug modes, status reasons, and uniform layout.
+- Files under `RayTracing/Effects/IndirectDiffuse` may mention indirect diffuse settings, CVars, debug modes, and uniform layout.
 - Files under generic `RayTracing`, `Passes/Bindings`, `Common`, `BRDF`, or `Lighting` must not depend on `IndirectDiffuse` settings, status, debug enums, or CVars.
-- Effect passes translate generic capability facts into effect-specific status reasons. They must not each rediscover backend support through local backend-name branches.
+- Effect passes must not rediscover backend support through local backend-name branches when neutral capability facts can provide the answer.
 - Shader package feature flags must describe actual resource use. Do not load a package variant that cannot bind its required TLAS/material resources.
 
 Generalization gate for every new file:
 
 1. If the file describes backend support, TLAS access, descriptor availability, hit data, material texture tables, or shader package capability, put it in a neutral ray tracing or binding layer.
 2. If the file describes a sampling primitive, PDF, hit-surface layout, incident-radiance evaluation, or path-sample record, put it in a neutral shader library.
-3. If the file describes an effect policy knob, debug mode, runtime status, or pass-specific uniform layout, keep it effect-specific.
+3. If the file describes an effect policy knob, debug mode, or pass-specific uniform layout, keep it effect-specific.
 4. A generic helper may serve one effect on the day it is introduced only when it represents a stable renderer concept. Its API must not accept effect-specific settings.
 5. Do not create broad "renderer utility" buckets. Every shared helper must have a small, named responsibility.
 
@@ -134,49 +134,25 @@ DebugMode:
 
 Stage 4 baseline only needs `Enabled`, `DebugMode=0`, `NormalBias`, `MaxDistance`, and `Intensity`.
 
-## Status Contract
-
-Add `IndirectDiffuseStatusReason` with exactly:
-
-```text
-not-evaluated
-disabled
-unsupported
-missing-tlas
-missing-hit-data
-missing-sky-texture
-running
-```
-
-`unsupported` must be used when:
-
-- the backend lacks ray tracing or inline ray query
-- the TLAS access mode is unsupported by the current pass variant
-- material texture table binding is required but unavailable
-
-Do not use black output as the only signal for unsupported state.
-
 ## Instrumentation Budget
 
 Hardening in this plan must not become logs and validation checks scattered across the renderer.
 
 Allowed:
 
-- one `IndirectDiffuseRuntimeStatus` snapshot
-- editor overlay rows that read the same snapshot
+- CVars and settings required to run the feature
 - debug view modes in the indirect diffuse shader
 
 Not allowed:
 
 - per-frame logging from shaders, passes, frame graph, hit-data upload, or TLAS build just for this feature
+- effect-specific runtime status snapshot files
 - new feature-specific status logs
 - new validation systems outside existing RHI/frame-graph/shader package validation surfaces
 - duplicate status strings in multiple subsystems
 - broad "just in case" counters
 - extra editor panels for this feature
 - source-backed validation levels or smoke-command suites for this feature
-
-If a stage needs a new counter, it must be added to the centralized runtime status snapshot and named in that stage's acceptance criteria.
 
 ## Pass Family Contract
 
@@ -230,7 +206,7 @@ This intentionally places `Debug` after `PostProcessing`. Do not split debug by 
 
 ### Implementation Prompt
 
-Inspect current indirect lighting, indirect specular, ray tracing scene, frame graph, and existing runtime status snapshot patterns. Do not edit source. Record the baseline files that will be touched by later stages.
+Inspect current indirect lighting, indirect specular, ray tracing scene, frame graph, and existing settings/CVar patterns. Do not edit source. Record the baseline files that will be touched by later stages.
 
 ### Required Source Reads
 
@@ -410,14 +386,13 @@ Modify:
 ### Acceptance
 
 - No duplicated `ResolveSkyTexture(...)` function remains in sky, indirect lighting, or indirect specular pass implementation files.
-- `IndirectSpecular` still reports `reason=running`.
 - The sky miss fix from indirect specular remains active.
 
-## Stage 3 - Indirect Diffuse Settings And Status Snapshot
+## Stage 3 - Indirect Diffuse Settings And CVars
 
 ### Implementation Prompt
 
-Add the indirect diffuse settings, CVars, one centralized runtime status snapshot, and editor overlay rows that read the same snapshot. Do not add ray tracing behavior yet. Do not add feature-specific logs.
+Add the indirect diffuse settings and CVars. Do not add ray tracing behavior yet. Do not add runtime status files, overlay rows, feature-specific logs, or timing labels.
 
 ### Files
 
@@ -427,14 +402,11 @@ Create:
 - `Engine/Renderer/Private/RayTracing/Effects/IndirectDiffuse/IndirectDiffuseCVars.cpp`
 - `Engine/Renderer/Private/RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h`
 - `Engine/Renderer/Private/RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.cpp`
-- `Engine/Renderer/Private/RayTracing/Effects/IndirectDiffuse/IndirectDiffuseRuntimeStatus.h`
-- `Engine/Renderer/Private/RayTracing/Effects/IndirectDiffuse/IndirectDiffuseRuntimeStatus.cpp`
 - `Engine/Renderer/Private/RayTracing/Effects/IndirectDiffuse/IndirectDiffuseDebugMode.h`
 
 Modify:
 
 - `Engine/Renderer/Private/RayTracing/Scene/RenderRayTracingPassServices.h`
-- `Engine/Editor/Private/Panels/ViewportRayTracingDebugOverlay.cpp`
 - CMake lists under `Engine/Renderer` only if the existing renderer source/header globs do not pick up the new files
 
 ### Required Behavior
@@ -445,23 +417,14 @@ Modify:
   - `NormalBias=0.01`
   - `MaxDistance=100000.0`
   - `Intensity=1.0`
-- Runtime status snapshot publishes `disabled` if disabled.
-- Runtime status snapshot includes:
-  - status reason
-  - enabled
-  - debug mode
-  - max distance
-  - intensity
-  - hit-data availability
-  - hit instance/material counts
-  - GPU timing label string
+- `BuildIndirectDiffuseSettingsFromCVars()` clamps negative numeric CVars to non-negative values.
+- `RenderRayTracingPassServices` exposes a const `IndirectDiffuseSettings*` for the future pass.
 
 ### Acceptance
 
-- Launch with `--cvar=r.RayTracing.IndirectDiffuse.Enabled=true`.
-- Before the pass exists, the centralized status snapshot may remain `not-evaluated`, but code must compile and expose the CVar.
-- No indirect specular status snapshot regressions.
+- Code compiles and exposes `r.RayTracing.IndirectDiffuse.Enabled`.
 - No new log line is emitted.
+- No runtime status snapshot files, GPU timing labels, or feature-specific timing fields are added.
 
 ## Stage 3A - General Ray Tracing Capability And Binding Contracts
 
@@ -501,16 +464,14 @@ Read and preserve:
   - device-address TLAS support
   - hit-data availability
   - material texture table availability and descriptor count
-- Effect passes map these neutral facts to their own status reasons.
 - Effect passes must not branch directly on backend API names when the neutral query can provide the answer.
 - `RayTracingScenePassBinding` binds descriptor TLAS or device-address TLAS according to explicit access mode. It must not mention indirect diffuse, indirect specular, or shadows.
-- `IndirectSpecularPass` may migrate to the neutral query and binding helper, but its status reasons and output must remain unchanged.
+- `IndirectSpecularPass` may migrate to the neutral query and binding helper, but its output must remain unchanged.
 - Shader package selection continues to use package feature flags that match actual resource use.
 
 ### Acceptance
 
 - `cmake --build build --target ShowcaseEditor --config DevelopmentEditor` succeeds.
-- `IndirectSpecular` mirror mode still reaches `reason=running`.
 - No new shader source is required for this stage.
 - No new logs or diagnostics are added.
 - No reusable file created in this stage contains `IndirectDiffuse` in its name.
@@ -606,7 +567,7 @@ For each pixel:
 
 ### Runtime Gating
 
-Return without dispatch and publish status if:
+Return without dispatch if:
 
 - disabled
 - no bound TLAS
@@ -615,7 +576,7 @@ Return without dispatch and publish status if:
 - material texture table unavailable
 - sky texture unavailable
 
-All of these checks must read from the neutral capability/query/binding helpers first, then map to `IndirectDiffuseStatusReason`.
+All of these checks must read from the neutral capability/query/binding helpers first. Do not add effect-specific status files or logs for these gates.
 
 ### Required Feature Flags
 
@@ -629,14 +590,13 @@ The shader package must declare:
 
 - `ShaderCompiler.exe cook --package IndirectDiffuse --target DxilSm66 --target SpirV16 --no-cache` succeeds.
 - `ShowcaseEditor` build succeeds.
-- With `r.RayTracing.IndirectDiffuse.Enabled=true`, the centralized status snapshot and editor overlay show `reason=running`, `enabled=true`, and `debugMode=0`.
 - `IndirectDiffuse` view mode shows stochastic traced lighting, not the old smooth sky ambient.
 
 ## Stage 5 - Debug Modes
 
 ### Implementation Prompt
 
-Add indirect diffuse debug modes and make the existing editor overlay report the selected mode clearly.
+Add indirect diffuse debug modes. Do not add editor overlay rows or status plumbing.
 
 ### Files
 
@@ -649,7 +609,6 @@ Modify:
 - `IndirectDiffuse.hlsl`
 - `IndirectDiffuseDebugMode.h`
 - `IndirectDiffuseCVars.cpp`
-- `ViewportRayTracingDebugOverlay.cpp`
 - `Engine/Assets/Shaders/RayTracing/RayTracingPathSample.hlsli` only if a neutral field is missing
 - `Engine/Assets/Shaders/RayTracing/RayTracingHitDebug.hlsli` only if a neutral rejection-color helper is missing
 
@@ -673,9 +632,8 @@ Implement:
 ### Acceptance
 
 - Debug mode 3 must not be used as final lighting.
-- The centralized status snapshot and existing overlay must show `debugMode=<value>`.
 - `IndirectDiffuse` view mode remains final contribution when `DebugMode=0`.
-- Do not add a new editor panel.
+- Do not add a new editor panel or overlay rows.
 - Do not add per-debug-mode log lines.
 - Do not add generic ray tracing helpers to `IndirectDiffuseDebug.hlsli`.
 
@@ -783,8 +741,8 @@ Improve shared hit-data infrastructure exposed by the diffuse work. Do not chang
 
 Stage 8A:
 
-- Add rejection counters to the centralized runtime status snapshot for skinned, alpha-blended, missing mesh hit data, invalid material, invalid primitive, and invalid vertex index.
-- Do not log individual rejected instances.
+- Document the hit-data rejection categories needed by ray-traced hit shading: skinned, alpha-blended, missing mesh hit data, invalid material, invalid primitive, and invalid vertex index.
+- Do not add rejection counters or log individual rejected instances.
 
 Stage 8B:
 
@@ -807,9 +765,7 @@ Stage 8E:
 
 ### Acceptance
 
-- Each sub-stage has one specific centralized status field before/after.
 - Existing indirect specular material behavior remains unchanged.
-- Indirect diffuse runtime status still reaches `running`.
 - Hit-data API names remain effect-neutral.
 
 ## Stage 9 - Performance And Quality Controls

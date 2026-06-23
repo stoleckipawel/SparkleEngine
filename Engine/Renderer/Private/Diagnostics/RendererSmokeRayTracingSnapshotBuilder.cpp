@@ -4,7 +4,6 @@
 
 #include "RayTracing/Diagnostics/RayTracingPerformanceMetrics.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
-#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularRuntimeDiagnostics.h"
 
 namespace RendererSmokeRayTracingSnapshotBuilderDetails
 {
@@ -69,20 +68,6 @@ namespace RendererSmokeRayTracingSnapshotBuilderDetails
 		    .FullGpuNativePackSubmitted = metrics.PtlasGpuUpdates.FullGpuNativePackSubmitted};
 	}
 
-	RendererSmokeIndirectSpecularDiagnostics BuildIndirectSpecularDiagnostics() noexcept
-	{
-		const IndirectSpecularRuntimeDiagnosticsSnapshot snapshot = IndirectSpecularRuntimeDiagnostics::Capture();
-		return RendererSmokeIndirectSpecularDiagnostics{
-		    .StatusReason = snapshot.StatusReason,
-		    .Enabled = snapshot.Enabled,
-		    .SampleMode = static_cast<std::uint32_t>(snapshot.SampleMode),
-		    .DebugMode = static_cast<std::uint32_t>(snapshot.DebugMode),
-		    .MaxDistance = snapshot.MaxDistance,
-		    .HitDataAvailable = snapshot.HitDataAvailable,
-		    .HitInstanceCount = snapshot.HitInstanceCount,
-		    .HitMaterialCount = snapshot.HitMaterialCount,
-		    .GpuTimingName = "Indirect Specular Ray Query"};
-	}
 }
 
 RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build(
@@ -92,7 +77,6 @@ RendererSmokeRayTracingDiagnostics RendererSmokeRayTracingSnapshotBuilder::Build
 	RendererSmokeRayTracingDiagnostics diagnostics{};
 	diagnostics.Capability.Supported = capabilities.SupportsRayTracing;
 	diagnostics.Capability.InlineRayQuerySupported = capabilities.SupportsInlineRayQuery;
-	diagnostics.IndirectSpecular = RendererSmokeRayTracingSnapshotBuilderDetails::BuildIndirectSpecularDiagnostics();
 
 	if (rayTracingScene == nullptr)
 	{

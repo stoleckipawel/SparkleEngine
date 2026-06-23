@@ -18,9 +18,10 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Host/RendererSystemRoot.h"
 #include "Pipeline/PipelineStateManager.h"
+#include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
+#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
-#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/GameScene.h"
@@ -576,10 +577,12 @@ void FramePipeline::RecordFrame() noexcept
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph compile end (passes={})", compiledPlan.executionOrder.size());
 	RenderCommandList& commandList = m_systems->GetBackend().GetCurrentGraphicsCommandList();
 	RenderCommandContext cmd(commandList);
+	const IndirectDiffuseSettings indirectDiffuseSettings = BuildIndirectDiffuseSettingsFromCVars();
 	const IndirectSpecularSettings indirectSpecularSettings = BuildIndirectSpecularSettingsFromCVars();
 	const RenderRayTracingPassServices rayTracingPassServices{
 	    .Scene = m_systems->GetRenderRayTracingScene(),
 	    .ShadowSettings = m_systems->GetRayTracedShadowSettings(),
+	    .IndirectDiffuseSettings = &indirectDiffuseSettings,
 	    .IndirectSpecularSettings = &indirectSpecularSettings};
 	const RenderUpscalingPassServices upscalingPassServices{
 	    .Subsystem = m_systems->GetUpscalerSubsystem()};

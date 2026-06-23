@@ -67,23 +67,9 @@ struct SPARKLE_RENDERER_API RendererSmokeRayTracingCapabilityDiagnostics final
 	std::string PartitionedTlasCapabilityReason;
 };
 
-struct SPARKLE_RENDERER_API RendererSmokeIndirectSpecularDiagnostics final
-{
-	std::string StatusReason;
-	bool Enabled = false;
-	std::uint32_t SampleMode = 0;
-	std::uint32_t DebugMode = 0;
-	float MaxDistance = 0.0f;
-	bool HitDataAvailable = false;
-	std::uint32_t HitInstanceCount = 0;
-	std::uint32_t HitMaterialCount = 0;
-	std::string GpuTimingName;
-};
-
 struct SPARKLE_RENDERER_API RendererSmokeRayTracingDiagnostics final
 {
 	RendererSmokeRayTracingCapabilityDiagnostics Capability;
-	RendererSmokeIndirectSpecularDiagnostics IndirectSpecular;
 	RendererSmokeRayTracingBlasDiagnostics Blas;
 	RendererSmokeRayTracingClassicTlasDiagnostics ClassicTlas;
 	RendererSmokeRayTracingPtlasPlannerDiagnostics PtlasPlanner;

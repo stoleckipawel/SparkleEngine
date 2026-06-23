@@ -119,12 +119,12 @@ void ViewportRayTracingDebugOverlay::Draw(
 	ImGui::SetNextWindowPos(ImVec2(viewportMin.x + 12.0f, viewportMin.y + 12.0f), ImGuiCond_Always);
 	ImGui::SetNextWindowBgAlpha(0.78f);
 	ImGui::Begin(
-	    "Ray Tracing AS Overlay",
+	    "Ray Tracing Overlay",
 	    nullptr,
 	    ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
 	        ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
 
-	ImGui::TextUnformatted("Ray Tracing Acceleration Structure");
+	ImGui::TextUnformatted("Ray Tracing");
 	ImGui::Separator();
 	const RenderViewMode currentViewMode = CVarRenderViewMode.Get();
 	ImGui::TextWrapped("%s", ViewportRayTracingDebugOverlayRows::GetCurrentViewModeSummary(currentViewMode));
