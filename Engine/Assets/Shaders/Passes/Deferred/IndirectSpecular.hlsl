@@ -2,6 +2,7 @@
 #include "Common/Math.hlsli"
 #include "Common/Random.hlsli"
 #include "Geometry/Basis.hlsli"
+#include "Lighting/SkyEnvironment.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
 #include "RayTracing/RayTracingDebugModes.hlsli"
 
@@ -185,19 +186,9 @@ RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 norm
 	return result;
 }
 
-float2 ComputeIndirectSpecularSkyUv(float3 worldDirection)
-{
-	const float clampedY = clamp(worldDirection.y, -1.0f, 1.0f);
-	const float u = atan2(-worldDirection.z, worldDirection.x) * 0.15915494309189535f + 0.5f;
-	const float v = acos(clampedY) * 0.3183098861837907f;
-	return float2(frac(u), saturate(v));
-}
-
 float3 SampleIndirectSpecularMissRadiance(float3 rayDirectionWorld)
 {
-	const float3 skyRadiance =
-	    SkyTexture.SampleLevel(SamplerLinearClamp, ComputeIndirectSpecularSkyUv(normalize(rayDirectionWorld)), 0.0f).rgb;
-	return skyRadiance / (skyRadiance + 1.0f.xxx);
+	return SampleSkyEnvironment(SkyTexture, SamplerLinearClamp, rayDirectionWorld);
 }
 
 #include "Passes/Deferred/IndirectSpecularDebug.hlsli"

@@ -390,7 +390,38 @@ Instrumentation rule:
 - Prefer deterministic debug views over additional logging.
 - Add counters only when an implementation stage has a concrete failure mode that cannot be diagnosed from the existing status snapshot.
 
-## Recommended Architectural Direction
+## Recommended Architectural DirectionStage 2 - Environment Map Binding Helper
+Implementation Prompt
+Extract sky/environment descriptor binding into a reusable renderer helper and shared HLSL include. Update SkyPass, IndirectLightingPass, and IndirectSpecularPass to use the helper.
+
+Files
+Create:
+
+Engine/Renderer/Private/Passes/Bindings/EnvironmentMapPassBinding.h
+Engine/Renderer/Private/Passes/Bindings/EnvironmentMapPassBinding.cpp
+Engine/Assets/Shaders/Lighting/SkyEnvironment.hlsli
+Modify:
+
+SkyPass.*
+IndirectLightingPass.*
+IndirectSpecularPass.*
+Sky.hlsl
+IndirectLighting.hlsl
+IndirectSpecular.hlsl
+Required Behavior
+CPU helper resolves TextureId::SkyCubemap, falling back to TextureId::Checker.
+CPU helper owns descriptor binding set caching.
+CPU helper returns empty binding if no texture manager or fallback texture exists.
+CPU helper is named as an environment map binding helper, not a sky-pass helper, because ray misses, ambient fallback, and sky resolve all consume the same environment source.
+HLSL helper exposes:
+float2 ComputeSkyEnvironmentUv(float3 worldDirection)
+float3 ToneMapSkyEnvironment(float3 skyRadiance)
+float3 SampleSkyEnvironment(Texture2D texture, SamplerState sampler, float3 worldDirection)
+Existing visible sky and indirect specular miss colors remain visually consistent.
+Acceptance
+No duplicated ResolveSkyTexture(...) function remains in sky, indirect lighting, or indirect specular pass implementation files.
+IndirectSpecular still reports reason=running.
+The sky miss fix from indirect specular remains active.
 
 The feature should introduce a new ray-traced diffuse effect under:
 

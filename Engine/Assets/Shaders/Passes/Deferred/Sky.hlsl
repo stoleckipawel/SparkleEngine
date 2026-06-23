@@ -1,4 +1,5 @@
 #include "Resources/ConstantBuffers.hlsli"
+#include "Lighting/SkyEnvironment.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
 
 RWTexture2D<float4> SceneColorTexture;
@@ -13,14 +14,6 @@ float3 ComputeSkyDirection(uint2 pixelCoord)
 	const float4 positionView = mul(positionClip, Camera.InvProjectionMTX);
 	const float3 viewDirection = normalize(positionView.xyz / max(positionView.w, 1.0e-6f));
 	return normalize(mul(float4(viewDirection, 0.0f), Camera.InvViewMTX).xyz);
-}
-
-float2 ComputeSkyUv(float3 worldDirection)
-{
-	const float clampedY = clamp(worldDirection.y, -1.0f, 1.0f);
-	const float u = atan2(-worldDirection.z, worldDirection.x) * 0.15915494309189535f + 0.5f;
-	const float v = acos(clampedY) * 0.3183098861837907f;
-	return float2(frac(u), saturate(v));
 }
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
@@ -41,8 +34,6 @@ float2 ComputeSkyUv(float3 worldDirection)
 	}
 
 	const float3 worldDirection = ComputeSkyDirection(dispatchThreadId.xy);
-	const float2 skyUv = ComputeSkyUv(worldDirection);
-	const float3 skyRadiance = SkyTexture.SampleLevel(SamplerLinearClamp, skyUv, 0.0f).rgb;
-	const float3 skyColor = skyRadiance / (skyRadiance + 1.0f.xxx);
+	const float3 skyColor = SampleSkyEnvironment(SkyTexture, SamplerLinearClamp, worldDirection);
 	SceneColorTexture[dispatchThreadId.xy] = float4(skyColor, 1.0f);
 }

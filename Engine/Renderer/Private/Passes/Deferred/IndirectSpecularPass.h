@@ -7,13 +7,12 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
-#include "RHI/Public/Bindings/RenderBindingSet.h"
+#include "Passes/Bindings/EnvironmentMapPassBinding.h"
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Resources/RenderViewLightingData.h"
 #include "SceneData/MaterialTextureTableCapability.h"
 
 #include <cstdint>
-#include <memory>
 
 class FrameGraphBuilder;
 struct FrameContext;
@@ -22,7 +21,6 @@ struct PassExecutionContext;
 struct PassRuntimeServices;
 struct RenderPassDefinition;
 struct RenderViewData;
-class Texture;
 
 struct IndirectSpecularPassParameters
 {
@@ -105,9 +103,7 @@ class IndirectSpecularPass final
 	    const FrameContext& frame,
 	    const RenderViewData& viewData,
 	    const PassRuntimeServices& passRuntimeServices) const;
-	RhiDescriptorTableBinding GetSkyTextureBinding(const PassRuntimeServices& passRuntimeServices) const noexcept;
 
 	const ComputePassPipelineRuntime& m_runtime;
-	mutable std::unique_ptr<RenderBindingSet> m_skyTextureBindingSet;
-	mutable const Texture* m_cachedSkyTexture = nullptr;
+	mutable EnvironmentMapPassBinding m_environmentMapBinding;
 };

@@ -1,4 +1,5 @@
 #include "Resources/Samplers.hlsli"
+#include "Lighting/SkyEnvironment.hlsli"
 
 RWTexture2D<float4> IndirectDiffuseTexture;
 Texture2D GBufferNormal;
@@ -16,18 +17,9 @@ float3 DecodeGBufferNormal(float3 normalWorld)
 	return lengthSquared > 0.0f ? normalWorld * rsqrt(lengthSquared) : float3(0.0f, 0.0f, 1.0f);
 }
 
-float2 ComputeSkyUv(float3 worldDirection)
-{
-	const float clampedY = clamp(worldDirection.y, -1.0f, 1.0f);
-	const float u = atan2(-worldDirection.z, worldDirection.x) * 0.15915494309189535f + 0.5f;
-	const float v = acos(clampedY) * 0.3183098861837907f;
-	return float2(u, v);
-}
-
 float3 SampleSkyAmbient(float3 normalWorld)
 {
-	const float3 skyRadiance = SkyTexture.SampleLevel(SamplerLinearNoMipClamp, ComputeSkyUv(normalize(normalWorld)), 0.0f).rgb;
-	const float3 skyColor = skyRadiance / (skyRadiance + 1.0f.xxx);
+	const float3 skyColor = SampleSkyEnvironment(SkyTexture, SamplerLinearNoMipClamp, normalWorld);
 	const float horizonWeight = saturate(normalWorld.y * 0.5f + 0.5f);
 	const float3 groundBounce = float3(0.035f, 0.032f, 0.028f);
 	return lerp(groundBounce, skyColor, horizonWeight) * 1.35f;

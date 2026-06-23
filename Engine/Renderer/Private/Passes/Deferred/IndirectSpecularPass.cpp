@@ -23,31 +23,13 @@
 #include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-#include "RHI/Public/Bindings/RenderBindingSet.h"
-#include "RHI/Public/Resources/Texture.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
-#include "Textures/TextureManager.h"
 
 #include <cassert>
 
 namespace
 {
 	constexpr const char* DispatchTimingLabel = "Indirect Specular Ray Query";
-
-	const Texture* ResolveSkyTexture(const TextureManager* textureManager) noexcept
-	{
-		if (textureManager == nullptr)
-		{
-			return nullptr;
-		}
-
-		if (const Texture* skyTexture = textureManager->GetTexture(TextureId::SkyCubemap))
-		{
-			return skyTexture;
-		}
-
-		return textureManager->GetTexture(TextureId::Checker);
-	}
 
 	IndirectSpecularSettings ResolveSettings(const PassRuntimeServices& services) noexcept
 	{
@@ -177,7 +159,7 @@ void IndirectSpecularPass::SetParameters(
 	parameters->PerView = viewData.perViewData;
 	LightingPassBinding::SetParameters(parameters, frame);
 	RayTracingHitDataPassBinding::SetParameters(parameters, frame);
-	parameters->SkyTexture = GetSkyTextureBinding(passRuntimeServices);
+	parameters->SkyTexture = m_environmentMapBinding.GetTextureBinding(passRuntimeServices);
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -188,35 +170,6 @@ void IndirectSpecularPass::SetParameters(
 	        .MipFilter = RhiSamplerMipFilter::Linear,
 	        .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
 	        .MaxAnisotropy = RhiSamplerAnisotropy::X1};
-}
-
-RhiDescriptorTableBinding IndirectSpecularPass::GetSkyTextureBinding(const PassRuntimeServices& passRuntimeServices) const noexcept
-{
-	const Texture* skyTexture = ResolveSkyTexture(passRuntimeServices.Textures);
-	if (skyTexture == nullptr)
-	{
-		return {};
-	}
-
-	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
-	if (!m_skyTextureBindingSet)
-	{
-		m_skyTextureBindingSet = renderHardwareInterface.GetDescriptorService().CreateBindingSet(
-		    RenderBindingSetDesc{.DescriptorType = ERhiDescriptorAllocatorType::ShaderResource, .DescriptorCount = 1u});
-	}
-
-	if (!m_skyTextureBindingSet || !*m_skyTextureBindingSet)
-	{
-		return {};
-	}
-
-	if (m_cachedSkyTexture != skyTexture)
-	{
-		skyTexture->WriteShaderResourceView(m_skyTextureBindingSet->GetCpuDescriptorHandle());
-		m_cachedSkyTexture = skyTexture;
-	}
-
-	return m_skyTextureBindingSet->GetTableBinding();
 }
 
 void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

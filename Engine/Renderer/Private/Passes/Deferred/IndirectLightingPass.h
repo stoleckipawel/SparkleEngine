@@ -5,17 +5,15 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "RHI/Public/Bindings/RenderBindingSet.h"
+#include "Passes/Bindings/EnvironmentMapPassBinding.h"
 
 #include <cstdint>
-#include <memory>
 
 class FrameGraphBuilder;
 struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeServices;
-class Texture;
 
 struct IndirectLightingPassParameters
 {
@@ -59,9 +57,7 @@ class IndirectLightingPass final
 
   private:
 	void SetParameters(ParameterInstance& parameters, const PassRuntimeServices& passRuntimeServices) const;
-	RhiDescriptorTableBinding GetSkyTextureBinding(const PassRuntimeServices& passRuntimeServices) const noexcept;
 
 	const ComputePassPipelineRuntime& m_runtime;
-	mutable std::unique_ptr<RenderBindingSet> m_skyTextureBindingSet;
-	mutable const Texture* m_cachedSkyTexture = nullptr;
+	mutable EnvironmentMapPassBinding m_environmentMapBinding;
 };
