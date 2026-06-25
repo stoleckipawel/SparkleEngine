@@ -6,11 +6,10 @@
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
+#include <cstddef>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
-static const auto g_rayTracingHitDataLogger = Logging::GetOrCreateLogger("Renderer.RayTracingHitData");
 
 namespace
 {
@@ -92,6 +91,31 @@ namespace
 		    .RejectionReason = rejectionReason,
 		    .AlphaMode = material != nullptr ? material->alphaMode : 0u,
 		    .MaterialTextureFlags = material != nullptr ? material->textureFlags : 0u};
+	}
+
+	std::uint32_t ValidateMeshHitData(const GPUMesh& gpuMesh) noexcept
+	{
+		if (!gpuMesh.HasRayTracingHitData())
+		{
+			return RayTracingHitData::Reason_MissingMeshHitData;
+		}
+
+		const std::span<const RayTracingHitVertex> vertices = gpuMesh.GetRayTracingHitVertices();
+		const std::span<const std::uint32_t> indices = gpuMesh.GetRayTracingHitIndices();
+		if (indices.size() < 3u || indices.size() % 3u != 0u)
+		{
+			return RayTracingHitData::Reason_InvalidPrimitive;
+		}
+
+		for (const std::uint32_t index : indices)
+		{
+			if (static_cast<std::size_t>(index) >= vertices.size())
+			{
+				return RayTracingHitData::Reason_InvalidVertexIndex;
+			}
+		}
+
+		return RayTracingHitData::Reason_None;
 	}
 
 	template <typename TData>
@@ -232,10 +256,6 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 
 	std::unordered_map<const GPUMesh*, MeshHitDataOffsets> meshOffsets;
 	std::uint32_t validInstanceCount = 0u;
-	std::uint32_t skippedSkinnedInstanceCount = 0u;
-	std::uint32_t skippedUnsupportedAlphaCount = 0u;
-	std::uint32_t skippedMissingHitDataCount = 0u;
-	std::uint32_t skippedInvalidMaterialCount = 0u;
 	for (std::uint32_t instanceIndex = 0u; instanceIndex < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++instanceIndex)
 	{
 		const MeshDraw& draw = sceneData.meshInstances[instanceIndex];
@@ -244,30 +264,33 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 		{
 			instances[instanceIndex] =
 			    BuildInvalidHitInstance(draw, nullptr, RayTracingHitData::Reason_InvalidMaterial);
-			++skippedInvalidMaterialCount;
 			continue;
 		}
 		if (draw.Geometry.MeshKind == RenderMeshKind::Skeletal)
 		{
 			instances[instanceIndex] =
 			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_UnsupportedSkinned);
-			++skippedSkinnedInstanceCount;
 			continue;
 		}
 		if (material->alphaMode == 2u)
 		{
 			instances[instanceIndex] =
 			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_UnsupportedAlphaMode);
-			++skippedUnsupportedAlphaCount;
 			continue;
 		}
 
 		const GPUMesh* gpuMesh = draw.Geometry.GpuMesh;
-		if (gpuMesh == nullptr || !gpuMesh->HasRayTracingHitData())
+		if (gpuMesh == nullptr)
 		{
 			instances[instanceIndex] =
 			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_MissingMeshHitData);
-			++skippedMissingHitDataCount;
+			continue;
+		}
+
+		const std::uint32_t meshValidationReason = ValidateMeshHitData(*gpuMesh);
+		if (meshValidationReason != RayTracingHitData::Reason_None)
+		{
+			instances[instanceIndex] = BuildInvalidHitInstance(draw, material, meshValidationReason);
 			continue;
 		}
 
@@ -314,19 +337,6 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 
 	if (validInstanceCount == 0u || vertices.empty() || indices.empty() || materials.empty())
 	{
-		static bool loggedNoHitData = false;
-		if (!loggedNoHitData)
-		{
-			loggedNoHitData = true;
-			SPDLOG_LOGGER_WARN(
-			    g_rayTracingHitDataLogger,
-			    "Ray tracing hit-data unavailable: validInstances=0 totalInstances={} skippedSkinned={} skippedUnsupportedAlpha={} skippedMissingHitData={} skippedInvalidMaterial={}.",
-			    sceneData.meshInstances.size(),
-			    skippedSkinnedInstanceCount,
-			    skippedUnsupportedAlphaCount,
-			    skippedMissingHitDataCount,
-			    skippedInvalidMaterialCount);
-		}
 		return {};
 	}
 
@@ -363,13 +373,6 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 	        frameData.m_materialView,
 	        frameData.m_materialShaderResourceView))
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_rayTracingHitDataLogger,
-		    "Ray tracing hit-data upload failed: vertices={} indices={} instances={} materials={}.",
-		    vertices.size(),
-		    indices.size(),
-		    instances.size(),
-		    materials.size());
 		frameData.Release();
 		return {};
 	}
