@@ -179,6 +179,30 @@ void EngineRenderingSettingsSection::SetPtlasModeChangeDistance(float distance)
 	UpdateState(state);
 }
 
+void EngineRenderingSettingsSection::SetIndirectDiffuseBounceCount(std::uint32_t bounceCount)
+{
+	const std::uint32_t sanitizedBounceCount = EngineRenderingRayTracingSettings::SanitizeIndirectBounceCount(bounceCount);
+	EngineRenderingSettingsState state = GetState();
+	if (state.IndirectDiffuseBounceCount == sanitizedBounceCount)
+	{
+		return;
+	}
+	state.IndirectDiffuseBounceCount = sanitizedBounceCount;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetIndirectSpecularBounceCount(std::uint32_t bounceCount)
+{
+	const std::uint32_t sanitizedBounceCount = EngineRenderingRayTracingSettings::SanitizeIndirectBounceCount(bounceCount);
+	EngineRenderingSettingsState state = GetState();
+	if (state.IndirectSpecularBounceCount == sanitizedBounceCount)
+	{
+		return;
+	}
+	state.IndirectSpecularBounceCount = sanitizedBounceCount;
+	UpdateState(state);
+}
+
 EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState() const noexcept
 {
 	EngineRenderingSettingsState state;
@@ -215,7 +239,7 @@ std::vector<std::pair<std::string, std::string>> EngineRenderingSettingsSection:
     const EngineRenderingSettingsState& state) const
 {
 	std::vector<std::pair<std::string, std::string>> values;
-	values.reserve(14);
+	values.reserve(16);
 	EngineRenderingDisplaySettings::AppendConfigValues(state, values);
 	EngineRenderingLightingSettings::AppendConfigValues(state, values);
 	EngineRenderingGeometrySettings::AppendConfigValues(state, values);

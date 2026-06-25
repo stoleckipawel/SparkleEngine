@@ -21,3 +21,7 @@ ConsoleVariable<float> CVarIndirectDiffuseIntensity(
     "r.RayTracing.IndirectDiffuse.Intensity",
     1.0f,
     "Intensity multiplier for ray-traced indirect diffuse.");
+ConsoleVariable<std::uint32_t> CVarIndirectDiffuseBounceCount(
+    "r.RayTracing.IndirectDiffuse.Bounces",
+    1u,
+    "Maximum diffuse path bounce count for ray-traced indirect diffuse.");

@@ -36,6 +36,8 @@ struct EngineRenderingSettingsState final
 	EnginePtlasPartitionUpdateMode PtlasPartitionUpdateMode = EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition;
 	bool PtlasMarkAllDynamicInPartition = false;
 	float PtlasModeChangeDistance = 100.0f;
+	std::uint32_t IndirectDiffuseBounceCount = 1;
+	std::uint32_t IndirectSpecularBounceCount = 1;
 };
 
 class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigBackedSettingsSection<EngineRenderingSettingsState>
@@ -57,6 +59,8 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigB
 	void SetPtlasPartitionUpdateMode(EnginePtlasPartitionUpdateMode mode);
 	void SetPtlasMarkAllDynamicInPartition(bool enabled);
 	void SetPtlasModeChangeDistance(float distance);
+	void SetIndirectDiffuseBounceCount(std::uint32_t bounceCount);
+	void SetIndirectSpecularBounceCount(std::uint32_t bounceCount);
 
   private:
 	EngineRenderingSettingsState CaptureRuntimeState() const noexcept override;

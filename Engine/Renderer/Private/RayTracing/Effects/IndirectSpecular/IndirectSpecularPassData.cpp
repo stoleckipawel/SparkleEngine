@@ -24,7 +24,7 @@ namespace IndirectSpecularPassData
 		    .MaterialTextureTableAvailable = capabilities.MaterialTextureTableAvailable ? 1u : 0u,
 		    .MaterialTextureTableDescriptorCount = capabilities.MaterialTextureTableDescriptorCount,
 		    .MaterialTextureTableCapacity = materialTextureTableCapacity,
-		    .Padding0 = 0u,
+		    .BounceCount = settings.BounceCount,
 		    .Padding1 = 0u};
 	}
 }

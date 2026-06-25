@@ -4,6 +4,8 @@
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSampleMode.h"
 #include "SceneData/MaterialBindingMode.h"
 
+#include <cstdint>
+
 struct RayTracingCapabilityReport;
 
 struct IndirectSpecularSettings final
@@ -14,6 +16,7 @@ struct IndirectSpecularSettings final
 	MaterialBindingMode MaterialMode = MaterialBindingMode::RaytracingOnly;
 	float NormalBias = 0.0f;
 	float MaxDistance = 0.0f;
+	std::uint32_t BounceCount = 1u;
 };
 
 IndirectSpecularSettings BuildIndirectSpecularSettingsFromCVars() noexcept;

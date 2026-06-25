@@ -9,6 +9,7 @@
 namespace EngineRenderingRayTracingSettings
 {
 	std::uint32_t SanitizePtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis) noexcept;
+	std::uint32_t SanitizeIndirectBounceCount(std::uint32_t bounceCount) noexcept;
 	float SanitizePtlasModeChangeDistance(float distance) noexcept;
 	void Capture(EngineRenderingSettingsState& state) noexcept;
 	void Apply(const EngineRenderingSettingsState& state) noexcept;

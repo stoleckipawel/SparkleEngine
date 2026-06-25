@@ -24,7 +24,7 @@ namespace IndirectDiffusePassData
 		    .MaterialTextureTableDescriptorCount = capabilities.MaterialTextureTableDescriptorCount,
 		    .MaterialTextureTableCapacity = materialTextureTableCapacity,
 		    .Intensity = settings.Intensity,
-		    .Padding0 = 0u,
+		    .BounceCount = settings.BounceCount,
 		    .Padding1 = 0u};
 	}
 }

@@ -5,6 +5,11 @@
 
 #include <algorithm>
 
+namespace
+{
+	constexpr std::uint32_t MaxSupportedBounceCount = 8u;
+}
+
 IndirectDiffuseSettings BuildIndirectDiffuseSettingsFromCVars() noexcept
 {
 	return IndirectDiffuseSettings{
@@ -12,5 +17,6 @@ IndirectDiffuseSettings BuildIndirectDiffuseSettingsFromCVars() noexcept
 	    .DebugMode = CVarIndirectDiffuseDebugMode.Get(),
 	    .NormalBias = std::max(CVarIndirectDiffuseNormalBias.Get(), 0.0f),
 	    .MaxDistance = std::max(CVarIndirectDiffuseMaxDistance.Get(), 0.001f),
-	    .Intensity = std::max(CVarIndirectDiffuseIntensity.Get(), 0.0f)};
+	    .Intensity = std::max(CVarIndirectDiffuseIntensity.Get(), 0.0f),
+	    .BounceCount = std::clamp(CVarIndirectDiffuseBounceCount.Get(), 1u, MaxSupportedBounceCount)};
 }

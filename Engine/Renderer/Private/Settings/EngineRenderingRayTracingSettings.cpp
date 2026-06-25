@@ -4,6 +4,8 @@
 
 #include "Core/Public/Strings/StringUtils.h"
 #include "RHI/Public/CVars/RHICVars.h"
+#include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseCVars.h"
+#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularCVars.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 
 #include <algorithm>
@@ -104,6 +106,11 @@ std::uint32_t EngineRenderingRayTracingSettings::SanitizePtlasPartitionsPerAxis(
 	return std::clamp(partitionsPerAxis, 1u, 64u);
 }
 
+std::uint32_t EngineRenderingRayTracingSettings::SanitizeIndirectBounceCount(std::uint32_t bounceCount) noexcept
+{
+	return std::clamp(bounceCount, 1u, 8u);
+}
+
 float EngineRenderingRayTracingSettings::SanitizePtlasModeChangeDistance(float distance) noexcept
 {
 	return (std::max)(distance, 0.0f);
@@ -118,6 +125,8 @@ void EngineRenderingRayTracingSettings::Capture(EngineRenderingSettingsState& st
 	state.PtlasPartitionUpdateMode = FromRuntimePartitionUpdateMode(CVarRayTracingPtlasPartitionUpdateMode.Get());
 	state.PtlasMarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get();
 	state.PtlasModeChangeDistance = SanitizePtlasModeChangeDistance(CVarRayTracingPtlasModeChangeDistance.Get());
+	state.IndirectDiffuseBounceCount = SanitizeIndirectBounceCount(CVarIndirectDiffuseBounceCount.Get());
+	state.IndirectSpecularBounceCount = SanitizeIndirectBounceCount(CVarIndirectSpecularBounceCount.Get());
 }
 
 void EngineRenderingRayTracingSettings::Apply(const EngineRenderingSettingsState& state) noexcept
@@ -129,6 +138,8 @@ void EngineRenderingRayTracingSettings::Apply(const EngineRenderingSettingsState
 	CVarRayTracingPtlasPartitionUpdateMode.Set(ToRuntimePartitionUpdateMode(state.PtlasPartitionUpdateMode));
 	CVarRayTracingPtlasMarkAllDynamicInPartition.Set(state.PtlasMarkAllDynamicInPartition);
 	CVarRayTracingPtlasModeChangeDistance.Set(SanitizePtlasModeChangeDistance(state.PtlasModeChangeDistance));
+	CVarIndirectDiffuseBounceCount.Set(SanitizeIndirectBounceCount(state.IndirectDiffuseBounceCount));
+	CVarIndirectSpecularBounceCount.Set(SanitizeIndirectBounceCount(state.IndirectSpecularBounceCount));
 }
 
 bool EngineRenderingRayTracingSettings::ReadConfigValue(
@@ -186,6 +197,24 @@ bool EngineRenderingRayTracingSettings::ReadConfigValue(
 		}
 		return true;
 	}
+	if (trimmedKey == "IndirectDiffuseBounceCount")
+	{
+		std::uint32_t bounceCount = state.IndirectDiffuseBounceCount;
+		if (Strings::TryParseNumber(trimmedValue, bounceCount))
+		{
+			state.IndirectDiffuseBounceCount = SanitizeIndirectBounceCount(bounceCount);
+		}
+		return true;
+	}
+	if (trimmedKey == "IndirectSpecularBounceCount")
+	{
+		std::uint32_t bounceCount = state.IndirectSpecularBounceCount;
+		if (Strings::TryParseNumber(trimmedValue, bounceCount))
+		{
+			state.IndirectSpecularBounceCount = SanitizeIndirectBounceCount(bounceCount);
+		}
+		return true;
+	}
 	return false;
 }
 
@@ -200,4 +229,6 @@ void EngineRenderingRayTracingSettings::AppendConfigValues(
 	values.emplace_back("PtlasPartitionUpdateMode", ToConfigString(state.PtlasPartitionUpdateMode));
 	values.emplace_back("PtlasMarkAllDynamicInPartition", state.PtlasMarkAllDynamicInPartition ? "true" : "false");
 	values.emplace_back("PtlasModeChangeDistance", std::to_string(SanitizePtlasModeChangeDistance(state.PtlasModeChangeDistance)));
+	values.emplace_back("IndirectDiffuseBounceCount", std::to_string(SanitizeIndirectBounceCount(state.IndirectDiffuseBounceCount)));
+	values.emplace_back("IndirectSpecularBounceCount", std::to_string(SanitizeIndirectBounceCount(state.IndirectSpecularBounceCount)));
 }

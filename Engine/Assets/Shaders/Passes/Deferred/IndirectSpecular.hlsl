@@ -23,7 +23,7 @@ cbuffer IndirectSpecularUniformData
 	uint IndirectSpecularMaterialTextureTableAvailable;
 	uint IndirectSpecularMaterialTextureTableDescriptorCount;
 	uint IndirectSpecularMaterialTextureTableCapacity;
-	uint IndirectSpecularPadding0;
+	uint IndirectSpecularBounceCount;
 	uint IndirectSpecularPadding1;
 };
 
@@ -56,9 +56,12 @@ struct IndirectSpecularResolvedContribution
 	float3 FinalContribution;
 };
 
-float2 BuildReflectionRandomSample(uint2 pixelCoord)
+float2 BuildReflectionRandomSample(uint2 pixelCoord, uint bounceIndex)
 {
-	return CommonRandom::InterleavedGradientNoise2(float2(pixelCoord), FrameIndex, float2(41.0f, 137.0f));
+	return CommonRandom::InterleavedGradientNoise2(
+	    float2(pixelCoord) + float2(bounceIndex * 23u, bounceIndex * 31u),
+	    FrameIndex + bounceIndex * 149u,
+	    float2(41.0f, 137.0f));
 }
 
 float3 SampleGGXHalfVector(float3 normalWorld, float roughness, float2 sample)
@@ -78,7 +81,12 @@ float3 SampleGGXHalfVector(float3 normalWorld, float roughness, float2 sample)
 	    normalWorld);
 }
 
-IndirectSpecularSampleResult BuildReflectionSample(uint2 pixelCoord, float3 normalWorld, float3 viewDirWorld, float roughness)
+IndirectSpecularSampleResult BuildReflectionSample(
+    uint2 pixelCoord,
+    float3 normalWorld,
+    float3 viewDirWorld,
+    float roughness,
+    uint bounceIndex)
 {
 	IndirectSpecularSampleResult result;
 	const float safeRoughness = max(roughness, 1.0e-4f);
@@ -96,7 +104,7 @@ IndirectSpecularSampleResult BuildReflectionSample(uint2 pixelCoord, float3 norm
 		return result;
 	}
 
-	const float2 randomSample = BuildReflectionRandomSample(pixelCoord);
+	const float2 randomSample = BuildReflectionRandomSample(pixelCoord, bounceIndex);
 	const float3 halfVectorWorld = SampleGGXHalfVector(normalWorld, safeRoughness, randomSample);
 	const float3 sampleDirectionWorld = SafeNormalize(reflect(-viewDirWorld, halfVectorWorld), mirrorDirection);
 	const float NoV = saturate(dot(normalWorld, viewDirWorld));
@@ -153,6 +161,73 @@ float3 SampleIndirectSpecularMissRadiance(float3 rayDirectionWorld)
 	return SampleSkyEnvironment(SkyTexture, SamplerLinearClamp, rayDirectionWorld);
 }
 
+IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
+    uint2 pixelCoord,
+    float3 primaryPositionWorld,
+    float3 primaryNormalWorld,
+    float3 primaryViewDirWorld,
+    float primaryRoughness,
+    out IndirectSpecularSampleResult firstSample,
+    out RayTracingTraceResult firstTrace,
+    out RayTracingHitSurfaceData firstHitSurface)
+{
+	firstSample = BuildReflectionSample(pixelCoord, primaryNormalWorld, primaryViewDirWorld, primaryRoughness, 0u);
+	firstTrace = (RayTracingTraceResult) 0;
+	firstHitSurface = (RayTracingHitSurfaceData) 0;
+
+	float3 pathPositionWorld = primaryPositionWorld;
+	float3 pathNormalWorld = primaryNormalWorld;
+	float3 pathViewDirWorld = primaryViewDirWorld;
+	float pathRoughness = primaryRoughness;
+	float pathThroughput = 1.0f;
+	float3 pathContribution = 0.0f.xxx;
+	float3 firstHitRadiance = 0.0f.xxx;
+	const uint bounceCount = max(IndirectSpecularBounceCount, 1u);
+
+	[loop] for (uint bounceIndex = 0u; bounceIndex < bounceCount; ++bounceIndex)
+	{
+		const IndirectSpecularSampleResult sample =
+		    BuildReflectionSample(pixelCoord, pathNormalWorld, pathViewDirWorld, pathRoughness, bounceIndex);
+		const RayTracingTraceResult trace =
+		    TraceIndirectSpecularRay(pathPositionWorld, pathNormalWorld, sample.DirectionWorld);
+		const RayTracingHitSurfaceData hitSurface =
+		    ReconstructRayTracingHitSurface(
+		        trace,
+		        ComputeRayOrigin(pathPositionWorld, pathNormalWorld, sample.DirectionWorld),
+		        sample.DirectionWorld);
+		const float3 hitIncidentRadiance =
+		    hitSurface.Valid ? ShadeRayTracingHitIncidentRadiance(hitSurface, sample.DirectionWorld)
+		                     : SampleIndirectSpecularMissRadiance(sample.DirectionWorld);
+
+		const float bounceThroughput = pathThroughput * sample.ThroughputNoF;
+		pathContribution += hitIncidentRadiance * bounceThroughput;
+
+		if (bounceIndex == 0u)
+		{
+			firstSample = sample;
+			firstTrace = trace;
+			firstHitSurface = hitSurface;
+			firstHitRadiance = hitIncidentRadiance;
+		}
+
+		if (!hitSurface.Valid || bounceThroughput <= 1.0e-4f)
+		{
+			break;
+		}
+
+		pathPositionWorld = hitSurface.PositionWorld;
+		pathNormalWorld = hitSurface.NormalWorld;
+		pathViewDirWorld = normalize(-sample.DirectionWorld);
+		pathRoughness = hitSurface.Roughness;
+		pathThroughput = bounceThroughput;
+	}
+
+	IndirectSpecularResolvedContribution resolved;
+	resolved.HitRadiance = firstHitRadiance;
+	resolved.FinalContribution = pathContribution;
+	return resolved;
+}
+
 #include "Passes/Deferred/IndirectSpecularDebug.hlsli"
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
@@ -181,17 +256,19 @@ float3 SampleIndirectSpecularMissRadiance(float3 rayDirectionWorld)
 	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, deviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const float3 viewDirWorld = normalize(Camera.Position - positionWorld);
 	const float3 mirrorDirectionWorld = normalize(reflect(-viewDirWorld, normalWorld));
-	const IndirectSpecularSampleResult sample =
-	    BuildReflectionSample(dispatchThreadId.xy, normalWorld, viewDirWorld, roughness);
-	const RayTracingTraceResult trace =
-	    TraceIndirectSpecularRay(positionWorld, normalWorld, sample.DirectionWorld);
-	const RayTracingHitSurfaceData hitSurface =
-	    ReconstructRayTracingHitSurface(trace, ComputeRayOrigin(positionWorld, normalWorld, sample.DirectionWorld), sample.DirectionWorld);
-	const float3 hitIncidentRadiance =
-	    hitSurface.Valid ? ShadeRayTracingHitIncidentRadiance(hitSurface, sample.DirectionWorld) : SampleIndirectSpecularMissRadiance(sample.DirectionWorld);
-	IndirectSpecularResolvedContribution resolved;
-	resolved.HitRadiance = hitIncidentRadiance;
-	resolved.FinalContribution = hitIncidentRadiance * sample.ThroughputNoF;
+	IndirectSpecularSampleResult sample;
+	RayTracingTraceResult trace;
+	RayTracingHitSurfaceData hitSurface;
+	const IndirectSpecularResolvedContribution resolved =
+	    ResolveIndirectSpecularPath(
+	        dispatchThreadId.xy,
+	        positionWorld,
+	        normalWorld,
+	        viewDirWorld,
+	        roughness,
+	        sample,
+	        trace,
+	        hitSurface);
 	const float3 debugColor =
 	    BuildIndirectSpecularDebugColor(trace, hitSurface, sample, resolved, mirrorDirectionWorld) *
 	    lerp(0.65f.xxx, baseColor, 0.35f);

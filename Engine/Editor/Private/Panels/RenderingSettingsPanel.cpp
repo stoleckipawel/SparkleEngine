@@ -345,7 +345,7 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	if (MatchesFilter(
 	        filterText,
 	        "Ray Tracing",
-	        "ray tracing tlas refit ptlas active partition update mode partitions topology xz xyz dynamic distance") &&
+	        "ray tracing tlas refit ptlas active partition update mode partitions topology xz xyz dynamic distance indirect diffuse specular reflection bounces") &&
 	    BeginSettingsCategory("Ray Tracing"))
 	{
 		if (BeginSettingsTable("##RenderingRayTracingSettings"))
@@ -393,6 +393,20 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    "Mode change distance",
 			    settings.PtlasModeChangeDistance,
 			    [this](float value) { m_settings->SetPtlasModeChangeDistance(value); });
+			DrawUnsignedIntSliderRow(
+			    "##IndirectDiffuseBounceCount",
+			    "Indirect diffuse bounces",
+			    settings.IndirectDiffuseBounceCount,
+			    1u,
+			    8u,
+			    [this](std::uint32_t value) { m_settings->SetIndirectDiffuseBounceCount(value); });
+			DrawUnsignedIntSliderRow(
+			    "##IndirectSpecularBounceCount",
+			    "Indirect specular bounces",
+			    settings.IndirectSpecularBounceCount,
+			    1u,
+			    8u,
+			    [this](std::uint32_t value) { m_settings->SetIndirectSpecularBounceCount(value); });
 			ImGui::EndTable();
 		}
 	}

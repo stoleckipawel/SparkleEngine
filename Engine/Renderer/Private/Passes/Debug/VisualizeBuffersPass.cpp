@@ -54,7 +54,7 @@ void VisualizeBuffersPass::DeclareResources(
     const GBufferRenderTargets& gbuffer,
     ParameterInstance& parameters)
 {
-	parameters->SceneColor = builder.CreateUAV(sceneTargets.SceneColor);
+	parameters->SceneColor = builder.CreateUAV(sceneTargets.FinalSceneColor);
 	parameters->DirectDiffuse = builder.CreateSRV(lighting.DirectDiffuse);
 	parameters->DirectSpecular = builder.CreateSRV(lighting.DirectSpecular);
 	parameters->DirectSubsurface = builder.CreateSRV(lighting.DirectSubsurface);

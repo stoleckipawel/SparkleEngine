@@ -7,6 +7,11 @@
 
 #include <algorithm>
 
+namespace
+{
+	constexpr std::uint32_t MaxSupportedBounceCount = 8u;
+}
+
 IndirectSpecularSettings BuildIndirectSpecularSettingsFromCVars() noexcept
 {
 	return IndirectSpecularSettings{
@@ -15,7 +20,8 @@ IndirectSpecularSettings BuildIndirectSpecularSettingsFromCVars() noexcept
 	    .DebugMode = CVarIndirectSpecularDebugMode.Get(),
 	    .MaterialMode = CVarRendererMaterialBindingMode.Get(),
 	    .NormalBias = std::max(CVarIndirectSpecularNormalBias.Get(), 0.0f),
-	    .MaxDistance = std::max(CVarIndirectSpecularMaxDistance.Get(), 0.001f)};
+	    .MaxDistance = std::max(CVarIndirectSpecularMaxDistance.Get(), 0.001f),
+	    .BounceCount = std::clamp(CVarIndirectSpecularBounceCount.Get(), 1u, MaxSupportedBounceCount)};
 }
 
 void LogIndirectSpecularSettingsOnce(

@@ -29,6 +29,7 @@ namespace RayTracingPathSample
 		float3 IncidentRadiance;
 		float3 Contribution;
 		float HitDistance;
+		float3 HitPositionWorld;
 		float3 HitNormalWorld;
 		float3 MaterialBaseColor;
 		float3 MissRadiance;

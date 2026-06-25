@@ -18,6 +18,7 @@
 
 # Project-local generated outputs.
 Projects/**/build/
+Projects/**/[Cc]ooked/
 Projects/**/logs/
 Projects/**/StreamlineLogs/
 

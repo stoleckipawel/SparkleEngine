@@ -21,3 +21,7 @@ ConsoleVariable<float> CVarIndirectSpecularMaxDistance(
     "r.RayTracing.Reflections.MaxDistance",
     100000.0f,
     "Maximum ray distance for ray-traced indirect specular rays.");
+ConsoleVariable<std::uint32_t> CVarIndirectSpecularBounceCount(
+    "r.RayTracing.Reflections.Bounces",
+    1u,
+    "Maximum reflection path bounce count for ray-traced indirect specular.");

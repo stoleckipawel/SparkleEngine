@@ -15,7 +15,7 @@ struct IndirectDiffuseUniformData
 	std::uint32_t MaterialTextureTableDescriptorCount = 0u;
 	std::uint32_t MaterialTextureTableCapacity = 0u;
 	float Intensity = 1.0f;
-	std::uint32_t Padding0 = 0u;
+	std::uint32_t BounceCount = 1u;
 	std::uint32_t Padding1 = 0u;
 };
 
