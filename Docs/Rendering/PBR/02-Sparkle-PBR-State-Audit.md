@@ -300,6 +300,108 @@ Issues:
 - No visible NRD SIGMA execution path exists yet.
 - Indirect diffuse/specular do not currently provide denoiser-ready auxiliary buffers.
 
+## Shader and Pass Structure Audit
+
+The shader directory already has a useful top-level vocabulary:
+
+```text
+BRDF/
+Common/
+Debug/
+Geometry/
+Lighting/
+Material/
+Passes/
+RayTracing/
+Resources/
+```
+
+This is a good starting hierarchy. It lets a reader infer ownership without opening every file.
+
+The largest shader files at the time of this audit are:
+
+```text
+359 Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli
+322 Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl
+275 Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl
+192 Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli
+187 Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli
+174 Engine/Assets/Shaders/Material/Material.hlsli
+154 Engine/Assets/Shaders/Passes/Deferred/DirectLighting.hlsl
+```
+
+Positive structure:
+
+- BRDF primitives are already separated into distribution, geometry, Fresnel, diffuse, specular, subsurface, and occlusion files.
+- CPU renderer passes are already split between `Frame/Lighting/*`, `Passes/Deferred/*Pass.*`, `Passes/Bindings/*`, and `ShaderRegistrations/*`.
+- Material texture-table sampling is separated from material property sampling.
+- Ray hit material reconstruction is centralized enough to avoid every effect reimplementing barycentric material decoding.
+- Direct lighting has a pass entrypoint and a shared helper include instead of putting all light math inside the compute `main`.
+
+Structural issues:
+
+- `RayTracingHitLighting.hlsli` includes `Passes/Deferred/DirectLightingCommon.hlsli`. This is an inverted dependency: reusable ray-hit lighting depends on a deferred-pass helper because generic light math currently lives under `Passes/Deferred`.
+- `DirectLightingCommon.hlsli` owns generic light direction, falloff, cone attenuation, and direct surface lighting. Those concepts should move to `Lighting/*` so primary direct lighting, secondary hit lighting, path tracing, and future probes/denoisers share them without depending on a deferred pass path.
+- `RayTracedShadows.hlsli`, `RayTracedShadowSampling.hlsli`, `RayTracedShadowSignals.hlsli`, and `RayTracedShadowDenoiserInputs.hlsli` live under `Passes/Deferred`, but their concepts are reusable ray-tracing/visibility concepts. They should move or be wrapped by reusable `RayTracing/Shadows/*` or `Lighting/Visibility/*` modules before NRD SIGMA work expands them.
+- `IndirectDiffuse.hlsl` currently owns pass IO, pass constants, surface records, random sampling, diffuse throughput, ray-origin policy, tracing, hit/miss resolve, path-loop logic, debug routing, and output writes. That is too many responsibilities for an entrypoint.
+- `IndirectSpecular.hlsl` has the same issue for GGX sampling, path state, tracing, hit/miss resolve, debug routing, and output writes.
+- `IndirectDiffuseSurface` and `IndirectSpecularSurface` are nearly the same concept. A shared `ShadingSurface` or `RayTracingPathSurface` should represent primary and hit surfaces.
+- `IndirectDiffuse` and `IndirectSpecular` each own their first-lobe sample logic. That is acceptable for a first prototype, but it blocks a unified BSDF path sampler.
+- Debug code is mostly separated, but debug-mode enums/constants are still pass-local in places where shared ray-hit debug modes already exist.
+
+Recommended target layout:
+
+```text
+Engine/Assets/Shaders/Lighting/
+  PunctualLights.hlsli
+  SurfaceLighting.hlsli
+  SkyEnvironment.hlsli
+  Visibility.hlsli
+
+Engine/Assets/Shaders/RayTracing/
+  RayTracingTraceQuery.hlsli
+  RayTracingHitSurface.hlsli
+  RayTracingMaterialHit.hlsli
+  RayTracingHitDebug.hlsli
+  PathSampling.hlsli
+  PathSurface.hlsli
+  PathLighting.hlsli
+  Shadows/
+    RayTracedShadowSignals.hlsli
+    RayTracedShadowSampling.hlsli
+    RayTracedShadowTrace.hlsli
+    RayTracedShadowDenoiserInputs.hlsli
+
+Engine/Assets/Shaders/Passes/Deferred/
+  DirectLighting.hlsl
+  IndirectDiffuse.hlsl
+  IndirectSpecular.hlsl
+  LightingComposite.hlsl
+  Sky.hlsl
+  GBuffer*.*
+  *Debug.hlsli
+```
+
+The pass files should become thin orchestration layers:
+
+```text
+load GBuffer / pass constants
+build primary surface
+call reusable lighting/path/shadow module
+choose debug or production output
+write target
+```
+
+CPU pass structure is in better shape than shader structure. The current split already resembles the desired model:
+
+- `Frame/Lighting/*` schedules pass order.
+- `Passes/Deferred/*Pass.*` owns resource declaration and dispatch.
+- `Passes/Bindings/*` owns reusable binding policies.
+- `RayTracing/Effects/*` owns settings and uniform-data construction.
+- `ShaderRegistrations/*` owns shader package ABI.
+
+Keep that shape. The main CPU-side improvement is to avoid growing pass classes into algorithm containers as denoisers, DLRR, or new lighting features arrive.
+
 ## Priority Issue List
 
 P0 correctness blockers:
@@ -332,6 +434,14 @@ P3 validation gaps:
 3. No automated radiance statistics for lighting targets.
 4. No EXR/HDR capture contract for pre-tonemap buffers.
 
+P4 structural blockers:
+
+1. Reusable ray-hit lighting depends on a deferred-pass include.
+2. Generic light math is stored in `Passes/Deferred/DirectLightingCommon.hlsli`.
+3. Shadow tracing/sampling/denoiser signal helpers are pass-local even though they are reusable visibility concepts.
+4. Indirect diffuse/specular entrypoints mix pass IO, sampling, tracing, path state, resolve, and output.
+5. Surface/path records are duplicated between diffuse and specular effects.
+
 ## Current Strengths
 
 The repo is closer than a rough prototype:
@@ -342,6 +452,6 @@ The repo is closer than a rough prototype:
 - Texture cooking appears to distinguish color and data textures.
 - Ray-hit material reconstruction is already substantial.
 - The provider architecture has started isolating DLSS and future denoisers.
+- The existing shader folders already make a clean modular layout achievable without a disruptive rename of the whole tree.
 
-The main work is not to invent a new renderer. It is to lock the physics contract, remove non-linear sky transport, unify material/BRDF conventions, and make indirect sampling converge toward a reference path tracer.
-
+The main work is not to invent a new renderer. It is to lock the physics contract, remove non-linear sky transport, unify material/BRDF conventions, make indirect sampling converge toward a reference path tracer, and move generic lighting logic out of pass-specific files before the next feature wave hardens those boundaries.

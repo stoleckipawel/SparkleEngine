@@ -19,6 +19,13 @@ Out of scope for this plan:
 - Neural radiance caches
 - Full material model expansion beyond the current metallic-roughness surface
 
+Every stage has two equal acceptance surfaces:
+
+- physical correctness
+- code structure and pass architecture
+
+A stage is not complete if the output looks correct but the implementation makes the next lighting problem harder to solve.
+
 ## Stage 0: Lock the Lighting Contract
 
 Implementation prompt:
@@ -36,6 +43,80 @@ Acceptance criteria:
 - `DirectDiffuse`, `DirectSpecular`, `IndirectDiffuse`, and `IndirectSpecular` have a written semantic contract.
 - No doc claims `IndirectDiffuse` is raw irradiance unless the code is changed to match.
 - `LightingComposite` remains a simple sum only because all inputs share the same radiance-contribution unit.
+
+## Stage 0A: Lock Shader Module Boundaries
+
+Implementation prompt:
+
+Before changing lighting math, move reusable lighting concepts out of pass-specific shader folders. Do this as behavior-preserving refactors with shader-cook validation after each step.
+
+Target dependency direction:
+
+```text
+Common -> Geometry -> Material -> BRDF -> Lighting -> RayTracing -> Passes
+```
+
+Files to create or move toward:
+
+- `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
+- `Engine/Assets/Shaders/Lighting/Visibility.hlsli`
+- `Engine/Assets/Shaders/RayTracing/PathSurface.hlsli`
+- `Engine/Assets/Shaders/RayTracing/PathSampling.hlsli`
+- `Engine/Assets/Shaders/RayTracing/PathLighting.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSignals.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSampling.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowTrace.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`
+
+Move candidates:
+
+- light direction/falloff/cone helpers from `DirectLightingCommon.hlsli` to `Lighting/PunctualLights.hlsli`
+- direct surface lobe evaluation from `DirectLightingCommon.hlsli` to `Lighting/SurfaceLighting.hlsli`
+- shadow signal/sampling helpers from `Passes/Deferred` to `RayTracing/Shadows`
+- duplicated indirect surface records into `RayTracing/PathSurface.hlsli`
+
+Acceptance criteria:
+
+- No file under `Engine/Assets/Shaders/RayTracing` includes `Passes/Deferred/*`.
+- Generic lighting helpers do not live under `Passes/Deferred`.
+- Deferred pass entrypoint files continue compiling and producing identical output after each move.
+- `DirectLighting.hlsl`, `IndirectDiffuse.hlsl`, and `IndirectSpecular.hlsl` become thinner, not larger.
+- The shader include graph has no cyclic conceptual dependency.
+
+## Stage 0B: Make Pass Entrypoints Thin
+
+Implementation prompt:
+
+Refactor direct and indirect pass entrypoints so they own pass IO and output policy only. Sampling, light evaluation, visibility tracing, hit/miss resolve, and path throughput should live in reusable modules.
+
+Target pass entrypoint shape:
+
+```text
+main:
+    validate dispatch bounds
+    load GBuffer / constants
+    early out sky pixels
+    build primary surface
+    call one reusable lighting/path function
+    choose debug or production output
+    write target
+```
+
+Refactor targets:
+
+- `Engine/Assets/Shaders/Passes/Deferred/DirectLighting.hlsl`
+- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl`
+- `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
+
+Acceptance criteria:
+
+- Pass entrypoint files do not define reusable BRDF, light falloff, ray-origin, lobe sampling, or path-throughput algorithms.
+- Shared algorithms are named after concepts, not effects.
+- Debug helpers stay pass-specific only when the debug view is effect-specific.
+- Line count is reduced for `IndirectDiffuse.hlsl` and `IndirectSpecular.hlsl` by moving cohesive logic, not by hiding unrelated code in one new god include.
+- New files each have one reason to change.
 
 ## Stage 1: Fix Linear HDR Sky Transport
 
@@ -209,6 +290,9 @@ Files:
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
 - `Engine/Assets/Shaders/BRDF/*.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingPathSample.hlsli`
+- `Engine/Assets/Shaders/RayTracing/PathSurface.hlsli`
+- `Engine/Assets/Shaders/RayTracing/PathSampling.hlsli`
+- `Engine/Assets/Shaders/RayTracing/PathLighting.hlsli`
 
 Target algorithm:
 
@@ -243,6 +327,8 @@ Acceptance criteria:
 - Multi-bounce paths can include diffuse-after-specular and specular-after-diffuse.
 - Debug views expose sampled lobe, PDF, throughput, hit distance, hit normal, and rejection reason.
 - Reference mode can run more than one bounce without needing non-physical intensity multipliers.
+- `IndirectDiffuse.hlsl` and `IndirectSpecular.hlsl` both call the same BSDF/path sampling code.
+- No new path sampling code is named after only diffuse or only specular unless it truly supports only that lobe.
 
 ## Stage 8: Add Secondary Shadowing and Direct-Light Sampling at Hits
 
@@ -357,19 +443,21 @@ Acceptance criteria:
 
 Do these first:
 
-1. Stage 1: linear HDR sky transport.
-2. Stage 2: material F0 and roughness consistency.
-3. Stage 4: light units/falloff.
-4. Stage 5: alpha-tested shadows and raw visibility split.
-5. Stage 7: unified BSDF path sampler.
+1. Stage 0A: shader module boundaries.
+2. Stage 0B: thin pass entrypoints.
+3. Stage 1: linear HDR sky transport.
+4. Stage 2: material F0 and roughness consistency.
+5. Stage 4: light units/falloff.
+6. Stage 5: alpha-tested shadows and raw visibility split.
+7. Stage 7: unified BSDF path sampler.
 
 Then:
 
-6. Stage 8: secondary shadowing.
-7. Stage 9: environment importance sampling.
-8. Stage 6: NRD SIGMA shadow integration.
-9. Stage 11: DLRR resource contract.
-10. Stage 12: high-sample reference mode.
+8. Stage 8: secondary shadowing.
+9. Stage 9: environment importance sampling.
+10. Stage 6: NRD SIGMA shadow integration.
+11. Stage 11: DLRR resource contract.
+12. Stage 12: high-sample reference mode.
 
 Stage 3 validation should run throughout. It is the guardrail, not a one-time cleanup.
 
@@ -386,4 +474,6 @@ The renderer is on a credible ground-truth path when all of these are true:
 - Secondary hit direct lighting can be shadowed.
 - Raw denoiser inputs exist separately from final lighting targets.
 - Validation scenes can compare real-time output against a high-sample reference.
-
+- Reusable lighting/ray-tracing shader modules do not depend on pass-specific deferred files.
+- Pass entrypoints are small orchestration layers over concept-named modules.
+- New lighting features reuse shared light, surface, path, visibility, and sky code instead of forking effect-local copies.

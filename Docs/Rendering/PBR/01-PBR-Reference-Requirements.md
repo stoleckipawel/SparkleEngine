@@ -15,8 +15,11 @@ Sparkle should treat the following sources as the external baseline:
 - Unreal Engine physically based materials: <https://dev.epicgames.com/documentation/en-us/unreal-engine/physically-based-materials-in-unreal-engine>
 - Unreal Engine path tracer: <https://dev.epicgames.com/documentation/en-us/unreal-engine/path-tracer-in-unreal-engine>
 - NVIDIA RTX Path Tracing SDK: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA RTXDI integration guide: <https://github.com/NVIDIA-RTX/RTXDI/blob/main/Doc/Integration.md>
 - NVIDIA NRD: <https://github.com/NVIDIA-RTX/NRD>
 - NVIDIA Streamline DLSS Ray Reconstruction guide: <https://github.com/NVIDIAGameWorks/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md>
+- AMD FidelityFX SDK: <https://gpuopen.com/fidelityfx-sdk/>
+- Unreal Engine shader development: <https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine>
 - glTF 2.0 material model: <https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials>
 - glTF KHR_lights_punctual: <https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_lights_punctual>
 - PBRT rendering equation reference: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
@@ -281,6 +284,62 @@ Required measurement outputs:
 - Difference against high-sample reference.
 - GPU feature path used: no RT, descriptor TLAS, device-address TLAS.
 
+### PBR-R-011: Shader Architecture Contract
+
+PBR correctness and shader architecture are equal requirements. A physically correct feature is not accepted if it arrives as a pass-specific tangle that cannot be reused by the next lighting problem.
+
+Sparkle shader code should follow this dependency direction:
+
+```text
+Common
+  -> Geometry
+  -> Material
+  -> BRDF
+  -> Lighting
+  -> RayTracing
+  -> Passes
+```
+
+Rules:
+
+- `Passes/*` files may depend on shared modules.
+- Shared modules must not include `Passes/*` files.
+- `BRDF/*` must not know about lights, GBuffer, TLAS, denoisers, debug modes, or pass CVars.
+- `Lighting/*` may know about light records, radiance, visibility, environment sampling, and surface lighting equations.
+- `RayTracing/*` may know about tracing, hit reconstruction, path state, path sampling, and ray-hit material decoding.
+- `Passes/*` entrypoints own resource declarations, pass uniforms, pixel dispatch, GBuffer loading, debug-mode selection, and output writes.
+- Effect-specific settings may live with the effect, but reusable sampling/tracing/lighting code must be named after the concept, not after the first pass that used it.
+
+Expected reusable shader modules for the near-term lighting work:
+
+- `Lighting/PunctualLights.hlsli`: directional, point, and spot light direction/radiance/falloff helpers.
+- `Lighting/SurfaceLighting.hlsli`: lobe-evaluated direct lighting for a surface.
+- `Lighting/SkyEnvironment.hlsli`: linear sky radiance, sky UVs, optional display-only transforms.
+- `RayTracing/RayTracingTraceQuery.hlsli`: generic ray-query trace policies and alpha-test candidate handling.
+- `RayTracing/RayTracingSurface.hlsli`: common primary and hit surface records.
+- `RayTracing/PathSampling.hlsli`: direction samples, PDFs, lobe selection, throughput.
+- `RayTracing/PathLighting.hlsli`: miss/hit radiance resolution and next-event lighting.
+- `Passes/Deferred/*.hlsl`: compact pass entrypoints that wire inputs to reusable modules.
+
+File-size is not a hard correctness rule, but it is a smell. Any shader file above roughly 250 lines should be reviewed for mixed responsibilities. A longer file can stay only if it owns one cohesive concept, such as full material hit reconstruction.
+
+### PBR-R-012: CPU Pass Architecture Contract
+
+Renderer pass code should mirror the shader separation:
+
+- `Frame/*` files schedule pass order and high-level resources.
+- `Passes/*Pass.*` files declare resources, bind parameters, check capability gates, and dispatch.
+- `ShaderRegistrations/*` files define shader package metadata and parameter ABI.
+- `RayTracing/Effects/*` files own effect settings, CVars, uniform data, and pass-data builders.
+- `Passes/Bindings/*` files own reusable binding policies for lighting, environment, TLAS, hit data, and material texture tables.
+
+Rules:
+
+- Pass classes should not implement lighting algorithms.
+- CVar/settings files should not leak into reusable shader modules.
+- Capability gates should be explicit in CPU pass execution, not hidden behind shader zero-output behavior.
+- New lighting features should add a narrow pass facade over reusable shader modules, not fork direct-light, indirect-light, or sky logic.
+
 ## Ground Truth Target
 
 The long-term reference is a path tracer mode, not a visual guess:
@@ -294,4 +353,3 @@ The long-term reference is a path tracer mode, not a visual guess:
 - A way to save EXR/HDR buffers for comparison.
 
 Real-time direct and indirect passes should be judged by convergence toward that path tracer, not just by looking similar to an existing game renderer.
-
