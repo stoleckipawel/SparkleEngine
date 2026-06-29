@@ -23,7 +23,7 @@ float3 BuildIndirectSpecularDebugColor(
 	}
 	if (IndirectSpecularDebugMode == IndirectSpecularDebugSampleThroughput)
 	{
-		return saturate(sample.ThroughputNoF).xxx;
+		return saturate(sample.Throughput);
 	}
 	if (IndirectSpecularDebugMode == IndirectSpecularDebugHitRadiance)
 	{

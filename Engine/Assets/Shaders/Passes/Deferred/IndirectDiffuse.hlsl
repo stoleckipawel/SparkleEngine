@@ -34,6 +34,18 @@ static const uint IndirectDiffuseRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
 static const uint IndirectDiffuseInstanceMask = 0xFFu;
 static const float IndirectDiffuseMinimumTMin = 0.001f;
 
+struct IndirectDiffuseSurface
+{
+	bool Valid;
+	float3 PositionWorld;
+	float3 NormalWorld;
+	float3 ViewDirWorld;
+	float3 BaseColor;
+	float Roughness;
+	float Metallic;
+	float DielectricF0;
+};
+
 float2 BuildIndirectDiffuseRandomSample(uint2 pixelCoord, uint bounceIndex)
 {
 	return CommonRandom::InterleavedGradientNoise2(
@@ -55,6 +67,66 @@ RayTracingPathSample::DirectionSample BuildIndirectDiffuseDirectionSample(uint2 
 	                             ? RayTracingPathSample::RejectionReasonNone
 	                             : RayTracingPathSample::RejectionReasonInvalidSample;
 	return result;
+}
+
+IndirectDiffuseSurface BuildPrimaryIndirectDiffuseSurface(
+    float3 positionWorld,
+    float3 normalWorld,
+    float3 viewDirWorld,
+    float3 baseColor,
+    float roughness,
+    float metallic)
+{
+	IndirectDiffuseSurface surface;
+	surface.Valid = true;
+	surface.PositionWorld = positionWorld;
+	surface.NormalWorld = normalWorld;
+	surface.ViewDirWorld = viewDirWorld;
+	surface.BaseColor = baseColor;
+	surface.Roughness = roughness;
+	surface.Metallic = metallic;
+	surface.DielectricF0 = 0.04f;
+	return surface;
+}
+
+IndirectDiffuseSurface BuildHitIndirectDiffuseSurface(
+    RayTracingHitSurfaceData hitSurface,
+    float3 incomingRayDirectionWorld)
+{
+	IndirectDiffuseSurface surface;
+	surface.Valid = hitSurface.Valid;
+	surface.PositionWorld = hitSurface.PositionWorld;
+	surface.NormalWorld = hitSurface.NormalWorld;
+	surface.ViewDirWorld = normalize(-incomingRayDirectionWorld);
+	surface.BaseColor = hitSurface.BaseColor;
+	surface.Roughness = hitSurface.Roughness;
+	surface.Metallic = hitSurface.Metallic;
+	surface.DielectricF0 = hitSurface.DielectricF0;
+	return surface;
+}
+
+float3 EvaluateIndirectDiffuseSampleThroughput(
+    IndirectDiffuseSurface surface,
+    RayTracingPathSample::DirectionSample sample)
+{
+	if (!surface.Valid || sample.RejectionReason != RayTracingPathSample::RejectionReasonNone)
+	{
+		return 0.0f.xxx;
+	}
+
+	const float safeRoughness = max(surface.Roughness, 0.04f);
+	const BRDF::ShadingData shadingData =
+	    BRDF::ComputeShadingData(surface.NormalWorld, surface.ViewDirWorld, sample.DirectionWorld);
+	if (shadingData.NoL <= 0.0f || shadingData.NoV <= 0.0f || sample.Pdf <= 0.0f)
+	{
+		return 0.0f.xxx;
+	}
+
+	const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
+	const float3 fresnel = BRDF::Fresnel::EvaluateDirect(shadingData.VoH, f0);
+	const float3 diffuseWeight = (1.0f.xxx - fresnel) * (1.0f - surface.Metallic);
+	const float3 diffuseBrdf = BRDF::Diffuse::EvaluateDirect(surface.BaseColor, safeRoughness, shadingData) * diffuseWeight;
+	return max(diffuseBrdf * (sample.CosineTerm * rcp(max(sample.Pdf, 1.0e-4f))), 0.0f.xxx);
 }
 
 float3 ComputeIndirectDiffuseRayOrigin(float3 positionWorld, float3 normalWorld, float3 rayDirectionWorld)
@@ -80,8 +152,10 @@ RayTracingTraceResult TraceIndirectDiffuseRay(float3 rayOriginWorld, float3 rayD
 RayTracingPathSample::LightingResult ResolveIndirectDiffuseLighting(
     RayTracingTraceResult trace,
     RayTracingPathSample::DirectionSample sample,
-    float3 rayOriginWorld)
+    float3 rayOriginWorld,
+    out RayTracingHitSurfaceData outHitSurface)
 {
+	outHitSurface = (RayTracingHitSurfaceData) 0;
 	RayTracingPathSample::LightingResult result;
 	result.TraceHit = trace.Hit;
 	result.Hit = trace.Hit;
@@ -104,6 +178,7 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffuseLighting(
 	{
 		const RayTracingHitSurfaceData hitSurface =
 		    ReconstructRayTracingHitSurface(trace, rayOriginWorld, sample.DirectionWorld);
+		outHitSurface = hitSurface;
 		result.Hit = hitSurface.Valid;
 		result.RejectionReason = hitSurface.Valid
 		                             ? RayTracingPathSample::RejectionReasonNone
@@ -124,7 +199,6 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffuseLighting(
 		result.IncidentRadiance = result.MissRadiance;
 	}
 
-	result.Contribution = result.IncidentRadiance * (sample.CosineTerm * rcp(max(sample.Pdf, 1.0e-4f)) * INV_PI);
 	return result;
 }
 
@@ -139,8 +213,16 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffusePathLighting(
 	firstLighting.RejectionReason = RayTracingPathSample::RejectionReasonTraceMiss;
 	firstSample = BuildIndirectDiffuseDirectionSample(pixelCoord, primaryNormalWorld, 0u);
 
-	float3 pathPositionWorld = primaryPositionWorld;
-	float3 pathNormalWorld = primaryNormalWorld;
+	const int3 pixel = int3(pixelCoord, 0);
+	const float3 primaryViewDirWorld = normalize(Camera.Position - primaryPositionWorld);
+	IndirectDiffuseSurface pathSurface =
+	    BuildPrimaryIndirectDiffuseSurface(
+	        primaryPositionWorld,
+	        primaryNormalWorld,
+	        primaryViewDirWorld,
+	        saturate(GBufferBaseColor.Load(pixel).rgb),
+	        saturate(GBufferMaterial.Load(pixel).g),
+	        saturate(GBufferMaterial.Load(pixel).r));
 	float3 pathThroughput = 1.0f.xxx;
 	float3 pathContribution = 0.0f.xxx;
 	const uint bounceCount = max(IndirectDiffuseBounceCount, 1u);
@@ -148,13 +230,20 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffusePathLighting(
 	[loop] for (uint bounceIndex = 0u; bounceIndex < bounceCount; ++bounceIndex)
 	{
 		const RayTracingPathSample::DirectionSample sample =
-		    BuildIndirectDiffuseDirectionSample(pixelCoord, pathNormalWorld, bounceIndex);
+		    BuildIndirectDiffuseDirectionSample(pixelCoord, pathSurface.NormalWorld, bounceIndex);
+		pathThroughput *= EvaluateIndirectDiffuseSampleThroughput(pathSurface, sample);
+		if (max(max(pathThroughput.r, pathThroughput.g), pathThroughput.b) <= 1.0e-4f)
+		{
+			break;
+		}
+
 		const float3 rayOriginWorld =
-		    ComputeIndirectDiffuseRayOrigin(pathPositionWorld, pathNormalWorld, sample.DirectionWorld);
+		    ComputeIndirectDiffuseRayOrigin(pathSurface.PositionWorld, pathSurface.NormalWorld, sample.DirectionWorld);
 		const RayTracingTraceResult trace = TraceIndirectDiffuseRay(rayOriginWorld, sample.DirectionWorld);
+		RayTracingHitSurfaceData hitSurface;
 		RayTracingPathSample::LightingResult lighting =
-		    ResolveIndirectDiffuseLighting(trace, sample, rayOriginWorld);
-		lighting.Contribution *= pathThroughput;
+		    ResolveIndirectDiffuseLighting(trace, sample, rayOriginWorld, hitSurface);
+		lighting.Contribution = lighting.IncidentRadiance * pathThroughput;
 
 		if (bounceIndex == 0u)
 		{
@@ -168,14 +257,7 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffusePathLighting(
 			break;
 		}
 
-		pathThroughput *= saturate(lighting.MaterialBaseColor);
-		if (max(max(pathThroughput.r, pathThroughput.g), pathThroughput.b) <= 1.0e-4f)
-		{
-			break;
-		}
-
-		pathPositionWorld = lighting.HitPositionWorld;
-		pathNormalWorld = lighting.HitNormalWorld;
+		pathSurface = BuildHitIndirectDiffuseSurface(hitSurface, sample.DirectionWorld);
 	}
 
 	firstLighting.Contribution = pathContribution;

@@ -47,7 +47,11 @@ namespace DirectLighting
 	void EvaluateDirectLight(
 	    float3 viewDirWorld,
 	    float3 normalWorld,
+	    float3 baseColor,
 	    float roughness,
+	    float metallic,
+	    float3 subsurfaceColor,
+	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
 	    float3 lightDirection,
 	    float3 radiance,
@@ -66,23 +70,32 @@ namespace DirectLighting
 		}
 
 		const float clampedRoughness = max(roughness, 0.04f);
-
-		outDiffuse = BRDF::Diffuse::EvaluateDirectTransport(clampedRoughness, shadingData);
-		outSpecular = BRDF::Specular::EvaluateDirectTransport(shadingData, clampedRoughness);
-		outSubsurface = 0.0f.xxx;
+		const float3 f0 = lerp(0.04f.xxx, baseColor, metallic);
+		BRDF::Direct::Evaluate(
+		    shadingData,
+		    baseColor,
+		    clampedRoughness,
+		    metallic,
+		    f0,
+		    subsurfaceColor,
+		    evaluateSubsurface ? subsurfaceStrength : 0.0f,
+		    outDiffuse,
+		    outSpecular,
+		    outSubsurface);
 
 		outDiffuse *= radiance * shadingData.NoL;
 		outSpecular *= radiance * shadingData.NoL;
-		if (evaluateSubsurface)
-		{
-			outSubsurface = BRDF::Subsurface::EvaluateDirectTransport(clampedRoughness, shadingData) * radiance * shadingData.NoL;
-		}
+		outSubsurface *= radiance * shadingData.NoL;
 	}
 
 	void AccumulateDirectionalLight(
 	    float3 viewDirWorld,
 	    float3 normalWorld,
+	    float3 baseColor,
 	    float roughness,
+	    float metallic,
+	    float3 subsurfaceColor,
+	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
 	    uint lightIndex,
 	    float shadowVisibility,
@@ -93,14 +106,31 @@ namespace DirectLighting
 		const float3 lightDirection = GetDirectionalLightDirection(lightIndex);
 		const float3 radiance =
 		    DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Intensity * shadowVisibility;
-		EvaluateDirectLight(viewDirWorld, normalWorld, roughness, evaluateSubsurface, lightDirection, radiance, outDiffuse, outSpecular, outSubsurface);
+		EvaluateDirectLight(
+		    viewDirWorld,
+		    normalWorld,
+		    baseColor,
+		    roughness,
+		    metallic,
+		    subsurfaceColor,
+		    subsurfaceStrength,
+		    evaluateSubsurface,
+		    lightDirection,
+		    radiance,
+		    outDiffuse,
+		    outSpecular,
+		    outSubsurface);
 	}
 
 	void AccumulatePointLight(
 	    float3 positionWorld,
 	    float3 viewDirWorld,
 	    float3 normalWorld,
+	    float3 baseColor,
 	    float roughness,
+	    float metallic,
+	    float3 subsurfaceColor,
+	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
 	    uint lightIndex,
 	    float shadowVisibility,
@@ -113,14 +143,31 @@ namespace DirectLighting
 		const float3 lightDirection = GetPointLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float attenuation = ComputeDistanceAttenuation(distanceToLight, light.Range);
 		const float3 radiance = light.Color * light.Intensity * attenuation * shadowVisibility;
-		EvaluateDirectLight(viewDirWorld, normalWorld, roughness, evaluateSubsurface, lightDirection, radiance, outDiffuse, outSpecular, outSubsurface);
+		EvaluateDirectLight(
+		    viewDirWorld,
+		    normalWorld,
+		    baseColor,
+		    roughness,
+		    metallic,
+		    subsurfaceColor,
+		    subsurfaceStrength,
+		    evaluateSubsurface,
+		    lightDirection,
+		    radiance,
+		    outDiffuse,
+		    outSpecular,
+		    outSubsurface);
 	}
 
 	void AccumulateSpotLight(
 	    float3 positionWorld,
 	    float3 viewDirWorld,
 	    float3 normalWorld,
+	    float3 baseColor,
 	    float roughness,
+	    float metallic,
+	    float3 subsurfaceColor,
+	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
 	    uint lightIndex,
 	    float shadowVisibility,
@@ -135,7 +182,20 @@ namespace DirectLighting
 		const float distanceAttenuation = ComputeDistanceAttenuation(distanceToLight, light.Range);
 		const float coneAttenuation = ComputeSpotConeAttenuation(lightToSurfaceDirection, light.Direction, light.InnerConeCosine, light.OuterConeCosine);
 		const float3 radiance = light.Color * light.Intensity * distanceAttenuation * coneAttenuation * shadowVisibility;
-		EvaluateDirectLight(viewDirWorld, normalWorld, roughness, evaluateSubsurface, lightDirection, radiance, outDiffuse, outSpecular, outSubsurface);
+		EvaluateDirectLight(
+		    viewDirWorld,
+		    normalWorld,
+		    baseColor,
+		    roughness,
+		    metallic,
+		    subsurfaceColor,
+		    subsurfaceStrength,
+		    evaluateSubsurface,
+		    lightDirection,
+		    radiance,
+		    outDiffuse,
+		    outSpecular,
+		    outSubsurface);
 	}
 }
 
