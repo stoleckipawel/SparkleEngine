@@ -19,12 +19,11 @@ void AccumulateRayTracingHitDirectLight(
 	float3 diffuse = 0.0f.xxx;
 	float3 specular = 0.0f.xxx;
 	float3 subsurface = 0.0f.xxx;
-	const float safeRoughness = max(surface.Roughness, 1.0e-4f);
 	const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
 	BRDF::Direct::Evaluate(
 	    shadingData,
 	    surface.BaseColor,
-	    safeRoughness,
+	    surface.Roughness,
 	    surface.Metallic,
 	    f0,
 	    surface.SubsurfaceColor,

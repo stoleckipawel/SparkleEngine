@@ -82,7 +82,7 @@ float3 SampleGGXHalfVector(float3 normalWorld, float roughness, float2 sample)
 	float3 bitangentWorld;
 	CommonSampling::BuildOrthonormalBasis(normalWorld, tangentWorld, bitangentWorld);
 
-	const float alpha = max(roughness * roughness, 1.0e-4f);
+	const float alpha = roughness * roughness;
 	const float alphaSquared = alpha * alpha;
 	const float phi = TWO_PI * sample.x;
 	const float cosTheta = sqrt(saturate((1.0f - sample.y) / max(1.0f + (alphaSquared - 1.0f) * sample.y, 1.0e-4f)));
@@ -137,10 +137,8 @@ IndirectSpecularSampleResult BuildReflectionSample(
     uint bounceIndex)
 {
 	IndirectSpecularSampleResult result;
-	const float safeRoughness = max(roughness, 1.0e-4f);
 	const float3 mirrorDirection = SafeNormalize(reflect(-viewDirWorld, normalWorld), normalWorld);
-	const bool forceMirror =
-	    IndirectSpecularSampleMode == IndirectSpecularSampleModeMirror || roughness <= 1.0e-4f;
+	const bool forceMirror = IndirectSpecularSampleMode == IndirectSpecularSampleModeMirror || roughness <= 0.0f;
 
 	result.DirectionWorld = mirrorDirection;
 	result.Pdf = 1.0f;
@@ -153,7 +151,7 @@ IndirectSpecularSampleResult BuildReflectionSample(
 	}
 
 	const float2 randomSample = BuildReflectionRandomSample(pixelCoord, bounceIndex);
-	const float3 halfVectorWorld = SampleGGXHalfVector(normalWorld, safeRoughness, randomSample);
+	const float3 halfVectorWorld = SampleGGXHalfVector(normalWorld, roughness, randomSample);
 	const float3 sampleDirectionWorld = SafeNormalize(reflect(-viewDirWorld, halfVectorWorld), mirrorDirection);
 	const float NoV = saturate(dot(normalWorld, viewDirWorld));
 	const float NoL = saturate(dot(normalWorld, sampleDirectionWorld));
@@ -169,7 +167,7 @@ IndirectSpecularSampleResult BuildReflectionSample(
 		return result;
 	}
 
-	const float alpha = safeRoughness * safeRoughness;
+	const float alpha = roughness * roughness;
 	const float D = BRDF::Distribution::Evaluate(NoH, alpha);
 	const float pdf = max(D * NoH / max(4.0f * VoH, 1.0e-4f), 1.0e-4f);
 
@@ -189,7 +187,6 @@ float3 EvaluateIndirectSpecularSampleThroughput(
 		return 0.0f.xxx;
 	}
 
-	const float safeRoughness = max(surface.Roughness, 1.0e-4f);
 	const BRDF::ShadingData shadingData =
 	    BRDF::ComputeShadingData(surface.NormalWorld, surface.ViewDirWorld, sample.DirectionWorld);
 	if (shadingData.NoL <= 0.0f || shadingData.NoV <= 0.0f)
@@ -204,7 +201,7 @@ float3 EvaluateIndirectSpecularSampleThroughput(
 		return fresnel;
 	}
 
-	const float3 specularBrdf = BRDF::Specular::EvaluateDirect(shadingData, safeRoughness, fresnel);
+	const float3 specularBrdf = BRDF::Specular::EvaluateDirect(shadingData, surface.Roughness, fresnel);
 	return max(specularBrdf * (shadingData.NoL * rcp(max(sample.Pdf, 1.0e-4f))), 0.0f.xxx);
 }
 

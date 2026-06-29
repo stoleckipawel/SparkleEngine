@@ -15,6 +15,7 @@ struct FrameAssemblyTransientResources final
 	SceneRenderTargets Scene = {};
 	GBufferRenderTargets GBuffer = {};
 	LightingRenderTargets Lighting = {};
+	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
 };
 
 struct FrameAssemblyPersistentResources final
@@ -25,8 +26,11 @@ struct FrameAssemblyPersistentResources final
 
 struct FrameAssemblyHistoryResources final
 {
+	FrameGraphTextureHandle PreviousExposure = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle CurrentExposure = FrameGraphTextureHandle::Invalid();
 	ShadowDenoiseContract::ShadowDenoiseTextures ShadowDenoiser = {};
 
+	bool HasExposureHistory() const noexcept { return PreviousExposure.IsValid() && CurrentExposure.IsValid(); }
 	bool HasShadowHistory() const noexcept { return ShadowDenoiser.DenoiseHistory.IsValid(); }
 };
 
@@ -44,6 +48,7 @@ struct FrameAssemblyViewportProducts final
 {
 	FrameGraphTextureHandle SceneColor = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle FinalSceneColor = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle SceneDepth = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Normals = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle MotionVectors = FrameGraphTextureHandle::Invalid();

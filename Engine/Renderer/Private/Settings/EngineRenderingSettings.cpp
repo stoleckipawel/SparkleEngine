@@ -2,6 +2,8 @@
 
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
+#include "Frame/Presentation/OutputEncodingSettings.h"
+#include "Frame/Presentation/ToneMappingSettings.h"
 #include "Settings/EngineRenderingDisplaySettings.h"
 #include "Settings/EngineRenderingGeometrySettings.h"
 #include "Settings/EngineRenderingLightingSettings.h"
@@ -52,6 +54,130 @@ void EngineRenderingSettingsSection::SetPreferHighPerformanceAdapter(bool enable
 		return;
 	}
 	state.PreferHighPerformanceAdapter = enabled;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetToneMapper(EngineToneMapper toneMapper)
+{
+	const EngineToneMapper sanitizedToneMapper = SanitizeToneMapper(toneMapper);
+	EngineRenderingSettingsState state = GetState();
+	if (state.ToneMapper == sanitizedToneMapper)
+	{
+		return;
+	}
+	state.ToneMapper = sanitizedToneMapper;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetExposureMode(EngineExposureMode mode)
+{
+	const EngineExposureMode sanitizedMode = SanitizeExposureMode(mode);
+	EngineRenderingSettingsState state = GetState();
+	if (state.ExposureMode == sanitizedMode)
+	{
+		return;
+	}
+	state.ExposureMode = sanitizedMode;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetExposureMeteringMethod(EngineExposureMeteringMethod method)
+{
+	const EngineExposureMeteringMethod sanitizedMethod = SanitizeExposureMeteringMethod(method);
+	EngineRenderingSettingsState state = GetState();
+	if (state.ExposureMeteringMethod == sanitizedMethod)
+	{
+		return;
+	}
+	state.ExposureMeteringMethod = sanitizedMethod;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetOutputColorEncoding(EngineOutputColorEncoding encoding)
+{
+	const EngineOutputColorEncoding sanitizedEncoding = SanitizeOutputColorEncoding(encoding);
+	EngineRenderingSettingsState state = GetState();
+	if (state.OutputColorEncoding == sanitizedEncoding)
+	{
+		return;
+	}
+	state.OutputColorEncoding = sanitizedEncoding;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetManualExposure(float exposure)
+{
+	const float sanitizedExposure = SanitizeManualExposure(exposure);
+	EngineRenderingSettingsState state = GetState();
+	if (state.ManualExposure == sanitizedExposure)
+	{
+		return;
+	}
+	state.ManualExposure = sanitizedExposure;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetExposureCompensation(float compensation)
+{
+	const float sanitizedCompensation = SanitizeExposureCompensation(compensation);
+	EngineRenderingSettingsState state = GetState();
+	if (state.ExposureCompensation == sanitizedCompensation)
+	{
+		return;
+	}
+	state.ExposureCompensation = sanitizedCompensation;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetExposureTargetLuminance(float luminance)
+{
+	const float sanitizedLuminance = SanitizeExposureTargetLuminance(luminance);
+	EngineRenderingSettingsState state = GetState();
+	if (state.ExposureTargetLuminance == sanitizedLuminance)
+	{
+		return;
+	}
+	state.ExposureTargetLuminance = sanitizedLuminance;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetExposureMin(float exposure)
+{
+	EngineRenderingSettingsState state = GetState();
+	state.ExposureMin = SanitizeExposureMin(exposure);
+	SanitizeExposureRange(state.ExposureMin, state.ExposureMax);
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetExposureMax(float exposure)
+{
+	EngineRenderingSettingsState state = GetState();
+	state.ExposureMax = SanitizeExposureMax(exposure);
+	SanitizeExposureRange(state.ExposureMin, state.ExposureMax);
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetExposureAdaptationSpeedUp(float speed)
+{
+	const float sanitizedSpeed = SanitizeExposureAdaptationSpeed(speed);
+	EngineRenderingSettingsState state = GetState();
+	if (state.ExposureAdaptationSpeedUp == sanitizedSpeed)
+	{
+		return;
+	}
+	state.ExposureAdaptationSpeedUp = sanitizedSpeed;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetExposureAdaptationSpeedDown(float speed)
+{
+	const float sanitizedSpeed = SanitizeExposureAdaptationSpeed(speed);
+	EngineRenderingSettingsState state = GetState();
+	if (state.ExposureAdaptationSpeedDown == sanitizedSpeed)
+	{
+		return;
+	}
+	state.ExposureAdaptationSpeedDown = sanitizedSpeed;
 	UpdateState(state);
 }
 
@@ -239,7 +365,7 @@ std::vector<std::pair<std::string, std::string>> EngineRenderingSettingsSection:
     const EngineRenderingSettingsState& state) const
 {
 	std::vector<std::pair<std::string, std::string>> values;
-	values.reserve(16);
+	values.reserve(24);
 	EngineRenderingDisplaySettings::AppendConfigValues(state, values);
 	EngineRenderingLightingSettings::AppendConfigValues(state, values);
 	EngineRenderingGeometrySettings::AppendConfigValues(state, values);

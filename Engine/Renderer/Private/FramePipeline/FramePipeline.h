@@ -3,6 +3,7 @@
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Frame/Builders/PerFrameDataBuilder.h"
 #include "Frame/Core/FrameAssembly.h"
+#include "Frame/RhiFrameConstants.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"
@@ -12,6 +13,7 @@
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Viewport/ViewportContracts.h"
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -60,7 +62,7 @@ class FramePipeline final
 	void BindWindowResizeEvent() noexcept;
 	void RefreshFrameExecution() noexcept;
 	void RefreshFrameExecution(RenderViewportExtent sceneExtent) noexcept;
-	bool ShouldPresentSceneToBackBuffer() const noexcept;
+	bool ShouldOutputToBackBuffer() const noexcept;
 	RenderViewportExtent ResolveSceneExtent() const noexcept;
 	void BeginFrame() noexcept;
 	void SetupFrame() noexcept;
@@ -71,6 +73,11 @@ class FramePipeline final
 	void RecordFrame() noexcept;
 	void BindRayTracingFrameGraphResources(const RayTracingSceneFrameData& rayTracingScene) noexcept;
 	void ClearRayTracingFrameGraphResources() noexcept;
+	void CreateExposureHistoryResources() noexcept;
+	void ReleaseExposureHistoryResources() noexcept;
+	void BindExposureHistoryFrameGraphResources() noexcept;
+	void ResetExposureHistory() noexcept;
+	bool HasExposureHistoryResources() const noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
@@ -90,5 +97,7 @@ class FramePipeline final
 	PerFrameConstantBufferData m_perFrameData = {};
 	RenderSceneSnapshot m_sceneSnapshot = {};
 	ScopedEventHandle m_resizeHandle;
+	std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> m_exposureHistoryResources = {};
 	bool m_bResizePending = false;
+	bool m_exposureHistoryValid = false;
 };

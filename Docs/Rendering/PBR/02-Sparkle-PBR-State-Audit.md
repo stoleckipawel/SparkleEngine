@@ -1,6 +1,6 @@
 # Sparkle PBR State Audit
 
-Date: 2026-06-29
+Date: 2026-06-30
 
 This document maps the current SparkleEngine PBR implementation against `Docs/Rendering/PBR/01-PBR-Reference-Requirements.md`.
 
@@ -87,6 +87,7 @@ Risks:
 - The visibility convention is implicit. If another caller treats `Geometry::EvaluateDirect` as raw `G`, specular energy will be wrong.
 - Burley diffuse is the default, but there is no visible white-furnace validation proving the current diffuse plus specular energy behavior.
 - `BRDF::Direct::Evaluate` adds subsurface separately from diffuse. If subsurface remains active, this can exceed energy unless diffuse is reduced.
+- The rejected direct-light roughness classification helper has been removed. Direct primary and ray-hit lighting now use one BRDF evaluator again; Stage 2C still needs to validate the reference-backed roughness and singularity policy across direct, indirect, and denoiser-facing signals.
 
 ## Material and GBuffer State
 
@@ -115,6 +116,7 @@ Ray-hit reconstruction does have material F0:
 Issue:
 
 - Primary and secondary material shading can disagree for dielectric reflectance. This violates PBR-R-002.
+- Material roughness is transported as `[0, 1]`, but there is not yet a single documented full-range roughness policy shared by direct, indirect, and ray-hit lighting.
 
 Texture color processing looks mostly correct:
 
@@ -157,7 +159,7 @@ Issues:
 - Local light attenuation is `1 / distance^2 * (1 - distance / range)^2`. This is not the glTF punctual range falloff and dims much more aggressively across the range.
 - Spot cone attenuation is linear in the cone ramp. glTF-compatible punctual lights normally square the cone attenuation.
 - Source radius affects stochastic shadow sampling but not direct-light radiometry. This is a punctual-light-with-soft-shadow approximation, not a physically sampled area light.
-- Direct primary roughness is clamped to `0.04`, while indirect specular allows much smaller roughness. This makes mirrors differ between direct and reflected paths.
+- The previous direct-lighting `0.04` roughness floor has been removed in the current changelist. Direct analytic lighting no longer contains a pass-local mirror/delta branch; singularity handling now belongs in BRDF math and still needs Stage 2C validation with a documented finite-light policy.
 
 ## Shadow State
 
@@ -207,6 +209,7 @@ Issues:
 - It uses sky radiance after `SampleSkyEnvironment`, which currently tone maps the sky. That makes indirect diffuse non-linear and under-energized.
 - It applies an arbitrary `IndirectDiffuseIntensity` multiplier. This is useful as a debug/art knob, but reference mode must default to `1.0` and validation must fail if it is used to compensate physical errors.
 - It depends on hit-data and material texture table availability. If unavailable, the pass silently returns after clear. That is fine for fallback behavior, but reference captures must record the reason.
+- The previous diffuse-throughput `0.04` roughness floor has been removed in the current changelist.
 
 ## Indirect Specular State
 
@@ -233,7 +236,7 @@ Issues:
 - Sampling uses the raw NDF instead of visible-normal GGX. This can be unbiased but will be much noisier at grazing angles than VNDF sampling.
 - Multi-bounce paths sample only specular-lobe continuation. Diffuse-after-specular paths are missing until a unified BSDF sampler exists.
 - The pass uses tone-mapped sky radiance on miss.
-- Roughness handling differs from direct lighting.
+- The current changelist removes the rejected shared roughness helper. Indirect specular still has effect-local mirror-vs-GGX sampling behavior, which Stage 2C/Stage 7 should move into shared BSDF/path-sampling code with reference-backed VNDF, near-zero stability, and denoiser/debug roughness parity.
 - It outputs a fully material-evaluated contribution but does not output hit distance, roughness, normal, albedo, or demodulated radiance needed by a dedicated denoiser.
 
 ## Secondary Hit Direct Lighting
@@ -267,14 +270,27 @@ Issues:
 
 - `Engine/Assets/Shaders/Passes/Deferred/Sky.hlsl`
 
-`PresentScene.hlsl` applies Reinhard tone mapping again:
+Presentation now applies exposure, selectable tone mapping, and explicit output encoding through a display module:
 
-- `Engine/Assets/Shaders/Passes/Presentation/PresentScene.hlsl:24`
-- `Engine/Assets/Shaders/Passes/Presentation/PresentScene.hlsl:33`
+- `Engine/Assets/Shaders/Display/ToneMapping.hlsli`
+- `Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl`
+- `Engine/Assets/Shaders/Passes/Presentation/OutputEncoding.hlsl`
+- `Engine/Renderer/Private/Frame/PostProcessing/Exposure.cpp`
+- `Engine/Assets/Shaders/Passes/PostProcessing/Exposure.hlsl`
+
+Exposure state:
+
+- A frame-graph `Exposure` texture exists as a 1x1 `R32G32B32A32_Float` resource.
+- The production metering path uses a parallel reduction chain of log-luminance moments.
+- The alternate metering path uses an explicit slower 2x2 downsample pyramid of the same moment payload.
+- Exposure history is stored in persistent 1x1 frame-graph textures so automatic exposure adapts frame-to-frame instead of jumping instantly.
+- The final resolve stores adapted exposure, average luminance, target exposure, and previous exposure in the exposure texture.
+- Temporal exposure history is invalidated with the renderer temporal-history reset path, including resize and scene extent changes.
+- The implementation is reference-backed by AMD FidelityFX FSR2/SPD, NVIDIA Falcor ToneMapper, and Microsoft MiniEngine exposure/luma shaders.
 
 Issue:
 
-- Sky pixels are tone mapped in the sky pass and then tone mapped again at presentation.
+- Sky pixels are still tone mapped in the sky pass before presentation.
 - Indirect diffuse and specular miss rays also receive tone-mapped sky, not linear HDR sky radiance.
 - This violates PBR-R-001 and PBR-R-007 and is currently one of the highest priority correctness bugs.
 
@@ -299,6 +315,79 @@ Issues:
 - No visible DLRR provider path exists yet.
 - No visible NRD SIGMA execution path exists yet.
 - Indirect diffuse/specular do not currently provide denoiser-ready auxiliary buffers.
+- Raw ray-traced shadow signal packing and registered frame-graph resource formats need a contract audit. The shader helper packs visibility, hit distance, confidence, and max distance, while the current denoiser registration path uses single-channel visibility-style resources in places.
+- Current ray-traced shadow queries use a first-hit visibility shortcut. That is valid for binary hard-shadow visibility, but it is not automatically a valid occluder-distance signal for NRD SIGMA-style denoising.
+
+## RHI, Format, and Signal State
+
+Current strengths:
+
+- Scene lighting targets use floating-point HDR formats, so the frame graph has enough precision to carry physically scaled lighting before presentation.
+- GBuffer normals are stored in a high-precision floating format.
+- Motion vectors and device-Z are first-class GBuffer products.
+- Presentation already has explicit tone-mapping and output-encoding code paths.
+
+Issues:
+
+- The material GBuffer does not carry dielectric F0/reflectance, which forces primary direct lighting to derive a fixed `0.04` F0 while ray-hit shading can use material F0.
+- Denoiser-facing resources are not yet modeled as a typed signal contract. Raw shadow visibility, packed shadow signal, denoised visibility, hit distance, noisy indirect radiance, demodulated indirect radiance, roughness, albedo, specular/F0, normal, depth, motion, exposure, and history reset state need explicit ownership and formats.
+- The raw shadow signal format must match the shader write. A packed `float4` signal cannot be treated as a single-channel visibility texture unless a separate unpack/resolve pass is part of the contract.
+- Motion-vector convention exists in provider code, but the PBR plan needs to lock units, jitter policy, camera-cut reset, depth convention, and normal space for all denoisers and reconstruction providers.
+
+Required stages:
+
+- Stage 0F: render-target, precision, and signal-surface contract.
+- Stage 2: material F0 parity between GBuffer and ray-hit material reconstruction.
+- Stage 2C: full roughness range and reference roughness policy.
+- Stage 2B: geometry, normal, depth, motion, and temporal signal contract.
+- Stage 5 and Stage 6: shadow visibility/hit-distance resource split and NRD SIGMA integration boundary.
+- Stage 11 and Stage 11A: provider-neutral DLRR/indirect denoiser resource contract and auxiliary buffers.
+
+## Asset Import and Cooking State
+
+Current strengths:
+
+- Texture cooking distinguishes color usages from data usages. Base color, emissive color, and subsurface color are treated as color inputs, while normal, roughness, metallic, ambient occlusion, subsurface strength, and HDR color usages are treated as linear/data inputs.
+- Normal maps have a dedicated compression path.
+- HDR color inputs have an HDR compression path.
+- The glTF importer maps base color, normal, AO, emissive, and packed metallic-roughness textures into material slots.
+- The glTF light importer reads `KHR_lights_punctual` light color, intensity, range, cone angles, and direction.
+- The repository already contains useful validation assets: EXR/HDR sky textures, glTF sample scenes such as DamagedHelmet/Sponza-style content, and Bistro-style BaseColor/Normal/Specular DDS texture sets.
+
+Issues:
+
+- The plan does not yet require deterministic asset-cook tests proving that each texture usage reaches the shader with the intended color-space and channel semantics.
+- glTF material extension handling is incomplete for physically important controls such as specular/F0, IOR, and emissive strength. Unsupported extensions need diagnostics or deliberate implementation stages.
+- Imported punctual light intensity units need a single documented conversion path into engine units. Otherwise light calibration can be accidentally fixed later by tone mapping or arbitrary intensity multipliers.
+- HDR sky/environment texture import must be proven to stay linear HDR through sampling and presentation.
+- Specular-workflow assets, such as Bistro `*_Specular` textures, need an explicit import policy. They should be converted into the engine's supported material model, used only by a declared specular workflow, or rejected/ignored with diagnostics.
+
+Required stages:
+
+- Stage 2A: asset color-space, material extension, and light-unit import contract.
+- Stage 4: punctual light units and falloff.
+- Stage 13: validation/review pack with asset-cook and glTF calibration cases.
+
+## Geometry, Normal, and Temporal State
+
+Current strengths:
+
+- The renderer already produces motion vectors, normals, device-Z, TLAS data, and material texture tables.
+- Provider contracts already have a place to describe motion-vector and depth conventions.
+- Ray-hit material reconstruction is substantial enough to become the shared material/geometry decode path for validation and reference rendering.
+
+Issues:
+
+- Primary deferred shading and ray-hit shading do not yet have a documented shared policy for geometric normal, shading normal, face orientation, two-sided materials, normal-map orientation, and ray-origin offsets.
+- Denoisers and DLRR need stable normal, depth/viewZ, motion-vector, jitter, and history-reset conventions. Those rules should be locked before signal buffers multiply.
+- Alpha-tested geometry participates in indirect ray-query material handling but not in the direct shadow path.
+
+Required stages:
+
+- Stage 0A and Stage 0B: move generic shader concepts into reusable modules before adding more signal paths.
+- Stage 2B: lock geometry/normal/depth/motion conventions.
+- Stage 5: route direct shadows through alpha-test-aware visibility.
+- Stage 11A: expose denoiser auxiliary buffers with agreed spaces and units.
 
 ## Shader and Pass Structure Audit
 
@@ -406,11 +495,12 @@ Keep that shape. The main CPU-side improvement is to avoid growing pass classes 
 
 P0 correctness blockers:
 
-1. Sky/environment radiance is tone mapped before lighting and sky pixels are effectively tone mapped twice.
+1. Sky/environment radiance is tone mapped before lighting, so sky pixels and ray-miss lighting are not linear HDR inputs to presentation.
 2. Primary direct lighting ignores material dielectric F0 while ray-hit lighting can use it.
 3. Secondary hit direct lighting is unshadowed, so indirect bounces overestimate light in occluded regions.
 4. Direct shadow rays do not appear to alpha-test foliage/material cutouts.
 5. Light attenuation and spot falloff are not aligned with the imported glTF punctual light model.
+6. PBR-relevant asset import rules are not yet enforced by tests, so color-space, packed-channel, HDR sky, and light-unit regressions could silently invalidate lighting.
 
 P1 path-tracing convergence blockers:
 
@@ -418,7 +508,8 @@ P1 path-tracing convergence blockers:
 2. Environment importance sampling is missing.
 3. Emissive geometry is only found by random hit, with no explicit emitter sampling.
 4. Source radius creates soft-shadow approximation but not physically integrated area-light radiance.
-5. Roughness floor differs across direct and indirect paths.
+5. Full roughness range is partially implemented but not reference-certified: the rejected shared delta classification has been removed, direct/ray-hit lighting use one BRDF path again, and Stage 2C still must validate near-zero stability, mirror-sky behavior, indirect sampling policy, denoiser/debug roughness parity, and finite-light policy.
+6. There is no shared lobe-energy budget for diffuse, specular, subsurface, transmission/future lobes, direct lighting, indirect sampling, and reference path tracing.
 
 P2 denoiser readiness blockers:
 
@@ -426,6 +517,9 @@ P2 denoiser readiness blockers:
 2. No DLRR input/output provider path is visible.
 3. Indirect passes do not output noisy/demodulated radiance, hit distance, and lobe metadata required for robust reconstruction.
 4. Provider-neutral normals/roughness/albedo resources are not yet first-class denoiser inputs.
+5. Shadow hit-distance generation is not yet compatible with NRD SIGMA-style occluder-distance requirements.
+6. Packed shadow signal formats and frame-graph resource formats are not yet reconciled.
+7. Motion-vector, depth/viewZ, normal-space, jitter, and history-reset contracts need to be locked for all denoiser and reconstruction providers.
 
 P3 validation gaps:
 
@@ -433,6 +527,8 @@ P3 validation gaps:
 2. No high-sample reference path tracer mode.
 3. No automated radiance statistics for lighting targets.
 4. No EXR/HDR capture contract for pre-tonemap buffers.
+5. No asset-cook/color-space validation pack for physically meaningful texture and light import.
+6. No review bundle that maps each completed stage to references followed, captures produced, and known deviations.
 
 P4 structural blockers:
 
@@ -441,6 +537,8 @@ P4 structural blockers:
 3. Shadow tracing/sampling/denoiser signal helpers are pass-local even though they are reusable visibility concepts.
 4. Indirect diffuse/specular entrypoints mix pass IO, sampling, tracing, path state, resolve, and output.
 5. Surface/path records are duplicated between diffuse and specular effects.
+6. Denoiser/reconstruction resources are not yet represented by one provider-neutral signal contract, which risks duplicate code paths for NRD, DLRR, debug capture, and future denoisers.
+7. Asset import/cooking rules are not yet tied to renderer validation, which risks duplicate material assumptions between tools and shaders.
 
 ## Current Strengths
 

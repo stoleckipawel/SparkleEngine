@@ -11,7 +11,7 @@ namespace BRDF
 		{
 			const float a2 = alpha * alpha;
 			const float f = (NoH * NoH) * (a2 - 1.0f) + 1.0f;
-			return a2 / (PI * f * f);
+			return a2 / max(PI * f * f, EPSILON);
 		}
 
 		float Beckmann(float NoH, float alpha)

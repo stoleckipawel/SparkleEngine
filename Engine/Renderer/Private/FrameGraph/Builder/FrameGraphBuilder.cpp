@@ -29,6 +29,13 @@ FrameGraphTextureHandle FrameGraphBuilder::ImportPersistentTexture(
 	return m_frameGraph.ImportPersistentTexture(desc, resource, initialState);
 }
 
+FrameGraphTextureHandle FrameGraphBuilder::ReservePersistentTexture(
+    const FrameGraphTextureDesc& desc,
+    ResourceState initialState) noexcept
+{
+	return m_frameGraph.ReservePersistentTexture(desc, initialState);
+}
+
 FrameGraphTextureHandle FrameGraphBuilder::CreateTexture(const FrameGraphTextureDesc& desc) noexcept
 {
 	return m_frameGraph.CreateTexture(desc);
@@ -108,6 +115,27 @@ void FrameGraphBuilder::BindPersistentAccelerationStructure(
 void FrameGraphBuilder::ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept
 {
 	m_frameGraph.ClearPersistentAccelerationStructureBinding(handle);
+}
+
+void FrameGraphBuilder::BindPersistentTexture(
+    FrameGraphTextureHandle handle,
+    NativeResourceHandle resource,
+    ResourceState currentState) noexcept
+{
+	m_frameGraph.BindPersistentTexture(handle, resource, currentState);
+}
+
+void FrameGraphBuilder::BindPersistentTexture(
+    FrameGraphTextureHandle handle,
+    RhiOwnedResourceHandle resource,
+    ResourceState currentState) noexcept
+{
+	m_frameGraph.BindPersistentTexture(handle, resource, currentState);
+}
+
+void FrameGraphBuilder::ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept
+{
+	m_frameGraph.ClearPersistentTextureBinding(handle);
 }
 
 void FrameGraphBuilder::BindPersistentBuffer(

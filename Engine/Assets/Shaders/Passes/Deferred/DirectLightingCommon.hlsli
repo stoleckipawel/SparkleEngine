@@ -69,12 +69,11 @@ namespace DirectLighting
 			return;
 		}
 
-		const float clampedRoughness = max(roughness, 0.04f);
 		const float3 f0 = lerp(0.04f.xxx, baseColor, metallic);
 		BRDF::Direct::Evaluate(
 		    shadingData,
 		    baseColor,
-		    clampedRoughness,
+		    roughness,
 		    metallic,
 		    f0,
 		    subsurfaceColor,

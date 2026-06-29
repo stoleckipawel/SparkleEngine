@@ -21,6 +21,7 @@ struct PassRuntimeServices
 	RenderHardwareInterface& HardwareInterface;
 	const PipelineStateManager& RuntimeManager;
 	const PerFrameConstantBufferData& PerFrame;
+	bool ExposureHistoryValid = false;
 	const TextureManager* Textures = nullptr;
 	const RenderRayTracingPassServices* RayTracing = nullptr;
 	const RenderUpscalingPassServices* Upscaling = nullptr;

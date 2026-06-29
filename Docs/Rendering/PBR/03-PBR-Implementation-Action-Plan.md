@@ -1,6 +1,6 @@
 # PBR Implementation Action Plan
 
-Date: 2026-06-29
+Date: 2026-06-30
 
 This document is a staged implementation prompt plan. It starts from `Docs/Rendering/PBR/02-Sparkle-PBR-State-Audit.md` and aims at the requirements in `Docs/Rendering/PBR/01-PBR-Reference-Requirements.md`.
 
@@ -26,11 +26,41 @@ Every stage has two equal acceptance surfaces:
 
 A stage is not complete if the output looks correct but the implementation makes the next lighting problem harder to solve.
 
+Every stage also has a reference-proof requirement:
+
+- The implementation prompt must include `Reference lineage`.
+- Each nontrivial algorithm must cite a concrete repository, SDK sample, engine implementation, specification, or paper.
+- If the code intentionally deviates from the reference, the prompt must name the difference and the validation used to protect it.
+- Final implementation files must not contain `Reference lineage` banners. References are tracked in prompts, design docs, audit docs, and PR notes; source comments are only for local non-obvious implementation details.
+- Acceptance criteria must include a reference-compliance check.
+- A feature without a credible external reference is experimental and cannot be marked PBR/reference-correct.
+
+Every stage also has a reuse-proof requirement:
+
+- The implementation prompt must include a `Reuse/DRY audit`.
+- Before adding new logic, scan existing shader modules, pass classes, bindings, settings, CVars, shader registrations, and docs for equivalent bodies.
+- Prefer reusing, moving, or generalizing existing bodies over adding near-copies.
+- Generic utility logic must not live in feature-specific files. Color math, encoding, sampling, geometry, ray offsets, reductions, and provider/signal helpers belong in concept-owned reusable modules such as `Common/*`, `Lighting/*`, `RayTracing/*`, or narrowly named `Display/*` includes.
+- New or touched shader registrations must use one source file per shader package registration unless a specific grouped-registration exception is documented and accepted.
+- Feature enum families must live in focused type headers instead of accumulating in umbrella settings headers.
+- Pass files must stay thin: generic parameter metadata, dispatch sizing, scheduling, binding, and frame-graph/RHI mechanics belong in pass/core utilities or the frame-graph/RHI layer.
+- If duplicate-looking code is intentionally kept, explain whether it is validation-only, backend-specific, temporary, or performance-motivated.
+- Acceptance criteria must include a no-unjustified-functional-duplicate check.
+
 ## Stage 0: Lock the Lighting Contract
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Document and assert that direct and indirect lighting targets store material-evaluated outgoing radiance contributions in linear HDR. Add comments near target declarations and composite code. Update or supersede older docs that describe `IndirectDiffuse` as raw irradiance.
+
+Reference lineage:
+
+- PBRT rendering equation and path-tracing target: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
+- Google Filament PBR/color contract: <https://google.github.io/filament/Filament.md.html>
+- Unreal Engine physically based materials: <https://dev.epicgames.com/documentation/en-us/unreal-engine/physically-based-materials-in-unreal-engine>
+- Unreal Engine path tracer as reference-output concept: <https://dev.epicgames.com/documentation/en-us/unreal-engine/path-tracer-in-unreal-engine>
 
 Files:
 
@@ -43,12 +73,24 @@ Acceptance criteria:
 - `DirectDiffuse`, `DirectSpecular`, `IndirectDiffuse`, and `IndirectSpecular` have a written semantic contract.
 - No doc claims `IndirectDiffuse` is raw irradiance unless the code is changed to match.
 - `LightingComposite` remains a simple sum only because all inputs share the same radiance-contribution unit.
+- Reference compliance: the final contract explicitly maps each target back to the rendering equation and names any deviation from PBRT/Filament/Unreal terminology.
+- Reuse/DRY: no duplicate lighting-target semantic descriptions remain in other docs with conflicting wording.
+- Source hygiene: no final shader/pass source file adds `Reference lineage` banners; references are held in this stage note, implementation prompt, audit note, or PR note.
 
 ## Stage 0A: Lock Shader Module Boundaries
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Before changing lighting math, move reusable lighting concepts out of pass-specific shader folders. Do this as behavior-preserving refactors with shader-cook validation after each step.
+
+Reference lineage:
+
+- Unreal Engine shader development and modular shader organization: <https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine>
+- NVIDIA Falcor render-pass and shader-module organization: <https://github.com/NVIDIAGameWorks/Falcor>
+- NVIDIA RTX Path Tracing SDK modular path-tracing shaders: <https://github.com/NVIDIA-RTX/RTXPT>
+- AMD FidelityFX SDK pass/kernel separation: <https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK>
 
 Target dependency direction:
 
@@ -83,12 +125,24 @@ Acceptance criteria:
 - Deferred pass entrypoint files continue compiling and producing identical output after each move.
 - `DirectLighting.hlsl`, `IndirectDiffuse.hlsl`, and `IndirectSpecular.hlsl` become thinner, not larger.
 - The shader include graph has no cyclic conceptual dependency.
+- Reference compliance: the final module layout names which Unreal/Falcor/RTXPT/FidelityFX patterns were followed and which local deviations were intentional.
+- Reuse/DRY: moved helpers have exactly one canonical home; no pass keeps a forked copy of light falloff, direct-surface evaluation, path surface records, or shadow signal packing.
+- Source hygiene: generic helpers live in concept-owned include files, not in first-use pass files, and final source files contain no `Reference lineage` banners.
 
 ## Stage 0B: Make Pass Entrypoints Thin
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Refactor direct and indirect pass entrypoints so they own pass IO and output policy only. Sampling, light evaluation, visibility tracing, hit/miss resolve, and path throughput should live in reusable modules.
+
+Reference lineage:
+
+- NVIDIA Falcor render pass boundaries and pass-resource ownership: <https://github.com/NVIDIAGameWorks/Falcor>
+- NVIDIA RTX Path Tracing SDK separation between path state, sampling, and pass entrypoints: <https://github.com/NVIDIA-RTX/RTXPT>
+- AMD FidelityFX SDK pattern of small dispatch kernels over shared helper code: <https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK>
+- Unreal Engine shader development guidance for permutation/pass ownership: <https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine>
 
 Target pass entrypoint shape:
 
@@ -117,12 +171,219 @@ Acceptance criteria:
 - Debug helpers stay pass-specific only when the debug view is effect-specific.
 - Line count is reduced for `IndirectDiffuse.hlsl` and `IndirectSpecular.hlsl` by moving cohesive logic, not by hiding unrelated code in one new god include.
 - New files each have one reason to change.
+- Reference compliance: pass boundaries are compared against Falcor/RTXPT/FidelityFX patterns in the implementation notes.
+- Reuse/DRY: entrypoints call shared concept modules for any repeated light, surface, sampling, tracing, or throughput logic.
+- Registration hygiene: new or touched shader registrations use one source file per shader package registration.
+- Settings hygiene: new or touched settings enums live in focused type headers, not umbrella settings files.
+
+## Stage 0C: Display Transform and Exposure Metering
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Keep lighting buffers linear HDR and move display conversion into a dedicated presentation/display path. Exposure must be a frame-graph resource. Implement a production metering path with parallel reduction and an explicit alternate downsample-pyramid metering path. Automatic exposure must adapt temporally through persistent exposure history.
+
+Reference lineage:
+
+- AMD FidelityFX FSR2 luminance pyramid: <https://github.com/GPUOpen-Effects/FidelityFX-FSR2>
+- AMD FidelityFX SPD downsampler: <https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK>
+- NVIDIA Falcor ToneMapper pass: <https://github.com/NVIDIAGameWorks/Falcor>
+- Microsoft MiniEngine exposure/luma and eye-adaptation shaders: <https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/MiniEngine/Core/Shaders>
+- Google Filament color/display management: <https://google.github.io/filament/Filament.md.html>
+
+Files:
+
+- `Engine/Assets/Shaders/Display/ToneMapping.hlsli`
+- `Engine/Assets/Shaders/Passes/PostProcessing/Exposure*.hlsl`
+- `Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl`
+- `Engine/Assets/Shaders/Passes/Presentation/OutputEncoding.hlsl`
+- `Engine/Renderer/Private/Frame/PostProcessing/Exposure.*`
+- `Engine/Renderer/Private/Passes/PostProcessing/ExposurePass.*`
+- `Engine/Renderer/Private/Frame/Presentation/ToneMapping*.{h,cpp}`
+- `Engine/Renderer/Private/FramePipeline/FramePipeline.*`
+- `Engine/Renderer/Public/Settings/EngineRenderingSettings.h`
+- `Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp`
+
+Required design:
+
+- Production path: reduce log-luminance moments with groupshared compute reduction.
+- Alternate path: 2x2 downsample pyramid over the same moments.
+- Resolve path: select exactly one metering source from renderer settings, compute target exposure, and adapt automatic exposure against the previous frame in EV/log2 space.
+- History path: keep previous/current exposure as persistent 1x1 frame-graph textures, reset history on camera cuts, temporal-history invalidation, resize, and scene-extent changes.
+- Presentation path: sample only final scene color and exposure, then apply one tone mapper and one output encoding policy.
+
+Acceptance criteria:
+
+- Reinhard, ACES approximate, and ACES fitted filmic operators are selectable.
+- Exposure mode supports manual and automatic.
+- Exposure metering supports parallel reduction and an explicit downsample pyramid mode.
+- Automatic exposure has separate adaptation speed-up and speed-down renderer settings.
+- The exposure texture stores adapted exposure, average luminance, target exposure, and previous exposure for debug visibility.
+- Output encoding is explicit for linear UNorm and sRGB backbuffers.
+- Implementation prompt, design notes, audit notes, or PR notes name the reference repositories above; final shader/source files do not use `Reference lineage` banners.
+- Shader cook passes for DXIL and SPIR-V.
+- Reference compliance: implementation notes map each exposure/tone-mapping subsystem to the exact reference path it follows.
+- Reuse/DRY: reduction and downsample paths share the same moment payload and final resolve; duplicate-looking kernels are removed or justified by genuinely different sampling work; persistent texture binding is a frame-graph capability, not local exposure-pass machinery.
+
+## Stage 0D: Audit and Refine Existing Exposure/Tone Mapping
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Review the currently implemented exposure and tone-mapping code against this document before treating it as production-ready. The implementation already exists, so this stage is a hardening/audit pass: check reference fidelity, color science assumptions, settings ABI, shader layout, frame-graph resource ownership, performance cost, validation scenes, and debug visibility.
+
+Reference lineage:
+
+- AMD FidelityFX FSR2 luminance pyramid: <https://github.com/GPUOpen-Effects/FidelityFX-FSR2>
+- AMD FidelityFX SPD downsampler: <https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK>
+- NVIDIA Falcor ToneMapper pass and auto-exposure workflow: <https://github.com/NVIDIAGameWorks/Falcor>
+- Microsoft MiniEngine `ExtractLumaCS` and exposure/luma shaders: <https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/MiniEngine/Core/Shaders>
+- Google Filament color management and tone-mapping discussion: <https://google.github.io/filament/Filament.md.html>
+- ACES fitted tone mapping references used by real-time engines must be named in implementation prompts, audit notes, PR notes, or docs where the display transform is specified.
+
+Files:
+
+- `Engine/Assets/Shaders/Display/ToneMapping.hlsli`
+- `Engine/Assets/Shaders/Passes/PostProcessing/Exposure*.hlsl`
+- `Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl`
+- `Engine/Assets/Shaders/Passes/Presentation/OutputEncoding.hlsl`
+- `Engine/Renderer/Private/Frame/PostProcessing/Exposure.*`
+- `Engine/Renderer/Private/Passes/PostProcessing/ExposurePass.*`
+- `Engine/Renderer/Private/Frame/Presentation/ToneMapping*.{h,cpp}`
+- `Engine/Renderer/ShaderRegistrations/Exposure*.cpp`
+- `Engine/Renderer/ShaderRegistrations/ToneMapping*.cpp`
+- `Engine/Renderer/ShaderRegistrations/OutputEncoding*.cpp`
+- `Engine/Renderer/Public/Settings/EngineRenderingSettings.h`
+- `Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp`
+- `Config/DefaultEngine.ini`
+
+Audit checklist:
+
+- Verify C++ `ToneMappingUniformData` layout exactly matches all HLSL constant buffers.
+- Verify output encoding policy handles linear UNorm and sRGB backbuffers without double encoding.
+- Verify exposure metering works on non-power-of-two extents without border overweighting.
+- Verify reduction and downsample averages match within documented tolerance on deterministic HDR test images.
+- Verify manual exposure bypasses automatic luminance selection but still applies compensation and min/max clamps as intended.
+- Verify automatic exposure adapts in EV/log space using frame delta, separate speed-up/speed-down settings, and a valid-history bit.
+- Verify exposure history resets on temporal-history invalidation, resize, scene extent changes, and camera cuts.
+- Verify ACES approximate and fitted filmic operators are display-only and never affect lighting inputs.
+- Verify generic color math, output encoding, exposure metering math, and reduction helpers live in concept-owned includes rather than in `ToneMapping.hlsli` or pass entrypoint files.
+- Verify every constant/curve and exposure algorithm has a named reference in docs, implementation prompts, audit notes, or PR notes.
+- Verify final implementation files contain no `Reference lineage` banners.
+- Verify exposure and presentation shader registrations are one package registration per source file, or document an approved exception.
+- Verify display/exposure enum families live in focused display type headers rather than the umbrella rendering settings state header.
+- Verify exposure pass files contain pass orchestration only; generic metadata, dispatch, and frame-graph/RHI mechanics live in shared pass/core helpers.
+- Verify downsample-pyramid metering is an explicit selectable path, not an implicit fallback or hidden validation mode.
+
+Acceptance criteria:
+
+- Reference compliance: each tone curve, exposure metering path, temporal adaptation rule, history reset rule, and output encoding decision has a named AMD/NVIDIA/Microsoft/Filament/ACES reference or a documented deviation.
+- Reuse/DRY: no duplicated constant buffer layouts, exposure formulas, adaptation formulas, output encoding formulas, generic color utilities, frame-graph persistent binding helpers, or settings enum mappings exist without a single canonical helper or documented reason.
+- Functional validation: reduction and downsample metering agree within tolerance on black, gray, HDR ramp, HDR sky, and non-power-of-two test images.
+- Presentation validation: scene color is tone mapped exactly once and sky/environment radiance remains HDR before presentation.
+- Performance validation: cost of building both metering paths is measured; if too expensive, the validation path is made optional without invalidating the production path.
+- Shader cook passes for all exposure and presentation packages on DXIL and SPIR-V.
+- Documentation records what was audited and what remains non-production-grade.
+- Source hygiene: final source has no `Reference lineage` banners, no touched registration hub for exposure/presentation shaders, no display enum dump in umbrella rendering settings, and no feature-owned copy of generic compute dispatch helpers.
+
+## Stage 0E: Repository-Wide PBR Council Audit Gate
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Before implementing a lighting phase, run a repo-wide audit across shaders, renderer frame graph, RHI formats, asset import/cooking, provider contracts, settings, debug views, and validation assets. The audit must update this plan when it finds a PBR-relevant issue. This gate exists so implementation work cannot focus only on the active shader file while missing a format, import, denoiser, or provider assumption elsewhere.
+
+Reference lineage:
+
+- NVIDIA RTXPT renderer structure and validation expectations: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA Falcor render-pass and path-tracing reference organization: <https://github.com/NVIDIAGameWorks/Falcor>
+- NVIDIA NRD signal contracts and validation/debug requirements: <https://github.com/NVIDIA-RTX/NRD>
+- NVIDIA Streamline DLSS Ray Reconstruction provider-resource tagging: <https://github.com/NVIDIAGameWorks/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md>
+- AMD FidelityFX SDK provider-style render-resource and temporal examples: <https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK>
+- Google Filament material, color, and lighting documentation: <https://google.github.io/filament/Filament.md.html>
+- glTF 2.0 and `KHR_lights_punctual`: <https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html>, <https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_lights_punctual>
+- Unreal Engine physically based materials, physical light units, and path tracer documentation.
+
+Required scan categories:
+
+- Shader modules: BRDF, material decode, GBuffer, direct lighting, indirect lighting, ray tracing, shadows, sky, debug, presentation.
+- Renderer passes: frame scheduling, pass data builders, frame-graph resource declarations, shader registrations, settings/CVars.
+- RHI and formats: scene color, GBuffer, depth, motion vectors, denoiser signal resources, backbuffer encoding, HDR capture formats.
+- Assets/tools: glTF material/light import, texture color-space policy, compression policy, HDR sky import, packed texture channels.
+- Providers: DLSS, future DLRR, NRD SIGMA, indirect denoiser/reconstruction contracts, history/reset state.
+- Validation: scenes, debug views, pre-tonemap captures, reference-mode outputs, metrics.
+
+Acceptance criteria:
+
+- The audit output maps every found issue to `file(s)`, `symptom`, `risk`, `required stage`, and `reference(s)`.
+- No P0/P1 issue is left as prose-only documentation; it must be represented by a stage or by an explicit non-goal/deviation.
+- The staged plan names the references inside the relevant stage prompt, not only in this global section.
+- Reference compliance: every new stage added by the audit cites at least one NVIDIA/AMD/Epic/Filament/glTF/PBRT reference and states what part of that reference is being followed.
+- Reuse/DRY: before proposing a new helper, resource, pass, or provider interface, the audit records the existing bodies that were scanned and whether they can be reused or unified.
+
+## Stage 0F: Lock Render Target, Precision, and Signal Surface Contracts
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Create a typed renderer signal contract for all PBR-relevant buffers. The contract must state owner, format, color space, units, valid range, lifetime, history behavior, and consumers. Fix any resource whose declared frame-graph format does not match the shader signal it stores.
+
+Reference lineage:
+
+- NVIDIA NRD resource and signal conventions for visibility, hit distance, normals, roughness, viewZ, motion, and history: <https://github.com/NVIDIA-RTX/NRD>
+- NVIDIA Streamline DLSS Ray Reconstruction resource tagging and required denoiser inputs: <https://github.com/NVIDIAGameWorks/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md>
+- NVIDIA Falcor render graph resource ownership patterns: <https://github.com/NVIDIAGameWorks/Falcor>
+- AMD FidelityFX SDK resource and temporal input patterns: <https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK>
+- Existing Sparkle frame-graph and provider contracts must be the implementation base.
+
+Files:
+
+- `Engine/Renderer/Private/Frame/Deferred/GBufferFormats.h`
+- `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.cpp`
+- `Engine/Renderer/Private/Upscaling/UpscalerInputContract.h`
+- `Engine/Renderer/Private/Frame/FrameResources.*`
+- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadowDenoiserInputs.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/LightingComposite.hlsl`
+- `Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl`
+- `Engine/Assets/Shaders/Passes/Presentation/OutputEncoding.hlsl`
+
+Signals to document:
+
+- HDR scene color and lighting targets.
+- Base color, normal, material, emissive, subsurface, device-Z, motion vector.
+- Raw shadow visibility, packed shadow signal, shadow hit distance, denoised visibility.
+- Noisy indirect radiance, demodulated indirect radiance, indirect hit distance, lobe id, confidence/variance.
+- Albedo, specular/F0, roughness, normals, depth/viewZ, motion vectors, exposure, history reset state.
+- Presentation backbuffer and output encoding.
+
+Acceptance criteria:
+
+- A single signal table exists in docs or code comments and is referenced by pass/resource registration code.
+- Packed `float4` shadow or indirect signals are stored in matching multi-channel formats or resolved into explicitly named single-channel products before consumers see them.
+- Scene lighting and sky remain HDR linear until presentation; presentation output encoding is part of the display signal contract.
+- Provider input builders can reject missing or format-incompatible resources with diagnostics.
+- Debug views can inspect every denoiser/reconstruction signal before provider execution.
+- Reference compliance: each signal's unit/space/range is mapped to NRD, Streamline DLRR, Falcor, AMD FidelityFX, or the local renderer contract.
+- Reuse/DRY: NRD, DLRR, debug capture, validation capture, and future denoisers use one signal registry instead of duplicate resource descriptions.
 
 ## Stage 1: Fix Linear HDR Sky Transport
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Split sky sampling into two functions: one that returns linear HDR radiance and one optional display transform for presentation/debug only. Use linear sky radiance for sky pixels, indirect ray misses, mirror reflections, and any future environment sampling. Remove pre-presentation tone mapping from `SampleSkyEnvironment`.
+
+Reference lineage:
+
+- PBRT infinite/environment light treatment: <https://pbr-book.org/4ed/Light_Sources/Infinite_Area_Lights>
+- Google Filament color management and IBL treatment: <https://google.github.io/filament/Filament.md.html>
+- NVIDIA RTX Path Tracing SDK sky/environment radiance usage: <https://github.com/NVIDIA-RTX/RTXPT>
+- Unreal Engine path tracer reference behavior for environment lighting: <https://dev.epicgames.com/documentation/en-us/unreal-engine/path-tracer-in-unreal-engine>
 
 Files:
 
@@ -130,7 +391,8 @@ Files:
 - `Engine/Assets/Shaders/Passes/Deferred/Sky.hlsl`
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl`
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
-- `Engine/Assets/Shaders/Passes/Presentation/PresentScene.hlsl`
+- `Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl`
+- `Engine/Assets/Shaders/Passes/Presentation/OutputEncoding.hlsl`
 
 Expected shader shape:
 
@@ -148,12 +410,23 @@ Acceptance criteria:
 - Indirect diffuse/specular miss rays use linear HDR sky radiance.
 - Mirror-sky test: a perfect mirror reflection of the sky matches the sky pixel before presentation.
 - Bright EXR sky values above 1.0 survive in scene color before presentation.
+- Reference compliance: implementation notes map sky sampling and presentation separation to PBRT/Filament/RTXPT behavior.
+- Reuse/DRY: all sky consumers call one canonical HDR radiance sampling helper; any display-only sky transform is separate and not copied into indirect passes.
 
 ## Stage 2: Unify Primary and Ray-Hit Material Data
 
 Implementation prompt:
 
-Make deferred primary shading and ray-hit shading use the same dielectric F0 value and roughness convention. Add F0/reflectance to the GBuffer or derive it from a documented material constant that is available in direct lighting. Avoid using fixed `0.04` for primary surfaces when material F0 exists.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Make deferred primary shading and ray-hit shading use the same dielectric F0 value and material roughness convention. Add F0/reflectance to the GBuffer or derive it from a documented material constant that is available in direct lighting. Avoid using fixed `0.04` for primary surfaces when material F0 exists.
+
+Reference lineage:
+
+- glTF 2.0 metallic-roughness material model: <https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials>
+- Google Filament material/reflectance model: <https://google.github.io/filament/Filament.md.html>
+- Unreal Engine physically based materials: <https://dev.epicgames.com/documentation/en-us/unreal-engine/physically-based-materials-in-unreal-engine>
+- Epic "Real Shading in Unreal Engine 4": <https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf>
 
 Files:
 
@@ -168,14 +441,168 @@ Acceptance criteria:
 
 - Direct primary lighting and ray-hit direct lighting use the same F0 for the same material.
 - A dielectric material with non-default reflectance visibly affects primary and reflected lighting consistently.
-- Roughness floor policy is documented and identical across direct, indirect diffuse throughput, indirect specular throughput, and ray-hit direct lighting.
+- Material roughness is preserved as an inclusive `[0, 1]` input contract and is not used as a hidden F0 or light-scale compensation path.
 - GBuffer format changes, if any, are reflected in visualization modes and shader binding metadata.
+- Reference compliance: material/F0 mapping is explicitly traced to glTF, Filament, or Unreal terminology.
+- Reuse/DRY: primary and ray-hit material decoding share canonical helpers or documented common data contracts instead of separately deriving material constants.
+
+## Stage 2C: Full Roughness Range and Reference Roughness Policy
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Make the renderer support perceptual roughness from `0.0` through `1.0` with a reference-backed policy that separates material data, BRDF evaluation, and sampling behavior. Direct analytic lighting must call the same canonical BRDF evaluator for all roughness values. Do not add pass-local direct-light branches that classify roughness and bypass specular evaluation. Perfect-mirror transport decisions belong in BSDF/path-sampling code, where delta lobes are sampled as exact directions, not in primary or ray-hit direct-light pass code. Extremely rough reflections must remain valid at `roughness = 1.0`.
+
+Reference lineage:
+
+- PBRT specular reflection/delta BSDF and rough dielectric/conductor separation: <https://pbr-book.org/4ed/Reflection_Models>
+- Google Filament material roughness and GGX conventions: <https://google.github.io/filament/Filament.md.html>
+- Epic "Real Shading in Unreal Engine 4" roughness/GGX conventions: <https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf>
+- NVIDIA RTX Path Tracing SDK material and path sampling structure: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA Falcor BSDF/path-tracing modules: <https://github.com/NVIDIAGameWorks/Falcor>
+
+Files:
+
+- `Engine/Assets/Shaders/BRDF/*.hlsli`
+- `Engine/Assets/Shaders/Material/Material.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl`
+- `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
+- `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
+- `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`
+- `Engine/Assets/Shaders/Debug/ViewModes.hlsli`
+
+Required design:
+
+- Material roughness must be preserved as authored/imported data and must remain visible to debug and denoiser outputs.
+- Direct primary lighting and ray-hit direct lighting must share one direct-surface evaluator, and that evaluator must call `BRDF::Direct::Evaluate` for all roughness values.
+- Numerical guards for singular GGX cases must live inside the owning BRDF distribution/geometry/PDF functions, be named as denominator/PDF guards, and be backed by references. They must not silently mutate stored material roughness.
+- Indirect specular/path sampling may branch on lobe type because sampling a delta lobe is a different estimator than sampling a finite rough lobe. That branch must live in shared BSDF/path-sampling code, not in direct-light pass logic.
+- Indirect specular must sample exact reflection for true mirror transport and GGX/VNDF or the selected rough-specular sampler for finite rough-specular transport.
+- Indirect diffuse must pass material roughness through diffuse models unchanged; diffuse roughness may be zero for smooth dielectrics.
+- Ray-hit direct lighting and primary direct lighting must use the same BRDF, roughness value, F0 policy, and light-unit policy.
+- Denoiser/debug roughness outputs must store material roughness, not internally floored roughness.
+- Numerical epsilons remain allowed only for denominators, PDFs, ray origin/ray range safety, and reference-backed BRDF singularity guards. They must be named as numerical guards and must not alter material roughness or direct-light control flow.
+
+Acceptance criteria:
+
+- `rg` finds no direct-light lobe bypass helpers or pass-local mirror/specular branches in `DirectLightingCommon.hlsli` or `RayTracingHitLighting.hlsli`.
+- `rg` finds no caller-side material roughness floors such as `max(roughness, 0.04)` or `max(surface.Roughness, 0.04)` in direct-lighting paths.
+- Any remaining `max`, `clamp`, or `saturate` involving roughness or alpha is classified as input range enforcement, debug visualization, denominator/PDF safety, or reference-backed BRDF singularity protection. Implementation notes must name why it is not a hidden material roughness mutation.
+- Roughness `0.0`, `0.02`, `0.1`, `0.5`, and `1.0` render without NaN/Inf in direct, indirect diffuse, indirect specular, and ray-hit direct paths.
+- Mirror-sky validation confirms a `roughness = 0.0` mirror reflects the HDR sky consistently before presentation.
+- Direct and ray-hit direct lighting agree for the same material roughness, F0, normal, and light input.
+- Reference compliance: implementation notes map direct BRDF evaluation, GGX rough-specular, mirror/delta path sampling, numerical singularity guards, and any punctual-light mirror behavior to PBRT/Filament/Unreal/RTXPT/Falcor references or document a non-reference approximation.
+- Reuse/DRY: direct lighting has one canonical BRDF evaluation path; lobe sampling decisions are centralized in shared BSDF/path-sampling modules and are not forked into pass-local direct-light helpers.
+
+## Stage 2A: Lock Asset Color-Space, Material Extension, and Import Unit Rules
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Turn asset import and texture cooking into an enforceable PBR contract. The shader can only be physically meaningful if imported base color, data maps, HDR sky maps, packed metallic-roughness channels, material reflectance, emissive strength, and light intensity units arrive in the spaces expected by the BRDF and light equations.
+
+Reference lineage:
+
+- glTF 2.0 material texture and metallic-roughness definitions: <https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials>
+- glTF `KHR_lights_punctual` units and cone semantics: <https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_lights_punctual>
+- Google Filament material and color-management documentation: <https://google.github.io/filament/Filament.md.html>
+- Unreal Engine physically based materials and physical light units documentation.
+- Existing Sparkle import/cook code must be reused and tested before adding new import paths.
+
+Files:
+
+- `Engine/Assets/Private/Texture/*`
+- `Tools/Import/SourceImporters/Private/Gltf/GltfMaterialTextureMapper.cpp`
+- `Tools/Import/SourceImporters/Private/Gltf/GltfMaterialPropertyMapper.cpp`
+- `Tools/Import/SourceImporters/Private/Gltf/GltfLightImporter.cpp`
+- `Engine/Assets/Shaders/Material/Material.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl`
+- `Engine/Assets/Shaders/Lighting/SkyEnvironment.hlsli`
+- `Docs/Rendering/PBR/*`
+
+Required policy:
+
+- Base color, emissive color, and subsurface color are decoded from sRGB/color space into linear shading values.
+- Normal, roughness, metallic, ambient occlusion, subsurface strength, F0/reflectance, packed material channels, and scalar masks are imported as data.
+- HDR sky/environment textures stay linear HDR and are never display tone mapped before lighting.
+- glTF metallic-roughness packed channel mapping is tested: roughness in green, metallic in blue.
+- `KHR_materials_specular`, `KHR_materials_ior`, and `KHR_materials_emissive_strength` are implemented or rejected with diagnostics and documented fallback behavior.
+- Specular-workflow texture sets such as Bistro `*_Specular` maps are converted into the supported material model, routed through a declared non-reference workflow, or rejected/ignored with diagnostics.
+- `KHR_lights_punctual` intensities are preserved or converted once into documented engine units.
+
+Acceptance criteria:
+
+- Asset-cook tests prove color/data/HDR usages select the expected decode and compression policies.
+- A glTF material test proves packed metallic-roughness channels reach shaders unchanged except for intended normalization.
+- A specular-workflow asset test proves `*_Specular` texture sets are converted, routed, or rejected according to the documented policy.
+- A non-default dielectric F0/reflectance material produces matching primary deferred and ray-hit material values after Stage 2.
+- A glTF light calibration scene proves point/spot attenuation ratios at known distances after Stage 4.
+- HDR sky import and sampling preserve values above 1.0 until presentation after Stage 1.
+- Reference compliance: each color-space, packed-channel, extension, and light-unit decision cites glTF/Filament/Unreal in the implementation prompt or source comments.
+- Reuse/DRY: importers, cook policies, shader material decode, and validation tools share one material/texture-usage vocabulary; no separate tool-side and shader-side assumptions are allowed without a named conversion.
+
+## Stage 2B: Lock Geometry, Normal, Depth, Motion, and Temporal Conventions
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Define one convention for the geometry and temporal signals used by shading, ray tracing, denoisers, DLRR, and validation. This stage should happen before expanding denoiser resources, because wrong normal/depth/motion conventions produce plausible but non-physical reconstructed lighting.
+
+Reference lineage:
+
+- NVIDIA NRD integration documentation for normal encoding, viewZ/depth, motion vectors, jitter, and history reset conventions: <https://github.com/NVIDIA-RTX/NRD>
+- NVIDIA Streamline DLSS Ray Reconstruction resource tagging and normal/roughness/depth/motion expectations: <https://github.com/NVIDIAGameWorks/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md>
+- NVIDIA RTXPT and Falcor ray-origin, hit-surface, and path-state conventions: <https://github.com/NVIDIA-RTX/RTXPT>, <https://github.com/NVIDIAGameWorks/Falcor>
+- PBRT shading normal and ray-offset correctness discussion as offline reference: <https://pbr-book.org/4ed/Shapes/Managing_Rounding_Error>
+- Existing Sparkle GBuffer, TLAS, material-hit, and provider contract code.
+
+Files:
+
+- `Engine/Assets/Shaders/Geometry/*.hlsli`
+- `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`
+- `Engine/Assets/Shaders/RayTracing/RayTracingTraceQuery.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/GBuffer*.hlsl*`
+- `Engine/Assets/Shaders/Passes/Deferred/Velocity.hlsl`
+- `Engine/Renderer/Private/Upscaling/UpscalerInputContract.*`
+- `Engine/Renderer/Private/Frame/Deferred/GBufferFormats.h`
+- `Engine/RHI/Public/Resources/RenderView*.h`
+
+Conventions to lock:
+
+- World-space vs view-space normal ownership for GBuffer, ray-hit shading, denoiser inputs, and debug views.
+- Geometric normal, shading normal, face orientation, two-sided materials, normal-map handedness, and tangent-frame construction.
+- Ray-origin offset and self-intersection policy for primary, shadow, indirect, and reference rays.
+- Device depth vs linear viewZ, reversed-depth convention, and provider conversion location.
+- Motion-vector units, sign, jitter inclusion/exclusion, current-to-previous matrix policy, camera cut, resize, and history reset behavior.
+
+Acceptance criteria:
+
+- A convention table names the owner and consumer for each geometry/temporal signal.
+- Primary GBuffer shading and ray-hit shading reconstruct matching normals and material orientation for a deterministic test mesh.
+- Motion vectors are verified against a known camera/object movement scene and match the provider contract.
+- Denoiser and DLRR provider builders receive normal/depth/motion signals in one documented space or perform one documented conversion.
+- Alpha-tested and two-sided materials use the same face/orientation rules in primary, shadow, indirect, and reference paths.
+- Reference compliance: every convention maps to NRD, Streamline DLRR, RTXPT/Falcor, PBRT, or a documented local engine decision.
+- Reuse/DRY: normal decode, ray offset, depth conversion, motion-vector conversion, and history-reset logic live in shared helpers or provider-contract builders, not pass-local copies.
 
 ## Stage 3: Normalize BRDF Energy Behavior
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Create a small shared BRDF validation harness or debug shader mode for furnace tests. Use it to verify the current GGX/Smith/Schlick implementation, then decide whether the reference mode uses Lambert diffuse or Burley diffuse. Mark subsurface as non-reference until energy compensation is implemented.
+
+Reference lineage:
+
+- Epic "Real Shading in Unreal Engine 4" GGX/Smith/Schlick conventions: <https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf>
+- Google Filament BRDF and furnace-test discussion: <https://google.github.io/filament/Filament.md.html>
+- PBRT BSDF energy/reference behavior: <https://pbr-book.org/4ed/Reflection_Models>
+- Walt Disney BRDF notes for Burley diffuse, if Burley remains enabled in production mode.
 
 Files:
 
@@ -190,12 +617,64 @@ Acceptance criteria:
 - No material returns NaN or infinity at grazing NoV/NoL.
 - The meaning of `Geometry::EvaluateDirect` is documented as visibility `V` or raw geometry `G`.
 - Subsurface contribution is either disabled in reference mode or energy compensated against diffuse.
+- Reference compliance: each BRDF helper names the convention it follows and tests prove the chosen convention.
+- Reuse/DRY: direct, indirect, and ray-hit lighting call the same BRDF helpers; no pass-local duplicate BRDF math remains.
+
+## Stage 3A: Add a Shading-Model and Lobe Energy Budget Registry
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Define the supported shading models and lobe weights as data, not scattered shader decisions. Direct lighting, indirect sampling, ray-hit lighting, reference path tracing, denoiser demodulation, and debug views must agree on which lobes exist, how they are weighted, which lobes are sampled, and how energy is conserved between them.
+
+Reference lineage:
+
+- Google Filament material model, reflectance, and energy-conservation discussion: <https://google.github.io/filament/Filament.md.html>
+- Epic "Real Shading in Unreal Engine 4" metallic/specular/diffuse conventions: <https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf>
+- Unreal Engine physically based material parameter documentation.
+- PBRT BSDF/lobe reference model: <https://pbr-book.org/4ed/Reflection_Models>
+- NVIDIA RTXPT/Falcor path tracing BSDF organization for lobe selection and debugability.
+
+Files:
+
+- `Engine/Assets/Shaders/Material/Material.hlsli`
+- `Engine/Assets/Shaders/BRDF/*.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- Future shared path-sampling files from Stage 7.
+- Material import/default settings files.
+
+Required policy:
+
+- Declare supported lobes for the reference path: diffuse, dielectric specular, conductor specular, emissive, and optional subsurface.
+- Define lobe weights and PDFs from material data once, then reuse them in direct evaluation, BSDF sampling, denoiser demodulation, and debug views.
+- Ensure `diffuse + specular + subsurface/transmission/future lobes` does not exceed the intended energy budget for opaque reference materials.
+- Mark subsurface as disabled in reference mode until it is energy compensated against diffuse or implemented as a documented BSSRDF/approximation.
+- Keep artist-facing non-reference modes possible, but make them explicit deviations from the reference path.
+
+Acceptance criteria:
+
+- A material debug view can display lobe weights, F0/specular color, diffuse albedo, roughness, metallic, and reference-mode eligibility.
+- White-furnace tests include diffuse, dielectric specular, metallic, rough metal, and subsurface-enabled materials.
+- Direct lighting and indirect BSDF sampling use the same lobe definitions and roughness/F0 policy.
+- Denoiser demodulation uses the same diffuse/specular material factors that the BSDF registry reports.
+- Reference compliance: lobe weights and conservation rules cite Filament/Epic/PBRT/RTXPT/Falcor and document local deviations.
+- Reuse/DRY: no pass computes its own lobe split, diffuse albedo, specular albedo, or subsurface energy outside the shared material/BSDF registry.
 
 ## Stage 4: Fix Punctual Light Units and Falloff
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Define engine units for directional, point, and spot lights. Align glTF-imported point/spot intensity with candela and directional intensity with lux or a documented calibrated engine unit. Replace current range and cone attenuation with a glTF/Filament-compatible punctual falloff policy, or document a deliberate engine policy and convert imports into that policy.
+
+Reference lineage:
+
+- glTF `KHR_lights_punctual` light units and cone model: <https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_lights_punctual>
+- Google Filament punctual light units/falloff: <https://google.github.io/filament/Filament.md.html>
+- Unreal Engine physical light units documentation and behavior: <https://dev.epicgames.com/documentation/en-us/unreal-engine/physical-lighting-units-in-unreal-engine>
+- Epic "Real Shading in Unreal Engine 4" direct-lighting conventions: <https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf>
 
 Files:
 
@@ -234,12 +713,63 @@ Acceptance criteria:
 - glTF `KHR_lights_punctual` imports do not need arbitrary intensity compensation.
 - Primary direct and secondary hit direct use the same falloff and cone functions.
 - A light calibration scene records expected luminance at known distances.
+- Reference compliance: unit conversion and falloff formulas cite glTF/Filament/Unreal and document any deviation.
+- Reuse/DRY: direct primary lighting, ray-hit lighting, validation tools, and import conversion use one canonical punctual-light policy.
+
+## Stage 4A: Define Finite Light Source and Soft-Shadow Approximation Policy
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Separate the current source-radius soft-shadow approximation from physically integrated finite-area light radiance. A light radius used only to jitter shadow rays must not silently change the radiometric meaning of a point/spot light. If finite lights are added, sample the light source and evaluate PDFs/geometry terms explicitly.
+
+Reference lineage:
+
+- PBRT area-light sampling and geometry terms: <https://pbr-book.org/4ed/Light_Sources/Area_Lights>
+- PBRT direct-light sampling/MIS at path vertices: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
+- NVIDIA RTXPT/Falcor direct-light and mesh/area-light sampling patterns.
+- Unreal Engine and Filament punctual-light documentation as the reference for non-area punctual behavior.
+- Existing Sparkle ray-traced shadow sampling code must be audited before adding area-light behavior.
+
+Files:
+
+- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadowSampling.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
+- `Engine/RHI/Public/Resources/RenderViewLightingData.h`
+- Light import and scene snapshot code.
+
+Required policy:
+
+- Punctual mode: source radius may affect stochastic shadow penumbra only and does not change emitted intensity or direct BRDF radiance.
+- Area-light mode, if introduced: sample a position/direction on the light, evaluate geometry term, emission, visibility, and PDF, then use MIS when combined with BSDF sampling.
+- Validation must expose whether a light is evaluated as punctual-with-soft-shadow or physically finite.
+
+Acceptance criteria:
+
+- Changing source radius in punctual mode changes penumbra shape but not unoccluded irradiance beyond documented approximation tolerance.
+- Any physically finite-light mode has explicit light sampling PDFs and does not reuse point-light attenuation as if it were an area-light integral.
+- Primary direct lighting, secondary direct lighting, and reference path tracing report the same light classification.
+- Validation scenes include unoccluded intensity, penumbra, and finite-light/reference comparisons.
+- Reference compliance: soft-shadow approximation and any finite-light integration cite PBRT/RTXPT/Falcor/Unreal/Filament and document deviations.
+- Reuse/DRY: light classification, radius policy, sampling, and debug labels are stored once and reused by direct, shadow, indirect, and validation code.
 
 ## Stage 5: Make Direct Shadows Physically Usable
 
 Implementation prompt:
 
-Route direct shadow rays through the same alpha-tested candidate handling used by indirect ray queries, or add an equivalent shadow-specific alpha-test resolver. Then split raw stochastic visibility from direct lighting accumulation so NRD SIGMA can consume it later.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Route direct shadow rays through the same alpha-tested candidate handling used by indirect ray queries, or add an equivalent shadow-specific alpha-test resolver. Then split raw stochastic visibility from direct lighting accumulation so NRD SIGMA can consume it later. Treat binary visibility and denoiser hit distance as separate signals: first-hit ray-query shortcuts are acceptable for immediate hard-shadow visibility, but NRD-style occluder-distance input needs a reference-compatible tracing policy and resource format.
+
+Reference lineage:
+
+- NVIDIA RTX Path Tracing SDK alpha-tested ray tracing and visibility handling: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA NRD SIGMA shadow denoiser signal expectations: <https://github.com/NVIDIA-RTX/NRD>
+- Microsoft DirectX Raytracing samples for shadow-ray separation patterns: <https://github.com/microsoft/DirectX-Graphics-Samples>
+- Unreal Engine ray tracing/path-tracing material visibility behavior: <https://dev.epicgames.com/documentation/en-us/unreal-engine/path-tracer-in-unreal-engine>
 
 Files:
 
@@ -255,13 +785,26 @@ Acceptance criteria:
 - Alpha-tested foliage/card geometry casts cutout direct shadows.
 - Hard shadows and one-sample soft shadows still work on descriptor TLAS and Vulkan address paths.
 - Raw visibility and hit-distance targets can be written independently from lighting contribution.
+- Shadow hit distance for denoising is generated with a trace mode compatible with the selected NRD SIGMA input rules, not merely inferred from a binary first-hit visibility shortcut.
+- Packed raw shadow signals use resource formats that match `RayTracedShadowDenoiserInputs.hlsli`, or an explicit unpack/resolve pass produces the single-channel products consumed downstream.
 - Existing direct-light visual output remains unchanged when denoiser mode is off.
+- Reference compliance: raw visibility, hit distance, alpha-test policy, and denoiser signal semantics are checked against RTXPT/NRD/DXR samples.
+- Reuse/DRY: direct shadows and indirect ray queries share alpha-test and ray-query candidate handling, or a documented shadow-specific adapter calls the same material alpha logic.
 
 ## Stage 6: Add Shadow Denoiser Integration Point
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Implement the renderer-side pass boundary for NRD SIGMA without forcing all platforms to have NRD. The pass should consume raw visibility, normal, depth, motion vectors, and history, then output denoised visibility. Direct lighting should be able to consume either raw or denoised visibility through an explicit mode.
+
+Reference lineage:
+
+- NVIDIA NRD repository and SIGMA integration documentation: <https://github.com/NVIDIA-RTX/NRD>
+- NVIDIA NRD sample/integration code for persistent history resources and signal layout: <https://github.com/NVIDIA-RTX/NRD>
+- NVIDIA RTXDI integration guide for explicit visibility/reservoir/provider boundaries where applicable: <https://github.com/NVIDIA-RTX/RTXDI/blob/main/Doc/Integration.md>
+- Existing Sparkle provider/resource contract must be reused instead of introducing a separate denoiser ownership model.
 
 Files:
 
@@ -276,12 +819,23 @@ Acceptance criteria:
 - `r.RayTracedShadows.Denoiser=1` requests SIGMA if available and falls back with diagnostics if unavailable.
 - History resources are persistent and reset on camera cut, resize, and feature toggles.
 - Denoised visibility is inspectable in a debug view.
+- Reference compliance: resource names, signal ranges, history reset behavior, and fallback diagnostics are checked against NRD SIGMA guidance.
+- Reuse/DRY: the denoiser path reuses provider-neutral frame graph/product infrastructure and does not fork shadow visibility resource ownership.
 
 ## Stage 7: Replace Split Bounce Logic With Unified BSDF Path Sampling
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Create a shared ray-traced surface path sampling module that can sample diffuse or specular lobes from one material using a single lobe-selection PDF. Use it for both indirect diffuse and indirect specular passes. Preserve current output split by assigning the path contribution to the buffer for the primary sampled lobe.
+
+Reference lineage:
+
+- PBRT path tracer throughput and BSDF sampling: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
+- NVIDIA RTX Path Tracing SDK path state and BSDF sampling structure: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA Falcor path tracing/render-pass structure: <https://github.com/NVIDIAGameWorks/Falcor>
+- Google Filament BRDF conventions for real-time metallic-roughness inputs: <https://google.github.io/filament/Filament.md.html>
 
 Files:
 
@@ -329,12 +883,23 @@ Acceptance criteria:
 - Reference mode can run more than one bounce without needing non-physical intensity multipliers.
 - `IndirectDiffuse.hlsl` and `IndirectSpecular.hlsl` both call the same BSDF/path sampling code.
 - No new path sampling code is named after only diffuse or only specular unless it truly supports only that lobe.
+- Reference compliance: throughput, lobe PDF, Russian roulette, miss handling, and first-lobe output split are mapped to PBRT/RTXPT/Falcor behavior.
+- Reuse/DRY: diffuse and specular indirect passes share one canonical path-surface, path-sample, PDF, throughput, and hit/miss resolve implementation.
 
 ## Stage 8: Add Secondary Shadowing and Direct-Light Sampling at Hits
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Make `ShadeRayTracingHitIncidentRadiance` optionally shadow secondary-hit direct lights. Start with one shadow ray to the sampled/selected light direction, then add explicit light sampling if the path sampler supports next-event estimation with PDFs.
+
+Reference lineage:
+
+- PBRT next-event estimation and direct lighting at path vertices: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
+- NVIDIA RTX Path Tracing SDK direct lighting at ray-hit points: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA Falcor path tracer direct-light sampling patterns: <https://github.com/NVIDIAGameWorks/Falcor>
+- NVIDIA RTXDI integration guide if direct-light reservoir sampling is introduced later: <https://github.com/NVIDIA-RTX/RTXDI/blob/main/Doc/Integration.md>
 
 Files:
 
@@ -348,12 +913,23 @@ Acceptance criteria:
 - Secondary shadowing can be disabled for performance with a visible debug flag.
 - Shadow alpha-test behavior matches primary direct shadows.
 - No double-counting of primary direct lighting occurs.
+- Reference compliance: next-event/direct-hit lighting equations and shadow-visibility policy are compared against PBRT/RTXPT/Falcor.
+- Reuse/DRY: secondary hit lighting calls the same punctual-light, shadow, alpha-test, and material helpers as primary direct lighting.
 
 ## Stage 9: Add Environment Importance Sampling
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Build an environment-map luminance distribution for the sky texture and sample it for indirect lighting. This is basic environment importance sampling, not ReSTIR. Combine with BSDF sampling using MIS when both strategies are active.
+
+Reference lineage:
+
+- PBRT infinite area light distribution and PDF handling: <https://pbr-book.org/4ed/Light_Sources/Infinite_Area_Lights>
+- NVIDIA RTX Path Tracing SDK environment sampling: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA Falcor environment-map sampling/path tracer references: <https://github.com/NVIDIAGameWorks/Falcor>
+- Google Filament IBL/environment-map treatment: <https://google.github.io/filament/Filament.md.html>
 
 Files:
 
@@ -367,12 +943,23 @@ Acceptance criteria:
 - MIS weights are debug-visible.
 - Energy matches brute-force high-sample cosine sampling.
 - Miss rays still use the same `SampleSkyEnvironmentRadiance` function.
+- Reference compliance: environment PDF, luminance measure, solid-angle weighting, and MIS weights are documented against PBRT/RTXPT/Falcor.
+- Reuse/DRY: sky miss radiance and environment importance sampling share one sky orientation/radiance convention and one environment metadata owner.
 
 ## Stage 10: Add Emissive Geometry Sampling
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Keep emissive-on-hit support, but add optional explicit emissive triangle/light sampling for high-variance emissive scenes. This can remain behind a reference or high-quality flag until acceleration structures for emitters are mature.
+
+Reference lineage:
+
+- PBRT area/emissive light sampling and direct-light estimators: <https://pbr-book.org/4ed/Light_Sources/Area_Lights>
+- NVIDIA RTX Path Tracing SDK emissive/mesh light sampling references: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA Falcor path tracer emissive light sampling references: <https://github.com/NVIDIAGameWorks/Falcor>
+- Unreal Engine path tracer emissive material behavior as artist-facing reference: <https://dev.epicgames.com/documentation/en-us/unreal-engine/path-tracer-in-unreal-engine>
 
 Files:
 
@@ -385,12 +972,23 @@ Acceptance criteria:
 - An emissive panel lights nearby diffuse surfaces without requiring only random ray hits.
 - High-sample reference matches hit-only estimation.
 - Emissive geometry does not get double counted when directly visible to a path ray.
+- Reference compliance: emitter selection PDF, area measure, emitted radiance, and MIS/double-counting policy are documented against PBRT/RTXPT/Falcor.
+- Reuse/DRY: emissive-on-hit and explicit emissive sampling share one emissive-material radiance decode and one emitter registry.
 
 ## Stage 11: Prepare DLRR or Other Indirect Reconstruction Inputs
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Extend the provider-neutral reconstruction contract for indirect lighting. Do not wire DLRR directly into shader code. First expose the resources and metadata a provider needs.
+
+Reference lineage:
+
+- NVIDIA Streamline DLSS Ray Reconstruction programming guide: <https://github.com/NVIDIAGameWorks/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md>
+- NVIDIA NRD signal and denoiser input conventions: <https://github.com/NVIDIA-RTX/NRD>
+- NVIDIA RTX Path Tracing SDK denoiser/reconstruction-facing signal conventions: <https://github.com/NVIDIA-RTX/RTXPT>
+- Existing Sparkle upscaler/provider contract must be reused as the provider boundary.
 
 Required resources:
 
@@ -419,12 +1017,66 @@ Acceptance criteria:
 - A DLRR-capable provider can be selected only when all required resources are available.
 - Missing resources produce diagnostics, not silent fallback to an invalid reconstruction path.
 - Raw indirect debug views remain available when reconstruction is enabled.
+- Reference compliance: each provider input resource is mapped to Streamline DLRR, NRD, or RTXPT signal expectations, with units/ranges documented.
+- Reuse/DRY: DLRR/reconstruction integration extends the existing provider contract and render-product registration instead of creating a parallel provider system.
+
+## Stage 11A: Add Indirect Denoiser Auxiliary Signal Buffers
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Refactor indirect diffuse/specular output so denoisers and reconstruction providers can consume stable auxiliary signals instead of only final noisy lighting. The real-time path may still composite direct/indirect buffers the current way, but provider-facing buffers must describe the noisy path sample, material factors, geometry, and confidence needed to reconstruct lighting correctly.
+
+Reference lineage:
+
+- NVIDIA Streamline DLSS Ray Reconstruction programming guide for required resource tags such as noisy color, diffuse albedo, specular albedo, normal, roughness, depth, motion, and specular hit distance: <https://github.com/NVIDIAGameWorks/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md>
+- NVIDIA NRD REBLUR/RELAX signal conventions for demodulated radiance, hit distance, roughness, normals, viewZ, motion, and history: <https://github.com/NVIDIA-RTX/NRD>
+- NVIDIA RTXPT/Falcor path tracing denoiser-output structure and debug passes.
+- AMD FidelityFX denoiser/upscaler examples for temporal resource contracts and diagnostics.
+- Existing Sparkle `UpscalerInputContract` and frame-graph product registration must be extended rather than bypassed.
+
+Files:
+
+- `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl`
+- `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
+- Future shared path-sampling files from Stage 7.
+- `Engine/Renderer/Private/FrameGraph/Resources/*`
+- `Engine/Renderer/Private/Upscaling/UpscalerInputContract.*`
+- Provider-neutral reconstruction/denoiser interfaces.
+
+Required buffers or views:
+
+- Noisy indirect diffuse radiance and noisy indirect specular radiance, or a provider-approved composed noisy color split.
+- Demodulated radiance when the selected denoiser expects material factors to be applied after denoising.
+- Diffuse albedo, specular albedo/F0, roughness, metallic or lobe metadata, and material validity flags.
+- First-bounce hit distance for diffuse/specular rays and specular hit distance for DLRR-style reconstruction.
+- Shading normal or provider-required normal space, depth/viewZ, motion vectors, exposure, confidence/variance, lobe id, and history reset.
+- Debug views for every buffer before provider execution.
+
+Acceptance criteria:
+
+- Indirect passes can output provider-neutral auxiliary buffers without changing lighting math.
+- DLRR/NRD-capable provider selection validates that all required auxiliary buffers exist and match documented formats.
+- Debug capture can show raw noisy radiance, demodulated radiance, albedo, specular/F0, roughness, hit distance, normal, motion, and confidence.
+- Reconstruction can be disabled while leaving the same auxiliary buffers available for validation.
+- Reference compliance: each auxiliary signal is mapped to Streamline DLRR, NRD, RTXPT/Falcor, or AMD FidelityFX expectations and units.
+- Reuse/DRY: indirect diffuse, indirect specular, reference mode, DLRR, NRD, and debug views share the same auxiliary signal writers/registry instead of each effect inventing a private layout.
 
 ## Stage 12: Add a High-Sample Reference Mode
 
 Implementation prompt:
 
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
 Add a reference path tracing mode or offline accumulation path that uses the same material, light, sky, and alpha-test code as the real-time passes. The reference mode can be slow. It exists to define truth.
+
+Reference lineage:
+
+- PBRT path tracer as correctness reference: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
+- NVIDIA RTX Path Tracing SDK real-time path tracer structure: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA Falcor path tracer/reference-rendering infrastructure: <https://github.com/NVIDIAGameWorks/Falcor>
+- Unreal Engine path tracer for production reference-mode expectations: <https://dev.epicgames.com/documentation/en-us/unreal-engine/path-tracer-in-unreal-engine>
 
 Files:
 
@@ -438,42 +1090,107 @@ Acceptance criteria:
 - Same scene can output real-time direct/indirect and reference path-traced buffers.
 - Difference images can be produced for direct, indirect diffuse, indirect specular, and composed scene color.
 - The validation scenes from `01-PBR-Reference-Requirements.md` have expected captures.
+- Reference compliance: reference-mode equations, sampling, accumulation, and capture outputs are documented against PBRT/RTXPT/Falcor/Unreal.
+- Reuse/DRY: reference mode shares material decode, BRDF, light units, sky radiance, alpha-test, and path sampling modules with the real-time path wherever possible.
+
+## Stage 13: Build the PBR Validation and Review Pack
+
+Implementation prompt:
+
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+
+Create a repeatable review pack that a renderer engineer can use to verify the implementation without trusting screenshots by eye. The pack must include deterministic validation scenes, capture scripts or commands, metrics, reference images/buffers, and per-stage evidence notes. This is the final gate for claiming the renderer is ready to build production PBR features on top of.
+
+Reference lineage:
+
+- PBRT reference path tracing equations and validation mentality: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
+- NVIDIA RTXPT and Falcor reference/path-tracing capture and debug-pass organization.
+- NVIDIA NRD debug and validation expectations for denoiser inputs.
+- NVIDIA Streamline DLSS Ray Reconstruction integration diagnostics.
+- AMD FidelityFX SDK sample validation and debug-resource patterns.
+- Unreal Engine path tracer as artist-facing ground-truth comparison reference.
+
+Validation scenes:
+
+- White furnace: diffuse white, dielectric, rough metal, mirror metal, and subsurface/off-reference variants.
+- Mirror sky: perfect mirror reflecting HDR sky before presentation.
+- glTF punctual light calibration: known point/spot/directional units and distances.
+- Alpha card shadows: cutout geometry in primary direct shadows and secondary rays.
+- HDR sky with small bright sun: environment miss and importance-sampling convergence.
+- Emissive panel: hit-only vs explicit emitter sampling.
+- Rough metal/specular hit distance: indirect specular denoiser inputs.
+- Motion/history: camera cut, object motion, resize, and jitter reset.
+- Tone mapping/exposure: black, gray, HDR ramp, bright sky, non-power-of-two extent.
+
+Required outputs:
+
+- Pre-tonemap HDR scene color, direct lighting, indirect diffuse, indirect specular, sky, emissive, shadow visibility, shadow hit distance, denoiser auxiliary buffers, exposure, and final presentation.
+- High-sample reference captures for scenes where the reference path tracer is available.
+- Difference images and scalar metrics for energy, luminance ratios, convergence, NaN/Inf counts, and provider input availability.
+- A short evidence note for each completed implementation stage: references followed, files changed, tests/captures run, deviations, and reuse/DRY audit result.
+
+Acceptance criteria:
+
+- A reviewer can reproduce the validation pack from documented commands or editor actions.
+- Every P0/P1/P2 stage has at least one validation scene or debug capture proving the core signal.
+- Failures identify the owning stage and signal instead of only reporting "image mismatch."
+- Captures prove tone mapping happens once, sky remains HDR before presentation, F0 matches between primary/ray-hit shading, shadows honor alpha testing, and denoiser buffers have valid units/ranges.
+- Reference compliance: validation expectations are tied to PBRT/RTXPT/Falcor/NRD/Streamline/AMD/Unreal references and local documented deviations.
+- Reuse/DRY: validation capture, debug views, provider diagnostics, and reference mode reuse the same signal registry and scene definitions where possible.
 
 ## Recommended Implementation Order
 
 Do these first:
 
-1. Stage 0A: shader module boundaries.
-2. Stage 0B: thin pass entrypoints.
-3. Stage 1: linear HDR sky transport.
-4. Stage 2: material F0 and roughness consistency.
-5. Stage 4: light units/falloff.
-6. Stage 5: alpha-tested shadows and raw visibility split.
-7. Stage 7: unified BSDF path sampler.
+1. Stage 0E: repository-wide PBR audit gate.
+2. Stage 0A: shader module boundaries.
+3. Stage 0B: thin pass entrypoints.
+4. Stage 0F: render target, precision, and signal surface contracts.
+5. Stage 0C: display transform and exposure metering.
+6. Stage 0D: audit and refine existing exposure/tone mapping.
+7. Stage 1: linear HDR sky transport.
+8. Stage 2A: asset color-space, material extension, and import unit rules.
+9. Stage 2B: geometry, normal, depth, motion, and temporal conventions.
+10. Stage 2: material F0 and roughness consistency.
+11. Stage 2C: full roughness range and reference roughness policy.
+12. Stage 3A: shading-model and lobe energy budget registry.
+13. Stage 4: light units/falloff.
+14. Stage 4A: finite light source and soft-shadow approximation policy.
+15. Stage 5: alpha-tested shadows, raw visibility, hit distance, and signal format split.
+16. Stage 7: unified BSDF path sampler.
 
 Then:
 
-8. Stage 8: secondary shadowing.
-9. Stage 9: environment importance sampling.
-10. Stage 6: NRD SIGMA shadow integration.
-11. Stage 11: DLRR resource contract.
-12. Stage 12: high-sample reference mode.
+17. Stage 8: secondary shadowing.
+18. Stage 9: environment importance sampling.
+19. Stage 10: emissive geometry sampling.
+20. Stage 6: NRD SIGMA shadow integration.
+21. Stage 11: DLRR resource contract.
+22. Stage 11A: indirect denoiser auxiliary signal buffers.
+23. Stage 12: high-sample reference mode.
+24. Stage 13: PBR validation and review pack.
 
-Stage 3 validation should run throughout. It is the guardrail, not a one-time cleanup.
+Stage 3 validation should run throughout. Stage 13 should start early as scenes and captures become possible, then close at the end as the review gate.
 
 ## Definition of Done for "PBR Correct Enough to Build On"
 
 The renderer is on a credible ground-truth path when all of these are true:
 
 - Sky and lighting are linear HDR until presentation.
-- Direct primary and ray-hit direct use the same BRDF, material F0, roughness, and light units.
+- Direct primary and ray-hit direct use the same BRDF, material F0, full-range roughness policy, and light units.
+- Roughness `0.0` through `1.0` is preserved as material data and evaluated/traced without hidden roughness floors.
 - Punctual light falloff and spot cones are documented and calibrated.
 - Alpha-tested geometry participates in direct shadows and indirect ray hits.
 - Indirect throughput is always `BSDF * cosine / pdf`.
 - Multi-bounce indirect can sample both diffuse and specular lobes.
 - Secondary hit direct lighting can be shadowed.
 - Raw denoiser inputs exist separately from final lighting targets.
+- Denoiser/reconstruction signal formats match the shader data written into them.
+- Asset import/cooking tests prove color-space, packed-channel, HDR sky, and light-unit contracts.
+- Normal, depth/viewZ, motion-vector, jitter, and history-reset conventions are locked at the provider boundary.
 - Validation scenes can compare real-time output against a high-sample reference.
+- A repeatable review pack includes captures, metrics, references followed, known deviations, and reuse/DRY evidence.
 - Reusable lighting/ray-tracing shader modules do not depend on pass-specific deferred files.
 - Pass entrypoints are small orchestration layers over concept-named modules.
 - New lighting features reuse shared light, surface, path, visibility, and sky code instead of forking effect-local copies.
+- Every completed stage records its exact reference lineage and reuse/DRY audit.

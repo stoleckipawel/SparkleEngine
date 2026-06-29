@@ -3,6 +3,7 @@
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
 
+#include <cstdint>
 #include <memory>
 #include <string_view>
 #include <type_traits>
@@ -70,6 +71,22 @@ class FrameGraphBuilder final
 		    });
 	}
 
+	template <typename TPass>
+	void AddSizedComputeShaderPass(
+	    typename TPass::ParameterInstance& parameters,
+	    std::uint32_t outputWidth,
+	    std::uint32_t outputHeight)
+	{
+		AddComputePass<TPass>(
+		    TPass::PassName,
+		    parameters,
+		    [outputWidth, outputHeight](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
+		    {
+			    const TPass pass(context.RuntimeServices.GetPassRuntime<TPass>());
+			    pass.Execute(context, passParameters, outputWidth, outputHeight);
+		    });
+	}
+
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
 	{
 		return m_frameGraph.AllocParameters<TParameters>();
@@ -86,6 +103,9 @@ class FrameGraphBuilder final
 	    const FrameGraphTextureDesc& desc,
 	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
+	FrameGraphTextureHandle ReservePersistentTexture(
+	    const FrameGraphTextureDesc& desc,
+	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
 	FrameGraphBufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
 	FrameGraphBufferHandle ImportPersistentBuffer(
@@ -120,6 +140,15 @@ class FrameGraphBuilder final
 	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept;
+	void BindPersistentTexture(
+	    FrameGraphTextureHandle handle,
+	    NativeResourceHandle resource,
+	    ResourceState currentState = ResourceState::Common) noexcept;
+	void BindPersistentTexture(
+	    FrameGraphTextureHandle handle,
+	    RhiOwnedResourceHandle resource,
+	    ResourceState currentState = ResourceState::Common) noexcept;
+	void ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept;
 	void BindPersistentBuffer(
 	    FrameGraphBufferHandle handle,
 	    NativeResourceHandle resource,

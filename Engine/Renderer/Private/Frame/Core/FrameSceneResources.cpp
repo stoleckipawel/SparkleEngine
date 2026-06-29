@@ -37,13 +37,26 @@ void CreateFrameSceneResources(
 	        sceneExtent.Height,
 	        FrameRenderFormats::DepthStencil));
 
+	const FrameGraphTextureHandle exposure = builder.CreateTexture(
+	    FrameGraphTextureDesc::CreateColor("Exposure", 1, 1, PixelFormat::R32G32B32A32_Float));
+	const FrameGraphTextureHandle previousExposure = builder.ReservePersistentTexture(
+	    FrameGraphTextureDesc::CreateColor("PreviousExposureHistory", 1, 1, PixelFormat::R32G32B32A32_Float),
+	    ResourceState::ShaderResource);
+	const FrameGraphTextureHandle currentExposure = builder.ReservePersistentTexture(
+	    FrameGraphTextureDesc::CreateColor("CurrentExposureHistory", 1, 1, PixelFormat::R32G32B32A32_Float),
+	    ResourceState::ShaderResource);
+
 	resources.Imported.BackBuffer = backBuffer;
 	resources.Transient.Scene = SceneRenderTargets{
 	    .SceneColor = sceneColor,
 	    .FinalSceneColor = finalSceneColor,
 	    .BackBuffer = backBuffer,
 	    .MainDepth = mainDepth};
+	resources.Transient.Exposure = exposure;
+	resources.History.PreviousExposure = previousExposure;
+	resources.History.CurrentExposure = currentExposure;
 	resources.ViewportProducts.SceneColor = sceneColor;
 	resources.ViewportProducts.FinalSceneColor = finalSceneColor;
+	resources.ViewportProducts.Exposure = exposure;
 	resources.ViewportProducts.SceneDepth = mainDepth;
 }

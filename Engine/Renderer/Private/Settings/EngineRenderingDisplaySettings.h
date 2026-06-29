@@ -9,6 +9,10 @@
 namespace EngineRenderingDisplaySettings
 {
 	PixelFormat ParseBackBufferFormat(std::string_view text) noexcept;
+	EngineToneMapper ParseToneMapper(std::string_view text) noexcept;
+	EngineExposureMode ParseExposureMode(std::string_view text) noexcept;
+	EngineExposureMeteringMethod ParseExposureMeteringMethod(std::string_view text) noexcept;
+	EngineOutputColorEncoding ParseOutputColorEncoding(std::string_view text) noexcept;
 	void Capture(EngineRenderingSettingsState& state) noexcept;
 	void Apply(const EngineRenderingSettingsState& state) noexcept;
 	bool ReadConfigValue(EngineRenderingSettingsState& state, std::string_view key, std::string_view value);

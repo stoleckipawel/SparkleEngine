@@ -24,6 +24,8 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Memory/RhiMemoryTypes.h"
+#include "RHI/Public/Resources/RhiResourceDesc.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
@@ -48,10 +50,14 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
 	}
 
 	InitializeFrameGraph();
+	CreateExposureHistoryResources();
 	BindWindowResizeEvent();
 }
 
-FramePipeline::~FramePipeline() noexcept = default;
+FramePipeline::~FramePipeline() noexcept
+{
+	ReleaseExposureHistoryResources();
+}
 
 void FramePipeline::PrepareHostFrame() noexcept
 {
@@ -329,6 +335,97 @@ void FramePipeline::ClearRayTracingFrameGraphResources() noexcept
 	m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasScratch);
 }
 
+void FramePipeline::CreateExposureHistoryResources() noexcept
+{
+	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
+	RhiResourceService& resourceService = renderHardwareInterface.GetResourceService();
+	const RhiTextureResourceDesc historyDesc{
+	    .Width = 1u,
+	    .Height = 1u,
+	    .Format = PixelFormat::R32G32B32A32_Float,
+	    .MipLevels = 1u,
+	    .AllowRenderTarget = false,
+	    .AllowDepthStencil = false,
+	    .AllowUnorderedAccess = true};
+
+	for (RhiOwnedResourceHandle& historyResource : m_exposureHistoryResources)
+	{
+		if (historyResource)
+		{
+			continue;
+		}
+
+		historyResource = resourceService.CreateTextureResource(
+		    historyDesc,
+		    ResourceState::ShaderResource,
+		    RhiMemoryCategory::Texture,
+		    RhiMemoryResidencyClass::DeviceLocal,
+		    L"ExposureHistory");
+	}
+
+	m_exposureHistoryValid = false;
+}
+
+void FramePipeline::ReleaseExposureHistoryResources() noexcept
+{
+	if (m_systems == nullptr)
+	{
+		return;
+	}
+
+	RhiResourceService& resourceService = m_systems->GetRenderHardwareInterface().GetResourceService();
+	for (RhiOwnedResourceHandle& historyResource : m_exposureHistoryResources)
+	{
+		if (historyResource)
+		{
+			resourceService.ReleaseOwnedResource(historyResource);
+			historyResource = {};
+		}
+	}
+	m_exposureHistoryValid = false;
+}
+
+void FramePipeline::BindExposureHistoryFrameGraphResources() noexcept
+{
+	if (m_frameGraph == nullptr || !m_frameResources.History.HasExposureHistory())
+	{
+		return;
+	}
+
+	const std::uint32_t currentFrameIndex = m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex();
+	const std::uint32_t previousFrameIndex =
+	    (currentFrameIndex + RhiFrameConstants::FramesInFlight - 1u) % RhiFrameConstants::FramesInFlight;
+	const RhiOwnedResourceHandle previousExposure = m_exposureHistoryResources[previousFrameIndex];
+	const RhiOwnedResourceHandle currentExposure = m_exposureHistoryResources[currentFrameIndex];
+	if (!previousExposure || !currentExposure)
+	{
+		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.PreviousExposure);
+		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.CurrentExposure);
+		m_exposureHistoryValid = false;
+		return;
+	}
+
+	m_frameGraph->BindPersistentTexture(m_frameResources.History.PreviousExposure, previousExposure, ResourceState::ShaderResource);
+	m_frameGraph->BindPersistentTexture(m_frameResources.History.CurrentExposure, currentExposure, ResourceState::ShaderResource);
+}
+
+void FramePipeline::ResetExposureHistory() noexcept
+{
+	m_exposureHistoryValid = false;
+}
+
+bool FramePipeline::HasExposureHistoryResources() const noexcept
+{
+	for (const RhiOwnedResourceHandle historyResource : m_exposureHistoryResources)
+	{
+		if (!historyResource)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 RenderViewportExtent FramePipeline::ResolveSceneExtent() const noexcept
 {
 	const Window& window = m_systems->GetWindow();
@@ -340,7 +437,7 @@ RenderViewportExtent FramePipeline::ResolveSceneExtent() const noexcept
 	return RenderViewportExtent{static_cast<std::uint32_t>(window.GetWidth()), static_cast<std::uint32_t>(window.GetHeight())};
 }
 
-bool FramePipeline::ShouldPresentSceneToBackBuffer() const noexcept
+bool FramePipeline::ShouldOutputToBackBuffer() const noexcept
 {
 	return m_viewportRenderRequest.ViewportId == 0;
 }
@@ -357,7 +454,7 @@ void FramePipeline::InitializeFrameGraph(RenderViewportExtent sceneExtent) noexc
 	    m_systems->GetRenderHardwareInterface(),
 	    m_systems->GetWindow(),
 	    sceneExtent,
-	    ShouldPresentSceneToBackBuffer()};
+	    ShouldOutputToBackBuffer()};
 
 	FrameGraphFactory frameGraphFactory(dependencies);
 	FrameGraphBuildResult buildResult = frameGraphFactory.Build();
@@ -409,6 +506,7 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		m_bResizePending = false;
 		temporalDataBuilder.ResetHistory("Window resize");
+		ResetExposureHistory();
 		if (upscalerSubsystem != nullptr)
 		{
 			upscalerSubsystem->ResetHistory("Window resize");
@@ -426,6 +524,7 @@ void FramePipeline::BeginFrame() noexcept
 	if (sceneExtent.Width != m_frameGraphSceneExtent.Width || sceneExtent.Height != m_frameGraphSceneExtent.Height)
 	{
 		temporalDataBuilder.ResetHistory("Scene extent changed");
+		ResetExposureHistory();
 		if (upscalerSubsystem != nullptr)
 		{
 			upscalerSubsystem->ResetHistory("Scene extent changed");
@@ -498,6 +597,7 @@ void FramePipeline::RecordFrame() noexcept
 	if (sceneRenderStateCoordinator != nullptr && sceneRenderStateCoordinator->ConsumeTemporalHistoryResetRequest(temporalResetReason))
 	{
 		m_systems->GetTemporalDataBuilder().ResetHistory(temporalResetReason);
+		ResetExposureHistory();
 	}
 
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[renderHardwareInterface.GetCurrentFrameIndex()];
@@ -563,6 +663,8 @@ void FramePipeline::RecordFrame() noexcept
 		}
 	}
 
+	BindExposureHistoryFrameGraphResources();
+
 	{
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphSetup");
 		m_frameGraph->Setup(frame);
@@ -593,6 +695,7 @@ void FramePipeline::RecordFrame() noexcept
 	    .HardwareInterface = renderHardwareInterface,
 	    .RuntimeManager = m_systems->GetPipelineStateManager(),
 	    .PerFrame = m_perFrameData,
+	    .ExposureHistoryValid = m_exposureHistoryValid,
 	    .Textures = &m_systems->GetTextureManager(),
 	    .RayTracing = &rayTracingPassServices,
 	    .Upscaling = &upscalingPassServices};
@@ -626,6 +729,7 @@ void FramePipeline::EndFrame() noexcept
 	SPARKLE_CPU_SCOPE("Renderer.EndFrame");
 	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame begin");
+	m_exposureHistoryValid = HasExposureHistoryResources();
 	m_systems->GetBackend().AdvanceFrameInFlight();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame end");
 }

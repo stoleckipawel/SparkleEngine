@@ -27,7 +27,7 @@ FrameBuildResult BuildFrame(
 
 	if (presentToBackBuffer)
 	{
-		AddPresentationPass(builder, resources.Transient.Scene);
+		AddPresentationPass(builder, sceneExtent, backBufferFormat, resources.Transient.Scene, resources.Transient.Exposure);
 	}
 
 	return FrameBuildResult{.Resources = resources};

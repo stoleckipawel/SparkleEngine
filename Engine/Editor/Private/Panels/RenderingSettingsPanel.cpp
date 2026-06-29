@@ -48,6 +48,96 @@ namespace
 		}
 	}
 
+	int ToToneMapperIndex(EngineToneMapper toneMapper) noexcept
+	{
+		switch (toneMapper)
+		{
+			case EngineToneMapper::Reinhard:
+				return 0;
+			case EngineToneMapper::AcesFilmic:
+				return 2;
+			case EngineToneMapper::AcesApprox:
+			default:
+				return 1;
+		}
+	}
+
+	EngineToneMapper FromToneMapperIndex(int index) noexcept
+	{
+		switch (index)
+		{
+			case 0:
+				return EngineToneMapper::Reinhard;
+			case 2:
+				return EngineToneMapper::AcesFilmic;
+			case 1:
+			default:
+				return EngineToneMapper::AcesApprox;
+		}
+	}
+
+	int ToExposureModeIndex(EngineExposureMode mode) noexcept
+	{
+		return mode == EngineExposureMode::Manual ? 0 : 1;
+	}
+
+	EngineExposureMode FromExposureModeIndex(int index) noexcept
+	{
+		return index == 0 ? EngineExposureMode::Manual : EngineExposureMode::Automatic;
+	}
+
+	int ToExposureMeteringMethodIndex(EngineExposureMeteringMethod method) noexcept
+	{
+		switch (method)
+		{
+			case EngineExposureMeteringMethod::DownsamplePyramid:
+				return 1;
+			case EngineExposureMeteringMethod::ParallelReduction:
+			default:
+				return 0;
+		}
+	}
+
+	EngineExposureMeteringMethod FromExposureMeteringMethodIndex(int index) noexcept
+	{
+		switch (index)
+		{
+			case 1:
+				return EngineExposureMeteringMethod::DownsamplePyramid;
+			case 0:
+			default:
+				return EngineExposureMeteringMethod::ParallelReduction;
+		}
+	}
+
+	int ToOutputColorEncodingIndex(EngineOutputColorEncoding encoding) noexcept
+	{
+		switch (encoding)
+		{
+			case EngineOutputColorEncoding::Linear:
+				return 1;
+			case EngineOutputColorEncoding::Srgb:
+				return 2;
+			case EngineOutputColorEncoding::Automatic:
+			default:
+				return 0;
+		}
+	}
+
+	EngineOutputColorEncoding FromOutputColorEncodingIndex(int index) noexcept
+	{
+		switch (index)
+		{
+			case 1:
+				return EngineOutputColorEncoding::Linear;
+			case 2:
+				return EngineOutputColorEncoding::Srgb;
+			case 0:
+			default:
+				return EngineOutputColorEncoding::Automatic;
+		}
+	}
+
 	int ToPtlasPartitionUpdateModeIndex(EnginePtlasPartitionUpdateMode mode) noexcept
 	{
 		switch (mode)
@@ -205,7 +295,14 @@ namespace
 	}
 
 	template <typename OnChanged>
-	void DrawFloatInputRow(const char* id, const char* label, float value, OnChanged&& onChanged)
+	void DrawFloatInputRow(
+	    const char* id,
+	    const char* label,
+	    float value,
+	    OnChanged&& onChanged,
+	    float step = 1.0f,
+	    float stepFast = 10.0f,
+	    const char* format = "%.3f")
 	{
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -215,7 +312,7 @@ namespace
 		ImGui::TableSetColumnIndex(1);
 		ImGui::SetNextItemWidth(-FLT_MIN);
 		float updatedValue = value;
-		if (ImGui::InputFloat(id, &updatedValue, 1.0f, 10.0f, "%.3f"))
+		if (ImGui::InputFloat(id, &updatedValue, step, stepFast, format))
 		{
 			onChanged(updatedValue);
 		}
@@ -272,7 +369,28 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	    "B8G8R8A8 UNorm",
 	    "B8G8R8A8 sRGB",
 	};
-	if (MatchesFilter(filterText, "Display", "display vsync high-performance adapter gpu back buffer format") &&
+	static constexpr const char* toneMapperLabels[] = {
+	    "Reinhard",
+	    "ACES approximate",
+	    "ACES fitted filmic",
+	};
+	static constexpr const char* exposureModeLabels[] = {
+	    "Manual",
+	    "Automatic",
+	};
+	static constexpr const char* exposureMeteringMethodLabels[] = {
+	    "Parallel reduction",
+	    "Downsample pyramid",
+	};
+	static constexpr const char* outputColorEncodingLabels[] = {
+	    "Automatic",
+	    "Linear",
+	    "sRGB",
+	};
+	if (MatchesFilter(
+	        filterText,
+	        "Display",
+	        "display vsync high-performance adapter gpu back buffer format tone mapper aces reinhard exposure automatic manual metering reduction downsample pyramid compensation luminance sdr srgb output encoding") &&
 	    BeginSettingsCategory("Display"))
 	{
 		if (BeginSettingsTable("##RenderingDisplaySettings"))
@@ -290,6 +408,92 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    "Prefer high-performance adapter",
 			    settings.PreferHighPerformanceAdapter,
 			    [this](bool value) { m_settings->SetPreferHighPerformanceAdapter(value); });
+			DrawComboRow(
+			    "##ToneMapper",
+			    "Tone mapper",
+			    ToToneMapperIndex(settings.ToneMapper),
+			    toneMapperLabels,
+			    IM_ARRAYSIZE(toneMapperLabels),
+			    [this](int value) { m_settings->SetToneMapper(FromToneMapperIndex(value)); });
+			DrawComboRow(
+			    "##ExposureMode",
+			    "Exposure mode",
+			    ToExposureModeIndex(settings.ExposureMode),
+			    exposureModeLabels,
+			    IM_ARRAYSIZE(exposureModeLabels),
+			    [this](int value) { m_settings->SetExposureMode(FromExposureModeIndex(value)); });
+			DrawComboRow(
+			    "##ExposureMeteringMethod",
+			    "Exposure metering",
+			    ToExposureMeteringMethodIndex(settings.ExposureMeteringMethod),
+			    exposureMeteringMethodLabels,
+			    IM_ARRAYSIZE(exposureMeteringMethodLabels),
+			    [this](int value) { m_settings->SetExposureMeteringMethod(FromExposureMeteringMethodIndex(value)); });
+			DrawComboRow(
+			    "##OutputColorEncoding",
+			    "Output encoding",
+			    ToOutputColorEncodingIndex(settings.OutputColorEncoding),
+			    outputColorEncodingLabels,
+			    IM_ARRAYSIZE(outputColorEncodingLabels),
+			    [this](int value) { m_settings->SetOutputColorEncoding(FromOutputColorEncodingIndex(value)); });
+			ImGui::BeginDisabled(settings.ExposureMode != EngineExposureMode::Manual);
+			DrawFloatInputRow(
+			    "##ManualExposure",
+			    "Manual exposure",
+			    settings.ManualExposure,
+			    [this](float value) { m_settings->SetManualExposure(value); },
+			    0.1f,
+			    1.0f,
+			    "%.4f");
+			ImGui::EndDisabled();
+			DrawFloatInputRow(
+			    "##ExposureCompensation",
+			    "Exposure compensation EV",
+			    settings.ExposureCompensation,
+			    [this](float value) { m_settings->SetExposureCompensation(value); },
+			    0.1f,
+			    1.0f,
+			    "%.2f");
+			DrawFloatInputRow(
+			    "##ExposureTargetLuminance",
+			    "Target luminance",
+			    settings.ExposureTargetLuminance,
+			    [this](float value) { m_settings->SetExposureTargetLuminance(value); },
+			    0.01f,
+			    0.1f,
+			    "%.4f");
+			DrawFloatInputRow(
+			    "##ExposureMin",
+			    "Min exposure",
+			    settings.ExposureMin,
+			    [this](float value) { m_settings->SetExposureMin(value); },
+			    0.0001f,
+			    0.01f,
+			    "%.6f");
+			DrawFloatInputRow(
+			    "##ExposureMax",
+			    "Max exposure",
+			    settings.ExposureMax,
+			    [this](float value) { m_settings->SetExposureMax(value); },
+			    1.0f,
+			    64.0f,
+			    "%.3f");
+			DrawFloatInputRow(
+			    "##ExposureAdaptationSpeedUp",
+			    "Adapt speed up",
+			    settings.ExposureAdaptationSpeedUp,
+			    [this](float value) { m_settings->SetExposureAdaptationSpeedUp(value); },
+			    0.1f,
+			    1.0f,
+			    "%.3f");
+			DrawFloatInputRow(
+			    "##ExposureAdaptationSpeedDown",
+			    "Adapt speed down",
+			    settings.ExposureAdaptationSpeedDown,
+			    [this](float value) { m_settings->SetExposureAdaptationSpeedDown(value); },
+			    0.1f,
+			    1.0f,
+			    "%.3f");
 			ImGui::EndTable();
 		}
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));

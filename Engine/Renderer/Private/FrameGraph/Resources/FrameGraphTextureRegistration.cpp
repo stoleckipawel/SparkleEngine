@@ -48,7 +48,7 @@ namespace FrameGraphTextureRegistration
 		        ResourceStateToString(initialState)));
 	}
 
-	std::string FormatBufferHandle(FrameGraphResourceHandle handle)
+	std::string FormatResourceHandle(FrameGraphResourceHandle handle)
 	{
 		return handle.IsValid() ? std::format("{}", handle.index) : "invalid";
 	}
@@ -68,7 +68,27 @@ namespace FrameGraphTextureRegistration
 		        "FrameGraph persistent-buffer validation failed: operation='{}' resource='{}' handle={} state={} hasResource={} remediation='bind persistent buffers through a valid frame-graph buffer handle with a native backing resource before declaring the pass resource use'",
 		        operation,
 		        resourceName.empty() ? "<unnamed>" : resourceName,
-		        FormatBufferHandle(handle),
+		        FormatResourceHandle(handle),
+		        ResourceStateToString(state),
+		        hasResource));
+	}
+
+	void FailInvalidPersistentTextureBinding(
+	    std::string_view operation,
+	    std::string_view resourceName,
+	    FrameGraphResourceHandle handle,
+	    ResourceState state,
+	    bool hasResource) noexcept
+	{
+		Diagnostics::Fail(
+		    g_frameGraphTextureLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "FrameGraph persistent-texture validation failed: operation='{}' resource='{}' handle={} state={} hasResource={} remediation='bind persistent textures through a valid frame-graph texture handle with a native backing resource before declaring the pass resource use'",
+		        operation,
+		        resourceName.empty() ? "<unnamed>" : resourceName,
+		        FormatResourceHandle(handle),
 		        ResourceStateToString(state),
 		        hasResource));
 	}
@@ -120,6 +140,23 @@ FrameGraphTextureHandle FrameGraph::ImportPersistentTexture(
 	m_resourceStateTracker.RegisterResource(handle, initialState);
 	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
 	m_resourceResolver.RegisterResource(handle, resource);
+	return FrameGraphTextureHandle{handle};
+}
+
+FrameGraphTextureHandle FrameGraph::ReservePersistentTexture(
+    const FrameGraphTextureDesc& desc,
+    ResourceState initialState) noexcept
+{
+	const FrameGraphTextureDesc resolvedDesc = FrameGraphTextureRegistration::ResolveTextureDesc(desc, *m_window, "PersistentTexture");
+	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
+	m_resourceRegistry.RegisterPersistentTexture(
+	    handle,
+	    resolvedDesc,
+	    FrameGraphTextureRegistration::ResolveTextureResourceKind(desc.kind),
+	    initialState);
+	m_resourceStateTracker.RegisterResource(handle, initialState);
+	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
+	m_resourceResolver.ClearResolvedAccess(handle);
 	return FrameGraphTextureHandle{handle};
 }
 
@@ -244,6 +281,88 @@ void FrameGraph::BindPersistentBuffer(
 
 	m_resourceResolver.RegisterResource(resourceHandle, resource);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
+}
+
+void FrameGraph::BindPersistentTexture(
+    FrameGraphTextureHandle handle,
+    NativeResourceHandle resource,
+    ResourceState currentState) noexcept
+{
+	if (!handle.IsValid())
+	{
+		return;
+	}
+
+	if (!resource)
+	{
+		FrameGraphTextureRegistration::FailInvalidPersistentTextureBinding(
+		    "BindPersistentTexture",
+		    {},
+		    handle.GetResourceHandle(),
+		    currentState,
+		    false);
+	}
+
+	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
+	if (!m_resourceRegistry.IsRegistered(resourceHandle))
+	{
+		FrameGraphTextureRegistration::FailInvalidPersistentTextureBinding(
+		    "BindPersistentTexture",
+		    {},
+		    resourceHandle,
+		    currentState,
+		    static_cast<bool>(resource));
+	}
+
+	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
+	if (metadata.resourceClass != FrameGraphResourceClass::Texture || metadata.ownership != FrameGraphResourceOwnership::ExternalPersistent)
+	{
+		FrameGraphTextureRegistration::FailInvalidPersistentTextureBinding(
+		    "BindPersistentTexture",
+		    metadata.debugName,
+		    resourceHandle,
+		    currentState,
+		    static_cast<bool>(resource));
+	}
+
+	m_resourceResolver.RegisterResource(resourceHandle, resource);
+	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
+}
+
+void FrameGraph::BindPersistentTexture(
+    FrameGraphTextureHandle handle,
+    RhiOwnedResourceHandle resource,
+    ResourceState currentState) noexcept
+{
+	if (m_renderHardwareInterface == nullptr || !resource)
+	{
+		FrameGraphTextureRegistration::FailInvalidPersistentTextureBinding(
+		    "BindPersistentTexture",
+		    {},
+		    handle.GetResourceHandle(),
+		    currentState,
+		    false);
+	}
+
+	BindPersistentTexture(handle, m_renderHardwareInterface->GetResourceService().GetNativeResource(resource), currentState);
+}
+
+void FrameGraph::ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept
+{
+	if (!handle.IsValid())
+	{
+		return;
+	}
+
+	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
+	if (!m_resourceRegistry.IsRegistered(resourceHandle))
+	{
+		return;
+	}
+
+	m_resourceResolver.ClearResolvedAccess(resourceHandle);
+	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
+	m_resourceStateTracker.UpdateCurrentState(resourceHandle, metadata.initialState);
 }
 
 void FrameGraph::BindPersistentBuffer(

@@ -114,7 +114,6 @@ float3 EvaluateIndirectDiffuseSampleThroughput(
 		return 0.0f.xxx;
 	}
 
-	const float safeRoughness = max(surface.Roughness, 0.04f);
 	const BRDF::ShadingData shadingData =
 	    BRDF::ComputeShadingData(surface.NormalWorld, surface.ViewDirWorld, sample.DirectionWorld);
 	if (shadingData.NoL <= 0.0f || shadingData.NoV <= 0.0f || sample.Pdf <= 0.0f)
@@ -125,7 +124,7 @@ float3 EvaluateIndirectDiffuseSampleThroughput(
 	const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
 	const float3 fresnel = BRDF::Fresnel::EvaluateDirect(shadingData.VoH, f0);
 	const float3 diffuseWeight = (1.0f.xxx - fresnel) * (1.0f - surface.Metallic);
-	const float3 diffuseBrdf = BRDF::Diffuse::EvaluateDirect(surface.BaseColor, safeRoughness, shadingData) * diffuseWeight;
+	const float3 diffuseBrdf = BRDF::Diffuse::EvaluateDirect(surface.BaseColor, surface.Roughness, shadingData) * diffuseWeight;
 	return max(diffuseBrdf * (sample.CosineTerm * rcp(max(sample.Pdf, 1.0e-4f))), 0.0f.xxx);
 }
 
