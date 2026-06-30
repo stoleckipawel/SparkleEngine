@@ -258,7 +258,7 @@ History in current renderer source exists in more than one form:
 
 - temporal history validity and previous jitter/camera data through `TemporalDataBuilder`
 - upscaler history managed by `UpscalerSubsystem`
-- denoiser history through `FrameGraphDenoiserRegistration` resources such as `ShadowDenoiseHistory`
+- denoiser history through `FrameGraphDenoiserRegistration` resources such as `ShadowVisibilityDenoisedHistory`
 
 Contract rules:
 
@@ -273,7 +273,7 @@ Current source-backed status:
 
 - `TemporalDataBuilder` tracks previous pose, previous jitter, reset requests, and history validity.
 - `UpscalerSubsystem` exposes history reset hooks and frame setup hooks.
-- `ShadowDenoiseHistory` exists as a frame-graph texture registration.
+- `ShadowVisibilityDenoisedHistory` exists as a frame-graph texture registration.
 
 `Needs source confirmation`:
 
@@ -344,15 +344,15 @@ This prompt requires exposure to be part of the contract vocabulary. Current sea
 
 Current contract statement:
 
-- exposure is a required future renderer frame-resource concept for post, upscaling, and neural-rendering readiness
-- the exact current SparkleEngine implementation point still needs source confirmation
+- exposure is a renderer frame-resource concept for post, upscaling, and neural-rendering readiness
+- the current implementation stores exposure in a 1x1 `R32G32B32A32_Float` frame-graph resource plus previous/current persistent exposure history textures
 
 ### History
 
 Current source-backed history-related surfaces:
 
 - `TemporalDataBuilder` history validity and previous jitter/camera state
-- `ShadowDenoiseHistory`
+- `ShadowVisibilityDenoisedHistory`
 - upscaler-managed history reset/setup
 
 Contract rule:

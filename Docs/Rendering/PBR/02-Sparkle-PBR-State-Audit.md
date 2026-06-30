@@ -329,8 +329,8 @@ Current strengths:
 Issues:
 
 - The material GBuffer does not carry dielectric F0/reflectance, which forces primary direct lighting to derive a fixed `0.04` F0 while ray-hit shading can use material F0.
-- Denoiser-facing resources are not yet modeled as a typed signal contract. Raw shadow visibility, packed shadow signal, denoised visibility, hit distance, noisy indirect radiance, demodulated indirect radiance, roughness, albedo, specular/F0, normal, depth, motion, exposure, and history reset state need explicit ownership and formats.
-- The raw shadow signal format must match the shader write. A packed `float4` signal cannot be treated as a single-channel visibility texture unless a separate unpack/resolve pass is part of the contract.
+- Stage 0F now owns the typed renderer signal contract in `Docs/Rendering/PBR/04-PBR-Renderer-Signal-Contract.md`, including shadow, exposure, presentation, GBuffer, provider, and reserved indirect reconstruction signals.
+- Packed raw shadow signal resources now match the shader `float4(visibility, hitDistance, confidence, maxDistance)` payload; scalar shadow visibility is explicitly named as denoised visibility or denoised visibility history.
 - Motion-vector convention exists in provider code, but the PBR plan needs to lock units, jitter policy, camera-cut reset, depth convention, and normal space for all denoisers and reconstruction providers.
 
 Required stages:
@@ -536,7 +536,7 @@ P4 structural blockers:
 3. Shadow tracing/sampling/denoiser signal helpers are pass-local even though they are reusable visibility concepts.
 4. Indirect diffuse/specular entrypoints mix pass IO, sampling, tracing, path state, resolve, and output.
 5. Surface/path records are duplicated between diffuse and specular effects.
-6. Denoiser/reconstruction resources are not yet represented by one provider-neutral signal contract, which risks duplicate code paths for NRD, DLRR, debug capture, and future denoisers.
+6. Denoiser/reconstruction resources now have a provider-neutral signal contract from Stage 0F; Stage 11, Stage 11A, and Stage 13 still need to allocate/debug/capture the future DLRR and indirect denoiser auxiliaries through that contract.
 7. Asset import/cooking rules are not yet tied to renderer validation, which risks duplicate material assumptions between tools and shaders.
 
 ## Current Strengths

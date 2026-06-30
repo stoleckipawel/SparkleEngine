@@ -51,7 +51,7 @@ Every stage also has a reuse-proof requirement:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Document and assert that direct and indirect lighting targets store material-evaluated outgoing radiance contributions in linear HDR. Add comments near target declarations and composite code. Update or supersede older docs that describe `IndirectDiffuse` as raw irradiance.
 
@@ -87,7 +87,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Before changing lighting math, move reusable lighting concepts out of pass-specific shader folders. Do this as behavior-preserving refactors with shader-cook validation after each step.
 
@@ -146,7 +146,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Refactor direct and indirect pass entrypoints so they own pass IO and output policy only. Sampling, light evaluation, visibility tracing, hit/miss resolve, and path throughput should live in reusable modules.
 
@@ -193,7 +193,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Keep lighting buffers linear HDR and move display conversion into a dedicated presentation/display path. Exposure must be a frame-graph resource. Implement a production metering path with parallel reduction and an explicit alternate downsample-pyramid metering path. Automatic exposure must adapt temporally through persistent exposure history.
 
@@ -249,7 +249,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Review the currently implemented exposure and tone-mapping code against this document before treating it as production-ready. The implementation already exists, so this stage is a hardening/audit pass: check reference fidelity, color science assumptions, settings ABI, shader layout, frame-graph resource ownership, performance cost, validation scenes, and debug visibility.
 
@@ -321,7 +321,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Before implementing a lighting phase, run a repo-wide audit across shaders, renderer frame graph, RHI formats, asset import/cooking, provider contracts, settings, debug views, and validation assets. The audit must update this plan when it finds a PBR-relevant issue. This gate exists so implementation work cannot focus only on the active shader file while missing a format, import, denoiser, or provider assumption elsewhere.
 
@@ -353,11 +353,29 @@ Acceptance criteria:
 - Reference compliance: every new stage added by the audit cites at least one NVIDIA/AMD/Epic/Filament/glTF/PBRT reference and states what part of that reference is being followed.
 - Reuse/DRY: before proposing a new helper, resource, pass, or provider interface, the audit records the existing bodies that were scanned and whether they can be reused or unified.
 
+Completion note:
+
+- Reference lineage: the audit used RTXPT and Falcor for renderer-wide pass/resource/reference-output organization, NRD for denoiser signal contracts and debug requirements, Streamline DLSS Ray Reconstruction for provider-resource tagging expectations, AMD FidelityFX for provider-style temporal resource handling, Filament and Unreal for material/light/color expectations, glTF 2.0 plus `KHR_lights_punctual` for asset import and light-unit contracts, and PBRT for path-traced reference-output expectations already named in later stages.
+- Reuse/DRY audit: scanned shader concept folders and entrypoints (`Material`, `BRDF`, `Lighting`, `RayTracing`, `Passes/Deferred`, `Passes/Presentation`), renderer frame data/builders, frame-graph resource declarations, GBuffer formats, exposure/presentation settings, DLSS/upscaler provider contracts, shadow denoiser contracts, glTF material import and texture cooking, default HDR sky cooking, smoke capture artifacts, and renderer diagnostics before proposing follow-up work. Existing canonical bodies to reuse are `SurfaceLighting.hlsli`, `PunctualLights.hlsli`, `PathSurface.hlsli`, `GBufferFormats.h`, `FrameSceneResources`, `UpscalerInputContract`, `ShadowDenoiseContract`, and the Stage 0D display/exposure helpers. No new helper, pass, or provider interface was added by this audit.
+- Stage update result: no new stage was required. All P0/P1 findings below are mapped to the existing stages named in their `Required stage` cells, whose prompts already carry the relevant references. Items that remain local deviations or non-production details are explicitly named in Stage 0D and Stage 13 instead of being left as hidden assumptions.
+
+| Priority | File(s) | Symptom | Risk | Required stage | Reference(s) |
+| --- | --- | --- | --- | --- | --- |
+| P0 resolved | `Engine/Assets/Shaders/Lighting/SkyEnvironment.hlsli`, `Engine/Assets/Shaders/Passes/Deferred/Sky.hlsl`, indirect miss paths | Sky sampling previously entered lighting through a display/tone-mapped helper instead of pure HDR radiance. | Violated the Stage 0 lighting/display boundary and made indirect lighting depend on presentation math. | Stage 0D completed; Stage 1 and Stage 13 keep sky reference captures/import validation. | Filament color/display boundary, PBRT/RTXPT radiance transport. |
+| P1 | `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl`, `Engine/Assets/Shaders/Passes/Deferred/GBufferUtils.hlsli`, `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`, `Engine/Assets/Shaders/Material/Material.hlsli`, `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`, `Engine/Renderer/Private/Frame/RayTracing/RayTracingHitDataFrameData.cpp` | Primary GBuffer drops material dielectric `F0`, so deferred direct lighting falls back to `0.04` while ray-hit lighting can use imported/cooked `F0`. | Primary and ray-hit material evaluation can disagree, especially for `KHR_materials_specular`-style content or future material extensions. | Stage 2 and Stage 2A; format/packing consequences belong to Stage 0F. | Filament material model, Unreal physically based materials, glTF material extensions. |
+| P1 | `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSignals.hlsli`, `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`, `Engine/Renderer/Public/Denoising/ShadowDenoiseContract.h`, `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.cpp` | Shader shadow helpers define a packed `float4(visibility, hitDistance, confidence, maxDistance)` signal, but registered raw/scratch/history/denoised visibility resources are single-channel `R32_Float`. | Denoiser/provider integration can silently lose hit-distance/confidence data or require pass-local side channels. | Stage 0F, Stage 5, Stage 6. | NRD SIGMA signal contracts, Falcor/RTXPT debug signal ownership. |
+| P1 | `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`, glTF importer files under `Tools/Import/SourceImporters/Private/Gltf` | Punctual attenuation uses local range fade and linear cone ramp; the audit did not find `KHR_lights_punctual` import coverage. | Imported lights and authored renderer lights can diverge from glTF/physical light-unit expectations. | Stage 2A and Stage 4. | `KHR_lights_punctual`, Filament/Unreal physical light units. |
+| P1 | `Engine/Renderer/Private/Upscaling/UpscalerInputContract.h`, `Engine/Renderer/Private/Upscaling/NvidiaDlss/NvidiaDlssUpscalerProvider.cpp`, indirect lighting shaders | Provider contract currently covers DLSS SR/NativeAA-style inputs, but not DLRR/indirect reconstruction signals such as noisy indirect radiance, demodulated radiance, lobe id, hit distance, confidence, or variance. | Future indirect reconstruction can become provider-specific and duplicate signal definitions outside the frame graph. | Stage 0F, Stage 11, Stage 11A. | Streamline DLSS Ray Reconstruction, NRD, AMD FidelityFX provider resource patterns. |
+| P1 | `Engine/Application/Private/Validation/RhiSmokeViewportCapture.cpp`, `Engine/Application/Private/Validation/RhiSmokeCaptureArtifacts.cpp`, `Engine/Renderer/Private/Diagnostics/RendererSmokeDiagnosticsBuilder.cpp`, `Engine/Renderer/Public/Diagnostics/RendererSmokeDiagnostics.h` | Validation captures are smoke-oriented and BMP/diagnostic focused; no required HDR pre-tonemap signal capture pack or reference-output metric path exists yet. | PBR regressions in radiance, denoiser inputs, material parity, or display transform can pass smoke validation. | Stage 12 and Stage 13. | RTXPT/Falcor reference-output organization, NRD debug requirements. |
+| P1 | `Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerDispatcher.cpp`, `Tools/Cooking/MaterialCooker/Private/TextureCookRequestBuilder.cpp`, sky/environment shaders | The default EXR sky is cooked as a regular linear 2D texture and HDR sky import/orientation/calibration/importance-sampling policy is not yet a single asset contract. | Environment lighting can be visually plausible but physically uncalibrated or inconsistent with later importance sampling. | Stage 1, Stage 2A, Stage 9, Stage 13. | Filament image-based lighting, glTF texture/color-space policy, PBRT/RTXPT environment sampling. |
+| P2 | `Engine/Renderer/Private/Frame/Presentation/OutputEncodingSettings.cpp`, presentation shaders, RHI swapchain copy path | Stage 0D documents a local deviation: compute presentation writes encoded UNorm bytes before copy instead of relying on render-target hardware sRGB writes for sRGB swapchains. | Backbuffer encoding policy is explicit and deterministic, but still needs backend-level validation before claiming hardware sRGB compliance. | Stage 13 validation; deviation remains documented in Stage 0D until a render-target presentation path exists. | Filament display management, Falcor tone mapper/output path. |
+| P2 | `Engine/Renderer/Private/Frame/Deferred/GBufferFormats.h`, `Engine/Renderer/Private/Frame/Core/FrameSceneResources.cpp`, frame-graph resource builders | Format, units, history behavior, and provider consumers are discoverable in code but not yet consolidated into one typed signal registry. | New passes can repeat or conflict with resource semantics, especially for provider/debug/validation paths. | Stage 0F. | NRD, Streamline, Falcor, AMD FidelityFX resource contracts. |
+
 ## Stage 0F: Lock Render Target, Precision, and Signal Surface Contracts
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Create a typed renderer signal contract for all PBR-relevant buffers. The contract must state owner, format, color space, units, valid range, lifetime, history behavior, and consumers. Fix any resource whose declared frame-graph format does not match the shader signal it stores.
 
@@ -399,11 +417,21 @@ Acceptance criteria:
 - Reference compliance: each signal's unit/space/range is mapped to NRD, Streamline DLRR, Falcor, AMD FidelityFX, or the local renderer contract.
 - Reuse/DRY: NRD, DLRR, debug capture, validation capture, and future denoisers use one signal registry instead of duplicate resource descriptions.
 
+Completion note:
+
+- Reference lineage: `04-PBR-Renderer-Signal-Contract.md` maps signal ownership, format, unit/space, range, lifetime/history, consumers, and debug route back to NRD-style denoiser guide resources, Streamline DLRR-style provider tags, Falcor-style render-graph resource ownership, AMD FidelityFX-style temporal/reset resource handling, and Sparkle's local linear-HDR lighting contract.
+- Reuse/DRY audit: scanned `FrameRenderFormats`, `GBufferFormats`, `FrameSceneResources`, `LightingRenderTargets`, `FrameGraphDenoiserRegistration`, `ShadowDenoiseContract`, `UpscalerInputContract`, `LightingComposite`, `ToneMapping`, `OutputEncoding`, and the moved `RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli` body before adding the contract. Semantic prose lives in one docs table, while code format constants stay in effect-specific homes instead of a renderer-wide alias namespace.
+- Format fix: packed raw shadow signal resources are now `R32G32B32A32_Float` (`ShadowVisibilitySignalRaw` and `ShadowVisibilitySignalScratch`) matching `float4(visibility, hitDistance, confidence, maxDistance)`. Denoised visibility and denoised visibility history are explicitly scalar `R32_Float` products.
+- Provider validation: no provider-format shim was added in this stage. `UpscalerInputContract` remains the existing missing-resource/convention gate; real format rejection should be added only when the frame graph exposes actual resource descriptions to provider builders without duplicating constants.
+- Source hygiene: no final shader/source comments or Reference lineage banners were added. The prompt's old deferred path for `RayTracedShadowDenoiserInputs.hlsli` is superseded by the Stage 0A module boundary move to `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`.
+- Remaining staged work: indirect denoiser/DLRR auxiliary buffers are reserved in the contract but intentionally not allocated until Stage 11/11A; expanded UI/debug capture for those future signals remains Stage 13 validation work.
+- Validation commands: rebuilt `ShowcaseEditor` DevelopmentEditor successfully; cooked `ToneMapping` and `OutputEncoding` for `DxilSm66` and `SpirV16` successfully; `LightingComposite` HLSL compiled for `DxilSm66` but package verification failed on the pre-existing reflected binding mismatch between shader cbuffer `PerFrameConstantBufferData` and registration layout alias `PerFrame`, so the full deferred shader-cook gate remains blocked by shader-registration naming cleanup outside the signal-format change.
+
 ## Stage 1: Fix Linear HDR Sky Transport
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Split sky sampling into two functions: one that returns linear HDR radiance and one optional display transform for presentation/debug only. Use linear sky radiance for sky pixels, indirect ray misses, mirror reflections, and any future environment sampling. Remove pre-presentation tone mapping from `SampleSkyEnvironment`.
 
@@ -446,7 +474,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Make deferred primary shading and ray-hit shading use the same dielectric F0 value and material roughness convention. Add F0/reflectance to the GBuffer or derive it from a documented material constant that is available in direct lighting. Avoid using fixed `0.04` for primary surfaces when material F0 exists.
 
@@ -479,7 +507,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Make the renderer support perceptual roughness from `0.0` through `1.0` with a reference-backed policy that separates material data, BRDF evaluation, and sampling behavior. Direct analytic lighting must call the same canonical BRDF evaluator for all roughness values. Do not add pass-local direct-light branches that classify roughness and bypass specular evaluation. Perfect-mirror transport decisions belong in BSDF/path-sampling code, where delta lobes are sampled as exact directions, not in primary or ray-hit direct-light pass code. Extremely rough reflections must remain valid at `roughness = 1.0`.
 
@@ -529,7 +557,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Turn asset import and texture cooking into an enforceable PBR contract. The shader can only be physically meaningful if imported base color, data maps, HDR sky maps, packed metallic-roughness channels, material reflectance, emissive strength, and light intensity units arrive in the spaces expected by the BRDF and light equations.
 
@@ -577,7 +605,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Define one convention for the geometry and temporal signals used by shading, ray tracing, denoisers, DLRR, and validation. This stage should happen before expanding denoiser resources, because wrong normal/depth/motion conventions produce plausible but non-physical reconstructed lighting.
 
@@ -622,7 +650,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Create a small shared BRDF validation harness or debug shader mode for furnace tests. Use it to verify the current GGX/Smith/Schlick implementation, then decide whether the reference mode uses Lambert diffuse or Burley diffuse. Mark subsurface as non-reference until energy compensation is implemented.
 
@@ -653,7 +681,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Define the supported shading models and lobe weights as data, not scattered shader decisions. Direct lighting, indirect sampling, ray-hit lighting, reference path tracing, denoiser demodulation, and debug views must agree on which lobes exist, how they are weighted, which lobes are sampled, and how energy is conserved between them.
 
@@ -694,7 +722,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Define engine units for directional, point, and spot lights. Align glTF-imported point/spot intensity with candela and directional intensity with lux or a documented calibrated engine unit. Replace current range and cone attenuation with a glTF/Filament-compatible punctual falloff policy, or document a deliberate engine policy and convert imports into that policy.
 
@@ -749,7 +777,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Separate the current source-radius soft-shadow approximation from physically integrated finite-area light radiance. A light radius used only to jitter shadow rays must not silently change the radiometric meaning of a point/spot light. If finite lights are added, sample the light source and evaluate PDFs/geometry terms explicitly.
 
@@ -789,7 +817,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Route direct shadow rays through the same alpha-tested candidate handling used by indirect ray queries, or add an equivalent shadow-specific alpha-test resolver. Then split raw stochastic visibility from direct lighting accumulation so NRD SIGMA can consume it later. Treat binary visibility and denoiser hit distance as separate signals: first-hit ray-query shortcuts are acceptable for immediate hard-shadow visibility, but NRD-style occluder-distance input needs a reference-compatible tracing policy and resource format.
 
@@ -824,7 +852,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Implement the renderer-side pass boundary for NRD SIGMA without forcing all platforms to have NRD. The pass should consume raw visibility, normal, depth, motion vectors, and history, then output denoised visibility. Direct lighting should be able to consume either raw or denoised visibility through an explicit mode.
 
@@ -855,7 +883,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Create a shared ray-traced surface path sampling module that can sample diffuse or specular lobes from one material using a single lobe-selection PDF. Use it for both indirect diffuse and indirect specular passes. Preserve current output split by assigning the path contribution to the buffer for the primary sampled lobe.
 
@@ -919,7 +947,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Make `ShadeRayTracingHitIncidentRadiance` optionally shadow secondary-hit direct lights. Start with one shadow ray to the sampled/selected light direction, then add explicit light sampling if the path sampler supports next-event estimation with PDFs.
 
@@ -949,7 +977,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Build an environment-map luminance distribution for the sky texture and sample it for indirect lighting. This is basic environment importance sampling, not ReSTIR. Combine with BSDF sampling using MIS when both strategies are active.
 
@@ -979,7 +1007,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Keep emissive-on-hit support, but add optional explicit emissive triangle/light sampling for high-variance emissive scenes. This can remain behind a reference or high-quality flag until acceleration structures for emitters are mature.
 
@@ -1008,7 +1036,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Extend the provider-neutral reconstruction contract for indirect lighting. Do not wire DLRR directly into shader code. First expose the resources and metadata a provider needs.
 
@@ -1053,7 +1081,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Refactor indirect diffuse/specular output so denoisers and reconstruction providers can consume stable auxiliary signals instead of only final noisy lighting. The real-time path may still composite direct/indirect buffers the current way, but provider-facing buffers must describe the noisy path sample, material factors, geometry, and confidence needed to reconstruct lighting correctly.
 
@@ -1096,7 +1124,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Add a reference path tracing mode or offline accumulation path that uses the same material, light, sky, and alpha-test code as the real-time passes. The reference mode can be slow. It exists to define truth.
 
@@ -1126,7 +1154,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
 
 Create a repeatable review pack that a renderer engineer can use to verify the implementation without trusting screenshots by eye. The pack must include deterministic validation scenes, capture scripts or commands, metrics, reference images/buffers, and per-stage evidence notes. This is the final gate for claiming the renderer is ready to build production PBR features on top of.
 

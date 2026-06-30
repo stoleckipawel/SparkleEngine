@@ -2,7 +2,6 @@
 
 #include "FrameGraph/Resources/FrameGraphDenoiserRegistration.h"
 
-#include "Frame/Deferred/GBufferFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
 namespace
@@ -10,10 +9,10 @@ namespace
 	ShadowDenoiseContract::ShadowDenoiseTextures CreateEmptyDenoiseTextures() noexcept
 	{
 		return ShadowDenoiseContract::ShadowDenoiseTextures{
-		    .RawVisibility = FrameGraphTextureHandle::Invalid(),
-		    .RawVisibilityScratch = FrameGraphTextureHandle::Invalid(),
+		    .PackedSignal = FrameGraphTextureHandle::Invalid(),
+		    .PackedSignalScratch = FrameGraphTextureHandle::Invalid(),
 		    .DenoisedVisibility = FrameGraphTextureHandle::Invalid(),
-		    .DenoiseHistory = FrameGraphTextureHandle::Invalid()};
+		    .DenoisedVisibilityHistory = FrameGraphTextureHandle::Invalid()};
 	}
 }
 
@@ -30,15 +29,31 @@ namespace FrameGraphDenoiserRegistration
 			return result;
 		}
 
-		result.RawVisibility =
-		    builder.CreateTexture(FrameGraphTextureDesc::CreateColor("ShadowVisibilityRaw", sceneExtent.Width, sceneExtent.Height, GBufferFormats::DeviceZ));
-		result.RawVisibilityScratch =
-		    builder.CreateTexture(FrameGraphTextureDesc::CreateColor("ShadowVisibilityScratch", sceneExtent.Width, sceneExtent.Height, GBufferFormats::DeviceZ));
-		result.DenoiseHistory =
-		    builder.CreateTexture(FrameGraphTextureDesc::CreateColor("ShadowDenoiseHistory", sceneExtent.Width, sceneExtent.Height, GBufferFormats::DeviceZ));
+		result.PackedSignal = builder.CreateTexture(
+		    FrameGraphTextureDesc::CreateColor(
+		        "ShadowVisibilitySignalRaw",
+		        sceneExtent.Width,
+		        sceneExtent.Height,
+		        ShadowDenoiseContract::PackedVisibilitySignalFormat));
+		result.PackedSignalScratch = builder.CreateTexture(
+		    FrameGraphTextureDesc::CreateColor(
+		        "ShadowVisibilitySignalScratch",
+		        sceneExtent.Width,
+		        sceneExtent.Height,
+		        ShadowDenoiseContract::PackedVisibilitySignalFormat));
+		result.DenoisedVisibilityHistory = builder.CreateTexture(
+		    FrameGraphTextureDesc::CreateColor(
+		        "ShadowVisibilityDenoisedHistory",
+		        sceneExtent.Width,
+		        sceneExtent.Height,
+		        ShadowDenoiseContract::DenoisedVisibilityFormat));
 
 		result.DenoisedVisibility = builder.CreateTexture(
-		    FrameGraphTextureDesc::CreateColor("ShadowVisibilityDenoised", sceneExtent.Width, sceneExtent.Height, GBufferFormats::DeviceZ));
+		    FrameGraphTextureDesc::CreateColor(
+		        "ShadowVisibilityDenoised",
+		        sceneExtent.Width,
+		        sceneExtent.Height,
+		        ShadowDenoiseContract::DenoisedVisibilityFormat));
 
 		return result;
 	}

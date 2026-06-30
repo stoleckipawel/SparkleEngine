@@ -31,7 +31,7 @@ struct FrameAssemblyHistoryResources final
 	ShadowDenoiseContract::ShadowDenoiseTextures ShadowDenoiser = {};
 
 	bool HasExposureHistory() const noexcept { return PreviousExposure.IsValid() && CurrentExposure.IsValid(); }
-	bool HasShadowHistory() const noexcept { return ShadowDenoiser.DenoiseHistory.IsValid(); }
+	bool HasShadowHistory() const noexcept { return ShadowDenoiser.DenoisedVisibilityHistory.IsValid(); }
 };
 
 struct FrameAssemblyProviderResources final

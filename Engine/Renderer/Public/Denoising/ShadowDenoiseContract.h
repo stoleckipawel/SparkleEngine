@@ -1,11 +1,15 @@
 #pragma once
 
 #include "FrameGraph/FrameGraphTextureHandle.h"
+#include "RHI/Public/Formats/PixelFormat.h"
 
 #include <cstdint>
 
 namespace ShadowDenoiseContract
 {
+	inline constexpr PixelFormat PackedVisibilitySignalFormat = PixelFormat::R32G32B32A32_Float;
+	inline constexpr PixelFormat DenoisedVisibilityFormat = PixelFormat::R32_Float;
+
 	enum class ShadowDenoiseStage : std::uint8_t
 	{
 		Off,
@@ -24,10 +28,10 @@ namespace ShadowDenoiseContract
 
 	struct ShadowDenoiseTextures
 	{
-		FrameGraphTextureHandle RawVisibility;
-		FrameGraphTextureHandle RawVisibilityScratch;
+		FrameGraphTextureHandle PackedSignal;
+		FrameGraphTextureHandle PackedSignalScratch;
 		FrameGraphTextureHandle DenoisedVisibility;
-		FrameGraphTextureHandle DenoiseHistory;
+		FrameGraphTextureHandle DenoisedVisibilityHistory;
 	};
 
 	struct ShadowDenoiseContract
