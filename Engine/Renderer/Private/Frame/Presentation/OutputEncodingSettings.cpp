@@ -19,7 +19,6 @@ EngineOutputColorEncoding SanitizeOutputColorEncoding(EngineOutputColorEncoding 
 
 std::uint32_t ResolveShaderOutputEncoding(EngineOutputColorEncoding encoding, PixelFormat backBufferFormat) noexcept
 {
-	(void)backBufferFormat;
 	const EngineOutputColorEncoding sanitizedEncoding = SanitizeOutputColorEncoding(encoding);
 	if (sanitizedEncoding == EngineOutputColorEncoding::Srgb)
 	{
@@ -30,7 +29,16 @@ std::uint32_t ResolveShaderOutputEncoding(EngineOutputColorEncoding encoding, Pi
 		return 0u;
 	}
 
-	return 1u;
+	switch (backBufferFormat)
+	{
+		case PixelFormat::R8G8B8A8_UNorm:
+		case PixelFormat::B8G8R8A8_UNorm:
+		case PixelFormat::R8G8B8A8_UNorm_Srgb:
+		case PixelFormat::B8G8R8A8_UNorm_Srgb:
+			return 1u;
+		default:
+			return 1u;
+	}
 }
 
 OutputEncodingUniformData BuildOutputEncodingUniformDataFromCVars() noexcept

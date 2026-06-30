@@ -10,15 +10,9 @@ float2 ComputeSkyEnvironmentUv(float3 worldDirection)
 	return float2(frac(u), saturate(v));
 }
 
-float3 ToneMapSkyEnvironment(float3 skyRadiance)
-{
-	return skyRadiance / (skyRadiance + 1.0f.xxx);
-}
-
 float3 SampleSkyEnvironment(Texture2D environmentTexture, SamplerState environmentSampler, float3 worldDirection)
 {
-	return ToneMapSkyEnvironment(
-	    environmentTexture.SampleLevel(environmentSampler, ComputeSkyEnvironmentUv(worldDirection), 0.0f).rgb);
+	return environmentTexture.SampleLevel(environmentSampler, ComputeSkyEnvironmentUv(worldDirection), 0.0f).rgb;
 }
 
 #endif

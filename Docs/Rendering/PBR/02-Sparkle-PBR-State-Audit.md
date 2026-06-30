@@ -237,7 +237,6 @@ Issues:
 
 - Sampling uses the raw NDF instead of visible-normal GGX. This can be unbiased but will be much noisier at grazing angles than VNDF sampling.
 - Multi-bounce paths sample only specular-lobe continuation. Diffuse-after-specular paths are missing until a unified BSDF sampler exists.
-- The pass uses tone-mapped sky radiance on miss.
 - The current changelist removes the rejected shared roughness helper. Indirect specular still has effect-local mirror-vs-GGX sampling behavior, which Stage 2C/Stage 7 should move into shared BSDF/path-sampling code with reference-backed VNDF, near-zero stability, and denoiser/debug roughness parity.
 - It outputs a fully material-evaluated contribution but does not output hit distance, roughness, normal, albedo, or demodulated radiance needed by a dedicated denoiser.
 
@@ -262,13 +261,11 @@ Issues:
 
 ## Sky and Presentation State
 
-`SkyEnvironment.hlsli` tone maps sampled sky radiance:
+`SkyEnvironment.hlsli` samples sky radiance without applying a display transform:
 
-- `Engine/Assets/Shaders/Lighting/SkyEnvironment.hlsli:13`
-- `Engine/Assets/Shaders/Lighting/SkyEnvironment.hlsli:18`
-- `Engine/Assets/Shaders/Lighting/SkyEnvironment.hlsli:20`
+- `Engine/Assets/Shaders/Lighting/SkyEnvironment.hlsli`
 
-`Sky.hlsl` writes that sky color into scene color:
+`Sky.hlsl` writes that linear HDR sky radiance into scene color:
 
 - `Engine/Assets/Shaders/Passes/Deferred/Sky.hlsl`
 
@@ -290,11 +287,11 @@ Exposure state:
 - Temporal exposure history is invalidated with the renderer temporal-history reset path, including resize and scene extent changes.
 - The implementation is reference-backed by AMD FidelityFX FSR2/SPD, NVIDIA Falcor ToneMapper, and Microsoft MiniEngine exposure/luma shaders.
 
-Issue:
+Resolved in Stage 0D:
 
-- Sky pixels are still tone mapped in the sky pass before presentation.
-- Indirect diffuse and specular miss rays also receive tone-mapped sky, not linear HDR sky radiance.
-- This violates PBR-R-001 and PBR-R-007 and is currently one of the highest priority correctness bugs.
+- Sky pixels now stay linear HDR until presentation.
+- Indirect diffuse and specular miss rays now receive the same linear HDR sky radiance used by the sky pass.
+- Tone mapping is display-only for this path; remaining sky correctness work belongs to later HDR environment import, calibration, and validation stages.
 
 ## Denoising and Provider State
 
