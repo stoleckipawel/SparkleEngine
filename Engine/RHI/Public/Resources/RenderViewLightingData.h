@@ -27,7 +27,7 @@ struct PointLightConstantBufferData
 	DirectX::XMFLOAT3 Color = {1.0f, 1.0f, 1.0f};
 	// Luminous intensity in candela.
 	float Intensity = 1.0f;
-	
+
 	float SourceRadius = 0.05f;
 	std::uint32_t CastShadow = 1u;
 	DirectX::XMUINT2 Padding = {0u, 0u};

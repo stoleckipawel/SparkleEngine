@@ -193,7 +193,7 @@ void SceneLightInspector::BuildPointLightCategory(const std::string& filterText,
 	float sourceRadius = lightDesc.sourceRadius;
 	constexpr float kDefaultSourceRadius = 0.05f;
 	if (UiUtil::EditDetailsFloat(
-	        "Shadow Radius",
+	        "Source Radius",
 	        sourceRadius,
 	        0.01f,
 	        0.0f,
@@ -236,7 +236,7 @@ void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	float sourceRadius = lightDesc.sourceRadius;
 	constexpr float kDefaultSourceRadius = 0.05f;
 	if (UiUtil::EditDetailsFloat(
-	        "Shadow Radius",
+	        "Source Radius",
 	        sourceRadius,
 	        0.01f,
 	        0.0f,

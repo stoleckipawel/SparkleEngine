@@ -237,13 +237,13 @@ Li_light = color * illuminance_lux
 
 This is acceptable if the engine treats directional intensity as irradiance on a surface perpendicular to the light direction and then multiplies by `NoL` in the rendering equation.
 
-Finite area-light sampling should eventually use the sampled point or sampled direction in both visibility and BRDF evaluation:
+Finite area-light sampling uses the sampled point or sampled direction in both visibility and BRDF evaluation:
 
 ```text
 Lo += f_s * Le_or_I * geometry_term * visibility / pdf
 ```
 
-Using source radius only to soften shadows is an approximation. It may remain as a punctual-light approximation, but it must be named as such and must not alter unoccluded direct radiance.
+Using source radius only to soften shadows is an approximation. It may remain as a compatibility/debug punctual-light mode, but production finite lights must sample emitter area or solid angle and evaluate emitted radiance, visibility, BRDF, and PDFs consistently.
 
 ### PBR-R-005: Direct Lighting Requirements
 
@@ -262,6 +262,14 @@ DirectDiffuse = f_diffuse * Li * NoL * visibility
 DirectSpecular = f_specular * Li * NoL * visibility
 DirectSubsurface = f_subsurface * Li * NoL * visibility
 ```
+
+Finite area-light direct lighting must use a sampled emitter direction:
+
+```text
+DirectLobe += f_lobe(wo, wi) * Le(sample) * abs(dot(ns, wi)) * visibility / pdf_w
+```
+
+where `pdf_w` is the final solid-angle PDF for the sampled emitter direction, including light-selection probability. If the implementation samples an emitter by area, it must convert `pdfA` to `pdf_w` using the emitter normal and squared distance before evaluating the estimator. Point-light inverse-square attenuation is not applied a second time to the finite-area estimator.
 
 The sum must match evaluating the same BSDF lobes together.
 

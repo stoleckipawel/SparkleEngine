@@ -149,7 +149,7 @@ Remaining issues:
 
 - Local light attenuation is `1 / distance^2 * (1 - distance / range)^2`. This is not the glTF punctual range falloff and dims much more aggressively across the range.
 - Stage 4 now uses a glTF/Filament-style punctual-light policy: directional intensity is treated as lux, point/spot intensity as candela, distance attenuation is inverse-square with optional smooth range cutoff, and spot cone attenuation uses the squared smooth cone ramp.
-- Source radius affects stochastic shadow sampling but not direct-light radiometry. Stage 4A now names this as `SoftPunctual`, a punctual-light-with-soft-shadow approximation, not a physically sampled area light.
+- Source radius currently affects stochastic shadow sampling but not direct-light radiometry. This remains an interim `SoftPunctual` compatibility/debug path; Stage 4A now requires physically sampled area-light shading for finite sources.
 - The previous direct-lighting `0.04` roughness floor has been removed. Direct analytic lighting has no pass-local mirror/delta branch; singularity handling is localized to BRDF denominator/PDF safety.
 
 ## Shadow State
@@ -157,7 +157,7 @@ Remaining issues:
 Direct shadows:
 
 - `RayTracedShadowTrace.hlsli` uses inline ray queries.
-- Hard and one-sample `SoftPunctual` modes exist.
+- Hard and one-sample `SoftPunctual` modes exist as the current compatibility path.
 - Shadow settings contain an NRD SIGMA enum path.
 
 Relevant code:
@@ -174,7 +174,7 @@ Issues:
 - Direct shadow rays do not appear to run the alpha-tested material resolution path used by indirect rays. Alpha-tested geometry can cast opaque direct shadows.
 - There is a `RayTracedShadowDenoiserInputs::PackShadowSignal` helper, but the direct lighting pass currently consumes visibility internally rather than writing raw visibility and denoised visibility resources.
 - SIGMA is represented in settings/resources, but there is no complete NRD integration visible in this pass path.
-- One-sample `SoftPunctual` shadows use sampled light positions/directions for visibility, but direct BRDF/radiance is still evaluated with the original punctual light direction. This is an approximation, not area-light integration.
+- One-sample `SoftPunctual` shadows use sampled light positions/directions for visibility, but direct BRDF/radiance is still evaluated with the original punctual light direction. This is an approximation, not area-light integration; Stage 4A must replace finite-source production shading with sampled emitter radiance/PDF evaluation.
 
 ## Indirect Diffuse State
 
@@ -492,8 +492,8 @@ P1 path-tracing convergence blockers:
 1. Diffuse and specular indirect passes are separate lobe-continuation estimators instead of a unified BSDF path sampler.
 2. Environment importance sampling is missing.
 3. Emissive geometry is only found by random hit, with no explicit emitter sampling.
-4. Source radius creates soft-shadow approximation but not physically integrated area-light radiance.
-5. Full roughness range is implemented for the current direct, indirect diffuse, indirect specular, and ray-hit direct shader paths: material roughness is not floored or reused as compensation, direct/ray-hit lighting use one BRDF path, and mirror-vs-GGX sampling lives in shared BRDF sampling code. Stage 4 owns punctual light units/falloff, Stage 4A still owns finite-light policy, and Stage 11/11A still owns denoiser auxiliary roughness resources.
+4. Source radius currently creates a soft-shadow approximation but not physically integrated area-light radiance; Stage 4A now requires sampled finite-light radiance before the PBR path is considered complete.
+5. Full roughness range is implemented for the current direct, indirect diffuse, indirect specular, and ray-hit direct shader paths: material roughness is not floored or reused as compensation, direct/ray-hit lighting use one BRDF path, and mirror-vs-GGX sampling lives in shared BRDF sampling code. Stage 4 owns punctual light units/falloff, Stage 4A must add physically sampled finite lights, and Stage 11/11A still owns denoiser auxiliary roughness resources.
 6. There is no shared lobe-energy budget for diffuse, specular, subsurface, transmission/future lobes, direct lighting, indirect sampling, and reference path tracing.
 
 P2 denoiser readiness blockers:

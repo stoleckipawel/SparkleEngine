@@ -847,59 +847,68 @@ Acceptance criteria:
 Completion note:
 
 - Reference lineage: Sparkle now follows the glTF `KHR_lights_punctual` and Filament punctual-light convention for units: directional intensity is illuminance in lux, point and spot intensity are luminous intensity in candela, point/spot distance falloff is inverse-square, and range is an optional smooth cutoff instead of an intensity unit conversion. Spot cone attenuation follows the glTF smooth cone rule with a squared interpolation term. Unreal/Epic remain the direct-lighting material/BRDF reference for consuming the resulting incident light in the shared surface evaluator.
-- Local deviation: finite source radius still affects stochastic shadow sampling only; it does not turn point/spot lights into physically integrated area lights. Stage 4A owns that finite-light policy.
+- Local deviation: Stage 4 locks punctual-light units/falloff only. The current source-radius soft-shadow approximation is not considered PBR-complete; Stage 4A must replace finite-source production shading with physically sampled area-light radiance.
 - Reuse/DRY audit: scanned `GltfLightImporter`, editor light controls, level light parsing/serialization, cooked scene light records/builders, scene-asset light translation, `SceneLightingSnapshotBuilder`, render-light upload, `RenderViewLightingData`, `LightConstantBufferData`, `PunctualLights`, `SurfaceLighting`, `RayTracingHitLighting`, `DirectLighting`, and shadow trace consumers before editing. The implementation keeps the canonical falloff and cone math in `Lighting/PunctualLights.hlsli`; primary direct lighting and ray-hit direct lighting already call those helpers, so no wrapper or new policy namespace was added.
 - Implementation: `PunctualLights::ComputeDistanceAttenuation` now uses `1 / max(distance^2, 1.0e-4)` with the `smooth^2` `1 - x^4` range cutoff, and `ComputeSpotConeAttenuation` now squares the cone ramp. glTF/imported and authored light intensity values pass through without arbitrary compensation. The editor labels directional intensity as lux and point/spot intensity as candela; serialized levels now write `IntensityLux` or `IntensityCandela` while still accepting older `Intensity` fields. Cooked/runtime/render-view/shader light structs carry the same unit contract. Spot outer cone defaults now match the glTF default `pi/4` where local light records are initialized.
 - Build checks: cooked `DirectLightingNoRayQuery`, `DirectLighting`, `DirectLightingVulkanAddress`, `IndirectDiffuse`, and `IndirectSpecular` for `DxilSm66` and `SpirV16`; built `ShowcaseEditor`, `SourceImporters`, `SceneCooker`, and `ShaderCompiler` for `DevelopmentEditor`.
 
-## Stage 4A: Define Finite Light Source and Soft-Shadow Approximation Policy
+## Stage 4A: Implement Physically Sampled Area Lights
 
 Implementation prompt:
 
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
-Separate the current source-radius soft-shadow approximation from physically integrated finite-area light radiance. A light radius used only to jitter shadow rays must not silently change the radiometric meaning of a point/spot light. If finite lights are added, sample the light source and evaluate PDFs/geometry terms explicitly.
+Implement finite light sources as physically sampled emitters, not as punctual lights with jittered shadow rays. A light with finite shape must sample a point or direction on the emitter, evaluate emitted radiance, visibility, geometry/PDF terms, and the BRDF for that sampled incident direction. The existing soft-punctual shadow path may remain only as a compatibility/debug mode and must not be presented as area-light shading.
 
 Reference lineage:
 
 - PBRT area-light sampling and geometry terms: <https://pbr-book.org/4ed/Light_Sources/Area_Lights>
 - PBRT direct-light sampling/MIS at path vertices: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
-- NVIDIA RTXPT/Falcor direct-light and mesh/area-light sampling patterns.
-- Unreal Engine and Filament punctual-light documentation as the reference for non-area punctual behavior.
+- NVIDIA RTXPT direct-light and analytic/mesh area-light sampling patterns: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA Falcor path tracer analytic light, mesh light, and MIS sampling structure: <https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/usage/path-tracer.md>
+- Unreal Engine physical light units for Directional/Point/Spot/Rect lights and emissive luminance: <https://dev.epicgames.com/documentation/unreal-engine/using-physical-lighting-units-in-unreal-engine>
+- Filament punctual-light documentation remains the reference only for true non-area punctual behavior.
 - Existing Sparkle ray-traced shadow sampling code must be audited before adding area-light behavior.
 
 Files:
 
 - `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSampling.hlsli`
 - `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowTrace.hlsli`
+- New or existing `Engine/Assets/Shaders/Lighting/AreaLights.hlsli`
+- New or existing `Engine/Assets/Shaders/Lighting/LightSampling.hlsli`
 - `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`
 - `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
 - `Engine/RHI/Public/Resources/RenderViewLightingData.h`
-- Light import and scene snapshot code.
+- Light import, editor, level serialization, cooked record, scene snapshot, render scene data, and frame-light upload code.
 
 Required policy:
 
-- Punctual mode: source radius may affect stochastic shadow penumbra only and does not change emitted intensity or direct BRDF radiance.
-- Area-light mode, if introduced: sample a position/direction on the light, evaluate geometry term, emission, visibility, and PDF, then use MIS when combined with BSDF sampling.
-- The light data model must explicitly say whether a light is evaluated as punctual-with-soft-shadow or physically finite.
+- Punctual mode remains valid only when the light has no finite emitter shape. Punctual point/spot lights keep Stage 4 inverse-square and cone behavior.
+- Finite point-like sources become sphere lights when `sourceRadius > 0`, unless the authored/imported light explicitly requests punctual compatibility.
+- Finite spot sources become disk or cone-projected disk emitters oriented by the spot direction when `sourceRadius > 0`, unless explicitly punctual.
+- Directional angular diameter is evaluated as a distant disk/solid-angle light for direct lighting, not only as a shadow-ray cone.
+- Rect/quad area lights are first-class finite lights. Use Unreal's Rect Light/physical-units workflow for editor-facing units and PBRT/Falcor for sampling.
+- Emissive mesh/triangle lights are either implemented here using the same light-sampling interface or explicitly routed to Stage 10 with the same interface and no duplicate estimator.
+- Area emitters store or derive emitted radiance/luminance. Editor units must follow Unreal/PBRT terminology: directional lux, punctual candela/lumen policy from Stage 4, area/emissive luminance in `cd/m^2` where the UI exposes surface brightness.
+- The canonical direct-area-light sample payload contains sampled position or direction, incident direction, distance, emitted radiance, solid-angle PDF, light selection PDF, optional emitter normal, and visibility range.
+- If sampling begins in area measure, convert to solid-angle measure with `pdfW = pdfA * distance^2 / abs(dot(lightNormal, -wi))`; do not also apply point-light inverse-square attenuation to the area-light result.
+- Direct primary lighting and ray-hit direct lighting must call the same area-light evaluator. That evaluator must evaluate the BRDF with the sampled area-light direction, not with the original punctual center direction.
+- Path/reference lighting must combine light sampling and BSDF sampling with MIS using the same PDFs. Direct-only real-time area lighting may initially use light sampling only, but the estimator and PDFs must be compatible with the later MIS path.
+- Visibility rays for finite lights terminate at the sampled emitter point/distance. Shadow-only jitter is not a substitute for finite-light direct radiance.
 
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
-- Changing source radius in punctual mode changes penumbra shape but not unoccluded irradiance beyond documented approximation tolerance.
-- Any physically finite-light mode has explicit light sampling PDFs and does not reuse point-light attenuation as if it were an area-light integral.
-- Primary direct lighting, secondary direct lighting, and path tracing use the same light classification.
-- Unoccluded intensity is invariant under source-radius changes in punctual mode except for documented approximation limits.
-- Reference compliance: soft-shadow approximation and any finite-light integration cite PBRT/RTXPT/Falcor/Unreal/Filament and document deviations.
-- Reuse/DRY: light classification, radius policy, and sampling are stored once and reused by direct, shadow, and indirect code.
-
-Completion note:
-
-- Reference lineage: Sparkle keeps the current light model on the Unreal/Filament/glTF side of the contract: directional, point, and spot lights are punctual light evaluations. The PBRT/RTXPT/Falcor area-light references are documented as the required future path for physically finite lights: sample the emitter, evaluate geometry/emission/visibility/PDF, and use MIS when combined with BSDF sampling. Sparkle does not claim the current source-radius path is an area-light integral.
-- Local deviation: `sourceRadius` and directional `angularDiameterRadians` are visibility-only stochastic shadow sampling parameters. They may change the penumbra sampled by ray-traced shadows, but they do not change punctual intensity, direct BRDF radiance, local-light attenuation, or the ray-hit direct-light path.
-- Reuse/DRY audit: scanned `RayTracedShadowSampling.hlsli`, `RayTracedShadowTrace.hlsli`, `PunctualLights.hlsli`, `SurfaceLighting.hlsli`, `RayTracingHitLighting.hlsli`, direct-light pass callsites, `RenderViewLightingData`, shader light constant-buffer data, editor light controls, scene light descriptors/snapshots, render scene light structs, frame-light upload, cooked/imported light records, and shadow CVars/settings. No area-light mode, PDF helper, or new light classification enum was added because there is only one runtime classification today: punctual with optional soft-shadow visibility jitter.
-- Implementation: renamed the ray-traced shadow quality mode from `SoftAreaLights` to `SoftPunctual`, relabeled the editor radius field as `Shadow Radius`, documented local-light `SourceRadius` and directional `AngularDiameter` as shadow-only fields through the existing CPU and shader light data path, and kept direct primary/ray-hit lighting on the same `PunctualLights` and `SurfaceLighting` radiance path.
+- Finite source radius changes both penumbra and unoccluded shading/specular highlight shape according to the sampled emitter; it is no longer only a shadow-radius control in production mode.
+- Physically finite light modes have explicit light selection PDFs and per-sample PDFs, and no finite-light path reuses point-light attenuation as if it were an area-light integral.
+- Primary direct lighting, secondary hit direct lighting, and path/reference lighting use the same light classification and sample payload.
+- A small sphere light converges toward the Stage 4 punctual result as radius approaches zero.
+- A large sphere/disk/rect light produces broader highlights and softer shading than a punctual light with the same center and photometric power.
+- Directional angular diameter affects direct-light direction distribution and highlight width, not only shadow softness.
+- `SoftPunctual` remains available only as a named compatibility/debug mode. It cannot be the default production interpretation for finite lights.
+- Reference compliance: implementation notes map `SampleLi`/`PDF_Li`-style area-light sampling to PBRT, analytic/mesh light strategy and MIS structure to Falcor/RTXPT, and editor units to Unreal. Any local deviation must name the exact estimator difference.
+- Reuse/DRY: light classification, area sample payload, PDF conversion, visibility range, and direct-area-light evaluation live once and are reused by primary direct, ray-hit direct, path/reference lighting, and future emissive mesh sampling.
 
 ## Stage 5: Make Direct Shadows Physically Usable
 
@@ -1303,7 +1312,7 @@ Do these first:
 11. Stage 2C: full roughness range and reference roughness policy.
 12. Stage 3A: centralized shading-model and lobe energy policy.
 13. Stage 4: light units/falloff.
-14. Stage 4A: finite light source and soft-shadow approximation policy.
+14. Stage 4A: physically sampled area lights.
 15. Stage 5: alpha-tested shadows, raw visibility, hit distance, and signal format split.
 16. Stage 7: unified BSDF path sampler.
 
