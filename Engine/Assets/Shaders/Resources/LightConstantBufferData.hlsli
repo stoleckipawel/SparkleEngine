@@ -45,10 +45,26 @@ struct SpotLightConstantBufferData
 	uint Padding;
 };
 
+struct RectLightConstantBufferData
+{
+	float3 Position;
+	float Width;
+
+	float3 Direction;
+	float Height;
+
+	float3 Tangent;
+	// Luminance in candela per square meter.
+	float Luminance;
+
+	float3 Color;
+	uint CastShadow;
+};
+
 struct ViewLightingData
 {
 	uint DirectionalLightCount;
 	uint PointLightCount;
 	uint SpotLightCount;
-	uint PaddingCount;
+	uint RectLightCount;
 };

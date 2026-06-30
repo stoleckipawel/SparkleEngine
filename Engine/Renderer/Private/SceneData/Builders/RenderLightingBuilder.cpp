@@ -17,6 +17,8 @@ namespace RenderLightingBuilder
 		sceneData.pointLights.reserve(lightingSnapshot.pointLights.size());
 		sceneData.spotLights.clear();
 		sceneData.spotLights.reserve(lightingSnapshot.spotLights.size());
+		sceneData.rectLights.clear();
+		sceneData.rectLights.reserve(lightingSnapshot.rectLights.size());
 
 		for (const DirectionalLightDesc& light : lightingSnapshot.directionalLights)
 		{
@@ -56,5 +58,18 @@ namespace RenderLightingBuilder
 			sceneData.spotLights.push_back(renderLight);
 		}
 
+		for (const RectLightSnapshotDesc& light : lightingSnapshot.rectLights)
+		{
+			RectLight renderLight = {};
+			renderLight.position = light.position;
+			renderLight.width = light.width;
+			renderLight.direction = light.direction;
+			renderLight.height = light.height;
+			renderLight.tangent = light.tangent;
+			renderLight.luminance = light.luminance;
+			renderLight.color = light.color;
+			renderLight.castShadow = light.castShadow;
+			sceneData.rectLights.push_back(renderLight);
+		}
 	}
 }

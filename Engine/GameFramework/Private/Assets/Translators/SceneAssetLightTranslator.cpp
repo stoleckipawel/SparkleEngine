@@ -37,6 +37,16 @@ namespace Assets
 					spot.castShadow = true;
 					return spot;
 				}
+				case CookedSceneLightKind::Rect:
+				{
+					RectLightDesc rect;
+					rect.direction = lightRecord.direction;
+					rect.tangent = lightRecord.tangent;
+					rect.width = lightRecord.width;
+					rect.height = lightRecord.height;
+					rect.castShadow = true;
+					return rect;
+				}
 				case CookedSceneLightKind::Unknown:
 				default:
 					return std::monostate{};

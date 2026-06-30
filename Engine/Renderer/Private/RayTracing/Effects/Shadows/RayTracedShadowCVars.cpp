@@ -1,10 +1,6 @@
 #include "../../../PCH.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 
-ConsoleVariable<RayTracedShadowQualityMode> CVarRayTracedShadowQualityMode(
-	"r.RayTracedShadows.Quality",
-	RayTracedShadowQualityMode::SoftPunctual,
-	"Ray traced shadow quality: 0=Hard, 1=SoftPunctual. SoftPunctual jitters shadow rays only; light radiance remains punctual.");
 ConsoleVariable<RayTracedShadowDenoiserMode> CVarRayTracedShadowDenoiserMode(
 	"r.RayTracedShadows.Denoiser",
 	RayTracedShadowDenoiserMode::NrdSigma,

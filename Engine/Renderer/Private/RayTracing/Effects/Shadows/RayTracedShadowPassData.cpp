@@ -27,14 +27,14 @@ namespace RayTracedShadowPassData
 		    .DirectionalShadowsEnabled = settings->Enabled ? 1u : 0u,
 		    .LocalLightShadowsEnabled = settings->Enabled ? 1u : 0u,
 		    .DiagnosticsEnabled = settings->DiagnosticsEnabled ? 1u : 0u,
-		    .QualityMode = static_cast<std::uint32_t>(settings->QualityMode),
+		    .Padding0 = 0u,
 		    .NormalBias = settings->NormalBias,
 		    .MaxDistance = settings->MaxDistance,
-		    .Padding0 = 0.0f,
 		    .Padding1 = 0.0f,
+		    .Padding2 = 0.0f,
 		    .SceneTlasGpuAddressLow = static_cast<std::uint32_t>(sceneTlasAddress & 0xFFFFFFFFull),
 		    .SceneTlasGpuAddressHigh = static_cast<std::uint32_t>((sceneTlasAddress >> 32u) & 0xFFFFFFFFull),
 		    .TlasAccessMode = static_cast<std::uint32_t>(accessMode),
-		    .Padding2 = 0u};
+		    .Padding3 = 0u};
 	}
 }

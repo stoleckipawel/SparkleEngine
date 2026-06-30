@@ -44,6 +44,7 @@ struct IndirectDiffusePassParameters
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
+	ShaderBufferSRV RectLights;
 	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
 	ShaderSamplerSet MaterialTextureSampler;
 
@@ -69,6 +70,7 @@ struct IndirectDiffusePassParameters
 		builder.ReadBuffer("DirectionalLights", &IndirectDiffusePassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &IndirectDiffusePassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &IndirectDiffusePassParameters::SpotLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RectLights", &IndirectDiffusePassParameters::RectLights, ShaderStageVisibility::Compute);
 		builder.ReadTexture("MaterialTextureTable", &IndirectDiffusePassParameters::MaterialTextureTable, ShaderStageVisibility::Compute);
 		builder.Sampler("MaterialTextureSampler", &IndirectDiffusePassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
 	}

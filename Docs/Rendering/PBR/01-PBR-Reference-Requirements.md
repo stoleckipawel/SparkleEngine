@@ -243,7 +243,7 @@ Finite area-light sampling uses the sampled point or sampled direction in both v
 Lo += f_s * Le_or_I * geometry_term * visibility / pdf
 ```
 
-Using source radius only to soften shadows is an approximation. It may remain as a compatibility/debug punctual-light mode, but production finite lights must sample emitter area or solid angle and evaluate emitted radiance, visibility, BRDF, and PDFs consistently.
+Using source radius only to soften shadows is an approximation and is not part of the production lighting contract. Finite lights must sample emitter area or solid angle and evaluate emitted radiance, visibility, BRDF, and PDFs consistently.
 
 ### PBR-R-005: Direct Lighting Requirements
 

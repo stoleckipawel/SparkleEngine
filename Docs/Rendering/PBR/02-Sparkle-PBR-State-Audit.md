@@ -135,9 +135,10 @@ Open question:
 
 Direct lighting shader:
 
-- Loops directional, point, and spot lights in `DirectLighting.hlsl`.
+- Loops directional, point, spot, and rect lights in `DirectLighting.hlsl`.
 - Writes separate `DirectDiffuse`, `DirectSpecular`, and `DirectSubsurface`.
 - Uses ray-query shadows when supported, or unshadowed signals in the no-ray-query variant.
+- Uses `Lighting/AreaLights.hlsli` to build one sampled direct-light payload shared by primary direct lighting and ray-hit direct lighting.
 
 Relevant code:
 
@@ -149,7 +150,7 @@ Remaining issues:
 
 - Local light attenuation is `1 / distance^2 * (1 - distance / range)^2`. This is not the glTF punctual range falloff and dims much more aggressively across the range.
 - Stage 4 now uses a glTF/Filament-style punctual-light policy: directional intensity is treated as lux, point/spot intensity as candela, distance attenuation is inverse-square with optional smooth range cutoff, and spot cone attenuation uses the squared smooth cone ramp.
-- Source radius currently affects stochastic shadow sampling but not direct-light radiometry. This remains an interim `SoftPunctual` compatibility/debug path; Stage 4A now requires physically sampled area-light shading for finite sources.
+- Stage 4A makes finite directional, sphere, disk, and rect sources physically sampled for production direct lighting. The old shadow-only finite-light quality path has been removed.
 - The previous direct-lighting `0.04` roughness floor has been removed. Direct analytic lighting has no pass-local mirror/delta branch; singularity handling is localized to BRDF denominator/PDF safety.
 
 ## Shadow State
@@ -157,7 +158,7 @@ Remaining issues:
 Direct shadows:
 
 - `RayTracedShadowTrace.hlsli` uses inline ray queries.
-- Hard and one-sample `SoftPunctual` modes exist as the current compatibility path.
+- Direct shadows trace the sampled direct-light direction/distance; finite production lights sample emitter direction and visibility together.
 - Shadow settings contain an NRD SIGMA enum path.
 
 Relevant code:
@@ -174,7 +175,7 @@ Issues:
 - Direct shadow rays do not appear to run the alpha-tested material resolution path used by indirect rays. Alpha-tested geometry can cast opaque direct shadows.
 - There is a `RayTracedShadowDenoiserInputs::PackShadowSignal` helper, but the direct lighting pass currently consumes visibility internally rather than writing raw visibility and denoised visibility resources.
 - SIGMA is represented in settings/resources, but there is no complete NRD integration visible in this pass path.
-- One-sample `SoftPunctual` shadows use sampled light positions/directions for visibility, but direct BRDF/radiance is still evaluated with the original punctual light direction. This is an approximation, not area-light integration; Stage 4A must replace finite-source production shading with sampled emitter radiance/PDF evaluation.
+- The old shadow-only finite-light helpers were removed; production finite-light shading uses the sampled emitter direction for both visibility and BRDF/radiance.
 
 ## Indirect Diffuse State
 
@@ -484,7 +485,7 @@ P0 correctness blockers:
 2. Material F0 parity is implemented for current primary and ray-hit shader paths; import extension coverage for non-default specular/F0 remains Stage 2A.
 3. Secondary hit direct lighting is unshadowed, so indirect bounces overestimate light in occluded regions.
 4. Direct shadow rays do not appear to alpha-test foliage/material cutouts.
-5. Light attenuation and spot falloff are not aligned with the imported glTF punctual light model.
+5. Light-unit correctness now depends on keeping the Stage 4/4A unit contract intact across import, editor, runtime, and shaders.
 6. PBR-relevant asset import rules are not yet enforced by tests, so color-space, packed-channel, HDR sky, and light-unit regressions could silently invalidate lighting.
 
 P1 path-tracing convergence blockers:
@@ -492,8 +493,8 @@ P1 path-tracing convergence blockers:
 1. Diffuse and specular indirect passes are separate lobe-continuation estimators instead of a unified BSDF path sampler.
 2. Environment importance sampling is missing.
 3. Emissive geometry is only found by random hit, with no explicit emitter sampling.
-4. Source radius currently creates a soft-shadow approximation but not physically integrated area-light radiance; Stage 4A now requires sampled finite-light radiance before the PBR path is considered complete.
-5. Full roughness range is implemented for the current direct, indirect diffuse, indirect specular, and ray-hit direct shader paths: material roughness is not floored or reused as compensation, direct/ray-hit lighting use one BRDF path, and mirror-vs-GGX sampling lives in shared BRDF sampling code. Stage 4 owns punctual light units/falloff, Stage 4A must add physically sampled finite lights, and Stage 11/11A still owns denoiser auxiliary roughness resources.
+4. Finite analytic lights are sampled for current direct and ray-hit direct lighting; path/reference MIS with BSDF-sampled direct lighting and explicit mesh emitter sampling remain later-stage work.
+5. Full roughness range is implemented for the current direct, indirect diffuse, indirect specular, and ray-hit direct shader paths: material roughness is not floored or reused as compensation, direct/ray-hit lighting use one BRDF path, and mirror-vs-GGX sampling lives in shared BRDF sampling code. Stage 11/11A still owns denoiser auxiliary roughness resources.
 6. There is no shared lobe-energy budget for diffuse, specular, subsurface, transmission/future lobes, direct lighting, indirect sampling, and reference path tracing.
 
 P2 denoiser readiness blockers:

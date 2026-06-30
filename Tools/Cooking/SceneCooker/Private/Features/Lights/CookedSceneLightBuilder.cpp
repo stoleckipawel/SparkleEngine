@@ -17,6 +17,8 @@ namespace
 				return Assets::CookedSceneLightKind::Point;
 			case ImportedLightKind::Spot:
 				return Assets::CookedSceneLightKind::Spot;
+			case ImportedLightKind::Rect:
+				return Assets::CookedSceneLightKind::Rect;
 			case ImportedLightKind::Unknown:
 			default:
 				return Assets::CookedSceneLightKind::Unknown;
@@ -41,6 +43,9 @@ namespace
 		lightRecord.range = importedLight.range;
 		lightRecord.innerConeAngleRadians = importedLight.innerConeAngleRadians;
 		lightRecord.outerConeAngleRadians = importedLight.outerConeAngleRadians;
+		lightRecord.tangent = importedLight.tangent;
+		lightRecord.width = importedLight.width;
+		lightRecord.height = importedLight.height;
 		lightRecord.sourceNodeIndex = importedLight.sourceNodeIndex;
 		lightRecord.flags = importedLight.visible ? 1u : 0u;
 		return lightRecord;

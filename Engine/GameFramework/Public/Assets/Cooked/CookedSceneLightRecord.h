@@ -19,7 +19,8 @@ namespace Assets
 		Directional = 0,
 		Point = 1,
 		Spot = 2,
-		Unknown = 3,
+		Rect = 3,
+		Unknown = 4,
 	};
 
 	struct SPARKLE_ENGINE_API CookedSceneLightRecord
@@ -28,12 +29,15 @@ namespace Assets
 		CookedSceneLightKind kind = CookedSceneLightKind::Unknown;
 		DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 		DirectX::XMFLOAT3 direction = {0.0f, -1.0f, 0.0f};
-		// Directional lights use lux; point and spot lights use candela.
+		// Directional lights use lux, point/spot lights use candela, rect lights use luminance in cd/m^2.
 		float intensity = 1.0f;
 		DirectX::XMFLOAT3 color = {1.0f, 1.0f, 1.0f};
 		float range = 0.0f;
 		float innerConeAngleRadians = 0.0f;
 		float outerConeAngleRadians = DirectX::XM_PIDIV4;
+		DirectX::XMFLOAT3 tangent = {1.0f, 0.0f, 0.0f};
+		float width = 1.0f;
+		float height = 1.0f;
 		std::uint32_t sourceNodeIndex = kInvalidCookedSceneLightSourceNodeIndex;
 		std::uint32_t flags = 0;
 	};

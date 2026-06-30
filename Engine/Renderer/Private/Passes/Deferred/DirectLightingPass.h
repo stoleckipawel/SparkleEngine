@@ -38,6 +38,7 @@ struct DirectLightingPassParameters
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
+	ShaderBufferSRV RectLights;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightingPassParameters>& builder)
 	{
@@ -57,6 +58,7 @@ struct DirectLightingPassParameters
 		builder.ReadBuffer("DirectionalLights", &DirectLightingPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &DirectLightingPassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &DirectLightingPassParameters::SpotLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RectLights", &DirectLightingPassParameters::RectLights, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -76,6 +78,7 @@ struct DirectLightingNoRayQueryPassParameters
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
+	ShaderBufferSRV RectLights;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightingNoRayQueryPassParameters>& builder)
 	{
@@ -93,6 +96,7 @@ struct DirectLightingNoRayQueryPassParameters
 		builder.ReadBuffer("DirectionalLights", &DirectLightingNoRayQueryPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &DirectLightingNoRayQueryPassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &DirectLightingNoRayQueryPassParameters::SpotLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RectLights", &DirectLightingNoRayQueryPassParameters::RectLights, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -113,6 +117,7 @@ struct DirectLightingVulkanAddressPassParameters
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
+	ShaderBufferSRV RectLights;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightingVulkanAddressPassParameters>& builder)
 	{
@@ -158,6 +163,7 @@ struct DirectLightingVulkanAddressPassParameters
 		builder.ReadBuffer("DirectionalLights", &DirectLightingVulkanAddressPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &DirectLightingVulkanAddressPassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &DirectLightingVulkanAddressPassParameters::SpotLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RectLights", &DirectLightingVulkanAddressPassParameters::RectLights, ShaderStageVisibility::Compute);
 	}
 };
 

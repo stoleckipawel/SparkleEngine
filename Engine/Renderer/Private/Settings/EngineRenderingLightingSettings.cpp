@@ -10,6 +10,7 @@ void EngineRenderingLightingSettings::Capture(EngineRenderingSettingsState& stat
 	state.MaxDirectionalLights = CVarMaxDirectionalLights.Get();
 	state.MaxPointLights = CVarMaxPointLights.Get();
 	state.MaxSpotLights = CVarMaxSpotLights.Get();
+	state.MaxRectLights = CVarMaxRectLights.Get();
 }
 
 void EngineRenderingLightingSettings::Apply(const EngineRenderingSettingsState& state) noexcept
@@ -17,6 +18,7 @@ void EngineRenderingLightingSettings::Apply(const EngineRenderingSettingsState& 
 	CVarMaxDirectionalLights.Set(state.MaxDirectionalLights);
 	CVarMaxPointLights.Set(state.MaxPointLights);
 	CVarMaxSpotLights.Set(state.MaxSpotLights);
+	CVarMaxRectLights.Set(state.MaxRectLights);
 }
 
 bool EngineRenderingLightingSettings::ReadConfigValue(
@@ -42,7 +44,13 @@ bool EngineRenderingLightingSettings::ReadConfigValue(
 		state.MaxSpotLights = count;
 		return true;
 	}
-	return trimmedKey == "MaxDirectionalLights" || trimmedKey == "MaxPointLights" || trimmedKey == "MaxSpotLights";
+	if (trimmedKey == "MaxRectLights" && Strings::TryParseNumber(trimmedValue, count))
+	{
+		state.MaxRectLights = count;
+		return true;
+	}
+	return trimmedKey == "MaxDirectionalLights" || trimmedKey == "MaxPointLights" || trimmedKey == "MaxSpotLights" ||
+	       trimmedKey == "MaxRectLights";
 }
 
 void EngineRenderingLightingSettings::AppendConfigValues(
@@ -52,4 +60,5 @@ void EngineRenderingLightingSettings::AppendConfigValues(
 	values.emplace_back("MaxDirectionalLights", std::to_string(state.MaxDirectionalLights));
 	values.emplace_back("MaxPointLights", std::to_string(state.MaxPointLights));
 	values.emplace_back("MaxSpotLights", std::to_string(state.MaxSpotLights));
+	values.emplace_back("MaxRectLights", std::to_string(state.MaxRectLights));
 }

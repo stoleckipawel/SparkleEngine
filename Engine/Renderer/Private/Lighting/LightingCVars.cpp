@@ -16,3 +16,8 @@ ConsoleVariable<std::uint32_t> CVarMaxSpotLights(
     "r.Lighting.MaxSpotLights",
     512u,
     "Maximum active spot lights submitted to lighting shaders.");
+
+ConsoleVariable<std::uint32_t> CVarMaxRectLights(
+    "r.Lighting.MaxRectLights",
+    128u,
+    "Maximum active rect area lights submitted to lighting shaders.");

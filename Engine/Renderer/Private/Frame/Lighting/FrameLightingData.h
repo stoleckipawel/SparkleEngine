@@ -23,6 +23,7 @@ class FrameLightingData final
 	RhiGpuDescriptorHandle GetDirectionalLightsShaderResourceView() const noexcept { return m_directionalLightsShaderResourceView; }
 	RhiGpuDescriptorHandle GetPointLightsShaderResourceView() const noexcept { return m_pointLightsShaderResourceView; }
 	RhiGpuDescriptorHandle GetSpotLightsShaderResourceView() const noexcept { return m_spotLightsShaderResourceView; }
+	RhiGpuDescriptorHandle GetRectLightsShaderResourceView() const noexcept { return m_rectLightsShaderResourceView; }
 
 	static FrameLightingData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
@@ -34,10 +35,13 @@ class FrameLightingData final
 	RhiOwnedResourceHandle m_directionalLightsBuffer = {};
 	RhiOwnedResourceHandle m_pointLightsBuffer = {};
 	RhiOwnedResourceHandle m_spotLightsBuffer = {};
+	RhiOwnedResourceHandle m_rectLightsBuffer = {};
 	RhiResourceViewHandle m_directionalLightsView = {};
 	RhiResourceViewHandle m_pointLightsView = {};
 	RhiResourceViewHandle m_spotLightsView = {};
+	RhiResourceViewHandle m_rectLightsView = {};
 	RhiGpuDescriptorHandle m_directionalLightsShaderResourceView = {};
 	RhiGpuDescriptorHandle m_pointLightsShaderResourceView = {};
 	RhiGpuDescriptorHandle m_spotLightsShaderResourceView = {};
+	RhiGpuDescriptorHandle m_rectLightsShaderResourceView = {};
 };

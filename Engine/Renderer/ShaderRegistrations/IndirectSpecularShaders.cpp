@@ -37,6 +37,7 @@ class IndirectSpecularCS final : public TGlobalShader<IndirectSpecularCS>
 	SHADER_PARAMETER_RDG_BUFFER_SRV(DirectionalLightConstantBufferData, DirectionalLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(PointLightConstantBufferData, PointLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(SpotLightConstantBufferData, SpotLights)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(RectLightConstantBufferData, RectLights)
 	SHADER_PARAMETER_TEXTURE_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
 	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	END_SHADER_PARAMETER_STRUCT()

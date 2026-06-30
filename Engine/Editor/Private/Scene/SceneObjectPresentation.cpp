@@ -18,6 +18,8 @@ namespace SceneObjectPresentation
 				return UiUtil::EditorIcon::PointLight;
 			case SceneLightKind::Spot:
 				return UiUtil::EditorIcon::SpotLight;
+			case SceneLightKind::Rect:
+				return UiUtil::EditorIcon::Light;
 			case SceneLightKind::Unknown:
 			default:
 				return UiUtil::EditorIcon::Light;
@@ -34,6 +36,8 @@ namespace SceneObjectPresentation
 				return "Point Light";
 			case SceneLightKind::Spot:
 				return "Spot Light";
+			case SceneLightKind::Rect:
+				return "Rect Light";
 			case SceneLightKind::Unknown:
 			default:
 				return "Light";

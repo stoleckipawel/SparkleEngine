@@ -78,6 +78,7 @@ ConstantBuffer<ViewLightingData> ViewLighting;
 StructuredBuffer<DirectionalLightConstantBufferData> DirectionalLights;
 StructuredBuffer<PointLightConstantBufferData> PointLights;
 StructuredBuffer<SpotLightConstantBufferData> SpotLights;
+StructuredBuffer<RectLightConstantBufferData> RectLights;
 
 cbuffer PerObjectPSConstantBufferData
 {

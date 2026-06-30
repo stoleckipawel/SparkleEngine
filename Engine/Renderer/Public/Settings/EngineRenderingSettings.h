@@ -28,6 +28,7 @@ struct EngineRenderingSettingsState final
 	std::uint32_t MaxDirectionalLights = 2;
 	std::uint32_t MaxPointLights = 512;
 	std::uint32_t MaxSpotLights = 512;
+	std::uint32_t MaxRectLights = 128;
 	bool MeshAutoBatching = true;
 	bool RefitTlas = true;
 	bool PtlasActive = false;
@@ -62,6 +63,7 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigB
 	void SetMaxDirectionalLights(std::uint32_t count);
 	void SetMaxPointLights(std::uint32_t count);
 	void SetMaxSpotLights(std::uint32_t count);
+	void SetMaxRectLights(std::uint32_t count);
 	void SetMeshAutoBatching(bool enabled);
 	void SetRefitTlas(bool enabled);
 	void SetPtlasActive(bool active);

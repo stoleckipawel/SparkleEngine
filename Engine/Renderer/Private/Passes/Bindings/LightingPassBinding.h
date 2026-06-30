@@ -11,5 +11,6 @@ namespace LightingPassBinding
 		parameters->DirectionalLights = frame.lighting.GetDirectionalLightsShaderResourceView();
 		parameters->PointLights = frame.lighting.GetPointLightsShaderResourceView();
 		parameters->SpotLights = frame.lighting.GetSpotLightsShaderResourceView();
+		parameters->RectLights = frame.lighting.GetRectLightsShaderResourceView();
 	}
 }

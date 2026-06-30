@@ -51,12 +51,28 @@ struct SpotLightConstantBufferData
 	std::uint32_t Padding = 0u;
 };
 
+struct RectLightConstantBufferData
+{
+	DirectX::XMFLOAT3 Position = {0.0f, 0.0f, 0.0f};
+	float Width = 1.0f;
+
+	DirectX::XMFLOAT3 Direction = {0.0f, -1.0f, 0.0f};
+	float Height = 1.0f;
+
+	DirectX::XMFLOAT3 Tangent = {1.0f, 0.0f, 0.0f};
+	// Luminance in candela per square meter.
+	float Luminance = 1.0f;
+
+	DirectX::XMFLOAT3 Color = {1.0f, 1.0f, 1.0f};
+	std::uint32_t CastShadow = 1u;
+};
+
 struct ViewLightingData
 {
 	std::uint32_t DirectionalLightCount = 0;
 	std::uint32_t PointLightCount = 0;
 	std::uint32_t SpotLightCount = 0;
-	std::uint32_t PaddingCount = 0;
+	std::uint32_t RectLightCount = 0;
 };
 
 static_assert(sizeof(DirectionalLightConstantBufferData) == 48, "Directional light constant buffer data must be 48 bytes");
@@ -92,7 +108,17 @@ static_assert(
     "SpotLightConstantBufferData::OuterConeCosine must start at c3.x");
 static_assert(offsetof(SpotLightConstantBufferData, CastShadow) == 52, "SpotLightConstantBufferData::CastShadow must be at c3.y");
 static_assert(offsetof(SpotLightConstantBufferData, SourceRadius) == 56, "SpotLightConstantBufferData::SourceRadius must be at c3.z");
+static_assert(sizeof(RectLightConstantBufferData) == 64, "Rect light constant buffer data must be 64 bytes");
+static_assert(offsetof(RectLightConstantBufferData, Position) == 0, "RectLightConstantBufferData::Position must start at c0.xyz");
+static_assert(offsetof(RectLightConstantBufferData, Width) == 12, "RectLightConstantBufferData::Width must be at c0.w");
+static_assert(offsetof(RectLightConstantBufferData, Direction) == 16, "RectLightConstantBufferData::Direction must start at c1.xyz");
+static_assert(offsetof(RectLightConstantBufferData, Height) == 28, "RectLightConstantBufferData::Height must be at c1.w");
+static_assert(offsetof(RectLightConstantBufferData, Tangent) == 32, "RectLightConstantBufferData::Tangent must start at c2.xyz");
+static_assert(offsetof(RectLightConstantBufferData, Luminance) == 44, "RectLightConstantBufferData::Luminance must be at c2.w");
+static_assert(offsetof(RectLightConstantBufferData, Color) == 48, "RectLightConstantBufferData::Color must start at c3.xyz");
+static_assert(offsetof(RectLightConstantBufferData, CastShadow) == 60, "RectLightConstantBufferData::CastShadow must be at c3.w");
 static_assert(sizeof(ViewLightingData) == 16, "View lighting constants must occupy one shader constant register");
 static_assert(offsetof(ViewLightingData, DirectionalLightCount) == 0, "ViewLightingData::DirectionalLightCount must start at c0.x");
 static_assert(offsetof(ViewLightingData, PointLightCount) == 4, "ViewLightingData::PointLightCount must start at c0.y");
 static_assert(offsetof(ViewLightingData, SpotLightCount) == 8, "ViewLightingData::SpotLightCount must start at c0.z");
+static_assert(offsetof(ViewLightingData, RectLightCount) == 12, "ViewLightingData::RectLightCount must start at c0.w");

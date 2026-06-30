@@ -7,3 +7,4 @@
 extern ConsoleVariable<std::uint32_t> CVarMaxDirectionalLights;
 extern ConsoleVariable<std::uint32_t> CVarMaxPointLights;
 extern ConsoleVariable<std::uint32_t> CVarMaxSpotLights;
+extern ConsoleVariable<std::uint32_t> CVarMaxRectLights;

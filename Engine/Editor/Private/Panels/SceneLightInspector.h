@@ -5,6 +5,7 @@
 
 class GameScene;
 struct PointLightDesc;
+struct RectLightDesc;
 struct SceneDirectionalLightDesc;
 struct SceneLightDesc;
 struct SpotLightDesc;
@@ -25,6 +26,7 @@ class SceneLightInspector final
 	static void BuildDirectionalLightCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept;
 	static void BuildPointLightCategory(const std::string& filterText, PointLightDesc& lightDesc) noexcept;
 	static void BuildSpotLightCategory(const std::string& filterText, SpotLightDesc& lightDesc) noexcept;
+	static void BuildRectLightCategory(const std::string& filterText, RectLightDesc& lightDesc) noexcept;
 
 	static constexpr float kDirectionSliderMin = -1.0f;
 	static constexpr float kDirectionSliderMax = 1.0f;

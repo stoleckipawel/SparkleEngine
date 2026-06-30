@@ -4,6 +4,7 @@
 #include "Core/Public/Math/MathUtils.h"
 #include "Scene/GameScene.h"
 #include "Scene/Lighting/PointLightDesc.h"
+#include "Scene/Lighting/RectLightDesc.h"
 #include "Scene/Lighting/SceneDirectionalLightDesc.h"
 #include "Scene/Lighting/SceneLightDesc.h"
 #include "Scene/Lighting/SceneLighting.h"
@@ -18,6 +19,7 @@ namespace
 	constexpr float kAngularDiameterDragSpeedDegrees = 0.1f;
 	constexpr float kAngularDiameterSliderMaxDegrees = 30.0f;
 	constexpr float kSourceRadiusSliderMax = 25.0f;
+	constexpr float kAreaLightSizeSliderMax = 100.0f;
 }
 
 void SceneLightInspector::Build(GameScene& gameScene, std::size_t lightIndex, const std::string& filterText) noexcept
@@ -54,13 +56,17 @@ void SceneLightInspector::BuildGenericLight(
 	{
 		BuildSpotLightCategory(filterText, *spot);
 	}
+	else if (RectLightDesc* rect = lightDesc.GetRect())
+	{
+		BuildRectLightCategory(filterText, *rect);
+	}
 
 	gameScene.GetLighting().ApplyLightDesc(lightIndex, std::move(lightDesc));
 }
 
 void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Light", "intensity lux candela color visible visibility rendering"))
+	if (!UiUtil::MatchesDetailsFilter(filterText, "Light", "intensity lux candela luminance color visible visibility rendering"))
 	{
 		return;
 	}
@@ -73,8 +79,10 @@ void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText
 	float intensity = lightDesc.common.intensity;
 	constexpr float kDefaultIntensity = 1.0f;
 	const bool isDirectionalLight = lightDesc.GetDirectional() != nullptr;
-	const char* intensityLabel = isDirectionalLight ? "Intensity (lux)" : "Intensity (candela)";
-	const float intensityDragSpeed = isDirectionalLight ? 100.0f : 10.0f;
+	const bool isRectLight = lightDesc.GetRect() != nullptr;
+	const char* intensityLabel =
+	    isDirectionalLight ? "Intensity (lux)" : (isRectLight ? "Luminance (cd/m^2)" : "Intensity (candela)");
+	const float intensityDragSpeed = isDirectionalLight ? 100.0f : (isRectLight ? 10.0f : 10.0f);
 	if (UiUtil::EditDetailsFloat(
 	        intensityLabel,
 	        intensity,
@@ -259,6 +267,55 @@ void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsFloat("Outer Cone", outerConeDegrees, 0.1f, 0.0f, 180.0f, "%.2f", &kDefaultOuterConeDegrees))
 	{
 		lightDesc.outerConeAngleRadians = MathUtils::DegreesToRadians((std::max) (0.0f, outerConeDegrees));
+	}
+
+	UiUtil::EndDetailsCategory();
+}
+
+void SceneLightInspector::BuildRectLightCategory(const std::string& filterText, RectLightDesc& lightDesc) noexcept
+{
+	if (!UiUtil::MatchesDetailsFilter(filterText, "Rect Light", "direction tangent width height area rectangle quad shadow"))
+	{
+		return;
+	}
+
+	if (!UiUtil::BeginDetailsCategory("Rect Light"))
+	{
+		return;
+	}
+
+	float directionValues[3] = {lightDesc.direction.x, lightDesc.direction.y, lightDesc.direction.z};
+	const float defaultDirection[3] = {0.0f, -1.0f, 0.0f};
+	if (UiUtil::EditDetailsFloat3("Direction", directionValues, 0.01f, kDirectionSliderMin, kDirectionSliderMax, "%.3f", defaultDirection))
+	{
+		lightDesc.direction = {directionValues[0], directionValues[1], directionValues[2]};
+	}
+
+	float tangentValues[3] = {lightDesc.tangent.x, lightDesc.tangent.y, lightDesc.tangent.z};
+	const float defaultTangent[3] = {1.0f, 0.0f, 0.0f};
+	if (UiUtil::EditDetailsFloat3("Tangent", tangentValues, 0.01f, kDirectionSliderMin, kDirectionSliderMax, "%.3f", defaultTangent))
+	{
+		lightDesc.tangent = {tangentValues[0], tangentValues[1], tangentValues[2]};
+	}
+
+	float width = lightDesc.width;
+	constexpr float kDefaultSize = 1.0f;
+	if (UiUtil::EditDetailsFloat("Width", width, 0.05f, 0.0f, kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
+	{
+		lightDesc.width = (std::max) (0.0f, width);
+	}
+
+	float height = lightDesc.height;
+	if (UiUtil::EditDetailsFloat("Height", height, 0.05f, 0.0f, kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
+	{
+		lightDesc.height = (std::max) (0.0f, height);
+	}
+
+	bool castShadow = lightDesc.castShadow;
+	constexpr bool kDefaultCastShadow = true;
+	if (UiUtil::EditDetailsCheckbox("Cast Shadow", castShadow, &kDefaultCastShadow))
+	{
+		lightDesc.castShadow = castShadow;
 	}
 
 	UiUtil::EndDetailsCategory();

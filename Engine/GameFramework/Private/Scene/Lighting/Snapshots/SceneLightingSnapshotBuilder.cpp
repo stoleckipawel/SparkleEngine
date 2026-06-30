@@ -52,6 +52,20 @@ namespace
 		return desc;
 	}
 
+	RectLightSnapshotDesc BuildRectLightDesc(const SceneLightCommonDesc& common, const RectLightDesc& rect) noexcept
+	{
+		RectLightSnapshotDesc desc;
+		desc.position = ExtractWorldPosition(common.worldTransform);
+		desc.width = (std::max) (0.0f, rect.width);
+		desc.direction = MathUtils::Normalize3(rect.direction, {0.0f, -1.0f, 0.0f});
+		desc.height = (std::max) (0.0f, rect.height);
+		desc.tangent = MathUtils::Normalize3(rect.tangent, {1.0f, 0.0f, 0.0f});
+		desc.luminance = (std::max) (0.0f, common.intensity);
+		desc.color = common.color;
+		desc.castShadow = rect.castShadow;
+		return desc;
+	}
+
 	template <typename AppendLight>
 	void AppendDirectionalLights(const std::vector<SceneLightDesc>& lights, bool requireVisible, AppendLight appendLight) noexcept
 	{
@@ -96,6 +110,21 @@ namespace
 			appendLight(BuildSpotLightDesc(light.common, *spot));
 		}
 	}
+
+	template <typename AppendLight>
+	void AppendRectLights(const std::vector<SceneLightDesc>& lights, bool requireVisible, AppendLight appendLight) noexcept
+	{
+		for (const SceneLightDesc& light : lights)
+		{
+			const RectLightDesc* rect = light.GetRect();
+			if (rect == nullptr || (requireVisible && !light.common.visible))
+			{
+				continue;
+			}
+
+			appendLight(BuildRectLightDesc(light.common, *rect));
+		}
+	}
 }  // namespace
 
 namespace SceneLightingSnapshotBuilder
@@ -123,6 +152,13 @@ namespace SceneLightingSnapshotBuilder
 		    [&snapshot](const SpotLightSnapshotDesc& light) noexcept
 		    {
 			    snapshot.spotLights.push_back(light);
+		    });
+		AppendRectLights(
+		    lights,
+		    true,
+		    [&snapshot](const RectLightSnapshotDesc& light) noexcept
+		    {
+			    snapshot.rectLights.push_back(light);
 		    });
 		return snapshot;
 	}

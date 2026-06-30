@@ -2,7 +2,7 @@
 #define SPARKLE_SURFACE_LIGHTING_HLSLI
 
 #include "BRDF/BRDF.hlsli"
-#include "Lighting/PunctualLights.hlsli"
+#include "Lighting/LightSampling.hlsli"
 
 namespace SurfaceLighting
 {
@@ -88,7 +88,7 @@ namespace SurfaceLighting
 		    outSubsurface);
 	}
 
-	void AccumulateDirectionalLight(
+	void AccumulateDirectLightSample(
 	    float3 viewDirWorld,
 	    float3 normalWorld,
 	    float3 baseColor,
@@ -98,54 +98,20 @@ namespace SurfaceLighting
 	    float3 subsurfaceColor,
 	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
-	    uint lightIndex,
+	    LightSampling::DirectLightSample lightSample,
 	    float shadowVisibility,
 	    out float3 outDiffuse,
 	    out float3 outSpecular,
 	    out float3 outSubsurface)
 	{
-		const float3 lightDirection = PunctualLights::GetDirectionalLightDirection(lightIndex);
-		const float3 radiance =
-		    DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Intensity * shadowVisibility;
-		EvaluateDirectLight(
-		    viewDirWorld,
-		    normalWorld,
-		    baseColor,
-		    roughness,
-		    metallic,
-		    dielectricF0,
-		    subsurfaceColor,
-		    subsurfaceStrength,
-		    evaluateSubsurface,
-		    lightDirection,
-		    radiance,
-		    outDiffuse,
-		    outSpecular,
-		    outSubsurface);
-	}
+		if (!lightSample.Valid || shadowVisibility <= 0.0f)
+		{
+			outDiffuse = 0.0f.xxx;
+			outSpecular = 0.0f.xxx;
+			outSubsurface = 0.0f.xxx;
+			return;
+		}
 
-	void AccumulatePointLight(
-	    float3 positionWorld,
-	    float3 viewDirWorld,
-	    float3 normalWorld,
-	    float3 baseColor,
-	    float roughness,
-	    float metallic,
-	    float dielectricF0,
-	    float3 subsurfaceColor,
-	    float subsurfaceStrength,
-	    bool evaluateSubsurface,
-	    uint lightIndex,
-	    float shadowVisibility,
-	    out float3 outDiffuse,
-	    out float3 outSpecular,
-	    out float3 outSubsurface)
-	{
-		const PointLightConstantBufferData light = PointLights[lightIndex];
-		float distanceToLight = 0.0f;
-		const float3 lightDirection = PunctualLights::GetPointLightDirection(positionWorld, lightIndex, distanceToLight);
-		const float attenuation = PunctualLights::ComputeDistanceAttenuation(distanceToLight, light.Range);
-		const float3 radiance = light.Color * light.Intensity * attenuation * shadowVisibility;
 		EvaluateDirectLight(
 		    viewDirWorld,
 		    normalWorld,
@@ -156,50 +122,8 @@ namespace SurfaceLighting
 		    subsurfaceColor,
 		    subsurfaceStrength,
 		    evaluateSubsurface,
-		    lightDirection,
-		    radiance,
-		    outDiffuse,
-		    outSpecular,
-		    outSubsurface);
-	}
-
-	void AccumulateSpotLight(
-	    float3 positionWorld,
-	    float3 viewDirWorld,
-	    float3 normalWorld,
-	    float3 baseColor,
-	    float roughness,
-	    float metallic,
-	    float dielectricF0,
-	    float3 subsurfaceColor,
-	    float subsurfaceStrength,
-	    bool evaluateSubsurface,
-	    uint lightIndex,
-	    float shadowVisibility,
-	    out float3 outDiffuse,
-	    out float3 outSpecular,
-	    out float3 outSubsurface)
-	{
-		const SpotLightConstantBufferData light = SpotLights[lightIndex];
-		float distanceToLight = 0.0f;
-		const float3 lightDirection = PunctualLights::GetSpotLightDirection(positionWorld, lightIndex, distanceToLight);
-		const float3 lightToSurfaceDirection = -lightDirection;
-		const float distanceAttenuation = PunctualLights::ComputeDistanceAttenuation(distanceToLight, light.Range);
-		const float coneAttenuation =
-		    PunctualLights::ComputeSpotConeAttenuation(lightToSurfaceDirection, light.Direction, light.InnerConeCosine, light.OuterConeCosine);
-		const float3 radiance = light.Color * light.Intensity * distanceAttenuation * coneAttenuation * shadowVisibility;
-		EvaluateDirectLight(
-		    viewDirWorld,
-		    normalWorld,
-		    baseColor,
-		    roughness,
-		    metallic,
-		    dielectricF0,
-		    subsurfaceColor,
-		    subsurfaceStrength,
-		    evaluateSubsurface,
-		    lightDirection,
-		    radiance,
+		    lightSample.DirectionWorld,
+		    lightSample.IncidentRadiance * shadowVisibility / max(lightSample.PdfW * lightSample.LightSelectionPdf, 1.0e-4f),
 		    outDiffuse,
 		    outSpecular,
 		    outSubsurface);

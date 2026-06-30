@@ -24,17 +24,22 @@ namespace PunctualLights
 		return surfaceToLight / max(distanceToLight, 0.0001f);
 	}
 
-	float ComputeDistanceAttenuation(float distanceToLight, float range)
+	float ComputeRangeCutoff(float distanceToLight, float range)
 	{
-		const float inverseSquare = rcp(max(distanceToLight * distanceToLight, 1.0e-4f));
 		if (range <= 0.0f)
 		{
-			return inverseSquare;
+			return 1.0f;
 		}
 
 		const float normalizedDistance = distanceToLight / max(range, 1.0e-4f);
 		const float smoothRange = saturate(1.0f - normalizedDistance * normalizedDistance * normalizedDistance * normalizedDistance);
-		return inverseSquare * smoothRange * smoothRange;
+		return smoothRange * smoothRange;
+	}
+
+	float ComputeDistanceAttenuation(float distanceToLight, float range)
+	{
+		const float inverseSquare = rcp(max(distanceToLight * distanceToLight, 1.0e-4f));
+		return inverseSquare * ComputeRangeCutoff(distanceToLight, range);
 	}
 
 	float ComputeSpotConeAttenuation(float3 lightToSurfaceDirection, float3 spotDirection, float innerConeCosine, float outerConeCosine)

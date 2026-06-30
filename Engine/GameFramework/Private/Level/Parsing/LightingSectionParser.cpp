@@ -54,50 +54,13 @@ namespace
 		return true;
 	}
 
-	bool TryParseLegacyDirectionalLightFieldKey(std::string_view key, ParsedLightFieldKey& outKey)
-	{
-		if (key == "Direction" || key == "DirectionalDirection")
-		{
-			outKey.kind = SceneLightKind::Directional;
-			outKey.index = 0;
-			outKey.field = "Direction";
-			return true;
-		}
-
-		if (key == "Intensity" || key == "IntensityLux" || key == "DirectionalIntensity" ||
-		    key == "DirectionalIntensityLux")
-		{
-			outKey.kind = SceneLightKind::Directional;
-			outKey.index = 0;
-			outKey.field = "IntensityLux";
-			return true;
-		}
-
-		if (key == "Color" || key == "DirectionalColor")
-		{
-			outKey.kind = SceneLightKind::Directional;
-			outKey.index = 0;
-			outKey.field = "Color";
-			return true;
-		}
-
-		if (key == "CastShadow" || key == "DirectionalCastShadow")
-		{
-			outKey.kind = SceneLightKind::Directional;
-			outKey.index = 0;
-			outKey.field = "CastShadow";
-			return true;
-		}
-
-		return false;
-	}
-
 	bool TryParseLightFieldKey(std::string_view key, ParsedLightFieldKey& outKey)
 	{
 		constexpr LightFieldPrefix prefixes[] = {
 		    {"DirectionalLight", SceneLightKind::Directional},
 		    {"PointLight", SceneLightKind::Point},
 		    {"SpotLight", SceneLightKind::Spot},
+		    {"RectLight", SceneLightKind::Rect},
 		};
 
 		for (const LightFieldPrefix& prefix : prefixes)
@@ -113,7 +76,7 @@ namespace
 			}
 		}
 
-		return TryParseLegacyDirectionalLightFieldKey(key, outKey);
+		return false;
 	}
 
 	void SetLightPosition(SceneLightCommonDesc& common, const DirectX::XMFLOAT3& position) noexcept
@@ -133,6 +96,8 @@ namespace
 				return light.GetPoint() != nullptr;
 			case SceneLightKind::Spot:
 				return light.GetSpot() != nullptr;
+			case SceneLightKind::Rect:
+				return light.GetRect() != nullptr;
 			case SceneLightKind::Unknown:
 			default:
 				return false;
@@ -149,6 +114,8 @@ namespace
 				return "Point Light " + std::to_string(index + 1);
 			case SceneLightKind::Spot:
 				return "Spot Light " + std::to_string(index + 1);
+			case SceneLightKind::Rect:
+				return "Rect Light " + std::to_string(index + 1);
 			case SceneLightKind::Unknown:
 			default:
 				return {};
@@ -165,6 +132,8 @@ namespace
 				return "point";
 			case SceneLightKind::Spot:
 				return "spot";
+			case SceneLightKind::Rect:
+				return "rect";
 			case SceneLightKind::Unknown:
 			default:
 				return "unknown";
@@ -185,6 +154,9 @@ namespace
 				break;
 			case SceneLightKind::Spot:
 				light.payload = SpotLightDesc{};
+				break;
+			case SceneLightKind::Rect:
+				light.payload = RectLightDesc{};
 				break;
 			case SceneLightKind::Unknown:
 			default:
@@ -247,7 +219,7 @@ namespace
 			return true;
 		}
 
-		if (field == "Intensity" || field == intensityField)
+		if (field == intensityField)
 		{
 			if (!Strings::TryParseFloat(parsedLine.value, common.intensity))
 			{
@@ -495,6 +467,97 @@ namespace
 		return false;
 	}
 
+	bool ParseRectLightField(std::string_view rectLightField, const ParsedLevelLine& parsedLine, SceneLightDesc& lightDesc, std::string& errorMessage)
+	{
+		if (lightDesc.common.name.empty())
+		{
+			lightDesc.common.name = "Rect Light";
+		}
+
+		RectLightDesc rect = lightDesc.GetRect() != nullptr ? *lightDesc.GetRect() : RectLightDesc{};
+
+		if (rectLightField == "LuminanceCdPerM2")
+		{
+			if (!Strings::TryParseFloat(parsedLine.value, lightDesc.common.intensity))
+			{
+				errorMessage = "Invalid rect light luminance";
+				return false;
+			}
+			lightDesc.payload = rect;
+			return true;
+		}
+
+		if (ParseCommonLightField(rectLightField, parsedLine, lightDesc.common, errorMessage, "LuminanceCdPerM2"))
+		{
+			lightDesc.payload = rect;
+			return true;
+		}
+
+		if (!errorMessage.empty())
+		{
+			return false;
+		}
+
+		if (rectLightField == "Direction")
+		{
+			if (!Strings::TryParseFloat3(parsedLine.value, rect.direction))
+			{
+				errorMessage = "Invalid rect light direction";
+				return false;
+			}
+			lightDesc.payload = rect;
+			return true;
+		}
+
+		if (rectLightField == "Tangent")
+		{
+			if (!Strings::TryParseFloat3(parsedLine.value, rect.tangent))
+			{
+				errorMessage = "Invalid rect light tangent";
+				return false;
+			}
+			lightDesc.payload = rect;
+			return true;
+		}
+
+		if (rectLightField == "Width")
+		{
+			if (!Strings::TryParseFloat(parsedLine.value, rect.width))
+			{
+				errorMessage = "Invalid rect light width";
+				return false;
+			}
+			lightDesc.payload = rect;
+			return true;
+		}
+
+		if (rectLightField == "Height")
+		{
+			if (!Strings::TryParseFloat(parsedLine.value, rect.height))
+			{
+				errorMessage = "Invalid rect light height";
+				return false;
+			}
+			lightDesc.payload = rect;
+			return true;
+		}
+
+		if (rectLightField == "CastShadow")
+		{
+			bool castShadow = true;
+			if (!Strings::TryParseBool(parsedLine.value, castShadow))
+			{
+				errorMessage = "Invalid rect light CastShadow value";
+				return false;
+			}
+			rect.castShadow = castShadow;
+			lightDesc.payload = rect;
+			return true;
+		}
+
+		return false;
+	}
+
 	void WriteCommonLightFields(std::ofstream& output, std::string_view prefix, const SceneLightCommonDesc& common, std::string_view intensityField)
 	{
 		if (!common.name.empty())
@@ -532,6 +595,9 @@ namespace LevelParsing
 			case SceneLightKind::Spot:
 				parsed = ParseSpotLightField(lightKey.field, parsedLine, light, errorMessage);
 				break;
+			case SceneLightKind::Rect:
+				parsed = ParseRectLightField(lightKey.field, parsedLine, light, errorMessage);
+				break;
 			case SceneLightKind::Unknown:
 			default:
 				return true;
@@ -553,6 +619,7 @@ namespace LevelParsing
 		std::size_t directionalIndex = 0;
 		std::size_t pointIndex = 0;
 		std::size_t spotIndex = 0;
+		std::size_t rectIndex = 0;
 		for (const SceneLightDesc& light : levelDesc.lights)
 		{
 			if (const SceneDirectionalLightDesc* directional = light.GetDirectional())
@@ -586,6 +653,18 @@ namespace LevelParsing
 				output << prefix << "InnerConeAngleRadians = " << spot->innerConeAngleRadians << "\n";
 				output << prefix << "OuterConeAngleRadians = " << spot->outerConeAngleRadians << "\n";
 				output << prefix << "CastShadow = " << (spot->castShadow ? "true" : "false") << "\n";
+				continue;
+			}
+
+			if (const RectLightDesc* rect = light.GetRect())
+			{
+				const std::string prefix = "RectLight" + std::to_string(rectIndex++);
+				WriteCommonLightFields(output, prefix, light.common, "LuminanceCdPerM2");
+				output << prefix << "Direction = " << rect->direction.x << ", " << rect->direction.y << ", " << rect->direction.z << "\n";
+				output << prefix << "Tangent = " << rect->tangent.x << ", " << rect->tangent.y << ", " << rect->tangent.z << "\n";
+				output << prefix << "Width = " << rect->width << "\n";
+				output << prefix << "Height = " << rect->height << "\n";
+				output << prefix << "CastShadow = " << (rect->castShadow ? "true" : "false") << "\n";
 			}
 		}
 

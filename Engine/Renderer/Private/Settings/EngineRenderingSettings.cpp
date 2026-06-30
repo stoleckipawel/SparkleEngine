@@ -214,6 +214,17 @@ void EngineRenderingSettingsSection::SetMaxSpotLights(std::uint32_t count)
 	UpdateState(state);
 }
 
+void EngineRenderingSettingsSection::SetMaxRectLights(std::uint32_t count)
+{
+	EngineRenderingSettingsState state = GetState();
+	if (state.MaxRectLights == count)
+	{
+		return;
+	}
+	state.MaxRectLights = count;
+	UpdateState(state);
+}
+
 void EngineRenderingSettingsSection::SetMeshAutoBatching(bool enabled)
 {
 	EngineRenderingSettingsState state = GetState();

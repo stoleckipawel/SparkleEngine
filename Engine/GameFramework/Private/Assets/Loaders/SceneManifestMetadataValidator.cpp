@@ -36,6 +36,7 @@ namespace Assets::SceneManifestMetadataValidator
 				if (light.kind != CookedSceneLightKind::Directional &&
 				    light.kind != CookedSceneLightKind::Point &&
 				    light.kind != CookedSceneLightKind::Spot &&
+				    light.kind != CookedSceneLightKind::Rect &&
 				    light.kind != CookedSceneLightKind::Unknown)
 				{
 					outErrorMessage = std::format("Cooked scene light {} uses an unknown light kind", lightIndex);

@@ -1,9 +1,7 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 
-#include "Common/Sampling.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowSampling.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 
 #if !defined(SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS) || !defined(__spirv__)
@@ -22,15 +20,15 @@ cbuffer RayTracedShadowUniformData
 	uint RayTracedDirectionalShadowsEnabled;
 	uint RayTracedLocalLightShadowsEnabled;
 	uint RayTracedShadowDiagnosticsEnabled;
-	uint RayTracedShadowQualityMode;
+	uint RayTracedShadowPadding0;
 	float RayTracedShadowNormalBias;
 	float RayTracedShadowMaxDistance;
-	float RayTracedShadowPadding0;
 	float RayTracedShadowPadding1;
+	float RayTracedShadowPadding2;
 	uint RayTracedShadowSceneTlasGpuAddressLow;
 	uint RayTracedShadowSceneTlasGpuAddressHigh;
 	uint RayTracedShadowTlasAccessMode;
-	uint RayTracedShadowPadding2;
+	uint RayTracedShadowPadding3;
 };
 
 namespace RayTracedShadows
@@ -40,7 +38,6 @@ namespace RayTracedShadows
 	static const uint ShadowInstanceMask = 0xFFu;
 	static const uint ShadowRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES;
 	static const float MinimumShadowTMin = 0.001f;
-	static const uint ShadowQualityModeHard = 0u;
 
 	bool SupportsDirectionalShadows()
 	{
@@ -50,11 +47,6 @@ namespace RayTracedShadows
 	bool SupportsLocalLightShadows()
 	{
 		return RayTracedLocalLightShadowsEnabled != 0u;
-	}
-
-	bool UsesHardShadowVisibility()
-	{
-		return RayTracedShadowQualityMode == ShadowQualityModeHard;
 	}
 
 	float3 BuildRayOrigin(float3 positionWorld, float3 normalWorld)
@@ -95,125 +87,29 @@ namespace RayTracedShadows
 		return RayTracedShadowSignals::BuildUnshadowedSignal(clampedMaxDistance);
 	}
 
-	ShadowVisibilitySignal TraceDirectionalShadowSignal(
+	ShadowVisibilitySignal TraceDirectLightSample(
 	    float3 positionWorld,
 	    float3 normalWorld,
 	    float3 lightDirectionWorld,
-	    float angularDiameterRadians,
-	    uint2 pixelCoord,
-	    uint lightIndex,
+	    float lightDistance,
+	    bool directionalLight,
 	    bool castsShadow)
 	{
-		if (!castsShadow || !SupportsDirectionalShadows())
-		{
-			return RayTracedShadowSignals::BuildUnshadowedSignal(RayTracedShadowMaxDistance);
-		}
-
-		const float3 originWorld = BuildRayOrigin(positionWorld, normalWorld);
-		if (UsesHardShadowVisibility())
-		{
-			return TraceShadowRay(originWorld, lightDirectionWorld, RayTracedShadowMaxDistance);
-		}
-
-		const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 0u);
-		const float coneHalfAngle = max(angularDiameterRadians, 0.0f) * 0.5f;
-		const float3 sampledDirection = CommonSampling::SampleConeDirection(lightDirectionWorld, coneHalfAngle, sample);
-		return TraceShadowRay(originWorld, sampledDirection, RayTracedShadowMaxDistance);
-	}
-
-	ShadowVisibilitySignal TracePointShadowSignal(
-	    float3 positionWorld,
-	    float3 normalWorld,
-	    float3 lightPositionWorld,
-	    float lightRange,
-	    float sourceRadius,
-	    uint2 pixelCoord,
-	    uint lightIndex,
-	    bool castsShadow)
-	{
-		if (!castsShadow || !SupportsLocalLightShadows())
-		{
-			return RayTracedShadowSignals::BuildUnshadowedSignal(RayTracedShadowMaxDistance);
-		}
-
-		float3 sampledLightPosition = lightPositionWorld;
-		if (!UsesHardShadowVisibility())
-		{
-			const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 1u);
-			// Visibility-only jitter for punctual soft shadows; direct radiance still uses the point light position.
-			sampledLightPosition = CommonSampling::SampleSpherePoint(
-			    lightPositionWorld,
-			    max(sourceRadius, 0.0f),
-			    positionWorld - lightPositionWorld,
-			    sample);
-		}
-		const float3 surfaceToLight = sampledLightPosition - positionWorld;
-		const float distanceToLight = length(surfaceToLight);
-		if (distanceToLight <= MinimumShadowTMin)
-		{
-			return RayTracedShadowSignals::BuildUnshadowedSignal(MinimumShadowTMin);
-		}
-
-		const float maxDistance = lightRange > 0.0f ? min(distanceToLight, lightRange) : distanceToLight;
-		if (maxDistance <= MinimumShadowTMin)
+		const bool supported = directionalLight ? SupportsDirectionalShadows() : SupportsLocalLightShadows();
+		const float maxDistance = directionalLight ? RayTracedShadowMaxDistance : lightDistance;
+		if (!castsShadow || !supported)
 		{
 			return RayTracedShadowSignals::BuildUnshadowedSignal(maxDistance);
 		}
 
-		const float3 originWorld = BuildRayOrigin(positionWorld, normalWorld);
-		return TraceShadowRay(originWorld, surfaceToLight, maxDistance - MinimumShadowTMin);
-	}
-
-	ShadowVisibilitySignal TraceSpotShadowSignal(
-	    float3 positionWorld,
-	    float3 normalWorld,
-	    float3 lightPositionWorld,
-	    float3 spotDirectionWorld,
-	    float lightRange,
-	    float sourceRadius,
-	    float outerConeCosine,
-	    uint2 pixelCoord,
-	    uint lightIndex,
-	    bool castsShadow)
-	{
-		if (!castsShadow || !SupportsLocalLightShadows())
+		if (!directionalLight && lightDistance <= MinimumShadowTMin)
 		{
-			return RayTracedShadowSignals::BuildUnshadowedSignal(RayTracedShadowMaxDistance);
-		}
-
-		float3 sampledLightPosition = lightPositionWorld;
-		if (!UsesHardShadowVisibility())
-		{
-			const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 2u);
-			// Visibility-only jitter for punctual soft shadows; direct radiance still uses the spot light position and cone.
-			sampledLightPosition = CommonSampling::SampleDiskPoint(
-			    lightPositionWorld,
-			    spotDirectionWorld,
-			    max(sourceRadius, 0.0f),
-			    sample);
-		}
-		const float3 surfaceToLight = sampledLightPosition - positionWorld;
-		const float distanceToLight = length(surfaceToLight);
-		if (distanceToLight <= MinimumShadowTMin)
-		{
-			return RayTracedShadowSignals::BuildUnshadowedSignal(MinimumShadowTMin);
-		}
-
-		const float3 lightDirection = surfaceToLight / max(distanceToLight, 0.0001f);
-		const float coneVisibility = dot(-lightDirection, normalize(spotDirectionWorld));
-		if (coneVisibility < outerConeCosine)
-		{
-			return RayTracedShadowSignals::BuildUnshadowedSignal(distanceToLight);
-		}
-
-		const float maxDistance = lightRange > 0.0f ? min(distanceToLight, lightRange) : distanceToLight;
-		if (maxDistance <= MinimumShadowTMin)
-		{
-			return RayTracedShadowSignals::BuildUnshadowedSignal(maxDistance);
+			return RayTracedShadowSignals::BuildUnshadowedSignal(lightDistance);
 		}
 
 		const float3 originWorld = BuildRayOrigin(positionWorld, normalWorld);
-		return TraceShadowRay(originWorld, surfaceToLight, maxDistance - MinimumShadowTMin);
+		const float traceDistance = directionalLight ? RayTracedShadowMaxDistance : max(lightDistance - MinimumShadowTMin, MinimumShadowTMin);
+		return TraceShadowRay(originWorld, lightDirectionWorld, traceDistance);
 	}
 }
 

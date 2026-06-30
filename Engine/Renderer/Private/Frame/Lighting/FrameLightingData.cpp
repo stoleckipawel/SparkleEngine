@@ -70,24 +70,30 @@ FrameLightingData& FrameLightingData::operator=(FrameLightingData&& other) noexc
 	m_directionalLightsBuffer = other.m_directionalLightsBuffer;
 	m_pointLightsBuffer = other.m_pointLightsBuffer;
 	m_spotLightsBuffer = other.m_spotLightsBuffer;
+	m_rectLightsBuffer = other.m_rectLightsBuffer;
 	m_directionalLightsView = other.m_directionalLightsView;
 	m_pointLightsView = other.m_pointLightsView;
 	m_spotLightsView = other.m_spotLightsView;
+	m_rectLightsView = other.m_rectLightsView;
 	m_directionalLightsShaderResourceView = other.m_directionalLightsShaderResourceView;
 	m_pointLightsShaderResourceView = other.m_pointLightsShaderResourceView;
 	m_spotLightsShaderResourceView = other.m_spotLightsShaderResourceView;
+	m_rectLightsShaderResourceView = other.m_rectLightsShaderResourceView;
 
 	other.m_renderHardwareInterface = nullptr;
 	other.m_constants = {};
 	other.m_directionalLightsBuffer = {};
 	other.m_pointLightsBuffer = {};
 	other.m_spotLightsBuffer = {};
+	other.m_rectLightsBuffer = {};
 	other.m_directionalLightsView = {};
 	other.m_pointLightsView = {};
 	other.m_spotLightsView = {};
+	other.m_rectLightsView = {};
 	other.m_directionalLightsShaderResourceView = {};
 	other.m_pointLightsShaderResourceView = {};
 	other.m_spotLightsShaderResourceView = {};
+	other.m_rectLightsShaderResourceView = {};
 	return *this;
 }
 
@@ -97,13 +103,16 @@ FrameLightingData FrameLightingData::Build(RenderHardwareInterface& renderHardwa
 	    std::min(sceneData.directionalLights.size(), static_cast<std::size_t>(CVarMaxDirectionalLights.Get()));
 	const std::size_t pointLightCount = std::min(sceneData.pointLights.size(), static_cast<std::size_t>(CVarMaxPointLights.Get()));
 	const std::size_t spotLightCount = std::min(sceneData.spotLights.size(), static_cast<std::size_t>(CVarMaxSpotLights.Get()));
+	const std::size_t rectLightCount = std::min(sceneData.rectLights.size(), static_cast<std::size_t>(CVarMaxRectLights.Get()));
 
 	std::vector<DirectionalLightConstantBufferData> directionalLights;
 	std::vector<PointLightConstantBufferData> pointLights;
 	std::vector<SpotLightConstantBufferData> spotLights;
+	std::vector<RectLightConstantBufferData> rectLights;
 	directionalLights.reserve(directionalLightCount);
 	pointLights.reserve(pointLightCount);
 	spotLights.reserve(spotLightCount);
+	rectLights.reserve(rectLightCount);
 
 	for (std::size_t lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
@@ -146,12 +155,28 @@ FrameLightingData FrameLightingData::Build(RenderHardwareInterface& renderHardwa
 		        .SourceRadius = sourceLight.sourceRadius});
 	}
 
+	for (std::size_t lightIndex = 0; lightIndex < rectLightCount; ++lightIndex)
+	{
+		const auto& sourceLight = sceneData.rectLights[lightIndex];
+		rectLights.push_back(
+		    RectLightConstantBufferData{
+		        .Position = {sourceLight.position.x, sourceLight.position.y, sourceLight.position.z},
+		        .Width = sourceLight.width,
+		        .Direction = {sourceLight.direction.x, sourceLight.direction.y, sourceLight.direction.z},
+		        .Height = sourceLight.height,
+		        .Tangent = {sourceLight.tangent.x, sourceLight.tangent.y, sourceLight.tangent.z},
+		        .Luminance = sourceLight.luminance,
+		        .Color = {sourceLight.color.x, sourceLight.color.y, sourceLight.color.z},
+		        .CastShadow = sourceLight.castShadow ? 1u : 0u});
+	}
+
 	FrameLightingData frameData;
 	frameData.m_renderHardwareInterface = &renderHardwareInterface;
 	frameData.m_constants = ViewLightingData{
 	    .DirectionalLightCount = static_cast<std::uint32_t>(directionalLightCount),
 	    .PointLightCount = static_cast<std::uint32_t>(pointLightCount),
-	    .SpotLightCount = static_cast<std::uint32_t>(spotLightCount)};
+	    .SpotLightCount = static_cast<std::uint32_t>(spotLightCount),
+	    .RectLightCount = static_cast<std::uint32_t>(rectLightCount)};
 
 	const bool uploaded =
 	    UploadLightBuffer(
@@ -174,7 +199,14 @@ FrameLightingData FrameLightingData::Build(RenderHardwareInterface& renderHardwa
 	        L"SpotLights",
 	        frameData.m_spotLightsBuffer,
 	        frameData.m_spotLightsView,
-	        frameData.m_spotLightsShaderResourceView);
+	        frameData.m_spotLightsShaderResourceView) &&
+	    UploadLightBuffer(
+	        renderHardwareInterface,
+	        rectLights,
+	        L"RectLights",
+	        frameData.m_rectLightsBuffer,
+	        frameData.m_rectLightsView,
+	        frameData.m_rectLightsShaderResourceView);
 	if (!uploaded)
 	{
 		Diagnostics::Fail(g_frameLightingDataLogger, __FILE__, __LINE__, "FrameLightingData::Build: failed to upload lighting buffers.");
@@ -199,6 +231,10 @@ void FrameLightingData::Release() noexcept
 		{
 			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_spotLightsView);
 		}
+		if (m_rectLightsView)
+		{
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_rectLightsView);
+		}
 		if (m_directionalLightsBuffer)
 		{
 			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_directionalLightsBuffer);
@@ -211,6 +247,10 @@ void FrameLightingData::Release() noexcept
 		{
 			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_spotLightsBuffer);
 		}
+		if (m_rectLightsBuffer)
+		{
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_rectLightsBuffer);
+		}
 	}
 
 	m_renderHardwareInterface = nullptr;
@@ -218,10 +258,13 @@ void FrameLightingData::Release() noexcept
 	m_directionalLightsBuffer = {};
 	m_pointLightsBuffer = {};
 	m_spotLightsBuffer = {};
+	m_rectLightsBuffer = {};
 	m_directionalLightsView = {};
 	m_pointLightsView = {};
 	m_spotLightsView = {};
+	m_rectLightsView = {};
 	m_directionalLightsShaderResourceView = {};
 	m_pointLightsShaderResourceView = {};
 	m_spotLightsShaderResourceView = {};
+	m_rectLightsShaderResourceView = {};
 }

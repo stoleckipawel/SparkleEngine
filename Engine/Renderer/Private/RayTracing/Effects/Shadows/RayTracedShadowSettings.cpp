@@ -7,7 +7,6 @@
 RayTracedShadowSettings BuildRayTracedShadowSettingsFromCVars() noexcept
 {
 	return RayTracedShadowSettings{
-	    .QualityMode = CVarRayTracedShadowQualityMode.Get(),
 	    .DenoiserMode = CVarRayTracedShadowDenoiserMode.Get(),
 	    .NormalBias = CVarRayTracedShadowNormalBias.Get(),
 	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get(),
