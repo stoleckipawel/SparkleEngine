@@ -386,7 +386,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.SubsurfaceColor = saturate(material.SubsurfaceColor);
 	surface.Roughness = saturate(resolvedRoughness);
 	surface.Metallic = saturate(resolvedMetallic);
-	surface.DielectricF0 = saturate(material.F0) * 0.08f;
+	surface.DielectricF0 = saturate(material.F0);
 	surface.Alpha = saturate(resolvedBaseColor.a);
 	surface.SubsurfaceStrength = saturate(material.SubsurfaceStrength);
 	return surface;

@@ -17,7 +17,7 @@ struct GBufferData
 	float Metallic;
 	float Roughness;
 	float AmbientOcclusion;
-	float MaterialFlags;
+	float DielectricF0;
 	float3 Emissive;
 	float3 SubsurfaceColor;
 	float SubsurfaceStrength;
@@ -37,6 +37,11 @@ float3 DecodeGBufferNormal(float3 normalWorld)
 {
 	const float lengthSquared = dot(normalWorld, normalWorld);
 	return lengthSquared > 0.0f ? normalWorld * rsqrt(lengthSquared) : float3(0.0f, 0.0f, 1.0f);
+}
+
+float DecodeGBufferDielectricF0(float storedDielectricF0)
+{
+	return saturate(storedDielectricF0);
 }
 
 float LoadGBufferDeviceZ(uint2 pixelCoord)
@@ -61,7 +66,7 @@ GBufferData LoadGBuffer(uint2 pixelCoord)
 	gBuffer.Metallic = saturate(materialSample.r);
 	gBuffer.Roughness = saturate(materialSample.g);
 	gBuffer.AmbientOcclusion = saturate(materialSample.b);
-	gBuffer.MaterialFlags = materialSample.a;
+	gBuffer.DielectricF0 = DecodeGBufferDielectricF0(materialSample.a);
 	gBuffer.Emissive = max(emissiveSample.rgb, 0.0f);
 	gBuffer.SubsurfaceColor = saturate(subsurfaceSample.rgb);
 	gBuffer.SubsurfaceStrength = saturate(subsurfaceSample.a);

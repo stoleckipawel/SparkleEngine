@@ -147,7 +147,7 @@ float3 EvaluateIndirectSpecularSampleThroughput(
 		return 0.0f.xxx;
 	}
 
-	const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
+	const float3 f0 = SurfaceLighting::BuildF0(surface.BaseColor, surface.Metallic, surface.DielectricF0);
 	const float3 fresnel = BRDF::Fresnel::EvaluateDirect(shadingData.VoH, f0);
 	if (sample.Mirror)
 	{
@@ -192,6 +192,7 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
     float3 primaryBaseColor,
     float primaryRoughness,
     float primaryMetallic,
+    float primaryDielectricF0,
     out IndirectSpecularSampleResult firstSample,
     out RayTracingTraceResult firstTrace,
     out RayTracingHitSurfaceData firstHitSurface)
@@ -204,7 +205,7 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
 	        primaryBaseColor,
 	        primaryRoughness,
 	        primaryMetallic,
-	        0.04f);
+	        primaryDielectricF0);
 	firstSample = BuildReflectionSample(pixelCoord, pathSurface.NormalWorld, pathSurface.ViewDirWorld, pathSurface.Roughness, 0u);
 	firstSample.Throughput = EvaluateIndirectSpecularSampleThroughput(pathSurface, firstSample);
 	firstTrace = (RayTracingTraceResult) 0;
@@ -284,7 +285,10 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
 
 	const float3 baseColor = saturate(GBufferBaseColor.Load(pixel).rgb);
 	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(pixel).xyz);
-	const float roughness = saturate(GBufferMaterial.Load(pixel).g);
+	const float4 materialSample = GBufferMaterial.Load(pixel);
+	const float roughness = saturate(materialSample.g);
+	const float metallic = saturate(materialSample.r);
+	const float dielectricF0 = DecodeGBufferDielectricF0(materialSample.a);
 	const float3 positionWorld =
 	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, deviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const float3 viewDirWorld = normalize(Camera.Position - positionWorld);
@@ -300,7 +304,8 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
 	        viewDirWorld,
 	        baseColor,
 	        roughness,
-	        saturate(GBufferMaterial.Load(pixel).r),
+	        metallic,
+	        dielectricF0,
 	        sample,
 	        trace,
 	        hitSurface);

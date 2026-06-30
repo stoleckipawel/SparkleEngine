@@ -173,7 +173,8 @@ main:
 Refactor targets:
 
 - `Engine/Assets/Shaders/Passes/Deferred/DirectLighting.hlsl`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl`
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
 
@@ -362,7 +363,7 @@ Completion note:
 | Priority | File(s) | Symptom | Risk | Required stage | Reference(s) |
 | --- | --- | --- | --- | --- | --- |
 | P0 resolved | `Engine/Assets/Shaders/Lighting/SkyEnvironment.hlsli`, `Engine/Assets/Shaders/Passes/Deferred/Sky.hlsl`, indirect miss paths | Sky sampling previously entered lighting through a display/tone-mapped helper instead of pure HDR radiance. | Violated the Stage 0 lighting/display boundary and made indirect lighting depend on presentation math. | Stage 0D completed; Stage 1 and Stage 13 keep sky reference captures/import validation. | Filament color/display boundary, PBRT/RTXPT radiance transport. |
-| P1 | `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl`, `Engine/Assets/Shaders/Passes/Deferred/GBufferUtils.hlsli`, `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`, `Engine/Assets/Shaders/Material/Material.hlsli`, `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`, `Engine/Renderer/Private/Frame/RayTracing/RayTracingHitDataFrameData.cpp` | Primary GBuffer drops material dielectric `F0`, so deferred direct lighting falls back to `0.04` while ray-hit lighting can use imported/cooked `F0`. | Primary and ray-hit material evaluation can disagree, especially for `KHR_materials_specular`-style content or future material extensions. | Stage 2 and Stage 2A; format/packing consequences belong to Stage 0F. | Filament material model, Unreal physically based materials, glTF material extensions. |
+| P1 resolved | `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl`, `Engine/Assets/Shaders/Passes/Deferred/GBufferUtils.hlsli`, `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`, `Engine/Assets/Shaders/Material/Material.hlsli`, `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`, `Engine/Renderer/Private/Frame/RayTracing/RayTracingHitDataFrameData.cpp` | Primary GBuffer previously dropped material dielectric `F0`, so deferred direct lighting fell back to `0.04` while ray-hit lighting could use imported/cooked `F0`. | Resolved for current shader paths by storing dielectric F0 in `GBufferMaterial.a` and building F0 through `SurfaceLighting::BuildF0`. Material-extension import coverage remains Stage 2A. | Stage 2 completed; Stage 2A still owns import extension coverage. | Filament material model, Unreal physically based materials, glTF material extensions. |
 | P1 | `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSignals.hlsli`, `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`, `Engine/Renderer/Public/Denoising/ShadowDenoiseContract.h`, `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.cpp` | Shader shadow helpers define a packed `float4(visibility, hitDistance, confidence, maxDistance)` signal, but registered raw/scratch/history/denoised visibility resources are single-channel `R32_Float`. | Denoiser/provider integration can silently lose hit-distance/confidence data or require pass-local side channels. | Stage 0F, Stage 5, Stage 6. | NRD SIGMA signal contracts, Falcor/RTXPT debug signal ownership. |
 | P1 | `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`, glTF importer files under `Tools/Import/SourceImporters/Private/Gltf` | Punctual attenuation uses local range fade and linear cone ramp; the audit did not find `KHR_lights_punctual` import coverage. | Imported lights and authored renderer lights can diverge from glTF/physical light-unit expectations. | Stage 2A and Stage 4. | `KHR_lights_punctual`, Filament/Unreal physical light units. |
 | P1 | `Engine/Renderer/Private/Upscaling/UpscalerInputContract.h`, `Engine/Renderer/Private/Upscaling/NvidiaDlss/NvidiaDlssUpscalerProvider.cpp`, indirect lighting shaders | Provider contract currently covers DLSS SR/NativeAA-style inputs, but not DLRR/indirect reconstruction signals such as noisy indirect radiance, demodulated radiance, lobe id, hit distance, confidence, or variance. | Future indirect reconstruction can become provider-specific and duplicate signal definitions outside the frame graph. | Stage 0F, Stage 11, Stage 11A. | Streamline DLSS Ray Reconstruction, NRD, AMD FidelityFX provider resource patterns. |
@@ -393,7 +394,7 @@ Files:
 - `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.cpp`
 - `Engine/Renderer/Private/Upscaling/UpscalerInputContract.h`
 - `Engine/Renderer/Private/Frame/FrameResources.*`
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadowDenoiserInputs.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`
 - `Engine/Assets/Shaders/Passes/Deferred/LightingComposite.hlsl`
 - `Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl`
 - `Engine/Assets/Shaders/Passes/Presentation/OutputEncoding.hlsl`
@@ -497,8 +498,11 @@ Files:
 - `Engine/Assets/Shaders/Material/Material.hlsli`
 - `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl`
 - `Engine/Assets/Shaders/Passes/Deferred/GBufferUtils.hlsli`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/DirectLighting.hlsl`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
+- `Engine/Assets/Shaders/RayTracing/PathSurface.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`
+- `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
 - `Engine/Renderer/Private/Frame/Deferred/GBufferFormats.h`
 
 Acceptance criteria:
@@ -509,6 +513,15 @@ Acceptance criteria:
 - GBuffer format changes, if any, are reflected in visualization modes and shader binding metadata.
 - Reference compliance: material/F0 mapping is explicitly traced to glTF, Filament, or Unreal terminology.
 - Reuse/DRY: primary and ray-hit material decoding share canonical helpers or documented common data contracts instead of separately deriving material constants.
+
+Completion note:
+
+- Reference lineage: the material contract follows the glTF metallic-roughness split of base color, metallic, and roughness; Filament/Unreal-style dielectric reflectance is carried by Sparkle's existing scalar material `f0` and blended with base color for metallic surfaces. The local deviation is that Stage 2 does not add a Filament-style reflectance UI/remap or new glTF specular-extension import; Stage 2A owns that import/material authoring work.
+- Reuse/DRY audit: scanned `Material.hlsli`, `GBufferPS.hlsl`, `GBufferUtils.hlsli`, `DirectLighting.hlsl`, `SurfaceLighting.hlsli`, `RayTracingMaterialHit.hlsli`, `RayTracingHitLighting.hlsli`, `PathSurface.hlsli`, indirect diffuse/specular entrypoints, `GBufferFormats.h`, and visualization shader bindings before editing. The change reuses the existing `GBufferMaterial` target and `SurfaceLighting` home; no new format registry, shader module, pass, or GBuffer format was added.
+- Implementation: `GBufferMaterial.a` now stores dielectric F0, direct lighting passes `gBuffer.DielectricF0`, primary indirect path surfaces use the same value, ray-hit reconstruction keeps material `F0` as actual F0, and ray-hit direct lighting shares `SurfaceLighting::BuildF0`.
+- Roughness remains the authored/imported inclusive `[0, 1]` material value. Stage 2 does not clamp it into an F0 or light-scale compensation path; Stage 2C still owns the full reference roughness and singularity policy.
+- No `GBufferFormats.h` change was required, so shader binding metadata and visualization resource declarations remain valid. Base-color alpha still carries blend alpha; ray-hit alpha mode remains in ray-tracing hit data instead of the material GBuffer.
+- Validation commands: rebuilt `ShowcaseEditor` and `ShaderCompiler`; cooked `GBuffer`, `DirectLightingNoRayQuery`, `DirectLighting`, `DirectLightingVulkanAddress`, `IndirectDiffuse`, `IndirectSpecular`, and `VisualizeBuffers` for `DxilSm66` and `SpirV16`. `LightingComposite` HLSL compiled for both targets, but full package cook remains blocked by the pre-existing reflected binding mismatch between shader cbuffer `PerFrameConstantBufferData` and registration layout alias `PerFrame`.
 
 ## Stage 2C: Full Roughness Range and Reference Roughness Policy
 
@@ -530,7 +543,7 @@ Files:
 
 - `Engine/Assets/Shaders/BRDF/*.hlsli`
 - `Engine/Assets/Shaders/Material/Material.hlsli`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl`
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
 - `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
@@ -551,7 +564,7 @@ Required design:
 
 Acceptance criteria:
 
-- `rg` finds no direct-light lobe bypass helpers or pass-local mirror/specular branches in `DirectLightingCommon.hlsli` or `RayTracingHitLighting.hlsli`.
+- `rg` finds no direct-light lobe bypass helpers or pass-local mirror/specular branches in `SurfaceLighting.hlsli` or `RayTracingHitLighting.hlsli`.
 - `rg` finds no caller-side material roughness floors such as `max(roughness, 0.04)` or `max(surface.Roughness, 0.04)` in direct-lighting paths.
 - Any remaining `max`, `clamp`, or `saturate` involving roughness or alpha is classified as input range enforcement, debug visualization, denominator/PDF safety, or reference-backed BRDF singularity protection. Implementation notes must name why it is not a hidden material roughness mutation.
 - Roughness `0.0`, `0.02`, `0.1`, `0.5`, and `1.0` render without NaN/Inf in direct, indirect diffuse, indirect specular, and ray-hit direct paths.
@@ -671,7 +684,7 @@ Reference lineage:
 Files:
 
 - `Engine/Assets/Shaders/BRDF/*.hlsli`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
 - Test or validation docs under `Docs/Architecture/03-Validation` or `Docs/Rendering/PBR`.
 
@@ -704,7 +717,7 @@ Files:
 
 - `Engine/Assets/Shaders/Material/Material.hlsli`
 - `Engine/Assets/Shaders/BRDF/*.hlsli`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - Future shared path-sampling files from Stage 7.
 - Material import/default settings files.
 
@@ -744,7 +757,8 @@ Files:
 
 - `Tools/Import/SourceImporters/Private/Gltf/GltfLightImporter.cpp`
 - `Engine/GameFramework/Private/Scene/Lighting/Snapshots/SceneLightingSnapshotBuilder.cpp`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
 - `Engine/RHI/Public/Resources/RenderViewLightingData.h`
 
@@ -798,9 +812,10 @@ Reference lineage:
 
 Files:
 
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadowSampling.hlsli`
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSampling.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowTrace.hlsli`
+- `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
 - `Engine/RHI/Public/Resources/RenderViewLightingData.h`
 - Light import and scene snapshot code.
@@ -837,10 +852,10 @@ Reference lineage:
 
 Files:
 
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowTrace.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingTraceQuery.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadowDenoiserInputs.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`
 - `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.cpp`
 - `Engine/Renderer/Private/RayTracing/Effects/Shadows/*`
 
@@ -968,7 +983,7 @@ Reference lineage:
 Files:
 
 - `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowTrace.hlsli`
 - Shared light sampling include if introduced.
 
 Acceptance criteria:

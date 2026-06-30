@@ -7,7 +7,8 @@ This document maps the current SparkleEngine PBR implementation against `Docs/Re
 The worktree already has modified lighting shaders at the time of this audit:
 
 - `Engine/Assets/Shaders/Passes/Deferred/DirectLighting.hlsl`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli`
+- `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl`
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
 - `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecularDebug.hlsli`
@@ -100,24 +101,21 @@ Material sampling computes dielectric F0:
 - `Engine/Assets/Shaders/Material/Material.hlsli:150`
 - `Engine/Assets/Shaders/Material/Material.hlsli:201`
 
-The GBuffer stores base color, normal, metallic, roughness, AO, alpha mode, emissive, subsurface, and device Z:
+The GBuffer stores base color, normal, metallic, roughness, AO, dielectric F0, emissive, subsurface, and device Z:
 
 - `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl:30`
 - `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl:32`
 - `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl:37`
 
-But GBuffer does not store dielectric F0. Primary deferred direct lighting hardcodes dielectric F0 to `0.04`:
-
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:73`
+`GBufferMaterial.a` now stores dielectric F0. Primary deferred direct lighting and ray-hit direct lighting both build F0 through `SurfaceLighting::BuildF0`.
 
 Ray-hit reconstruction does have material F0:
 
 - `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli:40`
 - `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli:389`
 
-Issue:
+Remaining issue:
 
-- Primary and secondary material shading can disagree for dielectric reflectance. This violates PBR-R-002.
 - Material roughness is transported as `[0, 1]`, but there is not yet a single documented full-range roughness policy shared by direct, indirect, and ray-hit lighting.
 
 Texture color processing looks mostly correct:
@@ -143,20 +141,11 @@ Direct lighting shader:
 
 Relevant code:
 
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:47`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:73`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:86`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:87`
+- `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
+- `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/DirectLighting.hlsl`
 
-Distance and cone attenuation:
-
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:28`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:40`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:144`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:182`
-- `Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli:183`
-
-Issues:
+Remaining issues:
 
 - Local light attenuation is `1 / distance^2 * (1 - distance / range)^2`. This is not the glTF punctual range falloff and dims much more aggressively across the range.
 - Spot cone attenuation is linear in the cone ramp. glTF-compatible punctual lights normally square the cone attenuation.
@@ -167,16 +156,16 @@ Issues:
 
 Direct shadows:
 
-- `RayTracedShadows.hlsli` uses inline ray queries.
+- `RayTracedShadowTrace.hlsli` uses inline ray queries.
 - Hard and one-sample soft area modes exist.
 - Shadow settings contain an NRD SIGMA enum path.
 
 Relevant code:
 
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli:65`
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli:98`
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli:124`
-- `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli:166`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowTrace.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSampling.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSignals.hlsli`
+- `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`
 - `Engine/Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowSettings.h:21`
 - `Engine/Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowCVars.cpp:8`
 
@@ -328,7 +317,7 @@ Current strengths:
 
 Issues:
 
-- The material GBuffer does not carry dielectric F0/reflectance, which forces primary direct lighting to derive a fixed `0.04` F0 while ray-hit shading can use material F0.
+- The material GBuffer now carries dielectric F0 for primary/ray-hit F0 parity. Stage 2A still needs to lock asset import for material extensions that can author non-default F0/specular behavior.
 - Stage 0F now owns the typed renderer signal contract in `Docs/Rendering/PBR/04-PBR-Renderer-Signal-Contract.md`, including shadow, exposure, presentation, GBuffer, provider, and reserved indirect reconstruction signals.
 - Packed raw shadow signal resources now match the shader `float4(visibility, hitDistance, confidence, maxDistance)` payload; scalar shadow visibility is explicitly named as denoised visibility or denoised visibility history.
 - Motion-vector convention exists in provider code, but the PBR plan needs to lock units, jitter policy, camera-cut reset, depth convention, and normal space for all denoisers and reconstruction providers.
@@ -336,7 +325,7 @@ Issues:
 Required stages:
 
 - Stage 0F: render-target, precision, and signal-surface contract.
-- Stage 2: material F0 parity between GBuffer and ray-hit material reconstruction.
+- Stage 2 completed: material F0 parity between GBuffer and ray-hit material reconstruction.
 - Stage 2C: full roughness range and reference roughness policy.
 - Stage 2B: geometry, normal, depth, motion, and temporal signal contract.
 - Stage 5 and Stage 6: shadow visibility/hit-distance resource split and NRD SIGMA integration boundary.
@@ -412,8 +401,6 @@ The largest shader files at the time of this audit are:
 359 Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli
 322 Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl
 275 Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl
-192 Engine/Assets/Shaders/Passes/Deferred/RayTracedShadows.hlsli
-187 Engine/Assets/Shaders/Passes/Deferred/DirectLightingCommon.hlsli
 174 Engine/Assets/Shaders/Material/Material.hlsli
 154 Engine/Assets/Shaders/Passes/Deferred/DirectLighting.hlsl
 ```
@@ -424,16 +411,13 @@ Positive structure:
 - CPU renderer passes are already split between `Frame/Lighting/*`, `Passes/Deferred/*Pass.*`, `Passes/Bindings/*`, and `ShaderRegistrations/*`.
 - Material texture-table sampling is separated from material property sampling.
 - Ray hit material reconstruction is centralized enough to avoid every effect reimplementing barycentric material decoding.
-- Direct lighting has a pass entrypoint and a shared helper include instead of putting all light math inside the compute `main`.
+- Generic punctual-light helpers and direct surface evaluation now live under `Lighting/*`, with `DirectLighting.hlsl` kept as a pass entrypoint.
 
 Structural issues:
 
-- `RayTracingHitLighting.hlsli` includes `Passes/Deferred/DirectLightingCommon.hlsli`. This is an inverted dependency: reusable ray-hit lighting depends on a deferred-pass helper because generic light math currently lives under `Passes/Deferred`.
-- `DirectLightingCommon.hlsli` owns generic light direction, falloff, cone attenuation, and direct surface lighting. Those concepts should move to `Lighting/*` so primary direct lighting, secondary hit lighting, path tracing, and future probes/denoisers share them without depending on a deferred pass path.
-- `RayTracedShadows.hlsli`, `RayTracedShadowSampling.hlsli`, `RayTracedShadowSignals.hlsli`, and `RayTracedShadowDenoiserInputs.hlsli` live under `Passes/Deferred`, but their concepts are reusable ray-tracing/visibility concepts. They should move or be wrapped by reusable `RayTracing/Shadows/*` or `Lighting/Visibility/*` modules before NRD SIGMA work expands them.
 - `IndirectDiffuse.hlsl` currently owns pass IO, pass constants, surface records, random sampling, diffuse throughput, ray-origin policy, tracing, hit/miss resolve, path-loop logic, debug routing, and output writes. That is too many responsibilities for an entrypoint.
 - `IndirectSpecular.hlsl` has the same issue for GGX sampling, path state, tracing, hit/miss resolve, debug routing, and output writes.
-- `IndirectDiffuseSurface` and `IndirectSpecularSurface` are nearly the same concept. A shared `ShadingSurface` or `RayTracingPathSurface` should represent primary and hit surfaces.
+- `RayTracingPathSurface` now represents primary and hit surface state, but diffuse/specular still keep effect-local path sample, throughput, and result payloads.
 - `IndirectDiffuse` and `IndirectSpecular` each own their first-lobe sample logic. That is acceptable for a first prototype, but it blocks a unified BSDF path sampler.
 - Debug code is mostly separated, but debug-mode enums/constants are still pass-local in places where shared ray-hit debug modes already exist.
 
@@ -494,8 +478,8 @@ Keep that shape. The main CPU-side improvement is to avoid growing pass classes 
 
 P0 correctness blockers:
 
-1. Sky/environment radiance is tone mapped before lighting, so sky pixels and ray-miss lighting are not linear HDR inputs to presentation.
-2. Primary direct lighting ignores material dielectric F0 while ray-hit lighting can use it.
+1. Sky/environment radiance now uses the Stage 1 HDR helper; HDR sky import/calibration and importance sampling remain later-stage work.
+2. Material F0 parity is implemented for current primary and ray-hit shader paths; import extension coverage for non-default specular/F0 remains Stage 2A.
 3. Secondary hit direct lighting is unshadowed, so indirect bounces overestimate light in occluded regions.
 4. Direct shadow rays do not appear to alpha-test foliage/material cutouts.
 5. Light attenuation and spot falloff are not aligned with the imported glTF punctual light model.
@@ -531,13 +515,10 @@ P3 validation gaps:
 
 P4 structural blockers:
 
-1. Reusable ray-hit lighting depends on a deferred-pass include.
-2. Generic light math is stored in `Passes/Deferred/DirectLightingCommon.hlsli`.
-3. Shadow tracing/sampling/denoiser signal helpers are pass-local even though they are reusable visibility concepts.
-4. Indirect diffuse/specular entrypoints mix pass IO, sampling, tracing, path state, resolve, and output.
-5. Surface/path records are duplicated between diffuse and specular effects.
-6. Denoiser/reconstruction resources now have a provider-neutral signal contract from Stage 0F; Stage 11, Stage 11A, and Stage 13 still need to allocate/debug/capture the future DLRR and indirect denoiser auxiliaries through that contract.
-7. Asset import/cooking rules are not yet tied to renderer validation, which risks duplicate material assumptions between tools and shaders.
+1. Indirect diffuse/specular entrypoints mix pass IO, sampling, tracing, path state, resolve, and output.
+2. Effect-local path sample, throughput, and result payloads are still split between diffuse and specular effects.
+3. Denoiser/reconstruction resources now have a provider-neutral signal contract from Stage 0F; Stage 11, Stage 11A, and Stage 13 still need to allocate/debug/capture the future DLRR and indirect denoiser auxiliaries through that contract.
+4. Asset import/cooking rules are not yet tied to renderer validation, which risks duplicate material assumptions between tools and shaders.
 
 ## Current Strengths
 

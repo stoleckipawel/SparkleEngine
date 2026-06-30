@@ -31,9 +31,9 @@ namespace Material
 	static const uint AlphaModeBlend = 2u;
 
 
-	float RemapDielectricF0(float EncodedF0)
+	float ClampDielectricF0(float dielectricF0)
 	{
-		return saturate(EncodedF0) * 0.08f;
+		return saturate(dielectricF0);
 	}
 
 	uint TextureGroupFlag(uint textureGroup)
@@ -92,7 +92,7 @@ namespace Material
 		props.NormalWorld = float3(0.0f, 0.0f, 1.0f);
 		props.Roughness = 1.0f;
 		props.Metallic = 0.0f;
-		props.DielectricF0 = 0.5f;
+		props.DielectricF0 = ClampDielectricF0(F0);
 		props.AmbientOcclusion = 1.0f;
 		props.SubsurfaceColor = float3(0.0f, 0.0f, 0.0f);
 		props.SubsurfaceStrength = 0.0f;
@@ -149,7 +149,7 @@ namespace Material
 
 	float SampleDielectricF0(float2 UV)
 	{
-		return RemapDielectricF0(F0);
+		return ClampDielectricF0(F0);
 	}
 
 	float SampleAmbientOcclusion(float2 UV)

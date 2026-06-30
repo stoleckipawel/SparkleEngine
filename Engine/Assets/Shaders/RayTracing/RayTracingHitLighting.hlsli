@@ -14,7 +14,7 @@ void AccumulateRayTracingHitDirectLight(
 	float3 diffuse = 0.0f.xxx;
 	float3 specular = 0.0f.xxx;
 	float3 subsurface = 0.0f.xxx;
-	const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
+	const float3 f0 = SurfaceLighting::BuildF0(surface.BaseColor, surface.Metallic, surface.DielectricF0);
 	SurfaceLighting::EvaluateDirectLightWithF0(
 	    viewDirWorld,
 	    surface.NormalWorld,

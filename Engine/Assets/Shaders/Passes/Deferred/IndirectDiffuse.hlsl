@@ -74,7 +74,7 @@ float3 EvaluateIndirectDiffuseSampleThroughput(
 		return 0.0f.xxx;
 	}
 
-	const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
+	const float3 f0 = SurfaceLighting::BuildF0(surface.BaseColor, surface.Metallic, surface.DielectricF0);
 	const float3 fresnel = BRDF::Fresnel::EvaluateDirect(shadingData.VoH, f0);
 	const float3 diffuseWeight = (1.0f.xxx - fresnel) * (1.0f - surface.Metallic);
 	const float3 diffuseBrdf = BRDF::Diffuse::EvaluateDirect(surface.BaseColor, surface.Roughness, shadingData) * diffuseWeight;
@@ -166,6 +166,7 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffusePathLighting(
 	firstSample = BuildIndirectDiffuseDirectionSample(pixelCoord, primaryNormalWorld, 0u);
 
 	const int3 pixel = int3(pixelCoord, 0);
+	const float4 materialSample = GBufferMaterial.Load(pixel);
 	const float3 primaryViewDirWorld = normalize(Camera.Position - primaryPositionWorld);
 	RayTracingPathSurface pathSurface =
 	    BuildPrimaryRayTracingPathSurface(
@@ -173,9 +174,9 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffusePathLighting(
 	        primaryNormalWorld,
 	        primaryViewDirWorld,
 	        saturate(GBufferBaseColor.Load(pixel).rgb),
-	        saturate(GBufferMaterial.Load(pixel).g),
-	        saturate(GBufferMaterial.Load(pixel).r),
-	        0.04f);
+	        saturate(materialSample.g),
+	        saturate(materialSample.r),
+	        DecodeGBufferDielectricF0(materialSample.a));
 	float3 pathThroughput = 1.0f.xxx;
 	float3 pathContribution = 0.0f.xxx;
 	const uint bounceCount = max(IndirectDiffuseBounceCount, 1u);

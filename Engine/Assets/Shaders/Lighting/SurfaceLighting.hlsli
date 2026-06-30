@@ -6,6 +6,11 @@
 
 namespace SurfaceLighting
 {
+	float3 BuildF0(float3 baseColor, float metallic, float dielectricF0)
+	{
+		return lerp(saturate(dielectricF0).xxx, saturate(baseColor), saturate(metallic));
+	}
+
 	void EvaluateDirectLightWithF0(
 	    float3 viewDirWorld,
 	    float3 normalWorld,
@@ -55,6 +60,7 @@ namespace SurfaceLighting
 	    float3 baseColor,
 	    float roughness,
 	    float metallic,
+	    float dielectricF0,
 	    float3 subsurfaceColor,
 	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
@@ -64,7 +70,7 @@ namespace SurfaceLighting
 	    out float3 outSpecular,
 	    out float3 outSubsurface)
 	{
-		const float3 f0 = lerp(0.04f.xxx, baseColor, metallic);
+		const float3 f0 = BuildF0(baseColor, metallic, dielectricF0);
 		EvaluateDirectLightWithF0(
 		    viewDirWorld,
 		    normalWorld,
@@ -88,6 +94,7 @@ namespace SurfaceLighting
 	    float3 baseColor,
 	    float roughness,
 	    float metallic,
+	    float dielectricF0,
 	    float3 subsurfaceColor,
 	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
@@ -106,6 +113,7 @@ namespace SurfaceLighting
 		    baseColor,
 		    roughness,
 		    metallic,
+		    dielectricF0,
 		    subsurfaceColor,
 		    subsurfaceStrength,
 		    evaluateSubsurface,
@@ -123,6 +131,7 @@ namespace SurfaceLighting
 	    float3 baseColor,
 	    float roughness,
 	    float metallic,
+	    float dielectricF0,
 	    float3 subsurfaceColor,
 	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
@@ -143,6 +152,7 @@ namespace SurfaceLighting
 		    baseColor,
 		    roughness,
 		    metallic,
+		    dielectricF0,
 		    subsurfaceColor,
 		    subsurfaceStrength,
 		    evaluateSubsurface,
@@ -160,6 +170,7 @@ namespace SurfaceLighting
 	    float3 baseColor,
 	    float roughness,
 	    float metallic,
+	    float dielectricF0,
 	    float3 subsurfaceColor,
 	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
@@ -183,6 +194,7 @@ namespace SurfaceLighting
 		    baseColor,
 		    roughness,
 		    metallic,
+		    dielectricF0,
 		    subsurfaceColor,
 		    subsurfaceStrength,
 		    evaluateSubsurface,
