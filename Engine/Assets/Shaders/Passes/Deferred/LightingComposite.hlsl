@@ -63,6 +63,7 @@ float3 ComposeSubsurfaceLighting(LightingTerms terms)
 	const float3 diffuseLighting = ComposeDiffuseLighting(lighting);
 	const float3 specularLighting = ComposeSpecularLighting(lighting);
 	const float3 subsurfaceLighting = ComposeSubsurfaceLighting(lighting);
+	// Demodulated irradiance/albedo signals belong in separate buffers, never in this sum.
 	const float3 lit = diffuseLighting + specularLighting + subsurfaceLighting + gBuffer.Emissive;
 	SceneColorTexture[dispatchThreadId.xy] = float4(lit, gBuffer.Alpha);
 }

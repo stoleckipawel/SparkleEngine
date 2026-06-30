@@ -43,6 +43,8 @@ This is good for HDR transport.
 
 ## Current Target Semantics
 
+The authoritative contract now lives in `Docs/Rendering/PBR/01-PBR-Reference-Requirements.md#lighting-target-contract`.
+
 `LightingComposite` simply adds all lighting target values and emissive:
 
 - `Engine/Assets/Shaders/Passes/Deferred/LightingComposite.hlsl:34`
@@ -50,19 +52,19 @@ This is good for HDR transport.
 - `Engine/Assets/Shaders/Passes/Deferred/LightingComposite.hlsl:44`
 - `Engine/Assets/Shaders/Passes/Deferred/LightingComposite.hlsl:66`
 
-Current effective semantics:
+Current effective semantics match the PBR contract:
 
 ```text
 DirectDiffuse = material-evaluated direct diffuse contribution
 DirectSpecular = material-evaluated direct specular contribution
 DirectSubsurface = material-evaluated direct subsurface contribution
-IndirectDiffuse = material-evaluated indirect contribution from the diffuse first event
-IndirectSpecular = material-evaluated indirect contribution from the specular first event
+IndirectDiffuse = material-evaluated indirect outgoing-radiance contribution from the diffuse first event
+IndirectSpecular = material-evaluated indirect outgoing-radiance contribution from the specular first event
 IndirectSubsurface = currently cleared, no active writer found in this pass family
 SceneColor = sum(all lighting targets) + GBuffer emissive
 ```
 
-This is internally consistent with the current composite. It conflicts with older architecture notes that described indirect diffuse as irradiance before base-color multiplication. The current implementation should either keep the material-evaluated convention or deliberately migrate, but it should not mix both.
+This is internally consistent with the current composite. Older architecture notes that described indirect diffuse as irradiance before base-color multiplication have been superseded by the PBR contract.
 
 ## BRDF Library
 

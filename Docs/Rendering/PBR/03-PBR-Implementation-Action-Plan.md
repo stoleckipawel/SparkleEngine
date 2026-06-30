@@ -77,6 +77,12 @@ Acceptance criteria:
 - Reuse/DRY: no duplicate lighting-target semantic descriptions remain in other docs with conflicting wording.
 - Source hygiene: no final shader/pass source file adds `Reference lineage` banners; references are held in this stage note, implementation prompt, audit note, or PR note.
 
+Completion note:
+
+- Reference lineage: implemented against the PBRT rendering-equation target, Filament linear HDR/material-evaluated color contract, Unreal physically based material terminology, and Unreal path tracer reference-output concept listed above.
+- Reuse/DRY audit: scanned existing lighting target declarations, `LightingComposite`, PBR docs, and older indirect-diffuse architecture docs before editing. `Docs/Rendering/PBR/01-PBR-Reference-Requirements.md#lighting-target-contract` is the authoritative contract; older docs now point to or defer to it instead of carrying conflicting raw-irradiance semantics.
+- Source hygiene: final shader/pass source comments describe only local buffer semantics and composite invariants; reference lineage stays in docs.
+
 ## Stage 0A: Lock Shader Module Boundaries
 
 Implementation prompt:

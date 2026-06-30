@@ -77,13 +77,11 @@ Generalization gate for every new file:
 
 ## Estimator Contract
 
-`IndirectDiffuse` texture stores incoming diffuse irradiance divided by pi, before applying primary-surface base color.
+Superseded by `Docs/Rendering/PBR/01-PBR-Reference-Requirements.md#lighting-target-contract`.
 
-`LightingComposite.hlsl` remains responsible for:
+`IndirectDiffuse` texture stores a material-evaluated outgoing radiance contribution in linear HDR. It is the portion of primary-surface `Lo` whose first sampled primary event is the diffuse lobe. `LightingComposite.hlsl` remains a simple sum because `IndirectDiffuse`, `IndirectSpecular`, and the direct lighting targets all share that same radiance-contribution unit.
 
-```hlsl
-indirectDiffuse = terms.IndirectDiffuse * response.DiffuseWeight * response.DiffuseColor * response.IndirectDiffuseOcclusion;
-```
+Older demodulated-irradiance wording from this plan is intentionally retired. If a future denoiser needs raw irradiance, demodulated radiance, albedo, PDF, hit distance, or visibility, those signals must be separate render products and must not redefine `IndirectDiffuse`.
 
 General estimator:
 
@@ -91,17 +89,18 @@ General estimator:
 // w is the sampled incoming direction in world space.
 // p(w) is the selected sampler PDF over the hemisphere.
 // Li(w) is ray-hit or sky-miss radiance.
-IndirectDiffuse = Li(w) * saturate(dot(N, w)) / (PI * max(p(w), 1.0e-6f));
+IndirectDiffuse = materialDiffuseThroughput(w) * Li(w);
+materialDiffuseThroughput(w) = f_diffuse * diffuseEnergyWeight * saturate(dot(N, w)) / max(p(w), 1.0e-6f);
 ```
 
 Cosine-hemisphere baseline:
 
 ```hlsl
 p(w) = saturate(dot(N, w)) / PI
-IndirectDiffuse = Li(w)
+IndirectDiffuse = f_diffuse * diffuseEnergyWeight * Li(w) * PI
 ```
 
-Do not multiply `BaseColor` in the ray-traced diffuse pass.
+The current shader evaluates the diffuse material term in the ray-traced diffuse pass. Do not multiply base color again in `LightingComposite`.
 
 ## CVar Contract
 
@@ -480,7 +479,7 @@ Read and preserve:
 
 ### Implementation Prompt
 
-Add `IndirectDiffusePass` and `IndirectDiffuse.hlsl`. The pass must trace one cosine-hemisphere diffuse ray per non-sky GBuffer pixel and write raw one-sample indirect diffuse radiance. No denoiser. No temporal accumulation. No environment importance sampling. Reuse the neutral ray tracing capability, binding, hit-data, environment, sampling, and random helpers from earlier stages.
+Add `IndirectDiffusePass` and `IndirectDiffuse.hlsl`. The pass must trace one cosine-hemisphere diffuse ray per non-sky GBuffer pixel and write one-sample material-evaluated indirect diffuse outgoing radiance. No denoiser. No temporal accumulation. No environment importance sampling. Reuse the neutral ray tracing capability, binding, hit-data, environment, sampling, and random helpers from earlier stages.
 
 ### Files
 
@@ -561,7 +560,7 @@ For each pixel:
    - reconstruct `RayTracingHitSurfaceData`
    - set `Li` to `ShadeRayTracingHitIncidentRadiance(hitSurface, sampleDirection)`
 10. For cosine hemisphere mode, write:
-    - `IndirectDiffuseTexture[pixel] = float4(Li * Intensity, alphaSignal)`
+    - `IndirectDiffuseTexture[pixel] = float4(materialDiffuseThroughput * Li * Intensity, alphaSignal)`
 
 `RayTracingPathSample.hlsli` must define neutral sample/result structs for direction, PDF, cosine term, hit/miss state, incident radiance, contribution, hit distance, and rejection reason. It must not include indirect diffuse settings, CVars, or debug enums.
 
@@ -808,7 +807,7 @@ These are explicitly out of the first implementation:
 - mesh-light importance sampling
 - emissive triangle light reservoir sampling
 
-When revisiting these later, start from the working `IndirectDiffuse` baseline and preserve the estimator contract.
+When revisiting these later, start from the working `IndirectDiffuse` baseline and preserve the lighting-target contract.
 
 ## Daily Working Rule
 

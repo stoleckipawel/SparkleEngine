@@ -94,6 +94,41 @@ For the near-term scope, indirect subsurface may remain zero if subsurface is ma
 
 This convention intentionally matches the current `LightingComposite` sum model. If a future denoiser wants demodulated signals, those must be additional buffers, not a silent semantic change to the lighting targets.
 
+### Lighting Target Contract
+
+The authoritative semantics for Sparkle lighting targets are:
+
+| Target | Semantic contract |
+| --- | --- |
+| `DirectDiffuse` | Linear HDR RGB outgoing radiance contribution at the primary surface from direct lights evaluated through the diffuse material lobe: `f_diffuse * Li_direct * visibility * NoL`. |
+| `DirectSpecular` | Linear HDR RGB outgoing radiance contribution at the primary surface from direct lights evaluated through the specular material lobe: `f_specular * Li_direct * visibility * NoL`. |
+| `IndirectDiffuse` | Linear HDR RGB outgoing radiance contribution at the primary surface from paths whose first sampled primary-surface event is the diffuse lobe. The stored value is after material throughput, including base-color/diffuse energy weighting, and is not incoming irradiance. |
+| `IndirectSpecular` | Linear HDR RGB outgoing radiance contribution at the primary surface from paths whose first sampled primary-surface event is the specular lobe. Mirror and glossy paths store material throughput multiplied by hit, emissive, or sky radiance. |
+
+The target alpha channels are pass/debug sidecar data and are not part of the physical radiance contract.
+
+`LightingComposite` may remain:
+
+```text
+SceneLinearRadiance =
+    DirectDiffuse
+  + DirectSpecular
+  + DirectSubsurface
+  + IndirectDiffuse
+  + IndirectSpecular
+  + IndirectSubsurface
+  + EmissiveRadiance
+```
+
+only because every lighting input is already a same-unit outgoing radiance contribution in linear HDR. Any raw irradiance, demodulated radiance, albedo, visibility, PDF, hit distance, or denoiser-provider signal must be added as a separate named render product.
+
+Reference compliance:
+
+- PBRT: the target maps to `Lo = Le + integral f_s Li abs(dot(N, wi)) dwi`. Sparkle splits the estimated `Lo` into direct/indirect and first-primary-lobe buffers for realtime scheduling and debug visibility, but every buffer still stores a material-evaluated contribution to `Lo`.
+- Filament: Sparkle follows the linear HDR, material-evaluated PBR color contract for lighting. Deviation: Filament's common IBL terminology may use irradiance or prefiltered environment inputs before BRDF/material application; Sparkle lighting targets are after material application.
+- Unreal Engine physically based materials: Sparkle uses comparable metallic-roughness material-facing terminology. Deviation: these target names are internal render-graph split buffers, not Unreal material pins or GBuffer fields.
+- Unreal Engine path tracer: Sparkle treats a path-traced/high-sample result as the reference-output concept. Deviation: the realtime targets are decomposed debug/scheduling outputs, not a single monolithic path-tracer accumulation buffer.
+
 ## Requirement IDs
 
 ### PBR-R-001: Linear HDR Transport

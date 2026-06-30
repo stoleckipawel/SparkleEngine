@@ -342,14 +342,14 @@ Problem:
 
 Required cleanup:
 
-- Define diffuse contribution as:
-  - `IndirectDiffuse` stores incoming diffuse irradiance divided by pi.
-  - Final composite remains `IndirectDiffuse * DiffuseWeight * BaseColor * AO`.
+- Use the authoritative lighting-target contract in `Docs/Rendering/PBR/01-PBR-Reference-Requirements.md#lighting-target-contract`.
+- Define diffuse contribution as material-evaluated outgoing radiance from paths whose first primary event is the diffuse lobe.
+- Keep `LightingComposite` as a direct sum; do not multiply base color or diffuse weights there.
 - Add a neutral shader-side path-sample vocabulary before debug modes multiply across effects.
 - For a general direction PDF `p(w)`, write:
-  - `contribution = Li(w) * saturate(dot(N, w)) / (PI * p(w))`
+  - `contribution = f_diffuse * diffuseEnergyWeight * Li(w) * saturate(dot(N, w)) / p(w)`
 - For cosine hemisphere PDF `p(w) = cosTheta / PI`, this reduces to:
-  - `contribution = Li(w)`
+  - `contribution = f_diffuse * diffuseEnergyWeight * Li(w) * PI`
 
 ### 8. No-Denoiser Requirement Must Be Explicit
 
@@ -516,7 +516,7 @@ Recommendation:
 
 - Do not integrate NRD, SVGF, DLSS-RR, ReSTIR GI, ReSTIR PT, RTXGI DDGI, NRC, or SHaRC in the first indirect diffuse milestone.
 - Do not add a hidden temporal accumulator and call it "not a denoiser".
-- Do not make `IndirectDiffuse` multiply by base color if `LightingComposite` continues to multiply by base color.
+- Do not multiply base color in `LightingComposite`; `IndirectDiffuse` is already a material-evaluated radiance contribution.
 - Do not add diffuse ray tracing with scattered runtime instrumentation, noisy per-frame logs, or validation plumbing outside the existing CVar/debug-view pattern.
 - Do not make a lighting producer pass write unrelated lighting targets to zero.
 - Do not add more unrelated work to `Lighting.cpp`; create or use a family helper instead.
