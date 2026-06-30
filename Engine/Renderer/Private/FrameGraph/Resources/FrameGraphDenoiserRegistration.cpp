@@ -11,8 +11,7 @@ namespace
 		return ShadowDenoiseContract::ShadowDenoiseTextures{
 		    .PackedSignal = FrameGraphTextureHandle::Invalid(),
 		    .PackedSignalScratch = FrameGraphTextureHandle::Invalid(),
-		    .DenoisedVisibility = FrameGraphTextureHandle::Invalid(),
-		    .DenoisedVisibilityHistory = FrameGraphTextureHandle::Invalid()};
+		    .DenoisedVisibility = FrameGraphTextureHandle::Invalid()};
 	}
 }
 
@@ -42,12 +41,6 @@ namespace FrameGraphDenoiserRegistration
 		        sceneExtent.Width,
 		        sceneExtent.Height,
 		        ShadowDenoiseContract::PackedVisibilitySignalFormat));
-		result.DenoisedVisibilityHistory = builder.CreateTexture(
-		    FrameGraphTextureDesc::CreateColor(
-		        "ShadowVisibilityDenoisedHistory",
-		        sceneExtent.Width,
-		        sceneExtent.Height,
-		        ShadowDenoiseContract::DenoisedVisibilityFormat));
 
 		result.DenoisedVisibility = builder.CreateTexture(
 		    FrameGraphTextureDesc::CreateColor(

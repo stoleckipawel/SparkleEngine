@@ -29,8 +29,14 @@ struct FrameAssemblyHistoryResources final
 {
 	FrameGraphTextureHandle PreviousExposure = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle CurrentExposure = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle PreviousDenoisedShadowVisibility = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle CurrentDenoisedShadowVisibility = FrameGraphTextureHandle::Invalid();
 
 	bool HasExposureHistory() const noexcept { return PreviousExposure.IsValid() && CurrentExposure.IsValid(); }
+	bool HasShadowDenoiseHistory() const noexcept
+	{
+		return PreviousDenoisedShadowVisibility.IsValid() && CurrentDenoisedShadowVisibility.IsValid();
+	}
 };
 
 struct FrameAssemblyProviderResources final

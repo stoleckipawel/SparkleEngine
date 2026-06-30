@@ -22,7 +22,8 @@ Reuse/DRY audit:
 | `GBufferBaseColor`, `GBufferNormal`, `GBufferMaterial`, `GBufferEmissive`, `GBufferSubsurface`, `GBufferDeviceZ`, `GBufferMotionVector` | GBuffer | `GBufferFormats::*` | Material, geometry, depth, and motion products. `GBufferMaterial` stores R metallic, G roughness, B ambient occlusion, A dielectric F0. |
 | `Exposure` and exposure history | Exposure pass / frame pipeline | `R32G32B32A32_Float` | R adapted exposure, G average luminance, B target exposure, A previous exposure. |
 | `ShadowVisibilitySignalRaw`, `ShadowVisibilitySignalScratch` | Shadow denoiser registration | `ShadowDenoiseContract::PackedVisibilitySignalFormat` | Packed `float4(visibility, hitDistance, confidence, maxDistance)`. |
-| `ShadowVisibilityDenoised`, `ShadowVisibilityDenoisedHistory` | Shadow denoiser registration | `ShadowDenoiseContract::DenoisedVisibilityFormat` | Scalar visibility only. |
+| `ShadowVisibilityDenoised` | Shadow denoiser registration | `ShadowDenoiseContract::DenoisedVisibilityFormat` | Scalar denoised visibility output. |
+| `PreviousDenoisedShadowVisibilityHistory`, `CurrentDenoisedShadowVisibilityHistory` | Frame scene resources / frame pipeline | `ShadowDenoiseContract::DenoisedVisibilityFormat` | Persistent previous/current scalar denoised visibility history, reset with renderer temporal history. |
 | `ToneMappedSceneColor`, `EncodedSceneColor`, `BackBuffer` | Presentation | Existing presentation/backbuffer formats | Display-only outputs; they do not feed lighting. |
 | `HistoryResetState` | Temporal frame state | Constant data | Shared reset signal for exposure, upscalers, and future denoisers. |
 

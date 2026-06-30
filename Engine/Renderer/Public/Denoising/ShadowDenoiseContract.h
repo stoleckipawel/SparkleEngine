@@ -19,6 +19,7 @@ namespace ShadowDenoiseContract
 
 	struct ShadowDenoiseInputState
 	{
+		bool HasRawVisibility = false;
 		bool HasDepth = false;
 		bool HasNormals = false;
 		bool HasMotionVectors = false;
@@ -31,7 +32,6 @@ namespace ShadowDenoiseContract
 		FrameGraphTextureHandle PackedSignal;
 		FrameGraphTextureHandle PackedSignalScratch;
 		FrameGraphTextureHandle DenoisedVisibility;
-		FrameGraphTextureHandle DenoisedVisibilityHistory;
 	};
 
 	struct ShadowDenoiseContract
@@ -42,6 +42,8 @@ namespace ShadowDenoiseContract
 		bool HasSceneTlas = true;
 		ShadowDenoiseInputState Inputs{};
 		ShadowDenoiseTextures Textures{};
+		FrameGraphTextureHandle PreviousDenoisedVisibility = FrameGraphTextureHandle::Invalid();
+		FrameGraphTextureHandle CurrentDenoisedVisibility = FrameGraphTextureHandle::Invalid();
 
 		constexpr bool IsEnabled() const noexcept { return Stage != ShadowDenoiseStage::Off; }
 		constexpr bool IsRawVisibilityOnly() const noexcept { return Stage == ShadowDenoiseStage::RawVisibility; }
@@ -50,14 +52,16 @@ namespace ShadowDenoiseContract
 
 	struct BuildRequest
 	{
-		bool UseSoftShadows = false;
 		bool RequestDenoiser = false;
+		bool ProviderAvailable = false;
 		bool InlineRayQueryAvailable = false;
 		bool HasSceneTlas = true;
+		std::uint32_t RaysPerPixel = 1u;
 		ShadowDenoiseInputState Inputs{};
+		ShadowDenoiseTextures Textures{};
+		FrameGraphTextureHandle PreviousDenoisedVisibility = FrameGraphTextureHandle::Invalid();
+		FrameGraphTextureHandle CurrentDenoisedVisibility = FrameGraphTextureHandle::Invalid();
 	};
 
 	ShadowDenoiseContract BuildContract(const BuildRequest& request) noexcept;
-	const char* StageToString(ShadowDenoiseStage stage) noexcept;
-	void LogContractSummary(const ShadowDenoiseContract& contract) noexcept;
 }  // namespace ShadowDenoiseContract

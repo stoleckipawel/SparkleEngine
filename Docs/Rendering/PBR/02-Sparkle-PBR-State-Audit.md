@@ -159,7 +159,8 @@ Direct shadows:
 
 - `RayTracedShadowTrace.hlsli` uses inline ray queries.
 - Direct shadows trace the sampled direct-light direction/distance; finite production lights sample emitter direction and visibility together.
-- Shadow settings contain an NRD SIGMA enum path.
+- Direct shadows use the shared alpha-tested ray-query path.
+- Shadow settings contain an NRD SIGMA enum path, but the default mode is raw visibility until a provider is linked.
 
 Relevant code:
 
@@ -172,9 +173,8 @@ Relevant code:
 
 Issues:
 
-- Direct shadow rays do not appear to run the alpha-tested material resolution path used by indirect rays. Alpha-tested geometry can cast opaque direct shadows.
-- There is a `RayTracedShadowDenoiserInputs::PackShadowSignal` helper, but the direct lighting pass currently consumes visibility internally rather than writing raw visibility and denoised visibility resources.
-- SIGMA is represented in settings/resources, but there is no complete NRD integration visible in this pass path.
+- There is a `RayTracedShadowDenoiserInputs::PackShadowSignal` helper, and direct lighting now writes the raw packed visibility signal separately from lighting contribution.
+- SIGMA is represented by a renderer-side selection/resource boundary, but there is no linked NRD provider execution path yet.
 - The old shadow-only finite-light helpers were removed; production finite-light shading uses the sampled emitter direction for both visibility and BRDF/radiance.
 
 ## Indirect Diffuse State
@@ -302,10 +302,10 @@ Issues:
 
 - DLSS Super Resolution is currently an upscaler, not a lighting denoiser.
 - No visible DLRR provider path exists yet.
-- No visible NRD SIGMA execution path exists yet.
+- No linked NRD SIGMA provider execution path exists yet; SIGMA requests fall back to the raw-visibility path through `ShadowDenoiseContract`.
 - Indirect diffuse/specular do not currently provide denoiser-ready auxiliary buffers.
-- Raw ray-traced shadow signal packing and registered frame-graph resource formats need a contract audit. The shader helper packs visibility, hit distance, confidence, and max distance, while the current denoiser registration path uses single-channel visibility-style resources in places.
-- Current ray-traced shadow queries use a first-hit visibility shortcut. That is valid for binary hard-shadow visibility, but it is not automatically a valid occluder-distance signal for NRD SIGMA-style denoising.
+- Raw ray-traced shadow signal packing now matches the registered multi-channel frame-graph resource format; denoised visibility remains scalar.
+- Current ray-traced shadow hit distance is generated from the shared alpha-tested ray-query path. Full per-light SIGMA occluder-distance policy still belongs to the provider implementation.
 
 ## RHI, Format, and Signal State
 

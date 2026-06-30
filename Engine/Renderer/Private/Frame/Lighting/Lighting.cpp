@@ -6,14 +6,14 @@
 #include "Frame/Lighting/LightingComposite.h"
 #include "Frame/Lighting/LightingRenderTargets.h"
 #include "Frame/Lighting/LightingTargetClear.h"
+#include "Frame/Lighting/ShadowDenoise.h"
 #include "Frame/Lighting/Sky.h"
-#include "FrameGraph/Resources/FrameGraphDenoiserRegistration.h"
 
 void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
 {
 	resources.Transient.Lighting = CreateLightingRenderTargets(builder, sceneExtent);
-	resources.Transient.ShadowDenoiser =
-	    FrameGraphDenoiserRegistration::RegisterShadowVisibilityResources(builder, sceneExtent, false);
+	const FrameGraphTextureHandle shadowVisibilitySignal =
+	    CreateShadowDenoiseFrameResources(builder, sceneExtent, resources).Textures.PackedSignal;
 
 	AddLightingTargetClearPass(builder, resources.Transient.Lighting);
 	AddDirectLightingPass(
@@ -21,7 +21,7 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	    resources.Transient.Lighting,
 	    resources.Transient.GBuffer,
 	    resources.Persistent.SceneTlas,
-	    resources.Transient.ShadowDenoiser.PackedSignal);
+	    shadowVisibilitySignal);
 	AddIndirectLightingPasses(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.Persistent.SceneTlas);
 	AddLightingCompositePass(builder, resources.Transient.Scene, resources.Transient.Lighting, resources.Transient.GBuffer);
 	AddSkyPass(builder, resources.Transient.Scene, resources.Transient.GBuffer);

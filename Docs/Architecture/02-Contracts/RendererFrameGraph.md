@@ -258,7 +258,7 @@ History in current renderer source exists in more than one form:
 
 - temporal history validity and previous jitter/camera data through `TemporalDataBuilder`
 - upscaler history managed by `UpscalerSubsystem`
-- denoiser history through `FrameGraphDenoiserRegistration` resources such as `ShadowVisibilityDenoisedHistory`
+- denoiser history through persistent previous/current resources such as `PreviousDenoisedShadowVisibilityHistory` and `CurrentDenoisedShadowVisibilityHistory`
 
 Contract rules:
 
@@ -273,7 +273,7 @@ Current source-backed status:
 
 - `TemporalDataBuilder` tracks previous pose, previous jitter, reset requests, and history validity.
 - `UpscalerSubsystem` exposes history reset hooks and frame setup hooks.
-- `ShadowVisibilityDenoisedHistory` exists as a frame-graph texture registration.
+- denoised shadow visibility history exists as previous/current persistent frame-graph texture handles bound by the frame pipeline.
 
 `Needs source confirmation`:
 
@@ -352,7 +352,8 @@ Current contract statement:
 Current source-backed history-related surfaces:
 
 - `TemporalDataBuilder` history validity and previous jitter/camera state
-- `ShadowVisibilityDenoisedHistory`
+- `PreviousDenoisedShadowVisibilityHistory`
+- `CurrentDenoisedShadowVisibilityHistory`
 - upscaler-managed history reset/setup
 
 Contract rule:

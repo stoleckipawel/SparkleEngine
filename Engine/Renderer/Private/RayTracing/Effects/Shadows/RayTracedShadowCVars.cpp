@@ -3,7 +3,7 @@
 
 ConsoleVariable<RayTracedShadowDenoiserMode> CVarRayTracedShadowDenoiserMode(
 	"r.RayTracedShadows.Denoiser",
-	RayTracedShadowDenoiserMode::NrdSigma,
+	RayTracedShadowDenoiserMode::Off,
 	"Ray traced shadow denoiser: 0=Off, 1=NRD SIGMA.");
 ConsoleVariable<bool> CVarRayTracedShadowsEnabled(
     "r.RayTracedShadows.Enabled",
