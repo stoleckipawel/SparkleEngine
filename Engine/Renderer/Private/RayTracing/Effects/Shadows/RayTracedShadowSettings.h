@@ -17,22 +17,6 @@ struct RayTracedShadowSettings final
 	float MaxDistance = 0.0f;
 	bool Enabled = true;
 	bool DiagnosticsEnabled = false;
-
-	bool RequiresDenoiser() const noexcept
-	{
-		return Enabled && QualityMode == RayTracedShadowQualityMode::SoftAreaLights &&
-		       DenoiserMode != RayTracedShadowDenoiserMode::Off;
-	}
-
-	bool UsesHardShadowVisibility() const noexcept
-	{
-		return Enabled && QualityMode == RayTracedShadowQualityMode::Hard;
-	}
-
-	bool UsesStochasticSoftShadowVisibility() const noexcept
-	{
-		return Enabled && QualityMode == RayTracedShadowQualityMode::SoftAreaLights;
-	}
 };
 
 RayTracedShadowSettings BuildRayTracedShadowSettingsFromCVars() noexcept;

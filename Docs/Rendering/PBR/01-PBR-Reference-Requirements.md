@@ -243,7 +243,7 @@ Finite area-light sampling should eventually use the sampled point or sampled di
 Lo += f_s * Le_or_I * geometry_term * visibility / pdf
 ```
 
-Using source radius only to soften shadows is an approximation. It may remain as a punctual-light approximation, but it must be named and tested as such.
+Using source radius only to soften shadows is an approximation. It may remain as a punctual-light approximation, but it must be named as such and must not alter unoccluded direct radiance.
 
 ### PBR-R-005: Direct Lighting Requirements
 

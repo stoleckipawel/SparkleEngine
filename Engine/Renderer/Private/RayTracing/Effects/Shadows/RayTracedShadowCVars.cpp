@@ -3,8 +3,8 @@
 
 ConsoleVariable<RayTracedShadowQualityMode> CVarRayTracedShadowQualityMode(
 	"r.RayTracedShadows.Quality",
-	RayTracedShadowQualityMode::SoftAreaLights,
-	"Ray traced shadow quality: 0=Hard, 1=SoftAreaLights.");
+	RayTracedShadowQualityMode::SoftPunctual,
+	"Ray traced shadow quality: 0=Hard, 1=SoftPunctual. SoftPunctual jitters shadow rays only; light radiance remains punctual.");
 ConsoleVariable<RayTracedShadowDenoiserMode> CVarRayTracedShadowDenoiserMode(
 	"r.RayTracedShadows.Denoiser",
 	RayTracedShadowDenoiserMode::NrdSigma,

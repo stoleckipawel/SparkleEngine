@@ -149,15 +149,15 @@ Remaining issues:
 
 - Local light attenuation is `1 / distance^2 * (1 - distance / range)^2`. This is not the glTF punctual range falloff and dims much more aggressively across the range.
 - Stage 4 now uses a glTF/Filament-style punctual-light policy: directional intensity is treated as lux, point/spot intensity as candela, distance attenuation is inverse-square with optional smooth range cutoff, and spot cone attenuation uses the squared smooth cone ramp.
-- Source radius affects stochastic shadow sampling but not direct-light radiometry. This is a punctual-light-with-soft-shadow approximation, not a physically sampled area light.
-- The previous direct-lighting `0.04` roughness floor has been removed. Direct analytic lighting has no pass-local mirror/delta branch; singularity handling is localized to BRDF denominator/PDF safety, while finite-light and area-light policy remains Stage 4/4A work.
+- Source radius affects stochastic shadow sampling but not direct-light radiometry. Stage 4A now names this as `SoftPunctual`, a punctual-light-with-soft-shadow approximation, not a physically sampled area light.
+- The previous direct-lighting `0.04` roughness floor has been removed. Direct analytic lighting has no pass-local mirror/delta branch; singularity handling is localized to BRDF denominator/PDF safety.
 
 ## Shadow State
 
 Direct shadows:
 
 - `RayTracedShadowTrace.hlsli` uses inline ray queries.
-- Hard and one-sample soft area modes exist.
+- Hard and one-sample `SoftPunctual` modes exist.
 - Shadow settings contain an NRD SIGMA enum path.
 
 Relevant code:
@@ -174,7 +174,7 @@ Issues:
 - Direct shadow rays do not appear to run the alpha-tested material resolution path used by indirect rays. Alpha-tested geometry can cast opaque direct shadows.
 - There is a `RayTracedShadowDenoiserInputs::PackShadowSignal` helper, but the direct lighting pass currently consumes visibility internally rather than writing raw visibility and denoised visibility resources.
 - SIGMA is represented in settings/resources, but there is no complete NRD integration visible in this pass path.
-- One-sample soft shadows use sampled light positions/directions for visibility, but direct BRDF/radiance is still evaluated with the original light direction. This is an approximation, not area-light integration.
+- One-sample `SoftPunctual` shadows use sampled light positions/directions for visibility, but direct BRDF/radiance is still evaluated with the original punctual light direction. This is an approximation, not area-light integration.
 
 ## Indirect Diffuse State
 

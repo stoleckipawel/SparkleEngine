@@ -894,6 +894,13 @@ Acceptance criteria:
 - Reference compliance: soft-shadow approximation and any finite-light integration cite PBRT/RTXPT/Falcor/Unreal/Filament and document deviations.
 - Reuse/DRY: light classification, radius policy, and sampling are stored once and reused by direct, shadow, and indirect code.
 
+Completion note:
+
+- Reference lineage: Sparkle keeps the current light model on the Unreal/Filament/glTF side of the contract: directional, point, and spot lights are punctual light evaluations. The PBRT/RTXPT/Falcor area-light references are documented as the required future path for physically finite lights: sample the emitter, evaluate geometry/emission/visibility/PDF, and use MIS when combined with BSDF sampling. Sparkle does not claim the current source-radius path is an area-light integral.
+- Local deviation: `sourceRadius` and directional `angularDiameterRadians` are visibility-only stochastic shadow sampling parameters. They may change the penumbra sampled by ray-traced shadows, but they do not change punctual intensity, direct BRDF radiance, local-light attenuation, or the ray-hit direct-light path.
+- Reuse/DRY audit: scanned `RayTracedShadowSampling.hlsli`, `RayTracedShadowTrace.hlsli`, `PunctualLights.hlsli`, `SurfaceLighting.hlsli`, `RayTracingHitLighting.hlsli`, direct-light pass callsites, `RenderViewLightingData`, shader light constant-buffer data, editor light controls, scene light descriptors/snapshots, render scene light structs, frame-light upload, cooked/imported light records, and shadow CVars/settings. No area-light mode, PDF helper, or new light classification enum was added because there is only one runtime classification today: punctual with optional soft-shadow visibility jitter.
+- Implementation: renamed the ray-traced shadow quality mode from `SoftAreaLights` to `SoftPunctual`, relabeled the editor radius field as `Shadow Radius`, documented local-light `SourceRadius` and directional `AngularDiameter` as shadow-only fields through the existing CPU and shader light data path, and kept direct primary/ray-hit lighting on the same `PunctualLights` and `SurfaceLighting` radiance path.
+
 ## Stage 5: Make Direct Shadows Physically Usable
 
 Implementation prompt:

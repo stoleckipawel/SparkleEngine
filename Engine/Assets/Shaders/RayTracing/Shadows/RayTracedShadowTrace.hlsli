@@ -41,7 +41,6 @@ namespace RayTracedShadows
 	static const uint ShadowRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES;
 	static const float MinimumShadowTMin = 0.001f;
 	static const uint ShadowQualityModeHard = 0u;
-	static const uint ShadowQualityModeSoftAreaLights = 1u;
 
 	bool SupportsDirectionalShadows()
 	{
@@ -141,6 +140,7 @@ namespace RayTracedShadows
 		if (!UsesHardShadowVisibility())
 		{
 			const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 1u);
+			// Visibility-only jitter for punctual soft shadows; direct radiance still uses the point light position.
 			sampledLightPosition = CommonSampling::SampleSpherePoint(
 			    lightPositionWorld,
 			    max(sourceRadius, 0.0f),
@@ -185,6 +185,7 @@ namespace RayTracedShadows
 		if (!UsesHardShadowVisibility())
 		{
 			const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 2u);
+			// Visibility-only jitter for punctual soft shadows; direct radiance still uses the spot light position and cone.
 			sampledLightPosition = CommonSampling::SampleDiskPoint(
 			    lightPositionWorld,
 			    spotDirectionWorld,
