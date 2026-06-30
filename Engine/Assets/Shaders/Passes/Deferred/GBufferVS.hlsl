@@ -1,4 +1,5 @@
 #include "CommonVS.hlsli"
+#include "Geometry/Basis.hlsli"
 #include "Geometry/Skinning.hlsli"
 
 void main(in VS::Input Input, out VS::Output Output)
@@ -16,9 +17,8 @@ void main(in VS::Input Input, out VS::Output Output)
 	const float4 positionWorld = mul(float4(localVertex.Position, 1.0f), worldMatrix);
 	const float4 previousPositionWorld = mul(float4(previousLocalVertex.Position, 1.0f), previousWorldMatrix);
 	const float3 normalWorld = normalize(mul(localVertex.Normal, worldInvTransposeMatrix));
-	const float4 tangentWorld = float4(mul(localVertex.Tangent, (float3x3) worldMatrix), Input.Tangent.w);
-
-	const float3 bitangentWorld = ComputeBitangent(normalWorld, tangentWorld);
+	const float3 tangentWorld = OrthonormalizeTangent(mul(localVertex.Tangent, (float3x3) worldMatrix), normalWorld);
+	const float3 bitangentWorld = ComputeBitangentFromSign(normalWorld, tangentWorld, Input.Tangent.w);
 
 	const float4 positionClip = PositionWorldToClip(positionWorld);
 	const float4 previousClipPosition = mul(previousPositionWorld, PrevViewProjMTX);
@@ -28,7 +28,7 @@ void main(in VS::Input Input, out VS::Output Output)
 	Output.Position = jitteredPositionClip;
 	Output.PositionWorld = positionWorld.xyz;
 	Output.NormalWorld = normalWorld;
-	Output.TangentWorld = tangentWorld;
+	Output.TangentWorld = float4(tangentWorld, Input.Tangent.w);
 	Output.BitangentWorld = bitangentWorld;
 	Output.TexCoord = Input.TexCoord;
 	Output.Color = Input.Color;

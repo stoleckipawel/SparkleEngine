@@ -2,8 +2,8 @@
 
 #include "Resources/ConstantBuffers.hlsli"
 #include "Resources/Samplers.hlsli"
+#include "Geometry/Basis.hlsli"
 #include "Geometry/PixelInput.hlsli"
-#include "Geometry/Transforms.hlsli"
 #include "Material/MaterialNormal.hlsli"
 
 Texture2D TextureBaseColor;
@@ -171,7 +171,7 @@ namespace Material
 		props.AlphaMode = AlphaMode;
 		ApplyAlphaMode(props.Alpha);
 		props.NormalTangent = SampleNormalTangent(Input.TexCoord);
-		props.NormalWorld = TransformNormalToWorld(props.NormalTangent, Input.NormalWorld, Input.TangentWorld.xyz, Input.BitangentWorld);
+		props.NormalWorld = TransformTangentNormalToWorld(props.NormalTangent, Input.NormalWorld, Input.TangentWorld.xyz, Input.BitangentWorld);
 		if (!Input.IsFrontFace)
 		{
 			props.NormalWorld = -props.NormalWorld;

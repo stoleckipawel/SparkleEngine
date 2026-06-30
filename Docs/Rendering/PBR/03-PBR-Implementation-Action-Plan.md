@@ -698,6 +698,14 @@ Acceptance criteria:
 - Reference compliance: every convention maps to NRD, Streamline DLRR, RTXPT/Falcor, PBRT, or a documented local engine decision.
 - Reuse/DRY: normal decode, ray offset, depth conversion, motion-vector conversion, and history-reset logic live in shared helpers or provider-contract builders, not pass-local copies.
 
+Stage 2B implementation notes:
+
+- Reference lineage: geometry/provider conventions are locked in `04-PBR-Renderer-Signal-Contract.md` against NRD/Streamline expectations for normal/depth/motion/history metadata, RTXPT/Falcor-style hit-surface records, and PBRT's explicit ray-offset/self-intersection policy. Local deviations are called out for Sparkle's current device-depth storage, local ray-bias constants, and direct-shadow alpha/two-sided parity remaining Stage 5 work.
+- Reuse/DRY audit: scanned `Geometry/Basis.hlsli`, `Geometry/Transforms.hlsli`, `Material.hlsli`, GBuffer vertex/pixel/util shaders, ray-hit material reconstruction, ray-query tracing, shadow tracing, `GBufferFormats`, temporal constants/state, `UpscalerInputContract`, the DLSS Streamline bridge, and existing PBR signal docs before editing. Existing homes are reused: `Geometry/Basis.hlsli` owns tangent-frame construction, `MotionVector.hlsli` owns pixel motion-vector math, `UpscalerInputContract` owns provider depth/motion conventions, and `TemporalFrameState` owns history-valid state.
+- Implementation: primary GBuffer tangent basis construction now uses `OrthonormalizeTangent` and `ComputeBitangentFromSign`, matching ray-hit reconstruction. Primary material normal mapping now calls `TransformTangentNormalToWorld`, the same canonical helper used by ray-hit shading. Stale geometry helpers that duplicated basis transforms, local/world position wrapper chains, and unused rotation math were removed from `Geometry/Transforms.hlsli`.
+- Simplification audit: no new provider enum, registry, pass, or wrapper was added. The only code change deletes duplicate/unused helpers and routes primary shading through existing concept-owned helpers.
+- Validation commands: cooked `GBuffer`, `DirectLightingNoRayQuery`, `DirectLighting`, `DirectLightingVulkanAddress`, `IndirectDiffuse`, and `IndirectSpecular` for `DxilSm66` and `SpirV16`. Deterministic image tests for primary-vs-ray-hit normal parity, motion-vector movement, and alpha-tested direct-shadow parity remain Stage 13/Stage 5 validation asset work.
+
 ## Stage 3: Normalize BRDF Energy Behavior
 
 Implementation prompt:

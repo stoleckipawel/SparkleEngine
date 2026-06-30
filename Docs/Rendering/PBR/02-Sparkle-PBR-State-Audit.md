@@ -364,11 +364,12 @@ Current strengths:
 - The renderer already produces motion vectors, normals, device-Z, TLAS data, and material texture tables.
 - Provider contracts already have a place to describe motion-vector and depth conventions.
 - Ray-hit material reconstruction is substantial enough to become the shared material/geometry decode path for validation and reference rendering.
+- Stage 2B now documents the normal, depth, motion-vector, jitter, and history-reset conventions in the renderer signal contract, and primary/ray-hit tangent-frame construction shares `Geometry/Basis.hlsli`.
 
 Issues:
 
-- Primary deferred shading and ray-hit shading do not yet have a documented shared policy for geometric normal, shading normal, face orientation, two-sided materials, normal-map orientation, and ray-origin offsets.
-- Denoisers and DLRR need stable normal, depth/viewZ, motion-vector, jitter, and history-reset conventions. Those rules should be locked before signal buffers multiply.
+- Image-test fixtures still need to prove primary deferred shading and ray-hit shading reconstruct matching normals/material orientation on deterministic meshes.
+- Motion-vector and provider-contract validation scenes still need to prove pixel delta, direction, jitter exclusion, and reset behavior against known camera/object movement.
 - Alpha-tested geometry participates in indirect ray-query material handling but not in the direct shadow path.
 
 Required stages:
