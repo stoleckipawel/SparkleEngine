@@ -1,19 +1,7 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 
-#include "RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
-
-#if !defined(SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS) || !defined(__spirv__)
-RaytracingAccelerationStructure SceneTlas;
-#endif
-
-#if defined(SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS) && defined(__spirv__)
-[[vk::ext_extension("SPV_KHR_ray_tracing")]]
-[[vk::ext_capability(4479)]]
-[[vk::ext_instruction(4447, "")]]
-RaytracingAccelerationStructure SparkleConvertAddressToAccelerationStructure(uint64_t address);
-#endif
 
 cbuffer RayTracedShadowUniformData
 {
@@ -27,16 +15,20 @@ cbuffer RayTracedShadowUniformData
 	float RayTracedShadowPadding2;
 	uint RayTracedShadowSceneTlasGpuAddressLow;
 	uint RayTracedShadowSceneTlasGpuAddressHigh;
-	uint RayTracedShadowTlasAccessMode;
+	uint RayTracingHitDataAvailable;
+	uint RayTracingHitInstanceCount;
+	uint RayTracingHitMaterialCount;
 	uint RayTracedShadowPadding3;
+	uint RayTracedShadowPadding4;
+	uint RayTracedShadowPadding5;
 };
+
+#include "RayTracing/RayTracingSceneTlasTrace.hlsli"
 
 namespace RayTracedShadows
 {
-	static const uint TlasAccessModeDescriptor = 0u;
-	static const uint TlasAccessModeShaderDeviceAddress = 1u;
 	static const uint ShadowInstanceMask = 0xFFu;
-	static const uint ShadowRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES;
+	static const uint ShadowRayFlags = RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES;
 	static const float MinimumShadowTMin = 0.001f;
 
 	bool SupportsDirectionalShadows()
@@ -57,31 +49,19 @@ namespace RayTracedShadows
 	ShadowVisibilitySignal TraceShadowRay(float3 originWorld, float3 directionWorld, float maxDistance)
 	{
 		const float clampedMaxDistance = max(maxDistance, MinimumShadowTMin);
-		RayDesc shadowRay;
-		shadowRay.Origin = originWorld;
-		shadowRay.Direction = normalize(directionWorld);
-		shadowRay.TMin = MinimumShadowTMin;
-		shadowRay.TMax = clampedMaxDistance;
-
-		RayQuery<ShadowRayFlags> query;
-#if defined(SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS) && defined(__spirv__)
-		const uint64_t sceneTlasAddress =
-		    (uint64_t(RayTracedShadowSceneTlasGpuAddressHigh) << 32u) | uint64_t(RayTracedShadowSceneTlasGpuAddressLow);
-		query.TraceRayInline(
-		    SparkleConvertAddressToAccelerationStructure(sceneTlasAddress),
+		const RayTracingTraceResult trace = RayTracingSceneTlas::TraceRayQueryWithAlphaTest(
+		    RayTracedShadowSceneTlasGpuAddressLow,
+		    RayTracedShadowSceneTlasGpuAddressHigh,
+		    originWorld,
+		    directionWorld,
+		    MinimumShadowTMin,
+		    clampedMaxDistance,
 		    ShadowRayFlags,
-		    ShadowInstanceMask,
-		    shadowRay);
-#else
-		query.TraceRayInline(SceneTlas, ShadowRayFlags, ShadowInstanceMask, shadowRay);
-#endif
-		while (query.Proceed())
-		{
-		}
+		    ShadowInstanceMask);
 
-		if (query.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
+		if (trace.Hit)
 		{
-			return RayTracedShadowSignals::BuildOccludedSignal(query.CommittedRayT(), clampedMaxDistance);
+			return RayTracedShadowSignals::BuildOccludedSignal(trace.RayT, clampedMaxDistance);
 		}
 
 		return RayTracedShadowSignals::BuildUnshadowedSignal(clampedMaxDistance);

@@ -276,20 +276,20 @@ Direct lighting has:
 
 - no-ray-query variant
 - D3D12 descriptor TLAS variant
-- Vulkan address variant
+- Device-address TLAS variant
 
 Indirect specular currently uses only descriptor TLAS and gates out otherwise.
 
 Problem:
 
 - Indirect diffuse needs an explicit backend policy up front.
-- If the first implementation is descriptor-only, Vulkan address mode must fail closed without plausible-looking output.
+- If the first implementation is descriptor-only, device-address TLAS mode must fail closed without plausible-looking output.
 - If Vulkan support is required in the first milestone, the shader package and pass variants must be planned before implementation.
 
 Required cleanup:
 
 - Start with descriptor TLAS only if that matches current indirect specular.
-- Add Vulkan address parity as a separate stage, not as an accidental omission.
+- Add device-address TLAS parity as a separate stage, not as an accidental omission.
 
 ### 6A. Reusable Ray Tracing Architecture Is Not Yet Explicit Enough
 

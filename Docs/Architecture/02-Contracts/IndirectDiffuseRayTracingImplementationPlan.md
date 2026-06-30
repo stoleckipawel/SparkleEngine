@@ -689,7 +689,7 @@ The helper must:
 
 ### Implementation Prompt
 
-Make the first indirect diffuse release descriptor-TLAS only, matching current indirect specular, using the neutral ray tracing capability query from Stage 3A. Address-only TLAS access must fail closed without a Vulkan address shader variant in this stage.
+Make the first indirect diffuse release descriptor-TLAS only, matching current indirect specular, using the neutral ray tracing capability query from Stage 3A. Address-only TLAS access must fail closed without a backend-named shader variant in this stage.
 
 ### Files
 
@@ -704,7 +704,7 @@ Likely modify:
 
 - D3D12 runs.
 - Vulkan descriptor mode runs if supported.
-- Vulkan address mode reports `unsupported` with a precise reason.
+- Device-address TLAS mode reports `unsupported` with a precise reason.
 - No shader package is loaded for a pass variant that cannot bind its TLAS.
 - No effect pass branches on backend API name to decide TLAS binding. It reads the neutral TLAS access mode and capability facts.
 
@@ -712,11 +712,11 @@ Likely modify:
 
 ### Implementation Prompt
 
-Add Vulkan address-mode support only after Stage 7 is validated. Mirror direct lighting's address variant structure, but keep package selection behind the neutral TLAS access mode/capability query.
+Add device-address TLAS support only after Stage 7 is validated. Mirror direct lighting's access-mode variant structure, but keep package selection behind the neutral TLAS access mode/capability query.
 
 ### Required Behavior
 
-- Add `IndirectDiffuseVulkanAddress` package.
+- Add an `IndirectDiffuseDeviceAddress` package only if the shader package system still requires a separate TLAS access-mode specialization.
 - Required feature flags include `UsesInlineRayQuery`, `UsesAccelerationStructure`, `UsesAccelerationStructureDeviceAddress`, and `UsesDescriptorIndexing`.
 - Use the same estimator contract as descriptor mode.
 - Keep descriptor mode unchanged.
@@ -726,7 +726,7 @@ Add Vulkan address-mode support only after Stage 7 is validated. Mirror direct l
 ### Acceptance
 
 - D3D12 descriptor mode still runs.
-- Vulkan address mode reaches `running`.
+- Device-address TLAS mode reaches `running`.
 - Both packages cook for `SpirV16`.
 - Descriptor and address variants produce comparable output for the same scene in cosine mode.
 

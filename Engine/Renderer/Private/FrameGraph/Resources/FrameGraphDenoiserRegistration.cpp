@@ -24,10 +24,6 @@ namespace FrameGraphDenoiserRegistration
 	    bool requestDenoiser)
 	{
 		ShadowDenoiseContract::ShadowDenoiseTextures result = CreateEmptyDenoiseTextures();
-		if (!requestDenoiser)
-		{
-			return result;
-		}
 
 		result.PackedSignal = builder.CreateTexture(
 		    FrameGraphTextureDesc::CreateColor(
@@ -35,6 +31,11 @@ namespace FrameGraphDenoiserRegistration
 		        sceneExtent.Width,
 		        sceneExtent.Height,
 		        ShadowDenoiseContract::PackedVisibilitySignalFormat));
+		if (!requestDenoiser)
+		{
+			return result;
+		}
+
 		result.PackedSignalScratch = builder.CreateTexture(
 		    FrameGraphTextureDesc::CreateColor(
 		        "ShadowVisibilitySignalScratch",

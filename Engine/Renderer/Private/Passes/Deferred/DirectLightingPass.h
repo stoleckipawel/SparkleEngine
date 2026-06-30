@@ -2,6 +2,7 @@
 
 #include "Frame/Targets/FrameRenderTargets.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
+#include "SceneData/MaterialTextureTableCapability.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
@@ -25,6 +26,7 @@ struct DirectLightingPassParameters
 	ShaderRWTexture2D<void> DirectDiffuse;
 	ShaderRWTexture2D<void> DirectSpecular;
 	ShaderRWTexture2D<void> DirectSubsurface;
+	ShaderRWTexture2D<void> ShadowVisibilitySignal;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
@@ -39,12 +41,19 @@ struct DirectLightingPassParameters
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
 	ShaderBufferSRV RectLights;
+	ShaderBufferSRV RayTracingHitVertices;
+	ShaderBufferSRV RayTracingHitIndices;
+	ShaderBufferSRV RayTracingHitInstances;
+	ShaderBufferSRV RayTracingHitMaterials;
+	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
+	ShaderSamplerSet MaterialTextureSampler;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightingPassParameters>& builder)
 	{
 		builder.RWTexture("DirectDiffuse", &DirectLightingPassParameters::DirectDiffuse, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSpecular", &DirectLightingPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSubsurface", &DirectLightingPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
+		builder.RWTexture("ShadowVisibilitySignal", &DirectLightingPassParameters::ShadowVisibilitySignal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &DirectLightingPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &DirectLightingPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DirectLightingPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
@@ -59,6 +68,12 @@ struct DirectLightingPassParameters
 		builder.ReadBuffer("PointLights", &DirectLightingPassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &DirectLightingPassParameters::SpotLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("RectLights", &DirectLightingPassParameters::RectLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitVertices", &DirectLightingPassParameters::RayTracingHitVertices, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitIndices", &DirectLightingPassParameters::RayTracingHitIndices, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitInstances", &DirectLightingPassParameters::RayTracingHitInstances, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitMaterials", &DirectLightingPassParameters::RayTracingHitMaterials, ShaderStageVisibility::Compute);
+		builder.ReadTexture("MaterialTextureTable", &DirectLightingPassParameters::MaterialTextureTable, ShaderStageVisibility::Compute);
+		builder.Sampler("MaterialTextureSampler", &DirectLightingPassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -67,6 +82,7 @@ struct DirectLightingNoRayQueryPassParameters
 	ShaderRWTexture2D<void> DirectDiffuse;
 	ShaderRWTexture2D<void> DirectSpecular;
 	ShaderRWTexture2D<void> DirectSubsurface;
+	ShaderRWTexture2D<void> ShadowVisibilitySignal;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
@@ -85,6 +101,7 @@ struct DirectLightingNoRayQueryPassParameters
 		builder.RWTexture("DirectDiffuse", &DirectLightingNoRayQueryPassParameters::DirectDiffuse, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSpecular", &DirectLightingNoRayQueryPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSubsurface", &DirectLightingNoRayQueryPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
+		builder.RWTexture("ShadowVisibilitySignal", &DirectLightingNoRayQueryPassParameters::ShadowVisibilitySignal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &DirectLightingNoRayQueryPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &DirectLightingNoRayQueryPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DirectLightingNoRayQueryPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
@@ -100,11 +117,12 @@ struct DirectLightingNoRayQueryPassParameters
 	}
 };
 
-struct DirectLightingVulkanAddressPassParameters
+struct DirectLightingDeviceAddressPassParameters
 {
 	ShaderRWTexture2D<void> DirectDiffuse;
 	ShaderRWTexture2D<void> DirectSpecular;
 	ShaderRWTexture2D<void> DirectSubsurface;
+	ShaderRWTexture2D<void> ShadowVisibilitySignal;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
@@ -118,52 +136,68 @@ struct DirectLightingVulkanAddressPassParameters
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
 	ShaderBufferSRV RectLights;
+	ShaderBufferSRV RayTracingHitVertices;
+	ShaderBufferSRV RayTracingHitIndices;
+	ShaderBufferSRV RayTracingHitInstances;
+	ShaderBufferSRV RayTracingHitMaterials;
+	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
+	ShaderSamplerSet MaterialTextureSampler;
 
-	static void Describe(ShaderParameterStructBuilder<DirectLightingVulkanAddressPassParameters>& builder)
+	static void Describe(ShaderParameterStructBuilder<DirectLightingDeviceAddressPassParameters>& builder)
 	{
 		builder.RWTexture(
 		    "DirectDiffuse",
-		    &DirectLightingVulkanAddressPassParameters::DirectDiffuse,
+		    &DirectLightingDeviceAddressPassParameters::DirectDiffuse,
 		    ShaderStageVisibility::Compute);
 		builder.RWTexture(
 		    "DirectSpecular",
-		    &DirectLightingVulkanAddressPassParameters::DirectSpecular,
+		    &DirectLightingDeviceAddressPassParameters::DirectSpecular,
 		    ShaderStageVisibility::Compute);
 		builder.RWTexture(
 		    "DirectSubsurface",
-		    &DirectLightingVulkanAddressPassParameters::DirectSubsurface,
+		    &DirectLightingDeviceAddressPassParameters::DirectSubsurface,
+		    ShaderStageVisibility::Compute);
+		builder.RWTexture(
+		    "ShadowVisibilitySignal",
+		    &DirectLightingDeviceAddressPassParameters::ShadowVisibilitySignal,
 		    ShaderStageVisibility::Compute);
 		builder.ReadTexture(
 		    "GBufferBaseColor",
-		    &DirectLightingVulkanAddressPassParameters::GBufferBaseColor,
+		    &DirectLightingDeviceAddressPassParameters::GBufferBaseColor,
 		    ShaderStageVisibility::Compute);
 		builder.ReadTexture(
 		    "GBufferNormal",
-		    &DirectLightingVulkanAddressPassParameters::GBufferNormal,
+		    &DirectLightingDeviceAddressPassParameters::GBufferNormal,
 		    ShaderStageVisibility::Compute);
 		builder.ReadTexture(
 		    "GBufferMaterial",
-		    &DirectLightingVulkanAddressPassParameters::GBufferMaterial,
+		    &DirectLightingDeviceAddressPassParameters::GBufferMaterial,
 		    ShaderStageVisibility::Compute);
 		builder.ReadTexture(
 		    "GBufferSubsurface",
-		    &DirectLightingVulkanAddressPassParameters::GBufferSubsurface,
+		    &DirectLightingDeviceAddressPassParameters::GBufferSubsurface,
 		    ShaderStageVisibility::Compute);
 		builder.ReadTexture(
 		    "GBufferDeviceZ",
-		    &DirectLightingVulkanAddressPassParameters::GBufferDeviceZ,
+		    &DirectLightingDeviceAddressPassParameters::GBufferDeviceZ,
 		    ShaderStageVisibility::Compute);
-		builder.Uniform("PerFrame", &DirectLightingVulkanAddressPassParameters::PerFrame, ShaderStageVisibility::Compute);
-		builder.Uniform("PerView", &DirectLightingVulkanAddressPassParameters::PerView, ShaderStageVisibility::Compute);
-		builder.Uniform("ViewLighting", &DirectLightingVulkanAddressPassParameters::ViewLighting, ShaderStageVisibility::Compute);
+		builder.Uniform("PerFrame", &DirectLightingDeviceAddressPassParameters::PerFrame, ShaderStageVisibility::Compute);
+		builder.Uniform("PerView", &DirectLightingDeviceAddressPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewLighting", &DirectLightingDeviceAddressPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 		builder.Uniform(
 		    "RayTracedShadows",
-		    &DirectLightingVulkanAddressPassParameters::RayTracedShadows,
+		    &DirectLightingDeviceAddressPassParameters::RayTracedShadows,
 		    ShaderStageVisibility::Compute);
-		builder.ReadBuffer("DirectionalLights", &DirectLightingVulkanAddressPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("PointLights", &DirectLightingVulkanAddressPassParameters::PointLights, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("SpotLights", &DirectLightingVulkanAddressPassParameters::SpotLights, ShaderStageVisibility::Compute);
-		builder.ReadBuffer("RectLights", &DirectLightingVulkanAddressPassParameters::RectLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("DirectionalLights", &DirectLightingDeviceAddressPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("PointLights", &DirectLightingDeviceAddressPassParameters::PointLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("SpotLights", &DirectLightingDeviceAddressPassParameters::SpotLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RectLights", &DirectLightingDeviceAddressPassParameters::RectLights, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitVertices", &DirectLightingDeviceAddressPassParameters::RayTracingHitVertices, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitIndices", &DirectLightingDeviceAddressPassParameters::RayTracingHitIndices, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitInstances", &DirectLightingDeviceAddressPassParameters::RayTracingHitInstances, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("RayTracingHitMaterials", &DirectLightingDeviceAddressPassParameters::RayTracingHitMaterials, ShaderStageVisibility::Compute);
+		builder.ReadTexture("MaterialTextureTable", &DirectLightingDeviceAddressPassParameters::MaterialTextureTable, ShaderStageVisibility::Compute);
+		builder.Sampler("MaterialTextureSampler", &DirectLightingDeviceAddressPassParameters::MaterialTextureSampler, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -186,6 +220,7 @@ class DirectLightingNoRayQueryPass final
 	    FrameGraphBuilder& builder,
 	    const LightingRenderTargets& lighting,
 	    const GBufferRenderTargets& gbuffer,
+	    FrameGraphTextureHandle shadowVisibilitySignal,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
@@ -219,6 +254,7 @@ class DirectLightingPass final
 	    const LightingRenderTargets& lighting,
 	    const GBufferRenderTargets& gbuffer,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
+	    FrameGraphTextureHandle shadowVisibilitySignal,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
@@ -233,18 +269,18 @@ class DirectLightingPass final
 	const ComputePassPipelineRuntime& m_runtime;
 };
 
-class DirectLightingVulkanAddressPass final
+class DirectLightingDeviceAddressPass final
 {
   public:
-	static constexpr const char* PassName = "DirectLightingVulkanAddress";
+	static constexpr const char* PassName = "DirectLightingDeviceAddress";
 	static constexpr std::uint32_t ThreadGroupSizeX = DirectLightingPass::ThreadGroupSizeX;
 	static constexpr std::uint32_t ThreadGroupSizeY = DirectLightingPass::ThreadGroupSizeY;
-	using Parameters = DirectLightingVulkanAddressPassParameters;
+	using Parameters = DirectLightingDeviceAddressPassParameters;
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 	using PipelineRuntime = ComputePassPipelineRuntime;
 
-	explicit DirectLightingVulkanAddressPass(const ComputePassPipelineRuntime& runtime) noexcept;
+	explicit DirectLightingDeviceAddressPass(const ComputePassPipelineRuntime& runtime) noexcept;
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
@@ -252,6 +288,7 @@ class DirectLightingVulkanAddressPass final
 	    FrameGraphBuilder& builder,
 	    const LightingRenderTargets& lighting,
 	    const GBufferRenderTargets& gbuffer,
+	    FrameGraphTextureHandle shadowVisibilitySignal,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

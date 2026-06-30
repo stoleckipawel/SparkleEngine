@@ -7,13 +7,21 @@
 #include "Frame/Lighting/LightingRenderTargets.h"
 #include "Frame/Lighting/LightingTargetClear.h"
 #include "Frame/Lighting/Sky.h"
+#include "FrameGraph/Resources/FrameGraphDenoiserRegistration.h"
 
 void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
 {
 	resources.Transient.Lighting = CreateLightingRenderTargets(builder, sceneExtent);
+	resources.Transient.ShadowDenoiser =
+	    FrameGraphDenoiserRegistration::RegisterShadowVisibilityResources(builder, sceneExtent, false);
 
 	AddLightingTargetClearPass(builder, resources.Transient.Lighting);
-	AddDirectLightingPass(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.Persistent.SceneTlas);
+	AddDirectLightingPass(
+	    builder,
+	    resources.Transient.Lighting,
+	    resources.Transient.GBuffer,
+	    resources.Persistent.SceneTlas,
+	    resources.Transient.ShadowDenoiser.PackedSignal);
 	AddIndirectLightingPasses(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.Persistent.SceneTlas);
 	AddLightingCompositePass(builder, resources.Transient.Scene, resources.Transient.Lighting, resources.Transient.GBuffer);
 	AddSkyPass(builder, resources.Transient.Scene, resources.Transient.GBuffer);

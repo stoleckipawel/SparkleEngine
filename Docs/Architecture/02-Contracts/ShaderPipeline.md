@@ -53,14 +53,14 @@ Current source-backed registration model:
 Examples visible in source:
 
 - `GBufferVS` and `GBufferPS` in `GBufferShaders.cpp`
-- `DirectLightingCS` and `DirectLightingVulkanAddressCS` in `DirectLightingShaders.cpp`
+- `DirectLightingCS` and `DirectLightingDeviceAddressCS` in `DirectLightingShaders.cpp`
 
 Current source path examples:
 
 - `"Passes/Deferred/GBufferVS.hlsl"`
 - `"Passes/Deferred/GBufferPS.hlsl"`
 - `"Passes/Deferred/DirectLighting.hlsl"`
-- `"Passes/Deferred/DirectLightingVulkanAddress.hlsl"`
+- `"Passes/Deferred/DirectLightingDeviceAddress.hlsl"`
 
 Contract rule:
 
@@ -271,7 +271,7 @@ Current source-backed package naming:
 - package ids can be explicitly grouped, for example renderer packages such as:
   - `ComputeClear`
   - `DirectLighting`
-  - `DirectLightingVulkanAddress`
+  - `DirectLightingDeviceAddress`
   - `GBuffer`
   - `IndirectLighting`
   - `LightingComposite`

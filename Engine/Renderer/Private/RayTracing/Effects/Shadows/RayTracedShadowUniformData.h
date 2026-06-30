@@ -1,7 +1,5 @@
 #pragma once
 
-#include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
-
 #include <cstdint>
 #include <type_traits>
 
@@ -17,10 +15,14 @@ struct RayTracedShadowUniformData
 	float Padding2 = 0.0f;
 	std::uint32_t SceneTlasGpuAddressLow = 0u;
 	std::uint32_t SceneTlasGpuAddressHigh = 0u;
-	std::uint32_t TlasAccessMode = static_cast<std::uint32_t>(RayTracingSceneTlasShaderAccessMode::Descriptor);
+	std::uint32_t RayTracingHitDataAvailable = 0u;
+	std::uint32_t RayTracingHitInstanceCount = 0u;
+	std::uint32_t RayTracingHitMaterialCount = 0u;
 	std::uint32_t Padding3 = 0u;
+	std::uint32_t Padding4 = 0u;
+	std::uint32_t Padding5 = 0u;
 };
 
 static_assert(std::is_standard_layout_v<RayTracedShadowUniformData>, "RayTracedShadowUniformData must be standard-layout");
 static_assert(std::is_trivially_copyable_v<RayTracedShadowUniformData>, "RayTracedShadowUniformData must be trivially copyable");
-static_assert(sizeof(RayTracedShadowUniformData) == 48, "RayTracedShadowUniformData must match the shader layout");
+static_assert(sizeof(RayTracedShadowUniformData) == 64, "RayTracedShadowUniformData must match the shader layout");

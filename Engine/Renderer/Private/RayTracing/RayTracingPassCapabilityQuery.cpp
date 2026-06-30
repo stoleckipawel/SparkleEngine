@@ -47,6 +47,7 @@ namespace RayTracingPassCapabilityQuery
 		RayTracingPassCapabilities result{
 		    .BoundSceneTlasAvailable = frame.rayTracingScene.HasBoundTlas(),
 		    .SceneTlasShaderAccessMode = frame.rayTracingScene.TlasShaderAccessMode,
+		    .TriangleMaterialDataAvailable = frame.rayTracingHitData.IsValid(),
 		    .HitDataAvailable = frame.rayTracingHitData.IsValid() && frame.meshInstances.IsValid(),
 		    .MaterialTextureTableAvailable = HasMaterialTextureTable(frame),
 		    .MaterialTextureTableDescriptorCount = frame.sceneData.materialTextureTableDescriptorCount};

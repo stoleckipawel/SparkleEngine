@@ -5,9 +5,9 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
+#include "Passes/Bindings/RayTracingScenePassBinding.h"
 #include "Passes/Deferred/DirectLightingPass.h"
 #include "Passes/Core/ShaderPass.h"
-#include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 
 namespace DirectLightingFramePasses
 {
@@ -16,16 +16,12 @@ namespace DirectLightingFramePasses
 		return !frame.rayTracingScene.HasTraceableInstances();
 	}
 
-	bool UsesDescriptorSceneTlas(const FrameContext& frame) noexcept
+	bool UsesSceneTlasAccessMode(
+	    const FrameContext& frame,
+	    RayTracingSceneTlasShaderAccessMode accessMode) noexcept
 	{
 		return frame.rayTracingScene.HasTraceableInstances() &&
-		       frame.rayTracingScene.TlasShaderAccessMode == RayTracingSceneTlasShaderAccessMode::Descriptor;
-	}
-
-	bool UsesShaderDeviceAddressSceneTlas(const FrameContext& frame) noexcept
-	{
-		return frame.rayTracingScene.HasTraceableInstances() &&
-		       frame.rayTracingScene.TlasShaderAccessMode == RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress;
+		       RayTracingScenePassBinding::FrameUsesSceneTlasAccessMode(frame, accessMode);
 	}
 }  // namespace DirectLightingFramePasses
 
@@ -33,10 +29,11 @@ void AddDirectLightingPass(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
     const GBufferRenderTargets& gbuffer,
-    FrameGraphAccelerationStructureHandle sceneTlas)
+    FrameGraphAccelerationStructureHandle sceneTlas,
+    FrameGraphTextureHandle shadowVisibilitySignal)
 {
 	auto& noRayParameters = builder.AllocPassParameters<DirectLightingNoRayQueryPass>();
-	DirectLightingNoRayQueryPass::DeclareResources(builder, lighting, gbuffer, noRayParameters);
+	DirectLightingNoRayQueryPass::DeclareResources(builder, lighting, gbuffer, shadowVisibilitySignal, noRayParameters);
 	builder.AddPass(
 	    DirectLightingNoRayQueryPass::PassName,
 	    EFrameGraphPassFlags::Compute,
@@ -64,13 +61,13 @@ void AddDirectLightingPass(
 	    });
 
 	auto& descriptorParameters = builder.AllocPassParameters<DirectLightingPass>();
-	DirectLightingPass::DeclareResources(builder, lighting, gbuffer, sceneTlas, descriptorParameters);
+	DirectLightingPass::DeclareResources(builder, lighting, gbuffer, sceneTlas, shadowVisibilitySignal, descriptorParameters);
 	builder.AddPass(
 	    DirectLightingPass::PassName,
 	    EFrameGraphPassFlags::Compute,
 	    [&descriptorParameters](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
 	    {
-		    if (!DirectLightingFramePasses::UsesDescriptorSceneTlas(frame))
+		    if (!DirectLightingFramePasses::UsesSceneTlasAccessMode(frame, RayTracingSceneTlasShaderAccessMode::Descriptor))
 		    {
 			    return;
 		    }
@@ -82,7 +79,7 @@ void AddDirectLightingPass(
 	    },
 	    [&descriptorParameters](PassExecutionContext& context)
 	    {
-		    if (!DirectLightingFramePasses::UsesDescriptorSceneTlas(context.Frame))
+		    if (!DirectLightingFramePasses::UsesSceneTlasAccessMode(context.Frame, RayTracingSceneTlasShaderAccessMode::Descriptor))
 		    {
 			    return;
 		    }
@@ -91,31 +88,31 @@ void AddDirectLightingPass(
 		    pass.Execute(context, descriptorParameters);
 	    });
 
-	auto& addressParameters = builder.AllocPassParameters<DirectLightingVulkanAddressPass>();
-	DirectLightingVulkanAddressPass::DeclareResources(builder, lighting, gbuffer, addressParameters);
+	auto& addressParameters = builder.AllocPassParameters<DirectLightingDeviceAddressPass>();
+	DirectLightingDeviceAddressPass::DeclareResources(builder, lighting, gbuffer, shadowVisibilitySignal, addressParameters);
 	builder.AddPass(
-	    DirectLightingVulkanAddressPass::PassName,
+	    DirectLightingDeviceAddressPass::PassName,
 	    EFrameGraphPassFlags::Compute,
 	    [&addressParameters](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
 	    {
-		    if (!DirectLightingFramePasses::UsesShaderDeviceAddressSceneTlas(frame))
+		    if (!DirectLightingFramePasses::UsesSceneTlasAccessMode(frame, RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress))
 		    {
 			    return;
 		    }
 
-		    ComputeShaderPass<DirectLightingVulkanAddressPass::Parameters>::Setup(
+		    ComputeShaderPass<DirectLightingDeviceAddressPass::Parameters>::Setup(
 		        resourceBuilder,
 		        addressParameters,
-		        DirectLightingVulkanAddressPass::PassName);
+		        DirectLightingDeviceAddressPass::PassName);
 	    },
 	    [&addressParameters](PassExecutionContext& context)
 	    {
-		    if (!DirectLightingFramePasses::UsesShaderDeviceAddressSceneTlas(context.Frame))
+		    if (!DirectLightingFramePasses::UsesSceneTlasAccessMode(context.Frame, RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress))
 		    {
 			    return;
 		    }
 
-		    const DirectLightingVulkanAddressPass pass(context.RuntimeServices.GetPassRuntime<DirectLightingVulkanAddressPass>());
+		    const DirectLightingDeviceAddressPass pass(context.RuntimeServices.GetPassRuntime<DirectLightingDeviceAddressPass>());
 		    pass.Execute(context, addressParameters);
 	    });
 }

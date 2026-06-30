@@ -7,7 +7,7 @@ namespace RendererShaderPackages
 	inline constexpr std::string_view ComputeClear = "ComputeClear";
 	inline constexpr std::string_view DirectLightingNoRayQuery = "DirectLightingNoRayQuery";
 	inline constexpr std::string_view DirectLighting = "DirectLighting";
-	inline constexpr std::string_view DirectLightingVulkanAddress = "DirectLightingVulkanAddress";
+	inline constexpr std::string_view DirectLightingDeviceAddress = "DirectLightingDeviceAddress";
 	inline constexpr std::string_view Exposure = "Exposure";
 	inline constexpr std::string_view ExposureReduceScene = "ExposureReduceScene";
 	inline constexpr std::string_view ExposureReduceTexture = "ExposureReduceTexture";

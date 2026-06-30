@@ -15,6 +15,7 @@ struct RayTracingPassCapabilities final
 	RayTracingSceneTlasShaderAccessMode SceneTlasShaderAccessMode = RayTracingSceneTlasShaderAccessMode::Descriptor;
 	bool DescriptorTlasSupported = false;
 	bool DeviceAddressTlasSupported = false;
+	bool TriangleMaterialDataAvailable = false;
 	bool HitDataAvailable = false;
 	bool MaterialTextureTableAvailable = false;
 	std::uint32_t MaterialTextureTableDescriptorCount = 0u;
