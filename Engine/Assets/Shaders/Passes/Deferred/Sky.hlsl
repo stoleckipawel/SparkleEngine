@@ -34,6 +34,6 @@ float3 ComputeSkyDirection(uint2 pixelCoord)
 	}
 
 	const float3 worldDirection = ComputeSkyDirection(dispatchThreadId.xy);
-	const float3 skyColor = SampleSkyEnvironment(SkyTexture, SamplerLinearClamp, worldDirection);
+	const float3 skyColor = SampleSkyEnvironmentRadiance(SkyTexture, SamplerLinearClamp, worldDirection);
 	SceneColorTexture[dispatchThreadId.xy] = float4(skyColor, 1.0f);
 }

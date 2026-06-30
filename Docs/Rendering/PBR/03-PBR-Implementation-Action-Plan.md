@@ -470,6 +470,13 @@ Acceptance criteria:
 - Reference compliance: implementation notes map sky sampling and presentation separation to PBRT/Filament/RTXPT behavior.
 - Reuse/DRY: all sky consumers call one canonical HDR radiance sampling helper; any display-only sky transform is separate and not copied into indirect passes.
 
+Completion note:
+
+- Reference lineage: sky/environment texture lookup follows PBRT's infinite-area/image light treatment by treating the environment map as emitted radiance sampled by direction. Presentation separation follows Filament color-management discipline, RTXPT-style path transport where misses return environment radiance, and Unreal path-tracer-style reference behavior where environment lighting remains part of scene transport before display conversion.
+- Reuse/DRY audit: scanned `SkyEnvironment.hlsli`, `Sky.hlsl`, `IndirectDiffuse.hlsl`, `IndirectSpecular.hlsl`, `ToneMapping.hlsl`, and `OutputEncoding.hlsl` before editing. The single sky transport helper is now `SampleSkyEnvironmentRadiance`; sky pixels, diffuse miss rays, and specular/mirror miss rays all call it. No display-only sky helper was added because no display-only sky consumer exists; presentation already owns tone mapping and output encoding.
+- Implementation: `SampleSkyEnvironmentRadiance` samples the environment map with `ComputeSkyEnvironmentUv` and clamps only negative samples to zero, preserving HDR values above `1.0` in scene color and indirect miss radiance.
+- Validation note: a perfect mirror miss and a sky pixel now use the same HDR radiance helper before presentation, so they match for the same world direction except for the existing view/reflection direction mapping and later material throughput.
+
 ## Stage 2: Unify Primary and Ray-Hit Material Data
 
 Implementation prompt:

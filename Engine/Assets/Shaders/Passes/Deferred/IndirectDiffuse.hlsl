@@ -147,7 +147,7 @@ RayTracingPathSample::LightingResult ResolveIndirectDiffuseLighting(
 	{
 		result.RejectionReason = RayTracingPathSample::RejectionReasonTraceMiss;
 		result.SurfaceRejectionReason = RayTracingHitSurface::ReasonNoHit;
-		result.MissRadiance = SampleSkyEnvironment(SkyTexture, SamplerLinearClamp, sample.DirectionWorld);
+		result.MissRadiance = SampleSkyEnvironmentRadiance(SkyTexture, SamplerLinearClamp, sample.DirectionWorld);
 		result.IncidentRadiance = result.MissRadiance;
 	}
 

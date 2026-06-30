@@ -181,7 +181,7 @@ RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 norm
 
 float3 SampleIndirectSpecularMissRadiance(float3 rayDirectionWorld)
 {
-	return SampleSkyEnvironment(SkyTexture, SamplerLinearClamp, rayDirectionWorld);
+	return SampleSkyEnvironmentRadiance(SkyTexture, SamplerLinearClamp, rayDirectionWorld);
 }
 
 IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
