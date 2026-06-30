@@ -31,11 +31,6 @@ namespace Material
 	static const uint AlphaModeBlend = 2u;
 
 
-	float ClampDielectricF0(float dielectricF0)
-	{
-		return saturate(dielectricF0);
-	}
-
 	uint TextureGroupFlag(uint textureGroup)
 	{
 		return 1u << textureGroup;
@@ -44,16 +39,6 @@ namespace Material
 	bool HasTexture(uint textureGroup)
 	{
 		return (TextureFlags & TextureGroupFlag(textureGroup)) != 0u;
-	}
-
-	float4 SampleBaseColorTexture(float2 uv)
-	{
-		return TextureBaseColor.Sample(SamplerAniso16xWrap, uv);
-	}
-
-	float3 UnpackNormal(float2 encodedNormal)
-	{
-		return UnpackMaterialNormal(encodedNormal);
 	}
 
 	void ApplyAlphaMode(float alpha)
@@ -92,7 +77,7 @@ namespace Material
 		props.NormalWorld = float3(0.0f, 0.0f, 1.0f);
 		props.Roughness = 1.0f;
 		props.Metallic = 0.0f;
-		props.DielectricF0 = ClampDielectricF0(F0);
+		props.DielectricF0 = saturate(F0);
 		props.AmbientOcclusion = 1.0f;
 		props.SubsurfaceColor = float3(0.0f, 0.0f, 0.0f);
 		props.SubsurfaceStrength = 0.0f;
@@ -104,7 +89,7 @@ namespace Material
 
 	float4 SampleBaseColor(float2 UV)
 	{
-		return HasTexture(TextureGroupDiffuse) ? SampleBaseColorTexture(UV) * BaseColor : BaseColor;
+		return HasTexture(TextureGroupDiffuse) ? TextureBaseColor.Sample(SamplerAniso16xWrap, UV) * BaseColor : BaseColor;
 	}
 
 	float3 SampleNormalTangent(float2 UV)
@@ -114,7 +99,7 @@ namespace Material
 			return float3(0.0f, 0.0f, 1.0f);
 		}
 
-		return UnpackNormal(TextureNormal.Sample(SamplerAniso16xWrap, UV).xy);
+		return UnpackMaterialNormal(TextureNormal.Sample(SamplerAniso16xWrap, UV).xy);
 	}
 
 	float SampleRoughness(float2 UV)
@@ -145,11 +130,6 @@ namespace Material
 		}
 
 		return TextureMetallic.Sample(SamplerAniso16xWrap, UV).r * Metallic;
-	}
-
-	float SampleDielectricF0(float2 UV)
-	{
-		return ClampDielectricF0(F0);
 	}
 
 	float SampleAmbientOcclusion(float2 UV)
@@ -198,7 +178,7 @@ namespace Material
 		}
 		props.Roughness = SampleRoughness(Input.TexCoord);
 		props.Metallic = SampleMetallic(Input.TexCoord);
-		props.DielectricF0 = SampleDielectricF0(Input.TexCoord);
+		props.DielectricF0 = saturate(F0);
 		props.AmbientOcclusion = SampleAmbientOcclusion(Input.TexCoord);
 		props.SubsurfaceColor = SampleSubsurfaceColor(Input.TexCoord);
 		props.SubsurfaceStrength = SampleSubsurfaceStrength(Input.TexCoord);

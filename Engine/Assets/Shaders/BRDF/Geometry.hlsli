@@ -10,7 +10,7 @@ namespace BRDF
 		float Lambda_GGX(float NdotX, float alpha)
 		{
 			const float a2 = alpha * alpha;
-			const float NdotX2 = NdotX * NdotX;
+			const float NdotX2 = max(NdotX * NdotX, EPSILON);
 			return (-1.0f + sqrt(1.0f + a2 * (1.0f - NdotX2) / NdotX2)) * 0.5f;
 		}
 
@@ -41,7 +41,7 @@ namespace BRDF
 			const float a2 = alpha * alpha;
 			const float GGXV = NoL * sqrt(NoV * NoV * (1.0f - a2) + a2);
 			const float GGXL = NoV * sqrt(NoL * NoL * (1.0f - a2) + a2);
-			return 0.5f / (GGXV + GGXL);
+			return 0.5f / max(GGXV + GGXL, EPSILON);
 		}
 
 		float Smith_HeightCorrelated_GGX_Fast(float NoV, float NoL, float roughness)
@@ -49,17 +49,17 @@ namespace BRDF
 			const float a = roughness;
 			const float GGXV = NoL * (NoV * (1.0f - a) + a);
 			const float GGXL = NoV * (NoL * (1.0f - a) + a);
-			return 0.5f / (GGXV + GGXL);
+			return 0.5f / max(GGXV + GGXL, EPSILON);
 		}
 
 		float Kelemen(float VoH)
 		{
-			return 1.0f / (4.0f * VoH * VoH + EPSILON);
+			return 1.0f / max(4.0f * VoH * VoH, EPSILON);
 		}
 
 		float Neumann(float NoV, float NoL)
 		{
-			return (NoV * NoL) / max(NoV, NoL);
+			return (NoV * NoL) / max(max(NoV, NoL), EPSILON);
 		}
 
 		float EvaluateDirect(float NoV, float NoL, float VoH, float roughness, float alpha)

@@ -92,18 +92,9 @@ StructuredBuffer<RayTracingHitMaterial> RayTracingHitMaterials;
 Texture2D MaterialTextureTable[4096];
 SamplerState MaterialTextureSampler;
 
-bool HasRayTracingMaterialTexture(RayTracingHitMaterial material, uint textureSlot)
+float4 SampleRayTracingMaterialTexture(RayTracingHitMaterial material, uint textureSlot, float2 uv)
 {
-	return MaterialTextureTableSampling::HasTexture(material.TextureFlags, textureSlot);
-}
-
-uint ResolveRayTracingMaterialTextureIndex(RayTracingHitMaterial material, uint textureSlot)
-{
-	return MaterialTextureTableSampling::ResolveTextureIndex(material.TextureIndices0, material.TextureIndices1, textureSlot);
-}
-
-float4 SampleRayTracingMaterialTextureLevel(uint textureIndex, float2 uv)
-{
+	const uint textureIndex = MaterialTextureTableSampling::ResolveTextureIndex(material.TextureIndices0, material.TextureIndices1, textureSlot);
 	return MaterialTextureTableSampling::SampleLevel(MaterialTextureTable, MaterialTextureSampler, textureIndex, uv);
 }
 
@@ -122,37 +113,36 @@ void ResolveRayTracingHitMaterialTextures(
 	emissive = material.EmissiveColor;
 	normalTangent = float3(0.0f, 0.0f, 1.0f);
 
-	if (HasRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotNormal))
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotNormal))
 	{
 		normalTangent =
-		    UnpackMaterialNormal(SampleRayTracingMaterialTextureLevel(ResolveRayTracingMaterialTextureIndex(material, MaterialTextureTableSampling::TextureSlotNormal), uv).xy);
+		    UnpackMaterialNormal(SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotNormal, uv).xy);
 	}
 
-	if (HasRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotBaseColor))
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotBaseColor))
 	{
 		baseColor =
-		    SampleRayTracingMaterialTextureLevel(ResolveRayTracingMaterialTextureIndex(material, MaterialTextureTableSampling::TextureSlotBaseColor), uv) *
-		    material.BaseColor;
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotBaseColor, uv) * material.BaseColor;
 	}
 
-	if (HasRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotRoughness))
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotRoughness))
 	{
 		roughness =
-		    SampleRayTracingMaterialTextureLevel(ResolveRayTracingMaterialTextureIndex(material, MaterialTextureTableSampling::TextureSlotRoughness), uv).r *
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotRoughness, uv).r *
 		    material.Roughness;
 	}
 
-	if (HasRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotMetallic))
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotMetallic))
 	{
 		metallic =
-		    SampleRayTracingMaterialTextureLevel(ResolveRayTracingMaterialTextureIndex(material, MaterialTextureTableSampling::TextureSlotMetallic), uv).r *
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotMetallic, uv).r *
 		    material.Metallic;
 	}
 
-	if (HasRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotEmissive))
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotEmissive))
 	{
 		emissive =
-		    SampleRayTracingMaterialTextureLevel(ResolveRayTracingMaterialTextureIndex(material, MaterialTextureTableSampling::TextureSlotEmissive), uv).rgb *
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotEmissive, uv).rgb *
 		    material.EmissiveColor;
 	}
 }
@@ -258,11 +248,10 @@ bool ResolveRayTracingCandidateAlpha(
 
 	const float2 uv = v0.TexCoord0 * barycentricWeights.x + v1.TexCoord0 * barycentricWeights.y + v2.TexCoord0 * barycentricWeights.z;
 	float4 baseColor = material.BaseColor;
-	if (HasRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotBaseColor))
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotBaseColor))
 	{
 		baseColor =
-		    SampleRayTracingMaterialTextureLevel(ResolveRayTracingMaterialTextureIndex(material, MaterialTextureTableSampling::TextureSlotBaseColor), uv) *
-		    material.BaseColor;
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotBaseColor, uv) * material.BaseColor;
 	}
 
 	sampledAlpha = saturate(baseColor.a);

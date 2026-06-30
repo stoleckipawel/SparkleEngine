@@ -54,9 +54,5 @@ namespace BRDF
 			return prefilteredEnv * (F * brdf.x + brdf.y);
 		}
 
-		float3 EvaluateDirectTransport(ShadingData sd, float roughness)
-		{
-			return EvaluateDirect(sd, roughness, 1.0f.xxx);
-		}
 	}  // namespace Specular
 }  // namespace BRDF

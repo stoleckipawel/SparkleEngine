@@ -44,6 +44,7 @@ Every stage also has a reuse-proof requirement:
 - New or touched shader registrations must use one source file per shader package registration unless a specific grouped-registration exception is documented and accepted.
 - Feature enum families must live in focused type headers instead of accumulating in umbrella settings headers.
 - Pass files must stay thin: generic parameter metadata, dispatch sizing, scheduling, binding, and frame-graph/RHI mechanics belong in pass/core utilities or the frame-graph/RHI layer.
+- Do not add wrappers that only rename or forward parameters. Keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - If duplicate-looking code is intentionally kept, explain whether it is validation-only, backend-specific, temporary, or performance-motivated.
 - Acceptance criteria must include a no-unjustified-functional-duplicate check.
 
@@ -51,7 +52,7 @@ Every stage also has a reuse-proof requirement:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Document and assert that direct and indirect lighting targets store material-evaluated outgoing radiance contributions in linear HDR. Add comments near target declarations and composite code. Update or supersede older docs that describe `IndirectDiffuse` as raw irradiance.
 
@@ -70,6 +71,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - `DirectDiffuse`, `DirectSpecular`, `IndirectDiffuse`, and `IndirectSpecular` have a written semantic contract.
 - No doc claims `IndirectDiffuse` is raw irradiance unless the code is changed to match.
 - `LightingComposite` remains a simple sum only because all inputs share the same radiance-contribution unit.
@@ -87,7 +89,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Before changing lighting math, move reusable lighting concepts out of pass-specific shader folders. Do this as behavior-preserving refactors with shader-cook validation after each step.
 
@@ -126,6 +128,7 @@ Move candidates:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - No file under `Engine/Assets/Shaders/RayTracing` includes `Passes/Deferred/*`.
 - Generic lighting helpers do not live under `Passes/Deferred`.
 - Deferred pass entrypoint files continue compiling and producing identical output after each move.
@@ -146,7 +149,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Refactor direct and indirect pass entrypoints so they own pass IO and output policy only. Sampling, light evaluation, visibility tracing, hit/miss resolve, and path throughput should live in reusable modules.
 
@@ -180,6 +183,7 @@ Refactor targets:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Pass entrypoint files do not define reusable BRDF, light falloff, ray-origin, lobe sampling, or path-throughput algorithms.
 - Shared algorithms are named after concepts, not effects.
 - Debug helpers stay pass-specific only when the debug view is effect-specific.
@@ -194,7 +198,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Keep lighting buffers linear HDR and move display conversion into a dedicated presentation/display path. Exposure must be a frame-graph resource. Implement a production metering path with parallel reduction and an explicit alternate downsample-pyramid metering path. Automatic exposure must adapt temporally through persistent exposure history.
 
@@ -229,6 +233,7 @@ Required design:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Reinhard, ACES approximate, and ACES fitted filmic operators are selectable.
 - Exposure mode supports manual and automatic.
 - Exposure metering supports parallel reduction and an explicit downsample pyramid mode.
@@ -250,7 +255,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Review the currently implemented exposure and tone-mapping code against this document before treating it as production-ready. The implementation already exists, so this stage is a hardening/audit pass: check reference fidelity, color science assumptions, settings ABI, shader layout, frame-graph resource ownership, performance cost, validation scenes, and debug visibility.
 
@@ -299,6 +304,7 @@ Audit checklist:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Reference compliance: each tone curve, exposure metering path, temporal adaptation rule, history reset rule, and output encoding decision has a named AMD/NVIDIA/Microsoft/Filament/ACES reference or a documented deviation.
 - Reuse/DRY: no duplicated constant buffer layouts, exposure formulas, adaptation formulas, output encoding formulas, generic color utilities, frame-graph persistent binding helpers, or settings enum mappings exist without a single canonical helper or documented reason.
 - Functional validation: reduction and downsample metering agree within tolerance on black, gray, HDR ramp, HDR sky, and non-power-of-two test images.
@@ -322,7 +328,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Before implementing a lighting phase, run a repo-wide audit across shaders, renderer frame graph, RHI formats, asset import/cooking, provider contracts, settings, debug views, and validation assets. The audit must update this plan when it finds a PBR-relevant issue. This gate exists so implementation work cannot focus only on the active shader file while missing a format, import, denoiser, or provider assumption elsewhere.
 
@@ -348,6 +354,7 @@ Required scan categories:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - The audit output maps every found issue to `file(s)`, `symptom`, `risk`, `required stage`, and `reference(s)`.
 - No P0/P1 issue is left as prose-only documentation; it must be represented by a stage or by an explicit non-goal/deviation.
 - The staged plan names the references inside the relevant stage prompt, not only in this global section.
@@ -376,7 +383,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Create a typed renderer signal contract for all PBR-relevant buffers. The contract must state owner, format, color space, units, valid range, lifetime, history behavior, and consumers. Fix any resource whose declared frame-graph format does not match the shader signal it stores.
 
@@ -410,6 +417,7 @@ Signals to document:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - A single signal table exists in docs or code comments and is referenced by pass/resource registration code.
 - Packed `float4` shadow or indirect signals are stored in matching multi-channel formats or resolved into explicitly named single-channel products before consumers see them.
 - Scene lighting and sky remain HDR linear until presentation; presentation output encoding is part of the display signal contract.
@@ -432,7 +440,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Split sky sampling into two functions: one that returns linear HDR radiance and one optional display transform for presentation/debug only. Use linear sky radiance for sky pixels, indirect ray misses, mirror reflections, and any future environment sampling. Remove pre-presentation tone mapping from `SampleSkyEnvironment`.
 
@@ -463,6 +471,7 @@ float3 SampleSkyEnvironmentRadiance(Texture2D environmentTexture, SamplerState e
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Sky pass writes linear HDR sky radiance to scene color.
 - Presentation still tone maps final scene color exactly once.
 - Indirect diffuse/specular miss rays use linear HDR sky radiance.
@@ -482,7 +491,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Make deferred primary shading and ray-hit shading use the same dielectric F0 value and material roughness convention. Add F0/reflectance to the GBuffer or derive it from a documented material constant that is available in direct lighting. Avoid using fixed `0.04` for primary surfaces when material F0 exists.
 
@@ -507,6 +516,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Direct primary lighting and ray-hit direct lighting use the same F0 for the same material.
 - A dielectric material with non-default reflectance visibly affects primary and reflected lighting consistently.
 - Material roughness is preserved as an inclusive `[0, 1]` input contract and is not used as a hidden F0 or light-scale compensation path.
@@ -519,7 +529,7 @@ Completion note:
 - Reference lineage: the material contract follows the glTF metallic-roughness split of base color, metallic, and roughness; Filament/Unreal-style dielectric reflectance is carried by Sparkle's existing scalar material `f0` and blended with base color for metallic surfaces. The local deviation is that Stage 2 does not add a Filament-style reflectance UI/remap or new glTF specular-extension import; Stage 2A owns that import/material authoring work.
 - Reuse/DRY audit: scanned `Material.hlsli`, `GBufferPS.hlsl`, `GBufferUtils.hlsli`, `DirectLighting.hlsl`, `SurfaceLighting.hlsli`, `RayTracingMaterialHit.hlsli`, `RayTracingHitLighting.hlsli`, `PathSurface.hlsli`, indirect diffuse/specular entrypoints, `GBufferFormats.h`, and visualization shader bindings before editing. The change reuses the existing `GBufferMaterial` target and `SurfaceLighting` home; no new format registry, shader module, pass, or GBuffer format was added.
 - Implementation: `GBufferMaterial.a` now stores dielectric F0, direct lighting passes `gBuffer.DielectricF0`, primary indirect path surfaces use the same value, ray-hit reconstruction keeps material `F0` as actual F0, and ray-hit direct lighting shares `SurfaceLighting::BuildF0`.
-- Roughness remains the authored/imported inclusive `[0, 1]` material value. Stage 2 does not clamp it into an F0 or light-scale compensation path; Stage 2C still owns the full reference roughness and singularity policy.
+- Roughness remains the authored/imported inclusive `[0, 1]` material value. Stage 2 does not clamp it into an F0 or light-scale compensation path; Stage 2C now defines the full-range roughness and singularity policy for the current shader paths.
 - No `GBufferFormats.h` change was required, so shader binding metadata and visualization resource declarations remain valid. Base-color alpha still carries blend alpha; ray-hit alpha mode remains in ray-tracing hit data instead of the material GBuffer.
 - Validation commands: rebuilt `ShowcaseEditor` and `ShaderCompiler`; cooked `GBuffer`, `DirectLightingNoRayQuery`, `DirectLighting`, `DirectLightingVulkanAddress`, `IndirectDiffuse`, `IndirectSpecular`, and `VisualizeBuffers` for `DxilSm66` and `SpirV16`. `LightingComposite` HLSL compiled for both targets, but full package cook remains blocked by the pre-existing reflected binding mismatch between shader cbuffer `PerFrameConstantBufferData` and registration layout alias `PerFrame`.
 
@@ -527,7 +537,7 @@ Completion note:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Make the renderer support perceptual roughness from `0.0` through `1.0` with a reference-backed policy that separates material data, BRDF evaluation, and sampling behavior. Direct analytic lighting must call the same canonical BRDF evaluator for all roughness values. Do not add pass-local direct-light branches that classify roughness and bypass specular evaluation. Perfect-mirror transport decisions belong in BSDF/path-sampling code, where delta lobes are sampled as exact directions, not in primary or ray-hit direct-light pass code. Extremely rough reflections must remain valid at `roughness = 1.0`.
 
@@ -554,16 +564,17 @@ Required design:
 
 - Material roughness must be preserved as authored/imported data and must remain visible to debug and denoiser outputs.
 - Direct primary lighting and ray-hit direct lighting must share one direct-surface evaluator, and that evaluator must call `BRDF::Direct::Evaluate` for all roughness values.
-- Numerical guards for singular GGX cases must live inside the owning BRDF distribution/geometry/PDF functions, be named as denominator/PDF guards, and be backed by references. They must not silently mutate stored material roughness.
+- Numerical guards for singular GGX cases must live directly inside the owning BRDF distribution/geometry/PDF expressions and be backed by references. Do not add alias constants unless they remove real duplication. They must not silently mutate stored material roughness.
 - Indirect specular/path sampling may branch on lobe type because sampling a delta lobe is a different estimator than sampling a finite rough lobe. That branch must live in shared BSDF/path-sampling code, not in direct-light pass logic.
 - Indirect specular must sample exact reflection for true mirror transport and GGX/VNDF or the selected rough-specular sampler for finite rough-specular transport.
 - Indirect diffuse must pass material roughness through diffuse models unchanged; diffuse roughness may be zero for smooth dielectrics.
 - Ray-hit direct lighting and primary direct lighting must use the same BRDF, roughness value, F0 policy, and light-unit policy.
 - Denoiser/debug roughness outputs must store material roughness, not internally floored roughness.
-- Numerical epsilons remain allowed only for denominators, PDFs, ray origin/ray range safety, and reference-backed BRDF singularity guards. They must be named as numerical guards and must not alter material roughness or direct-light control flow.
+- Numerical epsilons remain allowed only for denominators, PDFs, ray origin/ray range safety, and reference-backed BRDF singularity guards. Prefer inline `EPSILON` or the local numeric threshold at the use site over one-off aliases, and do not alter material roughness or direct-light control flow.
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - `rg` finds no direct-light lobe bypass helpers or pass-local mirror/specular branches in `SurfaceLighting.hlsli` or `RayTracingHitLighting.hlsli`.
 - `rg` finds no caller-side material roughness floors such as `max(roughness, 0.04)` or `max(surface.Roughness, 0.04)` in direct-lighting paths.
 - Any remaining `max`, `clamp`, or `saturate` involving roughness or alpha is classified as input range enforcement, debug visualization, denominator/PDF safety, or reference-backed BRDF singularity protection. Implementation notes must name why it is not a hidden material roughness mutation.
@@ -573,11 +584,21 @@ Acceptance criteria:
 - Reference compliance: implementation notes map direct BRDF evaluation, GGX rough-specular, mirror/delta path sampling, numerical singularity guards, and any punctual-light mirror behavior to PBRT/Filament/Unreal/RTXPT/Falcor references or document a non-reference approximation.
 - Reuse/DRY: direct lighting has one canonical BRDF evaluation path; lobe sampling decisions are centralized in shared BSDF/path-sampling modules and are not forked into pass-local direct-light helpers.
 
+Completion notes:
+
+- Reference compliance: primary direct and ray-hit direct lighting keep the Filament/Unreal-style metallic-roughness GGX path by calling `BRDF::Direct::Evaluate` through `Lighting/SurfaceLighting.hlsli` for every material roughness value. PBRT's separation between delta specular transport and finite rough BSDF evaluation is followed by moving mirror-vs-GGX sampling into `BRDF/SpecularSampling.hlsli`, not into the direct-light passes. The RTXPT/Falcor module pattern is followed only at the local shader-module level: pass entrypoints delegate lobe sampling to a shared BRDF-owned include while full unified BSDF path sampling remains Stage 7 work.
+- Local deviations: finite rough-specular sampling still uses the existing GGX NDF half-vector sampler rather than VNDF/MIS. Analytic punctual direct lighting does not synthesize a delta mirror response for `roughness = 0.0`; exact mirror transport is handled by the indirect/path sampling code, and the punctual-light finite-light/area-light policy remains Stage 4/4A work.
+- Reuse/DRY audit: scanned `BRDF/*.hlsli`, `Material.hlsli`, `Lighting/SurfaceLighting.hlsli`, `RayTracing/RayTracingHitLighting.hlsli`, `RayTracing/RayTracingMaterialHit.hlsli`, `IndirectDiffuse.hlsl`, `IndirectSpecular.hlsl`, `IndirectSpecularDebug.hlsli`, and `Debug/ViewModes.hlsli` before editing. The change reuses the existing BRDF and lighting module homes; the only new include is `BRDF/SpecularSampling.hlsli`, which replaces pass-local specular lobe sampling rather than adding a renderer/pass layer.
+- Implementation: material roughness remains the authored/imported inclusive `[0, 1]` value through GBuffer decode, ray-hit material reconstruction, debug roughness output, direct lighting, indirect diffuse throughput, and indirect specular sampling. `IndirectSpecular.hlsl` now asks `BRDF::SpecularSampling::SampleReflectionLobe` for either an exact mirror sample at `roughness = 0.0` or a finite GGX reflection sample; invalid finite samples return zero throughput instead of silently falling back to mirror transport.
+- Simplification audit: removed the pass-local forwarding wrapper around specular lobe sampling, removed single-use mirror/invalid sample constructor wrappers, removed the single-use indirect-specular sky miss wrapper, removed shadow sampling aliases that only forwarded into `CommonSampling`, removed material one-liners that only wrapped `saturate`/normal unpacking/texture sampling, removed unused BRDF transport wrappers, and collapsed ray-hit material texture forwarding helpers into one adapter that owns packed-index resolution plus table sampling. Kept helpers that own actual sampling math, throughput evaluation, tracing policy, material texture fallback policy, packed signal layout, BRDF model dispatch, or debug routing.
+- Guard classification: inline `EPSILON` uses in BRDF distribution, geometry, specular, diffuse, and subsurface code are denominator guards. Inline `1.0e-4f` uses in specular sampling and indirect throughput are PDF/sample guards local to those expressions. `saturate`/range clamps in material decode and GBuffer/ray-hit unpack are input range enforcement; `ViewModes` clamps are debug visualization; ray-origin and ray-range constants remain ray safety. None of these guards mutates stored material roughness or changes direct-light control flow.
+- Validation commands: rebuilt `ShaderCompiler` and `ShowcaseEditor`; cooked `GBuffer`, `DirectLightingNoRayQuery`, `DirectLighting`, `DirectLightingVulkanAddress`, `IndirectDiffuse`, and `IndirectSpecular` for `DxilSm66` and `SpirV16`. Code validation confirms the mirror-sky path uses exact reflection through `BRDF::SpecularSampling::SampleReflectionLobe` and linear HDR sky miss radiance through `SampleSkyEnvironmentRadiance`; image capture validation remains Stage 13 validation asset work.
+
 ## Stage 2A: Lock Asset Color-Space, Material Extension, and Import Unit Rules
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Turn asset import and texture cooking into an enforceable PBR contract. The shader can only be physically meaningful if imported base color, data maps, HDR sky maps, packed metallic-roughness channels, material reflectance, emissive strength, and light intensity units arrive in the spaces expected by the BRDF and light equations.
 
@@ -612,6 +633,7 @@ Required policy:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Asset-cook tests prove color/data/HDR usages select the expected decode and compression policies.
 - A glTF material test proves packed metallic-roughness channels reach shaders unchanged except for intended normalization.
 - A specular-workflow asset test proves `*_Specular` texture sets are converted, routed, or rejected according to the documented policy.
@@ -625,7 +647,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Define one convention for the geometry and temporal signals used by shading, ray tracing, denoisers, DLRR, and validation. This stage should happen before expanding denoiser resources, because wrong normal/depth/motion conventions produce plausible but non-physical reconstructed lighting.
 
@@ -658,6 +680,7 @@ Conventions to lock:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - A convention table names the owner and consumer for each geometry/temporal signal.
 - Primary GBuffer shading and ray-hit shading reconstruct matching normals and material orientation for a deterministic test mesh.
 - Motion vectors are verified against a known camera/object movement scene and match the provider contract.
@@ -670,7 +693,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Create a small shared BRDF validation harness or debug shader mode for furnace tests. Use it to verify the current GGX/Smith/Schlick implementation, then decide whether the reference mode uses Lambert diffuse or Burley diffuse. Mark subsurface as non-reference until energy compensation is implemented.
 
@@ -690,6 +713,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - White-furnace tests pass for diffuse white, dielectric mixed, and metallic surfaces.
 - No material returns NaN or infinity at grazing NoV/NoL.
 - The meaning of `Geometry::EvaluateDirect` is documented as visibility `V` or raw geometry `G`.
@@ -701,7 +725,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Define the supported shading models and lobe weights as data, not scattered shader decisions. Direct lighting, indirect sampling, ray-hit lighting, reference path tracing, denoiser demodulation, and debug views must agree on which lobes exist, how they are weighted, which lobes are sampled, and how energy is conserved between them.
 
@@ -731,6 +755,7 @@ Required policy:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - A material debug view can display lobe weights, F0/specular color, diffuse albedo, roughness, metallic, and reference-mode eligibility.
 - White-furnace tests include diffuse, dielectric specular, metallic, rough metal, and subsurface-enabled materials.
 - Direct lighting and indirect BSDF sampling use the same lobe definitions and roughness/F0 policy.
@@ -742,7 +767,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Define engine units for directional, point, and spot lights. Align glTF-imported point/spot intensity with candela and directional intensity with lux or a documented calibrated engine unit. Replace current range and cone attenuation with a glTF/Filament-compatible punctual falloff policy, or document a deliberate engine policy and convert imports into that policy.
 
@@ -787,6 +812,7 @@ float SpotFalloff(float cosTheta, float innerCos, float outerCos)
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Point and spot light falloff matches the selected unit policy.
 - glTF `KHR_lights_punctual` imports do not need arbitrary intensity compensation.
 - Primary direct and secondary hit direct use the same falloff and cone functions.
@@ -798,7 +824,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Separate the current source-radius soft-shadow approximation from physically integrated finite-area light radiance. A light radius used only to jitter shadow rays must not silently change the radiometric meaning of a point/spot light. If finite lights are added, sample the light source and evaluate PDFs/geometry terms explicitly.
 
@@ -828,6 +854,7 @@ Required policy:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Changing source radius in punctual mode changes penumbra shape but not unoccluded irradiance beyond documented approximation tolerance.
 - Any physically finite-light mode has explicit light sampling PDFs and does not reuse point-light attenuation as if it were an area-light integral.
 - Primary direct lighting, secondary direct lighting, and reference path tracing report the same light classification.
@@ -839,7 +866,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Route direct shadow rays through the same alpha-tested candidate handling used by indirect ray queries, or add an equivalent shadow-specific alpha-test resolver. Then split raw stochastic visibility from direct lighting accumulation so NRD SIGMA can consume it later. Treat binary visibility and denoiser hit distance as separate signals: first-hit ray-query shortcuts are acceptable for immediate hard-shadow visibility, but NRD-style occluder-distance input needs a reference-compatible tracing policy and resource format.
 
@@ -861,6 +888,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Alpha-tested foliage/card geometry casts cutout direct shadows.
 - Hard shadows and one-sample soft shadows still work on descriptor TLAS and Vulkan address paths.
 - Raw visibility and hit-distance targets can be written independently from lighting contribution.
@@ -874,7 +902,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Implement the renderer-side pass boundary for NRD SIGMA without forcing all platforms to have NRD. The pass should consume raw visibility, normal, depth, motion vectors, and history, then output denoised visibility. Direct lighting should be able to consume either raw or denoised visibility through an explicit mode.
 
@@ -894,6 +922,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - `r.RayTracedShadows.Denoiser=0` uses raw visibility.
 - `r.RayTracedShadows.Denoiser=1` requests SIGMA if available and falls back with diagnostics if unavailable.
 - History resources are persistent and reset on camera cut, resize, and feature toggles.
@@ -905,7 +934,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Create a shared ray-traced surface path sampling module that can sample diffuse or specular lobes from one material using a single lobe-selection PDF. Use it for both indirect diffuse and indirect specular passes. Preserve current output split by assigning the path contribution to the buffer for the primary sampled lobe.
 
@@ -956,6 +985,7 @@ for bounce:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Single-bounce output matches the previous diffuse/specular passes within expected sampling variance.
 - Multi-bounce paths can include diffuse-after-specular and specular-after-diffuse.
 - Debug views expose sampled lobe, PDF, throughput, hit distance, hit normal, and rejection reason.
@@ -969,7 +999,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Make `ShadeRayTracingHitIncidentRadiance` optionally shadow secondary-hit direct lights. Start with one shadow ray to the sampled/selected light direction, then add explicit light sampling if the path sampler supports next-event estimation with PDFs.
 
@@ -988,6 +1018,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Indirect lighting darkens correctly behind occluders at secondary hit points.
 - Secondary shadowing can be disabled for performance with a visible debug flag.
 - Shadow alpha-test behavior matches primary direct shadows.
@@ -999,7 +1030,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Build an environment-map luminance distribution for the sky texture and sample it for indirect lighting. This is basic environment importance sampling, not ReSTIR. Combine with BSDF sampling using MIS when both strategies are active.
 
@@ -1018,6 +1049,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - HDR sky with small bright sun converges faster than cosine-only sampling.
 - MIS weights are debug-visible.
 - Energy matches brute-force high-sample cosine sampling.
@@ -1029,7 +1061,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Keep emissive-on-hit support, but add optional explicit emissive triangle/light sampling for high-variance emissive scenes. This can remain behind a reference or high-quality flag until acceleration structures for emitters are mature.
 
@@ -1048,6 +1080,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - An emissive panel lights nearby diffuse surfaces without requiring only random ray hits.
 - High-sample reference matches hit-only estimation.
 - Emissive geometry does not get double counted when directly visible to a path ray.
@@ -1058,7 +1091,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Extend the provider-neutral reconstruction contract for indirect lighting. Do not wire DLRR directly into shader code. First expose the resources and metadata a provider needs.
 
@@ -1092,6 +1125,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - DLSS Super Resolution path still works unchanged.
 - A DLRR-capable provider can be selected only when all required resources are available.
 - Missing resources produce diagnostics, not silent fallback to an invalid reconstruction path.
@@ -1103,7 +1137,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Refactor indirect diffuse/specular output so denoisers and reconstruction providers can consume stable auxiliary signals instead of only final noisy lighting. The real-time path may still composite direct/indirect buffers the current way, but provider-facing buffers must describe the noisy path sample, material factors, geometry, and confidence needed to reconstruct lighting correctly.
 
@@ -1135,6 +1169,7 @@ Required buffers or views:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Indirect passes can output provider-neutral auxiliary buffers without changing lighting math.
 - DLRR/NRD-capable provider selection validates that all required auxiliary buffers exist and match documented formats.
 - Debug capture can show raw noisy radiance, demodulated radiance, albedo, specular/F0, roughness, hit distance, normal, motion, and confidence.
@@ -1146,7 +1181,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Add a reference path tracing mode or offline accumulation path that uses the same material, light, sky, and alpha-test code as the real-time passes. The reference mode can be slow. It exists to define truth.
 
@@ -1165,6 +1200,7 @@ Files:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Captures can accumulate many samples per pixel deterministically.
 - Same scene can output real-time direct/indirect and reference path-traced buffers.
 - Difference images can be produced for direct, indirect diffuse, indirect specular, and composed scene color.
@@ -1176,7 +1212,7 @@ Acceptance criteria:
 
 Implementation prompt:
 
-Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer.
+Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Create a repeatable review pack that a renderer engineer can use to verify the implementation without trusting screenshots by eye. The pack must include deterministic validation scenes, capture scripts or commands, metrics, reference images/buffers, and per-stage evidence notes. This is the final gate for claiming the renderer is ready to build production PBR features on top of.
 
@@ -1210,6 +1246,7 @@ Required outputs:
 
 Acceptance criteria:
 
+- Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - A reviewer can reproduce the validation pack from documented commands or editor actions.
 - Every P0/P1/P2 stage has at least one validation scene or debug capture proving the core signal.
 - Failures identify the owning stage and signal instead of only reporting "image mismatch."

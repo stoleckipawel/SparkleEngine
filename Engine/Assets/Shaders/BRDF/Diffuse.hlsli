@@ -35,7 +35,9 @@ namespace BRDF
 			const float sinThetaV = sqrt(max(0.0f, 1.0f - NoV * NoV));
 			const float sinThetaL = sqrt(max(0.0f, 1.0f - NoL * NoL));
 			const float sinAlpha = max(sinThetaV, sinThetaL);
-			const float tanBeta = min(sinThetaV / max(NoV, EPSILON), sinThetaL / max(NoL, EPSILON));
+			const float tanBeta = min(
+			    sinThetaV / max(NoV, EPSILON),
+			    sinThetaL / max(NoL, EPSILON));
 
 			return albedo * INV_PI * (A + B * cosPhiDiff * sinAlpha * tanBeta);
 		}
@@ -52,7 +54,7 @@ namespace BRDF
 
 			const float Fss90 = roughness * LoH * LoH;
 			const float Fss = lerp(1.0f, Fss90, FL) * lerp(1.0f, Fss90, FV);
-			const float ss = 1.25f * (Fss * (1.0f / (NoL + NoV) - 0.5f) + 0.5f);
+			const float ss = 1.25f * (Fss * (1.0f / max(NoL + NoV, EPSILON) - 0.5f) + 0.5f);
 
 			return albedo * INV_PI * lerp(Fd, ss, saturate(roughness));
 		}
@@ -77,9 +79,5 @@ namespace BRDF
 			return Lambert(albedo);
 		}
 
-		float3 EvaluateDirectTransport(float roughness, ShadingData sd)
-		{
-			return EvaluateDirect(1.0f.xxx, roughness, sd);
-		}
 	}  // namespace Diffuse
 }  // namespace BRDF

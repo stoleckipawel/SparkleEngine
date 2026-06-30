@@ -23,7 +23,7 @@ namespace BRDF
 
 			const float Fss90 = roughness * LoH * LoH;
 			const float Fss = lerp(1.0f, Fss90, FL) * lerp(1.0f, Fss90, FV);
-			const float ss = 1.25f * (Fss * (1.0f / (NoL + NoV + EPSILON) - 0.5f) + 0.5f);
+			const float ss = 1.25f * (Fss * (1.0f / max(NoL + NoV, EPSILON) - 0.5f) + 0.5f);
 
 			return albedo * subsurfaceColor * INV_PI * ss;
 		}
@@ -41,9 +41,5 @@ namespace BRDF
 #endif
 		}
 
-		float3 EvaluateDirectTransport(float roughness, ShadingData sd)
-		{
-			return EvaluateDirect(1.0f.xxx, 1.0f.xxx, roughness, 1.0f, sd);
-		}
 	}  // namespace Subsurface
 }  // namespace BRDF

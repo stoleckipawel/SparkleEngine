@@ -1,6 +1,7 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 
+#include "Common/Sampling.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSampling.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
@@ -117,7 +118,7 @@ namespace RayTracedShadows
 
 		const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 0u);
 		const float coneHalfAngle = max(angularDiameterRadians, 0.0f) * 0.5f;
-		const float3 sampledDirection = RayTracedShadowSampling::SampleConeDirection(lightDirectionWorld, coneHalfAngle, sample);
+		const float3 sampledDirection = CommonSampling::SampleConeDirection(lightDirectionWorld, coneHalfAngle, sample);
 		return TraceShadowRay(originWorld, sampledDirection, RayTracedShadowMaxDistance);
 	}
 
@@ -140,7 +141,7 @@ namespace RayTracedShadows
 		if (!UsesHardShadowVisibility())
 		{
 			const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 1u);
-			sampledLightPosition = RayTracedShadowSampling::SampleSpherePoint(
+			sampledLightPosition = CommonSampling::SampleSpherePoint(
 			    lightPositionWorld,
 			    max(sourceRadius, 0.0f),
 			    positionWorld - lightPositionWorld,
@@ -184,7 +185,7 @@ namespace RayTracedShadows
 		if (!UsesHardShadowVisibility())
 		{
 			const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 2u);
-			sampledLightPosition = RayTracedShadowSampling::SampleDiskPoint(
+			sampledLightPosition = CommonSampling::SampleDiskPoint(
 			    lightPositionWorld,
 			    spotDirectionWorld,
 			    max(sourceRadius, 0.0f),

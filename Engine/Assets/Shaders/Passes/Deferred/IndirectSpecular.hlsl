@@ -1,7 +1,7 @@
 #include "Resources/ConstantBuffers.hlsli"
 #include "Common/Math.hlsli"
 #include "Common/Random.hlsli"
-#include "Geometry/Basis.hlsli"
+#include "BRDF/SpecularSampling.hlsli"
 #include "Lighting/SkyEnvironment.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
 #include "RayTracing/RayTracingDebugModes.hlsli"
@@ -39,17 +39,7 @@ static const uint IndirectSpecularDebugSamplePdf = 11u;
 static const uint IndirectSpecularDebugSampleThroughput = 12u;
 static const uint IndirectSpecularDebugHitRadiance = 13u;
 static const uint IndirectSpecularDebugFinalContribution = 14u;
-static const uint IndirectSpecularSampleModeMirror = 0u;
-static const uint IndirectSpecularSampleModeStochasticGGX = 1u;
 static const float IndirectSpecularMinimumTMin = 0.001f;
-
-struct IndirectSpecularSampleResult
-{
-	float3 DirectionWorld;
-	float Pdf;
-	float3 Throughput;
-	bool Mirror;
-};
 
 struct IndirectSpecularResolvedContribution
 {
@@ -57,7 +47,7 @@ struct IndirectSpecularResolvedContribution
 	float3 FinalContribution;
 };
 
-float2 BuildReflectionRandomSample(uint2 pixelCoord, uint bounceIndex)
+float2 GenerateReflectionRandomSample(uint2 pixelCoord, uint bounceIndex)
 {
 	return CommonRandom::InterleavedGradientNoise2(
 	    float2(pixelCoord) + float2(bounceIndex * 23u, bounceIndex * 31u),
@@ -65,77 +55,11 @@ float2 BuildReflectionRandomSample(uint2 pixelCoord, uint bounceIndex)
 	    float2(41.0f, 137.0f));
 }
 
-float3 SampleGGXHalfVector(float3 normalWorld, float roughness, float2 sample)
-{
-	float3 tangentWorld;
-	float3 bitangentWorld;
-	CommonSampling::BuildOrthonormalBasis(normalWorld, tangentWorld, bitangentWorld);
-
-	const float alpha = roughness * roughness;
-	const float alphaSquared = alpha * alpha;
-	const float phi = TWO_PI * sample.x;
-	const float cosTheta = sqrt(saturate((1.0f - sample.y) / max(1.0f + (alphaSquared - 1.0f) * sample.y, 1.0e-4f)));
-	const float sinTheta = sqrt(saturate(1.0f - cosTheta * cosTheta));
-	const float3 localHalfVector = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-	return SafeNormalize(
-	    tangentWorld * localHalfVector.x + bitangentWorld * localHalfVector.y + normalWorld * localHalfVector.z,
-	    normalWorld);
-}
-
-IndirectSpecularSampleResult BuildReflectionSample(
-    uint2 pixelCoord,
-    float3 normalWorld,
-    float3 viewDirWorld,
-    float roughness,
-    uint bounceIndex)
-{
-	IndirectSpecularSampleResult result;
-	const float3 mirrorDirection = SafeNormalize(reflect(-viewDirWorld, normalWorld), normalWorld);
-	const bool forceMirror = IndirectSpecularSampleMode == IndirectSpecularSampleModeMirror || roughness <= 0.0f;
-
-	result.DirectionWorld = mirrorDirection;
-	result.Pdf = 1.0f;
-	result.Throughput = 1.0f.xxx;
-	result.Mirror = forceMirror;
-
-	if (forceMirror)
-	{
-		return result;
-	}
-
-	const float2 randomSample = BuildReflectionRandomSample(pixelCoord, bounceIndex);
-	const float3 halfVectorWorld = SampleGGXHalfVector(normalWorld, roughness, randomSample);
-	const float3 sampleDirectionWorld = SafeNormalize(reflect(-viewDirWorld, halfVectorWorld), mirrorDirection);
-	const float NoV = saturate(dot(normalWorld, viewDirWorld));
-	const float NoL = saturate(dot(normalWorld, sampleDirectionWorld));
-	const float NoH = saturate(dot(normalWorld, halfVectorWorld));
-	const float VoH = saturate(dot(viewDirWorld, halfVectorWorld));
-
-	if (NoV <= 0.0f || NoL <= 0.0f || NoH <= 0.0f || VoH <= 0.0f)
-	{
-		result.DirectionWorld = mirrorDirection;
-		result.Pdf = 1.0f;
-		result.Throughput = 0.0f.xxx;
-		result.Mirror = true;
-		return result;
-	}
-
-	const float alpha = roughness * roughness;
-	const float D = BRDF::Distribution::Evaluate(NoH, alpha);
-	const float pdf = max(D * NoH / max(4.0f * VoH, 1.0e-4f), 1.0e-4f);
-
-	result.DirectionWorld = sampleDirectionWorld;
-	result.Pdf = pdf;
-	result.Throughput = 1.0f.xxx;
-	result.Mirror = false;
-	return result;
-}
-
 float3 EvaluateIndirectSpecularSampleThroughput(
     RayTracingPathSurface surface,
-    IndirectSpecularSampleResult sample)
+    BRDF::SpecularSampling::LobeSample sample)
 {
-	if (!surface.Valid)
+	if (!surface.Valid || !sample.Valid)
 	{
 		return 0.0f.xxx;
 	}
@@ -179,11 +103,6 @@ RayTracingTraceResult TraceIndirectSpecularRay(float3 positionWorld, float3 norm
 	    IndirectSpecularInstanceMask);
 }
 
-float3 SampleIndirectSpecularMissRadiance(float3 rayDirectionWorld)
-{
-	return SampleSkyEnvironmentRadiance(SkyTexture, SamplerLinearClamp, rayDirectionWorld);
-}
-
 IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
     uint2 pixelCoord,
     float3 primaryPositionWorld,
@@ -193,7 +112,7 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
     float primaryRoughness,
     float primaryMetallic,
     float primaryDielectricF0,
-    out IndirectSpecularSampleResult firstSample,
+    out BRDF::SpecularSampling::LobeSample firstSample,
     out RayTracingTraceResult firstTrace,
     out RayTracingHitSurfaceData firstHitSurface)
 {
@@ -206,7 +125,13 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
 	        primaryRoughness,
 	        primaryMetallic,
 	        primaryDielectricF0);
-	firstSample = BuildReflectionSample(pixelCoord, pathSurface.NormalWorld, pathSurface.ViewDirWorld, pathSurface.Roughness, 0u);
+	firstSample =
+	    BRDF::SpecularSampling::SampleReflectionLobe(
+	        pathSurface.NormalWorld,
+	        pathSurface.ViewDirWorld,
+	        pathSurface.Roughness,
+	        IndirectSpecularSampleMode,
+	        GenerateReflectionRandomSample(pixelCoord, 0u));
 	firstSample.Throughput = EvaluateIndirectSpecularSampleThroughput(pathSurface, firstSample);
 	firstTrace = (RayTracingTraceResult) 0;
 	firstHitSurface = (RayTracingHitSurfaceData) 0;
@@ -218,8 +143,13 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
 
 	[loop] for (uint bounceIndex = 0u; bounceIndex < bounceCount; ++bounceIndex)
 	{
-		IndirectSpecularSampleResult sample =
-		    BuildReflectionSample(pixelCoord, pathSurface.NormalWorld, pathSurface.ViewDirWorld, pathSurface.Roughness, bounceIndex);
+		BRDF::SpecularSampling::LobeSample sample =
+		    BRDF::SpecularSampling::SampleReflectionLobe(
+		        pathSurface.NormalWorld,
+		        pathSurface.ViewDirWorld,
+		        pathSurface.Roughness,
+		        IndirectSpecularSampleMode,
+		        GenerateReflectionRandomSample(pixelCoord, bounceIndex));
 		sample.Throughput = EvaluateIndirectSpecularSampleThroughput(pathSurface, sample);
 		pathThroughput *= sample.Throughput;
 		if (max(max(pathThroughput.r, pathThroughput.g), pathThroughput.b) <= 1.0e-4f)
@@ -236,7 +166,7 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
 		        sample.DirectionWorld);
 		const float3 hitIncidentRadiance =
 		    hitSurface.Valid ? ShadeRayTracingHitIncidentRadiance(hitSurface, sample.DirectionWorld)
-		                     : SampleIndirectSpecularMissRadiance(sample.DirectionWorld);
+		                     : SampleSkyEnvironmentRadiance(SkyTexture, SamplerLinearClamp, sample.DirectionWorld);
 
 		pathContribution += hitIncidentRadiance * pathThroughput;
 
@@ -293,7 +223,7 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
 	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, deviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const float3 viewDirWorld = normalize(Camera.Position - positionWorld);
 	const float3 mirrorDirectionWorld = normalize(reflect(-viewDirWorld, normalWorld));
-	IndirectSpecularSampleResult sample;
+	BRDF::SpecularSampling::LobeSample sample;
 	RayTracingTraceResult trace;
 	RayTracingHitSurfaceData hitSurface;
 	const IndirectSpecularResolvedContribution resolved =

@@ -90,7 +90,7 @@ Risks:
 - The visibility convention is implicit. If another caller treats `Geometry::EvaluateDirect` as raw `G`, specular energy will be wrong.
 - Burley diffuse is the default, but there is no visible white-furnace validation proving the current diffuse plus specular energy behavior.
 - `BRDF::Direct::Evaluate` adds subsurface separately from diffuse. If subsurface remains active, this can exceed energy unless diffuse is reduced.
-- The rejected direct-light roughness classification helper has been removed. Direct primary and ray-hit lighting now use one BRDF evaluator again; Stage 2C still needs to validate the reference-backed roughness and singularity policy across direct, indirect, and denoiser-facing signals.
+- The rejected direct-light roughness classification helper has been removed. Direct primary and ray-hit lighting now use one BRDF evaluator again; Stage 2C keeps roughness as material data, leaves direct lighting on the shared BRDF path, and confines singularity guards to denominator/PDF expressions.
 
 ## Material and GBuffer State
 
@@ -116,7 +116,7 @@ Ray-hit reconstruction does have material F0:
 
 Remaining issue:
 
-- Material roughness is transported as `[0, 1]`, but there is not yet a single documented full-range roughness policy shared by direct, indirect, and ray-hit lighting.
+- Material roughness is transported as the authored/imported inclusive `[0, 1]` value. Direct, indirect diffuse, indirect specular, and ray-hit direct paths now share the Stage 2C roughness policy; capture-based validation remains Stage 13 work.
 
 Texture color processing looks mostly correct:
 
@@ -150,7 +150,7 @@ Remaining issues:
 - Local light attenuation is `1 / distance^2 * (1 - distance / range)^2`. This is not the glTF punctual range falloff and dims much more aggressively across the range.
 - Spot cone attenuation is linear in the cone ramp. glTF-compatible punctual lights normally square the cone attenuation.
 - Source radius affects stochastic shadow sampling but not direct-light radiometry. This is a punctual-light-with-soft-shadow approximation, not a physically sampled area light.
-- The previous direct-lighting `0.04` roughness floor has been removed in the current changelist. Direct analytic lighting no longer contains a pass-local mirror/delta branch; singularity handling now belongs in BRDF math and still needs Stage 2C validation with a documented finite-light policy.
+- The previous direct-lighting `0.04` roughness floor has been removed. Direct analytic lighting has no pass-local mirror/delta branch; singularity handling is localized to BRDF denominator/PDF safety, while finite-light and area-light policy remains Stage 4/4A work.
 
 ## Shadow State
 
@@ -204,13 +204,13 @@ Issues:
 
 ## Indirect Specular State
 
-Current `IndirectSpecular.hlsl` traces mirror or stochastic GGX paths:
+Current `IndirectSpecular.hlsl` traces mirror or stochastic GGX paths through shared BRDF sampling helpers:
 
-- GGX half-vector sampling: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl:79`
-- reflection sample construction: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl:132`
-- PDF calculation: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl:177`
-- throughput evaluation: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl:183`
-- `BRDF * NoL / pdf`: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl:208`
+- GGX half-vector sampling: `Engine/Assets/Shaders/BRDF/SpecularSampling.hlsli`
+- reflection sample construction: `Engine/Assets/Shaders/BRDF/SpecularSampling.hlsli`
+- PDF calculation: `Engine/Assets/Shaders/BRDF/SpecularSampling.hlsli`
+- throughput evaluation: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
+- `BRDF * NoL / pdf`: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
 - ray tracing: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl:219`
 - sky miss: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl:232`
 - path loop: `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl:265`
@@ -226,7 +226,7 @@ Issues:
 
 - Sampling uses the raw NDF instead of visible-normal GGX. This can be unbiased but will be much noisier at grazing angles than VNDF sampling.
 - Multi-bounce paths sample only specular-lobe continuation. Diffuse-after-specular paths are missing until a unified BSDF sampler exists.
-- The current changelist removes the rejected shared roughness helper. Indirect specular still has effect-local mirror-vs-GGX sampling behavior, which Stage 2C/Stage 7 should move into shared BSDF/path-sampling code with reference-backed VNDF, near-zero stability, and denoiser/debug roughness parity.
+- Mirror-vs-GGX sampling is no longer effect-local; `BRDF/SpecularSampling.hlsli` owns the current exact-mirror and finite-GGX reflection sample construction. Stage 7 still needs a unified BSDF path sampler, VNDF/MIS policy, and diffuse/specular lobe selection.
 - It outputs a fully material-evaluated contribution but does not output hit distance, roughness, normal, albedo, or demodulated radiance needed by a dedicated denoiser.
 
 ## Secondary Hit Direct Lighting
@@ -491,7 +491,7 @@ P1 path-tracing convergence blockers:
 2. Environment importance sampling is missing.
 3. Emissive geometry is only found by random hit, with no explicit emitter sampling.
 4. Source radius creates soft-shadow approximation but not physically integrated area-light radiance.
-5. Full roughness range is partially implemented but not reference-certified: the rejected shared delta classification has been removed, direct/ray-hit lighting use one BRDF path again, and Stage 2C still must validate near-zero stability, mirror-sky behavior, indirect sampling policy, denoiser/debug roughness parity, and finite-light policy.
+5. Full roughness range is implemented for the current direct, indirect diffuse, indirect specular, and ray-hit direct shader paths: material roughness is not floored or reused as compensation, direct/ray-hit lighting use one BRDF path, and mirror-vs-GGX sampling lives in shared BRDF sampling code. Stage 13 still needs capture validation for roughness sweeps and mirror-sky behavior; Stage 4/4A still owns finite-light policy; Stage 11/11A still owns denoiser auxiliary roughness resources.
 6. There is no shared lobe-energy budget for diffuse, specular, subsurface, transmission/future lobes, direct lighting, indirect sampling, and reference path tracing.
 
 P2 denoiser readiness blockers:

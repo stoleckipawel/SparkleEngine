@@ -5,7 +5,7 @@
 float3 BuildIndirectSpecularDebugColor(
     RayTracingTraceResult trace,
     RayTracingHitSurfaceData hitSurface,
-    IndirectSpecularSampleResult sample,
+    BRDF::SpecularSampling::LobeSample sample,
     IndirectSpecularResolvedContribution resolved,
     float3 mirrorDirectionWorld)
 {
