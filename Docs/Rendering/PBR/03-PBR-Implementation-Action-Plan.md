@@ -1067,6 +1067,14 @@ Acceptance criteria:
 - Reference compliance: throughput, lobe PDF, Russian roulette, miss handling, and first-lobe output split are mapped to PBRT/RTXPT/Falcor behavior.
 - Reuse/DRY: diffuse and specular indirect passes share one canonical path-surface, path-sample, PDF, throughput, and hit/miss resolve implementation.
 
+Stage note:
+
+- Reference lineage: the implementation follows PBRT's path-throughput shape (`SampleBSDF`, multiply by `f * cos / pdf`, trace, add miss or hit radiance, continue, and apply Russian roulette after the first bounces). It follows RTXPT/Falcor-style modular path structure by separating path surface data, BSDF/lobe sampling, and hit/miss lighting into concept-owned `RayTracing/*` includes. It keeps Filament-style metallic-roughness/F0 conventions by reusing the existing BRDF and `SurfaceLighting::BuildF0` policy.
+- Implementation: `RayTracing/PathSampling.hlsli` now owns diffuse/specular lobe selection, lobe PDFs, BSDF throughput, stochastic GGX/mirror specular sampling, and Russian roulette. `RayTracing/PathLighting.hlsli` owns ray origin bias, alpha-tested ray-query tracing, sky miss radiance, hit-surface reconstruction, secondary-hit direct/emissive radiance, and first-lobe path result packaging. `IndirectDiffuse.hlsl` and `IndirectSpecular.hlsl` now decode the primary surface, call `TraceSurfacePath`, and write only the contribution whose primary sampled lobe belongs to that pass.
+- Local deviations: Sparkle uses a small local lobe-selection heuristic based on diffuse material weight and F0 luminance instead of a full offline BSDF sampling table. Environment importance sampling and MIS remain Stage 9. Secondary-hit direct lighting reuses the existing unshadowed `ShadeRayTracingHitIncidentRadiance`; secondary shadowing remains Stage 8. The diffuse pass uses the shared stochastic GGX mode for finite specular sampling, while the specular pass keeps its existing sample-mode uniform for current editor/CVar behavior.
+- Reuse/DRY audit: scanned and replaced the old pass-local `BuildIndirectDiffuseDirectionSample`, diffuse/specular throughput evaluators, ray-origin helpers, trace helpers, and hit/miss resolve loops. Reused `PathSurface.hlsli`, `RayTracingPathSample.hlsli`, `RayTracingTraceQuery.hlsli`, `RayTracingMaterialHit.hlsli`, `RayTracingHitLighting.hlsli`, `BRDF/*`, `SurfaceLighting.hlsli`, and `SkyEnvironment.hlsli`. No source file adds reference banners, no new debug/logger path was added, and the only kept helpers own decode, settings-to-trace mapping, sampling policy, trace policy, or result packaging.
+- Validation commands: rebuilt `ShaderCompiler`; cooked `IndirectDiffuse` and `IndirectSpecular` for `DxilSm66` and `SpirV16`; rebuilt `ShowcaseEditor` DevelopmentEditor.
+
 ## Stage 8: Add Secondary Shadowing and Direct-Light Sampling at Hits
 
 Implementation prompt:

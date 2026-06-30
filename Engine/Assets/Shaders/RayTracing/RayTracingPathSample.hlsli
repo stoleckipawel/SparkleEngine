@@ -6,12 +6,18 @@ namespace RayTracingPathSample
 	static const uint RejectionReasonInvalidSample = 1u;
 	static const uint RejectionReasonTraceMiss = 2u;
 	static const uint RejectionReasonHitSurfaceRejected = 3u;
+	static const uint LobeNone = 0u;
+	static const uint LobeDiffuse = 1u;
+	static const uint LobeSpecular = 2u;
 
 	struct DirectionSample
 	{
 		float3 DirectionWorld;
 		float Pdf;
 		float CosineTerm;
+		float3 Throughput;
+		uint Lobe;
+		bool Mirror;
 		uint RejectionReason;
 	};
 

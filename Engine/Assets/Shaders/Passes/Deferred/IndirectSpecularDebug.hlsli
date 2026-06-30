@@ -1,11 +1,12 @@
 #pragma once
 
 #include "RayTracing/RayTracingHitDebug.hlsli"
+#include "RayTracing/RayTracingPathSample.hlsli"
 
 float3 BuildIndirectSpecularDebugColor(
     RayTracingTraceResult trace,
     RayTracingHitSurfaceData hitSurface,
-    BRDF::SpecularSampling::LobeSample sample,
+    RayTracingPathSample::DirectionSample sample,
     IndirectSpecularResolvedContribution resolved,
     float3 mirrorDirectionWorld)
 {
