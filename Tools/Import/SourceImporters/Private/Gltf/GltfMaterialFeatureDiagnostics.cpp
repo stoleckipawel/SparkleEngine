@@ -42,10 +42,6 @@ void GltfMaterialFeatureDiagnostics::ReportUnsupportedFeatures(
 	{
 		appendFeature("KHR_materials_volume");
 	}
-	if (material.has_ior)
-	{
-		appendFeature("KHR_materials_ior");
-	}
 	if (material.has_specular)
 	{
 		appendFeature("KHR_materials_specular");
@@ -53,10 +49,6 @@ void GltfMaterialFeatureDiagnostics::ReportUnsupportedFeatures(
 	if (material.has_sheen)
 	{
 		appendFeature("KHR_materials_sheen");
-	}
-	if (material.has_emissive_strength)
-	{
-		appendFeature("KHR_materials_emissive_strength");
 	}
 	if (material.has_iridescence)
 	{

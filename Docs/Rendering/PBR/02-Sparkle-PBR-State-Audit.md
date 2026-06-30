@@ -339,16 +339,17 @@ Current strengths:
 - Normal maps have a dedicated compression path.
 - HDR color inputs have an HDR compression path.
 - The glTF importer maps base color, normal, AO, emissive, and packed metallic-roughness textures into material slots.
+- The glTF importer applies `KHR_materials_emissive_strength`, maps `KHR_materials_ior` to the existing scalar cooked material `F0`, and keeps `KHR_materials_specular` as an unsupported diagnostic instead of inventing a partial colored/specular-texture conversion.
 - The glTF light importer reads `KHR_lights_punctual` light color, intensity, range, cone angles, and direction.
 - The repository already contains useful validation assets: EXR/HDR sky textures, glTF sample scenes such as DamagedHelmet/Sponza-style content, and Bistro-style BaseColor/Normal/Specular DDS texture sets.
 
 Issues:
 
 - The plan does not yet require deterministic asset-cook tests proving that each texture usage reaches the shader with the intended color-space and channel semantics.
-- glTF material extension handling is incomplete for physically important controls such as specular/F0, IOR, and emissive strength. Unsupported extensions need diagnostics or deliberate implementation stages.
+- glTF scalar IOR and emissive strength are now imported through the existing material contract, while colored/specular-texture F0 from `KHR_materials_specular` remains unsupported with diagnostics.
 - Imported punctual light intensity units need a single documented conversion path into engine units. Otherwise light calibration can be accidentally fixed later by tone mapping or arbitrary intensity multipliers.
 - HDR sky/environment texture import must be proven to stay linear HDR through sampling and presentation.
-- Specular-workflow assets, such as Bistro `*_Specular` textures, need an explicit import policy. They should be converted into the engine's supported material model, used only by a declared specular workflow, or rejected/ignored with diagnostics.
+- Specular-workflow assets, such as Bistro `*_Specular` textures, are not converted into metallic/AO fallbacks; FBX/Assimp specular texture bindings fall back to Sparkle's current material defaults until a real conversion or material-model extension exists. A checked-in validation scene for those loose Bistro texture sets is still missing.
 
 Required stages:
 

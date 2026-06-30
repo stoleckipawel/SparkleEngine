@@ -467,7 +467,7 @@ Required:
 - Normal, roughness, metallic, ambient occlusion, subsurface strength, F0/reflectance, and HDR environment textures are imported/cooked as data or HDR radiance, not sRGB display color.
 - glTF packed metallic-roughness channel mapping is explicit and tested.
 - glTF punctual light intensity units are preserved or converted exactly once into documented engine units.
-- Unsupported material extensions such as `KHR_materials_specular`, `KHR_materials_ior`, and `KHR_materials_emissive_strength` are either implemented or explicitly rejected with diagnostics instead of silently degrading the lighting contract.
+- Material extensions are either implemented or explicitly rejected with diagnostics instead of silently degrading the lighting contract; current policy imports `KHR_materials_ior` and `KHR_materials_emissive_strength`, while `KHR_materials_specular` remains diagnostic-only until Sparkle has colored/specular-texture F0 support.
 
 Acceptance:
 

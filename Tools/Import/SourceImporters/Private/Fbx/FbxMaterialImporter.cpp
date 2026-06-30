@@ -155,11 +155,6 @@ void FbxMaterialImporter::AssignTextureByType(
 		{
 			std::optional<std::filesystem::path> metallicTexture =
 			    ResolveTexturePath(material, materialIndex, sourceDirectory, aiTextureType_METALNESS, "metallic", result);
-			if (!metallicTexture)
-			{
-				metallicTexture = ResolveTexturePath(material, materialIndex, sourceDirectory, aiTextureType_SPECULAR, "specular", result);
-			}
-
 			SetTextureSource(importedMaterial, textureGroup, metallicTexture, TextureChannelMask::Red);
 			if (metallicTexture)
 			{
@@ -172,12 +167,6 @@ void FbxMaterialImporter::AssignTextureByType(
 		{
 			std::optional<std::filesystem::path> occlusionTexture =
 			    ResolveTexturePath(material, materialIndex, sourceDirectory, aiTextureType_AMBIENT_OCCLUSION, "occlusion", result);
-			if (!occlusionTexture)
-			{
-				occlusionTexture =
-				    ResolveTexturePath(material, materialIndex, sourceDirectory, aiTextureType_SPECULAR, "specular", result);
-			}
-
 			SetTextureSource(importedMaterial, textureGroup, occlusionTexture, TextureChannelMask::Red);
 			break;
 		}

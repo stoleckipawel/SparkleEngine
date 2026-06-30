@@ -5,9 +5,18 @@
 #include <DirectXMath.h>
 #include <cgltf.h>
 
+#include <algorithm>
+
 void GltfMaterialPropertyMapper::Apply(const cgltf_material& material, ImportedMaterial& importedMaterial)
 {
 	importedMaterial.emissiveColor = DirectX::XMFLOAT3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
+	if (material.has_emissive_strength)
+	{
+		importedMaterial.emissiveColor.x *= material.emissive_strength.emissive_strength;
+		importedMaterial.emissiveColor.y *= material.emissive_strength.emissive_strength;
+		importedMaterial.emissiveColor.z *= material.emissive_strength.emissive_strength;
+	}
+
 	importedMaterial.alphaCutoff = material.alpha_cutoff;
 	importedMaterial.doubleSided = material.double_sided;
 
@@ -44,5 +53,12 @@ void GltfMaterialPropertyMapper::Apply(const cgltf_material& material, ImportedM
 		        specGloss.diffuse_factor[3]);
 		importedMaterial.metallic = 0.0f;
 		importedMaterial.roughness = 1.0f - specGloss.glossiness_factor;
+	}
+
+	if (material.has_ior)
+	{
+		const float ior = (std::max) (material.ior.ior, 0.0f);
+		const float f0 = ior > 0.0f ? (ior - 1.0f) / (ior + 1.0f) : 0.0f;
+		importedMaterial.f0 = (std::clamp) (f0 * f0, 0.0f, 1.0f);
 	}
 }
