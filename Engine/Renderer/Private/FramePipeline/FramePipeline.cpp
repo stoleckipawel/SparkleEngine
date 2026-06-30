@@ -616,6 +616,10 @@ void FramePipeline::RecordFrame() noexcept
 		        m_systems->GetTemporalDataBuilder()));
 	}();
 	FrameContext& frame = *frameSlot;
+	if (frame.mainView.perTemporalData.HistoryValid == 0u)
+	{
+		ResetExposureHistory();
+	}
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
 	if (UpscalerSubsystem* upscalerSubsystem = m_systems->GetUpscalerSubsystem())

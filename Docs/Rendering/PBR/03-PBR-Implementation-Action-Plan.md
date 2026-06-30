@@ -239,6 +239,12 @@ Acceptance criteria:
 - Reference compliance: implementation notes map each exposure/tone-mapping subsystem to the exact reference path it follows.
 - Reuse/DRY: reduction and downsample paths share the same moment payload and final resolve; duplicate-looking kernels are removed or justified by genuinely different sampling work; persistent texture binding is a frame-graph capability, not local exposure-pass machinery.
 
+Completion note:
+
+- Reference lineage: the production metering path follows the parallel log-luminance reduction shape used by real-time exposure systems such as Microsoft MiniEngine and the luminance-reduction side of AMD FSR2; the alternate metering path follows the 2x2 luminance-pyramid/downsample organization used by AMD FSR2/FidelityFX SPD. Exposure resolve follows the MiniEngine/Falcor pattern of resolving metering into a persistent adapted exposure, with the local deviation that Sparkle stores adapted exposure, average luminance, target exposure, and previous exposure together in one debug-visible `RGBA32F` exposure texture. Presentation follows Falcor's dedicated ToneMapper pass boundary and Filament's display-management split by keeping lighting buffers linear HDR, applying a single selected tone mapper, then applying one explicit output-encoding policy. Local deviation: Sparkle writes an encoded UNorm intermediate and copies it to the swapchain, so automatic output encoding currently selects shader sRGB bytes for both linear UNorm and sRGB backbuffer formats instead of relying on render-target sRGB write conversion.
+- Reuse/DRY audit: scanned the existing exposure shaders, tone-mapping/display includes, presentation passes, frame-graph resource creation, frame-pipeline history binding/reset, renderer settings, and editor settings panel before adding logic. The reduction and pyramid paths share the same `float2(logLuminanceSum, sampleCount)` moment payload and the same exposure resolve shader; no duplicate resolve/adaptation code was introduced. Persistent previous/current exposure textures remain frame-graph resources, with `FramePipeline` only binding/resetting them when temporal history is invalidated.
+- Validation: rebuilt `ShaderCompiler` so the cook tool picked up the current renderer shader registrations, then cooked `ExposureReduceScene`, `ExposureReduceTexture`, `ExposureDownsampleScene`, `ExposureDownsampleTexture`, `Exposure`, `ToneMapping`, and `OutputEncoding` for `DxilSm66` and `SpirV16`.
+
 ## Stage 0D: Audit and Refine Existing Exposure/Tone Mapping
 
 Implementation prompt:
