@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Passes/Deferred/DirectLightingCommon.hlsli"
+#include "Lighting/PunctualLights.hlsli"
+#include "Lighting/SurfaceLighting.hlsli"
 #include "RayTracing/RayTracingMaterialHit.hlsli"
 
 void AccumulateRayTracingHitDirectLight(
@@ -10,29 +11,27 @@ void AccumulateRayTracingHitDirectLight(
     float3 radiance,
     inout float3 incidentRadiance)
 {
-	BRDF::ShadingData shadingData = BRDF::ComputeShadingData(surface.NormalWorld, viewDirWorld, lightDirection);
-	if (shadingData.NoL <= 0.0f || shadingData.NoV <= 0.0f)
-	{
-		return;
-	}
-
 	float3 diffuse = 0.0f.xxx;
 	float3 specular = 0.0f.xxx;
 	float3 subsurface = 0.0f.xxx;
 	const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
-	BRDF::Direct::Evaluate(
-	    shadingData,
+	SurfaceLighting::EvaluateDirectLightWithF0(
+	    viewDirWorld,
+	    surface.NormalWorld,
 	    surface.BaseColor,
 	    surface.Roughness,
 	    surface.Metallic,
 	    f0,
 	    surface.SubsurfaceColor,
 	    surface.SubsurfaceStrength,
+	    true,
+	    lightDirection,
+	    radiance,
 	    diffuse,
 	    specular,
 	    subsurface);
 
-	incidentRadiance += (diffuse + specular + subsurface) * radiance * shadingData.NoL;
+	incidentRadiance += diffuse + specular + subsurface;
 }
 
 float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, float3 rayDirectionWorld)
@@ -50,7 +49,7 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, floa
 
 	[loop] for (uint lightIndex = 0u; lightIndex < directionalLightCount; ++lightIndex)
 	{
-		const float3 lightDirection = DirectLighting::GetDirectionalLightDirection(lightIndex);
+		const float3 lightDirection = PunctualLights::GetDirectionalLightDirection(lightIndex);
 		const float3 radiance = DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Intensity;
 		AccumulateRayTracingHitDirectLight(surface, viewDirWorld, lightDirection, radiance, incidentRadiance);
 	}
@@ -59,8 +58,8 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, floa
 	{
 		const PointLightConstantBufferData light = PointLights[lightIndex];
 		float distanceToLight = 0.0f;
-		const float3 lightDirection = DirectLighting::GetPointLightDirection(surface.PositionWorld, lightIndex, distanceToLight);
-		const float attenuation = DirectLighting::ComputeDistanceAttenuation(distanceToLight, light.Range);
+		const float3 lightDirection = PunctualLights::GetPointLightDirection(surface.PositionWorld, lightIndex, distanceToLight);
+		const float attenuation = PunctualLights::ComputeDistanceAttenuation(distanceToLight, light.Range);
 		const float3 radiance = light.Color * light.Intensity * attenuation;
 		AccumulateRayTracingHitDirectLight(surface, viewDirWorld, lightDirection, radiance, incidentRadiance);
 	}
@@ -69,11 +68,11 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, floa
 	{
 		const SpotLightConstantBufferData light = SpotLights[lightIndex];
 		float distanceToLight = 0.0f;
-		const float3 lightDirection = DirectLighting::GetSpotLightDirection(surface.PositionWorld, lightIndex, distanceToLight);
+		const float3 lightDirection = PunctualLights::GetSpotLightDirection(surface.PositionWorld, lightIndex, distanceToLight);
 		const float3 lightToSurfaceDirection = -lightDirection;
-		const float distanceAttenuation = DirectLighting::ComputeDistanceAttenuation(distanceToLight, light.Range);
+		const float distanceAttenuation = PunctualLights::ComputeDistanceAttenuation(distanceToLight, light.Range);
 		const float coneAttenuation =
-		    DirectLighting::ComputeSpotConeAttenuation(lightToSurfaceDirection, light.Direction, light.InnerConeCosine, light.OuterConeCosine);
+		    PunctualLights::ComputeSpotConeAttenuation(lightToSurfaceDirection, light.Direction, light.InnerConeCosine, light.OuterConeCosine);
 		const float3 radiance = light.Color * light.Intensity * distanceAttenuation * coneAttenuation;
 		AccumulateRayTracingHitDirectLight(surface, viewDirWorld, lightDirection, radiance, incidentRadiance);
 	}

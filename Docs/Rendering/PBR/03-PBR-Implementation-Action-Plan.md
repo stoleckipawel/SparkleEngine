@@ -135,6 +135,13 @@ Acceptance criteria:
 - Reuse/DRY: moved helpers have exactly one canonical home; no pass keeps a forked copy of light falloff, direct-surface evaluation, path surface records, or shadow signal packing.
 - Source hygiene: generic helpers live in concept-owned include files, not in first-use pass files, and final source files contain no `Reference lineage` banners.
 
+Completion note:
+
+- Reference lineage: followed Unreal/Falcor-style separation between pass entrypoints and reusable shader modules, RTXPT-style shared ray/path helper ownership, and FidelityFX-style pass/kernel boundary discipline.
+- Local deviation: existing deferred pass entrypoints still own pass resources, debug selection, and dispatch shape; later stages will split path sampling and path lighting more deeply.
+- Reuse/DRY audit: scanned existing direct-light, ray-hit, shadow, and indirect path bodies before moving logic. `Lighting/PunctualLights.hlsli`, `Lighting/SurfaceLighting.hlsli`, `RayTracing/PathSurface.hlsli`, and `RayTracing/Shadows/*` are now the canonical homes for moved light falloff/cone helpers, direct surface evaluation, path surface records, and shadow signal/sampling/trace helpers.
+- Validation: cooked the affected direct-lighting and indirect-lighting shader packages after the moves.
+
 ## Stage 0B: Make Pass Entrypoints Thin
 
 Implementation prompt:

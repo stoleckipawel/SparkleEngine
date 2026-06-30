@@ -1,16 +1,14 @@
-#include "Resources/ConstantBuffers.hlsli"
-#include "Passes/Deferred/DirectLightingCommon.hlsli"
+#include "Lighting/PunctualLights.hlsli"
+#include "Lighting/SurfaceLighting.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
 #if defined(SPARKLE_DIRECT_LIGHTING_NO_RAY_QUERY)
-#include "Passes/Deferred/RayTracedShadowSignals.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 #else
-#include "Passes/Deferred/RayTracedShadows.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowTrace.hlsli"
 #endif
-
 RWTexture2D<float4> DirectDiffuseTexture;
 RWTexture2D<float4> DirectSpecularTexture;
 RWTexture2D<float4> DirectSubsurfaceTexture;
-
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0;
@@ -45,7 +43,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 
 	[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
-		const float3 lightDirection = DirectLighting::GetDirectionalLightDirection(lightIndex);
+		const float3 lightDirection = PunctualLights::GetDirectionalLightDirection(lightIndex);
 #if defined(SPARKLE_DIRECT_LIGHTING_NO_RAY_QUERY)
 		const ShadowVisibilitySignal directionalShadow = RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
 #else
@@ -61,7 +59,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
-		DirectLighting::AccumulateDirectionalLight(
+		SurfaceLighting::AccumulateDirectionalLight(
 		    viewDirWorld,
 		    gBuffer.NormalWorld,
 		    gBuffer.BaseColor,
@@ -99,7 +97,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
-		DirectLighting::AccumulatePointLight(
+		SurfaceLighting::AccumulatePointLight(
 		    positionWorld,
 		    viewDirWorld,
 		    gBuffer.NormalWorld,
@@ -140,7 +138,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
-		DirectLighting::AccumulateSpotLight(
+		SurfaceLighting::AccumulateSpotLight(
 		    positionWorld,
 		    viewDirWorld,
 		    gBuffer.NormalWorld,

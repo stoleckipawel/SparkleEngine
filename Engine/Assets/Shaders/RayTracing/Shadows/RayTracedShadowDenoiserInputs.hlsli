@@ -1,7 +1,7 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOW_DENOISER_INPUTS_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOW_DENOISER_INPUTS_HLSLI
 
-#include "Passes/Deferred/RayTracedShadowSignals.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 
 namespace RayTracedShadowDenoiserInputs
 {

@@ -1,9 +1,9 @@
-#ifndef SPARKLE_RAY_TRACED_SHADOWS_HLSLI
-#define SPARKLE_RAY_TRACED_SHADOWS_HLSLI
+#ifndef SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
+#define SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 
-#include "Passes/Deferred/RayTracedShadowDenoiserInputs.hlsli"
-#include "Passes/Deferred/RayTracedShadowSampling.hlsli"
-#include "Passes/Deferred/RayTracedShadowSignals.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowSampling.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 
 #if !defined(SPARKLE_DIRECT_LIGHTING_VULKAN_ADDRESS) || !defined(__spirv__)
 RaytracingAccelerationStructure SceneTlas;

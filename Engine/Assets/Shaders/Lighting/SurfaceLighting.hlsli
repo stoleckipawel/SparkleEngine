@@ -1,55 +1,18 @@
-#ifndef SPARKLE_DIRECT_LIGHTING_COMMON_HLSLI
-#define SPARKLE_DIRECT_LIGHTING_COMMON_HLSLI
+#ifndef SPARKLE_SURFACE_LIGHTING_HLSLI
+#define SPARKLE_SURFACE_LIGHTING_HLSLI
 
-#include "Resources/ConstantBuffers.hlsli"
 #include "BRDF/BRDF.hlsli"
+#include "Lighting/PunctualLights.hlsli"
 
-namespace DirectLighting
+namespace SurfaceLighting
 {
-	float3 GetDirectionalLightDirection(uint lightIndex)
-	{
-		return normalize(-DirectionalLights[lightIndex].Direction);
-	}
-
-	float3 GetPointLightDirection(float3 positionWorld, uint lightIndex, out float distanceToLight)
-	{
-		const float3 surfaceToLight = PointLights[lightIndex].Position - positionWorld;
-		distanceToLight = length(surfaceToLight);
-		return surfaceToLight / max(distanceToLight, 0.0001f);
-	}
-
-	float3 GetSpotLightDirection(float3 positionWorld, uint lightIndex, out float distanceToLight)
-	{
-		const float3 surfaceToLight = SpotLights[lightIndex].Position - positionWorld;
-		distanceToLight = length(surfaceToLight);
-		return surfaceToLight / max(distanceToLight, 0.0001f);
-	}
-
-	float ComputeDistanceAttenuation(float distanceToLight, float range)
-	{
-		const float inverseSquare = rcp(max(distanceToLight * distanceToLight, 0.01f));
-		if (range <= 0.0f)
-		{
-			return inverseSquare;
-		}
-
-		const float rangeFactor = saturate(1.0f - distanceToLight / range);
-		return inverseSquare * rangeFactor * rangeFactor;
-	}
-
-	float ComputeSpotConeAttenuation(float3 lightToSurfaceDirection, float3 spotDirection, float innerConeCosine, float outerConeCosine)
-	{
-		const float coneCosine = dot(normalize(lightToSurfaceDirection), normalize(spotDirection));
-		const float coneRange = max(innerConeCosine - outerConeCosine, 0.0001f);
-		return saturate((coneCosine - outerConeCosine) / coneRange);
-	}
-
-	void EvaluateDirectLight(
+	void EvaluateDirectLightWithF0(
 	    float3 viewDirWorld,
 	    float3 normalWorld,
 	    float3 baseColor,
 	    float roughness,
 	    float metallic,
+	    float3 f0,
 	    float3 subsurfaceColor,
 	    float subsurfaceStrength,
 	    bool evaluateSubsurface,
@@ -69,7 +32,6 @@ namespace DirectLighting
 			return;
 		}
 
-		const float3 f0 = lerp(0.04f.xxx, baseColor, metallic);
 		BRDF::Direct::Evaluate(
 		    shadingData,
 		    baseColor,
@@ -87,6 +49,39 @@ namespace DirectLighting
 		outSubsurface *= radiance * shadingData.NoL;
 	}
 
+	void EvaluateDirectLight(
+	    float3 viewDirWorld,
+	    float3 normalWorld,
+	    float3 baseColor,
+	    float roughness,
+	    float metallic,
+	    float3 subsurfaceColor,
+	    float subsurfaceStrength,
+	    bool evaluateSubsurface,
+	    float3 lightDirection,
+	    float3 radiance,
+	    out float3 outDiffuse,
+	    out float3 outSpecular,
+	    out float3 outSubsurface)
+	{
+		const float3 f0 = lerp(0.04f.xxx, baseColor, metallic);
+		EvaluateDirectLightWithF0(
+		    viewDirWorld,
+		    normalWorld,
+		    baseColor,
+		    roughness,
+		    metallic,
+		    f0,
+		    subsurfaceColor,
+		    subsurfaceStrength,
+		    evaluateSubsurface,
+		    lightDirection,
+		    radiance,
+		    outDiffuse,
+		    outSpecular,
+		    outSubsurface);
+	}
+
 	void AccumulateDirectionalLight(
 	    float3 viewDirWorld,
 	    float3 normalWorld,
@@ -102,7 +97,7 @@ namespace DirectLighting
 	    out float3 outSpecular,
 	    out float3 outSubsurface)
 	{
-		const float3 lightDirection = GetDirectionalLightDirection(lightIndex);
+		const float3 lightDirection = PunctualLights::GetDirectionalLightDirection(lightIndex);
 		const float3 radiance =
 		    DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Intensity * shadowVisibility;
 		EvaluateDirectLight(
@@ -139,8 +134,8 @@ namespace DirectLighting
 	{
 		const PointLightConstantBufferData light = PointLights[lightIndex];
 		float distanceToLight = 0.0f;
-		const float3 lightDirection = GetPointLightDirection(positionWorld, lightIndex, distanceToLight);
-		const float attenuation = ComputeDistanceAttenuation(distanceToLight, light.Range);
+		const float3 lightDirection = PunctualLights::GetPointLightDirection(positionWorld, lightIndex, distanceToLight);
+		const float attenuation = PunctualLights::ComputeDistanceAttenuation(distanceToLight, light.Range);
 		const float3 radiance = light.Color * light.Intensity * attenuation * shadowVisibility;
 		EvaluateDirectLight(
 		    viewDirWorld,
@@ -176,10 +171,11 @@ namespace DirectLighting
 	{
 		const SpotLightConstantBufferData light = SpotLights[lightIndex];
 		float distanceToLight = 0.0f;
-		const float3 lightDirection = GetSpotLightDirection(positionWorld, lightIndex, distanceToLight);
+		const float3 lightDirection = PunctualLights::GetSpotLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float3 lightToSurfaceDirection = -lightDirection;
-		const float distanceAttenuation = ComputeDistanceAttenuation(distanceToLight, light.Range);
-		const float coneAttenuation = ComputeSpotConeAttenuation(lightToSurfaceDirection, light.Direction, light.InnerConeCosine, light.OuterConeCosine);
+		const float distanceAttenuation = PunctualLights::ComputeDistanceAttenuation(distanceToLight, light.Range);
+		const float coneAttenuation =
+		    PunctualLights::ComputeSpotConeAttenuation(lightToSurfaceDirection, light.Direction, light.InnerConeCosine, light.OuterConeCosine);
 		const float3 radiance = light.Color * light.Intensity * distanceAttenuation * coneAttenuation * shadowVisibility;
 		EvaluateDirectLight(
 		    viewDirWorld,

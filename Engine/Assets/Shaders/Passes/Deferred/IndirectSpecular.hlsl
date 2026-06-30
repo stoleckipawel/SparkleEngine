@@ -27,6 +27,7 @@ cbuffer IndirectSpecularUniformData
 	uint IndirectSpecularPadding1;
 };
 
+#include "RayTracing/PathSurface.hlsli"
 #include "RayTracing/RayTracingTraceQuery.hlsli"
 #include "RayTracing/RayTracingHitLighting.hlsli"
 
@@ -56,18 +57,6 @@ struct IndirectSpecularResolvedContribution
 	float3 FinalContribution;
 };
 
-struct IndirectSpecularSurface
-{
-	bool Valid;
-	float3 PositionWorld;
-	float3 NormalWorld;
-	float3 ViewDirWorld;
-	float3 BaseColor;
-	float Roughness;
-	float Metallic;
-	float DielectricF0;
-};
-
 float2 BuildReflectionRandomSample(uint2 pixelCoord, uint bounceIndex)
 {
 	return CommonRandom::InterleavedGradientNoise2(
@@ -91,42 +80,6 @@ float3 SampleGGXHalfVector(float3 normalWorld, float roughness, float2 sample)
 	return SafeNormalize(
 	    tangentWorld * localHalfVector.x + bitangentWorld * localHalfVector.y + normalWorld * localHalfVector.z,
 	    normalWorld);
-}
-
-IndirectSpecularSurface BuildPrimaryIndirectSpecularSurface(
-    float3 positionWorld,
-    float3 normalWorld,
-    float3 viewDirWorld,
-    float3 baseColor,
-    float roughness,
-    float metallic)
-{
-	IndirectSpecularSurface surface;
-	surface.Valid = true;
-	surface.PositionWorld = positionWorld;
-	surface.NormalWorld = normalWorld;
-	surface.ViewDirWorld = viewDirWorld;
-	surface.BaseColor = baseColor;
-	surface.Roughness = roughness;
-	surface.Metallic = metallic;
-	surface.DielectricF0 = 0.04f;
-	return surface;
-}
-
-IndirectSpecularSurface BuildHitIndirectSpecularSurface(
-    RayTracingHitSurfaceData hitSurface,
-    float3 incomingRayDirectionWorld)
-{
-	IndirectSpecularSurface surface;
-	surface.Valid = hitSurface.Valid;
-	surface.PositionWorld = hitSurface.PositionWorld;
-	surface.NormalWorld = hitSurface.NormalWorld;
-	surface.ViewDirWorld = normalize(-incomingRayDirectionWorld);
-	surface.BaseColor = hitSurface.BaseColor;
-	surface.Roughness = hitSurface.Roughness;
-	surface.Metallic = hitSurface.Metallic;
-	surface.DielectricF0 = hitSurface.DielectricF0;
-	return surface;
 }
 
 IndirectSpecularSampleResult BuildReflectionSample(
@@ -179,7 +132,7 @@ IndirectSpecularSampleResult BuildReflectionSample(
 }
 
 float3 EvaluateIndirectSpecularSampleThroughput(
-    IndirectSpecularSurface surface,
+    RayTracingPathSurface surface,
     IndirectSpecularSampleResult sample)
 {
 	if (!surface.Valid)
@@ -243,14 +196,15 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
     out RayTracingTraceResult firstTrace,
     out RayTracingHitSurfaceData firstHitSurface)
 {
-	IndirectSpecularSurface pathSurface =
-	    BuildPrimaryIndirectSpecularSurface(
+	RayTracingPathSurface pathSurface =
+	    BuildPrimaryRayTracingPathSurface(
 	        primaryPositionWorld,
 	        primaryNormalWorld,
 	        primaryViewDirWorld,
 	        primaryBaseColor,
 	        primaryRoughness,
-	        primaryMetallic);
+	        primaryMetallic,
+	        0.04f);
 	firstSample = BuildReflectionSample(pixelCoord, pathSurface.NormalWorld, pathSurface.ViewDirWorld, pathSurface.Roughness, 0u);
 	firstSample.Throughput = EvaluateIndirectSpecularSampleThroughput(pathSurface, firstSample);
 	firstTrace = (RayTracingTraceResult) 0;
@@ -298,7 +252,7 @@ IndirectSpecularResolvedContribution ResolveIndirectSpecularPath(
 			break;
 		}
 
-		pathSurface = BuildHitIndirectSpecularSurface(hitSurface, sample.DirectionWorld);
+		pathSurface = BuildHitRayTracingPathSurface(hitSurface, sample.DirectionWorld);
 	}
 
 	IndirectSpecularResolvedContribution resolved;
