@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Frame/Core/FrameAssembly.h"
-#include "Renderer/Public/Denoising/ShadowDenoiseContract.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
 
-ShadowDenoiseContract::ShadowDenoiseContract CreateShadowDenoiseFrameResources(
+FrameGraphTextureHandle CreateShadowVisibilityResources(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     FrameAssemblyResourceLayout& resources);

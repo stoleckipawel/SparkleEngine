@@ -12,8 +12,8 @@
 void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
 {
 	resources.Transient.Lighting = CreateLightingRenderTargets(builder, sceneExtent);
-	const FrameGraphTextureHandle shadowVisibilitySignal =
-	    CreateShadowDenoiseFrameResources(builder, sceneExtent, resources).Textures.PackedSignal;
+	const FrameGraphTextureHandle rawShadowVisibilitySignal =
+	    CreateShadowVisibilityResources(builder, sceneExtent, resources);
 
 	AddLightingTargetClearPass(builder, resources.Transient.Lighting);
 	AddDirectLightingPass(
@@ -21,7 +21,7 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	    resources.Transient.Lighting,
 	    resources.Transient.GBuffer,
 	    resources.Persistent.SceneTlas,
-	    shadowVisibilitySignal);
+	    rawShadowVisibilitySignal);
 	AddIndirectLightingPasses(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.Persistent.SceneTlas);
 	AddLightingCompositePass(builder, resources.Transient.Scene, resources.Transient.Lighting, resources.Transient.GBuffer);
 	AddSkyPass(builder, resources.Transient.Scene, resources.Transient.GBuffer);

@@ -1,10 +1,11 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/ShadowDenoise.h"
 
+#include "Denoising/ShadowDenoiseContract.h"
 #include "FrameGraph/Resources/FrameGraphDenoiserRegistration.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 
-ShadowDenoiseContract::ShadowDenoiseContract CreateShadowDenoiseFrameResources(
+FrameGraphTextureHandle CreateShadowVisibilityResources(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     FrameAssemblyResourceLayout& resources)
@@ -18,7 +19,7 @@ ShadowDenoiseContract::ShadowDenoiseContract CreateShadowDenoiseFrameResources(
 	    sceneExtent,
 	    requestSigma && nrdSigmaProviderAvailable);
 
-	return ShadowDenoiseContract::BuildContract(
+	const ShadowDenoiseContract::ShadowDenoiseContract contract = ShadowDenoiseContract::BuildContract(
 	    ShadowDenoiseContract::BuildRequest{
 	        .RequestDenoiser = requestSigma,
 	        .ProviderAvailable = nrdSigmaProviderAvailable,
@@ -36,4 +37,6 @@ ShadowDenoiseContract::ShadowDenoiseContract CreateShadowDenoiseFrameResources(
 	        .Textures = resources.Transient.ShadowDenoiser,
 	        .PreviousDenoisedVisibility = resources.History.PreviousDenoisedShadowVisibility,
 	        .CurrentDenoisedVisibility = resources.History.CurrentDenoisedShadowVisibility});
+
+	return contract.Textures.PackedSignal;
 }
