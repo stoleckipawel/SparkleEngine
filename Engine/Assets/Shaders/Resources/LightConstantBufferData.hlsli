@@ -3,6 +3,7 @@
 struct DirectionalLightConstantBufferData
 {
 	float3 Direction;
+	// Illuminance in lux.
 	float Intensity;
 
 	float3 Color;
@@ -18,6 +19,7 @@ struct PointLightConstantBufferData
 	float Range;
 
 	float3 Color;
+	// Luminous intensity in candela.
 	float Intensity;
 
 	float SourceRadius;
@@ -34,6 +36,7 @@ struct SpotLightConstantBufferData
 	float InnerConeCosine;
 
 	float3 Color;
+	// Luminous intensity in candela.
 	float Intensity;
 
 	float OuterConeCosine;

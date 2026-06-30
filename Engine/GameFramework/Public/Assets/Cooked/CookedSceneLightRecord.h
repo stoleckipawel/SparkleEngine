@@ -28,11 +28,12 @@ namespace Assets
 		CookedSceneLightKind kind = CookedSceneLightKind::Unknown;
 		DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 		DirectX::XMFLOAT3 direction = {0.0f, -1.0f, 0.0f};
+		// Directional lights use lux; point and spot lights use candela.
 		float intensity = 1.0f;
 		DirectX::XMFLOAT3 color = {1.0f, 1.0f, 1.0f};
 		float range = 0.0f;
 		float innerConeAngleRadians = 0.0f;
-		float outerConeAngleRadians = 0.0f;
+		float outerConeAngleRadians = DirectX::XM_PIDIV4;
 		std::uint32_t sourceNodeIndex = kInvalidCookedSceneLightSourceNodeIndex;
 		std::uint32_t flags = 0;
 	};

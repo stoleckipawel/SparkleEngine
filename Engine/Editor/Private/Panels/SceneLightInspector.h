@@ -28,7 +28,5 @@ class SceneLightInspector final
 
 	static constexpr float kDirectionSliderMin = -1.0f;
 	static constexpr float kDirectionSliderMax = 1.0f;
-	static constexpr float kIntensitySliderMin = 0.0f;
-	static constexpr float kIntensitySliderMax = 20.0f;
 	static constexpr float kRangeSliderMax = 500.0f;
 };

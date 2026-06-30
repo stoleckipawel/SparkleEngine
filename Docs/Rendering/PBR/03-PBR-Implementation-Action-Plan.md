@@ -30,7 +30,7 @@ Every stage also has a reference-proof requirement:
 
 - The implementation prompt must include `Reference lineage`.
 - Each nontrivial algorithm must cite a concrete repository, SDK sample, engine implementation, specification, or paper.
-- If the code intentionally deviates from the reference, the prompt must name the difference and the validation used to protect it.
+- If the code intentionally deviates from the reference, the prompt must name the difference and the concrete implementation invariant or architecture boundary that keeps the deviation from spreading.
 - Final implementation files must not contain `Reference lineage` banners. References are tracked in prompts, design docs, audit docs, and PR notes; source comments are only for local non-obvious implementation details.
 - Acceptance criteria must include a reference-compliance check.
 - A feature without a credible external reference is experimental and cannot be marked PBR/reference-correct.
@@ -45,7 +45,7 @@ Every stage also has a reuse-proof requirement:
 - Feature enum families must live in focused type headers instead of accumulating in umbrella settings headers.
 - Pass files must stay thin: generic parameter metadata, dispatch sizing, scheduling, binding, and frame-graph/RHI mechanics belong in pass/core utilities or the frame-graph/RHI layer.
 - Do not add wrappers that only rename or forward parameters. Keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
-- If duplicate-looking code is intentionally kept, explain whether it is validation-only, backend-specific, temporary, or performance-motivated.
+- If duplicate-looking code is intentionally kept, explain whether it is backend-specific, temporary, performance-motivated, or required by a real ownership boundary.
 - Acceptance criteria must include a no-unjustified-functional-duplicate check.
 
 ## Stage 0: Lock the Lighting Contract
@@ -91,7 +91,7 @@ Implementation prompt:
 
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
-Before changing lighting math, move reusable lighting concepts out of pass-specific shader folders. Do this as behavior-preserving refactors with shader-cook validation after each step.
+Before changing lighting math, move reusable lighting concepts out of pass-specific shader folders. Do this as behavior-preserving refactors with shader-cook checks after each step.
 
 Reference lineage:
 
@@ -164,7 +164,7 @@ Target pass entrypoint shape:
 
 ```text
 main:
-    validate dispatch bounds
+    guard dispatch bounds
     load GBuffer / constants
     early out sky pixels
     build primary surface
@@ -186,7 +186,7 @@ Acceptance criteria:
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Pass entrypoint files do not define reusable BRDF, light falloff, ray-origin, lobe sampling, or path-throughput algorithms.
 - Shared algorithms are named after concepts, not effects.
-- Debug helpers stay pass-specific only when the debug view is effect-specific.
+- Effect-specific inspection helpers stay pass-specific only when they cannot be expressed through an existing owned signal or output.
 - Line count is reduced for `IndirectDiffuse.hlsl` and `IndirectSpecular.hlsl` by moving cohesive logic, not by hiding unrelated code in one new god include.
 - New files each have one reason to change.
 - Reference compliance: pass boundaries are compared against Falcor/RTXPT/FidelityFX patterns in the implementation notes.
@@ -330,13 +330,13 @@ Implementation prompt:
 
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
-Before implementing a lighting phase, run a repo-wide audit across shaders, renderer frame graph, RHI formats, asset import/cooking, provider contracts, settings, debug views, and validation assets. The audit must update this plan when it finds a PBR-relevant issue. This gate exists so implementation work cannot focus only on the active shader file while missing a format, import, denoiser, or provider assumption elsewhere.
+Before implementing a lighting phase, run a repo-wide audit across shaders, renderer frame graph, RHI formats, asset import/cooking, provider contracts, and settings. The audit must update this plan when it finds a PBR-relevant issue. This gate exists so implementation work cannot focus only on the active shader file while missing a format, import, denoiser, or provider assumption elsewhere.
 
 Reference lineage:
 
-- NVIDIA RTXPT renderer structure and validation expectations: <https://github.com/NVIDIA-RTX/RTXPT>
+- NVIDIA RTXPT renderer structure and correctness expectations: <https://github.com/NVIDIA-RTX/RTXPT>
 - NVIDIA Falcor render-pass and path-tracing reference organization: <https://github.com/NVIDIAGameWorks/Falcor>
-- NVIDIA NRD signal contracts and validation/debug requirements: <https://github.com/NVIDIA-RTX/NRD>
+- NVIDIA NRD signal contracts: <https://github.com/NVIDIA-RTX/NRD>
 - NVIDIA Streamline DLSS Ray Reconstruction provider-resource tagging: <https://github.com/NVIDIAGameWorks/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md>
 - AMD FidelityFX SDK provider-style render-resource and temporal examples: <https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK>
 - Google Filament material, color, and lighting documentation: <https://google.github.io/filament/Filament.md.html>
@@ -345,12 +345,12 @@ Reference lineage:
 
 Required scan categories:
 
-- Shader modules: BRDF, material decode, GBuffer, direct lighting, indirect lighting, ray tracing, shadows, sky, debug, presentation.
+- Shader modules: BRDF, material decode, GBuffer, direct lighting, indirect lighting, ray tracing, shadows, sky, presentation.
 - Renderer passes: frame scheduling, pass data builders, frame-graph resource declarations, shader registrations, settings/CVars.
-- RHI and formats: scene color, GBuffer, depth, motion vectors, denoiser signal resources, backbuffer encoding, HDR capture formats.
+- RHI and formats: scene color, GBuffer, depth, motion vectors, denoiser signal resources, backbuffer encoding, HDR formats.
 - Assets/tools: glTF material/light import, texture color-space policy, compression policy, HDR sky import, packed texture channels.
 - Providers: DLSS, future DLRR, NRD SIGMA, indirect denoiser/reconstruction contracts, history/reset state.
-- Validation: scenes, debug views, pre-tonemap captures, reference-mode outputs, metrics.
+- Correctness surfaces: representative scenes, pre-tonemap outputs, reference-mode outputs, and existing metrics when they already exist.
 
 Acceptance criteria:
 
@@ -363,8 +363,8 @@ Acceptance criteria:
 
 Completion note:
 
-- Reference lineage: the audit used RTXPT and Falcor for renderer-wide pass/resource/reference-output organization, NRD for denoiser signal contracts and debug requirements, Streamline DLSS Ray Reconstruction for provider-resource tagging expectations, AMD FidelityFX for provider-style temporal resource handling, Filament and Unreal for material/light/color expectations, glTF 2.0 plus `KHR_lights_punctual` for asset import and light-unit contracts, and PBRT for path-traced reference-output expectations already named in later stages.
-- Reuse/DRY audit: scanned shader concept folders and entrypoints (`Material`, `BRDF`, `Lighting`, `RayTracing`, `Passes/Deferred`, `Passes/Presentation`), renderer frame data/builders, frame-graph resource declarations, GBuffer formats, exposure/presentation settings, DLSS/upscaler provider contracts, shadow denoiser contracts, glTF material import and texture cooking, default HDR sky cooking, smoke capture artifacts, and renderer diagnostics before proposing follow-up work. Existing canonical bodies to reuse are `SurfaceLighting.hlsli`, `PunctualLights.hlsli`, `PathSurface.hlsli`, `GBufferFormats.h`, `FrameSceneResources`, `UpscalerInputContract`, `ShadowDenoiseContract`, and the Stage 0D display/exposure helpers. No new helper, pass, or provider interface was added by this audit.
+- Reference lineage: the audit used RTXPT and Falcor for renderer-wide pass/resource/reference-output organization, NRD for denoiser signal contracts, Streamline DLSS Ray Reconstruction for provider-resource tagging expectations, AMD FidelityFX for provider-style temporal resource handling, Filament and Unreal for material/light/color expectations, glTF 2.0 plus `KHR_lights_punctual` for asset import and light-unit contracts, and PBRT for path-traced reference-output expectations already named in later stages.
+- Reuse/DRY audit: scanned shader concept folders and entrypoints (`Material`, `BRDF`, `Lighting`, `RayTracing`, `Passes/Deferred`, `Passes/Presentation`), renderer frame data/builders, frame-graph resource declarations, GBuffer formats, exposure/presentation settings, DLSS/upscaler provider contracts, shadow denoiser contracts, glTF material import and texture cooking, and default HDR sky cooking before proposing follow-up work. Existing canonical bodies to reuse are `SurfaceLighting.hlsli`, `PunctualLights.hlsli`, `PathSurface.hlsli`, `GBufferFormats.h`, `FrameSceneResources`, `UpscalerInputContract`, `ShadowDenoiseContract`, and the Stage 0D display/exposure helpers. No new helper, pass, or provider interface was added by this audit.
 - Stage update result: no new stage was required. All P0/P1 findings below are mapped to the existing stages named in their `Required stage` cells, whose prompts already carry the relevant references. Items that remain local deviations or non-production details are explicitly named in Stage 0D and Stage 13 instead of being left as hidden assumptions.
 
 | Priority | File(s) | Symptom | Risk | Required stage | Reference(s) |
@@ -374,10 +374,9 @@ Completion note:
 | P1 | `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSignals.hlsli`, `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`, `Engine/Renderer/Public/Denoising/ShadowDenoiseContract.h`, `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.cpp` | Shader shadow helpers define a packed `float4(visibility, hitDistance, confidence, maxDistance)` signal, but registered raw/scratch/history/denoised visibility resources are single-channel `R32_Float`. | Denoiser/provider integration can silently lose hit-distance/confidence data or require pass-local side channels. | Stage 0F, Stage 5, Stage 6. | NRD SIGMA signal contracts, Falcor/RTXPT debug signal ownership. |
 | P1 | `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`, glTF importer files under `Tools/Import/SourceImporters/Private/Gltf` | Punctual attenuation uses local range fade and linear cone ramp; the audit did not find `KHR_lights_punctual` import coverage. | Imported lights and authored renderer lights can diverge from glTF/physical light-unit expectations. | Stage 2A and Stage 4. | `KHR_lights_punctual`, Filament/Unreal physical light units. |
 | P1 | `Engine/Renderer/Private/Upscaling/UpscalerInputContract.h`, `Engine/Renderer/Private/Upscaling/NvidiaDlss/NvidiaDlssUpscalerProvider.cpp`, indirect lighting shaders | Provider contract currently covers DLSS SR/NativeAA-style inputs, but not DLRR/indirect reconstruction signals such as noisy indirect radiance, demodulated radiance, lobe id, hit distance, confidence, or variance. | Future indirect reconstruction can become provider-specific and duplicate signal definitions outside the frame graph. | Stage 0F, Stage 11, Stage 11A. | Streamline DLSS Ray Reconstruction, NRD, AMD FidelityFX provider resource patterns. |
-| P1 | `Engine/Application/Private/Validation/RhiSmokeViewportCapture.cpp`, `Engine/Application/Private/Validation/RhiSmokeCaptureArtifacts.cpp`, `Engine/Renderer/Private/Diagnostics/RendererSmokeDiagnosticsBuilder.cpp`, `Engine/Renderer/Public/Diagnostics/RendererSmokeDiagnostics.h` | Validation captures are smoke-oriented and BMP/diagnostic focused; no required HDR pre-tonemap signal capture pack or reference-output metric path exists yet. | PBR regressions in radiance, denoiser inputs, material parity, or display transform can pass smoke validation. | Stage 12 and Stage 13. | RTXPT/Falcor reference-output organization, NRD debug requirements. |
 | P1 | `Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerDispatcher.cpp`, `Tools/Cooking/MaterialCooker/Private/TextureCookRequestBuilder.cpp`, sky/environment shaders | The default EXR sky is cooked as a regular linear 2D texture and HDR sky import/orientation/calibration/importance-sampling policy is not yet a single asset contract. | Environment lighting can be visually plausible but physically uncalibrated or inconsistent with later importance sampling. | Stage 1, Stage 2A, Stage 9, Stage 13. | Filament image-based lighting, glTF texture/color-space policy, PBRT/RTXPT environment sampling. |
-| P2 | `Engine/Renderer/Private/Frame/Presentation/OutputEncodingSettings.cpp`, presentation shaders, RHI swapchain copy path | Stage 0D documents a local deviation: compute presentation writes encoded UNorm bytes before copy instead of relying on render-target hardware sRGB writes for sRGB swapchains. | Backbuffer encoding policy is explicit and deterministic, but still needs backend-level validation before claiming hardware sRGB compliance. | Stage 13 validation; deviation remains documented in Stage 0D until a render-target presentation path exists. | Filament display management, Falcor tone mapper/output path. |
-| P2 | `Engine/Renderer/Private/Frame/Deferred/GBufferFormats.h`, `Engine/Renderer/Private/Frame/Core/FrameSceneResources.cpp`, frame-graph resource builders | Format, units, history behavior, and provider consumers are discoverable in code but not yet consolidated into one typed signal registry. | New passes can repeat or conflict with resource semantics, especially for provider/debug/validation paths. | Stage 0F. | NRD, Streamline, Falcor, AMD FidelityFX resource contracts. |
+| P2 | `Engine/Renderer/Private/Frame/Presentation/OutputEncodingSettings.cpp`, presentation shaders, RHI swapchain copy path | Stage 0D documents a local deviation: compute presentation writes encoded UNorm bytes before copy instead of relying on render-target hardware sRGB writes for sRGB swapchains. | Backbuffer encoding policy is explicit and deterministic, but still needs backend-level cleanup before claiming hardware sRGB compliance. | Stage 13 cleanup; deviation remains documented in Stage 0D until a render-target presentation path exists. | Filament display management, Falcor tone mapper/output path. |
+| P2 | `Engine/Renderer/Private/Frame/Deferred/GBufferFormats.h`, `Engine/Renderer/Private/Frame/Core/FrameSceneResources.cpp`, frame-graph resource builders | Format, units, history behavior, and provider consumers are discoverable in effect-local code but not consistently referenced from pass/resource declarations. | New passes can repeat or conflict with resource semantics, especially for provider paths. | Stage 0F. | NRD, Streamline, Falcor, AMD FidelityFX resource contracts. |
 
 ## Stage 0F: Lock Render Target, Precision, and Signal Surface Contracts
 
@@ -385,7 +384,7 @@ Implementation prompt:
 
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
-Create a typed renderer signal contract for all PBR-relevant buffers. The contract must state owner, format, color space, units, valid range, lifetime, history behavior, and consumers. Fix any resource whose declared frame-graph format does not match the shader signal it stores.
+Create effect-owned signal contracts for PBR-relevant buffers. Each contract must state owner, format, color space, units, valid range, lifetime, history behavior, and consumers without adding a renderer-wide alias namespace. Fix any resource whose declared frame-graph format does not match the shader signal it stores.
 
 Reference lineage:
 
@@ -418,22 +417,22 @@ Signals to document:
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
-- A single signal table exists in docs or code comments and is referenced by pass/resource registration code.
+- Each signal family has one canonical contract in its owning effect/module docs or comments, and pass/resource registration code references that owner instead of duplicating prose.
 - Packed `float4` shadow or indirect signals are stored in matching multi-channel formats or resolved into explicitly named single-channel products before consumers see them.
 - Scene lighting and sky remain HDR linear until presentation; presentation output encoding is part of the display signal contract.
-- Provider input builders can reject missing or format-incompatible resources with diagnostics.
-- Debug views can inspect every denoiser/reconstruction signal before provider execution.
+- Provider input builders can reject missing or format-incompatible resources at the contract boundary.
+- Every denoiser/reconstruction signal has one owner for format, unit, color/geometry space, and lifetime before provider execution.
 - Reference compliance: each signal's unit/space/range is mapped to NRD, Streamline DLRR, Falcor, AMD FidelityFX, or the local renderer contract.
-- Reuse/DRY: NRD, DLRR, debug capture, validation capture, and future denoisers use one signal registry instead of duplicate resource descriptions.
+- Reuse/DRY: NRD, DLRR, and future denoisers reuse the effect-owned signal contracts instead of duplicate resource descriptions or a needless global format alias layer.
 
 Completion note:
 
-- Reference lineage: `04-PBR-Renderer-Signal-Contract.md` maps signal ownership, format, unit/space, range, lifetime/history, consumers, and debug route back to NRD-style denoiser guide resources, Streamline DLRR-style provider tags, Falcor-style render-graph resource ownership, AMD FidelityFX-style temporal/reset resource handling, and Sparkle's local linear-HDR lighting contract.
+- Reference lineage: `04-PBR-Renderer-Signal-Contract.md` maps signal ownership, format, unit/space, range, lifetime/history, and consumers back to NRD-style denoiser guide resources, Streamline DLRR-style provider tags, Falcor-style render-graph resource ownership, AMD FidelityFX-style temporal/reset resource handling, and Sparkle's local linear-HDR lighting contract.
 - Reuse/DRY audit: scanned `FrameRenderFormats`, `GBufferFormats`, `FrameSceneResources`, `LightingRenderTargets`, `FrameGraphDenoiserRegistration`, `ShadowDenoiseContract`, `UpscalerInputContract`, `LightingComposite`, `ToneMapping`, `OutputEncoding`, and the moved `RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli` body before adding the contract. Semantic prose lives in one docs table, while code format constants stay in effect-specific homes instead of a renderer-wide alias namespace.
 - Format fix: packed raw shadow signal resources are now `R32G32B32A32_Float` (`ShadowVisibilitySignalRaw` and `ShadowVisibilitySignalScratch`) matching `float4(visibility, hitDistance, confidence, maxDistance)`. Denoised visibility and denoised visibility history are explicitly scalar `R32_Float` products.
-- Provider validation: no provider-format shim was added in this stage. `UpscalerInputContract` remains the existing missing-resource/convention gate; real format rejection should be added only when the frame graph exposes actual resource descriptions to provider builders without duplicating constants.
+- Provider contract: no provider-format shim was added in this stage. `UpscalerInputContract` remains the existing missing-resource/convention gate; real format rejection should be added only when the frame graph exposes actual resource descriptions to provider builders without duplicating constants.
 - Source hygiene: no final shader/source comments or Reference lineage banners were added. The prompt's old deferred path for `RayTracedShadowDenoiserInputs.hlsli` is superseded by the Stage 0A module boundary move to `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`.
-- Remaining staged work: indirect denoiser/DLRR auxiliary buffers are reserved in the contract but intentionally not allocated until Stage 11/11A; expanded UI/debug capture for those future signals remains Stage 13 validation work.
+- Remaining staged work: indirect denoiser/DLRR auxiliary buffers are reserved in the contract but intentionally not allocated until Stage 11/11A.
 - Validation commands: rebuilt `ShowcaseEditor` DevelopmentEditor successfully; cooked `ToneMapping` and `OutputEncoding` for `DxilSm66` and `SpirV16` successfully; `LightingComposite` HLSL compiled for `DxilSm66` but package verification failed on the pre-existing reflected binding mismatch between shader cbuffer `PerFrameConstantBufferData` and registration layout alias `PerFrame`, so the full deferred shader-cook gate remains blocked by shader-registration naming cleanup outside the signal-format change.
 
 ## Stage 1: Fix Linear HDR Sky Transport
@@ -627,26 +626,26 @@ Required policy:
 - Normal, roughness, metallic, ambient occlusion, subsurface strength, F0/reflectance, packed material channels, and scalar masks are imported as data.
 - HDR sky/environment textures stay linear HDR and are never display tone mapped before lighting.
 - glTF metallic-roughness packed channel mapping is tested: roughness in green, metallic in blue.
-- `KHR_materials_specular`, `KHR_materials_ior`, and `KHR_materials_emissive_strength` are implemented or rejected with diagnostics and documented fallback behavior.
-- Specular-workflow texture sets such as Bistro `*_Specular` maps are converted into the supported material model, routed through a declared non-reference workflow, or rejected/ignored with diagnostics.
+- `KHR_materials_specular`, `KHR_materials_ior`, and `KHR_materials_emissive_strength` are implemented or fall back through a documented material policy.
+- Specular-workflow texture sets such as Bistro `*_Specular` maps are converted into the supported material model, routed through a declared non-reference workflow, or ignored through a documented fallback policy.
 - `KHR_lights_punctual` intensities are preserved or converted once into documented engine units.
 
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
-- Asset-cook tests prove color/data/HDR usages select the expected decode and compression policies.
-- A glTF material test proves packed metallic-roughness channels reach shaders unchanged except for intended normalization.
-- A specular-workflow asset test proves `*_Specular` texture sets are converted, routed, or rejected according to the documented policy.
+- Asset-cook policy enforces color/data/HDR decode and compression choices.
+- glTF metallic-roughness channels reach shaders unchanged except for intended normalization.
+- Specular-workflow assets are converted, routed, or ignored according to the documented policy.
 - A non-default dielectric F0/reflectance material produces matching primary deferred and ray-hit material values after Stage 2.
 - A glTF light calibration scene proves point/spot attenuation ratios at known distances after Stage 4.
 - HDR sky import and sampling preserve values above 1.0 until presentation after Stage 1.
 - Reference compliance: each color-space, packed-channel, extension, and light-unit decision cites glTF/Filament/Unreal in the implementation prompt or source comments.
-- Reuse/DRY: importers, cook policies, shader material decode, and validation tools share one material/texture-usage vocabulary; no separate tool-side and shader-side assumptions are allowed without a named conversion.
+- Reuse/DRY: importers, cook policies, and shader material decode share one material/texture-usage vocabulary; no separate tool-side and shader-side assumptions are allowed without a named conversion.
 
 Stage 2A implementation notes:
 
 - Reference lineage: color/data texture policy follows glTF's material texture roles and Filament/Unreal's color-vs-data split by keeping base color, emissive, and subsurface color in sRGB cook policy while normal, roughness, metallic, AO, masks, F0, and HDR color remain linear/data. Metallic-roughness packed-channel handling follows glTF's roughness-in-G and metallic-in-B convention. glTF `KHR_materials_emissive_strength` is applied as a multiplier to the imported emissive factor. glTF `KHR_materials_ior` maps to Sparkle's existing scalar dielectric `F0` with the normal-incidence reflectance equation also used by Filament/Unreal-style dielectric material models. `KHR_lights_punctual` values are still imported without hidden tone-mapping compensation; Stage 4 owns attenuation/unit calibration.
-- Local deviations: `KHR_materials_specular` is rejected with diagnostics instead of partially converted because Sparkle currently stores scalar dielectric `F0` and has no colored/specular-texture F0 material channel. Legacy `KHR_materials_pbrSpecularGlossiness` remains an approximate diffuse/roughness import with an unsupported-feature diagnostic. FBX/Assimp specular-workflow textures are no longer routed into metallic or AO; they fall back silently to Sparkle's current material defaults until a real conversion policy exists.
+- Local deviations: `KHR_materials_specular` is rejected by material policy instead of partially converted because Sparkle currently stores scalar dielectric `F0` and has no colored/specular-texture F0 material channel. Legacy `KHR_materials_pbrSpecularGlossiness` remains an approximate diffuse/roughness import through a documented unsupported-feature fallback. FBX/Assimp specular-workflow textures are no longer routed into metallic or AO; they fall back silently to Sparkle's current material defaults until a real conversion policy exists.
 - Reuse/DRY audit: scanned `TextureCookRequestBuilder`, texture cook format/compression policy, glTF material texture/property/feature importers, FBX material importer, light importer, material shader decode, GBuffer write/decode, and sky sampling before editing. The stage reuses existing `TextureGroup`, `ImportedMaterial`, cooked material `F0`, texture channel masks, and import diagnostic logs; it adds no renderer-wide registry, wrapper namespace, or duplicate texture-usage vocabulary.
 - Simplification audit: removed the hidden FBX specular-to-metallic/AO fallback without adding replacement reporting or helper indirection. No helper was added for IOR or emissive strength; the policy lives directly in the existing glTF property mapper.
 - Validation commands: built `SourceImporters`, `MaterialCooker`, `AssetCooker`, and `TextureCooker` for `DevelopmentEditor`; ran `AssetCooker collect-texture-requests Projects\Showcase\Assets\Meshes\DamagedHelmet\DamagedHelmet.gltf build\stage2a\damagedhelmet-texture-requests.txt`; ran `TextureCooker inspect-request-file` and `cook-request-file` on that request list. The inspection verified diffuse/emissive as sRGB-linearized, normal/AO/roughness/metallic as linear/data, AO in red, roughness in green, and metallic in blue; the cook completed 6/6 textures.
@@ -658,7 +657,7 @@ Implementation prompt:
 
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
-Define one convention for the geometry and temporal signals used by shading, ray tracing, denoisers, DLRR, and validation. This stage should happen before expanding denoiser resources, because wrong normal/depth/motion conventions produce plausible but non-physical reconstructed lighting.
+Define one convention for the geometry and temporal signals used by shading, ray tracing, denoisers, DLRR, and reference paths. This stage should happen before expanding denoiser resources, because wrong normal/depth/motion conventions produce plausible but non-physical reconstructed lighting.
 
 Reference lineage:
 
@@ -681,7 +680,7 @@ Files:
 
 Conventions to lock:
 
-- World-space vs view-space normal ownership for GBuffer, ray-hit shading, denoiser inputs, and debug views.
+- World-space vs view-space normal ownership for GBuffer, ray-hit shading, denoiser inputs, and reference paths.
 - Geometric normal, shading normal, face orientation, two-sided materials, normal-map handedness, and tangent-frame construction.
 - Ray-origin offset and self-intersection policy for primary, shadow, indirect, and reference rays.
 - Device depth vs linear viewZ, reversed-depth convention, and provider conversion location.
@@ -691,8 +690,8 @@ Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - A convention table names the owner and consumer for each geometry/temporal signal.
-- Primary GBuffer shading and ray-hit shading reconstruct matching normals and material orientation for a deterministic test mesh.
-- Motion vectors are verified against a known camera/object movement scene and match the provider contract.
+- Primary GBuffer shading and ray-hit shading use the same normal/orientation convention.
+- Motion vectors use the provider contract direction, units, and jitter policy.
 - Denoiser and DLRR provider builders receive normal/depth/motion signals in one documented space or perform one documented conversion.
 - Alpha-tested and two-sided materials use the same face/orientation rules in primary, shadow, indirect, and reference paths.
 - Reference compliance: every convention maps to NRD, Streamline DLRR, RTXPT/Falcor, PBRT, or a documented local engine decision.
@@ -712,7 +711,7 @@ Implementation prompt:
 
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
-Create a small shared BRDF validation harness or debug shader mode for furnace tests. Use it to verify the current GGX/Smith/Schlick implementation, then decide whether the reference mode uses Lambert diffuse or Burley diffuse. Mark subsurface as non-reference until energy compensation is implemented.
+Normalize the production BRDF around one explicit energy policy instead of adding diagnostic paths. Keep the current GGX/Smith/Schlick metallic-roughness model only if the code makes its energy terms clear, removes unused model switchboards, and keeps direct, indirect, and ray-hit lighting on the same BRDF functions. Decide whether the strict reference diffuse term is Lambert or production Burley, and make subsurface a documented non-reference lobe until it is energy-compensated.
 
 Reference lineage:
 
@@ -726,25 +725,26 @@ Files:
 - `Engine/Assets/Shaders/BRDF/*.hlsli`
 - `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
-- Test or validation docs under `Docs/Architecture/03-Validation` or `Docs/Rendering/PBR`.
+- BRDF contract notes under `Docs/Rendering/PBR`.
 
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
-- White-furnace tests pass for diffuse white, dielectric mixed, and metallic surfaces.
-- No material returns NaN or infinity at grazing NoV/NoL.
+- Unused BRDF model dispatch, dead reference toggles, and pass-local BRDF math are removed unless a real production path still uses them.
+- Diffuse white, mixed dielectric, and metallic materials have an explicit lobe energy budget; `diffuse + specular + subsurface` cannot silently exceed the chosen opaque-material policy.
+- No material path returns NaN or infinity at grazing NoV/NoL.
 - The meaning of `Geometry::EvaluateDirect` is documented as visibility `V` or raw geometry `G`.
-- Subsurface contribution is either disabled in reference mode or energy compensated against diffuse.
-- Reference compliance: each BRDF helper names the convention it follows and tests prove the chosen convention.
+- Subsurface contribution is either excluded from the reference/PBR energy path or energy compensated against diffuse.
+- Reference compliance: each kept BRDF helper names the convention it follows; deleted alternatives are not left behind as confusing half-supported paths.
 - Reuse/DRY: direct, indirect, and ray-hit lighting call the same BRDF helpers; no pass-local duplicate BRDF math remains.
 
-## Stage 3A: Add a Shading-Model and Lobe Energy Budget Registry
+## Stage 3A: Centralize Shading Model and Lobe Energy Policy
 
 Implementation prompt:
 
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
-Define the supported shading models and lobe weights as data, not scattered shader decisions. Direct lighting, indirect sampling, ray-hit lighting, reference path tracing, denoiser demodulation, and debug views must agree on which lobes exist, how they are weighted, which lobes are sampled, and how energy is conserved between them.
+Centralize the supported shading models and lobe weights in the existing material/BRDF homes. Do not introduce a registry or new naming layer unless the current material data cannot express the policy. Direct lighting, indirect sampling, ray-hit lighting, path tracing, and provider-facing demodulation must agree on which lobes exist, how they are weighted, which lobes are sampled, and how energy is conserved between them.
 
 Reference lineage:
 
@@ -752,7 +752,7 @@ Reference lineage:
 - Epic "Real Shading in Unreal Engine 4" metallic/specular/diffuse conventions: <https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf>
 - Unreal Engine physically based material parameter documentation.
 - PBRT BSDF/lobe reference model: <https://pbr-book.org/4ed/Reflection_Models>
-- NVIDIA RTXPT/Falcor path tracing BSDF organization for lobe selection and debugability.
+- NVIDIA RTXPT/Falcor path tracing BSDF organization for lobe selection and material/path modularity.
 
 Files:
 
@@ -765,7 +765,7 @@ Files:
 Required policy:
 
 - Declare supported lobes for the reference path: diffuse, dielectric specular, conductor specular, emissive, and optional subsurface.
-- Define lobe weights and PDFs from material data once, then reuse them in direct evaluation, BSDF sampling, denoiser demodulation, and debug views.
+- Define lobe weights and PDFs from material data once, then reuse them in direct evaluation, BSDF sampling, and provider-facing demodulation.
 - Ensure `diffuse + specular + subsurface/transmission/future lobes` does not exceed the intended energy budget for opaque reference materials.
 - Mark subsurface as disabled in reference mode until it is energy compensated against diffuse or implemented as a documented BSSRDF/approximation.
 - Keep artist-facing non-reference modes possible, but make them explicit deviations from the reference path.
@@ -773,12 +773,12 @@ Required policy:
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
-- A material debug view can display lobe weights, F0/specular color, diffuse albedo, roughness, metallic, and reference-mode eligibility.
-- White-furnace tests include diffuse, dielectric specular, metallic, rough metal, and subsurface-enabled materials.
+- The lobe policy lives in the smallest existing material/BRDF boundary that can own it; no new registry is added unless it replaces scattered logic.
+- Diffuse, dielectric specular, metallic, rough metal, and subsurface-enabled materials all resolve through the same lobe energy policy.
 - Direct lighting and indirect BSDF sampling use the same lobe definitions and roughness/F0 policy.
-- Denoiser demodulation uses the same diffuse/specular material factors that the BSDF registry reports.
+- Provider demodulation uses the same diffuse/specular material factors as the BSDF/lobe policy.
 - Reference compliance: lobe weights and conservation rules cite Filament/Epic/PBRT/RTXPT/Falcor and document local deviations.
-- Reuse/DRY: no pass computes its own lobe split, diffuse albedo, specular albedo, or subsurface energy outside the shared material/BSDF registry.
+- Reuse/DRY: no pass computes its own lobe split, diffuse albedo, specular albedo, or subsurface energy outside the shared material/BRDF policy.
 
 ## Stage 4: Fix Punctual Light Units and Falloff
 
@@ -787,6 +787,7 @@ Implementation prompt:
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Define engine units for directional, point, and spot lights. Align glTF-imported point/spot intensity with candela and directional intensity with lux or a documented calibrated engine unit. Replace current range and cone attenuation with a glTF/Filament-compatible punctual falloff policy, or document a deliberate engine policy and convert imports into that policy.
+The same unit workflow must be visible in editor controls, level serialization, cooked light records, runtime scene data, render-view constant buffers, and shader consumers; it is not allowed to exist only as importer-side knowledge.
 
 Reference lineage:
 
@@ -798,7 +799,12 @@ Reference lineage:
 Files:
 
 - `Tools/Import/SourceImporters/Private/Gltf/GltfLightImporter.cpp`
+- `Engine/Editor/Private/Panels/SceneLightInspector.cpp`
+- `Engine/GameFramework/Private/Level/Parsing/LightingSectionParser.cpp`
+- `Engine/GameFramework/Public/Assets/Cooked/CookedSceneLightRecord.h`
 - `Engine/GameFramework/Private/Scene/Lighting/Snapshots/SceneLightingSnapshotBuilder.cpp`
+- `Engine/Renderer/Public/SceneData/*.h`
+- `Engine/Assets/Shaders/Resources/LightConstantBufferData.hlsli`
 - `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`
 - `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingHitLighting.hlsli`
@@ -832,10 +838,19 @@ Acceptance criteria:
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Point and spot light falloff matches the selected unit policy.
 - glTF `KHR_lights_punctual` imports do not need arbitrary intensity compensation.
+- Editor UI, serialized levels, cooked records, runtime scene data, render-view buffers, and shaders expose the same unit contract: directional lights in lux, point and spot lights in candela.
 - Primary direct and secondary hit direct use the same falloff and cone functions.
-- A light calibration scene records expected luminance at known distances.
+- The unit policy is explicit enough that expected luminance at known distances can be derived without per-asset compensation.
 - Reference compliance: unit conversion and falloff formulas cite glTF/Filament/Unreal and document any deviation.
-- Reuse/DRY: direct primary lighting, ray-hit lighting, validation tools, and import conversion use one canonical punctual-light policy.
+- Reuse/DRY: direct primary lighting, ray-hit lighting, and import conversion use one canonical punctual-light policy.
+
+Completion note:
+
+- Reference lineage: Sparkle now follows the glTF `KHR_lights_punctual` and Filament punctual-light convention for units: directional intensity is illuminance in lux, point and spot intensity are luminous intensity in candela, point/spot distance falloff is inverse-square, and range is an optional smooth cutoff instead of an intensity unit conversion. Spot cone attenuation follows the glTF smooth cone rule with a squared interpolation term. Unreal/Epic remain the direct-lighting material/BRDF reference for consuming the resulting incident light in the shared surface evaluator.
+- Local deviation: finite source radius still affects stochastic shadow sampling only; it does not turn point/spot lights into physically integrated area lights. Stage 4A owns that finite-light policy.
+- Reuse/DRY audit: scanned `GltfLightImporter`, editor light controls, level light parsing/serialization, cooked scene light records/builders, scene-asset light translation, `SceneLightingSnapshotBuilder`, render-light upload, `RenderViewLightingData`, `LightConstantBufferData`, `PunctualLights`, `SurfaceLighting`, `RayTracingHitLighting`, `DirectLighting`, and shadow trace consumers before editing. The implementation keeps the canonical falloff and cone math in `Lighting/PunctualLights.hlsli`; primary direct lighting and ray-hit direct lighting already call those helpers, so no wrapper or new policy namespace was added.
+- Implementation: `PunctualLights::ComputeDistanceAttenuation` now uses `1 / max(distance^2, 1.0e-4)` with the `smooth^2` `1 - x^4` range cutoff, and `ComputeSpotConeAttenuation` now squares the cone ramp. glTF/imported and authored light intensity values pass through without arbitrary compensation. The editor labels directional intensity as lux and point/spot intensity as candela; serialized levels now write `IntensityLux` or `IntensityCandela` while still accepting older `Intensity` fields. Cooked/runtime/render-view/shader light structs carry the same unit contract. Spot outer cone defaults now match the glTF default `pi/4` where local light records are initialized.
+- Build checks: cooked `DirectLightingNoRayQuery`, `DirectLighting`, `DirectLightingVulkanAddress`, `IndirectDiffuse`, and `IndirectSpecular` for `DxilSm66` and `SpirV16`; built `ShowcaseEditor`, `SourceImporters`, `SceneCooker`, and `ShaderCompiler` for `DevelopmentEditor`.
 
 ## Stage 4A: Define Finite Light Source and Soft-Shadow Approximation Policy
 
@@ -867,17 +882,17 @@ Required policy:
 
 - Punctual mode: source radius may affect stochastic shadow penumbra only and does not change emitted intensity or direct BRDF radiance.
 - Area-light mode, if introduced: sample a position/direction on the light, evaluate geometry term, emission, visibility, and PDF, then use MIS when combined with BSDF sampling.
-- Validation must expose whether a light is evaluated as punctual-with-soft-shadow or physically finite.
+- The light data model must explicitly say whether a light is evaluated as punctual-with-soft-shadow or physically finite.
 
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Changing source radius in punctual mode changes penumbra shape but not unoccluded irradiance beyond documented approximation tolerance.
 - Any physically finite-light mode has explicit light sampling PDFs and does not reuse point-light attenuation as if it were an area-light integral.
-- Primary direct lighting, secondary direct lighting, and reference path tracing report the same light classification.
-- Validation scenes include unoccluded intensity, penumbra, and finite-light/reference comparisons.
+- Primary direct lighting, secondary direct lighting, and path tracing use the same light classification.
+- Unoccluded intensity is invariant under source-radius changes in punctual mode except for documented approximation limits.
 - Reference compliance: soft-shadow approximation and any finite-light integration cite PBRT/RTXPT/Falcor/Unreal/Filament and document deviations.
-- Reuse/DRY: light classification, radius policy, sampling, and debug labels are stored once and reused by direct, shadow, indirect, and validation code.
+- Reuse/DRY: light classification, radius policy, and sampling are stored once and reused by direct, shadow, and indirect code.
 
 ## Stage 5: Make Direct Shadows Physically Usable
 
@@ -941,10 +956,9 @@ Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - `r.RayTracedShadows.Denoiser=0` uses raw visibility.
-- `r.RayTracedShadows.Denoiser=1` requests SIGMA if available and falls back with diagnostics if unavailable.
+- `r.RayTracedShadows.Denoiser=1` requests SIGMA only when the provider boundary can satisfy the required resources; otherwise it uses the existing raw-visibility path without adding noisy local fallback code.
 - History resources are persistent and reset on camera cut, resize, and feature toggles.
-- Denoised visibility is inspectable in a debug view.
-- Reference compliance: resource names, signal ranges, history reset behavior, and fallback diagnostics are checked against NRD SIGMA guidance.
+- Reference compliance: resource names, signal ranges, history reset behavior, and provider fallback behavior map to NRD SIGMA guidance.
 - Reuse/DRY: the denoiser path reuses provider-neutral frame graph/product infrastructure and does not fork shadow visibility resource ownership.
 
 ## Stage 7: Replace Split Bounce Logic With Unified BSDF Path Sampling
@@ -1005,7 +1019,6 @@ Acceptance criteria:
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Single-bounce output matches the previous diffuse/specular passes within expected sampling variance.
 - Multi-bounce paths can include diffuse-after-specular and specular-after-diffuse.
-- Debug views expose sampled lobe, PDF, throughput, hit distance, hit normal, and rejection reason.
 - Reference mode can run more than one bounce without needing non-physical intensity multipliers.
 - `IndirectDiffuse.hlsl` and `IndirectSpecular.hlsl` both call the same BSDF/path sampling code.
 - No new path sampling code is named after only diffuse or only specular unless it truly supports only that lobe.
@@ -1068,8 +1081,8 @@ Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - HDR sky with small bright sun converges faster than cosine-only sampling.
-- MIS weights are debug-visible.
-- Energy matches brute-force high-sample cosine sampling.
+- MIS weights are computed from the same PDFs used by BSDF and environment sampling.
+- Energy remains consistent with the selected sky radiance and BSDF throughput policy.
 - Miss rays still use the same `SampleSkyEnvironmentRadiance` function.
 - Reference compliance: environment PDF, luminance measure, solid-angle weighting, and MIS weights are documented against PBRT/RTXPT/Falcor.
 - Reuse/DRY: sky miss radiance and environment importance sampling share one sky orientation/radiance convention and one environment metadata owner.
@@ -1099,10 +1112,10 @@ Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - An emissive panel lights nearby diffuse surfaces without requiring only random ray hits.
-- High-sample reference matches hit-only estimation.
+- Explicit emitter sampling and hit-only estimation share emitted-radiance decode and double-counting policy.
 - Emissive geometry does not get double counted when directly visible to a path ray.
 - Reference compliance: emitter selection PDF, area measure, emitted radiance, and MIS/double-counting policy are documented against PBRT/RTXPT/Falcor.
-- Reuse/DRY: emissive-on-hit and explicit emissive sampling share one emissive-material radiance decode and one emitter registry.
+- Reuse/DRY: emissive-on-hit and explicit emissive sampling share one emissive-material radiance decode and one emitter list/selection owner.
 
 ## Stage 11: Prepare DLRR or Other Indirect Reconstruction Inputs
 
@@ -1145,8 +1158,7 @@ Acceptance criteria:
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - DLSS Super Resolution path still works unchanged.
 - A DLRR-capable provider can be selected only when all required resources are available.
-- Missing resources produce diagnostics, not silent fallback to an invalid reconstruction path.
-- Raw indirect debug views remain available when reconstruction is enabled.
+- Missing resources fail provider selection at the contract boundary instead of silently falling back to an invalid reconstruction path.
 - Reference compliance: each provider input resource is mapped to Streamline DLRR, NRD, or RTXPT signal expectations, with units/ranges documented.
 - Reuse/DRY: DLRR/reconstruction integration extends the existing provider contract and render-product registration instead of creating a parallel provider system.
 
@@ -1163,7 +1175,7 @@ Reference lineage:
 - NVIDIA Streamline DLSS Ray Reconstruction programming guide for required resource tags such as noisy color, diffuse albedo, specular albedo, normal, roughness, depth, motion, and specular hit distance: <https://github.com/NVIDIAGameWorks/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md>
 - NVIDIA NRD REBLUR/RELAX signal conventions for demodulated radiance, hit distance, roughness, normals, viewZ, motion, and history: <https://github.com/NVIDIA-RTX/NRD>
 - NVIDIA RTXPT/Falcor path tracing denoiser-output structure and debug passes.
-- AMD FidelityFX denoiser/upscaler examples for temporal resource contracts and diagnostics.
+- AMD FidelityFX denoiser/upscaler examples for temporal resource contracts.
 - Existing Sparkle `UpscalerInputContract` and frame-graph product registration must be extended rather than bypassed.
 
 Files:
@@ -1182,17 +1194,16 @@ Required buffers or views:
 - Diffuse albedo, specular albedo/F0, roughness, metallic or lobe metadata, and material validity flags.
 - First-bounce hit distance for diffuse/specular rays and specular hit distance for DLRR-style reconstruction.
 - Shading normal or provider-required normal space, depth/viewZ, motion vectors, exposure, confidence/variance, lobe id, and history reset.
-- Debug views for every buffer before provider execution.
+- Provider-facing buffers have one documented writer and one documented format/space owner.
 
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
 - Indirect passes can output provider-neutral auxiliary buffers without changing lighting math.
-- DLRR/NRD-capable provider selection validates that all required auxiliary buffers exist and match documented formats.
-- Debug capture can show raw noisy radiance, demodulated radiance, albedo, specular/F0, roughness, hit distance, normal, motion, and confidence.
-- Reconstruction can be disabled while leaving the same auxiliary buffers available for validation.
+- DLRR/NRD-capable provider selection requires all auxiliary buffers to exist and match documented formats.
+- Reconstruction can be disabled without changing the real-time lighting math or duplicating auxiliary writers.
 - Reference compliance: each auxiliary signal is mapped to Streamline DLRR, NRD, RTXPT/Falcor, or AMD FidelityFX expectations and units.
-- Reuse/DRY: indirect diffuse, indirect specular, reference mode, DLRR, NRD, and debug views share the same auxiliary signal writers/registry instead of each effect inventing a private layout.
+- Reuse/DRY: indirect diffuse, indirect specular, reference mode, DLRR, and NRD share the same auxiliary signal writers instead of each effect inventing a private layout.
 
 ## Stage 12: Add a High-Sample Reference Mode
 
@@ -1212,37 +1223,36 @@ Reference lineage:
 Files:
 
 - New path tracing shader/pass, or a reference mode in existing indirect path infrastructure.
-- Capture tooling for HDR/EXR or float target dumps.
-- Validation docs.
+- Existing presentation/output paths only if a high-sample result needs a visible target.
+- Reference-mode contract notes under `Docs/Rendering/PBR`.
 
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
-- Captures can accumulate many samples per pixel deterministically.
-- Same scene can output real-time direct/indirect and reference path-traced buffers.
-- Difference images can be produced for direct, indirect diffuse, indirect specular, and composed scene color.
-- The validation scenes from `01-PBR-Reference-Requirements.md` have expected captures.
-- Reference compliance: reference-mode equations, sampling, accumulation, and capture outputs are documented against PBRT/RTXPT/Falcor/Unreal.
+- The reference mode can accumulate many samples per pixel into a linear HDR radiance target.
+- The same scene data can be shaded by real-time direct/indirect and reference path-traced paths without duplicate material/light/sky code.
+- Direct, indirect diffuse, indirect specular, and composed scene color have clear reference-mode equivalents.
+- Reference compliance: reference-mode equations, sampling, and accumulation are documented against PBRT/RTXPT/Falcor/Unreal.
 - Reuse/DRY: reference mode shares material decode, BRDF, light units, sky radiance, alpha-test, and path sampling modules with the real-time path wherever possible.
 
-## Stage 13: Build the PBR Validation and Review Pack
+## Stage 13: Final PBR Architecture and Cleanup Gate
 
 Implementation prompt:
 
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
-Create a repeatable review pack that a renderer engineer can use to verify the implementation without trusting screenshots by eye. The pack must include deterministic validation scenes, capture scripts or commands, metrics, reference images/buffers, and per-stage evidence notes. This is the final gate for claiming the renderer is ready to build production PBR features on top of.
+Run a final cleanup and architecture pass over the PBR work before treating it as a foundation. This gate removes temporary toggles, diagnostic leftovers, stale docs, duplicate helpers, debug-only indirection, unowned signal descriptions, and pass-local forks that accumulated during implementation. It is not a request to build a new validation framework.
 
 Reference lineage:
 
-- PBRT reference path tracing equations and validation mentality: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
-- NVIDIA RTXPT and Falcor reference/path-tracing capture and debug-pass organization.
-- NVIDIA NRD debug and validation expectations for denoiser inputs.
-- NVIDIA Streamline DLSS Ray Reconstruction integration diagnostics.
-- AMD FidelityFX SDK sample validation and debug-resource patterns.
+- PBRT reference path tracing equations: <https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer>
+- NVIDIA RTXPT and Falcor reference/path-tracing organization.
+- NVIDIA NRD denoiser signal ownership expectations.
+- NVIDIA Streamline DLSS Ray Reconstruction provider-resource tagging.
+- AMD FidelityFX SDK temporal resource patterns.
 - Unreal Engine path tracer as artist-facing ground-truth comparison reference.
 
-Validation scenes:
+Correctness surfaces to audit, using existing scenes or minimal fixtures only when needed:
 
 - White furnace: diffuse white, dielectric, rough metal, mirror metal, and subsurface/off-reference variants.
 - Mirror sky: perfect mirror reflecting HDR sky before presentation.
@@ -1254,22 +1264,20 @@ Validation scenes:
 - Motion/history: camera cut, object motion, resize, and jitter reset.
 - Tone mapping/exposure: black, gray, HDR ramp, bright sky, non-power-of-two extent.
 
-Required outputs:
+Required cleanup outcomes:
 
-- Pre-tonemap HDR scene color, direct lighting, indirect diffuse, indirect specular, sky, emissive, shadow visibility, shadow hit distance, denoiser auxiliary buffers, exposure, and final presentation.
-- High-sample reference captures for scenes where the reference path tracer is available.
-- Difference images and scalar metrics for energy, luminance ratios, convergence, NaN/Inf counts, and provider input availability.
-- A short evidence note for each completed implementation stage: references followed, files changed, tests/captures run, deviations, and reuse/DRY audit result.
+- Stale debug-only paths, unused feature toggles, redundant wrappers, obsolete docs, and duplicate signal descriptions are removed or explicitly justified.
+- Pre-tonemap HDR scene color, direct lighting, indirect diffuse, indirect specular, sky, emissive, shadow visibility, shadow hit distance, denoiser auxiliary buffers, exposure, and final presentation keep one owner for format/space/unit semantics.
+- Any remaining local deviation from PBRT/Filament/Unreal/RTXPT/Falcor/NRD/Streamline/AMD is named in the owning stage, not hidden in code comments.
+- Each completed implementation stage records references followed, files changed, deviations, and reuse/DRY cleanup result.
 
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
-- A reviewer can reproduce the validation pack from documented commands or editor actions.
-- Every P0/P1/P2 stage has at least one validation scene or debug capture proving the core signal.
-- Failures identify the owning stage and signal instead of only reporting "image mismatch."
-- Captures prove tone mapping happens once, sky remains HDR before presentation, F0 matches between primary/ray-hit shading, shadows honor alpha testing, and denoiser buffers have valid units/ranges.
-- Reference compliance: validation expectations are tied to PBRT/RTXPT/Falcor/NRD/Streamline/AMD/Unreal references and local documented deviations.
-- Reuse/DRY: validation capture, debug views, provider diagnostics, and reference mode reuse the same signal registry and scene definitions where possible.
+- No PBR stage leaves behind a duplicate helper, stale wrapper, pass-local fork, or doc-only contract that conflicts with source ownership.
+- Tone mapping happens once, sky remains HDR before presentation, F0 matches between primary/ray-hit shading, shadows honor alpha testing, and denoiser buffers have valid units/ranges by construction of the owning modules.
+- Reference compliance: final contracts are tied to PBRT/RTXPT/Falcor/NRD/Streamline/AMD/Unreal references and local documented deviations.
+- Reuse/DRY: reference mode, provider paths, and real-time passes reuse the same material, BRDF, light, sky, visibility, and signal ownership code where possible.
 
 ## Recommended Implementation Order
 
@@ -1286,7 +1294,7 @@ Do these first:
 9. Stage 2B: geometry, normal, depth, motion, and temporal conventions.
 10. Stage 2: material F0 and roughness consistency.
 11. Stage 2C: full roughness range and reference roughness policy.
-12. Stage 3A: shading-model and lobe energy budget registry.
+12. Stage 3A: centralized shading-model and lobe energy policy.
 13. Stage 4: light units/falloff.
 14. Stage 4A: finite light source and soft-shadow approximation policy.
 15. Stage 5: alpha-tested shadows, raw visibility, hit distance, and signal format split.
@@ -1301,9 +1309,9 @@ Then:
 21. Stage 11: DLRR resource contract.
 22. Stage 11A: indirect denoiser auxiliary signal buffers.
 23. Stage 12: high-sample reference mode.
-24. Stage 13: PBR validation and review pack.
+24. Stage 13: final PBR architecture and cleanup gate.
 
-Stage 3 validation should run throughout. Stage 13 should start early as scenes and captures become possible, then close at the end as the review gate.
+Shader cook/build checks should run throughout. Stage 13 should start early as cleanup opportunities appear, then close at the end as the architecture gate.
 
 ## Definition of Done for "PBR Correct Enough to Build On"
 
@@ -1319,10 +1327,10 @@ The renderer is on a credible ground-truth path when all of these are true:
 - Secondary hit direct lighting can be shadowed.
 - Raw denoiser inputs exist separately from final lighting targets.
 - Denoiser/reconstruction signal formats match the shader data written into them.
-- Asset import/cooking tests prove color-space, packed-channel, HDR sky, and light-unit contracts.
+- Asset import/cooking paths enforce color-space, packed-channel, HDR sky, and light-unit contracts.
 - Normal, depth/viewZ, motion-vector, jitter, and history-reset conventions are locked at the provider boundary.
-- Validation scenes can compare real-time output against a high-sample reference.
-- A repeatable review pack includes captures, metrics, references followed, known deviations, and reuse/DRY evidence.
+- Real-time output and high-sample reference mode share material, BRDF, light, sky, and path sampling code wherever practical.
+- Final stage notes include references followed, known deviations, and reuse/DRY cleanup evidence.
 - Reusable lighting/ray-tracing shader modules do not depend on pass-specific deferred files.
 - Pass entrypoints are small orchestration layers over concept-named modules.
 - New lighting features reuse shared light, surface, path, visibility, and sky code instead of forking effect-local copies.

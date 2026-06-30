@@ -60,7 +60,7 @@ void SceneLightInspector::BuildGenericLight(
 
 void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Light", "intensity color visible visibility rendering"))
+	if (!UiUtil::MatchesDetailsFilter(filterText, "Light", "intensity lux candela color visible visibility rendering"))
 	{
 		return;
 	}
@@ -72,9 +72,19 @@ void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText
 
 	float intensity = lightDesc.common.intensity;
 	constexpr float kDefaultIntensity = 1.0f;
-	if (UiUtil::EditDetailsFloat("Intensity", intensity, 0.05f, kIntensitySliderMin, kIntensitySliderMax, "%.3f", &kDefaultIntensity))
+	const bool isDirectionalLight = lightDesc.GetDirectional() != nullptr;
+	const char* intensityLabel = isDirectionalLight ? "Intensity (lux)" : "Intensity (candela)";
+	const float intensityDragSpeed = isDirectionalLight ? 100.0f : 10.0f;
+	if (UiUtil::EditDetailsFloat(
+	        intensityLabel,
+	        intensity,
+	        intensityDragSpeed,
+	        0.0f,
+	        0.0f,
+	        "%.3f",
+	        &kDefaultIntensity))
 	{
-		lightDesc.common.intensity = intensity;
+		lightDesc.common.intensity = (std::max) (0.0f, intensity);
 	}
 
 	float colorValues[3] = {lightDesc.common.color.x, lightDesc.common.color.y, lightDesc.common.color.z};
@@ -245,7 +255,7 @@ void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	}
 
 	float outerConeDegrees = MathUtils::RadiansToDegrees(lightDesc.outerConeAngleRadians);
-	constexpr float kDefaultOuterConeDegrees = 0.0f;
+	constexpr float kDefaultOuterConeDegrees = 45.0f;
 	if (UiUtil::EditDetailsFloat("Outer Cone", outerConeDegrees, 0.1f, 0.0f, 180.0f, "%.2f", &kDefaultOuterConeDegrees))
 	{
 		lightDesc.outerConeAngleRadians = MathUtils::DegreesToRadians((std::max) (0.0f, outerConeDegrees));

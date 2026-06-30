@@ -148,7 +148,7 @@ Relevant code:
 Remaining issues:
 
 - Local light attenuation is `1 / distance^2 * (1 - distance / range)^2`. This is not the glTF punctual range falloff and dims much more aggressively across the range.
-- Spot cone attenuation is linear in the cone ramp. glTF-compatible punctual lights normally square the cone attenuation.
+- Stage 4 now uses a glTF/Filament-style punctual-light policy: directional intensity is treated as lux, point/spot intensity as candela, distance attenuation is inverse-square with optional smooth range cutoff, and spot cone attenuation uses the squared smooth cone ramp.
 - Source radius affects stochastic shadow sampling but not direct-light radiometry. This is a punctual-light-with-soft-shadow approximation, not a physically sampled area light.
 - The previous direct-lighting `0.04` roughness floor has been removed. Direct analytic lighting has no pass-local mirror/delta branch; singularity handling is localized to BRDF denominator/PDF safety, while finite-light and area-light policy remains Stage 4/4A work.
 
@@ -341,13 +341,13 @@ Current strengths:
 - The glTF importer maps base color, normal, AO, emissive, and packed metallic-roughness textures into material slots.
 - The glTF importer applies `KHR_materials_emissive_strength`, maps `KHR_materials_ior` to the existing scalar cooked material `F0`, and keeps `KHR_materials_specular` as an unsupported diagnostic instead of inventing a partial colored/specular-texture conversion.
 - The glTF light importer reads `KHR_lights_punctual` light color, intensity, range, cone angles, and direction.
+- Light intensity units now flow through importer, editor UI, level serialization, cooked records, runtime scene data, render-view constants, and shaders with directional lights in lux and point/spot lights in candela.
 - The repository already contains useful validation assets: EXR/HDR sky textures, glTF sample scenes such as DamagedHelmet/Sponza-style content, and Bistro-style BaseColor/Normal/Specular DDS texture sets.
 
 Issues:
 
 - The plan does not yet require deterministic asset-cook tests proving that each texture usage reaches the shader with the intended color-space and channel semantics.
 - glTF scalar IOR and emissive strength are now imported through the existing material contract, while colored/specular-texture F0 from `KHR_materials_specular` remains unsupported with diagnostics.
-- Imported punctual light intensity units need a single documented conversion path into engine units. Otherwise light calibration can be accidentally fixed later by tone mapping or arbitrary intensity multipliers.
 - HDR sky/environment texture import must be proven to stay linear HDR through sampling and presentation.
 - Specular-workflow assets, such as Bistro `*_Specular` textures, are not converted into metallic/AO fallbacks; FBX/Assimp specular texture bindings fall back to Sparkle's current material defaults until a real conversion or material-model extension exists. A checked-in validation scene for those loose Bistro texture sets is still missing.
 
@@ -493,7 +493,7 @@ P1 path-tracing convergence blockers:
 2. Environment importance sampling is missing.
 3. Emissive geometry is only found by random hit, with no explicit emitter sampling.
 4. Source radius creates soft-shadow approximation but not physically integrated area-light radiance.
-5. Full roughness range is implemented for the current direct, indirect diffuse, indirect specular, and ray-hit direct shader paths: material roughness is not floored or reused as compensation, direct/ray-hit lighting use one BRDF path, and mirror-vs-GGX sampling lives in shared BRDF sampling code. Stage 13 still needs capture validation for roughness sweeps and mirror-sky behavior; Stage 4/4A still owns finite-light policy; Stage 11/11A still owns denoiser auxiliary roughness resources.
+5. Full roughness range is implemented for the current direct, indirect diffuse, indirect specular, and ray-hit direct shader paths: material roughness is not floored or reused as compensation, direct/ray-hit lighting use one BRDF path, and mirror-vs-GGX sampling lives in shared BRDF sampling code. Stage 4 owns punctual light units/falloff, Stage 4A still owns finite-light policy, and Stage 11/11A still owns denoiser auxiliary roughness resources.
 6. There is no shared lobe-energy budget for diffuse, specular, subsurface, transmission/future lobes, direct lighting, indirect sampling, and reference path tracing.
 
 P2 denoiser readiness blockers:
@@ -505,15 +505,6 @@ P2 denoiser readiness blockers:
 5. Shadow hit-distance generation is not yet compatible with NRD SIGMA-style occluder-distance requirements.
 6. Packed shadow signal formats and frame-graph resource formats are not yet reconciled.
 7. Motion-vector, depth/viewZ, normal-space, jitter, and history-reset contracts need to be locked for all denoiser and reconstruction providers.
-
-P3 validation gaps:
-
-1. No visible white-furnace, mirror-sky, or glTF light calibration tests.
-2. No high-sample reference path tracer mode.
-3. No automated radiance statistics for lighting targets.
-4. No EXR/HDR capture contract for pre-tonemap buffers.
-5. No asset-cook/color-space validation pack for physically meaningful texture and light import.
-6. No review bundle that maps each completed stage to references followed, captures produced, and known deviations.
 
 P4 structural blockers:
 

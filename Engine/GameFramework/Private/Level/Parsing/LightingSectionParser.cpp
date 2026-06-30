@@ -64,11 +64,12 @@ namespace
 			return true;
 		}
 
-		if (key == "Intensity" || key == "DirectionalIntensity")
+		if (key == "Intensity" || key == "IntensityLux" || key == "DirectionalIntensity" ||
+		    key == "DirectionalIntensityLux")
 		{
 			outKey.kind = SceneLightKind::Directional;
 			outKey.index = 0;
-			outKey.field = "Intensity";
+			outKey.field = "IntensityLux";
 			return true;
 		}
 
@@ -223,7 +224,12 @@ namespace
 		return lights.back();
 	}
 
-	bool ParseCommonLightField(std::string_view field, const ParsedLevelLine& parsedLine, SceneLightCommonDesc& common, std::string& errorMessage)
+	bool ParseCommonLightField(
+	    std::string_view field,
+	    const ParsedLevelLine& parsedLine,
+	    SceneLightCommonDesc& common,
+	    std::string& errorMessage,
+	    std::string_view intensityField)
 	{
 		if (field == "Name")
 		{
@@ -241,7 +247,7 @@ namespace
 			return true;
 		}
 
-		if (field == "Intensity")
+		if (field == "Intensity" || field == intensityField)
 		{
 			if (!Strings::TryParseFloat(parsedLine.value, common.intensity))
 			{
@@ -302,7 +308,7 @@ namespace
 			return true;
 		}
 
-		if (ParseCommonLightField(directionalLightField, parsedLine, lightDesc.common, errorMessage))
+		if (ParseCommonLightField(directionalLightField, parsedLine, lightDesc.common, errorMessage, "IntensityLux"))
 		{
 			lightDesc.payload = directional;
 			return true;
@@ -349,7 +355,7 @@ namespace
 
 		PointLightDesc point = lightDesc.GetPoint() != nullptr ? *lightDesc.GetPoint() : PointLightDesc{};
 
-		if (ParseCommonLightField(pointLightField, parsedLine, lightDesc.common, errorMessage))
+		if (ParseCommonLightField(pointLightField, parsedLine, lightDesc.common, errorMessage, "IntensityCandela"))
 		{
 			lightDesc.payload = point;
 			return true;
@@ -407,7 +413,7 @@ namespace
 
 		SpotLightDesc spot = lightDesc.GetSpot() != nullptr ? *lightDesc.GetSpot() : SpotLightDesc{};
 
-		if (ParseCommonLightField(spotLightField, parsedLine, lightDesc.common, errorMessage))
+		if (ParseCommonLightField(spotLightField, parsedLine, lightDesc.common, errorMessage, "IntensityCandela"))
 		{
 			lightDesc.payload = spot;
 			return true;
@@ -489,7 +495,7 @@ namespace
 		return false;
 	}
 
-	void WriteCommonLightFields(std::ofstream& output, std::string_view prefix, const SceneLightCommonDesc& common)
+	void WriteCommonLightFields(std::ofstream& output, std::string_view prefix, const SceneLightCommonDesc& common, std::string_view intensityField)
 	{
 		if (!common.name.empty())
 		{
@@ -497,7 +503,7 @@ namespace
 		}
 		output << prefix << "Position = " << common.worldTransform._41 << ", " << common.worldTransform._42 << ", " << common.worldTransform._43
 		       << "\n";
-		output << prefix << "Intensity = " << common.intensity << "\n";
+		output << prefix << intensityField << " = " << common.intensity << "\n";
 		output << prefix << "Color = " << common.color.x << ", " << common.color.y << ", " << common.color.z << "\n";
 		output << prefix << "Visible = " << (common.visible ? "true" : "false") << "\n";
 	}
@@ -552,7 +558,7 @@ namespace LevelParsing
 			if (const SceneDirectionalLightDesc* directional = light.GetDirectional())
 			{
 				const std::string prefix = "DirectionalLight" + std::to_string(directionalIndex++);
-				WriteCommonLightFields(output, prefix, light.common);
+				WriteCommonLightFields(output, prefix, light.common, "IntensityLux");
 				output << prefix << "Direction = " << directional->direction.x << ", " << directional->direction.y << ", "
 				       << directional->direction.z << "\n";
 				output << prefix << "AngularDiameterRadians = " << directional->angularDiameterRadians << "\n";
@@ -563,7 +569,7 @@ namespace LevelParsing
 			if (const PointLightDesc* point = light.GetPoint())
 			{
 				const std::string prefix = "PointLight" + std::to_string(pointIndex++);
-				WriteCommonLightFields(output, prefix, light.common);
+				WriteCommonLightFields(output, prefix, light.common, "IntensityCandela");
 				output << prefix << "Range = " << point->range << "\n";
 				output << prefix << "SourceRadius = " << point->sourceRadius << "\n";
 				output << prefix << "CastShadow = " << (point->castShadow ? "true" : "false") << "\n";
@@ -573,7 +579,7 @@ namespace LevelParsing
 			if (const SpotLightDesc* spot = light.GetSpot())
 			{
 				const std::string prefix = "SpotLight" + std::to_string(spotIndex++);
-				WriteCommonLightFields(output, prefix, light.common);
+				WriteCommonLightFields(output, prefix, light.common, "IntensityCandela");
 				output << prefix << "Direction = " << spot->direction.x << ", " << spot->direction.y << ", " << spot->direction.z << "\n";
 				output << prefix << "Range = " << spot->range << "\n";
 				output << prefix << "SourceRadius = " << spot->sourceRadius << "\n";

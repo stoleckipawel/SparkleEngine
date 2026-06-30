@@ -8,6 +8,7 @@
 struct DirectionalLightConstantBufferData
 {
 	DirectX::XMFLOAT3 Direction = {0.0f, -1.0f, 0.0f};
+	// Illuminance in lux.
 	float Intensity = 1.0f;
 
 	DirectX::XMFLOAT3 Color = {1.0f, 1.0f, 1.0f};
@@ -23,6 +24,7 @@ struct PointLightConstantBufferData
 	float Range = 0.0f;
 
 	DirectX::XMFLOAT3 Color = {1.0f, 1.0f, 1.0f};
+	// Luminous intensity in candela.
 	float Intensity = 1.0f;
 
 	float SourceRadius = 0.05f;
@@ -39,6 +41,7 @@ struct SpotLightConstantBufferData
 	float InnerConeCosine = 1.0f;
 
 	DirectX::XMFLOAT3 Color = {1.0f, 1.0f, 1.0f};
+	// Luminous intensity in candela.
 	float Intensity = 1.0f;
 
 	float OuterConeCosine = 0.0f;
