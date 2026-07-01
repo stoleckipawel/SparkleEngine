@@ -6,7 +6,7 @@
 #include "Frame/Lighting/LightingComposite.h"
 #include "Frame/Lighting/LightingRenderTargets.h"
 #include "Frame/Lighting/LightingTargetClear.h"
-#include "Frame/Lighting/ShadowDenoise.h"
+#include "Frame/Lighting/ShadowVisibility.h"
 #include "Frame/Lighting/Sky.h"
 
 void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)

@@ -364,14 +364,14 @@ Acceptance criteria:
 Completion note:
 
 - Reference lineage: the audit used RTXPT and Falcor for renderer-wide pass/resource/reference-output organization, NRD for denoiser signal contracts, Streamline DLSS Ray Reconstruction for provider-resource tagging expectations, AMD FidelityFX for provider-style temporal resource handling, Filament and Unreal for material/light/color expectations, glTF 2.0 plus `KHR_lights_punctual` for asset import and light-unit contracts, and PBRT for path-traced reference-output expectations already named in later stages.
-- Reuse/DRY audit: scanned shader concept folders and entrypoints (`Material`, `BRDF`, `Lighting`, `RayTracing`, `Passes/Deferred`, `Passes/Presentation`), renderer frame data/builders, frame-graph resource declarations, GBuffer formats, exposure/presentation settings, DLSS/upscaler provider contracts, shadow denoiser contracts, glTF material import and texture cooking, and default HDR sky cooking before proposing follow-up work. Existing canonical bodies to reuse are `SurfaceLighting.hlsli`, `PunctualLights.hlsli`, `PathSurface.hlsli`, `GBufferFormats.h`, `FrameSceneResources`, `UpscalerInputContract`, `ShadowDenoiseContract`, and the Stage 0D display/exposure helpers. No new helper, pass, or provider interface was added by this audit.
+- Reuse/DRY audit: scanned shader concept folders and entrypoints (`Material`, `BRDF`, `Lighting`, `RayTracing`, `Passes/Deferred`, `Passes/Presentation`), renderer frame data/builders, frame-graph resource declarations, GBuffer formats, exposure/presentation settings, DLSS/upscaler provider contracts, shadow visibility signal code, glTF material import and texture cooking, and default HDR sky cooking before proposing follow-up work. Existing canonical bodies to reuse are `SurfaceLighting.hlsli`, `PunctualLights.hlsli`, `PathSurface.hlsli`, `GBufferFormats.h`, `FrameSceneResources`, `UpscalerInputContract`, `RayTracedShadowDenoiserInputs.hlsli`, and the Stage 0D display/exposure helpers. No new helper, pass, or provider interface was added by this audit.
 - Stage update result: no new stage was required. All P0/P1 findings below are mapped to the existing stages named in their `Required stage` cells, whose prompts already carry the relevant references. Items that remain local deviations or non-production details are explicitly named in Stage 0D and Stage 13 instead of being left as hidden assumptions.
 
 | Priority | File(s) | Symptom | Risk | Required stage | Reference(s) |
 | --- | --- | --- | --- | --- | --- |
 | P0 resolved | `Engine/Assets/Shaders/Lighting/SkyEnvironment.hlsli`, `Engine/Assets/Shaders/Passes/Deferred/Sky.hlsl`, indirect miss paths | Sky sampling previously entered lighting through a display/tone-mapped helper instead of pure HDR radiance. | Violated the Stage 0 lighting/display boundary and made indirect lighting depend on presentation math. | Stage 0D completed; Stage 1 and Stage 13 keep sky reference captures/import validation. | Filament color/display boundary, PBRT/RTXPT radiance transport. |
 | P1 resolved | `Engine/Assets/Shaders/Passes/Deferred/GBufferPS.hlsl`, `Engine/Assets/Shaders/Passes/Deferred/GBufferUtils.hlsli`, `Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli`, `Engine/Assets/Shaders/Material/Material.hlsli`, `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`, `Engine/Renderer/Private/Frame/RayTracing/RayTracingHitDataFrameData.cpp`, `Tools/Import/SourceImporters/Private/Gltf/GltfMaterialPropertyMapper.cpp` | Primary GBuffer previously dropped material dielectric `F0`, so deferred direct lighting fell back to `0.04` while ray-hit lighting could use imported/cooked `F0`. | Resolved for current shader paths by storing dielectric F0 in `GBufferMaterial.a` and building F0 through `SurfaceLighting::BuildF0`. Stage 2A now imports scalar glTF IOR into the existing cooked material `F0` field; `KHR_materials_specular` remains a diagnosed unsupported extension because Sparkle does not yet have colored/specular-texture F0. | Stage 2 completed; Stage 2A scalar IOR/F0 import completed; colored/specular-texture workflow remains a documented non-goal until a future material-model stage. | Filament material model, Unreal physically based materials, glTF material extensions. |
-| P1 resolved | `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSignals.hlsli`, `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`, `Engine/Renderer/Public/Denoising/ShadowDenoiseContract.h`, `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.cpp` | Shader shadow helpers define a packed `float4(visibility, hitDistance, confidence, maxDistance)` signal. Raw/scratch resources now use the matching multi-channel format, while denoised visibility and denoised visibility history are explicitly scalar products. | Resolved for the current raw-visibility path; full NRD SIGMA execution still waits for a linked provider. | Stage 0F, Stage 5, Stage 6. | NRD SIGMA signal contracts, Falcor/RTXPT debug signal ownership. |
+| P1 resolved | `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowSignals.hlsli`, `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`, `Engine/Renderer/Private/Frame/Lighting/ShadowVisibility.cpp` | Shader shadow helpers define a packed `float4(visibility, hitDistance, confidence, maxDistance)` signal, and the current frame graph allocates one matching raw multi-channel resource. Denoised visibility, scratch resources, and shadow denoise history are not allocated until a real provider exists. | Resolved for the current raw-visibility path; full NRD SIGMA execution still waits for a linked provider. | Stage 0F, Stage 5, Stage 6. | NRD SIGMA signal contracts, Falcor/RTXPT debug signal ownership. |
 | P1 | `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`, glTF importer files under `Tools/Import/SourceImporters/Private/Gltf` | Punctual attenuation uses local range fade and linear cone ramp; the audit did not find `KHR_lights_punctual` import coverage. | Imported lights and authored renderer lights can diverge from glTF/physical light-unit expectations. | Stage 2A and Stage 4. | `KHR_lights_punctual`, Filament/Unreal physical light units. |
 | P1 | `Engine/Renderer/Private/Upscaling/UpscalerInputContract.h`, `Engine/Renderer/Private/Upscaling/NvidiaDlss/NvidiaDlssUpscalerProvider.cpp`, indirect lighting shaders | Provider contract currently covers DLSS SR/NativeAA-style inputs, but not DLRR/indirect reconstruction signals such as noisy indirect radiance, demodulated radiance, lobe id, hit distance, confidence, or variance. | Future indirect reconstruction can become provider-specific and duplicate signal definitions outside the frame graph. | Stage 0F, Stage 11, Stage 11A. | Streamline DLSS Ray Reconstruction, NRD, AMD FidelityFX provider resource patterns. |
 | P1 | `Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerDispatcher.cpp`, `Tools/Cooking/MaterialCooker/Private/TextureCookRequestBuilder.cpp`, sky/environment shaders | The default EXR sky is cooked as a regular linear 2D texture and HDR sky import/orientation/calibration/importance-sampling policy is not yet a single asset contract. | Environment lighting can be visually plausible but physically uncalibrated or inconsistent with later importance sampling. | Stage 1, Stage 2A, Stage 9, Stage 13. | Filament image-based lighting, glTF texture/color-space policy, PBRT/RTXPT environment sampling. |
@@ -397,7 +397,7 @@ Reference lineage:
 Files:
 
 - `Engine/Renderer/Private/Frame/Deferred/GBufferFormats.h`
-- `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.cpp`
+- `Engine/Renderer/Private/Frame/Lighting/ShadowVisibility.cpp`
 - `Engine/Renderer/Private/Upscaling/UpscalerInputContract.h`
 - `Engine/Renderer/Private/Frame/FrameResources.*`
 - `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`
@@ -428,8 +428,8 @@ Acceptance criteria:
 Completion note:
 
 - Reference lineage: `04-PBR-Renderer-Signal-Contract.md` maps signal ownership, format, unit/space, range, lifetime/history, and consumers back to NRD-style denoiser guide resources, Streamline DLRR-style provider tags, Falcor-style render-graph resource ownership, AMD FidelityFX-style temporal/reset resource handling, and Sparkle's local linear-HDR lighting contract.
-- Reuse/DRY audit: scanned `FrameRenderFormats`, `GBufferFormats`, `FrameSceneResources`, `LightingRenderTargets`, `FrameGraphDenoiserRegistration`, `ShadowDenoiseContract`, `UpscalerInputContract`, `LightingComposite`, `ToneMapping`, `OutputEncoding`, and the moved `RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli` body before adding the contract. Semantic prose lives in one docs table, while code format constants stay in effect-specific homes instead of a renderer-wide alias namespace.
-- Format fix: packed raw shadow signal resources are now `R32G32B32A32_Float` (`ShadowVisibilitySignalRaw` and `ShadowVisibilitySignalScratch`) matching `float4(visibility, hitDistance, confidence, maxDistance)`. Denoised visibility and previous/current denoised visibility history are explicitly scalar `R32_Float` products.
+- Reuse/DRY audit: scanned `FrameRenderFormats`, `GBufferFormats`, `FrameSceneResources`, `LightingRenderTargets`, `ShadowVisibility`, `UpscalerInputContract`, `LightingComposite`, `ToneMapping`, `OutputEncoding`, and the moved `RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli` body before adding the contract. Semantic prose lives in one docs table, while code format choices stay in effect-specific homes instead of a renderer-wide alias namespace.
+- Format fix: packed raw shadow signal resources are now `R32G32B32A32_Float` (`ShadowVisibilitySignalRaw`) matching `float4(visibility, hitDistance, confidence, maxDistance)`. Scratch, denoised visibility, and denoised shadow-history resources are intentionally absent until a real denoiser provider owns them.
 - Provider contract: no provider-format shim was added in this stage. `UpscalerInputContract` remains the existing missing-resource/convention gate; real format rejection should be added only when the frame graph exposes actual resource descriptions to provider builders without duplicating constants.
 - Source hygiene: no final shader/source comments or Reference lineage banners were added. The prompt's old deferred path for `RayTracedShadowDenoiserInputs.hlsli` is superseded by the Stage 0A module boundary move to `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`.
 - Remaining staged work: indirect denoiser/DLRR auxiliary buffers are reserved in the contract but intentionally not allocated until Stage 11/11A.
@@ -941,7 +941,7 @@ Files:
 - `Engine/Assets/Shaders/RayTracing/RayTracingTraceQuery.hlsli`
 - `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`
 - `Engine/Assets/Shaders/RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli`
-- `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.cpp`
+- `Engine/Renderer/Private/Frame/Lighting/ShadowVisibility.cpp`
 - `Engine/Renderer/Private/RayTracing/Effects/Shadows/*`
 
 Acceptance criteria:
@@ -959,9 +959,9 @@ Acceptance criteria:
 Completion note:
 
 - Reference lineage: direct shadow visibility now follows the RTXPT/Unreal-style alpha-tested material visibility path by reusing the same ray-query candidate alpha resolver used by indirect rays. The raw `float4(visibility, hitDistance, confidence, maxDistance)` signal remains aligned with the NRD SIGMA-style separation of visibility and occluder distance, and the lighting path keeps the DXR sample pattern of tracing visibility separately from direct-light radiance accumulation.
-- Implementation: `RayTracedShadowTrace.hlsli` calls `TraceRayQueryWithAlphaTest` through the ray-tracing-owned `RayTracingSceneTlasTrace.hlsli` helper, so direct shadows no longer keep a first-hit-only shortcut that bypasses alpha-tested candidates. `DirectLighting.hlsl` writes direct lighting to the existing HDR contribution targets and writes raw packed shadow visibility to `ShadowVisibilitySignalRaw` independently. `FrameGraphDenoiserRegistration` now creates the packed raw signal even when the denoiser is not requested.
+- Implementation: `RayTracedShadowTrace.hlsli` calls `TraceRayQueryWithAlphaTest` through the ray-tracing-owned `RayTracingSceneTlasTrace.hlsli` helper, so direct shadows no longer keep a first-hit-only shortcut that bypasses alpha-tested candidates. `DirectLighting.hlsl` writes direct lighting to the existing HDR contribution targets and writes raw packed shadow visibility to `ShadowVisibilitySignalRaw` independently. `Frame/Lighting/ShadowVisibility.cpp` owns the raw packed signal resource.
 - Architecture cleanup: the previous backend-named direct-lighting address shader was replaced with the TLAS access-mode package `DirectLightingDeviceAddress`. Frame scheduling now asks for descriptor TLAS or device-address TLAS through `RayTracingScenePassBinding`; direct lighting no longer has a backend-specific shader/pass name in the renderer-facing path. The device-address package keeps feature parity for backends that need that TLAS access mode.
-- Reuse/DRY audit: scanned and reused `RayTracingTraceQuery`, `RayTracingMaterialHit`, `RayTracedShadowSignals`, `RayTracedShadowDenoiserInputs`, `ShadowDenoiseContract`, `FrameGraphDenoiserRegistration`, `RayTracingHitDataPassBinding`, `MaterialTextureTablePassBinding`, and `RayTracingScenePassBinding`. Direct shadows bind only triangle/material alpha data, while indirect hit reconstruction continues to bind full hit-surface data including `MeshInstances`.
+- Reuse/DRY audit: scanned and reused `RayTracingTraceQuery`, `RayTracingMaterialHit`, `RayTracedShadowSignals`, `RayTracedShadowDenoiserInputs`, `ShadowVisibility`, `RayTracingHitDataPassBinding`, `MaterialTextureTablePassBinding`, and `RayTracingScenePassBinding`. Direct shadows bind only triangle/material alpha data, while indirect hit reconstruction continues to bind full hit-surface data including `MeshInstances`.
 - Local deviation: the current raw shadow target stores a single per-pixel aggregate of the most occluding direct-light sample. Full per-light SIGMA execution remains a future provider implementation, using the same packed signal format rather than a second shadow contract.
 - Build checks: built `ShaderCompiler` and `ShowcaseEditor` for `DevelopmentEditor`; cooked `DirectLightingNoRayQuery`, `DirectLighting`, `DirectLightingDeviceAddress`, `IndirectDiffuse`, and `IndirectSpecular` for `DxilSm66` and `SpirV16`.
 
@@ -983,25 +983,25 @@ Reference lineage:
 Files:
 
 - Provider-neutral denoiser interface under renderer provider architecture.
-- `FrameGraphDenoiserRegistration`
+- `Frame/Lighting/ShadowVisibility`
 - Shadow settings and pass data.
 - Direct lighting pass resource declarations.
 
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
-- `r.RayTracedShadows.Denoiser=0` uses raw visibility.
-- `r.RayTracedShadows.Denoiser=1` requests SIGMA only when the provider boundary can satisfy the required resources; otherwise it uses the existing raw-visibility path without adding noisy local fallback code.
-- History resources are persistent and reset on camera cut, resize, and feature toggles.
+- Raw visibility remains the only exposed mode until a provider can execute SIGMA.
+- A SIGMA user setting is introduced only when provider selection can satisfy the required resources; otherwise no fake denoiser path is exposed.
+- History resources are introduced by the provider path and reset on camera cut, resize, and feature toggles.
 - Reference compliance: resource names, signal ranges, history reset behavior, and provider fallback behavior map to NRD SIGMA guidance.
 - Reuse/DRY: the denoiser path reuses provider-neutral frame graph/product infrastructure and does not fork shadow visibility resource ownership.
 
 Completion note:
 
 - Reference lineage: the boundary follows NRD SIGMA's separation of raw visibility, hit distance, normal/depth/motion inputs, denoised visibility, and persistent history. The provider boundary follows RTXDI-style explicit provider handoff: the renderer exposes resources and selects a provider path only when the provider can satisfy the contract.
-- Implementation: `ShadowDenoiseContract` now selects `RawVisibility` or `DenoisedVisibility` from explicit request, provider availability, raw visibility, GBuffer normal/depth/motion, jitter, and history inputs. `FrameGraphDenoiserRegistration` owns only transient raw/scratch/output resources; previous/current denoised visibility history is reserved in `FrameSceneResources` and backed/reset by `FramePipeline`.
-- Local deviation: Sparkle still has no linked NRD SIGMA provider in this changelist. `r.RayTracedShadows.Denoiser=1` therefore resolves to the raw visibility path instead of adding a fake local denoiser or noisy fallback code. The CVar default is `0` until a real provider exists.
-- Reuse/DRY audit: reused `ShadowDenoiseContract`, `FrameGraphDenoiserRegistration`, `FrameSceneResources`, `FramePipeline` persistent texture binding, GBuffer normal/depth/motion handles, and the existing direct-lighting raw signal write. Removed the stale contract logging hook and the transient denoised-history resource shape. Follow-up cleanup keeps `AddLightingPasses` as pass ordering, moves shadow denoise frame-resource assembly into `Frame/Lighting/ShadowDenoise`, keeps direct lighting dependent only on the raw visibility handle, and keeps shadow-history resource code in `FramePipelineShadowDenoiseHistory.cpp`.
+- Cleanup result: the earlier local SIGMA scaffold was removed because it did not execute a provider. The renderer now exposes only the current raw packed shadow visibility signal.
+- Local deviation: Sparkle still has no linked NRD SIGMA provider. That is represented honestly by the absence of a SIGMA runtime mode rather than a fake local denoiser or silent fallback.
+- Reuse/DRY audit: reused the existing direct-lighting raw signal write and collapsed raw resource allocation into `Frame/Lighting/ShadowVisibility`. Future SIGMA work should add provider-owned scratch/output/history resources only with the provider pass that consumes them.
 
 ## Stage 7: Replace Split Bounce Logic With Unified BSDF Path Sampling
 
@@ -1317,6 +1317,8 @@ Implementation prompt:
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
 Run a final cleanup and architecture pass over the PBR work before treating it as a foundation. This gate removes temporary toggles, diagnostic leftovers, stale docs, duplicate helpers, debug-only indirection, unowned signal descriptions, and pass-local forks that accumulated during implementation. It is not a request to build a new validation framework.
+
+Use `Docs/Rendering/PBR/05-Renderer-Reference-Quality-Gap-Audit.md` as the source-backed quality gate for SIGMA, DLRR, reference-path guide buffers, and renderer-path architecture. Its P0 decisions must either become stages or be explicitly marked as non-goals before Stage 13 closes.
 
 Reference lineage:
 

@@ -3,7 +3,6 @@
 #include "Frame/Reference/ReferenceRenderTargets.h"
 #include "Frame/RayTracing/RayTracingSceneFrameGraphResources.h"
 #include "Frame/Targets/FrameRenderTargets.h"
-#include "Renderer/Public/Denoising/ShadowDenoiseContract.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 
 struct FrameAssemblyImportedResources final
@@ -17,7 +16,7 @@ struct FrameAssemblyTransientResources final
 	GBufferRenderTargets GBuffer = {};
 	LightingRenderTargets Lighting = {};
 	ReferenceRenderTargets Reference = {};
-	ShadowDenoiseContract::ShadowDenoiseTextures ShadowDenoiser = {};
+	FrameGraphTextureHandle ShadowVisibilitySignal = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
 };
 
@@ -31,14 +30,8 @@ struct FrameAssemblyHistoryResources final
 {
 	FrameGraphTextureHandle PreviousExposure = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle CurrentExposure = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle PreviousDenoisedShadowVisibility = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle CurrentDenoisedShadowVisibility = FrameGraphTextureHandle::Invalid();
 
 	bool HasExposureHistory() const noexcept { return PreviousExposure.IsValid() && CurrentExposure.IsValid(); }
-	bool HasShadowDenoiseHistory() const noexcept
-	{
-		return PreviousDenoisedShadowVisibility.IsValid() && CurrentDenoisedShadowVisibility.IsValid();
-	}
 };
 
 struct FrameAssemblyUpscalerProviderResources final

@@ -1,10 +1,6 @@
 #include "../../../PCH.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 
-ConsoleVariable<RayTracedShadowDenoiserMode> CVarRayTracedShadowDenoiserMode(
-	"r.RayTracedShadows.Denoiser",
-	RayTracedShadowDenoiserMode::Off,
-	"Ray traced shadow denoiser: 0=Off, 1=NRD SIGMA.");
 ConsoleVariable<bool> CVarRayTracedShadowsEnabled(
     "r.RayTracedShadows.Enabled",
     true,

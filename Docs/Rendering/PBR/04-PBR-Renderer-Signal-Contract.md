@@ -10,8 +10,8 @@ Reference lineage:
 
 Reuse/DRY audit:
 
-- Reused existing homes: `FrameRenderFormats` for scene/lighting/presentation, `GBufferFormats` for GBuffer products, and `ShadowDenoiseContract` for shadow-denoiser formats.
-- Reused existing resource owners: `FrameSceneResources`, `LightingRenderTargets`, `FrameGraphDenoiserRegistration`, `UpscalerInputContract`, and `ShadowDenoiseContract`.
+- Reused existing homes: `FrameRenderFormats` for scene/lighting/presentation, `GBufferFormats` for GBuffer products, and `Frame/Lighting/ShadowVisibility` for the current raw shadow signal.
+- Reused existing resource owners: `FrameSceneResources`, `LightingRenderTargets`, `ShadowVisibility`, and `UpscalerInputContract`.
 - No renderer-wide alias namespace, provider shim, or new pass was added for this contract.
 
 | Signal | Owner | Format | Essential contract |
@@ -22,9 +22,7 @@ Reuse/DRY audit:
 | `ReferenceDirect`, `ReferenceIndirectDiffuse`, `ReferenceIndirectSpecular`, `ReferenceSceneColor` | Reference path tracing / `Frame/Reference` | `FrameRenderFormats::SceneColor` | Linear HDR high-sample reference outputs traced from primary camera rays. Direct, first-lobe diffuse, first-lobe specular, and composed reference scene color mirror the realtime lighting split; `ReferenceSceneColor` is copied into the common scene-color products before exposure and presentation. |
 | `GBufferBaseColor`, `GBufferNormal`, `GBufferMaterial`, `GBufferEmissive`, `GBufferSubsurface`, `GBufferDeviceZ`, `GBufferMotionVector` | GBuffer | `GBufferFormats::*` | Material, geometry, depth, and motion products. `GBufferMaterial` stores R metallic, G roughness, B ambient occlusion, A dielectric F0. |
 | `Exposure` and exposure history | Exposure pass / frame pipeline | `R32G32B32A32_Float` | R adapted exposure, G average luminance, B target exposure, A previous exposure. |
-| `ShadowVisibilitySignalRaw`, `ShadowVisibilitySignalScratch` | Shadow denoiser registration | `ShadowDenoiseContract::PackedVisibilitySignalFormat` | Packed `float4(visibility, hitDistance, confidence, maxDistance)`. |
-| `ShadowVisibilityDenoised` | Shadow denoiser registration | `ShadowDenoiseContract::DenoisedVisibilityFormat` | Scalar denoised visibility output. |
-| `PreviousDenoisedShadowVisibilityHistory`, `CurrentDenoisedShadowVisibilityHistory` | Frame scene resources / frame pipeline | `ShadowDenoiseContract::DenoisedVisibilityFormat` | Persistent previous/current scalar denoised visibility history, reset with renderer temporal history. |
+| `ShadowVisibilitySignalRaw` | `Frame/Lighting/ShadowVisibility` | `R32G32B32A32_Float` | Packed `float4(visibility, hitDistance, confidence, maxDistance)` raw direct-shadow signal. Denoised visibility, scratch resources, and shadow denoise history are intentionally absent until a real provider owns them. |
 | `ToneMappedSceneColor`, `EncodedSceneColor`, `BackBuffer` | Presentation | Existing presentation/backbuffer formats | Display-only outputs; they do not feed lighting. |
 | `HistoryResetState` | Temporal frame state | Constant data | Shared reset signal for exposure, upscalers, and future denoisers. |
 

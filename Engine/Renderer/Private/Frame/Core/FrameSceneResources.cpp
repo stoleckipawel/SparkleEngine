@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameRenderFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Denoising/ShadowDenoiseContract.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
@@ -46,20 +45,6 @@ void CreateFrameSceneResources(
 	const FrameGraphTextureHandle currentExposure = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor("CurrentExposureHistory", 1, 1, PixelFormat::R32G32B32A32_Float),
 	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle previousDenoisedShadowVisibility = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "PreviousDenoisedShadowVisibilityHistory",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        ShadowDenoiseContract::DenoisedVisibilityFormat),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle currentDenoisedShadowVisibility = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "CurrentDenoisedShadowVisibilityHistory",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        ShadowDenoiseContract::DenoisedVisibilityFormat),
-	    ResourceState::ShaderResource);
 
 	resources.Imported.BackBuffer = backBuffer;
 	resources.Transient.Scene = SceneRenderTargets{
@@ -70,8 +55,6 @@ void CreateFrameSceneResources(
 	resources.Transient.Exposure = exposure;
 	resources.History.PreviousExposure = previousExposure;
 	resources.History.CurrentExposure = currentExposure;
-	resources.History.PreviousDenoisedShadowVisibility = previousDenoisedShadowVisibility;
-	resources.History.CurrentDenoisedShadowVisibility = currentDenoisedShadowVisibility;
 	resources.ViewportProducts.SceneColor = sceneColor;
 	resources.ViewportProducts.FinalSceneColor = finalSceneColor;
 	resources.ViewportProducts.Exposure = exposure;

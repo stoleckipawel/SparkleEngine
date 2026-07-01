@@ -160,7 +160,7 @@ Direct shadows:
 - `RayTracedShadowTrace.hlsli` uses inline ray queries.
 - Direct shadows trace the sampled direct-light direction/distance; finite production lights sample emitter direction and visibility together.
 - Direct shadows use the shared alpha-tested ray-query path.
-- Shadow settings contain an NRD SIGMA enum path, but the default mode is raw visibility until a provider is linked.
+- Shadow settings expose raw ray-traced visibility only; no NRD SIGMA runtime mode is exposed until a provider is linked.
 
 Relevant code:
 
@@ -174,7 +174,7 @@ Relevant code:
 Issues:
 
 - There is a `RayTracedShadowDenoiserInputs::PackShadowSignal` helper, and direct lighting now writes the raw packed visibility signal separately from lighting contribution.
-- SIGMA is represented by a renderer-side selection/resource boundary, but there is no linked NRD provider execution path yet.
+- There is no linked NRD provider execution path yet, and no fake SIGMA runtime path is exposed.
 - The old shadow-only finite-light helpers were removed; production finite-light shading uses the sampled emitter direction for both visibility and BRDF/radiance.
 
 ## Indirect Diffuse State
@@ -302,9 +302,9 @@ Issues:
 
 - DLSS Super Resolution is currently an upscaler, not a lighting denoiser.
 - No visible DLRR provider path exists yet.
-- No linked NRD SIGMA provider execution path exists yet; SIGMA requests fall back to the raw-visibility path through `ShadowDenoiseContract`.
+- No linked NRD SIGMA provider execution path exists yet; the renderer exposes the raw-visibility path only.
 - Indirect diffuse/specular do not currently provide denoiser-ready auxiliary buffers.
-- Raw ray-traced shadow signal packing now matches the registered multi-channel frame-graph resource format; denoised visibility remains scalar.
+- Raw ray-traced shadow signal packing now matches the registered multi-channel frame-graph resource format. Denoised visibility resources are not allocated until a provider exists.
 - Current ray-traced shadow hit distance is generated from the shared alpha-tested ray-query path. Full per-light SIGMA occluder-distance policy still belongs to the provider implementation.
 
 ## RHI, Format, and Signal State

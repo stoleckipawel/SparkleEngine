@@ -294,7 +294,7 @@ History in current renderer source exists in more than one form:
 
 - temporal history validity and previous jitter/camera data through `TemporalDataBuilder`
 - upscaler history managed by `UpscalerSubsystem`
-- denoiser history through persistent previous/current resources such as `PreviousDenoisedShadowVisibilityHistory` and `CurrentDenoisedShadowVisibilityHistory`
+- denoiser history only when a real provider pass owns and consumes it
 
 Contract rules:
 
@@ -392,8 +392,6 @@ Contract rule:
 Current source-backed history-related surfaces:
 
 - `TemporalDataBuilder` history validity and previous jitter/camera state
-- `PreviousDenoisedShadowVisibilityHistory`
-- `CurrentDenoisedShadowVisibilityHistory`
 - upscaler-managed history reset/setup
 
 Contract rule:

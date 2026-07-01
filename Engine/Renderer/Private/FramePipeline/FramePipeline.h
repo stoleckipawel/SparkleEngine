@@ -26,7 +26,6 @@ class FrameGraph;
 class RendererSystemRoot;
 struct ResolvedGpuTiming;
 struct RayTracingSceneFrameData;
-enum class RayTracedShadowDenoiserMode : std::uint32_t;
 
 class FramePipeline final
 {
@@ -80,11 +79,6 @@ class FramePipeline final
 	void BindExposureHistoryFrameGraphResources() noexcept;
 	void ResetExposureHistory() noexcept;
 	bool HasExposureHistoryResources() const noexcept;
-	void CreateShadowDenoiseHistoryResources(RenderViewportExtent sceneExtent) noexcept;
-	void ReleaseShadowDenoiseHistoryResources() noexcept;
-	void RefreshShadowDenoiseHistoryResources() noexcept;
-	void BindShadowDenoiseHistoryFrameGraphResources() noexcept;
-	void ResetShadowDenoiseHistory() noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
@@ -105,9 +99,7 @@ class FramePipeline final
 	RenderSceneSnapshot m_sceneSnapshot = {};
 	ScopedEventHandle m_resizeHandle;
 	std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> m_exposureHistoryResources = {};
-	std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> m_shadowDenoiseHistoryResources = {};
 	bool m_bResizePending = false;
 	bool m_exposureHistoryValid = false;
 	FrameRenderPath m_renderPath = FrameRenderPath::RealtimeDeferred;
-	RayTracedShadowDenoiserMode m_lastShadowDenoiserMode;
 };

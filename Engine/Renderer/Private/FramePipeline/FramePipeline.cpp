@@ -20,7 +20,6 @@
 #include "Pipeline/PipelineStateManager.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
-#include "RayTracing/Effects/Shadows/RayTracedShadowDenoiserMode.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -36,8 +35,7 @@
 #include "Window/Window.h"
 
 FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
-    m_systems(&systems),
-    m_lastShadowDenoiserMode(RayTracedShadowDenoiserMode::Count)
+    m_systems(&systems)
 {
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
 	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
@@ -50,13 +48,11 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
 
 	InitializeFrameGraph();
 	CreateExposureHistoryResources();
-	RefreshShadowDenoiseHistoryResources();
 	BindWindowResizeEvent();
 }
 
 FramePipeline::~FramePipeline() noexcept
 {
-	ReleaseShadowDenoiseHistoryResources();
 	ReleaseExposureHistoryResources();
 }
 
@@ -149,7 +145,6 @@ void FramePipeline::RefreshFrameExecution(RenderViewportExtent sceneExtent) noex
 		frameContext.reset();
 	}
 
-	ReleaseShadowDenoiseHistoryResources();
 	m_frameGraph.reset();
 	InitializeFrameGraph(sceneExtent);
 	if (UpscalerSubsystem* upscalerSubsystem = m_systems->GetUpscalerSubsystem())
@@ -170,7 +165,6 @@ void FramePipeline::BeginFrame() noexcept
 		m_bResizePending = false;
 		temporalDataBuilder.ResetHistory("Window resize");
 		ResetExposureHistory();
-		ResetShadowDenoiseHistory();
 		if (upscalerSubsystem != nullptr)
 		{
 			upscalerSubsystem->ResetHistory("Window resize");
@@ -189,7 +183,6 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		temporalDataBuilder.ResetHistory("Scene extent changed");
 		ResetExposureHistory();
-		ResetShadowDenoiseHistory();
 		if (upscalerSubsystem != nullptr)
 		{
 			upscalerSubsystem->ResetHistory("Scene extent changed");
@@ -202,7 +195,6 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		temporalDataBuilder.ResetHistory("Render path changed");
 		ResetExposureHistory();
-		ResetShadowDenoiseHistory();
 		if (upscalerSubsystem != nullptr)
 		{
 			upscalerSubsystem->ResetHistory("Render path changed");
@@ -276,7 +268,6 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		m_systems->GetTemporalDataBuilder().ResetHistory(temporalResetReason);
 		ResetExposureHistory();
-		ResetShadowDenoiseHistory();
 	}
 
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[renderHardwareInterface.GetCurrentFrameIndex()];
@@ -298,7 +289,6 @@ void FramePipeline::RecordFrame() noexcept
 	if (frame.mainView.perTemporalData.HistoryValid == 0u)
 	{
 		ResetExposureHistory();
-		ResetShadowDenoiseHistory();
 	}
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
@@ -341,9 +331,7 @@ void FramePipeline::RecordFrame() noexcept
 		}
 	}
 
-	RefreshShadowDenoiseHistoryResources();
 	BindExposureHistoryFrameGraphResources();
-	BindShadowDenoiseHistoryFrameGraphResources();
 
 	{
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphSetup");
