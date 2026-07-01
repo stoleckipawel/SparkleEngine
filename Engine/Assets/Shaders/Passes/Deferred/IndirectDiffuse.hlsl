@@ -91,6 +91,7 @@ static const float IndirectDiffuseMinimumTMin = 0.001f;
 	        SamplerLinearClamp,
 	        primarySurface,
 	        pixelCoord,
+	        0u,
 	        RayTracingPathSampling::SpecularSampleModeStochasticGGX,
 	        IndirectDiffuseBounceCount,
 	        traceSettings);

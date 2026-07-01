@@ -18,6 +18,11 @@ class IndirectDiffuseCS final : public TGlobalShader<IndirectDiffuseCS>
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV(RWTexture2D, IndirectDiffuseTexture)
+	SHADER_PARAMETER_UAV(RWTexture2D, IndirectDiffuseDemodulatedRadiance)
+	SHADER_PARAMETER_UAV(RWTexture2D, IndirectDiffuseAlbedo)
+	SHADER_PARAMETER_UAV(RWTexture2D, IndirectSpecularAlbedo)
+	SHADER_PARAMETER_UAV(RWTexture2D, IndirectMaterialGuide)
+	SHADER_PARAMETER_UAV(RWTexture2D, IndirectDiffuseSampleGuide)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)

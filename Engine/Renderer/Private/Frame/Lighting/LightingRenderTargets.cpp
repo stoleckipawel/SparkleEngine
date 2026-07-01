@@ -44,5 +44,11 @@ LightingRenderTargets CreateLightingRenderTargets(FrameGraphBuilder& builder, Re
 	    CreateLightingTexture(builder, "IndirectDiffuseSampleGuide", sceneExtent, PixelFormat::R32G32B32A32_Float);
 	lighting.IndirectSpecularSampleGuide =
 	    CreateLightingTexture(builder, "IndirectSpecularSampleGuide", sceneExtent, PixelFormat::R32G32B32A32_Float);
+	lighting.ReferenceDirect = CreateLightingTexture(builder, "ReferenceDirect", sceneExtent, FrameRenderFormats::SceneColor);
+	lighting.ReferenceIndirectDiffuse =
+	    CreateLightingTexture(builder, "ReferenceIndirectDiffuse", sceneExtent, FrameRenderFormats::SceneColor);
+	lighting.ReferenceIndirectSpecular =
+	    CreateLightingTexture(builder, "ReferenceIndirectSpecular", sceneExtent, FrameRenderFormats::SceneColor);
+	lighting.ReferenceSceneColor = CreateLightingTexture(builder, "ReferenceSceneColor", sceneExtent, FrameRenderFormats::SceneColor);
 	return lighting;
 }

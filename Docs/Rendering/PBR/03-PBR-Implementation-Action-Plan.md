@@ -1302,6 +1302,14 @@ Acceptance criteria:
 - Reference compliance: reference-mode equations, sampling, and accumulation are documented against PBRT/RTXPT/Falcor/Unreal.
 - Reuse/DRY: reference mode shares material decode, BRDF, light units, sky radiance, alpha-test, and path sampling modules with the real-time path wherever possible.
 
+Completion note:
+
+- Reference lineage: the reference pass follows PBRT's path-throughput and accumulated radiance target, RTXPT's dedicated path-tracing core/reference-mode separation, Falcor's separate `PathTracer` render pass with primary visibility resolved by ray tracing, and Unreal's expectation that a slow path tracer can act as a production reference mode. Local deviation: Sparkle still writes realtime-compatible split outputs by primary sampled lobe so existing direct/indirect comparison paths stay useful.
+- Implementation: added an opt-in `ReferencePathTracing` compute pass and shader package controlled by `r.RayTracing.ReferencePathTracing.Enabled`, with `SamplesPerPixel`, `Bounces`, `NormalBias`, and `MaxDistance` CVars. The shader now lives under `Passes/Reference`, the C++ pass under `Passes/Reference`, and frame scheduling under `Frame/Reference`. It traces primary camera rays through the TLAS, reconstructs the first surface from ray-hit material data, and writes `ReferenceDirect`, `ReferenceIndirectDiffuse`, `ReferenceIndirectSpecular`, and `ReferenceSceneColor` as linear HDR scene-format targets.
+- Reuse/DRY audit: scanned the realtime sky, indirect diffuse/specular, path sampling, path lighting, ray-hit material, direct surface lighting, area-light sampling, shadow tracing, lighting target allocation/clear, shader registrations, and pass binding code before editing. The reference pass reuses `SurfaceLighting`, `AreaLights`, `RayTracedShadowTrace`, `PathLighting`, `PathSampling`, ray-hit reconstruction, alpha-tested ray queries, and the canonical HDR sky radiance helper instead of adding a second material/light/path implementation.
+- Simplification note: no reference-only BRDF, material decode, sky transform, alpha-test resolver, GBuffer reader, or path-throughput wrapper was added. The only shared shader change was adding `sampleIndex` to the existing path random-sample generator so high-Spp reference samples can reuse the same path estimator with distinct random streams.
+- Validation commands: rebuilt `ShaderCompiler`; validated the typed shader catalog; cooked `ReferencePathTracing`, `Sky`, `IndirectDiffuse`, and `IndirectSpecular` for `DxilSm66` and `SpirV16`; rebuilt `ShowcaseEditor` DevelopmentEditor.
+
 ## Stage 13: Final PBR Architecture and Cleanup Gate
 
 Implementation prompt:

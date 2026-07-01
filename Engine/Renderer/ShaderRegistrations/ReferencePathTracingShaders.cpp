@@ -6,10 +6,11 @@
 #include "Resources/RenderConstantBufferData.h"
 #include "Resources/RenderViewLightingData.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
-#include "Renderer/Private/RayTracing/Effects/IndirectSpecular/IndirectSpecularUniformData.h"
+#include "Renderer/Private/RayTracing/Effects/ReferencePathTracing/ReferencePathTracingUniformData.h"
+#include "Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
 
-class IndirectSpecularCS final : public TGlobalShader<IndirectSpecularCS>
+class ReferencePathTracingCS final : public TGlobalShader<ReferencePathTracingCS>
 {
   public:
 	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures =
@@ -17,18 +18,16 @@ class IndirectSpecularCS final : public TGlobalShader<IndirectSpecularCS>
 	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, IndirectSpecular, IndirectSpecularTexture)
-	SHADER_PARAMETER_UAV(RWTexture2D, IndirectSpecularDemodulatedRadiance)
-	SHADER_PARAMETER_UAV(RWTexture2D, IndirectSpecularSampleGuide)
+	SHADER_PARAMETER_UAV(RWTexture2D, ReferenceSceneColorTexture)
+	SHADER_PARAMETER_UAV(RWTexture2D, ReferenceDirectTexture)
+	SHADER_PARAMETER_UAV(RWTexture2D, ReferenceIndirectDiffuseTexture)
+	SHADER_PARAMETER_UAV(RWTexture2D, ReferenceIndirectSpecularTexture)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewLighting, ViewLighting, ViewLightingData)
-	SHADER_PARAMETER_CBUFFER_NAMED(IndirectSpecularConstants, IndirectSpecularUniformData, IndirectSpecularUniformData)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_CBUFFER_NAMED(RayTracedShadows, RayTracedShadowUniformData, RayTracedShadowUniformData)
+	SHADER_PARAMETER_CBUFFER_NAMED(ReferencePathTracingConstants, ReferencePathTracingUniformData, ReferencePathTracingUniformData)
 	SHADER_PARAMETER_TEXTURE(Texture2D, SkyTexture)
 	SHADER_PARAMETER_SAMPLER(SamplerState, SamplerLinearClamp)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)
@@ -46,8 +45,8 @@ class IndirectSpecularCS final : public TGlobalShader<IndirectSpecularCS>
 };
 
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
-    IndirectSpecularCS,
-    RendererShaderPackages::IndirectSpecular,
-    "Passes/Deferred/IndirectSpecular.hlsl",
-    "main",
-    Compute);
+	ReferencePathTracingCS,
+	RendererShaderPackages::ReferencePathTracing,
+	"Passes/Reference/ReferencePathTracing.hlsl",
+	"main",
+	Compute);

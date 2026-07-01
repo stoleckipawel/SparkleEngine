@@ -37,4 +37,8 @@ struct LightingRenderTargets
 	FrameGraphTextureHandle IndirectMaterialGuide;
 	FrameGraphTextureHandle IndirectDiffuseSampleGuide;
 	FrameGraphTextureHandle IndirectSpecularSampleGuide;
+	FrameGraphTextureHandle ReferenceDirect;
+	FrameGraphTextureHandle ReferenceIndirectDiffuse;
+	FrameGraphTextureHandle ReferenceIndirectSpecular;
+	FrameGraphTextureHandle ReferenceSceneColor;
 };

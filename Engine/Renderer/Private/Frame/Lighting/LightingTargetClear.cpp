@@ -11,9 +11,9 @@ namespace
 {
 	constexpr const char* kLightingTargetClearPassName = "LightingTargetClear";
 
-	std::array<FrameGraphTextureHandle, 13> GetLightingTargets(const LightingRenderTargets& lighting) noexcept
+	auto GetLightingTargets(const LightingRenderTargets& lighting) noexcept
 	{
-		return {
+		return std::array{
 		    lighting.DirectDiffuse,
 		    lighting.DirectSpecular,
 		    lighting.DirectSubsurface,
@@ -26,7 +26,11 @@ namespace
 		    lighting.IndirectSpecularAlbedo,
 		    lighting.IndirectMaterialGuide,
 		    lighting.IndirectDiffuseSampleGuide,
-		    lighting.IndirectSpecularSampleGuide};
+		    lighting.IndirectSpecularSampleGuide,
+		    lighting.ReferenceDirect,
+		    lighting.ReferenceIndirectDiffuse,
+		    lighting.ReferenceIndirectSpecular,
+		    lighting.ReferenceSceneColor};
 	}
 }
 
@@ -56,6 +60,10 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 		    resourceBuilder.Write(lighting.IndirectMaterialGuide, ResourceUsage::RenderTarget, "IndirectMaterialGuide");
 		    resourceBuilder.Write(lighting.IndirectDiffuseSampleGuide, ResourceUsage::RenderTarget, "IndirectDiffuseSampleGuide");
 		    resourceBuilder.Write(lighting.IndirectSpecularSampleGuide, ResourceUsage::RenderTarget, "IndirectSpecularSampleGuide");
+		    resourceBuilder.Write(lighting.ReferenceDirect, ResourceUsage::RenderTarget, "ReferenceDirect");
+		    resourceBuilder.Write(lighting.ReferenceIndirectDiffuse, ResourceUsage::RenderTarget, "ReferenceIndirectDiffuse");
+		    resourceBuilder.Write(lighting.ReferenceIndirectSpecular, ResourceUsage::RenderTarget, "ReferenceIndirectSpecular");
+		    resourceBuilder.Write(lighting.ReferenceSceneColor, ResourceUsage::RenderTarget, "ReferenceSceneColor");
 	    },
 	    [lighting](PassExecutionContext& context)
 	    {

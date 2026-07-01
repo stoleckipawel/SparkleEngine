@@ -95,6 +95,7 @@ namespace RayTracingPathLighting
 	    SamplerState skySampler,
 	    RayTracingPathSurface primarySurface,
 	    uint2 pixelCoord,
+	    uint sampleIndex,
 	    uint specularSampleMode,
 	    uint bounceCount,
 	    TraceSettings traceSettings)
@@ -115,7 +116,7 @@ namespace RayTracingPathLighting
 		[loop] for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
 		{
 			const RayTracingPathSampling::RandomSamples randomSamples =
-			    RayTracingPathSampling::GenerateRandomSamples(pixelCoord, bounceIndex);
+			    RayTracingPathSampling::GenerateRandomSamples(pixelCoord, bounceIndex, sampleIndex);
 			const RayTracingPathSample::DirectionSample sample =
 			    RayTracingPathSampling::SampleBSDF(surface, specularSampleMode, randomSamples);
 			if (bounceIndex == 0u)

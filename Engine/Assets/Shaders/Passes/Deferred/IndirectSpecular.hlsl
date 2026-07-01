@@ -98,6 +98,7 @@ struct IndirectSpecularResolvedContribution
 	            metallic,
 	            dielectricF0),
 	        pixelCoord,
+	        0u,
 	        IndirectSpecularSampleMode,
 	        IndirectSpecularBounceCount,
 	        traceSettings);

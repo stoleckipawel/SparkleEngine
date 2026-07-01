@@ -8,6 +8,7 @@
 #include "Frame/PostProcessing/PostProcessing.h"
 #include "Frame/Presentation/Presentation.h"
 #include "Frame/RayTracing/RayTracingScene.h"
+#include "Frame/Reference/ReferencePathTracing.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
 FrameBuildResult BuildFrame(
@@ -22,6 +23,7 @@ FrameBuildResult BuildFrame(
 	AddGBufferPasses(builder, sceneExtent, resources);
 	AddRayTracingInfrastructurePasses(builder, resources);
 	AddLightingPasses(builder, sceneExtent, resources);
+	AddReferenceRenderingPasses(builder, resources);
 	AddPostProcessingPasses(builder, sceneExtent, resources);
 	AddDebugPasses(builder, resources);
 

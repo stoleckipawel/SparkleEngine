@@ -19,6 +19,7 @@ Reuse/DRY audit:
 | `SceneColor`, `FinalSceneColor` | Frame scene resources / upscaler fallback | `FrameRenderFormats::SceneColor` | Linear HDR pre-presentation scene color. |
 | `DirectDiffuse`, `DirectSpecular`, `DirectSubsurface` | Direct lighting | `FrameRenderFormats::SceneColor` | Material-evaluated outgoing radiance contributions, not irradiance. |
 | `IndirectDiffuse`, `IndirectSpecular`, `IndirectSubsurface` | Indirect lighting | `FrameRenderFormats::SceneColor` | Material-evaluated outgoing radiance contributions split by first primary lobe. |
+| `ReferenceDirect`, `ReferenceIndirectDiffuse`, `ReferenceIndirectSpecular`, `ReferenceSceneColor` | Reference path tracing | `FrameRenderFormats::SceneColor` | Linear HDR high-sample reference outputs traced from primary camera rays. Direct, first-lobe diffuse, first-lobe specular, and composed reference scene color mirror the realtime lighting split without changing presentation. |
 | `GBufferBaseColor`, `GBufferNormal`, `GBufferMaterial`, `GBufferEmissive`, `GBufferSubsurface`, `GBufferDeviceZ`, `GBufferMotionVector` | GBuffer | `GBufferFormats::*` | Material, geometry, depth, and motion products. `GBufferMaterial` stores R metallic, G roughness, B ambient occlusion, A dielectric F0. |
 | `Exposure` and exposure history | Exposure pass / frame pipeline | `R32G32B32A32_Float` | R adapted exposure, G average luminance, B target exposure, A previous exposure. |
 | `ShadowVisibilitySignalRaw`, `ShadowVisibilitySignalScratch` | Shadow denoiser registration | `ShadowDenoiseContract::PackedVisibilitySignalFormat` | Packed `float4(visibility, hitDistance, confidence, maxDistance)`. |
@@ -63,6 +64,7 @@ Staged signals:
 
 - Stage 11 exposes provider-contract slots for noisy indirect radiance, guide albedo/material data, sample guides, exposure, and temporal reset state.
 - Stage 11A owns allocation/writers for demodulated radiance, indirect hit distance, lobe id, confidence, diffuse albedo, specular/F0 guide resources, and material guide resolves.
+- Stage 12 owns high-sample reference radiance targets for direct, first-lobe indirect diffuse, first-lobe indirect specular, and composed scene color.
 - Stage 13 owns final cleanup of stale signal descriptions and any redundant provider-facing outputs.
 
 Implementation notes:

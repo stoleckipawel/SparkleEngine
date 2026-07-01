@@ -20,13 +20,14 @@ namespace RayTracingPathSampling
 		float Roulette;
 	};
 
-	RandomSamples GenerateRandomSamples(uint2 pixelCoord, uint bounceIndex)
+	RandomSamples GenerateRandomSamples(uint2 pixelCoord, uint bounceIndex, uint sampleIndex)
 	{
-		const float2 basePixel = float2(pixelCoord) + float2(bounceIndex * 17u, bounceIndex * 29u);
+		const uint sampleSalt = sampleIndex * 4099u;
+		const float2 basePixel = float2(pixelCoord) + float2(bounceIndex * 17u + sampleSalt, bounceIndex * 29u + sampleSalt);
 		const float2 lobeAndRoulette =
-		    CommonRandom::InterleavedGradientNoise2(basePixel, FrameIndex + bounceIndex * 131u, float2(211.0f, 97.0f));
+		    CommonRandom::InterleavedGradientNoise2(basePixel, FrameIndex + bounceIndex * 131u + sampleSalt, float2(211.0f, 97.0f));
 		const float2 direction =
-		    CommonRandom::InterleavedGradientNoise2(basePixel, FrameIndex + bounceIndex * 149u, float2(41.0f, 137.0f));
+		    CommonRandom::InterleavedGradientNoise2(basePixel, FrameIndex + bounceIndex * 149u + sampleSalt, float2(41.0f, 137.0f));
 
 		RandomSamples result;
 		result.Lobe = lobeAndRoulette.x;
