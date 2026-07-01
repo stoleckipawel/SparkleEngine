@@ -26,11 +26,7 @@ namespace
 		    lighting.IndirectSpecularAlbedo,
 		    lighting.IndirectMaterialGuide,
 		    lighting.IndirectDiffuseSampleGuide,
-		    lighting.IndirectSpecularSampleGuide,
-		    lighting.ReferenceDirect,
-		    lighting.ReferenceIndirectDiffuse,
-		    lighting.ReferenceIndirectSpecular,
-		    lighting.ReferenceSceneColor};
+		    lighting.IndirectSpecularSampleGuide};
 	}
 }
 
@@ -60,10 +56,6 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 		    resourceBuilder.Write(lighting.IndirectMaterialGuide, ResourceUsage::RenderTarget, "IndirectMaterialGuide");
 		    resourceBuilder.Write(lighting.IndirectDiffuseSampleGuide, ResourceUsage::RenderTarget, "IndirectDiffuseSampleGuide");
 		    resourceBuilder.Write(lighting.IndirectSpecularSampleGuide, ResourceUsage::RenderTarget, "IndirectSpecularSampleGuide");
-		    resourceBuilder.Write(lighting.ReferenceDirect, ResourceUsage::RenderTarget, "ReferenceDirect");
-		    resourceBuilder.Write(lighting.ReferenceIndirectDiffuse, ResourceUsage::RenderTarget, "ReferenceIndirectDiffuse");
-		    resourceBuilder.Write(lighting.ReferenceIndirectSpecular, ResourceUsage::RenderTarget, "ReferenceIndirectSpecular");
-		    resourceBuilder.Write(lighting.ReferenceSceneColor, ResourceUsage::RenderTarget, "ReferenceSceneColor");
 	    },
 	    [lighting](PassExecutionContext& context)
 	    {

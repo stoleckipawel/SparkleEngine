@@ -10,6 +10,7 @@
 #include "Frame/RayTracing/RayTracingScene.h"
 #include "Frame/Reference/ReferencePathTracing.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
+#include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingSettings.h"
 
 FrameBuildResult BuildFrame(
     FrameGraphBuilder& builder,
@@ -20,10 +21,18 @@ FrameBuildResult BuildFrame(
 	FrameAssemblyResourceLayout resources = {};
 
 	CreateFrameSceneResources(builder, sceneExtent, backBufferFormat, resources);
-	AddGBufferPasses(builder, sceneExtent, resources);
 	AddRayTracingInfrastructurePasses(builder, resources);
-	AddLightingPasses(builder, sceneExtent, resources);
-	AddReferenceRenderingPasses(builder, resources);
+
+	if (BuildReferencePathTracingSettingsFromCVars().Enabled)
+	{
+		AddReferenceRenderingPasses(builder, sceneExtent, resources);
+	}
+	else
+	{
+		AddGBufferPasses(builder, sceneExtent, resources);
+		AddLightingPasses(builder, sceneExtent, resources);
+	}
+
 	AddPostProcessingPasses(builder, sceneExtent, resources);
 	AddDebugPasses(builder, resources);
 

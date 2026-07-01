@@ -61,14 +61,14 @@ const RenderPassDefinition& ReferencePathTracingPass::GetDefinition() noexcept
 
 void ReferencePathTracingPass::DeclareResources(
     FrameGraphBuilder& builder,
-    const LightingRenderTargets& lighting,
+    const ReferenceRenderTargets& targets,
     FrameGraphAccelerationStructureHandle sceneTlas,
     ParameterInstance& parameters)
 {
-	parameters->ReferenceSceneColorTexture = builder.CreateUAV(lighting.ReferenceSceneColor);
-	parameters->ReferenceDirectTexture = builder.CreateUAV(lighting.ReferenceDirect);
-	parameters->ReferenceIndirectDiffuseTexture = builder.CreateUAV(lighting.ReferenceIndirectDiffuse);
-	parameters->ReferenceIndirectSpecularTexture = builder.CreateUAV(lighting.ReferenceIndirectSpecular);
+	parameters->ReferenceSceneColorTexture = builder.CreateUAV(targets.ReferenceSceneColor);
+	parameters->ReferenceDirectTexture = builder.CreateUAV(targets.ReferenceDirect);
+	parameters->ReferenceIndirectDiffuseTexture = builder.CreateUAV(targets.ReferenceIndirectDiffuse);
+	parameters->ReferenceIndirectSpecularTexture = builder.CreateUAV(targets.ReferenceIndirectSpecular);
 	(void)RayTracingScenePassBinding::BindSceneTlas(
 	    builder,
 	    sceneTlas,
@@ -103,11 +103,6 @@ void ReferencePathTracingPass::SetParameters(
 void ReferencePathTracingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	const ReferencePathTracingSettings settings = BuildReferencePathTracingSettingsFromCVars();
-	if (!settings.Enabled)
-	{
-		return;
-	}
-
 	const RayTracingPassCapabilities rayTracingCapabilities =
 	    RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
 	if (!rayTracingCapabilities.InlineRayQueryAvailable ||

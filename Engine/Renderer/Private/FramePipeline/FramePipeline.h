@@ -107,5 +107,6 @@ class FramePipeline final
 	std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> m_shadowDenoiseHistoryResources = {};
 	bool m_bResizePending = false;
 	bool m_exposureHistoryValid = false;
+	bool m_referencePathTracingEnabled = false;
 	RayTracedShadowDenoiserMode m_lastShadowDenoiserMode;
 };

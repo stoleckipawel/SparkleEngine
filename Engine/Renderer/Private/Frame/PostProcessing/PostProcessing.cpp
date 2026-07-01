@@ -10,7 +10,13 @@ void AddPostProcessingPasses(
     RenderViewportExtent sceneExtent,
     FrameAssemblyResourceLayout& resources)
 {
-	AddUpscalerEvaluationPass(builder, sceneExtent, resources.Transient.Scene, resources.Transient.GBuffer);
+	const bool hasRealtimeProviderInputs =
+	    resources.Transient.GBuffer.MotionVector.IsValid() && resources.Transient.Lighting.IndirectDiffuse.IsValid();
+	if (hasRealtimeProviderInputs)
+	{
+		AddUpscalerEvaluationPass(builder, sceneExtent, resources.Transient.Scene, resources.Transient.GBuffer);
+	}
+
 	AddExposurePass(
 	    builder,
 	    sceneExtent,
@@ -18,11 +24,15 @@ void AddPostProcessingPasses(
 	    resources.History.PreviousExposure,
 	    resources.History.CurrentExposure,
 	    resources.Transient.Exposure);
-	resources.UpscalerProviderInputs =
-	    BuildFrameUpscalerProviderInputs(resources.Transient.Scene, resources.Transient.GBuffer, resources.Transient.Exposure);
-	resources.DenoiserProviderInputs = BuildFrameDenoiserProviderInputs(
-	    resources.Transient.Scene,
-	    resources.Transient.GBuffer,
-	    resources.Transient.Lighting,
-	    resources.Transient.Exposure);
+
+	if (hasRealtimeProviderInputs)
+	{
+		resources.UpscalerProviderInputs =
+		    BuildFrameUpscalerProviderInputs(resources.Transient.Scene, resources.Transient.GBuffer, resources.Transient.Exposure);
+		resources.DenoiserProviderInputs = BuildFrameDenoiserProviderInputs(
+		    resources.Transient.Scene,
+		    resources.Transient.GBuffer,
+		    resources.Transient.Lighting,
+		    resources.Transient.Exposure);
+	}
 }

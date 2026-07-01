@@ -165,7 +165,9 @@ The current registration shape is centralized in frame building code, not dynami
 Observed source-backed pattern:
 
 - `BuildFrame(...)` creates top-level frame resources.
-- `BuildFrame(...)` calls frame assembly helpers such as `AddGBufferPasses(...)`, `AddRayTracingInfrastructurePasses(...)`, `AddLightingPasses(...)`, `AddPostProcessingPasses(...)`, `AddDebugPasses(...)`, and `AddPresentationPass(...)`.
+- `BuildFrame(...)` calls shared setup such as `AddRayTracingInfrastructurePasses(...)`, then selects one renderer path before common post-processing, debug, and presentation.
+- The realtime path keeps the existing hierarchy visible with `AddGBufferPasses(...)` followed by `AddLightingPasses(...)`.
+- The reference path calls `AddReferenceRenderingPasses(...)` instead of appending reference work after realtime lighting.
 - Those helpers allocate typed pass parameters and register typed shader passes through `FrameGraphBuilder`.
 
 Contract rule:
@@ -177,6 +179,31 @@ Contract rule:
 `Needs source confirmation`:
 
 - Whether there are any secondary pass registration paths outside the main frame assembly path that should be treated as first-class contract surface.
+
+## Realtime And Reference Rendering Paths
+
+Sparkle supports two top-level scene-lighting paths:
+
+- `Realtime`: rasterized GBuffer, realtime direct/indirect lighting, sky, reconstruction-provider guide buffers, and realtime provider integration.
+- `PathTracedReference`: primary camera rays traced through the TLAS, shared material/light/sky/path code, high-sample linear HDR reference targets, then copy of composed reference scene color into the common scene-color products.
+
+Reference lineage:
+
+- NVIDIA Falcor keeps `PathTracer` as a separate render pass/render graph. Its path tracer docs describe primary path generation, path-segment tracing, direct-light sampling at path vertices, optional denoiser outputs, and separate scripts for path-traced graphs.
+- NVIDIA RTXPT exposes reference and realtime path-tracing modes while sharing scene/material/light transport infrastructure; it also keeps path-space decomposition and guide-buffer generation in the path-tracing renderer rather than in raster passes.
+- AMD FidelityFX SDK samples keep upscaling/denoising as dedicated render modules with explicit context creation, configuration, dispatch, and display stages; provider work should remain behind provider/module boundaries, not leak into frame-core scheduling.
+
+Contract rules:
+
+1. A frame builds either the reference path or the realtime GBuffer/lighting path for scene lighting, not both.
+2. Shared setup may run before the branch only when both paths need it. Current shared setup includes scene targets, exposure/history resources, and ray tracing scene/TLAS resources.
+3. Common post-processing, debug, and presentation run after the branch and consume common products such as `FinalSceneColor` and `Exposure`.
+4. Realtime-only products are published only by the realtime path. For example, viewport depth, normals, motion vectors, upscaler inputs, and indirect reconstruction-provider inputs are valid only when the GBuffer/realtime lighting path produced them.
+5. Reference-only targets live under `Frame/Reference` and must not be stored in lighting target structs or cleared by realtime lighting code.
+6. Reference rendering may reuse shared shader modules for material decode, BRDF, sky radiance, alpha-test, ray-hit reconstruction, and light sampling; it must not introduce reference-only copies of those policies.
+7. Provider integrations remain optional consumers of explicit frame products. They should not force the reference path to allocate fake GBuffer, motion, or denoiser resources.
+
+This mirrors the NVIDIA/Falcor split between render graphs/passes while keeping Sparkle's local frame hierarchy readable: the replacement point stays visible in `Frame/Core/Frame.cpp` instead of being hidden behind a broad `AddRealtimePath()` wrapper.
 
 ## Resource Declaration Rules
 
@@ -309,6 +336,7 @@ Contract rule:
 
 - Depth ownership belongs to renderer frame assembly and pass declarations.
 - Passes that need depth must consume the declared depth handles instead of inferring depth ownership from scene state.
+- Viewport depth is exposed only when a path writes it. The realtime GBuffer path publishes `SceneDepth`; the current reference path does not.
 
 ### Normals
 
@@ -338,14 +366,17 @@ Contract rule:
 
 ### Exposure
 
-`Needs source confirmation`.
+Current source-backed exposure resources:
 
-This prompt requires exposure to be part of the contract vocabulary. Current searched source does not show a clearly named renderer-owned frame-graph exposure texture or buffer in the reviewed frame assembly path.
+- `Exposure`
+- `PreviousExposureHistory`
+- `CurrentExposureHistory`
 
-Current contract statement:
+Contract rule:
 
-- exposure is a renderer frame-resource concept for post, upscaling, and neural-rendering readiness
-- the current implementation stores exposure in a 1x1 `R32G32B32A32_Float` frame-graph resource plus previous/current persistent exposure history textures
+- Exposure is a renderer frame-resource concept for post, upscaling, presentation, and neural-rendering readiness.
+- The current implementation stores exposure in a 1x1 `R32G32B32A32_Float` frame-graph texture plus previous/current persistent exposure history textures.
+- Reference and realtime paths both feed exposure through `FinalSceneColor`; exposure must not depend on GBuffer-only resources.
 
 ### History
 
@@ -585,7 +616,6 @@ Validation expectations:
 ## Known Gaps
 
 - A single explicit document for the top-level frame assembly contract and all builder helper entry points does not yet exist outside source.
-- Exposure is not clearly surfaced as a source-proven frame resource in the reviewed files.
 - A single unified renderer-wide temporal/history contract across temporal AA, denoising, and upscaling is not yet obvious from the reviewed source.
 - The reviewed source shows ray tracing resource preparation and binding, but a pass-by-pass contract for every ray tracing consumer still needs deeper confirmation.
 - The exact set of reviewer-facing viewport outputs beyond scene color and optional depth should be documented more explicitly in a follow-up renderer contract.
@@ -606,12 +636,16 @@ Primary reviewed files for this contract:
 - `Engine/Renderer/Private/FrameGraph/Diagnostics/FrameGraphResourceContractDiagnostics.h`
 - `Engine/Renderer/Private/Passes/ShaderPass.h`
 - `Engine/Renderer/Private/Passes/RenderPassDefinition.h`
-- `Engine/Renderer/Private/Frame/Frame.h`
-- `Engine/Renderer/Private/Frame/Frame.cpp`
+- `Engine/Renderer/Private/Frame/Core/Frame.h`
+- `Engine/Renderer/Private/Frame/Core/Frame.cpp`
+- `Engine/Renderer/Private/Frame/Reference/ReferencePathTracing.h`
+- `Engine/Renderer/Private/Frame/Reference/ReferencePathTracing.cpp`
+- `Engine/Renderer/Private/Frame/Reference/ReferenceRenderTargets.h`
+- `Engine/Renderer/Private/Frame/Reference/ReferenceRenderTargets.cpp`
 - `Engine/Renderer/Private/Frame/Targets/FrameRenderTargets.h`
-- `Engine/Renderer/Private/Frame/GBuffer.cpp`
+- `Engine/Renderer/Private/Frame/Deferred/GBuffer.cpp`
 - `Engine/Renderer/Private/Frame/Builders/TemporalDataBuilder.h`
-- `Engine/Renderer/Private/Frame/FrameContext.h`
+- `Engine/Renderer/Private/Frame/Core/FrameContext.h`
 - `Engine/Renderer/Private/Diagnostics/FrameExecutionDiagnostics.h`
 - `Engine/Renderer/Private/Diagnostics/PassExecutionDiagnostics.h`
 - `Engine/Renderer/Private/RayTracing/RenderRayTracingPassServices.h`

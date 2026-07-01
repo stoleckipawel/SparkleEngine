@@ -1,14 +1,18 @@
 #pragma once
 
-#include "Frame/Targets/FrameRenderTargets.h"
+#include "Frame/Reference/ReferenceRenderTargets.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
 struct FrameAssemblyResourceLayout;
 
 void AddReferencePathTracingPass(
     FrameGraphBuilder& builder,
-    const LightingRenderTargets& lighting,
+    const ReferenceRenderTargets& targets,
     FrameGraphAccelerationStructureHandle sceneTlas);
 
-void AddReferenceRenderingPasses(FrameGraphBuilder& builder, FrameAssemblyResourceLayout& resources);
+void AddReferenceRenderingPasses(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    FrameAssemblyResourceLayout& resources);

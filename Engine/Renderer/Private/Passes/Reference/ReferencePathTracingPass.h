@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/Targets/FrameRenderTargets.h"
+#include "Frame/Reference/ReferenceRenderTargets.h"
 #include "Passes/Bindings/EnvironmentMapPassBinding.h"
 #include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingUniformData.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
@@ -109,7 +109,7 @@ class ReferencePathTracingPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
-	    const LightingRenderTargets& lighting,
+	    const ReferenceRenderTargets& targets,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;

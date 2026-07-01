@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frame/Reference/ReferenceRenderTargets.h"
 #include "Frame/RayTracing/RayTracingSceneFrameGraphResources.h"
 #include "Frame/Targets/FrameRenderTargets.h"
 #include "Renderer/Public/Denoising/ShadowDenoiseContract.h"
@@ -15,6 +16,7 @@ struct FrameAssemblyTransientResources final
 	SceneRenderTargets Scene = {};
 	GBufferRenderTargets GBuffer = {};
 	LightingRenderTargets Lighting = {};
+	ReferenceRenderTargets Reference = {};
 	ShadowDenoiseContract::ShadowDenoiseTextures ShadowDenoiser = {};
 	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
 };

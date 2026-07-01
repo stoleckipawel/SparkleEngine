@@ -75,5 +75,4 @@ void CreateFrameSceneResources(
 	resources.ViewportProducts.SceneColor = sceneColor;
 	resources.ViewportProducts.FinalSceneColor = finalSceneColor;
 	resources.ViewportProducts.Exposure = exposure;
-	resources.ViewportProducts.SceneDepth = mainDepth;
 }

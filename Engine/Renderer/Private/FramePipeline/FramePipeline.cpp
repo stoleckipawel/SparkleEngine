@@ -20,6 +20,7 @@
 #include "Pipeline/PipelineStateManager.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
+#include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingSettings.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowDenoiserMode.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
@@ -122,6 +123,7 @@ void FramePipeline::InitializeFrameGraph(RenderViewportExtent sceneExtent) noexc
 	m_frameGraphSceneExtent = dependencies.sceneExtent;
 	m_frameResources = buildResult.Resources;
 	m_frameGraph = std::move(buildResult.Graph);
+	m_referencePathTracingEnabled = BuildReferencePathTracingSettingsFromCVars().Enabled;
 }
 
 void FramePipeline::BindWindowResizeEvent() noexcept
@@ -192,6 +194,19 @@ void FramePipeline::BeginFrame() noexcept
 		if (upscalerSubsystem != nullptr)
 		{
 			upscalerSubsystem->ResetHistory("Scene extent changed");
+		}
+		RefreshFrameExecution(sceneExtent);
+	}
+
+	const bool referencePathTracingEnabled = BuildReferencePathTracingSettingsFromCVars().Enabled;
+	if (referencePathTracingEnabled != m_referencePathTracingEnabled)
+	{
+		temporalDataBuilder.ResetHistory("Reference path tracing mode changed");
+		ResetExposureHistory();
+		ResetShadowDenoiseHistory();
+		if (upscalerSubsystem != nullptr)
+		{
+			upscalerSubsystem->ResetHistory("Reference path tracing mode changed");
 		}
 		RefreshFrameExecution(sceneExtent);
 	}
@@ -288,7 +303,8 @@ void FramePipeline::RecordFrame() noexcept
 	}
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
-	if (UpscalerSubsystem* upscalerSubsystem = m_systems->GetUpscalerSubsystem())
+	if (UpscalerSubsystem* upscalerSubsystem = m_systems->GetUpscalerSubsystem();
+	    upscalerSubsystem != nullptr && m_frameResources.UpscalerProviderInputs.ScalingInputColor.IsValid())
 	{
 		const UpscalerInputContract upscalerInputContract = BuildFrameUpscalerInputContract(
 		    m_frameResources.UpscalerProviderInputs,

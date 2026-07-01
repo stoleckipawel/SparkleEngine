@@ -64,6 +64,12 @@ void FramePipeline::ReleaseShadowDenoiseHistoryResources() noexcept
 
 void FramePipeline::RefreshShadowDenoiseHistoryResources() noexcept
 {
+	if (m_referencePathTracingEnabled)
+	{
+		ReleaseShadowDenoiseHistoryResources();
+		return;
+	}
+
 	const RayTracedShadowDenoiserMode mode = BuildRayTracedShadowSettingsFromCVars().DenoiserMode;
 	if (mode != m_lastShadowDenoiserMode)
 	{
