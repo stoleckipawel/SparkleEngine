@@ -52,12 +52,13 @@ struct FrameAssemblyIndirectReconstructionProviderResources final
 {
 	FrameGraphTextureHandle NoisyIndirectDiffuse = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle NoisyIndirectSpecular = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle Albedo = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle DemodulatedIndirectDiffuse = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle DemodulatedIndirectSpecular = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle DiffuseAlbedo = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle SpecularAlbedo = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle Roughness = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle DiffuseHitDistance = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle SpecularHitDistance = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle SpecularMotionVectors = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle MaterialGuide = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle DiffuseSampleGuide = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle SpecularSampleGuide = FrameGraphTextureHandle::Invalid();
 };
 
 struct FrameAssemblyDenoiserProviderResources final

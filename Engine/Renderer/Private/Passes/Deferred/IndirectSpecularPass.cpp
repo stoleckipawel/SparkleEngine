@@ -87,6 +87,8 @@ void IndirectSpecularPass::DeclareResources(
     ParameterInstance& parameters)
 {
 	parameters->IndirectSpecular = builder.CreateUAV(lighting.IndirectSpecular);
+	parameters->IndirectSpecularDemodulatedRadiance = builder.CreateUAV(lighting.IndirectSpecularDemodulatedRadiance);
+	parameters->IndirectSpecularSampleGuide = builder.CreateUAV(lighting.IndirectSpecularSampleGuide);
 	(void)RayTracingScenePassBinding::BindSceneTlas(
 	    builder,
 	    sceneTlas,

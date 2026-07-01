@@ -3,6 +3,8 @@
 #include "RayTracing/RayTracingDebugModes.hlsli"
 
 RWTexture2D<float4> IndirectSpecularTexture;
+RWTexture2D<float4> IndirectSpecularDemodulatedRadiance;
+RWTexture2D<float4> IndirectSpecularSampleGuide;
 RaytracingAccelerationStructure SceneTlas;
 Texture2D SkyTexture;
 SamplerState SamplerLinearClamp;
@@ -24,6 +26,7 @@ cbuffer IndirectSpecularUniformData
 };
 
 #include "RayTracing/PathLighting.hlsli"
+#include "Lighting/SurfaceLighting.hlsli"
 
 static const uint IndirectSpecularRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
 static const uint IndirectSpecularInstanceMask = 0xFFu;
@@ -60,6 +63,8 @@ struct IndirectSpecularResolvedContribution
 	if (IsSkyPixel(deviceZ))
 	{
 		IndirectSpecularTexture[pixelCoord] = 0.0f.xxxx;
+		IndirectSpecularDemodulatedRadiance[pixelCoord] = 0.0f.xxxx;
+		IndirectSpecularSampleGuide[pixelCoord] = 0.0f.xxxx;
 		return;
 	}
 
@@ -113,6 +118,20 @@ struct IndirectSpecularResolvedContribution
 	    lerp(0.65f.xxx, baseColor, 0.35f);
 	const float3 reflectionColor = IndirectSpecularDebugMode == RayTracingDebugModes::Off ? resolved.FinalContribution : debugColor;
 	const float bindingKeepAliveSignal = float(FrameIndex & 1u) * 1.0e-6f + roughness * 1.0e-9f;
+	const float specularSampleSelected = path.PrimaryLobe == RayTracingPathSample::LobeSpecular ? 1.0f : 0.0f;
+	const float specularSampleValid =
+	    specularSampleSelected *
+	    (path.FirstSample.RejectionReason == RayTracingPathSample::RejectionReasonNone ? 1.0f : 0.0f);
+	const float specularHitValid = specularSampleSelected * (path.FirstLighting.Hit ? 1.0f : 0.0f);
+	const float3 specularAlbedo = SurfaceLighting::BuildF0(baseColor, metallic, dielectricF0);
 
 	IndirectSpecularTexture[pixelCoord] = float4(reflectionColor, path.FirstHitSurface.Valid ? 1.0f : bindingKeepAliveSignal);
+	IndirectSpecularDemodulatedRadiance[pixelCoord] =
+	    float4(resolved.FinalContribution / max(specularAlbedo, 1.0e-4f.xxx), specularSampleValid);
+	IndirectSpecularSampleGuide[pixelCoord] =
+	    float4(
+	        max(path.FirstLighting.HitDistance, 0.0f),
+	        specularSampleValid,
+	        float(RayTracingPathSample::LobeSpecular),
+	        specularHitValid);
 }

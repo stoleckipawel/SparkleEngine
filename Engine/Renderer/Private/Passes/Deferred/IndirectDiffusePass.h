@@ -25,6 +25,11 @@ struct RenderViewData;
 struct IndirectDiffusePassParameters
 {
 	ShaderRWTexture2D<void> IndirectDiffuseTexture;
+	ShaderRWTexture2D<void> IndirectDiffuseDemodulatedRadiance;
+	ShaderRWTexture2D<void> IndirectDiffuseAlbedo;
+	ShaderRWTexture2D<void> IndirectSpecularAlbedo;
+	ShaderRWTexture2D<void> IndirectMaterialGuide;
+	ShaderRWTexture2D<void> IndirectDiffuseSampleGuide;
 	ShaderAccelerationStructure SceneTlas;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
@@ -51,6 +56,26 @@ struct IndirectDiffusePassParameters
 	static void Describe(ShaderParameterStructBuilder<IndirectDiffusePassParameters>& builder)
 	{
 		builder.RWTexture("IndirectDiffuseTexture", &IndirectDiffusePassParameters::IndirectDiffuseTexture, ShaderStageVisibility::Compute);
+		builder.RWTexture(
+		    "IndirectDiffuseDemodulatedRadiance",
+		    &IndirectDiffusePassParameters::IndirectDiffuseDemodulatedRadiance,
+		    ShaderStageVisibility::Compute);
+		builder.RWTexture(
+		    "IndirectDiffuseAlbedo",
+		    &IndirectDiffusePassParameters::IndirectDiffuseAlbedo,
+		    ShaderStageVisibility::Compute);
+		builder.RWTexture(
+		    "IndirectSpecularAlbedo",
+		    &IndirectDiffusePassParameters::IndirectSpecularAlbedo,
+		    ShaderStageVisibility::Compute);
+		builder.RWTexture(
+		    "IndirectMaterialGuide",
+		    &IndirectDiffusePassParameters::IndirectMaterialGuide,
+		    ShaderStageVisibility::Compute);
+		builder.RWTexture(
+		    "IndirectDiffuseSampleGuide",
+		    &IndirectDiffusePassParameters::IndirectDiffuseSampleGuide,
+		    ShaderStageVisibility::Compute);
 		builder.AccelerationStructure("SceneTlas", &IndirectDiffusePassParameters::SceneTlas, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &IndirectDiffusePassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &IndirectDiffusePassParameters::PerView, ShaderStageVisibility::Compute);

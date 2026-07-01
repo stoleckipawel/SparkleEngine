@@ -35,13 +35,14 @@ Stage 11 keeps image upscaling and denoising/reconstruction separate. `UpscalerI
 | --- | --- | --- | --- |
 | `ScalingInputColor` | Scene color before upscaler evaluation | Linear HDR noisy composed scene color | Streamline `ScalingInputColor`; RTXPT/Falcor reconstruction-facing noisy color. |
 | `Reconstruction.NoisyIndirectDiffuse`, `Reconstruction.NoisyIndirectSpecular` | Existing indirect lighting targets | Linear HDR material-evaluated outgoing radiance contributions | Optional split noisy radiance inputs for NRD/RTXPT-style indirect reconstruction. |
+| `Reconstruction.DemodulatedIndirectDiffuse`, `Reconstruction.DemodulatedIndirectSpecular` | Indirect diffuse/specular guide writers | Linear HDR radiance divided by the matching material factor | NRD REBLUR/RELAX-style demodulated radiance; RTXPT/Falcor denoiser-output pattern. |
 | `Depth` | Scene depth / GBuffer device Z | Reversed device depth, with provider metadata | Streamline depth tag and NRD depth/viewZ conventions; conversion remains provider-owned. |
 | `MotionVectors` | GBuffer motion vector target | Pixel delta, current minus previous | Streamline motion-vector tag and NRD temporal reprojection metadata. |
 | `Normals` | GBuffer normal target | World-space unit shading normal | Streamline normals/normal-roughness and NRD normal input conventions. |
 | `Exposure` | Exposure pass | `RGBA32F` adapted/average/target/previous exposure debug payload | Streamline exposure/auto-exposure state and local display contract. |
-| `Reconstruction.Albedo`, `Reconstruction.SpecularAlbedo`, `Reconstruction.Roughness` | Future Stage 11A guide writers | Linear guides; roughness in `[0, 1]` | Streamline albedo/specular albedo/roughness requirements. Packed `GBufferMaterial` is not marked provider-ready until a real resolve writes these guides. |
-| `Reconstruction.DiffuseHitDistance`, `Reconstruction.SpecularHitDistance` | Future Stage 11A path-signal writers | World-space ray distance from the primary surface | Streamline specular-hit-distance guidance and NRD hit-distance conventions. |
-| `Reconstruction.SpecularMotionVectors` | Future Stage 11A reflection guide writer | Dense reflection motion vectors | Streamline-compatible alternative to specular hit distance. |
+| `Reconstruction.DiffuseAlbedo`, `Reconstruction.SpecularAlbedo` | Indirect diffuse guide writer | Linear diffuse reflectance and specular/F0 guide derived from the same metallic/F0 policy as lighting | Streamline diffuse/specular albedo tags; NRD material-factor demodulation. |
+| `Reconstruction.MaterialGuide` | Indirect diffuse guide writer | `float4(roughness, metallic, dielectricF0, valid)` | Streamline roughness requirement plus local material-valid metadata. |
+| `Reconstruction.DiffuseSampleGuide`, `Reconstruction.SpecularSampleGuide` | Indirect diffuse/specular path-signal writers | `float4(hitDistanceWorld, sampleConfidence, lobeId, hitValid)` | Streamline specular-hit-distance guidance and NRD hit-distance/confidence-style denoiser inputs. |
 | `HistoryResetState` | Temporal frame state / provider contract | Boolean reset and reason metadata | Streamline/NRD temporal history reset expectations. |
 
 ## Geometry And Temporal Conventions
@@ -58,10 +59,10 @@ Stage 11 keeps image upscaling and denoising/reconstruction separate. `UpscalerI
 | Jitter | `PerTemporalConstantBufferData`, `GBufferVS.hlsl`, `StreamlineDlssRuntime.cpp` | Rasterization, DLSS/provider constants | Current clip position is jittered for rasterization; motion-vector endpoints are unjittered. Provider jitter is converted from NDC to pixels in the Streamline bridge. | Streamline jitter constants; Falcor-style temporal state handoff. |
 | History reset | `PerTemporalConstantBufferData`, `TemporalFrameState`, frame pipeline/provider contracts | Exposure, DLSS, future denoisers | `HistoryValid == 0` resets motion vectors to zero and sets provider reset state; resize/camera-cut invalidation is represented by the shared temporal history state before provider evaluation. | NRD/Streamline temporal reset expectations; Sparkle local history state owns the reset bit. |
 
-Future staged signals:
+Staged signals:
 
-- Stage 11 exposes provider-contract slots for noisy indirect radiance, guide albedo, roughness, hit distance, exposure, and temporal reset state.
-- Stage 11A owns allocation/writers for demodulated radiance, indirect hit distance, lobe id, confidence/variance, diffuse albedo, specular/F0 guide resources, and roughness guide resolves.
+- Stage 11 exposes provider-contract slots for noisy indirect radiance, guide albedo/material data, sample guides, exposure, and temporal reset state.
+- Stage 11A owns allocation/writers for demodulated radiance, indirect hit distance, lobe id, confidence, diffuse albedo, specular/F0 guide resources, and material guide resolves.
 - Stage 13 owns final cleanup of stale signal descriptions and any redundant provider-facing outputs.
 
 Implementation notes:

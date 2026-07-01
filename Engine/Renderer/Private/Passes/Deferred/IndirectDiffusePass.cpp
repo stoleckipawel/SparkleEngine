@@ -82,6 +82,11 @@ void IndirectDiffusePass::DeclareResources(
     ParameterInstance& parameters)
 {
 	parameters->IndirectDiffuseTexture = builder.CreateUAV(lighting.IndirectDiffuse);
+	parameters->IndirectDiffuseDemodulatedRadiance = builder.CreateUAV(lighting.IndirectDiffuseDemodulatedRadiance);
+	parameters->IndirectDiffuseAlbedo = builder.CreateUAV(lighting.IndirectDiffuseAlbedo);
+	parameters->IndirectSpecularAlbedo = builder.CreateUAV(lighting.IndirectSpecularAlbedo);
+	parameters->IndirectMaterialGuide = builder.CreateUAV(lighting.IndirectMaterialGuide);
+	parameters->IndirectDiffuseSampleGuide = builder.CreateUAV(lighting.IndirectDiffuseSampleGuide);
 	(void)RayTracingScenePassBinding::BindSceneTlas(
 	    builder,
 	    sceneTlas,

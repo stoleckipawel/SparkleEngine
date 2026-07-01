@@ -27,5 +27,12 @@ FrameAssemblyDenoiserProviderResources BuildFrameDenoiserProviderInputs(
 	    .Normals = gbuffer.Normal,
 	    .IndirectReconstruction =
 	        {.NoisyIndirectDiffuse = lighting.IndirectDiffuse,
-	         .NoisyIndirectSpecular = lighting.IndirectSpecular}};
+	         .NoisyIndirectSpecular = lighting.IndirectSpecular,
+	         .DemodulatedIndirectDiffuse = lighting.IndirectDiffuseDemodulatedRadiance,
+	         .DemodulatedIndirectSpecular = lighting.IndirectSpecularDemodulatedRadiance,
+	         .DiffuseAlbedo = lighting.IndirectDiffuseAlbedo,
+	         .SpecularAlbedo = lighting.IndirectSpecularAlbedo,
+	         .MaterialGuide = lighting.IndirectMaterialGuide,
+	         .DiffuseSampleGuide = lighting.IndirectDiffuseSampleGuide,
+	         .SpecularSampleGuide = lighting.IndirectSpecularSampleGuide}};
 }

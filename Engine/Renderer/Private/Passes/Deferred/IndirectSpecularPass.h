@@ -25,6 +25,8 @@ struct RenderViewData;
 struct IndirectSpecularPassParameters
 {
 	ShaderRWTexture2D<void> IndirectSpecular;
+	ShaderRWTexture2D<void> IndirectSpecularDemodulatedRadiance;
+	ShaderRWTexture2D<void> IndirectSpecularSampleGuide;
 	ShaderAccelerationStructure SceneTlas;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
@@ -51,6 +53,14 @@ struct IndirectSpecularPassParameters
 	static void Describe(ShaderParameterStructBuilder<IndirectSpecularPassParameters>& builder)
 	{
 		builder.RWTexture("IndirectSpecular", &IndirectSpecularPassParameters::IndirectSpecular, ShaderStageVisibility::Compute);
+		builder.RWTexture(
+		    "IndirectSpecularDemodulatedRadiance",
+		    &IndirectSpecularPassParameters::IndirectSpecularDemodulatedRadiance,
+		    ShaderStageVisibility::Compute);
+		builder.RWTexture(
+		    "IndirectSpecularSampleGuide",
+		    &IndirectSpecularPassParameters::IndirectSpecularSampleGuide,
+		    ShaderStageVisibility::Compute);
 		builder.AccelerationStructure("SceneTlas", &IndirectSpecularPassParameters::SceneTlas, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &IndirectSpecularPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &IndirectSpecularPassParameters::PerView, ShaderStageVisibility::Compute);
