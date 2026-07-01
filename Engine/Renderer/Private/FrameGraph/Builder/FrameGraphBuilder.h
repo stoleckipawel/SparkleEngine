@@ -11,6 +11,7 @@
 
 #include "Frame/RayTracing/RayTracingSceneFrameGraphResources.h"
 #include "Frame/Core/FrameAssembly.h"
+#include "Frame/Core/FrameRenderPath.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
@@ -221,6 +222,7 @@ struct FrameGraphBuildResult
 {
 	std::unique_ptr<FrameGraph> Graph;
 	FrameAssemblyResourceLayout Resources = {};
+	FrameRenderPath RenderPath = FrameRenderPath::RealtimeDeferred;
 };
 
 class FrameGraphFactory final

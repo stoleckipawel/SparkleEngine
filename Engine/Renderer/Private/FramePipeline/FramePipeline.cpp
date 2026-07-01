@@ -20,7 +20,6 @@
 #include "Pipeline/PipelineStateManager.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
-#include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingSettings.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowDenoiserMode.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
@@ -122,8 +121,8 @@ void FramePipeline::InitializeFrameGraph(RenderViewportExtent sceneExtent) noexc
 	FrameGraphBuildResult buildResult = frameGraphFactory.Build();
 	m_frameGraphSceneExtent = dependencies.sceneExtent;
 	m_frameResources = buildResult.Resources;
+	m_renderPath = buildResult.RenderPath;
 	m_frameGraph = std::move(buildResult.Graph);
-	m_referencePathTracingEnabled = BuildReferencePathTracingSettingsFromCVars().Enabled;
 }
 
 void FramePipeline::BindWindowResizeEvent() noexcept
@@ -198,15 +197,15 @@ void FramePipeline::BeginFrame() noexcept
 		RefreshFrameExecution(sceneExtent);
 	}
 
-	const bool referencePathTracingEnabled = BuildReferencePathTracingSettingsFromCVars().Enabled;
-	if (referencePathTracingEnabled != m_referencePathTracingEnabled)
+	const FrameRenderPath renderPath = ResolveFrameRenderPathFromSettings();
+	if (renderPath != m_renderPath)
 	{
-		temporalDataBuilder.ResetHistory("Reference path tracing mode changed");
+		temporalDataBuilder.ResetHistory("Render path changed");
 		ResetExposureHistory();
 		ResetShadowDenoiseHistory();
 		if (upscalerSubsystem != nullptr)
 		{
-			upscalerSubsystem->ResetHistory("Reference path tracing mode changed");
+			upscalerSubsystem->ResetHistory("Render path changed");
 		}
 		RefreshFrameExecution(sceneExtent);
 	}

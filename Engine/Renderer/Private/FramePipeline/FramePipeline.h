@@ -3,6 +3,7 @@
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Frame/Builders/PerFrameDataBuilder.h"
 #include "Frame/Core/FrameAssembly.h"
+#include "Frame/Core/FrameRenderPath.h"
 #include "Frame/RhiFrameConstants.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
@@ -107,6 +108,6 @@ class FramePipeline final
 	std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> m_shadowDenoiseHistoryResources = {};
 	bool m_bResizePending = false;
 	bool m_exposureHistoryValid = false;
-	bool m_referencePathTracingEnabled = false;
+	FrameRenderPath m_renderPath = FrameRenderPath::RealtimeDeferred;
 	RayTracedShadowDenoiserMode m_lastShadowDenoiserMode;
 };

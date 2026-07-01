@@ -64,7 +64,7 @@ void FramePipeline::ReleaseShadowDenoiseHistoryResources() noexcept
 
 void FramePipeline::RefreshShadowDenoiseHistoryResources() noexcept
 {
-	if (m_referencePathTracingEnabled)
+	if (m_renderPath != FrameRenderPath::RealtimeDeferred)
 	{
 		ReleaseShadowDenoiseHistoryResources();
 		return;

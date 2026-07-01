@@ -185,6 +185,7 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 
 	FrameGraphBuildResult result{};
 	result.Resources = frameLoop.Resources;
+	result.RenderPath = frameLoop.RenderPath;
 	result.Graph = std::move(frameGraph);
 	return result;
 }

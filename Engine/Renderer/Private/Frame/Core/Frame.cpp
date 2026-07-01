@@ -1,6 +1,7 @@
 #include "../../PCH.h"
 #include "Frame/Core/Frame.h"
 
+#include "Frame/Core/FrameRenderPath.h"
 #include "Frame/Core/FrameSceneResources.h"
 #include "Frame/Debug/Debug.h"
 #include "Frame/Deferred/GBuffer.h"
@@ -10,7 +11,6 @@
 #include "Frame/RayTracing/RayTracingScene.h"
 #include "Frame/Reference/ReferencePathTracing.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingSettings.h"
 
 FrameBuildResult BuildFrame(
     FrameGraphBuilder& builder,
@@ -19,11 +19,12 @@ FrameBuildResult BuildFrame(
     bool presentToBackBuffer)
 {
 	FrameAssemblyResourceLayout resources = {};
+	const FrameRenderPath renderPath = ResolveFrameRenderPathFromSettings();
 
 	CreateFrameSceneResources(builder, sceneExtent, backBufferFormat, resources);
 	AddRayTracingInfrastructurePasses(builder, resources);
 
-	if (BuildReferencePathTracingSettingsFromCVars().Enabled)
+	if (renderPath == FrameRenderPath::PathTracedReference)
 	{
 		AddReferenceRenderingPasses(builder, sceneExtent, resources);
 	}
@@ -41,5 +42,5 @@ FrameBuildResult BuildFrame(
 		AddPresentationPass(builder, sceneExtent, backBufferFormat, resources.Transient.Scene, resources.Transient.Exposure);
 	}
 
-	return FrameBuildResult{.Resources = resources};
+	return FrameBuildResult{.Resources = resources, .RenderPath = renderPath};
 }
