@@ -13,14 +13,14 @@ namespace
 		const RendererProviderResourceBinding* Binding = nullptr;
 	};
 
-	constexpr std::array<NamedProviderResourceBinding, 9> GetNamedBindings(const RendererProviderResourceContract& contract) noexcept
+	constexpr std::array<NamedProviderResourceBinding, 9> GetNamedBindings(const RendererProviderUpscalerResourceContract& contract) noexcept
 	{
 		return {{
-		    {"color", &contract.Color},
+		    {"scaling input color", &contract.ScalingInputColor},
+		    {"scaling output color", &contract.ScalingOutputColor},
 		    {"depth", &contract.Depth},
 		    {"motion vectors", &contract.MotionVectors},
 		    {"exposure", &contract.Exposure},
-		    {"normals", &contract.Normals},
 		    {"history", &contract.History},
 		    {"jitter", &contract.Jitter},
 		    {"camera matrices", &contract.CameraMatrices},
@@ -29,7 +29,7 @@ namespace
 	}
 }
 
-bool HasMissingRequiredProviderResources(const RendererProviderResourceContract& contract) noexcept
+bool HasMissingRequiredProviderResources(const RendererProviderUpscalerResourceContract& contract) noexcept
 {
 	for (const NamedProviderResourceBinding& namedBinding : GetNamedBindings(contract))
 	{
@@ -42,11 +42,16 @@ bool HasMissingRequiredProviderResources(const RendererProviderResourceContract&
 	return false;
 }
 
-std::string BuildProviderResourceContractSummary(const RendererProviderResourceContract& contract)
+std::string BuildProviderResourceContractSummary(const RendererProviderUpscalerResourceContract& contract)
 {
 	std::string summary;
 	for (const NamedProviderResourceBinding& namedBinding : GetNamedBindings(contract))
 	{
+		if (namedBinding.Binding->Requirement == ERendererProviderResourceRequirement::Unused)
+		{
+			continue;
+		}
+
 		if (!summary.empty())
 		{
 			summary += ", ";

@@ -4,7 +4,6 @@
 #include "Camera/RenderCamera.h"
 #include "Commands/RenderCommandContext.h"
 #include "Frame/RhiFrameConstants.h"
-#include "Core/Public/Diagnostics/LiveProfiler.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Debug/RendererCVars.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
@@ -13,6 +12,7 @@
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
+#include "Frame/Presentation/Upscaling.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
@@ -25,8 +25,6 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RHI/Public/Memory/RhiMemoryTypes.h"
-#include "RHI/Public/Resources/RhiResourceDesc.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
@@ -34,7 +32,6 @@
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
 #include "Upscaling/RenderUpscalingPassServices.h"
-#include "Upscaling/UpscalerInputContractBuilder.h"
 #include "Upscaling/UpscalerSubsystem.h"
 #include "Window/Window.h"
 
@@ -88,346 +85,6 @@ void FramePipeline::OnRender() noexcept
 	PrepareHostFrame();
 	RecordHostFrame();
 	SubmitHostFrame();
-}
-
-ViewportPresentationProduct FramePipeline::BeginViewportPresentation(RenderOutputFlags output) noexcept
-{
-	const RenderProduct* product = m_viewportRenderProducts.FindProduct(output);
-	if (product == nullptr || !product->Handle)
-	{
-		return ViewportPresentationProduct{
-		    .Output = output,
-		    .FailureReason = "Viewport output is not available"};
-	}
-
-	if (m_frameGraph == nullptr)
-	{
-		return ViewportPresentationProduct{
-		    .Output = output,
-		    .Product = *product,
-		    .FailureReason = "Frame graph is not available"};
-	}
-
-	TransitionRenderProduct(product->Handle, ResourceState::ShaderResource);
-
-	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(product->Handle);
-	const std::uint64_t textureId = m_systems->GetRenderHardwareInterface().GetPresentationService().ResolveImGuiTextureId(
-	    m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}));
-	if (textureId == 0)
-	{
-		return ViewportPresentationProduct{
-		    .Output = output,
-		    .Product = *product,
-		    .FailureReason = "RHI presentation service did not resolve a texture id"};
-	}
-
-	return ViewportPresentationProduct{
-	    .Output = output,
-	    .Product = *product,
-	    .TextureId = textureId,
-	    .Status = ViewportPresentationStatus::Ready};
-}
-
-void FramePipeline::EndViewportPresentation(RenderOutputFlags output) noexcept
-{
-	const RenderProduct* product = m_viewportRenderProducts.FindProduct(output);
-	if (product == nullptr || !product->Handle)
-	{
-		return;
-	}
-
-	TransitionRenderProduct(product->Handle, ResourceState::Common);
-}
-
-RhiCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
-{
-	RhiCaptureResult result{};
-	result.BackendApi = m_systems->GetRenderHardwareInterface().GetCapabilities().BackendApi;
-	result.FrameIndex = request.FrameIndex;
-	result.ViewMode = request.ViewMode;
-	result.ViewModeName = request.ViewModeName;
-	result.ArtifactPath = request.OutputPath;
-
-	const RenderProduct* product = m_viewportRenderProducts.FindProduct(request.Output);
-	if (product == nullptr || !product->Handle)
-	{
-		result.FailureReason = "Viewport output is not available";
-		return result;
-	}
-
-	const NativeResourceHandle resource = ResolveRenderProductResource(product->Handle);
-	if (!resource)
-	{
-		result.FailureReason = "Viewport output resource is not available";
-		return result;
-	}
-
-	return m_systems->GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
-	    RhiTextureCaptureRequest{
-	        .Resource = resource,
-	        .Width = product->Extent.Width,
-	        .Height = product->Extent.Height,
-	        .OutputPath = request.OutputPath,
-	        .FrameIndex = request.FrameIndex,
-	        .ViewMode = request.ViewMode,
-	        .ViewModeName = request.ViewModeName,
-	        .DebugName = request.DebugName});
-}
-
-FrameGraphResourceHandle FramePipeline::ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept
-{
-	return ToFrameGraphResourceHandle(handle);
-}
-
-NativeResourceHandle FramePipeline::ResolveRenderProductResource(RenderProductHandle handle) const noexcept
-{
-	if (!handle || !m_frameGraph)
-	{
-		return NativeResourceHandle{};
-	}
-
-	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(handle);
-	if (!resourceHandle.IsValid())
-	{
-		return NativeResourceHandle{};
-	}
-
-	return m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle});
-}
-
-void FramePipeline::TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept
-{
-	if (!handle || !m_frameGraph)
-	{
-		return;
-	}
-
-	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(handle);
-	if (!resourceHandle.IsValid())
-	{
-		return;
-	}
-
-	const NativeResourceHandle resource = m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle});
-	if (!resource)
-	{
-		return;
-	}
-
-	const ResourceState trackedBefore = m_frameGraph->GetTrackedResourceState(resourceHandle);
-	if (trackedBefore == after)
-	{
-		return;
-	}
-
-	RenderHardwareInterface& renderHardware = m_systems->GetRenderHardwareInterface();
-	RenderCommandList& commandList = m_systems->GetBackend().GetGraphicsCommandList(renderHardware.GetCurrentFrameIndex());
-	commandList.TransitionResource(resource, trackedBefore, after);
-	m_frameGraph->UpdateTrackedResourceState(resourceHandle, after);
-}
-
-std::uint32_t FramePipeline::GetLastUnresolvedBarrierWarningCount() const noexcept
-{
-	return m_frameGraph != nullptr ? m_frameGraph->GetLastUnresolvedBarrierWarningCount() : 0u;
-}
-
-std::uint32_t FramePipeline::GetLastMissingExecutionBindingCount() const noexcept
-{
-	return m_frameGraph != nullptr ? m_frameGraph->GetLastMissingExecutionBindingCount() : 0u;
-}
-
-std::uint32_t FramePipeline::GetCompiledTransientResourceCount() const noexcept
-{
-	return m_frameGraph != nullptr ? m_frameGraph->GetCompiledTransientResourceCount() : 0u;
-}
-
-std::uint32_t FramePipeline::GetCompiledImportedResourceCount() const noexcept
-{
-	return m_frameGraph != nullptr ? m_frameGraph->GetCompiledImportedResourceCount() : 0u;
-}
-
-std::uint32_t FramePipeline::GetCompiledPersistentResourceCount() const noexcept
-{
-	return m_frameGraph != nullptr ? m_frameGraph->GetCompiledPersistentResourceCount() : 0u;
-}
-
-std::uint32_t FramePipeline::GetAvailableViewportProductCount() const noexcept
-{
-	std::uint32_t count = 0;
-	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::SceneColor) ? 1u : 0u;
-	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::SceneDepth) ? 1u : 0u;
-	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::Normals) ? 1u : 0u;
-	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::ObjectId) ? 1u : 0u;
-	count += m_viewportRenderProducts.HasOutput(RenderOutputFlags::OverlayMask) ? 1u : 0u;
-	return count;
-}
-
-RendererFrameTimingDiagnosticsSnapshot FramePipeline::CaptureFrameTimingDiagnosticsSnapshot() const
-{
-	const FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
-	RendererFrameTimingDiagnosticsSnapshot snapshot;
-	snapshot.GpuTimingStatus =
-	    frameDiagnostics.IsGpuTimingAvailable() ? ERendererDiagnosticStatus::Available : ERendererDiagnosticStatus::Unsupported;
-	const std::vector<ResolvedGpuTiming>& resolvedTimings = frameDiagnostics.GetResolvedTimings();
-	snapshot.GpuTimings.reserve(resolvedTimings.size());
-	for (const ResolvedGpuTiming& resolvedTiming : resolvedTimings)
-	{
-		snapshot.GpuTimings.push_back(
-		    RendererGpuTimingMetric{
-		        .Label = resolvedTiming.Label,
-		        .BeginTicks = resolvedTiming.BeginTicks,
-		        .EndTicks = resolvedTiming.EndTicks,
-		        .DurationTicks = resolvedTiming.DurationTicks,
-		        .DurationMilliseconds = resolvedTiming.DurationMilliseconds,
-		        .Depth = resolvedTiming.Depth});
-	}
-	snapshot.CpuFrameTimingStatus = ERendererDiagnosticStatus::Available;
-	snapshot.CpuFrameTimingReason = "CPU frame scopes are owned by Core LiveProfiler; renderer snapshot keeps GPU frame timings here.";
-	return snapshot;
-}
-
-void FramePipeline::BindRayTracingFrameGraphResources(const RayTracingSceneFrameData& rayTracingScene) noexcept
-{
-	if (m_frameGraph == nullptr)
-	{
-		return;
-	}
-
-	if (rayTracingScene.PtlasFrameGraphResources.HasLogicalUpdateRecords())
-	{
-		m_frameGraph->BindPersistentBuffer(
-		    m_frameResources.Persistent.RayTracing.PtlasLogicalUpdateRecords,
-		    rayTracingScene.PtlasFrameGraphResources.LogicalUpdateRecords);
-	}
-	else
-	{
-		m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasLogicalUpdateRecords);
-	}
-
-	if (rayTracingScene.PtlasFrameGraphResources.HasNativeOperationData())
-	{
-		m_frameGraph->BindPersistentBuffer(
-		    m_frameResources.Persistent.RayTracing.PtlasNativeOperationData,
-		    rayTracingScene.PtlasFrameGraphResources.NativeOperationData);
-	}
-	else
-	{
-		m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasNativeOperationData);
-	}
-
-	if (rayTracingScene.PtlasFrameGraphResources.HasScratch())
-	{
-		m_frameGraph->BindPersistentBuffer(
-		    m_frameResources.Persistent.RayTracing.PtlasScratch,
-		    rayTracingScene.PtlasFrameGraphResources.Scratch);
-	}
-	else
-	{
-		m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasScratch);
-	}
-}
-
-void FramePipeline::ClearRayTracingFrameGraphResources() noexcept
-{
-	if (m_frameGraph == nullptr)
-	{
-		return;
-	}
-
-	m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasLogicalUpdateRecords);
-	m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasNativeOperationData);
-	m_frameGraph->ClearPersistentBufferBinding(m_frameResources.Persistent.RayTracing.PtlasScratch);
-}
-
-void FramePipeline::CreateExposureHistoryResources() noexcept
-{
-	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
-	RhiResourceService& resourceService = renderHardwareInterface.GetResourceService();
-	const RhiTextureResourceDesc historyDesc{
-	    .Width = 1u,
-	    .Height = 1u,
-	    .Format = PixelFormat::R32G32B32A32_Float,
-	    .MipLevels = 1u,
-	    .AllowRenderTarget = false,
-	    .AllowDepthStencil = false,
-	    .AllowUnorderedAccess = true};
-
-	for (RhiOwnedResourceHandle& historyResource : m_exposureHistoryResources)
-	{
-		if (historyResource)
-		{
-			continue;
-		}
-
-		historyResource = resourceService.CreateTextureResource(
-		    historyDesc,
-		    ResourceState::ShaderResource,
-		    RhiMemoryCategory::Texture,
-		    RhiMemoryResidencyClass::DeviceLocal,
-		    L"ExposureHistory");
-	}
-
-	m_exposureHistoryValid = false;
-}
-
-void FramePipeline::ReleaseExposureHistoryResources() noexcept
-{
-	if (m_systems == nullptr)
-	{
-		return;
-	}
-
-	RhiResourceService& resourceService = m_systems->GetRenderHardwareInterface().GetResourceService();
-	for (RhiOwnedResourceHandle& historyResource : m_exposureHistoryResources)
-	{
-		if (historyResource)
-		{
-			resourceService.ReleaseOwnedResource(historyResource);
-			historyResource = {};
-		}
-	}
-	m_exposureHistoryValid = false;
-}
-
-void FramePipeline::BindExposureHistoryFrameGraphResources() noexcept
-{
-	if (m_frameGraph == nullptr || !m_frameResources.History.HasExposureHistory())
-	{
-		return;
-	}
-
-	const std::uint32_t currentFrameIndex = m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex();
-	const std::uint32_t previousFrameIndex =
-	    (currentFrameIndex + RhiFrameConstants::FramesInFlight - 1u) % RhiFrameConstants::FramesInFlight;
-	const RhiOwnedResourceHandle previousExposure = m_exposureHistoryResources[previousFrameIndex];
-	const RhiOwnedResourceHandle currentExposure = m_exposureHistoryResources[currentFrameIndex];
-	if (!previousExposure || !currentExposure)
-	{
-		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.PreviousExposure);
-		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.CurrentExposure);
-		m_exposureHistoryValid = false;
-		return;
-	}
-
-	m_frameGraph->BindPersistentTexture(m_frameResources.History.PreviousExposure, previousExposure, ResourceState::ShaderResource);
-	m_frameGraph->BindPersistentTexture(m_frameResources.History.CurrentExposure, currentExposure, ResourceState::ShaderResource);
-}
-
-void FramePipeline::ResetExposureHistory() noexcept
-{
-	m_exposureHistoryValid = false;
-}
-
-bool FramePipeline::HasExposureHistoryResources() const noexcept
-{
-	for (const RhiOwnedResourceHandle historyResource : m_exposureHistoryResources)
-	{
-		if (!historyResource)
-		{
-			return false;
-		}
-	}
-	return true;
 }
 
 RenderViewportExtent FramePipeline::ResolveSceneExtent() const noexcept
@@ -633,20 +290,13 @@ void FramePipeline::RecordFrame() noexcept
 
 	if (UpscalerSubsystem* upscalerSubsystem = m_systems->GetUpscalerSubsystem())
 	{
-		const UpscalerInputContract upscalerInputContract =
-		    BuildUpscalerInputContract(
-		        UpscalerInputContractBuildDesc{
-		            .HudlessSceneColor = ToRenderProductHandle(m_frameResources.ProviderInputs.HudlessSceneColor),
-		            .Depth = ToRenderProductHandle(m_frameResources.ProviderInputs.Depth),
-		            .MotionVectors = ToRenderProductHandle(m_frameResources.ProviderInputs.MotionVectors),
-		            .Normals = ToRenderProductHandle(m_frameResources.ProviderInputs.Normals),
-		            .FinalOutput = ToRenderProductHandle(m_frameResources.ProviderInputs.FinalOutputColor),
-		            .RenderExtent = m_frameGraphSceneExtent,
-		            .OutputExtent = m_frameGraphSceneExtent,
-		            .FrameIndex = m_systems->GetTimer().GetFrameCount(),
-		            .Camera = frame.mainView.perViewData.Camera,
-		            .TemporalData = frame.mainView.perTemporalData,
-		            .TemporalState = frame.mainView.temporalState});
+		const UpscalerInputContract upscalerInputContract = BuildFrameUpscalerInputContract(
+		    m_frameResources.UpscalerProviderInputs,
+		    m_frameGraphSceneExtent,
+		    m_systems->GetTimer().GetFrameCount(),
+		    frame.mainView.perViewData.Camera,
+		    frame.mainView.perTemporalData,
+		    frame.mainView.temporalState);
 		upscalerSubsystem->SetupFrame(upscalerInputContract);
 	}
 
@@ -747,71 +397,4 @@ void FramePipeline::EndFrame() noexcept
 	m_exposureHistoryValid = HasExposureHistoryResources();
 	m_systems->GetBackend().AdvanceFrameInFlight();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame end");
-}
-
-FrameExecutionDiagnostics& FramePipeline::GetCurrentFrameDiagnostics() noexcept
-{
-	return *m_frameExecutionDiagnostics[m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex()];
-}
-
-const FrameExecutionDiagnostics& FramePipeline::GetCurrentFrameDiagnostics() const noexcept
-{
-	return *m_frameExecutionDiagnostics[m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex()];
-}
-
-void FramePipeline::ReportResolvedTimings(std::uint32_t frameIndex, const FrameExecutionDiagnostics& frameDiagnostics) const noexcept
-{
-	const auto& resolvedTimers = frameDiagnostics.GetResolvedTimings();
-
-	PublishLiveGpuTimings(resolvedTimers);
-
-	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
-
-	if (rendererLogger == nullptr || !rendererLogger->should_log(spdlog::level::trace))
-	{
-		return;
-	}
-
-	if (resolvedTimers.empty())
-	{
-		return;
-	}
-
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Resolved GPU timings for frame slot {} ({} scopes)", frameIndex, resolvedTimers.size());
-	for (const ResolvedGpuTiming& resolvedTimer : resolvedTimers)
-	{
-		SPDLOG_LOGGER_TRACE(
-		    rendererLogger,
-		    "  {}: {:.3f} ms ({} ticks)",
-		    resolvedTimer.Label,
-		    resolvedTimer.DurationMilliseconds,
-		    resolvedTimer.DurationTicks);
-	}
-}
-
-void FramePipeline::PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resolvedTimers) const noexcept
-{
-	if (resolvedTimers.empty())
-	{
-		return;
-	}
-
-	Diagnostics::LiveProfiler& profiler = Diagnostics::LiveProfiler::Get();
-	if (!profiler.IsEnabled())
-	{
-		return;
-	}
-
-	std::vector<Diagnostics::LiveProfiler::GpuTimingEntry> entries;
-	entries.reserve(resolvedTimers.size());
-	for (const ResolvedGpuTiming& resolvedTimer : resolvedTimers)
-	{
-		entries.push_back(
-		    Diagnostics::LiveProfiler::GpuTimingEntry{
-		        .Label = std::string_view(resolvedTimer.Label),
-		        .DurationMicroseconds = static_cast<std::uint64_t>(resolvedTimer.DurationMilliseconds * 1000.0),
-		        .Depth = resolvedTimer.Depth});
-	}
-
-	profiler.SubmitGpuFrame(entries.data(), entries.size());
 }

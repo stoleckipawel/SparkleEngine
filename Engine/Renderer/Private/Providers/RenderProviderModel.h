@@ -33,22 +33,22 @@ struct RendererProviderResourceBinding final
 	bool Available = false;
 };
 
-struct RendererProviderResourceContract final
+struct RendererProviderUpscalerResourceContract final
 {
-	RendererProviderResourceBinding Color = {};
+	RendererProviderResourceBinding ScalingInputColor = {};
+	RendererProviderResourceBinding ScalingOutputColor = {};
 	RendererProviderResourceBinding Depth = {};
 	RendererProviderResourceBinding MotionVectors = {};
 	RendererProviderResourceBinding Exposure = {};
-	RendererProviderResourceBinding Normals = {};
 	RendererProviderResourceBinding History = {};
 	RendererProviderResourceBinding Jitter = {};
 	RendererProviderResourceBinding CameraMatrices = {};
 	RendererProviderResourceBinding FrameIndex = {};
 };
 
-bool HasMissingRequiredProviderResources(const RendererProviderResourceContract& contract) noexcept;
+bool HasMissingRequiredProviderResources(const RendererProviderUpscalerResourceContract& contract) noexcept;
 
-std::string BuildProviderResourceContractSummary(const RendererProviderResourceContract& contract);
+std::string BuildProviderResourceContractSummary(const RendererProviderUpscalerResourceContract& contract);
 
 const char* RendererProviderCategoryToString(ERendererProviderCategory category) noexcept;
 const char* RendererProviderCapabilityStateToString(ERendererProviderCapabilityState state) noexcept;

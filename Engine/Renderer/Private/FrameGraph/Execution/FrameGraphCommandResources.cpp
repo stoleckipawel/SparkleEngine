@@ -1,0 +1,190 @@
+#include "PCH.h"
+#include "FrameGraph/FrameGraph.h"
+
+#include "Commands/RenderCommandContext.h"
+
+#include <algorithm>
+#include <array>
+#include <cassert>
+
+namespace
+{
+	struct FrameGraphFramebuffer final
+	{
+		std::array<RhiCpuDescriptorHandle, 8> renderTargetViews = {};
+		std::uint32_t renderTargetCount = 0;
+		RhiCpuDescriptorHandle depthStencilView = {};
+
+		bool HasDepthStencil() const noexcept { return static_cast<bool>(depthStencilView); }
+	};
+}
+
+void FrameGraph::BindRenderTarget(
+    RenderCommandContext& cmd,
+    FrameGraphTextureHandle renderTargetHandle,
+    FrameGraphTextureHandle depthStencilHandle) const noexcept
+{
+	FrameGraphFramebuffer framebuffer{};
+	framebuffer.renderTargetViews[0] = ResolveRenderTargetView(renderTargetHandle.GetResourceHandle());
+	framebuffer.renderTargetCount = 1u;
+	if (depthStencilHandle.IsValid())
+	{
+		framebuffer.depthStencilView = ResolveDepthStencilView(depthStencilHandle.GetResourceHandle());
+	}
+
+	cmd.SetRenderTarget(
+	    framebuffer.renderTargetViews[0],
+	    framebuffer.HasDepthStencil() ? &framebuffer.depthStencilView : nullptr);
+}
+
+void FrameGraph::BindRenderTargets(
+    RenderCommandContext& cmd,
+    std::span<const FrameGraphTextureHandle> renderTargetHandles,
+    FrameGraphTextureHandle depthStencilHandle) const noexcept
+{
+	assert(!renderTargetHandles.empty());
+	assert(renderTargetHandles.size() <= 8u);
+
+	FrameGraphFramebuffer framebuffer{};
+	framebuffer.renderTargetCount = static_cast<std::uint32_t>(renderTargetHandles.size());
+	for (std::size_t index = 0; index < renderTargetHandles.size(); ++index)
+	{
+		framebuffer.renderTargetViews[index] = ResolveRenderTargetView(renderTargetHandles[index].GetResourceHandle());
+	}
+
+	if (depthStencilHandle.IsValid())
+	{
+		framebuffer.depthStencilView = ResolveDepthStencilView(depthStencilHandle.GetResourceHandle());
+	}
+
+	cmd.SetRenderTargets(
+	    framebuffer.renderTargetCount,
+	    framebuffer.renderTargetViews.data(),
+	    framebuffer.HasDepthStencil() ? &framebuffer.depthStencilView : nullptr);
+}
+
+RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveShaderResourceView(handle.GetResourceHandle());
+}
+
+RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveShaderResourceView(handle.GetResourceHandle());
+}
+
+RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveUnorderedAccessView(handle.GetResourceHandle());
+}
+
+RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveUnorderedAccessView(handle.GetResourceHandle());
+}
+
+RhiGpuVirtualAddress FrameGraph::ResolveAccelerationStructureGpuAddress(FrameGraphAccelerationStructureHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveAccelerationStructureGpuAddress(handle.GetResourceHandle());
+}
+
+void FrameGraph::CopyTexture(RenderCommandContext& cmd, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept
+{
+	assert(destinationHandle.IsValid());
+	assert(sourceHandle.IsValid());
+	CopyResource(cmd, destinationHandle.GetResourceHandle(), sourceHandle.GetResourceHandle());
+}
+
+void FrameGraph::CopyBuffer(RenderCommandContext& cmd, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept
+{
+	assert(destinationHandle.IsValid());
+	assert(sourceHandle.IsValid());
+	CopyResource(cmd, destinationHandle.GetResourceHandle(), sourceHandle.GetResourceHandle());
+}
+
+void FrameGraph::ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept
+{
+	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
+	const std::array<float, 4> clearColor = GetClearColor(resourceHandle);
+	cmd.ClearRenderTarget(ResolveRenderTargetView(resourceHandle), clearColor.data());
+}
+
+void FrameGraph::ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept
+{
+	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
+	cmd.ClearDepthStencil(ResolveDepthStencilView(resourceHandle), GetClearDepth(resourceHandle));
+}
+
+NativeResourceHandle FrameGraph::ResolveResource(FrameGraphTextureHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveResource(handle.GetResourceHandle());
+}
+
+NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveNativeTextureView(handle.GetResourceHandle(), state);
+}
+
+void FrameGraph::CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept
+{
+	assert(destinationHandle.IsValid());
+	assert(sourceHandle.IsValid());
+
+	const FrameGraphResourceMetadata& destinationMetadata = m_resourceRegistry.GetMetadata(destinationHandle);
+	const FrameGraphResourceMetadata& sourceMetadata = m_resourceRegistry.GetMetadata(sourceHandle);
+	assert(destinationMetadata.resourceClass == sourceMetadata.resourceClass);
+	assert(
+	    destinationMetadata.kind == sourceMetadata.kind || (destinationMetadata.resourceClass == FrameGraphResourceClass::Texture &&
+	                                                        sourceMetadata.resourceClass == FrameGraphResourceClass::Texture));
+
+	const NativeResourceHandle destinationResource = ResolveResource(destinationHandle);
+	const NativeResourceHandle sourceResource = ResolveResource(sourceHandle);
+	assert(destinationResource);
+	assert(sourceResource);
+	cmd.CopyResource(destinationResource, sourceResource);
+}
+
+void FrameGraph::InitializeTransientColorUavFirstUses(
+    RenderCommandContext& cmd,
+    const FrameGraphPlan& plan,
+    const FrameGraphPassNode& passRecord) const noexcept
+{
+	for (const PassResourceDeclaration& declaration : passRecord.declarations)
+	{
+		if (!declaration.handle.IsValid() || !UsesUnorderedAccess(declaration.usage))
+		{
+			continue;
+		}
+
+		const auto transientIt = std::find_if(
+		    plan.transients.resources.begin(),
+		    plan.transients.resources.end(),
+		    [handle = declaration.handle](const FrameGraphTransientResourcePlan& transientPlan)
+		    {
+			    return transientPlan.handle == handle;
+		    });
+		if (transientIt == plan.transients.resources.end() ||
+		    transientIt->kind != FrameGraphResourceKind::ColorRenderTarget ||
+		    transientIt->lifetime.firstUserPass != passRecord.index)
+		{
+			continue;
+		}
+
+		const NativeResourceHandle resource = ResolveResource(declaration.handle);
+		if (!resource)
+		{
+			continue;
+		}
+
+		cmd.TransitionResource(resource, ResourceState::UnorderedAccess, ResourceState::RenderTarget);
+		ClearRenderTarget(cmd, FrameGraphTextureHandle{declaration.handle});
+		cmd.TransitionResource(resource, ResourceState::RenderTarget, ResourceState::UnorderedAccess);
+	}
+}

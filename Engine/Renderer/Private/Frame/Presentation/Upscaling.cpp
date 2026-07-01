@@ -6,20 +6,31 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "Commands/RenderCommandContext.h"
+#include "Upscaling/UpscalerInputContractBuilder.h"
 #include "Upscaling/UpscalerProvider.h"
 #include "Upscaling/UpscalerSubsystem.h"
 
-FrameAssemblyProviderResources CreateUpscalerProviderInputs(
-    const SceneRenderTargets& sceneTargets,
-    const GBufferRenderTargets& gbuffer)
+UpscalerInputContract BuildFrameUpscalerInputContract(
+    const FrameAssemblyUpscalerProviderResources& providerInputs,
+    RenderViewportExtent sceneExtent,
+    std::uint64_t frameIndex,
+    const PerViewCameraConstantBufferData& camera,
+    const PerTemporalConstantBufferData& temporalData,
+    RenderTemporalFrameState temporalState)
 {
-	return FrameAssemblyProviderResources{
-	    .HudlessSceneColor = sceneTargets.SceneColor,
-	    .Depth = sceneTargets.MainDepth,
-	    .MotionVectors = gbuffer.MotionVector,
-	    .FinalOutputColor = sceneTargets.FinalSceneColor,
-	    .Exposure = FrameGraphTextureHandle::Invalid(),
-	    .Normals = gbuffer.Normal};
+	return BuildUpscalerInputContract(
+	    UpscalerInputContractBuildDesc{
+	        .ScalingInputColor = ToRenderProductHandle(providerInputs.ScalingInputColor),
+	        .Depth = ToRenderProductHandle(providerInputs.Depth),
+	        .MotionVectors = ToRenderProductHandle(providerInputs.MotionVectors),
+	        .Exposure = ToRenderProductHandle(providerInputs.Exposure),
+	        .ScalingOutputColor = ToRenderProductHandle(providerInputs.ScalingOutputColor),
+	        .RenderExtent = sceneExtent,
+	        .OutputExtent = sceneExtent,
+	        .FrameIndex = frameIndex,
+	        .Camera = camera,
+	        .TemporalData = temporalData,
+	        .TemporalState = temporalState});
 }
 
 void AddUpscalerEvaluationPass(
@@ -33,10 +44,10 @@ void AddUpscalerEvaluationPass(
 	    EFrameGraphPassFlags::ExternalProvider,
 	    [sceneTargets, gbuffer](PassResourceBuilder& resourceBuilder)
 	    {
-		    resourceBuilder.Read(sceneTargets.SceneColor, ResourceUsage::CopySource, "HudlessSceneColor");
+		    resourceBuilder.Read(sceneTargets.SceneColor, ResourceUsage::CopySource, "ScalingInputColor");
 		    resourceBuilder.Read(sceneTargets.MainDepth, ResourceUsage::DepthRead, "Depth");
 		    resourceBuilder.Read(gbuffer.MotionVector, ResourceUsage::ShaderRead, "MotionVectors");
-		    resourceBuilder.Write(sceneTargets.FinalSceneColor, ResourceUsage::UnorderedAccess, "FinalSceneColor");
+		    resourceBuilder.Write(sceneTargets.FinalSceneColor, ResourceUsage::UnorderedAccess, "ScalingOutputColor");
 	    },
 	    [sceneTargets, gbuffer, sceneExtent](PassExecutionContext& context)
 	    {
@@ -50,23 +61,24 @@ void AddUpscalerEvaluationPass(
 		    {
 			    result = context.RuntimeServices.Upscaling->Subsystem->Evaluate(
 			        UpscalerEvaluationDesc{
-			            .InputColor = ToRenderProductHandle(sceneTargets.SceneColor),
+			            .ScalingInputColor = ToRenderProductHandle(sceneTargets.SceneColor),
 			            .Depth = ToRenderProductHandle(sceneTargets.MainDepth),
 			            .MotionVectors = ToRenderProductHandle(gbuffer.MotionVector),
-			            .OutputColor = ToRenderProductHandle(sceneTargets.FinalSceneColor),
+			            .ScalingOutputColor = ToRenderProductHandle(sceneTargets.FinalSceneColor),
 			            .BackendApi = context.Commands.GetRenderCommandList().GetBackendApi(),
 			            .NativeCommandList = context.Commands.GetRenderCommandList().GetNativeHandle(
 			                RhiNativeInteropRequest{
 			                    .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
 			                    .Reason = "Evaluate upscaler pass"}),
-			            .NativeInputColor = context.Resources.ResolveResource(sceneTargets.SceneColor),
+			            .NativeScalingInputColor = context.Resources.ResolveResource(sceneTargets.SceneColor),
 			            .NativeDepth = context.Resources.ResolveResource(sceneTargets.MainDepth),
 			            .NativeMotionVectors = context.Resources.ResolveResource(gbuffer.MotionVector),
-			            .NativeOutputColor = context.Resources.ResolveResource(sceneTargets.FinalSceneColor),
-			            .NativeInputColorView = context.Resources.ResolveNativeTextureView(sceneTargets.SceneColor, ResourceState::CopySource),
+			            .NativeScalingOutputColor = context.Resources.ResolveResource(sceneTargets.FinalSceneColor),
+			            .NativeScalingInputColorView = context.Resources.ResolveNativeTextureView(sceneTargets.SceneColor, ResourceState::CopySource),
 			            .NativeDepthView = context.Resources.ResolveNativeTextureView(sceneTargets.MainDepth, ResourceState::DepthRead),
 			            .NativeMotionVectorsView = context.Resources.ResolveNativeTextureView(gbuffer.MotionVector, ResourceState::ShaderResource),
-			            .NativeOutputColorView = context.Resources.ResolveNativeTextureView(sceneTargets.FinalSceneColor, ResourceState::UnorderedAccess),
+			            .NativeScalingOutputColorView =
+			                context.Resources.ResolveNativeTextureView(sceneTargets.FinalSceneColor, ResourceState::UnorderedAccess),
 			            .RenderExtent = sceneExtent,
 			            .OutputExtent = sceneExtent});
 		    }

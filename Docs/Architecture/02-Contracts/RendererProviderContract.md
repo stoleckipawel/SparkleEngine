@@ -246,21 +246,37 @@ Contract rule:
 
 - renderer-facing docs, diagnostics, and launcher reporting should use these six states consistently, even when an internal provider enum has more detail such as `Created`, `Evaluating`, or `FailedWithFallback`
 
-## Required Resource Contract Table
+## Upscaler Resource Contract Table
 
-This table defines the renderer vocabulary providers must use. It does not claim that every current provider consumes every field today.
+This table defines the renderer vocabulary image upscalers must use. Denoisers and reconstruction providers use a separate resource surface so upscaling does not become a catch-all provider category.
 
 | Resource | Contract meaning | Current source evidence | Provider expectation |
 | --- | --- | --- | --- |
-| color | Main provider input color, typically HUD-less scene color or equivalent provider input | `UpscalerInputContract.HudlessSceneColor`, `UpscalerEvaluationDesc.InputColor` | Required for upscalers, denoisers, frame generation, and likely neural rendering paths |
-| depth | Main scene depth with declared convention | `UpscalerInputContract.Depth`, `UpscalerEvaluationDesc.Depth`, `UpscalerDepthConvention` | Required when the provider depends on motion reprojection, reconstruction, or scene understanding |
-| motion vectors | Renderer-owned motion vectors with explicit units/direction contract | `UpscalerInputContract.MotionVectors`, motion-vector convention enums, `UpscalerEvaluationDesc.MotionVectors` | Required for temporal upscalers, frame generation, temporal denoisers, and many neural paths |
+| scaling input color | Main provider input color, typically scene color before upscaler evaluation | `UpscalerInputContract.ScalingInputColor`, `UpscalerEvaluationDesc.ScalingInputColor` | Required for image upscalers |
+| scaling output color | Provider output color target | `UpscalerInputContract.ScalingOutputColor`, `UpscalerEvaluationDesc.ScalingOutputColor` | Required for image upscalers that write an output color product |
+| depth | Main scene depth with declared convention | `UpscalerInputContract.Depth`, `UpscalerEvaluationDesc.Depth`, `UpscalerDepthConvention` | Required for temporal upscaler reprojection |
+| motion vectors | Renderer-owned motion vectors with explicit units/direction contract | `UpscalerInputContract.MotionVectors`, motion-vector convention enums, `UpscalerEvaluationDesc.MotionVectors` | Required for temporal upscaler reprojection |
 | exposure | Optional or required exposure resource depending on provider category | `UpscalerInputContract.Exposure`, `ExposureRequired` | Must be explicit when needed; providers must not infer hidden exposure sources |
-| normals | Renderer-owned surface normal resource | currently visible in renderer frame resources as `GBufferNormal` rather than in the current upscaler input contract | Required for denoisers, some neural paths, and any provider that depends on geometric surface orientation |
 | history | Temporal validity and provider-managed history state | `HistoryInvalid`, `ResetRequested`, `ResetReason`, `TemporalState.HistoryValid`, provider `ResetHistory(...)` | Providers must accept renderer-owned history invalidation and must not hide global reset policy |
 | jitter | Current and previous jitter used for temporal alignment | `PerTemporalConstantBufferData`, `TemporalData`, `TemporalState` | Providers must consume renderer-supplied jitter data rather than generating a separate independent temporal sequence |
 | camera matrices | Renderer-owned per-view camera state | `UpscalerInputContract.Camera`, `PerViewCameraConstantBufferData` | Required for providers that need reprojection, clip-space transforms, or neural camera features |
 | frame index | Stable renderer-owned frame identifier | `UpscalerInputContract.FrameIndex`, `UpscalerEvaluationDesc.FrameIndex` | Required for deterministic temporal sequencing and diagnostics |
+
+## Denoiser And Reconstruction Resource Surface
+
+These resources are deliberately not part of `UpscalerInputContract`. They are frame-level denoiser/reconstruction inputs, currently collected by `FrameAssemblyDenoiserProviderResources` and consumed by future denoiser/reconstruction stages.
+
+| Resource | Contract meaning | Current source evidence | Provider expectation |
+| --- | --- | --- | --- |
+| normals | Renderer-owned surface normal resource | `FrameAssemblyDenoiserProviderResources.Normals`, `GBufferNormal` | Required for denoisers, some neural paths, and any provider that depends on geometric surface orientation |
+| noisy indirect diffuse | Linear HDR material-evaluated indirect diffuse radiance contribution | `FrameAssemblyDenoiserProviderResources.IndirectReconstruction.NoisyIndirectDiffuse`, `LightingRenderTargets.IndirectDiffuse` | Optional guide for indirect reconstruction providers; not a substitute for provider-ready albedo or hit-distance guides |
+| noisy indirect specular | Linear HDR material-evaluated indirect specular radiance contribution | `FrameAssemblyDenoiserProviderResources.IndirectReconstruction.NoisyIndirectSpecular`, `LightingRenderTargets.IndirectSpecular` | Optional guide for indirect reconstruction providers and reflection reconstruction |
+| albedo | Provider-ready diffuse reflectance guide, linear, material evaluated | `FrameAssemblyDenoiserProviderResources.IndirectReconstruction.Albedo` | Required by DLRR-style reconstruction when selected; plain `GBufferBaseColor` is not enough for metallic materials |
+| specular albedo | Provider-ready specular reflectance/F0 guide, linear, material evaluated | `FrameAssemblyDenoiserProviderResources.IndirectReconstruction.SpecularAlbedo` | Required by DLRR-style reconstruction when selected; must be derived from the same F0/metallic policy used by lighting |
+| roughness | Linear material roughness guide in `[0, 1]` | `FrameAssemblyDenoiserProviderResources.IndirectReconstruction.Roughness` | Required by DLRR-style reconstruction when selected; packed GBuffer material data needs an explicit resolve before a provider can consume it |
+| diffuse hit distance | First-bounce diffuse/indirect ray hit distance in world units | `FrameAssemblyDenoiserProviderResources.IndirectReconstruction.DiffuseHitDistance` | Optional for providers that reconstruct diffuse/GI rays |
+| specular hit distance | First-bounce specular ray hit distance in world units | `FrameAssemblyDenoiserProviderResources.IndirectReconstruction.SpecularHitDistance` | Required by DLRR-style reconstruction unless `SpecularMotionVectors` is provided |
+| specular motion vectors | Dense reflection motion-vector guide | `FrameAssemblyDenoiserProviderResources.IndirectReconstruction.SpecularMotionVectors` | Streamline-compatible alternative to specular hit distance for reflection reconstruction |
 
 Contract rules:
 

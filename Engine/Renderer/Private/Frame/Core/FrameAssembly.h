@@ -39,14 +39,34 @@ struct FrameAssemblyHistoryResources final
 	}
 };
 
-struct FrameAssemblyProviderResources final
+struct FrameAssemblyUpscalerProviderResources final
 {
-	FrameGraphTextureHandle HudlessSceneColor = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle ScalingInputColor = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle ScalingOutputColor = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Depth = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle MotionVectors = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle FinalOutputColor = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
+};
+
+struct FrameAssemblyIndirectReconstructionProviderResources final
+{
+	FrameGraphTextureHandle NoisyIndirectDiffuse = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle NoisyIndirectSpecular = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle Albedo = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle SpecularAlbedo = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle Roughness = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle DiffuseHitDistance = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle SpecularHitDistance = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle SpecularMotionVectors = FrameGraphTextureHandle::Invalid();
+};
+
+struct FrameAssemblyDenoiserProviderResources final
+{
+	FrameGraphTextureHandle Depth = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle MotionVectors = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Normals = FrameGraphTextureHandle::Invalid();
+	FrameAssemblyIndirectReconstructionProviderResources IndirectReconstruction = {};
 };
 
 struct FrameAssemblyViewportProducts final
@@ -65,6 +85,7 @@ struct FrameAssemblyResourceLayout final
 	FrameAssemblyTransientResources Transient = {};
 	FrameAssemblyPersistentResources Persistent = {};
 	FrameAssemblyHistoryResources History = {};
-	FrameAssemblyProviderResources ProviderInputs = {};
+	FrameAssemblyUpscalerProviderResources UpscalerProviderInputs = {};
+	FrameAssemblyDenoiserProviderResources DenoiserProviderInputs = {};
 	FrameAssemblyViewportProducts ViewportProducts = {};
 };

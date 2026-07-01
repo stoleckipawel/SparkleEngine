@@ -6,6 +6,7 @@
 #include <DirectXMath.h>
 
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 struct MeshDraw;
@@ -18,6 +19,7 @@ inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugDirtyTransform = 1u
 inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugMovedPartition = 1u << 29u;
 inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugGlobalPartition = 1u << 30u;
 inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugInvalid = 1u << 31u;
+inline constexpr std::uint32_t kRayTracingPtlasInvalidEntryIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 struct RayTracingPtlasPartitionPlannerConfig final
 {
@@ -139,7 +141,6 @@ class RayTracingPtlasPartitionPlanner final
 	};
 
 	static RayTracingPtlasPartitionPlannerConfig SanitizeConfig(RayTracingPtlasPartitionPlannerConfig config) noexcept;
-	static DirectX::XMFLOAT3 ExtractTranslation(const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
 	static bool IsTransformDirty(
 	    const DirectX::XMFLOAT4X4& current,
 	    const DirectX::XMFLOAT4X4& previous,

@@ -27,6 +27,23 @@ Reuse/DRY audit:
 | `ToneMappedSceneColor`, `EncodedSceneColor`, `BackBuffer` | Presentation | Existing presentation/backbuffer formats | Display-only outputs; they do not feed lighting. |
 | `HistoryResetState` | Temporal frame state | Constant data | Shared reset signal for exposure, upscalers, and future denoisers. |
 
+## Reconstruction Provider Inputs
+
+Stage 11 keeps image upscaling and denoising/reconstruction separate. `UpscalerInputContract` owns only scaling inputs and output. Provider-facing indirect reconstruction slots live under `FrameAssemblyDenoiserProviderResources.IndirectReconstruction`. This stage does not add a DLRR provider or shader-side DLRR path.
+
+| Provider input | Current owner | Unit / range | Reference mapping |
+| --- | --- | --- | --- |
+| `ScalingInputColor` | Scene color before upscaler evaluation | Linear HDR noisy composed scene color | Streamline `ScalingInputColor`; RTXPT/Falcor reconstruction-facing noisy color. |
+| `Reconstruction.NoisyIndirectDiffuse`, `Reconstruction.NoisyIndirectSpecular` | Existing indirect lighting targets | Linear HDR material-evaluated outgoing radiance contributions | Optional split noisy radiance inputs for NRD/RTXPT-style indirect reconstruction. |
+| `Depth` | Scene depth / GBuffer device Z | Reversed device depth, with provider metadata | Streamline depth tag and NRD depth/viewZ conventions; conversion remains provider-owned. |
+| `MotionVectors` | GBuffer motion vector target | Pixel delta, current minus previous | Streamline motion-vector tag and NRD temporal reprojection metadata. |
+| `Normals` | GBuffer normal target | World-space unit shading normal | Streamline normals/normal-roughness and NRD normal input conventions. |
+| `Exposure` | Exposure pass | `RGBA32F` adapted/average/target/previous exposure debug payload | Streamline exposure/auto-exposure state and local display contract. |
+| `Reconstruction.Albedo`, `Reconstruction.SpecularAlbedo`, `Reconstruction.Roughness` | Future Stage 11A guide writers | Linear guides; roughness in `[0, 1]` | Streamline albedo/specular albedo/roughness requirements. Packed `GBufferMaterial` is not marked provider-ready until a real resolve writes these guides. |
+| `Reconstruction.DiffuseHitDistance`, `Reconstruction.SpecularHitDistance` | Future Stage 11A path-signal writers | World-space ray distance from the primary surface | Streamline specular-hit-distance guidance and NRD hit-distance conventions. |
+| `Reconstruction.SpecularMotionVectors` | Future Stage 11A reflection guide writer | Dense reflection motion vectors | Streamline-compatible alternative to specular hit distance. |
+| `HistoryResetState` | Temporal frame state / provider contract | Boolean reset and reason metadata | Streamline/NRD temporal history reset expectations. |
+
 ## Geometry And Temporal Conventions
 
 | Signal or rule | Owner | Consumers | Convention | Reference mapping |
@@ -43,7 +60,8 @@ Reuse/DRY audit:
 
 Future staged signals:
 
-- Stage 11/11A owns allocation and provider contracts for noisy indirect radiance, demodulated indirect radiance, indirect hit distance, lobe id, confidence/variance, albedo, and specular/F0 guide resources.
+- Stage 11 exposes provider-contract slots for noisy indirect radiance, guide albedo, roughness, hit distance, exposure, and temporal reset state.
+- Stage 11A owns allocation/writers for demodulated radiance, indirect hit distance, lobe id, confidence/variance, diffuse albedo, specular/F0 guide resources, and roughness guide resolves.
 - Stage 13 owns final cleanup of stale signal descriptions and any redundant provider-facing outputs.
 
 Implementation notes:

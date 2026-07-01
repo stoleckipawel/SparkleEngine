@@ -278,7 +278,7 @@ Build-system note:
 
 - `AddIndirectLightingPasses(...)` calls the current ambient indirect lighting pass and indirect specular pass.
 - `AddLightingPasses(...)` creates lighting targets, calls direct lighting, calls `AddIndirectLightingPasses(...)`, calls lighting composite, and then calls sky.
-- `AddPostProcessingPasses(...)` calls `AddUpscalerEvaluationPass(...)` and assigns provider inputs through `CreateUpscalerProviderInputs(...)`.
+- `AddPostProcessingPasses(...)` calls `AddUpscalerEvaluationPass(...)` and assigns provider inputs through the frame-provider input builders.
 - `AddDebugPasses(...)` calls `VisualizeBuffers`.
 - `AddLightingPasses(...)` no longer includes visualization.
 - `BuildFrame(...)` does not directly declare scene, GBuffer, lighting, ray tracing, or provider-input resources; those resources are owned by the family/helper that adds the related passes.

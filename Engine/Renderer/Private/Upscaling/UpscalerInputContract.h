@@ -36,12 +36,11 @@ struct UpscalerMotionVectorConvention final
 
 struct UpscalerInputContract final
 {
-	RenderProductHandle HudlessSceneColor = {};
+	RenderProductHandle ScalingInputColor = {};
 	RenderProductHandle Depth = {};
 	RenderProductHandle MotionVectors = {};
 	RenderProductHandle Exposure = {};
-	RenderProductHandle Normals = {};
-	RenderProductHandle FinalOutput = {};
+	RenderProductHandle ScalingOutputColor = {};
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
 	std::uint64_t FrameIndex = 0;
@@ -65,7 +64,7 @@ struct UpscalerInputContractValidation final
 	std::string Summary;
 };
 
-RendererProviderResourceContract BuildUpscalerProviderResourceContract(const UpscalerInputContract& contract) noexcept;
+RendererProviderUpscalerResourceContract BuildUpscalerProviderResourceContract(const UpscalerInputContract& contract) noexcept;
 UpscalerInputContractValidation ValidateUpscalerInputContract(const UpscalerInputContract& contract);
 
 const char* UpscalerMotionVectorUnitsToString(EUpscalerMotionVectorUnits units) noexcept;

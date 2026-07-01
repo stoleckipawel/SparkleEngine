@@ -9,20 +9,20 @@ namespace
 {
 	constexpr std::uint32_t kStableExtentFramesBeforeDlssEvaluation = 2;
 
-	RendererProviderResourceContract BuildDlssResourceContract(const UpscalerInputContract* inputContract = nullptr) noexcept
+	RendererProviderUpscalerResourceContract BuildDlssResourceContract(const UpscalerInputContract* inputContract = nullptr) noexcept
 	{
 		const bool hasInputContract = inputContract != nullptr;
-		return RendererProviderResourceContract{
-		    .Color = {.Requirement = ERendererProviderResourceRequirement::Required,
-		              .Available = hasInputContract ? static_cast<bool>(inputContract->HudlessSceneColor) : false},
+		return RendererProviderUpscalerResourceContract{
+		    .ScalingInputColor = {.Requirement = ERendererProviderResourceRequirement::Required,
+		                          .Available = hasInputContract ? static_cast<bool>(inputContract->ScalingInputColor) : false},
+		    .ScalingOutputColor = {.Requirement = ERendererProviderResourceRequirement::Required,
+		                           .Available = hasInputContract ? static_cast<bool>(inputContract->ScalingOutputColor) : false},
 		    .Depth = {.Requirement = ERendererProviderResourceRequirement::Required,
 		              .Available = hasInputContract ? static_cast<bool>(inputContract->Depth) : false},
 		    .MotionVectors = {.Requirement = ERendererProviderResourceRequirement::Required,
 		                      .Available = hasInputContract ? static_cast<bool>(inputContract->MotionVectors) : false},
 		    .Exposure = {.Requirement = ERendererProviderResourceRequirement::Optional,
 		                 .Available = hasInputContract ? static_cast<bool>(inputContract->Exposure) : false},
-		    .Normals = {.Requirement = ERendererProviderResourceRequirement::Optional,
-		                .Available = hasInputContract ? static_cast<bool>(inputContract->Normals) : false},
 		    .History = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = hasInputContract},
 		    .Jitter = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = hasInputContract},
 		    .CameraMatrices = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = hasInputContract},
@@ -114,7 +114,7 @@ UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::QueryCapabilities(const
 {
 	const DlssCapabilityReport dlss = DlssCapabilityReporter::Build(capabilities);
 	const bool canCreate = dlss.CanCreateFeature();
-	const RendererProviderResourceContract resourceContract = BuildDlssResourceContract();
+	const RendererProviderUpscalerResourceContract resourceContract = BuildDlssResourceContract();
 	return UpscalerProviderCapabilities{
 	    .Kind = EUpscalerProviderKind::NvidiaDlss,
 	    .Category = ERendererProviderCategory::Upscaler,
@@ -308,7 +308,7 @@ UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::GetDiagnostics() const
 	const bool canEvaluate =
 	    m_dlssCapabilities.RuntimeState == EDlssProviderRuntimeState::Created ||
 	    m_dlssCapabilities.RuntimeState == EDlssProviderRuntimeState::Evaluating;
-	const RendererProviderResourceContract resourceContract = BuildDlssResourceContract(&m_lastInputContract);
+	const RendererProviderUpscalerResourceContract resourceContract = BuildDlssResourceContract(&m_lastInputContract);
 	return UpscalerProviderCapabilities{
 	    .Kind = EUpscalerProviderKind::NvidiaDlss,
 	    .Category = ERendererProviderCategory::Upscaler,

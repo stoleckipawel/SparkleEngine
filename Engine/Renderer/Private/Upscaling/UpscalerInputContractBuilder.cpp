@@ -5,16 +5,16 @@ UpscalerInputContract BuildUpscalerInputContract(const UpscalerInputContractBuil
 {
 	const bool historyInvalid = !desc.TemporalState.HistoryValid;
 	return UpscalerInputContract{
-	    .HudlessSceneColor = desc.HudlessSceneColor,
+	    .ScalingInputColor = desc.ScalingInputColor,
 	    .Depth = desc.Depth,
 	    .MotionVectors = desc.MotionVectors,
-	    .Normals = desc.Normals,
-	    .FinalOutput = desc.FinalOutput,
+	    .Exposure = desc.Exposure,
+	    .ScalingOutputColor = desc.ScalingOutputColor,
 	    .RenderExtent = desc.RenderExtent,
 	    .OutputExtent = desc.OutputExtent,
 	    .FrameIndex = desc.FrameIndex,
 	    .HdrMetadataAvailable = false,
-	    .ExposureRequired = false,
+	    .ExposureRequired = desc.ExposureRequired,
 	    .ResetRequested = historyInvalid,
 	    .CameraCut = false,
 	    .HistoryInvalid = historyInvalid,

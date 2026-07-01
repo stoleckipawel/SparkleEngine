@@ -13,9 +13,8 @@
 
 struct RhiCapabilities;
 
-// Renderer-owned provider boundary for image upscalers and external reconstruction
-// features. Implementations translate renderer contracts to provider policy; RHI
-// only supplies backend/native-handle capability facts through RhiCapabilities.
+// Renderer-owned provider boundary for image upscalers. Denoisers and
+// reconstruction providers use separate frame/provider contracts.
 enum class EUpscalerProviderKind : std::uint8_t
 {
 	Passthrough = 0,
@@ -43,7 +42,7 @@ struct UpscalerProviderCapabilities final
 	bool CanEvaluate = false;
 	bool UsesExternalSdk = false;
 	std::string ProviderName;
-	RendererProviderResourceContract ResourceContract = {};
+	RendererProviderUpscalerResourceContract ResourceContract = {};
 	std::string ResourceContractSummary;
 	std::string ExternalRuntimeVersion;
 	std::string RuntimeState;
@@ -68,20 +67,20 @@ struct UpscalerPresentationBridge final
 
 struct UpscalerEvaluationDesc final
 {
-	RenderProductHandle InputColor = {};
+	RenderProductHandle ScalingInputColor = {};
 	RenderProductHandle Depth = {};
 	RenderProductHandle MotionVectors = {};
-	RenderProductHandle OutputColor = {};
+	RenderProductHandle ScalingOutputColor = {};
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
 	NativeGraphicsCommandListHandle NativeCommandList = {};
-	NativeResourceHandle NativeInputColor = {};
+	NativeResourceHandle NativeScalingInputColor = {};
 	NativeResourceHandle NativeDepth = {};
 	NativeResourceHandle NativeMotionVectors = {};
-	NativeResourceHandle NativeOutputColor = {};
-	NativeTextureViewInfo NativeInputColorView = {};
+	NativeResourceHandle NativeScalingOutputColor = {};
+	NativeTextureViewInfo NativeScalingInputColorView = {};
 	NativeTextureViewInfo NativeDepthView = {};
 	NativeTextureViewInfo NativeMotionVectorsView = {};
-	NativeTextureViewInfo NativeOutputColorView = {};
+	NativeTextureViewInfo NativeScalingOutputColorView = {};
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
 	std::uint64_t FrameIndex = 0;

@@ -3,12 +3,12 @@
 
 UpscalerProviderCapabilities PassthroughUpscalerProvider::QueryCapabilities(const RhiCapabilities&) const
 {
-	const RendererProviderResourceContract resourceContract{
-	    .Color = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = true},
+	const RendererProviderUpscalerResourceContract resourceContract{
+	    .ScalingInputColor = {.Requirement = ERendererProviderResourceRequirement::Required, .Available = true},
+	    .ScalingOutputColor = {.Requirement = ERendererProviderResourceRequirement::Unused, .Available = false},
 	    .Depth = {.Requirement = ERendererProviderResourceRequirement::Optional, .Available = true},
 	    .MotionVectors = {.Requirement = ERendererProviderResourceRequirement::Optional, .Available = true},
 	    .Exposure = {.Requirement = ERendererProviderResourceRequirement::Unused, .Available = false},
-	    .Normals = {.Requirement = ERendererProviderResourceRequirement::Unused, .Available = false},
 	    .History = {.Requirement = ERendererProviderResourceRequirement::Unused, .Available = false},
 	    .Jitter = {.Requirement = ERendererProviderResourceRequirement::Unused, .Available = false},
 	    .CameraMatrices = {.Requirement = ERendererProviderResourceRequirement::Unused, .Available = false},
@@ -52,7 +52,7 @@ void PassthroughUpscalerProvider::SetupFrame(const UpscalerInputContract& inputC
 
 UpscalerEvaluationResult PassthroughUpscalerProvider::Evaluate(const UpscalerEvaluationDesc& evaluation)
 {
-	const bool hasInput = static_cast<bool>(evaluation.InputColor);
+	const bool hasInput = static_cast<bool>(evaluation.ScalingInputColor);
 	return UpscalerEvaluationResult{
 	    .ProducedOutput = hasInput,
 	    .UsedFallback = true,

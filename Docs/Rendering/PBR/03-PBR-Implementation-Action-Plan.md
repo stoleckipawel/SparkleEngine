@@ -1212,13 +1212,22 @@ Acceptance criteria:
 - Reference compliance: each provider input resource is mapped to Streamline DLRR, NRD, or RTXPT signal expectations, with units/ranges documented.
 - Reuse/DRY: DLRR/reconstruction integration extends the existing provider contract and render-product registration instead of creating a parallel provider system.
 
-## Stage 11A: Add Indirect Denoiser Auxiliary Signal Buffers
+Stage note:
+
+- Reference lineage: Streamline DLRR resource vocabulary is recorded for future reconstruction providers, but Sparkle keeps the image upscaler boundary separate from denoiser/reconstruction resources. `UpscalerInputContract` owns only `ScalingInputColor`, `ScalingOutputColor`, `Depth`, `MotionVectors`, `Exposure`, temporal state, camera state, and extents. NRD, RTXPT, and Streamline DLRR guide the denoiser-side treatment of `Albedo`, `SpecularAlbedo`, `Normals`, `Roughness`, `SpecularMotionVectors`, `SpecularHitDistance`, noisy radiance, hit distance, and temporal reset/history. Sparkle keeps this as a provider contract stage only: no shader-side DLRR path or provider SDK call was added.
+- Implementation: `FrameAssemblyDenoiserProviderResources.IndirectReconstruction` now carries explicit indirect reconstruction slots for noisy indirect diffuse/specular radiance and future provider-ready `Albedo`, `SpecularAlbedo`, `Roughness`, `DiffuseHitDistance`, `SpecularHitDistance`, and optional `SpecularMotionVectors`. `FrameAssemblyUpscalerProviderResources` registers only the scaling resources consumed by the upscaler pass. Provider-ready albedo/roughness/hit-distance/specular-motion guide slots intentionally remain invalid until Stage 11A writes real resources.
+- Local deviation: current `GBufferBaseColor` and packed `GBufferMaterial` are not treated as DLRR-ready diffuse/specular albedo or roughness guides, because Streamline expects linear provider tags with clear semantics. A future provider can request `Reconstruction.Required`; the existing contract validation then fails at the boundary until the required guide resources exist.
+- NVIDIA sample audit: compared the local provider boundary against the vendored Streamline SDK programming guides, `Streamline_Sample`'s `TagResourcesDLSSNIS`/`TagResourcesDLSSRR` and `EvaluateDLSS`/`EvaluateDLSSRR` structure, and `vk_denoise_dlssrr`'s NGX DLSSD resource/evaluate wrapper. Sparkle follows the same provider-side resource-tagging model with `slGetNewFrameToken`, `slSetConstants`, frame-based `slSetTagForFrame`, and a narrow `slEvaluateFeature` call; Stage 11 deliberately does not add a DLSSD evaluate path until provider-ready guide resources exist.
+- Reuse/DRY audit: scanned `UpscalerInputContract`, `UpscalerInputContractBuilder`, `RendererProviderModel`, `UpscalerSubsystem`, `NvidiaDlssUpscalerProvider`, `StreamlineDlssRuntime`, `FrameAssembly`, `Frame/Presentation/Upscaling`, lighting target registration, and the renderer provider/PBR signal docs before editing. The change keeps Streamline resource-tag construction inside the upscaler runtime, moves denoiser/reconstruction resources out of the upscaler contract, and skips unused fields in provider summaries instead of adding extra diagnostics, logging, shader wrappers, or DLRR-specific shader code.
+- Validation: `cmake --build build --target ShowcaseEditor --config DevelopmentEditor` passed. No shader source changed in this stage.
+
+## Stage 11A: Write Provider-Ready Reconstruction Guide Buffers
 
 Implementation prompt:
 
 Prompt guardrail: include `Reference lineage` and `Reuse/DRY audit`; scan existing bodies before adding or moving logic; simplify first by reusing existing homes, deleting stale code, and justifying any new layer. Do not add wrappers that only rename or forward parameters; keep a helper only when it owns real policy, math, IO binding, repeated behavior, or a meaningful boundary. Improve unclear names while touching code, and remove needless logging, debug noise, indirection, and complexity before adding new logic.
 
-Refactor indirect diffuse/specular output so denoisers and reconstruction providers can consume stable auxiliary signals instead of only final noisy lighting. The real-time path may still composite direct/indirect buffers the current way, but provider-facing buffers must describe the noisy path sample, material factors, geometry, and confidence needed to reconstruct lighting correctly.
+Refactor indirect diffuse/specular output so reconstruction providers can consume stable guide signals instead of only final noisy lighting. The real-time path may still composite direct/indirect buffers the current way, but provider-facing buffers must describe the noisy path sample, material factors, geometry, and confidence needed to reconstruct lighting correctly.
 
 Reference lineage:
 
@@ -1235,7 +1244,7 @@ Files:
 - Future shared path-sampling files from Stage 7.
 - `Engine/Renderer/Private/FrameGraph/Resources/*`
 - `Engine/Renderer/Private/Upscaling/UpscalerInputContract.*`
-- Provider-neutral reconstruction/denoiser interfaces.
+- Existing provider-neutral upscaler/reconstruction contract.
 
 Required buffers or views:
 
@@ -1249,9 +1258,9 @@ Required buffers or views:
 Acceptance criteria:
 
 - Simplification gate: remove needless wrappers, unclear names, stale logging/debug noise, duplicate indirection, and avoidable complexity introduced or exposed by the stage; any helper kept must own real policy, math, IO binding, repeated behavior, or a meaningful boundary.
-- Indirect passes can output provider-neutral auxiliary buffers without changing lighting math.
-- DLRR/NRD-capable provider selection requires all auxiliary buffers to exist and match documented formats.
-- Reconstruction can be disabled without changing the real-time lighting math or duplicating auxiliary writers.
+- Indirect passes can output provider-neutral guide buffers without changing lighting math.
+- DLRR/NRD-capable provider selection requires all guide buffers to exist and match documented formats.
+- Reconstruction can be disabled without changing the real-time lighting math or duplicating guide writers.
 - Reference compliance: each auxiliary signal is mapped to Streamline DLRR, NRD, RTXPT/Falcor, or AMD FidelityFX expectations and units.
 - Reuse/DRY: indirect diffuse, indirect specular, reference mode, DLRR, and NRD share the same auxiliary signal writers instead of each effect inventing a private layout.
 
