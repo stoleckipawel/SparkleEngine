@@ -1,7 +1,7 @@
 #include "Lighting/DirectLightSampling.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSampling.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 
 RWTexture2D<float4> ShadowVisibilitySignalTexture;
@@ -22,7 +22,7 @@ RWTexture2D<float4> ShadowLightSampleTexture;
 	if (IsSkyPixel(deviceZ))
 	{
 		ShadowVisibilitySignalTexture[dispatchThreadId.xy] =
-		    RayTracedShadowDenoiserInputs::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
+		    RayTracedShadowSignalPacking::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
 		ShadowLightSampleTexture[dispatchThreadId.xy] = DirectLightSampling::PackLightCandidate(DirectLightSampling::InvalidLightCandidate());
 		return;
 	}
@@ -39,7 +39,7 @@ RWTexture2D<float4> ShadowLightSampleTexture;
 	if (!DirectLightSampling::IsValid(candidate))
 	{
 		ShadowVisibilitySignalTexture[dispatchThreadId.xy] =
-		    RayTracedShadowDenoiserInputs::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
+		    RayTracedShadowSignalPacking::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
 		return;
 	}
 
@@ -50,5 +50,5 @@ RWTexture2D<float4> ShadowLightSampleTexture;
 	const ShadowVisibilitySignal shadowSignal =
 	    RayTracedShadowVisibility::TraceDirectLightSample(positionWorld, normalWorld, lightSample, DirectLightSampling::CastsShadow(candidate.Light));
 
-	ShadowVisibilitySignalTexture[dispatchThreadId.xy] = RayTracedShadowDenoiserInputs::PackShadowSignal(shadowSignal);
+	ShadowVisibilitySignalTexture[dispatchThreadId.xy] = RayTracedShadowSignalPacking::PackShadowSignal(shadowSignal);
 }

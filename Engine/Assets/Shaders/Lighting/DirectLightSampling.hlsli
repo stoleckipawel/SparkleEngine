@@ -269,7 +269,12 @@ namespace DirectLightSampling
 		candidate.Light.Index = (uint)(packedCandidate.y + 0.5f);
 		candidate.SelectionPdf = packedCandidate.z;
 		candidate.Valid = packedCandidate.w;
-		return IsValid(candidate) ? candidate : InvalidLightCandidate();
+		if (IsValid(candidate))
+		{
+			return candidate;
+		}
+
+		return InvalidLightCandidate();
 	}
 }
 

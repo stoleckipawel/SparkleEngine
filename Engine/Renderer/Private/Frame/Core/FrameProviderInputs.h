@@ -9,7 +9,7 @@ FrameAssemblyUpscalerProviderResources BuildFrameUpscalerProviderInputs(
     const GBufferRenderTargets& gbuffer,
     FrameGraphTextureHandle exposure);
 
-FrameAssemblyDenoiserProviderResources BuildFrameDenoiserProviderInputs(
+FrameAssemblyRayReconstructionProviderResources BuildFrameRayReconstructionProviderInputs(
     const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     const LightingRenderTargets& lighting,

@@ -8,7 +8,6 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
-#include "Passes/Bindings/LightingPassBinding.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -73,7 +72,10 @@ void DirectLightingPass::SetParameters(
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
-	LightingPassBinding::SetParameters(parameters, frame);
+	parameters->DirectionalLights = frame.lighting.GetDirectionalLightsShaderResourceView();
+	parameters->PointLights = frame.lighting.GetPointLightsShaderResourceView();
+	parameters->SpotLights = frame.lighting.GetSpotLightsShaderResourceView();
+	parameters->RectLights = frame.lighting.GetRectLightsShaderResourceView();
 }
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

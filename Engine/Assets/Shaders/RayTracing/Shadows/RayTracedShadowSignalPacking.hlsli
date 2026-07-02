@@ -1,9 +1,9 @@
-#ifndef SPARKLE_RAY_TRACED_SHADOW_DENOISER_INPUTS_HLSLI
-#define SPARKLE_RAY_TRACED_SHADOW_DENOISER_INPUTS_HLSLI
+#ifndef SPARKLE_RAY_TRACED_SHADOW_SIGNAL_PACKING_HLSLI
+#define SPARKLE_RAY_TRACED_SHADOW_SIGNAL_PACKING_HLSLI
 
 #include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 
-namespace RayTracedShadowDenoiserInputs
+namespace RayTracedShadowSignalPacking
 {
 	float4 PackShadowSignal(ShadowVisibilitySignal signal)
 	{

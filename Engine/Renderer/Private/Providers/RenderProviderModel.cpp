@@ -73,8 +73,8 @@ const char* RendererProviderCategoryToString(ERendererProviderCategory category)
 	{
 		case ERendererProviderCategory::Upscaler:
 			return "upscaler";
-		case ERendererProviderCategory::Denoiser:
-			return "denoiser";
+		case ERendererProviderCategory::RayReconstruction:
+			return "ray reconstruction";
 		case ERendererProviderCategory::FrameGeneration:
 			return "frame generation";
 	}

@@ -13,8 +13,8 @@
 
 struct RhiCapabilities;
 
-// Renderer-owned provider boundary for image upscalers. Denoisers and
-// reconstruction providers use separate frame/provider contracts.
+// Renderer-owned provider boundary for image upscalers. Ray reconstruction
+// and frame generation use separate frame/provider contracts.
 enum class EUpscalerProviderKind : std::uint8_t
 {
 	Passthrough = 0,

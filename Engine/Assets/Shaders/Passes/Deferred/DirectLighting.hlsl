@@ -1,8 +1,8 @@
 #include "Lighting/DirectLightSampling.hlsli"
 #include "Lighting/SurfaceLighting.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSampling.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
 RWTexture2D<float4> DirectDiffuseTexture;
 RWTexture2D<float4> DirectSpecularTexture;
 RWTexture2D<float4> DirectSubsurfaceTexture;
@@ -78,7 +78,7 @@ void AddDirectLightSample(
 	const DirectLightSampling::LightCandidate lightCandidate =
 	    DirectLightSampling::UnpackLightCandidate(ShadowLightSampleTexture.Load(int3(dispatchThreadId.xy, 0)));
 	const ShadowVisibilitySignal shadowSignal =
-	    RayTracedShadowDenoiserInputs::UnpackShadowSignal(ShadowVisibilitySignalTexture.Load(int3(dispatchThreadId.xy, 0)));
+	    RayTracedShadowSignalPacking::UnpackShadowSignal(ShadowVisibilitySignalTexture.Load(int3(dispatchThreadId.xy, 0)));
 	const bool evaluateSubsurface = any(gBuffer.SubsurfaceColor > 0.0f.xxx) && gBuffer.SubsurfaceStrength > 0.0f;
 	if (DirectLightSampling::IsValid(lightCandidate))
 	{

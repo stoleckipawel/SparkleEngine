@@ -29,7 +29,7 @@ void AddPostProcessingPasses(
 	{
 		resources.UpscalerProviderInputs =
 		    BuildFrameUpscalerProviderInputs(resources.Transient.Scene, resources.Transient.GBuffer, resources.Transient.Exposure);
-		resources.DenoiserProviderInputs = BuildFrameDenoiserProviderInputs(
+		resources.RayReconstructionProviderInputs = BuildFrameRayReconstructionProviderInputs(
 		    resources.Transient.Scene,
 		    resources.Transient.GBuffer,
 		    resources.Transient.Lighting,

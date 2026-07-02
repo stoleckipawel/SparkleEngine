@@ -57,7 +57,7 @@ struct FrameAssemblyIndirectReconstructionProviderResources final
 	FrameGraphTextureHandle SpecularSampleGuide = FrameGraphTextureHandle::Invalid();
 };
 
-struct FrameAssemblyDenoiserProviderResources final
+struct FrameAssemblyRayReconstructionProviderResources final
 {
 	FrameGraphTextureHandle Depth = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle MotionVectors = FrameGraphTextureHandle::Invalid();
@@ -83,6 +83,6 @@ struct FrameAssemblyResourceLayout final
 	FrameAssemblyPersistentResources Persistent = {};
 	FrameAssemblyHistoryResources History = {};
 	FrameAssemblyUpscalerProviderResources UpscalerProviderInputs = {};
-	FrameAssemblyDenoiserProviderResources DenoiserProviderInputs = {};
+	FrameAssemblyRayReconstructionProviderResources RayReconstructionProviderInputs = {};
 	FrameAssemblyViewportProducts ViewportProducts = {};
 };

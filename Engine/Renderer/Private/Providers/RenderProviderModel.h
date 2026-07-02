@@ -6,7 +6,7 @@
 enum class ERendererProviderCategory : std::uint8_t
 {
 	Upscaler = 0,
-	Denoiser = 1,
+	RayReconstruction = 1,
 	FrameGeneration = 2
 };
 

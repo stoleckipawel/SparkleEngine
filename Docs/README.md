@@ -4,7 +4,7 @@ This folder keeps only active implementation guidance. Old review notes, superse
 
 ## PBR Rendering
 
-- `Rendering/PBR/05-Renderer-Reference-Quality-Gap-Audit.md`: current implementation-prompt source, focused first on editor-visible SIGMA and DLRR integration. Each staged prompt includes code denoising, reuse/DRY, and NVIDIA/AMD reference-pattern requirements.
+- `Rendering/PBR/05-Renderer-Reference-Quality-Gap-Audit.md`: current implementation-prompt source, focused first on RTXDI/ReSTIR-style direct lighting and DLRR integration. Each staged prompt includes code denoising, reuse/DRY, and NVIDIA/AMD reference-pattern requirements.
 
 ## Review Background
 

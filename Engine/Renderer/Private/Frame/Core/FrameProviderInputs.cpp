@@ -14,13 +14,13 @@ FrameAssemblyUpscalerProviderResources BuildFrameUpscalerProviderInputs(
 	    .Exposure = exposure};
 }
 
-FrameAssemblyDenoiserProviderResources BuildFrameDenoiserProviderInputs(
+FrameAssemblyRayReconstructionProviderResources BuildFrameRayReconstructionProviderInputs(
     const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     const LightingRenderTargets& lighting,
     FrameGraphTextureHandle exposure)
 {
-	return FrameAssemblyDenoiserProviderResources{
+	return FrameAssemblyRayReconstructionProviderResources{
 	    .Depth = sceneTargets.MainDepth,
 	    .MotionVectors = gbuffer.MotionVector,
 	    .Exposure = exposure,
