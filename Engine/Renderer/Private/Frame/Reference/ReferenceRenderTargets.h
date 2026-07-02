@@ -11,6 +11,12 @@ struct ReferenceRenderTargets
 	FrameGraphTextureHandle ReferenceIndirectDiffuse;
 	FrameGraphTextureHandle ReferenceIndirectSpecular;
 	FrameGraphTextureHandle ReferenceSceneColor;
+	FrameGraphTextureHandle ReferencePrimaryDeviceDepth;
+	FrameGraphTextureHandle ReferencePrimaryNormal;
+	FrameGraphTextureHandle ReferencePrimaryDiffuseAlbedo;
+	FrameGraphTextureHandle ReferencePrimarySpecularAlbedo;
+	FrameGraphTextureHandle ReferencePrimaryMaterialGuide;
+	FrameGraphTextureHandle ReferencePrimaryPathSampleGuide;
 };
 
 ReferenceRenderTargets CreateReferenceRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent);

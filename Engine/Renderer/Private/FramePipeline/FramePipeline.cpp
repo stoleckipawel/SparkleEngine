@@ -12,7 +12,6 @@
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
-#include "Frame/Lighting/IndirectReconstruction.h"
 #include "Frame/Presentation/Upscaling.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
@@ -20,6 +19,7 @@
 #include "Host/RendererSystemRoot.h"
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
+#include "RayReconstruction/RayReconstructionFramePass.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
@@ -305,7 +305,7 @@ void FramePipeline::RecordFrame() noexcept
 
 	if (m_frameResources.RayReconstructionProviderInputs.NoisyInputColor.IsValid())
 	{
-		const RayReconstructionInputContract reconstructionInputContract = BuildFrameIndirectRayReconstructionInputContract(
+		const RayReconstructionInputContract reconstructionInputContract = BuildFrameRayReconstructionInputContract(
 		    m_frameResources.RayReconstructionProviderInputs,
 		    m_frameGraphSceneExtent,
 		    m_systems->GetTimer().GetFrameCount(),

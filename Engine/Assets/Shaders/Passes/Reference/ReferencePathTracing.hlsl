@@ -9,6 +9,12 @@ RWTexture2D<float4> ReferenceSceneColorTexture;
 RWTexture2D<float4> ReferenceDirectTexture;
 RWTexture2D<float4> ReferenceIndirectDiffuseTexture;
 RWTexture2D<float4> ReferenceIndirectSpecularTexture;
+RWTexture2D<float> ReferencePrimaryDeviceDepthTexture;
+RWTexture2D<float4> ReferencePrimaryNormalTexture;
+RWTexture2D<float4> ReferencePrimaryDiffuseAlbedoTexture;
+RWTexture2D<float4> ReferencePrimarySpecularAlbedoTexture;
+RWTexture2D<float4> ReferencePrimaryMaterialGuideTexture;
+RWTexture2D<float4> ReferencePrimaryPathSampleGuideTexture;
 Texture2D SkyTexture;
 SamplerState SamplerLinearClamp;
 
@@ -23,6 +29,22 @@ cbuffer ReferencePathTracingUniformData
 static const uint ReferencePathTracingRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
 static const uint ReferencePathTracingInstanceMask = 0xFFu;
 static const float ReferencePathTracingMinimumTMin = 0.001f;
+
+float ComputeReferencePrimaryDeviceDepth(float3 positionWorld)
+{
+	const float4 clipPosition = mul(float4(positionWorld, 1.0f), Camera.ViewProjMTX);
+	return abs(clipPosition.w) > 1.0e-6f ? saturate(clipPosition.z / clipPosition.w) : 0.0f;
+}
+
+void ClearReferenceGuides(uint2 pixelCoord)
+{
+	ReferencePrimaryDeviceDepthTexture[pixelCoord] = 0.0f;
+	ReferencePrimaryNormalTexture[pixelCoord] = 0.0f.xxxx;
+	ReferencePrimaryDiffuseAlbedoTexture[pixelCoord] = 0.0f.xxxx;
+	ReferencePrimarySpecularAlbedoTexture[pixelCoord] = 0.0f.xxxx;
+	ReferencePrimaryMaterialGuideTexture[pixelCoord] = 0.0f.xxxx;
+	ReferencePrimaryPathSampleGuideTexture[pixelCoord] = 0.0f.xxxx;
+}
 
 float2 BuildReferenceLightSample(float3 positionWorld, uint lightIndex, uint dimensionTag, uint sampleIndex)
 {
@@ -166,6 +188,7 @@ float3 EvaluateReferenceDirectLighting(
 		ReferenceDirectTexture[pixelCoord] = 0.0f.xxxx;
 		ReferenceIndirectDiffuseTexture[pixelCoord] = 0.0f.xxxx;
 		ReferenceIndirectSpecularTexture[pixelCoord] = 0.0f.xxxx;
+		ClearReferenceGuides(pixelCoord);
 		return;
 	}
 
@@ -177,15 +200,20 @@ float3 EvaluateReferenceDirectLighting(
 		ReferenceDirectTexture[pixelCoord] = 0.0f.xxxx;
 		ReferenceIndirectDiffuseTexture[pixelCoord] = 0.0f.xxxx;
 		ReferenceIndirectSpecularTexture[pixelCoord] = 0.0f.xxxx;
+		ClearReferenceGuides(pixelCoord);
 		return;
 	}
 
 	const RayTracingPathSurface primarySurface =
 	    BuildHitRayTracingPathSurface(primaryHit, primaryRayDirection);
+	const float3 primaryDiffuseAlbedo = primaryHit.BaseColor * (1.0f - primaryHit.Metallic);
+	const float3 primarySpecularAlbedo =
+	    SurfaceLighting::BuildF0(primaryHit.BaseColor, primaryHit.Metallic, primaryHit.DielectricF0);
 
 	float3 directRadiance = 0.0f.xxx;
 	float3 indirectDiffuseRadiance = 0.0f.xxx;
 	float3 indirectSpecularRadiance = 0.0f.xxx;
+	float4 primaryPathSampleGuide = 0.0f.xxxx;
 	const uint sampleCount = max(ReferencePathTracingSamplesPerPixel, 1u);
 
 	[loop] for (uint sampleIndex = 0u; sampleIndex < sampleCount; ++sampleIndex)
@@ -210,6 +238,13 @@ float3 EvaluateReferenceDirectLighting(
 		{
 			indirectSpecularRadiance += path.FinalContribution;
 		}
+		if (sampleIndex == 0u)
+		{
+			const float pathSampleValid =
+			    path.FirstSample.RejectionReason == RayTracingPathSample::RejectionReasonNone ? 1.0f : 0.0f;
+			primaryPathSampleGuide =
+			    float4(max(path.FirstLighting.HitDistance, 0.0f), pathSampleValid, float(path.PrimaryLobe), path.FirstLighting.Hit ? 1.0f : 0.0f);
+		}
 	}
 
 	const float invSampleCount = rcp(float(sampleCount));
@@ -220,6 +255,13 @@ float3 EvaluateReferenceDirectLighting(
 	ReferenceDirectTexture[pixelCoord] = float4(directRadiance, primaryHit.Alpha);
 	ReferenceIndirectDiffuseTexture[pixelCoord] = float4(indirectDiffuseRadiance, primaryHit.Alpha);
 	ReferenceIndirectSpecularTexture[pixelCoord] = float4(indirectSpecularRadiance, primaryHit.Alpha);
+	ReferencePrimaryDeviceDepthTexture[pixelCoord] = ComputeReferencePrimaryDeviceDepth(primaryHit.PositionWorld);
+	ReferencePrimaryNormalTexture[pixelCoord] = float4(primaryHit.NormalWorld, primaryHit.Alpha);
+	ReferencePrimaryDiffuseAlbedoTexture[pixelCoord] = float4(primaryDiffuseAlbedo, 1.0f);
+	ReferencePrimarySpecularAlbedoTexture[pixelCoord] = float4(primarySpecularAlbedo, 1.0f);
+	ReferencePrimaryMaterialGuideTexture[pixelCoord] =
+	    float4(primaryHit.Roughness, primaryHit.Metallic, primaryHit.DielectricF0, 1.0f);
+	ReferencePrimaryPathSampleGuideTexture[pixelCoord] = primaryPathSampleGuide;
 	ReferenceSceneColorTexture[pixelCoord] =
 	    float4(directRadiance + indirectDiffuseRadiance + indirectSpecularRadiance + primaryHit.EmissiveColor, primaryHit.Alpha);
 }

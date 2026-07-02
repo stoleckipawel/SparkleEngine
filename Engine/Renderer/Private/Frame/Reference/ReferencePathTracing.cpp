@@ -11,6 +11,8 @@
 #include "Passes/Core/PassUtilities.h"
 #include "Passes/Core/ShaderPass.h"
 #include "Passes/Reference/ReferencePathTracingPass.h"
+#include "RayReconstruction/RayReconstructionFramePass.h"
+#include "RayReconstruction/RayReconstructionSettings.h"
 
 namespace
 {
@@ -19,6 +21,53 @@ namespace
 		return RayTracingScenePassBinding::FrameUsesSceneTlasAccessMode(
 		    frame,
 		    RayTracingSceneTlasShaderAccessMode::Descriptor);
+	}
+
+	FrameRayReconstructionProviderResources BuildReferenceRayReconstructionProviderInputs(
+	    const SceneRenderTargets& sceneTargets,
+	    const ReferenceRenderTargets& referenceTargets,
+	    FrameGraphTextureHandle exposure)
+	{
+		return FrameRayReconstructionProviderResources{
+		    .NoisyInputColor = referenceTargets.ReferenceSceneColor,
+		    .OutputColor = sceneTargets.FinalSceneColor,
+		    .Depth = referenceTargets.ReferencePrimaryDeviceDepth,
+		    .MotionVectors = FrameGraphTextureHandle::Invalid(),
+		    .Exposure = exposure,
+		    .Normals = referenceTargets.ReferencePrimaryNormal,
+		    .Roughness = referenceTargets.ReferencePrimaryMaterialGuide,
+		    .DiffuseAlbedo = referenceTargets.ReferencePrimaryDiffuseAlbedo,
+		    .SpecularAlbedo = referenceTargets.ReferencePrimarySpecularAlbedo,
+		    .SpecularHitDistance = referenceTargets.ReferencePrimaryPathSampleGuide};
+	}
+
+	bool AddReferenceRayReconstructionPassIfEnabled(
+	    FrameGraphBuilder& builder,
+	    RenderViewportExtent sceneExtent,
+	    FrameAssemblyResourceLayout& resources)
+	{
+		if (GetRayReconstructionModeFromCVars() != EngineRayReconstructionMode::NvidiaDlssRayReconstruction)
+		{
+			return false;
+		}
+
+		FrameRayReconstructionProviderResources providerInputs =
+		    BuildReferenceRayReconstructionProviderInputs(
+		        resources.Transient.Scene,
+		        resources.Transient.Reference,
+		        resources.Transient.Exposure);
+		if (!HasRequiredRayReconstructionProviderResources(providerInputs))
+		{
+			return false;
+		}
+
+		resources.RayReconstructionProviderInputs = providerInputs;
+		AddRayReconstructionProviderPass(
+		    builder,
+		    "ReferenceRayReconstruction",
+		    sceneExtent,
+		    resources.RayReconstructionProviderInputs);
+		return true;
 	}
 }
 
@@ -69,10 +118,13 @@ void AddReferenceRenderingPasses(
 	    "ReferenceSceneColorToSceneColor",
 	    resources.Transient.Scene.SceneColor,
 	    resources.Transient.Reference.ReferenceSceneColor);
-	PassUtilities::AddCopyTexturePass(
-	    builder,
-	    "ReferenceSceneColorToFinalSceneColor",
-	    resources.Transient.Scene.FinalSceneColor,
-	    resources.Transient.Reference.ReferenceSceneColor);
+	if (!AddReferenceRayReconstructionPassIfEnabled(builder, sceneExtent, resources))
+	{
+		PassUtilities::AddCopyTexturePass(
+		    builder,
+		    "ReferenceSceneColorToFinalSceneColor",
+		    resources.Transient.Scene.FinalSceneColor,
+		    resources.Transient.Reference.ReferenceSceneColor);
+	}
 	resources.FinalSceneColorProduced = true;
 }

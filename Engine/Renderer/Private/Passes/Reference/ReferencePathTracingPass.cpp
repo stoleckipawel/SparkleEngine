@@ -56,6 +56,12 @@ void ReferencePathTracingPass::DeclareResources(
 	parameters->ReferenceDirectTexture = builder.CreateUAV(targets.ReferenceDirect);
 	parameters->ReferenceIndirectDiffuseTexture = builder.CreateUAV(targets.ReferenceIndirectDiffuse);
 	parameters->ReferenceIndirectSpecularTexture = builder.CreateUAV(targets.ReferenceIndirectSpecular);
+	parameters->ReferencePrimaryDeviceDepthTexture = builder.CreateUAV(targets.ReferencePrimaryDeviceDepth);
+	parameters->ReferencePrimaryNormalTexture = builder.CreateUAV(targets.ReferencePrimaryNormal);
+	parameters->ReferencePrimaryDiffuseAlbedoTexture = builder.CreateUAV(targets.ReferencePrimaryDiffuseAlbedo);
+	parameters->ReferencePrimarySpecularAlbedoTexture = builder.CreateUAV(targets.ReferencePrimarySpecularAlbedo);
+	parameters->ReferencePrimaryMaterialGuideTexture = builder.CreateUAV(targets.ReferencePrimaryMaterialGuide);
+	parameters->ReferencePrimaryPathSampleGuideTexture = builder.CreateUAV(targets.ReferencePrimaryPathSampleGuide);
 	(void)RayTracingScenePassBinding::BindSceneTlas(
 	    builder,
 	    sceneTlas,

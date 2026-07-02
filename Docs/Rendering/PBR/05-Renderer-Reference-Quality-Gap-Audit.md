@@ -299,6 +299,13 @@ Acceptance criteria:
 - Reference compliance note maps guide ownership to RTXPT/Falcor and provider guide expectations to Streamline/AMD.
 - Reuse/DRY note lists reused shader modules and any intentional local deviations.
 
+Implementation note:
+
+- Reference path tracing now writes its own guide targets under `Frame/Reference`: primary device depth, primary normal, primary diffuse albedo, primary specular albedo/F0, primary material guide, and primary path sample guide.
+- Reused shader modules: `RayTracing/PathLighting`, `RayTracing/PathSampling`, `RayTracing/RayTracingMaterialHit`, `Lighting/SurfaceLighting`, `Lighting/AreaLights`, `Lighting/SkyEnvironment`, and `RayTracing/Shadows/RayTracedShadowVisibility`.
+- Reference reconstruction uses the shared ray-reconstruction provider pass only when all required provider resources exist. Current intentional blocker: reference mode does not yet write a real reference motion-vector guide, so DLRR is not scheduled from reference mode rather than borrowing realtime GBuffer motion vectors.
+- Reference mapping: guide ownership follows RTXPT/Falcor path-tracer-owned output products; provider gating follows Streamline/AMD reconstruction staging where incomplete guide sets must not execute.
+
 ## What To Delete Or Avoid
 
 - Do not add a shadow-only provider path for direct lighting.
