@@ -4,87 +4,40 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
+#include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/Bindings/LightingPassBinding.h"
-#include "Passes/Bindings/RayTracedShadowPassBinding.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 namespace DirectLightingPassDetails
 {
-	constexpr CookedShaderPackageFeatureFlags DescriptorRayQueryFeatures =
-	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
-	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
-
-	constexpr CookedShaderPackageFeatureFlags DeviceAddressRayQueryFeatures =
-	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
-	    CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress |
-	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
-
-	template <typename TParameterInstance>
-	void PopulateCommonResources(
+	void PopulateResources(
 	    FrameGraphBuilder& builder,
 	    const LightingRenderTargets& lighting,
 	    const GBufferRenderTargets& gbuffer,
-	    FrameGraphTextureHandle shadowVisibilitySignal,
-	    TParameterInstance& parameters)
+	    const DirectShadowSignalResources& shadowSignals,
+	    DirectLightingPass::ParameterInstance& parameters)
 	{
 		parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
 		parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
 		parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
-		parameters->ShadowVisibilitySignal = builder.CreateSRV(shadowVisibilitySignal);
+		parameters->ShadowVisibilitySignal = builder.CreateSRV(shadowSignals.Visibility);
+		parameters->ShadowLightSample = builder.CreateSRV(shadowSignals.LightSample);
 		parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
 		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 		parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 		parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 		parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 	}
-
-	template <typename TParameterInstance>
-	void PopulateRayQueryParameters(
-	    TParameterInstance& parameters,
-	    const FrameContext& frame,
-	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices,
-	    bool hasSceneTlas)
-	{
-		parameters->PerFrame = passRuntimeServices.PerFrame;
-		parameters->PerView = viewData.perViewData;
-		LightingPassBinding::SetParameters(parameters, frame);
-		RayTracedShadowPassBinding::SetRayQueryParameters(parameters, frame, passRuntimeServices, hasSceneTlas);
-	}
 }  // namespace DirectLightingPassDetails
 
 DirectLightingPass::DirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
-
-DirectLightingNoRayQueryPass::DirectLightingNoRayQueryPass(const ComputePassPipelineRuntime& runtime) noexcept :
-    m_runtime(runtime)
-{
-}
-
-const DirectLightingNoRayQueryPass::ParameterMetadata& DirectLightingNoRayQueryPass::GetParameterMetadata() noexcept
-{
-	return ComputePassUtilities::BuildParameterMetadata<DirectLightingNoRayQueryPass>();
-}
-
-const RenderPassDefinition& DirectLightingNoRayQueryPass::GetDefinition() noexcept
-{
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
-	    PassName,
-	    "DirectLightingNoRayQueryShaderPackage",
-	    RendererShaderPackages::DirectLightingNoRayQuery,
-	    L"DirectLightingNoRayQuery_BindingLayout",
-	    L"DirectLightingNoRayQuery_PipelineState");
-	return definition;
-}
 
 const DirectLightingPass::ParameterMetadata& DirectLightingPass::GetParameterMetadata() noexcept
 {
@@ -98,56 +51,21 @@ const RenderPassDefinition& DirectLightingPass::GetDefinition() noexcept
 	    "DirectLightingShaderPackage",
 	    RendererShaderPackages::DirectLighting,
 	    L"DirectLighting_BindingLayout",
-	    L"DirectLighting_PipelineState",
-	    DirectLightingPassDetails::DescriptorRayQueryFeatures);
+	    L"DirectLighting_PipelineState");
 	return definition;
-}
-
-DirectLightingDeviceAddressPass::DirectLightingDeviceAddressPass(const ComputePassPipelineRuntime& runtime) noexcept :
-    m_runtime(runtime)
-{
-}
-
-const DirectLightingDeviceAddressPass::ParameterMetadata& DirectLightingDeviceAddressPass::GetParameterMetadata() noexcept
-{
-	return ComputePassUtilities::BuildParameterMetadata<DirectLightingDeviceAddressPass>();
-}
-
-const RenderPassDefinition& DirectLightingDeviceAddressPass::GetDefinition() noexcept
-{
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
-	    PassName,
-	    "DirectLightingDeviceAddressShaderPackage",
-	    RendererShaderPackages::DirectLightingDeviceAddress,
-	    L"DirectLightingDeviceAddress_BindingLayout",
-	    L"DirectLightingDeviceAddress_PipelineState",
-	    DirectLightingPassDetails::DeviceAddressRayQueryFeatures);
-	return definition;
-}
-
-void DirectLightingNoRayQueryPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    const LightingRenderTargets& lighting,
-    const GBufferRenderTargets& gbuffer,
-    FrameGraphTextureHandle shadowVisibilitySignal,
-    ParameterInstance& parameters)
-{
-	DirectLightingPassDetails::PopulateCommonResources(builder, lighting, gbuffer, shadowVisibilitySignal, parameters);
 }
 
 void DirectLightingPass::DeclareResources(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
     const GBufferRenderTargets& gbuffer,
-    FrameGraphAccelerationStructureHandle sceneTlas,
-    FrameGraphTextureHandle shadowVisibilitySignal,
+    const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectLightingPassDetails::PopulateCommonResources(builder, lighting, gbuffer, shadowVisibilitySignal, parameters);
-	parameters->SceneTlas = builder.Read(sceneTlas);
+	DirectLightingPassDetails::PopulateResources(builder, lighting, gbuffer, shadowSignals, parameters);
 }
 
-void DirectLightingNoRayQueryPass::SetParameters(
+void DirectLightingPass::SetParameters(
     ParameterInstance& parameters,
     const FrameContext& frame,
     const RenderViewData& viewData,
@@ -158,67 +76,12 @@ void DirectLightingNoRayQueryPass::SetParameters(
 	LightingPassBinding::SetParameters(parameters, frame);
 }
 
-void DirectLightingDeviceAddressPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    const LightingRenderTargets& lighting,
-    const GBufferRenderTargets& gbuffer,
-    FrameGraphTextureHandle shadowVisibilitySignal,
-    ParameterInstance& parameters)
-{
-	DirectLightingPassDetails::PopulateCommonResources(builder, lighting, gbuffer, shadowVisibilitySignal, parameters);
-}
-
-void DirectLightingPass::SetParameters(
-    ParameterInstance& parameters,
-    const FrameContext& frame,
-    const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices,
-    bool hasSceneTlas) const
-{
-	DirectLightingPassDetails::PopulateRayQueryParameters(parameters, frame, viewData, passRuntimeServices, hasSceneTlas);
-}
-
-void DirectLightingDeviceAddressPass::SetParameters(
-    ParameterInstance& parameters,
-    const FrameContext& frame,
-    const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices,
-    bool hasSceneTlas) const
-{
-	DirectLightingPassDetails::PopulateRayQueryParameters(parameters, frame, viewData, passRuntimeServices, hasSceneTlas);
-}
-
-void DirectLightingNoRayQueryPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
-{
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
-	ComputePassUtilities::DispatchSized<DirectLightingNoRayQueryPass>(
-	    context,
-	    m_runtime,
-	    parameters,
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
-}
-
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
+	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
 	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, "Ray Query Dispatch");
+		SPARKLE_GPU_SCOPE(context.Diagnostics, "Sampled Direct Lighting");
 		ComputePassUtilities::DispatchSized<DirectLightingPass>(
-		    context,
-		    m_runtime,
-		    parameters,
-		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
-	}
-}
-
-void DirectLightingDeviceAddressPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
-{
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
-	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, "Ray Query Dispatch");
-		ComputePassUtilities::DispatchSized<DirectLightingDeviceAddressPass>(
 		    context,
 		    m_runtime,
 		    parameters,

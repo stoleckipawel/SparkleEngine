@@ -2,12 +2,12 @@
 
 #include "Frame/Targets/FrameRenderTargets.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 
 class FrameGraphBuilder;
+struct DirectShadowSignalResources;
 
 void AddDirectShadowSignalPass(
     FrameGraphBuilder& builder,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas,
-    FrameGraphTextureHandle shadowVisibilitySignal);
+    const DirectShadowSignalResources& shadowSignals);

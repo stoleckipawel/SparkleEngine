@@ -5,6 +5,7 @@
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
+#include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
@@ -33,10 +34,11 @@ namespace DirectShadowSignalPassDetails
 	void PopulateRayResources(
 	    FrameGraphBuilder& builder,
 	    const GBufferRenderTargets& gbuffer,
-	    FrameGraphTextureHandle shadowVisibilitySignal,
+	    const DirectShadowSignalResources& shadowSignals,
 	    TParameterInstance& parameters)
 	{
-		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowVisibilitySignal);
+		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
+		parameters->ShadowLightSample = builder.CreateUAV(shadowSignals.LightSample);
 		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 		parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 	}
@@ -44,10 +46,12 @@ namespace DirectShadowSignalPassDetails
 	void PopulateNoRayResources(
 	    FrameGraphBuilder& builder,
 	    const GBufferRenderTargets& gbuffer,
-	    FrameGraphTextureHandle shadowVisibilitySignal,
+	    const DirectShadowSignalResources& shadowSignals,
 	    DirectShadowSignalNoRayQueryPass::ParameterInstance& parameters)
 	{
-		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowVisibilitySignal);
+		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
+		parameters->ShadowLightSample = builder.CreateUAV(shadowSignals.LightSample);
+		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 		parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 	}
 
@@ -131,30 +135,30 @@ const RenderPassDefinition& DirectShadowSignalDeviceAddressPass::GetDefinition()
 void DirectShadowSignalNoRayQueryPass::DeclareResources(
     FrameGraphBuilder& builder,
     const GBufferRenderTargets& gbuffer,
-    FrameGraphTextureHandle shadowVisibilitySignal,
+    const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectShadowSignalPassDetails::PopulateNoRayResources(builder, gbuffer, shadowVisibilitySignal, parameters);
+	DirectShadowSignalPassDetails::PopulateNoRayResources(builder, gbuffer, shadowSignals, parameters);
 }
 
 void DirectShadowSignalPass::DeclareResources(
     FrameGraphBuilder& builder,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas,
-    FrameGraphTextureHandle shadowVisibilitySignal,
+    const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectShadowSignalPassDetails::PopulateRayResources(builder, gbuffer, shadowVisibilitySignal, parameters);
+	DirectShadowSignalPassDetails::PopulateRayResources(builder, gbuffer, shadowSignals, parameters);
 	parameters->SceneTlas = builder.Read(sceneTlas);
 }
 
 void DirectShadowSignalDeviceAddressPass::DeclareResources(
     FrameGraphBuilder& builder,
     const GBufferRenderTargets& gbuffer,
-    FrameGraphTextureHandle shadowVisibilitySignal,
+    const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectShadowSignalPassDetails::PopulateRayResources(builder, gbuffer, shadowVisibilitySignal, parameters);
+	DirectShadowSignalPassDetails::PopulateRayResources(builder, gbuffer, shadowSignals, parameters);
 }
 
 void DirectShadowSignalNoRayQueryPass::SetParameters(
@@ -203,7 +207,7 @@ void DirectShadowSignalPass::Execute(PassExecutionContext& context, ParameterIns
 {
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
 	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, "Selected Shadow Signal");
+		SPARKLE_GPU_SCOPE(context.Diagnostics, "Direct Shadow Signal");
 		ComputePassUtilities::DispatchSized<DirectShadowSignalPass>(
 		    context,
 		    m_runtime,
@@ -217,7 +221,7 @@ void DirectShadowSignalDeviceAddressPass::Execute(PassExecutionContext& context,
 {
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
 	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, "Selected Shadow Signal");
+		SPARKLE_GPU_SCOPE(context.Diagnostics, "Direct Shadow Signal");
 		ComputePassUtilities::DispatchSized<DirectShadowSignalDeviceAddressPass>(
 		    context,
 		    m_runtime,

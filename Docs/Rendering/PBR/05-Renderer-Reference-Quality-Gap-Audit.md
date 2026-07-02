@@ -18,8 +18,8 @@ Sparkle is now structurally pointed in the right direction: `FrameRenderPath` se
 
 The renderer is not yet at NVIDIA-reference integration quality. The largest blockers are:
 
-1. SIGMA cannot improve all direct lighting yet because the first Stage 6R slice exposes one selected-light raw visibility product while non-selected lights still use the raw tracing path for visual parity.
-2. `DirectShadowSelection::SelectFirstShadowCastingLight` is not acceptable as a final architecture. It is temporary Stage 6R scaffolding and must be replaced by a many-light sampled-light or per-light visibility pipeline before SIGMA is exposed.
+1. Stage 6M now removes first-light shadowing and uses an RTXDI-shaped initial sampled-light product, but there is no temporal/spatial reservoir reuse yet and no NRD provider execution.
+2. SIGMA is still not a provider path. Raw sampled-light visibility exists before direct lighting, but no NRD provider consumes it, owns history, or writes denoised visibility.
 3. DLRR is not a provider path yet; the existing Streamline runtime only evaluates DLSS Super Resolution / DLAA.
 4. Reconstruction guide buffers exist as frame assembly slots, but there is no provider-neutral reconstruction contract or Streamline DLRR tag path.
 5. Reference path tracing owns primary rays, but provider guide buffers are still mostly realtime-GBuffer-shaped. Reference mode must write its own guides if it wants denoising/reconstruction.
@@ -30,8 +30,8 @@ The next work should produce visible editor results before broad cleanup continu
 
 Priority:
 
-1. Replace the selected-light Stage 6R shortcut with a reference-shaped many-light direct-shadow signal path.
-2. Finish SIGMA shadow denoising end-to-end: raw shadow signal before lighting, NRD provider execution, persistent provider history, editor setting, and direct lighting consuming raw or denoised visibility.
+1. Finish SIGMA shadow denoising end-to-end on top of the Stage 6M sampled-light visibility product: NRD provider execution, persistent provider history, editor setting, and direct lighting consuming raw or denoised visibility.
+2. Add temporal/spatial reservoir reuse or an RTXDI provider boundary after the initial sampled-light contract is stable.
 3. Finish DLRR/ray reconstruction end-to-end: provider-neutral reconstruction contract, guide buffers, Streamline DLRR resource tags, editor setting, and reconstructed output visible in the viewport.
 4. After those are visible, return to reference-path guide outputs and deeper renderer architecture cleanup.
 
@@ -68,9 +68,9 @@ Prompt guardrail for every stage:
 | --- | --- | --- |
 | Render path selection | `FrameRenderPath`, `BuildFrame`, `FrameBuildResult`, `FrameGraphBuildResult`, `FramePipeline` | Good direction. The built graph now reports the path it actually contains. |
 | Reference path ownership | `Frame/Reference/*`, `Passes/Reference/ReferencePathTracingPass.*`, `Passes/Reference/ReferencePathTracing.hlsl` | Good direction. Reference targets are no longer lighting targets. |
-| Shadow visibility signal | `Frame/Lighting/ShadowVisibility.cpp`, `Frame/Lighting/Shadows/DirectShadowSignal.cpp`, `DirectShadowSignal.hlsl`, `RayTracedShadowDenoiserInputs.hlsli` | Stage 6R writes a selected-light raw visibility/hit-distance signal before direct lighting. No SIGMA mode is exposed until a real provider exists. |
-| Direct shadows | `DirectLighting.hlsl`, `DirectLightingPass.*`, `DirectShadowSignalPass.*` | Direct lighting consumes the selected-light visibility resource, then preserves current raw output by tracing non-selected lights until a per-light or sampled-light direct-light policy lands. |
-| Many-light shadow sampling | `DirectShadowSelection.hlsli`, `LightSampling.hlsli`, `AreaLights.hlsli` | Current selected-light policy is not reference quality. Stage 6M must replace it with a many-light sampled-light pipeline inspired by RTXDI/ReSTIR DI or an explicit per-light product strategy. |
+| Shadow visibility signal | `Frame/Lighting/ShadowVisibility.cpp`, `Frame/Lighting/Shadows/DirectShadowSignal.cpp`, `DirectShadowSignal.hlsl`, `RayTracedShadowDenoiserInputs.hlsli` | Stage 6M writes raw visibility/hit-distance before direct lighting and pairs it with `DirectShadowLightSample` identity/PDF. No SIGMA mode is exposed until a real provider exists. |
+| Direct shadows | `DirectLighting.hlsl`, `DirectLightingPass.*`, `DirectShadowSignalPass.*` | Direct lighting is now backend-agnostic and consumes the sampled-light plus visibility products. It no longer traces shadows inline or mixes denoised-first-light with raw-rest paths. |
+| Many-light shadow sampling | `DirectLightSampling.hlsli`, `LightSampling.hlsli`, `AreaLights.hlsli` | Initial Stage 6M slice samples one contribution-weighted direct-light candidate per pixel across directional, point, spot, and rect lights. Next NVIDIA-quality step is reservoir reuse / RTXDI provider integration. |
 | Shadow history | Not allocated in the current runtime | Correct current state. Future SIGMA history must be introduced by the provider pass that consumes it. |
 | Upscaler provider | `UpscalerInputContract`, `NvidiaDlssUpscalerProvider`, `StreamlineDlssRuntime` | DLSS-SR/DLAA shaped. This should stay separate from DLRR. |
 | Reconstruction resources | `FrameAssemblyDenoiserProviderResources`, `FrameProviderInputs`, `LightingRenderTargets` guide slots | Good vocabulary, but not a complete provider contract and not tagged/evaluated by any provider. |
@@ -85,8 +85,8 @@ These are required before claiming SIGMA or DLRR-quality integration.
 Current problem:
 
 - Before Stage 6R, `DirectLighting.hlsl` traced a direct-light sample, immediately multiplied lighting by `shadow.Visibility`, and also wrote `ShadowVisibilitySignalTexture`.
-- A denoiser can only improve a signal that is consumed after denoising. Direct lighting now consumes one selected-light signal written by `DirectShadowSignal`, but non-selected lights still trace raw visibility to preserve the existing editor result.
-- The old raw shadow output was an aggregate "most occluding" per-pixel signal across all direct light samples. SIGMA is per-light shadow denoising; Stage 6R replaces the aggregate with a selected-light signal and names full multi-light denoising as the remaining blocker.
+- A denoiser can only improve a signal that is consumed after denoising. Direct lighting now consumes the Stage 6M sampled-light visibility product written by `DirectShadowSignal`.
+- The old raw shadow output was an aggregate "most occluding" per-pixel signal across all direct light samples. Stage 6R removed that aggregate, and Stage 6M removed the selected-first-light shortcut by pairing visibility with direct-light sample identity/PDF.
 
 Decision:
 
@@ -108,21 +108,25 @@ Reference mapping:
 
 ### P0.1A Replace Selected-Light Shadowing With Many-Light Visibility
 
-Current problem:
+Resolved Stage 6M problem:
 
-- `DirectShadowSelection::SelectFirstShadowCastingLight` chooses the first shadow-casting light by type order.
-- That shortcut is acceptable only as a Stage 6R proof that raw visibility can be generated before direct lighting. It is not physically correct, does not scale to multiple soft-shadowing lights, and cannot produce editor-visible denoising for all direct shadows.
-- Denoising a single selected light while tracing every other light raw creates a misleading split: only one light can become smooth, and quality depends on light ordering rather than radiance, importance, or visibility.
+- `DirectShadowSelection::SelectFirstShadowCastingLight` chose the first shadow-casting light by type order.
+- That shortcut was acceptable only as a Stage 6R proof that raw visibility can be generated before direct lighting. It was not physically correct, did not scale to multiple soft-shadowing lights, and could not produce editor-visible denoising for all direct shadows.
+- Denoising a single selected light while tracing every other light raw created a misleading split: only one light could become smooth, and quality depended on light ordering rather than radiance, importance, or visibility.
 - AMD FidelityFX Shadow Denoiser is explicitly shaped around a single-light shadow mask. It can inform per-light staging, tile classification, packing, and temporal filtering, but it is not a complete many-light solution by itself.
 - NVIDIA's many-light reference path is RTXDI/ReSTIR-style: collect all light data, sample/resample important light candidates per pixel, trace visibility for the selected reservoir sample, shade using the chosen sample and PDF/weight, and optionally feed confidence/denoiser inputs.
 
-Decision:
+Implemented decision:
 
-- Stage 6M must replace `SelectFirstShadowCastingLight` before Stage 6N exposes SIGMA.
-- Sparkle should choose one of two explicit policies:
-  1. **RTXDI-style sampled-light policy, preferred:** build a per-pixel direct-light sample/reservoir product over all shadow-casting punctual and area lights; trace and denoise the visibility for that sampled light; shade direct lighting from the sampled reservoir with proper PDF/weight. This scales to many lights and follows NVIDIA's reference architecture.
-  2. **Per-light product policy, fallback for small light counts:** generate raw/denoised visibility per active shadow-casting light or per light tile/list, then accumulate every light against its matching visibility. This is simpler to reason about but can be expensive and should be capped/tiled explicitly.
-- Do not keep an implicit "first light wins" policy, a global aggregate shadow mask, or a denoised-first-light plus raw-rest hybrid as a final mode.
+- Stage 6M deletes `SelectFirstShadowCastingLight` and replaces it with an RTXDI-style initial sampled-light product.
+- `DirectLightSampling.hlsli` samples one contribution-weighted candidate per pixel across all represented directional, point, spot, and rect lights, stores light type/index plus selection PDF in `DirectShadowLightSample`, and pairs it with raw visibility/hit-distance in `ShadowVisibilitySignalRaw`.
+- `DirectLighting.hlsl` shades from the sampled-light product and the paired visibility signal. It no longer loops over all lights while tracing non-selected lights raw, and it no longer has ray-query/no-ray/device-address variants.
+- Do not reintroduce an implicit "first light wins" policy, a global aggregate shadow mask, or a denoised-first-light plus raw-rest hybrid.
+
+Remaining NVIDIA-quality work:
+
+- Add temporal/spatial reservoir reuse or integrate an RTXDI-style provider so the initial sampled-light product becomes a stable many-light direct-lighting solution rather than a one-sample vertical slice.
+- Stage 6N must make NRD SIGMA consume and produce visibility for the same sampled-light identity; it must not denoise an unordered aggregate.
 
 Reference mapping:
 
@@ -136,7 +140,7 @@ Current problem:
 
 - Sparkle has no linked NRD provider execution path.
 - The previous local SIGMA CVar/contract/history scaffold did not execute a provider and has been removed.
-- The current raw shadow output is selected-light shaped. It is enough to prove the render-graph staging, but not enough to claim multi-light SIGMA until Stage 6M replaces selected-light ordering and Stage 6N adds the provider.
+- The current raw shadow output is sampled-light shaped. It is enough to prove the render-graph staging, but not enough to claim SIGMA until Stage 6N adds a real NRD provider and history ownership.
 
 Decision:
 
@@ -346,9 +350,9 @@ Acceptance criteria:
 
 Stage 6R implementation note:
 
-- Reference compliance: Sparkle now follows the NRD/RTXPT/Falcor staging shape for the selected shadow light: `DirectShadowSignal` writes raw visibility/hit distance before direct lighting, and `DirectLighting` reads that signal instead of writing denoiser input as a side effect. The deliberate local deviation is that non-selected lights still use raw inline tracing in `DirectLighting` so the editor view remains stable until Stage 6N introduces either a per-light visibility product or a sampled-light estimator.
-- Reuse/DRY audit: scanned `DirectLighting.hlsl`, `RayTracing/Shadows/*`, `Frame/Lighting/*`, `DirectLightingPass.*`, `RayTracedShadowPassData`, and `FrameAssembly.h`. Kept existing light sampling, area-light policy, alpha-tested shadow tracing, material table binding, and frame-graph resource ownership. Added `DirectShadowSelection.hlsli` because it owns the selected-light policy, and added `UnpackShadowSignal` beside `PackShadowSignal` because packing is the real signal boundary.
-- Remaining blocker: the raw signal is selected-light shaped, not per-light. Full SIGMA integration must either allocate/provider-tag per-light signals or move direct lighting to a sampled-light policy whose selected visibility is the one denoised by SIGMA.
+- Superseded by Stage 6M. Stage 6R proved the render-graph staging shape, but its selected-light shortcut and direct-light raw-rest hybrid are no longer acceptable current architecture.
+- Reference compliance retained: `DirectShadowSignal` writes raw visibility/hit distance before direct lighting, and `DirectLighting` reads that signal instead of writing denoiser input as a side effect.
+- Reuse/DRY audit: scanned `DirectLighting.hlsl`, `RayTracing/Shadows/*`, `Frame/Lighting/*`, `DirectLightingPass.*`, `DirectShadowSignalPass.*`, `RayTracedShadowPassData`, and `FrameAssembly.h`. Kept existing area-light policy, alpha-tested shadow tracing, and frame-graph resource ownership. Stage 6M deleted `DirectShadowSelection.hlsli` and kept signal packing beside `RayTracedShadowDenoiserInputs` because packing is the real signal boundary.
 
 ### Stage 6M: Replace Selected-Light Shadows With Many-Light Sampling
 
@@ -417,6 +421,13 @@ Acceptance criteria:
 - No backend-specific shader/pass names are added.
 - Reference compliance note maps light table/candidate generation/reservoir or per-light product, visibility tracing, confidence, and denoise/composite order to RTXDI/NRD/RTXPT/Falcor/AMD.
 - Reuse/DRY note lists the existing light sampling, area-light, shadow tracing, frame-graph, and scene-light snapshot bodies scanned, and explains why any new helper earns its place.
+
+Stage 6M implementation note:
+
+- Implemented policy: initial RTXDI/ReSTIR-shaped sampled-light slice. `DirectLightSampling.hlsli` samples one contribution-weighted direct-light candidate per pixel across directional, point, spot, and rect lights, stores light type/index plus selection PDF in `DirectShadowLightSample`, and `DirectShadowSignal` writes paired raw visibility/hit-distance in `ShadowVisibilitySignalRaw`.
+- Direct lighting now consumes the sampled-light and visibility products only. It no longer traces direct shadows inline, no longer combines one selected denoiser signal with raw-traced non-selected lights, and no longer has direct-lighting ray-query/no-ray/device-address shader variants.
+- Reference compliance: the structure follows RTXDI's initial candidate/sample plus final visibility ray shape, keeps NRD/SIGMA-compatible visibility before lighting, and keeps AMD FidelityFX-style shadow-mask staging as a per-sample/per-light building block rather than a many-light aggregate. Local deviation: Sparkle has no temporal/spatial reservoir reuse or RTXDI provider yet, so the current estimator is a one-sample vertical slice.
+- Reuse/DRY audit: scanned `DirectShadowSelection.hlsli`, `LightSampling.hlsli`, `AreaLights.hlsli`, `PunctualLights.hlsli`, `DirectShadowSignal.hlsl`, `DirectLighting.hlsl`, `RayTracing/Shadows/*`, `Frame/Lighting/Shadows/*`, `DirectShadowSignalPass.*`, `DirectLightingPass.*`, scene light snapshot code, and `RenderViewLightingData.h`. Deleted `DirectShadowSelection.hlsli` and direct-lighting backend wrapper shaders. Kept `DirectLightSampling.hlsli` because it owns real light indexing, candidate weighting, sample identity packing, and selection PDF policy.
 
 ### Stage 6N: Add NRD SIGMA Provider Runtime
 
@@ -637,13 +648,12 @@ Acceptance criteria:
 
 ## Suggested Priority Order
 
-1. Stage 6R: split direct shadow signal generation from direct lighting while preserving the current raw-shadow viewport result.
-2. Stage 6M: replace selected-light shadows with many-light sampled-light or per-light visibility before exposing SIGMA.
-3. Stage 6N: add NRD provider runtime and editor-visible SIGMA shadow denoising.
-4. Stage 11R: add `RayReconstructionInputContract`, provider category, and realtime guide buffers needed by DLRR.
-5. Stage 11D: add Streamline DLRR provider and editor-visible ray reconstruction.
-6. Stage 12G: make reference path write its own guides after realtime SIGMA/DLRR results are visible.
-7. Final cleanup: collapse stale shadow/reconstruction docs and remove obsolete "future" wording after provider integrations land.
+1. Stage 6N: add NRD provider runtime and editor-visible SIGMA shadow denoising on the Stage 6M sampled-light visibility product.
+2. Add temporal/spatial reservoir reuse or an RTXDI provider boundary for more stable many-light sampling.
+3. Stage 11R: add `RayReconstructionInputContract`, provider category, and realtime guide buffers needed by DLRR.
+4. Stage 11D: add Streamline DLRR provider and editor-visible ray reconstruction.
+5. Stage 12G: make reference path write its own guides after realtime SIGMA/DLRR results are visible.
+6. Final cleanup: collapse stale shadow/reconstruction docs and remove obsolete "future" wording after provider integrations land.
 
 ## Bottom Line
 

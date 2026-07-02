@@ -6,7 +6,13 @@
 class FrameGraphBuilder;
 struct FrameAssemblyResourceLayout;
 
-FrameGraphTextureHandle CreateShadowVisibilityResources(
+struct DirectShadowSignalResources final
+{
+	FrameGraphTextureHandle Visibility = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle LightSample = FrameGraphTextureHandle::Invalid();
+};
+
+DirectShadowSignalResources CreateDirectShadowSignalResources(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     FrameAssemblyResourceLayout& resources);

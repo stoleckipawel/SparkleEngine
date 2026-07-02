@@ -6,7 +6,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
-FrameGraphTextureHandle CreateShadowVisibilityResources(
+DirectShadowSignalResources CreateDirectShadowSignalResources(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     FrameAssemblyResourceLayout& resources)
@@ -17,5 +17,13 @@ FrameGraphTextureHandle CreateShadowVisibilityResources(
 	        sceneExtent.Width,
 	        sceneExtent.Height,
 	        PixelFormat::R32G32B32A32_Float));
-	return resources.Transient.ShadowVisibilitySignal;
+	resources.Transient.ShadowLightSample = builder.CreateTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "DirectShadowLightSample",
+	        sceneExtent.Width,
+	        sceneExtent.Height,
+	        PixelFormat::R32G32B32A32_Float));
+	return DirectShadowSignalResources{
+	    .Visibility = resources.Transient.ShadowVisibilitySignal,
+	    .LightSample = resources.Transient.ShadowLightSample};
 }

@@ -17,6 +17,7 @@ struct FrameAssemblyTransientResources final
 	LightingRenderTargets Lighting = {};
 	ReferenceRenderTargets Reference = {};
 	FrameGraphTextureHandle ShadowVisibilitySignal = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle ShadowLightSample = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
 };
 
