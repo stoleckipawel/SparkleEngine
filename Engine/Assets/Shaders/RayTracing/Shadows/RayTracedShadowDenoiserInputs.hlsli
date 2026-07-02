@@ -9,6 +9,16 @@ namespace RayTracedShadowDenoiserInputs
 	{
 		return float4(signal.Visibility, signal.HitDistance, signal.Confidence, signal.MaxDistance);
 	}
+
+	ShadowVisibilitySignal UnpackShadowSignal(float4 packedSignal)
+	{
+		ShadowVisibilitySignal signal;
+		signal.Visibility = packedSignal.x;
+		signal.HitDistance = packedSignal.y;
+		signal.Confidence = packedSignal.z;
+		signal.MaxDistance = packedSignal.w;
+		return signal;
+	}
 }
 
 #endif

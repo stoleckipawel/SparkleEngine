@@ -1,49 +1,30 @@
 #include "../../PCH.h"
 #include "Passes/Debug/VisualizeBuffersPass.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
-#include "Core/Public/Math/MathUtils.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
-#include "Diagnostics/PassExecutionDiagnostics.h"
-#include "Passes/Core/PassUtilities.h"
+#include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
-#include "Passes/Core/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-
-#include <cassert>
 
 VisualizeBuffersPass::VisualizeBuffersPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
 const VisualizeBuffersPass::ParameterMetadata& VisualizeBuffersPass::GetParameterMetadata() noexcept
 {
-	static const ParameterMetadata metadata = []
-	{
-		const ParameterMetadata localMetadata = ShaderParameterStructBuilder<Parameters>::BuildMetadata(PassName);
-		const bool valid = ValidateShaderPassLayout(localMetadata.GetLayout(), ShaderPassKind::Compute, PassName);
-		assert(valid);
-		return localMetadata;
-	}();
-
-	return metadata;
+	return ComputePassUtilities::BuildParameterMetadata<VisualizeBuffersPass>();
 }
 
 const RenderPassDefinition& VisualizeBuffersPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition{
-	    .PassName = PassName,
-	    .PackageDeclarationName = "VisualizeBuffersShaderPackage",
-	    .ShaderPackage = ShaderPackageDefinition{
-	        .PackageId = RendererShaderPackages::VisualizeBuffers.data(),
-	        .BindingLayoutId = RendererShaderPackages::VisualizeBuffers.data(),
-	        .ExpectedStages = ShaderStageMask::Compute},
-	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
-	    .BindingLayoutDebugName = L"VisualizeBuffers_BindingLayout",
-	    .PipelineStateDebugName = L"VisualizeBuffers_PipelineState"};
+	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	    PassName,
+	    "VisualizeBuffersShaderPackage",
+	    RendererShaderPackages::VisualizeBuffers,
+	    L"VisualizeBuffers_BindingLayout",
+	    L"VisualizeBuffers_PipelineState");
 	return definition;
 }
 
@@ -73,26 +54,17 @@ void VisualizeBuffersPass::SetParameters(
     const RenderViewData& viewData,
 	const PassRuntimeServices& passRuntimeServices) const
 {
-	(void) viewData;
+	(void)viewData;
 	parameters->PerFrame = passRuntimeServices.PerFrame;
-	const bool valid = parameters.Sync();
-	assert(valid);
 }
 
 void VisualizeBuffersPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
-	const ComputeDispatchDesc dispatch{
-	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
-	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
-	    1};
-	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<VisualizeBuffersPass>(
-	    context.Resources,
-	    context.Commands,
-	    context.RuntimeServices.HardwareInterface,
+	ComputePassUtilities::DispatchSized<VisualizeBuffersPass>(
+	    context,
 	    m_runtime,
 	    parameters,
-	    dispatch,
-	    PassName);
-	assert(dispatched);
+	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
 }

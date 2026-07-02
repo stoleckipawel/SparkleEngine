@@ -26,7 +26,7 @@ struct DirectLightingPassParameters
 	ShaderRWTexture2D<void> DirectDiffuse;
 	ShaderRWTexture2D<void> DirectSpecular;
 	ShaderRWTexture2D<void> DirectSubsurface;
-	ShaderRWTexture2D<void> ShadowVisibilitySignal;
+	ShaderTexture2D<void> ShadowVisibilitySignal;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
@@ -53,7 +53,7 @@ struct DirectLightingPassParameters
 		builder.RWTexture("DirectDiffuse", &DirectLightingPassParameters::DirectDiffuse, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSpecular", &DirectLightingPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSubsurface", &DirectLightingPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
-		builder.RWTexture("ShadowVisibilitySignal", &DirectLightingPassParameters::ShadowVisibilitySignal, ShaderStageVisibility::Compute);
+		builder.ReadTexture("ShadowVisibilitySignal", &DirectLightingPassParameters::ShadowVisibilitySignal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &DirectLightingPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &DirectLightingPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DirectLightingPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
@@ -82,7 +82,7 @@ struct DirectLightingNoRayQueryPassParameters
 	ShaderRWTexture2D<void> DirectDiffuse;
 	ShaderRWTexture2D<void> DirectSpecular;
 	ShaderRWTexture2D<void> DirectSubsurface;
-	ShaderRWTexture2D<void> ShadowVisibilitySignal;
+	ShaderTexture2D<void> ShadowVisibilitySignal;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
@@ -101,7 +101,7 @@ struct DirectLightingNoRayQueryPassParameters
 		builder.RWTexture("DirectDiffuse", &DirectLightingNoRayQueryPassParameters::DirectDiffuse, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSpecular", &DirectLightingNoRayQueryPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSubsurface", &DirectLightingNoRayQueryPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
-		builder.RWTexture("ShadowVisibilitySignal", &DirectLightingNoRayQueryPassParameters::ShadowVisibilitySignal, ShaderStageVisibility::Compute);
+		builder.ReadTexture("ShadowVisibilitySignal", &DirectLightingNoRayQueryPassParameters::ShadowVisibilitySignal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &DirectLightingNoRayQueryPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &DirectLightingNoRayQueryPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DirectLightingNoRayQueryPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
@@ -122,7 +122,7 @@ struct DirectLightingDeviceAddressPassParameters
 	ShaderRWTexture2D<void> DirectDiffuse;
 	ShaderRWTexture2D<void> DirectSpecular;
 	ShaderRWTexture2D<void> DirectSubsurface;
-	ShaderRWTexture2D<void> ShadowVisibilitySignal;
+	ShaderTexture2D<void> ShadowVisibilitySignal;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
@@ -157,7 +157,7 @@ struct DirectLightingDeviceAddressPassParameters
 		    "DirectSubsurface",
 		    &DirectLightingDeviceAddressPassParameters::DirectSubsurface,
 		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
+		builder.ReadTexture(
 		    "ShadowVisibilitySignal",
 		    &DirectLightingDeviceAddressPassParameters::ShadowVisibilitySignal,
 		    ShaderStageVisibility::Compute);

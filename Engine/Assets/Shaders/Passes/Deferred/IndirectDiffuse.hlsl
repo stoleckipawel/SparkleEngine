@@ -7,7 +7,6 @@ RWTexture2D<float4> IndirectDiffuseAlbedo;
 RWTexture2D<float4> IndirectSpecularAlbedo;
 RWTexture2D<float4> IndirectMaterialGuide;
 RWTexture2D<float4> IndirectDiffuseSampleGuide;
-RaytracingAccelerationStructure SceneTlas;
 Texture2D SkyTexture;
 SamplerState SamplerLinearClamp;
 
@@ -47,9 +46,8 @@ static const float IndirectDiffuseMinimumTMin = 0.001f;
 	}
 
 	const uint2 pixelCoord = dispatchThreadId.xy;
-	const int3 pixel = int3(pixelCoord, 0);
-	const float deviceZ = LoadGBufferDeviceZ(pixelCoord);
-	if (IsSkyPixel(deviceZ))
+	const GBufferData gBuffer = LoadGBuffer(pixelCoord);
+	if (IsSkyPixel(gBuffer.DeviceZ))
 	{
 		IndirectDiffuseTexture[pixelCoord] = 0.0f.xxxx;
 		IndirectDiffuseDemodulatedRadiance[pixelCoord] = 0.0f.xxxx;
@@ -60,24 +58,18 @@ static const float IndirectDiffuseMinimumTMin = 0.001f;
 		return;
 	}
 
-	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(pixel).xyz);
 	const float3 positionWorld =
-	    ReconstructGBufferWorldPosition(pixelCoord, deviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
-	const float4 materialSample = GBufferMaterial.Load(pixel);
-	const float3 baseColor = saturate(GBufferBaseColor.Load(pixel).rgb);
-	const float roughness = saturate(materialSample.g);
-	const float metallic = saturate(materialSample.r);
-	const float dielectricF0 = DecodeGBufferDielectricF0(materialSample.a);
+	    ReconstructGBufferWorldPosition(pixelCoord, gBuffer.DeviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const RayTracingPathSurface primarySurface =
 	    BuildPrimaryRayTracingPathSurface(
 	        positionWorld,
-	        normalWorld,
+	        gBuffer.NormalWorld,
 	        normalize(Camera.Position - positionWorld),
-	        baseColor,
-	        roughness,
-	        metallic,
-	        dielectricF0);
-	RayTracingPathLighting::TraceSettings traceSettings;
+	        gBuffer.BaseColor,
+	        gBuffer.Roughness,
+	        gBuffer.Metallic,
+	        gBuffer.DielectricF0);
+	RayTracingPathTrace::TraceSettings traceSettings;
 	traceSettings.NormalBias = IndirectDiffuseNormalBias;
 	traceSettings.MaxDistance = IndirectDiffuseMaxDistance;
 	traceSettings.MinT = IndirectDiffuseMinimumTMin;
@@ -86,7 +78,6 @@ static const float IndirectDiffuseMinimumTMin = 0.001f;
 
 	const RayTracingPathLighting::Result path =
 	    RayTracingPathLighting::TraceSurfacePath(
-	        SceneTlas,
 	        SkyTexture,
 	        SamplerLinearClamp,
 	        primarySurface,
@@ -114,15 +105,15 @@ static const float IndirectDiffuseMinimumTMin = 0.001f;
 	    (path.FirstSample.RejectionReason == RayTracingPathSample::RejectionReasonNone ? 1.0f : 0.0f);
 	const float diffuseHitValid = diffuseSampleSelected * (path.FirstLighting.Hit ? 1.0f : 0.0f);
 	const float materialValid = 1.0f;
-	const float3 diffuseAlbedo = baseColor * (1.0f - metallic);
-	const float3 specularAlbedo = SurfaceLighting::BuildF0(baseColor, metallic, dielectricF0);
+	const float3 diffuseAlbedo = gBuffer.BaseColor * (1.0f - gBuffer.Metallic);
+	const float3 specularAlbedo = SurfaceLighting::BuildF0(gBuffer.BaseColor, gBuffer.Metallic, gBuffer.DielectricF0);
 
 	IndirectDiffuseTexture[pixelCoord] = float4(outputColor, path.FirstLighting.Hit ? 1.0f : 0.0f);
 	IndirectDiffuseDemodulatedRadiance[pixelCoord] =
 	    float4(finalContribution / max(diffuseAlbedo, 1.0e-4f.xxx), diffuseSampleValid);
 	IndirectDiffuseAlbedo[pixelCoord] = float4(diffuseAlbedo, materialValid);
 	IndirectSpecularAlbedo[pixelCoord] = float4(specularAlbedo, materialValid);
-	IndirectMaterialGuide[pixelCoord] = float4(roughness, metallic, dielectricF0, materialValid);
+	IndirectMaterialGuide[pixelCoord] = float4(gBuffer.Roughness, gBuffer.Metallic, gBuffer.DielectricF0, materialValid);
 	IndirectDiffuseSampleGuide[pixelCoord] =
 	    float4(
 	        max(path.FirstLighting.HitDistance, 0.0f),

@@ -15,8 +15,8 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Deferred/GBufferMeshBatchDrawer.h"
 #include "Passes/Core/PassUtilities.h"
+#include "Passes/Core/RasterPassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
-#include "Passes/Core/ShaderPass.h"
 #include "SceneData/RenderSceneData.h"
 #include "SceneData/MaterialData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
@@ -39,15 +39,7 @@ GBufferPass::GBufferPass(const RasterPassPipelineRuntime& runtime) noexcept : m_
 
 const GBufferPass::ParameterMetadata& GBufferPass::GetParameterMetadata() noexcept
 {
-	static const ParameterMetadata metadata = []
-	{
-		const ParameterMetadata localMetadata = ShaderParameterStructBuilder<Parameters>::BuildMetadata(PassName);
-		const bool valid = ValidateShaderPassLayout(localMetadata.GetLayout(), ShaderPassKind::Raster, PassName);
-		assert(valid);
-		return localMetadata;
-	}();
-
-	return metadata;
+	return RasterPassUtilities::BuildParameterMetadata<GBufferPass>();
 }
 
 const GBufferPass::DrawParameterMetadata& GBufferPass::GetDrawParameterMetadata() noexcept

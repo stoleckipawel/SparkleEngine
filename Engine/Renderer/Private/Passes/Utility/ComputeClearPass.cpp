@@ -1,34 +1,19 @@
 #include "../../PCH.h"
 #include "Passes/Utility/ComputeClearPass.h"
 
-#include "Commands/RenderCommandContext.h"
-#include "Diagnostics/PassExecutionDiagnostics.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Core/Public/Math/MathUtils.h"
-#include "Passes/Core/PassUtilities.h"
+#include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
-#include "Passes/Core/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-
-#include <cassert>
 
 ComputeClearPass::ComputeClearPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
 const ComputeClearPass::ParameterMetadata& ComputeClearPass::GetParameterMetadata() noexcept
 {
-	static const ParameterMetadata metadata = []
-	{
-		const ParameterMetadata localMetadata = ShaderParameterStructBuilder<Parameters>::BuildMetadata(PassName);
-		const bool valid = ValidateShaderPassLayout(localMetadata.GetLayout(), ShaderPassKind::Compute, PassName);
-		assert(valid);
-		return localMetadata;
-	}();
-	return metadata;
+	return ComputePassUtilities::BuildParameterMetadata<ComputeClearPass>();
 }
 
 const PassParameterLayout& ComputeClearPass::GetParameterLayout() noexcept
@@ -38,16 +23,12 @@ const PassParameterLayout& ComputeClearPass::GetParameterLayout() noexcept
 
 const RenderPassDefinition& ComputeClearPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition{
-	    .PassName = PassName,
-	    .PackageDeclarationName = "ComputeClearShaderPackage",
-	    .ShaderPackage = ShaderPackageDefinition{
-	        .PackageId = RendererShaderPackages::ComputeClear.data(),
-	        .BindingLayoutId = RendererShaderPackages::ComputeClear.data(),
-	        .ExpectedStages = ShaderStageMask::Compute},
-	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
-	    .BindingLayoutDebugName = L"ComputeClear_BindingLayout",
-	    .PipelineStateDebugName = L"ComputeClear_PipelineState"};
+	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	    PassName,
+	    "ComputeClearShaderPackage",
+	    RendererShaderPackages::ComputeClear,
+	    L"ComputeClear_BindingLayout",
+	    L"ComputeClear_PipelineState");
 	return definition;
 }
 
@@ -62,17 +43,5 @@ void ComputeClearPass::Execute(
 	std::uint32_t width,
 	std::uint32_t height) const noexcept
 {
-	const ComputeDispatchDesc dispatch{
-	    MathUtils::DivideRoundUp(width, ThreadGroupSizeX),
-	    MathUtils::DivideRoundUp(height, ThreadGroupSizeY),
-	    1};
-	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<ComputeClearPass>(
-	    context.Resources,
-	    context.Commands,
-	    context.RuntimeServices.HardwareInterface,
-	    m_runtime,
-	    parameters,
-	    dispatch,
-	    PassName);
-	assert(dispatched);
+	ComputePassUtilities::DispatchSized<ComputeClearPass>(context, m_runtime, parameters, width, height);
 }

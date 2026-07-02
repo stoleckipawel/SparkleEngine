@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Reference/ReferencePathTracingPass.h"
 
-#include "Core/Public/Math/MathUtils.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -11,51 +10,39 @@
 #include "Passes/Bindings/MaterialTextureTablePassBinding.h"
 #include "Passes/Bindings/RayTracingHitDataPassBinding.h"
 #include "Passes/Bindings/RayTracingScenePassBinding.h"
-#include "Passes/Core/PassUtilities.h"
+#include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
-#include "Passes/Core/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingSettings.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
-#include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
-#include <cassert>
+namespace
+{
+	constexpr CookedShaderPackageFeatureFlags RayQueryFeatures =
+	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
+	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
+	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
+}
 
 ReferencePathTracingPass::ReferencePathTracingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
 const ReferencePathTracingPass::ParameterMetadata& ReferencePathTracingPass::GetParameterMetadata() noexcept
 {
-	static const ParameterMetadata metadata = []
-	{
-		const ParameterMetadata localMetadata = ShaderParameterStructBuilder<Parameters>::BuildMetadata(PassName);
-		const bool valid = ValidateShaderPassLayout(localMetadata.GetLayout(), ShaderPassKind::Compute, PassName);
-		assert(valid);
-		return localMetadata;
-	}();
-
-	return metadata;
+	return ComputePassUtilities::BuildParameterMetadata<ReferencePathTracingPass>();
 }
 
 const RenderPassDefinition& ReferencePathTracingPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition{
-	    .PassName = PassName,
-	    .PackageDeclarationName = "ReferencePathTracingShaderPackage",
-	    .ShaderPackage =
-	        ShaderPackageDefinition{
-	            .PackageId = RendererShaderPackages::ReferencePathTracing.data(),
-	            .BindingLayoutId = RendererShaderPackages::ReferencePathTracing.data(),
-	            .ExpectedStages = ShaderStageMask::Compute,
-	            .RequiredFeatures =
-	                CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	                CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
-	                CookedShaderPackageFeatureFlags::UsesDescriptorIndexing},
-	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
-	    .BindingLayoutDebugName = L"ReferencePathTracing_BindingLayout",
-	    .PipelineStateDebugName = L"ReferencePathTracing_PipelineState"};
+	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	    PassName,
+	    "ReferencePathTracingShaderPackage",
+	    RendererShaderPackages::ReferencePathTracing,
+	    L"ReferencePathTracing_BindingLayout",
+	    L"ReferencePathTracing_PipelineState",
+	    RayQueryFeatures);
 	return definition;
 }
 
@@ -140,20 +127,10 @@ void ReferencePathTracingPass::Execute(PassExecutionContext& context, ParameterI
 	    rayTracingCapabilities.TriangleMaterialDataAvailable && materialTextureTableAvailable,
 	    context.Frame.rayTracingHitData.GetInstanceCount(),
 	    context.Frame.rayTracingHitData.GetMaterialCount());
-	const bool valid = parameters.Sync();
-	assert(valid);
-
-	const ComputeDispatchDesc dispatch{
-	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
-	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
-	    1};
-	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<ReferencePathTracingPass>(
-	    context.Resources,
-	    context.Commands,
-	    context.RuntimeServices.HardwareInterface,
+	ComputePassUtilities::DispatchSized<ReferencePathTracingPass>(
+	    context,
 	    m_runtime,
-	    parameters.GetPassParameterSet(),
-	    dispatch,
-	    PassName);
-	assert(dispatched);
+	    parameters,
+	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
 }

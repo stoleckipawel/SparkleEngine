@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/IndirectDiffusePass.h"
 
-#include "Core/Public/Math/MathUtils.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -11,22 +10,23 @@
 #include "Passes/Bindings/MaterialTextureTablePassBinding.h"
 #include "Passes/Bindings/RayTracingHitDataPassBinding.h"
 #include "Passes/Bindings/RayTracingScenePassBinding.h"
-#include "Passes/Core/PassUtilities.h"
+#include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
-#include "Passes/Core/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffusePassData.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
-#include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
-#include <cassert>
-
 namespace
 {
+	constexpr CookedShaderPackageFeatureFlags RayQueryFeatures =
+	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
+	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
+	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
+
 	IndirectDiffuseSettings ResolveSettings(const PassRuntimeServices& services) noexcept
 	{
 		const RenderRayTracingPassServices* rayTracingServices = services.RayTracing;
@@ -43,34 +43,18 @@ IndirectDiffusePass::IndirectDiffusePass(const ComputePassPipelineRuntime& runti
 
 const IndirectDiffusePass::ParameterMetadata& IndirectDiffusePass::GetParameterMetadata() noexcept
 {
-	static const ParameterMetadata metadata = []
-	{
-		const ParameterMetadata localMetadata = ShaderParameterStructBuilder<Parameters>::BuildMetadata(PassName);
-		const bool valid = ValidateShaderPassLayout(localMetadata.GetLayout(), ShaderPassKind::Compute, PassName);
-		assert(valid);
-		return localMetadata;
-	}();
-
-	return metadata;
+	return ComputePassUtilities::BuildParameterMetadata<IndirectDiffusePass>();
 }
 
 const RenderPassDefinition& IndirectDiffusePass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition{
-	    .PassName = PassName,
-	    .PackageDeclarationName = "IndirectDiffuseShaderPackage",
-	    .ShaderPackage =
-	        ShaderPackageDefinition{
-	            .PackageId = RendererShaderPackages::IndirectDiffuse.data(),
-	            .BindingLayoutId = RendererShaderPackages::IndirectDiffuse.data(),
-	            .ExpectedStages = ShaderStageMask::Compute,
-	            .RequiredFeatures =
-	                CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	                CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
-	                CookedShaderPackageFeatureFlags::UsesDescriptorIndexing},
-	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
-	    .BindingLayoutDebugName = L"IndirectDiffuse_BindingLayout",
-	    .PipelineStateDebugName = L"IndirectDiffuse_PipelineState"};
+	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	    PassName,
+	    "IndirectDiffuseShaderPackage",
+	    RendererShaderPackages::IndirectDiffuse,
+	    L"IndirectDiffuse_BindingLayout",
+	    L"IndirectDiffuse_PipelineState",
+	    RayQueryFeatures);
 	return definition;
 }
 
@@ -164,20 +148,10 @@ void IndirectDiffusePass::Execute(PassExecutionContext& context, ParameterInstan
 	    hitInstanceCount,
 	    hitMaterialCount,
 	    MaterialTextureTableFixedCapacity);
-	const bool valid = parameters.Sync();
-	assert(valid);
-
-	const ComputeDispatchDesc dispatch{
-	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
-	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
-	    1};
-	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<IndirectDiffusePass>(
-	    context.Resources,
-	    context.Commands,
-	    context.RuntimeServices.HardwareInterface,
+	ComputePassUtilities::DispatchSized<IndirectDiffusePass>(
+	    context,
 	    m_runtime,
-	    parameters.GetPassParameterSet(),
-	    dispatch,
-	    PassName);
-	assert(dispatched);
+	    parameters,
+	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
+	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
 }

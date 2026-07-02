@@ -1,48 +1,14 @@
 #include "Lighting/AreaLights.hlsli"
 #include "Lighting/SurfaceLighting.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
+#include "RayTracing/Shadows/DirectShadowSelection.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowDenoiserInputs.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSampling.hlsli"
-#if defined(SPARKLE_DIRECT_LIGHTING_NO_RAY_QUERY)
-#include "RayTracing/Shadows/RayTracedShadowSignals.hlsli"
-#else
-#include "RayTracing/Shadows/RayTracedShadowTrace.hlsli"
-#endif
+#include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 RWTexture2D<float4> DirectDiffuseTexture;
 RWTexture2D<float4> DirectSpecularTexture;
 RWTexture2D<float4> DirectSubsurfaceTexture;
-RWTexture2D<float4> ShadowVisibilitySignalTexture;
-
-ShadowVisibilitySignal TraceLightSampleVisibility(
-    float3 positionWorld,
-    float3 normalWorld,
-    LightSampling::DirectLightSample lightSample,
-    bool castsShadow)
-{
-#if defined(SPARKLE_DIRECT_LIGHTING_NO_RAY_QUERY)
-	return RayTracedShadowSignals::BuildUnshadowedSignal(lightSample.VisibilityDistance);
-#else
-	return RayTracedShadows::TraceDirectLightSample(
-	    positionWorld,
-	    normalWorld,
-	    lightSample.DirectionWorld,
-	    lightSample.VisibilityDistance,
-	    lightSample.IsDirectional,
-	    castsShadow);
-#endif
-}
-
-void AccumulateRawShadowSignal(ShadowVisibilitySignal lightShadow, inout ShadowVisibilitySignal rawShadow)
-{
-	rawShadow.MaxDistance = max(rawShadow.MaxDistance, lightShadow.MaxDistance);
-	rawShadow.Confidence = min(rawShadow.Confidence, lightShadow.Confidence);
-	if (lightShadow.Visibility < rawShadow.Visibility ||
-	    (lightShadow.Visibility == rawShadow.Visibility && lightShadow.HitDistance < rawShadow.HitDistance))
-	{
-		rawShadow.Visibility = lightShadow.Visibility;
-		rawShadow.HitDistance = lightShadow.HitDistance;
-	}
-}
+Texture2D<float4> ShadowVisibilitySignalTexture;
 
 void AddDirectLightSample(
     GBufferData gBuffer,
@@ -51,18 +17,23 @@ void AddDirectLightSample(
     bool evaluateSubsurface,
     LightSampling::DirectLightSample lightSample,
     bool castsShadow,
+    bool useSelectedShadowSignal,
+    ShadowVisibilitySignal selectedShadowSignal,
     inout float3 directDiffuse,
     inout float3 directSpecular,
-    inout float3 directSubsurface,
-    inout ShadowVisibilitySignal rawShadowSignal)
+    inout float3 directSubsurface)
 {
 	if (!lightSample.Valid)
 	{
 		return;
 	}
 
-	const ShadowVisibilitySignal shadow = TraceLightSampleVisibility(positionWorld, gBuffer.NormalWorld, lightSample, castsShadow);
-	AccumulateRawShadowSignal(shadow, rawShadowSignal);
+	ShadowVisibilitySignal shadow = selectedShadowSignal;
+	if (!useSelectedShadowSignal)
+	{
+		shadow = RayTracedShadowVisibility::TraceDirectLightSample(positionWorld, gBuffer.NormalWorld, lightSample, castsShadow);
+	}
+
 	float3 lightDiffuse;
 	float3 lightSpecular;
 	float3 lightSubsurface;
@@ -104,8 +75,6 @@ void AddDirectLightSample(
 		DirectDiffuseTexture[dispatchThreadId.xy] = 0.0f.xxxx;
 		DirectSpecularTexture[dispatchThreadId.xy] = 0.0f.xxxx;
 		DirectSubsurfaceTexture[dispatchThreadId.xy] = 0.0f.xxxx;
-		ShadowVisibilitySignalTexture[dispatchThreadId.xy] =
-		    RayTracedShadowDenoiserInputs::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
 		return;
 	}
 
@@ -116,7 +85,9 @@ void AddDirectLightSample(
 	float3 directDiffuse = 0.0f;
 	float3 directSpecular = 0.0f;
 	float3 directSubsurface = 0.0f;
-	ShadowVisibilitySignal rawShadowSignal = RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
+	const DirectShadowSelection::SelectedLight selectedLight = DirectShadowSelection::SelectFirstShadowCastingLight();
+	const ShadowVisibilitySignal selectedShadowSignal =
+	    RayTracedShadowDenoiserInputs::UnpackShadowSignal(ShadowVisibilitySignalTexture.Load(int3(dispatchThreadId.xy, 0)));
 	const bool evaluateSubsurface = any(gBuffer.SubsurfaceColor > 0.0f.xxx) && gBuffer.SubsurfaceStrength > 0.0f;
 	const uint directionalLightCount = ViewLighting.DirectionalLightCount;
 	const uint pointLightCount = ViewLighting.PointLightCount;
@@ -132,12 +103,13 @@ void AddDirectLightSample(
 		    evaluateSubsurface,
 		    AreaLights::SampleDirectionalLight(
 		        lightIndex,
-		        RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, lightIndex, 0u)),
+		        RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, lightIndex, LightSampling::LightTypeDirectional)),
 		    DirectionalLights[lightIndex].CastShadow != 0u,
+		    selectedLight.Type == LightSampling::LightTypeDirectional && selectedLight.Index == lightIndex,
+		    selectedShadowSignal,
 		    directDiffuse,
 		    directSpecular,
-		    directSubsurface,
-		    rawShadowSignal);
+		    directSubsurface);
 	}
 
 	[loop] for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
@@ -150,12 +122,13 @@ void AddDirectLightSample(
 		    AreaLights::SamplePointLight(
 		        positionWorld,
 		        lightIndex,
-		        RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, lightIndex, 1u)),
+		        RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, lightIndex, LightSampling::LightTypePoint)),
 		    PointLights[lightIndex].CastShadow != 0u,
+		    selectedLight.Type == LightSampling::LightTypePoint && selectedLight.Index == lightIndex,
+		    selectedShadowSignal,
 		    directDiffuse,
 		    directSpecular,
-		    directSubsurface,
-		    rawShadowSignal);
+		    directSubsurface);
 	}
 
 	[loop] for (uint lightIndex = 0; lightIndex < spotLightCount; ++lightIndex)
@@ -168,12 +141,13 @@ void AddDirectLightSample(
 		    AreaLights::SampleSpotLight(
 		        positionWorld,
 		        lightIndex,
-		        RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, lightIndex, 2u)),
+		        RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, lightIndex, LightSampling::LightTypeSpot)),
 		    SpotLights[lightIndex].CastShadow != 0u,
+		    selectedLight.Type == LightSampling::LightTypeSpot && selectedLight.Index == lightIndex,
+		    selectedShadowSignal,
 		    directDiffuse,
 		    directSpecular,
-		    directSubsurface,
-		    rawShadowSignal);
+		    directSubsurface);
 	}
 
 	[loop] for (uint lightIndex = 0; lightIndex < rectLightCount; ++lightIndex)
@@ -186,16 +160,16 @@ void AddDirectLightSample(
 		    AreaLights::SampleRectLight(
 		        positionWorld,
 		        lightIndex,
-		        RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, lightIndex, 3u)),
+		        RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, lightIndex, LightSampling::LightTypeRect)),
 		    RectLights[lightIndex].CastShadow != 0u,
+		    selectedLight.Type == LightSampling::LightTypeRect && selectedLight.Index == lightIndex,
+		    selectedShadowSignal,
 		    directDiffuse,
 		    directSpecular,
-		    directSubsurface,
-		    rawShadowSignal);
+		    directSubsurface);
 	}
 
 	DirectDiffuseTexture[dispatchThreadId.xy] = float4(directDiffuse, gBuffer.Alpha);
 	DirectSpecularTexture[dispatchThreadId.xy] = float4(directSpecular, gBuffer.Alpha);
 	DirectSubsurfaceTexture[dispatchThreadId.xy] = float4(directSubsurface, gBuffer.Alpha);
-	ShadowVisibilitySignalTexture[dispatchThreadId.xy] = RayTracedShadowDenoiserInputs::PackShadowSignal(rawShadowSignal);
 }

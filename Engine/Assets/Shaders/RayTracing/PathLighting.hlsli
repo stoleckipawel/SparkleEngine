@@ -3,20 +3,11 @@
 
 #include "Lighting/SkyEnvironment.hlsli"
 #include "RayTracing/PathSampling.hlsli"
+#include "RayTracing/PathTrace.hlsli"
 #include "RayTracing/RayTracingHitLighting.hlsli"
-#include "RayTracing/RayTracingTraceQuery.hlsli"
 
 namespace RayTracingPathLighting
 {
-	struct TraceSettings
-	{
-		float NormalBias;
-		float MaxDistance;
-		float MinT;
-		uint RayFlags;
-		uint InstanceMask;
-	};
-
 	struct Result
 	{
 		uint PrimaryLobe;
@@ -26,14 +17,6 @@ namespace RayTracingPathLighting
 		RayTracingTraceResult FirstTrace;
 		RayTracingHitSurfaceData FirstHitSurface;
 	};
-
-	float3 ComputeRayOrigin(RayTracingPathSurface surface, float3 rayDirectionWorld, TraceSettings settings)
-	{
-		const float bias = max(settings.NormalBias, 0.0f);
-		const float NoR = abs(dot(surface.NormalWorld, rayDirectionWorld));
-		const float grazingScale = rcp(max(NoR, 0.25f));
-		return surface.PositionWorld + surface.NormalWorld * bias * grazingScale + rayDirectionWorld * settings.MinT;
-	}
 
 	RayTracingPathSample::LightingResult ResolveLighting(
 	    RayTracingTraceResult trace,
@@ -90,7 +73,6 @@ namespace RayTracingPathLighting
 	}
 
 	Result TraceSurfacePath(
-	    RaytracingAccelerationStructure sceneTlas,
 	    Texture2D skyTexture,
 	    SamplerState skySampler,
 	    RayTracingPathSurface primarySurface,
@@ -98,7 +80,7 @@ namespace RayTracingPathLighting
 	    uint sampleIndex,
 	    uint specularSampleMode,
 	    uint bounceCount,
-	    TraceSettings traceSettings)
+	    RayTracingPathTrace::TraceSettings traceSettings)
 	{
 		Result result = (Result) 0;
 		result.PrimaryLobe = RayTracingPathSample::LobeNone;
@@ -139,16 +121,9 @@ namespace RayTracingPathLighting
 				break;
 			}
 
-			const float3 rayOriginWorld = ComputeRayOrigin(surface, sample.DirectionWorld, traceSettings);
+			float3 rayOriginWorld = 0.0f.xxx;
 			const RayTracingTraceResult trace =
-			    TraceRayQueryWithAlphaTest(
-			        sceneTlas,
-			        rayOriginWorld,
-			        sample.DirectionWorld,
-			        traceSettings.MinT,
-			        max(traceSettings.MaxDistance, traceSettings.MinT),
-			        traceSettings.RayFlags,
-			        traceSettings.InstanceMask);
+			    RayTracingPathTrace::TraceSurfaceRay(surface, sample.DirectionWorld, traceSettings, rayOriginWorld);
 			RayTracingHitSurfaceData hitSurface;
 			RayTracingPathSample::LightingResult lighting =
 			    ResolveLighting(trace, sample, rayOriginWorld, skyTexture, skySampler, hitSurface);

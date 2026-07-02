@@ -5,6 +5,9 @@
 namespace RendererShaderPackages
 {
 	inline constexpr std::string_view ComputeClear = "ComputeClear";
+	inline constexpr std::string_view DirectShadowSignalNoRayQuery = "DirectShadowSignalNoRayQuery";
+	inline constexpr std::string_view DirectShadowSignal = "DirectShadowSignal";
+	inline constexpr std::string_view DirectShadowSignalDeviceAddress = "DirectShadowSignalDeviceAddress";
 	inline constexpr std::string_view DirectLightingNoRayQuery = "DirectLightingNoRayQuery";
 	inline constexpr std::string_view DirectLighting = "DirectLighting";
 	inline constexpr std::string_view DirectLightingDeviceAddress = "DirectLightingDeviceAddress";

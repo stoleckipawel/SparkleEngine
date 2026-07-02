@@ -6,6 +6,13 @@
 
 namespace LightSampling
 {
+	static const uint LightTypeDirectional = 0u;
+	static const uint LightTypePoint = 1u;
+	static const uint LightTypeSpot = 2u;
+	static const uint LightTypeRect = 3u;
+	static const uint LightTypeInvalid = 0xFFFFFFFFu;
+	static const uint LightIndexInvalid = 0xFFFFFFFFu;
+
 	struct DirectLightSample
 	{
 		bool Valid;

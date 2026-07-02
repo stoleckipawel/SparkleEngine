@@ -2,7 +2,7 @@
 #include "Lighting/AreaLights.hlsli"
 #include "Lighting/SkyEnvironment.hlsli"
 #include "Lighting/SurfaceLighting.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowTrace.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 #include "RayTracing/PathLighting.hlsli"
 
 RWTexture2D<float4> ReferenceSceneColorTexture;
@@ -46,12 +46,10 @@ void AccumulateReferenceDirectLightSample(
 	}
 
 	const ShadowVisibilitySignal shadow =
-	    RayTracedShadows::TraceDirectLightSample(
+	    RayTracedShadowVisibility::TraceDirectLightSample(
 	        surface.PositionWorld,
 	        surface.NormalWorld,
-	        lightSample.DirectionWorld,
-	        lightSample.VisibilityDistance,
-	        lightSample.IsDirectional,
+	        lightSample,
 	        castsShadow);
 	float3 diffuse = 0.0f.xxx;
 	float3 specular = 0.0f.xxx;
@@ -90,7 +88,7 @@ float3 EvaluateReferenceDirectLighting(
 		    viewDirWorld,
 		    AreaLights::SampleDirectionalLight(
 		        lightIndex,
-		        BuildReferenceLightSample(surface.PositionWorld, lightIndex, 0u, sampleIndex)),
+		        BuildReferenceLightSample(surface.PositionWorld, lightIndex, LightSampling::LightTypeDirectional, sampleIndex)),
 		    DirectionalLights[lightIndex].CastShadow != 0u,
 		    directRadiance);
 	}
@@ -103,7 +101,7 @@ float3 EvaluateReferenceDirectLighting(
 		    AreaLights::SamplePointLight(
 		        surface.PositionWorld,
 		        lightIndex,
-		        BuildReferenceLightSample(surface.PositionWorld, lightIndex, 1u, sampleIndex)),
+		        BuildReferenceLightSample(surface.PositionWorld, lightIndex, LightSampling::LightTypePoint, sampleIndex)),
 		    PointLights[lightIndex].CastShadow != 0u,
 		    directRadiance);
 	}
@@ -116,7 +114,7 @@ float3 EvaluateReferenceDirectLighting(
 		    AreaLights::SampleSpotLight(
 		        surface.PositionWorld,
 		        lightIndex,
-		        BuildReferenceLightSample(surface.PositionWorld, lightIndex, 2u, sampleIndex)),
+		        BuildReferenceLightSample(surface.PositionWorld, lightIndex, LightSampling::LightTypeSpot, sampleIndex)),
 		    SpotLights[lightIndex].CastShadow != 0u,
 		    directRadiance);
 	}
@@ -129,7 +127,7 @@ float3 EvaluateReferenceDirectLighting(
 		    AreaLights::SampleRectLight(
 		        surface.PositionWorld,
 		        lightIndex,
-		        BuildReferenceLightSample(surface.PositionWorld, lightIndex, 3u, sampleIndex)),
+		        BuildReferenceLightSample(surface.PositionWorld, lightIndex, LightSampling::LightTypeRect, sampleIndex)),
 		    RectLights[lightIndex].CastShadow != 0u,
 		    directRadiance);
 	}
@@ -151,15 +149,15 @@ float3 EvaluateReferenceDirectLighting(
 	const uint2 pixelCoord = dispatchThreadId.xy;
 	const float3 primaryRayOrigin = Camera.Position;
 	const float3 primaryRayDirection = ComputeSkyViewDirectionWorld(pixelCoord);
+	RayTracingPathTrace::TraceSettings traceSettings;
+	traceSettings.NormalBias = ReferencePathTracingNormalBias;
+	traceSettings.MaxDistance = ReferencePathTracingMaxDistance;
+	traceSettings.MinT = ReferencePathTracingMinimumTMin;
+	traceSettings.RayFlags = ReferencePathTracingRayFlags;
+	traceSettings.InstanceMask = ReferencePathTracingInstanceMask;
+
 	const RayTracingTraceResult primaryTrace =
-	    TraceRayQueryWithAlphaTest(
-	        SceneTlas,
-	        primaryRayOrigin,
-	        primaryRayDirection,
-	        ReferencePathTracingMinimumTMin,
-	        max(ReferencePathTracingMaxDistance, ReferencePathTracingMinimumTMin),
-	        ReferencePathTracingRayFlags,
-	        ReferencePathTracingInstanceMask);
+	    RayTracingPathTrace::TraceSceneRay(primaryRayOrigin, primaryRayDirection, traceSettings);
 	if (!primaryTrace.Hit)
 	{
 		const float3 skyRadiance =
@@ -185,13 +183,6 @@ float3 EvaluateReferenceDirectLighting(
 	const RayTracingPathSurface primarySurface =
 	    BuildHitRayTracingPathSurface(primaryHit, primaryRayDirection);
 
-	RayTracingPathLighting::TraceSettings traceSettings;
-	traceSettings.NormalBias = ReferencePathTracingNormalBias;
-	traceSettings.MaxDistance = ReferencePathTracingMaxDistance;
-	traceSettings.MinT = ReferencePathTracingMinimumTMin;
-	traceSettings.RayFlags = ReferencePathTracingRayFlags;
-	traceSettings.InstanceMask = ReferencePathTracingInstanceMask;
-
 	float3 directRadiance = 0.0f.xxx;
 	float3 indirectDiffuseRadiance = 0.0f.xxx;
 	float3 indirectSpecularRadiance = 0.0f.xxx;
@@ -203,7 +194,6 @@ float3 EvaluateReferenceDirectLighting(
 
 		const RayTracingPathLighting::Result path =
 		    RayTracingPathLighting::TraceSurfacePath(
-		        SceneTlas,
 		        SkyTexture,
 		        SamplerLinearClamp,
 		        primarySurface,

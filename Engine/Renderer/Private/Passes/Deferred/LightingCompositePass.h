@@ -5,16 +5,12 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "RHI/Public/Resources/RenderConstantBufferData.h"
-
 #include <cstdint>
 
 class FrameGraphBuilder;
 struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
-struct PassRuntimeServices;
-struct RenderViewData;
 
 struct LightingCompositePassParameters
 {
@@ -26,13 +22,7 @@ struct LightingCompositePassParameters
 	ShaderTexture2D<void> IndirectSpecular;
 	ShaderTexture2D<void> IndirectSubsurface;
 	ShaderTexture2D<void> GBufferBaseColor;
-	ShaderTexture2D<void> GBufferNormal;
-	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferEmissive;
-	ShaderTexture2D<void> GBufferSubsurface;
-	ShaderTexture2D<void> GBufferDeviceZ;
-	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
 
 	static void Describe(ShaderParameterStructBuilder<LightingCompositePassParameters>& builder)
 	{
@@ -44,13 +34,7 @@ struct LightingCompositePassParameters
 		builder.ReadTexture("IndirectSpecular", &LightingCompositePassParameters::IndirectSpecular, ShaderStageVisibility::Compute);
 		builder.ReadTexture("IndirectSubsurface", &LightingCompositePassParameters::IndirectSubsurface, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &LightingCompositePassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferNormal", &LightingCompositePassParameters::GBufferNormal, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferMaterial", &LightingCompositePassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferEmissive", &LightingCompositePassParameters::GBufferEmissive, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferSubsurface", &LightingCompositePassParameters::GBufferSubsurface, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferDeviceZ", &LightingCompositePassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
-		builder.Uniform("PerFrame", &LightingCompositePassParameters::PerFrame, ShaderStageVisibility::Compute);
-		builder.Uniform("PerView", &LightingCompositePassParameters::PerView, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -78,10 +62,5 @@ class LightingCompositePass final
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:
-	void SetParameters(
-	    ParameterInstance& parameters,
-	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices) const;
-
 	const ComputePassPipelineRuntime& m_runtime;
 };

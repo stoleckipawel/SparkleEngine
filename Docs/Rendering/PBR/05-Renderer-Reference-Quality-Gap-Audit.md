@@ -5,9 +5,11 @@ This audit compares the current Sparkle renderer architecture against NVIDIA NRD
 ## Reference Lineage
 
 - NVIDIA NRD: API-agnostic spatio-temporal denoisers for low-spp signals, using GBuffer guides such as normal, roughness, viewZ, and motion vector. SIGMA is the shadow-only denoiser. NRD does not allocate resources; the application owns texture creation and dispatches the compute passes from NRD descriptors. <https://github.com/NVIDIA-RTX/NRD>
+- NVIDIA RTXDI: ReSTIR DI / ReGIR / ReSTIR GI provide reference many-light sampling structure. The application owns light buffers, GBuffer/material/ray-tracing bridge code, resource allocation, and final shading; RTXDI provides light sampling/resampling math and reservoir data flow. <https://github.com/NVIDIA-RTX/RTXDI/blob/main/Doc/Integration.md>
 - NVIDIA Streamline DLSS Ray Reconstruction: DLRR requires provider-tagged noisy HDR color plus guide buffers such as diffuse albedo, specular albedo, normals, roughness, motion vectors, depth, and either specular motion vectors or specular hit distance. It is an extension around DLSS evaluation, but its resource contract is much broader than DLSS Super Resolution. <https://github.com/NVIDIA-RTX/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md>
 - NVIDIA RTXPT: pure path tracer, no raster dependency in the main configuration, with reference and real-time modes, path-space layer decomposition, guide-buffer generation, NRD, and Streamline integration. <https://github.com/NVIDIA-RTX/RTXPT>
 - NVIDIA Falcor PathTracer: separate render pass/render graph. It can use lightweight primary visibility input, then owns path generation, path tracing, direct-light sampling at path vertices, accumulation, and optional denoiser graph wiring. <https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/usage/path-tracer.md>
+- AMD FidelityFX Shadow Denoiser: useful reference for explicit shadow-mask staging, bitmask packing, tile classification, temporal reprojection, and edge-aware filtering, but documented as a single-light shadow-mask denoiser. Sparkle must not treat it as a many-light direct-shadow solution without an explicit per-light or sampled-light policy. <https://gpuopen.com/manuals/fidelityfx_sdk/techniques/denoiser/>
 - AMD neural supersampling/denoising: real-time path tracing reconstruction benefits from noisy color plus guide buffers such as albedo, normal, roughness, depth, and specular hit distance, with denoising and upscaling treated as explicit reconstruction stages. <https://gpuopen.com/learn/neural_supersampling_and_denoising_for_real-time_path_tracing/>
 
 ## Executive Verdict
@@ -16,8 +18,8 @@ Sparkle is now structurally pointed in the right direction: `FrameRenderPath` se
 
 The renderer is not yet at NVIDIA-reference integration quality. The largest blockers are:
 
-1. SIGMA cannot improve final direct lighting yet because direct lighting currently traces and applies raw visibility inside the same pass that writes the raw shadow signal.
-2. The raw shadow signal is an aggregate per pixel, not a provider-ready per-light or selected-light SIGMA input.
+1. SIGMA cannot improve all direct lighting yet because the first Stage 6R slice exposes one selected-light raw visibility product while non-selected lights still use the raw tracing path for visual parity.
+2. `DirectShadowSelection::SelectFirstShadowCastingLight` is not acceptable as a final architecture. It is temporary Stage 6R scaffolding and must be replaced by a many-light sampled-light or per-light visibility pipeline before SIGMA is exposed.
 3. DLRR is not a provider path yet; the existing Streamline runtime only evaluates DLSS Super Resolution / DLAA.
 4. Reconstruction guide buffers exist as frame assembly slots, but there is no provider-neutral reconstruction contract or Streamline DLRR tag path.
 5. Reference path tracing owns primary rays, but provider guide buffers are still mostly realtime-GBuffer-shaped. Reference mode must write its own guides if it wants denoising/reconstruction.
@@ -28,9 +30,10 @@ The next work should produce visible editor results before broad cleanup continu
 
 Priority:
 
-1. Finish SIGMA shadow denoising end-to-end: raw shadow signal before lighting, NRD provider execution, persistent provider history, editor setting, and direct lighting consuming raw or denoised visibility.
-2. Finish DLRR/ray reconstruction end-to-end: provider-neutral reconstruction contract, guide buffers, Streamline DLRR resource tags, editor setting, and reconstructed output visible in the viewport.
-3. After those are visible, return to reference-path guide outputs and deeper renderer architecture cleanup.
+1. Replace the selected-light Stage 6R shortcut with a reference-shaped many-light direct-shadow signal path.
+2. Finish SIGMA shadow denoising end-to-end: raw shadow signal before lighting, NRD provider execution, persistent provider history, editor setting, and direct lighting consuming raw or denoised visibility.
+3. Finish DLRR/ray reconstruction end-to-end: provider-neutral reconstruction contract, guide buffers, Streamline DLRR resource tags, editor setting, and reconstructed output visible in the viewport.
+4. After those are visible, return to reference-path guide outputs and deeper renderer architecture cleanup.
 
 Editor-visible definition of done:
 
@@ -40,14 +43,34 @@ Editor-visible definition of done:
 - A noisy indirect/specular reconstruction scene visibly changes between unreconstructed and DLRR output while preserving linear HDR lighting before presentation.
 - Unsupported provider modes are not shown as working features; they remain absent or disabled with a short reason at the provider boundary.
 
+## Universal Implementation Prompt Rules
+
+Every staged prompt below is ready to use as an implementation request. Each stage must leave the codebase simpler than it found it.
+
+Prompt guardrail for every stage:
+
+- Include reference lineage and reuse/DRY audit in the implementation note.
+- Scan existing bodies before adding or moving logic.
+- Start with a code denoising pass in the touched area: delete stale scaffolding, no-op code, unused settings, fake provider paths, needless logging, duplicate docs, and wrappers that only rename or forward parameters.
+- Keep a helper only when it owns real policy, math, IO binding, resource lifetime, repeated behavior, or a meaningful architecture boundary.
+- Follow NVIDIA/AMD reference patterns concretely enough that the shape is recognizable:
+  - NRD: app/provider owns resources, permanent/transient pools, dispatch from NRD descriptors, and explicit guide inputs.
+  - Streamline DLRR: tagged resources, common constants, feature availability, command-state restoration, and provider-boundary failure.
+  - RTXPT/Falcor: explicit render-graph products for path/shadow/reconstruction signals, path-owned guide buffers, and separate reference/realtime paths.
+  - AMD/FidelityFX style: explicit reconstruction stage inputs, temporal resource ownership, and no hidden coupling between upscaling and denoising.
+- Avoid adding backend-specific shaders or renderer-facing backend branches. Backend/native details belong in RHI/provider bridges.
+- Preserve current visible behavior unless the stage explicitly changes it and names the editor-visible result.
+- If a stage needs a new layer, justify why existing homes cannot own the behavior.
+
 ## Current Source-Backed State
 
 | Area | Current source | Assessment |
 | --- | --- | --- |
 | Render path selection | `FrameRenderPath`, `BuildFrame`, `FrameBuildResult`, `FrameGraphBuildResult`, `FramePipeline` | Good direction. The built graph now reports the path it actually contains. |
 | Reference path ownership | `Frame/Reference/*`, `Passes/Reference/ReferencePathTracingPass.*`, `Passes/Reference/ReferencePathTracing.hlsl` | Good direction. Reference targets are no longer lighting targets. |
-| Shadow visibility signal | `Frame/Lighting/ShadowVisibility.cpp`, `DirectLighting.hlsl`, `RayTracedShadowDenoiserInputs.hlsli` | Honest raw-visibility path. No SIGMA mode is exposed until a real provider exists. |
-| Direct shadows | `DirectLighting.hlsl`, `DirectLightingPass.*` | Physically usable for raw visibility, but architecturally wrong for SIGMA because visibility is applied before denoising. |
+| Shadow visibility signal | `Frame/Lighting/ShadowVisibility.cpp`, `Frame/Lighting/Shadows/DirectShadowSignal.cpp`, `DirectShadowSignal.hlsl`, `RayTracedShadowDenoiserInputs.hlsli` | Stage 6R writes a selected-light raw visibility/hit-distance signal before direct lighting. No SIGMA mode is exposed until a real provider exists. |
+| Direct shadows | `DirectLighting.hlsl`, `DirectLightingPass.*`, `DirectShadowSignalPass.*` | Direct lighting consumes the selected-light visibility resource, then preserves current raw output by tracing non-selected lights until a per-light or sampled-light direct-light policy lands. |
+| Many-light shadow sampling | `DirectShadowSelection.hlsli`, `LightSampling.hlsli`, `AreaLights.hlsli` | Current selected-light policy is not reference quality. Stage 6M must replace it with a many-light sampled-light pipeline inspired by RTXDI/ReSTIR DI or an explicit per-light product strategy. |
 | Shadow history | Not allocated in the current runtime | Correct current state. Future SIGMA history must be introduced by the provider pass that consumes it. |
 | Upscaler provider | `UpscalerInputContract`, `NvidiaDlssUpscalerProvider`, `StreamlineDlssRuntime` | DLSS-SR/DLAA shaped. This should stay separate from DLRR. |
 | Reconstruction resources | `FrameAssemblyDenoiserProviderResources`, `FrameProviderInputs`, `LightingRenderTargets` guide slots | Good vocabulary, but not a complete provider contract and not tagged/evaluated by any provider. |
@@ -61,9 +84,9 @@ These are required before claiming SIGMA or DLRR-quality integration.
 
 Current problem:
 
-- `DirectLighting.hlsl` traces a direct-light sample, immediately multiplies lighting by `shadow.Visibility`, and also writes `ShadowVisibilitySignalTexture`.
-- A denoiser can only improve a signal that is consumed after denoising. Today, direct lighting has already used raw stochastic visibility.
-- The current raw shadow output is an aggregate "most occluding" per-pixel signal across all direct light samples. SIGMA is per-light shadow denoising; an aggregate visibility/hit-distance value cannot reconstruct multiple lights correctly.
+- Before Stage 6R, `DirectLighting.hlsl` traced a direct-light sample, immediately multiplied lighting by `shadow.Visibility`, and also wrote `ShadowVisibilitySignalTexture`.
+- A denoiser can only improve a signal that is consumed after denoising. Direct lighting now consumes one selected-light signal written by `DirectShadowSignal`, but non-selected lights still trace raw visibility to preserve the existing editor result.
+- The old raw shadow output was an aggregate "most occluding" per-pixel signal across all direct light samples. SIGMA is per-light shadow denoising; Stage 6R replaces the aggregate with a selected-light signal and names full multi-light denoising as the remaining blocker.
 
 Decision:
 
@@ -83,13 +106,37 @@ Reference mapping:
 - NRD SIGMA expects shadow signal and guide inputs before denoising.
 - RTXPT/Falcor keep direct-light sampling and denoiser-facing outputs as explicit path/render-graph products.
 
+### P0.1A Replace Selected-Light Shadowing With Many-Light Visibility
+
+Current problem:
+
+- `DirectShadowSelection::SelectFirstShadowCastingLight` chooses the first shadow-casting light by type order.
+- That shortcut is acceptable only as a Stage 6R proof that raw visibility can be generated before direct lighting. It is not physically correct, does not scale to multiple soft-shadowing lights, and cannot produce editor-visible denoising for all direct shadows.
+- Denoising a single selected light while tracing every other light raw creates a misleading split: only one light can become smooth, and quality depends on light ordering rather than radiance, importance, or visibility.
+- AMD FidelityFX Shadow Denoiser is explicitly shaped around a single-light shadow mask. It can inform per-light staging, tile classification, packing, and temporal filtering, but it is not a complete many-light solution by itself.
+- NVIDIA's many-light reference path is RTXDI/ReSTIR-style: collect all light data, sample/resample important light candidates per pixel, trace visibility for the selected reservoir sample, shade using the chosen sample and PDF/weight, and optionally feed confidence/denoiser inputs.
+
+Decision:
+
+- Stage 6M must replace `SelectFirstShadowCastingLight` before Stage 6N exposes SIGMA.
+- Sparkle should choose one of two explicit policies:
+  1. **RTXDI-style sampled-light policy, preferred:** build a per-pixel direct-light sample/reservoir product over all shadow-casting punctual and area lights; trace and denoise the visibility for that sampled light; shade direct lighting from the sampled reservoir with proper PDF/weight. This scales to many lights and follows NVIDIA's reference architecture.
+  2. **Per-light product policy, fallback for small light counts:** generate raw/denoised visibility per active shadow-casting light or per light tile/list, then accumulate every light against its matching visibility. This is simpler to reason about but can be expensive and should be capped/tiled explicitly.
+- Do not keep an implicit "first light wins" policy, a global aggregate shadow mask, or a denoised-first-light plus raw-rest hybrid as a final mode.
+
+Reference mapping:
+
+- RTXDI integrates deeply with the renderer, with app-owned light buffers, GBuffer/material/ray-tracing bridge code, reservoir buffers, light sampling/resampling passes, final visibility ray, optional confidence inputs, and denoising/composition after sampling.
+- NRD SIGMA is per-light shadow denoising. It can denoise a chosen direct-light sample or an explicit per-light shadow mask, but it must not be fed an unordered aggregate that no longer maps to a light.
+- AMD FidelityFX Shadow Denoiser confirms the single-light shadow-mask model. For Sparkle, that makes it a per-light/single-sample building block, not the solution for all lights.
+
 ### P0.2 Do Not Claim SIGMA Until There Is A Real NRD Provider
 
 Current problem:
 
 - Sparkle has no linked NRD provider execution path.
 - The previous local SIGMA CVar/contract/history scaffold did not execute a provider and has been removed.
-- The current raw shadow output remains an aggregate "most occluding" per-pixel signal, not a provider-ready per-light SIGMA input.
+- The current raw shadow output is selected-light shaped. It is enough to prove the render-graph staging, but not enough to claim multi-light SIGMA until Stage 6M replaces selected-light ordering and Stage 6N adds the provider.
 
 Decision:
 
@@ -245,122 +292,339 @@ Reference mapping:
 
 - NRD distinguishes permanent and transient resource pools owned by the app/provider integration.
 
-## Proposed Stage Additions
+## Ready Implementation Prompts
 
 ### Stage 6R: Rebuild Direct Shadows For SIGMA
+
+Implementation prompt:
+
+Prompt guardrail: apply the universal implementation prompt rules above. Before writing new code, do a code denoising pass over direct-light/shadow scheduling and delete or collapse anything that only exists for fake denoising, duplicated visibility ownership, stale settings, or pass-local shadow policy. Do not add wrappers that only rename `raw` versus `denoised`; keep a helper only if it owns real light selection, signal packing, resource declaration, or visibility-source policy.
 
 Goal:
 
 - Make direct shadows denoiser-ready before implementing NRD, with the editor still showing the current raw-shadow result.
 
-Required changes:
+Reference lineage:
+
+- NVIDIA NRD SIGMA: raw shadow signal plus guide inputs must exist before denoising; denoised visibility is consumed after provider execution.
+- RTXPT/Falcor: denoiser-facing visibility products are explicit render-graph products, not incidental side effects of final radiance accumulation.
+- AMD/FidelityFX-style reconstruction staging: noisy signal generation and reconstruction/denoising are separate stages with explicit resources.
+
+Existing bodies to scan first:
+
+- `Engine/Assets/Shaders/Passes/Deferred/DirectLighting.hlsl`
+- `Engine/Assets/Shaders/RayTracing/Shadows/*`
+- `Engine/Renderer/Private/Frame/Lighting/*`
+- `Engine/Renderer/Private/Passes/Deferred/DirectLightingPass.*`
+- `Engine/Renderer/Private/RayTracing/Effects/Shadows/*`
+- `Engine/Renderer/Private/Frame/Core/FrameAssembly.h`
+
+Required implementation:
 
 - Split direct shadow signal generation from direct-light radiance accumulation.
-- Replace aggregate per-pixel raw shadow signal with a provider-compatible light selection or per-light product.
-- Direct lighting consumes `ShadowVisibilitySource::Raw` or `ShadowVisibilitySource::Denoised`.
+- Replace aggregate per-pixel raw shadow signal with a provider-compatible selected-light or per-light product, with the exact policy named in code and notes. A selected-light product is Stage 6R scaffolding only and must be removed by Stage 6M.
+- Direct lighting consumes an explicit visibility source: raw in this stage, denoised later in Stage 6N.
 - Keep physical light units and area-light sampling unchanged.
-- Add the raw/denoised visibility source as a renderer setting, but expose only raw until Stage 6N provides NRD.
+- Add the raw/denoised visibility source as a renderer setting only if it is not misleading; expose raw only until Stage 6N provides NRD.
+- Keep shader module direction intact: light/BRDF evaluation stays in `Lighting/*`, shadow tracing stays in `RayTracing/Shadows/*`, pass scheduling stays in frame/pass code.
 
 Editor result:
 
-- The viewport still matches the current raw-shadow look.
+- The viewport matches the current raw-shadow look.
 - The direct-light pass no longer owns denoiser input generation, so Stage 6N can visibly change shadows without rewriting lighting.
 
-References:
+Acceptance criteria:
 
-- NRD SIGMA shadow-only denoiser.
-- RTXPT/Falcor explicit render-graph products for denoiser-facing signals.
+- Code denoising gate: touched direct-light/shadow code removes stale wrappers, no-op provider hooks, duplicate signal declarations, and needless settings before adding new logic.
+- Raw direct shadows render the same as before within expected sampling variance.
+- Shadow visibility signal generation is its own pass/resource path and does not apply final BRDF radiance.
+- Direct lighting consumes a visibility resource instead of tracing/applying shadow visibility internally.
+- The raw visibility signal is provider-shaped enough for SIGMA integration or explicitly documents the remaining blocker.
+- No backend-specific shader/pass names are added.
+- Reference compliance note maps the final structure to NRD SIGMA and RTXPT/Falcor render-graph product separation.
+- Reuse/DRY note lists the existing bodies scanned and explains why any new helper earns its place.
 
-### Stage 6N: Add NRD Provider Runtime
+Stage 6R implementation note:
+
+- Reference compliance: Sparkle now follows the NRD/RTXPT/Falcor staging shape for the selected shadow light: `DirectShadowSignal` writes raw visibility/hit distance before direct lighting, and `DirectLighting` reads that signal instead of writing denoiser input as a side effect. The deliberate local deviation is that non-selected lights still use raw inline tracing in `DirectLighting` so the editor view remains stable until Stage 6N introduces either a per-light visibility product or a sampled-light estimator.
+- Reuse/DRY audit: scanned `DirectLighting.hlsl`, `RayTracing/Shadows/*`, `Frame/Lighting/*`, `DirectLightingPass.*`, `RayTracedShadowPassData`, and `FrameAssembly.h`. Kept existing light sampling, area-light policy, alpha-tested shadow tracing, material table binding, and frame-graph resource ownership. Added `DirectShadowSelection.hlsli` because it owns the selected-light policy, and added `UnpackShadowSignal` beside `PackShadowSignal` because packing is the real signal boundary.
+- Remaining blocker: the raw signal is selected-light shaped, not per-light. Full SIGMA integration must either allocate/provider-tag per-light signals or move direct lighting to a sampled-light policy whose selected visibility is the one denoised by SIGMA.
+
+### Stage 6M: Replace Selected-Light Shadows With Many-Light Sampling
+
+Implementation prompt:
+
+Prompt guardrail: apply the universal implementation prompt rules above. Begin by deleting or collapsing the Stage 6R selected-light shortcut. Do not keep `SelectFirstShadowCastingLight`, light-type-order priority, hidden first-light policy, aggregate "most occluding" masks, or a denoised-first-light/raw-rest hybrid. Do not add wrappers that only rename light samples, reservoirs, or visibility products; keep a helper only if it owns real light indexing, candidate sampling, reservoir math, per-light product allocation, resource declaration, or visibility-source policy.
+
+Goal:
+
+- Support soft shadows from all shadow-casting direct lights through a reference-shaped many-light visibility pipeline, so SIGMA/denoising can improve the full direct-light result rather than one arbitrary light.
+
+Reference lineage:
+
+- NVIDIA RTXDI/ReSTIR DI: direct illumination over many dynamic lights is solved by app-owned light buffers, light sampling/resampling, reservoir products, final selected-light visibility rays, optional confidence inputs, and denoising/composition after sampling.
+- NVIDIA NRD SIGMA: SIGMA is a per-light shadow-only denoiser. The denoised signal must map to a known light/sample, not an unordered aggregate.
+- NVIDIA RTXPT/Falcor: direct-light sampling is an explicit path/render-graph product, and denoiser-facing products are not side effects of final radiance accumulation.
+- AMD FidelityFX Shadow Denoiser: shadow denoiser staging, bitmask packing, tile classification, temporal reprojection, and edge-aware filtering are useful references, but the documented shadow mask is single-light. Use it as a per-light/single-sample staging model, not as a many-light aggregation model.
+
+Existing bodies to scan first:
+
+- `Engine/Assets/Shaders/RayTracing/Shadows/DirectShadowSelection.hlsli`
+- `Engine/Assets/Shaders/Lighting/LightSampling.hlsli`
+- `Engine/Assets/Shaders/Lighting/AreaLights.hlsli`
+- `Engine/Assets/Shaders/Lighting/PunctualLights.hlsli`
+- `Engine/Assets/Shaders/Passes/Deferred/DirectShadowSignal.hlsl`
+- `Engine/Assets/Shaders/Passes/Deferred/DirectLighting.hlsl`
+- `Engine/Assets/Shaders/RayTracing/Shadows/*`
+- `Engine/Renderer/Private/Frame/Lighting/Shadows/*`
+- `Engine/Renderer/Private/Passes/Deferred/DirectShadowSignalPass.*`
+- `Engine/Renderer/Private/Passes/Deferred/DirectLightingPass.*`
+- `Engine/GameFramework/Private/Scene/Lighting/Snapshots/*`
+- `Engine/RHI/Public/Resources/RenderViewLightingData.h`
+
+Required implementation:
+
+- Delete `SelectFirstShadowCastingLight` and replace it with one explicit many-light policy.
+- Preferred policy: implement an RTXDI/ReSTIR-shaped sampled-light direct-shadow path:
+  - Build or expose a compact direct-light table over all shadow-casting directional, point, spot, rect, and future emissive/area lights.
+  - Generate initial light candidates using power/solid-angle/BRDF-aware importance where available.
+  - Store a per-pixel selected light sample/reservoir product containing light type/index, sample position/direction, PDF or inverse PDF/weight, confidence, and any data needed for final BRDF evaluation.
+  - Trace visibility for that selected sample and write raw visibility/hit distance tied to the same sample identity.
+  - Direct lighting shades from the sampled-light product and its PDF/weight; it does not loop all lights and secretly raw-trace unrepresented lights in the denoised mode.
+  - Add temporal/spatial reservoir reuse only after the initial sample/visibility/shading contract is correct.
+- Fallback policy for small scenes only: implement explicit per-light or per-light-tile visibility products:
+  - Each denoised visibility result must retain light identity.
+  - Resource count, format, max light count, tiling policy, and editor limits must be explicit.
+  - The path must not collapse multiple lights into a single visibility value before denoising.
+- Keep physical light units and area-light sampling unchanged.
+- Keep low-level shadow tracing in `RayTracing/Shadows/*`; keep light sampling in `Lighting/*`; keep pass scheduling in frame/pass code.
+- If the first vertical slice only supports punctual/rect lights, document unsupported light classes as absent from the sampled-light table rather than silently raw-tracing them.
+
+Editor result:
+
+- A scene with multiple shadow-casting lights shows all represented lights using the same shadow-sampling/visibility-source policy.
+- Toggling denoising later in Stage 6N can visibly smooth all represented soft shadows, not only the first shadow-casting light in a fixed type order.
+
+Acceptance criteria:
+
+- Code denoising gate: `DirectShadowSelection::SelectFirstShadowCastingLight` and any first-light-priority policy are removed.
+- No final shader/pass code contains a "first shadow-casting light" selection path.
+- All represented direct lights participate in one explicit sampled-light or per-light visibility policy.
+- Direct lighting no longer combines one denoised selected light with raw-traced non-selected lights in the same denoised mode.
+- The raw visibility signal carries enough light/sample identity for the denoiser and final lighting consumer to agree on what was filtered.
+- The chosen policy has a clear cost model: RTXDI-style one/few samples per pixel with reservoir weights, or explicit per-light/tiled products with limits.
+- Area-light soft shadows remain physically sampled; changing light size changes penumbra through sampling, not through denoiser hacks.
+- No backend-specific shader/pass names are added.
+- Reference compliance note maps light table/candidate generation/reservoir or per-light product, visibility tracing, confidence, and denoise/composite order to RTXDI/NRD/RTXPT/Falcor/AMD.
+- Reuse/DRY note lists the existing light sampling, area-light, shadow tracing, frame-graph, and scene-light snapshot bodies scanned, and explains why any new helper earns its place.
+
+### Stage 6N: Add NRD SIGMA Provider Runtime
+
+Implementation prompt:
+
+Prompt guardrail: apply the universal implementation prompt rules above. Begin by verifying Stage 6M removed selected-light ordering and produced a many-light sampled-light or per-light visibility contract. Do not add a fake blur fallback, local approximation, provider-looking wrapper without NRD execution, or a renderer-global history manager. Provider resources and history must be owned by the NRD provider boundary, not scattered through frame orchestration.
 
 Goal:
 
 - Implement a provider boundary capable of executing SIGMA without making NRD mandatory, and make the result selectable in the editor.
 
-Required changes:
+Reference lineage:
 
-- Add `NrdProvider` with capability query, initialization, resize/recreate, history pool ownership, common settings, and dispatch execution.
-- Consume frame-graph resources through native RHI interop.
+- NVIDIA NRD: application creates resources, owns permanent/transient pools, translates NRD descriptors into graphics API dispatches, and feeds normal/depth/motion/history guides.
+- RTXPT/Falcor: denoiser execution is a provider/render-graph stage between noisy signal generation and final lighting use.
+- AMD/FidelityFX-style temporal ownership: provider history resets and resource recreation are explicit on resize, camera cut, render-path change, and feature toggles.
+
+Existing bodies to scan first:
+
+- Stage 6R shadow visibility resources and passes.
+- `Engine/Renderer/Private/Providers/*`
+- `Engine/Renderer/Private/FramePipeline/*`
+- `Engine/Renderer/Private/FrameGraph/*`
+- `Engine/Renderer/Private/RayTracing/Effects/Shadows/*`
+- RHI native interop surfaces and resource-state helpers.
+- Editor rendering settings panel and renderer settings storage.
+
+Required implementation:
+
+- Add `NrdProvider` with capability query, initialization, resize/recreate, shutdown, provider status, and version/availability reporting.
+- Add SIGMA execution using NRD descriptors and app-owned permanent/transient resource pools.
+- Consume Stage 6M raw shadow visibility plus light/sample identity, normal, depth/viewZ, motion, jitter/history metadata, and reset state through explicit frame-graph resources.
+- Output denoised visibility as a resource consumed by direct lighting.
 - Recreate provider resources on resize and render-path changes.
-- No local blur fallback.
-- Add renderer/editor settings for SIGMA mode, history reset, and the minimal quality knobs required by NRD.
-- Keep the UI disabled or hidden when the NRD provider is not available.
+- Reset provider history on camera cut, resize, temporal invalidation, render-path change, and feature toggle.
+- Add renderer/editor settings for raw versus NRD SIGMA, history reset, and only the minimal NRD quality knobs needed for the first visible result.
+- Disable or hide SIGMA in the editor when provider capability is unavailable.
 
 Editor result:
 
 - A one-sample soft-shadow scene can toggle raw visibility versus NRD SIGMA denoised visibility.
 - Shadow penumbra noise decreases while unoccluded direct-light intensity remains unchanged.
 
-References:
+Acceptance criteria:
 
-- NRD Integration / ResourceSnapshot / permanent and transient pool model.
+- Code denoising gate: no fake provider path, no fallback blur, no dormant CVar, no unused history allocation, and no wrapper that only forwards NRD settings.
+- Stage 6M many-light visibility is complete; SIGMA is not exposed on top of `SelectFirstShadowCastingLight` or an equivalent first-light shortcut.
+- `SIGMA unavailable` is represented at the provider boundary, not by pretending raw visibility is SIGMA.
+- Direct lighting can consume raw or denoised visibility through the same visibility-source boundary.
+- NRD permanent/transient resources are owned by the provider runtime or a provider-local owner, not by broad `FramePipeline` fields.
+- RHI/native interop is provider-scoped and does not leak D3D12/Vulkan details into general renderer passes.
+- Editor settings expose only modes that can actually run.
+- Reference compliance note maps resource ownership, dispatch flow, history reset, and guide inputs to NRD and RTXPT/Falcor patterns.
+- Reuse/DRY note lists which frame-graph/provider/RHI bodies were reused instead of creating a parallel denoiser system.
 
 ### Stage 11R: Add Ray Reconstruction Provider Contract And Guides
+
+Implementation prompt:
+
+Prompt guardrail: apply the universal implementation prompt rules above. Start by denoising the current upscaler/denoiser/reconstruction boundary: remove fields that pretend DLRR is an upscaler input, collapse duplicate guide descriptions, and avoid a global signal registry. Do not add wrappers that merely repack material values if existing material/GBuffer/path helpers already own the policy.
 
 Goal:
 
 - Make DLRR and future reconstruction providers selectable only when all required resources exist, and write the guide buffers needed for a visible DLRR pass.
 
-Required changes:
+Reference lineage:
 
-- Add `RayReconstructionInputContract`.
-- Add `RendererProviderCategory::RayReconstruction`.
-- Convert current `FrameAssemblyDenoiserProviderResources.IndirectReconstruction` into explicit provider input products.
-- Add contract validation for DLRR-required inputs and formats.
-- Write provider-ready noisy HDR color, diffuse albedo, specular albedo, normal/roughness, depth, motion, exposure, and specular hit-distance or specular motion-vector products from the realtime path.
-- Keep guide writers near path/lighting code; do not build a global signal registry or duplicate material packing helpers.
+- NVIDIA Streamline DLRR: provider requires tagged noisy HDR color, output, diffuse/specular albedo, normal/roughness, depth, motion, exposure/reset, and specular hit-distance or specular motion-vector resources.
+- NVIDIA NRD: guide/radiance resources must name demodulated/noisy signal semantics and temporal metadata explicitly.
+- RTXPT/Falcor: path/reconstruction guide buffers are explicit outputs owned by path/realtime rendering, not debug-only side products.
+- AMD neural denoising/upscaling: noisy color plus guide buffers feed a distinct reconstruction stage.
+
+Existing bodies to scan first:
+
+- `Engine/Renderer/Private/Upscaling/*`
+- `Engine/Renderer/Private/Providers/*`
+- `Engine/Renderer/Private/Frame/Core/FrameAssembly.h`
+- `Engine/Renderer/Private/Frame/Core/FrameProviderInputs.*`
+- `Engine/Renderer/Private/Frame/Lighting/*`
+- `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuse.hlsl`
+- `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecular.hlsl`
+- `Engine/Assets/Shaders/RayTracing/Path*.hlsli`
+- `Engine/Assets/Shaders/Material/*`
+- `Engine/Assets/Shaders/Passes/Deferred/GBufferUtils.hlsli`
+
+Required implementation:
+
+- Add `RayReconstructionInputContract` separate from `UpscalerInputContract`.
+- Add `RendererProviderCategory::RayReconstruction` or a more precise denoising/reconstruction category.
+- Convert current indirect reconstruction frame slots into explicit provider input products with one owner and one writer.
+- Write provider-ready noisy HDR color, diffuse albedo, specular albedo/F0, normal/roughness, depth, motion, exposure/reset, and specular hit-distance or specular motion-vector resources from the realtime path.
+- Keep guide writers near path/lighting code and reuse existing material/F0/albedo helpers.
+- Add contract validation for required DLRR inputs and formats at provider selection.
+- Keep reconstruction disabled until all required resources exist.
 
 Editor result:
 
 - Reconstruction mode remains unavailable until all required resources exist.
 - The editor can show an unreconstructed noisy indirect/specular scene using the same lighting math that DLRR will consume.
 
-References:
+Acceptance criteria:
 
-- Streamline DLRR resource tags.
-- AMD noisy color plus guide-buffer reconstruction pattern.
+- Code denoising gate: `UpscalerInputContract` remains about upscaling; DLRR guide resources do not sprawl into unrelated structs or duplicate material packing helpers.
+- Provider selection can reject missing guide buffers before execution.
+- Guide buffers have a single writer and a documented owner.
+- Real-time lighting math does not fork for DLRR; it only publishes required guide products.
+- No global all-signals namespace or registry is introduced.
+- Reference compliance note maps each guide resource to Streamline DLRR, NRD, RTXPT/Falcor, or AMD reconstruction expectations.
+- Reuse/DRY note lists which material, GBuffer, path, provider, and frame-assembly bodies were reused.
 
 ### Stage 11D: Implement Streamline DLRR Provider
+
+Implementation prompt:
+
+Prompt guardrail: apply the universal implementation prompt rules above. Start with a code denoising pass through the existing Streamline DLSS runtime: share only primitives that own real Streamline API policy, and keep DLSS-SR/DLAA separate from DLRR resource contracts. Do not merge DLRR into `UpscalerInputContract` or add DLRR-specific shader code unless a provider requirement genuinely needs it.
 
 Goal:
 
 - Implement DLRR through Streamline without merging it into DLSS-SR code, and expose it as a visible editor reconstruction mode.
 
-Required changes:
+Reference lineage:
+
+- NVIDIA Streamline DLRR: query/load `sl::kFeatureDLSS_RR`, set options/common constants, tag all required resources, call `slEvaluateFeature`, and restore command state.
+- NVIDIA RTXPT/Falcor: reconstruction is a pass/provider stage consuming explicit noisy/guide resources.
+- AMD/FidelityFX-style provider integration: provider unavailable or incomplete resources disable the mode rather than running a hidden fallback.
+
+Existing bodies to scan first:
+
+- `Engine/Renderer/Private/Upscaling/NvidiaDlss/*`
+- Streamline runtime wrappers and resource-tag construction.
+- Provider model/category code.
+- Stage 11R `RayReconstructionInputContract`.
+- RHI native interop services.
+- Editor renderer settings panel and renderer settings storage.
+
+Required implementation:
 
 - Query and load `sl::kFeatureDLSS_RR`.
-- Set DLRR options and common constants.
-- Tag DLRR resources: noisy HDR color, output color, albedo, specular albedo, normal/roughness, depth, motion vectors, specular hit distance or specular motion vectors, exposure/reset.
+- Add a Streamline DLRR provider separate from the DLSS-SR provider.
+- Set DLRR options and common constants from the reconstruction contract and current view/temporal state.
+- Tag noisy HDR color, output color, diffuse albedo, specular albedo, normal/roughness, depth, motion vectors, specular hit distance or specular motion vectors, exposure/reset.
 - Restore command state after `slEvaluateFeature`.
 - Reinitialize or reject unsupported dynamic-resolution changes per Streamline guidance.
-- Keep DLRR provider code separate from the DLSS-SR provider, sharing only Streamline runtime primitives that own real API policy.
-- Add renderer/editor settings for reconstruction off/DLRR and any required Streamline quality mode.
+- Add renderer/editor settings for reconstruction off/DLRR and only the required Streamline quality mode.
+- Keep final output in the normal exposure/presentation path.
 
 Editor result:
 
 - A noisy indirect/specular scene can toggle unreconstructed output versus DLRR output.
 - The viewport output remains explicit: final linear HDR lighting goes through the same exposure and presentation path after reconstruction.
 
-References:
+Acceptance criteria:
 
-- Streamline DLSS-RR Programming Guide.
+- Code denoising gate: DLSS-SR code does not grow DLRR-only fields, and DLRR code does not duplicate generic Streamline runtime primitives.
+- DLRR mode is unavailable unless Streamline feature availability and all required resources are satisfied.
+- Resource tags are recognizable against the Streamline DLRR programming guide.
+- Command-state restoration is explicit and localized to the Streamline provider runtime.
+- DLRR failure falls back to the known unreconstructed path without hidden global state.
+- Reference compliance note maps feature query, resource tags, constants, dispatch/evaluate, and fallback behavior to Streamline and AMD-style provider patterns.
+- Reuse/DRY note names which DLSS/Streamline primitives were shared and which were intentionally kept separate.
 
 ### Stage 12G: Reference Path Guide Outputs
+
+Implementation prompt:
+
+Prompt guardrail: apply the universal implementation prompt rules above. Start by denoising reference/realtime guide boundaries: remove any code or docs implying reference mode may borrow realtime GBuffer handles. Do not add wrappers that only mirror realtime guide structs unless the reference path truly writes equivalent data.
 
 Goal:
 
 - Make path-traced reference outputs comparable to realtime and provider-ready without borrowing GBuffer products.
 
-Required changes:
+Reference lineage:
+
+- RTXPT: pure path tracing generates guide buffers from the path tracer rather than relying on raster GBuffer products.
+- Falcor PathTracer: path tracing is a separate render pass/graph owner for path outputs and optional denoiser inputs.
+- Streamline/NRD/AMD reconstruction patterns: provider guide resources must come from the renderer path that produced the noisy signal.
+
+Existing bodies to scan first:
+
+- `Engine/Renderer/Private/Frame/Reference/*`
+- `Engine/Renderer/Private/Passes/Reference/*`
+- `Engine/Assets/Shaders/Passes/Reference/*`
+- `Engine/Assets/Shaders/RayTracing/Path*.hlsli`
+- `Engine/Assets/Shaders/RayTracing/RayTracingMaterialHit.hlsli`
+- `Engine/Renderer/Private/Frame/Core/FrameAssembly.h`
+- Stage 11R reconstruction contract code.
+
+Required implementation:
 
 - Add optional reference guide targets for primary depth/viewZ, normal, roughness, albedo/F0, first-hit distance, and path lobe metadata.
-- Keep them under `Frame/Reference`.
+- Keep guide targets, allocation, and pass scheduling under `Frame/Reference`.
 - Let reference denoising/reconstruction consume those guides explicitly.
+- Do not publish realtime GBuffer products from reference mode unless a reference guide pass actually writes equivalent products.
+- Reuse shared material, BRDF, sky, light, alpha-test, and path-sampling code; do not copy reference-only versions of those policies.
 
-References:
+Editor result:
 
-- RTXPT pure path tracer guide-buffer generation.
-- Falcor PathTracer render graph ownership.
+- Reference mode can expose guide outputs or feed reconstruction without depending on realtime deferred GBuffer products.
+- Realtime SIGMA/DLRR results remain the first target; reference guide work follows after those editor-visible results exist.
+
+Acceptance criteria:
+
+- Code denoising gate: reference path code contains no fake GBuffer handles, no duplicated material/light policy, and no guide wrappers that do not write actual guide data.
+- Reference guide resources are owned by `Frame/Reference` and have one writer.
+- Shared path/material/light modules remain shared between realtime and reference paths.
+- Provider/reconstruction code selects reference guides only when the reference path produced them.
+- Reference compliance note maps guide ownership to RTXPT/Falcor and provider guide expectations to Streamline/NRD/AMD.
+- Reuse/DRY note lists reused shader modules and any intentional local deviations.
 
 ## What To Delete Or Avoid
 
@@ -374,12 +638,13 @@ References:
 ## Suggested Priority Order
 
 1. Stage 6R: split direct shadow signal generation from direct lighting while preserving the current raw-shadow viewport result.
-2. Stage 6N: add NRD provider runtime and editor-visible SIGMA shadow denoising.
-3. Stage 11R: add `RayReconstructionInputContract`, provider category, and realtime guide buffers needed by DLRR.
-4. Stage 11D: add Streamline DLRR provider and editor-visible ray reconstruction.
-5. Stage 12G: make reference path write its own guides after realtime SIGMA/DLRR results are visible.
-6. Final cleanup: collapse stale shadow/reconstruction docs and remove obsolete "future" wording after provider integrations land.
+2. Stage 6M: replace selected-light shadows with many-light sampled-light or per-light visibility before exposing SIGMA.
+3. Stage 6N: add NRD provider runtime and editor-visible SIGMA shadow denoising.
+4. Stage 11R: add `RayReconstructionInputContract`, provider category, and realtime guide buffers needed by DLRR.
+5. Stage 11D: add Streamline DLRR provider and editor-visible ray reconstruction.
+6. Stage 12G: make reference path write its own guides after realtime SIGMA/DLRR results are visible.
+7. Final cleanup: collapse stale shadow/reconstruction docs and remove obsolete "future" wording after provider integrations land.
 
 ## Bottom Line
 
-Sparkle has the right top-level path split now. The next quality jump is editor-visible SIGMA and DLRR, not another broad frame orchestrator refactor. SIGMA needs shadow visibility before lighting and a real NRD provider. DLRR needs reconstruction guide buffers and a Streamline DLRR provider, not an upscaler contract stretched sideways. Reference path tracing still needs its own guides, but that comes after the realtime editor results are visible.
+Sparkle has the right top-level path split now. The next quality jump is editor-visible SIGMA and DLRR, not another broad frame orchestrator refactor. SIGMA needs shadow visibility before lighting, a many-light sampled-light or per-light visibility policy, and a real NRD provider. DLRR needs reconstruction guide buffers and a Streamline DLRR provider, not an upscaler contract stretched sideways. Reference path tracing still needs its own guides, but that comes after the realtime editor results are visible.

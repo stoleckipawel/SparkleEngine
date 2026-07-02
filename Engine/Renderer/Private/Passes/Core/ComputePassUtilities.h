@@ -35,7 +35,8 @@ namespace ComputePassUtilities
 	    const char* packageDeclarationName,
 	    std::string_view packageId,
 	    const wchar_t* bindingLayoutName,
-	    const wchar_t* pipelineStateName)
+	    const wchar_t* pipelineStateName,
+	    CookedShaderPackageFeatureFlags requiredFeatures = CookedShaderPackageFeatureFlags::None)
 	{
 		return RenderPassDefinition{
 		    .PassName = passName,
@@ -43,7 +44,8 @@ namespace ComputePassUtilities
 		    .ShaderPackage = ShaderPackageDefinition{
 		        .PackageId = packageId.data(),
 		        .BindingLayoutId = packageId.data(),
-		        .ExpectedStages = ShaderStageMask::Compute},
+		        .ExpectedStages = ShaderStageMask::Compute,
+		        .RequiredFeatures = requiredFeatures},
 		    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
 		    .BindingLayoutDebugName = bindingLayoutName,
 		    .PipelineStateDebugName = pipelineStateName};
@@ -53,7 +55,7 @@ namespace ComputePassUtilities
 	bool Dispatch(
 	    PassExecutionContext& context,
 	    const ComputePassPipelineRuntime& runtime,
-	    typename TPass::ParameterInstance& parameters,
+	    const typename TPass::ParameterInstance& parameters,
 	    const ComputeDispatchDesc& dispatch)
 	{
 		const bool valid = parameters.Sync();
@@ -74,7 +76,7 @@ namespace ComputePassUtilities
 	bool DispatchSized(
 	    PassExecutionContext& context,
 	    const ComputePassPipelineRuntime& runtime,
-	    typename TPass::ParameterInstance& parameters,
+	    const typename TPass::ParameterInstance& parameters,
 	    std::uint32_t outputWidth,
 	    std::uint32_t outputHeight)
 	{

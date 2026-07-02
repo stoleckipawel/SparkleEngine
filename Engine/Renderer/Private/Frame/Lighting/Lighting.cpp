@@ -7,6 +7,7 @@
 #include "Frame/Lighting/LightingRenderTargets.h"
 #include "Frame/Lighting/LightingTargetClear.h"
 #include "Frame/Lighting/ShadowVisibility.h"
+#include "Frame/Lighting/Shadows/DirectShadowSignal.h"
 #include "Frame/Lighting/Sky.h"
 
 void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
@@ -16,6 +17,11 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	    CreateShadowVisibilityResources(builder, sceneExtent, resources);
 
 	AddLightingTargetClearPass(builder, resources.Transient.Lighting);
+	AddDirectShadowSignalPass(
+	    builder,
+	    resources.Transient.GBuffer,
+	    resources.Persistent.SceneTlas,
+	    rawShadowVisibilitySignal);
 	AddDirectLightingPass(
 	    builder,
 	    resources.Transient.Lighting,

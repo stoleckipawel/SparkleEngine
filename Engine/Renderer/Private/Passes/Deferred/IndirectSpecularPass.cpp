@@ -2,34 +2,33 @@
 #include "Passes/Deferred/IndirectSpecularPass.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
-#include "Core/Public/Math/MathUtils.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Core/PassUtilities.h"
+#include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Bindings/LightingPassBinding.h"
 #include "Passes/Bindings/MaterialTextureTablePassBinding.h"
 #include "Passes/Bindings/RayTracingHitDataPassBinding.h"
 #include "Passes/Bindings/RayTracingScenePassBinding.h"
 #include "Passes/Core/RenderPassDefinition.h"
-#include "Passes/Core/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularPassData.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
-#include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
-
-#include <cassert>
 
 namespace
 {
 	constexpr const char* DispatchTimingLabel = "Indirect Specular Ray Query";
+	constexpr CookedShaderPackageFeatureFlags RayQueryFeatures =
+	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
+	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
+	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
 
 	IndirectSpecularSettings ResolveSettings(const PassRuntimeServices& services) noexcept
 	{
@@ -48,34 +47,18 @@ IndirectSpecularPass::IndirectSpecularPass(const ComputePassPipelineRuntime& run
 
 const IndirectSpecularPass::ParameterMetadata& IndirectSpecularPass::GetParameterMetadata() noexcept
 {
-	static const ParameterMetadata metadata = []
-	{
-		const ParameterMetadata localMetadata = ShaderParameterStructBuilder<Parameters>::BuildMetadata(PassName);
-		const bool valid = ValidateShaderPassLayout(localMetadata.GetLayout(), ShaderPassKind::Compute, PassName);
-		assert(valid);
-		return localMetadata;
-	}();
-
-	return metadata;
+	return ComputePassUtilities::BuildParameterMetadata<IndirectSpecularPass>();
 }
 
 const RenderPassDefinition& IndirectSpecularPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition{
-	    .PassName = PassName,
-	    .PackageDeclarationName = "IndirectSpecularShaderPackage",
-	    .ShaderPackage =
-	        ShaderPackageDefinition{
-	            .PackageId = RendererShaderPackages::IndirectSpecular.data(),
-	            .BindingLayoutId = RendererShaderPackages::IndirectSpecular.data(),
-	            .ExpectedStages = ShaderStageMask::Compute,
-	            .RequiredFeatures =
-	                CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	                CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
-	                CookedShaderPackageFeatureFlags::UsesDescriptorIndexing},
-	    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
-	    .BindingLayoutDebugName = L"IndirectSpecular_BindingLayout",
-	    .PipelineStateDebugName = L"IndirectSpecular_PipelineState"};
+	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
+	    PassName,
+	    "IndirectSpecularShaderPackage",
+	    RendererShaderPackages::IndirectSpecular,
+	    L"IndirectSpecular_BindingLayout",
+	    L"IndirectSpecular_PipelineState",
+	    RayQueryFeatures);
 	return definition;
 }
 
@@ -158,24 +141,13 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 	    hitInstanceCount,
 	    hitMaterialCount,
 	    MaterialTextureTableFixedCapacity);
-	const bool valid = parameters.Sync();
-	assert(valid);
-
-	const ComputeDispatchDesc dispatch{
-	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
-	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
-	    1};
-	const bool dispatched = [&]() noexcept
 	{
 		SPARKLE_GPU_SCOPE(context.Diagnostics, DispatchTimingLabel);
-		return PassUtilities::DispatchComputePassWithRuntime<IndirectSpecularPass>(
-		    context.Resources,
-		    context.Commands,
-		    context.RuntimeServices.HardwareInterface,
+		ComputePassUtilities::DispatchSized<IndirectSpecularPass>(
+		    context,
 		    m_runtime,
-		    parameters.GetPassParameterSet(),
-		    dispatch,
-		    PassName);
-	}();
-	assert(dispatched);
+		    parameters,
+		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
+		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
+	}
 }

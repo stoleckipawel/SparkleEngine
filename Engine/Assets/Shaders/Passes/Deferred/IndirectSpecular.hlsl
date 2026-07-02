@@ -5,7 +5,6 @@
 RWTexture2D<float4> IndirectSpecularTexture;
 RWTexture2D<float4> IndirectSpecularDemodulatedRadiance;
 RWTexture2D<float4> IndirectSpecularSampleGuide;
-RaytracingAccelerationStructure SceneTlas;
 Texture2D SkyTexture;
 SamplerState SamplerLinearClamp;
 
@@ -58,9 +57,8 @@ struct IndirectSpecularResolvedContribution
 	}
 
 	const uint2 pixelCoord = dispatchThreadId.xy;
-	const int3 pixel = int3(pixelCoord, 0);
-	const float deviceZ = LoadGBufferDeviceZ(pixelCoord);
-	if (IsSkyPixel(deviceZ))
+	const GBufferData gBuffer = LoadGBuffer(pixelCoord);
+	if (IsSkyPixel(gBuffer.DeviceZ))
 	{
 		IndirectSpecularTexture[pixelCoord] = 0.0f.xxxx;
 		IndirectSpecularDemodulatedRadiance[pixelCoord] = 0.0f.xxxx;
@@ -68,16 +66,10 @@ struct IndirectSpecularResolvedContribution
 		return;
 	}
 
-	const float3 baseColor = saturate(GBufferBaseColor.Load(pixel).rgb);
-	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(pixel).xyz);
-	const float4 materialSample = GBufferMaterial.Load(pixel);
-	const float roughness = saturate(materialSample.g);
-	const float metallic = saturate(materialSample.r);
-	const float dielectricF0 = DecodeGBufferDielectricF0(materialSample.a);
 	const float3 positionWorld =
-	    ReconstructGBufferWorldPosition(pixelCoord, deviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
+	    ReconstructGBufferWorldPosition(pixelCoord, gBuffer.DeviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const float3 viewDirWorld = normalize(Camera.Position - positionWorld);
-	RayTracingPathLighting::TraceSettings traceSettings;
+	RayTracingPathTrace::TraceSettings traceSettings;
 	traceSettings.NormalBias = IndirectSpecularNormalBias;
 	traceSettings.MaxDistance = IndirectSpecularMaxDistance;
 	traceSettings.MinT = IndirectSpecularMinimumTMin;
@@ -86,17 +78,16 @@ struct IndirectSpecularResolvedContribution
 
 	const RayTracingPathLighting::Result path =
 	    RayTracingPathLighting::TraceSurfacePath(
-	        SceneTlas,
 	        SkyTexture,
 	        SamplerLinearClamp,
 	        BuildPrimaryRayTracingPathSurface(
 	            positionWorld,
-	            normalWorld,
+	            gBuffer.NormalWorld,
 	            viewDirWorld,
-	            baseColor,
-	            roughness,
-	            metallic,
-	            dielectricF0),
+	            gBuffer.BaseColor,
+	            gBuffer.Roughness,
+	            gBuffer.Metallic,
+	            gBuffer.DielectricF0),
 	        pixelCoord,
 	        0u,
 	        IndirectSpecularSampleMode,
@@ -108,7 +99,7 @@ struct IndirectSpecularResolvedContribution
 	resolved.FinalContribution =
 	    path.PrimaryLobe == RayTracingPathSample::LobeSpecular ? path.FinalContribution : 0.0f.xxx;
 
-	const float3 mirrorDirectionWorld = normalize(reflect(-viewDirWorld, normalWorld));
+	const float3 mirrorDirectionWorld = normalize(reflect(-viewDirWorld, gBuffer.NormalWorld));
 	const float3 debugColor =
 	    BuildIndirectSpecularDebugColor(
 	        path.FirstTrace,
@@ -116,15 +107,15 @@ struct IndirectSpecularResolvedContribution
 	        path.FirstSample,
 	        resolved,
 	        mirrorDirectionWorld) *
-	    lerp(0.65f.xxx, baseColor, 0.35f);
+	    lerp(0.65f.xxx, gBuffer.BaseColor, 0.35f);
 	const float3 reflectionColor = IndirectSpecularDebugMode == RayTracingDebugModes::Off ? resolved.FinalContribution : debugColor;
-	const float bindingKeepAliveSignal = float(FrameIndex & 1u) * 1.0e-6f + roughness * 1.0e-9f;
+	const float bindingKeepAliveSignal = float(FrameIndex & 1u) * 1.0e-6f + gBuffer.Roughness * 1.0e-9f;
 	const float specularSampleSelected = path.PrimaryLobe == RayTracingPathSample::LobeSpecular ? 1.0f : 0.0f;
 	const float specularSampleValid =
 	    specularSampleSelected *
 	    (path.FirstSample.RejectionReason == RayTracingPathSample::RejectionReasonNone ? 1.0f : 0.0f);
 	const float specularHitValid = specularSampleSelected * (path.FirstLighting.Hit ? 1.0f : 0.0f);
-	const float3 specularAlbedo = SurfaceLighting::BuildF0(baseColor, metallic, dielectricF0);
+	const float3 specularAlbedo = SurfaceLighting::BuildF0(gBuffer.BaseColor, gBuffer.Metallic, gBuffer.DielectricF0);
 
 	IndirectSpecularTexture[pixelCoord] = float4(reflectionColor, path.FirstHitSurface.Valid ? 1.0f : bindingKeepAliveSignal);
 	IndirectSpecularDemodulatedRadiance[pixelCoord] =

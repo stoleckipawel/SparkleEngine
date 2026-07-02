@@ -5,18 +5,15 @@
 
 #include "Resources/RenderConstantBufferData.h"
 #include "Resources/RenderViewLightingData.h"
-#include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
+#include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
 
-class DirectLightingNoRayQueryCS final : public TGlobalShader<DirectLightingNoRayQueryCS>
+class DirectShadowSignalNoRayQueryCS final : public TGlobalShader<DirectShadowSignalNoRayQueryCS>
 {
   public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectDiffuse, DirectDiffuseTexture)
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectSpecular, DirectSpecularTexture)
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectSubsurface, DirectSubsurfaceTexture)
-	SHADER_PARAMETER_TEXTURE_NAMED(Texture2D, ShadowVisibilitySignal, ShadowVisibilitySignalTexture)
+	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, ShadowVisibilitySignal, ShadowVisibilitySignalTexture)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewLighting, ViewLighting, ViewLightingData)
@@ -24,15 +21,11 @@ class DirectLightingNoRayQueryCS final : public TGlobalShader<DirectLightingNoRa
 	SHADER_PARAMETER_RDG_BUFFER_SRV(PointLightConstantBufferData, PointLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(SpotLightConstantBufferData, SpotLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RectLightConstantBufferData, RectLights)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferSubsurface)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
+class DirectShadowSignalCS final : public TGlobalShader<DirectShadowSignalCS>
 {
   public:
 	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures =
@@ -40,10 +33,7 @@ class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
 	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectDiffuse, DirectDiffuseTexture)
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectSpecular, DirectSpecularTexture)
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectSubsurface, DirectSubsurfaceTexture)
-	SHADER_PARAMETER_TEXTURE_NAMED(Texture2D, ShadowVisibilitySignal, ShadowVisibilitySignalTexture)
+	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, ShadowVisibilitySignal, ShadowVisibilitySignalTexture)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
@@ -59,15 +49,12 @@ class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitMaterial, RayTracingHitMaterials)
 	SHADER_PARAMETER_TEXTURE_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
 	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferSubsurface)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-class DirectLightingDeviceAddressCS final : public TGlobalShader<DirectLightingDeviceAddressCS>
+class DirectShadowSignalDeviceAddressCS final : public TGlobalShader<DirectShadowSignalDeviceAddressCS>
 {
   public:
 	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures =
@@ -77,10 +64,7 @@ class DirectLightingDeviceAddressCS final : public TGlobalShader<DirectLightingD
 	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectDiffuse, DirectDiffuseTexture)
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectSpecular, DirectSpecularTexture)
-	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, DirectSubsurface, DirectSubsurfaceTexture)
-	SHADER_PARAMETER_TEXTURE_NAMED(Texture2D, ShadowVisibilitySignal, ShadowVisibilitySignalTexture)
+	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, ShadowVisibilitySignal, ShadowVisibilitySignalTexture)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewLighting, ViewLighting, ViewLightingData)
@@ -95,31 +79,28 @@ class DirectLightingDeviceAddressCS final : public TGlobalShader<DirectLightingD
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitMaterial, RayTracingHitMaterials)
 	SHADER_PARAMETER_TEXTURE_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
 	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferSubsurface)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
 	END_SHADER_PARAMETER_STRUCT()
 };
 
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
-    DirectLightingNoRayQueryCS,
-    RendererShaderPackages::DirectLightingNoRayQuery,
-    "Passes/Deferred/DirectLightingNoRayQuery.hlsl",
+    DirectShadowSignalNoRayQueryCS,
+    RendererShaderPackages::DirectShadowSignalNoRayQuery,
+    "Passes/Deferred/DirectShadowSignalNoRayQuery.hlsl",
     "main",
     Compute);
 
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
-    DirectLightingCS,
-    RendererShaderPackages::DirectLighting,
-    "Passes/Deferred/DirectLighting.hlsl",
+    DirectShadowSignalCS,
+    RendererShaderPackages::DirectShadowSignal,
+    "Passes/Deferred/DirectShadowSignal.hlsl",
     "main",
     Compute);
 
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
-    DirectLightingDeviceAddressCS,
-    RendererShaderPackages::DirectLightingDeviceAddress,
-    "Passes/Deferred/DirectLightingDeviceAddress.hlsl",
+    DirectShadowSignalDeviceAddressCS,
+    RendererShaderPackages::DirectShadowSignalDeviceAddress,
+    "Passes/Deferred/DirectShadowSignalDeviceAddress.hlsl",
     "main",
     Compute);

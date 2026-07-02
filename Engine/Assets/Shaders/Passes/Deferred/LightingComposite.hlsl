@@ -1,6 +1,3 @@
-#include "Resources/ConstantBuffers.hlsli"
-#include "Passes/Deferred/GBufferUtils.hlsli"
-
 RWTexture2D<float4> SceneColorTexture;
 Texture2D DirectDiffuse;
 Texture2D DirectSpecular;
@@ -8,6 +5,8 @@ Texture2D DirectSubsurface;
 Texture2D IndirectDiffuse;
 Texture2D IndirectSpecular;
 Texture2D IndirectSubsurface;
+Texture2D GBufferBaseColor;
+Texture2D GBufferEmissive;
 
 struct LightingTerms
 {
@@ -58,12 +57,13 @@ float3 ComposeSubsurfaceLighting(LightingTerms terms)
 	}
 
 	const int3 pixel = int3(dispatchThreadId.xy, 0);
-	const GBufferData gBuffer = LoadGBuffer(dispatchThreadId.xy);
 	const LightingTerms lighting = LoadLightingTerms(pixel);
 	const float3 diffuseLighting = ComposeDiffuseLighting(lighting);
 	const float3 specularLighting = ComposeSpecularLighting(lighting);
 	const float3 subsurfaceLighting = ComposeSubsurfaceLighting(lighting);
 	// Demodulated irradiance/albedo signals belong in separate buffers, never in this sum.
-	const float3 lit = diffuseLighting + specularLighting + subsurfaceLighting + gBuffer.Emissive;
-	SceneColorTexture[dispatchThreadId.xy] = float4(lit, gBuffer.Alpha);
+	const float3 emissive = max(GBufferEmissive.Load(pixel).rgb, 0.0f);
+	const float alpha = GBufferBaseColor.Load(pixel).a;
+	const float3 lit = diffuseLighting + specularLighting + subsurfaceLighting + emissive;
+	SceneColorTexture[dispatchThreadId.xy] = float4(lit, alpha);
 }
