@@ -111,5 +111,3 @@ tmp_streamline_sdk/
 # deliberate docs/attachment location instead of committing it from logs/.
 /logs/.*
 /logs/*
-/logs/Scripts/.*
-/logs/Scripts/*

@@ -2,9 +2,9 @@
 
 This folder keeps only active implementation guidance. Old review notes, superseded staged plans, and standalone validation notes are intentionally removed unless they directly support the current PBR/provider work.
 
-## PBR Rendering
+## Renderer Release Readiness
 
-- `Rendering/PBR/05-Renderer-Reference-Quality-Gap-Audit.md`: current implementation-prompt source, focused first on RTXDI/ReSTIR-style direct lighting and DLRR integration. Each staged prompt includes code denoising, reuse/DRY, and NVIDIA/AMD reference-pattern requirements.
+- `Architecture/00-Review/B_RendererReleaseReadinessMap.md`: current renderer map and release-readiness gap audit against AMD/NVIDIA reference repository shapes. It is focused on cleanup, feature completion, and reducing scaffolding before product release.
 
 ## Review Background
 
