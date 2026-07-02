@@ -12,9 +12,12 @@ void AddPostProcessingPasses(
 {
 	const bool hasRealtimeProviderInputs =
 	    resources.Transient.GBuffer.MotionVector.IsValid() && resources.Transient.Lighting.IndirectDiffuse.IsValid();
-	if (hasRealtimeProviderInputs)
+	if (hasRealtimeProviderInputs && !resources.FinalSceneColorProduced)
 	{
+		resources.UpscalerProviderInputs =
+		    BuildFrameUpscalerProviderInputs(resources.Transient.Scene, resources.Transient.GBuffer, resources.Transient.Exposure);
 		AddUpscalerEvaluationPass(builder, sceneExtent, resources.Transient.Scene, resources.Transient.GBuffer);
+		resources.FinalSceneColorProduced = true;
 	}
 
 	AddExposurePass(
@@ -25,14 +28,4 @@ void AddPostProcessingPasses(
 	    resources.History.CurrentExposure,
 	    resources.Transient.Exposure);
 
-	if (hasRealtimeProviderInputs)
-	{
-		resources.UpscalerProviderInputs =
-		    BuildFrameUpscalerProviderInputs(resources.Transient.Scene, resources.Transient.GBuffer, resources.Transient.Exposure);
-		resources.RayReconstructionProviderInputs = BuildFrameRayReconstructionProviderInputs(
-		    resources.Transient.Scene,
-		    resources.Transient.GBuffer,
-		    resources.Transient.Lighting,
-		    resources.Transient.Exposure);
-	}
 }

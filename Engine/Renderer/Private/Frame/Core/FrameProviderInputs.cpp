@@ -1,38 +1,15 @@
 #include "../../PCH.h"
 #include "Frame/Core/FrameProviderInputs.h"
 
-FrameAssemblyUpscalerProviderResources BuildFrameUpscalerProviderInputs(
+FrameUpscalerProviderResources BuildFrameUpscalerProviderInputs(
     const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     FrameGraphTextureHandle exposure)
 {
-	return FrameAssemblyUpscalerProviderResources{
+	return FrameUpscalerProviderResources{
 	    .ScalingInputColor = sceneTargets.SceneColor,
 	    .ScalingOutputColor = sceneTargets.FinalSceneColor,
 	    .Depth = sceneTargets.MainDepth,
 	    .MotionVectors = gbuffer.MotionVector,
 	    .Exposure = exposure};
-}
-
-FrameAssemblyRayReconstructionProviderResources BuildFrameRayReconstructionProviderInputs(
-    const SceneRenderTargets& sceneTargets,
-    const GBufferRenderTargets& gbuffer,
-    const LightingRenderTargets& lighting,
-    FrameGraphTextureHandle exposure)
-{
-	return FrameAssemblyRayReconstructionProviderResources{
-	    .Depth = sceneTargets.MainDepth,
-	    .MotionVectors = gbuffer.MotionVector,
-	    .Exposure = exposure,
-	    .Normals = gbuffer.Normal,
-	    .IndirectReconstruction =
-	        {.NoisyIndirectDiffuse = lighting.IndirectDiffuse,
-	         .NoisyIndirectSpecular = lighting.IndirectSpecular,
-	         .DemodulatedIndirectDiffuse = lighting.IndirectDiffuseDemodulatedRadiance,
-	         .DemodulatedIndirectSpecular = lighting.IndirectSpecularDemodulatedRadiance,
-	         .DiffuseAlbedo = lighting.IndirectDiffuseAlbedo,
-	         .SpecularAlbedo = lighting.IndirectSpecularAlbedo,
-	         .MaterialGuide = lighting.IndirectMaterialGuide,
-	         .DiffuseSampleGuide = lighting.IndirectDiffuseSampleGuide,
-	         .SpecularSampleGuide = lighting.IndirectSpecularSampleGuide}};
 }

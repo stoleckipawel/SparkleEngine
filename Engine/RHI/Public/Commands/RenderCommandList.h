@@ -27,6 +27,7 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void SetPipelineState(const RenderPipelineState& pipelineState) noexcept = 0;
 	virtual void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;
 	virtual void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;
+	virtual void ResetBoundState() noexcept = 0;
 	virtual void BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindGraphicsShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindGraphicsUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;

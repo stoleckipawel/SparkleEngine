@@ -3,6 +3,7 @@
 #include "Core/Public/Config/ConfigBackedSettings.h"
 #include "RHI/Public/Presentation/RhiPresentationDefaults.h"
 #include "Renderer/Public/Settings/EngineRenderingDisplayTypes.h"
+#include "Renderer/Public/Settings/EngineRenderingRayReconstructionTypes.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "RendererAPI.h"
 
@@ -29,6 +30,8 @@ struct EngineRenderingSettingsState final
 	std::uint32_t MaxPointLights = 512;
 	std::uint32_t MaxSpotLights = 512;
 	std::uint32_t MaxRectLights = 128;
+	EngineRayReconstructionMode RayReconstructionMode = EngineRayReconstructionMode::Off;
+	EngineRayReconstructionQualityMode RayReconstructionQualityMode = EngineRayReconstructionQualityMode::Quality;
 	bool MeshAutoBatching = true;
 	bool RefitTlas = true;
 	bool PtlasActive = false;
@@ -64,6 +67,8 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigB
 	void SetMaxPointLights(std::uint32_t count);
 	void SetMaxSpotLights(std::uint32_t count);
 	void SetMaxRectLights(std::uint32_t count);
+	void SetRayReconstructionMode(EngineRayReconstructionMode mode);
+	void SetRayReconstructionQualityMode(EngineRayReconstructionQualityMode mode);
 	void SetMeshAutoBatching(bool enabled);
 	void SetRefitTlas(bool enabled);
 	void SetPtlasActive(bool active);

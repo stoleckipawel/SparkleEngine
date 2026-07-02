@@ -46,9 +46,29 @@ struct RendererProviderUpscalerResourceContract final
 	RendererProviderResourceBinding FrameIndex = {};
 };
 
+struct RendererProviderRayReconstructionResourceContract final
+{
+	RendererProviderResourceBinding NoisyInputColor = {};
+	RendererProviderResourceBinding OutputColor = {};
+	RendererProviderResourceBinding Depth = {};
+	RendererProviderResourceBinding MotionVectors = {};
+	RendererProviderResourceBinding Normals = {};
+	RendererProviderResourceBinding Roughness = {};
+	RendererProviderResourceBinding DiffuseAlbedo = {};
+	RendererProviderResourceBinding SpecularAlbedo = {};
+	RendererProviderResourceBinding SpecularHitDistance = {};
+	RendererProviderResourceBinding Exposure = {};
+	RendererProviderResourceBinding History = {};
+	RendererProviderResourceBinding Jitter = {};
+	RendererProviderResourceBinding CameraMatrices = {};
+	RendererProviderResourceBinding FrameIndex = {};
+};
+
 bool HasMissingRequiredProviderResources(const RendererProviderUpscalerResourceContract& contract) noexcept;
+bool HasMissingRequiredProviderResources(const RendererProviderRayReconstructionResourceContract& contract) noexcept;
 
 std::string BuildProviderResourceContractSummary(const RendererProviderUpscalerResourceContract& contract);
+std::string BuildProviderResourceContractSummary(const RendererProviderRayReconstructionResourceContract& contract);
 
 const char* RendererProviderCategoryToString(ERendererProviderCategory category) noexcept;
 const char* RendererProviderCapabilityStateToString(ERendererProviderCapabilityState state) noexcept;

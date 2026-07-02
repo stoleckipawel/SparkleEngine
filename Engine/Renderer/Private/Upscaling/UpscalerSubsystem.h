@@ -25,6 +25,7 @@ class UpscalerSubsystem final
 	void Initialize(
 	    const RhiCapabilities& capabilities,
 	    RhiNativeDeviceQueueInterop nativeInterop,
+	    const UpscalerSettings& settings,
 	    UpscalerPresentationBridge presentationBridge);
 	void SetupFrame(const UpscalerInputContract& inputContract);
 	UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation);

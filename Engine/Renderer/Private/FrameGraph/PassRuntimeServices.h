@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Pipeline/PipelineStateManager.h"
+#include "Providers/RendererImageProviderStack.h"
 
 #include "RHI/Public/Resources/PerFrameConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
-#include "Upscaling/RenderUpscalingPassServices.h"
 
 class TextureManager;
 
@@ -24,7 +24,7 @@ struct PassRuntimeServices
 	bool ExposureHistoryValid = false;
 	const TextureManager* Textures = nullptr;
 	const RenderRayTracingPassServices* RayTracing = nullptr;
-	const RenderUpscalingPassServices* Upscaling = nullptr;
+	const RendererImageProviderPassServices* ImageProviders = nullptr;
 
 	template <typename TPass> const typename TPass::PipelineRuntime& GetPassRuntime() const noexcept
 	{

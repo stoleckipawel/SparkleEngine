@@ -36,3 +36,56 @@ DlssFeatureMatrix CreateStreamlineDlssFeatureMatrix(bool superResolutionSupporte
 	}
 	return matrix;
 }
+
+EDlssFeatureKind GetDlssFeatureForQualityMode(EUpscalerQualityMode qualityMode) noexcept
+{
+	return qualityMode == EUpscalerQualityMode::NativeAA ? EDlssFeatureKind::NativeAA : EDlssFeatureKind::SuperResolution;
+}
+
+std::string BuildDlssFeatureMatrixSummary(const DlssFeatureMatrix& matrix)
+{
+	std::string summary;
+	for (const DlssFeatureMatrixEntry& entry : matrix.Entries)
+	{
+		if (!summary.empty())
+		{
+			summary += ", ";
+		}
+		summary += DlssFeatureKindToString(entry.Feature);
+		summary += "=";
+		summary += DlssFeatureStateToString(entry.State);
+	}
+	return summary;
+}
+
+void MarkSelectedDlssFeature(DlssFeatureMatrix& matrix, EDlssFeatureKind selectedFeature)
+{
+	for (DlssFeatureMatrixEntry& entry : matrix.Entries)
+	{
+		if (entry.Feature == selectedFeature)
+		{
+			if (entry.State == EDlssFeatureState::Available)
+			{
+				entry.State = EDlssFeatureState::Enabled;
+			}
+			continue;
+		}
+
+		if (entry.State == EDlssFeatureState::Available || entry.State == EDlssFeatureState::Enabled)
+		{
+			entry.State = EDlssFeatureState::NotSelected;
+		}
+	}
+}
+
+void MarkDlssFeatureFailedWithFallback(DlssFeatureMatrix& matrix, EDlssFeatureKind feature, std::string_view reason)
+{
+	for (DlssFeatureMatrixEntry& entry : matrix.Entries)
+	{
+		if (entry.Feature == feature)
+		{
+			entry.State = EDlssFeatureState::FailedWithFallback;
+			entry.Reason = std::string(reason);
+		}
+	}
+}

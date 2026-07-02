@@ -2,6 +2,7 @@
 
 #include "Upscaling/NvidiaDlss/StreamlineDlssRuntime.h"
 
+#include <string>
 #include <string_view>
 
 inline constexpr const char* kStreamlineDlssSdkVersion = "2.11.1";
@@ -10,3 +11,7 @@ inline constexpr const char* kStreamlineDlssNotIntegratedReason =
 
 DlssFeatureMatrix CreateUnavailableStreamlineDlssFeatureMatrix(std::string_view reason);
 DlssFeatureMatrix CreateStreamlineDlssFeatureMatrix(bool superResolutionSupported, std::string_view reason);
+EDlssFeatureKind GetDlssFeatureForQualityMode(EUpscalerQualityMode qualityMode) noexcept;
+std::string BuildDlssFeatureMatrixSummary(const DlssFeatureMatrix& matrix);
+void MarkSelectedDlssFeature(DlssFeatureMatrix& matrix, EDlssFeatureKind selectedFeature);
+void MarkDlssFeatureFailedWithFallback(DlssFeatureMatrix& matrix, EDlssFeatureKind feature, std::string_view reason);

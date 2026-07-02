@@ -122,7 +122,7 @@ namespace SparkleLauncher
 			    nvidiaStreamlineEnabled,
 			    {
 			        {"nvidia-nvapi", "NVIDIA NVAPI SDK", "git 9b181ea", "Headers and import library used by D3D12 NVAPI integration and PTLAS capability support.", "sparkle_nvapi-src", {"nvapi.h", "amd64/nvapi64.lib"}},
-			        {"nvidia-streamline", "NVIDIA Streamline SDK", "v2.11.1", "Headers, import library, Streamline plugins, and DLSS runtime redistributables.", "streamline-sdk-src", {"include/sl.h", "lib/x64/sl.interposer.lib", "bin/x64/sl.interposer.dll", "bin/x64/sl.common.dll", "bin/x64/sl.dlss.dll", "bin/x64/nvngx_dlss.dll"}},
+			        {"nvidia-streamline", "NVIDIA Streamline SDK", "v2.11.1", "Headers, import library, Streamline plugins, and DLSS runtime redistributables.", "streamline-sdk-src", {"include/sl.h", "lib/x64/sl.interposer.lib", "bin/x64/sl.interposer.dll", "bin/x64/sl.common.dll", "bin/x64/sl.dlss.dll", "bin/x64/sl.dlss_d.dll", "bin/x64/nvngx_dlss.dll", "bin/x64/nvngx_dlssd.dll"}},
 			    }});
 			return entries;
 		}();

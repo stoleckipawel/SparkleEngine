@@ -873,7 +873,7 @@ sparkle_log_dependency_ready("Font Awesome" "${SPARKLE_FONT_AWESOME_SOLID_TTF}" 
 # out of source and cache it under build/_deps so fresh syncs are reproducible.
 # ============================================================================
 if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
-    sparkle_log_dependency_step(12 12 "NVIDIA Streamline SDK" "v2.11.1" "~217 MB" "DLSS external upscaler SDK headers, import library, and runtime DLLs" "https://github.com/NVIDIA-RTX/Streamline/releases")
+    sparkle_log_dependency_step(12 12 "NVIDIA Streamline SDK" "v2.11.1" "~217 MB" "DLSS external provider SDK headers, import library, and runtime DLLs" "https://github.com/NVIDIA-RTX/Streamline/releases")
 
     set(_sparkle_streamline_url "https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.11.1/streamline-sdk-v2.11.1.zip")
     set(_sparkle_streamline_zip "${FETCHCONTENT_BASE_DIR}/streamline-sdk-v2.11.1.zip")
@@ -884,7 +884,9 @@ if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
         "bin/x64/sl.interposer.dll"
         "bin/x64/sl.common.dll"
         "bin/x64/sl.dlss.dll"
+        "bin/x64/sl.dlss_d.dll"
         "bin/x64/nvngx_dlss.dll"
+        "bin/x64/nvngx_dlssd.dll"
     )
 
     sparkle_ensure_archive_dependency(
@@ -913,8 +915,10 @@ if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
         "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.interposer.dll"
         "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.common.dll"
         "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.dlss.dll"
+        "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.dlss_d.dll"
         "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/nvngx_dlss.dll"
-        CACHE STRING "NVIDIA Streamline DLSS Super Resolution runtime DLLs staged beside Sparkle products."
+        "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/nvngx_dlssd.dll"
+        CACHE STRING "NVIDIA Streamline DLSS SR and Ray Reconstruction runtime DLLs staged beside Sparkle products."
         FORCE
     )
 

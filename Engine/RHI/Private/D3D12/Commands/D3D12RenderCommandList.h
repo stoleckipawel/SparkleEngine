@@ -22,6 +22,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void SetPipelineState(const RenderPipelineState& pipelineState) noexcept override;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
 	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
+	void ResetBoundState() noexcept override;
 	void BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
 	void BindGraphicsShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
 	void BindGraphicsUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;

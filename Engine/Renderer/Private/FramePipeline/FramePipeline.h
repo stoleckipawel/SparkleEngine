@@ -102,4 +102,5 @@ class FramePipeline final
 	bool m_bResizePending = false;
 	bool m_exposureHistoryValid = false;
 	FrameRenderPath m_renderPath = FrameRenderPath::RealtimeDeferred;
+	std::uint32_t m_imageProviderFrameGraphKey = 0;
 };

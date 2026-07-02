@@ -371,7 +371,8 @@ namespace SparkleLauncher
 		}
 		if ((operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files") &&
 		    (statusText.contains("NVIDIA Streamline SDK", Qt::CaseInsensitive) || statusText.contains("sl.interposer.lib", Qt::CaseInsensitive) ||
-		     statusText.contains("sl.dlss.dll", Qt::CaseInsensitive) || statusText.contains("nvngx_dlss.dll", Qt::CaseInsensitive)))
+		     statusText.contains("sl.dlss.dll", Qt::CaseInsensitive) || statusText.contains("sl.dlss_d.dll", Qt::CaseInsensitive) ||
+		     statusText.contains("nvngx_dlss.dll", Qt::CaseInsensitive) || statusText.contains("nvngx_dlssd.dll", Qt::CaseInsensitive)))
 		{
 			return "Sync fetches the NVIDIA Streamline SDK automatically. If this still fails after retry, verify network access to GitHub releases, then clean the source dependency cache and run Prepare Workspace again.";
 		}

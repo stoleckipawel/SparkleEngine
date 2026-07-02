@@ -1,16 +1,10 @@
 #pragma once
 
-#include "Frame/Core/FrameAssembly.h"
+#include "Frame/Core/FrameProviderResources.h"
 #include "Frame/Targets/FrameRenderTargets.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 
-FrameAssemblyUpscalerProviderResources BuildFrameUpscalerProviderInputs(
+FrameUpscalerProviderResources BuildFrameUpscalerProviderInputs(
     const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
-    FrameGraphTextureHandle exposure);
-
-FrameAssemblyRayReconstructionProviderResources BuildFrameRayReconstructionProviderInputs(
-    const SceneRenderTargets& sceneTargets,
-    const GBufferRenderTargets& gbuffer,
-    const LightingRenderTargets& lighting,
     FrameGraphTextureHandle exposure);

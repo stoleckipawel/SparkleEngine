@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frame/Core/FrameProviderResources.h"
 #include "Frame/Reference/ReferenceRenderTargets.h"
 #include "Frame/RayTracing/RayTracingSceneFrameGraphResources.h"
 #include "Frame/Targets/FrameRenderTargets.h"
@@ -35,37 +36,6 @@ struct FrameAssemblyHistoryResources final
 	bool HasExposureHistory() const noexcept { return PreviousExposure.IsValid() && CurrentExposure.IsValid(); }
 };
 
-struct FrameAssemblyUpscalerProviderResources final
-{
-	FrameGraphTextureHandle ScalingInputColor = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle ScalingOutputColor = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle Depth = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle MotionVectors = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
-};
-
-struct FrameAssemblyIndirectReconstructionProviderResources final
-{
-	FrameGraphTextureHandle NoisyIndirectDiffuse = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle NoisyIndirectSpecular = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle DemodulatedIndirectDiffuse = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle DemodulatedIndirectSpecular = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle DiffuseAlbedo = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle SpecularAlbedo = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle MaterialGuide = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle DiffuseSampleGuide = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle SpecularSampleGuide = FrameGraphTextureHandle::Invalid();
-};
-
-struct FrameAssemblyRayReconstructionProviderResources final
-{
-	FrameGraphTextureHandle Depth = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle MotionVectors = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle Normals = FrameGraphTextureHandle::Invalid();
-	FrameAssemblyIndirectReconstructionProviderResources IndirectReconstruction = {};
-};
-
 struct FrameAssemblyViewportProducts final
 {
 	FrameGraphTextureHandle SceneColor = FrameGraphTextureHandle::Invalid();
@@ -82,7 +52,8 @@ struct FrameAssemblyResourceLayout final
 	FrameAssemblyTransientResources Transient = {};
 	FrameAssemblyPersistentResources Persistent = {};
 	FrameAssemblyHistoryResources History = {};
-	FrameAssemblyUpscalerProviderResources UpscalerProviderInputs = {};
-	FrameAssemblyRayReconstructionProviderResources RayReconstructionProviderInputs = {};
+	FrameUpscalerProviderResources UpscalerProviderInputs = {};
+	FrameRayReconstructionProviderResources RayReconstructionProviderInputs = {};
 	FrameAssemblyViewportProducts ViewportProducts = {};
+	bool FinalSceneColorProduced = false;
 };

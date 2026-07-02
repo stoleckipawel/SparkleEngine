@@ -136,6 +136,24 @@ void VulkanRenderCommandList::SetComputeBindingLayout(const RenderBindingLayout&
 	m_computeBoundDescriptorSets.assign(m_computeDescriptorSets.size(), false);
 }
 
+void VulkanRenderCommandList::ResetBoundState() noexcept
+{
+	EndDynamicRenderingIfNeeded();
+	m_graphicsBindingLayout = nullptr;
+	m_computeBindingLayout = nullptr;
+	m_graphicsPipelineLayout = VK_NULL_HANDLE;
+	m_computePipelineLayout = VK_NULL_HANDLE;
+	m_graphicsDescriptorSets.clear();
+	m_computeDescriptorSets.clear();
+	m_graphicsDirtyDescriptorSets.clear();
+	m_computeDirtyDescriptorSets.clear();
+	m_graphicsBoundDescriptorSets.clear();
+	m_computeBoundDescriptorSets.clear();
+	m_retainedDescriptorTables.clear();
+	m_retainedDescriptorHandles.clear();
+	m_retainedDescriptorBuffers.clear();
+}
+
 void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	const CompiledBinding* const binding = FindBindingByIndex(m_graphicsBindingLayout, bindingIndex);

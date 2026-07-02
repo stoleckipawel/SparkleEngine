@@ -3,9 +3,8 @@
 
 #include "Host/RendererSystemRoot.h"
 #include "Pipeline/PipelineStateManager.h"
+#include "Providers/RendererImageProviderStack.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Upscaling/UpscalerProvider.h"
-#include "Upscaling/UpscalerSubsystem.h"
 
 #include <numeric>
 
@@ -73,30 +72,6 @@ namespace
 			    return total + allocator.Allocated;
 		    });
 	}
-
-	RendererProviderDiagnosticsSnapshot BuildProviderSnapshot(const UpscalerSubsystem* upscalerSubsystem)
-	{
-		if (upscalerSubsystem == nullptr)
-		{
-			return RendererProviderDiagnosticsSnapshot{};
-		}
-
-		const UpscalerProviderCapabilities& provider = upscalerSubsystem->GetDiagnostics();
-		return RendererProviderDiagnosticsSnapshot{
-		    .Status = ERendererDiagnosticStatus::Available,
-		    .RequestedProvider = UpscalerProviderKindToString(upscalerSubsystem->GetRequestedProviderKind()),
-		    .ActiveProvider = provider.ProviderName.empty() ? std::string(upscalerSubsystem->GetActiveProvider().GetName()) :
-		                                                      provider.ProviderName,
-		    .Category = RendererProviderCategoryToString(provider.Category),
-		    .CapabilityState = RendererProviderCapabilityStateToString(provider.CapabilityState),
-		    .FailureDomain = UpscalerProviderFailureDomainToString(provider.FailureDomain),
-		    .CanEvaluate = provider.CanEvaluate,
-		    .UsesExternalSdk = provider.UsesExternalSdk,
-		    .RuntimeVersion = provider.ExternalRuntimeVersion,
-		    .RuntimeState = provider.RuntimeState,
-		    .ResourceContract = provider.ResourceContractSummary,
-		    .Reason = provider.Reason};
-	}
 }
 
 RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const RendererSystemRoot& systems)
@@ -128,7 +103,7 @@ RendererDiagnosticsSnapshot RendererDiagnosticsCollector::Capture(const Renderer
 	snapshot.Descriptors = renderHardware.GetDescriptorService().CaptureDescriptorUsageSnapshot();
 	snapshot.UploadPressure = BuildUploadPressureSnapshot(snapshot.Memory);
 	snapshot.Pipeline = systems.GetPipelineStateManager().CaptureDiagnosticsSnapshot();
-	snapshot.Provider = BuildProviderSnapshot(systems.GetUpscalerSubsystem());
+	snapshot.Provider = systems.GetImageProviders().CaptureUpscalerDiagnosticsSnapshot();
 
 	snapshot.Metrics.push_back(
 	    RendererDiagnosticMetric{

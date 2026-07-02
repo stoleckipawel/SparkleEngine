@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/Core/FrameAssembly.h"
+#include "Frame/Core/FrameProviderResources.h"
 #include "Frame/Targets/FrameRenderTargets.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Upscaling/UpscalerInputContract.h"
@@ -10,7 +10,7 @@
 class FrameGraphBuilder;
 
 UpscalerInputContract BuildFrameUpscalerInputContract(
-    const FrameAssemblyUpscalerProviderResources& providerInputs,
+    const FrameUpscalerProviderResources& providerInputs,
     RenderViewportExtent sceneExtent,
     std::uint64_t frameIndex,
     const PerViewCameraConstantBufferData& camera,

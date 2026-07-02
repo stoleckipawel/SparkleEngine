@@ -12,12 +12,14 @@
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
+#include "Frame/Lighting/IndirectReconstruction.h"
 #include "Frame/Presentation/Upscaling.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Host/RendererSystemRoot.h"
 #include "Pipeline/PipelineStateManager.h"
+#include "Providers/RendererImageProviderStack.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
@@ -30,8 +32,6 @@
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
-#include "Upscaling/RenderUpscalingPassServices.h"
-#include "Upscaling/UpscalerSubsystem.h"
 #include "Window/Window.h"
 
 FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
@@ -118,6 +118,7 @@ void FramePipeline::InitializeFrameGraph(RenderViewportExtent sceneExtent) noexc
 	m_frameGraphSceneExtent = dependencies.sceneExtent;
 	m_frameResources = buildResult.Resources;
 	m_renderPath = buildResult.RenderPath;
+	m_imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	m_frameGraph = std::move(buildResult.Graph);
 }
 
@@ -147,10 +148,7 @@ void FramePipeline::RefreshFrameExecution(RenderViewportExtent sceneExtent) noex
 
 	m_frameGraph.reset();
 	InitializeFrameGraph(sceneExtent);
-	if (UpscalerSubsystem* upscalerSubsystem = m_systems->GetUpscalerSubsystem())
-	{
-		upscalerSubsystem->OnResize(m_frameGraphSceneExtent, m_frameGraphSceneExtent);
-	}
+	m_systems->GetImageProviders().OnResize(m_frameGraphSceneExtent, m_frameGraphSceneExtent);
 }
 
 void FramePipeline::BeginFrame() noexcept
@@ -158,17 +156,13 @@ void FramePipeline::BeginFrame() noexcept
 	SPARKLE_CPU_SCOPE("Renderer.BeginFrame");
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	TemporalDataBuilder& temporalDataBuilder = m_systems->GetTemporalDataBuilder();
-	UpscalerSubsystem* upscalerSubsystem = m_systems->GetUpscalerSubsystem();
 
 	if (m_bResizePending)
 	{
 		m_bResizePending = false;
 		temporalDataBuilder.ResetHistory("Window resize");
 		ResetExposureHistory();
-		if (upscalerSubsystem != nullptr)
-		{
-			upscalerSubsystem->ResetHistory("Window resize");
-		}
+		m_systems->GetImageProviders().ResetHistory("Window resize");
 
 		if (m_systems->GetWindow().HasValidSize())
 		{
@@ -183,10 +177,7 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		temporalDataBuilder.ResetHistory("Scene extent changed");
 		ResetExposureHistory();
-		if (upscalerSubsystem != nullptr)
-		{
-			upscalerSubsystem->ResetHistory("Scene extent changed");
-		}
+		m_systems->GetImageProviders().ResetHistory("Scene extent changed");
 		RefreshFrameExecution(sceneExtent);
 	}
 
@@ -195,11 +186,19 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		temporalDataBuilder.ResetHistory("Render path changed");
 		ResetExposureHistory();
-		if (upscalerSubsystem != nullptr)
-		{
-			upscalerSubsystem->ResetHistory("Render path changed");
-		}
+		m_systems->GetImageProviders().ResetHistory("Render path changed");
 		RefreshFrameExecution(sceneExtent);
+	}
+
+	const std::uint32_t imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
+	if (imageProviderFrameGraphKey != m_imageProviderFrameGraphKey)
+	{
+		temporalDataBuilder.ResetHistory("Image provider graph mode changed");
+		ResetExposureHistory();
+		m_systems->RefreshImageProviders();
+		RefreshFrameExecution(sceneExtent);
+		m_systems->GetImageProviders().ResetHistory("Image provider graph mode changed");
+		m_imageProviderFrameGraphKey = imageProviderFrameGraphKey;
 	}
 
 	backend.BeginFrame();
@@ -292,8 +291,7 @@ void FramePipeline::RecordFrame() noexcept
 	}
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
-	if (UpscalerSubsystem* upscalerSubsystem = m_systems->GetUpscalerSubsystem();
-	    upscalerSubsystem != nullptr && m_frameResources.UpscalerProviderInputs.ScalingInputColor.IsValid())
+	if (m_frameResources.UpscalerProviderInputs.ScalingInputColor.IsValid())
 	{
 		const UpscalerInputContract upscalerInputContract = BuildFrameUpscalerInputContract(
 		    m_frameResources.UpscalerProviderInputs,
@@ -302,7 +300,19 @@ void FramePipeline::RecordFrame() noexcept
 		    frame.mainView.perViewData.Camera,
 		    frame.mainView.perTemporalData,
 		    frame.mainView.temporalState);
-		upscalerSubsystem->SetupFrame(upscalerInputContract);
+		m_systems->GetImageProviders().SetupUpscalerFrame(upscalerInputContract);
+	}
+
+	if (m_frameResources.RayReconstructionProviderInputs.NoisyInputColor.IsValid())
+	{
+		const RayReconstructionInputContract reconstructionInputContract = BuildFrameIndirectRayReconstructionInputContract(
+		    m_frameResources.RayReconstructionProviderInputs,
+		    m_frameGraphSceneExtent,
+		    m_systems->GetTimer().GetFrameCount(),
+		    frame.mainView.perViewData.Camera,
+		    frame.mainView.perTemporalData,
+		    frame.mainView.temporalState);
+		m_systems->GetImageProviders().SetupRayReconstructionFrame(reconstructionInputContract);
 	}
 
 	if (m_frameGraph != nullptr && m_frameResources.Persistent.SceneTlas.IsValid())
@@ -357,8 +367,7 @@ void FramePipeline::RecordFrame() noexcept
 	    .ShadowSettings = m_systems->GetRayTracedShadowSettings(),
 	    .IndirectDiffuseSettings = &indirectDiffuseSettings,
 	    .IndirectSpecularSettings = &indirectSpecularSettings};
-	const RenderUpscalingPassServices upscalingPassServices{
-	    .Subsystem = m_systems->GetUpscalerSubsystem()};
+	const RendererImageProviderPassServices imageProviderPassServices = m_systems->GetImageProviders().BuildPassServices();
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
 	    .RuntimeManager = m_systems->GetPipelineStateManager(),
@@ -366,7 +375,7 @@ void FramePipeline::RecordFrame() noexcept
 	    .ExposureHistoryValid = m_exposureHistoryValid,
 	    .Textures = &m_systems->GetTextureManager(),
 	    .RayTracing = &rayTracingPassServices,
-	    .Upscaling = &upscalingPassServices};
+	    .ImageProviders = &imageProviderPassServices};
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
 	auto gpuFrameScope =

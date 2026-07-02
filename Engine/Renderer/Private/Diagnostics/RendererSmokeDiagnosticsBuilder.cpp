@@ -5,10 +5,9 @@
 #include "Diagnostics/RendererSmokeRayTracingSnapshotBuilder.h"
 #include "FramePipeline/FramePipeline.h"
 #include "Host/RendererSystemRoot.h"
+#include "Providers/RendererImageProviderStack.h"
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Upscaling/UpscalerProvider.h"
-#include "Upscaling/UpscalerSubsystem.h"
 
 namespace
 {
@@ -40,15 +39,10 @@ namespace
 
 	void FillUpscalerDiagnostics(RendererSmokeDiagnosticsSnapshot& snapshot, const RendererSystemRoot& systems)
 	{
-		const UpscalerSubsystem* upscalerSubsystem = systems.GetUpscalerSubsystem();
-		if (upscalerSubsystem == nullptr)
-		{
-			return;
-		}
-
-		const UpscalerProviderCapabilities upscalerDiagnostics = upscalerSubsystem->GetDiagnostics();
-		snapshot.Upscaler.Provider = upscalerDiagnostics.ProviderName;
-		snapshot.Upscaler.Status = RendererProviderCapabilityStateToString(upscalerDiagnostics.CapabilityState);
+		const RendererProviderDiagnosticsSnapshot upscalerDiagnostics =
+		    systems.GetImageProviders().CaptureUpscalerDiagnosticsSnapshot();
+		snapshot.Upscaler.Provider = upscalerDiagnostics.ActiveProvider;
+		snapshot.Upscaler.Status = upscalerDiagnostics.CapabilityState;
 		snapshot.Upscaler.Reason = upscalerDiagnostics.Reason;
 	}
 }

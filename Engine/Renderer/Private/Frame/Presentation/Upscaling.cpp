@@ -11,7 +11,7 @@
 #include "Upscaling/UpscalerSubsystem.h"
 
 UpscalerInputContract BuildFrameUpscalerInputContract(
-    const FrameAssemblyUpscalerProviderResources& providerInputs,
+    const FrameUpscalerProviderResources& providerInputs,
     RenderViewportExtent sceneExtent,
     std::uint64_t frameIndex,
     const PerViewCameraConstantBufferData& camera,
@@ -57,9 +57,10 @@ void AddUpscalerEvaluationPass(
 		        .FailureDomain = EUpscalerProviderFailureDomain::Backend,
 		        .Reason = "No upscaler runtime service was provided."};
 
-		    if (context.RuntimeServices.Upscaling != nullptr && context.RuntimeServices.Upscaling->Subsystem != nullptr)
+		    if (context.RuntimeServices.ImageProviders != nullptr &&
+		        context.RuntimeServices.ImageProviders->Upscaling.Subsystem != nullptr)
 		    {
-			    result = context.RuntimeServices.Upscaling->Subsystem->Evaluate(
+			    result = context.RuntimeServices.ImageProviders->Upscaling.Subsystem->Evaluate(
 			        UpscalerEvaluationDesc{
 			            .ScalingInputColor = ToRenderProductHandle(sceneTargets.SceneColor),
 			            .Depth = ToRenderProductHandle(sceneTargets.MainDepth),

@@ -113,6 +113,10 @@ void D3D12RenderCommandList::SetComputeBindingLayout(const RenderBindingLayout& 
 	m_commandList->SetComputeRootSignature(nativeBindingLayout.GetRootSignature().GetRaw());
 }
 
+void D3D12RenderCommandList::ResetBoundState() noexcept
+{
+}
+
 void D3D12RenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	if (m_commandList != nullptr)

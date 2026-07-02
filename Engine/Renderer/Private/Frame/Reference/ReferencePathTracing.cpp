@@ -74,4 +74,5 @@ void AddReferenceRenderingPasses(
 	    "ReferenceSceneColorToFinalSceneColor",
 	    resources.Transient.Scene.FinalSceneColor,
 	    resources.Transient.Reference.ReferenceSceneColor);
+	resources.FinalSceneColorProduced = true;
 }

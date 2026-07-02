@@ -3,6 +3,7 @@
 
 #include "Frame/Lighting/DirectLighting.h"
 #include "Frame/Lighting/IndirectLighting.h"
+#include "Frame/Lighting/IndirectReconstruction.h"
 #include "Frame/Lighting/LightingComposite.h"
 #include "Frame/Lighting/LightingRenderTargets.h"
 #include "Frame/Lighting/LightingTargetClear.h"
@@ -30,4 +31,5 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	AddIndirectLightingPasses(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.Persistent.SceneTlas);
 	AddLightingCompositePass(builder, resources.Transient.Scene, resources.Transient.Lighting, resources.Transient.GBuffer);
 	AddSkyPass(builder, resources.Transient.Scene, resources.Transient.GBuffer);
+	AddIndirectRayReconstructionPassIfEnabled(builder, sceneExtent, resources);
 }

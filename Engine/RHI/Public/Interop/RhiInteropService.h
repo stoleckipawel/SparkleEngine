@@ -14,7 +14,8 @@ enum class ERhiNativeInteropConsumer : std::uint8_t
 	Validation = 1,
 	UpscalerProvider = 2,
 	RendererFrameGraph = 3,
-	PresentationBridge = 4
+	PresentationBridge = 4,
+	RayReconstructionProvider = 5
 };
 
 struct RhiNativeInteropRequest final

@@ -11,6 +11,7 @@
 #include "Level/LevelManager.h"
 #include "Meshes/GPUMeshCache.h"
 #include "Pipeline/PipelineStateManager.h"
+#include "Providers/RendererImageProviderStack.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -26,21 +27,8 @@
 #include "Settings/RenderDeviceSettingsResolver.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
-#include "Upscaling/UpscalerSubsystem.h"
 #include "Upscaling/UpscalingStartupDiagnostics.h"
 #include "Window/Window.h"
-
-namespace
-{
-	bool UpgradePresentationInterfaceThroughRhi(
-	    RhiNativeInterfaceUpgradeCallback callback,
-	    void* callbackUserData,
-	    void* bridgeUserData)
-	{
-		RenderHardwareInterface* const hardware = static_cast<RenderHardwareInterface*>(bridgeUserData);
-		return hardware != nullptr && hardware->GetInteropService().UpgradePresentationInterface(callback, callbackUserData);
-	}
-}
 
 RendererSystemRoot::RendererSystemRoot(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
     m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
@@ -51,9 +39,9 @@ RendererSystemRoot::RendererSystemRoot(Timer& timer, GameScene& gameScene, Windo
 
 RendererSystemRoot::~RendererSystemRoot() noexcept
 {
-	if (m_upscalerSubsystem != nullptr)
+	if (m_imageProviders != nullptr)
 	{
-		m_upscalerSubsystem->Shutdown();
+		m_imageProviders->Shutdown();
 	}
 
 	if (m_backend != nullptr)
@@ -131,6 +119,23 @@ void RendererSystemRoot::PostLoad() noexcept
 	m_backend->CloseExecuteAndFlushCurrentFrame();
 }
 
+void RendererSystemRoot::RefreshImageProviders() noexcept
+{
+	if (m_backend == nullptr)
+	{
+		return;
+	}
+
+	m_backend->Flush();
+	m_imageProviders->Refresh(GetRenderHardwareInterface());
+}
+
+void RendererSystemRoot::InitializeImageProviders(RenderHardwareInterface& renderHardware) noexcept
+{
+	m_imageProviders = std::make_unique<RendererImageProviderStack>();
+	m_imageProviders->Initialize(renderHardware);
+}
+
 void RendererSystemRoot::InitializeCoreSystems() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.InitializeCoreSystems");
@@ -153,17 +158,8 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
 	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
 	LogUpscalingStartupDiagnostics(GetRenderHardwareInterface().GetCapabilities());
-	m_upscalerSubsystem = std::make_unique<UpscalerSubsystem>();
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
-	m_upscalerSubsystem->Initialize(
-	    renderHardware.GetCapabilities(),
-	    renderHardware.GetInteropService().GetDeviceQueueInterop(
-	        RhiNativeInteropRequest{
-	            .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
-	            .Reason = "Renderer upscaler provider initialization"}),
-	    UpscalerPresentationBridge{
-	        .UpgradePresentationInterface = &UpgradePresentationInterfaceThroughRhi,
-	        .UserData = &renderHardware});
+	InitializeImageProviders(renderHardware);
 	m_rayTracedShadowSettings = std::make_unique<RayTracedShadowSettings>(BuildRayTracedShadowSettingsFromCVars());
 	LogRayTracedShadowSettingsOnce(*m_rayTracedShadowSettings, rayTracingCapabilities);
 	LogIndirectSpecularSettingsOnce(BuildIndirectSpecularSettingsFromCVars(), rayTracingCapabilities);

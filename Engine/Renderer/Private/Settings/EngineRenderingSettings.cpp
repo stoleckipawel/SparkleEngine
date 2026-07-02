@@ -7,6 +7,7 @@
 #include "Settings/EngineRenderingDisplaySettings.h"
 #include "Settings/EngineRenderingGeometrySettings.h"
 #include "Settings/EngineRenderingLightingSettings.h"
+#include "Settings/EngineRenderingRayReconstructionSettings.h"
 #include "Settings/EngineRenderingRayTracingSettings.h"
 
 #include <sstream>
@@ -225,6 +226,28 @@ void EngineRenderingSettingsSection::SetMaxRectLights(std::uint32_t count)
 	UpdateState(state);
 }
 
+void EngineRenderingSettingsSection::SetRayReconstructionMode(EngineRayReconstructionMode mode)
+{
+	EngineRenderingSettingsState state = GetState();
+	if (state.RayReconstructionMode == mode)
+	{
+		return;
+	}
+	state.RayReconstructionMode = mode;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetRayReconstructionQualityMode(EngineRayReconstructionQualityMode mode)
+{
+	EngineRenderingSettingsState state = GetState();
+	if (state.RayReconstructionQualityMode == mode)
+	{
+		return;
+	}
+	state.RayReconstructionQualityMode = mode;
+	UpdateState(state);
+}
+
 void EngineRenderingSettingsSection::SetMeshAutoBatching(bool enabled)
 {
 	EngineRenderingSettingsState state = GetState();
@@ -346,6 +369,7 @@ EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState
 	EngineRenderingDisplaySettings::Capture(state);
 	EngineRenderingLightingSettings::Capture(state);
 	EngineRenderingGeometrySettings::Capture(state);
+	EngineRenderingRayReconstructionSettings::Capture(state);
 	EngineRenderingRayTracingSettings::Capture(state);
 	return state;
 }
@@ -355,6 +379,7 @@ void EngineRenderingSettingsSection::ApplyStateToRuntime(const EngineRenderingSe
 	EngineRenderingDisplaySettings::Apply(state);
 	EngineRenderingLightingSettings::Apply(state);
 	EngineRenderingGeometrySettings::Apply(state);
+	EngineRenderingRayReconstructionSettings::Apply(state);
 	EngineRenderingRayTracingSettings::Apply(state);
 }
 
@@ -366,6 +391,7 @@ void EngineRenderingSettingsSection::ReadConfigValue(
 	if (EngineRenderingDisplaySettings::ReadConfigValue(state, key, value) ||
 	    EngineRenderingLightingSettings::ReadConfigValue(state, key, value) ||
 	    EngineRenderingGeometrySettings::ReadConfigValue(state, key, value) ||
+	    EngineRenderingRayReconstructionSettings::ReadConfigValue(state, key, value) ||
 	    EngineRenderingRayTracingSettings::ReadConfigValue(state, key, value))
 	{
 		return;
@@ -380,6 +406,7 @@ std::vector<std::pair<std::string, std::string>> EngineRenderingSettingsSection:
 	EngineRenderingDisplaySettings::AppendConfigValues(state, values);
 	EngineRenderingLightingSettings::AppendConfigValues(state, values);
 	EngineRenderingGeometrySettings::AppendConfigValues(state, values);
+	EngineRenderingRayReconstructionSettings::AppendConfigValues(state, values);
 	EngineRenderingRayTracingSettings::AppendConfigValues(state, values);
 	return values;
 }

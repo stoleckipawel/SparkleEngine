@@ -2,6 +2,8 @@
 #include "Upscaling/NvidiaDlss/StreamlineDlssResourceTags.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
+#include "Streamline/StreamlineResourceInterop.h"
+
 #include <array>
 
 namespace
@@ -12,34 +14,6 @@ namespace
 	constexpr std::uint32_t kD3D12ResourceStatePixelShaderResource = 0x00000080u;
 	constexpr std::uint32_t kD3D12ResourceStateCopySource = 0x00000800u;
 
-	sl::SubresourceRange BuildStreamlineSubresourceRange(const NativeTextureViewInfo& view) noexcept
-	{
-		sl::SubresourceRange range{};
-		range.aspectMask = view.SubresourceAspectMask;
-		range.baseMipLevel = view.SubresourceBaseMipLevel;
-		range.levelCount = view.SubresourceLevelCount;
-		range.baseArrayLayer = view.SubresourceBaseArrayLayer;
-		range.layerCount = view.SubresourceLayerCount;
-		return range;
-	}
-
-	sl::Resource BuildVulkanStreamlineTextureResource(const NativeTextureViewInfo& view) noexcept
-	{
-		sl::Resource resource{
-		    sl::ResourceType::eTex2d,
-		    view.Resource.Value,
-		    nullptr,
-		    view.View.Value,
-		    view.NativeState};
-		resource.width = view.Width;
-		resource.height = view.Height;
-		resource.nativeFormat = view.NativeFormat;
-		resource.mipLevels = view.MipLevels;
-		resource.arrayLayers = view.ArrayLayers;
-		resource.flags = view.NativeFlags;
-		resource.usage = view.NativeUsage;
-		return resource;
-	}
 }
 
 sl::Result TagDlssResourcesForFrame(
@@ -49,23 +23,23 @@ sl::Result TagDlssResourcesForFrame(
 {
 	sl::Extent renderExtent{.top = 0, .left = 0, .width = evaluation.RenderExtent.Width, .height = evaluation.RenderExtent.Height};
 	sl::Extent outputExtent{.top = 0, .left = 0, .width = evaluation.OutputExtent.Width, .height = evaluation.OutputExtent.Height};
-	sl::Resource colorIn = evaluation.BackendApi == ERhiBackendApi::Vulkan ?
-	                           BuildVulkanStreamlineTextureResource(evaluation.NativeScalingInputColorView) :
-	                           sl::Resource{sl::ResourceType::eTex2d, evaluation.NativeScalingInputColor.Value, kD3D12ResourceStateCopySource};
-	sl::Resource colorOut =
-	    evaluation.BackendApi == ERhiBackendApi::Vulkan ?
-	        BuildVulkanStreamlineTextureResource(evaluation.NativeScalingOutputColorView) :
-	        sl::Resource{sl::ResourceType::eTex2d, evaluation.NativeScalingOutputColor.Value, kD3D12ResourceStateUnorderedAccess};
-	sl::Resource depth = evaluation.BackendApi == ERhiBackendApi::Vulkan ?
-	                         BuildVulkanStreamlineTextureResource(evaluation.NativeDepthView) :
-	                         sl::Resource{sl::ResourceType::eTex2d, evaluation.NativeDepth.Value, kD3D12ResourceStateDepthRead};
-	sl::Resource motionVectors =
-	    evaluation.BackendApi == ERhiBackendApi::Vulkan ?
-	        BuildVulkanStreamlineTextureResource(evaluation.NativeMotionVectorsView) :
-	        sl::Resource{
-	            sl::ResourceType::eTex2d,
-	            evaluation.NativeMotionVectors.Value,
-	            kD3D12ResourceStateNonPixelShaderResource | kD3D12ResourceStatePixelShaderResource};
+	sl::Resource colorIn = BuildStreamlineTextureResource(
+	    evaluation.BackendApi,
+	    evaluation.NativeScalingInputColor,
+	    evaluation.NativeScalingInputColorView,
+	    kD3D12ResourceStateCopySource);
+	sl::Resource colorOut = BuildStreamlineTextureResource(
+	    evaluation.BackendApi,
+	    evaluation.NativeScalingOutputColor,
+	    evaluation.NativeScalingOutputColorView,
+	    kD3D12ResourceStateUnorderedAccess);
+	sl::Resource depth =
+	    BuildStreamlineTextureResource(evaluation.BackendApi, evaluation.NativeDepth, evaluation.NativeDepthView, kD3D12ResourceStateDepthRead);
+	sl::Resource motionVectors = BuildStreamlineTextureResource(
+	    evaluation.BackendApi,
+	    evaluation.NativeMotionVectors,
+	    evaluation.NativeMotionVectorsView,
+	    kD3D12ResourceStateNonPixelShaderResource | kD3D12ResourceStatePixelShaderResource);
 	sl::SubresourceRange colorInRange = BuildStreamlineSubresourceRange(evaluation.NativeScalingInputColorView);
 	sl::SubresourceRange colorOutRange = BuildStreamlineSubresourceRange(evaluation.NativeScalingOutputColorView);
 	sl::SubresourceRange depthRange = BuildStreamlineSubresourceRange(evaluation.NativeDepthView);

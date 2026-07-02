@@ -22,11 +22,12 @@ void UpscalerSubsystem::RefreshDiagnostics(IUpscalerProvider* provider) noexcept
 void UpscalerSubsystem::Initialize(
     const RhiCapabilities& capabilities,
     RhiNativeDeviceQueueInterop nativeInterop,
+    const UpscalerSettings& settings,
     UpscalerPresentationBridge presentationBridge)
 {
 	m_nativeInterop = nativeInterop;
 	m_presentationBridge = presentationBridge;
-	m_settings = BuildUpscalerSettingsFromCVars();
+	m_settings = settings;
 	m_activeProvider = CreateProvider(m_settings.RequestedProvider);
 	if (m_activeProvider == nullptr)
 	{

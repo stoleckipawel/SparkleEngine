@@ -264,6 +264,14 @@ Acceptance criteria:
 - Reference compliance note maps feature query, resource tags, constants, dispatch/evaluate, and fallback behavior to Streamline and AMD-style provider patterns.
 - Reuse/DRY note names which DLSS/Streamline primitives were shared and which were intentionally kept separate.
 
+Implementation note:
+
+- Implemented as a separate ray-reconstruction provider path: `RayReconstructionInputContract`, `RayReconstructionSubsystem`, `RayReconstructionEvaluation`, and `NvidiaDlssRayReconstructionProvider`. `UpscalerInputContract` remains DLSS-SR/DLAA-only.
+- Streamline mapping follows the DLRR programming guide: `sl::kFeatureDLSS_RR` feature load/query, `slDLSSDSetOptions`, shared `sl::Constants`, frame resource tags for noisy HDR color, output color, albedo/specular albedo, normals, roughness, depth, motion vectors, specular hit distance, and exposure, then `slEvaluateFeature`.
+- AMD-style provider staging is preserved: noisy signal generation and reconstruction are distinct graph stages, and failure falls back to the unreconstructed HDR color before exposure/presentation.
+- Shared primitives: Streamline texture resource/subresource conversion and view constants are common to DLSS-SR and DLRR. Kept separate: provider contracts, provider runtimes, settings, and frame evaluation passes.
+- Local deviation to resolve in Stage 11R follow-up: roughness is currently tagged from the material-guide product's roughness channel rather than from a dedicated single-channel roughness product. The provider contract has a named roughness slot so this can be split without changing the DLRR provider boundary.
+
 ### Stage 12G: Reference Path Guide Outputs
 
 Implementation prompt:
