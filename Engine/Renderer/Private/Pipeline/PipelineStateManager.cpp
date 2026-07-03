@@ -25,14 +25,10 @@ RendererPipelineDiagnosticsSnapshot PipelineStateManager::CaptureDiagnosticsSnap
 
 CookedShaderReloadResult PipelineStateManager::ReloadCookedShaders() noexcept
 {
-	static const std::shared_ptr<spdlog::logger>& logger = Logging::GetOrCreateLogger("Renderer");
-	SPDLOG_LOGGER_INFO(logger, "Reloading cooked shader packages and clearing lazy pipeline state runtimes");
-
 	CookedShaderPackageCache nextShaderPackages;
 	m_shaderPackages.ReplaceWith(std::move(nextShaderPackages));
 	m_runtimeStorageByPassName.clear();
 
-	SPDLOG_LOGGER_INFO(logger, "Cooked shader reload complete (generation={})", m_shaderPackages.GetGeneration());
 	return CookedShaderReloadResult::Success();
 }
 

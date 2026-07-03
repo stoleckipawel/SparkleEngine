@@ -1,10 +1,32 @@
 #include "../PCH.h"
 #include "RayReconstruction/RayReconstructionSubsystem.h"
 
-#include "RayReconstruction/NoopRayReconstructionProvider.h"
 #include "RayReconstruction/NvidiaDlss/NvidiaDlssRayReconstructionProvider.h"
 
 #include <format>
+#include <utility>
+
+namespace
+{
+	RayReconstructionProviderCapabilities BuildFrameCopyRayReconstructionDiagnostics(
+	    ERendererProviderCapabilityState state,
+	    ERayReconstructionProviderFailureDomain failureDomain,
+	    std::string reason)
+	{
+		return RayReconstructionProviderCapabilities{
+		    .Kind = ERayReconstructionProviderKind::None,
+		    .Category = ERendererProviderCategory::RayReconstruction,
+		    .CapabilityState = state,
+		    .FailureDomain = failureDomain,
+		    .CanInitialize = true,
+		    .CanEvaluate = true,
+		    .UsesExternalSdk = false,
+		    .ProviderName = "Frame pass copy",
+		    .ExternalRuntimeVersion = "none",
+		    .RuntimeState = "FrameCopy",
+		    .Reason = std::move(reason)};
+	}
+}
 
 RayReconstructionSubsystem::~RayReconstructionSubsystem() noexcept
 {
@@ -30,33 +52,33 @@ void RayReconstructionSubsystem::Initialize(
 	m_activeProvider = CreateProvider(m_settings.Mode);
 	if (m_activeProvider == nullptr)
 	{
-		m_activeProvider = CreateFallbackProvider();
+		m_diagnostics = BuildFrameCopyRayReconstructionDiagnostics(
+		    ERendererProviderCapabilityState::Enabled,
+		    ERayReconstructionProviderFailureDomain::None,
+		    "Ray reconstruction is disabled; final color is produced by the frame pass copy.");
+		m_shutdown = false;
+		return;
 	}
 
 	const bool initialized = m_activeProvider->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
 	if (!initialized && m_settings.Mode != EngineRayReconstructionMode::Off)
 	{
 		const RayReconstructionProviderCapabilities failedDiagnostics = m_activeProvider->GetDiagnostics();
-		std::unique_ptr<IRayReconstructionProvider> fallback = CreateFallbackProvider();
-		const bool fallbackInitialized = fallback->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
-		m_activeProvider = std::move(fallback);
-		RefreshDiagnostics(m_activeProvider.get());
-		m_diagnostics.CapabilityState =
-		    fallbackInitialized ? ERendererProviderCapabilityState::RuntimeFailed : ERendererProviderCapabilityState::Unavailable;
-		m_diagnostics.FailureDomain = failedDiagnostics.FailureDomain;
-		m_diagnostics.Reason = std::format(
-		    "Requested provider {} was unavailable: {} Falling back to {}.",
-		    RayReconstructionModeToString(m_settings.Mode),
-		    failedDiagnostics.Reason,
-		    m_activeProvider->GetName());
+		m_activeProvider->Shutdown();
+		m_activeProvider.reset();
+		m_diagnostics = BuildFrameCopyRayReconstructionDiagnostics(
+		    ERendererProviderCapabilityState::RuntimeFailed,
+		    failedDiagnostics.FailureDomain,
+		    std::format(
+		        "Requested provider {} was unavailable: {} Final color is produced by the frame pass copy.",
+		        RayReconstructionModeToString(m_settings.Mode),
+		        failedDiagnostics.Reason));
 	}
 	else
 	{
 		RefreshDiagnostics(m_activeProvider.get());
 	}
 
-	m_frameFallbackProvider = CreateFallbackProvider();
-	m_frameFallbackProvider->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
 	m_shutdown = false;
 }
 
@@ -64,48 +86,62 @@ void RayReconstructionSubsystem::SetupFrame(const RayReconstructionInputContract
 {
 	m_settings = BuildRayReconstructionSettingsFromCVars();
 	m_lastInputValidation = ValidateRayReconstructionInputContract(inputContract);
-	m_useFrameFallback = !m_lastInputValidation.Valid && m_activeProvider != nullptr &&
-	                     m_activeProvider->GetKind() != ERayReconstructionProviderKind::None;
-	m_frameFallbackReason.clear();
-
 	if (!m_lastInputValidation.Valid)
 	{
-		m_frameFallbackReason = std::format("Ray reconstruction input contract invalid: {}", m_lastInputValidation.Summary);
+		m_diagnostics = BuildFrameCopyRayReconstructionDiagnostics(
+		    ERendererProviderCapabilityState::RuntimeFailed,
+		    ERayReconstructionProviderFailureDomain::InputContract,
+		    std::format("Ray reconstruction input contract invalid: {}", m_lastInputValidation.Summary));
+		m_diagnostics.RenderExtent = inputContract.RenderExtent;
+		m_diagnostics.OutputExtent = inputContract.OutputExtent;
+		m_diagnostics.ResetRequested = inputContract.ResetRequested;
+		m_diagnostics.ResetReason = inputContract.ResetReason;
+		m_diagnostics.ResourceContract = BuildRayReconstructionProviderResourceContract(inputContract);
+		m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
+		return;
 	}
 
-	IRayReconstructionProvider* const provider =
-	    m_useFrameFallback && m_frameFallbackProvider != nullptr ? m_frameFallbackProvider.get() : m_activeProvider.get();
-	if (provider != nullptr)
+	if (m_activeProvider != nullptr)
 	{
-		provider->SetupFrame(inputContract);
-		RefreshDiagnostics(provider);
+		m_activeProvider->SetupFrame(inputContract);
+		RefreshDiagnostics(m_activeProvider.get());
+		return;
 	}
+
+	m_diagnostics = BuildFrameCopyRayReconstructionDiagnostics(
+	    ERendererProviderCapabilityState::Enabled,
+	    ERayReconstructionProviderFailureDomain::None,
+	    "Ray reconstruction is disabled; final color is produced by the frame pass copy.");
+	m_diagnostics.RenderExtent = inputContract.RenderExtent;
+	m_diagnostics.OutputExtent = inputContract.OutputExtent;
+	m_diagnostics.ResetRequested = inputContract.ResetRequested;
+	m_diagnostics.ResetReason = inputContract.ResetReason;
+	m_diagnostics.ResourceContract = BuildRayReconstructionProviderResourceContract(inputContract);
+	m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
 }
 
 RayReconstructionEvaluationResult RayReconstructionSubsystem::Evaluate(const RayReconstructionEvaluationDesc& evaluation)
 {
-	IRayReconstructionProvider* const provider =
-	    m_useFrameFallback && m_frameFallbackProvider != nullptr ? m_frameFallbackProvider.get() : m_activeProvider.get();
-	if (provider == nullptr)
+	if (!m_lastInputValidation.Valid)
 	{
 		return RayReconstructionEvaluationResult{
 		    .ProducedOutput = false,
 		    .UsedFallback = true,
-		    .FailureDomain = ERayReconstructionProviderFailureDomain::Backend,
-		    .Reason = "No ray reconstruction provider is active."};
+		    .FailureDomain = ERayReconstructionProviderFailureDomain::InputContract,
+		    .Reason = std::format("Ray reconstruction input contract invalid: {}", m_lastInputValidation.Summary)};
 	}
 
-	RayReconstructionEvaluationResult result = provider->Evaluate(evaluation);
-	RefreshDiagnostics(provider);
-	if (m_useFrameFallback)
+	if (m_activeProvider == nullptr)
 	{
-		result.UsedFallback = true;
-		result.FailureDomain = ERayReconstructionProviderFailureDomain::InputContract;
-		result.Reason = m_frameFallbackReason;
-		m_diagnostics.CapabilityState = ERendererProviderCapabilityState::RuntimeFailed;
-		m_diagnostics.FailureDomain = result.FailureDomain;
-		m_diagnostics.Reason = result.Reason;
+		return RayReconstructionEvaluationResult{
+		    .ProducedOutput = false,
+		    .UsedFallback = true,
+		    .FailureDomain = ERayReconstructionProviderFailureDomain::None,
+		    .Reason = "Final color is produced by the frame pass copy."};
 	}
+
+	RayReconstructionEvaluationResult result = m_activeProvider->Evaluate(evaluation);
+	RefreshDiagnostics(m_activeProvider.get());
 	return result;
 }
 
@@ -115,11 +151,11 @@ void RayReconstructionSubsystem::OnResize(RenderViewportExtent renderExtent, Ren
 	{
 		m_activeProvider->OnResize(renderExtent, outputExtent);
 		RefreshDiagnostics(m_activeProvider.get());
+		return;
 	}
-	if (m_frameFallbackProvider != nullptr)
-	{
-		m_frameFallbackProvider->OnResize(renderExtent, outputExtent);
-	}
+
+	m_diagnostics.RenderExtent = renderExtent;
+	m_diagnostics.OutputExtent = outputExtent;
 }
 
 void RayReconstructionSubsystem::ResetHistory(std::string_view reason)
@@ -128,11 +164,11 @@ void RayReconstructionSubsystem::ResetHistory(std::string_view reason)
 	{
 		m_activeProvider->ResetHistory(reason);
 		RefreshDiagnostics(m_activeProvider.get());
+		return;
 	}
-	if (m_frameFallbackProvider != nullptr)
-	{
-		m_frameFallbackProvider->ResetHistory(reason);
-	}
+
+	m_diagnostics.ResetRequested = true;
+	m_diagnostics.ResetReason = std::string(reason);
 }
 
 void RayReconstructionSubsystem::Shutdown() noexcept
@@ -146,10 +182,6 @@ void RayReconstructionSubsystem::Shutdown() noexcept
 	{
 		m_activeProvider->Shutdown();
 	}
-	if (m_frameFallbackProvider != nullptr)
-	{
-		m_frameFallbackProvider->Shutdown();
-	}
 	m_shutdown = true;
 }
 
@@ -160,13 +192,8 @@ std::unique_ptr<IRayReconstructionProvider> RayReconstructionSubsystem::CreatePr
 		case EngineRayReconstructionMode::NvidiaDlssRayReconstruction:
 			return std::make_unique<NvidiaDlssRayReconstructionProvider>();
 		case EngineRayReconstructionMode::Off:
-			return std::make_unique<NoopRayReconstructionProvider>();
+			return {};
 	}
 
 	return {};
-}
-
-std::unique_ptr<IRayReconstructionProvider> RayReconstructionSubsystem::CreateFallbackProvider()
-{
-	return std::make_unique<NoopRayReconstructionProvider>();
 }

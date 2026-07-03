@@ -114,8 +114,6 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 		return false;
 	}
 
-	SPDLOG_LOGGER_TRACE(g_gpuMeshLogger, "[GPUMesh] Uploaded mesh buffers");
-
 	return true;
 }
 

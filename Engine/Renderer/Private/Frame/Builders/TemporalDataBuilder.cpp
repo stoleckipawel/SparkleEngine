@@ -4,12 +4,9 @@
 
 #include "Camera/RenderCamera.h"
 #include "Math/MathUtils.h"
-#include "Core/Public/Diagnostics/Logger.h"
 #include "Temporal/TemporalJitterPatterns.h"
 
 #include <cmath>
-
-static const auto g_temporalDataBuilderLogger = Logging::GetOrCreateLogger("Renderer.TemporalDataBuilder");
 
 namespace
 {
@@ -23,8 +20,8 @@ constexpr float kCutFovDeltaDegrees = 6.0f;
 
 void TemporalDataBuilder::ResetHistory(std::string_view reason) noexcept
 {
+	static_cast<void>(reason);
 	m_resetRequested = true;
-	m_resetReason = reason.empty() ? "Requested by renderer state" : std::string(reason);
 	m_hasPreviousPose = false;
 }
 
@@ -105,29 +102,7 @@ PerTemporalConstantBufferData TemporalDataBuilder::BuildTemporalData(
 
 	if (m_resetRequested)
 	{
-		SPDLOG_LOGGER_DEBUG(g_temporalDataBuilderLogger, "Temporal history reset requested: {}", m_resetReason);
 		m_resetRequested = false;
-	}
-	else if (!m_hasPreviousPose)
-	{
-		SPDLOG_LOGGER_DEBUG(g_temporalDataBuilderLogger, "Temporal history not yet available; initializing motion vectors without history.");
-	}
-	else if (hasCut)
-	{
-		const DirectX::XMVECTOR prevEye = DirectX::XMLoadFloat3(&m_previousPose.Position);
-		const DirectX::XMVECTOR currEye = DirectX::XMLoadFloat3(&currentPose.Position);
-		const DirectX::XMVECTOR deltaEye = DirectX::XMVectorSubtract(currEye, prevEye);
-		const float deltaPosition = DirectX::XMVectorGetX(DirectX::XMVector3Length(deltaEye));
-		const DirectX::XMVECTOR prevDirection = DirectX::XMLoadFloat3(&m_previousPose.Direction);
-		const DirectX::XMVECTOR currDirection = DirectX::XMLoadFloat3(&currentPose.Direction);
-		const float directionDot = DirectX::XMVectorGetX(DirectX::XMVector3Dot(prevDirection, currDirection));
-		const float fovDelta = std::abs(m_previousPose.FovYDegrees - currentPose.FovYDegrees);
-		SPDLOG_LOGGER_INFO(
-		    g_temporalDataBuilderLogger,
-		    "Temporal history reset due camera cut (deltaPos={}, dirDot={}, fovDelta={}).",
-		    deltaPosition,
-		    directionDot,
-		    fovDelta);
 	}
 
 	m_previousPose = currentPose;

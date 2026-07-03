@@ -86,7 +86,6 @@ bool NvidiaDlssUpscalerProvider::Initialize(
 	{
 		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::Unavailable;
 		m_diagnostics = GetDiagnostics();
-		DlssCapabilityReporter::LogOnce(m_dlssCapabilities);
 		return false;
 	}
 
@@ -99,7 +98,6 @@ bool NvidiaDlssUpscalerProvider::Initialize(
 		m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 		m_diagnostics.CanEvaluate = false;
 		m_diagnostics.Reason = m_dlssCapabilities.UnavailableReason;
-		DlssCapabilityReporter::LogOnce(m_dlssCapabilities);
 		return false;
 	}
 
@@ -108,22 +106,9 @@ bool NvidiaDlssUpscalerProvider::Initialize(
 	        .Capabilities = capabilities,
 	        .NativeInterop = nativeInterop,
 	        .PresentationBridge = presentationBridge,
-	        .QualityMode = m_qualityMode,
-	        .DiagnosticsEnabled = settings.DiagnosticsEnabled,
-	        .ApplicationName = "SparkleEngine",
-	        .ApplicationId = 0});
+	        .QualityMode = m_qualityMode});
 	DlssCapabilityReporter::ApplyRuntimeDiagnostics(m_dlssCapabilities, m_runtime->GetDiagnostics());
 	m_diagnostics = GetDiagnostics();
-	if (!initialized)
-	{
-		const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.DLSS");
-		SPDLOG_LOGGER_WARN(
-		    logger,
-		    "DLSS provider initialization failed: runtimeState={} reason='{}'",
-		    DlssProviderRuntimeStateToString(m_dlssCapabilities.RuntimeState),
-		    m_dlssCapabilities.UnavailableReason);
-	}
-	DlssCapabilityReporter::LogOnce(m_dlssCapabilities);
 	return initialized;
 }
 

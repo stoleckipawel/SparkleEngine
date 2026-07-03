@@ -40,11 +40,7 @@ namespace
 			    preferences,
 			    features,
 			    static_cast<std::uint32_t>(std::size(features)),
-			    StreamlinePreferencesDesc{
-			        .DiagnosticsEnabled = desc.DiagnosticsEnabled,
-			        .ApplicationId = desc.ApplicationId,
-			        .RenderApi = backend.UsesVulkan ? sl::RenderAPI::eVulkan : sl::RenderAPI::eD3D12},
-			    m_streamlineLogPath);
+			    backend.UsesVulkan ? sl::RenderAPI::eVulkan : sl::RenderAPI::eD3D12);
 
 			sl::Result result = slInit(preferences, sl::kSDKVersion);
 			if (result != sl::Result::eOk)
@@ -153,7 +149,6 @@ namespace
 	  private:
 		StreamlineDlssRayReconstructionRuntimeDiagnostics m_diagnostics = {};
 		RayReconstructionInputContract m_lastFrameContract = {};
-		std::wstring m_streamlineLogPath;
 		sl::ViewportHandle m_viewport{0u};
 		EngineRayReconstructionQualityMode m_qualityMode = EngineRayReconstructionQualityMode::Quality;
 		bool m_initialized = false;

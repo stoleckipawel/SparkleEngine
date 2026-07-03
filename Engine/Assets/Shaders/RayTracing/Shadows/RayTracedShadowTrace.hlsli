@@ -7,20 +7,20 @@ cbuffer RayTracedShadowUniformData
 {
 	uint RayTracedDirectionalShadowsEnabled;
 	uint RayTracedLocalLightShadowsEnabled;
-	uint RayTracedShadowDiagnosticsEnabled;
 	uint RayTracedShadowPadding0;
+	uint RayTracedShadowPadding1;
 	float RayTracedShadowNormalBias;
 	float RayTracedShadowMaxDistance;
-	float RayTracedShadowPadding1;
 	float RayTracedShadowPadding2;
+	float RayTracedShadowPadding3;
 	uint RayTracedShadowSceneTlasGpuAddressLow;
 	uint RayTracedShadowSceneTlasGpuAddressHigh;
 	uint RayTracingHitDataAvailable;
 	uint RayTracingHitInstanceCount;
 	uint RayTracingHitMaterialCount;
-	uint RayTracedShadowPadding3;
 	uint RayTracedShadowPadding4;
 	uint RayTracedShadowPadding5;
+	uint RayTracedShadowPadding6;
 };
 
 #include "RayTracing/RayTracingSceneTlasTrace.hlsli"

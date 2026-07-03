@@ -1,7 +1,6 @@
 #include "../PCH.h"
 #include "PipelineRuntimeLibrary.h"
 
-#include "Core/Public/Formatting/HexFormat.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
@@ -12,12 +11,6 @@
 
 namespace
 {
-	const std::shared_ptr<spdlog::logger>& GetLogger() noexcept
-	{
-		static std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer");
-		return logger;
-	}
-
 	std::string FormatPackageId(const ShaderPackageDefinition& package)
 	{
 		return package.PackageId != nullptr ? std::string(package.PackageId) : std::string("<null>");
@@ -31,38 +24,6 @@ namespace
 		}
 
 		return request.BindingLayout != nullptr ? request.BindingLayout->GetDebugName() : std::string("<null>");
-	}
-
-	PipelineRuntimeKey BuildBasePipelineKey(
-	    RenderHardwareInterface& rhi,
-	    CookedShaderPackageCache& shaderPackageCache,
-	    const PipelineRuntimePackageRequest& request,
-	    const LoadedShaderPackage& shaderPackage,
-	    PipelineRuntimeKind kind)
-	{
-		const RhiCapabilities& capabilities = rhi.GetCapabilities();
-		const CookedShaderPackageHeader& header = shaderPackage.GetHeader();
-		PipelineRuntimeKey key{};
-		key.PassName = std::string(request.PassName);
-		key.PackageDeclarationName = std::string(request.PackageDeclarationName);
-		key.PackageId = FormatPackageId(request.Package);
-		key.BindingLayoutId = FormatBindingLayoutId(request);
-		key.Backend = capabilities.BackendApi;
-		key.RequiredBinaryFormat = capabilities.RequiredShaderBinaryFormat;
-		key.PipelineKind = kind;
-		key.ShaderStages = header.DeclaredStages;
-		key.RequiredFeatures = request.Package.RequiredFeatures;
-		key.PackageFeatures = header.PackageFeatures;
-		key.ShaderPackageGeneration = shaderPackageCache.GetGeneration();
-		key.ShaderPackageKey = header.ShaderPackageKey;
-		key.SourceIdentityHash = header.SourceIdentityHash;
-		key.BindingLayoutHash = header.BindingLayoutHash;
-		return key;
-	}
-
-	void LogPipelineKey(const PipelineRuntimeKey& key)
-	{
-		SPDLOG_LOGGER_INFO(GetLogger(), "Pipeline runtime key: {}", FormatPipelineRuntimeKey(key));
 	}
 }
 
@@ -110,24 +71,6 @@ bool PipelineRuntimeLibrary::LoadShaderPackage(
 	}
 
 	assert(outLoadedPackage != nullptr);
-	const CookedShaderPackageLoadReport& loadReport = shaderPackageCache.GetLastLoadReport();
-	SPDLOG_LOGGER_INFO(
-	    GetLogger(),
-	    "Loaded shader package '{}' for pass '{}' backend='{}' format='{}' key={} cacheHit={} reload={} loadTimeUs={} "
-	    "binaries={} pipelineLayouts={} reflections={} generation={} path='{}'",
-	    FormatPackageId(request.Package),
-	    request.PassName,
-	    RhiBackendApiToString(capabilities.BackendApi),
-	    CookedShaderBinaryFormatToString(requiredBinaryFormat),
-	    Formatting::FormatHexUInt64(loadReport.PackageKey),
-	    loadReport.WasCacheHit,
-	    loadReport.WasReload,
-	    loadReport.ElapsedMicroseconds,
-	    loadReport.BinaryRecordCount,
-	    loadReport.PipelineLayoutRecordCount,
-	    loadReport.ReflectionRecordCount,
-	    loadReport.CacheGeneration,
-	    loadReport.PackagePath.string());
 	outErrorMessage.clear();
 	return true;
 }
@@ -189,54 +132,14 @@ std::unique_ptr<RenderBindingLayout> PipelineRuntimeLibrary::CreateBindingLayout
 
 std::unique_ptr<RenderPipelineState> PipelineRuntimeLibrary::CreateGraphicsPipelineState(
     RenderHardwareInterface& rhi,
-    CookedShaderPackageCache& shaderPackageCache,
-    const PipelineRuntimePackageRequest& request,
-    const LoadedShaderPackage& shaderPackage,
     const GraphicsPipelineStateDesc& pipelineDesc)
 {
-	const PipelineRuntimeKey key = BuildGraphicsPipelineKey(rhi, shaderPackageCache, request, shaderPackage, pipelineDesc);
-	LogPipelineKey(key);
 	return rhi.GetPipelineService().CreateGraphicsPipelineState(pipelineDesc);
 }
 
 std::unique_ptr<RenderPipelineState> PipelineRuntimeLibrary::CreateComputePipelineState(
     RenderHardwareInterface& rhi,
-    CookedShaderPackageCache& shaderPackageCache,
-    const PipelineRuntimePackageRequest& request,
-    const LoadedShaderPackage& shaderPackage,
     const ComputePipelineStateDesc& pipelineDesc)
 {
-	const PipelineRuntimeKey key = BuildComputePipelineKey(rhi, shaderPackageCache, request, shaderPackage);
-	LogPipelineKey(key);
 	return rhi.GetPipelineService().CreateComputePipelineState(pipelineDesc);
-}
-
-PipelineRuntimeKey PipelineRuntimeLibrary::BuildGraphicsPipelineKey(
-    RenderHardwareInterface& rhi,
-    CookedShaderPackageCache& shaderPackageCache,
-    const PipelineRuntimePackageRequest& request,
-    const LoadedShaderPackage& shaderPackage,
-    const GraphicsPipelineStateDesc& pipelineDesc)
-{
-	PipelineRuntimeKey key = BuildBasePipelineKey(rhi, shaderPackageCache, request, shaderPackage, PipelineRuntimeKind::Graphics);
-	key.VertexLayout = pipelineDesc.VertexLayout;
-	key.HasPixelShader = pipelineDesc.PixelShader.IsValid();
-	key.RenderWireframe = pipelineDesc.RenderWireframe;
-	key.CullMode = pipelineDesc.CullMode;
-	key.FrontFaceWinding = pipelineDesc.FrontFaceWinding;
-	key.DepthTest = pipelineDesc.DepthTest;
-	key.StencilTest = pipelineDesc.StencilTest;
-	key.RenderTargetFormats = pipelineDesc.RenderTargetFormats;
-	key.RenderTargetCount = pipelineDesc.RenderTargetCount;
-	key.DepthStencilFormat = pipelineDesc.DepthStencilFormat;
-	return key;
-}
-
-PipelineRuntimeKey PipelineRuntimeLibrary::BuildComputePipelineKey(
-    RenderHardwareInterface& rhi,
-    CookedShaderPackageCache& shaderPackageCache,
-    const PipelineRuntimePackageRequest& request,
-    const LoadedShaderPackage& shaderPackage)
-{
-	return BuildBasePipelineKey(rhi, shaderPackageCache, request, shaderPackage, PipelineRuntimeKind::Compute);
 }

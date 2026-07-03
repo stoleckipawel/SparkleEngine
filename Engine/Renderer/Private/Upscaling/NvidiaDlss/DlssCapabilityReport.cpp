@@ -9,11 +9,6 @@
 
 namespace
 {
-	constexpr const char* BoolToString(bool value) noexcept
-	{
-		return value ? "true" : "false";
-	}
-
 	void AppendMissing(std::vector<std::string>& missing, bool present, const char* label)
 	{
 		if (!present)
@@ -98,65 +93,6 @@ void DlssCapabilityReporter::ApplyRuntimeDiagnostics(DlssCapabilityReport& repor
 	{
 		report.FailureDomain = EUpscalerProviderFailureDomain::None;
 		report.UnavailableReason = "DLSS Super Resolution is active or ready for evaluation.";
-	}
-}
-
-void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcept
-{
-	static bool s_logged = false;
-	if (s_logged)
-	{
-		return;
-	}
-
-	s_logged = true;
-	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.DLSS");
-	SPDLOG_LOGGER_INFO(
-	    logger,
-	    "DLSS capability summary: backend={} bridge={} adapter='{}' vendorId={:#06x} deviceId={:#06x} driver='{}' "
-	    "rhiBridgeReady={} d3d12BridgeReady={} vulkanBridgeReady={} sdkRuntimeIntegrated={} sdkRuntimeAvailable={} "
-	    "featureQuerySucceeded={} featureSupported={} canCreateFeature={} runtimeState={} failureDomain={} sdkVersion='{}' selectedMode='{}' "
-	    "renderExtent={}x{} outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
-	    RhiBackendApiToString(report.BackendApi),
-	    RhiExternalFeatureBridgeKindToString(report.BridgeKind),
-	    report.Adapter.Name,
-	    report.Adapter.VendorId,
-	    report.Adapter.DeviceId,
-	    report.Adapter.DriverDescription,
-	    BoolToString(report.RhiBridgeReady),
-	    BoolToString(report.D3D12BridgeReady),
-	    BoolToString(report.VulkanBridgeReady),
-	    BoolToString(report.SdkRuntimeIntegrated),
-	    BoolToString(report.SdkRuntimeAvailable),
-	    BoolToString(report.FeatureQuerySucceeded),
-	    BoolToString(report.FeatureSupported),
-	    BoolToString(report.CanCreateFeature()),
-	    DlssProviderRuntimeStateToString(report.RuntimeState),
-	    UpscalerProviderFailureDomainToString(report.FailureDomain),
-	    report.SdkVersion,
-	    report.SelectedQualityMode,
-	    report.RenderExtent.Width,
-	    report.RenderExtent.Height,
-	    report.OutputExtent.Width,
-	    report.OutputExtent.Height,
-	    BoolToString(report.ResetRequested),
-	    report.ResetReason,
-	    report.UnavailableReason);
-
-	for (const DlssFeatureMatrixEntry& entry : report.FeatureMatrix.Entries)
-	{
-		SPDLOG_LOGGER_INFO(
-		    logger,
-		    "DLSS feature matrix: backend={} feature={} state={} supported={} qualityModes='{}' "
-		    "presetRecommendation='{}' requiredResources='{}' reason='{}'",
-		    RhiBackendApiToString(report.BackendApi),
-		    DlssFeatureKindToString(entry.Feature),
-		    DlssFeatureStateToString(entry.State),
-		    BoolToString(entry.Supported),
-		    entry.QualityModes,
-		    entry.ModelPresetRecommendation,
-		    entry.RequiredResources,
-		    entry.Reason);
 	}
 }
 

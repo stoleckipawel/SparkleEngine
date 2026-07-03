@@ -11,10 +11,6 @@ struct RayTracedShadowSettings final
 	float NormalBias = 0.0f;
 	float MaxDistance = 0.0f;
 	bool Enabled = true;
-	bool DiagnosticsEnabled = false;
 };
 
 RayTracedShadowSettings BuildRayTracedShadowSettingsFromCVars() noexcept;
-void LogRayTracedShadowSettingsOnce(
-    const RayTracedShadowSettings& settings,
-    const RayTracingCapabilityReport& capabilities) noexcept;

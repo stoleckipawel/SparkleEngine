@@ -52,8 +52,6 @@ void TextureManager::LoadDefaults()
 	LoadTexture(TextureId::Checker, DefaultTextures::GetPath(DefaultTexture::Checkerboard));
 	LoadTexture(TextureId::SkyCubemap, DefaultTextures::GetPath(DefaultTexture::Cubemap));
 	LoadDefaultTextures();
-
-	SPDLOG_LOGGER_INFO(g_textureManagerLogger, "{}", std::format("TextureManager: Loaded {} default textures", GetLoadedCount()));
 }
 
 void TextureManager::LoadSceneTextures(const TextureSnapshot& textureSnapshot)
@@ -75,7 +73,6 @@ void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& rela
 
 	if (m_textures[index])
 	{
-		SPDLOG_LOGGER_DEBUG(g_textureManagerLogger, "{}", std::format("TextureManager: Replacing texture at slot {}", index));
 		m_textures[index].reset();
 	}
 
@@ -88,8 +85,6 @@ void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& rela
 		    std::format("TextureManager::LoadTexture: Failed to load '{}' into slot {}", relativePath.string(), index));
 		return;
 	}
-
-	SPDLOG_LOGGER_DEBUG(g_textureManagerLogger, "{}", std::format("TextureManager: Loaded '{}' at slot {}", relativePath.string(), index));
 }
 
 Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
@@ -134,7 +129,6 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 	Texture* texturePtr = texture.get();
 	m_pathTextures.emplace(cacheKey, std::move(texture));
 
-	SPDLOG_LOGGER_DEBUG(g_textureManagerLogger, "{}", std::format("TextureManager: Cached '{}'", resolvedPath.string()));
 	return texturePtr;
 }
 void TextureManager::UnloadTexture(TextureId id) noexcept

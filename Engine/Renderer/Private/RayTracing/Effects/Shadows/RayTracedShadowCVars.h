@@ -5,4 +5,3 @@
 extern ConsoleVariable<bool> CVarRayTracedShadowsEnabled;
 extern ConsoleVariable<float> CVarRayTracedShadowNormalBias;
 extern ConsoleVariable<float> CVarRayTracedShadowMaxDistance;
-extern ConsoleVariable<bool> CVarRayTracedShadowDiagnosticsEnabled;

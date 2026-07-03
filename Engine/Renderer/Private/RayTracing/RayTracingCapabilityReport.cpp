@@ -40,18 +40,6 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::Build(const RhiCapabili
 	return BuildFromCapabilities(capabilities);
 }
 
-void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& report) noexcept
-{
-	static bool s_logged = false;
-	if (s_logged)
-	{
-		return;
-	}
-
-	s_logged = true;
-	static_cast<void>(report);
-}
-
 RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(const RhiCapabilities& capabilities) noexcept
 {
 	const ERhiBackendApi backendApi = capabilities.BackendApi;

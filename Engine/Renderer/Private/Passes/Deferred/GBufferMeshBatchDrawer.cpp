@@ -235,20 +235,6 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 		return;
 	}
 
-	static bool loggedFirstDrawSummary = false;
-	if (!loggedFirstDrawSummary && !sceneData.meshInstanceBatches.empty())
-	{
-		loggedFirstDrawSummary = true;
-		SPDLOG_LOGGER_INFO(
-		    g_gbufferMeshBatchDrawerLogger,
-		    "GBuffer: submitting staticInstances={} skinnedInstances={} staticBatches={} skinnedBatches={} jointMatrices={}.",
-		    sceneData.meshWorkload.staticInstanceCount,
-		    sceneData.meshWorkload.skinnedInstanceCount,
-		    sceneData.meshWorkload.staticBatchCount,
-		    sceneData.meshWorkload.skinnedBatchCount,
-		    sceneData.meshWorkload.jointMatrixCount);
-	}
-
 	for (std::size_t batchIndex = 0; batchIndex < sceneData.meshInstanceBatches.size(); ++batchIndex)
 	{
 		const MeshInstanceBatch& batch = sceneData.meshInstanceBatches[batchIndex];

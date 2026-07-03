@@ -6,8 +6,6 @@
 
 #include <cstdint>
 
-struct RayTracingCapabilityReport;
-
 struct IndirectSpecularSettings final
 {
 	bool Enabled = false;
@@ -20,6 +18,3 @@ struct IndirectSpecularSettings final
 };
 
 IndirectSpecularSettings BuildIndirectSpecularSettingsFromCVars() noexcept;
-void LogIndirectSpecularSettingsOnce(
-    const IndirectSpecularSettings& settings,
-    const RayTracingCapabilityReport& capabilities) noexcept;

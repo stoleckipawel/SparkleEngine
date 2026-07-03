@@ -25,9 +25,6 @@ struct StreamlineDlssRayReconstructionRuntimeDesc final
 	RhiNativeDeviceQueueInterop NativeInterop = {};
 	RayReconstructionPresentationBridge PresentationBridge = {};
 	EngineRayReconstructionQualityMode QualityMode = EngineRayReconstructionQualityMode::Quality;
-	bool DiagnosticsEnabled = false;
-	std::string ApplicationName;
-	std::uint32_t ApplicationId = 0;
 };
 
 struct StreamlineDlssRayReconstructionRuntimeDiagnostics final

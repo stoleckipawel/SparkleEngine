@@ -34,10 +34,9 @@ struct DlssCapabilityReport final
 
 class DlssCapabilityReporter final
 {
-  public:
+ public:
 	static DlssCapabilityReport Build(const RhiCapabilities& capabilities) noexcept;
 	static void ApplyRuntimeDiagnostics(DlssCapabilityReport& report, const StreamlineDlssRuntimeDiagnostics& diagnostics);
-	static void LogOnce(const DlssCapabilityReport& report) noexcept;
 
   private:
 	static std::string BuildUnavailableReason(const RhiCapabilities& capabilities, const DlssCapabilityReport& report);

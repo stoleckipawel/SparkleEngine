@@ -15,18 +15,13 @@ namespace
 	    EngineRayReconstructionQualityMode::Quality,
 	    "Renderer ray reconstruction quality mode: 0=Quality, 1=Balanced, 2=Performance.");
 
-	ConsoleVariable<bool> CVarRayReconstructionDiagnostics(
-	    "r.RayReconstruction.Diagnostics",
-	    false,
-	    "Enable additional renderer ray reconstruction diagnostics.");
 }
 
 RayReconstructionSettings BuildRayReconstructionSettingsFromCVars() noexcept
 {
 	return RayReconstructionSettings{
 	    .Mode = CVarRayReconstructionMode.Get(),
-	    .QualityMode = CVarRayReconstructionQualityMode.Get(),
-	    .DiagnosticsEnabled = CVarRayReconstructionDiagnostics.Get()};
+	    .QualityMode = CVarRayReconstructionQualityMode.Get()};
 }
 
 EngineRayReconstructionMode GetRayReconstructionModeFromCVars() noexcept

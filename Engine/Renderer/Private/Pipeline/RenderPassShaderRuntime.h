@@ -91,7 +91,7 @@ class RenderPassShaderRuntime final
 		pipelineDesc.DebugName = desc.PipelineStateDebugName;
 		configurePipelineState(pipelineDesc);
 		storage.PipelineState =
-		    PipelineRuntimeLibrary::CreateGraphicsPipelineState(rhi, shaderPackageCache, packageRequest, *storage.ShaderPackage, pipelineDesc);
+		    PipelineRuntimeLibrary::CreateGraphicsPipelineState(rhi, pipelineDesc);
 		storage.WireframePipelineState.reset();
 		storage.TwoSidedPipelineState.reset();
 		if (desc.AllowInputAssemblerInputLayout && !pipelineDesc.RenderWireframe)
@@ -100,9 +100,6 @@ class RenderPassShaderRuntime final
 			twoSidedPipelineDesc.CullMode = ERhiCullMode::None;
 			storage.TwoSidedPipelineState = PipelineRuntimeLibrary::CreateGraphicsPipelineState(
 			    rhi,
-			    shaderPackageCache,
-			    packageRequest,
-			    *storage.ShaderPackage,
 			    twoSidedPipelineDesc);
 			if (!storage.TwoSidedPipelineState)
 			{
@@ -118,9 +115,6 @@ class RenderPassShaderRuntime final
 			wireframePipelineDesc.CullMode = ERhiCullMode::None;
 			storage.WireframePipelineState = PipelineRuntimeLibrary::CreateGraphicsPipelineState(
 			    rhi,
-			    shaderPackageCache,
-			    packageRequest,
-			    *storage.ShaderPackage,
 			    wireframePipelineDesc);
 			if (!storage.WireframePipelineState)
 			{
@@ -132,7 +126,6 @@ class RenderPassShaderRuntime final
 			}
 		}
 
-		LogRuntimeReady(rhi, desc);
 		outErrorMessage.clear();
 		return true;
 	}
@@ -178,9 +171,8 @@ class RenderPassShaderRuntime final
 		pipelineDesc.DebugName = desc.PipelineStateDebugName;
 		configurePipelineState(pipelineDesc);
 		storage.PipelineState =
-		    PipelineRuntimeLibrary::CreateComputePipelineState(rhi, shaderPackageCache, packageRequest, *storage.ShaderPackage, pipelineDesc);
+		    PipelineRuntimeLibrary::CreateComputePipelineState(rhi, pipelineDesc);
 
-		LogRuntimeReady(rhi, desc);
 		outErrorMessage.clear();
 		return true;
 	}
@@ -318,19 +310,4 @@ class RenderPassShaderRuntime final
 		    outErrorMessage);
 	}
 
-	static void LogRuntimeReady(RenderHardwareInterface& rhi, const RenderPassShaderRuntimeDesc& desc)
-	{
-		const RhiCapabilities& capabilities = rhi.GetCapabilities();
-		SPDLOG_LOGGER_INFO(
-		    GetLogger(),
-		    "Cooked shader runtime ready: pass='{}' pipeline='{}' backend='{}' requiredFormat='{}' package='{}' bindingLayout='{}' "
-		    "expectedStages='{}'",
-		    desc.PassName,
-		    FormatPipelineKind(desc.PipelineKind),
-		    RhiBackendApiToString(capabilities.BackendApi),
-		    CookedShaderBinaryFormatToString(capabilities.RequiredShaderBinaryFormat),
-		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
-		    desc.Package.BindingLayoutId != nullptr ? desc.Package.BindingLayoutId : "<null>",
-		    FormatShaderStageMask(desc.Package.ExpectedStages));
-	}
 };

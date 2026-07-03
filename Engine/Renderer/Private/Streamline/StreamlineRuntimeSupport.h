@@ -11,13 +11,6 @@
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 #include <sl.h>
 
-struct StreamlinePreferencesDesc final
-{
-	bool DiagnosticsEnabled = false;
-	std::uint32_t ApplicationId = 0;
-	sl::RenderAPI RenderApi = sl::RenderAPI::eD3D12;
-};
-
 struct StreamlineBackendContract final
 {
 	bool Valid = false;
@@ -49,6 +42,5 @@ void FillStreamlinePreferences(
     sl::Preferences& preferences,
     const sl::Feature* features,
     std::uint32_t featureCount,
-    const StreamlinePreferencesDesc& desc,
-    std::wstring& outLogPath);
+    sl::RenderAPI renderApi);
 #endif

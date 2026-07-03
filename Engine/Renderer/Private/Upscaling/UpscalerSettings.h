@@ -17,7 +17,6 @@ struct UpscalerSettings final
 {
 	EUpscalerProviderKind RequestedProvider = EUpscalerProviderKind::NvidiaDlss;
 	EUpscalerQualityMode QualityMode = EUpscalerQualityMode::NativeAA;
-	bool DiagnosticsEnabled = false;
 };
 
 UpscalerSettings BuildUpscalerSettingsFromCVars() noexcept;

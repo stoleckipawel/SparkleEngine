@@ -83,7 +83,6 @@ class RayTracingCapabilityReporter final
 {
   public:
 	static RayTracingCapabilityReport Build(const RhiCapabilities& capabilities) noexcept;
-	static void LogOnce(const RayTracingCapabilityReport& report) noexcept;
 
   private:
 	static RayTracingCapabilityReport BuildFromCapabilities(const RhiCapabilities& capabilities) noexcept;

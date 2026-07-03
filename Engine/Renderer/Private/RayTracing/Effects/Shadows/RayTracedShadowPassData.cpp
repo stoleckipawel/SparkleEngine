@@ -27,19 +27,19 @@ namespace RayTracedShadowPassData
 		return RayTracedShadowUniformData{
 		    .DirectionalShadowsEnabled = settings->Enabled ? 1u : 0u,
 		    .LocalLightShadowsEnabled = settings->Enabled ? 1u : 0u,
-		    .DiagnosticsEnabled = settings->DiagnosticsEnabled ? 1u : 0u,
 		    .Padding0 = 0u,
+		    .Padding1 = 0u,
 		    .NormalBias = settings->NormalBias,
 		    .MaxDistance = settings->MaxDistance,
-		    .Padding1 = 0.0f,
 		    .Padding2 = 0.0f,
+		    .Padding3 = 0.0f,
 		    .SceneTlasGpuAddressLow = static_cast<std::uint32_t>(sceneTlasAddress & 0xFFFFFFFFull),
 		    .SceneTlasGpuAddressHigh = static_cast<std::uint32_t>((sceneTlasAddress >> 32u) & 0xFFFFFFFFull),
 		    .RayTracingHitDataAvailable = hasAlphaTestResources ? 1u : 0u,
 		    .RayTracingHitInstanceCount = hitInstanceCount,
 		    .RayTracingHitMaterialCount = hitMaterialCount,
-		    .Padding3 = 0u,
 		    .Padding4 = 0u,
-		    .Padding5 = 0u};
+		    .Padding5 = 0u,
+		    .Padding6 = 0u};
 	}
 }

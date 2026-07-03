@@ -71,9 +71,6 @@ struct StreamlineDlssRuntimeDesc final
 	RhiNativeDeviceQueueInterop NativeInterop = {};
 	UpscalerPresentationBridge PresentationBridge = {};
 	EUpscalerQualityMode QualityMode = EUpscalerQualityMode::Quality;
-	bool DiagnosticsEnabled = false;
-	std::string ApplicationName;
-	std::uint32_t ApplicationId = 0;
 };
 
 struct StreamlineDlssRuntimeDiagnostics final

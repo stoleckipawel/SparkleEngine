@@ -2,9 +2,32 @@
 #include "Upscaling/UpscalerSubsystem.h"
 
 #include "Upscaling/NvidiaDlss/NvidiaDlssUpscalerProvider.h"
-#include "Upscaling/PassthroughUpscalerProvider.h"
 
 #include <format>
+#include <utility>
+
+namespace
+{
+	UpscalerProviderCapabilities BuildFrameCopyUpscalerDiagnostics(
+	    ERendererProviderCapabilityState state,
+	    EUpscalerProviderFailureDomain failureDomain,
+	    std::string reason)
+	{
+		return UpscalerProviderCapabilities{
+		    .Kind = EUpscalerProviderKind::Passthrough,
+		    .Category = ERendererProviderCategory::Upscaler,
+		    .CapabilityState = state,
+		    .FailureDomain = failureDomain,
+		    .CanInitialize = true,
+		    .CanEvaluate = true,
+		    .UsesExternalSdk = false,
+		    .ProviderName = "Frame pass copy",
+		    .ExternalRuntimeVersion = "none",
+		    .RuntimeState = "FrameCopy",
+		    .FeatureMatrixSummary = "external features not selected",
+		    .Reason = std::move(reason)};
+	}
+}
 
 UpscalerSubsystem::~UpscalerSubsystem() noexcept
 {
@@ -31,85 +54,93 @@ void UpscalerSubsystem::Initialize(
 	m_activeProvider = CreateProvider(m_settings.RequestedProvider);
 	if (m_activeProvider == nullptr)
 	{
-		m_activeProvider = CreateFallbackProvider();
+		m_diagnostics = BuildFrameCopyUpscalerDiagnostics(
+		    ERendererProviderCapabilityState::Enabled,
+		    EUpscalerProviderFailureDomain::None,
+		    "Upscaler passthrough selected; final color is produced by the frame pass copy.");
+		m_shutdown = false;
+		return;
 	}
 
 	const bool initialized = m_activeProvider->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
-	if (!initialized && m_settings.RequestedProvider != EUpscalerProviderKind::Passthrough)
+	if (!initialized)
 	{
 		const UpscalerProviderCapabilities failedDiagnostics = m_activeProvider->GetDiagnostics();
-		std::unique_ptr<IUpscalerProvider> fallback = CreateFallbackProvider();
-		const bool fallbackInitialized = fallback->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
-		m_activeProvider = std::move(fallback);
-		RefreshDiagnostics(m_activeProvider.get());
-		m_diagnostics.CapabilityState =
-		    fallbackInitialized ? ERendererProviderCapabilityState::RuntimeFailed : ERendererProviderCapabilityState::Unavailable;
-		m_diagnostics.FailureDomain = failedDiagnostics.FailureDomain;
-		m_diagnostics.Reason = std::format(
-		    "Requested provider {} was unavailable: {} Falling back to {}.",
-		    UpscalerProviderKindToString(m_settings.RequestedProvider),
-		    failedDiagnostics.Reason,
-		    m_activeProvider->GetName());
+		m_activeProvider->Shutdown();
+		m_activeProvider.reset();
+		m_diagnostics = BuildFrameCopyUpscalerDiagnostics(
+		    ERendererProviderCapabilityState::RuntimeFailed,
+		    failedDiagnostics.FailureDomain,
+		    std::format(
+		        "Requested provider {} was unavailable: {} Final color is produced by the frame pass copy.",
+		        UpscalerProviderKindToString(m_settings.RequestedProvider),
+		        failedDiagnostics.Reason));
 	}
 	else
 	{
 		RefreshDiagnostics(m_activeProvider.get());
 	}
 
-	m_frameFallbackProvider = CreateFallbackProvider();
-	m_frameFallbackProvider->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
 	m_shutdown = false;
 }
 
 void UpscalerSubsystem::SetupFrame(const UpscalerInputContract& inputContract)
 {
 	m_lastInputValidation = ValidateUpscalerInputContract(inputContract);
-	m_useFrameFallback = !m_lastInputValidation.Valid && m_activeProvider != nullptr &&
-	                     m_activeProvider->GetKind() != EUpscalerProviderKind::Passthrough;
-	m_frameFallbackReason.clear();
-
-	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.Upscaling");
 	if (!m_lastInputValidation.Valid)
 	{
-		m_frameFallbackReason = std::format("Upscaler input contract invalid: {}", m_lastInputValidation.Summary);
-		SPDLOG_LOGGER_WARN(logger, "{}. Using deterministic passthrough for this frame.", m_frameFallbackReason);
-	}
-	else if (m_settings.DiagnosticsEnabled)
-	{
-		SPDLOG_LOGGER_DEBUG(logger, "Upscaler input contract: {}", m_lastInputValidation.Summary);
+		m_diagnostics = BuildFrameCopyUpscalerDiagnostics(
+		    ERendererProviderCapabilityState::RuntimeFailed,
+		    EUpscalerProviderFailureDomain::InputContract,
+		    std::format("Upscaler input contract invalid: {}", m_lastInputValidation.Summary));
+		m_diagnostics.RenderExtent = inputContract.RenderExtent;
+		m_diagnostics.OutputExtent = inputContract.OutputExtent;
+		m_diagnostics.ResourceContract = BuildUpscalerProviderResourceContract(inputContract);
+		m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
+		return;
 	}
 
-	IUpscalerProvider* const provider = m_useFrameFallback && m_frameFallbackProvider != nullptr ? m_frameFallbackProvider.get() : m_activeProvider.get();
-	if (provider != nullptr)
+	if (m_activeProvider != nullptr)
 	{
-		provider->SetupFrame(inputContract);
-		RefreshDiagnostics(provider);
+		m_activeProvider->SetupFrame(inputContract);
+		RefreshDiagnostics(m_activeProvider.get());
+		return;
 	}
+
+	m_diagnostics = BuildFrameCopyUpscalerDiagnostics(
+	    ERendererProviderCapabilityState::Enabled,
+	    EUpscalerProviderFailureDomain::None,
+	    "Upscaler passthrough selected; final color is produced by the frame pass copy.");
+	m_diagnostics.RenderExtent = inputContract.RenderExtent;
+	m_diagnostics.OutputExtent = inputContract.OutputExtent;
+	m_diagnostics.ResetRequested = inputContract.ResetRequested;
+	m_diagnostics.ResetReason = inputContract.ResetReason;
+	m_diagnostics.ResourceContract = BuildUpscalerProviderResourceContract(inputContract);
+	m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
 }
 
 UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDesc& evaluation)
 {
-	IUpscalerProvider* const provider = m_useFrameFallback && m_frameFallbackProvider != nullptr ? m_frameFallbackProvider.get() : m_activeProvider.get();
-	if (provider == nullptr)
+	if (!m_lastInputValidation.Valid)
 	{
 		return UpscalerEvaluationResult{
 		    .ProducedOutput = false,
 		    .UsedFallback = true,
-		    .FailureDomain = EUpscalerProviderFailureDomain::Backend,
-		    .Reason = "No upscaler provider is active."};
+		    .FailureDomain = EUpscalerProviderFailureDomain::InputContract,
+		    .Reason = std::format("Upscaler input contract invalid: {}", m_lastInputValidation.Summary)};
 	}
 
-	UpscalerEvaluationResult result = provider->Evaluate(evaluation);
-	RefreshDiagnostics(provider);
-	if (m_useFrameFallback)
+	if (m_activeProvider == nullptr)
 	{
-		result.UsedFallback = true;
-		result.FailureDomain = EUpscalerProviderFailureDomain::InputContract;
-		result.Reason = m_frameFallbackReason;
-		m_diagnostics.CapabilityState = ERendererProviderCapabilityState::RuntimeFailed;
-		m_diagnostics.FailureDomain = result.FailureDomain;
-		m_diagnostics.Reason = result.Reason;
+		return UpscalerEvaluationResult{
+		    .ProducedOutput = false,
+		    .UsedFallback = true,
+		    .FailureDomain = EUpscalerProviderFailureDomain::None,
+		    .Reason = "Final color is produced by the frame pass copy."};
 	}
+
+	UpscalerEvaluationResult result = m_activeProvider->Evaluate(evaluation);
+	RefreshDiagnostics(m_activeProvider.get());
 	return result;
 }
 
@@ -119,11 +150,11 @@ void UpscalerSubsystem::OnResize(RenderViewportExtent renderExtent, RenderViewpo
 	{
 		m_activeProvider->OnResize(renderExtent, outputExtent);
 		RefreshDiagnostics(m_activeProvider.get());
+		return;
 	}
-	if (m_frameFallbackProvider != nullptr)
-	{
-		m_frameFallbackProvider->OnResize(renderExtent, outputExtent);
-	}
+
+	m_diagnostics.RenderExtent = renderExtent;
+	m_diagnostics.OutputExtent = outputExtent;
 }
 
 void UpscalerSubsystem::ResetHistory(std::string_view reason)
@@ -132,11 +163,11 @@ void UpscalerSubsystem::ResetHistory(std::string_view reason)
 	{
 		m_activeProvider->ResetHistory(reason);
 		RefreshDiagnostics(m_activeProvider.get());
+		return;
 	}
-	if (m_frameFallbackProvider != nullptr)
-	{
-		m_frameFallbackProvider->ResetHistory(reason);
-	}
+
+	m_diagnostics.ResetRequested = true;
+	m_diagnostics.ResetReason = std::string(reason);
 }
 
 void UpscalerSubsystem::Shutdown() noexcept
@@ -150,10 +181,6 @@ void UpscalerSubsystem::Shutdown() noexcept
 	{
 		m_activeProvider->Shutdown();
 	}
-	if (m_frameFallbackProvider != nullptr)
-	{
-		m_frameFallbackProvider->Shutdown();
-	}
 	m_shutdown = true;
 }
 
@@ -162,15 +189,10 @@ std::unique_ptr<IUpscalerProvider> UpscalerSubsystem::CreateProvider(EUpscalerPr
 	switch (kind)
 	{
 		case EUpscalerProviderKind::Passthrough:
-			return std::make_unique<PassthroughUpscalerProvider>();
+			return {};
 		case EUpscalerProviderKind::NvidiaDlss:
 			return std::make_unique<NvidiaDlssUpscalerProvider>();
 	}
 
 	return {};
-}
-
-std::unique_ptr<IUpscalerProvider> UpscalerSubsystem::CreateFallbackProvider()
-{
-	return std::make_unique<PassthroughUpscalerProvider>();
 }

@@ -167,12 +167,6 @@ void RenderRayTracingScene::Build(
 	    m_capabilityReport.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites;
 	m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates.FullGpuNativePackAvailable =
 	    m_capabilityReport.PartitionedTlas.SupportsGpuNativeOperationPacking;
-	m_diagnosticState->SceneDiagnostics.LogSceneUpdate(
-	    m_capabilityReport,
-	    topLevelBuild.ActiveProvider,
-	    topLevelBuild.ActiveProviderReason,
-	    blasStats,
-	    topLevelStats);
 }
 
 void RenderRayTracingScene::BuildPartitionedTlasLogicalUpdateResources(

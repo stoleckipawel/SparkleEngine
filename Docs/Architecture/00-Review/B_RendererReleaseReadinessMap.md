@@ -22,7 +22,7 @@ The biggest release-review risks are not TODO comments. The renderer/RHI/shader 
 1. Direct lighting now has a ReSTIR DI-shaped vertical slice: reservoir payloads, temporal reuse, spatial reuse, selected-sample visibility, and final reservoir-weighted shading. It still needs image/perf tuning against RTXDI-style reference behavior before it should be marketed as RTXDI-equivalent.
 2. Frame graph product ownership now has explicit roots for viewport/provider outputs, and the old no-root culling fallback is removed. Remaining work is to keep product exports request-aware as the editor/offscreen surface grows.
 3. PTLAS support is impressive but research-heavy: there are classic fallback paths, reserved frame-graph buffers, capability/provider selection, future GPU-pack hooks, and a lot of diagnostic state. For release, choose the shipping path and cut or compile-gate the rest.
-4. Provider/fallback/diagnostic code is broader than the current product surface. The release path should keep deterministic fallbacks only where they are user-visible behavior, not architecture drivers.
+4. Provider fallback ownership is now slimmer: unavailable upscaling or ray reconstruction returns a fallback result, and the frame pass performs the copy. Diagnostic CVars, startup reports, and Streamline log-directory plumbing were removed from this path.
 5. The docs are stale in one visible place: `Docs/README.md` still referenced a deleted PBR audit before this document was added.
 
 ## Engine Map
@@ -55,7 +55,7 @@ Renderer flow:
 | Deferred path | `Frame/Deferred`, `Frame/Lighting`, `Passes/Deferred`, shaders | GBuffer, shadow signal, direct lighting, indirect diffuse/specular, composite, sky. |
 | Reference path | `Frame/Reference`, `Passes/Reference`, `Passes/Reference/ReferencePathTracing.hlsl` | Owns color, direct/indirect splits, depth, normal, albedo, material, path guide outputs. |
 | Ray tracing scene | `RayTracing/Scene`, `RayTracing/Acceleration`, `Frame/RayTracing` | BLAS cache, classic TLAS, partitioned TLAS, frame-graph build passes. |
-| Providers | `Upscaling`, `RayReconstruction`, `Streamline` | Separate upscaler and ray reconstruction contracts, Streamline-backed NVIDIA providers, fallback providers. |
+| Providers | `Upscaling`, `RayReconstruction`, `Streamline` | Separate upscaler and ray reconstruction contracts, Streamline-backed NVIDIA providers, frame-pass copy fallback. |
 | Shader ABI | `ShaderRegistrations`, `Tools/Shaders/ShaderCompiler`, `RHI/Public/Shaders` | Typed registrations, package features, reflection, cook artifacts, package inspection. |
 
 ## Reference Shape
@@ -82,7 +82,7 @@ A great product renderer has these traits:
 | One writer per product | History, guide buffers, GBuffer products, and lighting outputs have one clear writer. | Mostly good. Reference guide ownership is especially good. |
 | Explicit RHI policy | The engine clearly states what it tracks automatically and what remains explicit. | Present in code; needs product-level documentation. |
 | Shader ABI discipline | Shader source, registration, feature flags, reflection, cook cache, package load, and binding layout all line up. | Strong. This is a review strength. |
-| Vendor boundaries | NVIDIA/AMD SDKs are isolated behind provider contracts and capability gates. | Good direction. Cleanup should reduce fallback and diagnostic sprawl. |
+| Vendor boundaries | NVIDIA/AMD SDKs are isolated behind provider contracts and capability gates. | Good direction. Provider fallback is now a product-boundary copy instead of a parallel provider object. |
 | Physical lighting | Direct, indirect, reference, and realtime lighting share BRDF/material/light policy. | Good sharing. Direct lighting now has many-light reservoir reuse; tune quality, stability, and performance against reference scenes. |
 | Temporal ownership | Motion vectors, jitter, history reset, exposure, upscaler/reconstruction state are explicit. | Good resets; reference path lacks motion vectors for reconstruction. |
 | Runtime confidence | Build steps, smoke paths, and demo project are present and current. | Local CMake targets and launcher flows exist; hosted CI is intentionally absent. |
@@ -177,24 +177,44 @@ Cleanup action:
 - Pick one shipping TLAS path for the release.
 - Put PTLAS behind a build/runtime feature gate with an explicit support matrix, or remove the future GPU-pack scaffolding until the GPU path is real.
 
-### P1. Provider Surface Is Good, But Fallbacks Shape Too Much Code
+### Closed P1. Provider Fallbacks No Longer Shape The Provider Surface
 
 Evidence:
 
-- Upscaling and ray reconstruction both maintain active provider plus frame fallback provider.
-- Ray reconstruction has a good separate input contract and provider pass, but provider diagnostics are not surfaced through `RendererImageProviderStack` the same way upscaler diagnostics are.
-- `RendererImageProviderStack::GetFrameGraphKey()` only keys on ray reconstruction mode; upscaler setting changes are not graph-keyed even though provider execution mode can affect final color production.
+- Upscaling and ray reconstruction no longer maintain per-frame fallback provider instances.
+- `PassthroughUpscalerProvider` and `NoopRayReconstructionProvider` were removed.
+- Provider-unavailable and invalid-input cases now return fallback evaluation results; `AddUpscalerEvaluationPass()` and `AddRayReconstructionProviderPass()` keep the deterministic product-boundary copy.
+- `RendererImageProviderStack::GetFrameGraphKey()` now includes effective upscaler provider/quality and ray reconstruction mode/quality.
+- Provider diagnostic CVars (`r.Upscaler.Diagnostics`, `r.RayReconstruction.Diagnostics`) and Streamline log path setup were removed.
+- DLSS startup/capability logging was removed; provider state stays in the capability/evaluation result path.
 
 Why reviewers care:
 
 - Provider abstraction is a strength when it is small and decisive.
-- If fallback code is larger than the feature code, reviewers read it as unfinished behavior.
+- Fallback code is now smaller and no longer reads as a second feature path.
 
-Cleanup action:
+Remaining cleanup:
 
 - Keep deterministic fallback behavior only at the product boundary: "provider unavailable means copy unreconstructed/unupscaled color."
-- Collapse duplicated fallback-provider machinery where a simple fallback result would do.
-- Do not add new diagnostics to paper over provider ambiguity.
+- Keep provider diagnostics as state needed for feature decisions; do not reintroduce runtime logging as a substitute for product behavior.
+
+### Closed P1. Routine Renderer Logging Was Cut Back
+
+Evidence:
+
+- Frame-pipeline begin/end trace logs, GPU-timing trace dumps, temporal history debug/info logs, texture load debug/info logs, shader-runtime ready/package logs, and first GBuffer draw summary logs were removed.
+- `PipelineRuntimeKey` existed only to format pipeline INFO logs and was deleted with its formatter implementation.
+- `RayTracingSceneDiagnostics` existed only to emit scene summary INFO logs and was removed; ray tracing performance metrics remain in `RayTracingSceneDiagnosticState`.
+- Ray traced shadow diagnostic CVar/uniform plumbing was removed because the shader did not consume it.
+
+Why reviewers care:
+
+- Routine logs make the renderer look louder than its feature code and increase maintenance surface without improving shipped behavior.
+- Keeping failure-path warnings/errors while deleting trace/info chatter makes the runtime easier to read and keeps review focus on product paths.
+
+Remaining cleanup:
+
+- `FrameGraphPlanDiagnostics` still contains explicit plan-dump logging. Keep it only as an intentionally invoked graph inspection utility, or replace it with a structured artifact if product release no longer needs it.
 
 ### P1. Reference Path Is Architecturally Better Than It Is Algorithmically Complete
 
@@ -274,7 +294,7 @@ Cleanup action:
 
 5. Trim provider code.
    - Keep `UpscalerInputContract` and `RayReconstructionInputContract` separate.
-   - Collapse fallback-provider duplication where possible.
+   - Keep fallback as pass-level copy behavior rather than provider objects.
    - Keep provider resource contracts decisive and small.
 
 6. Freeze ray tracing scope.
@@ -289,7 +309,7 @@ Cleanup action:
 
 - Do not add more renderer validators or diagnostic panels as a substitute for finishing features.
 - Do not add wrapper layers that only rename handles, settings, or provider results.
-- Do not let fallback providers become the main architecture.
+- Do not let fallback behavior become the main architecture.
 - Do not claim RTXDI SDK equivalence unless the SDK is actually integrated and validated against its reference behavior.
 - Do not let reference mode consume realtime GBuffer products unless it writes equivalent products itself.
 - Do not keep future GPU/SDK scaffolding in the release path unless the feature is shipping.

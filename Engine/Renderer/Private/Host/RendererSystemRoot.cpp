@@ -18,7 +18,6 @@
 #include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
-#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
@@ -27,7 +26,6 @@
 #include "Settings/RenderDeviceSettingsResolver.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
-#include "Upscaling/UpscalingStartupDiagnostics.h"
 #include "Window/Window.h"
 
 RendererSystemRoot::RendererSystemRoot(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
@@ -156,13 +154,9 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnostics();
 	const RayTracingCapabilityReport rayTracingCapabilities =
 	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
-	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
-	LogUpscalingStartupDiagnostics(GetRenderHardwareInterface().GetCapabilities());
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
 	InitializeImageProviders(renderHardware);
 	m_rayTracedShadowSettings = std::make_unique<RayTracedShadowSettings>(BuildRayTracedShadowSettingsFromCVars());
-	LogRayTracedShadowSettingsOnce(*m_rayTracedShadowSettings, rayTracingCapabilities);
-	LogIndirectSpecularSettingsOnce(BuildIndirectSpecularSettingsFromCVars(), rayTracingCapabilities);
 	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);
 
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);

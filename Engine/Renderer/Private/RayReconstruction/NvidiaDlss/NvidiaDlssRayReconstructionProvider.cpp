@@ -74,10 +74,7 @@ bool NvidiaDlssRayReconstructionProvider::Initialize(
 	        .Capabilities = capabilities,
 	        .NativeInterop = nativeInterop,
 	        .PresentationBridge = presentationBridge,
-	        .QualityMode = m_qualityMode,
-	        .DiagnosticsEnabled = settings.DiagnosticsEnabled,
-	        .ApplicationName = "SparkleEngine",
-	        .ApplicationId = 0});
+	        .QualityMode = m_qualityMode});
 	m_runtimeDiagnostics = m_runtime->GetDiagnostics();
 	m_diagnostics = GetDiagnostics();
 	return initialized;

@@ -10,11 +10,6 @@ namespace
 	    EUpscalerProviderKind::NvidiaDlss,
 	    "Renderer upscaler provider: 0=Passthrough, 1=NVIDIA DLSS.");
 
-	ConsoleVariable<bool> CVarUpscalerDiagnosticsEnabled(
-	    "r.Upscaler.Diagnostics",
-	    false,
-	    "Enable additional renderer upscaler diagnostics.");
-
 	ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode(
 	    "r.Upscaler.QualityMode",
 	    EUpscalerQualityMode::NativeAA,
@@ -25,8 +20,7 @@ UpscalerSettings BuildUpscalerSettingsFromCVars() noexcept
 {
 	return UpscalerSettings{
 	    .RequestedProvider = CVarUpscalerProvider.Get(),
-	    .QualityMode = CVarUpscalerQualityMode.Get(),
-	    .DiagnosticsEnabled = CVarUpscalerDiagnosticsEnabled.Get()};
+	    .QualityMode = CVarUpscalerQualityMode.Get()};
 }
 
 const char* UpscalerQualityModeToString(EUpscalerQualityMode mode) noexcept

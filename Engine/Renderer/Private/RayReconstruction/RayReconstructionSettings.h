@@ -6,7 +6,6 @@ struct RayReconstructionSettings final
 {
 	EngineRayReconstructionMode Mode = EngineRayReconstructionMode::Off;
 	EngineRayReconstructionQualityMode QualityMode = EngineRayReconstructionQualityMode::Quality;
-	bool DiagnosticsEnabled = false;
 };
 
 RayReconstructionSettings BuildRayReconstructionSettingsFromCVars() noexcept;

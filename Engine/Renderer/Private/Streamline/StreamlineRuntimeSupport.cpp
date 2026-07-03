@@ -6,9 +6,7 @@
 #include <sl_helpers.h>
 #include <sl_helpers_vk.h>
 
-#include <filesystem>
 #include <format>
-#include <system_error>
 
 bool HasStreamlineNativeAdapterLuid(const RhiAdapterIdentity& adapter) noexcept
 {
@@ -110,32 +108,20 @@ void FillStreamlinePreferences(
     sl::Preferences& preferences,
     const sl::Feature* features,
     std::uint32_t featureCount,
-    const StreamlinePreferencesDesc& desc,
-    std::wstring& outLogPath)
+    sl::RenderAPI renderApi)
 {
 	preferences = {};
 	preferences.showConsole = false;
-	preferences.logLevel = desc.DiagnosticsEnabled ? sl::LogLevel::eVerbose : sl::LogLevel::eDefault;
+	preferences.logLevel = sl::LogLevel::eDefault;
 	preferences.featuresToLoad = features;
 	preferences.numFeaturesToLoad = featureCount;
 	preferences.flags = sl::PreferenceFlags::eDisableCLStateTracking | sl::PreferenceFlags::eUseManualHooking |
 	                    sl::PreferenceFlags::eUseFrameBasedResourceTagging | sl::PreferenceFlags::eAllowOTA |
 	                    sl::PreferenceFlags::eLoadDownloadedPlugins;
-	preferences.applicationId = desc.ApplicationId;
+	preferences.applicationId = 0;
 	preferences.engine = sl::EngineType::eCustom;
 	preferences.engineVersion = "SparkleEngine-Development";
 	preferences.projectId = "535041524B4C45454E47494E45303031";
-	preferences.renderAPI = desc.RenderApi;
-
-	std::error_code logPathError;
-	outLogPath = (std::filesystem::current_path(logPathError) / ".." / ".." / "logs" / "Streamline").lexically_normal().wstring();
-	if (!logPathError)
-	{
-		std::filesystem::create_directories(outLogPath, logPathError);
-		if (!logPathError)
-		{
-			preferences.pathToLogsAndData = outLogPath.c_str();
-		}
-	}
+	preferences.renderAPI = renderApi;
 }
 #endif

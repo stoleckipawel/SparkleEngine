@@ -219,8 +219,6 @@ void FramePipeline::BeginFrame() noexcept
 void FramePipeline::SetupFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.SetupFrame");
-	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SetupFrame begin");
 
 	Timer& timer = m_systems->GetTimer();
 	timer.Tick();
@@ -232,7 +230,6 @@ void FramePipeline::SetupFrame() noexcept
 
 	const RenderViewportExtent sceneExtent = m_frameGraphSceneExtent.IsValid() ? m_frameGraphSceneExtent : ResolveSceneExtent();
 	m_perFrameData = m_perFrameDataBuilder.Build(timer, CVarRenderViewMode.Get(), sceneExtent);
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SetupFrame end");
 }
 
 void FramePipeline::RefreshViewportRenderProducts() noexcept
@@ -264,8 +261,6 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 void FramePipeline::RecordFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.RecordFrame");
-	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context begin");
 
 	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
 	std::string temporalResetReason;
@@ -298,7 +293,6 @@ void FramePipeline::RecordFrame() noexcept
 		ResetExposureHistory();
 		ResetDirectLightReservoirHistory();
 	}
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
 	if (m_frameResources.UpscalerProviderInputs.ScalingInputColor.IsValid())
 	{
@@ -357,14 +351,12 @@ void FramePipeline::RecordFrame() noexcept
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphSetup");
 		m_frameGraph->Setup(frame);
 	}
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph setup end");
 
 	const FrameGraphPlan compiledPlan = [&]()
 	{
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphCompile");
 		return m_frameGraph->Compile();
 	}();
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph compile end (passes={})", compiledPlan.executionOrder.size());
 	RenderCommandList& commandList = m_systems->GetBackend().GetCurrentGraphicsCommandList();
 	RenderCommandContext cmd(commandList);
 	const IndirectDiffuseSettings indirectDiffuseSettings = BuildIndirectDiffuseSettingsFromCVars();
@@ -397,28 +389,19 @@ void FramePipeline::RecordFrame() noexcept
 	              RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255})
 	        : ScopedGpuScope{};
 
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute begin");
 	m_frameGraph->Execute(compiledPlan, cmd, frame, passRuntimeServices, frameDiagnostics);
-
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute end");
 }
 
 void FramePipeline::SubmitFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.SubmitFrame");
-	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SubmitFrame begin");
 	m_systems->GetBackend().SubmitFrame();
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SubmitFrame end");
 }
 
 void FramePipeline::EndFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.EndFrame");
-	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame begin");
 	m_exposureHistoryValid = HasExposureHistoryResources();
 	m_directLightReservoirHistoryValid = HasDirectLightReservoirHistoryResources();
 	m_systems->GetBackend().AdvanceFrameInFlight();
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame end");
 }

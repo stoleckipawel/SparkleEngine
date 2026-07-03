@@ -5,7 +5,6 @@
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 
 #include <DirectXMath.h>
-#include <string>
 #include <string_view>
 
 class RenderCamera;
@@ -38,5 +37,4 @@ class TemporalDataBuilder final
 	uint32_t m_jitterIndex = 0;
 	bool m_hasPreviousPose = false;
 	bool m_resetRequested = false;
-	std::string m_resetReason;
 };

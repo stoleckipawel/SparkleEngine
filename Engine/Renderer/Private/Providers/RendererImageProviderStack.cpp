@@ -28,6 +28,16 @@ namespace
 		}
 		return settings;
 	}
+
+	std::uint32_t PackImageProviderGraphKey(
+	    const UpscalerSettings& upscalerSettings,
+	    const RayReconstructionSettings& rayReconstructionSettings) noexcept
+	{
+		return static_cast<std::uint32_t>(upscalerSettings.RequestedProvider) |
+		       (static_cast<std::uint32_t>(upscalerSettings.QualityMode) << 4u) |
+		       (static_cast<std::uint32_t>(rayReconstructionSettings.Mode) << 8u) |
+		       (static_cast<std::uint32_t>(rayReconstructionSettings.QualityMode) << 12u);
+	}
 }
 
 RendererImageProviderStack::RendererImageProviderStack() = default;
@@ -125,7 +135,7 @@ void RendererImageProviderStack::SetupRayReconstructionFrame(const RayReconstruc
 
 std::uint32_t RendererImageProviderStack::GetFrameGraphKey() const noexcept
 {
-	return static_cast<std::uint32_t>(GetRayReconstructionModeFromCVars());
+	return PackImageProviderGraphKey(BuildImageProviderUpscalerSettings(), BuildRayReconstructionSettingsFromCVars());
 }
 
 RendererImageProviderPassServices RendererImageProviderStack::BuildPassServices() noexcept
@@ -146,8 +156,7 @@ RendererProviderDiagnosticsSnapshot RendererImageProviderStack::CaptureUpscalerD
 	return RendererProviderDiagnosticsSnapshot{
 	    .Status = ERendererDiagnosticStatus::Available,
 	    .RequestedProvider = UpscalerProviderKindToString(m_upscalerSubsystem->GetRequestedProviderKind()),
-	    .ActiveProvider = provider.ProviderName.empty() ? std::string(m_upscalerSubsystem->GetActiveProvider().GetName()) :
-	                                                      provider.ProviderName,
+	    .ActiveProvider = provider.ProviderName,
 	    .Category = RendererProviderCategoryToString(provider.Category),
 	    .CapabilityState = RendererProviderCapabilityStateToString(provider.CapabilityState),
 	    .FailureDomain = UpscalerProviderFailureDomainToString(provider.FailureDomain),

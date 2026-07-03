@@ -79,32 +79,10 @@ const FrameExecutionDiagnostics& FramePipeline::GetCurrentFrameDiagnostics() con
 
 void FramePipeline::ReportResolvedTimings(std::uint32_t frameIndex, const FrameExecutionDiagnostics& frameDiagnostics) const noexcept
 {
+	static_cast<void>(frameIndex);
 	const auto& resolvedTimers = frameDiagnostics.GetResolvedTimings();
 
 	PublishLiveGpuTimings(resolvedTimers);
-
-	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
-
-	if (rendererLogger == nullptr || !rendererLogger->should_log(spdlog::level::trace))
-	{
-		return;
-	}
-
-	if (resolvedTimers.empty())
-	{
-		return;
-	}
-
-	SPDLOG_LOGGER_TRACE(rendererLogger, "Resolved GPU timings for frame slot {} ({} scopes)", frameIndex, resolvedTimers.size());
-	for (const ResolvedGpuTiming& resolvedTimer : resolvedTimers)
-	{
-		SPDLOG_LOGGER_TRACE(
-		    rendererLogger,
-		    "  {}: {:.3f} ms ({} ticks)",
-		    resolvedTimer.Label,
-		    resolvedTimer.DurationMilliseconds,
-		    resolvedTimer.DurationTicks);
-	}
 }
 
 void FramePipeline::PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resolvedTimers) const noexcept

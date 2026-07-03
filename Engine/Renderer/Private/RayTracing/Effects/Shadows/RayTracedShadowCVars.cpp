@@ -13,7 +13,3 @@ ConsoleVariable<float> CVarRayTracedShadowMaxDistance(
 	"r.RayTracedShadows.MaxDistance",
 	100000.0f,
 	"Maximum ray distance for directional ray traced shadows.");
-ConsoleVariable<bool> CVarRayTracedShadowDiagnosticsEnabled(
-	"r.RayTracedShadows.Diagnostics",
-	false,
-	"Enable additional ray traced shadow diagnostics.");
