@@ -46,7 +46,6 @@ void FrameGraph::Execute(
     const PassRuntimeServices& passRuntimeServices,
     FrameExecutionDiagnostics& frameDiagnostics) const
 {
-	static constexpr auto kFrameGraphExecuteName = Diagnostics::DiagnosticName{"Renderer.FrameGraph.Execute"};
 	FrameGraphExecutionDiagnostics graphDiagnostics(frameDiagnostics, cmd);
 	if (graphDiagnostics.ShouldEmitDetailedMarkers())
 	{

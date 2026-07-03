@@ -38,11 +38,6 @@ ScopedGpuScope PassExecutionDiagnostics::BeginGpuScope(std::string_view label) n
 	return m_frameDiagnostics->BeginGpuScope(*m_commands, eventLabel, m_passColor);
 }
 
-ScopedGpuScope PassExecutionDiagnostics::BeginGpuScope(const Diagnostics::DiagnosticName& name) noexcept
-{
-	return BeginGpuScope(name.GetCanonicalName());
-}
-
 RhiDiagnosticLabelColor PassExecutionDiagnostics::GetPassEventColor(EFrameGraphPassFlags passKind) noexcept
 {
 	switch (passKind)

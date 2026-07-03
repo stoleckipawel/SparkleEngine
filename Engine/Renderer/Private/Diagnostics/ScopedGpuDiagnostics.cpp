@@ -22,6 +22,11 @@ ScopedGpuEvent::~ScopedGpuEvent() noexcept
 	Reset();
 }
 
+bool ScopedGpuEvent::IsActive() const noexcept
+{
+	return m_commands != nullptr;
+}
+
 ScopedGpuEvent::ScopedGpuEvent(ScopedGpuEvent&& other) noexcept : m_commands(other.m_commands)
 {
 	other.m_commands = nullptr;
@@ -91,6 +96,11 @@ ScopedGpuTimer::~ScopedGpuTimer() noexcept
 	m_endQuery = {};
 }
 
+bool ScopedGpuTimer::IsActive() const noexcept
+{
+	return m_owner != nullptr;
+}
+
 ScopedGpuTimer::ScopedGpuTimer(ScopedGpuTimer&& other) noexcept :
     m_owner(other.m_owner),
     m_commands(other.m_commands),
@@ -155,6 +165,11 @@ void ScopedGpuTimer::Reset() noexcept
 ScopedGpuScope::ScopedGpuScope(ScopedGpuEvent eventScope, ScopedGpuTimer timerScope) noexcept :
     m_eventScope(std::move(eventScope)), m_timerScope(std::move(timerScope))
 {
+}
+
+bool ScopedGpuScope::IsActive() const noexcept
+{
+	return m_eventScope.IsActive() || m_timerScope.IsActive();
 }
 
 ScopedGpuScope::ScopedGpuScope(ScopedGpuScope&& other) noexcept :

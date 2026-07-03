@@ -14,7 +14,7 @@ class FrameGraphExecutionDiagnostics final
   public:
 	FrameGraphExecutionDiagnostics(FrameExecutionDiagnostics& frameDiagnostics, RenderCommandContext& commands) noexcept;
 
-	RendererDiagnosticMarkerVerbosity GetMarkerVerbosity() const noexcept { return m_markerVerbosity; }
+	RendererDiagnosticMarkerVerbosity GetMarkerVerbosity() const noexcept;
 	bool ShouldEmitFramePassMarkers() const noexcept;
 	bool ShouldEmitDetailedMarkers() const noexcept;
 

@@ -4,7 +4,6 @@
 
 #include "FrameGraph/FrameGraphPassFlags.h"
 
-
 #include <string>
 #include <string_view>
 
@@ -19,7 +18,6 @@ class PassExecutionDiagnostics final
 
 	ScopedGpuScope BeginPassGpuScope() noexcept;
 	ScopedGpuScope BeginGpuScope(std::string_view label) noexcept;
-	ScopedGpuScope BeginGpuScope(const Diagnostics::DiagnosticName& name) noexcept;
 
   private:
 	static RhiDiagnosticLabelColor GetPassEventColor(EFrameGraphPassFlags passKind) noexcept;

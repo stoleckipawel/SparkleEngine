@@ -33,6 +33,16 @@ bool FrameExecutionDiagnostics::IsGpuTimingAvailable() const noexcept
 	return CVarRendererDiagnosticGpuTiming.Get() && SupportsTimestampQueries();
 }
 
+const std::vector<GpuTimingScope>& FrameExecutionDiagnostics::GetRecordedTimings() const noexcept
+{
+	return m_recordedTimers;
+}
+
+const std::vector<ResolvedGpuTiming>& FrameExecutionDiagnostics::GetResolvedTimings() const noexcept
+{
+	return m_resolvedTimers;
+}
+
 ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
     RenderCommandContext& commands,
     std::string_view label,
@@ -71,14 +81,6 @@ ScopedGpuScope FrameExecutionDiagnostics::BeginGpuScope(
     RhiDiagnosticLabelColor color) noexcept
 {
 	return ScopedGpuScope{BeginGpuEvent(commands, label, color), BeginTimer(commands, label)};
-}
-
-ScopedGpuScope FrameExecutionDiagnostics::BeginGpuScope(
-    RenderCommandContext& commands,
-    const Diagnostics::DiagnosticName& name,
-    RhiDiagnosticLabelColor color) noexcept
-{
-	return BeginGpuScope(commands, name.GetCanonicalName(), color);
 }
 
 void FrameExecutionDiagnostics::InsertGpuMarker(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color)

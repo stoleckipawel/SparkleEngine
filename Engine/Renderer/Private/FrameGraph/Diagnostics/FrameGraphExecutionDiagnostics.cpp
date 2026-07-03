@@ -25,6 +25,11 @@ bool FrameGraphExecutionDiagnostics::ShouldEmitFramePassMarkers() const noexcept
 	       m_markerVerbosity == RendererDiagnosticMarkerVerbosity::Detailed;
 }
 
+RendererDiagnosticMarkerVerbosity FrameGraphExecutionDiagnostics::GetMarkerVerbosity() const noexcept
+{
+	return m_markerVerbosity;
+}
+
 bool FrameGraphExecutionDiagnostics::ShouldEmitDetailedMarkers() const noexcept
 {
 	return m_markerVerbosity == RendererDiagnosticMarkerVerbosity::Detailed;

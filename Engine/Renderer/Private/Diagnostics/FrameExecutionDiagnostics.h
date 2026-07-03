@@ -2,7 +2,6 @@
 
 #include "FrameGraph/FrameGraphPassFlags.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cstdint>
@@ -44,7 +43,7 @@ class ScopedGpuEvent final
 	ScopedGpuEvent(ScopedGpuEvent&& other) noexcept;
 	ScopedGpuEvent& operator=(ScopedGpuEvent&& other) noexcept;
 
-	bool IsActive() const noexcept { return m_commands != nullptr; }
+	bool IsActive() const noexcept;
 
   private:
 	friend class FrameExecutionDiagnostics;
@@ -66,7 +65,7 @@ class ScopedGpuTimer final
 	ScopedGpuTimer(ScopedGpuTimer&& other) noexcept;
 	ScopedGpuTimer& operator=(ScopedGpuTimer&& other) noexcept;
 
-	bool IsActive() const noexcept { return m_owner != nullptr; }
+	bool IsActive() const noexcept;
 
   private:
 	friend class FrameExecutionDiagnostics;
@@ -100,7 +99,7 @@ class ScopedGpuScope final
 	ScopedGpuScope(ScopedGpuScope&& other) noexcept;
 	ScopedGpuScope& operator=(ScopedGpuScope&& other) noexcept;
 
-	bool IsActive() const noexcept { return m_eventScope.IsActive() || m_timerScope.IsActive(); }
+	bool IsActive() const noexcept;
 
   private:
 	ScopedGpuEvent m_eventScope;
@@ -120,14 +119,10 @@ class FrameExecutionDiagnostics final
 
 	bool IsGpuTimingAvailable() const noexcept;
 	ScopedGpuScope BeginGpuScope(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
-	ScopedGpuScope BeginGpuScope(
-	    RenderCommandContext& commands,
-	    const Diagnostics::DiagnosticName& name,
-	    RhiDiagnosticLabelColor color = {}) noexcept;
 	void ResolveTimings() noexcept;
 
-	const std::vector<GpuTimingScope>& GetRecordedTimings() const noexcept { return m_recordedTimers; }
-	const std::vector<ResolvedGpuTiming>& GetResolvedTimings() const noexcept { return m_resolvedTimers; }
+	const std::vector<GpuTimingScope>& GetRecordedTimings() const noexcept;
+	const std::vector<ResolvedGpuTiming>& GetResolvedTimings() const noexcept;
 
   private:
 	friend class ScopedGpuTimer;
