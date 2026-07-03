@@ -397,11 +397,9 @@ namespace SparkleLauncher
 		launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
 		launchRequest.SmokeViewMode = request.SmokeViewMode.toStdString();
 		launchRequest.SmokeCapturePath = request.SmokeCapturePath.toStdString();
-		launchRequest.SmokeTrace = request.SmokeTrace;
 		launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
 		launchRequest.SmokeRunRayTracingParity = request.SmokeRunRayTracingParity;
 		launchRequest.SmokeRunPtlasBenchmark = request.SmokeRunPtlasBenchmark;
-		launchRequest.SmokeRunDiagnosticCaptures = request.SmokeRunDiagnosticCaptures;
 
 		const LaunchOperationPlan plan = PlanLaunchOperation(operationId.toStdString(), launchRequest);
 		const BuildToolchainStatus toolchainStatus = DetectBuildToolchain(workspaceRequest.RepositoryRoot, workspaceRequest.PreferredIde);
@@ -653,14 +651,6 @@ namespace SparkleLauncher
 		addCompactCheckBoxRow(
 		    *smokeOptionsLayout,
 		    CreateBoundCheckBox(
-		        "Capture trace",
-		        "Write smoke trace output to help diagnose failures or correlate capture artifacts with runtime events.",
-		        m_settings.SmokeTrace(),
-		        &LauncherSettings::SetSmokeTrace),
-		    420);
-		addCompactCheckBoxRow(
-		    *smokeOptionsLayout,
-		    CreateBoundCheckBox(
 		        "Skip level switching",
 		        "Do not switch levels during smoke. Matrix-oriented suites force this behavior when deterministic comparisons require a fixed scene.",
 		        m_settings.SmokeSkipLevelSwitching(),
@@ -684,13 +674,6 @@ namespace SparkleLauncher
 		        "Runs PTLAS benchmark scenarios and emits timing-oriented diagnostics for performance review.",
 		        m_settings.SmokeRunPtlasBenchmark(),
 		        &LauncherSettings::SetSmokeRunPtlasBenchmark));
-		addCompactCheckBoxRow(
-		    *smokeOptionsLayout,
-		    CreateBoundCheckBox(
-		        "PTLAS diagnostic captures",
-		        "Generates capture-oriented PTLAS diagnostic views and writes a reusable artifact bundle for inspection.",
-		        m_settings.SmokeRunDiagnosticCaptures(),
-		        &LauncherSettings::SetSmokeRunDiagnosticCaptures));
 	}
 
 	void LauncherMainWindow::AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)

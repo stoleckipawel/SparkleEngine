@@ -161,13 +161,6 @@ namespace FrameGraphPlanDiagnostics
 					continue;
 				}
 
-				SPDLOG_LOGGER_INFO(
-				    logger,
-				    "FrameGraph declaration: pass='{}' resource='{}' label='{}' usage={}",
-				    passRecord.passName,
-				    ResourceName(resourceRecord),
-				    declaration.label.empty() ? "<unlabeled>" : declaration.label,
-				    ResourceUsageToString(declaration.usage));
 			}
 		}
 	}
@@ -214,16 +207,6 @@ namespace FrameGraphPlanDiagnostics
 				continue;
 			}
 
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "FrameGraph pass[{}]: index={} name='{}' declarations={} deps={} barriers={} aliasing={}",
-			    orderIndex,
-			    passRecord->index,
-			    passRecord->passName,
-			    passRecord->declarations.size(),
-			    passRecord->dependsOn.size(),
-			    passRecord->compiledBarriers.size(),
-			    passRecord->transientAliasingBarriers.size());
 		}
 	}
 
@@ -236,13 +219,6 @@ namespace FrameGraphPlanDiagnostics
 				continue;
 			}
 
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "FrameGraph culled pass: index={} name='{}' declarations={} deps={}",
-			    passRecord.index,
-			    passRecord.passName,
-			    passRecord.declarations.size(),
-			    passRecord.dependsOn.size());
 		}
 	}
 
@@ -255,17 +231,6 @@ namespace FrameGraphPlanDiagnostics
 				continue;
 			}
 
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "FrameGraph resource: index={} name='{}' kind={} ownership={} initial={} planningStart={} final={} versions={}",
-			    resourceRecord.index,
-			    ResourceName(&resourceRecord),
-			    ResourceKindName(resourceRecord.kind),
-			    ResourceOwnershipName(resourceRecord.ownership),
-			    ResourceStateToString(resourceRecord.initialState),
-			    ResourceStateToString(resourceRecord.planningStartState),
-			    ResourceStateToString(resourceRecord.finalState),
-			    resourceRecord.versions.size());
 		}
 
 		for (const FrameGraphTransientResourcePlan& transientPlan : plan.transients.resources)
@@ -276,18 +241,6 @@ namespace FrameGraphPlanDiagnostics
 				continue;
 			}
 
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "FrameGraph transient lifetime: name='{}' block={} pool={} first={}({}) last={}({}) read={} write={}",
-			    ResourceName(resourceRecord),
-			    transientPlan.physicalAllocation.physicalBlockIndex,
-			    AllocationPoolName(transientPlan.physicalAllocation.pool),
-			    transientPlan.lifetime.firstExecutionIndex,
-			    PassNameForIndex(plan, transientPlan.lifetime.firstUserPass),
-			    transientPlan.lifetime.lastExecutionIndex,
-			    PassNameForIndex(plan, transientPlan.lifetime.lastUserPass),
-			    transientPlan.lifetime.readUsed,
-			    transientPlan.lifetime.writeUsed);
 		}
 	}
 
@@ -303,15 +256,6 @@ namespace FrameGraphPlanDiagnostics
 				}
 
 				const FrameGraphResourceNode* resourceRecord = FindResource(plan, barrier.handle);
-				SPDLOG_LOGGER_INFO(
-				    logger,
-				    "FrameGraph barrier: pass='{}' resource='{}' label='{}' type={} {}->{}",
-				    passRecord.passName,
-				    ResourceName(resourceRecord),
-				    BarrierLabel(barrier),
-				    BarrierTypeName(barrier.type),
-				    ResourceStateToString(barrier.before),
-				    ResourceStateToString(barrier.after));
 			}
 		}
 
@@ -323,14 +267,6 @@ namespace FrameGraphPlanDiagnostics
 			}
 
 			const FrameGraphResourceNode* resourceRecord = FindResource(plan, barrier.handle);
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "FrameGraph frame-end barrier: resource='{}' label='{}' type={} {}->{}",
-			    ResourceName(resourceRecord),
-			    BarrierLabel(barrier),
-			    BarrierTypeName(barrier.type),
-			    ResourceStateToString(barrier.before),
-			    ResourceStateToString(barrier.after));
 		}
 	}
 
@@ -355,16 +291,6 @@ namespace FrameGraphPlanDiagnostics
 				}
 			}
 
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "FrameGraph aliasing block: block={} pool={} size={} alignment={} first={} last={} resources={}",
-			    blockPlan.physicalBlockIndex,
-			    AllocationPoolName(blockPlan.pool),
-			    blockPlan.sizeInBytes,
-			    blockPlan.alignment,
-			    blockPlan.firstExecutionIndex,
-			    blockPlan.lastExecutionIndex,
-			    blockPlan.handles.size());
 		}
 
 		for (const FrameGraphPassNode& passRecord : plan.passes)
@@ -376,13 +302,6 @@ namespace FrameGraphPlanDiagnostics
 					continue;
 				}
 
-				SPDLOG_LOGGER_INFO(
-				    logger,
-				    "FrameGraph aliasing barrier: pass='{}' block={} before='{}' after='{}'",
-				    passRecord.passName,
-				    barrier.physicalBlockIndex,
-				    ResourceName(FindResource(plan, barrier.beforeHandle)),
-				    ResourceName(FindResource(plan, barrier.afterHandle)));
 			}
 		}
 
@@ -393,12 +312,6 @@ namespace FrameGraphPlanDiagnostics
 				continue;
 			}
 
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "FrameGraph frame-end aliasing barrier: block={} before='{}' after='{}'",
-			    barrier.physicalBlockIndex,
-			    ResourceName(FindResource(plan, barrier.beforeHandle)),
-			    ResourceName(FindResource(plan, barrier.afterHandle)));
 		}
 	}
 
@@ -419,19 +332,6 @@ namespace FrameGraphPlanDiagnostics
 			    return passRecord.alive;
 		    }));
 
-		SPDLOG_LOGGER_INFO(
-		    logger,
-		    "FrameGraph diagnostics: passes={} alive={} culled={} executionOrder={} resources={} transientResources={} aliasingBlocks={} finalBarriers={} finalAliasingBarriers={} filter='{}'",
-		    plan.passes.size(),
-		    alivePassCount,
-		    plan.passes.size() - alivePassCount,
-		    plan.executionOrder.size(),
-		    plan.resources.size(),
-		    plan.transients.resources.size(),
-		    plan.transients.physicalBlocks.size(),
-		    plan.finalBarriers.size(),
-		    plan.finalTransientAliasingBarriers.size(),
-		    config.Filter);
 
 		LogPassOrder(plan, config, logger);
 		LogPassDeclarations(plan, config, logger);

@@ -4,8 +4,6 @@
 
 #include <string_view>
 
-void RegisterHelloInlineRayQueryCSShader() noexcept {}
-
 class HelloInlineRayQueryCS final : public FComputeShader
 {
   public:
@@ -22,3 +20,8 @@ class HelloInlineRayQueryCS final : public FComputeShader
 };
 
 IMPLEMENT_GLOBAL_SHADER(HelloInlineRayQueryCS, "HelloWorld/HelloInlineRayQueryCS.hlsl", "main", Compute);
+
+void RegisterHelloInlineRayQueryCSShader() noexcept
+{
+	(void)AutoRegisterGlobalShader_HelloInlineRayQueryCS;
+}

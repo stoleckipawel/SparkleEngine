@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "Panels/ViewportPanel.h"
 
-#include "Panels/ViewportRayTracingDebugOverlay.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
@@ -68,11 +67,6 @@ void ViewportPanel::SetRenderProducts(const ViewportRenderProducts& renderProduc
 void ViewportPanel::SetSceneColorTextureId(std::uint64_t textureId) noexcept
 {
 	m_sceneColorTextureId = textureId;
-}
-
-void ViewportPanel::SetRendererSmokeDiagnostics(const RendererSmokeDiagnosticsSnapshot& diagnostics) noexcept
-{
-	m_rendererSmokeDiagnostics = diagnostics;
 }
 
 const ViewportRenderRequest& ViewportPanel::GetRenderRequest() const noexcept
@@ -161,7 +155,6 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 		}
 
 		ImGui::Image(static_cast<ImTextureID>(m_sceneColorTextureId), imageSize);
-		ViewportRayTracingDebugOverlay::Draw(m_rendererSmokeDiagnostics, ImGui::GetWindowPos());
 	}
 
 	ImGui::EndChild();

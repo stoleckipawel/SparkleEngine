@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "FileSystemUtils.h"
 
@@ -299,17 +299,12 @@ namespace
 				{
 					Diagnostics::Fail(logger, __FILE__, __LINE__, "[MISSING]  " + paddedLabel + ": (not configured)");
 				}
-				else
-				{
-					SPDLOG_LOGGER_INFO(logger, "[--]       {}: (not configured)", paddedLabel);
-				}
 				return;
 			}
 
 			const bool exists = std::filesystem::exists(path, ec);
 			if (exists)
 			{
-				SPDLOG_LOGGER_INFO(logger, "[OK]       {}: {}", paddedLabel, path.string());
 				return;
 			}
 
@@ -323,7 +318,6 @@ namespace
 			}
 		};
 
-		SPDLOG_LOGGER_INFO(logger, "========== Asset Paths Configuration ==========");
 		logPath("Working Directory", state.workingDirectory, true);
 		logPath("Executable Directory", state.executableDirectory, true);
 		logPath("Workspace", state.workspacePath, true);
@@ -339,7 +333,6 @@ namespace
 		logPath("Project", state.projectPath, false);
 		logPath("Project Assets", state.projectAssetsPath, false);
 		logPath("Shader Symbols Output", state.shaderSymbolsOutputPath, false);
-		SPDLOG_LOGGER_INFO(logger, "===============================================");
 	}
 
 	std::optional<std::filesystem::path> TryResolveIn(

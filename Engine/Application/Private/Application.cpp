@@ -3,7 +3,6 @@
 #include "Application.h"
 
 #include "ApplicationCommandLineCVars.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
@@ -23,15 +22,15 @@ void Application::ConfigureProcessFromCommandLine() noexcept
 
 void Application::Run()
 {
-	Diagnostics::BeginTraceSession();
-
 	Initialize();
 
-	while (Tick())
+	for (;;)
 	{
+		if (!Tick())
+		{
+			break;
+		}
 	}
 
 	Shutdown();
-
-	Diagnostics::EndTraceSession();
 }

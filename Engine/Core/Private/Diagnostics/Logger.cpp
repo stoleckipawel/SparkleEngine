@@ -146,6 +146,7 @@ namespace Logging
 				}
 				catch (...)
 				{
+					continue;
 				}
 			}
 		}
@@ -195,6 +196,7 @@ namespace Logging
 			}
 			catch (...)
 			{
+				return sinks;
 			}
 
 			return sinks;
@@ -243,6 +245,7 @@ namespace Logging
 		}
 		catch (...)
 		{
+			return;
 		}
 	}
 
@@ -331,6 +334,7 @@ namespace Logging
 		}
 		catch (...)
 		{
+			return;
 		}
 	}
 

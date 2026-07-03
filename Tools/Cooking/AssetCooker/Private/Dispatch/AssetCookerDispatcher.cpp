@@ -3,7 +3,6 @@
 #include "AssetCookerToolProcess.h"
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
@@ -417,7 +416,6 @@ static bool AssetCookerRunWithImportedScene(
     ImportedSceneHandler&& importedSceneHandler)
 {
 	const std::string scopeName = "Tools.AssetCooker.ImportScene." + sceneEntry.relativePath;
-	SPARKLE_CPU_SCOPE(scopeName);
 	SPARKLE_LOG_SCOPE(AssetCookerGetLogger(), spdlog::level::debug, scopeName);
 
 	const HRESULT coInitializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -459,7 +457,6 @@ static bool AssetCookerCookImportedScene(
     AssetCookerDiagnostics& diagnostics)
 {
 	const std::string scopeName = "Tools.AssetCooker.CookImportedScene." + sceneEntry.relativePath;
-	SPARKLE_CPU_SCOPE(scopeName);
 	SPARKLE_LOG_SCOPE(AssetCookerGetLogger(), spdlog::level::info, scopeName);
 
 	CookedSceneBuild build;
@@ -563,7 +560,6 @@ static bool AssetCookerCollectTextureRequests(
     AssetCookerDiagnostics& diagnostics,
     const std::filesystem::path& textureRequestPath)
 {
-	SPARKLE_CPU_SCOPE("Tools.AssetCooker.CollectTextureRequests");
 	SPARKLE_LOG_SCOPE(AssetCookerGetLogger(), spdlog::level::info, "AssetCooker.CollectTextureRequests");
 
 	TextureCookRequestSet requestSet;
@@ -659,7 +655,6 @@ static bool AssetCookerRunShaders(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs)
 {
-	SPARKLE_CPU_SCOPE("Tools.AssetCooker.Stage.Shaders");
 	SPARKLE_LOG_SCOPE(AssetCookerGetLogger(), spdlog::level::info, "AssetCooker.Stage.Shaders");
 
 	const std::filesystem::path shaderCompilerPath = AssetCookerResolveToolPath(plan, "ShaderCompiler");
@@ -700,7 +695,6 @@ static bool AssetCookerRunTextures(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs)
 {
-	SPARKLE_CPU_SCOPE("Tools.AssetCooker.Stage.Textures");
 	SPARKLE_LOG_SCOPE(AssetCookerGetLogger(), spdlog::level::info, "AssetCooker.Stage.Textures");
 
 	const std::filesystem::path textureCookerPath = AssetCookerResolveToolPath(plan, "TextureCooker");
@@ -746,7 +740,6 @@ static bool AssetCookerRunSceneAssets(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs)
 {
-	SPARKLE_CPU_SCOPE("Tools.AssetCooker.Stage.SceneAssets");
 	SPARKLE_LOG_SCOPE(AssetCookerGetLogger(), spdlog::level::info, "AssetCooker.Stage.SceneAssets");
 
 	std::vector<std::string> failedScenes;
@@ -843,23 +836,11 @@ bool AssetCookerDispatcher::DispatchPlan(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs)
 {
-	SPARKLE_CPU_SCOPE("Tools.AssetCooker.DispatchPlan");
 	SPARKLE_LOG_SCOPE(AssetCookerGetLogger(), spdlog::level::info, "AssetCooker.DispatchPlan");
 	const auto dispatchStartTime = std::chrono::steady_clock::now();
 	std::vector<AssetCookerStageTiming> stageTimings;
 
 	Filesystem::ConfigureProjectRoot(plan.projectRoot);
-	SPDLOG_LOGGER_INFO(
-	    AssetCookerGetLogger(),
-	    "AssetCooker plan project='{}' configuration='{}' toolConfiguration='{}' steps={} finalScenes={} engineScenes={} projectScenes={} overrides={}",
-	    plan.projectName,
-	    plan.configuration,
-	    plan.toolConfiguration,
-	    plan.steps.size(),
-	    plan.sceneEntries.size(),
-	    plan.engineSceneCount,
-	    plan.projectSceneCount,
-	    plan.overriddenEngineSceneCount);
 
 	ToolConsole::Summary(
 	    std::cout,

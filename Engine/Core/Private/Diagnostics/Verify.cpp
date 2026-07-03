@@ -91,6 +91,13 @@ namespace Diagnostics
 		    std::string_view message,
 		    spdlog::level::level_enum level) noexcept
 		{
+			const auto writeFallback = [&]()
+			{
+				std::string fallbackRecord = BuildMessagePrefix(file, line);
+				fallbackRecord.append(message.data(), message.size());
+				WriteFallback(fallbackRecord);
+			};
+
 			if (logger)
 			{
 				try
@@ -105,12 +112,12 @@ namespace Diagnostics
 				}
 				catch (...)
 				{
+					writeFallback();
+					return;
 				}
 			}
 
-			std::string fallbackRecord = BuildMessagePrefix(file, line);
-			fallbackRecord.append(message.data(), message.size());
-			WriteFallback(fallbackRecord);
+			writeFallback();
 		}
 
 		void BreakInDebuggerIfAttached() noexcept

@@ -2,9 +2,7 @@
 #include "Host/RendererSystemRoot.h"
 
 #include "Camera/RenderCamera.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Diagnostics/MeshDiagnosticsCollector.h"
-#include "Diagnostics/RendererDiagnosticsCollector.h"
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
@@ -98,11 +96,6 @@ RendererMemoryDiagnosticsSnapshot RendererSystemRoot::CaptureMemoryDiagnostics()
 	return m_memoryMonitor != nullptr ? m_memoryMonitor->GetLatestSnapshot() : RendererMemoryDiagnosticsSnapshot{};
 }
 
-RendererDiagnosticsSnapshot RendererSystemRoot::CaptureDiagnosticsSnapshot() const
-{
-	return RendererDiagnosticsCollector::Capture(*this);
-}
-
 void RendererSystemRoot::TickDiagnostics(std::uint64_t frameIndex) noexcept
 {
 	if (m_memoryMonitor != nullptr)
@@ -113,7 +106,6 @@ void RendererSystemRoot::TickDiagnostics(std::uint64_t frameIndex) noexcept
 
 void RendererSystemRoot::PostLoad() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.PostLoad");
 	m_backend->CloseExecuteAndFlushCurrentFrame();
 }
 
@@ -136,18 +128,14 @@ void RendererSystemRoot::InitializeImageProviders(RenderHardwareInterface& rende
 
 void RendererSystemRoot::InitializeCoreSystems() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.InitializeCoreSystems");
 
 	{
-		SPARKLE_CPU_SCOPE("Renderer.CreateBackend");
 		m_backend = RenderDeviceServices::Create(*m_window, BuildRenderDeviceSettingsFromCVars());
 	}
 	{
-		SPARKLE_CPU_SCOPE("Renderer.CreatePipelineStateManager");
 		m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetRenderHardwareInterface());
 	}
 	{
-		SPARKLE_CPU_SCOPE("Renderer.CreateGPUMeshCache");
 		m_gpuMeshCache = std::make_unique<GPUMeshCache>(GetRenderHardwareInterface());
 	}
 
@@ -164,7 +152,6 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 
 void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.InitializeSceneSystems");
 	m_textureManager = std::make_unique<TextureManager>(GetRenderHardwareInterface());
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
 	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache);

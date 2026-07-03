@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "FramePipeline/FramePipeline.h"
 
-#include "Core/Public/Diagnostics/LiveProfiler.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Host/RendererSystemRoot.h"
@@ -47,8 +46,7 @@ RendererFrameTimingDiagnosticsSnapshot FramePipeline::CaptureFrameTimingDiagnost
 {
 	const FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 	RendererFrameTimingDiagnosticsSnapshot snapshot;
-	snapshot.GpuTimingStatus =
-	    frameDiagnostics.IsGpuTimingAvailable() ? ERendererDiagnosticStatus::Available : ERendererDiagnosticStatus::Unsupported;
+	snapshot.GpuTimingAvailable = frameDiagnostics.IsGpuTimingAvailable();
 	const std::vector<ResolvedGpuTiming>& resolvedTimings = frameDiagnostics.GetResolvedTimings();
 	snapshot.GpuTimings.reserve(resolvedTimings.size());
 	for (const ResolvedGpuTiming& resolvedTiming : resolvedTimings)
@@ -62,8 +60,6 @@ RendererFrameTimingDiagnosticsSnapshot FramePipeline::CaptureFrameTimingDiagnost
 		        .DurationMilliseconds = resolvedTiming.DurationMilliseconds,
 		        .Depth = resolvedTiming.Depth});
 	}
-	snapshot.CpuFrameTimingStatus = ERendererDiagnosticStatus::Available;
-	snapshot.CpuFrameTimingReason = "CPU frame scopes are owned by Core LiveProfiler; renderer snapshot keeps GPU frame timings here.";
 	return snapshot;
 }
 
@@ -75,39 +71,4 @@ FrameExecutionDiagnostics& FramePipeline::GetCurrentFrameDiagnostics() noexcept
 const FrameExecutionDiagnostics& FramePipeline::GetCurrentFrameDiagnostics() const noexcept
 {
 	return *m_frameExecutionDiagnostics[m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex()];
-}
-
-void FramePipeline::ReportResolvedTimings(std::uint32_t frameIndex, const FrameExecutionDiagnostics& frameDiagnostics) const noexcept
-{
-	static_cast<void>(frameIndex);
-	const auto& resolvedTimers = frameDiagnostics.GetResolvedTimings();
-
-	PublishLiveGpuTimings(resolvedTimers);
-}
-
-void FramePipeline::PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resolvedTimers) const noexcept
-{
-	if (resolvedTimers.empty())
-	{
-		return;
-	}
-
-	Diagnostics::LiveProfiler& profiler = Diagnostics::LiveProfiler::Get();
-	if (!profiler.IsEnabled())
-	{
-		return;
-	}
-
-	std::vector<Diagnostics::LiveProfiler::GpuTimingEntry> entries;
-	entries.reserve(resolvedTimers.size());
-	for (const ResolvedGpuTiming& resolvedTimer : resolvedTimers)
-	{
-		entries.push_back(
-		    Diagnostics::LiveProfiler::GpuTimingEntry{
-		        .Label = std::string_view(resolvedTimer.Label),
-		        .DurationMicroseconds = static_cast<std::uint64_t>(resolvedTimer.DurationMilliseconds * 1000.0),
-		        .Depth = resolvedTimer.Depth});
-	}
-
-	profiler.SubmitGpuFrame(entries.data(), entries.size());
 }

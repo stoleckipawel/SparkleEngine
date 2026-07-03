@@ -24,7 +24,6 @@ namespace UiUtil
 		Filter,
 		Settings,
 		Save,
-		Profiler,
 		Shader,
 		Refresh,
 		Reload,

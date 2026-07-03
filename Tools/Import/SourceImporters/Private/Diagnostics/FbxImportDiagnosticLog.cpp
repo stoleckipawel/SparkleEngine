@@ -33,24 +33,6 @@ void FbxImportDiagnosticLog::ReportNoSupportedStaticMeshes(const std::filesystem
 	SourceImportDiagnosticsRecorder::RecordError(result);
 }
 
-void FbxImportDiagnosticLog::ReportLoadedScene(const std::filesystem::path& filePath, const SourceImportResult& result)
-{
-	SPDLOG_LOGGER_INFO(
-	    g_fbxImportDiagnosticLogger,
-	    "{}",
-	    std::format(
-	        "FbxImporter: Loaded '{}' - {} mesh primitives, {} mesh instances, {} materials, textures={}, warnings={}, instancing uniquePrimitiveCandidates={}, placements={}, authoredGroups={}",
-	        filePath.filename().string(),
-	        result.scene.meshPrimitives.size(),
-	        result.scene.meshInstances.size(),
-	        result.scene.materials.size(),
-	        result.diagnostics.textures.resolvedTextureBindingCount,
-	        result.diagnostics.issues.warningMessageCount,
-	        result.diagnostics.geometryInstancing.uniqueMeshPrimitiveCandidateCount,
-	        result.diagnostics.geometryInstancing.meshPlacementCount,
-	        result.diagnostics.geometryInstancing.authoredInstanceGroupCount));
-}
-
 void FbxImportDiagnosticLog::ReportIgnoredAnimations(std::size_t count, SourceImportResult& result)
 {
 	SPDLOG_LOGGER_WARN(g_fbxImportDiagnosticLogger, "{}", std::format("FbxImporter: {} animations are present and will be ignored", count));

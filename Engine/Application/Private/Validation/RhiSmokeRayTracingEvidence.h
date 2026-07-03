@@ -12,10 +12,6 @@ struct RendererSmokeRayTracingDiagnostics;
 
 namespace RhiSmokeRayTracingEvidence
 {
-	void Log(
-	    const RendererSmokeRayTracingDiagnostics& diagnostics,
-	    std::string_view evidenceLabel,
-	    const std::shared_ptr<spdlog::logger>& logger) noexcept;
 	bool Validate(
 	    const RendererSmokeRayTracingDiagnostics& diagnostics,
 	    std::string_view validationLabel,

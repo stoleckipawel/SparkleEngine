@@ -52,8 +52,6 @@ class SPARKLE_PLATFORM_API InputSystem
 
 	void BeginFrame();
 
-	void EndFrame();
-
 	void ProcessDeferredEvents();
 
 	void SubscribeToWindow(Window& window);

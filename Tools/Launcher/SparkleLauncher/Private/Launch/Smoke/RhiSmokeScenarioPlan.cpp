@@ -54,11 +54,6 @@ namespace SparkleLauncher
 				AddOrReplaceRhiSmokeEnvironment(request, "SPARKLE_SMOKE_CAMERA_MOTION_YAW_DEGREES", std::to_string(suiteDefinition.MotionYawDegrees));
 				AddOrReplaceRhiSmokeEnvironment(request, "SPARKLE_SMOKE_CAMERA_MOTION_PITCH_DEGREES", std::to_string(suiteDefinition.MotionPitchDegrees));
 			}
-			if (suite == RhiSmokeSuite::DiagnosticCaptures)
-			{
-				AddOrReplaceRhiSmokeEnvironment(request, "SPARKLE_SMOKE_CAPTURE_PURPOSE", viewMode.Purpose);
-				AddOrReplaceRhiSmokeEnvironment(request, "SPARKLE_SMOKE_CAPTURE_LABEL", scenarioCase.CaptureLabel);
-			}
 			request.LogPath = GetRhiSmokeArtifactDirectory(plan, suite) / scenarioCase.Name / (std::string(viewMode.Name) + ".log");
 			return request;
 		}

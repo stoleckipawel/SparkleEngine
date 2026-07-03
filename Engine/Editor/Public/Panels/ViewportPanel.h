@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../EditorAPI.h"
-#include "../../../Renderer/Public/Diagnostics/RendererSmokeDiagnostics.h"
 #include "../../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Input/Dispatch/InputLayer.h"
 
@@ -24,7 +23,6 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	void SetRequestedExtent(RenderViewportExtent extent) noexcept;
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
 	void SetSceneColorTextureId(std::uint64_t textureId) noexcept;
-	void SetRendererSmokeDiagnostics(const RendererSmokeDiagnosticsSnapshot& diagnostics) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
 	InputLayer GetTargetInputLayer() const noexcept { return InputLayer::Gameplay; }
 	bool GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept;
@@ -36,7 +34,6 @@ class SPARKLE_EDITOR_API ViewportPanel final
 
 	ViewportRenderRequest m_renderRequest = {};
 	ViewportRenderProducts m_renderProducts = {};
-	RendererSmokeDiagnosticsSnapshot m_rendererSmokeDiagnostics = {};
 	float m_topInsetPixels = 0.0f;
 	float m_bottomInsetPixels = 0.0f;
 	float m_leftInsetPixels = 320.0f;

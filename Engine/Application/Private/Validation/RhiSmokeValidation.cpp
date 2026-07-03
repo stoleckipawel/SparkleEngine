@@ -36,8 +36,7 @@ bool RhiSmokeValidationRunner::TickRuntime(
 
 	app.UpdateRuntime();
 	app.GetRenderer().OnRender();
-	RhiSmokeSession::LogRendererEvidence(config, app, state, "RHI runtime smoke evidence", "RHI runtime smoke validation");
-	app.EndFrame();
+	RhiSmokeSession::LogRendererEvidence(config, app, state, "RHI runtime smoke validation");
 	RhiSmokeFrameControl::Advance(config.FrameControl, app, state.FrameControl, "runtime");
 	return true;
 }
@@ -46,13 +45,16 @@ int RhiSmokeValidationRunner::RunProjectValidation(const RhiSmokeSessionConfig& 
 {
 	RuntimeApplication app(std::move(options));
 	RhiSmokeSessionState state{};
-	RhiSmokeSession::ApplyLoggingConfig(config);
 	app.Initialize();
 	RhiSmokeSession::LogDiagnosticsCapabilities(config, app, state);
 	RhiSmokeSession::InitializeFrameControl(config, app, state);
 
-	while (TickRuntime(app, config, state))
+	for (;;)
 	{
+		if (!TickRuntime(app, config, state))
+		{
+			break;
+		}
 	}
 
 	app.Shutdown();

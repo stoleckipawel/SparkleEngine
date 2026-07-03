@@ -90,8 +90,6 @@ class SPARKLE_CORE_API InputState
 
 	void BeginFrame() noexcept;
 
-	void EndFrame() noexcept;
-
 	static constexpr std::size_t KeyCount = static_cast<std::size_t>(Key::Count);
 
 	static constexpr std::size_t MouseButtonCount = static_cast<std::size_t>(MouseButton::Count);

@@ -31,11 +31,6 @@ namespace RhiSmokeViewportCapture
 		if (!state.ViewModeOverrideLogged)
 		{
 			const std::shared_ptr<spdlog::logger> logger = GetSmokeLogger();
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "RHI smoke: forced render view mode {}({})",
-			    RhiSmokeRenderViewModeNames::ToString(config.ViewModeOverride),
-			    static_cast<std::uint32_t>(config.ViewModeOverride));
 			state.ViewModeOverrideLogged = true;
 		}
 	}
@@ -58,16 +53,6 @@ namespace RhiSmokeViewportCapture
 		}
 
 		const RenderProduct& sceneColor = viewportProducts.GetSceneColor();
-		SPDLOG_LOGGER_INFO(
-		    logger,
-		    "RHI smoke viewport evidence: sceneColorHandle={} textureId={} extent={}x{} outputsMask={} presentationStatus={} reason='{}'",
-		    sceneColor.Handle.Value,
-		    sceneColorPresentation.TextureId,
-		    sceneColor.Extent.Width,
-		    sceneColor.Extent.Height,
-		    static_cast<std::uint32_t>(viewportProducts.GetAvailableOutputs()),
-		    static_cast<std::uint32_t>(sceneColorPresentation.Status),
-		    sceneColorPresentation.FailureReason);
 
 		state.ViewportEvidenceLogged = true;
 	}
@@ -114,14 +99,6 @@ namespace RhiSmokeViewportCapture
 
 		if (captureResult)
 		{
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "RHI smoke: captured scene color backend={} viewMode={}({}) path='{}' frame={}",
-			    RhiBackendApiToString(captureResult.BackendApi),
-			    captureResult.ViewModeName,
-			    captureResult.ViewMode,
-			    captureResult.ArtifactPath.string(),
-			    captureResult.FrameIndex);
 			state.SceneColorCaptured = true;
 		}
 		else

@@ -97,29 +97,6 @@ bool RhiSmokeCameraMotion::Validate(
 		return true;
 	}
 
-	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
-	if (appLogger != nullptr)
-	{
-		SPDLOG_LOGGER_INFO(
-		    appLogger,
-		    "RHI smoke camera motion evidence: label={} backend={} frames={} startFrame={} endFrame={} yawDegrees={} pitchDegrees={} "
-		    "rayTracing={} inlineRayQuery={} tlasValid={} tlasInstances={} frameGraphUnresolvedBarrierWarnings={} "
-		    "frameGraphMissingExecutionBindings={}",
-		    label != nullptr ? label : "",
-		    RhiBackendApiToString(snapshot.BackendApi),
-		    state.AppliedFrames,
-		    config.StartFrame,
-		    config.EndFrame,
-		    config.YawDegrees,
-		    config.PitchDegrees,
-		    snapshot.RayTracing.Capability.Supported,
-		    snapshot.RayTracing.Capability.InlineRayQuerySupported,
-		    snapshot.RayTracing.ClassicTlas.Valid,
-		    snapshot.RayTracing.ClassicTlas.InstanceCount,
-		    snapshot.FrameGraph.UnresolvedBarrierWarnings,
-		    snapshot.FrameGraph.MissingExecutionBindings);
-	}
-
 	if (state.MissingScene || !state.Started || !state.Completed || state.AppliedFrames == 0)
 	{
 		return false;

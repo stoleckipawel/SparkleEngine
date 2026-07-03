@@ -17,7 +17,6 @@ namespace RhiSmokeSession
 			return config;
 		}
 
-		config.TraceLogging = Environment::GetFlag("SPARKLE_SMOKE_TRACE");
 		config.FrameControl.Enabled = config.Enabled;
 		config.FrameControl.FrameLimit = Environment::GetUInt32("SPARKLE_SMOKE_FRAME_LIMIT", config.FrameControl.FrameLimit);
 		config.FrameControl.RestoreFrame = Environment::GetUInt32("SPARKLE_SMOKE_RESTORE_FRAME", config.FrameControl.RestoreFrame);
@@ -29,14 +28,6 @@ namespace RhiSmokeSession
 		    Environment::GetUInt32("SPARKLE_SMOKE_LEVEL_SWITCH_INTERVAL_FRAMES", config.FrameControl.LevelSwitchIntervalFrames);
 		config.FrameControl.CameraMotion = RhiSmokeCameraMotion::LoadConfig();
 		return config;
-	}
-
-	void ApplyLoggingConfig(const RhiSmokeSessionConfig& config) noexcept
-	{
-		if (config.Enabled && config.TraceLogging)
-		{
-			Logging::SetLevel(spdlog::level::trace);
-		}
 	}
 
 	void LogDiagnosticsCapabilities(const RhiSmokeSessionConfig& config, RuntimeApplication& app, RhiSmokeSessionState& state) noexcept
@@ -51,7 +42,6 @@ namespace RhiSmokeSession
 	    const RhiSmokeSessionConfig& config,
 	    RuntimeApplication& app,
 	    RhiSmokeSessionState& state,
-	    std::string_view evidenceLabel,
 	    std::string_view validationLabel) noexcept
 	{
 		if (!config.Enabled)
@@ -59,7 +49,7 @@ namespace RhiSmokeSession
 			return;
 		}
 
-		if (!RhiSmokeRendererEvidence::LogRendererEvidence(app, state.RendererEvidenceLogged, evidenceLabel, validationLabel))
+		if (!RhiSmokeRendererEvidence::LogRendererEvidence(app, state.RendererEvidenceLogged, validationLabel))
 		{
 			state.FrameControl.Failed = true;
 		}

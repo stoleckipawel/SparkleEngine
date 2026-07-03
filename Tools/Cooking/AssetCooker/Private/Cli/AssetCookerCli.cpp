@@ -5,7 +5,6 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "ToolConsole.h"
 
 #include <iostream>
@@ -285,7 +284,6 @@ static void AssetCookerCliPrintResult(const AssetCookerServiceResult& result)
 int AssetCookerCli::Run(int argc, char** argv) const
 {
 	static const auto assetCookerLogger = Logging::GetOrCreateLogger("Tools.AssetCooker");
-	SPARKLE_CPU_SCOPE("Tools.AssetCooker.Cli.Run");
 	SPARKLE_LOG_SCOPE(assetCookerLogger, spdlog::level::info, "AssetCooker.Cli.Run");
 
 	AssetCookerCliArguments arguments;
@@ -309,13 +307,6 @@ int AssetCookerCli::Run(int argc, char** argv) const
 	config.repositoryRoot = arguments.repositoryRoot.empty() ? nullptr : arguments.repositoryRoot.c_str();
 	config.projectName = arguments.projectName.empty() ? nullptr : arguments.projectName.c_str();
 	config.configuration = arguments.configuration.c_str();
-	SPDLOG_LOGGER_INFO(
-	    assetCookerLogger,
-	    "AssetCooker command='{}' project='{}' configuration='{}' category={}",
-	    arguments.command,
-	    arguments.projectName.empty() ? "ALL" : arguments.projectName,
-	    arguments.configuration,
-	    AssetCookerCliGetCategoryName(arguments.category));
 
 	AssetCookerService service(&config);
 
@@ -357,6 +348,5 @@ int AssetCookerCli::Run(int argc, char** argv) const
 	exitCode = result.exitCode;
 
 	AssetCookerCliPrintResult(result);
-	SPDLOG_LOGGER_INFO(assetCookerLogger, "AssetCooker command='{}' completed with exitCode={}", arguments.command, exitCode);
 	return exitCode;
 }

@@ -2,7 +2,6 @@
 
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 
-#include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Core/Public/Formatting/HexFormat.h"
 
 #include <D3D12MemAlloc.h>
@@ -139,11 +138,6 @@ D3D12GpuMemoryAllocator::D3D12GpuMemoryAllocator(IDXGIAdapter* adapter, ID3D12De
 	allocatorDesc.pDevice = device;
 
 	CHECK(D3D12MA::CreateAllocator(&allocatorDesc, &m_impl->allocator));
-
-	if (Environment::GetFlag("SPARKLE_RHI_MEMORY_DIAGNOSTICS"))
-	{
-		SPDLOG_LOGGER_INFO(g_d3d12MemoryLogger, "D3D12MA allocator initialized");
-	}
 }
 
 D3D12GpuMemoryAllocator::~D3D12GpuMemoryAllocator() noexcept = default;

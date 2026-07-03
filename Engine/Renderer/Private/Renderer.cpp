@@ -71,33 +71,6 @@ RendererMemoryDiagnosticsSnapshot Renderer::CaptureMemoryDiagnostics() const
 	return m_systemRoot->CaptureMemoryDiagnostics();
 }
 
-RendererDiagnosticsSnapshot Renderer::CaptureDiagnosticsSnapshot() const
-{
-	RendererDiagnosticsSnapshot snapshot =
-	    m_systemRoot != nullptr ? m_systemRoot->CaptureDiagnosticsSnapshot() : RendererDiagnosticsSnapshot{};
-	if (m_framePipeline != nullptr)
-	{
-		snapshot.FrameTiming = m_framePipeline->CaptureFrameTimingDiagnosticsSnapshot();
-		snapshot.Metrics.push_back(
-		    RendererDiagnosticMetric{
-		        .Name = "frame.gpuTimingScopeCount",
-		        .Origin = ERendererDiagnosticOrigin::RendererFrame,
-		        .Status = snapshot.FrameTiming.GpuTimingStatus,
-		        .Unit = ERendererDiagnosticUnit::Count,
-		        .IntegerValue = static_cast<std::uint64_t>(snapshot.FrameTiming.GpuTimings.size())});
-	}
-
-	snapshot.Metrics.push_back(
-	    RendererDiagnosticMetric{
-	        .Name = "frame.cpuTimingSource",
-	        .Origin = ERendererDiagnosticOrigin::CoreProfiler,
-	        .Status = snapshot.FrameTiming.CpuFrameTimingStatus,
-	        .Unit = ERendererDiagnosticUnit::Text,
-	        .TextValue = "Core LiveProfiler",
-	        .Detail = snapshot.FrameTiming.CpuFrameTimingReason});
-	return snapshot;
-}
-
 RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
 {
 	return m_systemRoot != nullptr ? RendererSmokeDiagnosticsBuilder::Build(*m_systemRoot, m_framePipeline.get()) :

@@ -141,11 +141,8 @@ namespace RhiSmokeCaptureArtifacts
 		file << "    \"frameGraphMissingExecutionBindings\": " << diagnostics.FrameGraph.MissingExecutionBindings << ",\n";
 		file << "    \"frameGraphTransientResources\": " << diagnostics.FrameGraph.TransientResources << ",\n";
 		file << "    \"frameGraphImportedResources\": " << diagnostics.FrameGraph.ImportedResources << ",\n";
-		file << "    \"frameGraphPersistentResources\": " << diagnostics.FrameGraph.PersistentResources << ",\n";
-		file << "    \"frameGraphViewportProducts\": " << diagnostics.FrameGraph.ViewportProducts << ",\n";
-		file << "    \"upscalerProvider\": \"" << EscapeJson(diagnostics.Upscaler.Provider) << "\",\n";
-		file << "    \"upscalerStatus\": \"" << EscapeJson(diagnostics.Upscaler.Status) << "\",\n";
-		file << "    \"upscalerReason\": \"" << EscapeJson(diagnostics.Upscaler.Reason) << "\"\n";
+	file << "    \"frameGraphPersistentResources\": " << diagnostics.FrameGraph.PersistentResources << ",\n";
+	file << "    \"frameGraphViewportProducts\": " << diagnostics.FrameGraph.ViewportProducts << "\n";
 		file << "  },\n";
 		file << "  \"rayTracing\": {\n";
 		file << "    \"supported\": " << (rayTracing.Capability.Supported ? "true" : "false") << ",\n";
@@ -330,6 +327,7 @@ namespace RhiSmokeCaptureArtifacts
 		}
 		catch (...)
 		{
+			return;
 		}
 	}
 }

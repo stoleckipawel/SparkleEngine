@@ -69,10 +69,6 @@ namespace SparkleLauncher
 		{
 			AddEnvironment(plan, "SPARKLE_RHI_BACKEND", plan.Request.SmokeBackend);
 		}
-		if (plan.Request.SmokeTrace)
-		{
-			AddEnvironment(plan, "SPARKLE_SMOKE_TRACE", "1");
-		}
 		if (!plan.Request.SmokeViewMode.empty())
 		{
 			AddEnvironment(plan, "SPARKLE_SMOKE_VIEW_MODE_NAME", plan.Request.SmokeViewMode);
@@ -105,10 +101,6 @@ namespace SparkleLauncher
 		if (plan.Request.SmokeRunPtlasBenchmark)
 		{
 			effects.push_back("Capture PTLAS timing and metadata evidence and write benchmark summary diagnostics.");
-		}
-		if (plan.Request.SmokeRunDiagnosticCaptures)
-		{
-			effects.push_back("Capture multi-view PTLAS diagnostics and write a generic artifact manifest for later inspection.");
 		}
 		if (!HasRhiSmokeScenarioMatrix(plan))
 		{

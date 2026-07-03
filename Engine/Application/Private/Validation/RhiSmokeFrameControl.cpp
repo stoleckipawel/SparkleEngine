@@ -59,15 +59,7 @@ namespace RhiSmokeFrameControl
 			Renderer& renderer = app.GetRenderer();
 			renderer.GetCommandSubmissionService().WaitForIdle();
 			const CookedShaderReloadResult reloadResult = renderer.ReloadCookedShaders();
-			if (reloadResult)
-			{
-				SPDLOG_LOGGER_INFO(
-				    logger,
-				    "RHI smoke validation: reloaded cooked shaders on frame {} (generation={})",
-				    state.CompletedRenderFrames,
-				    renderer.GetShaderPackageGeneration());
-			}
-			else
+			if (!reloadResult)
 			{
 				state.Failed = true;
 				SPDLOG_LOGGER_ERROR(
@@ -80,13 +72,11 @@ namespace RhiSmokeFrameControl
 
 		if (config.RestoreFrame > 0 && state.CompletedRenderFrames == config.RestoreFrame)
 		{
-			SPDLOG_LOGGER_INFO(logger, "RHI smoke validation: restoring window on frame {}", state.CompletedRenderFrames);
 			window.Restore();
 		}
 
 		if (config.MaximizeFrame > 0 && state.CompletedRenderFrames == config.MaximizeFrame)
 		{
-			SPDLOG_LOGGER_INFO(logger, "RHI smoke validation: maximizing window on frame {}", state.CompletedRenderFrames);
 			window.Maximize();
 		}
 
@@ -113,7 +103,6 @@ namespace RhiSmokeFrameControl
 				    state.LevelSwitching.SwitchOrder.size());
 			}
 
-			SPDLOG_LOGGER_INFO(logger, "RHI smoke validation: reached frame limit {}, requesting shutdown", config.FrameLimit);
 			window.RequestClose();
 		}
 	}

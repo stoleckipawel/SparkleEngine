@@ -51,35 +51,6 @@ void GltfImportDiagnosticLog::ReportNoSupportedMeshPrimitives(const std::filesys
 	SourceImportDiagnosticsRecorder::RecordError(result);
 }
 
-void GltfImportDiagnosticLog::ReportLoadedScene(const std::filesystem::path& filePath, const SourceImportResult& result)
-{
-	SPDLOG_LOGGER_INFO(
-	    g_gltfImportDiagnosticLogger,
-	    "{}",
-	    std::format(
-	        "GltfImporter: Loaded '{}' - {} mesh primitives, {} mesh instances, {} cameras, {} lights, {} animation clips, {} materials, textures={}, warnings={}, instancing uniquePrimitiveCandidates={}, placements={}, authoredGroups={}",
-	        filePath.filename().string(),
-	        result.scene.meshPrimitives.size(),
-	        result.scene.meshInstances.size(),
-	        result.scene.cameras.size(),
-	        result.scene.lights.size(),
-	        result.scene.animations.size(),
-	        result.scene.materials.size(),
-	        result.diagnostics.textures.resolvedTextureBindingCount,
-	        result.diagnostics.issues.warningMessageCount,
-	        result.diagnostics.geometryInstancing.uniqueMeshPrimitiveCandidateCount,
-	        result.diagnostics.geometryInstancing.meshPlacementCount,
-	        result.diagnostics.geometryInstancing.authoredInstanceGroupCount));
-}
-
-void GltfImportDiagnosticLog::ReportImportedAnimationsForPlayback(std::size_t count)
-{
-	SPDLOG_LOGGER_INFO(
-	    g_gltfImportDiagnosticLogger,
-	    "{}",
-	    std::format("GltfImporter: {} animation clips imported for cooked runtime playback", count));
-}
-
 void GltfImportDiagnosticLog::ReportStaticSkinnedNodes(std::size_t count, SourceImportResult& result)
 {
 	SPDLOG_LOGGER_WARN(

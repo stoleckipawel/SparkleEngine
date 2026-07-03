@@ -5,20 +5,6 @@
 #include <cstdint>
 #include <string_view>
 
-void RegisterHelloRayGenShader() noexcept {}
-
-void RegisterHelloMissShader() noexcept {}
-
-void RegisterHelloClosestHitShader() noexcept {}
-
-void RegisterHelloAnyHitShader() noexcept {}
-
-void RegisterHelloIntersectionShader() noexcept {}
-
-void RegisterHelloCallableShader() noexcept {}
-
-void RegisterHelloPrimaryHitGroup() noexcept {}
-
 class HelloRayGen final : public FRayGenerationShader
 {
   public:
@@ -129,3 +115,38 @@ IMPLEMENT_RAY_TRACING_SHADER(HelloIntersection, "HelloWorld/RayTracing/HelloInte
 IMPLEMENT_RAY_TRACING_SHADER(HelloCallable, "HelloWorld/RayTracing/HelloCallable.hlsl", "HelloCallable");
 
 IMPLEMENT_RAY_TRACING_HIT_GROUP(HelloPrimaryHitGroup);
+
+void RegisterHelloRayGenShader() noexcept
+{
+	(void)AutoRegisterRayTracingShader_HelloRayGen;
+}
+
+void RegisterHelloMissShader() noexcept
+{
+	(void)AutoRegisterRayTracingShader_HelloMiss;
+}
+
+void RegisterHelloClosestHitShader() noexcept
+{
+	(void)AutoRegisterRayTracingShader_HelloClosestHit;
+}
+
+void RegisterHelloAnyHitShader() noexcept
+{
+	(void)AutoRegisterRayTracingShader_HelloAnyHit;
+}
+
+void RegisterHelloIntersectionShader() noexcept
+{
+	(void)AutoRegisterRayTracingShader_HelloIntersection;
+}
+
+void RegisterHelloCallableShader() noexcept
+{
+	(void)AutoRegisterRayTracingShader_HelloCallable;
+}
+
+void RegisterHelloPrimaryHitGroup() noexcept
+{
+	(void)AutoRegisterRayTracingHitGroup_HelloPrimaryHitGroup;
+}

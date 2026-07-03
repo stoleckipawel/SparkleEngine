@@ -5,7 +5,6 @@
 #include "CVars/RHICVars.h"
 #include "Window/Window.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 #include "RHI/Public/Diagnostics/RhiDiagnostics.h"
 
 static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
@@ -44,11 +43,9 @@ D3D12Rhi::D3D12Rhi() noexcept
 	m_debugLayer = std::make_unique<D3D12DebugLayer>();
 #endif
 	{
-		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateFactory");
 		CreateFactory();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateDevice");
 		CreateDevice();
 	}
 
@@ -57,32 +54,25 @@ D3D12Rhi::D3D12Rhi() noexcept
 #endif
 
 	{
-		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateMemoryAllocator");
 		CreateMemoryAllocator();
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("RHI.D3D12.CheckShaderModel");
 		CheckShaderModel6Support();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateCommandQueue");
 		CreateCommandQueue();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateCommandAllocators");
 		CreateCommandAllocators();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateCommandLists");
 		CreateCommandLists();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.D3D12.RefreshPartitionedTlasCommandListCapability");
 		RefreshPartitionedTlasCommandListCapability();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateFence");
 		CreateFenceAndEvent();
 	}
 
@@ -266,15 +256,6 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		            ? "d3d12-nvapi-ptlas-supported-but-renderer-selection-not-wired"
 		            : (m_rayTracingCapabilities.SupportsRayTracing ? "classic-tlas-baseline-selected" : "ray-tracing-unavailable")};
 
-		SPDLOG_LOGGER_INFO(
-		    g_d3d12RhiLogger,
-		    "DXR capability: tier={}({}) rayTracing={} inlineRayQuery={} topLevelProvider={} partitionedTlasSupported={}",
-		    static_cast<int>(options5.RaytracingTier),
-		    RaytracingTierToString(options5.RaytracingTier),
-		    m_rayTracingCapabilities.SupportsRayTracing,
-		    m_rayTracingCapabilities.SupportsInlineRayQuery,
-		    RhiRayTracingTopLevelProviderToString(m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider),
-		    m_rayTracingCapabilities.Groups.PartitionedTlas.Supported);
 	}
 	else
 	{

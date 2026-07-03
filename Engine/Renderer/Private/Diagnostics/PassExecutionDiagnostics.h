@@ -4,7 +4,6 @@
 
 #include "FrameGraph/FrameGraphPassFlags.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 
 #include <string>
 #include <string_view>

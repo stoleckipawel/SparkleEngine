@@ -1,8 +1,6 @@
 #include "PCH.h"
 #include "Commands/RenderCommandContext.h"
 
-#include "Core/Public/Diagnostics/LiveProfiler.h"
-
 #include <cstdio>
 
 RenderCommandContext::RenderCommandContext(RenderCommandList& commandList) noexcept : m_commandList(&commandList) {}
@@ -175,7 +173,6 @@ void RenderCommandContext::DrawIndexedInstanced(
 	{
 		EmitDrawMarker();
 	}
-	Diagnostics::LiveProfiler::Get().AccumulateDrawCall(indexCountPerInstance, instanceCount, /*indexed*/ true);
 	m_commandList
 	    ->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }
@@ -190,7 +187,6 @@ void RenderCommandContext::DrawInstanced(
 	{
 		EmitDrawMarker();
 	}
-	Diagnostics::LiveProfiler::Get().AccumulateDrawCall(vertexCountPerInstance, instanceCount, /*indexed*/ false);
 	m_commandList->DrawInstanced(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
 }
 
@@ -200,7 +196,6 @@ void RenderCommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t gro
 	{
 		EmitDispatchMarker(groupCountX, groupCountY, groupCountZ);
 	}
-	Diagnostics::LiveProfiler::Get().AccumulateDispatch(groupCountX, groupCountY, groupCountZ);
 	m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ);
 }
 

@@ -3,7 +3,6 @@
 #include "RayTracing/Acceleration/RayTracingPartitionedTlasStrategy.h"
 
 #include "Commands/RenderCommandContext.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Meshes/GPUMesh.h"
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Acceleration/RayTracingPtlasLogicalUpdateStream.h"
@@ -280,7 +279,6 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		return true;
 	};
 	{
-		SPARKLE_CPU_SCOPE("Renderer.RayTracing.PartitionedTlas.InstancePreparation");
 		if (useFullBuild)
 		{
 			appendFullBuildWrites();
@@ -351,7 +349,6 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		m_partitionedResources.NativeOperationData = {};
 	}
 	{
-		SPARKLE_CPU_SCOPE("Renderer.RayTracing.PartitionedTlas.CpuPack");
 		m_partitionedResources.NativeOperationData =
 		    rayTracingService.CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
 		        operationPack,
@@ -395,7 +392,6 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("Renderer.RayTracing.PartitionedTlas.Build");
 		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope("Partitioned TLAS Build") : ScopedGpuScope{};
 		cmd.BuildPartitionedTopLevelAccelerationStructure(
 		    RhiPartitionedTlasBuildCommandDesc{

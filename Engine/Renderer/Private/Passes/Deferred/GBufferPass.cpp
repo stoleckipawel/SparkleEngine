@@ -5,7 +5,6 @@
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Logger.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/FrameRenderFormats.h"
 #include "Frame/Core/RenderViewData.h"

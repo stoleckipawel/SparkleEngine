@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/DirectLightingPass.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Lighting/ShadowVisibility.h"
@@ -81,7 +80,6 @@ void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstanc
 {
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
 	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, "Sampled Direct Lighting");
 		ComputePassUtilities::DispatchSized<DirectLightingPass>(
 		    context,
 		    m_runtime,

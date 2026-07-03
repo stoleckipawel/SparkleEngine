@@ -144,26 +144,3 @@ RendererImageProviderPassServices RendererImageProviderStack::BuildPassServices(
 	    .Upscaling = RenderUpscalingPassServices{.Subsystem = m_upscalerSubsystem.get()},
 	    .RayReconstruction = RenderRayReconstructionPassServices{.Subsystem = m_rayReconstructionSubsystem.get()}};
 }
-
-RendererProviderDiagnosticsSnapshot RendererImageProviderStack::CaptureUpscalerDiagnosticsSnapshot() const
-{
-	if (m_upscalerSubsystem == nullptr)
-	{
-		return RendererProviderDiagnosticsSnapshot{};
-	}
-
-	const UpscalerProviderCapabilities& provider = m_upscalerSubsystem->GetDiagnostics();
-	return RendererProviderDiagnosticsSnapshot{
-	    .Status = ERendererDiagnosticStatus::Available,
-	    .RequestedProvider = UpscalerProviderKindToString(m_upscalerSubsystem->GetRequestedProviderKind()),
-	    .ActiveProvider = provider.ProviderName,
-	    .Category = RendererProviderCategoryToString(provider.Category),
-	    .CapabilityState = RendererProviderCapabilityStateToString(provider.CapabilityState),
-	    .FailureDomain = UpscalerProviderFailureDomainToString(provider.FailureDomain),
-	    .CanEvaluate = provider.CanEvaluate,
-	    .UsesExternalSdk = provider.UsesExternalSdk,
-	    .RuntimeVersion = provider.ExternalRuntimeVersion,
-	    .RuntimeState = provider.RuntimeState,
-	    .ResourceContract = provider.ResourceContractSummary,
-	    .Reason = provider.Reason};
-}

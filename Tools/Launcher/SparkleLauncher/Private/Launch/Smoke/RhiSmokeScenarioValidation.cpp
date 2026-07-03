@@ -334,21 +334,6 @@ namespace SparkleLauncher::RhiSmokeValidation
 					return false;
 				}
 
-				if (suite == RhiSmokeSuite::DiagnosticCaptures)
-				{
-					const std::string expectedPurpose = "\"purpose\": \"" + std::string(viewMode.Purpose) + "\"";
-					const std::string expectedCaptureLabel = "\"captureLabel\": \"" + std::string(scenarioCase.CaptureLabel) + "\"";
-					if (!MetadataContains(metadataPath, expectedPurpose))
-					{
-						outFailureSummary = "Diagnostic metadata does not report capture purpose: " + metadataPath.string();
-						return false;
-					}
-					if (!MetadataContains(metadataPath, expectedCaptureLabel))
-					{
-						outFailureSummary = "Diagnostic metadata does not report capture label: " + metadataPath.string();
-						return false;
-					}
-				}
 			}
 		}
 		return true;
@@ -459,102 +444,6 @@ namespace SparkleLauncher::RhiSmokeValidation
 		return true;
 	}
 
-	bool WriteDiagnosticManifest(const LaunchOperationPlan& plan, std::string& outFailureSummary)
-	{
-		const std::filesystem::path suiteDirectory = GetRhiSmokeArtifactDirectory(plan, RhiSmokeSuite::DiagnosticCaptures);
-		const std::filesystem::path indexPath = suiteDirectory / "artifact-manifest.md";
-		std::ofstream indexFile(indexPath, std::ios::out | std::ios::trunc);
-		if (!indexFile)
-		{
-			outFailureSummary = "Could not create diagnostic artifact manifest: " + indexPath.string();
-			return false;
-		}
-
-		indexFile << "# PTLAS Diagnostic Artifacts\n\n";
-		indexFile << "| Case | Backend | Requested top-level mode | Requested writer path | Capture label |\n";
-		indexFile << "|---|---|---|---|---|\n";
-		for (const RhiSmokeScenarioCase& scenarioCase : GetRhiSmokeCases(RhiSmokeSuite::DiagnosticCaptures))
-		{
-			indexFile << "| " << EscapeMarkdown(scenarioCase.Name)
-			          << " | " << EscapeMarkdown(scenarioCase.Backend)
-			          << " | " << EscapeMarkdown(scenarioCase.RequestedTopLevelMode)
-			          << " | " << EscapeMarkdown(scenarioCase.RequestedWriterPathName)
-			          << " | " << EscapeMarkdown(scenarioCase.CaptureLabel) << " |\n";
-		}
-
-		indexFile << "\n| Case | View mode | Purpose | Screenshot | Metadata | Timing CSV |\n";
-		indexFile << "|---|---|---|---|---|---|\n";
-		for (const RhiSmokeScenarioCase& scenarioCase : GetRhiSmokeCases(RhiSmokeSuite::DiagnosticCaptures))
-		{
-			for (const RhiSmokeScenarioViewMode& viewMode : GetRhiSmokeViewModes(RhiSmokeSuite::DiagnosticCaptures))
-			{
-				indexFile << "| " << EscapeMarkdown(scenarioCase.Name)
-				          << " | " << EscapeMarkdown(viewMode.Name)
-				          << " | " << EscapeMarkdown(viewMode.Purpose)
-				          << " | [" << EscapeMarkdown(std::string(viewMode.Name) + ".bmp") << "](" << scenarioCase.Name << "/" << viewMode.Name << ".bmp)"
-				          << " | [" << EscapeMarkdown(std::string(viewMode.Name) + ".json") << "](" << scenarioCase.Name << "/" << viewMode.Name << ".json)"
-				          << " | [" << EscapeMarkdown(std::string(viewMode.Name) + ".timing.csv") << "](" << scenarioCase.Name << "/" << viewMode.Name << ".timing.csv)"
-				          << " |\n";
-			}
-		}
-
-		const std::filesystem::path summaryPath = suiteDirectory / "diagnostic-summary.csv";
-		std::ofstream summaryFile(summaryPath, std::ios::out | std::ios::trunc);
-		if (!summaryFile)
-		{
-			outFailureSummary = "Could not create diagnostic summary CSV: " + summaryPath.string();
-			return false;
-		}
-
-		summaryFile << "caseName,backend,requestedTopLevelMode,requestedWriterPath,viewMode,purpose,artifactStatus,topLevelProvider,ptlasProvider,ptlasSupported,operationWriterPath,operationWriterReason,metadataPath,timingCsvPath,screenshotPath\n";
-		for (const RhiSmokeScenarioCase& scenarioCase : GetRhiSmokeCases(RhiSmokeSuite::DiagnosticCaptures))
-		{
-			for (const RhiSmokeScenarioViewMode& viewMode : GetRhiSmokeViewModes(RhiSmokeSuite::DiagnosticCaptures))
-			{
-				const std::filesystem::path metadataPath = GetRhiSmokeArtifactPath(plan, RhiSmokeSuite::DiagnosticCaptures, scenarioCase, viewMode, ".json");
-				const std::filesystem::path timingPath = GetRhiSmokeArtifactPath(plan, RhiSmokeSuite::DiagnosticCaptures, scenarioCase, viewMode, ".timing.csv");
-				const std::filesystem::path bmpPath = GetRhiSmokeArtifactPath(plan, RhiSmokeSuite::DiagnosticCaptures, scenarioCase, viewMode, ".bmp");
-				const bool selectedPartitionedTlas = MetadataContains(metadataPath, "\"topLevelProvider\": \"PartitionedTlas\"");
-				const bool explicitFallback = MetadataContains(metadataPath, "\"topLevelProvider\": \"ClassicTlas\"") && MetadataContains(metadataPath, "\"ptlasSupported\": false");
-				const char* artifactStatus = explicitFallback ? "CapturedWithFallback" : "Captured";
-
-				std::string purpose = viewMode.Purpose;
-				ExtractMetadataField(metadataPath, "purpose", purpose);
-				std::string topLevelProvider = "Unknown";
-				std::string ptlasProvider = "Unknown";
-				std::string operationWriterPath = "Unknown";
-				std::string operationWriterReason = "unknown";
-				ExtractMetadataField(metadataPath, "topLevelProvider", topLevelProvider);
-				ExtractMetadataField(metadataPath, "ptlasProvider", ptlasProvider);
-				ExtractMetadataField(metadataPath, "operationWriterPath", operationWriterPath);
-				ExtractMetadataField(metadataPath, "operationWriterReason", operationWriterReason);
-
-				summaryFile << EscapeCsv(scenarioCase.Name) << ','
-				            << EscapeCsv(scenarioCase.Backend) << ','
-				            << EscapeCsv(scenarioCase.RequestedTopLevelMode) << ','
-				            << EscapeCsv(scenarioCase.RequestedWriterPathName) << ','
-				            << EscapeCsv(viewMode.Name) << ','
-				            << EscapeCsv(purpose) << ','
-				            << EscapeCsv(artifactStatus) << ','
-				            << EscapeCsv(topLevelProvider) << ','
-				            << EscapeCsv(ptlasProvider) << ','
-				            << EscapeCsv(MetadataContains(metadataPath, "\"ptlasSupported\": true") ? "true" : "false") << ','
-				            << EscapeCsv(operationWriterPath) << ','
-				            << EscapeCsv(operationWriterReason) << ','
-				            << EscapeCsv(metadataPath.string()) << ','
-				            << EscapeCsv(timingPath.string()) << ','
-				            << EscapeCsv(bmpPath.string()) << '\n';
-
-				if (scenarioCase.PreferPartitionedTlas && !selectedPartitionedTlas && !explicitFallback)
-				{
-					outFailureSummary = "Diagnostic case requested PTLAS but metadata did not report active PTLAS or explicit fallback: " + metadataPath.string();
-					return false;
-				}
-			}
-		}
-
-		return true;
-	}
 }
 
 namespace SparkleLauncher
@@ -581,11 +470,6 @@ namespace SparkleLauncher
 		{
 			return false;
 		}
-		if (plan.Request.SmokeRunDiagnosticCaptures && !RhiSmokeValidation::WriteDiagnosticManifest(plan, outFailureSummary))
-		{
-			return false;
-		}
-
 		return true;
 	}
 }

@@ -50,7 +50,6 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
     const GPUMesh& gpuMesh,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.RayTracing.Blas.Ensure");
 
 	if (m_renderHardwareInterface == nullptr || !gpuMesh.IsValid())
 	{

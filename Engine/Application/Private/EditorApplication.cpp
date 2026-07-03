@@ -9,7 +9,6 @@
 #include "ShaderRecook/ShaderConsoleCommands.h"
 #include "ShaderRecook/ShaderRecookCoordinator.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 
 EditorApplication::EditorApplication() = default;
 
@@ -19,7 +18,6 @@ EditorApplication::~EditorApplication() = default;
 
 void EditorApplication::Initialize()
 {
-	SPARKLE_CPU_SCOPE("Application.EditorInitialize");
 	if (m_isEditorSessionActive)
 	{
 		return;
@@ -67,14 +65,6 @@ void EditorApplication::Initialize()
 		    .MemoryDiagnostics = [&renderer]()
 		    {
 			    return renderer.CaptureMemoryDiagnostics();
-		    },
-		    .RendererDiagnostics = [&renderer]()
-		    {
-			    return renderer.CaptureDiagnosticsSnapshot();
-		    },
-		    .RendererSmokeDiagnostics = [&renderer]()
-		    {
-			    return renderer.CaptureSmokeDiagnostics();
 		    }});
 		ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
 	}
@@ -84,7 +74,6 @@ void EditorApplication::Initialize()
 
 bool EditorApplication::Tick()
 {
-	SPARKLE_CPU_SCOPE("Application.CpuFrame");
 	if (!m_isEditorSessionActive || !m_runtimeApplication || !m_ui)
 	{
 		return false;
@@ -136,13 +125,11 @@ bool EditorApplication::Tick()
 	renderer.EndViewportPresentation(RenderOutputFlags::SceneColor);
 
 	renderer.SubmitHostFrame();
-	m_runtimeApplication->EndFrame();
 	return true;
 }
 
 void EditorApplication::Shutdown()
 {
-	SPARKLE_CPU_SCOPE("Application.EditorShutdown");
 	if (!m_isEditorSessionActive)
 	{
 		return;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RayReconstruction/RenderRayReconstructionPassServices.h"
-#include "Renderer/Public/Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "Upscaling/RenderUpscalingPassServices.h"
 #include "Viewport/ViewportContracts.h"
 
@@ -42,7 +41,6 @@ class RendererImageProviderStack final
 
 	std::uint32_t GetFrameGraphKey() const noexcept;
 	RendererImageProviderPassServices BuildPassServices() noexcept;
-	RendererProviderDiagnosticsSnapshot CaptureUpscalerDiagnosticsSnapshot() const;
 
   private:
 	std::unique_ptr<UpscalerSubsystem> m_upscalerSubsystem;

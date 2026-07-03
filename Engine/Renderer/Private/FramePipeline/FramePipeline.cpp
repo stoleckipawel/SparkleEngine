@@ -4,7 +4,6 @@
 #include "Camera/RenderCamera.h"
 #include "Commands/RenderCommandContext.h"
 #include "Frame/RhiFrameConstants.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Debug/RendererCVars.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 #include "Frame/Builders/BuildFrameContext.h"
@@ -60,20 +59,17 @@ FramePipeline::~FramePipeline() noexcept
 
 void FramePipeline::PrepareHostFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.PrepareHostFrame");
 	BeginFrame();
 	SetupFrame();
 }
 
 void FramePipeline::RecordHostFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.RecordHostFrame");
 	RecordFrame();
 }
 
 void FramePipeline::SubmitHostFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.SubmitHostFrame");
 	SubmitFrame();
 	EndFrame();
 }
@@ -108,7 +104,6 @@ void FramePipeline::InitializeFrameGraph() noexcept
 
 void FramePipeline::InitializeFrameGraph(RenderViewportExtent sceneExtent) noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.InitializeFrameGraph");
 	const FrameGraphDependencies dependencies{
 	    m_systems->GetRenderHardwareInterface(),
 	    m_systems->GetWindow(),
@@ -156,7 +151,6 @@ void FramePipeline::RefreshFrameExecution(RenderViewportExtent sceneExtent) noex
 
 void FramePipeline::BeginFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.BeginFrame");
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	TemporalDataBuilder& temporalDataBuilder = m_systems->GetTemporalDataBuilder();
 
@@ -213,13 +207,10 @@ void FramePipeline::BeginFrame() noexcept
 	m_systems->TickDiagnostics(m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex());
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 	frameDiagnostics.ResolveTimings();
-	ReportResolvedTimings(m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex(), frameDiagnostics);
 }
 
 void FramePipeline::SetupFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.SetupFrame");
-
 	Timer& timer = m_systems->GetTimer();
 	timer.Tick();
 	RefreshViewportRenderProducts();
@@ -260,8 +251,6 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 
 void FramePipeline::RecordFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.RecordFrame");
-
 	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
 	std::string temporalResetReason;
 	SceneRenderStateCoordinator* sceneRenderStateCoordinator = m_systems->GetSceneRenderStateCoordinator();
@@ -275,7 +264,6 @@ void FramePipeline::RecordFrame() noexcept
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[renderHardwareInterface.GetCurrentFrameIndex()];
 	frameSlot = [&]()
 	{
-		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.BuildFrameContext");
 		return std::make_unique<FrameContext>(
 		    BuildFrameContext(
 		        m_sceneSnapshot,
@@ -348,13 +336,11 @@ void FramePipeline::RecordFrame() noexcept
 	BindDirectLightReservoirHistoryFrameGraphResources();
 
 	{
-		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphSetup");
 		m_frameGraph->Setup(frame);
 	}
 
 	const FrameGraphPlan compiledPlan = [&]()
 	{
-		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphCompile");
 		return m_frameGraph->Compile();
 	}();
 	RenderCommandList& commandList = m_systems->GetBackend().GetCurrentGraphicsCommandList();
@@ -394,13 +380,11 @@ void FramePipeline::RecordFrame() noexcept
 
 void FramePipeline::SubmitFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.SubmitFrame");
 	m_systems->GetBackend().SubmitFrame();
 }
 
 void FramePipeline::EndFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.EndFrame");
 	m_exposureHistoryValid = HasExposureHistoryResources();
 	m_directLightReservoirHistoryValid = HasDirectLightReservoirHistoryResources();
 	m_systems->GetBackend().AdvanceFrameInFlight();

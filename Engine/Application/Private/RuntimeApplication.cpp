@@ -11,7 +11,6 @@
 #include "Level/LevelManager.h"
 #include "Time/Timer.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 
 #include <imgui.h>
 
@@ -62,27 +61,23 @@ Renderer& RuntimeApplication::GetRenderer() noexcept
 
 void RuntimeApplication::Initialize()
 {
-	SPARKLE_CPU_SCOPE("Application.RuntimeInitialize");
 	if (m_isInitialized)
 	{
 		return;
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("Application.RuntimeCreateWindow");
 		m_timer = std::make_unique<Timer>();
 		m_window = std::make_unique<Window>("Sparkle Engine");
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("Application.RuntimeCreateInput");
 		m_inputSystem = InputSystem::Create();
 		m_inputSystem->SetInputCaptureQuery(WantsImGuiInputCapture);
 		m_inputSystem->SubscribeToWindow(*m_window);
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("Application.RuntimeCreateScene");
 		m_gameScene = std::make_unique<GameScene>();
 		m_gameScene->RegisterController(std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window));
 		if (m_options.SceneSetupCallback)
@@ -94,13 +89,11 @@ void RuntimeApplication::Initialize()
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("Application.RuntimeCreateRenderer");
 		m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
 	}
 
 	if (m_options.EnableRuntimeConsole)
 	{
-		SPARKLE_CPU_SCOPE("Application.RuntimeCreateConsole");
 		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(*m_timer, *m_window, *m_renderer);
 	}
 	m_isInitialized = true;
@@ -108,7 +101,6 @@ void RuntimeApplication::Initialize()
 
 RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 {
-	SPARKLE_CPU_SCOPE("Application.RuntimeBeginFrame");
 	if (!m_isInitialized)
 	{
 		return RuntimeApplicationFrameResult::Exit;
@@ -120,13 +112,11 @@ RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 
 	if (m_window->ShouldClose())
 	{
-		m_inputSystem->EndFrame();
 		return RuntimeApplicationFrameResult::Exit;
 	}
 
 	if (m_window->IsMinimized())
 	{
-		m_inputSystem->EndFrame();
 		m_window->WaitForEvent();
 		return RuntimeApplicationFrameResult::SkipRender;
 	}
@@ -141,7 +131,6 @@ RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 
 void RuntimeApplication::UpdateRuntime() noexcept
 {
-	SPARKLE_CPU_SCOPE("Application.RuntimeUpdate");
 	if (m_gameScene && m_timer)
 	{
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
@@ -166,15 +155,6 @@ const ViewportRenderProducts& RuntimeApplication::GetViewportRenderProducts() co
 	}
 
 	return m_renderer->GetViewportRenderProducts();
-}
-
-void RuntimeApplication::EndFrame() noexcept
-{
-	SPARKLE_CPU_SCOPE("Application.RuntimeEndFrame");
-	if (m_inputSystem)
-	{
-		m_inputSystem->EndFrame();
-	}
 }
 
 bool RuntimeApplication::Tick()
@@ -204,13 +184,11 @@ bool RuntimeApplication::Tick()
 		UpdateRuntime();
 		m_renderer->OnRender();
 	}
-	EndFrame();
 	return true;
 }
 
 void RuntimeApplication::Shutdown()
 {
-	SPARKLE_CPU_SCOPE("Application.RuntimeShutdown");
 	if (!m_isInitialized)
 	{
 		return;

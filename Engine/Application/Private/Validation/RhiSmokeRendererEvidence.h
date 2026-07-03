@@ -10,6 +10,5 @@ namespace RhiSmokeRendererEvidence
 	bool LogRendererEvidence(
 	    RuntimeApplication& app,
 	    bool& logged,
-	    std::string_view evidenceLabel,
 	    std::string_view validationLabel) noexcept;
 }

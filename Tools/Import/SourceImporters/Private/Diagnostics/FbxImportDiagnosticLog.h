@@ -13,7 +13,6 @@ class FbxImportDiagnosticLog final
 	static void ReportMissingFile(const std::filesystem::path& filePath, SourceImportResult& result);
 	static void ReportParseFailure(const std::filesystem::path& filePath, std::string_view errorMessage, SourceImportResult& result);
 	static void ReportNoSupportedStaticMeshes(const std::filesystem::path& filePath, SourceImportResult& result);
-	static void ReportLoadedScene(const std::filesystem::path& filePath, const SourceImportResult& result);
 
 	static void ReportIgnoredAnimations(std::size_t count, SourceImportResult& result);
 	static void ReportIgnoredEmbeddedTextures(std::size_t count, SourceImportResult& result);

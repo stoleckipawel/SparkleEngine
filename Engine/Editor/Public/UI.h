@@ -2,9 +2,7 @@
 
 #include "EditorAPI.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
-#include "../../Renderer/Public/Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
-#include "../../Renderer/Public/Diagnostics/RendererSmokeDiagnostics.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
@@ -21,7 +19,6 @@ class SceneOutlinerPanel;
 class SceneInspectorPanel;
 class ViewportPanel;
 class ViewportTopPanel;
-class ProfilerPanel;
 class SettingsPanel;
 class UsedShadersPanel;
 class UsedMeshesPanel;
@@ -51,8 +48,6 @@ struct EditorDiagnosticsProviders final
 	std::function<MeshDiagnosticsSnapshot()> MeshDiagnostics;
 	std::function<TextureDiagnosticsSnapshot()> TextureDiagnostics;
 	std::function<RendererMemoryDiagnosticsSnapshot()> MemoryDiagnostics;
-	std::function<RendererDiagnosticsSnapshot()> RendererDiagnostics;
-	std::function<RendererSmokeDiagnosticsSnapshot()> RendererSmokeDiagnostics;
 };
 
 class SPARKLE_EDITOR_API UI final
@@ -72,7 +67,6 @@ class SPARKLE_EDITOR_API UI final
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
-	RendererDiagnosticsSnapshot CaptureRendererDiagnostics() const;
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
@@ -106,7 +100,6 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<SceneInspectorPanel> m_sceneInspectorPanel;
 	std::unique_ptr<ViewportTopPanel> m_viewportTopPanel;
 	std::unique_ptr<ViewportPanel> m_viewportPanel;
-	std::unique_ptr<ProfilerPanel> m_profilerPanel;
 	std::unique_ptr<SettingsPanel> m_settingsPanel;
 	std::unique_ptr<UsedShadersPanel> m_usedShadersPanel;
 	std::unique_ptr<UsedMeshesPanel> m_usedMeshesPanel;
@@ -124,8 +117,6 @@ class SPARKLE_EDITOR_API UI final
 	std::function<MeshDiagnosticsSnapshot()> m_meshDiagnosticsProvider;
 	std::function<TextureDiagnosticsSnapshot()> m_textureDiagnosticsProvider;
 	std::function<RendererMemoryDiagnosticsSnapshot()> m_memoryDiagnosticsProvider;
-	std::function<RendererDiagnosticsSnapshot()> m_rendererDiagnosticsProvider;
-	std::function<RendererSmokeDiagnosticsSnapshot()> m_rendererSmokeDiagnosticsProvider;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;
 	bool m_isImGuiContextInitialized = false;

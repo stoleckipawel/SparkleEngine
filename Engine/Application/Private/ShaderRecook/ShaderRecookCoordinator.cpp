@@ -321,6 +321,7 @@ void ShaderRecookCoordinator::PublishStatus(std::string status) noexcept
 	}
 	catch (...)
 	{
+		return;
 	}
 }
 

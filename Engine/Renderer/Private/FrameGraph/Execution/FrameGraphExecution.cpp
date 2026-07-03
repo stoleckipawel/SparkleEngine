@@ -7,7 +7,6 @@
 #include "Frame/Core/FrameContext.h"
 #include "FrameGraph/Diagnostics/FrameGraphExecutionDiagnostics.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 
 #include <format>
 #include <string>
@@ -51,7 +50,6 @@ void FrameGraph::Execute(
 	m_lastMissingExecutionBindingCount = 0;
 
 	static constexpr auto kFrameGraphExecuteName = Diagnostics::DiagnosticName{"Renderer.FrameGraph.Execute"};
-	SPARKLE_CPU_SCOPE(kFrameGraphExecuteName);
 	FrameGraphExecutionDiagnostics graphDiagnostics(frameDiagnostics, cmd);
 	if (graphDiagnostics.ShouldEmitDetailedMarkers())
 	{

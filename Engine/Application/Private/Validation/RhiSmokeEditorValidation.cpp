@@ -69,11 +69,6 @@ namespace
 		return config;
 	}
 
-	void ApplyLoggingConfig(const EditorSmokeConfig& config) noexcept
-	{
-		RhiSmokeSession::ApplyLoggingConfig(config.Session);
-	}
-
 	void LogDiagnosticsCapabilities(const EditorSmokeConfig& config, RuntimeApplication& app, EditorSmokeState& state) noexcept
 	{
 		if (config.Session.Enabled)
@@ -89,7 +84,7 @@ namespace
 			return;
 		}
 
-		RhiSmokeSession::LogRendererEvidence(config.Session, app, state.Session, "RHI editor smoke evidence", "RHI editor smoke validation");
+		RhiSmokeSession::LogRendererEvidence(config.Session, app, state.Session, "RHI editor smoke validation");
 	}
 
 	void InitializeFrameControl(const EditorSmokeConfig& config, RuntimeApplication& app, EditorSmokeState& state) noexcept
@@ -144,7 +139,6 @@ namespace
 		    state.Session.FrameControl.CompletedRenderFrames,
 		    state.Viewport,
 		    state.Session.FrameControl.Failed);
-		app.EndFrame();
 		RhiSmokeFrameControl::Advance(config.Session.FrameControl, app, state.Session.FrameControl, "editor");
 		return true;
 	}
@@ -156,7 +150,6 @@ namespace
 	{
 		const EditorSmokeConfig config = LoadConfig();
 		EditorSmokeState state{};
-		ApplyLoggingConfig(config);
 		RuntimeApplicationOptions runtimeOptions = std::move(options.RuntimeOptions);
 		runtimeOptions.EnableRuntimeConsole = false;
 		RuntimeApplication app(std::move(runtimeOptions));
@@ -178,23 +171,16 @@ namespace
 			        .ImGuiRenderer = renderer.GetImGuiRenderer(),
 			        .HostWindow = app.GetWindow(),
 			        .Input = app.GetInputSystem()});
-			ui.SetDiagnosticsProviders(EditorDiagnosticsProviders{
-			    .RendererDiagnostics = [&renderer]()
-			    {
-				    return renderer.CaptureDiagnosticsSnapshot();
-			    },
-			    .RendererSmokeDiagnostics = [&renderer]()
-			    {
-				    return renderer.CaptureSmokeDiagnostics();
-			    }});
-
-			while (TickEditor(app, ui, config, state))
+			for (;;)
 			{
+				if (!TickEditor(app, ui, config, state))
+				{
+					break;
+				}
 			}
 		}
 
 		app.Shutdown();
-		SPDLOG_LOGGER_INFO(appLogger, "RHI editor smoke: RuntimeApplication shutdown complete");
 		return state.Session.FrameControl.Failed ? 1 : 0;
 	}
 }

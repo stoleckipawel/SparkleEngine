@@ -11,7 +11,6 @@
 
 #include "Window/Window.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 
 class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 {
@@ -63,23 +62,18 @@ std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(
 {
 	auto services = std::unique_ptr<VulkanRenderDeviceServices>(new VulkanRenderDeviceServices());
 	{
-		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateDevice");
 		services->m_rhi = std::make_unique<VulkanRhi>();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateMemoryAllocator");
 		services->m_memoryAllocator = std::make_unique<VulkanGpuMemoryAllocator>(*services->m_rhi);
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateSwapChain");
 		services->m_swapChain = std::make_unique<VulkanSwapChain>(*services->m_rhi, window, settings.BackBufferFormat);
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateCommandContext");
 		services->m_commandContext = std::make_unique<VulkanCommandContext>(*services->m_rhi);
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateHardwareInterface");
 		services->m_renderHardwareInterface = std::make_unique<VulkanRenderHardwareInterface>(
 		    *services->m_rhi,
 		    *services->m_swapChain,

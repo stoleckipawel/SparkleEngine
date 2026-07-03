@@ -8,7 +8,6 @@
 
 #include "Console/EditorConsoleSystem.h"
 #include "Panels/MainMenuBarPanel.h"
-#include "Panels/ProfilerPanel.h"
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
 #include "Panels/SettingsPanel.h"
@@ -21,7 +20,6 @@
 #include "Settings/EditorRestartService.h"
 #include "Style/SparkleUiTheme.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshComponent.h"
@@ -79,8 +77,6 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 	m_meshDiagnosticsProvider = std::move(providers.MeshDiagnostics);
 	m_textureDiagnosticsProvider = std::move(providers.TextureDiagnostics);
 	m_memoryDiagnosticsProvider = std::move(providers.MemoryDiagnostics);
-	m_rendererDiagnosticsProvider = std::move(providers.RendererDiagnostics);
-	m_rendererSmokeDiagnosticsProvider = std::move(providers.RendererSmokeDiagnostics);
 
 	if (m_usedShadersPanel)
 	{
@@ -102,11 +98,6 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 RendererMemoryDiagnosticsSnapshot UI::CaptureMemoryDiagnostics() const
 {
 	return m_memoryDiagnosticsProvider ? m_memoryDiagnosticsProvider() : RendererMemoryDiagnosticsSnapshot{};
-}
-
-RendererDiagnosticsSnapshot UI::CaptureRendererDiagnostics() const
-{
-	return m_rendererDiagnosticsProvider ? m_rendererDiagnosticsProvider() : RendererDiagnosticsSnapshot{};
 }
 
 bool UI::ConsumeShaderReloadRequest() noexcept
@@ -201,7 +192,6 @@ void UI::InitializeDefaultPanels()
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
 	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelManager);
 	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
-	m_profilerPanel = std::make_unique<ProfilerPanel>();
 	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>();
 	m_restartService = std::make_unique<EditorRestartService>();
 	m_settingsPanel = std::make_unique<SettingsPanel>();
@@ -293,14 +283,6 @@ void UI::ConfigureMainMenuBarWindowActions()
 			    m_usedMeshesPanel->SetOpen(true);
 		    }
 	    });
-	m_mainMenuBar->SetProfilerOpenHandler(
-	    [this]()
-	    {
-		    if (m_profilerPanel)
-		    {
-			    m_profilerPanel->SetOpen(true);
-		    }
-	    });
 	m_mainMenuBar->SetSettingsOpenHandler(
 	    [this]()
 	    {
@@ -377,7 +359,6 @@ void UI::SubscribeToWindowEvents(Window& window)
 
 void UI::NewFrame()
 {
-	SPARKLE_CPU_SCOPE("Editor.UI.NewFrame");
 	if (!IsReady())
 	{
 		return;
@@ -394,7 +375,6 @@ void UI::NewFrame()
 
 void UI::Build()
 {
-	SPARKLE_CPU_SCOPE("Editor.UI.Build");
 	const bool disableInteraction = m_levelManager != nullptr && m_levelManager->IsLevelChangeInProgress();
 	ImGuiIO& io = ImGui::GetIO();
 	if (m_inputSystem != nullptr)
@@ -434,8 +414,6 @@ void UI::Build()
 		m_viewportPanel->SetTopInset(mainMenuBarHeight + viewportTopPanelHeight);
 		m_viewportPanel->SetBottomInset(consoleDockHeight);
 		m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
-		m_viewportPanel->SetRendererSmokeDiagnostics(
-		    m_rendererSmokeDiagnosticsProvider ? m_rendererSmokeDiagnosticsProvider() : RendererSmokeDiagnosticsSnapshot{});
 		m_viewportPanel->BuildUI(disableInteraction);
 		if (m_inputSystem != nullptr)
 		{
@@ -476,11 +454,6 @@ void UI::Build()
 		m_usedTexturesPanel->BuildUI(disableInteraction);
 	}
 
-	if (m_profilerPanel)
-	{
-		m_profilerPanel->BuildUI(disableInteraction);
-	}
-
 	if (m_settingsPanel)
 	{
 		m_settingsPanel->BuildUI(disableInteraction);
@@ -505,7 +478,6 @@ void UI::Build()
 }
 void UI::Update()
 {
-	SPARKLE_CPU_SCOPE("Editor.UI.Update");
 	if (!IsReady())
 	{
 		return;
@@ -517,7 +489,6 @@ void UI::Update()
 
 void UI::Render() noexcept
 {
-	SPARKLE_CPU_SCOPE("Editor.UI.Render");
 	if (!IsReady() || m_imguiRenderer == nullptr)
 	{
 		return;
@@ -528,38 +499,27 @@ void UI::Render() noexcept
 
 UI::~UI() noexcept
 {
-	SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI begin");
 
 	m_windowMessageHandle.Reset();
-	SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI window message handle released");
 
 	if (m_isGraphicsBackendInitialized)
 	{
-		SPDLOG_LOGGER_INFO(
-		    g_editorLogger,
-		    "UI::~UI graphics backend invalidate begin (context={})",
-		    static_cast<const void*>(ImGui::GetCurrentContext()));
 		m_imguiRenderer->Shutdown();
-		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI graphics backend invalidate complete");
 		m_isGraphicsBackendInitialized = false;
-		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI graphics backend shutdown complete");
 	}
 
 	if (m_isWin32BackendInitialized)
 	{
 		ImGui_ImplWin32_Shutdown();
 		m_isWin32BackendInitialized = false;
-		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI Win32 backend shutdown complete");
 	}
 
 	if (m_isImGuiContextInitialized)
 	{
 		ImGui::DestroyContext();
 		m_isImGuiContextInitialized = false;
-		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI ImGui context destroyed");
 	}
 
-	SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI end");
 }
 
 bool UI::IsReady() const noexcept

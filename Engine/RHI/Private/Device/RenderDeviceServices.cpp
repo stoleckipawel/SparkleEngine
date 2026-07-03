@@ -9,7 +9,6 @@
 #include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Diagnostics/Verify.h"
 #include <string>
 
@@ -63,9 +62,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
     RhiBackendSelection selection,
     const RenderDeviceSettings& settings) noexcept
 {
-	SPARKLE_CPU_SCOPE("RHI.CreateBackend");
 	ValidateRenderDeviceSettings(settings);
-	SPDLOG_LOGGER_INFO(g_rhiServicesLogger, "Creating RHI backend: {}", RhiBackendApiToString(selection.Api));
 
 	auto services = std::unique_ptr<RenderDeviceServices>(new RenderDeviceServices());
 	services->m_impl = std::make_unique<Impl>();

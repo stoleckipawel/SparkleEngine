@@ -55,11 +55,6 @@ namespace RhiSmokeLevelSwitching
 		const std::string activeLevelName = GetActiveLevelName(app);
 		state.SwitchOrder.erase(std::remove(state.SwitchOrder.begin(), state.SwitchOrder.end(), activeLevelName), state.SwitchOrder.end());
 
-		SPDLOG_LOGGER_INFO(
-		    logger,
-		    "RHI smoke validation: level switching initialized activeLevel='{}' switchTargets={}",
-		    activeLevelName,
-		    state.SwitchOrder.size());
 
 		if (state.SwitchOrder.empty())
 		{
@@ -86,12 +81,6 @@ namespace RhiSmokeLevelSwitching
 		if (!state.PendingLevelName.empty() && activeLevelName == state.PendingLevelName)
 		{
 			++state.CompletedSwitches;
-			SPDLOG_LOGGER_INFO(
-			    logger,
-			    "RHI smoke validation: completed level switch to '{}' ({}/{})",
-			    activeLevelName,
-			    state.CompletedSwitches,
-			    state.SwitchOrder.size());
 			state.PendingLevelName.clear();
 			state.LastSwitchFrame = completedRenderFrames;
 		}
@@ -99,7 +88,6 @@ namespace RhiSmokeLevelSwitching
 		if (state.PendingLevelName.empty() && state.CompletedSwitches >= state.SwitchOrder.size())
 		{
 			state.Finished = true;
-			SPDLOG_LOGGER_INFO(logger, "RHI smoke validation: completed all level switch targets");
 			return;
 		}
 
@@ -124,7 +112,6 @@ namespace RhiSmokeLevelSwitching
 		}
 
 		state.PendingLevelName = nextLevelName;
-		SPDLOG_LOGGER_INFO(logger, "RHI smoke validation: requesting level switch to '{}'", nextLevelName);
 		levelManager->RequestLevelChange(nextLevelName);
 	}
 }

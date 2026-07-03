@@ -7,7 +7,6 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
-#include "Core/Public/Diagnostics/Trace.h"
 
 #include <iostream>
 #include <memory>
@@ -16,7 +15,6 @@
 	int TextureCookerApplication::Run(int argc, char** argv) const
 	{
 		static const auto textureCookerLogger = Logging::GetOrCreateLogger("Tools.TextureCooker");
-		SPARKLE_CPU_SCOPE("Tools.TextureCooker.Application.Run");
 		SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, "TextureCooker.Application.Run");
 
 		if (argc != 3 && argc != 5)
@@ -46,16 +44,9 @@
 		const std::filesystem::path& summaryPath)
 	{
 		static const auto textureCookerLogger = Logging::GetOrCreateLogger("Tools.TextureCooker");
-		SPARKLE_CPU_SCOPE("Tools.TextureCooker.Application.RunCommand");
 		SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, "TextureCooker.Application.RunCommand");
 
 		const std::string_view command(commandName != nullptr ? commandName : "");
-		SPDLOG_LOGGER_INFO(
-			textureCookerLogger,
-			"TextureCooker command='{}' requestFile='{}' summaryPath='{}'",
-			command,
-			requestFilePath.string(),
-			summaryPath.string());
 		std::unique_ptr<TextureCookerCommand> commandHandler = TextureCookerCommandRegistry::Create(command);
 		if (!commandHandler)
 		{
@@ -66,6 +57,5 @@
 		TextureCookerCommandOptions options;
 		options.summaryPath = summaryPath;
 		const int exitCode = commandHandler->Execute(requestFilePath, options);
-		SPDLOG_LOGGER_INFO(textureCookerLogger, "TextureCooker command='{}' completed with exitCode={}", command, exitCode);
 		return exitCode;
 	}

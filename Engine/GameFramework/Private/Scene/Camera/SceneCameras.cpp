@@ -20,15 +20,10 @@ bool SceneCameras::ApplyCamera(std::size_t cameraIndex) noexcept
 	const SceneCameraEntry& camera = m_cameraEntries[cameraIndex];
 	if (!camera.IsPerspective())
 	{
-		SPDLOG_LOGGER_INFO(
-		    g_sceneCamerasLogger,
-		    "SceneCameras: Camera '{}' is metadata-only because only perspective cameras can drive the runtime view",
-		    camera.name);
 		return false;
 	}
 
 	m_activeCamera.ApplyFromDesc(camera.desc);
-	SPDLOG_LOGGER_INFO(g_sceneCamerasLogger, "SceneCameras: Applied camera '{}' as the active scene camera", camera.name);
 	return true;
 }
 

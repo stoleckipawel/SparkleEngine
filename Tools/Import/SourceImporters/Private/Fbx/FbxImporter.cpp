@@ -55,8 +55,6 @@ SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) co
 	}
 
 	result.succeeded = true;
-	FbxImportDiagnosticLog::ReportLoadedScene(filePath, result);
-
 	return result;
 }
 

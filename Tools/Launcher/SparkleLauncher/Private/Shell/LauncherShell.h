@@ -37,11 +37,9 @@ namespace SparkleLauncher
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
 		bool ForceRecookConfirmed = false;
 		bool CleanConfirmed = false;
-		bool SmokeTrace = false;
 		bool SmokeSkipLevelSwitching = false;
 		bool SmokeRunRayTracingParity = false;
 		bool SmokeRunPtlasBenchmark = false;
-		bool SmokeRunDiagnosticCaptures = false;
 		bool ShowHelp = false;
 	};
 

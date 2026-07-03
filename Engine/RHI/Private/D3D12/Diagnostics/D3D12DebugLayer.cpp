@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "D3D12/Diagnostics/D3D12DebugLayer.h"
 
 #if ENGINE_GPU_VALIDATION
@@ -295,7 +295,6 @@ D3D12DebugLayer::D3D12DebugLayer()
 	InitDredSettings();
 	InitD3D12Debug();
 	InitDXGIDebug();
-	SPDLOG_LOGGER_INFO(g_d3d12DiagnosticsLogger, "D3D12 diagnostics bootstrap completed.");
 }
 
 D3D12DebugLayer::~D3D12DebugLayer() noexcept
@@ -333,7 +332,6 @@ void D3D12DebugLayer::InitializeInfoQueue(ID3D12Device* device)
 	ConfigureInfoQueue(device);
 	ApplyInfoQueueFilters(device);
 	ClearMessages();
-	SPDLOG_LOGGER_INFO(g_d3d12DiagnosticsLogger, "D3D12 debug messages enabled through ID3D12InfoQueue.");
 }
 
 bool D3D12DebugLayer::SupportsDebugMessages() const noexcept
@@ -505,21 +503,18 @@ void D3D12DebugLayer::InitDredSettings() noexcept
 	}
 
 	m_supportsCrashDiagnostics = true;
-	SPDLOG_LOGGER_INFO(g_d3d12DiagnosticsLogger, "D3D12 crash diagnostics enabled through DRED.");
 }
 
 void D3D12DebugLayer::InitD3D12Debug()
 {
 	CHECK(D3D12GetDebugInterface(IID_PPV_ARGS(m_d3d12Debug.ReleaseAndGetAddressOf())));
 	m_d3d12Debug->EnableDebugLayer();
-	SPDLOG_LOGGER_INFO(g_d3d12DiagnosticsLogger, "D3D12 debug layer enabled.");
 }
 
 void D3D12DebugLayer::InitDXGIDebug()
 {
 	CHECK(DXGIGetDebugInterface1(0, IID_PPV_ARGS(m_dxgiDebug.ReleaseAndGetAddressOf())));
 	m_dxgiDebug->EnableLeakTrackingForThread();
-	SPDLOG_LOGGER_INFO(g_d3d12DiagnosticsLogger, "DXGI debug interface enabled for live object reporting.");
 }
 
 void D3D12DebugLayer::ConfigureInfoQueue(ID3D12Device* device)

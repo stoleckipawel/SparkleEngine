@@ -204,5 +204,3 @@ void InputState::BeginFrame() noexcept
 	m_WheelDelta = 0.0f;
 	m_WheelHorizontalDelta = 0.0f;
 }
-
-void InputState::EndFrame() noexcept {}

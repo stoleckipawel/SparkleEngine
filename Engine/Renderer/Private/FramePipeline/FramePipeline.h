@@ -88,8 +88,6 @@ class FramePipeline final
 	void EndFrame() noexcept;
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
 	const FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() const noexcept;
-	void ReportResolvedTimings(std::uint32_t frameIndex, const FrameExecutionDiagnostics& frameDiagnostics) const noexcept;
-	void PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resolvedTimers) const noexcept;
 
 	RendererSystemRoot* m_systems = nullptr;
 	std::unique_ptr<FrameGraph> m_frameGraph;

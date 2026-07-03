@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "Level/LevelRegistry.h"
 
 #include "Core/Public/Paths/DirectoryPaths.h"
@@ -91,7 +91,6 @@ void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)
 		return;
 	}
 
-	SPDLOG_LOGGER_INFO(g_levelRegistryLogger, "LevelRegistry: Registered level '{}'", nameKey);
 	m_levels.emplace(std::move(nameKey), std::move(level));
 }
 

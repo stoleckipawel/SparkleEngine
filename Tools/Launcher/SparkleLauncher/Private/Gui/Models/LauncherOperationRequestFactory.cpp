@@ -124,11 +124,9 @@ namespace SparkleLauncher
 		request.ForceRecook = settings.ForceRecook();
 		request.ConfirmForceRecook = settings.ConfirmForceRecook();
 		request.ConfirmClean = settings.ConfirmClean();
-		request.SmokeTrace = settings.SmokeTrace();
 		request.SmokeSkipLevelSwitching = settings.SmokeSkipLevelSwitching();
 		request.SmokeRunRayTracingParity = settings.SmokeRunRayTracingParity();
 		request.SmokeRunPtlasBenchmark = settings.SmokeRunPtlasBenchmark();
-		request.SmokeRunDiagnosticCaptures = settings.SmokeRunDiagnosticCaptures();
 
 		if (operationId == "project.open.editor")
 		{

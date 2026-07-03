@@ -12,7 +12,6 @@
 
 #include "Window/Window.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 
 class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 {
@@ -65,15 +64,12 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
 	auto services = std::unique_ptr<D3D12RenderDeviceServices>(new D3D12RenderDeviceServices());
 
 	{
-		SPARKLE_CPU_SCOPE("RHI.CreateDevice");
 		services->m_rhi = std::make_unique<D3D12Rhi>();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.CreateDescriptorHeaps");
 		services->m_descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*services->m_rhi);
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.CreateSwapChain");
 		services->m_swapChain = std::make_unique<D3D12SwapChain>(
 		    *services->m_rhi,
 		    window,
@@ -81,16 +77,13 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
 		    settings.BackBufferFormat);
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.CreateFrameResources");
 		services->m_frameResourceManager =
 		    std::make_unique<D3D12FrameResourceManager>(*services->m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.CreateConstantBuffers");
 		services->m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(*services->m_frameResourceManager);
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.CreateHardwareInterface");
 		services->m_renderHardwareInterface = std::make_unique<D3D12RenderHardwareInterface>(
 		    *services->m_rhi,
 		    services->m_rhi->GetMemoryAllocator(),
@@ -99,7 +92,6 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
 		    *services->m_constantBufferManager);
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.CreateSamplerLibrary");
 		services->m_samplerLibrary =
 		    std::make_unique<D3D12SamplerLibrary>(*services->m_rhi, services->m_renderHardwareInterface->GetDescriptorService());
 	}

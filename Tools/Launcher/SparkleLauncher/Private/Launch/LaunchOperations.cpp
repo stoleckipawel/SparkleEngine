@@ -202,7 +202,7 @@ namespace SparkleLauncher
 		{
 			plan.Request.EnableSmokeTest = true;
 		}
-		if (plan.Request.SmokeRunRayTracingParity || plan.Request.SmokeRunPtlasBenchmark || plan.Request.SmokeRunDiagnosticCaptures)
+		if (plan.Request.SmokeRunRayTracingParity || plan.Request.SmokeRunPtlasBenchmark)
 		{
 			plan.Request.EnableSmokeTest = true;
 			plan.Request.SmokeSkipLevelSwitching = true;

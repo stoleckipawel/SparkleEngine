@@ -100,11 +100,6 @@ void MainMenuBarPanel::SetTextureToolsOpenHandler(std::function<void()> handler)
 	m_textureToolsOpenHandler = std::move(handler);
 }
 
-void MainMenuBarPanel::SetProfilerOpenHandler(std::function<void()> handler)
-{
-	m_profilerOpenHandler = std::move(handler);
-}
-
 void MainMenuBarPanel::SetSettingsOpenHandler(std::function<void()> handler)
 {
 	m_settingsOpenHandler = std::move(handler);
@@ -168,12 +163,6 @@ void MainMenuBarPanel::BuildWindowsMenu() noexcept
 	}
 
 	ImGui::Separator();
-
-	const std::string profilerLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Profiler, "Profiler");
-	if (ImGui::MenuItem(profilerLabel.c_str(), nullptr, false, static_cast<bool>(m_profilerOpenHandler)))
-	{
-		m_profilerOpenHandler();
-	}
 
 	const std::string shadersLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Shader, "Shaders");
 	if (ImGui::MenuItem(shadersLabel.c_str(), nullptr, false, static_cast<bool>(m_shaderToolsOpenHandler)))

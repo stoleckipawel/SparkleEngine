@@ -12,8 +12,7 @@ namespace SparkleLauncher
 	{
 		SingleViewportCapture,
 		RayTracingParity,
-		PtlasBenchmark,
-		DiagnosticCaptures
+		PtlasBenchmark
 	};
 
 	struct RhiSmokeSuiteDefinition final

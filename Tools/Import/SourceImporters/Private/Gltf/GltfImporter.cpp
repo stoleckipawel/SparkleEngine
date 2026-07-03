@@ -72,8 +72,6 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 	}
 
 	result.succeeded = true;
-	GltfImportDiagnosticLog::ReportLoadedScene(filePath, result);
-
 	return result;
 }
 

@@ -9,7 +9,6 @@
 #include "Vulkan/VulkanTypeConversions.h"
 #include "Window/Window.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 
 #include <algorithm>
 #include <format>
@@ -225,14 +224,6 @@ void VulkanSwapChain::CreateSwapChain(VkSwapchainKHR oldSwapChain)
 		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateSwapchainKHR", result));
 	}
 
-	SPDLOG_LOGGER_INFO(
-	    g_vulkanSwapChainLogger,
-	    "Created Vulkan swapchain: extent={}x{}, format={}, colorSpace={}, presentMode={}",
-	    m_extent.width,
-	    m_extent.height,
-	    static_cast<int>(m_surfaceFormat.format),
-	    static_cast<int>(m_surfaceFormat.colorSpace),
-	    static_cast<int>(m_presentMode));
 }
 
 void VulkanSwapChain::CreateBackBufferImageViews()

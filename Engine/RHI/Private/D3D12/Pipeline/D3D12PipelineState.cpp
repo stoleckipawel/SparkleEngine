@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
@@ -198,11 +198,9 @@ namespace
 				SPDLOG_LOGGER_WARN(g_pipelineStateLogger, "{}", message);
 				break;
 			case ERhiDiagnosticMessageSeverity::Info:
-				SPDLOG_LOGGER_INFO(g_pipelineStateLogger, "{}", message);
 				break;
 			case ERhiDiagnosticMessageSeverity::Verbose:
 			default:
-				SPDLOG_LOGGER_DEBUG(g_pipelineStateLogger, "{}", message);
 				break;
 		}
 	}

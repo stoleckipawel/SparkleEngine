@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/DirectShadowSignalPass.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
@@ -208,7 +207,6 @@ void DirectShadowSignalPass::Execute(PassExecutionContext& context, ParameterIns
 {
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
 	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, "Direct Shadow Signal");
 		ComputePassUtilities::DispatchSized<DirectShadowSignalPass>(
 		    context,
 		    m_runtime,
@@ -222,7 +220,6 @@ void DirectShadowSignalDeviceAddressPass::Execute(PassExecutionContext& context,
 {
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
 	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, "Direct Shadow Signal");
 		ComputePassUtilities::DispatchSized<DirectShadowSignalDeviceAddressPass>(
 		    context,
 		    m_runtime,

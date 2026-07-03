@@ -2,8 +2,6 @@
 
 #include "Gltf/GltfAnimationImporter.h"
 
-#include "Diagnostics/GltfImportDiagnosticLog.h"
-
 #include <cgltf.h>
 
 #include <algorithm>
@@ -233,6 +231,5 @@ void GltfAnimationImporter::ImportAnimations(const cgltf_data* data, SourceImpor
 		result.diagnostics.featureCapabilities.animations = {
 		    result.scene.animations.size(),
 		    SourceImportFeatureSupport::Imported};
-		GltfImportDiagnosticLog::ReportImportedAnimationsForPlayback(result.scene.animations.size());
 	}
 }

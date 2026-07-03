@@ -53,20 +53,6 @@ namespace SparkleLauncher
 			return definition;
 		}
 
-		const RhiSmokeSuiteDefinition& DiagnosticSuiteDefinition()
-		{
-			static const RhiSmokeSuiteDefinition definition = {
-			    RhiSmokeSuite::DiagnosticCaptures,
-			    "diagnostic-captures",
-			    "PTLAS diagnostic captures",
-			    "diagnostic-captures",
-			    80,
-			    10,
-			    70,
-			    24,
-			    0};
-			return definition;
-		}
 	}
 
 	std::vector<RhiSmokeSuite> GetEnabledRhiSmokeSuites(const LaunchOperationPlan& plan)
@@ -84,10 +70,6 @@ namespace SparkleLauncher
 		if (plan.Request.SmokeRunPtlasBenchmark)
 		{
 			suites.push_back(RhiSmokeSuite::PtlasBenchmark);
-		}
-		if (plan.Request.SmokeRunDiagnosticCaptures)
-		{
-			suites.push_back(RhiSmokeSuite::DiagnosticCaptures);
 		}
 		if (suites.empty())
 		{
@@ -122,8 +104,6 @@ namespace SparkleLauncher
 			return ParitySuiteDefinition();
 		case RhiSmokeSuite::PtlasBenchmark:
 			return BenchmarkSuiteDefinition();
-		case RhiSmokeSuite::DiagnosticCaptures:
-			return DiagnosticSuiteDefinition();
 		}
 
 		return SingleViewportSuiteDefinition();
@@ -153,13 +133,6 @@ namespace SparkleLauncher
 		    {"vulkan-ptlas-gpu-logical", "vulkan", true, "2", "PartitionedTlas", "GpuLogicalDirtyCpuNativePack", "CpuPack", "ptlas-gpu-logical-dirty-writer-not-implemented", ""},
 		    {"vulkan-ptlas-full-gpu-native", "vulkan", true, "3", "PartitionedTlas", "FullGpuNativePack", "CpuPack", "ptlas-full-gpu-native-pack-backend-pack-shader-not-implemented", ""},
 		};
-		static const std::vector<RhiSmokeScenarioCase> diagnosticCases = {
-		    {"d3d12-classic-reference", "d3d12", false, "1", "ClassicTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", "D3D12 classic TLAS reference"},
-		    {"d3d12-partitioned-request", "d3d12", true, "1", "PartitionedTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", "D3D12 partitioned TLAS request"},
-		    {"vulkan-classic-reference", "vulkan", false, "1", "ClassicTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", "Vulkan classic TLAS reference"},
-		    {"vulkan-partitioned-request", "vulkan", true, "1", "PartitionedTlas", "CpuPack", "CpuPack", "ptlas-operation-writer-cpu-pack-selected", "Vulkan partitioned TLAS request"},
-		};
-
 		switch (suite)
 		{
 		case RhiSmokeSuite::SingleViewportCapture:
@@ -168,8 +141,6 @@ namespace SparkleLauncher
 			return parityCases;
 		case RhiSmokeSuite::PtlasBenchmark:
 			return benchmarkCases;
-		case RhiSmokeSuite::DiagnosticCaptures:
-			return diagnosticCases;
 		}
 
 		return singleViewportCases;
@@ -188,18 +159,6 @@ namespace SparkleLauncher
 		    {"Lit", "Primary shaded output used for timing comparisons and benchmark summaries."},
 		    {"RayTracingProviderStatus", "Provider capability view used to correlate timing data with selected PTLAS provider state."},
 		};
-		static const std::vector<RhiSmokeScenarioViewMode> diagnosticViewModes = {
-		    {"Lit", "Final lit output used as the primary visual reference."},
-		    {"GBufferNormal", "Normal buffer sanity view used to verify orientation and geometry coherence."},
-		    {"RayTracingPartitions", "Partition ownership view used to inspect logical PTLAS partitioning."},
-		    {"RayTracingPartitionUpdates", "Partition update heatmap showing which logical partitions were touched by motion."},
-		    {"RayTracingInstanceMovement", "Instance movement debug view that highlights objects contributing to PTLAS updates."},
-		    {"RayTracingTopLevelMode", "Top-level acceleration structure mode view exposing classic TLAS versus PTLAS selection."},
-		    {"RayTracingNativeOperations", "Native PTLAS operation pressure view for backend-native work inspection."},
-		    {"RayTracingGpuDrivenUpdates", "GPU-driven update mode view used to inspect writer-path selection and GPU update state."},
-		    {"RayTracingProviderStatus", "Provider capability and fallback status view for active backend/provider diagnostics."},
-		};
-
 		switch (suite)
 		{
 		case RhiSmokeSuite::SingleViewportCapture:
@@ -208,8 +167,6 @@ namespace SparkleLauncher
 			return parityViewModes;
 		case RhiSmokeSuite::PtlasBenchmark:
 			return benchmarkViewModes;
-		case RhiSmokeSuite::DiagnosticCaptures:
-			return diagnosticViewModes;
 		}
 
 		return singleViewportViewModes;

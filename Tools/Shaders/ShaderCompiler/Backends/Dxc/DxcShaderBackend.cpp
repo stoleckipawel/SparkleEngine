@@ -199,11 +199,6 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 		}
 	}
 
-	SPDLOG_LOGGER_INFO(
-		g_dxcShaderBackendLogger,
-		"Shader compiled successfully ({}): {}",
-		IsSpirVTarget(options.Target) ? "SPIR-V" : "DXIL",
-		options.SourcePath.filename().string());
 	auto compileResult = ShaderCompileResult::Success(std::move(bytecode), debugArtifactPath);
 	compileResult.SetReflection(std::move(reflection));
 	if (options.CaptureDebugArtifacts)

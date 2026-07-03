@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/DirectLightReservoirPass.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
@@ -95,7 +94,6 @@ void DirectLightReservoirTemporalPass::Execute(PassExecutionContext& context, Pa
 {
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
 	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, "Direct Light Reservoir Temporal");
 		ComputePassUtilities::DispatchSized<DirectLightReservoirTemporalPass>(
 		    context,
 		    m_runtime,
@@ -153,7 +151,6 @@ void DirectLightReservoirSpatialPass::Execute(PassExecutionContext& context, Par
 {
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
 	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, "Direct Light Reservoir Spatial");
 		ComputePassUtilities::DispatchSized<DirectLightReservoirSpatialPass>(
 		    context,
 		    m_runtime,

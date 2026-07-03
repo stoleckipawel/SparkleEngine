@@ -32,19 +32,11 @@ struct SPARKLE_RENDERER_API RendererSmokeFrameTimingDiagnostics final
 	std::vector<RendererGpuTimingMetric> GpuTimings;
 };
 
-struct SPARKLE_RENDERER_API RendererSmokeUpscalerDiagnostics final
-{
-	std::string Provider;
-	std::string Status;
-	std::string Reason;
-};
-
 struct SPARKLE_RENDERER_API RendererSmokeDiagnosticsSnapshot final
 {
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
 	RendererSmokeAdapterDiagnostics Adapter;
 	RendererSmokeFrameGraphDiagnostics FrameGraph;
 	RendererSmokeFrameTimingDiagnostics FrameTimings;
-	RendererSmokeUpscalerDiagnostics Upscaler;
 	RendererSmokeRayTracingDiagnostics RayTracing;
 };

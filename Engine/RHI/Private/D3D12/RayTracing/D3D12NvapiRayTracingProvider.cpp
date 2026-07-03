@@ -2,7 +2,6 @@
 
 #include "D3D12/RayTracing/D3D12NvapiRayTracingProvider.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 
 #include <d3d12.h>
 
@@ -29,7 +28,6 @@ D3D12NvapiRayTracingProvider::D3D12NvapiRayTracingProvider() noexcept
 	const NvAPI_Status status = NvAPI_Initialize();
 	m_runtimeInitialized = status == NVAPI_OK;
 	m_runtimeStatusReason = m_runtimeInitialized ? "d3d12-nvapi-runtime-initialized" : ToNvapiStatusReason(status);
-	SPDLOG_LOGGER_INFO(g_d3d12NvapiRayTracingLogger, "NVAPI initialization status: {}", m_runtimeStatusReason);
 #else
 	m_runtimeInitialized = false;
 	m_runtimeStatusReason = "d3d12-nvapi-headers-not-compiled";

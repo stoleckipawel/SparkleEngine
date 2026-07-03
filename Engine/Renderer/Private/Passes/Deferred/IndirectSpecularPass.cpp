@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/IndirectSpecularPass.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
@@ -142,7 +141,6 @@ void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInsta
 	    hitMaterialCount,
 	    MaterialTextureTableFixedCapacity);
 	{
-		SPARKLE_GPU_SCOPE(context.Diagnostics, DispatchTimingLabel);
 		ComputePassUtilities::DispatchSized<IndirectSpecularPass>(
 		    context,
 		    m_runtime,

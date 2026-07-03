@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
 #include "Resources/Textures/TextureDiagnostics.h"
@@ -76,7 +75,6 @@ class RendererSystemRoot final
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
-	RendererDiagnosticsSnapshot CaptureDiagnosticsSnapshot() const;
 	void TickDiagnostics(std::uint64_t frameIndex) noexcept;
 	void PostLoad() noexcept;
 	void RefreshImageProviders() noexcept;

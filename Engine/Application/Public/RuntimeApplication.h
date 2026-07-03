@@ -49,7 +49,6 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	void UpdateRuntime() noexcept;
 	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
-	void EndFrame() noexcept;
 	Timer& GetTimer() noexcept;
 	Window& GetWindow() noexcept;
 	InputSystem& GetInputSystem() noexcept;

@@ -47,15 +47,6 @@ void InputSystem::BeginFrame()
 	ClearDeferredQueues();
 }
 
-void InputSystem::EndFrame()
-{
-	m_State.EndFrame();
-	for (InputState& layerState : m_LayerStates)
-	{
-		layerState.EndFrame();
-	}
-}
-
 void InputSystem::ProcessDeferredEvents()
 {
 	if (m_captureQuery)
@@ -92,6 +83,7 @@ void InputSystem::HandleWindowMessage(WindowMessageEvent& event)
 {
 	if (OnWindowMessage(event.msg, event.wParam, event.lParam))
 	{
+		event.handled = true;
 	}
 }
 
@@ -331,6 +323,7 @@ void InputSystem::HideCursor()
 {
 	while (::ShowCursor(FALSE) >= 0)
 	{
+		continue;
 	}
 	m_State.SetCursorHidden(true);
 }
@@ -339,6 +332,7 @@ void InputSystem::ShowCursor()
 {
 	while (::ShowCursor(TRUE) < 0)
 	{
+		continue;
 	}
 	m_State.SetCursorHidden(false);
 }

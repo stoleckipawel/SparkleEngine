@@ -6,7 +6,6 @@
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
 
-#include "Core/Public/Diagnostics/Trace.h"
 
 #include <algorithm>
 #include <array>
@@ -113,19 +112,15 @@ namespace
 VulkanRhi::VulkanRhi() noexcept
 {
 	{
-		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateInstance");
 		CreateInstance();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateDebugMessenger");
 		CreateDebugMessenger();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.Vulkan.SelectPhysicalDevice");
 		SelectPhysicalDevice();
 	}
 	{
-		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateLogicalDevice");
 		CreateLogicalDevice();
 	}
 	LoadDeviceDebugFunctions();
@@ -442,15 +437,6 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_featureStatus.SupportsMutableDescriptorType = QueryMutableDescriptorTypeFeature(m_physicalDevice);
 	m_featureStatus.RayTracing = VulkanRayTracingFeatureQuery::Query(m_physicalDevice);
 
-	SPDLOG_LOGGER_INFO(
-	    g_vulkanRhiLogger,
-	    "Selected Vulkan adapter: name='{}', type={}, vendorId={:#06x}, deviceId={:#06x}, api={}, driver={}",
-	    m_adapterInfo.Name,
-	    PhysicalDeviceTypeToString(m_adapterInfo.DeviceType),
-	    m_adapterInfo.VendorId,
-	    m_adapterInfo.DeviceId,
-	    FormatApiVersion(m_adapterInfo.ApiVersion),
-	    m_adapterInfo.Driver);
 }
 
 void VulkanRhi::CreateLogicalDevice() noexcept
@@ -500,18 +486,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 			m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure = true;
 		}
 	}
-	const bool enabledNvidiaBinaryImport =
-	    AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, kNvidiaBinaryImportExtensionName);
-	const bool enabledNvidiaImageViewHandle =
-	    AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, kNvidiaImageViewHandleExtensionName);
-	if (enabledNvidiaBinaryImport || enabledNvidiaImageViewHandle)
-	{
-		SPDLOG_LOGGER_INFO(
-		    g_vulkanRhiLogger,
-		    "Enabled Vulkan NVIDIA external-feature interop extensions: binaryImport={}, imageViewHandle={}",
-		    enabledNvidiaBinaryImport,
-		    enabledNvidiaImageViewHandle);
-	}
+	AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, kNvidiaBinaryImportExtensionName);
+	AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, kNvidiaImageViewHandleExtensionName);
 	for (const char* extension : deviceExtensions)
 	{
 		m_enabledDeviceExtensions.emplace_back(extension);
@@ -856,11 +832,6 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    m_rayTracingCapabilities.Groups.PartitionedTlas.Supported,
 	    m_rayTracingCapabilities.Groups.PartitionedTlas.CapabilityStatusReason);
 
-	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", adapterSummary);
-	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", featureSummary);
-	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", providerSummary);
-	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", instanceExtensions);
-	SPDLOG_LOGGER_INFO(g_vulkanRhiLogger, "{}", deviceExtensions);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Driver, adapterSummary);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Validation, featureSummary);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Validation, providerSummary);

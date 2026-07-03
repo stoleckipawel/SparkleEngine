@@ -125,11 +125,8 @@ void FrameExecutionDiagnostics::ResolveTimings() noexcept
 		        .Depth = record.Depth});
 	}
 
-	// Records are pushed in scope-end order (inner timers end before their parents),
-	// but downstream consumers (LiveProfiler hierarchy reconstruction) require
-	// begin-order entries to interpret the depth stream correctly. Sort ascending by
-	// begin tick; tie-break by depth so a parent precedes a child that begins on the
-	// same tick.
+	// Records are pushed in scope-end order, so sort them back into begin order before
+	// exposing the resolved timing stream.
 	std::sort(
 	    m_resolvedTimers.begin(),
 	    m_resolvedTimers.end(),

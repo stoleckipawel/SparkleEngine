@@ -50,11 +50,9 @@ namespace SparkleLauncher
 		bool ForceRecook() const;
 		bool ConfirmForceRecook() const;
 		bool ConfirmClean() const;
-		bool SmokeTrace() const;
 		bool SmokeSkipLevelSwitching() const;
 		bool SmokeRunRayTracingParity() const;
 		bool SmokeRunPtlasBenchmark() const;
-		bool SmokeRunDiagnosticCaptures() const;
 
 	public slots:
 		void SetBuildConfiguration(const QString& configuration);
@@ -95,11 +93,9 @@ namespace SparkleLauncher
 		void SetForceRecook(bool enabled);
 		void SetConfirmForceRecook(bool enabled);
 		void SetConfirmClean(bool enabled);
-		void SetSmokeTrace(bool enabled);
 		void SetSmokeSkipLevelSwitching(bool enabled);
 		void SetSmokeRunRayTracingParity(bool enabled);
 		void SetSmokeRunPtlasBenchmark(bool enabled);
-		void SetSmokeRunDiagnosticCaptures(bool enabled);
 
 	signals:
 		void SettingsChanged();
@@ -141,10 +137,8 @@ namespace SparkleLauncher
 		bool m_forceRecook = false;
 		bool m_confirmForceRecook = false;
 		bool m_confirmClean = false;
-		bool m_smokeTrace = false;
 		bool m_smokeSkipLevelSwitching = false;
 		bool m_smokeRunRayTracingParity = false;
 		bool m_smokeRunPtlasBenchmark = false;
-		bool m_smokeRunDiagnosticCaptures = false;
 	};
 }

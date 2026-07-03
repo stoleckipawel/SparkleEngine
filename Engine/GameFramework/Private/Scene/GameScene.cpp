@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "Scene/GameScene.h"
 
 #include "Assets/SceneAssetPayload.h"
@@ -44,7 +44,6 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 {
 	GameSceneLoadResult result;
 
-	SPDLOG_LOGGER_INFO(g_gameSceneLogger, "Scene: Loading level '{}'", desc.name);
 
 	Clear();
 	m_activeLevelName = desc.name;
@@ -63,7 +62,6 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 
 	result.status = GameSceneLoadStatus::Succeeded;
 
-	SPDLOG_LOGGER_INFO(g_gameSceneLogger, "Scene: Level '{}' loaded", desc.name);
 	return result;
 }
 

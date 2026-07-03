@@ -2,7 +2,6 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "ToolConsole.h"
 
 #include <cwctype>
@@ -89,7 +88,6 @@ int AssetCookerToolProcess::Run(
 {
 	static const auto toolProcessLogger = Logging::GetOrCreateLogger("Tools.AssetCooker.Process");
 	const std::string processScopeName = "AssetCooker.ToolProcess." + executablePath.filename().string();
-	SPARKLE_CPU_SCOPE(processScopeName);
 	SPARKLE_LOG_SCOPE(toolProcessLogger, spdlog::level::info, processScopeName);
 
 	ToolConsole::Message(
@@ -135,13 +133,11 @@ int AssetCookerToolProcess::Run(
 	GetExitCodeProcess(processInformation.hProcess, &exitCode);
 	CloseHandle(processInformation.hThread);
 	CloseHandle(processInformation.hProcess);
-	SPDLOG_LOGGER_INFO(toolProcessLogger, "Process '{}' exited with code {}", executablePath.string(), exitCode);
 	return static_cast<int>(exitCode);
 #else
 	const std::wstring commandLine = AssetCookerBuildCommandLine(executablePath, arguments);
 	const std::string narrowCommandLine(commandLine.begin(), commandLine.end());
 	const int exitCode = std::system(narrowCommandLine.c_str());
-	SPDLOG_LOGGER_INFO(toolProcessLogger, "Process '{}' exited with code {}", executablePath.string(), exitCode);
 	return exitCode;
 #endif
 }

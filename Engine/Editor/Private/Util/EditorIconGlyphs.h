@@ -23,7 +23,6 @@ namespace EditorIconGlyphs
 		inline constexpr const char* Filter = "\xef\x82\xb0";
 		inline constexpr const char* Settings = "\xef\x80\x93";
 		inline constexpr const char* Save = "\xef\x83\x87";
-		inline constexpr const char* Profiler = "\xef\x88\x81";
 		inline constexpr const char* Shader = "\xef\x8b\x9b";
 		inline constexpr const char* Refresh = "\xef\x80\xa1";
 		inline constexpr const char* Reload = "\xef\x87\x80";

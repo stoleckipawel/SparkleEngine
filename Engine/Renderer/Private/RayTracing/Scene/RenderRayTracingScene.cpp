@@ -51,7 +51,6 @@ RayTracingSceneFramePlan RenderRayTracingScene::PlanFrame(
 
 RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& sceneData) noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.RayTracing.ScenePrepare");
 
 	if (m_topLevelAccelerationStructureStrategy == nullptr)
 	{
@@ -102,7 +101,6 @@ void RenderRayTracingScene::Build(
     const RenderSceneData& sceneData,
     PassExecutionDiagnostics* diagnostics) noexcept
 {
-	SPARKLE_CPU_SCOPE("Renderer.RayTracing.SceneBuild");
 	RayTracingPerformanceDiagnostics performanceDiagnostics{diagnostics};
 
 	if (m_blasCache == nullptr || m_topLevelAccelerationStructureStrategy == nullptr)

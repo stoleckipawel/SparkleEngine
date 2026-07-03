@@ -5,7 +5,6 @@
 
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 
-#include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
@@ -172,11 +171,6 @@ VulkanGpuMemoryAllocator::VulkanGpuMemoryAllocator(VulkanRhi& rhi) noexcept : m_
 	if (!VulkanResult::Succeeded(result))
 	{
 		Diagnostics::Fail(g_vulkanMemoryLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vmaCreateAllocator", result));
-	}
-
-	if (Environment::GetFlag("SPARKLE_RHI_MEMORY_DIAGNOSTICS"))
-	{
-		SPDLOG_LOGGER_INFO(g_vulkanMemoryLogger, "VMA allocator initialized");
 	}
 }
 

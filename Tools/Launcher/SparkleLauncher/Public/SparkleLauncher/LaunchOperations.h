@@ -47,11 +47,9 @@ namespace SparkleLauncher
 		std::string SmokeFrameLimit;
 		std::string SmokeViewMode;
 		std::string SmokeCapturePath;
-		bool SmokeTrace = false;
 		bool SmokeSkipLevelSwitching = false;
 		bool SmokeRunRayTracingParity = false;
 		bool SmokeRunPtlasBenchmark = false;
-		bool SmokeRunDiagnosticCaptures = false;
 	};
 
 	struct LaunchOperationStep

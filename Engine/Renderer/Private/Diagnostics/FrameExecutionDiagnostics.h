@@ -156,16 +156,3 @@ class FrameExecutionDiagnostics final
 	std::vector<ResolvedGpuTiming> m_resolvedTimers;
 	std::uint16_t m_openTimerCount = 0;
 };
-
-#ifndef SPARKLE_DIAGNOSTIC_NAME
-	#define SPARKLE_DIAGNOSTIC_NAME(name) \
-		::Diagnostics::DiagnosticName     \
-		{                                 \
-			(name)                        \
-		}
-#endif
-
-#ifndef SPARKLE_GPU_SCOPE
-	#define SPARKLE_GPU_SCOPE(scopeOwner, ...) \
-		auto SPARKLE_PP_CONCAT(_sparkleGpuScope_, __LINE__) = (scopeOwner).BeginGpuScope(__VA_ARGS__)
-#endif

@@ -5,7 +5,6 @@
 #include "Diagnostics/RendererSmokeRayTracingSnapshotBuilder.h"
 #include "FramePipeline/FramePipeline.h"
 #include "Host/RendererSystemRoot.h"
-#include "Providers/RendererImageProviderStack.h"
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
@@ -36,15 +35,6 @@ namespace
 		const RendererFrameTimingDiagnosticsSnapshot frameTimings = framePipeline->CaptureFrameTimingDiagnosticsSnapshot();
 		snapshot.FrameTimings.GpuTimings = frameTimings.GpuTimings;
 	}
-
-	void FillUpscalerDiagnostics(RendererSmokeDiagnosticsSnapshot& snapshot, const RendererSystemRoot& systems)
-	{
-		const RendererProviderDiagnosticsSnapshot upscalerDiagnostics =
-		    systems.GetImageProviders().CaptureUpscalerDiagnosticsSnapshot();
-		snapshot.Upscaler.Provider = upscalerDiagnostics.ActiveProvider;
-		snapshot.Upscaler.Status = upscalerDiagnostics.CapabilityState;
-		snapshot.Upscaler.Reason = upscalerDiagnostics.Reason;
-	}
 }
 
 RendererSmokeDiagnosticsSnapshot RendererSmokeDiagnosticsBuilder::Build(
@@ -63,6 +53,5 @@ RendererSmokeDiagnosticsSnapshot RendererSmokeDiagnosticsBuilder::Build(
 	FillFrameTimingDiagnostics(snapshot, framePipeline);
 	snapshot.RayTracing =
 	    RendererSmokeRayTracingSnapshotBuilder::Build(capabilities.RayTracing, systems.GetRenderRayTracingScene());
-	FillUpscalerDiagnostics(snapshot, systems);
 	return snapshot;
 }

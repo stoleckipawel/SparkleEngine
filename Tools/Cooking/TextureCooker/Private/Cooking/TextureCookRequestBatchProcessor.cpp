@@ -9,7 +9,6 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
-#include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Json/JsonWriter.h"
 #include "ToolConsole.h"
@@ -57,9 +56,7 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 		const std::filesystem::path& summaryPath) const
 	{
 		static const auto textureCookerLogger = Logging::GetOrCreateLogger("Tools.TextureCooker");
-		SPARKLE_CPU_SCOPE("Tools.TextureCooker.CookRequestFile");
 		SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, "TextureCooker.CookRequestFile");
-		SPDLOG_LOGGER_INFO(textureCookerLogger, "TextureCooker requestFile='{}' loading", requestFilePath.string());
 		const auto batchStartTime = std::chrono::steady_clock::now();
 
 		std::string errorMessage;
@@ -89,7 +86,6 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 		{
 			const TextureCookRequest& request = requests[requestIndex];
 			const std::string requestScopeName = "Tools.TextureCooker.Request." + Formatting::FormatHexUInt64(request.assetId);
-			SPARKLE_CPU_SCOPE(requestScopeName);
 			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, requestScopeName);
 			const auto requestStartTime = std::chrono::steady_clock::now();
 			ToolConsole::Progress(
@@ -117,21 +113,8 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 			timing.sourcePath = request.sourcePath;
 			timing.outputPath = request.outputPath;
 			requestTimings.push_back(timing);
-			SPDLOG_LOGGER_INFO(
-			    textureCookerLogger,
-			    "TextureCooker request assetId={} status={} elapsedMs={} source='{}'",
-			    Formatting::FormatHexUInt64(request.assetId),
-			    "cooked",
-			    timing.elapsedMilliseconds,
-			    request.sourcePath.string());
 		}
 
-		SPDLOG_LOGGER_INFO(
-		    textureCookerLogger,
-		    "TextureCooker processed requestFile='{}' requests={} cooked={}",
-		    requestFilePath.string(),
-		    requests.size(),
-		    cookedCount);
 
 		std::ranges::sort(
 		    requestTimings,
@@ -143,14 +126,6 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 		for (std::size_t timingIndex = 0; timingIndex < topCount; ++timingIndex)
 		{
 			const TextureCookRequestTiming& timing = requestTimings[timingIndex];
-			SPDLOG_LOGGER_INFO(
-			    textureCookerLogger,
-			    "TextureCooker topRequest rank={} assetId={} status={} elapsedMs={} source='{}'",
-			    timingIndex + 1u,
-			    Formatting::FormatHexUInt64(timing.assetId),
-			    "cooked",
-			    timing.elapsedMilliseconds,
-			    timing.sourcePath.string());
 		}
 
 		const std::uint64_t elapsedMilliseconds = TextureCookerElapsedMilliseconds(batchStartTime);
@@ -200,7 +175,6 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 	{
 		const std::string cookScopeName = "Tools.TextureCooker.CookRequest." + Formatting::FormatHexUInt64(request.assetId);
 		{
-			SPARKLE_CPU_SCOPE(cookScopeName);
 			SPARKLE_LOG_SCOPE(Logging::GetOrCreateLogger("Tools.TextureCooker"), spdlog::level::info, cookScopeName);
 			if (!cooker.Cook(request, outErrorMessage))
 			{

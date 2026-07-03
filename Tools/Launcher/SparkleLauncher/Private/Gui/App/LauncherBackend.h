@@ -80,11 +80,9 @@ namespace SparkleLauncher
 		bool ForceRecook = false;
 		bool ConfirmForceRecook = false;
 		bool ConfirmClean = false;
-		bool SmokeTrace = false;
 		bool SmokeSkipLevelSwitching = false;
 		bool SmokeRunRayTracingParity = false;
 		bool SmokeRunPtlasBenchmark = false;
-		bool SmokeRunDiagnosticCaptures = false;
 	};
 
 	class LauncherBackend final : public QObject

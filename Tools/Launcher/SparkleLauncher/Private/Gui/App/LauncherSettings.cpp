@@ -233,11 +233,6 @@ namespace SparkleLauncher
 		return m_confirmClean;
 	}
 
-	bool LauncherSettings::SmokeTrace() const
-	{
-		return m_smokeTrace;
-	}
-
 	bool LauncherSettings::SmokeSkipLevelSwitching() const
 	{
 		return m_smokeSkipLevelSwitching;
@@ -251,11 +246,6 @@ namespace SparkleLauncher
 	bool LauncherSettings::SmokeRunPtlasBenchmark() const
 	{
 		return m_smokeRunPtlasBenchmark;
-	}
-
-	bool LauncherSettings::SmokeRunDiagnosticCaptures() const
-	{
-		return m_smokeRunDiagnosticCaptures;
 	}
 
 	void LauncherSettings::SetBuildConfiguration(const QString& configuration)
@@ -632,16 +622,6 @@ namespace SparkleLauncher
 		emit SettingsChanged();
 	}
 
-	void LauncherSettings::SetSmokeTrace(bool enabled)
-	{
-		if (m_smokeTrace == enabled)
-		{
-			return;
-		}
-		m_smokeTrace = enabled;
-		emit SettingsChanged();
-	}
-
 	void LauncherSettings::SetSmokeSkipLevelSwitching(bool enabled)
 	{
 		if (m_smokeSkipLevelSwitching == enabled)
@@ -672,13 +652,4 @@ namespace SparkleLauncher
 		emit SettingsChanged();
 	}
 
-	void LauncherSettings::SetSmokeRunDiagnosticCaptures(bool enabled)
-	{
-		if (m_smokeRunDiagnosticCaptures == enabled)
-		{
-			return;
-		}
-		m_smokeRunDiagnosticCaptures = enabled;
-		emit SettingsChanged();
-	}
 }

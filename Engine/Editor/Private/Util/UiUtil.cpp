@@ -270,8 +270,6 @@ namespace UiUtil
 				return EditorIconGlyphs::FontAwesome::Settings;
 			case EditorIcon::Save:
 				return EditorIconGlyphs::FontAwesome::Save;
-			case EditorIcon::Profiler:
-				return EditorIconGlyphs::FontAwesome::Profiler;
 			case EditorIcon::Shader:
 				return EditorIconGlyphs::FontAwesome::Shader;
 			case EditorIcon::Refresh:

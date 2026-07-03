@@ -55,31 +55,6 @@ namespace
 		}
 	}
 
-	void LogRendererSnapshot(
-	    const RendererSmokeDiagnosticsSnapshot& snapshot,
-	    std::string_view evidenceLabel,
-	    const std::shared_ptr<spdlog::logger>& logger) noexcept
-	{
-		SPDLOG_LOGGER_INFO(
-		    logger,
-		    "{}: backend={} frameGraphUnresolvedBarrierWarnings={} frameGraphMissingExecutionBindings={} transientResources={} "
-		    "importedResources={} persistentResources={} viewportProducts={} upscalerProvider='{}' upscalerStatus={} "
-		    "upscalerReason='{}' rayTracing={} inlineRayQuery={}",
-		    evidenceLabel,
-		    RhiBackendApiToString(snapshot.BackendApi),
-		    snapshot.FrameGraph.UnresolvedBarrierWarnings,
-		    snapshot.FrameGraph.MissingExecutionBindings,
-		    snapshot.FrameGraph.TransientResources,
-		    snapshot.FrameGraph.ImportedResources,
-		    snapshot.FrameGraph.PersistentResources,
-		    snapshot.FrameGraph.ViewportProducts,
-		    snapshot.Upscaler.Provider,
-		    snapshot.Upscaler.Status,
-		    snapshot.Upscaler.Reason,
-		    snapshot.RayTracing.Capability.Supported,
-		    snapshot.RayTracing.Capability.InlineRayQuerySupported);
-		RhiSmokeRayTracingEvidence::Log(snapshot.RayTracing, evidenceLabel, logger);
-	}
 }
 
 namespace RhiSmokeRendererEvidence
@@ -99,16 +74,6 @@ namespace RhiSmokeRendererEvidence
 
 		const RenderHardwareInterface& renderHardware = app.GetRenderer().GetRenderHardwareInterface();
 		const RhiDiagnosticsCapabilities capabilities = renderHardware.GetDiagnostics().GetCapabilities();
-		SPDLOG_LOGGER_INFO(
-		    logger,
-		    "RHI smoke diagnostics capabilities: objectNames={} commandScopes={} timestampQueries={} debugMessages={} liveObjectReports={} "
-		    "crashDiagnostics={}",
-		    capabilities.SupportsObjectNames,
-		    capabilities.SupportsGpuEvents,
-		    capabilities.SupportsTimestampQueries,
-		    capabilities.SupportsDebugMessages,
-		    capabilities.SupportsLiveObjectReports,
-		    capabilities.SupportsCrashDiagnostics);
 
 		LogUnavailableDiagnostics(capabilities, logger);
 		logged = true;
@@ -117,7 +82,6 @@ namespace RhiSmokeRendererEvidence
 	bool LogRendererEvidence(
 	    RuntimeApplication& app,
 	    bool& logged,
-	    std::string_view evidenceLabel,
 	    std::string_view validationLabel) noexcept
 	{
 		if (logged)
@@ -132,7 +96,6 @@ namespace RhiSmokeRendererEvidence
 		}
 
 		const RendererSmokeDiagnosticsSnapshot snapshot = app.GetRenderer().CaptureSmokeDiagnostics();
-		LogRendererSnapshot(snapshot, evidenceLabel, logger);
 
 		bool passed = true;
 		if (snapshot.FrameGraph.UnresolvedBarrierWarnings > 0)
