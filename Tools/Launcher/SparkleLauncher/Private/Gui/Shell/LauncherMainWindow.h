@@ -118,7 +118,6 @@ namespace SparkleLauncher
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeStartupLevel);
 		void AddLaunchApplicationOptions(QVBoxLayout& layout);
-		void AddSmokeValidationOptions(QVBoxLayout& layout);
 		void AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		QVBoxLayout* AddInlineOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);

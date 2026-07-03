@@ -413,8 +413,8 @@ namespace SparkleLauncher
 		}
 		if (statusText.contains("executable is missing", Qt::CaseInsensitive) || statusText.contains("missing", Qt::CaseInsensitive))
 		{
-			const bool runtimeLaunch = operationId == "project.open.runtime" || ((operationId == "project.run" || operationId == "project.run.smoke") && m_settings.LaunchTarget() == "runtime");
-			if ((operationId == "project.open.runtime" || operationId == "project.run" || operationId == "project.run.smoke") && runtimeLaunch)
+			const bool runtimeLaunch = operationId == "project.open.runtime" || (operationId == "project.run" && m_settings.LaunchTarget() == "runtime");
+			if ((operationId == "project.open.runtime" || operationId == "project.run") && runtimeLaunch)
 			{
 				return "Run Build > Build Runtime, then retry this workflow.";
 			}

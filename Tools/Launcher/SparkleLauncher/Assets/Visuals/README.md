@@ -36,7 +36,6 @@ Workflow banner asset slots:
 - `workflow-cook-shaders.png`: Shader cook workflow banner.
 - `workflow-cook-textures.png`: Texture cook workflow banner.
 - `workflow-cook-assets.png`: Scene asset cook workflow banner.
-- `workflow-smoke-test.png`: Smoke validation workflow banner.
 - `workflow-format-check.png`: Format check workflow banner.
 - `workflow-package-release.png`: Release package workflow banner.
 - `workflow-clean-workspace.png`: Clean workspace workflow banner.

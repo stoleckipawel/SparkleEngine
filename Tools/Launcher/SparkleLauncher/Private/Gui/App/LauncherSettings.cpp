@@ -138,26 +138,6 @@ namespace SparkleLauncher
 		return m_launchCVars;
 	}
 
-	const QString& LauncherSettings::SmokeBackend() const
-	{
-		return m_smokeBackend;
-	}
-
-	const QString& LauncherSettings::SmokeFrameLimit() const
-	{
-		return m_smokeFrameLimit;
-	}
-
-	const QString& LauncherSettings::SmokeViewMode() const
-	{
-		return m_smokeViewMode;
-	}
-
-	const QString& LauncherSettings::SmokeCapturePath() const
-	{
-		return m_smokeCapturePath;
-	}
-
 	const QString& LauncherSettings::FormatMode() const
 	{
 		return m_formatMode;
@@ -166,11 +146,6 @@ namespace SparkleLauncher
 	const QString& LauncherSettings::CleanScope() const
 	{
 		return m_cleanScope;
-	}
-
-	bool LauncherSettings::LaunchSmokeTest() const
-	{
-		return m_launchSmokeTest;
 	}
 
 	bool LauncherSettings::ShaderUseCache() const
@@ -231,21 +206,6 @@ namespace SparkleLauncher
 	bool LauncherSettings::ConfirmClean() const
 	{
 		return m_confirmClean;
-	}
-
-	bool LauncherSettings::SmokeSkipLevelSwitching() const
-	{
-		return m_smokeSkipLevelSwitching;
-	}
-
-	bool LauncherSettings::SmokeRunRayTracingParity() const
-	{
-		return m_smokeRunRayTracingParity;
-	}
-
-	bool LauncherSettings::SmokeRunPtlasBenchmark() const
-	{
-		return m_smokeRunPtlasBenchmark;
 	}
 
 	void LauncherSettings::SetBuildConfiguration(const QString& configuration)
@@ -432,46 +392,6 @@ namespace SparkleLauncher
 		emit SettingsChanged();
 	}
 
-	void LauncherSettings::SetSmokeBackend(const QString& backend)
-	{
-		if (m_smokeBackend == backend)
-		{
-			return;
-		}
-		m_smokeBackend = backend;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetSmokeFrameLimit(const QString& frameLimit)
-	{
-		if (m_smokeFrameLimit == frameLimit)
-		{
-			return;
-		}
-		m_smokeFrameLimit = frameLimit;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetSmokeViewMode(const QString& viewMode)
-	{
-		if (m_smokeViewMode == viewMode)
-		{
-			return;
-		}
-		m_smokeViewMode = viewMode;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetSmokeCapturePath(const QString& path)
-	{
-		if (m_smokeCapturePath == path)
-		{
-			return;
-		}
-		m_smokeCapturePath = path;
-		emit SettingsChanged();
-	}
-
 	void LauncherSettings::SetFormatMode(const QString& mode)
 	{
 		if (m_formatMode == mode)
@@ -489,16 +409,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_cleanScope = scope;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetLaunchSmokeTest(bool enabled)
-	{
-		if (m_launchSmokeTest == enabled)
-		{
-			return;
-		}
-		m_launchSmokeTest = enabled;
 		emit SettingsChanged();
 	}
 
@@ -619,36 +529,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_confirmClean = enabled;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetSmokeSkipLevelSwitching(bool enabled)
-	{
-		if (m_smokeSkipLevelSwitching == enabled)
-		{
-			return;
-		}
-		m_smokeSkipLevelSwitching = enabled;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetSmokeRunRayTracingParity(bool enabled)
-	{
-		if (m_smokeRunRayTracingParity == enabled)
-		{
-			return;
-		}
-		m_smokeRunRayTracingParity = enabled;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetSmokeRunPtlasBenchmark(bool enabled)
-	{
-		if (m_smokeRunPtlasBenchmark == enabled)
-		{
-			return;
-		}
-		m_smokeRunPtlasBenchmark = enabled;
 		emit SettingsChanged();
 	}
 

@@ -31,13 +31,8 @@ namespace SparkleLauncher
 		const QString& LaunchMeshAutoBatching() const;
 		const QString& LaunchCommandLineArguments() const;
 		const QString& LaunchCVars() const;
-		const QString& SmokeBackend() const;
-		const QString& SmokeFrameLimit() const;
-		const QString& SmokeViewMode() const;
-		const QString& SmokeCapturePath() const;
 		const QString& FormatMode() const;
 		const QString& CleanScope() const;
-		bool LaunchSmokeTest() const;
 		bool ShaderUseCache() const;
 		bool ShaderEnableDebugInfo() const;
 		bool ShaderEnableOptimizations() const;
@@ -50,9 +45,6 @@ namespace SparkleLauncher
 		bool ForceRecook() const;
 		bool ConfirmForceRecook() const;
 		bool ConfirmClean() const;
-		bool SmokeSkipLevelSwitching() const;
-		bool SmokeRunRayTracingParity() const;
-		bool SmokeRunPtlasBenchmark() const;
 
 	public slots:
 		void SetBuildConfiguration(const QString& configuration);
@@ -79,13 +71,8 @@ namespace SparkleLauncher
 		void SetLaunchMeshAutoBatching(const QString& value);
 		void SetLaunchCommandLineArguments(const QString& arguments);
 		void SetLaunchCVars(const QString& cvars);
-		void SetSmokeBackend(const QString& backend);
-		void SetSmokeFrameLimit(const QString& frameLimit);
-		void SetSmokeViewMode(const QString& viewMode);
-		void SetSmokeCapturePath(const QString& path);
 		void SetFormatMode(const QString& mode);
 		void SetCleanScope(const QString& scope);
-		void SetLaunchSmokeTest(bool enabled);
 		void SetShaderUseCache(bool enabled);
 		void SetShaderWriteDebugArtifacts(bool enabled);
 		void SetShaderWriteCookedShaderStats(bool enabled);
@@ -93,9 +80,6 @@ namespace SparkleLauncher
 		void SetForceRecook(bool enabled);
 		void SetConfirmForceRecook(bool enabled);
 		void SetConfirmClean(bool enabled);
-		void SetSmokeSkipLevelSwitching(bool enabled);
-		void SetSmokeRunRayTracingParity(bool enabled);
-		void SetSmokeRunPtlasBenchmark(bool enabled);
 
 	signals:
 		void SettingsChanged();
@@ -118,13 +102,8 @@ namespace SparkleLauncher
 		QString m_launchMeshAutoBatching;
 		QString m_launchCommandLineArguments;
 		QString m_launchCVars;
-		QString m_smokeBackend;
-		QString m_smokeFrameLimit;
-		QString m_smokeViewMode;
-		QString m_smokeCapturePath;
 		QString m_formatMode = "check";
 		QString m_cleanScope = "selected-cooked";
-		bool m_launchSmokeTest = false;
 		bool m_shaderUseCache = true;
 		bool m_shaderEnableDebugInfo = false;
 		bool m_shaderEnableOptimizations = true;
@@ -137,8 +116,5 @@ namespace SparkleLauncher
 		bool m_forceRecook = false;
 		bool m_confirmForceRecook = false;
 		bool m_confirmClean = false;
-		bool m_smokeSkipLevelSwitching = false;
-		bool m_smokeRunRayTracingParity = false;
-		bool m_smokeRunPtlasBenchmark = false;
 	};
 }

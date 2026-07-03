@@ -59,15 +59,10 @@ namespace SparkleLauncher
 		QString LaunchMeshAutoBatching;
 		QString LaunchCommandLineArguments;
 		QString LaunchCVars;
-		QString SmokeBackend;
-		QString SmokeFrameLimit;
-		QString SmokeViewMode;
-		QString SmokeCapturePath;
 		QString FormatMode = "check";
 		QString CleanScope = "selected-cooked";
 		QVector<LauncherCleanTarget> CleanTargets;
 		QVector<QString> PreservedPaths;
-		bool LaunchSmokeTest = false;
 		bool ShaderUseCache = true;
 		bool ShaderEnableDebugInfo = false;
 		bool ShaderEnableOptimizations = true;
@@ -80,9 +75,6 @@ namespace SparkleLauncher
 		bool ForceRecook = false;
 		bool ConfirmForceRecook = false;
 		bool ConfirmClean = false;
-		bool SmokeSkipLevelSwitching = false;
-		bool SmokeRunRayTracingParity = false;
-		bool SmokeRunPtlasBenchmark = false;
 	};
 
 	class LauncherBackend final : public QObject

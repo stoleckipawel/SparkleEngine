@@ -232,14 +232,6 @@ namespace SparkleLauncher
 		launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
 		launchRequest.CustomArguments = SplitCommandLineArguments(request.LaunchCommandLineArguments);
 		launchRequest.CustomCVars = SplitOptionList(request.LaunchCVars);
-		launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
-		launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
-		launchRequest.SmokeViewMode = request.SmokeViewMode.toStdString();
-		launchRequest.SmokeCapturePath = request.SmokeCapturePath.toStdString();
-		launchRequest.EnableSmokeTest = request.LaunchSmokeTest;
-		launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
-		launchRequest.SmokeRunRayTracingParity = request.SmokeRunRayTracingParity;
-		launchRequest.SmokeRunPtlasBenchmark = request.SmokeRunPtlasBenchmark;
 		return launchRequest;
 	}
 

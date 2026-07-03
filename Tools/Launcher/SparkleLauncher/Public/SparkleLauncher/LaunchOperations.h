@@ -36,20 +36,12 @@ namespace SparkleLauncher
 		std::string RuntimeProfile = "DevelopmentGame";
 		std::string Target = "editor";
 		std::string StartupLevel = "Sponza";
-		bool EnableSmokeTest = false;
 		std::string GraphicsBackend;
 		std::string VSync;
 		std::string PreferHighPerformanceAdapter;
 		std::string MeshAutoBatching;
 		std::vector<std::string> CustomArguments;
 		std::vector<std::string> CustomCVars;
-		std::string SmokeBackend;
-		std::string SmokeFrameLimit;
-		std::string SmokeViewMode;
-		std::string SmokeCapturePath;
-		bool SmokeSkipLevelSwitching = false;
-		bool SmokeRunRayTracingParity = false;
-		bool SmokeRunPtlasBenchmark = false;
 	};
 
 	struct LaunchOperationStep

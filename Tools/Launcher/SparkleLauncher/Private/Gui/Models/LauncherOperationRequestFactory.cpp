@@ -113,34 +113,20 @@ namespace SparkleLauncher
 		request.LaunchMeshAutoBatching = settings.LaunchMeshAutoBatching();
 		request.LaunchCommandLineArguments = settings.LaunchCommandLineArguments();
 		request.LaunchCVars = settings.LaunchCVars();
-		request.SmokeBackend = settings.SmokeBackend();
-		request.SmokeFrameLimit = settings.SmokeFrameLimit();
-		request.SmokeViewMode = settings.SmokeViewMode();
-		request.SmokeCapturePath = settings.SmokeCapturePath();
 		request.FormatMode = settings.FormatMode();
 		request.CleanScope = settings.CleanScope();
-		request.LaunchSmokeTest = settings.LaunchSmokeTest();
 		request.ForceConfigure = settings.ForceConfigure();
 		request.ForceRecook = settings.ForceRecook();
 		request.ConfirmForceRecook = settings.ConfirmForceRecook();
 		request.ConfirmClean = settings.ConfirmClean();
-		request.SmokeSkipLevelSwitching = settings.SmokeSkipLevelSwitching();
-		request.SmokeRunRayTracingParity = settings.SmokeRunRayTracingParity();
-		request.SmokeRunPtlasBenchmark = settings.SmokeRunPtlasBenchmark();
 
 		if (operationId == "project.open.editor")
 		{
 			request.LaunchTarget = "editor";
-			request.LaunchSmokeTest = false;
 		}
 		else if (operationId == "project.open.runtime")
 		{
 			request.LaunchTarget = "runtime";
-			request.LaunchSmokeTest = false;
-		}
-		else if (operationId == "project.run.smoke")
-		{
-			request.LaunchSmokeTest = true;
 		}
 
 		return request;

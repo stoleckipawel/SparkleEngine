@@ -1,11 +1,7 @@
 #include "SparkleLauncher/LaunchOperations.h"
 
 #include "LaunchOperationProcessRequests.h"
-#include "Smoke/RhiSmokeLaunchOperations.h"
-#include "Smoke/RhiSmokeScenarioValidation.h"
-#include "Smoke/RhiSmokeTestCatalog.h"
 
-#include <filesystem>
 #include <optional>
 
 namespace SparkleLauncher
@@ -20,18 +16,6 @@ namespace SparkleLauncher
 			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Launch operation is not ready to run." : plan.ReadinessMessages.front();
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
-		}
-
-		if (HasRhiSmokeScenarioMatrix(plan))
-		{
-			std::error_code errorCode;
-			std::filesystem::remove_all(GetRhiSmokeValidationDirectory(plan), errorCode);
-			if (errorCode)
-			{
-				operation.FailureSummary = "Could not clear RHI smoke diagnostics: " + errorCode.message();
-				MarkOperationFinished(operation, OperationStatus::Failed, 1);
-				return operation;
-			}
 		}
 
 		for (LaunchOperationProcessStep& step : BuildLaunchProcessStepsForPlan(plan))
@@ -54,17 +38,6 @@ namespace SparkleLauncher
 			{
 				operation.FailureSummary = result.FailureReason.empty() ? step.DisplayName + " failed." : result.FailureReason;
 				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
-				return operation;
-			}
-		}
-
-		if (HasRhiSmokeScenarioMatrix(plan))
-		{
-			std::string failureSummary;
-			if (!ValidateRhiSmokeScenarioArtifacts(plan, failureSummary))
-			{
-				operation.FailureSummary = failureSummary.empty() ? "RHI smoke artifact validation failed." : failureSummary;
-				MarkOperationFinished(operation, OperationStatus::Failed, 1);
 				return operation;
 			}
 		}

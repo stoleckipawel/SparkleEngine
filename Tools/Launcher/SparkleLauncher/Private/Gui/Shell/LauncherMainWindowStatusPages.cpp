@@ -373,7 +373,6 @@ namespace SparkleLauncher
 		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
 		launchRequest.Target = request.LaunchTarget.toStdString();
 		launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
-		launchRequest.EnableSmokeTest = request.LaunchSmokeTest;
 		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
 		launchRequest.VSync = request.LaunchVSync.toStdString();
 		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
@@ -393,13 +392,6 @@ namespace SparkleLauncher
 				launchRequest.CustomCVars.push_back(trimmed.toStdString());
 			}
 		}
-		launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
-		launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
-		launchRequest.SmokeViewMode = request.SmokeViewMode.toStdString();
-		launchRequest.SmokeCapturePath = request.SmokeCapturePath.toStdString();
-		launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
-		launchRequest.SmokeRunRayTracingParity = request.SmokeRunRayTracingParity;
-		launchRequest.SmokeRunPtlasBenchmark = request.SmokeRunPtlasBenchmark;
 
 		const LaunchOperationPlan plan = PlanLaunchOperation(operationId.toStdString(), launchRequest);
 		const BuildToolchainStatus toolchainStatus = DetectBuildToolchain(workspaceRequest.RepositoryRoot, workspaceRequest.PreferredIde);
@@ -552,128 +544,6 @@ namespace SparkleLauncher
 		        "r.SomeCVar=1\nr.OtherCVar=false",
 		        "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.",
 		        &LauncherSettings::SetLaunchCVars));
-	}
-
-	void LauncherMainWindow::AddSmokeValidationOptions(QVBoxLayout& layout)
-	{
-		QVBoxLayout* smokeOptionsLayout = AddOptionGroup(
-		    layout,
-		    "Smoke Tests",
-		    QString());
-
-		auto addCompactCheckBoxRow = [this](QVBoxLayout& sectionLayout, QCheckBox* checkBox, int maxWidth = 520) {
-			QFrame* row = new QFrame(this);
-			row->setObjectName("OptionRow");
-			row->setMaximumWidth(maxWidth);
-			QHBoxLayout* rowLayout = new QHBoxLayout(row);
-			rowLayout->setContentsMargins(0, 0, 0, 0);
-			rowLayout->setSpacing(0);
-
-			QFrame* valueCell = new QFrame(row);
-			valueCell->setObjectName("OptionValueCell");
-			QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
-			valueLayout->setContentsMargins(0, 0, 0, 0);
-			valueLayout->setSpacing(0);
-			valueLayout->addWidget(checkBox, 1);
-
-			rowLayout->addWidget(valueCell, 1);
-			sectionLayout.addWidget(row, 0, Qt::AlignLeft);
-		};
-
-		auto addCompactFieldRow = [this](QVBoxLayout& sectionLayout, const QString& label, QWidget* control, int maxWidth = 820) {
-			QFrame* row = new QFrame(this);
-			row->setObjectName("OptionRow");
-			row->setMaximumWidth(maxWidth);
-			QHBoxLayout* rowLayout = new QHBoxLayout(row);
-			rowLayout->setContentsMargins(0, 0, 0, 0);
-			rowLayout->setSpacing(0);
-
-			QFrame* labelCell = new QFrame(row);
-			labelCell->setObjectName("OptionLabelCell");
-			labelCell->setFixedWidth(108);
-			QHBoxLayout* labelLayout = new QHBoxLayout(labelCell);
-			labelLayout->setContentsMargins(8, 0, 8, 0);
-			labelLayout->setSpacing(0);
-
-			QLabel* fieldLabel = CreateFieldLabel(label);
-			fieldLabel->setBuddy(control);
-			labelLayout->addWidget(fieldLabel);
-
-			QFrame* valueCell = new QFrame(row);
-			valueCell->setObjectName("OptionValueCell");
-			QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
-			valueLayout->setContentsMargins(0, 0, 0, 0);
-			valueLayout->setSpacing(0);
-			valueLayout->addWidget(control, 1);
-
-			rowLayout->addWidget(labelCell, 0);
-			rowLayout->addWidget(valueCell, 1);
-			sectionLayout.addWidget(row, 0, Qt::AlignLeft);
-		};
-
-		addCompactCheckBoxRow(
-		    *smokeOptionsLayout,
-		    CreateBoundCheckBox(
-		        "Enable smoke validation",
-		        "Run the shared smoke harness with the selected launch target and options.",
-		        m_settings.LaunchSmokeTest(),
-		        &LauncherSettings::SetLaunchSmokeTest));
-		addCompactFieldRow(
-		    *smokeOptionsLayout,
-		    "Frame limit",
-		    CreateValueCombo(
-		        {{"120 frames", ""}, {"60 frames", "60"}, {"300 frames", "300"}, {"600 frames", "600"}},
-		        m_settings.SmokeFrameLimit(),
-		        &LauncherSettings::SetSmokeFrameLimit));
-		addCompactFieldRow(
-		    *smokeOptionsLayout,
-		    "View mode",
-		    CreateValueCombo(
-		        {
-		            {"Default", ""},
-		            {"Lit", "0"},
-		            {"Wireframe", "1"},
-		            {"GBuffer normal", "3"},
-		            {"Direct diffuse", "10"},
-		            {"Indirect diffuse", "13"},
-		            {"Instance groups", "16"},
-		        },
-		        m_settings.SmokeViewMode(),
-		        &LauncherSettings::SetSmokeViewMode));
-		addCompactFieldRow(
-		    *smokeOptionsLayout,
-		    "Capture path",
-		    CreateBoundLineEdit(
-		        m_settings.SmokeCapturePath(),
-		        "logs/smoke/scene-color.bmp",
-		        "Optional base scene-color capture path. Suite-specific diagnostics still write their own artifacts.",
-		        &LauncherSettings::SetSmokeCapturePath));
-		addCompactCheckBoxRow(
-		    *smokeOptionsLayout,
-		    CreateBoundCheckBox(
-		        "Skip level switching",
-		        "Do not switch levels during smoke. Matrix-oriented suites force this behavior when deterministic comparisons require a fixed scene.",
-		        m_settings.SmokeSkipLevelSwitching(),
-		        &LauncherSettings::SetSmokeSkipLevelSwitching),
-		    420);
-
-		QLabel* ptlasLabel = CreateSectionLabel("PTLAS Suites");
-		smokeOptionsLayout->addWidget(ptlasLabel);
-
-		addCompactCheckBoxRow(
-		    *smokeOptionsLayout,
-		    CreateBoundCheckBox(
-		        "Backend/PTLAS parity checks",
-		        "Validates deterministic D3D12 and Vulkan parity and confirms PTLAS stays aligned with the fallback path.",
-		        m_settings.SmokeRunRayTracingParity(),
-		        &LauncherSettings::SetSmokeRunRayTracingParity));
-		addCompactCheckBoxRow(
-		    *smokeOptionsLayout,
-		    CreateBoundCheckBox(
-		        "PTLAS benchmark timings",
-		        "Runs PTLAS benchmark scenarios and emits timing-oriented diagnostics for performance review.",
-		        m_settings.SmokeRunPtlasBenchmark(),
-		        &LauncherSettings::SetSmokeRunPtlasBenchmark));
 	}
 
 	void LauncherMainWindow::AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)

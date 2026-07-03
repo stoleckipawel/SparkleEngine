@@ -1,7 +1,6 @@
 #include "SparkleLauncher/LaunchOperations.h"
 
 #include "LaunchOperationProcessRequests.h"
-#include "Smoke/RhiSmokeLaunchOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/ToolResolver.h"
 
@@ -168,7 +167,6 @@ namespace SparkleLauncher
 		static const std::vector<LaunchOperationDefinition> definitions = {
 		    {LaunchOperationKind::RunProject, "project.open.editor", "Launch", "Open Editor", "Launch the selected project in editor mode using available runtime components."},
 		    {LaunchOperationKind::RunProject, "project.open.runtime", "Launch", "Open Runtime", "Launch the selected project in runtime mode using available runtime components."},
-		    {LaunchOperationKind::RunProject, "project.run.smoke", "Launch", "Run Smoke Test", "Run the selected project with smoke validation enabled, then optionally execute selected PTLAS diagnostic matrices."},
 		    {LaunchOperationKind::RunProject, "project.run", "Launch", "Launch Project", "Launch the selected project in editor or runtime mode using shared launch options."},
 		};
 		return definitions;
@@ -198,16 +196,6 @@ namespace SparkleLauncher
 		plan.Kind = definition->Kind;
 		plan.RepositoryRoot = request.RepositoryRoot;
 		plan.Request = request;
-		if (definition->Id == "project.run.smoke")
-		{
-			plan.Request.EnableSmokeTest = true;
-		}
-		if (plan.Request.SmokeRunRayTracingParity || plan.Request.SmokeRunPtlasBenchmark)
-		{
-			plan.Request.EnableSmokeTest = true;
-			plan.Request.SmokeSkipLevelSwitching = true;
-			plan.Request.Target = "editor";
-		}
 		plan.Profile = ResolveLaunchProfile(plan.Kind, plan.Request);
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
 		plan.Operation.Inputs.push_back({"project", plan.Request.ProjectId});
@@ -216,10 +204,6 @@ namespace SparkleLauncher
 		if (!plan.Request.StartupLevel.empty())
 		{
 			plan.Operation.Inputs.push_back({"startupLevel", plan.Request.StartupLevel});
-		}
-		if (plan.Request.EnableSmokeTest)
-		{
-			plan.Operation.Inputs.push_back({"smokeTest", "enabled"});
 		}
 		if (!plan.Request.GraphicsBackend.empty())
 		{
@@ -245,7 +229,6 @@ namespace SparkleLauncher
 		{
 			plan.Operation.Inputs.push_back({"customCVars", std::to_string(plan.Request.CustomCVars.size())});
 		}
-		PopulateRhiSmokeLaunchInputs(plan);
 		plan.Operation.LogPath = GetLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
 
 		const std::optional<BuildProfile> profile = ResolveProfileForLaunch(plan.Request, plan.Profile);
@@ -258,7 +241,6 @@ namespace SparkleLauncher
 		plan.TargetName = BuildProjectTargetName(plan.Request.ProjectId, *profile);
 		plan.ExecutablePath = ResolveLaunchExecutablePath(plan.Request, plan.Profile, plan.TargetName);
 		plan.WorkingDirectory = plan.Request.RepositoryRoot / "Projects" / plan.Request.ProjectId;
-		PopulateRhiSmokeLaunchEnvironment(plan);
 		if (!plan.Request.StartupLevel.empty())
 		{
 			AddEnvironment(plan, "SPARKLE_STARTUP_LEVEL", plan.Request.StartupLevel);
@@ -310,10 +292,6 @@ namespace SparkleLauncher
 		for (const std::string& customCVar : plan.Request.CustomCVars)
 		{
 			AddPlannedEffect(plan, "Set " + customCVar + ".");
-		}
-		for (const std::string& effect : GetRhiSmokeLaunchPlannedEffects(plan))
-		{
-			AddPlannedEffect(plan, effect);
 		}
 		plan.CanRun = executableExists && projectMarkerExists && cookedMeshesReady && cookedTexturesReady && cookedShadersReady;
 		PopulateLaunchStep(plan);

@@ -1,7 +1,5 @@
 #include "LaunchOperationProcessRequests.h"
 
-#include "Smoke/RhiSmokeLaunchOperations.h"
-#include "Smoke/RhiSmokeScenarioPlan.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
 #include <utility>
@@ -15,11 +13,6 @@ namespace SparkleLauncher
 		{
 			return steps;
 		}
-		if (HasRhiSmokeScenarioMatrix(plan))
-		{
-			return BuildRhiSmokeScenarioProcessSteps(plan);
-		}
-
 		ProcessRequest request;
 		request.ExecutablePath = plan.ExecutablePath;
 		request.WorkingDirectory = plan.WorkingDirectory;

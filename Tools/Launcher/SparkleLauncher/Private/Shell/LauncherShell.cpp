@@ -392,14 +392,6 @@ namespace SparkleLauncher
 		launchRequest.RuntimeProfile = state.RuntimeProfile;
 		launchRequest.Target = arguments.LaunchTarget;
 		launchRequest.StartupLevel = arguments.LaunchStartupLevel;
-		launchRequest.EnableSmokeTest = arguments.EnableSmokeTest;
-		launchRequest.SmokeBackend = arguments.SmokeBackend;
-		launchRequest.SmokeFrameLimit = arguments.SmokeFrameLimit;
-		launchRequest.SmokeViewMode = arguments.SmokeViewMode;
-		launchRequest.SmokeCapturePath = arguments.SmokeCapturePath;
-		launchRequest.SmokeSkipLevelSwitching = arguments.SmokeSkipLevelSwitching;
-		launchRequest.SmokeRunRayTracingParity = arguments.SmokeRunRayTracingParity;
-		launchRequest.SmokeRunPtlasBenchmark = arguments.SmokeRunPtlasBenchmark;
 		return launchRequest;
 	}
 
@@ -850,70 +842,6 @@ namespace SparkleLauncher
 				continue;
 			}
 
-			if (argument == "--smoke-skip-level-switching")
-			{
-				outArguments.SmokeSkipLevelSwitching = true;
-				continue;
-			}
-
-			if (argument == "--smoke-parity")
-			{
-				outArguments.EnableSmokeTest = true;
-				outArguments.SmokeRunRayTracingParity = true;
-				continue;
-			}
-
-			if (argument == "--smoke-benchmark")
-			{
-				outArguments.EnableSmokeTest = true;
-				outArguments.SmokeRunPtlasBenchmark = true;
-				continue;
-			}
-
-			if (argument == "--smoke-backend")
-			{
-				if (index + 1 >= argc)
-				{
-					error << "SparkleLauncher: --smoke-backend requires a value.\n";
-					return false;
-				}
-				outArguments.SmokeBackend = argv[++index];
-				continue;
-			}
-
-			if (argument == "--smoke-frame-limit")
-			{
-				if (index + 1 >= argc)
-				{
-					error << "SparkleLauncher: --smoke-frame-limit requires a value.\n";
-					return false;
-				}
-				outArguments.SmokeFrameLimit = argv[++index];
-				continue;
-			}
-
-			if (argument == "--smoke-view-mode")
-			{
-				if (index + 1 >= argc)
-				{
-					error << "SparkleLauncher: --smoke-view-mode requires a value.\n";
-					return false;
-				}
-				outArguments.SmokeViewMode = argv[++index];
-				continue;
-			}
-
-			if (argument == "--smoke-capture")
-			{
-				if (index + 1 >= argc)
-				{
-					error << "SparkleLauncher: --smoke-capture requires a path.\n";
-					return false;
-				}
-				outArguments.SmokeCapturePath = argv[++index];
-				continue;
-			}
-
 			if (argument == "--launch-target")
 			{
 				if (index + 1 >= argc)
@@ -942,12 +870,6 @@ namespace SparkleLauncher
 				continue;
 			}
 
-			if (argument == "--smoke-test")
-			{
-				outArguments.EnableSmokeTest = true;
-				continue;
-			}
-
 			error << "SparkleLauncher: unexpected argument '" << argument << "'.\n";
 			return false;
 		}
@@ -958,14 +880,12 @@ namespace SparkleLauncher
 	void LauncherShell::PrintUsage(std::ostream& output) const
 	{
 		output << "Usage:\n"
-		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--smoke-test] [--smoke-parity] [--smoke-benchmark] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-view-mode <name-or-index>] [--smoke-capture <path>] [--smoke-skip-level-switching] [--dry-run [operation-id]] [--run <operation-id>]\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]] [--run <operation-id>]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level Sponza --smoke-test --smoke-backend d3d12 --smoke-view-mode 3 --smoke-capture logs/smoke/scene-color.bmp --dry-run project.run\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --smoke-parity --run project.run\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --smoke-benchmark --run project.run\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level Sponza --dry-run project.run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n"

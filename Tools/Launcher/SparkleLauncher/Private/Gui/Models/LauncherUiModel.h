@@ -11,7 +11,6 @@ namespace SparkleLauncher
 		Sync,
 		Build,
 		Cook,
-		Test,
 		Package,
 		Clean,
 		Unknown
@@ -26,7 +25,6 @@ namespace SparkleLauncher
 		BuildOutputs,
 		CookedOutputs,
 		LaunchProcess,
-		TestRun,
 		PackageOutputs,
 		GeneratedState
 	};

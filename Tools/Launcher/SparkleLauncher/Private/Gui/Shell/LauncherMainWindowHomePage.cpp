@@ -73,7 +73,6 @@ namespace SparkleLauncher
 			launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
 			launchRequest.Target = request.LaunchTarget.toStdString();
 			launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
-			launchRequest.EnableSmokeTest = request.LaunchSmokeTest;
 			launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
 			launchRequest.VSync = request.LaunchVSync.toStdString();
 			launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
@@ -93,13 +92,6 @@ namespace SparkleLauncher
 					launchRequest.CustomCVars.push_back(trimmed.toStdString());
 				}
 			}
-			launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
-			launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
-			launchRequest.SmokeViewMode = request.SmokeViewMode.toStdString();
-			launchRequest.SmokeCapturePath = request.SmokeCapturePath.toStdString();
-			launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
-			launchRequest.SmokeRunRayTracingParity = request.SmokeRunRayTracingParity;
-			launchRequest.SmokeRunPtlasBenchmark = request.SmokeRunPtlasBenchmark;
 			return PlanLaunchOperation(operationId.toStdString(), launchRequest);
 		};
 

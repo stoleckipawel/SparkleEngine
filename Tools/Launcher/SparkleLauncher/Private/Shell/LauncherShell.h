@@ -27,19 +27,11 @@ namespace SparkleLauncher
 		std::string RunOperationId;
 		std::string LaunchTarget = "editor";
 		std::string LaunchStartupLevel = "Sponza";
-		bool EnableSmokeTest = false;
-		std::string SmokeBackend;
-		std::string SmokeFrameLimit;
-		std::string SmokeViewMode;
-		std::string SmokeCapturePath;
 		CookMode RequestedCookMode = CookMode::Incremental;
 		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
 		bool ForceRecookConfirmed = false;
 		bool CleanConfirmed = false;
-		bool SmokeSkipLevelSwitching = false;
-		bool SmokeRunRayTracingParity = false;
-		bool SmokeRunPtlasBenchmark = false;
 		bool ShowHelp = false;
 	};
 

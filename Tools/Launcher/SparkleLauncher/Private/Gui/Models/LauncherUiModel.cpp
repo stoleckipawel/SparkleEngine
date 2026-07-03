@@ -89,9 +89,9 @@ namespace SparkleLauncher
 			    "Run",
 			    LauncherWorkflowPageKind::Launch,
 			    LauncherActionImpactKind::LaunchProcess,
-			    "Launch workflow: runs the selected editor or runtime target with shared graphics, startup level, smoke validation, and PTLAS test options.",
+			    "Launch workflow: runs the selected editor or runtime target with shared graphics, startup level, and runtime options.",
 			    "Launch view",
-			    "Uses the selected project, target, startup level, runtime options, and optional smoke validation controls from this page.",
+			    "Uses the selected project, target, startup level, and runtime options from this page.",
 			    "workflow-project-run-editor.png");
 		}
 		if (operationId == "workspace.open-ide")
@@ -263,19 +263,6 @@ namespace SparkleLauncher
 			    "Refreshes cooked content for the selected project and startup level.",
 			    "workflow-cook-assets.png");
 		}
-		if (operationId == "project.run.smoke")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Run Smoke Test",
-			    "Run",
-			    LauncherWorkflowPageKind::Launch,
-			    LauncherActionImpactKind::TestRun,
-			    "Compatibility launch workflow: runs smoke validation from the same launch path used by Launch Project.",
-			    "Validation run",
-			    "Runs a focused confidence check using the same launch parameters as the product path, with optional PTLAS diagnostics.",
-			    "workflow-smoke-test.png");
-		}
 		if (operationId == "quality.format")
 		{
 			return MakeOperationUiModel(
@@ -360,8 +347,6 @@ namespace SparkleLauncher
 			return "Build";
 		case LauncherWorkflowPageKind::Cook:
 			return "Cook";
-		case LauncherWorkflowPageKind::Test:
-			return "Test";
 		case LauncherWorkflowPageKind::Package:
 			return "Package";
 		case LauncherWorkflowPageKind::Clean:
@@ -390,8 +375,6 @@ namespace SparkleLauncher
 			return "Cooked outputs";
 		case LauncherActionImpactKind::LaunchProcess:
 			return "Launch process";
-		case LauncherActionImpactKind::TestRun:
-			return "Test run";
 		case LauncherActionImpactKind::PackageOutputs:
 			return "Package outputs";
 		case LauncherActionImpactKind::GeneratedState:

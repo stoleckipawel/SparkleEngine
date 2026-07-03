@@ -223,7 +223,7 @@ namespace SparkleLauncher
 		QComboBox* projectCombo = CreateProjectCombo();
 		projectCombo->setObjectName("HeaderContextCombo");
 		projectCombo->setAccessibleName("Project");
-		projectCombo->setToolTip("Global project context used by project, cook, launch, and smoke workflows.");
+		projectCombo->setToolTip("Global project context used by project, cook, and launch workflows.");
 		applyComboMetrics(*projectCombo, LauncherUi::HeaderContext::ProjectComboMinWidth, LauncherUi::HeaderContext::ProjectComboMaxWidth);
 		projectLabel->setBuddy(projectCombo);
 		rowLayout->addWidget(projectCombo, 0);

@@ -269,20 +269,10 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (operationId == "project.run.smoke")
-		{
-			AddLaunchTargetOptions(layout, "Launch Project", QString(), false);
-			AddLaunchApplicationOptions(layout);
-			AddSmokeValidationOptions(layout);
-			AddLaunchEnvironmentStatus(layout, operationId);
-			return;
-		}
-
 		if (operationId == "project.run")
 		{
 			AddLaunchTargetOptions(layout, "Launch Project", QString(), true);
 			AddLaunchApplicationOptions(layout);
-			AddSmokeValidationOptions(layout);
 			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}
