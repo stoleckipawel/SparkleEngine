@@ -24,13 +24,23 @@ namespace
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::Lights);
 		}
 
-		if (importResult.diagnostics.sceneFeatures.skinnedNodeCount > 0)
+		bool hasSkinnedMeshes = !importResult.scene.skeletons.empty();
+		for (const ImportedMeshPrimitive& primitive : importResult.scene.meshPrimitives)
+		{
+			if (primitive.geometry.HasSkinInfluences())
+			{
+				hasSkinnedMeshes = true;
+				break;
+			}
+		}
+
+		if (hasSkinnedMeshes)
 		{
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::SkinnedMeshes);
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::Skeletons);
 		}
 
-		if (importResult.diagnostics.sceneFeatures.animationCount > 0)
+		if (!importResult.scene.animations.empty())
 		{
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::Animations);
 		}
@@ -55,9 +65,13 @@ namespace
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::MaterialVariants);
 		}
 
-		if (importResult.diagnostics.sceneFeatures.authoredInstancingNodeCount > 0)
+		for (const ImportedMeshInstanceGroup& group : importResult.scene.meshInstanceGroups)
 		{
-			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::AuthoredMeshInstancing);
+			if (group.groupKind == ImportedMeshInstanceGroupKind::AuthoredInstanceGroup)
+			{
+				AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::AuthoredMeshInstancing);
+				break;
+			}
 		}
 
 		return flags;

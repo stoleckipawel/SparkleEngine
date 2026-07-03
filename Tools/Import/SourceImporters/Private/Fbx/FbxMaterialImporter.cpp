@@ -3,8 +3,10 @@
 #include "Fbx/FbxMaterialImporter.h"
 
 #include "Core/Public/Paths/PathUtils.h"
-#include "Diagnostics/FbxImportDiagnosticLog.h"
-#include "Diagnostics/SourceImportDiagnosticsRecorder.h"
+
+#include <format>
+
+static const auto g_fbxMaterialImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Fbx");
 
 void FbxMaterialImporter::ImportMaterials(const aiScene& scene, const std::filesystem::path& sourceDirectory, SourceImportResult& result)
 {
@@ -43,7 +45,14 @@ void FbxMaterialImporter::CollectMaterialWarnings(const aiMaterial& material, Im
 		return;
 	}
 
-	FbxImportDiagnosticLog::ReportUnsupportedShadingModel(materialIndex, shadingModel, result);
+	(void)result;
+	SPDLOG_LOGGER_WARN(
+	    g_fbxMaterialImporterLogger,
+	    "{}",
+	    std::format(
+	        "FbxImporter: Material handle {} uses unsupported shading model {} and will be approximated with Sparkle PBR defaults",
+	        materialIndex,
+	        shadingModel));
 }
 
 void FbxMaterialImporter::ApplyMaterialProperties(const aiMaterial& material, ImportedMaterial& importedMaterial)
@@ -213,11 +222,14 @@ std::optional<std::filesystem::path> FbxMaterialImporter::ResolveTexturePath(
 	{
 		return std::nullopt;
 	}
-	SourceImportDiagnosticsRecorder::RecordReferencedTextureBindings(result, textureCount);
 
 	if (textureCount > 1)
 	{
-		FbxImportDiagnosticLog::ReportMultipleTextures(materialIndex, slotName, textureCount - 1u, result);
+		(void)result;
+		SPDLOG_LOGGER_WARN(
+		    g_fbxMaterialImporterLogger,
+		    "{}",
+		    std::format("FbxImporter: Material handle {} has multiple {} textures and only the first will be used", materialIndex, slotName));
 	}
 
 	aiString texturePath;
@@ -234,7 +246,14 @@ std::optional<std::filesystem::path> FbxMaterialImporter::ResolveTexturePath(
 
 	if (texturePathString[0] == '*')
 	{
-		FbxImportDiagnosticLog::ReportEmbeddedTexture(materialIndex, slotName, texturePathString, result);
+		SPDLOG_LOGGER_WARN(
+		    g_fbxMaterialImporterLogger,
+		    "{}",
+		    std::format(
+		        "FbxImporter: Material handle {} uses embedded {} texture '{}' which is not supported yet",
+		        materialIndex,
+		        slotName,
+		        texturePathString));
 		return std::nullopt;
 	}
 
@@ -242,7 +261,14 @@ std::optional<std::filesystem::path> FbxMaterialImporter::ResolveTexturePath(
 	    Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString));
 	if (!resolvedTexturePath)
 	{
-		FbxImportDiagnosticLog::ReportInvalidTexturePath(materialIndex, slotName, texturePathString, result);
+		SPDLOG_LOGGER_WARN(
+		    g_fbxMaterialImporterLogger,
+		    "{}",
+		    std::format(
+		        "FbxImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
+		        materialIndex,
+		        slotName,
+		        texturePathString));
 		return std::nullopt;
 	}
 
@@ -258,7 +284,15 @@ std::optional<std::filesystem::path> FbxMaterialImporter::NormalizeTexturePath(
 	const std::filesystem::path normalizedTexturePath = Paths::Normalize(texturePath);
 	if (normalizedTexturePath.empty())
 	{
-		FbxImportDiagnosticLog::ReportInvalidTexturePath(materialIndex, slotName, texturePath.string(), result);
+		(void)result;
+		SPDLOG_LOGGER_WARN(
+		    g_fbxMaterialImporterLogger,
+		    "{}",
+		    std::format(
+		        "FbxImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
+		        materialIndex,
+		        slotName,
+		        texturePath.string()));
 		return std::nullopt;
 	}
 

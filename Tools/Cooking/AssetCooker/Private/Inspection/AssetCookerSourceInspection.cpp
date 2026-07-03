@@ -17,14 +17,8 @@
 
 namespace
 {
-	std::string FeatureCapabilityValue(const SourceImportFeatureCapability& capability)
-	{
-		return std::to_string(capability.count) + "/" + std::string(ToString(capability.support));
-	}
-
 	void PrintImportFeatureSummary(const std::filesystem::path& sourceScenePath, const SourceImportResult& importResult)
 	{
-		const SourceImportFeatureCapabilitySummary& features = importResult.diagnostics.featureCapabilities;
 		ToolConsole::Summary(
 		    std::cout,
 		    "Source import inspection",
@@ -38,14 +32,7 @@ namespace
 		     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
 		     ToolConsole::Field("materialVariants", std::to_string(importResult.GetMaterialVariantCount())),
 		     ToolConsole::Field("materialVariantMappings", std::to_string(importResult.GetMaterialVariantMappingCount())),
-		     ToolConsole::Field("animations", FeatureCapabilityValue(features.animations)),
-		     ToolConsole::Field("cameraNodes", FeatureCapabilityValue(features.cameraNodes)),
-		     ToolConsole::Field("lightNodes", FeatureCapabilityValue(features.lightNodes)),
-		     ToolConsole::Field("skinnedNodes", FeatureCapabilityValue(features.skinnedNodes)),
-		     ToolConsole::Field("weightedNodes", FeatureCapabilityValue(features.weightedNodes)),
-		     ToolConsole::Field("morphTargets", FeatureCapabilityValue(features.morphTargets)),
-		     ToolConsole::Field("materialVariantsSupport", FeatureCapabilityValue(features.materialVariants)),
-		     ToolConsole::Field("meshGpuInstancing", FeatureCapabilityValue(features.meshGpuInstancing))});
+		     ToolConsole::Field("animations", std::to_string(importResult.GetAnimationCount()))});
 	}
 
 	void ConfigureProjectContextForSource(const std::filesystem::path& sourceScenePath)

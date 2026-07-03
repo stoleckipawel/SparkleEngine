@@ -3,11 +3,11 @@
 
 #include "Gltf/GltfSceneReader.h"
 
-#include "Diagnostics/GltfImportDiagnosticLog.h"
-#include "Diagnostics/GltfSceneDiagnostics.h"
-#include "Diagnostics/SourceImportDiagnosticsRecorder.h"
-
 #include <cgltf.h>
+
+#include <format>
+
+static const auto g_gltfSceneReaderLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
 
 GltfScene::~GltfScene()
 {
@@ -21,7 +21,8 @@ bool GltfSceneReader::ValidateInputPath(const std::filesystem::path& filePath, S
 		return true;
 	}
 
-	GltfImportDiagnosticLog::ReportMissingFile(filePath, result);
+	(void)result;
+	SPDLOG_LOGGER_ERROR(g_gltfSceneReaderLogger, "{}", std::format("GltfImporter: File not found: {}", filePath.string()));
 	return false;
 }
 
@@ -33,7 +34,11 @@ bool GltfSceneReader::ParseGltfFile(cgltf_options& options, const std::string& p
 		return true;
 	}
 
-	GltfImportDiagnosticLog::ReportParseFailure(pathStr, static_cast<int>(parseResult), result);
+	(void)result;
+	SPDLOG_LOGGER_ERROR(
+	    g_gltfSceneReaderLogger,
+	    "{}",
+	    std::format("GltfImporter: Failed to parse '{}' (cgltf error {})", pathStr, static_cast<int>(parseResult)));
 	return false;
 }
 
@@ -45,7 +50,11 @@ bool GltfSceneReader::LoadGltfBuffers(cgltf_options& options, cgltf_data* data, 
 		return true;
 	}
 
-	GltfImportDiagnosticLog::ReportBufferLoadFailure(pathStr, static_cast<int>(bufferResult), result);
+	(void)result;
+	SPDLOG_LOGGER_ERROR(
+	    g_gltfSceneReaderLogger,
+	    "{}",
+	    std::format("GltfImporter: Failed to load buffers for '{}' (cgltf error {})", pathStr, static_cast<int>(bufferResult)));
 	return false;
 }
 
@@ -54,7 +63,11 @@ void GltfSceneReader::ValidateGltf(cgltf_data* data, const std::string& pathStr,
 	const cgltf_result validateResult = cgltf_validate(data);
 	if (validateResult != cgltf_result_success)
 	{
-		GltfImportDiagnosticLog::ReportValidationWarning(pathStr, static_cast<int>(validateResult), result);
+		(void)result;
+		SPDLOG_LOGGER_WARN(
+		    g_gltfSceneReaderLogger,
+		    "{}",
+		    std::format("GltfImporter: Validation warnings for '{}' (cgltf error {})", pathStr, static_cast<int>(validateResult)));
 	}
 }
 
@@ -80,12 +93,4 @@ bool GltfSceneReader::LoadScene(const std::filesystem::path& filePath, GltfScene
 	ValidateGltf(scene.data, pathStr, result);
 	return true;
 }
-
-void GltfSceneReader::CollectSceneWarnings(const cgltf_data* data, SourceImportResult& result)
-{
-	const SourceSceneFeatureDiagnostics sceneFeatures = GltfSceneDiagnostics::CaptureFeatures(data);
-	SourceImportDiagnosticsRecorder::RecordSceneFeatures(result, sceneFeatures);
-
-}
-
 

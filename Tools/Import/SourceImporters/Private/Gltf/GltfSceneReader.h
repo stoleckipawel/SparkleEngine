@@ -22,7 +22,6 @@ class GltfSceneReader final
 {
   public:
 	static bool LoadScene(const std::filesystem::path& filePath, GltfScene& scene, SourceImportResult& result);
-	static void CollectSceneWarnings(const cgltf_data* data, SourceImportResult& result);
 
   private:
 	static bool ValidateInputPath(const std::filesystem::path& filePath, SourceImportResult& result);

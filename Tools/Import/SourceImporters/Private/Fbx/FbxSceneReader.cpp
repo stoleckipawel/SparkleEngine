@@ -2,13 +2,13 @@
 
 #include "Fbx/FbxSceneReader.h"
 
-#include "Diagnostics/FbxImportDiagnosticLog.h"
-#include "Diagnostics/FbxSceneDiagnostics.h"
-#include "Diagnostics/SourceImportDiagnosticsRecorder.h"
-
 #include <assimp/config.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
+
+#include <format>
+
+static const auto g_fbxSceneReaderLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Fbx");
 
 constexpr unsigned int FbxSceneReader::GetPostProcessFlags() noexcept
 {
@@ -28,7 +28,8 @@ bool FbxSceneReader::ValidateInputPath(const std::filesystem::path& filePath, So
 		return true;
 	}
 
-	FbxImportDiagnosticLog::ReportMissingFile(filePath, result);
+	(void)result;
+	SPDLOG_LOGGER_ERROR(g_fbxSceneReaderLogger, "{}", std::format("FbxImporter: File not found: {}", filePath.string()));
 	return false;
 }
 
@@ -50,33 +51,48 @@ bool FbxSceneReader::LoadScene(
 		return true;
 	}
 
-	FbxImportDiagnosticLog::ReportParseFailure(filePath, importer.GetErrorString(), result);
+	(void)result;
+	SPDLOG_LOGGER_ERROR(
+	    g_fbxSceneReaderLogger,
+	    "{}",
+	    std::format("FbxImporter: Failed to parse '{}' ({})", filePath.string(), importer.GetErrorString()));
 	return false;
 }
 
 void FbxSceneReader::CollectSceneWarnings(const aiScene& scene, SourceImportResult& result)
 {
-	const SourceSceneFeatureDiagnostics sceneFeatures = FbxSceneDiagnostics::CaptureFeatures(scene);
-	SourceImportDiagnosticsRecorder::RecordSceneFeatures(result, sceneFeatures);
+	(void)result;
 
 	if (scene.HasAnimations())
 	{
-		FbxImportDiagnosticLog::ReportIgnoredAnimations(sceneFeatures.animationCount, result);
+		SPDLOG_LOGGER_WARN(
+		    g_fbxSceneReaderLogger,
+		    "{}",
+		    std::format("FbxImporter: {} animations are present and will be ignored", scene.mNumAnimations));
 	}
 
 	if (scene.HasTextures())
 	{
-		FbxImportDiagnosticLog::ReportIgnoredEmbeddedTextures(sceneFeatures.embeddedTextureCount, result);
+		SPDLOG_LOGGER_WARN(
+		    g_fbxSceneReaderLogger,
+		    "{}",
+		    std::format("FbxImporter: {} embedded textures are present and will be ignored", scene.mNumTextures));
 	}
 
 	if (scene.HasCameras())
 	{
-		FbxImportDiagnosticLog::ReportIgnoredCameras(sceneFeatures.cameraNodeCount, result);
+		SPDLOG_LOGGER_WARN(
+		    g_fbxSceneReaderLogger,
+		    "{}",
+		    std::format("FbxImporter: {} cameras are present and will be ignored", scene.mNumCameras));
 	}
 
 	if (scene.HasLights())
 	{
-		FbxImportDiagnosticLog::ReportIgnoredLights(sceneFeatures.lightNodeCount, result);
+		SPDLOG_LOGGER_WARN(
+		    g_fbxSceneReaderLogger,
+		    "{}",
+		    std::format("FbxImporter: {} lights are present and will be ignored", scene.mNumLights));
 	}
 }
 

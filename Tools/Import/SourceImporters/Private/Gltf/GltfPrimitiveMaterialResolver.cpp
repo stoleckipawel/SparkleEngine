@@ -2,9 +2,11 @@
 
 #include "Gltf/GltfPrimitiveMaterialResolver.h"
 
-#include "Diagnostics/GltfImportDiagnosticLog.h"
-
 #include <cgltf.h>
+
+#include <format>
+
+static const auto g_gltfPrimitiveMaterialResolverLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
 
 ImportedMaterialIndex GltfPrimitiveMaterialResolver::Resolve(
     const cgltf_primitive& primitive,
@@ -23,6 +25,13 @@ ImportedMaterialIndex GltfPrimitiveMaterialResolver::Resolve(
 		return materialIndex;
 	}
 
-	GltfImportDiagnosticLog::ReportInvalidMaterialIndex(primitiveLabel, materialIndex, result);
+	(void)result;
+	SPDLOG_LOGGER_WARN(
+	    g_gltfPrimitiveMaterialResolverLogger,
+	    "{}",
+	    std::format(
+	        "GltfImporter: {} references invalid material index {} and will use the default material",
+	        primitiveLabel,
+	        materialIndex));
 	return kInvalidImportedMaterialIndex;
 }

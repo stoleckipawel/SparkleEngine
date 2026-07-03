@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Types/ImportedScene.h"
-#include "SourceImportDiagnostics.h"
 
 #include <cstddef>
 #include <filesystem>
@@ -17,7 +16,6 @@ struct SourceImportReport
 struct SourceImportResult
 {
 	ImportedScene scene;
-	SourceImportDiagnostics diagnostics;
 	SourceImportReport report;
 	bool succeeded = false;
 

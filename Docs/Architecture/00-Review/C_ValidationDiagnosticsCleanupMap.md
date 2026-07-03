@@ -624,10 +624,13 @@ Files:
 | Path | Action |
 | --- | --- |
 | `Tools/Import/SourceImporters/Public/SourceImportDiagnostics.h` | Delete or collapse to fatal/import result messages. |
-| `Tools/Import/SourceImporters/Private/SourceImportDiagnosticsRecorder.cpp` | Delete recorder/counter aggregation. |
+| `Tools/Import/SourceImporters/Private/Diagnostics/SourceImportDiagnosticsRecorder.*` | Delete recorder/counter aggregation. |
 | `Tools/Import/SourceImporters/Private/Gltf/GltfImportDiagnosticLog.cpp` | Collapse wrapper logs into direct local errors/warnings. |
 | `Tools/Import/SourceImporters/Private/Fbx/FbxImportDiagnosticLog.cpp` | Collapse wrapper logs into direct local errors/warnings. |
 | `Tools/Import/SourceImporters/Private/Gltf/GltfGeometryInstancingDiagnostics.cpp` | Delete detailed feature counters. |
+| `Tools/Import/SourceImporters/Private/Diagnostics/GltfSceneDiagnostics.*` | Delete source feature counter capture. |
+| `Tools/Import/SourceImporters/Private/Diagnostics/FbxSceneDiagnostics.*` | Delete source feature counter capture. |
+| `Tools/Import/SourceImporters/Private/Gltf/GltfImportFeatureDiagnostics.*` | Delete imported feature capability summary recording. |
 | `Tools/Import/SourceImporters/Private/Gltf/GltfMaterialFeatureDiagnostics.cpp` | Delete detailed material feature counters. |
 | `Tools/Import/SourceImporters/Private/Gltf/GltfSkinImportDiagnostics.cpp` | Delete detailed skin counters. |
 | `Tools/Import/SourceImporters/Private/Gltf/GltfMorphImportDiagnostics.cpp` | Delete detailed morph counters. |
@@ -637,6 +640,7 @@ Why:
 - Importers need clear fatal errors for unsupported/corrupt files.
 - Detailed capability/counter diagnostics add many small files and wrapper functions.
 - `GltfImportDiagnosticLog` and `FbxImportDiagnosticLog` mostly wrap logger calls with counter increments, which makes normal import code harder to read.
+- Cooked scene metadata should be derived from actual imported payload, not source-side capability counters.
 
 Cleanup steps:
 
@@ -651,6 +655,7 @@ Acceptance criteria:
 - [ ] Bad/missing/unsupported source files still produce actionable import errors.
 - [ ] Importer public APIs no longer require diagnostics recorder objects for normal operation.
 - [ ] `rg "SourceImportDiagnostics|DiagnosticRecorder|GltfImportDiagnosticLog|FbxImportDiagnosticLog"` returns no live references if fully deleted.
+- [ ] Cooked scene feature flags still reflect imported cameras, lights, animations, skeletons, morph targets, material variants, and authored instance groups.
 - [ ] GLTF and FBX import smoke/manual cases still import supported content.
 
 Preserve option:

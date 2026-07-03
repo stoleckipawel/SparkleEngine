@@ -84,30 +84,6 @@ static const char* AssetCookerCategoryName(AssetCookerCategory category) noexcep
 	}
 }
 
-static std::string AssetCookerFeatureCapabilityValue(const SourceImportFeatureCapability& capability)
-{
-	return std::to_string(capability.count) + "/" + std::string(ToString(capability.support));
-}
-
-static void AssetCookerPrintImportFeatureSummary(const AssetCookerSceneEntry& sceneEntry, const SourceImportResult& importResult)
-{
-	const SourceImportFeatureCapabilitySummary& features = importResult.diagnostics.featureCapabilities;
-	ToolConsole::Message(
-	    std::cout,
-	    ToolConsoleSeverity::Info,
-	    "Import feature summary",
-	    {ToolConsole::QuotedField("source", sceneEntry.relativePath),
-	     ToolConsole::Field("importer", std::string(importResult.GetImporterId())),
-	     ToolConsole::Field("animations", AssetCookerFeatureCapabilityValue(features.animations)),
-	     ToolConsole::Field("cameraNodes", AssetCookerFeatureCapabilityValue(features.cameraNodes)),
-	     ToolConsole::Field("lightNodes", AssetCookerFeatureCapabilityValue(features.lightNodes)),
-	     ToolConsole::Field("skinnedNodes", AssetCookerFeatureCapabilityValue(features.skinnedNodes)),
-	     ToolConsole::Field("weightedNodes", AssetCookerFeatureCapabilityValue(features.weightedNodes)),
-	     ToolConsole::Field("morphTargets", AssetCookerFeatureCapabilityValue(features.morphTargets)),
-	     ToolConsole::Field("materialVariants", AssetCookerFeatureCapabilityValue(features.materialVariants)),
-	     ToolConsole::Field("meshGpuInstancing", AssetCookerFeatureCapabilityValue(features.meshGpuInstancing))});
-}
-
 static std::string AssetCookerBuildPlanStepList(const std::vector<AssetCookerPlanStep>& steps)
 {
 	std::ostringstream output;
@@ -429,8 +405,6 @@ static bool AssetCookerRunWithImportedScene(
 		return false;
 	}
 
-	AssetCookerPrintImportFeatureSummary(sceneEntry, importResult);
-
 	const bool result = importedSceneHandler(importResult);
 	if (SUCCEEDED(coInitializeResult))
 	{
@@ -516,20 +490,6 @@ static bool AssetCookerCookImportedScene(
 	     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
 	     ToolConsole::Field("materialVariants", std::to_string(importResult.GetMaterialVariantCount())),
 	     ToolConsole::Field("materialVariantMappings", std::to_string(importResult.GetMaterialVariantMappingCount())),
-	     ToolConsole::Field("importSourceMeshes", std::to_string(importResult.diagnostics.summary.sourceMeshCount)),
-	     ToolConsole::Field("importSourceMaterials", std::to_string(importResult.diagnostics.summary.sourceMaterialCount)),
-	     ToolConsole::Field("importTextureBindings", std::to_string(importResult.diagnostics.textures.resolvedTextureBindingCount)),
-	     ToolConsole::Field("importWarnings", std::to_string(importResult.diagnostics.issues.warningMessageCount)),
-	     ToolConsole::Field("importedMeshPrimitives", std::to_string(importResult.diagnostics.summary.importedMeshPrimitiveCount)),
-	     ToolConsole::Field("importedMeshInstances", std::to_string(importResult.diagnostics.summary.importedMeshInstanceCount)),
-	     ToolConsole::Field("importedMeshInstanceGroups", std::to_string(importResult.diagnostics.summary.importedMeshInstanceGroupCount)),
-	     ToolConsole::Field(
-	         "importUniqueMeshPrimitiveCandidates",
-	         std::to_string(importResult.diagnostics.geometryInstancing.uniqueMeshPrimitiveCandidateCount)),
-	     ToolConsole::Field("importMeshPlacements", std::to_string(importResult.diagnostics.geometryInstancing.meshPlacementCount)),
-	     ToolConsole::Field(
-	         "importAuthoredInstanceGroups",
-	         std::to_string(importResult.diagnostics.geometryInstancing.authoredInstanceGroupCount)),
 	     ToolConsole::Field("cookedMeshAssetRefs", std::to_string(build.manifest.meshAssetReferences.size())),
 	     ToolConsole::Field("cookedInstances", std::to_string(build.manifest.instances.size())),
 	     ToolConsole::Field("cookedInstanceGroups", std::to_string(build.manifest.instanceGroups.size())),

@@ -2,7 +2,6 @@
 
 #include "Gltf/GltfMeshInstancingImporter.h"
 
-#include "Diagnostics/GltfImportDiagnosticLog.h"
 #include "Gltf/GltfAccessorReader.h"
 #include "Gltf/GltfNodeTransformUtils.h"
 #include "SourceImportResult.h"
@@ -12,6 +11,8 @@
 #include <cstdint>
 #include <format>
 #include <limits>
+
+static const auto g_gltfMeshInstancingImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
 
 const cgltf_accessor* GltfMeshInstancingImporter::FindMeshGpuInstancingAttribute(const cgltf_node& node, std::string_view attributeName)
 {
@@ -50,7 +51,14 @@ bool GltfMeshInstancingImporter::TryReadMeshGpuInstancingTransforms(
 	countSource = countSource != nullptr ? countSource : outTransforms.scales;
 	if (countSource == nullptr)
 	{
-		GltfImportDiagnosticLog::ReportMalformedGpuInstancing(nodeLabel, "no supported transform attributes", result);
+		(void)result;
+		SPDLOG_LOGGER_WARN(
+		    g_gltfMeshInstancingImporterLogger,
+		    "{}",
+		    std::format(
+		        "GltfImporter: Node '{}' has malformed EXT_mesh_gpu_instancing data ({}) and will import as a regular mesh node",
+		        nodeLabel,
+		        "no supported transform attributes"));
 		return false;
 	}
 
@@ -62,13 +70,25 @@ bool GltfMeshInstancingImporter::TryReadMeshGpuInstancingTransforms(
 
 		if (accessor->component_type != cgltf_component_type_r_32f || accessor->type != expectedType)
 		{
-			GltfImportDiagnosticLog::ReportMalformedGpuInstancing(nodeLabel, std::format("{} accessor has unsupported component/type", attributeName), result);
+			SPDLOG_LOGGER_WARN(
+			    g_gltfMeshInstancingImporterLogger,
+			    "{}",
+			    std::format(
+			        "GltfImporter: Node '{}' has malformed EXT_mesh_gpu_instancing data ({} accessor has unsupported component/type) and will import as a regular mesh node",
+			        nodeLabel,
+			        attributeName));
 			return false;
 		}
 
 		if (accessor->count != countSource->count)
 		{
-			GltfImportDiagnosticLog::ReportMalformedGpuInstancing(nodeLabel, std::format("{} accessor count does not match the group", attributeName), result);
+			SPDLOG_LOGGER_WARN(
+			    g_gltfMeshInstancingImporterLogger,
+			    "{}",
+			    std::format(
+			        "GltfImporter: Node '{}' has malformed EXT_mesh_gpu_instancing data ({} accessor count does not match the group) and will import as a regular mesh node",
+			        nodeLabel,
+			        attributeName));
 			return false;
 		}
 
@@ -85,7 +105,13 @@ bool GltfMeshInstancingImporter::TryReadMeshGpuInstancingTransforms(
 
 	if (countSource->count == 0 || countSource->count > (std::numeric_limits<std::uint32_t>::max)())
 	{
-		GltfImportDiagnosticLog::ReportMalformedGpuInstancing(nodeLabel, "instance count is outside the supported range", result);
+		SPDLOG_LOGGER_WARN(
+		    g_gltfMeshInstancingImporterLogger,
+		    "{}",
+		    std::format(
+		        "GltfImporter: Node '{}' has malformed EXT_mesh_gpu_instancing data ({}) and will import as a regular mesh node",
+		        nodeLabel,
+		        "instance count is outside the supported range"));
 		return false;
 	}
 

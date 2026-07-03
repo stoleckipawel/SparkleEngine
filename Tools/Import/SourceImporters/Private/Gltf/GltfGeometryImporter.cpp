@@ -2,7 +2,6 @@
 
 #include "Gltf/GltfGeometryImporter.h"
 
-#include "Diagnostics/GltfImportDiagnosticLog.h"
 #include "Gltf/GltfMeshGeometryExtractor.h"
 #include "Gltf/GltfMeshInstanceAppender.h"
 #include "Gltf/GltfMeshInstancingImporter.h"
@@ -15,6 +14,8 @@
 
 #include <cstdint>
 #include <format>
+
+static const auto g_gltfGeometryImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
 
 std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* data)
 {
@@ -73,13 +74,21 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 
 			if (primitive.type != cgltf_primitive_type_triangles)
 			{
-				GltfImportDiagnosticLog::ReportSkippedNonTrianglePrimitive(primitiveLabel, result);
+				(void)result;
+				SPDLOG_LOGGER_WARN(
+				    g_gltfGeometryImporterLogger,
+				    "{}",
+				    std::format("GltfImporter: Skipping {} because only triangle primitives are supported", primitiveLabel));
 				continue;
 			}
 
 			if (primitive.has_draco_mesh_compression)
 			{
-				GltfImportDiagnosticLog::ReportSkippedDracoPrimitive(primitiveLabel, result);
+				(void)result;
+				SPDLOG_LOGGER_WARN(
+				    g_gltfGeometryImporterLogger,
+				    "{}",
+				    std::format("GltfImporter: Skipping {} because Draco-compressed primitives are not supported yet", primitiveLabel));
 				continue;
 			}
 
@@ -89,13 +98,19 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				ImportedMeshGeometry meshGeometry = GltfMeshGeometryExtractor::ExtractMeshGeometry(*node.mesh, primitive);
 				if (!meshGeometry.IsValid())
 				{
-					GltfImportDiagnosticLog::ReportSkippedIncompletePrimitive(primitiveLabel, result);
+					SPDLOG_LOGGER_WARN(
+					    g_gltfGeometryImporterLogger,
+					    "{}",
+					    std::format("GltfImporter: Skipping {} because vertex or index data is incomplete", primitiveLabel));
 					continue;
 				}
 
 				if (primitive.targets_count > 0 && (!meshGeometry.HasSkinInfluences() || !meshGeometry.HasMorphTargets()))
 				{
-					GltfImportDiagnosticLog::ReportIgnoredMorphTargets(primitiveLabel, result);
+					SPDLOG_LOGGER_WARN(
+					    g_gltfGeometryImporterLogger,
+					    "{}",
+					    std::format("GltfImporter: {} contains morph targets which will be ignored", primitiveLabel));
 				}
 
 				ImportedMeshPrimitive primitiveEntry;

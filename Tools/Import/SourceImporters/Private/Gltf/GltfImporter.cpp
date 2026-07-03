@@ -2,21 +2,19 @@
 
 #include "Gltf/GltfImporter.h"
 
-#include "Diagnostics/GltfImportDiagnosticLog.h"
-#include "Diagnostics/GltfGeometryInstancingDiagnostics.h"
-#include "Diagnostics/SourceImportDiagnosticsRecorder.h"
 #include "Gltf/GltfCameraImporter.h"
 #include "Gltf/GltfAnimationImporter.h"
-#include "Gltf/GltfImportFeatureDiagnostics.h"
 #include "Gltf/GltfSceneReader.h"
 #include "Gltf/GltfGeometryImporter.h"
 #include "Gltf/GltfLightImporter.h"
 #include "Gltf/GltfMaterialImporter.h"
 #include "Gltf/GltfMaterialVariantImporter.h"
-#include "Gltf/GltfMorphImportDiagnostics.h"
-#include "Gltf/GltfSkinImportDiagnostics.h"
 
 #include <cgltf.h>
+
+#include <format>
+
+static const auto g_gltfImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
 
 std::string_view GltfImporter::GetImporterId() const noexcept
 {
@@ -42,32 +40,27 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 		return result;
 	}
 
-	GltfSceneReader::CollectSceneWarnings(scene.data, result);
 	GltfCameraImporter::ImportCameras(scene.data, result);
 	GltfLightImporter::ImportLights(scene.data, result);
-	GltfImportFeatureDiagnostics::RecordImportedFeatureSupport(result);
 
 	const std::filesystem::path sourceDirectory = filePath.parent_path();
-	SourceImportDiagnosticsRecorder::RecordSourceSummary(result, scene.data->meshes_count, scene.data->materials_count);
 	result.scene.materials.reserve(scene.data->materials_count);
 	GltfMaterialImporter::ImportMaterials(scene.data, sourceDirectory, result);
 	GltfMaterialVariantImporter::ImportMaterialVariants(scene.data, result);
 
-	SourceImportDiagnosticsRecorder::RecordGeometryInstancingBaseline(result, GltfGeometryInstancingDiagnostics::CaptureBaseline(scene.data));
 	const std::size_t importedMeshInstanceCount = GltfGeometryImporter::CountImportedMeshInstances(scene.data);
-	result.ReserveMeshPrimitives(result.diagnostics.geometryInstancing.uniqueMeshPrimitiveCandidateCount);
+	result.ReserveMeshPrimitives(scene.data->meshes_count);
 	result.ReserveMeshInstances(importedMeshInstanceCount);
-	result.ReserveMeshInstanceGroups(result.diagnostics.geometryInstancing.authoredInstanceGroupCount);
+	result.ReserveMeshInstanceGroups(scene.data->nodes_count);
 	GltfGeometryImporter::ImportGeometry(scene.data, result);
 	GltfAnimationImporter::ImportAnimations(scene.data, result);
-	GltfSkinImportDiagnostics::ReportStaticOnlySkinnedNodes(result);
-	GltfMorphImportDiagnostics::ReportUnsupportedWeightedNodes(result);
-	GltfGeometryInstancingDiagnostics::RecordImportedPlacements(result);
-	SourceImportDiagnosticsRecorder::RecordImportedScenePayload(result);
 
 	if (result.scene.meshPrimitives.empty() || result.scene.meshInstances.empty())
 	{
-		GltfImportDiagnosticLog::ReportNoSupportedMeshPrimitives(filePath, result);
+		SPDLOG_LOGGER_ERROR(
+		    g_gltfImporterLogger,
+		    "{}",
+		    std::format("GltfImporter: No supported mesh primitives found in '{}'", filePath.string()));
 		return result;
 	}
 
