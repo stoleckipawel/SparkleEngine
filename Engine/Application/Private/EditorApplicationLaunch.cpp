@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "EditorApplication.h"
-#include "Validation/RhiSmokeValidation.h"
 
 int RunEditorApplication()
 {
@@ -14,11 +13,6 @@ int RunEditorApplication()
 int RunEditorApplication(EditorApplicationOptions options)
 {
 	Application::ConfigureProcessFromCommandLine();
-
-	if (RhiSmokeValidation::IsRequested())
-	{
-		return RhiSmokeValidation::RunEditor(std::move(options));
-	}
 
 	EditorApplication app(std::move(options));
 	app.Run();
