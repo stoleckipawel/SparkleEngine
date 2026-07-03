@@ -101,18 +101,6 @@ class VulkanRenderMessageDiagnostics final : public RenderMessageDiagnostics
 	VulkanRhi& m_rhi;
 };
 
-class VulkanRenderFailureDiagnostics final : public RenderFailureDiagnostics
-{
-  public:
-	bool SupportsLiveObjectReports() const noexcept override { return false; }
-
-	bool SupportsCrashDiagnostics() const noexcept override { return false; }
-
-	void ReportLiveObjects() noexcept override {}
-
-	void CollectCrashDiagnostics() noexcept override {}
-};
-
 class VulkanRenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 {
   public:
@@ -176,9 +164,15 @@ class VulkanRenderDiagnostics final : public RenderDiagnostics
 
 	const RenderTimingDiagnostics* GetTimingDiagnostics() const noexcept override { return nullptr; }
 
-	RenderMessageDiagnostics* GetMessageDiagnostics() noexcept override { return &m_messageDiagnostics; }
+	RenderMessageDiagnostics* GetMessageDiagnostics() noexcept override
+	{
+		return m_messageDiagnostics.SupportsDebugMessages() ? &m_messageDiagnostics : nullptr;
+	}
 
-	const RenderMessageDiagnostics* GetMessageDiagnostics() const noexcept override { return &m_messageDiagnostics; }
+	const RenderMessageDiagnostics* GetMessageDiagnostics() const noexcept override
+	{
+		return m_messageDiagnostics.SupportsDebugMessages() ? &m_messageDiagnostics : nullptr;
+	}
 
 	RenderFailureDiagnostics* GetFailureDiagnostics() noexcept override { return nullptr; }
 
@@ -192,7 +186,6 @@ class VulkanRenderDiagnostics final : public RenderDiagnostics
 	VulkanRhi& m_rhi;
 	VulkanRenderObjectDiagnostics m_objectDiagnostics;
 	VulkanRenderMessageDiagnostics m_messageDiagnostics;
-	VulkanRenderFailureDiagnostics m_failureDiagnostics;
 	VulkanRenderMemoryDiagnostics m_memoryDiagnostics;
 };
 

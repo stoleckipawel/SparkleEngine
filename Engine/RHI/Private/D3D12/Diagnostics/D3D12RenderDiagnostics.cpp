@@ -24,8 +24,6 @@
 class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 {
   public:
-	explicit D3D12RenderObjectDiagnostics(D3D12Rhi&) noexcept {}
-
 	bool SupportsObjectNames() const noexcept override { return true; }
 
 	void SetDebugName(NativeGraphicsDeviceHandle device, std::wstring_view debugName) noexcept override
@@ -388,7 +386,6 @@ class D3D12RenderDiagnostics final : public RenderDiagnostics
 {
   public:
 	explicit D3D12RenderDiagnostics(D3D12Rhi& rhi) noexcept :
-	    m_objectDiagnostics(rhi),
 	    m_timingDiagnostics(rhi),
 	    m_messageDiagnostics(rhi),
 	    m_failureDiagnostics(rhi),

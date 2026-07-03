@@ -8,9 +8,11 @@ Scope: validation, diagnostics, smoke testing, debug artifacts, logging observer
 
 This document maps the highest-value cleanup targets found in a broad repository scan. The focus is code that increases reading cost, extension cost, or build/runtime surface area without being core to the engine.
 
-The preferred end state is a thin fatal guardrail layer:
+The preferred end state is a thin fatal guardrail layer plus first-class GPU debugging/profiling support:
 
 - Keep checks that prevent corrupt data, undefined GPU access, broken package loads, invalid API results, and device/backend failures from continuing silently.
+- Keep D3D12 debug layer support and Vulkan validation/debug layer support as essential graphics API development features.
+- Keep GPU markers, object names, event scopes, and timestamp timing support needed by PIX, RenderDoc, and NVIDIA Nsight.
 - Keep the smallest logging layer required to understand fatal startup/runtime failures.
 - Remove validation flows, smoke orchestration, debug artifact systems, detailed counters, optional diagnostics, and wrapper-only abstractions that are not part of normal engine operation.
 
@@ -24,8 +26,8 @@ Approximate scan weights:
 
 | Area | Files | Lines | Cleanup signal |
 | --- | ---: | ---: | --- |
-| Renderer diagnostics/debug code | 40 | 2166 | High. Lots of optional marker/timing/smoke plumbing. |
-| RHI diagnostics/validation code | 20 | 1963 | High. Broad capability hierarchy and backend diagnostics. |
+| Renderer diagnostics/debug code | 40 | 2166 | High. Smoke/report plumbing is deletable; profiler marker/timing support must be preserved and cleaned. |
+| RHI diagnostics/validation code | 20 | 1963 | High. Wrapper shape can be simplified; API validation/debug layers must remain. |
 | Application RHI smoke validation | 21 | 1502 | Very high. Runtime/editor host carries test harness code. |
 | Importer diagnostics | 23 | 987 | Medium-high. Feature counters and logging wrappers. |
 | Launcher smoke orchestration | 10 | 933 | Very high. Local process orchestration and artifact validation. |
@@ -62,12 +64,15 @@ Do not delete these unless there is a separate design decision:
 | `Engine/Core/Public/Diagnostics/Verify.h` | Small fatal surface: `Diagnostics::Fail`, `CheckHResult`, `CHECK(hr)`. |
 | `Engine/Core/Private/Diagnostics/Verify.cpp` | Fatal write/fallback/abort/debug break implementation. |
 | API result checks in RHI backends | HRESULT/VkResult failures must stay fatal. |
+| D3D12 debug layer support | The engine must expose/enable native D3D12 debug-layer diagnostics for development and backend bring-up. |
+| Vulkan validation/debug layer support | The engine must expose/enable native Vulkan validation layers and debug messenger output for development and backend bring-up. |
+| PIX/RenderDoc/Nsight marker support | GPU event scopes, object names, debug labels, and timestamp timing are essential profiling features, not cleanup targets. |
 | Shader package/header/version/bounds validation | Prevents corrupted cooked shader data from loading. |
 | Asset package/header/version/bounds validation | Prevents corrupted cooked asset data from loading. |
 | Truly fatal frame graph contract checks | Invalid resource usage should fail loudly, but should not require a large diagnostics subsystem. |
 | Basic logger bootstrap | Keep console/file debug output if needed for fatal failures and startup diagnosis. |
 
-The cleanup direction is not "no validation". It is "fatal guardrails only, with optional observation layers deleted unless they are actively used."
+The cleanup direction is not "no validation". It is "fatal guardrails plus strong graphics debugging/profiling support, with smoke/test/report-only layers deleted unless they are actively used."
 
 ## Deletion Groups
 
@@ -292,155 +297,167 @@ Preserve option:
 
 - If a compact renderer status panel is desired, design a separate small read-only view model for editor UI. Do not preserve the smoke snapshot shape as a general renderer API.
 
-### DG-05: Collapse Or Delete RHI Diagnostics Capability Hierarchy
+### DG-05: Reshape RHI Diagnostics Without Removing Profiler Or API Debug Support
 
 Priority: high  
 Confidence: medium-high  
 Blast radius: medium-high  
-Primary value: remove a broad optional diagnostics service tree from the public RHI contract
+Primary value: simplify the diagnostics service shape while preserving essential graphics debugging capabilities
 
 Files:
 
 | Path | Action |
 | --- | --- |
-| `Engine/RHI/Public/Diagnostics/RhiDiagnostics.h` | Collapse to only the small surface still required, or delete. |
-| `Engine/RHI/Private/D3D12/Diagnostics/D3D12RenderDiagnostics.cpp` | Delete or split only fatal/device-failure code that must remain. |
-| `Engine/RHI/Private/Vulkan/Diagnostics/VulkanRenderDiagnostics.cpp` | Delete or split only fatal/device-failure code that must remain. |
-| `Engine/RHI/Private/D3D12/Diagnostics/D3D12DebugLayer.cpp` | Delete live-object/message/debug-layer reporting unless actively owned. |
-| `Engine/RHI/Private/D3D12/Diagnostics/D3D12PixEvents.cpp` | Delete with GPU marker stack. |
-| `Engine/RHI/Private/Vulkan/Diagnostics/VulkanDebugEvents.cpp` | Delete with GPU marker stack. |
-| `Engine/RHI/Private/Vulkan/Diagnostics/VulkanDebugNames.cpp` | Delete if object naming is not preserved. |
-| `RenderHardwareInterface::GetDiagnostics()` declarations/implementations | Remove or narrow. |
-| Backend `m_diagnostics` fields | Remove or narrow. |
+| `Engine/RHI/Public/Diagnostics/RhiDiagnostics.h` | Narrow and clarify the public surface; do not delete marker/object-name/timing/API debug capabilities. |
+| `Engine/RHI/Private/D3D12/Diagnostics/D3D12RenderDiagnostics.cpp` | Split or simplify aggregation if noisy; preserve debug layer, PIX event, object naming, timing, and failure support. |
+| `Engine/RHI/Private/Vulkan/Diagnostics/VulkanRenderDiagnostics.cpp` | Split or simplify aggregation if noisy; preserve validation layers, debug messenger/event labels, object naming, timing, and failure support. |
+| `Engine/RHI/Private/D3D12/Diagnostics/D3D12DebugLayer.cpp` | Preserve. Clean message filtering/reporting quality only. |
+| `Engine/RHI/Private/D3D12/Diagnostics/D3D12PixEvents.cpp` | Preserve. This is required for PIX/RenderDoc/Nsight marker visibility on D3D12. |
+| `Engine/RHI/Private/Vulkan/Diagnostics/VulkanDebugEvents.cpp` | Preserve. This is required for Vulkan debug labels used by RenderDoc/Nsight. |
+| `Engine/RHI/Private/Vulkan/Diagnostics/VulkanDebugNames.cpp` | Preserve object naming. Clean naming paths if duplicated. |
+| `RenderHardwareInterface::GetDiagnostics()` declarations/implementations | Keep or replace with a clearer owned service boundary; do not remove essential features. |
+| Backend `m_diagnostics` fields | Keep if they own debug/profiler services; split into smaller named members if the aggregate is hard to read. |
 
 Current public hierarchy:
 
 | Interface/type | Cleanup view |
 | --- | --- |
-| `RhiDiagnosticLabelColor` | Only needed for GPU markers/debug events. |
-| `RhiTimestampQueryHandle` | Only needed for GPU timing. |
-| `RenderObjectDiagnostics` | Optional object naming, not fatal. |
-| `RenderTimingDiagnostics` | Optional timestamp query service, not fatal. |
-| `RenderMessageDiagnostics` | Optional debug messages, not fatal. |
-| `RenderFailureDiagnostics` | Some D3D12 crash/live object paths may be useful, but should not force the whole hierarchy. |
-| `RenderDiagnostics` | Aggregate wrapper that makes optional features look core. |
+| `RhiDiagnosticLabelColor` | Preserve for GPU markers/debug events. Simplify names/colors only if the palette is noisy. |
+| `RhiTimestampQueryHandle` | Preserve for GPU timing/profiler measurement. |
+| `RenderObjectDiagnostics` | Preserve object naming for PIX/RenderDoc/Nsight. Clean duplicated wrappers only. |
+| `RenderTimingDiagnostics` | Preserve timestamp query service for engine profiling. |
+| `RenderMessageDiagnostics` | Preserve native API debug/validation messages; improve filtering/ownership. |
+| `RenderFailureDiagnostics` | Preserve device failure, crash, and live-object support where available. |
+| `RenderDiagnostics` | Optional aggregate wrapper. This can be split/renamed if it obscures ownership, but must not remove capabilities. |
 
 Why:
 
 - The public RHI contract exposes diagnostics as a first-class service tree.
-- Vulkan failure diagnostics currently includes no-op methods for some functions, which is a sign the abstraction is wider than the useful behavior.
-- Object names, markers, timestamp queries, message polling, live objects, and crash reports are useful during engine development but are not required for a lean runtime.
-- This hierarchy keeps renderer diagnostic wrappers and marker/timing code alive.
+- Some aggregation/wrapper layers may make ownership harder to follow.
+- Vulkan failure diagnostics currently includes no-op methods for some functions, which is a sign the abstraction may be wider than useful behavior.
+- Object names, markers, timestamp queries, message polling, validation messages, live objects, and crash reports are essential engine development and profiling features.
+- The cleanup target is wrapper shape, no-op methods, duplication, and unclear ownership, not capability removal.
 
 Cleanup steps:
 
 1. Decide whether memory diagnostics stay. If `RendererMemoryMonitor` remains, keep only a small memory stats path.
-2. Remove public diagnostics interfaces that are not used by kept runtime features.
-3. Remove backend aggregate diagnostics objects and direct call sites.
+2. Audit each public diagnostics interface and mark it as profiler marker, object naming, timing, API debug/validation, failure reporting, or removable wrapper.
+3. Remove only no-op methods and wrapper-only indirection.
 4. Preserve fatal API result checks through `CHECK(hr)`, `Diagnostics::Fail`, and backend-specific failure paths.
-5. Delete D3D12/Vulkan debug event/name/timestamp plumbing if DG-06 is also accepted.
+5. Preserve D3D12 debug layer, Vulkan validation/debug layers, D3D12 PIX events, Vulkan debug labels, object naming, and timestamp query plumbing.
+6. If the aggregate `RenderDiagnostics` remains, document it as the RHI profiler/debug service. If it is split, keep an equally discoverable replacement.
 
 Acceptance criteria:
 
-- [ ] RHI public headers no longer expose optional object/message/timing/event diagnostics unless intentionally preserved.
+- [ ] PIX/RenderDoc/Nsight can still show meaningful GPU event scopes and object names for D3D12 and Vulkan.
+- [ ] GPU timing remains available for engine-side profiling where supported.
+- [ ] D3D12 debug layer support still works in development configurations.
+- [ ] Vulkan validation/debug layer and debug messenger support still works in development configurations.
 - [ ] Normal D3D12 and Vulkan rendering still works.
 - [ ] Fatal HRESULT/VkResult checks still fail loudly.
 - [ ] Device creation and swapchain failures still produce enough log/fatal context to diagnose startup.
-- [ ] No no-op backend diagnostics implementations remain.
+- [ ] No no-op backend diagnostics implementations remain unless explicitly documented as unsupported backend capability.
 
 Preserve option:
 
-- Keep a compile-time development-only backend debug layer, but hide it behind backend-private code instead of a public aggregate `RenderDiagnostics` hierarchy.
+- Preserve the capability set by default. Only reshape ownership/API boundaries.
 
-### DG-06: Delete GPU Marker And Timing Stack
+### DG-06: Preserve And Clean GPU Marker And Timing Stack
 
 Priority: high  
-Confidence: medium  
+Confidence: high
 Blast radius: high  
-Primary value: remove cross-cutting diagnostic plumbing from frame graph, passes, renderer, and RHI commands
+Primary value: keep PIX/RenderDoc/Nsight support while reducing wrapper noise and unclear ownership
 
 Files:
 
 | Path | Action |
 | --- | --- |
-| `Engine/Core/Public/Diagnostics/Trace.h` | Delete `DiagnosticName` if no marker system remains. |
-| `Engine/Renderer/Private/Diagnostics/FrameExecutionDiagnostics.*` | Delete frame GPU scope/timing coordinator. |
-| `Engine/Renderer/Private/Diagnostics/ScopedGpuDiagnostics.cpp` and related headers | Delete RAII marker/timer helpers. |
-| `Engine/Renderer/Private/Diagnostics/PassExecutionDiagnostics.*` | Delete pass event label/color formatter. |
-| `Engine/Renderer/Private/Diagnostics/FrameGraphExecutionDiagnostics.*` | Delete detailed barrier/aliasing marker helpers. |
-| `Engine/Renderer/Private/Debug/RendererCVars.*` | Remove `r.Renderer.DiagnosticMarkerVerbosity` and `r.Renderer.DiagnosticGpuTiming` if unused. |
-| `Engine/RHI/Public/Commands/*` | Remove diagnostic begin/end event/timestamp command methods if they only feed markers/timing. |
-| D3D12/Vulkan command list implementations | Remove PIX/Vulkan debug event/timestamp implementations. |
+| `Engine/Core/Public/Diagnostics/Trace.h` | Preserve if it keeps marker naming consistent. Rename/simplify only if it is pure ceremony. |
+| `Engine/Renderer/Private/Diagnostics/FrameExecutionDiagnostics.*` | Preserve GPU timing/marker coordination. Clean responsibilities and remove unused branches only. |
+| `Engine/Renderer/Private/Diagnostics/ScopedGpuDiagnostics.cpp` and related headers | Preserve RAII scopes if they prevent missing end events. Simplify names/ownership if noisy. |
+| `Engine/Renderer/Private/Diagnostics/PassExecutionDiagnostics.*` | Preserve pass event labeling. Remove only duplicated formatting or unused color/name layers. |
+| `Engine/Renderer/Private/Diagnostics/FrameGraphExecutionDiagnostics.*` | Preserve frame graph/pass markers. Trim excessive barrier detail only if profiler captures stay useful. |
+| `Engine/Renderer/Private/Debug/RendererCVars.*` | Preserve useful runtime controls for marker verbosity/GPU timing. Rename/document if unclear. |
+| `Engine/RHI/Public/Commands/*` | Preserve diagnostic begin/end event and timestamp command methods needed by profilers/timing. |
+| D3D12/Vulkan command list implementations | Preserve PIX events, Vulkan debug labels, and timestamp implementations. |
 
 Why:
 
-- Marker/timing code crosses a large amount of otherwise core renderer flow.
-- `DiagnosticName` is a tiny wrapper around `std::string_view`, used to support diagnostics naming rather than core logic.
-- `PassExecutionDiagnostics` and frame graph execution diagnostics format debug labels and colors, which are optional observation behavior.
-- If the goal is fatal guardrails only, GPU timing and markers are outside the keep line.
+- Marker/timing code crosses core renderer flow because profilers need the render graph and pass structure to be visible.
+- PIX, RenderDoc, and NVIDIA Nsight support is an essential engine feature.
+- GPU timings are required to measure pass and frame cost while developing renderer features.
+- The cleanup target is noisy naming layers, duplicate formatting, no-op paths, and unclear toggles, not the marker/timing capability itself.
 
 Cleanup steps:
 
-1. Remove renderer CVars for diagnostic marker verbosity and GPU timing.
-2. Remove frame execution diagnostics fields from frame pipeline/frame graph execution state.
-3. Remove pass execution diagnostics injection from pass/graph execution.
-4. Remove command list begin/end event and timestamp APIs if no other user remains.
-5. Delete backend event/timestamp implementations.
-6. Delete `DiagnosticName`.
+1. Define the minimum required profiler contract: frame scope, pass scope, resource/object names, backend command markers, optional barrier/detail scopes, and timestamp timing.
+2. Audit labels in PIX/RenderDoc/Nsight captures and keep the names that make captures readable.
+3. Remove only duplicate label builders, unused color mappings, and no-op marker/timing branches.
+4. Preserve RAII/event-scope helpers where they prevent mismatched begin/end calls.
+5. Preserve D3D12 PIX event and Vulkan debug-label implementations.
+6. Preserve timestamp query lifecycle and GPU timing toggles where supported.
+7. Document any remaining CVar controls for marker verbosity and GPU timing.
 
 Acceptance criteria:
 
-- [ ] `rg "DiagnosticName|DiagnosticGpuTiming|DiagnosticMarkerVerbosity|BeginGpu|EndGpu|TimestampQuery|PixEvents|DebugEvents"` has no live marker/timing references except third-party or intentionally preserved backend code.
-- [ ] Renderer builds and renders without marker/timing objects.
-- [ ] Frame graph execution no longer allocates/updates GPU timing query resources.
-- [ ] RenderDoc/PIX labels may be absent; that loss is accepted by this deletion group.
+- [ ] PIX captures show meaningful frame/pass markers on D3D12.
+- [ ] RenderDoc/Nsight captures show meaningful debug labels/object names on Vulkan and D3D12 where supported.
+- [ ] GPU timestamp timing still works when enabled and supported by the backend.
+- [ ] Renderer builds and renders with marker/timing objects.
+- [ ] No deleted wrapper removes profiler readability or timing accuracy.
+- [ ] `rg "DiagnosticName|DiagnosticGpuTiming|DiagnosticMarkerVerbosity|BeginGpu|EndGpu|TimestampQuery|PixEvents|DebugEvents"` shows intentional profiler/debug support, not dead no-op code.
 
 Preserve option:
 
-- Keep markers in Debug builds only, but keep the API private and narrow. Avoid preserving the current broad public RHI diagnostics hierarchy just to support labels.
+- Default to preserve. Future cleanup can narrow APIs, but profiler marker/timing capability must remain first-class.
 
-### DG-07: Reduce RHI Validation To Fatal Contract Guards
+### DG-07: Reduce Custom RHI Validation Wrappers While Keeping API Debug Layers
 
 Priority: medium-high  
 Confidence: medium  
 Blast radius: medium-high  
-Primary value: remove compile-time validation layer while keeping dangerous-boundary checks
+Primary value: remove custom report-only validation clutter while preserving fatal checks and native API validation/debug layers
 
 Files:
 
 | Path | Action |
 | --- | --- |
-| `Engine/RHI/Public/Validation/RhiValidation.h` | Delete or reduce to fatal helper functions. |
-| `Engine/RHI/Private/Validation/RhiValidation.cpp` | Delete detailed validation/reporting. |
-| `Engine/RHI/Private/Validation/RhiRayTracingValidation.cpp` | Delete detailed ray tracing descriptor validation or convert critical cases to fatal assertions near use. |
-| `Engine/RHI/CMakeLists.txt` | Remove `ENGINE_GPU_VALIDATION` compile definition if deleted. |
+| `Engine/RHI/Public/Validation/RhiValidation.h` | Delete or reduce custom report-only helpers. Do not remove native API validation/debug layer support. |
+| `Engine/RHI/Private/Validation/RhiValidation.cpp` | Delete detailed custom reporting that duplicates backend validation layers. Keep fatal helpers if needed. |
+| `Engine/RHI/Private/Validation/RhiRayTracingValidation.cpp` | Delete custom report-only descriptor validation or convert critical cases to fatal checks near use. |
+| `Engine/RHI/CMakeLists.txt` | Remove or rename `ENGINE_GPU_VALIDATION` only if it controls custom wrappers. Preserve config for D3D12 debug layer and Vulkan validation layers. |
 | RHI call sites in resource/binding/ray tracing services | Inline fatal checks or delete optional validation calls. |
 | Renderer call sites such as pipeline/frame graph contract reports | Replace with `Diagnostics::Fail` only where continuing would be unsafe. |
 
 Why:
 
-- `ENGINE_GPU_VALIDATION` creates a second validation policy layer on top of fatal API checks and backend failures.
+- `ENGINE_GPU_VALIDATION` may create a second custom validation policy layer on top of fatal API checks and native backend validation layers.
 - `RhiValidation::ReportContractViolation` logs and/or asserts policy issues from several distant call sites.
 - The user goal explicitly deprioritizes non-essential validation and diagnostics.
+- D3D12 debug layer and Vulkan validation layers are not non-essential; they are required backend development features.
 
 Cleanup steps:
 
 1. Classify each validation call site as fatal safety, debug-only convenience, or redundant.
 2. Move fatal safety checks next to the code that cannot safely continue.
 3. Delete debug-only convenience validation.
-4. Remove `ENGINE_GPU_VALIDATION` and related build definitions if no longer used.
-5. Delete the validation files.
+4. Remove `ENGINE_GPU_VALIDATION` and related build definitions only if they control deleted custom wrappers.
+5. Preserve explicit D3D12 debug layer and Vulkan validation-layer configuration.
+6. Delete or shrink the custom validation files.
 
 Acceptance criteria:
 
 - [ ] Invalid cooked data, invalid API results, and impossible backend states still fail loudly.
+- [ ] D3D12 debug layer can still be enabled and emits messages in development configurations.
+- [ ] Vulkan validation/debug layers can still be enabled and emit messages in development configurations.
 - [ ] Optional descriptor/texture/binding validation no longer creates separate runtime policy code.
 - [ ] `rg "ENGINE_GPU_VALIDATION|RhiValidation"` returns no references if fully deleted.
 - [ ] D3D12 and Vulkan backend tests/manual launches still render a frame.
 
 Preserve option:
 
-- Keep a tiny `RhiContract` helper with only fatal checks that protect memory safety or API undefined behavior. Do not keep logging/reporting-only validation paths.
+- Keep a tiny `RhiContract` helper with only fatal checks that protect memory safety or API undefined behavior. Keep native API validation/debug layers as first-class backend features. Do not keep custom logging/reporting-only validation paths that duplicate those native layers.
 
 ### DG-08: Trim Debug View Mode Matrix And Duplicate Tables
 
@@ -941,6 +958,7 @@ Why:
 - The capture path appears tied to smoke BMP artifacts such as `logs/smoke/scene-color.bmp`.
 - It adds public RHI API, backend services, renderer forwarding, image encoding, readback synchronization, and launcher settings.
 - If the engine does not have a product screenshot/export workflow, this is diagnostics-only infrastructure.
+- This group targets engine-owned BMP/readback artifact capture only. It must not remove PIX/RenderDoc/Nsight marker visibility, object naming, timestamp timing, native API debug layers, or external profiler capture support.
 
 Cleanup steps:
 
@@ -959,6 +977,7 @@ Acceptance criteria:
 Preserve option:
 
 - Preserve only if there is a real editor screenshot/export feature. If so, rename it away from diagnostics/smoke language and make it product-owned.
+- Preserve all external profiler/debugger support regardless of this decision.
 
 ### DG-20: Consolidate Scene Manifest Validators Without Weakening Fatal Checks
 
@@ -1207,7 +1226,7 @@ The repo repeatedly turns observation behavior into public API:
 
 | API surface | Suggested direction |
 | --- | --- |
-| RHI `RenderDiagnostics` aggregate | Collapse or delete. |
+| RHI `RenderDiagnostics` aggregate | Reshape or split if noisy, while preserving API debug layers, profiler markers, object names, and timing. |
 | Renderer smoke snapshot headers | Delete with smoke stack. |
 | RHI capture/BMP service | Delete if its only owner is smoke capture. |
 | Core log observer handlers | Delete if output log is non-core. |
@@ -1240,9 +1259,9 @@ Recommended order:
 14. DG-22: Collapse AssetCooker public bridge and capability self-report.
 15. DG-11: Collapse importer diagnostics and counters.
 16. DG-12: Decide whether editor output log observer is core.
-17. DG-05: Collapse RHI diagnostics hierarchy.
-18. DG-06: Delete GPU marker/timing stack if release runtime does not need PIX/RenderDoc labels/timings.
-19. DG-07: Reduce RHI validation to fatal contract guards.
+17. DG-05: Reshape RHI diagnostics hierarchy without removing profiler/API debug support.
+18. DG-06: Clean GPU marker/timing stack while preserving PIX/RenderDoc/Nsight support.
+19. DG-07: Reduce custom RHI validation wrappers while keeping D3D12/Vulkan debug layers.
 20. DG-16: Delete PTLAS future GPU-pack placeholder passes after confirming CPU-pack PTLAS remains intact.
 21. DG-20: Consolidate scene manifest validators without weakening fatal checks.
 22. DG-10: Collapse shader contract catalog validation if it is only a report layer.
@@ -1257,7 +1276,7 @@ Rationale:
 - Then delete APIs whose only consumer was the test harness.
 - Then trim debug shader/view matrices.
 - Then clean tool diagnostics and CLI-private bridge layers.
-- Then attack broader RHI/renderer diagnostics.
+- Then clean broader RHI/renderer diagnostics only where profiler/API debug capability remains intact.
 - Leave feature-adjacent PTLAS placeholder cleanup until after the smoke/diagnostics surface is quiet.
 - Leave pass-runtime simplification for last because it touches the most interactable renderer authoring path.
 
@@ -1268,13 +1287,13 @@ After accepted cleanup groups, the desired validation/diagnostic shape is:
 | Layer | Keep |
 | --- | --- |
 | Core diagnostics | `Diagnostics::Fail`, `CHECK(hr)`, basic logger. |
-| RHI | Fatal API result checks, fatal device/backend creation failures, minimal memory safety guards. |
-| Renderer | Fatal frame graph/resource contract failures where continuing would be unsafe. |
+| RHI | Fatal API result checks, fatal device/backend creation failures, D3D12 debug layer support, Vulkan validation/debug layer support, profiler object names/markers/timing, minimal memory safety guards. |
+| Renderer | Fatal frame graph/resource contract failures where continuing would be unsafe, plus profiler-visible frame/pass markers and GPU timing. |
 | Shader pipeline | Cook/load ABI checks that prevent bad packages from running. |
 | Import/cook tools | Clear import/cook failures for unsupported or corrupt input. |
 | Editor/launcher | Product workflows only. Optional test matrices and debug artifacts live outside core tools. |
 
-Everything else should need a specific owner and a current workflow to justify staying.
+Profiler/API validation support is part of the target shape, not an exception. Everything else should need a specific owner and a current workflow to justify staying.
 
 ## Not Marked For Deletion
 
@@ -1287,6 +1306,9 @@ These appeared during the scan but are not marked as cleanup targets here:
 | Cooked package validation | Protects against corrupted data and ABI mismatch. |
 | Scene manifest validation checks | Keep the fatal checks; DG-20 targets file fragmentation. |
 | Core frame graph resource contract checks | Fatal correctness checks are aligned with the requested preserve line. |
+| PIX/RenderDoc/Nsight marker and timing support | Essential profiling/debugging feature; cleanup may simplify wrappers but must preserve capability. |
+| D3D12 debug layer support | Essential backend validation/debug feature. |
+| Vulkan validation/debug layer support | Essential backend validation/debug feature. |
 | Current PTLAS CPU-pack implementation | DG-16 targets future GPU-pack placeholders, not the working PTLAS feature. |
 | Normal AssetCooker outputs | DG-21 targets diagnostic plan/timing artifacts, not cooked assets. |
 | Actual renderer/RHI feature implementation | This document targets diagnostic/test/wrapper bloat, not feature deletion unless the feature is debug-only. |
