@@ -48,11 +48,13 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
 
 	InitializeFrameGraph();
 	CreateExposureHistoryResources();
+	CreateDirectLightReservoirHistoryResources();
 	BindWindowResizeEvent();
 }
 
 FramePipeline::~FramePipeline() noexcept
 {
+	ReleaseDirectLightReservoirHistoryResources();
 	ReleaseExposureHistoryResources();
 }
 
@@ -148,6 +150,7 @@ void FramePipeline::RefreshFrameExecution(RenderViewportExtent sceneExtent) noex
 
 	m_frameGraph.reset();
 	InitializeFrameGraph(sceneExtent);
+	CreateDirectLightReservoirHistoryResources();
 	m_systems->GetImageProviders().OnResize(m_frameGraphSceneExtent, m_frameGraphSceneExtent);
 }
 
@@ -162,6 +165,7 @@ void FramePipeline::BeginFrame() noexcept
 		m_bResizePending = false;
 		temporalDataBuilder.ResetHistory("Window resize");
 		ResetExposureHistory();
+		ResetDirectLightReservoirHistory();
 		m_systems->GetImageProviders().ResetHistory("Window resize");
 
 		if (m_systems->GetWindow().HasValidSize())
@@ -177,6 +181,7 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		temporalDataBuilder.ResetHistory("Scene extent changed");
 		ResetExposureHistory();
+		ResetDirectLightReservoirHistory();
 		m_systems->GetImageProviders().ResetHistory("Scene extent changed");
 		RefreshFrameExecution(sceneExtent);
 	}
@@ -186,6 +191,7 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		temporalDataBuilder.ResetHistory("Render path changed");
 		ResetExposureHistory();
+		ResetDirectLightReservoirHistory();
 		m_systems->GetImageProviders().ResetHistory("Render path changed");
 		RefreshFrameExecution(sceneExtent);
 	}
@@ -195,6 +201,7 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		temporalDataBuilder.ResetHistory("Image provider graph mode changed");
 		ResetExposureHistory();
+		ResetDirectLightReservoirHistory();
 		m_systems->RefreshImageProviders();
 		RefreshFrameExecution(sceneExtent);
 		m_systems->GetImageProviders().ResetHistory("Image provider graph mode changed");
@@ -267,6 +274,7 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		m_systems->GetTemporalDataBuilder().ResetHistory(temporalResetReason);
 		ResetExposureHistory();
+		ResetDirectLightReservoirHistory();
 	}
 
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[renderHardwareInterface.GetCurrentFrameIndex()];
@@ -288,6 +296,7 @@ void FramePipeline::RecordFrame() noexcept
 	if (frame.mainView.perTemporalData.HistoryValid == 0u)
 	{
 		ResetExposureHistory();
+		ResetDirectLightReservoirHistory();
 	}
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
@@ -342,6 +351,7 @@ void FramePipeline::RecordFrame() noexcept
 	}
 
 	BindExposureHistoryFrameGraphResources();
+	BindDirectLightReservoirHistoryFrameGraphResources();
 
 	{
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphSetup");
@@ -373,6 +383,7 @@ void FramePipeline::RecordFrame() noexcept
 	    .RuntimeManager = m_systems->GetPipelineStateManager(),
 	    .PerFrame = m_perFrameData,
 	    .ExposureHistoryValid = m_exposureHistoryValid,
+	    .DirectLightReservoirHistoryValid = m_directLightReservoirHistoryValid,
 	    .Textures = &m_systems->GetTextureManager(),
 	    .RayTracing = &rayTracingPassServices,
 	    .ImageProviders = &imageProviderPassServices};
@@ -407,6 +418,7 @@ void FramePipeline::EndFrame() noexcept
 	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame begin");
 	m_exposureHistoryValid = HasExposureHistoryResources();
+	m_directLightReservoirHistoryValid = HasDirectLightReservoirHistoryResources();
 	m_systems->GetBackend().AdvanceFrameInFlight();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame end");
 }

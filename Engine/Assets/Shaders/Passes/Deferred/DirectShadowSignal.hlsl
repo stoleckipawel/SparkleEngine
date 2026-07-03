@@ -1,11 +1,11 @@
-#include "Lighting/DirectLightSampling.hlsli"
+#include "Lighting/DirectLightReservoir.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowSampling.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 
 RWTexture2D<float4> ShadowVisibilitySignalTexture;
-RWTexture2D<float4> ShadowLightSampleTexture;
+Texture2D<float4> CurrentReservoirSampleTexture;
+Texture2D<float4> CurrentReservoirWeightTexture;
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -23,32 +23,31 @@ RWTexture2D<float4> ShadowLightSampleTexture;
 	{
 		ShadowVisibilitySignalTexture[dispatchThreadId.xy] =
 		    RayTracedShadowSignalPacking::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
-		ShadowLightSampleTexture[dispatchThreadId.xy] = DirectLightSampling::PackLightCandidate(DirectLightSampling::InvalidLightCandidate());
 		return;
 	}
 
 	const float3 positionWorld =
 	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, deviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(int3(dispatchThreadId.xy, 0)).xyz);
-	const float candidateRandom =
-	    RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, 0u, 0xA53u).x;
-	const DirectLightSampling::LightCandidate candidate =
-	    DirectLightSampling::SampleLightCandidate(positionWorld, normalWorld, candidateRandom);
-	ShadowLightSampleTexture[dispatchThreadId.xy] = DirectLightSampling::PackLightCandidate(candidate);
-
-	if (!DirectLightSampling::IsValid(candidate))
+	const DirectLightReservoir::Reservoir reservoir =
+	    DirectLightReservoir::UnpackReservoir(
+	        CurrentReservoirSampleTexture.Load(int3(dispatchThreadId.xy, 0)),
+	        CurrentReservoirWeightTexture.Load(int3(dispatchThreadId.xy, 0)));
+	if (!DirectLightReservoir::IsValid(reservoir))
 	{
 		ShadowVisibilitySignalTexture[dispatchThreadId.xy] =
 		    RayTracedShadowSignalPacking::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
 		return;
 	}
 
-	const float2 shapeSample =
-	    RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, candidate.Light.Index, candidate.Light.Type);
 	const LightSampling::DirectLightSample lightSample =
-	    DirectLightSampling::SampleDirectLight(candidate, positionWorld, shapeSample);
+	    DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
 	const ShadowVisibilitySignal shadowSignal =
-	    RayTracedShadowVisibility::TraceDirectLightSample(positionWorld, normalWorld, lightSample, DirectLightSampling::CastsShadow(candidate.Light));
+	    RayTracedShadowVisibility::TraceDirectLightSample(
+	        positionWorld,
+	        normalWorld,
+	        lightSample,
+	        DirectLightSampling::CastsShadow(reservoir.Candidate.Light));
 
 	ShadowVisibilitySignalTexture[dispatchThreadId.xy] = RayTracedShadowSignalPacking::PackShadowSignal(shadowSignal);
 }

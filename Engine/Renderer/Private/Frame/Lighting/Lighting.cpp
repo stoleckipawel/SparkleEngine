@@ -1,6 +1,7 @@
 #include "../../PCH.h"
 #include "Frame/Lighting/Lighting.h"
 
+#include "Frame/Lighting/DirectLightReservoir.h"
 #include "Frame/Lighting/DirectLighting.h"
 #include "Frame/Lighting/IndirectLighting.h"
 #include "Frame/Lighting/IndirectReconstruction.h"
@@ -18,6 +19,10 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	    CreateDirectShadowSignalResources(builder, sceneExtent, resources);
 
 	AddLightingTargetClearPass(builder, resources.Transient.Lighting);
+	AddDirectLightReservoirPasses(
+	    builder,
+	    resources.Transient.GBuffer,
+	    rawShadowSignals);
 	AddDirectShadowSignalPass(
 	    builder,
 	    resources.Transient.GBuffer,

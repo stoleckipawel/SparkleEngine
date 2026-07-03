@@ -17,13 +17,26 @@ DirectShadowSignalResources CreateDirectShadowSignalResources(
 	        sceneExtent.Width,
 	        sceneExtent.Height,
 	        PixelFormat::R32G32B32A32_Float));
-	resources.Transient.ShadowLightSample = builder.CreateTexture(
+	resources.Transient.DirectLightTemporalReservoirSample = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
-	        "DirectShadowLightSample",
+	        "DirectLightTemporalReservoirSample",
+	        sceneExtent.Width,
+	        sceneExtent.Height,
+	        PixelFormat::R32G32B32A32_Float));
+	resources.Transient.DirectLightTemporalReservoirWeight = builder.CreateTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "DirectLightTemporalReservoirWeight",
 	        sceneExtent.Width,
 	        sceneExtent.Height,
 	        PixelFormat::R32G32B32A32_Float));
 	return DirectShadowSignalResources{
 	    .Visibility = resources.Transient.ShadowVisibilitySignal,
-	    .LightSample = resources.Transient.ShadowLightSample};
+	    .TemporalReservoirSample = resources.Transient.DirectLightTemporalReservoirSample,
+	    .TemporalReservoirWeight = resources.Transient.DirectLightTemporalReservoirWeight,
+	    .PreviousReservoirSample = resources.History.PreviousDirectLightReservoirSample,
+	    .PreviousReservoirWeight = resources.History.PreviousDirectLightReservoirWeight,
+	    .PreviousReservoirSurface = resources.History.PreviousDirectLightReservoirSurface,
+	    .CurrentReservoirSample = resources.History.CurrentDirectLightReservoirSample,
+	    .CurrentReservoirWeight = resources.History.CurrentDirectLightReservoirWeight,
+	    .CurrentReservoirSurface = resources.History.CurrentDirectLightReservoirSurface};
 }

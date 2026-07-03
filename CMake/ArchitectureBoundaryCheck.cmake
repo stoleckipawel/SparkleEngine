@@ -121,13 +121,13 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}"
                 "^[ \t]*(if\\(TARGET Vulkan::Vulkan\\)|target_link_libraries\\(SparkleRendererNvidiaDlssProvider PRIVATE Vulkan::Vulkan\\))"
                 SPARKLE_RENDERER_PROVIDER_CMAKE_VULKAN_EXCEPTION_COUNT)
-            sparkle_boundary_try_counted_exception(
-                _allowed_streamline_vulkan
-                "${_relative_path}"
-                "Engine/Renderer/Private/Upscaling/NvidiaDlss/StreamlineDlssRuntime.cpp"
-                "${_line}"
-                "^[ \t]*(#include <vulkan/vulkan\\.h>|vulkanInfo\\.(instance|physicalDevice|device) = static_cast<Vk(Instance|PhysicalDevice|Device)>|adapterInfo\\.vkPhysicalDevice =)"
-                SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT)
+			sparkle_boundary_try_counted_exception(
+				_allowed_streamline_vulkan
+				"${_relative_path}"
+				"Engine/Renderer/Private/Streamline/StreamlineRuntimeSupport.cpp"
+				"${_line}"
+				"^[ \t]*(#include <vulkan/vulkan\\.h>|vulkanInfo\\.(instance|physicalDevice|device) = static_cast<Vk(Instance|PhysicalDevice|Device)>|adapterInfo\\.Info\\.vkPhysicalDevice =)"
+				SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT)
             if(_allowed_renderer_provider_cmake_vulkan OR _allowed_streamline_vulkan)
             else()
                 sparkle_boundary_append_failure(

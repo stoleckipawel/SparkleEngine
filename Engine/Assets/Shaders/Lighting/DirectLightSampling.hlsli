@@ -35,6 +35,31 @@ namespace DirectLightSampling
 		return candidate.Valid > 0.5f && candidate.SelectionPdf > 0.0f;
 	}
 
+	bool IsLightIdInRange(LightId light)
+	{
+		if (light.Type == LightSampling::LightTypeDirectional)
+		{
+			return light.Index < ViewLighting.DirectionalLightCount;
+		}
+
+		if (light.Type == LightSampling::LightTypePoint)
+		{
+			return light.Index < ViewLighting.PointLightCount;
+		}
+
+		if (light.Type == LightSampling::LightTypeSpot)
+		{
+			return light.Index < ViewLighting.SpotLightCount;
+		}
+
+		if (light.Type == LightSampling::LightTypeRect)
+		{
+			return light.Index < ViewLighting.RectLightCount;
+		}
+
+		return false;
+	}
+
 	uint GetDirectLightCount()
 	{
 		return ViewLighting.DirectionalLightCount +
@@ -80,6 +105,20 @@ namespace DirectLightSampling
 		light.Type = LightSampling::LightTypeInvalid;
 		light.Index = LightSampling::LightIndexInvalid;
 		return light;
+	}
+
+	LightCandidate BuildLightCandidate(LightId light, float selectionPdf)
+	{
+		LightCandidate candidate;
+		candidate.Light = light;
+		candidate.SelectionPdf = selectionPdf;
+		candidate.Valid = IsLightIdInRange(light) && selectionPdf > 0.0f ? 1.0f : 0.0f;
+		if (IsValid(candidate))
+		{
+			return candidate;
+		}
+
+		return InvalidLightCandidate();
 	}
 
 	bool CastsShadow(LightId light)
@@ -224,6 +263,18 @@ namespace DirectLightSampling
 		}
 
 		return fallback;
+	}
+
+	LightCandidate SampleUniformLightCandidate(float random)
+	{
+		const uint lightCount = GetDirectLightCount();
+		if (lightCount == 0u)
+		{
+			return InvalidLightCandidate();
+		}
+
+		const uint linearIndex = min((uint)(saturate(random) * (float)lightCount), lightCount - 1u);
+		return BuildLightCandidate(GetDirectLightId(linearIndex), rcp((float)lightCount));
 	}
 
 	LightSampling::DirectLightSample SampleDirectLight(LightCandidate candidate, float3 positionWorld, float2 shapeSample)

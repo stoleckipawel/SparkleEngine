@@ -8,6 +8,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
+#include "Passes/Bindings/LightingPassBinding.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -27,7 +28,8 @@ namespace DirectLightingPassDetails
 		parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
 		parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
 		parameters->ShadowVisibilitySignal = builder.CreateSRV(shadowSignals.Visibility);
-		parameters->ShadowLightSample = builder.CreateSRV(shadowSignals.LightSample);
+		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
+		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
 		parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
 		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 		parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
@@ -72,10 +74,7 @@ void DirectLightingPass::SetParameters(
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
-	parameters->DirectionalLights = frame.lighting.GetDirectionalLightsShaderResourceView();
-	parameters->PointLights = frame.lighting.GetPointLightsShaderResourceView();
-	parameters->SpotLights = frame.lighting.GetSpotLightsShaderResourceView();
-	parameters->RectLights = frame.lighting.GetRectLightsShaderResourceView();
+	LightingPassBinding::SetParameters(parameters, frame);
 }
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

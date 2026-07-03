@@ -79,6 +79,11 @@ class FramePipeline final
 	void BindExposureHistoryFrameGraphResources() noexcept;
 	void ResetExposureHistory() noexcept;
 	bool HasExposureHistoryResources() const noexcept;
+	void CreateDirectLightReservoirHistoryResources() noexcept;
+	void ReleaseDirectLightReservoirHistoryResources() noexcept;
+	void BindDirectLightReservoirHistoryFrameGraphResources() noexcept;
+	void ResetDirectLightReservoirHistory() noexcept;
+	bool HasDirectLightReservoirHistoryResources() const noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
@@ -99,8 +104,17 @@ class FramePipeline final
 	RenderSceneSnapshot m_sceneSnapshot = {};
 	ScopedEventHandle m_resizeHandle;
 	std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> m_exposureHistoryResources = {};
+	struct DirectLightReservoirHistoryFrameResources
+	{
+		RhiOwnedResourceHandle Sample;
+		RhiOwnedResourceHandle Weight;
+		RhiOwnedResourceHandle Surface;
+	};
+	std::array<DirectLightReservoirHistoryFrameResources, RhiFrameConstants::FramesInFlight> m_directLightReservoirHistoryResources = {};
+	RenderViewportExtent m_directLightReservoirHistoryExtent = {};
 	bool m_bResizePending = false;
 	bool m_exposureHistoryValid = false;
+	bool m_directLightReservoirHistoryValid = false;
 	FrameRenderPath m_renderPath = FrameRenderPath::RealtimeDeferred;
 	std::uint32_t m_imageProviderFrameGraphKey = 0;
 };

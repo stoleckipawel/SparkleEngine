@@ -25,7 +25,8 @@ struct DirectLightingPassParameters
 	ShaderRWTexture2D<void> DirectSpecular;
 	ShaderRWTexture2D<void> DirectSubsurface;
 	ShaderTexture2D<void> ShadowVisibilitySignal;
-	ShaderTexture2D<void> ShadowLightSample;
+	ShaderTexture2D<void> CurrentReservoirSample;
+	ShaderTexture2D<void> CurrentReservoirWeight;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
@@ -33,6 +34,7 @@ struct DirectLightingPassParameters
 	ShaderTexture2D<void> GBufferDeviceZ;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
@@ -44,7 +46,8 @@ struct DirectLightingPassParameters
 		builder.RWTexture("DirectSpecular", &DirectLightingPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSubsurface", &DirectLightingPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
 		builder.ReadTexture("ShadowVisibilitySignal", &DirectLightingPassParameters::ShadowVisibilitySignal, ShaderStageVisibility::Compute);
-		builder.ReadTexture("ShadowLightSample", &DirectLightingPassParameters::ShadowLightSample, ShaderStageVisibility::Compute);
+		builder.ReadTexture("CurrentReservoirSample", &DirectLightingPassParameters::CurrentReservoirSample, ShaderStageVisibility::Compute);
+		builder.ReadTexture("CurrentReservoirWeight", &DirectLightingPassParameters::CurrentReservoirWeight, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &DirectLightingPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &DirectLightingPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DirectLightingPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
@@ -52,6 +55,7 @@ struct DirectLightingPassParameters
 		builder.ReadTexture("GBufferDeviceZ", &DirectLightingPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DirectLightingPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectLightingPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("ViewLighting", &DirectLightingPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("DirectionalLights", &DirectLightingPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &DirectLightingPassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &DirectLightingPassParameters::SpotLights, ShaderStageVisibility::Compute);

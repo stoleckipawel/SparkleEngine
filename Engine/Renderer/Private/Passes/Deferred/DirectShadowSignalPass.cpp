@@ -38,7 +38,8 @@ namespace DirectShadowSignalPassDetails
 	    TParameterInstance& parameters)
 	{
 		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
-		parameters->ShadowLightSample = builder.CreateUAV(shadowSignals.LightSample);
+		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
+		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
 		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 		parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 	}
@@ -50,8 +51,8 @@ namespace DirectShadowSignalPassDetails
 	    DirectShadowSignalNoRayQueryPass::ParameterInstance& parameters)
 	{
 		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
-		parameters->ShadowLightSample = builder.CreateUAV(shadowSignals.LightSample);
-		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
+		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
+		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
 		parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 	}
 

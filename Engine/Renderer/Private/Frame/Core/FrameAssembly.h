@@ -18,7 +18,8 @@ struct FrameAssemblyTransientResources final
 	LightingRenderTargets Lighting = {};
 	ReferenceRenderTargets Reference = {};
 	FrameGraphTextureHandle ShadowVisibilitySignal = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle ShadowLightSample = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle DirectLightTemporalReservoirSample = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle DirectLightTemporalReservoirWeight = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
 };
 
@@ -32,8 +33,23 @@ struct FrameAssemblyHistoryResources final
 {
 	FrameGraphTextureHandle PreviousExposure = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle CurrentExposure = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle PreviousDirectLightReservoirSample = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle PreviousDirectLightReservoirWeight = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle PreviousDirectLightReservoirSurface = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle CurrentDirectLightReservoirSample = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle CurrentDirectLightReservoirWeight = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle CurrentDirectLightReservoirSurface = FrameGraphTextureHandle::Invalid();
 
 	bool HasExposureHistory() const noexcept { return PreviousExposure.IsValid() && CurrentExposure.IsValid(); }
+	bool HasDirectLightReservoirHistory() const noexcept
+	{
+		return PreviousDirectLightReservoirSample.IsValid() &&
+		       PreviousDirectLightReservoirWeight.IsValid() &&
+		       PreviousDirectLightReservoirSurface.IsValid() &&
+		       CurrentDirectLightReservoirSample.IsValid() &&
+		       CurrentDirectLightReservoirWeight.IsValid() &&
+		       CurrentDirectLightReservoirSurface.IsValid();
+	}
 };
 
 struct FrameAssemblyViewportProducts final

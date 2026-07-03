@@ -45,6 +45,48 @@ void CreateFrameSceneResources(
 	const FrameGraphTextureHandle currentExposure = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor("CurrentExposureHistory", 1, 1, PixelFormat::R32G32B32A32_Float),
 	    ResourceState::ShaderResource);
+	const FrameGraphTextureHandle previousDirectLightReservoirSample = builder.ReservePersistentTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "PreviousDirectLightReservoirSample",
+	        sceneExtent.Width,
+	        sceneExtent.Height,
+	        PixelFormat::R32G32B32A32_Float),
+	    ResourceState::ShaderResource);
+	const FrameGraphTextureHandle previousDirectLightReservoirWeight = builder.ReservePersistentTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "PreviousDirectLightReservoirWeight",
+	        sceneExtent.Width,
+	        sceneExtent.Height,
+	        PixelFormat::R32G32B32A32_Float),
+	    ResourceState::ShaderResource);
+	const FrameGraphTextureHandle previousDirectLightReservoirSurface = builder.ReservePersistentTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "PreviousDirectLightReservoirSurface",
+	        sceneExtent.Width,
+	        sceneExtent.Height,
+	        PixelFormat::R16G16B16A16_Float),
+	    ResourceState::ShaderResource);
+	const FrameGraphTextureHandle currentDirectLightReservoirSample = builder.ReservePersistentTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "CurrentDirectLightReservoirSample",
+	        sceneExtent.Width,
+	        sceneExtent.Height,
+	        PixelFormat::R32G32B32A32_Float),
+	    ResourceState::ShaderResource);
+	const FrameGraphTextureHandle currentDirectLightReservoirWeight = builder.ReservePersistentTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "CurrentDirectLightReservoirWeight",
+	        sceneExtent.Width,
+	        sceneExtent.Height,
+	        PixelFormat::R32G32B32A32_Float),
+	    ResourceState::ShaderResource);
+	const FrameGraphTextureHandle currentDirectLightReservoirSurface = builder.ReservePersistentTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "CurrentDirectLightReservoirSurface",
+	        sceneExtent.Width,
+	        sceneExtent.Height,
+	        PixelFormat::R16G16B16A16_Float),
+	    ResourceState::ShaderResource);
 
 	resources.Imported.BackBuffer = backBuffer;
 	resources.Transient.Scene = SceneRenderTargets{
@@ -55,6 +97,12 @@ void CreateFrameSceneResources(
 	resources.Transient.Exposure = exposure;
 	resources.History.PreviousExposure = previousExposure;
 	resources.History.CurrentExposure = currentExposure;
+	resources.History.PreviousDirectLightReservoirSample = previousDirectLightReservoirSample;
+	resources.History.PreviousDirectLightReservoirWeight = previousDirectLightReservoirWeight;
+	resources.History.PreviousDirectLightReservoirSurface = previousDirectLightReservoirSurface;
+	resources.History.CurrentDirectLightReservoirSample = currentDirectLightReservoirSample;
+	resources.History.CurrentDirectLightReservoirWeight = currentDirectLightReservoirWeight;
+	resources.History.CurrentDirectLightReservoirSurface = currentDirectLightReservoirSurface;
 	resources.ViewportProducts.SceneColor = sceneColor;
 	resources.ViewportProducts.FinalSceneColor = finalSceneColor;
 	resources.ViewportProducts.Exposure = exposure;

@@ -1,13 +1,13 @@
-#include "Lighting/DirectLightSampling.hlsli"
+#include "Lighting/DirectLightReservoir.hlsli"
 #include "Lighting/SurfaceLighting.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
-#include "RayTracing/Shadows/RayTracedShadowSampling.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
 RWTexture2D<float4> DirectDiffuseTexture;
 RWTexture2D<float4> DirectSpecularTexture;
 RWTexture2D<float4> DirectSubsurfaceTexture;
 Texture2D<float4> ShadowVisibilitySignalTexture;
-Texture2D<float4> ShadowLightSampleTexture;
+Texture2D<float4> CurrentReservoirSampleTexture;
+Texture2D<float4> CurrentReservoirWeightTexture;
 
 void AddDirectLightSample(
     GBufferData gBuffer,
@@ -15,11 +15,12 @@ void AddDirectLightSample(
     bool evaluateSubsurface,
     LightSampling::DirectLightSample lightSample,
     ShadowVisibilitySignal shadow,
+    float sampleWeight,
     inout float3 directDiffuse,
     inout float3 directSpecular,
     inout float3 directSubsurface)
 {
-	if (!lightSample.Valid)
+	if (!lightSample.Valid || sampleWeight <= 0.0f)
 	{
 		return;
 	}
@@ -43,9 +44,9 @@ void AddDirectLightSample(
 	    lightSpecular,
 	    lightSubsurface);
 
-	directDiffuse += lightDiffuse;
-	directSpecular += lightSpecular;
-	directSubsurface += lightSubsurface;
+	directDiffuse += lightDiffuse * sampleWeight;
+	directSpecular += lightSpecular * sampleWeight;
+	directSubsurface += lightSubsurface * sampleWeight;
 }
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
@@ -75,17 +76,18 @@ void AddDirectLightSample(
 	float3 directDiffuse = 0.0f;
 	float3 directSpecular = 0.0f;
 	float3 directSubsurface = 0.0f;
-	const DirectLightSampling::LightCandidate lightCandidate =
-	    DirectLightSampling::UnpackLightCandidate(ShadowLightSampleTexture.Load(int3(dispatchThreadId.xy, 0)));
+	const DirectLightReservoir::Reservoir reservoir =
+	    DirectLightReservoir::UnpackReservoir(
+	        CurrentReservoirSampleTexture.Load(int3(dispatchThreadId.xy, 0)),
+	        CurrentReservoirWeightTexture.Load(int3(dispatchThreadId.xy, 0)));
 	const ShadowVisibilitySignal shadowSignal =
 	    RayTracedShadowSignalPacking::UnpackShadowSignal(ShadowVisibilitySignalTexture.Load(int3(dispatchThreadId.xy, 0)));
 	const bool evaluateSubsurface = any(gBuffer.SubsurfaceColor > 0.0f.xxx) && gBuffer.SubsurfaceStrength > 0.0f;
-	if (DirectLightSampling::IsValid(lightCandidate))
+	if (DirectLightReservoir::IsValid(reservoir))
 	{
-		const float2 shapeSample =
-		    RayTracedShadowSampling::BuildAnimatedSample(dispatchThreadId.xy, lightCandidate.Light.Index, lightCandidate.Light.Type);
 		const LightSampling::DirectLightSample lightSample =
-		    DirectLightSampling::SampleDirectLight(lightCandidate, positionWorld, shapeSample);
+		    DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
+		const float reservoirWeight = DirectLightReservoir::GetFinalWeight(reservoir);
 
 		AddDirectLightSample(
 		    gBuffer,
@@ -93,6 +95,7 @@ void AddDirectLightSample(
 		    evaluateSubsurface,
 		    lightSample,
 		    shadowSignal,
+		    reservoirWeight,
 		    directDiffuse,
 		    directSpecular,
 		    directSubsurface);

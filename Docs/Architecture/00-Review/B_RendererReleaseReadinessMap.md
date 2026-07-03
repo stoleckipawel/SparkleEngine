@@ -19,12 +19,11 @@ Sparkle already has a credible modern-renderer skeleton:
 
 The biggest release-review risks are not TODO comments. The renderer/RHI/shader compiler scan did not find TODO/FIXME/HACK markers. The risks are architectural:
 
-1. Hosted CI is intentionally absent. That is cleaner than keeping an inactive GitHub Actions gate; release verification should return only when it is actively owned.
-2. Direct lighting is not RTXDI/ReSTIR-shaped yet. It samples one weighted candidate per pixel and has no reservoir history, spatial reuse, light index mapping, or reservoir buffer ownership.
-3. Frame graph culling roots only backbuffer writes. When there is no backbuffer root, it keeps every pass alive. Product render outputs should be explicit graph roots.
-4. PTLAS support is impressive but research-heavy: there are classic fallback paths, reserved frame-graph buffers, capability/provider selection, future GPU-pack hooks, and a lot of diagnostic state. For release, choose the shipping path and cut or compile-gate the rest.
-5. Provider/fallback/diagnostic code is broader than the current product surface. The release path should keep deterministic fallbacks only where they are user-visible behavior, not architecture drivers.
-6. The docs are stale in one visible place: `Docs/README.md` still referenced a deleted PBR audit before this document was added.
+1. Direct lighting now has a ReSTIR DI-shaped vertical slice: reservoir payloads, temporal reuse, spatial reuse, selected-sample visibility, and final reservoir-weighted shading. It still needs image/perf tuning against RTXDI-style reference behavior before it should be marketed as RTXDI-equivalent.
+2. Frame graph culling roots only backbuffer writes. When there is no backbuffer root, it keeps every pass alive. Product render outputs should be explicit graph roots.
+3. PTLAS support is impressive but research-heavy: there are classic fallback paths, reserved frame-graph buffers, capability/provider selection, future GPU-pack hooks, and a lot of diagnostic state. For release, choose the shipping path and cut or compile-gate the rest.
+4. Provider/fallback/diagnostic code is broader than the current product surface. The release path should keep deterministic fallbacks only where they are user-visible behavior, not architecture drivers.
+5. The docs are stale in one visible place: `Docs/README.md` still referenced a deleted PBR audit before this document was added.
 
 ## Engine Map
 
@@ -68,7 +67,7 @@ These are the external shapes Sparkle should be compared against:
 | AMD FidelityFX SDK / Cauldron | SDK samples depend on a framework, common render modules, and a custom backend wrapper. Effects remain distinct, sample-driven vertical integrations. | Sparkle has analogous modules, but provider integrations should be treated as product features with one backend bridge, not spread through general renderer state. |
 | NVIDIA Donut | `core`, `engine`, `render`, `app` split. Render passes are reusable, app/device management is separate, ray tracing AS ownership is app-specific. | Sparkle has a similar engine/application/render separation. Ray tracing ownership is more ambitious and should be narrowed for release. |
 | NVIDIA NVRHI/NRI | Clear RHI tradeoff: either higher-level resource tracking/barriers/lifetime or low-level explicit API with minimal hidden management. Native escape hatches are intentional. | Sparkle sits closer to NVRHI in frame-graph/barrier/resource tracking, with an NRI-like explicit RHI surface underneath. The policy should be documented and tightened. |
-| NVIDIA RTXDI | Application owns material model, scene data, ray tracing, GBuffer, graphics API access, light buffers, resource allocation, and shaders. RTXDI supplies sampling/resampling math and bridge callbacks. | Sparkle owns the right surrounding data, but direct lighting has not reached reservoir-backed ReSTIR DI shape. |
+| NVIDIA RTXDI | Application owns material model, scene data, ray tracing, GBuffer, graphics API access, light buffers, resource allocation, and shaders. RTXDI supplies sampling/resampling math and bridge callbacks. | Sparkle owns the surrounding renderer data and now has a native reservoir-backed ReSTIR DI-shaped path. It is not a vendored RTXDI SDK integration and still needs tuning/profiling against RTXDI reference behavior. |
 | NVIDIA RTXPT / Falcor PathTracer | Path tracing owns path generation, direct-light sampling, path-space decomposition, guide buffers, accumulation/denoising handoff. | Sparkle reference path owns guides now, which is strong. It still lacks reference motion vectors and realtime-grade many-light sampling/cache behavior. |
 | NVIDIA Streamline DLSS-RR | Provider requires tagged noisy HDR color and guide buffers, common constants, correct motion/depth conventions, and host command-state restoration. | Sparkle's ray reconstruction contract maps well. It should avoid adding more diagnostic surface and instead finish the missing signal/product cases. |
 
@@ -84,49 +83,61 @@ A great product renderer has these traits:
 | Explicit RHI policy | The engine clearly states what it tracks automatically and what remains explicit. | Present in code; needs product-level documentation. |
 | Shader ABI discipline | Shader source, registration, feature flags, reflection, cook cache, package load, and binding layout all line up. | Strong. This is a review strength. |
 | Vendor boundaries | NVIDIA/AMD SDKs are isolated behind provider contracts and capability gates. | Good direction. Cleanup should reduce fallback and diagnostic sprawl. |
-| Physical lighting | Direct, indirect, reference, and realtime lighting share BRDF/material/light policy. | Good sharing. Direct many-light strategy is the missing production piece. |
+| Physical lighting | Direct, indirect, reference, and realtime lighting share BRDF/material/light policy. | Good sharing. Direct lighting now has many-light reservoir reuse; tune quality, stability, and performance against reference scenes. |
 | Temporal ownership | Motion vectors, jitter, history reset, exposure, upscaler/reconstruction state are explicit. | Good resets; reference path lacks motion vectors for reconstruction. |
 | Runtime confidence | Build steps, smoke paths, and demo project are present and current. | Local CMake targets and launcher flows exist; hosted CI is intentionally absent. |
 
-## Highest Pain Points
+## Local Verification Contract
 
-### P0. Release Verification Is Local-Only
-
-Evidence:
+Hosted CI is intentionally absent. The repo should not carry inactive workflow files just to look release-gated.
 
 - No files are present under `.github/workflows`.
-- Existing local verification entry points include:
-  - `ShaderCompiler`
-  - `ShaderCompilerCliValidation`
-  - `architecture_boundary_check`
+- No repo-level helper folder is used for release verification.
+- Current local verification entry points are checked-in CMake targets:
+  - `ShaderCompilerCliValidation`, which builds `ShaderCompiler`, runs CLI smoke commands, cooks `ComputeClear`, and inspects the cooked package.
+  - `architecture_boundary_check`, which checks renderer/RHI ownership boundaries.
 
-Why reviewers care:
+Local review command:
 
-- Inactive hosted CI is worse than no hosted CI because it creates false release confidence.
-- A product release still needs a repeatable verification contract, even if it starts as local CMake and launcher commands.
+```powershell
+cmake -S . -B build/local-review -G "Visual Studio 17 2022" -A x64 `
+  -DSPARKLE_ENABLE_CONTENT_PIPELINE=OFF `
+  -DSPARKLE_ENABLE_SHADER_COMPILER=ON `
+  -DSPARKLE_ENABLE_KTX_SUPPORT=OFF `
+  -DSPARKLE_ENABLE_NVIDIA_STREAMLINE=OFF `
+  -DSPARKLE_RHI_WITH_D3D12=ON `
+  -DSPARKLE_RHI_WITH_D3D12_NVAPI=OFF `
+  -DSPARKLE_RHI_WITH_VULKAN=OFF
 
-Cleanup action:
+cmake --build build/local-review --config DevelopmentEditor --target ShaderCompilerCliValidation --parallel
+cmake --build build/local-review --config DevelopmentEditor --target architecture_boundary_check --parallel
+```
 
-- Keep GitHub Actions absent until the team actively uses it.
-- When hosted CI returns, make it target-based and small. Prefer named CMake targets owned near the code they validate.
+Reopen hosted CI only when it is actively owned, target-based, and small. This item is no longer an open P0. The remaining release-confidence work is to choose one documented runtime smoke path.
 
-### P0. Direct Lighting Is Still A One-Candidate Slice
+## Highest Pain Points
+
+### Closed P0. Direct Lighting ReSTIR DI Vertical Slice Is In Place
 
 Evidence:
 
-- `DirectLightSampling.hlsli` computes total light weight by looping over all direct lights per pixel.
-- `DirectShadowSignal.hlsl` samples one candidate, traces visibility for that candidate, and stores one packed light candidate plus one visibility signal.
-- `DirectLighting.hlsl` unpacks that candidate and shades one direct-light sample.
+- `DirectLightReservoir.hlsli` owns the reservoir math: initial candidate streaming, reservoir combine, target PDF evaluation, temporal/spatial M clamping, packed sample/weight payloads, and final shading weight.
+- `DirectLightReservoirTemporal.hlsl` builds an initial many-light reservoir and reprojects previous-frame reservoir state through motion vectors when direct-light reservoir history is valid.
+- `DirectLightReservoirSpatial.hlsl` combines compatible neighbor reservoirs and writes the current persistent sample, weight, and surface history.
+- `DirectShadowSignal.hlsl` traces visibility only for the selected reservoir sample.
+- `DirectLighting.hlsl` replays the selected sample and shades with `WeightSum / (M * targetPdf)`.
+- `FramePipelineDirectLightReservoirHistory.cpp` owns persistent reservoir sample, weight, and surface textures across frames.
 
 Why reviewers care:
 
 - NVIDIA RTXDI/ReSTIR DI reviewers expect reservoir buffers, temporal/spatial reuse, light-index mapping, selected-sample visibility, and final shading using reservoir weight/PDF.
-- Sparkle has the surrounding renderer ownership RTXDI needs, but not the algorithmic product path.
+- Sparkle now has the algorithmic vertical slice and renderer ownership RTXDI-style review expects, without adding a diagnostic or denoiser substitute.
 
-Cleanup action:
+Remaining cleanup:
 
-- Either finish ReSTIR-style direct lighting as a real vertical slice, or explicitly label the current path as a simple stochastic direct-light sampler and do not present it as RTXDI-grade.
-- Avoid adding a "shadow denoiser" as a substitute. The missing feature is many-light sampling/reuse, not more diagnostics.
+- Tune candidate counts, neighbor policy, confidence/stability, and quality/performance against representative many-light scenes.
+- Keep this documented as a native ReSTIR DI-shaped implementation unless the NVIDIA RTXDI SDK is actually integrated.
+- Avoid adding a "shadow denoiser" as a substitute for many-light sampling quality.
 
 ### P0. Frame Graph Outputs Are Not Explicit Product Roots
 
@@ -202,21 +213,21 @@ Cleanup action:
 - Either add reference motion vectors and progressive accumulation, or document that reference ray reconstruction is unavailable by design.
 - Consider sharing the future many-light sampling strategy between realtime and reference, with reference mode using higher sample counts.
 
-### P1. Runtime Renderer Confidence Is Not A Visible CI Matrix
+### P1. Runtime Smoke Contract Needs One Local Command
 
 Evidence:
 
 - The repo has smoke tooling in `Tools/Launcher` and `Engine/Application/Private/Validation`.
-- Hosted CI is intentionally absent; local CMake targets and launcher flows are the current verification surface.
+- Local CMake targets cover shader package validation and architecture boundaries; runtime smoke tooling still needs one named release path.
 
 Why reviewers care:
 
 - Product quality is judged through repeatable workflows.
-- The request is not to add more validators, so the right fix is to keep the local verification path small and real.
+- The request is not to add more validators, so the right fix is to keep the local runtime smoke path small and real.
 
 Cleanup action:
 
-- Make one release smoke path executable from a documented local command first; add hosted CI only when it is actively owned.
+- Choose one release smoke path and document the exact local command.
 - Remove smoke modes that are not part of the release evidence path.
 
 ### P2. Documentation And CMake Hygiene Need A Pass
@@ -242,9 +253,8 @@ Cleanup action:
 ## First Cleanup Sequence
 
 1. Make the repository reviewable.
-   - Keep hosted CI absent until it is actively owned.
    - Update docs so every linked doc exists.
-   - Run the existing architecture boundary check and shader compiler cook path through checked-in CMake targets.
+   - Run the local release verification contract before review.
 
 2. Choose the release renderer target.
    - Decide which backend/provider combinations are product-supported.
@@ -256,9 +266,10 @@ Cleanup action:
    - Remove "no roots means all passes alive."
    - Keep one writer for every product and history resource.
 
-4. Finish or demote direct lighting.
-   - Product path: implement RTXDI/ReSTIR-style reservoirs and reuse.
-   - Cleanup path: demote current one-candidate sampler to a simple stochastic mode and stop presenting it as reference-quality direct lighting.
+4. Tune direct lighting.
+   - Profile the reservoir path on representative many-light scenes.
+   - Compare stability and bias against NVIDIA RTXDI/ReSTIR DI expectations.
+   - Keep the implementation native and small unless the product explicitly chooses to vendor RTXDI.
 
 5. Trim provider code.
    - Keep `UpscalerInputContract` and `RayReconstructionInputContract` separate.
@@ -278,7 +289,7 @@ Cleanup action:
 - Do not add more renderer validators or diagnostic panels as a substitute for finishing features.
 - Do not add wrapper layers that only rename handles, settings, or provider results.
 - Do not let fallback providers become the main architecture.
-- Do not claim RTXDI/ReSTIR quality until reservoirs, temporal/spatial reuse, and selected-sample visibility exist.
+- Do not claim RTXDI SDK equivalence unless the SDK is actually integrated and validated against its reference behavior.
 - Do not let reference mode consume realtime GBuffer products unless it writes equivalent products itself.
 - Do not keep future GPU/SDK scaffolding in the release path unless the feature is shipping.
 
