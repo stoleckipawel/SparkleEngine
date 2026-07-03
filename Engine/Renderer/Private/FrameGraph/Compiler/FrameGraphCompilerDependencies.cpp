@@ -90,15 +90,6 @@ void FrameGraphCompiler::CullDeadPasses() noexcept
 		}
 	}
 
-	if (!m_plan.passes.empty() && rootPasses.empty())
-	{
-		for (FrameGraphPassNode& passRecord : m_plan.passes)
-		{
-			passRecord.alive = true;
-		}
-		return;
-	}
-
 	for (const FrameGraphPassIndex rootPass : rootPasses)
 	{
 		MarkPassAliveRecursive(rootPass);
@@ -126,11 +117,6 @@ void FrameGraphCompiler::MarkPassAliveRecursive(FrameGraphPassIndex passIndex) n
 	}
 }
 
-bool FrameGraphCompiler::IsRootPass(const FrameGraphPassNode& passRecord) const noexcept
-{
-	return GetRootPassReason(passRecord) != nullptr;
-}
-
 const char* FrameGraphCompiler::GetRootPassReason(const FrameGraphPassNode& passRecord) const noexcept
 {
 	if (WritesBackBuffer(passRecord))
@@ -138,9 +124,13 @@ const char* FrameGraphCompiler::GetRootPassReason(const FrameGraphPassNode& pass
 		return "backbuffer-output";
 	}
 
+	if (WritesProductRoot(passRecord))
+	{
+		return "product-output";
+	}
+
 	return nullptr;
 }
-
 
 bool FrameGraphCompiler::WritesBackBuffer(const FrameGraphPassNode& passRecord) const noexcept
 {
@@ -153,6 +143,26 @@ bool FrameGraphCompiler::WritesBackBuffer(const FrameGraphPassNode& passRecord) 
 
 		const FrameGraphResourceNode& resource = GetCompiledResourceEntry(declaration.handle);
 		if (resource.kind == FrameGraphResourceKind::BackBuffer)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool FrameGraphCompiler::WritesProductRoot(const FrameGraphPassNode& passRecord) const noexcept
+{
+	for (const FrameGraphProductRoot& productRoot : m_plan.productRoots)
+	{
+		if (!productRoot.handle.IsValid())
+		{
+			continue;
+		}
+
+		const FrameGraphResourceNode& resource = GetCompiledResourceEntry(productRoot.handle);
+		const FrameGraphResourceVersion& finalVersion = GetCurrentResourceVersion(resource);
+		if (finalVersion.writerPass == passRecord.index)
 		{
 			return true;
 		}

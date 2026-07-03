@@ -191,6 +191,21 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 
 	ExtendTransientLifetimesToFrame(m_plan.transients, m_plan.executionOrder);
 
+	const auto unusedIt = std::remove_if(
+	    m_plan.transients.resources.begin(),
+	    m_plan.transients.resources.end(),
+	    [](const FrameGraphTransientResourcePlan& transientPlan) noexcept
+	    {
+		    return transientPlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX;
+	    });
+	m_plan.transients.resources.erase(unusedIt, m_plan.transients.resources.end());
+
+	for (std::size_t transientIndex = 0; transientIndex < m_plan.transients.resources.size(); ++transientIndex)
+	{
+		m_plan.transients.resources[transientIndex].physicalAllocation.allocationIndex =
+		    static_cast<std::uint32_t>(transientIndex);
+	}
+
 	for (const FrameGraphTransientResourcePlan& transientPlan : m_plan.transients.resources)
 	{
 		assert(transientPlan.handle.IsValid());

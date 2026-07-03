@@ -60,6 +60,12 @@ struct FrameGraphResourceVersion
 	std::vector<FrameGraphPassIndex> readerPasses;
 };
 
+struct FrameGraphProductRoot
+{
+	FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
+	std::string name;
+};
+
 struct FrameGraphPassNode
 {
 	FrameGraphPassIndex index = INVALID_FRAME_GRAPH_PASS_INDEX;
@@ -192,6 +198,7 @@ struct FrameGraphPlan
 {
 	std::vector<FrameGraphPassNode> passes;
 	std::vector<FrameGraphResourceNode> resources;
+	std::vector<FrameGraphProductRoot> productRoots;
 	FrameGraphTransientPlan transients;
 	std::vector<FrameGraphPassIndex> executionOrder;
 	std::vector<FrameGraphAliasingBarrier> finalTransientAliasingBarriers;
@@ -201,6 +208,7 @@ struct FrameGraphPlan
 	{
 		passes.clear();
 		resources.clear();
+		productRoots.clear();
 		transients.Clear();
 		executionOrder.clear();
 		finalTransientAliasingBarriers.clear();

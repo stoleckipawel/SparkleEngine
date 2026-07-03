@@ -6,6 +6,31 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
+#include <string_view>
+
+namespace
+{
+	void ExportTextureIfValid(FrameGraphBuilder& builder, FrameGraphTextureHandle handle, std::string_view name) noexcept
+	{
+		if (handle.IsValid())
+		{
+			builder.ExportTexture(handle, name);
+		}
+	}
+
+	void ExportFrameProductRoots(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources) noexcept
+	{
+		ExportTextureIfValid(builder, resources.ViewportProducts.SceneColor, "Viewport.SceneColor");
+		ExportTextureIfValid(builder, resources.ViewportProducts.FinalSceneColor, "Viewport.FinalSceneColor");
+		ExportTextureIfValid(builder, resources.ViewportProducts.Exposure, "Viewport.Exposure");
+		ExportTextureIfValid(builder, resources.ViewportProducts.SceneDepth, "Viewport.SceneDepth");
+		ExportTextureIfValid(builder, resources.ViewportProducts.Normals, "Viewport.Normals");
+		ExportTextureIfValid(builder, resources.ViewportProducts.MotionVectors, "Viewport.MotionVectors");
+		ExportTextureIfValid(builder, resources.UpscalerProviderInputs.ScalingOutputColor, "Upscaler.ScalingOutputColor");
+		ExportTextureIfValid(builder, resources.RayReconstructionProviderInputs.OutputColor, "RayReconstruction.OutputColor");
+	}
+}  // namespace
+
 FrameGraphBuilder::FrameGraphBuilder(FrameGraph& frameGraph) noexcept : m_frameGraph(frameGraph) {}
 
 FrameGraphTextureHandle FrameGraphBuilder::ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
@@ -159,6 +184,11 @@ void FrameGraphBuilder::ClearPersistentBufferBinding(FrameGraphBufferHandle hand
 	m_frameGraph.ClearPersistentBufferBinding(handle);
 }
 
+void FrameGraphBuilder::ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept
+{
+	m_frameGraph.ExportTexture(handle, name);
+}
+
 ShaderRenderTarget FrameGraphBuilder::CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept
 {
 	return m_frameGraph.CreateRenderTarget(handle);
@@ -182,6 +212,7 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	    m_dependencies.sceneExtent,
 	    m_dependencies.renderHardwareInterface.GetPresentationService().GetPresentColorFormat(),
 	    m_dependencies.presentSceneToBackBuffer);
+	ExportFrameProductRoots(builder, frameLoop.Resources);
 
 	FrameGraphBuildResult result{};
 	result.Resources = frameLoop.Resources;

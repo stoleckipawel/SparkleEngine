@@ -159,6 +159,7 @@ class FrameGraphBuilder final
 	    RhiOwnedResourceHandle resource,
 	    ResourceState currentState = ResourceState::Common) noexcept;
 	void ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept;
+	void ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept
 	{

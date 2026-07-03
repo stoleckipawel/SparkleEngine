@@ -22,9 +22,9 @@ class FrameGraphCompiler final
 	void DeduplicatePassDependencies() noexcept;
 	void CullDeadPasses() noexcept;
 	void MarkPassAliveRecursive(FrameGraphPassIndex passIndex) noexcept;
-	bool IsRootPass(const FrameGraphPassNode& passRecord) const noexcept;
 	const char* GetRootPassReason(const FrameGraphPassNode& passRecord) const noexcept;
 	bool WritesBackBuffer(const FrameGraphPassNode& passRecord) const noexcept;
+	bool WritesProductRoot(const FrameGraphPassNode& passRecord) const noexcept;
 	void BuildPassSuccessorsAndInDegrees() noexcept;
 	void BuildTopologicalExecutionOrder() noexcept;
 	void ValidateExecutionOrder() const noexcept;

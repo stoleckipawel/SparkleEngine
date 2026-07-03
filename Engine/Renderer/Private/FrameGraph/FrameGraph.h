@@ -235,6 +235,7 @@ class FrameGraph
 	    RhiOwnedResourceHandle resource,
 	    ResourceState currentState = ResourceState::Common) noexcept;
 	void ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept;
+	void ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept;
 	ResourceState GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept;
 	void UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(
@@ -430,6 +431,7 @@ class FrameGraph
 	mutable FrameGraphResourceStateTracker m_resourceStateTracker;
 	mutable FrameGraphResourceResolver m_resourceResolver;
 	FrameGraphPlan m_compiledPlan;
+	std::vector<FrameGraphProductRoot> m_productRoots;
 	mutable std::uint32_t m_lastUnresolvedBarrierWarningCount = 0;
 	mutable std::uint32_t m_lastMissingExecutionBindingCount = 0;
 	std::uint32_t m_nextDynamicResourceIndex = 0;

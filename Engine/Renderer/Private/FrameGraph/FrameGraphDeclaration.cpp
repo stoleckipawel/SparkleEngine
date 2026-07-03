@@ -42,6 +42,7 @@ namespace
 void FrameGraph::Setup(const FrameContext& frame)
 {
 	m_compiledPlan.Clear();
+	m_compiledPlan.productRoots = m_productRoots;
 	m_compiledPlan.passes.reserve(m_passes.size());
 
 	for (std::size_t passIndex = 0; passIndex < m_passes.size(); ++passIndex)

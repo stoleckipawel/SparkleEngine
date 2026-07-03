@@ -20,7 +20,7 @@ Sparkle already has a credible modern-renderer skeleton:
 The biggest release-review risks are not TODO comments. The renderer/RHI/shader compiler scan did not find TODO/FIXME/HACK markers. The risks are architectural:
 
 1. Direct lighting now has a ReSTIR DI-shaped vertical slice: reservoir payloads, temporal reuse, spatial reuse, selected-sample visibility, and final reservoir-weighted shading. It still needs image/perf tuning against RTXDI-style reference behavior before it should be marketed as RTXDI-equivalent.
-2. Frame graph culling roots only backbuffer writes. When there is no backbuffer root, it keeps every pass alive. Product render outputs should be explicit graph roots.
+2. Frame graph product ownership now has explicit roots for viewport/provider outputs, and the old no-root culling fallback is removed. Remaining work is to keep product exports request-aware as the editor/offscreen surface grows.
 3. PTLAS support is impressive but research-heavy: there are classic fallback paths, reserved frame-graph buffers, capability/provider selection, future GPU-pack hooks, and a lot of diagnostic state. For release, choose the shipping path and cut or compile-gate the rest.
 4. Provider/fallback/diagnostic code is broader than the current product surface. The release path should keep deterministic fallbacks only where they are user-visible behavior, not architecture drivers.
 5. The docs are stale in one visible place: `Docs/README.md` still referenced a deleted PBR audit before this document was added.
@@ -78,7 +78,7 @@ A great product renderer has these traits:
 | Quality | What reviewers look for | Sparkle status |
 | --- | --- | --- |
 | Feature ownership | Every feature has one owner for settings, resources, passes, shaders, history, and fallback behavior. | Partial. Reference and provider contracts are good; direct lighting and PTLAS are spread across several policy layers. |
-| Product graph | Render graph resources are declared, rooted by explicit outputs, culled predictably, and scheduled from data dependencies. | Good foundation, but root selection is too backbuffer-centric. |
+| Product graph | Render graph resources are declared, rooted by explicit outputs, culled predictably, and scheduled from data dependencies. | Good foundation. Viewport/provider outputs are now explicit product roots; continue tightening request-specific product exports. |
 | One writer per product | History, guide buffers, GBuffer products, and lighting outputs have one clear writer. | Mostly good. Reference guide ownership is especially good. |
 | Explicit RHI policy | The engine clearly states what it tracks automatically and what remains explicit. | Present in code; needs product-level documentation. |
 | Shader ABI discipline | Shader source, registration, feature flags, reflection, cook cache, package load, and binding layout all line up. | Strong. This is a review strength. |
@@ -139,23 +139,25 @@ Remaining cleanup:
 - Keep this documented as a native ReSTIR DI-shaped implementation unless the NVIDIA RTXDI SDK is actually integrated.
 - Avoid adding a "shadow denoiser" as a substitute for many-light sampling quality.
 
-### P0. Frame Graph Outputs Are Not Explicit Product Roots
+### Closed P0. Frame Graph Outputs Are Explicit Product Roots
 
 Evidence:
 
-- `FrameGraphCompiler::GetRootPassReason()` currently roots passes only if they write the backbuffer.
-- If the graph has passes but no roots, `CullDeadPasses()` marks every pass alive.
-- Editor/offscreen paths can request viewport products, but the graph root model does not express those as exports.
+- `FrameGraphPlan` now carries `productRoots` entries with product names and resource handles.
+- `FrameGraphBuilder::ExportTexture()` registers `FrameAssemblyViewportProducts` plus upscaler/ray-reconstruction provider outputs from `FrameGraphFactory::Build()`.
+- `FrameGraphCompiler::GetRootPassReason()` roots backbuffer writes and final writers of exported products.
+- `CullDeadPasses()` no longer keeps every pass alive when a graph has no roots.
+- Transient materialization planning prunes unused transient resources after dead-pass culling.
 
 Why reviewers care:
 
 - A release renderer should know exactly why a pass runs.
-- "No root means run everything" is useful during bring-up, but it hides dead work and makes graph correctness harder to review.
+- "No root means run everything" is useful during bring-up, but it hides dead work and makes graph correctness harder to review. That behavior has been removed.
 
-Cleanup action:
+Remaining cleanup:
 
-- Add explicit graph roots for `FrameAssemblyViewportProducts` and provider outputs, or model exported products as roots.
-- Delete the fallback that keeps every pass alive once product roots exist.
+- Keep product export registration aligned with `ViewportRenderRequest::RequestedOutputs` if the graph factory starts receiving per-viewport request policy.
+- Add new products only through the export list, not by widening culling fallback behavior.
 
 ### P1. PTLAS Is Too Broad For A First Product Release Unless It Is The Product
 
@@ -262,8 +264,7 @@ Cleanup action:
    - Do not let experimental PTLAS, DLRR, or provider fallback paths define the default renderer.
 
 3. Tighten frame graph product ownership.
-   - Add explicit exported output roots.
-   - Remove "no roots means all passes alive."
+   - Keep explicit exported output roots current as products are added.
    - Keep one writer for every product and history resource.
 
 4. Tune direct lighting.

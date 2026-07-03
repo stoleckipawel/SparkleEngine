@@ -8,6 +8,8 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
+#include <algorithm>
+
 static const auto g_frameGraphLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window, RenderViewportExtent sceneExtent) :
@@ -37,6 +39,20 @@ FrameGraphPlan FrameGraph::Compile()
 	compiler.Compile();
 	FrameGraphPlanDiagnostics::LogIfEnabled(m_compiledPlan);
 	return m_compiledPlan;
+}
+
+void FrameGraph::ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept
+{
+	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
+	if (!resourceHandle.IsValid() || !m_resourceRegistry.IsRegistered(resourceHandle))
+	{
+		return;
+	}
+
+	m_productRoots.push_back(
+	    FrameGraphProductRoot{
+	        .handle = resourceHandle,
+	        .name = std::string(name)});
 }
 
 std::uint32_t FrameGraph::GetCompiledTransientResourceCount() const noexcept
