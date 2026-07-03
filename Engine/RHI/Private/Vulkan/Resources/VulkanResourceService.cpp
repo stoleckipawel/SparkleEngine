@@ -1,7 +1,7 @@
 #include "Vulkan/Resources/VulkanResourceService.h"
 
-#include "RHI/Public/Validation/RhiValidation.h"
 #include "Resources/Texture.h"
+#include "Validation/RhiContract.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
 #include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
@@ -52,7 +52,7 @@ RhiOwnedResourceHandle VulkanResourceService::CreateTextureResource(
 {
 	(void) initialState;
 	if (m_textureFactory == nullptr || m_capabilities == nullptr ||
-	    !RhiValidation::ValidateTextureResourceDesc(*m_capabilities, desc, "RHI.Vulkan.CreateTextureResource"))
+	    !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc))
 	{
 		return {};
 	}
@@ -336,7 +336,7 @@ RhiOwnedResourceHandle VulkanResourceService::CreateAliasingTextureResource(
 	(void) desc.InitialState;
 	(void) desc.ClearValue;
 	if (m_memoryAllocator == nullptr || m_capabilities == nullptr || !memoryBlock ||
-	    !RhiValidation::ValidateTextureResourceDesc(*m_capabilities, desc.ResourceDesc, "RHI.Vulkan.CreateAliasingTextureResource"))
+	    !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc.ResourceDesc))
 	{
 		return {};
 	}

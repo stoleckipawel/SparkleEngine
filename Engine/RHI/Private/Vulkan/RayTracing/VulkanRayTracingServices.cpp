@@ -2,7 +2,7 @@
 
 #include "Vulkan/RayTracing/VulkanRayTracingServices.h"
 
-#include "RHI/Public/Validation/RhiValidation.h"
+#include "Validation/RhiContract.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
@@ -88,7 +88,7 @@ RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetBott
 {
 	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
 	    m_rhi->GetAccelerationStructureBuildSizes() == nullptr ||
-	    !RhiValidation::ValidateRayTracingGeometryDesc(geometry, "Vulkan.GetBottomLevelAccelerationStructurePrebuildInfo"))
+	    !RhiContract::IsRayTracingGeometryDescUsable(geometry))
 	{
 		return {};
 	}
@@ -152,7 +152,7 @@ RhiOwnedResourceHandle VulkanRayTracingServices::CreateScratchBuffer(std::uint64
 {
 	const std::uint64_t scratchAlignment = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().ScratchBufferByteAlignment : 0;
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
-	    !RhiValidation::ValidateRayTracingBufferSize(sizeInBytes, scratchAlignment, "Vulkan.CreateRayTracingScratchBuffer"))
+	    !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, scratchAlignment))
 	{
 		return {};
 	}
@@ -184,7 +184,7 @@ RhiOwnedResourceHandle VulkanRayTracingServices::CreateAccelerationStructureBuff
 	    m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().AccelerationStructureByteAlignment : 0;
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
 	    m_rhi->GetCreateAccelerationStructure() == nullptr || m_rhi->GetAccelerationStructureDeviceAddress() == nullptr ||
-	    !RhiValidation::ValidateRayTracingBufferSize(sizeInBytes, asAlignment, "Vulkan.CreateRayTracingAccelerationStructureBuffer"))
+	    !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, asAlignment))
 	{
 		return {};
 	}

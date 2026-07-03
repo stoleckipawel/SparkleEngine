@@ -9,7 +9,7 @@
 #include "D3D12/Textures/TextureFactory.h"
 #include "RHI/Public/Diagnostics/RhiDiagnostics.h"
 #include "Resources/Texture.h"
-#include "RHI/Public/Validation/RhiValidation.h"
+#include "Validation/RhiContract.h"
 
 #include <algorithm>
 #include <cstring>
@@ -48,7 +48,7 @@ RhiOwnedResourceHandle D3D12ResourceService::CreateTextureResource(
     std::wstring_view debugName)
 {
 	if (m_memoryAllocator == nullptr || m_capabilities == nullptr ||
-	    !RhiValidation::ValidateTextureResourceDesc(*m_capabilities, desc, "RHI.D3D12.CreateTextureResource"))
+	    !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc))
 	{
 		return {};
 	}
@@ -389,7 +389,7 @@ RhiOwnedResourceHandle D3D12ResourceService::CreateAliasingTextureResource(
 {
 	D3D12GpuHeapRecord* const ownedMemoryBlock = GetD3D12GpuHeapRecord(memoryBlock);
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr || m_capabilities == nullptr || ownedMemoryBlock == nullptr ||
-	    !RhiValidation::ValidateTextureResourceDesc(*m_capabilities, desc.ResourceDesc, "RHI.D3D12.CreateAliasingTextureResource"))
+	    !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc.ResourceDesc))
 	{
 		return {};
 	}

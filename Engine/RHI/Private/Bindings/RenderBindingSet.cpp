@@ -4,7 +4,7 @@
 
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Descriptors/RhiDescriptorService.h"
-#include "RHI/Public/Validation/RhiValidation.h"
+#include "Validation/RhiContract.h"
 
 #include <utility>
 
@@ -14,7 +14,7 @@ RenderBindingSet::RenderBindingSet(
     const RenderBindingSetDesc& desc) noexcept :
 	m_descriptorService(&descriptorService)
 {
-	if (!RhiValidation::ValidateBindingSetDesc(capabilities, desc, "RHI.RenderBindingSet"))
+	if (!RhiContract::IsBindingSetDescUsable(capabilities, desc))
 	{
 		m_descriptorService = nullptr;
 		return;
@@ -51,7 +51,7 @@ RenderBindingSet& RenderBindingSet::operator=(RenderBindingSet&& other) noexcept
 
 RhiCpuDescriptorHandle RenderBindingSet::GetCpuDescriptorHandle(std::uint32_t descriptorIndex) const noexcept
 {
-	if (!RhiValidation::ValidateBindingSetDescriptorIndex(descriptorIndex, m_descriptorCount, "RHI.RenderBindingSet"))
+	if (!RhiContract::IsBindingSetDescriptorIndexValid(descriptorIndex, m_descriptorCount))
 	{
 		return {};
 	}
@@ -62,7 +62,7 @@ RhiCpuDescriptorHandle RenderBindingSet::GetCpuDescriptorHandle(std::uint32_t de
 
 RhiDescriptorTableBinding RenderBindingSet::GetTableBinding(std::uint32_t descriptorIndex) const noexcept
 {
-	if (!RhiValidation::ValidateBindingSetDescriptorIndex(descriptorIndex, m_descriptorCount, "RHI.RenderBindingSet"))
+	if (!RhiContract::IsBindingSetDescriptorIndexValid(descriptorIndex, m_descriptorCount))
 	{
 		return {};
 	}

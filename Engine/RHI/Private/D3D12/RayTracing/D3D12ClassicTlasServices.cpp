@@ -6,7 +6,7 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
-#include "RHI/Public/Validation/RhiValidation.h"
+#include "Validation/RhiContract.h"
 
 #include <cstring>
 #include <memory>
@@ -54,7 +54,6 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12ClassicTlasServices::GetClas
 	}
 	if (instanceCount == 0)
 	{
-		(void)RhiValidation::ValidateRayTracingInstanceDescs(nullptr, instanceCount, "D3D12.GetClassicTlasPrebuildInfo");
 		return {};
 	}
 
@@ -74,7 +73,6 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12ClassicTlasServices::GetClas
 	    .ResultDataMaxSizeInBytes = nativeInfo.ResultDataMaxSizeInBytes,
 	    .ScratchDataSizeInBytes = nativeInfo.ScratchDataSizeInBytes,
 	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
-	(void)RhiValidation::ValidateRayTracingAccelerationStructurePrebuildInfo(prebuildInfo, "D3D12.GetClassicTlasPrebuildInfo");
 	return prebuildInfo;
 }
 
@@ -84,7 +82,7 @@ RhiOwnedResourceHandle D3D12ClassicTlasServices::CreateClassicTopLevelAccelerati
     std::wstring_view debugName)
 {
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    !RhiValidation::ValidateRayTracingInstanceDescs(instances, instanceCount, "D3D12.CreateClassicTlasInstanceBuffer"))
+	    !RhiContract::IsRayTracingInstanceListUsable(instances, instanceCount))
 	{
 		return {};
 	}

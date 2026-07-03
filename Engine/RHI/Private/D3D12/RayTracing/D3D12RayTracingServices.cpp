@@ -6,7 +6,7 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
-#include "RHI/Public/Validation/RhiValidation.h"
+#include "Validation/RhiContract.h"
 
 #include <cstring>
 #include <d3d12.h>
@@ -67,7 +67,7 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBotto
     const RhiRayTracingGeometryDesc& geometry) const noexcept
 {
 	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
-	    !RhiValidation::ValidateRayTracingGeometryDesc(geometry, "D3D12.GetBottomLevelAccelerationStructurePrebuildInfo"))
+	    !RhiContract::IsRayTracingGeometryDescUsable(geometry))
 	{
 		return {};
 	}
@@ -97,9 +97,6 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBotto
 	    .ResultDataMaxSizeInBytes = nativeInfo.ResultDataMaxSizeInBytes,
 	    .ScratchDataSizeInBytes = nativeInfo.ScratchDataSizeInBytes,
 	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
-	(void)RhiValidation::ValidateRayTracingAccelerationStructurePrebuildInfo(
-	    prebuildInfo,
-	    "D3D12.GetBottomLevelAccelerationStructurePrebuildInfo");
 	return prebuildInfo;
 }
 
@@ -134,7 +131,7 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateScratchBuffer(std::uint64_
 {
 	const std::uint64_t scratchAlignment = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().ScratchBufferByteAlignment : 0;
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    !RhiValidation::ValidateRayTracingBufferSize(sizeInBytes, scratchAlignment, "D3D12.CreateRayTracingScratchBuffer"))
+	    !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, scratchAlignment))
 	{
 		return {};
 	}
@@ -165,7 +162,7 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateAccelerationStructureBuffe
 	const std::uint64_t asAlignment =
 	    m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().AccelerationStructureByteAlignment : 0;
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    !RhiValidation::ValidateRayTracingBufferSize(sizeInBytes, asAlignment, "D3D12.CreateRayTracingAccelerationStructureBuffer"))
+	    !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, asAlignment))
 	{
 		return {};
 	}

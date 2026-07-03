@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "FrameGraphCompiler.h"
 
-#include "FrameGraph/Compiler/FrameGraphCompilerExternalResources.h"
 #include "FrameGraph/Compiler/FrameGraphCompilerRayTracing.h"
 #include "FrameGraph/FrameGraphResourceRegistry.h"
 #include "FrameGraph/FrameGraphResourceStateTracker.h"
@@ -190,7 +189,6 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		const FrameGraphResourceHandle handle = registeredHandles[resourceIndex];
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
 		const FrameGraphResourceRuntimeState& runtimeState = m_resourceStateTracker.GetRuntimeState(handle);
-		FrameGraphCompilerExternalResources::ValidateResourceBoundaryState(entry, runtimeState);
 		m_plan.resources.push_back(
 		    FrameGraphResourceNode{
 		        .index = static_cast<FrameGraphResourceIndex>(resourceIndex),
@@ -280,7 +278,8 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(
 
 bool FrameGraphCompiler::ShouldRestoreFinalState(const FrameGraphResourceNode& resource) const noexcept
 {
-	return FrameGraphCompilerExternalResources::ShouldRestoreFinalState(resource);
+	return resource.finalState != ResourceState::Undefined &&
+	       (resource.ownership != FrameGraphResourceOwnership::Transient || resource.kind == FrameGraphResourceKind::DepthStencil);
 }
 
 FrameGraphResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(FrameGraphResourceNode& resource) noexcept

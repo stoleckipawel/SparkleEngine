@@ -4,7 +4,6 @@
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
-#include "RHI/Public/Validation/RhiValidation.h"
 
 #include <cassert>
 #include <format>
@@ -38,10 +37,6 @@ bool PipelineRuntimeLibrary::LoadShaderPackage(
 	if (request.BindingLayout == nullptr)
 	{
 		outErrorMessage = std::format("Render pass '{}' requested shader package '{}' with no binding layout", request.PassName, FormatPackageId(request.Package));
-		RhiValidation::ReportContractViolation(
-		    "Renderer.Pipeline",
-		    outErrorMessage,
-		    "build a pass parameter layout before loading the cooked shader package");
 		return false;
 	}
 
@@ -63,10 +58,6 @@ bool PipelineRuntimeLibrary::LoadShaderPackage(
 		    loadReport.ElapsedMicroseconds,
 		    loadReport.PackagePath.string(),
 		    outErrorMessage);
-		RhiValidation::ReportContractViolation(
-		    "Renderer.Pipeline",
-		    outErrorMessage,
-		    "recook the shader package, regenerate shader parameter metadata, or fix the pass package declaration so reflection and runtime layout match");
 		return false;
 	}
 
@@ -91,10 +82,6 @@ bool PipelineRuntimeLibrary::ValidatePackageCapabilities(
 		    request.PassName,
 		    FormatPackageId(request.Package),
 		    RhiBackendApiToString(capabilities.BackendApi));
-		RhiValidation::ReportContractViolation(
-		    "Renderer.Pipeline",
-		    outErrorMessage,
-		    "disable the pass, select a non-ray-tracing permutation, or implement and truthfully report backend ray tracing support");
 		return false;
 	}
 
@@ -106,10 +93,6 @@ bool PipelineRuntimeLibrary::ValidatePackageCapabilities(
 		    request.PassName,
 		    FormatPackageId(request.Package),
 		    RhiBackendApiToString(capabilities.BackendApi));
-		RhiValidation::ReportContractViolation(
-		    "Renderer.Pipeline",
-		    outErrorMessage,
-		    "disable the pass, select a non-ray-query permutation, or implement and truthfully report backend inline ray query support");
 		return false;
 	}
 

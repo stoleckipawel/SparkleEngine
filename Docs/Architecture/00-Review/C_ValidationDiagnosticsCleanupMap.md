@@ -1319,6 +1319,7 @@ Before deleting a group:
 
 - [ ] Confirm the group has no active product workflow owner.
 - [ ] Confirm fatal errors still fail loudly after the group is gone.
+- [ ] Identify files/classes/functions touched by the cleanup and decide whether each still has enough responsibility to remain.
 - [ ] Remove build file entries in the same change as deleted files.
 - [ ] Remove docs/config/env vars/settings that only served the deleted group.
 - [ ] Build at least the touched target.
@@ -1330,6 +1331,8 @@ After deleting a group:
 - [ ] Search for deleted file basenames.
 - [ ] Check that source lists do not mention deleted files.
 - [ ] Check that no replacement abstraction was added unless it removed more complexity than it introduced.
+- [ ] Re-scan modified files for leftover shells: empty classes, one-function wrapper files, pass-through helpers, unused methods, and types whose names now overstate their remaining job.
+- [ ] Inline, merge, or delete leftover shells unless they are preserving a clear ownership boundary used by current code.
 
 ## First Cuts I Would Personally Approve
 

@@ -4,7 +4,7 @@
 
 #include "Memory/RhiMemoryTypes.h"
 #include "Resources/RhiResourceDesc.h"
-#include "RHI/Public/Validation/RhiValidation.h"
+#include "Validation/RhiContract.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
@@ -97,7 +97,7 @@ RhiOwnedResourceHandle VulkanClassicTlasServices::CreateClassicTopLevelAccelerat
     std::wstring_view debugName)
 {
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
-	    !RhiValidation::ValidateRayTracingInstanceDescs(instances, instanceCount, "Vulkan.CreateClassicTlasInstanceBuffer"))
+	    !RhiContract::IsRayTracingInstanceListUsable(instances, instanceCount))
 	{
 		return {};
 	}
