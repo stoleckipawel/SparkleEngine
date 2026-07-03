@@ -5,6 +5,7 @@ This folder keeps only active implementation guidance. Old review notes, superse
 ## Renderer Release Readiness
 
 - `Architecture/00-Review/B_RendererReleaseReadinessMap.md`: current renderer map and release-readiness gap audit against AMD/NVIDIA reference repository shapes. It is focused on cleanup, feature completion, and reducing scaffolding before product release.
+- `Architecture/00-Review/C_ValidationDiagnosticsCleanupMap.md`: source-backed staged cleanup map for validation, diagnostics, smoke flows, debug artifacts, and wrapper-only code that can be reviewed for deletion.
 
 ## Review Background
 

@@ -212,10 +212,6 @@ Why reviewers care:
 - Routine logs make the renderer look louder than its feature code and increase maintenance surface without improving shipped behavior.
 - Keeping failure-path warnings/errors while deleting trace/info chatter makes the runtime easier to read and keeps review focus on product paths.
 
-Remaining cleanup:
-
-- `FrameGraphPlanDiagnostics` still contains explicit plan-dump logging. Keep it only as an intentionally invoked graph inspection utility, or replace it with a structured artifact if product release no longer needs it.
-
 ### P1. Reference Path Is Architecturally Better Than It Is Algorithmically Complete
 
 Evidence:
