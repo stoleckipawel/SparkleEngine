@@ -7,14 +7,12 @@
 #include "Frame/RayTracing/RayTracingSceneFrameData.h"
 #include "Frame/RayTracing/RayTracingHitDataFrameData.h"
 #include "Frame/Geometry/SkinningFrameData.h"
-#include "RayTracing/Scene/RayTracingSceneFramePlan.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/RenderSceneData.h"
 
 struct SPARKLE_RENDERER_API FrameContext
 {
 	RenderSceneData sceneData = {};
-	RayTracingSceneFramePlan rayTracingFramePlan = {};
 	RayTracingSceneFrameData rayTracingScene = {};
 	RenderViewData mainView = {};
 	FrameLightingData lighting = {};

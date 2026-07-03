@@ -2,7 +2,6 @@
 #include "Frame/Geometry/MeshInstanceFrameData.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
-#include "RayTracing/Scene/RayTracingSceneFramePlan.h"
 #include "SceneData/RenderSceneData.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -43,8 +42,7 @@ MeshInstanceFrameData& MeshInstanceFrameData::operator=(MeshInstanceFrameData&& 
 
 MeshInstanceFrameData MeshInstanceFrameData::Build(
     RenderHardwareInterface& renderHardwareInterface,
-    const RenderSceneData& sceneData,
-    const RayTracingSceneFramePlan* rayTracingFramePlan)
+    const RenderSceneData& sceneData)
 {
 	if (sceneData.meshInstances.empty())
 	{
@@ -65,11 +63,7 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(
 		                     ? MeshInstanceFlag_Skinned
 		                     : 0u,
 		        .JointMatrixOffset = draw.Skinning.JointMatrixOffset,
-		        .PackedDebugData =
-		            rayTracingFramePlan != nullptr
-		                ? rayTracingFramePlan->MeshInstanceDebugData.GetPackedDebugVisualizationData(
-		                      static_cast<std::uint32_t>(instances.size()))
-		                : 0u});
+		        .DebugData = static_cast<std::uint32_t>(instances.size())});
 	}
 
 	RhiOwnedResourceHandle buffer = {};

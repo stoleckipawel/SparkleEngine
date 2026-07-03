@@ -12,13 +12,6 @@
 struct MeshDraw;
 struct RenderSceneData;
 
-inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugPartitionMask = 0x000FFFFFu;
-inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugActivityShift = 20u;
-inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugDynamicInstance = 1u << 27u;
-inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugDirtyTransform = 1u << 28u;
-inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugMovedPartition = 1u << 29u;
-inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugGlobalPartition = 1u << 30u;
-inline constexpr std::uint32_t kRayTracingPtlasPartitionDebugInvalid = 1u << 31u;
 inline constexpr std::uint32_t kRayTracingPtlasInvalidEntryIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 struct RayTracingPtlasPartitionPlannerConfig final
@@ -60,19 +53,12 @@ struct RayTracingPtlasPartitionValidation final
 	bool Valid = true;
 };
 
-struct RayTracingPtlasPartitionDebugVisualization final
-{
-	std::uint32_t PackedData = 0;
-	std::uint32_t ActivityLevel = 0;
-};
-
 struct RayTracingPtlasPartitionEntry final
 {
 	RayTracingPtlasPartitionEntryIdentity Identity;
 	RayTracingPtlasPartitionAssignment Assignment;
 	RayTracingPtlasPartitionUpdateState Update;
 	RayTracingPtlasPartitionValidation Validation;
-	RayTracingPtlasPartitionDebugVisualization DebugVisualization;
 };
 
 struct RayTracingPtlasPartitionPlanIndices final
@@ -102,7 +88,6 @@ struct RayTracingPtlasPartitionPlanValidation final
 {
 	bool HasDuplicateStableIndices = false;
 	bool HasPartitionOverflow = false;
-	bool HasInvalidPartition = false;
 };
 
 struct RayTracingPtlasPartitionPlan final
@@ -112,7 +97,6 @@ struct RayTracingPtlasPartitionPlan final
 	RayTracingPtlasPartitionPlanValidation Validation;
 
 	const RayTracingPtlasPartitionEntry* FindByRenderInstance(std::uint32_t renderInstanceIndex) const noexcept;
-	std::uint32_t GetPackedDebugVisualizationDataForRenderInstance(std::uint32_t renderInstanceIndex) const noexcept;
 };
 
 class RayTracingPtlasPartitionPlanner final
@@ -146,7 +130,6 @@ class RayTracingPtlasPartitionPlanner final
 	    const DirectX::XMFLOAT4X4& previous,
 	    float epsilon) noexcept;
 	static bool IsGlobalPartitionEligible(const MeshDraw& draw) noexcept;
-	static std::uint32_t PackDebugVisualizationData(const RayTracingPtlasPartitionEntry& entry) noexcept;
 
 	std::vector<PreviousInstanceState> m_previousInstances;
 	std::vector<PartitionRuntimeState> m_partitionStates;

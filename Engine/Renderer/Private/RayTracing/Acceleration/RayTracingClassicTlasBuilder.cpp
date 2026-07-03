@@ -128,8 +128,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 		stats.PtlasPlanner.ActivePartitionCount = partitionPlan->Counts.ActivePartitionCount;
 		stats.PtlasPlanner.MaxPartitionActivityCount = partitionPlan->Counts.MaxPartitionActivityCount;
 		stats.PtlasPlanner.DuplicateStableIndexCount = partitionPlan->Counts.DuplicateStableIndexCount;
-		stats.PtlasPlanner.Overflow =
-		    partitionPlan->Validation.HasPartitionOverflow || partitionPlan->Validation.HasInvalidPartition;
+		stats.PtlasPlanner.Overflow = partitionPlan->Validation.HasPartitionOverflow;
 	}
 	instances.reserve(sceneData.meshInstances.size());
 	{

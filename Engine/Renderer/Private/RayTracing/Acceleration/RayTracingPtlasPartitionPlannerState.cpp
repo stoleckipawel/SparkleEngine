@@ -48,31 +48,3 @@ bool RayTracingPtlasPartitionPlanner::IsGlobalPartitionEligible(const MeshDraw& 
 {
 	return draw.Geometry.MeshKind != RenderMeshKind::Static;
 }
-
-std::uint32_t RayTracingPtlasPartitionPlanner::PackDebugVisualizationData(const RayTracingPtlasPartitionEntry& entry) noexcept
-{
-	std::uint32_t packedDebugVisualizationData = entry.Assignment.PartitionId & kRayTracingPtlasPartitionDebugPartitionMask;
-	packedDebugVisualizationData |=
-	    (entry.DebugVisualization.ActivityLevel & 0xFFu) << kRayTracingPtlasPartitionDebugActivityShift;
-	if (entry.Update.DirtyTransform)
-	{
-		packedDebugVisualizationData |= kRayTracingPtlasPartitionDebugDirtyTransform;
-	}
-	if (entry.Update.MovedPartition)
-	{
-		packedDebugVisualizationData |= kRayTracingPtlasPartitionDebugMovedPartition;
-	}
-	if (entry.Update.UsesGlobalPartition)
-	{
-		packedDebugVisualizationData |= kRayTracingPtlasPartitionDebugGlobalPartition;
-	}
-	if (entry.Update.GlobalPartitionEligible)
-	{
-		packedDebugVisualizationData |= kRayTracingPtlasPartitionDebugDynamicInstance;
-	}
-	if (!entry.Validation.Valid)
-	{
-		packedDebugVisualizationData |= kRayTracingPtlasPartitionDebugInvalid;
-	}
-	return packedDebugVisualizationData;
-}

@@ -24,14 +24,14 @@ RayTracingTopLevelScenePlanner::RayTracingTopLevelScenePlanner() noexcept :
 
 RayTracingTopLevelScenePlanner::~RayTracingTopLevelScenePlanner() noexcept = default;
 
-RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(
+void RayTracingTopLevelScenePlanner::PlanFrame(
     const RenderSceneData& sceneData,
     const DirectX::XMFLOAT3& cameraPosition,
     bool buildPartitionedTlasUpdateStream) noexcept
 {
 	if (m_impl == nullptr)
 	{
-		return {};
+		return;
 	}
 
 	m_impl->CurrentPartitionPlan = m_impl->PartitionPlanner.Build(
@@ -48,15 +48,6 @@ RayTracingSceneFramePlan RayTracingTopLevelScenePlanner::PlanFrame(
 	    buildPartitionedTlasUpdateStream ? m_impl->LogicalUpdateStream.Build(sceneData, m_impl->CurrentPartitionPlan)
 	                                     : RayTracingPtlasLogicalUpdateStreamResult{};
 	m_impl->LastRenderInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
-
-	RayTracingSceneFramePlan framePlan{};
-	framePlan.MeshInstanceDebugData.PackedDebugVisualizationDataByRenderInstance.reserve(
-	    m_impl->CurrentPartitionPlan.Indices.Entries.size());
-	for (const RayTracingPtlasPartitionEntry& entry : m_impl->CurrentPartitionPlan.Indices.Entries)
-	{
-		framePlan.MeshInstanceDebugData.PackedDebugVisualizationDataByRenderInstance.push_back(entry.DebugVisualization.PackedData);
-	}
-	return framePlan;
 }
 
 const RayTracingPtlasPartitionPlan* RayTracingTopLevelScenePlanner::GetCurrentPartitionPlan() const noexcept

@@ -14,6 +14,6 @@
 		nointerpolation uint InstanceId : TEXCOORD5;
 		float4 ClipPosition : TEXCOORD6;
 		float4 PrevClipPosition : TEXCOORD7;
-		nointerpolation uint PackedDebugData : TEXCOORD8;
+		nointerpolation uint DebugData : TEXCOORD8;
 	};
 }  // namespace VS

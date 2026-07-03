@@ -223,9 +223,11 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	plan.Indices.RenderInstanceToEntry.assign(sceneData.meshInstances.size(), kRayTracingPtlasInvalidEntryIndex);
 
 	const std::uint64_t gridPartitionCount64 = ComputeGridPartitionCount(config.PartitionsPerAxis, config.PartitionTopology);
-	plan.Validation.HasPartitionOverflow = gridPartitionCount64 > kRayTracingPtlasPartitionDebugPartitionMask;
-	const bool hasGlobalPartition = config.EnableGlobalPartition && RequiresGlobalPartition(config.PartitionUpdateMode) &&
-	                                !plan.Validation.HasPartitionOverflow;
+	const bool requiresGlobalPartition = config.EnableGlobalPartition && RequiresGlobalPartition(config.PartitionUpdateMode);
+	const std::uint64_t maxPartitionCount = static_cast<std::uint64_t>((std::numeric_limits<std::uint32_t>::max)());
+	plan.Validation.HasPartitionOverflow =
+	    gridPartitionCount64 > maxPartitionCount || (requiresGlobalPartition && gridPartitionCount64 == maxPartitionCount);
+	const bool hasGlobalPartition = requiresGlobalPartition && !plan.Validation.HasPartitionOverflow;
 	plan.Counts.GridPartitionCount =
 	    plan.Validation.HasPartitionOverflow ? 0u : static_cast<std::uint32_t>(gridPartitionCount64);
 	plan.Counts.PartitionCount = plan.Counts.GridPartitionCount + (hasGlobalPartition ? 1u : 0u);
@@ -388,12 +390,6 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		const std::uint32_t previousPartitionId = observed.PreviousPartitionId;
 		const bool movedPartition = previousPartitionId != partitionId;
 		const bool dirtyTransform = observed.DirtyTransform;
-		const std::uint32_t partitionActivityCount =
-		    observed.LocalPartitionId < m_partitionStates.size() ? m_partitionStates[observed.LocalPartitionId].ActivityCountThisFrame : 0u;
-		const std::uint32_t activityLevel =
-		    plan.Counts.MaxPartitionActivityCount > 0
-		        ? (std::min)(255u, (partitionActivityCount * 255u) / plan.Counts.MaxPartitionActivityCount)
-		        : 0u;
 
 		RayTracingPtlasPartitionEntry entry{
 		    .Identity =
@@ -414,11 +410,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		    .Validation =
 		        RayTracingPtlasPartitionValidation{
 		            .DuplicateStableIndex = observed.DuplicateStableIndex,
-		            .Valid = !plan.Validation.HasPartitionOverflow},
-		    .DebugVisualization =
-		        RayTracingPtlasPartitionDebugVisualization{
-		            .PackedData = 0,
-		            .ActivityLevel = activityLevel}};
+		            .Valid = !plan.Validation.HasPartitionOverflow}};
 
 		if (entry.Validation.DuplicateStableIndex)
 		{
@@ -427,11 +419,6 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 			entry.Validation.Valid = false;
 		}
 
-		if (entry.Assignment.PartitionId > kRayTracingPtlasPartitionDebugPartitionMask)
-		{
-			plan.Validation.HasInvalidPartition = true;
-			entry.Validation.Valid = false;
-		}
 		if (entry.Update.DirtyTransform)
 		{
 			++plan.Counts.DirtyTransformCount;
@@ -449,7 +436,6 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 			++plan.Counts.GlobalPartitionInstanceCount;
 		}
 
-		entry.DebugVisualization.PackedData = PackDebugVisualizationData(entry);
 		plan.Indices.RenderInstanceToEntry[observed.RenderInstanceIndex] = static_cast<std::uint32_t>(plan.Indices.Entries.size());
 		plan.Indices.Entries.push_back(entry);
 		nextPrevious[observed.StableIndex] = PreviousInstanceState{

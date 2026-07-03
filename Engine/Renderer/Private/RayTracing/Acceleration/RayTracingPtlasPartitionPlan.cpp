@@ -12,13 +12,3 @@ const RayTracingPtlasPartitionEntry* RayTracingPtlasPartitionPlan::FindByRenderI
 	const std::uint32_t entryIndex = Indices.RenderInstanceToEntry[renderInstanceIndex];
 	return entryIndex != kRayTracingPtlasInvalidEntryIndex && entryIndex < Indices.Entries.size() ? &Indices.Entries[entryIndex] : nullptr;
 }
-
-std::uint32_t RayTracingPtlasPartitionPlan::GetPackedDebugVisualizationDataForRenderInstance(
-    std::uint32_t renderInstanceIndex) const noexcept
-{
-	if (const RayTracingPtlasPartitionEntry* entry = FindByRenderInstance(renderInstanceIndex))
-	{
-		return entry->DebugVisualization.PackedData;
-	}
-	return kRayTracingPtlasPartitionDebugInvalid;
-}

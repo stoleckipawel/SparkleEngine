@@ -52,13 +52,6 @@ namespace
 			case RenderViewMode::IndirectSubsurface:
 				return UiUtil::EditorIcon::ViewDirectSubsurface;
 			case RenderViewMode::InstanceGroups:
-			case RenderViewMode::RayTracingPartitions:
-			case RenderViewMode::RayTracingPartitionUpdates:
-			case RenderViewMode::RayTracingInstanceMovement:
-			case RenderViewMode::RayTracingGpuDrivenUpdates:
-			case RenderViewMode::RayTracingTopLevelMode:
-			case RenderViewMode::RayTracingNativeOperations:
-			case RenderViewMode::RayTracingProviderStatus:
 				return UiUtil::EditorIcon::ViewMode;
 			case RenderViewMode::Count:
 				break;
@@ -123,20 +116,6 @@ const char* ViewportTopPanel::GetViewModeLabel(RenderViewMode viewMode) noexcept
 			return "Indirect Subsurface";
 		case RenderViewMode::InstanceGroups:
 			return "Instance Groups";
-		case RenderViewMode::RayTracingPartitions:
-			return "RT AS Partitions";
-		case RenderViewMode::RayTracingPartitionUpdates:
-			return "RT AS Partition Activity";
-		case RenderViewMode::RayTracingInstanceMovement:
-			return "RT AS Instance Movement";
-		case RenderViewMode::RayTracingGpuDrivenUpdates:
-			return "RT AS GPU Updates";
-		case RenderViewMode::RayTracingTopLevelMode:
-			return "RT Top Level Mode";
-		case RenderViewMode::RayTracingNativeOperations:
-			return "RT AS Native Operations";
-		case RenderViewMode::RayTracingProviderStatus:
-			return "RT Provider Status";
 		case RenderViewMode::Count:
 			break;
 	}
@@ -152,10 +131,6 @@ void ViewportTopPanel::DrawViewModeCategory(const char* label) noexcept
 	if (std::strcmp(label, "Lighting") == 0)
 	{
 		icon = UiUtil::EditorIcon::Light;
-	}
-	else if (std::strcmp(label, "Ray Tracing Acceleration Structure") == 0)
-	{
-		icon = UiUtil::EditorIcon::ViewMode;
 	}
 	const std::string categoryLabel = UiUtil::MakeIconLabel(icon, label);
 	ImGui::TextDisabled("%s", categoryLabel.c_str());
@@ -230,17 +205,6 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 		DrawViewModeOption(RenderViewMode::IndirectDiffuse, currentViewMode);
 		DrawViewModeOption(RenderViewMode::IndirectSpecular, currentViewMode);
 		DrawViewModeOption(RenderViewMode::IndirectSubsurface, currentViewMode);
-		ImGui::Unindent(8.0f);
-
-		DrawViewModeCategory("Ray Tracing Acceleration Structure");
-		ImGui::Indent(8.0f);
-		DrawViewModeOption(RenderViewMode::RayTracingPartitions, currentViewMode);
-		DrawViewModeOption(RenderViewMode::RayTracingPartitionUpdates, currentViewMode);
-		DrawViewModeOption(RenderViewMode::RayTracingInstanceMovement, currentViewMode);
-		DrawViewModeOption(RenderViewMode::RayTracingGpuDrivenUpdates, currentViewMode);
-		DrawViewModeOption(RenderViewMode::RayTracingTopLevelMode, currentViewMode);
-		DrawViewModeOption(RenderViewMode::RayTracingNativeOperations, currentViewMode);
-		DrawViewModeOption(RenderViewMode::RayTracingProviderStatus, currentViewMode);
 		ImGui::Unindent(8.0f);
 
 		ImGui::EndCombo();

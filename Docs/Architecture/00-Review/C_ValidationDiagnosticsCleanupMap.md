@@ -476,16 +476,21 @@ Files:
 | `Engine/Editor/Private/Panels/ViewportTopPanel.cpp` | Trim labels/tooltips/menu options. |
 | `Engine/Assets/Shaders/Debug/ViewModes.hlsli` | Trim debug switches/functions. |
 | `Engine/Assets/Shaders/Debug/PTLAS/RayTracingPtlasDebugVisualization.hlsli` | Delete if PTLAS debug views are cut. |
-| `Engine/Assets/Shaders/RayTracing/RayTracingHitDebug.hlsli` | Delete if ray tracing hit debug views are cut. |
-| `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuseDebug.hlsli` | Delete if indirect diffuse debug view is cut. |
-| `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecularDebug.hlsli` | Delete if indirect specular debug view is cut. |
-| `Engine/Assets/Shaders/Debug/RayTracingDebugModes.hlsli` | Delete or trim if ray tracing debug modes are cut. |
+| `Engine/Assets/Shaders/Debug/InstanceView.hlsli` | Preserve as the narrow Instance Groups viewport helper. |
+| `Engine/Assets/Shaders/RayTracing/RayTracingHitDebug.hlsli` | Preserve while indirect diffuse/specular debug paths use it. |
+| `Engine/Assets/Shaders/Passes/Deferred/IndirectDiffuseDebug.hlsli` | Preserve while indirect diffuse debug CVar is supported. |
+| `Engine/Assets/Shaders/Passes/Deferred/IndirectSpecularDebug.hlsli` | Preserve while indirect specular debug CVar is supported. |
+| `Engine/Assets/Shaders/Debug/RayTracingDebugModes.hlsli` | Preserve while indirect diffuse/specular debug paths use it. |
+| `Engine/Renderer/Private/RayTracing/Scene/RayTracingSceneFramePlan.*` | Delete if it only carries viewport visualization payloads. |
+| `Engine/RHI/Public/Resources/MeshInstanceShaderData.h` | Preserve a small per-instance `DebugData` lane for current and future lightweight debug views. |
 
 Why:
 
 - View mode state is duplicated across C++ enum, HLSL constants, smoke parser/name table, and editor menu labels/tooltips.
 - PTLAS and ray tracing debug modes are useful while building features but heavy for normal users.
 - Debug shader code can quietly force rendering passes, descriptors, and UI to carry extra compatibility surface.
+- The post-cleanup shell audit must remove data plumbing that exists only to feed deleted debug shaders.
+- Instance Groups is a useful low-cost view mode and can use the generic mesh-instance `DebugData` lane without pulling PTLAS machinery back in.
 
 Recommended keep set:
 
@@ -494,9 +499,10 @@ Recommended keep set:
 | Lit | Yes | Core viewport. |
 | Wireframe | Yes | Basic debugging, low cost. |
 | GBuffer normals/albedo/roughness/metallic/depth | Maybe | Useful for renderer work, but can be trimmed if the editor should be lean. |
-| Direct/indirect diffuse/specular debug | Maybe delete | Feature-debug specific. |
-| Instance groups | Maybe delete | Narrow debugging value. |
-| Ray tracing hit/PTLAS debug modes | Delete unless actively debugging PTLAS | Largest duplication and shader surface. |
+| Direct/indirect diffuse/specular viewport modes | Yes for now | Still useful buffer visualization with active lighting targets. |
+| Indirect diffuse/specular shader debug CVars | Preserve for now | Separate feature-debug path still included by active passes. |
+| Instance groups | Yes | Useful scene/instancing inspection, small shader and UI footprint. |
+| PTLAS viewport debug modes | Delete | Largest duplicated menu/shader/data-upload surface. |
 
 Cleanup steps:
 
@@ -506,13 +512,18 @@ Cleanup steps:
 4. Delete unused debug shaders and includes.
 5. Delete smoke parser/name table through DG-02.
 6. Re-cook shaders.
+7. Re-scan touched classes and delete shells left behind by removed debug views.
 
 Acceptance criteria:
 
 - [ ] C++ enum and HLSL constants match exactly.
 - [ ] Editor viewport menu contains only preserved modes.
 - [ ] Shader cook succeeds with deleted debug files removed from includes/registrations.
-- [ ] `rg "PtlasDebug|RayTracingHitDebug|IndirectSpecularDebug|IndirectDiffuseDebug"` returns only intentionally preserved references.
+- [ ] `InstanceView` references are limited to the Instance Groups viewport path.
+- [ ] Mesh instance `DebugData` is populated intentionally and consumed by an active debug view, not left as unused ABI padding.
+- [ ] `rg "PtlasDebug|PackedDebugData|RayTracingSceneFramePlan"` returns no live engine/shader references.
+- [ ] `rg "RayTracingHitDebug|IndirectSpecularDebug|IndirectDiffuseDebug"` returns only intentionally preserved indirect-lighting debug references.
+- [ ] Touched classes and structs are re-audited so one-function or empty shells are deleted or folded into their caller.
 
 Preserve option:
 

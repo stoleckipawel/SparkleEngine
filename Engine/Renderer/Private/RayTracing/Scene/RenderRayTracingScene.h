@@ -2,7 +2,6 @@
 
 #include "Frame/RayTracing/RayTracingSceneFrameData.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
-#include "RayTracing/Scene/RayTracingSceneFramePlan.h"
 #include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 
 #include <memory>
@@ -33,7 +32,7 @@ class RenderRayTracingScene final
 	RenderRayTracingScene(RenderRayTracingScene&&) = delete;
 	RenderRayTracingScene& operator=(RenderRayTracingScene&&) = delete;
 
-	RayTracingSceneFramePlan PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept;
+	void PlanFrame(const RenderSceneData& sceneData, const DirectX::XMFLOAT3& cameraPosition) noexcept;
 	RayTracingSceneFrameData Prepare(const RenderSceneData& sceneData) noexcept;
 	void Build(
 	    RenderCommandContext& cmd,

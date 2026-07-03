@@ -47,7 +47,7 @@ struct MeshInstanceData
 	uint MaterialSlot;
 	uint Flags;
 	uint JointMatrixOffset;
-	uint PackedDebugData;
+	uint DebugData;
 };
 
 static const uint MeshInstanceFlag_Skinned = 1u << 0u;

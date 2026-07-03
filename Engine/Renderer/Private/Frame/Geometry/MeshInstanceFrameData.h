@@ -5,7 +5,6 @@
 #include "RHI/Public/Resources/RhiResourceView.h"
 
 class RenderHardwareInterface;
-struct RayTracingSceneFramePlan;
 struct RenderSceneData;
 
 class MeshInstanceFrameData final
@@ -24,8 +23,7 @@ class MeshInstanceFrameData final
 
 	static MeshInstanceFrameData Build(
 	    RenderHardwareInterface& renderHardwareInterface,
-	    const RenderSceneData& sceneData,
-	    const RayTracingSceneFramePlan* rayTracingFramePlan = nullptr);
+	    const RenderSceneData& sceneData);
 
   private:
 	void Release() noexcept;

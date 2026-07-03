@@ -60,15 +60,13 @@ namespace RayTracingPartitionedTlasStrategyDetails
 		stats.PtlasPlanner.ActivePartitionCount = partitionPlan->Counts.ActivePartitionCount;
 		stats.PtlasPlanner.MaxPartitionActivityCount = partitionPlan->Counts.MaxPartitionActivityCount;
 		stats.PtlasPlanner.DuplicateStableIndexCount = partitionPlan->Counts.DuplicateStableIndexCount;
-		stats.PtlasPlanner.Overflow =
-		    partitionPlan->Validation.HasPartitionOverflow || partitionPlan->Validation.HasInvalidPartition;
+		stats.PtlasPlanner.Overflow = partitionPlan->Validation.HasPartitionOverflow;
 	}
 
 	bool HasStructuralPartitionValidationFailure(const RayTracingPtlasPartitionPlan* partitionPlan) noexcept
 	{
 		return partitionPlan != nullptr &&
-		       (partitionPlan->Validation.HasDuplicateStableIndices || partitionPlan->Validation.HasPartitionOverflow ||
-		        partitionPlan->Validation.HasInvalidPartition);
+		       (partitionPlan->Validation.HasDuplicateStableIndices || partitionPlan->Validation.HasPartitionOverflow);
 	}
 
 	std::uint64_t ResolveStableInstanceFingerprint(const RenderSceneData& sceneData) noexcept

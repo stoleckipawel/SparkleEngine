@@ -21,12 +21,5 @@ enum class RenderViewMode : std::uint32_t
 	IndirectSpecular,
 	IndirectSubsurface,
 	InstanceGroups,
-	RayTracingPartitions,
-	RayTracingPartitionUpdates,
-	RayTracingInstanceMovement,
-	RayTracingGpuDrivenUpdates,
-	RayTracingTopLevelMode,
-	RayTracingNativeOperations,
-	RayTracingProviderStatus,
 	Count
 };

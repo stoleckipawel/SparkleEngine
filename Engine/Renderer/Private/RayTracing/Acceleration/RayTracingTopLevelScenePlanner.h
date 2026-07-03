@@ -2,7 +2,6 @@
 
 #include "RayTracing/Acceleration/RayTracingClassicTlasBuilder.h"
 #include "RayTracing/Diagnostics/RayTracingPtlasGpuUpdateMetrics.h"
-#include "RayTracing/Scene/RayTracingSceneFramePlan.h"
 
 #include <cstdint>
 #include <memory>
@@ -50,7 +49,7 @@ class RayTracingTopLevelScenePlanner final
 	RayTracingTopLevelScenePlanner(RayTracingTopLevelScenePlanner&&) = delete;
 	RayTracingTopLevelScenePlanner& operator=(RayTracingTopLevelScenePlanner&&) = delete;
 
-	RayTracingSceneFramePlan PlanFrame(
+	void PlanFrame(
 	    const RenderSceneData& sceneData,
 	    const DirectX::XMFLOAT3& cameraPosition,
 	    bool buildPartitionedTlasUpdateStream) noexcept;
