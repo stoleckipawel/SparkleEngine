@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "Renderer.h"
 
-#include "Diagnostics/RendererSmokeDiagnosticsBuilder.h"
 #include "FramePipeline/FramePipeline.h"
 #include "Host/RendererSystemRoot.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -69,12 +68,6 @@ TextureDiagnosticsSnapshot Renderer::CaptureTextureDiagnostics() const
 RendererMemoryDiagnosticsSnapshot Renderer::CaptureMemoryDiagnostics() const
 {
 	return m_systemRoot->CaptureMemoryDiagnostics();
-}
-
-RendererSmokeDiagnosticsSnapshot Renderer::CaptureSmokeDiagnostics() const
-{
-	return m_systemRoot != nullptr ? RendererSmokeDiagnosticsBuilder::Build(*m_systemRoot, m_framePipeline.get()) :
-	                                RendererSmokeDiagnosticsSnapshot{};
 }
 
 void Renderer::PrepareHostFrame() noexcept

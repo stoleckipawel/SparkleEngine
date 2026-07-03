@@ -28,7 +28,6 @@ namespace SparkleLauncher
 		const QString& LaunchStartupLevel() const;
 		const QString& LaunchVSync() const;
 		const QString& LaunchHighPerformanceAdapter() const;
-		const QString& LaunchMeshAutoBatching() const;
 		const QString& LaunchCommandLineArguments() const;
 		const QString& LaunchCVars() const;
 		const QString& FormatMode() const;
@@ -68,7 +67,6 @@ namespace SparkleLauncher
 		void SetLaunchStartupLevel(const QString& levelName);
 		void SetLaunchVSync(const QString& value);
 		void SetLaunchHighPerformanceAdapter(const QString& value);
-		void SetLaunchMeshAutoBatching(const QString& value);
 		void SetLaunchCommandLineArguments(const QString& arguments);
 		void SetLaunchCVars(const QString& cvars);
 		void SetFormatMode(const QString& mode);
@@ -99,7 +97,6 @@ namespace SparkleLauncher
 		QString m_launchStartupLevel = "Sponza";
 		QString m_launchVSync;
 		QString m_launchHighPerformanceAdapter;
-		QString m_launchMeshAutoBatching;
 		QString m_launchCommandLineArguments;
 		QString m_launchCVars;
 		QString m_formatMode = "check";

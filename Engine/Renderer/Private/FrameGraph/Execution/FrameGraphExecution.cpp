@@ -46,9 +46,6 @@ void FrameGraph::Execute(
     const PassRuntimeServices& passRuntimeServices,
     FrameExecutionDiagnostics& frameDiagnostics) const
 {
-	m_lastUnresolvedBarrierWarningCount = 0;
-	m_lastMissingExecutionBindingCount = 0;
-
 	static constexpr auto kFrameGraphExecuteName = Diagnostics::DiagnosticName{"Renderer.FrameGraph.Execute"};
 	FrameGraphExecutionDiagnostics graphDiagnostics(frameDiagnostics, cmd);
 	if (graphDiagnostics.ShouldEmitDetailedMarkers())
@@ -115,7 +112,6 @@ void FrameGraph::ValidateExecutionBindings(const FrameGraphPlan& plan) const noe
 				continue;
 			}
 
-			RecordMissingExecutionBinding();
 			FailMissingExecutionBinding(
 			    passRecord.passName,
 			    resource,

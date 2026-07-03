@@ -33,11 +33,6 @@ namespace SparkleLauncher
 			request.Arguments.push_back("--cvar");
 			request.Arguments.push_back("r.PreferHighPerformanceAdapter=" + plan.Request.PreferHighPerformanceAdapter);
 		}
-		if (!plan.Request.MeshAutoBatching.empty())
-		{
-			request.Arguments.push_back("--cvar");
-			request.Arguments.push_back("r.MeshAutoBatching=" + plan.Request.MeshAutoBatching);
-		}
 		for (const std::string& customArgument : plan.Request.CustomArguments)
 		{
 			if (!customArgument.empty())

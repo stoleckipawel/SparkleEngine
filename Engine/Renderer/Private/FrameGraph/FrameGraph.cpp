@@ -7,8 +7,6 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
-#include <algorithm>
-
 static const auto g_frameGraphLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window, RenderViewportExtent sceneExtent) :
@@ -51,39 +49,6 @@ void FrameGraph::ExportTexture(FrameGraphTextureHandle handle, std::string_view 
 	    FrameGraphProductRoot{
 	        .handle = resourceHandle,
 	        .name = std::string(name)});
-}
-
-std::uint32_t FrameGraph::GetCompiledTransientResourceCount() const noexcept
-{
-	return static_cast<std::uint32_t>(std::count_if(
-	    m_compiledPlan.resources.begin(),
-	    m_compiledPlan.resources.end(),
-	    [](const FrameGraphResourceNode& resource) noexcept
-	    {
-		    return resource.ownership == FrameGraphResourceOwnership::Transient;
-	    }));
-}
-
-std::uint32_t FrameGraph::GetCompiledImportedResourceCount() const noexcept
-{
-	return static_cast<std::uint32_t>(std::count_if(
-	    m_compiledPlan.resources.begin(),
-	    m_compiledPlan.resources.end(),
-	    [](const FrameGraphResourceNode& resource) noexcept
-	    {
-		    return resource.ownership == FrameGraphResourceOwnership::Imported;
-	    }));
-}
-
-std::uint32_t FrameGraph::GetCompiledPersistentResourceCount() const noexcept
-{
-	return static_cast<std::uint32_t>(std::count_if(
-	    m_compiledPlan.resources.begin(),
-	    m_compiledPlan.resources.end(),
-	    [](const FrameGraphResourceNode& resource) noexcept
-	    {
-		    return resource.ownership == FrameGraphResourceOwnership::ExternalPersistent;
-	    }));
 }
 
 ResourceState FrameGraph::GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept

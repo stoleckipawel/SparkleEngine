@@ -10,7 +10,6 @@
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "RHI/Public/Resources/PerFrameConstantBufferData.h"
-#include "Renderer/Public/Diagnostics/RendererDiagnosticsSnapshot.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Viewport/ViewportContracts.h"
 
@@ -49,13 +48,6 @@ class FramePipeline final
 	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
 	void EndViewportPresentation(RenderOutputFlags output) noexcept;
 	RhiCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
-	std::uint32_t GetLastUnresolvedBarrierWarningCount() const noexcept;
-	std::uint32_t GetLastMissingExecutionBindingCount() const noexcept;
-	std::uint32_t GetCompiledTransientResourceCount() const noexcept;
-	std::uint32_t GetCompiledImportedResourceCount() const noexcept;
-	std::uint32_t GetCompiledPersistentResourceCount() const noexcept;
-	std::uint32_t GetAvailableViewportProductCount() const noexcept;
-	RendererFrameTimingDiagnosticsSnapshot CaptureFrameTimingDiagnosticsSnapshot() const;
 
   private:
 	void InitializeFrameGraph() noexcept;

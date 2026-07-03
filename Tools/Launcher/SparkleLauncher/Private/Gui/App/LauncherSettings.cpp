@@ -123,11 +123,6 @@ namespace SparkleLauncher
 		return m_launchHighPerformanceAdapter;
 	}
 
-	const QString& LauncherSettings::LaunchMeshAutoBatching() const
-	{
-		return m_launchMeshAutoBatching;
-	}
-
 	const QString& LauncherSettings::LaunchCommandLineArguments() const
 	{
 		return m_launchCommandLineArguments;
@@ -359,16 +354,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_launchHighPerformanceAdapter = value;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetLaunchMeshAutoBatching(const QString& value)
-	{
-		if (m_launchMeshAutoBatching == value)
-		{
-			return;
-		}
-		m_launchMeshAutoBatching = value;
 		emit SettingsChanged();
 	}
 

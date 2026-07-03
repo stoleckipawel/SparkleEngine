@@ -56,7 +56,6 @@ namespace SparkleLauncher
 		QString LaunchStartupLevel;
 		QString LaunchVSync;
 		QString LaunchHighPerformanceAdapter;
-		QString LaunchMeshAutoBatching;
 		QString LaunchCommandLineArguments;
 		QString LaunchCVars;
 		QString FormatMode = "check";

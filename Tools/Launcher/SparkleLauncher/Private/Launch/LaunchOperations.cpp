@@ -217,10 +217,6 @@ namespace SparkleLauncher
 		{
 			plan.Operation.Inputs.push_back({"r.PreferHighPerformanceAdapter", plan.Request.PreferHighPerformanceAdapter});
 		}
-		if (!plan.Request.MeshAutoBatching.empty())
-		{
-			plan.Operation.Inputs.push_back({"r.MeshAutoBatching", plan.Request.MeshAutoBatching});
-		}
 		if (!plan.Request.CustomArguments.empty())
 		{
 			plan.Operation.Inputs.push_back({"customArguments", std::to_string(plan.Request.CustomArguments.size())});
@@ -276,10 +272,6 @@ namespace SparkleLauncher
 		if (!plan.Request.PreferHighPerformanceAdapter.empty())
 		{
 			AddPlannedEffect(plan, "Set r.PreferHighPerformanceAdapter=" + plan.Request.PreferHighPerformanceAdapter + ".");
-		}
-		if (!plan.Request.MeshAutoBatching.empty())
-		{
-			AddPlannedEffect(plan, "Set r.MeshAutoBatching=" + plan.Request.MeshAutoBatching + ".");
 		}
 		if (!plan.Request.StartupLevel.empty())
 		{

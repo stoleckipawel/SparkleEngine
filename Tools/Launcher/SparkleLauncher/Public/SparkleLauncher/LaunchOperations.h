@@ -39,7 +39,6 @@ namespace SparkleLauncher
 		std::string GraphicsBackend;
 		std::string VSync;
 		std::string PreferHighPerformanceAdapter;
-		std::string MeshAutoBatching;
 		std::vector<std::string> CustomArguments;
 		std::vector<std::string> CustomCVars;
 	};

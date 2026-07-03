@@ -88,7 +88,6 @@ void FrameGraph::EmitTransientAliasingBarriers(
 
 		if (!beforeResource || !afterResource)
 		{
-			RecordUnresolvedBarrierWarning();
 			std::string_view beforeName = "<unknown>";
 			if (m_resourceRegistry.IsRegistered(barrier.beforeHandle))
 			{
@@ -116,7 +115,6 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_vie
 		const NativeResourceHandle resource = ResolveResource(barrier.handle);
 		if (!resource)
 		{
-			RecordUnresolvedBarrierWarning();
 			std::string_view resourceName = "<unknown>";
 			if (m_resourceRegistry.IsRegistered(barrier.handle))
 			{

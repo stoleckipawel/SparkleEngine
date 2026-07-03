@@ -62,7 +62,6 @@ namespace SparkleLauncher
 			launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
 			launchRequest.VSync = request.LaunchVSync.toStdString();
 			launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
-			launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
 			for (const QString& argument : QProcess::splitCommand(request.LaunchCommandLineArguments))
 			{
 				if (!argument.isEmpty())

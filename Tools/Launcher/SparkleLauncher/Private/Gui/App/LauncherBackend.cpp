@@ -229,7 +229,6 @@ namespace SparkleLauncher
 		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
 		launchRequest.VSync = request.LaunchVSync.toStdString();
 		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
-		launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
 		launchRequest.CustomArguments = SplitCommandLineArguments(request.LaunchCommandLineArguments);
 		launchRequest.CustomCVars = SplitOptionList(request.LaunchCVars);
 		return launchRequest;

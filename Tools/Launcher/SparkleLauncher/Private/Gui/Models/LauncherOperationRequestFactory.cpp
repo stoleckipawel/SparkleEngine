@@ -110,7 +110,6 @@ namespace SparkleLauncher
 		request.LaunchStartupLevel = settings.LaunchStartupLevel();
 		request.LaunchVSync = settings.LaunchVSync();
 		request.LaunchHighPerformanceAdapter = settings.LaunchHighPerformanceAdapter();
-		request.LaunchMeshAutoBatching = settings.LaunchMeshAutoBatching();
 		request.LaunchCommandLineArguments = settings.LaunchCommandLineArguments();
 		request.LaunchCVars = settings.LaunchCVars();
 		request.FormatMode = settings.FormatMode();
