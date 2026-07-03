@@ -7,8 +7,6 @@
 
 #include "Core/Public/Formatting/HexFormat.h"
 
-#include "Core/Public/Diagnostics/Logger.h"
-#include "Core/Public/Diagnostics/ScopedLogEvent.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Json/JsonWriter.h"
 #include "ToolConsole.h"
@@ -55,8 +53,6 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 		const std::filesystem::path& requestFilePath,
 		const std::filesystem::path& summaryPath) const
 	{
-		static const auto textureCookerLogger = Logging::GetOrCreateLogger("Tools.TextureCooker");
-		SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, "TextureCooker.CookRequestFile");
 		const auto batchStartTime = std::chrono::steady_clock::now();
 
 		std::string errorMessage;
@@ -85,8 +81,6 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 		for (std::size_t requestIndex = 0; requestIndex < requests.size(); ++requestIndex)
 		{
 			const TextureCookRequest& request = requests[requestIndex];
-			const std::string requestScopeName = "Tools.TextureCooker.Request." + Formatting::FormatHexUInt64(request.assetId);
-			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, requestScopeName);
 			const auto requestStartTime = std::chrono::steady_clock::now();
 			ToolConsole::Progress(
 			    std::cout,
@@ -173,14 +167,10 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 		std::size_t& outCookedCount,
 		std::string& outErrorMessage) const
 	{
-		const std::string cookScopeName = "Tools.TextureCooker.CookRequest." + Formatting::FormatHexUInt64(request.assetId);
+		if (!cooker.Cook(request, outErrorMessage))
 		{
-			SPARKLE_LOG_SCOPE(Logging::GetOrCreateLogger("Tools.TextureCooker"), spdlog::level::info, cookScopeName);
-			if (!cooker.Cook(request, outErrorMessage))
-			{
-				outErrorMessage = "failed to cook texture '" + request.sourcePath.string() + "' - " + outErrorMessage;
-				return false;
-			}
+			outErrorMessage = "failed to cook texture '" + request.sourcePath.string() + "' - " + outErrorMessage;
+			return false;
 		}
 		++outCookedCount;
 		outErrorMessage.clear();

@@ -1,7 +1,6 @@
 #include "AssetCookerToolProcess.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
-#include "Core/Public/Diagnostics/ScopedLogEvent.h"
 #include "ToolConsole.h"
 
 #include <cwctype>
@@ -87,8 +86,6 @@ int AssetCookerToolProcess::Run(
     const std::filesystem::path& workingDirectory)
 {
 	static const auto toolProcessLogger = Logging::GetOrCreateLogger("Tools.AssetCooker.Process");
-	const std::string processScopeName = "AssetCooker.ToolProcess." + executablePath.filename().string();
-	SPARKLE_LOG_SCOPE(toolProcessLogger, spdlog::level::info, processScopeName);
 
 	ToolConsole::Message(
 	    std::cout,

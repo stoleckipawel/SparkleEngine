@@ -3,7 +3,6 @@
 #include "Validation/RhiSmokeValidation.h"
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
-#include "Diagnostics/ScopedLogEvent.h"
 #include "Editor/Public/UI.h"
 #include "Input/InputSystem.h"
 #include "Renderer.h"
@@ -156,27 +155,22 @@ namespace
 		app.Initialize();
 		LogDiagnosticsCapabilities(config, app, state);
 		InitializeFrameControl(config, app, state);
-		static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
-
+		Renderer& renderer = app.GetRenderer();
+		app.GetInputSystem().ClearInputCaptureQuery();
+		app.GetInputSystem().BeginInputRoutingFrame(false, false);
+		UI ui(
+		    EditorHostServices{
+		        .RuntimeTimer = app.GetTimer(),
+		        .Levels = app.GetLevelManager(),
+		        .Scene = app.GetGameScene(),
+		        .ImGuiRenderer = renderer.GetImGuiRenderer(),
+		        .HostWindow = app.GetWindow(),
+		        .Input = app.GetInputSystem()});
+		for (;;)
 		{
-			SPARKLE_LOG_SCOPE(appLogger, spdlog::level::info, "RHI editor smoke UI scope");
-			Renderer& renderer = app.GetRenderer();
-			app.GetInputSystem().ClearInputCaptureQuery();
-			app.GetInputSystem().BeginInputRoutingFrame(false, false);
-			UI ui(
-			    EditorHostServices{
-			        .RuntimeTimer = app.GetTimer(),
-			        .Levels = app.GetLevelManager(),
-			        .Scene = app.GetGameScene(),
-			        .ImGuiRenderer = renderer.GetImGuiRenderer(),
-			        .HostWindow = app.GetWindow(),
-			        .Input = app.GetInputSystem()});
-			for (;;)
+			if (!TickEditor(app, ui, config, state))
 			{
-				if (!TickEditor(app, ui, config, state))
-				{
-					break;
-				}
+				break;
 			}
 		}
 

@@ -5,18 +5,12 @@
 #include "Cli/TextureCookerCommandRegistry.h"
 #include "Constants/TextureCookerConstants.h"
 
-#include "Core/Public/Diagnostics/Logger.h"
-#include "Core/Public/Diagnostics/ScopedLogEvent.h"
-
 #include <iostream>
 #include <memory>
 #include <string_view>
 
 	int TextureCookerApplication::Run(int argc, char** argv) const
 	{
-		static const auto textureCookerLogger = Logging::GetOrCreateLogger("Tools.TextureCooker");
-		SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, "TextureCooker.Application.Run");
-
 		if (argc != 3 && argc != 5)
 		{
 			TextureCookerCommandRegistry::PrintUsage(std::cerr);
@@ -43,9 +37,6 @@
 		const char* commandName,
 		const std::filesystem::path& summaryPath)
 	{
-		static const auto textureCookerLogger = Logging::GetOrCreateLogger("Tools.TextureCooker");
-		SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, "TextureCooker.Application.RunCommand");
-
 		const std::string_view command(commandName != nullptr ? commandName : "");
 		std::unique_ptr<TextureCookerCommand> commandHandler = TextureCookerCommandRegistry::Create(command);
 		if (!commandHandler)

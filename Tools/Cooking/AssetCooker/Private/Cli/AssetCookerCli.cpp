@@ -3,8 +3,6 @@
 #include "../Api/AssetCookerService.h"
 #include "../Inspection/AssetCookerSourceInspection.h"
 
-#include "Core/Public/Diagnostics/Logger.h"
-#include "Core/Public/Diagnostics/ScopedLogEvent.h"
 #include "ToolConsole.h"
 
 #include <iostream>
@@ -283,9 +281,6 @@ static void AssetCookerCliPrintResult(const AssetCookerServiceResult& result)
 
 int AssetCookerCli::Run(int argc, char** argv) const
 {
-	static const auto assetCookerLogger = Logging::GetOrCreateLogger("Tools.AssetCooker");
-	SPARKLE_LOG_SCOPE(assetCookerLogger, spdlog::level::info, "AssetCooker.Cli.Run");
-
 	AssetCookerCliArguments arguments;
 	if (!AssetCookerCliParse(argc, argv, arguments))
 	{

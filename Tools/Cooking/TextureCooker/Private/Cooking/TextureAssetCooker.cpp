@@ -6,8 +6,6 @@
 
 #include "Textures/CookedTextureAsset.h"
 
-#include "Core/Public/Diagnostics/Logger.h"
-#include "Core/Public/Diagnostics/ScopedLogEvent.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 
@@ -17,35 +15,22 @@
 
 	bool TextureAssetCooker::Cook(const TextureCookRequest& request, std::string& outErrorMessage) const
 	{
-		static const auto textureCookerLogger = Logging::GetOrCreateLogger("Tools.TextureCooker");
-		const std::string scopeName = "Tools.TextureCooker.CookAsset." + request.sourcePath.filename().string();
-		SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, scopeName);
-
 		if (!request.IsValid())
 		{
 			outErrorMessage = "Texture cook request is invalid.";
 			return false;
 		}
 
-		TextureLoadResult loadResult;
-		{
-			const std::string phaseScopeName = "Tools.TextureCooker.LoadSource." + request.sourcePath.filename().string();
-			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, phaseScopeName);
-			loadResult = TextureSourceLoader::Load(request.sourcePath, outErrorMessage);
-		}
+		TextureLoadResult loadResult = TextureSourceLoader::Load(request.sourcePath, outErrorMessage);
 		if (!loadResult.IsValid())
 		{
 			return false;
 		}
 
 		TextureLoadResult cookedTexture;
+		if (!TexturePipeline::Process(request, std::move(loadResult), cookedTexture, outErrorMessage))
 		{
-			const std::string phaseScopeName = "Tools.TextureCooker.ProcessTexture." + request.sourcePath.filename().string();
-			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, phaseScopeName);
-			if (!TexturePipeline::Process(request, std::move(loadResult), cookedTexture, outErrorMessage))
-			{
-				return false;
-			}
+			return false;
 		}
 
 		if (!cookedTexture.IsValid())
@@ -91,8 +76,6 @@
 
 		std::ofstream output;
 		{
-			const std::string phaseScopeName = "Tools.TextureCooker.WriteTexture." + request.sourcePath.filename().string();
-			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, phaseScopeName);
 			if (!Files::TryOpenBinaryOutput(temporaryOutputPath, output, outErrorMessage))
 			{
 				return false;
@@ -136,14 +119,10 @@
 			}
 		}
 
+		if (!Files::TryFinalizeTemporaryFile(temporaryOutputPath, request.outputPath, outErrorMessage))
 		{
-			const std::string phaseScopeName = "Tools.TextureCooker.FinalizeTexture." + request.sourcePath.filename().string();
-			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, phaseScopeName);
-			if (!Files::TryFinalizeTemporaryFile(temporaryOutputPath, request.outputPath, outErrorMessage))
-			{
-				Files::CleanupTemporaryFile(temporaryOutputPath);
-				return false;
-			}
+			Files::CleanupTemporaryFile(temporaryOutputPath);
+			return false;
 		}
 
 		outErrorMessage.clear();
