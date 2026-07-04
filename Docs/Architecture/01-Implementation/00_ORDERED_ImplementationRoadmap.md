@@ -734,16 +734,36 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Launcher source line count decreases.
-- [ ] Shader debug/stat toggles leave default GUI.
-- [ ] Diagnostic-only pages/actions are removed.
-- [ ] No new panel replaces deleted panels.
+- [x] Launcher source line count decreases.
+- [x] Shader debug/stat toggles leave default GUI.
+- [x] Diagnostic-only pages/actions are removed.
+- [x] No new panel replaces deleted panels.
+
+Result:
+
+- The default launcher workflow catalog now exposes product workflows only: build/prepare, cook, launch, package assembly, and clean. `workspace.sync-source-tiers` remains available, but it is folded into the Build preparation surface rather than a standalone top-level sync family.
+- Shader debug/stat GUI controls were removed from the default shader cook page. Runtime shader packages and reflection remain owned by the cook path; debug artifacts are no longer a default GUI workflow.
+- The package page was reduced to direct package assembly status instead of package cockpit/status breakdowns. Stage 15 still owns the exact package output contract.
+- Removed workflow visual banners, workflow recovery UI/model, raw dependency inventory rows, per-dependency clean/regenerate actions, and diagnostic/status cockpit affordances that were not product workflows.
+- Removed the launcher `quality.format` action across GUI, shell, maintenance planning, maintenance execution, and toolchain detection. Maintenance is now clean-only.
+- Removed the standalone host-environment diagnostic action. Toolchain readiness remains available as build/cook/launch readiness data, but missing prerequisites now block at the owning workflow boundary instead of launching a diagnostic fallback workflow.
+- No new panel, fallback chain, content hardcode, project hardcode, level hardcode, asset hardcode, or content-pack hardcode was added.
+
+Net code pressure:
+
+- Launcher code is net negative in this batch: `git diff --numstat -- Tools/Launcher/SparkleLauncher` totals 42 added lines and 878 deleted lines, for a net reduction of 836 lines.
+
+Verification:
+
+- Searches for removed workflow surfaces returned no matches in launcher C++/header source: `quality.format`, `format-mode`, `RunClangFormat`, `FormatMode`, `toolchain.check`, `CheckToolchain`, `Verify Host`, `Sync Diagnostics`, workflow recovery UI, workflow visual banners, advanced dependency inventory, tracked dependency actions, and shader debug/stat GUI labels.
+- `cmake --build build --target SparkleLauncher --config DevelopmentEditor` succeeded. The deploy step still prints the existing warning `Cannot find Visual Studio installation directory, VCINSTALLDIR is not set.`
+- `git diff --check` reported no whitespace errors; it only printed existing LF-to-CRLF working-copy warnings.
 
 ### Stage 15: Package Ownership Decision
 
@@ -757,16 +777,60 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Owned package list is written in existing docs or package config.
-- [ ] Unowned package outputs are marked for removal.
-- [ ] Optional content is not part of runtime package by default.
-- [ ] Checksums/manifests are kept only if consumed.
+- [x] Owned package list is written in existing docs or package config.
+- [x] Unowned package outputs are marked for removal.
+- [x] Optional content is not part of runtime package by default.
+- [x] Checksums/manifests are kept only if consumed.
+
+Package ownership decision:
+
+| Package surface | Decision | Current owner | Stage 40 implementation rule |
+| --- | --- | --- | --- |
+| Runtime review package | Owned now. | `sparkle_release_assembly` creates `sparkle-runtime-<version>-<channel>-<platform>`. | Keep one runtime package rooted at `dist/releases/<version>/<runtime-package>/`; it contains runnable apps, cooked default content, runtime support, licenses, release notes, and the minimum package manifest needed for package-root discovery. |
+| Launcher | Owned as a runtime package component, not as a separate package. | `CMake/SparkleReleaseAssembly.cmake` stages launcher artifacts at the runtime package root. | Keep `SparkleLauncher.exe` at package root because package-root launch detection depends on it. Do not create a separate `sparkle-launcher` package unless a consumer appears. |
+| Runtime app | Owned as a runtime package component. | `CMake/SparkleReleaseAssembly.cmake` stages project runtime artifacts under `Apps/<RuntimeApp>/`. | Keep the runtime app in the runtime package. Avoid project-name hardcoding in the implementation pass; resolve package app identity from project/package metadata. |
+| Editor app | Owned for review packages only, as a runtime package component. | `CMake/SparkleReleaseAssembly.cmake` stages project editor artifacts under `Apps/<EditorApp>/`. | Keep editor staging only while the review package is explicitly engine-evaluation oriented. Do not create a separate `sparkle-editor` package until there is a consumer. |
+| Symbols | Owned now as a separate package. | `sparkle_release_assembly` creates `sparkle-symbols-<version>-<channel>-<platform>` and a zip when possible. | Keep symbols separate from runtime. Symbols may include PDB/debug artifacts from built products, but must not be copied into the runtime package. |
+| Dev tools | Not owned as a package now. | Development tools remain build/cook prerequisites under `artifacts/dev/tools`. | Do not stage `ShaderCompiler`, cook tools, importers, headers, import libraries, static libraries, or source-facing diagnostics into runtime packages. Remove any future `sparkle-dev-tools` assembly until a real consumer requires it. |
+| Dependency pack | Not owned as a package now. | Current release assembly writes a dependency-pack manifest name only. | Remove dependency-pack naming/manifests unless Stage 40 implements a real dependency package consumer. Source dependency sync remains a launcher/build workflow, not a distributable package. |
+| Optional content pack | Owned as a future separate package, not part of default runtime. | Optional level/content availability is represented by catalog metadata such as `Projects/Showcase/Levels.catalog`. | Do not include optional synced content in the runtime package by default. Runtime package assembly must stage only the curated default level set and shared runtime content; optional content packs must be explicit separate outputs. |
+
+Unowned outputs marked for removal:
+
+- Remove or replace broad cooked-root staging in `CMake/SparkleReleaseAssembly.cmake` before treating package assembly as final. Copying all of `artifacts/dev/projects/<Project>/cooked` risks bundling optional levels and externally synced content into the default runtime package.
+- Remove package IDs/config paths for separate launcher, editor, dev tools, and dependencies packages unless a real package consumer is added.
+- Remove dependency-pack manifest emission from release assembly unless a dependency package is actually built and consumed.
+- Remove package file manifests and `SHA256SUMS.txt` outputs unless the launcher, runtime, or final release validation command consumes them.
+
+Manifest/checksum decision:
+
+- Keep `manifests/sparkle-package-manifest.json` because package-root discovery consumes it through `Engine/Core/Private/FileSystemUtils.cpp`.
+- Keep the bundled-component manifest only if Stage 40 uses it to drive package UI or package validation. Otherwise remove it with the package cockpit remnants.
+- Treat `sparkle-release-manifest.json`, `sparkle-build-manifest.json`, `sparkle-dependency-manifest.json`, `sparkle-package-files.json`, and `SHA256SUMS.txt` as unowned review artifacts until a consuming workflow exists.
+
+Result:
+
+- Stage 15 is a decision-only stage; no package assembly code was added.
+- Existing package capability search covered `CMake/SparkleReleaseAssembly.cmake`, `CMake/SparkleArtifactContract.cmake`, launcher package operation definitions, package-root discovery, and package manifest/checksum references.
+- The owned package list is now explicit in this roadmap: runtime review package, package-root launcher component, runtime app component, editor app component for review packages, separate symbols package, and future optional content packs.
+- Dev tools, separate launcher/editor packages, dependency pack outputs, broad cooked-root staging, unconsumed package manifests, and checksums are marked for removal or replacement in Stage 40.
+- Optional content is explicitly excluded from the default runtime package. The implementation rule is catalog-driven default content only, with optional content packs as separate outputs.
+
+Net code pressure:
+
+- No source or package code was added in this stage. The only change is the roadmap ownership decision.
+- The next package implementation stage must be net negative by deleting or replacing unowned package outputs rather than layering a package manager on top of the current script.
+
+Verification:
+
+- `rg -n "SparkleReleaseAssembly|sparkle_release_assembly|ReleaseAssembly|dist/releases|checksums|manifest|symbols" CMake Tools/Launcher` located the existing package assembly surface.
+- `rg -n "sparkle-package-files|SHA256SUMS|sparkle-release-manifest|sparkle-build-manifest|sparkle-dependency-manifest|sparkle-package-manifest|sparkle-bundled-runtime-components|manifests" Tools Engine Projects CMake Docs` confirmed that package-root discovery consumes `sparkle-package-manifest.json`, while the detailed file manifests/checksums have no engine or launcher consumer today.
 
 ### Stage 16: Public Renderer Observation Inventory
 
@@ -780,16 +844,77 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Renderer public diagnostic headers are listed.
-- [ ] Consumers are listed.
-- [ ] Editor-only consumers are separated from runtime behavior.
-- [ ] Product-owned observation surfaces are explicitly justified.
+- [x] Renderer public diagnostic headers are listed.
+- [x] Consumers are listed.
+- [x] Editor-only consumers are separated from runtime behavior.
+- [x] Product-owned observation surfaces are explicitly justified.
+
+Public Renderer Observation Inventory:
+
+| Public surface | Header/API | Current consumers | Classification | Decision |
+| --- | --- | --- | --- | --- |
+| Mesh diagnostics snapshot | `Engine/Renderer/Public/Meshes/MeshDiagnostics.h`; `Renderer::CaptureMeshDiagnostics()` | `Engine/Application/Private/EditorApplication.cpp`, `Engine/Editor/Public/UI.h`, `Engine/Editor/Public/Panels/UsedMeshesPanel.h`, `Engine/Editor/Private/Panels/UsedMeshesPanel.cpp`; producer is `RendererSystemRoot` through `MeshDiagnosticsCollector` | Editor-only observation | Keep for now because the editor asset/scene inspection workflow consumes it. Later slimming should move the snapshot provider behind an editor-facing adapter if runtime no longer needs the header. |
+| Texture diagnostics snapshot | `Engine/Renderer/Public/Resources/Textures/TextureDiagnostics.h`; `Renderer::CaptureTextureDiagnostics()` | `EditorApplication`, `UI`, `UsedTexturesPanel`; producer is `TextureManager::CaptureDiagnosticsSnapshot()` | Editor-only observation | Keep for now. It is an editor inspection surface, not runtime behavior. Later slimming should avoid exposing texture diagnostics through broad renderer API if an editor adapter can own it. |
+| Renderer memory diagnostics snapshot | `Engine/Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h`; `Renderer::CaptureMemoryDiagnostics()` | `EditorApplication`, `UI::CaptureMemoryDiagnostics`, editor diagnostics providers; producer is `RendererMemoryMonitor` | Editor/tool observation with product value | Keep. Memory pressure and residency data are useful for productization and feature work, but it should remain a snapshot, not a growing report system. |
+| Viewport products and presentation | `Engine/Renderer/Public/Viewport/ViewportContracts.h`; `Renderer::SubmitViewportRenderRequest`, `GetViewportRenderProducts`, `BeginViewportPresentation`, `EndViewportPresentation` | `RuntimeApplication`, `EditorApplication`, `ViewportPanel`, `UI` | Product-owned runtime/editor contract | Keep. This is not diagnostic clutter; it is the high-level viewport contract between runtime/editor shell and renderer. |
+| Screenshot/BMP capture | `ViewportCaptureRequest`, `ViewportCaptureResult`; `Renderer::CaptureViewportProductToBmp()` | Product capture path through `FramePipelineViewportProducts.cpp`; no smoke/ad hoc caller after Stage 09-10 | Product-owned tool/editor capability | Keep. It preserves screenshot capability while hiding RHI capture details behind the renderer-owned viewport product contract. |
+| Debug view modes | `Engine/Renderer/Public/Debug/RenderViewMode.h`, `RendererCVars.h`, `CVarRenderViewMode` | `ViewportTopPanel`, `FramePipeline`, render pass utilities | Editor-facing rendering mode with runtime pass impact | Keep for now because editor viewport modes are real renderer features. Later stages should decide whether `RendererCVars.h` belongs in public or should become an editor/runtime settings bridge. |
+| Renderer diagnostic CVars and markers | `RendererCVars.h` exposes `CVarRendererDiagnosticMarkerVerbosity`, `CVarRendererDiagnosticGpuTiming`, mesh batching, and ray tracing/PTLAS tuning CVars | Renderer private frame graph, pass diagnostics, ray tracing planner/builders, editor viewport top panel for view mode | Mixed: some product tuning, some diagnostic/profiling | Mark for Stage 16/17 follow-up pressure. Keep feature/tuning CVars that affect real rendering behavior; defer profiling/marker CVars to late performance stages or private renderer implementation unless a product UI consumes them. |
+| Shader package reload observation | `Engine/Renderer/Public/Shaders/CookedShaderReloadResult.h`; `Renderer::ReloadCookedShaders`, `GetShaderPackageGeneration` | `ShaderRecookCoordinator`, `EditorApplication`, editor UI provider | Product-owned editor/tool workflow | Keep. It preserves offline cooked shader package workflow and reflection-era reload behavior without adding debug bundles. |
+| Low-level renderer escape hatches | `Renderer::GetRenderHardwareInterface`, `GetCommandSubmissionService`, `GetImGuiRenderer` | `EditorApplication`, `RuntimeConsoleHost`, `ShaderRecookCoordinator` | Boundary pressure, not observation | Mark for later slimming. These are currently real integration points, but they expose RHI details through `Renderer.h`. Future work should replace only the external needs with thin renderer/editor services instead of broad RHI access. |
+
+Editor-only consumers:
+
+- `Engine/Editor/Public/UI.h` owns editor diagnostics provider slots for mesh, texture, memory, and shader package generation.
+- `Engine/Editor/Public/Panels/UsedMeshesPanel.h` and `Engine/Editor/Private/Panels/UsedMeshesPanel.cpp` consume `MeshDiagnosticsSnapshot`.
+- `Engine/Editor/Public/Panels/UsedTexturesPanel.h` and `Engine/Editor/Private/Panels/UsedTexturesPanel.cpp` consume `TextureDiagnosticsSnapshot`.
+- `Engine/Editor/Public/Panels/ViewportTopPanel.h` and `Engine/Editor/Private/Panels/ViewportTopPanel.cpp` consume `RenderViewMode` and `CVarRenderViewMode`.
+- `Engine/Application/Private/EditorApplication.cpp` wires renderer diagnostics providers into editor UI and uses viewport presentation products for editor rendering.
+
+Runtime/product consumers:
+
+- `Engine/Application/Private/RuntimeApplication.cpp` uses `ViewportRenderRequest` and `ViewportRenderProducts` for runtime/editor render request flow.
+- `Engine/Application/Private/RuntimeConsole/RuntimeConsoleHost.cpp` currently uses `Renderer::GetImGuiRenderer` and `Renderer::GetRenderHardwareInterface`; this is an integration escape hatch to narrow later, not a diagnostic feature to grow.
+- `Engine/Application/Private/ShaderRecook/ShaderRecookCoordinator.cpp` uses `Renderer::GetCommandSubmissionService`, `ReloadCookedShaders`, and `GetShaderPackageGeneration` to preserve safe cooked shader reload behavior.
+- `Engine/Renderer/Private/FramePipeline/FramePipelineViewportProducts.cpp` owns renderer-to-RHI presentation and capture bridging.
+
+Product-owned observation justification:
+
+- Keep viewport products/presentation/capture because they are the renderer-facing API for editor/runtime view composition and screenshot/BMP capture.
+- Keep shader reload result/generation because offline cooked shader packages with reflection data are preserved capabilities.
+- Keep memory snapshots while feature work is still active because memory pressure connects directly to renderer productization, but do not expand it into reports or default diagnostics.
+- Keep mesh/texture snapshots only as editor inspection data. They should not become runtime reporting systems.
+
+Marked for later removal or narrowing:
+
+- Move mesh and texture diagnostics behind an editor-owned adapter if runtime stops requiring public headers.
+- Split `RendererCVars.h` into product rendering controls versus private diagnostics/profiling controls. Diagnostic marker verbosity and GPU timing should move late with performance/profiling stages.
+- Replace `Renderer::GetRenderHardwareInterface`, `GetCommandSubmissionService`, and `GetImGuiRenderer` external usage with smaller services only where doing so deletes more public coupling than it adds.
+
+Result:
+
+- Stage 16 is an inventory-only stage; no renderer source code was added.
+- Public diagnostic headers and public observation entrypoints are listed with concrete consumers.
+- Editor-only observation surfaces are separated from product runtime behavior.
+- Product-owned surfaces are justified by viewport rendering, screenshot capture, cooked shader reload, and memory/productization needs.
+
+Net code pressure:
+
+- No source code was added. The only change is this roadmap inventory.
+- Follow-up stages must reduce public renderer coupling before adding any new renderer observation API.
+
+Verification:
+
+- `rg --files Engine/Renderer/Public` listed the renderer public header set.
+- `rg -n "Diagnostic|Diagnostics|Stats|Metrics|Profiler|Profile|Capture|Screenshot|Snapshot|Debug|Report|Viewport|Observer|Observation|Inspector" Engine/Renderer/Public Engine/Renderer/Private Engine/Editor Tools Projects` found the candidate observation surface.
+- `rg -n "RendererMemoryDiagnostics|CaptureMemoryDiagnostics|MeshDiagnostics|CaptureMeshDiagnostics|TextureDiagnostics|CaptureTextureDiagnostics|ViewportCapture|CaptureViewportProductToBmp|BeginViewportPresentation|ViewportRenderProducts|SubmitViewportRenderRequest|GetViewportRenderProducts|RenderViewMode|RendererCVars|CookedShaderReloadResult|ReloadCookedShaders|GetShaderPackageGeneration" Engine Tools Projects` identified the consumers.
+- `rg -n "GetRenderHardwareInterface\\(|GetCommandSubmissionService\\(|GetImGuiRenderer\\(" Engine Tools Projects` identified low-level renderer escape-hatch consumers.
 
 ### Stage 17: Public RHI Observation Inventory
 
@@ -814,13 +939,80 @@ Universal acceptance for this stage:
 - [ ] Capture is preserved and separated from broad diagnostics.
 - [ ] D3D12/Vulkan parity risk is recorded.
 
-### Stage 18: Move Or Remove Editor-Only Diagnostics
+Stage 17 inventory result:
+
+Universal acceptance status:
+
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
+Specific acceptance status:
+
+- [x] RHI public observation APIs are listed.
+- [x] Runtime-critical facts are separated from report/detail dumps.
+- [x] Capture is preserved and separated from broad diagnostics.
+- [x] D3D12/Vulkan parity risk is recorded.
+
+Public RHI observation APIs:
+
+| Surface | Public owner | Current consumers | Classification | Stage 18/19 direction |
+| --- | --- | --- | --- | --- |
+| `RenderHardwareInterface::GetCapabilities`, `GetBackendApi`, `GetRequiredShaderBinaryFormat`, `GetCurrentFrameIndex` | `Engine/RHI/Public/Device/RenderHardwareInterface.h` | Renderer, application/runtime glue, shader package selection | Runtime-critical backend facts | Keep compact; do not expand into reports. |
+| `RenderHardwareInterface::GetDiagnostics` and `Engine/RHI/Public/Diagnostics/RhiDiagnostics.h` | RHI public diagnostics service | Renderer diagnostics, backend failure paths, debug naming | Mixed surface: object names and capability flags are useful; messages, timing, live-object, crash, and memory report access are broad observation | Split by ownership later; product code should consume facts through narrow owners, not a general diagnostics cockpit. |
+| `RenderObjectDiagnostics` | `RhiDiagnostics.h` | D3D12 and Vulkan debug names | Product/dev support for GPU object labels | Keep only as backend-owned debug-name capability. Do not expose as a general inspection API. |
+| `RenderTimingDiagnostics` | `RhiDiagnostics.h` | `Engine/Renderer/Private/Diagnostics/FrameExecutionDiagnostics.cpp` and `ScopedGpuDiagnostics` | Performance observation, not first-priority feature work | Preserve behind capability checks, but defer slimming until after renderer/RHI/frame-graph feature work. |
+| `RenderMessageDiagnostics` | `RhiDiagnostics.h` | D3D12 debug layer and Vulkan validation-message plumbing | Debug/validation observation | Keep backend-private or opt-in; do not surface as default product workflow. |
+| `RenderFailureDiagnostics` | `RhiDiagnostics.h` | D3D12 resource/pipeline failure collection and live-object reporting | Failure-only backend support | Keep on-failure capability; remove any default report-style consumer. Vulkan correctly reports no support through capabilities. |
+| `RenderMemoryDiagnostics` and `Engine/RHI/Public/Memory/RhiMemoryDiagnostics.h` | RHI public memory diagnostics service | `RendererMemoryMonitor`, `RendererMemoryDiagnosticsSnapshot` | Mixed surface: compact memory pressure facts are useful; allocator JSON dump and allocation-detail lists are report/detail dumps | Keep compact budget/category snapshot. Move/remove `WriteAllocatorJsonDump`, allocation-detail exposure, and environment-triggered dumps unless a product package consumes them. |
+| `RhiDescriptorService::CaptureDescriptorUsageSnapshot` and `RhiDescriptorUsageSnapshot` | `Engine/RHI/Public/Descriptors/RhiDescriptorService.h` | No product consumer found outside backend implementations | Report/detail dump | Candidate for removal or private backend-only move. If kept, justify as runtime descriptor pressure fact in Stage 19. |
+| `RenderHardwareInterface::GetCaptureService` and `Engine/RHI/Public/Capture/RhiCaptureService.h` | RHI capture service | `FramePipelineViewportProducts.cpp` through renderer-owned viewport capture | Product capability | Preserve. Keep separated from diagnostics. Users should enter through renderer/editor/tool capture, not broad RHI diagnostics. |
+| `RhiPresentationService` and `RhiInteropService` | RHI public service interfaces | Renderer/application presentation and native interop needs | Runtime/product integration surfaces, not diagnostics | Keep scoped to presentation and explicit interop. Do not treat as observation/report APIs. |
+
+Runtime-critical facts versus report/detail dumps:
+
+- Keep runtime-critical facts: backend API, shader binary format, current frame index, capability flags, compact memory budget/category pressure, delayed-destruction pressure when consumed, capture request/result status, and explicit D3D12/Vulkan support flags.
+- Treat as report/detail dumps: descriptor heap snapshots, allocator JSON dumps, full allocation maps, debug-message queues, timing query result reporting, live object reports, and crash diagnostic bundles. These are not first-class default workflows.
+- Capture is not a dump. Screenshot/BMP capture is a preserved product/tool capability and must remain after diagnostics cleanup.
+
+Consumer map:
+
+- Memory pressure consumer: `Engine/Renderer/Private/Diagnostics/RendererMemoryMonitor.cpp` reads `RenderMemoryDiagnostics::GetLatestMemorySnapshot`.
+- Timing consumer: `Engine/Renderer/Private/Diagnostics/FrameExecutionDiagnostics.cpp` uses timestamp query allocation/write/resolve through `RenderTimingDiagnostics`.
+- Capture consumer: `Engine/Renderer/Private/FramePipeline/FramePipelineViewportProducts.cpp` calls `RhiCaptureService::CaptureTextureToBmp`.
+- Descriptor snapshot consumer: none found outside D3D12/Vulkan descriptor service implementations.
+- Failure diagnostics consumers: D3D12 backend failure paths call crash/live-object support internally; Vulkan exposes no failure diagnostics through its capability object.
+
+D3D12/Vulkan parity risk:
+
+- Capture parity exists and must be preserved: D3D12 has `D3D12CaptureService`, Vulkan has `VulkanCaptureService`, and both implement `CaptureTextureToBmp`.
+- Descriptor snapshot parity exists but appears unconsumed: D3D12 and Vulkan both implement `CaptureDescriptorUsageSnapshot`; remove/private both together if Stage 19 does not keep descriptor pressure as a runtime fact.
+- Memory diagnostics parity exists with backend-specific support flags: D3D12 and Vulkan both expose memory snapshots and JSON dump support through allocator-backed diagnostics. Capability flags must remain the authority; product code must not branch on backend names.
+- Diagnostics parity is intentionally asymmetric: D3D12 exposes timestamp queries, debug-layer messages, live object reports, and crash diagnostics; Vulkan currently exposes object names, validation messages, memory diagnostics, and no timing/failure diagnostics. Any retained public surface must make unsupported backend behavior explicit through capabilities.
+
+Net code pressure:
+
+- No source code was added in this stage. The only change is this roadmap inventory.
+- Stage 18 and Stage 19 must shrink public observation surfaces before adding any new RHI/renderer observation API.
+
+Verification:
+
+- `rg --files Engine/RHI/Public Engine/RHI/Private Engine/Renderer Engine/Application Engine/Editor Tools Projects | rg "(Diagnostic|Diagnostics|Stats|Metrics|Profile|Profiler|Capture|Memory|Descriptor|Snapshot|Report|Telemetry|Debug|Observation|Present|Presentation|Service|RenderHardwareInterface|Rhi)"` listed the candidate RHI observation files.
+- `rg -n "CaptureDescriptorUsageSnapshot|RhiDescriptorUsageSnapshot|RhiDescriptorAllocatorUsage|GetLatestMemorySnapshot|WriteAllocatorJsonDump|SupportsJsonDump|RenderMemoryDiagnostics|GetMemoryDiagnostics|GetDiagnostics\\(\\)|GetCaptureService|CaptureTextureToBmp|RhiCaptureService|ReportLiveObjects|CollectCrashDiagnostics|TryPopMessage|AllocateTimestampQuery|WriteTimestamp|TryResolveTimestamp" Engine/RHI Engine/Renderer Engine/Application Engine/Editor Tools Projects -g "*.h" -g "*.cpp"` identified consumers and backend implementations.
+- `Engine/RHI/Public/Diagnostics/RhiDiagnostics.h`, `Engine/RHI/Public/Memory/RhiMemoryDiagnostics.h`, `Engine/RHI/Public/Capture/RhiCaptureService.h`, `Engine/RHI/Public/Descriptors/RhiDescriptorService.h`, and `Engine/RHI/Public/Device/RenderHardwareInterface.h` were reviewed as public surfaces.
+- `Engine/RHI/Private/D3D12/Diagnostics/D3D12RenderDiagnostics.cpp` and `Engine/RHI/Private/Vulkan/Diagnostics/VulkanRenderDiagnostics.cpp` were reviewed for backend parity and capability asymmetry.
+
+### Stage 18: Preserve Editor Inspection And Narrow Diagnostics Ownership
 
 References: UE-SOURCE, NV-DONUT.
 
 Prompt:
 
-- Move editor-only diagnostics behind editor-private ownership or remove unowned panels.
+- Preserve shader, mesh, and texture editor inspection windows as product-owned editor capabilities.
+- Move editor-only diagnostics behind editor-private ownership where practical.
+- Remove only unowned diagnostics panels; do not remove inspection windows that help understand renderer assets, residency, shader packages, or editor/runtime state.
 
 Acceptance:
 
@@ -832,10 +1024,72 @@ Universal acceptance for this stage:
 - [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
 - [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Public Renderer/RHI diagnostics line count decreases.
-- [ ] Editor panels are either product-owned or removed.
+- [ ] Public Renderer/RHI diagnostics exposure is reduced, or remaining exposure is explicitly classified as editor inspection surface.
+- [ ] Shader, mesh, and texture inspection windows remain available.
 - [ ] No diagnostics facade is added.
 - [ ] Runtime pressure facts remain only if consumed.
+
+Stage 18 decision correction:
+
+Universal acceptance status:
+
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
+Specific acceptance status:
+
+- [x] Public Renderer/RHI diagnostics exposure is reduced, or remaining exposure is explicitly classified as editor inspection surface.
+- [x] Shader, mesh, and texture inspection windows remain available.
+- [x] No diagnostics facade is added.
+- [x] Runtime pressure facts remain only if consumed.
+
+Preserved editor inspection capabilities:
+
+- `UsedShadersPanel` remains product-owned because it supports shader reload and recook workflows.
+- `UsedMeshesPanel` remains product-owned because it lets the editor inspect mesh residency, draw/instance shape, material linkage, bounds, CPU/GPU byte estimates, and mesh batching behavior.
+- `UsedTexturesPanel` remains product-owned because it lets the editor inspect texture residency, dimensions, format intent, mip count, estimated memory, default-vs-scene ownership, and SRV identity.
+- `Windows > Shaders`, `Windows > Meshes`, and `Windows > Textures` remain valid editor workflows.
+
+Corrected ownership rule:
+
+- Editor inspection windows are capabilities, not scaffolding. They should be preserved.
+- The cleanup target is not the existence of the panels. The cleanup target is excessive public renderer/RHI exposure, duplicated DTO ownership, fallback chains, and report-style detail surfaces that are not consumed by editor inspection.
+- Mesh and texture inspection may keep renderer data extraction, but the API must be treated as an editor inspection surface rather than general runtime diagnostics.
+- Future refactors should prefer narrowing names, ownership, and include paths over deleting the capability.
+
+Future cleanup requirements for this area:
+
+- Keep shader/mesh/texture inspection windows available after every Stage 18 follow-up batch.
+- Do not add a generic diagnostics facade to hide the panels; ownership should stay direct and obvious.
+- If a renderer public DTO exists only for editor inspection, either classify it under an editor/inspection-named renderer API or move the smallest possible data extraction boundary without making Renderer depend on Editor.
+- Do not hardcode sample asset names, default level names, content-pack ids, or project names in inspection code. Inspection must reflect whatever the current level/content catalog loads.
+- Avoid fallback chains in inspection panels. Missing data should show as unavailable/empty at the owning boundary rather than trying multiple hidden paths.
+- Any cleanup in this area must be net code-negative or must remove equivalent duplicated panel/DTO/helper code in the same batch.
+
+Stage 18 implementation result:
+
+- Moved `UsedShadersPanel.h`, `UsedMeshesPanel.h`, and `UsedTexturesPanel.h` from `Engine/Editor/Public/Panels` to `Engine/Editor/Private/Panels`.
+- Kept `UsedShadersPanel.cpp`, `UsedMeshesPanel.cpp`, and `UsedTexturesPanel.cpp` unchanged in behavior; the windows remain available from the editor `Windows` menu.
+- Kept `UI.h` as the public editor API boundary with forward declarations only. External editor API users no longer see the concrete inspection panel headers.
+- Did not add a diagnostics facade, wrapper, fallback chain, or replacement panel.
+- Did not change renderer capture or renderer diagnostic DTO behavior in this batch. Those remain classified as editor inspection surfaces until a later net-negative narrowing pass can move or rename the smallest useful boundary.
+
+Code ownership result:
+
+- Shader, mesh, and texture inspection are now more clearly editor-private UI implementation details.
+- The preserved public editor contract remains the high-level `UI` entrypoint and `EditorDiagnosticsProviders`.
+- Renderer public diagnostic DTOs are still present only because the editor inspection windows consume them; Stage 19/20 may further narrow those names or ownership, but must not remove the windows.
+
+Verification:
+
+- `rg -n "UsedMeshesPanel|UsedTexturesPanel|CaptureMeshDiagnostics|CaptureTextureDiagnostics|MeshDiagnostics|TextureDiagnostics" Engine -g "*.h" -g "*.cpp"` confirms the shader/mesh/texture inspection path is present.
+- `rg -n "Panels/UsedShadersPanel.h|Panels/UsedMeshesPanel.h|Panels/UsedTexturesPanel.h|class UsedShadersPanel|class UsedMeshesPanel|class UsedTexturesPanel" Engine -g "*.h" -g "*.cpp"` confirms private implementation includes and public `UI.h` forward declarations.
+- `Test-Path` confirms the three inspection panel headers now live under `Engine/Editor/Private/Panels` and no longer live under `Engine/Editor/Public/Panels`.
+- Source deletion from the previous Stage 18 attempt was reverted because it removed a desired editor capability.
+- No source-code replacement layer was added.
 
 ### Stage 19: Compact Runtime Pressure Facts
 
