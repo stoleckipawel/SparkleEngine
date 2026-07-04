@@ -592,7 +592,7 @@ namespace SparkleLauncher
 		const LauncherProjectSummary* activeProject = FindActiveProject(m_projectModel);
 		if (activeProject == nullptr)
 		{
-			AddNoOptionsMessage(*levelLayout, "No active project is selected.");
+			AddNoOptionsMessage(*levelLayout, "No active project was discovered.");
 			return;
 		}
 

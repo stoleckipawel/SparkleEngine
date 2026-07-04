@@ -23,22 +23,19 @@ namespace SparkleLauncher
 		explicit LauncherProjectModel(QObject* parent = nullptr);
 
 		const QVector<LauncherProjectSummary>& Projects() const;
-		const QString& SelectedProjectId() const;
-		QString ActiveProjectId() const;
+		const QString& ActiveProjectId() const;
 
 	public slots:
 		void Refresh(const std::filesystem::path& repositoryRoot);
-		void SelectProject(const QString& projectId);
 
 	signals:
 		void ProjectsChanged();
-		void SelectionChanged(const QString& projectId);
 		void ProjectDiscoveryFailed(const QString& message);
 
 	private:
 		static QString ChooseInitialProjectId(const QVector<LauncherProjectSummary>& projects);
 
 		QVector<LauncherProjectSummary> m_projects;
-		QString m_selectedProjectId;
+		QString m_activeProjectId;
 	};
 }

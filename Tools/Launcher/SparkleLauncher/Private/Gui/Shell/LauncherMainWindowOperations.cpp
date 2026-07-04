@@ -47,7 +47,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty())
+		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.ActiveProjectId().isEmpty())
 		{
 			const QString message = "No project discovered. Confirm this is a Sparkle repository or package root with Projects/<Project> markers.";
 			if (m_operationOutput != nullptr)
@@ -121,8 +121,8 @@ namespace SparkleLauncher
 		    m_selectedOperationId);
 		if (request.CleanTargets.isEmpty())
 		{
-			const QString message = OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty() ?
-			                            "Select a project before cleaning this workflow's generated outputs." :
+			const QString message = OperationNeedsProject(m_selectedOperationId) && m_projectModel.ActiveProjectId().isEmpty() ?
+			                            "No active project was discovered for this workflow's generated outputs." :
 			                            "No generated outputs were resolved for this workflow.";
 			if (m_operationOutput != nullptr)
 			{
@@ -353,9 +353,9 @@ namespace SparkleLauncher
 
 	QString LauncherMainWindow::FailureRecoveryHint(const QString& operationId, const QString& statusText) const
 	{
-		if (OperationNeedsProject(operationId) && m_projectModel.SelectedProjectId().isEmpty())
+		if (OperationNeedsProject(operationId) && m_projectModel.ActiveProjectId().isEmpty())
 		{
-			return "No project is selected. Confirm the repository/package root contains Projects/<Project> markers, then regenerate project files if rebuilding from source.";
+			return "No active project was discovered. Confirm the repository/package root contains Projects/<Project> markers, then regenerate project files if rebuilding from source.";
 		}
 		if (operationId.startsWith("cook.") && OperationNeedsConfirmation(operationId))
 		{

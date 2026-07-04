@@ -194,9 +194,6 @@ namespace SparkleLauncher
 		connect(&m_projectModel, &LauncherProjectModel::ProjectsChanged, this, [this]() {
 			ScheduleUiRefresh(false);
 		});
-		connect(&m_projectModel, &LauncherProjectModel::SelectionChanged, this, [this](const QString&) {
-			ScheduleUiRefresh(false);
-		});
 		connect(&m_projectModel, &LauncherProjectModel::ProjectDiscoveryFailed, this, &LauncherMainWindow::SetStartupNotice);
 		connect(&m_settings, &LauncherSettings::SettingsChanged, this, [this]() {
 			ScheduleUiRefresh(false);
@@ -519,7 +516,7 @@ namespace SparkleLauncher
 		m_runButton->setVisible(true);
 		m_cleanButton->setVisible(m_selectedOperationId == "workspace.clean" || SupportsActionSpecificClean(m_selectedOperationId));
 
-		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty())
+		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.ActiveProjectId().isEmpty())
 		{
 			const QString reason = "No project discovered. Confirm this is a Sparkle repository or package root with Projects/<Project> markers, then run Generate Build Files if rebuilding from source.";
 			m_runButton->setEnabled(false);

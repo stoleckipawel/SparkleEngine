@@ -94,7 +94,7 @@ namespace SparkleLauncher
 			    "Package inclusion follows product ownership, visibility, binary type, declared dependencies, and package navigation rules.",
 			    false);
 			AddStatusRow(*contentsLayout, "Launcher", "Included", "Package-root SparkleLauncher.exe and runtime support files.", "neutral");
-			AddStatusRow(*contentsLayout, "Selected project products", "Staged when present", "Editor/runtime binaries and cooked content are staged from the selected project's artifacts.", "neutral");
+			AddStatusRow(*contentsLayout, "Active project products", "Staged when present", "Editor/runtime binaries and cooked content are staged from the active project's artifacts.", "neutral");
 			AddStatusRow(*contentsLayout, "Manifests", "Generated", "Release, build, dependency, bundled-runtime, file hash, checksum, and notes outputs.", "neutral");
 			AddStatusRow(*contentsLayout, "Symbols", "Separate archive", "Debug symbols stay outside user-facing runtime packages.", "neutral");
 			return;
@@ -242,13 +242,6 @@ namespace SparkleLauncher
 			        "Request embedded debug info stripping for final runtime shader binaries where the active backend supports it.",
 			        m_settings.ShaderStripDebugInfo(),
 			        &LauncherSettings::SetShaderStripDebugInfo));
-			AddOptionCheckBox(
-			    *advancedLayout,
-			    CreateBoundCheckBox(
-			        "Write cooked shader stats CSV",
-			        "Run the cooked-shader-stats analysis pass after the shader cook and write CSV output into the shader cache analysis folder.",
-			        m_settings.ShaderWriteCookedShaderStats(),
-			        &LauncherSettings::SetShaderWriteCookedShaderStats));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
@@ -291,7 +284,7 @@ namespace SparkleLauncher
 		if (operationId == "workspace.clean")
 		{
 			const std::array<CleanScopeUiOption, 9> cleanScopes = {{
-			    {"Selected project cooked content", "selected-cooked", "Cooked asset outputs for only the selected project under artifacts/dev/projects/<Project>/cooked.", QString(), "Cooked content"},
+			    {"Active project cooked content", "selected-cooked", "Cooked asset outputs for the active project under artifacts/dev/projects/<Project>/cooked.", QString(), "Cooked content"},
 			    {"All cooked content", "all-cooked", "Cooked asset domains for every project plus the shared cooked domain. Keeps editor/runtime artifacts and source dependency caches.", "artifacts/dev/projects/*/cooked", "Cooked content"},
 			    {"Build outputs and generated build files", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and project build trees. Keeps the source dependency cache.", "build content except build/_deps, root generated project files, project generated files", "Build and packages"},
 			    {"Generated artifacts", "artifacts", "Runnable artifacts, libraries, symbols, diagnostics, and generated project outputs under artifacts/.", QString(), "Build and packages"},
@@ -303,7 +296,7 @@ namespace SparkleLauncher
 			}};
 
 			QVector<QCheckBox*> scopeBoxes;
-			const QString selectedProjectId = m_projectModel.SelectedProjectId();
+			const QString activeProjectId = m_projectModel.ActiveProjectId();
 			const QStringList selectedScopes = m_settings.CleanScope().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
 			const std::array<QPair<QString, QString>, 5> cleanGroups = {{
 			    {"Cooked content", "Cooked assets"},
@@ -313,7 +306,7 @@ namespace SparkleLauncher
 			    {"Logs", "Launcher and project logs"},
 			}};
 
-			const auto addCleanScopeRow = [this, &scopeBoxes, &selectedProjectId, &selectedScopes](QGridLayout& groupGrid, const CleanScopeUiOption& scope, int row, int column) {
+			const auto addCleanScopeRow = [this, &scopeBoxes, &activeProjectId, &selectedScopes](QGridLayout& groupGrid, const CleanScopeUiOption& scope, int row, int column) {
 				QCheckBox* scopeBox = new QCheckBox(scope.Label, this);
 				scopeBox->setToolTip(scope.Detail);
 				scopeBox->setProperty("CleanScope", scope.Value);
@@ -327,7 +320,7 @@ namespace SparkleLauncher
 				scopeRowLayout->setContentsMargins(LauncherUi::Clean::ScopeCardMargins());
 				scopeRowLayout->setSpacing(LauncherUi::Clean::ScopeCardSpacing);
 				scopeRowLayout->addWidget(scopeBox);
-				const std::filesystem::path previewPath = ResolveCleanScopePreviewPath(m_repositoryRoot, selectedProjectId, scope.Value);
+				const std::filesystem::path previewPath = ResolveCleanScopePreviewPath(m_repositoryRoot, activeProjectId, scope.Value);
 				const QString previewText = scope.Preview.isEmpty() ? ToDisplayPath(m_repositoryRoot, previewPath) + " - " + FormatDirectoryInventory(previewPath) : scope.Preview;
 				QLabel* scopeDetail = new QLabel(previewText, scopeRow);
 				scopeDetail->setObjectName("OptionHelpText");

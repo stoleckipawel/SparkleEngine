@@ -33,19 +33,9 @@ namespace SparkleLauncher
 		return m_projects;
 	}
 
-	const QString& LauncherProjectModel::SelectedProjectId() const
+	const QString& LauncherProjectModel::ActiveProjectId() const
 	{
-		return m_selectedProjectId;
-	}
-
-	QString LauncherProjectModel::ActiveProjectId() const
-	{
-		if (!m_selectedProjectId.isEmpty())
-		{
-			return m_selectedProjectId;
-		}
-
-		return ChooseInitialProjectId(m_projects);
+		return m_activeProjectId;
 	}
 
 	void LauncherProjectModel::Refresh(const std::filesystem::path& repositoryRoot)
@@ -59,57 +49,21 @@ namespace SparkleLauncher
 			refreshedProjects.push_back({QString::fromStdString(project.Id), QString::fromStdString(project.DisplayName), project.RootPath});
 		}
 
-		const QString previousSelection = m_selectedProjectId;
-		QString nextSelection = previousSelection;
-		bool selectionStillExists = false;
-		for (const LauncherProjectSummary& project : refreshedProjects)
-		{
-			if (project.Id == previousSelection)
-			{
-				selectionStillExists = true;
-				break;
-			}
-		}
-		if (!selectionStillExists)
-		{
-			nextSelection = ChooseInitialProjectId(refreshedProjects);
-		}
+		const QString nextActiveProjectId = ChooseInitialProjectId(refreshedProjects);
 
 		const bool projectsChanged = !ProjectsMatch(m_projects, refreshedProjects);
-		const bool selectionChanged = m_selectedProjectId != nextSelection;
+		const bool activeProjectChanged = m_activeProjectId != nextActiveProjectId;
 		m_projects = std::move(refreshedProjects);
-		m_selectedProjectId = nextSelection;
+		m_activeProjectId = nextActiveProjectId;
 
-		if (projectsChanged)
+		if (projectsChanged || activeProjectChanged)
 		{
 			emit ProjectsChanged();
-		}
-		if (selectionChanged)
-		{
-			emit SelectionChanged(m_selectedProjectId);
 		}
 
 		if (!errorMessage.empty())
 		{
 			emit ProjectDiscoveryFailed(QString::fromStdString(errorMessage));
-		}
-	}
-
-	void LauncherProjectModel::SelectProject(const QString& projectId)
-	{
-		if (m_selectedProjectId == projectId)
-		{
-			return;
-		}
-
-		for (const LauncherProjectSummary& project : m_projects)
-		{
-			if (project.Id == projectId)
-			{
-				m_selectedProjectId = projectId;
-				emit SelectionChanged(m_selectedProjectId);
-				return;
-			}
 		}
 	}
 

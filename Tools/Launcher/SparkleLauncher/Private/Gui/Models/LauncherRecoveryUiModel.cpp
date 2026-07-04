@@ -18,11 +18,11 @@ namespace SparkleLauncher
 		}
 		if (operationId == "project.open.editor" || (operationId == "project.run" && statusText.contains("Editor", Qt::CaseInsensitive)))
 		{
-			return {"project.build.editor", "Build Editor", "Rebuild the selected project editor artifact.", true};
+			return {"project.build.editor", "Build Editor", "Rebuild the active project editor artifact.", true};
 		}
 		if (operationId == "project.open.runtime" || statusText.contains("Runtime", Qt::CaseInsensitive))
 		{
-			return {"project.build.runtime", "Build Runtime", "Rebuild the selected project runtime artifact.", true};
+			return {"project.build.runtime", "Build Runtime", "Rebuild the active project runtime artifact.", true};
 		}
 		if (statusText.contains("scene", Qt::CaseInsensitive) || statusText.contains("mesh", Qt::CaseInsensitive))
 		{

@@ -178,11 +178,6 @@ namespace SparkleLauncher
 		return m_shaderWriteDebugArtifacts;
 	}
 
-	bool LauncherSettings::ShaderWriteCookedShaderStats() const
-	{
-		return m_shaderWriteCookedShaderStats;
-	}
-
 	bool LauncherSettings::ForceConfigure() const
 	{
 		return m_forceConfigure;
@@ -464,16 +459,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_shaderWriteDebugArtifacts = enabled;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetShaderWriteCookedShaderStats(bool enabled)
-	{
-		if (m_shaderWriteCookedShaderStats == enabled)
-		{
-			return;
-		}
-		m_shaderWriteCookedShaderStats = enabled;
 		emit SettingsChanged();
 	}
 

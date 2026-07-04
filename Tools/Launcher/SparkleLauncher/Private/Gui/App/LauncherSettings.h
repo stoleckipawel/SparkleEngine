@@ -39,7 +39,6 @@ namespace SparkleLauncher
 		bool ShaderStripReflection() const;
 		bool ShaderStripDebugInfo() const;
 		bool ShaderWriteDebugArtifacts() const;
-		bool ShaderWriteCookedShaderStats() const;
 		bool ForceConfigure() const;
 		bool ForceRecook() const;
 		bool ConfirmForceRecook() const;
@@ -73,7 +72,6 @@ namespace SparkleLauncher
 		void SetCleanScope(const QString& scope);
 		void SetShaderUseCache(bool enabled);
 		void SetShaderWriteDebugArtifacts(bool enabled);
-		void SetShaderWriteCookedShaderStats(bool enabled);
 		void SetForceConfigure(bool enabled);
 		void SetForceRecook(bool enabled);
 		void SetConfirmForceRecook(bool enabled);
@@ -105,10 +103,9 @@ namespace SparkleLauncher
 		bool m_shaderEnableDebugInfo = false;
 		bool m_shaderEnableOptimizations = true;
 		bool m_shaderWarningsAsErrors = true;
-		bool m_shaderStripReflection = true;
+		bool m_shaderStripReflection = false;
 		bool m_shaderStripDebugInfo = true;
 		bool m_shaderWriteDebugArtifacts = false;
-		bool m_shaderWriteCookedShaderStats = false;
 		bool m_forceConfigure = false;
 		bool m_forceRecook = false;
 		bool m_confirmForceRecook = false;

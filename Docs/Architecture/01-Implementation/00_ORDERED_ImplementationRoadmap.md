@@ -343,6 +343,7 @@ Result:
 - Asset cook discovery uses catalog `Default` levels to filter project scene sources while preserving engine scene discovery.
 - Launcher level sync controls use catalog metadata to make required levels locked-on and optional levels user-selectable.
 - Launcher header level selection is the single visible startup-level source for editor/runtime launch; the Launch Project page no longer owns a duplicate startup-level selector.
+- Launcher GUI project state is single-active-project state, not user-selectable project state; build/cook/launch requests still carry the active project id only for paths and target ownership.
 - Optional pack metadata is represented by `Id`, `Root`, and `Available`; missing or disabled packs can suppress catalog levels without introducing a content database.
 
 ### Stage 06: Optional Heavy Content Pack Boundary
@@ -577,7 +578,7 @@ Net code pressure:
 
 - No source code was added.
 - No source code was deleted because the target smoke harnesses were already absent.
-- The next actual deletion pressure remains Stage 11 AssetCooker report cleanup and Stage 12 shader debug artifact cleanup.
+- The next actual deletion pressure moved to Stage 13 launcher workflow inventory and Stage 14 launcher workflow slimming.
 
 ### Stage 11: AssetCooker Default Report Cleanup
 
@@ -592,16 +593,34 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Default AssetCooker path writes cooked assets, not plan/timing report artifacts.
-- [ ] `asset-cooker-plan-v1` and `asset-cooker-summary-v1` are gone from default path.
-- [ ] Fatal errors remain clear.
-- [ ] No report replacement is added.
+- [x] Default AssetCooker path writes cooked assets, not plan/timing report artifacts.
+- [x] `asset-cooker-plan-v1` and `asset-cooker-summary-v1` are gone from default path.
+- [x] Fatal errors remain clear.
+- [x] No report replacement is added.
+
+Result:
+
+- Removed `AssetCookerDiscovery::WritePlanSummary`, the `asset-cooker-plan-v1` file writer, and the plan/summary path fields from `AssetCookerProjectCookPlan`.
+- Removed `AssetCookerWriteTimingSummary`, `AssetCookerPrintTopStageTimings`, timing structs, elapsed-time fields, and `asset-cooker-summary-v1` JSON emission from `AssetCookerDispatcher`.
+- Stopped passing `--summary` to `TextureCooker` from the AssetCooker default texture path, so the launcher-driven cook path no longer creates a texture timing summary as a side effect.
+- Moved the transient texture request file out of `artifacts/diagnostics/cook/Temp` into `artifacts/dev/tools/AssetCooker/Temp`.
+- Kept cooked output records in `AssetCookerCliPrintResult`, stage progress/status messages, and fatal diagnostics from shader, texture, scene, mesh, and material cook failures.
+- No new report, replacement summary, fallback chain, or content hardcode was added.
+
+Net code pressure:
+
+- This stage is net negative: it deletes report/timing artifact code and only updates the existing roadmap result.
+
+Verification:
+
+- `cmake --build build --target AssetCooker --config DevelopmentEditor` succeeded.
+- `rg -n "asset-cooker-plan-v1|asset-cooker-summary-v1|planPath|summaryPath|textureSummaryPath|WritePlanSummary|WriteTimingSummary|PrintTopStageTimings|StageTiming|elapsedMs|Timing summary written|AssetCooker stage timings|artifacts.*/diagnostics.*/cook|--summary" Tools/Cooking/AssetCooker Tools/Launcher/SparkleLauncher/Private/Cook` returned no matches.
 
 ### Stage 12: Shader Debug Artifact Cleanup
 
@@ -616,16 +635,31 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Default shader cook writes runtime packages.
-- [ ] Reflection data remains available to runtime.
-- [ ] Debug artifacts are opt-in or removed.
-- [ ] Validation-only shader registrations are removed from product runtime.
+- [x] Default shader cook writes runtime packages.
+- [x] Reflection data remains available to runtime.
+- [x] Debug artifacts are opt-in or removed.
+- [x] Validation-only shader registrations are removed from product runtime.
+
+Result:
+
+- Launcher and AssetCooker shader cook orchestration now call the runtime package cook directly; the separate `list-shaders --validate` step is no longer part of product cook.
+- Launcher cook requests no longer expose or forward cooked shader stats CSV generation. `--analysis cooked-shader-stats` remains only as an intentional low-level ShaderCompiler CLI analysis path, not a default launcher or AssetCooker behavior.
+- Default shader cook settings now preserve reflection by default in `ShaderPackageCookSettings`, `CookOperationRequest`, `LauncherOperationRequest`, and launcher settings.
+- Runtime package output remains owned by `ShaderCompiler cook`, which writes `.sparkshader` packages and `ShaderPackageRegistry.sreg`.
+- Reflection remains serialized into runtime cooked packages through `CookedPackageWriter` and loaded by `CookedShaderPackageCache`.
+- Debug artifact bundles remain opt-in through the explicit `--debug-artifacts` path; no default debug bundle directory is used unless the launcher setting is enabled.
+
+Net code pressure:
+
+- No source code was added.
+- Source code was removed from launcher stats plumbing, validation-only cook steps, stale validation failure handling, and AssetCooker pre-cook validation.
+- The stage reduces default debug/report surface while preserving runtime shader packages and reflection data.
 
 ### Stage 13: Launcher Workflow Inventory
 
@@ -640,16 +674,53 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Build, cook, run, clean, package-if-owned are the only first-class launcher workflows.
-- [ ] Diagnostic/status/quality/debug-only launcher pages are listed.
-- [ ] Package UI ownership is decided.
-- [ ] No launcher feature is added.
+- [x] Build, cook, run, clean, package-if-owned are the only first-class launcher workflows.
+- [x] Diagnostic/status/quality/debug-only launcher pages are listed.
+- [x] Package UI ownership is decided.
+- [x] No launcher feature is added.
+
+Result:
+
+- Product-owned first-class workflow families are:
+  - Build: `workspace.generate-build-files`, `workspace.build-all`, `launcher.build.self`, `project.build.editor`, `project.build.runtime`, `cook.tools.prepare`.
+  - Cook: `cook.project`, `cook.shaders`, `cook.textures`, `cook.assets`.
+  - Run: `project.open.editor`, `project.open.runtime`, `project.run`; `workspace.open-ide` is build/navigation support, not a separate product family.
+  - Clean: `workspace.clean`.
+  - Package: `package.release`, because it maps to `BuildWorkspaceOperationKind::AssembleRelease` and writes reviewable runtime/symbol package layouts under `dist/releases/<version>` without publishing.
+- Preserved but not first-class:
+  - `workspace.sync-source-tiers` stays as required preparation for dependency and optional level/content sync, but Stage 14 should fold it into a Build/Prepare surface rather than keep a standalone top-level workflow family.
+  - Level and optional content sync remain product capability; they should stay catalog-driven and must not hardcode sample names in launcher code.
+- Diagnostic, status, quality, debug, or cockpit surfaces marked for Stage 14 removal or demotion:
+  - `toolchain.check` as a standalone visible workflow. Keep host-readiness checks as blocking readiness data owned by Build/Cook/Run pages.
+  - `quality.format` as a launcher workflow. Prefer CLI/dev-tool ownership or keep it outside the first-class launcher surface.
+  - `LauncherMainWindowStatusPages.cpp` action-dependency panels named `Action Dependencies - ...`; keep only compact blocking readiness on the owning workflow.
+  - `LauncherMainWindowSyncPages.cpp` raw third-party dependency cache inventory. Keep enabled dependency sync state, remove raw package cockpit details from the normal flow.
+  - `LauncherOutputWidgets.*` and `LauncherMainWindowActivity.cpp` expanded Activity/log cockpit. Keep last-run result and failure surface only if directly actionable.
+  - `LauncherRecoveryUiModel.*` and workflow recovery panels that duplicate action dependencies. Keep one recovery path at the owner boundary.
+  - `LauncherMainWindowPagePrimitives.cpp` workflow visual banners if they do not carry direct command state.
+  - Advanced shader diagnostics in `LauncherMainWindowOptionPages.cpp`: debug artifact bundles, debug info, optimization/debug stripping switches should leave the default GUI or become an explicit developer-only path.
+  - Package contents/status breakdown in `LauncherMainWindowOptionPages.cpp` should be reduced to direct package assembly inputs until Stage 15 defines owned package outputs.
+- Package UI ownership decision:
+  - Keep `package.release` as an owned workflow only for assembly of already-built product artifacts.
+  - Do not expand package UI into release validation, publishing, checklist, signing, or report generation.
+  - Stage 15 still owns the detailed package output list: runtime, editor if shipped, launcher, dev tools if shipped, symbols archive, optional content packs.
+
+Net code pressure:
+
+- No source code was added.
+- No source code was removed in this inventory-only stage.
+- Stage 14 must pay the debt by deleting or demoting the listed diagnostic cockpit surfaces without replacing them with new panels.
+
+Search evidence:
+
+- Operation definitions were inventoried from `BuildWorkspacePlanner.cpp`, `CookOperations.cpp`, `LaunchOperations.cpp`, `MaintenanceOperations.cpp`, and `LauncherWorkflowCatalog.cpp`.
+- UI cockpit surfaces were inventoried from `LauncherMainWindowStatusPages.cpp`, `LauncherMainWindowSyncPages.cpp`, `LauncherOutputWidgets.*`, `LauncherMainWindowActivity.cpp`, `LauncherRecoveryUiModel.*`, and `LauncherMainWindowOptionPages.cpp`.
 
 ### Stage 14: Launcher Workflow Slimming
 

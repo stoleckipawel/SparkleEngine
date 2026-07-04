@@ -21,17 +21,13 @@ namespace SparkleLauncher
 
 		if (static_cast<unsigned int>(result.ExitCode) == kMissingRuntimeDependencyExitCode)
 		{
-			if (step.Id == "validate-shader-registrations" || step.Id == "cook-shaders" || step.Id == "cook-shader-package")
+			if (step.Id == "cook-shaders" || step.Id == "cook-shader-package")
 			{
 				return "ShaderCompiler could not start because its DXC/Slang runtime support bundle is incomplete. Rebuild cooking tools after Sync confirms the Vulkan SDK, then retry. Log: " + step.Request.LogPath.string();
 			}
 			return "A required runtime DLL is missing for this tool. Rebuild the tool and retry. Log: " + step.Request.LogPath.string();
 		}
 
-		if (step.Id == "validate-shader-registrations")
-		{
-			return "Shader registration validation failed. Log: " + step.Request.LogPath.string();
-		}
 		if (step.Id == "cook-shaders" || step.Id == "cook-shader-package")
 		{
 			return "Shader package cooking failed. Log: " + step.Request.LogPath.string();

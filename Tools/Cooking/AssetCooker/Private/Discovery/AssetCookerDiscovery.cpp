@@ -434,11 +434,6 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 	outPlan.repositoryRoot = repositoryRoot;
 	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
 	outPlan.cookedRoot = repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
-	outPlan.planPath = repositoryRoot / "artifacts" / "diagnostics" / "cook" / "Plans" / (outPlan.projectName + ".assetcookplan.txt");
-	outPlan.summaryPath = repositoryRoot / "artifacts" / "diagnostics" / "cook" / "Summaries" /
-	                      (outPlan.projectName + "-" + outPlan.configuration + "-assetcook-summary.json");
-	outPlan.textureSummaryPath = repositoryRoot / "artifacts" / "diagnostics" / "cook" / "Summaries" /
-	                             (outPlan.projectName + "-" + outPlan.configuration + "-texturecook-summary.json");
 	AssetCookerAddPlanSteps(category, outPlan.steps);
 
 	if (!AssetCookerPathExists(outPlan.projectRoot / ".sparkle-project"))
@@ -483,43 +478,5 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 		}
 	}
 
-	return WritePlanSummary(outPlan, diagnostics);
-}
-
-bool AssetCookerDiscovery::WritePlanSummary(
-    const AssetCookerProjectCookPlan& plan,
-    AssetCookerDiagnostics& diagnostics)
-{
-	std::error_code createError;
-	std::filesystem::create_directories(plan.planPath.parent_path(), createError);
-	if (createError)
-	{
-		diagnostics.AddError(AssetCookerCategory_All, "Failed to create cook plan directory.", plan.planPath.parent_path());
-		return false;
-	}
-
-	std::ofstream output(plan.planPath, std::ios::binary);
-	if (!output.is_open())
-	{
-		diagnostics.AddError(AssetCookerCategory_All, "Failed to write cook plan summary.", plan.planPath);
-		return false;
-	}
-
-	output << "schema=asset-cooker-plan-v1\n";
-	output << "project=" << plan.projectName << "\n";
-	output << "configuration=" << plan.configuration << "\n";
-	output << "toolConfiguration=" << plan.toolConfiguration << "\n";
-	output << "summaryPath=" << plan.summaryPath.string() << "\n";
-	output << "textureSummaryPath=" << plan.textureSummaryPath.string() << "\n";
-	output << "engineSceneCount=" << plan.engineSceneCount << "\n";
-	output << "projectSceneCount=" << plan.projectSceneCount << "\n";
-	output << "overriddenEngineSceneCount=" << plan.overriddenEngineSceneCount << "\n";
-	output << "sceneCount=" << plan.sceneEntries.size() << "\n";
-	for (const AssetCookerSceneEntry& entry : plan.sceneEntries)
-	{
-		output << "scene=" << entry.origin << "|" << entry.relativePath << "|" << entry.sourcePath.string() << "\n";
-	}
-
-	diagnostics.AddInfo(AssetCookerCategory_All, "ProjectCookPlan summary written to " + plan.planPath.string() + ".");
 	return true;
 }

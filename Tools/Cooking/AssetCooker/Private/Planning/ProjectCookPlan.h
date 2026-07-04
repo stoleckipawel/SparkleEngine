@@ -28,9 +28,6 @@ struct AssetCookerProjectCookPlan final
 	std::filesystem::path repositoryRoot;
 	std::filesystem::path projectRoot;
 	std::filesystem::path cookedRoot;
-	std::filesystem::path planPath;
-	std::filesystem::path summaryPath;
-	std::filesystem::path textureSummaryPath;
 	std::vector<AssetCookerSceneEntry> sceneEntries;
 	std::vector<AssetCookerPlanStep> steps;
 	int engineSceneCount = 0;

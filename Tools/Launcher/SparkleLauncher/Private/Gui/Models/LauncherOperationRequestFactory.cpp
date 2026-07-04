@@ -57,7 +57,7 @@ namespace SparkleLauncher
 			return settings.ShaderDebugArtifactDirectory().trimmed();
 		}
 
-		const QString projectId = projectModel.SelectedProjectId().isEmpty() ? "Workspace" : projectModel.SelectedProjectId();
+		const QString projectId = projectModel.ActiveProjectId().isEmpty() ? "Workspace" : projectModel.ActiveProjectId();
 		return QString::fromStdString((GetDiagnosticsDirectory(repositoryRoot) / "ShaderDebugArtifacts" / projectId.toStdString()).string());
 	}
 
@@ -85,7 +85,7 @@ namespace SparkleLauncher
 		LauncherOperationRequest request;
 		request.RepositoryRoot = repositoryRoot;
 		request.OperationId = operationId;
-		request.ProjectId = projectModel.SelectedProjectId();
+		request.ProjectId = projectModel.ActiveProjectId();
 		request.EditorProfile = settings.EditorProfile();
 		request.RuntimeProfile = settings.RuntimeProfile();
 		request.WorkspaceIde = settings.WorkspaceIde();
@@ -101,7 +101,6 @@ namespace SparkleLauncher
 		request.ShaderStripReflection = settings.ShaderStripReflection();
 		request.ShaderStripDebugInfo = settings.ShaderStripDebugInfo();
 		request.ShaderWriteDebugArtifacts = settings.ShaderWriteDebugArtifacts();
-		request.ShaderWriteCookedShaderStats = settings.ShaderWriteCookedShaderStats();
 		request.ShaderDebugArtifactDirectory = settings.ShaderWriteDebugArtifacts() ?
 		                                          ResolveShaderDebugArtifactDirectory(repositoryRoot, projectModel, settings) :
 		                                          QString();
@@ -142,7 +141,7 @@ namespace SparkleLauncher
 		    repositoryRoot,
 		    runningLauncherPath,
 		    operationId,
-		    projectModel.SelectedProjectId(),
+		    projectModel.ActiveProjectId(),
 		    settings.EditorProfile(),
 		    settings.RuntimeProfile(),
 		    settings.SelectedTargets()};

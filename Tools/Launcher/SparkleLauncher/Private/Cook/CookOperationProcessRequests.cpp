@@ -48,11 +48,6 @@ namespace SparkleLauncher
 			arguments.push_back("--debug-artifacts");
 			arguments.push_back(plan.Request.ShaderDebugArtifactDirectory.string());
 		}
-		if (plan.Request.WriteCookedShaderStats)
-		{
-			arguments.push_back("--analysis");
-			arguments.push_back("cooked-shader-stats");
-		}
 	}
 
 	static ProcessRequest MakeAssetCookerRequest(const CookOperationPlan& plan, std::string_view command, std::string_view logFileName)
@@ -62,16 +57,6 @@ namespace SparkleLauncher
 		process.WorkingDirectory = plan.RepositoryRoot;
 		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, logFileName);
 		process.Arguments = {std::string(command), plan.Request.ProjectId, plan.Request.RuntimeProfile, "--root", plan.RepositoryRoot.string()};
-		return process;
-	}
-
-	static ProcessRequest MakeShaderValidationRequest(const CookOperationPlan& plan)
-	{
-		ProcessRequest process;
-		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "ShaderCompiler");
-		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ProjectId;
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "ShaderRegistrationValidation.txt");
-		process.Arguments = {"list-shaders", "--validate"};
 		return process;
 	}
 
@@ -134,7 +119,6 @@ namespace SparkleLauncher
 		{
 		case CookOperationKind::CookShaders:
 #if SPARKLE_ENABLE_SHADER_COMPILER
-			AddStep(steps, "validate-shader-registrations", "Validate shader registrations", MakeShaderValidationRequest(plan));
 			if (plan.Request.ShaderPackages.empty())
 			{
 				AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
@@ -160,7 +144,6 @@ namespace SparkleLauncher
 			return steps;
 		case CookOperationKind::CookAllAssets:
 #if SPARKLE_ENABLE_SHADER_COMPILER
-			AddStep(steps, "validate-shader-registrations", "Validate shader registrations", MakeShaderValidationRequest(plan));
 			AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
 #endif
 #if SPARKLE_ENABLE_CONTENT_PIPELINE

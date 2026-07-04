@@ -2,9 +2,7 @@
 
 #include "AssetCookerToolProcess.h"
 #include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
-#include "Core/Public/Json/JsonWriter.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "CookedMeshAssetBuilder.h"
 #include "CookedMeshAssetWriter.h"
@@ -16,11 +14,9 @@
 #include "ToolConsole.h"
 #include "TextureCookRequestList.h"
 
-#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -28,19 +24,6 @@
 #include <vector>
 
 #include <objbase.h>
-
-struct AssetCookerStageTiming final
-{
-	std::string name;
-	std::uint64_t elapsedMilliseconds = 0;
-	bool succeeded = false;
-};
-
-static std::uint64_t AssetCookerElapsedMilliseconds(std::chrono::steady_clock::time_point startTime) noexcept
-{
-	return static_cast<std::uint64_t>(
-	    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
-}
 
 static const char* AssetCookerPlanStepName(AssetCookerPlanStep step) noexcept
 {
@@ -54,139 +37,6 @@ static const char* AssetCookerPlanStepName(AssetCookerPlanStep step) noexcept
 		return "scene-assets";
 	default:
 		return "unknown";
-	}
-}
-
-static const char* AssetCookerCategoryName(AssetCookerCategory category) noexcept
-{
-	switch (category)
-	{
-	case AssetCookerCategory_All:
-		return "all";
-	case AssetCookerCategory_Shaders:
-		return "shaders";
-	case AssetCookerCategory_Textures:
-		return "textures";
-	case AssetCookerCategory_SceneAssets:
-		return "scene-assets";
-	case AssetCookerCategory_Texture:
-		return "texture";
-	case AssetCookerCategory_Shader:
-		return "shader";
-	case AssetCookerCategory_Mesh:
-		return "mesh";
-	case AssetCookerCategory_Material:
-		return "material";
-	case AssetCookerCategory_Scene:
-		return "scene";
-	default:
-		return "unknown";
-	}
-}
-
-static std::string AssetCookerBuildPlanStepList(const std::vector<AssetCookerPlanStep>& steps)
-{
-	std::ostringstream output;
-	for (std::size_t stepIndex = 0; stepIndex < steps.size(); ++stepIndex)
-	{
-		if (stepIndex > 0u)
-		{
-			output << ", ";
-		}
-		output << AssetCookerPlanStepName(steps[stepIndex]);
-	}
-	return output.str();
-}
-
-static bool AssetCookerWriteTimingSummary(
-    const AssetCookerProjectCookPlan& plan,
-    const std::vector<AssetCookerStageTiming>& stageTimings,
-    const std::vector<AssetCookerOutputRecord>& outputs,
-    bool succeeded,
-    std::uint64_t elapsedMilliseconds,
-    std::string& outErrorMessage)
-{
-	std::ostringstream stages;
-	stages << "[\n";
-	for (std::size_t stageIndex = 0; stageIndex < stageTimings.size(); ++stageIndex)
-	{
-		const AssetCookerStageTiming& stage = stageTimings[stageIndex];
-		stages << "    {"
-		       << "\"name\": " << Json::QuoteString(stage.name) << ", "
-		       << "\"elapsedMs\": " << stage.elapsedMilliseconds << ", "
-		       << "\"succeeded\": " << (stage.succeeded ? "true" : "false") << "}";
-		if (stageIndex + 1u < stageTimings.size())
-		{
-			stages << ',';
-		}
-		stages << "\n";
-	}
-	stages << "  ]";
-
-	std::ostringstream outputRecords;
-	outputRecords << "[\n";
-	for (std::size_t outputIndex = 0; outputIndex < outputs.size(); ++outputIndex)
-	{
-		const AssetCookerOutputRecord& output = outputs[outputIndex];
-		outputRecords << "    {"
-		              << "\"category\": " << Json::QuoteString(AssetCookerCategoryName(output.category)) << ", "
-		              << "\"assetId\": " << Json::QuoteString(output.assetId) << ", "
-		              << "\"path\": " << Json::QuoteString(std::filesystem::path(output.path).generic_string()) << ", "
-		              << "\"reloadHint\": " << Json::QuoteString(output.reloadHint) << "}";
-		if (outputIndex + 1u < outputs.size())
-		{
-			outputRecords << ',';
-		}
-		outputRecords << "\n";
-	}
-	outputRecords << "  ]";
-
-	Json::ObjectWriter writer;
-	writer.WriteString("schema", "asset-cooker-summary-v1");
-	writer.WriteString("tool", "AssetCooker");
-	writer.WriteString("project", plan.projectName);
-	writer.WriteString("configuration", plan.configuration);
-	writer.WriteString("toolConfiguration", plan.toolConfiguration);
-	writer.WriteString("planPath", plan.planPath.generic_string());
-	writer.WriteString("textureSummaryPath", plan.textureSummaryPath.generic_string());
-	writer.WriteRaw("succeeded", succeeded ? "true" : "false");
-	writer.WriteUInt64("elapsedMs", elapsedMilliseconds);
-	writer.WriteUInt64("engineSceneCount", static_cast<std::uint64_t>(plan.engineSceneCount));
-	writer.WriteUInt64("projectSceneCount", static_cast<std::uint64_t>(plan.projectSceneCount));
-	writer.WriteUInt64("overriddenEngineSceneCount", static_cast<std::uint64_t>(plan.overriddenEngineSceneCount));
-	writer.WriteUInt64("sceneCount", static_cast<std::uint64_t>(plan.sceneEntries.size()));
-	writer.WriteUInt64("outputCount", static_cast<std::uint64_t>(outputs.size()));
-	writer.WriteRaw("stages", stages.str());
-	writer.WriteRaw("outputs", outputRecords.str());
-
-	return Files::TryWriteAllTextAtomic(plan.summaryPath, writer.Finish(), outErrorMessage);
-}
-
-static void AssetCookerPrintTopStageTimings(const std::vector<AssetCookerStageTiming>& stageTimings)
-{
-	std::vector<AssetCookerStageTiming> sortedTimings = stageTimings;
-	std::ranges::sort(
-	    sortedTimings,
-	    [](const AssetCookerStageTiming& lhs, const AssetCookerStageTiming& rhs) noexcept
-	    {
-		    return lhs.elapsedMilliseconds > rhs.elapsedMilliseconds;
-	    });
-
-	if (sortedTimings.empty())
-	{
-		return;
-	}
-
-	ToolConsole::ListHeader(std::cout, "AssetCooker stage timings");
-	for (std::size_t timingIndex = 0; timingIndex < sortedTimings.size(); ++timingIndex)
-	{
-		const AssetCookerStageTiming& timing = sortedTimings[timingIndex];
-		ToolConsole::ListItem(
-		    std::cout,
-		    timingIndex + 1u,
-		    {ToolConsole::Field("stage", timing.name),
-		     ToolConsole::Field("elapsedMs", std::to_string(timing.elapsedMilliseconds)),
-		     ToolConsole::Field("status", timing.succeeded ? "succeeded" : "failed")});
 	}
 }
 
@@ -225,10 +75,10 @@ static bool AssetCookerPlanUsesStep(const AssetCookerProjectCookPlan& plan, Asse
 static std::filesystem::path AssetCookerMakeTempPath(
     const AssetCookerProjectCookPlan& plan,
     std::string_view stem,
-    std::string_view extension)
+	std::string_view extension)
 {
 	const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-	return plan.repositoryRoot / "artifacts" / "diagnostics" / "cook" / "Temp" /
+	return plan.repositoryRoot / "artifacts" / "dev" / "tools" / "AssetCooker" / "Temp" /
 	       (std::string(stem) + "-" + plan.projectName + "-" + std::to_string(timestamp) + std::string(extension));
 }
 
@@ -600,16 +450,8 @@ static bool AssetCookerRunShaders(
     std::vector<AssetCookerOutputRecord>& outOutputs)
 {
 	const std::filesystem::path shaderCompilerPath = AssetCookerResolveToolPath(plan, "ShaderCompiler");
-	ToolConsole::Info("Cooking shaders: validating package registry...");
-	int exitCode = AssetCookerToolProcess::Run(shaderCompilerPath, {L"list-shaders", L"--validate"}, plan.projectRoot);
-	if (exitCode != 0)
-	{
-		diagnostics.AddError(AssetCookerCategory_Shaders, "Shader registration validation failed.");
-		return false;
-	}
-
 	ToolConsole::Info("Cooking shaders: writing package payloads...");
-	exitCode = AssetCookerToolProcess::Run(shaderCompilerPath, {L"cook"}, plan.projectRoot);
+	const int exitCode = AssetCookerToolProcess::Run(shaderCompilerPath, {L"cook"}, plan.projectRoot);
 	if (exitCode != 0)
 	{
 		diagnostics.AddError(AssetCookerCategory_Shaders, "Shader package cooking failed.");
@@ -657,7 +499,7 @@ static bool AssetCookerRunTextures(
 
 	const int exitCode = AssetCookerToolProcess::Run(
 	    textureCookerPath,
-	    {L"cook-request-file", textureRequestPath.wstring(), L"--summary", plan.textureSummaryPath.wstring()},
+	    {L"cook-request-file", textureRequestPath.wstring()},
 	    plan.projectRoot);
 	AssetCookerRemoveTempFile(textureRequestPath);
 	if (exitCode != 0)
@@ -774,90 +616,47 @@ bool AssetCookerDispatcher::DispatchPlan(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs)
 {
-	const auto dispatchStartTime = std::chrono::steady_clock::now();
-	std::vector<AssetCookerStageTiming> stageTimings;
-
 	Filesystem::ConfigureProjectRoot(plan.projectRoot);
 
 	ToolConsole::Summary(
 	    std::cout,
-	    "AssetCooker plan",
+	    "AssetCooker cook",
 	    {ToolConsole::QuotedField("project", plan.projectName),
 	     ToolConsole::QuotedField("configuration", plan.configuration),
 	     ToolConsole::QuotedField("toolConfiguration", plan.toolConfiguration),
-	     ToolConsole::QuotedField("steps", AssetCookerBuildPlanStepList(plan.steps)),
-	     ToolConsole::Field("scenes", std::to_string(plan.sceneEntries.size())),
-	     ToolConsole::Field("engineScenes", std::to_string(plan.engineSceneCount)),
-	     ToolConsole::Field("projectScenes", std::to_string(plan.projectSceneCount)),
-	     ToolConsole::Field("overrides", std::to_string(plan.overriddenEngineSceneCount))});
+	     ToolConsole::Field("steps", std::to_string(plan.steps.size())),
+	     ToolConsole::Field("scenes", std::to_string(plan.sceneEntries.size()))});
 
 	for (std::size_t stepIndex = 0; stepIndex < plan.steps.size(); ++stepIndex)
 	{
 		const AssetCookerPlanStep step = plan.steps[stepIndex];
-		AssetCookerStageTiming stageTiming;
-		stageTiming.name = AssetCookerPlanStepName(step);
-		const auto stageStartTime = std::chrono::steady_clock::now();
-		ToolConsole::Progress(std::cout, "Cooking", "stage", stepIndex + 1u, plan.steps.size(), stageTiming.name);
+		const char* stageName = AssetCookerPlanStepName(step);
+		ToolConsole::Progress(std::cout, "Cooking", "stage", stepIndex + 1u, plan.steps.size(), stageName);
 
+		bool stageSucceeded = false;
 		if (step == AssetCookerPlanStep::Shaders)
 		{
-			stageTiming.succeeded = AssetCookerRunShaders(plan, diagnostics, outOutputs);
+			stageSucceeded = AssetCookerRunShaders(plan, diagnostics, outOutputs);
 		}
 		else if (step == AssetCookerPlanStep::Textures)
 		{
-			stageTiming.succeeded = AssetCookerRunTextures(plan, diagnostics, outOutputs);
+			stageSucceeded = AssetCookerRunTextures(plan, diagnostics, outOutputs);
 		}
 		else if (step == AssetCookerPlanStep::SceneAssets)
 		{
-			stageTiming.succeeded = AssetCookerRunSceneAssets(plan, diagnostics, outOutputs);
+			stageSucceeded = AssetCookerRunSceneAssets(plan, diagnostics, outOutputs);
 		}
 
-		stageTiming.elapsedMilliseconds = AssetCookerElapsedMilliseconds(stageStartTime);
-		stageTimings.push_back(std::move(stageTiming));
 		ToolConsole::Message(
 		    std::cout,
 		    ToolConsoleSeverity::Info,
 		    "Stage finished",
-		    {ToolConsole::QuotedField("name", stageTimings.back().name),
-		     ToolConsole::Field("status", stageTimings.back().succeeded ? "completed" : "failed"),
-		     ToolConsole::Field("elapsedMs", std::to_string(stageTimings.back().elapsedMilliseconds))});
-		if (!stageTimings.back().succeeded)
+		    {ToolConsole::QuotedField("name", stageName),
+		     ToolConsole::Field("status", stageSucceeded ? "completed" : "failed")});
+		if (!stageSucceeded)
 		{
-			AssetCookerPrintTopStageTimings(stageTimings);
-			std::string summaryError;
-			if (!AssetCookerWriteTimingSummary(
-			        plan,
-			        stageTimings,
-			        outOutputs,
-			        false,
-			        AssetCookerElapsedMilliseconds(dispatchStartTime),
-			        summaryError))
-			{
-				diagnostics.AddWarning(AssetCookerCategory_All, "Failed to write timing summary: " + summaryError);
-			}
-			else
-			{
-				diagnostics.AddInfo(AssetCookerCategory_All, "Timing summary written to " + plan.summaryPath.string() + ".");
-			}
 			return false;
 		}
-	}
-
-	AssetCookerPrintTopStageTimings(stageTimings);
-	std::string summaryError;
-	if (!AssetCookerWriteTimingSummary(
-	        plan,
-	        stageTimings,
-	        outOutputs,
-	        true,
-	        AssetCookerElapsedMilliseconds(dispatchStartTime),
-	        summaryError))
-	{
-		diagnostics.AddWarning(AssetCookerCategory_All, "Failed to write timing summary: " + summaryError);
-	}
-	else
-	{
-		diagnostics.AddInfo(AssetCookerCategory_All, "Timing summary written to " + plan.summaryPath.string() + ".");
 	}
 
 	return true;

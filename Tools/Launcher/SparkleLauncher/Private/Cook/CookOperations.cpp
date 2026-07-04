@@ -198,7 +198,6 @@ namespace SparkleLauncher
 		switch (plan.Kind)
 		{
 		case CookOperationKind::CookShaders:
-			AddPlannedEffect(plan, "Validate shader package registrations.");
 			AddPlannedEffect(plan, "Shader backend: " + plan.Request.ShaderBackend + ".");
 			if (!plan.Request.ShaderTargets.empty())
 			{
@@ -222,10 +221,6 @@ namespace SparkleLauncher
 			if (!plan.Request.ShaderDebugArtifactDirectory.empty())
 			{
 				AddPlannedEffect(plan, "Write shader debug artifacts to " + plan.Request.ShaderDebugArtifactDirectory.string() + ".");
-			}
-			if (plan.Request.WriteCookedShaderStats)
-			{
-				AddPlannedEffect(plan, "Write cooked shader stats analysis output.");
 			}
 			if (plan.Request.ShaderPackages.empty())
 			{

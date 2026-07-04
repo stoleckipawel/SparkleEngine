@@ -23,7 +23,4 @@ public:
 	    AssetCookerCategory category,
 	    AssetCookerProjectCookPlan& outPlan,
 	    AssetCookerDiagnostics& diagnostics);
-	static bool WritePlanSummary(
-	    const AssetCookerProjectCookPlan& plan,
-	    AssetCookerDiagnostics& diagnostics);
 };

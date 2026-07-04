@@ -22,7 +22,7 @@ struct ShaderPackageCookSettings final
 	bool enableDebugInfo = false;
 	bool enableOptimizations = true;
 	bool treatWarningsAsErrors = true;
-	bool stripReflection = true;
+	bool stripReflection = false;
 	bool stripDebugInfo = true;
 	bool forceParameterStructMismatchForValidation = false;
 	bool forceMissingIncludeForValidation = false;

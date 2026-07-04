@@ -231,7 +231,7 @@ namespace SparkleLauncher
 			}
 			else
 			{
-				addProjectArtifacts(context.EditorProfile, context.ProjectId, "Selected project editor target outputs.");
+				addProjectArtifacts(context.EditorProfile, context.ProjectId, "Active project editor target outputs.");
 			}
 		}
 
@@ -243,7 +243,7 @@ namespace SparkleLauncher
 			}
 			else
 			{
-				addProjectArtifacts(context.RuntimeProfile, context.ProjectId, "Selected project runtime target outputs.");
+				addProjectArtifacts(context.RuntimeProfile, context.ProjectId, "Active project runtime target outputs.");
 			}
 		}
 
@@ -264,7 +264,7 @@ namespace SparkleLauncher
 			    targets,
 			    "Cooked project content",
 			    GetCookedProjectDirectory(context.RepositoryRoot, context.ProjectId.toStdString()),
-			    "All cooked content for the selected project.");
+			    "All cooked content for the active project.");
 			AddExplicitCleanTarget(
 			    targets,
 			    "Shader cache",
@@ -285,7 +285,7 @@ namespace SparkleLauncher
 			    targets,
 			    "Cooked project content",
 			    GetCookedProjectDirectory(context.RepositoryRoot, context.ProjectId.toStdString()),
-			    context.OperationId == "cook.textures" ? "Selected project cooked texture outputs." : "Selected project cooked mesh and material outputs.");
+			    context.OperationId == "cook.textures" ? "Active project cooked texture outputs." : "Active project cooked mesh and material outputs.");
 		}
 
 		return targets;

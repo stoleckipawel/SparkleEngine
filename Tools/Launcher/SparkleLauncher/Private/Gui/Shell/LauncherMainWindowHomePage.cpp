@@ -139,7 +139,7 @@ namespace SparkleLauncher
 
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
 		const QString editorDetail = editorPlan.CanRun ?
-		    QStringLiteral("Launch the selected project editor from %1.").arg(launchProvenance) :
+		    QStringLiteral("Launch the project editor from %1.").arg(launchProvenance) :
 		    (editorExecutableMissing ? "Editor output is not ready yet. Build the editor target to unlock this launch path." :
 		                               "Editor output exists. Resolve the remaining cooked-content prerequisites to launch.");
 		const QString editorCardOperationId = editorCanBuild ? "project.build.editor" : "project.open.editor";
@@ -155,7 +155,7 @@ namespace SparkleLauncher
 		    this));
 		const QString runtimeStatus = runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked");
 		const QString runtimeDetail = runtimePlan.CanRun ?
-		    QStringLiteral("Run the selected project runtime from %1.").arg(launchProvenance) :
+		    QStringLiteral("Run the project runtime from %1.").arg(launchProvenance) :
 		    (runtimeExecutableMissing ? "Runtime output is not ready yet. Build the runtime target to unlock the standalone path." :
 		                                "Runtime output exists. Resolve the remaining cooked-content prerequisites to launch.");
 		const QString runtimeCardOperationId = runtimeCanBuild ? "project.build.runtime" : "project.open.runtime";
