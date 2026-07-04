@@ -1,0 +1,471 @@
+# D. Whole Repository Architecture Map
+
+Status: source-backed repository map
+Date: 2026-07-04
+Scope: full depot structure, module boundaries, runtime flow, tools, public/private API shape, memory, GPU/CPU performance surfaces, extensibility, and productization risk
+
+## Intent
+
+This document maps SparkleEngine as a whole repository, not only as a renderer. It is written for high-level planning and deep review. The goal is to make architecture decisions easier by showing what exists, how systems link together, where code weight lives, what is public versus private, and which surfaces are worth slimming before adding features.
+
+The guiding preference is a thinner depot with stronger ownership:
+
+- Keep product behavior, fatal correctness checks, graphics debugger support, screenshot/BMP capture, explicit API control, shader ABI safety, and a small set of real workflows.
+- Delete or collapse report-only, smoke-only, validation-only, debug-artifact, wrapper-only, and future-scaffold code unless it is part of the product.
+- Do not add new documentation, diagnostics, logging, validation, wrappers, abstractions, or scaffolding before cleanup.
+- Prefer net code and depot size removal for every cleanup change.
+
+## Executive Map
+
+SparkleEngine is already shaped like a modern rendering engine:
+
+- `Engine/RHI` provides D3D12 and Vulkan backends behind a common RHI service surface.
+- `Engine/Renderer` owns a frame graph, render passes, scene data extraction, ray tracing scene ownership, upscaling/ray reconstruction provider contracts, shader registrations, and memory/diagnostic snapshots.
+- `Tools/Shaders/ShaderCompiler` is a serious offline shader pipeline with DXC/Slang backends, reflection, contracts, cache, package cooking, and inspection commands.
+- `Tools/Cooking` and `Tools/Import` form a source-to-cooked content pipeline.
+- `Tools/Launcher/SparkleLauncher` is a workflow shell for build, cook, launch, package, clean, dependency, quality, and GUI flows.
+- `Projects/Showcase` is the main sample project and dominates depot size.
+
+The main issue is not lack of feature ambition. The issue is that Sparkle currently tries to be all of these at once:
+
+- engine runtime
+- renderer research platform
+- shader SDK
+- content pipeline
+- launcher/workflow product
+- validation/reporting environment
+- heavy showcase depot
+
+Top-tier repositories usually declare a much sharper scope. Sparkle should do the same, then cut anything outside the chosen product line.
+
+## Industry Requirements Overlay
+
+Advanced graphics and neural rendering expectations add a sharper target for this repo. Sparkle should become evidence for:
+
+| Requirement cluster | What the repo should prove | Current evidence | Direction |
+| --- | --- | --- | --- |
+| D3D12/Vulkan workload analysis | Late ability to analyze how modern engines use explicit graphics APIs. | D3D12/Vulkan RHI, frame graph, boundary checks, descriptor/memory snapshots. | Defer until feature cleanup; do not add new diagnostics now. |
+| High-level shader engineering | Efficient HLSL SM6/Slang shader code, reflection, package ABI, and shader optimization. | Strong shader compiler, typed shader registrations, HLSL libraries. | Keep this as a centerpiece; trim debug artifacts and non-product shader demos. |
+| Real-time rendering fundamentals | Rasterization, physically based shading, sampling, light transport, GI, path tracing. | Deferred path, BRDF libraries, reservoir direct lighting, reference path tracing. | Make reference mode honest and tune direct lighting against representative scenes. |
+| Ray tracing architecture | BLAS/TLAS lifecycle, ray queries/tracing, GI/path tracing integration. | Classic TLAS plus PTLAS path. | Preserve both classic TLAS and PTLAS; minimize PTLAS toward the reference implementation and cut research scaffolding. |
+| GPU debugging/capture | PIX/RenderDoc/Nsight marker, timing, object naming, API debug layer fluency, screenshot/BMP capture. | RHI diagnostics, frame execution diagnostics, capture writer. | Preserve debugger/capture support while deleting bespoke reports/logs. |
+| GPU architecture and memory | Cache, bandwidth, memory budget, descriptors, pipeline pressure. | Allocator-backed memory and descriptor usage snapshots. | Keep compact pressure facts; remove broad public observation APIs. |
+| Neural rendering readiness | Translate model/operator ideas into efficient GPU shader/kernel paths. | Slang path and shader ABI foundation. | Add design-level readiness first; avoid heavy ML runtime dependencies until a feature replaces existing code. |
+| Tooling and productization | Developer tools that streamline graphics workflows. | Launcher, shader compiler, cookers, package assembly. | Slim launcher/tools to current product workflows and workload inspection. |
+| Communication and standards | Clear docs, coding standards, reviewability, collaboration-ready decisions. | Architecture docs and boundary check. | Keep docs precise, decision-oriented, and tied to deletion stages. |
+
+Advanced-graphics implication:
+
+- The repo should show fewer systems, deeper ownership, and stronger evidence. A reviewer should see graphics API control, shader/compiler expertise, performance reasoning, and neural-rendering readiness without needing to read thousands of lines of diagnostic scaffolding.
+
+## Repository Measurements
+
+Scan excludes `.git`, `build`, `artifacts`, and `logs`.
+
+| Root | Files | Approx MB | Interpretation |
+| --- | ---: | ---: | --- |
+| `Engine` | 1164 | 340.29 | Main runtime, shaders, default assets, RHI, renderer, editor, application. |
+| `Projects` | 776 | 2788.88 | Dominant depot weight, mostly Showcase content. |
+| `Tools` | 437 | 15.09 | Launcher, shader compiler, import/cooking tools. |
+| `CMake` | 6 | 0.09 | Build profiles, dependencies, packaging, boundary checks. |
+| `Docs` | 2 before this map set | 0.01 | Docs were intentionally lean, but the index referenced deleted review docs. |
+| Config/root metadata | 7 | small | Formatting, git, engine config, license, root CMake. |
+
+Text/source line distribution:
+
+| Extension | Files | Lines |
+| --- | ---: | ---: |
+| `.cpp` | 606 | 100077 |
+| `.h` | 837 | 43477 |
+| `.hlsli` | 70 | 4884 |
+| `.hlsl` | 20 | 1379 |
+| `.cmake` | 7 | 2041 |
+| `.txt` | 23 | 2319 |
+| `.md` | 4 before this map set | 172 |
+| `.ini` | 2 | 40 |
+
+Largest source areas:
+
+| Area | Files | Lines | Read |
+| --- | ---: | ---: | --- |
+| `Engine/RHI` | 248 | 37166 | Largest code owner; backend and public RHI contract are both significant. |
+| `Engine/Renderer` | 453 | 36890 | Almost as large as RHI; heavy private feature implementation. |
+| `Tools/Launcher` | 109 | 18986 | Large for a workflow shell; likely over-productized versus current engine maturity. |
+| `Tools/Shaders` | 118 | 9554 | Strong product-like subsystem. |
+| `Engine/GameFramework` | 175 | 9543 | Runtime scene/assets/components and cooked loaders. |
+| `Tools/Cooking` | 110 | 8821 | Multiple cookers plus AssetCooker orchestration. |
+| `Engine/Editor` | 58 | 8796 | ImGui/editor panels and diagnostic views. |
+| `Engine/Core` | 78 | 6616 | Foundation utilities. |
+| `Engine/Assets` | 91 | 6278 | HLSL and default assets. |
+| `Tools/Import` | 63 | 3885 | Source import pipeline. |
+| `Engine/Application` | 30 | 2687 | Runtime/editor hosts and shader recook/runtime console. |
+| `Engine/Platform` | 12 | 1992 | Window/input/platform services. |
+
+Largest individual files:
+
+| File | Lines | Action signal |
+| --- | ---: | --- |
+| `Engine/RHI/Private/D3D12/ThirdParty/d3dx12.h` | 4065 | Third-party header, not a Sparkle cleanup target. |
+| `Engine/RHI/Private/Vulkan/Commands/VulkanRenderCommandList.cpp` | 1335 | Backend command code, performance-sensitive. |
+| `Engine/RHI/Private/Shaders/CookedShaderPackageCache.cpp` | 1171 | Shader runtime package load/cache. |
+| `Engine/RHI/Private/Vulkan/Memory/VulkanGpuMemoryAllocator.cpp` | 1057 | Memory allocator integration. |
+| `Engine/RHI/Private/Vulkan/Device/VulkanRhi.cpp` | 1056 | Vulkan device/bootstrap. |
+| `Engine/Editor/Private/Util/UiUtil.cpp` | 991 | Editor utility concentration. |
+| `CMake/Dependencies/FetchDependencies.cmake` | 940 | Dependency policy concentration. |
+| `Tools/Launcher/SparkleLauncher/Private/Shell/LauncherShell.cpp` | 894 | CLI shell workflow concentration. |
+| `Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerDispatcher.cpp` | 864 | Cook orchestration concentration. |
+| `Engine/Core/Private/FileSystemUtils.cpp` | 854 | Foundation utility weight. |
+
+## Module And Layer Shape
+
+Declared engine modules:
+
+| Module | Role | Main dependencies |
+| --- | --- | --- |
+| `Core` | Math, events, file utilities, logging, fatal checks, config helpers. | Bottom layer. |
+| `Platform` | Window, input, platform services. | Publicly depends on Core. |
+| `RHI` | D3D12/Vulkan abstraction, resources, descriptors, pipelines, commands, ray tracing, memory, diagnostics, presentation. | Public Core; private Platform. |
+| `Renderer` | Frame graph, passes, scene extraction, ray tracing scene, providers, textures, shader registrations. | Public Core/RHI; private Platform/GameFramework/provider target. |
+| `GameFramework` | Scene, level, components, cooked asset loading. | Public Core/Platform; no renderer dependency. |
+| `Editor` | Editor UI and panels. | Private Renderer/RHI/Core/Platform/GameFramework. |
+| `Application` | Runtime/editor host orchestration. | Public Renderer; private Core/Platform/GameFramework/Editor. |
+
+Observed include links between engine modules:
+
+| From | To | Include count |
+| --- | --- | ---: |
+| `Renderer` | `RHI` | 221 |
+| `Renderer` | `Core` | 179 |
+| `RHI` | `Core` | 56 |
+| `GameFramework` | `Core` | 38 |
+| `Editor` | `Core` | 26 |
+| `Application` | `Core` | 20 |
+| `Editor` | `Renderer` | 12 |
+| `Renderer` | `GameFramework` | 7 |
+| `Application` | `RHI` | 3 |
+| `Application` | `Editor` | 3 |
+| `Editor` | `RHI` | 3 |
+| `Application` | `Renderer` | 2 |
+
+The module direction is mostly good. The renderer consumes runtime scene data privately instead of making GameFramework depend on rendering. RHI does not include Renderer private headers. The architecture boundary check is narrowly focused on RHI/Renderer native API leakage, D3D12/Vulkan backend separation, and renderer PTLAS native identifier leakage.
+
+## Public Versus Private API Shape
+
+| Area | Public lines | Private lines | Public share | Read |
+| --- | ---: | ---: | ---: | --- |
+| `Engine/Core` | 3208 | 3301 | 49.3% | Public-heavy foundation. Worth auditing for convenience APIs that are not true engine contracts. |
+| `Engine/Platform` | 477 | 1455 | 24.7% | Healthy for low-level platform abstractions. |
+| `Engine/RHI` | 5108 | 31674 | 13.9% | Broad but plausible because it is the contract layer. Diagnostic/capture APIs raise review cost. |
+| `Engine/Renderer` | 2588 | 33372 | 7.2% | Good instinct: most renderer complexity is private. Public diagnostics/capture still widen the surface. |
+| `Engine/GameFramework` | 2659 | 6825 | 28.0% | A bit public-heavy; asset/scene types may be promoted too early. |
+| `Engine/Editor` | 738 | 7983 | 8.5% | Good. |
+| `Engine/Application` | 160 | 2397 | 6.3% | Good. |
+| `Tools/Launcher/SparkleLauncher` | 854 | 17733 | 4.6% | Good surface ratio, but private workflow volume is high. |
+| `Tools/Shaders/ShaderCompiler` | 0 | 6888 | 0.0% | CLI-private, appropriate. |
+| `Tools/Cooking/AssetCooker` | 68 | 2322 | 2.8% | Mostly private, but public bridge may be unnecessary. |
+| `Tools/Cooking/TextureCooker` | 96 | 3805 | 2.5% | Mostly private. |
+| `Tools/Import/SourceImporters` | 511 | 3329 | 13.3% | Public import API exists; keep only if used by multiple cookers. |
+
+API cleanup direction:
+
+- RHI public surface should remain explicit, but separate "runtime render contract" from "developer/profiler/debug tooling contract."
+- Renderer public surface should expose render requests/products, host frame orchestration, shader reload if product-owned, and only minimal editor-facing status.
+- Public renderer capture, memory, mesh, and texture diagnostic snapshots should either be product editor APIs or moved behind an editor-private adapter.
+- GameFramework public surface should be re-audited for asset loader and scene-manifest implementation details.
+- Tool public headers should exist only when another tool or executable consumes them as a stable API.
+
+## Engine Runtime Flow
+
+High-level runtime flow:
+
+| Stage | Owner | Notes |
+| --- | --- | --- |
+| Application launch | `Engine/Application` | Hosts runtime/editor application classes and shader recook/runtime console plumbing. |
+| Window/input/time | `Engine/Platform`, `Engine/Core` | Platform service layer and basic timing. |
+| Runtime scene | `Engine/GameFramework` | Level, scene, assets, cooked loaders, material/mesh/light/camera data. |
+| Renderer facade | `Engine/Renderer/Public/Renderer.h` | Public facade for render requests/products, host frame steps, RHI access, shader reload, and diagnostics/capture APIs. |
+| System root | `RendererSystemRoot` | Private dependency hub for renderer services. |
+| Frame pipeline | `FramePipeline` | Prepares, records, submits frames; owns histories and frame graph lifetime. |
+| Frame graph | `FrameGraph` | Declares passes/resources, compiles dependencies/barriers/transients, executes passes. |
+| RHI | `RenderHardwareInterface` | Backend services for resources, descriptors, pipelines, upload, ray tracing, interop, capture, diagnostics, presentation. |
+
+Per-frame renderer flow:
+
+1. `FramePipeline::BeginFrame()` handles resize, scene extent changes, render path switches, image provider graph key changes, backend begin-frame, and timing resolution.
+2. `FramePipeline::SetupFrame()` ticks time, refreshes viewport products, captures a scene snapshot, loads scene textures, updates camera, and builds per-frame constants.
+3. `FramePipeline::RecordFrame()` builds `FrameContext`, sets provider input contracts, prepares ray tracing scene/TLAS resources, binds exposure and direct-light reservoir histories, runs `FrameGraph::Setup(frame)`, compiles the frame graph, builds pass runtime services, opens GPU frame scope when enabled, and executes the graph.
+4. `FramePipeline::SubmitFrame()` submits the current backend frame.
+5. `FramePipeline::EndFrame()` marks exposure/reservoir history validity and advances frame-in-flight.
+
+Important CPU observation:
+
+- The frame graph object is rebuilt on resize, render path changes, or provider graph changes.
+- The graph setup and compile happen during `RecordFrame()` each frame.
+- This is architecturally clear but should be profiled: per-frame setup/compile gives flexibility but can become CPU overhead once pass topology is stable. A future cleanup should cache compiled topology when it can delete more dynamic per-frame planning code than it adds.
+
+## RHI Map
+
+`RenderHardwareInterface` exposes these services:
+
+| Service | Role | Cleanup read |
+| --- | --- | --- |
+| Capabilities/backend info | Adapter, feature, format, diagnostics, memory support, shader binary format, backend API. | Keep. Essential review signal. |
+| `RhiResourceService` | Texture/buffer/resource allocation and views. | Keep. |
+| `RhiDescriptorService` | Binding sets, descriptors, descriptor tables, shared samplers, resource views, descriptor usage snapshots. | Keep core binding path; audit public usage snapshot API. |
+| `RhiPipelineService` | Pipeline and layout creation. | Keep. |
+| `RhiUploadService` | Upload/readback. | Keep. |
+| `RhiRayTracingService` | Ray tracing pipelines, BLAS/TLAS services, PTLAS services. | Keep classic TLAS and PTLAS functional; trim PTLAS to minimal D3D12/Vulkan product capability. |
+| `RhiInteropService` | Native device/queue/resource handles for provider bridges. | Keep but require explicit consumer enum and narrow allowed use. |
+| `RhiCaptureService` | Texture-to-BMP capture. | Preserve as a hardened editor/tool capability; narrow ownership and remove smoke/ad hoc coupling. |
+| `RenderDiagnostics` | Object names, GPU events, timing, messages, failure, memory. | Preserve PIX/RenderDoc/Nsight/debug-layer capability; collapse public report shape if noisy. |
+| `RhiPresentationService` | Backbuffer/presentation. | Keep. |
+
+Backend split:
+
+- D3D12 backend: command list, device, descriptor heaps, pipeline state/root signatures, resources, memory via D3D12MA, ray tracing, NVAPI PTLAS provider, diagnostics, presentation, swap chain, ImGui backend.
+- Vulkan backend: command list/context, descriptor allocator/manager, pipeline/layout/shader modules, resources, memory via VMA, ray tracing/classic/PTLAS services, diagnostics/debug labels/names, presentation, swap chain, ImGui backend.
+- Common RHI: shader packages/cache, bindings, capture writer, config/depth conventions, resource validation, type conversions.
+
+RHI strength:
+
+- Explicit service ownership.
+- Backend-private native API usage.
+- D3D12MA and VMA integrations.
+- Optional NVAPI and Vulkan backend gates.
+- Capabilities model broad enough for ray tracing/provider decisions.
+
+RHI cleanup risk:
+
+- Public diagnostics/memory/descriptor snapshots look like product API even when they may be developer tooling; screenshot/BMP capture should remain but be narrowly owned.
+- `RenderHardwareInterface` is a "god interface" for every service. That can be acceptable for a low-level engine boundary, but it should be documented as the RHI service locator and kept stable.
+
+## Renderer Map
+
+Renderer source weight by area:
+
+| Renderer area | Files | Lines | Read |
+| --- | ---: | ---: | --- |
+| `Private/FrameGraph` | 43 | 6134 | Core graph ownership: resources, compiler, barriers, transient allocator, execution diagnostics. |
+| `Private/Passes` | 43 | 4975 | Typed raster/compute/reference/deferred pass implementations. |
+| `Private/RayTracing` | 69 | 4724 | BLAS/TLAS, classic TLAS, PTLAS, scene, effects, metrics. |
+| `Private/Frame` | 95 | 4141 | Frame assembly, builders, deferred/reference/lighting/presentation products. |
+| `Private/Upscaling` | 27 | 2067 | Upscaler provider contracts and DLSS/Streamline bridge. |
+| `Private/RayReconstruction` | 21 | 1766 | Ray reconstruction provider contracts and DLSS-RR bridge. |
+| `Private/SceneData` | 27 | 1663 | Scene extraction/builders. |
+| `Public/ShaderParameters` | 4 | 1456 | Strong but broad public parameter/binding machinery. |
+| `Private/Settings` | 13 | 1287 | Runtime renderer settings/CVars. |
+| `Private/Pipeline` | 10 | 1195 | Pipeline state/runtime management. |
+| `Private/Diagnostics` | 9 | 1099 | Renderer memory/mesh/texture/status snapshots. |
+| `Private/FramePipeline` | 7 | 1015 | Host frame orchestration. |
+| `ShaderRegistrations` | 19 | 723 | C++ shader registration and package metadata. |
+
+Feature map:
+
+| Feature | Owner | State |
+| --- | --- | --- |
+| Frame graph | `FrameGraph` and `Frame/Core/Frame.cpp` factory | Strong foundation with product roots, transient resources, barriers, typed pass parameters. |
+| Deferred path | `Frame/Deferred`, `Frame/Lighting`, `Passes/Deferred`, HLSL | GBuffer, direct lighting, reservoir path, shadows, indirect diffuse/specular, composite, sky. |
+| Reference path tracing | `Frame/Reference`, `Passes/Reference`, HLSL | Owns reference outputs and guide buffers; motion-vector/accumulation/product story needs sharper scope. |
+| Direct-light reservoir | `DirectLightReservoir*` C++ and HLSL | ReSTIR DI-shaped native path; should be tuned/qualified before being marketed as RTXDI-equivalent. |
+| Ray tracing scene | `RayTracing/Scene`, `RayTracing/Acceleration`, RHI RT services | Classic TLAS and PTLAS should both be product-owned; remaining ambiguity is scaffolding, not capability. |
+| Upscaling | `Upscaling/*`, `Streamline/*` | Provider contract and DLSS bridge. |
+| Ray reconstruction | `RayReconstruction/*` | Separate provider category, good architecture. |
+| Shader ABI | `ShaderRegistrations`, `RHI/Public/Shaders`, `Tools/Shaders` | Strong source-to-cooked linkage. |
+| Memory/diagnostics | `RendererMemoryMonitor`, public snapshots, RHI memory | Useful, but public/API shape should shrink if only editor/debug consumes it. |
+
+## Shader And Cook Pipeline
+
+Shader source shape:
+
+- Shared HLSL include libraries under `Engine/Assets/Shaders/BRDF`, `Common`, `Geometry`, `Lighting`, `Material`, `RayTracing`, `Resources`, `Display`, and `Debug`.
+- Pass shaders under `Engine/Assets/Shaders/Passes`.
+- C++ shader registrations under `Engine/Renderer/ShaderRegistrations`.
+- RHI public shader package, reflection, authoring macros, and pass parameter layout types.
+- Shader compiler tool under `Tools/Shaders/ShaderCompiler` with DXC/Slang backends, reflection extractors, contracts, cooking, cache, inspection, CLI commands, and verification.
+
+Strengths:
+
+- Offline compiler and runtime shader package cache are product-level systems.
+- Cooked shader packages and reflection give a real ABI story.
+- Typed pass parameters make render pass bindings reviewable.
+- DXC and Slang support positions the engine for D3D12/Vulkan and future neural rendering paths.
+
+Slimming targets:
+
+- Debug artifact bundles and cooked stats CSV should be opt-in developer tooling or deleted from default workflows.
+- Shader registration and HLSL resource declarations remain duplicated; avoid adding a generator unless it deletes materially more code than it adds.
+- Launcher shader options expose many compiler/debug toggles. Keep them only if the launcher is a developer workstation product.
+
+## Tools And Workflow Map
+
+Tool areas:
+
+| Tool area | Lines | Read |
+| --- | ---: | --- |
+| `Launcher/SparkleLauncher` | 18986 | Full workflow product: GUI, shell, build/cook/launch/package/clean/dependency/status/quality. |
+| `Shaders/ShaderCompiler` | 9452 | Strong CLI/private shader pipeline. |
+| `Cooking/TextureCooker` | 4039 | Texture source loading and processing. |
+| `Import/SourceImporters` | 3885 | Source asset import, likely Assimp/scene-related. |
+| `Cooking/AssetCooker` | 2501 | Multi-stage cook orchestration and diagnostics. |
+| `Cooking/SceneCooker` | 1360 | Scene cook output. |
+| `Cooking/MaterialCooker` | 605 | Material cook output. |
+| `Cooking/MeshCooker` | 316 | Mesh cook output. |
+| `Support/ToolConsoleSupport` | 233 | Shared console helper. |
+| `Shaders/ShaderContracts` | 102 | Shared shader contract catalog. |
+
+Launcher read:
+
+- The launcher is large enough to be judged as an application.
+- It currently models dry-run plans, logs, dependency state, GUI status pages, operation catalogs, build/cook/launch/maintenance requests, and package assembly.
+- This is useful for productization, but it should not keep validation/report/debug scaffolding alive.
+- Preferred target: launcher as a small workflow shell for build, cook, run, clean, package if shipping, and source dependency sync if truly needed.
+
+Cooker read:
+
+- AssetCooker has plan/timing/summary artifact concepts that may be too heavy for default cooking.
+- A lean product cooker should emit cooked outputs and clear fatal failures, not durable diagnostic report schemas by default.
+
+## Memory Map
+
+Current memory-related ownership:
+
+| Layer | Existing surface | Read |
+| --- | --- | --- |
+| RHI backends | D3D12MA and VMA allocation backends, allocator snapshots, budget support, delayed destruction tracking. | Strong. This is a production-recognized foundation. |
+| RHI public | `RhiMemoryUsageSnapshot`, category stats, allocation details, JSON dump support. | Useful but broad. |
+| Renderer public | `RendererMemoryDiagnosticsSnapshot`, pressure thresholds, texture streaming policy snapshot, scene memory report. | Product value if it drives streaming; bloat if only displayed. |
+| Renderer private | Memory monitor and texture/mesh/ray tracing categories. | Good place for policy. |
+| Content depot | `Projects/Showcase` is about 2.79 GB. | Biggest memory/depot pressure signal is content packaging, not code. |
+
+Best next shape:
+
+- Keep allocator-backed memory budget and usage.
+- Keep texture streaming decisions if they affect runtime behavior.
+- Keep one compact memory pressure/status object if the editor needs it.
+- Delete JSON dumps, largest-allocation detail lists, and public report structs unless they are part of a real memory workflow.
+- Externalize heavyweight showcase content so repository size does not dominate every clone/review.
+
+## GPU Performance Map
+
+Current GPU performance strengths:
+
+- Explicit D3D12/Vulkan backends.
+- D3D12MA/VMA allocator integration.
+- Frame graph resource declarations, barriers, transient allocator, and product roots.
+- GPU marker/timing support through RHI diagnostics and frame execution diagnostics.
+- Ray tracing scene preparation with BLAS/TLAS ownership.
+- Provider contracts for DLSS upscaling and ray reconstruction guide resources.
+- HLSL layout and shader package ABI validation.
+
+GPU performance risks:
+
+- PTLAS code mixes shipping path, capability selection, classic fallback, metrics, and future GPU-pack scaffolding. It should be refactored to the bare functional reference-style path while preserving D3D12 and Vulkan capability.
+- ReSTIR DI-shaped direct lighting needs measured quality/perf comparison against representative many-light scenes.
+- Reference path tracing should be either an offline/progressive quality reference or a scoped debug reference; ambiguous modes attract extra buffers and settings.
+- Provider resource contracts should stay decisive; do not add fallback provider objects or diagnostic panels as a substitute for correct signals.
+
+## CPU Performance Map
+
+CPU-sensitive surfaces:
+
+| Surface | Current behavior | Risk |
+| --- | --- | --- |
+| Frame graph setup/compile | Runs every recorded frame. | Flexible, but could become CPU overhead. Cache topology if it deletes more dynamic planning code than it adds. |
+| Scene snapshot/build frame context | Captures scene snapshot, builds render scene data, ray tracing plan, per-view/temporal data. | Needs profiling on large scenes. |
+| Texture loading | `TextureManager::LoadSceneTextures` during setup. | Ensure it is incremental/cache-backed; avoid per-frame redundant scans. |
+| Shader package cache | Large runtime loader file. | Strong, but watch startup/cook/runtime split. |
+| Launcher | Qt GUI and CLI planning for many workflows. | Large workstation app overhead, not runtime overhead. |
+| Cookers/importers | Source pipeline tools. | Keep out of runtime package. |
+
+## Coding Pattern And Style Map
+
+Observed patterns:
+
+- C++20 across modules.
+- `Public`/`Private` module directories.
+- CMake `GLOB_RECURSE` with `CONFIGURE_DEPENDS` for module source ownership.
+- Service interfaces for RHI subsystems.
+- RAII and move/delete semantics for owning runtime classes.
+- `final` on many structs/classes where appropriate.
+- `noexcept` used broadly in runtime code.
+- PCH per module.
+- Shader authoring macros modeled after Unreal-like global shader and parameter structs.
+- Explicit static/dynamic library switches via `SPARKLE_BUILD_SHARED`.
+- Build profiles for Debug/Development/Shipping and editor/game variants.
+- Boundary check as a CMake target.
+
+Style risks:
+
+- Some CMake docs/comments contain mojibake box-drawing text.
+- CMake source ownership is convenient but less reviewable than explicit file lists for release-critical modules.
+- Formatter workflow is launcher-owned, not root-owned.
+- Debug/report concepts often become structs and public APIs rather than internal, transient views.
+- A few UI files and tool planners concentrate many unrelated branches in one file.
+
+## System Links
+
+| Producer | Consumer | Contract |
+| --- | --- | --- |
+| GameFramework scene/assets | Renderer scene builders | Runtime scene/material/mesh/light/camera snapshot. |
+| Renderer frame graph | RHI services | Resource, descriptor, pipeline, command, ray tracing, interop, presentation services. |
+| Shader registrations | ShaderCompiler | Package names, source paths, entries, stages, parameters. |
+| ShaderCompiler | RHI runtime shader cache | Cooked shader package binary, reflection, layout metadata. |
+| Asset cookers | GameFramework loaders | Cooked scene/mesh/material/texture package contracts. |
+| Launcher | CMake/tools/projects | Build/cook/launch/package/clean process requests. |
+| Renderer providers | Streamline/DLSS | Tagged resources and native interop. |
+| Editor | Renderer public diagnostics | Mesh/texture/memory panels. |
+| Application | Renderer/Editor | Host frame orchestration and editor application integration. |
+
+## Architecture Grades
+
+Scale: 1 weak, 3 credible, 5 production-sharp.
+
+| Quality | Grade | Why |
+| --- | ---: | --- |
+| Module layering | 4.0 | Good bottom-up shape; Renderer consumes GameFramework privately; boundary check exists. |
+| RHI explicitness | 4.0 | Strong services, D3D12/Vulkan backends, memory allocators, ray tracing; public diagnostics/capture widen surface. |
+| Renderer frame architecture | 3.8 | Real frame graph/pass system/history/provider ownership; per-frame compile and broad assembly structs need review. |
+| Shader pipeline | 4.4 | One of the strongest product systems: compiler, reflection, contracts, cache, cook, inspection. |
+| Ray tracing architecture | 3.4 | Classic TLAS and PTLAS are both valuable; PTLAS needs minimization and clearer ownership. |
+| Provider integration | 3.6 | Upscaling and ray reconstruction are separated well; Streamline bridge should remain narrow. |
+| Memory model | 3.5 | Allocator-backed and visible; too much report shape may be public. |
+| CPU performance posture | 3.0 | Clear frame pipeline, but per-frame graph setup/compile and scene extraction need evidence. |
+| GPU performance posture | 3.5 | Strong explicit API foundation; needs representative benchmark discipline. |
+| Public API minimalism | 3.2 | Renderer is mostly private; RHI and Core public surfaces should be pruned. |
+| Tooling productization | 3.0 | Launcher is polished but large; cookers/report artifacts should be narrowed. |
+| Depot hygiene | 2.0 | Showcase content dominates depot size; levels need cataloging so capability stays broad while default footprint shrinks. |
+| Deletion readiness | 4.0 | Many cleanup targets are identifiable and isolated enough for staged removal. |
+
+## Principal Conclusions
+
+1. The core renderer/RHI architecture is worth preserving. Do not replace it with a new abstraction.
+2. The first big win is depot size: catalog Showcase levels, keep multi-level support, and move heavy media out of git or into optional content packs.
+3. The second big win is deleting validation/report/debug scaffolding, especially around launcher, cookers, shader debug artifacts, and public diagnostics, while preserving hardened screenshot/BMP capture.
+4. PTLAS should remain a named product feature alongside classic TLAS, be minimized toward the original reference implementation, and be stripped of future GPU-pack placeholders.
+5. The shader compiler is a strength. Slim defaults and debug artifacts, but keep the source-to-package ABI.
+6. The launcher should be treated as a product with a smaller mission, not as a home for every local workflow.
+7. Public API should shrink around behavior, not observation. Keep runtime contracts; move or delete report APIs.
+
+## Local Source Evidence
+
+Primary local files reviewed:
+
+- `CMakeLists.txt`
+- `Engine/CMakeLists.txt`
+- `Engine/RHI/CMakeLists.txt`
+- `Engine/Renderer/CMakeLists.txt`
+- `Engine/Application/CMakeLists.txt`
+- `Tools/CMakeLists.txt`
+- `CMake/ArchitectureBoundaryCheck.cmake`
+- `Engine/RHI/Public/Device/RenderHardwareInterface.h`
+- `Engine/RHI/Public/Descriptors/RhiDescriptorService.h`
+- `Engine/RHI/Public/Memory/RhiMemoryDiagnostics.h`
+- `Engine/RHI/Public/Diagnostics/RhiDiagnostics.h`
+- `Engine/Renderer/Public/Renderer.h`
+- `Engine/Renderer/Private/FramePipeline/FramePipeline.h`
+- `Engine/Renderer/Private/FramePipeline/FramePipeline.cpp`
+- `Engine/Renderer/Private/Frame/Core/FrameAssembly.h`
+- `Engine/Renderer/Private/FrameGraph/FrameGraph.h`
+- `Engine/Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h`
+- `Tools/Launcher/SparkleLauncher/Private/Maintenance/MaintenanceOperations.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindowOptionPages.cpp`
