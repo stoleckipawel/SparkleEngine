@@ -6,7 +6,6 @@
 #include "Level/Level.h"
 #include "Level/Parsing/LevelParser.h"
 
-#include <algorithm>
 #include <fstream>
 #include <unordered_map>
 
@@ -20,6 +19,7 @@ namespace
 	{
 		std::filesystem::path sourcePath;
 		std::string optionalPackId;
+		bool startupDefault = false;
 	};
 
 	struct OptionalContentPack final
@@ -127,6 +127,14 @@ namespace
 				{
 					currentLevel->optionalPackId = Strings::UnquoteCopy(value);
 				}
+				else if (key == "StartupDefault")
+				{
+					bool startupDefault = false;
+					if (Strings::TryParseBool(value, startupDefault))
+					{
+						currentLevel->startupDefault = startupDefault;
+					}
+				}
 				continue;
 			}
 
@@ -173,6 +181,7 @@ void LevelRegistry::DiscoverLevels()
 	LevelCatalog catalog;
 	if (LoadLevelCatalog(projectRoot, catalog))
 	{
+		std::string startupDefaultLevelName;
 		for (const LevelCatalogEntry& entry : catalog.levels)
 		{
 			if (entry.sourcePath.empty() || !OptionalPackAvailable(catalog, projectRoot, entry.optionalPackId))
@@ -192,12 +201,16 @@ void LevelRegistry::DiscoverLevels()
 				continue;
 			}
 
+			if (entry.startupDefault)
+			{
+				startupDefaultLevelName = std::string(loadedLevel->GetName());
+			}
 			Register(std::move(loadedLevel));
 		}
 
-		if (FindLevel("Empty") != nullptr)
+		if (!startupDefaultLevelName.empty())
 		{
-			SetDefaultLevelName("Empty");
+			SetDefaultLevelName(startupDefaultLevelName);
 		}
 		else if (!m_levels.empty())
 		{
@@ -206,60 +219,7 @@ void LevelRegistry::DiscoverLevels()
 		return;
 	}
 
-	const std::filesystem::path levelsPath = Paths::ProjectLevelsRoot();
-	std::error_code errorCode;
-	if (!std::filesystem::exists(levelsPath, errorCode))
-	{
-		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Levels directory not found at '{}'", levelsPath.string());
-		return;
-	}
-
-	std::vector<std::filesystem::path> levelFiles;
-	for (const auto& entry : std::filesystem::directory_iterator(levelsPath, errorCode))
-	{
-		if (errorCode)
-		{
-			SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Failed while scanning levels directory '{}'", levelsPath.string());
-			break;
-		}
-
-		if (!entry.is_regular_file())
-		{
-			continue;
-		}
-
-		if (entry.path().extension() == ".level")
-		{
-			levelFiles.push_back(entry.path());
-		}
-	}
-
-	std::sort(levelFiles.begin(), levelFiles.end());
-	for (const std::filesystem::path& levelFile : levelFiles)
-	{
-		std::string errorMessage;
-		auto loadedLevel = LevelParser::LoadFromFile(levelFile, errorMessage);
-		if (!loadedLevel)
-		{
-			SPDLOG_LOGGER_WARN(
-			    g_levelRegistryLogger,
-			    "LevelRegistry: Failed to load level file '{}'{}",
-			    levelFile.string(),
-			    errorMessage.empty() ? std::string() : std::string{" - "} + errorMessage);
-			continue;
-		}
-
-		Register(std::move(loadedLevel));
-	}
-
-	if (FindLevel("Empty") != nullptr)
-	{
-		SetDefaultLevelName("Empty");
-	}
-	else if (!m_levels.empty())
-	{
-		SetDefaultLevelName(m_levels.begin()->first);
-	}
+	SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Required level catalog not found at '{}'", (projectRoot / kLevelCatalogFileName).string());
 }
 
 void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)

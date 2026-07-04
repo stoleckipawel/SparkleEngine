@@ -94,7 +94,7 @@ namespace SparkleLauncher
 		QString m_shaderDebugArtifactDirectory;
 		QString m_launchBackend;
 		QString m_launchTarget = "editor";
-		QString m_launchStartupLevel = "Sponza";
+		QString m_launchStartupLevel;
 		QString m_launchVSync;
 		QString m_launchHighPerformanceAdapter;
 		QString m_launchCommandLineArguments;

@@ -16,8 +16,7 @@ static const auto g_levelManagerLogger = Logging::GetOrCreateLogger("GameFramewo
 
 namespace
 {
-	constexpr std::string_view kDefaultStartupLevelName = "Sponza";
-	std::string ResolveStartupLevelName() noexcept
+	std::string ResolveRequestedStartupLevelName() noexcept
 	{
 		std::string requestedLevelName;
 		if (Environment::TryGetVariable("SPARKLE_STARTUP_LEVEL", requestedLevelName) && !requestedLevelName.empty())
@@ -25,7 +24,7 @@ namespace
 			return requestedLevelName;
 		}
 
-		return std::string(kDefaultStartupLevelName);
+		return {};
 	}
 }
 
@@ -43,14 +42,16 @@ void LevelManager::InitializeStartupLevel() noexcept
 		return;
 	}
 
-	const std::string requestedStartupLevelName = ResolveStartupLevelName();
-	LevelAsset* startupLevel = m_levelRegistry.FindLevelOrDefault(requestedStartupLevelName);
+	const std::string requestedStartupLevelName = ResolveRequestedStartupLevelName();
+	LevelAsset* startupLevel = requestedStartupLevelName.empty() ?
+	                                m_levelRegistry.GetDefaultLevel() :
+	                                m_levelRegistry.FindLevelOrDefault(requestedStartupLevelName);
 	if (!startupLevel)
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_levelManagerLogger,
 		    "LevelManager: Startup level initialization failed because no registered level could be resolved for '{}'",
-		    requestedStartupLevelName);
+		    requestedStartupLevelName.empty() ? std::string(m_levelRegistry.GetDefaultLevelName()) : requestedStartupLevelName);
 		m_activeLevel = nullptr;
 		return;
 	}

@@ -269,7 +269,7 @@ namespace SparkleLauncher
 			m_projectModel.Refresh(m_repositoryRoot);
 		}
 
-		PopulateProjectSelectors();
+		PopulateStartupLevelSelectors();
 		RebuildOptionsPages();
 		UpdateRunAvailability();
 		m_isApplyingUiRefresh = false;
@@ -376,12 +376,12 @@ namespace SparkleLauncher
 			}
 		}
 
-		m_projectSelectors.clear();
+		m_startupLevelSelectors.clear();
 		for (QComboBox* combo : findChildren<QComboBox*>())
 		{
-			if (combo != nullptr && combo->property("ProjectSelector").toBool())
+			if (combo != nullptr && combo->property("StartupLevelSelector").toBool())
 			{
-				m_projectSelectors.push_back(combo);
+				m_startupLevelSelectors.push_back(combo);
 			}
 		}
 
@@ -650,41 +650,6 @@ namespace SparkleLauncher
 		}
 
 		UpdateRunAvailability();
-	}
-
-	void LauncherMainWindow::PopulateProjectSelectors()
-	{
-		for (QComboBox* combo : m_projectSelectors)
-		{
-			if (combo != nullptr)
-			{
-				PopulateProjectCombo(*combo);
-			}
-		}
-	}
-
-	void LauncherMainWindow::PopulateProjectCombo(QComboBox& combo) const
-	{
-		const QSignalBlocker blocker(&combo);
-		combo.clear();
-		if (m_projectModel.Projects().empty())
-		{
-			combo.addItem("No projects found", "");
-			combo.setToolTip("No projects were discovered. Confirm the selected root contains Projects/<Project> markers or inspect project discovery output.");
-			combo.setEnabled(false);
-			return;
-		}
-
-		combo.setEnabled(true);
-		combo.setToolTip("Project used by this workflow.");
-		for (const LauncherProjectSummary& project : m_projectModel.Projects())
-		{
-			combo.addItem(project.DisplayName, project.Id);
-			combo.setItemData(combo.count() - 1, project.Id + "\n" + QString::fromStdString(project.RootPath.string()), Qt::ToolTipRole);
-		}
-
-		const int selectedIndex = combo.findData(m_projectModel.SelectedProjectId());
-		combo.setCurrentIndex(selectedIndex >= 0 ? selectedIndex : 0);
 	}
 
 	void LauncherMainWindow::ApplyVisualStyle()

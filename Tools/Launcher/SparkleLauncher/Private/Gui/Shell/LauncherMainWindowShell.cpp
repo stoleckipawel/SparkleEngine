@@ -217,16 +217,16 @@ namespace SparkleLauncher
 			combo.setMaximumHeight(LauncherUi::HeaderContext::ComboHeight);
 		};
 
-		QLabel* projectLabel = CreateFieldLabel("Project");
-		projectLabel->setObjectName("HeaderFieldLabel");
-		rowLayout->addWidget(projectLabel, 0);
-		QComboBox* projectCombo = CreateProjectCombo();
-		projectCombo->setObjectName("HeaderContextCombo");
-		projectCombo->setAccessibleName("Project");
-		projectCombo->setToolTip("Global project context used by project, cook, and launch workflows.");
-		applyComboMetrics(*projectCombo, LauncherUi::HeaderContext::ProjectComboMinWidth, LauncherUi::HeaderContext::ProjectComboMaxWidth);
-		projectLabel->setBuddy(projectCombo);
-		rowLayout->addWidget(projectCombo, 0);
+		QLabel* levelLabel = CreateFieldLabel("Level");
+		levelLabel->setObjectName("HeaderFieldLabel");
+		rowLayout->addWidget(levelLabel, 0);
+		QComboBox* levelCombo = CreateStartupLevelCombo();
+		levelCombo->setObjectName("HeaderContextCombo");
+		levelCombo->setAccessibleName("Startup level");
+		levelCombo->setToolTip("Startup level used by editor and runtime launches.");
+		applyComboMetrics(*levelCombo, LauncherUi::HeaderContext::LevelComboMinWidth, LauncherUi::HeaderContext::LevelComboMaxWidth);
+		levelLabel->setBuddy(levelCombo);
+		rowLayout->addWidget(levelCombo, 0);
 
 		QLabel* configurationLabel = CreateFieldLabel("Config");
 		configurationLabel->setObjectName("HeaderFieldLabel");
@@ -383,27 +383,6 @@ namespace SparkleLauncher
 		combo->setCurrentText(currentProfile);
 		RegisterFocusable(combo);
 		connect(combo, &QComboBox::currentTextChanged, &m_settings, setter);
-		return combo;
-	}
-
-	QComboBox* LauncherMainWindow::CreateProjectCombo()
-	{
-		QComboBox* combo = new QComboBox(this);
-		combo->setObjectName("ProjectCombo");
-		combo->setProperty("ProjectSelector", true);
-		combo->setToolTip("Project used by this workflow.");
-		combo->setAccessibleName("Project");
-		combo->setAccessibleDescription("Project used by this workflow.");
-		RegisterFocusable(combo);
-		m_projectSelectors.push_back(combo);
-		connect(combo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [combo, this]() {
-			const QString projectId = combo->currentData().toString();
-			if (!projectId.isEmpty())
-			{
-				m_projectModel.SelectProject(projectId);
-			}
-		});
-		PopulateProjectCombo(*combo);
 		return combo;
 	}
 

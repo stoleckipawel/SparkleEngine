@@ -26,7 +26,7 @@ namespace SparkleLauncher
 		std::string DryRunOperationId;
 		std::string RunOperationId;
 		std::string LaunchTarget = "editor";
-		std::string LaunchStartupLevel = "Sponza";
+		std::string LaunchStartupLevel;
 		CookMode RequestedCookMode = CookMode::Incremental;
 		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;

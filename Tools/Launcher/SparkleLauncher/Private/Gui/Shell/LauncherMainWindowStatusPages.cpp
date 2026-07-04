@@ -299,6 +299,7 @@ namespace SparkleLauncher
 			if (operationId == "workspace.sync-source-tiers")
 			{
 				AddSyncDependencyBundles(layout, true);
+				AddSyncLevelContentGroups(layout);
 			}
 			return;
 		}
@@ -476,7 +477,7 @@ namespace SparkleLauncher
 		    CreateActionDependencyActions("cook.shaders", "Cook Shaders"));
 	}
 
-	void LauncherMainWindow::AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeStartupLevel)
+	void LauncherMainWindow::AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail)
 	{
 		QVBoxLayout* targetLayout = AddOptionGroup(layout, title, detail);
 		AddOptionField(
@@ -486,21 +487,6 @@ namespace SparkleLauncher
 		        {{"Editor", "editor"}, {"Runtime", "runtime"}},
 		        m_settings.LaunchTarget(),
 		        &LauncherSettings::SetLaunchTarget));
-		if (includeStartupLevel)
-		{
-			AddOptionField(
-			    *targetLayout,
-			    "Startup level",
-			    CreateValueCombo(
-			        {{"Sponza", "Sponza"},
-			            {"A Beautiful Game", "ABeautifulGame"},
-			            {"Damaged Helmet", "DamagedHelmet"},
-			            {"Cesium Man", "CesiumMan"},
-			            {"Diffuse Transmission Plant", "DiffuseTransmissionPlant"},
-			            {"Empty", "Empty"}},
-			        m_settings.LaunchStartupLevel(),
-			        &LauncherSettings::SetLaunchStartupLevel));
-		}
 	}
 
 	void LauncherMainWindow::AddLaunchApplicationOptions(QVBoxLayout& layout)

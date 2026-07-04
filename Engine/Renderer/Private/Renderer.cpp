@@ -95,7 +95,7 @@ void Renderer::EndViewportPresentation(RenderOutputFlags output) noexcept
 	m_framePipeline->EndViewportPresentation(output);
 }
 
-RhiCaptureResult Renderer::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
+ViewportCaptureResult Renderer::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
 {
 	return m_framePipeline->CaptureViewportProductToBmp(request);
 }

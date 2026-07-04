@@ -145,6 +145,25 @@ struct SPARKLE_RENDERER_API ViewportCaptureRequest
 	const char* DebugName = "";
 };
 
+enum class ViewportCaptureStatus : std::uint8_t
+{
+	Unavailable = 0,
+	Failed = 1,
+	Succeeded = 2,
+};
+
+struct SPARKLE_RENDERER_API ViewportCaptureResult
+{
+	ViewportCaptureStatus Status = ViewportCaptureStatus::Failed;
+	std::filesystem::path ArtifactPath;
+	const char* FailureReason = "";
+
+	constexpr explicit operator bool() const noexcept
+	{
+		return Status == ViewportCaptureStatus::Succeeded;
+	}
+};
+
 struct SPARKLE_RENDERER_API ViewportRenderRequest
 {
 	std::uint64_t ViewportId = 0;

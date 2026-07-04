@@ -17,6 +17,7 @@ class VulkanCaptureService final : public RhiCaptureService
 	    NativeResourceHandle resource,
 	    std::uint32_t width,
 	    std::uint32_t height,
+	    ResourceState sourceState,
 	    const std::filesystem::path& outputPath) noexcept;
 
 	VulkanRenderHardwareInterface* m_owner = nullptr;

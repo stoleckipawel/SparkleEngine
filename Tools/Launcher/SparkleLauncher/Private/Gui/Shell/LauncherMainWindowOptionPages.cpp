@@ -268,7 +268,7 @@ namespace SparkleLauncher
 
 		if (operationId == "project.run")
 		{
-			AddLaunchTargetOptions(layout, "Launch Project", QString(), true);
+			AddLaunchTargetOptions(layout, "Launch Project", QString());
 			AddLaunchApplicationOptions(layout);
 			AddLaunchEnvironmentStatus(layout, operationId);
 			return;

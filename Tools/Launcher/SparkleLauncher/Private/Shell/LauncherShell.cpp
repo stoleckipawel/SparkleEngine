@@ -885,7 +885,7 @@ namespace SparkleLauncher
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
-		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level Sponza --dry-run project.run\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level <level-name> --dry-run project.run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n"

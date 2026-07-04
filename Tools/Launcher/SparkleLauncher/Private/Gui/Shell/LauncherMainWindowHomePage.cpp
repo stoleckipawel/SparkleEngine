@@ -117,8 +117,8 @@ namespace SparkleLauncher
 
 		const QString launchProvenance = packageRoot ? "bundled package components" : "local source artifacts";
 		const QString heroTitle = "Explore Project";
-		const QString heroDetail = QStringLiteral("Choose Editor or Runtime below. Products use the Launch Project settings, including startup level %1, and launch from %2 when available.")
-		                               .arg(m_settings.LaunchStartupLevel(), launchProvenance);
+		const QString heroDetail = QStringLiteral("Choose Editor or Runtime below. Products use the header startup level %1 and launch from %2 when available.")
+		                               .arg(ResolveStartupLevelDisplayName(), launchProvenance);
 		layout.addWidget(CreateHomeHeroCard(
 		    m_repositoryRoot,
 		    heroTitle,

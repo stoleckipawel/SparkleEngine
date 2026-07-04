@@ -35,7 +35,7 @@ namespace SparkleLauncher
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		std::string Target = "editor";
-		std::string StartupLevel = "Sponza";
+		std::string StartupLevel;
 		std::string GraphicsBackend;
 		std::string VSync;
 		std::string PreferHighPerformanceAdapter;

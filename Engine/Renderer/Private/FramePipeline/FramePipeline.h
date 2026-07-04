@@ -6,7 +6,6 @@
 #include "Frame/Core/FrameRenderPath.h"
 #include "Frame/RhiFrameConstants.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
-#include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "RHI/Public/Resources/PerFrameConstantBufferData.h"
@@ -47,7 +46,7 @@ class FramePipeline final
 
 	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
 	void EndViewportPresentation(RenderOutputFlags output) noexcept;
-	RhiCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
+	ViewportCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
 
   private:
 	void InitializeFrameGraph() noexcept;
@@ -61,7 +60,6 @@ class FramePipeline final
 	void SetupFrame() noexcept;
 	void RefreshViewportRenderProducts() noexcept;
 	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
-	NativeResourceHandle ResolveRenderProductResource(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
 	void BindRayTracingFrameGraphResources(const RayTracingSceneFrameData& rayTracingScene) noexcept;

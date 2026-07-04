@@ -52,7 +52,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::None,
 			    {},
 			    "Explore Project",
-			    "Choose Editor or Runtime below. Products use the Launch Project settings, including startup level, and launch from local source artifacts when available.",
+			    "Choose Editor or Runtime below. Products use the header startup level and launch from local source artifacts when available.",
 			    "workflow-home-quickstart.png");
 		}
 		if (operationId == "project.open.editor")
@@ -65,7 +65,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::LaunchProcess,
 			    "Product shortcut: opens the selected editor directly from Quick Start when ready.",
 			    "Launch view",
-			    "Uses the selected project, target, startup level, and runtime options from the Launch Project page.",
+			    "Uses the header startup level with the selected target and runtime options.",
 			    "workflow-editor-open.png");
 		}
 		if (operationId == "project.open.runtime")
@@ -78,7 +78,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::LaunchProcess,
 			    "Product shortcut: opens the selected runtime directly from Quick Start when ready.",
 			    "Launch view",
-			    "Uses the selected project, target, startup level, and runtime options from the Launch Project page.",
+			    "Uses the header startup level with the selected target and runtime options.",
 			    "workflow-runtime-open.png");
 		}
 		if (operationId == "project.run")
@@ -89,9 +89,9 @@ namespace SparkleLauncher
 			    "Run",
 			    LauncherWorkflowPageKind::Launch,
 			    LauncherActionImpactKind::LaunchProcess,
-			    "Launch workflow: runs the selected editor or runtime target with shared graphics, startup level, and runtime options.",
+			    "Launch workflow: runs the selected editor or runtime target with shared graphics and runtime options.",
 			    "Launch view",
-			    "Uses the selected project, target, startup level, and runtime options from this page.",
+			    "Uses the header startup level with the selected target and runtime options.",
 			    "workflow-project-run-editor.png");
 		}
 		if (operationId == "workspace.open-ide")
@@ -221,7 +221,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes all generated project content.",
 			    "Content outputs",
-			    "Refreshes cooked content for the selected project and startup level.",
+			    "Refreshes cooked content for synced catalog levels.",
 			    "workflow-cook-all.png");
 		}
 		if (operationId == "cook.shaders")
@@ -234,7 +234,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes generated shader content.",
 			    "Content outputs",
-			    "Refreshes cooked content for the selected project and startup level.",
+			    "Refreshes cooked shader outputs for synced catalog levels.",
 			    "workflow-cook-shaders.png");
 		}
 		if (operationId == "cook.textures")
@@ -247,7 +247,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes generated texture content.",
 			    "Content outputs",
-			    "Refreshes cooked content for the selected project and startup level.",
+			    "Refreshes cooked texture outputs for synced catalog levels.",
 			    "workflow-cook-textures.png");
 		}
 		if (operationId == "cook.assets")
@@ -260,7 +260,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes generated scene content.",
 			    "Content outputs",
-			    "Refreshes cooked content for the selected project and startup level.",
+			    "Refreshes cooked scene outputs for synced catalog levels.",
 			    "workflow-cook-assets.png");
 		}
 		if (operationId == "quality.format")
@@ -326,7 +326,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::CookedOutputs,
 			    "Cooked outputs: optional local recook that refreshes generated project content.",
 			    "Content outputs",
-			    "Refreshes cooked content for the selected project and startup level.",
+			    "Refreshes cooked content for synced catalog levels.",
 			    "workflow-cook-generic.png");
 		}
 

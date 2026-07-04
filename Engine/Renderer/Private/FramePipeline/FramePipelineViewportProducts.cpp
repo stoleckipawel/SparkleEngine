@@ -5,10 +5,48 @@
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Host/RendererSystemRoot.h"
+#include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Commands/RenderCommandList.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
+
+namespace
+{
+	bool IsCapturableViewportProductFormat(RenderProductFormat format) noexcept
+	{
+		switch (format)
+		{
+			case RenderProductFormat::ColorLdr:
+			case RenderProductFormat::ColorHdr:
+			case RenderProductFormat::Float:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	ViewportCaptureResult ToViewportCaptureResult(const RhiCaptureResult& rhiResult) noexcept
+	{
+		ViewportCaptureResult result{};
+		result.ArtifactPath = rhiResult.ArtifactPath;
+		result.FailureReason = rhiResult.FailureReason;
+		switch (rhiResult.Status)
+		{
+			case ERhiCaptureStatus::Succeeded:
+				result.Status = ViewportCaptureStatus::Succeeded;
+				break;
+			case ERhiCaptureStatus::Unsupported:
+				result.Status = ViewportCaptureStatus::Unavailable;
+				break;
+			case ERhiCaptureStatus::Failed:
+			default:
+				result.Status = ViewportCaptureStatus::Failed;
+				break;
+		}
+		return result;
+	}
+}
 
 ViewportPresentationProduct FramePipeline::BeginViewportPresentation(RenderOutputFlags output) noexcept
 {
@@ -59,14 +97,15 @@ void FramePipeline::EndViewportPresentation(RenderOutputFlags output) noexcept
 	TransitionRenderProduct(product->Handle, ResourceState::Common);
 }
 
-RhiCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
+ViewportCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
 {
-	RhiCaptureResult result{};
-	result.BackendApi = m_systems->GetRenderHardwareInterface().GetCapabilities().BackendApi;
-	result.FrameIndex = request.FrameIndex;
-	result.ViewMode = request.ViewMode;
-	result.ViewModeName = request.ViewModeName;
+	ViewportCaptureResult result{};
 	result.ArtifactPath = request.OutputPath;
+	if (request.OutputPath.empty())
+	{
+		result.FailureReason = "Capture output path is not set";
+		return result;
+	}
 
 	const RenderProduct* product = m_viewportRenderProducts.FindProduct(request.Output);
 	if (product == nullptr || !product->Handle)
@@ -75,44 +114,39 @@ RhiCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportCaptur
 		return result;
 	}
 
-	const NativeResourceHandle resource = ResolveRenderProductResource(product->Handle);
+	if (!IsCapturableViewportProductFormat(product->Format))
+	{
+		result.FailureReason = "Viewport output format is not supported for BMP capture";
+		return result;
+	}
+
+	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(product->Handle);
+	const NativeResourceHandle resource = resourceHandle.IsValid() && m_frameGraph != nullptr ?
+	                                          m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle}) :
+	                                          NativeResourceHandle{};
 	if (!resource)
 	{
 		result.FailureReason = "Viewport output resource is not available";
 		return result;
 	}
 
-	return m_systems->GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
+	const ResourceState sourceState = m_frameGraph->GetTrackedResourceState(resourceHandle);
+	return ToViewportCaptureResult(m_systems->GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
 	    RhiTextureCaptureRequest{
 	        .Resource = resource,
 	        .Width = product->Extent.Width,
 	        .Height = product->Extent.Height,
+	        .SourceState = sourceState,
 	        .OutputPath = request.OutputPath,
 	        .FrameIndex = request.FrameIndex,
 	        .ViewMode = request.ViewMode,
 	        .ViewModeName = request.ViewModeName,
-	        .DebugName = request.DebugName});
+	        .DebugName = request.DebugName}));
 }
 
 FrameGraphResourceHandle FramePipeline::ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept
 {
 	return ToFrameGraphResourceHandle(handle);
-}
-
-NativeResourceHandle FramePipeline::ResolveRenderProductResource(RenderProductHandle handle) const noexcept
-{
-	if (!handle || !m_frameGraph)
-	{
-		return NativeResourceHandle{};
-	}
-
-	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(handle);
-	if (!resourceHandle.IsValid())
-	{
-		return NativeResourceHandle{};
-	}
-
-	return m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle});
 }
 
 void FramePipeline::TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept

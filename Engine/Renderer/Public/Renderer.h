@@ -4,7 +4,6 @@
 #include "Shaders/CookedShaderReloadResult.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
-#include "RHI/Public/Capture/RhiCaptureService.h"
 #include "RHI/Public/Commands/RhiCommandSubmissionService.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Resources/Textures/TextureDiagnostics.h"
@@ -50,7 +49,7 @@ class SPARKLE_RENDERER_API Renderer final
 	void SubmitHostFrame() noexcept;
 	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
 	void EndViewportPresentation(RenderOutputFlags output) noexcept;
-	RhiCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
+	ViewportCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
 
 	void OnRender() noexcept;
 

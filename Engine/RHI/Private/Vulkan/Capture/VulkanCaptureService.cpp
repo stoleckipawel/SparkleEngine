@@ -2,6 +2,7 @@
 
 #include "Capture/RhiBmpWriter.h"
 #include "Vulkan/VulkanRenderHardwareInterface.h"
+#include "Vulkan/VulkanTypeConversions.h"
 
 namespace
 {
@@ -23,13 +24,57 @@ namespace
 		}
 		return UINT32_MAX;
 	}
+
+	void RecordCaptureTransition(
+	    VkCommandBuffer commandBuffer,
+	    VkImage image,
+	    ResourceState before,
+	    ResourceState after) noexcept
+	{
+		if (commandBuffer == VK_NULL_HANDLE || image == VK_NULL_HANDLE || before == after)
+		{
+			return;
+		}
+
+		const VulkanResourceStateMapping sourceState = VulkanTypeConversions::ToResourceStateMapping(before);
+		const VulkanResourceStateMapping destinationState = VulkanTypeConversions::ToResourceStateMapping(after);
+		const VkImageMemoryBarrier2 barrier{
+		    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+		    .pNext = nullptr,
+		    .srcStageMask = sourceState.StageMask,
+		    .srcAccessMask = sourceState.AccessMask,
+		    .dstStageMask = destinationState.StageMask,
+		    .dstAccessMask = destinationState.AccessMask,
+		    .oldLayout = sourceState.ImageLayout,
+		    .newLayout = destinationState.ImageLayout,
+		    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		    .image = image,
+		    .subresourceRange = VkImageSubresourceRange{
+		        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		        .baseMipLevel = 0,
+		        .levelCount = 1,
+		        .baseArrayLayer = 0,
+		        .layerCount = 1}};
+		const VkDependencyInfo dependency{
+		    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		    .pNext = nullptr,
+		    .dependencyFlags = 0,
+		    .memoryBarrierCount = 0,
+		    .pMemoryBarriers = nullptr,
+		    .bufferMemoryBarrierCount = 0,
+		    .pBufferMemoryBarriers = nullptr,
+		    .imageMemoryBarrierCount = 1,
+		    .pImageMemoryBarriers = &barrier};
+		vkCmdPipelineBarrier2(commandBuffer, &dependency);
+	}
 }
 
 VulkanCaptureService::VulkanCaptureService(VulkanRenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
 
 RhiCaptureResult VulkanCaptureService::CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept
 {
-	const bool captured = CaptureNativeTextureToBmp(request.Resource, request.Width, request.Height, request.OutputPath);
+	const bool captured = CaptureNativeTextureToBmp(request.Resource, request.Width, request.Height, request.SourceState, request.OutputPath);
 	return RhiCaptureResult{
 	    .Status = captured ? ERhiCaptureStatus::Succeeded : ERhiCaptureStatus::Failed,
 	    .BackendApi = ERhiBackendApi::Vulkan,
@@ -44,6 +89,7 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
     NativeResourceHandle resource,
     std::uint32_t width,
     std::uint32_t height,
+    ResourceState sourceState,
     const std::filesystem::path& outputPath) noexcept
 {
 	if (m_owner == nullptr || resource.Value == nullptr || width == 0 || height == 0)
@@ -149,30 +195,7 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
 		return false;
 	}
 
-	const VkImageMemoryBarrier2 toTransferSource{
-	    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-	    .pNext = nullptr,
-	    .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-	    .srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
-	    .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-	    .dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
-	    .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
-	    .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-	    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-	    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-	    .image = sourceImage,
-	    .subresourceRange = VkImageSubresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
-	const VkDependencyInfo toTransferDependency{
-	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-	    .pNext = nullptr,
-	    .dependencyFlags = 0,
-	    .memoryBarrierCount = 0,
-	    .pMemoryBarriers = nullptr,
-	    .bufferMemoryBarrierCount = 0,
-	    .pBufferMemoryBarriers = nullptr,
-	    .imageMemoryBarrierCount = 1,
-	    .pImageMemoryBarriers = &toTransferSource};
-	vkCmdPipelineBarrier2(commandBuffer, &toTransferDependency);
+	RecordCaptureTransition(commandBuffer, sourceImage, sourceState, ResourceState::CopySource);
 
 	const VkBufferImageCopy copyRegion{
 	    .bufferOffset = 0,
@@ -183,24 +206,7 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
 	    .imageExtent = VkExtent3D{.width = width, .height = height, .depth = 1}};
 	vkCmdCopyImageToBuffer(commandBuffer, sourceImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, readbackBuffer, 1, &copyRegion);
 
-	VkImageMemoryBarrier2 toGeneral = toTransferSource;
-	toGeneral.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-	toGeneral.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
-	toGeneral.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-	toGeneral.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
-	toGeneral.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-	toGeneral.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	const VkDependencyInfo toGeneralDependency{
-	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-	    .pNext = nullptr,
-	    .dependencyFlags = 0,
-	    .memoryBarrierCount = 0,
-	    .pMemoryBarriers = nullptr,
-	    .bufferMemoryBarrierCount = 0,
-	    .pBufferMemoryBarriers = nullptr,
-	    .imageMemoryBarrierCount = 1,
-	    .pImageMemoryBarriers = &toGeneral};
-	vkCmdPipelineBarrier2(commandBuffer, &toGeneralDependency);
+	RecordCaptureTransition(commandBuffer, sourceImage, ResourceState::CopySource, sourceState);
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 	{

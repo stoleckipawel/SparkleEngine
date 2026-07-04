@@ -98,7 +98,7 @@ No-pollution check means:
 Universal engineering gate means:
 
 - Search first: before adding code, prove the repo does not already have an owner/capability that should be reused, merged, or simplified.
-- Net code pressure: every code addition should be paired with deletion or simplification in the same batch; if impossible, record the reason and the next removal target.
+- Net code pressure: every code addition should be paired with deletion or simplification in the same batch. Treat this as applying to completed and future stages; if a batch cannot reach net-zero or net-negative code, record the exact reason and the next removal target before the batch is considered done.
 - Single ownership: similar capabilities must converge on one owner instead of creating parallel paths.
 - Data owns content names: catalogs, config, level files, and project data may name content; compiled engine/tool code should not hardcode sample or asset names.
 - Fail simply: required data should fail clearly at the owning boundary; optional data should use explicit availability metadata rather than layered fallbacks.
@@ -339,8 +339,10 @@ Universal acceptance for this stage:
 Result:
 
 - Added `Projects/Showcase/Levels.catalog` as the project-owned default level catalog.
-- Runtime level discovery now prefers available catalog levels and falls back to directory scanning when no catalog exists.
+- Runtime level discovery now uses the project catalog as the single owner of level discovery; missing catalog is reported at the GameFramework boundary instead of scanning arbitrary level files.
 - Asset cook discovery uses catalog `Default` levels to filter project scene sources while preserving engine scene discovery.
+- Launcher level sync controls use catalog metadata to make required levels locked-on and optional levels user-selectable.
+- Launcher header level selection is the single visible startup-level source for editor/runtime launch; the Launch Project page no longer owns a duplicate startup-level selector.
 - Optional pack metadata is represented by `Id`, `Root`, and `Available`; missing or disabled packs can suppress catalog levels without introducing a content database.
 
 ### Stage 06: Optional Heavy Content Pack Boundary
@@ -405,6 +407,7 @@ Result:
 - Removed `Projects/Showcase/Assets/Meshes/Bistro` from the core repo footprint.
 - Kept optional pack metadata in `Projects/Showcase/Levels.catalog` with `Id = Bistro`, `Root = Assets/Meshes/Bistro`, `Available = false`, and `External = true`.
 - Curated default set remains seven levels; all seven level files resolve and all five referenced default source scenes still exist.
+- Launcher optional-pack sync controls expose external/missing pack state without hardcoding any content name in compiled code.
 - `Projects` source content, excluding generated logs/cooked output, dropped from about 1527.06 MB to about 88.26 MB.
 
 ### Stage 08: Capture Path Inventory
@@ -420,16 +423,78 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Every `CaptureTextureToBmp`, `RhiCaptureService`, and BMP writer call site is listed.
-- [ ] One intended product capture owner is selected.
-- [ ] Smoke/ad hoc capture call sites are named for removal.
-- [ ] D3D12/Vulkan readback impact is recorded.
+- [x] Every `CaptureTextureToBmp`, `RhiCaptureService`, and BMP writer call site is listed.
+- [x] One intended product capture owner is selected.
+- [x] Smoke/ad hoc capture call sites are named for removal.
+- [x] D3D12/Vulkan readback impact is recorded.
+
+Result:
+
+This stage made no capture source-code changes. Existing capability search found an already-owned product path:
+
+`Renderer::CaptureViewportProductToBmp` -> `FramePipeline::CaptureViewportProductToBmp` -> `RenderHardwareInterface::GetCaptureService()` -> backend `CaptureTextureToBmp` -> private `WriteRhiBmp`.
+
+Product capture owner selected:
+
+- Owner: Renderer viewport product capture.
+- Public product entrypoint: `Engine/Renderer/Public/Renderer.h:53`, `Engine/Renderer/Private/Renderer.cpp:98`.
+- Renderer implementation: `Engine/Renderer/Private/FramePipeline/FramePipelineViewportProducts.cpp:62`.
+- Request type: `Engine/Renderer/Public/Viewport/ViewportContracts.h:138`.
+- Ownership rule for Stage 09: editor/tool capture should call the renderer viewport product entrypoint. It should not call backend capture services or the BMP writer directly.
+
+`CaptureTextureToBmp` and `RhiCaptureService` inventory:
+
+| Path | Role | Stage 09 decision |
+| --- | --- | --- |
+| `Engine/RHI/Public/Capture/RhiCaptureService.h:40` | RHI backend service interface. | Keep, but keep it backend-owned and avoid exposing it as a general app/tool API. |
+| `Engine/RHI/Public/Capture/RhiCaptureService.h:45` | `CaptureTextureToBmp` virtual backend operation. | Keep behind renderer product capture. |
+| `Engine/RHI/Private/Capture/RhiCaptureService.cpp:3` | Virtual destructor definition. | Keep. |
+| `Engine/RHI/Public/Device/RenderHardwareInterface.h:39` | Backend service accessor. | Keep only as RHI service access for renderer/backend code. |
+| `Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.h:60` and `.cpp:261` | D3D12 `GetCaptureService`. | Keep for D3D12 parity. |
+| `Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp:85` | Creates `D3D12CaptureService`. | Keep for D3D12 parity. |
+| `Engine/RHI/Private/D3D12/Capture/D3D12CaptureService.h:7` | D3D12 service type. | Keep, backend-private. |
+| `Engine/RHI/Private/D3D12/Capture/D3D12CaptureService.h:12` and `.cpp:34` | D3D12 `CaptureTextureToBmp`. | Keep, harden assumptions in Stage 09. |
+| `Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.h:58` and `.cpp:202` | Vulkan `GetCaptureService`. | Keep for Vulkan parity. |
+| `Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.cpp:87` | Creates `VulkanCaptureService`. | Keep for Vulkan parity. |
+| `Engine/RHI/Private/Vulkan/Capture/VulkanCaptureService.h:8` | Vulkan service type. | Keep, backend-private. |
+| `Engine/RHI/Private/Vulkan/Capture/VulkanCaptureService.h:13` and `.cpp:30` | Vulkan `CaptureTextureToBmp`. | Keep, harden assumptions in Stage 09. |
+| `Engine/Renderer/Private/FramePipeline/FramePipelineViewportProducts.cpp:85` | Only renderer-to-RHI `CaptureTextureToBmp` call site. | Keep as the only product-to-RHI bridge. |
+
+BMP writer inventory:
+
+| Path | Role | Stage 09 decision |
+| --- | --- | --- |
+| `Engine/RHI/Private/Capture/RhiBmpWriter.h:14` | Private BMP writer declaration. | Keep private to RHI capture. |
+| `Engine/RHI/Private/Capture/RhiBmpWriter.cpp:85` | BMP writer implementation. | Keep only behind backend capture services. |
+| `Engine/RHI/Private/D3D12/Capture/D3D12CaptureService.cpp:172` | D3D12 write call. | Keep. |
+| `Engine/RHI/Private/Vulkan/Capture/VulkanCaptureService.cpp:242` | Vulkan write call. | Keep. |
+
+Readback inventory and impact:
+
+| Area | Path | Current impact | Stage 09/late-stage action |
+| --- | --- | --- | --- |
+| Capture capability flags | `Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp:140`, `Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.cpp:272` | Both backends advertise upload/readback support. | Preserve D3D12/Vulkan parity. |
+| D3D12 screenshot readback | `Engine/RHI/Private/D3D12/Capture/D3D12CaptureService.cpp:79`, `:128`, `:166` | Allocates a readback heap buffer, transitions texture from `COMMON` to copy source, copies with `CopyTextureRegion`, waits on a fence, maps on CPU, writes BMP. Synchronous and only suitable as a user-triggered tool/editor action. | Keep capability; harden resource-state assumptions and avoid frame-path use. |
+| Vulkan screenshot readback | `Engine/RHI/Private/Vulkan/Capture/VulkanCaptureService.cpp:71`, `:184`, `:240` | Allocates host-visible coherent transfer buffer, transitions image from `GENERAL` to transfer source, copies with `vkCmdCopyImageToBuffer`, waits on a fence, maps on CPU, writes BMP. Synchronous and only suitable as a user-triggered tool/editor action. | Keep capability; harden layout/format assumptions and avoid frame-path use. |
+| D3D12 timestamp readback | `Engine/RHI/Private/D3D12/Diagnostics/D3D12RenderDiagnostics.cpp:177`, `:275`, `:292` | Diagnostics/profiling readback, not screenshot capture. | Do not mix with screenshot hardening; profiling cleanup is later priority. |
+| PTLAS validation readback | `Engine/RHI/Public/RayTracing/RhiPartitionedTlasDesc.h:200`, `Engine/RHI/Private/D3D12/RayTracing/D3D12PartitionedTlasServices.cpp:437`, `Engine/RHI/Private/Vulkan/RayTracing/VulkanPartitionedTlasServices.cpp:438` | Optional validation/CPU readback around PTLAS, not product screenshot capture. | Preserve TLAS/PTLAS feature; do not let capture work delete this capability. |
+
+Smoke/ad hoc capture removal candidates:
+
+- No source call site currently invokes `CaptureViewportProductToBmp`, `CaptureTextureToBmp`, or `WriteRhiBmp` from smoke/ad hoc code.
+- `rg -n "SPARKLE_SMOKE|SmokeDiagnostics|smoke|Smoke|Screenshot|screenshot|CaptureViewportProductToBmp|CaptureTextureToBmp" . -g"*.cpp" -g"*.h" -g"*.cmake" -g"CMakeLists.txt" -g"*.ps1" -g"*.py"` found only the product capture declarations/definitions and no smoke-owned screenshot execution path.
+- Stage 09 removal rule: if a smoke or validation harness later appears around screenshot/BMP capture, remove that owner and route only through the renderer product capture entrypoint.
+
+Net code pressure:
+
+- No capture code was added in this stage.
+- Stage 09 must reduce or hold code count by narrowing public exposure, deleting any stale capture/debug scaffolding discovered during implementation, or recording the exact next removal if hardening requires a small replacement.
 
 ### Stage 09: Harden Screenshot/BMP Capture
 
@@ -444,16 +509,36 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Capture entrypoint is product-owned.
-- [ ] BMP writer remains only behind the intended path.
-- [ ] Smoke/ad hoc capture ownership is gone.
-- [ ] Public API is smaller or explicitly justified.
+- [x] Capture entrypoint is product-owned.
+- [x] BMP writer remains only behind the intended path.
+- [x] Smoke/ad hoc capture ownership is gone.
+- [x] Public API is smaller or explicitly justified.
+
+Result:
+
+- Product capture remains `Renderer::CaptureViewportProductToBmp`, but the public renderer API now returns `ViewportCaptureResult` instead of `RhiCaptureResult`. This removes `RHI/Public/Capture/RhiCaptureService.h` from `Engine/Renderer/Public/Renderer.h`.
+- `ViewportCaptureResult` lives beside `ViewportCaptureRequest` in `Engine/Renderer/Public/Viewport/ViewportContracts.h`, keeping the high-level capture contract renderer-owned.
+- The private renderer bridge in `Engine/Renderer/Private/FramePipeline/FramePipelineViewportProducts.cpp` is now the only renderer-to-RHI capture call site. It validates output path, product availability, and capturable product format before entering RHI.
+- `RhiTextureCaptureRequest` now carries the renderer-tracked source `ResourceState`; D3D12 and Vulkan capture services transition from that explicit state to `CopySource` and then restore it.
+- D3D12 no longer assumes `D3D12_RESOURCE_STATE_COMMON` for screenshot source resources. It uses `D3D12TypeConversions::ToResourceStates` from the provided source state.
+- Vulkan no longer assumes `VK_IMAGE_LAYOUT_GENERAL` for screenshot source images. It uses `VulkanTypeConversions::ToResourceStateMapping` from the provided source state.
+- `WriteRhiBmp` remains private to `Engine/RHI/Private/Capture` and is still called only by `D3D12CaptureService` and `VulkanCaptureService`.
+- No smoke/ad hoc screenshot caller exists in source, and no new smoke, validation, report, or gallery path was added.
+
+Net code pressure:
+
+- This stage added a small renderer-owned result type and explicit source-state field, but removed the public renderer dependency on RHI capture result types and removed hardcoded backend state/layout assumptions.
+- The batch is justified as an ownership and correctness hardening step; next removal pressure remains Stage 10 smoke harness removal and Stage 11-12 report/debug artifact cleanup.
+
+Verification:
+
+- `cmake --build build --target SparkleRenderer --config DevelopmentEditor` succeeded.
 
 ### Stage 10: Smoke Harness Removal
 
@@ -468,16 +553,31 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] `RhiSmoke`, `SmokeDiagnostics`, and `SPARKLE_SMOKE` references are gone or intentionally product-owned.
-- [ ] No screenshot capability is removed.
-- [ ] No new validation system replaces smoke.
-- [ ] Final stabilization risk is recorded if launch behavior is touched.
+- [x] `RhiSmoke`, `SmokeDiagnostics`, and `SPARKLE_SMOKE` references are gone or intentionally product-owned.
+- [x] No screenshot capability is removed.
+- [x] No new validation system replaces smoke.
+- [x] Final stabilization risk is recorded if launch behavior is touched.
+
+Result:
+
+- No smoke harness source code remains to remove in this stage.
+- Source search `rg -n "RhiSmoke|SmokeDiagnostics|SPARKLE_SMOKE|Smoke|smoke|SmokeTest|smoke-test" Engine Tools Projects -g"*.cpp" -g"*.h" -g"*.cmake" -g"CMakeLists.txt" -g"*.ps1" -g"*.py" -g"*.bat"` returned no matches.
+- The remaining smoke mentions are planning/review document references that describe deletion policy, not executable product code.
+- Screenshot/BMP capture remains preserved through the Stage 09 renderer-owned path.
+- No launch behavior was touched in this stage; final stabilization risk is unchanged from earlier stages.
+- No replacement validation, smoke, report, or diagnostic system was added.
+
+Net code pressure:
+
+- No source code was added.
+- No source code was deleted because the target smoke harnesses were already absent.
+- The next actual deletion pressure remains Stage 11 AssetCooker report cleanup and Stage 12 shader debug artifact cleanup.
 
 ### Stage 11: AssetCooker Default Report Cleanup
 

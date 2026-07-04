@@ -92,8 +92,8 @@ namespace SparkleLauncher::LauncherUi
 	{
 		inline constexpr int Spacing = 10;
 		inline constexpr int ComboHeight = 28;
-		inline constexpr int ProjectComboMinWidth = 140;
-		inline constexpr int ProjectComboMaxWidth = 180;
+		inline constexpr int LevelComboMinWidth = 170;
+		inline constexpr int LevelComboMaxWidth = 240;
 		inline constexpr int ConfigurationComboMinWidth = 140;
 		inline constexpr int ConfigurationComboMaxWidth = 180;
 		inline constexpr int IdeComboMinWidth = 120;

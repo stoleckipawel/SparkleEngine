@@ -328,7 +328,7 @@ namespace SparkleLauncher
 
 	void LauncherSettings::SetLaunchStartupLevel(const QString& levelName)
 	{
-		const QString normalized = levelName.trimmed().isEmpty() ? QString("Sponza") : levelName.trimmed();
+		const QString normalized = levelName.trimmed();
 		if (m_launchStartupLevel == normalized)
 		{
 			return;

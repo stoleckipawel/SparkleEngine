@@ -2,6 +2,7 @@
 
 #include "Capture/RhiBmpWriter.h"
 #include "D3D12/D3D12RenderHardwareInterface.h"
+#include "D3D12/D3D12TypeConversions.h"
 
 #include <d3d12.h>
 #include <wrl/client.h>
@@ -27,13 +28,33 @@ namespace
 			return false;
 		}
 	}
+
+	void RecordCaptureTransition(
+	    ID3D12GraphicsCommandList* commandList,
+	    ID3D12Resource* resource,
+	    ResourceState before,
+	    ResourceState after) noexcept
+	{
+		if (commandList == nullptr || resource == nullptr || before == after)
+		{
+			return;
+		}
+
+		D3D12_RESOURCE_BARRIER barrier{};
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Transition.pResource = resource;
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = D3D12TypeConversions::ToResourceStates(before);
+		barrier.Transition.StateAfter = D3D12TypeConversions::ToResourceStates(after);
+		commandList->ResourceBarrier(1, &barrier);
+	}
 }
 
 D3D12CaptureService::D3D12CaptureService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
 
 RhiCaptureResult D3D12CaptureService::CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept
 {
-	const bool captured = CaptureNativeTextureToBmp(request.Resource, request.OutputPath);
+	const bool captured = CaptureNativeTextureToBmp(request.Resource, request.SourceState, request.OutputPath);
 	return RhiCaptureResult{
 	    .Status = captured ? ERhiCaptureStatus::Succeeded : ERhiCaptureStatus::Failed,
 	    .BackendApi = ERhiBackendApi::D3D12,
@@ -44,7 +65,10 @@ RhiCaptureResult D3D12CaptureService::CaptureTextureToBmp(const RhiTextureCaptur
 	    .FailureReason = captured ? "" : "D3D12 texture capture failed; verify the resource is a valid Texture2D and the output path is writable."};
 }
 
-bool D3D12CaptureService::CaptureNativeTextureToBmp(NativeResourceHandle resource, const std::filesystem::path& outputPath) noexcept
+bool D3D12CaptureService::CaptureNativeTextureToBmp(
+    NativeResourceHandle resource,
+    ResourceState sourceState,
+    const std::filesystem::path& outputPath) noexcept
 {
 	ID3D12Device* const device = m_owner != nullptr ? static_cast<ID3D12Device*>(m_owner->GetDeviceHandle().Value) : nullptr;
 	ID3D12CommandQueue* const queue = m_owner != nullptr ? static_cast<ID3D12CommandQueue*>(m_owner->GetGraphicsQueueHandle().Value) : nullptr;
@@ -109,13 +133,7 @@ bool D3D12CaptureService::CaptureNativeTextureToBmp(NativeResourceHandle resourc
 		return false;
 	}
 
-	D3D12_RESOURCE_BARRIER barrier{};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Transition.pResource = sourceResource;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-	commandList->ResourceBarrier(1, &barrier);
+	RecordCaptureTransition(commandList.Get(), sourceResource, sourceState, ResourceState::CopySource);
 
 	D3D12_TEXTURE_COPY_LOCATION sourceLocation{};
 	sourceLocation.pResource = sourceResource;
@@ -127,8 +145,7 @@ bool D3D12CaptureService::CaptureNativeTextureToBmp(NativeResourceHandle resourc
 	destinationLocation.PlacedFootprint = footprint;
 	commandList->CopyTextureRegion(&destinationLocation, 0, 0, 0, &sourceLocation, nullptr);
 
-	std::swap(barrier.Transition.StateBefore, barrier.Transition.StateAfter);
-	commandList->ResourceBarrier(1, &barrier);
+	RecordCaptureTransition(commandList.Get(), sourceResource, ResourceState::CopySource, sourceState);
 
 	if (FAILED(commandList->Close()))
 	{

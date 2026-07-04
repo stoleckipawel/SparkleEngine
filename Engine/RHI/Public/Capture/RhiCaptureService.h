@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/RhiBackendApi.h"
+#include "../Interop/ResourceState.h"
 #include "../Interop/RhiNativeHandles.h"
 #include "../RHIAPI.h"
 
@@ -19,6 +20,7 @@ struct RhiTextureCaptureRequest final
 	NativeResourceHandle Resource = {};
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
+	ResourceState SourceState = ResourceState::Common;
 	std::filesystem::path OutputPath;
 	std::uint32_t FrameIndex = 0;
 	std::uint32_t ViewMode = 0;

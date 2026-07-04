@@ -101,7 +101,6 @@ namespace SparkleLauncher
 		QLineEdit* CreateBoundLineEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
 		QTextEdit* CreateBoundTextEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
 		QComboBox* CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&));
-		QComboBox* CreateProjectCombo();
 		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
@@ -110,13 +109,19 @@ namespace SparkleLauncher
 		QVBoxLayout* AddDetailsGroup(QVBoxLayout& layout, const QString& title, const QString& detail, bool expanded = false);
 		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
 		void AddSyncDependencyBundles(QVBoxLayout& layout, bool includeDependencyDetails);
+		void AddSyncLevelContentGroups(QVBoxLayout& layout);
+		QComboBox* CreateStartupLevelCombo();
+		void PopulateStartupLevelCombo(QComboBox& combo);
+		void PopulateStartupLevelSelectors();
+		QVector<QPair<QString, QString>> BuildStartupLevelOptions() const;
+		QString ResolveStartupLevelDisplayName() const;
 		void AddWorkflowVisualBanner(QVBoxLayout& layout, const QString& operationId);
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
 		void AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId);
 		void AddHomeQuickStart(QVBoxLayout& layout);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
-		void AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeStartupLevel);
+		void AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail);
 		void AddLaunchApplicationOptions(QVBoxLayout& layout);
 		void AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		QVBoxLayout* AddInlineOptionsSection(QVBoxLayout& layout);
@@ -164,8 +169,6 @@ namespace SparkleLauncher
 		void SetActivityLogExpanded(bool expanded);
 		void UpdateActivityRunSelectionVisuals();
 		void UpdateProgress();
-		void PopulateProjectSelectors();
-		void PopulateProjectCombo(QComboBox& combo) const;
 		void ApplyVisualStyle();
 
 		std::filesystem::path m_repositoryRoot;
@@ -182,7 +185,7 @@ namespace SparkleLauncher
 		QWidget* m_headerContextPanel = nullptr;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
-		QVector<QComboBox*> m_projectSelectors;
+		QVector<QComboBox*> m_startupLevelSelectors;
 		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_cleanButton = nullptr;
 		QPushButton* m_runButton = nullptr;
