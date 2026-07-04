@@ -80,8 +80,6 @@ struct RhiBackendMemorySupport
 {
 	bool SupportsMemoryDiagnostics = false;
 	bool SupportsBudgetQueries = false;
-	bool SupportsJsonDump = false;
-	bool SupportsAllocationDetails = false;
 	bool SupportsDelayedDestructionTracking = false;
 	bool SupportsResidencyPressure = false;
 };

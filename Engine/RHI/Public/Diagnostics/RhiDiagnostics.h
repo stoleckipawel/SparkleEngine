@@ -62,7 +62,6 @@ struct RhiDiagnosticsCapabilities
 	bool SupportsCrashDiagnostics = false;
 	bool SupportsMemoryDiagnostics = false;
 	bool SupportsMemoryBudgetQueries = false;
-	bool SupportsMemoryJsonDump = false;
 };
 
 class SPARKLE_RHI_API RenderObjectDiagnostics

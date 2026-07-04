@@ -48,8 +48,6 @@ struct SPARKLE_RENDERER_API SceneMemoryReport final
 	std::uint64_t UploadBytes = 0;
 	std::uint64_t ConstantBufferBytes = 0;
 	std::uint64_t TotalTrackedBytes = 0;
-	std::uint32_t NamedAllocationCount = 0;
-	std::vector<RhiMemoryAllocationInfo> LargestNamedAllocations;
 };
 
 struct SPARKLE_RENDERER_API RendererMemoryDiagnosticsSnapshot final

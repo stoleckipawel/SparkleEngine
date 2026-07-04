@@ -38,10 +38,9 @@ std::string FormatBackendDiagnosticsSupport(const RhiBackendDiagnosticsSupport& 
 std::string FormatBackendMemorySupport(const RhiBackendMemorySupport& memory)
 {
 	return std::format(
-	    "memorySupport(diagnostics={}, budgetQueries={}, jsonDump={}, residencyPressure={})",
+	    "memorySupport(diagnostics={}, budgetQueries={}, residencyPressure={})",
 	    memory.SupportsMemoryDiagnostics,
 	    memory.SupportsBudgetQueries,
-	    memory.SupportsJsonDump,
 	    memory.SupportsResidencyPressure);
 }
 

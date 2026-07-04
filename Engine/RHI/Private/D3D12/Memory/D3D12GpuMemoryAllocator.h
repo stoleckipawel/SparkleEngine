@@ -7,7 +7,6 @@
 
 #include <cstdint>
 #include <d3d12.h>
-#include <filesystem>
 #include <memory>
 #include <string_view>
 
@@ -27,9 +26,7 @@ class D3D12GpuMemoryAllocator final
 
 	bool IsInitialized() const noexcept;
 	bool SupportsBudgetQueries() const noexcept;
-	bool SupportsJsonDump() const noexcept;
 	RhiMemoryUsageSnapshot CreateMemoryUsageSnapshot() const;
-	bool WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap = true) const noexcept;
 	std::unique_ptr<D3D12GpuAllocationRecord> CreateTexture(
 	    const D3D12_RESOURCE_DESC& resourceDesc,
 	    D3D12_RESOURCE_STATES initialState,

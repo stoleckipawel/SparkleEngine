@@ -101,62 +101,6 @@ RhiDescriptorTableBinding VulkanDescriptorManager::GetSharedSamplerBinding(const
 	return m_samplerLibrary != nullptr ? m_samplerLibrary->GetSharedSamplerBinding(samplerDesc) : RhiDescriptorTableBinding{};
 }
 
-RhiDescriptorUsageSnapshot VulkanDescriptorManager::CaptureDescriptorUsageSnapshot() const
-{
-	const VulkanDescriptorAllocatorStats stats = m_allocator.CaptureStats();
-	const auto makeUsage =
-	    [](ERhiDescriptorAllocatorType type,
-	       std::string name,
-	       std::uint32_t capacity,
-	       std::uint32_t allocated,
-	       std::uint32_t free,
-	       std::string reason = {}) -> RhiDescriptorAllocatorUsage
-	{
-		const float occupancyRatio = capacity != 0u ? static_cast<float>(allocated) / static_cast<float>(capacity) : 0.0f;
-		return RhiDescriptorAllocatorUsage{
-		    .Type = type,
-		    .Status = capacity != 0u || allocated != 0u ? ERhiDescriptorUsageStatus::Available : ERhiDescriptorUsageStatus::Unavailable,
-		    .Name = std::move(name),
-		    .Capacity = capacity,
-		    .Allocated = allocated,
-		    .Free = free,
-		    .HighWatermark = allocated,
-		    .OccupancyRatio = occupancyRatio,
-		    .Reason = std::move(reason)};
-	};
-
-	RhiDescriptorUsageSnapshot snapshot;
-	snapshot.DescriptorModel = ERhiDescriptorModel::DescriptorSets;
-	snapshot.Allocators.reserve(3);
-	snapshot.Allocators.push_back(
-	    makeUsage(
-	        ERhiDescriptorAllocatorType::ShaderResource,
-	        "Vulkan descriptor tables",
-	        stats.DescriptorTableCapacity,
-	        stats.DescriptorTableAllocated,
-	        stats.DescriptorTableFree,
-	        stats.DescriptorTableCapacity != 0u ? "" : "No persistent descriptor tables have been allocated yet."));
-	snapshot.Allocators.push_back(
-	    makeUsage(
-	        ERhiDescriptorAllocatorType::ShaderResource,
-	        "Vulkan registered resource descriptors",
-	        stats.RegisteredDescriptorCapacity,
-	        stats.RegisteredDescriptorAllocated,
-	        stats.RegisteredDescriptorFree,
-	        stats.RegisteredDescriptorCapacity != 0u ? "" : "No registered resource descriptors have been allocated yet."));
-	snapshot.Allocators.push_back(
-	    makeUsage(
-	        ERhiDescriptorAllocatorType::ShaderResource,
-	        "Vulkan transient frame descriptor sets",
-	        stats.TransientDescriptorSetCapacity,
-	        stats.TransientDescriptorSetAllocated,
-	        stats.TransientDescriptorSetCapacity >= stats.TransientDescriptorSetAllocated ?
-	            stats.TransientDescriptorSetCapacity - stats.TransientDescriptorSetAllocated :
-	            0u,
-	        stats.TransientDescriptorPoolPages != 0u ? "" : "No transient descriptor pool pages have been allocated yet."));
-	return snapshot;
-}
-
 RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResourceViewDesc& desc)
 {
 	if (!desc.Resource && desc.Kind != ERhiResourceViewKind::AccelerationStructureShaderResource)

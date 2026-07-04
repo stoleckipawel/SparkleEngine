@@ -2,7 +2,6 @@
 
 #include "Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
 
-#include <cstddef>
 #include <cstdint>
 
 class RenderDiagnostics;
@@ -25,7 +24,6 @@ class RendererMemoryMonitor final
 	    const std::vector<RendererMemoryCategoryPressure>& categoryPressure);
 	static SceneMemoryReport BuildSceneMemoryReport(const RhiMemoryUsageSnapshot& memoryUsage);
 	static bool HasReachedPollInterval(std::uint64_t frameIndex, std::uint64_t lastPollFrame, std::uint32_t pollIntervalFrames) noexcept;
-	static constexpr std::size_t kLargestNamedAllocationCount = 16;
 
 	RenderDiagnostics* m_diagnostics = nullptr;
 	RendererMemoryDiagnosticsSnapshot m_latestSnapshot;

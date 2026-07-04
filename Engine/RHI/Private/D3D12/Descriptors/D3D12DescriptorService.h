@@ -41,7 +41,6 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
 	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
-	RhiDescriptorUsageSnapshot CaptureDescriptorUsageSnapshot() const override;
 
   private:
 	struct DescriptorTableRecord

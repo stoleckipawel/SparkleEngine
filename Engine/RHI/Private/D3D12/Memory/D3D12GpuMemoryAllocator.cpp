@@ -7,8 +7,6 @@
 #include <D3D12MemAlloc.h>
 
 #include <algorithm>
-#include <filesystem>
-#include <fstream>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -152,11 +150,6 @@ bool D3D12GpuMemoryAllocator::SupportsBudgetQueries() const noexcept
 	return IsInitialized();
 }
 
-bool D3D12GpuMemoryAllocator::SupportsJsonDump() const noexcept
-{
-	return IsInitialized();
-}
-
 RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() const
 {
 	RhiMemoryUsageSnapshot snapshot;
@@ -173,7 +166,6 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 	m_impl->allocator->CalculateStatistics(&totalStats);
 	snapshot.AllocatorBackend = ERhiMemoryAllocatorBackend::D3D12Managed;
 	snapshot.HasBudgetData = true;
-	snapshot.HasAllocationDetails = true;
 	snapshot.HasDelayedDestructionTracking = false;
 	snapshot.TotalUsedBytes = totalStats.Total.Stats.AllocationBytes;
 	snapshot.TotalAllocatedBytes = totalStats.Total.Stats.BlockBytes;
@@ -183,7 +175,6 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 	std::vector<CategoryAggregation> aggregations;
 	{
 		std::scoped_lock lock(m_impl->recordsMutex);
-		snapshot.Allocations.reserve(m_impl->liveRecords.size());
 		aggregations.reserve(m_impl->liveRecords.size());
 
 		for (const D3D12GpuAllocationRecord* record : m_impl->liveRecords)
@@ -220,13 +211,6 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			aggregation.Stats.UsedBytes += allocationBytes;
 			aggregation.Stats.AllocatedBytes += allocationBytes;
 			AddBlockReference(aggregation, record->Allocation);
-
-			snapshot.Allocations.push_back(RhiMemoryAllocationInfo{
-			    .Category = record->Category,
-			    .ResidencyClass = record->ResidencyClass,
-			    .UsedBytes = allocationBytes,
-			    .AllocatedBytes = allocationBytes,
-			    .DebugName = record->DebugName});
 		}
 
 		for (const D3D12GpuHeapRecord* record : m_impl->liveHeapRecords)
@@ -253,13 +237,6 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			aggregation.Stats.UsedBytes += allocationBytes;
 			aggregation.Stats.AllocatedBytes += allocationBytes;
 			AddBlockReference(aggregation, record->Allocation);
-
-			snapshot.Allocations.push_back(RhiMemoryAllocationInfo{
-			    .Category = record->Category,
-			    .ResidencyClass = record->ResidencyClass,
-			    .UsedBytes = allocationBytes,
-			    .AllocatedBytes = allocationBytes,
-			    .DebugName = record->DebugName});
 		}
 	}
 
@@ -270,48 +247,6 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 	}
 
 	return snapshot;
-}
-
-bool D3D12GpuMemoryAllocator::WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap) const noexcept
-{
-	if (m_impl == nullptr || m_impl->allocator == nullptr || outputPath.empty())
-	{
-		return false;
-	}
-
-	WCHAR* statsString = nullptr;
-	m_impl->allocator->BuildStatsString(&statsString, includeDetailedMap ? TRUE : FALSE);
-	if (statsString == nullptr)
-	{
-		return false;
-	}
-
-	const std::string utf8Json = WideStringToUtf8(statsString);
-	m_impl->allocator->FreeStatsString(statsString);
-	if (utf8Json.empty())
-	{
-		return false;
-	}
-
-	std::error_code directoryError;
-	const std::filesystem::path parentPath = outputPath.parent_path();
-	if (!parentPath.empty())
-	{
-		std::filesystem::create_directories(parentPath, directoryError);
-		if (directoryError)
-		{
-			return false;
-		}
-	}
-
-	std::ofstream output(outputPath, std::ios::binary | std::ios::trunc);
-	if (!output.is_open())
-	{
-		return false;
-	}
-
-	output.write(utf8Json.data(), static_cast<std::streamsize>(utf8Json.size()));
-	return output.good();
 }
 
 std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateTexture(

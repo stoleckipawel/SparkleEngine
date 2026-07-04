@@ -7,7 +7,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <memory>
 #include <string_view>
 
@@ -28,9 +27,7 @@ class VulkanGpuMemoryAllocator final
 
 	bool IsInitialized() const noexcept;
 	bool SupportsBudgetQueries() const noexcept;
-	bool SupportsJsonDump() const noexcept;
 	RhiMemoryUsageSnapshot CreateMemoryUsageSnapshot() const;
-	bool WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap = true) const noexcept;
 
 	std::unique_ptr<VulkanGpuAllocationRecord> CreateBuffer(
 	    const VkBufferCreateInfo& bufferCreateInfo,

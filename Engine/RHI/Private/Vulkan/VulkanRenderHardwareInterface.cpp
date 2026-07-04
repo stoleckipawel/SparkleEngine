@@ -68,8 +68,6 @@ namespace
 		return RhiBackendMemorySupport{
 		    .SupportsMemoryDiagnostics = memoryDiagnostics != nullptr,
 		    .SupportsBudgetQueries = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries(),
-		    .SupportsJsonDump = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsJsonDump(),
-		    .SupportsAllocationDetails = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsAllocationDetails(),
 		    .SupportsDelayedDestructionTracking = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsDelayedDestructionTracking(),
 		    .SupportsResidencyPressure = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries()};
 	}

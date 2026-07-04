@@ -6,14 +6,6 @@
 #include <optional>
 #include "D3D12DescriptorHeap.h"
 
-struct D3D12DescriptorAllocatorStats
-{
-	std::uint32_t Capacity = 0;
-	std::uint32_t Allocated = 0;
-	std::uint32_t Free = 0;
-	std::uint32_t HighWatermark = 0;
-};
-
 class D3D12DescriptorAllocator
 {
   public:
@@ -26,8 +18,6 @@ class D3D12DescriptorAllocator
 	void Free(const D3D12DescriptorHandle& handle) noexcept;
 
 	void FreeContiguous(const D3D12DescriptorHandle& firstHandle, uint32_t count) noexcept;
-
-	D3D12DescriptorAllocatorStats CaptureStats() const noexcept;
 
   private:
 	std::optional<UINT> TryAllocateContiguousFromFreeListLocked(uint32_t count);

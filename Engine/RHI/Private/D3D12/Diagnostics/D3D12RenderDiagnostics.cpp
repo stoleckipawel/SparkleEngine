@@ -9,11 +9,9 @@
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "Device/RenderHardwareInterface.h"
-#include "Core/Public/Environment/EnvironmentVariables.h"
 
 #include <array>
 #include <cstring>
-#include <filesystem>
 #include <limits>
 #include <memory>
 #include <string>
@@ -354,29 +352,13 @@ class D3D12RenderFailureDiagnostics final : public RenderFailureDiagnostics
 class D3D12RenderMemoryDiagnostics final : public RenderMemoryDiagnostics
 {
   public:
-	explicit D3D12RenderMemoryDiagnostics(D3D12GpuMemoryAllocator& allocator) noexcept : m_allocator(allocator)
-	{
-		std::string jsonDumpPath;
-		if (Environment::TryGetVariable("SPARKLE_RHI_MEMORY_JSON_DUMP", jsonDumpPath))
-		{
-			(void)m_allocator.WriteAllocatorJsonDump(std::filesystem::path(jsonDumpPath), true);
-		}
-	}
+	explicit D3D12RenderMemoryDiagnostics(D3D12GpuMemoryAllocator& allocator) noexcept : m_allocator(allocator) {}
 
 	bool SupportsBudgetQueries() const noexcept override { return m_allocator.SupportsBudgetQueries(); }
-
-	bool SupportsJsonDump() const noexcept override { return m_allocator.SupportsJsonDump(); }
-
-	bool SupportsAllocationDetails() const noexcept override { return true; }
 
 	bool SupportsDelayedDestructionTracking() const noexcept override { return false; }
 
 	RhiMemoryUsageSnapshot GetLatestMemorySnapshot() const override { return m_allocator.CreateMemoryUsageSnapshot(); }
-
-	bool WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap = true) const noexcept override
-	{
-		return m_allocator.WriteAllocatorJsonDump(outputPath, includeDetailedMap);
-	}
 
   private:
 	D3D12GpuMemoryAllocator& m_allocator;
@@ -403,8 +385,7 @@ class D3D12RenderDiagnostics final : public RenderDiagnostics
 		    .SupportsLiveObjectReports = m_failureDiagnostics.SupportsLiveObjectReports(),
 		    .SupportsCrashDiagnostics = m_failureDiagnostics.SupportsCrashDiagnostics(),
 		    .SupportsMemoryDiagnostics = true,
-		    .SupportsMemoryBudgetQueries = m_memoryDiagnostics.SupportsBudgetQueries(),
-		    .SupportsMemoryJsonDump = m_memoryDiagnostics.SupportsJsonDump()};
+		    .SupportsMemoryBudgetQueries = m_memoryDiagnostics.SupportsBudgetQueries()};
 	}
 
 	RenderObjectDiagnostics& GetObjectDiagnostics() noexcept override { return m_objectDiagnostics; }

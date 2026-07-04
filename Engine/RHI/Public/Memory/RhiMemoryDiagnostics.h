@@ -5,8 +5,6 @@
 #include "../RHIAPI.h"
 
 #include <cstdint>
-#include <filesystem>
-#include <string>
 #include <vector>
 
 struct RhiMemoryCategoryStats
@@ -21,20 +19,10 @@ struct RhiMemoryCategoryStats
 	std::uint64_t BudgetBytes = 0;
 };
 
-struct RhiMemoryAllocationInfo
-{
-	RhiMemoryCategory Category = RhiMemoryCategory::Other;
-	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::DeviceLocal;
-	std::uint64_t UsedBytes = 0;
-	std::uint64_t AllocatedBytes = 0;
-	std::wstring DebugName;
-};
-
 struct RhiMemoryUsageSnapshot
 {
 	ERhiMemoryAllocatorBackend AllocatorBackend = ERhiMemoryAllocatorBackend::Unknown;
 	bool HasBudgetData = false;
-	bool HasAllocationDetails = false;
 	bool HasDelayedDestructionTracking = false;
 	std::uint64_t TotalUsedBytes = 0;
 	std::uint64_t TotalAllocatedBytes = 0;
@@ -46,7 +34,6 @@ struct RhiMemoryUsageSnapshot
 	std::uint64_t DelayedDestructionBytes = 0;
 	std::uint64_t DelayedDestructionAllocationCount = 0;
 	std::vector<RhiMemoryCategoryStats> CategoryStats;
-	std::vector<RhiMemoryAllocationInfo> Allocations;
 };
 
 class SPARKLE_RHI_API RenderMemoryDiagnostics
@@ -55,9 +42,6 @@ class SPARKLE_RHI_API RenderMemoryDiagnostics
 	virtual ~RenderMemoryDiagnostics() noexcept = default;
 
 	virtual bool SupportsBudgetQueries() const noexcept = 0;
-	virtual bool SupportsJsonDump() const noexcept = 0;
-	virtual bool SupportsAllocationDetails() const noexcept = 0;
 	virtual bool SupportsDelayedDestructionTracking() const noexcept = 0;
 	virtual RhiMemoryUsageSnapshot GetLatestMemorySnapshot() const = 0;
-	virtual bool WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap = true) const noexcept = 0;
 };

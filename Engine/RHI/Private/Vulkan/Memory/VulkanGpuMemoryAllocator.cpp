@@ -13,8 +13,6 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
-#include <filesystem>
-#include <fstream>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -186,11 +184,6 @@ bool VulkanGpuMemoryAllocator::SupportsBudgetQueries() const noexcept
 	return IsInitialized();
 }
 
-bool VulkanGpuMemoryAllocator::SupportsJsonDump() const noexcept
-{
-	return IsInitialized();
-}
-
 RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() const
 {
 	RhiMemoryUsageSnapshot snapshot;
@@ -206,7 +199,6 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 	vmaCalculateStatistics(m_impl->Allocator, &totalStats);
 	snapshot.AllocatorBackend = ERhiMemoryAllocatorBackend::VulkanManaged;
 	snapshot.HasBudgetData = true;
-	snapshot.HasAllocationDetails = true;
 	snapshot.HasDelayedDestructionTracking = true;
 	snapshot.TotalUsedBytes = totalStats.total.statistics.allocationBytes;
 	snapshot.TotalAllocatedBytes = totalStats.total.statistics.blockBytes;
@@ -220,7 +212,6 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 	std::vector<CategoryAggregation> aggregations;
 	{
 		std::scoped_lock lock(m_impl->RecordsMutex);
-		snapshot.Allocations.reserve(m_impl->LiveRecords.size());
 		aggregations.reserve(m_impl->LiveRecords.size());
 
 		for (const VulkanGpuAllocationRecord* record : m_impl->LiveRecords)
@@ -241,13 +232,6 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 				snapshot.TransientUsageBytes += record->AllocatedBytes;
 			}
 			AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets);
-
-			snapshot.Allocations.push_back(RhiMemoryAllocationInfo{
-			    .Category = record->Category,
-			    .ResidencyClass = record->ResidencyClass,
-			    .UsedBytes = record->UsedBytes,
-			    .AllocatedBytes = record->AllocatedBytes,
-			    .DebugName = record->DebugName});
 		}
 
 		for (const VulkanGpuMemoryBlockRecord* record : m_impl->LiveMemoryBlockRecords)
@@ -268,13 +252,6 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 				snapshot.TransientUsageBytes += record->AllocatedBytes;
 			}
 			AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets);
-
-			snapshot.Allocations.push_back(RhiMemoryAllocationInfo{
-			    .Category = record->Category,
-			    .ResidencyClass = record->ResidencyClass,
-			    .UsedBytes = record->UsedBytes,
-			    .AllocatedBytes = record->AllocatedBytes,
-			    .DebugName = record->DebugName});
 		}
 
 		for (const PendingAllocationRelease& pendingRelease : m_impl->PendingReleases)
@@ -303,45 +280,6 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 	}
 
 	return snapshot;
-}
-
-bool VulkanGpuMemoryAllocator::WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap) const noexcept
-{
-	if (m_impl == nullptr || m_impl->Allocator == nullptr || outputPath.empty())
-	{
-		return false;
-	}
-
-	char* statsString = nullptr;
-	vmaBuildStatsString(m_impl->Allocator, &statsString, includeDetailedMap ? VK_TRUE : VK_FALSE);
-	if (statsString == nullptr)
-	{
-		return false;
-	}
-
-	std::error_code directoryError;
-	const std::filesystem::path parentPath = outputPath.parent_path();
-	if (!parentPath.empty())
-	{
-		std::filesystem::create_directories(parentPath, directoryError);
-		if (directoryError)
-		{
-			vmaFreeStatsString(m_impl->Allocator, statsString);
-			return false;
-		}
-	}
-
-	std::ofstream output(outputPath, std::ios::binary | std::ios::trunc);
-	if (!output.is_open())
-	{
-		vmaFreeStatsString(m_impl->Allocator, statsString);
-		return false;
-	}
-
-	output << statsString;
-	const bool succeeded = output.good();
-	vmaFreeStatsString(m_impl->Allocator, statsString);
-	return succeeded;
 }
 
 std::unique_ptr<VulkanGpuAllocationRecord> VulkanGpuMemoryAllocator::CreateBuffer(

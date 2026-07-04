@@ -122,17 +122,3 @@ void D3D12DescriptorAllocator::FreeContiguous(const D3D12DescriptorHandle& first
 		}
 	}
 }
-
-D3D12DescriptorAllocatorStats D3D12DescriptorAllocator::CaptureStats() const noexcept
-{
-	std::lock_guard<std::mutex> lock(m_mutex);
-
-	const std::uint32_t capacity = m_heap != nullptr ? m_heap->GetNumDescriptors() : 0u;
-	const std::uint32_t highWatermark = m_currentOffset;
-	const std::uint32_t freeCount = static_cast<std::uint32_t>(m_freeIndices.size());
-	return D3D12DescriptorAllocatorStats{
-	    .Capacity = capacity,
-	    .Allocated = highWatermark >= freeCount ? highWatermark - freeCount : 0u,
-	    .Free = capacity >= highWatermark ? capacity - highWatermark + freeCount : freeCount,
-	    .HighWatermark = highWatermark};
-}

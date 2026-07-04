@@ -4,7 +4,6 @@
 
 #include "RHI/Public/Diagnostics/RhiDiagnostics.h"
 
-#include <algorithm>
 #include <utility>
 
 const char* RendererMemoryPressureLevelToString(RendererMemoryPressureLevel pressure) noexcept
@@ -157,31 +156,6 @@ SceneMemoryReport RendererMemoryMonitor::BuildSceneMemoryReport(const RhiMemoryU
 			default:
 				break;
 		}
-	}
-
-	for (const RhiMemoryAllocationInfo& allocation : memoryUsage.Allocations)
-	{
-		if (!allocation.DebugName.empty())
-		{
-			++report.NamedAllocationCount;
-			report.LargestNamedAllocations.push_back(allocation);
-		}
-	}
-
-	std::sort(
-	    report.LargestNamedAllocations.begin(),
-	    report.LargestNamedAllocations.end(),
-	    [](const RhiMemoryAllocationInfo& lhs, const RhiMemoryAllocationInfo& rhs) noexcept
-	    {
-		    if (lhs.UsedBytes != rhs.UsedBytes)
-		    {
-			    return lhs.UsedBytes > rhs.UsedBytes;
-		    }
-		    return lhs.DebugName < rhs.DebugName;
-	    });
-	if (report.LargestNamedAllocations.size() > kLargestNamedAllocationCount)
-	{
-		report.LargestNamedAllocations.resize(kLargestNamedAllocationCount);
 	}
 
 	return report;

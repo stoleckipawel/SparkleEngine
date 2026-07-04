@@ -134,20 +134,3 @@ D3D12DescriptorAllocator* D3D12DescriptorHeapManager::GetAllocator(D3D12_DESCRIP
 			return nullptr;
 	}
 }
-
-std::array<D3D12DescriptorHeapUsage, 4> D3D12DescriptorHeapManager::CaptureUsage() const noexcept
-{
-	const auto capture = [this](D3D12_DESCRIPTOR_HEAP_TYPE type) noexcept
-	{
-		const D3D12DescriptorAllocator* allocator = GetAllocator(type);
-		return D3D12DescriptorHeapUsage{
-		    .HeapType = type,
-		    .Stats = allocator != nullptr ? allocator->CaptureStats() : D3D12DescriptorAllocatorStats{}};
-	};
-
-	return {
-	    capture(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
-	    capture(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER),
-	    capture(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
-	    capture(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)};
-}
