@@ -60,14 +60,19 @@ Capability improved:
 Primary source docs (KEEP/MODIFY/ADD/REMOVE):
 Files/paths to inspect:
 Search patterns:
+Existing capability search:
+Similar responsibility found:
 Expected removals:
 Allowed additions:
+Code delta target:
 D3D12 impact:
 Vulkan impact:
 Shader/cook impact:
 Runtime impact:
 Public/private API impact:
 Content impact:
+Hardcoded content/name check:
+Fallback policy:
 Tooling/capture impact:
 No-pollution check:
 Verification plan:
@@ -86,6 +91,17 @@ No-pollution check means:
 - no thick abstraction layers
 - no future-feature scaffolding
 - no uncataloged heavy content
+- no duplicate responsibility when an existing subsystem already owns the behavior
+- no real-code hardcoding of project, level, asset, optional-pack, or sample names
+- no fallback chains that hide missing required data
+
+Universal engineering gate means:
+
+- Search first: before adding code, prove the repo does not already have an owner/capability that should be reused, merged, or simplified.
+- Net code pressure: every code addition should be paired with deletion or simplification in the same batch; if impossible, record the reason and the next removal target.
+- Single ownership: similar capabilities must converge on one owner instead of creating parallel paths.
+- Data owns content names: catalogs, config, level files, and project data may name content; compiled engine/tool code should not hardcode sample or asset names.
+- Fail simply: required data should fail clearly at the owning boundary; optional data should use explicit availability metadata rather than layered fallbacks.
 
 ## Renderer-First Module Contract
 
@@ -179,6 +195,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [x] README opens with `00_ORDERED_ImplementationRoadmap.md`.
 - [x] No new planning document is created.
 - [x] Every future batch names KEEP/MODIFY/ADD/REMOVE source docs.
@@ -195,6 +219,14 @@ Prompt:
 - Keep high-level concepts thin: project, level, scene, render path, backend, capture, cook.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [x] Core owns foundation utilities only.
 - [x] RHI owns explicit D3D12/Vulkan resources, descriptors, pipelines, queues, barriers, ray tracing, capture, presentation.
@@ -216,6 +248,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [x] Current largest areas are known.
 - [x] Current public API hotspots are known.
 - [x] Current Projects depot weight is known.
@@ -232,12 +272,20 @@ Prompt:
 
 Acceptance:
 
-- [ ] D3D12 and Vulkan parity is listed as a preserved capability.
-- [ ] Offline cooked shader packages with reflection data are listed as preserved.
-- [ ] Screenshot/BMP capture is listed as preserved.
-- [ ] Classic TLAS and PTLAS are listed as preserved.
-- [ ] Multi-level support is listed as preserved.
-- [ ] Core/RHI/Renderer/GameFramework/Tools/Projects separation is listed as preserved.
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
+- [x] D3D12 and Vulkan parity is listed as a preserved capability.
+- [x] Offline cooked shader packages with reflection data are listed as preserved.
+- [x] Screenshot/BMP capture is listed as preserved.
+- [x] Classic TLAS and PTLAS are listed as preserved.
+- [x] Multi-level support is listed as preserved.
+- [x] Core/RHI/Renderer/GameFramework/Tools/Projects separation is listed as preserved.
 
 ### Stage 04: Content Discovery And Default Level Set
 
@@ -251,10 +299,18 @@ Prompt:
 
 Acceptance:
 
-- [ ] Every in-repo level is listed.
-- [ ] Default level set is named.
-- [ ] Heavy optional content candidates are listed by path and approximate size.
-- [ ] Multi-level support remains explicitly preserved.
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
+- [x] Every in-repo level is listed.
+- [x] Default level set is named.
+- [x] Heavy optional content candidates are listed by path and approximate size.
+- [x] Multi-level support remains explicitly preserved.
 
 ### Stage 05: Minimal Level/Content Catalog
 
@@ -267,10 +323,25 @@ Prompt:
 
 Acceptance:
 
-- [ ] Catalog contains level id, display name, source path, default inclusion, optional pack id if needed.
-- [ ] Launcher/cooker/runtime can resolve the default level set through the catalog.
-- [ ] Missing optional pack state can be represented.
-- [ ] No asset database or content browser rewrite is added.
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
+- [x] Catalog contains level id, display name, source path, default inclusion, optional pack id if needed.
+- [x] Launcher/cooker/runtime can resolve the default level set through the catalog.
+- [x] Missing optional pack state can be represented.
+- [x] No asset database or content browser rewrite is added.
+
+Result:
+
+- Added `Projects/Showcase/Levels.catalog` as the project-owned default level catalog.
+- Runtime level discovery now prefers available catalog levels and falls back to directory scanning when no catalog exists.
+- Asset cook discovery uses catalog `Default` levels to filter project scene sources while preserving engine scene discovery.
+- Optional pack metadata is represented by `Id`, `Root`, and `Available`; missing or disabled packs can suppress catalog levels without introducing a content database.
 
 ### Stage 06: Optional Heavy Content Pack Boundary
 
@@ -283,10 +354,27 @@ Prompt:
 
 Acceptance:
 
-- [ ] Optional pack root is defined.
-- [ ] Default build/cook/run path does not require optional heavy content.
-- [ ] Missing optional content produces a clear non-fatal state.
-- [ ] Core repo byte reduction target is recorded.
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
+- [x] Optional pack root is defined.
+- [x] Default build/cook/run path does not require optional heavy content.
+- [x] Missing optional content produces a clear non-fatal state.
+- [x] Core repo byte reduction target is recorded.
+
+Result:
+
+- Optional pack ownership is project-owned through `Projects/Showcase/Levels.catalog`.
+- Optional pack roots are catalog `Root` values relative to `Projects/Showcase`; the current heavy pack is `Bistro` at `Assets/Meshes/Bistro`.
+- Default runtime levels remain the seven curated Showcase levels; none reference `Bistro`.
+- Default asset cook discovery uses catalog `Default` levels, so project scene source discovery excludes `Bistro` unless a default level references it.
+- Missing optional content is non-fatal: catalog levels that name a missing or disabled optional pack are skipped, while default levels and cook discovery continue.
+- Stage 07 byte target: remove or externalize at least `Projects/Showcase/Assets/Meshes/Bistro` from the core repo, about 1438.80 MB, reducing `Projects` source content from about 1527.06 MB to about 88.26 MB before other generated-output cleanup.
 
 ### Stage 07: Externalize Or Remove Heavy Content
 
@@ -299,10 +387,25 @@ Prompt:
 
 Acceptance:
 
-- [ ] Heavy Bistro/media content is removed from default repo footprint or marked external.
-- [ ] Default level set remains selectable.
-- [ ] Optional heavy levels remain discoverable.
-- [ ] Depot byte count is materially lower.
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
+- [x] Heavy Bistro/media content is removed from default repo footprint or marked external.
+- [x] Default level set remains selectable.
+- [x] Optional heavy levels remain discoverable.
+- [x] Depot byte count is materially lower.
+
+Result:
+
+- Removed `Projects/Showcase/Assets/Meshes/Bistro` from the core repo footprint.
+- Kept optional pack metadata in `Projects/Showcase/Levels.catalog` with `Id = Bistro`, `Root = Assets/Meshes/Bistro`, `Available = false`, and `External = true`.
+- Curated default set remains seven levels; all seven level files resolve and all five referenced default source scenes still exist.
+- `Projects` source content, excluding generated logs/cooked output, dropped from about 1527.06 MB to about 88.26 MB.
 
 ### Stage 08: Capture Path Inventory
 
@@ -314,6 +417,14 @@ Prompt:
 - Separate product capture from smoke/ad hoc capture.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Every `CaptureTextureToBmp`, `RhiCaptureService`, and BMP writer call site is listed.
 - [ ] One intended product capture owner is selected.
@@ -331,6 +442,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Capture entrypoint is product-owned.
 - [ ] BMP writer remains only behind the intended path.
 - [ ] Smoke/ad hoc capture ownership is gone.
@@ -346,6 +465,14 @@ Prompt:
 - Preserve fatal checks and product launch paths.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] `RhiSmoke`, `SmokeDiagnostics`, and `SPARKLE_SMOKE` references are gone or intentionally product-owned.
 - [ ] No screenshot capability is removed.
@@ -363,6 +490,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Default AssetCooker path writes cooked assets, not plan/timing report artifacts.
 - [ ] `asset-cooker-plan-v1` and `asset-cooker-summary-v1` are gone from default path.
 - [ ] Fatal errors remain clear.
@@ -378,6 +513,14 @@ Prompt:
 - Preserve offline cooked packages and reflection data.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Default shader cook writes runtime packages.
 - [ ] Reflection data remains available to runtime.
@@ -395,6 +538,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Build, cook, run, clean, package-if-owned are the only first-class launcher workflows.
 - [ ] Diagnostic/status/quality/debug-only launcher pages are listed.
 - [ ] Package UI ownership is decided.
@@ -409,6 +560,14 @@ Prompt:
 - Remove launcher UI/actions that do not support current workflows.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Launcher source line count decreases.
 - [ ] Shader debug/stat toggles leave default GUI.
@@ -425,6 +584,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Owned package list is written in existing docs or package config.
 - [ ] Unowned package outputs are marked for removal.
 - [ ] Optional content is not part of runtime package by default.
@@ -439,6 +606,14 @@ Prompt:
 - Inventory public Renderer diagnostics and observation APIs.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Renderer public diagnostic headers are listed.
 - [ ] Consumers are listed.
@@ -455,6 +630,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] RHI public observation APIs are listed.
 - [ ] Runtime-critical facts are separated from report/detail dumps.
 - [ ] Capture is preserved and separated from broad diagnostics.
@@ -470,6 +653,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Public Renderer/RHI diagnostics line count decreases.
 - [ ] Editor panels are either product-owned or removed.
 - [ ] No diagnostics facade is added.
@@ -484,6 +675,14 @@ Prompt:
 - Keep compact memory/descriptor pressure facts only when they drive runtime policy.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Memory budget facts are backed by D3D12MA/VMA paths.
 - [ ] Descriptor pressure facts are consumed or removed.
@@ -501,6 +700,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Resource, descriptor, pipeline, upload, ray tracing, interop, capture, diagnostics, presentation services are still owned by RHI.
 - [ ] Backend-native details remain private or provider-bridged.
 - [ ] No new RHI wrapper layer is added.
@@ -515,6 +722,14 @@ Prompt:
 - Create a working parity matrix in existing docs or issue notes for key RHI/Renderer features.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] D3D12/Vulkan parity is named for resources, descriptors, pipelines, uploads, presentation, ray tracing, PTLAS, capture.
 - [ ] Backend-specific gaps are listed.
@@ -531,6 +746,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Resource creation path remains backend-owned.
 - [ ] Descriptor binding model remains understandable.
 - [ ] Pipeline/layout creation remains explicit.
@@ -546,6 +769,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Native handle access has explicit consumer ownership.
 - [ ] Provider resource contracts remain narrow.
 - [ ] No broad native escape hatch is exposed casually.
@@ -560,6 +791,14 @@ Prompt:
 - Audit shader source-to-cooked-package-to-runtime flow.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Shader source includes are tracked.
 - [ ] DXC/Slang target outputs are known.
@@ -577,6 +816,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Duplicate declarations are listed.
 - [ ] Any simplification deletes more code than it adds.
 - [ ] No code generator is added unless net code decreases materially.
@@ -591,6 +838,14 @@ Prompt:
 - Trace classic BLAS/TLAS build/update/trace ownership.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] BLAS lifecycle owner is clear.
 - [ ] Classic TLAS lifecycle owner is clear.
@@ -607,6 +862,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] PTLAS planner metrics not required for product behavior are removed.
 - [ ] CPU validation readbacks not required for product behavior are removed.
 - [ ] Future GPU-pack placeholders are removed.
@@ -621,6 +884,14 @@ Prompt:
 - Preserve user-facing selection between classic TLAS and PTLAS.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Selection is available through one clear policy point.
 - [ ] Unsupported backend/feature state fails gracefully or falls back explicitly.
@@ -637,6 +908,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] D3D12 PTLAS support path is listed and functional where supported.
 - [ ] Vulkan PTLAS support path is listed and functional where supported.
 - [ ] Capability checks are explicit per backend.
@@ -651,6 +930,14 @@ Prompt:
 - Choose debug reference as the first clear role.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Reference path has one sentence role.
 - [ ] Provider handoff hooks unsupported by data are removed.
@@ -667,6 +954,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Direct lighting is not described as SDK-equivalent unless SDK is integrated.
 - [ ] Light buffers, GBuffer addressing, TLAS, material model, and shader scheduling remain Sparkle-owned.
 - [ ] Unused debug views or report outputs are removed.
@@ -681,6 +976,14 @@ Prompt:
 - Make post-processing pass inputs/outputs explicit and reduce duplicate pass plumbing.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Each post-process pass declares inputs/outputs clearly.
 - [ ] Unused settings/CVars are removed.
@@ -697,6 +1000,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Denoiser inputs/outputs are named.
 - [ ] History/resource ownership is explicit.
 - [ ] Provider boundary is narrow if external denoiser integration exists.
@@ -711,6 +1022,14 @@ Prompt:
 - Preserve upscaling/ray reconstruction provider capability while trimming diagnostics and fallback scaffolding.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Provider required resources are narrow and named.
 - [ ] Depth, motion vectors, exposure, history, jitter, frame index, and camera state ownership is clear where used.
@@ -727,6 +1046,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Frame graph remains the only render scheduling abstraction.
 - [ ] Pass inputs/outputs/history dependencies are clearer.
 - [ ] Transient/persistent resource ownership is easier to trace.
@@ -741,6 +1068,14 @@ Prompt:
 - Reduce public Core convenience APIs that are not stable contracts.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Public Core line count decreases.
 - [ ] Private helpers move private.
@@ -757,6 +1092,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Level, scene, component, asset concepts remain.
 - [ ] Asset loader/manifest implementation details are private where possible.
 - [ ] Multi-level support remains intact.
@@ -771,6 +1114,14 @@ Prompt:
 - Keep tool public headers only when another executable consumes them as stable API.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Import/cooker public headers are audited.
 - [ ] Unused public bridge headers are removed.
@@ -787,6 +1138,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Slang/HLSL flexibility is preserved.
 - [ ] Tensor/operator concepts remain design-level unless a renderer feature needs them.
 - [ ] No PyTorch/TensorFlow/ONNX Runtime dependency is added.
@@ -801,6 +1160,14 @@ Prompt:
 - Make package outputs real and intentional.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Runtime/editor/launcher/dev tools/symbols/optional content package ownership is decided.
 - [ ] Unowned package assembly code is removed.
@@ -817,6 +1184,14 @@ Prompt:
 
 Acceptance:
 
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
 - [ ] Feature cleanup is complete for the measured path.
 - [ ] Existing PIX/RenderDoc/Nsight hooks are used first.
 - [ ] Any new measurement code replaces old diagnostics.
@@ -832,6 +1207,14 @@ Prompt:
 - Confirm the repo demonstrates the persona.
 
 Acceptance:
+
+Universal acceptance for this stage:
+
+- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
 - [ ] Build relevant editor/runtime targets.
 - [ ] Cook curated default level set.
@@ -971,7 +1354,7 @@ rg -n "Showcase|Level|Scene|Bistro|\\.hdr|\\.tga|\\.dds|Cook" Projects Tools Eng
 Allowed additions:
 
 - minimal level/content catalog
-- optional pack id/path metadata
+- optional pack id/root/availability metadata
 - resolver logic only if it enables content removal
 
 Forbidden additions:

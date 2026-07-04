@@ -19,6 +19,10 @@ The default rule is still deletion-first:
 - do not add thick abstraction layers
 - do not add future scaffolding
 - do not add profiling systems before feature cleanup
+- do not add code before searching for an existing owner/capability that can be reused, merged, or simplified
+- do not add duplicate responsibility
+- do not hardcode project, level, asset, content-pack, or sample names in compiled code
+- do not add fallback chains that hide missing required data
 
 An addition is allowed only when it satisfies at least one condition:
 
@@ -27,15 +31,22 @@ An addition is allowed only when it satisfies at least one condition:
 3. It makes D3D12/Vulkan, shader ABI, cook, runtime, high-level user concepts, or content selection coherent.
 4. It replaces a broader system with a smaller direct path.
 5. It is a real renderer feature slice, not a placeholder.
+6. It moves content-specific names into catalog, config, level, or project data instead of compiled code.
 
 ## Add Gate
 
 Before adding anything, answer:
 
+- [ ] Which existing code paths, helpers, tools, or ownership boundaries already solve part of this problem?
+- [ ] Can this be done by deleting, moving, or merging existing code instead of adding new code?
+- [ ] If similar responsibility already exists, which path becomes the single owner and which path is removed?
 - [ ] What existing code or depot weight does this enable us to remove?
 - [ ] Which persona pillar does this develop?
 - [ ] Which preserved engine capability does it support?
 - [ ] Is the addition smaller than the code it replaces?
+- [ ] Is the batch net code-neutral or net code-negative; if not, where is the paired deletion recorded?
+- [ ] Does compiled code avoid hardcoded project, level, asset, optional-pack, and sample names?
+- [ ] Does required missing data fail clearly instead of walking a fallback chain?
 - [ ] Does it avoid new wrappers, thick abstraction layers, diagnostics, logs, validation, and scaffolding?
 - [ ] Does it preserve or improve D3D12/Vulkan parity?
 - [ ] Does it preserve offline cooked shader packages with reflection data, or update them coherently?

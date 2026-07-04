@@ -1,0 +1,47 @@
+[Level]
+Id = Empty
+DisplayName = Empty
+Source = Levels/Empty.level
+Default = true
+
+[Level]
+Id = DamagedHelmet
+DisplayName = Damaged Helmet
+Source = Levels/DamagedHelmet.level
+Default = true
+
+[Level]
+Id = CesiumMan
+DisplayName = Cesium Man
+Source = Levels/CesiumMan.level
+Default = true
+
+[Level]
+Id = DiffuseTransmissionPlant
+DisplayName = Diffuse Transmission Plant
+Source = Levels/DiffuseTransmissionPlant.level
+Default = true
+
+[Level]
+Id = ABeautifulGame
+DisplayName = A Beautiful Game
+Source = Levels/ABeautifulGame.level
+Default = true
+
+[Level]
+Id = Sponza
+DisplayName = Sponza
+Source = Levels/Sponza.level
+Default = true
+
+[Level]
+Id = SponzaPtlas
+DisplayName = Sponza PTLAS
+Source = Levels/SponzaPtlas.level
+Default = true
+
+[OptionalPack]
+Id = Bistro
+Root = Assets/Meshes/Bistro
+Available = false
+External = true

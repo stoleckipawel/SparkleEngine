@@ -45,6 +45,11 @@ Every implementation batch must answer:
 9. Content impact: is multi-level support preserved?
 10. Separation impact: does the change preserve Core/RHI/Renderer/GameFramework/Tools/Projects ownership?
 11. No-pollution check: no new docs, logs, validation systems, wrappers, thick abstraction layers, diagnostic panels, or future scaffolding.
+12. Existing capability search: what already does this job, and why is reuse/merge/delete insufficient?
+13. Responsibility merge: if similar behavior exists, which owner remains and which path is removed?
+14. Code delta: what code is removed or simplified so the batch is net code-neutral or net code-negative?
+15. Content-name check: does compiled code avoid hardcoded project, level, asset, optional-pack, and sample names?
+16. Fallback check: does required missing data fail clearly instead of adding fallback chains?
 
 If the batch cannot answer these, split it or move it to `03_ADD_MinimalMissingCapabilities.md` or `04_REMOVE_DeletionsAndCleanup.md`.
 
@@ -53,6 +58,9 @@ Modification bias:
 - Remove bloat first.
 - Prefer fewer files, fewer public headers, fewer settings, fewer branches, and fewer default artifacts.
 - Keep a thin user-facing concept only when it makes the engine easier to operate without hiding the rendering path.
+- Prefer merging with an existing owner over adding a parallel helper.
+- Move content-specific names into catalog, config, level, or project data.
+- Prefer one clear failure at the owning boundary over multiple fallback branches.
 - A richer engine with less code is the signal of good engineering.
 
 ## Modification Order
@@ -78,7 +86,7 @@ Persona pillar: product engineering discipline.
 
 Current problem:
 
-- `Projects` is about 2788.88 MB, mostly Showcase content.
+- `Projects` is about 1527.06 MB when generated logs are excluded, mostly Showcase content.
 - Heavy content dominates depot size more than source code.
 - The engine must not become a one-level demo. Multi-level support is a preserved capability.
 
@@ -108,16 +116,30 @@ Target paths:
 
 - `Projects/Showcase`
 - `Projects/Showcase/Assets/Meshes/Bistro`
+- `Projects/Showcase/logs/trace.json`
+- `Projects/Showcase/Cooked`
 - large DDS/TGA/HDR assets
 - launcher/cooker project selection code
 
 Acceptance:
 
-- [ ] Multiple Showcase levels remain selectable.
-- [ ] Default level set cooks and launches without optional packs.
-- [ ] Heavy optional packs are discoverable through one path.
-- [ ] Core repo size drops materially.
-- [ ] Source increase is limited to small catalog/resolver code.
+- [x] Multiple Showcase levels remain selectable.
+- [x] Default level set cooks and launches without optional packs.
+- [x] Heavy optional packs are discoverable through one path.
+- [x] Core repo size drops materially.
+- [x] Source increase is limited to small catalog/resolver code.
+
+Stage 06 boundary:
+
+- Optional pack metadata lives in `Projects/Showcase/Levels.catalog`.
+- Optional pack root is `Root = Assets/Meshes/Bistro` for pack `Bistro`.
+- Byte reduction target is at least 1438.80 MB in Stage 07 by removing or externalizing `Projects/Showcase/Assets/Meshes/Bistro`.
+
+Stage 07 result:
+
+- `Projects/Showcase/Assets/Meshes/Bistro` was removed from the core repo.
+- Catalog keeps `Bistro` discoverable as an external unavailable optional pack.
+- `Projects` source content dropped to about 88.26 MB, excluding generated logs/cooked output.
 
 ## 2. Screenshot/BMP Capture Ownership
 

@@ -12,7 +12,7 @@ This document gathers the capabilities, architecture instincts, and personal eng
 The goal is not to freeze the engine. The goal is to prevent cleanup from deleting the parts that prove advanced graphics engineering depth:
 
 - explicit D3D12/Vulkan ownership and parity
-- clear Core, RHI, Renderer, GameFramework, and Tools separation
+- clear Core, RHI, Renderer, GameFramework, Tools, and Projects separation
 - thin high-level engine concepts that hide low-level implementation details only where that improves reasoning
 - renderer feature depth
 - shader/cook/runtime ABI discipline
@@ -52,6 +52,9 @@ Implementation prompt:
 2. If the subsystem does not serve the identity, move to `04_REMOVE_DeletionsAndCleanup.md`.
 3. If it serves the identity but is bloated, move to `02_MODIFY_RefactorExistingSystems.md`.
 4. If a missing capability is required, move to `03_ADD_MinimalMissingCapabilities.md`.
+5. Before adding code, search for an existing owner/capability and prefer reuse, merge, move, or deletion.
+6. Keep content-specific names in catalogs, config, level files, or project data, not compiled engine/tool code.
+7. Prefer clear owner-boundary failure over fallback chains.
 
 ## Module Ownership Contract To Preserve
 
@@ -65,6 +68,25 @@ Keep the engine split around ownership, not around convenience wrappers. A batch
 | GameFramework | project runtime concepts, levels, scenes, components, cameras, materials, meshes, lights, cooked scene loading | renderer-private implementation details, RHI resources, shader package compilation |
 | Tools | shader compile, import, cook, launch, clean, package-if-owned, asset workflow entrypoints | runtime render ownership, diagnostic cockpit behavior, unowned package products |
 | Projects | sample projects, selectable levels, scene/content data, optional heavy content packs | engine contracts, backend-specific behavior, required heavy content in the default repo footprint |
+
+Ownership rule:
+
+- A subsystem should have one owner for each capability.
+- If a batch discovers parallel implementations, the result should merge ownership or delete the weaker path.
+- Code additions should be net code-neutral or net code-negative whenever possible; when a capability requires a temporary increase, the paired deletion target must be recorded in the batch.
+
+## Preserved Capability Owners
+
+Use this table before any deletion. If the target touches one of these rows, the change is not a pure deletion until the owner confirms the behavior is preserved, moved, or replaced by a smaller product path.
+
+| Preserved Capability | Primary Owner | Supporting Owners | Deletion Rule |
+| --- | --- | --- | --- |
+| D3D12 and Vulkan parity | RHI | Renderer, Tools, Projects | Delete only scaffolding around backend behavior; preserve or improve explicit parity for resources, descriptors, pipelines, uploads, presentation, ray tracing, PTLAS, and capture. |
+| Offline cooked shader packages with reflection data | Tools | RHI, Renderer | Remove debug artifacts and reports, but keep source-to-package-to-runtime linkage, reflection data, layout safety, runtime cache loading, and shader registration coherence. |
+| Screenshot/BMP capture | RHI | Renderer, Editor/Application, Tools | Remove smoke/ad hoc capture ownership only; preserve one product-owned capture path and backend readback behavior. |
+| Classic TLAS and PTLAS | Renderer | RHI, Tools, Projects | Remove PTLAS planner metrics, validation readbacks, placeholders, and diagnostics; preserve classic TLAS, PTLAS, backend capability checks, and user-facing selection where supported. |
+| Multi-level support | GameFramework | Projects, Tools, Launcher/Application | Externalize or catalog heavy content only after multiple levels remain discoverable, selectable, cookable, and runnable. |
+| Core/RHI/Renderer/GameFramework/Tools/Projects separation | All owners | Docs as guardrail only | Move behavior to the owning layer; do not add cross-layer wrappers, aggregate facades, or diagnostic bridges to preserve convenience. |
 
 ## Persona Direction To Preserve
 

@@ -52,6 +52,11 @@ Before deleting, answer:
 11. Does it preserve multi-level support?
 12. Does it preserve Core/RHI/Renderer/GameFramework/Tools/Projects separation?
 13. Is any build/cook/run risk recorded for the final stabilization pass?
+14. If a replacement is proposed, does existing code already provide it?
+15. Does the deletion remove duplicate responsibility rather than adding a second owner?
+16. Does the net batch remove or simplify at least as much code as it adds?
+17. Does real code remain free of hardcoded project, level, asset, optional-pack, and sample names?
+18. Does the change avoid fallback chains and fail clearly for missing required data?
 
 Only delete when the answer is clear.
 
@@ -67,11 +72,28 @@ Recommended first deletion batches:
 6. Move renderer mesh/texture/memory diagnostics out of public API or delete unowned panels.
 7. Cut launcher operation/status UI until it is build, cook, run, clean, package if owned.
 
+## Planned Deletion Capability Audit
+
+Use this table before starting any deletion batch. The intent is to delete scaffolding around capability, never the capability itself.
+
+| Deletion Target | Capability Protected | Owner To Check | Safe Result |
+| --- | --- | --- | --- |
+| Heavy uncataloged content | Multi-level support | Projects, GameFramework, Tools | Heavy content leaves the default footprint only after levels remain discoverable, selectable, cookable, and runnable. |
+| Smoke harnesses | Screenshot/BMP capture, shader cook, asset cook, runtime launch, debugger markers | RHI, Renderer, Application, Tools | Smoke/ad hoc ownership is removed; product launch, cook, capture, and fatal checks remain. |
+| Default cook reports and diagnostic artifacts | Offline cooked assets and shader packages with reflection data | Tools, RHI, Renderer | Default workflows emit product assets/packages and fatal errors, not reports. |
+| Public observation APIs | RHI/Renderer behavior and compact runtime pressure facts | RHI, Renderer, Editor | Public diagnostics shrink; debugger markers, object names, timestamps, and consumed pressure facts remain. |
+| PTLAS scaffolding | Classic TLAS and PTLAS | Renderer, RHI | PTLAS becomes smaller and closer to reference flow while classic TLAS, PTLAS, backend support, and selection remain. |
+| Shader debug/demo bloat | Offline cooked shader packages with reflection data | Tools, RHI, Renderer | Debug/demo artifacts leave default paths; ABI, reflection, package cache, and registrations remain coherent. |
+| Launcher diagnostic cockpit behavior | Build/cook/run/clean/package-if-owned workflows | Tools | Launcher becomes a workflow shell, not a diagnostic product. |
+| Reference path ambiguity | Ray tracing, GI, path tracing evidence | Renderer, RHI | Reference path keeps one clear role and shared material/light policy. |
+| Package/release scaffolding | Product-owned package outputs and optional content separation | Tools, Projects | Only owned packages remain; optional content is separate from runtime output. |
+| Stale docs/review noise | Active implementation guidance | Docs | Navigation gets clearer without adding another planning layer. |
+
 ## Remove Category 1: Heavy Uncataloged Content
 
 Why remove:
 
-- `Projects` is about 2788.88 MB.
+- `Projects` is about 1527.06 MB.
 - Content weight dominates repo cost.
 - Heavy content should not be required for every clone/build/review.
 
@@ -98,10 +120,16 @@ rg -n "Bistro|\\.hdr|\\.tga|\\.dds" Projects/Showcase
 
 Acceptance:
 
-- [ ] Heavy content is represented by optional pack metadata before removal.
-- [ ] Default level set runs without optional packs.
-- [ ] Repo byte size drops materially.
-- [ ] Multi-level support remains intact.
+- [x] Heavy content is represented by optional pack metadata before removal.
+- [x] Default level set runs without optional packs.
+- [x] Repo byte size drops materially.
+- [x] Multi-level support remains intact.
+
+Stage 06 removal boundary:
+
+- `Projects/Showcase/Assets/Meshes/Bistro` is cataloged as optional pack `Bistro` with root `Assets/Meshes/Bistro`.
+- Stage 07 removed it from the core repo.
+- The removed/externalized payload was about 1438.80 MB.
 
 ## Remove Category 2: Smoke Harnesses
 

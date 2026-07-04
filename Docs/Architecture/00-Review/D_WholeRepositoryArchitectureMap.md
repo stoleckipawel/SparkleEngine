@@ -118,6 +118,77 @@ Largest individual files:
 | `Engine/RHI/Private/Vulkan/Descriptors/VulkanDescriptorAllocator.cpp` | 768 | Descriptor allocator implementation concentration. |
 | `Engine/Core/Private/FileSystemUtils.cpp` | 729 | Foundation utility weight. |
 
+## Showcase Content Inventory
+
+Stage 04 discovery found seven in-repo Showcase levels. Multi-level support is a preserved capability; cleanup must catalog or externalize content without reducing the engine to one sample level.
+
+Current curated default level set:
+
+- `Empty`
+- `DamagedHelmet`
+- `CesiumMan`
+- `DiffuseTransmissionPlant`
+- `ABeautifulGame`
+- `Sponza`
+- `SponzaPtlas`
+
+Startup default:
+
+- `Sponza`, matching current launcher/runtime defaults.
+
+Level inventory:
+
+| Level File | Level Name | Scene Asset Refs | Unique Scene Assets | Default Set |
+| --- | --- | ---: | --- | --- |
+| `Projects/Showcase/Levels/Empty.level` | `Empty` | 0 | none | Yes; fallback/minimal scene. |
+| `Projects/Showcase/Levels/DamagedHelmet.level` | `DamagedHelmet` | 1 | `DamagedHelmet/DamagedHelmet` | Yes; small material/mesh check. |
+| `Projects/Showcase/Levels/CesiumMan.level` | `CesiumMan` | 1 | `CesiumMan/CesiumMan` | Yes; animation/skinned asset check. |
+| `Projects/Showcase/Levels/DiffuseTransmissionPlant.level` | `DiffuseTransmissionPlant` | 1 | `DiffuseTransmissionPlant/DiffuseTransmissionPlant` | Yes; material/transmission asset check. |
+| `Projects/Showcase/Levels/ABeautifulGame.level` | `ABeautifulGame` | 1 | `ABeautifulGame/ABeautifulGame` | Yes; medium mesh/material scene. |
+| `Projects/Showcase/Levels/Sponza.level` | `Sponza` | 1 | `Sponza/Sponza` | Yes; primary renderer review scene and startup default. |
+| `Projects/Showcase/Levels/SponzaPtlas.level` | `SponzaPtlas` | 11 | `Sponza/Sponza`, `CesiumMan/CesiumMan` | Yes; PTLAS/multiple-instance coverage. |
+
+Heavy optional/generated candidates:
+
+| Path | Approx MB | Candidate Type | Stage 04 Decision |
+| --- | ---: | --- | --- |
+| `Projects/Showcase/Assets/Meshes/Bistro` | 1438.80 | Optional heavy source content pack. | Removed from the core repo in Stage 07; catalog entry remains external/unavailable. |
+| `Projects/Showcase/logs/trace.json` | 1261.82 | Generated log artifact. | Do not treat as required content; remove or ignore only in a later cleanup stage. |
+| `Projects/Showcase/Cooked` | 508.96 | Generated cooked output. | Do not treat as required source content; later stages should keep default cook outputs out of the source footprint. |
+| `Projects/Showcase/Assets/Textures/Sponza` | 41.00 | Default-set texture content. | Keep with default set unless a later catalog supports external packs. |
+| `Projects/Showcase/Assets/Textures/ABeautifulGame` | 18.05 | Default-set texture content. | Keep with default set. |
+| `Projects/Showcase/Assets/Meshes/ABeautifulGame` | 10.37 | Default-set mesh content. | Keep with default set. |
+| `Projects/Showcase/Assets/Meshes/Sponza` | 9.26 | Default-set mesh content. | Keep with default set. |
+
+Stage 04 rule:
+
+- Do not remove content yet.
+- Preserve all seven levels as the current default level set.
+- Treat logs and cooked outputs as later cleanup/package-boundary candidates. Bistro was externalized from the core repo in Stage 07.
+
+Stage 05 catalog result:
+
+- `Projects/Showcase/Levels.catalog` is now the tiny project-owned level catalog.
+- Each default level has `Id`, `DisplayName`, `Source`, and `Default` metadata.
+- Runtime level discovery prefers available catalog levels, then falls back to scanning `Projects/Showcase/Levels`.
+- Asset cook discovery reads catalog `Default` levels and filters project source scenes to the level-referenced scene assets.
+- Optional content pack state is represented by `OptionalPack` on levels and `Id`/`Root`/`Available` pack metadata; `Bistro` is currently represented as an optional pack candidate, not removed.
+
+Stage 06 optional pack boundary:
+
+- Optional pack ownership is project-owned. `Projects/Showcase/Levels.catalog` is the single boundary for Showcase optional pack metadata.
+- Optional pack root is the catalog `Root` value relative to `Projects/Showcase`; current root is `Assets/Meshes/Bistro` for pack `Bistro`.
+- Default levels do not reference `Bistro`, so default build/cook/run does not require the heavy optional pack.
+- Missing optional pack state is non-fatal: catalog levels that name a missing or disabled optional pack are unavailable, while default catalog levels continue to load/cook.
+- Core repo byte reduction target for Stage 07 is at least 1438.80 MB by removing or externalizing `Projects/Showcase/Assets/Meshes/Bistro`, reducing `Projects` source content from about 1527.06 MB to about 88.26 MB before generated-output cleanup.
+
+Stage 07 externalization result:
+
+- `Projects/Showcase/Assets/Meshes/Bistro` was removed from the core repo.
+- `Projects/Showcase/Levels.catalog` keeps pack `Bistro` discoverable as `Root = Assets/Meshes/Bistro`, `Available = false`, `External = true`.
+- Curated default level set remains intact: seven level files resolve and the five default source scene IDs still resolve.
+- `Projects` source content, excluding generated logs/cooked output, is now about 88.26 MB.
+
 ## Module And Layer Shape
 
 Declared engine modules:
