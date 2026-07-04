@@ -34,7 +34,6 @@ namespace SparkleLauncher
 	class LauncherProjectModel;
 	class LauncherSettings;
 	struct DependencyGroupUiEntry;
-	struct ThirdPartyDependencyUiEntry;
 	enum class LauncherArtworkPreset;
 
 	class LauncherMainWindow final : public QMainWindow
@@ -108,16 +107,14 @@ namespace SparkleLauncher
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
 		QVBoxLayout* AddDetailsGroup(QVBoxLayout& layout, const QString& title, const QString& detail, bool expanded = false);
 		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
-		void AddSyncDependencyBundles(QVBoxLayout& layout, bool includeDependencyDetails);
+		void AddSyncDependencyBundles(QVBoxLayout& layout);
 		void AddSyncLevelContentGroups(QVBoxLayout& layout);
 		QComboBox* CreateStartupLevelCombo();
 		void PopulateStartupLevelCombo(QComboBox& combo);
 		void PopulateStartupLevelSelectors();
 		QVector<QPair<QString, QString>> BuildStartupLevelOptions() const;
 		QString ResolveStartupLevelDisplayName() const;
-		void AddWorkflowVisualBanner(QVBoxLayout& layout, const QString& operationId);
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
-		void AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId);
 		void AddHomeQuickStart(QVBoxLayout& layout);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
@@ -137,7 +134,6 @@ namespace SparkleLauncher
 		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
-		QWidget* CreateTrackedDependencyActions(const ThirdPartyDependencyUiEntry& dependency);
 		QWidget* CreateDisabledSourceTierActions(const DependencyGroupUiEntry& group);
 		QWidget* CreateActionDependencyActions(
 		    const QString& actionId,
@@ -148,8 +144,6 @@ namespace SparkleLauncher
 		void OpenLocalPath(const std::filesystem::path& path);
 		void TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle);
 		void TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun);
-		void TriggerDependencyClean(const ThirdPartyDependencyUiEntry& dependency);
-		void TriggerDependencyRegenerate(const ThirdPartyDependencyUiEntry& dependency);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
 		bool OperationNeedsProject(const QString& operationId) const;

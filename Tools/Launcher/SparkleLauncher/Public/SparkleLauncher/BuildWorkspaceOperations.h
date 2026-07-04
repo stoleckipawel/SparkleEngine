@@ -40,7 +40,6 @@ namespace SparkleLauncher
 		std::filesystem::path NinjaPath;
 		std::filesystem::path RiderPath;
 		std::filesystem::path GitPath;
-		std::filesystem::path ClangFormatPath;
 		std::filesystem::path VswherePath;
 		std::filesystem::path QtRootPath;
 		std::filesystem::path QtQmakePath;
@@ -94,7 +93,6 @@ namespace SparkleLauncher
 
 	enum class BuildWorkspaceOperationKind
 	{
-		CheckToolchain,
 		SyncSourceTiers,
 		GenerateBuildFiles,
 		OpenIde,
@@ -108,7 +106,7 @@ namespace SparkleLauncher
 
 	struct BuildWorkspaceOperationDefinition
 	{
-		BuildWorkspaceOperationKind Kind = BuildWorkspaceOperationKind::CheckToolchain;
+		BuildWorkspaceOperationKind Kind = BuildWorkspaceOperationKind::SyncSourceTiers;
 		std::string Id;
 		std::string Group;
 		std::string DisplayName;
@@ -140,7 +138,7 @@ namespace SparkleLauncher
 		OperationRecord Operation;
 		std::filesystem::path RepositoryRoot;
 		BuildWorkspaceOperationRequest Request;
-		BuildWorkspaceOperationKind Kind = BuildWorkspaceOperationKind::CheckToolchain;
+		BuildWorkspaceOperationKind Kind = BuildWorkspaceOperationKind::SyncSourceTiers;
 		BuildToolchainStatus Toolchain;
 		BuildFilesFreshnessStatus Freshness;
 		SourceDependencyInventoryStatus SourceDependencies;

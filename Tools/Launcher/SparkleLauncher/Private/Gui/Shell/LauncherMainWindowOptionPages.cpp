@@ -10,7 +10,6 @@
 #include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
 #include "LauncherProjectModel.h"
-#include "LauncherRecoveryUiModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"
@@ -64,12 +63,6 @@ namespace SparkleLauncher
 			return;
 		}
 
-		AddWorkflowPageHeader(layout, operationId);
-		if (operationId != "toolchain.check" && operationId != "workspace.sync-source-tiers")
-		{
-			AddWorkflowVisualBanner(layout, operationId);
-		}
-
 		if (operationId == "package.release")
 		{
 			QVBoxLayout* packageLayout = AddOptionGroup(
@@ -82,25 +75,10 @@ namespace SparkleLauncher
 			    "Assembly target",
 			    "Build the sparkle_release_assembly CMake target to assemble launcher, editor/runtime, cooked content, manifests, checksums, notes, licenses, and a separate symbols archive under dist/releases/<version>.",
 			    "neutral");
-			AddStatusRow(
-			    *packageLayout,
-			    "Validation",
-			    "Separate sign-off",
-			    "This workflow assembles dist/ packages. Publish readiness still requires the final validation checklist and release report.",
-			    "neutral");
-			QVBoxLayout* contentsLayout = AddDetailsGroup(
-			    layout,
-			    "Selection Details",
-			    "Package inclusion follows product ownership, visibility, binary type, declared dependencies, and package navigation rules.",
-			    false);
-			AddStatusRow(*contentsLayout, "Launcher", "Included", "Package-root SparkleLauncher.exe and runtime support files.", "neutral");
-			AddStatusRow(*contentsLayout, "Active project products", "Staged when present", "Editor/runtime binaries and cooked content are staged from the active project's artifacts.", "neutral");
-			AddStatusRow(*contentsLayout, "Manifests", "Generated", "Release, build, dependency, bundled-runtime, file hash, checksum, and notes outputs.", "neutral");
-			AddStatusRow(*contentsLayout, "Symbols", "Separate archive", "Debug symbols stay outside user-facing runtime packages.", "neutral");
 			return;
 		}
 
-		if (operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide" || operationId == "toolchain.check" || operationId == "workspace.sync-source-tiers")
+		if (operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide" || operationId == "workspace.sync-source-tiers")
 		{
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
@@ -177,71 +155,6 @@ namespace SparkleLauncher
 				customTargetsRow->setVisible(m_settings.ShaderTargetPreset() == "custom");
 			});
 
-			QVBoxLayout* advancedLayout = AddDetailsGroup(layout, "Advanced Shader Options", "Cache, diagnostics, and compiler-output controls for shader investigation and production tuning.", false);
-			advancedLayout->addWidget(CreateSectionLabel("Cache And Outputs"));
-			AddOptionCheckBox(*advancedLayout, CreateBoundCheckBox("Use shader cache", "Reuse cached shader compile artifacts when possible.", m_settings.ShaderUseCache(), &LauncherSettings::SetShaderUseCache));
-			AddOptionField(
-			    *advancedLayout,
-			    "Cache directory",
-			    CreateBoundLineEdit(
-			        m_settings.ShaderCacheDirectory(),
-			        "Use ShaderCompiler default cache location",
-			        "Optional override for ShaderCompiler --cache-dir.",
-			        &LauncherSettings::SetShaderCacheDirectory));
-			QCheckBox* debugArtifactsBox = CreateBoundCheckBox(
-			    "Write debug artifact bundles",
-			    "Emit compiler-side debug bundles and intermediate artifacts for inspection.",
-			    m_settings.ShaderWriteDebugArtifacts(),
-			    &LauncherSettings::SetShaderWriteDebugArtifacts);
-			debugArtifactsBox->setObjectName("WarningCheckBox");
-			AddOptionCheckBox(*advancedLayout, debugArtifactsBox);
-			QWidget* debugArtifactsRow = AddOptionField(
-			    *advancedLayout,
-			    "Debug output directory",
-			    CreateBoundLineEdit(
-			        m_settings.ShaderDebugArtifactDirectory(),
-			        ResolveShaderDebugArtifactDirectory(m_repositoryRoot, m_projectModel, m_settings),
-			        "Optional override for ShaderCompiler --debug-artifacts. When empty, the launcher uses a build-local default directory.",
-			        &LauncherSettings::SetShaderDebugArtifactDirectory));
-			debugArtifactsRow->setVisible(m_settings.ShaderWriteDebugArtifacts());
-			connect(debugArtifactsBox, &QCheckBox::toggled, debugArtifactsRow, &QWidget::setVisible);
-
-			advancedLayout->addWidget(CreateSectionLabel("Diagnostics"));
-			AddOptionCheckBox(
-			    *advancedLayout,
-			    CreateBoundCheckBox(
-			        "Enable debug info and symbols",
-			        "Request backend debug information and symbol emission where the selected backend supports it.",
-			        m_settings.ShaderEnableDebugInfo(),
-			        &LauncherSettings::SetShaderEnableDebugInfo));
-			AddOptionCheckBox(
-			    *advancedLayout,
-			    CreateBoundCheckBox(
-			        "Enable compiler optimizations",
-			        "Compile shaders with backend optimizations enabled. Disable when debugging compiler output or reproducing optimization-sensitive issues.",
-			        m_settings.ShaderEnableOptimizations(),
-			        &LauncherSettings::SetShaderEnableOptimizations));
-			AddOptionCheckBox(
-			    *advancedLayout,
-			    CreateBoundCheckBox(
-			        "Treat warnings as errors",
-			        "Fail the shader cook when the backend emits warnings.",
-			        m_settings.ShaderWarningsAsErrors(),
-			        &LauncherSettings::SetShaderWarningsAsErrors));
-			AddOptionCheckBox(
-			    *advancedLayout,
-			    CreateBoundCheckBox(
-			        "Strip reflection from runtime binaries",
-			        "Request reflection stripping for final runtime shader binaries where the active backend supports it.",
-			        m_settings.ShaderStripReflection(),
-			        &LauncherSettings::SetShaderStripReflection));
-			AddOptionCheckBox(
-			    *advancedLayout,
-			    CreateBoundCheckBox(
-			        "Strip embedded debug info from runtime binaries",
-			        "Request embedded debug info stripping for final runtime shader binaries where the active backend supports it.",
-			        m_settings.ShaderStripDebugInfo(),
-			        &LauncherSettings::SetShaderStripDebugInfo));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
@@ -264,20 +177,6 @@ namespace SparkleLauncher
 			AddLaunchTargetOptions(layout, "Launch Project", QString());
 			AddLaunchApplicationOptions(layout);
 			AddLaunchEnvironmentStatus(layout, operationId);
-			return;
-		}
-
-		if (operationId == "quality.format")
-		{
-			QVBoxLayout* formatOptionsLayout = AddOptionGroup(layout, "Formatting Mode", "Run clang-format as a quality gate or explicitly apply formatting changes.");
-			AddOptionField(
-			    *formatOptionsLayout,
-			    "Mode",
-			    CreateValueCombo(
-			        {{"Check only", "check"}, {"Apply formatting", "apply"}},
-			        m_settings.FormatMode(),
-			        &LauncherSettings::SetFormatMode));
-			AddMaintenanceEnvironmentStatus(layout, operationId);
 			return;
 		}
 

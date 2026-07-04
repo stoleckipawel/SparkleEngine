@@ -297,19 +297,6 @@ namespace SparkleLauncher
 		return false;
 	}
 
-	static std::string MakeMaintenanceFailureSummary(const MaintenanceOperationProcessStep& step, const ProcessResult& result)
-	{
-		if (!result.FailureReason.empty())
-		{
-			return result.FailureReason + " Log: " + step.Request.LogPath.string();
-		}
-		if (step.Id == "clang-format-batch")
-		{
-			return "clang-format reported formatting differences or failed. Log: " + step.Request.LogPath.string();
-		}
-		return step.DisplayName + " failed. Log: " + step.Request.LogPath.string();
-	}
-
 	static std::string MakeCleanFailureSummary(const MaintenanceOperationProcessStep& step, const OperationRecord& operation, const std::string& errorMessage)
 	{
 		std::string summary = errorMessage.empty() ? "Clean blocked by locked files or permissions." : errorMessage;
@@ -323,6 +310,9 @@ namespace SparkleLauncher
 
 	OperationRecord RunMaintenanceOperationPlan(MaintenanceOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback)
 	{
+		(void)processRunner;
+		(void)outputCallback;
+
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);
 
@@ -336,51 +326,17 @@ namespace SparkleLauncher
 		const std::vector<std::filesystem::path> preservedPaths = plan.Request.PreservedPaths;
 		for (MaintenanceOperationProcessStep& step : BuildMaintenanceProcessStepsForPlan(plan))
 		{
-			if (step.DeletesGeneratedOutput)
+			std::string errorMessage;
+			if (!RunCleanStep(step, preservedPaths, errorMessage))
 			{
-				std::string errorMessage;
-				if (!RunCleanStep(step, preservedPaths, errorMessage))
-				{
-					operation.FailureSummary = MakeCleanFailureSummary(step, operation, errorMessage);
-					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
-					return operation;
-				}
-				continue;
-			}
-
-			ProcessRequest request = step.Request;
-			if (step.Id == "configure")
-			{
-				std::error_code errorCode;
-				std::filesystem::create_directories(request.WorkingDirectory, errorCode);
-			}
-
-			const ProcessOutputCallback existingCallback = request.OutputCallback;
-			request.OutputCallback = [existingCallback, outputCallback](std::string_view output) {
-				if (existingCallback)
-				{
-					existingCallback(output);
-				}
-				if (outputCallback)
-				{
-					outputCallback(output);
-				}
-			};
-
-			const ProcessResult result = processRunner.Run(request);
-			if (!result.Launched || result.Canceled || result.ExitCode != 0)
-			{
-				operation.FailureSummary = MakeMaintenanceFailureSummary(step, result);
-				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
+				operation.FailureSummary = MakeCleanFailureSummary(step, operation, errorMessage);
+				MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 				return operation;
 			}
 		}
 
-		if (plan.Kind == MaintenanceOperationKind::CleanWorkspace)
-		{
-			PruneEmptyDirectories(plan.RepositoryRoot / "Projects");
-			PruneEmptyDirectories(plan.RepositoryRoot);
-		}
+		PruneEmptyDirectories(plan.RepositoryRoot / "Projects");
+		PruneEmptyDirectories(plan.RepositoryRoot);
 
 		MarkOperationFinished(operation, OperationStatus::Succeeded, 0);
 		return operation;

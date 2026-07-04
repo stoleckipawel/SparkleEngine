@@ -12,23 +12,6 @@
 
 namespace SparkleLauncher
 {
-	inline QString VisualAssetForOperation(const QString& operationId)
-	{
-		return LauncherUiModelForOperation(operationId).VisualAssetName;
-	}
-
-	inline QString VisualBannerTitleForOperation(const QString& operationId)
-	{
-		const QString title = LauncherUiModelForOperation(operationId).VisualTitle;
-		return title.isEmpty() ? QString("Workflow") : title;
-	}
-
-	inline QString VisualBannerTextForOperation(const QString& operationId)
-	{
-		const QString text = LauncherUiModelForOperation(operationId).VisualText;
-		return text.isEmpty() ? QString("Context artwork is informational; the primary action remains in the workflow controls below.") : text;
-	}
-
 	inline QString ToDisplayPath(const std::filesystem::path& repositoryRoot, const std::filesystem::path& path)
 	{
 		std::error_code errorCode;

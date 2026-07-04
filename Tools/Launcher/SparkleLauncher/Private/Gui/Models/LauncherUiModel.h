@@ -19,7 +19,6 @@ namespace SparkleLauncher
 	enum class LauncherActionImpactKind
 	{
 		None,
-		Diagnostics,
 		SourceDependencies,
 		WorkspaceFiles,
 		BuildOutputs,

@@ -139,25 +139,6 @@ namespace SparkleLauncher
 		StartOperation(std::move(request), "Clean " + DisplayNameForOperation(m_selectedOperationId));
 	}
 
-
-	QWidget* LauncherMainWindow::CreateTrackedDependencyActions(const ThirdPartyDependencyUiEntry& dependency)
-	{
-		QToolButton* button = CreateLauncherOverflowActionButton(
-		    this,
-		    dependency.Label + " actions",
-		    "Dependency actions",
-		    {
-		        LauncherActionMenuEntry{
-		            "Refresh this cache",
-		            [this, dependency]() { TriggerDependencyRegenerate(dependency); }},
-		        LauncherActionMenuEntry{
-		            "Clean this cache",
-		            [this, dependency]() { TriggerDependencyClean(dependency); }},
-		    });
-		RegisterFocusable(button);
-		return button;
-	}
-
 	QWidget* LauncherMainWindow::CreateDisabledSourceTierActions(const DependencyGroupUiEntry& group)
 	{
 		QVector<LauncherActionMenuEntry> entries;
@@ -261,48 +242,6 @@ namespace SparkleLauncher
 
 		StartOperation(std::move(request), actionTitle);
 	}
-
-	void LauncherMainWindow::TriggerDependencyClean(const ThirdPartyDependencyUiEntry& dependency)
-	{
-		LauncherOperationRequest request = BuildDependencyCleanOperationRequest(m_repositoryRoot, m_projectModel, m_settings, dependency);
-		if (!ConfirmRunRequest(request))
-		{
-			return;
-		}
-
-		StartOperation(std::move(request), "Clean " + dependency.Label);
-	}
-
-	void LauncherMainWindow::TriggerDependencyRegenerate(const ThirdPartyDependencyUiEntry& dependency)
-	{
-		const QMessageBox::StandardButton regenerateResult = QMessageBox::question(
-		    this,
-		    "Refresh Dependency Cache",
-		    QStringLiteral("This will clean only the cached %1 source folder first, then run Prepare Workspace to refill any missing enabled package content. Continue?").arg(dependency.Label),
-		    QMessageBox::Ok | QMessageBox::Cancel,
-		    QMessageBox::Ok);
-		if (regenerateResult != QMessageBox::Ok)
-		{
-			return;
-		}
-
-		LauncherOperationRequest cleanRequest = BuildDependencyCleanOperationRequest(m_repositoryRoot, m_projectModel, m_settings, dependency);
-		if (!ConfirmRunRequest(cleanRequest))
-		{
-			return;
-		}
-
-		LauncherOperationRequest setupRequest = BuildDependencyRegenerateOperationRequest(m_repositoryRoot, m_projectModel, m_settings);
-		const QString title = "Regenerate " + dependency.Label;
-		const QString cleanTitle = "Clean cache before " + title;
-		const QString runId = QStringLiteral("run-%1").arg(m_nextRunIndex + 1, 4, 10, QChar('0'));
-		PendingFollowUpOperation followUp;
-		followUp.Request = std::move(setupRequest);
-		followUp.Title = title;
-		m_pendingFollowUpOperations.insert(runId, std::move(followUp));
-		StartOperation(std::move(cleanRequest), cleanTitle);
-	}
-
 
 	const LauncherOperationDescriptor* LauncherMainWindow::FindOperationDescriptor(const QString& operationId) const
 	{

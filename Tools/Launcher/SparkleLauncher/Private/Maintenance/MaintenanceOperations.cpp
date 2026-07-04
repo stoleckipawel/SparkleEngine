@@ -81,18 +81,6 @@ namespace SparkleLauncher
 		plan.CleanTargets.push_back(std::move(target));
 	}
 
-	static bool HasFormatExtension(const std::filesystem::path& path)
-	{
-		const std::string extension = Strings::ToLowerCopy(path.extension().string());
-		return extension == ".cpp" || extension == ".h" || extension == ".hpp" || extension == ".hxx" || extension == ".hlsl" || extension == ".hlsli";
-	}
-
-	static bool IsThirdPartyPath(const std::filesystem::path& path)
-	{
-		const std::string normalized = Strings::ToLowerCopy(path.generic_string());
-		return normalized.find("/thirdparty/") != std::string::npos || normalized.find("/third_party/") != std::string::npos;
-	}
-
 	static std::vector<std::filesystem::path> CollectProjectDirectories(const std::filesystem::path& repositoryRoot)
 	{
 		std::vector<std::filesystem::path> projects;
@@ -115,44 +103,6 @@ namespace SparkleLauncher
 			return Strings::ToLowerCopy(left.filename().string()) < Strings::ToLowerCopy(right.filename().string());
 		});
 		return projects;
-	}
-
-	static void CollectFormatSourcesInDirectory(std::vector<std::filesystem::path>& files, const std::filesystem::path& directory)
-	{
-		std::error_code errorCode;
-		if (!std::filesystem::is_directory(directory, errorCode))
-		{
-			return;
-		}
-
-		std::filesystem::recursive_directory_iterator iterator(
-		    directory,
-		    std::filesystem::directory_options::skip_permission_denied,
-		    errorCode);
-		const std::filesystem::recursive_directory_iterator end;
-		while (iterator != end)
-		{
-			const std::filesystem::directory_entry entry = *iterator;
-			if (entry.is_regular_file(errorCode) && HasFormatExtension(entry.path()) && !IsThirdPartyPath(entry.path()))
-			{
-				files.push_back(entry.path());
-			}
-			errorCode.clear();
-			iterator.increment(errorCode);
-			errorCode.clear();
-		}
-	}
-
-	static std::vector<std::filesystem::path> CollectFormatSourceFiles(const std::filesystem::path& repositoryRoot)
-	{
-		std::vector<std::filesystem::path> files;
-		CollectFormatSourcesInDirectory(files, repositoryRoot / "Engine");
-		CollectFormatSourcesInDirectory(files, repositoryRoot / "Projects");
-		CollectFormatSourcesInDirectory(files, repositoryRoot / "Tools");
-		std::sort(files.begin(), files.end(), [](const std::filesystem::path& lhs, const std::filesystem::path& rhs) {
-			return lhs.generic_string() < rhs.generic_string();
-		});
-		return files;
 	}
 
 	static void AddProjectGeneratedTargets(MaintenanceOperationPlan& plan, bool includeBuild, bool includeLogs, bool includeState)
@@ -322,8 +272,7 @@ namespace SparkleLauncher
 
 	static void PopulatePlanSteps(MaintenanceOperationPlan& plan)
 	{
-		const bool shouldExposeSteps = plan.CanRun || plan.Kind == MaintenanceOperationKind::CleanWorkspace;
-		if (!shouldExposeSteps)
+		if (!plan.CanRun)
 		{
 			return;
 		}
@@ -336,15 +285,7 @@ namespace SparkleLauncher
 			step.DisplayName = processStep.DisplayName;
 			step.Destructive = processStep.DeletesGeneratedOutput;
 			step.DestructivePath = processStep.DestructivePath;
-			if (processStep.HasProcessRequest)
-			{
-				step.DisplayCommandLine = BuildDisplayCommandLine(processStep.Request.ExecutablePath, processStep.Request.Arguments);
-				step.LogPath = processStep.Request.LogPath;
-			}
-			else
-			{
-				step.DisplayCommandLine = "Delete " + processStep.DestructivePath.string();
-			}
+			step.DisplayCommandLine = "Delete " + processStep.DestructivePath.string();
 			plan.Steps.push_back(std::move(step));
 		}
 	}
@@ -353,26 +294,11 @@ namespace SparkleLauncher
 	{
 		switch (kind)
 		{
-		case MaintenanceOperationKind::RunClangFormat:
-			return "RunClangFormat";
 		case MaintenanceOperationKind::CleanWorkspace:
 			return "CleanWorkspace";
 		}
 
 		return "Unknown";
-	}
-
-	std::string ToString(FormatMode mode)
-	{
-		switch (mode)
-		{
-		case FormatMode::Check:
-			return "check";
-		case FormatMode::Apply:
-			return "apply";
-		}
-
-		return "unknown";
 	}
 
 	std::string ToString(CleanScope scope)
@@ -407,7 +333,6 @@ namespace SparkleLauncher
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions()
 	{
 		static const std::vector<MaintenanceOperationDefinition> definitions = {
-		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Build", "Format Check", "Check or apply code formatting for engine, project, and tool source files."},
 		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Clean", "Clean Workspace", "Remove generated files for the selected confirmed scope."},
 		};
 		return definitions;
@@ -440,7 +365,6 @@ namespace SparkleLauncher
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
 		plan.Operation.Inputs.push_back({"project", request.ProjectId});
 		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
-		plan.Operation.Inputs.push_back({"formatMode", ToString(request.RequestedFormatMode)});
 		for (const MaintenanceCleanPathSpec& target : request.RequestedCleanTargets)
 		{
 			plan.Operation.Inputs.push_back({"cleanTarget", target.Path.string()});
@@ -455,13 +379,6 @@ namespace SparkleLauncher
 
 		switch (plan.Kind)
 		{
-		case MaintenanceOperationKind::RunClangFormat:
-			plan.FormatSourceFiles = CollectFormatSourceFiles(request.RepositoryRoot);
-			AddReadiness(plan, plan.Toolchain.ClangFormatPath.empty() ? "clang-format was not found." : "clang-format is available.");
-			AddReadiness(plan, plan.FormatSourceFiles.empty() ? "No source files were found for formatting." : "Format source files discovered: " + std::to_string(plan.FormatSourceFiles.size()));
-			AddPlannedEffect(plan, std::string(request.RequestedFormatMode == FormatMode::Check ? "Check" : "Apply") + " code formatting for Engine/, Projects/, and Tools/ source files.");
-			plan.CanRun = !plan.Toolchain.ClangFormatPath.empty() && !plan.FormatSourceFiles.empty();
-			break;
 		case MaintenanceOperationKind::CleanWorkspace:
 		{
 			const std::vector<CleanScope> requestedCleanScopes = ResolveRequestedCleanScopes(request);

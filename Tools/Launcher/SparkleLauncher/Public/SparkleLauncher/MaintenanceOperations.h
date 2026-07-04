@@ -16,14 +16,7 @@ namespace SparkleLauncher
 {
 	enum class MaintenanceOperationKind
 	{
-		RunClangFormat,
 		CleanWorkspace
-	};
-
-	enum class FormatMode
-	{
-		Check,
-		Apply
 	};
 
 	enum class CleanScope
@@ -42,7 +35,7 @@ namespace SparkleLauncher
 
 	struct MaintenanceOperationDefinition
 	{
-		MaintenanceOperationKind Kind = MaintenanceOperationKind::RunClangFormat;
+		MaintenanceOperationKind Kind = MaintenanceOperationKind::CleanWorkspace;
 		std::string Id;
 		std::string Group;
 		std::string DisplayName;
@@ -72,7 +65,6 @@ namespace SparkleLauncher
 		std::filesystem::path RepositoryRoot;
 		std::string ProjectId = kDefaultProjectId;
 		std::string EditorProfile = "DevelopmentEditor";
-		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
 		std::vector<CleanScope> RequestedCleanScopes;
 		std::vector<MaintenanceCleanPathSpec> RequestedCleanTargets;
@@ -95,10 +87,9 @@ namespace SparkleLauncher
 		OperationRecord Operation;
 		std::filesystem::path RepositoryRoot;
 		MaintenanceOperationRequest Request;
-		MaintenanceOperationKind Kind = MaintenanceOperationKind::RunClangFormat;
+		MaintenanceOperationKind Kind = MaintenanceOperationKind::CleanWorkspace;
 		BuildToolchainStatus Toolchain;
 		BuildFilesFreshnessStatus Freshness;
-		std::vector<std::filesystem::path> FormatSourceFiles;
 		std::vector<MaintenanceCleanTarget> CleanTargets;
 		std::vector<MaintenanceOperationStep> Steps;
 		std::vector<std::string> PlannedEffects;
@@ -107,7 +98,6 @@ namespace SparkleLauncher
 	};
 
 	std::string ToString(MaintenanceOperationKind kind);
-	std::string ToString(FormatMode mode);
 	std::string ToString(CleanScope scope);
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions();
 	std::optional<MaintenanceOperationDefinition> FindMaintenanceOperationDefinition(std::string_view operationId);

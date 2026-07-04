@@ -133,11 +133,6 @@ namespace SparkleLauncher
 		return m_launchCVars;
 	}
 
-	const QString& LauncherSettings::FormatMode() const
-	{
-		return m_formatMode;
-	}
-
 	const QString& LauncherSettings::CleanScope() const
 	{
 		return m_cleanScope;
@@ -369,16 +364,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_launchCVars = cvars;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetFormatMode(const QString& mode)
-	{
-		if (m_formatMode == mode)
-		{
-			return;
-		}
-		m_formatMode = mode;
 		emit SettingsChanged();
 	}
 

@@ -173,26 +173,6 @@ namespace SparkleLauncher
 		return detail;
 	}
 
-	QString FormatDependencyEntryDetail(
-	    const DependencyGroupUiEntry& group,
-	    const ThirdPartyDependencyUiEntry& dependency,
-	    const std::filesystem::path& dependencyPath)
-	{
-		const SourceDependencyValidation validation = ValidateDependency(dependency, dependencyPath.parent_path());
-		QString detail = QStringLiteral("%1 Cache directory: %2 under the source dependency cache.")
-		                     .arg(dependency.Purpose)
-		                     .arg(QString::fromStdString(dependencyPath.filename().generic_string()));
-		if (!group.Enabled)
-		{
-			return detail + (group.EnablementDetail.isEmpty() ? QString() : QStringLiteral(" %1").arg(group.EnablementDetail));
-		}
-		if (!validation.Ready)
-		{
-			detail += QStringLiteral(" Missing required files: %1.").arg(FormatMissingRelativePaths(validation.MissingRelativePaths));
-		}
-		return detail;
-	}
-
 	bool OperationUsesDependencyGroup(const QString& operationId, const DependencyGroupUiEntry& group)
 	{
 		if (operationId == "workspace.sync-source-tiers")

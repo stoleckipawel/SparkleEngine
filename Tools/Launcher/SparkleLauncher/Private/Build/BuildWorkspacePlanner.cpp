@@ -116,9 +116,9 @@ namespace SparkleLauncher
 
 	static void PopulatePlanSteps(BuildWorkspaceOperationPlan& plan, const BuildWorkspaceOperationRequest& request)
 	{
-		if (!plan.Toolchain.RequiredToolsAvailable && plan.Kind != BuildWorkspaceOperationKind::CheckToolchain)
+		if (!plan.Toolchain.RequiredToolsAvailable)
 		{
-			AddReadiness(plan, "Required host prerequisites are missing or unsupported. Review Verify Host Environment and Prepare Workspace before local build workflows.");
+			AddReadiness(plan, "Required host prerequisites are missing or unsupported.");
 			return;
 		}
 
@@ -126,10 +126,6 @@ namespace SparkleLauncher
 		const bool needsConfigure = BuildWorkspaceOperationRequiresConfigureStep(plan);
 		switch (plan.Kind)
 		{
-		case BuildWorkspaceOperationKind::CheckToolchain:
-			AddPlannedEffect(plan, "Audit installed host prerequisites for local rebuild, cook, and IDE workflows without syncing source dependencies or changing generated outputs.");
-			plan.CanRun = true;
-			return;
 		case BuildWorkspaceOperationKind::SyncSourceTiers:
 			if (!RequireConfigurePrerequisites(plan))
 			{
@@ -331,7 +327,6 @@ namespace SparkleLauncher
 		    {BuildWorkspaceOperationKind::SyncSourceTiers, "workspace.sync-source-tiers", "Sync", std::string(ArtifactNaming::kActionSyncSourceDependencies), "Download enabled repository dependencies and refresh workspace configure state without installing host tools."},
 		    {BuildWorkspaceOperationKind::GenerateBuildFiles, "workspace.generate-build-files", "Build", std::string(ArtifactNaming::kActionGenerateProjectFiles), "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
 		    {BuildWorkspaceOperationKind::OpenIde, "workspace.open-ide", "Launch", "Open IDE", "Open the selected IDE after generated build files are current."},
-		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Sync", std::string(ArtifactNaming::kActionVerifyHostEnvironment), "Audit installed host prerequisites without downloading repository dependencies or changing build files."},
 		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Refresh generated workspace files, then rebuild launcher, project editor/runtime targets, and enabled cook tools."},
 		    {BuildWorkspaceOperationKind::CompileLauncher, "launcher.build.self", "Build", "Build Launcher", "Optional local rebuild of Sparkle Launcher for development or customization."},
 		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Build Editor", "Optional local rebuild of the selected project's editor target."},

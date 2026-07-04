@@ -130,9 +130,11 @@ namespace SparkleLauncher
 		QString promptAction;
 		if (!plan.Toolchain.RequiredToolsAvailable)
 		{
-			prerequisiteOperationId = "toolchain.check";
-			promptTitle = "Sync Diagnostics";
-			promptAction = "Required host prerequisites are missing. Run a sync diagnostics check now?";
+			QMessageBox::information(
+			    parent,
+			    "Workflow Blocked",
+			    "Required host prerequisites are missing.\n\n" + ToQStringList(plan.ReadinessMessages).join('\n'));
+			return BlockedDecision();
 		}
 		else if ((operationId == "workspace.open-ide" || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare") && !plan.Freshness.Current)
 		{
@@ -142,9 +144,11 @@ namespace SparkleLauncher
 		}
 		else if (operationId == "workspace.open-ide")
 		{
-			prerequisiteOperationId = "toolchain.check";
-			promptTitle = "Sync Diagnostics";
-			promptAction = QString("%1 is not currently available. Run a sync diagnostics check now and verify the Visual Studio, Qt, and optional ClangCL toolchain?").arg(ResolveSelectedWorkspaceIdeName(settings));
+			QMessageBox::information(
+			    parent,
+			    "Workflow Blocked",
+			    QString("%1 is not currently available.\n\n%2").arg(ResolveSelectedWorkspaceIdeName(settings), ToQStringList(plan.ReadinessMessages).join('\n')));
+			return BlockedDecision();
 		}
 		else
 		{

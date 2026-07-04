@@ -28,7 +28,6 @@ namespace SparkleLauncher
 		std::string LaunchTarget = "editor";
 		std::string LaunchStartupLevel;
 		CookMode RequestedCookMode = CookMode::Incremental;
-		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
 		bool ForceRecookConfirmed = false;
 		bool CleanConfirmed = false;

@@ -130,8 +130,6 @@ namespace SparkleLauncher
 
 		switch (plan.Kind)
 		{
-		case BuildWorkspaceOperationKind::CheckToolchain:
-			return steps;
 		case BuildWorkspaceOperationKind::SyncSourceTiers:
 			if (BuildWorkspaceOperationRequiresConfigureStep(plan))
 			{

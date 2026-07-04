@@ -10,7 +10,6 @@
 #include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
 #include "LauncherProjectModel.h"
-#include "LauncherRecoveryUiModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"
@@ -92,7 +91,6 @@ namespace SparkleLauncher
 		    operationId.startsWith("cook.") && operationId != "cook.tools.prepare" ? "cook.tools.prepare" : operationId;
 		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(workspacePlanOperationId.toStdString(), request);
 		const QString workspaceIdeName = ResolveSelectedWorkspaceIdeName(m_settings);
-		const bool isToolchainCheck = operationId == "toolchain.check";
 		const bool isSyncWorkflow = operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide";
 		const bool isBuildWorkflow = operationId == "workspace.build-all" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
 		const bool isCookWorkflow = operationId.startsWith("cook.") && operationId != "cook.tools.prepare";
@@ -118,49 +116,6 @@ namespace SparkleLauncher
 				                    CreateDisabledSourceTierActions(group));
 			}
 		};
-		if (isToolchainCheck)
-		{
-			QVBoxLayout* hostDetailsLayout = AddOptionGroup(
-			    layout,
-			    "Machine support",
-			    "Installed tools and detected paths used for local builds, IDE integration, and optional renderer features.");
-			for (const ToolchainItemStatus& item : plan.Toolchain.Items)
-			{
-				QString detail = QString::fromStdString(item.Detail);
-				const QString path = FormatStatusPath(item.Path);
-				if (!path.isEmpty())
-				{
-					detail = CombineStatusDetail(detail, path);
-				}
-				AddStatusRow(
-				    *hostDetailsLayout,
-				    QString::fromStdString(item.DisplayName) + (item.Required ? "" : " (optional)"),
-				    ToolchainStatusText(item.State, item.Required),
-				    detail,
-				    ToolchainStatusState(item.State, item.Required));
-			}
-			AddStatusRow(
-			    *hostDetailsLayout,
-			    "Selected IDE",
-			    workspaceIdeName,
-			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : QString::fromStdString(plan.Toolchain.RiderPath.string())) :
-			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : QString::fromStdString(plan.Freshness.SolutionPath.string())),
-			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
-			QVBoxLayout* toolchainLayout = AddOptionGroup(
-			    layout,
-			    "Readiness summary",
-			    "Use this audit to confirm the machine can generate workspace files, open the IDE, and rebuild locally.");
-			AddStatusRow(*toolchainLayout, "Dependency set", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", BuildGeneratorSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
-			AddStatusRow(
-			    *toolchainLayout,
-			    "Selected IDE",
-			    workspaceIdeName,
-			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : "Rider executable is available.") :
-			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : "Visual Studio workspace discovery is available."),
-			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
-			return;
-		}
-
 		if (isSyncWorkflow)
 		{
 			const bool syncWillRunConfigure = BuildWorkspaceOperationRequiresConfigureStep(plan);
@@ -298,7 +253,7 @@ namespace SparkleLauncher
 			}
 			if (operationId == "workspace.sync-source-tiers")
 			{
-				AddSyncDependencyBundles(layout, true);
+				AddSyncDependencyBundles(layout);
 				AddSyncLevelContentGroups(layout);
 			}
 			return;
@@ -317,8 +272,7 @@ namespace SparkleLauncher
 			    "Required tools",
 			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked",
 			    plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain),
-			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad",
-			    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
+			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
 			AddStatusRow(
 			    *buildLayout,
 			    "Build files",
@@ -343,8 +297,7 @@ namespace SparkleLauncher
 			    "Required tools",
 			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked",
 			    plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain),
-			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad",
-			    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
+			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
 			AddStatusRow(
 			    *cookLayout,
 			    "Build files",
@@ -437,9 +390,8 @@ namespace SparkleLauncher
 			    *launchLayout,
 			    "Graphics backend",
 			    "Needs SDK",
-			    "Vulkan was selected, but the Vulkan SDK is not available on this machine yet, so Vulkan-backed workflows remain unavailable until Verify Host Environment shows the Vulkan SDK as ready.",
-			    "warning",
-			    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
+			    "Vulkan was selected, but the Vulkan SDK is not available on this machine yet.",
+			    "warning");
 		}
 		AddStatusRow(
 		    *launchLayout,
@@ -537,33 +489,7 @@ namespace SparkleLauncher
 		request.RepositoryRoot = m_repositoryRoot;
 		request.ProjectId = m_projectModel.ActiveProjectId().toStdString();
 		request.EditorProfile = m_settings.EditorProfile().toStdString();
-		request.RequestedFormatMode = m_settings.FormatMode() == "check" ? FormatMode::Check : FormatMode::Apply;
 		request.DestructiveActionConfirmed = m_settings.ConfirmClean();
-
-		if (operationId == "quality.format")
-		{
-			const MaintenanceOperationPlan plan = PlanMaintenanceOperation(operationId.toStdString(), request);
-			const bool formatNeedsAttention = plan.Toolchain.ClangFormatPath.empty() || plan.FormatSourceFiles.empty();
-			QVBoxLayout* maintenanceLayout = AddDetailsGroup(
-			    layout,
-			    formatNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
-			    QString(),
-			    false);
-			AddStatusRow(
-			    *maintenanceLayout,
-			    "clang-format",
-			    plan.Toolchain.ClangFormatPath.empty() ? "Missing" : "Ready",
-			    plan.Toolchain.ClangFormatPath.empty() ? "clang-format was not found." : "clang-format is available.",
-			    plan.Toolchain.ClangFormatPath.empty() ? "warning" : "ok",
-			    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
-			AddStatusRow(
-			    *maintenanceLayout,
-			    "Source files",
-			    plan.FormatSourceFiles.empty() ? "None found" : "Ready",
-			    QString("Discovered %1 source files eligible for formatting.").arg(plan.FormatSourceFiles.size()),
-			    plan.FormatSourceFiles.empty() ? "warning" : "ok");
-			return;
-		}
 
 		if (operationId == "workspace.clean")
 		{

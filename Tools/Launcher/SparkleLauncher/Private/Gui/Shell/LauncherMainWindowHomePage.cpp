@@ -10,7 +10,6 @@
 #include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
 #include "LauncherProjectModel.h"
-#include "LauncherRecoveryUiModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"

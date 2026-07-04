@@ -58,7 +58,6 @@ namespace SparkleLauncher
 		QString LaunchHighPerformanceAdapter;
 		QString LaunchCommandLineArguments;
 		QString LaunchCVars;
-		QString FormatMode = "check";
 		QString CleanScope = "selected-cooked";
 		QVector<LauncherCleanTarget> CleanTargets;
 		QVector<QString> PreservedPaths;

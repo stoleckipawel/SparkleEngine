@@ -57,8 +57,6 @@ namespace SparkleLauncher
 			return {"rider64.exe", "rider.exe", "rider.bat", "rider"};
 		case KnownTool::Git:
 			return {"git.exe", "git"};
-		case KnownTool::ClangFormat:
-			return {"clang-format.exe", "clang-format"};
 		}
 
 		return {};
@@ -78,8 +76,6 @@ namespace SparkleLauncher
 			return {"SPARKLE_RIDER_EXE"};
 		case KnownTool::Git:
 			return {"SPARKLE_GIT_EXE"};
-		case KnownTool::ClangFormat:
-			return {"SPARKLE_CLANG_FORMAT_EXE"};
 		}
 
 		return {};
@@ -307,9 +303,6 @@ namespace SparkleLauncher
 		case KnownTool::Git:
 			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("Git") / "cmd" / "git.exe");
 			break;
-		case KnownTool::ClangFormat:
-			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("LLVM") / "bin" / "clang-format.exe");
-			break;
 		}
 
 		return candidates;
@@ -348,8 +341,6 @@ namespace SparkleLauncher
 			return "Rider";
 		case KnownTool::Git:
 			return "Git";
-		case KnownTool::ClangFormat:
-			return "clang-format";
 		}
 
 		return "Unknown";

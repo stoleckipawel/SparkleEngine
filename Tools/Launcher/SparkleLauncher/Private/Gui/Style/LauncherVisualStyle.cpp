@@ -119,11 +119,6 @@ namespace SparkleLauncher
 		addRule("#CommandCardText", "color: " + textSecondary + "; font-size: 9pt; line-height: 135%;");
 		addRule("#CommandCapabilityCard[TileRole=\"discover\"] #CommandCardText", "font-size: 8.35pt; line-height: 128%;");
 		addStateChipRules("#CommandCardChip");
-		addRule("#WorkflowVisualBanner", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #20241e, stop:0.62 #181b18, stop:1 #111311); border: 1px solid #30372b; border-left: 3px solid " + accent + "; border-radius: 4px;");
-		addRule("#WorkflowVisualCopyPane", "background: transparent; border: none;");
-		addRule("#WorkflowVisualArtwork", "background: transparent; border: none; border-left: 1px solid #26301d;");
-		addRule("#WorkflowVisualTitle", "color: " + textPrimary + "; font-size: 11.5pt; font-weight: 900; letter-spacing: -0.08px;");
-		addRule("#WorkflowVisualText", "color: " + textSecondary + "; font-size: 8.75pt; line-height: 135%;");
 		addRule("QPushButton#CommandPrimaryButton", "background: " + primary + "; color: #071006; border: 1px solid #92d83a; border-radius: 3px; padding: 7px 18px; font-weight: 900; min-width: 150px;");
 		addRule("QPushButton#CommandPrimaryButton:hover", "background: " + primaryHover + ";");
 		addRule("QPushButton#CommandPrimaryButton:disabled", "background: #252923; color: " + textMuted + "; border: 1px solid #3b4434;");

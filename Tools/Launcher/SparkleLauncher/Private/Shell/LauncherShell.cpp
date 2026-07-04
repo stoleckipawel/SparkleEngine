@@ -199,21 +199,6 @@ namespace SparkleLauncher
 		return text;
 	}
 
-	static bool TryParseFormatMode(std::string_view text, FormatMode& outMode)
-	{
-		if (text == "check")
-		{
-			outMode = FormatMode::Check;
-			return true;
-		}
-		if (text == "apply")
-		{
-			outMode = FormatMode::Apply;
-			return true;
-		}
-		return false;
-	}
-
 	static bool TryParseCleanScope(std::string_view text, CleanScope& outScope)
 	{
 		if (text == "selected-cooked")
@@ -337,7 +322,6 @@ namespace SparkleLauncher
 		state.JobOutput.push_back(plan.Operation.DisplayName + " [" + std::string(plan.CanRun ? "Ready" : "Blocked") + "]");
 		state.JobOutput.push_back("Project: " + state.SelectedProjectId);
 		state.JobOutput.push_back("Editor profile: " + state.EditorProfile);
-		state.JobOutput.push_back("Format mode: " + ToString(plan.Request.RequestedFormatMode));
 		state.JobOutput.push_back("Clean scope: " + ToString(plan.Request.RequestedCleanScope));
 		state.JobOutput.push_back("Latest log: " + plan.Operation.LogPath.string());
 		if (plan.Operation.RequiresConfirmation)
@@ -430,7 +414,6 @@ namespace SparkleLauncher
 		request.RepositoryRoot = state.Repository.RootPath;
 		request.ProjectId = state.SelectedProjectId;
 		request.EditorProfile = state.EditorProfile;
-		request.RequestedFormatMode = arguments.RequestedFormatMode;
 		request.RequestedCleanScope = arguments.RequestedCleanScope;
 		request.DestructiveActionConfirmed = arguments.CleanConfirmed;
 		return request;
@@ -798,25 +781,6 @@ namespace SparkleLauncher
 				continue;
 			}
 
-			if (argument == "--format-mode")
-			{
-				if (index + 1 >= argc)
-				{
-					error << "SparkleLauncher: --format-mode requires check or apply.\n";
-					return false;
-				}
-
-				FormatMode mode = FormatMode::Check;
-				const std::string_view modeText(argv[++index]);
-				if (!TryParseFormatMode(modeText, mode))
-				{
-					error << "SparkleLauncher: unsupported format mode '" << modeText << "'.\n";
-					return false;
-				}
-				outArguments.RequestedFormatMode = mode;
-				continue;
-			}
-
 			if (argument == "--clean-scope")
 			{
 				if (index + 1 >= argc)
@@ -880,14 +844,13 @@ namespace SparkleLauncher
 	void LauncherShell::PrintUsage(std::ostream& output) const
 	{
 		output << "Usage:\n"
-		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]] [--run <operation-id>]\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--startup-level <level-name>] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]] [--run <operation-id>]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level <level-name> --dry-run project.run\n"
 		       << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
-		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n"
 		       << "  SparkleLauncher --clean-scope clean-all --dry-run workspace.clean\n";
 	}

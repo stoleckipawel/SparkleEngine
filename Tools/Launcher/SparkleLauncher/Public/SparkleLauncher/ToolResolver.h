@@ -14,8 +14,7 @@ namespace SparkleLauncher
 		MSBuild,
 		Ninja,
 		Rider,
-		Git,
-		ClangFormat
+		Git
 	};
 
 	struct ToolResolveResult

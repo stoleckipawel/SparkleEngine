@@ -13,7 +13,6 @@ namespace SparkleLauncher
 	struct ActionCleanTargetContext;
 	class LauncherProjectModel;
 	class LauncherSettings;
-	struct ThirdPartyDependencyUiEntry;
 
 	WorkspaceIde ResolveSelectedWorkspaceIde(const LauncherSettings& settings);
 	QString ResolveSelectedWorkspaceIdeName(const LauncherSettings& settings);
@@ -55,14 +54,4 @@ namespace SparkleLauncher
 	    const QString& cleanScope,
 	    const std::filesystem::path& runningLauncherPath = {});
 
-	LauncherOperationRequest BuildDependencyCleanOperationRequest(
-	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
-	    const LauncherSettings& settings,
-	    const ThirdPartyDependencyUiEntry& dependency);
-
-	LauncherOperationRequest BuildDependencyRegenerateOperationRequest(
-	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
-	    const LauncherSettings& settings);
 }

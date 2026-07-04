@@ -30,7 +30,6 @@ namespace SparkleLauncher
 		const QString& LaunchHighPerformanceAdapter() const;
 		const QString& LaunchCommandLineArguments() const;
 		const QString& LaunchCVars() const;
-		const QString& FormatMode() const;
 		const QString& CleanScope() const;
 		bool ShaderUseCache() const;
 		bool ShaderEnableDebugInfo() const;
@@ -68,7 +67,6 @@ namespace SparkleLauncher
 		void SetLaunchHighPerformanceAdapter(const QString& value);
 		void SetLaunchCommandLineArguments(const QString& arguments);
 		void SetLaunchCVars(const QString& cvars);
-		void SetFormatMode(const QString& mode);
 		void SetCleanScope(const QString& scope);
 		void SetShaderUseCache(bool enabled);
 		void SetShaderWriteDebugArtifacts(bool enabled);
@@ -97,7 +95,6 @@ namespace SparkleLauncher
 		QString m_launchHighPerformanceAdapter;
 		QString m_launchCommandLineArguments;
 		QString m_launchCVars;
-		QString m_formatMode = "check";
 		QString m_cleanScope = "selected-cooked";
 		bool m_shaderUseCache = true;
 		bool m_shaderEnableDebugInfo = false;

@@ -1,27 +1,14 @@
 #include "MaintenanceOperationProcessRequests.h"
 
-#include "CMakeWorkflowProcessRequests.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
 #include <algorithm>
-#include <span>
 #include <system_error>
 #include <utility>
 
 namespace SparkleLauncher
 {
-	static constexpr std::size_t kFormatBatchSize = 80;
-
-	static void AddProcessStep(std::vector<MaintenanceOperationProcessStep>& steps, std::string id, std::string displayName, ProcessRequest request)
-	{
-		MaintenanceOperationProcessStep step;
-		step.Id = std::move(id);
-		step.DisplayName = std::move(displayName);
-		step.Request = std::move(request);
-		steps.push_back(std::move(step));
-	}
-
 	static void AddCleanStep(
 	    std::vector<MaintenanceOperationProcessStep>& steps,
 	    std::string id,
@@ -34,7 +21,6 @@ namespace SparkleLauncher
 		step.DisplayName = std::move(displayName);
 		step.DestructivePath = std::move(path);
 		step.CleanBehavior = behavior;
-		step.HasProcessRequest = false;
 		step.DeletesGeneratedOutput = true;
 		steps.push_back(std::move(step));
 	}
@@ -100,49 +86,6 @@ namespace SparkleLauncher
 				continue;
 			}
 			AddCleanStep(steps, "clean-project-cooked", "Clean cooked outputs " + projectName, GetCookedProjectDirectory(plan.RepositoryRoot, projectName), MaintenanceCleanBehavior::RemovePath);
-		}
-	}
-
-	static ProcessRequest MakeClangFormatRequest(
-	    const MaintenanceOperationPlan& plan,
-	    std::span<const std::filesystem::path> files,
-	    std::size_t batchIndex)
-	{
-		ProcessRequest process;
-		process.ExecutablePath = plan.Toolchain.ClangFormatPath;
-		process.WorkingDirectory = plan.RepositoryRoot;
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "ClangFormat-" + std::to_string(batchIndex + 1) + ".txt");
-		process.Arguments.push_back("-style=file");
-		if (plan.Request.RequestedFormatMode == FormatMode::Check)
-		{
-			process.Arguments.push_back("--dry-run");
-			process.Arguments.push_back("--Werror");
-		}
-		else
-		{
-			process.Arguments.push_back("-i");
-		}
-
-		for (const std::filesystem::path& file : files)
-		{
-			process.Arguments.push_back(file.string());
-		}
-		return process;
-	}
-
-	static void AddFormatSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
-	{
-		std::size_t batchIndex = 0;
-		for (std::size_t firstFile = 0; firstFile < plan.FormatSourceFiles.size(); firstFile += kFormatBatchSize)
-		{
-			const std::size_t lastFile = std::min(firstFile + kFormatBatchSize, plan.FormatSourceFiles.size());
-			const std::span<const std::filesystem::path> batch(plan.FormatSourceFiles.data() + firstFile, lastFile - firstFile);
-			AddProcessStep(
-			    steps,
-			    "clang-format-batch",
-			    std::string(plan.Request.RequestedFormatMode == FormatMode::Check ? "Check" : "Apply") + " clang-format batch " + std::to_string(batchIndex + 1),
-			    MakeClangFormatRequest(plan, batch, batchIndex));
-			++batchIndex;
 		}
 	}
 
@@ -240,16 +183,13 @@ namespace SparkleLauncher
 	std::vector<MaintenanceOperationProcessStep> BuildMaintenanceProcessStepsForPlan(const MaintenanceOperationPlan& plan)
 	{
 		std::vector<MaintenanceOperationProcessStep> steps;
-		if (!plan.CanRun && plan.Kind != MaintenanceOperationKind::CleanWorkspace)
+		if (!plan.CanRun)
 		{
 			return steps;
 		}
 
 		switch (plan.Kind)
 		{
-		case MaintenanceOperationKind::RunClangFormat:
-			AddFormatSteps(steps, plan);
-			return steps;
 		case MaintenanceOperationKind::CleanWorkspace:
 			AddCleanSteps(steps, plan);
 			return steps;

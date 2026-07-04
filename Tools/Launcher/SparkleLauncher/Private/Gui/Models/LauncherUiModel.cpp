@@ -107,19 +107,6 @@ namespace SparkleLauncher
 			    "Refreshes project files for the selected toolchain and opens the IDE when the workspace is current.",
 			    "workflow-open-ide.png");
 		}
-		if (operationId == "toolchain.check")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Verify Host Environment",
-			    "Check",
-			    LauncherWorkflowPageKind::Sync,
-			    LauncherActionImpactKind::Diagnostics,
-			    "Diagnostics only: audits installed host prerequisites and does not modify workspace dependencies or outputs.",
-			    "Host readiness",
-			    "Checks installed tools without changing source dependencies, artifacts, or cooked outputs.",
-			    "workflow-toolchain-check.png");
-		}
 		if (operationId == "workspace.sync-source-tiers")
 		{
 			return MakeOperationUiModel(
@@ -263,19 +250,6 @@ namespace SparkleLauncher
 			    "Refreshes cooked scene outputs for synced catalog levels.",
 			    "workflow-cook-assets.png");
 		}
-		if (operationId == "quality.format")
-		{
-			return MakeOperationUiModel(
-			    operationId,
-			    "Format Check",
-			    "Run",
-			    LauncherWorkflowPageKind::Clean,
-			    LauncherActionImpactKind::Diagnostics,
-			    "Quality gate: checks or applies clang-format for source files; it does not build, cook, or sync dependencies.",
-			    "Code quality",
-			    "Applies source formatting while leaving build artifacts and cooked content alone.",
-			    "workflow-format-check.png");
-		}
 		if (operationId == "package.release")
 		{
 			return MakeOperationUiModel(
@@ -363,8 +337,6 @@ namespace SparkleLauncher
 		{
 		case LauncherActionImpactKind::None:
 			return "None";
-		case LauncherActionImpactKind::Diagnostics:
-			return "Diagnostics";
 		case LauncherActionImpactKind::SourceDependencies:
 			return "Source dependencies";
 		case LauncherActionImpactKind::WorkspaceFiles:

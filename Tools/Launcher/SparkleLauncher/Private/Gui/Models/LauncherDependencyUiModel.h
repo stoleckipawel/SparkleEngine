@@ -37,9 +37,5 @@ namespace SparkleLauncher
 	QString DependencyGroupStatusText(const DependencyGroupUiEntry& group, int readyCount);
 	QString DependencyGroupStatusState(const DependencyGroupUiEntry& group, int readyCount);
 	QString FormatDependencyGroupDetail(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath, int readyCount);
-	QString FormatDependencyEntryDetail(
-	    const DependencyGroupUiEntry& group,
-	    const ThirdPartyDependencyUiEntry& dependency,
-	    const std::filesystem::path& dependencyPath);
 	bool OperationUsesDependencyGroup(const QString& operationId, const DependencyGroupUiEntry& group);
 }

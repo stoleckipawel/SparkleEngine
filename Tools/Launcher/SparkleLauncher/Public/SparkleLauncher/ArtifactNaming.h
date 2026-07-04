@@ -24,7 +24,6 @@ namespace SparkleLauncher::ArtifactNaming
 	inline constexpr std::string_view kBinaryTypeSymbolFile = "symbol-file";
 	inline constexpr std::string_view kBinaryTypeGeneratedAsset = "generated-asset";
 
-	inline constexpr std::string_view kActionVerifyHostEnvironment = "Verify Host Environment";
 	inline constexpr std::string_view kActionSyncSourceDependencies = "Prepare Workspace";
 	inline constexpr std::string_view kActionGenerateProjectFiles = "Generate Build Files";
 	inline constexpr std::string_view kActionOpenIde = "Open IDE";

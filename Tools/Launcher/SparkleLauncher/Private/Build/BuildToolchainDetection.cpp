@@ -707,9 +707,6 @@ namespace SparkleLauncher
 		case KnownTool::Git:
 			status.GitPath = resolvedTool.Path;
 			break;
-		case KnownTool::ClangFormat:
-			status.ClangFormatPath = resolvedTool.Path;
-			break;
 		}
 	}
 
@@ -736,7 +733,6 @@ namespace SparkleLauncher
 		AppendKnownToolStatus(status, KnownTool::Ninja, ninjaGenerator, ninjaGenerator ? "Required by the selected CMake generator." : "Optional for Ninja generators.");
 		AppendKnownToolStatus(status, KnownTool::Rider, preferredIde == WorkspaceIde::Rider, preferredIde == WorkspaceIde::Rider ? "Required for the selected IDE." : "Optional IDE integration.");
 		AppendKnownToolStatus(status, KnownTool::Git, true, "Minimum required version: " + std::string(kMinimumGitVersion));
-		AppendKnownToolStatus(status, KnownTool::ClangFormat, false, "Required only for format operations.");
 
 		status.VswherePath = ResolveVswherePath().value_or(FindVisualStudioInstallWithCppTools().value_or(std::filesystem::path()));
 		status.Items.push_back(MakeToolStatus(

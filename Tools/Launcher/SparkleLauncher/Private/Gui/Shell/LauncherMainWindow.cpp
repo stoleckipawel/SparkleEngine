@@ -13,7 +13,6 @@
 #include "LauncherProjectModel.h"
 #include "LauncherOutputWidgets.h"
 #include "LauncherPrerequisitePrompts.h"
-#include "LauncherRecoveryUiModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"
@@ -556,21 +555,6 @@ namespace SparkleLauncher
 			    (ReadinessContains(plan.ReadinessMessages, "Generated build files are not current") ||
 			     ReadinessContains(plan.ReadinessMessages, "Run Generate Build Files first") || ReadinessContains(plan.ReadinessMessages, "not current"));
 			m_runButton->setEnabled(plan.CanRun || canRetryWorkspacePrerequisite);
-			m_runButton->setToolTip(reason);
-			m_runButton->setAccessibleDescription(reason);
-			return;
-		}
-
-		if (m_selectedOperationId == "quality.format")
-		{
-			MaintenanceOperationRequest request;
-			request.RepositoryRoot = m_repositoryRoot;
-			request.ProjectId = m_projectModel.ActiveProjectId().toStdString();
-			request.EditorProfile = m_settings.EditorProfile().toStdString();
-			request.RequestedFormatMode = m_settings.FormatMode() == "check" ? FormatMode::Check : FormatMode::Apply;
-			const MaintenanceOperationPlan plan = PlanMaintenanceOperation(m_selectedOperationId.toStdString(), request);
-			const QString reason = plan.CanRun ? "Run " + DisplayNameForOperation(m_selectedOperationId) + ". Existing runs keep going." : FirstBlockingReadinessMessage(plan.ReadinessMessages);
-			m_runButton->setEnabled(plan.CanRun);
 			m_runButton->setToolTip(reason);
 			m_runButton->setAccessibleDescription(reason);
 			return;

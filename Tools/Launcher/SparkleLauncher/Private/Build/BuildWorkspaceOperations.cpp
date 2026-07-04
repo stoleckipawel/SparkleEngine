@@ -73,8 +73,6 @@ namespace SparkleLauncher
 	{
 		switch (kind)
 		{
-		case BuildWorkspaceOperationKind::CheckToolchain:
-			return "CheckToolchain";
 		case BuildWorkspaceOperationKind::SyncSourceTiers:
 			return "SyncSourceTiers";
 		case BuildWorkspaceOperationKind::GenerateBuildFiles:

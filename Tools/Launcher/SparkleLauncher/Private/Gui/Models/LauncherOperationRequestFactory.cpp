@@ -111,7 +111,6 @@ namespace SparkleLauncher
 		request.LaunchHighPerformanceAdapter = settings.LaunchHighPerformanceAdapter();
 		request.LaunchCommandLineArguments = settings.LaunchCommandLineArguments();
 		request.LaunchCVars = settings.LaunchCVars();
-		request.FormatMode = settings.FormatMode();
 		request.CleanScope = settings.CleanScope();
 		request.ForceConfigure = settings.ForceConfigure();
 		request.ForceRecook = settings.ForceRecook();
@@ -186,30 +185,4 @@ namespace SparkleLauncher
 		return request;
 	}
 
-	LauncherOperationRequest BuildDependencyCleanOperationRequest(
-	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
-	    const LauncherSettings& settings,
-	    const ThirdPartyDependencyUiEntry& dependency)
-	{
-		LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, "workspace.clean");
-		LauncherCleanTarget target;
-		target.DisplayName = dependency.Label + " dependency cache";
-		target.Path = QString::fromStdString((GetBuildDirectory(repositoryRoot) / "_deps" / dependency.CacheDirectoryName.toStdString()).string());
-		target.Detail = "Local cache folder for " + dependency.Label + " " + dependency.Version + ".";
-		request.CleanTargets.clear();
-		request.CleanTargets.push_back(target);
-		request.ConfirmClean = false;
-		return request;
-	}
-
-	LauncherOperationRequest BuildDependencyRegenerateOperationRequest(
-	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
-	    const LauncherSettings& settings)
-	{
-		LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, projectModel, settings, "workspace.sync-source-tiers");
-		request.ForceConfigure = true;
-		return request;
-	}
 }

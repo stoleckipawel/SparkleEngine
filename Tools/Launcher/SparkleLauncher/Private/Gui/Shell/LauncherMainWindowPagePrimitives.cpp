@@ -10,7 +10,6 @@
 #include "LauncherOutputWidgets.h"
 #include "LauncherPageUtilities.h"
 #include "LauncherProjectModel.h"
-#include "LauncherRecoveryUiModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
 #include "LauncherUiDesign.h"
@@ -56,27 +55,7 @@ namespace SparkleLauncher
 	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
 	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
 	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
-	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;	void LauncherMainWindow::AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId)
-	{
-		const LauncherActionHistoryRecord* history = m_actionHistory.Find(operationId);
-		if (history != nullptr && history->ExitCode != 0)
-		{
-			const QString recoveryHint = FailureRecoveryHint(operationId, history->ResultText);
-			const LauncherRecoveryAction recoveryAction = RecoveryActionForFailure(operationId, history->ResultText);
-			QVBoxLayout* recoveryLayout = AddDetailsGroup(
-			    layout,
-			    "Current Workflow Recovery",
-			    "Only shown when the selected workflow has a failed run. Raw logs stay in Activity.",
-			    true);
-			AddStatusRow(
-			    *recoveryLayout,
-			    "Current workflow recovery",
-			    "Needs attention",
-			    CombineStatusDetail("Last run failed: " + history->ResultText, recoveryHint),
-			    "warning",
-			    recoveryAction.OperationId.isEmpty() ? nullptr : CreateActionDependencyActions(recoveryAction.OperationId, recoveryAction.Label, QString(), QString(), true));
-		}
-	}
+	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
 
 	void LauncherMainWindow::AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory)
 	{
@@ -126,58 +105,6 @@ namespace SparkleLauncher
 		rowLayout->addWidget(actionCell, 0, Qt::AlignRight | Qt::AlignTop);
 
 		layout.addWidget(row);
-	}
-
-	void LauncherMainWindow::AddWorkflowVisualBanner(QVBoxLayout& layout, const QString& operationId)
-	{
-		const QString artworkFileName =
-		    operationId == "project.run" ?
-		        (m_settings.LaunchTarget() == "runtime" ? QStringLiteral("workflow-project-run-runtime.png") : VisualAssetForOperation(operationId)) :
-		        VisualAssetForOperation(operationId);
-		if (artworkFileName.isEmpty())
-		{
-			return;
-		}
-
-		QWidget* artwork = CreateLauncherVisualArtworkWidget(
-		    m_repositoryRoot,
-		    artworkFileName,
-		    "WorkflowVisualArtwork",
-		    LauncherUi::WorkflowVisual::ArtworkSize(),
-		    LauncherArtworkPreset::WorkflowBanner,
-		    this);
-		if (artwork == nullptr)
-		{
-			return;
-		}
-
-		QFrame* banner = new QFrame(this);
-		banner->setObjectName("WorkflowVisualBanner");
-		banner->setMinimumHeight(LauncherUi::WorkflowVisual::MinHeight);
-		QHBoxLayout* shellLayout = new QHBoxLayout(banner);
-		shellLayout->setContentsMargins(0, 0, 0, 0);
-		shellLayout->setSpacing(0);
-
-		QWidget* copyPane = new QWidget(banner);
-		copyPane->setObjectName("WorkflowVisualCopyPane");
-		QVBoxLayout* copyLayout = new QVBoxLayout(copyPane);
-		copyLayout->setContentsMargins(LauncherUi::WorkflowVisual::CopyMargins());
-		copyLayout->setSpacing(LauncherUi::WorkflowVisual::CopySpacing);
-
-		QLabel* title = new QLabel(VisualBannerTitleForOperation(operationId), banner);
-		title->setObjectName("WorkflowVisualTitle");
-		copyLayout->addWidget(title);
-
-		QLabel* detail = new QLabel(VisualBannerTextForOperation(operationId), banner);
-		detail->setObjectName("WorkflowVisualText");
-		detail->setWordWrap(true);
-		copyLayout->addWidget(detail, 1);
-
-		shellLayout->addWidget(copyPane, 1);
-		artwork->setParent(banner);
-		shellLayout->addWidget(artwork, 0);
-
-		layout.addWidget(banner);
 	}
 
 	QPushButton* LauncherMainWindow::CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately)
