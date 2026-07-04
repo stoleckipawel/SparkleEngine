@@ -64,57 +64,59 @@ Scan excludes `.git`, `build`, `artifacts`, and `logs`.
 
 | Root | Files | Approx MB | Interpretation |
 | --- | ---: | ---: | --- |
+| `Projects` | 775 | 1527.06 | Still the dominant depot weight; content organization remains the biggest byte-reduction lever. |
 | `Engine` | 1164 | 340.29 | Main runtime, shaders, default assets, RHI, renderer, editor, application. |
-| `Projects` | 776 | 2788.88 | Dominant depot weight, mostly Showcase content. |
-| `Tools` | 437 | 15.09 | Launcher, shader compiler, import/cooking tools. |
+| `Tools` | 422 | 15.01 | Launcher, shader compiler, import/cooking tools. |
+| `Docs` | 12 | 0.21 | Active review and implementation guidance. |
 | `CMake` | 6 | 0.09 | Build profiles, dependencies, packaging, boundary checks. |
-| `Docs` | 2 before this map set | 0.01 | Docs were intentionally lean, but the index referenced deleted review docs. |
-| Config/root metadata | 7 | small | Formatting, git, engine config, license, root CMake. |
+| Config/root metadata | 8 | 0.02 | Formatting, engine config, license, root CMake, and root metadata. |
 
 Text/source line distribution:
 
 | Extension | Files | Lines |
 | --- | ---: | ---: |
-| `.cpp` | 606 | 100077 |
-| `.h` | 837 | 43477 |
-| `.hlsli` | 70 | 4884 |
-| `.hlsl` | 20 | 1379 |
-| `.cmake` | 7 | 2041 |
-| `.txt` | 23 | 2319 |
-| `.md` | 4 before this map set | 172 |
-| `.ini` | 2 | 40 |
+| `.cpp` | 596 | 86199 |
+| `.h` | 832 | 37025 |
+| `.hlsli` | 70 | 4253 |
+| `.md` | 14 | 3740 |
+| `.txt` | 23 | 1979 |
+| `.cmake` | 7 | 1790 |
+| `.hlsl` | 20 | 1222 |
+| `.ini` | 2 | 37 |
 
 Largest source areas:
 
 | Area | Files | Lines | Read |
 | --- | ---: | ---: | --- |
-| `Engine/RHI` | 248 | 37166 | Largest code owner; backend and public RHI contract are both significant. |
-| `Engine/Renderer` | 453 | 36890 | Almost as large as RHI; heavy private feature implementation. |
-| `Tools/Launcher` | 109 | 18986 | Large for a workflow shell; likely over-productized versus current engine maturity. |
-| `Tools/Shaders` | 118 | 9554 | Strong product-like subsystem. |
-| `Engine/GameFramework` | 175 | 9543 | Runtime scene/assets/components and cooked loaders. |
-| `Tools/Cooking` | 110 | 8821 | Multiple cookers plus AssetCooker orchestration. |
-| `Engine/Editor` | 58 | 8796 | ImGui/editor panels and diagnostic views. |
-| `Engine/Core` | 78 | 6616 | Foundation utilities. |
-| `Engine/Assets` | 91 | 6278 | HLSL and default assets. |
-| `Tools/Import` | 63 | 3885 | Source import pipeline. |
-| `Engine/Application` | 30 | 2687 | Runtime/editor hosts and shader recook/runtime console. |
-| `Engine/Platform` | 12 | 1992 | Window/input/platform services. |
+| `Engine/RHI` | 247 | 32559 | Largest source owner; backend code and the public RHI contract remain the highest-leverage architecture surface. |
+| `Engine/Renderer` | 452 | 32095 | Almost as large as RHI; most feature complexity should stay private and pass/frame-graph owned. |
+| `Tools/Launcher` | 107 | 16802 | Large for a workflow shell; still a prime slimming target after content/capture guardrails. |
+| `Tools/Shaders` | 115 | 8241 | Strong product-like subsystem; preserve ABI while removing debug/default artifact bloat. |
+| `Engine/GameFramework` | 174 | 7994 | Runtime scene/assets/components and cooked loaders; public surface is the cleanup risk. |
+| `Engine/Editor` | 57 | 7639 | Editor panels and utilities; useful only when product-owned, not as diagnostic sprawl. |
+| `Tools/Cooking` | 105 | 7300 | Multiple cookers plus AssetCooker orchestration; default report behavior should shrink. |
+| `Engine/Core` | 77 | 5482 | Foundation utilities; public-heavy and worth auditing for convenience APIs. |
+| `Engine/Assets` | 90 | 5475 | HLSL and default assets. |
+| `Tools/Import` | 62 | 3222 | Source import pipeline. |
+| `Engine/Application` | 29 | 2196 | Runtime/editor hosts and shader recook/runtime console. |
+| `Engine/Platform` | 11 | 1619 | Window/input/platform services. |
 
 Largest individual files:
 
 | File | Lines | Action signal |
 | --- | ---: | --- |
-| `Engine/RHI/Private/D3D12/ThirdParty/d3dx12.h` | 4065 | Third-party header, not a Sparkle cleanup target. |
-| `Engine/RHI/Private/Vulkan/Commands/VulkanRenderCommandList.cpp` | 1335 | Backend command code, performance-sensitive. |
-| `Engine/RHI/Private/Shaders/CookedShaderPackageCache.cpp` | 1171 | Shader runtime package load/cache. |
-| `Engine/RHI/Private/Vulkan/Memory/VulkanGpuMemoryAllocator.cpp` | 1057 | Memory allocator integration. |
-| `Engine/RHI/Private/Vulkan/Device/VulkanRhi.cpp` | 1056 | Vulkan device/bootstrap. |
-| `Engine/Editor/Private/Util/UiUtil.cpp` | 991 | Editor utility concentration. |
-| `CMake/Dependencies/FetchDependencies.cmake` | 940 | Dependency policy concentration. |
-| `Tools/Launcher/SparkleLauncher/Private/Shell/LauncherShell.cpp` | 894 | CLI shell workflow concentration. |
-| `Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerDispatcher.cpp` | 864 | Cook orchestration concentration. |
-| `Engine/Core/Private/FileSystemUtils.cpp` | 854 | Foundation utility weight. |
+| `Engine/RHI/Private/D3D12/ThirdParty/d3dx12.h` | 3850 | Third-party header, not a Sparkle cleanup target. |
+| `Engine/RHI/Private/Vulkan/Commands/VulkanRenderCommandList.cpp` | 1235 | Backend command code, performance-sensitive. |
+| `Engine/RHI/Private/Shaders/CookedShaderPackageCache.cpp` | 1061 | Shader runtime package load/cache. |
+| `Engine/RHI/Private/Vulkan/Device/VulkanRhi.cpp` | 948 | Vulkan device/bootstrap. |
+| `Engine/RHI/Private/Vulkan/Memory/VulkanGpuMemoryAllocator.cpp` | 941 | Memory allocator integration. |
+| `Engine/Editor/Private/Util/UiUtil.cpp` | 876 | Editor utility concentration. |
+| `CMake/Dependencies/FetchDependencies.cmake` | 831 | Dependency policy concentration. |
+| `Tools/Launcher/SparkleLauncher/Private/Shell/LauncherShell.cpp` | 809 | CLI shell workflow concentration. |
+| `Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.cpp` | 783 | Vulkan RHI service wiring concentration. |
+| `Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerDispatcher.cpp` | 782 | Cook orchestration concentration. |
+| `Engine/RHI/Private/Vulkan/Descriptors/VulkanDescriptorAllocator.cpp` | 768 | Descriptor allocator implementation concentration. |
+| `Engine/Core/Private/FileSystemUtils.cpp` | 729 | Foundation utility weight. |
 
 ## Module And Layer Shape
 
@@ -153,18 +155,18 @@ The module direction is mostly good. The renderer consumes runtime scene data pr
 
 | Area | Public lines | Private lines | Public share | Read |
 | --- | ---: | ---: | ---: | --- |
-| `Engine/Core` | 3208 | 3301 | 49.3% | Public-heavy foundation. Worth auditing for convenience APIs that are not true engine contracts. |
-| `Engine/Platform` | 477 | 1455 | 24.7% | Healthy for low-level platform abstractions. |
-| `Engine/RHI` | 5108 | 31674 | 13.9% | Broad but plausible because it is the contract layer. Diagnostic/capture APIs raise review cost. |
-| `Engine/Renderer` | 2588 | 33372 | 7.2% | Good instinct: most renderer complexity is private. Public diagnostics/capture still widen the surface. |
-| `Engine/GameFramework` | 2659 | 6825 | 28.0% | A bit public-heavy; asset/scene types may be promoted too early. |
-| `Engine/Editor` | 738 | 7983 | 8.5% | Good. |
-| `Engine/Application` | 160 | 2397 | 6.3% | Good. |
-| `Tools/Launcher/SparkleLauncher` | 854 | 17733 | 4.6% | Good surface ratio, but private workflow volume is high. |
-| `Tools/Shaders/ShaderCompiler` | 0 | 6888 | 0.0% | CLI-private, appropriate. |
-| `Tools/Cooking/AssetCooker` | 68 | 2322 | 2.8% | Mostly private, but public bridge may be unnecessary. |
-| `Tools/Cooking/TextureCooker` | 96 | 3805 | 2.5% | Mostly private. |
-| `Tools/Import/SourceImporters` | 511 | 3329 | 13.3% | Public import API exists; keep only if used by multiple cookers. |
+| `Engine/Core` | 2658 | 2824 | 48.5% | Public-heavy foundation. Worth auditing for convenience APIs that are not true engine contracts. |
+| `Engine/Platform` | 363 | 1256 | 22.4% | Healthy for low-level platform abstractions. |
+| `Engine/RHI` | 4424 | 28135 | 13.6% | Broad but plausible because it is the contract layer. Diagnostic/capture APIs raise review cost. |
+| `Engine/Renderer` | 2155 | 29298 | 6.9% | Good instinct: most renderer complexity is private. Public diagnostics/capture still widen the surface. |
+| `Engine/GameFramework` | 2151 | 5843 | 26.9% | Still public-heavy; level/scene concepts stay, asset/manifest implementation details should be audited. |
+| `Engine/Editor` | 616 | 7023 | 8.1% | Good public ratio; private panel volume still matters. |
+| `Engine/Application` | 133 | 2063 | 6.1% | Good. |
+| `Tools/Launcher/SparkleLauncher` | 763 | 15968 | 4.6% | Good surface ratio, but private workflow volume is high. |
+| `Tools/Shaders/ShaderCompiler` | 0 | 6053 | 0.0% | CLI-private, appropriate. |
+| `Tools/Cooking/AssetCooker` | 58 | 2064 | 2.7% | Mostly private, but public bridge may be unnecessary. |
+| `Tools/Cooking/TextureCooker` | 79 | 3247 | 2.4% | Mostly private. |
+| `Tools/Import/SourceImporters` | 416 | 2806 | 12.9% | Public import API exists; keep only if used by multiple cookers. |
 
 API cleanup direction:
 

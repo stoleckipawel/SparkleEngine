@@ -43,7 +43,7 @@ Every implementation batch must answer:
 7. Public/private impact: which public surface shrinks or remains justified?
 8. Tooling impact: are debugger markers and screenshot capture preserved?
 9. Content impact: is multi-level support preserved?
-10. Separation impact: does the change preserve Core/RHI/Renderer/GameFramework/Tools ownership?
+10. Separation impact: does the change preserve Core/RHI/Renderer/GameFramework/Tools/Projects ownership?
 11. No-pollution check: no new docs, logs, validation systems, wrappers, thick abstraction layers, diagnostic panels, or future scaffolding.
 
 If the batch cannot answer these, split it or move it to `03_ADD_MinimalMissingCapabilities.md` or `04_REMOVE_DeletionsAndCleanup.md`.

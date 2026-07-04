@@ -25,7 +25,7 @@ The goal is not to make Sparkle smaller by deleting capability. The goal is to d
 Preserve:
 
 - D3D12/Vulkan
-- proper Core/RHI/Renderer/GameFramework/Tools separation
+- proper Core/RHI/Renderer/GameFramework/Tools/Projects separation
 - RHI explicitness
 - frame graph
 - offline cooked shader packages with reflection data
@@ -50,7 +50,7 @@ Before deleting, answer:
 9. Does it preserve screenshot capture?
 10. Does it preserve classic TLAS and PTLAS?
 11. Does it preserve multi-level support?
-12. Does it preserve Core/RHI/Renderer/GameFramework/Tools separation?
+12. Does it preserve Core/RHI/Renderer/GameFramework/Tools/Projects separation?
 13. Is any build/cook/run risk recorded for the final stabilization pass?
 
 Only delete when the answer is clear.

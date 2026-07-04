@@ -53,6 +53,19 @@ Implementation prompt:
 3. If it serves the identity but is bloated, move to `02_MODIFY_RefactorExistingSystems.md`.
 4. If a missing capability is required, move to `03_ADD_MinimalMissingCapabilities.md`.
 
+## Module Ownership Contract To Preserve
+
+Keep the engine split around ownership, not around convenience wrappers. A batch should move code toward the owning area instead of adding another forwarding layer.
+
+| Area | Owns | Does Not Own |
+| --- | --- | --- |
+| Core | foundation utilities, math, files, config, fatal checks, small platform-neutral helpers | renderer policy, backend resources, workflow UI, content schemas beyond common utilities |
+| RHI | explicit D3D12/Vulkan resources, descriptors, pipelines, queues, command lists, barriers, uploads/readbacks, ray tracing, native interop, capture, presentation | scene extraction, material policy, frame scheduling, editor panels, generic wrapper layers |
+| Renderer | frame graph, passes, render paths, scene extraction, shader registrations, provider boundaries, TLAS/PTLAS policy, render products | backend-private API details, level ownership, launcher/cooker workflows |
+| GameFramework | project runtime concepts, levels, scenes, components, cameras, materials, meshes, lights, cooked scene loading | renderer-private implementation details, RHI resources, shader package compilation |
+| Tools | shader compile, import, cook, launch, clean, package-if-owned, asset workflow entrypoints | runtime render ownership, diagnostic cockpit behavior, unowned package products |
+| Projects | sample projects, selectable levels, scene/content data, optional heavy content packs | engine contracts, backend-specific behavior, required heavy content in the default repo footprint |
+
 ## Persona Direction To Preserve
 
 The engine should develop and demonstrate the advanced graphics engineer persona described in `H_AdvancedGraphicsEngineerPersona.md`.
@@ -95,7 +108,7 @@ Keep these unless the user explicitly changes product direction:
 | Vulkan backend | Explicit graphics API depth and cross-backend design discipline. | Preserve or improve parity for RHI, ray tracing, PTLAS where supported, and presentation. |
 | RHI service model | Strong low-level engine boundary. | Do not replace with a new abstraction; narrow public services if needed. |
 | Renderer frame graph | Core render scheduling abstraction. | Keep as the one graph; simplify pass/resource ownership inside it. |
-| Core/RHI/Renderer/GameFramework/Tools separation | Keeps the engine understandable. | Move behavior to the owning layer instead of adding cross-layer wrappers. |
+| Core/RHI/Renderer/GameFramework/Tools/Projects separation | Keeps the engine understandable. | Move behavior to the owning layer instead of adding cross-layer wrappers. |
 | Shader compiler/cook/runtime ABI | One of the strongest product systems. | Remove debug artifacts, but preserve source-to-package-to-runtime linkage. |
 | HLSL/Slang readiness | Enables modern shader work and neural rendering readiness. | Keep flexible without adding runtime ML frameworks. |
 | Classic TLAS | Core ray tracing path. | Preserve build/update/trace behavior. |

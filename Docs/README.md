@@ -4,7 +4,7 @@ This folder keeps only active implementation guidance. Old review notes, superse
 
 ## Implementation Spine
 
-Start here when doing engine work. These four documents gather the review set into implementation prompts:
+Start here when doing engine work. These documents gather the review set into implementation prompts:
 
 - `Architecture/01-Implementation/00_ORDERED_ImplementationRoadmap.md`: start-here roadmap that orders the implementation stages over multiple sessions.
 - `Architecture/01-Implementation/01_KEEP_PreservedCapabilities.md`: guardrails for capabilities and architecture that must survive cleanup.
