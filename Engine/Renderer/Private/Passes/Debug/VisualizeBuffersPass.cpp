@@ -21,7 +21,6 @@ const RenderPassDefinition& VisualizeBuffersPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "VisualizeBuffersShaderPackage",
 	    RendererShaderPackages::VisualizeBuffers,
 	    L"VisualizeBuffers_BindingLayout",
 	    L"VisualizeBuffers_PipelineState");

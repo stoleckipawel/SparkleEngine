@@ -38,7 +38,6 @@ const RenderPassDefinition& ReferencePathTracingPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "ReferencePathTracingShaderPackage",
 	    RendererShaderPackages::ReferencePathTracing,
 	    L"ReferencePathTracing_BindingLayout",
 	    L"ReferencePathTracing_PipelineState",

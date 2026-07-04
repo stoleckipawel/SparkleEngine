@@ -25,7 +25,6 @@ enum class RenderPassShaderPipelineKind
 struct RenderPassShaderRuntimeDesc final
 {
 	std::string_view PassName;
-	std::string_view PackageDeclarationName;
 	ShaderPackageDefinition Package;
 	RenderPassShaderPipelineKind PipelineKind = RenderPassShaderPipelineKind::Graphics;
 	bool AllowInputAssemblerInputLayout = false;
@@ -228,12 +227,11 @@ class RenderPassShaderRuntime final
 		}
 
 		outErrorMessage = std::format(
-		    "Render pass '{}' declares conflicting expected stages '{}' for {} shader package '{}' ({})",
+		    "Render pass '{}' declares conflicting expected stages '{}' for {} shader package '{}'",
 		    desc.PassName,
 		    FormatShaderStageMask(desc.Package.ExpectedStages),
 		    FormatPipelineKind(desc.PipelineKind),
-		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
-		    desc.PackageDeclarationName);
+		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>");
 		return false;
 	}
 
@@ -245,9 +243,8 @@ class RenderPassShaderRuntime final
 		if (!desc.Package.IsValid())
 		{
 			outErrorMessage = std::format(
-			    "Render pass '{}' declares an invalid cooked shader package for '{}'",
-			    desc.PassName,
-			    desc.PackageDeclarationName);
+			    "Render pass '{}' declares an invalid cooked shader package",
+			    desc.PassName);
 			return false;
 		}
 
@@ -255,10 +252,9 @@ class RenderPassShaderRuntime final
 		if (!BuildRegisteredShaderPackageLayout(desc.Package.PackageId, bindingLayout, outErrorMessage))
 		{
 			outErrorMessage = std::format(
-			    "Failed to build generated shader package layout '{}' for pass '{}' ({}) - {}",
+			    "Failed to build generated shader package layout '{}' for pass '{}' - {}",
 			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
 			    desc.PassName,
-			    desc.PackageDeclarationName,
 			    outErrorMessage);
 			return false;
 		}
@@ -272,7 +268,6 @@ class RenderPassShaderRuntime final
 	{
 		PipelineRuntimePackageRequest request{};
 		request.PassName = desc.PassName;
-		request.PackageDeclarationName = desc.PackageDeclarationName;
 		request.Package = desc.Package;
 		request.BindingLayout = &bindingLayout;
 		request.AllowInputAssemblerInputLayout = desc.AllowInputAssemblerInputLayout;

@@ -12,7 +12,6 @@ class PassParameterLayout;
 struct ShaderPackageDefinition final
 {
 	const char* PackageId = nullptr;
-	const char* BindingLayoutId = nullptr;
 	ShaderStageMask ExpectedStages = ShaderStageMask::None;
 	CookedShaderPackageFeatureFlags RequiredFeatures = CookedShaderPackageFeatureFlags::None;
 

@@ -32,7 +32,6 @@ namespace ComputePassUtilities
 
 	inline RenderPassDefinition BuildDefinition(
 	    const char* passName,
-	    const char* packageDeclarationName,
 	    std::string_view packageId,
 	    const wchar_t* bindingLayoutName,
 	    const wchar_t* pipelineStateName,
@@ -40,10 +39,8 @@ namespace ComputePassUtilities
 	{
 		return RenderPassDefinition{
 		    .PassName = passName,
-		    .PackageDeclarationName = packageDeclarationName,
 		    .ShaderPackage = ShaderPackageDefinition{
 		        .PackageId = packageId.data(),
-		        .BindingLayoutId = packageId.data(),
 		        .ExpectedStages = ShaderStageMask::Compute,
 		        .RequiredFeatures = requiredFeatures},
 		    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,

@@ -53,7 +53,6 @@ const RenderPassDefinition& IndirectSpecularPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "IndirectSpecularShaderPackage",
 	    RendererShaderPackages::IndirectSpecular,
 	    L"IndirectSpecular_BindingLayout",
 	    L"IndirectSpecular_PipelineState",

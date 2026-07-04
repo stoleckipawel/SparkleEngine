@@ -48,7 +48,6 @@ const RenderPassDefinition& DirectLightingPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "DirectLightingShaderPackage",
 	    RendererShaderPackages::DirectLighting,
 	    L"DirectLighting_BindingLayout",
 	    L"DirectLighting_PipelineState");

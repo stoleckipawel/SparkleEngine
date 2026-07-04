@@ -19,7 +19,6 @@ const RenderPassDefinition& LightingCompositePass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "LightingCompositeShaderPackage",
 	    RendererShaderPackages::LightingComposite,
 	    L"LightingComposite_BindingLayout",
 	    L"LightingComposite_PipelineState");

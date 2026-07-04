@@ -50,7 +50,6 @@ const RenderPassDefinition& IndirectDiffusePass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "IndirectDiffuseShaderPackage",
 	    RendererShaderPackages::IndirectDiffuse,
 	    L"IndirectDiffuse_BindingLayout",
 	    L"IndirectDiffuse_PipelineState",

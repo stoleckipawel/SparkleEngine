@@ -32,7 +32,6 @@ namespace RasterPassUtilities
 
 	inline RenderPassDefinition BuildFullscreenDefinition(
 	    const char* passName,
-	    const char* packageDeclarationName,
 	    std::string_view packageId,
 	    const wchar_t* bindingLayoutName,
 	    const wchar_t* pipelineStateName,
@@ -41,10 +40,8 @@ namespace RasterPassUtilities
 	{
 		return RenderPassDefinition{
 		    .PassName = passName,
-		    .PackageDeclarationName = packageDeclarationName,
 		    .ShaderPackage = ShaderPackageDefinition{
 		        .PackageId = packageId.data(),
-		        .BindingLayoutId = packageId.data(),
 		        .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel},
 		    .PipelineKind = RenderPassDefinitionPipelineKind::Graphics,
 		    .AllowInputAssemblerInputLayout = true,

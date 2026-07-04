@@ -21,7 +21,6 @@ const RenderPassDefinition& SkyPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "SkyShaderPackage",
 	    RendererShaderPackages::Sky,
 	    L"Sky_BindingLayout",
 	    L"Sky_PipelineState");

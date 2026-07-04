@@ -14,16 +14,6 @@ namespace
 	{
 		return package.PackageId != nullptr ? std::string(package.PackageId) : std::string("<null>");
 	}
-
-	std::string FormatBindingLayoutId(const PipelineRuntimePackageRequest& request)
-	{
-		if (request.Package.BindingLayoutId != nullptr)
-		{
-			return std::string(request.Package.BindingLayoutId);
-		}
-
-		return request.BindingLayout != nullptr ? request.BindingLayout->GetDebugName() : std::string("<null>");
-	}
 }
 
 bool PipelineRuntimeLibrary::LoadShaderPackage(
@@ -46,14 +36,13 @@ bool PipelineRuntimeLibrary::LoadShaderPackage(
 	{
 		const CookedShaderPackageLoadReport& loadReport = shaderPackageCache.GetLastLoadReport();
 		outErrorMessage = std::format(
-		    "Runtime validation rejected cooked shader package '{}' for pass '{}' ({}) with backend='{}' requiredFormat='{}' "
+		    "Runtime validation rejected cooked shader package '{}' for pass '{}' with backend='{}' requiredFormat='{}' "
 		    "bindingLayout='{}' expectedStages='{}' loadTimeUs={} packagePath='{}' - {}",
 		    FormatPackageId(request.Package),
 		    request.PassName,
-		    request.PackageDeclarationName,
 		    RhiBackendApiToString(capabilities.BackendApi),
 		    CookedShaderBinaryFormatToString(requiredBinaryFormat),
-		    FormatBindingLayoutId(request),
+		    request.BindingLayout != nullptr ? request.BindingLayout->GetDebugName() : "<null>",
 		    FormatShaderStageMask(request.Package.ExpectedStages),
 		    loadReport.ElapsedMicroseconds,
 		    loadReport.PackagePath.string(),

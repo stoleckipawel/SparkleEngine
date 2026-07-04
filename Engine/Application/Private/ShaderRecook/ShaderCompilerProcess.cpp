@@ -24,7 +24,7 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookReq
 	const std::filesystem::path projectDirectory = ResolveProjectDirectory();
 	if (projectDirectory.empty())
 	{
-		result.Output = "Projects/Showcase was not found from the current build output.";
+		result.Output = "Configured project root was not found from the current build output.";
 		return result;
 	}
 
@@ -59,7 +59,7 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunToolCommand(std::string_vi
 	const std::filesystem::path projectDirectory = ResolveProjectDirectory();
 	if (projectDirectory.empty())
 	{
-		result.Output = "Projects/Showcase was not found from the current build output.";
+		result.Output = "Configured project root was not found from the current build output.";
 		return result;
 	}
 

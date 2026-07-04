@@ -986,7 +986,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 		outErrorMessage = std::format(
 		    "Cooked shader package '{}' failed package contract check: field=BindingLayoutHash bindingLayout='{}' expected={} actual={}",
 		    definition.PackageId,
-		    definition.BindingLayoutId != nullptr ? definition.BindingLayoutId : expectedBindingLayout.GetDebugName().c_str(),
+		    expectedBindingLayout.GetDebugName(),
 		    Formatting::FormatHexUInt64(expectedBindingLayoutHash),
 		    Formatting::FormatHexUInt64(package.GetHeader().BindingLayoutHash));
 		return false;
@@ -1044,7 +1044,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 		    "Cooked shader package '{}' declares {} binding records but runtime layout '{}' expects {}",
 		    definition.PackageId,
 		    package.GetBindingRecords().size(),
-		    definition.BindingLayoutId != nullptr ? definition.BindingLayoutId : expectedBindingLayout.GetDebugName().c_str(),
+		    expectedBindingLayout.GetDebugName(),
 		    expectedParameters.size());
 		return false;
 	}

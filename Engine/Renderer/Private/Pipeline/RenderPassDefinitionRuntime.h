@@ -27,7 +27,6 @@ class RenderPassDefinitionRuntime final
 
 		const RenderPassShaderRuntimeDesc runtimeDesc{
 		    .PassName = definition.PassName,
-		    .PackageDeclarationName = definition.PackageDeclarationName,
 		    .Package = definition.ShaderPackage,
 		    .PipelineKind = ConvertPipelineKind(definition.PipelineKind),
 		    .AllowInputAssemblerInputLayout = definition.AllowInputAssemblerInputLayout,
@@ -90,12 +89,6 @@ class RenderPassDefinitionRuntime final
 		if (definition.PassName == nullptr || definition.PassName[0] == '\0')
 		{
 			outErrorMessage = "Render pass definition is missing a pass name";
-			return false;
-		}
-
-		if (definition.PackageDeclarationName == nullptr || definition.PackageDeclarationName[0] == '\0')
-		{
-			outErrorMessage = std::format("Render pass '{}' is missing a package declaration name", definition.PassName);
 			return false;
 		}
 

@@ -13,7 +13,6 @@ class RenderHardwareInterface;
 struct PipelineRuntimePackageRequest final
 {
 	std::string_view PassName;
-	std::string_view PackageDeclarationName;
 	ShaderPackageDefinition Package;
 	const PassParameterLayout* BindingLayout = nullptr;
 	bool AllowInputAssemblerInputLayout = false;

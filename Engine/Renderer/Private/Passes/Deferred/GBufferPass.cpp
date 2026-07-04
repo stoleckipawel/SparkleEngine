@@ -55,10 +55,8 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition{
 	    .PassName = PassName,
-	    .PackageDeclarationName = "GBufferShaderPackage",
 	    .ShaderPackage = ShaderPackageDefinition{
 	        .PackageId = RendererShaderPackages::GBuffer.data(),
-	        .BindingLayoutId = RendererShaderPackages::GBuffer.data(),
 	        .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel},
 	    .PipelineKind = RenderPassDefinitionPipelineKind::Graphics,
 	    .AllowInputAssemblerInputLayout = true,

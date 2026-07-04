@@ -1474,17 +1474,29 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Shader source includes are tracked.
-- [ ] DXC/Slang target outputs are known.
-- [ ] Reflection data survives cook.
-- [ ] Runtime package cache loads cooked packages.
-- [ ] Debug artifact behavior is opt-in or removed.
+- [x] Shader source includes are tracked.
+- [x] DXC/Slang target outputs are known.
+- [x] Reflection data survives cook.
+- [x] Runtime package cache loads cooked packages.
+- [x] Debug artifact behavior is opt-in or removed.
+
+Stage 24 closure notes:
+
+- Existing-capability search covered shader registration, include tracking, compiler target selection, package writing, reflection serialization, runtime cache loading, launcher cook requests, and editor recook.
+- No new shader ABI abstraction was added. The only source edit removed the sample project name from editor shader recook error text in `Engine/Application/Private/ShaderRecook/ShaderCompilerProcess.cpp`.
+- Include tracking is owned by `IncludeClosureHasher`; it recursively resolves `#include` files through `ShaderIncludeResolver`, hashes every source file, and feeds both `sourceHash` and `includeClosureHash` into `ShaderCacheKey` and `ShaderContractJobIdentity`.
+- Target output policy is explicit: `ShaderPackageCookSettings` defaults to `DxilSm66` plus `SpirV16`; `ShaderCompiler.exe list-backends` reports DXC and Slang targets across `DxilSm60` through `DxilSm67` and `SpirV14` through `SpirV16`.
+- Cooked package ABI keeps both binary formats in one runtime package where requested: `StageCompiler` maps DXIL targets to `CookedShaderBinaryFormat::Dxil` and SPIR-V targets to `CookedShaderBinaryFormat::SpirV`.
+- Reflection survives cook by default: `stripReflection=false`, `StageCompiler` moves backend reflection into `CookedStageBuild`, `CookedPackageWriter` serializes it through `ReflectionSerializer`, and `CookedShaderPackageCache` reads reflection arrays from `.sparkshader` packages.
+- Runtime loading is owned by `CookedShaderPackageCache` and `PipelineRuntimeLibrary`; package load validates package key, shader model ABI, binding-layout hash, required backend binary format, bytecode hashes, expected stages, and reflected binding compatibility.
+- Debug artifacts are outside the runtime package path. Default launcher/cook only forwards `--debug-artifacts` when `ShaderWriteDebugArtifacts` is enabled; editor recook writes debug bundles as an explicit editor inspection path, preserving the shader inspection panels without making debug bundles part of default runtime cook.
+- Representative ABI check: `ShaderCompiler.exe cook --package ComputeClear --target DxilSm66 --target SpirV16` produced `A5C7ADD3A0B8D443.sparkshader` plus `ShaderPackageRegistry.sreg`; `ShaderCompiler.exe inspect-package` reported two binaries, two pipeline layouts, and two reflection records.
 
 ### Stage 25: Shader Registration And Binding Duplication Cleanup
 
@@ -1498,16 +1510,30 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Duplicate declarations are listed.
-- [ ] Any simplification deletes more code than it adds.
-- [ ] No code generator is added unless net code decreases materially.
-- [ ] Layout verification remains intact.
+- [x] Duplicate declarations are listed.
+- [x] Any simplification deletes more code than it adds.
+- [x] No code generator is added unless net code decreases materially.
+- [x] Layout verification remains intact.
+
+Stage 25 closure notes:
+
+- Existing-capability search covered shader registration macros, renderer shader registration files, HLSL resource declarations, pass definitions, `ShaderPackageDefinition`, `ShaderPackageLayoutBuilder`, `CookedShaderPackageCache`, and `PipelineRuntimeLibrary`.
+- Duplicate declarations found:
+  - C++ shader parameter structs in `Engine/Renderer/ShaderRegistrations/*.cpp` mirror HLSL resources in `Engine/Assets/Shaders/**`. This remains intentionally owned by shader registration because cook-time reflection validates it and a generator would add scaffolding before deleting enough code.
+  - Runtime pass definitions duplicated package identity as both `PackageId` and `BindingLayoutId`. This was removed from `ShaderPackageDefinition`; runtime now uses the generated `PassParameterLayout` debug name and binding-layout hash for diagnostics/validation.
+  - Runtime pass definitions duplicated package identity again through `PackageDeclarationName` strings such as `GBufferShaderPackage`; this diagnostic-only field was removed from `RenderPassDefinition`, `RenderPassShaderRuntimeDesc`, and `PipelineRuntimePackageRequest`.
+  - `RendererShaderPackages::*` constants duplicate package names used by shader registrations and pass definitions. This remains for now because it centralizes cross-file package IDs without adding a generator or reflection lookup layer.
+  - Per-pass debug names such as `*_BindingLayout` and `*_PipelineState` duplicate package names. This remains for now because deriving stable wide debug names would add helper code and not materially reduce source.
+- Code simplification was net-negative: removed the runtime `BindingLayoutId` field, removed the runtime `PackageDeclarationName` field, removed duplicated pass assignments/arguments in `ComputePassUtilities`, `RasterPassUtilities`, `GBufferPass`, and per-pass definition call sites, and simplified diagnostics in `CookedShaderPackageCache`, `RenderPassShaderRuntime`, `RenderPassDefinitionRuntime`, and `PipelineRuntimeLibrary` without adding a replacement abstraction.
+- Source-only cleanup count for the shader/runtime pass code is `9` added / `61` deleted, excluding this roadmap note.
+- Layout verification remains intact: `BuildRegisteredShaderPackageLayout` still builds runtime layouts from registered C++ parameter structs; `CookedShaderPackageCache` still validates package key, shader model, binding-layout hash, expected stages, backend binary format, bytecode hashes, and reflected binding compatibility.
+- Representative verification: `ShaderCompiler.exe cook --package GBuffer --target DxilSm66 --target SpirV16` succeeded; `ShaderCompiler.exe inspect-package ...DCDF88FE4533E870.sparkshader` reported four binaries, four reflection records, two pipeline layouts, and matching DXIL/SPIR-V layout hash `0xAA07F509D5C7FEE2`.
 
 ### Stage 26: Classic TLAS Flow Audit
 

@@ -25,7 +25,6 @@ const RenderPassDefinition& ComputeClearPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "ComputeClearShaderPackage",
 	    RendererShaderPackages::ComputeClear,
 	    L"ComputeClear_BindingLayout",
 	    L"ComputeClear_PipelineState");

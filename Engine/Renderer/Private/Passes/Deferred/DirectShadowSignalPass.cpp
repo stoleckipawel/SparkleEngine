@@ -84,7 +84,6 @@ const RenderPassDefinition& DirectShadowSignalNoRayQueryPass::GetDefinition() no
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "DirectShadowSignalNoRayQueryShaderPackage",
 	    RendererShaderPackages::DirectShadowSignalNoRayQuery,
 	    L"DirectShadowSignalNoRayQuery_BindingLayout",
 	    L"DirectShadowSignalNoRayQuery_PipelineState");
@@ -102,7 +101,6 @@ const RenderPassDefinition& DirectShadowSignalPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "DirectShadowSignalShaderPackage",
 	    RendererShaderPackages::DirectShadowSignal,
 	    L"DirectShadowSignal_BindingLayout",
 	    L"DirectShadowSignal_PipelineState",
@@ -124,7 +122,6 @@ const RenderPassDefinition& DirectShadowSignalDeviceAddressPass::GetDefinition()
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "DirectShadowSignalDeviceAddressShaderPackage",
 	    RendererShaderPackages::DirectShadowSignalDeviceAddress,
 	    L"DirectShadowSignalDeviceAddress_BindingLayout",
 	    L"DirectShadowSignalDeviceAddress_PipelineState",

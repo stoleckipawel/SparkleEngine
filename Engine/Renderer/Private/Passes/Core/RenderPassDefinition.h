@@ -26,7 +26,6 @@ struct RenderPassGraphicsPipelineDefinition final
 struct RenderPassDefinition final
 {
 	const char* PassName = nullptr;
-	const char* PackageDeclarationName = nullptr;
 	ShaderPackageDefinition ShaderPackage = {};
 	RenderPassDefinitionPipelineKind PipelineKind = RenderPassDefinitionPipelineKind::Compute;
 	bool AllowInputAssemblerInputLayout = false;

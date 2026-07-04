@@ -53,7 +53,6 @@ const RenderPassDefinition& DirectLightReservoirTemporalPass::GetDefinition() no
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "DirectLightReservoirTemporalShaderPackage",
 	    RendererShaderPackages::DirectLightReservoirTemporal,
 	    L"DirectLightReservoirTemporal_BindingLayout",
 	    L"DirectLightReservoirTemporal_PipelineState");
@@ -117,7 +116,6 @@ const RenderPassDefinition& DirectLightReservoirSpatialPass::GetDefinition() noe
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "DirectLightReservoirSpatialShaderPackage",
 	    RendererShaderPackages::DirectLightReservoirSpatial,
 	    L"DirectLightReservoirSpatial_BindingLayout",
 	    L"DirectLightReservoirSpatial_PipelineState");

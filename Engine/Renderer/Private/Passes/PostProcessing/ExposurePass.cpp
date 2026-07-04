@@ -20,7 +20,6 @@ const RenderPassDefinition& ExposureReduceScenePass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "ExposureReduceSceneShaderPackage",
 	    RendererShaderPackages::ExposureReduceScene,
 	    L"ExposureReduceScene_BindingLayout",
 	    L"ExposureReduceScene_PipelineState");
@@ -57,7 +56,6 @@ const RenderPassDefinition& ExposureReduceTexturePass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "ExposureReduceTextureShaderPackage",
 	    RendererShaderPackages::ExposureReduceTexture,
 	    L"ExposureReduceTexture_BindingLayout",
 	    L"ExposureReduceTexture_PipelineState");
@@ -94,7 +92,6 @@ const RenderPassDefinition& ExposureDownsampleScenePass::GetDefinition() noexcep
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "ExposureDownsampleSceneShaderPackage",
 	    RendererShaderPackages::ExposureDownsampleScene,
 	    L"ExposureDownsampleScene_BindingLayout",
 	    L"ExposureDownsampleScene_PipelineState");
@@ -131,7 +128,6 @@ const RenderPassDefinition& ExposureDownsampleTexturePass::GetDefinition() noexc
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "ExposureDownsampleTextureShaderPackage",
 	    RendererShaderPackages::ExposureDownsampleTexture,
 	    L"ExposureDownsampleTexture_BindingLayout",
 	    L"ExposureDownsampleTexture_PipelineState");
@@ -168,7 +164,6 @@ const RenderPassDefinition& ExposurePass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "ExposureShaderPackage",
 	    RendererShaderPackages::Exposure,
 	    L"Exposure_BindingLayout",
 	    L"Exposure_PipelineState");

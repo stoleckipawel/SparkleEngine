@@ -22,7 +22,6 @@ const RenderPassDefinition& ToneMappingPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "ToneMappingShaderPackage",
 	    RendererShaderPackages::ToneMapping,
 	    L"ToneMapping_BindingLayout",
 	    L"ToneMapping_PipelineState");

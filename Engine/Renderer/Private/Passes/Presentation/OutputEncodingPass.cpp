@@ -21,7 +21,6 @@ const RenderPassDefinition& OutputEncodingPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
 	    PassName,
-	    "OutputEncodingShaderPackage",
 	    RendererShaderPackages::OutputEncoding,
 	    L"OutputEncoding_BindingLayout",
 	    L"OutputEncoding_PipelineState");
