@@ -1,7 +1,7 @@
 # SparkleRHI Module
 # Graphics API abstraction: common RHI contracts plus backend-private implementations.
 # Dependencies: SparkleCore, SparklePlatform
-# Shared shader-parameter layout types live here so RHI does not reach upward into Renderer/GameFramework.
+# Renderer shader payload layouts stay in Renderer; RHI owns device/resource/pipeline contracts only.
 
 include(FetchContent)
 

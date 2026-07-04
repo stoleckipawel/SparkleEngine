@@ -2,7 +2,7 @@
 
 #include "Renderer/Public/Debug/RenderViewMode.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
-#include "RHI/Public/Resources/PerFrameConstantBufferData.h"
+#include "ShaderData/PerFrameConstantBufferData.h"
 
 class Timer;
 

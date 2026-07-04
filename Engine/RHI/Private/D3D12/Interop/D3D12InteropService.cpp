@@ -17,10 +17,3 @@ bool D3D12InteropService::UpgradePresentationInterface(RhiNativeInterfaceUpgrade
 {
 	return m_owner != nullptr && m_owner->UpgradePresentationInterface(callback, userData);
 }
-
-NativeTextureViewInfo D3D12InteropService::GetNativeTextureViewInfo(
-    RhiResourceViewHandle view,
-    ResourceState state) const noexcept
-{
-	return m_owner != nullptr ? m_owner->GetNativeTextureViewInfo(view, state) : NativeTextureViewInfo{};
-}

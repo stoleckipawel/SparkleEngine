@@ -2,7 +2,7 @@
 
 #include "Core/Public/Assets/TextureGroup.h"
 #include "Renderer/Public/RendererAPI.h"
-#include "RHI/Public/Resources/PerObjectConstantBufferData.h"
+#include "ShaderData/PerObjectConstantBufferData.h"
 
 #include <DirectXMath.h>
 #include <array>

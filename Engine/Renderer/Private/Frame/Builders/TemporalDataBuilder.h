@@ -1,7 +1,7 @@
 #pragma once
 
-#include "RHI/Public/Resources/PerTemporalConstantBufferData.h"
-#include "RHI/Public/Resources/RenderViewCameraData.h"
+#include "ShaderData/PerTemporalConstantBufferData.h"
+#include "ShaderData/RenderViewCameraData.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 
 #include <DirectXMath.h>

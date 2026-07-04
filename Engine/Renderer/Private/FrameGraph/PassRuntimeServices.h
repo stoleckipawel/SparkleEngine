@@ -3,7 +3,7 @@
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
 
-#include "RHI/Public/Resources/PerFrameConstantBufferData.h"
+#include "ShaderData/PerFrameConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 

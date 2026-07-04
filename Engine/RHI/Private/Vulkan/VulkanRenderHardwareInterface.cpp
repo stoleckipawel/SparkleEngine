@@ -333,93 +333,6 @@ RhiImGuiRenderer& VulkanRenderHardwareInterface::GetImGuiRenderer() noexcept
 	return *m_imguiBackend;
 }
 
-std::unique_ptr<RenderBindingSet> VulkanRenderHardwareInterface::CreateBindingSet(const RenderBindingSetDesc& desc)
-{
-	return m_descriptorManager != nullptr ? m_descriptorManager->CreateBindingSet(desc) : std::unique_ptr<RenderBindingSet>{};
-}
-
-std::unique_ptr<RenderBindingLayout> VulkanRenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)
-{
-	return m_pipelineService != nullptr ? m_pipelineService->CreateBindingLayout(desc) : std::unique_ptr<RenderBindingLayout>{};
-}
-
-std::unique_ptr<RenderPipelineState> VulkanRenderHardwareInterface::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc)
-{
-	return m_pipelineService != nullptr ? m_pipelineService->CreateGraphicsPipelineState(desc) : std::unique_ptr<RenderPipelineState>{};
-}
-
-std::unique_ptr<RenderPipelineState> VulkanRenderHardwareInterface::CreateComputePipelineState(const ComputePipelineStateDesc& desc)
-{
-	return m_pipelineService != nullptr ? m_pipelineService->CreateComputePipelineState(desc) : std::unique_ptr<RenderPipelineState>{};
-}
-
-void VulkanRenderHardwareInterface::BindGlobalDescriptorState(RenderCommandList&) const noexcept {}
-
-RhiDescriptorAllocation VulkanRenderHardwareInterface::AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType)
-{
-	return m_descriptorManager != nullptr ? m_descriptorManager->AllocateDescriptor(descriptorType) : RhiDescriptorAllocation{};
-}
-
-void VulkanRenderHardwareInterface::ReleaseDescriptor(
-    ERhiDescriptorAllocatorType descriptorType,
-    const RhiDescriptorAllocation& allocation) noexcept
-{
-	if (m_descriptorManager != nullptr)
-	{
-		m_descriptorManager->ReleaseDescriptor(descriptorType, allocation);
-	}
-}
-
-RhiDescriptorTableHandle VulkanRenderHardwareInterface::AllocateDescriptorTable(
-    ERhiDescriptorAllocatorType descriptorType,
-    std::uint32_t descriptorCount)
-{
-	return m_descriptorManager != nullptr ? m_descriptorManager->AllocateDescriptorTable(descriptorType, descriptorCount)
-	                                        : RhiDescriptorTableHandle{};
-}
-
-RhiCpuDescriptorHandle VulkanRenderHardwareInterface::GetDescriptorTableCpuHandle(
-    RhiDescriptorTableHandle tableHandle,
-    std::uint32_t descriptorIndex) const noexcept
-{
-	return m_descriptorManager != nullptr ? m_descriptorManager->GetDescriptorTableCpuHandle(tableHandle, descriptorIndex)
-	                                        : RhiCpuDescriptorHandle{};
-}
-
-void VulkanRenderHardwareInterface::ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept
-{
-	if (m_descriptorManager != nullptr)
-	{
-		m_descriptorManager->ReleaseDescriptorTable(tableHandle);
-	}
-}
-
-void VulkanRenderHardwareInterface::AllocateShaderResourceDescriptor(
-    RhiCpuDescriptorHandle& outCpuHandle,
-    RhiGpuDescriptorHandle& outGpuHandle)
-{
-	const RhiDescriptorAllocation allocation = AllocateDescriptor(ERhiDescriptorAllocatorType::ShaderResource);
-	outCpuHandle = allocation.CpuHandle;
-	outGpuHandle = allocation.GpuHandle;
-}
-
-void VulkanRenderHardwareInterface::ReleaseShaderResourceDescriptor(
-    RhiCpuDescriptorHandle cpuHandle,
-    RhiGpuDescriptorHandle gpuHandle) noexcept
-{
-	ReleaseDescriptor(ERhiDescriptorAllocatorType::ShaderResource, RhiDescriptorAllocation{.CpuHandle = cpuHandle, .GpuHandle = gpuHandle});
-}
-
-RhiGpuVirtualAddress VulkanRenderHardwareInterface::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes)
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocateUniform(data, sizeInBytes) : RhiGpuVirtualAddress{};
-}
-
-RhiDescriptorTableBinding VulkanRenderHardwareInterface::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept
-{
-	return m_samplerLibrary != nullptr ? m_samplerLibrary->GetSharedSamplerBinding(samplerDesc) : RhiDescriptorTableBinding{};
-}
-
 RhiViewport VulkanRenderHardwareInterface::GetBackBufferViewport() const noexcept
 {
 	return m_swapChain != nullptr ? m_swapChain->GetDefaultViewport() : RhiViewport{};
@@ -432,96 +345,13 @@ RhiRect VulkanRenderHardwareInterface::GetBackBufferScissorRect() const noexcept
 
 RhiCpuDescriptorHandle VulkanRenderHardwareInterface::GetBackBufferRenderTargetView() const noexcept
 {
-	return GetResourceViewCpuHandle(GetCurrentBackBufferViewHandle());
+	return m_descriptorManager != nullptr ? m_descriptorManager->GetResourceViewCpuHandle(GetCurrentBackBufferViewHandle()) :
+	                                        RhiCpuDescriptorHandle{};
 }
 
 NativeResourceHandle VulkanRenderHardwareInterface::GetBackBufferResource() const noexcept
 {
 	return m_swapChain != nullptr ? m_swapChain->GetCurrentBackBufferResource() : NativeResourceHandle{};
-}
-
-std::unique_ptr<Texture> VulkanRenderHardwareInterface::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateTexture(std::move(textureUpload), debugName) :
-	                                      std::unique_ptr<Texture>{};
-}
-
-RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateTextureResource(
-    const RhiTextureResourceDesc& desc,
-    ResourceState initialState,
-    RhiMemoryCategory category,
-    RhiMemoryResidencyClass residencyClass,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateTextureResource(desc, initialState, category, residencyClass, debugName) :
-	                                      RhiOwnedResourceHandle{};
-}
-
-RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateBufferResource(
-    const RhiBufferResourceDesc& desc,
-    ResourceState initialState,
-    RhiMemoryCategory category,
-    RhiMemoryResidencyClass residencyClass,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateBufferResource(desc, initialState, category, residencyClass, debugName) :
-	                                      RhiOwnedResourceHandle{};
-}
-
-bool VulkanRenderHardwareInterface::CreateVertexBuffer(
-    const void* data,
-    std::size_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName,
-    RhiOwnedResourceHandle& outResource,
-    RhiVertexBufferView& outView)
-{
-	return m_resourceService != nullptr ?
-	           m_resourceService->CreateVertexBuffer(data, sizeInBytes, strideInBytes, debugName, outResource, outView) :
-	           false;
-}
-
-bool VulkanRenderHardwareInterface::CreateStructuredBuffer(
-    const void* data,
-    std::size_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName,
-    RhiOwnedResourceHandle& outResource,
-    RhiResourceViewHandle& outView)
-{
-	return m_resourceService != nullptr ?
-	           m_resourceService->CreateStructuredBuffer(data, sizeInBytes, strideInBytes, debugName, outResource, outView) :
-	           false;
-}
-
-bool VulkanRenderHardwareInterface::CreateIndexBuffer(
-    const void* data,
-    std::size_t sizeInBytes,
-    RhiIndexFormat format,
-    std::wstring_view debugName,
-    RhiOwnedResourceHandle& outResource,
-    RhiIndexBufferView& outView)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateIndexBuffer(data, sizeInBytes, format, debugName, outResource, outView) :
-	                                      false;
-}
-
-void VulkanRenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept
-{
-	if (m_resourceService != nullptr)
-	{
-		m_resourceService->ReleaseOwnedResource(resource);
-	}
-}
-
-NativeResourceHandle VulkanRenderHardwareInterface::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
-{
-	return m_resourceService != nullptr ? m_resourceService->GetNativeResource(resource) : NativeResourceHandle{};
-}
-
-RhiGpuVirtualAddress VulkanRenderHardwareInterface::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept
-{
-	return m_resourceService != nullptr ? m_resourceService->GetResourceGpuVirtualAddress(resource) : 0;
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo VulkanRenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(
@@ -562,84 +392,6 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateRayTracingInstanceBu
 	                                        RhiOwnedResourceHandle{};
 }
 
-RhiResourceAllocationInfo VulkanRenderHardwareInterface::GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept
-{
-	return m_resourceService != nullptr ? m_resourceService->GetTextureAllocationInfo(desc) : RhiResourceAllocationInfo{};
-}
-
-RhiResourceAllocationInfo VulkanRenderHardwareInterface::GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept
-{
-	return m_resourceService != nullptr ? m_resourceService->GetBufferAllocationInfo(desc) : RhiResourceAllocationInfo{};
-}
-
-RhiOwnedMemoryBlockHandle VulkanRenderHardwareInterface::CreateTransientMemoryBlock(
-    RhiTransientAllocationPool pool,
-    std::uint64_t sizeInBytes,
-    std::uint64_t alignment,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateTransientMemoryBlock(pool, sizeInBytes, alignment, debugName) :
-	                                      RhiOwnedMemoryBlockHandle{};
-}
-
-void VulkanRenderHardwareInterface::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept
-{
-	if (m_resourceService != nullptr)
-	{
-		m_resourceService->ReleaseTransientMemoryBlock(memoryBlock);
-	}
-}
-
-RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateAliasingTextureResource(
-    RhiOwnedMemoryBlockHandle memoryBlock,
-    std::uint64_t memoryBlockOffset,
-    const RhiTransientTextureAllocationDesc& desc,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ?
-	           m_resourceService->CreateAliasingTextureResource(memoryBlock, memoryBlockOffset, desc, debugName) :
-	           RhiOwnedResourceHandle{};
-}
-
-RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateAliasingBufferResource(
-    RhiOwnedMemoryBlockHandle memoryBlock,
-    std::uint64_t memoryBlockOffset,
-    const RhiTransientBufferAllocationDesc& desc,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ?
-	           m_resourceService->CreateAliasingBufferResource(memoryBlock, memoryBlockOffset, desc, debugName) :
-	           RhiOwnedResourceHandle{};
-}
-
-RhiResourceViewHandle VulkanRenderHardwareInterface::CreateResourceView(const RhiResourceViewDesc& desc)
-{
-	return m_descriptorManager != nullptr ? m_descriptorManager->CreateResourceView(desc) : RhiResourceViewHandle{};
-}
-
-void VulkanRenderHardwareInterface::ReleaseResourceView(RhiResourceViewHandle view) noexcept
-{
-	if (m_descriptorManager != nullptr)
-	{
-		m_descriptorManager->ReleaseResourceView(view);
-	}
-}
-
-RhiCpuDescriptorHandle VulkanRenderHardwareInterface::GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept
-{
-	return m_descriptorManager != nullptr ? m_descriptorManager->GetResourceViewCpuHandle(view) : RhiCpuDescriptorHandle{};
-}
-
-RhiGpuDescriptorHandle VulkanRenderHardwareInterface::GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept
-{
-	return m_descriptorManager != nullptr ? m_descriptorManager->GetResourceViewGpuHandle(view) : RhiGpuDescriptorHandle{};
-}
-
-NativeTextureViewInfo VulkanRenderHardwareInterface::GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept
-{
-	return m_descriptorManager != nullptr ? m_descriptorManager->GetNativeTextureViewInfo(view, state) : NativeTextureViewInfo{};
-}
-
 std::uint64_t VulkanRenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
 {
 	if (m_descriptorManager == nullptr || m_imguiBackend == nullptr)
@@ -649,11 +401,6 @@ std::uint64_t VulkanRenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescrip
 
 	const VkImageView imageView = m_descriptorManager->GetRegisteredImageView(shaderResourceView);
 	return m_imguiBackend->GetTextureId(imageView);
-}
-
-bool VulkanRenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept
-{
-	return m_resourceService != nullptr && m_resourceService->SupportsUnorderedAccess(resource);
 }
 
 void VulkanRenderHardwareInterface::BeginPresentRenderPass(const float clearColor[4]) noexcept

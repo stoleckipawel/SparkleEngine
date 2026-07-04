@@ -2,7 +2,7 @@
 
 #include "Frame/Temporal/TemporalFrameState.h"
 #include "Providers/RenderProviderModel.h"
-#include "RHI/Public/Resources/RenderViewCameraData.h"
+#include "ShaderData/RenderViewCameraData.h"
 #include "Viewport/ViewportContracts.h"
 
 #include <cstdint>

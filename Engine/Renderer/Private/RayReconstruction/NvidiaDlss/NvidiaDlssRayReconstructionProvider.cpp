@@ -27,6 +27,7 @@ RayReconstructionProviderCapabilities NvidiaDlssRayReconstructionProvider::Query
 {
 	const bool backendSupported = capabilities.BackendApi == ERhiBackendApi::D3D12 || capabilities.BackendApi == ERhiBackendApi::Vulkan;
 	const bool interopSupported = capabilities.ExternalFeatureInterop.ExposesNativeDevice &&
+	                              capabilities.ExternalFeatureInterop.ExposesNativeGraphicsQueue &&
 	                              capabilities.ExternalFeatureInterop.ExposesNativeGraphicsCommandList &&
 	                              capabilities.ExternalFeatureInterop.ExposesNativeResources;
 	const RendererProviderRayReconstructionResourceContract resourceContract =

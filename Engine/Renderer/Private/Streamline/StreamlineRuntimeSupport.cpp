@@ -25,22 +25,19 @@ StreamlineBackendContract ValidateStreamlineBackend(
 		    .Valid = false,
 		    .FailureReason = "Streamline is only implemented for D3D12 and Vulkan backends."};
 	}
-	if (isD3D12 && !nativeInterop.Device)
+	if (isD3D12 && !nativeInterop)
 	{
 		return StreamlineBackendContract{
 		    .Valid = false,
 		    .UsesD3D12 = true,
-		    .FailureReason = "D3D12 native device handle is unavailable."};
+		    .FailureReason = "D3D12 native device or graphics queue handle is unavailable."};
 	}
-	if (isVulkan && (!capabilities.ExternalFeatureInterop.VulkanInstance ||
-	                 !capabilities.ExternalFeatureInterop.VulkanPhysicalDevice ||
-	                 !capabilities.ExternalFeatureInterop.VulkanDevice ||
-	                 capabilities.ExternalFeatureInterop.VulkanGraphicsQueueFamilyIndex == UINT32_MAX))
+	if (isVulkan && !nativeInterop.Vulkan)
 	{
 		return StreamlineBackendContract{
 		    .Valid = false,
 		    .UsesVulkan = true,
-		    .FailureReason = "Vulkan native instance, physical device, device, or graphics queue family is unavailable."};
+		    .FailureReason = "Vulkan native instance, physical device, device, graphics queue, or graphics queue family is unavailable."};
 	}
 	if (isD3D12 && !HasStreamlineNativeAdapterLuid(capabilities.ExternalFeatureInterop.Adapter))
 	{
@@ -58,7 +55,6 @@ StreamlineBackendContract ValidateStreamlineBackend(
 
 sl::Result SetStreamlineNativeDevice(
     const StreamlineBackendContract& backend,
-    const RhiCapabilities& capabilities,
     RhiNativeDeviceQueueInterop nativeInterop) noexcept
 {
 	if (backend.UsesD3D12)
@@ -67,11 +63,11 @@ sl::Result SetStreamlineNativeDevice(
 	}
 
 	sl::VulkanInfo vulkanInfo{};
-	vulkanInfo.instance = static_cast<VkInstance>(capabilities.ExternalFeatureInterop.VulkanInstance);
-	vulkanInfo.physicalDevice = static_cast<VkPhysicalDevice>(capabilities.ExternalFeatureInterop.VulkanPhysicalDevice);
-	vulkanInfo.device = static_cast<VkDevice>(capabilities.ExternalFeatureInterop.VulkanDevice);
-	vulkanInfo.graphicsQueueFamily = capabilities.ExternalFeatureInterop.VulkanGraphicsQueueFamilyIndex;
-	vulkanInfo.computeQueueFamily = capabilities.ExternalFeatureInterop.VulkanGraphicsQueueFamilyIndex;
+	vulkanInfo.instance = static_cast<VkInstance>(nativeInterop.Vulkan.Instance);
+	vulkanInfo.physicalDevice = static_cast<VkPhysicalDevice>(nativeInterop.Vulkan.PhysicalDevice);
+	vulkanInfo.device = static_cast<VkDevice>(nativeInterop.Vulkan.Device);
+	vulkanInfo.graphicsQueueFamily = nativeInterop.Vulkan.GraphicsQueueFamilyIndex;
+	vulkanInfo.computeQueueFamily = nativeInterop.Vulkan.GraphicsQueueFamilyIndex;
 	vulkanInfo.graphicsQueueIndex = 0;
 	vulkanInfo.computeQueueIndex = 0;
 	return slSetVulkanInfo(vulkanInfo);
@@ -79,12 +75,13 @@ sl::Result SetStreamlineNativeDevice(
 
 StreamlineAdapterInfo BuildStreamlineAdapterInfo(
     const StreamlineBackendContract& backend,
-    const RhiCapabilities& capabilities) noexcept
+    const RhiCapabilities& capabilities,
+    RhiNativeDeviceQueueInterop nativeInterop) noexcept
 {
 	StreamlineAdapterInfo adapterInfo{};
 	if (backend.UsesVulkan)
 	{
-		adapterInfo.Info.vkPhysicalDevice = capabilities.ExternalFeatureInterop.VulkanPhysicalDevice;
+		adapterInfo.Info.vkPhysicalDevice = nativeInterop.Vulkan.PhysicalDevice;
 		return adapterInfo;
 	}
 

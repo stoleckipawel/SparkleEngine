@@ -1,8 +1,8 @@
 #pragma once
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RHI/Public/Resources/PerTemporalConstantBufferData.h"
-#include "RHI/Public/Resources/PerViewConstantBufferData.h"
+#include "ShaderData/PerTemporalConstantBufferData.h"
+#include "ShaderData/PerViewConstantBufferData.h"
 #include "Frame/Temporal/TemporalFrameState.h"
 
 struct RenderViewData

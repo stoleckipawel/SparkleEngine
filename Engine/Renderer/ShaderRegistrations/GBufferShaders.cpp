@@ -3,7 +3,7 @@
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-#include "Resources/RenderConstantBufferData.h"
+#include "ShaderData/RenderConstantBufferData.h"
 
 class GBufferVS final : public TGlobalShader<GBufferVS>
 {

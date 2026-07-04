@@ -8,7 +8,7 @@
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
-#include "RHI/Public/Resources/PerFrameConstantBufferData.h"
+#include "ShaderData/PerFrameConstantBufferData.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Viewport/ViewportContracts.h"
 

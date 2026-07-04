@@ -5,7 +5,7 @@
 #include "SceneData/RenderSceneData.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "ShaderData/RenderConstantBufferData.h"
 
 #include <vector>
 

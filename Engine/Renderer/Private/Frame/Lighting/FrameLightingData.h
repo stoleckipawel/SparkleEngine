@@ -2,7 +2,7 @@
 
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
-#include "RHI/Public/Resources/RenderViewLightingData.h"
+#include "ShaderData/RenderViewLightingData.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
 
 class RenderHardwareInterface;

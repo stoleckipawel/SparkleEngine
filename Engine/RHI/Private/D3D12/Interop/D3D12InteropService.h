@@ -11,7 +11,6 @@ class D3D12InteropService final : public RhiInteropService
 
 	RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept override;
 	bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept override;
-	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
 
   private:
 	D3D12RenderHardwareInterface* m_owner = nullptr;

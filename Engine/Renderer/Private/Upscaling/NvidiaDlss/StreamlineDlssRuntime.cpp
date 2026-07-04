@@ -81,7 +81,7 @@ namespace
 				return false;
 			}
 
-			result = SetStreamlineNativeDevice(backend, desc.Capabilities, desc.NativeInterop);
+			result = SetStreamlineNativeDevice(backend, desc.NativeInterop);
 			if (result != sl::Result::eOk)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
@@ -91,7 +91,7 @@ namespace
 				return false;
 			}
 
-			const StreamlineAdapterInfo adapterInfo = BuildStreamlineAdapterInfo(backend, desc.Capabilities);
+			const StreamlineAdapterInfo adapterInfo = BuildStreamlineAdapterInfo(backend, desc.Capabilities, desc.NativeInterop);
 			result = slIsFeatureSupported(sl::kFeatureDLSS, adapterInfo.Info);
 			if (result != sl::Result::eOk)
 			{

@@ -3,7 +3,7 @@
 #include "RenderSceneDataBuilder.h"
 
 #include "Meshes/GPUMeshCache.h"
-#include "RHI/Public/Resources/MeshInstanceShaderData.h"
+#include "ShaderData/MeshInstanceShaderData.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "SceneData/RenderSceneData.h"
 #include "SceneData/Builders/MeshInstanceBatchBuilder.h"

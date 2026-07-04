@@ -5,7 +5,7 @@
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "ShaderData/RenderConstantBufferData.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <algorithm>

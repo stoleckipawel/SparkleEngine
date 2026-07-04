@@ -31,11 +31,11 @@ StreamlineBackendContract ValidateStreamlineBackend(
     RhiNativeDeviceQueueInterop nativeInterop);
 sl::Result SetStreamlineNativeDevice(
     const StreamlineBackendContract& backend,
-    const RhiCapabilities& capabilities,
     RhiNativeDeviceQueueInterop nativeInterop) noexcept;
 StreamlineAdapterInfo BuildStreamlineAdapterInfo(
     const StreamlineBackendContract& backend,
-    const RhiCapabilities& capabilities) noexcept;
+    const RhiCapabilities& capabilities,
+    RhiNativeDeviceQueueInterop nativeInterop) noexcept;
 std::string FormatStreamlineFailure(std::string_view operation, sl::Result result);
 bool UpgradePresentationInterfaceWithStreamline(void** nativeInterface, void*) noexcept;
 void FillStreamlinePreferences(

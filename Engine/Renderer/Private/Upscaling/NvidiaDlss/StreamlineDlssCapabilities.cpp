@@ -7,6 +7,7 @@ StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const R
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	const bool d3d12BridgeReady = capabilities.BackendApi == ERhiBackendApi::D3D12 &&
 	                              capabilities.ExternalFeatureInterop.ExposesNativeDevice &&
+	                              capabilities.ExternalFeatureInterop.ExposesNativeGraphicsQueue &&
 	                              capabilities.ExternalFeatureInterop.ExposesNativeGraphicsCommandList &&
 	                              capabilities.ExternalFeatureInterop.ExposesNativeResources;
 	const bool vulkanBridgeReady = capabilities.BackendApi == ERhiBackendApi::Vulkan &&

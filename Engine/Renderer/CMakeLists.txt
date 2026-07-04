@@ -3,6 +3,7 @@
 # Dependencies: SparkleCore, SparklePlatform, SparkleRHI, SparkleGameFramework runtime scene types
 # Renderer consumes runtime scene/material data only. Source import, conversion,
 # and authoring-side dependencies must stay out of this module.
+# Renderer-owned shader payload layouts live under Private/ShaderData; RHI owns only binding/resource contracts.
 
 find_package(Vulkan QUIET)
 

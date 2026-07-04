@@ -36,11 +36,6 @@ RhiExternalFeatureInteropCapabilities BuildVulkanExternalFeatureInteropCapabilit
 		capabilities.VulkanHasDeviceHandle = rhi->GetDevice() != VK_NULL_HANDLE;
 		capabilities.VulkanHasGraphicsQueueHandle = rhi->GetGraphicsQueue() != VK_NULL_HANDLE;
 		capabilities.VulkanHasGraphicsQueueFamilyIndex = rhi->GetGraphicsQueueFamilyIndex() != UINT32_MAX;
-		capabilities.VulkanInstance = rhi->GetInstance();
-		capabilities.VulkanPhysicalDevice = rhi->GetPhysicalDevice();
-		capabilities.VulkanDevice = rhi->GetDevice();
-		capabilities.VulkanGraphicsQueue = rhi->GetGraphicsQueue();
-		capabilities.VulkanGraphicsQueueFamilyIndex = rhi->GetGraphicsQueueFamilyIndex();
 	}
 
 	capabilities.ExposesNativeDevice = capabilities.VulkanHasDeviceHandle;

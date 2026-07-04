@@ -64,7 +64,7 @@ namespace
 				return false;
 			}
 
-			result = SetStreamlineNativeDevice(backend, desc.Capabilities, desc.NativeInterop);
+			result = SetStreamlineNativeDevice(backend, desc.NativeInterop);
 			if (result != sl::Result::eOk)
 			{
 				m_diagnostics.State = EDlssRayReconstructionRuntimeState::Unavailable;
@@ -73,7 +73,7 @@ namespace
 				return false;
 			}
 
-			const StreamlineAdapterInfo adapterInfo = BuildStreamlineAdapterInfo(backend, desc.Capabilities);
+			const StreamlineAdapterInfo adapterInfo = BuildStreamlineAdapterInfo(backend, desc.Capabilities, desc.NativeInterop);
 			result = slIsFeatureSupported(sl::kFeatureDLSS_RR, adapterInfo.Info);
 			if (result != sl::Result::eOk)
 			{

@@ -6,7 +6,7 @@
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 #include "Frame/Targets/FrameRenderTargets.h"
 
-#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "ShaderData/RenderConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cstddef>

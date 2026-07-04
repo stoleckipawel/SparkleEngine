@@ -24,7 +24,7 @@
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 #include "RHI/Public/Bindings/RenderBindingSet.h"
-#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "ShaderData/RenderConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Pipeline/PassBinder.h"

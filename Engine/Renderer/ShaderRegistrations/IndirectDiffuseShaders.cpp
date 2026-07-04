@@ -3,8 +3,8 @@
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-#include "Resources/RenderConstantBufferData.h"
-#include "Resources/RenderViewLightingData.h"
+#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/RenderViewLightingData.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/RayTracing/Effects/IndirectDiffuse/IndirectDiffuseUniformData.h"
 #include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"

@@ -315,110 +315,9 @@ RhiImGuiRenderer& D3D12RenderHardwareInterface::GetImGuiRenderer() noexcept
 	return *m_imguiBackend;
 }
 
-std::unique_ptr<RenderBindingSet> D3D12RenderHardwareInterface::CreateBindingSet(const RenderBindingSetDesc& desc)
-{
-	return m_descriptorService != nullptr ? m_descriptorService->CreateBindingSet(desc) : std::unique_ptr<RenderBindingSet>{};
-}
-
-std::unique_ptr<RenderBindingLayout> D3D12RenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)
-{
-	return m_pipelineService != nullptr ? m_pipelineService->CreateBindingLayout(desc) : std::unique_ptr<RenderBindingLayout>{};
-}
-
-std::unique_ptr<RenderPipelineState> D3D12RenderHardwareInterface::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc)
-{
-	return m_pipelineService != nullptr ? m_pipelineService->CreateGraphicsPipelineState(desc) : std::unique_ptr<RenderPipelineState>{};
-}
-
-std::unique_ptr<RenderPipelineState> D3D12RenderHardwareInterface::CreateComputePipelineState(const ComputePipelineStateDesc& desc)
-{
-	return m_pipelineService != nullptr ? m_pipelineService->CreateComputePipelineState(desc) : std::unique_ptr<RenderPipelineState>{};
-}
-
-void D3D12RenderHardwareInterface::BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept
-{
-	if (m_descriptorHeapManager != nullptr && commandList.GetBackendApi() == ERhiBackendApi::D3D12)
-	{
-		m_descriptorHeapManager->BindGlobalDescriptorState(static_cast<D3D12RenderCommandList&>(commandList));
-	}
-}
-
 ID3D12DescriptorHeap* D3D12RenderHardwareInterface::GetD3D12ShaderResourceDescriptorHeap() const noexcept
 {
 	return m_descriptorService != nullptr ? m_descriptorService->GetShaderResourceDescriptorHeap() : nullptr;
-}
-
-RhiDescriptorAllocation D3D12RenderHardwareInterface::AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType)
-{
-	return m_descriptorService != nullptr ? m_descriptorService->AllocateDescriptor(descriptorType) : RhiDescriptorAllocation{};
-}
-
-void D3D12RenderHardwareInterface::ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept
-{
-	if (m_descriptorService != nullptr)
-	{
-		m_descriptorService->ReleaseDescriptor(descriptorType, allocation);
-	}
-}
-
-RhiDescriptorTableHandle D3D12RenderHardwareInterface::AllocateDescriptorTable(
-    ERhiDescriptorAllocatorType descriptorType,
-    std::uint32_t descriptorCount)
-{
-	return m_descriptorService != nullptr ? m_descriptorService->AllocateDescriptorTable(descriptorType, descriptorCount)
-	                                      : RhiDescriptorTableHandle{};
-}
-
-RhiCpuDescriptorHandle D3D12RenderHardwareInterface::GetDescriptorTableCpuHandle(
-    RhiDescriptorTableHandle tableHandle,
-    std::uint32_t descriptorIndex) const noexcept
-{
-	return m_descriptorService != nullptr ? m_descriptorService->GetDescriptorTableCpuHandle(tableHandle, descriptorIndex)
-	                                      : RhiCpuDescriptorHandle{};
-}
-
-void D3D12RenderHardwareInterface::ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept
-{
-	if (m_descriptorService != nullptr)
-	{
-		m_descriptorService->ReleaseDescriptorTable(tableHandle);
-	}
-}
-
-void D3D12RenderHardwareInterface::AllocateShaderResourceDescriptor(
-    RhiCpuDescriptorHandle& outCpuHandle,
-    RhiGpuDescriptorHandle& outGpuHandle)
-{
-	if (m_descriptorService != nullptr)
-	{
-		m_descriptorService->AllocateShaderResourceDescriptor(outCpuHandle, outGpuHandle);
-	}
-	else
-	{
-		outCpuHandle = {};
-		outGpuHandle = {};
-	}
-}
-
-void D3D12RenderHardwareInterface::ReleaseShaderResourceDescriptor(
-    RhiCpuDescriptorHandle cpuHandle,
-    RhiGpuDescriptorHandle gpuHandle) noexcept
-{
-	if (m_descriptorService != nullptr)
-	{
-		m_descriptorService->ReleaseShaderResourceDescriptor(cpuHandle, gpuHandle);
-	}
-}
-
-RhiGpuVirtualAddress D3D12RenderHardwareInterface::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes)
-{
-	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocateUniform(data, sizeInBytes) : 0;
-}
-
-RhiDescriptorTableBinding D3D12RenderHardwareInterface::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept
-{
-	return m_descriptorService != nullptr ? m_descriptorService->GetSharedSamplerBinding(samplerDesc)
-	                                      : RhiDescriptorTableBinding{};
 }
 
 RhiViewport D3D12RenderHardwareInterface::GetBackBufferViewport() const noexcept
@@ -439,90 +338,6 @@ RhiCpuDescriptorHandle D3D12RenderHardwareInterface::GetBackBufferRenderTargetVi
 NativeResourceHandle D3D12RenderHardwareInterface::GetBackBufferResource() const noexcept
 {
 	return NativeResourceHandle{m_swapChain != nullptr ? m_swapChain->GetCurrentResource() : nullptr};
-}
-
-std::unique_ptr<Texture> D3D12RenderHardwareInterface::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateTexture(std::move(textureUpload), debugName) :
-	                                      std::unique_ptr<Texture>{};
-}
-
-RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateTextureResource(
-    const RhiTextureResourceDesc& desc,
-    ResourceState initialState,
-    RhiMemoryCategory category,
-    RhiMemoryResidencyClass residencyClass,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateTextureResource(desc, initialState, category, residencyClass, debugName) :
-	                                      RhiOwnedResourceHandle{};
-}
-
-RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateBufferResource(
-    const RhiBufferResourceDesc& desc,
-    ResourceState initialState,
-    RhiMemoryCategory category,
-    RhiMemoryResidencyClass residencyClass,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateBufferResource(desc, initialState, category, residencyClass, debugName) :
-	                                      RhiOwnedResourceHandle{};
-}
-
-bool D3D12RenderHardwareInterface::CreateVertexBuffer(
-    const void* data,
-    std::size_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName,
-    RhiOwnedResourceHandle& outResource,
-    RhiVertexBufferView& outView)
-{
-	return m_resourceService != nullptr ?
-	           m_resourceService->CreateVertexBuffer(data, sizeInBytes, strideInBytes, debugName, outResource, outView) :
-	           false;
-}
-
-bool D3D12RenderHardwareInterface::CreateStructuredBuffer(
-    const void* data,
-    std::size_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName,
-    RhiOwnedResourceHandle& outResource,
-    RhiResourceViewHandle& outView)
-{
-	return m_resourceService != nullptr ?
-	           m_resourceService->CreateStructuredBuffer(data, sizeInBytes, strideInBytes, debugName, outResource, outView) :
-	           false;
-}
-
-bool D3D12RenderHardwareInterface::CreateIndexBuffer(
-    const void* data,
-    std::size_t sizeInBytes,
-    RhiIndexFormat format,
-    std::wstring_view debugName,
-    RhiOwnedResourceHandle& outResource,
-    RhiIndexBufferView& outView)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateIndexBuffer(data, sizeInBytes, format, debugName, outResource, outView) :
-	                                      false;
-}
-
-void D3D12RenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept
-{
-	if (m_resourceService != nullptr)
-	{
-		m_resourceService->ReleaseOwnedResource(resource);
-	}
-}
-
-NativeResourceHandle D3D12RenderHardwareInterface::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
-{
-	return m_resourceService != nullptr ? m_resourceService->GetNativeResource(resource) : NativeResourceHandle{};
-}
-
-RhiGpuVirtualAddress D3D12RenderHardwareInterface::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept
-{
-	return m_resourceService != nullptr ? m_resourceService->GetResourceGpuVirtualAddress(resource) : 0;
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(
@@ -563,92 +378,9 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
 	                                        RhiOwnedResourceHandle{};
 }
 
-RhiResourceAllocationInfo D3D12RenderHardwareInterface::GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept
-{
-	return m_resourceService != nullptr ? m_resourceService->GetTextureAllocationInfo(desc) : RhiResourceAllocationInfo{};
-}
-
-RhiResourceAllocationInfo D3D12RenderHardwareInterface::GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept
-{
-	return m_resourceService != nullptr ? m_resourceService->GetBufferAllocationInfo(desc) : RhiResourceAllocationInfo{};
-}
-
-RhiOwnedMemoryBlockHandle D3D12RenderHardwareInterface::CreateTransientMemoryBlock(
-    RhiTransientAllocationPool pool,
-    std::uint64_t sizeInBytes,
-    std::uint64_t alignment,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ? m_resourceService->CreateTransientMemoryBlock(pool, sizeInBytes, alignment, debugName) :
-	                                      RhiOwnedMemoryBlockHandle{};
-}
-
-void D3D12RenderHardwareInterface::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept
-{
-	if (m_resourceService != nullptr)
-	{
-		m_resourceService->ReleaseTransientMemoryBlock(memoryBlock);
-	}
-}
-
-RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateAliasingTextureResource(
-    RhiOwnedMemoryBlockHandle memoryBlock,
-    std::uint64_t memoryBlockOffset,
-    const RhiTransientTextureAllocationDesc& desc,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ?
-	           m_resourceService->CreateAliasingTextureResource(memoryBlock, memoryBlockOffset, desc, debugName) :
-	           RhiOwnedResourceHandle{};
-}
-
-RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateAliasingBufferResource(
-    RhiOwnedMemoryBlockHandle memoryBlock,
-    std::uint64_t memoryBlockOffset,
-    const RhiTransientBufferAllocationDesc& desc,
-    std::wstring_view debugName)
-{
-	return m_resourceService != nullptr ?
-	           m_resourceService->CreateAliasingBufferResource(memoryBlock, memoryBlockOffset, desc, debugName) :
-	           RhiOwnedResourceHandle{};
-}
-
-RhiResourceViewHandle D3D12RenderHardwareInterface::CreateResourceView(const RhiResourceViewDesc& desc)
-{
-	return m_descriptorService != nullptr ? m_descriptorService->CreateResourceView(desc) : RhiResourceViewHandle{};
-}
-
-void D3D12RenderHardwareInterface::ReleaseResourceView(RhiResourceViewHandle view) noexcept
-{
-	if (m_descriptorService != nullptr)
-	{
-		m_descriptorService->ReleaseResourceView(view);
-	}
-}
-
-RhiCpuDescriptorHandle D3D12RenderHardwareInterface::GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept
-{
-	return m_descriptorService != nullptr ? m_descriptorService->GetResourceViewCpuHandle(view) : RhiCpuDescriptorHandle{};
-}
-
-RhiGpuDescriptorHandle D3D12RenderHardwareInterface::GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept
-{
-	return m_descriptorService != nullptr ? m_descriptorService->GetResourceViewGpuHandle(view) : RhiGpuDescriptorHandle{};
-}
-
-NativeTextureViewInfo D3D12RenderHardwareInterface::GetNativeTextureViewInfo(RhiResourceViewHandle, ResourceState) const noexcept
-{
-	return {};
-}
-
 std::uint64_t D3D12RenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
 {
 	return shaderResourceView.Value;
-}
-
-bool D3D12RenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept
-{
-	return m_resourceService != nullptr && m_resourceService->SupportsUnorderedAccess(resource);
 }
 
 void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor[4]) noexcept
@@ -666,7 +398,10 @@ void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor
 
 	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
 	commandList.TransitionResource(presentTexture, ResourceState::Present, ResourceState::RenderTarget);
-	BindGlobalDescriptorState(commandList);
+	if (m_descriptorService != nullptr)
+	{
+		m_descriptorService->BindGlobalDescriptorState(commandList);
+	}
 
 	const RhiCpuDescriptorHandle renderTargetView = GetBackBufferRenderTargetView();
 	commandList.SetRenderTarget(renderTargetView);
@@ -690,7 +425,10 @@ void D3D12RenderHardwareInterface::BeginPresentOverlayPass() noexcept
 
 	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
 	commandList.TransitionResource(presentTexture, ResourceState::Present, ResourceState::RenderTarget);
-	BindGlobalDescriptorState(commandList);
+	if (m_descriptorService != nullptr)
+	{
+		m_descriptorService->BindGlobalDescriptorState(commandList);
+	}
 
 	const RhiCpuDescriptorHandle renderTargetView = GetBackBufferRenderTargetView();
 	commandList.SetRenderTarget(renderTargetView);

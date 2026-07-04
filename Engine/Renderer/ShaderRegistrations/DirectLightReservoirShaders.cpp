@@ -3,8 +3,8 @@
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-#include "Resources/RenderConstantBufferData.h"
-#include "Resources/RenderViewLightingData.h"
+#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/RenderViewLightingData.h"
 
 class DirectLightReservoirTemporalCS final : public TGlobalShader<DirectLightReservoirTemporalCS>
 {

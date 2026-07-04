@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Public/Resources/PerTemporalConstantBufferData.h"
+#include "ShaderData/PerTemporalConstantBufferData.h"
 
 #include <DirectXMath.h>
 

@@ -1114,6 +1114,64 @@ Universal acceptance for this stage:
 - [ ] Public detail dumps are removed from default API.
 - [ ] No report format is added.
 
+Stage 19 implementation result:
+
+Universal acceptance status:
+
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
+Specific acceptance status:
+
+- [x] Memory budget facts are backed by D3D12MA/VMA paths.
+- [x] Descriptor pressure facts are consumed or removed.
+- [x] Public detail dumps are removed from default API.
+- [x] No report format is added.
+
+Removed descriptor pressure reports:
+
+- Removed `RhiDescriptorUsageSnapshot`, `RhiDescriptorAllocatorUsage`, and `ERhiDescriptorUsageStatus` from public RHI.
+- Removed `RhiDescriptorService::CaptureDescriptorUsageSnapshot`.
+- Removed D3D12 `D3D12DescriptorService::CaptureDescriptorUsageSnapshot`.
+- Removed Vulkan `VulkanDescriptorManager::CaptureDescriptorUsageSnapshot`.
+- Removed now-unconsumed private descriptor stats helpers:
+  - `D3D12DescriptorAllocatorStats`
+  - `D3D12DescriptorAllocator::CaptureStats`
+  - `D3D12DescriptorHeapUsage`
+  - `D3D12DescriptorHeapManager::CaptureUsage`
+  - `VulkanDescriptorAllocatorStats`
+  - `VulkanDescriptorAllocator::CaptureStats`
+
+Removed memory detail dumps:
+
+- Removed `RhiMemoryAllocationInfo` and the `RhiMemoryUsageSnapshot::Allocations` vector.
+- Removed `RhiMemoryUsageSnapshot::HasAllocationDetails`.
+- Removed `RenderMemoryDiagnostics::SupportsJsonDump`.
+- Removed `RenderMemoryDiagnostics::SupportsAllocationDetails`.
+- Removed `RenderMemoryDiagnostics::WriteAllocatorJsonDump`.
+- Removed `RhiDiagnosticsCapabilities::SupportsMemoryJsonDump`.
+- Removed `RhiBackendMemorySupport::SupportsJsonDump` and `SupportsAllocationDetails`.
+- Removed `D3D12GpuMemoryAllocator::SupportsJsonDump` and `WriteAllocatorJsonDump`.
+- Removed `VulkanGpuMemoryAllocator::SupportsJsonDump` and `WriteAllocatorJsonDump`.
+- Removed `SPARKLE_RHI_MEMORY_JSON_DUMP` default-path behavior from D3D12/Vulkan diagnostics.
+- Removed renderer `SceneMemoryReport::NamedAllocationCount` and `LargestNamedAllocations`; renderer memory snapshots now keep totals/category facts rather than allocation-detail reports.
+
+Preserved compact runtime pressure facts:
+
+- D3D12 memory snapshots still call D3D12MA budget/statistics paths through `GetBudget` and `CalculateStatistics`.
+- Vulkan memory snapshots still call VMA budget/statistics paths through `vmaGetHeapBudgets` and `vmaCalculateStatistics`.
+- `RhiMemoryUsageSnapshot` still preserves allocator backend, total used/allocated/budget bytes, API usage, committed/placed/transient usage, delayed-destruction facts, and category stats.
+- `RendererMemoryMonitor` still computes category pressure, overall pressure, texture pressure, and texture streaming policy from compact budget/category facts.
+- Editor memory inspection remains available through `Renderer::CaptureMemoryDiagnostics`; only allocation-detail dump payload was removed.
+
+Verification:
+
+- `rg -n "RhiDescriptorUsageSnapshot|RhiDescriptorAllocatorUsage|ERhiDescriptorUsageStatus|CaptureDescriptorUsageSnapshot|RhiDescriptorUsageStatusToString|SupportsJsonDump|SupportsAllocationDetails|SupportsMemoryJsonDump|HasAllocationDetails|RhiMemoryAllocationInfo|\\.Allocations|LargestNamedAllocations|NamedAllocationCount|WriteAllocatorJsonDump|SPARKLE_RHI_MEMORY_JSON_DUMP|VulkanDescriptorAllocatorStats|D3D12DescriptorAllocatorStats|D3D12DescriptorHeapUsage|CaptureUsage\\(|CaptureStats\\(" Engine/RHI Engine/Renderer -g "*.h" -g "*.cpp"` returned no matches.
+- `cmake --build build --config DevelopmentEditor --parallel` completed successfully.
+
 ### Stage 20: RHI Service Boundary Audit
 
 References: NV-NRI, NV-NVRHI, UE-SOURCE.
@@ -1138,6 +1196,60 @@ Universal acceptance for this stage:
 - [ ] No new RHI wrapper layer is added.
 - [ ] Public service surface is smaller or justified.
 
+Stage 20 audit result:
+
+- [x] Existing-capability search was completed before adding code.
+- [x] No source code was added in this stage; there is no code debt to offset in this batch.
+- [x] No duplicate responsibility was introduced.
+- [x] No content/project/level names were added to real code.
+- [x] No fallback chain was added.
+- [x] Resource, descriptor, pipeline, upload, ray tracing, interop, capture, diagnostics, and presentation services remain owned by RHI.
+- [x] Backend-native details remain private or are exposed through the explicit interop/provider bridge.
+- [x] No new RHI wrapper layer was added.
+- [x] Public service surface is justified for now after the Stage 17 and Stage 19 diagnostic/detail reductions.
+
+RHI service boundary:
+
+- `RenderHardwareInterface` remains the one explicit RHI service root. It exposes backend facts and owned services; it does not become a gameplay/content API.
+- `GetCapabilities`, `GetBackendApi`, `GetRequiredShaderBinaryFormat`, and `GetCurrentFrameIndex` are backend/runtime facts. Keep them on RHI because renderer policy, shader package selection, frame resources, and parity checks consume them directly.
+- `RhiResourceService` owns GPU resource creation, release, transient memory, native resource handles, GPU virtual addresses, and allocation-size queries. Renderer consumers are frame graph transient allocation/planning, texture upload, mesh buffers, lighting buffers, skinning buffers, BLAS/TLAS/PTLAS builders, and frame history resources.
+- `RhiDescriptorService` owns descriptor/view creation, release, shared sampler bindings, descriptor table binding, GPU/CPU view handles, global descriptor state binding, and native texture view info. Stage 19 removed broad descriptor pressure reports; the remaining service surface is functional, not a reporting layer.
+- `RhiPipelineService` owns binding layouts and graphics/compute pipeline state creation. Renderer pipeline/runtime code consumes it directly.
+- `RhiUploadService` owns uniform upload and upload/readback paths. Keep it in RHI because upload behavior is backend- and frame-lifetime-dependent.
+- `RhiRayTracingService` owns ray tracing prebuild queries, scratch/acceleration-structure buffers, instance buffers, and build commands for classic TLAS and PTLAS flows. Renderer owns policy and scene selection; RHI owns backend execution.
+- `RhiInteropService` owns explicit native interop and presentation provider bridging. It is the sanctioned escape hatch for external providers and platform/native integration.
+- `RhiCaptureService` owns texture-to-BMP capture/readback execution. Capture remains preserved as a product/tool capability; editor/runtime-facing capture commands should stay above this service.
+- `RenderDiagnostics` owns compact runtime facts, object names, timing hooks, failure reporting, and compact memory-budget facts. It should not regain broad dump/report ownership after Stage 18 and Stage 19.
+- `RhiPresentationService` owns swapchain/back-buffer presentation, viewport/scissor facts, render-target access, ImGui texture resolution, manual-present state, and present execution.
+- `RenderDeviceServices` remains the device/service owner and command-submission surface. Its `GetImGuiRenderer` is the editor UI backend bridge; it should not grow into a general editor facade.
+
+Public escape hatches:
+
+- `Renderer::GetRenderHardwareInterface()` is currently consumed by application/editor/runtime-console code for presentation handoff and by renderer systems internally. Keep it narrow; do not let gameplay/content systems use it directly.
+- `Renderer::GetCommandSubmissionService()` is currently consumed by shader recook to wait for idle. Keep this as an explicit tool/runtime synchronization escape hatch until a smaller owned synchronization command replaces it with less public surface.
+- `RendererSystemRoot::GetRenderHardwareInterface()` is renderer-private plumbing and is acceptable because renderer passes and resource managers need explicit RHI services.
+
+Backend-native boundary:
+
+- Native handles and backend-specific details should remain in backend-private implementations, `RhiInteropService`, `RhiNativeHandles`, or explicit provider bridge structs.
+- Frame graph native view data currently flows through `RhiDescriptorService::GetNativeTextureViewInfo`; keep this as a descriptor-owned backend bridge instead of adding another renderer wrapper.
+- No D3D12/Vulkan-specific assumptions should leak into GameFramework, Projects, content catalog, or launcher workflows.
+
+Next reduction pressure:
+
+- Do not add a second RHI facade.
+- Do not add generic service locators around RHI.
+- Only reduce `RenderHardwareInterface` public methods when a stage can remove an actual consumer or merge a duplicated path without hurting D3D12/Vulkan parity, capture, shader package ABI, TLAS/PTLAS, or editor inspection.
+- Candidate later cleanup: review whether const/non-const service accessor pairs are all consumed; remove pairs only if the consumer search proves they are dead.
+
+Verification:
+
+- `Get-Content Engine/RHI/Public/Device/RenderHardwareInterface.h` confirmed the current service root and service list.
+- `Get-Content Engine/RHI/Public/Device/RenderDeviceServices.h` confirmed device ownership, command submission, and ImGui bridge ownership.
+- `rg -n "GetResourceService\\(|GetDescriptorService\\(|GetPipelineService\\(|GetUploadService\\(|GetRayTracingService\\(|GetInteropService\\(|GetCaptureService\\(|GetDiagnostics\\(|GetPresentationService\\(|GetRenderHardwareInterface\\(|GetCommandSubmissionService\\(" Engine/Renderer Engine/Application Engine/Editor Tools Projects -g "*.h" -g "*.cpp"` identified current service consumers.
+- `rg --files Engine/RHI/Public` enumerated the public RHI surface.
+- No build was required because this stage made no source changes.
+
 ### Stage 21: D3D12/Vulkan Parity Matrix
 
 References: AMD-CAULDRON, NV-NRI, UE-SOURCE.
@@ -1150,16 +1262,93 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] D3D12/Vulkan parity is named for resources, descriptors, pipelines, uploads, presentation, ray tracing, PTLAS, capture.
-- [ ] Backend-specific gaps are listed.
-- [ ] No parity gap is hidden behind generic abstraction.
-- [ ] Any extension opportunity is recorded.
+- [x] D3D12/Vulkan parity is named for resources, descriptors, pipelines, uploads, presentation, ray tracing, PTLAS, capture.
+- [x] Backend-specific gaps are listed.
+- [x] No parity gap is hidden behind generic abstraction.
+- [x] Any extension opportunity is recorded.
+
+Stage 21 implementation result:
+
+Universal acceptance status:
+
+- [x] Existing-capability search was completed before adding code.
+- [x] No source code was added in this stage; there is no code debt to offset in this batch.
+- [x] No duplicate responsibility was introduced.
+- [x] No content/project/level names were added to real code.
+- [x] No fallback chain was added.
+
+Specific acceptance status:
+
+- [x] D3D12/Vulkan parity is named for resources, descriptors, pipelines, uploads, presentation, ray tracing, PTLAS, and capture.
+- [x] Backend-specific gaps are listed.
+- [x] No parity gap is hidden behind generic abstraction.
+- [x] Extension opportunities are recorded.
+
+Working parity matrix:
+
+| Area | Public owner | D3D12 status | Vulkan status | Parity result | Gap / next action |
+| --- | --- | --- | --- | --- | --- |
+| Backend identity | `RhiCapabilities` / `RenderHardwareInterface` | `ERhiBackendApi::D3D12`, DXIL shader packages, feature-level version semantic | `ERhiBackendApi::Vulkan`, SPIR-V shader packages, API-version semantic | Parity with intentional shader/package split | Keep package ABI explicit; do not hide DXIL/SPIR-V behind a generic blob. |
+| Resources | `RhiResourceService` | `D3D12ResourceService`, D3D12MA-backed allocation records, native resource handles | `VulkanResourceService`, VMA-backed allocation records, native resource handles | Parity | Stage 22 should remove duplicated convenience forwarding only if consumers prove redundant. |
+| Texture upload | `RhiResourceService` / texture factories | `D3D12TextureFactory` through resource service | `VulkanTextureFactory` through resource service | Parity | Preserve backend-specific texture creation details privately. |
+| Buffer upload / uniforms | `RhiUploadService` | constant buffer manager is upload service | Vulkan constant buffer manager is upload service | Parity | Compute/copy queues are not exposed yet; keep graphics-queue upload baseline explicit. |
+| Readback / capture source | `RhiUploadReadbackCapabilities`, `RhiCaptureService` | readback supported, `D3D12CaptureService::CaptureTextureToBmp` | readback supported, `VulkanCaptureService::CaptureTextureToBmp` | Parity | Keep capture as product/tool capability; do not re-add smoke capture ownership. |
+| Descriptors | `RhiDescriptorService` | descriptor tables, D3D12 descriptor heap manager/service | descriptor sets, Vulkan descriptor manager/allocator | Parity with backend-specific model | The descriptor model difference is real and should remain visible through capabilities. |
+| Shared samplers | `RhiDescriptorService` | D3D12 sampler library/table binding | Vulkan sampler library/set binding | Parity | Keep sampler ownership in descriptor service. |
+| Pipeline layouts / PSO | `RhiPipelineService` | D3D12 root signature, binding layout, graphics/compute PSO | Vulkan pipeline layout, binding layout, graphics/compute pipeline | Parity | Shader reflection/package inputs must remain explicit per backend format. |
+| Presentation | `RhiPresentationService` | D3D12 swapchain/back buffer, manual present, ImGui texture resolve | Vulkan swapchain/back buffer, manual present, ImGui texture resolve | Parity | Application/editor may use presentation service; gameplay/content should not. |
+| ImGui backend | `RenderDeviceServices::GetImGuiRenderer` | D3D12 ImGui backend | Vulkan ImGui backend | Parity | Preserve as editor/tool bridge, not a broader UI facade. |
+| Diagnostics facts | `RenderDiagnostics`, `RhiMemoryDiagnostics` | D3D12 debug layer, PIX events, D3D12MA budget/statistics | Vulkan validation/debug events, VMA budget/statistics | Parity after Stage 19 cleanup | Keep compact facts only; do not restore default JSON/detail dump reports. |
+| Native interop | `RhiInteropService`, `RhiNativeHandles` | native device/queue/command list/resource bridge | Vulkan handles/manual function pointer/interposer bridge | Parity with different bridge kinds | Stage 23 should keep native access tied to explicit provider consumers. |
+| Format support | `RhiCapabilities::FormatSupport` | queried through `CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT)` | queried through `vkGetPhysicalDeviceFormatProperties` | Parity | Add formats only when a renderer feature consumes them. |
+| Queues | `RhiQueueCapabilities` | graphics true, compute false, copy false | graphics true, compute false, copy false | Parity baseline | Extension opportunity: expose async compute/copy only after frame graph has real users. |
+| Mesh/task shaders | `RhiCapabilities` | false | false | Parity baseline | Extension opportunity after core renderer/ray tracing path is cleaner. |
+| Ray tracing base | `RhiRayTracingService` | DXR capability query through D3D12 options5 | Vulkan KHR acceleration/ray query feature path | Parity baseline | Keep backend capability reasons explicit. |
+| BLAS | `RhiRayTracingService` | D3D12 BLAS prebuild/resource paths | Vulkan BLAS prebuild/resource paths | Parity | Build/update policy remains renderer-owned. |
+| Classic TLAS | `RhiClassicTlasService` / `RhiRayTracingService` | build/update/gpu-readable instance buffer supported when DXR is available | build/update/gpu-readable instance buffer supported when Vulkan RT is available | Parity | Preserve as baseline RT path. |
+| PTLAS capability | `RhiPartitionedTlasService` / `RhiRayTracingCapabilities` | NVAPI partitioned TLAS path; public DXR PTLAS flags currently false | Vulkan NV partitioned acceleration structure path | Partial parity | Both are modeled, but provider details differ and public DXR PTLAS is not implemented. |
+| PTLAS renderer selection | Renderer ray tracing scene/strategies | capability reason reports `d3d12-nvapi-ptlas-supported-but-renderer-selection-not-wired` when requested/supported | capability reason reports `partitioned-tlas-supported-but-renderer-selection-not-wired` when requested/supported | Gap | Future RT stage must wire renderer selection and acceptance scenes for both backends. |
+| PTLAS CPU operation packing | `RhiPartitionedTlasService` | supported when NVAPI standard cap is present | supported when Vulkan NV PTLAS is enabled | Parity when provider is available | Keep minimal original-PTLAS-style implementation; avoid extra wrappers. |
+| PTLAS GPU-driven operations | `RhiPartitionedTlasCapabilities` | capability can be true through D3D12 NVAPI | currently false on Vulkan | Backend-specific gap | Renderer must branch by explicit capability, not by backend name. |
+| PTLAS shader access | `RhiPartitionedTlasCapabilities` / renderer capability report | D3D12 NVAPI path, public DXR descriptor path false | Vulkan descriptor path false, shader-device-address path possible | Backend-specific gap | Decide one minimal shader access contract before adding demos. |
+| Capture BMP writer | `RhiCaptureService` | product capture path exists | product capture path exists | Parity | Harden capability without expanding diagnostics/smoke harnesses. |
+
+Backend-specific gaps to keep visible:
+
+- D3D12 uses descriptor tables; Vulkan uses descriptor sets. This is intentional and should remain visible in `RhiCapabilities::DescriptorModel`.
+- D3D12 requires DXIL shader packages; Vulkan requires SPIR-V shader packages. Offline cooked shader package reflection must preserve this ABI distinction.
+- D3D12 PTLAS currently depends on NVAPI capability/runtime/header paths; public DXR PTLAS flags are explicitly false.
+- Vulkan PTLAS currently depends on the NV partitioned acceleration structure extension and loaded functions.
+- PTLAS renderer selection is not fully wired even when a backend reports provider support. This is the most important parity gap for the ray tracing roadmap.
+- Vulkan PTLAS GPU-driven operations are currently false; D3D12 NVAPI can expose GPU-driven operations.
+- Both backends report graphics queue support only; compute/copy queue capability is not yet exposed as an active renderer path.
+- Mesh/task shader support is false on both backends and should not be treated as a hidden renderer feature.
+- Native interop bridges differ by design: D3D12 exposes native device/queue/list style handles; Vulkan exposes Vulkan handles/function-pointer/interposer style capability.
+
+Extension opportunities:
+
+- Wire renderer PTLAS provider selection so classic TLAS and PTLAS are both usable product paths on D3D12 and Vulkan.
+- Add a minimal RT scene or level mode that proves classic TLAS and PTLAS can both be selected without hardcoded content names.
+- Keep PTLAS implementation close to the original provider model: backend capability query, operation pack, build sizes, buffers, and build command. Avoid broad new abstraction.
+- Add async compute/copy only when frame graph passes have real queue ownership and synchronization requirements.
+- Add mesh/task shader support only when a renderer feature consumes it and shader package reflection can express it cleanly.
+- Keep native interop only for explicit provider bridges such as upscaling/ray reconstruction/external feature integration.
+
+Verification:
+
+- `rg --files Engine/RHI/Private | rg "(D3D12|Vulkan)"` confirmed both backend trees expose matching service areas.
+- `rg -n "class .*ResourceService|class .*Descriptor|class .*PipelineService|class .*CaptureService|class .*PresentationService|class .*InteropService|class .*RayTracingServices" Engine/RHI/Private/D3D12 Engine/RHI/Private/Vulkan -g "*.h"` confirmed matching service implementations.
+- `Get-Content Engine/RHI/Public/Core/RhiCapabilities.h` confirmed the public capability model.
+- `Get-Content Engine/RHI/Public/RayTracing/RhiRayTracingService.h`, `RhiClassicTlasService.h`, and `RhiPartitionedTlasService.h` confirmed classic TLAS and PTLAS public ownership.
+- D3D12 capability inspection covered `D3D12RenderHardwareInterface::BuildCapabilities`, `D3D12Rhi::CheckRayTracingSupport`, and `D3D12NvapiRayTracingProvider::QueryPartitionedTlasCapabilities`.
+- Vulkan capability inspection covered `VulkanRenderHardwareInterface::BuildCapabilities` and `VulkanRhi::BuildRayTracingCapabilities`.
+- No build was required because this stage made no source changes.
 
 ### Stage 22: RHI Resource/Descriptor/Pipeline Cleanup
 
@@ -1173,16 +1362,48 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Resource creation path remains backend-owned.
-- [ ] Descriptor binding model remains understandable.
-- [ ] Pipeline/layout creation remains explicit.
-- [ ] Any removed helper had no unique product behavior.
+- [x] Resource creation path remains backend-owned.
+- [x] Descriptor binding model remains understandable.
+- [x] Pipeline/layout creation remains explicit.
+- [x] Any removed helper had no unique product behavior.
+
+Stage 22 implementation result:
+
+- Removed duplicate descriptor, pipeline, and resource forwarding methods from `D3D12RenderHardwareInterface`.
+- Removed duplicate descriptor, pipeline, and resource forwarding methods from `VulkanRenderHardwareInterface`.
+- Kept `RhiResourceService`, `RhiDescriptorService`, and `RhiPipelineService` as the explicit owners.
+- Kept D3D12 private descriptor table resolution because `D3D12RenderCommandList` still consumes it for backend-native descriptor binding.
+- Kept backend presentation helpers because presentation ownership is covered by `RhiPresentationService` and was not the duplicate resource/descriptor/pipeline surface being removed.
+- Updated D3D12 ImGui descriptor callbacks to allocate/free through `GetDescriptorService()`.
+- Updated D3D12/Vulkan interop native texture view lookup to go through `GetDescriptorService().GetNativeTextureViewInfo(...)`.
+
+Removed helpers with no unique product behavior:
+
+- Pipeline forwarding: `CreateBindingSet`, `CreateBindingLayout`, `CreateGraphicsPipelineState`, `CreateComputePipelineState`.
+- Descriptor forwarding: `BindGlobalDescriptorState`, descriptor allocation/table helpers, shader-resource descriptor helpers, shared sampler binding, resource view create/release/lookup, native texture view lookup.
+- Resource forwarding: texture/buffer creation helpers, vertex/index/structured buffer helpers, owned resource release/native lookup/GPU address lookup, transient memory and aliasing resource helpers, allocation info helpers, unordered-access helper.
+
+Ownership after cleanup:
+
+- Renderer resource consumers already call `GetResourceService()` directly.
+- Renderer descriptor consumers already call `GetDescriptorService()` directly.
+- Renderer pipeline/runtime consumers already call `GetPipelineService()` directly.
+- Backend-native details remain inside D3D12/Vulkan services or explicit interop bridges.
+- No project, level, asset, content-pack, or sample names were added.
+- No fallback chain was added; the batch removes duplicate entrypoints instead of adding alternate paths.
+- The batch is net code negative: the working diff is hundreds of lines smaller after accounting for the roadmap note.
+
+Verification:
+
+- `rg -n -g "*.h" -g "*.cpp" -- "D3D12RenderHardwareInterface::(CreateBindingSet|CreateBindingLayout|CreateGraphicsPipelineState|CreateComputePipelineState|BindGlobalDescriptorState|AllocateDescriptor|ReleaseDescriptor|AllocateDescriptorTable|GetDescriptorTableCpuHandle|ReleaseDescriptorTable|AllocateShaderResourceDescriptor|ReleaseShaderResourceDescriptor|AllocateUniformConstantBuffer|GetSharedSamplerBinding|CreateTexture\\(|CreateTextureResource|CreateBufferResource|CreateVertexBuffer|CreateStructuredBuffer|CreateIndexBuffer|ReleaseOwnedResource|GetNativeResource|GetResourceGpuVirtualAddress|GetTextureAllocationInfo|GetBufferAllocationInfo|CreateTransientMemoryBlock|ReleaseTransientMemoryBlock|CreateAliasingTextureResource|CreateAliasingBufferResource|CreateResourceView|ReleaseResourceView|GetResourceViewCpuHandle|GetResourceViewGpuHandle|GetNativeTextureViewInfo|SupportsUnorderedAccess)" Engine/RHI/Private/D3D12` returned no matches.
+- `rg -n -g "*.h" -g "*.cpp" -- "VulkanRenderHardwareInterface::(CreateBindingSet|CreateBindingLayout|CreateGraphicsPipelineState|CreateComputePipelineState|BindGlobalDescriptorState|AllocateDescriptor|ReleaseDescriptor|AllocateDescriptorTable|GetDescriptorTableCpuHandle|ReleaseDescriptorTable|AllocateShaderResourceDescriptor|ReleaseShaderResourceDescriptor|AllocateUniformConstantBuffer|GetSharedSamplerBinding|CreateTexture\\(|CreateTextureResource|CreateBufferResource|CreateVertexBuffer|CreateStructuredBuffer|CreateIndexBuffer|ReleaseOwnedResource|GetNativeResource|GetResourceGpuVirtualAddress|GetTextureAllocationInfo|GetBufferAllocationInfo|CreateTransientMemoryBlock|ReleaseTransientMemoryBlock|CreateAliasingTextureResource|CreateAliasingBufferResource|CreateResourceView|ReleaseResourceView|GetResourceViewCpuHandle|GetResourceViewGpuHandle|GetNativeTextureViewInfo|SupportsUnorderedAccess)" Engine/RHI/Private/Vulkan` returned no matches.
+- `cmake --build build --config DevelopmentEditor --parallel` completed successfully. The build emitted the existing launcher warning that `VCINSTALLDIR` is not set, but compilation/linking completed.
 
 ### Stage 23: Native Interop Boundary
 
@@ -1196,16 +1417,50 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Native handle access has explicit consumer ownership.
-- [ ] Provider resource contracts remain narrow.
-- [ ] No broad native escape hatch is exposed casually.
-- [ ] Streamline/upscaling/ray reconstruction paths remain functional where supported.
+- [x] Native handle access has explicit consumer ownership.
+- [x] Provider resource contracts remain narrow.
+- [x] No broad native escape hatch is exposed casually.
+- [x] Streamline/upscaling/ray reconstruction paths remain functional where supported.
+
+Stage 23 implementation result:
+
+- Removed raw Vulkan native handles from broad `RhiExternalFeatureInteropCapabilities`.
+- Added provider-owned Vulkan native payload to `RhiNativeDeviceQueueInterop`, returned only through `RhiInteropService::GetDeviceQueueInterop(...)` with a named `RhiNativeInteropRequest`.
+- Removed unused duplicate `RhiInteropService::GetNativeTextureViewInfo`; native texture view conversion remains owned by `RhiDescriptorService`.
+- Updated Streamline backend validation, device setup, and adapter info construction to use `RhiNativeDeviceQueueInterop` instead of raw handles in capabilities.
+- Updated DLSS upscaling and DLSS ray reconstruction runtimes to pass their explicit native interop contract into Streamline adapter setup.
+
+Native interop ownership after cleanup:
+
+- Upscaling provider initialization requests native device/queue ownership with `ERhiNativeInteropConsumer::UpscalerProvider`.
+- Ray reconstruction provider initialization requests native device/queue ownership with `ERhiNativeInteropConsumer::RayReconstructionProvider`.
+- DLSS and DLSS ray reconstruction command-list access is still requested with provider-specific consumers.
+- Presentation bridge use remains explicit for ImGui and Streamline presentation upgrade paths.
+- Frame graph/resource native texture view data remains descriptor-owned and is not exposed through the interop facade.
+- Frame graph `NativeResourceHandle` use is treated as the RHI resource identity needed for scheduling/barriers/imports, not as a backend API escape hatch; backend-native API objects remain in RHI-private code or explicit provider bridges.
+- Validation/debug native command-list access remains named with `ERhiNativeInteropConsumer::Validation`; it is not a provider bridge, but it is an explicit diagnostic owner and was not expanded in this stage.
+
+Provider contract result:
+
+- Streamline still receives D3D12 device handles through provider-owned `RhiNativeDeviceQueueInterop`.
+- Streamline still receives Vulkan instance, physical device, logical device, graphics queue, and queue-family data through provider-owned `RhiNativeDeviceQueueInterop`.
+- `RhiCapabilities::ExternalFeatureInterop` now reports capability facts only; it no longer carries raw Vulkan object pointers.
+- No project, level, asset, content-pack, or sample names were added.
+- No fallback chain was added.
+- The batch remains net code negative together with Stage 22 cleanup.
+
+Verification:
+
+- `rg -n "ERhiNativeInteropConsumer::|RhiNativeInteropRequest\\{|GetNativeHandle\\(|GetDeviceQueueInterop\\(|GetNativeTextureViewInfo\\(|UpgradePresentationInterface\\(" Engine Tools Projects -g "*.h" -g "*.cpp"` identified native interop ownership.
+- `rg -n "ExternalFeatureInterop\\.Vulkan(Instance|PhysicalDevice|Device|GraphicsQueue|GraphicsQueueFamilyIndex)|\\.VulkanInstance|\\.VulkanPhysicalDevice|\\.VulkanDevice|\\.VulkanGraphicsQueue|\\.VulkanGraphicsQueueFamilyIndex|GetInteropService\\(\\)\\.GetNativeTextureViewInfo|RhiInteropService::GetNativeTextureViewInfo|virtual NativeTextureViewInfo GetNativeTextureViewInfo" Engine Tools Projects -g "*.h" -g "*.cpp"` now finds only descriptor-service native texture view ownership.
+- `cmake --build build --target architecture_boundary_check --config DevelopmentEditor` completed successfully; Renderer native API usage remains limited to the counted Streamline provider bridge exceptions.
+- `cmake --build build --config DevelopmentEditor --parallel` completed successfully. The build emitted the existing launcher warning that `VCINSTALLDIR` is not set, but compilation/linking completed.
 
 ### Stage 24: Shader Compiler/Cook ABI Audit
 
