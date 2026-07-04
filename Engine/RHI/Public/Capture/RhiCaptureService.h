@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../Core/RhiBackendApi.h"
 #include "../Interop/RhiNativeHandles.h"
 #include "../RHIAPI.h"
-#include "../Core/RhiBackendApi.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -35,14 +35,12 @@ struct RhiCaptureResult final
 	const char* ViewModeName = "";
 	std::filesystem::path ArtifactPath;
 	const char* FailureReason = "";
-
-	constexpr explicit operator bool() const noexcept { return Status == ERhiCaptureStatus::Succeeded; }
 };
 
 class SPARKLE_RHI_API RhiCaptureService
 {
   public:
-	virtual ~RhiCaptureService() noexcept = default;
+	virtual ~RhiCaptureService() noexcept;
 
 	virtual RhiCaptureResult CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept = 0;
 };

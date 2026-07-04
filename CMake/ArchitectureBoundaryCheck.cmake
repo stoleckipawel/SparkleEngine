@@ -134,7 +134,7 @@ function(sparkle_boundary_scan_file absolute_path)
                     "RENDERER_NO_BACKEND_NATIVE"
                     "${_relative_path}"
                     "${_line_number}"
-                    "Renderer code must not depend on D3D12/Vulkan native APIs outside documented provider migration code."
+                    "Renderer code must not depend on D3D12/Vulkan native APIs outside documented provider bridge code."
                     "${_line}")
             endif()
         endif()
@@ -166,34 +166,16 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
-        if(_relative_path MATCHES "^Engine/Application/Private/Validation/" AND _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_API_REGEX}")
-            sparkle_boundary_append_failure(
-                "APPLICATION_VALIDATION_NO_BACKEND_NATIVE"
-                "${_relative_path}"
-                "${_line_number}"
-                "Application validation must not add backend-native capture or API dependencies."
-                "${_line}")
-        endif()
     endforeach()
 endfunction()
 
 message(STATUS "Sparkle architecture boundary check")
 message(STATUS "Repository root: ${SPARKLE_REPO_ROOT}")
 
-file(GLOB_RECURSE SPARKLE_ASSET_CONVERTER_FILES LIST_DIRECTORIES false "${SPARKLE_REPO_ROOT}/Tools/Conversion/AssetConverter/*")
-if(SPARKLE_ASSET_CONVERTER_FILES)
-    foreach(_asset_converter_file IN LISTS SPARKLE_ASSET_CONVERTER_FILES)
-        sparkle_boundary_relative_path(_asset_converter_relative "${_asset_converter_file}")
-        sparkle_boundary_append_failure_text(
-            "${_asset_converter_relative}: [NO_PARALLEL_ASSET_CONVERTER_PIPELINE] AssetConverter was retired as a production path. Use AssetCooker inspect/debug commands or focused cookers.")
-    endforeach()
-endif()
-
 sparkle_boundary_collect_source_files(
     SPARKLE_BOUNDARY_SOURCE_FILES
     "Engine/RHI"
-    "Engine/Renderer"
-    "Engine/Application/Private/Validation")
+    "Engine/Renderer")
 
 foreach(_file IN LISTS SPARKLE_BOUNDARY_SOURCE_FILES)
     sparkle_boundary_scan_file("${_file}")

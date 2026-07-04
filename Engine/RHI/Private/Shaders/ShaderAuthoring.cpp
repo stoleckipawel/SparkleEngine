@@ -6,18 +6,6 @@
 #include <sstream>
 #include <vector>
 
-void RegisterBuiltinGlobalShaders() noexcept;
-
-static void EnsureGlobalShaderRegistrationBootstrap() noexcept
-{
-	static const bool initialized = []
-	{
-		RegisterBuiltinGlobalShaders();
-		return true;
-	}();
-	(void) initialized;
-}
-
 static std::vector<ShaderRegistrationDesc>& MutableGlobalShaderRegistrations()
 {
 	static std::vector<ShaderRegistrationDesc> registrations;
@@ -34,7 +22,6 @@ static const std::vector<ShaderRegistrationDesc>& GlobalShaderRegistrationSnapsh
 {
 	static const std::vector<ShaderRegistrationDesc> registrations = []
 	{
-		EnsureGlobalShaderRegistrationBootstrap();
 		std::vector<ShaderRegistrationDesc> snapshot = MutableGlobalShaderRegistrations();
 		std::ranges::sort(
 		    snapshot,
@@ -63,7 +50,6 @@ static const std::vector<RayTracingHitGroupRegistrationDesc>& RayTracingHitGroup
 {
 	static const std::vector<RayTracingHitGroupRegistrationDesc> registrations = []
 	{
-		EnsureGlobalShaderRegistrationBootstrap();
 		std::vector<RayTracingHitGroupRegistrationDesc> snapshot = MutableRayTracingHitGroupRegistrations();
 		std::ranges::sort(
 		    snapshot,
@@ -82,8 +68,6 @@ static const std::vector<RayTracingHitGroupRegistrationDesc>& RayTracingHitGroup
 
 void GlobalShaderRegistry::Register(ShaderRegistrationDesc desc)
 {
-	EnsureGlobalShaderRegistrationBootstrap();
-
 	std::vector<ShaderRegistrationDesc>& registrations = MutableGlobalShaderRegistrations();
 	const auto existing = std::ranges::find_if(
 	    registrations,
@@ -101,8 +85,6 @@ void GlobalShaderRegistry::Register(ShaderRegistrationDesc desc)
 
 void GlobalShaderRegistry::RegisterRayTracingHitGroup(RayTracingHitGroupRegistrationDesc desc)
 {
-	EnsureGlobalShaderRegistrationBootstrap();
-
 	std::vector<RayTracingHitGroupRegistrationDesc>& registrations = MutableRayTracingHitGroupRegistrations();
 	const auto existing = std::ranges::find_if(
 	    registrations,

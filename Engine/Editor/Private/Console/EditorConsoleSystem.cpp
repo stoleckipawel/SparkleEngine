@@ -6,8 +6,7 @@
 #include "Core/Public/Console/ConsoleCommandRegistry.h"
 #include "Core/Public/Console/ConsoleOutput.h"
 #include "Core/Public/Console/ConsoleSession.h"
-#include "Core/Public/Diagnostics/Logger.h"
-#include "Panels/OutputLogPanel.h"
+#include "Panels/EditorConsolePanel.h"
 #include "Style/SparkleUiPalette.h"
 
 #include <imgui.h>
@@ -20,32 +19,6 @@ namespace
 	constexpr std::uintptr_t kTildeKey = 0xC0;
 	constexpr float kMinimumDockHeight = 160.0f;
 	constexpr float kMinimumViewportHeight = 64.0f;
-
-	ConsoleCommandSeverity ToConsoleSeverity(spdlog::level::level_enum level) noexcept
-	{
-		if (level >= spdlog::level::err)
-		{
-			return ConsoleCommandSeverity::Error;
-		}
-		if (level >= spdlog::level::warn)
-		{
-			return ConsoleCommandSeverity::Warning;
-		}
-		return ConsoleCommandSeverity::Info;
-	}
-
-	const char* ToSeverityLabel(spdlog::level::level_enum level) noexcept
-	{
-		if (level >= spdlog::level::err)
-		{
-			return "error";
-		}
-		if (level >= spdlog::level::warn)
-		{
-			return "warning";
-		}
-		return "info";
-	}
 }
 
 EditorConsoleSystem::EditorConsoleSystem()
@@ -53,19 +26,10 @@ EditorConsoleSystem::EditorConsoleSystem()
 	m_commandRegistry = std::make_unique<ConsoleCommandRegistry>();
 	ConsoleBuiltinCommands::Register(*m_commandRegistry);
 	m_session = std::make_unique<ConsoleSession>(*m_commandRegistry, ConsoleCommandContext{.Scope = ConsoleCommandScope::Editor});
-	m_outputLogPanel = std::make_unique<OutputLogPanel>(*m_session);
-	m_outputLogPanel->AddLine(ConsoleCommandSeverity::Info, "Output Log panel initialized. Listening to engine log records.");
-	SubscribeToLogStream();
+	m_consolePanel = std::make_unique<EditorConsolePanel>(*m_session);
 }
 
-EditorConsoleSystem::~EditorConsoleSystem() noexcept
-{
-	if (m_logRecordHandlerId != 0)
-	{
-		Logging::RemoveRecordHandler(m_logRecordHandlerId);
-		m_logRecordHandlerId = 0;
-	}
-}
+EditorConsoleSystem::~EditorConsoleSystem() noexcept = default;
 
 ConsoleCommandRegistry& EditorConsoleSystem::GetCommandRegistry() noexcept
 {
@@ -90,15 +54,15 @@ void EditorConsoleSystem::AppendOutput(ConsoleOutputRecord record)
 
 void EditorConsoleSystem::RequestConsoleFocus() noexcept
 {
-	OpenOutputLog();
+	OpenConsole();
 }
 
-void EditorConsoleSystem::OpenOutputLog() noexcept
+void EditorConsoleSystem::OpenConsole() noexcept
 {
-	if (m_outputLogPanel)
+	if (m_consolePanel)
 	{
-		m_outputLogPanel->SetOpen(true);
-		m_outputLogPanel->RequestFocus();
+		m_consolePanel->SetOpen(true);
+		m_consolePanel->RequestFocus();
 	}
 }
 
@@ -114,9 +78,9 @@ bool EditorConsoleSystem::HandleShortcut(std::uint32_t message, std::uintptr_t k
 
 void EditorConsoleSystem::BuildUI(bool disableInteraction)
 {
-	if (m_outputLogPanel)
+	if (m_consolePanel)
 	{
-		m_outputLogPanel->BuildUI(disableInteraction);
+		m_consolePanel->BuildUI(disableInteraction);
 	}
 }
 
@@ -164,9 +128,9 @@ void EditorConsoleSystem::BuildDockedUI(float left, float bottom, float width, f
 		return;
 	}
 
-	if (m_outputLogPanel)
+	if (m_consolePanel)
 	{
-		m_outputLogPanel->BuildContent(disableInteraction);
+		m_consolePanel->BuildContent(disableInteraction);
 	}
 	m_dockHeight = ImGui::GetWindowHeight();
 	GetDockHeight(availableHeight);
@@ -174,32 +138,4 @@ void EditorConsoleSystem::BuildDockedUI(float left, float bottom, float width, f
 	ImGui::End();
 	ImGui::PopStyleColor(4);
 	ImGui::PopStyleVar(2);
-}
-
-void EditorConsoleSystem::SubscribeToLogStream()
-{
-	if (m_logRecordHandlerId != 0 || m_outputLogPanel == nullptr)
-	{
-		return;
-	}
-
-	m_logRecordHandlerId = Logging::AddRecordHandler(
-	    [this](Logging::LogRecord record)
-	    {
-		    if (m_outputLogPanel == nullptr)
-		    {
-			    return;
-		    }
-
-		    const char* severityLabel = ToSeverityLabel(record.Level);
-		    std::string text;
-		    text.reserve(record.LoggerName.size() + record.Message.size() + 16);
-		    text += '[';
-		    text += record.LoggerName;
-		    text += "] [";
-		    text += severityLabel;
-		    text += "] ";
-		    text += record.Message;
-		    m_outputLogPanel->AddRecord(ConsoleOutputRecord{.Severity = ToConsoleSeverity(record.Level), .Text = std::move(text)});
-	    });
 }

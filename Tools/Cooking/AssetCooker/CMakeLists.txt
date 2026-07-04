@@ -1,6 +1,5 @@
 set(ASSET_COOKER_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookRequest.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookResult.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookerTypes.h
 )
 

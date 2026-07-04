@@ -12,5 +12,7 @@ class D3D12CaptureService final : public RhiCaptureService
 	RhiCaptureResult CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept override;
 
   private:
+	bool CaptureNativeTextureToBmp(NativeResourceHandle resource, const std::filesystem::path& outputPath) noexcept;
+
 	D3D12RenderHardwareInterface* m_owner = nullptr;
 };

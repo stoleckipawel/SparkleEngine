@@ -8,7 +8,7 @@
 
 class ConsoleCommandRegistry;
 class ConsoleSession;
-class OutputLogPanel;
+class EditorConsolePanel;
 struct ConsoleOutputRecord;
 
 class SPARKLE_EDITOR_API EditorConsoleSystem final
@@ -26,18 +26,15 @@ class SPARKLE_EDITOR_API EditorConsoleSystem final
 	void SubmitLine(std::string_view line);
 	void AppendOutput(ConsoleOutputRecord record);
 	void RequestConsoleFocus() noexcept;
-	void OpenOutputLog() noexcept;
+	void OpenConsole() noexcept;
 	bool HandleShortcut(std::uint32_t message, std::uintptr_t key, bool wantsTextInput) noexcept;
 	void BuildUI(bool disableInteraction);
 	float GetDockHeight(float availableHeight) noexcept;
 	void BuildDockedUI(float left, float bottom, float width, float availableHeight, bool disableInteraction);
 
   private:
-	void SubscribeToLogStream();
-
 	std::unique_ptr<ConsoleCommandRegistry> m_commandRegistry;
 	std::unique_ptr<ConsoleSession> m_session;
-	std::unique_ptr<OutputLogPanel> m_outputLogPanel;
-	std::uint64_t m_logRecordHandlerId = 0;
+	std::unique_ptr<EditorConsolePanel> m_consolePanel;
 	float m_dockHeight = 300.0f;
 };

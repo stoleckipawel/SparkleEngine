@@ -80,11 +80,6 @@ if(ENABLE_STRICT_WARNINGS)
 endif()
 
 # ---------------------------
-# Optional: local iteration gates
-# ---------------------------
-option(SPARKLE_RUN_CLANG_FORMAT_ON_BUILD "Run clang-format checks as dependencies of normal builds" OFF)
-
-# ---------------------------
 # Optional dependency groups
 # ---------------------------
 option(SPARKLE_ENABLE_CONTENT_PIPELINE "Build source import, conversion, and asset/texture cooking tools" ON)
@@ -149,50 +144,6 @@ endforeach()
 
 if(NOT DISCOVERED_PROJECTS)
     message(WARNING "No projects discovered. Add a runnable project under Projects/ with a .sparkle-project marker")
-endif()
-
-# ---------------------------
-# Clang-Format integration
-# ---------------------------
-find_program(CLANG_FORMAT_EXE NAMES clang-format)
-if(CLANG_FORMAT_EXE)
-    message(STATUS "clang-format found: ${CLANG_FORMAT_EXE}")
-
-    # Collect all C++ files excluding third_party
-    file(GLOB_RECURSE ALL_CPP
-        "${CMAKE_SOURCE_DIR}/Engine/*.cpp"
-        "${CMAKE_SOURCE_DIR}/Engine/*.h"
-        "${CMAKE_SOURCE_DIR}/Projects/*.cpp"
-        "${CMAKE_SOURCE_DIR}/Projects/*.h"
-    )
-
-    foreach(f ${ALL_CPP})
-        string(FIND "${f}" "/third_party/" isThirdParty)
-        if(NOT isThirdParty EQUAL -1)
-            list(REMOVE_ITEM ALL_CPP "${f}")
-        endif()
-    endforeach()
-
-    add_custom_target(
-        clang_format_check
-        COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror ${ALL_CPP}
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Checking code formatting with clang-format..."
-    )
-endif()
-
-# ---------------------------
-# Apply clang-format to targets
-# ---------------------------
-
-if(CLANG_FORMAT_EXE AND SPARKLE_RUN_CLANG_FORMAT_ON_BUILD)
-    # Optionally make normal targets depend on clang_format_check.
-    get_property(all_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY BUILDSYSTEM_TARGETS)
-    foreach(t ${all_targets})
-        if(NOT t STREQUAL "clang_format_check")
-            add_dependencies(${t} clang_format_check)
-        endif()
-    endforeach()
 endif()
 
 # ---------------------------

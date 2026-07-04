@@ -74,7 +74,6 @@ struct RhiBackendDiagnosticsSupport
 	bool SupportsDebugMessages = false;
 	bool SupportsLiveObjectReports = false;
 	bool SupportsCrashDiagnostics = false;
-	bool SupportsCapture = false;
 };
 
 struct RhiBackendMemorySupport

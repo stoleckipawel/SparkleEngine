@@ -63,11 +63,6 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept;
 	bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept;
-	bool CaptureTextureToBmp(
-	    NativeResourceHandle resource,
-	    std::uint32_t width,
-	    std::uint32_t height,
-	    const std::filesystem::path& outputPath) noexcept;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;

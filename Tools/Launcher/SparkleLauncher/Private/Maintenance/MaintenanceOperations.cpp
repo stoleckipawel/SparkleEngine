@@ -90,7 +90,7 @@ namespace SparkleLauncher
 	static bool IsThirdPartyPath(const std::filesystem::path& path)
 	{
 		const std::string normalized = Strings::ToLowerCopy(path.generic_string());
-		return normalized.find("/third_party/") != std::string::npos;
+		return normalized.find("/thirdparty/") != std::string::npos || normalized.find("/third_party/") != std::string::npos;
 	}
 
 	static std::vector<std::filesystem::path> CollectProjectDirectories(const std::filesystem::path& repositoryRoot)
@@ -148,6 +148,7 @@ namespace SparkleLauncher
 		std::vector<std::filesystem::path> files;
 		CollectFormatSourcesInDirectory(files, repositoryRoot / "Engine");
 		CollectFormatSourcesInDirectory(files, repositoryRoot / "Projects");
+		CollectFormatSourcesInDirectory(files, repositoryRoot / "Tools");
 		std::sort(files.begin(), files.end(), [](const std::filesystem::path& lhs, const std::filesystem::path& rhs) {
 			return lhs.generic_string() < rhs.generic_string();
 		});
@@ -406,7 +407,7 @@ namespace SparkleLauncher
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions()
 	{
 		static const std::vector<MaintenanceOperationDefinition> definitions = {
-		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Build", "Format Check", "Check or apply code formatting for engine and project source files."},
+		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Build", "Format Check", "Check or apply code formatting for engine, project, and tool source files."},
 		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Clean", "Clean Workspace", "Remove generated files for the selected confirmed scope."},
 		};
 		return definitions;
@@ -458,7 +459,7 @@ namespace SparkleLauncher
 			plan.FormatSourceFiles = CollectFormatSourceFiles(request.RepositoryRoot);
 			AddReadiness(plan, plan.Toolchain.ClangFormatPath.empty() ? "clang-format was not found." : "clang-format is available.");
 			AddReadiness(plan, plan.FormatSourceFiles.empty() ? "No source files were found for formatting." : "Format source files discovered: " + std::to_string(plan.FormatSourceFiles.size()));
-			AddPlannedEffect(plan, std::string(request.RequestedFormatMode == FormatMode::Check ? "Check" : "Apply") + " code formatting for Engine/ and Projects/ source files.");
+			AddPlannedEffect(plan, std::string(request.RequestedFormatMode == FormatMode::Check ? "Check" : "Apply") + " code formatting for Engine/, Projects/, and Tools/ source files.");
 			plan.CanRun = !plan.Toolchain.ClangFormatPath.empty() && !plan.FormatSourceFiles.empty();
 			break;
 		case MaintenanceOperationKind::CleanWorkspace:

@@ -675,32 +675,37 @@ Files:
 | --- | --- |
 | `Engine/Core/Public/Diagnostics/Logger.h` | Remove `LogRecord`, `LogRecordHandler`, `AddRecordHandler`, `RemoveRecordHandler` if no UI observer remains. |
 | `Engine/Core/Private/Diagnostics/Logger.cpp` | Remove `LogObserverSink` and record handler registry. |
-| `Engine/Editor/Private/Panels/OutputLogPanel.cpp` | Delete or decouple from live logger observer stream. |
-| `Engine/Editor/Private/Console/EditorConsoleSystem.cpp` | Remove log subscription. |
+| `Engine/Editor/Private/Panels/EditorConsolePanel.cpp` | Preserve as command-console UI only; do not consume the core logger stream. |
+| `Engine/Editor/Private/Console/EditorConsoleSystem.cpp` | Remove log subscription and keep only console command/session ownership. |
 
 Why:
 
 - The core logger is otherwise a normal spdlog bootstrap with stderr/file/debug sinks.
 - The observer sink makes core logging carry editor UI behavior.
-- If non-essential diagnostics/logs are being cut, a live output log panel is optional.
+- The editor command console is still useful for commands, shader recook status, history, and completion, but it does not need to mirror every engine log record.
 
 Cleanup steps:
 
-1. Decide whether the editor needs a live output log panel.
-2. If not, delete the observer sink and record handler API.
-3. Remove editor subscriptions and UI panel code.
-4. Keep fatal logger bootstrap and file/stderr/debug sink behavior if desired.
+1. Preserve the editor command console if it is used by editor workflows.
+2. Delete the observer sink and record handler API from the core logger.
+3. Remove editor log subscriptions and any pending log-record queues.
+4. Rename or reshape leftover output-log classes so they clearly represent command-console UI, not a logger observer.
+5. Keep fatal logger bootstrap and file/stderr/debug sink behavior.
+6. Post-step shell audit: reconsider every modified class; delete, rename, or inline any class that became an empty shell, one-function wrapper, or misleading leftover abstraction.
 
 Acceptance criteria:
 
 - [ ] Fatal startup/runtime failures still print somewhere visible.
 - [ ] Core logger no longer exposes observer registration API.
-- [ ] Editor builds without live log stream panel.
+- [ ] Editor builds without a live engine-log stream panel.
+- [ ] The preserved editor console still supports command submission, history, completion, clear/copy/filter, and shader recook status messages.
 - [ ] `rg "AddRecordHandler|RemoveRecordHandler|LogRecordHandler|LogObserverSink"` returns no live references if fully deleted.
+- [ ] `rg "OutputLogPanel|OpenOutputLog|SubscribeToLogStream"` returns no live references after the console rename/decouple.
+- [ ] Modified leftovers still make sense in the new shape: no empty observer classes, pending log queues, or one-function wrappers remain.
 
 Preserve option:
 
-- Keep the output log panel if it is a core editor workflow. If preserved, treat it as a deliberate editor feature, not diagnostic clutter.
+- Keep the editor command console if it is a core workflow. If preserved, treat it as a deliberate command UI, not diagnostic clutter or a live log mirror.
 
 ### DG-13: Collapse Pass Binding Override Wrapper
 
@@ -793,14 +798,15 @@ Files:
 
 | Path | Action |
 | --- | --- |
-| `CMake/ArchitectureBoundaryCheck.cmake` | Remove stale checks for retired `Tools/Conversion/AssetConverter` layout. After DG-02, remove validation-directory rules that only protected the smoke stack. |
-| `CMakeLists.txt` | Keep `architecture_boundary_check` only if the remaining checks are current and useful. Otherwise delete the custom target. |
+| `CMake/ArchitectureBoundaryCheck.cmake` | Removed stale checks for the retired conversion layout and the empty application validation directory; keep current Renderer/RHI ownership rules. |
+| `CMakeLists.txt` | Keep `architecture_boundary_check`; the remaining target protects active Renderer/RHI module boundaries. |
 
 Why:
 
 - `Tools/Conversion/AssetConverter` no longer exists, but the CMake boundary script still carries a sentinel for it.
 - Retired sentinels make review harder because they look like current architecture policy.
 - A boundary check should protect active module ownership, not preserve memory of removed tool layouts.
+- The remaining checks still protect current ownership: RHI must not include Renderer-private headers, Renderer must not use backend-native APIs except documented provider bridges, native PTLAS identifiers stay in backend RHI code, and D3D12/Vulkan backends do not cross-include each other.
 
 Cleanup steps:
 
@@ -808,12 +814,14 @@ Cleanup steps:
 2. Re-run the architecture boundary target.
 3. If the target only contains stale rules after smoke deletion, remove the target entirely.
 4. If useful Renderer/RHI boundaries remain, keep them and rename comments/messages so they describe current ownership.
+5. Post-step shell audit: keep the CMake target only because it still catches real module ownership violations.
 
 Acceptance criteria:
 
-- [ ] `rg "Tools/Conversion|AssetConverter|NO_PARALLEL_ASSET_CONVERTER_PIPELINE"` returns no live references.
-- [ ] `architecture_boundary_check` either passes with current repo policy or no longer exists.
-- [ ] The check output describes current modules, not retired systems.
+- [x] `rg "Tools/Conversion|AssetConverter|NO_PARALLEL_ASSET_CONVERTER_PIPELINE" CMake CMakeLists.txt` returns no live references.
+- [x] `architecture_boundary_check` passes with current Renderer/RHI policy.
+- [x] The check output describes current modules, not retired systems.
+- [x] No application validation-directory rule remains after the smoke validation stack deletion.
 
 Preserve option:
 
@@ -875,13 +883,13 @@ Files:
 
 | Path | Action |
 | --- | --- |
-| `Engine/RHI/Private/Shaders/HelloTriangleShaders.cpp` | Delete or move to a sample/test-only target. |
-| `Engine/RHI/Private/Shaders/HelloInlineRayQueryCS.cpp` | Delete or move to a sample/test-only target. |
-| `Engine/RHI/Private/Shaders/HelloRayGen.cpp` | Delete or move to a sample/test-only target. |
-| `Engine/RHI/Private/Shaders/BuiltinGlobalShaders.cpp` | Remove HelloWorld package registrations from product bootstrap. |
-| `Engine/RHI/Private/Shaders/ShaderAuthoring.cpp` | Stop registering sample packages during normal RHI startup if no product workflow needs them. |
-| `Engine/Assets/Shaders/HelloWorld/**` | Delete or move under a samples/tests asset tree. |
-| `Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindowOptionPages.cpp` | Remove HelloWorld shader packages from user-facing cook/package options. |
+| `Engine/RHI/Private/Shaders/HelloTriangleShaders.cpp` | Deleted. |
+| `Engine/RHI/Private/Shaders/HelloInlineRayQueryCS.cpp` | Deleted. |
+| `Engine/RHI/Private/Shaders/HelloRayGen.cpp` | Deleted. |
+| `Engine/RHI/Private/Shaders/BuiltinGlobalShaders.cpp` | Deleted; RHI no longer has a sample shader bootstrap. |
+| `Engine/RHI/Private/Shaders/ShaderAuthoring.cpp` | Removed the sample bootstrap hook; registrations come from linked renderer shader registration objects. |
+| `Engine/Assets/Shaders/HelloWorld/**` | Deleted. |
+| `Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindowOptionPages.cpp` | Removed HelloWorld shader packages from user-facing cook/package options. |
 
 Why:
 
@@ -896,12 +904,14 @@ Cleanup steps:
 3. Delete or relocate shader assets.
 4. Delete RHI private sample registration files or move them to a sample-only build target.
 5. Run shader package discovery/cook for real renderer packages.
+6. Post-step shell audit: delete the RHI builtin bootstrap once it contains no product shader registrations.
 
 Acceptance criteria:
 
-- [ ] `rg "HelloWorld|HelloTriangle|HelloInlineRayQuery|HelloRayTracingLibrary|HelloRayGen"` returns no product references.
-- [ ] Normal renderer shader packages still cook.
-- [ ] Launcher no longer offers HelloWorld packages as first-class product choices.
+- [x] `rg "HelloWorld|HelloTriangle|HelloInlineRayQuery|HelloRayTracingLibrary|HelloRayGen" Engine Tools Projects CMake CMakeLists.txt` returns no product references.
+- [x] Normal renderer shader packages still discover and cook.
+- [x] Launcher no longer offers HelloWorld packages as first-class product choices.
+- [x] No empty RHI builtin shader registration shell remains.
 
 Preserve option:
 
@@ -918,11 +928,11 @@ Files:
 
 | Path | Action |
 | --- | --- |
-| `Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindowStatusPages.cpp` | Remove smoke frame limit, view mode, capture path, level switching, PTLAS suite, parity, and benchmark controls. |
-| `Tools/Launcher/SparkleLauncher/Private/Gui/Models/LauncherUiModel.cpp` | Remove smoke workflow visual/model entry. |
-| `Tools/Launcher/SparkleLauncher/Assets/Visuals/workflow-smoke-test.png` | Delete smoke workflow visual asset. |
-| `Tools/Launcher/SparkleLauncher/Assets/Visuals/README.md` | Remove smoke-test visual entry. |
-| `Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/*` | Delete with DG-03. |
+| `Tools/Launcher/SparkleLauncher/Private/Gui/Shell/LauncherMainWindowStatusPages.cpp` | No smoke controls remain. |
+| `Tools/Launcher/SparkleLauncher/Private/Gui/Models/LauncherUiModel.cpp` | No smoke workflow visual/model entry remains. |
+| `Tools/Launcher/SparkleLauncher/Assets/Visuals/workflow-smoke-test.png` | Already absent. |
+| `Tools/Launcher/SparkleLauncher/Assets/Visuals/README.md` | No smoke-test visual entry remains. |
+| `Tools/Launcher/SparkleLauncher/Private/Launch/Smoke/*` | Deleted with DG-03; removed leftover empty directory shell. |
 
 Why:
 
@@ -936,63 +946,74 @@ Cleanup steps:
 2. Remove all smoke controls from status/options pages.
 3. Delete smoke visual asset and README entry.
 4. Remove persisted smoke settings and defaults if they have no remaining owner.
+5. Post-step shell audit: remove empty smoke directories and confirm no status/model placeholder remains.
 
 Acceptance criteria:
 
-- [ ] `rg "workflow-smoke-test|SmokeFrameLimit|SmokeViewMode|SmokeCapturePath|SmokeRunRayTracingParity|SmokeRunPtlasBenchmark|smoke-test"` returns no launcher live references.
-- [ ] Launcher still opens and product workflows still render.
-- [ ] No empty smoke/status section remains.
+- [x] `rg "workflow-smoke-test|SmokeFrameLimit|SmokeViewMode|SmokeCapturePath|SmokeRunRayTracingParity|SmokeRunPtlasBenchmark|smoke-test" Tools/Launcher/SparkleLauncher` returns no launcher live references.
+- [x] Launcher builds and product workflows still render.
+- [x] No empty smoke/status section remains.
+- [x] `Tools/Launcher/SparkleLauncher/Private/Launch/Smoke` no longer exists.
 
 Preserve option:
 
 - Preserve only if smoke testing remains a first-class launcher workflow. In that case, keep the UI and do not delete DG-02/DG-03.
 
-### DG-19: Delete RHI/Renderer BMP Capture Service If It Only Serves Smoke
+### DG-19: Preserve Thin RHI/Renderer Image Capture Service
 
-Priority: high after DG-02/DG-03  
-Confidence: medium-high  
-Blast radius: medium-high  
-Primary value: remove backend readback/BMP code that exists for smoke artifacts
+Priority: high
+Confidence: high
+Blast radius: medium
+Primary value: keep intentional image dumps while removing smoke coupling and wrapper-only service code
 
 Files:
 
 | Path | Action |
 | --- | --- |
-| `Engine/RHI/Public/Capture/RhiCaptureService.h` | Delete capture request/result/service API if no product screenshot feature remains. |
-| `Engine/RHI/Public/Device/RenderHardwareInterface.h` | Remove `GetCaptureService`. |
-| `Engine/RHI/Private/D3D12/Capture/D3D12CaptureService.*` | Delete D3D12 capture service wrapper. |
-| `Engine/RHI/Private/Vulkan/Capture/VulkanCaptureService.*` | Delete Vulkan capture service wrapper. |
-| `Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp` | Remove `CaptureTextureToBmp`/`WriteDiagnosticBmp` readback path if only smoke used it. |
-| `Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.cpp` | Remove `CaptureTextureToBmp`/`WriteRgbaFloatDiagnosticBmp` readback path if only smoke used it. |
-| `Engine/Renderer/Public/Renderer.h` | Remove `CaptureViewportProductToBmp`. |
-| `Engine/Renderer/Private/Renderer.cpp` | Remove capture forwarding. |
-| `Engine/Renderer/Private/FramePipeline/FramePipelineViewportProducts.cpp` | Remove viewport product BMP capture helper. |
+| `Engine/RHI/Public/Capture/RhiCaptureService.h` | Preserve as the small RHI image-dump service contract. Keep declarations/data only; no header-defined helpers. |
+| `Engine/RHI/Public/Device/RenderHardwareInterface.h` | Preserve `GetCaptureService` so RHI stays service-oriented. |
+| `Engine/RHI/Private/D3D12/Capture/D3D12CaptureService.*` | Preserve and make it own the D3D12 readback/BMP path instead of acting as a one-call forwarding wrapper. |
+| `Engine/RHI/Private/Vulkan/Capture/VulkanCaptureService.*` | Preserve and make it own the Vulkan readback/BMP path instead of acting as a one-call forwarding wrapper. |
+| `Engine/RHI/Private/Capture/RhiBmpWriter.*` | Add one shared private BMP writer so D3D12 and Vulkan services do not duplicate BMP headers, row conversion, or file output. |
+| `Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp` | Keep only capture service construction/access; move readback/BMP implementation into `D3D12CaptureService.cpp`. |
+| `Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.cpp` | Keep only capture service construction/access; move readback/BMP implementation into `VulkanCaptureService.cpp`. |
+| `Engine/Renderer/Public/Renderer.h` | Preserve `CaptureViewportProductToBmp` as the renderer-facing image dump entry point. |
+| `Engine/Renderer/Private/Renderer.cpp` | Preserve thin forwarding to the frame pipeline. |
+| `Engine/Renderer/Private/FramePipeline/FramePipelineViewportProducts.cpp` | Preserve viewport product capture and call `GetCaptureService().CaptureTextureToBmp(...)`. |
 | `Engine/Application/Private/Validation/RhiSmokeViewportCapture.cpp` | Delete with DG-02. |
+| `Engine/Renderer/Public/Viewport/ViewportContracts.h` | Preserve `ViewportCaptureRequest` as the renderer capture request shape. |
+| `Engine/RHI/Public/Core/RhiCapabilities.h` | Keep capture out of backend diagnostics capability logs; the service itself is the discoverable contract. |
 
 Why:
 
-- The capture path appears tied to smoke BMP artifacts such as `logs/smoke/scene-color.bmp`.
-- It adds public RHI API, backend services, renderer forwarding, image encoding, readback synchronization, and launcher settings.
-- If the engine does not have a product screenshot/export workflow, this is diagnostics-only infrastructure.
-- This group targets engine-owned BMP/readback artifact capture only. It must not remove PIX/RenderDoc/Nsight marker visibility, object naming, timestamp timing, native API debug layers, or external profiler capture support.
+- Image dumping is useful outside smoke validation for visual inspection, debugging, screenshots, and feature bring-up.
+- RHI is intentionally service-oriented, so capture belongs behind `GetCaptureService()` rather than as ad hoc backend methods.
+- The old backend service shape risked becoming wrapper-only ceremony; the cleanup target is to make the service own real capture work.
+- Capture should remain separate from PIX/RenderDoc/Nsight markers, object naming, timestamp timing, native API debug layers, and external profiler support.
 
 Cleanup steps:
 
 1. Delete smoke capture call sites first.
-2. Confirm no editor screenshot/product capture workflow calls `CaptureViewportProductToBmp`.
-3. Remove renderer capture forwarding and RHI capture service API.
-4. Delete backend capture service files and backend readback-to-BMP helpers.
-5. Remove build file entries and includes.
+2. Preserve the renderer/RHI capture entry points as product/debug image-dump capability.
+3. Keep `GetCaptureService()` and the backend capture service files.
+4. Move backend readback/BMP implementation out of `*RenderHardwareInterface.cpp` and into the backend capture services.
+5. Share the BMP writer between backends instead of duplicating image encoding code.
+6. Keep public capture headers declaration-only.
+7. Post-step shell audit: confirm no one-function wrapper service remains and no capture capability bit is buried in generic diagnostics logs.
 
 Acceptance criteria:
 
-- [ ] `rg "RhiCaptureService|RhiTextureCaptureRequest|RhiCaptureResult|CaptureTextureToBmp|CaptureViewportProductToBmp|WriteDiagnosticBmp|WriteRgbaFloatDiagnosticBmp"` returns no live references.
-- [ ] D3D12 and Vulkan RHI no longer allocate capture service objects.
-- [ ] Normal viewport presentation still works.
+- [x] `RhiCaptureService` remains the single RHI service boundary for image dumps.
+- [x] `D3D12CaptureService` and `VulkanCaptureService` own the backend readback/BMP implementation directly; they are no longer wrapper-only forwarding shells.
+- [x] Shared BMP writing lives in `Engine/RHI/Private/Capture/RhiBmpWriter.*` instead of duplicated backend-local BMP writer code.
+- [x] `D3D12RenderHardwareInterface.cpp` and `VulkanRenderHardwareInterface.cpp` only construct/expose the capture service, not the readback/BMP implementation.
+- [x] `RhiCaptureService.h` has no function definitions in the header.
+- [x] `ShowcaseEditor` builds after preserving and reshaping capture.
+- [ ] Manual viewport capture smoke still recommended because this preserves code near render product presentation but did not run a live editor capture.
 
 Preserve option:
 
-- Preserve only if there is a real editor screenshot/export feature. If so, rename it away from diagnostics/smoke language and make it product-owned.
+- Preserve the service by default. Future cleanup can rename BMP writer internals or add PNG/EXR backends, but image dumping should remain a deliberate RHI/renderer capability.
 - Preserve all external profiler/debugger support regardless of this decision.
 
 ### DG-20: Consolidate Scene Manifest Validators Without Weakening Fatal Checks
@@ -1006,15 +1027,15 @@ Files:
 
 | Path | Action |
 | --- | --- |
-| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestFeatureValidator.*` | Fold into one scene manifest validation implementation. |
-| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestInstanceGroupValidator.*` | Fold into one scene manifest validation implementation. |
-| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestInstanceValidator.*` | Fold into one scene manifest validation implementation. |
-| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestMaterialVariantValidator.*` | Fold into one scene manifest validation implementation. |
-| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestMeshReferenceValidator.*` | Fold into one scene manifest validation implementation. |
-| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestMeshValidator.*` | Fold into one scene manifest validation implementation. |
-| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestMetadataValidator.*` | Fold into one scene manifest validation implementation. |
-| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestValidator.*` | Keep as the public internal entry point; move helper functions here or into `SceneManifestLoaderValidation.cpp`. |
-| `Engine/GameFramework/Private/Assets/Loaders/CookedAssetLoaderDiagnostics.*` | Optional follow-up: keep only if shared load-error formatting remains valuable. |
+| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestFeatureValidator.*` | Deleted; helper implementation folded into `SceneManifestValidator.cpp`. |
+| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestInstanceGroupValidator.*` | Deleted; helper implementation folded into `SceneManifestValidator.cpp`. |
+| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestInstanceValidator.*` | Deleted; helper implementation folded into `SceneManifestValidator.cpp`. |
+| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestMaterialVariantValidator.*` | Deleted; helper implementation folded into `SceneManifestValidator.cpp`. |
+| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestMeshReferenceValidator.*` | Deleted; helper implementation folded into `SceneManifestValidator.cpp`. |
+| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestMeshValidator.*` | Deleted; helper implementation folded into `SceneManifestValidator.cpp`. |
+| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestMetadataValidator.*` | Deleted; helper implementation folded into `SceneManifestValidator.cpp`. |
+| `Engine/GameFramework/Private/Assets/Loaders/SceneManifestValidator.*` | Preserved as the single validation entry point; `SceneManifestValidator.h` stays declaration-only and `SceneManifestValidator.cpp` owns the internal helpers. |
+| `Engine/GameFramework/Private/Assets/Loaders/CookedAssetLoaderDiagnostics.*` | Preserved for now because the formatter is shared by scene, mesh, material, skeleton, and animation loaders. |
 
 Why:
 
@@ -1032,8 +1053,10 @@ Cleanup steps:
 
 Acceptance criteria:
 
-- [ ] `rg "SceneManifestFeatureValidator|SceneManifestMeshReferenceValidator|SceneManifestInstanceValidator|SceneManifestInstanceGroupValidator|SceneManifestMetadataValidator|SceneManifestMaterialVariantValidator|SceneManifestMeshValidator"` returns no live references.
-- [ ] Invalid manifest header/version/count/reference failures still produce clear loader errors.
+- [x] `rg "SceneManifestFeatureValidator|SceneManifestMeshReferenceValidator|SceneManifestInstanceValidator|SceneManifestInstanceGroupValidator|SceneManifestMetadataValidator|SceneManifestMaterialVariantValidator|SceneManifestMeshValidator" Engine/GameFramework Tools Projects -g "*.cpp" -g "*.h"` returns no live source references.
+- [x] Invalid manifest header/version/count/reference failures still produce clear loader errors through the consolidated `SceneManifestValidator.cpp` helpers.
+- [x] Post-step shell audit completed: only `SceneManifestValidator.h/.cpp` remain for scene manifest validation, and `CookedAssetLoaderDiagnostics.*` still has enough shared loader ownership to justify its current shape.
+- [x] `ShowcaseEditor` builds after the consolidation.
 - [ ] Scene manifest loading succeeds for existing cooked showcase data.
 
 Preserve option:
@@ -1135,11 +1158,12 @@ Files:
 
 | Path | Action |
 | --- | --- |
-| `Engine/Core/Public/CoreMacros.h` | Delete if `SPARKLE_PP_CONCAT` remains unused. |
-| `Engine/Core/Public/CoreMinimal.h` | Delete if no source includes it. |
-| `Engine/Core/Public/Input/Mouse/MouseWheel.h` | Delete unused `MouseWheelAxis`, `MouseWheelState`, and wrapper type. |
-| `Engine/GameFramework/Public/Assets/AssetId.h` | Delete unused `AssetId` and `_asset` literal if the engine uses `CookedAssetId`/strings instead. |
-| `Tools/Cooking/AssetCooker/Public/AssetCookResult.h` | Delete with DG-22 or independently. |
+| `Engine/Core/Public/CoreMacros.h` | Deleted; `SPARKLE_PP_CONCAT` had no live users. |
+| `Engine/Core/Public/CoreMinimal.h` | Deleted; no source included it. |
+| `Engine/Core/Public/Input/Mouse/MouseWheel.h` | Deleted; `MouseWheelAxis`, `MouseWheelState`, and wrapper type had no live users. |
+| `Engine/GameFramework/Public/Assets/AssetId.h` | Deleted; `AssetId` and `_asset` literal had no live users. |
+| `Tools/Cooking/AssetCooker/Public/AssetCookResult.h` | Deleted; `AssetCookResult` had no live users. |
+| `Tools/Cooking/AssetCooker/CMakeLists.txt` | Removed the deleted `AssetCookResult.h` public-header entry. |
 
 Why:
 
@@ -1156,9 +1180,9 @@ Cleanup steps:
 
 Acceptance criteria:
 
-- [ ] `rg "CoreMinimal.h|CoreMacros.h|MouseWheelState|MouseWheelAxis|class AssetId|operator\"\"_asset|AssetCookResult"` returns no live references.
-- [ ] No replacement aggregate header is added.
-- [ ] Engine/Core, GameFramework, and AssetCooker targets still compile.
+- [x] `rg "CoreMinimal.h|CoreMacros.h|MouseWheelState|MouseWheelAxis|class AssetId|operator\"\"_asset|AssetCookResult" Engine Tools Projects -g "*.h" -g "*.cpp" -g "*.hpp" -g "*.inl" -g "CMakeLists.txt" -g "*.cmake"` returns no live source/build references.
+- [x] No replacement aggregate header was added.
+- [x] `SparkleCore`, `SparkleGameFramework`, and `AssetCooker` compile in `DevelopmentEditor`.
 
 Preserve option:
 
@@ -1175,8 +1199,8 @@ Files:
 
 | Path | Action |
 | --- | --- |
-| `CMakeLists.txt` | Either remove `SPARKLE_RUN_CLANG_FORMAT_ON_BUILD`/`clang_format_check`, or update it to match current repo layout. |
-| `Tools/Launcher/SparkleLauncher` quality/format workflow | Prefer one canonical formatting workflow if launcher already owns quality tasks. |
+| `CMakeLists.txt` | Removed `SPARKLE_RUN_CLANG_FORMAT_ON_BUILD`, `clang_format_check`, and the root build-time clang-format dependency hook. |
+| `Tools/Launcher/SparkleLauncher` quality/format workflow | Preserved as the canonical formatting workflow and updated to cover `Engine/`, `Projects/`, and `Tools/`. |
 
 Why:
 
@@ -1193,9 +1217,11 @@ Cleanup steps:
 
 Acceptance criteria:
 
-- [ ] There is one obvious formatting workflow.
-- [ ] It either covers `Engine`, `Projects`, and `Tools`, or clearly states its intended subset.
-- [ ] Third-party paths are excluded by actual repo path casing.
+- [x] There is one obvious formatting workflow: `SparkleLauncher --format-mode check --run quality.format` for checking, or `SparkleLauncher --format-mode apply --run quality.format` for applying.
+- [x] The canonical launcher workflow covers `Engine/`, `Projects/`, and `Tools/` source files.
+- [x] Third-party paths are excluded through normalized checks for both `ThirdParty` and `third_party` path spellings.
+- [x] Root CMake configure/build no longer defines `SPARKLE_RUN_CLANG_FORMAT_ON_BUILD` or `clang_format_check`.
+- [x] `SparkleLauncher` builds, and `SparkleLauncher --root . --format-mode check --dry-run quality.format` plans the canonical workflow.
 
 Preserve option:
 

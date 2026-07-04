@@ -102,7 +102,7 @@ void ShaderConsoleCommands::ConnectEditor(UI& ui, ShaderRecookCoordinator& coord
 		    {
 			    const ConsoleCommandSeverity severity = ResolveRecookStatusSeverity(status);
 			    consoleSystem->AppendOutput(ConsoleOutputRecord{.Severity = severity, .Text = std::move(status)});
-			    consoleSystem->OpenOutputLog();
+			    consoleSystem->OpenConsole();
 		    }
 	    });
 

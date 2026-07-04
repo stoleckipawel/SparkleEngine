@@ -1,6 +1,7 @@
 ﻿#include "PCH.h"
-#include "Panels/OutputLogPanel.h"
+#include "Panels/EditorConsolePanel.h"
 
+#include "Core/Public/Console/ConsoleOutput.h"
 #include "Core/Public/Console/ConsoleSession.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Style/SparkleUiPalette.h"
@@ -10,39 +11,18 @@
 #include <imgui.h>
 
 #include <algorithm>
-#include <iterator>
 #include <optional>
 
-namespace
-{
-	constexpr std::size_t kMaxOutputLogRecords = 2048;
-}
+EditorConsolePanel::EditorConsolePanel(ConsoleSession& session) noexcept : m_session(&session) {}
 
-OutputLogPanel::OutputLogPanel(ConsoleSession& session) noexcept : m_session(&session) {}
-
-void OutputLogPanel::RequestFocus() noexcept
+void EditorConsolePanel::RequestFocus() noexcept
 {
 	m_isOpen = true;
 	m_focusInput = true;
 }
 
-void OutputLogPanel::AddLine(ConsoleCommandSeverity severity, std::string text)
+void EditorConsolePanel::Clear() noexcept
 {
-	AddRecord(ConsoleOutputRecord{.Severity = severity, .Text = std::move(text)});
-	DrainPendingRecords();
-}
-
-void OutputLogPanel::AddRecord(ConsoleOutputRecord record)
-{
-	std::lock_guard<std::mutex> lock(m_recordsMutex);
-	m_pendingRecords.push_back(std::move(record));
-}
-
-void OutputLogPanel::Clear() noexcept
-{
-	std::lock_guard<std::mutex> lock(m_recordsMutex);
-	m_records.clear();
-	m_pendingRecords.clear();
 	if (m_session != nullptr)
 	{
 		m_session->ClearOutput();
@@ -51,10 +31,8 @@ void OutputLogPanel::Clear() noexcept
 	m_scrollToBottom = true;
 }
 
-void OutputLogPanel::BuildUI(bool disableInteraction)
+void EditorConsolePanel::BuildUI(bool disableInteraction)
 {
-	DrainPendingRecords();
-
 	if (!m_isOpen)
 	{
 		return;
@@ -68,7 +46,7 @@ void OutputLogPanel::BuildUI(bool disableInteraction)
 		    ImGuiCond_FirstUseEver);
 	}
 	ImGui::SetNextWindowSize(ImVec2(600.0f, 300.0f), ImGuiCond_FirstUseEver);
-	const std::string windowTitle = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Console, "Output Log") + "##Output Log";
+	const std::string windowTitle = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Console, "Console") + "##Editor Console";
 	if (!ImGui::Begin(windowTitle.c_str(), &m_isOpen))
 	{
 		ImGui::End();
@@ -84,10 +62,8 @@ void OutputLogPanel::BuildUI(bool disableInteraction)
 	ImGui::End();
 }
 
-void OutputLogPanel::BuildContent(bool disableInteraction)
+void EditorConsolePanel::BuildContent(bool disableInteraction)
 {
-	DrainPendingRecords();
-
 	DrawToolbar(disableInteraction);
 	ImGui::Separator();
 	DrawScrollback();
@@ -96,14 +72,14 @@ void OutputLogPanel::BuildContent(bool disableInteraction)
 	DrawAutocompletePreview();
 }
 
-int OutputLogPanel::HandleInputTextCallback(ImGuiInputTextCallbackData* data)
+int EditorConsolePanel::HandleInputTextCallback(ImGuiInputTextCallbackData* data)
 {
 	if (data == nullptr || data->UserData == nullptr)
 	{
 		return 0;
 	}
 
-	auto* panel = static_cast<OutputLogPanel*>(data->UserData);
+	auto* panel = static_cast<EditorConsolePanel*>(data->UserData);
 	if (data->EventFlag == ImGuiInputTextFlags_CallbackHistory)
 	{
 		return panel->HandleHistoryCallback(*data);
@@ -115,7 +91,7 @@ int OutputLogPanel::HandleInputTextCallback(ImGuiInputTextCallbackData* data)
 	return 0;
 }
 
-std::size_t OutputLogPanel::FindCompletionTokenStart(const std::string& input) noexcept
+std::size_t EditorConsolePanel::FindCompletionTokenStart(const std::string& input) noexcept
 {
 	for (std::size_t index = input.size(); index > 0; --index)
 	{
@@ -127,13 +103,13 @@ std::size_t OutputLogPanel::FindCompletionTokenStart(const std::string& input) n
 	return 0;
 }
 
-void OutputLogPanel::ReplaceInputText(ImGuiInputTextCallbackData& data, const std::string& text)
+void EditorConsolePanel::ReplaceInputText(ImGuiInputTextCallbackData& data, const std::string& text)
 {
 	data.DeleteChars(0, data.BufTextLen);
 	data.InsertChars(0, text.c_str());
 }
 
-int OutputLogPanel::HandleHistoryCallback(ImGuiInputTextCallbackData& data)
+int EditorConsolePanel::HandleHistoryCallback(ImGuiInputTextCallbackData& data)
 {
 	if (m_session == nullptr)
 	{
@@ -157,7 +133,7 @@ int OutputLogPanel::HandleHistoryCallback(ImGuiInputTextCallbackData& data)
 	return 0;
 }
 
-int OutputLogPanel::HandleCompletionCallback(ImGuiInputTextCallbackData& data)
+int EditorConsolePanel::HandleCompletionCallback(ImGuiInputTextCallbackData& data)
 {
 	if (m_session == nullptr)
 	{
@@ -188,7 +164,7 @@ int OutputLogPanel::HandleCompletionCallback(ImGuiInputTextCallbackData& data)
 	return 0;
 }
 
-void OutputLogPanel::SubmitInput()
+void EditorConsolePanel::SubmitInput()
 {
 	if (m_session == nullptr)
 	{
@@ -203,10 +179,10 @@ void OutputLogPanel::SubmitInput()
 	m_focusInput = true;
 }
 
-void OutputLogPanel::DrawToolbar(bool disableInteraction)
+void EditorConsolePanel::DrawToolbar(bool disableInteraction)
 {
 	ImGui::BeginDisabled(disableInteraction);
-	if (ImGui::BeginTable("##OutputLogToolbar", 5, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX))
+	if (ImGui::BeginTable("##EditorConsoleToolbar", 5, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX))
 	{
 		ImGui::TableSetupColumn("help", ImGuiTableColumnFlags_WidthFixed, 66.0f);
 		ImGui::TableSetupColumn("clear", ImGuiTableColumnFlags_WidthFixed, 66.0f);
@@ -240,17 +216,17 @@ void OutputLogPanel::DrawToolbar(bool disableInteraction)
 
 		ImGui::TableSetColumnIndex(3);
 		ImGui::SetNextItemWidth(-1.0f);
-		ImGui::InputTextWithHint("##OutputLogFilter", "Filter output", m_filterBuffer.data(), m_filterBuffer.size());
+		ImGui::InputTextWithHint("##EditorConsoleFilter", "Filter output", m_filterBuffer.data(), m_filterBuffer.size());
 
 		ImGui::TableSetColumnIndex(4);
 		const std::size_t consoleRecordCount = m_session != nullptr ? m_session->GetOutputRecords().size() : 0;
-		ImGui::TextDisabled("%zu records", m_records.size() + consoleRecordCount);
+		ImGui::TextDisabled("%zu records", consoleRecordCount);
 		ImGui::EndTable();
 	}
 	ImGui::EndDisabled();
 }
 
-void OutputLogPanel::DrawScrollback()
+void EditorConsolePanel::DrawScrollback()
 {
 	if (m_session != nullptr && m_session->GetOutputRecords().size() != m_seenConsoleOutputCount)
 	{
@@ -273,7 +249,7 @@ void OutputLogPanel::DrawScrollback()
 	const ImGuiInputTextFlags flags = ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_NoUndoRedo;
 	const ImVec2 available = ImGui::GetContentRegionAvail();
 	ImGui::InputTextMultiline(
-	    "##OutputLogScrollback",
+	    "##EditorConsoleScrollback",
 	    m_outputTextBuffer.data(),
 	    m_outputTextBuffer.size(),
 	    ImVec2(available.x, (std::max) (32.0f, available.y - 34.0f)),
@@ -290,7 +266,7 @@ void OutputLogPanel::DrawScrollback()
 	}
 }
 
-void OutputLogPanel::DrawInputLine(bool disableInteraction)
+void EditorConsolePanel::DrawInputLine(bool disableInteraction)
 {
 	ImGui::BeginDisabled(disableInteraction || m_session == nullptr);
 	if (m_focusInput)
@@ -304,7 +280,7 @@ void OutputLogPanel::DrawInputLine(bool disableInteraction)
 	const ImGuiInputTextFlags flags =
 	    ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion;
 	if (ImGui::InputTextWithHint(
-	        "##OutputLogCommandInput",
+	        "##EditorConsoleCommandInput",
 	        "Enter command",
 	        m_inputBuffer.data(),
 	        m_inputBuffer.size(),
@@ -318,7 +294,7 @@ void OutputLogPanel::DrawInputLine(bool disableInteraction)
 	ImGui::EndDisabled();
 }
 
-void OutputLogPanel::DrawAutocompletePreview()
+void EditorConsolePanel::DrawAutocompletePreview()
 {
 	const std::vector<std::string> completions = GetCurrentCompletions();
 	if (completions.empty())
@@ -346,20 +322,9 @@ void OutputLogPanel::DrawAutocompletePreview()
 	}
 }
 
-void OutputLogPanel::BuildOutputTextBuffer(std::string_view filter)
+void EditorConsolePanel::BuildOutputTextBuffer(std::string_view filter)
 {
 	m_outputTextBuffer.clear();
-	for (const ConsoleOutputRecord& record : m_records)
-	{
-		if (!filter.empty() && !Strings::ContainsIgnoreCase(record.Text, filter))
-		{
-			continue;
-		}
-
-		m_outputTextBuffer += record.Text;
-		m_outputTextBuffer += '\n';
-	}
-
 	if (m_session != nullptr)
 	{
 		for (const ConsoleOutputRecord& record : m_session->GetOutputRecords())
@@ -382,28 +347,7 @@ void OutputLogPanel::BuildOutputTextBuffer(std::string_view filter)
 	m_outputTextBuffer.push_back('\0');
 }
 
-void OutputLogPanel::DrainPendingRecords()
-{
-	std::vector<ConsoleOutputRecord> pendingRecords;
-	{
-		std::lock_guard<std::mutex> lock(m_recordsMutex);
-		pendingRecords.swap(m_pendingRecords);
-	}
-
-	if (pendingRecords.empty())
-	{
-		return;
-	}
-
-	m_records.insert(m_records.end(), std::make_move_iterator(pendingRecords.begin()), std::make_move_iterator(pendingRecords.end()));
-	while (m_records.size() > kMaxOutputLogRecords)
-	{
-		m_records.erase(m_records.begin(), m_records.begin() + (std::min) (m_records.size() - kMaxOutputLogRecords, m_records.size()));
-	}
-	m_scrollToBottom = true;
-}
-
-std::vector<std::string> OutputLogPanel::GetCurrentCompletions() const
+std::vector<std::string> EditorConsolePanel::GetCurrentCompletions() const
 {
 	if (m_session == nullptr || m_inputBuffer[0] == '\0')
 	{
@@ -412,7 +356,7 @@ std::vector<std::string> OutputLogPanel::GetCurrentCompletions() const
 	return m_session->CompleteLine(m_inputBuffer.data());
 }
 
-std::string OutputLogPanel::BuildCompletionList(const std::vector<std::string>& completions) const
+std::string EditorConsolePanel::BuildCompletionList(const std::vector<std::string>& completions) const
 {
 	std::string output = "matches:";
 	const std::size_t maxOutputCount = (std::min) (completions.size(), static_cast<std::size_t>(12));

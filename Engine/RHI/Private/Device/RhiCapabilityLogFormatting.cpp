@@ -24,7 +24,7 @@ std::string FormatBackendDiagnosticsSupport(const RhiBackendDiagnosticsSupport& 
 {
 	return std::format(
 	    "diagnostics(validation={}, debugLayer={}, objectNames={}, gpuEvents={}, timestampQueries={}, debugMessages={}, "
-	    "liveObjectReports={}, crashDiagnostics={}, capture={})",
+	    "liveObjectReports={}, crashDiagnostics={})",
 	    diagnostics.ValidationEnabled,
 	    diagnostics.SupportsDebugLayer,
 	    diagnostics.SupportsObjectNames,
@@ -32,8 +32,7 @@ std::string FormatBackendDiagnosticsSupport(const RhiBackendDiagnosticsSupport& 
 	    diagnostics.SupportsTimestampQueries,
 	    diagnostics.SupportsDebugMessages,
 	    diagnostics.SupportsLiveObjectReports,
-	    diagnostics.SupportsCrashDiagnostics,
-	    diagnostics.SupportsCapture);
+	    diagnostics.SupportsCrashDiagnostics);
 }
 
 std::string FormatBackendMemorySupport(const RhiBackendMemorySupport& memory)
