@@ -1,5 +1,7 @@
 #include "AssetCookerDiscovery.h"
 
+#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "SourceSceneImporter.h"
 
@@ -332,30 +334,35 @@ bool AssetCookerDiscovery::TryFindRepositoryRoot(
     const std::filesystem::path& startPath,
     std::filesystem::path& outRepositoryRoot)
 {
-	std::filesystem::path currentPath = std::filesystem::absolute(startPath).lexically_normal();
+	std::error_code errorCode;
+	std::filesystem::path currentPath = Paths::Normalize(startPath.empty() ? std::filesystem::current_path(errorCode) : startPath);
+	if (errorCode)
+	{
+		return false;
+	}
 	if (!std::filesystem::is_directory(currentPath))
 	{
 		currentPath = currentPath.parent_path();
 	}
 
-	while (!currentPath.empty())
+	const std::optional<std::filesystem::path> workspaceRoot =
+	    Filesystem::FindAncestorWithMarker(currentPath, Filesystem::kWorkspaceMarker);
+	if (!workspaceRoot)
 	{
-		if (AssetCookerPathExists(currentPath / "CMakeLists.txt") && AssetCookerPathExists(currentPath / "Engine") &&
-		    AssetCookerPathExists(currentPath / "Projects") && AssetCookerPathExists(currentPath / "Tools"))
-		{
-			outRepositoryRoot = currentPath;
-			return true;
-		}
-
-		const std::filesystem::path parentPath = currentPath.parent_path();
-		if (parentPath == currentPath)
-		{
-			break;
-		}
-		currentPath = parentPath;
+		return false;
 	}
 
-	return false;
+	const std::filesystem::path engineRoot = *workspaceRoot / "Engine";
+	const bool hasEngineMarker = AssetCookerPathExists(engineRoot / std::string(Filesystem::kEngineMarker));
+	const bool hasProjectsDirectory = AssetCookerPathExists(*workspaceRoot / "Projects");
+	const bool hasToolsDirectory = AssetCookerPathExists(*workspaceRoot / "Tools");
+	if (!hasEngineMarker || !hasProjectsDirectory || !hasToolsDirectory)
+	{
+		return false;
+	}
+
+	outRepositoryRoot = *workspaceRoot;
+	return true;
 }
 
 bool AssetCookerDiscovery::ValidateConfiguration(std::string_view configuration)
@@ -404,7 +411,7 @@ std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
 			continue;
 		}
 
-		if (AssetCookerPathExists(entry.path() / ".sparkle-project"))
+		if (AssetCookerPathExists(entry.path() / std::string(Filesystem::kProjectMarker)))
 		{
 			projects.push_back(projectName);
 		}
@@ -436,9 +443,12 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 	outPlan.cookedRoot = repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
 	AssetCookerAddPlanSteps(category, outPlan.steps);
 
-	if (!AssetCookerPathExists(outPlan.projectRoot / ".sparkle-project"))
+	if (!AssetCookerPathExists(outPlan.projectRoot / std::string(Filesystem::kProjectMarker)))
 	{
-		diagnostics.AddError(AssetCookerCategory_All, "Project marker was not found.", outPlan.projectRoot / ".sparkle-project");
+		diagnostics.AddError(
+		    AssetCookerCategory_All,
+		    "Project marker was not found.",
+		    outPlan.projectRoot / std::string(Filesystem::kProjectMarker));
 		return false;
 	}
 

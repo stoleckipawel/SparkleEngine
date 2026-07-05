@@ -1,10 +1,10 @@
-﻿#include "PCH.h"
+#include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "Assets/SceneAssetManager.h"
 
 #include "Assets/SceneAssetRegistry.h"
 #include "Assets/SceneAssetPayloadLoader.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <format>
 
@@ -65,7 +65,7 @@ namespace Assets
 		if (!m_sceneAssetRegistry.Load(errorMessage))
 		{
 			errorMessage =
-			    std::format("Failed to load scene asset registry from '{}' - {}", Paths::SceneAssetRegistry().string(), errorMessage);
+			    std::format("Failed to load scene asset registry from '{}' - {}", Filesystem::GetSceneAssetRegistryPath().string(), errorMessage);
 			return false;
 		}
 

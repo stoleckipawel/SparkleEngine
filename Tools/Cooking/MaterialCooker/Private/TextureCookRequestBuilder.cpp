@@ -1,11 +1,11 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "TextureCookRequestBuilder.h"
 
 #include "Core/Public/Assets/AssetTypes.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
+#include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 
 bool TextureCookRequestBuilder::Build(
@@ -128,7 +128,7 @@ bool TextureCookRequestBuilder::BuildTextureSourceKey(
     std::string& outTextureSourceKey,
     std::string& outErrorMessage)
 {
-	const std::filesystem::path& projectRoot = Paths::ProjectRoot();
+	const std::filesystem::path& projectRoot = Filesystem::GetProjectPath();
 	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, projectRoot))
 	{
 		outTextureSourceKey = std::string("project:") + GetTextureColorSpaceName(request.policy.colorSpace) + ":" +
@@ -140,7 +140,7 @@ bool TextureCookRequestBuilder::BuildTextureSourceKey(
 		return true;
 	}
 
-	const std::filesystem::path& engineRoot = Paths::EngineRoot();
+	const std::filesystem::path& engineRoot = Filesystem::GetEnginePath();
 	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, engineRoot))
 	{
 		outTextureSourceKey = std::string("engine:") + GetTextureColorSpaceName(request.policy.colorSpace) + ":" +
@@ -162,22 +162,22 @@ bool TextureCookRequestBuilder::BuildTextureOutputPath(
     std::filesystem::path& outTextureOutputPath,
     std::string& outErrorMessage)
 {
-	const std::filesystem::path& projectRoot = Paths::ProjectRoot();
+	const std::filesystem::path& projectRoot = Filesystem::GetProjectPath();
 	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, projectRoot))
 	{
 		std::filesystem::path cookedRelativePath = std::filesystem::path("Project") / *relativePath;
 		cookedRelativePath.replace_extension(BuildTextureVariantSuffix(request) + ".stex");
-		outTextureOutputPath = Paths::CookedTextureRoot() / cookedRelativePath;
+		outTextureOutputPath = Filesystem::GetCookedTextureRootPath() / cookedRelativePath;
 		outErrorMessage.clear();
 		return true;
 	}
 
-	const std::filesystem::path& engineRoot = Paths::EngineRoot();
+	const std::filesystem::path& engineRoot = Filesystem::GetEnginePath();
 	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, engineRoot))
 	{
 		std::filesystem::path cookedRelativePath = std::filesystem::path("Engine") / *relativePath;
 		cookedRelativePath.replace_extension(BuildTextureVariantSuffix(request) + ".stex");
-		outTextureOutputPath = Paths::CookedTextureRoot() / cookedRelativePath;
+		outTextureOutputPath = Filesystem::GetCookedTextureRootPath() / cookedRelativePath;
 		outErrorMessage.clear();
 		return true;
 	}

@@ -1,4 +1,5 @@
-﻿#include "PCH.h"
+#include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "MaterialCooker.h"
 
@@ -23,7 +24,7 @@ namespace
 	    std::string& outTextureReferencePath,
 	    std::string& outErrorMessage)
 	{
-		const std::optional<std::filesystem::path> relativePath = Paths::TryMakeRelativeUnderRoot(request.outputPath, Paths::CookedAssetRoot());
+		const std::optional<std::filesystem::path> relativePath = Paths::TryMakeRelativeUnderRoot(request.outputPath, Filesystem::GetCookedAssetRootPath());
 		if (!relativePath)
 		{
 			outErrorMessage = "Cooked texture output path is outside the cooked asset root: '" + request.outputPath.string() + "'";

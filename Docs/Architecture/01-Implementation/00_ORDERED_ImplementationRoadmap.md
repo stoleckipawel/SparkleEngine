@@ -2350,16 +2350,29 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Public Core line count decreases.
-- [ ] Private helpers move private.
-- [ ] No replacement aggregate header appears.
-- [ ] Platform/Renderer/GameFramework includes remain clean.
+- [x] Public Core line count decreases.
+- [x] Private helpers move private.
+- [x] No replacement aggregate header appears.
+- [x] Platform/Renderer/GameFramework includes remain clean.
+
+Stage 36 closure notes:
+
+- Reference check: UE module guidance favors private dependencies and forward declarations where possible; Donut exposes deliberate include roots for stable app/core contracts rather than broad convenience surfaces.
+- Existing-capability search found `DirectoryPaths.h` was the largest Core public header and mixed stable engine path contracts with reusable path formatting helpers.
+- `DirectoryPaths.h` now stays a path catalog. Reusable formatting primitives live in `Core/Public/Paths/PathFormatting.h` with implementation in `Engine/Core/Private/Paths/PathFormatting.cpp`.
+- Sparkle-specific log directory policy moved to `Engine/Core/Private/Paths/LogPathPolicy.*`; package/workspace/project discovery moved to `Engine/Core/Private/Paths/FileSystemDiscovery.*`.
+- Private path implementation uses named private namespaces instead of unnamed namespaces in the touched Core path files.
+- `Paths::LogFile` remains the log path public contract, and the root markers such as `.sparkle`, `.sparkle-engine`, and `.sparkle-project` remain intentional Core repository discovery data.
+- `DirectoryPaths.h` dropped from 343 lines to 196 lines; `FileSystemUtils.cpp` dropped from about 800 lines to 653 lines after the private discovery split.
+- Marker discovery propagation check: launcher repository discovery and AssetCooker repository discovery now use Core `Filesystem::FindAncestorWithMarker` and marker constants instead of local repository-root walkers/string literals; launcher's local public `NormalizePath` helper was removed.
+- Remaining marker text outside Core is CMake project discovery, user-facing messages, and the launcher home-state folder name, not duplicate runtime marker logic.
+- Platform, Renderer, and GameFramework include direction stays unchanged: consumers still include the specific Core headers they use, and no content/project/level/asset names or fallback chains were introduced.
 
 ### Stage 37: GameFramework Public API Cleanup
 

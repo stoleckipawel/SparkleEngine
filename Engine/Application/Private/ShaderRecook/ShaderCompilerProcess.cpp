@@ -1,4 +1,5 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "ShaderRecook/ShaderCompilerProcess.h"
 
@@ -42,7 +43,7 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookReq
 	}
 
 	arguments += " --debug-artifacts ";
-	arguments += CommandLine::QuotePath(Paths::ShaderDebugArtifactRoot());
+	arguments += CommandLine::QuotePath(Filesystem::GetShaderDebugArtifactRootPath());
 	return RunCommand(executablePath, projectDirectory, arguments);
 }
 
@@ -85,7 +86,7 @@ std::filesystem::path ShaderCompilerProcess::ResolveExecutable() noexcept
 
 std::filesystem::path ShaderCompilerProcess::ResolveProjectDirectory() noexcept
 {
-	const std::filesystem::path showcaseDirectory = Paths::ProjectRoot();
+	const std::filesystem::path showcaseDirectory = Filesystem::GetProjectPath();
 	std::error_code errorCode;
 	if (std::filesystem::exists(showcaseDirectory, errorCode) && !errorCode)
 	{

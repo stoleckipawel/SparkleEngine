@@ -1,8 +1,8 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "ShaderRecook/ShaderSourceChangeTracker.h"
 
-#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <algorithm>
 #include <array>
@@ -41,8 +41,8 @@ bool ShaderSourceChangeTracker::RefreshSnapshot(bool detectChanges) noexcept
 	std::unordered_map<std::string, std::filesystem::file_time_type> currentWriteTimes;
 
 	const std::array<std::filesystem::path, 2> shaderRoots{
-	    Paths::ShaderSourceRoot(PathRoot::Project),
-	    Paths::ShaderSourceRoot(PathRoot::Engine)};
+	    Filesystem::GetShaderPath(PathRoot::Project),
+	    Filesystem::GetShaderPath(PathRoot::Engine)};
 
 	for (const std::filesystem::path& shaderRoot : shaderRoots)
 	{

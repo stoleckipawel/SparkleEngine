@@ -1,5 +1,6 @@
 #include "BuildFreshnessSignature.h"
 
+#include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
@@ -16,7 +17,7 @@ namespace SparkleLauncher
 	{
 		const std::string fileName = path.filename().string();
 		const std::string extension = path.extension().string();
-		return fileName == "CMakeLists.txt" || fileName == ".sparkle-project" || extension == ".cmake";
+		return fileName == "CMakeLists.txt" || fileName == Filesystem::kProjectMarker || extension == ".cmake";
 	}
 
 	static bool IsSourceFile(const std::filesystem::path& path)

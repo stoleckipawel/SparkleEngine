@@ -1,11 +1,12 @@
-﻿#include "PCH.h"
+#include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "Cooking/CookedRegistryWriter.h"
 
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
+#include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
 
@@ -16,7 +17,7 @@ bool CookedRegistryWriter::Write(
 	std::filesystem::path& outRegistryPath,
 	std::string& outErrorMessage)
 {
-	outRegistryPath = Paths::CookedShaderRegistry();
+	outRegistryPath = Filesystem::GetCookedShaderRegistryPath();
 	const std::filesystem::path tempRegistryPath = Files::BuildTemporaryPath(outRegistryPath);
 	std::ofstream output;
 	if (!Files::TryOpenTextOutput(tempRegistryPath, output, outErrorMessage))

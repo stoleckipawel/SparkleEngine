@@ -1,5 +1,7 @@
 #include "SparkleLauncher/ProjectDiscovery.h"
 
+#include "Core/Public/FileSystemUtils.h"
+
 #include <algorithm>
 #include <system_error>
 
@@ -38,7 +40,7 @@ namespace SparkleLauncher
 				continue;
 			}
 
-			const std::filesystem::path markerPath = entry.path() / ".sparkle-project";
+			const std::filesystem::path markerPath = entry.path() / std::string(Filesystem::kProjectMarker);
 			if (!std::filesystem::exists(markerPath, errorCode))
 			{
 				continue;

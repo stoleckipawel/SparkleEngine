@@ -1,8 +1,8 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "Core/Public/Config/ConfigBackedSettings.h"
 
-#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <filesystem>
@@ -12,7 +12,7 @@
 
 std::filesystem::path ConfigBackedSettings::DefaultProjectConfigPath(std::string_view categoryName)
 {
-	return Paths::WorkspaceRoot() / "Config" / ("Default" + std::string(categoryName) + ".ini");
+	return Filesystem::GetWorkspaceRootPath() / "Config" / ("Default" + std::string(categoryName) + ".ini");
 }
 
 void ConfigBackedSettings::LoadSectionValues(

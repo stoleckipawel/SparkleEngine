@@ -1,10 +1,10 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "Panels/UsedTexturesPanel.h"
 
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Json/JsonReader.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Util/UiUtil.h"
 
@@ -68,7 +68,7 @@ namespace
 
 	std::optional<std::filesystem::path> FindLatestTextureCookSummary()
 	{
-		const std::filesystem::path summaryRoot = Paths::WorkspaceRoot() / "artifacts" / "diagnostics" / "cook" / "Summaries";
+		const std::filesystem::path summaryRoot = Filesystem::GetWorkspaceRootPath() / "artifacts" / "diagnostics" / "cook" / "Summaries";
 		std::error_code errorCode;
 		if (!std::filesystem::exists(summaryRoot, errorCode) || errorCode)
 		{

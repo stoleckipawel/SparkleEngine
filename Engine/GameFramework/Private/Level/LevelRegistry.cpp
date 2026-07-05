@@ -1,7 +1,7 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "Level/LevelRegistry.h"
 
-#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Level/Level.h"
 #include "Level/Parsing/LevelParser.h"
@@ -177,7 +177,7 @@ LevelRegistry::~LevelRegistry() noexcept = default;
 
 void LevelRegistry::DiscoverLevels()
 {
-	const std::filesystem::path projectRoot = Paths::ProjectRoot();
+	const std::filesystem::path projectRoot = Filesystem::GetProjectPath();
 	LevelCatalog catalog;
 	if (LoadLevelCatalog(projectRoot, catalog))
 	{

@@ -1,8 +1,8 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "Settings/EditorRestartService.h"
 
-#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Window/Window.h"
 
 #include <shellapi.h>
@@ -58,12 +58,12 @@ namespace
 
 bool EditorRestartService::Restart(Window& hostWindow) const
 {
-	const std::filesystem::path executablePath = Paths::ExecutablePath();
+	const std::filesystem::path executablePath = Filesystem::GetExecutablePath();
 	const std::wstring commandLine = BuildRelaunchCommandLine(executablePath);
 	std::vector<wchar_t> mutableCommandLine(commandLine.begin(), commandLine.end());
 	mutableCommandLine.push_back(L'\0');
 
-	const std::wstring workingDirectory = Paths::WorkingDirectory().wstring();
+	const std::wstring workingDirectory = Filesystem::GetWorkingDirectory().wstring();
 	STARTUPINFOW startupInfo{};
 	startupInfo.cb = sizeof(startupInfo);
 	PROCESS_INFORMATION processInfo{};

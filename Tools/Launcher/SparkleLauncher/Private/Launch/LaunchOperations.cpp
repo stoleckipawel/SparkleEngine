@@ -1,6 +1,7 @@
 #include "SparkleLauncher/LaunchOperations.h"
 
 #include "LaunchOperationProcessRequests.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/ToolResolver.h"
 
@@ -245,7 +246,7 @@ namespace SparkleLauncher
 		std::error_code errorCode;
 		const bool executableExists = std::filesystem::exists(plan.ExecutablePath, errorCode);
 		errorCode.clear();
-		const bool projectMarkerExists = std::filesystem::exists(plan.WorkingDirectory / ".sparkle-project", errorCode);
+		const bool projectMarkerExists = std::filesystem::exists(plan.WorkingDirectory / std::string(Filesystem::kProjectMarker), errorCode);
 		errorCode.clear();
 		const bool cookedMeshesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Meshes");
 		const bool cookedTexturesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ProjectId, "Textures");

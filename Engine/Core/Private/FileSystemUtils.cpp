@@ -2,13 +2,12 @@
 
 #include "FileSystemUtils.h"
 
+#include "Paths/FileSystemDiscovery.h"
+
 #include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 
-#include <algorithm>
 #include <array>
-#include <cctype>
-#include <cwctype>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -21,156 +20,8 @@
 	#include <Windows.h>
 #endif
 
-namespace
+namespace Filesystem::Private
 {
-	std::string GetExecutableStem()
-	{
-		return Strings::ToLowerCopy(Filesystem::GetExecutablePath().stem().string());
-	}
-
-	std::string InferProjectNameFromExecutableStem(std::string executableStem)
-	{
-		if (executableStem.size() > std::string_view("editor").size() && executableStem.ends_with("editor"))
-		{
-			executableStem.resize(executableStem.size() - std::string_view("editor").size());
-		}
-		else if (executableStem.size() > std::string_view("runtime").size() && executableStem.ends_with("runtime"))
-		{
-			executableStem.resize(executableStem.size() - std::string_view("runtime").size());
-		}
-
-		if (executableStem.empty())
-		{
-			return {};
-		}
-
-		executableStem.front() = static_cast<char>(std::toupper(static_cast<unsigned char>(executableStem.front())));
-		return executableStem;
-	}
-
-	std::optional<std::filesystem::path> DiscoverPackageRoot()
-	{
-		std::error_code ec;
-		auto currentDir = std::filesystem::weakly_canonical(Filesystem::GetExecutableDirectory(), ec);
-		if (ec)
-		{
-			currentDir = Filesystem::GetExecutableDirectory();
-		}
-
-		for (uint32_t depth = 0; depth < 8 && !currentDir.empty(); ++depth)
-		{
-			const bool hasPackageRoot = std::filesystem::exists(currentDir / Filesystem::kWorkspaceMarker, ec);
-			ec.clear();
-			const bool hasPackageManifest = std::filesystem::exists(currentDir / "manifests" / "sparkle-package-manifest.json", ec);
-			ec.clear();
-			const bool hasProjects = std::filesystem::exists(currentDir / "Projects", ec);
-			ec.clear();
-			if (hasPackageRoot && hasPackageManifest && hasProjects)
-			{
-				return Paths::Normalize(currentDir);
-			}
-
-			const auto parentDir = currentDir.parent_path();
-			if (parentDir == currentDir)
-			{
-				break;
-			}
-			currentDir = parentDir;
-		}
-
-		return std::nullopt;
-	}
-
-	std::optional<std::filesystem::path> DiscoverPackageProjectRoot(const std::filesystem::path& packageRoot)
-	{
-		if (packageRoot.empty())
-		{
-			return std::nullopt;
-		}
-
-		const std::filesystem::path projectsRoot = packageRoot / "Projects";
-		std::error_code ec;
-		if (!std::filesystem::exists(projectsRoot, ec) || ec)
-		{
-			return std::nullopt;
-		}
-
-		const std::string projectName = InferProjectNameFromExecutableStem(GetExecutableStem());
-		if (!projectName.empty())
-		{
-			const std::filesystem::path inferredProjectRoot = projectsRoot / projectName;
-			if (std::filesystem::exists(inferredProjectRoot / "Cooked", ec) && !ec)
-			{
-				return Paths::Normalize(inferredProjectRoot);
-			}
-			ec.clear();
-		}
-
-		for (const auto& entry : std::filesystem::directory_iterator(projectsRoot, ec))
-		{
-			if (ec)
-			{
-				break;
-			}
-			if (entry.is_directory(ec) && !ec && std::filesystem::exists(entry.path() / "Cooked", ec) && !ec)
-			{
-				return Paths::Normalize(entry.path());
-			}
-			ec.clear();
-		}
-
-		return std::nullopt;
-	}
-
-	std::optional<std::filesystem::path> DiscoverWorkspaceProjectRoot()
-	{
-		const auto workspaceRoot = Filesystem::DiscoverWorkspaceRoot();
-		if (!workspaceRoot)
-		{
-			return std::nullopt;
-		}
-
-		const std::filesystem::path projectsRoot = *workspaceRoot / "Projects";
-		std::error_code ec;
-		if (!std::filesystem::exists(projectsRoot, ec) || ec)
-		{
-			return std::nullopt;
-		}
-
-		const std::string executableStem = GetExecutableStem();
-		if (executableStem.empty())
-		{
-			return std::nullopt;
-		}
-		for (const auto& entry : std::filesystem::directory_iterator(projectsRoot, ec))
-		{
-			if (ec)
-			{
-				break;
-			}
-
-			if (!entry.is_directory(ec) || ec)
-			{
-				ec.clear();
-				continue;
-			}
-
-			const std::filesystem::path projectRoot = entry.path();
-			if (!std::filesystem::exists(projectRoot / Filesystem::kProjectMarker, ec) || ec)
-			{
-				ec.clear();
-				continue;
-			}
-
-			if (Strings::EqualsIgnoreCase(projectRoot.filename().string(), executableStem))
-			{
-				return Paths::Normalize(projectRoot);
-			}
-		}
-
-		return std::nullopt;
-	}
-
 	struct AssetPathState
 	{
 		static constexpr size_t kAssetTypeCount = static_cast<size_t>(AssetType::Count);
@@ -420,65 +271,13 @@ namespace
 		static AssetPathState state = CreateAssetPathState();
 		return state;
 	}
-}  // namespace
+}  // namespace Filesystem::Private
 
 namespace Filesystem
 {
-	std::filesystem::path NormalizePath(const std::filesystem::path& path)
-	{
-		if (path.empty())
-		{
-			return {};
-		}
-
-		auto normalized = path.is_relative() ? std::filesystem::absolute(path) : path;
-		normalized.make_preferred();
-
-		std::error_code ec;
-		if (auto canonical = std::filesystem::weakly_canonical(normalized, ec); !ec)
-		{
-			return canonical;
-		}
-		return normalized;
-	}
-
-	std::wstring MakePathKey(const std::filesystem::path& path)
-	{
-		const std::filesystem::path normalizedPath = NormalizePath(path);
-		if (normalizedPath.empty())
-		{
-			return {};
-		}
-
-		std::wstring key = normalizedPath.generic_wstring();
-		std::transform(
-		    key.begin(),
-		    key.end(),
-		    key.begin(),
-		    [](wchar_t value)
-		    {
-			    return static_cast<wchar_t>(std::towlower(value));
-		    });
-		return key;
-	}
-
-	std::wstring GetLowercaseExtension(const std::filesystem::path& path)
-	{
-		std::wstring extension = path.extension().wstring();
-		std::transform(
-		    extension.begin(),
-		    extension.end(),
-		    extension.begin(),
-		    [](wchar_t value)
-		    {
-			    return static_cast<wchar_t>(std::towlower(value));
-		    });
-		return extension;
-	}
-
 	const std::filesystem::path& GetWorkingDirectory()
 	{
-		return GetAssetPathState().workingDirectory;
+		return Private::GetAssetPathState().workingDirectory;
 	}
 
 	std::filesystem::path GetExecutablePath()
@@ -508,154 +307,154 @@ namespace Filesystem
 	{
 		if (auto workspaceRoot = DiscoverWorkspaceRoot())
 		{
-			return NormalizePath(*workspaceRoot);
+			return Paths::Normalize(*workspaceRoot);
 		}
 
 		if (auto engineRoot = DiscoverEngineRoot())
 		{
-			return NormalizePath(engineRoot->parent_path());
+			return Paths::Normalize(engineRoot->parent_path());
 		}
 
 		std::error_code ec;
 		const std::filesystem::path workingDirectory = std::filesystem::current_path(ec);
 		if (!workingDirectory.empty() && !ec)
 		{
-			return NormalizePath(workingDirectory);
+			return Paths::Normalize(workingDirectory);
 		}
 
-		return NormalizePath(GetExecutableDirectory());
+		return Paths::Normalize(GetExecutableDirectory());
 	}
 
 	std::filesystem::path ResolveBuildOutputRootPath()
 	{
-		return NormalizePath(ResolveWorkspaceRootPath() / "build");
+		return Paths::Normalize(ResolveWorkspaceRootPath() / "build");
 	}
 
 	std::filesystem::path ResolveLogsRootPath()
 	{
-		return NormalizePath(ResolveWorkspaceRootPath() / "logs");
+		return Paths::Normalize(ResolveWorkspaceRootPath() / "logs");
 	}
 
 	const std::filesystem::path& GetWorkspaceRootPath()
 	{
-		return GetAssetPathState().workspacePath;
+		return Private::GetAssetPathState().workspacePath;
 	}
 
 	const std::filesystem::path& GetBuildOutputRootPath()
 	{
-		return GetAssetPathState().buildOutputRootPath;
+		return Private::GetAssetPathState().buildOutputRootPath;
 	}
 
 	const std::filesystem::path& GetLogsRootPath()
 	{
-		return GetAssetPathState().logsRootPath;
+		return Private::GetAssetPathState().logsRootPath;
 	}
 
 	const std::filesystem::path& GetCookedAssetRootPath()
 	{
-		return GetAssetPathState().cookedAssetRootPath;
+		return Private::GetAssetPathState().cookedAssetRootPath;
 	}
 
 	const std::filesystem::path& GetCookedShaderRootPath()
 	{
-		return GetAssetPathState().cookedShaderRootPath;
+		return Private::GetAssetPathState().cookedShaderRootPath;
 	}
 
 	const std::filesystem::path& GetCookedShaderPackageRootPath()
 	{
-		return GetAssetPathState().cookedShaderPackageRootPath;
+		return Private::GetAssetPathState().cookedShaderPackageRootPath;
 	}
 
 	const std::filesystem::path& GetCookedShaderRegistryPath()
 	{
-		return GetAssetPathState().cookedShaderRegistryPath;
+		return Private::GetAssetPathState().cookedShaderRegistryPath;
 	}
 
 	const std::filesystem::path& GetCookedTextureRootPath()
 	{
-		return GetAssetPathState().cookedTextureRootPath;
+		return Private::GetAssetPathState().cookedTextureRootPath;
 	}
 
 	const std::filesystem::path& GetCookedSceneManifestRootPath()
 	{
-		return GetAssetPathState().cookedSceneManifestRootPath;
+		return Private::GetAssetPathState().cookedSceneManifestRootPath;
 	}
 
 	const std::filesystem::path& GetCookedMeshRootPath()
 	{
-		return GetAssetPathState().cookedMeshRootPath;
+		return Private::GetAssetPathState().cookedMeshRootPath;
 	}
 
 	const std::filesystem::path& GetCookedMaterialRootPath()
 	{
-		return GetAssetPathState().cookedMaterialRootPath;
+		return Private::GetAssetPathState().cookedMaterialRootPath;
 	}
 
 	const std::filesystem::path& GetCookedSkeletonRootPath()
 	{
-		return GetAssetPathState().cookedSkeletonRootPath;
+		return Private::GetAssetPathState().cookedSkeletonRootPath;
 	}
 
 	const std::filesystem::path& GetCookedAnimationRootPath()
 	{
-		return GetAssetPathState().cookedAnimationRootPath;
+		return Private::GetAssetPathState().cookedAnimationRootPath;
 	}
 
 	const std::filesystem::path& GetSceneAssetRegistryPath()
 	{
-		return GetAssetPathState().sceneAssetRegistryPath;
+		return Private::GetAssetPathState().sceneAssetRegistryPath;
 	}
 
 	const std::filesystem::path& GetShaderCacheRootPath()
 	{
-		return GetAssetPathState().shaderCacheRootPath;
+		return Private::GetAssetPathState().shaderCacheRootPath;
 	}
 
 	const std::filesystem::path& GetShaderDebugArtifactRootPath()
 	{
-		return GetAssetPathState().shaderDebugArtifactRootPath;
+		return Private::GetAssetPathState().shaderDebugArtifactRootPath;
 	}
 
 	const std::filesystem::path& GetShaderRecookSignalPath()
 	{
-		return GetAssetPathState().shaderRecookSignalPath;
+		return Private::GetAssetPathState().shaderRecookSignalPath;
 	}
 
 	std::filesystem::path BuildShaderRecookSignalPath(const std::filesystem::path& shaderCacheRootPath)
 	{
-		return NormalizePath(shaderCacheRootPath / "recook.signal");
+		return Paths::Normalize(shaderCacheRootPath / "recook.signal");
 	}
 
 	const std::filesystem::path& GetProjectPath()
 	{
-		return GetAssetPathState().projectPath;
+		return Private::GetAssetPathState().projectPath;
 	}
 
 	const std::filesystem::path& GetProjectAssetsPath()
 	{
-		return GetAssetPathState().projectAssetsPath;
+		return Private::GetAssetPathState().projectAssetsPath;
 	}
 
 	const std::filesystem::path& GetEnginePath()
 	{
-		return GetAssetPathState().enginePath;
+		return Private::GetAssetPathState().enginePath;
 	}
 
 	const std::filesystem::path& GetEngineAssetsPath()
 	{
-		return GetAssetPathState().engineAssetsPath;
+		return Private::GetAssetPathState().engineAssetsPath;
 	}
 
 	void ConfigureProjectRoot(const std::filesystem::path& projectRoot)
 	{
-		AssetPathState& state = GetAssetPathState();
+		Private::AssetPathState& state = Private::GetAssetPathState();
 		state.projectPath = Paths::Normalize(projectRoot);
 		state.projectAssetsPath = state.projectPath.empty() ? std::filesystem::path{} : Paths::Normalize(state.projectPath / "Assets");
 
-		InitializeProjectOutputPaths(state);
-		InitializeTypedPaths(state);
-		InitializeOutputPaths(state);
-		ValidatePaths(state);
+		Private::InitializeProjectOutputPaths(state);
+		Private::InitializeTypedPaths(state);
+		Private::InitializeOutputPaths(state);
+		Private::ValidatePaths(state);
 	}
 
 	std::optional<std::filesystem::path> FindAncestorWithMarker(
@@ -697,13 +496,13 @@ namespace Filesystem
 	{
 		if (auto fromExe = FindAncestorWithMarker(GetExecutableDirectory(), kWorkspaceMarker))
 		{
-			return NormalizePath(*fromExe);
+			return Paths::Normalize(*fromExe);
 		}
 
 		std::error_code ec;
 		if (auto fromCwd = FindAncestorWithMarker(std::filesystem::current_path(ec), kWorkspaceMarker); fromCwd && !ec)
 		{
-			return NormalizePath(*fromCwd);
+			return Paths::Normalize(*fromCwd);
 		}
 
 		return std::nullopt;
@@ -713,13 +512,13 @@ namespace Filesystem
 	{
 		if (auto fromExe = FindAncestorWithMarker(GetExecutableDirectory(), kEngineMarker))
 		{
-			return NormalizePath(*fromExe);
+			return Paths::Normalize(*fromExe);
 		}
 
 		std::error_code ec;
 		if (auto fromCwd = FindAncestorWithMarker(std::filesystem::current_path(ec), kEngineMarker); fromCwd && !ec)
 		{
-			return NormalizePath(*fromCwd);
+			return Paths::Normalize(*fromCwd);
 		}
 
 		if (auto workspace = DiscoverWorkspaceRoot())
@@ -727,7 +526,7 @@ namespace Filesystem
 			auto enginePath = *workspace / "engine";
 			if (std::filesystem::exists(enginePath / kEngineMarker, ec))
 			{
-				return NormalizePath(enginePath);
+				return Paths::Normalize(enginePath);
 			}
 		}
 
@@ -738,18 +537,18 @@ namespace Filesystem
 	{
 		if (auto fromExe = FindAncestorWithMarker(GetExecutableDirectory(), kProjectMarker))
 		{
-			return NormalizePath(*fromExe);
+			return Paths::Normalize(*fromExe);
 		}
 
 		std::error_code ec;
 		if (auto fromCwd = FindAncestorWithMarker(std::filesystem::current_path(ec), kProjectMarker); fromCwd && !ec)
 		{
-			return NormalizePath(*fromCwd);
+			return Paths::Normalize(*fromCwd);
 		}
 
-		if (auto fromWorkspace = DiscoverWorkspaceProjectRoot())
+		if (auto fromWorkspace = Private::DiscoverWorkspaceProjectRoot())
 		{
-			return NormalizePath(*fromWorkspace);
+			return Paths::Normalize(*fromWorkspace);
 		}
 
 		return std::nullopt;
@@ -757,9 +556,9 @@ namespace Filesystem
 
 	const std::filesystem::path& GetTypedPath(AssetType type, PathRoot root) noexcept
 	{
-		AssetPathState& state = GetAssetPathState();
+		Private::AssetPathState& state = Private::GetAssetPathState();
 		const size_t idx = static_cast<size_t>(type);
-		if (type == AssetType::Count || idx >= AssetPathState::kAssetTypeCount)
+		if (type == AssetType::Count || idx >= Private::AssetPathState::kAssetTypeCount)
 		{
 			return state.emptyPath;
 		}
@@ -790,7 +589,7 @@ namespace Filesystem
 	{
 		if (auto resolved = ResolveAssetPath(inputPath, type))
 		{
-			return NormalizePath(*resolved);
+			return Paths::Normalize(*resolved);
 		}
 
 		return std::nullopt;
@@ -803,7 +602,7 @@ namespace Filesystem
 			return std::nullopt;
 		}
 
-		AssetPathState& state = GetAssetPathState();
+		Private::AssetPathState& state = Private::GetAssetPathState();
 
 		if (inputPath.is_absolute())
 		{
@@ -813,18 +612,18 @@ namespace Filesystem
 
 		if (type == AssetType::Texture && Strings::EqualsIgnoreCase(inputPath.extension().string(), ".stex"))
 		{
-			if (auto result = TryResolveIn(state.cookedAssetRootPath, inputPath, type))
+			if (auto result = Private::TryResolveIn(state.cookedAssetRootPath, inputPath, type))
 			{
 				return result;
 			}
 		}
 
-		if (auto result = TryResolveIn(state.projectAssetsPath, inputPath, type))
+		if (auto result = Private::TryResolveIn(state.projectAssetsPath, inputPath, type))
 		{
 			return result;
 		}
 
-		if (auto result = TryResolveIn(state.engineAssetsPath, inputPath, type))
+		if (auto result = Private::TryResolveIn(state.engineAssetsPath, inputPath, type))
 		{
 			return result;
 		}
@@ -849,6 +648,6 @@ namespace Filesystem
 
 	const std::filesystem::path& GetShaderSymbolsOutputPath()
 	{
-		return GetAssetPathState().shaderSymbolsOutputPath;
+		return Private::GetAssetPathState().shaderSymbolsOutputPath;
 	}
 }  // namespace Filesystem

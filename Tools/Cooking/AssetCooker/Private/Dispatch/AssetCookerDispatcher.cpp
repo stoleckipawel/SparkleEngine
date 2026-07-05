@@ -3,7 +3,6 @@
 #include "AssetCookerToolProcess.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
 #include "CookedMeshAssetBuilder.h"
 #include "CookedMeshAssetWriter.h"
 #include "CookedSkeletonAssetWriter.h"
@@ -99,7 +98,7 @@ static bool AssetCookerAppendDefaultTextureRequest(
 	TextureCookRequestSet& requestSet,
     std::string& outErrorMessage)
 {
-	const std::filesystem::path sourcePath = (Paths::EngineRoot() / std::filesystem::path(std::string(sourceRelativePath))).lexically_normal();
+	const std::filesystem::path sourcePath = (Filesystem::GetEnginePath() / std::filesystem::path(std::string(sourceRelativePath))).lexically_normal();
 	std::error_code existsError;
 	if (!std::filesystem::exists(sourcePath, existsError))
 	{
@@ -110,7 +109,7 @@ static bool AssetCookerAppendDefaultTextureRequest(
 	TextureCookRequest request;
 	request.assetId = Hash::Fnv1a64(std::string("engine-default-texture:") + std::string(outputRelativePath));
 	request.sourcePath = sourcePath;
-	request.outputPath = (Paths::CookedTextureRoot() / std::filesystem::path(std::string(outputRelativePath))).lexically_normal();
+	request.outputPath = (Filesystem::GetCookedTextureRootPath() / std::filesystem::path(std::string(outputRelativePath))).lexically_normal();
 	request.policy.colorSpace = colorSpace;
 	request.policy.mipPolicy = TextureMipPolicy::Generate;
 	request.policy.mipFilter = mipFilter;

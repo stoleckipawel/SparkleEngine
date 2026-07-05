@@ -1,4 +1,5 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "Cooking/ShaderPackageCooker.h"
 
@@ -7,12 +8,11 @@
 #include "Cooking/CookedShaderPackageEmitter.h"
 #include "Cooking/ShaderCookPlanBuilder.h"
 #include "Cooking/ShaderCookPlanExecutor.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
 
 ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSettings& settings) const
 {
 	ShaderPackageCookResult result;
-	result.cacheDirectory = settings.cacheDirectory.empty() ? Paths::ShaderCacheRoot() : settings.cacheDirectory;
+	result.cacheDirectory = settings.cacheDirectory.empty() ? Filesystem::GetShaderCacheRootPath() : settings.cacheDirectory;
 	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	ShaderBackendPool backendPool;
 	ShaderCookPipelinePlan plan;

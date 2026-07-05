@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "SceneCooker.h"
 
@@ -198,8 +198,8 @@ bool SceneCooker::BuildSceneAssetId(
     std::string& outSceneAssetId,
     std::string& outErrorMessage)
 {
-	const std::filesystem::path projectMeshRoot = Paths::TypedAssetRoot(AssetType::Mesh, PathRoot::Project);
-	const std::filesystem::path engineMeshRoot = Paths::TypedAssetRoot(AssetType::Mesh, PathRoot::Engine);
+	const std::filesystem::path projectMeshRoot = Filesystem::GetTypedPath(AssetType::Mesh, PathRoot::Project);
+	const std::filesystem::path engineMeshRoot = Filesystem::GetTypedPath(AssetType::Mesh, PathRoot::Engine);
 
 	std::optional<std::filesystem::path> relativePath = Paths::TryMakeRelativeUnderRoot(resolvedSourceScenePath, projectMeshRoot);
 	if (!relativePath)
@@ -224,7 +224,7 @@ bool SceneCooker::BuildSceneAssetId(
 
 bool SceneCooker::UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::string& outErrorMessage)
 {
-	const std::filesystem::path manifestRoot = Paths::CookedSceneManifestRoot();
+	const std::filesystem::path manifestRoot = Filesystem::GetCookedSceneManifestRootPath();
 	const std::optional<std::filesystem::path> manifestRelativePath =
 	    Paths::TryMakeRelativeUnderRoot(build.identity.manifestPath, manifestRoot);
 	if (!manifestRelativePath)

@@ -1,8 +1,8 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "ShaderRecook/ShaderRecookCoordinator.h"
 
-#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Renderer.h"
 #include "ShaderRecook/ShaderRecookPublicationReader.h"
 
@@ -356,7 +356,7 @@ std::uint64_t ShaderRecookCoordinator::ReadCurrentPublicationId() noexcept
 
 ShaderRecookPublicationReadResult ShaderRecookCoordinator::ReadRecookPublication() noexcept
 {
-	return ShaderRecookPublicationReader::Read(Paths::ShaderRecookSignal());
+	return ShaderRecookPublicationReader::Read(Filesystem::GetShaderRecookSignalPath());
 }
 
 bool ShaderRecookCoordinator::TryAcceptFreshPublication(

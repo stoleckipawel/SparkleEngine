@@ -1,8 +1,8 @@
-﻿#include "PCH.h"
+#include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "Assets/SceneAssetRegistry.h"
 
-#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <fstream>
@@ -32,7 +32,7 @@ namespace Assets
 	{
 		m_entries.clear();
 
-		const std::filesystem::path registryPath = Paths::SceneAssetRegistry();
+		const std::filesystem::path registryPath = Filesystem::GetSceneAssetRegistryPath();
 		std::error_code errorCode;
 		if (!std::filesystem::exists(registryPath, errorCode))
 		{
@@ -98,7 +98,7 @@ namespace Assets
 
 	bool SceneAssetRegistry::Save(std::string& outErrorMessage) const
 	{
-		const std::filesystem::path registryPath = Paths::SceneAssetRegistry();
+		const std::filesystem::path registryPath = Filesystem::GetSceneAssetRegistryPath();
 		std::error_code errorCode;
 		std::filesystem::create_directories(registryPath.parent_path(), errorCode);
 		if (errorCode)

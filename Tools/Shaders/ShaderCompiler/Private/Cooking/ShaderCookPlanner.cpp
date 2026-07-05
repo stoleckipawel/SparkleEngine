@@ -4,7 +4,7 @@
 
 #include "Core/Public/Assets/AssetTypes.h"
 #include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
+#include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Contracts/ShaderContractCatalogBuilder.h"
 
@@ -22,8 +22,8 @@ ShaderCompileOptions ShaderCookPlanner::BuildCompileOptions(const ShaderCookStag
 	options.PackageFeatures = stage.packageFeatures;
 	options.RayTracingExportKind = stage.rayTracingExportKind;
 
-	const std::filesystem::path& projectShaderRoot = Paths::ShaderSourceRoot(PathRoot::Project);
-	const std::filesystem::path& engineShaderRoot = Paths::ShaderSourceRoot(PathRoot::Engine);
+	const std::filesystem::path& projectShaderRoot = Filesystem::GetShaderPath(PathRoot::Project);
+	const std::filesystem::path& engineShaderRoot = Filesystem::GetShaderPath(PathRoot::Engine);
 
 	if (!projectShaderRoot.empty())
 	{

@@ -1,16 +1,31 @@
 #include "SparkleLauncher/RepositoryLocator.h"
 
+#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/PathUtils.h"
+
 #include <system_error>
 
 namespace SparkleLauncher
 {
 	bool IsRepositoryRoot(const std::filesystem::path& path)
 	{
+		if (path.empty())
+		{
+			return false;
+		}
+
 		std::error_code errorCode;
-		return std::filesystem::exists(path / "CMakeLists.txt", errorCode) &&
-		       std::filesystem::is_directory(path / "Engine", errorCode) &&
-		       std::filesystem::is_directory(path / "Tools", errorCode) &&
-		       std::filesystem::is_directory(path / "Projects", errorCode);
+		const std::filesystem::path enginePath = path / "Engine";
+		const bool hasWorkspaceMarker = std::filesystem::exists(path / std::string(Filesystem::kWorkspaceMarker), errorCode);
+		errorCode.clear();
+		const bool hasEngineMarker = std::filesystem::exists(enginePath / std::string(Filesystem::kEngineMarker), errorCode);
+		errorCode.clear();
+		const bool hasEngineDirectory = std::filesystem::is_directory(enginePath, errorCode);
+		errorCode.clear();
+		const bool hasToolsDirectory = std::filesystem::is_directory(path / "Tools", errorCode);
+		errorCode.clear();
+		const bool hasProjectsDirectory = std::filesystem::is_directory(path / "Projects", errorCode);
+		return hasWorkspaceMarker && hasEngineMarker && hasEngineDirectory && hasToolsDirectory && hasProjectsDirectory;
 	}
 
 	std::optional<RepositoryRoot> TryFindRepositoryRoot(const std::filesystem::path& startPath, std::string& outErrorMessage)
@@ -18,7 +33,7 @@ namespace SparkleLauncher
 		outErrorMessage.clear();
 
 		std::error_code errorCode;
-		std::filesystem::path current = NormalizePath(startPath.empty() ? std::filesystem::current_path(errorCode) : startPath);
+		std::filesystem::path current = Paths::Normalize(startPath.empty() ? std::filesystem::current_path(errorCode) : startPath);
 		if (errorCode)
 		{
 			outErrorMessage = "Failed to resolve current directory: " + errorCode.message();
@@ -30,46 +45,19 @@ namespace SparkleLauncher
 			current = current.parent_path();
 		}
 
-		while (!current.empty())
+		const std::optional<std::filesystem::path> workspaceRoot =
+		    Filesystem::FindAncestorWithMarker(current, Filesystem::kWorkspaceMarker);
+		if (workspaceRoot && IsRepositoryRoot(*workspaceRoot))
 		{
-			if (IsRepositoryRoot(current))
-			{
-				RepositoryRoot root;
-				root.RootPath = current;
-				root.EnginePath = current / "Engine";
-				root.ToolsPath = current / "Tools";
-				root.ProjectsPath = current / "Projects";
-				return root;
-			}
-
-			const std::filesystem::path parent = current.parent_path();
-			if (parent == current)
-			{
-				break;
-			}
-
-			current = parent;
+			RepositoryRoot root;
+			root.RootPath = *workspaceRoot;
+			root.EnginePath = root.RootPath / "Engine";
+			root.ToolsPath = root.RootPath / "Tools";
+			root.ProjectsPath = root.RootPath / "Projects";
+			return root;
 		}
 
-		outErrorMessage = "Could not find SparkleEngine repository root from: " + startPath.string();
+		outErrorMessage = "Could not find SparkleEngine repository root marker from: " + startPath.string();
 		return std::nullopt;
-	}
-
-	std::filesystem::path NormalizePath(const std::filesystem::path& path)
-	{
-		std::error_code errorCode;
-		std::filesystem::path absolutePath = path.is_relative() ? std::filesystem::absolute(path, errorCode) : path;
-		if (errorCode)
-		{
-			return path.lexically_normal();
-		}
-
-		std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(absolutePath, errorCode);
-		if (!errorCode)
-		{
-			return canonicalPath.lexically_normal();
-		}
-
-		return absolutePath.lexically_normal();
 	}
 }

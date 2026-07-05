@@ -1,4 +1,5 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "DxcShaderBackend.h"
 
@@ -8,7 +9,6 @@
 #include "Compiler/ShaderSourcePreprocessor.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Files/FileUtils.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "DxilReflectionExtractor.h"
 #include "SpirVReflectionExtractor.h"
@@ -498,7 +498,7 @@ std::filesystem::path DxcShaderBackend::SaveShaderSymbols(IDxcResult* result, co
 		return {};
 
 	std::wstring pdbName(pdbNameBlob->GetStringPointer());
-	const std::filesystem::path pdbPath = Paths::ShaderSymbolsOutputRoot() / std::filesystem::path(pdbName).filename();
+	const std::filesystem::path pdbPath = Filesystem::GetShaderSymbolsOutputPath() / std::filesystem::path(pdbName).filename();
 
 	FILE* fp = nullptr;
 	_wfopen_s(&fp, pdbPath.c_str(), L"wb");

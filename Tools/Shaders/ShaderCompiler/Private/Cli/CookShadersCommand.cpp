@@ -1,4 +1,5 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include "Cli/CookShadersCommand.h"
 
@@ -7,7 +8,6 @@
 #include "Constants/ShaderCompilerConstants.h"
 #include "Cooking/ShaderPackageCooker.h"
 #include "Core/Public/Formatting/HexFormat.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "ToolConsole.h"
 
@@ -375,7 +375,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	    std::cout,
 	    "Shader cook summary",
 	    {ToolConsole::Field("packages", std::to_string(cookResult.packages.size())),
-	     ToolConsole::PathField("packageRoot", Paths::CookedShaderPackageRoot()),
+	     ToolConsole::PathField("packageRoot", Filesystem::GetCookedShaderPackageRootPath()),
 	     ToolConsole::PathField("registry", cookResult.registryPath),
 	     ToolConsole::QuotedField("targets", FormatTargets(settings.targets)),
 	     ToolConsole::PathField("recookSignal", cookResult.recookSignalPath),
