@@ -1,8 +1,3 @@
-set(ASSET_COOKER_PUBLIC_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookRequest.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookerTypes.h
-)
-
 set(ASSET_COOKER_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Api/AssetCookerService.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/AssetCookerDiagnostics.cpp
@@ -14,6 +9,7 @@ set(ASSET_COOKER_CORE_SOURCES
 
 set(ASSET_COOKER_CORE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Api/AssetCookerService.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Api/AssetCookerTypes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/AssetCookerDiagnostics.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Discovery/AssetCookerDiscovery.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerDispatcher.h
@@ -32,22 +28,19 @@ set(ASSET_COOKER_CLI_HEADERS
 )
 
 add_library(AssetCookerCore STATIC
-    ${ASSET_COOKER_PUBLIC_HEADERS}
     ${ASSET_COOKER_CORE_SOURCES}
     ${ASSET_COOKER_CORE_HEADERS}
 )
 sparkle_configure_host_tool_target(AssetCookerCore)
 
 target_include_directories(AssetCookerCore
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         ${CMAKE_SOURCE_DIR}/Engine
         ${CMAKE_SOURCE_DIR}/Engine/Core/Public/Diagnostics
 )
 
-target_compile_features(AssetCookerCore PUBLIC cxx_std_20)
+target_compile_features(AssetCookerCore PRIVATE cxx_std_20)
 set(ASSET_COOKER_COOKING_LINK_LIBRARIES
     ole32
     SourceImporters
@@ -66,7 +59,6 @@ target_link_libraries(AssetCookerCore
 )
 
 add_executable(AssetCooker
-    ${ASSET_COOKER_PUBLIC_HEADERS}
     ${ASSET_COOKER_CLI_SOURCES}
     ${ASSET_COOKER_CLI_HEADERS}
 )
@@ -75,7 +67,6 @@ sparkle_configure_development_tool_artifacts(AssetCooker)
 
 target_include_directories(AssetCooker
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         ${CMAKE_SOURCE_DIR}/Engine
         ${CMAKE_SOURCE_DIR}/Engine/Core/Public/Diagnostics
@@ -99,6 +90,5 @@ if(TARGET assimp)
     )
 endif()
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${ASSET_COOKER_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${ASSET_COOKER_CORE_SOURCES} ${ASSET_COOKER_CORE_HEADERS} ${ASSET_COOKER_CLI_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)

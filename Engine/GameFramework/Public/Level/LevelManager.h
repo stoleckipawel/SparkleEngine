@@ -1,15 +1,15 @@
 ﻿#pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "Level/LevelRegistry.h"
 #include "Level/LevelChangeEvents.h"
 
-#include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
 class LevelAsset;
+class LevelRegistry;
 class GameScene;
 struct GameSceneLoadResult;
 namespace Assets
@@ -20,8 +20,8 @@ namespace Assets
 class SPARKLE_ENGINE_API LevelManager final
 {
   public:
-	LevelManager(GameScene& scene, Assets::SceneAssetManager& sceneAssetManager) noexcept;
-	~LevelManager() noexcept = default;
+	LevelManager(GameScene& scene, Assets::SceneAssetManager& sceneAssetManager);
+	~LevelManager() noexcept;
 
 	LevelManager(const LevelManager&) = delete;
 	LevelManager& operator=(const LevelManager&) = delete;
@@ -42,8 +42,6 @@ class SPARKLE_ENGINE_API LevelManager final
 	bool SaveActiveLevel() noexcept;
 
   private:
-	static constexpr std::string_view GetEmptyLevelName() noexcept { return "Empty"; }
-
 	void CaptureSceneToLevel() noexcept;
 	void InitializeStartupLevel() noexcept;
 	GameSceneLoadResult LoadLevelFromUnloadedState(const LevelAsset& level) noexcept;
@@ -51,7 +49,7 @@ class SPARKLE_ENGINE_API LevelManager final
 
 	GameScene* m_gameScene = nullptr;
 	Assets::SceneAssetManager* m_sceneAssetManager = nullptr;
-	LevelRegistry m_levelRegistry;
+	std::unique_ptr<LevelRegistry> m_levelRegistry;
 	LevelChangeEvents m_levelChangeEvents;
 	LevelAsset* m_activeLevel = nullptr;
 	LevelAsset* m_pendingLevelChange = nullptr;

@@ -10,10 +10,8 @@
 		return commandName == TextureCookerConstants::CookRequestFileCommand;
 	}
 
-	int CookTextureCookRequestFileCommand::Execute(
-		const std::filesystem::path& requestFilePath,
-		const TextureCookerCommandOptions& options) const
+	int CookTextureCookRequestFileCommand::Execute(const std::filesystem::path& requestFilePath) const
 	{
 		TextureCookRequestBatchProcessor batchProcessor;
-		return batchProcessor.CookRequestFile(requestFilePath, options.summaryPath);
+		return batchProcessor.CookRequestFile(requestFilePath);
 	}

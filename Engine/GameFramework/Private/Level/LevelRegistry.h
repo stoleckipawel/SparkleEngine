@@ -1,8 +1,5 @@
 #pragma once
 
-#include "GameFramework/Public/GameFrameworkAPI.h"
-
-#include <cstddef>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -11,7 +8,7 @@
 
 class LevelAsset;
 
-class SPARKLE_ENGINE_API LevelRegistry final
+class LevelRegistry final
 {
   public:
 	LevelRegistry();
@@ -24,17 +21,12 @@ class SPARKLE_ENGINE_API LevelRegistry final
 
 	LevelAsset* FindLevel(std::string_view name) const;
 
-	LevelAsset* FindLevelOrDefault(std::string_view name) const;
-
-	const std::unordered_map<std::string, std::unique_ptr<LevelAsset>>& GetAllLevels() const noexcept;
-
-	std::size_t GetLevelCount() const noexcept;
+	std::vector<std::string> GetLevelNames() const;
 
 	void SetDefaultLevelName(std::string_view name);
 	bool SaveLevel(const LevelAsset& level, std::string* errorMessage = nullptr) const;
 
 	std::string_view GetDefaultLevelName() const noexcept;
-	LevelAsset* GetDefaultLevel() const;
 
   private:
 	void DiscoverLevels();

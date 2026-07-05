@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Public/AssetCookerTypes.h"
+#include "Api/AssetCookerTypes.h"
 
 #include <filesystem>
 #include <string>

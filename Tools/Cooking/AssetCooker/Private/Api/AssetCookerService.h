@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Public/AssetCookRequest.h"
+#include "AssetCookerTypes.h"
 #include "../Diagnostics/AssetCookerDiagnostics.h"
 
 #include <filesystem>
@@ -8,22 +8,16 @@
 
 class AssetCookerService final
 {
-public:
-	explicit AssetCookerService(const AssetCookerConfig* config);
+ public:
+	AssetCookerService(const char* repositoryRoot, const char* projectName, const char* configuration);
 
-	AssetCookerServiceResult CookProject(const AssetCookRequest* request);
-	AssetCookerServiceResult RecookAssets(const AssetRecookRequest* request);
+	AssetCookerServiceResult Cook(const char* projectName, const char* configuration, AssetCookerCategory category);
 	AssetCookerCapabilities QueryCapabilities() const noexcept;
 
-private:
-	AssetCookerServiceResult CookCategory(
-	    const char* projectName,
-	    const char* configuration,
-	    AssetCookerCategory category);
+  private:
 	bool ResolveRepositoryRoot(AssetCookerDiagnostics& diagnostics, std::filesystem::path& outRepositoryRoot) const;
 	std::string ResolveProjectName(const char* requestProjectName) const;
 	std::string ResolveConfiguration(const char* requestConfiguration) const;
-	AssetCookerCategory ResolveRecookCategory(const AssetRecookRequest* request, AssetCookerDiagnostics& diagnostics) const;
 
 	std::filesystem::path configuredRepositoryRoot;
 	std::string configuredProjectName;

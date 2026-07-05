@@ -10,6 +10,5 @@
 	  private:
 		static int RunCommand(
 			const std::filesystem::path& requestFilePath,
-			const char* commandName,
-			const std::filesystem::path& summaryPath);
+			const char* commandName);
 	};

@@ -57,6 +57,11 @@ Before deleting, answer:
 16. Does the net batch remove or simplify at least as much code as it adds?
 17. Does real code remain free of hardcoded project, level, asset, optional-pack, and sample names?
 18. Does the change avoid fallback chains and fail clearly for missing required data?
+19. Did deletion leave a wrapper function that only forwards to another owner?
+20. Did deletion leave a struct/class/config object with one meaningful field and no behavior, invariant, or external ABI role?
+21. Did deletion leave empty `if`, `else`, loop, switch, callback, or no-op function bodies?
+22. Did deletion leave duplicated constants, marker names, path normalization helpers, capability discovery, or local utility code outside the owning module?
+23. Were call sites, includes, source lists, and docs propagated to the surviving owner?
 
 Only delete when the answer is clear.
 
@@ -478,6 +483,7 @@ Search patterns used:
 Pre-delete behavior to preserve:
 Deletion target:
 Fallback if capability breaks:
+Cleanup-after-cleanup scan:
 Final build/cook/run stabilization risk:
 Targeted verification before final stage:
 Expected net delta:
@@ -496,3 +502,4 @@ The remove plan is successful when:
 - screenshot capture is preserved
 - multiple levels remain supported
 - no new replacement scaffolding appears
+- no no-value forwarding wrappers, single-field data-only shells, empty control-flow shells, stale includes, duplicated local helpers, or dead compatibility paths remain in touched modules

@@ -50,6 +50,11 @@ Every implementation batch must answer:
 14. Code delta: what code is removed or simplified so the batch is net code-neutral or net code-negative?
 15. Content-name check: does compiled code avoid hardcoded project, level, asset, optional-pack, and sample names?
 16. Fallback check: does required missing data fail clearly instead of adding fallback chains?
+17. Wrapper check: did the change leave functions that only forward to another owner without adding policy, invariant, ABI boundary, product vocabulary, or composed value?
+18. Shape check: did the change leave structs/classes/config objects with one meaningful field and no behavior, invariant, or external ABI role?
+19. Empty-control-flow check: did deletion leave empty `if`/`else`/loop/switch/callback/function bodies or no-op hooks?
+20. Propagation check: are all call sites, includes, source lists, docs, and module boundaries using the surviving owner instead of a compatibility path?
+21. Stale-helper check: did the change leave duplicated constants, duplicated path/normalization helpers, duplicated capability discovery, or stale local utilities outside the owning module?
 
 If the batch cannot answer these, split it or move it to `03_ADD_MinimalMissingCapabilities.md` or `04_REMOVE_DeletionsAndCleanup.md`.
 
@@ -59,6 +64,9 @@ Modification bias:
 - Prefer fewer files, fewer public headers, fewer settings, fewer branches, and fewer default artifacts.
 - Keep a thin user-facing concept only when it makes the engine easier to operate without hiding the rendering path.
 - Prefer merging with an existing owner over adding a parallel helper.
+- Prefer deleting no-value forwarding wrappers over preserving a compatibility facade.
+- Prefer collapsing leftover structs/classes, empty branches, and no-op hooks in the same batch that made them empty.
+- Prefer updating call sites to the surviving owner immediately, then deleting stale includes and local helpers.
 - Move content-specific names into catalog, config, level, or project data.
 - Prefer one clear failure at the owning boundary over multiple fallback branches.
 - A richer engine with less code is the signal of good engineering.

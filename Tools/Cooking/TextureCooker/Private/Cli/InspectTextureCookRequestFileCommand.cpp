@@ -14,11 +14,8 @@
 		return commandName == TextureCookerConstants::InspectRequestFileCommand;
 	}
 
-	int InspectTextureCookRequestFileCommand::Execute(
-		const std::filesystem::path& requestFilePath,
-		const TextureCookerCommandOptions& options) const
+	int InspectTextureCookRequestFileCommand::Execute(const std::filesystem::path& requestFilePath) const
 	{
-		(void)options;
 		std::vector<TextureCookRequest> requests;
 		std::string errorMessage;
 		if (!LoadTextureCookRequestList(requestFilePath, requests, errorMessage))
@@ -34,7 +31,6 @@
 			PrintRequest(request);
 		}
 
-		PrintSummary(requestFilePath, requests.size());
 		return TextureCookerConstants::ExitSuccess;
 	}
 
@@ -47,12 +43,4 @@
 		          << GetTextureGroupName(request.policy.textureGroup) << "' dimension='" << GetTextureDimensionName(request.policy.dimension)
 		          << "' channelMask='" << GetTextureChannelMaskName(request.policy.channelMask) << "' output='" << request.outputPath.string()
 		          << "' source='" << request.sourcePath.string() << "'\n";
-	}
-
-	void InspectTextureCookRequestFileCommand::PrintSummary(const std::filesystem::path& requestFilePath, std::size_t requestCount)
-	{
-		std::cout << TextureCookerConstants::ToolName << " Summary:\n"
-		          << "  mode=inspect\n"
-		          << "  requestFile='" << requestFilePath.string() << "'\n"
-		          << "  requests=" << requestCount << "\n";
 	}

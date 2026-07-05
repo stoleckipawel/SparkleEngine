@@ -53,6 +53,8 @@ Before adding anything, answer:
 - [ ] Does it preserve multi-level support?
 - [ ] Does it preserve screenshot/BMP capture if touched?
 - [ ] Does it preserve classic TLAS and PTLAS if touched?
+- [ ] Did the addition avoid leaving no-value forwarding wrappers, single-field data-only shells, empty branches, duplicated local helpers, stale includes, or dead compatibility paths?
+- [ ] Were call sites and ownership boundaries propagated to the new/surviving owner so the old path can be deleted?
 
 If the answer is weak, do not add it.
 
@@ -343,3 +345,4 @@ The add plan is healthy when additions are rare and surgical:
 - capability facts drive runtime behavior
 - any new feature slice deletes old ambiguity
 - profiling additions wait until the late stage
+- cleanup-after-cleanup scans remove leftover wrappers, single-field shells, empty branches, stale includes, and duplicated local helpers from touched modules

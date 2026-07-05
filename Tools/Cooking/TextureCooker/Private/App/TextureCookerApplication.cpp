@@ -11,31 +11,18 @@
 
 	int TextureCookerApplication::Run(int argc, char** argv) const
 	{
-		if (argc != 3 && argc != 5)
+		if (argc != 3)
 		{
 			TextureCookerCommandRegistry::PrintUsage(std::cerr);
 			return TextureCookerConstants::ExitUsageError;
 		}
 
-		std::filesystem::path summaryPath;
-		if (argc == 5)
-		{
-			const std::string_view summaryArgument(argv[3]);
-			if (summaryArgument != "--summary")
-			{
-				TextureCookerCommandRegistry::PrintUsage(std::cerr);
-				return TextureCookerConstants::ExitUsageError;
-			}
-			summaryPath = argv[4];
-		}
-
-		return RunCommand(std::filesystem::path(argv[2]), argv[1], summaryPath);
+		return RunCommand(std::filesystem::path(argv[2]), argv[1]);
 	}
 
 	int TextureCookerApplication::RunCommand(
 		const std::filesystem::path& requestFilePath,
-		const char* commandName,
-		const std::filesystem::path& summaryPath)
+		const char* commandName)
 	{
 		const std::string_view command(commandName != nullptr ? commandName : "");
 		std::unique_ptr<TextureCookerCommand> commandHandler = TextureCookerCommandRegistry::Create(command);
@@ -45,8 +32,6 @@
 			return TextureCookerConstants::ExitUsageError;
 		}
 
-		TextureCookerCommandOptions options;
-		options.summaryPath = summaryPath;
-		const int exitCode = commandHandler->Execute(requestFilePath, options);
+		const int exitCode = commandHandler->Execute(requestFilePath);
 		return exitCode;
 	}

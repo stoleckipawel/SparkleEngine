@@ -260,7 +260,7 @@ namespace SparkleLauncher
 			    LauncherActionImpactKind::PackageOutputs,
 			    "Package outputs: assembles runtime and symbols packages from artifacts into dist/releases/<version>; publishing and release sign-off stay separate.",
 			    "Release assembly",
-			    "Stages reviewable release packages from artifacts and manifests; publishing remains a separate sign-off.",
+			    "Stages runtime app components, cooked shader packages, and separate symbols output; publishing remains a separate sign-off.",
 			    "workflow-package-release.png");
 		}
 		if (operationId == "workspace.clean")

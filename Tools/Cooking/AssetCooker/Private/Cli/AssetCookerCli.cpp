@@ -298,12 +298,10 @@ int AssetCookerCli::Run(int argc, char** argv) const
 		return AssetCookerSourceInspection::CollectTextureRequests(arguments.sourceScenePath, arguments.outputPath);
 	}
 
-	AssetCookerConfig config = {};
-	config.repositoryRoot = arguments.repositoryRoot.empty() ? nullptr : arguments.repositoryRoot.c_str();
-	config.projectName = arguments.projectName.empty() ? nullptr : arguments.projectName.c_str();
-	config.configuration = arguments.configuration.c_str();
-
-	AssetCookerService service(&config);
+	AssetCookerService service(
+	    arguments.repositoryRoot.empty() ? nullptr : arguments.repositoryRoot.c_str(),
+	    arguments.projectName.empty() ? nullptr : arguments.projectName.c_str(),
+	    arguments.configuration.c_str());
 
 	if (arguments.command == "capabilities")
 	{
@@ -318,30 +316,11 @@ int AssetCookerCli::Run(int argc, char** argv) const
 		return 0;
 	}
 
-	AssetCookerServiceResult result;
-	int exitCode = 1;
-	if (arguments.command == "recook")
-	{
-		AssetRecookAsset recookAsset = {};
-		recookAsset.category = arguments.category;
-		AssetRecookRequest request = {};
-		request.projectName = arguments.projectName.c_str();
-		request.configuration = arguments.configuration.c_str();
-		request.assets = &recookAsset;
-		request.assetCount = 1;
-		result = service.RecookAssets(&request);
-	}
-	else
-	{
-		AssetCookRequest request = {};
-		request.category = arguments.category;
-		request.projectName = arguments.projectName.empty() ? nullptr : arguments.projectName.c_str();
-		request.configuration = arguments.configuration.c_str();
-		result = service.CookProject(&request);
-	}
-
-	exitCode = result.exitCode;
+	const AssetCookerServiceResult result = service.Cook(
+	    arguments.projectName.empty() ? nullptr : arguments.projectName.c_str(),
+	    arguments.configuration.c_str(),
+	    arguments.category);
 
 	AssetCookerCliPrintResult(result);
-	return exitCode;
+	return result.exitCode;
 }

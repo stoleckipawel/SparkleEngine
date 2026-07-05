@@ -253,34 +253,16 @@ LevelAsset* LevelRegistry::FindLevel(std::string_view name) const
 	return it != m_levels.end() ? it->second.get() : nullptr;
 }
 
-LevelAsset* LevelRegistry::FindLevelOrDefault(std::string_view name) const
+std::vector<std::string> LevelRegistry::GetLevelNames() const
 {
-	if (!name.empty())
+	std::vector<std::string> levelNames;
+	levelNames.reserve(m_levels.size());
+	for (const auto& levelEntry : m_levels)
 	{
-		if (auto* level = FindLevel(name))
-		{
-			return level;
-		}
-		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Level '{}' not found - falling back to default", std::string(name));
+		levelNames.push_back(levelEntry.first);
 	}
-
-	if (auto* level = GetDefaultLevel())
-	{
-		return level;
-	}
-
-	SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: No default level available");
-	return nullptr;
-}
-
-const std::unordered_map<std::string, std::unique_ptr<LevelAsset>>& LevelRegistry::GetAllLevels() const noexcept
-{
-	return m_levels;
-}
-
-std::size_t LevelRegistry::GetLevelCount() const noexcept
-{
-	return m_levels.size();
+	std::sort(levelNames.begin(), levelNames.end());
+	return levelNames;
 }
 
 void LevelRegistry::SetDefaultLevelName(std::string_view name)
@@ -305,9 +287,4 @@ bool LevelRegistry::SaveLevel(const LevelAsset& level, std::string* errorMessage
 std::string_view LevelRegistry::GetDefaultLevelName() const noexcept
 {
 	return m_defaultLevelName;
-}
-
-LevelAsset* LevelRegistry::GetDefaultLevel() const
-{
-	return FindLevel(m_defaultLevelName);
 }

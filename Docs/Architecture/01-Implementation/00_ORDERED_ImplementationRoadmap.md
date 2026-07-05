@@ -42,8 +42,9 @@ For every implementation batch:
 3. Open the referenced section in `02_MODIFY_RefactorExistingSystems.md`, `03_ADD_MinimalMissingCapabilities.md`, or `04_REMOVE_DeletionsAndCleanup.md`.
 4. Fill the batch prompt before editing.
 5. Make the smallest meaningful code/content change.
-6. Verify the acceptance criteria from the stage with targeted checks; defer full build/cook/run stabilization to Stage 42 unless you intentionally choose a checkpoint.
-7. Update only existing docs if the implementation result makes current instructions stale.
+6. Run the cleanup-after-cleanup scan for the touched module before declaring the batch done.
+7. Verify the acceptance criteria from the stage with targeted checks; defer full build/cook/run stabilization to Stage 42 unless you intentionally choose a checkpoint.
+8. Update only existing docs if the implementation result makes current instructions stale.
 
 Do not start by creating more plans. This is the plan.
 
@@ -75,6 +76,7 @@ Hardcoded content/name check:
 Fallback policy:
 Tooling/capture impact:
 No-pollution check:
+Post-cleanup scan:
 Verification plan:
 Full build/cook/run deferred to:
 Done criteria:
@@ -102,8 +104,22 @@ Universal engineering gate means:
 - Net code pressure: every code addition should be paired with deletion or simplification in the same batch. Treat this as applying to completed and future stages; if a batch cannot reach net-zero or net-negative code, record the exact reason and the next removal target before the batch is considered done.
 - Single ownership: similar capabilities must converge on one owner instead of creating parallel paths.
 - Shape pressure: if a refactor shrinks a struct/class to one meaningful data field and no behavior, invariant, or external ABI role, delete the wrapper before the CL is done and use the field directly at the owning call sites.
+- Wrapper pressure: if a function only forwards to another function without adding a stable name, policy, invariant, ABI boundary, or meaningful composition, remove the wrapper and update call sites to the real owner. Keep wrappers only when they encode product vocabulary or build a composed path/value.
+- Empty-control-flow pressure: after deleting code, scan for empty `if`, `else`, loop, switch, lambda, callback, and function bodies. Remove the empty branch, invert/collapse the condition, or delete the dead hook rather than leaving a misleading shell.
+- Leftover-helper pressure: after moving ownership, scan for private helpers, local normalizers, duplicate constants, stale includes, unused headers, unused files, and one-off utility functions that now duplicate Core/RHI/Renderer/GameFramework/Tools ownership.
+- Propagation pressure: a cleanup is not done until the call sites, includes, CMake/source lists, docs, and module boundaries use the surviving owner. Do not leave both the new path and the old compatibility path unless the old path has a current product consumer.
 - Data owns content names: catalogs, config, level files, and project data may name content; compiled engine/tool code should not hardcode sample or asset names.
 - Fail simply: required data should fail clearly at the owning boundary; optional data should use explicit availability metadata rather than layered fallbacks.
+
+Cleanup-after-cleanup scan means:
+
+- Scan touched files and their owning module for no-value forwarding functions.
+- Scan for structs/classes/enums/config objects left with one meaningful field and no behavior, invariant, or ABI role.
+- Scan for empty branches, empty callbacks, no-op overrides, no-op `default`/`else` blocks, and functions that only preserve a deleted hook.
+- Scan for duplicated constants, duplicated marker names, duplicated normalization/path helpers, duplicated capability discovery, and duplicate resource/provider ownership.
+- Scan for includes that were only needed by deleted wrappers or transitive dependencies.
+- Scan for stale comments/docs that describe deleted wrappers, reports, diagnostics, fallbacks, or scaffolding.
+- Run the scan at module scope for each batch, and run a repo-wide version in Stage 42.
 
 ## Renderer-First Module Contract
 
@@ -792,47 +808,48 @@ Universal acceptance for this stage:
 
 Package ownership decision:
 
-| Package surface | Decision | Current owner | Stage 40 implementation rule |
+| Package surface | Decision | Current implementation after Stage 40 | Stage 40 implementation rule |
 | --- | --- | --- | --- |
-| Runtime review package | Owned now. | `sparkle_release_assembly` creates `sparkle-runtime-<version>-<channel>-<platform>`. | Keep one runtime package rooted at `dist/releases/<version>/<runtime-package>/`; it contains runnable apps, cooked default content, runtime support, licenses, release notes, and the minimum package manifest needed for package-root discovery. |
+| Runtime review package | Owned now. | `sparkle_release_assembly` creates `sparkle-runtime-<version>-<channel>-<platform>`. | Keep one runtime package rooted at `dist/releases/<version>/<runtime-package>/`; it contains launcher/editor/runtime app components, cooked shader packages, package markers, licenses, and the minimum package manifest needed for package-root discovery. Do not broad-copy cooked content until a catalog-driven default-content package step owns it. |
 | Launcher | Owned as a runtime package component, not as a separate package. | `CMake/SparkleReleaseAssembly.cmake` stages launcher artifacts at the runtime package root. | Keep `SparkleLauncher.exe` at package root because package-root launch detection depends on it. Do not create a separate `sparkle-launcher` package unless a consumer appears. |
-| Runtime app | Owned as a runtime package component. | `CMake/SparkleReleaseAssembly.cmake` stages project runtime artifacts under `Apps/<RuntimeApp>/`. | Keep the runtime app in the runtime package. Avoid project-name hardcoding in the implementation pass; resolve package app identity from project/package metadata. |
-| Editor app | Owned for review packages only, as a runtime package component. | `CMake/SparkleReleaseAssembly.cmake` stages project editor artifacts under `Apps/<EditorApp>/`. | Keep editor staging only while the review package is explicitly engine-evaluation oriented. Do not create a separate `sparkle-editor` package until there is a consumer. |
-| Symbols | Owned now as a separate package. | `sparkle_release_assembly` creates `sparkle-symbols-<version>-<channel>-<platform>` and a zip when possible. | Keep symbols separate from runtime. Symbols may include PDB/debug artifacts from built products, but must not be copied into the runtime package. |
+| Runtime app | Owned as a runtime package component. | `CMake/SparkleReleaseAssembly.cmake` stages project runtime artifacts under `Apps/<ProjectId>Runtime/` from the package project id. | Keep the runtime app in the runtime package. Avoid project-name hardcoding in implementation logic; resolve package app identity from package/project metadata. |
+| Editor app | Owned for review packages only, as a runtime package component. | `CMake/SparkleReleaseAssembly.cmake` stages project editor artifacts under `Apps/<ProjectId>Editor/` from the package project id. | Keep editor staging only while the review package is explicitly engine-evaluation oriented. Do not create a separate `sparkle-editor` package until there is a consumer. |
+| Symbols | Owned now as a separate package. | `sparkle_release_assembly` creates `sparkle-symbols-<version>-<channel>-<platform>` as a separate folder. | Keep symbols separate from runtime. Symbols may include PDB/debug artifacts from built products, but must not be copied into the runtime package. |
 | Dev tools | Not owned as a package now. | Development tools remain build/cook prerequisites under `artifacts/dev/tools`. | Do not stage `ShaderCompiler`, cook tools, importers, headers, import libraries, static libraries, or source-facing diagnostics into runtime packages. Remove any future `sparkle-dev-tools` assembly until a real consumer requires it. |
-| Dependency pack | Not owned as a package now. | Current release assembly writes a dependency-pack manifest name only. | Remove dependency-pack naming/manifests unless Stage 40 implements a real dependency package consumer. Source dependency sync remains a launcher/build workflow, not a distributable package. |
-| Optional content pack | Owned as a future separate package, not part of default runtime. | Optional level/content availability is represented by catalog metadata such as `Projects/Showcase/Levels.catalog`. | Do not include optional synced content in the runtime package by default. Runtime package assembly must stage only the curated default level set and shared runtime content; optional content packs must be explicit separate outputs. |
+| Dependency pack | Not owned as a package now. | Stage 40 removed dependency-pack naming/manifests from release assembly. | Source dependency sync remains a launcher/build workflow, not a distributable package. Do not reintroduce dependency package metadata unless a real package consumer appears. |
+| Optional content pack | Owned as a future separate package, not part of default runtime. | Optional level/content availability is represented by catalog metadata such as `Projects/Showcase/Levels.catalog`. Stage 40 does not broad-copy cooked scene/content folders. | Do not include optional synced content in the runtime package by default. Future runtime content staging must be catalog-driven for curated default content only; optional content packs must be explicit separate outputs. |
 
-Unowned outputs marked for removal:
+Unowned outputs closed by Stage 40:
 
-- Remove or replace broad cooked-root staging in `CMake/SparkleReleaseAssembly.cmake` before treating package assembly as final. Copying all of `artifacts/dev/projects/<Project>/cooked` risks bundling optional levels and externally synced content into the default runtime package.
-- Remove package IDs/config paths for separate launcher, editor, dev tools, and dependencies packages unless a real package consumer is added.
-- Remove dependency-pack manifest emission from release assembly unless a dependency package is actually built and consumed.
-- Remove package file manifests and `SHA256SUMS.txt` outputs unless the launcher, runtime, or final release validation command consumes them.
+- Stage 40 removed broad cooked-root staging from `CMake/SparkleReleaseAssembly.cmake`; only cooked shader packages are staged until a catalog-driven default-content package step exists.
+- Stage 40 removed package IDs/config paths for separate launcher, editor, dev tools, and dependencies packages.
+- Stage 40 removed dependency-pack manifest emission.
+- Stage 40 removed package file manifests and `SHA256SUMS.txt` outputs because no launcher/runtime/release validation consumer exists.
 
 Manifest/checksum decision:
 
 - Keep `manifests/sparkle-package-manifest.json` because package-root discovery consumes it through `Engine/Core/Private/FileSystemUtils.cpp`.
-- Keep the bundled-component manifest only if Stage 40 uses it to drive package UI or package validation. Otherwise remove it with the package cockpit remnants.
-- Treat `sparkle-release-manifest.json`, `sparkle-build-manifest.json`, `sparkle-dependency-manifest.json`, `sparkle-package-files.json`, and `SHA256SUMS.txt` as unowned review artifacts until a consuming workflow exists.
+- Stage 40 removed the bundled-component manifest because no package UI or package validation path consumes it.
+- Stage 40 removed `sparkle-release-manifest.json`, `sparkle-build-manifest.json`, `sparkle-dependency-manifest.json`, `sparkle-package-files.json`, and `SHA256SUMS.txt` from default assembly.
 
 Result:
 
 - Stage 15 is a decision-only stage; no package assembly code was added.
 - Existing package capability search covered `CMake/SparkleReleaseAssembly.cmake`, `CMake/SparkleArtifactContract.cmake`, launcher package operation definitions, package-root discovery, and package manifest/checksum references.
 - The owned package list is now explicit in this roadmap: runtime review package, package-root launcher component, runtime app component, editor app component for review packages, separate symbols package, and future optional content packs.
-- Dev tools, separate launcher/editor packages, dependency pack outputs, broad cooked-root staging, unconsumed package manifests, and checksums are marked for removal or replacement in Stage 40.
-- Optional content is explicitly excluded from the default runtime package. The implementation rule is catalog-driven default content only, with optional content packs as separate outputs.
+- Stage 40 implemented that decision: dev tools, separate launcher/editor packages, dependency pack outputs, broad cooked-root staging, unconsumed package manifests, and checksums are gone from default release assembly.
+- Optional content is explicitly excluded from the default runtime package. Runtime package content assembly beyond cooked shader packages remains a later catalog-driven content-pack/default-content packaging task, not a broad CMake copy.
 
 Net code pressure:
 
 - No source or package code was added in this stage. The only change is the roadmap ownership decision.
-- The next package implementation stage must be net negative by deleting or replacing unowned package outputs rather than layering a package manager on top of the current script.
+- Stage 40 followed this decision with a net-negative implementation by deleting/replacing unowned package outputs rather than layering a package manager on top of the old script.
 
 Verification:
 
-- `rg -n "SparkleReleaseAssembly|sparkle_release_assembly|ReleaseAssembly|dist/releases|checksums|manifest|symbols" CMake Tools/Launcher` located the existing package assembly surface.
-- `rg -n "sparkle-package-files|SHA256SUMS|sparkle-release-manifest|sparkle-build-manifest|sparkle-dependency-manifest|sparkle-package-manifest|sparkle-bundled-runtime-components|manifests" Tools Engine Projects CMake Docs` confirmed that package-root discovery consumes `sparkle-package-manifest.json`, while the detailed file manifests/checksums have no engine or launcher consumer today.
+- `rg -n "SparkleReleaseAssembly|sparkle_release_assembly|ReleaseAssembly|dist/releases|checksums|manifest|symbols" CMake Tools/Launcher` located the original package assembly surface.
+- `rg -n "sparkle-package-files|SHA256SUMS|sparkle-release-manifest|sparkle-build-manifest|sparkle-dependency-manifest|sparkle-package-manifest|sparkle-bundled-runtime-components|manifests" Tools Engine Projects CMake Docs` confirmed that package-root discovery consumes `sparkle-package-manifest.json`, while the detailed file manifests/checksums had no engine or launcher consumer.
+- Stage 40 verification later confirmed the unconsumed package surfaces are removed from default package assembly.
 
 ### Stage 16: Public Renderer Observation Inventory
 
@@ -2365,11 +2382,12 @@ Stage 36 closure notes:
 
 - Reference check: UE module guidance favors private dependencies and forward declarations where possible; Donut exposes deliberate include roots for stable app/core contracts rather than broad convenience surfaces.
 - Existing-capability search found `DirectoryPaths.h` was the largest Core public header and mixed stable engine path contracts with reusable path formatting helpers.
-- `DirectoryPaths.h` now stays a path catalog. Reusable formatting primitives live in `Core/Public/Paths/PathFormatting.h` with implementation in `Engine/Core/Private/Paths/PathFormatting.cpp`.
+- `DirectoryPaths.h` now keeps only composed artifact path builders and `Paths::LogFile`; direct forwarding wrappers to `Filesystem::*` roots were removed and call sites now use the real Core filesystem contract.
+- Reusable formatting primitives live in `Core/Public/Paths/PathFormatting.h` with implementation in `Engine/Core/Private/Paths/PathFormatting.cpp`.
 - Sparkle-specific log directory policy moved to `Engine/Core/Private/Paths/LogPathPolicy.*`; package/workspace/project discovery moved to `Engine/Core/Private/Paths/FileSystemDiscovery.*`.
 - Private path implementation uses named private namespaces instead of unnamed namespaces in the touched Core path files.
 - `Paths::LogFile` remains the log path public contract, and the root markers such as `.sparkle`, `.sparkle-engine`, and `.sparkle-project` remain intentional Core repository discovery data.
-- `DirectoryPaths.h` dropped from 343 lines to 196 lines; `FileSystemUtils.cpp` dropped from about 800 lines to 653 lines after the private discovery split.
+- `DirectoryPaths.h` dropped from 343 lines to 59 lines; `FileSystemUtils.cpp` dropped from about 800 lines to 553 lines after the private discovery split.
 - Marker discovery propagation check: launcher repository discovery and AssetCooker repository discovery now use Core `Filesystem::FindAncestorWithMarker` and marker constants instead of local repository-root walkers/string literals; launcher's local public `NormalizePath` helper was removed.
 - Remaining marker text outside Core is CMake project discovery, user-facing messages, and the launcher home-state folder name, not duplicate runtime marker logic.
 - Platform, Renderer, and GameFramework include direction stays unchanged: consumers still include the specific Core headers they use, and no content/project/level/asset names or fallback chains were introduced.
@@ -2384,18 +2402,25 @@ Prompt:
 
 Acceptance:
 
-Universal acceptance for this stage:
+General acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Universal engineering gate is satisfied.
+- [x] Cleanup-after-cleanup scan is run for GameFramework and any touched Core/Renderer boundary files.
 
-- [ ] Level, scene, component, asset concepts remain.
-- [ ] Asset loader/manifest implementation details are private where possible.
-- [ ] Multi-level support remains intact.
-- [ ] Renderer still consumes GameFramework privately.
+Stage-specific acceptance:
+
+- [x] Level, scene, component, asset concepts remain.
+- [x] Asset loader/manifest implementation details are private where possible.
+- [x] Multi-level support remains intact.
+- [x] Renderer still consumes GameFramework privately.
+
+Stage 37 closure notes:
+
+- Public `Engine/GameFramework/Public/Level/LevelRegistry.h` was removed; `LevelRegistry` is now private under `Engine/GameFramework/Private/Level`.
+- `LevelManager` remains the high-level public level API; level change events remain public, while registry discovery/catalog ownership is private.
+- No-value registry wrappers were removed after the initial cleanup: `GetAllLevels`, `GetLevelCount`, and `GetDefaultLevel` are gone; `GetLevelNames` owns sorted name enumeration without exposing the registry map.
+- Multi-level behavior remains catalog-driven, and no project, level, asset, content-pack, or sample name was hardcoded in GameFramework code.
+- Verification: `cmake --build build --target SparkleGameFramework --config DevelopmentEditor` passed.
 
 ### Stage 38: Import/Cooker Public Surface Cleanup
 
@@ -2407,18 +2432,25 @@ Prompt:
 
 Acceptance:
 
-Universal acceptance for this stage:
+General acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Universal engineering gate is satisfied.
+- [x] Cleanup-after-cleanup scan is run for importer/cooker modules and any touched tool shared libraries.
 
-- [ ] Import/cooker public headers are audited.
-- [ ] Unused public bridge headers are removed.
-- [ ] Cooked asset outputs remain.
-- [ ] Default reports do not return.
+Stage-specific acceptance:
+
+- [x] Import/cooker public headers are audited.
+- [x] Unused public bridge headers are removed.
+- [x] Cooked asset outputs remain.
+- [x] Default reports do not return.
+
+Stage 38 closure notes:
+
+- `Tools/Cooking/AssetCooker/Public/AssetCookRequest.h` and `Tools/Cooking/AssetCooker/Public/AssetCookerTypes.h` were removed; AssetCooker API types now live under private `Api`.
+- `AssetCookerService` now exposes one real operation, `Cook`, instead of the old `CookProject` / `RecookAssets` / `CookCategory` forwarding stack.
+- TextureCooker keeps `Tools/Cooking/TextureCooker/Public/TextureCookRequestList.h` as the remaining public request-list serialization contract; batch processing and command implementation details are private.
+- Searches found no removed AssetCooker wrapper names and no `asset-cooker-plan-v1` / `asset-cooker-summary-v1` default report surfaces in the touched tool paths.
+- Verification: `cmake --build build --target AssetCooker --config DevelopmentEditor` and `cmake --build build --target TextureCooker --config DevelopmentEditor` passed.
 
 ### Stage 39: Neural Rendering Readiness Without ML Bloat
 
@@ -2430,18 +2462,21 @@ Prompt:
 
 Acceptance:
 
-Universal acceptance for this stage:
+General acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [ ] Universal engineering gate is satisfied.
+- [ ] Cleanup-after-cleanup scan is run for touched shader, renderer, upscaling, denoising, or ray reconstruction code.
+
+Stage-specific acceptance:
 
 - [ ] Slang/HLSL flexibility is preserved.
 - [ ] Tensor/operator concepts remain design-level unless a renderer feature needs them.
 - [ ] No PyTorch/TensorFlow/ONNX Runtime dependency is added.
 - [ ] Denoising/upscaling/ray reconstruction paths remain the practical readiness surface.
+
+Stage 39 status:
+
+- Not started in the current addressed batch.
 
 ### Stage 40: Package Contract Implementation
 
@@ -2453,18 +2488,25 @@ Prompt:
 
 Acceptance:
 
-Universal acceptance for this stage:
+General acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Universal engineering gate is satisfied.
+- [x] Cleanup-after-cleanup scan is run for package assembly, launcher package UI, artifact naming, manifests, and CMake packaging code.
 
-- [ ] Runtime/editor/launcher/dev tools/symbols/optional content package ownership is decided.
-- [ ] Unowned package assembly code is removed.
-- [ ] Optional content is separate from runtime package.
-- [ ] Manifest/checksum fields are consumed or removed.
+Stage-specific acceptance:
+
+- [x] Runtime/editor/launcher/dev tools/symbols/optional content package ownership is decided.
+- [x] Unowned package assembly code is removed.
+- [x] Optional content is separate from runtime package.
+- [x] Manifest/checksum fields are consumed or removed.
+
+Stage 40 closure notes:
+
+- Owned package outputs are now runtime package and separate symbols package. Launcher, editor app, and runtime app are runtime-package components, not independent packages.
+- Dev tools package, dependency package, separate launcher/editor package IDs, broad cooked-root staging, detailed release/build/dependency/component/file manifests, checksums, and symbol zip assembly were removed from default package assembly.
+- Runtime package stages cooked shader packages only. Default scene/content package assembly must be added later through a catalog-driven default-content/optional-content package step, not by copying every cooked folder.
+- Package UI copy now describes the actual runtime/symbol package contract instead of old debug/stat/package-cockpit behavior.
+- Verification: `cmake --build build --target sparkle_release_assembly --config DevelopmentEditor` passed and emitted `sparkle-runtime-0.0.0-dev-dev-windows-x64` plus `sparkle-symbols-0.0.0-dev-dev-windows-x64`.
 
 ### Stage 41: Late Measurement Setup
 
@@ -2476,13 +2518,12 @@ Prompt:
 
 Acceptance:
 
-Universal acceptance for this stage:
+General acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [ ] Universal engineering gate is satisfied.
+- [ ] Cleanup-after-cleanup scan is run for the measured feature path before any measurement code is accepted.
+
+Stage-specific acceptance:
 
 - [ ] Feature cleanup is complete for the measured path.
 - [ ] Existing PIX/RenderDoc/Nsight hooks are used first.
@@ -2496,17 +2537,17 @@ References: all reference repos above.
 Prompt:
 
 - Run final stabilization after the staged cleanup sequence.
+- Run the final repo-wide cleanup-after-cleanup scan after stabilization candidates are in place.
 - Confirm the repo demonstrates the persona.
 
 Acceptance:
 
-Universal acceptance for this stage:
+General acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [ ] Universal engineering gate is satisfied.
+- [ ] Repo-wide cleanup-after-cleanup scan is complete after all staged implementation work.
+
+Stage-specific acceptance:
 
 - [ ] Build relevant editor/runtime targets.
 - [ ] Cook curated default level set.
@@ -2521,6 +2562,7 @@ Universal acceptance for this stage:
 - [ ] Confirm public APIs are smaller.
 - [ ] Confirm repo/depot weight is smaller.
 - [ ] Confirm no new docs/logs/validation/report systems/wrappers/thick abstractions replaced old ones.
+- [ ] Confirm no no-value forwarding wrappers, single-field data-only shells, empty branches, stale includes, or duplicated local helpers remain in touched modules.
 
 ## Phase Note 0: Baseline And Guardrails
 
@@ -3171,6 +3213,7 @@ Final checks:
 - [ ] PIX/RenderDoc/Nsight support remains strong.
 - [ ] Heavy optional content is out of the default footprint.
 - [ ] No new docs/logs/validation/report systems/wrappers/scaffolding have replaced old ones.
+- [ ] Repo-wide cleanup-after-cleanup scan finds no no-value forwarding wrappers, single-field data-only shells, empty control-flow shells, stale includes, duplicate local helpers, or dead compatibility paths in modules touched by the staged work.
 - [ ] The next feature can delete or replace something old.
 
 Final stabilization checks:
@@ -3183,6 +3226,18 @@ Final stabilization checks:
 - [ ] Verify screenshot/BMP capture through the hardened path.
 - [ ] Verify classic TLAS and PTLAS selection where supported.
 - [ ] Verify multiple levels remain selectable.
+
+Final cleanup scan prompts:
+
+```powershell
+rg -n "TODO|temporary|compat|legacy|fallback|wrapper|shim|unused|deprecated|scaffold" Engine Tools Projects
+rg -n "struct .*\\{|class .*\\{|enum .*\\{" Engine Tools Projects
+rg -n "if \\(|else|switch \\(|for \\(|while \\(" Engine Tools Projects
+rg -n "return [A-Za-z0-9_:]+\\(.*\\);" Engine Tools Projects
+rg -n "#include" Engine Tools Projects
+```
+
+Use these as starting points, not proof by themselves. For each hit, decide whether it is a real current capability, a product-owned abstraction, or a leftover shell from cleanup. Delete or collapse the leftover shell before final acceptance.
 
 ## Weekly Working Pattern
 

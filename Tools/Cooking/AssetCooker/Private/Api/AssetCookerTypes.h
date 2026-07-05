@@ -22,14 +22,6 @@ enum AssetCookerDiagnosticSeverity : std::uint32_t
 	AssetCookerDiagnosticSeverity_Error = 2
 };
 
-struct AssetCookerConfig
-{
-	const char* repositoryRoot;
-	const char* projectName;
-	const char* configuration;
-	const char* diagnosticsPath;
-};
-
 struct AssetCookerCapabilities
 {
 	std::uint32_t supportsProjectCook;

@@ -26,5 +26,5 @@
 	{
 		output << "Usage:\n"
 		       << "  TextureCooker inspect-request-file <request-file-path>\n"
-		       << "  TextureCooker cook-request-file <request-file-path> [--summary <summary-json-path>]\n";
+		       << "  TextureCooker cook-request-file <request-file-path>\n";
 	}

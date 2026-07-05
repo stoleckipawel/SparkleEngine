@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Public/AssetCookerTypes.h"
+#include "Api/AssetCookerTypes.h"
 
 #include <filesystem>
 #include <string>
@@ -32,7 +32,7 @@ struct AssetCookerServiceResult final
 
 class AssetCookerDiagnostics final
 {
-public:
+  public:
 	void AddInfo(AssetCookerCategory category, std::string message);
 	void AddWarning(AssetCookerCategory category, std::string message);
 	void AddError(AssetCookerCategory category, std::string message);
@@ -41,7 +41,7 @@ public:
 	const std::vector<AssetCookerDiagnosticRecord>& GetRecords() const noexcept;
 	std::vector<AssetCookerDiagnosticRecord> ReleaseRecords();
 
-private:
+  private:
 	void Add(
 	    AssetCookerDiagnosticSeverity severity,
 	    AssetCookerCategory category,

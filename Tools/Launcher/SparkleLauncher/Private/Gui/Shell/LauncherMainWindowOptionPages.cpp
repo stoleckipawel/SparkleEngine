@@ -73,7 +73,7 @@ namespace SparkleLauncher
 			    *packageLayout,
 			    "Release package",
 			    "Assembly target",
-			    "Build the sparkle_release_assembly CMake target to assemble launcher, editor/runtime, cooked content, manifests, checksums, notes, licenses, and a separate symbols archive under dist/releases/<version>.",
+			    "Build the sparkle_release_assembly CMake target to assemble the launcher, editor/runtime app components, cooked shader packages, package-root marker, license, and separate symbols package under dist/releases/<version>.",
 			    "neutral");
 			return;
 		}

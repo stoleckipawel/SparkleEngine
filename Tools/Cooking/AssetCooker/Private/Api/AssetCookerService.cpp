@@ -15,76 +15,20 @@ static bool AssetCookerIsAllProjects(std::string_view projectName)
 	return projectName.empty() || projectName == "ALL" || projectName == "All" || projectName == "all";
 }
 
-static AssetCookerCategory AssetCookerNormalizeCategoryForRecook(AssetCookerCategory category)
+AssetCookerService::AssetCookerService(const char* repositoryRoot, const char* projectName, const char* configuration)
 {
-	if (category == AssetCookerCategory_Shader)
+	if (AssetCookerHasText(repositoryRoot))
 	{
-		return AssetCookerCategory_Shaders;
+		configuredRepositoryRoot = std::filesystem::path(repositoryRoot);
 	}
-	if (category == AssetCookerCategory_Texture)
+	if (AssetCookerHasText(projectName))
 	{
-		return AssetCookerCategory_Textures;
+		configuredProjectName = projectName;
 	}
-	if (category == AssetCookerCategory_Mesh || category == AssetCookerCategory_Material || category == AssetCookerCategory_Scene)
+	if (AssetCookerHasText(configuration))
 	{
-		return AssetCookerCategory_SceneAssets;
+		configuredConfiguration = configuration;
 	}
-	return category;
-}
-
-AssetCookerService::AssetCookerService(const AssetCookerConfig* config)
-{
-	if (config == nullptr)
-	{
-		return;
-	}
-
-	if (AssetCookerHasText(config->repositoryRoot))
-	{
-		configuredRepositoryRoot = std::filesystem::path(config->repositoryRoot);
-	}
-	if (AssetCookerHasText(config->projectName))
-	{
-		configuredProjectName = config->projectName;
-	}
-	if (AssetCookerHasText(config->configuration))
-	{
-		configuredConfiguration = config->configuration;
-	}
-}
-
-AssetCookerServiceResult AssetCookerService::CookProject(const AssetCookRequest* request)
-{
-	if (request == nullptr)
-	{
-		AssetCookerServiceResult result;
-		result.succeeded = false;
-		result.exitCode = 1;
-		result.diagnostics.push_back(
-		    {AssetCookerDiagnosticSeverity_Error, AssetCookerCategory_All, "Cook request was null.", std::string()});
-		return result;
-	}
-
-	return CookCategory(request->projectName, request->configuration, request->category);
-}
-
-AssetCookerServiceResult AssetCookerService::RecookAssets(const AssetRecookRequest* request)
-{
-	AssetCookerDiagnostics diagnostics;
-	if (request == nullptr)
-	{
-		diagnostics.AddError(AssetCookerCategory_All, "Recook request was null.");
-		AssetCookerServiceResult result;
-		result.succeeded = false;
-		result.exitCode = 1;
-		result.diagnostics = diagnostics.ReleaseRecords();
-		return result;
-	}
-
-	const AssetCookerCategory category = ResolveRecookCategory(request, diagnostics);
-	AssetCookerServiceResult result = CookCategory(request->projectName, request->configuration, category);
-	result.diagnostics.insert(result.diagnostics.begin(), diagnostics.GetRecords().begin(), diagnostics.GetRecords().end());
-	return result;
 }
 
 AssetCookerCapabilities AssetCookerService::QueryCapabilities() const noexcept
@@ -99,7 +43,7 @@ AssetCookerCapabilities AssetCookerService::QueryCapabilities() const noexcept
 	return capabilities;
 }
 
-AssetCookerServiceResult AssetCookerService::CookCategory(
+AssetCookerServiceResult AssetCookerService::Cook(
     const char* projectName,
     const char* configuration,
     AssetCookerCategory category)
@@ -224,41 +168,4 @@ std::string AssetCookerService::ResolveConfiguration(const char* requestConfigur
 		return configuredConfiguration;
 	}
 	return "DevelopmentGame";
-}
-
-AssetCookerCategory AssetCookerService::ResolveRecookCategory(
-    const AssetRecookRequest* request,
-    AssetCookerDiagnostics& diagnostics) const
-{
-	if (request == nullptr)
-	{
-		diagnostics.AddError(AssetCookerCategory_All, "Recook request was null.");
-		return AssetCookerCategory_All;
-	}
-
-	if (request->assets == nullptr || request->assetCount == 0)
-	{
-		diagnostics.AddWarning(
-		    AssetCookerCategory_All,
-		    "Recook request contained no selected assets; bridge recook will run the full project cook.");
-		return AssetCookerCategory_All;
-	}
-
-	AssetCookerCategory category = AssetCookerNormalizeCategoryForRecook(request->assets[0].category);
-	for (std::uint32_t index = 1; index < request->assetCount; ++index)
-	{
-		const AssetCookerCategory currentCategory = AssetCookerNormalizeCategoryForRecook(request->assets[index].category);
-		if (currentCategory != category)
-		{
-			diagnostics.AddWarning(
-			    AssetCookerCategory_All,
-			    "Selected recook spans multiple current bridge categories; running the full project cook.");
-			return AssetCookerCategory_All;
-		}
-	}
-
-	diagnostics.AddInfo(
-	    category,
-	    "Selected recook is represented through the AssetCooker API; Phase 2 dispatches the matching current category flow.");
-	return category;
 }

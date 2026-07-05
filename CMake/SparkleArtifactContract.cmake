@@ -20,33 +20,7 @@ set(SPARKLE_RELEASE_CHANNEL "dev" CACHE STRING "Release channel: dev, preview, r
 set_property(CACHE SPARKLE_RELEASE_CHANNEL PROPERTY STRINGS dev preview rc release)
 set(SPARKLE_PACKAGE_VERSION "0.0.0-dev" CACHE STRING "Package version used by future artifact manifests.")
 set(SPARKLE_PACKAGE_PLATFORM "windows-x64" CACHE STRING "Package platform identifier.")
-
-set(SPARKLE_DEPENDENCY_CATEGORY_HOST_PREREQUISITE "host-prerequisite")
-set(SPARKLE_DEPENDENCY_CATEGORY_SOURCE_DEPENDENCY_GROUP "source-dependency-group")
-set(SPARKLE_DEPENDENCY_CATEGORY_RUNTIME_REDISTRIBUTABLE "runtime-redistributable")
-set(SPARKLE_DEPENDENCY_CATEGORY_BUILD_OUTPUT "build-output")
-set(SPARKLE_DEPENDENCY_CATEGORY_COOKED_OUTPUT "cooked-output")
-set(SPARKLE_DEPENDENCY_CATEGORY_PROJECT_SELECTION "project-selection")
-
-set(SPARKLE_VISIBILITY_PUBLIC "public")
-set(SPARKLE_VISIBILITY_INTERNAL "internal")
-set(SPARKLE_VISIBILITY_PRIVATE "private")
-
-set(SPARKLE_BINARY_TYPE_APP "app")
-set(SPARKLE_BINARY_TYPE_DEVELOPER_TOOL "developer-tool")
-set(SPARKLE_BINARY_TYPE_RUNTIME_DLL "runtime-dll")
-set(SPARKLE_BINARY_TYPE_PLUGIN_DLL "plugin-dll")
-set(SPARKLE_BINARY_TYPE_IMPORT_LIBRARY "import-library")
-set(SPARKLE_BINARY_TYPE_STATIC_LIBRARY "static-library")
-set(SPARKLE_BINARY_TYPE_SYMBOL_FILE "symbol-file")
-set(SPARKLE_BINARY_TYPE_GENERATED_ASSET "generated-asset")
-
-set(SPARKLE_PACKAGE_ID_LAUNCHER "sparkle-launcher")
-set(SPARKLE_PACKAGE_ID_RUNTIME "sparkle-runtime")
-set(SPARKLE_PACKAGE_ID_EDITOR "sparkle-editor")
-set(SPARKLE_PACKAGE_ID_DEV_TOOLS "sparkle-dev-tools")
-set(SPARKLE_PACKAGE_ID_SYMBOLS "sparkle-symbols")
-set(SPARKLE_PACKAGE_ID_DEPENDENCIES "sparkle-dependencies")
+set(SPARKLE_PACKAGE_PROJECT_ID "Showcase" CACHE STRING "Project id assembled by sparkle_release_assembly.")
 
 function(sparkle_set_product_artifact_directories target_name runtime_root symbol_owner)
     if(NOT TARGET ${target_name})
@@ -158,15 +132,8 @@ if(NOT TARGET sparkle_release_assembly)
             "-DSPARKLE_PACKAGE_VERSION=${SPARKLE_PACKAGE_VERSION}"
             "-DSPARKLE_RELEASE_CHANNEL=${SPARKLE_RELEASE_CHANNEL}"
             "-DSPARKLE_PACKAGE_PLATFORM=${SPARKLE_PACKAGE_PLATFORM}"
+            "-DSPARKLE_PACKAGE_PROJECT_ID=${SPARKLE_PACKAGE_PROJECT_ID}"
             "-DSPARKLE_BUILD_CONFIG=$<CONFIG>"
-            "-DSPARKLE_RELEASE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}"
-            "-DSPARKLE_RELEASE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}"
-            "-DSPARKLE_RELEASE_CMAKE_GENERATOR=${CMAKE_GENERATOR}"
-            "-DSPARKLE_RELEASE_CMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
-            "-DSPARKLE_RELEASE_CMAKE_GENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
-            "-DSPARKLE_RELEASE_QT_KIT_HINT=${CMAKE_PREFIX_PATH}"
-            "-DGIT_EXECUTABLE=${GIT_EXECUTABLE}"
-            "-DSPARKLE_GIT_EXE=${SPARKLE_GIT_EXE}"
             -P "${CMAKE_SOURCE_DIR}/CMake/SparkleReleaseAssembly.cmake"
         COMMENT "Assembling Sparkle release layout for review"
         VERBATIM
@@ -174,4 +141,4 @@ if(NOT TARGET sparkle_release_assembly)
 endif()
 
 message(STATUS "Sparkle roots: build=${SPARKLE_BUILD_ROOT}; artifacts=${SPARKLE_ARTIFACT_ROOT}; dev=${SPARKLE_DEV_ARTIFACT_ROOT}; dist=${SPARKLE_DIST_ROOT}")
-message(STATUS "Sparkle package identity: version=${SPARKLE_PACKAGE_VERSION}; channel=${SPARKLE_RELEASE_CHANNEL}; platform=${SPARKLE_PACKAGE_PLATFORM}")
+message(STATUS "Sparkle package identity: project=${SPARKLE_PACKAGE_PROJECT_ID}; version=${SPARKLE_PACKAGE_VERSION}; channel=${SPARKLE_RELEASE_CHANNEL}; platform=${SPARKLE_PACKAGE_PLATFORM}")
