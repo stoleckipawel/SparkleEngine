@@ -65,7 +65,7 @@ void DrawRayReconstructionSettingsSection(
 	    "Performance",
 	};
 
-	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlrr dlss ray reconstruction denoise indirect specular diffuse") ||
+	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlrr dlss ray reconstruction indirect specular diffuse") ||
 	    !BeginSettingsCategory("Ray Reconstruction"))
 	{
 		return;

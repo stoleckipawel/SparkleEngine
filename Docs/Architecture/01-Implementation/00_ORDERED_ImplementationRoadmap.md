@@ -2255,16 +2255,24 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Denoiser inputs/outputs are named.
-- [ ] History/resource ownership is explicit.
-- [ ] Provider boundary is narrow if external denoiser integration exists.
-- [ ] No diagnostic panel is added.
+- [x] Denoiser inputs/outputs are named.
+- [x] History/resource ownership is explicit.
+- [x] Provider boundary is narrow if external denoiser integration exists.
+- [x] No diagnostic panel is added.
+
+Stage 33 completion notes:
+
+- Reference check: NRD exposes denoising as explicit noisy-signal, GBuffer-guide, history, settings, and output resources owned by the application/RHI integration. FidelityFX effects follow the same concrete feature-slice pattern.
+- Existing-capability search found no Sparkle denoiser implementation, no NRD/FidelityFX denoiser integration, and no REBLUR/RELAX/SIGMA resource path in `Engine/Renderer`, `Engine/Assets/Shaders`, `Tools`, or `Projects`.
+- Sparkle therefore has no denoiser inputs/outputs or denoiser history resources to name yet. Stage 33 is closed by keeping denoising absent instead of adding placeholder scaffolding.
+- Ray reconstruction remains a separate Stage 34 provider feature, not a denoiser substitute. The editor ray reconstruction search alias no longer labels it as `denoise`.
+- No denoising diagnostic panel, provider facade, content hardcode, fallback chain, or new abstraction was added.
 
 ### Stage 34: Upscaling And Ray Reconstruction Boundary
 
