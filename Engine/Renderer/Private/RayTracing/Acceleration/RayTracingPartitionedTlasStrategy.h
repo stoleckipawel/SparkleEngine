@@ -8,7 +8,6 @@
 
 class RenderHardwareInterface;
 struct RayTracingPtlasPartitionPlan;
-struct RayTracingPtlasLogicalUpdateStreamResult;
 
 class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAccelerationStructureStrategy
 {
@@ -30,16 +29,6 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
-	void BuildPartitionedTlasLogicalUpdateResources(
-	    RenderCommandContext& cmd,
-	    const RenderSceneData& sceneData,
-	    RayTracingTopLevelScenePlanner* scenePlanner,
-	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
-	void PackPartitionedTlasNativeOperations(
-	    RenderCommandContext& cmd,
-	    const RenderSceneData& sceneData,
-	    RayTracingTopLevelScenePlanner* scenePlanner,
-	    RayTracingPerformanceDiagnostics* diagnostics) noexcept override;
 	bool HasValidSceneTlas() const noexcept override;
 	RhiOwnedResourceHandle GetSceneTlasResource() const noexcept override;
 	RhiGpuVirtualAddress GetSceneTlasGpuAddress() const noexcept override;
@@ -58,22 +47,19 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	{
 		RhiOwnedResourceHandle Storage = {};
 		RhiOwnedResourceHandle Scratch = {};
-		RhiOwnedResourceHandle LogicalUpdateRecords = {};
 		RhiOwnedResourceHandle NativeOperationData = {};
 		RhiGpuVirtualAddress StorageAddress = 0;
 		RhiGpuVirtualAddress ScratchAddress = 0;
 		RhiGpuVirtualAddress NativeOperationDataAddress = 0;
 		RhiPartitionedTlasDesc Layout = {};
-		RhiPartitionedTlasGpuOperationBufferLayout NativeOperationLayout = {};
+		RhiPartitionedTlasOperationBufferLayout NativeOperationLayout = {};
 		std::uint32_t InstanceCount = 0;
-		std::uint32_t LogicalUpdateCount = 0;
 		std::uint32_t NativeOperationCount = 0;
 		std::uint64_t StableInstanceFingerprint = 0;
 		bool IncrementalUpdatesAllowed = false;
 		bool Built = false;
 
 		bool HasSceneTlas() const noexcept;
-		bool HasFrameGraphOperationResources() const noexcept;
 	};
 
 	bool CanUseActivePartitionedTlasProvider() const noexcept;
@@ -87,9 +73,6 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	    const RenderSceneData& sceneData,
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,
-	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
-	bool UploadLogicalUpdateRecords(
-	    const RayTracingPtlasLogicalUpdateStreamResult* logicalUpdates,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
 	void InvalidatePartitionedTlasSceneState() noexcept;
 	void ReleasePartitionedTlasResources() noexcept;

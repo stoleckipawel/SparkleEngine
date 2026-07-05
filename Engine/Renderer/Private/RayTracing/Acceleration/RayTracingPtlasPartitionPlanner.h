@@ -17,9 +17,7 @@ inline constexpr std::uint32_t kRayTracingPtlasInvalidEntryIndex = (std::numeric
 struct RayTracingPtlasPartitionPlannerConfig final
 {
 	std::uint32_t PartitionsPerAxis = 8;
-	RayTracingPtlasPartitionTopology PartitionTopology = RayTracingPtlasPartitionTopology::XYZ3D;
 	RayTracingPtlasPartitionUpdateMode PartitionUpdateMode = RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition;
-	bool EnableGlobalPartition = true;
 	bool MarkAllDynamicInPartition = false;
 	DirectX::XMFLOAT3 CameraPosition = {};
 	float ModeChangeDistance = 100.0f;

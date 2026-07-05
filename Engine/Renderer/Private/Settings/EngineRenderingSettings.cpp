@@ -294,17 +294,6 @@ void EngineRenderingSettingsSection::SetPtlasPartitionsPerAxis(std::uint32_t par
 	UpdateState(state);
 }
 
-void EngineRenderingSettingsSection::SetPtlasPartitionTopology(EnginePtlasPartitionTopology topology)
-{
-	EngineRenderingSettingsState state = GetState();
-	if (state.PtlasPartitionTopology == topology)
-	{
-		return;
-	}
-	state.PtlasPartitionTopology = topology;
-	UpdateState(state);
-}
-
 void EngineRenderingSettingsSection::SetPtlasPartitionUpdateMode(EnginePtlasPartitionUpdateMode mode)
 {
 	EngineRenderingSettingsState state = GetState();

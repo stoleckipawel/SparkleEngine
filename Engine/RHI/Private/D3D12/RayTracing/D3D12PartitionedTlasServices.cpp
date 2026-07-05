@@ -324,63 +324,8 @@ RhiOwnedResourceHandle D3D12PartitionedTlasServices::CreatePartitionedTopLevelAc
 #endif
 }
 
-RhiOwnedResourceHandle D3D12PartitionedTlasServices::CreatePartitionedTopLevelAccelerationStructureLogicalUpdateBuffer(
-    const RhiPartitionedTlasLogicalUpdateBufferDesc& desc,
-    const RhiPartitionedTlasLogicalUpdateRecord* records,
-    std::uint32_t recordCount,
-    std::wstring_view debugName)
-{
-	const RhiRayTracingCapabilities capabilities = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !capabilities.Groups.PartitionedTlas.Supported ||
-	    desc.MaxLogicalUpdateCount == 0 || recordCount > desc.MaxLogicalUpdateCount ||
-	    (recordCount > 0 && records == nullptr))
-	{
-		return {};
-	}
-
-	const std::uint64_t totalSize =
-	    sizeof(RhiPartitionedTlasLogicalUpdateRecord) * static_cast<std::uint64_t>(desc.MaxLogicalUpdateCount);
-	const RhiBufferResourceDesc bufferDesc{
-	    .SizeInBytes = totalSize,
-	    .StrideInBytes = sizeof(RhiPartitionedTlasLogicalUpdateRecord),
-	    .AllowUnorderedAccess = desc.AllowGpuWrites && !desc.AllowCpuUploadReference};
-	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(bufferDesc);
-	const D3D12_RESOURCE_STATES initialState =
-	    desc.AllowCpuUploadReference ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-	const RhiMemoryResidencyClass residency =
-	    desc.AllowCpuUploadReference ? RhiMemoryResidencyClass::HostUpload : RhiMemoryResidencyClass::DeviceLocal;
-	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
-	    resourceDesc,
-	    initialState,
-	    RhiMemoryCategory::RayTracing,
-	    residency,
-	    D3D12PartitionedTlasText::CopyDebugName(debugName, L"RayTracingPartitionedTlasLogicalUpdates"));
-	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
-	{
-		return {};
-	}
-
-	if (recordCount > 0)
-	{
-		void* mappedData = nullptr;
-		const D3D12_RANGE readRange{0, 0};
-		if (FAILED(ownedRecord->Resource->Map(0, &readRange, &mappedData)) || mappedData == nullptr)
-		{
-			return {};
-		}
-		ownedRecord->IsMapped = true;
-		ownedRecord->CpuMappedAddress = mappedData;
-		std::memcpy(mappedData, records, sizeof(RhiPartitionedTlasLogicalUpdateRecord) * recordCount);
-		ownedRecord->Resource->Unmap(0, nullptr);
-		ownedRecord->IsMapped = false;
-		ownedRecord->CpuMappedAddress = nullptr;
-	}
-
-	return MakeD3D12OwnedResourceHandle(std::move(ownedRecord));
-}
-
-RhiPartitionedTlasGpuOperationBufferLayout
-D3D12PartitionedTlasServices::GetPartitionedTopLevelAccelerationStructureGpuOperationBufferLayout(
+RhiPartitionedTlasOperationBufferLayout
+D3D12PartitionedTlasServices::GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
     const RhiPartitionedTlasDesc& desc) const noexcept
 {
 	const RhiRayTracingCapabilities capabilities = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
@@ -393,7 +338,7 @@ D3D12PartitionedTlasServices::GetPartitionedTopLevelAccelerationStructureGpuOper
 	static_cast<void>(desc);
 	return {};
 #else
-	RhiPartitionedTlasGpuOperationBufferLayout layout{};
+	RhiPartitionedTlasOperationBufferLayout layout{};
 	layout.OperationCountOffsetInBytes = 0;
 	layout.OperationHeaderStrideInBytes = sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP);
 	layout.InstanceWriteStrideInBytes = sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_INSTANCE);
@@ -403,48 +348,29 @@ D3D12PartitionedTlasServices::GetPartitionedTopLevelAccelerationStructureGpuOper
 	layout.InstanceWriteRecordsOffsetInBytes =
 	    AlignUp(layout.OperationHeadersOffsetInBytes + layout.OperationHeaderStrideInBytes * desc.MaxOperations,
 	        alignof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_INSTANCE));
-	layout.InstanceUpdateRecordsOffsetInBytes =
-	    AlignUp(layout.InstanceWriteRecordsOffsetInBytes + layout.InstanceWriteStrideInBytes * desc.InstanceCapacity,
-	        alignof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE));
-	layout.PartitionTranslationRecordsOffsetInBytes =
-	    AlignUp(layout.InstanceUpdateRecordsOffsetInBytes + layout.InstanceUpdateStrideInBytes * desc.InstanceCapacity,
-	        alignof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION));
-	layout.TotalSizeInBytes =
-	    AlignUp(layout.PartitionTranslationRecordsOffsetInBytes + layout.PartitionTranslationStrideInBytes * desc.PartitionCount, 16);
+	std::uint64_t cursor = layout.InstanceWriteRecordsOffsetInBytes + layout.InstanceWriteStrideInBytes * desc.InstanceCapacity;
+	if (desc.AllowInstanceUpdates)
+	{
+		layout.InstanceUpdateRecordsOffsetInBytes =
+		    AlignUp(cursor, alignof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE));
+		cursor = layout.InstanceUpdateRecordsOffsetInBytes + layout.InstanceUpdateStrideInBytes * desc.InstanceCapacity;
+	}
+	else
+	{
+		layout.InstanceUpdateRecordsOffsetInBytes = cursor;
+	}
+	if (desc.AllowPartitionTranslation)
+	{
+		layout.PartitionTranslationRecordsOffsetInBytes =
+		    AlignUp(cursor, alignof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION));
+		cursor = layout.PartitionTranslationRecordsOffsetInBytes +
+		         layout.PartitionTranslationStrideInBytes * static_cast<std::uint64_t>(desc.PartitionCount + 1u);
+	}
+	else
+	{
+		layout.PartitionTranslationRecordsOffsetInBytes = cursor;
+	}
+	layout.TotalSizeInBytes = AlignUp(cursor, 16);
 	return layout;
 #endif
-}
-
-RhiOwnedResourceHandle D3D12PartitionedTlasServices::CreatePartitionedTopLevelAccelerationStructureGpuOperationBuffer(
-    const RhiPartitionedTlasGpuOperationBufferDesc& desc,
-    std::wstring_view debugName)
-{
-	const RhiRayTracingCapabilities capabilities = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !capabilities.Groups.PartitionedTlas.Supported ||
-	    desc.Layout.TotalSizeInBytes == 0)
-	{
-		return {};
-	}
-
-	const RhiBufferResourceDesc bufferDesc{
-	    .SizeInBytes = desc.Layout.TotalSizeInBytes,
-	    .AllowUnorderedAccess = desc.AllowGpuWrites};
-	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(bufferDesc);
-	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
-	    resourceDesc,
-	    D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-	    RhiMemoryCategory::RayTracing,
-	    desc.AllowCpuValidationReadback ? RhiMemoryResidencyClass::HostUpload : RhiMemoryResidencyClass::DeviceLocal,
-	    D3D12PartitionedTlasText::CopyDebugName(debugName, L"RayTracingPartitionedTlasGpuOperations"));
-	return ownedRecord != nullptr && ownedRecord->Resource != nullptr ? MakeD3D12OwnedResourceHandle(std::move(ownedRecord))
-	                                                                  : RhiOwnedResourceHandle{};
-}
-
-bool D3D12PartitionedTlasServices::PackPartitionedTopLevelAccelerationStructureGpuOperations(
-    RenderCommandList& commandList,
-    const RhiPartitionedTlasGpuOperationPackDesc& desc) noexcept
-{
-	static_cast<void>(commandList);
-	static_cast<void>(desc);
-	return false;
 }

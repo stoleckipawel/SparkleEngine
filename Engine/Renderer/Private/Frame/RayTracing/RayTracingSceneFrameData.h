@@ -6,33 +6,6 @@
 
 #include <cstdint>
 
-struct RayTracingPtlasFrameGraphResourceBindings
-{
-	RhiOwnedResourceHandle LogicalUpdateRecords = {};
-	RhiOwnedResourceHandle NativeOperationData = {};
-	RhiOwnedResourceHandle Scratch = {};
-
-	bool HasLogicalUpdateRecords() const noexcept
-	{
-		return static_cast<bool>(LogicalUpdateRecords);
-	}
-
-	bool HasNativeOperationData() const noexcept
-	{
-		return static_cast<bool>(NativeOperationData);
-	}
-
-	bool HasScratch() const noexcept
-	{
-		return static_cast<bool>(Scratch);
-	}
-
-	bool HasOperationResources() const noexcept
-	{
-		return HasLogicalUpdateRecords() && HasNativeOperationData() && HasScratch();
-	}
-};
-
 struct RayTracingSceneFrameData
 {
 	bool IsAvailable = false;
@@ -40,7 +13,6 @@ struct RayTracingSceneFrameData
 	RhiGpuVirtualAddress TlasGpuAddress = 0;
 	RayTracingSceneTlasShaderAccessMode TlasShaderAccessMode = RayTracingSceneTlasShaderAccessMode::Descriptor;
 	std::uint32_t EstimatedInstanceCount = 0;
-	RayTracingPtlasFrameGraphResourceBindings PtlasFrameGraphResources = {};
 
 	bool HasBoundTlas() const noexcept
 	{
@@ -50,10 +22,5 @@ struct RayTracingSceneFrameData
 	bool HasTraceableInstances() const noexcept
 	{
 		return HasBoundTlas() && EstimatedInstanceCount > 0;
-	}
-
-	bool HasPartitionedTlasOperationResources() const noexcept
-	{
-		return PtlasFrameGraphResources.HasOperationResources();
 	}
 };

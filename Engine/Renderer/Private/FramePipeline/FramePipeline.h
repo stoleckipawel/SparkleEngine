@@ -62,8 +62,6 @@ class FramePipeline final
 	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
-	void BindRayTracingFrameGraphResources(const RayTracingSceneFrameData& rayTracingScene) noexcept;
-	void ClearRayTracingFrameGraphResources() noexcept;
 	void CreateExposureHistoryResources() noexcept;
 	void ReleaseExposureHistoryResources() noexcept;
 	void BindExposureHistoryFrameGraphResources() noexcept;

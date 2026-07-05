@@ -165,15 +165,6 @@ namespace
 		}
 	}
 
-	int ToPtlasPartitionTopologyIndex(EnginePtlasPartitionTopology topology) noexcept
-	{
-		return topology == EnginePtlasPartitionTopology::XYZ3D ? 1 : 0;
-	}
-
-	EnginePtlasPartitionTopology FromPtlasPartitionTopologyIndex(int index) noexcept
-	{
-		return index == 1 ? EnginePtlasPartitionTopology::XYZ3D : EnginePtlasPartitionTopology::XZ2D;
-	}
 }
 
 void RenderingSettingsPanel::SetSettings(EngineRenderingSettingsSection* settings) noexcept
@@ -401,10 +392,6 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 
 	DrawRayReconstructionSettingsSection(*m_settings, settings, filterText);
 
-	static constexpr const char* ptlasPartitionTopologyLabels[] = {
-	    "2D X/Z",
-	    "3D X/Y/Z",
-	};
 	static constexpr const char* ptlasPartitionUpdateModeLabels[] = {
 	    "Always update partition",
 	    "Always move dynamic to global",
@@ -413,7 +400,7 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	if (MatchesFilter(
 	        filterText,
 	        "Ray Tracing",
-	        "ray tracing tlas refit ptlas active partition update mode partitions topology xz xyz dynamic distance indirect diffuse specular reflection bounces") &&
+	        "ray tracing tlas refit ptlas active partition update mode partitions dynamic distance indirect diffuse specular reflection bounces") &&
 	    BeginSettingsCategory("Ray Tracing"))
 	{
 		if (BeginSettingsTable("##RenderingRayTracingSettings"))
@@ -437,13 +424,6 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    1u,
 			    64u,
 			    [this](std::uint32_t value) { m_settings->SetPtlasPartitionsPerAxis(value); });
-			DrawComboRow(
-			    "##PtlasPartitionTopology",
-			    "PTLAS partition topology",
-			    ToPtlasPartitionTopologyIndex(settings.PtlasPartitionTopology),
-			    ptlasPartitionTopologyLabels,
-			    IM_ARRAYSIZE(ptlasPartitionTopologyLabels),
-			    [this](int value) { m_settings->SetPtlasPartitionTopology(FromPtlasPartitionTopologyIndex(value)); });
 			DrawComboRow(
 			    "##PtlasPartitionUpdateMode",
 			    "Partition update mode",

@@ -38,14 +38,6 @@ class RenderRayTracingScene final
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,
 	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
-	void BuildPartitionedTlasLogicalUpdateResources(
-	    RenderCommandContext& cmd,
-	    const RenderSceneData& sceneData,
-	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
-	void PackPartitionedTlasNativeOperations(
-	    RenderCommandContext& cmd,
-	    const RenderSceneData& sceneData,
-	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.Core.SupportsRayTracing; }

@@ -16,19 +16,6 @@ bool HasFlag(RhiPartitionedTlasInstanceFlags flags, RhiPartitionedTlasInstanceFl
 	return (static_cast<std::uint32_t>(flags) & static_cast<std::uint32_t>(flag)) != 0;
 }
 
-RhiPartitionedTlasLogicalUpdateFlags operator|(
-    RhiPartitionedTlasLogicalUpdateFlags lhs,
-    RhiPartitionedTlasLogicalUpdateFlags rhs) noexcept
-{
-	return static_cast<RhiPartitionedTlasLogicalUpdateFlags>(
-	    static_cast<std::uint32_t>(lhs) | static_cast<std::uint32_t>(rhs));
-}
-
-bool HasFlag(RhiPartitionedTlasLogicalUpdateFlags flags, RhiPartitionedTlasLogicalUpdateFlags flag) noexcept
-{
-	return (static_cast<std::uint32_t>(flags) & static_cast<std::uint32_t>(flag)) != 0;
-}
-
 const char* RhiPartitionedTlasProviderToString(ERhiPartitionedTlasProvider provider) noexcept
 {
 	switch (provider)
@@ -40,22 +27,6 @@ const char* RhiPartitionedTlasProviderToString(ERhiPartitionedTlasProvider provi
 		case ERhiPartitionedTlasProvider::D3D12PublicDxrRtasOperations:
 			return "D3D12PublicDxrRtasOperations";
 		case ERhiPartitionedTlasProvider::None:
-		default:
-			return "None";
-	}
-}
-
-const char* RhiPartitionedTlasOperationWriterPathToString(ERhiPartitionedTlasOperationWriterPath writerPath) noexcept
-{
-	switch (writerPath)
-	{
-		case ERhiPartitionedTlasOperationWriterPath::CpuPack:
-			return "CpuPack";
-		case ERhiPartitionedTlasOperationWriterPath::GpuLogicalDirtyCpuNativePack:
-			return "GpuLogicalDirtyCpuNativePack";
-		case ERhiPartitionedTlasOperationWriterPath::FullGpuNativePack:
-			return "FullGpuNativePack";
-		case ERhiPartitionedTlasOperationWriterPath::None:
 		default:
 			return "None";
 	}

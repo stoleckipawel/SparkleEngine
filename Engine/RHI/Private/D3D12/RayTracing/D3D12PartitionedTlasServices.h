@@ -25,19 +25,8 @@ class D3D12PartitionedTlasServices final : public RhiPartitionedTlasService
 	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
 	    const RhiPartitionedTlasOperationPackDesc& operationPack,
 	    std::wstring_view debugName) override;
-	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureLogicalUpdateBuffer(
-	    const RhiPartitionedTlasLogicalUpdateBufferDesc& desc,
-	    const RhiPartitionedTlasLogicalUpdateRecord* records,
-	    std::uint32_t recordCount,
-	    std::wstring_view debugName) override;
-	RhiPartitionedTlasGpuOperationBufferLayout GetPartitionedTopLevelAccelerationStructureGpuOperationBufferLayout(
+	RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
 	    const RhiPartitionedTlasDesc& desc) const noexcept override;
-	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureGpuOperationBuffer(
-	    const RhiPartitionedTlasGpuOperationBufferDesc& desc,
-	    std::wstring_view debugName) override;
-	bool PackPartitionedTopLevelAccelerationStructureGpuOperations(
-	    RenderCommandList& commandList,
-	    const RhiPartitionedTlasGpuOperationPackDesc& desc) noexcept override;
 
   private:
 	static std::uint64_t AlignUp(std::uint64_t value, std::uint64_t alignment) noexcept;

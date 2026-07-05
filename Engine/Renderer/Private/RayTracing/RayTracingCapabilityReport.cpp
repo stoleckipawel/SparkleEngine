@@ -92,10 +92,6 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(c
 	            .SupportsD3D12PublicDxrProvider = rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas,
 	            .SupportsD3D12PublicDxrHeaders = rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrHeaders,
 	            .SupportsCpuPackedOperations = rayTracing.Groups.PartitionedTlas.SupportsCpuPackedOperations,
-	            .SupportsGpuDrivenOperations = rayTracing.Groups.PartitionedTlas.SupportsGpuDrivenOperations,
-	            .SupportsGpuLogicalUpdateRecordWrites =
-	                rayTracing.Groups.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites,
-	            .SupportsGpuNativeOperationPacking = rayTracing.Groups.PartitionedTlas.SupportsGpuNativeOperationPacking,
 	            .CapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason},
 	    .TlasShaderAccess =
 	        RayTracingTlasShaderAccessCapabilityReport{

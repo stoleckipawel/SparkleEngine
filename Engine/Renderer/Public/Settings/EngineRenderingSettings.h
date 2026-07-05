@@ -36,7 +36,6 @@ struct EngineRenderingSettingsState final
 	bool RefitTlas = true;
 	bool PtlasActive = false;
 	std::uint32_t PtlasPartitionsPerAxis = 8;
-	EnginePtlasPartitionTopology PtlasPartitionTopology = EnginePtlasPartitionTopology::XYZ3D;
 	EnginePtlasPartitionUpdateMode PtlasPartitionUpdateMode = EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition;
 	bool PtlasMarkAllDynamicInPartition = false;
 	float PtlasModeChangeDistance = 100.0f;
@@ -73,7 +72,6 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigB
 	void SetRefitTlas(bool enabled);
 	void SetPtlasActive(bool active);
 	void SetPtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis);
-	void SetPtlasPartitionTopology(EnginePtlasPartitionTopology topology);
 	void SetPtlasPartitionUpdateMode(EnginePtlasPartitionUpdateMode mode);
 	void SetPtlasMarkAllDynamicInPartition(bool enabled);
 	void SetPtlasModeChangeDistance(float distance);

@@ -23,10 +23,6 @@ ConsoleVariable<std::uint32_t> CVarRayTracingPartitionsPerAxis(
     "r.RayTracing.Ptlas.PartitionsPerAxis",
     8u,
     "Logical ray tracing partition grid resolution per axis.");
-ConsoleVariable<RayTracingPtlasPartitionTopology> CVarRayTracingPtlasPartitionTopology(
-    "r.RayTracing.Ptlas.PartitionTopology",
-    RayTracingPtlasPartitionTopology::XYZ3D,
-    "PTLAS partition topology: 0=2D X/Z, 1=3D X/Y/Z.");
 ConsoleVariable<RayTracingPtlasPartitionUpdateMode> CVarRayTracingPtlasPartitionUpdateMode(
     "r.RayTracing.Ptlas.PartitionUpdateMode",
     RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition,

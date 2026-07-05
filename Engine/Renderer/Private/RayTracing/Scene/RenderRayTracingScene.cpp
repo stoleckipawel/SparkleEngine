@@ -65,32 +65,6 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 		m_topLevelAccelerationStructureStrategy->Clear();
 		m_diagnosticState->PerformanceMetrics.Blas = {};
 		m_diagnosticState->PerformanceMetrics.ClassicTlas = {};
-		m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates = {};
-		const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
-		    m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->GetCurrentPlannerMetrics() : RayTracingTopLevelScenePlannerMetrics{};
-		m_diagnosticState->PerformanceMetrics.PtlasPlanner = RayTracingPtlasPlannerMetrics{
-		    .TotalRenderInstanceCount = plannerMetrics.TotalRenderInstanceCount,
-		    .TraceableInstanceCount = plannerMetrics.TraceableInstanceCount,
-		    .StaticTraceableInstanceCount = plannerMetrics.StaticTraceableInstanceCount,
-		    .DynamicTraceableInstanceCount = plannerMetrics.DynamicTraceableInstanceCount,
-		    .PartitionsPerAxis = plannerMetrics.PartitionsPerAxis,
-		    .PartitionCount = plannerMetrics.PartitionCount,
-		    .GridPartitionCount = plannerMetrics.GridPartitionCount,
-		    .DirtyTransformCount = plannerMetrics.DirtyTransformCount,
-		    .MovedPartitionCount = plannerMetrics.MovedPartitionCount,
-		    .GlobalPartitionEligibleCount = plannerMetrics.GlobalPartitionEligibleCount,
-		    .GlobalPartitionInstanceCount = plannerMetrics.GlobalPartitionInstanceCount,
-		    .ActivePartitionCount = plannerMetrics.ActivePartitionCount,
-		    .MaxPartitionActivityCount = plannerMetrics.MaxPartitionActivityCount,
-		    .DuplicateStableIndexCount = plannerMetrics.DuplicateStableIndexCount,
-		    .Overflow = plannerMetrics.Overflow};
-		m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
-		m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates.GpuDrivenOperationApiSupported =
-		    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
-		m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable =
-		    m_capabilityReport.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites;
-		m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates.FullGpuNativePackAvailable =
-		    m_capabilityReport.PartitionedTlas.SupportsGpuNativeOperationPacking;
 		return {};
 	}
 
@@ -138,70 +112,6 @@ void RenderRayTracingScene::Build(
 	m_diagnosticState->PerformanceMetrics.ClassicTlas.MissingGpuMeshCount = topLevelStats.Candidates.MissingGpuMeshCount;
 	m_diagnosticState->PerformanceMetrics.ClassicTlas.RejectedBlasCount = topLevelStats.Candidates.RejectedBlasCount;
 	m_diagnosticState->PerformanceMetrics.ClassicTlas.Built = topLevelStats.Build.Built;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.TotalRenderInstanceCount = topLevelStats.PtlasPlanner.TotalRenderInstanceCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.TraceableInstanceCount = topLevelStats.PtlasPlanner.TraceableInstanceCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.StaticTraceableInstanceCount = topLevelStats.PtlasPlanner.StaticTraceableInstanceCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.DynamicTraceableInstanceCount = topLevelStats.PtlasPlanner.DynamicTraceableInstanceCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.PartitionsPerAxis = topLevelStats.PtlasPlanner.PartitionsPerAxis;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.PartitionCount = topLevelStats.PtlasPlanner.PartitionCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.GridPartitionCount = topLevelStats.PtlasPlanner.GridPartitionCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.DirtyTransformCount = topLevelStats.PtlasPlanner.DirtyTransformCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.MovedPartitionCount = topLevelStats.PtlasPlanner.MovedPartitionCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.GlobalPartitionEligibleCount = topLevelStats.PtlasPlanner.GlobalPartitionEligibleCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.GlobalPartitionInstanceCount = topLevelStats.PtlasPlanner.GlobalPartitionInstanceCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.ActivePartitionCount = topLevelStats.PtlasPlanner.ActivePartitionCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.MaxPartitionActivityCount = topLevelStats.PtlasPlanner.MaxPartitionActivityCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.DuplicateStableIndexCount = topLevelStats.PtlasPlanner.DuplicateStableIndexCount;
-	m_diagnosticState->PerformanceMetrics.PtlasPlanner.Overflow = topLevelStats.PtlasPlanner.Overflow;
-	const RayTracingTopLevelScenePlannerMetrics plannerMetrics =
-	    m_topLevelScenePlanner != nullptr ? m_topLevelScenePlanner->GetCurrentPlannerMetrics() : RayTracingTopLevelScenePlannerMetrics{};
-	m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates = plannerMetrics.GpuUpdates;
-	if (topLevelBuild.ActiveProvider == ERhiRayTracingTopLevelProvider::PartitionedTlas)
-	{
-		m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates = topLevelBuild.PtlasGpuUpdates;
-	}
-	m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates.GpuDrivenOperationApiSupported =
-	    m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
-	m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable =
-	    m_capabilityReport.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites;
-	m_diagnosticState->PerformanceMetrics.PtlasGpuUpdates.FullGpuNativePackAvailable =
-	    m_capabilityReport.PartitionedTlas.SupportsGpuNativeOperationPacking;
-}
-
-void RenderRayTracingScene::BuildPartitionedTlasLogicalUpdateResources(
-    RenderCommandContext& cmd,
-    const RenderSceneData& sceneData,
-    PassExecutionDiagnostics* diagnostics) noexcept
-{
-	if (m_topLevelAccelerationStructureStrategy == nullptr)
-	{
-		return;
-	}
-
-	RayTracingPerformanceDiagnostics performanceDiagnostics{diagnostics};
-	m_topLevelAccelerationStructureStrategy->BuildPartitionedTlasLogicalUpdateResources(
-	    cmd,
-	    sceneData,
-	    m_topLevelScenePlanner.get(),
-	    &performanceDiagnostics);
-}
-
-void RenderRayTracingScene::PackPartitionedTlasNativeOperations(
-    RenderCommandContext& cmd,
-    const RenderSceneData& sceneData,
-    PassExecutionDiagnostics* diagnostics) noexcept
-{
-	if (m_topLevelAccelerationStructureStrategy == nullptr)
-	{
-		return;
-	}
-
-	RayTracingPerformanceDiagnostics performanceDiagnostics{diagnostics};
-	m_topLevelAccelerationStructureStrategy->PackPartitionedTlasNativeOperations(
-	    cmd,
-	    sceneData,
-	    m_topLevelScenePlanner.get(),
-	    &performanceDiagnostics);
 }
 
 void RenderRayTracingScene::Clear() noexcept

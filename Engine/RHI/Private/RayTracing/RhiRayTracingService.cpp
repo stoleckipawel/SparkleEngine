@@ -90,38 +90,11 @@ RhiOwnedResourceHandle RhiRayTracingService::CreatePartitionedTopLevelAccelerati
 	return GetPartitionedTlasService().CreatePartitionedTopLevelAccelerationStructureOperationBuffer(operationPack, debugName);
 }
 
-RhiOwnedResourceHandle RhiRayTracingService::CreatePartitionedTopLevelAccelerationStructureLogicalUpdateBuffer(
-    const RhiPartitionedTlasLogicalUpdateBufferDesc& desc,
-    const RhiPartitionedTlasLogicalUpdateRecord* records,
-    std::uint32_t recordCount,
-    std::wstring_view debugName)
-{
-	return GetPartitionedTlasService().CreatePartitionedTopLevelAccelerationStructureLogicalUpdateBuffer(
-	    desc,
-	    records,
-	    recordCount,
-	    debugName);
-}
-
-RhiPartitionedTlasGpuOperationBufferLayout
-RhiRayTracingService::GetPartitionedTopLevelAccelerationStructureGpuOperationBufferLayout(
+RhiPartitionedTlasOperationBufferLayout
+RhiRayTracingService::GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
     const RhiPartitionedTlasDesc& desc) const noexcept
 {
-	return GetPartitionedTlasService().GetPartitionedTopLevelAccelerationStructureGpuOperationBufferLayout(desc);
-}
-
-RhiOwnedResourceHandle RhiRayTracingService::CreatePartitionedTopLevelAccelerationStructureGpuOperationBuffer(
-    const RhiPartitionedTlasGpuOperationBufferDesc& desc,
-    std::wstring_view debugName)
-{
-	return GetPartitionedTlasService().CreatePartitionedTopLevelAccelerationStructureGpuOperationBuffer(desc, debugName);
-}
-
-bool RhiRayTracingService::PackPartitionedTopLevelAccelerationStructureGpuOperations(
-    RenderCommandList& commandList,
-    const RhiPartitionedTlasGpuOperationPackDesc& desc) noexcept
-{
-	return GetPartitionedTlasService().PackPartitionedTopLevelAccelerationStructureGpuOperations(commandList, desc);
+	return GetPartitionedTlasService().GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(desc);
 }
 
 RhiOwnedResourceHandle RhiRayTracingService::CreateRayTracingInstanceBuffer(

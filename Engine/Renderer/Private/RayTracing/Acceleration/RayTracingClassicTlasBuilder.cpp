@@ -112,24 +112,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	std::unordered_set<void*> builtBlasResources;
 	std::vector<RhiRayTracingInstanceDesc> instances;
 	stats.Candidates.InstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
-	if (partitionPlan != nullptr)
-	{
-		stats.PtlasPlanner.TotalRenderInstanceCount = partitionPlan->Counts.CandidateInstanceCount;
-		stats.PtlasPlanner.TraceableInstanceCount = partitionPlan->Counts.CandidateInstanceCount;
-		stats.PtlasPlanner.StaticTraceableInstanceCount = partitionPlan->Counts.StaticInstanceCount;
-		stats.PtlasPlanner.DynamicTraceableInstanceCount = partitionPlan->Counts.DynamicInstanceCount;
-		stats.PtlasPlanner.PartitionsPerAxis = partitionPlan->Counts.PartitionsPerAxis;
-		stats.PtlasPlanner.PartitionCount = partitionPlan->Counts.PartitionCount;
-		stats.PtlasPlanner.GridPartitionCount = partitionPlan->Counts.GridPartitionCount;
-		stats.PtlasPlanner.DirtyTransformCount = partitionPlan->Counts.DirtyTransformCount;
-		stats.PtlasPlanner.MovedPartitionCount = partitionPlan->Counts.MovedPartitionCount;
-		stats.PtlasPlanner.GlobalPartitionEligibleCount = partitionPlan->Counts.GlobalPartitionEligibleCount;
-		stats.PtlasPlanner.GlobalPartitionInstanceCount = partitionPlan->Counts.GlobalPartitionInstanceCount;
-		stats.PtlasPlanner.ActivePartitionCount = partitionPlan->Counts.ActivePartitionCount;
-		stats.PtlasPlanner.MaxPartitionActivityCount = partitionPlan->Counts.MaxPartitionActivityCount;
-		stats.PtlasPlanner.DuplicateStableIndexCount = partitionPlan->Counts.DuplicateStableIndexCount;
-		stats.PtlasPlanner.Overflow = partitionPlan->Validation.HasPartitionOverflow;
-	}
+	(void)partitionPlan;
 	instances.reserve(sceneData.meshInstances.size());
 	{
 		for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++index)

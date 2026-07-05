@@ -6,7 +6,6 @@
 #include "Meshes/GPUMesh.h"
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Acceleration/RayTracingPtlasLogicalUpdateStream.h"
-#include "RayTracing/Acceleration/RayTracingPtlasOperationWriterPolicy.h"
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelScenePlanner.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
@@ -35,32 +34,6 @@ namespace RayTracingPartitionedTlasStrategyDetails
 		    worldMatrix._32,
 		    worldMatrix._33,
 		    worldMatrix._34};
-	}
-
-	void PopulatePlannerCounters(
-	    RayTracingTopLevelAccelerationStructureBuildStats& stats,
-	    const RayTracingPtlasPartitionPlan* partitionPlan) noexcept
-	{
-		if (partitionPlan == nullptr)
-		{
-			return;
-		}
-
-		stats.PtlasPlanner.TotalRenderInstanceCount = partitionPlan->Counts.CandidateInstanceCount;
-		stats.PtlasPlanner.TraceableInstanceCount = partitionPlan->Counts.CandidateInstanceCount;
-		stats.PtlasPlanner.StaticTraceableInstanceCount = partitionPlan->Counts.StaticInstanceCount;
-		stats.PtlasPlanner.DynamicTraceableInstanceCount = partitionPlan->Counts.DynamicInstanceCount;
-		stats.PtlasPlanner.PartitionsPerAxis = partitionPlan->Counts.PartitionsPerAxis;
-		stats.PtlasPlanner.PartitionCount = partitionPlan->Counts.PartitionCount;
-		stats.PtlasPlanner.GridPartitionCount = partitionPlan->Counts.GridPartitionCount;
-		stats.PtlasPlanner.DirtyTransformCount = partitionPlan->Counts.DirtyTransformCount;
-		stats.PtlasPlanner.MovedPartitionCount = partitionPlan->Counts.MovedPartitionCount;
-		stats.PtlasPlanner.GlobalPartitionEligibleCount = partitionPlan->Counts.GlobalPartitionEligibleCount;
-		stats.PtlasPlanner.GlobalPartitionInstanceCount = partitionPlan->Counts.GlobalPartitionInstanceCount;
-		stats.PtlasPlanner.ActivePartitionCount = partitionPlan->Counts.ActivePartitionCount;
-		stats.PtlasPlanner.MaxPartitionActivityCount = partitionPlan->Counts.MaxPartitionActivityCount;
-		stats.PtlasPlanner.DuplicateStableIndexCount = partitionPlan->Counts.DuplicateStableIndexCount;
-		stats.PtlasPlanner.Overflow = partitionPlan->Validation.HasPartitionOverflow;
 	}
 
 	bool HasStructuralPartitionValidationFailure(const RayTracingPtlasPartitionPlan* partitionPlan) noexcept
@@ -101,28 +74,6 @@ namespace RayTracingPartitionedTlasStrategyDetails
 		}
 	}
 
-	const char* ResolveActiveWriterReason(
-	    const RayTracingPartitionedTlasCapabilityReport& capabilityReport,
-	    ERhiPartitionedTlasOperationWriterPath writerPath) noexcept
-	{
-		if (writerPath == ERhiPartitionedTlasOperationWriterPath::GpuLogicalDirtyCpuNativePack)
-		{
-			switch (capabilityReport.Provider)
-			{
-				case ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas:
-					return "d3d12-nvapi-partitioned-tlas-active-gpu-logical-cpu-native-pack";
-				case ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure:
-					return "vulkan-nv-partitioned-tlas-active-gpu-logical-cpu-native-pack";
-				case ERhiPartitionedTlasProvider::D3D12PublicDxrRtasOperations:
-					return "d3d12-public-dxr-partitioned-tlas-active-gpu-logical-cpu-native-pack";
-				case ERhiPartitionedTlasProvider::None:
-				default:
-					return "partitioned-tlas-active-gpu-logical-cpu-native-pack";
-			}
-		}
-
-		return ResolveActiveCpuPackReason(capabilityReport);
-	}
 }
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStrategy::BuildPartitionedTlas(
@@ -136,19 +87,9 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	result.ActiveProvider = ERhiRayTracingTopLevelProvider::PartitionedTlas;
 	result.ActiveProviderReason = GetActiveProviderReason();
 	result.Stats.Candidates.InstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
-	const RayTracingPtlasOperationWriterPolicy writerPolicy =
-	    RayTracingPtlasOperationWriterPolicyResolver::ResolveForCapability(m_capabilityReport.PartitionedTlas);
-	result.PtlasGpuUpdates.RequestedWriterPath = writerPolicy.RequestedPath;
-	result.PtlasGpuUpdates.SelectedWriterPath = writerPolicy.SelectedPath;
-	result.PtlasGpuUpdates.WriterSelectionReason = writerPolicy.SelectionReason;
-	result.PtlasGpuUpdates.GpuDrivenOperationApiSupported = m_capabilityReport.PartitionedTlas.SupportsGpuDrivenOperations;
-	result.PtlasGpuUpdates.GpuLogicalUpdateWriterAvailable =
-	    m_capabilityReport.PartitionedTlas.SupportsGpuLogicalUpdateRecordWrites;
-	result.PtlasGpuUpdates.FullGpuNativePackAvailable = m_capabilityReport.PartitionedTlas.SupportsGpuNativeOperationPacking;
 
 	const RayTracingPtlasPartitionPlan* partitionPlan =
 	    scenePlanner != nullptr ? scenePlanner->GetCurrentPartitionPlan() : nullptr;
-	RayTracingPartitionedTlasStrategyDetails::PopulatePlannerCounters(result.Stats, partitionPlan);
 	if (!EnsurePartitionedTlasResources(sceneData, partitionPlan))
 	{
 		result.ActiveProvider = ERhiRayTracingTopLevelProvider::None;
@@ -157,18 +98,13 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	}
 	const RayTracingPtlasLogicalUpdateStreamResult* logicalUpdates =
 	    scenePlanner != nullptr ? scenePlanner->GetCurrentLogicalUpdateStream() : nullptr;
-	if (writerPolicy.SelectedPath != ERhiPartitionedTlasOperationWriterPath::CpuPack)
-	{
-		UploadLogicalUpdateRecords(logicalUpdates, diagnostics);
-	}
 	const bool partitionPlanRequiresFullBuild =
 	    RayTracingPartitionedTlasStrategyDetails::HasStructuralPartitionValidationFailure(partitionPlan);
 	const std::uint64_t stableInstanceFingerprint =
 	    RayTracingPartitionedTlasStrategyDetails::ResolveStableInstanceFingerprint(sceneData);
 	bool useFullBuild =
-	    writerPolicy.SelectedPath == ERhiPartitionedTlasOperationWriterPath::CpuPack || !m_partitionedResources.Built ||
-	    !m_partitionedResources.IncrementalUpdatesAllowed || partitionPlanRequiresFullBuild ||
-	    m_partitionedResources.StableInstanceFingerprint != stableInstanceFingerprint;
+	    !m_partitionedResources.Built || !m_partitionedResources.IncrementalUpdatesAllowed ||
+	    partitionPlanRequiresFullBuild || m_partitionedResources.StableInstanceFingerprint != stableInstanceFingerprint;
 	auto resolveInstanceFlags = [&](const MeshDraw& draw) noexcept {
 		RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;
 		if (draw.Material.Slot < sceneData.materials.size() && sceneData.materials[draw.Material.Slot].alphaMode == 1u)
@@ -231,7 +167,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 			return true;
 		}
 
-		for (const RhiPartitionedTlasLogicalUpdateRecord& record : logicalUpdates->Records)
+		for (const RayTracingPtlasLogicalUpdateRecord& record : logicalUpdates->Records)
 		{
 			if (record.RenderInstanceIndex >= sceneData.meshInstances.size())
 			{
@@ -297,10 +233,6 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	    useFullBuild ? nativeWriteCount : (std::max)(m_partitionedResources.InstanceCount, nativeWriteCount);
 	if (instanceWrites.empty())
 	{
-		result.PtlasGpuUpdates.NativeOperationCount = 0;
-		result.PtlasGpuUpdates.LogicalUpdateCount = logicalUpdates != nullptr ? logicalUpdates->LogicalUpdateCount : 0u;
-		result.PtlasGpuUpdates.ValidationMismatchCount =
-		    logicalUpdates != nullptr ? logicalUpdates->SkippedInvalidInstanceCount : 0u;
 		m_partitionedResources.NativeOperationCount = 0;
 		if (useFullBuild)
 		{
@@ -310,17 +242,9 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		{
 			result.Stats.Build.Built = m_partitionedResources.Built;
 			m_activeProviderReason =
-			    RayTracingPartitionedTlasStrategyDetails::ResolveActiveWriterReason(m_capabilityReport.PartitionedTlas, writerPolicy.SelectedPath);
+			    RayTracingPartitionedTlasStrategyDetails::ResolveActiveCpuPackReason(m_capabilityReport.PartitionedTlas);
 			result.ActiveProviderReason = m_activeProviderReason;
 		}
-		return result;
-	}
-
-	if (writerPolicy.SelectedPath == ERhiPartitionedTlasOperationWriterPath::None)
-	{
-		InvalidatePartitionedTlasSceneState();
-		result.ActiveProvider = ERhiRayTracingTopLevelProvider::None;
-		result.ActiveProviderReason = writerPolicy.SelectionReason;
 		return result;
 	}
 
@@ -333,11 +257,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	    .Operations = &operation,
 	    .OperationCount = 1,
 	    .InstanceWrites = instanceWrites.data(),
-	    .InstanceWriteCount = nativeWriteCount,
-	    .InstanceUpdates = nullptr,
-	    .InstanceUpdateCount = 0,
-	    .PartitionTranslations = nullptr,
-	    .PartitionTranslationCount = 0};
+	    .InstanceWriteCount = nativeWriteCount};
 
 	RhiRayTracingService& rayTracingService = m_renderHardwareInterface->GetRayTracingService();
 	RhiResourceService& resourceService = m_renderHardwareInterface->GetResourceService();
@@ -361,21 +281,10 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	}
 
 	m_partitionedResources.NativeOperationLayout =
-	    rayTracingService.GetPartitionedTopLevelAccelerationStructureGpuOperationBufferLayout(m_partitionedResources.Layout);
+	    rayTracingService.GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(m_partitionedResources.Layout);
 	m_partitionedResources.NativeOperationDataAddress =
 	    resourceService.GetResourceGpuVirtualAddress(m_partitionedResources.NativeOperationData);
 	m_partitionedResources.NativeOperationCount = nativeWriteCount;
-	result.PtlasGpuUpdates.NativeOperationCount = m_partitionedResources.NativeOperationCount;
-	if (logicalUpdates != nullptr)
-	{
-		m_partitionedResources.LogicalUpdateCount = logicalUpdates->LogicalUpdateCount;
-		result.PtlasGpuUpdates.LogicalUpdateCount = logicalUpdates->LogicalUpdateCount;
-		result.PtlasGpuUpdates.ValidationMismatchCount = logicalUpdates->SkippedInvalidInstanceCount;
-	}
-	else
-	{
-		result.PtlasGpuUpdates.LogicalUpdateCount = nativeWriteCount;
-	}
 	if (m_partitionedResources.NativeOperationDataAddress == 0)
 	{
 		InvalidatePartitionedTlasSceneState();
@@ -416,7 +325,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	}
 	m_partitionedResources.Built = true;
 	m_activeProviderReason =
-	    RayTracingPartitionedTlasStrategyDetails::ResolveActiveWriterReason(m_capabilityReport.PartitionedTlas, writerPolicy.SelectedPath);
+	    RayTracingPartitionedTlasStrategyDetails::ResolveActiveCpuPackReason(m_capabilityReport.PartitionedTlas);
 	result.ActiveProviderReason = m_activeProviderReason;
 	return result;
 }

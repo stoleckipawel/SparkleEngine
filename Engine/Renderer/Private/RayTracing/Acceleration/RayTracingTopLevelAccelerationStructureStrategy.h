@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Frame/RayTracing/RayTracingSceneFrameData.h"
-#include "RayTracing/Diagnostics/RayTracingPtlasGpuUpdateMetrics.h"
 #include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureBuildStats.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
@@ -19,7 +18,6 @@ struct RenderSceneData;
 struct RayTracingTopLevelAccelerationStructureBuildResult final
 {
 	RayTracingTopLevelAccelerationStructureBuildStats Stats;
-	RayTracingPtlasGpuUpdateMetrics PtlasGpuUpdates;
 	ERhiRayTracingTopLevelProvider ActiveProvider = ERhiRayTracingTopLevelProvider::None;
 	const char* ActiveProviderReason = "not-built";
 };
@@ -44,16 +42,6 @@ class RayTracingTopLevelAccelerationStructureStrategy
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,
 	    RayTracingBlasCache& blasCache,
-	    RayTracingTopLevelScenePlanner* scenePlanner,
-	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
-	virtual void BuildPartitionedTlasLogicalUpdateResources(
-	    RenderCommandContext& cmd,
-	    const RenderSceneData& sceneData,
-	    RayTracingTopLevelScenePlanner* scenePlanner,
-	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
-	virtual void PackPartitionedTlasNativeOperations(
-	    RenderCommandContext& cmd,
-	    const RenderSceneData& sceneData,
 	    RayTracingTopLevelScenePlanner* scenePlanner,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
 	virtual bool HasValidSceneTlas() const noexcept = 0;

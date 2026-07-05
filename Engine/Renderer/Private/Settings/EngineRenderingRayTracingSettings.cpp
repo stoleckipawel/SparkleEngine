@@ -12,17 +12,6 @@
 
 namespace
 {
-	EnginePtlasPartitionTopology ParsePtlasPartitionTopology(std::string_view text) noexcept
-	{
-		const std::string_view trimmed = Strings::TrimAsciiWhitespace(text);
-		if (Strings::EqualsIgnoreCase(trimmed, "XZ2D") || Strings::EqualsIgnoreCase(trimmed, "2D_XZ") ||
-		    Strings::EqualsIgnoreCase(trimmed, "2D X/Z"))
-		{
-			return EnginePtlasPartitionTopology::XZ2D;
-		}
-		return EnginePtlasPartitionTopology::XYZ3D;
-	}
-
 	EnginePtlasPartitionUpdateMode ParsePtlasPartitionUpdateMode(std::string_view text) noexcept
 	{
 		const std::string_view trimmed = Strings::TrimAsciiWhitespace(text);
@@ -41,11 +30,6 @@ namespace
 		return EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition;
 	}
 
-	const char* ToConfigString(EnginePtlasPartitionTopology topology) noexcept
-	{
-		return topology == EnginePtlasPartitionTopology::XZ2D ? "XZ2D" : "XYZ3D";
-	}
-
 	const char* ToConfigString(EnginePtlasPartitionUpdateMode mode) noexcept
 	{
 		switch (mode)
@@ -58,18 +42,6 @@ namespace
 			default:
 				return "AlwaysUpdatePartition";
 		}
-	}
-
-	RayTracingPtlasPartitionTopology ToRuntimePartitionTopology(EnginePtlasPartitionTopology topology) noexcept
-	{
-		return topology == EnginePtlasPartitionTopology::XZ2D ? RayTracingPtlasPartitionTopology::XZ2D
-		                                                      : RayTracingPtlasPartitionTopology::XYZ3D;
-	}
-
-	EnginePtlasPartitionTopology FromRuntimePartitionTopology(RayTracingPtlasPartitionTopology topology) noexcept
-	{
-		return topology == RayTracingPtlasPartitionTopology::XZ2D ? EnginePtlasPartitionTopology::XZ2D
-		                                                          : EnginePtlasPartitionTopology::XYZ3D;
 	}
 
 	RayTracingPtlasPartitionUpdateMode ToRuntimePartitionUpdateMode(EnginePtlasPartitionUpdateMode mode) noexcept
@@ -121,7 +93,6 @@ void EngineRenderingRayTracingSettings::Capture(EngineRenderingSettingsState& st
 	state.RefitTlas = CVarRayTracingClassicTlasRefit.Get();
 	state.PtlasActive = CVarRayTracingPreferPartitionedTlas.Get();
 	state.PtlasPartitionsPerAxis = SanitizePtlasPartitionsPerAxis(CVarRayTracingPartitionsPerAxis.Get());
-	state.PtlasPartitionTopology = FromRuntimePartitionTopology(CVarRayTracingPtlasPartitionTopology.Get());
 	state.PtlasPartitionUpdateMode = FromRuntimePartitionUpdateMode(CVarRayTracingPtlasPartitionUpdateMode.Get());
 	state.PtlasMarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get();
 	state.PtlasModeChangeDistance = SanitizePtlasModeChangeDistance(CVarRayTracingPtlasModeChangeDistance.Get());
@@ -134,7 +105,6 @@ void EngineRenderingRayTracingSettings::Apply(const EngineRenderingSettingsState
 	CVarRayTracingClassicTlasRefit.Set(state.RefitTlas);
 	CVarRayTracingPreferPartitionedTlas.Set(state.PtlasActive);
 	CVarRayTracingPartitionsPerAxis.Set(SanitizePtlasPartitionsPerAxis(state.PtlasPartitionsPerAxis));
-	CVarRayTracingPtlasPartitionTopology.Set(ToRuntimePartitionTopology(state.PtlasPartitionTopology));
 	CVarRayTracingPtlasPartitionUpdateMode.Set(ToRuntimePartitionUpdateMode(state.PtlasPartitionUpdateMode));
 	CVarRayTracingPtlasMarkAllDynamicInPartition.Set(state.PtlasMarkAllDynamicInPartition);
 	CVarRayTracingPtlasModeChangeDistance.Set(SanitizePtlasModeChangeDistance(state.PtlasModeChangeDistance));
@@ -171,11 +141,6 @@ bool EngineRenderingRayTracingSettings::ReadConfigValue(
 		{
 			state.PtlasPartitionsPerAxis = SanitizePtlasPartitionsPerAxis(partitionsPerAxis);
 		}
-		return true;
-	}
-	if (trimmedKey == "PtlasPartitionTopology")
-	{
-		state.PtlasPartitionTopology = ParsePtlasPartitionTopology(trimmedValue);
 		return true;
 	}
 	if (trimmedKey == "PtlasPartitionUpdateMode")
@@ -225,7 +190,6 @@ void EngineRenderingRayTracingSettings::AppendConfigValues(
 	values.emplace_back("RefitTlas", state.RefitTlas ? "true" : "false");
 	values.emplace_back("PtlasActive", state.PtlasActive ? "true" : "false");
 	values.emplace_back("PtlasPartitionsPerAxis", std::to_string(SanitizePtlasPartitionsPerAxis(state.PtlasPartitionsPerAxis)));
-	values.emplace_back("PtlasPartitionTopology", ToConfigString(state.PtlasPartitionTopology));
 	values.emplace_back("PtlasPartitionUpdateMode", ToConfigString(state.PtlasPartitionUpdateMode));
 	values.emplace_back("PtlasMarkAllDynamicInPartition", state.PtlasMarkAllDynamicInPartition ? "true" : "false");
 	values.emplace_back("PtlasModeChangeDistance", std::to_string(SanitizePtlasModeChangeDistance(state.PtlasModeChangeDistance)));

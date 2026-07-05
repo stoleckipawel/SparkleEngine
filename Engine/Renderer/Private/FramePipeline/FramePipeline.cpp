@@ -317,18 +317,15 @@ void FramePipeline::RecordFrame() noexcept
 				    m_frameResources.Persistent.SceneTlas,
 				    frame.rayTracingScene.TlasResource,
 				    frame.rayTracingScene.TlasGpuAddress);
-				BindRayTracingFrameGraphResources(frame.rayTracingScene);
 			}
 			else
 			{
 				m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameResources.Persistent.SceneTlas);
-				ClearRayTracingFrameGraphResources();
 			}
 		}
 		else
 		{
 			m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameResources.Persistent.SceneTlas);
-			ClearRayTracingFrameGraphResources();
 		}
 	}
 

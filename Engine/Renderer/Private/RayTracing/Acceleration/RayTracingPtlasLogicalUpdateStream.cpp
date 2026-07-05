@@ -10,25 +10,6 @@ bool RayTracingPtlasLogicalUpdateStream::ShouldEmitLogicalUpdate(const RayTracin
 	return entry.Validation.Valid && (entry.Update.DirtyTransform || entry.Update.MovedPartition);
 }
 
-RhiPartitionedTlasLogicalUpdateFlags RayTracingPtlasLogicalUpdateStream::BuildUpdateFlags(
-    const RayTracingPtlasPartitionEntry& entry) noexcept
-{
-	RhiPartitionedTlasLogicalUpdateFlags flags = RhiPartitionedTlasLogicalUpdateFlags::ValidInstance;
-	if (entry.Update.DirtyTransform)
-	{
-		flags = flags | RhiPartitionedTlasLogicalUpdateFlags::DirtyTransform;
-	}
-	if (entry.Update.MovedPartition)
-	{
-		flags = flags | RhiPartitionedTlasLogicalUpdateFlags::MovedPartition;
-	}
-	if (entry.Update.UsesGlobalPartition)
-	{
-		flags = flags | RhiPartitionedTlasLogicalUpdateFlags::UsesGlobalPartition;
-	}
-	return flags;
-}
-
 std::array<float, 12> RayTracingPtlasLogicalUpdateStream::BuildInstanceTransform(
     const DirectX::XMFLOAT4X4& worldMatrix) noexcept
 {
@@ -81,19 +62,15 @@ RayTracingPtlasLogicalUpdateStreamResult RayTracingPtlasLogicalUpdateStream::Bui
 
 		const MeshDraw& draw = sceneData.meshInstances[entry.Identity.RenderInstanceIndex];
 		result.Records.push_back(
-		    RhiPartitionedTlasLogicalUpdateRecord{
+		    RayTracingPtlasLogicalUpdateRecord{
 		        .Transform = BuildInstanceTransform(draw.Transform.WorldMatrix),
-		        .StableInstanceIndex = entry.Identity.StableInstanceIndex,
 		        .RenderInstanceIndex = entry.Identity.RenderInstanceIndex,
 		        .InstanceIndex = entry.Identity.StableInstanceIndex,
 		        .PartitionIndex = entry.Assignment.PartitionId,
-		        .PreviousPartitionIndex = entry.Assignment.PreviousPartitionId,
 		        .InstanceID = entry.Identity.RenderInstanceIndex,
 		        .InstanceMask = 0xFFu,
 		        .InstanceContributionToHitGroupIndex = 0u,
-		        .AccelerationStructure = 0,
-		        .InstanceFlags = ResolveInstanceFlags(sceneData, draw),
-		        .UpdateFlags = BuildUpdateFlags(entry)});
+		        .InstanceFlags = ResolveInstanceFlags(sceneData, draw)});
 	}
 
 	result.LogicalUpdateCount = static_cast<std::uint32_t>(result.Records.size());

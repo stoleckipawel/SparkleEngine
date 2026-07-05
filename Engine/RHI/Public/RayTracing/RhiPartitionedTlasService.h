@@ -21,17 +21,6 @@ class SPARKLE_RHI_API RhiPartitionedTlasService
 	virtual RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
 	    const RhiPartitionedTlasOperationPackDesc&,
 	    std::wstring_view);
-	virtual RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureLogicalUpdateBuffer(
-	    const RhiPartitionedTlasLogicalUpdateBufferDesc&,
-	    const RhiPartitionedTlasLogicalUpdateRecord*,
-	    std::uint32_t,
-	    std::wstring_view);
-	virtual RhiPartitionedTlasGpuOperationBufferLayout GetPartitionedTopLevelAccelerationStructureGpuOperationBufferLayout(
+	virtual RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
 	    const RhiPartitionedTlasDesc&) const noexcept;
-	virtual RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureGpuOperationBuffer(
-	    const RhiPartitionedTlasGpuOperationBufferDesc&,
-	    std::wstring_view);
-	virtual bool PackPartitionedTopLevelAccelerationStructureGpuOperations(
-	    RenderCommandList&,
-	    const RhiPartitionedTlasGpuOperationPackDesc&) noexcept;
 };

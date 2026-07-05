@@ -36,19 +36,8 @@ class SPARKLE_RHI_API RhiRayTracingService
 	virtual RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
 	    const RhiPartitionedTlasOperationPackDesc& operationPack,
 	    std::wstring_view debugName);
-	virtual RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureLogicalUpdateBuffer(
-	    const RhiPartitionedTlasLogicalUpdateBufferDesc& desc,
-	    const RhiPartitionedTlasLogicalUpdateRecord* records,
-	    std::uint32_t recordCount,
-	    std::wstring_view debugName);
-	virtual RhiPartitionedTlasGpuOperationBufferLayout GetPartitionedTopLevelAccelerationStructureGpuOperationBufferLayout(
+	virtual RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
 	    const RhiPartitionedTlasDesc& desc) const noexcept;
-	virtual RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureGpuOperationBuffer(
-	    const RhiPartitionedTlasGpuOperationBufferDesc& desc,
-	    std::wstring_view debugName);
-	virtual bool PackPartitionedTopLevelAccelerationStructureGpuOperations(
-	    RenderCommandList& commandList,
-	    const RhiPartitionedTlasGpuOperationPackDesc& desc) noexcept;
 	virtual RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) = 0;
 	virtual RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
 	    std::uint64_t sizeInBytes,
