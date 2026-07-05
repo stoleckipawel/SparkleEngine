@@ -18,7 +18,7 @@ GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 	auto it = m_cache.find(key);
 	if (it != m_cache.end() && !cpuMesh.IsGeometryDirty())
 	{
-		return it->second.Mesh.get();
+		return it->second.get();
 	}
 
 	auto gpuMesh = std::make_unique<GPUMesh>();
@@ -29,7 +29,7 @@ GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 	}
 
 	GPUMesh* result = gpuMesh.get();
-	m_cache.insert_or_assign(key, CacheEntry{.Mesh = std::move(gpuMesh)});
+	m_cache.insert_or_assign(key, std::move(gpuMesh));
 
 	return result;
 }
@@ -48,7 +48,7 @@ const GPUMesh* GPUMeshCache::Find(const Mesh& cpuMesh) const noexcept
 {
 	if (auto it = m_cache.find(&cpuMesh); it != m_cache.end())
 	{
-		return it->second.Mesh.get();
+		return it->second.get();
 	}
 
 	return nullptr;

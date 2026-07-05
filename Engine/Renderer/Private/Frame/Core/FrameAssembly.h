@@ -1,32 +1,20 @@
 #pragma once
 
 #include "Frame/Core/FrameProviderResources.h"
-#include "Frame/Reference/ReferenceRenderTargets.h"
-#include "Frame/RayTracing/RayTracingSceneFrameGraphResources.h"
 #include "Frame/Targets/FrameRenderTargets.h"
+#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
-
-struct FrameAssemblyImportedResources final
-{
-	FrameGraphTextureHandle BackBuffer = FrameGraphTextureHandle::Invalid();
-};
 
 struct FrameAssemblyTransientResources final
 {
 	SceneRenderTargets Scene = {};
 	GBufferRenderTargets GBuffer = {};
 	LightingRenderTargets Lighting = {};
-	ReferenceRenderTargets Reference = {};
+	FrameGraphTextureHandle ReferenceSceneColor = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle ShadowVisibilitySignal = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle DirectLightTemporalReservoirSample = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle DirectLightTemporalReservoirWeight = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
-};
-
-struct FrameAssemblyPersistentResources final
-{
-	FrameGraphAccelerationStructureHandle SceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
-	RayTracingSceneFrameGraphResources RayTracing = {};
 };
 
 struct FrameAssemblyHistoryResources final
@@ -64,9 +52,8 @@ struct FrameAssemblyViewportProducts final
 
 struct FrameAssemblyResourceLayout final
 {
-	FrameAssemblyImportedResources Imported = {};
 	FrameAssemblyTransientResources Transient = {};
-	FrameAssemblyPersistentResources Persistent = {};
+	FrameGraphAccelerationStructureHandle SceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
 	FrameAssemblyHistoryResources History = {};
 	FrameUpscalerProviderResources UpscalerProviderInputs = {};
 	FrameRayReconstructionProviderResources RayReconstructionProviderInputs = {};

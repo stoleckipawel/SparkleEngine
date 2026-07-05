@@ -9,7 +9,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "Frame/RayTracing/RayTracingSceneFrameGraphResources.h"
 #include "Frame/Core/FrameAssembly.h"
 #include "Frame/Core/FrameRenderPath.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"

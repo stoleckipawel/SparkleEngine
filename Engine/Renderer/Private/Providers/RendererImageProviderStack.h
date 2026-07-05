@@ -1,7 +1,5 @@
 #pragma once
 
-#include "RayReconstruction/RenderRayReconstructionPassServices.h"
-#include "Upscaling/RenderUpscalingPassServices.h"
 #include "Viewport/ViewportContracts.h"
 
 #include <cstdint>
@@ -16,8 +14,8 @@ struct UpscalerInputContract;
 
 struct RendererImageProviderPassServices final
 {
-	RenderUpscalingPassServices Upscaling = {};
-	RenderRayReconstructionPassServices RayReconstruction = {};
+	UpscalerSubsystem* Upscaling = nullptr;
+	RayReconstructionSubsystem* RayReconstruction = nullptr;
 };
 
 class RendererImageProviderStack final

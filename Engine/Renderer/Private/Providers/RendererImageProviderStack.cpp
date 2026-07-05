@@ -141,6 +141,6 @@ std::uint32_t RendererImageProviderStack::GetFrameGraphKey() const noexcept
 RendererImageProviderPassServices RendererImageProviderStack::BuildPassServices() noexcept
 {
 	return RendererImageProviderPassServices{
-	    .Upscaling = RenderUpscalingPassServices{.Subsystem = m_upscalerSubsystem.get()},
-	    .RayReconstruction = RenderRayReconstructionPassServices{.Subsystem = m_rayReconstructionSubsystem.get()}};
+	    .Upscaling = m_upscalerSubsystem.get(),
+	    .RayReconstruction = m_rayReconstructionSubsystem.get()};
 }

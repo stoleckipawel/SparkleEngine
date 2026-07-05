@@ -19,9 +19,6 @@ class ReferencePathTracingCS final : public TGlobalShader<ReferencePathTracingCS
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV(RWTexture2D, ReferenceSceneColorTexture)
-	SHADER_PARAMETER_UAV(RWTexture2D, ReferenceDirectTexture)
-	SHADER_PARAMETER_UAV(RWTexture2D, ReferenceIndirectDiffuseTexture)
-	SHADER_PARAMETER_UAV(RWTexture2D, ReferenceIndirectSpecularTexture)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)

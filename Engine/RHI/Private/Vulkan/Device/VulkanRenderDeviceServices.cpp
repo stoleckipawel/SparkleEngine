@@ -17,7 +17,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
  public:
 	static std::unique_ptr<VulkanRenderDeviceServices> Create(
 	    Window& window,
-	    const RenderDeviceSettings& settings) noexcept;
+	    PixelFormat backBufferFormat) noexcept;
 	~VulkanRenderDeviceServices() noexcept override;
 
 	VulkanRenderDeviceServices(const VulkanRenderDeviceServices&) = delete;
@@ -51,14 +51,14 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 
 std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(
     Window& window,
-    const RenderDeviceSettings& settings) noexcept
+    PixelFormat backBufferFormat) noexcept
 {
-	return VulkanRenderDeviceServices::Create(window, settings);
+	return VulkanRenderDeviceServices::Create(window, backBufferFormat);
 }
 
 std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(
     Window& window,
-    const RenderDeviceSettings& settings) noexcept
+    PixelFormat backBufferFormat) noexcept
 {
 	auto services = std::unique_ptr<VulkanRenderDeviceServices>(new VulkanRenderDeviceServices());
 	{
@@ -68,7 +68,7 @@ std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(
 		services->m_memoryAllocator = std::make_unique<VulkanGpuMemoryAllocator>(*services->m_rhi);
 	}
 	{
-		services->m_swapChain = std::make_unique<VulkanSwapChain>(*services->m_rhi, window, settings.BackBufferFormat);
+		services->m_swapChain = std::make_unique<VulkanSwapChain>(*services->m_rhi, window, backBufferFormat);
 	}
 	{
 		services->m_commandContext = std::make_unique<VulkanCommandContext>(*services->m_rhi);

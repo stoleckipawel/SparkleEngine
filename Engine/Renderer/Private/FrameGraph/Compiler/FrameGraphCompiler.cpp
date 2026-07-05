@@ -188,7 +188,7 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 	{
 		const FrameGraphResourceHandle handle = registeredHandles[resourceIndex];
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
-		const FrameGraphResourceRuntimeState& runtimeState = m_resourceStateTracker.GetRuntimeState(handle);
+		const ResourceState runtimeState = m_resourceStateTracker.GetRuntimeState(handle);
 		m_plan.resources.push_back(
 		    FrameGraphResourceNode{
 		        .index = static_cast<FrameGraphResourceIndex>(resourceIndex),
@@ -197,9 +197,9 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		        .kind = entry.kind,
 		        .ownership = entry.ownership,
 		        .initialState = entry.initialState,
-		        .planningStartState = runtimeState.currentState,
+		        .planningStartState = runtimeState,
 		        .finalState = entry.finalState,
-		        .currentState = runtimeState.currentState,
+		        .currentState = runtimeState,
 		        .debugName = entry.debugName,
 		        .currentVersion = 0,
 		        .versions = {FrameGraphResourceVersion{.handle = entry.handle, .version = 0, .writerPass = INVALID_FRAME_GRAPH_PASS_INDEX}}});
@@ -210,7 +210,7 @@ void FrameGraphCompiler::ResetCompiledResourceStatesForBarrierPlanning() noexcep
 {
 	for (FrameGraphResourceNode& compiledResource : m_plan.resources)
 	{
-		compiledResource.currentState = m_resourceStateTracker.GetRuntimeState(compiledResource.handle).currentState;
+		compiledResource.currentState = m_resourceStateTracker.GetRuntimeState(compiledResource.handle);
 		compiledResource.pendingAccelerationStructureBarrier = false;
 		m_resourceStateTracker.UpdateCurrentState(compiledResource.handle, compiledResource.currentState);
 	}

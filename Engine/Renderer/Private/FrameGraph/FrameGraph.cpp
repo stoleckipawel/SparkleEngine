@@ -58,7 +58,7 @@ ResourceState FrameGraph::GetTrackedResourceState(FrameGraphResourceHandle handl
 		return ResourceState::Common;
 	}
 
-	return m_resourceStateTracker.GetRuntimeState(handle).currentState;
+	return m_resourceStateTracker.GetRuntimeState(handle);
 }
 
 void FrameGraph::UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept

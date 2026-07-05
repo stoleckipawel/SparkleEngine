@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Frame/Reference/ReferenceRenderTargets.h"
 #include "Passes/Bindings/EnvironmentMapPassBinding.h"
 #include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingUniformData.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
@@ -26,15 +26,6 @@ struct RenderViewData;
 struct ReferencePathTracingPassParameters
 {
 	ShaderRWTexture2D<void> ReferenceSceneColorTexture;
-	ShaderRWTexture2D<void> ReferenceDirectTexture;
-	ShaderRWTexture2D<void> ReferenceIndirectDiffuseTexture;
-	ShaderRWTexture2D<void> ReferenceIndirectSpecularTexture;
-	ShaderRWTexture2D<void> ReferencePrimaryDeviceDepthTexture;
-	ShaderRWTexture2D<void> ReferencePrimaryNormalTexture;
-	ShaderRWTexture2D<void> ReferencePrimaryDiffuseAlbedoTexture;
-	ShaderRWTexture2D<void> ReferencePrimarySpecularAlbedoTexture;
-	ShaderRWTexture2D<void> ReferencePrimaryMaterialGuideTexture;
-	ShaderRWTexture2D<void> ReferencePrimaryPathSampleGuideTexture;
 	ShaderAccelerationStructure SceneTlas;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
@@ -60,42 +51,6 @@ struct ReferencePathTracingPassParameters
 		builder.RWTexture(
 		    "ReferenceSceneColorTexture",
 		    &ReferencePathTracingPassParameters::ReferenceSceneColorTexture,
-		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
-		    "ReferenceDirectTexture",
-		    &ReferencePathTracingPassParameters::ReferenceDirectTexture,
-		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
-		    "ReferenceIndirectDiffuseTexture",
-		    &ReferencePathTracingPassParameters::ReferenceIndirectDiffuseTexture,
-		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
-		    "ReferenceIndirectSpecularTexture",
-		    &ReferencePathTracingPassParameters::ReferenceIndirectSpecularTexture,
-		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
-		    "ReferencePrimaryDeviceDepthTexture",
-		    &ReferencePathTracingPassParameters::ReferencePrimaryDeviceDepthTexture,
-		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
-		    "ReferencePrimaryNormalTexture",
-		    &ReferencePathTracingPassParameters::ReferencePrimaryNormalTexture,
-		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
-		    "ReferencePrimaryDiffuseAlbedoTexture",
-		    &ReferencePathTracingPassParameters::ReferencePrimaryDiffuseAlbedoTexture,
-		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
-		    "ReferencePrimarySpecularAlbedoTexture",
-		    &ReferencePathTracingPassParameters::ReferencePrimarySpecularAlbedoTexture,
-		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
-		    "ReferencePrimaryMaterialGuideTexture",
-		    &ReferencePathTracingPassParameters::ReferencePrimaryMaterialGuideTexture,
-		    ShaderStageVisibility::Compute);
-		builder.RWTexture(
-		    "ReferencePrimaryPathSampleGuideTexture",
-		    &ReferencePathTracingPassParameters::ReferencePrimaryPathSampleGuideTexture,
 		    ShaderStageVisibility::Compute);
 		builder.AccelerationStructure("SceneTlas", &ReferencePathTracingPassParameters::SceneTlas, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &ReferencePathTracingPassParameters::PerFrame, ShaderStageVisibility::Compute);
@@ -139,7 +94,7 @@ class ReferencePathTracingPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
-	    const ReferenceRenderTargets& targets,
+	    FrameGraphTextureHandle referenceSceneColor,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;

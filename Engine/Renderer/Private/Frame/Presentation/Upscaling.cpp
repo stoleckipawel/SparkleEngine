@@ -58,9 +58,9 @@ void AddUpscalerEvaluationPass(
 		        .Reason = "No upscaler runtime service was provided."};
 
 		    if (context.RuntimeServices.ImageProviders != nullptr &&
-		        context.RuntimeServices.ImageProviders->Upscaling.Subsystem != nullptr)
+		        context.RuntimeServices.ImageProviders->Upscaling != nullptr)
 		    {
-			    result = context.RuntimeServices.ImageProviders->Upscaling.Subsystem->Evaluate(
+			    result = context.RuntimeServices.ImageProviders->Upscaling->Evaluate(
 			        UpscalerEvaluationDesc{
 			            .ScalingInputColor = ToRenderProductHandle(sceneTargets.SceneColor),
 			            .Depth = ToRenderProductHandle(sceneTargets.MainDepth),

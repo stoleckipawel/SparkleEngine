@@ -138,15 +138,15 @@ static ERhiBackendApi ResolveBuildDefaultRhiBackend() noexcept
 #endif
 }
 
-RhiBackendSelection ResolveDefaultRhiBackendSelection() noexcept
+ERhiBackendApi ResolveDefaultRhiBackendApi() noexcept
 {
-	RhiBackendSelection selection{ResolveBuildDefaultRhiBackend()};
+	ERhiBackendApi api = ResolveBuildDefaultRhiBackend();
 	std::string configuredBackend;
-	if (Environment::TryGetVariable("SPARKLE_RHI_BACKEND", configuredBackend) && !TryParseRhiBackendApi(configuredBackend, selection.Api))
+	if (Environment::TryGetVariable("SPARKLE_RHI_BACKEND", configuredBackend) && !TryParseRhiBackendApi(configuredBackend, api))
 	{
-		selection.Api = ERhiBackendApi::Unknown;
+		api = ERhiBackendApi::Unknown;
 	}
 
-	TryResolveRhiBackendFromCommandLine(selection.Api);
-	return selection;
+	TryResolveRhiBackendFromCommandLine(api);
+	return api;
 }

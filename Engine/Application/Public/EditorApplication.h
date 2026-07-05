@@ -5,11 +5,6 @@
 
 #include <memory>
 
-struct EditorApplicationOptions final
-{
-	RuntimeApplicationOptions RuntimeOptions;
-};
-
 class RuntimeApplication;
 class ShaderRecookCoordinator;
 class UI;
@@ -18,7 +13,7 @@ class SPARKLE_APPLICATION_API EditorApplication final : public Application
 {
   public:
 	EditorApplication();
-	explicit EditorApplication(EditorApplicationOptions options) noexcept;
+	explicit EditorApplication(RuntimeApplicationOptions options) noexcept;
 	~EditorApplication();
 
 	EditorApplication(const EditorApplication&) = delete;
@@ -34,6 +29,6 @@ class SPARKLE_APPLICATION_API EditorApplication final : public Application
 	std::unique_ptr<RuntimeApplication> m_runtimeApplication;
 	std::unique_ptr<UI> m_ui;
 	std::unique_ptr<ShaderRecookCoordinator> m_shaderRecookCoordinator;
-	EditorApplicationOptions m_options;
+	RuntimeApplicationOptions m_runtimeOptions;
 	bool m_isEditorSessionActive = false;
 };

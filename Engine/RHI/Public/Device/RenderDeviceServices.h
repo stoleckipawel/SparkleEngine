@@ -2,8 +2,8 @@
 
 #include "../Core/RhiBackendSelection.h"
 #include "../Commands/RhiCommandSubmissionService.h"
+#include "../Formats/PixelFormat.h"
 #include "../RHIAPI.h"
-#include "RenderDeviceSettings.h"
 #include "RenderHardwareInterface.h"
 
 #include <cstdint>
@@ -11,19 +11,20 @@
 
 class Window;
 class RhiImGuiRenderer;
+class RenderDeviceBackendServices;
 
 class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionService
 {
   public:
 	static std::unique_ptr<RenderDeviceServices> Create(Window& window) noexcept;
-	static std::unique_ptr<RenderDeviceServices> Create(Window& window, RhiBackendSelection selection) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(Window& window, ERhiBackendApi backendApi) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(
 	    Window& window,
-	    const RenderDeviceSettings& settings) noexcept;
+	    PixelFormat backBufferFormat) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(
 	    Window& window,
-	    RhiBackendSelection selection,
-	    const RenderDeviceSettings& settings) noexcept;
+	    ERhiBackendApi backendApi,
+	    PixelFormat backBufferFormat) noexcept;
 
 	~RenderDeviceServices() noexcept;
 
@@ -49,6 +50,5 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
   private:
 	RenderDeviceServices() noexcept;
 
-	struct Impl;
-	std::unique_ptr<Impl> m_impl;
+	std::unique_ptr<RenderDeviceBackendServices> m_backend;
 };

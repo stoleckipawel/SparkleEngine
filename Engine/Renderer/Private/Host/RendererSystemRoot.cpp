@@ -21,7 +21,7 @@
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
-#include "Settings/RenderDeviceSettingsResolver.h"
+#include "Settings/RenderDeviceBackBufferFormatResolver.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
@@ -130,7 +130,7 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 {
 
 	{
-		m_backend = RenderDeviceServices::Create(*m_window, BuildRenderDeviceSettingsFromCVars());
+		m_backend = RenderDeviceServices::Create(*m_window, ResolveRenderDeviceBackBufferFormatFromCVars());
 	}
 	{
 		m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetRenderHardwareInterface());

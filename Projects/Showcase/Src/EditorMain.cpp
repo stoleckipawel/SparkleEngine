@@ -7,12 +7,10 @@
 int main()
 {
 	return RunEditorApplication(
-	    EditorApplicationOptions{
-	        .RuntimeOptions =
-	            RuntimeApplicationOptions{
-	                .SceneSetupCallback =
-	                    [](GameScene& scene)
-	                    {
-		                    scene.RegisterController(std::make_unique<ShowcaseSceneController>());
-	                    }}});
+	    RuntimeApplicationOptions{
+	        .SceneSetupCallback =
+	            [](GameScene& scene)
+	            {
+		            scene.RegisterController(std::make_unique<ShowcaseSceneController>());
+	            }});
 }

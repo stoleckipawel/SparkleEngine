@@ -88,7 +88,6 @@ void CreateFrameSceneResources(
 	        PixelFormat::R16G16B16A16_Float),
 	    ResourceState::ShaderResource);
 
-	resources.Imported.BackBuffer = backBuffer;
 	resources.Transient.Scene = SceneRenderTargets{
 	    .SceneColor = sceneColor,
 	    .FinalSceneColor = finalSceneColor,

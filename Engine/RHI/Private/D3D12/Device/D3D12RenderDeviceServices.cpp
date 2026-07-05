@@ -18,7 +18,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
  public:
 	static std::unique_ptr<D3D12RenderDeviceServices> Create(
 	    Window& window,
-	    const RenderDeviceSettings& settings) noexcept;
+	    PixelFormat backBufferFormat) noexcept;
 	~D3D12RenderDeviceServices() noexcept override;
 
 	D3D12RenderDeviceServices(const D3D12RenderDeviceServices&) = delete;
@@ -52,14 +52,14 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 
 std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(
     Window& window,
-    const RenderDeviceSettings& settings) noexcept
+    PixelFormat backBufferFormat) noexcept
 {
-	return D3D12RenderDeviceServices::Create(window, settings);
+	return D3D12RenderDeviceServices::Create(window, backBufferFormat);
 }
 
 std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
     Window& window,
-    const RenderDeviceSettings& settings) noexcept
+    PixelFormat backBufferFormat) noexcept
 {
 	auto services = std::unique_ptr<D3D12RenderDeviceServices>(new D3D12RenderDeviceServices());
 
@@ -74,7 +74,7 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
 		    *services->m_rhi,
 		    window,
 		    *services->m_descriptorHeapManager,
-		    settings.BackBufferFormat);
+		    backBufferFormat);
 	}
 	{
 		services->m_frameResourceManager =

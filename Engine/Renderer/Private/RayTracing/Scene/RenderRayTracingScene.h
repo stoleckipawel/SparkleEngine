@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RayTracing/Diagnostics/RayTracingPerformanceMetrics.h"
 #include "Frame/RayTracing/RayTracingSceneFrameData.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
@@ -15,8 +16,6 @@ class RenderCommandContext;
 class RenderHardwareInterface;
 class PassExecutionDiagnostics;
 class RayTracingBlasCache;
-struct RayTracingPerformanceMetrics;
-struct RayTracingSceneDiagnosticState;
 class RayTracingTopLevelAccelerationStructureStrategy;
 class RayTracingTopLevelScenePlanner;
 struct RenderSceneData;
@@ -54,7 +53,7 @@ class RenderRayTracingScene final
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	RayTracingCapabilityReport m_capabilityReport = {};
-	std::unique_ptr<RayTracingSceneDiagnosticState> m_diagnosticState;
+	RayTracingPerformanceMetrics m_performanceMetrics = {};
 	std::unique_ptr<RayTracingBlasCache> m_blasCache;
 	std::unique_ptr<RayTracingTopLevelAccelerationStructureStrategy> m_topLevelAccelerationStructureStrategy;
 	std::unique_ptr<RayTracingTopLevelScenePlanner> m_topLevelScenePlanner;

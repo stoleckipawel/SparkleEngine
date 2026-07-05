@@ -26,14 +26,14 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	AddDirectShadowSignalPass(
 	    builder,
 	    resources.Transient.GBuffer,
-	    resources.Persistent.SceneTlas,
+	    resources.SceneTlas,
 	    rawShadowSignals);
 	AddDirectLightingPass(
 	    builder,
 	    resources.Transient.Lighting,
 	    resources.Transient.GBuffer,
 	    rawShadowSignals);
-	AddIndirectLightingPasses(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.Persistent.SceneTlas);
+	AddIndirectLightingPasses(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.SceneTlas);
 	AddLightingCompositePass(builder, resources.Transient.Scene, resources.Transient.Lighting, resources.Transient.GBuffer);
 	AddSkyPass(builder, resources.Transient.Scene, resources.Transient.GBuffer);
 	AddIndirectRayReconstructionPassIfEnabled(builder, sceneExtent, resources);

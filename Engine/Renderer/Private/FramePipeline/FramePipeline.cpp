@@ -306,7 +306,7 @@ void FramePipeline::RecordFrame() noexcept
 		m_systems->GetImageProviders().SetupRayReconstructionFrame(reconstructionInputContract);
 	}
 
-	if (m_frameGraph != nullptr && m_frameResources.Persistent.SceneTlas.IsValid())
+	if (m_frameGraph != nullptr && m_frameResources.SceneTlas.IsValid())
 	{
 		if (RenderRayTracingScene* renderRayTracingScene = m_systems->GetRenderRayTracingScene())
 		{
@@ -314,18 +314,18 @@ void FramePipeline::RecordFrame() noexcept
 			if (frame.rayTracingScene.HasBoundTlas())
 			{
 				m_frameGraph->BindPersistentAccelerationStructure(
-				    m_frameResources.Persistent.SceneTlas,
+				    m_frameResources.SceneTlas,
 				    frame.rayTracingScene.TlasResource,
 				    frame.rayTracingScene.TlasGpuAddress);
 			}
 			else
 			{
-				m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameResources.Persistent.SceneTlas);
+				m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameResources.SceneTlas);
 			}
 		}
 		else
 		{
-			m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameResources.Persistent.SceneTlas);
+			m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameResources.SceneTlas);
 		}
 	}
 

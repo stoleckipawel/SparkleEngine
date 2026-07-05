@@ -7,10 +7,10 @@
 
 int RunEditorApplication()
 {
-	return RunEditorApplication(EditorApplicationOptions{});
+	return RunEditorApplication(RuntimeApplicationOptions{});
 }
 
-int RunEditorApplication(EditorApplicationOptions options)
+int RunEditorApplication(RuntimeApplicationOptions options)
 {
 	Application::ConfigureProcessFromCommandLine();
 

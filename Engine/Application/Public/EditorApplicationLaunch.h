@@ -4,4 +4,4 @@
 #include "EditorApplication.h"
 
 SPARKLE_APPLICATION_API int RunEditorApplication();
-SPARKLE_APPLICATION_API int RunEditorApplication(EditorApplicationOptions options);
+SPARKLE_APPLICATION_API int RunEditorApplication(RuntimeApplicationOptions options);

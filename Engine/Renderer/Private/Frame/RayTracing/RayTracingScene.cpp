@@ -13,26 +13,25 @@ namespace RayTracingSceneFrameGraphContract
 	constexpr std::string_view kSceneBuildPassName = "RayTracingSceneBuild";
 }  // namespace RayTracingSceneFrameGraphContract
 
-RayTracingSceneFrameGraphResources CreateRayTracingSceneFrameGraphResources(FrameGraphBuilder& builder)
+FrameGraphAccelerationStructureHandle CreateRayTracingSceneFrameGraphResource(FrameGraphBuilder& builder)
 {
-	return RayTracingSceneFrameGraphResources{
-	    .SceneTlas = builder.ReservePersistentAccelerationStructure(FrameGraphAccelerationStructureDesc::Create("SceneTlas"))};
+	return builder.ReservePersistentAccelerationStructure(FrameGraphAccelerationStructureDesc::Create("SceneTlas"));
 }
 
-void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, const RayTracingSceneFrameGraphResources& resources)
+void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAccelerationStructureHandle sceneTlas)
 {
 	builder.AddPass(
 	    RayTracingSceneFrameGraphContract::kSceneBuildPassName,
 	    EFrameGraphPassFlags::Compute,
-	    [resources](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
+	    [sceneTlas](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
 	    {
-		    if (!resources.HasSceneTlas() || !frame.rayTracingScene.HasBoundTlas())
+		    if (!sceneTlas.IsValid() || !frame.rayTracingScene.HasBoundTlas())
 		    {
 			    return;
 		    }
 
 		    resourceBuilder.Use(
-		        resources.SceneTlas,
+		        sceneTlas,
 		        ResourceUsage::AccelerationStructureBuild,
 		        "SceneTopLevelAccelerationStructure");
 	    },
@@ -50,7 +49,6 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, const RayTracingS
 
 void AddRayTracingInfrastructurePasses(FrameGraphBuilder& builder, FrameAssemblyResourceLayout& resources)
 {
-	resources.Persistent.RayTracing = CreateRayTracingSceneFrameGraphResources(builder);
-	resources.Persistent.SceneTlas = resources.Persistent.RayTracing.SceneTlas;
-	AddRayTracingSceneBuildPasses(builder, resources.Persistent.RayTracing);
+	resources.SceneTlas = CreateRayTracingSceneFrameGraphResource(builder);
+	AddRayTracingSceneBuildPasses(builder, resources.SceneTlas);
 }

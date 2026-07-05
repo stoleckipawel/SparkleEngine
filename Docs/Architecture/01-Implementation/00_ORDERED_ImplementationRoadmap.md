@@ -2153,16 +2153,35 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Reference path has one sentence role.
-- [ ] Provider handoff hooks unsupported by data are removed.
-- [ ] Guide outputs without consumers are removed.
-- [ ] Material/light policy aligns with realtime path.
+- [x] Reference path has one sentence role.
+- [x] Provider handoff hooks unsupported by data are removed.
+- [x] Guide outputs without consumers are removed.
+- [x] Material/light policy aligns with realtime path.
+
+Completion notes:
+
+- One sentence role: reference path tracing is a debug reference render path for comparing Sparkle's realtime lighting, material, TLAS, and shader-binding behavior against a high-sample path-traced result.
+- Existing-capability search covered reference frame assembly, reference render targets, reference pass parameter bindings, shader registrations, HLSL side outputs, ray reconstruction provider handoff, realtime material/light bindings, frame graph resource shells, RHI device settings/selection wrappers, editor launch options, and provider pass-service wrappers.
+- Removed unsupported reference-provider handoff hooks: reference path tracing no longer builds `ReferenceRayReconstruction` provider inputs, no longer creates missing motion-vector handoff state, and no longer falls back through ray reconstruction before producing `FinalSceneColor`.
+- Removed guide outputs without consumers: direct/indirect split textures, primary depth/normal/albedo/material/path-sample guide textures, matching pass parameter bindings, shader registrations, frame graph target creation, and HLSL writes.
+- Material/light policy remains shared with the realtime path through `LightingPassBinding`, `RayTracingHitDataPassBinding`, `MaterialTextureTablePassBinding`, `SurfaceLighting`, `RayTracingPathLighting`, shared light buffers, material texture table bindings, and the selected scene TLAS.
+- Single-field wrapper cleanup performed in the same batch: deleted `ReferenceRenderTargets`, `RayTracingSceneFrameGraphResources`, `FrameGraphResourceRuntimeState`, `GPUMeshCache::CacheEntry`, image-provider pass-service shells, `RayTracingSceneDiagnosticState`, `RenderDeviceServices::Impl`, `RhiBackendSelection`, `RenderDeviceSettings`, `EditorApplicationOptions`, and collapsed shrunken frame assembly resource shells.
+- Remaining one-field scan results are intentional strong typed handles/tokens, shader parameter binding records, serialized asset/tool payloads, or ABI/resource records; they are not plain post-refactor carrier shells.
+- Verification:
+  - `cmake --build build --target SparkleRHI --config DevelopmentEditor --parallel`
+  - `cmake --build build --target SparkleRenderer --config DevelopmentEditor --parallel`
+  - `cmake --build build --target SparkleApplication --config DevelopmentEditor --parallel`
+  - `cmake --build build --target ShowcaseEditor --config DevelopmentEditor --parallel`
+  - `cmake --build build --target ShaderCompiler --config DevelopmentEditor --parallel`
+  - `ShaderCompiler.exe cook --package ReferencePathTracing --target DxilSm66 --target SpirV16`
+  - `git diff --check`
+  - `rg -n "EditorApplicationOptions|RenderDeviceSettings|RhiBackendSelection final|FrameAssemblyPersistentResources|Persistent\\.SceneTlas|m_frameresources|ReferenceRenderTargets|RayTracingSceneFrameGraphResources|FrameGraphResourceRuntimeState|RenderUpscalingPassServices|RenderRayReconstructionPassServices|RayTracingSceneDiagnosticState|CacheEntry|RenderDeviceServices::Impl|m_impl->backend|\\.Subsystem" Engine Tools Projects -g "*.h" -g "*.cpp"`
 
 ### Stage 31: Reservoir Direct Lighting Cleanup
 

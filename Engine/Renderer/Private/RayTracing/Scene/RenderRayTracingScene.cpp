@@ -4,7 +4,6 @@
 
 #include "Commands/RenderCommandContext.h"
 #include "RHI/Public/CVars/RHICVars.h"
-#include "RayTracing/Diagnostics/RayTracingSceneDiagnosticState.h"
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureStrategy.h"
@@ -15,14 +14,13 @@ RenderRayTracingScene::RenderRayTracingScene(
     RenderHardwareInterface& renderHardwareInterface,
     const RayTracingCapabilityReport& capabilityReport) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface),
-    m_capabilityReport(capabilityReport),
-    m_diagnosticState(std::make_unique<RayTracingSceneDiagnosticState>())
+    m_capabilityReport(capabilityReport)
 {
-	m_diagnosticState->PerformanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
-	m_diagnosticState->PerformanceMetrics.Providers.TopLevelProviderReason = m_capabilityReport.TopLevelProvider.SelectionReason;
-	m_diagnosticState->PerformanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
-	m_diagnosticState->PerformanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
-	m_diagnosticState->PerformanceMetrics.Providers.PartitionedTlasCapabilityReason = m_capabilityReport.PartitionedTlas.CapabilityStatusReason;
+	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
+	m_performanceMetrics.Providers.TopLevelProviderReason = m_capabilityReport.TopLevelProvider.SelectionReason;
+	m_performanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
+	m_performanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
+	m_performanceMetrics.Providers.PartitionedTlasCapabilityReason = m_capabilityReport.PartitionedTlas.CapabilityStatusReason;
 	m_topLevelScenePlanner = std::make_unique<RayTracingTopLevelScenePlanner>();
 
 	if (!m_capabilityReport.Core.SupportsRayTracing)
@@ -62,8 +60,8 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 	if (estimatedInstanceCount == 0)
 	{
 		m_topLevelAccelerationStructureStrategy->Clear();
-		m_diagnosticState->PerformanceMetrics.Blas = {};
-		m_diagnosticState->PerformanceMetrics.ClassicTlas = {};
+		m_performanceMetrics.Blas = {};
+		m_performanceMetrics.ClassicTlas = {};
 		return {};
 	}
 
@@ -98,19 +96,19 @@ void RenderRayTracingScene::Build(
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
 	const RayTracingTopLevelAccelerationStructureBuildStats& topLevelStats = topLevelBuild.Stats;
 
-	m_diagnosticState->PerformanceMetrics.Providers.TopLevelProvider = topLevelBuild.ActiveProvider;
-	m_diagnosticState->PerformanceMetrics.Providers.TopLevelProviderReason = topLevelBuild.ActiveProviderReason;
-	m_diagnosticState->PerformanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
-	m_diagnosticState->PerformanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
-	m_diagnosticState->PerformanceMetrics.Providers.PartitionedTlasCapabilityReason = m_capabilityReport.PartitionedTlas.CapabilityStatusReason;
-	m_diagnosticState->PerformanceMetrics.Blas.ReferencedMeshCount = blasStats.referencedMeshCount;
-	m_diagnosticState->PerformanceMetrics.Blas.BuiltCount = blasStats.builtBlasCount;
-	m_diagnosticState->PerformanceMetrics.Blas.ReusedCount = blasStats.reusedBlasCount;
-	m_diagnosticState->PerformanceMetrics.ClassicTlas.CandidateInstanceCount = topLevelStats.Candidates.InstanceCount;
-	m_diagnosticState->PerformanceMetrics.ClassicTlas.InstanceCount = topLevelStats.Build.InstanceCount;
-	m_diagnosticState->PerformanceMetrics.ClassicTlas.MissingGpuMeshCount = topLevelStats.Candidates.MissingGpuMeshCount;
-	m_diagnosticState->PerformanceMetrics.ClassicTlas.RejectedBlasCount = topLevelStats.Candidates.RejectedBlasCount;
-	m_diagnosticState->PerformanceMetrics.ClassicTlas.Built = topLevelStats.Build.Built;
+	m_performanceMetrics.Providers.TopLevelProvider = topLevelBuild.ActiveProvider;
+	m_performanceMetrics.Providers.TopLevelProviderReason = topLevelBuild.ActiveProviderReason;
+	m_performanceMetrics.Providers.PartitionedTlasProvider = m_capabilityReport.PartitionedTlas.Provider;
+	m_performanceMetrics.Providers.SupportsPartitionedTlas = m_capabilityReport.PartitionedTlas.Supported;
+	m_performanceMetrics.Providers.PartitionedTlasCapabilityReason = m_capabilityReport.PartitionedTlas.CapabilityStatusReason;
+	m_performanceMetrics.Blas.ReferencedMeshCount = blasStats.referencedMeshCount;
+	m_performanceMetrics.Blas.BuiltCount = blasStats.builtBlasCount;
+	m_performanceMetrics.Blas.ReusedCount = blasStats.reusedBlasCount;
+	m_performanceMetrics.ClassicTlas.CandidateInstanceCount = topLevelStats.Candidates.InstanceCount;
+	m_performanceMetrics.ClassicTlas.InstanceCount = topLevelStats.Build.InstanceCount;
+	m_performanceMetrics.ClassicTlas.MissingGpuMeshCount = topLevelStats.Candidates.MissingGpuMeshCount;
+	m_performanceMetrics.ClassicTlas.RejectedBlasCount = topLevelStats.Candidates.RejectedBlasCount;
+	m_performanceMetrics.ClassicTlas.Built = topLevelStats.Build.Built;
 }
 
 void RenderRayTracingScene::Clear() noexcept
@@ -166,7 +164,7 @@ std::uint32_t RenderRayTracingScene::GetTlasInstanceCount() const noexcept
 
 const RayTracingPerformanceMetrics& RenderRayTracingScene::GetPerformanceMetrics() const noexcept
 {
-	return m_diagnosticState->PerformanceMetrics;
+	return m_performanceMetrics;
 }
 
 void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode() noexcept

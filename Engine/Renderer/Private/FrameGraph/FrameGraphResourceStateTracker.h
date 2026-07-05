@@ -4,11 +4,6 @@
 
 #include <vector>
 
-struct FrameGraphResourceRuntimeState
-{
-	ResourceState currentState = ResourceState::Common;
-};
-
 class FrameGraphResourceStateTracker final
 {
   public:
@@ -25,12 +20,11 @@ class FrameGraphResourceStateTracker final
 	void ResetCurrentStates(const FrameGraphResourceRegistry& registry) noexcept;
 	void UpdateCurrentState(FrameGraphResourceHandle handle, ResourceState currentState) noexcept;
 
-	FrameGraphResourceRuntimeState& GetRuntimeState(FrameGraphResourceHandle handle) noexcept;
-	const FrameGraphResourceRuntimeState& GetRuntimeState(FrameGraphResourceHandle handle) const noexcept;
+	ResourceState GetRuntimeState(FrameGraphResourceHandle handle) const noexcept;
 
   private:
 	void EnsureStorage(FrameGraphResourceHandle handle) noexcept;
 
-	std::vector<FrameGraphResourceRuntimeState> m_runtimeStates;
+	std::vector<ResourceState> m_runtimeStates;
 	std::vector<bool> m_trackedResources;
 };

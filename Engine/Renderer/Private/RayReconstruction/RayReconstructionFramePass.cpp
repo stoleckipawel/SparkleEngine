@@ -90,10 +90,10 @@ void AddRayReconstructionProviderPass(
 		        .Reason = "No ray reconstruction runtime service was provided."};
 
 		    if (context.RuntimeServices.ImageProviders != nullptr &&
-		        context.RuntimeServices.ImageProviders->RayReconstruction.Subsystem != nullptr)
+		        context.RuntimeServices.ImageProviders->RayReconstruction != nullptr)
 		    {
 			    RenderCommandList& commandList = context.Commands.GetRenderCommandList();
-			    result = context.RuntimeServices.ImageProviders->RayReconstruction.Subsystem->Evaluate(
+			    result = context.RuntimeServices.ImageProviders->RayReconstruction->Evaluate(
 			        RayReconstructionEvaluationDesc{
 			            .NoisyInputColor = ToRenderProductHandle(providerInputs.NoisyInputColor),
 			            .OutputColor = ToRenderProductHandle(providerInputs.OutputColor),

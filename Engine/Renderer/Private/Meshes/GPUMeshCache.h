@@ -29,11 +29,6 @@ class SPARKLE_RENDERER_API GPUMeshCache final
 	const GPUMesh* Find(const Mesh& cpuMesh) const noexcept;
 
   private:
-	struct CacheEntry final
-	{
-		std::unique_ptr<GPUMesh> Mesh;
-	};
-
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
-	std::unordered_map<const Mesh*, CacheEntry> m_cache;
+	std::unordered_map<const Mesh*, std::unique_ptr<GPUMesh>> m_cache;
 };

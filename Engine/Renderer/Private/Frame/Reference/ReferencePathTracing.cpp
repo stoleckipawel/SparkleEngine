@@ -3,7 +3,7 @@
 
 #include "Frame/Core/FrameAssembly.h"
 #include "Frame/Core/FrameContext.h"
-#include "Frame/Reference/ReferenceRenderTargets.h"
+#include "Frame/Reference/ReferenceSceneColorTarget.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
@@ -11,8 +11,6 @@
 #include "Passes/Core/PassUtilities.h"
 #include "Passes/Core/ShaderPass.h"
 #include "Passes/Reference/ReferencePathTracingPass.h"
-#include "RayReconstruction/RayReconstructionFramePass.h"
-#include "RayReconstruction/RayReconstructionSettings.h"
 
 namespace
 {
@@ -23,61 +21,15 @@ namespace
 		    RayTracingSceneTlasShaderAccessMode::Descriptor);
 	}
 
-	FrameRayReconstructionProviderResources BuildReferenceRayReconstructionProviderInputs(
-	    const SceneRenderTargets& sceneTargets,
-	    const ReferenceRenderTargets& referenceTargets,
-	    FrameGraphTextureHandle exposure)
-	{
-		return FrameRayReconstructionProviderResources{
-		    .NoisyInputColor = referenceTargets.ReferenceSceneColor,
-		    .OutputColor = sceneTargets.FinalSceneColor,
-		    .Depth = referenceTargets.ReferencePrimaryDeviceDepth,
-		    .MotionVectors = FrameGraphTextureHandle::Invalid(),
-		    .Exposure = exposure,
-		    .Normals = referenceTargets.ReferencePrimaryNormal,
-		    .Roughness = referenceTargets.ReferencePrimaryMaterialGuide,
-		    .DiffuseAlbedo = referenceTargets.ReferencePrimaryDiffuseAlbedo,
-		    .SpecularAlbedo = referenceTargets.ReferencePrimarySpecularAlbedo,
-		    .SpecularHitDistance = referenceTargets.ReferencePrimaryPathSampleGuide};
-	}
-
-	bool AddReferenceRayReconstructionPassIfEnabled(
-	    FrameGraphBuilder& builder,
-	    RenderViewportExtent sceneExtent,
-	    FrameAssemblyResourceLayout& resources)
-	{
-		if (GetRayReconstructionModeFromCVars() != EngineRayReconstructionMode::NvidiaDlssRayReconstruction)
-		{
-			return false;
-		}
-
-		FrameRayReconstructionProviderResources providerInputs =
-		    BuildReferenceRayReconstructionProviderInputs(
-		        resources.Transient.Scene,
-		        resources.Transient.Reference,
-		        resources.Transient.Exposure);
-		if (!HasRequiredRayReconstructionProviderResources(providerInputs))
-		{
-			return false;
-		}
-
-		resources.RayReconstructionProviderInputs = providerInputs;
-		AddRayReconstructionProviderPass(
-		    builder,
-		    "ReferenceRayReconstruction",
-		    sceneExtent,
-		    resources.RayReconstructionProviderInputs);
-		return true;
-	}
 }
 
 void AddReferencePathTracingPass(
     FrameGraphBuilder& builder,
-    const ReferenceRenderTargets& targets,
+    FrameGraphTextureHandle referenceSceneColor,
     FrameGraphAccelerationStructureHandle sceneTlas)
 {
 	auto& parameters = builder.AllocPassParameters<ReferencePathTracingPass>();
-	ReferencePathTracingPass::DeclareResources(builder, targets, sceneTlas, parameters);
+	ReferencePathTracingPass::DeclareResources(builder, referenceSceneColor, sceneTlas, parameters);
 	builder.AddPass(
 	    ReferencePathTracingPass::PassName,
 	    EFrameGraphPassFlags::Compute,
@@ -110,21 +62,18 @@ void AddReferenceRenderingPasses(
     RenderViewportExtent sceneExtent,
     FrameAssemblyResourceLayout& resources)
 {
-	resources.Transient.Reference = CreateReferenceRenderTargets(builder, sceneExtent);
-	AddReferenceTargetClearPass(builder, resources.Transient.Reference);
-	AddReferencePathTracingPass(builder, resources.Transient.Reference, resources.Persistent.SceneTlas);
+	resources.Transient.ReferenceSceneColor = CreateReferenceSceneColorTarget(builder, sceneExtent);
+	AddReferenceSceneColorClearPass(builder, resources.Transient.ReferenceSceneColor);
+	AddReferencePathTracingPass(builder, resources.Transient.ReferenceSceneColor, resources.SceneTlas);
 	PassUtilities::AddCopyTexturePass(
 	    builder,
 	    "ReferenceSceneColorToSceneColor",
 	    resources.Transient.Scene.SceneColor,
-	    resources.Transient.Reference.ReferenceSceneColor);
-	if (!AddReferenceRayReconstructionPassIfEnabled(builder, sceneExtent, resources))
-	{
-		PassUtilities::AddCopyTexturePass(
-		    builder,
-		    "ReferenceSceneColorToFinalSceneColor",
-		    resources.Transient.Scene.FinalSceneColor,
-		    resources.Transient.Reference.ReferenceSceneColor);
-	}
+	    resources.Transient.ReferenceSceneColor);
+	PassUtilities::AddCopyTexturePass(
+	    builder,
+	    "ReferenceSceneColorToFinalSceneColor",
+	    resources.Transient.Scene.FinalSceneColor,
+	    resources.Transient.ReferenceSceneColor);
 	resources.FinalSceneColorProduced = true;
 }

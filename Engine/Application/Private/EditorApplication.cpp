@@ -12,7 +12,7 @@
 
 EditorApplication::EditorApplication() = default;
 
-EditorApplication::EditorApplication(EditorApplicationOptions options) noexcept : m_options(std::move(options)) {}
+EditorApplication::EditorApplication(RuntimeApplicationOptions options) noexcept : m_runtimeOptions(std::move(options)) {}
 
 EditorApplication::~EditorApplication() = default;
 
@@ -25,7 +25,7 @@ void EditorApplication::Initialize()
 
 	if (!m_runtimeApplication)
 	{
-		RuntimeApplicationOptions runtimeOptions = m_options.RuntimeOptions;
+		RuntimeApplicationOptions runtimeOptions = m_runtimeOptions;
 		runtimeOptions.EnableRuntimeConsole = false;
 		m_runtimeApplication = std::make_unique<RuntimeApplication>(std::move(runtimeOptions));
 	}
