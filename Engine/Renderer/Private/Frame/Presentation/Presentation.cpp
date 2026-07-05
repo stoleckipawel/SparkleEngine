@@ -2,10 +2,8 @@
 #include "Frame/Presentation/Presentation.h"
 
 #include "Frame/Core/FrameRenderFormats.h"
-#include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/FrameGraphPassFlags.h"
-#include "FrameGraph/ResourceUsage.h"
+#include "Passes/Core/PassUtilities.h"
 #include "Passes/Presentation/OutputEncodingPass.h"
 #include "Passes/Presentation/ToneMappingPass.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
@@ -23,25 +21,6 @@ namespace
 			default:
 				return backBufferFormat;
 		}
-	}
-
-	void AddBackBufferCopyPass(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle encodedColor,
-	    FrameGraphTextureHandle backBuffer)
-	{
-		builder.AddPass(
-		    "CopyEncodedColorToBackBuffer",
-		    EFrameGraphPassFlags::Transfer,
-		    [encodedColor, backBuffer](PassResourceBuilder& resources)
-		    {
-			    resources.Read(encodedColor, ResourceUsage::CopySource, "EncodedColor");
-			    resources.Write(backBuffer, ResourceUsage::CopyDest, "BackBuffer");
-		    },
-		    [encodedColor, backBuffer](PassExecutionContext& context)
-		    {
-			    context.Resources.CopyTexture(context.Commands, backBuffer, encodedColor);
-		    });
 	}
 }
 
@@ -77,5 +56,5 @@ void AddPresentationPass(
 	auto& outputEncodingParameters = builder.AllocPassParameters<OutputEncodingPass>();
 	OutputEncodingPass::DeclareResources(builder, toneMappedColor, encodedColor, outputEncodingParameters);
 	builder.AddSizedComputeShaderPass<OutputEncodingPass>(outputEncodingParameters, sceneExtent.Width, sceneExtent.Height);
-	AddBackBufferCopyPass(builder, encodedColor, sceneTargets.BackBuffer);
+	PassUtilities::AddCopyTexturePass(builder, "CopyEncodedColorToBackBuffer", sceneTargets.BackBuffer, encodedColor);
 }

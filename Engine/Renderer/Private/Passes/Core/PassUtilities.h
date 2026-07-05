@@ -291,8 +291,8 @@ namespace PassUtilities
 		    EFrameGraphPassFlags::Transfer,
 			[destinationHandle, sourceHandle](PassResourceBuilder& resourceBuilder)
 		    {
-				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource);
-				resourceBuilder.Write(destinationHandle, ResourceUsage::CopyDest);
+				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource, "Source");
+				resourceBuilder.Write(destinationHandle, ResourceUsage::CopyDest, "Destination");
 		    },
 		    [destinationHandle, sourceHandle](PassExecutionContext& context)
 		    {
@@ -307,8 +307,8 @@ namespace PassUtilities
 		    EFrameGraphPassFlags::Transfer,
 			[destinationHandle, sourceHandle](PassResourceBuilder& resourceBuilder)
 		    {
-				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource);
-				resourceBuilder.Write(destinationHandle, ResourceUsage::CopyDest);
+				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource, "Source");
+				resourceBuilder.Write(destinationHandle, ResourceUsage::CopyDest, "Destination");
 		    },
 		    [destinationHandle, sourceHandle](PassExecutionContext& context)
 		    {

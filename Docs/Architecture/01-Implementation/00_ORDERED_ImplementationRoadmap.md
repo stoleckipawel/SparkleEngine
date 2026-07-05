@@ -2318,16 +2318,25 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Frame graph remains the only render scheduling abstraction.
-- [ ] Pass inputs/outputs/history dependencies are clearer.
-- [ ] Transient/persistent resource ownership is easier to trace.
-- [ ] No replacement render graph is added.
+- [x] Frame graph remains the only render scheduling abstraction.
+- [x] Pass inputs/outputs/history dependencies are clearer.
+- [x] Transient/persistent resource ownership is easier to trace.
+- [x] No replacement render graph is added.
+
+Stage 35 closure notes:
+
+- Reference check: UE RDG keeps pass/resource declaration in the graph, Donut composes reusable renderer passes instead of per-call bespoke scheduling, and NVRHI emphasizes explicit resource states at command-list boundaries.
+- Existing-capability search found Sparkle already had `PassUtilities::AddCopyTexturePass`/`AddCopyBufferPass`, plus one local `CopyEncodedColorToBackBuffer` pass in presentation that duplicated the copy-pass declaration/execution pattern.
+- Presentation now reuses `PassUtilities::AddCopyTexturePass`, so frame graph remains the only render scheduling abstraction and no replacement graph, wrapper graph, or new pass framework was added.
+- Shared copy utilities now label copy dependencies as `Source` and `Destination`, making copy pass inputs/outputs visible to the frame graph for presentation and reference-path copy passes.
+- Transient/persistent ownership was not changed: tone-mapped and encoded scene color remain transient frame graph textures, the swapchain back buffer remains the imported presentation target, and history resources remain under `FrameAssemblyHistoryResources`.
+- The batch removes more bespoke pass code than it adds, introduces no content or project hardcodes, and does not add fallback behavior.
 
 ### Stage 36: Core Public API Cleanup
 
