@@ -18,7 +18,7 @@ enum class EDlssProviderRuntimeState : std::uint8_t
 	AvailableNotCreated = 2,
 	Created = 3,
 	Evaluating = 4,
-	FailedWithFallback = 5
+	Failed = 5
 };
 
 enum class EDlssFeatureKind : std::uint8_t
@@ -34,7 +34,7 @@ enum class EDlssFeatureState : std::uint8_t
 	Available = 2,
 	Enabled = 3,
 	Active = 4,
-	FailedWithFallback = 5
+	Failed = 5
 };
 
 struct DlssFeatureMatrixEntry final

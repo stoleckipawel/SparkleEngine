@@ -53,7 +53,6 @@ void AddUpscalerEvaluationPass(
 	    {
 		    UpscalerEvaluationResult result{
 		        .ProducedOutput = false,
-		        .UsedFallback = true,
 		        .FailureDomain = EUpscalerProviderFailureDomain::Backend,
 		        .Reason = "No upscaler runtime service was provided."};
 
@@ -84,7 +83,7 @@ void AddUpscalerEvaluationPass(
 			            .OutputExtent = sceneExtent});
 		    }
 
-		    if (!result.ProducedOutput || result.UsedFallback)
+		    if (!result.ProducedOutput)
 		    {
 			    context.Commands.TransitionResource(
 			        context.Resources.ResolveResource(sceneTargets.FinalSceneColor),

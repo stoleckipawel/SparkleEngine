@@ -104,11 +104,10 @@ namespace
 		{
 			if (!m_initialized)
 			{
-				m_diagnostics.State = EDlssRayReconstructionRuntimeState::FailedWithFallback;
+				m_diagnostics.State = EDlssRayReconstructionRuntimeState::Failed;
 				m_diagnostics.FailureDomain = ERayReconstructionProviderFailureDomain::Sdk;
 				return {
 				    .ProducedOutput = false,
-				    .UsedFallback = true,
 				    .FailureDomain = m_diagnostics.FailureDomain,
 				    .Reason = "Streamline DLRR runtime is not initialized."};
 			}
@@ -116,7 +115,7 @@ namespace
 			    EvaluateStreamlineDlssRayReconstructionFrame(m_lastFrameContract, m_qualityMode, m_viewport, evaluation);
 			if (!result.ProducedOutput)
 			{
-				m_diagnostics.State = EDlssRayReconstructionRuntimeState::FailedWithFallback;
+				m_diagnostics.State = EDlssRayReconstructionRuntimeState::Failed;
 				m_diagnostics.FailureDomain = result.FailureDomain;
 				m_diagnostics.FailureReason = result.Reason;
 				return result;
@@ -179,7 +178,7 @@ namespace
 
 		RayReconstructionEvaluationResult Evaluate(const RayReconstructionEvaluationDesc& evaluation) override
 		{
-			m_diagnostics.State = EDlssRayReconstructionRuntimeState::FailedWithFallback;
+			m_diagnostics.State = EDlssRayReconstructionRuntimeState::Failed;
 			m_diagnostics.RenderExtent = evaluation.RenderExtent;
 			m_diagnostics.OutputExtent = evaluation.OutputExtent;
 			m_diagnostics.FailureDomain =
@@ -191,7 +190,6 @@ namespace
 			        : "DLRR evaluation contract is missing a native command list or required native resources.";
 			return RayReconstructionEvaluationResult{
 			    .ProducedOutput = false,
-			    .UsedFallback = true,
 			    .FailureDomain = m_diagnostics.FailureDomain,
 			    .Reason = m_diagnostics.FailureReason};
 		}
@@ -224,8 +222,8 @@ const char* DlssRayReconstructionRuntimeStateToString(EDlssRayReconstructionRunt
 			return "created";
 		case EDlssRayReconstructionRuntimeState::Evaluating:
 			return "evaluating";
-		case EDlssRayReconstructionRuntimeState::FailedWithFallback:
-			return "failed with fallback";
+		case EDlssRayReconstructionRuntimeState::Failed:
+			return "failed";
 		case EDlssRayReconstructionRuntimeState::NotSelected:
 		default:
 			return "not selected";

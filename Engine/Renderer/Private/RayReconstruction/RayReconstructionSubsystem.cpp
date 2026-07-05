@@ -8,7 +8,7 @@
 
 namespace
 {
-	RayReconstructionProviderCapabilities BuildFrameCopyRayReconstructionDiagnostics(
+	RayReconstructionProviderCapabilities BuildRendererCopyRayReconstructionCapabilities(
 	    ERendererProviderCapabilityState state,
 	    ERayReconstructionProviderFailureDomain failureDomain,
 	    std::string reason)
@@ -21,9 +21,9 @@ namespace
 		    .CanInitialize = true,
 		    .CanEvaluate = true,
 		    .UsesExternalSdk = false,
-		    .ProviderName = "Frame pass copy",
+		    .ProviderName = "Renderer frame copy",
 		    .ExternalRuntimeVersion = "none",
-		    .RuntimeState = "FrameCopy",
+		    .RuntimeState = "RendererCopy",
 		    .Reason = std::move(reason)};
 	}
 }
@@ -52,7 +52,7 @@ void RayReconstructionSubsystem::Initialize(
 	m_activeProvider = CreateProvider(m_settings.Mode);
 	if (m_activeProvider == nullptr)
 	{
-		m_diagnostics = BuildFrameCopyRayReconstructionDiagnostics(
+		m_diagnostics = BuildRendererCopyRayReconstructionCapabilities(
 		    ERendererProviderCapabilityState::Enabled,
 		    ERayReconstructionProviderFailureDomain::None,
 		    "Ray reconstruction is disabled; final color is produced by the frame pass copy.");
@@ -66,7 +66,7 @@ void RayReconstructionSubsystem::Initialize(
 		const RayReconstructionProviderCapabilities failedDiagnostics = m_activeProvider->GetDiagnostics();
 		m_activeProvider->Shutdown();
 		m_activeProvider.reset();
-		m_diagnostics = BuildFrameCopyRayReconstructionDiagnostics(
+		m_diagnostics = BuildRendererCopyRayReconstructionCapabilities(
 		    ERendererProviderCapabilityState::RuntimeFailed,
 		    failedDiagnostics.FailureDomain,
 		    std::format(
@@ -88,7 +88,7 @@ void RayReconstructionSubsystem::SetupFrame(const RayReconstructionInputContract
 	m_lastInputValidation = ValidateRayReconstructionInputContract(inputContract);
 	if (!m_lastInputValidation.Valid)
 	{
-		m_diagnostics = BuildFrameCopyRayReconstructionDiagnostics(
+		m_diagnostics = BuildRendererCopyRayReconstructionCapabilities(
 		    ERendererProviderCapabilityState::RuntimeFailed,
 		    ERayReconstructionProviderFailureDomain::InputContract,
 		    std::format("Ray reconstruction input contract invalid: {}", m_lastInputValidation.Summary));
@@ -108,7 +108,7 @@ void RayReconstructionSubsystem::SetupFrame(const RayReconstructionInputContract
 		return;
 	}
 
-	m_diagnostics = BuildFrameCopyRayReconstructionDiagnostics(
+	m_diagnostics = BuildRendererCopyRayReconstructionCapabilities(
 	    ERendererProviderCapabilityState::Enabled,
 	    ERayReconstructionProviderFailureDomain::None,
 	    "Ray reconstruction is disabled; final color is produced by the frame pass copy.");
@@ -126,7 +126,6 @@ RayReconstructionEvaluationResult RayReconstructionSubsystem::Evaluate(const Ray
 	{
 		return RayReconstructionEvaluationResult{
 		    .ProducedOutput = false,
-		    .UsedFallback = true,
 		    .FailureDomain = ERayReconstructionProviderFailureDomain::InputContract,
 		    .Reason = std::format("Ray reconstruction input contract invalid: {}", m_lastInputValidation.Summary)};
 	}
@@ -135,7 +134,6 @@ RayReconstructionEvaluationResult RayReconstructionSubsystem::Evaluate(const Ray
 	{
 		return RayReconstructionEvaluationResult{
 		    .ProducedOutput = false,
-		    .UsedFallback = true,
 		    .FailureDomain = ERayReconstructionProviderFailureDomain::None,
 		    .Reason = "Final color is produced by the frame pass copy."};
 	}

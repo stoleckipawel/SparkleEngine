@@ -67,7 +67,6 @@ namespace
 	{
 		return RayReconstructionEvaluationResult{
 		    .ProducedOutput = false,
-		    .UsedFallback = true,
 		    .FailureDomain = failureDomain,
 		    .Reason = std::move(reason)};
 	}
@@ -149,7 +148,6 @@ RayReconstructionEvaluationResult EvaluateStreamlineDlssRayReconstructionFrame(
 
 	return RayReconstructionEvaluationResult{
 	    .ProducedOutput = true,
-	    .UsedFallback = false,
 	    .FailureDomain = ERayReconstructionProviderFailureDomain::None,
 	    .Reason = "Streamline DLRR evaluated successfully."};
 }

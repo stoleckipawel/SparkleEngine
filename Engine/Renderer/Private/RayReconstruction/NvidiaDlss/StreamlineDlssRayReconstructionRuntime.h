@@ -16,7 +16,7 @@ enum class EDlssRayReconstructionRuntimeState : std::uint8_t
 	Unavailable = 1,
 	Created = 2,
 	Evaluating = 3,
-	FailedWithFallback = 4,
+	Failed = 4,
 };
 
 struct StreamlineDlssRayReconstructionRuntimeDesc final

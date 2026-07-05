@@ -64,7 +64,6 @@ namespace
 	{
 		return UpscalerEvaluationResult{
 		    .ProducedOutput = false,
-		    .UsedFallback = true,
 		    .FailureDomain = failureDomain,
 		    .Reason = std::move(reason)};
 	}
@@ -132,7 +131,6 @@ UpscalerEvaluationResult EvaluateStreamlineDlssFrame(
 
 	return UpscalerEvaluationResult{
 	    .ProducedOutput = true,
-	    .UsedFallback = false,
 	    .FailureDomain = EUpscalerProviderFailureDomain::None,
 	    .Reason = "Streamline DLSS evaluated successfully."};
 }

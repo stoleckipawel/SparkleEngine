@@ -10,7 +10,7 @@ namespace
 			case EDlssRayReconstructionRuntimeState::Created:
 			case EDlssRayReconstructionRuntimeState::Evaluating:
 				return ERendererProviderCapabilityState::Enabled;
-			case EDlssRayReconstructionRuntimeState::FailedWithFallback:
+			case EDlssRayReconstructionRuntimeState::Failed:
 				return ERendererProviderCapabilityState::RuntimeFailed;
 			case EDlssRayReconstructionRuntimeState::Unavailable:
 				return diagnostics.FailureDomain == ERayReconstructionProviderFailureDomain::Feature
@@ -100,7 +100,6 @@ RayReconstructionEvaluationResult NvidiaDlssRayReconstructionProvider::Evaluate(
 	{
 		return RayReconstructionEvaluationResult{
 		    .ProducedOutput = false,
-		    .UsedFallback = true,
 		    .FailureDomain = ERayReconstructionProviderFailureDomain::Sdk,
 		    .Reason = "NVIDIA DLRR runtime was not created."};
 	}

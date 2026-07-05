@@ -8,7 +8,7 @@
 
 namespace
 {
-	UpscalerProviderCapabilities BuildFrameCopyUpscalerDiagnostics(
+	UpscalerProviderCapabilities BuildRendererCopyUpscalerCapabilities(
 	    ERendererProviderCapabilityState state,
 	    EUpscalerProviderFailureDomain failureDomain,
 	    std::string reason)
@@ -21,9 +21,9 @@ namespace
 		    .CanInitialize = true,
 		    .CanEvaluate = true,
 		    .UsesExternalSdk = false,
-		    .ProviderName = "Frame pass copy",
+		    .ProviderName = "Renderer frame copy",
 		    .ExternalRuntimeVersion = "none",
-		    .RuntimeState = "FrameCopy",
+		    .RuntimeState = "RendererCopy",
 		    .FeatureMatrixSummary = "external features not selected",
 		    .Reason = std::move(reason)};
 	}
@@ -54,7 +54,7 @@ void UpscalerSubsystem::Initialize(
 	m_activeProvider = CreateProvider(m_settings.RequestedProvider);
 	if (m_activeProvider == nullptr)
 	{
-		m_diagnostics = BuildFrameCopyUpscalerDiagnostics(
+		m_diagnostics = BuildRendererCopyUpscalerCapabilities(
 		    ERendererProviderCapabilityState::Enabled,
 		    EUpscalerProviderFailureDomain::None,
 		    "Upscaler passthrough selected; final color is produced by the frame pass copy.");
@@ -68,7 +68,7 @@ void UpscalerSubsystem::Initialize(
 		const UpscalerProviderCapabilities failedDiagnostics = m_activeProvider->GetDiagnostics();
 		m_activeProvider->Shutdown();
 		m_activeProvider.reset();
-		m_diagnostics = BuildFrameCopyUpscalerDiagnostics(
+		m_diagnostics = BuildRendererCopyUpscalerCapabilities(
 		    ERendererProviderCapabilityState::RuntimeFailed,
 		    failedDiagnostics.FailureDomain,
 		    std::format(
@@ -89,7 +89,7 @@ void UpscalerSubsystem::SetupFrame(const UpscalerInputContract& inputContract)
 	m_lastInputValidation = ValidateUpscalerInputContract(inputContract);
 	if (!m_lastInputValidation.Valid)
 	{
-		m_diagnostics = BuildFrameCopyUpscalerDiagnostics(
+		m_diagnostics = BuildRendererCopyUpscalerCapabilities(
 		    ERendererProviderCapabilityState::RuntimeFailed,
 		    EUpscalerProviderFailureDomain::InputContract,
 		    std::format("Upscaler input contract invalid: {}", m_lastInputValidation.Summary));
@@ -107,7 +107,7 @@ void UpscalerSubsystem::SetupFrame(const UpscalerInputContract& inputContract)
 		return;
 	}
 
-	m_diagnostics = BuildFrameCopyUpscalerDiagnostics(
+	m_diagnostics = BuildRendererCopyUpscalerCapabilities(
 	    ERendererProviderCapabilityState::Enabled,
 	    EUpscalerProviderFailureDomain::None,
 	    "Upscaler passthrough selected; final color is produced by the frame pass copy.");
@@ -125,7 +125,6 @@ UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDes
 	{
 		return UpscalerEvaluationResult{
 		    .ProducedOutput = false,
-		    .UsedFallback = true,
 		    .FailureDomain = EUpscalerProviderFailureDomain::InputContract,
 		    .Reason = std::format("Upscaler input contract invalid: {}", m_lastInputValidation.Summary)};
 	}
@@ -134,7 +133,6 @@ UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDes
 	{
 		return UpscalerEvaluationResult{
 		    .ProducedOutput = false,
-		    .UsedFallback = true,
 		    .FailureDomain = EUpscalerProviderFailureDomain::None,
 		    .Reason = "Final color is produced by the frame pass copy."};
 	}

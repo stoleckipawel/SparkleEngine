@@ -14,4 +14,4 @@ DlssFeatureMatrix CreateStreamlineDlssFeatureMatrix(bool superResolutionSupporte
 EDlssFeatureKind GetDlssFeatureForQualityMode(EUpscalerQualityMode qualityMode) noexcept;
 std::string BuildDlssFeatureMatrixSummary(const DlssFeatureMatrix& matrix);
 void MarkSelectedDlssFeature(DlssFeatureMatrix& matrix, EDlssFeatureKind selectedFeature);
-void MarkDlssFeatureFailedWithFallback(DlssFeatureMatrix& matrix, EDlssFeatureKind feature, std::string_view reason);
+void MarkDlssFeatureFailed(DlssFeatureMatrix& matrix, EDlssFeatureKind feature, std::string_view reason);

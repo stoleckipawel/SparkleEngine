@@ -85,7 +85,6 @@ void AddRayReconstructionProviderPass(
 	    {
 		    RayReconstructionEvaluationResult result{
 		        .ProducedOutput = false,
-		        .UsedFallback = true,
 		        .FailureDomain = ERayReconstructionProviderFailureDomain::Backend,
 		        .Reason = "No ray reconstruction runtime service was provided."};
 
@@ -142,7 +141,7 @@ void AddRayReconstructionProviderPass(
 			            .ResetCommandStateUserData = &context.Commands});
 		    }
 
-		    if (!result.ProducedOutput || result.UsedFallback)
+		    if (!result.ProducedOutput)
 		    {
 			    context.Commands.TransitionResource(
 			        context.Resources.ResolveResource(providerInputs.OutputColor),

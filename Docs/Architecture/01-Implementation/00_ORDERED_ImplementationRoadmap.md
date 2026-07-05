@@ -2286,16 +2286,25 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Provider required resources are narrow and named.
-- [ ] Depth, motion vectors, exposure, history, jitter, frame index, and camera state ownership is clear where used.
-- [ ] Unused fallback/provider objects are removed.
-- [ ] Streamline bridge remains narrow.
+- [x] Provider required resources are narrow and named.
+- [x] Depth, motion vectors, exposure, history, jitter, frame index, and camera state ownership is clear where used.
+- [x] Unused fallback/provider objects are removed.
+- [x] Streamline bridge remains narrow.
+
+Stage 34 closure notes:
+
+- Reference check: Streamline is an external feature bridge that consumes native devices, command lists, resource tags, frame constants, and selected feature options; FidelityFX-style integrations are explicit feature passes with named input/output resources rather than broad renderer fallbacks.
+- Existing-capability search found Sparkle already has separate upscaler and ray reconstruction provider slices, separate input contracts, explicit frame provider resources, and Streamline-native resource tagging for DLSS Super Resolution and DLSS Ray Reconstruction.
+- The provider result contracts now report only whether the provider produced output. The removed `UsedFallback` field and `FailedWithFallback` state names no longer duplicate the renderer frame-copy path as provider behavior.
+- The renderer-owned copy path remains inside the frame passes as the explicit output-preservation path when no provider output is produced; it is not hidden behind an alternate provider object or chained fallback system.
+- Upscaling owns scaling input/output, depth, motion vectors, optional exposure metadata, history/jitter/camera constants, frame index, and Streamline native resource tags where DLSS consumes them. Ray reconstruction owns noisy input/output, depth, motion vectors, exposure, normals, roughness, diffuse/specular albedo, specular hit distance, history/jitter/camera constants, frame index, and the command-state reset hook required by the external provider.
+- The Streamline bridge remains isolated to the provider/runtime/tagging code and the RHI native interop request for `UpscalerProvider` or `RayReconstructionProvider`; no content names, level names, project names, asset names, or new provider abstraction were added.
 
 ### Stage 35: Frame Graph Pass/Resource Ownership
 

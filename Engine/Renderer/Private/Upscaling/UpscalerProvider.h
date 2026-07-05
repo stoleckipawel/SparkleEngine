@@ -89,7 +89,6 @@ struct UpscalerEvaluationDesc final
 struct UpscalerEvaluationResult final
 {
 	bool ProducedOutput = false;
-	bool UsedFallback = false;
 	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
 	std::string Reason;
 };

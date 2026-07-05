@@ -78,13 +78,13 @@ void MarkSelectedDlssFeature(DlssFeatureMatrix& matrix, EDlssFeatureKind selecte
 	}
 }
 
-void MarkDlssFeatureFailedWithFallback(DlssFeatureMatrix& matrix, EDlssFeatureKind feature, std::string_view reason)
+void MarkDlssFeatureFailed(DlssFeatureMatrix& matrix, EDlssFeatureKind feature, std::string_view reason)
 {
 	for (DlssFeatureMatrixEntry& entry : matrix.Entries)
 	{
 		if (entry.Feature == feature)
 		{
-			entry.State = EDlssFeatureState::FailedWithFallback;
+			entry.State = EDlssFeatureState::Failed;
 			entry.Reason = std::string(reason);
 		}
 	}

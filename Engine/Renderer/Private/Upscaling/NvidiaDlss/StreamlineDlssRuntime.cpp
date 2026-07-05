@@ -123,11 +123,10 @@ namespace
 		{
 			if (!m_initialized)
 			{
-				m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
+				m_diagnostics.State = EDlssProviderRuntimeState::Failed;
 				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 				return {
 				    .ProducedOutput = false,
-				    .UsedFallback = true,
 				    .FailureDomain = m_diagnostics.FailureDomain,
 				    .Reason = "Streamline DLSS runtime is not initialized."};
 			}
@@ -141,7 +140,7 @@ namespace
 			UpscalerEvaluationResult result = EvaluateStreamlineDlssFrame(m_lastFrameContract, frameQualityMode, m_viewport, evaluation);
 			if (!result.ProducedOutput)
 			{
-				m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
+				m_diagnostics.State = EDlssProviderRuntimeState::Failed;
 				m_diagnostics.FailureDomain = result.FailureDomain;
 				m_diagnostics.FailureReason = result.Reason;
 				return result;
@@ -206,7 +205,7 @@ namespace
 
 		UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation) override
 		{
-			m_diagnostics.State = EDlssProviderRuntimeState::FailedWithFallback;
+			m_diagnostics.State = EDlssProviderRuntimeState::Failed;
 			m_diagnostics.RenderExtent = evaluation.RenderExtent;
 			m_diagnostics.OutputExtent = evaluation.OutputExtent;
 			m_diagnostics.FailureDomain =
@@ -218,7 +217,6 @@ namespace
 			        : "DLSS evaluation contract is missing a native command list or required native resources.";
 			return UpscalerEvaluationResult{
 			    .ProducedOutput = false,
-			    .UsedFallback = true,
 			    .FailureDomain = m_diagnostics.FailureDomain,
 			    .Reason = m_diagnostics.FailureReason};
 		}

@@ -19,7 +19,7 @@ namespace
 			case EDlssProviderRuntimeState::Created:
 			case EDlssProviderRuntimeState::Evaluating:
 				return ERendererProviderCapabilityState::Enabled;
-			case EDlssProviderRuntimeState::FailedWithFallback:
+			case EDlssProviderRuntimeState::Failed:
 				return ERendererProviderCapabilityState::RuntimeFailed;
 			case EDlssProviderRuntimeState::Unavailable:
 				if (!dlss.SdkRuntimeIntegrated || !dlss.SdkRuntimeAvailable)
@@ -92,7 +92,7 @@ bool NvidiaDlssUpscalerProvider::Initialize(
 	m_runtime = CreateStreamlineDlssRuntime();
 	if (m_runtime == nullptr)
 	{
-		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::FailedWithFallback;
+		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::Failed;
 		m_dlssCapabilities.UnavailableReason = "DLSS runtime factory returned no runtime instance.";
 		m_diagnostics.CapabilityState = ERendererProviderCapabilityState::MissingDependency;
 		m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
@@ -138,11 +138,11 @@ void NvidiaDlssUpscalerProvider::SetupFrame(const UpscalerInputContract& inputCo
 	m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
 	if (m_qualityMode == EUpscalerQualityMode::NativeAA && !NativeAAExtentContractValid(inputContract))
 	{
-		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::FailedWithFallback;
+		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::Failed;
 		m_dlssCapabilities.FailureDomain = EUpscalerProviderFailureDomain::InputContract;
 		m_dlssCapabilities.UnavailableReason =
-		    "DLSS NativeAA requires render extent to equal output extent; using deterministic passthrough fallback.";
-		MarkDlssFeatureFailedWithFallback(
+		    "DLSS NativeAA requires render extent to equal output extent; renderer copy will preserve final color.";
+		MarkDlssFeatureFailed(
 		    m_dlssCapabilities.FeatureMatrix,
 		    EDlssFeatureKind::NativeAA,
 		    m_dlssCapabilities.UnavailableReason);
@@ -161,12 +161,11 @@ UpscalerEvaluationResult NvidiaDlssUpscalerProvider::Evaluate(const UpscalerEval
 {
 	if (m_runtime == nullptr)
 	{
-		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::FailedWithFallback;
+		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::Failed;
 		m_dlssCapabilities.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 		m_dlssCapabilities.UnavailableReason = "NVIDIA DLSS runtime was not created.";
 		return UpscalerEvaluationResult{
 		    .ProducedOutput = false,
-		    .UsedFallback = true,
 		    .FailureDomain = m_dlssCapabilities.FailureDomain,
 		    .Reason = m_dlssCapabilities.UnavailableReason};
 	}
@@ -176,11 +175,10 @@ UpscalerEvaluationResult NvidiaDlssUpscalerProvider::Evaluate(const UpscalerEval
 		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::Created;
 		m_dlssCapabilities.FailureDomain = EUpscalerProviderFailureDomain::None;
 		m_dlssCapabilities.UnavailableReason =
-		    "Waiting for stable render/output extent before first DLSS evaluation; using deterministic passthrough fallback.";
+		    "Waiting for stable render/output extent before first DLSS evaluation; renderer copy will preserve final color.";
 		m_diagnostics = GetDiagnostics();
 		return UpscalerEvaluationResult{
 		    .ProducedOutput = false,
-		    .UsedFallback = true,
 		    .FailureDomain = EUpscalerProviderFailureDomain::None,
 		    .Reason = m_dlssCapabilities.UnavailableReason};
 	}

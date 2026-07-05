@@ -107,7 +107,6 @@ struct RayReconstructionEvaluationDesc final
 struct RayReconstructionEvaluationResult final
 {
 	bool ProducedOutput = false;
-	bool UsedFallback = false;
 	ERayReconstructionProviderFailureDomain FailureDomain = ERayReconstructionProviderFailureDomain::None;
 	std::string Reason;
 };

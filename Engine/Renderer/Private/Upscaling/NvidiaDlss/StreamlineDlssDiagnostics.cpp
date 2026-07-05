@@ -15,8 +15,8 @@ const char* DlssProviderRuntimeStateToString(EDlssProviderRuntimeState state) no
 			return "Created";
 		case EDlssProviderRuntimeState::Evaluating:
 			return "Evaluating";
-		case EDlssProviderRuntimeState::FailedWithFallback:
-			return "FailedWithFallback";
+		case EDlssProviderRuntimeState::Failed:
+			return "Failed";
 	}
 
 	return "Unknown";
@@ -49,8 +49,8 @@ const char* DlssFeatureStateToString(EDlssFeatureState state) noexcept
 			return "Enabled";
 		case EDlssFeatureState::Active:
 			return "Active";
-		case EDlssFeatureState::FailedWithFallback:
-			return "FailedWithFallback";
+		case EDlssFeatureState::Failed:
+			return "Failed";
 	}
 
 	return "Unknown";
