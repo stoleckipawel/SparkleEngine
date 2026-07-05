@@ -16,7 +16,6 @@ void RayTracingPtlasPartitionPlanner::Clear() noexcept
 {
 	m_previousInstances.clear();
 	m_partitionStates.clear();
-	m_frameIndex = 0;
 }
 
 RayTracingPtlasPartitionPlannerConfig RayTracingPtlasPartitionPlanner::SanitizeConfig(RayTracingPtlasPartitionPlannerConfig config) noexcept

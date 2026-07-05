@@ -74,24 +74,6 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(c
 	        RayTracingPartitionedTlasCapabilityReport{
 	            .Provider = rayTracing.Groups.PartitionedTlas.Provider,
 	            .Supported = rayTracing.Groups.PartitionedTlas.Supported,
-	            .RequiresNvidiaDevice = rayTracing.Groups.PartitionedTlas.RequiresNvidiaDevice,
-	            .RunsOnNvidiaDevice = rayTracing.Groups.PartitionedTlas.RunsOnNvidiaDevice,
-	            .SupportsVulkanNativeProvider =
-	                rayTracing.Groups.PartitionedTlas.SupportsVulkanNativePartitionedAccelerationStructure,
-	            .SupportsVulkanExtension = rayTracing.Groups.PartitionedTlas.SupportsVulkanExtension,
-	            .SupportsVulkanFeatureQuery = rayTracing.Groups.PartitionedTlas.SupportsVulkanFeatureQuery,
-	            .SupportsVulkanFunctionLoading = rayTracing.Groups.PartitionedTlas.SupportsVulkanFunctionLoading,
-	            .SupportsVulkanDescriptorPath = rayTracing.Groups.PartitionedTlas.SupportsVulkanDescriptorPath,
-	            .SupportsVulkanShaderDeviceAddressPath =
-	                rayTracing.Groups.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath,
-	            .SupportsD3D12NvapiProvider = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiPartitionedTlas,
-	            .SupportsD3D12NvapiHeaders = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiHeaders,
-	            .SupportsD3D12NvapiRuntime = rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiRuntime,
-	            .SupportsD3D12DeviceInterface = rayTracing.Groups.PartitionedTlas.SupportsD3D12DeviceInterface,
-	            .SupportsD3D12CommandListInterface = rayTracing.Groups.PartitionedTlas.SupportsD3D12CommandListInterface,
-	            .SupportsD3D12PublicDxrProvider = rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas,
-	            .SupportsD3D12PublicDxrHeaders = rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrHeaders,
-	            .SupportsCpuPackedOperations = rayTracing.Groups.PartitionedTlas.SupportsCpuPackedOperations,
 	            .CapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason},
 	    .TlasShaderAccess =
 	        RayTracingTlasShaderAccessCapabilityReport{

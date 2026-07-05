@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RayTracing/Acceleration/RayTracingClassicTlasStrategy.h"
+#include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureStrategy.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RHI/Public/RayTracing/RhiPartitionedTlasDesc.h"
 
@@ -37,12 +37,6 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	void Clear() noexcept override;
 
   private:
-	enum class FrameMode : std::uint8_t
-	{
-		ClassicFallback,
-		PartitionedTlas,
-	};
-
 	struct PartitionedTlasResources final
 	{
 		RhiOwnedResourceHandle Storage = {};
@@ -52,11 +46,7 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 		RhiGpuVirtualAddress ScratchAddress = 0;
 		RhiGpuVirtualAddress NativeOperationDataAddress = 0;
 		RhiPartitionedTlasDesc Layout = {};
-		RhiPartitionedTlasOperationBufferLayout NativeOperationLayout = {};
 		std::uint32_t InstanceCount = 0;
-		std::uint32_t NativeOperationCount = 0;
-		std::uint64_t StableInstanceFingerprint = 0;
-		bool IncrementalUpdatesAllowed = false;
 		bool Built = false;
 
 		bool HasSceneTlas() const noexcept;
@@ -79,8 +69,6 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	RayTracingCapabilityReport m_capabilityReport = {};
-	RayTracingClassicTlasStrategy m_classicFallbackStrategy;
 	PartitionedTlasResources m_partitionedResources = {};
-	FrameMode m_currentFrameMode = FrameMode::ClassicFallback;
 	const char* m_activeProviderReason = "partitioned-tlas-not-prepared";
 };

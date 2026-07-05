@@ -211,17 +211,24 @@ RhiOwnedResourceHandle D3D12PartitionedTlasServices::CreatePartitionedTopLevelAc
 	const std::uint64_t instanceWriteBytes =
 	    sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_INSTANCE) *
 	    static_cast<std::uint64_t>(operationPack.InstanceWriteCount);
-	const std::uint64_t instanceUpdateOffset =
-	    AlignUp(instanceWriteOffset + instanceWriteBytes, alignof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE));
 	const std::uint64_t instanceUpdateBytes =
 	    sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE) *
 	    static_cast<std::uint64_t>(operationPack.InstanceUpdateCount);
-	const std::uint64_t partitionTranslationOffset =
-	    AlignUp(instanceUpdateOffset + instanceUpdateBytes, alignof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION));
+	std::uint64_t cursor = instanceWriteOffset + instanceWriteBytes;
+	const std::uint64_t instanceUpdateOffset =
+	    operationPack.InstanceUpdateCount > 0
+	        ? AlignUp(cursor, alignof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE))
+	        : cursor;
+	cursor = instanceUpdateOffset + instanceUpdateBytes;
 	const std::uint64_t partitionTranslationBytes =
 	    sizeof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION) *
 	    static_cast<std::uint64_t>(operationPack.PartitionTranslationCount);
-	const std::uint64_t totalSize = AlignUp(partitionTranslationOffset + partitionTranslationBytes, 16);
+	const std::uint64_t partitionTranslationOffset =
+	    operationPack.PartitionTranslationCount > 0
+	        ? AlignUp(cursor, alignof(NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION))
+	        : cursor;
+	cursor = partitionTranslationOffset + partitionTranslationBytes;
+	const std::uint64_t totalSize = AlignUp(cursor, 16);
 	if (totalSize == 0)
 	{
 		return {};

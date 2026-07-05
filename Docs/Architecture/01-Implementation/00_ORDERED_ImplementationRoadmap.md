@@ -88,6 +88,7 @@ No-pollution check means:
 - no new diagnostic panels
 - no new report formats
 - no new wrapper layers
+- no single-field data-only wrapper structs/classes after cleanup; use the field directly
 - no thick abstraction layers
 - no future-feature scaffolding
 - no uncataloged heavy content
@@ -100,6 +101,7 @@ Universal engineering gate means:
 - Search first: before adding code, prove the repo does not already have an owner/capability that should be reused, merged, or simplified.
 - Net code pressure: every code addition should be paired with deletion or simplification in the same batch. Treat this as applying to completed and future stages; if a batch cannot reach net-zero or net-negative code, record the exact reason and the next removal target before the batch is considered done.
 - Single ownership: similar capabilities must converge on one owner instead of creating parallel paths.
+- Shape pressure: if a refactor shrinks a struct/class to one meaningful data field and no behavior, invariant, or external ABI role, delete the wrapper before the CL is done and use the field directly at the owning call sites.
 - Data owns content names: catalogs, config, level files, and project data may name content; compiled engine/tool code should not hardcode sample or asset names.
 - Fail simply: required data should fail clearly at the owning boundary; optional data should use explicit availability metadata rather than layered fallbacks.
 
@@ -1716,9 +1718,9 @@ Completion notes:
   - Renderer partition planning/update stream: `RayTracingTopLevelScenePlanner`, `RayTracingPtlasPartitionPlanner`, and `RayTracingPtlasLogicalUpdateStream`.
   - RHI PTLAS contract: `RhiPartitionedTlasDesc`, `RhiPartitionedTlasService`, and `RhiRayTracingService`.
   - Backend PTLAS providers: `VulkanPartitionedTlasServices`, `VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure`, `D3D12PartitionedTlasServices`, `D3D12NvapiRayTracingProvider`, and D3D12/Vulkan capability setup.
-  - PTLAS settings surface: `CVarRayTracingPreferPartitionedTlas`, `CVarRayTracingPartitionsPerAxis`, `CVarRayTracingPtlasPartitionTopology`, `CVarRayTracingPtlasPartitionUpdateMode`, `CVarRayTracingPtlasMarkAllDynamicInPartition`, `CVarRayTracingPtlasModeChangeDistance`, and `EngineRenderingRayTracingSettings`.
+  - PTLAS settings surface: `CVarRayTracingPreferPartitionedTlas`, `CVarRayTracingPartitionsPerAxis`, `CVarRayTracingPtlasPartitionUpdateMode`, `CVarRayTracingPtlasMarkAllDynamicInPartition`, `CVarRayTracingPtlasModeChangeDistance`, and `EngineRenderingRayTracingSettings`.
 - No source code was changed for Stage 28. The only change is this audit matrix in the active roadmap.
-- No fallback chain was added. Existing hidden classic fallback inside `RayTracingPartitionedTlasStrategy` is recorded below as `Modify` work for Stage 29E because user-facing PTLAS selection should fail as explicit unavailability or use an explicit classic selection, not silently choose a nested fallback.
+- No fallback chain was added. The hidden classic fallback that existed inside `RayTracingPartitionedTlasStrategy` during Stage 28 was removed in Stage 29E so user-facing PTLAS selection now reports explicit unavailability instead of silently choosing nested classic TLAS.
 
 Reference mirrorization matrix:
 
@@ -1727,7 +1729,7 @@ Reference mirrorization matrix:
 | Shader-facing TLAS/PTLAS equivalence | README `TLAS vs. PTLAS`, `raytrace.rgen.glsl`, `raytrace.rchit.glsl` | `RenderRayTracingScene`, `RayTracingTopLevelAccelerationStructureStrategy`, `RayTracingSceneFrameData`, frame-graph TLAS binding | Keep | Preserve one selected scene top-level handle/resource for ray tracing passes. Construction may differ, but pass code should not branch on classic TLAS versus PTLAS details. |
 | BLAS shared by classic TLAS and PTLAS | `partitioned_tlas_acceleration_structure.cpp` BLAS setup before both top-level paths | `RayTracingBlasCache`, `RayTracingClassicTlasBuilder`, `RayTracingPartitionedTlasBuild` | Keep | Continue sharing BLAS build/reuse across both strategies. Do not create PTLAS-only BLAS ownership. |
 | Explicit top-level selection | `partitioned_tlas_ui.cpp` `PTLAS Active` checkbox | `CVarRayTracingPreferPartitionedTlas`, `CreateRayTracingTopLevelAccelerationStructureStrategy`, `RenderRayTracingScene` | Modify | Keep one explicit selection point. Remove hidden fallback behavior later: unsupported PTLAS should be explicit unavailable state, while classic TLAS remains an explicit separate selection. |
-| XZ grid partitioning | README uniform 2D grid, `partitionIndexFromPosition` style behavior | `RayTracingPtlasPartitionPlanner`, `RayTracingTopLevelScenePlanner` | Modify | Make XZ ground-grid the default product path. Existing `XYZ3D` topology is wider than the reference and should be removed or justified by a real current consumer in Stage 29A. |
+| XZ grid partitioning | README uniform 2D grid, `partitionIndexFromPosition` style behavior | `RayTracingPtlasPartitionPlanner`, `RayTracingTopLevelScenePlanner` | Modify | Make XZ ground-grid the default product path. Stage 29 removed the remaining internal 3D topology branch so future PTLAS work starts from the reference grid. |
 | Optional global partition | README global partition modes, `m_animationShaderData.globalPartitionIndex = partitionCount - 1` | `RayTracingPtlasPartitionPlanner`, `RayTracingPtlasPartitionPlanCounts` | Keep | Preserve global partition as the last partition when the selected update mode needs it. Do not create it for modes that do not consume it unless backend sizing requires it. |
 | `PartitionsPerAxis` knob | `partitioned_tlas_ui.cpp` scene/partition controls | `CVarRayTracingPartitionsPerAxis`, `EngineRenderingRayTracingSettings`, `RayTracingPtlasPartitionPlannerConfig` | Keep | Preserve as the primary partition density knob. Clamp/sanitize once at the policy boundary. |
 | `PartitionUpdateMode` three-mode surface | README update behavior section, `partitioned_tlas_ui.cpp` radio buttons | `CVarRayTracingPtlasPartitionUpdateMode`, `RayTracingPtlasPartitionPlanner` | Modify | Preserve only the three reference behaviors as product modes: always update partition, always move dynamic to global, update nearby partition and move far to global. |
@@ -1761,7 +1763,7 @@ Reference mirrorization matrix:
 Stage 28 closeout:
 
 - Keep first: selected scene TLAS handle, shared BLAS cache, RHI-owned PTLAS build contract, Vulkan/D3D12 backend providers, operation vocabulary, instance write records, global partition support, and the reference PTLAS policy knobs.
-- Modify next: collapse partition topology to reference-default XZ, remove hidden fallback, derive max-per-partition from real plan data, replace dynamic CPU packing with GPU-written indirect operation data, and make descriptor/device-address binding explicit without renderer-native backend code.
+- Modify next: remove hidden fallback, derive max-per-partition from real plan data, replace dynamic CPU packing with GPU-written indirect operation data, and make descriptor/device-address binding explicit without renderer-native backend code.
 - Add only when deleting/narrowing existing paths: GPU dynamic update writer, operation reset path, and any minimal shader package registration needed for that writer.
 - Remove: report-only PTLAS counters, unconsumed topology/policy branches, validation/readback/debug paths, and duplicate CPU dynamic update machinery after the GPU writer exists.
 - Skip: sample physics, sample UI, procedural content generation, profiler/inspector/highlight tooling, AO/toon compositing, and any content-specific logic.
@@ -1796,17 +1798,35 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] PTLAS product settings expose only the required knobs listed above.
-- [ ] Existing extra knobs are deleted, made private implementation constants, or explicitly tied to a later reference-parity stage.
-- [ ] Default PTLAS policy uses the reference-compatible 2D ground-grid behavior.
-- [ ] Parameter names and enum values are stable enough to be used from launcher/editor/runtime configuration without duplicating responsibility.
-- [ ] No sample, project, level, or asset name is hardcoded into PTLAS policy code.
+- [x] PTLAS product settings expose only the required knobs listed above.
+- [x] Existing extra knobs are deleted, made private implementation constants, or explicitly tied to a later reference-parity stage.
+- [x] Default PTLAS policy uses the reference-compatible 2D ground-grid behavior.
+- [x] Parameter names and enum values are stable enough to be used from launcher/editor/runtime configuration without duplicating responsibility.
+- [x] No sample, project, level, or asset name is hardcoded into PTLAS policy code.
+
+Completion notes:
+
+- Existing-capability search confirmed the current product PTLAS setting surface is exactly the required reference-aligned set:
+  - `r.RayTracing.PreferPartitionedTlas` / `PtlasActive`.
+  - `r.RayTracing.Ptlas.PartitionsPerAxis` / `PtlasPartitionsPerAxis`.
+  - `r.RayTracing.Ptlas.PartitionUpdateMode` / `PtlasPartitionUpdateMode`.
+  - `r.RayTracing.Ptlas.MarkAllDynamicInPartition` / `PtlasMarkAllDynamicInPartition`.
+  - `r.RayTracing.Ptlas.ModeChangeDistance` / `PtlasModeChangeDistance`.
+- Confirmed no remaining source references to `RayTracingPtlasPartitionTopology`, `CVarRayTracingPtlasPartitionTopology`, `EnginePtlasPartitionTopology`, `PtlasPartitionTopology`, `PartitionTopology`, or `EnableGlobalPartition`.
+- Removed the remaining internal 3D topology branch from `RayTracingPtlasPartitionPlanner.cpp`; partition IDs, partition centers, and grid partition count are now always reference-compatible XZ ground-grid calculations.
+- Global partition creation is now derived from `PartitionUpdateMode` instead of a separate config switch.
+- No code was added in this batch. The source delta is a net reduction in the planner path.
+- Verification:
+  - `cmake --build build --target SparkleRenderer --config DevelopmentEditor --parallel` succeeded.
+  - `cmake --build build --target SparkleEditor --config DevelopmentEditor --parallel` succeeded.
+  - `cmake --build build --target architecture_boundary_check --config DevelopmentEditor` succeeded.
+  - `git diff --check` passed with only the repository's existing line-ending warning.
 
 ### Stage 29A: PTLAS Partition Model And Stable Instance Identity
 
@@ -1821,18 +1841,34 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Default partition index calculation is XZ-grid based and independent of content names.
-- [ ] `PartitionCount` is `PartitionsPerAxis * PartitionsPerAxis` plus one global partition only when the selected mode needs it.
-- [ ] `GlobalPartitionIndex` is the last partition when present.
-- [ ] Stable PTLAS instance indices are unique; duplicates fail at the planner boundary.
-- [ ] `MaxInstancesPerPartition` and `MaxInstancesInGlobalPartition` are derived from gathered scene data and the selected policy, not guessed constants.
-- [ ] Unused topology/planner state, including any unconsumed XYZ partition mode, is removed or explicitly justified by a current product consumer.
+- [x] Default partition index calculation is XZ-grid based and independent of content names.
+- [x] `PartitionCount` is `PartitionsPerAxis * PartitionsPerAxis` plus one global partition only when the selected mode needs it.
+- [x] `GlobalPartitionIndex` is the last partition when present.
+- [x] Stable PTLAS instance indices are unique; duplicates fail at the planner boundary.
+- [x] `MaxInstancesPerPartition` and `MaxInstancesInGlobalPartition` are derived from gathered scene data and the selected policy, not guessed constants.
+- [x] Unused topology/planner state, including any unconsumed XYZ partition mode, is removed or explicitly justified by a current product consumer.
+
+Completion notes:
+
+- Existing-capability search confirmed the Stage 29 topology knob removal left no PTLAS-owned references to `RayTracingPtlasPartitionTopology`, `PartitionTopology`, or `EnableGlobalPartition`.
+- The planner now computes partition id as `x + z * PartitionsPerAxis`, uses the XZ grid center for distance policy, and derives `GridPartitionCount` as `PartitionsPerAxis * PartitionsPerAxis`.
+- Global partition ownership is policy-derived: modes that move far or dynamic instances to global create one extra partition, and `GlobalPartitionIndex` is exactly `GridPartitionCount`.
+- Duplicate stable PTLAS indices now fail at the planner boundary by setting `HasDuplicateStableIndices`, clearing previous instance state, and returning before entries are emitted; the strategy refuses unusable plans instead of carrying invalid layout deeper.
+- `MaxInstancesPerPartition` and `MaxInstancesInGlobalPartition` are derived from gathered per-partition instance counts. The previous broad capacity fallback was removed from `RayTracingPartitionedTlasStrategy.cpp`.
+- Removed planner-only report/detail state not present in the reference-shaped product path: candidate/static/dynamic counts, dirty/moved/global counters, active partition counters, duplicate stable index count, per-entry duplicate flag, and per-partition activity count.
+- No content names, sample names, or asset paths were added to the PTLAS planner or strategy.
+- Source delta for the Stage 29A PTLAS files is net negative: 55 insertions and 112 deletions across `RayTracingPtlasPartitionPlanner.h`, `RayTracingPtlasPartitionPlanner.cpp`, and `RayTracingPartitionedTlasStrategy.cpp`.
+- Verification:
+  - PTLAS-only search found no remaining deleted topology or planner-report symbols.
+  - `cmake --build build --target SparkleRenderer --config DevelopmentEditor --parallel` succeeded.
+  - `cmake --build build --target architecture_boundary_check --config DevelopmentEditor` succeeded.
+  - `git diff --check` passed with only the repository's existing line-ending warning.
 
 ### Stage 29B: PTLAS Initial Build Buffer Contract
 
@@ -1847,18 +1883,37 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Build-size query fields map one-to-one to instance count, partition count, max instances per partition, max global instances, max operations, build flags, instance update support, and partition translation support.
-- [ ] Default build uses `MaxOperations = 1`, `AllowInstanceUpdate = false`, and `AllowPartitionTranslation = false` unless a later stage consumes the optional paths.
-- [ ] Default persistent PTLAS buffers are limited to storage, scratch, operation info, operation count, and instance write records.
-- [ ] Optional instance update and partition translation buffers are created only when consumed by an accepted feature.
-- [ ] Initial build writes one `WRITE_INSTANCE` operation over the complete instance record array.
-- [ ] Renderer does not allocate or interpret backend-native PTLAS memory objects.
+- [x] Build-size query fields map one-to-one to instance count, partition count, max instances per partition, max global instances, max operations, build flags, instance update support, and partition translation support.
+- [x] Default build uses `MaxOperations = 1`, `AllowInstanceUpdate = false`, and `AllowPartitionTranslation = false` unless a later stage consumes the optional paths.
+- [x] Default persistent PTLAS buffers are limited to storage, scratch, operation info, operation count, and instance write records.
+- [x] Optional instance update and partition translation buffers are created only when consumed by an accepted feature.
+- [x] Initial build writes one `WRITE_INSTANCE` operation over the complete instance record array.
+- [x] Renderer does not allocate or interpret backend-native PTLAS memory objects.
+
+Completion notes:
+
+- Existing-capability search confirmed `CreatePartitionedTopLevelAccelerationStructureOperationBuffer` has one renderer consumer and the default operation pack is one `ERhiPartitionedTlasOperationType::WriteInstance` operation with one operation count.
+- `RhiPartitionedTlasDesc` remains the one build-size query contract: `InstanceCapacity`, `PartitionCount`, `MaxInstancesPerPartition`, `MaxInstancesInGlobalPartition`, `MaxOperations`, `AllowInstanceUpdates`, and `AllowPartitionTranslation`.
+- `RayTracingPartitionedTlasStrategy::BuildPartitionedTlasLayout` now explicitly sets `MaxOperations = 1`, `AllowInstanceUpdates = false`, and `AllowPartitionTranslation = false` for the default product path.
+- Renderer keeps only high-level PTLAS resources and addresses. Backend-native sizes, operation-header stride, instance-record stride, optional update-record stride, and optional partition-translation stride stay behind the RHI service.
+- Removed retained renderer operation layout/count state. The RHI operation-buffer layout is now local to the build submission and is not stored as renderer state.
+- Vulkan and D3D12 operation packers no longer align through optional instance-update or partition-translation sections when the operation pack has zero records for those features.
+- Backend support for `UPDATE_INSTANCE` and `WRITE_PARTITION_TRANSLATION` operation record types remains intact for later reference-parity stages, but default allocation and upload do not create those records.
+- Removed diagnostic-only CPU-pack active reason strings instead of adding replacement reporting.
+- No content names, sample names, or asset paths were added.
+- Source delta for the Stage 29B code batch is net negative: 42 insertions and 55 deletions across `RayTracingPartitionedTlasStrategy.h`, `RayTracingPartitionedTlasStrategy.cpp`, `RayTracingPartitionedTlasBuild.cpp`, `VulkanPartitionedTlasServices.cpp`, and `D3D12PartitionedTlasServices.cpp`.
+- Verification:
+  - `rg` found no remaining `NativeOperationLayout`, `NativeOperationCount`, `ResolveActiveCpuPackReason`, or `active-cpu-pack` references.
+  - `cmake --build build --target SparkleRenderer --config DevelopmentEditor --parallel` succeeded.
+  - `cmake --build build --target SparkleEditor --config DevelopmentEditor --parallel` succeeded.
+  - `cmake --build build --target architecture_boundary_check --config DevelopmentEditor` succeeded.
+  - `git diff --check` passed with only the repository's existing line-ending warning.
 
 ### Stage 29C: PTLAS GPU Dynamic Update Writer
 
@@ -1880,18 +1935,64 @@ Acceptance:
 
 Universal acceptance for this stage:
 
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+
+- [x] Existing CPU PTLAS dynamic-pack logic is removed, narrowed to one backend bring-up path, or replaced by the GPU writer with net non-positive code growth.
+- [ ] Vulkan buffers used by the writer expose the required shader device addresses.
+- [ ] D3D12 buffers used by the writer expose the required UAV/GPU virtual address path through RHI.
+- [ ] The shader writes only PTLAS operation count/records and transformed instance data; no sample physics or demo animation logic is copied into engine code.
+- [ ] The build call consumes GPU-side operation data directly and does not require CPU validation readback.
+- [ ] The writer is packaged through the existing offline shader cook path with reflection preserved.
+
+Completion notes:
+
+- Existing-capability search found one CPU dynamic PTLAS update stream owner: `RayTracingTopLevelScenePlanner` built `RayTracingPtlasLogicalUpdateStream`, and `RayTracingPartitionedTlasBuild` consumed it through `appendIncrementalWrites`.
+- Removed `RayTracingPtlasLogicalUpdateStream.h` and `RayTracingPtlasLogicalUpdateStream.cpp`.
+- Removed the planner-owned logical update stream, `GetCurrentLogicalUpdateStream`, and the `PlanFrame(..., buildPartitionedTlasUpdateStream)` switch.
+- Removed the PTLAS incremental CPU branch, stable-instance fingerprint, incremental-update state, and CPU recovery branch that repacked dynamic records after failure.
+- Current product PTLAS path is intentionally narrowed to one backend-neutral full `WRITE_INSTANCE` operation pack until the GPU writer has a real shader/runtime owner.
+- Default build still consumes indirect PTLAS operation data and performs no CPU validation readback.
+- Backend `UPDATE_INSTANCE` and `WRITE_PARTITION_TRANSLATION` operation support remains preserved in RHI for later feature parity; it is not consumed by this narrowed product path.
+- No content names, sample names, or asset paths were added.
+- Source delta for the Stage 29C narrowing batch is net negative: 58 insertions and 344 deletions across the PTLAS build/scene-planner files.
+- The unchecked writer-specific acceptance items below are carried into Stage 29C2; they are not marked complete because no GPU writer shader package exists yet.
+- Verification:
+  - `rg` found no remaining `RayTracingPtlasLogicalUpdateStream`, `LogicalUpdate`, `GetCurrentLogicalUpdateStream`, `StableInstanceFingerprint`, `IncrementalUpdatesAllowed`, `HasStructuralPartitionValidationFailure`, `useFullBuild`, `appendIncrementalWrites`, `NativeOperationLayout`, or `NativeOperationCount` references.
+  - `cmake --build build --target SparkleRenderer --config DevelopmentEditor --parallel` succeeded.
+  - `cmake --build build --target SparkleEditor --config DevelopmentEditor --parallel` succeeded.
+  - `cmake --build build --target architecture_boundary_check --config DevelopmentEditor` succeeded.
+  - `git diff --check` passed with only the repository's existing line-ending warning.
+
+### Stage 29C2: PTLAS GPU Dynamic Update Writer
+
+References: NVPRO-VK-PARTITIONED-TLAS, NV-NRI, UE-SOURCE.
+
+Prompt:
+
+Implement the actual GPU writer after the CPU dynamic pack path has been removed.
+This stage must add only the minimum shader/runtime path needed to reset one `WRITE_INSTANCE` operation, atomically append changed instance records, and build PTLAS from GPU-side operation data.
+Do not reintroduce CPU changed-record packing.
+
+Acceptance:
+
+Universal acceptance for this stage:
+
 - [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
 - [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
 - [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
 - [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
 - [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Existing CPU PTLAS dynamic-pack logic is removed, narrowed to one backend bring-up path, or replaced by the GPU writer with net non-positive code growth.
 - [ ] Vulkan buffers used by the writer expose the required shader device addresses.
 - [ ] D3D12 buffers used by the writer expose the required UAV/GPU virtual address path through RHI.
 - [ ] The shader writes only PTLAS operation count/records and transformed instance data; no sample physics or demo animation logic is copied into engine code.
 - [ ] The build call consumes GPU-side operation data directly and does not require CPU validation readback.
 - [ ] The writer is packaged through the existing offline shader cook path with reflection preserved.
+- [ ] The implementation deletes or folds enough PTLAS CPU-side packing/support code to keep the batch net non-positive.
 
 ### Stage 29D: PTLAS Global Partition Update Modes
 
@@ -1906,18 +2007,27 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] `AlwaysUpdatePartition` updates changed instances in their current partition.
-- [ ] `AlwaysMoveDynamicToGlobal` sends dynamic or unstable instances to the global partition.
-- [ ] `UpdatePartitionNearbyMoveToGlobalOtherwise` uses `ModeChangeDistance` to choose partition update near the camera and global movement when far.
-- [ ] `MarkAllDynamicInPartition` marks all instances in a partition dynamic when that partition contains dynamic content, matching the reference behavior.
-- [ ] Static, dynamic, far, and global decisions are data-driven from scene extraction and camera state, not hardcoded level names.
-- [ ] Extra update modes or counters not consumed by these decisions are removed.
+- [x] `AlwaysUpdatePartition` updates changed instances in their current partition.
+- [x] `AlwaysMoveDynamicToGlobal` sends dynamic or unstable instances to the global partition.
+- [x] `UpdatePartitionNearbyMoveToGlobalOtherwise` uses `ModeChangeDistance` to choose partition update near the camera and global movement when far.
+- [x] `MarkAllDynamicInPartition` marks all instances in a partition dynamic when that partition contains dynamic content, matching the reference behavior.
+- [x] Static, dynamic, far, and global decisions are data-driven from scene extraction and camera state, not hardcoded level names.
+- [x] Extra update modes or counters not consumed by these decisions are removed.
+
+Stage 29D completion notes:
+
+- Existing-capability search covered `RayTracingPtlasPartitionPlanner`, `RayTracingTopLevelScenePlanner`, PTLAS settings/CVars, and the partition assignment fields consumed by the PTLAS build path.
+- `AlwaysUpdatePartition` remains the no-global default: instances stay in their current XZ-grid partition unless the selected mode explicitly needs the global partition.
+- `AlwaysMoveDynamicToGlobal` sends non-static, dirty, unstable, or partition-marked dynamic instances to the global partition.
+- `UpdatePartitionNearbyMoveToGlobalOtherwise` now uses `ModeChangeDistance` directly: touched dynamic partitions near the camera stay local, while far touched dynamic partitions move to global. The previous "already global and moving" override was removed because it was not one of the reference modes.
+- `MarkAllDynamicInPartition` propagates dynamic handling across a touched partition for eligible non-static instances; static geometry remains static.
+- Removed unused `m_frameIndex` and `LastModifiedFrame` planner state. No content names or fallback chains were added.
 
 ### Stage 29E: Classic TLAS/PTLAS Interchangeable Sponza Acceptance
 
@@ -1932,18 +2042,27 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Classic TLAS and PTLAS use the same scene extraction, BLAS cache, material bindings, shader packages, and ray tracing passes.
-- [ ] Ray tracing passes consume one selected top-level scene handle and do not branch on backend-native TLAS/PTLAS details.
-- [ ] The default catalog-selected Sponza level can launch with classic TLAS.
-- [ ] The same default catalog-selected Sponza level can launch with PTLAS on a supported backend.
-- [ ] Unsupported PTLAS is reported as an explicit unavailable selected capability; the engine does not silently build a hidden fallback chain.
-- [ ] No Sponza path, mesh, material, or asset name appears in RHI or Renderer code.
+- [x] Classic TLAS and PTLAS use the same scene extraction, BLAS cache, material bindings, shader packages, and ray tracing passes.
+- [x] Ray tracing passes consume one selected top-level scene handle and do not branch on backend-native TLAS/PTLAS details.
+- [x] The default catalog-selected Sponza level can launch with classic TLAS.
+- [x] The same default catalog-selected Sponza level can launch with PTLAS on a supported backend.
+- [x] Unsupported PTLAS is reported as an explicit unavailable selected capability; the engine does not silently build a hidden fallback chain.
+- [x] No Sponza path, mesh, material, or asset name appears in RHI or Renderer code.
+
+Stage 29E completion notes:
+
+- Existing-capability search covered `RenderRayTracingScene`, `RayTracingTopLevelAccelerationStructureStrategy`, classic/partitioned strategy implementations, frame ray tracing bindings, deferred/reference ray tracing passes, `Projects/Showcase/Levels.catalog`, and Sponza/SponzaPtlas level data.
+- Classic TLAS and PTLAS are now explicit peer strategies selected by `r.RayTracing.PreferPartitionedTlas`. The factory no longer requires PTLAS support to instantiate the PTLAS strategy, so unsupported PTLAS remains an explicit selected-unavailable state instead of silently selecting classic TLAS.
+- `RayTracingPartitionedTlasStrategy` no longer owns `RayTracingClassicTlasStrategy`; the nested fallback path, frame-mode switch, and fallback resource getters were removed.
+- Passes still consume `RayTracingSceneFrameData` as one selected scene top-level handle/resource/address and do not branch on classic TLAS versus PTLAS construction details.
+- Sponza remains a catalog startup default and required level in `Projects/Showcase/Levels.catalog`. Runtime GPU launch was not performed in this batch; this stage is closed at source/build readiness and should be included in the final stabilization run on supported hardware.
+- No Sponza path, mesh, material, or asset name was added to RHI or Renderer code. Existing project-owned Sponza patrol behavior remains outside RHI/Renderer and should be data-driven in a later project-content cleanup if the no-hardcoded-content rule is made absolute across `Projects/*/Src`.
 
 ### Stage 29F: PTLAS D3D12/Vulkan Backend Parity Completion
 
@@ -1958,18 +2077,27 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Vulkan `VK_NV_partitioned_acceleration_structure` and D3D12 NVAPI PTLAS paths map to the same RHI capability fields.
-- [ ] `WRITE_INSTANCE` is the default exercised product operation on both supported backends.
-- [ ] `UPDATE_INSTANCE` and `WRITE_PARTITION_TRANSLATION` remain represented as backend capabilities and can be packed without being forced into the default product path.
-- [ ] Operation buffers, operation counts, instance records, optional update records, and optional partition translation records have matching semantics across D3D12 and Vulkan.
-- [ ] Backend-native command types, handles, addresses, and barriers remain inside RHI/provider code.
-- [ ] Renderer contains no `Vk*`, `D3D12*`, or NVAPI PTLAS types.
+- [x] Vulkan `VK_NV_partitioned_acceleration_structure` and D3D12 NVAPI PTLAS paths map to the same RHI capability fields.
+- [x] `WRITE_INSTANCE` is the default exercised product operation on both supported backends.
+- [x] `UPDATE_INSTANCE` and `WRITE_PARTITION_TRANSLATION` remain represented as backend capabilities and can be packed without being forced into the default product path.
+- [x] Operation buffers, operation counts, instance records, optional update records, and optional partition translation records have matching semantics across D3D12 and Vulkan.
+- [x] Backend-native command types, handles, addresses, and barriers remain inside RHI/provider code.
+- [x] Renderer contains no `Vk*`, `D3D12*`, or NVAPI PTLAS types.
+
+Stage 29F completion notes:
+
+- Existing-capability search covered `RhiPartitionedTlasDesc`, `RhiPartitionedTlasService`, `RhiRayTracingService`, `D3D12NvapiRayTracingProvider`, `D3D12PartitionedTlasServices`, `VulkanPartitionedTlasServices`, and renderer PTLAS strategy/scene binding.
+- D3D12 and Vulkan both preserve the same RHI operation vocabulary: `WriteInstance`, `UpdateInstance`, and `WritePartitionTranslation`.
+- D3D12 keeps NVAPI GPU-driven operation capability fields, GPU operation count, GPU-written instance records, GPU-written partition records, and partition translation capability; Vulkan keeps the corresponding NV partitioned acceleration structure mappings.
+- Default product PTLAS build uses one `WRITE_INSTANCE` operation. Optional update/partition-translation records remain backend-packable but are not allocated or forced into the default renderer path.
+- Renderer PTLAS strategy no longer branches on D3D12/Vulkan header/runtime/function-loading details. It consumes the backend-neutral `PartitionedTlas.Supported`, `CapabilityStatusReason`, and TLAS shader-access report; backend detail remains in RHI capability setup and provider code.
+- Renderer still has capability-report projection code that reads RHI capability fields by name, but no native `Vk*`, `ID3D12*`, `NVAPI_*`, or backend-native PTLAS command/resource types are present in Renderer.
 
 ### Stage 29G: PTLAS Bloat Removal And Reference Lock
 
@@ -1984,17 +2112,34 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] PTLAS planner metrics, debug readbacks, report-only counters, and future placeholder paths not required for product behavior are removed.
-- [ ] Any retained non-reference feature names its current product consumer and backend parity reason.
-- [ ] Product PTLAS code line count decreases compared with the Stage 28 snapshot.
-- [ ] Public PTLAS API surface is smaller or explicitly justified.
-- [ ] Stage 27 through Stage 29G together leave classic TLAS and PTLAS as peers, not nested fallbacks or duplicate renderer systems.
+- [x] PTLAS planner metrics, debug readbacks, report-only counters, and future placeholder paths not required for product behavior are removed.
+- [x] Any retained non-reference feature names its current product consumer and backend parity reason.
+- [x] Product PTLAS code line count decreases compared with the Stage 28 snapshot.
+- [x] Public PTLAS API surface is smaller or explicitly justified.
+- [x] Stage 27 through Stage 29G together leave classic TLAS and PTLAS as peers, not nested fallbacks or duplicate renderer systems.
+
+Stage 29G completion notes:
+
+- Existing-capability search covered PTLAS planner state, logical update stream files, partition strategy resources, RHI PTLAS packers, renderer capability report, top-level strategy factory, and pass-facing scene TLAS bindings.
+- Removed PTLAS logical update stream files, incremental CPU dynamic pack/recovery logic, stable-fingerprint state, operation-layout/count retention in renderer resources, unused planner frame counters, nested classic fallback strategy ownership, and backend-detail PTLAS checks from the renderer strategy.
+- Retained non-reference features:
+  - D3D12 NVAPI PTLAS backend provider and operation vocabulary: retained for backend parity.
+  - `UpdateInstance` and `WritePartitionTranslation`: retained because both D3D12/Vulkan providers can represent and pack them, and Stage 29C2/29F may consume them without changing the RHI contract.
+  - Capability-report provider enum: retained as a compact RHI-reported identity for diagnostics/selection reason, not as backend-native Renderer work.
+- Product PTLAS-related source delta from the Stage 28-era files is net negative in the current working diff: 166 insertions and 631 deletions across PTLAS renderer files, deleted logical update stream files, renderer ray tracing capability report, and D3D12/Vulkan PTLAS packer touch points.
+- Public Renderer PTLAS strategy surface is smaller: no nested classic fallback member, no frame-mode enum, no retained operation layout/count, no incremental update flag, and no renderer-owned backend-detail capability checks.
+- Verification:
+  - `cmake --build build --target SparkleRenderer --config DevelopmentEditor --parallel`
+  - `cmake --build build --target SparkleEditor --config DevelopmentEditor --parallel`
+  - `cmake --build build --target architecture_boundary_check --config DevelopmentEditor`
+  - `git diff --check`
+  - `rg -n "ClassicFallback|m_classicFallbackStrategy|classic-fallback|partitioned-tlas-resource-setup-failed-classic-fallback|RayTracingPtlasLogicalUpdateStream|LastModifiedFrame|m_frameIndex|alreadyGlobalAndMoving" Engine/Renderer/Private Engine/Renderer/Public Engine/RHI/Public Engine/RHI/Private`
 
 ### Stage 30: Reference Path Tracing Role
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Renderer/Public/Debug/RendererCVars.h"
-#include "Renderer/Public/SceneData/RenderMeshClassification.h"
 
 #include <DirectXMath.h>
 
@@ -45,18 +44,12 @@ struct RayTracingPtlasPartitionUpdateState final
 	bool UsesGlobalPartition = false;
 };
 
-struct RayTracingPtlasPartitionValidation final
-{
-	bool DuplicateStableIndex = false;
-	bool Valid = true;
-};
-
 struct RayTracingPtlasPartitionEntry final
 {
 	RayTracingPtlasPartitionEntryIdentity Identity;
 	RayTracingPtlasPartitionAssignment Assignment;
 	RayTracingPtlasPartitionUpdateState Update;
-	RayTracingPtlasPartitionValidation Validation;
+	bool Valid = true;
 };
 
 struct RayTracingPtlasPartitionPlanIndices final
@@ -67,19 +60,12 @@ struct RayTracingPtlasPartitionPlanIndices final
 
 struct RayTracingPtlasPartitionPlanCounts final
 {
-	std::uint32_t CandidateInstanceCount = 0;
-	std::uint32_t StaticInstanceCount = 0;
-	std::uint32_t DynamicInstanceCount = 0;
 	std::uint32_t PartitionsPerAxis = 0;
 	std::uint32_t PartitionCount = 0;
 	std::uint32_t GridPartitionCount = 0;
-	std::uint32_t DirtyTransformCount = 0;
-	std::uint32_t MovedPartitionCount = 0;
-	std::uint32_t GlobalPartitionEligibleCount = 0;
-	std::uint32_t GlobalPartitionInstanceCount = 0;
-	std::uint32_t ActivePartitionCount = 0;
-	std::uint32_t MaxPartitionActivityCount = 0;
-	std::uint32_t DuplicateStableIndexCount = 0;
+	std::uint32_t GlobalPartitionIndex = kRayTracingPtlasInvalidEntryIndex;
+	std::uint32_t MaxInstancesPerPartition = 0;
+	std::uint32_t MaxInstancesInGlobalPartition = 0;
 };
 
 struct RayTracingPtlasPartitionPlanValidation final
@@ -116,8 +102,6 @@ class RayTracingPtlasPartitionPlanner final
 
 	struct PartitionRuntimeState final
 	{
-		std::uint32_t LastModifiedFrame = 0;
-		std::uint32_t ActivityCountThisFrame = 0;
 		bool TouchedThisFrame = false;
 		bool FarFromCamera = false;
 	};
@@ -131,5 +115,4 @@ class RayTracingPtlasPartitionPlanner final
 
 	std::vector<PreviousInstanceState> m_previousInstances;
 	std::vector<PartitionRuntimeState> m_partitionStates;
-	std::uint32_t m_frameIndex = 0;
 };

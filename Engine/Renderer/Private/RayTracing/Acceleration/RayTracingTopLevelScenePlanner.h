@@ -13,7 +13,6 @@ namespace DirectX
 class RayTracingBlasCache;
 class RayTracingPerformanceDiagnostics;
 class RenderCommandContext;
-struct RayTracingPtlasLogicalUpdateStreamResult;
 struct RayTracingPtlasPartitionPlan;
 struct RenderSceneData;
 
@@ -30,10 +29,8 @@ class RayTracingTopLevelScenePlanner final
 
 	void PlanFrame(
 	    const RenderSceneData& sceneData,
-	    const DirectX::XMFLOAT3& cameraPosition,
-	    bool buildPartitionedTlasUpdateStream) noexcept;
+	    const DirectX::XMFLOAT3& cameraPosition) noexcept;
 	const RayTracingPtlasPartitionPlan* GetCurrentPartitionPlan() const noexcept;
-	const RayTracingPtlasLogicalUpdateStreamResult* GetCurrentLogicalUpdateStream() const noexcept;
 	RayTracingClassicTlasBuilder::BuildStats BuildClassicTlas(
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,

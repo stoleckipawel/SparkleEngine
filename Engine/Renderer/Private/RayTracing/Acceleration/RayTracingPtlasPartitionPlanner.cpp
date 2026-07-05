@@ -10,6 +10,7 @@
 #include <cmath>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -137,25 +138,17 @@ namespace
 	std::uint32_t ComputeGridPartitionId(
 	    const DirectX::XMFLOAT3& position,
 	    const SceneBounds& bounds,
-	    std::uint32_t partitionsPerAxis,
-	    RayTracingPtlasPartitionTopology partitionTopology) noexcept
+	    std::uint32_t partitionsPerAxis) noexcept
 	{
 		const std::uint32_t x = QuantizeAxis(position.x, bounds.Min.x, bounds.Max.x, partitionsPerAxis);
 		const std::uint32_t z = QuantizeAxis(position.z, bounds.Min.z, bounds.Max.z, partitionsPerAxis);
-		if (partitionTopology == RayTracingPtlasPartitionTopology::XZ2D)
-		{
-			return x + z * partitionsPerAxis;
-		}
-
-		const std::uint32_t y = QuantizeAxis(position.y, bounds.Min.y, bounds.Max.y, partitionsPerAxis);
-		return x + y * partitionsPerAxis + z * partitionsPerAxis * partitionsPerAxis;
+		return x + z * partitionsPerAxis;
 	}
 
 	DirectX::XMFLOAT3 ComputeGridPartitionCenter(
 	    std::uint32_t partitionId,
 	    const SceneBounds& bounds,
-	    std::uint32_t partitionsPerAxis,
-	    RayTracingPtlasPartitionTopology partitionTopology) noexcept
+	    std::uint32_t partitionsPerAxis) noexcept
 	{
 		if (partitionsPerAxis == 0)
 		{
@@ -163,17 +156,7 @@ namespace
 		}
 
 		const std::uint32_t x = partitionId % partitionsPerAxis;
-		std::uint32_t y = 0;
-		std::uint32_t z = 0;
-		if (partitionTopology == RayTracingPtlasPartitionTopology::XZ2D)
-		{
-			z = partitionId / partitionsPerAxis;
-		}
-		else
-		{
-			y = (partitionId / partitionsPerAxis) % partitionsPerAxis;
-			z = partitionId / (partitionsPerAxis * partitionsPerAxis);
-		}
+		const std::uint32_t z = partitionId / partitionsPerAxis;
 
 		const DirectX::XMFLOAT3 extent{
 		    bounds.Max.x - bounds.Min.x,
@@ -182,19 +165,14 @@ namespace
 		const float invPartitions = 1.0f / static_cast<float>(partitionsPerAxis);
 		return DirectX::XMFLOAT3{
 		    bounds.Min.x + (static_cast<float>(x) + 0.5f) * extent.x * invPartitions,
-		    partitionTopology == RayTracingPtlasPartitionTopology::XZ2D
-		        ? 0.5f * (bounds.Min.y + bounds.Max.y)
-		        : bounds.Min.y + (static_cast<float>(y) + 0.5f) * extent.y * invPartitions,
+		    0.5f * (bounds.Min.y + bounds.Max.y),
 		    bounds.Min.z + (static_cast<float>(z) + 0.5f) * extent.z * invPartitions};
 	}
 
-	std::uint64_t ComputeGridPartitionCount(
-	    std::uint32_t partitionsPerAxis,
-	    RayTracingPtlasPartitionTopology partitionTopology) noexcept
+	std::uint64_t ComputeGridPartitionCount(std::uint32_t partitionsPerAxis) noexcept
 	{
 		const std::uint64_t partitions = partitionsPerAxis;
-		return partitionTopology == RayTracingPtlasPartitionTopology::XZ2D ? partitions * partitions
-		                                                                  : partitions * partitions * partitions;
+		return partitions * partitions;
 	}
 
 	bool RequiresGlobalPartition(RayTracingPtlasPartitionUpdateMode updateMode) noexcept
@@ -218,12 +196,11 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 {
 	const RayTracingPtlasPartitionPlannerConfig config = SanitizeConfig(inputConfig);
 	RayTracingPtlasPartitionPlan plan{};
-	plan.Counts.CandidateInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
 	plan.Counts.PartitionsPerAxis = config.PartitionsPerAxis;
 	plan.Indices.RenderInstanceToEntry.assign(sceneData.meshInstances.size(), kRayTracingPtlasInvalidEntryIndex);
 
-	const std::uint64_t gridPartitionCount64 = ComputeGridPartitionCount(config.PartitionsPerAxis, config.PartitionTopology);
-	const bool requiresGlobalPartition = config.EnableGlobalPartition && RequiresGlobalPartition(config.PartitionUpdateMode);
+	const std::uint64_t gridPartitionCount64 = ComputeGridPartitionCount(config.PartitionsPerAxis);
+	const bool requiresGlobalPartition = RequiresGlobalPartition(config.PartitionUpdateMode);
 	const std::uint64_t maxPartitionCount = static_cast<std::uint64_t>((std::numeric_limits<std::uint32_t>::max)());
 	plan.Validation.HasPartitionOverflow =
 	    gridPartitionCount64 > maxPartitionCount || (requiresGlobalPartition && gridPartitionCount64 == maxPartitionCount);
@@ -231,6 +208,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	plan.Counts.GridPartitionCount =
 	    plan.Validation.HasPartitionOverflow ? 0u : static_cast<std::uint32_t>(gridPartitionCount64);
 	plan.Counts.PartitionCount = plan.Counts.GridPartitionCount + (hasGlobalPartition ? 1u : 0u);
+	plan.Counts.GlobalPartitionIndex = hasGlobalPartition ? plan.Counts.GridPartitionCount : kRayTracingPtlasInvalidEntryIndex;
 
 	if (sceneData.meshInstances.empty())
 	{
@@ -240,15 +218,6 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	}
 
 	const SceneBounds bounds = ComputeSceneBounds(sceneData);
-	++m_frameIndex;
-	if (m_frameIndex == 0)
-	{
-		m_frameIndex = 1;
-		for (PartitionRuntimeState& partitionState : m_partitionStates)
-		{
-			partitionState.LastModifiedFrame = 0;
-		}
-	}
 
 	if (!plan.Validation.HasPartitionOverflow && m_partitionStates.size() != plan.Counts.GridPartitionCount)
 	{
@@ -258,13 +227,12 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	{
 		partitionState.TouchedThisFrame = false;
 		partitionState.FarFromCamera = false;
-		partitionState.ActivityCountThisFrame = 0;
 	}
 	const float modeChangeDistanceSquared = config.ModeChangeDistance * config.ModeChangeDistance;
 	for (std::uint32_t partitionId = 0; partitionId < plan.Counts.GridPartitionCount && partitionId < m_partitionStates.size(); ++partitionId)
 	{
 		const DirectX::XMFLOAT3 partitionCenter =
-		    ComputeGridPartitionCenter(partitionId, bounds, config.PartitionsPerAxis, config.PartitionTopology);
+		    ComputeGridPartitionCenter(partitionId, bounds, config.PartitionsPerAxis);
 		m_partitionStates[partitionId].FarFromCamera =
 		    DistanceSquared(partitionCenter, config.CameraPosition) >= modeChangeDistanceSquared;
 	}
@@ -272,14 +240,12 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	struct ObservedInstance final
 	{
 		const MeshDraw* Draw = nullptr;
-		DirectX::XMFLOAT3 Position = {};
 		std::uint32_t RenderInstanceIndex = 0;
 		std::uint32_t StableIndex = 0;
 		std::uint32_t LocalPartitionId = 0;
 		std::uint32_t PreviousPartitionId = 0;
 		bool DirtyTransform = false;
 		bool GlobalEligible = false;
-		bool DuplicateStableIndex = false;
 	};
 
 	std::unordered_set<std::uint32_t> seenStableIndices;
@@ -302,7 +268,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		const std::uint32_t localPartitionId =
 		    plan.Validation.HasPartitionOverflow
 		        ? 0u
-		        : ComputeGridPartitionId(position, bounds, config.PartitionsPerAxis, config.PartitionTopology);
+		        : ComputeGridPartitionId(position, bounds, config.PartitionsPerAxis);
 		const PreviousInstanceState* previous =
 		    stableIndex < m_previousInstances.size() && m_previousInstances[stableIndex].Valid ? &m_previousInstances[stableIndex] : nullptr;
 		const bool dirtyTransform =
@@ -313,58 +279,45 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		{
 			seenStableIndices.insert(stableIndex);
 		}
+		else
+		{
+			plan.Validation.HasDuplicateStableIndices = true;
+		}
 		if (globalEligible && dirtyTransform && localPartitionId < m_partitionStates.size())
 		{
 			PartitionRuntimeState& partitionState = m_partitionStates[localPartitionId];
-			partitionState.LastModifiedFrame = m_frameIndex;
 			partitionState.TouchedThisFrame = true;
-			++partitionState.ActivityCountThisFrame;
 		}
-		if (globalEligible && dirtyTransform && previous != nullptr && previous->PartitionId == plan.Counts.GridPartitionCount &&
+		if (globalEligible && dirtyTransform && previous != nullptr && previous->PartitionId == plan.Counts.GlobalPartitionIndex &&
 		    previous->LocalPartitionId < m_partitionStates.size())
 		{
 			PartitionRuntimeState& originalPartitionState = m_partitionStates[previous->LocalPartitionId];
-			originalPartitionState.LastModifiedFrame = m_frameIndex;
 			originalPartitionState.TouchedThisFrame = true;
-			++originalPartitionState.ActivityCountThisFrame;
 		}
 
 		observedInstances.push_back(
 		    ObservedInstance{
 		        .Draw = &draw,
-		        .Position = position,
 		        .RenderInstanceIndex = renderInstanceIndex,
 		        .StableIndex = stableIndex,
 		        .LocalPartitionId = localPartitionId,
 		        .PreviousPartitionId = previous != nullptr ? previous->PartitionId : localPartitionId,
 		        .DirtyTransform = dirtyTransform,
-		        .GlobalEligible = globalEligible,
-		        .DuplicateStableIndex = duplicateStableIndex});
+		        .GlobalEligible = globalEligible});
 	}
 
-	for (const PartitionRuntimeState& partitionState : m_partitionStates)
+	if (plan.Validation.HasDuplicateStableIndices)
 	{
-		if (partitionState.TouchedThisFrame || partitionState.ActivityCountThisFrame > 0)
-		{
-			++plan.Counts.ActivePartitionCount;
-		}
-		plan.Counts.MaxPartitionActivityCount =
-		    (std::max)(plan.Counts.MaxPartitionActivityCount, partitionState.ActivityCountThisFrame);
+		m_previousInstances.clear();
+		return plan;
 	}
 
 	plan.Indices.Entries.reserve(sceneData.meshInstances.size());
+	std::vector<std::uint32_t> partitionInstanceCounts(plan.Counts.PartitionCount, 0u);
 
 	for (const ObservedInstance& observed : observedInstances)
 	{
 		const MeshDraw& draw = *observed.Draw;
-		if (draw.Geometry.MeshKind == RenderMeshKind::Static)
-		{
-			++plan.Counts.StaticInstanceCount;
-		}
-		else
-		{
-			++plan.Counts.DynamicInstanceCount;
-		}
 
 		bool shouldUseGlobalPartition = false;
 		if (observed.GlobalEligible && !plan.Validation.HasPartitionOverflow)
@@ -373,7 +326,6 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 			    observed.LocalPartitionId < m_partitionStates.size() ? &m_partitionStates[observed.LocalPartitionId] : nullptr;
 			const bool partitionTouched = partitionState != nullptr && partitionState->TouchedThisFrame;
 			const bool forceWholePartition = config.MarkAllDynamicInPartition && partitionTouched;
-			const bool alreadyGlobalAndMoving = observed.PreviousPartitionId == plan.Counts.GridPartitionCount && observed.DirtyTransform;
 			const bool instanceOrPartitionUpdated = observed.DirtyTransform || forceWholePartition;
 			if (config.PartitionUpdateMode == RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal)
 			{
@@ -382,11 +334,11 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 			else if (config.PartitionUpdateMode == RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise)
 			{
 				const bool farFromCamera = partitionState != nullptr && partitionState->FarFromCamera;
-				shouldUseGlobalPartition = alreadyGlobalAndMoving || (farFromCamera && instanceOrPartitionUpdated);
+				shouldUseGlobalPartition = farFromCamera && instanceOrPartitionUpdated;
 			}
 		}
 
-		const std::uint32_t partitionId = shouldUseGlobalPartition ? plan.Counts.GridPartitionCount : observed.LocalPartitionId;
+		const std::uint32_t partitionId = shouldUseGlobalPartition ? plan.Counts.GlobalPartitionIndex : observed.LocalPartitionId;
 		const std::uint32_t previousPartitionId = observed.PreviousPartitionId;
 		const bool movedPartition = previousPartitionId != partitionId;
 		const bool dirtyTransform = observed.DirtyTransform;
@@ -407,42 +359,28 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		            .MovedPartition = movedPartition,
 		            .GlobalPartitionEligible = observed.GlobalEligible,
 		            .UsesGlobalPartition = shouldUseGlobalPartition},
-		    .Validation =
-		        RayTracingPtlasPartitionValidation{
-		            .DuplicateStableIndex = observed.DuplicateStableIndex,
-		            .Valid = !plan.Validation.HasPartitionOverflow}};
-
-		if (entry.Validation.DuplicateStableIndex)
-		{
-			++plan.Counts.DuplicateStableIndexCount;
-			plan.Validation.HasDuplicateStableIndices = true;
-			entry.Validation.Valid = false;
-		}
-
-		if (entry.Update.DirtyTransform)
-		{
-			++plan.Counts.DirtyTransformCount;
-		}
-		if (entry.Update.MovedPartition)
-		{
-			++plan.Counts.MovedPartitionCount;
-		}
-		if (entry.Update.GlobalPartitionEligible)
-		{
-			++plan.Counts.GlobalPartitionEligibleCount;
-		}
-		if (entry.Update.UsesGlobalPartition)
-		{
-			++plan.Counts.GlobalPartitionInstanceCount;
-		}
+		    .Valid = !plan.Validation.HasPartitionOverflow};
 
 		plan.Indices.RenderInstanceToEntry[observed.RenderInstanceIndex] = static_cast<std::uint32_t>(plan.Indices.Entries.size());
 		plan.Indices.Entries.push_back(entry);
+		if (partitionId < partitionInstanceCounts.size())
+		{
+			const std::uint32_t instanceCount = ++partitionInstanceCounts[partitionId];
+			if (partitionId == plan.Counts.GlobalPartitionIndex)
+			{
+				plan.Counts.MaxInstancesInGlobalPartition =
+				    (std::max)(plan.Counts.MaxInstancesInGlobalPartition, instanceCount);
+			}
+			else
+			{
+				plan.Counts.MaxInstancesPerPartition = (std::max)(plan.Counts.MaxInstancesPerPartition, instanceCount);
+			}
+		}
 		nextPrevious[observed.StableIndex] = PreviousInstanceState{
 		    .WorldMatrix = draw.Transform.WorldMatrix,
 		    .LocalPartitionId = observed.LocalPartitionId,
 		    .PartitionId = partitionId,
-		    .Valid = entry.Validation.Valid};
+		    .Valid = entry.Valid};
 	}
 
 	m_previousInstances = std::move(nextPrevious);

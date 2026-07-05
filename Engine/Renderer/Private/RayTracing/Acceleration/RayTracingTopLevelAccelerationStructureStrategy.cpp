@@ -15,7 +15,7 @@ std::unique_ptr<RayTracingTopLevelAccelerationStructureStrategy> CreateRayTracin
     RenderHardwareInterface& renderHardwareInterface,
     const RayTracingCapabilityReport& capabilityReport) noexcept
 {
-	if (CVarRayTracingPreferPartitionedTlas.Get() && capabilityReport.PartitionedTlas.Supported)
+	if (CVarRayTracingPreferPartitionedTlas.Get())
 	{
 		return std::make_unique<RayTracingPartitionedTlasStrategy>(renderHardwareInterface, capabilityReport);
 	}

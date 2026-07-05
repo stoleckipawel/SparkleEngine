@@ -31,8 +31,7 @@ RenderRayTracingScene::RenderRayTracingScene(
 	}
 
 	m_blasCache = std::make_unique<RayTracingBlasCache>(renderHardwareInterface);
-	m_topLevelStrategyPrefersPartitionedTlas =
-	    CVarRayTracingPreferPartitionedTlas.Get() && m_capabilityReport.PartitionedTlas.Supported;
+	m_topLevelStrategyPrefersPartitionedTlas = CVarRayTracingPreferPartitionedTlas.Get();
 	m_topLevelAccelerationStructureStrategy =
 	    CreateRayTracingTopLevelAccelerationStructureStrategy(renderHardwareInterface, m_capabilityReport);
 }
@@ -46,7 +45,7 @@ void RenderRayTracingScene::PlanFrame(
 	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
 	if (m_topLevelScenePlanner != nullptr)
 	{
-		m_topLevelScenePlanner->PlanFrame(sceneData, cameraPosition, m_topLevelStrategyPrefersPartitionedTlas);
+		m_topLevelScenePlanner->PlanFrame(sceneData, cameraPosition);
 	}
 }
 
@@ -177,7 +176,7 @@ void RenderRayTracingScene::EnsureTopLevelAccelerationStructureStrategyMatchesRu
 		return;
 	}
 
-	const bool wantsPartitionedTlas = CVarRayTracingPreferPartitionedTlas.Get() && m_capabilityReport.PartitionedTlas.Supported;
+	const bool wantsPartitionedTlas = CVarRayTracingPreferPartitionedTlas.Get();
 	if (m_topLevelAccelerationStructureStrategy != nullptr && wantsPartitionedTlas == m_topLevelStrategyPrefersPartitionedTlas)
 	{
 		return;

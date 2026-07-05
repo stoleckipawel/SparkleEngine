@@ -37,22 +37,6 @@ struct RayTracingPartitionedTlasCapabilityReport final
 {
 	ERhiPartitionedTlasProvider Provider = ERhiPartitionedTlasProvider::None;
 	bool Supported = false;
-	bool RequiresNvidiaDevice = false;
-	bool RunsOnNvidiaDevice = false;
-	bool SupportsVulkanNativeProvider = false;
-	bool SupportsVulkanExtension = false;
-	bool SupportsVulkanFeatureQuery = false;
-	bool SupportsVulkanFunctionLoading = false;
-	bool SupportsVulkanDescriptorPath = false;
-	bool SupportsVulkanShaderDeviceAddressPath = false;
-	bool SupportsD3D12NvapiProvider = false;
-	bool SupportsD3D12NvapiHeaders = false;
-	bool SupportsD3D12NvapiRuntime = false;
-	bool SupportsD3D12DeviceInterface = false;
-	bool SupportsD3D12CommandListInterface = false;
-	bool SupportsD3D12PublicDxrProvider = false;
-	bool SupportsD3D12PublicDxrHeaders = false;
-	bool SupportsCpuPackedOperations = false;
 	const char* CapabilityStatusReason = "not-queried";
 };
 

@@ -238,15 +238,21 @@ RhiOwnedResourceHandle VulkanPartitionedTlasServices::CreatePartitionedTopLevelA
 	    AlignUp(operationOffset + operationBytes, alignof(VkPartitionedAccelerationStructureWriteInstanceDataNV));
 	const std::uint64_t instanceWriteBytes =
 	    sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV) * static_cast<std::uint64_t>(operationPack.InstanceWriteCount);
-	const std::uint64_t instanceUpdateOffset =
-	    AlignUp(instanceWriteOffset + instanceWriteBytes, alignof(VkPartitionedAccelerationStructureUpdateInstanceDataNV));
 	const std::uint64_t instanceUpdateBytes =
 	    sizeof(VkPartitionedAccelerationStructureUpdateInstanceDataNV) * static_cast<std::uint64_t>(operationPack.InstanceUpdateCount);
-	const std::uint64_t partitionTranslationOffset =
-	    AlignUp(instanceUpdateOffset + instanceUpdateBytes, alignof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV));
+	std::uint64_t cursor = instanceWriteOffset + instanceWriteBytes;
+	const std::uint64_t instanceUpdateOffset = operationPack.InstanceUpdateCount > 0
+	                                               ? AlignUp(cursor, alignof(VkPartitionedAccelerationStructureUpdateInstanceDataNV))
+	                                               : cursor;
+	cursor = instanceUpdateOffset + instanceUpdateBytes;
 	const std::uint64_t partitionTranslationBytes = sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV) *
 	                                               static_cast<std::uint64_t>(operationPack.PartitionTranslationCount);
-	const std::uint64_t totalSize = AlignUp(partitionTranslationOffset + partitionTranslationBytes, 16);
+	const std::uint64_t partitionTranslationOffset =
+	    operationPack.PartitionTranslationCount > 0
+	        ? AlignUp(cursor, alignof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV))
+	        : cursor;
+	cursor = partitionTranslationOffset + partitionTranslationBytes;
+	const std::uint64_t totalSize = AlignUp(cursor, 16);
 	if (totalSize == 0)
 	{
 		return {};
