@@ -12,7 +12,6 @@ class ToneMappingCS final : public TGlobalShader<ToneMappingCS>
 	SHADER_PARAMETER_UAV(RWTexture2D, ToneMappedColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, SceneColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, ExposureTexture)
-	SHADER_PARAMETER_SHARED_SAMPLER(SamplerLinearClamp)
 	SHADER_PARAMETER_CBUFFER_NAMED(ToneMappingConstants, ToneMappingUniformData, ToneMappingUniformData)
 	END_SHADER_PARAMETER_STRUCT()
 };

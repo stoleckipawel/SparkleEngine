@@ -11,7 +11,6 @@ class OutputEncodingCS final : public TGlobalShader<OutputEncodingCS>
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV(RWTexture2D, EncodedColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, DisplayLinearColor)
-	SHADER_PARAMETER_SHARED_SAMPLER(SamplerLinearClamp)
 	SHADER_PARAMETER_CBUFFER_NAMED(OutputEncodingConstants, OutputEncodingUniformData, OutputEncodingUniformData)
 	END_SHADER_PARAMETER_STRUCT()
 };

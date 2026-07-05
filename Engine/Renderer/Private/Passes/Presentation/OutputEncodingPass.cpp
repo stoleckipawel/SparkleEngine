@@ -8,7 +8,6 @@
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-#include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
 OutputEncodingPass::OutputEncodingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -35,10 +34,6 @@ void OutputEncodingPass::DeclareResources(
 {
 	parameters->EncodedColor = builder.CreateUAV(encodedColor);
 	parameters->DisplayLinearColor = builder.CreateSRV(displayLinearColor);
-	parameters->SamplerLinearClamp = RhiSamplerDesc{
-	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::Linear,
-	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
 }
 
 void OutputEncodingPass::Execute(

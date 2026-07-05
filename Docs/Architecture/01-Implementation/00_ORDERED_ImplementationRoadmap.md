@@ -2225,16 +2225,23 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Each post-process pass declares inputs/outputs clearly.
-- [ ] Unused settings/CVars are removed.
-- [ ] No new post-processing framework is added.
-- [ ] Existing output quality path remains buildable.
+- [x] Each post-process pass declares inputs/outputs clearly.
+- [x] Unused settings/CVars are removed.
+- [x] No new post-processing framework is added.
+- [x] Existing output quality path remains buildable.
+
+Stage 32 completion notes:
+
+- Reference check: Cauldron and Donut keep post-processing as concrete feature passes with explicit resources. Sparkle keeps the same shape through `Exposure`, `ToneMapping`, `OutputEncoding`, and the existing upscaler provider handoff.
+- Existing-capability search found the active post-processing settings are consumed: exposure mode/metering, exposure range/adaptation, tone mapper, and output encoding all feed runtime passes or persisted renderer settings.
+- Net cleanup removed duplicated presentation sampler plumbing. Tone mapping and output encoding now load same-extent input pixels directly, so pass parameters, shader registrations, and shaders no longer declare `SamplerLinearClamp`.
+- No new post-processing framework, content-specific path, or fallback chain was added.
 
 ### Stage 33: Denoising Feature Boundary
 

@@ -9,7 +9,6 @@
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-#include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
 ToneMappingPass::ToneMappingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -38,10 +37,6 @@ void ToneMappingPass::DeclareResources(
 	parameters->ToneMappedColor = builder.CreateUAV(toneMappedColor);
 	parameters->SceneColor = builder.CreateSRV(sceneColor);
 	parameters->ExposureTexture = builder.CreateSRV(exposure);
-	parameters->SamplerLinearClamp = RhiSamplerDesc{
-	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::Linear,
-	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
 }
 
 void ToneMappingPass::Execute(

@@ -2,7 +2,6 @@
 
 Texture2D DisplayLinearColor;
 RWTexture2D<float4> EncodedColor;
-SamplerState SamplerLinearClamp;
 
 cbuffer OutputEncodingUniformData
 {
@@ -23,8 +22,7 @@ cbuffer OutputEncodingUniformData
 		return;
 	}
 
-	const float2 uv = (float2(pixelCoord) + float2(0.5f, 0.5f)) / float2(width, height);
-	const float4 displayLinear = DisplayLinearColor.SampleLevel(SamplerLinearClamp, uv, 0.0f);
+	const float4 displayLinear = DisplayLinearColor.Load(int3(pixelCoord, 0));
 	const float3 encodedColor = OutputEncoding::Encode(displayLinear.rgb, OutputColorEncoding);
 	EncodedColor[pixelCoord] = float4(encodedColor, saturate(displayLinear.a));
 }

@@ -27,5 +27,4 @@ void AddPostProcessingPasses(
 	    resources.History.PreviousExposure,
 	    resources.History.CurrentExposure,
 	    resources.Transient.Exposure);
-
 }

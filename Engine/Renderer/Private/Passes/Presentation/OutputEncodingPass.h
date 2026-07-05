@@ -17,14 +17,12 @@ struct OutputEncodingPassParameters
 {
 	ShaderRWTexture2D<void> EncodedColor;
 	ShaderTexture2D<void> DisplayLinearColor;
-	ShaderSamplerSet SamplerLinearClamp;
 	ShaderUniform<OutputEncodingUniformData> OutputEncodingConstants;
 
 	static void Describe(ShaderParameterStructBuilder<OutputEncodingPassParameters>& builder)
 	{
 		builder.RWTexture("EncodedColor", &OutputEncodingPassParameters::EncodedColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("DisplayLinearColor", &OutputEncodingPassParameters::DisplayLinearColor, ShaderStageVisibility::Compute);
-		builder.Sampler("SamplerLinearClamp", &OutputEncodingPassParameters::SamplerLinearClamp, ShaderStageVisibility::Compute);
 		builder.Uniform(
 		    "OutputEncodingConstants",
 		    &OutputEncodingPassParameters::OutputEncodingConstants,

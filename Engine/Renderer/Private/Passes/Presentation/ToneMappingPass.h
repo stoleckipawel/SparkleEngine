@@ -18,7 +18,6 @@ struct ToneMappingPassParameters
 	ShaderRWTexture2D<void> ToneMappedColor;
 	ShaderTexture2D<void> SceneColor;
 	ShaderTexture2D<void> ExposureTexture;
-	ShaderSamplerSet SamplerLinearClamp;
 	ShaderUniform<ToneMappingUniformData> ToneMappingConstants;
 
 	static void Describe(ShaderParameterStructBuilder<ToneMappingPassParameters>& builder)
@@ -26,7 +25,6 @@ struct ToneMappingPassParameters
 		builder.RWTexture("ToneMappedColor", &ToneMappingPassParameters::ToneMappedColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("SceneColor", &ToneMappingPassParameters::SceneColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("ExposureTexture", &ToneMappingPassParameters::ExposureTexture, ShaderStageVisibility::Compute);
-		builder.Sampler("SamplerLinearClamp", &ToneMappingPassParameters::SamplerLinearClamp, ShaderStageVisibility::Compute);
 		builder.Uniform("ToneMappingConstants", &ToneMappingPassParameters::ToneMappingConstants, ShaderStageVisibility::Compute);
 	}
 };
