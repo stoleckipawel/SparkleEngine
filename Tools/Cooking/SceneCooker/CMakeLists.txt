@@ -23,6 +23,7 @@ target_include_directories(SceneCooker
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         ${CMAKE_SOURCE_DIR}/Engine
+        ${CMAKE_SOURCE_DIR}/Engine/GameFramework/Private
         ${CMAKE_SOURCE_DIR}/Engine/Core/Public/Diagnostics
 )
 

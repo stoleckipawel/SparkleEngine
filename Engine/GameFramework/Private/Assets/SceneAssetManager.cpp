@@ -10,6 +10,12 @@
 
 namespace Assets
 {
+	SceneAssetManager::SceneAssetManager() : m_sceneAssetRegistry(std::make_unique<SceneAssetRegistry>())
+	{
+	}
+
+	SceneAssetManager::~SceneAssetManager() noexcept = default;
+
 	SceneAssetLoadResult SceneAssetManager::LoadSceneAsset(const SceneAssetId& sceneAssetId)
 	{
 		SceneAssetLoadResult result;
@@ -62,7 +68,7 @@ namespace Assets
 			return true;
 		}
 
-		if (!m_sceneAssetRegistry.Load(errorMessage))
+		if (!m_sceneAssetRegistry->Load(errorMessage))
 		{
 			errorMessage =
 			    std::format("Failed to load scene asset registry from '{}' - {}", Filesystem::GetSceneAssetRegistryPath().string(), errorMessage);
@@ -85,7 +91,7 @@ namespace Assets
 			return true;
 		}
 
-		const auto manifestRelativePath = m_sceneAssetRegistry.Resolve(sceneAssetId.value);
+		const auto manifestRelativePath = m_sceneAssetRegistry->Resolve(sceneAssetId.value);
 		if (!manifestRelativePath)
 		{
 			errorMessage = std::format("Scene asset id '{}' is not registered in the cooked scene asset registry", sceneAssetId.value);

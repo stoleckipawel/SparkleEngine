@@ -2402,9 +2402,13 @@ Prompt:
 
 Acceptance:
 
-General acceptance for this stage:
+Universal acceptance for this stage:
 
-- [x] Universal engineering gate is satisfied.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 - [x] Cleanup-after-cleanup scan is run for GameFramework and any touched Core/Renderer boundary files.
 
 Stage-specific acceptance:
@@ -2419,8 +2423,10 @@ Stage 37 closure notes:
 - Public `Engine/GameFramework/Public/Level/LevelRegistry.h` was removed; `LevelRegistry` is now private under `Engine/GameFramework/Private/Level`.
 - `LevelManager` remains the high-level public level API; level change events remain public, while registry discovery/catalog ownership is private.
 - No-value registry wrappers were removed after the initial cleanup: `GetAllLevels`, `GetLevelCount`, and `GetDefaultLevel` are gone; `GetLevelNames` owns sorted name enumeration without exposing the registry map.
+- Public `Engine/GameFramework/Public/Assets/SceneAssetRegistry.h` was removed; `SceneAssetRegistry` is now private under `Engine/GameFramework/Private/Assets`, and `SceneAssetManager` hides it behind the high-level asset-load API.
+- The scene cooker updates the registry through a private GameFramework include path declared in `Tools/Cooking/SceneCooker/CMakeLists.txt`, because registry persistence is a tool/runtime implementation detail, not a public user concept.
 - Multi-level behavior remains catalog-driven, and no project, level, asset, content-pack, or sample name was hardcoded in GameFramework code.
-- Verification: `cmake --build build --target SparkleGameFramework --config DevelopmentEditor` passed.
+- Verification: `cmake --build build --target SparkleGameFramework --config DevelopmentEditor`, `cmake --build build --target SceneCooker --config DevelopmentEditor`, `cmake --build build --target AssetCooker --config DevelopmentEditor`, and `cmake --build build --target SparkleApplication --config DevelopmentEditor` passed.
 
 ### Stage 38: Import/Cooker Public Surface Cleanup
 

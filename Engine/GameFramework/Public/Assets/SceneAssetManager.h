@@ -2,19 +2,19 @@
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/Assets/SceneAssetPayload.h"
-#include "GameFramework/Public/Assets/SceneAssetRegistry.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Level/LevelDesc.h"
 
 #include <cstdint>
-#include <filesystem>
-#include <optional>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
 
 namespace Assets
 {
+	class SceneAssetRegistry;
+
 	struct SPARKLE_ENGINE_API SceneAssetLoadResult
 	{
 		SceneAssetPayload sceneAssetPayload;
@@ -26,8 +26,8 @@ namespace Assets
 	class SPARKLE_ENGINE_API SceneAssetManager final
 	{
 	  public:
-		SceneAssetManager() noexcept = default;
-		~SceneAssetManager() noexcept = default;
+		SceneAssetManager();
+		~SceneAssetManager() noexcept;
 
 		SceneAssetManager(const SceneAssetManager&) = delete;
 		SceneAssetManager& operator=(const SceneAssetManager&) = delete;
@@ -46,7 +46,7 @@ namespace Assets
 		    std::uint32_t& materialBaseIndex,
 		    std::string& errorMessage);
 
-		SceneAssetRegistry m_sceneAssetRegistry;
+		std::unique_ptr<SceneAssetRegistry> m_sceneAssetRegistry;
 		bool m_sceneAssetRegistryLoaded = false;
 		std::vector<std::string> m_loadedSceneAssetIds;
 	};
