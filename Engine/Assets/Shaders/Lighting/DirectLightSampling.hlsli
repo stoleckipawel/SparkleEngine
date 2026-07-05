@@ -306,27 +306,6 @@ namespace DirectLightSampling
 		return sample;
 	}
 
-	float4 PackLightCandidate(LightCandidate candidate)
-	{
-		return IsValid(candidate)
-		           ? float4(float(candidate.Light.Type), float(candidate.Light.Index), candidate.SelectionPdf, candidate.Valid)
-		           : 0.0f.xxxx;
-	}
-
-	LightCandidate UnpackLightCandidate(float4 packedCandidate)
-	{
-		LightCandidate candidate;
-		candidate.Light.Type = (uint)(packedCandidate.x + 0.5f);
-		candidate.Light.Index = (uint)(packedCandidate.y + 0.5f);
-		candidate.SelectionPdf = packedCandidate.z;
-		candidate.Valid = packedCandidate.w;
-		if (IsValid(candidate))
-		{
-			return candidate;
-		}
-
-		return InvalidLightCandidate();
-	}
 }
 
 #endif

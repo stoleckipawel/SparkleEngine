@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/DirectShadowSignalPass.h"
 
-#include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Lighting/ShadowVisibility.h"

@@ -6,7 +6,6 @@
 #include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
-#include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/Bindings/LightingPassBinding.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"

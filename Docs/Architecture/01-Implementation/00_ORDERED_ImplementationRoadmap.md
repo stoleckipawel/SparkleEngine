@@ -2195,16 +2195,23 @@ Acceptance:
 
 Universal acceptance for this stage:
 
-- [ ] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
-- [ ] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
-- [ ] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
-- [ ] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
-- [ ] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
+- [x] Existing-capability search is completed before adding code; prefer reuse, deletion, or replacement over new code.
+- [x] Added code is offset by removed or simplified code in the same batch, or the batch records why net code reduction is impossible and where the next removal occurs.
+- [x] No duplicate responsibility is introduced; if a similar capability exists, the older or less-owned path is removed or merged.
+- [x] Real code does not hardcode project, level, asset, content-pack, or sample names; content-specific names stay in catalog, config, or content data.
+- [x] No fallback chain is added; missing required data fails clearly at the owning boundary, and optional data is represented by explicit availability metadata.
 
-- [ ] Direct lighting is not described as SDK-equivalent unless SDK is integrated.
-- [ ] Light buffers, GBuffer addressing, TLAS, material model, and shader scheduling remain Sparkle-owned.
-- [ ] Unused debug views or report outputs are removed.
-- [ ] Shader/resource ownership is obvious.
+- [x] Direct lighting is not described as SDK-equivalent unless SDK is integrated.
+- [x] Light buffers, GBuffer addressing, TLAS, material model, and shader scheduling remain Sparkle-owned.
+- [x] Unused debug views or report outputs are removed.
+- [x] Shader/resource ownership is obvious.
+
+Stage 31 completion notes:
+
+- Reference check: RTXDI is treated as an external SDK/runtime reference, not as an implied Sparkle implementation. SHARC remains a GI/path-tracing reference, not a direct-lighting dependency.
+- Code search found no RTXDI/SHARC library calls in the direct-lighting path. Sparkle owns light selection, reservoir packing, GBuffer loading, shadow signal consumption, and final direct-light accumulation through `Lighting/DirectLightReservoir.hlsli`, `Lighting/DirectLightSampling.hlsli`, `Passes/Deferred/DirectLightReservoir*.hlsl`, and `Passes/Deferred/DirectLighting.hlsl`.
+- Net cleanup removed unused candidate pack/unpack helpers from `DirectLightSampling.hlsli` and stale diagnostics includes from the direct reservoir, direct shadow signal, and direct lighting pass implementations.
+- Editor/debug buffer visualization of direct diffuse/specular/subsurface remains because it is a consumed inspection surface, not an unowned report artifact.
 
 ### Stage 32: Post-Processing Pass Ownership
 
