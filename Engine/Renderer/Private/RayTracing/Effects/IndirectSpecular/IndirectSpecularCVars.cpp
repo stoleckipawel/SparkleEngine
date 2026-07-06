@@ -3,7 +3,7 @@
 
 ConsoleVariable<bool> CVarIndirectSpecularEnabled(
     "r.RayTracing.Reflections.Enabled",
-    false,
+    true,
     "Enable full-resolution ray-traced indirect specular.");
 ConsoleVariable<IndirectSpecularDebugMode> CVarIndirectSpecularDebugMode(
     "r.RayTracing.Reflections.DebugMode",

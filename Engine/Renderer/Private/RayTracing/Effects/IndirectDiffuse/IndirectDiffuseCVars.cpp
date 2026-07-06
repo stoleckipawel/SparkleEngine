@@ -3,7 +3,7 @@
 
 ConsoleVariable<bool> CVarIndirectDiffuseEnabled(
     "r.RayTracing.IndirectDiffuse.Enabled",
-    false,
+    true,
     "Enable full-resolution ray-traced indirect diffuse.");
 ConsoleVariable<IndirectDiffuseDebugMode> CVarIndirectDiffuseDebugMode(
     "r.RayTracing.IndirectDiffuse.DebugMode",
