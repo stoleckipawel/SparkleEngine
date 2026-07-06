@@ -3,6 +3,8 @@
 
 #include "Frame/Lighting/IndirectDiffuse.h"
 #include "Frame/Lighting/IndirectSpecular.h"
+#include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
+#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
 
 void AddIndirectLightingPasses(
     FrameGraphBuilder& builder,
@@ -10,6 +12,13 @@ void AddIndirectLightingPasses(
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas)
 {
-	AddIndirectDiffusePass(builder, lighting, gbuffer, sceneTlas);
-	AddIndirectSpecularPass(builder, lighting, gbuffer, sceneTlas);
+	if (BuildIndirectDiffuseSettingsFromCVars().Enabled)
+	{
+		AddIndirectDiffusePass(builder, lighting, gbuffer, sceneTlas);
+	}
+
+	if (BuildIndirectSpecularSettingsFromCVars().Enabled)
+	{
+		AddIndirectSpecularPass(builder, lighting, gbuffer, sceneTlas);
+	}
 }

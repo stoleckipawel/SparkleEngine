@@ -19,14 +19,7 @@ namespace
 		    lighting.DirectSubsurface,
 		    lighting.IndirectDiffuse,
 		    lighting.IndirectSpecular,
-		    lighting.IndirectSubsurface,
-		    lighting.IndirectDiffuseDemodulatedRadiance,
-		    lighting.IndirectSpecularDemodulatedRadiance,
-		    lighting.IndirectDiffuseAlbedo,
-		    lighting.IndirectSpecularAlbedo,
-		    lighting.IndirectMaterialGuide,
-		    lighting.IndirectDiffuseSampleGuide,
-		    lighting.IndirectSpecularSampleGuide};
+		    lighting.IndirectSubsurface};
 	}
 }
 
@@ -43,19 +36,6 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 		    resourceBuilder.Write(lighting.IndirectDiffuse, ResourceUsage::RenderTarget, "IndirectDiffuse");
 		    resourceBuilder.Write(lighting.IndirectSpecular, ResourceUsage::RenderTarget, "IndirectSpecular");
 		    resourceBuilder.Write(lighting.IndirectSubsurface, ResourceUsage::RenderTarget, "IndirectSubsurface");
-		    resourceBuilder.Write(
-		        lighting.IndirectDiffuseDemodulatedRadiance,
-		        ResourceUsage::RenderTarget,
-		        "IndirectDiffuseDemodulatedRadiance");
-		    resourceBuilder.Write(
-		        lighting.IndirectSpecularDemodulatedRadiance,
-		        ResourceUsage::RenderTarget,
-		        "IndirectSpecularDemodulatedRadiance");
-		    resourceBuilder.Write(lighting.IndirectDiffuseAlbedo, ResourceUsage::RenderTarget, "IndirectDiffuseAlbedo");
-		    resourceBuilder.Write(lighting.IndirectSpecularAlbedo, ResourceUsage::RenderTarget, "IndirectSpecularAlbedo");
-		    resourceBuilder.Write(lighting.IndirectMaterialGuide, ResourceUsage::RenderTarget, "IndirectMaterialGuide");
-		    resourceBuilder.Write(lighting.IndirectDiffuseSampleGuide, ResourceUsage::RenderTarget, "IndirectDiffuseSampleGuide");
-		    resourceBuilder.Write(lighting.IndirectSpecularSampleGuide, ResourceUsage::RenderTarget, "IndirectSpecularSampleGuide");
 	    },
 	    [lighting](PassExecutionContext& context)
 	    {

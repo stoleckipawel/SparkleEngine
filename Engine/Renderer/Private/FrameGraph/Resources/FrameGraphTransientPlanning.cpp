@@ -26,6 +26,22 @@ namespace
 		return false;
 	}
 
+	bool RequiresRenderTarget(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
+	{
+		for (const FrameGraphPassNode& passRecord : plan.passes)
+		{
+			for (const PassResourceDeclaration& declaration : passRecord.declarations)
+			{
+				if (declaration.handle == handle && declaration.usage == ResourceUsage::RenderTarget)
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	RhiBufferResourceDesc BuildTransientBufferDesc(const FrameGraphBufferDesc& desc, bool requiresUnorderedAccess) noexcept
 	{
 		return RhiBufferResourceDesc{
@@ -37,6 +53,7 @@ namespace
 	RhiTextureResourceDesc BuildTransientResourceDesc(
 	    const FrameGraphTextureDesc& desc,
 	    FrameGraphResourceKind kind,
+	    bool requiresRenderTarget,
 	    bool requiresUnorderedAccess) noexcept
 	{
 		RhiTextureResourceDesc resourceDesc{};
@@ -44,7 +61,7 @@ namespace
 		resourceDesc.Height = desc.height;
 		resourceDesc.Format = desc.format;
 		resourceDesc.MipLevels = 1;
-		resourceDesc.AllowRenderTarget = kind == FrameGraphResourceKind::ColorRenderTarget;
+		resourceDesc.AllowRenderTarget = kind == FrameGraphResourceKind::ColorRenderTarget && requiresRenderTarget;
 		resourceDesc.AllowDepthStencil = kind == FrameGraphResourceKind::DepthStencil;
 		resourceDesc.AllowUnorderedAccess = requiresUnorderedAccess;
 		return resourceDesc;
@@ -100,12 +117,17 @@ void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const n
 		}
 
 		const bool requiresUnorderedAccess = RequiresUnorderedAccess(plan, transientResource.handle);
+		const bool requiresRenderTarget = RequiresRenderTarget(plan, transientResource.handle);
 		const bool isBuffer = resourceMetadata.resourceClass == FrameGraphResourceClass::Buffer;
 		const RhiBufferResourceDesc bufferResourceDesc =
 		    isBuffer ? BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess) : RhiBufferResourceDesc{};
 		const RhiTextureResourceDesc textureResourceDesc =
 		    isBuffer ? RhiTextureResourceDesc{}
-		             : BuildTransientResourceDesc(transientResource.textureDesc, resourceMetadata.kind, requiresUnorderedAccess);
+		             : BuildTransientResourceDesc(
+		                   transientResource.textureDesc,
+		                   resourceMetadata.kind,
+		                   requiresRenderTarget,
+		                   requiresUnorderedAccess);
 		const RhiResourceAllocationInfo allocationInfo = isBuffer
 		                                                     ? m_renderHardwareInterface->GetResourceService().GetBufferAllocationInfo(bufferResourceDesc)
 		                                                     : m_renderHardwareInterface->GetResourceService().GetTextureAllocationInfo(textureResourceDesc);

@@ -235,15 +235,6 @@ void UI::InitializeDefaultPanels()
 			    m_editorConsoleSystem->SubmitLine("RecompileShaders " + packageId);
 		    }
 	    });
-	if (m_window != nullptr && m_viewportPanel)
-	{
-		const RenderViewportExtent initialExtent{
-		    static_cast<std::uint32_t>(
-		        (std::max) (1.0f, static_cast<float>(m_window->GetWidth()) - SceneOutlinerWidth - SceneInspectorWidth)),
-		    (std::max) (1u, m_window->GetHeight())};
-		m_viewportPanel->SetRequestedExtent(initialExtent);
-	}
-
 	if (m_gameScene != nullptr)
 	{
 		m_sceneSelection = SceneObjectSelection::Camera();

@@ -21,6 +21,7 @@
 #include "RayReconstruction/RayReconstructionFramePass.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
+#include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -252,6 +253,16 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 void FramePipeline::RecordFrame() noexcept
 {
 	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
+	const IndirectDiffuseSettings indirectDiffuseSettings = BuildIndirectDiffuseSettingsFromCVars();
+	const IndirectSpecularSettings indirectSpecularSettings = BuildIndirectSpecularSettingsFromCVars();
+	const RayTracedShadowSettings* shadowSettings = m_systems->GetRayTracedShadowSettings();
+	const bool rayTracingSceneRequired =
+	    m_renderPath == FrameRenderPath::PathTracedReference ||
+	    (shadowSettings != nullptr && shadowSettings->Enabled) ||
+	    indirectDiffuseSettings.Enabled ||
+	    indirectSpecularSettings.Enabled;
+	RenderRayTracingScene* activeRayTracingScene =
+	    rayTracingSceneRequired ? m_systems->GetRenderRayTracingScene() : nullptr;
 	std::string temporalResetReason;
 	SceneRenderStateCoordinator* sceneRenderStateCoordinator = m_systems->GetSceneRenderStateCoordinator();
 	if (sceneRenderStateCoordinator != nullptr && sceneRenderStateCoordinator->ConsumeTemporalHistoryResetRequest(temporalResetReason))
@@ -271,7 +282,7 @@ void FramePipeline::RecordFrame() noexcept
 		        m_systems->GetRenderCamera(),
 		        m_frameGraphSceneExtent,
 		        m_systems->GetRenderSceneDataBuilder(),
-		        m_systems->GetRenderRayTracingScene(),
+		        activeRayTracingScene,
 		        m_systems->GetPerViewDataBuilder(),
 		        m_systems->GetTemporalDataBuilder()));
 	}();
@@ -308,9 +319,9 @@ void FramePipeline::RecordFrame() noexcept
 
 	if (m_frameGraph != nullptr && m_frameResources.SceneTlas.IsValid())
 	{
-		if (RenderRayTracingScene* renderRayTracingScene = m_systems->GetRenderRayTracingScene())
+		if (activeRayTracingScene != nullptr)
 		{
-			frame.rayTracingScene = renderRayTracingScene->Prepare(frame.sceneData);
+			frame.rayTracingScene = activeRayTracingScene->Prepare(frame.sceneData);
 			if (frame.rayTracingScene.HasBoundTlas())
 			{
 				m_frameGraph->BindPersistentAccelerationStructure(
@@ -342,14 +353,10 @@ void FramePipeline::RecordFrame() noexcept
 	}();
 	RenderCommandList& commandList = m_systems->GetBackend().GetCurrentGraphicsCommandList();
 	RenderCommandContext cmd(commandList);
-	const IndirectDiffuseSettings indirectDiffuseSettings = BuildIndirectDiffuseSettingsFromCVars();
-	const IndirectSpecularSettings indirectSpecularSettings = BuildIndirectSpecularSettingsFromCVars();
 	const RenderRayTracingPassServices rayTracingPassServices{
-	    .Scene = m_systems->GetRenderRayTracingScene(),
-	    .CapabilityReport = m_systems->GetRenderRayTracingScene() != nullptr
-	                            ? &m_systems->GetRenderRayTracingScene()->GetCapabilities()
-	                            : nullptr,
-	    .ShadowSettings = m_systems->GetRayTracedShadowSettings(),
+	    .Scene = activeRayTracingScene,
+	    .CapabilityReport = activeRayTracingScene != nullptr ? &activeRayTracingScene->GetCapabilities() : nullptr,
+	    .ShadowSettings = shadowSettings,
 	    .IndirectDiffuseSettings = &indirectDiffuseSettings,
 	    .IndirectSpecularSettings = &indirectSpecularSettings};
 	const RendererImageProviderPassServices imageProviderPassServices = m_systems->GetImageProviders().BuildPassServices();

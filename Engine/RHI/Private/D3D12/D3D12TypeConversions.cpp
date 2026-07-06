@@ -185,7 +185,7 @@ D3D12_RESOURCE_DESC D3D12TypeConversions::BuildTextureResourceDesc(const RhiText
 {
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+	resourceDesc.Alignment = 0;
 	resourceDesc.Width = static_cast<UINT64>(desc.Width);
 	resourceDesc.Height = desc.Height;
 	resourceDesc.DepthOrArraySize = 1;
@@ -214,7 +214,7 @@ D3D12_RESOURCE_DESC D3D12TypeConversions::BuildBufferResourceDesc(const RhiBuffe
 {
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+	resourceDesc.Alignment = 0;
 	resourceDesc.Width = desc.SizeInBytes;
 	resourceDesc.Height = 1;
 	resourceDesc.DepthOrArraySize = 1;

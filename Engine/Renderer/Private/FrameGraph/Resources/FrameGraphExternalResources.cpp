@@ -29,13 +29,13 @@ namespace
 		        IsExternalFrameGraphResource(metadata.ownership) ? "External" : "Internal"));
 	}
 
-	bool RequiresUnorderedAccessView(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
+	bool RequiresUsage(const FrameGraphPlan& plan, FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
 	{
 		for (const FrameGraphPassNode& passRecord : plan.passes)
 		{
 			for (const PassResourceDeclaration& declaration : passRecord.declarations)
 			{
-				if (declaration.handle == handle && UsesUnorderedAccess(declaration.usage))
+				if (declaration.handle == handle && declaration.usage == usage)
 				{
 					return true;
 				}
@@ -43,6 +43,11 @@ namespace
 		}
 
 		return false;
+	}
+
+	bool RequiresUnorderedAccessView(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
+	{
+		return RequiresUsage(plan, handle, ResourceUsage::UnorderedAccess);
 	}
 }
 
@@ -71,13 +76,13 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 
 		if (metadata.kind == FrameGraphResourceKind::ColorRenderTarget)
 		{
-			if (!access.renderTargetView)
+			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::RenderTarget) && !access.renderTargetView)
 			{
 				access.renderTargetView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::RenderTarget(access.resource, metadata.textureDesc.format));
 			}
 
-			if (!access.shaderResourceView)
+			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
@@ -107,7 +112,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		}
 		else if (metadata.kind == FrameGraphResourceKind::Buffer)
 		{
-			if (!access.shaderResourceView)
+			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(RhiResourceViewDesc::BufferShaderResource(
 				    access.resource,

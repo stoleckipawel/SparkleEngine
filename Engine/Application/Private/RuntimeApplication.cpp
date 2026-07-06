@@ -115,7 +115,7 @@ RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 		return RuntimeApplicationFrameResult::Exit;
 	}
 
-	if (m_window->IsMinimized())
+	if (m_window->IsMinimized() || !m_window->HasValidSize())
 	{
 		m_window->WaitForEvent();
 		return RuntimeApplicationFrameResult::SkipRender;

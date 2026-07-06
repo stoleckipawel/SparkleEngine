@@ -62,7 +62,6 @@ void FrameGraph::Execute(
 		EmitTransientAliasingBarriers(cmd, passRecord.passName, passRecord.transientAliasingBarriers);
 		graphDiagnostics.InsertPassResourceBarrierMarker(passRecord);
 		EmitCompiledBarriers(cmd, passRecord.passName, passRecord.compiledBarriers);
-		InitializeTransientColorUavFirstUses(cmd, plan, passRecord);
 		PassExecutionDiagnostics passDiagnostics(
 		    frameDiagnostics,
 		    cmd,
