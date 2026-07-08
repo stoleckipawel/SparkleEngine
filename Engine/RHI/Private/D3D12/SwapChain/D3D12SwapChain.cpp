@@ -93,6 +93,11 @@ void D3D12SwapChain::Resize()
 
 bool D3D12SwapChain::UpgradeNativeInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept
 {
+	if (m_nativeInterfaceUpgraded)
+	{
+		return m_swapChain != nullptr;
+	}
+
 	if (callback == nullptr || m_swapChain == nullptr)
 	{
 		return false;
@@ -111,6 +116,7 @@ bool D3D12SwapChain::UpgradeNativeInterface(RhiNativeInterfaceUpgradeCallback ca
 	}
 
 	m_swapChain = std::move(upgradedSwapChain);
+	m_nativeInterfaceUpgraded = true;
 	return true;
 }
 

@@ -214,7 +214,8 @@ struct FrameGraphDependencies
 {
 	RenderHardwareInterface& renderHardwareInterface;
 	Window& window;
-	RenderViewportExtent sceneExtent;
+	RenderViewportExtent renderExtent;
+	RenderViewportExtent outputExtent;
 	bool presentSceneToBackBuffer = true;
 };
 

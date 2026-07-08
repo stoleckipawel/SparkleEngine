@@ -5,6 +5,7 @@
 #include "Renderer/Public/Settings/EngineRenderingDisplayTypes.h"
 #include "Renderer/Public/Settings/EngineRenderingRayReconstructionTypes.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
+#include "Renderer/Public/Settings/EngineRenderingUpscalingTypes.h"
 #include "RendererAPI.h"
 
 #include <cstdint>
@@ -30,8 +31,9 @@ struct EngineRenderingSettingsState final
 	std::uint32_t MaxPointLights = 512;
 	std::uint32_t MaxSpotLights = 512;
 	std::uint32_t MaxRectLights = 128;
+	EngineUpscalerProvider UpscalerProvider = EngineUpscalerProvider::NvidiaDlss;
+	EngineUpscalerQualityMode UpscalerQualityMode = EngineUpscalerQualityMode::NativeAA;
 	EngineRayReconstructionMode RayReconstructionMode = EngineRayReconstructionMode::Off;
-	EngineRayReconstructionQualityMode RayReconstructionQualityMode = EngineRayReconstructionQualityMode::Quality;
 	bool MeshAutoBatching = true;
 	bool RefitTlas = true;
 	bool PtlasActive = false;
@@ -66,8 +68,9 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigB
 	void SetMaxPointLights(std::uint32_t count);
 	void SetMaxSpotLights(std::uint32_t count);
 	void SetMaxRectLights(std::uint32_t count);
+	void SetUpscalerProvider(EngineUpscalerProvider provider);
+	void SetUpscalerQualityMode(EngineUpscalerQualityMode mode);
 	void SetRayReconstructionMode(EngineRayReconstructionMode mode);
-	void SetRayReconstructionQualityMode(EngineRayReconstructionQualityMode mode);
 	void SetMeshAutoBatching(bool enabled);
 	void SetRefitTlas(bool enabled);
 	void SetPtlasActive(bool active);

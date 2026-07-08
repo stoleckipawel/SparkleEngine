@@ -13,6 +13,8 @@
 namespace
 {
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
+	constexpr std::uint32_t kDlssViewportId = 1u;
+
 	bool ExtentsMatch(RenderViewportExtent lhs, RenderViewportExtent rhs) noexcept
 	{
 		return lhs.Width == rhs.Width && lhs.Height == rhs.Height;
@@ -49,24 +51,16 @@ namespace
 				return false;
 			}
 
-			const sl::Feature features[] = {sl::kFeatureDLSS};
-			sl::Preferences preferences{};
-			FillStreamlinePreferences(
-			    preferences,
-			    features,
-			    static_cast<std::uint32_t>(std::size(features)),
-			    backend.UsesVulkan ? sl::RenderAPI::eVulkan : sl::RenderAPI::eD3D12);
-
-			sl::Result result = slInit(preferences, sl::kSDKVersion);
-			if (result != sl::Result::eOk)
+			const SharedStreamlineRuntimeSession streamlineSession = AcquireSharedStreamlineRuntime(backend, desc.NativeInterop);
+			if (!streamlineSession.Succeeded)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
 				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
-				m_diagnostics.FailureReason = FormatStreamlineFailure("slInit", result);
+				m_diagnostics.FailureReason = streamlineSession.FailureReason;
 				m_diagnostics.FeatureMatrix = CreateStreamlineDlssFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
 			}
-			m_initialized = true;
+			m_streamlineSessionAcquired = true;
 
 			if (backend.UsesD3D12 && desc.PresentationBridge &&
 			    !desc.PresentationBridge.UpgradePresentationInterface(
@@ -81,18 +75,8 @@ namespace
 				return false;
 			}
 
-			result = SetStreamlineNativeDevice(backend, desc.NativeInterop);
-			if (result != sl::Result::eOk)
-			{
-				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
-				m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
-				m_diagnostics.FailureReason = FormatStreamlineFailure("Streamline native device setup", result);
-				m_diagnostics.FeatureMatrix = CreateStreamlineDlssFeatureMatrix(false, m_diagnostics.FailureReason);
-				return false;
-			}
-
 			const StreamlineAdapterInfo adapterInfo = BuildStreamlineAdapterInfo(backend, desc.Capabilities, desc.NativeInterop);
-			result = slIsFeatureSupported(sl::kFeatureDLSS, adapterInfo.Info);
+			sl::Result result = slIsFeatureSupported(sl::kFeatureDLSS, adapterInfo.Info);
 			if (result != sl::Result::eOk)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
@@ -102,11 +86,24 @@ namespace
 				return false;
 			}
 
-			m_viewport = sl::ViewportHandle{0u};
+			m_viewport = sl::ViewportHandle{kDlssViewportId};
 			m_diagnostics.State = EDlssProviderRuntimeState::Created;
 			m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::None;
 			m_diagnostics.FeatureMatrix = CreateStreamlineDlssFeatureMatrix(true, "DLSS Super Resolution is supported by Streamline.");
+			m_initialized = true;
 			return true;
+		}
+
+		void SetQualityMode(EUpscalerQualityMode qualityMode) override
+		{
+			if (m_qualityMode == qualityMode)
+			{
+				return;
+			}
+
+			m_qualityMode = qualityMode;
+			m_diagnostics.SelectedQualityMode = UpscalerQualityModeToString(qualityMode);
+			ResetHistory("DLSS quality mode changed");
 		}
 
 		bool SetupFrame(const UpscalerInputContract& inputContract) override
@@ -135,7 +132,7 @@ namespace
 			    ResolveFrameQualityMode(m_qualityMode, evaluation.RenderExtent, evaluation.OutputExtent);
 			m_diagnostics.SelectedQualityMode = frameQualityMode == m_qualityMode ?
 			                                        UpscalerQualityModeToString(m_qualityMode) :
-			                                        "NativeAA (forced until render extent scaling is wired)";
+			                                        "NativeAA (render extent equals output extent)";
 
 			UpscalerEvaluationResult result = EvaluateStreamlineDlssFrame(m_lastFrameContract, frameQualityMode, m_viewport, evaluation);
 			if (!result.ProducedOutput)
@@ -160,11 +157,16 @@ namespace
 
 		void Shutdown() noexcept override
 		{
-			if (m_initialized)
+			if (m_streamlineSessionAcquired)
 			{
-				(void) slShutdown();
-				m_initialized = false;
+				if (m_initialized)
+				{
+					(void) slFreeResources(sl::kFeatureDLSS, m_viewport);
+				}
+				ReleaseSharedStreamlineRuntime();
+				m_streamlineSessionAcquired = false;
 			}
+			m_initialized = false;
 			m_diagnostics.State = EDlssProviderRuntimeState::NotSelected;
 		}
 
@@ -173,8 +175,9 @@ namespace
 	  private:
 		StreamlineDlssRuntimeDiagnostics m_diagnostics = {};
 		UpscalerInputContract m_lastFrameContract = {};
-		sl::ViewportHandle m_viewport{0u};
+		sl::ViewportHandle m_viewport{kDlssViewportId};
 		EUpscalerQualityMode m_qualityMode = EUpscalerQualityMode::Quality;
+		bool m_streamlineSessionAcquired = false;
 		bool m_initialized = false;
 	};
 #endif
@@ -191,6 +194,11 @@ namespace
 			m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 			m_diagnostics.FailureReason = kStreamlineDlssNotIntegratedReason;
 			return false;
+		}
+
+		void SetQualityMode(EUpscalerQualityMode qualityMode) override
+		{
+			m_diagnostics.SelectedQualityMode = UpscalerQualityModeToString(qualityMode);
 		}
 
 		bool SetupFrame(const UpscalerInputContract& inputContract) override

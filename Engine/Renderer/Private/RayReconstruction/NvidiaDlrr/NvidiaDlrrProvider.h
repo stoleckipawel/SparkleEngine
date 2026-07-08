@@ -1,16 +1,16 @@
 #pragma once
 
-#include "RayReconstruction/NvidiaDlss/StreamlineDlssRayReconstructionRuntime.h"
+#include "RayReconstruction/NvidiaDlrr/StreamlineDlrrRuntime.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
 
 #include <memory>
 
-class NvidiaDlssRayReconstructionProvider final : public IRayReconstructionProvider
+class NvidiaDlrrProvider final : public IRayReconstructionProvider
 {
   public:
-	ERayReconstructionProviderKind GetKind() const noexcept override { return ERayReconstructionProviderKind::NvidiaDlssRayReconstruction; }
-	std::string_view GetName() const noexcept override { return "NVIDIA DLSS Ray Reconstruction"; }
+	ERayReconstructionProviderKind GetKind() const noexcept override { return ERayReconstructionProviderKind::NvidiaDlrr; }
+	std::string_view GetName() const noexcept override { return "NVIDIA DLRR"; }
 	RayReconstructionProviderCapabilities QueryCapabilities(const RhiCapabilities& capabilities) const override;
 	bool Initialize(
 	    const RhiCapabilities& capabilities,
@@ -26,7 +26,6 @@ class NvidiaDlssRayReconstructionProvider final : public IRayReconstructionProvi
   private:
 	RayReconstructionProviderCapabilities m_diagnostics = {};
 	RayReconstructionInputContract m_lastInputContract = {};
-	std::unique_ptr<IStreamlineDlssRayReconstructionRuntime> m_runtime;
-	EngineRayReconstructionQualityMode m_qualityMode = EngineRayReconstructionQualityMode::Quality;
-	StreamlineDlssRayReconstructionRuntimeDiagnostics m_runtimeDiagnostics = {};
+	std::unique_ptr<IStreamlineDlrrRuntime> m_runtime;
+	StreamlineDlrrRuntimeDiagnostics m_runtimeDiagnostics = {};
 };

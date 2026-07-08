@@ -1,5 +1,5 @@
 #include "../../PCH.h"
-#include "RayReconstruction/NvidiaDlss/StreamlineDlssRayReconstructionResourceTags.h"
+#include "RayReconstruction/NvidiaDlrr/StreamlineDlrrResourceTags.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 #include "Streamline/StreamlineResourceInterop.h"
@@ -12,12 +12,11 @@ namespace
 	constexpr std::uint32_t kD3D12ResourceStateDepthRead = 0x00000020u;
 	constexpr std::uint32_t kD3D12ResourceStateNonPixelShaderResource = 0x00000040u;
 	constexpr std::uint32_t kD3D12ResourceStatePixelShaderResource = 0x00000080u;
-	constexpr std::uint32_t kD3D12ResourceStateCopySource = 0x00000800u;
 	constexpr std::uint32_t kD3D12ShaderResourceState =
 	    kD3D12ResourceStateNonPixelShaderResource | kD3D12ResourceStatePixelShaderResource;
 }
 
-sl::Result TagDlssRayReconstructionResourcesForFrame(
+sl::Result TagDlrrResourcesForFrame(
     const sl::FrameToken& frameToken,
     sl::ViewportHandle viewport,
     const RayReconstructionEvaluationDesc& evaluation) noexcept
@@ -29,7 +28,7 @@ sl::Result TagDlssRayReconstructionResourcesForFrame(
 	    evaluation.BackendApi,
 	    evaluation.NativeNoisyInputColor,
 	    evaluation.NativeNoisyInputColorView,
-	    kD3D12ResourceStateCopySource);
+	    kD3D12ShaderResourceState);
 	sl::Resource outputColor = BuildStreamlineTextureResource(
 	    evaluation.BackendApi,
 	    evaluation.NativeOutputColor,

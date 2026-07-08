@@ -21,13 +21,11 @@ void EngineRenderingRayReconstructionSettings::Capture(EngineRenderingSettingsSt
 {
 	const RayReconstructionSettings runtime = BuildRayReconstructionSettingsFromCVars();
 	state.RayReconstructionMode = runtime.Mode;
-	state.RayReconstructionQualityMode = runtime.QualityMode;
 }
 
 void EngineRenderingRayReconstructionSettings::Apply(const EngineRenderingSettingsState& state) noexcept
 {
 	SetRayReconstructionModeCVar(state.RayReconstructionMode);
-	SetRayReconstructionQualityModeCVar(state.RayReconstructionQualityMode);
 }
 
 bool EngineRenderingRayReconstructionSettings::ReadConfigValue(
@@ -40,11 +38,6 @@ bool EngineRenderingRayReconstructionSettings::ReadConfigValue(
 		state.RayReconstructionMode = ParseEnumOrDefault(value, EngineRayReconstructionMode::Off);
 		return true;
 	}
-	if (key == "RayReconstructionQualityMode")
-	{
-		state.RayReconstructionQualityMode = ParseEnumOrDefault(value, EngineRayReconstructionQualityMode::Quality);
-		return true;
-	}
 	return false;
 }
 
@@ -53,5 +46,4 @@ void EngineRenderingRayReconstructionSettings::AppendConfigValues(
     std::vector<std::pair<std::string, std::string>>& values)
 {
 	values.emplace_back("RayReconstructionMode", std::to_string(static_cast<int>(state.RayReconstructionMode)));
-	values.emplace_back("RayReconstructionQualityMode", std::to_string(static_cast<int>(state.RayReconstructionQualityMode)));
 }

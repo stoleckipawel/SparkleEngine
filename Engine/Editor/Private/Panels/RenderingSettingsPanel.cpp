@@ -4,6 +4,7 @@
 
 #include "Panels/RenderingRayReconstructionSettingsPanel.h"
 #include "Panels/RenderingSettingsPanelUi.h"
+#include "Panels/RenderingUpscalingSettingsPanel.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Style/SparkleUiPalette.h"
 
@@ -361,7 +362,8 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));
 	}
 
-	if (MatchesFilter(filterText, "Lighting", "lighting light budget directional point spot rect area") && BeginSettingsCategory("Lighting"))
+	if (MatchesFilter(filterText, "Lighting", "lighting light budget directional point spot rect area indirect diffuse specular reflection bounces") &&
+	    BeginSettingsCategory("Lighting"))
 	{
 		if (BeginSettingsTable("##RenderingLightingSettings"))
 		{
@@ -385,12 +387,27 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    "Max rect lights",
 			    settings.MaxRectLights,
 			    [this](std::uint32_t value) { m_settings->SetMaxRectLights(value); });
+			DrawUnsignedIntSliderRow(
+			    "##IndirectDiffuseBounceCount",
+			    "Indirect diffuse bounces",
+			    settings.IndirectDiffuseBounceCount,
+			    1u,
+			    8u,
+			    [this](std::uint32_t value) { m_settings->SetIndirectDiffuseBounceCount(value); });
+			DrawUnsignedIntSliderRow(
+			    "##IndirectSpecularBounceCount",
+			    "Indirect specular bounces",
+			    settings.IndirectSpecularBounceCount,
+			    1u,
+			    8u,
+			    [this](std::uint32_t value) { m_settings->SetIndirectSpecularBounceCount(value); });
 			ImGui::EndTable();
 		}
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));
 	}
 
 	DrawRayReconstructionSettingsSection(*m_settings, settings, filterText);
+	DrawUpscalingSettingsSection(*m_settings, settings, filterText);
 
 	static constexpr const char* ptlasPartitionUpdateModeLabels[] = {
 	    "Always update partition",
@@ -399,11 +416,11 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	};
 	if (MatchesFilter(
 	        filterText,
-	        "Ray Tracing",
-	        "ray tracing tlas refit ptlas active partition update mode partitions dynamic distance indirect diffuse specular reflection bounces") &&
-	    BeginSettingsCategory("Ray Tracing"))
+	        "Ray Tracing Scene",
+	        "ray tracing scene tlas refit ptlas active partition update mode partitions dynamic distance acceleration structure") &&
+	    BeginSettingsCategory("Ray Tracing Scene"))
 	{
-		if (BeginSettingsTable("##RenderingRayTracingSettings"))
+		if (BeginSettingsTable("##RenderingRayTracingSceneSettings"))
 		{
 			DrawBooleanRow(
 			    "##PtlasActive",
@@ -441,20 +458,6 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    "Mode change distance",
 			    settings.PtlasModeChangeDistance,
 			    [this](float value) { m_settings->SetPtlasModeChangeDistance(value); });
-			DrawUnsignedIntSliderRow(
-			    "##IndirectDiffuseBounceCount",
-			    "Indirect diffuse bounces",
-			    settings.IndirectDiffuseBounceCount,
-			    1u,
-			    8u,
-			    [this](std::uint32_t value) { m_settings->SetIndirectDiffuseBounceCount(value); });
-			DrawUnsignedIntSliderRow(
-			    "##IndirectSpecularBounceCount",
-			    "Indirect specular bounces",
-			    settings.IndirectSpecularBounceCount,
-			    1u,
-			    8u,
-			    [this](std::uint32_t value) { m_settings->SetIndirectSpecularBounceCount(value); });
 			ImGui::EndTable();
 		}
 	}

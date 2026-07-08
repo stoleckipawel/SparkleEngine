@@ -26,8 +26,6 @@ namespace
 		ExportTextureIfValid(builder, resources.ViewportProducts.SceneDepth, "Viewport.SceneDepth");
 		ExportTextureIfValid(builder, resources.ViewportProducts.Normals, "Viewport.Normals");
 		ExportTextureIfValid(builder, resources.ViewportProducts.MotionVectors, "Viewport.MotionVectors");
-		ExportTextureIfValid(builder, resources.UpscalerProviderInputs.ScalingOutputColor, "Upscaler.ScalingOutputColor");
-		ExportTextureIfValid(builder, resources.RayReconstructionProviderInputs.OutputColor, "RayReconstruction.OutputColor");
 	}
 }  // namespace
 
@@ -204,12 +202,13 @@ FrameGraphFactory::FrameGraphFactory(const FrameGraphDependencies& dependencies)
 FrameGraphBuildResult FrameGraphFactory::Build() const
 {
 	auto frameGraph =
-	    std::make_unique<FrameGraph>(&m_dependencies.renderHardwareInterface, &m_dependencies.window, m_dependencies.sceneExtent);
+	    std::make_unique<FrameGraph>(&m_dependencies.renderHardwareInterface, &m_dependencies.window);
 
 	FrameGraphBuilder builder(*frameGraph);
 	const FrameBuildResult frameLoop = BuildFrame(
 	    builder,
-	    m_dependencies.sceneExtent,
+	    m_dependencies.renderExtent,
+	    m_dependencies.outputExtent,
 	    m_dependencies.renderHardwareInterface.GetPresentationService().GetPresentColorFormat(),
 	    m_dependencies.presentSceneToBackBuffer);
 	ExportFrameProductRoots(builder, frameLoop.Resources);

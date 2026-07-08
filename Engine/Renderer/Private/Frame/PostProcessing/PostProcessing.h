@@ -8,5 +8,6 @@ class FrameGraphBuilder;
 
 void AddPostProcessingPasses(
     FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
+    RenderViewportExtent renderExtent,
+    RenderViewportExtent outputExtent,
     FrameAssemblyResourceLayout& resources);

@@ -114,29 +114,45 @@ bool NvidiaDlssUpscalerProvider::Initialize(
 
 void NvidiaDlssUpscalerProvider::SetupFrame(const UpscalerInputContract& inputContract)
 {
-	m_lastInputContract = inputContract;
-	m_renderExtent = inputContract.RenderExtent;
-	m_outputExtent = inputContract.OutputExtent;
-	if (ExtentsEqual(m_lastObservedRenderExtent, inputContract.RenderExtent) &&
-	    ExtentsEqual(m_lastObservedOutputExtent, inputContract.OutputExtent))
+	UpscalerInputContract frameContract = inputContract;
+	const UpscalerSettings settings = BuildUpscalerSettingsFromCVars();
+	if (settings.QualityMode != m_qualityMode)
+	{
+		m_qualityMode = settings.QualityMode;
+		m_dlssCapabilities.SelectedQualityMode = UpscalerQualityModeToString(m_qualityMode);
+		MarkSelectedDlssFeature(m_dlssCapabilities.FeatureMatrix, GetDlssFeatureForQualityMode(m_qualityMode));
+		frameContract.ResetRequested = true;
+		frameContract.HistoryInvalid = true;
+		frameContract.ResetReason = "DLSS quality mode changed";
+		if (m_runtime != nullptr)
+		{
+			m_runtime->SetQualityMode(m_qualityMode);
+		}
+	}
+
+	m_lastInputContract = frameContract;
+	m_renderExtent = frameContract.RenderExtent;
+	m_outputExtent = frameContract.OutputExtent;
+	if (ExtentsEqual(m_lastObservedRenderExtent, frameContract.RenderExtent) &&
+	    ExtentsEqual(m_lastObservedOutputExtent, frameContract.OutputExtent))
 	{
 		++m_stableExtentFrameCount;
 	}
 	else
 	{
-		m_lastObservedRenderExtent = inputContract.RenderExtent;
-		m_lastObservedOutputExtent = inputContract.OutputExtent;
+		m_lastObservedRenderExtent = frameContract.RenderExtent;
+		m_lastObservedOutputExtent = frameContract.OutputExtent;
 		m_stableExtentFrameCount = 1;
 	}
 	m_extentReadyForEvaluation = m_stableExtentFrameCount >= kStableExtentFramesBeforeDlssEvaluation;
 
 	m_dlssCapabilities.RenderExtent = m_renderExtent;
 	m_dlssCapabilities.OutputExtent = m_outputExtent;
-	m_dlssCapabilities.ResetRequested = inputContract.ResetRequested;
-	m_dlssCapabilities.ResetReason = inputContract.ResetReason;
-	m_diagnostics.ResourceContract = BuildUpscalerProviderResourceContract(inputContract);
+	m_dlssCapabilities.ResetRequested = frameContract.ResetRequested;
+	m_dlssCapabilities.ResetReason = frameContract.ResetReason;
+	m_diagnostics.ResourceContract = BuildUpscalerProviderResourceContract(frameContract);
 	m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
-	if (m_qualityMode == EUpscalerQualityMode::NativeAA && !NativeAAExtentContractValid(inputContract))
+	if (m_qualityMode == EUpscalerQualityMode::NativeAA && !NativeAAExtentContractValid(frameContract))
 	{
 		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::Failed;
 		m_dlssCapabilities.FailureDomain = EUpscalerProviderFailureDomain::InputContract;
@@ -152,7 +168,7 @@ void NvidiaDlssUpscalerProvider::SetupFrame(const UpscalerInputContract& inputCo
 
 	if (m_runtime != nullptr)
 	{
-		m_runtime->SetupFrame(inputContract);
+		m_runtime->SetupFrame(frameContract);
 		DlssCapabilityReporter::ApplyRuntimeDiagnostics(m_dlssCapabilities, m_runtime->GetDiagnostics());
 	}
 }

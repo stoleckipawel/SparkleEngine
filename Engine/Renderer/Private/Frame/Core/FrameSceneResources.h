@@ -8,6 +8,7 @@ class FrameGraphBuilder;
 
 void CreateFrameSceneResources(
     FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
+    RenderViewportExtent renderExtent,
+    RenderViewportExtent outputExtent,
     PixelFormat backBufferFormat,
     FrameAssemblyResourceLayout& resources);

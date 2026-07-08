@@ -16,7 +16,7 @@
 enum class ERayReconstructionProviderKind : std::uint8_t
 {
 	None = 0,
-	NvidiaDlssRayReconstruction = 1,
+	NvidiaDlrr = 1,
 };
 
 enum class ERayReconstructionProviderFailureDomain : std::uint8_t
@@ -41,14 +41,6 @@ struct RayReconstructionProviderCapabilities final
 	bool UsesExternalSdk = false;
 	std::string ProviderName;
 	RendererProviderRayReconstructionResourceContract ResourceContract = {};
-	std::string ResourceContractSummary;
-	std::string ExternalRuntimeVersion;
-	std::string RuntimeState;
-	std::string SelectedQualityMode;
-	RenderViewportExtent RenderExtent = {};
-	RenderViewportExtent OutputExtent = {};
-	bool ResetRequested = false;
-	std::string ResetReason;
 	std::string Reason;
 };
 

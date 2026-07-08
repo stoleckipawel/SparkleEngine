@@ -1,7 +1,7 @@
 #include "../PCH.h"
 #include "RayReconstruction/RayReconstructionSubsystem.h"
 
-#include "RayReconstruction/NvidiaDlss/NvidiaDlssRayReconstructionProvider.h"
+#include "RayReconstruction/NvidiaDlrr/NvidiaDlrrProvider.h"
 
 #include <format>
 #include <utility>
@@ -22,8 +22,6 @@ namespace
 		    .CanEvaluate = true,
 		    .UsesExternalSdk = false,
 		    .ProviderName = "Renderer frame copy",
-		    .ExternalRuntimeVersion = "none",
-		    .RuntimeState = "RendererCopy",
 		    .Reason = std::move(reason)};
 	}
 }
@@ -39,6 +37,21 @@ void RayReconstructionSubsystem::RefreshDiagnostics(IRayReconstructionProvider* 
 	{
 		m_diagnostics = provider->GetDiagnostics();
 	}
+}
+
+RayReconstructionInputContract RayReconstructionSubsystem::ConsumePendingReset(
+    const RayReconstructionInputContract& inputContract)
+{
+	RayReconstructionInputContract frameContract = inputContract;
+	if (m_pendingResetRequested)
+	{
+		frameContract.ResetRequested = true;
+		frameContract.HistoryInvalid = true;
+		frameContract.ResetReason = m_pendingResetReason;
+		m_pendingResetRequested = false;
+		m_pendingResetReason.clear();
+	}
+	return frameContract;
 }
 
 void RayReconstructionSubsystem::Initialize(
@@ -84,26 +97,22 @@ void RayReconstructionSubsystem::Initialize(
 
 void RayReconstructionSubsystem::SetupFrame(const RayReconstructionInputContract& inputContract)
 {
+	const RayReconstructionInputContract frameContract = ConsumePendingReset(inputContract);
 	m_settings = BuildRayReconstructionSettingsFromCVars();
-	m_lastInputValidation = ValidateRayReconstructionInputContract(inputContract);
+	m_lastInputValidation = ValidateRayReconstructionInputContract(frameContract);
 	if (!m_lastInputValidation.Valid)
 	{
 		m_diagnostics = BuildRendererCopyRayReconstructionCapabilities(
 		    ERendererProviderCapabilityState::RuntimeFailed,
 		    ERayReconstructionProviderFailureDomain::InputContract,
 		    std::format("Ray reconstruction input contract invalid: {}", m_lastInputValidation.Summary));
-		m_diagnostics.RenderExtent = inputContract.RenderExtent;
-		m_diagnostics.OutputExtent = inputContract.OutputExtent;
-		m_diagnostics.ResetRequested = inputContract.ResetRequested;
-		m_diagnostics.ResetReason = inputContract.ResetReason;
-		m_diagnostics.ResourceContract = BuildRayReconstructionProviderResourceContract(inputContract);
-		m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
+		m_diagnostics.ResourceContract = BuildRayReconstructionProviderResourceContract(frameContract);
 		return;
 	}
 
 	if (m_activeProvider != nullptr)
 	{
-		m_activeProvider->SetupFrame(inputContract);
+		m_activeProvider->SetupFrame(frameContract);
 		RefreshDiagnostics(m_activeProvider.get());
 		return;
 	}
@@ -112,12 +121,7 @@ void RayReconstructionSubsystem::SetupFrame(const RayReconstructionInputContract
 	    ERendererProviderCapabilityState::Enabled,
 	    ERayReconstructionProviderFailureDomain::None,
 	    "Ray reconstruction is disabled; final color is produced by the frame pass copy.");
-	m_diagnostics.RenderExtent = inputContract.RenderExtent;
-	m_diagnostics.OutputExtent = inputContract.OutputExtent;
-	m_diagnostics.ResetRequested = inputContract.ResetRequested;
-	m_diagnostics.ResetReason = inputContract.ResetReason;
-	m_diagnostics.ResourceContract = BuildRayReconstructionProviderResourceContract(inputContract);
-	m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
+	m_diagnostics.ResourceContract = BuildRayReconstructionProviderResourceContract(frameContract);
 }
 
 RayReconstructionEvaluationResult RayReconstructionSubsystem::Evaluate(const RayReconstructionEvaluationDesc& evaluation)
@@ -152,12 +156,15 @@ void RayReconstructionSubsystem::OnResize(RenderViewportExtent renderExtent, Ren
 		return;
 	}
 
-	m_diagnostics.RenderExtent = renderExtent;
-	m_diagnostics.OutputExtent = outputExtent;
+	(void) renderExtent;
+	(void) outputExtent;
 }
 
 void RayReconstructionSubsystem::ResetHistory(std::string_view reason)
 {
+	m_pendingResetRequested = true;
+	m_pendingResetReason = std::string(reason);
+
 	if (m_activeProvider != nullptr)
 	{
 		m_activeProvider->ResetHistory(reason);
@@ -165,8 +172,7 @@ void RayReconstructionSubsystem::ResetHistory(std::string_view reason)
 		return;
 	}
 
-	m_diagnostics.ResetRequested = true;
-	m_diagnostics.ResetReason = std::string(reason);
+	(void) reason;
 }
 
 void RayReconstructionSubsystem::Shutdown() noexcept
@@ -187,8 +193,8 @@ std::unique_ptr<IRayReconstructionProvider> RayReconstructionSubsystem::CreatePr
 {
 	switch (mode)
 	{
-		case EngineRayReconstructionMode::NvidiaDlssRayReconstruction:
-			return std::make_unique<NvidiaDlssRayReconstructionProvider>();
+		case EngineRayReconstructionMode::NvidiaDlrr:
+			return std::make_unique<NvidiaDlrrProvider>();
 		case EngineRayReconstructionMode::Off:
 			return {};
 	}

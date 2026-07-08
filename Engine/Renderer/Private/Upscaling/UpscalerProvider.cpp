@@ -5,8 +5,8 @@ const char* UpscalerProviderKindToString(EUpscalerProviderKind kind) noexcept
 {
 	switch (kind)
 	{
-		case EUpscalerProviderKind::Passthrough:
-			return "Passthrough";
+		case EUpscalerProviderKind::Linear:
+			return "Linear";
 		case EUpscalerProviderKind::NvidiaDlss:
 			return "NvidiaDLSS";
 	}

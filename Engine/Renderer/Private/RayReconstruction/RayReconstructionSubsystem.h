@@ -6,6 +6,7 @@
 #include "RHI/Public/Interop/RhiInteropService.h"
 
 #include <memory>
+#include <string>
 
 struct RhiCapabilities;
 
@@ -35,6 +36,7 @@ class RayReconstructionSubsystem final
 
   private:
 	static std::unique_ptr<IRayReconstructionProvider> CreateProvider(EngineRayReconstructionMode mode);
+	RayReconstructionInputContract ConsumePendingReset(const RayReconstructionInputContract& inputContract);
 	void RefreshDiagnostics(IRayReconstructionProvider* provider) noexcept;
 
 	RayReconstructionSettings m_settings = {};
@@ -43,5 +45,7 @@ class RayReconstructionSubsystem final
 	RayReconstructionInputContractValidation m_lastInputValidation = {};
 	RhiNativeDeviceQueueInterop m_nativeInterop = {};
 	RayReconstructionPresentationBridge m_presentationBridge = {};
+	bool m_pendingResetRequested = false;
+	std::string m_pendingResetReason;
 	bool m_shutdown = true;
 };

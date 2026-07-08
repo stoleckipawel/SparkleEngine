@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Upscaling/UpscalerProvider.h"
 
 #include <cstdint>
@@ -21,3 +22,6 @@ struct UpscalerSettings final
 
 UpscalerSettings BuildUpscalerSettingsFromCVars() noexcept;
 const char* UpscalerQualityModeToString(EUpscalerQualityMode mode) noexcept;
+void SetUpscalerProviderCVar(EUpscalerProviderKind provider) noexcept;
+void SetUpscalerQualityModeCVar(EUpscalerQualityMode mode) noexcept;
+RenderViewportExtent ResolveUpscalerRenderExtent(RenderViewportExtent outputExtent, EUpscalerQualityMode qualityMode) noexcept;

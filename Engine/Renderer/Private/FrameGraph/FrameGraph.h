@@ -48,7 +48,7 @@ class FrameGraph
 	};
 
   public:
-	FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window, RenderViewportExtent sceneExtent);
+	FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window);
 	~FrameGraph();
 
 	FrameGraph(const FrameGraph&) = delete;
@@ -415,7 +415,6 @@ class FrameGraph
 	std::vector<RegisteredPass> m_passes;
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	Window* m_window = nullptr;
-	RenderViewportExtent m_sceneExtent = {};
 	FrameGraphResourceRegistry m_resourceRegistry;
 	mutable FrameGraphResourceStateTracker m_resourceStateTracker;
 	mutable FrameGraphResourceResolver m_resourceResolver;

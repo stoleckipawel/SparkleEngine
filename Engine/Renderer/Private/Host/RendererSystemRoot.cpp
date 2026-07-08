@@ -22,6 +22,7 @@
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
 #include "Settings/RenderDeviceBackBufferFormatResolver.h"
+#include "Streamline/StreamlineRuntimeSupport.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
@@ -35,15 +36,17 @@ RendererSystemRoot::RendererSystemRoot(Timer& timer, GameScene& gameScene, Windo
 
 RendererSystemRoot::~RendererSystemRoot() noexcept
 {
+	if (m_backend != nullptr)
+	{
+		m_backend->Flush();
+	}
+
 	if (m_imageProviders != nullptr)
 	{
 		m_imageProviders->Shutdown();
 	}
 
-	if (m_backend != nullptr)
-	{
-		m_backend->Flush();
-	}
+	ShutdownSharedStreamlineRuntime();
 }
 
 RenderHardwareInterface& RendererSystemRoot::GetRenderHardwareInterface() noexcept

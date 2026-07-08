@@ -8,6 +8,8 @@
 #include <string>
 #include <string_view>
 
+void ShutdownSharedStreamlineRuntime() noexcept;
+
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 #include <sl.h>
 
@@ -23,6 +25,12 @@ struct StreamlineAdapterInfo final
 {
 	sl::AdapterInfo Info = {};
 	std::array<std::uint8_t, 8> LuidStorage = {};
+};
+
+struct SharedStreamlineRuntimeSession final
+{
+	bool Succeeded = false;
+	std::string FailureReason;
 };
 
 bool HasStreamlineNativeAdapterLuid(const RhiAdapterIdentity& adapter) noexcept;
@@ -43,4 +51,8 @@ void FillStreamlinePreferences(
     const sl::Feature* features,
     std::uint32_t featureCount,
     sl::RenderAPI renderApi);
+SharedStreamlineRuntimeSession AcquireSharedStreamlineRuntime(
+    const StreamlineBackendContract& backend,
+    RhiNativeDeviceQueueInterop nativeInterop);
+void ReleaseSharedStreamlineRuntime() noexcept;
 #endif

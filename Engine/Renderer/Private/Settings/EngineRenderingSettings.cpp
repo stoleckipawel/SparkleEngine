@@ -9,6 +9,7 @@
 #include "Settings/EngineRenderingLightingSettings.h"
 #include "Settings/EngineRenderingRayReconstructionSettings.h"
 #include "Settings/EngineRenderingRayTracingSettings.h"
+#include "Settings/EngineRenderingUpscalingSettings.h"
 
 #include <sstream>
 #include <string>
@@ -226,6 +227,28 @@ void EngineRenderingSettingsSection::SetMaxRectLights(std::uint32_t count)
 	UpdateState(state);
 }
 
+void EngineRenderingSettingsSection::SetUpscalerProvider(EngineUpscalerProvider provider)
+{
+	EngineRenderingSettingsState state = GetState();
+	if (state.UpscalerProvider == provider)
+	{
+		return;
+	}
+	state.UpscalerProvider = provider;
+	UpdateState(state);
+}
+
+void EngineRenderingSettingsSection::SetUpscalerQualityMode(EngineUpscalerQualityMode mode)
+{
+	EngineRenderingSettingsState state = GetState();
+	if (state.UpscalerQualityMode == mode)
+	{
+		return;
+	}
+	state.UpscalerQualityMode = mode;
+	UpdateState(state);
+}
+
 void EngineRenderingSettingsSection::SetRayReconstructionMode(EngineRayReconstructionMode mode)
 {
 	EngineRenderingSettingsState state = GetState();
@@ -234,17 +257,6 @@ void EngineRenderingSettingsSection::SetRayReconstructionMode(EngineRayReconstru
 		return;
 	}
 	state.RayReconstructionMode = mode;
-	UpdateState(state);
-}
-
-void EngineRenderingSettingsSection::SetRayReconstructionQualityMode(EngineRayReconstructionQualityMode mode)
-{
-	EngineRenderingSettingsState state = GetState();
-	if (state.RayReconstructionQualityMode == mode)
-	{
-		return;
-	}
-	state.RayReconstructionQualityMode = mode;
 	UpdateState(state);
 }
 
@@ -358,6 +370,7 @@ EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState
 	EngineRenderingDisplaySettings::Capture(state);
 	EngineRenderingLightingSettings::Capture(state);
 	EngineRenderingGeometrySettings::Capture(state);
+	EngineRenderingUpscalingSettings::Capture(state);
 	EngineRenderingRayReconstructionSettings::Capture(state);
 	EngineRenderingRayTracingSettings::Capture(state);
 	return state;
@@ -368,6 +381,7 @@ void EngineRenderingSettingsSection::ApplyStateToRuntime(const EngineRenderingSe
 	EngineRenderingDisplaySettings::Apply(state);
 	EngineRenderingLightingSettings::Apply(state);
 	EngineRenderingGeometrySettings::Apply(state);
+	EngineRenderingUpscalingSettings::Apply(state);
 	EngineRenderingRayReconstructionSettings::Apply(state);
 	EngineRenderingRayTracingSettings::Apply(state);
 }
@@ -380,6 +394,7 @@ void EngineRenderingSettingsSection::ReadConfigValue(
 	if (EngineRenderingDisplaySettings::ReadConfigValue(state, key, value) ||
 	    EngineRenderingLightingSettings::ReadConfigValue(state, key, value) ||
 	    EngineRenderingGeometrySettings::ReadConfigValue(state, key, value) ||
+	    EngineRenderingUpscalingSettings::ReadConfigValue(state, key, value) ||
 	    EngineRenderingRayReconstructionSettings::ReadConfigValue(state, key, value) ||
 	    EngineRenderingRayTracingSettings::ReadConfigValue(state, key, value))
 	{
@@ -391,10 +406,11 @@ std::vector<std::pair<std::string, std::string>> EngineRenderingSettingsSection:
     const EngineRenderingSettingsState& state) const
 {
 	std::vector<std::pair<std::string, std::string>> values;
-	values.reserve(24);
+	values.reserve(25);
 	EngineRenderingDisplaySettings::AppendConfigValues(state, values);
 	EngineRenderingLightingSettings::AppendConfigValues(state, values);
 	EngineRenderingGeometrySettings::AppendConfigValues(state, values);
+	EngineRenderingUpscalingSettings::AppendConfigValues(state, values);
 	EngineRenderingRayReconstructionSettings::AppendConfigValues(state, values);
 	EngineRenderingRayTracingSettings::AppendConfigValues(state, values);
 	return values;

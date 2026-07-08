@@ -5,8 +5,8 @@ const char* RayReconstructionProviderKindToString(ERayReconstructionProviderKind
 {
 	switch (kind)
 	{
-		case ERayReconstructionProviderKind::NvidiaDlssRayReconstruction:
-			return "NVIDIA DLSS Ray Reconstruction";
+		case ERayReconstructionProviderKind::NvidiaDlrr:
+			return "NVIDIA DLRR";
 		case ERayReconstructionProviderKind::None:
 		default:
 			return "None";

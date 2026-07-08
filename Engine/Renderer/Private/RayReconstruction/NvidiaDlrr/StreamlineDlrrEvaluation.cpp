@@ -1,7 +1,7 @@
 #include "../../PCH.h"
-#include "RayReconstruction/NvidiaDlss/StreamlineDlssRayReconstructionEvaluation.h"
+#include "RayReconstruction/NvidiaDlrr/StreamlineDlrrEvaluation.h"
 
-bool HasDlssRayReconstructionNativeEvaluationContract(const RayReconstructionEvaluationDesc& evaluation) noexcept
+bool HasDlrrNativeEvaluationContract(const RayReconstructionEvaluationDesc& evaluation) noexcept
 {
 	const bool hasNativeResources =
 	    evaluation.NativeCommandList && evaluation.NativeNoisyInputColor && evaluation.NativeOutputColor && evaluation.NativeDepth &&
@@ -19,7 +19,7 @@ bool HasDlssRayReconstructionNativeEvaluationContract(const RayReconstructionEva
 }
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-#include "RayReconstruction/NvidiaDlss/StreamlineDlssRayReconstructionResourceTags.h"
+#include "RayReconstruction/NvidiaDlrr/StreamlineDlrrResourceTags.h"
 #include "Streamline/StreamlineRuntimeSupport.h"
 #include "Streamline/StreamlineViewConstants.h"
 
@@ -27,27 +27,12 @@ bool HasDlssRayReconstructionNativeEvaluationContract(const RayReconstructionEva
 
 namespace
 {
-	sl::DLSSMode ToStreamlineDlssMode(EngineRayReconstructionQualityMode mode) noexcept
-	{
-		switch (mode)
-		{
-			case EngineRayReconstructionQualityMode::Balanced:
-				return sl::DLSSMode::eBalanced;
-			case EngineRayReconstructionQualityMode::Performance:
-				return sl::DLSSMode::eMaxPerformance;
-			case EngineRayReconstructionQualityMode::Quality:
-			default:
-				return sl::DLSSMode::eMaxQuality;
-		}
-	}
-
 	sl::DLSSDOptions BuildRayReconstructionOptions(
 	    const RayReconstructionInputContract& inputContract,
-	    EngineRayReconstructionQualityMode qualityMode,
 	    RenderViewportExtent outputExtent) noexcept
 	{
 		sl::DLSSDOptions options{};
-		options.mode = ToStreamlineDlssMode(qualityMode);
+		options.mode = sl::DLSSMode::eDLAA;
 		options.outputWidth = outputExtent.Width;
 		options.outputHeight = outputExtent.Height;
 		options.colorBuffersHDR = sl::Boolean::eTrue;
@@ -55,9 +40,12 @@ namespace
 		options.alphaUpscalingEnabled = sl::Boolean::eFalse;
 		options.worldToCameraView = ToStreamlineMatrix(inputContract.Camera.ViewMTX);
 		options.cameraViewToWorld = ToStreamlineMatrix(inputContract.Camera.InvViewMTX);
+		options.dlaaPreset = sl::DLSSDPreset::ePresetD;
 		options.qualityPreset = sl::DLSSDPreset::ePresetD;
 		options.balancedPreset = sl::DLSSDPreset::ePresetD;
 		options.performancePreset = sl::DLSSDPreset::ePresetD;
+		options.ultraPerformancePreset = sl::DLSSDPreset::ePresetD;
+		options.ultraQualityPreset = sl::DLSSDPreset::ePresetD;
 		return options;
 	}
 
@@ -72,13 +60,12 @@ namespace
 	}
 }
 
-RayReconstructionEvaluationResult EvaluateStreamlineDlssRayReconstructionFrame(
+RayReconstructionEvaluationResult EvaluateStreamlineDlrrFrame(
     const RayReconstructionInputContract& inputContract,
-    EngineRayReconstructionQualityMode qualityMode,
     sl::ViewportHandle viewport,
     const RayReconstructionEvaluationDesc& evaluation)
 {
-	if (!HasDlssRayReconstructionNativeEvaluationContract(evaluation))
+	if (!HasDlrrNativeEvaluationContract(evaluation))
 	{
 		return FailedDlrrEvaluation(
 		    ERayReconstructionProviderFailureDomain::InputContract,
@@ -95,7 +82,7 @@ RayReconstructionEvaluationResult EvaluateStreamlineDlssRayReconstructionFrame(
 		    FormatStreamlineFailure("slGetNewFrameToken", result));
 	}
 
-	sl::DLSSDOptions options = BuildRayReconstructionOptions(inputContract, qualityMode, evaluation.OutputExtent);
+	sl::DLSSDOptions options = BuildRayReconstructionOptions(inputContract, evaluation.OutputExtent);
 	result = slDLSSDSetOptions(viewport, options);
 	if (result != sl::Result::eOk)
 	{
@@ -121,16 +108,16 @@ RayReconstructionEvaluationResult EvaluateStreamlineDlssRayReconstructionFrame(
 	{
 		return FailedDlrrEvaluation(
 		    ERayReconstructionProviderFailureDomain::Sdk,
-		    FormatStreamlineFailure("slSetConstants(DLSS_RR)", result));
+		    FormatStreamlineFailure("slSetConstants(DLRR)", result));
 	}
 
 	auto* commandBuffer = static_cast<sl::CommandBuffer*>(evaluation.NativeCommandList.Value);
-	result = TagDlssRayReconstructionResourcesForFrame(*frameToken, viewport, evaluation);
+	result = TagDlrrResourcesForFrame(*frameToken, viewport, evaluation);
 	if (result != sl::Result::eOk)
 	{
 		return FailedDlrrEvaluation(
 		    ERayReconstructionProviderFailureDomain::Sdk,
-		    FormatStreamlineFailure("slSetTagForFrame(DLSS_RR)", result));
+		    FormatStreamlineFailure("slSetTagForFrame(DLRR)", result));
 	}
 
 	const sl::BaseStructure* inputs[] = {&viewport};
@@ -143,7 +130,7 @@ RayReconstructionEvaluationResult EvaluateStreamlineDlssRayReconstructionFrame(
 	{
 		return FailedDlrrEvaluation(
 		    ERayReconstructionProviderFailureDomain::Sdk,
-		    FormatStreamlineFailure("slEvaluateFeature(DLSS_RR)", result));
+		    FormatStreamlineFailure("slEvaluateFeature(DLRR)", result));
 	}
 
 	return RayReconstructionEvaluationResult{

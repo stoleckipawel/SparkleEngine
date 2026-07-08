@@ -70,7 +70,7 @@ void AddRayReconstructionProviderPass(
 	    EFrameGraphPassFlags::ExternalProvider,
 	    [providerInputs](PassResourceBuilder& resourceBuilder)
 	    {
-		    resourceBuilder.Read(providerInputs.NoisyInputColor, ResourceUsage::CopySource, "NoisyInputColor");
+		    resourceBuilder.Read(providerInputs.NoisyInputColor, ResourceUsage::ShaderRead, "NoisyInputColor");
 		    resourceBuilder.Write(providerInputs.OutputColor, ResourceUsage::UnorderedAccess, "OutputColor");
 		    resourceBuilder.Read(providerInputs.Depth, ResourceUsage::DepthRead, "Depth");
 		    resourceBuilder.Read(providerInputs.MotionVectors, ResourceUsage::ShaderRead, "MotionVectors");
@@ -120,7 +120,7 @@ void AddRayReconstructionProviderPass(
 			            .NativeSpecularAlbedo = context.Resources.ResolveResource(providerInputs.SpecularAlbedo),
 			            .NativeSpecularHitDistance = context.Resources.ResolveResource(providerInputs.SpecularHitDistance),
 			            .NativeNoisyInputColorView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.NoisyInputColor, ResourceState::CopySource),
+			                context.Resources.ResolveNativeTextureView(providerInputs.NoisyInputColor, ResourceState::ShaderResource),
 			            .NativeOutputColorView =
 			                context.Resources.ResolveNativeTextureView(providerInputs.OutputColor, ResourceState::UnorderedAccess),
 			            .NativeDepthView = context.Resources.ResolveNativeTextureView(providerInputs.Depth, ResourceState::DepthRead),
@@ -144,10 +144,18 @@ void AddRayReconstructionProviderPass(
 		    if (!result.ProducedOutput)
 		    {
 			    context.Commands.TransitionResource(
+			        context.Resources.ResolveResource(providerInputs.NoisyInputColor),
+			        ResourceState::ShaderResource,
+			        ResourceState::CopySource);
+			    context.Commands.TransitionResource(
 			        context.Resources.ResolveResource(providerInputs.OutputColor),
 			        ResourceState::UnorderedAccess,
 			        ResourceState::CopyDest);
 			    context.Resources.CopyTexture(context.Commands, providerInputs.OutputColor, providerInputs.NoisyInputColor);
+			    context.Commands.TransitionResource(
+			        context.Resources.ResolveResource(providerInputs.NoisyInputColor),
+			        ResourceState::CopySource,
+			        ResourceState::ShaderResource);
 			    context.Commands.TransitionResource(
 			        context.Resources.ResolveResource(providerInputs.OutputColor),
 			        ResourceState::CopyDest,

@@ -8,33 +8,41 @@
 
 void CreateFrameSceneResources(
     FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
+    RenderViewportExtent renderExtent,
+    RenderViewportExtent outputExtent,
     PixelFormat backBufferFormat,
     FrameAssemblyResourceLayout& resources)
 {
 	const FrameGraphTextureHandle sceneColor = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "SceneColor",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        renderExtent.Width,
+	        renderExtent.Height,
+	        FrameRenderFormats::SceneColor));
+
+	const FrameGraphTextureHandle reconstructedSceneColor = builder.CreateTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "ReconstructedSceneColor",
+	        renderExtent.Width,
+	        renderExtent.Height,
 	        FrameRenderFormats::SceneColor));
 
 	const FrameGraphTextureHandle finalSceneColor = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "FinalSceneColor",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        outputExtent.Width,
+	        outputExtent.Height,
 	        FrameRenderFormats::SceneColor));
 
 	const FrameGraphTextureHandle backBuffer = builder.ImportTexture(
-	    FrameGraphTextureDesc::CreateColor("BackBuffer", sceneExtent.Width, sceneExtent.Height, backBufferFormat),
+	    FrameGraphTextureDesc::CreateColor("BackBuffer", outputExtent.Width, outputExtent.Height, backBufferFormat),
 	    ResourceState::Present);
 
 	const FrameGraphTextureHandle mainDepth = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateDepthStencil(
 	        "MainDepth",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        renderExtent.Width,
+	        renderExtent.Height,
 	        FrameRenderFormats::DepthStencil));
 
 	const FrameGraphTextureHandle exposure = builder.CreateTexture(
@@ -48,48 +56,49 @@ void CreateFrameSceneResources(
 	const FrameGraphTextureHandle previousDirectLightReservoirSample = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "PreviousDirectLightReservoirSample",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        renderExtent.Width,
+	        renderExtent.Height,
 	        PixelFormat::R32G32B32A32_Float),
 	    ResourceState::ShaderResource);
 	const FrameGraphTextureHandle previousDirectLightReservoirWeight = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "PreviousDirectLightReservoirWeight",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        renderExtent.Width,
+	        renderExtent.Height,
 	        PixelFormat::R32G32B32A32_Float),
 	    ResourceState::ShaderResource);
 	const FrameGraphTextureHandle previousDirectLightReservoirSurface = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "PreviousDirectLightReservoirSurface",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        renderExtent.Width,
+	        renderExtent.Height,
 	        PixelFormat::R16G16B16A16_Float),
 	    ResourceState::ShaderResource);
 	const FrameGraphTextureHandle currentDirectLightReservoirSample = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "CurrentDirectLightReservoirSample",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        renderExtent.Width,
+	        renderExtent.Height,
 	        PixelFormat::R32G32B32A32_Float),
 	    ResourceState::ShaderResource);
 	const FrameGraphTextureHandle currentDirectLightReservoirWeight = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "CurrentDirectLightReservoirWeight",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        renderExtent.Width,
+	        renderExtent.Height,
 	        PixelFormat::R32G32B32A32_Float),
 	    ResourceState::ShaderResource);
 	const FrameGraphTextureHandle currentDirectLightReservoirSurface = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "CurrentDirectLightReservoirSurface",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
+	        renderExtent.Width,
+	        renderExtent.Height,
 	        PixelFormat::R16G16B16A16_Float),
 	    ResourceState::ShaderResource);
 
 	resources.Transient.Scene = SceneRenderTargets{
 	    .SceneColor = sceneColor,
+	    .ReconstructedSceneColor = reconstructedSceneColor,
 	    .FinalSceneColor = finalSceneColor,
 	    .BackBuffer = backBuffer,
 	    .MainDepth = mainDepth};

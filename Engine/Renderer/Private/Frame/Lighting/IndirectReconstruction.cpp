@@ -12,7 +12,7 @@ FrameRayReconstructionProviderResources BuildIndirectRayReconstructionProviderIn
 {
 	return FrameRayReconstructionProviderResources{
 	    .NoisyInputColor = sceneTargets.SceneColor,
-	    .OutputColor = sceneTargets.FinalSceneColor,
+	    .OutputColor = sceneTargets.ReconstructedSceneColor,
 	    .Depth = sceneTargets.MainDepth,
 	    .MotionVectors = gbuffer.MotionVector,
 	    .Exposure = exposure,
@@ -28,7 +28,7 @@ bool AddIndirectRayReconstructionPassIfEnabled(
     RenderViewportExtent sceneExtent,
     FrameAssemblyResourceLayout& resources)
 {
-	if (GetRayReconstructionModeFromCVars() != EngineRayReconstructionMode::NvidiaDlssRayReconstruction)
+	if (GetRayReconstructionModeFromCVars() != EngineRayReconstructionMode::NvidiaDlrr)
 	{
 		return false;
 	}
@@ -48,6 +48,6 @@ bool AddIndirectRayReconstructionPassIfEnabled(
 	    "IndirectRayReconstruction",
 	    sceneExtent,
 	    resources.RayReconstructionProviderInputs);
-	resources.FinalSceneColorProduced = true;
+	resources.ReconstructedSceneColorProduced = true;
 	return true;
 }

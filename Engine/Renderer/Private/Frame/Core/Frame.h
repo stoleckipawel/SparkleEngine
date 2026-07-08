@@ -15,6 +15,7 @@ struct FrameBuildResult
 
 FrameBuildResult BuildFrame(
     FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
+    RenderViewportExtent renderExtent,
+    RenderViewportExtent outputExtent,
     PixelFormat backBufferFormat,
     bool presentToBackBuffer);

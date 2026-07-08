@@ -2,11 +2,22 @@
 #include "Streamline/StreamlineRuntimeSupport.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
+#include <sl_dlss.h>
+#include <sl_dlss_d.h>
 #include <vulkan/vulkan.h>
 #include <sl_helpers.h>
 #include <sl_helpers_vk.h>
 
 #include <format>
+#include <mutex>
+
+namespace
+{
+	std::mutex g_sharedStreamlineRuntimeMutex;
+	bool g_sharedStreamlineRuntimeInitialized = false;
+	std::uint32_t g_sharedStreamlineRuntimeRefCount = 0;
+	sl::RenderAPI g_sharedStreamlineRenderApi = sl::RenderAPI::eD3D12;
+}
 
 bool HasStreamlineNativeAdapterLuid(const RhiAdapterIdentity& adapter) noexcept
 {
@@ -122,3 +133,74 @@ void FillStreamlinePreferences(
 	preferences.renderAPI = renderApi;
 }
 #endif
+
+#if SPARKLE_WITH_NVIDIA_STREAMLINE
+SharedStreamlineRuntimeSession AcquireSharedStreamlineRuntime(
+    const StreamlineBackendContract& backend,
+    RhiNativeDeviceQueueInterop nativeInterop)
+{
+	const sl::RenderAPI renderApi = backend.UsesVulkan ? sl::RenderAPI::eVulkan : sl::RenderAPI::eD3D12;
+
+	std::lock_guard lock(g_sharedStreamlineRuntimeMutex);
+	if (g_sharedStreamlineRuntimeInitialized)
+	{
+		if (g_sharedStreamlineRenderApi != renderApi)
+		{
+			return SharedStreamlineRuntimeSession{
+			    .Succeeded = false,
+			    .FailureReason = "Streamline is already initialized for a different render API."};
+		}
+
+		++g_sharedStreamlineRuntimeRefCount;
+		return SharedStreamlineRuntimeSession{.Succeeded = true};
+	}
+
+	const sl::Feature features[] = {sl::kFeatureDLSS, sl::kFeatureDLSS_RR};
+	sl::Preferences preferences{};
+	FillStreamlinePreferences(preferences, features, 2u, renderApi);
+
+	const sl::Result result = slInit(preferences, sl::kSDKVersion);
+	if (result != sl::Result::eOk)
+	{
+		return SharedStreamlineRuntimeSession{
+		    .Succeeded = false,
+		    .FailureReason = FormatStreamlineFailure("slInit(Streamline shared runtime)", result)};
+	}
+
+	const sl::Result nativeDeviceResult = SetStreamlineNativeDevice(backend, nativeInterop);
+	if (nativeDeviceResult != sl::Result::eOk)
+	{
+		(void) slShutdown();
+		return SharedStreamlineRuntimeSession{
+		    .Succeeded = false,
+		    .FailureReason = FormatStreamlineFailure("Streamline native device setup", nativeDeviceResult)};
+	}
+
+	g_sharedStreamlineRuntimeInitialized = true;
+	g_sharedStreamlineRuntimeRefCount = 1;
+	g_sharedStreamlineRenderApi = renderApi;
+	return SharedStreamlineRuntimeSession{.Succeeded = true};
+}
+
+void ReleaseSharedStreamlineRuntime() noexcept
+{
+	std::lock_guard lock(g_sharedStreamlineRuntimeMutex);
+	if (g_sharedStreamlineRuntimeRefCount > 0)
+	{
+		--g_sharedStreamlineRuntimeRefCount;
+	}
+}
+#endif
+
+void ShutdownSharedStreamlineRuntime() noexcept
+{
+#if SPARKLE_WITH_NVIDIA_STREAMLINE
+	std::lock_guard lock(g_sharedStreamlineRuntimeMutex);
+	if (g_sharedStreamlineRuntimeInitialized)
+	{
+		(void) slShutdown();
+		g_sharedStreamlineRuntimeInitialized = false;
+		g_sharedStreamlineRuntimeRefCount = 0;
+	}
+#endif
+}

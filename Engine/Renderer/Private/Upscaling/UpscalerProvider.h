@@ -17,7 +17,7 @@ struct RhiCapabilities;
 // and frame generation use separate frame/provider contracts.
 enum class EUpscalerProviderKind : std::uint8_t
 {
-	Passthrough = 0,
+	Linear = 0,
 	NvidiaDlss = 1
 };
 
@@ -34,7 +34,7 @@ enum class EUpscalerProviderFailureDomain : std::uint8_t
 
 struct UpscalerProviderCapabilities final
 {
-	EUpscalerProviderKind Kind = EUpscalerProviderKind::Passthrough;
+	EUpscalerProviderKind Kind = EUpscalerProviderKind::Linear;
 	ERendererProviderCategory Category = ERendererProviderCategory::Upscaler;
 	ERendererProviderCapabilityState CapabilityState = ERendererProviderCapabilityState::Unavailable;
 	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;

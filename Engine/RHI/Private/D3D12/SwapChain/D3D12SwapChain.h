@@ -83,6 +83,7 @@ class D3D12SwapChain final
 	D3D12DescriptorHandle m_rtvHandles[RhiFrameConstants::FramesInFlight];
 	PixelFormat m_backBufferFormat = PixelFormat::Unknown;
 	HANDLE m_waitableObject = nullptr;
+	bool m_nativeInterfaceUpgraded = false;
 	Window* m_window = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 };

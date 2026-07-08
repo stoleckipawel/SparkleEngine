@@ -4,7 +4,6 @@
 #include "RayReconstruction/RayReconstructionSettings.h"
 #include "RayReconstruction/RayReconstructionSubsystem.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Upscaling/UpscalerProvider.h"
 #include "Upscaling/UpscalerSettings.h"
 #include "Upscaling/UpscalerSubsystem.h"
 
@@ -19,24 +18,12 @@ namespace
 		return hardware != nullptr && hardware->GetInteropService().UpgradePresentationInterface(callback, callbackUserData);
 	}
 
-	UpscalerSettings BuildImageProviderUpscalerSettings()
-	{
-		UpscalerSettings settings = BuildUpscalerSettingsFromCVars();
-		if (GetRayReconstructionModeFromCVars() != EngineRayReconstructionMode::Off)
-		{
-			settings.RequestedProvider = EUpscalerProviderKind::Passthrough;
-		}
-		return settings;
-	}
-
 	std::uint32_t PackImageProviderGraphKey(
 	    const UpscalerSettings& upscalerSettings,
 	    const RayReconstructionSettings& rayReconstructionSettings) noexcept
 	{
 		return static_cast<std::uint32_t>(upscalerSettings.RequestedProvider) |
-		       (static_cast<std::uint32_t>(upscalerSettings.QualityMode) << 4u) |
-		       (static_cast<std::uint32_t>(rayReconstructionSettings.Mode) << 8u) |
-		       (static_cast<std::uint32_t>(rayReconstructionSettings.QualityMode) << 12u);
+		       (static_cast<std::uint32_t>(rayReconstructionSettings.Mode) << 8u);
 	}
 }
 
@@ -56,7 +43,7 @@ void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardw
 	        RhiNativeInteropRequest{
 	            .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
 	            .Reason = "Renderer upscaler provider initialization"}),
-	    BuildImageProviderUpscalerSettings(),
+	    BuildUpscalerSettingsFromCVars(),
 	    UpscalerPresentationBridge{
 	        .UpgradePresentationInterface = &UpgradePresentationInterfaceThroughRhi,
 	        .UserData = &renderHardware});
@@ -101,7 +88,7 @@ void RendererImageProviderStack::OnResize(RenderViewportExtent renderExtent, Ren
 	}
 	if (m_rayReconstructionSubsystem != nullptr)
 	{
-		m_rayReconstructionSubsystem->OnResize(renderExtent, outputExtent);
+		m_rayReconstructionSubsystem->OnResize(renderExtent, renderExtent);
 	}
 }
 
@@ -135,7 +122,7 @@ void RendererImageProviderStack::SetupRayReconstructionFrame(const RayReconstruc
 
 std::uint32_t RendererImageProviderStack::GetFrameGraphKey() const noexcept
 {
-	return PackImageProviderGraphKey(BuildImageProviderUpscalerSettings(), BuildRayReconstructionSettingsFromCVars());
+	return PackImageProviderGraphKey(BuildUpscalerSettingsFromCVars(), BuildRayReconstructionSettingsFromCVars());
 }
 
 RendererImageProviderPassServices RendererImageProviderStack::BuildPassServices() noexcept

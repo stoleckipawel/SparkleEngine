@@ -93,6 +93,7 @@ class IStreamlineDlssRuntime
 	virtual ~IStreamlineDlssRuntime() = default;
 
 	virtual bool Initialize(const StreamlineDlssRuntimeDesc& desc) = 0;
+	virtual void SetQualityMode(EUpscalerQualityMode qualityMode) = 0;
 	virtual bool SetupFrame(const UpscalerInputContract& inputContract) = 0;
 	virtual UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation) = 0;
 	virtual void ResetHistory(std::string_view reason) = 0;

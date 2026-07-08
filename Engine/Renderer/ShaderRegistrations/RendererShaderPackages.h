@@ -18,6 +18,7 @@ namespace RendererShaderPackages
 	inline constexpr std::string_view ExposureDownsampleTexture = "ExposureDownsampleTexture";
 	inline constexpr std::string_view GBuffer = "GBuffer";
 	inline constexpr std::string_view IndirectDiffuse = "IndirectDiffuse";
+	inline constexpr std::string_view LinearUpscale = "LinearUpscale";
 	inline constexpr std::string_view LightingComposite = "LightingComposite";
 	inline constexpr std::string_view IndirectSpecular = "IndirectSpecular";
 	inline constexpr std::string_view OutputEncoding = "OutputEncoding";

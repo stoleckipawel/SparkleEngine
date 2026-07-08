@@ -26,27 +26,27 @@ namespace
 
 void FramePipeline::CreateDirectLightReservoirHistoryResources() noexcept
 {
-	const RenderViewportExtent sceneExtent = m_frameGraphSceneExtent.IsValid() ? m_frameGraphSceneExtent : ResolveSceneExtent();
-	if (!sceneExtent.IsValid())
+	const RenderViewportExtent renderExtent = m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
+	if (!renderExtent.IsValid())
 	{
 		return;
 	}
 
-	if (m_directLightReservoirHistoryExtent.Width != sceneExtent.Width ||
-	    m_directLightReservoirHistoryExtent.Height != sceneExtent.Height)
+	if (m_directLightReservoirHistoryExtent.Width != renderExtent.Width ||
+	    m_directLightReservoirHistoryExtent.Height != renderExtent.Height)
 	{
 		ReleaseDirectLightReservoirHistoryResources();
-		m_directLightReservoirHistoryExtent = sceneExtent;
+		m_directLightReservoirHistoryExtent = renderExtent;
 	}
 
 	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
 	RhiResourceService& resourceService = renderHardwareInterface.GetResourceService();
 	const RhiTextureResourceDesc sampleDesc =
-	    BuildDirectLightReservoirTextureDesc(sceneExtent, PixelFormat::R32G32B32A32_Float);
+	    BuildDirectLightReservoirTextureDesc(renderExtent, PixelFormat::R32G32B32A32_Float);
 	const RhiTextureResourceDesc weightDesc =
-	    BuildDirectLightReservoirTextureDesc(sceneExtent, PixelFormat::R32G32B32A32_Float);
+	    BuildDirectLightReservoirTextureDesc(renderExtent, PixelFormat::R32G32B32A32_Float);
 	const RhiTextureResourceDesc surfaceDesc =
-	    BuildDirectLightReservoirTextureDesc(sceneExtent, PixelFormat::R16G16B16A16_Float);
+	    BuildDirectLightReservoirTextureDesc(renderExtent, PixelFormat::R16G16B16A16_Float);
 
 	for (DirectLightReservoirHistoryFrameResources& frameResources : m_directLightReservoirHistoryResources)
 	{

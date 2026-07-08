@@ -11,40 +11,12 @@ namespace
 {
 	int ToRayReconstructionModeIndex(EngineRayReconstructionMode mode) noexcept
 	{
-		return mode == EngineRayReconstructionMode::NvidiaDlssRayReconstruction ? 1 : 0;
+		return mode == EngineRayReconstructionMode::NvidiaDlrr ? 1 : 0;
 	}
 
 	EngineRayReconstructionMode FromRayReconstructionModeIndex(int index) noexcept
 	{
-		return index == 1 ? EngineRayReconstructionMode::NvidiaDlssRayReconstruction : EngineRayReconstructionMode::Off;
-	}
-
-	int ToRayReconstructionQualityModeIndex(EngineRayReconstructionQualityMode mode) noexcept
-	{
-		switch (mode)
-		{
-			case EngineRayReconstructionQualityMode::Balanced:
-				return 1;
-			case EngineRayReconstructionQualityMode::Performance:
-				return 2;
-			case EngineRayReconstructionQualityMode::Quality:
-			default:
-				return 0;
-		}
-	}
-
-	EngineRayReconstructionQualityMode FromRayReconstructionQualityModeIndex(int index) noexcept
-	{
-		switch (index)
-		{
-			case 1:
-				return EngineRayReconstructionQualityMode::Balanced;
-			case 2:
-				return EngineRayReconstructionQualityMode::Performance;
-			case 0:
-			default:
-				return EngineRayReconstructionQualityMode::Quality;
-		}
+		return index == 1 ? EngineRayReconstructionMode::NvidiaDlrr : EngineRayReconstructionMode::Off;
 	}
 }
 
@@ -57,15 +29,10 @@ void DrawRayReconstructionSettingsSection(
 
 	static constexpr const char* rayReconstructionModeLabels[] = {
 	    "Off",
-	    "NVIDIA DLSS Ray Reconstruction",
-	};
-	static constexpr const char* rayReconstructionQualityLabels[] = {
-	    "Quality",
-	    "Balanced",
-	    "Performance",
+	    "NVIDIA DLRR",
 	};
 
-	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlrr dlss ray reconstruction indirect specular diffuse") ||
+	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlrr ray reconstruction indirect specular diffuse") ||
 	    !BeginSettingsCategory("Ray Reconstruction"))
 	{
 		return;
@@ -80,15 +47,6 @@ void DrawRayReconstructionSettingsSection(
 		    rayReconstructionModeLabels,
 		    IM_ARRAYSIZE(rayReconstructionModeLabels),
 		    [&settingsSection](int value) { settingsSection.SetRayReconstructionMode(FromRayReconstructionModeIndex(value)); });
-		ImGui::BeginDisabled(settings.RayReconstructionMode == EngineRayReconstructionMode::Off);
-		DrawComboRow(
-		    "##RayReconstructionQualityMode",
-		    "Quality mode",
-		    ToRayReconstructionQualityModeIndex(settings.RayReconstructionQualityMode),
-		    rayReconstructionQualityLabels,
-		    IM_ARRAYSIZE(rayReconstructionQualityLabels),
-		    [&settingsSection](int value) { settingsSection.SetRayReconstructionQualityMode(FromRayReconstructionQualityModeIndex(value)); });
-		ImGui::EndDisabled();
 		ImGui::EndTable();
 	}
 	ImGui::Dummy(ImVec2(0.0f, 4.0f));

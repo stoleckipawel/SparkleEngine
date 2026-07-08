@@ -4,14 +4,13 @@
 #include "RayReconstruction/RayReconstructionProvider.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
 
-bool HasDlssRayReconstructionNativeEvaluationContract(const RayReconstructionEvaluationDesc& evaluation) noexcept;
+bool HasDlrrNativeEvaluationContract(const RayReconstructionEvaluationDesc& evaluation) noexcept;
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 #include <sl.h>
 
-RayReconstructionEvaluationResult EvaluateStreamlineDlssRayReconstructionFrame(
+RayReconstructionEvaluationResult EvaluateStreamlineDlrrFrame(
     const RayReconstructionInputContract& inputContract,
-    EngineRayReconstructionQualityMode qualityMode,
     sl::ViewportHandle viewport,
     const RayReconstructionEvaluationDesc& evaluation);
 #endif

@@ -58,5 +58,6 @@ struct FrameAssemblyResourceLayout final
 	FrameUpscalerProviderResources UpscalerProviderInputs = {};
 	FrameRayReconstructionProviderResources RayReconstructionProviderInputs = {};
 	FrameAssemblyViewportProducts ViewportProducts = {};
+	bool ReconstructedSceneColorProduced = false;
 	bool FinalSceneColorProduced = false;
 };

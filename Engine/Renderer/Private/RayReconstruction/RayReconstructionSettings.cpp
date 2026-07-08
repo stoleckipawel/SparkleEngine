@@ -8,20 +8,13 @@ namespace
 	ConsoleVariable<EngineRayReconstructionMode> CVarRayReconstructionMode(
 	    "r.RayReconstruction.Mode",
 	    EngineRayReconstructionMode::Off,
-	    "Renderer ray reconstruction mode: 0=Off, 1=NVIDIA DLSS Ray Reconstruction.");
-
-	ConsoleVariable<EngineRayReconstructionQualityMode> CVarRayReconstructionQualityMode(
-	    "r.RayReconstruction.QualityMode",
-	    EngineRayReconstructionQualityMode::Quality,
-	    "Renderer ray reconstruction quality mode: 0=Quality, 1=Balanced, 2=Performance.");
-
+	    "Renderer ray reconstruction mode: 0=Off, 1=NVIDIA DLRR.");
 }
 
 RayReconstructionSettings BuildRayReconstructionSettingsFromCVars() noexcept
 {
 	return RayReconstructionSettings{
-	    .Mode = CVarRayReconstructionMode.Get(),
-	    .QualityMode = CVarRayReconstructionQualityMode.Get()};
+	    .Mode = CVarRayReconstructionMode.Get()};
 }
 
 EngineRayReconstructionMode GetRayReconstructionModeFromCVars() noexcept
@@ -33,34 +26,15 @@ const char* RayReconstructionModeToString(EngineRayReconstructionMode mode) noex
 {
 	switch (mode)
 	{
-		case EngineRayReconstructionMode::NvidiaDlssRayReconstruction:
-			return "NVIDIA DLSS Ray Reconstruction";
+		case EngineRayReconstructionMode::NvidiaDlrr:
+			return "NVIDIA DLRR";
 		case EngineRayReconstructionMode::Off:
 		default:
 			return "Off";
 	}
 }
 
-const char* RayReconstructionQualityModeToString(EngineRayReconstructionQualityMode mode) noexcept
-{
-	switch (mode)
-	{
-		case EngineRayReconstructionQualityMode::Balanced:
-			return "Balanced";
-		case EngineRayReconstructionQualityMode::Performance:
-			return "Performance";
-		case EngineRayReconstructionQualityMode::Quality:
-		default:
-			return "Quality";
-	}
-}
-
 void SetRayReconstructionModeCVar(EngineRayReconstructionMode mode) noexcept
 {
 	CVarRayReconstructionMode.Set(mode);
-}
-
-void SetRayReconstructionQualityModeCVar(EngineRayReconstructionQualityMode mode) noexcept
-{
-	CVarRayReconstructionQualityMode.Set(mode);
 }

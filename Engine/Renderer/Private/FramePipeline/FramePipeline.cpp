@@ -82,7 +82,7 @@ void FramePipeline::OnRender() noexcept
 	SubmitHostFrame();
 }
 
-RenderViewportExtent FramePipeline::ResolveSceneExtent() const noexcept
+RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 {
 	const Window& window = m_systems->GetWindow();
 	if (m_viewportRenderRequest.Extent.IsValid())
@@ -93,6 +93,11 @@ RenderViewportExtent FramePipeline::ResolveSceneExtent() const noexcept
 	return RenderViewportExtent{static_cast<std::uint32_t>(window.GetWidth()), static_cast<std::uint32_t>(window.GetHeight())};
 }
 
+FrameResolutionExtents FramePipeline::ResolveFrameResolution() const noexcept
+{
+	return ResolveFrameResolutionExtents(ResolveOutputExtent(), ResolveFrameRenderPathFromSettings());
+}
+
 bool FramePipeline::ShouldOutputToBackBuffer() const noexcept
 {
 	return m_viewportRenderRequest.ViewportId == 0;
@@ -100,20 +105,22 @@ bool FramePipeline::ShouldOutputToBackBuffer() const noexcept
 
 void FramePipeline::InitializeFrameGraph() noexcept
 {
-	InitializeFrameGraph(ResolveSceneExtent());
+	InitializeFrameGraph(ResolveFrameResolution());
 }
 
-void FramePipeline::InitializeFrameGraph(RenderViewportExtent sceneExtent) noexcept
+void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noexcept
 {
 	const FrameGraphDependencies dependencies{
 	    m_systems->GetRenderHardwareInterface(),
 	    m_systems->GetWindow(),
-	    sceneExtent,
+	    resolution.Render,
+	    resolution.Output,
 	    ShouldOutputToBackBuffer()};
 
 	FrameGraphFactory frameGraphFactory(dependencies);
 	FrameGraphBuildResult buildResult = frameGraphFactory.Build();
-	m_frameGraphSceneExtent = dependencies.sceneExtent;
+	m_frameGraphRenderExtent = dependencies.renderExtent;
+	m_frameGraphOutputExtent = dependencies.outputExtent;
 	m_frameResources = buildResult.Resources;
 	m_renderPath = buildResult.RenderPath;
 	m_imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
@@ -132,10 +139,10 @@ void FramePipeline::BindWindowResizeEvent() noexcept
 
 void FramePipeline::RefreshFrameExecution() noexcept
 {
-	RefreshFrameExecution(ResolveSceneExtent());
+	RefreshFrameExecution(ResolveFrameResolution());
 }
 
-void FramePipeline::RefreshFrameExecution(RenderViewportExtent sceneExtent) noexcept
+void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	backend.Flush();
@@ -145,9 +152,9 @@ void FramePipeline::RefreshFrameExecution(RenderViewportExtent sceneExtent) noex
 	}
 
 	m_frameGraph.reset();
-	InitializeFrameGraph(sceneExtent);
+	InitializeFrameGraph(resolution);
 	CreateDirectLightReservoirHistoryResources();
-	m_systems->GetImageProviders().OnResize(m_frameGraphSceneExtent, m_frameGraphSceneExtent);
+	m_systems->GetImageProviders().OnResize(m_frameGraphRenderExtent, m_frameGraphOutputExtent);
 }
 
 void FramePipeline::BeginFrame() noexcept
@@ -167,18 +174,21 @@ void FramePipeline::BeginFrame() noexcept
 		{
 			backend.Flush();
 			backend.ResizeSwapChain();
-			RefreshFrameExecution(ResolveSceneExtent());
+			RefreshFrameExecution(ResolveFrameResolution());
 		}
 	}
 
-	const RenderViewportExtent sceneExtent = ResolveSceneExtent();
-	if (sceneExtent.Width != m_frameGraphSceneExtent.Width || sceneExtent.Height != m_frameGraphSceneExtent.Height)
+	const FrameResolutionExtents frameResolution = ResolveFrameResolution();
+	if (frameResolution.Render.Width != m_frameGraphRenderExtent.Width ||
+	    frameResolution.Render.Height != m_frameGraphRenderExtent.Height ||
+	    frameResolution.Output.Width != m_frameGraphOutputExtent.Width ||
+	    frameResolution.Output.Height != m_frameGraphOutputExtent.Height)
 	{
-		temporalDataBuilder.ResetHistory("Scene extent changed");
+		temporalDataBuilder.ResetHistory("Frame resolution changed");
 		ResetExposureHistory();
 		ResetDirectLightReservoirHistory();
-		m_systems->GetImageProviders().ResetHistory("Scene extent changed");
-		RefreshFrameExecution(sceneExtent);
+		m_systems->GetImageProviders().ResetHistory("Frame resolution changed");
+		RefreshFrameExecution(frameResolution);
 	}
 
 	const FrameRenderPath renderPath = ResolveFrameRenderPathFromSettings();
@@ -188,7 +198,7 @@ void FramePipeline::BeginFrame() noexcept
 		ResetExposureHistory();
 		ResetDirectLightReservoirHistory();
 		m_systems->GetImageProviders().ResetHistory("Render path changed");
-		RefreshFrameExecution(sceneExtent);
+		RefreshFrameExecution(ResolveFrameResolution());
 	}
 
 	const std::uint32_t imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
@@ -198,7 +208,7 @@ void FramePipeline::BeginFrame() noexcept
 		ResetExposureHistory();
 		ResetDirectLightReservoirHistory();
 		m_systems->RefreshImageProviders();
-		RefreshFrameExecution(sceneExtent);
+		RefreshFrameExecution(ResolveFrameResolution());
 		m_systems->GetImageProviders().ResetHistory("Image provider graph mode changed");
 		m_imageProviderFrameGraphKey = imageProviderFrameGraphKey;
 	}
@@ -220,25 +230,28 @@ void FramePipeline::SetupFrame() noexcept
 	m_systems->GetTextureManager().LoadSceneTextures(m_sceneSnapshot.textures);
 	m_systems->GetRenderCamera().Update(m_sceneSnapshot.camera);
 
-	const RenderViewportExtent sceneExtent = m_frameGraphSceneExtent.IsValid() ? m_frameGraphSceneExtent : ResolveSceneExtent();
-	m_perFrameData = m_perFrameDataBuilder.Build(timer, CVarRenderViewMode.Get(), sceneExtent);
+	const RenderViewportExtent renderExtent = m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
+	m_perFrameData = m_perFrameDataBuilder.Build(timer, CVarRenderViewMode.Get(), renderExtent);
 }
 
 void FramePipeline::RefreshViewportRenderProducts() noexcept
 {
-	const RenderViewportExtent extent = m_frameGraphSceneExtent.IsValid() ? m_frameGraphSceneExtent : ResolveSceneExtent();
+	const FrameResolutionExtents resolution =
+	    m_frameGraphOutputExtent.IsValid() && m_frameGraphRenderExtent.IsValid()
+	        ? FrameResolutionExtents{.Render = m_frameGraphRenderExtent, .Output = m_frameGraphOutputExtent}
+	        : ResolveFrameResolution();
 
 	m_viewportRenderProducts.Clear();
 	m_viewportRenderProducts.SetProduct(
 	    RenderOutputFlags::SceneColor,
-	    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.FinalSceneColor), extent, RenderProductFormat::ColorLdr});
+	    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.FinalSceneColor), resolution.Output, RenderProductFormat::ColorLdr});
 
 	if (m_frameResources.ViewportProducts.SceneDepth.IsValid() &&
 	    HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::SceneDepth,
-		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth), extent, RenderProductFormat::DepthStencil});
+		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth), resolution.Render, RenderProductFormat::DepthStencil});
 	}
 
 	if (m_frameResources.ViewportProducts.Normals.IsValid() &&
@@ -246,7 +259,7 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	{
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::Normals,
-		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.Normals), extent, RenderProductFormat::ColorHdr});
+		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.Normals), resolution.Render, RenderProductFormat::ColorHdr});
 	}
 }
 
@@ -280,7 +293,7 @@ void FramePipeline::RecordFrame() noexcept
 		        m_sceneSnapshot,
 		        renderHardwareInterface,
 		        m_systems->GetRenderCamera(),
-		        m_frameGraphSceneExtent,
+		        m_frameGraphRenderExtent,
 		        m_systems->GetRenderSceneDataBuilder(),
 		        activeRayTracingScene,
 		        m_systems->GetPerViewDataBuilder(),
@@ -297,7 +310,8 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		const UpscalerInputContract upscalerInputContract = BuildFrameUpscalerInputContract(
 		    m_frameResources.UpscalerProviderInputs,
-		    m_frameGraphSceneExtent,
+		    m_frameGraphRenderExtent,
+		    m_frameGraphOutputExtent,
 		    m_systems->GetTimer().GetFrameCount(),
 		    frame.mainView.perViewData.Camera,
 		    frame.mainView.perTemporalData,
@@ -309,7 +323,7 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		const RayReconstructionInputContract reconstructionInputContract = BuildFrameRayReconstructionInputContract(
 		    m_frameResources.RayReconstructionProviderInputs,
-		    m_frameGraphSceneExtent,
+		    m_frameGraphRenderExtent,
 		    m_systems->GetTimer().GetFrameCount(),
 		    frame.mainView.perViewData.Camera,
 		    frame.mainView.perTemporalData,

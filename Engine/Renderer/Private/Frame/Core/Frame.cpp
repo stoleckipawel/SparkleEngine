@@ -14,32 +14,33 @@
 
 FrameBuildResult BuildFrame(
     FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
+    RenderViewportExtent renderExtent,
+    RenderViewportExtent outputExtent,
     PixelFormat backBufferFormat,
     bool presentToBackBuffer)
 {
 	FrameAssemblyResourceLayout resources = {};
 	const FrameRenderPath renderPath = ResolveFrameRenderPathFromSettings();
 
-	CreateFrameSceneResources(builder, sceneExtent, backBufferFormat, resources);
+	CreateFrameSceneResources(builder, renderExtent, outputExtent, backBufferFormat, resources);
 	AddRayTracingInfrastructurePasses(builder, resources);
 
 	if (renderPath == FrameRenderPath::PathTracedReference)
 	{
-		AddReferenceRenderingPasses(builder, sceneExtent, resources);
+		AddReferenceRenderingPasses(builder, renderExtent, resources);
 	}
 	else
 	{
-		AddGBufferPasses(builder, sceneExtent, resources);
-		AddLightingPasses(builder, sceneExtent, resources);
+		AddGBufferPasses(builder, renderExtent, resources);
+		AddLightingPasses(builder, renderExtent, resources);
 	}
 
-	AddPostProcessingPasses(builder, sceneExtent, resources);
+	AddPostProcessingPasses(builder, renderExtent, outputExtent, resources);
 	AddDebugPasses(builder, resources);
 
 	if (presentToBackBuffer)
 	{
-		AddPresentationPass(builder, sceneExtent, backBufferFormat, resources.Transient.Scene, resources.Transient.Exposure);
+		AddPresentationPass(builder, outputExtent, backBufferFormat, resources.Transient.Scene, resources.Transient.Exposure);
 	}
 
 	return FrameBuildResult{.Resources = resources, .RenderPath = renderPath};

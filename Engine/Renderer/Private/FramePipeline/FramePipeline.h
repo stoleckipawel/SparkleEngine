@@ -3,6 +3,7 @@
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Frame/Builders/PerFrameDataBuilder.h"
 #include "Frame/Core/FrameAssembly.h"
+#include "Frame/Core/FrameResolution.h"
 #include "Frame/Core/FrameRenderPath.h"
 #include "Frame/RhiFrameConstants.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
@@ -50,12 +51,13 @@ class FramePipeline final
 
   private:
 	void InitializeFrameGraph() noexcept;
-	void InitializeFrameGraph(RenderViewportExtent sceneExtent) noexcept;
+	void InitializeFrameGraph(FrameResolutionExtents resolution) noexcept;
 	void BindWindowResizeEvent() noexcept;
 	void RefreshFrameExecution() noexcept;
-	void RefreshFrameExecution(RenderViewportExtent sceneExtent) noexcept;
+	void RefreshFrameExecution(FrameResolutionExtents resolution) noexcept;
 	bool ShouldOutputToBackBuffer() const noexcept;
-	RenderViewportExtent ResolveSceneExtent() const noexcept;
+	RenderViewportExtent ResolveOutputExtent() const noexcept;
+	FrameResolutionExtents ResolveFrameResolution() const noexcept;
 	void BeginFrame() noexcept;
 	void SetupFrame() noexcept;
 	void RefreshViewportRenderProducts() noexcept;
@@ -82,7 +84,8 @@ class FramePipeline final
 	PerFrameDataBuilder m_perFrameDataBuilder;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
 	std::vector<std::unique_ptr<FrameContext>> m_frameContexts;
-	RenderViewportExtent m_frameGraphSceneExtent = {};
+	RenderViewportExtent m_frameGraphRenderExtent = {};
+	RenderViewportExtent m_frameGraphOutputExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	FrameAssemblyResourceLayout m_frameResources = {};

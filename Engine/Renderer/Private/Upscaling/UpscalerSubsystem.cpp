@@ -14,16 +14,16 @@ namespace
 	    std::string reason)
 	{
 		return UpscalerProviderCapabilities{
-		    .Kind = EUpscalerProviderKind::Passthrough,
+		    .Kind = EUpscalerProviderKind::Linear,
 		    .Category = ERendererProviderCategory::Upscaler,
 		    .CapabilityState = state,
 		    .FailureDomain = failureDomain,
 		    .CanInitialize = true,
 		    .CanEvaluate = true,
 		    .UsesExternalSdk = false,
-		    .ProviderName = "Renderer frame copy",
+		    .ProviderName = "Renderer linear upscaler",
 		    .ExternalRuntimeVersion = "none",
-		    .RuntimeState = "RendererCopy",
+		    .RuntimeState = "RendererLinear",
 		    .FeatureMatrixSummary = "external features not selected",
 		    .Reason = std::move(reason)};
 	}
@@ -57,7 +57,7 @@ void UpscalerSubsystem::Initialize(
 		m_diagnostics = BuildRendererCopyUpscalerCapabilities(
 		    ERendererProviderCapabilityState::Enabled,
 		    EUpscalerProviderFailureDomain::None,
-		    "Upscaler passthrough selected; final color is produced by the frame pass copy.");
+		    "Linear upscaler selected; final color is produced by the renderer linear upscale pass.");
 		m_shutdown = false;
 		return;
 	}
@@ -72,7 +72,7 @@ void UpscalerSubsystem::Initialize(
 		    ERendererProviderCapabilityState::RuntimeFailed,
 		    failedDiagnostics.FailureDomain,
 		    std::format(
-		        "Requested provider {} was unavailable: {} Final color is produced by the frame pass copy.",
+		        "Requested provider {} was unavailable: {} Final color is produced by the renderer linear upscale pass.",
 		        UpscalerProviderKindToString(m_settings.RequestedProvider),
 		        failedDiagnostics.Reason));
 	}
@@ -110,7 +110,7 @@ void UpscalerSubsystem::SetupFrame(const UpscalerInputContract& inputContract)
 	m_diagnostics = BuildRendererCopyUpscalerCapabilities(
 	    ERendererProviderCapabilityState::Enabled,
 	    EUpscalerProviderFailureDomain::None,
-	    "Upscaler passthrough selected; final color is produced by the frame pass copy.");
+	    "Linear upscaler selected; final color is produced by the renderer linear upscale pass.");
 	m_diagnostics.RenderExtent = inputContract.RenderExtent;
 	m_diagnostics.OutputExtent = inputContract.OutputExtent;
 	m_diagnostics.ResetRequested = inputContract.ResetRequested;
@@ -134,7 +134,7 @@ UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDes
 		return UpscalerEvaluationResult{
 		    .ProducedOutput = false,
 		    .FailureDomain = EUpscalerProviderFailureDomain::None,
-		    .Reason = "Final color is produced by the frame pass copy."};
+		    .Reason = "Final color is produced by the renderer linear upscale pass."};
 	}
 
 	UpscalerEvaluationResult result = m_activeProvider->Evaluate(evaluation);
@@ -186,7 +186,7 @@ std::unique_ptr<IUpscalerProvider> UpscalerSubsystem::CreateProvider(EUpscalerPr
 {
 	switch (kind)
 	{
-		case EUpscalerProviderKind::Passthrough:
+		case EUpscalerProviderKind::Linear:
 			return {};
 		case EUpscalerProviderKind::NvidiaDlss:
 			return std::make_unique<NvidiaDlssUpscalerProvider>();
