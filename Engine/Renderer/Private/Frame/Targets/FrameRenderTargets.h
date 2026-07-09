@@ -8,7 +8,6 @@ struct SceneRenderTargets
 	FrameGraphTextureHandle ReconstructedSceneColor;
 	FrameGraphTextureHandle FinalSceneColor;
 	FrameGraphTextureHandle BackBuffer;
-	FrameGraphTextureHandle MainDepth;
 };
 
 struct GBufferRenderTargets
@@ -20,7 +19,6 @@ struct GBufferRenderTargets
 	FrameGraphTextureHandle Subsurface;
 	FrameGraphTextureHandle DeviceZ;
 	FrameGraphTextureHandle MotionVector;
-	FrameGraphTextureHandle MainDepth;
 };
 
 struct LightingRenderTargets

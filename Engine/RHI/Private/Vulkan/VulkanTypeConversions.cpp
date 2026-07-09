@@ -20,10 +20,12 @@ VkFormat VulkanTypeConversions::ToVkFormat(PixelFormat format) noexcept
 			return VK_FORMAT_B8G8R8A8_UNORM;
 		case PixelFormat::B8G8R8A8_UNorm_Srgb:
 			return VK_FORMAT_B8G8R8A8_SRGB;
-		case PixelFormat::D24_UNorm_S8_UInt:
-			return VK_FORMAT_D24_UNORM_S8_UINT;
+		case PixelFormat::D32_Float:
+			return VK_FORMAT_D32_SFLOAT;
 		case PixelFormat::R32_Float:
 			return VK_FORMAT_R32_SFLOAT;
+		case PixelFormat::D24_UNorm_S8_UInt:
+			return VK_FORMAT_D24_UNORM_S8_UINT;
 		case PixelFormat::BC1_UNorm:
 			return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
 		case PixelFormat::BC1_UNorm_Srgb:
@@ -74,10 +76,12 @@ PixelFormat VulkanTypeConversions::ToPixelFormat(VkFormat format) noexcept
 			return PixelFormat::B8G8R8A8_UNorm;
 		case VK_FORMAT_B8G8R8A8_SRGB:
 			return PixelFormat::B8G8R8A8_UNorm_Srgb;
-		case VK_FORMAT_D24_UNORM_S8_UINT:
-			return PixelFormat::D24_UNorm_S8_UInt;
+		case VK_FORMAT_D32_SFLOAT:
+			return PixelFormat::D32_Float;
 		case VK_FORMAT_R32_SFLOAT:
 			return PixelFormat::R32_Float;
+		case VK_FORMAT_D24_UNORM_S8_UINT:
+			return PixelFormat::D24_UNorm_S8_UInt;
 		case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
 			return PixelFormat::BC1_UNorm;
 		case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
@@ -365,6 +369,8 @@ VkImageAspectFlags VulkanTypeConversions::ResolveAspectMask(PixelFormat format) 
 {
 	switch (format)
 	{
+		case PixelFormat::D32_Float:
+			return VK_IMAGE_ASPECT_DEPTH_BIT;
 		case PixelFormat::D24_UNorm_S8_UInt:
 			return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 		default:

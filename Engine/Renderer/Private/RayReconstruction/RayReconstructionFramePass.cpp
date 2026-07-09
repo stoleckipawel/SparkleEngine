@@ -72,7 +72,7 @@ void AddRayReconstructionProviderPass(
 	    {
 		    resourceBuilder.Read(providerInputs.NoisyInputColor, ResourceUsage::ShaderRead, "NoisyInputColor");
 		    resourceBuilder.Write(providerInputs.OutputColor, ResourceUsage::UnorderedAccess, "OutputColor");
-		    resourceBuilder.Read(providerInputs.Depth, ResourceUsage::DepthRead, "Depth");
+		    resourceBuilder.Read(providerInputs.Depth, ResourceUsage::ShaderRead, "Depth");
 		    resourceBuilder.Read(providerInputs.MotionVectors, ResourceUsage::ShaderRead, "MotionVectors");
 		    resourceBuilder.Read(providerInputs.Exposure, ResourceUsage::ShaderRead, "Exposure");
 		    resourceBuilder.Read(providerInputs.Normals, ResourceUsage::ShaderRead, "Normals");
@@ -123,7 +123,7 @@ void AddRayReconstructionProviderPass(
 			                context.Resources.ResolveNativeTextureView(providerInputs.NoisyInputColor, ResourceState::ShaderResource),
 			            .NativeOutputColorView =
 			                context.Resources.ResolveNativeTextureView(providerInputs.OutputColor, ResourceState::UnorderedAccess),
-			            .NativeDepthView = context.Resources.ResolveNativeTextureView(providerInputs.Depth, ResourceState::DepthRead),
+			            .NativeDepthView = context.Resources.ResolveNativeTextureView(providerInputs.Depth, ResourceState::ShaderResource),
 			            .NativeMotionVectorsView =
 			                context.Resources.ResolveNativeTextureView(providerInputs.MotionVectors, ResourceState::ShaderResource),
 			            .NativeExposureView = context.Resources.ResolveNativeTextureView(providerInputs.Exposure, ResourceState::ShaderResource),

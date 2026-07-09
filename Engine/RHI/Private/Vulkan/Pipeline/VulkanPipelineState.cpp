@@ -178,6 +178,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f}};
 
 	const bool hasDepthStencilFormat = desc.DepthStencilFormat != PixelFormat::Unknown;
+	const bool hasStencilFormat = HasStencilAspect(desc.DepthStencilFormat);
 	const VkPipelineDepthStencilStateCreateInfo depthStencilState{
 	    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
 	    .pNext = nullptr,
@@ -186,7 +187,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .depthWriteEnable = hasDepthStencilFormat && desc.DepthTest.DepthWriteEnable ? VK_TRUE : VK_FALSE,
 	    .depthCompareOp = VulkanTypeConversions::ToVkCompareOp(desc.DepthTest.DepthFunc),
 	    .depthBoundsTestEnable = VK_FALSE,
-	    .stencilTestEnable = hasDepthStencilFormat && desc.StencilTest.StencilEnable ? VK_TRUE : VK_FALSE,
+	    .stencilTestEnable = hasStencilFormat && desc.StencilTest.StencilEnable ? VK_TRUE : VK_FALSE,
 	    .front = BuildStencilFaceState(
 	        desc.StencilTest.FrontFaceStencilFunc,
 	        desc.StencilTest.FrontFaceStencilFailOp,
@@ -223,7 +224,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .pColorAttachmentFormats = renderTargetFormats.data(),
 	    .depthAttachmentFormat = VulkanTypeConversions::ToVkFormat(desc.DepthStencilFormat),
 	    .stencilAttachmentFormat =
-	        HasStencilAspect(desc.DepthStencilFormat) ? VulkanTypeConversions::ToVkFormat(desc.DepthStencilFormat) : VK_FORMAT_UNDEFINED};
+	        hasStencilFormat ? VulkanTypeConversions::ToVkFormat(desc.DepthStencilFormat) : VK_FORMAT_UNDEFINED};
 
 	const VulkanPipelineCacheKey cacheKey{
 	    .Layout = reinterpret_cast<std::uint64_t>(GetPipelineLayout()),

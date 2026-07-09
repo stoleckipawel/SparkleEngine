@@ -9,6 +9,22 @@
 
 #include <d3d12.h>
 
+namespace
+{
+	DXGI_FORMAT ResolveTextureShaderResourceViewFormat(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+			case PixelFormat::D32_Float:
+				return DXGI_FORMAT_R32_FLOAT;
+			case PixelFormat::D24_UNorm_S8_UInt:
+				return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+			default:
+				return D3D12TypeConversions::ToDxgiFormat(format);
+		}
+	}
+}
+
 D3D12DescriptorService::D3D12DescriptorService(
     D3D12Rhi& rhi,
     D3D12DescriptorHeapManager& descriptorHeapManager,
@@ -336,7 +352,7 @@ bool D3D12DescriptorService::WriteResourceViewDescriptor(
 			}
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
-			viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(desc.Format);
+			viewDesc.Format = ResolveTextureShaderResourceViewFormat(desc.Format);
 			viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 			viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			viewDesc.Texture2D.MostDetailedMip = desc.Texture.MostDetailedMip;

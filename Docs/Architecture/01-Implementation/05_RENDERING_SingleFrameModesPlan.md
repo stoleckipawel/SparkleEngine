@@ -115,7 +115,8 @@ The active GBuffer producer must write these products:
 - `GBufferRenderTargets::Subsurface`
 - `GBufferRenderTargets::DeviceZ`
 - `GBufferRenderTargets::MotionVector`
-- `GBufferRenderTargets::MainDepth`
+
+`DeviceZ` is the only frame depth product. Rasterized GBuffer binds it as the depth target; raytraced GBuffer writes it as an `R32_Float` UAV. Lighting, post processing, debug products, upscalers, and ray reconstruction consume `GBufferRenderTargets::DeviceZ`.
 
 The active lighting producer must write these products:
 

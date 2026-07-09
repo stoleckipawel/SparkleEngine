@@ -13,7 +13,7 @@ FrameRayReconstructionProviderResources BuildIndirectRayReconstructionProviderIn
 	return FrameRayReconstructionProviderResources{
 	    .NoisyInputColor = sceneTargets.SceneColor,
 	    .OutputColor = sceneTargets.ReconstructedSceneColor,
-	    .Depth = sceneTargets.MainDepth,
+	    .Depth = gbuffer.DeviceZ,
 	    .MotionVectors = gbuffer.MotionVector,
 	    .Exposure = exposure,
 	    .Normals = gbuffer.Normal,

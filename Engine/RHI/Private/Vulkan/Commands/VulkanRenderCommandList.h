@@ -12,6 +12,7 @@
 
 class VulkanGpuMemoryAllocator;
 class VulkanDescriptorAllocator;
+class VulkanDescriptorManager;
 class VulkanBindingLayout;
 class VulkanRhi;
 class VulkanRenderCommandList final : public RenderCommandList
@@ -19,6 +20,7 @@ class VulkanRenderCommandList final : public RenderCommandList
   public:
 	void SetRhi(const VulkanRhi* rhi) noexcept { m_rhi = rhi; }
 	void SetMemoryAllocator(const VulkanGpuMemoryAllocator* memoryAllocator) noexcept { m_memoryAllocator = memoryAllocator; }
+	void SetDescriptorManager(const VulkanDescriptorManager* descriptorManager) noexcept { m_descriptorManager = descriptorManager; }
 	void SetDescriptorAllocator(VulkanDescriptorAllocator* descriptorAllocator) noexcept { m_descriptorAllocator = descriptorAllocator; }
 	void CloseOpenRendering() noexcept;
 	void SetNativeCommandBuffer(
@@ -123,11 +125,13 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void MarkDescriptorSetDirty(std::uint32_t setIndex, std::vector<bool>& dirtySets) noexcept;
 	void FlushGraphicsDescriptorSets() noexcept;
 	void FlushComputeDescriptorSets() noexcept;
+	VkImageAspectFlags ResolveDepthStencilAspectMask(VkImageView imageView) const noexcept;
 
 	static constexpr std::uint32_t MaxRenderTargets = 8;
 
 	const VulkanRhi* m_rhi = nullptr;
 	const VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
+	const VulkanDescriptorManager* m_descriptorManager = nullptr;
 	VulkanDescriptorAllocator* m_descriptorAllocator = nullptr;
 	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
 	const VulkanBindingLayout* m_graphicsBindingLayout = nullptr;
@@ -147,6 +151,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	std::array<VkImageView, MaxRenderTargets> m_renderTargets = {};
 	std::uint32_t m_renderTargetCount = 0;
 	VkImageView m_depthStencil = VK_NULL_HANDLE;
+	VkImageAspectFlags m_depthStencilAspectMask = 0;
 	VkRect2D m_scissorRect = {};
 	bool m_hasScissorRect = false;
 	bool m_dynamicRenderingActive = false;

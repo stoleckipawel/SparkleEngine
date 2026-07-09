@@ -12,6 +12,7 @@ enum class PixelFormat : std::uint16_t
 	R8G8B8A8_UNorm = 28,
 	R8G8B8A8_UNorm_Srgb = 29,
 	R16G16_Float = 34,
+	D32_Float = 40,
 	R32_Float = 41,
 	D24_UNorm_S8_UInt = 45,
 	BC1_UNorm = 71,
@@ -49,10 +50,12 @@ constexpr const char* PixelFormatName(PixelFormat format) noexcept
 			return "R16G16_Float";
 		case PixelFormat::R32G32B32A32_Float:
 			return "R32G32B32A32_Float";
-		case PixelFormat::D24_UNorm_S8_UInt:
-			return "D24_UNorm_S8_UInt";
+		case PixelFormat::D32_Float:
+			return "D32_Float";
 		case PixelFormat::R32_Float:
 			return "R32_Float";
+		case PixelFormat::D24_UNorm_S8_UInt:
+			return "D24_UNorm_S8_UInt";
 		case PixelFormat::BC1_UNorm:
 			return "BC1_UNorm";
 		case PixelFormat::BC1_UNorm_Srgb:
@@ -99,6 +102,8 @@ constexpr PixelFormat PixelFormatFromSerializedTextureFormat(std::uint32_t value
 			return PixelFormat::R8G8B8A8_UNorm_Srgb;
 		case 34u:
 			return PixelFormat::R16G16_Float;
+		case 40u:
+			return PixelFormat::D32_Float;
 		case 41u:
 			return PixelFormat::R32_Float;
 		case 45u:

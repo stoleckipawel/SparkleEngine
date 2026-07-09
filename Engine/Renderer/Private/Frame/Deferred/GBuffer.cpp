@@ -8,7 +8,30 @@
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 
-GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const SceneRenderTargets& sceneTargets)
+namespace
+{
+	FrameGraphTextureHandle CreateGBufferDeviceZ(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode)
+	{
+		if (gBufferMode == GBufferMode::Raytraced)
+		{
+			return builder.CreateTexture(
+			    FrameGraphTextureDesc::CreateColor(
+			        "GBufferDeviceZ",
+			        sceneExtent.Width,
+			        sceneExtent.Height,
+			        GBufferFormats::RaytracedDeviceZ));
+		}
+
+		return builder.CreateTexture(
+		    FrameGraphTextureDesc::CreateDepthTarget(
+		        "GBufferDeviceZ",
+		        sceneExtent.Width,
+		        sceneExtent.Height,
+		        GBufferFormats::RasterizedDeviceZ));
+	}
+}
+
+GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode)
 {
 	GBufferRenderTargets targets{};
 	targets.BaseColor = builder.CreateTexture(
@@ -43,18 +66,15 @@ GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, Rend
 	        sceneExtent.Width,
 	        sceneExtent.Height,
 	        GBufferFormats::MotionVector));
-	targets.DeviceZ = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateDepth("GBufferDeviceZ", sceneExtent.Width, sceneExtent.Height, GBufferFormats::DeviceZ));
-	targets.MainDepth = sceneTargets.MainDepth;
+	targets.DeviceZ = CreateGBufferDeviceZ(builder, sceneExtent, gBufferMode);
 	return targets;
 }
 
 void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
 {
-	resources.Transient.GBuffer = CreateGBufferRenderTargets(builder, sceneExtent, resources.Transient.Scene);
 	const GBufferMode gBufferMode = CVarGBufferMode.Get();
-	resources.ViewportProducts.SceneDepth =
-	    gBufferMode == GBufferMode::Raytraced ? resources.Transient.GBuffer.DeviceZ : resources.Transient.Scene.MainDepth;
+	resources.Transient.GBuffer = CreateGBufferRenderTargets(builder, sceneExtent, gBufferMode);
+	resources.ViewportProducts.SceneDepth = resources.Transient.GBuffer.DeviceZ;
 	resources.ViewportProducts.Normals = resources.Transient.GBuffer.Normal;
 	resources.ViewportProducts.MotionVectors = resources.Transient.GBuffer.MotionVector;
 

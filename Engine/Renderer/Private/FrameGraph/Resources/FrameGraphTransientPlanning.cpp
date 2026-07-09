@@ -169,29 +169,33 @@ void FrameGraph::EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan
 		{
 			case FrameGraphResourceKind::DepthStencil:
 				access.resource = allocation.depthStencilResource;
-					access.depthStencilView = allocation.depthStencilView;
+				access.depthStencilView = allocation.depthStencilView;
+				if (allocation.shaderResourceView)
+				{
+					access.shaderResourceView = allocation.shaderResourceView;
+				}
 				break;
 			case FrameGraphResourceKind::ColorRenderTarget:
 				access.resource = allocation.renderTargetResource;
-					access.renderTargetView = allocation.renderTargetView;
-					if (allocation.shaderResourceView)
+				access.renderTargetView = allocation.renderTargetView;
+				if (allocation.shaderResourceView)
 				{
-						access.shaderResourceView = allocation.shaderResourceView;
+					access.shaderResourceView = allocation.shaderResourceView;
 				}
-					if (allocation.unorderedAccessView)
+				if (allocation.unorderedAccessView)
 				{
-						access.unorderedAccessView = allocation.unorderedAccessView;
+					access.unorderedAccessView = allocation.unorderedAccessView;
 				}
 				break;
 			case FrameGraphResourceKind::Buffer:
 				access.resource = allocation.buffer;
-					if (allocation.shaderResourceView)
+				if (allocation.shaderResourceView)
 				{
-						access.shaderResourceView = allocation.shaderResourceView;
+					access.shaderResourceView = allocation.shaderResourceView;
 				}
-					if (allocation.unorderedAccessView)
+				if (allocation.unorderedAccessView)
 				{
-						access.unorderedAccessView = allocation.unorderedAccessView;
+					access.unorderedAccessView = allocation.unorderedAccessView;
 				}
 				break;
 			default:

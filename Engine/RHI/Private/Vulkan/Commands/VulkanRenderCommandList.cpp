@@ -4,6 +4,7 @@
 
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/Descriptors/VulkanDescriptorHandles.h"
+#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
@@ -52,6 +53,7 @@ void VulkanRenderCommandList::SetNativeCommandBuffer(
 	m_renderTargets = {};
 	m_renderTargetCount = 0;
 	m_depthStencil = VK_NULL_HANDLE;
+	m_depthStencilAspectMask = 0;
 	m_hasScissorRect = false;
 	m_graphicsDescriptorSets.clear();
 	m_computeDescriptorSets.clear();
@@ -452,6 +454,7 @@ void VulkanRenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle rtv, const 
 	m_renderTargets[0] = VulkanDescriptorHandles::DecodeImageViewCpuHandle(rtv);
 	m_renderTargetCount = m_renderTargets[0] != VK_NULL_HANDLE ? 1u : 0u;
 	m_depthStencil = dsv != nullptr ? VulkanDescriptorHandles::DecodeImageViewCpuHandle(*dsv) : VK_NULL_HANDLE;
+	m_depthStencilAspectMask = ResolveDepthStencilAspectMask(m_depthStencil);
 }
 
 void VulkanRenderCommandList::SetRenderTargets(
@@ -463,6 +466,7 @@ void VulkanRenderCommandList::SetRenderTargets(
 	m_renderTargets = {};
 	m_renderTargetCount = 0;
 	m_depthStencil = dsv != nullptr ? VulkanDescriptorHandles::DecodeImageViewCpuHandle(*dsv) : VK_NULL_HANDLE;
+	m_depthStencilAspectMask = ResolveDepthStencilAspectMask(m_depthStencil);
 	if (rtvs == nullptr)
 	{
 		return;
@@ -535,7 +539,7 @@ void VulkanRenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle dsv, floa
 	clearValue.depthStencil.depth = depth;
 	clearValue.depthStencil.stencil = stencil;
 	const VkClearAttachment clearAttachment{
-	    .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+	    .aspectMask = m_depthStencilAspectMask != 0 ? m_depthStencilAspectMask : VK_IMAGE_ASPECT_DEPTH_BIT,
 	    .colorAttachment = 0,
 	    .clearValue = clearValue};
 	const VkClearRect clearRect{.rect = m_scissorRect, .baseArrayLayer = 0, .layerCount = 1};
@@ -1170,6 +1174,8 @@ void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
 	    .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 	    .clearValue = {}};
 
+	const bool hasDepthAttachment = (m_depthStencilAspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
+	const bool hasStencilAttachment = (m_depthStencilAspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
 	const VkRenderingInfo renderingInfo{
 	    .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
 	    .pNext = nullptr,
@@ -1179,10 +1185,22 @@ void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
 	    .viewMask = 0,
 	    .colorAttachmentCount = m_renderTargetCount,
 	    .pColorAttachments = m_renderTargetCount > 0 ? colorAttachments.data() : nullptr,
-	    .pDepthAttachment = m_depthStencil != VK_NULL_HANDLE ? &depthStencilAttachment : nullptr,
-	    .pStencilAttachment = m_depthStencil != VK_NULL_HANDLE ? &depthStencilAttachment : nullptr};
+	    .pDepthAttachment = hasDepthAttachment ? &depthStencilAttachment : nullptr,
+	    .pStencilAttachment = hasStencilAttachment ? &depthStencilAttachment : nullptr};
 	vkCmdBeginRendering(m_commandBuffer, &renderingInfo);
 	m_dynamicRenderingActive = true;
+}
+
+VkImageAspectFlags VulkanRenderCommandList::ResolveDepthStencilAspectMask(VkImageView imageView) const noexcept
+{
+	if (imageView == VK_NULL_HANDLE)
+	{
+		return 0;
+	}
+
+	const VkImageAspectFlags aspectMask =
+	    m_descriptorManager != nullptr ? m_descriptorManager->ResolveImageViewAspectMask(imageView) : 0;
+	return aspectMask != 0 ? aspectMask : VK_IMAGE_ASPECT_DEPTH_BIT;
 }
 
 VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(

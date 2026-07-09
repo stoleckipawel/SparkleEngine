@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Config/DepthConvention.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
 #include <array>
@@ -23,7 +22,7 @@ struct FrameGraphTextureDesc
 	FrameGraphTextureKind kind = FrameGraphTextureKind::Color;
 	std::array<float, 4> clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
-	static FrameGraphTextureDesc CreateDepthStencil(
+	static FrameGraphTextureDesc CreateDepthTarget(
 	    std::string_view name,
 	    std::uint32_t width,
 	    std::uint32_t height,
@@ -43,15 +42,4 @@ struct FrameGraphTextureDesc
 		return FrameGraphTextureDesc{std::string(name), width, height, format, FrameGraphTextureKind::Color, {0.0f, 0.0f, 0.0f, 1.0f}};
 	}
 
-	static FrameGraphTextureDesc CreateDepth(std::string_view name, std::uint32_t width, std::uint32_t height, PixelFormat format) noexcept
-	{
-		const float clearDepth = DepthConvention::GetClearDepth();
-		return FrameGraphTextureDesc{
-		    std::string(name),
-		    width,
-		    height,
-		    format,
-		    FrameGraphTextureKind::Color,
-		    {clearDepth, clearDepth, clearDepth, 1.0f}};
-	}
 };

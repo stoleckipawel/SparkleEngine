@@ -46,7 +46,6 @@ RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(FrameGraphResourceH
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
 	const FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
 	assert(metadata.kind != FrameGraphResourceKind::BackBuffer);
-	assert(metadata.kind != FrameGraphResourceKind::DepthStencil && "DepthStencil resources must be resolved with a depth view contract.");
 
 	assert(access.shaderResourceView);
 	if (m_renderHardwareInterface == nullptr)

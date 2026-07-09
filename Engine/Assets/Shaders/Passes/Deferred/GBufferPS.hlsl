@@ -10,8 +10,7 @@ struct GBufferOutput
 	float4 Material : SV_Target2;
 	float4 Emissive : SV_Target3;
 	float4 Subsurface : SV_Target4;
-	float DeviceZ : SV_Target5;
-	float2 MotionVector : SV_Target6;
+	float2 MotionVector : SV_Target5;
 };
 
 void main(in PS::Input Input, out GBufferOutput Output)
@@ -30,7 +29,6 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	    MatProps.DielectricF0);
 	Output.Emissive = GBufferPacking::PackEmissive(MatProps.Emissive);
 	Output.Subsurface = GBufferPacking::PackSubsurface(MatProps.SubsurfaceColor, MatProps.SubsurfaceStrength);
-	Output.DeviceZ = Input.Position.z;
 
 	Output.MotionVector = MotionVectors::Compute(
 		Input.ClipPosition,

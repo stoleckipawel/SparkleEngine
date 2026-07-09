@@ -35,7 +35,7 @@ namespace
 		return FrameUpscalerProviderResources{
 		    .ScalingInputColor = scalingInputColor,
 		    .ScalingOutputColor = sceneTargets.FinalSceneColor,
-		    .Depth = sceneTargets.MainDepth,
+		    .Depth = gbuffer.DeviceZ,
 		    .MotionVectors = gbuffer.MotionVector,
 		    .Exposure = exposure};
 	}
@@ -76,7 +76,7 @@ namespace
 		    [providerInputs](PassResourceBuilder& resourceBuilder)
 		    {
 			    resourceBuilder.Read(providerInputs.ScalingInputColor, ResourceUsage::ShaderRead, "ScalingInputColor");
-			    resourceBuilder.Read(providerInputs.Depth, ResourceUsage::DepthRead, "Depth");
+			    resourceBuilder.Read(providerInputs.Depth, ResourceUsage::ShaderRead, "Depth");
 			    resourceBuilder.Read(providerInputs.MotionVectors, ResourceUsage::ShaderRead, "MotionVectors");
 			    resourceBuilder.Write(providerInputs.ScalingOutputColor, ResourceUsage::UnorderedAccess, "ScalingOutputColor");
 		    },
@@ -108,7 +108,7 @@ namespace
 				            .NativeScalingInputColorView =
 				                context.Resources.ResolveNativeTextureView(providerInputs.ScalingInputColor, ResourceState::ShaderResource),
 				            .NativeDepthView =
-				                context.Resources.ResolveNativeTextureView(providerInputs.Depth, ResourceState::DepthRead),
+				                context.Resources.ResolveNativeTextureView(providerInputs.Depth, ResourceState::ShaderResource),
 				            .NativeMotionVectorsView =
 				                context.Resources.ResolveNativeTextureView(providerInputs.MotionVectors, ResourceState::ShaderResource),
 				            .NativeScalingOutputColorView =

@@ -9,7 +9,6 @@
 namespace
 {
 	constexpr std::uint32_t kD3D12ResourceStateUnorderedAccess = 0x00000008u;
-	constexpr std::uint32_t kD3D12ResourceStateDepthRead = 0x00000020u;
 	constexpr std::uint32_t kD3D12ResourceStateNonPixelShaderResource = 0x00000040u;
 	constexpr std::uint32_t kD3D12ResourceStatePixelShaderResource = 0x00000080u;
 	constexpr std::uint32_t kD3D12ShaderResourceState =
@@ -35,7 +34,7 @@ sl::Result TagDlssResourcesForFrame(
 	    evaluation.NativeScalingOutputColorView,
 	    kD3D12ResourceStateUnorderedAccess);
 	sl::Resource depth =
-	    BuildStreamlineTextureResource(evaluation.BackendApi, evaluation.NativeDepth, evaluation.NativeDepthView, kD3D12ResourceStateDepthRead);
+	    BuildStreamlineTextureResource(evaluation.BackendApi, evaluation.NativeDepth, evaluation.NativeDepthView, kD3D12ShaderResourceState);
 	sl::Resource motionVectors = BuildStreamlineTextureResource(
 	    evaluation.BackendApi,
 	    evaluation.NativeMotionVectors,

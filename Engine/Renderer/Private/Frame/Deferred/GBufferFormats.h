@@ -9,6 +9,7 @@ namespace GBufferFormats
 	inline constexpr PixelFormat Material = PixelFormat::R8G8B8A8_UNorm;
 	inline constexpr PixelFormat Emissive = PixelFormat::R16G16B16A16_Float;
 	inline constexpr PixelFormat Subsurface = PixelFormat::R8G8B8A8_UNorm;
-	inline constexpr PixelFormat DeviceZ = PixelFormat::R32_Float;
+	inline constexpr PixelFormat RasterizedDeviceZ = PixelFormat::D32_Float;
+	inline constexpr PixelFormat RaytracedDeviceZ = PixelFormat::R32_Float;
 	inline constexpr PixelFormat MotionVector = PixelFormat::R16G16_Float;
 }

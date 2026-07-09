@@ -278,6 +278,31 @@ VkImageView VulkanDescriptorManager::GetRegisteredImageView(RhiGpuDescriptorHand
 	return VK_NULL_HANDLE;
 }
 
+VkImageAspectFlags VulkanDescriptorManager::ResolveImageViewAspectMask(VkImageView imageView) const noexcept
+{
+	if (imageView == VK_NULL_HANDLE)
+	{
+		return 0;
+	}
+
+	for (const ResourceViewRecord& record : m_resourceViewRecords)
+	{
+		if (record.ImageView != imageView)
+		{
+			continue;
+		}
+
+		const RhiResourceViewDesc viewDesc{
+		    .Kind = record.Kind,
+		    .Resource = NativeResourceHandle{record.Image},
+		    .Format = record.Format,
+		    .Texture = record.Texture};
+		return ResolveViewAspectMask(viewDesc);
+	}
+
+	return VK_IMAGE_ASPECT_COLOR_BIT;
+}
+
 void VulkanDescriptorManager::RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept
 {
 	ReleaseAllResourceViews();
@@ -398,6 +423,17 @@ VkFormat VulkanDescriptorManager::ResolveViewFormat(const RhiResourceViewDesc& d
 
 VkImageAspectFlags VulkanDescriptorManager::ResolveViewAspectMask(const RhiResourceViewDesc& desc) const noexcept
 {
-	return desc.Kind == ERhiResourceViewKind::DepthStencil ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
-	                                                       : VK_IMAGE_ASPECT_COLOR_BIT;
+	if (desc.Kind == ERhiResourceViewKind::DepthStencil)
+	{
+		return VulkanTypeConversions::ResolveAspectMask(desc.Format);
+	}
+
+	switch (desc.Format)
+	{
+		case PixelFormat::D32_Float:
+		case PixelFormat::D24_UNorm_S8_UInt:
+			return VK_IMAGE_ASPECT_DEPTH_BIT;
+		default:
+			return VK_IMAGE_ASPECT_COLOR_BIT;
+	}
 }

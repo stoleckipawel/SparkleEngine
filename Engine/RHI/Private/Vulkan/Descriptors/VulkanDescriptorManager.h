@@ -48,6 +48,7 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
 	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
 	VkImageView GetRegisteredImageView(RhiGpuDescriptorHandle descriptorHandle) const noexcept;
+	VkImageAspectFlags ResolveImageViewAspectMask(VkImageView imageView) const noexcept;
 	void RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept;
 	RhiResourceViewHandle GetSwapChainBackBufferView(std::uint32_t backBufferIndex) const noexcept;
 	void ReleaseAllResourceViews() noexcept;

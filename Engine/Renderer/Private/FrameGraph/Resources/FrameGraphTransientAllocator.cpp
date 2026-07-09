@@ -11,8 +11,7 @@ namespace
 {
 	bool RequiresShaderResourceView(const FrameGraphTransientResourcePlan& transientPlan) noexcept
 	{
-		return transientPlan.kind != FrameGraphResourceKind::DepthStencil &&
-		       std::find(
+		return std::find(
 		           transientPlan.lifetime.requiredStates.begin(),
 		           transientPlan.lifetime.requiredStates.end(),
 		           ResourceState::ShaderResource) != transientPlan.lifetime.requiredStates.end();
@@ -225,6 +224,11 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			allocation.depthStencilResource = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedDepthStencilResource);
 			allocation.depthStencilView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 			    RhiResourceViewDesc::DepthStencil(allocation.depthStencilResource, transientPlan.textureDesc.format));
+			if (RequiresShaderResourceView(transientPlan))
+			{
+				allocation.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
+				    RhiResourceViewDesc::TextureShaderResource(allocation.depthStencilResource, transientPlan.textureDesc.format));
+			}
 			break;
 		}
 

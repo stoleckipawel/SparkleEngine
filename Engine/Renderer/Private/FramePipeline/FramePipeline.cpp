@@ -262,11 +262,9 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	if (m_frameResources.ViewportProducts.SceneDepth.IsValid() &&
 	    HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
-		const RenderProductFormat sceneDepthFormat =
-		    CVarGBufferMode.Get() == GBufferMode::Raytraced ? RenderProductFormat::Float : RenderProductFormat::DepthStencil;
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::SceneDepth,
-		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth), resolution.Render, sceneDepthFormat});
+		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth), resolution.Render, RenderProductFormat::Float});
 	}
 
 	if (m_frameResources.ViewportProducts.Normals.IsValid() &&

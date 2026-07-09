@@ -30,9 +30,8 @@ struct GBufferPassParameters
 	ShaderRenderTarget Material;
 	ShaderRenderTarget Emissive;
 	ShaderRenderTarget Subsurface;
-	ShaderRenderTarget DeviceZ;
 	ShaderRenderTarget MotionVector;
-	ShaderDepthTarget MainDepth;
+	ShaderDepthTarget DeviceZ;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
@@ -45,9 +44,8 @@ struct GBufferPassParameters
 		builder.RenderTarget("Material", &GBufferPassParameters::Material, ShaderStageVisibility::AllGraphics);
 		builder.RenderTarget("Emissive", &GBufferPassParameters::Emissive, ShaderStageVisibility::AllGraphics);
 		builder.RenderTarget("Subsurface", &GBufferPassParameters::Subsurface, ShaderStageVisibility::AllGraphics);
-		builder.RenderTarget("DeviceZ", &GBufferPassParameters::DeviceZ, ShaderStageVisibility::AllGraphics);
 		builder.RenderTarget("MotionVector", &GBufferPassParameters::MotionVector, ShaderStageVisibility::AllGraphics);
-		builder.DepthTarget("MainDepth", &GBufferPassParameters::MainDepth, ShaderStageVisibility::AllGraphics);
+		builder.DepthTarget("DeviceZ", &GBufferPassParameters::DeviceZ, ShaderStageVisibility::AllGraphics);
 		builder.Uniform("PerFrame", &GBufferPassParameters::PerFrame, ShaderStageVisibility::Pixel);
 		builder.Uniform("PerView", &GBufferPassParameters::PerView, ShaderStageVisibility::Vertex);
 		builder.Uniform("PerTemporal", &GBufferPassParameters::PerTemporal, ShaderStageVisibility::Vertex | ShaderStageVisibility::Pixel);

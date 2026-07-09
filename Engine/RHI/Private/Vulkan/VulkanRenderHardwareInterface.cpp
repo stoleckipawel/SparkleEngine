@@ -96,6 +96,7 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	{
 		commandContext.GetCommandList(frameIndex).SetRhi(&rhi);
 		commandContext.GetCommandList(frameIndex).SetMemoryAllocator(&memoryAllocator);
+		commandContext.GetCommandList(frameIndex).SetDescriptorManager(m_descriptorManager.get());
 		commandContext.GetCommandList(frameIndex).SetDescriptorAllocator(&m_descriptorManager->GetAllocator());
 	}
 	m_diagnostics = CreateVulkanRenderDiagnostics(rhi, memoryAllocator);

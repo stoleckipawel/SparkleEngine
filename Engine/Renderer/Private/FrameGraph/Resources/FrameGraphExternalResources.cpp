@@ -109,6 +109,12 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				access.depthStencilView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::DepthStencil(access.resource, metadata.textureDesc.format));
 			}
+
+			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
+			{
+				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
+				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
+			}
 		}
 		else if (metadata.kind == FrameGraphResourceKind::Buffer)
 		{

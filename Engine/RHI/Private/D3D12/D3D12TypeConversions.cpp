@@ -2,6 +2,27 @@
 
 #include "D3D12/D3D12TypeConversions.h"
 
+namespace
+{
+	DXGI_FORMAT ResolveTextureResourceFormat(const RhiTextureResourceDesc& desc) noexcept
+	{
+		if (!desc.AllowDepthStencil)
+		{
+			return D3D12TypeConversions::ToDxgiFormat(desc.Format);
+		}
+
+		switch (desc.Format)
+		{
+			case PixelFormat::D32_Float:
+				return DXGI_FORMAT_R32_TYPELESS;
+			case PixelFormat::D24_UNorm_S8_UInt:
+				return DXGI_FORMAT_R24G8_TYPELESS;
+			default:
+				return D3D12TypeConversions::ToDxgiFormat(desc.Format);
+		}
+	}
+}
+
 DXGI_FORMAT D3D12TypeConversions::ToDxgiFormat(PixelFormat format) noexcept
 {
 	switch (format)
@@ -20,10 +41,12 @@ DXGI_FORMAT D3D12TypeConversions::ToDxgiFormat(PixelFormat format) noexcept
 			return DXGI_FORMAT_B8G8R8A8_UNORM;
 		case PixelFormat::B8G8R8A8_UNorm_Srgb:
 			return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
-		case PixelFormat::D24_UNorm_S8_UInt:
-			return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case PixelFormat::D32_Float:
+			return DXGI_FORMAT_D32_FLOAT;
 		case PixelFormat::R32_Float:
 			return DXGI_FORMAT_R32_FLOAT;
+		case PixelFormat::D24_UNorm_S8_UInt:
+			return DXGI_FORMAT_D24_UNORM_S8_UINT;
 		case PixelFormat::BC1_UNorm:
 			return DXGI_FORMAT_BC1_UNORM;
 		case PixelFormat::BC1_UNorm_Srgb:
@@ -190,7 +213,7 @@ D3D12_RESOURCE_DESC D3D12TypeConversions::BuildTextureResourceDesc(const RhiText
 	resourceDesc.Height = desc.Height;
 	resourceDesc.DepthOrArraySize = 1;
 	resourceDesc.MipLevels = desc.MipLevels;
-	resourceDesc.Format = ToDxgiFormat(desc.Format);
+	resourceDesc.Format = ResolveTextureResourceFormat(desc);
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.SampleDesc.Quality = 0;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
