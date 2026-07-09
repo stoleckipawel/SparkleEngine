@@ -1,6 +1,8 @@
 #ifndef SPARKLE_GBUFFER_UTILS_HLSLI
 #define SPARKLE_GBUFFER_UTILS_HLSLI
 
+#include "Passes/Deferred/GBufferPacking.hlsli"
+
 Texture2D GBufferBaseColor;
 Texture2D GBufferNormal;
 Texture2D GBufferMaterial;
@@ -25,7 +27,7 @@ struct GBufferData
 
 float GetSkyDeviceZValue()
 {
-	return 0.0f;
+	return GBufferPacking::PackSkyDeviceZ();
 }
 
 bool IsSkyPixel(float deviceZ)

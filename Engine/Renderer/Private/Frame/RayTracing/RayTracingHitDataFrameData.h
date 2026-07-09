@@ -25,6 +25,7 @@ class RayTracingHitDataFrameData final
 	std::uint32_t GetInstanceCount() const noexcept { return m_instanceCount; }
 	std::uint32_t GetMaterialCount() const noexcept { return m_materialCount; }
 	RhiGpuDescriptorHandle GetVertexShaderResourceView() const noexcept { return m_vertexShaderResourceView; }
+	RhiGpuDescriptorHandle GetSkinInfluenceShaderResourceView() const noexcept { return m_skinInfluenceShaderResourceView; }
 	RhiGpuDescriptorHandle GetIndexShaderResourceView() const noexcept { return m_indexShaderResourceView; }
 	RhiGpuDescriptorHandle GetInstanceShaderResourceView() const noexcept { return m_instanceShaderResourceView; }
 	RhiGpuDescriptorHandle GetMaterialShaderResourceView() const noexcept { return m_materialShaderResourceView; }
@@ -36,14 +37,17 @@ class RayTracingHitDataFrameData final
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	RhiOwnedResourceHandle m_vertexBuffer = {};
+	RhiOwnedResourceHandle m_skinInfluenceBuffer = {};
 	RhiOwnedResourceHandle m_indexBuffer = {};
 	RhiOwnedResourceHandle m_instanceBuffer = {};
 	RhiOwnedResourceHandle m_materialBuffer = {};
 	RhiResourceViewHandle m_vertexView = {};
+	RhiResourceViewHandle m_skinInfluenceView = {};
 	RhiResourceViewHandle m_indexView = {};
 	RhiResourceViewHandle m_instanceView = {};
 	RhiResourceViewHandle m_materialView = {};
 	RhiGpuDescriptorHandle m_vertexShaderResourceView = {};
+	RhiGpuDescriptorHandle m_skinInfluenceShaderResourceView = {};
 	RhiGpuDescriptorHandle m_indexShaderResourceView = {};
 	RhiGpuDescriptorHandle m_instanceShaderResourceView = {};
 	RhiGpuDescriptorHandle m_materialShaderResourceView = {};

@@ -14,14 +14,6 @@ float3 RayTracingDebugReasonColor(uint reason)
 	{
 		return 0.0f.xxx;
 	}
-	if (reason == RayTracingHitSurface::ReasonUnsupportedSkinned)
-	{
-		return float3(0.65f, 0.2f, 1.0f);
-	}
-	if (reason == RayTracingHitSurface::ReasonUnsupportedAlphaMode)
-	{
-		return float3(1.0f, 0.1f, 0.05f);
-	}
 	if (reason == RayTracingHitSurface::ReasonMissingMeshHitData)
 	{
 		return float3(1.0f, 0.55f, 0.0f);

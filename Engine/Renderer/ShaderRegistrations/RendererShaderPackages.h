@@ -22,6 +22,7 @@ namespace RendererShaderPackages
 	inline constexpr std::string_view LightingComposite = "LightingComposite";
 	inline constexpr std::string_view IndirectSpecular = "IndirectSpecular";
 	inline constexpr std::string_view OutputEncoding = "OutputEncoding";
+	inline constexpr std::string_view RaytracedGBuffer = "RaytracedGBuffer";
 	inline constexpr std::string_view ReferencePathTracing = "ReferencePathTracing";
 	inline constexpr std::string_view Sky = "Sky";
 	inline constexpr std::string_view ToneMapping = "ToneMapping";

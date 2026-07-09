@@ -27,8 +27,6 @@ namespace RayTracingHitData
 	inline constexpr std::uint32_t Reason_InstanceOutOfRange = 3u;
 	inline constexpr std::uint32_t Reason_InvalidInstance = 4u;
 	inline constexpr std::uint32_t Reason_InvalidMaterial = 5u;
-	inline constexpr std::uint32_t Reason_UnsupportedSkinned = 6u;
-	inline constexpr std::uint32_t Reason_UnsupportedAlphaMode = 7u;
 	inline constexpr std::uint32_t Reason_MissingMeshHitData = 8u;
 	inline constexpr std::uint32_t Reason_InvalidPrimitive = 9u;
 	inline constexpr std::uint32_t Reason_InvalidVertexIndex = 10u;

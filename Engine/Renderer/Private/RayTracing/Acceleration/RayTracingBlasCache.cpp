@@ -6,8 +6,12 @@
 #include "Core/Public/Math/MathUtils.h"
 #include "Meshes/GPUMesh.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
+#include "SceneData/RenderSceneData.h"
+#include "ShaderData/MeshInstanceShaderData.h"
 
+#include <DirectXMath.h>
 #include <utility>
+#include <vector>
 
 static const auto g_rayTracingBlasCacheLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
 
@@ -23,6 +27,46 @@ namespace
 	std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
 	{
 		return alignment > 0 ? MathUtils::AlignUp(sizeInBytes, alignment) : sizeInBytes;
+	}
+
+	bool IsSkinnedDraw(const MeshDraw& draw) noexcept
+	{
+		return draw.Geometry.MeshKind == RenderMeshKind::Skeletal;
+	}
+
+	DirectX::XMFLOAT3 TransformSkinnedPosition(
+	    const DirectX::XMFLOAT3& position,
+	    const VertexSkinInfluence& influence,
+	    std::uint32_t jointMatrixOffset,
+	    const std::vector<DirectX::XMFLOAT4X4>& jointMatrices) noexcept
+	{
+		const DirectX::XMVECTOR sourcePosition = DirectX::XMLoadFloat3(&position);
+		DirectX::XMVECTOR skinnedPosition = DirectX::XMVectorZero();
+		float totalWeight = 0.0f;
+		for (std::uint32_t influenceIndex = 0u; influenceIndex < 4u; ++influenceIndex)
+		{
+			const float weight = influence.jointWeights[influenceIndex];
+			if (weight <= 0.0f)
+			{
+				continue;
+			}
+
+			const std::uint32_t jointMatrixIndex = jointMatrixOffset + influence.jointIndices[influenceIndex];
+			if (jointMatrixIndex >= jointMatrices.size())
+			{
+				continue;
+			}
+
+			const DirectX::XMMATRIX skinningMatrix = DirectX::XMLoadFloat4x4(&jointMatrices[jointMatrixIndex]);
+			skinnedPosition = DirectX::XMVectorAdd(
+			    skinnedPosition,
+			    DirectX::XMVectorScale(DirectX::XMVector3Transform(sourcePosition, skinningMatrix), weight));
+			totalWeight += weight;
+		}
+
+		DirectX::XMFLOAT3 result = position;
+		DirectX::XMStoreFloat3(&result, totalWeight > 0.0f ? skinnedPosition : sourcePosition);
+		return result;
 	}
 }
 
@@ -40,6 +84,10 @@ void RayTracingBlasCache::BeginFrame() noexcept
 {
 	m_currentFrameStats = {};
 	for (auto& [mesh, entry] : m_entries)
+	{
+		entry.touchedThisFrame = false;
+	}
+	for (auto& [key, entry] : m_skinnedEntries)
 	{
 		entry.touchedThisFrame = false;
 	}
@@ -70,6 +118,34 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
 		return BuildHandle(entry);
 	}
 
+	return BuildBlas(cmd, geometry, entry, diagnostics);
+}
+
+RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    const MeshDraw& draw,
+    std::uint32_t renderInstanceIndex,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
+{
+	if (IsSkinnedDraw(draw))
+	{
+		return EnsureSkinnedBlas(cmd, sceneData, draw, renderInstanceIndex, diagnostics);
+	}
+
+	if (draw.Geometry.GpuMesh == nullptr)
+	{
+		return {};
+	}
+	return EnsureBlas(cmd, *draw.Geometry.GpuMesh, diagnostics);
+}
+
+RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildBlas(
+    RenderCommandContext& cmd,
+    const RhiRayTracingGeometryDesc& geometry,
+    Entry& entry,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
+{
 	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
 	    m_renderHardwareInterface->GetRayTracingService().GetBottomLevelAccelerationStructurePrebuildInfo(geometry);
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || prebuildInfo.ScratchDataSizeInBytes == 0)
@@ -101,6 +177,38 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
 	return handle;
 }
 
+RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureSkinnedBlas(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    const MeshDraw& draw,
+    std::uint32_t renderInstanceIndex,
+    RayTracingPerformanceDiagnostics* diagnostics) noexcept
+{
+	if (m_renderHardwareInterface == nullptr || draw.Geometry.GpuMesh == nullptr || !draw.Geometry.GpuMesh->IsValid())
+	{
+		return {};
+	}
+
+	++m_currentFrameStats.referencedMeshCount;
+
+	SkinnedEntryKey key{
+	    .Mesh = draw.Geometry.GpuMesh,
+	    .RenderInstanceIndex = renderInstanceIndex};
+	auto [it, inserted] = m_skinnedEntries.try_emplace(key);
+	(void)inserted;
+	Entry& entry = it->second;
+	entry.touchedThisFrame = true;
+
+	RhiRayTracingGeometryDesc geometry{};
+	if (!BuildSkinnedGeometry(sceneData, draw, entry, geometry))
+	{
+		ReleaseEntryResources(entry);
+		return {};
+	}
+
+	return BuildBlas(cmd, geometry, entry, diagnostics);
+}
+
 RayTracingBlasCache::BuildStats RayTracingBlasCache::EndFrame() noexcept
 {
 	for (auto it = m_entries.begin(); it != m_entries.end();)
@@ -114,6 +222,17 @@ RayTracingBlasCache::BuildStats RayTracingBlasCache::EndFrame() noexcept
 		ReleaseEntryResources(it->second);
 		it = m_entries.erase(it);
 	}
+	for (auto it = m_skinnedEntries.begin(); it != m_skinnedEntries.end();)
+	{
+		if (it->second.touchedThisFrame)
+		{
+			++it;
+			continue;
+		}
+
+		ReleaseEntryResources(it->second);
+		it = m_skinnedEntries.erase(it);
+	}
 
 	return m_currentFrameStats;
 }
@@ -126,6 +245,7 @@ void RayTracingBlasCache::Clear() noexcept
 	}
 
 	m_entries.clear();
+	m_skinnedEntries.clear();
 	m_currentFrameStats = {};
 }
 
@@ -141,12 +261,99 @@ void RayTracingBlasCache::ReleaseEntryResources(Entry& entry) noexcept
 	{
 		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(entry.scratchBuffer);
 	}
+	if (entry.dynamicVertexBuffer)
+	{
+		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(entry.dynamicVertexBuffer);
+	}
 	if (entry.accelerationStructureBuffer)
 	{
 		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(entry.accelerationStructureBuffer);
 	}
 
 	entry = {};
+}
+
+bool RayTracingBlasCache::BuildSkinnedGeometry(
+    const RenderSceneData& sceneData,
+    const MeshDraw& draw,
+    Entry& entry,
+    RhiRayTracingGeometryDesc& outGeometry) noexcept
+{
+	if (m_renderHardwareInterface == nullptr || draw.Geometry.GpuMesh == nullptr ||
+	    draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset)
+	{
+		return false;
+	}
+
+	const GPUMesh& gpuMesh = *draw.Geometry.GpuMesh;
+	if (!gpuMesh.HasRayTracingHitData() || !gpuMesh.HasSkinInfluences() ||
+	    gpuMesh.GetRayTracingHitVertices().size() != gpuMesh.GetSkinInfluences().size() ||
+	    sceneData.jointMatrices.empty())
+	{
+		return false;
+	}
+
+	std::vector<DirectX::XMFLOAT3> skinnedPositions;
+	skinnedPositions.reserve(gpuMesh.GetRayTracingHitVertices().size());
+	const std::span<const RayTracingHitVertex> vertices = gpuMesh.GetRayTracingHitVertices();
+	const std::span<const VertexSkinInfluence> skinInfluences = gpuMesh.GetSkinInfluences();
+	for (std::size_t vertexIndex = 0; vertexIndex < vertices.size(); ++vertexIndex)
+	{
+		for (std::uint32_t influenceIndex = 0u; influenceIndex < 4u; ++influenceIndex)
+		{
+			if (skinInfluences[vertexIndex].jointWeights[influenceIndex] <= 0.0f)
+			{
+				continue;
+			}
+			const std::uint32_t jointMatrixIndex =
+			    draw.Skinning.JointMatrixOffset + skinInfluences[vertexIndex].jointIndices[influenceIndex];
+			if (jointMatrixIndex >= sceneData.jointMatrices.size())
+			{
+				return false;
+			}
+		}
+		skinnedPositions.push_back(
+		    TransformSkinnedPosition(
+		        vertices[vertexIndex].Position,
+		        skinInfluences[vertexIndex],
+		        draw.Skinning.JointMatrixOffset,
+		        sceneData.jointMatrices));
+	}
+
+	if (skinnedPositions.empty())
+	{
+		return false;
+	}
+
+	if (entry.dynamicVertexBuffer)
+	{
+		m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(entry.dynamicVertexBuffer);
+		entry.dynamicVertexBuffer = {};
+		entry.dynamicVertexBufferView = {};
+	}
+
+	if (!m_renderHardwareInterface->GetResourceService().CreateVertexBuffer(
+	        skinnedPositions.data(),
+	        skinnedPositions.size() * sizeof(DirectX::XMFLOAT3),
+	        static_cast<std::uint32_t>(sizeof(DirectX::XMFLOAT3)),
+	        L"RayTracingSkinnedBlasVertices",
+	        entry.dynamicVertexBuffer,
+	        entry.dynamicVertexBufferView) ||
+	    !entry.dynamicVertexBuffer)
+	{
+		return false;
+	}
+
+	const RhiIndexBufferView indexBufferView = gpuMesh.GetIndexBufferView();
+	outGeometry = RhiRayTracingGeometryDesc{
+	    .VertexBuffer = entry.dynamicVertexBufferView.BufferLocation,
+	    .VertexStrideInBytes = entry.dynamicVertexBufferView.StrideInBytes,
+	    .VertexCount = static_cast<std::uint32_t>(skinnedPositions.size()),
+	    .IndexBuffer = indexBufferView.BufferLocation,
+	    .IndexCount = gpuMesh.GetIndexCount(),
+	    .IndexFormat = indexBufferView.Format,
+	    .Opaque = true};
+	return true;
 }
 
 bool RayTracingBlasCache::EnsureEntryResources(

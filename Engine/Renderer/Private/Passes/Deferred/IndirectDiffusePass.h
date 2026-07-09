@@ -46,6 +46,8 @@ struct IndirectDiffusePassParameters
 	ShaderBufferSRV RayTracingHitInstances;
 	ShaderBufferSRV RayTracingHitMaterials;
 	ShaderBufferSRV MeshInstances;
+	ShaderBufferSRV SkinInfluences;
+	ShaderBufferSRV JointMatrices;
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
@@ -92,6 +94,8 @@ struct IndirectDiffusePassParameters
 		builder.ReadBuffer("RayTracingHitInstances", &IndirectDiffusePassParameters::RayTracingHitInstances, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("RayTracingHitMaterials", &IndirectDiffusePassParameters::RayTracingHitMaterials, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("MeshInstances", &IndirectDiffusePassParameters::MeshInstances, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("SkinInfluences", &IndirectDiffusePassParameters::SkinInfluences, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("JointMatrices", &IndirectDiffusePassParameters::JointMatrices, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("DirectionalLights", &IndirectDiffusePassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &IndirectDiffusePassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &IndirectDiffusePassParameters::SpotLights, ShaderStageVisibility::Compute);

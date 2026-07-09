@@ -87,7 +87,8 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 			continue;
 		}
 
-		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, *draw.Geometry.GpuMesh, diagnostics);
+		const RayTracingBlasCache::BlasHandle blas =
+		    blasCache.EnsureBlas(cmd, sceneData, draw, renderInstanceIndex, diagnostics);
 		if (!blas.IsValid())
 		{
 			++result.Stats.Candidates.RejectedBlasCount;

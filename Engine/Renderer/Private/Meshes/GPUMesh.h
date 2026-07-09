@@ -7,6 +7,7 @@
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
+#include "Scene/Meshes/MeshSkinningData.h"
 
 #include <DirectXMath.h>
 
@@ -16,8 +17,6 @@
 
 class RenderCommandContext;
 struct MeshData;
-struct VertexSkinInfluence;
-
 struct GPUMeshBounds final
 {
 	DirectX::XMFLOAT3 Min = {};
@@ -62,6 +61,8 @@ class SPARKLE_RENDERER_API GPUMesh final
 	bool HasRayTracingHitData() const noexcept { return !m_rayTracingHitVertices.empty() && !m_rayTracingHitIndices.empty(); }
 	std::span<const RayTracingHitVertex> GetRayTracingHitVertices() const noexcept { return m_rayTracingHitVertices; }
 	std::span<const std::uint32_t> GetRayTracingHitIndices() const noexcept { return m_rayTracingHitIndices; }
+	bool HasSkinInfluences() const noexcept { return m_cpuSkinInfluences.size() == m_vertexCount; }
+	std::span<const VertexSkinInfluence> GetSkinInfluences() const noexcept { return m_cpuSkinInfluences; }
 
   private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
@@ -76,4 +77,5 @@ class SPARKLE_RENDERER_API GPUMesh final
 	GPUMeshBounds m_localBounds = {};
 	std::vector<RayTracingHitVertex> m_rayTracingHitVertices;
 	std::vector<std::uint32_t> m_rayTracingHitIndices;
+	std::vector<VertexSkinInfluence> m_cpuSkinInfluences;
 };

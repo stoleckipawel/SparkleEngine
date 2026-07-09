@@ -36,6 +36,8 @@ class IndirectSpecularCS final : public TGlobalShader<IndirectSpecularCS>
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitInstance, RayTracingHitInstances)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitMaterial, RayTracingHitMaterials)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(MeshInstanceData, MeshInstances)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(VertexSkinInfluenceData, SkinInfluences)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(JointMatrixData, JointMatrices)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(DirectionalLightConstantBufferData, DirectionalLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(PointLightConstantBufferData, PointLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(SpotLightConstantBufferData, SpotLights)

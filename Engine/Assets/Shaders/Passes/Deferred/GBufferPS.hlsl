@@ -1,5 +1,6 @@
 #include "CommonPS.hlsli"
 #include "Debug/InstanceView.hlsli"
+#include "Passes/Deferred/GBufferPacking.hlsli"
 #include "MotionVector.hlsli"
 
 struct GBufferOutput
@@ -20,16 +21,15 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	Material::Properties MatProps = Material::Sample(Input);
 	MatProps.BaseColor = InstanceView::ApplyDebugVisualization(MatProps.BaseColor, Input.DebugData);
 
-	const float outputAlpha = (MatProps.AlphaMode == Material::AlphaModeBlend) ? MatProps.Alpha : 1.0f;
-	Output.BaseColor = float4(MatProps.BaseColor, outputAlpha);
-	Output.Normal = float4(normalize(MatProps.NormalWorld), 0.0f);
-	Output.Material = float4(
-	    saturate(MatProps.Metallic),
-	    saturate(MatProps.Roughness),
-	    saturate(MatProps.AmbientOcclusion),
-	    saturate(MatProps.DielectricF0));
-	Output.Emissive = float4(MatProps.Emissive, 0.0f);
-	Output.Subsurface = float4(saturate(MatProps.SubsurfaceColor), saturate(MatProps.SubsurfaceStrength));
+	Output.BaseColor = GBufferPacking::PackBaseColor(MatProps.BaseColor, MatProps.Alpha, MatProps.AlphaMode, Material::AlphaModeBlend);
+	Output.Normal = GBufferPacking::PackNormal(MatProps.NormalWorld);
+	Output.Material = GBufferPacking::PackMaterial(
+	    MatProps.Metallic,
+	    MatProps.Roughness,
+	    MatProps.AmbientOcclusion,
+	    MatProps.DielectricF0);
+	Output.Emissive = GBufferPacking::PackEmissive(MatProps.Emissive);
+	Output.Subsurface = GBufferPacking::PackSubsurface(MatProps.SubsurfaceColor, MatProps.SubsurfaceStrength);
 	Output.DeviceZ = Input.Position.z;
 
 	Output.MotionVector = MotionVectors::Compute(

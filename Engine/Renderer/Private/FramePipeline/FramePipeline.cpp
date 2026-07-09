@@ -125,6 +125,7 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 	m_frameGraphOutputExtent = dependencies.outputExtent;
 	m_frameResources = buildResult.Resources;
 	m_renderPath = ResolveFrameRenderPathFromSettings();
+	m_gBufferMode = CVarGBufferMode.Get();
 	m_imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	m_frameGraph = std::move(buildResult.Graph);
 }
@@ -203,6 +204,16 @@ void FramePipeline::BeginFrame() noexcept
 		RefreshFrameExecution(ResolveFrameResolution());
 	}
 
+	const GBufferMode gBufferMode = CVarGBufferMode.Get();
+	if (gBufferMode != m_gBufferMode)
+	{
+		temporalDataBuilder.ResetHistory("GBuffer mode changed");
+		ResetExposureHistory();
+		ResetDirectLightReservoirHistory();
+		m_systems->GetImageProviders().ResetHistory("GBuffer mode changed");
+		RefreshFrameExecution(ResolveFrameResolution());
+	}
+
 	const std::uint32_t imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	if (imageProviderFrameGraphKey != m_imageProviderFrameGraphKey)
 	{
@@ -251,9 +262,11 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	if (m_frameResources.ViewportProducts.SceneDepth.IsValid() &&
 	    HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
+		const RenderProductFormat sceneDepthFormat =
+		    CVarGBufferMode.Get() == GBufferMode::Raytraced ? RenderProductFormat::Float : RenderProductFormat::DepthStencil;
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::SceneDepth,
-		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth), resolution.Render, RenderProductFormat::DepthStencil});
+		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth), resolution.Render, sceneDepthFormat});
 	}
 
 	if (m_frameResources.ViewportProducts.Normals.IsValid() &&
@@ -274,6 +287,7 @@ void FramePipeline::RecordFrame() noexcept
 	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get()};
 	const bool rayTracingSceneRequired =
 	    CVarReferencePathTracingEnabled.Get() ||
+	    CVarGBufferMode.Get() == GBufferMode::Raytraced ||
 	    rayTracedShadowsEnabled ||
 	    CVarIndirectDiffuseEnabled.Get() ||
 	    CVarIndirectSpecularEnabled.Get();

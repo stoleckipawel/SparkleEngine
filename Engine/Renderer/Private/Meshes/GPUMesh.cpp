@@ -107,6 +107,11 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 		        .TexCoord0 = vertex.uv});
 	}
 	m_rayTracingHitIndices.assign(meshData.indices.begin(), meshData.indices.end());
+	m_cpuSkinInfluences.clear();
+	if (uploadDesc.skinInfluences.size() == m_vertexCount)
+	{
+		m_cpuSkinInfluences.assign(uploadDesc.skinInfluences.begin(), uploadDesc.skinInfluences.end());
+	}
 
 	if (!m_skinInfluences.Upload(renderHardwareInterface, m_vertexCount, uploadDesc.skinInfluences))
 	{

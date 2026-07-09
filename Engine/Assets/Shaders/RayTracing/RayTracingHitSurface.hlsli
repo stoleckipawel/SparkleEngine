@@ -22,8 +22,6 @@ namespace RayTracingHitSurface
 	static const uint ReasonInstanceOutOfRange = 3u;
 	static const uint ReasonInvalidInstance = 4u;
 	static const uint ReasonInvalidMaterial = 5u;
-	static const uint ReasonUnsupportedSkinned = 6u;
-	static const uint ReasonUnsupportedAlphaMode = 7u;
 	static const uint ReasonMissingMeshHitData = 8u;
 	static const uint ReasonInvalidPrimitive = 9u;
 	static const uint ReasonInvalidVertexIndex = 10u;

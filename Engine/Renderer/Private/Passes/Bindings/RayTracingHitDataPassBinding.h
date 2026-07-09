@@ -6,7 +6,7 @@ namespace RayTracingHitDataPassBinding
 {
 	inline bool IsAvailable(const FrameContext& frame) noexcept
 	{
-		return frame.rayTracingHitData.IsValid() && frame.meshInstances.IsValid();
+		return frame.rayTracingHitData.IsValid() && frame.meshInstances.IsValid() && frame.skinning.IsValid();
 	}
 
 	inline bool HasTriangleMaterialData(const FrameContext& frame) noexcept
@@ -28,5 +28,14 @@ namespace RayTracingHitDataPassBinding
 	{
 		SetTriangleMaterialParameters(parameters, frame);
 		parameters->MeshInstances = frame.meshInstances.GetShaderResourceView();
+		parameters->SkinInfluences = frame.rayTracingHitData.GetSkinInfluenceShaderResourceView();
+		parameters->JointMatrices = frame.skinning.GetShaderResourceView();
+	}
+
+	template <typename TParameterInstance>
+	void SetTemporalSurfaceParameters(TParameterInstance& parameters, const FrameContext& frame) noexcept
+	{
+		SetParameters(parameters, frame);
+		parameters->PreviousJointMatrices = frame.skinning.GetPreviousShaderResourceView();
 	}
 }

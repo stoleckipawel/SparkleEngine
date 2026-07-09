@@ -39,6 +39,8 @@ struct ReferencePathTracingPassParameters
 	ShaderBufferSRV RayTracingHitInstances;
 	ShaderBufferSRV RayTracingHitMaterials;
 	ShaderBufferSRV MeshInstances;
+	ShaderBufferSRV SkinInfluences;
+	ShaderBufferSRV JointMatrices;
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
@@ -68,6 +70,8 @@ struct ReferencePathTracingPassParameters
 		builder.ReadBuffer("RayTracingHitInstances", &ReferencePathTracingPassParameters::RayTracingHitInstances, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("RayTracingHitMaterials", &ReferencePathTracingPassParameters::RayTracingHitMaterials, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("MeshInstances", &ReferencePathTracingPassParameters::MeshInstances, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("SkinInfluences", &ReferencePathTracingPassParameters::SkinInfluences, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("JointMatrices", &ReferencePathTracingPassParameters::JointMatrices, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("DirectionalLights", &ReferencePathTracingPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &ReferencePathTracingPassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &ReferencePathTracingPassParameters::SpotLights, ShaderStageVisibility::Compute);

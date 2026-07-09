@@ -3,6 +3,7 @@
 
 #include "Meshes/GPUMesh.h"
 #include "SceneData/RenderSceneData.h"
+#include "ShaderData/MeshInstanceShaderData.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
@@ -20,6 +21,21 @@ namespace
 		std::uint32_t VertexCount = 0u;
 		std::uint32_t IndexCount = 0u;
 	};
+
+	VertexSkinInfluenceData ToHitSkinInfluence(const VertexSkinInfluence& influence) noexcept
+	{
+		return VertexSkinInfluenceData{
+		    .JointIndices =
+		        {influence.jointIndices[0],
+		         influence.jointIndices[1],
+		         influence.jointIndices[2],
+		         influence.jointIndices[3]},
+		    .JointWeights =
+		        {influence.jointWeights[0],
+		         influence.jointWeights[1],
+		         influence.jointWeights[2],
+		         influence.jointWeights[3]}};
+	}
 
 	std::uint32_t BuildHitMaterialFlags(const MaterialData& material) noexcept
 	{
@@ -173,13 +189,16 @@ RayTracingHitDataFrameData& RayTracingHitDataFrameData::operator=(RayTracingHitD
 	m_renderHardwareInterface = other.m_renderHardwareInterface;
 	m_vertexBuffer = other.m_vertexBuffer;
 	m_indexBuffer = other.m_indexBuffer;
+	m_skinInfluenceBuffer = other.m_skinInfluenceBuffer;
 	m_instanceBuffer = other.m_instanceBuffer;
 	m_materialBuffer = other.m_materialBuffer;
 	m_vertexView = other.m_vertexView;
+	m_skinInfluenceView = other.m_skinInfluenceView;
 	m_indexView = other.m_indexView;
 	m_instanceView = other.m_instanceView;
 	m_materialView = other.m_materialView;
 	m_vertexShaderResourceView = other.m_vertexShaderResourceView;
+	m_skinInfluenceShaderResourceView = other.m_skinInfluenceShaderResourceView;
 	m_indexShaderResourceView = other.m_indexShaderResourceView;
 	m_instanceShaderResourceView = other.m_instanceShaderResourceView;
 	m_materialShaderResourceView = other.m_materialShaderResourceView;
@@ -189,13 +208,16 @@ RayTracingHitDataFrameData& RayTracingHitDataFrameData::operator=(RayTracingHitD
 	other.m_renderHardwareInterface = nullptr;
 	other.m_vertexBuffer = {};
 	other.m_indexBuffer = {};
+	other.m_skinInfluenceBuffer = {};
 	other.m_instanceBuffer = {};
 	other.m_materialBuffer = {};
 	other.m_vertexView = {};
+	other.m_skinInfluenceView = {};
 	other.m_indexView = {};
 	other.m_instanceView = {};
 	other.m_materialView = {};
 	other.m_vertexShaderResourceView = {};
+	other.m_skinInfluenceShaderResourceView = {};
 	other.m_indexShaderResourceView = {};
 	other.m_instanceShaderResourceView = {};
 	other.m_materialShaderResourceView = {};
@@ -207,7 +229,8 @@ RayTracingHitDataFrameData& RayTracingHitDataFrameData::operator=(RayTracingHitD
 bool RayTracingHitDataFrameData::IsValid() const noexcept
 {
 	return static_cast<bool>(m_vertexShaderResourceView) && static_cast<bool>(m_indexShaderResourceView) &&
-	       static_cast<bool>(m_instanceShaderResourceView) && static_cast<bool>(m_materialShaderResourceView) && m_instanceCount > 0u &&
+	       static_cast<bool>(m_skinInfluenceShaderResourceView) && static_cast<bool>(m_instanceShaderResourceView) &&
+	       static_cast<bool>(m_materialShaderResourceView) && m_instanceCount > 0u &&
 	       m_materialCount > 0u;
 }
 
@@ -221,6 +244,7 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 	}
 
 	std::vector<RayTracingHitVertex> vertices;
+	std::vector<VertexSkinInfluenceData> skinInfluences;
 	std::vector<std::uint32_t> indices;
 	std::vector<RayTracingHitInstance> instances(sceneData.meshInstances.size());
 	std::vector<RayTracingHitMaterial> materials;
@@ -266,21 +290,15 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 			    BuildInvalidHitInstance(draw, nullptr, RayTracingHitData::Reason_InvalidMaterial);
 			continue;
 		}
-		if (draw.Geometry.MeshKind == RenderMeshKind::Skeletal)
-		{
-			instances[instanceIndex] =
-			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_UnsupportedSkinned);
-			continue;
-		}
-		if (material->alphaMode == 2u)
-		{
-			instances[instanceIndex] =
-			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_UnsupportedAlphaMode);
-			continue;
-		}
-
 		const GPUMesh* gpuMesh = draw.Geometry.GpuMesh;
 		if (gpuMesh == nullptr)
+		{
+			instances[instanceIndex] =
+			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_MissingMeshHitData);
+			continue;
+		}
+		if (draw.Geometry.MeshKind == RenderMeshKind::Skeletal &&
+		    (draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset || !gpuMesh->HasSkinInfluences()))
 		{
 			instances[instanceIndex] =
 			    BuildInvalidHitInstance(draw, material, RayTracingHitData::Reason_MissingMeshHitData);
@@ -311,6 +329,17 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 			    vertices.end(),
 			    gpuMesh->GetRayTracingHitVertices().begin(),
 			    gpuMesh->GetRayTracingHitVertices().end());
+			if (gpuMesh->HasSkinInfluences())
+			{
+				for (const VertexSkinInfluence& influence : gpuMesh->GetSkinInfluences())
+				{
+					skinInfluences.push_back(ToHitSkinInfluence(influence));
+				}
+			}
+			else
+			{
+				skinInfluences.resize(vertices.size());
+			}
 			indices.insert(
 			    indices.end(),
 			    gpuMesh->GetRayTracingHitIndices().begin(),
@@ -326,7 +355,7 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 		    .MaterialSlot = draw.Material.Slot,
 		    .Flags = RayTracingHitData::InstanceFlag_Valid |
 		             (material->alphaMode == 0u ? RayTracingHitData::InstanceFlag_Opaque : 0u) |
-		             RayTracingHitData::InstanceFlag_StaticMesh |
+		             (draw.Geometry.MeshKind == RenderMeshKind::Static ? RayTracingHitData::InstanceFlag_StaticMesh : 0u) |
 		             (material->doubleSided ? RayTracingHitData::InstanceFlag_TwoSided : 0u),
 		    .GeometryFlags = BuildHitGeometryFlags(draw, material),
 		    .RejectionReason = RayTracingHitData::Reason_None,
@@ -351,6 +380,13 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 	        frameData.m_vertexBuffer,
 	        frameData.m_vertexView,
 	        frameData.m_vertexShaderResourceView) ||
+	    !UploadStructuredBuffer(
+	        renderHardwareInterface,
+	        skinInfluences,
+	        L"RayTracingHitSkinInfluences",
+	        frameData.m_skinInfluenceBuffer,
+	        frameData.m_skinInfluenceView,
+	        frameData.m_skinInfluenceShaderResourceView) ||
 	    !UploadStructuredBuffer(
 	        renderHardwareInterface,
 	        indices,
@@ -392,6 +428,10 @@ void RayTracingHitDataFrameData::Release() noexcept
 		{
 			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_indexView);
 		}
+		if (m_skinInfluenceView)
+		{
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_skinInfluenceView);
+		}
 		if (m_instanceView)
 		{
 			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_instanceView);
@@ -408,6 +448,10 @@ void RayTracingHitDataFrameData::Release() noexcept
 		{
 			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_indexBuffer);
 		}
+		if (m_skinInfluenceBuffer)
+		{
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_skinInfluenceBuffer);
+		}
 		if (m_instanceBuffer)
 		{
 			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_instanceBuffer);
@@ -421,13 +465,16 @@ void RayTracingHitDataFrameData::Release() noexcept
 	m_renderHardwareInterface = nullptr;
 	m_vertexBuffer = {};
 	m_indexBuffer = {};
+	m_skinInfluenceBuffer = {};
 	m_instanceBuffer = {};
 	m_materialBuffer = {};
 	m_vertexView = {};
+	m_skinInfluenceView = {};
 	m_indexView = {};
 	m_instanceView = {};
 	m_materialView = {};
 	m_vertexShaderResourceView = {};
+	m_skinInfluenceShaderResourceView = {};
 	m_indexShaderResourceView = {};
 	m_instanceShaderResourceView = {};
 	m_materialShaderResourceView = {};

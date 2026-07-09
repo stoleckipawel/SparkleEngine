@@ -9,6 +9,7 @@
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "ShaderData/PerFrameConstantBufferData.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Viewport/ViewportContracts.h"
@@ -105,5 +106,6 @@ class FramePipeline final
 	bool m_exposureHistoryValid = false;
 	bool m_directLightReservoirHistoryValid = false;
 	FrameRenderPath m_renderPath = FrameRenderPath::RealtimeDeferred;
+	GBufferMode m_gBufferMode = GBufferMode::Rasterized;
 	std::uint32_t m_imageProviderFrameGraphKey = 0;
 };

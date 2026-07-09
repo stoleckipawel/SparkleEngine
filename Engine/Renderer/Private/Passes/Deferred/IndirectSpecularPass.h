@@ -43,6 +43,8 @@ struct IndirectSpecularPassParameters
 	ShaderBufferSRV RayTracingHitInstances;
 	ShaderBufferSRV RayTracingHitMaterials;
 	ShaderBufferSRV MeshInstances;
+	ShaderBufferSRV SkinInfluences;
+	ShaderBufferSRV JointMatrices;
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
 	ShaderBufferSRV SpotLights;
@@ -77,6 +79,8 @@ struct IndirectSpecularPassParameters
 		builder.ReadBuffer("RayTracingHitInstances", &IndirectSpecularPassParameters::RayTracingHitInstances, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("RayTracingHitMaterials", &IndirectSpecularPassParameters::RayTracingHitMaterials, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("MeshInstances", &IndirectSpecularPassParameters::MeshInstances, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("SkinInfluences", &IndirectSpecularPassParameters::SkinInfluences, ShaderStageVisibility::Compute);
+		builder.ReadBuffer("JointMatrices", &IndirectSpecularPassParameters::JointMatrices, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("DirectionalLights", &IndirectSpecularPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &IndirectSpecularPassParameters::PointLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("SpotLights", &IndirectSpecularPassParameters::SpotLights, ShaderStageVisibility::Compute);

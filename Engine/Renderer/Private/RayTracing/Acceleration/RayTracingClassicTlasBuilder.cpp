@@ -124,7 +124,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 				continue;
 			}
 
-			const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, *draw.Geometry.GpuMesh, diagnostics);
+			const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, sceneData, draw, index, diagnostics);
 			if (!blas.IsValid())
 			{
 				++stats.Candidates.RejectedBlasCount;

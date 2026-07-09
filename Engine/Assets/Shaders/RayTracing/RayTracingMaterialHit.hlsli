@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Common/Math.hlsli"
+#include "Resources/ConstantBuffers.hlsli"
 #include "Geometry/Basis.hlsli"
+#include "Geometry/Skinning.hlsli"
 #include "Material/MaterialNormal.hlsli"
 #include "Material/MaterialTextureTable.hlsli"
 #include "RayTracing/RayTracingHitSurface.hlsli"
@@ -66,6 +68,7 @@ struct RayTracingHitSurfaceData
 {
 	bool Valid;
 	float3 PositionWorld;
+	float3 PreviousPositionWorld;
 	float3 NormalWorld;
 	float3 TangentWorld;
 	float3 BitangentWorld;
@@ -81,8 +84,11 @@ struct RayTracingHitSurfaceData
 	float Roughness;
 	float Metallic;
 	float DielectricF0;
+	float AmbientOcclusion;
 	float Alpha;
 	float SubsurfaceStrength;
+	uint AlphaMode;
+	uint DebugData;
 };
 
 StructuredBuffer<RayTracingHitVertex> RayTracingHitVertices;
@@ -105,13 +111,19 @@ void ResolveRayTracingHitMaterialTextures(
     out float roughness,
     out float metallic,
     out float3 emissive,
-    out float3 normalTangent)
+    out float3 normalTangent,
+    out float ambientOcclusion,
+    out float3 subsurfaceColor,
+    out float subsurfaceStrength)
 {
 	baseColor = material.BaseColor;
 	roughness = material.Roughness;
 	metallic = material.Metallic;
 	emissive = material.EmissiveColor;
 	normalTangent = float3(0.0f, 0.0f, 1.0f);
+	ambientOcclusion = 1.0f;
+	subsurfaceColor = material.SubsurfaceColor;
+	subsurfaceStrength = material.SubsurfaceStrength;
 
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotNormal))
 	{
@@ -145,6 +157,26 @@ void ResolveRayTracingHitMaterialTextures(
 		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotEmissive, uv).rgb *
 		    material.EmissiveColor;
 	}
+
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotOcclusion))
+	{
+		ambientOcclusion =
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotOcclusion, uv).r;
+	}
+
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotSubsurfaceColor))
+	{
+		subsurfaceColor =
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotSubsurfaceColor, uv).rgb *
+		    material.SubsurfaceColor;
+	}
+
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotSubsurfaceStrength))
+	{
+		subsurfaceStrength =
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotSubsurfaceStrength, uv).r *
+		    material.SubsurfaceStrength;
+	}
 }
 
 bool TryLoadRayTracingHitTriangle(
@@ -154,6 +186,7 @@ bool TryLoadRayTracingHitTriangle(
     out RayTracingHitInstance hitInstance,
     out RayTracingHitMaterial material,
     out float3 barycentricWeights,
+    out uint3 vertexIndices,
     out RayTracingHitVertex v0,
     out RayTracingHitVertex v1,
     out RayTracingHitVertex v2,
@@ -162,6 +195,7 @@ bool TryLoadRayTracingHitTriangle(
 	hitInstance = (RayTracingHitInstance) 0;
 	material = (RayTracingHitMaterial) 0;
 	barycentricWeights = 0.0f.xxx;
+	vertexIndices = 0u.xxx;
 	v0 = (RayTracingHitVertex) 0;
 	v1 = (RayTracingHitVertex) 0;
 	v2 = (RayTracingHitVertex) 0;
@@ -208,6 +242,7 @@ bool TryLoadRayTracingHitTriangle(
 	}
 
 	barycentricWeights = float3(1.0f - barycentrics.x - barycentrics.y, barycentrics.x, barycentrics.y);
+	vertexIndices = uint3(i0, i1, i2);
 	v0 = RayTracingHitVertices[i0];
 	v1 = RayTracingHitVertices[i1];
 	v2 = RayTracingHitVertices[i2];
@@ -228,11 +263,12 @@ bool ResolveRayTracingCandidateAlpha(
 	RayTracingHitInstance hitInstance = (RayTracingHitInstance) 0;
 	RayTracingHitMaterial material = (RayTracingHitMaterial) 0;
 	float3 barycentricWeights = 0.0f.xxx;
+	uint3 vertexIndices = 0u.xxx;
 	RayTracingHitVertex v0 = (RayTracingHitVertex) 0;
 	RayTracingHitVertex v1 = (RayTracingHitVertex) 0;
 	RayTracingHitVertex v2 = (RayTracingHitVertex) 0;
 	uint rejectionReason = RayTracingHitSurface::ReasonNone;
-	if (!TryLoadRayTracingHitTriangle(instanceId, primitiveIndex, barycentrics, hitInstance, material, barycentricWeights, v0, v1, v2, rejectionReason))
+	if (!TryLoadRayTracingHitTriangle(instanceId, primitiveIndex, barycentrics, hitInstance, material, barycentricWeights, vertexIndices, v0, v1, v2, rejectionReason))
 	{
 		return true;
 	}
@@ -264,6 +300,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	RayTracingHitSurfaceData surface;
 	surface.Valid = false;
 	surface.PositionWorld = rayOriginWorld + rayDirectionWorld * trace.RayT;
+	surface.PreviousPositionWorld = surface.PositionWorld;
 	surface.NormalWorld = 0.0f.xxx;
 	surface.TangentWorld = 0.0f.xxx;
 	surface.BitangentWorld = 0.0f.xxx;
@@ -279,8 +316,11 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.Roughness = 1.0f;
 	surface.Metallic = 0.0f;
 	surface.DielectricF0 = 0.04f;
+	surface.AmbientOcclusion = 1.0f;
 	surface.Alpha = 1.0f;
 	surface.SubsurfaceStrength = 0.0f;
+	surface.AlphaMode = RayTracingHitSurface::AlphaModeOpaque;
+	surface.DebugData = 0u;
 
 	if (!trace.Hit)
 	{
@@ -290,6 +330,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	RayTracingHitInstance hitInstance = (RayTracingHitInstance) 0;
 	RayTracingHitMaterial material = (RayTracingHitMaterial) 0;
 	float3 barycentricWeights = 0.0f.xxx;
+	uint3 vertexIndices = 0u.xxx;
 	RayTracingHitVertex v0 = (RayTracingHitVertex) 0;
 	RayTracingHitVertex v1 = (RayTracingHitVertex) 0;
 	RayTracingHitVertex v2 = (RayTracingHitVertex) 0;
@@ -301,6 +342,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	        hitInstance,
 	        material,
 	        barycentricWeights,
+	        vertexIndices,
 	        v0,
 	        v1,
 	        v2,
@@ -314,16 +356,29 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.MaterialSlot = hitInstance.MaterialSlot;
 	surface.GeometryFlags = hitInstance.GeometryFlags;
 	surface.RejectionReason = hitInstance.RejectionReason;
+	surface.AlphaMode = hitInstance.AlphaMode;
 
-	const float3 localNormal = v0.Normal * barycentricWeights.x + v1.Normal * barycentricWeights.y + v2.Normal * barycentricWeights.z;
-	const float4 localTangent =
-	    v0.Tangent * barycentricWeights.x + v1.Tangent * barycentricWeights.y + v2.Tangent * barycentricWeights.z;
 	const MeshInstanceData meshInstance = MeshInstances[trace.InstanceId];
+	const SkinnedVertexAttributes skinned0 = ApplySkinning(meshInstance, vertexIndices.x, v0.Position, v0.Normal, v0.Tangent.xyz);
+	const SkinnedVertexAttributes skinned1 = ApplySkinning(meshInstance, vertexIndices.y, v1.Position, v1.Normal, v1.Tangent.xyz);
+	const SkinnedVertexAttributes skinned2 = ApplySkinning(meshInstance, vertexIndices.z, v2.Position, v2.Normal, v2.Tangent.xyz);
+	const SkinnedVertexAttributes previousSkinned0 = ApplyPreviousSkinning(meshInstance, vertexIndices.x, v0.Position, v0.Normal, v0.Tangent.xyz);
+	const SkinnedVertexAttributes previousSkinned1 = ApplyPreviousSkinning(meshInstance, vertexIndices.y, v1.Position, v1.Normal, v1.Tangent.xyz);
+	const SkinnedVertexAttributes previousSkinned2 = ApplyPreviousSkinning(meshInstance, vertexIndices.z, v2.Position, v2.Normal, v2.Tangent.xyz);
+	const float3 localPosition =
+	    skinned0.Position * barycentricWeights.x + skinned1.Position * barycentricWeights.y + skinned2.Position * barycentricWeights.z;
+	const float3 previousLocalPosition =
+	    previousSkinned0.Position * barycentricWeights.x + previousSkinned1.Position * barycentricWeights.y + previousSkinned2.Position * barycentricWeights.z;
+	const float3 localNormal =
+	    skinned0.Normal * barycentricWeights.x + skinned1.Normal * barycentricWeights.y + skinned2.Normal * barycentricWeights.z;
+	const float3 localTangent =
+	    skinned0.Tangent * barycentricWeights.x + skinned1.Tangent * barycentricWeights.y + skinned2.Tangent * barycentricWeights.z;
+	const float tangentSign =
+	    (v0.Tangent.w * barycentricWeights.x + v1.Tangent.w * barycentricWeights.y + v2.Tangent.w * barycentricWeights.z) >= 0.0f ? 1.0f : -1.0f;
 	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
 	const float3x3 worldMatrix = (float3x3) meshInstance.WorldMTX;
 	float3 normalWorld = SafeNormalize(mul(localNormal, worldInvTransposeMatrix), -rayDirectionWorld);
-	float3 tangentWorld = SafeNormalize(mul(localTangent.xyz, worldMatrix), 0.0f.xxx);
-	const float tangentSign = localTangent.w >= 0.0f ? 1.0f : -1.0f;
+	float3 tangentWorld = SafeNormalize(mul(localTangent, worldMatrix), 0.0f.xxx);
 	const bool twoSided = (hitInstance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 	const bool frontFacing = dot(normalWorld, -rayDirectionWorld) >= 0.0f;
 	if (!frontFacing && !twoSided)
@@ -335,10 +390,8 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	const float3 bitangentWorld = ComputeBitangentFromSign(normalWorld, tangentWorld, tangentSign);
 
 	surface.Valid = true;
-	surface.PositionWorld =
-	    mul(float4(v0.Position * barycentricWeights.x + v1.Position * barycentricWeights.y + v2.Position * barycentricWeights.z, 1.0f),
-	        meshInstance.WorldMTX)
-	        .xyz;
+	surface.PositionWorld = mul(float4(localPosition, 1.0f), meshInstance.WorldMTX).xyz;
+	surface.PreviousPositionWorld = mul(float4(previousLocalPosition, 1.0f), meshInstance.PreviousWorldMTX).xyz;
 	surface.NormalWorld = normalWorld;
 	surface.TangentWorld = tangentWorld;
 	surface.BitangentWorld = bitangentWorld;
@@ -347,12 +400,17 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.MaterialSlot = hitInstance.MaterialSlot;
 	surface.GeometryFlags = hitInstance.GeometryFlags;
 	surface.RejectionReason = RayTracingHitSurface::ReasonNone;
+	surface.AlphaMode = material.AlphaMode;
+	surface.DebugData = meshInstance.DebugData;
 
 	float4 resolvedBaseColor = material.BaseColor;
 	float resolvedRoughness = material.Roughness;
 	float resolvedMetallic = material.Metallic;
 	float3 resolvedEmissive = material.EmissiveColor;
 	float3 resolvedNormalTangent = float3(0.0f, 0.0f, 1.0f);
+	float resolvedAmbientOcclusion = 1.0f;
+	float3 resolvedSubsurfaceColor = material.SubsurfaceColor;
+	float resolvedSubsurfaceStrength = material.SubsurfaceStrength;
 	ResolveRayTracingHitMaterialTextures(
 	    material,
 	    surface.TexCoord0,
@@ -360,7 +418,10 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	    resolvedRoughness,
 	    resolvedMetallic,
 	    resolvedEmissive,
-	    resolvedNormalTangent);
+	    resolvedNormalTangent,
+	    resolvedAmbientOcclusion,
+	    resolvedSubsurfaceColor,
+	    resolvedSubsurfaceStrength);
 
 	surface.NormalTangent = resolvedNormalTangent;
 	surface.NormalWorld = TransformTangentNormalToWorld(resolvedNormalTangent, normalWorld, tangentWorld, bitangentWorld);
@@ -372,11 +433,12 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	}
 	surface.BaseColor = saturate(resolvedBaseColor.rgb);
 	surface.EmissiveColor = max(resolvedEmissive, 0.0f.xxx);
-	surface.SubsurfaceColor = saturate(material.SubsurfaceColor);
+	surface.SubsurfaceColor = saturate(resolvedSubsurfaceColor);
 	surface.Roughness = saturate(resolvedRoughness);
 	surface.Metallic = saturate(resolvedMetallic);
 	surface.DielectricF0 = saturate(material.F0);
+	surface.AmbientOcclusion = saturate(resolvedAmbientOcclusion);
 	surface.Alpha = saturate(resolvedBaseColor.a);
-	surface.SubsurfaceStrength = saturate(material.SubsurfaceStrength);
+	surface.SubsurfaceStrength = saturate(resolvedSubsurfaceStrength);
 	return surface;
 }
