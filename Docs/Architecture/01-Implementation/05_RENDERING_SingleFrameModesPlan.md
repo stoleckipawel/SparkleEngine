@@ -37,25 +37,33 @@ Rendering settings CVar contract:
 - Every field in `EngineRenderingSettingsState` must capture from a `ConsoleVariable<T>::Get()` path.
 - Persisted config must store CVar names and apply values through the CVar registry/parser.
 - Individual editor/settings setters must write the owning CVar directly, then refresh and persist the section snapshot from CVars.
-- Runtime render code should read CVars directly at use sites; feature-local builders may group packing/clamping logic, but should be named for the feature data they produce rather than for CVars.
+- Runtime render code should read CVars directly at use sites. Feature-local builders may group packing/clamping logic, but only for payloads the pass actually consumes.
+- Do not add `Build*FromCVars` helpers.
+- Do not use `Build*Settings().Enabled` for scheduling. Enabled gates are CVars and should be read directly at the branch that needs them.
+- Feature settings structs should not carry broad scheduling flags such as `Enabled`; keep them to pass payload values such as bias, distance, sample counts, bounce counts, and debug modes.
 - Do not route one-setting edits through a copied full settings state, mirrored globals, setter wrapper functions, or frame result fields.
 - New renderer settings must add the CVar first, then add config/editor persistence on top of that CVar.
+- Editor settings UI should keep feature-specific enum option tables in feature section files. The main rendering settings panel should orchestrate sections rather than own enum/index conversion details.
 
 ## Current Sparkle State
 
-The top-level fork is in `Engine/Renderer/Private/Frame/Core/Frame.cpp`. `ResolveFrameRenderPathFromSettings()` turns `r.RayTracing.ReferencePathTracing.Enabled` into `FrameRenderPath::PathTracedReference`, then `BuildFrame` either runs `AddReferenceRenderingPasses` or the realtime GBuffer plus lighting path.
+The top-level fork is still in `Engine/Renderer/Private/Frame/Core/Frame.cpp`. `ResolveFrameRenderPathFromSettings()` turns `r.RayTracing.ReferencePathTracing.Enabled` into `FrameRenderPath::PathTracedReference`, then `BuildFrame` either runs `AddReferenceRenderingPasses` or the realtime GBuffer plus lighting path.
 
 Related dependency points:
 
 - `Engine/Renderer/Private/Frame/Core/FrameRenderPath.*` owns the two-value frame path enum.
-- `Engine/Renderer/Private/Frame/Core/FrameResolution.cpp` disables upscaling for `PathTracedReference`.
-- `Engine/Renderer/Private/FramePipeline/FramePipeline.cpp` rebuilds the graph and resets history when `FrameRenderPath` changes.
-- `FramePipeline::RecordFrame` uses `m_renderPath == FrameRenderPath::PathTracedReference` as one reason to build the ray tracing scene.
+- `Engine/Renderer/Private/Frame/Core/FrameResolution.cpp` is already independent from `FrameRenderPath`; it resolves render extent from the upscaler quality CVar.
+- `FrameBuildResult` is already resource-focused and no longer carries render path or mode state.
+- `Engine/Renderer/Private/FramePipeline/FramePipeline.cpp` still rebuilds the graph and resets history when `FrameRenderPath` changes, but captures the current value directly from `ResolveFrameRenderPathFromSettings()`.
+- `FramePipeline::RecordFrame` already derives ray tracing scene requirements from direct CVar reads for the temporary reference path and active RT effects.
 - `Engine/Renderer/Private/Frame/RayTracing/RayTracingScene.*` owns the frame graph TLAS resource and scene build pass through `AddRaytracingScenePasses`.
 - `Engine/Renderer/Private/Frame/Deferred/GBuffer.cpp` already centralizes GBuffer target creation and writes common viewport products.
 - `Engine/Renderer/Private/Frame/Lighting/Lighting.cpp` already centralizes lighting composition and calls direct, indirect, sky, composite, and ray reconstruction passes.
+- `Engine/Renderer/Private/Frame/Lighting/IndirectLighting.cpp` schedules indirect passes from direct enabled-CVar checks, not from bulk settings builders.
 - `Engine/Renderer/Private/Frame/Reference/ReferencePathTracing.cpp` currently writes `ReferenceSceneColor` and copies it over scene color/final scene color. This path is deleted once raytraced GBuffer plus path traced lighting replaces its role.
 - Current indirect diffuse/specular passes already path trace secondary rays from a GBuffer primary surface and output lighting/guide products.
+- Feature-local settings builders such as `BuildIndirectDiffuseSettings`, `BuildIndirectSpecularSettings`, and `BuildReferencePathTracingSettings` are pass payload builders only. They must not own enabled/scheduling state.
+- `RenderRayTracingPassServices` carries the ray tracing scene/capability data and ray-traced shadow payload. It does not carry indirect diffuse/specular settings payloads.
 
 That means the refactor should not start by inventing a second frame graph. The frame graph is already the right scheduler; the ambiguity is the frame-wide render path switch.
 
@@ -191,6 +199,7 @@ Implementation notes:
 - Rendering settings captures snapshots through `CVar*.Get()` and applies persisted config through CVar names.
 - Any mode setter writes the mode CVar directly, then refreshes/persists the settings snapshot from CVars.
 - Render code should read the mode CVars directly at the branch points that need them.
+- Keep enabled feature gates as direct `CVar*.Get()` checks at scheduling and pass-entry points. Do not hide them inside settings payload builders.
 - Leave `FrameRenderPath` removal to Stage 7, but stop adding new logic to it.
 - Do not add any special reference final-color mode.
 - Do not create a new route from `r.RayTracing.ReferencePathTracing.Enabled` into the new modes.
@@ -229,6 +238,8 @@ Requirements:
 - Add CVarGBufferMode and CVarLightingMode.
 - Make rendering settings capture/apply persisted config through CVar Get/Set.
 - Make any direct settings setter write the owning CVar first, not a copied full settings state.
+- Do not add `Build*FromCVars` helpers or settings structs whose only purpose is moving copied CVar state.
+- Do not put enabled flags into pass settings payloads when the enabled state can be checked directly from the owning CVar.
 - Keep current default output stable.
 - Do not connect r.RayTracing.ReferencePathTracing.Enabled to the new modes.
 - Do not add a special reference final-color mode.
@@ -380,15 +391,17 @@ Implementation notes:
 - Treat existing direct lighting plus indirect diffuse/specular passes as the first `LightingMode::Raytraced` implementation.
 - Move orchestration into clearer files such as `RaytracedLighting.*` if useful.
 - `AddLightingPasses` or `AddIndirectLightingPasses` should branch on `LightingMode`:
-  - `Raytraced`: current enabled-CVar behavior.
+  - `Raytraced`: current enabled-CVar behavior, with enabled checks read directly from the owning CVars.
   - `PathTraced`: no-op until Stage 5.
 - Keep direct lighting behavior unchanged in this stage.
+- Keep feature settings builders payload-only. For example, indirect diffuse/specular builders may prepare bias, distance, bounce count, intensity, sample mode, and debug mode, but must not own `Enabled`.
 
 Acceptance:
 
 - Existing direct and indirect raytraced lighting behavior is unchanged in default mode.
 - The lighting mode switch lives under lighting, not frame core.
 - Ray reconstruction still only runs when its required inputs exist.
+- No `Build*Settings().Enabled` checks are introduced.
 
 Ready-to-use prompt:
 
@@ -410,11 +423,14 @@ Requirements:
 - Add LightingMode branching inside lighting orchestration.
 - Treat existing direct plus indirect raytraced passes as LightingMode::Raytraced.
 - Leave LightingMode::PathTraced as explicit unimplemented/no-op until Stage 5.
+- Read enabled CVars directly for pass scheduling and pass-entry gates.
+- Keep indirect settings structs free of `Enabled` fields.
 - Do not rename unrelated raytraced-lighting toggles in this stage.
 
 Verification:
 - Build Renderer.
 - Test/default inspect: LightingMode::Raytraced still schedules current lighting passes.
+- rg "Build.*Settings\\(\\)\\.Enabled|settings\\.Enabled" Engine/Renderer
 ```
 
 ## Stage 5 - Implement Path Traced Lighting
@@ -549,10 +565,10 @@ Target files:
 Implementation notes:
 
 - Remove `FrameRenderPath` from frame build results after the single frame skeleton no longer needs it.
-- Resolve `GBufferMode` and `LightingMode` from settings at the GBuffer, lighting, resolution, and ray tracing scene decision points.
-- `ResolveFrameResolutionExtents` should depend on upscaling settings and selected output policy, not on reference path tracing.
+- Resolve `GBufferMode` and `LightingMode` from settings at the GBuffer, lighting, graph rebuild/history, and ray tracing scene decision points.
+- `ResolveFrameResolutionExtents` is already independent from reference path tracing; keep it driven by upscaling/output policy, not frame path or lighting mode.
 - Temporal history reset should happen where mode changes alter persistent graph resources or temporal inputs.
-- `rayTracingSceneRequired` should be derived from selected modes plus active RT effects:
+- `rayTracingSceneRequired` should be derived from selected modes plus active RT effects with direct CVar reads at the decision point:
   - `GBufferMode::Raytraced`
   - raytraced direct shadows
   - `LightingMode::Raytraced` when current RT lighting effects are enabled
@@ -585,7 +601,7 @@ Requirements:
 - Remove FrameRenderPath from FrameBuildResult after its branch is gone.
 - Do not add mode fields to FrameBuildResult or FrameGraphBuildResult.
 - Make resolution policy independent from reference path tracing.
-- Derive rayTracingSceneRequired from selected modes and active RT effects.
+- Derive rayTracingSceneRequired from selected modes and active RT effects with direct CVar reads for existing feature gates.
 - Delete FrameRenderPath files after replacing their call sites.
 - Keep temporal history resets on meaningful mode changes.
 - Do not add extra frame-mode layers.
@@ -606,6 +622,11 @@ Target files:
 - `Engine/Renderer/Public/Settings/EngineRenderingRayTracingTypes.h`
 - `Engine/Renderer/Private/Settings/EngineRenderingSettings.cpp`
 - `Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp`
+- `Engine/Editor/Private/Panels/RenderingSettingsPanelUi.h`
+- `Engine/Editor/Private/Panels/RenderingDisplaySettingsPanel.*`
+- `Engine/Editor/Private/Panels/RenderingRayTracingSceneSettingsPanel.*`
+- `Engine/Editor/Private/Panels/RenderingUpscalingSettingsPanel.cpp`
+- `Engine/Editor/Private/Panels/RenderingRayReconstructionSettingsPanel.*`
 - `Config/DefaultEngine.ini`
 - `Engine/Renderer/Private/RayTracing/Effects/ReferencePathTracing/ReferencePathTracingCVars.*`
 
@@ -617,6 +638,8 @@ Implementation notes:
 - Remove `ReferencePathTracing` CVar/config names from the public settings surface.
 - Rename descriptions so "path traced reference" no longer implies a separate frame path.
 - Store config values as readable strings, not magic integers, where the settings parser already supports it.
+- Keep enum option mapping in feature-specific panel sections using typed option tables. Do not add `To*Index`/`From*Index` helper pairs to the main rendering settings panel.
+- `RenderingSettingsPanel.cpp` should remain a section orchestrator.
 
 Acceptance:
 
@@ -624,6 +647,7 @@ Acceptance:
 - No reference-frame CVar owns renderer behavior.
 - Default config remains rasterized GBuffer plus raytraced lighting.
 - UI does not expose unimplemented modes.
+- `rg "To[A-Za-z0-9]+Index|From[A-Za-z0-9]+Index" Engine/Editor/Private/Panels` finds no enum/index conversion helpers.
 
 Ready-to-use prompt:
 
@@ -637,6 +661,11 @@ Inspect:
 - Engine/Renderer/Public/Settings/EngineRenderingRayTracingTypes.h
 - Engine/Renderer/Private/Settings/EngineRenderingSettings.cpp
 - Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp
+- Engine/Editor/Private/Panels/RenderingSettingsPanelUi.h
+- Engine/Editor/Private/Panels/RenderingDisplaySettingsPanel.*
+- Engine/Editor/Private/Panels/RenderingRayTracingSceneSettingsPanel.*
+- Engine/Editor/Private/Panels/RenderingUpscalingSettingsPanel.cpp
+- Engine/Editor/Private/Panels/RenderingRayReconstructionSettingsPanel.*
 - Config/DefaultEngine.ini
 - Engine/Renderer/Private/RayTracing/Effects/ReferencePathTracing/ReferencePathTracingCVars.*
 
@@ -645,6 +674,8 @@ Requirements:
 - Add editor controls only for implemented modes.
 - Remove ReferencePathTracing CVar/config names from settings and UI.
 - Use readable config strings where practical.
+- Keep enum option mappings in feature-specific section files.
+- Keep the main rendering settings panel free of feature enum/index conversion helpers.
 - Keep defaults stable.
 - Do not add extra frame-mode layers.
 
@@ -652,6 +683,7 @@ Verification:
 - Build Renderer and Editor target if available.
 - Edit config and confirm Capture/Apply path updates CVars/settings.
 - Check UI labels do not mention a separate render path.
+- rg "To[A-Za-z0-9]+Index|From[A-Za-z0-9]+Index" Engine/Editor/Private/Panels
 ```
 
 ## Stage 9 - Final Cleanup And Validation
@@ -686,6 +718,9 @@ Acceptance:
 - No product code depends on `FrameRenderPath`.
 - No product code contains a special final-color reference override.
 - No product code contains an extra frame-mode layer.
+- No product code contains `Build*FromCVars` helpers.
+- No product code uses `Build*Settings().Enabled` for scheduling.
+- Feature settings payload structs do not carry broad `Enabled` flags when a direct CVar gate exists.
 
 Ready-to-use prompt:
 
@@ -703,12 +738,15 @@ Inspect:
 Requirements:
 - Remove includes, files, CVar names, and docs that imply a frame-wide render path.
 - Remove the separate full-frame reference path when replaced by GBufferMode::Raytraced + LightingMode::PathTraced.
+- Keep runtime branch decisions on direct CVar reads or direct mode CVar reads.
+- Keep feature-local builders payload-only.
 - Confirm shader package registrations match surviving pass files.
 - Verify unsupported RT modes are unavailable or fail clearly.
 - Do not add extra frame-mode layers.
 
 Verification:
 - rg "FrameRenderPath|PathTracedReference|RealtimeDeferred|ReferenceRenderingPasses" Engine Docs
+- rg "FromCVars|Build[A-Za-z0-9]+Settings\\(\\)\\.Enabled|settings\\.Enabled" Engine/Renderer
 - Build Renderer and Editor if available.
 - Cook shaders.
 - Test the mode matrix: Rasterized/Raytraced, Rasterized/PathTraced, Raytraced/Raytraced, Raytraced/PathTraced.

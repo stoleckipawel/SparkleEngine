@@ -2,8 +2,9 @@
 #include "Frame/Deferred/GBuffer.h"
 
 #include "Frame/Deferred/GBufferFormats.h"
+#include "Frame/GBuffer/RasterizedGBuffer.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/Deferred/GBufferPass.h"
+#include "Renderer/Public/Debug/RendererCVars.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 
 GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const SceneRenderTargets& sceneTargets)
@@ -47,18 +48,19 @@ GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, Rend
 	return targets;
 }
 
-void AddGBufferPass(FrameGraphBuilder& builder, const GBufferRenderTargets& targets)
-{
-	auto& parameters = builder.AllocPassParameters<GBufferPass>();
-	GBufferPass::DeclareResources(builder, targets, parameters);
-	builder.AddRasterShaderPass<GBufferPass>(parameters);
-}
-
 void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
 {
 	resources.Transient.GBuffer = CreateGBufferRenderTargets(builder, sceneExtent, resources.Transient.Scene);
 	resources.ViewportProducts.SceneDepth = resources.Transient.Scene.MainDepth;
 	resources.ViewportProducts.Normals = resources.Transient.GBuffer.Normal;
 	resources.ViewportProducts.MotionVectors = resources.Transient.GBuffer.MotionVector;
-	AddGBufferPass(builder, resources.Transient.GBuffer);
+
+	switch (CVarGBufferMode.Get())
+	{
+		case GBufferMode::Rasterized:
+		case GBufferMode::Raytraced:
+		default:
+			AddRasterizedGBufferPass(builder, resources.Transient.GBuffer);
+			break;
+	}
 }

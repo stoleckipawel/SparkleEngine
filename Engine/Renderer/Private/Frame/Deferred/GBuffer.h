@@ -7,5 +7,4 @@
 class FrameGraphBuilder;
 
 GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const SceneRenderTargets& sceneTargets);
-void AddGBufferPass(FrameGraphBuilder& builder, const GBufferRenderTargets& targets);
 void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources);
