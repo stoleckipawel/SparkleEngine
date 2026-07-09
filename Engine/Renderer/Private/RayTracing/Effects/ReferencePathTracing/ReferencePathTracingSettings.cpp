@@ -11,10 +11,9 @@ namespace
 	constexpr std::uint32_t MaxSupportedBounceCount = 16u;
 }
 
-ReferencePathTracingSettings BuildReferencePathTracingSettingsFromCVars() noexcept
+ReferencePathTracingSettings BuildReferencePathTracingSettings() noexcept
 {
 	return ReferencePathTracingSettings{
-	    .Enabled = CVarReferencePathTracingEnabled.Get(),
 	    .SamplesPerPixel = std::clamp(CVarReferencePathTracingSamplesPerPixel.Get(), 1u, MaxSupportedSamplesPerPixel),
 	    .BounceCount = std::clamp(CVarReferencePathTracingBounceCount.Get(), 1u, MaxSupportedBounceCount),
 	    .NormalBias = std::max(CVarReferencePathTracingNormalBias.Get(), 0.0f),

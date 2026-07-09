@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Frame/Core/FrameRenderPath.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 struct FrameResolutionExtents final
@@ -9,6 +8,4 @@ struct FrameResolutionExtents final
 	RenderViewportExtent Output;
 };
 
-FrameResolutionExtents ResolveFrameResolutionExtents(
-    RenderViewportExtent outputExtent,
-    FrameRenderPath renderPath) noexcept;
+FrameResolutionExtents ResolveFrameResolutionExtents(RenderViewportExtent outputExtent) noexcept;

@@ -31,6 +31,16 @@ The mode decisions move inside `AddGBufferPasses` and `AddLightingPasses`.
 
 Deletion policy: when a stage replaces a frame-path concept, delete the replaced code/config in that same stage. Do not keep retired CVar/config names after Stage 8.
 
+Rendering settings CVar contract:
+
+- `EngineRenderingSettingsSection` is a config/editor facade over CVars, not a runtime settings owner.
+- Every field in `EngineRenderingSettingsState` must capture from a `ConsoleVariable<T>::Get()` path.
+- Persisted config must store CVar names and apply values through the CVar registry/parser.
+- Individual editor/settings setters must write the owning CVar directly, then refresh and persist the section snapshot from CVars.
+- Runtime render code should read CVars directly at use sites; feature-local builders may group packing/clamping logic, but should be named for the feature data they produce rather than for CVars.
+- Do not route one-setting edits through a copied full settings state, mirrored globals, setter wrapper functions, or frame result fields.
+- New renderer settings must add the CVar first, then add config/editor persistence on top of that CVar.
+
 ## Current Sparkle State
 
 The top-level fork is in `Engine/Renderer/Private/Frame/Core/Frame.cpp`. `ResolveFrameRenderPathFromSettings()` turns `r.RayTracing.ReferencePathTracing.Enabled` into `FrameRenderPath::PathTracedReference`, then `BuildFrame` either runs `AddReferenceRenderingPasses` or the realtime GBuffer plus lighting path.
@@ -166,26 +176,32 @@ Target files:
 - `Engine/Renderer/Private/Frame/Core/FrameRenderPath.*`
 - `Engine/Renderer/Private/Frame/Core/Frame.h`
 - `Engine/Renderer/Private/FramePipeline/FramePipeline.*`
+- `Engine/Renderer/Public/Debug/RendererCVars.h`
+- `Engine/Renderer/Private/Debug/RendererCVars.cpp`
 - `Engine/Renderer/Public/Settings/EngineRenderingSettings.h`
 - `Engine/Renderer/Public/Settings/EngineRenderingRayTracingTypes.h`
-- `Engine/Renderer/Private/Settings/EngineRenderingRayTracingSettings.*`
+- `Engine/Renderer/Private/Settings/EngineRenderingSettings.cpp`
 - `Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp`
 - `Config/DefaultEngine.ini`
 
 Implementation notes:
 
 - Add `GBufferMode` and `LightingMode` to renderer settings/types.
-- Resolve or capture the two enum values directly.
+- Add `CVarGBufferMode` and `CVarLightingMode`; CVars are the runtime source of truth.
+- Rendering settings captures snapshots through `CVar*.Get()` and applies persisted config through CVar names.
+- Any mode setter writes the mode CVar directly, then refreshes/persists the settings snapshot from CVars.
+- Render code should read the mode CVars directly at the branch points that need them.
 - Leave `FrameRenderPath` removal to Stage 7, but stop adding new logic to it.
 - Do not add any special reference final-color mode.
 - Do not create a new route from `r.RayTracing.ReferencePathTracing.Enabled` into the new modes.
-- `FramePipeline` can compare the two enum settings directly to decide when graph resources/history must reset.
+- Do not add mode fields to `FrameBuildResult` or `FrameGraphBuildResult`.
 - Add editor/config fields only for modes that have implemented behavior. It is acceptable in Stage 1 to expose no UI and keep the resolver private.
 
 Acceptance:
 
 - Default rendering is unchanged.
 - `GBufferMode` and `LightingMode` exist as the only new core render-mode enums.
+- `CVarGBufferMode` and `CVarLightingMode` drive the runtime values.
 - No duplicate renderer settings owner is introduced.
 
 Ready-to-use prompt:
@@ -199,25 +215,32 @@ Inspect:
 - Engine/Renderer/Private/Frame/Core/FrameRenderPath.*
 - Engine/Renderer/Private/Frame/Core/Frame.h
 - Engine/Renderer/Private/FramePipeline/FramePipeline.*
+- Engine/Renderer/Public/Debug/RendererCVars.h
+- Engine/Renderer/Private/Debug/RendererCVars.cpp
 - Engine/Renderer/Public/Settings/EngineRenderingSettings.h
 - Engine/Renderer/Public/Settings/EngineRenderingRayTracingTypes.h
-- Engine/Renderer/Private/Settings/EngineRenderingRayTracingSettings.*
+- Engine/Renderer/Private/Settings/EngineRenderingSettings.cpp
 - Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp
 - Config/DefaultEngine.ini
 
 Requirements:
 - Add only GBufferMode { Rasterized, Raytraced }.
 - Add only LightingMode { Raytraced, PathTraced }.
+- Add CVarGBufferMode and CVarLightingMode.
+- Make rendering settings capture/apply persisted config through CVar Get/Set.
+- Make any direct settings setter write the owning CVar first, not a copied full settings state.
 - Keep current default output stable.
 - Do not connect r.RayTracing.ReferencePathTracing.Enabled to the new modes.
 - Do not add a special reference final-color mode.
 - Leave FrameRenderPath removal to Stage 7.
+- Do not add GBufferMode or LightingMode fields to FrameBuildResult or FrameGraphBuildResult.
 - Do not add UI for unimplemented behavior.
 
 Verification:
 - Build Renderer.
 - Confirm only GBufferMode and LightingMode were introduced.
-- Confirm Frame.cpp default output is unchanged except for optional mode capture.
+- Confirm mode runtime state is CVar-backed, not mirrored in custom globals.
+- Confirm Frame.cpp default output is unchanged.
 ```
 
 ## Stage 2 - Split Rasterized GBuffer Into Dedicated Files
@@ -476,7 +499,7 @@ Implementation notes:
   - `GBufferMode::Raytraced`
   - `LightingMode::PathTraced`
 - Remove `AddReferenceRenderingPasses`.
-- `FrameBuildResult` should return or expose the two mode values instead of `FrameRenderPath`.
+- Keep `FrameBuildResult` resource-focused; do not add mode fields to it.
 
 Acceptance:
 
@@ -525,9 +548,10 @@ Target files:
 
 Implementation notes:
 
-- Replace `FrameRenderPath` with direct `GBufferMode` and `LightingMode` state in `FrameBuildResult`/`FramePipeline`.
+- Remove `FrameRenderPath` from frame build results after the single frame skeleton no longer needs it.
+- Resolve `GBufferMode` and `LightingMode` from settings at the GBuffer, lighting, resolution, and ray tracing scene decision points.
 - `ResolveFrameResolutionExtents` should depend on upscaling settings and selected output policy, not on reference path tracing.
-- `FramePipeline` should reset temporal history when either mode changes.
+- Temporal history reset should happen where mode changes alter persistent graph resources or temporal inputs.
 - `rayTracingSceneRequired` should be derived from selected modes plus active RT effects:
   - `GBufferMode::Raytraced`
   - raytraced direct shadows
@@ -538,7 +562,7 @@ Implementation notes:
 Acceptance:
 
 - `rg "FrameRenderPath|PathTracedReference|RealtimeDeferred" Engine/Renderer` finds no product code references.
-- Frame graph rebuilds when selected modes change.
+- Frame graph rebuilds when selected modes alter graph resources.
 - Resolution/upscaling behavior is explicit and still defaults to current output.
 - Ray tracing scene is not built for pure rasterized/direct-only frames unless another selected mode or effect needs it.
 - No extra frame-mode layer is introduced.
@@ -548,7 +572,7 @@ Ready-to-use prompt:
 ```text
 Implement Stage 7 from Docs/Architecture/01-Implementation/05_RENDERING_SingleFrameModesPlan.md.
 
-Goal: remove FrameRenderPath and make GBufferMode/LightingMode drive graph rebuild, resolution, and ray tracing scene requirements.
+Goal: remove FrameRenderPath and make direct GBufferMode/LightingMode queries drive graph rebuild, resolution, and ray tracing scene requirements.
 
 Inspect:
 - Engine/Renderer/Private/Frame/Core/FrameRenderPath.*
@@ -558,7 +582,8 @@ Inspect:
 - Engine/Renderer/Private/FrameGraph/Builder/FrameGraphBuilder.h
 
 Requirements:
-- Replace FrameRenderPath in FrameBuildResult and FramePipeline state with GBufferMode and LightingMode.
+- Remove FrameRenderPath from FrameBuildResult after its branch is gone.
+- Do not add mode fields to FrameBuildResult or FrameGraphBuildResult.
 - Make resolution policy independent from reference path tracing.
 - Derive rayTracingSceneRequired from selected modes and active RT effects.
 - Delete FrameRenderPath files after replacing their call sites.
@@ -568,7 +593,7 @@ Requirements:
 Verification:
 - rg "FrameRenderPath|PathTracedReference|RealtimeDeferred" Engine/Renderer
 - Build Renderer.
-- Switch GBuffer and lighting modes and confirm graph rebuild/history reset behavior.
+- Switch GBuffer and lighting modes and confirm graph rebuild/history reset behavior when the selected mode changes graph resources or temporal inputs.
 ```
 
 ## Stage 8 - Settings, UI, And CVar Cleanup
@@ -579,7 +604,7 @@ Target files:
 
 - `Engine/Renderer/Public/Settings/EngineRenderingSettings.h`
 - `Engine/Renderer/Public/Settings/EngineRenderingRayTracingTypes.h`
-- `Engine/Renderer/Private/Settings/EngineRenderingRayTracingSettings.*`
+- `Engine/Renderer/Private/Settings/EngineRenderingSettings.cpp`
 - `Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp`
 - `Config/DefaultEngine.ini`
 - `Engine/Renderer/Private/RayTracing/Effects/ReferencePathTracing/ReferencePathTracingCVars.*`
@@ -610,7 +635,7 @@ Goal: expose GBufferMode and LightingMode through settings/config/UI and remove 
 Inspect:
 - Engine/Renderer/Public/Settings/EngineRenderingSettings.h
 - Engine/Renderer/Public/Settings/EngineRenderingRayTracingTypes.h
-- Engine/Renderer/Private/Settings/EngineRenderingRayTracingSettings.*
+- Engine/Renderer/Private/Settings/EngineRenderingSettings.cpp
 - Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp
 - Config/DefaultEngine.ini
 - Engine/Renderer/Private/RayTracing/Effects/ReferencePathTracing/ReferencePathTracingCVars.*

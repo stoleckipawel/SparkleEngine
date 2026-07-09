@@ -35,5 +35,5 @@ FrameBuildResult BuildFrame(
 
 	AddPostProcessingPasses(builder, renderExtent, outputExtent, backBufferFormat, presentToBackBuffer, resources);
 
-	return FrameBuildResult{.Resources = resources, .RenderPath = renderPath};
+	return FrameBuildResult{.Resources = resources};
 }

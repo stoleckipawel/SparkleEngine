@@ -13,10 +13,10 @@
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
+#include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseCVars.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffusePassData.h"
 #include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
-#include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 
@@ -26,17 +26,6 @@ namespace
 	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
 	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
 	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
-
-	IndirectDiffuseSettings ResolveSettings(const PassRuntimeServices& services) noexcept
-	{
-		const RenderRayTracingPassServices* rayTracingServices = services.RayTracing;
-		if (rayTracingServices != nullptr && rayTracingServices->IndirectDiffuseSettings != nullptr)
-		{
-			return *rayTracingServices->IndirectDiffuseSettings;
-		}
-
-		return BuildIndirectDiffuseSettingsFromCVars();
-	}
 }
 
 IndirectDiffusePass::IndirectDiffusePass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
@@ -107,15 +96,16 @@ void IndirectDiffusePass::SetParameters(
 
 void IndirectDiffusePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	const IndirectDiffuseSettings settings = ResolveSettings(context.RuntimeServices);
+	if (!CVarIndirectDiffuseEnabled.Get())
+	{
+		return;
+	}
+
+	const IndirectDiffuseSettings settings = BuildIndirectDiffuseSettings();
 	const RayTracingPassCapabilities rayTracingCapabilities =
 	    RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
 	const std::uint32_t hitInstanceCount = context.Frame.rayTracingHitData.GetInstanceCount();
 	const std::uint32_t hitMaterialCount = context.Frame.rayTracingHitData.GetMaterialCount();
-	if (!settings.Enabled)
-	{
-		return;
-	}
 
 	if (!rayTracingCapabilities.InlineRayQueryAvailable ||
 	    !RayTracingScenePassBinding::CanUseSceneTlas(rayTracingCapabilities, RayTracingSceneTlasShaderAccessMode::Descriptor))

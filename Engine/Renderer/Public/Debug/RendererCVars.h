@@ -2,16 +2,10 @@
 
 #include "Core/Public/Console/CVar.h"
 #include "Renderer/Public/Debug/RenderViewMode.h"
+#include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "Renderer/Public/RendererAPI.h"
 
 #include <cstdint>
-
-enum class RayTracingPtlasPartitionUpdateMode : std::uint8_t
-{
-	AlwaysUpdatePartition,
-	AlwaysMoveDynamicToGlobal,
-	UpdatePartitionNearbyMoveToGlobalOtherwise,
-};
 
 enum class RendererDiagnosticMarkerVerbosity : std::uint8_t
 {
@@ -21,6 +15,8 @@ enum class RendererDiagnosticMarkerVerbosity : std::uint8_t
 };
 
 extern SPARKLE_RENDERER_API ConsoleVariable<RenderViewMode> CVarRenderViewMode;
+extern SPARKLE_RENDERER_API ConsoleVariable<GBufferMode> CVarGBufferMode;
+extern SPARKLE_RENDERER_API ConsoleVariable<LightingMode> CVarLightingMode;
 extern SPARKLE_RENDERER_API ConsoleVariable<bool> CVarRendererMeshAutoBatching;
 extern SPARKLE_RENDERER_API ConsoleVariable<RendererDiagnosticMarkerVerbosity> CVarRendererDiagnosticMarkerVerbosity;
 extern SPARKLE_RENDERER_API ConsoleVariable<bool> CVarRendererDiagnosticGpuTiming;

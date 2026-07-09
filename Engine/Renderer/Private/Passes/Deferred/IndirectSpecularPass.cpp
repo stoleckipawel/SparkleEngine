@@ -15,8 +15,8 @@
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
+#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularCVars.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularPassData.h"
-#include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
@@ -28,18 +28,6 @@ namespace
 	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
 	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
 	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
-
-	IndirectSpecularSettings ResolveSettings(const PassRuntimeServices& services) noexcept
-	{
-		const RenderRayTracingPassServices* rayTracingServices = services.RayTracing;
-		if (rayTracingServices != nullptr && rayTracingServices->IndirectSpecularSettings != nullptr)
-		{
-			return *rayTracingServices->IndirectSpecularSettings;
-		}
-
-		return BuildIndirectSpecularSettingsFromCVars();
-	}
-
 }
 
 IndirectSpecularPass::IndirectSpecularPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
@@ -106,15 +94,16 @@ void IndirectSpecularPass::SetParameters(
 
 void IndirectSpecularPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	const IndirectSpecularSettings settings = ResolveSettings(context.RuntimeServices);
+	if (!CVarIndirectSpecularEnabled.Get())
+	{
+		return;
+	}
+
+	const IndirectSpecularSettings settings = BuildIndirectSpecularSettings();
 	const RayTracingPassCapabilities rayTracingCapabilities =
 	    RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
 	const std::uint32_t hitInstanceCount = context.Frame.rayTracingHitData.GetInstanceCount();
 	const std::uint32_t hitMaterialCount = context.Frame.rayTracingHitData.GetMaterialCount();
-	if (!settings.Enabled)
-	{
-		return;
-	}
 
 	if (!rayTracingCapabilities.InlineRayQueryAvailable ||
 	    !RayTracingScenePassBinding::CanUseSceneTlas(rayTracingCapabilities, RayTracingSceneTlasShaderAccessMode::Descriptor))

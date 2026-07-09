@@ -8,4 +8,4 @@
 
 EngineOutputColorEncoding SanitizeOutputColorEncoding(EngineOutputColorEncoding encoding) noexcept;
 std::uint32_t ResolveShaderOutputEncoding(EngineOutputColorEncoding encoding, PixelFormat backBufferFormat) noexcept;
-OutputEncodingUniformData BuildOutputEncodingUniformDataFromCVars() noexcept;
+OutputEncodingUniformData BuildOutputEncodingUniformData() noexcept;

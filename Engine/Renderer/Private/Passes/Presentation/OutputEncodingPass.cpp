@@ -42,6 +42,6 @@ void OutputEncodingPass::Execute(
     std::uint32_t outputWidth,
     std::uint32_t outputHeight) const
 {
-	parameters->OutputEncodingConstants = BuildOutputEncodingUniformDataFromCVars();
+	parameters->OutputEncodingConstants = BuildOutputEncodingUniformData();
 	ComputePassUtilities::DispatchSized<OutputEncodingPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

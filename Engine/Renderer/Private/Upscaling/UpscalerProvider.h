@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Providers/RenderProviderModel.h"
+#include "Renderer/Public/Settings/EngineRenderingUpscalingTypes.h"
 #include "Upscaling/UpscalerInputContract.h"
 #include "Viewport/ViewportContracts.h"
 #include "RHI/Public/Core/RhiBackendApi.h"
@@ -12,14 +13,6 @@
 #include <string_view>
 
 struct RhiCapabilities;
-
-// Renderer-owned provider boundary for image upscalers. Ray reconstruction
-// and frame generation use separate frame/provider contracts.
-enum class EUpscalerProviderKind : std::uint8_t
-{
-	Linear = 0,
-	NvidiaDlss = 1
-};
 
 enum class EUpscalerProviderFailureDomain : std::uint8_t
 {

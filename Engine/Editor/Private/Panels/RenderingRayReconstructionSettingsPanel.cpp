@@ -7,19 +7,6 @@
 
 #include <imgui.h>
 
-namespace
-{
-	int ToRayReconstructionModeIndex(EngineRayReconstructionMode mode) noexcept
-	{
-		return mode == EngineRayReconstructionMode::NvidiaDlrr ? 1 : 0;
-	}
-
-	EngineRayReconstructionMode FromRayReconstructionModeIndex(int index) noexcept
-	{
-		return index == 1 ? EngineRayReconstructionMode::NvidiaDlrr : EngineRayReconstructionMode::Off;
-	}
-}
-
 void DrawRayReconstructionSettingsSection(
     EngineRenderingSettingsSection& settingsSection,
     const EngineRenderingSettingsState& settings,
@@ -27,9 +14,9 @@ void DrawRayReconstructionSettingsSection(
 {
 	using namespace RenderingSettingsPanelUi;
 
-	static constexpr const char* rayReconstructionModeLabels[] = {
-	    "Off",
-	    "NVIDIA DLRR",
+	static constexpr ComboOption<EngineRayReconstructionMode> rayReconstructionModeOptions[] = {
+	    {"Off", EngineRayReconstructionMode::Off},
+	    {"NVIDIA DLRR", EngineRayReconstructionMode::NvidiaDlrr},
 	};
 
 	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlrr ray reconstruction indirect specular diffuse") ||
@@ -40,13 +27,12 @@ void DrawRayReconstructionSettingsSection(
 
 	if (BeginSettingsTable("##RenderingRayReconstructionSettings"))
 	{
-		DrawComboRow(
+		DrawComboOptionRow(
 		    "##RayReconstructionMode",
 		    "Mode",
-		    ToRayReconstructionModeIndex(settings.RayReconstructionMode),
-		    rayReconstructionModeLabels,
-		    IM_ARRAYSIZE(rayReconstructionModeLabels),
-		    [&settingsSection](int value) { settingsSection.SetRayReconstructionMode(FromRayReconstructionModeIndex(value)); });
+		    settings.RayReconstructionMode,
+		    rayReconstructionModeOptions,
+		    [&settingsSection](EngineRayReconstructionMode value) { settingsSection.SetRayReconstructionMode(value); });
 		ImGui::EndTable();
 	}
 	ImGui::Dummy(ImVec2(0.0f, 4.0f));

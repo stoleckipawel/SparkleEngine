@@ -186,7 +186,7 @@ void ExposurePass::DeclareResources(
 
 void ExposurePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	parameters->ExposureConstants = BuildExposureUniformDataFromCVars(
+	parameters->ExposureConstants = BuildExposureUniformData(
 	    context.RuntimeServices.PerFrame.DeltaTime,
 	    context.RuntimeServices.ExposureHistoryValid);
 	ComputePassUtilities::Dispatch<ExposurePass>(context, m_runtime, parameters, ComputeDispatchDesc{1u, 1u, 1u});

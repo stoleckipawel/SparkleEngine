@@ -178,8 +178,7 @@ void AddUpscalingPasses(
 	    resources.Transient.GBuffer,
 	    resources.Transient.Exposure);
 
-	const UpscalerSettings settings = BuildUpscalerSettingsFromCVars();
-	if (settings.RequestedProvider == EUpscalerProviderKind::NvidiaDlss)
+	if (CVarUpscalerProvider.Get() == EUpscalerProviderKind::NvidiaDlss)
 	{
 		AddRendererLinearUpscaleFallbackIfNeeded(
 		    builder,

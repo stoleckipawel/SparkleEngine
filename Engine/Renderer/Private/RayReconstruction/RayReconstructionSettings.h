@@ -1,14 +1,8 @@
 #pragma once
 
+#include "Core/Public/Console/CVar.h"
 #include "Renderer/Public/Settings/EngineRenderingRayReconstructionTypes.h"
 
-struct RayReconstructionSettings final
-{
-	EngineRayReconstructionMode Mode = EngineRayReconstructionMode::Off;
-};
+extern ConsoleVariable<EngineRayReconstructionMode> CVarRayReconstructionMode;
 
-RayReconstructionSettings BuildRayReconstructionSettingsFromCVars() noexcept;
-EngineRayReconstructionMode GetRayReconstructionModeFromCVars() noexcept;
 const char* RayReconstructionModeToString(EngineRayReconstructionMode mode) noexcept;
-
-void SetRayReconstructionModeCVar(EngineRayReconstructionMode mode) noexcept;

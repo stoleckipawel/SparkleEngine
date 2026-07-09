@@ -11,10 +11,9 @@ namespace
 	constexpr std::uint32_t MaxSupportedBounceCount = 8u;
 }
 
-IndirectSpecularSettings BuildIndirectSpecularSettingsFromCVars() noexcept
+IndirectSpecularSettings BuildIndirectSpecularSettings() noexcept
 {
 	return IndirectSpecularSettings{
-	    .Enabled = CVarIndirectSpecularEnabled.Get(),
 	    .SampleMode = CVarIndirectSpecularSampleMode.Get(),
 	    .DebugMode = CVarIndirectSpecularDebugMode.Get(),
 	    .MaterialMode = CVarRendererMaterialBindingMode.Get(),

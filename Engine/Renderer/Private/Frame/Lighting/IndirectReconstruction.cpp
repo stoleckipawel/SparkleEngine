@@ -28,7 +28,7 @@ bool AddIndirectRayReconstructionPassIfEnabled(
     RenderViewportExtent sceneExtent,
     FrameAssemblyResourceLayout& resources)
 {
-	if (GetRayReconstructionModeFromCVars() != EngineRayReconstructionMode::NvidiaDlrr)
+	if (CVarRayReconstructionMode.Get() != EngineRayReconstructionMode::NvidiaDlrr)
 	{
 		return false;
 	}

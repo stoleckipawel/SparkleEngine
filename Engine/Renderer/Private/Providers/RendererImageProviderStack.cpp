@@ -17,14 +17,6 @@ namespace
 		RenderHardwareInterface* const hardware = static_cast<RenderHardwareInterface*>(bridgeUserData);
 		return hardware != nullptr && hardware->GetInteropService().UpgradePresentationInterface(callback, callbackUserData);
 	}
-
-	std::uint32_t PackImageProviderGraphKey(
-	    const UpscalerSettings& upscalerSettings,
-	    const RayReconstructionSettings& rayReconstructionSettings) noexcept
-	{
-		return static_cast<std::uint32_t>(upscalerSettings.RequestedProvider) |
-		       (static_cast<std::uint32_t>(rayReconstructionSettings.Mode) << 8u);
-	}
 }
 
 RendererImageProviderStack::RendererImageProviderStack() = default;
@@ -43,7 +35,6 @@ void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardw
 	        RhiNativeInteropRequest{
 	            .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
 	            .Reason = "Renderer upscaler provider initialization"}),
-	    BuildUpscalerSettingsFromCVars(),
 	    UpscalerPresentationBridge{
 	        .UpgradePresentationInterface = &UpgradePresentationInterfaceThroughRhi,
 	        .UserData = &renderHardware});
@@ -122,7 +113,8 @@ void RendererImageProviderStack::SetupRayReconstructionFrame(const RayReconstruc
 
 std::uint32_t RendererImageProviderStack::GetFrameGraphKey() const noexcept
 {
-	return PackImageProviderGraphKey(BuildUpscalerSettingsFromCVars(), BuildRayReconstructionSettingsFromCVars());
+	return static_cast<std::uint32_t>(CVarUpscalerProvider.Get()) |
+	       (static_cast<std::uint32_t>(CVarRayReconstructionMode.Get()) << 8u);
 }
 
 RendererImageProviderPassServices RendererImageProviderStack::BuildPassServices() noexcept

@@ -85,7 +85,7 @@ void ReferencePathTracingPass::SetParameters(
 
 void ReferencePathTracingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	const ReferencePathTracingSettings settings = BuildReferencePathTracingSettingsFromCVars();
+	const ReferencePathTracingSettings settings = BuildReferencePathTracingSettings();
 	const RayTracingPassCapabilities rayTracingCapabilities =
 	    RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
 	if (!rayTracingCapabilities.InlineRayQueryAvailable ||

@@ -28,7 +28,6 @@ class TemporalDataBuilder;
 class TextureManager;
 class Timer;
 class Window;
-struct RayTracedShadowSettings;
 
 class RendererSystemRoot final
 {
@@ -68,7 +67,6 @@ class RendererSystemRoot final
 	SceneRenderStateCoordinator* GetSceneRenderStateCoordinator() noexcept { return m_sceneRenderStateCoordinator.get(); }
 	RendererImageProviderStack& GetImageProviders() noexcept { return *m_imageProviders; }
 	const RendererImageProviderStack& GetImageProviders() const noexcept { return *m_imageProviders; }
-	RayTracedShadowSettings* GetRayTracedShadowSettings() noexcept { return m_rayTracedShadowSettings.get(); }
 
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
@@ -101,5 +99,4 @@ class RendererSystemRoot final
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 	std::unique_ptr<RendererImageProviderStack> m_imageProviders;
-	std::unique_ptr<RayTracedShadowSettings> m_rayTracedShadowSettings;
 };

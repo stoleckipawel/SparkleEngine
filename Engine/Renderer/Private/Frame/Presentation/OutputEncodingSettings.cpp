@@ -41,7 +41,7 @@ std::uint32_t ResolveShaderOutputEncoding(EngineOutputColorEncoding encoding, Pi
 	}
 }
 
-OutputEncodingUniformData BuildOutputEncodingUniformDataFromCVars() noexcept
+OutputEncodingUniformData BuildOutputEncodingUniformData() noexcept
 {
 	return OutputEncodingUniformData{
 	    .OutputColorEncoding = ResolveShaderOutputEncoding(CVarOutputColorEncoding.Get(), CVarBackBufferFormat.Get())};

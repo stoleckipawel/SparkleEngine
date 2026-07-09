@@ -6,6 +6,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <cfloat>
 #include <cstdint>
 #include <string>
@@ -13,6 +14,13 @@
 namespace RenderingSettingsPanelUi
 {
 	inline constexpr float kLabelColumnWidth = 340.0f;
+
+	template <typename ValueType>
+	struct ComboOption final
+	{
+		const char* Label = "";
+		ValueType Value{};
+	};
 
 	inline bool MatchesFilter(const char* filterText, const char* title, const char* keywords)
 	{
@@ -69,20 +77,46 @@ namespace RenderingSettingsPanelUi
 		}
 	}
 
-	template <typename OnChanged>
-	void DrawComboRow(const char* id, const char* label, int value, const char* const labels[], int labelCount, OnChanged&& onChanged)
+	template <typename ValueType, std::size_t OptionCount, typename OnChanged>
+	void DrawComboOptionRow(
+	    const char* id,
+	    const char* label,
+	    ValueType value,
+	    const ComboOption<ValueType> (&options)[OptionCount],
+	    OnChanged&& onChanged)
 	{
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextUnformatted(label);
 
+		const char* previewLabel = OptionCount > 0 ? options[0].Label : "";
+		for (const ComboOption<ValueType>& option : options)
+		{
+			if (option.Value == value)
+			{
+				previewLabel = option.Label;
+				break;
+			}
+		}
+
 		ImGui::TableSetColumnIndex(1);
 		ImGui::SetNextItemWidth(-FLT_MIN);
-		int updatedValue = value;
-		if (ImGui::Combo(id, &updatedValue, labels, labelCount))
+		if (ImGui::BeginCombo(id, previewLabel))
 		{
-			onChanged(updatedValue);
+			for (const ComboOption<ValueType>& option : options)
+			{
+				const bool selected = option.Value == value;
+				if (ImGui::Selectable(option.Label, selected))
+				{
+					onChanged(option.Value);
+				}
+				if (selected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
 		}
 	}
 

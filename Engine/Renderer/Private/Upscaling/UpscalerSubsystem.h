@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Upscaling/UpscalerProvider.h"
-#include "Upscaling/UpscalerSettings.h"
 #include "RHI/Public/Interop/RhiInteropService.h"
 
 #include <memory>
@@ -25,7 +24,6 @@ class UpscalerSubsystem final
 	void Initialize(
 	    const RhiCapabilities& capabilities,
 	    RhiNativeDeviceQueueInterop nativeInterop,
-	    const UpscalerSettings& settings,
 	    UpscalerPresentationBridge presentationBridge);
 	void SetupFrame(const UpscalerInputContract& inputContract);
 	UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation);
@@ -34,13 +32,11 @@ class UpscalerSubsystem final
 	void Shutdown() noexcept;
 
 	const UpscalerProviderCapabilities& GetDiagnostics() const noexcept { return m_diagnostics; }
-	EUpscalerProviderKind GetRequestedProviderKind() const noexcept { return m_settings.RequestedProvider; }
 
   private:
 	static std::unique_ptr<IUpscalerProvider> CreateProvider(EUpscalerProviderKind kind);
 	void RefreshDiagnostics(IUpscalerProvider* provider) noexcept;
 
-	UpscalerSettings m_settings = {};
 	std::unique_ptr<IUpscalerProvider> m_activeProvider;
 	UpscalerProviderCapabilities m_diagnostics = {};
 	UpscalerInputContractValidation m_lastInputValidation = {};

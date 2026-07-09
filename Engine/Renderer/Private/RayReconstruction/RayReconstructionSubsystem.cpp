@@ -2,6 +2,7 @@
 #include "RayReconstruction/RayReconstructionSubsystem.h"
 
 #include "RayReconstruction/NvidiaDlrr/NvidiaDlrrProvider.h"
+#include "RayReconstruction/RayReconstructionSettings.h"
 
 #include <format>
 #include <utility>
@@ -61,8 +62,8 @@ void RayReconstructionSubsystem::Initialize(
 {
 	m_nativeInterop = nativeInterop;
 	m_presentationBridge = presentationBridge;
-	m_settings = BuildRayReconstructionSettingsFromCVars();
-	m_activeProvider = CreateProvider(m_settings.Mode);
+	const EngineRayReconstructionMode requestedMode = CVarRayReconstructionMode.Get();
+	m_activeProvider = CreateProvider(requestedMode);
 	if (m_activeProvider == nullptr)
 	{
 		m_diagnostics = BuildRendererCopyRayReconstructionCapabilities(
@@ -74,7 +75,7 @@ void RayReconstructionSubsystem::Initialize(
 	}
 
 	const bool initialized = m_activeProvider->Initialize(capabilities, m_nativeInterop, m_presentationBridge);
-	if (!initialized && m_settings.Mode != EngineRayReconstructionMode::Off)
+	if (!initialized && requestedMode != EngineRayReconstructionMode::Off)
 	{
 		const RayReconstructionProviderCapabilities failedDiagnostics = m_activeProvider->GetDiagnostics();
 		m_activeProvider->Shutdown();
@@ -84,7 +85,7 @@ void RayReconstructionSubsystem::Initialize(
 		    failedDiagnostics.FailureDomain,
 		    std::format(
 		        "Requested provider {} was unavailable: {} Final color is produced by the frame pass copy.",
-		        RayReconstructionModeToString(m_settings.Mode),
+		        RayReconstructionModeToString(requestedMode),
 		        failedDiagnostics.Reason));
 	}
 	else
@@ -98,7 +99,6 @@ void RayReconstructionSubsystem::Initialize(
 void RayReconstructionSubsystem::SetupFrame(const RayReconstructionInputContract& inputContract)
 {
 	const RayReconstructionInputContract frameContract = ConsumePendingReset(inputContract);
-	m_settings = BuildRayReconstructionSettingsFromCVars();
 	m_lastInputValidation = ValidateRayReconstructionInputContract(frameContract);
 	if (!m_lastInputValidation.Valid)
 	{

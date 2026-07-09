@@ -19,8 +19,10 @@
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "RayReconstruction/RayReconstructionFramePass.h"
-#include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseSettings.h"
-#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularSettings.h"
+#include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseCVars.h"
+#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularCVars.h"
+#include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingCVars.h"
+#include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
@@ -95,7 +97,7 @@ RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 
 FrameResolutionExtents FramePipeline::ResolveFrameResolution() const noexcept
 {
-	return ResolveFrameResolutionExtents(ResolveOutputExtent(), ResolveFrameRenderPathFromSettings());
+	return ResolveFrameResolutionExtents(ResolveOutputExtent());
 }
 
 bool FramePipeline::ShouldOutputToBackBuffer() const noexcept
@@ -122,7 +124,7 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 	m_frameGraphRenderExtent = dependencies.renderExtent;
 	m_frameGraphOutputExtent = dependencies.outputExtent;
 	m_frameResources = buildResult.Resources;
-	m_renderPath = buildResult.RenderPath;
+	m_renderPath = ResolveFrameRenderPathFromSettings();
 	m_imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	m_frameGraph = std::move(buildResult.Graph);
 }
@@ -266,14 +268,15 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 void FramePipeline::RecordFrame() noexcept
 {
 	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
-	const IndirectDiffuseSettings indirectDiffuseSettings = BuildIndirectDiffuseSettingsFromCVars();
-	const IndirectSpecularSettings indirectSpecularSettings = BuildIndirectSpecularSettingsFromCVars();
-	const RayTracedShadowSettings* shadowSettings = m_systems->GetRayTracedShadowSettings();
+	const bool rayTracedShadowsEnabled = CVarRayTracedShadowsEnabled.Get();
+	const RayTracedShadowSettings shadowSettings{
+	    .NormalBias = CVarRayTracedShadowNormalBias.Get(),
+	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get()};
 	const bool rayTracingSceneRequired =
-	    m_renderPath == FrameRenderPath::PathTracedReference ||
-	    (shadowSettings != nullptr && shadowSettings->Enabled) ||
-	    indirectDiffuseSettings.Enabled ||
-	    indirectSpecularSettings.Enabled;
+	    CVarReferencePathTracingEnabled.Get() ||
+	    rayTracedShadowsEnabled ||
+	    CVarIndirectDiffuseEnabled.Get() ||
+	    CVarIndirectSpecularEnabled.Get();
 	RenderRayTracingScene* activeRayTracingScene =
 	    rayTracingSceneRequired ? m_systems->GetRenderRayTracingScene() : nullptr;
 	std::string temporalResetReason;
@@ -370,9 +373,7 @@ void FramePipeline::RecordFrame() noexcept
 	const RenderRayTracingPassServices rayTracingPassServices{
 	    .Scene = activeRayTracingScene,
 	    .CapabilityReport = activeRayTracingScene != nullptr ? &activeRayTracingScene->GetCapabilities() : nullptr,
-	    .ShadowSettings = shadowSettings,
-	    .IndirectDiffuseSettings = &indirectDiffuseSettings,
-	    .IndirectSpecularSettings = &indirectSpecularSettings};
+	    .ShadowSettings = rayTracedShadowsEnabled ? &shadowSettings : nullptr};
 	const RendererImageProviderPassServices imageProviderPassServices = m_systems->GetImageProviders().BuildPassServices();
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,

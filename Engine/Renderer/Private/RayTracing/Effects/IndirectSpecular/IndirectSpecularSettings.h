@@ -8,7 +8,6 @@
 
 struct IndirectSpecularSettings final
 {
-	bool Enabled = false;
 	IndirectSpecularSampleMode SampleMode = IndirectSpecularSampleMode::StochasticGGX;
 	IndirectSpecularDebugMode DebugMode = IndirectSpecularDebugMode::Off;
 	MaterialBindingMode MaterialMode = MaterialBindingMode::RaytracingOnly;
@@ -17,4 +16,4 @@ struct IndirectSpecularSettings final
 	std::uint32_t BounceCount = 1u;
 };
 
-IndirectSpecularSettings BuildIndirectSpecularSettingsFromCVars() noexcept;
+IndirectSpecularSettings BuildIndirectSpecularSettings() noexcept;

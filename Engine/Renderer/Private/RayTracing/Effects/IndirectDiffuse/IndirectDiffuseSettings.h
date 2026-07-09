@@ -6,7 +6,6 @@
 
 struct IndirectDiffuseSettings final
 {
-	bool Enabled = false;
 	IndirectDiffuseDebugMode DebugMode = IndirectDiffuseDebugMode::Off;
 	float NormalBias = 0.01f;
 	float MaxDistance = 100000.0f;
@@ -14,4 +13,4 @@ struct IndirectDiffuseSettings final
 	std::uint32_t BounceCount = 1u;
 };
 
-IndirectDiffuseSettings BuildIndirectDiffuseSettingsFromCVars() noexcept;
+IndirectDiffuseSettings BuildIndirectDiffuseSettings() noexcept;

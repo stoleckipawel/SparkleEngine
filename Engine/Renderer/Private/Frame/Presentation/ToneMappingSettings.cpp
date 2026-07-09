@@ -121,7 +121,7 @@ void SanitizeExposureRange(float& minExposure, float& maxExposure) noexcept
 	}
 }
 
-ExposureUniformData BuildExposureUniformDataFromCVars(float frameDeltaSeconds, bool exposureHistoryValid) noexcept
+ExposureUniformData BuildExposureUniformData(float frameDeltaSeconds, bool exposureHistoryValid) noexcept
 {
 	float minExposure = CVarExposureMin.Get();
 	float maxExposure = CVarExposureMax.Get();
@@ -140,7 +140,7 @@ ExposureUniformData BuildExposureUniformDataFromCVars(float frameDeltaSeconds, b
 	    .ExposureAdaptationSpeedDown = SanitizeExposureAdaptationSpeed(CVarExposureAdaptationSpeedDown.Get())};
 }
 
-ToneMappingUniformData BuildToneMappingUniformDataFromCVars() noexcept
+ToneMappingUniformData BuildToneMappingUniformData() noexcept
 {
 	return ToneMappingUniformData{
 	    .ToneMapper = ToShaderToneMapper(CVarToneMapper.Get())};

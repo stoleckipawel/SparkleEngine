@@ -1,27 +1,11 @@
 #pragma once
 
+#include "Core/Public/Console/CVar.h"
+#include "Renderer/Public/Settings/EngineRenderingUpscalingTypes.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
-#include "Upscaling/UpscalerProvider.h"
 
-#include <cstdint>
+extern ConsoleVariable<EUpscalerProviderKind> CVarUpscalerProvider;
+extern ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode;
 
-enum class EUpscalerQualityMode : std::uint8_t
-{
-	NativeAA = 0,
-	Quality = 1,
-	Balanced = 2,
-	Performance = 3,
-	UltraPerformance = 4
-};
-
-struct UpscalerSettings final
-{
-	EUpscalerProviderKind RequestedProvider = EUpscalerProviderKind::NvidiaDlss;
-	EUpscalerQualityMode QualityMode = EUpscalerQualityMode::NativeAA;
-};
-
-UpscalerSettings BuildUpscalerSettingsFromCVars() noexcept;
 const char* UpscalerQualityModeToString(EUpscalerQualityMode mode) noexcept;
-void SetUpscalerProviderCVar(EUpscalerProviderKind provider) noexcept;
-void SetUpscalerQualityModeCVar(EUpscalerQualityMode mode) noexcept;
 RenderViewportExtent ResolveUpscalerRenderExtent(RenderViewportExtent outputExtent, EUpscalerQualityMode qualityMode) noexcept;

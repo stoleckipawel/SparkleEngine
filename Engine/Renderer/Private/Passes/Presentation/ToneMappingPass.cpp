@@ -45,6 +45,6 @@ void ToneMappingPass::Execute(
     std::uint32_t outputWidth,
     std::uint32_t outputHeight) const
 {
-	parameters->ToneMappingConstants = BuildToneMappingUniformDataFromCVars();
+	parameters->ToneMappingConstants = BuildToneMappingUniformData();
 	ComputePassUtilities::DispatchSized<ToneMappingPass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

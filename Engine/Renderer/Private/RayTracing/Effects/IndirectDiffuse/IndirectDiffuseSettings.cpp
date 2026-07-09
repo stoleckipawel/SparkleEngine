@@ -10,10 +10,9 @@ namespace
 	constexpr std::uint32_t MaxSupportedBounceCount = 8u;
 }
 
-IndirectDiffuseSettings BuildIndirectDiffuseSettingsFromCVars() noexcept
+IndirectDiffuseSettings BuildIndirectDiffuseSettings() noexcept
 {
 	return IndirectDiffuseSettings{
-	    .Enabled = CVarIndirectDiffuseEnabled.Get(),
 	    .DebugMode = CVarIndirectDiffuseDebugMode.Get(),
 	    .NormalBias = std::max(CVarIndirectDiffuseNormalBias.Get(), 0.0f),
 	    .MaxDistance = std::max(CVarIndirectDiffuseMaxDistance.Get(), 0.001f),

@@ -3,6 +3,14 @@
 #include "Renderer/Public/Debug/RendererCVars.h"
 
 ConsoleVariable<RenderViewMode> CVarRenderViewMode("r.ViewMode", RenderViewMode::Lit, "Renderer debug view mode.");
+ConsoleVariable<GBufferMode> CVarGBufferMode(
+    "r.GBuffer.Mode",
+    GBufferMode::Rasterized,
+    "GBuffer producer mode: 0=rasterized, 1=raytraced.");
+ConsoleVariable<LightingMode> CVarLightingMode(
+    "r.Lighting.Mode",
+    LightingMode::Raytraced,
+    "Lighting producer mode: 0=raytraced realtime, 1=path traced.");
 ConsoleVariable<bool> CVarRendererMeshAutoBatching(
 	"r.MeshAutoBatching",
 	true,

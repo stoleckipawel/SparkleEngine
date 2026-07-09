@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Core/Public/Config/ConfigBackedSettings.h"
 #include "RHI/Public/Presentation/RhiPresentationDefaults.h"
 #include "Renderer/Public/Settings/EngineRenderingDisplayTypes.h"
 #include "Renderer/Public/Settings/EngineRenderingRayReconstructionTypes.h"
@@ -31,24 +30,36 @@ struct EngineRenderingSettingsState final
 	std::uint32_t MaxPointLights = 512;
 	std::uint32_t MaxSpotLights = 512;
 	std::uint32_t MaxRectLights = 128;
-	EngineUpscalerProvider UpscalerProvider = EngineUpscalerProvider::NvidiaDlss;
-	EngineUpscalerQualityMode UpscalerQualityMode = EngineUpscalerQualityMode::NativeAA;
+	EUpscalerProviderKind UpscalerProvider = EUpscalerProviderKind::NvidiaDlss;
+	EUpscalerQualityMode UpscalerQualityMode = EUpscalerQualityMode::NativeAA;
 	EngineRayReconstructionMode RayReconstructionMode = EngineRayReconstructionMode::Off;
+	GBufferMode GBuffer = GBufferMode::Rasterized;
+	LightingMode Lighting = LightingMode::Raytraced;
 	bool MeshAutoBatching = true;
 	bool RefitTlas = true;
 	bool PtlasActive = false;
 	std::uint32_t PtlasPartitionsPerAxis = 8;
-	EnginePtlasPartitionUpdateMode PtlasPartitionUpdateMode = EnginePtlasPartitionUpdateMode::AlwaysUpdatePartition;
+	RayTracingPtlasPartitionUpdateMode PtlasPartitionUpdateMode = RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition;
 	bool PtlasMarkAllDynamicInPartition = false;
 	float PtlasModeChangeDistance = 100.0f;
 	std::uint32_t IndirectDiffuseBounceCount = 1;
 	std::uint32_t IndirectSpecularBounceCount = 1;
 };
 
-class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigBackedSettingsSection<EngineRenderingSettingsState>
+class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 {
   public:
 	EngineRenderingSettingsSection();
+	EngineRenderingSettingsSection(const EngineRenderingSettingsSection&) = delete;
+	EngineRenderingSettingsSection& operator=(const EngineRenderingSettingsSection&) = delete;
+	EngineRenderingSettingsSection(EngineRenderingSettingsSection&&) = delete;
+	EngineRenderingSettingsSection& operator=(EngineRenderingSettingsSection&&) = delete;
+
+	const EngineRenderingSettingsState& GetState() const noexcept { return m_state; }
+	void RefreshFromRuntimeState() noexcept;
+	void ApplyPersistedValuesToRuntimeState() noexcept;
+	bool HasPendingRestart() const noexcept;
+	std::string BuildPendingRestartMessage() const;
 
 	void SetVSync(bool enabled);
 	void SetBackBufferFormat(PixelFormat format);
@@ -68,30 +79,33 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final : public ConfigB
 	void SetMaxPointLights(std::uint32_t count);
 	void SetMaxSpotLights(std::uint32_t count);
 	void SetMaxRectLights(std::uint32_t count);
-	void SetUpscalerProvider(EngineUpscalerProvider provider);
-	void SetUpscalerQualityMode(EngineUpscalerQualityMode mode);
+	void SetUpscalerProvider(EUpscalerProviderKind provider);
+	void SetUpscalerQualityMode(EUpscalerQualityMode mode);
 	void SetRayReconstructionMode(EngineRayReconstructionMode mode);
+	void SetGBufferMode(GBufferMode mode);
+	void SetLightingMode(LightingMode mode);
 	void SetMeshAutoBatching(bool enabled);
 	void SetRefitTlas(bool enabled);
 	void SetPtlasActive(bool active);
 	void SetPtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis);
-	void SetPtlasPartitionUpdateMode(EnginePtlasPartitionUpdateMode mode);
+	void SetPtlasPartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode);
 	void SetPtlasMarkAllDynamicInPartition(bool enabled);
 	void SetPtlasModeChangeDistance(float distance);
 	void SetIndirectDiffuseBounceCount(std::uint32_t bounceCount);
 	void SetIndirectSpecularBounceCount(std::uint32_t bounceCount);
 
   private:
-	EngineRenderingSettingsState CaptureRuntimeState() const noexcept override;
-	void ApplyStateToRuntime(const EngineRenderingSettingsState& state) const noexcept override;
-	void ReadConfigValue(EngineRenderingSettingsState& state, std::string_view key, std::string_view value) const override;
-	std::vector<std::pair<std::string, std::string>> BuildConfigValues(const EngineRenderingSettingsState& state) const override;
+	void RefreshAndPersistRuntimeState();
+	EngineRenderingSettingsState CaptureRuntimeState() const noexcept;
 	bool ComputePendingRestart(
 	    const EngineRenderingSettingsState& baseline,
-	    const EngineRenderingSettingsState& current) const noexcept override;
+	    const EngineRenderingSettingsState& current) const noexcept;
 	std::string DescribePendingRestart(
 	    const EngineRenderingSettingsState& baseline,
-	    const EngineRenderingSettingsState& current) const override;
+	    const EngineRenderingSettingsState& current) const;
+
+	EngineRenderingSettingsState m_state{};
+	EngineRenderingSettingsState m_sessionBaseline{};
 };
 
 SPARKLE_RENDERER_API void ApplyPersistedEngineRenderingSettingsToCVars() noexcept;

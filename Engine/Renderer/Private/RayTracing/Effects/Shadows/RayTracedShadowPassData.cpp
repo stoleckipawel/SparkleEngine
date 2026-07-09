@@ -25,8 +25,8 @@ namespace RayTracedShadowPassData
 		                                                 ? services->Scene->GetTlasGpuAddress()
 		                                                 : 0u;
 		return RayTracedShadowUniformData{
-		    .DirectionalShadowsEnabled = settings->Enabled ? 1u : 0u,
-		    .LocalLightShadowsEnabled = settings->Enabled ? 1u : 0u,
+		    .DirectionalShadowsEnabled = 1u,
+		    .LocalLightShadowsEnabled = 1u,
 		    .Padding0 = 0u,
 		    .Padding1 = 0u,
 		    .NormalBias = settings->NormalBias,

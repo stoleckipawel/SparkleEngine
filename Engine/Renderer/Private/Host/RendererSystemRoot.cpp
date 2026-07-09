@@ -13,15 +13,14 @@
 #include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
+#include "RHI/Public/CVars/RHICVars.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
-#include "Settings/RenderDeviceBackBufferFormatResolver.h"
 #include "Streamline/StreamlineRuntimeSupport.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
@@ -133,7 +132,7 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 {
 
 	{
-		m_backend = RenderDeviceServices::Create(*m_window, ResolveRenderDeviceBackBufferFormatFromCVars());
+		m_backend = RenderDeviceServices::Create(*m_window, CVarBackBufferFormat.Get());
 	}
 	{
 		m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetRenderHardwareInterface());
@@ -147,7 +146,6 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
 	InitializeImageProviders(renderHardware);
-	m_rayTracedShadowSettings = std::make_unique<RayTracedShadowSettings>(BuildRayTracedShadowSettingsFromCVars());
 	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);
 
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);

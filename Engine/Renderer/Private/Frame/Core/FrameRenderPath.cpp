@@ -1,11 +1,11 @@
 #include "../../PCH.h"
 #include "Frame/Core/FrameRenderPath.h"
 
-#include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingSettings.h"
+#include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingCVars.h"
 
 FrameRenderPath ResolveFrameRenderPathFromSettings() noexcept
 {
-	return BuildReferencePathTracingSettingsFromCVars().Enabled
+	return CVarReferencePathTracingEnabled.Get()
 	           ? FrameRenderPath::PathTracedReference
 	           : FrameRenderPath::RealtimeDeferred;
 }

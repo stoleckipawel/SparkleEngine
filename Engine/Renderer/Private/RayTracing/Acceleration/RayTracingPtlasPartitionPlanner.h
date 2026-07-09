@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 
 #include <DirectXMath.h>
 

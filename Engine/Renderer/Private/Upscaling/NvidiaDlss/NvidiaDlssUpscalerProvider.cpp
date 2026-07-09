@@ -72,8 +72,7 @@ bool NvidiaDlssUpscalerProvider::Initialize(
     RhiNativeDeviceQueueInterop nativeInterop,
     UpscalerPresentationBridge presentationBridge)
 {
-	const UpscalerSettings settings = BuildUpscalerSettingsFromCVars();
-	m_qualityMode = settings.QualityMode;
+	m_qualityMode = CVarUpscalerQualityMode.Get();
 	m_dlssCapabilities = DlssCapabilityReporter::Build(capabilities);
 	MarkSelectedDlssFeature(m_dlssCapabilities.FeatureMatrix, GetDlssFeatureForQualityMode(m_qualityMode));
 	if (!m_dlssCapabilities.CanCreateFeature())
@@ -104,10 +103,10 @@ bool NvidiaDlssUpscalerProvider::Initialize(
 void NvidiaDlssUpscalerProvider::SetupFrame(const UpscalerInputContract& inputContract)
 {
 	UpscalerInputContract frameContract = inputContract;
-	const UpscalerSettings settings = BuildUpscalerSettingsFromCVars();
-	if (settings.QualityMode != m_qualityMode)
+	const EUpscalerQualityMode qualityMode = CVarUpscalerQualityMode.Get();
+	if (qualityMode != m_qualityMode)
 	{
-		m_qualityMode = settings.QualityMode;
+		m_qualityMode = qualityMode;
 		MarkSelectedDlssFeature(m_dlssCapabilities.FeatureMatrix, GetDlssFeatureForQualityMode(m_qualityMode));
 		frameContract.ResetRequested = true;
 		frameContract.HistoryInvalid = true;

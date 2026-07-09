@@ -2,8 +2,8 @@
 
 #include "RayReconstruction/RayReconstructionInputContract.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
-#include "RayReconstruction/RayReconstructionSettings.h"
 #include "RHI/Public/Interop/RhiInteropService.h"
+#include "Renderer/Public/Settings/EngineRenderingRayReconstructionTypes.h"
 
 #include <memory>
 #include <string>
@@ -32,14 +32,12 @@ class RayReconstructionSubsystem final
 	void Shutdown() noexcept;
 
 	const RayReconstructionProviderCapabilities& GetDiagnostics() const noexcept { return m_diagnostics; }
-	EngineRayReconstructionMode GetRequestedMode() const noexcept { return m_settings.Mode; }
 
   private:
 	static std::unique_ptr<IRayReconstructionProvider> CreateProvider(EngineRayReconstructionMode mode);
 	RayReconstructionInputContract ConsumePendingReset(const RayReconstructionInputContract& inputContract);
 	void RefreshDiagnostics(IRayReconstructionProvider* provider) noexcept;
 
-	RayReconstructionSettings m_settings = {};
 	std::unique_ptr<IRayReconstructionProvider> m_activeProvider;
 	RayReconstructionProviderCapabilities m_diagnostics = {};
 	RayReconstructionInputContractValidation m_lastInputValidation = {};

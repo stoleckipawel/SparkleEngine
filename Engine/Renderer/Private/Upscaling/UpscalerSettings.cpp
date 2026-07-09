@@ -1,21 +1,42 @@
 #include "../PCH.h"
 #include "Upscaling/UpscalerSettings.h"
 
-#include "Core/Public/Console/CVar.h"
-
 #include <algorithm>
+
+ConsoleVariable<EUpscalerProviderKind> CVarUpscalerProvider(
+    "r.Upscaler.Provider",
+    EUpscalerProviderKind::NvidiaDlss,
+    "Renderer upscaler provider: 0=Linear, 1=NVIDIA DLSS.");
+ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode(
+    "r.Upscaler.QualityMode",
+    EUpscalerQualityMode::NativeAA,
+    "Renderer upscaler quality mode: 0=NativeAA, 1=Quality, 2=Balanced, 3=Performance, 4=UltraPerformance.");
 
 namespace
 {
-	ConsoleVariable<EUpscalerProviderKind> CVarUpscalerProvider(
-	    "r.Upscaler.Provider",
-	    EUpscalerProviderKind::NvidiaDlss,
-	    "Renderer upscaler provider: 0=Linear, 1=NVIDIA DLSS.");
+	struct UpscalerRenderScale final
+	{
+		std::uint32_t Numerator = 1u;
+		std::uint32_t Denominator = 1u;
+	};
 
-	ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode(
-	    "r.Upscaler.QualityMode",
-	    EUpscalerQualityMode::NativeAA,
-	    "Renderer upscaler quality mode: 0=NativeAA, 1=Quality, 2=Balanced, 3=Performance, 4=UltraPerformance.");
+	UpscalerRenderScale GetDlssRenderScale(EUpscalerQualityMode qualityMode) noexcept
+	{
+		switch (qualityMode)
+		{
+			case EUpscalerQualityMode::Quality:
+				return {.Numerator = 2u, .Denominator = 3u}; // 66.7%, 1.5x upscale
+			case EUpscalerQualityMode::Balanced:
+				return {.Numerator = 58u, .Denominator = 100u}; // 58%, about 1.72x upscale
+			case EUpscalerQualityMode::Performance:
+				return {.Numerator = 1u, .Denominator = 2u}; // 50%, 2x upscale
+			case EUpscalerQualityMode::UltraPerformance:
+				return {.Numerator = 1u, .Denominator = 3u}; // 33.3%, 3x upscale
+			case EUpscalerQualityMode::NativeAA:
+			default:
+				return {.Numerator = 1u, .Denominator = 1u}; // 100%, native/DLAA
+		}
+	}
 
 	RenderViewportExtent ScaleExtent(RenderViewportExtent outputExtent, std::uint32_t numerator, std::uint32_t denominator) noexcept
 	{
@@ -28,13 +49,6 @@ namespace
 		    (std::max)(1u, (outputExtent.Width * numerator + denominator - 1u) / denominator),
 		    (std::max)(1u, (outputExtent.Height * numerator + denominator - 1u) / denominator)};
 	}
-}
-
-UpscalerSettings BuildUpscalerSettingsFromCVars() noexcept
-{
-	return UpscalerSettings{
-	    .RequestedProvider = CVarUpscalerProvider.Get(),
-	    .QualityMode = CVarUpscalerQualityMode.Get()};
 }
 
 const char* UpscalerQualityModeToString(EUpscalerQualityMode mode) noexcept
@@ -56,30 +70,8 @@ const char* UpscalerQualityModeToString(EUpscalerQualityMode mode) noexcept
 	return "Unknown";
 }
 
-void SetUpscalerProviderCVar(EUpscalerProviderKind provider) noexcept
-{
-	CVarUpscalerProvider.Set(provider);
-}
-
-void SetUpscalerQualityModeCVar(EUpscalerQualityMode mode) noexcept
-{
-	CVarUpscalerQualityMode.Set(mode);
-}
-
 RenderViewportExtent ResolveUpscalerRenderExtent(RenderViewportExtent outputExtent, EUpscalerQualityMode qualityMode) noexcept
 {
-	switch (qualityMode)
-	{
-		case EUpscalerQualityMode::Quality:
-			return ScaleExtent(outputExtent, 2u, 3u);
-		case EUpscalerQualityMode::Balanced:
-			return ScaleExtent(outputExtent, 58u, 100u);
-		case EUpscalerQualityMode::Performance:
-			return ScaleExtent(outputExtent, 1u, 2u);
-		case EUpscalerQualityMode::UltraPerformance:
-			return ScaleExtent(outputExtent, 1u, 3u);
-		case EUpscalerQualityMode::NativeAA:
-		default:
-			return outputExtent;
-	}
+	const UpscalerRenderScale renderScale = GetDlssRenderScale(qualityMode);
+	return ScaleExtent(outputExtent, renderScale.Numerator, renderScale.Denominator);
 }

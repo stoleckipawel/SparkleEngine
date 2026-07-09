@@ -15,5 +15,5 @@ float SanitizeExposureMax(float exposure) noexcept;
 float SanitizeExposureAdaptationSpeed(float speed) noexcept;
 void SanitizeExposureRange(float& minExposure, float& maxExposure) noexcept;
 
-ExposureUniformData BuildExposureUniformDataFromCVars(float frameDeltaSeconds, bool exposureHistoryValid) noexcept;
-ToneMappingUniformData BuildToneMappingUniformDataFromCVars() noexcept;
+ExposureUniformData BuildExposureUniformData(float frameDeltaSeconds, bool exposureHistoryValid) noexcept;
+ToneMappingUniformData BuildToneMappingUniformData() noexcept;

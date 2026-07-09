@@ -2,6 +2,7 @@
 #include "Upscaling/UpscalerSubsystem.h"
 
 #include "Upscaling/NvidiaDlss/NvidiaDlssUpscalerProvider.h"
+#include "Upscaling/UpscalerSettings.h"
 
 #include <format>
 #include <utility>
@@ -42,13 +43,12 @@ void UpscalerSubsystem::RefreshDiagnostics(IUpscalerProvider* provider) noexcept
 void UpscalerSubsystem::Initialize(
     const RhiCapabilities& capabilities,
     RhiNativeDeviceQueueInterop nativeInterop,
-    const UpscalerSettings& settings,
     UpscalerPresentationBridge presentationBridge)
 {
 	m_nativeInterop = nativeInterop;
 	m_presentationBridge = presentationBridge;
-	m_settings = settings;
-	m_activeProvider = CreateProvider(m_settings.RequestedProvider);
+	const EUpscalerProviderKind requestedProvider = CVarUpscalerProvider.Get();
+	m_activeProvider = CreateProvider(requestedProvider);
 	if (m_activeProvider == nullptr)
 	{
 		m_diagnostics = BuildRendererCopyUpscalerCapabilities(
@@ -70,7 +70,7 @@ void UpscalerSubsystem::Initialize(
 		    failedDiagnostics.FailureDomain,
 		    std::format(
 		        "Requested provider {} was unavailable: {} Final color is produced by the renderer linear upscale pass.",
-		        UpscalerProviderKindToString(m_settings.RequestedProvider),
+		        UpscalerProviderKindToString(requestedProvider),
 		        failedDiagnostics.Reason));
 	}
 	else

@@ -3,19 +3,9 @@
 
 #include "Upscaling/UpscalerSettings.h"
 
-FrameResolutionExtents ResolveFrameResolutionExtents(
-    RenderViewportExtent outputExtent,
-    FrameRenderPath renderPath) noexcept
+FrameResolutionExtents ResolveFrameResolutionExtents(RenderViewportExtent outputExtent) noexcept
 {
-	if (renderPath == FrameRenderPath::PathTracedReference)
-	{
-		return FrameResolutionExtents{
-		    .Render = outputExtent,
-		    .Output = outputExtent};
-	}
-
-	const UpscalerSettings settings = BuildUpscalerSettingsFromCVars();
 	return FrameResolutionExtents{
-	    .Render = ResolveUpscalerRenderExtent(outputExtent, settings.QualityMode),
+	    .Render = ResolveUpscalerRenderExtent(outputExtent, CVarUpscalerQualityMode.Get()),
 	    .Output = outputExtent};
 }
