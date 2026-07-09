@@ -68,7 +68,6 @@ DlssCapabilityReport DlssCapabilityReporter::Build(const RhiCapabilities& capabi
 	report.FeatureSupported = runtimeCapabilities.FeatureSupported;
 	report.RuntimeState = report.CanCreateFeature() ? EDlssProviderRuntimeState::AvailableNotCreated : EDlssProviderRuntimeState::Unavailable;
 	report.FailureDomain = runtimeCapabilities.FailureDomain;
-	report.SdkVersion = runtimeCapabilities.SdkVersion;
 	report.FeatureMatrix = runtimeCapabilities.FeatureMatrix;
 	report.UnavailableReason = BuildUnavailableReason(capabilities, report);
 	return report;
@@ -77,14 +76,8 @@ DlssCapabilityReport DlssCapabilityReporter::Build(const RhiCapabilities& capabi
 void DlssCapabilityReporter::ApplyRuntimeDiagnostics(DlssCapabilityReport& report, const StreamlineDlssRuntimeDiagnostics& diagnostics)
 {
 	report.RuntimeState = diagnostics.State;
-	report.SdkVersion = diagnostics.SdkVersion;
-	report.SelectedQualityMode = diagnostics.SelectedQualityMode;
 	report.FeatureMatrix = diagnostics.FeatureMatrix;
 	report.FailureDomain = diagnostics.FailureDomain;
-	report.RenderExtent = diagnostics.RenderExtent;
-	report.OutputExtent = diagnostics.OutputExtent;
-	report.ResetRequested = diagnostics.ResetRequested;
-	report.ResetReason = diagnostics.ResetReason;
 	if (!diagnostics.FailureReason.empty())
 	{
 		report.UnavailableReason = diagnostics.FailureReason;

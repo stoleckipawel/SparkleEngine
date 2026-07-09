@@ -24,7 +24,6 @@ class NvidiaDlrrProvider final : public IRayReconstructionProvider
 	RayReconstructionProviderCapabilities GetDiagnostics() const override;
 
   private:
-	RayReconstructionProviderCapabilities m_diagnostics = {};
 	RayReconstructionInputContract m_lastInputContract = {};
 	std::unique_ptr<IStreamlineDlrrRuntime> m_runtime;
 	StreamlineDlrrRuntimeDiagnostics m_runtimeDiagnostics = {};

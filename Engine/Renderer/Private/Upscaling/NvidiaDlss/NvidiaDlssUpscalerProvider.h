@@ -25,13 +25,10 @@ class NvidiaDlssUpscalerProvider final : public IUpscalerProvider
 	UpscalerProviderCapabilities GetDiagnostics() const override;
 
   private:
-	UpscalerProviderCapabilities m_diagnostics = {};
 	DlssCapabilityReport m_dlssCapabilities = {};
 	UpscalerInputContract m_lastInputContract = {};
 	std::unique_ptr<IStreamlineDlssRuntime> m_runtime;
 	EUpscalerQualityMode m_qualityMode = EUpscalerQualityMode::Quality;
-	RenderViewportExtent m_renderExtent = {};
-	RenderViewportExtent m_outputExtent = {};
 	RenderViewportExtent m_lastObservedRenderExtent = {};
 	RenderViewportExtent m_lastObservedOutputExtent = {};
 	std::uint32_t m_stableExtentFrameCount = 0;

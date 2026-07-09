@@ -200,15 +200,3 @@ void AddUpscalingPasses(
 
 	resources.FinalSceneColorProduced = true;
 }
-	void AddRendererLinearUpscaleFallbackIfNeeded(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle scalingInputColor,
-	    FrameGraphTextureHandle scalingOutputColor,
-	    RenderViewportExtent renderExtent,
-	    RenderViewportExtent outputExtent)
-	{
-		if (!HasSameExtent(renderExtent, outputExtent))
-		{
-			AddRendererLinearUpscalePass(builder, scalingInputColor, scalingOutputColor, outputExtent);
-		}
-	}

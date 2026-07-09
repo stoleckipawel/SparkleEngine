@@ -165,6 +165,49 @@ This means Linear and DLSS can be selected independently of Ray Reconstruction. 
 
 ## Verification Evidence
 
+### Linear Upscaler Crash Reproduction
+
+Artifact: `logs/Projects/Showcase/Full/ShowcaseEditor_2026-07-08_23-52-20.log`
+
+The current DLSS-to-Linear crash reproduced before any settings automation ran. The editor exited while building the Linear upscaling pass because the Showcase cooked shader output did not contain the new `LinearUpscale` package:
+
+```text
+Runtime validation rejected cooked shader package 'LinearUpscale' for pass 'LinearUpscale' ... Failed to open ... AFEA69852025BAD9.sparkshader
+```
+
+This is a cooked-content freshness failure, not a DLSS/DLRR lifetime failure. `LinearUpscale` is registered in `Engine/Renderer/ShaderRegistrations/LinearUpscaleShader.cpp`, and a project-local shader cook from `Projects/Showcase` generated:
+
+```text
+artifacts/dev/projects/Showcase/cooked/Shaders/Packages/AFEA69852025BAD9.sparkshader
+artifacts/dev/projects/Showcase/cooked/Shaders/ShaderPackageRegistry.sreg
+```
+
+Command used:
+
+```text
+artifacts/dev/tools/ShaderCompiler/DevelopmentEditor/ShaderCompiler.exe cook --target DxilSm66 --target SpirV16
+```
+
+The working directory matters. Running the command from the repository root cooks the shared shader root; running it from `Projects/Showcase` refreshes the shader root that `ShowcaseEditor` loads.
+
+### Upscaler/DLRR Runtime Transition Verification
+
+Artifact: `artifacts/verification/upscaler-dlrr-automation-20260709-000227`
+
+After recooking Showcase shaders, an editor run applied the same runtime CVars as the settings UI across the requested transition matrix:
+
+```text
+r.Upscaler.Provider       1 -> 0 -> 1 -> 0 -> 1
+r.Upscaler.QualityMode    1 -> 3 -> 1
+r.RayReconstruction.Mode  1 -> 0 -> 1
+```
+
+Evidence files:
+
+- `ShowcaseEditor_automation_after_close.log` records each applied CVar transition and contains no `critical`, `error`, `fatal`, `failed`, `rejected`, `invalid`, `crash`, or `exception` matches.
+- `process_status.txt` recorded `ShowcaseEditor` still responding after the sequence.
+- `01_after_initial_dlss_quality_dlrr_on.png` through `10_settled_final.png` are full-size `1600x900` frame captures taken during and after the sequence.
+
 ### Instrumented Root-Cause Proof
 
 Artifact: `artifacts/verification/dlrr-toggle-20260708-202659`

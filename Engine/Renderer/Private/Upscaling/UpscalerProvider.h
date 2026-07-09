@@ -43,15 +43,6 @@ struct UpscalerProviderCapabilities final
 	bool UsesExternalSdk = false;
 	std::string ProviderName;
 	RendererProviderUpscalerResourceContract ResourceContract = {};
-	std::string ResourceContractSummary;
-	std::string ExternalRuntimeVersion;
-	std::string RuntimeState;
-	std::string SelectedQualityMode;
-	std::string FeatureMatrixSummary;
-	RenderViewportExtent RenderExtent = {};
-	RenderViewportExtent OutputExtent = {};
-	bool ResetRequested = false;
-	std::string ResetReason;
 	std::string Reason;
 };
 

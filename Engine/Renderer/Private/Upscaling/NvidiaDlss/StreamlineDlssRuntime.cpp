@@ -38,8 +38,6 @@ namespace
 		bool Initialize(const StreamlineDlssRuntimeDesc& desc) override
 		{
 			m_qualityMode = desc.QualityMode;
-			m_diagnostics.SdkVersion = kStreamlineDlssSdkVersion;
-			m_diagnostics.SelectedQualityMode = UpscalerQualityModeToString(desc.QualityMode);
 
 			const StreamlineBackendContract backend = ValidateStreamlineBackend(desc.Capabilities, desc.NativeInterop);
 			if (!backend.Valid)
@@ -102,17 +100,12 @@ namespace
 			}
 
 			m_qualityMode = qualityMode;
-			m_diagnostics.SelectedQualityMode = UpscalerQualityModeToString(qualityMode);
 			ResetHistory("DLSS quality mode changed");
 		}
 
 		bool SetupFrame(const UpscalerInputContract& inputContract) override
 		{
 			m_lastFrameContract = inputContract;
-			m_diagnostics.RenderExtent = inputContract.RenderExtent;
-			m_diagnostics.OutputExtent = inputContract.OutputExtent;
-			m_diagnostics.ResetRequested = inputContract.ResetRequested;
-			m_diagnostics.ResetReason = inputContract.ResetReason;
 			return m_initialized;
 		}
 
@@ -130,9 +123,6 @@ namespace
 
 			const EUpscalerQualityMode frameQualityMode =
 			    ResolveFrameQualityMode(m_qualityMode, evaluation.RenderExtent, evaluation.OutputExtent);
-			m_diagnostics.SelectedQualityMode = frameQualityMode == m_qualityMode ?
-			                                        UpscalerQualityModeToString(m_qualityMode) :
-			                                        "NativeAA (render extent equals output extent)";
 
 			UpscalerEvaluationResult result = EvaluateStreamlineDlssFrame(m_lastFrameContract, frameQualityMode, m_viewport, evaluation);
 			if (!result.ProducedOutput)
@@ -151,8 +141,7 @@ namespace
 
 		void ResetHistory(std::string_view reason) override
 		{
-			m_diagnostics.ResetRequested = true;
-			m_diagnostics.ResetReason = std::string(reason);
+			(void) reason;
 		}
 
 		void Shutdown() noexcept override
@@ -187,9 +176,8 @@ namespace
 	  public:
 		bool Initialize(const StreamlineDlssRuntimeDesc& desc) override
 		{
+			(void) desc;
 			m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
-			m_diagnostics.SdkVersion = "not-integrated";
-			m_diagnostics.SelectedQualityMode = UpscalerQualityModeToString(desc.QualityMode);
 			m_diagnostics.FeatureMatrix = CreateUnavailableStreamlineDlssFeatureMatrix(kStreamlineDlssNotIntegratedReason);
 			m_diagnostics.FailureDomain = EUpscalerProviderFailureDomain::Sdk;
 			m_diagnostics.FailureReason = kStreamlineDlssNotIntegratedReason;
@@ -198,24 +186,18 @@ namespace
 
 		void SetQualityMode(EUpscalerQualityMode qualityMode) override
 		{
-			m_diagnostics.SelectedQualityMode = UpscalerQualityModeToString(qualityMode);
+			(void) qualityMode;
 		}
 
 		bool SetupFrame(const UpscalerInputContract& inputContract) override
 		{
-			m_diagnostics.RenderExtent = inputContract.RenderExtent;
-			m_diagnostics.OutputExtent = inputContract.OutputExtent;
-			m_diagnostics.ResetRequested = inputContract.ResetRequested;
-			m_diagnostics.ResetReason = inputContract.ResetReason;
-			m_lastFrameContract = inputContract;
+			(void) inputContract;
 			return false;
 		}
 
 		UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation) override
 		{
 			m_diagnostics.State = EDlssProviderRuntimeState::Failed;
-			m_diagnostics.RenderExtent = evaluation.RenderExtent;
-			m_diagnostics.OutputExtent = evaluation.OutputExtent;
 			m_diagnostics.FailureDomain =
 			    HasDlssNativeEvaluationContract(evaluation) ? EUpscalerProviderFailureDomain::Sdk :
 			                                             EUpscalerProviderFailureDomain::InputContract;
@@ -231,8 +213,7 @@ namespace
 
 		void ResetHistory(std::string_view reason) override
 		{
-			m_diagnostics.ResetRequested = true;
-			m_diagnostics.ResetReason = std::string(reason);
+			(void) reason;
 		}
 
 		void Shutdown() noexcept override
@@ -244,7 +225,6 @@ namespace
 
 	  private:
 		StreamlineDlssRuntimeDiagnostics m_diagnostics = {};
-		UpscalerInputContract m_lastFrameContract = {};
 	};
 }
 

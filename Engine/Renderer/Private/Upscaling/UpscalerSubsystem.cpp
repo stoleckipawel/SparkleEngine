@@ -22,9 +22,6 @@ namespace
 		    .CanEvaluate = true,
 		    .UsesExternalSdk = false,
 		    .ProviderName = "Renderer linear upscaler",
-		    .ExternalRuntimeVersion = "none",
-		    .RuntimeState = "RendererLinear",
-		    .FeatureMatrixSummary = "external features not selected",
 		    .Reason = std::move(reason)};
 	}
 }
@@ -93,10 +90,7 @@ void UpscalerSubsystem::SetupFrame(const UpscalerInputContract& inputContract)
 		    ERendererProviderCapabilityState::RuntimeFailed,
 		    EUpscalerProviderFailureDomain::InputContract,
 		    std::format("Upscaler input contract invalid: {}", m_lastInputValidation.Summary));
-		m_diagnostics.RenderExtent = inputContract.RenderExtent;
-		m_diagnostics.OutputExtent = inputContract.OutputExtent;
 		m_diagnostics.ResourceContract = BuildUpscalerProviderResourceContract(inputContract);
-		m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
 		return;
 	}
 
@@ -111,12 +105,7 @@ void UpscalerSubsystem::SetupFrame(const UpscalerInputContract& inputContract)
 	    ERendererProviderCapabilityState::Enabled,
 	    EUpscalerProviderFailureDomain::None,
 	    "Linear upscaler selected; final color is produced by the renderer linear upscale pass.");
-	m_diagnostics.RenderExtent = inputContract.RenderExtent;
-	m_diagnostics.OutputExtent = inputContract.OutputExtent;
-	m_diagnostics.ResetRequested = inputContract.ResetRequested;
-	m_diagnostics.ResetReason = inputContract.ResetReason;
 	m_diagnostics.ResourceContract = BuildUpscalerProviderResourceContract(inputContract);
-	m_diagnostics.ResourceContractSummary = BuildProviderResourceContractSummary(m_diagnostics.ResourceContract);
 }
 
 UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDesc& evaluation)
@@ -151,8 +140,8 @@ void UpscalerSubsystem::OnResize(RenderViewportExtent renderExtent, RenderViewpo
 		return;
 	}
 
-	m_diagnostics.RenderExtent = renderExtent;
-	m_diagnostics.OutputExtent = outputExtent;
+	(void) renderExtent;
+	(void) outputExtent;
 }
 
 void UpscalerSubsystem::ResetHistory(std::string_view reason)
@@ -164,8 +153,7 @@ void UpscalerSubsystem::ResetHistory(std::string_view reason)
 		return;
 	}
 
-	m_diagnostics.ResetRequested = true;
-	m_diagnostics.ResetReason = std::string(reason);
+	(void) reason;
 }
 
 void UpscalerSubsystem::Shutdown() noexcept

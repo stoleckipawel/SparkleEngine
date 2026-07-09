@@ -61,7 +61,6 @@ struct StreamlineDlssRuntimeCapabilities final
 	bool FeatureSupported = false;
 	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
 	DlssFeatureMatrix FeatureMatrix;
-	std::string SdkVersion;
 	std::string Reason;
 };
 
@@ -76,13 +75,7 @@ struct StreamlineDlssRuntimeDesc final
 struct StreamlineDlssRuntimeDiagnostics final
 {
 	EDlssProviderRuntimeState State = EDlssProviderRuntimeState::NotSelected;
-	std::string SdkVersion;
-	std::string SelectedQualityMode;
 	DlssFeatureMatrix FeatureMatrix;
-	RenderViewportExtent RenderExtent = {};
-	RenderViewportExtent OutputExtent = {};
-	bool ResetRequested = false;
-	std::string ResetReason;
 	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
 	std::string FailureReason;
 };
@@ -101,8 +94,5 @@ class IStreamlineDlssRuntime
 	virtual const StreamlineDlssRuntimeDiagnostics& GetDiagnostics() const noexcept = 0;
 };
 
-const char* DlssProviderRuntimeStateToString(EDlssProviderRuntimeState state) noexcept;
-const char* DlssFeatureKindToString(EDlssFeatureKind feature) noexcept;
-const char* DlssFeatureStateToString(EDlssFeatureState state) noexcept;
 StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const RhiCapabilities& capabilities) noexcept;
 std::unique_ptr<IStreamlineDlssRuntime> CreateStreamlineDlssRuntime();

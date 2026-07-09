@@ -20,13 +20,7 @@ struct DlssCapabilityReport final
 	bool FeatureSupported = false;
 	EDlssProviderRuntimeState RuntimeState = EDlssProviderRuntimeState::NotSelected;
 	EUpscalerProviderFailureDomain FailureDomain = EUpscalerProviderFailureDomain::None;
-	std::string SdkVersion;
-	std::string SelectedQualityMode;
 	DlssFeatureMatrix FeatureMatrix;
-	RenderViewportExtent RenderExtent = {};
-	RenderViewportExtent OutputExtent = {};
-	bool ResetRequested = false;
-	std::string ResetReason;
 	std::string UnavailableReason;
 
 	bool CanCreateFeature() const noexcept;

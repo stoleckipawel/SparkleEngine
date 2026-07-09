@@ -51,19 +51,21 @@ bool NvidiaDlrrProvider::Initialize(
     RhiNativeDeviceQueueInterop nativeInterop,
     RayReconstructionPresentationBridge presentationBridge)
 {
-	m_diagnostics = QueryCapabilities(capabilities);
-	if (!m_diagnostics.CanInitialize)
+	const RayReconstructionProviderCapabilities providerCapabilities = QueryCapabilities(capabilities);
+	if (!providerCapabilities.CanInitialize)
 	{
+		m_runtimeDiagnostics.State = EDlrrRuntimeState::Unavailable;
+		m_runtimeDiagnostics.FailureDomain = providerCapabilities.FailureDomain;
+		m_runtimeDiagnostics.FailureReason = providerCapabilities.Reason;
 		return false;
 	}
 
 	m_runtime = CreateStreamlineDlrrRuntime();
 	if (m_runtime == nullptr)
 	{
-		m_diagnostics.CapabilityState = ERendererProviderCapabilityState::MissingDependency;
-		m_diagnostics.FailureDomain = ERayReconstructionProviderFailureDomain::Sdk;
-		m_diagnostics.CanEvaluate = false;
-		m_diagnostics.Reason = "DLRR runtime factory returned no runtime instance.";
+		m_runtimeDiagnostics.State = EDlrrRuntimeState::Failed;
+		m_runtimeDiagnostics.FailureDomain = ERayReconstructionProviderFailureDomain::Sdk;
+		m_runtimeDiagnostics.FailureReason = "DLRR runtime factory returned no runtime instance.";
 		return false;
 	}
 
@@ -73,20 +75,17 @@ bool NvidiaDlrrProvider::Initialize(
 	        .NativeInterop = nativeInterop,
 	        .PresentationBridge = presentationBridge});
 	m_runtimeDiagnostics = m_runtime->GetDiagnostics();
-	m_diagnostics = GetDiagnostics();
 	return initialized;
 }
 
 void NvidiaDlrrProvider::SetupFrame(const RayReconstructionInputContract& inputContract)
 {
 	m_lastInputContract = inputContract;
-	m_diagnostics.ResourceContract = BuildRayReconstructionProviderResourceContract(inputContract);
 	if (m_runtime != nullptr)
 	{
 		m_runtime->SetupFrame(inputContract);
 		m_runtimeDiagnostics = m_runtime->GetDiagnostics();
 	}
-	m_diagnostics = GetDiagnostics();
 }
 
 RayReconstructionEvaluationResult NvidiaDlrrProvider::Evaluate(const RayReconstructionEvaluationDesc& evaluation)
@@ -101,7 +100,6 @@ RayReconstructionEvaluationResult NvidiaDlrrProvider::Evaluate(const RayReconstr
 
 	RayReconstructionEvaluationResult result = m_runtime->Evaluate(evaluation);
 	m_runtimeDiagnostics = m_runtime->GetDiagnostics();
-	m_diagnostics = GetDiagnostics();
 	return result;
 }
 

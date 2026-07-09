@@ -42,22 +42,6 @@ EDlssFeatureKind GetDlssFeatureForQualityMode(EUpscalerQualityMode qualityMode) 
 	return qualityMode == EUpscalerQualityMode::NativeAA ? EDlssFeatureKind::NativeAA : EDlssFeatureKind::SuperResolution;
 }
 
-std::string BuildDlssFeatureMatrixSummary(const DlssFeatureMatrix& matrix)
-{
-	std::string summary;
-	for (const DlssFeatureMatrixEntry& entry : matrix.Entries)
-	{
-		if (!summary.empty())
-		{
-			summary += ", ";
-		}
-		summary += DlssFeatureKindToString(entry.Feature);
-		summary += "=";
-		summary += DlssFeatureStateToString(entry.State);
-	}
-	return summary;
-}
-
 void MarkSelectedDlssFeature(DlssFeatureMatrix& matrix, EDlssFeatureKind selectedFeature)
 {
 	for (DlssFeatureMatrixEntry& entry : matrix.Entries)

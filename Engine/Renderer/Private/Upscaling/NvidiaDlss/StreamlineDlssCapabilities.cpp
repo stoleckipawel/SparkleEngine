@@ -35,7 +35,6 @@ StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const R
 	    .FeatureSupported = runtimeReady,
 	    .FailureDomain = runtimeReady ? EUpscalerProviderFailureDomain::None : EUpscalerProviderFailureDomain::Backend,
 	    .FeatureMatrix = CreateStreamlineDlssFeatureMatrix(runtimeReady, reason),
-	    .SdkVersion = kStreamlineDlssSdkVersion,
 	    .Reason = reason};
 #else
 	return StreamlineDlssRuntimeCapabilities{
@@ -45,7 +44,6 @@ StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const R
 	    .FeatureSupported = false,
 	    .FailureDomain = EUpscalerProviderFailureDomain::Sdk,
 	    .FeatureMatrix = CreateUnavailableStreamlineDlssFeatureMatrix(kStreamlineDlssNotIntegratedReason),
-	    .SdkVersion = "not-integrated",
 	    .Reason = kStreamlineDlssNotIntegratedReason};
 #endif
 }
