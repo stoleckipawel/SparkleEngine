@@ -11,6 +11,7 @@ Start here when doing engine work. These documents gather the review set into im
 - `Architecture/01-Implementation/02_MODIFY_RefactorExistingSystems.md`: staged prompts for refactoring valuable systems without adding pollution.
 - `Architecture/01-Implementation/03_ADD_MinimalMissingCapabilities.md`: the only allowed add-list before cleanup is complete.
 - `Architecture/01-Implementation/04_REMOVE_DeletionsAndCleanup.md`: deletion queue for depot weight, diagnostics, scaffolding, public observation APIs, and workflow bloat.
+- `Architecture/01-Implementation/05_RENDERING_SingleFrameModesPlan.md`: staged plan for replacing the realtime/reference frame fork with selectable GBuffer and lighting modes.
 
 ## Architecture Review Source Set
 

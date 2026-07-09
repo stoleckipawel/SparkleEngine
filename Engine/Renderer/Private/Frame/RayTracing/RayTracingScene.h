@@ -7,4 +7,4 @@ class FrameGraphBuilder;
 
 FrameGraphAccelerationStructureHandle CreateRayTracingSceneFrameGraphResource(FrameGraphBuilder& builder);
 void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAccelerationStructureHandle sceneTlas);
-void AddRayTracingInfrastructurePasses(FrameGraphBuilder& builder, FrameAssemblyResourceLayout& resources);
+void AddRaytracingScenePasses(FrameGraphBuilder& builder, FrameAssemblyResourceLayout& resources);

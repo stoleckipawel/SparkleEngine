@@ -1,13 +1,17 @@
 #include "../../PCH.h"
 #include "Frame/PostProcessing/PostProcessing.h"
 
+#include "Frame/Debug/Debug.h"
 #include "Frame/PostProcessing/Exposure.h"
+#include "Frame/Presentation/Presentation.h"
 #include "Frame/Presentation/Upscaling.h"
 
 void AddPostProcessingPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent renderExtent,
     RenderViewportExtent outputExtent,
+    PixelFormat backBufferFormat,
+    bool presentToBackBuffer,
     FrameAssemblyResourceLayout& resources)
 {
 	const bool hasRealtimeProviderInputs =
@@ -24,4 +28,11 @@ void AddPostProcessingPasses(
 	    resources.History.PreviousExposure,
 	    resources.History.CurrentExposure,
 	    resources.Transient.Exposure);
+
+	AddDebugPasses(builder, resources);
+
+	if (presentToBackBuffer)
+	{
+		AddPresentationPass(builder, outputExtent, backBufferFormat, resources.Transient.Scene, resources.Transient.Exposure);
+	}
 }

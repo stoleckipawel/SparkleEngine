@@ -47,7 +47,7 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAcceler
 	    });
 }
 
-void AddRayTracingInfrastructurePasses(FrameGraphBuilder& builder, FrameAssemblyResourceLayout& resources)
+void AddRaytracingScenePasses(FrameGraphBuilder& builder, FrameAssemblyResourceLayout& resources)
 {
 	resources.SceneTlas = CreateRayTracingSceneFrameGraphResource(builder);
 	AddRayTracingSceneBuildPasses(builder, resources.SceneTlas);
