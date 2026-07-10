@@ -7,5 +7,6 @@ struct DirectShadowSignalResources;
 
 void AddDirectLightReservoirPasses(
     FrameGraphBuilder& builder,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals);

@@ -92,7 +92,7 @@ sl::Result TagDlrrResourcesForFrame(
 	std::array<sl::ResourceTag, 10> tags = {
 	    sl::ResourceTag{&noisyColor, sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
 	    sl::ResourceTag{&outputColor, sl::kBufferTypeScalingOutputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &outputExtent},
-	    sl::ResourceTag{&depth, sl::kBufferTypeDepth, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
+	    sl::ResourceTag{&depth, sl::kBufferTypeLinearDepth, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
 	    sl::ResourceTag{&motionVectors, sl::kBufferTypeMotionVectors, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
 	    sl::ResourceTag{&diffuseAlbedo, sl::kBufferTypeAlbedo, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
 	    sl::ResourceTag{&specularAlbedo, sl::kBufferTypeSpecularAlbedo, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},

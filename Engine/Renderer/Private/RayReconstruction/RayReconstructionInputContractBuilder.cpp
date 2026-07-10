@@ -28,5 +28,5 @@ RayReconstructionInputContract BuildRayReconstructionInputContract(const RayReco
 	        RayReconstructionMotionVectorConvention{
 	            .Units = ERayReconstructionMotionVectorUnits::PixelDelta,
 	            .Direction = ERayReconstructionMotionVectorDirection::CurrentMinusPrevious},
-	    .DepthConvention = ERayReconstructionDepthConvention::ReversedDeviceDepth};
+	    .DepthConvention = ERayReconstructionDepthConvention::LinearDepth};
 }

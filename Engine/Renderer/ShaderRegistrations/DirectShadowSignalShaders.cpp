@@ -23,7 +23,7 @@ class DirectShadowSignalNoRayQueryCS final : public TGlobalShader<DirectShadowSi
 	SHADER_PARAMETER_RDG_BUFFER_SRV(PointLightConstantBufferData, PointLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(SpotLightConstantBufferData, SpotLights)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RectLightConstantBufferData, RectLights)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SceneDepth)
 	END_SHADER_PARAMETER_STRUCT()
 };
 
@@ -54,7 +54,7 @@ class DirectShadowSignalCS final : public TGlobalShader<DirectShadowSignalCS>
 	SHADER_PARAMETER_TEXTURE_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
 	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SceneDepth)
 	END_SHADER_PARAMETER_STRUCT()
 };
 
@@ -86,7 +86,7 @@ class DirectShadowSignalDeviceAddressCS final : public TGlobalShader<DirectShado
 	SHADER_PARAMETER_TEXTURE_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
 	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SceneDepth)
 	END_SHADER_PARAMETER_STRUCT()
 };
 

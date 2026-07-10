@@ -47,7 +47,7 @@ static const float IndirectDiffuseMinimumTMin = 0.001f;
 
 	const uint2 pixelCoord = dispatchThreadId.xy;
 	const GBufferData gBuffer = LoadGBuffer(pixelCoord);
-	if (IsSkyPixel(gBuffer.DeviceZ))
+	if (IsSkyPixel(gBuffer.SceneDepth))
 	{
 		IndirectDiffuseTexture[pixelCoord] = 0.0f.xxxx;
 		IndirectDiffuseDemodulatedRadiance[pixelCoord] = 0.0f.xxxx;
@@ -59,7 +59,7 @@ static const float IndirectDiffuseMinimumTMin = 0.001f;
 	}
 
 	const float3 positionWorld =
-	    ReconstructGBufferWorldPosition(pixelCoord, gBuffer.DeviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
+	    ReconstructGBufferWorldPosition(pixelCoord, gBuffer.SceneDepth, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const RayTracingPathSurface primarySurface =
 	    BuildPrimaryRayTracingPathSurface(
 	        positionWorld,

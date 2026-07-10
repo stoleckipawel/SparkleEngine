@@ -18,6 +18,7 @@ namespace DirectLightingPassDetails
 	void PopulateResources(
 	    FrameGraphBuilder& builder,
 	    const LightingRenderTargets& lighting,
+	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    const DirectShadowSignalResources& shadowSignals,
 	    DirectLightingPass::ParameterInstance& parameters)
@@ -32,7 +33,7 @@ namespace DirectLightingPassDetails
 		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 		parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 		parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
-		parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
+		parameters->SceneDepth = builder.CreateSRV(sceneDepth);
 	}
 }  // namespace DirectLightingPassDetails
 
@@ -56,11 +57,12 @@ const RenderPassDefinition& DirectLightingPass::GetDefinition() noexcept
 void DirectLightingPass::DeclareResources(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
+    FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectLightingPassDetails::PopulateResources(builder, lighting, gbuffer, shadowSignals, parameters);
+	DirectLightingPassDetails::PopulateResources(builder, lighting, sceneDepth, gbuffer, shadowSignals, parameters);
 }
 
 void DirectLightingPass::SetParameters(

@@ -30,7 +30,7 @@ struct DirectLightReservoirTemporalPassParameters
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferSubsurface;
-	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderTexture2D<void> SceneDepth;
 	ShaderTexture2D<void> GBufferMotionVector;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
@@ -67,7 +67,7 @@ struct DirectLightReservoirTemporalPassParameters
 		builder.ReadTexture("GBufferNormal", &DirectLightReservoirTemporalPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DirectLightReservoirTemporalPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferSubsurface", &DirectLightReservoirTemporalPassParameters::GBufferSubsurface, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferDeviceZ", &DirectLightReservoirTemporalPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.ReadTexture("SceneDepth", &DirectLightReservoirTemporalPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 		builder.ReadTexture(
 		    "GBufferMotionVector",
 		    &DirectLightReservoirTemporalPassParameters::GBufferMotionVector,
@@ -94,7 +94,7 @@ struct DirectLightReservoirSpatialPassParameters
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferSubsurface;
-	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderTexture2D<void> SceneDepth;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderUniform<ViewLightingData> ViewLighting;
@@ -129,7 +129,7 @@ struct DirectLightReservoirSpatialPassParameters
 		builder.ReadTexture("GBufferNormal", &DirectLightReservoirSpatialPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DirectLightReservoirSpatialPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferSubsurface", &DirectLightReservoirSpatialPassParameters::GBufferSubsurface, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferDeviceZ", &DirectLightReservoirSpatialPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.ReadTexture("SceneDepth", &DirectLightReservoirSpatialPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DirectLightReservoirSpatialPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectLightReservoirSpatialPassParameters::PerView, ShaderStageVisibility::Compute);
 		builder.Uniform("ViewLighting", &DirectLightReservoirSpatialPassParameters::ViewLighting, ShaderStageVisibility::Compute);
@@ -157,6 +157,7 @@ class DirectLightReservoirTemporalPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
+	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    const DirectShadowSignalResources& shadowSignals,
 	    ParameterInstance& parameters);
@@ -189,6 +190,7 @@ class DirectLightReservoirSpatialPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
+	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    const DirectShadowSignalResources& shadowSignals,
 	    ParameterInstance& parameters);

@@ -8,10 +8,11 @@
 void AddDirectLightingPass(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals)
 {
 	auto& parameters = builder.AllocPassParameters<DirectLightingPass>();
-	DirectLightingPass::DeclareResources(builder, lighting, gbuffer, shadowSignals, parameters);
+	DirectLightingPass::DeclareResources(builder, lighting, sceneTargets.SceneDepth, gbuffer, shadowSignals, parameters);
 	builder.AddComputeShaderPass<DirectLightingPass>(parameters);
 }

@@ -31,7 +31,7 @@ class IndirectDiffuseCS final : public TGlobalShader<IndirectDiffuseCS>
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SceneDepth)
 	SHADER_PARAMETER_TEXTURE(Texture2D, SkyTexture)
 	SHADER_PARAMETER_SAMPLER(SamplerState, SamplerLinearClamp)
 	SHADER_PARAMETER_RDG_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)

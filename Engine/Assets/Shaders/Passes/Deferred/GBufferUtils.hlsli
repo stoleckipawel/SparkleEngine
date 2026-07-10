@@ -2,20 +2,21 @@
 #define SPARKLE_GBUFFER_UTILS_HLSLI
 
 #include "Passes/Deferred/GBufferPacking.hlsli"
+#include "Passes/Deferred/SceneDepthUtils.hlsli"
 
 Texture2D GBufferBaseColor;
 Texture2D GBufferNormal;
 Texture2D GBufferMaterial;
 Texture2D GBufferEmissive;
 Texture2D GBufferSubsurface;
-Texture2D GBufferDeviceZ;
+Texture2D SceneDepth;
 
 struct GBufferData
 {
 	float3 BaseColor;
 	float Alpha;
 	float3 NormalWorld;
-	float DeviceZ;
+	float SceneDepth;
 	float Metallic;
 	float Roughness;
 	float AmbientOcclusion;
@@ -25,14 +26,14 @@ struct GBufferData
 	float SubsurfaceStrength;
 };
 
-float GetSkyDeviceZValue()
+float GetSkySceneDepthValue()
 {
-	return GBufferPacking::PackSkyDeviceZ();
+	return SceneDepthUtils::SkyDepth(Camera.FarZ);
 }
 
-bool IsSkyPixel(float deviceZ)
+bool IsSkyPixel(float sceneDepth)
 {
-	return deviceZ <= GetSkyDeviceZValue() + 1.0e-6f;
+	return SceneDepthUtils::IsSkyDepth(sceneDepth, Camera.FarZ);
 }
 
 float3 DecodeGBufferNormal(float3 normalWorld)
@@ -46,9 +47,9 @@ float DecodeGBufferDielectricF0(float storedDielectricF0)
 	return saturate(storedDielectricF0);
 }
 
-float LoadGBufferDeviceZ(uint2 pixelCoord)
+float LoadSceneDepth(uint2 pixelCoord)
 {
-	return GBufferDeviceZ.Load(int3(pixelCoord, 0)).r;
+	return SceneDepth.Load(int3(pixelCoord, 0)).r;
 }
 
 GBufferData LoadGBuffer(uint2 pixelCoord)
@@ -64,7 +65,7 @@ GBufferData LoadGBuffer(uint2 pixelCoord)
 	gBuffer.BaseColor = saturate(baseColorSample.rgb);
 	gBuffer.Alpha = baseColorSample.a;
 	gBuffer.NormalWorld = DecodeGBufferNormal(normalSample.xyz);
-	gBuffer.DeviceZ = LoadGBufferDeviceZ(pixelCoord);
+	gBuffer.SceneDepth = LoadSceneDepth(pixelCoord);
 	gBuffer.Metallic = saturate(materialSample.r);
 	gBuffer.Roughness = saturate(materialSample.g);
 	gBuffer.AmbientOcclusion = saturate(materialSample.b);
@@ -75,10 +76,11 @@ GBufferData LoadGBuffer(uint2 pixelCoord)
 	return gBuffer;
 }
 
-float3 ReconstructGBufferWorldPosition(uint2 pixelCoord, float deviceZ, float4x4 invView, float4x4 invProjection)
+float3 ReconstructGBufferWorldPosition(uint2 pixelCoord, float sceneDepth, float4x4 invView, float4x4 invProjection)
 {
 	const float2 uv = (float2(pixelCoord) + 0.5f) * ViewportSizeInv;
 	const float2 ndc = float2(uv.x * 2.0f - 1.0f, 1.0f - uv.y * 2.0f);
+	const float deviceZ = SceneDepthUtils::DeviceZFromLinearDepth(sceneDepth, Camera.NearZ);
 	const float4 positionClip = float4(ndc, deviceZ, 1.0f);
 	const float4 positionView = mul(positionClip, invProjection);
 	const float4 positionWorld = mul(float4(positionView.xyz / positionView.w, 1.0f), invView);

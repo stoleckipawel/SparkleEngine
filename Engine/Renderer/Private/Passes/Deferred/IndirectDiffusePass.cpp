@@ -49,6 +49,7 @@ const RenderPassDefinition& IndirectDiffusePass::GetDefinition() noexcept
 void IndirectDiffusePass::DeclareResources(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
+    FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas,
     ParameterInstance& parameters)
@@ -67,7 +68,7 @@ void IndirectDiffusePass::DeclareResources(
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
-	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
+	parameters->SceneDepth = builder.CreateSRV(sceneDepth);
 }
 
 void IndirectDiffusePass::SetParameters(

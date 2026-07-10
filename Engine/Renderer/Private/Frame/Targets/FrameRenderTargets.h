@@ -5,6 +5,7 @@
 struct SceneRenderTargets
 {
 	FrameGraphTextureHandle SceneColor;
+	FrameGraphTextureHandle SceneDepth;
 	FrameGraphTextureHandle ReconstructedSceneColor;
 	FrameGraphTextureHandle FinalSceneColor;
 	FrameGraphTextureHandle BackBuffer;

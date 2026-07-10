@@ -20,7 +20,7 @@ struct RenderViewData;
 struct SkyPassParameters
 {
 	ShaderRWTexture2D<void> SceneColor;
-	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderTexture2D<void> SceneDepth;
 	ShaderTexture2DSRV SkyTexture;
 	ShaderSamplerSet SamplerLinearClamp;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
@@ -29,7 +29,7 @@ struct SkyPassParameters
 	static void Describe(ShaderParameterStructBuilder<SkyPassParameters>& builder)
 	{
 		builder.RWTexture("SceneColor", &SkyPassParameters::SceneColor, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferDeviceZ", &SkyPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.ReadTexture("SceneDepth", &SkyPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 		builder.ReadTexture("SkyTexture", &SkyPassParameters::SkyTexture, ShaderStageVisibility::Compute);
 		builder.Sampler("SamplerLinearClamp", &SkyPassParameters::SamplerLinearClamp, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &SkyPassParameters::PerFrame, ShaderStageVisibility::Compute);
@@ -55,7 +55,6 @@ class SkyPass final
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
 	    const SceneRenderTargets& sceneTargets,
-	    const GBufferRenderTargets& gbuffer,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

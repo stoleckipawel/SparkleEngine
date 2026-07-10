@@ -4,4 +4,4 @@
 
 class FrameGraphBuilder;
 
-void AddSkyPass(FrameGraphBuilder& builder, const SceneRenderTargets& sceneTargets, const GBufferRenderTargets& gbuffer);
+void AddSkyPass(FrameGraphBuilder& builder, const SceneRenderTargets& sceneTargets);

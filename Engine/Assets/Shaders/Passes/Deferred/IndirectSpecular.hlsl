@@ -58,7 +58,7 @@ struct IndirectSpecularResolvedContribution
 
 	const uint2 pixelCoord = dispatchThreadId.xy;
 	const GBufferData gBuffer = LoadGBuffer(pixelCoord);
-	if (IsSkyPixel(gBuffer.DeviceZ))
+	if (IsSkyPixel(gBuffer.SceneDepth))
 	{
 		IndirectSpecularTexture[pixelCoord] = 0.0f.xxxx;
 		IndirectSpecularDemodulatedRadiance[pixelCoord] = 0.0f.xxxx;
@@ -67,7 +67,7 @@ struct IndirectSpecularResolvedContribution
 	}
 
 	const float3 positionWorld =
-	    ReconstructGBufferWorldPosition(pixelCoord, gBuffer.DeviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
+	    ReconstructGBufferWorldPosition(pixelCoord, gBuffer.SceneDepth, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const float3 viewDirWorld = normalize(Camera.Position - positionWorld);
 	RayTracingPathTrace::TraceSettings traceSettings;
 	traceSettings.NormalBias = IndirectSpecularNormalBias;

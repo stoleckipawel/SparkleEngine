@@ -7,14 +7,15 @@
 
 void AddDirectLightReservoirPasses(
     FrameGraphBuilder& builder,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals)
 {
 	auto& temporalParameters = builder.AllocPassParameters<DirectLightReservoirTemporalPass>();
-	DirectLightReservoirTemporalPass::DeclareResources(builder, gbuffer, shadowSignals, temporalParameters);
+	DirectLightReservoirTemporalPass::DeclareResources(builder, sceneTargets.SceneDepth, gbuffer, shadowSignals, temporalParameters);
 	builder.AddComputeShaderPass<DirectLightReservoirTemporalPass>(temporalParameters);
 
 	auto& spatialParameters = builder.AllocPassParameters<DirectLightReservoirSpatialPass>();
-	DirectLightReservoirSpatialPass::DeclareResources(builder, gbuffer, shadowSignals, spatialParameters);
+	DirectLightReservoirSpatialPass::DeclareResources(builder, sceneTargets.SceneDepth, gbuffer, shadowSignals, spatialParameters);
 	builder.AddComputeShaderPass<DirectLightReservoirSpatialPass>(spatialParameters);
 }

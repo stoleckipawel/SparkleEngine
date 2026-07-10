@@ -57,13 +57,13 @@ namespace DirectLightReservoir
 		surface.ViewDistance = 0.0f;
 		surface.EvaluateSubsurface = false;
 
-		if (IsSkyPixel(surface.GBuffer.DeviceZ))
+		if (IsSkyPixel(surface.GBuffer.SceneDepth))
 		{
 			return surface;
 		}
 
 		surface.PositionWorld =
-		    ReconstructGBufferWorldPosition(pixelCoord, surface.GBuffer.DeviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
+		    ReconstructGBufferWorldPosition(pixelCoord, surface.GBuffer.SceneDepth, Camera.InvViewMTX, Camera.InvProjectionMTX);
 		const float3 cameraToSurface = surface.PositionWorld - Camera.Position;
 		surface.ViewDistance = length(cameraToSurface);
 		surface.ViewDirWorld = surface.ViewDistance > 1.0e-5f ? -cameraToSurface / surface.ViewDistance : 0.0f.xxx;

@@ -30,11 +30,10 @@ const RenderPassDefinition& SkyPass::GetDefinition() noexcept
 void SkyPass::DeclareResources(
     FrameGraphBuilder& builder,
     const SceneRenderTargets& sceneTargets,
-    const GBufferRenderTargets& gbuffer,
     ParameterInstance& parameters)
 {
 	parameters->SceneColor = builder.CreateUAV(sceneTargets.SceneColor);
-	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
+	parameters->SceneDepth = builder.CreateSRV(sceneTargets.SceneDepth);
 }
 
 void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const

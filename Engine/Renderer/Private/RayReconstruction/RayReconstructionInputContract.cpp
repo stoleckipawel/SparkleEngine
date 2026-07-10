@@ -145,6 +145,8 @@ const char* RayReconstructionDepthConventionToString(ERayReconstructionDepthConv
 			return "DeviceDepth";
 		case ERayReconstructionDepthConvention::ReversedDeviceDepth:
 			return "ReversedDeviceDepth";
+		case ERayReconstructionDepthConvention::LinearDepth:
+			return "LinearDepth";
 		case ERayReconstructionDepthConvention::Unknown:
 		default:
 			return "Unknown";

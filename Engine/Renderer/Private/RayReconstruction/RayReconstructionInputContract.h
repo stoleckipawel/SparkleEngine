@@ -26,6 +26,7 @@ enum class ERayReconstructionDepthConvention : std::uint8_t
 	Unknown = 0,
 	DeviceDepth = 1,
 	ReversedDeviceDepth = 2,
+	LinearDepth = 3,
 };
 
 struct RayReconstructionMotionVectorConvention final

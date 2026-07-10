@@ -8,23 +8,24 @@
 
 void AddDirectShadowSignalPass(
     FrameGraphBuilder& builder,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas,
     const DirectShadowSignalResources& shadowSignals)
 {
 	auto& noRayParameters = builder.AllocPassParameters<DirectShadowSignalNoRayQueryPass>();
-	DirectShadowSignalNoRayQueryPass::DeclareResources(builder, gbuffer, shadowSignals, noRayParameters);
+	DirectShadowSignalNoRayQueryPass::DeclareResources(builder, sceneTargets.SceneDepth, shadowSignals, noRayParameters);
 	LightingRayTracingPasses::AddNoRayQueryComputePass<DirectShadowSignalNoRayQueryPass>(builder, noRayParameters);
 
 	auto& descriptorParameters = builder.AllocPassParameters<DirectShadowSignalPass>();
-	DirectShadowSignalPass::DeclareResources(builder, gbuffer, sceneTlas, shadowSignals, descriptorParameters);
+	DirectShadowSignalPass::DeclareResources(builder, sceneTargets.SceneDepth, gbuffer, sceneTlas, shadowSignals, descriptorParameters);
 	LightingRayTracingPasses::AddSceneTlasComputePass<DirectShadowSignalPass>(
 	    builder,
 	    descriptorParameters,
 	    RayTracingSceneTlasShaderAccessMode::Descriptor);
 
 	auto& addressParameters = builder.AllocPassParameters<DirectShadowSignalDeviceAddressPass>();
-	DirectShadowSignalDeviceAddressPass::DeclareResources(builder, gbuffer, shadowSignals, addressParameters);
+	DirectShadowSignalDeviceAddressPass::DeclareResources(builder, sceneTargets.SceneDepth, gbuffer, shadowSignals, addressParameters);
 	LightingRayTracingPasses::AddSceneTlasComputePass<DirectShadowSignalDeviceAddressPass>(
 	    builder,
 	    addressParameters,

@@ -8,5 +8,6 @@ class FrameGraphBuilder;
 void AddIndirectSpecularPass(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas);

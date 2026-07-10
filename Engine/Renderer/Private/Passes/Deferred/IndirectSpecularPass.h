@@ -35,7 +35,7 @@ struct IndirectSpecularPassParameters
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
-	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderTexture2D<void> SceneDepth;
 	ShaderTexture2DSRV SkyTexture;
 	ShaderSamplerSet SamplerLinearClamp;
 	ShaderBufferSRV RayTracingHitVertices;
@@ -71,7 +71,7 @@ struct IndirectSpecularPassParameters
 		builder.ReadTexture("GBufferBaseColor", &IndirectSpecularPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &IndirectSpecularPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &IndirectSpecularPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferDeviceZ", &IndirectSpecularPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.ReadTexture("SceneDepth", &IndirectSpecularPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 		builder.ReadTexture("SkyTexture", &IndirectSpecularPassParameters::SkyTexture, ShaderStageVisibility::Compute);
 		builder.Sampler("SamplerLinearClamp", &IndirectSpecularPassParameters::SamplerLinearClamp, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("RayTracingHitVertices", &IndirectSpecularPassParameters::RayTracingHitVertices, ShaderStageVisibility::Compute);
@@ -108,6 +108,7 @@ class IndirectSpecularPass final
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
 	    const LightingRenderTargets& lighting,
+	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
 	    ParameterInstance& parameters);

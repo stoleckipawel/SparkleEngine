@@ -27,7 +27,7 @@ class DirectLightingCS final : public TGlobalShader<DirectLightingCS>
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferSubsurface)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SceneDepth)
 	END_SHADER_PARAMETER_STRUCT()
 };
 

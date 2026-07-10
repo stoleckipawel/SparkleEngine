@@ -16,13 +16,17 @@
 namespace DirectLightReservoirPassDetails
 {
 	template <typename TParameterInstance>
-	void BindGBuffer(FrameGraphBuilder& builder, const GBufferRenderTargets& gbuffer, TParameterInstance& parameters)
+	void BindGBuffer(
+	    FrameGraphBuilder& builder,
+	    FrameGraphTextureHandle sceneDepth,
+	    const GBufferRenderTargets& gbuffer,
+	    TParameterInstance& parameters)
 	{
 		parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
 		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 		parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 		parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
-		parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
+		parameters->SceneDepth = builder.CreateSRV(sceneDepth);
 	}
 
 	template <typename TParameterInstance>
@@ -60,6 +64,7 @@ const RenderPassDefinition& DirectLightReservoirTemporalPass::GetDefinition() no
 
 void DirectLightReservoirTemporalPass::DeclareResources(
     FrameGraphBuilder& builder,
+    FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
@@ -69,7 +74,7 @@ void DirectLightReservoirTemporalPass::DeclareResources(
 	parameters->PreviousReservoirSample = builder.CreateSRV(shadowSignals.PreviousReservoirSample);
 	parameters->PreviousReservoirWeight = builder.CreateSRV(shadowSignals.PreviousReservoirWeight);
 	parameters->PreviousReservoirSurface = builder.CreateSRV(shadowSignals.PreviousReservoirSurface);
-	DirectLightReservoirPassDetails::BindGBuffer(builder, gbuffer, parameters);
+	DirectLightReservoirPassDetails::BindGBuffer(builder, sceneDepth, gbuffer, parameters);
 	parameters->GBufferMotionVector = builder.CreateSRV(gbuffer.MotionVector);
 }
 
@@ -123,6 +128,7 @@ const RenderPassDefinition& DirectLightReservoirSpatialPass::GetDefinition() noe
 
 void DirectLightReservoirSpatialPass::DeclareResources(
     FrameGraphBuilder& builder,
+    FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
@@ -132,7 +138,7 @@ void DirectLightReservoirSpatialPass::DeclareResources(
 	parameters->CurrentReservoirSample = builder.CreateUAV(shadowSignals.CurrentReservoirSample);
 	parameters->CurrentReservoirWeight = builder.CreateUAV(shadowSignals.CurrentReservoirWeight);
 	parameters->CurrentReservoirSurface = builder.CreateUAV(shadowSignals.CurrentReservoirSurface);
-	DirectLightReservoirPassDetails::BindGBuffer(builder, gbuffer, parameters);
+	DirectLightReservoirPassDetails::BindGBuffer(builder, sceneDepth, gbuffer, parameters);
 }
 
 void DirectLightReservoirSpatialPass::SetParameters(

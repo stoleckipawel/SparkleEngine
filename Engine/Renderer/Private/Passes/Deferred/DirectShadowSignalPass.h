@@ -28,7 +28,7 @@ struct DirectShadowSignalPassParameters
 	ShaderTexture2D<void> CurrentReservoirSample;
 	ShaderTexture2D<void> CurrentReservoirWeight;
 	ShaderTexture2D<void> GBufferNormal;
-	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderTexture2D<void> SceneDepth;
 	ShaderAccelerationStructure SceneTlas;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
@@ -51,7 +51,7 @@ struct DirectShadowSignalPassParameters
 		builder.ReadTexture("CurrentReservoirSample", &DirectShadowSignalPassParameters::CurrentReservoirSample, ShaderStageVisibility::Compute);
 		builder.ReadTexture("CurrentReservoirWeight", &DirectShadowSignalPassParameters::CurrentReservoirWeight, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &DirectShadowSignalPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferDeviceZ", &DirectShadowSignalPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.ReadTexture("SceneDepth", &DirectShadowSignalPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 		builder.AccelerationStructure("SceneTlas", &DirectShadowSignalPassParameters::SceneTlas, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DirectShadowSignalPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectShadowSignalPassParameters::PerView, ShaderStageVisibility::Compute);
@@ -75,7 +75,7 @@ struct DirectShadowSignalNoRayQueryPassParameters
 	ShaderRWTexture2D<void> ShadowVisibilitySignal;
 	ShaderTexture2D<void> CurrentReservoirSample;
 	ShaderTexture2D<void> CurrentReservoirWeight;
-	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderTexture2D<void> SceneDepth;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderUniform<ViewLightingData> ViewLighting;
@@ -89,7 +89,7 @@ struct DirectShadowSignalNoRayQueryPassParameters
 		builder.RWTexture("ShadowVisibilitySignal", &DirectShadowSignalNoRayQueryPassParameters::ShadowVisibilitySignal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("CurrentReservoirSample", &DirectShadowSignalNoRayQueryPassParameters::CurrentReservoirSample, ShaderStageVisibility::Compute);
 		builder.ReadTexture("CurrentReservoirWeight", &DirectShadowSignalNoRayQueryPassParameters::CurrentReservoirWeight, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferDeviceZ", &DirectShadowSignalNoRayQueryPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.ReadTexture("SceneDepth", &DirectShadowSignalNoRayQueryPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DirectShadowSignalNoRayQueryPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectShadowSignalNoRayQueryPassParameters::PerView, ShaderStageVisibility::Compute);
 		builder.Uniform("ViewLighting", &DirectShadowSignalNoRayQueryPassParameters::ViewLighting, ShaderStageVisibility::Compute);
@@ -106,7 +106,7 @@ struct DirectShadowSignalDeviceAddressPassParameters
 	ShaderTexture2D<void> CurrentReservoirSample;
 	ShaderTexture2D<void> CurrentReservoirWeight;
 	ShaderTexture2D<void> GBufferNormal;
-	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderTexture2D<void> SceneDepth;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderUniform<ViewLightingData> ViewLighting;
@@ -128,7 +128,7 @@ struct DirectShadowSignalDeviceAddressPassParameters
 		builder.ReadTexture("CurrentReservoirSample", &DirectShadowSignalDeviceAddressPassParameters::CurrentReservoirSample, ShaderStageVisibility::Compute);
 		builder.ReadTexture("CurrentReservoirWeight", &DirectShadowSignalDeviceAddressPassParameters::CurrentReservoirWeight, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &DirectShadowSignalDeviceAddressPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferDeviceZ", &DirectShadowSignalDeviceAddressPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.ReadTexture("SceneDepth", &DirectShadowSignalDeviceAddressPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DirectShadowSignalDeviceAddressPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectShadowSignalDeviceAddressPassParameters::PerView, ShaderStageVisibility::Compute);
 		builder.Uniform("ViewLighting", &DirectShadowSignalDeviceAddressPassParameters::ViewLighting, ShaderStageVisibility::Compute);
@@ -163,7 +163,7 @@ class DirectShadowSignalNoRayQueryPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
-	    const GBufferRenderTargets& gbuffer,
+	    FrameGraphTextureHandle sceneDepth,
 	    const DirectShadowSignalResources& shadowSignals,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
@@ -191,6 +191,7 @@ class DirectShadowSignalPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
+	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
 	    const DirectShadowSignalResources& shadowSignals,
@@ -225,6 +226,7 @@ class DirectShadowSignalDeviceAddressPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
+	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    const DirectShadowSignalResources& shadowSignals,
 	    ParameterInstance& parameters);

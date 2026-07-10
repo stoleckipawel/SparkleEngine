@@ -2,6 +2,7 @@
 #include "Frame/Deferred/GBuffer.h"
 
 #include "Frame/Deferred/GBufferFormats.h"
+#include "Frame/Deferred/SceneDepth.h"
 #include "Frame/GBuffer/RaytracedGBuffer.h"
 #include "Frame/GBuffer/RasterizedGBuffer.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -74,7 +75,6 @@ void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExte
 {
 	const GBufferMode gBufferMode = CVarGBufferMode.Get();
 	resources.Transient.GBuffer = CreateGBufferRenderTargets(builder, sceneExtent, gBufferMode);
-	resources.ViewportProducts.SceneDepth = resources.Transient.GBuffer.DeviceZ;
 	resources.ViewportProducts.Normals = resources.Transient.GBuffer.Normal;
 	resources.ViewportProducts.MotionVectors = resources.Transient.GBuffer.MotionVector;
 
@@ -88,4 +88,9 @@ void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExte
 			AddRaytracedGBufferPass(builder, resources.Transient.GBuffer, resources.SceneTlas);
 			break;
 	}
+
+	AddLinearizeDeviceZPass(
+	    builder,
+	    resources.Transient.GBuffer.DeviceZ,
+	    resources.Transient.Scene.SceneDepth);
 }

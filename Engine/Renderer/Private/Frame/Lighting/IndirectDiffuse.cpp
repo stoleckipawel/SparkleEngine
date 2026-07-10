@@ -22,11 +22,12 @@ namespace
 void AddIndirectDiffusePass(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas)
 {
 	auto& parameters = builder.AllocPassParameters<IndirectDiffusePass>();
-	IndirectDiffusePass::DeclareResources(builder, lighting, gbuffer, sceneTlas, parameters);
+	IndirectDiffusePass::DeclareResources(builder, lighting, sceneTargets.SceneDepth, gbuffer, sceneTlas, parameters);
 	builder.AddPass(
 	    IndirectDiffusePass::PassName,
 	    EFrameGraphPassFlags::Compute,

@@ -18,8 +18,8 @@ Texture2D<float4> CurrentReservoirWeightTexture;
 		return;
 	}
 
-	const float deviceZ = LoadGBufferDeviceZ(dispatchThreadId.xy);
-	if (IsSkyPixel(deviceZ))
+	const float sceneDepth = LoadSceneDepth(dispatchThreadId.xy);
+	if (IsSkyPixel(sceneDepth))
 	{
 		ShadowVisibilitySignalTexture[dispatchThreadId.xy] =
 		    RayTracedShadowSignalPacking::PackShadowSignal(RayTracedShadowSignals::BuildUnshadowedSignal(0.0f));
@@ -27,7 +27,7 @@ Texture2D<float4> CurrentReservoirWeightTexture;
 	}
 
 	const float3 positionWorld =
-	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, deviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
+	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, sceneDepth, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(int3(dispatchThreadId.xy, 0)).xyz);
 	const DirectLightReservoir::Reservoir reservoir =
 	    DirectLightReservoir::UnpackReservoir(

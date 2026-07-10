@@ -22,11 +22,12 @@ namespace
 void AddIndirectSpecularPass(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas)
 {
 	auto& parameters = builder.AllocPassParameters<IndirectSpecularPass>();
-	IndirectSpecularPass::DeclareResources(builder, lighting, gbuffer, sceneTlas, parameters);
+	IndirectSpecularPass::DeclareResources(builder, lighting, sceneTargets.SceneDepth, gbuffer, sceneTlas, parameters);
 	builder.AddPass(
 	    IndirectSpecularPass::PassName,
 	    EFrameGraphPassFlags::Compute,

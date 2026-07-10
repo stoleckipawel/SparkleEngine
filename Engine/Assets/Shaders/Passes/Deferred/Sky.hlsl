@@ -17,8 +17,8 @@ SamplerState SamplerLinearClamp;
 		return;
 	}
 
-	const float deviceZ = GBufferDeviceZ.Load(int3(dispatchThreadId.xy, 0)).r;
-	if (!IsSkyPixel(deviceZ))
+	const float sceneDepth = SceneDepth.Load(int3(dispatchThreadId.xy, 0)).r;
+	if (!IsSkyPixel(sceneDepth))
 	{
 		return;
 	}

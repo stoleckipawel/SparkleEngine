@@ -8,6 +8,7 @@ struct DirectShadowSignalResources;
 
 void AddDirectShadowSignalPass(
     FrameGraphBuilder& builder,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas,
     const DirectShadowSignalResources& shadowSignals);

@@ -61,7 +61,7 @@ void AddDirectLightSample(
 	}
 
 	const GBufferData gBuffer = LoadGBuffer(dispatchThreadId.xy);
-	if (IsSkyPixel(gBuffer.DeviceZ))
+	if (IsSkyPixel(gBuffer.SceneDepth))
 	{
 		DirectDiffuseTexture[dispatchThreadId.xy] = 0.0f.xxxx;
 		DirectSpecularTexture[dispatchThreadId.xy] = 0.0f.xxxx;
@@ -70,7 +70,7 @@ void AddDirectLightSample(
 	}
 
 	const float3 positionWorld =
-	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, gBuffer.DeviceZ, Camera.InvViewMTX, Camera.InvProjectionMTX);
+	    ReconstructGBufferWorldPosition(dispatchThreadId.xy, gBuffer.SceneDepth, Camera.InvViewMTX, Camera.InvProjectionMTX);
 	const float3 viewDirWorld = normalize(Camera.Position - positionWorld);
 
 	float3 directDiffuse = 0.0f;

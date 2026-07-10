@@ -8,5 +8,6 @@ class FrameGraphBuilder;
 void AddIndirectDiffusePass(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas);

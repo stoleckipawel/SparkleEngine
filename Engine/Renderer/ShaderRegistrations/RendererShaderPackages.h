@@ -24,6 +24,7 @@ namespace RendererShaderPackages
 	inline constexpr std::string_view OutputEncoding = "OutputEncoding";
 	inline constexpr std::string_view RaytracedGBuffer = "RaytracedGBuffer";
 	inline constexpr std::string_view ReferencePathTracing = "ReferencePathTracing";
+	inline constexpr std::string_view SceneDepth = "SceneDepth";
 	inline constexpr std::string_view Sky = "Sky";
 	inline constexpr std::string_view ToneMapping = "ToneMapping";
 	inline constexpr std::string_view VisualizeBuffers = "VisualizeBuffers";

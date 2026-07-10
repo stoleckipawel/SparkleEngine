@@ -9,16 +9,17 @@
 void AddIndirectLightingPasses(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
+    const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas)
 {
 	if (CVarIndirectDiffuseEnabled.Get())
 	{
-		AddIndirectDiffusePass(builder, lighting, gbuffer, sceneTlas);
+		AddIndirectDiffusePass(builder, lighting, sceneTargets, gbuffer, sceneTlas);
 	}
 
 	if (CVarIndirectSpecularEnabled.Get())
 	{
-		AddIndirectSpecularPass(builder, lighting, gbuffer, sceneTlas);
+		AddIndirectSpecularPass(builder, lighting, sceneTargets, gbuffer, sceneTlas);
 	}
 }

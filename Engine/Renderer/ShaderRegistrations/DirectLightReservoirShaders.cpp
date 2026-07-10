@@ -27,7 +27,7 @@ class DirectLightReservoirTemporalCS final : public TGlobalShader<DirectLightRes
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferSubsurface)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SceneDepth)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMotionVector)
 	END_SHADER_PARAMETER_STRUCT()
 };
@@ -52,7 +52,7 @@ class DirectLightReservoirSpatialCS final : public TGlobalShader<DirectLightRese
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferSubsurface)
-	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SceneDepth)
 	END_SHADER_PARAMETER_STRUCT()
 };
 

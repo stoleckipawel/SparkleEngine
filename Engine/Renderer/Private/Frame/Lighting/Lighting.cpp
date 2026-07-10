@@ -11,9 +11,19 @@
 #include "Frame/Lighting/ShadowVisibility.h"
 #include "Frame/Lighting/Shadows/DirectShadowSignal.h"
 #include "Frame/Lighting/Sky.h"
+#include "Renderer/Public/Debug/RendererCVars.h"
 
 void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
 {
+	switch (CVarLightingMode.Get())
+	{
+	case LightingMode::Raytraced:
+		break;
+	case LightingMode::PathTraced:
+		// Stage 5 will add the path-traced lighting producer.
+		return;
+	}
+
 	resources.Transient.Lighting = CreateLightingRenderTargets(builder, sceneExtent);
 	const DirectShadowSignalResources rawShadowSignals =
 	    CreateDirectShadowSignalResources(builder, sceneExtent, resources);
@@ -21,20 +31,28 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	AddLightingTargetClearPass(builder, resources.Transient.Lighting);
 	AddDirectLightReservoirPasses(
 	    builder,
+	    resources.Transient.Scene,
 	    resources.Transient.GBuffer,
 	    rawShadowSignals);
 	AddDirectShadowSignalPass(
 	    builder,
+	    resources.Transient.Scene,
 	    resources.Transient.GBuffer,
 	    resources.SceneTlas,
 	    rawShadowSignals);
 	AddDirectLightingPass(
 	    builder,
 	    resources.Transient.Lighting,
+	    resources.Transient.Scene,
 	    resources.Transient.GBuffer,
 	    rawShadowSignals);
-	AddIndirectLightingPasses(builder, resources.Transient.Lighting, resources.Transient.GBuffer, resources.SceneTlas);
+	AddIndirectLightingPasses(
+	    builder,
+	    resources.Transient.Lighting,
+	    resources.Transient.Scene,
+	    resources.Transient.GBuffer,
+	    resources.SceneTlas);
 	AddLightingCompositePass(builder, resources.Transient.Scene, resources.Transient.Lighting, resources.Transient.GBuffer);
-	AddSkyPass(builder, resources.Transient.Scene, resources.Transient.GBuffer);
+	AddSkyPass(builder, resources.Transient.Scene);
 	AddIndirectRayReconstructionPassIfEnabled(builder, sceneExtent, resources);
 }

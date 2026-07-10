@@ -31,6 +31,7 @@ namespace DirectShadowSignalPassDetails
 	template <typename TParameterInstance>
 	void PopulateRayResources(
 	    FrameGraphBuilder& builder,
+	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    const DirectShadowSignalResources& shadowSignals,
 	    TParameterInstance& parameters)
@@ -39,19 +40,19 @@ namespace DirectShadowSignalPassDetails
 		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
 		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
 		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
-		parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
+		parameters->SceneDepth = builder.CreateSRV(sceneDepth);
 	}
 
 	void PopulateNoRayResources(
 	    FrameGraphBuilder& builder,
-	    const GBufferRenderTargets& gbuffer,
+	    FrameGraphTextureHandle sceneDepth,
 	    const DirectShadowSignalResources& shadowSignals,
 	    DirectShadowSignalNoRayQueryPass::ParameterInstance& parameters)
 	{
 		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
 		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
 		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
-		parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
+		parameters->SceneDepth = builder.CreateSRV(sceneDepth);
 	}
 
 	template <typename TParameterInstance>
@@ -130,31 +131,33 @@ const RenderPassDefinition& DirectShadowSignalDeviceAddressPass::GetDefinition()
 
 void DirectShadowSignalNoRayQueryPass::DeclareResources(
     FrameGraphBuilder& builder,
-    const GBufferRenderTargets& gbuffer,
+    FrameGraphTextureHandle sceneDepth,
     const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectShadowSignalPassDetails::PopulateNoRayResources(builder, gbuffer, shadowSignals, parameters);
+	DirectShadowSignalPassDetails::PopulateNoRayResources(builder, sceneDepth, shadowSignals, parameters);
 }
 
 void DirectShadowSignalPass::DeclareResources(
     FrameGraphBuilder& builder,
+    FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas,
     const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectShadowSignalPassDetails::PopulateRayResources(builder, gbuffer, shadowSignals, parameters);
+	DirectShadowSignalPassDetails::PopulateRayResources(builder, sceneDepth, gbuffer, shadowSignals, parameters);
 	parameters->SceneTlas = builder.Read(sceneTlas);
 }
 
 void DirectShadowSignalDeviceAddressPass::DeclareResources(
     FrameGraphBuilder& builder,
+    FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectShadowSignalPassDetails::PopulateRayResources(builder, gbuffer, shadowSignals, parameters);
+	DirectShadowSignalPassDetails::PopulateRayResources(builder, sceneDepth, gbuffer, shadowSignals, parameters);
 }
 
 void DirectShadowSignalNoRayQueryPass::SetParameters(
