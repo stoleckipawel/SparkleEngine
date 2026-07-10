@@ -37,10 +37,28 @@ void ComputeClearPass::DeclareResources(FrameGraphBuilder& builder, FrameGraphTe
 }
 
 void ComputeClearPass::Execute(
-	PassExecutionContext& context,
-	const ComputeClearPass::ParameterInstance& parameters,
-	std::uint32_t width,
-	std::uint32_t height) const noexcept
+    PassExecutionContext& context,
+    const ComputeClearPass::ParameterInstance& parameters,
+    std::uint32_t width,
+    std::uint32_t height) const noexcept
 {
 	ComputePassUtilities::DispatchSized<ComputeClearPass>(context, m_runtime, parameters, width, height);
+}
+
+void AddComputeClearPass(
+    FrameGraphBuilder& builder,
+    std::string_view passName,
+    FrameGraphTextureHandle outputTexture,
+    RenderViewportExtent outputExtent)
+{
+	auto& parameters = builder.AllocPassParameters<ComputeClearPass>();
+	ComputeClearPass::DeclareResources(builder, outputTexture, parameters);
+	builder.AddComputePass<ComputeClearPass>(
+	    passName,
+	    parameters,
+	    [outputExtent](PassExecutionContext& context, ComputeClearPass::ParameterInstance& passParameters)
+	    {
+		    const ComputeClearPass pass(context.RuntimeServices.GetPassRuntime<ComputeClearPass>());
+		    pass.Execute(context, passParameters, outputExtent.Width, outputExtent.Height);
+	    });
 }

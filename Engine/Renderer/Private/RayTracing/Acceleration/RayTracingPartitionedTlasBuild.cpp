@@ -56,17 +56,26 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		return result;
 	}
 
-	const RayTracingPtlasPartitionPlan* partitionPlan =
-	    scenePlanner != nullptr ? scenePlanner->GetCurrentPartitionPlan() : nullptr;
+	const RayTracingPtlasPartitionPlan* partitionPlan = scenePlanner != nullptr ? scenePlanner->GetCurrentPartitionPlan() : nullptr;
 	if (!EnsurePartitionedTlasResources(sceneData, partitionPlan))
 	{
 		result.ActiveProvider = ERhiRayTracingTopLevelProvider::None;
 		result.ActiveProviderReason = "partitioned-tlas-resource-setup-failed-after-frame-prepare";
 		return result;
 	}
-	auto resolveInstanceFlags = [&](const MeshDraw& draw) noexcept {
-		RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;
-		if (draw.Material.Slot < sceneData.materials.size() && sceneData.materials[draw.Material.Slot].alphaMode == 1u)
+	auto resolveInstanceFlags = [&](const MeshDraw& draw) noexcept
+	{
+		RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::None;
+		if (draw.Material.Slot >= sceneData.materials.size())
+		{
+			return flags;
+		}
+		const MaterialData& material = sceneData.materials[draw.Material.Slot];
+		if (material.doubleSided)
+		{
+			flags = flags | RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;
+		}
+		if (material.alphaMode == 1u)
 		{
 			flags = flags | RhiPartitionedTlasInstanceFlags::ForceNoOpaque;
 		}
@@ -76,8 +85,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	std::vector<RhiPartitionedTlasInstanceWriteDesc> instanceWrites;
 	std::unordered_set<void*> builtBlasResources;
 	instanceWrites.reserve(sceneData.meshInstances.size());
-	for (std::uint32_t renderInstanceIndex = 0;
-	     renderInstanceIndex < static_cast<std::uint32_t>(sceneData.meshInstances.size());
+	for (std::uint32_t renderInstanceIndex = 0; renderInstanceIndex < static_cast<std::uint32_t>(sceneData.meshInstances.size());
 	     ++renderInstanceIndex)
 	{
 		const MeshDraw& draw = sceneData.meshInstances[renderInstanceIndex];
@@ -87,8 +95,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 			continue;
 		}
 
-		const RayTracingBlasCache::BlasHandle blas =
-		    blasCache.EnsureBlas(cmd, sceneData, draw, renderInstanceIndex, diagnostics);
+		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, sceneData, draw, renderInstanceIndex, diagnostics);
 		if (!blas.IsValid())
 		{
 			++result.Stats.Candidates.RejectedBlasCount;
@@ -146,10 +153,9 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		m_partitionedResources.NativeOperationData = {};
 	}
 	{
-		m_partitionedResources.NativeOperationData =
-		    rayTracingService.CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
-		        operationPack,
-		        L"RayTracingPartitionedTlasCpuPackedOperations");
+		m_partitionedResources.NativeOperationData = rayTracingService.CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
+		    operationPack,
+		    L"RayTracingPartitionedTlasCpuPackedOperations");
 	}
 	if (!m_partitionedResources.NativeOperationData)
 	{
@@ -184,12 +190,8 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		        .SourceAccelerationStructure = 0,
 		        .DestinationAccelerationStructure = m_partitionedResources.StorageAddress,
 		        .Scratch = m_partitionedResources.ScratchAddress,
-		        .OperationHeaders =
-		            m_partitionedResources.NativeOperationDataAddress +
-		            nativeOperationLayout.OperationHeadersOffsetInBytes,
-		        .OperationCount =
-		            m_partitionedResources.NativeOperationDataAddress +
-		            nativeOperationLayout.OperationCountOffsetInBytes});
+		        .OperationHeaders = m_partitionedResources.NativeOperationDataAddress + nativeOperationLayout.OperationHeadersOffsetInBytes,
+		        .OperationCount = m_partitionedResources.NativeOperationDataAddress + nativeOperationLayout.OperationCountOffsetInBytes});
 	}
 
 	result.Stats.Build.Built = true;

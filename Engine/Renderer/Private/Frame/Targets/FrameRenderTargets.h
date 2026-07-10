@@ -29,12 +29,8 @@ struct LightingRenderTargets
 	FrameGraphTextureHandle DirectSubsurface;
 	FrameGraphTextureHandle IndirectDiffuse;
 	FrameGraphTextureHandle IndirectSpecular;
-	FrameGraphTextureHandle IndirectSubsurface;
-	FrameGraphTextureHandle IndirectDiffuseDemodulatedRadiance;
-	FrameGraphTextureHandle IndirectSpecularDemodulatedRadiance;
 	FrameGraphTextureHandle IndirectDiffuseAlbedo;
 	FrameGraphTextureHandle IndirectSpecularAlbedo;
 	FrameGraphTextureHandle IndirectMaterialGuide;
-	FrameGraphTextureHandle IndirectDiffuseSampleGuide;
 	FrameGraphTextureHandle IndirectSpecularSampleGuide;
 };

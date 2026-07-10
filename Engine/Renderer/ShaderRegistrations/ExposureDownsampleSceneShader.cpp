@@ -15,6 +15,6 @@ class ExposureDownsampleSceneCS final : public TGlobalShader<ExposureDownsampleS
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     ExposureDownsampleSceneCS,
     RendererShaderPackages::ExposureDownsampleScene,
-    "Passes/PostProcessing/ExposureDownsample.hlsl",
-    "DownsampleSceneMain",
+    "Passes/PostProcessing/ExposureDownsampleScene.hlsl",
+    "main",
     Compute);

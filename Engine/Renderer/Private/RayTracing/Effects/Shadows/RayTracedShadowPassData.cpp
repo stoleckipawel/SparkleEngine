@@ -16,14 +16,13 @@ namespace RayTracedShadowPassData
 	    std::uint32_t hitMaterialCount) noexcept
 	{
 		const RayTracedShadowSettings* settings = services != nullptr ? services->ShadowSettings : nullptr;
-		if (settings == nullptr || !hasSceneTlas)
+		if (settings == nullptr || services == nullptr || !services->ShadowsEnabled || !hasSceneTlas)
 		{
 			return RayTracedShadowUniformData{};
 		}
 
-		const RhiGpuVirtualAddress sceneTlasAddress = services != nullptr && services->Scene != nullptr
-		                                                 ? services->Scene->GetTlasGpuAddress()
-		                                                 : 0u;
+		const RhiGpuVirtualAddress sceneTlasAddress =
+		    services != nullptr && services->Scene != nullptr ? services->Scene->GetTlasGpuAddress() : 0u;
 		return RayTracedShadowUniformData{
 		    .DirectionalShadowsEnabled = 1u,
 		    .LocalLightShadowsEnabled = 1u,

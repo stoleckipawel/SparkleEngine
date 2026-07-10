@@ -14,6 +14,6 @@ class ComputeClearCS final : public TGlobalShader<ComputeClearCS>
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     ComputeClearCS,
     RendererShaderPackages::ComputeClear,
-    "Passes/Compute/ComputeClearColorCS.hlsl",
+    "Passes/Compute/ComputeClear.hlsl",
     "main",
     Compute);

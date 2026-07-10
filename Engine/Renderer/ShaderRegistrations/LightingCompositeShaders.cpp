@@ -13,7 +13,6 @@ class LightingCompositeCS final : public TGlobalShader<LightingCompositeCS>
 	SHADER_PARAMETER_TEXTURE(Texture2D, DirectSubsurface)
 	SHADER_PARAMETER_TEXTURE(Texture2D, IndirectDiffuse)
 	SHADER_PARAMETER_TEXTURE(Texture2D, IndirectSpecular)
-	SHADER_PARAMETER_TEXTURE(Texture2D, IndirectSubsurface)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferEmissive)
 	END_SHADER_PARAMETER_STRUCT()

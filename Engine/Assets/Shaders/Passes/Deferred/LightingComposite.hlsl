@@ -4,7 +4,6 @@ Texture2D DirectSpecular;
 Texture2D DirectSubsurface;
 Texture2D IndirectDiffuse;
 Texture2D IndirectSpecular;
-Texture2D IndirectSubsurface;
 Texture2D GBufferBaseColor;
 Texture2D GBufferEmissive;
 
@@ -15,7 +14,6 @@ struct LightingTerms
 	float3 DirectSubsurface;
 	float3 IndirectDiffuse;
 	float3 IndirectSpecular;
-	float3 IndirectSubsurface;
 };
 
 LightingTerms LoadLightingTerms(int3 pixel)
@@ -26,7 +24,6 @@ LightingTerms LoadLightingTerms(int3 pixel)
 	terms.DirectSubsurface = DirectSubsurface.Load(pixel).rgb;
 	terms.IndirectDiffuse = IndirectDiffuse.Load(pixel).rgb;
 	terms.IndirectSpecular = IndirectSpecular.Load(pixel).rgb;
-	terms.IndirectSubsurface = IndirectSubsurface.Load(pixel).rgb;
 	return terms;
 }
 
@@ -38,11 +35,6 @@ float3 ComposeDiffuseLighting(LightingTerms terms)
 float3 ComposeSpecularLighting(LightingTerms terms)
 {
 	return terms.DirectSpecular + terms.IndirectSpecular;
-}
-
-float3 ComposeSubsurfaceLighting(LightingTerms terms)
-{
-	return terms.DirectSubsurface + terms.IndirectSubsurface;
 }
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
@@ -60,10 +52,8 @@ float3 ComposeSubsurfaceLighting(LightingTerms terms)
 	const LightingTerms lighting = LoadLightingTerms(pixel);
 	const float3 diffuseLighting = ComposeDiffuseLighting(lighting);
 	const float3 specularLighting = ComposeSpecularLighting(lighting);
-	const float3 subsurfaceLighting = ComposeSubsurfaceLighting(lighting);
-	// Demodulated irradiance/albedo signals belong in separate buffers, never in this sum.
 	const float3 emissive = max(GBufferEmissive.Load(pixel).rgb, 0.0f);
 	const float alpha = GBufferBaseColor.Load(pixel).a;
-	const float3 lit = diffuseLighting + specularLighting + subsurfaceLighting + emissive;
+	const float3 lit = diffuseLighting + specularLighting + lighting.DirectSubsurface + emissive;
 	SceneColorTexture[dispatchThreadId.xy] = float4(lit, alpha);
 }

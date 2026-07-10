@@ -24,7 +24,6 @@ struct VisualizeBuffersPassParameters
 	ShaderTexture2D<void> DirectSubsurface;
 	ShaderTexture2D<void> IndirectDiffuse;
 	ShaderTexture2D<void> IndirectSpecular;
-	ShaderTexture2D<void> IndirectSubsurface;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
@@ -40,7 +39,6 @@ struct VisualizeBuffersPassParameters
 		builder.ReadTexture("DirectSubsurface", &VisualizeBuffersPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
 		builder.ReadTexture("IndirectDiffuse", &VisualizeBuffersPassParameters::IndirectDiffuse, ShaderStageVisibility::Compute);
 		builder.ReadTexture("IndirectSpecular", &VisualizeBuffersPassParameters::IndirectSpecular, ShaderStageVisibility::Compute);
-		builder.ReadTexture("IndirectSubsurface", &VisualizeBuffersPassParameters::IndirectSubsurface, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &VisualizeBuffersPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &VisualizeBuffersPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &VisualizeBuffersPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
@@ -74,10 +72,7 @@ class VisualizeBuffersPass final
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:
-	void SetParameters(
-	    ParameterInstance& parameters,
-	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices) const;
+	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 };

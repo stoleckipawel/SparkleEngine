@@ -49,8 +49,6 @@ namespace
 				return UiUtil::EditorIcon::ViewDirectDiffuse;
 			case RenderViewMode::IndirectSpecular:
 				return UiUtil::EditorIcon::ViewDirectSpecular;
-			case RenderViewMode::IndirectSubsurface:
-				return UiUtil::EditorIcon::ViewDirectSubsurface;
 			case RenderViewMode::InstanceGroups:
 				return UiUtil::EditorIcon::ViewMode;
 			case RenderViewMode::Count:
@@ -112,8 +110,6 @@ const char* ViewportTopPanel::GetViewModeLabel(RenderViewMode viewMode) noexcept
 			return "Indirect Diffuse";
 		case RenderViewMode::IndirectSpecular:
 			return "Indirect Specular";
-		case RenderViewMode::IndirectSubsurface:
-			return "Indirect Subsurface";
 		case RenderViewMode::InstanceGroups:
 			return "Instance Groups";
 		case RenderViewMode::Count:
@@ -204,7 +200,6 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 		DrawViewModeOption(RenderViewMode::DirectSubsurface, currentViewMode);
 		DrawViewModeOption(RenderViewMode::IndirectDiffuse, currentViewMode);
 		DrawViewModeOption(RenderViewMode::IndirectSpecular, currentViewMode);
-		DrawViewModeOption(RenderViewMode::IndirectSubsurface, currentViewMode);
 		ImGui::Unindent(8.0f);
 
 		ImGui::EndCombo();

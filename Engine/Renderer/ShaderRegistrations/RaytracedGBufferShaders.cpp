@@ -4,6 +4,7 @@
 #include "Shaders/Authoring/GlobalShader.h"
 
 #include "Passes/RayTracing/RaytracedGBufferPass.h"
+#include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/SceneData/MaterialTextureTableCapability.h"
 #include "ShaderData/RenderConstantBufferData.h"
@@ -11,9 +12,7 @@
 class RaytracedGBufferCS final : public TGlobalShader<RaytracedGBufferCS>
 {
   public:
-	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures =
-	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure | CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
+	static constexpr CookedShaderPackageFeatureFlags kPackageFeatures = RayTracingShaderFeatureFlags::DescriptorRayQuery;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	SHADER_PARAMETER_UAV(RWTexture2D, GBufferBaseColor)

@@ -40,7 +40,6 @@ void VisualizeBuffersPass::DeclareResources(
 	parameters->DirectSubsurface = builder.CreateSRV(lighting.DirectSubsurface);
 	parameters->IndirectDiffuse = builder.CreateSRV(lighting.IndirectDiffuse);
 	parameters->IndirectSpecular = builder.CreateSRV(lighting.IndirectSpecular);
-	parameters->IndirectSubsurface = builder.CreateSRV(lighting.IndirectSubsurface);
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
@@ -51,9 +50,9 @@ void VisualizeBuffersPass::DeclareResources(
 void VisualizeBuffersPass::SetParameters(
     ParameterInstance& parameters,
     const RenderViewData& viewData,
-	const PassRuntimeServices& passRuntimeServices) const
+    const PassRuntimeServices& passRuntimeServices) const
 {
-	(void)viewData;
+	(void) viewData;
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 }
 

@@ -6,11 +6,11 @@
 
 void AddLightingCompositePass(
     FrameGraphBuilder& builder,
-    const SceneRenderTargets& sceneTargets,
+    FrameGraphTextureHandle output,
     const LightingRenderTargets& lighting,
     const GBufferRenderTargets& gbuffer)
 {
 	auto& parameters = builder.AllocPassParameters<LightingCompositePass>();
-	LightingCompositePass::DeclareResources(builder, sceneTargets, lighting, gbuffer, parameters);
+	LightingCompositePass::DeclareResources(builder, output, lighting, gbuffer, parameters);
 	builder.AddComputeShaderPass<LightingCompositePass>(parameters);
 }

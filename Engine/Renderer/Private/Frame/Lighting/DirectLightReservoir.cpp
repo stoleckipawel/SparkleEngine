@@ -3,7 +3,8 @@
 
 #include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/Deferred/DirectLightReservoirPass.h"
+#include "Passes/Deferred/DirectLightReservoirSpatialPass.h"
+#include "Passes/Deferred/DirectLightReservoirTemporalPass.h"
 
 void AddDirectLightReservoirPasses(
     FrameGraphBuilder& builder,

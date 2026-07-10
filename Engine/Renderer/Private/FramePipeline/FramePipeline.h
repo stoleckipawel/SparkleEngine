@@ -4,9 +4,9 @@
 #include "Frame/Builders/PerFrameDataBuilder.h"
 #include "Frame/Core/FrameAssembly.h"
 #include "Frame/Core/FrameResolution.h"
-#include "Frame/Core/FrameRenderPath.h"
 #include "Frame/RhiFrameConstants.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "FramePipeline/ReservoirHistoryResources.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
@@ -70,11 +70,21 @@ class FramePipeline final
 	void BindExposureHistoryFrameGraphResources() noexcept;
 	void ResetExposureHistory() noexcept;
 	bool HasExposureHistoryResources() const noexcept;
+	void CreateReferenceLightingHistoryResources() noexcept;
+	void ReleaseReferenceLightingHistoryResources() noexcept;
+	void BindReferenceLightingHistoryFrameGraphResources() noexcept;
+	void ResetReferenceLightingHistory() noexcept;
+	bool HasReferenceLightingHistoryResources() const noexcept;
 	void CreateDirectLightReservoirHistoryResources() noexcept;
 	void ReleaseDirectLightReservoirHistoryResources() noexcept;
 	void BindDirectLightReservoirHistoryFrameGraphResources() noexcept;
-	void ResetDirectLightReservoirHistory() noexcept;
+	void ResetRestirLightingHistory() noexcept;
 	bool HasDirectLightReservoirHistoryResources() const noexcept;
+	void UpdateLightingHistoryState(const FrameContext& frame) noexcept;
+	void CreateRestirIndirectReservoirHistoryResources() noexcept;
+	void ReleaseRestirIndirectReservoirHistoryResources() noexcept;
+	void BindRestirIndirectReservoirHistoryFrameGraphResources() noexcept;
+	bool HasRestirIndirectReservoirHistoryResources() const noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
@@ -94,18 +104,20 @@ class FramePipeline final
 	RenderSceneSnapshot m_sceneSnapshot = {};
 	ScopedEventHandle m_resizeHandle;
 	std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> m_exposureHistoryResources = {};
-	struct DirectLightReservoirHistoryFrameResources
-	{
-		RhiOwnedResourceHandle Sample;
-		RhiOwnedResourceHandle Weight;
-		RhiOwnedResourceHandle Surface;
-	};
-	std::array<DirectLightReservoirHistoryFrameResources, RhiFrameConstants::FramesInFlight> m_directLightReservoirHistoryResources = {};
-	RenderViewportExtent m_directLightReservoirHistoryExtent = {};
+	std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> m_referenceLightingHistoryResources = {};
+	RenderViewportExtent m_referenceLightingHistoryExtent = {};
+	ReservoirHistoryResourceSet m_directLightReservoirHistoryResources = {};
+	ReservoirHistoryResourceSet m_restirIndirectReservoirHistoryResources = {};
 	bool m_bResizePending = false;
 	bool m_exposureHistoryValid = false;
+	bool m_referenceLightingHistoryValid = false;
 	bool m_directLightReservoirHistoryValid = false;
-	FrameRenderPath m_renderPath = FrameRenderPath::RealtimeDeferred;
+	bool m_restirIndirectReservoirHistoryValid = false;
 	GBufferMode m_gBufferMode = GBufferMode::Rasterized;
+	LightingMode m_lightingMode = LightingMode::RestirPathTraced;
+	std::uint64_t m_referenceLightingSettingsKey = 0u;
+	std::uint64_t m_referenceLightingStateKey = 0u;
+	std::uint64_t m_restirLightingSettingsKey = 0u;
+	std::uint64_t m_restirLightingSceneStateKey = 0u;
 	std::uint32_t m_imageProviderFrameGraphKey = 0;
 };

@@ -11,8 +11,6 @@
 #include "Frame/Presentation/ToneMappingSettings.h"
 #include "Lighting/LightingCVars.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
-#include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseCVars.h"
-#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularCVars.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "RHI/Public/CVars/RHICVars.h"
 #include "Upscaling/UpscalerSettings.h"
@@ -34,8 +32,7 @@ namespace
 		return Filesystem::GetWorkspaceRootPath() / "Config" / "DefaultEngine.ini";
 	}
 
-	template <typename OnValue>
-	void LoadRenderingSettingsConfigValues(OnValue&& onValue)
+	template <typename OnValue> void LoadRenderingSettingsConfigValues(OnValue&& onValue)
 	{
 		std::ifstream input(GetRenderingSettingsConfigPath());
 		if (!input.is_open())
@@ -69,9 +66,7 @@ namespace
 				continue;
 			}
 
-			onValue(
-			    std::string_view(trimmed).substr(0, separator),
-			    std::string_view(trimmed).substr(separator + 1));
+			onValue(std::string_view(trimmed).substr(0, separator), std::string_view(trimmed).substr(separator + 1));
 		}
 	}
 
@@ -126,9 +121,7 @@ namespace
 
 		if (sectionStart < lines.size())
 		{
-			lines.erase(
-			    lines.begin() + static_cast<std::ptrdiff_t>(sectionStart),
-			    lines.begin() + static_cast<std::ptrdiff_t>(sectionEnd));
+			lines.erase(lines.begin() + static_cast<std::ptrdiff_t>(sectionStart), lines.begin() + static_cast<std::ptrdiff_t>(sectionEnd));
 			lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(sectionStart), sectionLines.begin(), sectionLines.end());
 		}
 		else
@@ -177,9 +170,7 @@ namespace
 	    "r.RayTracing.Ptlas.PartitionsPerAxis",
 	    "r.RayTracing.Ptlas.PartitionUpdateMode",
 	    "r.RayTracing.Ptlas.MarkAllDynamicInPartition",
-	    "r.RayTracing.Ptlas.ModeChangeDistance",
-	    "r.RayTracing.IndirectDiffuse.Bounces",
-	    "r.RayTracing.Reflections.Bounces"};
+	    "r.RayTracing.Ptlas.ModeChangeDistance"};
 
 	bool IsPersistedRenderingCVarName(std::string_view name) noexcept
 	{
@@ -214,7 +205,7 @@ namespace
 
 		const std::string trimmedValue = Strings::TrimCopy(value);
 		std::string errorMessage;
-		(void)variable->TrySetValueFromString(trimmedValue, errorMessage);
+		(void) variable->TrySetValueFromString(trimmedValue, errorMessage);
 	}
 
 	std::vector<std::pair<std::string, std::string>> BuildRenderingSettingsConfigValues()
@@ -235,8 +226,7 @@ namespace
 		return values;
 	}
 
-	template <typename TCVar, typename TValue>
-	bool SetCVarIfChanged(TCVar& cvar, const TValue& value) noexcept
+	template <typename TCVar, typename TValue> bool SetCVarIfChanged(TCVar& cvar, const TValue& value) noexcept
 	{
 		if (cvar.Get() == value)
 		{
@@ -546,22 +536,6 @@ void EngineRenderingSettingsSection::SetPtlasModeChangeDistance(float distance)
 	}
 }
 
-void EngineRenderingSettingsSection::SetIndirectDiffuseBounceCount(std::uint32_t bounceCount)
-{
-	if (SetCVarIfChanged(CVarIndirectDiffuseBounceCount, bounceCount))
-	{
-		RefreshAndPersistRuntimeState();
-	}
-}
-
-void EngineRenderingSettingsSection::SetIndirectSpecularBounceCount(std::uint32_t bounceCount)
-{
-	if (SetCVarIfChanged(CVarIndirectSpecularBounceCount, bounceCount))
-	{
-		RefreshAndPersistRuntimeState();
-	}
-}
-
 EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState() const noexcept
 {
 	EngineRenderingSettingsState state;
@@ -588,7 +562,7 @@ EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState
 	state.UpscalerQualityMode = CVarUpscalerQualityMode.Get();
 	state.RayReconstructionMode = CVarRayReconstructionMode.Get();
 	state.GBuffer = CVarGBufferMode.Get();
-	state.Lighting = CVarLightingMode.Get();
+	state.Lighting = GetLightingMode();
 	state.MeshAutoBatching = CVarRendererMeshAutoBatching.Get();
 	state.RefitTlas = CVarRayTracingClassicTlasRefit.Get();
 	state.PtlasActive = CVarRayTracingPreferPartitionedTlas.Get();
@@ -596,8 +570,6 @@ EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState
 	state.PtlasPartitionUpdateMode = CVarRayTracingPtlasPartitionUpdateMode.Get();
 	state.PtlasMarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get();
 	state.PtlasModeChangeDistance = CVarRayTracingPtlasModeChangeDistance.Get();
-	state.IndirectDiffuseBounceCount = CVarIndirectDiffuseBounceCount.Get();
-	state.IndirectSpecularBounceCount = CVarIndirectSpecularBounceCount.Get();
 	return state;
 }
 

@@ -23,7 +23,7 @@ cbuffer RaytracedGBufferUniformData
 
 #include "RayTracing/PathTrace.hlsli"
 
-static const uint RaytracedGBufferRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
+static const uint RaytracedGBufferRayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER | RAY_FLAG_CULL_BACK_FACING_TRIANGLES;
 static const uint RaytracedGBufferInstanceMask = 0xFFu;
 static const float RaytracedGBufferMinimumTMin = 0.001f;
 

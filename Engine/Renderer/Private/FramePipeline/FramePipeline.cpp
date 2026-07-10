@@ -11,6 +11,8 @@
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
+#include "Frame/Lighting/ReferenceLightingState.h"
+#include "Frame/Lighting/RestirLightingState.h"
 #include "Frame/Presentation/Upscaling.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
@@ -19,9 +21,6 @@
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "RayReconstruction/RayReconstructionFramePass.h"
-#include "RayTracing/Effects/IndirectDiffuse/IndirectDiffuseCVars.h"
-#include "RayTracing/Effects/IndirectSpecular/IndirectSpecularCVars.h"
-#include "RayTracing/Effects/ReferencePathTracing/ReferencePathTracingCVars.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
@@ -36,13 +35,11 @@
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
-FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
-    m_systems(&systems)
+FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&systems)
 {
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
 	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
-	RenderDiagnostics& backendDiagnostics =
-	    m_systems->GetRenderHardwareInterface().GetDiagnostics();
+	RenderDiagnostics& backendDiagnostics = m_systems->GetRenderHardwareInterface().GetDiagnostics();
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
 	{
 		frameDiagnostics = std::make_unique<FrameExecutionDiagnostics>(backendDiagnostics);
@@ -51,12 +48,16 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
 	InitializeFrameGraph();
 	CreateExposureHistoryResources();
 	CreateDirectLightReservoirHistoryResources();
+	CreateReferenceLightingHistoryResources();
+	CreateRestirIndirectReservoirHistoryResources();
 	BindWindowResizeEvent();
 }
 
 FramePipeline::~FramePipeline() noexcept
 {
 	ReleaseDirectLightReservoirHistoryResources();
+	ReleaseReferenceLightingHistoryResources();
+	ReleaseRestirIndirectReservoirHistoryResources();
 	ReleaseExposureHistoryResources();
 }
 
@@ -124,8 +125,10 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 	m_frameGraphRenderExtent = dependencies.renderExtent;
 	m_frameGraphOutputExtent = dependencies.outputExtent;
 	m_frameResources = buildResult.Resources;
-	m_renderPath = ResolveFrameRenderPathFromSettings();
 	m_gBufferMode = CVarGBufferMode.Get();
+	m_lightingMode = GetLightingMode();
+	m_referenceLightingSettingsKey = BuildReferenceLightingSettingsKey();
+	m_restirLightingSettingsKey = BuildRestirLightingSettingsKey();
 	m_imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	m_frameGraph = std::move(buildResult.Graph);
 }
@@ -157,6 +160,8 @@ void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noe
 	m_frameGraph.reset();
 	InitializeFrameGraph(resolution);
 	CreateDirectLightReservoirHistoryResources();
+	CreateReferenceLightingHistoryResources();
+	CreateRestirIndirectReservoirHistoryResources();
 	m_systems->GetImageProviders().OnResize(m_frameGraphRenderExtent, m_frameGraphOutputExtent);
 }
 
@@ -170,7 +175,8 @@ void FramePipeline::BeginFrame() noexcept
 		m_bResizePending = false;
 		temporalDataBuilder.ResetHistory("Window resize");
 		ResetExposureHistory();
-		ResetDirectLightReservoirHistory();
+		ResetReferenceLightingHistory();
+		ResetRestirLightingHistory();
 		m_systems->GetImageProviders().ResetHistory("Window resize");
 
 		if (m_systems->GetWindow().HasValidSize())
@@ -184,24 +190,14 @@ void FramePipeline::BeginFrame() noexcept
 	const FrameResolutionExtents frameResolution = ResolveFrameResolution();
 	if (frameResolution.Render.Width != m_frameGraphRenderExtent.Width ||
 	    frameResolution.Render.Height != m_frameGraphRenderExtent.Height ||
-	    frameResolution.Output.Width != m_frameGraphOutputExtent.Width ||
-	    frameResolution.Output.Height != m_frameGraphOutputExtent.Height)
+	    frameResolution.Output.Width != m_frameGraphOutputExtent.Width || frameResolution.Output.Height != m_frameGraphOutputExtent.Height)
 	{
 		temporalDataBuilder.ResetHistory("Frame resolution changed");
 		ResetExposureHistory();
-		ResetDirectLightReservoirHistory();
+		ResetReferenceLightingHistory();
+		ResetRestirLightingHistory();
 		m_systems->GetImageProviders().ResetHistory("Frame resolution changed");
 		RefreshFrameExecution(frameResolution);
-	}
-
-	const FrameRenderPath renderPath = ResolveFrameRenderPathFromSettings();
-	if (renderPath != m_renderPath)
-	{
-		temporalDataBuilder.ResetHistory("Render path changed");
-		ResetExposureHistory();
-		ResetDirectLightReservoirHistory();
-		m_systems->GetImageProviders().ResetHistory("Render path changed");
-		RefreshFrameExecution(ResolveFrameResolution());
 	}
 
 	const GBufferMode gBufferMode = CVarGBufferMode.Get();
@@ -209,9 +205,43 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		temporalDataBuilder.ResetHistory("GBuffer mode changed");
 		ResetExposureHistory();
-		ResetDirectLightReservoirHistory();
+		ResetReferenceLightingHistory();
+		ResetRestirLightingHistory();
 		m_systems->GetImageProviders().ResetHistory("GBuffer mode changed");
 		RefreshFrameExecution(ResolveFrameResolution());
+	}
+
+	const LightingMode lightingMode = GetLightingMode();
+	if (lightingMode != m_lightingMode)
+	{
+		temporalDataBuilder.ResetHistory("Lighting mode changed");
+		ResetExposureHistory();
+		ResetReferenceLightingHistory();
+		ResetRestirLightingHistory();
+		m_systems->GetImageProviders().ResetHistory("Lighting mode changed");
+		RefreshFrameExecution(ResolveFrameResolution());
+	}
+
+	const std::uint64_t referenceLightingSettingsKey = BuildReferenceLightingSettingsKey();
+	if (referenceLightingSettingsKey != m_referenceLightingSettingsKey)
+	{
+		m_referenceLightingSettingsKey = referenceLightingSettingsKey;
+		if (lightingMode == LightingMode::ReferencePathTraced)
+		{
+			ResetReferenceLightingHistory();
+			m_systems->GetImageProviders().ResetHistory("Reference lighting settings changed");
+		}
+	}
+
+	const std::uint64_t restirLightingSettingsKey = BuildRestirLightingSettingsKey();
+	if (restirLightingSettingsKey != m_restirLightingSettingsKey)
+	{
+		m_restirLightingSettingsKey = restirLightingSettingsKey;
+		if (lightingMode == LightingMode::RestirPathTraced)
+		{
+			ResetRestirLightingHistory();
+			m_systems->GetImageProviders().ResetHistory("ReSTIR lighting settings changed");
+		}
 	}
 
 	const std::uint32_t imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
@@ -219,7 +249,8 @@ void FramePipeline::BeginFrame() noexcept
 	{
 		temporalDataBuilder.ResetHistory("Image provider graph mode changed");
 		ResetExposureHistory();
-		ResetDirectLightReservoirHistory();
+		ResetReferenceLightingHistory();
+		ResetRestirLightingHistory();
 		m_systems->RefreshImageProviders();
 		RefreshFrameExecution(ResolveFrameResolution());
 		m_systems->GetImageProviders().ResetHistory("Image provider graph mode changed");
@@ -243,7 +274,8 @@ void FramePipeline::SetupFrame() noexcept
 	m_systems->GetTextureManager().LoadSceneTextures(m_sceneSnapshot.textures);
 	m_systems->GetRenderCamera().Update(m_sceneSnapshot.camera);
 
-	const RenderViewportExtent renderExtent = m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
+	const RenderViewportExtent renderExtent =
+	    m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
 	m_perFrameData = m_perFrameDataBuilder.Build(timer, CVarRenderViewMode.Get(), renderExtent);
 }
 
@@ -257,14 +289,20 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	m_viewportRenderProducts.Clear();
 	m_viewportRenderProducts.SetProduct(
 	    RenderOutputFlags::SceneColor,
-	    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.FinalSceneColor), resolution.Output, RenderProductFormat::ColorLdr});
+	    RenderProduct{
+	        ToRenderProductHandle(m_frameResources.ViewportProducts.FinalSceneColor),
+	        resolution.Output,
+	        RenderProductFormat::ColorLdr});
 
 	if (m_frameResources.ViewportProducts.SceneDepth.IsValid() &&
 	    HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::SceneDepth,
-		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth), resolution.Render, RenderProductFormat::Float});
+		    RenderProduct{
+		        ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth),
+		        resolution.Render,
+		        RenderProductFormat::Float});
 	}
 
 	if (m_frameResources.ViewportProducts.Normals.IsValid() &&
@@ -272,53 +310,51 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	{
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::Normals,
-		    RenderProduct{ToRenderProductHandle(m_frameResources.ViewportProducts.Normals), resolution.Render, RenderProductFormat::ColorHdr});
+		    RenderProduct{
+		        ToRenderProductHandle(m_frameResources.ViewportProducts.Normals),
+		        resolution.Render,
+		        RenderProductFormat::ColorHdr});
 	}
 }
 
 void FramePipeline::RecordFrame() noexcept
 {
 	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
-	const bool rayTracedShadowsEnabled = CVarRayTracedShadowsEnabled.Get();
 	const RayTracedShadowSettings shadowSettings{
 	    .NormalBias = CVarRayTracedShadowNormalBias.Get(),
 	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get()};
-	const bool rayTracingSceneRequired =
-	    CVarReferencePathTracingEnabled.Get() ||
-	    CVarGBufferMode.Get() == GBufferMode::Raytraced ||
-	    rayTracedShadowsEnabled ||
-	    CVarIndirectDiffuseEnabled.Get() ||
-	    CVarIndirectSpecularEnabled.Get();
-	RenderRayTracingScene* activeRayTracingScene =
-	    rayTracingSceneRequired ? m_systems->GetRenderRayTracingScene() : nullptr;
+	const bool rayTracedShadowsEnabled = CVarRayTracedShadowsEnabled.Get();
+	RenderRayTracingScene* activeRayTracingScene = m_systems->GetRenderRayTracingScene();
 	std::string temporalResetReason;
 	SceneRenderStateCoordinator* sceneRenderStateCoordinator = m_systems->GetSceneRenderStateCoordinator();
 	if (sceneRenderStateCoordinator != nullptr && sceneRenderStateCoordinator->ConsumeTemporalHistoryResetRequest(temporalResetReason))
 	{
 		m_systems->GetTemporalDataBuilder().ResetHistory(temporalResetReason);
 		ResetExposureHistory();
-		ResetDirectLightReservoirHistory();
+		ResetReferenceLightingHistory();
+		ResetRestirLightingHistory();
 	}
 
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[renderHardwareInterface.GetCurrentFrameIndex()];
 	frameSlot = [&]()
 	{
-		return std::make_unique<FrameContext>(
-		    BuildFrameContext(
-		        m_sceneSnapshot,
-		        renderHardwareInterface,
-		        m_systems->GetRenderCamera(),
-		        m_frameGraphRenderExtent,
-		        m_systems->GetRenderSceneDataBuilder(),
-		        activeRayTracingScene,
-		        m_systems->GetPerViewDataBuilder(),
-		        m_systems->GetTemporalDataBuilder()));
+		return std::make_unique<FrameContext>(BuildFrameContext(
+		    m_sceneSnapshot,
+		    renderHardwareInterface,
+		    m_systems->GetRenderCamera(),
+		    m_frameGraphRenderExtent,
+		    m_systems->GetRenderSceneDataBuilder(),
+		    activeRayTracingScene,
+		    m_systems->GetPerViewDataBuilder(),
+		    m_systems->GetTemporalDataBuilder()));
 	}();
 	FrameContext& frame = *frameSlot;
+	UpdateLightingHistoryState(frame);
 	if (frame.mainView.perTemporalData.HistoryValid == 0u)
 	{
 		ResetExposureHistory();
-		ResetDirectLightReservoirHistory();
+		ResetReferenceLightingHistory();
+		ResetRestirLightingHistory();
 	}
 
 	if (m_frameResources.UpscalerProviderInputs.ScalingInputColor.IsValid())
@@ -371,6 +407,8 @@ void FramePipeline::RecordFrame() noexcept
 
 	BindExposureHistoryFrameGraphResources();
 	BindDirectLightReservoirHistoryFrameGraphResources();
+	BindReferenceLightingHistoryFrameGraphResources();
+	BindRestirIndirectReservoirHistoryFrameGraphResources();
 
 	{
 		m_frameGraph->Setup(frame);
@@ -385,14 +423,17 @@ void FramePipeline::RecordFrame() noexcept
 	const RenderRayTracingPassServices rayTracingPassServices{
 	    .Scene = activeRayTracingScene,
 	    .CapabilityReport = activeRayTracingScene != nullptr ? &activeRayTracingScene->GetCapabilities() : nullptr,
-	    .ShadowSettings = rayTracedShadowsEnabled ? &shadowSettings : nullptr};
+	    .ShadowSettings = &shadowSettings,
+	    .ShadowsEnabled = rayTracedShadowsEnabled};
 	const RendererImageProviderPassServices imageProviderPassServices = m_systems->GetImageProviders().BuildPassServices();
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
 	    .RuntimeManager = m_systems->GetPipelineStateManager(),
 	    .PerFrame = m_perFrameData,
 	    .ExposureHistoryValid = m_exposureHistoryValid,
+	    .ReferenceLightingHistoryValid = m_referenceLightingHistoryValid,
 	    .DirectLightReservoirHistoryValid = m_directLightReservoirHistoryValid,
+	    .RestirIndirectReservoirHistoryValid = m_restirIndirectReservoirHistoryValid,
 	    .Textures = &m_systems->GetTextureManager(),
 	    .RayTracing = &rayTracingPassServices,
 	    .ImageProviders = &imageProviderPassServices};
@@ -400,10 +441,7 @@ void FramePipeline::RecordFrame() noexcept
 
 	auto gpuFrameScope =
 	    CVarRendererDiagnosticMarkerVerbosity.Get() != RendererDiagnosticMarkerVerbosity::Off
-	        ? frameDiagnostics.BeginGpuScope(
-	              cmd,
-	              "GPU Frame",
-	              RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255})
+	        ? frameDiagnostics.BeginGpuScope(cmd, "GPU Frame", RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255})
 	        : ScopedGpuScope{};
 
 	m_frameGraph->Execute(compiledPlan, cmd, frame, passRuntimeServices, frameDiagnostics);
@@ -416,7 +454,10 @@ void FramePipeline::SubmitFrame() noexcept
 
 void FramePipeline::EndFrame() noexcept
 {
+	const bool restirLightingActive = GetLightingMode() == LightingMode::RestirPathTraced;
 	m_exposureHistoryValid = HasExposureHistoryResources();
-	m_directLightReservoirHistoryValid = HasDirectLightReservoirHistoryResources();
+	m_referenceLightingHistoryValid = GetLightingMode() == LightingMode::ReferencePathTraced && HasReferenceLightingHistoryResources();
+	m_directLightReservoirHistoryValid = restirLightingActive && HasDirectLightReservoirHistoryResources();
+	m_restirIndirectReservoirHistoryValid = restirLightingActive && HasRestirIndirectReservoirHistoryResources();
 	m_systems->GetBackend().AdvanceFrameInFlight();
 }

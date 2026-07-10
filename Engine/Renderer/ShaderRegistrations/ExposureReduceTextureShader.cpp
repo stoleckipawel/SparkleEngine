@@ -15,6 +15,6 @@ class ExposureReduceTextureCS final : public TGlobalShader<ExposureReduceTexture
 IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE(
     ExposureReduceTextureCS,
     RendererShaderPackages::ExposureReduceTexture,
-    "Passes/PostProcessing/ExposureReduce.hlsl",
-    "ReduceTextureMain",
+    "Passes/PostProcessing/ExposureReduceTexture.hlsl",
+    "main",
     Compute);

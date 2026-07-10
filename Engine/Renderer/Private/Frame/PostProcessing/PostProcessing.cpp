@@ -5,6 +5,7 @@
 #include "Frame/PostProcessing/Exposure.h"
 #include "Frame/Presentation/Presentation.h"
 #include "Frame/Presentation/Upscaling.h"
+#include "RayReconstruction/RayReconstructionFramePass.h"
 
 void AddPostProcessingPasses(
     FrameGraphBuilder& builder,
@@ -14,20 +15,21 @@ void AddPostProcessingPasses(
     bool presentToBackBuffer,
     FrameAssemblyResourceLayout& resources)
 {
-	const bool hasRealtimeProviderInputs =
-	    resources.Transient.GBuffer.MotionVector.IsValid() && resources.Transient.Lighting.IndirectDiffuse.IsValid();
-	if (hasRealtimeProviderInputs && !resources.FinalSceneColorProduced)
-	{
-		AddUpscalingPasses(builder, renderExtent, outputExtent, resources);
-	}
-
 	AddExposurePass(
 	    builder,
-	    outputExtent,
-	    resources.Transient.Scene.FinalSceneColor,
+	    renderExtent,
+	    resources.Transient.Scene.SceneColor,
 	    resources.History.PreviousExposure,
 	    resources.History.CurrentExposure,
 	    resources.Transient.Exposure);
+
+	resources.ReconstructedSceneColorProduced =
+	    TryAddRayReconstructionProviderPass(builder, "RayReconstruction", renderExtent, resources.RayReconstructionProviderInputs);
+
+	if (!resources.FinalSceneColorProduced)
+	{
+		AddUpscalingPasses(builder, renderExtent, outputExtent, resources);
+	}
 
 	AddDebugPasses(builder, resources);
 

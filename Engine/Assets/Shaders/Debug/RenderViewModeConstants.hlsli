@@ -17,6 +17,5 @@ namespace ViewMode
 	static const uint DirectSubsurface = 12u;
 	static const uint IndirectDiffuse = 13u;
 	static const uint IndirectSpecular = 14u;
-	static const uint IndirectSubsurface = 15u;
-	static const uint InstanceGroups = 16u;
+	static const uint InstanceGroups = 15u;
 }

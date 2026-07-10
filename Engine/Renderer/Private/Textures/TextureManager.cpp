@@ -175,6 +175,15 @@ const Texture* TextureManager::GetTexture(TextureId id) const noexcept
 	return (index < kTextureCount) ? m_textures[index].get() : nullptr;
 }
 
+const Texture* TextureManager::ResolveEnvironmentMapTexture() const noexcept
+{
+	if (const Texture* environmentTexture = GetTexture(TextureId::SkyCubemap))
+	{
+		return environmentTexture;
+	}
+	return GetTexture(TextureId::Checker);
+}
+
 Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) noexcept
 {
 	return const_cast<Texture*>(std::as_const(*this).GetSceneTexture(texturePath));
@@ -247,10 +256,7 @@ TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot() const
 			continue;
 		}
 
-		snapshot.Rows.push_back(BuildDiagnosticsRow(
-		    *texture,
-		    TextureDiagnosticsKind::DefaultSlot,
-		    std::format("slot:{}", index)));
+		snapshot.Rows.push_back(BuildDiagnosticsRow(*texture, TextureDiagnosticsKind::DefaultSlot, std::format("slot:{}", index)));
 	}
 
 	for (const auto& [cacheKey, texture] : m_pathTextures)
@@ -262,10 +268,7 @@ TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot() const
 
 		const bool defaultOrFallback = m_defaultPathTextureKeys.contains(cacheKey);
 		const TextureDiagnosticsKind kind = defaultOrFallback ? TextureDiagnosticsKind::DefaultPath : TextureDiagnosticsKind::Scene;
-		snapshot.Rows.push_back(BuildDiagnosticsRow(
-		    *texture,
-		    kind,
-		    std::filesystem::path(cacheKey).generic_string()));
+		snapshot.Rows.push_back(BuildDiagnosticsRow(*texture, kind, std::filesystem::path(cacheKey).generic_string()));
 	}
 
 	std::sort(
@@ -340,10 +343,7 @@ const Texture* TextureManager::FindPathTexture(const std::filesystem::path& text
 	return nullptr;
 }
 
-TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(
-    const Texture& texture,
-    TextureDiagnosticsKind kind,
-	const std::string& key)
+TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(const Texture& texture, TextureDiagnosticsKind kind, const std::string& key)
 {
 	const TextureRuntimeInfo textureInfo = texture.GetRuntimeInfo();
 	TextureDiagnosticsRow row;

@@ -9,8 +9,22 @@
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 
+#include <array>
+
 namespace
 {
+	FrameGraphTextureHandle CreateGBufferColor(
+	    FrameGraphBuilder& builder,
+	    const char* name,
+	    RenderViewportExtent sceneExtent,
+	    PixelFormat format,
+	    std::array<float, 4> clearColor)
+	{
+		FrameGraphTextureDesc desc = FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, format);
+		desc.clearColor = clearColor;
+		return builder.CreateTexture(desc);
+	}
+
 	FrameGraphTextureHandle CreateGBufferDeviceZ(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode)
 	{
 		if (gBufferMode == GBufferMode::Raytraced)
@@ -35,38 +49,14 @@ namespace
 GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode)
 {
 	GBufferRenderTargets targets{};
-	targets.BaseColor = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "GBufferBaseColor",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        GBufferFormats::BaseColor));
-	targets.Normal = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor("GBufferNormal", sceneExtent.Width, sceneExtent.Height, GBufferFormats::Normal));
-	targets.Material = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "GBufferMaterial",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        GBufferFormats::Material));
-	targets.Emissive = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "GBufferEmissive",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        GBufferFormats::Emissive));
-	targets.Subsurface = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "GBufferSubsurface",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        GBufferFormats::Subsurface));
-	targets.MotionVector = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "GBufferMotionVector",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        GBufferFormats::MotionVector));
+	targets.BaseColor = CreateGBufferColor(builder, "GBufferBaseColor", sceneExtent, GBufferFormats::BaseColor, {0.0f, 0.0f, 0.0f, 1.0f});
+	targets.Normal = CreateGBufferColor(builder, "GBufferNormal", sceneExtent, GBufferFormats::Normal, {0.0f, 0.0f, 1.0f, 0.0f});
+	targets.Material = CreateGBufferColor(builder, "GBufferMaterial", sceneExtent, GBufferFormats::Material, {0.0f, 1.0f, 1.0f, 0.04f});
+	targets.Emissive = CreateGBufferColor(builder, "GBufferEmissive", sceneExtent, GBufferFormats::Emissive, {0.0f, 0.0f, 0.0f, 0.0f});
+	targets.Subsurface =
+	    CreateGBufferColor(builder, "GBufferSubsurface", sceneExtent, GBufferFormats::Subsurface, {0.0f, 0.0f, 0.0f, 0.0f});
+	targets.MotionVector =
+	    CreateGBufferColor(builder, "GBufferMotionVector", sceneExtent, GBufferFormats::MotionVector, {0.0f, 0.0f, 0.0f, 0.0f});
 	targets.DeviceZ = CreateGBufferDeviceZ(builder, sceneExtent, gBufferMode);
 	return targets;
 }
@@ -89,8 +79,5 @@ void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExte
 			break;
 	}
 
-	AddLinearizeDeviceZPass(
-	    builder,
-	    resources.Transient.GBuffer.DeviceZ,
-	    resources.Transient.Scene.SceneDepth);
+	AddLinearizeDeviceZPass(builder, resources.Transient.GBuffer.DeviceZ, resources.Transient.Scene.SceneDepth);
 }

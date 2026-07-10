@@ -24,11 +24,10 @@ namespace
 
 bool HasRequiredRayReconstructionProviderResources(const FrameRayReconstructionProviderResources& providerInputs) noexcept
 {
-	return providerInputs.NoisyInputColor.IsValid() && providerInputs.OutputColor.IsValid() &&
-	       providerInputs.Depth.IsValid() && providerInputs.MotionVectors.IsValid() &&
-	       providerInputs.Exposure.IsValid() && providerInputs.Normals.IsValid() &&
-	       providerInputs.Roughness.IsValid() && providerInputs.DiffuseAlbedo.IsValid() &&
-	       providerInputs.SpecularAlbedo.IsValid() && providerInputs.SpecularHitDistance.IsValid();
+	return providerInputs.NoisyInputColor.IsValid() && providerInputs.OutputColor.IsValid() && providerInputs.Depth.IsValid() &&
+	       providerInputs.MotionVectors.IsValid() && providerInputs.Exposure.IsValid() && providerInputs.Normals.IsValid() &&
+	       providerInputs.Roughness.IsValid() && providerInputs.DiffuseAlbedo.IsValid() && providerInputs.SpecularAlbedo.IsValid() &&
+	       providerInputs.SpecularHitDistance.IsValid();
 }
 
 RayReconstructionInputContract BuildFrameRayReconstructionInputContract(
@@ -59,12 +58,17 @@ RayReconstructionInputContract BuildFrameRayReconstructionInputContract(
 	        .TemporalState = temporalState});
 }
 
-void AddRayReconstructionProviderPass(
+bool TryAddRayReconstructionProviderPass(
     FrameGraphBuilder& builder,
     const char* passName,
     RenderViewportExtent sceneExtent,
     const FrameRayReconstructionProviderResources& providerInputs)
 {
+	if (!HasRequiredRayReconstructionProviderResources(providerInputs))
+	{
+		return false;
+	}
+
 	builder.AddPass(
 	    passName,
 	    EFrameGraphPassFlags::ExternalProvider,
@@ -88,8 +92,7 @@ void AddRayReconstructionProviderPass(
 		        .FailureDomain = ERayReconstructionProviderFailureDomain::Backend,
 		        .Reason = "No ray reconstruction runtime service was provided."};
 
-		    if (context.RuntimeServices.ImageProviders != nullptr &&
-		        context.RuntimeServices.ImageProviders->RayReconstruction != nullptr)
+		    if (context.RuntimeServices.ImageProviders != nullptr && context.RuntimeServices.ImageProviders->RayReconstruction != nullptr)
 		    {
 			    RenderCommandList& commandList = context.Commands.GetRenderCommandList();
 			    result = context.RuntimeServices.ImageProviders->RayReconstruction->Evaluate(
@@ -106,9 +109,7 @@ void AddRayReconstructionProviderPass(
 			            .SpecularHitDistance = ToRenderProductHandle(providerInputs.SpecularHitDistance),
 			            .BackendApi = commandList.GetBackendApi(),
 			            .NativeCommandList = commandList.GetNativeHandle(
-			                RhiNativeInteropRequest{
-			                    .Consumer = ERhiNativeInteropConsumer::RayReconstructionProvider,
-			                    .Reason = passName}),
+			                RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::RayReconstructionProvider, .Reason = passName}),
 			            .NativeNoisyInputColor = context.Resources.ResolveResource(providerInputs.NoisyInputColor),
 			            .NativeOutputColor = context.Resources.ResolveResource(providerInputs.OutputColor),
 			            .NativeDepth = context.Resources.ResolveResource(providerInputs.Depth),
@@ -126,9 +127,12 @@ void AddRayReconstructionProviderPass(
 			            .NativeDepthView = context.Resources.ResolveNativeTextureView(providerInputs.Depth, ResourceState::ShaderResource),
 			            .NativeMotionVectorsView =
 			                context.Resources.ResolveNativeTextureView(providerInputs.MotionVectors, ResourceState::ShaderResource),
-			            .NativeExposureView = context.Resources.ResolveNativeTextureView(providerInputs.Exposure, ResourceState::ShaderResource),
-			            .NativeNormalsView = context.Resources.ResolveNativeTextureView(providerInputs.Normals, ResourceState::ShaderResource),
-			            .NativeRoughnessView = context.Resources.ResolveNativeTextureView(providerInputs.Roughness, ResourceState::ShaderResource),
+			            .NativeExposureView =
+			                context.Resources.ResolveNativeTextureView(providerInputs.Exposure, ResourceState::ShaderResource),
+			            .NativeNormalsView =
+			                context.Resources.ResolveNativeTextureView(providerInputs.Normals, ResourceState::ShaderResource),
+			            .NativeRoughnessView =
+			                context.Resources.ResolveNativeTextureView(providerInputs.Roughness, ResourceState::ShaderResource),
 			            .NativeDiffuseAlbedoView =
 			                context.Resources.ResolveNativeTextureView(providerInputs.DiffuseAlbedo, ResourceState::ShaderResource),
 			            .NativeSpecularAlbedoView =
@@ -162,4 +166,5 @@ void AddRayReconstructionProviderPass(
 			        ResourceState::UnorderedAccess);
 		    }
 	    });
+	return true;
 }

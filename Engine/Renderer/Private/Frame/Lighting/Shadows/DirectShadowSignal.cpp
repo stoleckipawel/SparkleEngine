@@ -4,6 +4,8 @@
 #include "Frame/Lighting/LightingRayTracingPasses.h"
 #include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
+#include "Passes/Deferred/DirectShadowSignalDeviceAddressPass.h"
+#include "Passes/Deferred/DirectShadowSignalNoRayQueryPass.h"
 #include "Passes/Deferred/DirectShadowSignalPass.h"
 
 void AddDirectShadowSignalPass(

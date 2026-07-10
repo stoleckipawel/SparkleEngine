@@ -3,6 +3,7 @@
 
 #include "Passes/Deferred/GBufferPacking.hlsli"
 #include "Passes/Deferred/SceneDepthUtils.hlsli"
+#include "Geometry/ScreenSpace.hlsli"
 
 Texture2D GBufferBaseColor;
 Texture2D GBufferNormal;
@@ -78,8 +79,7 @@ GBufferData LoadGBuffer(uint2 pixelCoord)
 
 float3 ReconstructGBufferWorldPosition(uint2 pixelCoord, float sceneDepth, float4x4 invView, float4x4 invProjection)
 {
-	const float2 uv = (float2(pixelCoord) + 0.5f) * ViewportSizeInv;
-	const float2 ndc = float2(uv.x * 2.0f - 1.0f, 1.0f - uv.y * 2.0f);
+	const float2 ndc = PixelCenterToUnjitteredNdc(pixelCoord);
 	const float deviceZ = SceneDepthUtils::DeviceZFromLinearDepth(sceneDepth, Camera.NearZ);
 	const float4 positionClip = float4(ndc, deviceZ, 1.0f);
 	const float4 positionView = mul(positionClip, invProjection);

@@ -21,7 +21,7 @@ RayReconstructionInputContract BuildFrameRayReconstructionInputContract(
     const PerTemporalConstantBufferData& temporalData,
     RenderTemporalFrameState temporalState);
 
-void AddRayReconstructionProviderPass(
+bool TryAddRayReconstructionProviderPass(
     FrameGraphBuilder& builder,
     const char* passName,
     RenderViewportExtent sceneExtent,

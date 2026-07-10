@@ -8,7 +8,6 @@ Texture2D DirectSpecular;
 Texture2D DirectSubsurface;
 Texture2D IndirectDiffuse;
 Texture2D IndirectSpecular;
-Texture2D IndirectSubsurface;
 
 float3 PreviewScalar(float value)
 {
@@ -49,7 +48,6 @@ float3 PreviewHdr(float3 color)
 	const float3 directSubsurface = DirectSubsurface.Load(pixel).rgb;
 	const float3 indirectDiffuse = IndirectDiffuse.Load(pixel).rgb;
 	const float3 indirectSpecular = IndirectSpecular.Load(pixel).rgb;
-	const float3 indirectSubsurface = IndirectSubsurface.Load(pixel).rgb;
 
 	float3 outputColor = 0.0f;
 	switch (ViewModeIndex)
@@ -92,9 +90,6 @@ float3 PreviewHdr(float3 color)
 			break;
 		case ViewMode::IndirectSpecular:
 			outputColor = PreviewHdr(indirectSpecular);
-			break;
-		case ViewMode::IndirectSubsurface:
-			outputColor = PreviewHdr(indirectSubsurface);
 			break;
 		case ViewMode::InstanceGroups:
 			outputColor = saturate(gBuffer.BaseColor);

@@ -41,13 +41,22 @@ namespace
 		{
 			return prebuildInfo.ScratchDataSizeInBytes;
 		}
-		return (std::max)(prebuildInfo.ScratchDataSizeInBytes, prebuildInfo.UpdateScratchDataSizeInBytes);
+		return (std::max) (prebuildInfo.ScratchDataSizeInBytes, prebuildInfo.UpdateScratchDataSizeInBytes);
 	}
 
 	RhiRayTracingInstanceFlags ResolveInstanceFlags(const RenderSceneData& sceneData, const MeshDraw& draw) noexcept
 	{
-		RhiRayTracingInstanceFlags flags = RhiRayTracingInstanceFlags::TriangleFacingCullDisable;
-		if (draw.Material.Slot < sceneData.materials.size() && sceneData.materials[draw.Material.Slot].alphaMode == 1u)
+		RhiRayTracingInstanceFlags flags = RhiRayTracingInstanceFlags::None;
+		if (draw.Material.Slot >= sceneData.materials.size())
+		{
+			return flags;
+		}
+		const MaterialData& material = sceneData.materials[draw.Material.Slot];
+		if (material.doubleSided)
+		{
+			flags = flags | RhiRayTracingInstanceFlags::TriangleFacingCullDisable;
+		}
+		if (material.alphaMode == 1u)
 		{
 			flags = flags | RhiRayTracingInstanceFlags::ForceNonOpaque;
 		}
@@ -77,7 +86,8 @@ bool RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexc
 	    m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(
 	        instanceCapacity,
 	        ResolveClassicTlasBuildFlags(*m_renderHardwareInterface));
-	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || ResolveRequiredScratchSize(prebuildInfo, ResolveClassicTlasBuildFlags(*m_renderHardwareInterface)) == 0)
+	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 ||
+	    ResolveRequiredScratchSize(prebuildInfo, ResolveClassicTlasBuildFlags(*m_renderHardwareInterface)) == 0)
 	{
 		m_tlas = {};
 		return false;
@@ -112,7 +122,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	std::unordered_set<void*> builtBlasResources;
 	std::vector<RhiRayTracingInstanceDesc> instances;
 	stats.Candidates.InstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
-	(void)partitionPlan;
+	(void) partitionPlan;
 	instances.reserve(sceneData.meshInstances.size());
 	{
 		for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++index)
@@ -205,9 +215,9 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 		cmd.UnorderedAccessBarrier(NativeResourceHandle{resourceValue});
 	}
 
-	const bool canRefit =
-	    HasFlag(requestedBuildFlags, ERhiClassicTlasBuildFlags::AllowUpdate) && m_resourcesAllowUpdate && m_tlas.IsValid() &&
-	    m_tlas.instanceCount == stats.Build.InstanceCount && prebuildInfo.UpdateScratchDataSizeInBytes > 0;
+	const bool canRefit = HasFlag(requestedBuildFlags, ERhiClassicTlasBuildFlags::AllowUpdate) && m_resourcesAllowUpdate &&
+	                      m_tlas.IsValid() && m_tlas.instanceCount == stats.Build.InstanceCount &&
+	                      prebuildInfo.UpdateScratchDataSizeInBytes > 0;
 	const ERhiClassicTlasBuildMode buildMode = canRefit ? ERhiClassicTlasBuildMode::Update : ERhiClassicTlasBuildMode::Build;
 	const char* const tlasEventName = canRefit ? "Classic TLAS Refit" : "Classic TLAS Build";
 	{
@@ -357,4 +367,3 @@ bool RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerati
 
 	return true;
 }
-

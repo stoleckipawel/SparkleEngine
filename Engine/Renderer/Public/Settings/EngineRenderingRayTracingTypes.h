@@ -10,8 +10,8 @@ enum class GBufferMode : std::uint8_t
 
 enum class LightingMode : std::uint8_t
 {
-	Raytraced,
-	PathTraced
+	RestirPathTraced,
+	ReferencePathTraced
 };
 
 enum class RayTracingPtlasPartitionUpdateMode : std::uint8_t

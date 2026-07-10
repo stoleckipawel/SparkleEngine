@@ -1,119 +1,51 @@
 #include "PCH.h"
 #include "FramePipeline/FramePipeline.h"
 
-#include "Frame/RhiFrameConstants.h"
+#include "Debug/RendererCVars.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Host/RendererSystemRoot.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RHI/Public/Interop/ResourceState.h"
-#include "RHI/Public/Memory/RhiMemoryTypes.h"
-#include "RHI/Public/Resources/RhiResourceDesc.h"
 
 namespace
 {
-	RhiTextureResourceDesc BuildDirectLightReservoirTextureDesc(RenderViewportExtent extent, PixelFormat format) noexcept
-	{
-		return RhiTextureResourceDesc{
-		    .Width = extent.Width,
-		    .Height = extent.Height,
-		    .Format = format,
-		    .MipLevels = 1u,
-		    .AllowRenderTarget = false,
-		    .AllowDepthStencil = false,
-		    .AllowUnorderedAccess = true};
-	}
+	constexpr ReservoirHistoryDebugNames DirectLightReservoirNames{
+	    .Sample = L"DirectLightReservoirSampleHistory",
+	    .Weight = L"DirectLightReservoirWeightHistory",
+	    .Surface = L"DirectLightReservoirSurfaceHistory"};
 }
 
 void FramePipeline::CreateDirectLightReservoirHistoryResources() noexcept
 {
-	const RenderViewportExtent renderExtent = m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
+	RhiResourceService& resourceService = m_systems->GetRenderHardwareInterface().GetResourceService();
+	if (GetLightingMode() != LightingMode::RestirPathTraced)
+	{
+		ReleaseReservoirHistoryResources(resourceService, m_directLightReservoirHistoryResources);
+		m_directLightReservoirHistoryValid = false;
+		m_restirLightingSceneStateKey = 0u;
+		return;
+	}
+
+	const RenderViewportExtent renderExtent =
+	    m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
 	if (!renderExtent.IsValid())
 	{
 		return;
 	}
 
-	if (m_directLightReservoirHistoryExtent.Width != renderExtent.Width ||
-	    m_directLightReservoirHistoryExtent.Height != renderExtent.Height)
-	{
-		ReleaseDirectLightReservoirHistoryResources();
-		m_directLightReservoirHistoryExtent = renderExtent;
-	}
-
-	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
-	RhiResourceService& resourceService = renderHardwareInterface.GetResourceService();
-	const RhiTextureResourceDesc sampleDesc =
-	    BuildDirectLightReservoirTextureDesc(renderExtent, PixelFormat::R32G32B32A32_Float);
-	const RhiTextureResourceDesc weightDesc =
-	    BuildDirectLightReservoirTextureDesc(renderExtent, PixelFormat::R32G32B32A32_Float);
-	const RhiTextureResourceDesc surfaceDesc =
-	    BuildDirectLightReservoirTextureDesc(renderExtent, PixelFormat::R16G16B16A16_Float);
-
-	for (DirectLightReservoirHistoryFrameResources& frameResources : m_directLightReservoirHistoryResources)
-	{
-		if (!frameResources.Sample)
-		{
-			frameResources.Sample = resourceService.CreateTextureResource(
-			    sampleDesc,
-			    ResourceState::ShaderResource,
-			    RhiMemoryCategory::Texture,
-			    RhiMemoryResidencyClass::DeviceLocal,
-			    L"DirectLightReservoirSampleHistory");
-		}
-
-		if (!frameResources.Weight)
-		{
-			frameResources.Weight = resourceService.CreateTextureResource(
-			    weightDesc,
-			    ResourceState::ShaderResource,
-			    RhiMemoryCategory::Texture,
-			    RhiMemoryResidencyClass::DeviceLocal,
-			    L"DirectLightReservoirWeightHistory");
-		}
-
-		if (!frameResources.Surface)
-		{
-			frameResources.Surface = resourceService.CreateTextureResource(
-			    surfaceDesc,
-			    ResourceState::ShaderResource,
-			    RhiMemoryCategory::Texture,
-			    RhiMemoryResidencyClass::DeviceLocal,
-			    L"DirectLightReservoirSurfaceHistory");
-		}
-	}
-
+	EnsureReservoirHistoryResources(resourceService, renderExtent, DirectLightReservoirNames, m_directLightReservoirHistoryResources);
 	m_directLightReservoirHistoryValid = false;
 }
 
 void FramePipeline::ReleaseDirectLightReservoirHistoryResources() noexcept
 {
-	if (m_systems == nullptr)
+	if (m_systems != nullptr)
 	{
-		return;
+		ReleaseReservoirHistoryResources(
+		    m_systems->GetRenderHardwareInterface().GetResourceService(),
+		    m_directLightReservoirHistoryResources);
 	}
-
-	RhiResourceService& resourceService = m_systems->GetRenderHardwareInterface().GetResourceService();
-	for (DirectLightReservoirHistoryFrameResources& frameResources : m_directLightReservoirHistoryResources)
-	{
-		if (frameResources.Sample)
-		{
-			resourceService.ReleaseOwnedResource(frameResources.Sample);
-			frameResources.Sample = {};
-		}
-
-		if (frameResources.Weight)
-		{
-			resourceService.ReleaseOwnedResource(frameResources.Weight);
-			frameResources.Weight = {};
-		}
-
-		if (frameResources.Surface)
-		{
-			resourceService.ReleaseOwnedResource(frameResources.Surface);
-			frameResources.Surface = {};
-		}
-	}
-
 	m_directLightReservoirHistoryValid = false;
+	m_restirLightingSceneStateKey = 0u;
 }
 
 void FramePipeline::BindDirectLightReservoirHistoryFrameGraphResources() noexcept
@@ -123,70 +55,30 @@ void FramePipeline::BindDirectLightReservoirHistoryFrameGraphResources() noexcep
 		return;
 	}
 
-	const std::uint32_t currentFrameIndex = m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex();
-	const std::uint32_t previousFrameIndex =
-	    (currentFrameIndex + RhiFrameConstants::FramesInFlight - 1u) % RhiFrameConstants::FramesInFlight;
-	const DirectLightReservoirHistoryFrameResources& previousResources =
-	    m_directLightReservoirHistoryResources[previousFrameIndex];
-	const DirectLightReservoirHistoryFrameResources& currentResources =
-	    m_directLightReservoirHistoryResources[currentFrameIndex];
-
-	if (!previousResources.Sample ||
-	    !previousResources.Weight ||
-	    !previousResources.Surface ||
-	    !currentResources.Sample ||
-	    !currentResources.Weight ||
-	    !currentResources.Surface)
+	const ReservoirHistoryFrameGraphHandles handles{
+	    .PreviousSample = m_frameResources.History.PreviousDirectLightReservoirSample,
+	    .PreviousWeight = m_frameResources.History.PreviousDirectLightReservoirWeight,
+	    .PreviousSurface = m_frameResources.History.PreviousDirectLightReservoirSurface,
+	    .CurrentSample = m_frameResources.History.CurrentDirectLightReservoirSample,
+	    .CurrentWeight = m_frameResources.History.CurrentDirectLightReservoirWeight,
+	    .CurrentSurface = m_frameResources.History.CurrentDirectLightReservoirSurface};
+	if (!BindReservoirHistoryResources(
+	        *m_frameGraph,
+	        m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex(),
+	        handles,
+	        m_directLightReservoirHistoryResources))
 	{
-		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.PreviousDirectLightReservoirSample);
-		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.PreviousDirectLightReservoirWeight);
-		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.PreviousDirectLightReservoirSurface);
-		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.CurrentDirectLightReservoirSample);
-		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.CurrentDirectLightReservoirWeight);
-		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.History.CurrentDirectLightReservoirSurface);
 		m_directLightReservoirHistoryValid = false;
-		return;
 	}
-
-	m_frameGraph->BindPersistentTexture(
-	    m_frameResources.History.PreviousDirectLightReservoirSample,
-	    previousResources.Sample,
-	    ResourceState::ShaderResource);
-	m_frameGraph->BindPersistentTexture(
-	    m_frameResources.History.PreviousDirectLightReservoirWeight,
-	    previousResources.Weight,
-	    ResourceState::ShaderResource);
-	m_frameGraph->BindPersistentTexture(
-	    m_frameResources.History.PreviousDirectLightReservoirSurface,
-	    previousResources.Surface,
-	    ResourceState::ShaderResource);
-	m_frameGraph->BindPersistentTexture(
-	    m_frameResources.History.CurrentDirectLightReservoirSample,
-	    currentResources.Sample,
-	    ResourceState::ShaderResource);
-	m_frameGraph->BindPersistentTexture(
-	    m_frameResources.History.CurrentDirectLightReservoirWeight,
-	    currentResources.Weight,
-	    ResourceState::ShaderResource);
-	m_frameGraph->BindPersistentTexture(
-	    m_frameResources.History.CurrentDirectLightReservoirSurface,
-	    currentResources.Surface,
-	    ResourceState::ShaderResource);
 }
 
-void FramePipeline::ResetDirectLightReservoirHistory() noexcept
+void FramePipeline::ResetRestirLightingHistory() noexcept
 {
 	m_directLightReservoirHistoryValid = false;
+	m_restirIndirectReservoirHistoryValid = false;
 }
 
 bool FramePipeline::HasDirectLightReservoirHistoryResources() const noexcept
 {
-	for (const DirectLightReservoirHistoryFrameResources& frameResources : m_directLightReservoirHistoryResources)
-	{
-		if (!frameResources.Sample || !frameResources.Weight || !frameResources.Surface)
-		{
-			return false;
-		}
-	}
-	return true;
+	return HasReservoirHistoryResources(m_directLightReservoirHistoryResources);
 }

@@ -19,7 +19,6 @@ enum class RenderViewMode : std::uint32_t
 	DirectSubsurface,
 	IndirectDiffuse,
 	IndirectSpecular,
-	IndirectSubsurface,
 	InstanceGroups,
 	Count
 };

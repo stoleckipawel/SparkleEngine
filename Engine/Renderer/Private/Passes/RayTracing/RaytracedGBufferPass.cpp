@@ -11,18 +11,11 @@
 #include "Passes/Bindings/RayTracingScenePassBinding.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
+#include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
-
-namespace
-{
-	constexpr CookedShaderPackageFeatureFlags RayQueryFeatures =
-	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
-	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
-}
 
 RaytracedGBufferPass::RaytracedGBufferPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -38,7 +31,7 @@ const RenderPassDefinition& RaytracedGBufferPass::GetDefinition() noexcept
 	    RendererShaderPackages::RaytracedGBuffer,
 	    L"RaytracedGBuffer_BindingLayout",
 	    L"RaytracedGBuffer_PipelineState",
-	    RayQueryFeatures);
+	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
 }
 
@@ -55,11 +48,7 @@ void RaytracedGBufferPass::DeclareResources(
 	parameters->GBufferSubsurface = builder.CreateUAV(targets.Subsurface);
 	parameters->GBufferDeviceZ = builder.CreateUAV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
-	(void)RayTracingScenePassBinding::BindSceneTlas(
-	    builder,
-	    sceneTlas,
-	    RayTracingSceneTlasShaderAccessMode::Descriptor,
-	    parameters);
+	(void) RayTracingScenePassBinding::BindSceneTlas(builder, sceneTlas, RayTracingSceneTlasShaderAccessMode::Descriptor, parameters);
 }
 
 void RaytracedGBufferPass::SetParameters(
@@ -72,12 +61,11 @@ void RaytracedGBufferPass::SetParameters(
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
 	RayTracingHitDataPassBinding::SetTemporalSurfaceParameters(parameters, frame);
-	parameters->MaterialTextureSampler =
-	    RhiSamplerDesc{
-	        .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	        .MipFilter = RhiSamplerMipFilter::Linear,
-	        .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
-	        .MaxAnisotropy = RhiSamplerAnisotropy::X1};
+	parameters->MaterialTextureSampler = RhiSamplerDesc{
+	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
+	    .MipFilter = RhiSamplerMipFilter::Linear,
+	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
+	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 }
 
 void RaytracedGBufferPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

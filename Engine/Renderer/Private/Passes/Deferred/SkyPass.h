@@ -54,15 +54,13 @@ class SkyPass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
-	    const SceneRenderTargets& sceneTargets,
+	    FrameGraphTextureHandle output,
+	    FrameGraphTextureHandle sceneDepth,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:
-	void SetParameters(
-	    ParameterInstance& parameters,
-	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices) const;
+	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 	mutable EnvironmentMapPassBinding m_environmentMapBinding;

@@ -50,12 +50,12 @@ Texture2D GBufferMotionVector;
 				    DirectLightReservoir::UnpackReservoir(
 				        PreviousReservoirSampleTexture.Load(int3(previousPixelCoord, 0)),
 				        PreviousReservoirWeightTexture.Load(int3(previousPixelCoord, 0)));
-				uint rng = DirectLightReservoir::BuildSeed(pixelCoord, 0x7151u);
+				uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0x7151u);
 				DirectLightReservoir::CombineReservoir(
 				    reservoir,
 				    previousReservoir,
 				    surface,
-				    DirectLightReservoir::MaxTemporalM,
+				    RestirReservoirCommon::MaxTemporalM,
 				    CommonRandom::Random01(rng));
 			}
 		}

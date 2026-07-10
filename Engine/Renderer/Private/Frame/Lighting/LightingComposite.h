@@ -6,6 +6,6 @@ class FrameGraphBuilder;
 
 void AddLightingCompositePass(
     FrameGraphBuilder& builder,
-    const SceneRenderTargets& sceneTargets,
+    FrameGraphTextureHandle output,
     const LightingRenderTargets& lighting,
     const GBufferRenderTargets& gbuffer);

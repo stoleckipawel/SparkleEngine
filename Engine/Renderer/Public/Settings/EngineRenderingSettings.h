@@ -34,7 +34,7 @@ struct EngineRenderingSettingsState final
 	EUpscalerQualityMode UpscalerQualityMode = EUpscalerQualityMode::NativeAA;
 	EngineRayReconstructionMode RayReconstructionMode = EngineRayReconstructionMode::Off;
 	GBufferMode GBuffer = GBufferMode::Rasterized;
-	LightingMode Lighting = LightingMode::Raytraced;
+	LightingMode Lighting = LightingMode::RestirPathTraced;
 	bool MeshAutoBatching = true;
 	bool RefitTlas = true;
 	bool PtlasActive = false;
@@ -42,8 +42,6 @@ struct EngineRenderingSettingsState final
 	RayTracingPtlasPartitionUpdateMode PtlasPartitionUpdateMode = RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition;
 	bool PtlasMarkAllDynamicInPartition = false;
 	float PtlasModeChangeDistance = 100.0f;
-	std::uint32_t IndirectDiffuseBounceCount = 1;
-	std::uint32_t IndirectSpecularBounceCount = 1;
 };
 
 class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
@@ -91,18 +89,12 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 	void SetPtlasPartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode);
 	void SetPtlasMarkAllDynamicInPartition(bool enabled);
 	void SetPtlasModeChangeDistance(float distance);
-	void SetIndirectDiffuseBounceCount(std::uint32_t bounceCount);
-	void SetIndirectSpecularBounceCount(std::uint32_t bounceCount);
 
   private:
 	void RefreshAndPersistRuntimeState();
 	EngineRenderingSettingsState CaptureRuntimeState() const noexcept;
-	bool ComputePendingRestart(
-	    const EngineRenderingSettingsState& baseline,
-	    const EngineRenderingSettingsState& current) const noexcept;
-	std::string DescribePendingRestart(
-	    const EngineRenderingSettingsState& baseline,
-	    const EngineRenderingSettingsState& current) const;
+	bool ComputePendingRestart(const EngineRenderingSettingsState& baseline, const EngineRenderingSettingsState& current) const noexcept;
+	std::string DescribePendingRestart(const EngineRenderingSettingsState& baseline, const EngineRenderingSettingsState& current) const;
 
 	EngineRenderingSettingsState m_state{};
 	EngineRenderingSettingsState m_sessionBaseline{};

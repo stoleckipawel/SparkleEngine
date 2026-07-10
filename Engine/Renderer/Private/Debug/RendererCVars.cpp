@@ -9,12 +9,25 @@ ConsoleVariable<GBufferMode> CVarGBufferMode(
     "GBuffer producer mode: 0=rasterized, 1=raytraced.");
 ConsoleVariable<LightingMode> CVarLightingMode(
     "r.Lighting.Mode",
-    LightingMode::Raytraced,
-    "Lighting producer mode: 0=raytraced realtime, 1=path traced.");
+    LightingMode::RestirPathTraced,
+    "Lighting pipeline: 0=ReSTIR real-time path tracing, 1=convergent reference path tracing.");
+
+LightingMode GetLightingMode() noexcept
+{
+	switch (CVarLightingMode.Get())
+	{
+		case LightingMode::ReferencePathTraced:
+			return LightingMode::ReferencePathTraced;
+		case LightingMode::RestirPathTraced:
+		default:
+			return LightingMode::RestirPathTraced;
+	}
+}
+
 ConsoleVariable<bool> CVarRendererMeshAutoBatching(
-	"r.MeshAutoBatching",
-	true,
-	"Build renderer-side auto batches for compatible flat mesh instances.");
+    "r.MeshAutoBatching",
+    true,
+    "Build renderer-side auto batches for compatible flat mesh instances.");
 ConsoleVariable<RendererDiagnosticMarkerVerbosity> CVarRendererDiagnosticMarkerVerbosity(
     "r.Diagnostics.MarkerVerbosity",
     RendererDiagnosticMarkerVerbosity::FramePass,
@@ -22,7 +35,8 @@ ConsoleVariable<RendererDiagnosticMarkerVerbosity> CVarRendererDiagnosticMarkerV
 ConsoleVariable<bool> CVarRendererDiagnosticGpuTiming(
     "r.Diagnostics.GpuTiming",
     false,
-    "Collect internal GPU timestamp timings from renderer diagnostic scopes. Profiler markers remain controlled by r.Diagnostics.MarkerVerbosity.");
+    "Collect internal GPU timestamp timings from renderer diagnostic scopes. Profiler markers remain controlled by "
+    "r.Diagnostics.MarkerVerbosity.");
 ConsoleVariable<bool> CVarRayTracingClassicTlasRefit(
     "r.RayTracing.Tlas.Refit",
     true,
@@ -34,7 +48,8 @@ ConsoleVariable<std::uint32_t> CVarRayTracingPartitionsPerAxis(
 ConsoleVariable<RayTracingPtlasPartitionUpdateMode> CVarRayTracingPtlasPartitionUpdateMode(
     "r.RayTracing.Ptlas.PartitionUpdateMode",
     RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition,
-    "PTLAS partition update mode: 0=always update partition, 1=always move dynamic to global, 2=update nearby and move distant dynamic to global.");
+    "PTLAS partition update mode: 0=always update partition, 1=always move dynamic to global, 2=update nearby and move distant dynamic to "
+    "global.");
 ConsoleVariable<bool> CVarRayTracingPtlasMarkAllDynamicInPartition(
     "r.RayTracing.Ptlas.MarkAllDynamicInPartition",
     false,

@@ -15,7 +15,6 @@ class VisualizeBuffersCS final : public TGlobalShader<VisualizeBuffersCS>
 	SHADER_PARAMETER_TEXTURE(Texture2D, DirectSubsurface)
 	SHADER_PARAMETER_TEXTURE(Texture2D, IndirectDiffuse)
 	SHADER_PARAMETER_TEXTURE(Texture2D, IndirectSpecular)
-	SHADER_PARAMETER_TEXTURE(Texture2D, IndirectSubsurface)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)

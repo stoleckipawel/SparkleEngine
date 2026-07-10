@@ -3,92 +3,13 @@
 
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
-#include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Bindings/LightingPassBinding.h"
-#include "Passes/Bindings/RayTracedShadowPassBinding.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
+#include "RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Pipeline/PassPipelineRuntime.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-
-namespace DirectShadowSignalPassDetails
-{
-	constexpr CookedShaderPackageFeatureFlags DescriptorRayQueryFeatures =
-	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
-	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
-
-	constexpr CookedShaderPackageFeatureFlags DeviceAddressRayQueryFeatures =
-	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery |
-	    CookedShaderPackageFeatureFlags::UsesAccelerationStructure |
-	    CookedShaderPackageFeatureFlags::UsesAccelerationStructureDeviceAddress |
-	    CookedShaderPackageFeatureFlags::UsesDescriptorIndexing;
-
-	template <typename TParameterInstance>
-	void PopulateRayResources(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle sceneDepth,
-	    const GBufferRenderTargets& gbuffer,
-	    const DirectShadowSignalResources& shadowSignals,
-	    TParameterInstance& parameters)
-	{
-		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
-		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
-		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
-		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
-		parameters->SceneDepth = builder.CreateSRV(sceneDepth);
-	}
-
-	void PopulateNoRayResources(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle sceneDepth,
-	    const DirectShadowSignalResources& shadowSignals,
-	    DirectShadowSignalNoRayQueryPass::ParameterInstance& parameters)
-	{
-		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
-		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
-		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
-		parameters->SceneDepth = builder.CreateSRV(sceneDepth);
-	}
-
-	template <typename TParameterInstance>
-	void PopulateRayQueryParameters(
-	    TParameterInstance& parameters,
-	    const FrameContext& frame,
-	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices,
-	    bool hasSceneTlas)
-	{
-		parameters->PerFrame = passRuntimeServices.PerFrame;
-		parameters->PerView = viewData.perViewData;
-		LightingPassBinding::SetParameters(parameters, frame);
-		RayTracedShadowPassBinding::SetRayQueryParameters(parameters, frame, passRuntimeServices, hasSceneTlas);
-	}
-}
-
-DirectShadowSignalNoRayQueryPass::DirectShadowSignalNoRayQueryPass(const ComputePassPipelineRuntime& runtime) noexcept :
-    m_runtime(runtime)
-{
-}
-
-const DirectShadowSignalNoRayQueryPass::ParameterMetadata& DirectShadowSignalNoRayQueryPass::GetParameterMetadata() noexcept
-{
-	return ComputePassUtilities::BuildParameterMetadata<DirectShadowSignalNoRayQueryPass>();
-}
-
-const RenderPassDefinition& DirectShadowSignalNoRayQueryPass::GetDefinition() noexcept
-{
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
-	    PassName,
-	    RendererShaderPackages::DirectShadowSignalNoRayQuery,
-	    L"DirectShadowSignalNoRayQuery_BindingLayout",
-	    L"DirectShadowSignalNoRayQuery_PipelineState");
-	return definition;
-}
 
 DirectShadowSignalPass::DirectShadowSignalPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -104,38 +25,8 @@ const RenderPassDefinition& DirectShadowSignalPass::GetDefinition() noexcept
 	    RendererShaderPackages::DirectShadowSignal,
 	    L"DirectShadowSignal_BindingLayout",
 	    L"DirectShadowSignal_PipelineState",
-	    DirectShadowSignalPassDetails::DescriptorRayQueryFeatures);
+	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
-}
-
-DirectShadowSignalDeviceAddressPass::DirectShadowSignalDeviceAddressPass(const ComputePassPipelineRuntime& runtime) noexcept :
-    m_runtime(runtime)
-{
-}
-
-const DirectShadowSignalDeviceAddressPass::ParameterMetadata& DirectShadowSignalDeviceAddressPass::GetParameterMetadata() noexcept
-{
-	return ComputePassUtilities::BuildParameterMetadata<DirectShadowSignalDeviceAddressPass>();
-}
-
-const RenderPassDefinition& DirectShadowSignalDeviceAddressPass::GetDefinition() noexcept
-{
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
-	    PassName,
-	    RendererShaderPackages::DirectShadowSignalDeviceAddress,
-	    L"DirectShadowSignalDeviceAddress_BindingLayout",
-	    L"DirectShadowSignalDeviceAddress_PipelineState",
-	    DirectShadowSignalPassDetails::DeviceAddressRayQueryFeatures);
-	return definition;
-}
-
-void DirectShadowSignalNoRayQueryPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneDepth,
-    const DirectShadowSignalResources& shadowSignals,
-    ParameterInstance& parameters)
-{
-	DirectShadowSignalPassDetails::PopulateNoRayResources(builder, sceneDepth, shadowSignals, parameters);
 }
 
 void DirectShadowSignalPass::DeclareResources(
@@ -146,84 +37,22 @@ void DirectShadowSignalPass::DeclareResources(
     const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectShadowSignalPassDetails::PopulateRayResources(builder, sceneDepth, gbuffer, shadowSignals, parameters);
+	DirectShadowSignalPassCommon::DeclareRayQueryResources(builder, sceneDepth, gbuffer, shadowSignals, *parameters);
 	parameters->SceneTlas = builder.Read(sceneTlas);
 }
 
-void DirectShadowSignalDeviceAddressPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneDepth,
-    const GBufferRenderTargets& gbuffer,
-    const DirectShadowSignalResources& shadowSignals,
-    ParameterInstance& parameters)
+void DirectShadowSignalPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	DirectShadowSignalPassDetails::PopulateRayResources(builder, sceneDepth, gbuffer, shadowSignals, parameters);
-}
-
-void DirectShadowSignalNoRayQueryPass::SetParameters(
-    ParameterInstance& parameters,
-    const FrameContext& frame,
-    const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices) const
-{
-	parameters->PerFrame = passRuntimeServices.PerFrame;
-	parameters->PerView = viewData.perViewData;
-	LightingPassBinding::SetParameters(parameters, frame);
-}
-
-void DirectShadowSignalPass::SetParameters(
-    ParameterInstance& parameters,
-    const FrameContext& frame,
-    const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices,
-    bool hasSceneTlas) const
-{
-	DirectShadowSignalPassDetails::PopulateRayQueryParameters(parameters, frame, viewData, passRuntimeServices, hasSceneTlas);
-}
-
-void DirectShadowSignalDeviceAddressPass::SetParameters(
-    ParameterInstance& parameters,
-    const FrameContext& frame,
-    const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices,
-    bool hasSceneTlas) const
-{
-	DirectShadowSignalPassDetails::PopulateRayQueryParameters(parameters, frame, viewData, passRuntimeServices, hasSceneTlas);
-}
-
-void DirectShadowSignalNoRayQueryPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
-{
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
-	ComputePassUtilities::DispatchSized<DirectShadowSignalNoRayQueryPass>(
+	DirectShadowSignalPassCommon::SetRayQueryParameters(
+	    *parameters,
+	    context.Frame,
+	    context.Frame.mainView,
+	    context.RuntimeServices,
+	    context.Frame.rayTracingScene.HasTraceableInstances());
+	ComputePassUtilities::DispatchSized<DirectShadowSignalPass>(
 	    context,
 	    m_runtime,
 	    parameters,
 	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
 	    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
-}
-
-void DirectShadowSignalPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
-{
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
-	{
-		ComputePassUtilities::DispatchSized<DirectShadowSignalPass>(
-		    context,
-		    m_runtime,
-		    parameters,
-		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
-	}
-}
-
-void DirectShadowSignalDeviceAddressPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
-{
-	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
-	{
-		ComputePassUtilities::DispatchSized<DirectShadowSignalDeviceAddressPass>(
-		    context,
-		    m_runtime,
-		    parameters,
-		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width),
-		    static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height));
-	}
 }

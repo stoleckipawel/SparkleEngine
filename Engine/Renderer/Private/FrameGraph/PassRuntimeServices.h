@@ -22,7 +22,9 @@ struct PassRuntimeServices
 	const PipelineStateManager& RuntimeManager;
 	const PerFrameConstantBufferData& PerFrame;
 	bool ExposureHistoryValid = false;
+	bool ReferenceLightingHistoryValid = false;
 	bool DirectLightReservoirHistoryValid = false;
+	bool RestirIndirectReservoirHistoryValid = false;
 	const TextureManager* Textures = nullptr;
 	const RenderRayTracingPassServices* RayTracing = nullptr;
 	const RendererImageProviderPassServices* ImageProviders = nullptr;

@@ -15,12 +15,12 @@ std::unique_ptr<RayTracingTopLevelAccelerationStructureStrategy> CreateRayTracin
     RenderHardwareInterface& renderHardwareInterface,
     const RayTracingCapabilityReport& capabilityReport) noexcept
 {
-	if (CVarRayTracingPreferPartitionedTlas.Get())
+	const bool partitionedDescriptorPathAvailable =
+	    capabilityReport.PartitionedTlas.Supported && capabilityReport.PartitionedTlas.SupportsDescriptor;
+	if (CVarRayTracingPreferPartitionedTlas.Get() && partitionedDescriptorPathAvailable)
 	{
 		return std::make_unique<RayTracingPartitionedTlasStrategy>(renderHardwareInterface, capabilityReport);
 	}
 
-	return std::make_unique<RayTracingClassicTlasStrategy>(
-	    renderHardwareInterface,
-	    RayTracingSceneTlasShaderAccessMode::Descriptor);
+	return std::make_unique<RayTracingClassicTlasStrategy>(renderHardwareInterface, RayTracingSceneTlasShaderAccessMode::Descriptor);
 }

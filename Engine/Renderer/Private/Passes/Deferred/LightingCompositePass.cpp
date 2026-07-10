@@ -27,18 +27,17 @@ const RenderPassDefinition& LightingCompositePass::GetDefinition() noexcept
 
 void LightingCompositePass::DeclareResources(
     FrameGraphBuilder& builder,
-    const SceneRenderTargets& sceneTargets,
+    FrameGraphTextureHandle output,
     const LightingRenderTargets& lighting,
     const GBufferRenderTargets& gbuffer,
     ParameterInstance& parameters)
 {
-	parameters->SceneColor = builder.CreateUAV(sceneTargets.SceneColor);
+	parameters->SceneColor = builder.CreateUAV(output);
 	parameters->DirectDiffuse = builder.CreateSRV(lighting.DirectDiffuse);
 	parameters->DirectSpecular = builder.CreateSRV(lighting.DirectSpecular);
 	parameters->DirectSubsurface = builder.CreateSRV(lighting.DirectSubsurface);
 	parameters->IndirectDiffuse = builder.CreateSRV(lighting.IndirectDiffuse);
 	parameters->IndirectSpecular = builder.CreateSRV(lighting.IndirectSpecular);
-	parameters->IndirectSubsurface = builder.CreateSRV(lighting.IndirectSubsurface);
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
 	parameters->GBufferEmissive = builder.CreateSRV(gbuffer.Emissive);
 }

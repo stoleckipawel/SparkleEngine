@@ -20,7 +20,6 @@ struct LightingCompositePassParameters
 	ShaderTexture2D<void> DirectSubsurface;
 	ShaderTexture2D<void> IndirectDiffuse;
 	ShaderTexture2D<void> IndirectSpecular;
-	ShaderTexture2D<void> IndirectSubsurface;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferEmissive;
 
@@ -32,7 +31,6 @@ struct LightingCompositePassParameters
 		builder.ReadTexture("DirectSubsurface", &LightingCompositePassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
 		builder.ReadTexture("IndirectDiffuse", &LightingCompositePassParameters::IndirectDiffuse, ShaderStageVisibility::Compute);
 		builder.ReadTexture("IndirectSpecular", &LightingCompositePassParameters::IndirectSpecular, ShaderStageVisibility::Compute);
-		builder.ReadTexture("IndirectSubsurface", &LightingCompositePassParameters::IndirectSubsurface, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &LightingCompositePassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferEmissive", &LightingCompositePassParameters::GBufferEmissive, ShaderStageVisibility::Compute);
 	}
@@ -55,7 +53,7 @@ class LightingCompositePass final
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
-	    const SceneRenderTargets& sceneTargets,
+	    FrameGraphTextureHandle output,
 	    const LightingRenderTargets& lighting,
 	    const GBufferRenderTargets& gbuffer,
 	    ParameterInstance& parameters);

@@ -27,8 +27,7 @@ namespace ViewMode
 	    float3 directSpecular,
 	    float3 directSubsurface,
 	    float3 indirectDiffuse,
-	    float3 indirectSpecular,
-	    float3 indirectSubsurface)
+	    float3 indirectSpecular)
 	{
 		switch (ViewModeIndex)
 		{
@@ -74,9 +73,6 @@ namespace ViewMode
 
 			case IndirectSpecular:
 				return PreviewHdr(indirectSpecular);
-
-			case IndirectSubsurface:
-				return PreviewHdr(indirectSubsurface);
 			default:
 				return lit;
 		}

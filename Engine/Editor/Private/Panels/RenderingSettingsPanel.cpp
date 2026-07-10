@@ -58,6 +58,12 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 
 	ImGui::BeginDisabled(disableInteraction);
 	using namespace RenderingSettingsPanelUi;
+	static constexpr ComboOption<GBufferMode> gBufferModeOptions[] = {
+	    {"Rasterized", GBufferMode::Rasterized},
+	    {"Ray traced", GBufferMode::Raytraced}};
+	static constexpr ComboOption<LightingMode> lightingModeOptions[] = {
+	    {"ReSTIR real-time path tracing", LightingMode::RestirPathTraced},
+	    {"Convergent reference path tracing", LightingMode::ReferencePathTraced}};
 
 	DrawDisplaySettingsSection(*m_settings, settings, filterText);
 
@@ -65,55 +71,74 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	{
 		if (BeginSettingsTable("##RenderingGeometrySettings"))
 		{
+			DrawComboOptionRow(
+			    "##GBufferMode",
+			    "GBuffer mode",
+			    settings.GBuffer,
+			    gBufferModeOptions,
+			    [this](GBufferMode value)
+			    {
+				    m_settings->SetGBufferMode(value);
+			    });
 			DrawBooleanRow(
 			    "##MeshAutoBatching",
 			    "Mesh auto batching",
 			    settings.MeshAutoBatching,
-			    [this](bool value) { m_settings->SetMeshAutoBatching(value); });
+			    [this](bool value)
+			    {
+				    m_settings->SetMeshAutoBatching(value);
+			    });
 			ImGui::EndTable();
 		}
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));
 	}
 
-	if (MatchesFilter(filterText, "Lighting", "lighting light budget directional point spot rect area indirect diffuse specular reflection bounces") &&
+	if (MatchesFilter(filterText, "Lighting", "lighting light budget directional point spot rect area") &&
 	    BeginSettingsCategory("Lighting"))
 	{
 		if (BeginSettingsTable("##RenderingLightingSettings"))
 		{
+			DrawComboOptionRow(
+			    "##LightingMode",
+			    "Lighting mode",
+			    settings.Lighting,
+			    lightingModeOptions,
+			    [this](LightingMode value)
+			    {
+				    m_settings->SetLightingMode(value);
+			    });
 			DrawUnsignedIntInputRow(
 			    "##MaxDirectionalLights",
 			    "Max directional lights",
 			    settings.MaxDirectionalLights,
-			    [this](std::uint32_t value) { m_settings->SetMaxDirectionalLights(value); });
+			    [this](std::uint32_t value)
+			    {
+				    m_settings->SetMaxDirectionalLights(value);
+			    });
 			DrawUnsignedIntInputRow(
 			    "##MaxPointLights",
 			    "Max point lights",
 			    settings.MaxPointLights,
-			    [this](std::uint32_t value) { m_settings->SetMaxPointLights(value); });
+			    [this](std::uint32_t value)
+			    {
+				    m_settings->SetMaxPointLights(value);
+			    });
 			DrawUnsignedIntInputRow(
 			    "##MaxSpotLights",
 			    "Max spot lights",
 			    settings.MaxSpotLights,
-			    [this](std::uint32_t value) { m_settings->SetMaxSpotLights(value); });
+			    [this](std::uint32_t value)
+			    {
+				    m_settings->SetMaxSpotLights(value);
+			    });
 			DrawUnsignedIntInputRow(
 			    "##MaxRectLights",
 			    "Max rect lights",
 			    settings.MaxRectLights,
-			    [this](std::uint32_t value) { m_settings->SetMaxRectLights(value); });
-			DrawUnsignedIntSliderRow(
-			    "##IndirectDiffuseBounceCount",
-			    "Indirect diffuse bounces",
-			    settings.IndirectDiffuseBounceCount,
-			    1u,
-			    8u,
-			    [this](std::uint32_t value) { m_settings->SetIndirectDiffuseBounceCount(value); });
-			DrawUnsignedIntSliderRow(
-			    "##IndirectSpecularBounceCount",
-			    "Indirect specular bounces",
-			    settings.IndirectSpecularBounceCount,
-			    1u,
-			    8u,
-			    [this](std::uint32_t value) { m_settings->SetIndirectSpecularBounceCount(value); });
+			    [this](std::uint32_t value)
+			    {
+				    m_settings->SetMaxRectLights(value);
+			    });
 			ImGui::EndTable();
 		}
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));

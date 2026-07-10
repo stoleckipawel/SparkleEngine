@@ -15,6 +15,17 @@ namespace RayTracingPathTrace
 		uint InstanceMask;
 	};
 
+	TraceSettings BuildSurfaceTraceSettings(float normalBias, float maxDistance)
+	{
+		TraceSettings settings;
+		settings.NormalBias = normalBias;
+		settings.MaxDistance = maxDistance;
+		settings.MinT = 0.001f;
+		settings.RayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER | RAY_FLAG_CULL_BACK_FACING_TRIANGLES;
+		settings.InstanceMask = 0xFFu;
+		return settings;
+	}
+
 	float3 ComputeRayOrigin(RayTracingPathSurface surface, float3 rayDirectionWorld, TraceSettings settings)
 	{
 		const float bias = max(settings.NormalBias, 0.0f);

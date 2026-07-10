@@ -112,6 +112,15 @@ namespace SurfaceLighting
 			return;
 		}
 
+		const float samplePdf = lightSample.PdfW * lightSample.LightSelectionPdf;
+		if (samplePdf <= 0.0f)
+		{
+			outDiffuse = 0.0f.xxx;
+			outSpecular = 0.0f.xxx;
+			outSubsurface = 0.0f.xxx;
+			return;
+		}
+
 		EvaluateDirectLight(
 		    viewDirWorld,
 		    normalWorld,
@@ -123,7 +132,7 @@ namespace SurfaceLighting
 		    subsurfaceStrength,
 		    evaluateSubsurface,
 		    lightSample.DirectionWorld,
-		    lightSample.IncidentRadiance * shadowVisibility / max(lightSample.PdfW * lightSample.LightSelectionPdf, 1.0e-4f),
+		    lightSample.IncidentRadiance * shadowVisibility / samplePdf,
 		    outDiffuse,
 		    outSpecular,
 		    outSubsurface);

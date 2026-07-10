@@ -53,11 +53,11 @@ class SPARKLE_RENDERER_API TextureManager final
 
 	Texture* GetTexture(TextureId id) noexcept;
 	const Texture* GetTexture(TextureId id) const noexcept;
+	const Texture* ResolveEnvironmentMapTexture() const noexcept;
 	Texture* GetSceneTexture(const std::filesystem::path& texturePath) noexcept;
 	const Texture* GetSceneTexture(const std::filesystem::path& texturePath) const noexcept;
-	const Texture* ResolveTextureReferenceOrDefault(
-	    const Assets::CookedTextureReference* textureReference,
-	    DefaultTexture fallbackType) const;
+	const Texture* ResolveTextureReferenceOrDefault(const Assets::CookedTextureReference* textureReference, DefaultTexture fallbackType)
+	    const;
 
 	bool IsLoaded(TextureId id) const noexcept;
 
@@ -79,8 +79,5 @@ class SPARKLE_RENDERER_API TextureManager final
 	std::unique_ptr<Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const;
 	const Texture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
 	void RegisterDefaultPathTexture(const std::filesystem::path& texturePath);
-	static TextureDiagnosticsRow BuildDiagnosticsRow(
-	    const Texture& texture,
-	    TextureDiagnosticsKind kind,
-	    const std::string& key);
+	static TextureDiagnosticsRow BuildDiagnosticsRow(const Texture& texture, TextureDiagnosticsKind kind, const std::string& key);
 };

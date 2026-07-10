@@ -2196,7 +2196,9 @@ Completion notes:
   - `cmake --build build --target SparkleApplication --config DevelopmentEditor --parallel`
   - `cmake --build build --target ShowcaseEditor --config DevelopmentEditor --parallel`
   - `cmake --build build --target ShaderCompiler --config DevelopmentEditor --parallel`
-  - `ShaderCompiler.exe cook --package ReferencePathTracing --target DxilSm66 --target SpirV16`
+  - `ShaderCompiler.exe cook --package PathTracedDirectLighting --target DxilSm66 --target SpirV16`
+  - `ShaderCompiler.exe cook --package PathTracedIndirectLighting --target DxilSm66 --target SpirV16`
+  - `ShaderCompiler.exe cook --package ReferenceLightingAccumulation --target DxilSm66 --target SpirV16`
   - `git diff --check`
   - `rg -n "EditorApplicationOptions|RenderDeviceSettings|RhiBackendSelection final|FrameAssemblyPersistentResources|Persistent\\.SceneTlas|m_frameresources|ReferenceRenderTargets|RayTracingSceneFrameGraphResources|FrameGraphResourceRuntimeState|RenderUpscalingPassServices|RenderRayReconstructionPassServices|RayTracingSceneDiagnosticState|CacheEntry|RenderDeviceServices::Impl|m_impl->backend|\\.Subsystem" Engine Tools Projects -g "*.h" -g "*.cpp"`
 

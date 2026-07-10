@@ -45,10 +45,10 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(c
 	const ERhiBackendApi backendApi = capabilities.BackendApi;
 	const RhiRayTracingCapabilities& rayTracing = capabilities.RayTracing;
 	const bool supportsClassicDescriptorTlas = rayTracing.Groups.ClassicTlas.SupportsClassicTlasBuild;
-	const bool supportsPartitionedDescriptorTlas =
-	    rayTracing.Groups.PartitionedTlas.SupportsVulkanDescriptorPath ||
-	    rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiPartitionedTlas ||
-	    rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas;
+	const bool supportsPartitionedDescriptorTlas = rayTracing.Groups.PartitionedTlas.SupportsVulkanDescriptorPath ||
+	                                               rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiPartitionedTlas ||
+	                                               rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas;
+	const bool supportsPartitionedShaderDeviceAddress = rayTracing.Groups.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath;
 	return RayTracingCapabilityReport{
 	    .BackendApi = backendApi,
 	    .Core =
@@ -74,12 +74,12 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(c
 	        RayTracingPartitionedTlasCapabilityReport{
 	            .Provider = rayTracing.Groups.PartitionedTlas.Provider,
 	            .Supported = rayTracing.Groups.PartitionedTlas.Supported,
+	            .SupportsDescriptor = supportsPartitionedDescriptorTlas,
+	            .SupportsShaderDeviceAddress = supportsPartitionedShaderDeviceAddress,
 	            .CapabilityStatusReason = rayTracing.Groups.PartitionedTlas.CapabilityStatusReason},
 	    .TlasShaderAccess =
 	        RayTracingTlasShaderAccessCapabilityReport{
-	            .SupportsDescriptor = rayTracing.SupportsRayTracing &&
-	                                  (supportsClassicDescriptorTlas || supportsPartitionedDescriptorTlas),
-	            .SupportsShaderDeviceAddress = rayTracing.SupportsRayTracing &&
-	                                           rayTracing.Groups.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath},
+	            .SupportsDescriptor = rayTracing.SupportsRayTracing && (supportsClassicDescriptorTlas || supportsPartitionedDescriptorTlas),
+	            .SupportsShaderDeviceAddress = rayTracing.SupportsRayTracing && supportsPartitionedShaderDeviceAddress},
 	    .MaterialTextureTable = BuildMaterialTextureTableCapabilityReport(capabilities)};
 }

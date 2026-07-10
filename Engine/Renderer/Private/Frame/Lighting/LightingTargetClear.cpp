@@ -19,7 +19,10 @@ namespace
 		    lighting.DirectSubsurface,
 		    lighting.IndirectDiffuse,
 		    lighting.IndirectSpecular,
-		    lighting.IndirectSubsurface};
+		    lighting.IndirectDiffuseAlbedo,
+		    lighting.IndirectSpecularAlbedo,
+		    lighting.IndirectMaterialGuide,
+		    lighting.IndirectSpecularSampleGuide};
 	}
 }
 
@@ -35,7 +38,10 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 		    resourceBuilder.Write(lighting.DirectSubsurface, ResourceUsage::RenderTarget, "DirectSubsurface");
 		    resourceBuilder.Write(lighting.IndirectDiffuse, ResourceUsage::RenderTarget, "IndirectDiffuse");
 		    resourceBuilder.Write(lighting.IndirectSpecular, ResourceUsage::RenderTarget, "IndirectSpecular");
-		    resourceBuilder.Write(lighting.IndirectSubsurface, ResourceUsage::RenderTarget, "IndirectSubsurface");
+		    resourceBuilder.Write(lighting.IndirectDiffuseAlbedo, ResourceUsage::RenderTarget, "IndirectDiffuseAlbedo");
+		    resourceBuilder.Write(lighting.IndirectSpecularAlbedo, ResourceUsage::RenderTarget, "IndirectSpecularAlbedo");
+		    resourceBuilder.Write(lighting.IndirectMaterialGuide, ResourceUsage::RenderTarget, "IndirectMaterialGuide");
+		    resourceBuilder.Write(lighting.IndirectSpecularSampleGuide, ResourceUsage::RenderTarget, "IndirectSpecularSampleGuide");
 	    },
 	    [lighting](PassExecutionContext& context)
 	    {

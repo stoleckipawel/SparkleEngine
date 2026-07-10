@@ -45,9 +45,9 @@ static const int2 SpatialOffsets[8] =
 	        TemporalReservoirSampleTexture.Load(int3(pixelCoord, 0)),
 	        TemporalReservoirWeightTexture.Load(int3(pixelCoord, 0)));
 
-	uint rng = DirectLightReservoir::BuildSeed(pixelCoord, 0x5A71A1u);
+	uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0x5A71A1u);
 	const uint offsetStart = (uint)(CommonRandom::Random01(rng) * 8.0f) & 7u;
-	[unroll] for (uint sampleIndex = 0u; sampleIndex < DirectLightReservoir::SpatialNeighborCount; ++sampleIndex)
+	[unroll] for (uint sampleIndex = 0u; sampleIndex < RestirReservoirCommon::SpatialNeighborCount; ++sampleIndex)
 	{
 		const int2 neighborCoord = int2(pixelCoord) + SpatialOffsets[(offsetStart + sampleIndex * 2u) & 7u];
 		if (neighborCoord.x < 0 ||
@@ -73,7 +73,7 @@ static const int2 SpatialOffsets[8] =
 		    reservoir,
 		    neighborReservoir,
 		    surface,
-		    DirectLightReservoir::MaxSpatialM,
+		    RestirReservoirCommon::MaxSpatialM,
 		    CommonRandom::Random01(rng));
 	}
 

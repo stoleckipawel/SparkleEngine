@@ -4,9 +4,9 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Deferred/SkyPass.h"
 
-void AddSkyPass(FrameGraphBuilder& builder, const SceneRenderTargets& sceneTargets)
+void AddSkyPass(FrameGraphBuilder& builder, FrameGraphTextureHandle output, FrameGraphTextureHandle sceneDepth)
 {
 	auto& parameters = builder.AllocPassParameters<SkyPass>();
-	SkyPass::DeclareResources(builder, sceneTargets, parameters);
+	SkyPass::DeclareResources(builder, output, sceneDepth, parameters);
 	builder.AddComputeShaderPass<SkyPass>(parameters);
 }

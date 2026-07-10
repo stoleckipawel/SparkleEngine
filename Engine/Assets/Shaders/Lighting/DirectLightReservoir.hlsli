@@ -4,19 +4,13 @@
 #include "Common/Color.hlsli"
 #include "Common/Random.hlsli"
 #include "Lighting/DirectLightSampling.hlsli"
+#include "Lighting/RestirReservoirCommon.hlsli"
 #include "Lighting/SurfaceLighting.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
 
 namespace DirectLightReservoir
 {
-	static const uint InitialCandidateCount = 4u;
-	static const uint SpatialNeighborCount = 4u;
-	static const float MaxTemporalM = 20.0f;
-	static const float MaxSpatialM = 32.0f;
 	static const float MinPdf = 1.0e-6f;
-	static const float NormalSimilarityThreshold = 0.85f;
-	static const float RelativeDepthThreshold = 0.05f;
-	static const float MinimumDepthThreshold = 0.10f;
 
 	struct Surface
 	{
@@ -37,15 +31,6 @@ namespace DirectLightReservoir
 		float M;
 		float Valid;
 	};
-
-	uint BuildSeed(uint2 pixelCoord, uint tag)
-	{
-		uint seed = pixelCoord.x * 1973u;
-		seed ^= pixelCoord.y * 9277u;
-		seed ^= FrameIndex * 26699u;
-		seed ^= tag * 911u;
-		return CommonRandom::Hash(seed);
-	}
 
 	Surface LoadSurface(uint2 pixelCoord)
 	{
@@ -75,25 +60,16 @@ namespace DirectLightReservoir
 
 	float4 PackSurface(Surface surface)
 	{
-		return surface.Valid ? float4(surface.GBuffer.NormalWorld, surface.ViewDistance) : 0.0f.xxxx;
-	}
-
-	bool IsPackedSurfaceValid(float4 packedSurface)
-	{
-		return packedSurface.w > 0.0f && dot(packedSurface.xyz, packedSurface.xyz) > 0.25f;
+		return RestirReservoirCommon::PackSurface(surface.Valid, surface.GBuffer.NormalWorld, surface.ViewDistance);
 	}
 
 	bool AreSurfacesCompatible(Surface surface, float4 packedSurface)
 	{
-		if (!surface.Valid || !IsPackedSurfaceValid(packedSurface))
-		{
-			return false;
-		}
-
-		const float normalSimilarity = dot(surface.GBuffer.NormalWorld, normalize(packedSurface.xyz));
-		const float depthThreshold = max(MinimumDepthThreshold, surface.ViewDistance * RelativeDepthThreshold);
-		return normalSimilarity >= NormalSimilarityThreshold &&
-		       abs(surface.ViewDistance - packedSurface.w) <= depthThreshold;
+		return RestirReservoirCommon::AreSurfacesCompatible(
+		    surface.Valid,
+		    surface.GBuffer.NormalWorld,
+		    surface.ViewDistance,
+		    packedSurface);
 	}
 
 	Reservoir EmptyReservoir()
@@ -130,7 +106,7 @@ namespace DirectLightReservoir
 
 	float4 PackReservoirWeight(Reservoir reservoir)
 	{
-		return IsValid(reservoir)
+		return reservoir.M > 0.0f
 		           ? float4(reservoir.WeightSum, reservoir.TargetPdf, reservoir.M, reservoir.Valid)
 		           : 0.0f.xxxx;
 	}
@@ -148,9 +124,17 @@ namespace DirectLightReservoir
 		reservoir.M = weightPayload.z;
 		reservoir.Valid = weightPayload.w;
 
-		if (!IsValid(reservoir) || !DirectLightSampling::IsLightIdInRange(reservoir.Candidate.Light))
+		if (reservoir.M <= 0.0f)
 		{
 			return EmptyReservoir();
+		}
+		if (!IsValid(reservoir) || !DirectLightSampling::IsLightIdInRange(reservoir.Candidate.Light))
+		{
+			reservoir.Candidate = DirectLightSampling::InvalidLightCandidate();
+			reservoir.ShapeSample = 0.0f.xx;
+			reservoir.WeightSum = 0.0f;
+			reservoir.TargetPdf = 0.0f;
+			reservoir.Valid = 0.0f;
 		}
 
 		return reservoir;
@@ -226,6 +210,7 @@ namespace DirectLightReservoir
 	    float sourcePdf,
 	    float random)
 	{
+		reservoir.M += 1.0f;
 		if (!DirectLightSampling::IsValid(candidate) || targetPdf <= MinPdf || sourcePdf <= MinPdf)
 		{
 			return false;
@@ -235,7 +220,6 @@ namespace DirectLightReservoir
 		const float newWeightSum = reservoir.WeightSum + sampleWeight;
 		const bool selected = random * newWeightSum <= sampleWeight;
 		reservoir.WeightSum = newWeightSum;
-		reservoir.M += 1.0f;
 		if (selected)
 		{
 			reservoir.Candidate = candidate;
@@ -254,7 +238,15 @@ namespace DirectLightReservoir
 	    float maxM,
 	    float random)
 	{
-		if (!surface.Valid || !IsValid(candidateReservoir))
+		if (!surface.Valid || candidateReservoir.M <= 0.0f)
+		{
+			return false;
+		}
+
+		const float candidateM = candidateReservoir.M;
+		const float acceptedM = min(candidateM, maxM);
+		reservoir.M += acceptedM;
+		if (!IsValid(candidateReservoir))
 		{
 			return false;
 		}
@@ -265,8 +257,6 @@ namespace DirectLightReservoir
 			return false;
 		}
 
-		const float candidateM = max(candidateReservoir.M, 1.0f);
-		const float acceptedM = min(candidateM, maxM);
 		const float historyScale = acceptedM / candidateM;
 		const float sampleWeight =
 		    candidateReservoir.WeightSum * historyScale * targetPdf / max(candidateReservoir.TargetPdf, MinPdf);
@@ -278,7 +268,6 @@ namespace DirectLightReservoir
 		const float newWeightSum = reservoir.WeightSum + sampleWeight;
 		const bool selected = random * newWeightSum <= sampleWeight;
 		reservoir.WeightSum = newWeightSum;
-		reservoir.M += acceptedM;
 		if (selected)
 		{
 			reservoir.Candidate = candidateReservoir.Candidate;
@@ -297,8 +286,8 @@ namespace DirectLightReservoir
 		}
 
 		Reservoir reservoir = EmptyReservoir();
-		uint rng = BuildSeed(pixelCoord, 0xC0FFEEu);
-		[unroll] for (uint candidateIndex = 0u; candidateIndex < InitialCandidateCount; ++candidateIndex)
+		uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0xC0FFEEu);
+		[unroll] for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
 		{
 			const DirectLightSampling::LightCandidate candidate =
 			    DirectLightSampling::SampleUniformLightCandidate(CommonRandom::Random01(rng));
@@ -316,12 +305,7 @@ namespace DirectLightReservoir
 			StreamWeightedSample(reservoir, candidate, shapeSample, targetPdf, sourcePdf, CommonRandom::Random01(rng));
 		}
 
-		if (IsValid(reservoir))
-		{
-			return reservoir;
-		}
-
-		return EmptyReservoir();
+		return reservoir;
 	}
 
 	float GetFinalWeight(Reservoir reservoir)

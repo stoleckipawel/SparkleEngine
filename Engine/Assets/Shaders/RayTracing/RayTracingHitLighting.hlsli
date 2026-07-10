@@ -3,13 +3,22 @@
 #include "Lighting/AreaLights.hlsli"
 #include "Lighting/SurfaceLighting.hlsli"
 #include "RayTracing/RayTracingMaterialHit.hlsli"
+#include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 
 void AccumulateRayTracingHitDirectLightSample(
     RayTracingHitSurfaceData surface,
     float3 viewDirWorld,
     LightSampling::DirectLightSample lightSample,
+    bool castsShadow,
     inout float3 incidentRadiance)
 {
+	if (!lightSample.Valid)
+	{
+		return;
+	}
+
+	const ShadowVisibilitySignal shadow =
+	    RayTracedShadowVisibility::TraceDirectLightSample(surface.PositionWorld, surface.NormalWorld, lightSample, castsShadow);
 	float3 diffuse = 0.0f.xxx;
 	float3 specular = 0.0f.xxx;
 	float3 subsurface = 0.0f.xxx;
@@ -24,7 +33,7 @@ void AccumulateRayTracingHitDirectLightSample(
 	    surface.SubsurfaceStrength,
 	    true,
 	    lightSample,
-	    1.0f,
+	    shadow.Visibility,
 	    diffuse,
 	    specular,
 	    subsurface);
@@ -32,7 +41,12 @@ void AccumulateRayTracingHitDirectLightSample(
 	incidentRadiance += diffuse + specular + subsurface;
 }
 
-float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, float3 rayDirectionWorld)
+float3 ShadeRayTracingHitIncidentRadiance(
+    RayTracingHitSurfaceData surface,
+    float3 rayDirectionWorld,
+    uint pathSampleIndex,
+    uint bounceIndex,
+    uint randomFrameIndex)
 {
 	if (!surface.Valid)
 	{
@@ -53,7 +67,12 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, floa
 		    viewDirWorld,
 		    AreaLights::SampleDirectionalLight(
 		        lightIndex,
-		        LightSampling::StableLightSample2D(surface.PositionWorld, lightIndex, 10u, FrameIndex)),
+		        LightSampling::StableLightSample2D(
+		            surface.PositionWorld,
+		            lightIndex,
+		            10u + bounceIndex * 4u,
+		            randomFrameIndex + pathSampleIndex * 4099u)),
+		    DirectionalLights[lightIndex].CastShadow != 0u,
 		    incidentRadiance);
 	}
 
@@ -65,7 +84,12 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, floa
 		    AreaLights::SamplePointLight(
 		        surface.PositionWorld,
 		        lightIndex,
-		        LightSampling::StableLightSample2D(surface.PositionWorld, lightIndex, 11u, FrameIndex)),
+		        LightSampling::StableLightSample2D(
+		            surface.PositionWorld,
+		            lightIndex,
+		            11u + bounceIndex * 4u,
+		            randomFrameIndex + pathSampleIndex * 4099u)),
+		    PointLights[lightIndex].CastShadow != 0u,
 		    incidentRadiance);
 	}
 
@@ -77,7 +101,12 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, floa
 		    AreaLights::SampleSpotLight(
 		        surface.PositionWorld,
 		        lightIndex,
-		        LightSampling::StableLightSample2D(surface.PositionWorld, lightIndex, 12u, FrameIndex)),
+		        LightSampling::StableLightSample2D(
+		            surface.PositionWorld,
+		            lightIndex,
+		            12u + bounceIndex * 4u,
+		            randomFrameIndex + pathSampleIndex * 4099u)),
+		    SpotLights[lightIndex].CastShadow != 0u,
 		    incidentRadiance);
 	}
 
@@ -89,7 +118,12 @@ float3 ShadeRayTracingHitIncidentRadiance(RayTracingHitSurfaceData surface, floa
 		    AreaLights::SampleRectLight(
 		        surface.PositionWorld,
 		        lightIndex,
-		        LightSampling::StableLightSample2D(surface.PositionWorld, lightIndex, 13u, FrameIndex)),
+		        LightSampling::StableLightSample2D(
+		            surface.PositionWorld,
+		            lightIndex,
+		            13u + bounceIndex * 4u,
+		            randomFrameIndex + pathSampleIndex * 4099u)),
+		    RectLights[lightIndex].CastShadow != 0u,
 		    incidentRadiance);
 	}
 

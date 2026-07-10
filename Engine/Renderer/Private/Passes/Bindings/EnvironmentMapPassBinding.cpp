@@ -5,30 +5,12 @@
 #include "RHI/Public/Resources/Texture.h"
 #include "Textures/TextureManager.h"
 
-namespace
-{
-	const Texture* ResolveEnvironmentMapTexture(const TextureManager* textureManager) noexcept
-	{
-		if (textureManager == nullptr)
-		{
-			return nullptr;
-		}
-
-		if (const Texture* environmentTexture = textureManager->GetTexture(TextureId::SkyCubemap))
-		{
-			return environmentTexture;
-		}
-
-		return textureManager->GetTexture(TextureId::Checker);
-	}
-}
-
 EnvironmentMapPassBinding::~EnvironmentMapPassBinding() noexcept = default;
 
-RhiDescriptorTableBinding EnvironmentMapPassBinding::GetTextureBinding(
-    const PassRuntimeServices& passRuntimeServices) const noexcept
+RhiDescriptorTableBinding EnvironmentMapPassBinding::GetTextureBinding(const PassRuntimeServices& passRuntimeServices) const noexcept
 {
-	const Texture* environmentTexture = ResolveEnvironmentMapTexture(passRuntimeServices.Textures);
+	const Texture* environmentTexture =
+	    passRuntimeServices.Textures != nullptr ? passRuntimeServices.Textures->ResolveEnvironmentMapTexture() : nullptr;
 	if (environmentTexture == nullptr)
 	{
 		return {};

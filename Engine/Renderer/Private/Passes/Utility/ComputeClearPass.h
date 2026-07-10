@@ -4,8 +4,10 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
+#include <string_view>
 
 class RenderCommandContext;
 class FrameGraphBuilder;
@@ -42,12 +44,15 @@ class ComputeClearPass final
 	static const PassParameterLayout& GetParameterLayout() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
 	static void DeclareResources(FrameGraphBuilder& builder, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters);
-	void Execute(
-	    PassExecutionContext& context,
-	    const ParameterInstance& parameters,
-	    std::uint32_t width,
-	    std::uint32_t height) const noexcept;
+	void Execute(PassExecutionContext& context, const ParameterInstance& parameters, std::uint32_t width, std::uint32_t height)
+	    const noexcept;
 
   private:
 	const ComputePassPipelineRuntime& m_runtime;
 };
+
+void AddComputeClearPass(
+    FrameGraphBuilder& builder,
+    std::string_view passName,
+    FrameGraphTextureHandle outputTexture,
+    RenderViewportExtent outputExtent);

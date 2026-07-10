@@ -37,6 +37,8 @@ struct RayTracingPartitionedTlasCapabilityReport final
 {
 	ERhiPartitionedTlasProvider Provider = ERhiPartitionedTlasProvider::None;
 	bool Supported = false;
+	bool SupportsDescriptor = false;
+	bool SupportsShaderDeviceAddress = false;
 	const char* CapabilityStatusReason = "not-queried";
 };
 

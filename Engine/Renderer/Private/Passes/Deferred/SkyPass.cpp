@@ -19,24 +19,23 @@ const SkyPass::ParameterMetadata& SkyPass::GetParameterMetadata() noexcept
 
 const RenderPassDefinition& SkyPass::GetDefinition() noexcept
 {
-	static const RenderPassDefinition definition = ComputePassUtilities::BuildDefinition(
-	    PassName,
-	    RendererShaderPackages::Sky,
-	    L"Sky_BindingLayout",
-	    L"Sky_PipelineState");
+	static const RenderPassDefinition definition =
+	    ComputePassUtilities::BuildDefinition(PassName, RendererShaderPackages::Sky, L"Sky_BindingLayout", L"Sky_PipelineState");
 	return definition;
 }
 
 void SkyPass::DeclareResources(
     FrameGraphBuilder& builder,
-    const SceneRenderTargets& sceneTargets,
+    FrameGraphTextureHandle output,
+    FrameGraphTextureHandle sceneDepth,
     ParameterInstance& parameters)
 {
-	parameters->SceneColor = builder.CreateUAV(sceneTargets.SceneColor);
-	parameters->SceneDepth = builder.CreateSRV(sceneTargets.SceneDepth);
+	parameters->SceneColor = builder.CreateUAV(output);
+	parameters->SceneDepth = builder.CreateSRV(sceneDepth);
 }
 
-void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const
+void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices)
+    const
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
