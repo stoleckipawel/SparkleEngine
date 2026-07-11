@@ -65,7 +65,6 @@ namespace SparkleLauncher
 		bool ShaderEnableDebugInfo = false;
 		bool ShaderEnableOptimizations = true;
 		bool ShaderWarningsAsErrors = true;
-		bool ShaderStripReflection = false;
 		bool ShaderStripDebugInfo = true;
 		bool ShaderWriteDebugArtifacts = false;
 		bool ForceConfigure = false;

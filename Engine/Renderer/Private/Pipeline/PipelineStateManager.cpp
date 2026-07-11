@@ -16,7 +16,7 @@ CookedShaderReloadResult PipelineStateManager::ReloadCookedShaders() noexcept
 {
 	CookedShaderPackageCache nextShaderPackages;
 	m_shaderPackages.ReplaceWith(std::move(nextShaderPackages));
-	m_runtimeStorageByPassName.clear();
+	m_runtimeStorageByPassType.clear();
 
 	return CookedShaderReloadResult::Success();
 }

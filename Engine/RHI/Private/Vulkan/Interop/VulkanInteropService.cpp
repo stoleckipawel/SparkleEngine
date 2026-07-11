@@ -19,8 +19,3 @@ RhiNativeDeviceQueueInterop VulkanInteropService::GetDeviceQueueInterop(RhiNativ
 	            .GraphicsQueueFamilyIndex = m_owner != nullptr ? m_owner->GetVulkanGraphicsQueueFamilyIndex() : UINT32_MAX},
 	    .Request = request};
 }
-
-bool VulkanInteropService::UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept
-{
-	return m_owner != nullptr && m_owner->UpgradePresentationInterface(callback, userData);
-}

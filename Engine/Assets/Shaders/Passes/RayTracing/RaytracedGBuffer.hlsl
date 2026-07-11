@@ -48,7 +48,6 @@ void StoreRaytracedGBufferMiss(uint2 pixelCoord)
 	GBufferEmissive[pixelCoord] = GBufferPacking::PackSkyEmissive();
 	GBufferSubsurface[pixelCoord] = GBufferPacking::PackSkySubsurface();
 	GBufferDeviceZ[pixelCoord] = GBufferPacking::PackSkyDeviceZ();
-	GBufferMotionVector[pixelCoord] = GBufferPacking::PackSkyMotionVector();
 }
 
 void StoreRaytracedGBufferHit(uint2 pixelCoord, RayTracingHitSurfaceData surface)

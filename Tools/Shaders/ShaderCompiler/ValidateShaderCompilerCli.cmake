@@ -14,6 +14,10 @@ if(NOT DEFINED REPRESENTATIVE_PACKAGE_KEY OR REPRESENTATIVE_PACKAGE_KEY STREQUAL
     message(FATAL_ERROR "REPRESENTATIVE_PACKAGE_KEY is required so package identity changes are intentional.")
 endif()
 
+if(NOT DEFINED REPRESENTATIVE_PROJECT OR REPRESENTATIVE_PROJECT STREQUAL "")
+    set(REPRESENTATIVE_PROJECT "Shared")
+endif()
+
 function(run_shader_compiler)
     execute_process(
         COMMAND "${SHADER_COMPILER_EXECUTABLE}" ${ARGV}
@@ -31,13 +35,11 @@ run_shader_compiler(list-shaders --validate)
 run_shader_compiler(inspect-shader "${REPRESENTATIVE_PACKAGE}")
 run_shader_compiler(cook --package "${REPRESENTATIVE_PACKAGE}" --target DxilSm66 --target SpirV16 --analysis cooked-shader-stats)
 
-file(GLOB_RECURSE representative_packages
-    "${WORKING_DIRECTORY}/artifacts/dev/projects/*/cooked/Shaders/Packages/${REPRESENTATIVE_PACKAGE_KEY}.sparkshader")
-list(LENGTH representative_packages representative_package_count)
-if(NOT representative_package_count EQUAL 1)
+set(representative_package_path
+    "${WORKING_DIRECTORY}/artifacts/dev/projects/${REPRESENTATIVE_PROJECT}/cooked/Shaders/Packages/${REPRESENTATIVE_PACKAGE_KEY}.sparkshader")
+if(NOT EXISTS "${representative_package_path}")
     message(FATAL_ERROR
-        "Expected one cooked package for ${REPRESENTATIVE_PACKAGE} key ${REPRESENTATIVE_PACKAGE_KEY}, found ${representative_package_count}.")
+        "Expected cooked package for project ${REPRESENTATIVE_PROJECT}, package ${REPRESENTATIVE_PACKAGE}, key ${REPRESENTATIVE_PACKAGE_KEY}.")
 endif()
 
-list(GET representative_packages 0 representative_package_path)
 run_shader_compiler(inspect-package "${representative_package_path}")

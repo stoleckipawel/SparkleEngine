@@ -30,3 +30,4 @@ SPARKLE_RHI_API std::uint64_t BuildShaderBlobId(
 	CookedShaderBinaryFormat binaryFormat);
 SPARKLE_RHI_API std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout);
 SPARKLE_RHI_API const char* CookedShaderBinaryFormatToString(CookedShaderBinaryFormat format) noexcept;
+SPARKLE_RHI_API std::string_view GetRuntimeShaderCodegenTarget(CookedShaderBinaryFormat format) noexcept;

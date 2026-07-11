@@ -4,7 +4,9 @@
 
 #include "Shaders/CookedShaderPackageCache.h"
 
+#include <algorithm>
 #include <format>
+#include <vector>
 
 bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
     const LoadedShaderPackage& package,
@@ -45,7 +47,7 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	bool hasRequiredBinary = false;
 	for (const CookedShaderBinaryRecord& binary : package.GetBinaryRecords())
 	{
-		if (binary.Format == requiredBinaryFormat)
+		if (package.IsRuntimeBinary(binary, requiredBinaryFormat))
 		{
 			hasRequiredBinary = true;
 			break;
@@ -54,15 +56,17 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	if (!hasRequiredBinary)
 	{
 		outErrorMessage = std::format(
-		    "Inline ray query shader package has no binary for required format {}.",
-		    CookedShaderBinaryFormatToString(requiredBinaryFormat));
+		    "Inline ray query shader package has no binary for required target {}/{}.",
+		    CookedShaderBinaryFormatToString(requiredBinaryFormat),
+		    GetRuntimeShaderCodegenTarget(requiredBinaryFormat));
 		return false;
 	}
 
 	bool hasAccelerationStructureLayoutBinding = false;
 	for (const CookedShaderPipelineLayoutRecord& layout : package.GetPipelineLayoutRecords())
 	{
-		if (layout.AccelerationStructureCount > 0)
+		if (package.ResolveString(layout.CodegenTarget) == GetRuntimeShaderCodegenTarget(requiredBinaryFormat) &&
+		    layout.AccelerationStructureCount > 0)
 		{
 			hasAccelerationStructureLayoutBinding = true;
 			break;
@@ -78,12 +82,29 @@ bool ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(
 	}
 
 	bool hasAccelerationStructureReflectionBinding = false;
-	for (const CookedShaderResourceBindingRecord& binding : package.GetResourceBindings())
+	const std::vector<CookedShaderBinaryRecord>& binaries = package.GetBinaryRecords();
+	const std::vector<CookedShaderReflectionRecord>& reflections = package.GetReflectionRecords();
+	const std::vector<CookedShaderResourceBindingRecord>& bindings = package.GetResourceBindings();
+	for (std::size_t reflectionIndex = 0;
+	     reflectionIndex < reflections.size() && reflectionIndex < binaries.size() && !hasAccelerationStructureReflectionBinding;
+	     ++reflectionIndex)
 	{
-		if (binding.Kind == CookedShaderResourceKind::AccelerationStructure)
+		if (!package.IsRuntimeBinary(binaries[reflectionIndex], requiredBinaryFormat))
 		{
-			hasAccelerationStructureReflectionBinding = true;
-			break;
+			continue;
+		}
+
+		const CookedShaderReflectionRecord& reflection = reflections[reflectionIndex];
+		const std::size_t bindingEnd = std::min<std::size_t>(
+		    static_cast<std::size_t>(reflection.ResourceBindingOffset) + reflection.ResourceBindingCount,
+		    bindings.size());
+		for (std::size_t bindingIndex = reflection.ResourceBindingOffset; bindingIndex < bindingEnd; ++bindingIndex)
+		{
+			if (bindings[bindingIndex].Kind == CookedShaderResourceKind::AccelerationStructure)
+			{
+				hasAccelerationStructureReflectionBinding = true;
+				break;
+			}
 		}
 	}
 	if (!hasAccelerationStructureReflectionBinding)

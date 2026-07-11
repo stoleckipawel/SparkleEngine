@@ -20,6 +20,8 @@ FrameBuildResult BuildFrame(
 	AddRaytracingScenePasses(builder, resources);
 	AddGBufferPasses(builder, renderExtent, resources);
 	AddLightingPasses(builder, renderExtent, resources);
+	AddPreReconstructionPostProcessingPasses(builder, renderExtent, resources);
+	AddLightingReconstructionPasses(builder, renderExtent, outputExtent, resources);
 
 	AddPostProcessingPasses(builder, renderExtent, outputExtent, backBufferFormat, presentToBackBuffer, resources);
 

@@ -2,8 +2,10 @@
 
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "Shaders/Authoring/ShaderParameterStruct.h"
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -16,6 +18,7 @@ struct ShaderCookStageDesc final
 	CookedShaderPackageFeatureFlags packageFeatures = CookedShaderPackageFeatureFlags::None;
 	CookedShaderRayTracingExportKind rayTracingExportKind = CookedShaderRayTracingExportKind::None;
 	std::string rayTracingExportName;
+	std::optional<ShaderParameterStructDescriptor> parameterStructDescriptor;
 };
 
 struct ShaderCookRayTracingExportDesc final

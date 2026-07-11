@@ -3,7 +3,7 @@
 #include "Verification/ShaderParameterStructCookVerifier.h"
 
 #include "Cooking/ShaderCookDiagnostics.h"
-#include "Cooking/ShaderPackageCooker.h"
+#include "Cooking/ShaderCookSettings.h"
 #include "Core/Public/Json/JsonWriter.h"
 #include "ShaderDebugArtifactSet.h"
 #include "Verification/ShaderParameterStructVerifier.h"

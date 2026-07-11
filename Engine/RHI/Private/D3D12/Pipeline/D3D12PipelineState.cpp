@@ -96,7 +96,8 @@ namespace
 		}
 
 		const LoadedShaderPackage& shaderPackage = *shaderDesc.Package;
-		const CookedShaderBinaryRecord* shaderBinary = shaderPackage.FindBinaryRecord(shaderDesc.Stage, CookedShaderBinaryFormat::Dxil);
+		const CookedShaderBinaryRecord* shaderBinary =
+		    shaderPackage.FindRuntimeBinaryRecord(shaderDesc.Stage, CookedShaderBinaryFormat::Dxil);
 		if (shaderBinary == nullptr)
 		{
 			Diagnostics::Fail(
@@ -104,8 +105,9 @@ namespace
 			    __FILE__,
 			    __LINE__,
 			    std::format(
-			        "Pipeline '{}' is missing a cooked DXIL binary for shader stage '{}'",
+			        "Pipeline '{}' is missing a cooked DXIL/{} binary for shader stage '{}'",
 			        pipelineName,
+			        GetRuntimeShaderCodegenTarget(CookedShaderBinaryFormat::Dxil),
 			        GetShaderStagePrefix(shaderDesc.Stage)));
 		}
 

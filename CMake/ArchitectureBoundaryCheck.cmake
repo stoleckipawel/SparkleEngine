@@ -12,11 +12,12 @@ set(SPARKLE_BOUNDARY_NATIVE_PTLAS_REGEX "VK_NV_partitioned_acceleration_structur
 set(SPARKLE_BOUNDARY_RENDERER_SHADER_DATA_REGEX "Per(Frame|View|Object|Temporal)ConstantBufferData|PerViewCameraConstantBufferData|Render(ViewCamera|ViewLighting|ConstantBuffer)Data|RenderConstantBufferValidation|MeshInstanceShaderData|MeshInstanceData|VertexSkinInfluenceData|JointMatrixData")
 set(SPARKLE_BOUNDARY_D3D12_IN_VULKAN_REGEX "D3D12/|<d3d12\\.h>|ID3D12|D3D12_")
 set(SPARKLE_BOUNDARY_VULKAN_IN_D3D12_REGEX "Vulkan/|<vulkan/vulkan\\.h>|Vk[A-Z]|vk[A-Z]|Vulkan::Vulkan")
+set(SPARKLE_BOUNDARY_RENDERER_HIGH_LEVEL_ORCHESTRATOR_REGEX
+    "^Engine/Renderer/Private/(Host/RendererSystemRoot|FramePipeline/FramePipeline|Providers/RendererImageProviderStack)\\.(cpp|h)$")
+set(SPARKLE_BOUNDARY_RENDERER_PROVIDER_DETAIL_REGEX
+    "Streamline/|Upscaling/Nvidia|RayReconstruction/Nvidia|NvidiaDlss")
 
 set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_FAILURES "")
-set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_EXCEPTION_SUMMARIES "")
-set_property(GLOBAL PROPERTY SPARKLE_RENDERER_PROVIDER_CMAKE_VULKAN_EXCEPTION_COUNT 0)
-set_property(GLOBAL PROPERTY SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT 0)
 
 function(sparkle_boundary_relative_path out_var absolute_path)
     file(RELATIVE_PATH _relative "${SPARKLE_REPO_ROOT}" "${absolute_path}")
@@ -32,47 +33,6 @@ function(sparkle_boundary_append_failure rule relative_path line_number reason l
     string(STRIP "${line_text}" _line_text)
     string(REPLACE ";" "," _line_text "${_line_text}")
     sparkle_boundary_append_failure_text("${relative_path}:${line_number}: [${rule}] ${reason} | ${_line_text}")
-endfunction()
-
-function(sparkle_boundary_increment_property property_name)
-    get_property(_count GLOBAL PROPERTY ${property_name})
-    if(NOT _count)
-        set(_count 0)
-    endif()
-
-    math(EXPR _count "${_count} + 1")
-    set_property(GLOBAL PROPERTY ${property_name} "${_count}")
-endfunction()
-
-function(sparkle_boundary_append_exception_summary summary_text)
-    set_property(GLOBAL APPEND PROPERTY SPARKLE_BOUNDARY_EXCEPTION_SUMMARIES "${summary_text}")
-endfunction()
-
-function(sparkle_boundary_try_counted_exception out_var relative_path expected_path line_text allowed_regex property_name)
-    if(relative_path STREQUAL expected_path AND line_text MATCHES "${allowed_regex}")
-        sparkle_boundary_increment_property(${property_name})
-        set(${out_var} TRUE PARENT_SCOPE)
-    else()
-        set(${out_var} FALSE PARENT_SCOPE)
-    endif()
-endfunction()
-
-function(sparkle_boundary_validate_counted_exception label property_name max_count removal_stage reason)
-    get_property(_count GLOBAL PROPERTY ${property_name})
-    if(NOT _count)
-        set(_count 0)
-    endif()
-
-    if(_count GREATER max_count)
-        sparkle_boundary_append_failure_text(
-            "${label}: counted exception grew to ${_count}/${max_count}. Owner: ${removal_stage}. ${reason}")
-    elseif(_count LESS max_count)
-        sparkle_boundary_append_exception_summary(
-            "${label}: ${_count}/${max_count} counted matches remain. Owner: ${removal_stage}. Count is below the frozen baseline. Remove or tighten this exception if the provider no longer needs it.")
-    else()
-        sparkle_boundary_append_exception_summary(
-            "${label}: ${_count}/${max_count} counted matches remain. Owner: ${removal_stage}. ${reason}")
-    endif()
 endfunction()
 
 function(sparkle_boundary_collect_source_files out_var)
@@ -124,29 +84,12 @@ function(sparkle_boundary_scan_file absolute_path)
         endif()
 
         if(_relative_path MATCHES "^Engine/Renderer/" AND _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_API_REGEX}")
-            sparkle_boundary_try_counted_exception(
-                _allowed_renderer_provider_cmake_vulkan
-                "${_relative_path}"
-                "Engine/Renderer/CMakeLists.txt"
-                "${_line}"
-                "^[ \t]*(if\\(TARGET Vulkan::Vulkan\\)|target_link_libraries\\(SparkleRendererNvidiaDlssProvider PRIVATE Vulkan::Vulkan\\))"
-                SPARKLE_RENDERER_PROVIDER_CMAKE_VULKAN_EXCEPTION_COUNT)
-			sparkle_boundary_try_counted_exception(
-				_allowed_streamline_vulkan
+			sparkle_boundary_append_failure(
+				"RENDERER_NO_BACKEND_NATIVE"
 				"${_relative_path}"
-				"Engine/Renderer/Private/Streamline/StreamlineRuntimeSupport.cpp"
-				"${_line}"
-				"^[ \t]*(#include <vulkan/vulkan\\.h>|vulkanInfo\\.(instance|physicalDevice|device) = static_cast<Vk(Instance|PhysicalDevice|Device)>|adapterInfo\\.Info\\.vkPhysicalDevice =)"
-				SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT)
-            if(_allowed_renderer_provider_cmake_vulkan OR _allowed_streamline_vulkan)
-            else()
-                sparkle_boundary_append_failure(
-                    "RENDERER_NO_BACKEND_NATIVE"
-                    "${_relative_path}"
-                    "${_line_number}"
-                    "Renderer code must not depend on D3D12/Vulkan native APIs outside documented provider bridge code."
-                    "${_line}")
-            endif()
+				"${_line_number}"
+				"Renderer code must not depend on D3D12/Vulkan native APIs."
+				"${_line}")
         endif()
 
         if(_relative_path MATCHES "^Engine/Renderer/" AND _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_PTLAS_REGEX}")
@@ -155,6 +98,36 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_relative_path}"
                 "${_line_number}"
                 "Renderer code must use backend-neutral RHI PTLAS structs; native Vulkan/D3D12/NVAPI PTLAS identifiers belong in backend-private RHI code."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "${SPARKLE_BOUNDARY_RENDERER_HIGH_LEVEL_ORCHESTRATOR_REGEX}" AND
+           _line MATCHES "${SPARKLE_BOUNDARY_RENDERER_PROVIDER_DETAIL_REGEX}")
+            sparkle_boundary_append_failure(
+                "RENDERER_ORCHESTRATOR_NO_PROVIDER_DETAILS"
+                "${_relative_path}"
+                "${_line_number}"
+                "High-level renderer orchestrators must depend on provider interfaces/factories, not vendor implementations."
+                "${_line}")
+        endif()
+
+        if(_relative_path STREQUAL "Engine/Renderer/Private/Frame/Core/Frame.cpp" AND _line MATCHES "Passes/")
+            sparkle_boundary_append_failure(
+                "FRAME_ORCHESTRATOR_NO_PASS_IMPLEMENTATIONS"
+                "${_relative_path}"
+                "${_line_number}"
+                "The frame orchestrator must call subsystem-level frame APIs rather than concrete pass implementations."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Tools/Shaders/ShaderCompiler/Private/(Cooking|Verification)/" AND
+           NOT _relative_path STREQUAL "Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderPackageCooker.cpp" AND
+           _line MATCHES "Cooking/ShaderPackageCooker\\.h")
+            sparkle_boundary_append_failure(
+                "SHADER_COOKING_NO_FACADE_DEPENDENCY"
+                "${_relative_path}"
+                "${_line_number}"
+                "Shader cooking internals must depend on settings/result contracts, not upward on the cooker facade."
                 "${_line}")
         endif()
 
@@ -185,33 +158,12 @@ message(STATUS "Repository root: ${SPARKLE_REPO_ROOT}")
 sparkle_boundary_collect_source_files(
     SPARKLE_BOUNDARY_SOURCE_FILES
     "Engine/RHI"
-    "Engine/Renderer")
+    "Engine/Renderer"
+    "Tools/Shaders/ShaderCompiler")
 
 foreach(_file IN LISTS SPARKLE_BOUNDARY_SOURCE_FILES)
     sparkle_boundary_scan_file("${_file}")
 endforeach()
-
-sparkle_boundary_validate_counted_exception(
-    "RENDERER_NO_BACKEND_NATIVE: NVIDIA DLSS provider Vulkan::Vulkan link"
-    SPARKLE_RENDERER_PROVIDER_CMAKE_VULKAN_EXCEPTION_COUNT
-    2
-    "Provider contract"
-    "Vulkan linkage is restricted to the NVIDIA DLSS provider target and is not linked by SparkleRenderer directly.")
-
-sparkle_boundary_validate_counted_exception(
-    "RENDERER_NO_BACKEND_NATIVE: Streamline DLSS Vulkan bridge"
-    SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT
-    5
-    "Provider contract"
-    "Streamline Vulkan identifiers are restricted to the NVIDIA DLSS provider runtime.")
-
-get_property(_exceptions GLOBAL PROPERTY SPARKLE_BOUNDARY_EXCEPTION_SUMMARIES)
-if(_exceptions)
-    message(STATUS "Counted exceptions:")
-    foreach(_exception IN LISTS _exceptions)
-        message(STATUS "  - ${_exception}")
-    endforeach()
-endif()
 
 get_property(_failures GLOBAL PROPERTY SPARKLE_BOUNDARY_FAILURES)
 if(_failures)

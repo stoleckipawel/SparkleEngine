@@ -9,17 +9,6 @@
 
 namespace
 {
-	std::string FormatPassDisplayLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
-	{
-		std::string label{"["};
-		label += FrameGraphPassKindToString(flags);
-		label += " #";
-		label += std::to_string(passIndex);
-		label += "] ";
-		label.append(passName.begin(), passName.end());
-		return label;
-	}
-
 	std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
 	{
 		std::string label{"FrameGraph/"};
@@ -60,7 +49,6 @@ void FrameGraph::Setup(const FrameContext& frame)
 		        .flags = pass.flags,
 		        .passKind = GetFrameGraphPassKind(pass.flags),
 		        .diagnosticName = FormatPassDiagnosticName(pass.name),
-		        .displayLabel = FormatPassDisplayLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.flags),
 		        .eventScopeLabel = FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.flags),
 		        .declarations = std::move(declarations)});
 	}

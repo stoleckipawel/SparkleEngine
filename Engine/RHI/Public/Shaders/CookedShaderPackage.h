@@ -113,8 +113,9 @@ struct CookedShaderPackageHeader
 	std::uint32_t SpecializationInputCount = 0;
 	std::uint32_t StringTableSizeInBytes = 0;
 	std::uint32_t BinaryBlobSizeInBytes = 0;
-	// ReflectionRecordCount equals BinaryRecordCount when reflection is
-	// present, or 0 when extraction failed/was disabled.
+	// Reflection records are positional with binary records. Ray-tracing library
+	// entries currently contain empty reflection ranges rather than omitting the
+	// corresponding record.
 	std::uint32_t ReflectionRecordCount = 0;
 	std::uint32_t ResourceBindingRecordCount = 0;
 	std::uint32_t ConstantBufferRecordCount = 0;

@@ -237,7 +237,7 @@ namespace
 		     ++reflectionIndex)
 		{
 			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
-			if (binaryRecord.Format != requiredBinaryFormat ||
+			if (!package.IsRuntimeBinary(binaryRecord, requiredBinaryFormat) ||
 			    !HasAllStages(definition.ExpectedStages, ToShaderStageMask(binaryRecord.Stage)))
 			{
 				continue;
@@ -289,9 +289,10 @@ namespace
 	    CookedShaderBinaryFormat requiredBinaryFormat)
 	{
 		message += std::format(
-		    " Expected runtime bindings=[{}]. Reflected {} bindings=[{}].",
+		    " Expected runtime bindings=[{}]. Reflected {}/{} bindings=[{}].",
 		    FormatExpectedParameterList(expectedParameters),
 		    CookedShaderBinaryFormatToString(requiredBinaryFormat),
+		    GetRuntimeShaderCodegenTarget(requiredBinaryFormat),
 		    FormatReflectedBindingList(package, definition, requiredBinaryFormat));
 		return message;
 	}
@@ -366,6 +367,23 @@ namespace
 
 		if (reflectionRecords.empty())
 		{
+			ShaderStageMask runtimeBindingStages = ShaderStageMask::None;
+			for (const PassParameterDesc& expectedParameter : expectedParameters)
+			{
+				runtimeBindingStages |= ToPackageStageMask(expectedParameter.Visibility) & definition.ExpectedStages;
+			}
+
+			if (runtimeBindingStages != ShaderStageMask::None)
+			{
+				outErrorMessage = std::format(
+				    "Cooked shader package '{}' is missing {}/{} reflection required by runtime bindings for shader stages '{}'. Recook shaders.",
+				    definition.PackageId,
+				    CookedShaderBinaryFormatToString(requiredBinaryFormat),
+				    GetRuntimeShaderCodegenTarget(requiredBinaryFormat),
+				    FormatShaderStageMask(runtimeBindingStages));
+				return false;
+			}
+
 			return true;
 		}
 
@@ -382,7 +400,7 @@ namespace
 		for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size(); ++reflectionIndex)
 		{
 			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
-			if (binaryRecord.Format != requiredBinaryFormat)
+			if (!package.IsRuntimeBinary(binaryRecord, requiredBinaryFormat))
 			{
 				continue;
 			}
@@ -421,13 +439,14 @@ namespace
 				{
 					outErrorMessage = AddBindingDiagnostics(
 					    std::format(
-					        "Cooked shader package '{}' failed package contract check: stage {} reflects unexpected {} '{}' for backend {}. "
+					        "Cooked shader package '{}' failed package contract check: stage {} reflects unexpected {} '{}' for target {}/{}. "
 					        "Recook shaders to refresh stale package metadata.",
 					        definition.PackageId,
 					        static_cast<std::uint32_t>(binaryRecord.Stage),
 					        FormatCookedShaderResourceKind(resourceBinding.Kind),
 					        resourceName,
-							CookedShaderBinaryFormatToString(requiredBinaryFormat)),
+					        CookedShaderBinaryFormatToString(requiredBinaryFormat),
+					        GetRuntimeShaderCodegenTarget(requiredBinaryFormat)),
 					    package,
 					    definition,
 					    expectedParameters,
@@ -443,7 +462,7 @@ namespace
 			for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size() && !foundMatch; ++reflectionIndex)
 			{
 				const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
-				if (binaryRecord.Format != requiredBinaryFormat)
+				if (!package.IsRuntimeBinary(binaryRecord, requiredBinaryFormat))
 				{
 					continue;
 				}
@@ -484,11 +503,12 @@ namespace
 				outErrorMessage = AddBindingDiagnostics(
 				    std::format(
 				        "Cooked shader package '{}' failed package contract check: runtime parameter '{}' (shader='{}') is missing reflected "
-				        "backend {} bindings. Recook shaders to refresh stale package metadata.",
+				        "target {}/{} bindings. Recook shaders to refresh stale package metadata.",
 				        definition.PackageId,
 				        expectedParameter.Name,
 				        expectedParameter.GetShaderName(),
-				        CookedShaderBinaryFormatToString(requiredBinaryFormat)),
+				        CookedShaderBinaryFormatToString(requiredBinaryFormat),
+				        GetRuntimeShaderCodegenTarget(requiredBinaryFormat)),
 				    package,
 				    definition,
 				    expectedParameters,
@@ -501,23 +521,24 @@ namespace
 	}
 }  // namespace
 
-const CookedShaderBinaryRecord* LoadedShaderPackage::FindBinaryRecord(ShaderStage stage, CookedShaderBinaryFormat format) const noexcept
+bool LoadedShaderPackage::IsRuntimeBinary(const CookedShaderBinaryRecord& record, CookedShaderBinaryFormat format) const noexcept
+{
+	return record.Format == format && ResolveString(record.CodegenTarget) == GetRuntimeShaderCodegenTarget(format);
+}
+
+const CookedShaderBinaryRecord* LoadedShaderPackage::FindRuntimeBinaryRecord(
+    ShaderStage stage,
+    CookedShaderBinaryFormat format) const noexcept
 {
 	for (const CookedShaderBinaryRecord& binaryRecord : m_binaryRecords)
 	{
-		if (binaryRecord.Stage == stage && binaryRecord.Format == format)
+		if (binaryRecord.Stage == stage && IsRuntimeBinary(binaryRecord, format))
 		{
 			return &binaryRecord;
 		}
 	}
 
 	return nullptr;
-}
-
-ShaderBytecode LoadedShaderPackage::GetStageBytecode(ShaderStage stage, CookedShaderBinaryFormat format) const noexcept
-{
-	const CookedShaderBinaryRecord* binaryRecord = FindBinaryRecord(stage, format);
-	return binaryRecord != nullptr ? GetBytecode(*binaryRecord) : ShaderBytecode{};
 }
 
 ShaderBytecode LoadedShaderPackage::GetBytecode(const CookedShaderBinaryRecord& record) const noexcept
@@ -620,18 +641,15 @@ bool LoadedShaderPackage::ValidateRayTracingLibraryMetadata(
 			outErrorMessage = std::format("Cooked ray tracing export {} references a binary record with ShaderBlobId=0", exportIndex);
 			return false;
 		}
-		if (binaryRecord.Format != requiredBinaryFormat)
+		if (!IsRuntimeBinary(binaryRecord, requiredBinaryFormat))
 		{
 			outErrorMessage = std::format(
-			    "Cooked ray tracing export {} binary format '{}' does not match RHI-required format '{}'",
+			    "Cooked ray tracing export {} target '{}/{}' does not match RHI-required target '{}/{}'",
 			    exportIndex,
 			    CookedShaderBinaryFormatToString(binaryRecord.Format),
-			    CookedShaderBinaryFormatToString(requiredBinaryFormat));
-			return false;
-		}
-		if (ResolveString(binaryRecord.CodegenTarget).empty())
-		{
-			outErrorMessage = std::format("Cooked ray tracing export {} references a binary record with empty CodegenTarget", exportIndex);
+			    ResolveString(binaryRecord.CodegenTarget),
+			    CookedShaderBinaryFormatToString(requiredBinaryFormat),
+			    GetRuntimeShaderCodegenTarget(requiredBinaryFormat));
 			return false;
 		}
 		if (!GetBytecode(binaryRecord).IsValid())
@@ -1000,6 +1018,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 		return false;
 	}
 
+	const std::string_view requiredCodegenTarget = GetRuntimeShaderCodegenTarget(requiredBinaryFormat);
+	std::uint32_t runtimeLayoutRecordCount = 0;
 	for (const CookedShaderPipelineLayoutRecord& layoutRecord : package.GetPipelineLayoutRecords())
 	{
 		if (layoutRecord.BindingLayoutHash != expectedBindingLayoutHash)
@@ -1018,13 +1038,29 @@ bool CookedShaderPackageCache::ValidatePackage(
 			    definition.PackageId);
 			return false;
 		}
-		if (package.ResolveString(layoutRecord.CodegenTarget).empty())
+		const std::string_view codegenTarget = package.ResolveString(layoutRecord.CodegenTarget);
+		if (codegenTarget.empty())
 		{
 			outErrorMessage = std::format(
 			    "Cooked shader package '{}' failed package contract check: pipeline layout CodegenTarget is empty",
 			    definition.PackageId);
 			return false;
 		}
+
+		if (codegenTarget == requiredCodegenTarget)
+		{
+			++runtimeLayoutRecordCount;
+		}
+	}
+
+	if (runtimeLayoutRecordCount != 1)
+	{
+		outErrorMessage = std::format(
+		    "Cooked shader package '{}' requires exactly one pipeline layout for runtime target '{}' but contains {}",
+		    definition.PackageId,
+		    requiredCodegenTarget,
+		    runtimeLayoutRecordCount);
+		return false;
 	}
 
 	if (!HasAllStages(package.GetHeader().DeclaredStages, definition.ExpectedStages))
@@ -1105,6 +1141,14 @@ bool CookedShaderPackageCache::ValidatePackage(
 			return false;
 		}
 
+		if (package.ResolveString(binaryRecord.CodegenTarget).empty())
+		{
+			outErrorMessage = std::format(
+			    "Cooked shader package '{}' contains a binary with an invalid CodegenTarget string",
+			    definition.PackageId);
+			return false;
+		}
+
 		const ShaderBytecode bytecode = package.GetBytecode(binaryRecord);
 		if (!bytecode.IsValid())
 		{
@@ -1131,15 +1175,16 @@ bool CookedShaderPackageCache::ValidatePackage(
 			return false;
 		}
 
-		if (binaryRecord.Format == requiredBinaryFormat)
+		if (package.IsRuntimeBinary(binaryRecord, requiredBinaryFormat))
 		{
 			const std::size_t stageIndex = static_cast<std::size_t>(binaryRecord.Stage);
 			if (hasRequiredBinaryForStage[stageIndex])
 			{
 				outErrorMessage = std::format(
-				    "Cooked shader package '{}' contains more than one {} binary for stage {}",
+				    "Cooked shader package '{}' contains more than one {}/{} binary for stage {}",
 				    definition.PackageId,
 				    CookedShaderBinaryFormatToString(requiredBinaryFormat),
+				    requiredCodegenTarget,
 				    stageIndex);
 				return false;
 			}
@@ -1158,9 +1203,10 @@ bool CookedShaderPackageCache::ValidatePackage(
 		if (!hasRequiredBinaryForStage[static_cast<std::size_t>(stage)])
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' is missing the required {} binary for shader stage '{}'",
+			    "Cooked shader package '{}' is missing the required {}/{} binary for shader stage '{}'",
 			    definition.PackageId,
 			    CookedShaderBinaryFormatToString(requiredBinaryFormat),
+			    requiredCodegenTarget,
 			    GetShaderStagePrefix(stage));
 			return false;
 		}

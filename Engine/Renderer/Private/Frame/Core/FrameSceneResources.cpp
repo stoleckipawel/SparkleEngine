@@ -19,13 +19,6 @@ void CreateFrameSceneResources(
 	const FrameGraphTextureHandle sceneDepth = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor("SceneDepth", renderExtent.Width, renderExtent.Height, FrameRenderFormats::SceneDepth));
 
-	const FrameGraphTextureHandle reconstructedSceneColor = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "ReconstructedSceneColor",
-	        renderExtent.Width,
-	        renderExtent.Height,
-	        FrameRenderFormats::SceneColor));
-
 	const FrameGraphTextureHandle finalSceneColor = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor("FinalSceneColor", outputExtent.Width, outputExtent.Height, FrameRenderFormats::SceneColor));
 
@@ -119,7 +112,6 @@ void CreateFrameSceneResources(
 	resources.Transient.Scene = SceneRenderTargets{
 	    .SceneColor = sceneColor,
 	    .SceneDepth = sceneDepth,
-	    .ReconstructedSceneColor = reconstructedSceneColor,
 	    .FinalSceneColor = finalSceneColor,
 	    .BackBuffer = backBuffer};
 	resources.Transient.Exposure = exposure;

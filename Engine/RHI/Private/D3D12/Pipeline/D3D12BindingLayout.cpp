@@ -201,7 +201,7 @@ class D3D12BindingLayoutCompilerImpl final
 		     ++reflectionIndex)
 		{
 			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
-			if (binaryRecord.Format != CookedShaderBinaryFormat::Dxil)
+			if (!shaderPackage.IsRuntimeBinary(binaryRecord, CookedShaderBinaryFormat::Dxil))
 			{
 				continue;
 			}

@@ -13,14 +13,13 @@
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "Frame/Lighting/ReferenceLightingState.h"
 #include "Frame/Lighting/RestirLightingState.h"
-#include "Frame/Presentation/Upscaling.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Host/RendererSystemRoot.h"
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
-#include "RayReconstruction/RayReconstructionFramePass.h"
+#include "Providers/ImageProviderFrameContext.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowSettings.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
@@ -98,7 +97,13 @@ RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 
 FrameResolutionExtents FramePipeline::ResolveFrameResolution() const noexcept
 {
-	return ResolveFrameResolutionExtents(ResolveOutputExtent());
+	const RenderViewportExtent outputExtent = ResolveOutputExtent();
+	const ImageProviderPipeline imagePipeline = GetLightingMode() == LightingMode::RestirPathTraced
+	                                                ? ImageProviderPipeline::RayReconstruction
+	                                                : ImageProviderPipeline::PresentationUpscaling;
+	return FrameResolutionExtents{
+	    .Render = m_systems->GetImageProviders().ResolveRenderExtent(outputExtent, imagePipeline),
+	    .Output = outputExtent};
 }
 
 bool FramePipeline::ShouldOutputToBackBuffer() const noexcept
@@ -162,7 +167,6 @@ void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noe
 	CreateDirectLightReservoirHistoryResources();
 	CreateReferenceLightingHistoryResources();
 	CreateRestirIndirectReservoirHistoryResources();
-	m_systems->GetImageProviders().OnResize(m_frameGraphRenderExtent, m_frameGraphOutputExtent);
 }
 
 void FramePipeline::BeginFrame() noexcept
@@ -177,7 +181,7 @@ void FramePipeline::BeginFrame() noexcept
 		ResetExposureHistory();
 		ResetReferenceLightingHistory();
 		ResetRestirLightingHistory();
-		m_systems->GetImageProviders().ResetHistory("Window resize");
+		m_systems->GetImageProviders().ResetHistory();
 
 		if (m_systems->GetWindow().HasValidSize())
 		{
@@ -196,7 +200,7 @@ void FramePipeline::BeginFrame() noexcept
 		ResetExposureHistory();
 		ResetReferenceLightingHistory();
 		ResetRestirLightingHistory();
-		m_systems->GetImageProviders().ResetHistory("Frame resolution changed");
+		m_systems->GetImageProviders().ResetHistory();
 		RefreshFrameExecution(frameResolution);
 	}
 
@@ -207,7 +211,7 @@ void FramePipeline::BeginFrame() noexcept
 		ResetExposureHistory();
 		ResetReferenceLightingHistory();
 		ResetRestirLightingHistory();
-		m_systems->GetImageProviders().ResetHistory("GBuffer mode changed");
+		m_systems->GetImageProviders().ResetHistory();
 		RefreshFrameExecution(ResolveFrameResolution());
 	}
 
@@ -218,7 +222,7 @@ void FramePipeline::BeginFrame() noexcept
 		ResetExposureHistory();
 		ResetReferenceLightingHistory();
 		ResetRestirLightingHistory();
-		m_systems->GetImageProviders().ResetHistory("Lighting mode changed");
+		m_systems->GetImageProviders().ResetHistory();
 		RefreshFrameExecution(ResolveFrameResolution());
 	}
 
@@ -229,7 +233,7 @@ void FramePipeline::BeginFrame() noexcept
 		if (lightingMode == LightingMode::ReferencePathTraced)
 		{
 			ResetReferenceLightingHistory();
-			m_systems->GetImageProviders().ResetHistory("Reference lighting settings changed");
+			m_systems->GetImageProviders().ResetHistory();
 		}
 	}
 
@@ -240,11 +244,11 @@ void FramePipeline::BeginFrame() noexcept
 		if (lightingMode == LightingMode::RestirPathTraced)
 		{
 			ResetRestirLightingHistory();
-			m_systems->GetImageProviders().ResetHistory("ReSTIR lighting settings changed");
+			m_systems->GetImageProviders().ResetHistory();
 		}
 	}
 
-	const std::uint32_t imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
+	const ImageProviderGraphKey imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	if (imageProviderFrameGraphKey != m_imageProviderFrameGraphKey)
 	{
 		temporalDataBuilder.ResetHistory("Image provider graph mode changed");
@@ -253,7 +257,7 @@ void FramePipeline::BeginFrame() noexcept
 		ResetRestirLightingHistory();
 		m_systems->RefreshImageProviders();
 		RefreshFrameExecution(ResolveFrameResolution());
-		m_systems->GetImageProviders().ResetHistory("Image provider graph mode changed");
+		m_systems->GetImageProviders().ResetHistory();
 		m_imageProviderFrameGraphKey = imageProviderFrameGraphKey;
 	}
 
@@ -357,30 +361,15 @@ void FramePipeline::RecordFrame() noexcept
 		ResetRestirLightingHistory();
 	}
 
-	if (m_frameResources.UpscalerProviderInputs.ScalingInputColor.IsValid())
-	{
-		const UpscalerInputContract upscalerInputContract = BuildFrameUpscalerInputContract(
-		    m_frameResources.UpscalerProviderInputs,
-		    m_frameGraphRenderExtent,
-		    m_frameGraphOutputExtent,
-		    m_systems->GetTimer().GetFrameCount(),
-		    frame.mainView.perViewData.Camera,
-		    frame.mainView.perTemporalData,
-		    frame.mainView.temporalState);
-		m_systems->GetImageProviders().SetupUpscalerFrame(upscalerInputContract);
-	}
-
-	if (m_frameResources.RayReconstructionProviderInputs.NoisyInputColor.IsValid())
-	{
-		const RayReconstructionInputContract reconstructionInputContract = BuildFrameRayReconstructionInputContract(
-		    m_frameResources.RayReconstructionProviderInputs,
-		    m_frameGraphRenderExtent,
-		    m_systems->GetTimer().GetFrameCount(),
-		    frame.mainView.perViewData.Camera,
-		    frame.mainView.perTemporalData,
-		    frame.mainView.temporalState);
-		m_systems->GetImageProviders().SetupRayReconstructionFrame(reconstructionInputContract);
-	}
+	m_systems->GetImageProviders().SetupFrame(
+	    ImageProviderFrameContext{
+	        .RenderExtent = m_frameGraphRenderExtent,
+	        .OutputExtent = m_frameGraphOutputExtent,
+	        .FrameIndex = m_systems->GetTimer().GetFrameCount(),
+	        .Camera = frame.mainView.perViewData.Camera,
+	        .TemporalData = frame.mainView.perTemporalData,
+	        .TemporalState = frame.mainView.temporalState,
+	        .ResetHistory = frame.mainView.perTemporalData.HistoryValid == 0u});
 
 	if (m_frameGraph != nullptr && m_frameResources.SceneTlas.IsValid())
 	{
@@ -410,14 +399,8 @@ void FramePipeline::RecordFrame() noexcept
 	BindReferenceLightingHistoryFrameGraphResources();
 	BindRestirIndirectReservoirHistoryFrameGraphResources();
 
-	{
-		m_frameGraph->Setup(frame);
-	}
-
-	const FrameGraphPlan compiledPlan = [&]()
-	{
-		return m_frameGraph->Compile();
-	}();
+	m_frameGraph->Setup(frame);
+	const FrameGraphPlan& compiledPlan = m_frameGraph->Compile();
 	RenderCommandList& commandList = m_systems->GetBackend().GetCurrentGraphicsCommandList();
 	RenderCommandContext cmd(commandList);
 	const RenderRayTracingPassServices rayTracingPassServices{

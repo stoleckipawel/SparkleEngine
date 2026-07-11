@@ -53,5 +53,4 @@ class SPARKLE_RHI_API RhiInteropService
 	virtual ~RhiInteropService() noexcept = default;
 
 	virtual RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept = 0;
-	virtual bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept = 0;
 };

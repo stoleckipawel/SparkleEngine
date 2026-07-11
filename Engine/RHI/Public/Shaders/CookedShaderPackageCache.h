@@ -68,8 +68,8 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 		return m_specializationConstants;
 	}
 
-	const CookedShaderBinaryRecord* FindBinaryRecord(ShaderStage stage, CookedShaderBinaryFormat format) const noexcept;
-	ShaderBytecode GetStageBytecode(ShaderStage stage, CookedShaderBinaryFormat format) const noexcept;
+	bool IsRuntimeBinary(const CookedShaderBinaryRecord& record, CookedShaderBinaryFormat format) const noexcept;
+	const CookedShaderBinaryRecord* FindRuntimeBinaryRecord(ShaderStage stage, CookedShaderBinaryFormat format) const noexcept;
 	ShaderBytecode GetBytecode(const CookedShaderBinaryRecord& record) const noexcept;
 	std::string_view ResolveString(CookedShaderStringRef ref) const noexcept;
 	bool ValidateRayTracingLibraryMetadata(

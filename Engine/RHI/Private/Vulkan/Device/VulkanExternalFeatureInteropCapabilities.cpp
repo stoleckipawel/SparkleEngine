@@ -43,12 +43,9 @@ RhiExternalFeatureInteropCapabilities BuildVulkanExternalFeatureInteropCapabilit
 	capabilities.ExposesNativeGraphicsCommandList = hasGraphicsCommandContext;
 	capabilities.ExposesNativeResources = true;
 	capabilities.SupportsExplicitResourceStates = true;
-	capabilities.VulkanManualFunctionPointerHookingReady =
-	    capabilities.VulkanHasInstanceHandle && capabilities.VulkanHasPhysicalDeviceHandle && capabilities.VulkanHasDeviceHandle &&
-	    capabilities.VulkanHasGraphicsQueueHandle && capabilities.VulkanHasGraphicsQueueFamilyIndex && hasGraphicsCommandContext;
-	capabilities.VulkanInterposerRequired = false;
-	capabilities.SupportsExternalProviderEvaluation =
-	    capabilities.VulkanManualFunctionPointerHookingReady && capabilities.ExposesNativeResources;
-	capabilities.SupportsRuntimeProviderChecks = capabilities.SupportsExternalProviderEvaluation;
+	capabilities.VulkanManualFunctionPointerHookingReady = false;
+	capabilities.VulkanInterposerRequired = true;
+	capabilities.SupportsExternalProviderEvaluation = false;
+	capabilities.SupportsRuntimeProviderChecks = false;
 	return capabilities;
 }

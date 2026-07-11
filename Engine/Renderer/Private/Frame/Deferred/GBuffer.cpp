@@ -5,6 +5,7 @@
 #include "Frame/Deferred/SceneDepth.h"
 #include "Frame/GBuffer/RaytracedGBuffer.h"
 #include "Frame/GBuffer/RasterizedGBuffer.h"
+#include "Frame/GBuffer/SkyMotionVectors.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
@@ -79,5 +80,6 @@ void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExte
 			break;
 	}
 
+	AddSkyMotionVectorPass(builder, resources.Transient.GBuffer);
 	AddLinearizeDeviceZPass(builder, resources.Transient.GBuffer.DeviceZ, resources.Transient.Scene.SceneDepth);
 }

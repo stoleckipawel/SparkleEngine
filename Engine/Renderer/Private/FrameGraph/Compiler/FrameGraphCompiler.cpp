@@ -187,6 +187,8 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 	for (std::size_t resourceIndex = 0; resourceIndex < registeredHandles.size(); ++resourceIndex)
 	{
 		const FrameGraphResourceHandle handle = registeredHandles[resourceIndex];
+		assert(handle.IsValid());
+		assert(handle.index == resourceIndex && "FrameGraph resources must be registered in monotonically increasing handle order.");
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
 		const ResourceState runtimeState = m_resourceStateTracker.GetRuntimeState(handle);
 		m_plan.resources.push_back(
@@ -296,28 +298,20 @@ const FrameGraphResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(c
 
 FrameGraphResourceNode& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept
 {
-	const auto it = std::find_if(
-	    m_plan.resources.begin(),
-	    m_plan.resources.end(),
-	    [handle](const FrameGraphResourceNode& resource)
-	    {
-		    return resource.handle == handle;
-	    });
-	assert(it != m_plan.resources.end());
-	return *it;
+	assert(handle.IsValid());
+	assert(handle.index < m_plan.resources.size());
+	FrameGraphResourceNode& resource = m_plan.resources[handle.index];
+	assert(resource.handle == handle);
+	return resource;
 }
 
 const FrameGraphResourceNode& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) const noexcept
 {
-	const auto it = std::find_if(
-	    m_plan.resources.begin(),
-	    m_plan.resources.end(),
-	    [handle](const FrameGraphResourceNode& resource)
-	    {
-		    return resource.handle == handle;
-	    });
-	assert(it != m_plan.resources.end());
-	return *it;
+	assert(handle.IsValid());
+	assert(handle.index < m_plan.resources.size());
+	const FrameGraphResourceNode& resource = m_plan.resources[handle.index];
+	assert(resource.handle == handle);
+	return resource;
 }
 
 FrameGraphTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(FrameGraphResourceHandle handle) noexcept

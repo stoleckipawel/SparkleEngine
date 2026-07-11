@@ -1,7 +1,9 @@
 #pragma once
 
-enum class EngineRayReconstructionMode
+#include <cstdint>
+
+enum class EngineRayReconstructionMode : std::uint8_t
 {
 	Off,
-	NvidiaDlrr,
+	NvidiaDlssRayReconstruction,
 };

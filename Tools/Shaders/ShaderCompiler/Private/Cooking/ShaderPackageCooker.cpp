@@ -6,34 +6,38 @@
 #include "Backend/ShaderBackendPool.h"
 #include "Cooking/Cache/LocalDiskShaderArtifactStore.h"
 #include "Cooking/CookedShaderPackageEmitter.h"
+#include "Cooking/ShaderCookNodeExecutor.h"
 #include "Cooking/ShaderCookPlanBuilder.h"
-#include "Cooking/ShaderCookPlanExecutor.h"
+#include "Cooking/ShaderCookProgressReporter.h"
 
 ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSettings& settings) const
 {
 	ShaderPackageCookResult result;
 	result.cacheDirectory = settings.cacheDirectory.empty() ? Filesystem::GetShaderCacheRootPath() : settings.cacheDirectory;
-	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	ShaderBackendPool backendPool;
 	ShaderCookPipelinePlan plan;
-	if (!ShaderCookPlanBuilder::Build(settings, writeDebugArtifacts, backendPool, plan, result.errorMessage))
+	if (!ShaderCookPlanBuilder::Build(settings, backendPool, plan, result.errorMessage))
 	{
 		return result;
 	}
 
 	LocalDiskShaderArtifactStore artifactStore(result.cacheDirectory);
 	ShaderCookExecutionCounters counters;
-	if (!ShaderCookPlanExecutor::Execute(
-	        settings,
-	        writeDebugArtifacts,
-	        plan,
-	        backendPool,
-	        artifactStore,
-	        counters,
-	        result.errorMessage))
+	ShaderCookProgressReporter::PrintPlanSummary(plan, settings);
+	for (const CookNode& node : plan.nodes)
 	{
-		result.packages.clear();
-		return result;
+		if (!ShaderCookNodeExecutor::Execute(
+		        settings,
+		        node,
+		        plan,
+		        backendPool,
+		        artifactStore,
+		        counters,
+		        result.errorMessage))
+		{
+			result.packages.clear();
+			return result;
+		}
 	}
 	result.backendInvocationCount = counters.backendInvocationCount;
 	result.cacheHitCount = counters.cacheHitCount;
@@ -46,4 +50,3 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 
 	return result;
 }
-

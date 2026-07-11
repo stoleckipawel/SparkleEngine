@@ -15,7 +15,6 @@ class ShaderCookPlanBuilder final
 
 	static bool Build(
 	    const ShaderPackageCookSettings& settings,
-	    bool writeDebugArtifacts,
 	    ShaderBackendPool& backendPool,
 	    ShaderCookPipelinePlan& outPlan,
 	    std::string& outErrorMessage);
@@ -23,7 +22,6 @@ class ShaderCookPlanBuilder final
   private:
 	static bool AddPackageNodes(
 	    const ShaderPackageCookSettings& settings,
-	    bool writeDebugArtifacts,
 	    std::size_t packageIndex,
 	    ShaderBackendPool& backendPool,
 	    ShaderCookPipelinePlan& plan,

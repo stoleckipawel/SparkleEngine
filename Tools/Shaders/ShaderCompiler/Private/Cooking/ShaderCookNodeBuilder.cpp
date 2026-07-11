@@ -8,14 +8,13 @@
 #include "Cooking/Cache/ShaderCacheKey.h"
 #include "Cooking/Cache/ShaderCompileOptionsHasher.h"
 #include "Cooking/ShaderCookPlanner.h"
-#include "Cooking/ShaderPackageCooker.h"
+#include "Cooking/ShaderCookSettings.h"
 #include "Compiler/ShaderCompileProfile.h"
 
 #include <format>
 
 bool ShaderCookNodeBuilder::BuildAndAdd(
     const ShaderPackageCookSettings& settings,
-    bool writeDebugArtifacts,
     std::size_t packageIndex,
     std::size_t stageIndex,
     std::size_t targetIndex,
@@ -28,11 +27,10 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	const ShaderTarget target = settings.targets[targetIndex];
 	ShaderCompileOptions compileOptions = ShaderCookPlanner::BuildCompileOptions(stage);
 	compileOptions.Target = target;
-	compileOptions.CaptureDebugArtifacts = writeDebugArtifacts;
+	compileOptions.CaptureDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	compileOptions.EnableDebugInfo = settings.enableDebugInfo;
 	compileOptions.EnableOptimizations = settings.enableOptimizations;
 	compileOptions.TreatWarningsAsErrors = settings.treatWarningsAsErrors;
-	compileOptions.StripReflection = settings.stripReflection;
 	compileOptions.StripDebugInfo = settings.stripDebugInfo;
 
 	if (settings.forceMissingIncludeForValidation && packageIndex == 0 && stageIndex == 0 && targetIndex == 0)
@@ -98,8 +96,6 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	const std::uint64_t optionsHash = ShaderCompileOptionsHasher::Compute(compileOptions);
 	const ShaderCacheKey cacheKey = ShaderCacheKey::Compute(
 	    package,
-	    stage,
-	    compileOptions,
 	    includeHashResult.sourceHash,
 	    includeHashResult.includeClosureHash,
 	    optionsHash,
@@ -107,12 +103,11 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	    backend->GetBackendVersion());
 	plan.nodes.push_back(CookNode{
 	    .packageIndex = packageIndex,
-	    .stageIndex = stageIndex,
 	    .package = &package,
 	    .stage = &stage,
 	    .backendName = backendName,
 	    .compileOptions = compileOptions,
-	    .parameterStructDescriptor = ShaderCookPlanner::FindParameterStructDescriptor(compileOptions),
+	    .parameterStructDescriptor = stage.parameterStructDescriptor,
 	    .sourceHash = includeHashResult.sourceHash,
 	    .includeClosureHash = includeHashResult.includeClosureHash,
 	    .optionsHash = optionsHash,

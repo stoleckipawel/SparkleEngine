@@ -14,7 +14,6 @@
 struct CookNode final
 {
 	std::size_t packageIndex = 0;
-	std::size_t stageIndex = 0;
 	const ShaderCookPackageDesc* package = nullptr;
 	const ShaderCookStageDesc* stage = nullptr;
 	std::string backendName;

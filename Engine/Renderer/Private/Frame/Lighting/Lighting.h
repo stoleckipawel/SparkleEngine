@@ -8,3 +8,8 @@
 class FrameGraphBuilder;
 
 void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources);
+void AddLightingReconstructionPasses(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    RenderViewportExtent outputExtent,
+    FrameAssemblyResourceLayout& resources);

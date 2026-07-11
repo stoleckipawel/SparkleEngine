@@ -4,24 +4,36 @@
 
 #include <cstdint>
 #include <memory>
-#include <string_view>
 
-class RayReconstructionSubsystem;
+class IRayReconstructionProvider;
 class RenderHardwareInterface;
-class UpscalerSubsystem;
-struct RayReconstructionInputContract;
-struct UpscalerInputContract;
+class IUpscalerProvider;
+struct ImageProviderFrameContext;
 
 struct RendererImageProviderPassServices final
 {
-	UpscalerSubsystem* Upscaling = nullptr;
-	RayReconstructionSubsystem* RayReconstruction = nullptr;
+	IUpscalerProvider* Upscaling = nullptr;
+	IRayReconstructionProvider* RayReconstruction = nullptr;
+};
+
+struct ImageProviderGraphKey final
+{
+	std::uint32_t UpscalerProvider = 0;
+	std::uint32_t RayReconstructionMode = 0;
+
+	bool operator==(const ImageProviderGraphKey&) const noexcept = default;
+};
+
+enum class ImageProviderPipeline : std::uint8_t
+{
+	PresentationUpscaling,
+	RayReconstruction
 };
 
 class RendererImageProviderStack final
 {
   public:
-	RendererImageProviderStack();
+	explicit RendererImageProviderStack(RenderHardwareInterface& renderHardware);
 	~RendererImageProviderStack() noexcept;
 
 	RendererImageProviderStack(const RendererImageProviderStack&) = delete;
@@ -29,18 +41,22 @@ class RendererImageProviderStack final
 	RendererImageProviderStack(RendererImageProviderStack&&) = delete;
 	RendererImageProviderStack& operator=(RendererImageProviderStack&&) = delete;
 
-	void Initialize(RenderHardwareInterface& renderHardware);
 	void Refresh(RenderHardwareInterface& renderHardware);
-	void Shutdown() noexcept;
-	void OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent);
-	void ResetHistory(std::string_view reason);
-	void SetupUpscalerFrame(const UpscalerInputContract& inputContract);
-	void SetupRayReconstructionFrame(const RayReconstructionInputContract& inputContract);
+	void ResetHistory() noexcept;
+	void SetupFrame(const ImageProviderFrameContext& frameContext);
+	RenderViewportExtent ResolveRenderExtent(
+	    RenderViewportExtent outputExtent,
+	    ImageProviderPipeline pipeline) noexcept;
 
-	std::uint32_t GetFrameGraphKey() const noexcept;
+	ImageProviderGraphKey GetFrameGraphKey() const noexcept;
 	RendererImageProviderPassServices BuildPassServices() noexcept;
 
   private:
-	std::unique_ptr<UpscalerSubsystem> m_upscalerSubsystem;
-	std::unique_ptr<RayReconstructionSubsystem> m_rayReconstructionSubsystem;
+	void Initialize(RenderHardwareInterface& renderHardware);
+	void Shutdown() noexcept;
+
+	std::unique_ptr<IUpscalerProvider> m_upscaler;
+	std::unique_ptr<IRayReconstructionProvider> m_rayReconstruction;
+	bool m_rayReconstructionRequested = false;
+	bool m_resetHistoryPending = true;
 };

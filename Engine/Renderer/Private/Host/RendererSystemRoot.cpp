@@ -6,11 +6,11 @@
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
+#include "Host/RendererBackendSystem.h"
 #include "Level/LevelManager.h"
 #include "Meshes/GPUMeshCache.h"
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
-#include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
@@ -21,7 +21,6 @@
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
-#include "Streamline/StreamlineRuntimeSupport.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
@@ -37,30 +36,34 @@ RendererSystemRoot::~RendererSystemRoot() noexcept
 {
 	if (m_backend != nullptr)
 	{
-		m_backend->Flush();
+		GetBackend().Flush();
 	}
 
-	if (m_imageProviders != nullptr)
-	{
-		m_imageProviders->Shutdown();
-	}
+}
 
-	ShutdownSharedStreamlineRuntime();
+RenderDeviceServices& RendererSystemRoot::GetBackend() noexcept
+{
+	return m_backend->GetServices();
+}
+
+const RenderDeviceServices& RendererSystemRoot::GetBackend() const noexcept
+{
+	return m_backend->GetServices();
 }
 
 RenderHardwareInterface& RendererSystemRoot::GetRenderHardwareInterface() noexcept
 {
-	return m_backend->GetRenderHardwareInterface();
+	return GetBackend().GetRenderHardwareInterface();
 }
 
 const RenderHardwareInterface& RendererSystemRoot::GetRenderHardwareInterface() const noexcept
 {
-	return m_backend->GetRenderHardwareInterface();
+	return GetBackend().GetRenderHardwareInterface();
 }
 
 RhiImGuiRenderer& RendererSystemRoot::GetImGuiRenderer() noexcept
 {
-	return m_backend->GetImGuiRenderer();
+	return GetBackend().GetImGuiRenderer();
 }
 
 CookedShaderReloadResult RendererSystemRoot::ReloadCookedShaders() noexcept
@@ -108,7 +111,7 @@ void RendererSystemRoot::TickDiagnostics(std::uint64_t frameIndex) noexcept
 
 void RendererSystemRoot::PostLoad() noexcept
 {
-	m_backend->CloseExecuteAndFlushCurrentFrame();
+	GetBackend().CloseExecuteAndFlushCurrentFrame();
 }
 
 void RendererSystemRoot::RefreshImageProviders() noexcept
@@ -118,35 +121,25 @@ void RendererSystemRoot::RefreshImageProviders() noexcept
 		return;
 	}
 
-	m_backend->Flush();
+	GetBackend().Flush();
 	m_imageProviders->Refresh(GetRenderHardwareInterface());
-}
-
-void RendererSystemRoot::InitializeImageProviders(RenderHardwareInterface& renderHardware) noexcept
-{
-	m_imageProviders = std::make_unique<RendererImageProviderStack>();
-	m_imageProviders->Initialize(renderHardware);
 }
 
 void RendererSystemRoot::InitializeCoreSystems() noexcept
 {
-
-	{
-		m_backend = RenderDeviceServices::Create(*m_window, CVarBackBufferFormat.Get());
-	}
-	{
-		m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetRenderHardwareInterface());
-	}
-	{
-		m_gpuMeshCache = std::make_unique<GPUMeshCache>(GetRenderHardwareInterface());
-	}
-
-	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnostics();
-	const RayTracingCapabilityReport rayTracingCapabilities =
-	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
+	m_backend = std::make_unique<RendererBackendSystem>(*m_window, CVarBackBufferFormat.Get());
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
-	InitializeImageProviders(renderHardware);
-	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);
+	{
+		m_pipelineStateManager = std::make_unique<PipelineStateManager>(renderHardware);
+	}
+	{
+		m_gpuMeshCache = std::make_unique<GPUMeshCache>(renderHardware);
+	}
+
+	RenderDiagnostics& backendDiagnostics = renderHardware.GetDiagnostics();
+	const RayTracingCapabilityReport rayTracingCapabilities = RayTracingCapabilityReporter::Build(renderHardware.GetCapabilities());
+	m_imageProviders = std::make_unique<RendererImageProviderStack>(renderHardware);
+	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(renderHardware, rayTracingCapabilities);
 
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);
 }
@@ -164,7 +157,7 @@ void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noex
 	m_sceneRenderStateCoordinator = std::make_unique<SceneRenderStateCoordinator>(
 	    levelManager.GetLevelChangeEvents(),
 	    *m_gameScene,
-	    *m_backend,
+	    GetBackend(),
 	    *m_gpuMeshCache,
 	    *m_textureManager,
 	    *m_renderCamera,

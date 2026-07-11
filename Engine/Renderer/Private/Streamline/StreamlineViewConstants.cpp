@@ -82,7 +82,7 @@ namespace
 
 	sl::float2 BuildMotionVectorScale(const StreamlineViewConstantsInput& input) noexcept
 	{
-		const float directionScale = input.MotionVectorsCurrentMinusPrevious ? -1.0f : 1.0f;
+		const float directionScale = input.MotionVectorsCurrentMinusPrevious ? 1.0f : -1.0f;
 		return sl::float2{
 		    input.RenderExtent.Width > 0 ? directionScale / static_cast<float>(input.RenderExtent.Width) : directionScale,
 		    input.RenderExtent.Height > 0 ? directionScale / static_cast<float>(input.RenderExtent.Height) : directionScale};

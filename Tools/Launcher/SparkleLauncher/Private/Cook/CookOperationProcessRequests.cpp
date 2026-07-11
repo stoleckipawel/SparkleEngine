@@ -39,8 +39,6 @@ namespace SparkleLauncher
 		}
 		arguments.push_back("--warnings-as-errors");
 		arguments.push_back(plan.Request.ShaderWarningsAsErrors ? "on" : "off");
-		arguments.push_back("--strip-reflection");
-		arguments.push_back(plan.Request.ShaderStripReflection ? "on" : "off");
 		arguments.push_back("--strip-debug");
 		arguments.push_back(plan.Request.ShaderStripDebugInfo ? "on" : "off");
 		if (!plan.Request.ShaderDebugArtifactDirectory.empty())

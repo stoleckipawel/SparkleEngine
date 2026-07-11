@@ -2,17 +2,11 @@
 
 #include "Cooking/ShaderCookProgressReporter.h"
 
-#include "Cooking/ShaderPackageCooker.h"
+#include "Cooking/ShaderCookSettings.h"
 #include "ToolConsole.h"
 
+#include <algorithm>
 #include <iostream>
-
-std::size_t ShaderCookProgressReporter::CountPackageJobs(
-    const ShaderCookPackageDesc& package,
-    const ShaderPackageCookSettings& settings) noexcept
-{
-	return package.stages.size() * settings.targets.size();
-}
 
 void ShaderCookProgressReporter::PrintPlanSummary(
     const ShaderCookPipelinePlan& plan,
@@ -29,10 +23,16 @@ void ShaderCookProgressReporter::PrintPlanSummary(
 
 void ShaderCookProgressReporter::PrintPackageProgress(
     const ShaderCookPipelinePlan& plan,
-    const ShaderPackageCookSettings& settings,
     const CookNode& node)
 {
 	const ShaderCookPackageDesc& package = plan.packages[node.packageIndex];
+	const std::size_t packageJobCount = std::count_if(
+	    plan.nodes.begin(),
+	    plan.nodes.end(),
+	    [packageIndex = node.packageIndex](const CookNode& candidate)
+	    {
+		    return candidate.packageIndex == packageIndex;
+	    });
 	ToolConsole::Progress(
 	    std::cout,
 	    "Cooking",
@@ -40,7 +40,7 @@ void ShaderCookProgressReporter::PrintPackageProgress(
 	    node.packageIndex + 1u,
 	    plan.packages.size(),
 	    package.packageId,
-	    {ToolConsole::Field("jobs", std::to_string(CountPackageJobs(package, settings)))});
+	    {ToolConsole::Field("jobs", std::to_string(packageJobCount))});
 }
 
 void ShaderCookProgressReporter::PrintStageProgress(

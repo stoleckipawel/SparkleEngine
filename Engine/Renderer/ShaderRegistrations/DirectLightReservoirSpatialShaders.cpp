@@ -14,6 +14,7 @@ class DirectLightReservoirSpatialCS final : public TGlobalShader<DirectLightRese
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, CurrentReservoirWeight, CurrentReservoirWeightTexture)
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, CurrentReservoirSurface, CurrentReservoirSurfaceTexture)
 	DIRECT_LIGHT_RESERVOIR_FRAME_SHADER_PARAMETERS
+	SHADER_PARAMETER_CBUFFER_NAMED(PerTemporal, PerTemporalConstantBufferData, PerTemporalConstantBufferData)
 	DIRECT_LIGHT_RESERVOIR_SURFACE_AND_LIGHTING_SHADER_PARAMETERS
 	END_SHADER_PARAMETER_STRUCT()
 };

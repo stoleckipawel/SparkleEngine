@@ -2,57 +2,17 @@
 
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Interop/RhiInteropService.h"
+#include "RHI/Public/Interop/RhiExternalFeatureHooks.h"
 
-#include <cstdint>
-#include <array>
-#include <string>
-#include <string_view>
-
+bool InitializeSharedStreamlineRuntime(ERhiBackendApi backendApi);
+RhiExternalFeatureHooks GetSharedStreamlineRhiHooks() noexcept;
 void ShutdownSharedStreamlineRuntime() noexcept;
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-#include <sl.h>
+	#include <sl.h>
 
-struct StreamlineBackendContract final
-{
-	bool Valid = false;
-	bool UsesD3D12 = false;
-	bool UsesVulkan = false;
-	std::string FailureReason;
-};
-
-struct StreamlineAdapterInfo final
-{
-	sl::AdapterInfo Info = {};
-	std::array<std::uint8_t, 8> LuidStorage = {};
-};
-
-struct SharedStreamlineRuntimeSession final
-{
-	bool Succeeded = false;
-	std::string FailureReason;
-};
-
-bool HasStreamlineNativeAdapterLuid(const RhiAdapterIdentity& adapter) noexcept;
-StreamlineBackendContract ValidateStreamlineBackend(
-    const RhiCapabilities& capabilities,
-    RhiNativeDeviceQueueInterop nativeInterop);
-sl::Result SetStreamlineNativeDevice(
-    const StreamlineBackendContract& backend,
-    RhiNativeDeviceQueueInterop nativeInterop) noexcept;
-StreamlineAdapterInfo BuildStreamlineAdapterInfo(
-    const StreamlineBackendContract& backend,
+bool IsStreamlineFeatureSupported(
+    sl::Feature feature,
     const RhiCapabilities& capabilities,
     RhiNativeDeviceQueueInterop nativeInterop) noexcept;
-std::string FormatStreamlineFailure(std::string_view operation, sl::Result result);
-bool UpgradePresentationInterfaceWithStreamline(void** nativeInterface, void*) noexcept;
-void FillStreamlinePreferences(
-    sl::Preferences& preferences,
-    const sl::Feature* features,
-    std::uint32_t featureCount,
-    sl::RenderAPI renderApi);
-SharedStreamlineRuntimeSession AcquireSharedStreamlineRuntime(
-    const StreamlineBackendContract& backend,
-    RhiNativeDeviceQueueInterop nativeInterop);
-void ReleaseSharedStreamlineRuntime() noexcept;
 #endif

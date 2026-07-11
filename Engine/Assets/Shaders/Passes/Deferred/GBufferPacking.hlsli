@@ -62,11 +62,6 @@ namespace GBufferPacking
 	{
 		return 0.0f.xxxx;
 	}
-
-	float2 PackSkyMotionVector()
-	{
-		return 0.0f.xx;
-	}
 }
 
 #endif

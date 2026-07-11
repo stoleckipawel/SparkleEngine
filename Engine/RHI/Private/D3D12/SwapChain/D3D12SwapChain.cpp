@@ -28,6 +28,7 @@ D3D12SwapChain::~D3D12SwapChain() noexcept
 {
 	ReleaseBuffers();
 	ReleaseRenderTargetHandles();
+	m_externalSwapChain.Reset();
 	m_swapChain.Reset();
 }
 
@@ -65,6 +66,34 @@ void D3D12SwapChain::Create()
 	DXGI_SWAP_CHAIN_FULLSCREEN_DESC swapChainFullsceenDesc{};
 	swapChainFullsceenDesc.Windowed = true;
 
+	ComPtr<IDXGIFactory7> externalFactory;
+	if (m_rhi.TryUpgradeExternalInterface(
+	        ERhiExternalInterfaceKind::PresentationFactory,
+	        m_rhi.GetDxgiFactory().Get(),
+	        IID_PPV_ARGS(externalFactory.ReleaseAndGetAddressOf())))
+	{
+		ComPtr<IDXGISwapChain1> externalSwapChain;
+		const HRESULT createResult = externalFactory->CreateSwapChainForHwnd(
+		    m_rhi.GetPresentationCommandQueue(),
+		    m_window->GetHWND(),
+		    &swapChainDesc,
+		    &swapChainFullsceenDesc,
+		    nullptr,
+		    externalSwapChain.ReleaseAndGetAddressOf());
+		if (SUCCEEDED(createResult) &&
+		    SUCCEEDED(externalSwapChain.As(&m_externalSwapChain)) &&
+		    m_rhi.TryResolveExternalNativeInterface(
+		        ERhiExternalInterfaceKind::PresentationSurface,
+		        m_externalSwapChain.Get(),
+		        IID_PPV_ARGS(m_swapChain.ReleaseAndGetAddressOf())))
+		{
+			m_rhi.NotifyExternalPresentationReady(true);
+			return;
+		}
+
+		m_externalSwapChain.Reset();
+	}
+
 	ComPtr<IDXGISwapChain1> swapChain;
 	CHECK(m_rhi.GetDxgiFactory()->CreateSwapChainForHwnd(
 	    m_rhi.GetCommandQueue().Get(),
@@ -72,9 +101,9 @@ void D3D12SwapChain::Create()
 	    &swapChainDesc,
 	    &swapChainFullsceenDesc,
 	    nullptr,
-	    &swapChain));
-
+	    swapChain.ReleaseAndGetAddressOf()));
 	CHECK(swapChain.As(&m_swapChain));
+	m_rhi.NotifyExternalPresentationReady(false);
 }
 
 void D3D12SwapChain::Resize()
@@ -91,38 +120,9 @@ void D3D12SwapChain::Resize()
 	UpdateFrameInFlightIndex();
 }
 
-bool D3D12SwapChain::UpgradeNativeInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept
-{
-	if (m_nativeInterfaceUpgraded)
-	{
-		return m_swapChain != nullptr;
-	}
-
-	if (callback == nullptr || m_swapChain == nullptr)
-	{
-		return false;
-	}
-
-	void* upgradedInterface = m_swapChain.Get();
-	if (!callback(&upgradedInterface, userData) || upgradedInterface == nullptr)
-	{
-		return false;
-	}
-
-	ComPtr<IDXGISwapChain3> upgradedSwapChain;
-	if (FAILED(static_cast<IUnknown*>(upgradedInterface)->QueryInterface(IID_PPV_ARGS(upgradedSwapChain.ReleaseAndGetAddressOf()))))
-	{
-		return false;
-	}
-
-	m_swapChain = std::move(upgradedSwapChain);
-	m_nativeInterfaceUpgraded = true;
-	return true;
-}
-
 void D3D12SwapChain::ResizeBuffersToWindow()
 {
-	CHECK(m_swapChain->ResizeBuffers(
+	CHECK(GetPresentationInterface()->ResizeBuffers(
 	    RhiFrameConstants::FramesInFlight,
 	    GetWindowWidth(),
 	    GetWindowHeight(),
@@ -141,7 +141,7 @@ void D3D12SwapChain::CreateRenderTargetViews()
 {
 	for (UINT i = 0; i < RhiFrameConstants::FramesInFlight; i++)
 	{
-		CHECK(m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_buffers[i].ReleaseAndGetAddressOf())));
+		CHECK(GetPresentationInterface()->GetBuffer(i, IID_PPV_ARGS(m_buffers[i].ReleaseAndGetAddressOf())));
 		m_buffers[i]->SetName(L"RHI_BackBuffer");
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
@@ -207,7 +207,12 @@ void D3D12SwapChain::Present()
 		m_rhi.GetDxgiFactory()->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
 		presentFlags = (allowTearing == TRUE) ? DXGI_PRESENT_ALLOW_TEARING : 0u;
 	}
-	CHECK(m_swapChain->Present(presentInterval, presentFlags));
+	CHECK(GetPresentationInterface()->Present(presentInterval, presentFlags));
+}
+
+IDXGISwapChain3* D3D12SwapChain::GetPresentationInterface() const noexcept
+{
+	return m_externalSwapChain != nullptr ? m_externalSwapChain.Get() : m_swapChain.Get();
 }
 
 void D3D12SwapChain::ReleaseBuffers()

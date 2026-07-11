@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Cooking/ShaderCookTypes.h"
-#include "ShaderCompileOptions.h"
 
 #include <cstdint>
 #include <string>
@@ -16,8 +15,6 @@ struct ShaderCacheKey final
 
 	static ShaderCacheKey Compute(
 		const ShaderCookPackageDesc& package,
-		const ShaderCookStageDesc& stage,
-		const ShaderCompileOptions& options,
 		std::uint64_t sourceHash,
 		std::uint64_t includeClosureHash,
 		std::uint64_t optionsHash,

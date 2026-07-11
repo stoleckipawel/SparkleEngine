@@ -2,7 +2,6 @@
 
 #include "Cooking/Cache/ShaderCacheKey.h"
 
-#include "Compiler/ShaderCompileProfile.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
@@ -16,8 +15,6 @@ std::string ShaderCacheKey::ToHex() const
 
 ShaderCacheKey ShaderCacheKey::Compute(
 	const ShaderCookPackageDesc& package,
-	const ShaderCookStageDesc& stage,
-	const ShaderCompileOptions& options,
 	const std::uint64_t sourceHash,
 	const std::uint64_t includeClosureHash,
 	const std::uint64_t optionsHash,
@@ -39,10 +36,6 @@ ShaderCacheKey ShaderCacheKey::Compute(
 	canonical += package.bindingLayoutId;
 	canonical += '|';
 	canonical += std::to_string(bindingLayoutHash);
-	canonical += '|';
-	canonical += GetShaderStagePrefix(stage.stage);
-	canonical += '|';
-	canonical += ShaderCompileProfile::BuildTargetProfile(options);
 	canonical += '|';
 	canonical += std::to_string(sourceHash);
 	canonical += '|';

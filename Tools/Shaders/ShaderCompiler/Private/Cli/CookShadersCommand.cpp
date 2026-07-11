@@ -73,7 +73,6 @@ void CookShadersCommand::PrintHelp(std::ostream& output)
 	       << "  --debug-info                Request backend debug information and symbol emission where supported.\n"
 	       << "  --disable-optimizations     Build shaders without backend optimization passes.\n"
 	       << "  --warnings-as-errors <on|off>  Treat shader warnings as hard errors. Defaults to on.\n"
-	       << "  --strip-reflection <on|off> Strip reflection data from final runtime binaries when supported.\n"
 	       << "  --strip-debug <on|off>      Strip embedded debug info from final runtime binaries when supported.\n";
 }
 
@@ -243,31 +242,6 @@ bool CookShadersCommand::TryParseArguments(
 			else
 			{
 				outErrorMessage = "Expected on|off after --warnings-as-errors";
-				return false;
-			}
-			++index;
-			continue;
-		}
-
-		if (args[index] == "--strip-reflection")
-		{
-			if (index + 1 >= args.size())
-			{
-				outErrorMessage = "Missing value after --strip-reflection";
-				return false;
-			}
-			const std::string_view value = args[index + 1];
-			if (value == "on" || value == "true")
-			{
-				outSettings.stripReflection = true;
-			}
-			else if (value == "off" || value == "false")
-			{
-				outSettings.stripReflection = false;
-			}
-			else
-			{
-				outErrorMessage = "Expected on|off after --strip-reflection";
 				return false;
 			}
 			++index;

@@ -35,7 +35,6 @@ std::uint64_t ShaderCompileOptionsHasher::Compute(const ShaderCompileOptions& op
 	canonical += options.EnableDebugInfo ? '1' : '0';
 	canonical += options.EnableOptimizations ? '1' : '0';
 	canonical += options.TreatWarningsAsErrors ? '1' : '0';
-	canonical += options.StripReflection ? '1' : '0';
 	canonical += options.StripDebugInfo ? '1' : '0';
 	canonical += '|';
 	appendPathKey(canonical, options.IncludeDir);

@@ -3,10 +3,10 @@
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Frame/Builders/PerFrameDataBuilder.h"
 #include "Frame/Core/FrameAssembly.h"
-#include "Frame/Core/FrameResolution.h"
 #include "Frame/RhiFrameConstants.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "FramePipeline/ReservoirHistoryResources.h"
+#include "Providers/RendererImageProviderStack.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
@@ -26,6 +26,12 @@ class FrameGraph;
 class RendererSystemRoot;
 struct ResolvedGpuTiming;
 struct RayTracingSceneFrameData;
+
+struct FrameResolutionExtents final
+{
+	RenderViewportExtent Render;
+	RenderViewportExtent Output;
+};
 
 class FramePipeline final
 {
@@ -119,5 +125,5 @@ class FramePipeline final
 	std::uint64_t m_referenceLightingStateKey = 0u;
 	std::uint64_t m_restirLightingSettingsKey = 0u;
 	std::uint64_t m_restirLightingSceneStateKey = 0u;
-	std::uint32_t m_imageProviderFrameGraphKey = 0;
+	ImageProviderGraphKey m_imageProviderFrameGraphKey = {};
 };

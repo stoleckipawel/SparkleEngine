@@ -178,7 +178,6 @@ namespace SparkleLauncher
 		cookRequest.ShaderEnableDebugInfo = request.ShaderEnableDebugInfo;
 		cookRequest.ShaderEnableOptimizations = request.ShaderEnableOptimizations;
 		cookRequest.ShaderWarningsAsErrors = request.ShaderWarningsAsErrors;
-		cookRequest.ShaderStripReflection = request.ShaderStripReflection;
 		cookRequest.ShaderStripDebugInfo = request.ShaderStripDebugInfo;
 		if (request.ShaderWriteDebugArtifacts)
 		{

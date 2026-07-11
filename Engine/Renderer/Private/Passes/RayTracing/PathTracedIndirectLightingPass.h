@@ -21,10 +21,6 @@ struct PathTracedIndirectLightingPassParameters : RayTracedSurfaceLightingPassPa
 {
 	ShaderRWTexture2D<void> IndirectDiffuse;
 	ShaderRWTexture2D<void> IndirectSpecular;
-	ShaderRWTexture2D<void> IndirectDiffuseAlbedo;
-	ShaderRWTexture2D<void> IndirectSpecularAlbedo;
-	ShaderRWTexture2D<void> IndirectMaterialGuide;
-	ShaderRWTexture2D<void> IndirectSpecularSampleGuide;
 	ShaderUniform<PathTracedLightingUniformData> PathTracedLightingConstants;
 
 	static void Describe(ShaderParameterStructBuilder<PathTracedIndirectLightingPassParameters>& builder);

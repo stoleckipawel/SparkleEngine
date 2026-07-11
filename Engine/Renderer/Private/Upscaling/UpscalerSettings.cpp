@@ -1,8 +1,6 @@
 #include "../PCH.h"
 #include "Upscaling/UpscalerSettings.h"
 
-#include <algorithm>
-
 ConsoleVariable<EUpscalerProviderKind> CVarUpscalerProvider(
     "r.Upscaler.Provider",
     EUpscalerProviderKind::NvidiaDlss,
@@ -12,43 +10,14 @@ ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode(
     EUpscalerQualityMode::NativeAA,
     "Renderer upscaler quality mode: 0=NativeAA, 1=Quality, 2=Balanced, 3=Performance, 4=UltraPerformance.");
 
-namespace
+bool IsExternalUpscalerEnabled() noexcept
 {
-	struct UpscalerRenderScale final
-	{
-		std::uint32_t Numerator = 1u;
-		std::uint32_t Denominator = 1u;
-	};
+	return CVarUpscalerProvider.Get() != EUpscalerProviderKind::Linear;
+}
 
-	UpscalerRenderScale GetDlssRenderScale(EUpscalerQualityMode qualityMode) noexcept
-	{
-		switch (qualityMode)
-		{
-			case EUpscalerQualityMode::Quality:
-				return {.Numerator = 2u, .Denominator = 3u}; // 66.7%, 1.5x upscale
-			case EUpscalerQualityMode::Balanced:
-				return {.Numerator = 58u, .Denominator = 100u}; // 58%, about 1.72x upscale
-			case EUpscalerQualityMode::Performance:
-				return {.Numerator = 1u, .Denominator = 2u}; // 50%, 2x upscale
-			case EUpscalerQualityMode::UltraPerformance:
-				return {.Numerator = 1u, .Denominator = 3u}; // 33.3%, 3x upscale
-			case EUpscalerQualityMode::NativeAA:
-			default:
-				return {.Numerator = 1u, .Denominator = 1u}; // 100%, native/DLAA
-		}
-	}
-
-	RenderViewportExtent ScaleExtent(RenderViewportExtent outputExtent, std::uint32_t numerator, std::uint32_t denominator) noexcept
-	{
-		if (!outputExtent.IsValid() || denominator == 0u)
-		{
-			return outputExtent;
-		}
-
-		return RenderViewportExtent{
-		    (std::max)(1u, (outputExtent.Width * numerator + denominator - 1u) / denominator),
-		    (std::max)(1u, (outputExtent.Height * numerator + denominator - 1u) / denominator)};
-	}
+std::uint32_t GetUpscalerProviderSelectionKey() noexcept
+{
+	return static_cast<std::uint32_t>(CVarUpscalerProvider.Get());
 }
 
 const char* UpscalerQualityModeToString(EUpscalerQualityMode mode) noexcept
@@ -68,10 +37,4 @@ const char* UpscalerQualityModeToString(EUpscalerQualityMode mode) noexcept
 	}
 
 	return "Unknown";
-}
-
-RenderViewportExtent ResolveUpscalerRenderExtent(RenderViewportExtent outputExtent, EUpscalerQualityMode qualityMode) noexcept
-{
-	const UpscalerRenderScale renderScale = GetDlssRenderScale(qualityMode);
-	return ScaleExtent(outputExtent, renderScale.Numerator, renderScale.Denominator);
 }

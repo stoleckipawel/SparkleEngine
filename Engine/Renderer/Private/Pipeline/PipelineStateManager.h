@@ -8,8 +8,8 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <typeindex>
 #include <unordered_map>
-#include <string_view>
 
 class RenderHardwareInterface;
 
@@ -63,11 +63,11 @@ class PipelineStateManager final
 
 	template <typename TPass> RuntimeStorageHolder<TPass>& GetOrCreateRuntimeStorageHolder() const noexcept
 	{
-		const std::string_view key = TPass::GetDefinition().PassName;
-		auto runtimeIt = m_runtimeStorageByPassName.find(key);
-		if (runtimeIt == m_runtimeStorageByPassName.end())
+		const std::type_index passType = typeid(TPass);
+		auto runtimeIt = m_runtimeStorageByPassType.find(passType);
+		if (runtimeIt == m_runtimeStorageByPassType.end())
 		{
-			runtimeIt = m_runtimeStorageByPassName.emplace(key, std::make_unique<RuntimeStorageHolder<TPass>>()).first;
+			runtimeIt = m_runtimeStorageByPassType.emplace(passType, std::make_unique<RuntimeStorageHolder<TPass>>()).first;
 		}
 
 		auto* typedHolder = static_cast<RuntimeStorageHolder<TPass>*>(runtimeIt->second.get());
@@ -79,5 +79,5 @@ class PipelineStateManager final
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	mutable CookedShaderPackageCache m_shaderPackages;
-	mutable std::unordered_map<std::string_view, std::unique_ptr<IRuntimeStorageHolder>> m_runtimeStorageByPassName;
+	mutable std::unordered_map<std::type_index, std::unique_ptr<IRuntimeStorageHolder>> m_runtimeStorageByPassType;
 };

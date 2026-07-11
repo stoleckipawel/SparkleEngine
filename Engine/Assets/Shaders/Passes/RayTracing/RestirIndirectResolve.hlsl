@@ -7,8 +7,8 @@ Texture2D SkyTexture;
 SamplerState SamplerLinearClamp;
 
 #include "Lighting/RestirIndirectReservoir.hlsli"
-#include "Lighting/SurfaceLighting.hlsli"
 #include "Lighting/IndirectLightingOutputs.hlsli"
+#include "Lighting/RayReconstructionGuides.hlsli"
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -16,6 +16,10 @@ SamplerState SamplerLinearClamp;
 	uint height = 0u;
 	IndirectDiffuse.GetDimensions(width, height);
 	const uint2 pixelCoord = dispatchThreadId.xy;
+	uint guideWidth = 0u;
+	uint guideHeight = 0u;
+	RayReconstructionRoughness.GetDimensions(guideWidth, guideHeight);
+	const bool writeRayReconstructionGuides = guideWidth == width && guideHeight == height;
 	if (pixelCoord.x >= width || pixelCoord.y >= height)
 	{
 		return;
@@ -28,13 +32,24 @@ SamplerState SamplerLinearClamp;
 	if (!surface.Valid)
 	{
 		IndirectLightingOutputs::Clear(pixelCoord, false);
+		if (writeRayReconstructionGuides)
+		{
+			RayReconstructionGuides::Clear(pixelCoord);
+		}
 		return;
 	}
 
-	IndirectLightingOutputs::WriteSurfaceGuides(pixelCoord, surface.GBuffer);
+	if (writeRayReconstructionGuides)
+	{
+		RayReconstructionGuides::WriteSurface(pixelCoord, surface.GBuffer, surface.PathSurface.ViewDirWorld);
+	}
 	if (!RestirIndirectReservoir::IsValid(reservoir))
 	{
-		IndirectLightingOutputs::ClearRadianceAndSpecularGuide(pixelCoord);
+		IndirectLightingOutputs::ClearRadiance(pixelCoord);
+		if (writeRayReconstructionGuides)
+		{
+			RayReconstructionGuides::ClearSpecularHitDistance(pixelCoord);
+		}
 		return;
 	}
 
@@ -47,5 +62,12 @@ SamplerState SamplerLinearClamp;
 	const float3 specular = specularSelected ? path.FinalContribution : 0.0f.xxx;
 	IndirectDiffuse[pixelCoord] = float4(diffuse, diffuseSelected ? 1.0f : 0.0f);
 	IndirectSpecular[pixelCoord] = float4(specular, specularSelected ? 1.0f : 0.0f);
-	IndirectLightingOutputs::WriteSpecularSampleGuide(pixelCoord, path, specularSelected);
+	if (writeRayReconstructionGuides)
+	{
+		RayReconstructionGuides::WriteSpecularHitDistance(
+		    pixelCoord,
+		    path,
+		    surface.PathSurface.PositionWorld,
+		    specularSelected);
+	}
 }

@@ -73,7 +73,6 @@ struct FrameGraphPassNode
 	EFrameGraphPassFlags flags = EFrameGraphPassFlags::None;
 	EFrameGraphPassFlags passKind = EFrameGraphPassFlags::None;
 	std::string diagnosticName;
-	std::string displayLabel;
 	std::string eventScopeLabel;
 	std::vector<PassResourceDeclaration> declarations;
 	std::vector<FrameGraphPassIndex> dependsOn;

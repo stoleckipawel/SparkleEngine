@@ -302,6 +302,14 @@ void VulkanRhi::CreateInstance() noexcept
 	{
 		(void)vkEnumerateInstanceVersion(&loaderApiVersion);
 	}
+	if (loaderApiVersion < VK_API_VERSION_1_3)
+	{
+		Diagnostics::Fail(
+		    g_vulkanRhiLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Vulkan 1.3 is required by the engine's SPIR-V 1.6 runtime shader contract.");
+	}
 
 	std::vector<const char*> instanceExtensions;
 	if (IsInstanceExtensionAvailable(VK_KHR_SURFACE_EXTENSION_NAME))
@@ -353,7 +361,7 @@ void VulkanRhi::CreateInstance() noexcept
 	    .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
 	    .pEngineName = "SparkleEngine",
 	    .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-	    .apiVersion = std::min(loaderApiVersion, VK_API_VERSION_1_3)};
+	    .apiVersion = VK_API_VERSION_1_3};
 
 	const VkInstanceCreateInfo createInfo{
 	    .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -401,10 +409,11 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 		candidate.Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		candidate.Features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 		vkGetPhysicalDeviceProperties(device, &candidate.Properties);
-		if (candidate.Properties.apiVersion >= VK_API_VERSION_1_3)
+		if (candidate.Properties.apiVersion < VK_API_VERSION_1_3)
 		{
-			candidate.Features.pNext = &candidate.Features13;
+			continue;
 		}
+		candidate.Features.pNext = &candidate.Features13;
 		vkGetPhysicalDeviceFeatures2(device, &candidate.Features);
 		candidate.GraphicsQueueFamilyIndex = FindGraphicsQueueFamily(device);
 		if (candidate.GraphicsQueueFamilyIndex == UINT32_MAX)
@@ -417,7 +426,11 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 
 	if (candidates.empty())
 	{
-		Diagnostics::Fail(g_vulkanRhiLogger, __FILE__, __LINE__, "No Vulkan physical device exposes a graphics queue family.");
+		Diagnostics::Fail(
+		    g_vulkanRhiLogger,
+		    __FILE__,
+		    __LINE__,
+		    "No Vulkan 1.3 physical device exposes a graphics queue family.");
 	}
 
 	std::sort(

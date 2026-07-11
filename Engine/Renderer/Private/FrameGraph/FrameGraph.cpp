@@ -27,7 +27,7 @@ FrameGraph::~FrameGraph()
 	ReleaseExternalResourceViews();
 }
 
-FrameGraphPlan FrameGraph::Compile()
+const FrameGraphPlan& FrameGraph::Compile()
 {
 	SyncImportedResourceAccesses();
 	BuildTransientMaterializationPlan(m_compiledPlan);

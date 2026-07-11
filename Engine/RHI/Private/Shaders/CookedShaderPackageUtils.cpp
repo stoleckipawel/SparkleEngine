@@ -5,6 +5,7 @@
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "ShaderParameters/PassParameterLayout.h"
+#include "Shaders/CookedShaderPackageContract.h"
 
 #include <format>
 #include <string>
@@ -116,4 +117,17 @@ const char* CookedShaderBinaryFormatToString(CookedShaderBinaryFormat format) no
 	}
 
 	return "unknown";
+}
+
+std::string_view GetRuntimeShaderCodegenTarget(CookedShaderBinaryFormat format) noexcept
+{
+	switch (format)
+	{
+		case CookedShaderBinaryFormat::Dxil:
+			return CookedShaderPackageContract::DxilRuntimeCodegenTarget;
+		case CookedShaderBinaryFormat::SpirV:
+			return CookedShaderPackageContract::SpirVRuntimeCodegenTarget;
+	}
+
+	return {};
 }

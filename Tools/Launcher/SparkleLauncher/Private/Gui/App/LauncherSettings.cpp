@@ -158,11 +158,6 @@ namespace SparkleLauncher
 		return m_shaderWarningsAsErrors;
 	}
 
-	bool LauncherSettings::ShaderStripReflection() const
-	{
-		return m_shaderStripReflection;
-	}
-
 	bool LauncherSettings::ShaderStripDebugInfo() const
 	{
 		return m_shaderStripDebugInfo;
@@ -414,16 +409,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_shaderWarningsAsErrors = enabled;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetShaderStripReflection(bool enabled)
-	{
-		if (m_shaderStripReflection == enabled)
-		{
-			return;
-		}
-		m_shaderStripReflection = enabled;
 		emit SettingsChanged();
 	}
 

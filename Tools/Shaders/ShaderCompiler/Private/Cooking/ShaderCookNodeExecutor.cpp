@@ -5,11 +5,10 @@
 #include "Backend/IShaderBackend.h"
 #include "Backend/ShaderBackendPool.h"
 #include "Cooking/Cache/IShaderArtifactStore.h"
-#include "Cooking/CookedStageBuildFinalizer.h"
 #include "Cooking/ShaderCookDiagnostics.h"
 #include "Cooking/ShaderCookProgressReporter.h"
+#include "Cooking/ShaderCookSettings.h"
 #include "Cooking/ShaderDebugArtifactWriter.h"
-#include "Cooking/ShaderPackageCooker.h"
 #include "Cooking/StageCompiler.h"
 #include "ShaderDebugArtifactSet.h"
 #include "Verification/ShaderParameterStructCookVerifier.h"
@@ -19,7 +18,6 @@
 
 bool ShaderCookNodeExecutor::Execute(
     const ShaderPackageCookSettings& settings,
-    bool writeDebugArtifacts,
     const CookNode& node,
     ShaderCookPipelinePlan& plan,
     ShaderBackendPool& backendPool,
@@ -27,6 +25,7 @@ bool ShaderCookNodeExecutor::Execute(
     ShaderCookExecutionCounters& counters,
     std::string& outErrorMessage)
 {
+	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	IShaderBackend* backend = backendPool.Find(node.backendName);
 	if (backend == nullptr)
 	{
@@ -36,7 +35,7 @@ bool ShaderCookNodeExecutor::Execute(
 
 	if (plan.packageContexts[node.packageIndex].compiledStages.empty())
 	{
-		ShaderCookProgressReporter::PrintPackageProgress(plan, settings, node);
+		ShaderCookProgressReporter::PrintPackageProgress(plan, node);
 	}
 
 	bool completedFromCache = false;
@@ -79,7 +78,7 @@ bool ShaderCookNodeExecutor::Execute(
 	{
 		return false;
 	}
-	CookedStageBuildFinalizer::ApplyNodeMetadata(
+	ApplyNodeMetadata(
 	    node,
 	    settings.useCache ? (writeDebugArtifacts ? "disabled-debug-artifacts" : "miss") : "disabled",
 	    compiledStage);
@@ -118,7 +117,7 @@ bool ShaderCookNodeExecutor::TryCompleteFromCache(
 		if (artifactStore.TryGet(node.cacheKey, compiledStage, cacheLookupError))
 		{
 			ShaderCookProgressReporter::PrintStageProgress(plan, counters, node, backend.GetBackendName(), "cache-hit");
-			CookedStageBuildFinalizer::ApplyNodeMetadata(node, "hit", compiledStage);
+			ApplyNodeMetadata(node, "hit", compiledStage);
 			if (!ShaderParameterStructCookVerifier::Verify(settings, node, compiledStage, nullptr, outErrorMessage))
 			{
 				return false;
@@ -176,9 +175,7 @@ bool ShaderCookNodeExecutor::WriteDebugArtifacts(
     const ShaderDebugArtifactSet& debugArtifacts,
     std::string& outErrorMessage)
 {
-	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
-
-	if (writeDebugArtifacts &&
+	if (!settings.debugArtifactDirectory.empty() &&
 	    !ShaderDebugArtifactWriter::Write(
 	        settings.debugArtifactDirectory,
 	        *node.package,
@@ -218,6 +215,32 @@ bool ShaderCookNodeExecutor::StoreCompiledStage(
 
 	outErrorMessage.clear();
 	return true;
+}
+
+void ShaderCookNodeExecutor::ApplyNodeMetadata(
+    const CookNode& node,
+    std::string_view cacheStatus,
+    CookedStageBuild& compiledStage)
+{
+	if (compiledStage.codegenTarget.empty())
+	{
+		compiledStage.codegenTarget.assign(GetShaderTargetName(node.compileOptions.Target));
+	}
+	if (compiledStage.shaderBlobId == 0)
+	{
+		compiledStage.shaderBlobId = BuildShaderBlobId(
+		    node.package->packageId,
+		    compiledStage.entryPoint,
+		    {},
+		    compiledStage.backendName,
+		    compiledStage.codegenTarget,
+		    compiledStage.format);
+	}
+	compiledStage.sourceHash = node.sourceHash;
+	compiledStage.includeClosureHash = node.includeClosureHash;
+	compiledStage.optionsHash = node.optionsHash;
+	compiledStage.cacheKey = node.cacheKey.value;
+	compiledStage.cacheStatus.assign(cacheStatus);
 }
 
 void ShaderCookNodeExecutor::RecordCompletedStage(

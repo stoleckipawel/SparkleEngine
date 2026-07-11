@@ -51,6 +51,7 @@ void DirectLightReservoirSpatialPass::SetParameters(
     const PassRuntimeServices& passRuntimeServices) const
 {
 	DirectLightReservoirPassCommon::SetParameters(*parameters, frame, viewData, passRuntimeServices);
+	parameters->PerTemporal = viewData.perTemporalData;
 }
 
 void DirectLightReservoirSpatialPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

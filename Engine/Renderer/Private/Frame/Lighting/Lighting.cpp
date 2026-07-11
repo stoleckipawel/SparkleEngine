@@ -8,8 +8,10 @@
 #include "Frame/Lighting/ReferenceLighting.h"
 #include "Frame/Lighting/ReferenceLightingSample.h"
 #include "Frame/Lighting/RestirLighting.h"
+#include "Frame/Lighting/RestirRayReconstruction.h"
 #include "Frame/Lighting/Sky.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
+#include "RayReconstruction/RayReconstructionSettings.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
 void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameAssemblyResourceLayout& resources)
@@ -17,7 +19,10 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	const LightingMode lightingMode = GetLightingMode();
 	const PixelFormat radianceFormat =
 	    lightingMode == LightingMode::ReferencePathTraced ? PixelFormat::R32G32B32A32_Float : FrameRenderFormats::SceneColor;
-	resources.Transient.Lighting = CreateLightingRenderTargets(builder, sceneExtent, radianceFormat);
+	const bool createRayReconstructionGuides =
+	    lightingMode == LightingMode::RestirPathTraced && IsRayReconstructionEnabled();
+	resources.Transient.Lighting =
+	    CreateLightingRenderTargets(builder, sceneExtent, radianceFormat, createRayReconstructionGuides);
 	AddLightingTargetClearPass(builder, resources.Transient.Lighting);
 
 	switch (lightingMode)
@@ -39,12 +44,23 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 
 	switch (lightingMode)
 	{
-		case LightingMode::RestirPathTraced:
-		default:
-			FinalizeRestirLightingPasses(resources);
-			break;
 		case LightingMode::ReferencePathTraced:
 			FinalizeReferenceLightingPasses(builder, lightingSample, resources);
 			break;
+		case LightingMode::RestirPathTraced:
+		default:
+			break;
+	}
+}
+
+void AddLightingReconstructionPasses(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    RenderViewportExtent outputExtent,
+    FrameAssemblyResourceLayout& resources)
+{
+	if (GetLightingMode() == LightingMode::RestirPathTraced)
+	{
+		AddRestirRayReconstructionPass(builder, sceneExtent, outputExtent, resources);
 	}
 }

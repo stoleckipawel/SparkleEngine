@@ -82,6 +82,7 @@ struct RenderViewportExtent
 	std::uint32_t Height = 0;
 
 	constexpr bool IsValid() const noexcept { return Width > 0 && Height > 0; }
+	constexpr bool operator==(const RenderViewportExtent&) const noexcept = default;
 };
 
 struct RenderViewSelectionToken

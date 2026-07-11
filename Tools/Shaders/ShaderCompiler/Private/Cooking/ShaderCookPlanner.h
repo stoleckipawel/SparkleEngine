@@ -1,11 +1,9 @@
 #pragma once
 
 #include "Cooking/ShaderCookTypes.h"
-#include "Cooking/ShaderPackageCooker.h"
+#include "Cooking/ShaderCookSettings.h"
 #include "ShaderCompileOptions.h"
-#include "Shaders/Authoring/ShaderParameterStruct.h"
 
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -17,9 +15,6 @@ class ShaderCookPlanner final
 	static std::vector<ShaderCookPackageDesc> BuildPackages(
 	    const ShaderPackageCookSettings& settings,
 	    std::string& outErrorMessage);
-	static std::optional<ShaderParameterStructDescriptor> FindParameterStructDescriptor(
-	    const ShaderCompileOptions& options);
-
   private:
 	enum class CookSelectionKind
 	{

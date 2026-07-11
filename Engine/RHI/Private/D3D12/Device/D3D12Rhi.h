@@ -8,6 +8,7 @@
 #include "Frame/RhiFrameConstants.h"
 #include "D3D12/RayTracing/D3D12NvapiRayTracingProvider.h"
 #include "Device/RenderHardwareInterface.h"
+#include "Interop/RhiExternalFeatureHooks.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -22,7 +23,7 @@ class D3D12GpuMemoryAllocator;
 class D3D12Rhi final
 {
   public:
-	explicit D3D12Rhi() noexcept;
+	explicit D3D12Rhi(RhiExternalFeatureHooks externalFeatureHooks = {}) noexcept;
 
 	~D3D12Rhi() noexcept;
 
@@ -63,6 +64,7 @@ class D3D12Rhi final
 	const ComPtr<IDXGIAdapter1>& GetAdapter() const noexcept;
 	const ComPtr<ID3D12Device10>& GetDevice() const noexcept;
 	const ComPtr<ID3D12CommandQueue>& GetCommandQueue() const noexcept;
+	ID3D12CommandQueue* GetPresentationCommandQueue() const noexcept;
 	const ComPtr<ID3D12CommandAllocator>& GetCommandAllocator(uint32_t frameInFlightIndex) const noexcept;
 	const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList(uint32_t frameInFlightIndex) const noexcept;
 	const ComPtr<ID3D12Fence1>& GetFence() const noexcept;
@@ -73,6 +75,17 @@ class D3D12Rhi final
 	const D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() const noexcept;
 	D3D12GpuMemoryAllocator& GetMemoryAllocator() noexcept;
 	const D3D12GpuMemoryAllocator& GetMemoryAllocator() const noexcept;
+	bool TryUpgradeExternalInterface(
+	    ERhiExternalInterfaceKind kind,
+	    IUnknown* nativeInterface,
+	    REFIID requestedInterface,
+	    void** upgradedInterface) noexcept;
+	bool TryResolveExternalNativeInterface(
+	    ERhiExternalInterfaceKind kind,
+	    IUnknown* externalInterface,
+	    REFIID requestedInterface,
+	    void** nativeInterface) noexcept;
+	void NotifyExternalPresentationReady(bool ready) noexcept;
 
   private:
 	void SelectAdapter() noexcept;
@@ -85,6 +98,7 @@ class D3D12Rhi final
 	void CreateCommandAllocators();
 	void CreateCommandLists();
 	void CreateFenceAndEvent();
+	void DisableExternalFeatureHooks() noexcept;
 
 #if ENGINE_GPU_VALIDATION
 	std::unique_ptr<D3D12DebugLayer> m_debugLayer;
@@ -93,9 +107,11 @@ class D3D12Rhi final
 	ComPtr<IDXGIFactory7> m_dxgiFactory = nullptr;
 	ComPtr<IDXGIAdapter1> m_adapter = nullptr;
 	ComPtr<ID3D12Device10> m_device = nullptr;
+	ComPtr<ID3D12Device10> m_externalDevice = nullptr;
 	D3D12NvapiRayTracingProvider m_nvapiRayTracingProvider;
 	std::unique_ptr<D3D12GpuMemoryAllocator> m_memoryAllocator;
 	ComPtr<ID3D12CommandQueue> m_cmdQueue = nullptr;
+	ComPtr<ID3D12CommandQueue> m_externalCommandQueue = nullptr;
 	ComPtr<ID3D12CommandAllocator> m_cmdAllocator[RhiFrameConstants::FramesInFlight] = {};
 	ComPtr<ID3D12GraphicsCommandList7> m_cmdList[RhiFrameConstants::FramesInFlight] = {};
 	uint32_t m_currentFrameIndex = 0;
@@ -106,4 +122,6 @@ class D3D12Rhi final
 	HANDLE m_fenceEvent = nullptr;
 	D3D_FEATURE_LEVEL m_desiredD3DFeatureLevel = D3D_FEATURE_LEVEL_12_1;
 	RhiRayTracingCapabilities m_rayTracingCapabilities = {};
+	RhiExternalFeatureHooks m_externalFeatureHooks = {};
+	bool m_externalFeatureHooksActive = false;
 };

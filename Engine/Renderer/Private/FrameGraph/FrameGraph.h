@@ -125,7 +125,7 @@ class FrameGraph
 
 	void Setup(const FrameContext& frame);
 
-	FrameGraphPlan Compile();
+	const FrameGraphPlan& Compile();
 
 	void Execute(
 	    const FrameGraphPlan& plan,

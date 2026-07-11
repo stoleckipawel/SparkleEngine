@@ -16,6 +16,7 @@ class MaterialCacheManager;
 class PerViewDataBuilder;
 class PipelineStateManager;
 class RenderCamera;
+class RendererBackendSystem;
 class RenderDeviceServices;
 class RenderHardwareInterface;
 class RendererMemoryMonitor;
@@ -46,8 +47,8 @@ class RendererSystemRoot final
 	Window& GetWindow() noexcept { return *m_window; }
 	const Window& GetWindow() const noexcept { return *m_window; }
 
-	RenderDeviceServices& GetBackend() noexcept { return *m_backend; }
-	const RenderDeviceServices& GetBackend() const noexcept { return *m_backend; }
+	RenderDeviceServices& GetBackend() noexcept;
+	const RenderDeviceServices& GetBackend() const noexcept;
 	bool HasBackend() const noexcept { return m_backend != nullptr; }
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
@@ -80,13 +81,12 @@ class RendererSystemRoot final
   private:
 	void InitializeCoreSystems() noexcept;
 	void InitializeSceneSystems(LevelManager& levelManager) noexcept;
-	void InitializeImageProviders(RenderHardwareInterface& renderHardware) noexcept;
 
 	Timer* m_timer = nullptr;
 	GameScene* m_gameScene = nullptr;
 	Window* m_window = nullptr;
 
-	std::unique_ptr<RenderDeviceServices> m_backend;
+	std::unique_ptr<RendererBackendSystem> m_backend;
 	std::unique_ptr<PipelineStateManager> m_pipelineStateManager;
 	std::unique_ptr<RendererMemoryMonitor> m_memoryMonitor;
 	std::unique_ptr<GPUMeshCache> m_gpuMeshCache;

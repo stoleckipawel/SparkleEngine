@@ -41,8 +41,6 @@ class D3D12SwapChain final
 
 	void Resize();
 
-	bool UpgradeNativeInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept;
-
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(UINT index) const { return m_rtvHandles[index].GetCPU(); }
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return m_rtvHandles[m_frameInFlightIndex].GetCPU(); }
@@ -51,7 +49,7 @@ class D3D12SwapChain final
 
 	UINT GetFrameInFlightIndex() const { return m_frameInFlightIndex; }
 
-	void UpdateFrameInFlightIndex() { m_frameInFlightIndex = m_swapChain->GetCurrentBackBufferIndex(); }
+	void UpdateFrameInFlightIndex() { m_frameInFlightIndex = GetPresentationInterface()->GetCurrentBackBufferIndex(); }
 
 	RhiViewport GetDefaultViewport() const;
 
@@ -75,15 +73,16 @@ class D3D12SwapChain final
 	void Create();
 	void ReleaseBuffers();
 	void ReleaseRenderTargetHandles() noexcept;
+	IDXGISwapChain3* GetPresentationInterface() const noexcept;
 
 	D3D12Rhi& m_rhi;
 	UINT m_frameInFlightIndex = 0;
 	ComPtr<IDXGISwapChain3> m_swapChain = nullptr;
+	ComPtr<IDXGISwapChain3> m_externalSwapChain = nullptr;
 	ComPtr<ID3D12Resource2> m_buffers[RhiFrameConstants::FramesInFlight];
 	D3D12DescriptorHandle m_rtvHandles[RhiFrameConstants::FramesInFlight];
 	PixelFormat m_backBufferFormat = PixelFormat::Unknown;
 	HANDLE m_waitableObject = nullptr;
-	bool m_nativeInterfaceUpgraded = false;
 	Window* m_window = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 };

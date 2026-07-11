@@ -3,9 +3,14 @@
 
 namespace SceneDepthUtils
 {
+	bool IsSkyDeviceZ(float deviceZ)
+	{
+		return !(deviceZ > 0.0f);
+	}
+
 	float LinearizeDeviceZ(float deviceZ, float nearZ, float farZ)
 	{
-		return deviceZ > 0.0f ? nearZ / deviceZ : farZ;
+		return IsSkyDeviceZ(deviceZ) ? farZ : nearZ / deviceZ;
 	}
 
 	float DeviceZFromLinearDepth(float sceneDepth, float nearZ)

@@ -1,10 +1,8 @@
 #include "Resources/ConstantBuffers.hlsli"
-#include "Passes/Deferred/GBufferUtils.hlsli"
-#include "Lighting/SurfaceLighting.hlsli"
 #include "Lighting/IndirectLightingOutputs.hlsli"
 #include "RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
-#include "RayTracing/PathLighting.hlsli"
 #include "RayTracing/GBufferPathSurface.hlsli"
+#include "RayTracing/PathLighting.hlsli"
 #include "RayTracing/PathTracedLightingUniform.hlsli"
 
 Texture2D SkyTexture;
@@ -34,13 +32,11 @@ void ClearPathTracedIndirectLightingPixel(uint2 pixelCoord)
 		ClearPathTracedIndirectLightingPixel(pixelCoord);
 		return;
 	}
-	const GBufferData gBuffer = primarySurface.GBuffer;
 	const RayTracingPathTrace::TraceSettings traceSettings =
 	    RayTracingPathTrace::BuildSurfaceTraceSettings(PathTracedLightingNormalBias, PathTracedLightingMaxDistance);
 
 	float3 indirectDiffuse = 0.0f.xxx;
 	float3 indirectSpecular = 0.0f.xxx;
-	RayTracingPathLighting::Result guidePath = (RayTracingPathLighting::Result) 0;
 	const uint sampleCount = max(PathTracedLightingSamplesPerPixel, 1u);
 	[loop] for (uint sampleIndex = 0u; sampleIndex < sampleCount; ++sampleIndex)
 	{
@@ -53,10 +49,6 @@ void ClearPathTracedIndirectLightingPixel(uint2 pixelCoord)
 		    RayTracingPathSampling::SpecularSampleModeStochasticGGX,
 		    PathTracedLightingBounceCount,
 		    traceSettings);
-		if (sampleIndex == 0u)
-		{
-			guidePath = path;
-		}
 		if (path.PrimaryLobe == RayTracingPathSample::LobeDiffuse)
 		{
 			indirectDiffuse += path.FinalContribution;
@@ -70,10 +62,6 @@ void ClearPathTracedIndirectLightingPixel(uint2 pixelCoord)
 	const float invSampleCount = rcp(float(sampleCount));
 	indirectDiffuse *= invSampleCount;
 	indirectSpecular *= invSampleCount;
-	IndirectLightingOutputs::WriteSurfaceGuides(pixelCoord, gBuffer);
-	const bool specularGuide = guidePath.PrimaryLobe == RayTracingPathSample::LobeSpecular;
-
 	IndirectDiffuse[pixelCoord] = float4(indirectDiffuse, 1.0f);
 	IndirectSpecular[pixelCoord] = float4(indirectSpecular, 1.0f);
-	IndirectLightingOutputs::WriteSpecularSampleGuide(pixelCoord, guidePath, specularGuide);
 }

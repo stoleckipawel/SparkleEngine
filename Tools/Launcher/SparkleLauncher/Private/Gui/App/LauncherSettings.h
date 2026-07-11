@@ -35,7 +35,6 @@ namespace SparkleLauncher
 		bool ShaderEnableDebugInfo() const;
 		bool ShaderEnableOptimizations() const;
 		bool ShaderWarningsAsErrors() const;
-		bool ShaderStripReflection() const;
 		bool ShaderStripDebugInfo() const;
 		bool ShaderWriteDebugArtifacts() const;
 		bool ForceConfigure() const;
@@ -58,7 +57,6 @@ namespace SparkleLauncher
 		void SetShaderEnableDebugInfo(bool enabled);
 		void SetShaderEnableOptimizations(bool enabled);
 		void SetShaderWarningsAsErrors(bool enabled);
-		void SetShaderStripReflection(bool enabled);
 		void SetShaderStripDebugInfo(bool enabled);
 		void SetLaunchBackend(const QString& backend);
 		void SetLaunchTarget(const QString& target);
@@ -100,7 +98,6 @@ namespace SparkleLauncher
 		bool m_shaderEnableDebugInfo = false;
 		bool m_shaderEnableOptimizations = true;
 		bool m_shaderWarningsAsErrors = true;
-		bool m_shaderStripReflection = false;
 		bool m_shaderStripDebugInfo = true;
 		bool m_shaderWriteDebugArtifacts = false;
 		bool m_forceConfigure = false;

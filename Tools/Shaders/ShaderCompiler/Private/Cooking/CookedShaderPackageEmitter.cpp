@@ -4,7 +4,7 @@
 
 #include "Cooking/CookedPackageWriter.h"
 #include "Cooking/CookedRegistryWriter.h"
-#include "Cooking/ShaderPackageCooker.h"
+#include "Cooking/ShaderCookResult.h"
 #include "Cooking/ShaderRecookSignal.h"
 
 bool CookedShaderPackageEmitter::Emit(

@@ -13,10 +13,10 @@ struct RestirIndirectResolvePassParameters : RestirIndirectScenePassParameters
 	ShaderTexture2D<void> CurrentReservoirWeightTexture;
 	ShaderRWTexture2D<void> IndirectDiffuse;
 	ShaderRWTexture2D<void> IndirectSpecular;
-	ShaderRWTexture2D<void> IndirectDiffuseAlbedo;
-	ShaderRWTexture2D<void> IndirectSpecularAlbedo;
-	ShaderRWTexture2D<void> IndirectMaterialGuide;
-	ShaderRWTexture2D<void> IndirectSpecularSampleGuide;
+	ShaderRWTexture2D<void> RayReconstructionDiffuseAlbedo;
+	ShaderRWTexture2D<void> RayReconstructionSpecularAlbedo;
+	ShaderRWTexture2D<void> RayReconstructionRoughness;
+	ShaderRWTexture2D<void> RayReconstructionSpecularHitDistance;
 	static void Describe(ShaderParameterStructBuilder<RestirIndirectResolvePassParameters>& builder);
 };
 

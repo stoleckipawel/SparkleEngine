@@ -254,7 +254,8 @@ class VulkanBindingLayoutCompilerImpl final
 		for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size() && reflectionIndex < binaryRecords.size(); ++reflectionIndex)
 		{
 			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
-			if (binaryRecord.Format != CookedShaderBinaryFormat::SpirV || !HasAnyShaderStageMask(bindingRecord.VisibilityMask, ToShaderStageMask(binaryRecord.Stage)))
+			if (!shaderPackage.IsRuntimeBinary(binaryRecord, CookedShaderBinaryFormat::SpirV) ||
+			    !HasAnyShaderStageMask(bindingRecord.VisibilityMask, ToShaderStageMask(binaryRecord.Stage)))
 			{
 				continue;
 			}

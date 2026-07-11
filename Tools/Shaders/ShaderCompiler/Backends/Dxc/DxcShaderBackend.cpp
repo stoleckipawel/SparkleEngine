@@ -274,14 +274,11 @@ void DxcShaderBackend::BuildCompileArguments(
 		outArgs.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);
 	}
 
-	// -Qstrip_reflect / -Qstrip_debug are DXIL-only DXC flags; SPIR-V mode
-	// rejects them, so only emit them when targeting DXIL.
+	// Cooked packages serialize typed reflection separately, so runtime DXIL
+	// does not need the embedded reflection payload. Both flags are DXIL-only.
 	if (!IsSpirVTarget(options.Target))
 	{
-		if (options.StripReflection)
-		{
-			outArgs.push_back(L"-Qstrip_reflect");
-		}
+		outArgs.push_back(L"-Qstrip_reflect");
 		if (options.StripDebugInfo)
 		{
 			outArgs.push_back(L"-Qstrip_debug");
@@ -307,6 +304,20 @@ void DxcShaderBackend::BuildCompileArguments(
 	if (IsSpirVTarget(options.Target))
 	{
 		outArgs.push_back(L"-spirv");
+		switch (options.Target)
+		{
+			case ShaderTarget::SpirV14:
+				outArgs.push_back(L"-fspv-target-env=vulkan1.1spirv1.4");
+				break;
+			case ShaderTarget::SpirV15:
+				outArgs.push_back(L"-fspv-target-env=vulkan1.2");
+				break;
+			case ShaderTarget::SpirV16:
+				outArgs.push_back(L"-fspv-target-env=vulkan1.3");
+				break;
+			default:
+				break;
+		}
 		if (HasCookedShaderPackageFeature(options.PackageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery))
 		{
 			outArgs.push_back(L"-fspv-extension=SPV_KHR_ray_query");

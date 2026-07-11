@@ -55,7 +55,8 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
     Window& window,
     ERhiBackendApi backendApi,
-    PixelFormat backBufferFormat) noexcept
+    PixelFormat backBufferFormat,
+    RhiExternalFeatureHooks externalFeatureHooks) noexcept
 {
 	ValidateBackBufferFormat(backBufferFormat);
 
@@ -64,7 +65,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 	{
 		case ERhiBackendApi::D3D12:
 		#if SPARKLE_RHI_WITH_D3D12
-			services->m_backend = CreateD3D12RenderDeviceServices(window, backBufferFormat);
+			services->m_backend = CreateD3D12RenderDeviceServices(window, backBufferFormat, externalFeatureHooks);
 			break;
 		#else
 			FailUnsupportedRhiBackend(backendApi);
@@ -72,7 +73,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 		#endif
 		case ERhiBackendApi::Vulkan:
 		#if SPARKLE_RHI_WITH_VULKAN
-			services->m_backend = CreateVulkanRenderDeviceServices(window, backBufferFormat);
+			services->m_backend = CreateVulkanRenderDeviceServices(window, backBufferFormat, externalFeatureHooks);
 			break;
 		#else
 			FailUnsupportedRhiBackend(backendApi);

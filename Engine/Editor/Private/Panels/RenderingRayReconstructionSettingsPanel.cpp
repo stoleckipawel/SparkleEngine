@@ -16,10 +16,10 @@ void DrawRayReconstructionSettingsSection(
 
 	static constexpr ComboOption<EngineRayReconstructionMode> rayReconstructionModeOptions[] = {
 	    {"Off", EngineRayReconstructionMode::Off},
-	    {"NVIDIA DLRR", EngineRayReconstructionMode::NvidiaDlrr},
+	    {"NVIDIA DLSS Ray Reconstruction", EngineRayReconstructionMode::NvidiaDlssRayReconstruction},
 	};
 
-	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlrr ray reconstruction indirect specular diffuse") ||
+	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlss ray reconstruction indirect specular diffuse") ||
 	    !BeginSettingsCategory("Ray Reconstruction"))
 	{
 		return;

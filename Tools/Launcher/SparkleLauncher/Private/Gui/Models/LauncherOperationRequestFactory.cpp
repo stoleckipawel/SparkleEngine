@@ -98,7 +98,6 @@ namespace SparkleLauncher
 		request.ShaderEnableDebugInfo = settings.ShaderEnableDebugInfo();
 		request.ShaderEnableOptimizations = settings.ShaderEnableOptimizations();
 		request.ShaderWarningsAsErrors = settings.ShaderWarningsAsErrors();
-		request.ShaderStripReflection = settings.ShaderStripReflection();
 		request.ShaderStripDebugInfo = settings.ShaderStripDebugInfo();
 		request.ShaderWriteDebugArtifacts = settings.ShaderWriteDebugArtifacts();
 		request.ShaderDebugArtifactDirectory = settings.ShaderWriteDebugArtifacts() ?

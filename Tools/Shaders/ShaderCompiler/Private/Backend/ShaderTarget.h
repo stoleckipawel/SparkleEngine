@@ -1,9 +1,12 @@
 #pragma once
 
-#include <cstdint>
+#include "RHI/Public/Shaders/CookedShaderPackageContract.h"
 
-// Backend target families.
-// Today all Dxil* and SpirV* values use the global shader-model setting.
+#include <cstdint>
+#include <string_view>
+
+// Backend target families. DXIL targets select their corresponding shader
+// model; SPIR-V targets select their corresponding SPIR-V environment.
 enum class ShaderTarget : std::uint16_t
 {
 	DxilSm60 = 0,
@@ -49,3 +52,10 @@ constexpr const char* GetShaderTargetName(ShaderTarget target) noexcept
 	}
 	return "Unknown";
 }
+
+static_assert(
+    std::string_view{GetShaderTargetName(ShaderTarget::DxilSm66)} ==
+    CookedShaderPackageContract::DxilRuntimeCodegenTarget);
+static_assert(
+    std::string_view{GetShaderTargetName(ShaderTarget::SpirV16)} ==
+    CookedShaderPackageContract::SpirVRuntimeCodegenTarget);

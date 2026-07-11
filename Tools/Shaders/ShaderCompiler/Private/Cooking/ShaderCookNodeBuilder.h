@@ -15,7 +15,6 @@ class ShaderCookNodeBuilder final
 
 	static bool BuildAndAdd(
 	    const ShaderPackageCookSettings& settings,
-	    bool writeDebugArtifacts,
 	    std::size_t packageIndex,
 	    std::size_t stageIndex,
 	    std::size_t targetIndex,

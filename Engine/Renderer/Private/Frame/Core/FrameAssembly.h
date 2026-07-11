@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Frame/Core/FrameProviderResources.h"
 #include "Frame/Targets/FrameRenderTargets.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
@@ -66,9 +65,6 @@ struct FrameAssemblyResourceLayout final
 	FrameAssemblyTransientResources Transient = {};
 	FrameGraphAccelerationStructureHandle SceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
 	FrameAssemblyHistoryResources History = {};
-	FrameUpscalerProviderResources UpscalerProviderInputs = {};
-	FrameRayReconstructionProviderResources RayReconstructionProviderInputs = {};
 	FrameAssemblyViewportProducts ViewportProducts = {};
-	bool ReconstructedSceneColorProduced = false;
 	bool FinalSceneColorProduced = false;
 };

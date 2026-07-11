@@ -6,13 +6,12 @@
 #include "Backend/ShaderBackendPool.h"
 #include "Cooking/ShaderCookNodeBuilder.h"
 #include "Cooking/ShaderCookPlanner.h"
-#include "Cooking/ShaderPackageCooker.h"
+#include "Cooking/ShaderCookSettings.h"
 
 #include <format>
 
 bool ShaderCookPlanBuilder::Build(
     const ShaderPackageCookSettings& settings,
-    bool writeDebugArtifacts,
     ShaderBackendPool& backendPool,
     ShaderCookPipelinePlan& outPlan,
     std::string& outErrorMessage)
@@ -27,7 +26,7 @@ bool ShaderCookPlanBuilder::Build(
 	outPlan.packageContexts.resize(outPlan.packages.size());
 	for (std::size_t packageIndex = 0; packageIndex < outPlan.packages.size(); ++packageIndex)
 	{
-		if (!AddPackageNodes(settings, writeDebugArtifacts, packageIndex, backendPool, outPlan, outErrorMessage))
+		if (!AddPackageNodes(settings, packageIndex, backendPool, outPlan, outErrorMessage))
 		{
 			return false;
 		}
@@ -40,7 +39,6 @@ bool ShaderCookPlanBuilder::Build(
 
 bool ShaderCookPlanBuilder::AddPackageNodes(
     const ShaderPackageCookSettings& settings,
-    bool writeDebugArtifacts,
     std::size_t packageIndex,
     ShaderBackendPool& backendPool,
     ShaderCookPipelinePlan& plan,
@@ -74,7 +72,6 @@ bool ShaderCookPlanBuilder::AddPackageNodes(
 		{
 			if (!ShaderCookNodeBuilder::BuildAndAdd(
 			        settings,
-			        writeDebugArtifacts,
 			        packageIndex,
 			        stageIndex,
 			        targetIndex,

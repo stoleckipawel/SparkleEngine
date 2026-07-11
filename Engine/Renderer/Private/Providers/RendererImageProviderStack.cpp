@@ -1,25 +1,35 @@
 #include "../PCH.h"
 #include "Providers/RendererImageProviderStack.h"
 
+#include "Providers/ImageProviderFrameContext.h"
+#include "RayReconstruction/RayReconstructionProvider.h"
+#include "RayReconstruction/RayReconstructionProviderFactory.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
-#include "RayReconstruction/RayReconstructionSubsystem.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "Upscaling/UpscalerProvider.h"
+#include "Upscaling/UpscalerProviderFactory.h"
 #include "Upscaling/UpscalerSettings.h"
-#include "Upscaling/UpscalerSubsystem.h"
 
 namespace
 {
-	bool UpgradePresentationInterfaceThroughRhi(
-	    RhiNativeInterfaceUpgradeCallback callback,
-	    void* callbackUserData,
-	    void* bridgeUserData)
+	template <typename TProvider>
+	bool InitializeImageProvider(
+	    TProvider& provider,
+	    const RhiCapabilities& capabilities,
+	    RhiInteropService& interop,
+	    ERhiNativeInteropConsumer consumer,
+	    const char* reason)
 	{
-		RenderHardwareInterface* const hardware = static_cast<RenderHardwareInterface*>(bridgeUserData);
-		return hardware != nullptr && hardware->GetInteropService().UpgradePresentationInterface(callback, callbackUserData);
+		return provider.Initialize(
+		    capabilities,
+		    interop.GetDeviceQueueInterop(RhiNativeInteropRequest{.Consumer = consumer, .Reason = reason}));
 	}
 }
 
-RendererImageProviderStack::RendererImageProviderStack() = default;
+RendererImageProviderStack::RendererImageProviderStack(RenderHardwareInterface& renderHardware)
+{
+	Initialize(renderHardware);
+}
 
 RendererImageProviderStack::~RendererImageProviderStack() noexcept
 {
@@ -28,27 +38,35 @@ RendererImageProviderStack::~RendererImageProviderStack() noexcept
 
 void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardware)
 {
-	m_upscalerSubsystem = std::make_unique<UpscalerSubsystem>();
-	m_upscalerSubsystem->Initialize(
-	    renderHardware.GetCapabilities(),
-	    renderHardware.GetInteropService().GetDeviceQueueInterop(
-	        RhiNativeInteropRequest{
-	            .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
-	            .Reason = "Renderer upscaler provider initialization"}),
-	    UpscalerPresentationBridge{
-	        .UpgradePresentationInterface = &UpgradePresentationInterfaceThroughRhi,
-	        .UserData = &renderHardware});
+	const RhiCapabilities& capabilities = renderHardware.GetCapabilities();
+	RhiInteropService& interop = renderHardware.GetInteropService();
 
-	m_rayReconstructionSubsystem = std::make_unique<RayReconstructionSubsystem>();
-	m_rayReconstructionSubsystem->Initialize(
-	    renderHardware.GetCapabilities(),
-	    renderHardware.GetInteropService().GetDeviceQueueInterop(
-	        RhiNativeInteropRequest{
-	            .Consumer = ERhiNativeInteropConsumer::RayReconstructionProvider,
-	            .Reason = "Renderer ray reconstruction provider initialization"}),
-	    RayReconstructionPresentationBridge{
-	        .UpgradePresentationInterface = &UpgradePresentationInterfaceThroughRhi,
-	        .UserData = &renderHardware});
+	m_upscaler = CreateConfiguredUpscalerProvider();
+	if (m_upscaler != nullptr && !InitializeImageProvider(
+	                               *m_upscaler,
+	                               capabilities,
+	                               interop,
+	                               ERhiNativeInteropConsumer::UpscalerProvider,
+	                               "Renderer upscaler provider initialization"))
+	{
+		m_upscaler->Shutdown();
+		m_upscaler.reset();
+	}
+
+	m_rayReconstruction = CreateConfiguredRayReconstructionProvider();
+	m_rayReconstructionRequested = m_rayReconstruction != nullptr;
+	if (m_rayReconstruction != nullptr && !InitializeImageProvider(
+	                                         *m_rayReconstruction,
+	                                         capabilities,
+	                                         interop,
+	                                         ERhiNativeInteropConsumer::RayReconstructionProvider,
+	                                         "Renderer ray-reconstruction provider initialization"))
+	{
+		m_rayReconstruction->Shutdown();
+		m_rayReconstruction.reset();
+	}
+
+	m_resetHistoryPending = true;
 }
 
 void RendererImageProviderStack::Refresh(RenderHardwareInterface& renderHardware)
@@ -59,67 +77,64 @@ void RendererImageProviderStack::Refresh(RenderHardwareInterface& renderHardware
 
 void RendererImageProviderStack::Shutdown() noexcept
 {
-	if (m_upscalerSubsystem != nullptr)
+	if (m_upscaler != nullptr)
 	{
-		m_upscalerSubsystem->Shutdown();
-		m_upscalerSubsystem.reset();
+		m_upscaler->Shutdown();
+		m_upscaler.reset();
 	}
-	if (m_rayReconstructionSubsystem != nullptr)
+	if (m_rayReconstruction != nullptr)
 	{
-		m_rayReconstructionSubsystem->Shutdown();
-		m_rayReconstructionSubsystem.reset();
+		m_rayReconstruction->Shutdown();
+		m_rayReconstruction.reset();
+	}
+	m_rayReconstructionRequested = false;
+}
+
+void RendererImageProviderStack::ResetHistory() noexcept
+{
+	m_resetHistoryPending = true;
+}
+
+void RendererImageProviderStack::SetupFrame(const ImageProviderFrameContext& frameContext)
+{
+	ImageProviderFrameContext providerFrame = frameContext;
+	providerFrame.ResetHistory |= m_resetHistoryPending;
+	m_resetHistoryPending = false;
+	if (m_upscaler != nullptr)
+	{
+		m_upscaler->SetupFrame(providerFrame);
+	}
+	if (m_rayReconstruction != nullptr)
+	{
+		m_rayReconstruction->SetupFrame(providerFrame);
 	}
 }
 
-void RendererImageProviderStack::OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent)
+RenderViewportExtent RendererImageProviderStack::ResolveRenderExtent(
+    RenderViewportExtent outputExtent,
+    ImageProviderPipeline pipeline) noexcept
 {
-	if (m_upscalerSubsystem != nullptr)
+	if (pipeline == ImageProviderPipeline::RayReconstruction && m_rayReconstructionRequested)
 	{
-		m_upscalerSubsystem->OnResize(renderExtent, outputExtent);
+		return m_rayReconstruction != nullptr ? m_rayReconstruction->ResolveRenderExtent(outputExtent) : outputExtent;
 	}
-	if (m_rayReconstructionSubsystem != nullptr)
+	if (m_upscaler != nullptr)
 	{
-		m_rayReconstructionSubsystem->OnResize(renderExtent, renderExtent);
+		return m_upscaler->ResolveRenderExtent(outputExtent);
 	}
+	return outputExtent;
 }
 
-void RendererImageProviderStack::ResetHistory(std::string_view reason)
+ImageProviderGraphKey RendererImageProviderStack::GetFrameGraphKey() const noexcept
 {
-	if (m_upscalerSubsystem != nullptr)
-	{
-		m_upscalerSubsystem->ResetHistory(reason);
-	}
-	if (m_rayReconstructionSubsystem != nullptr)
-	{
-		m_rayReconstructionSubsystem->ResetHistory(reason);
-	}
-}
-
-void RendererImageProviderStack::SetupUpscalerFrame(const UpscalerInputContract& inputContract)
-{
-	if (m_upscalerSubsystem != nullptr)
-	{
-		m_upscalerSubsystem->SetupFrame(inputContract);
-	}
-}
-
-void RendererImageProviderStack::SetupRayReconstructionFrame(const RayReconstructionInputContract& inputContract)
-{
-	if (m_rayReconstructionSubsystem != nullptr)
-	{
-		m_rayReconstructionSubsystem->SetupFrame(inputContract);
-	}
-}
-
-std::uint32_t RendererImageProviderStack::GetFrameGraphKey() const noexcept
-{
-	return static_cast<std::uint32_t>(CVarUpscalerProvider.Get()) |
-	       (static_cast<std::uint32_t>(CVarRayReconstructionMode.Get()) << 8u);
+	return ImageProviderGraphKey{
+	    .UpscalerProvider = GetUpscalerProviderSelectionKey(),
+	    .RayReconstructionMode = GetRayReconstructionModeKey()};
 }
 
 RendererImageProviderPassServices RendererImageProviderStack::BuildPassServices() noexcept
 {
 	return RendererImageProviderPassServices{
-	    .Upscaling = m_upscalerSubsystem.get(),
-	    .RayReconstruction = m_rayReconstructionSubsystem.get()};
+	    .Upscaling = m_upscaler.get(),
+	    .RayReconstruction = m_rayReconstruction.get()};
 }

@@ -29,7 +29,8 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 	}
 
 	const LoadedShaderPackage& shaderPackage = *desc.Package;
-	const CookedShaderBinaryRecord* shaderBinary = shaderPackage.FindBinaryRecord(desc.Stage, CookedShaderBinaryFormat::SpirV);
+	const CookedShaderBinaryRecord* shaderBinary =
+	    shaderPackage.FindRuntimeBinaryRecord(desc.Stage, CookedShaderBinaryFormat::SpirV);
 	if (shaderBinary == nullptr)
 	{
 		Diagnostics::Fail(
@@ -37,8 +38,9 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "Pipeline '{}' is missing a cooked SPIR-V binary for shader stage '{}'",
+		        "Pipeline '{}' is missing a cooked SPIR-V/{} binary for shader stage '{}'",
 		        pipelineName,
+		        GetRuntimeShaderCodegenTarget(CookedShaderBinaryFormat::SpirV),
 		        GetShaderStagePrefix(desc.Stage)));
 	}
 

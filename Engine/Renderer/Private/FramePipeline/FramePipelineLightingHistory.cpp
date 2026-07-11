@@ -20,7 +20,7 @@ void FramePipeline::UpdateLightingHistoryState(const FrameContext& frame) noexce
 			if (m_restirLightingSceneStateKey != 0u && stateKey != m_restirLightingSceneStateKey)
 			{
 				ResetRestirLightingHistory();
-				m_systems->GetImageProviders().ResetHistory("ReSTIR lighting scene changed");
+				m_systems->GetImageProviders().ResetHistory();
 			}
 			m_restirLightingSceneStateKey = stateKey;
 			break;

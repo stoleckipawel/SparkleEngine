@@ -51,8 +51,10 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 
 std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(
     Window& window,
-    PixelFormat backBufferFormat) noexcept
+    PixelFormat backBufferFormat,
+    RhiExternalFeatureHooks externalFeatureHooks) noexcept
 {
+	(void) externalFeatureHooks;
 	return VulkanRenderDeviceServices::Create(window, backBufferFormat);
 }
 

@@ -5,7 +5,6 @@
 #include "Core/Public/Assets/AssetTypes.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "Core/Public/Paths/PathUtils.h"
 #include "Contracts/ShaderContractCatalogBuilder.h"
 
 #include <algorithm>
@@ -87,37 +86,6 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildPackages(
 	return packages;
 }
 
-std::optional<ShaderParameterStructDescriptor> ShaderCookPlanner::FindParameterStructDescriptor(
-	const ShaderCompileOptions& options)
-{
-	std::string errorMessage;
-	const ShaderContractCatalog catalog =
-	    ShaderContractCatalogBuilder::Build(ShaderContractSelectionKind::All, {}, errorMessage);
-	if (!errorMessage.empty())
-	{
-		return std::nullopt;
-	}
-
-	const std::string sourcePath = options.SourcePath.generic_string();
-	for (const ShaderContractStage& stage : catalog.stages)
-	{
-		const std::string registeredSourcePath = stage.sourcePath.generic_string();
-		const bool sourceMatches = sourcePath == registeredSourcePath || sourcePath.ends_with("/" + registeredSourcePath);
-		if (stage.stage != options.Stage || stage.packageKind != options.PackageKind || stage.entryPoint != options.EntryPoint || !sourceMatches)
-		{
-			continue;
-		}
-
-		if (!stage.hasParameterStruct)
-		{
-			return ShaderParameterStructDescriptor{};
-		}
-		return stage.parameterStruct;
-	}
-
-	return std::nullopt;
-}
-
 std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 	CookSelectionKind selectionKind,
 	std::string_view requestedId,
@@ -185,7 +153,10 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 			    .packageKind = stage.packageKind,
 			    .packageFeatures = stage.packageFeatures,
 			    .rayTracingExportKind = stage.rayTracingExportKind,
-			    .rayTracingExportName = stage.rayTracingExportName});
+			    .rayTracingExportName = stage.rayTracingExportName,
+			    .parameterStructDescriptor = stage.hasParameterStruct
+			                                     ? std::optional<ShaderParameterStructDescriptor>{stage.parameterStruct}
+			                                     : std::optional<ShaderParameterStructDescriptor>{ShaderParameterStructDescriptor{}}});
 
 			if (stage.packageKind == CookedShaderPackageKind::RayTracingLibrary)
 			{

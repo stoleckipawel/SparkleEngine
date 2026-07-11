@@ -6,6 +6,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Bindings/IndirectLightingOutputPassBinding.h"
+#include "Passes/Bindings/RayReconstructionGuidePassBinding.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
@@ -22,6 +23,7 @@ void RestirIndirectResolvePassParameters::Describe(ShaderParameterStructBuilder<
 	    &RestirIndirectResolvePassParameters::CurrentReservoirWeightTexture,
 	    ShaderStageVisibility::Compute);
 	IndirectLightingOutputPassBinding::Describe(builder);
+	RayReconstructionGuidePassBinding::Describe(builder);
 	RestirIndirectPassCommon::DescribeSceneParameters(builder);
 }
 
@@ -54,6 +56,7 @@ void RestirIndirectResolvePass::DeclareResources(
 	parameters->CurrentReservoirSampleTexture = builder.CreateSRV(currentSample);
 	parameters->CurrentReservoirWeightTexture = builder.CreateSRV(currentWeight);
 	IndirectLightingOutputPassBinding::Bind(builder, lighting, parameters);
+	RayReconstructionGuidePassBinding::Bind(builder, lighting, parameters);
 	RestirIndirectPassCommon::BindSceneResources(builder, scene, gbuffer, sceneTlas, parameters);
 }
 

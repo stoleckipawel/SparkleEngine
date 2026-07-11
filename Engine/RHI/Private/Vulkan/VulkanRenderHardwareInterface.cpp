@@ -223,11 +223,6 @@ NativeGraphicsQueueHandle VulkanRenderHardwareInterface::GetGraphicsQueueHandle(
 	return NativeGraphicsQueueHandle{m_rhi != nullptr ? m_rhi->GetGraphicsQueue() : nullptr};
 }
 
-bool VulkanRenderHardwareInterface::UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback, void*) noexcept
-{
-	return false;
-}
-
 RenderCommandList& VulkanRenderHardwareInterface::GetGraphicsCommandList(std::uint32_t) noexcept
 {
 	if (m_resourceService != nullptr)

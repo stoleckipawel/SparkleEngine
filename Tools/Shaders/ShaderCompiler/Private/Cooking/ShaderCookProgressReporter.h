@@ -16,7 +16,6 @@ class ShaderCookProgressReporter final
 	static void PrintPlanSummary(const ShaderCookPipelinePlan& plan, const ShaderPackageCookSettings& settings);
 	static void PrintPackageProgress(
 	    const ShaderCookPipelinePlan& plan,
-	    const ShaderPackageCookSettings& settings,
 	    const CookNode& node);
 	static void PrintStageProgress(
 	    const ShaderCookPipelinePlan& plan,
@@ -24,7 +23,4 @@ class ShaderCookProgressReporter final
 	    const CookNode& node,
 	    std::string_view backendName,
 	    std::string_view status);
-
-  private:
-	static std::size_t CountPackageJobs(const ShaderCookPackageDesc& package, const ShaderPackageCookSettings& settings) noexcept;
 };

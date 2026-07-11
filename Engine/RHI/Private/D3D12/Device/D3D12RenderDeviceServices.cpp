@@ -18,7 +18,8 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
  public:
 	static std::unique_ptr<D3D12RenderDeviceServices> Create(
 	    Window& window,
-	    PixelFormat backBufferFormat) noexcept;
+	    PixelFormat backBufferFormat,
+	    RhiExternalFeatureHooks externalFeatureHooks) noexcept;
 	~D3D12RenderDeviceServices() noexcept override;
 
 	D3D12RenderDeviceServices(const D3D12RenderDeviceServices&) = delete;
@@ -52,19 +53,21 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 
 std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(
     Window& window,
-    PixelFormat backBufferFormat) noexcept
+    PixelFormat backBufferFormat,
+    RhiExternalFeatureHooks externalFeatureHooks) noexcept
 {
-	return D3D12RenderDeviceServices::Create(window, backBufferFormat);
+	return D3D12RenderDeviceServices::Create(window, backBufferFormat, externalFeatureHooks);
 }
 
 std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
     Window& window,
-    PixelFormat backBufferFormat) noexcept
+    PixelFormat backBufferFormat,
+    RhiExternalFeatureHooks externalFeatureHooks) noexcept
 {
 	auto services = std::unique_ptr<D3D12RenderDeviceServices>(new D3D12RenderDeviceServices());
 
 	{
-		services->m_rhi = std::make_unique<D3D12Rhi>();
+		services->m_rhi = std::make_unique<D3D12Rhi>(externalFeatureHooks);
 	}
 	{
 		services->m_descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*services->m_rhi);

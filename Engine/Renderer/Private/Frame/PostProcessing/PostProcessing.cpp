@@ -5,14 +5,10 @@
 #include "Frame/PostProcessing/Exposure.h"
 #include "Frame/Presentation/Presentation.h"
 #include "Frame/Presentation/Upscaling.h"
-#include "RayReconstruction/RayReconstructionFramePass.h"
 
-void AddPostProcessingPasses(
+void AddPreReconstructionPostProcessingPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent renderExtent,
-    RenderViewportExtent outputExtent,
-    PixelFormat backBufferFormat,
-    bool presentToBackBuffer,
     FrameAssemblyResourceLayout& resources)
 {
 	AddExposurePass(
@@ -22,10 +18,16 @@ void AddPostProcessingPasses(
 	    resources.History.PreviousExposure,
 	    resources.History.CurrentExposure,
 	    resources.Transient.Exposure);
+}
 
-	resources.ReconstructedSceneColorProduced =
-	    TryAddRayReconstructionProviderPass(builder, "RayReconstruction", renderExtent, resources.RayReconstructionProviderInputs);
-
+void AddPostProcessingPasses(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent renderExtent,
+    RenderViewportExtent outputExtent,
+    PixelFormat backBufferFormat,
+    bool presentToBackBuffer,
+    FrameAssemblyResourceLayout& resources)
+{
 	if (!resources.FinalSceneColorProduced)
 	{
 		AddUpscalingPasses(builder, renderExtent, outputExtent, resources);

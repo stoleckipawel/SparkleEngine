@@ -70,6 +70,10 @@ void FrameGraph::Execute(
 		auto passScope = graphDiagnostics.BeginPassScope(passDiagnostics);
 		PassExecutionContext passContext{cmd, frame, passRuntimeServices, passDiagnostics, FrameGraphResourceCommands{*this}};
 		m_passes[passIndex].executeCallback(passContext);
+		if (passRecord.passKind == EFrameGraphPassFlags::ExternalProvider)
+		{
+			cmd.GetRenderCommandList().ResetBoundState();
+		}
 	}
 
 	if (!plan.finalTransientAliasingBarriers.empty())

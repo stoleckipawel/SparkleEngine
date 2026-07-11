@@ -3,6 +3,7 @@
 #include "../Core/RhiBackendSelection.h"
 #include "../Commands/RhiCommandSubmissionService.h"
 #include "../Formats/PixelFormat.h"
+#include "../Interop/RhiExternalFeatureHooks.h"
 #include "../RHIAPI.h"
 #include "RenderHardwareInterface.h"
 
@@ -24,7 +25,8 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	static std::unique_ptr<RenderDeviceServices> Create(
 	    Window& window,
 	    ERhiBackendApi backendApi,
-	    PixelFormat backBufferFormat) noexcept;
+	    PixelFormat backBufferFormat,
+	    RhiExternalFeatureHooks externalFeatureHooks = {}) noexcept;
 
 	~RenderDeviceServices() noexcept;
 

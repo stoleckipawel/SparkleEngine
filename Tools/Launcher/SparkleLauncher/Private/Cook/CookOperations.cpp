@@ -212,7 +212,6 @@ namespace SparkleLauncher
 			AddPlannedEffect(plan, std::string("Shader debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
 			AddPlannedEffect(plan, std::string("Shader optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
 			AddPlannedEffect(plan, std::string("Warnings as errors: ") + (plan.Request.ShaderWarningsAsErrors ? "enabled." : "disabled."));
-			AddPlannedEffect(plan, std::string("Strip reflection: ") + (plan.Request.ShaderStripReflection ? "enabled." : "disabled."));
 			AddPlannedEffect(plan, std::string("Strip debug info: ") + (plan.Request.ShaderStripDebugInfo ? "enabled." : "disabled."));
 			if (!plan.Request.ShaderCacheDirectory.empty())
 			{

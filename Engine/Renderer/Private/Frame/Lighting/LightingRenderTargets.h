@@ -6,4 +6,8 @@
 
 class FrameGraphBuilder;
 
-LightingRenderTargets CreateLightingRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, PixelFormat radianceFormat);
+LightingRenderTargets CreateLightingRenderTargets(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    PixelFormat radianceFormat,
+    bool createRayReconstructionGuides);

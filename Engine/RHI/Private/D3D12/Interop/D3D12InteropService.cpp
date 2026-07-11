@@ -12,8 +12,3 @@ RhiNativeDeviceQueueInterop D3D12InteropService::GetDeviceQueueInterop(RhiNative
 	    .GraphicsQueue = m_owner != nullptr ? m_owner->GetGraphicsQueueHandle() : NativeGraphicsQueueHandle{},
 	    .Request = request};
 }
-
-bool D3D12InteropService::UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept
-{
-	return m_owner != nullptr && m_owner->UpgradePresentationInterface(callback, userData);
-}

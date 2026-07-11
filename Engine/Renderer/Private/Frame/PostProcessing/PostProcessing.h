@@ -7,6 +7,11 @@
 
 class FrameGraphBuilder;
 
+void AddPreReconstructionPostProcessingPasses(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent renderExtent,
+    FrameAssemblyResourceLayout& resources);
+
 void AddPostProcessingPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent renderExtent,

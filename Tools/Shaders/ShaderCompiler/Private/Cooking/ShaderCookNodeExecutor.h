@@ -4,6 +4,7 @@
 #include "Cooking/ShaderCookExecutionCounters.h"
 
 #include <string>
+#include <string_view>
 
 class IShaderArtifactStore;
 class IShaderBackend;
@@ -20,7 +21,6 @@ class ShaderCookNodeExecutor final
 
 	static bool Execute(
 	    const ShaderPackageCookSettings& settings,
-	    bool writeDebugArtifacts,
 	    const CookNode& node,
 	    ShaderCookPipelinePlan& plan,
 	    ShaderBackendPool& backendPool,
@@ -61,6 +61,11 @@ class ShaderCookNodeExecutor final
 	    const CookedStageBuild& compiledStage,
 	    IShaderArtifactStore& artifactStore,
 	    std::string& outErrorMessage);
+
+	static void ApplyNodeMetadata(
+	    const CookNode& node,
+	    std::string_view cacheStatus,
+	    CookedStageBuild& compiledStage);
 
 	static void RecordCompletedStage(
 	    const CookNode& node,

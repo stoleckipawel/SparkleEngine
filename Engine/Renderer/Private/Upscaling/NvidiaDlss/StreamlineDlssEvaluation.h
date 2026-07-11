@@ -1,16 +1,17 @@
 #pragma once
 
-#include "Upscaling/UpscalerInputContract.h"
+#include "Providers/ImageProviderFrameContext.h"
 #include "Upscaling/UpscalerProvider.h"
 #include "Upscaling/UpscalerSettings.h"
-
-bool HasDlssNativeEvaluationContract(const UpscalerEvaluationDesc& evaluation) noexcept;
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 #include <sl.h>
 
-UpscalerEvaluationResult EvaluateStreamlineDlssFrame(
-    const UpscalerInputContract& inputContract,
+RenderViewportExtent QueryStreamlineDlssOptimalRenderExtent(
+    RenderViewportExtent outputExtent,
+    EUpscalerQualityMode qualityMode) noexcept;
+bool EvaluateStreamlineDlssFrame(
+    const ImageProviderFrameContext& frameContext,
     EUpscalerQualityMode qualityMode,
     sl::ViewportHandle viewport,
     const UpscalerEvaluationDesc& evaluation);

@@ -2,14 +2,48 @@
 
 #include "RHI/Public/Core/RhiBackendApi.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 #include <sl.h>
 
-sl::SubresourceRange BuildStreamlineSubresourceRange(const NativeTextureViewInfo& view) noexcept;
-sl::Resource BuildStreamlineTextureResource(
+enum class StreamlineTextureAccess
+{
+	ReadOnly,
+	ReadWrite
+};
+
+// Keeps a Streamline resource and its optional Vulkan subresource range in one
+// stable object so feature-specific tag builders do not duplicate backend rules.
+class StreamlineTaggedTextureResource final
+{
+  public:
+	StreamlineTaggedTextureResource(
+	    ERhiBackendApi backendApi,
+	    const NativeTextureViewInfo& view,
+	    StreamlineTextureAccess access) noexcept;
+
+	StreamlineTaggedTextureResource(const StreamlineTaggedTextureResource&) = delete;
+	StreamlineTaggedTextureResource& operator=(const StreamlineTaggedTextureResource&) = delete;
+	StreamlineTaggedTextureResource(StreamlineTaggedTextureResource&&) = delete;
+	StreamlineTaggedTextureResource& operator=(StreamlineTaggedTextureResource&&) = delete;
+
+	sl::Resource* Get() noexcept { return &m_resource; }
+
+  private:
+	sl::Resource m_resource = {};
+	sl::SubresourceRange m_subresourceRange = {};
+};
+
+bool IsStreamlineTextureViewValid(
     ERhiBackendApi backendApi,
-    NativeResourceHandle resource,
-    const NativeTextureViewInfo& view,
-    std::uint32_t d3d12State) noexcept;
+    const NativeTextureViewInfo& view) noexcept;
+
+template <typename... TViews>
+bool AreStreamlineTextureViewsValid(ERhiBackendApi backendApi, const TViews&... views) noexcept
+{
+	return (IsStreamlineTextureViewValid(backendApi, views) && ...);
+}
+
+sl::Extent BuildStreamlineExtent(RenderViewportExtent extent) noexcept;
 #endif

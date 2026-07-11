@@ -18,11 +18,16 @@ namespace
 		    lighting.DirectSpecular,
 		    lighting.DirectSubsurface,
 		    lighting.IndirectDiffuse,
-		    lighting.IndirectSpecular,
-		    lighting.IndirectDiffuseAlbedo,
-		    lighting.IndirectSpecularAlbedo,
-		    lighting.IndirectMaterialGuide,
-		    lighting.IndirectSpecularSampleGuide};
+		    lighting.IndirectSpecular};
+	}
+
+	auto GetRayReconstructionGuideTargets(const LightingRenderTargets& lighting) noexcept
+	{
+		return std::array{
+		    lighting.ReconstructionGuides.DiffuseAlbedo,
+		    lighting.ReconstructionGuides.SpecularAlbedo,
+		    lighting.ReconstructionGuides.Roughness,
+		    lighting.ReconstructionGuides.SpecularHitDistance};
 	}
 }
 
@@ -38,16 +43,38 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 		    resourceBuilder.Write(lighting.DirectSubsurface, ResourceUsage::RenderTarget, "DirectSubsurface");
 		    resourceBuilder.Write(lighting.IndirectDiffuse, ResourceUsage::RenderTarget, "IndirectDiffuse");
 		    resourceBuilder.Write(lighting.IndirectSpecular, ResourceUsage::RenderTarget, "IndirectSpecular");
-		    resourceBuilder.Write(lighting.IndirectDiffuseAlbedo, ResourceUsage::RenderTarget, "IndirectDiffuseAlbedo");
-		    resourceBuilder.Write(lighting.IndirectSpecularAlbedo, ResourceUsage::RenderTarget, "IndirectSpecularAlbedo");
-		    resourceBuilder.Write(lighting.IndirectMaterialGuide, ResourceUsage::RenderTarget, "IndirectMaterialGuide");
-		    resourceBuilder.Write(lighting.IndirectSpecularSampleGuide, ResourceUsage::RenderTarget, "IndirectSpecularSampleGuide");
+		    if (lighting.ReconstructionGuides.IsValid())
+		    {
+			    resourceBuilder.Write(
+			        lighting.ReconstructionGuides.DiffuseAlbedo,
+			        ResourceUsage::RenderTarget,
+			        "RayReconstructionDiffuseAlbedo");
+			    resourceBuilder.Write(
+			        lighting.ReconstructionGuides.SpecularAlbedo,
+			        ResourceUsage::RenderTarget,
+			        "RayReconstructionSpecularAlbedo");
+			    resourceBuilder.Write(
+			        lighting.ReconstructionGuides.Roughness,
+			        ResourceUsage::RenderTarget,
+			        "RayReconstructionRoughness");
+			    resourceBuilder.Write(
+			        lighting.ReconstructionGuides.SpecularHitDistance,
+			        ResourceUsage::RenderTarget,
+			        "RayReconstructionSpecularHitDistance");
+		    }
 	    },
 	    [lighting](PassExecutionContext& context)
 	    {
 		    for (FrameGraphTextureHandle target : GetLightingTargets(lighting))
 		    {
 			    context.Resources.ClearRenderTarget(context.Commands, target);
+		    }
+		    if (lighting.ReconstructionGuides.IsValid())
+		    {
+			    for (FrameGraphTextureHandle target : GetRayReconstructionGuideTargets(lighting))
+			    {
+				    context.Resources.ClearRenderTarget(context.Commands, target);
+			    }
 		    }
 	    });
 }

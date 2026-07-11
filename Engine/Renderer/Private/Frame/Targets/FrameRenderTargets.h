@@ -6,7 +6,6 @@ struct SceneRenderTargets
 {
 	FrameGraphTextureHandle SceneColor;
 	FrameGraphTextureHandle SceneDepth;
-	FrameGraphTextureHandle ReconstructedSceneColor;
 	FrameGraphTextureHandle FinalSceneColor;
 	FrameGraphTextureHandle BackBuffer;
 };
@@ -29,8 +28,18 @@ struct LightingRenderTargets
 	FrameGraphTextureHandle DirectSubsurface;
 	FrameGraphTextureHandle IndirectDiffuse;
 	FrameGraphTextureHandle IndirectSpecular;
-	FrameGraphTextureHandle IndirectDiffuseAlbedo;
-	FrameGraphTextureHandle IndirectSpecularAlbedo;
-	FrameGraphTextureHandle IndirectMaterialGuide;
-	FrameGraphTextureHandle IndirectSpecularSampleGuide;
+
+	struct RayReconstructionGuides final
+	{
+		FrameGraphTextureHandle DiffuseAlbedo = FrameGraphTextureHandle::Invalid();
+		FrameGraphTextureHandle SpecularAlbedo = FrameGraphTextureHandle::Invalid();
+		FrameGraphTextureHandle Roughness = FrameGraphTextureHandle::Invalid();
+		FrameGraphTextureHandle SpecularHitDistance = FrameGraphTextureHandle::Invalid();
+
+		bool IsValid() const noexcept
+		{
+			return DiffuseAlbedo.IsValid() && SpecularAlbedo.IsValid() && Roughness.IsValid() &&
+			       SpecularHitDistance.IsValid();
+		}
+	} ReconstructionGuides;
 };

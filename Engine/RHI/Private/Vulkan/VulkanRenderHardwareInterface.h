@@ -62,7 +62,6 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	const RhiPresentationService& GetPresentationService() const noexcept;
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept;
-	bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;

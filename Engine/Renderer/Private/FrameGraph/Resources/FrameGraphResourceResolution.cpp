@@ -153,5 +153,16 @@ NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(FrameGraphResourceHan
 		return {};
 	}
 
-	return m_renderHardwareInterface->GetDescriptorService().GetNativeTextureViewInfo(view, state);
+	NativeTextureViewInfo nativeView =
+	    m_renderHardwareInterface->GetDescriptorService().GetNativeTextureViewInfo(view, state);
+	if (!nativeView.Resource)
+	{
+		nativeView.Resource = ResolveResource(handle);
+	}
+	if (nativeView.Width == 0u || nativeView.Height == 0u)
+	{
+		nativeView.Width = metadata.textureDesc.width;
+		nativeView.Height = metadata.textureDesc.height;
+	}
+	return nativeView;
 }

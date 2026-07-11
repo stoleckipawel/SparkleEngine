@@ -21,6 +21,7 @@ struct DirectLightReservoirSpatialPassParameters : DirectLightReservoirCommonPar
 	ShaderRWTexture2D<void> CurrentReservoirSample;
 	ShaderRWTexture2D<void> CurrentReservoirWeight;
 	ShaderRWTexture2D<void> CurrentReservoirSurface;
+	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightReservoirSpatialPassParameters>& builder)
 	{
@@ -46,6 +47,7 @@ struct DirectLightReservoirSpatialPassParameters : DirectLightReservoirCommonPar
 		    ShaderStageVisibility::Compute);
 		DescribeGBuffer(builder);
 		DescribeFrame(builder);
+		builder.Uniform("PerTemporal", &DirectLightReservoirSpatialPassParameters::PerTemporal, ShaderStageVisibility::Compute);
 		DescribeLighting(builder);
 	}
 };

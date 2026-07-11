@@ -24,7 +24,6 @@ struct ShaderCompileOptions
 	bool EnableDebugInfo = false;
 	bool EnableOptimizations = true;
 	bool TreatWarningsAsErrors = true;
-	bool StripReflection = true;
 	bool StripDebugInfo = true;
 	bool CaptureDebugArtifacts = false;
 
