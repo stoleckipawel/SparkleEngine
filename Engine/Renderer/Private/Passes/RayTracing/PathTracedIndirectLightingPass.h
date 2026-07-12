@@ -1,11 +1,15 @@
 #pragma once
 
 #include "Frame/Targets/FrameRenderTargets.h"
-#include "Passes/Bindings/RayTracedSurfaceLightingPassBinding.h"
+#include "RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "RayTracing/Effects/PathTracedLighting/PathTracedLightingUniformData.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
+#include "SceneData/MaterialTextureTableCapability.h"
+#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/RenderViewLightingData.h"
 
 #include <cstdint>
 
@@ -17,8 +21,33 @@ struct PassRuntimeServices;
 struct RenderPassDefinition;
 struct RenderViewData;
 
-struct PathTracedIndirectLightingPassParameters : RayTracedSurfaceLightingPassParameters
+struct PathTracedIndirectLightingPassParameters
 {
+	ShaderAccelerationStructure SceneTlas;
+	ShaderUniform<PerFrameConstantBufferData> PerFrame;
+	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<ViewLightingData> ViewLighting;
+	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
+	ShaderTexture2D<void> GBufferBaseColor;
+	ShaderTexture2D<void> GBufferNormal;
+	ShaderTexture2D<void> GBufferMaterial;
+	ShaderTexture2D<void> SceneDepth;
+	ShaderTexture2DSRV SkyTexture;
+	ShaderSamplerSet SamplerLinearClamp;
+	ShaderBufferSRV RayTracingHitVertices;
+	ShaderBufferSRV RayTracingHitIndices;
+	ShaderBufferSRV RayTracingHitInstances;
+	ShaderBufferSRV RayTracingHitMaterials;
+	ShaderBufferSRV MeshInstances;
+	ShaderBufferSRV SkinInfluences;
+	ShaderBufferSRV JointMatrices;
+	ShaderBufferSRV DirectionalLights;
+	ShaderBufferSRV PointLights;
+	ShaderBufferSRV SpotLights;
+	ShaderBufferSRV RectLights;
+	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
+	ShaderSamplerSet MaterialTextureSampler;
 	ShaderRWTexture2D<void> IndirectDiffuse;
 	ShaderRWTexture2D<void> IndirectSpecular;
 	ShaderUniform<PathTracedLightingUniformData> PathTracedLightingConstants;
@@ -52,5 +81,4 @@ class PathTracedIndirectLightingPass final
 
   private:
 	const ComputePassPipelineRuntime& m_runtime;
-	mutable RayTracedSurfaceLightingPassBinding m_sceneBinding;
 };

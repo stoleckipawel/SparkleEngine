@@ -12,6 +12,7 @@ class SkyCS final : public TGlobalShader<SkyCS>
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, SceneColor, SceneColorTexture)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
+	SHADER_PARAMETER_CBUFFER_NAMED(PerTemporal, PerTemporalConstantBufferData, PerTemporalConstantBufferData)
 	SHADER_PARAMETER_TEXTURE(Texture2D, SceneDepth)
 	SHADER_PARAMETER_TEXTURE(Texture2D, SkyTexture)
 	SHADER_PARAMETER_SHARED_SAMPLER(SamplerLinearClamp)

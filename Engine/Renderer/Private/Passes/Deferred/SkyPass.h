@@ -5,7 +5,6 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "Passes/Bindings/EnvironmentMapPassBinding.h"
 #include "ShaderData/RenderConstantBufferData.h"
 
 #include <cstdint>
@@ -25,6 +24,7 @@ struct SkyPassParameters
 	ShaderSamplerSet SamplerLinearClamp;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 
 	static void Describe(ShaderParameterStructBuilder<SkyPassParameters>& builder)
 	{
@@ -34,6 +34,7 @@ struct SkyPassParameters
 		builder.Sampler("SamplerLinearClamp", &SkyPassParameters::SamplerLinearClamp, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &SkyPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &SkyPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("PerTemporal", &SkyPassParameters::PerTemporal, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -63,5 +64,4 @@ class SkyPass final
 	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
-	mutable EnvironmentMapPassBinding m_environmentMapBinding;
 };

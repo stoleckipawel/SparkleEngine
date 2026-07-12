@@ -26,6 +26,7 @@ struct PathTracedDirectLightingPassParameters
 	ShaderAccelerationStructure SceneTlas;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
 	ShaderUniform<PathTracedLightingUniformData> PathTracedLightingConstants;

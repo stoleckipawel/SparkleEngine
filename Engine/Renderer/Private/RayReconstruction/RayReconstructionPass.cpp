@@ -36,7 +36,7 @@ void AddRayReconstructionPass(
 	    [providerInputs](PassResourceBuilder& resourceBuilder)
 	    {
 		    resourceBuilder.Read(providerInputs.NoisyInputColor, ResourceUsage::ShaderRead, "NoisyInputColor");
-		    resourceBuilder.Write(providerInputs.OutputColor, ResourceUsage::UnorderedAccess, "OutputColor");
+		    resourceBuilder.Use(providerInputs.OutputColor, ResourceUsage::UnorderedAccess, "OutputColor");
 		    resourceBuilder.Read(providerInputs.Depth, ResourceUsage::ShaderRead, "Depth");
 		    resourceBuilder.Read(providerInputs.MotionVectors, ResourceUsage::ShaderRead, "MotionVectors");
 		    resourceBuilder.Read(providerInputs.Exposure, ResourceUsage::ShaderRead, "Exposure");

@@ -121,7 +121,7 @@ void D3D12Texture::UploadToGPU()
 	CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 	    m_textureResource.Get(),
 	    D3D12_RESOURCE_STATE_COPY_DEST,
-	    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	    D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 	m_rhi.GetCommandList(m_rhi.GetCurrentFrameIndex())->ResourceBarrier(1, &barrier);
 }
 

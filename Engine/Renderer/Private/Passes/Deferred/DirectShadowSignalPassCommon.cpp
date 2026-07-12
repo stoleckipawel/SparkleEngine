@@ -6,22 +6,10 @@
 #include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Bindings/LightingPassBinding.h"
-#include "Passes/Bindings/RayTracedShadowPassBinding.h"
-
-namespace
-{
-	template <typename TParameters> class ParameterReference final
-	{
-	  public:
-		explicit ParameterReference(TParameters& parameters) noexcept : m_parameters(&parameters) {}
-
-		TParameters* operator->() noexcept { return m_parameters; }
-
-	  private:
-		TParameters* m_parameters;
-	};
-}
+#include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
+#include "RayTracing/RayTracingPassCapabilityQuery.h"
+#include "RHI/Public/Samplers/RhiSamplerDesc.h"
+#include "SceneData/MaterialTextureTableCapability.h"
 
 void DirectShadowSignalPassCommon::DeclareResources(
     FrameGraphBuilder& builder,
@@ -54,8 +42,12 @@ void DirectShadowSignalPassCommon::SetParameters(
 {
 	parameters.PerFrame = passRuntimeServices.PerFrame;
 	parameters.PerView = viewData.perViewData;
-	ParameterReference parameterReference(parameters);
-	LightingPassBinding::SetParameters(parameterReference, frame);
+	parameters.PerTemporal = viewData.perTemporalData;
+	parameters.ViewLighting = frame.lighting.GetConstants();
+	parameters.DirectionalLights = frame.lighting.GetDirectionalLightsShaderResourceView();
+	parameters.PointLights = frame.lighting.GetPointLightsShaderResourceView();
+	parameters.SpotLights = frame.lighting.GetSpotLightsShaderResourceView();
+	parameters.RectLights = frame.lighting.GetRectLightsShaderResourceView();
 }
 
 void DirectShadowSignalPassCommon::SetRayQueryParameters(
@@ -66,6 +58,31 @@ void DirectShadowSignalPassCommon::SetRayQueryParameters(
     bool hasSceneTlas)
 {
 	SetParameters(parameters, frame, viewData, passRuntimeServices);
-	ParameterReference parameterReference(parameters);
-	RayTracedShadowPassBinding::SetRayQueryParameters(parameterReference, frame, passRuntimeServices, hasSceneTlas);
+	parameters.RayTracingHitVertices = frame.rayTracingHitData.GetVertexShaderResourceView();
+	parameters.RayTracingHitIndices = frame.rayTracingHitData.GetIndexShaderResourceView();
+	parameters.RayTracingHitInstances = frame.rayTracingHitData.GetInstanceShaderResourceView();
+	parameters.RayTracingHitMaterials = frame.rayTracingHitData.GetMaterialShaderResourceView();
+	parameters.MaterialTextureSampler = RhiSamplerDesc{
+	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
+	    .MipFilter = RhiSamplerMipFilter::Linear,
+	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
+	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
+
+	const RayTracingPassCapabilities capabilities = RayTracingPassCapabilityQuery::Build(frame, passRuntimeServices.RayTracing);
+	const RenderBindingSet* materialTextureTable = frame.sceneData.materialTextureTable;
+	const std::uint32_t descriptorCount = frame.sceneData.materialTextureTableDescriptorCount;
+	const bool materialTextureTableAvailable =
+	    frame.sceneData.materialTextureTableValid && materialTextureTable != nullptr && *materialTextureTable &&
+	    descriptorCount > 0u && descriptorCount <= MaterialTextureTableFixedCapacity &&
+	    materialTextureTable->GetDescriptorCount() >= descriptorCount;
+	if (materialTextureTableAvailable)
+	{
+		parameters.MaterialTextureTable = materialTextureTable->GetTableBinding(0);
+	}
+	parameters.RayTracedShadows = RayTracedShadowPassData::Build(
+	    passRuntimeServices.RayTracing,
+	    hasSceneTlas,
+	    capabilities.TriangleMaterialDataAvailable && materialTextureTableAvailable,
+	    frame.rayTracingHitData.GetInstanceCount(),
+	    frame.rayTracingHitData.GetMaterialCount());
 }

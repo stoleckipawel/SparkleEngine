@@ -1,8 +1,9 @@
 #include "PCH.h"
 
-#include "DirectLightReservoirShaderParameters.h"
 #include "RendererShaderPackages.h"
 #include "Shaders/Authoring/GlobalShader.h"
+#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/RenderViewLightingData.h"
 
 class DirectLightReservoirTemporalCS final : public TGlobalShader<DirectLightReservoirTemporalCS>
 {
@@ -13,9 +14,19 @@ class DirectLightReservoirTemporalCS final : public TGlobalShader<DirectLightRes
 	SHADER_PARAMETER_TEXTURE_NAMED(Texture2D, PreviousReservoirSample, PreviousReservoirSampleTexture)
 	SHADER_PARAMETER_TEXTURE_NAMED(Texture2D, PreviousReservoirWeight, PreviousReservoirWeightTexture)
 	SHADER_PARAMETER_TEXTURE_NAMED(Texture2D, PreviousReservoirSurface, PreviousReservoirSurfaceTexture)
-	DIRECT_LIGHT_RESERVOIR_FRAME_SHADER_PARAMETERS
+	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
+	SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerTemporal, PerTemporalConstantBufferData, PerTemporalConstantBufferData)
-	DIRECT_LIGHT_RESERVOIR_SURFACE_AND_LIGHTING_SHADER_PARAMETERS
+	SHADER_PARAMETER_CBUFFER_NAMED(ViewLighting, ViewLighting, ViewLightingData)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(DirectionalLightConstantBufferData, DirectionalLights)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(PointLightConstantBufferData, PointLights)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(SpotLightConstantBufferData, SpotLights)
+	SHADER_PARAMETER_RDG_BUFFER_SRV(RectLightConstantBufferData, RectLights)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferSubsurface)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SceneDepth)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMotionVector)
 	END_SHADER_PARAMETER_STRUCT()
 };

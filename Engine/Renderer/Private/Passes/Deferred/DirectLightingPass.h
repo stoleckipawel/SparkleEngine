@@ -34,6 +34,7 @@ struct DirectLightingPassParameters
 	ShaderTexture2D<void> SceneDepth;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
@@ -55,6 +56,7 @@ struct DirectLightingPassParameters
 		builder.ReadTexture("SceneDepth", &DirectLightingPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DirectLightingPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectLightingPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("PerTemporal", &DirectLightingPassParameters::PerTemporal, ShaderStageVisibility::Compute);
 		builder.Uniform("ViewLighting", &DirectLightingPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("DirectionalLights", &DirectLightingPassParameters::DirectionalLights, ShaderStageVisibility::Compute);
 		builder.ReadBuffer("PointLights", &DirectLightingPassParameters::PointLights, ShaderStageVisibility::Compute);

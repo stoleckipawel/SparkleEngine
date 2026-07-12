@@ -3,6 +3,7 @@
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "Renderer/Public/RendererAPI.h"
+#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "Scene/Textures/TextureSnapshot.h"
 
 #include <array>
@@ -14,6 +15,7 @@
 #include <string>
 
 class RenderHardwareInterface;
+class RenderBindingSet;
 class Texture;
 
 namespace Assets
@@ -54,6 +56,7 @@ class SPARKLE_RENDERER_API TextureManager final
 	Texture* GetTexture(TextureId id) noexcept;
 	const Texture* GetTexture(TextureId id) const noexcept;
 	const Texture* ResolveEnvironmentMapTexture() const noexcept;
+	RhiDescriptorTableBinding GetShaderResourceBinding(const Texture* texture) const noexcept;
 	Texture* GetSceneTexture(const std::filesystem::path& texturePath) noexcept;
 	const Texture* GetSceneTexture(const std::filesystem::path& texturePath) const noexcept;
 	const Texture* ResolveTextureReferenceOrDefault(const Assets::CookedTextureReference* textureReference, DefaultTexture fallbackType)
@@ -73,6 +76,7 @@ class SPARKLE_RENDERER_API TextureManager final
 	std::array<std::unique_ptr<Texture>, kTextureCount> m_textures{};
 	std::unordered_map<TextureCacheKey, std::unique_ptr<Texture>> m_pathTextures;
 	std::unordered_set<TextureCacheKey> m_defaultPathTextureKeys;
+	mutable std::unordered_map<const Texture*, std::unique_ptr<RenderBindingSet>> m_shaderResourceBindings;
 
 	void LoadDefaultTextures();
 	Texture* LoadFromPath(const std::filesystem::path& texturePath);

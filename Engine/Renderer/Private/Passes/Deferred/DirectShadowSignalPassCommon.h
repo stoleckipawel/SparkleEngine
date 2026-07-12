@@ -22,6 +22,7 @@ struct DirectShadowSignalCommonPassParameters
 	ShaderTexture2D<void> SceneDepth;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderBufferSRV DirectionalLights;
 	ShaderBufferSRV PointLights;
@@ -53,6 +54,11 @@ struct DirectShadowSignalCommonPassParameters
 		builder.Uniform(
 		    "PerView",
 		    static_cast<ShaderUniform<PerViewConstantBufferData> TParameters::*>(&DirectShadowSignalCommonPassParameters::PerView),
+		    ShaderStageVisibility::Compute);
+		builder.Uniform(
+		    "PerTemporal",
+		    static_cast<ShaderUniform<PerTemporalConstantBufferData> TParameters::*>(
+		        &DirectShadowSignalCommonPassParameters::PerTemporal),
 		    ShaderStageVisibility::Compute);
 		builder.Uniform(
 		    "ViewLighting",

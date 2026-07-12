@@ -129,6 +129,7 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 	FrameGraphBuildResult buildResult = frameGraphFactory.Build();
 	m_frameGraphRenderExtent = dependencies.renderExtent;
 	m_frameGraphOutputExtent = dependencies.outputExtent;
+	m_frameGraphPresentsToBackBuffer = dependencies.presentSceneToBackBuffer;
 	m_frameResources = buildResult.Resources;
 	m_gBufferMode = CVarGBufferMode.Get();
 	m_lightingMode = GetLightingMode();
@@ -192,11 +193,15 @@ void FramePipeline::BeginFrame() noexcept
 	}
 
 	const FrameResolutionExtents frameResolution = ResolveFrameResolution();
-	if (frameResolution.Render.Width != m_frameGraphRenderExtent.Width ||
-	    frameResolution.Render.Height != m_frameGraphRenderExtent.Height ||
-	    frameResolution.Output.Width != m_frameGraphOutputExtent.Width || frameResolution.Output.Height != m_frameGraphOutputExtent.Height)
+	const bool presentsToBackBuffer = ShouldOutputToBackBuffer();
+	const bool resolutionChanged = frameResolution.Render.Width != m_frameGraphRenderExtent.Width ||
+	                               frameResolution.Render.Height != m_frameGraphRenderExtent.Height ||
+	                               frameResolution.Output.Width != m_frameGraphOutputExtent.Width ||
+	                               frameResolution.Output.Height != m_frameGraphOutputExtent.Height;
+	const bool presentationChanged = presentsToBackBuffer != m_frameGraphPresentsToBackBuffer;
+	if (resolutionChanged || presentationChanged)
 	{
-		temporalDataBuilder.ResetHistory("Frame resolution changed");
+		temporalDataBuilder.ResetHistory(presentationChanged ? "Frame presentation mode changed" : "Frame resolution changed");
 		ResetExposureHistory();
 		ResetReferenceLightingHistory();
 		ResetRestirLightingHistory();

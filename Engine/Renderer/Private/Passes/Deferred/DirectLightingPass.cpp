@@ -6,36 +6,11 @@
 #include "Frame/Lighting/ShadowVisibility.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Bindings/LightingPassBinding.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-
-namespace DirectLightingPassDetails
-{
-	void PopulateResources(
-	    FrameGraphBuilder& builder,
-	    const LightingRenderTargets& lighting,
-	    FrameGraphTextureHandle sceneDepth,
-	    const GBufferRenderTargets& gbuffer,
-	    const DirectShadowSignalResources& shadowSignals,
-	    DirectLightingPass::ParameterInstance& parameters)
-	{
-		parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
-		parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
-		parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
-		parameters->ShadowVisibilitySignal = builder.CreateSRV(shadowSignals.Visibility);
-		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
-		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
-		parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
-		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
-		parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
-		parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
-		parameters->SceneDepth = builder.CreateSRV(sceneDepth);
-	}
-}  // namespace DirectLightingPassDetails
 
 DirectLightingPass::DirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -62,7 +37,17 @@ void DirectLightingPass::DeclareResources(
     const DirectShadowSignalResources& shadowSignals,
     ParameterInstance& parameters)
 {
-	DirectLightingPassDetails::PopulateResources(builder, lighting, sceneDepth, gbuffer, shadowSignals, parameters);
+	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
+	parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
+	parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
+	parameters->ShadowVisibilitySignal = builder.CreateSRV(shadowSignals.Visibility);
+	parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
+	parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
+	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
+	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
+	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
+	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
+	parameters->SceneDepth = builder.CreateSRV(sceneDepth);
 }
 
 void DirectLightingPass::SetParameters(
@@ -73,7 +58,12 @@ void DirectLightingPass::SetParameters(
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
-	LightingPassBinding::SetParameters(parameters, frame);
+	parameters->PerTemporal = viewData.perTemporalData;
+	parameters->ViewLighting = frame.lighting.GetConstants();
+	parameters->DirectionalLights = frame.lighting.GetDirectionalLightsShaderResourceView();
+	parameters->PointLights = frame.lighting.GetPointLightsShaderResourceView();
+	parameters->SpotLights = frame.lighting.GetSpotLightsShaderResourceView();
+	parameters->RectLights = frame.lighting.GetRectLightsShaderResourceView();
 }
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

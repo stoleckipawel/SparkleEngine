@@ -9,6 +9,7 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
+#include "Textures/TextureManager.h"
 
 SkyPass::SkyPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -39,7 +40,10 @@ void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData&
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
-	parameters->SkyTexture = m_environmentMapBinding.GetTextureBinding(passRuntimeServices);
+	parameters->PerTemporal = viewData.perTemporalData;
+	const TextureManager* textures = passRuntimeServices.Textures;
+	parameters->SkyTexture =
+	    textures != nullptr ? textures->GetShaderResourceBinding(textures->ResolveEnvironmentMapTexture()) : RhiDescriptorTableBinding{};
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,

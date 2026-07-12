@@ -27,4 +27,8 @@ Use these as source material behind the implementation spine:
 
 - `Architecture/00-Review/A_PrincipalRenderingRequirements.md`: retained only as background for principal-level rendering expectations.
 
+## Rendering Postmortems
+
+- `Rendering/IndirectLightingArtifactInvestigation.md`: root cause, accepted fixes, and regression checks for the resolved indirect-lighting descriptor-lifetime artifact.
+
 Keep new docs only when they describe an active implementation prompt, a source-backed contract, or a reference-backed rendering decision that the source cannot make obvious by itself.

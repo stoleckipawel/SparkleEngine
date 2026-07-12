@@ -6,9 +6,6 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
-#include "Passes/Bindings/MaterialTextureTablePassBinding.h"
-#include "Passes/Bindings/RayTracingHitDataPassBinding.h"
-#include "Passes/Bindings/RayTracingScenePassBinding.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "RayTracing/RayTracingShaderFeatureFlags.h"
@@ -16,6 +13,7 @@
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
+#include "SceneData/MaterialTextureTableCapability.h"
 
 RaytracedGBufferPass::RaytracedGBufferPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -48,7 +46,7 @@ void RaytracedGBufferPass::DeclareResources(
 	parameters->GBufferSubsurface = builder.CreateUAV(targets.Subsurface);
 	parameters->GBufferDeviceZ = builder.CreateUAV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
-	(void) RayTracingScenePassBinding::BindSceneTlas(builder, sceneTlas, RayTracingSceneTlasShaderAccessMode::Descriptor, parameters);
+	parameters->SceneTlas = builder.Read(sceneTlas);
 }
 
 void RaytracedGBufferPass::SetParameters(
@@ -60,7 +58,14 @@ void RaytracedGBufferPass::SetParameters(
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
-	RayTracingHitDataPassBinding::SetTemporalSurfaceParameters(parameters, frame);
+	parameters->RayTracingHitVertices = frame.rayTracingHitData.GetVertexShaderResourceView();
+	parameters->RayTracingHitIndices = frame.rayTracingHitData.GetIndexShaderResourceView();
+	parameters->RayTracingHitInstances = frame.rayTracingHitData.GetInstanceShaderResourceView();
+	parameters->RayTracingHitMaterials = frame.rayTracingHitData.GetMaterialShaderResourceView();
+	parameters->MeshInstances = frame.meshInstances.GetShaderResourceView();
+	parameters->SkinInfluences = frame.rayTracingHitData.GetSkinInfluenceShaderResourceView();
+	parameters->JointMatrices = frame.skinning.GetShaderResourceView();
+	parameters->PreviousJointMatrices = frame.skinning.GetPreviousShaderResourceView();
 	parameters->MaterialTextureSampler = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -73,7 +78,9 @@ void RaytracedGBufferPass::Execute(PassExecutionContext& context, ParameterInsta
 	const RayTracingPassCapabilities rayTracingCapabilities =
 	    RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
 	if (!rayTracingCapabilities.InlineRayQueryAvailable ||
-	    !RayTracingScenePassBinding::CanUseSceneTlas(rayTracingCapabilities, RayTracingSceneTlasShaderAccessMode::Descriptor))
+	    !RayTracingPassCapabilityQuery::CanUseSceneTlas(
+	        rayTracingCapabilities,
+	        RayTracingSceneTlasShaderAccessMode::Descriptor))
 	{
 		return;
 	}
@@ -82,11 +89,15 @@ void RaytracedGBufferPass::Execute(PassExecutionContext& context, ParameterInsta
 		return;
 	}
 
-	const bool materialTextureTableAvailable = MaterialTextureTablePassBinding::Bind(parameters, context.Frame);
-	if (!materialTextureTableAvailable)
+	const RenderBindingSet* materialTextureTable = context.Frame.sceneData.materialTextureTable;
+	const std::uint32_t descriptorCount = context.Frame.sceneData.materialTextureTableDescriptorCount;
+	if (!context.Frame.sceneData.materialTextureTableValid || materialTextureTable == nullptr || !*materialTextureTable ||
+	    descriptorCount == 0u || descriptorCount > MaterialTextureTableFixedCapacity ||
+	    materialTextureTable->GetDescriptorCount() < descriptorCount)
 	{
 		return;
 	}
+	parameters->MaterialTextureTable = materialTextureTable->GetTableBinding(0);
 
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
 	parameters->RaytracedGBufferConstants = RaytracedGBufferUniformData{

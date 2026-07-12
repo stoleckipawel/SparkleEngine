@@ -30,8 +30,5 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	Output.Emissive = GBufferPacking::PackEmissive(MatProps.Emissive);
 	Output.Subsurface = GBufferPacking::PackSubsurface(MatProps.SubsurfaceColor, MatProps.SubsurfaceStrength);
 
-	Output.MotionVector = MotionVectors::Compute(
-		Input.ClipPosition,
-		Input.PrevClipPosition,
-		ViewportSize);
+	Output.MotionVector = MotionVectors::ComputeRaster(Input.Position.xy, Input.PrevClipPosition, ViewportSize);
 }

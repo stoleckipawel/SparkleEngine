@@ -103,6 +103,7 @@ class FramePipeline final
 	std::vector<std::unique_ptr<FrameContext>> m_frameContexts;
 	RenderViewportExtent m_frameGraphRenderExtent = {};
 	RenderViewportExtent m_frameGraphOutputExtent = {};
+	bool m_frameGraphPresentsToBackBuffer = true;
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	FrameAssemblyResourceLayout m_frameResources = {};

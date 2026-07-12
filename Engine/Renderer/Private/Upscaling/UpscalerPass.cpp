@@ -36,7 +36,7 @@ void AddUpscalerPass(
 		    resourceBuilder.Read(inputs.Depth, ResourceUsage::ShaderRead, "Depth");
 		    resourceBuilder.Read(inputs.MotionVectors, ResourceUsage::ShaderRead, "MotionVectors");
 		    resourceBuilder.Read(inputs.Exposure, ResourceUsage::ShaderRead, "Exposure");
-		    resourceBuilder.Write(inputs.OutputColor, ResourceUsage::UnorderedAccess, "OutputColor");
+		    resourceBuilder.Use(inputs.OutputColor, ResourceUsage::UnorderedAccess, "OutputColor");
 	    },
 	    [inputs, renderExtent, outputExtent](PassExecutionContext& context)
 	    {

@@ -4,7 +4,6 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
-#include "Passes/Bindings/RayTracingScenePassBinding.h"
 #include "Passes/Core/ShaderPass.h"
 
 namespace LightingRayTracingPasses
@@ -18,8 +17,8 @@ namespace LightingRayTracingPasses
 	    const FrameContext& frame,
 	    RayTracingSceneTlasShaderAccessMode accessMode) noexcept
 	{
-		return frame.rayTracingScene.HasTraceableInstances() &&
-		       RayTracingScenePassBinding::FrameUsesSceneTlasAccessMode(frame, accessMode);
+		return frame.rayTracingScene.HasTraceableInstances() && frame.rayTracingScene.HasBoundTlas() &&
+		       frame.rayTracingScene.TlasShaderAccessMode == accessMode;
 	}
 
 	template <typename TPass>

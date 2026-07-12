@@ -1,4 +1,5 @@
 #include "CommonVS.hlsli"
+#include "Resources/TemporalConstantBuffer.hlsli"
 #include "Geometry/Basis.hlsli"
 #include "Geometry/Skinning.hlsli"
 

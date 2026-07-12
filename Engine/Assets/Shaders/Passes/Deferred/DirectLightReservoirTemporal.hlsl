@@ -1,4 +1,5 @@
 #include "Lighting/DirectLightReservoir.hlsli"
+#include "Passes/Deferred/MotionVector.hlsli"
 
 RWTexture2D<float4> TemporalReservoirSampleTexture;
 RWTexture2D<float4> TemporalReservoirWeightTexture;
@@ -35,7 +36,8 @@ Texture2D GBufferMotionVector;
 	if (HistoryValid != 0u)
 	{
 		const float2 motionPixels = GBufferMotionVector.Load(int3(pixelCoord, 0)).xy;
-		const float2 previousPixel = (float2(pixelCoord) + 0.5f) - motionPixels;
+		const float2 previousPixel =
+		    MotionVectors::ReprojectToPreviousPixelCenter(pixelCoord, motionPixels, float2(width, height));
 		const int2 previousPixelCoord = int2(floor(previousPixel));
 		if (previousPixelCoord.x >= 0 &&
 		    previousPixelCoord.y >= 0 &&

@@ -64,6 +64,7 @@ struct FrameGraphProductRoot
 {
 	FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
 	std::string name;
+	ResourceState requiredState = ResourceState::ShaderResource;
 };
 
 struct FrameGraphPassNode

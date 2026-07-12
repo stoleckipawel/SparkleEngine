@@ -189,6 +189,23 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 		}
 	}
 
+	for (const FrameGraphProductRoot& productRoot : m_plan.productRoots)
+	{
+		FrameGraphTransientResourcePlan* transientPlan = FindTransientResourcePlan(productRoot.handle);
+		if (transientPlan == nullptr || transientPlan->lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX)
+		{
+			continue;
+		}
+
+		const auto stateIt =
+		    std::find(transientPlan->lifetime.requiredStates.begin(), transientPlan->lifetime.requiredStates.end(), productRoot.requiredState);
+		if (stateIt == transientPlan->lifetime.requiredStates.end())
+		{
+			transientPlan->lifetime.requiredStates.push_back(productRoot.requiredState);
+		}
+		transientPlan->lifetime.readUsed = true;
+	}
+
 	ExtendTransientLifetimesToFrame(m_plan.transients, m_plan.executionOrder);
 
 	const auto unusedIt = std::remove_if(

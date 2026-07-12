@@ -5,6 +5,7 @@
 #include "Assets/Cooked/CookedTextureReference.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
+#include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Resources/Texture.h"
 #include "Textures/CookedTextureLoader.h"
@@ -73,6 +74,7 @@ void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& rela
 
 	if (m_textures[index])
 	{
+		m_shaderResourceBindings.erase(m_textures[index].get());
 		m_textures[index].reset();
 	}
 
@@ -136,6 +138,7 @@ void TextureManager::UnloadTexture(TextureId id) noexcept
 	const auto index = static_cast<std::size_t>(id);
 	if (index < kTextureCount)
 	{
+		m_shaderResourceBindings.erase(m_textures[index].get());
 		m_textures[index].reset();
 	}
 }
@@ -150,12 +153,14 @@ void TextureManager::UnloadSceneTextures() noexcept
 			continue;
 		}
 
+		m_shaderResourceBindings.erase(it->second.get());
 		it = m_pathTextures.erase(it);
 	}
 }
 
 void TextureManager::UnloadAll() noexcept
 {
+	m_shaderResourceBindings.clear();
 	m_pathTextures.clear();
 	m_defaultPathTextureKeys.clear();
 	for (auto& texture : m_textures)
@@ -181,7 +186,33 @@ const Texture* TextureManager::ResolveEnvironmentMapTexture() const noexcept
 	{
 		return environmentTexture;
 	}
+
 	return GetTexture(TextureId::Checker);
+}
+
+RhiDescriptorTableBinding TextureManager::GetShaderResourceBinding(const Texture* texture) const noexcept
+{
+	if (texture == nullptr || m_renderHardwareInterface == nullptr)
+	{
+		return {};
+	}
+
+	if (const auto bindingIt = m_shaderResourceBindings.find(texture); bindingIt != m_shaderResourceBindings.end())
+	{
+		return bindingIt->second->GetTableBinding();
+	}
+
+	auto bindingSet = m_renderHardwareInterface->GetDescriptorService().CreateBindingSet(
+	    RenderBindingSetDesc{.DescriptorType = ERhiDescriptorAllocatorType::ShaderResource, .DescriptorCount = 1u});
+	if (!bindingSet || !*bindingSet)
+	{
+		return {};
+	}
+
+	texture->WriteShaderResourceView(bindingSet->GetCpuDescriptorHandle());
+	const RhiDescriptorTableBinding binding = bindingSet->GetTableBinding();
+	m_shaderResourceBindings.emplace(texture, std::move(bindingSet));
+	return binding;
 }
 
 Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) noexcept

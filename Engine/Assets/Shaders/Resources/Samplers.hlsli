@@ -20,17 +20,6 @@
 //   SamplerAniso16xWrap            SamplerAniso16xClamp
 
 // =============================================================================
-// Convenience Macros
-// =============================================================================
-// Usage:
-//   SAMPLER(Point, MipLinear, Wrap)    -> SamplerPointMipLinearWrap
-//   SAMPLER(Linear, NoMip, Clamp)      -> SamplerLinearNoMipClamp
-//   SAMPLER_ANISO(4, Mirror)           -> SamplerAniso4xMirror
-
-#define SAMPLER(MinMag, Mip, Address) Sampler##MinMag##Mip##Address
-#define SAMPLER_ANISO(Level, Address) SamplerAniso##Level##x##Address
-
-// =============================================================================
 // Sampler Declarations
 // =============================================================================
 // Shared sampler symbols are reflected during cook. Runtime pass code selects
