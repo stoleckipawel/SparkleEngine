@@ -35,14 +35,14 @@ struct PathTracedDirectLightingPassParameters
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferSubsurface;
 	ShaderTexture2D<void> SceneDepth;
-	ShaderBufferSRV DirectionalLights;
-	ShaderBufferSRV PointLights;
-	ShaderBufferSRV SpotLights;
-	ShaderBufferSRV RectLights;
-	ShaderBufferSRV RayTracingHitVertices;
-	ShaderBufferSRV RayTracingHitIndices;
-	ShaderBufferSRV RayTracingHitInstances;
-	ShaderBufferSRV RayTracingHitMaterials;
+	ShaderBuffer<void> DirectionalLights;
+	ShaderBuffer<void> PointLights;
+	ShaderBuffer<void> SpotLights;
+	ShaderBuffer<void> RectLights;
+	ShaderBuffer<void> RayTracingHitVertices;
+	ShaderBuffer<void> RayTracingHitIndices;
+	ShaderBuffer<void> RayTracingHitInstances;
+	ShaderBuffer<void> RayTracingHitMaterials;
 	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
 	ShaderSamplerSet MaterialTextureSampler;
 
@@ -70,6 +70,14 @@ class PathTracedDirectLightingPass final
 	    const SceneRenderTargets& sceneTargets,
 	    const GBufferRenderTargets& gbuffer,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
+	    FrameGraphBufferHandle hitVertices,
+	    FrameGraphBufferHandle hitIndices,
+	    FrameGraphBufferHandle hitInstances,
+	    FrameGraphBufferHandle hitMaterials,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

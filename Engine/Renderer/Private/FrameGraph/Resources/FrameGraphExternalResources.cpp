@@ -23,7 +23,8 @@ namespace
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "FrameGraph external resource validation failed: resource='{}' handle={} ownership={} requiredUsage=UnorderedAccess remediation='create/import the resource with unordered-access support or remove UAV declarations for this pass path'",
+		        "FrameGraph external resource validation failed: resource='{}' handle={} ownership={} requiredUsage=UnorderedAccess "
+		        "remediation='create/import the resource with unordered-access support or remove UAV declarations for this pass path'",
 		        FormatResourceName(metadata),
 		        metadata.handle.index,
 		        IsExternalFrameGraphResource(metadata.ownership) ? "External" : "Internal"));
@@ -120,10 +121,11 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		{
 			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
 			{
-				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(RhiResourceViewDesc::BufferShaderResource(
-				    access.resource,
-				    metadata.bufferDesc.sizeInBytes,
-				    metadata.bufferDesc.strideInBytes));
+				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
+				    RhiResourceViewDesc::BufferShaderResource(
+				        access.resource,
+				        metadata.bufferDesc.sizeInBytes,
+				        metadata.bufferDesc.strideInBytes));
 			}
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
@@ -135,10 +137,11 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 
 				if (!access.unorderedAccessView)
 				{
-					access.unorderedAccessView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(RhiResourceViewDesc::BufferUnorderedAccess(
-					    access.resource,
-					    metadata.bufferDesc.sizeInBytes,
-					    metadata.bufferDesc.strideInBytes));
+					access.unorderedAccessView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
+					    RhiResourceViewDesc::BufferUnorderedAccess(
+					        access.resource,
+					        metadata.bufferDesc.sizeInBytes,
+					        metadata.bufferDesc.strideInBytes));
 				}
 			}
 		}
@@ -160,29 +163,39 @@ void FrameGraph::ReleaseExternalResourceViews() noexcept
 			continue;
 		}
 
-		FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
-		if (access.renderTargetView)
-		{
-			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.renderTargetView);
-			access.renderTargetView = {};
-		}
+		ReleaseExternalResourceViews(handle);
+	}
+}
 
-		if (access.depthStencilView)
-		{
-			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.depthStencilView);
-			access.depthStencilView = {};
-		}
+void FrameGraph::ReleaseExternalResourceViews(FrameGraphResourceHandle handle) noexcept
+{
+	if (m_renderHardwareInterface == nullptr || !handle.IsValid() || !m_resourceRegistry.IsRegistered(handle))
+	{
+		return;
+	}
 
-		if (access.shaderResourceView)
-		{
-			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.shaderResourceView);
-			access.shaderResourceView = {};
-		}
+	FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
+	if (access.renderTargetView)
+	{
+		m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.renderTargetView);
+		access.renderTargetView = {};
+	}
 
-		if (access.unorderedAccessView)
-		{
-			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.unorderedAccessView);
-			access.unorderedAccessView = {};
-		}
+	if (access.depthStencilView)
+	{
+		m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.depthStencilView);
+		access.depthStencilView = {};
+	}
+
+	if (access.shaderResourceView)
+	{
+		m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.shaderResourceView);
+		access.shaderResourceView = {};
+	}
+
+	if (access.unorderedAccessView)
+	{
+		m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.unorderedAccessView);
+		access.unorderedAccessView = {};
 	}
 }

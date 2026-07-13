@@ -73,10 +73,10 @@ void AddGBufferPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExte
 	{
 		case GBufferMode::Rasterized:
 		default:
-			AddRasterizedGBufferPass(builder, resources.Transient.GBuffer);
+			AddRasterizedGBufferPass(builder, resources.Transient.GBuffer, resources.External);
 			break;
 		case GBufferMode::Raytraced:
-			AddRaytracedGBufferPass(builder, resources.Transient.GBuffer, resources.SceneTlas);
+			AddRaytracedGBufferPass(builder, resources.Transient.GBuffer, resources.SceneTlas, resources.External);
 			break;
 	}
 

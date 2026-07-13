@@ -20,8 +20,6 @@
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-
-#include <array>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -37,6 +35,7 @@ class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;
 struct PassRuntimeServices;
 class Window;
+class Texture;
 struct FrameContext;
 
 class FrameGraph
@@ -63,7 +62,8 @@ class FrameGraph
 		using ExecuteFnType = std::decay_t<ExecuteFn>;
 
 		static_assert(
-		    std::is_invocable_v<SetupFnType&, PassResourceBuilder&, const FrameContext&> || std::is_invocable_v<SetupFnType&, PassResourceBuilder&>,
+		    std::is_invocable_v<SetupFnType&, PassResourceBuilder&, const FrameContext&> ||
+		        std::is_invocable_v<SetupFnType&, PassResourceBuilder&>,
 		    "FrameGraph setup lambda must accept (PassResourceBuilder&, const FrameContext&) or (PassResourceBuilder&).\n");
 		static_assert(
 		    std::is_invocable_v<ExecuteFnType&, PassExecutionContext&>,
@@ -170,8 +170,7 @@ class FrameGraph
 	}
 
 	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
-	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
-	FrameGraphTextureHandle ImportPersistentTexture(
+	FrameGraphTextureHandle ImportTexture(
 	    const FrameGraphTextureDesc& desc,
 	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
@@ -179,8 +178,7 @@ class FrameGraph
 	    const FrameGraphTextureDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
-	FrameGraphBufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
-	FrameGraphBufferHandle ImportPersistentBuffer(
+	FrameGraphBufferHandle ImportBuffer(
 	    const FrameGraphBufferDesc& desc,
 	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
@@ -189,11 +187,6 @@ class FrameGraph
 	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
 	FrameGraphAccelerationStructureHandle ImportAccelerationStructure(
-	    const FrameGraphAccelerationStructureDesc& desc,
-	    NativeResourceHandle resource,
-	    RhiGpuVirtualAddress gpuAddress,
-	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
-	FrameGraphAccelerationStructureHandle ImportPersistentAccelerationStructure(
 	    const FrameGraphAccelerationStructureDesc& desc,
 	    NativeResourceHandle resource,
 	    RhiGpuVirtualAddress gpuAddress,
@@ -220,6 +213,10 @@ class FrameGraph
 	    FrameGraphTextureHandle handle,
 	    RhiOwnedResourceHandle resource,
 	    ResourceState currentState = ResourceState::Common) noexcept;
+	void BindPersistentTexture(
+	    FrameGraphTextureHandle handle,
+	    const Texture& texture,
+	    ResourceState currentState = ResourceState::Common) noexcept;
 	void ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept;
 	void BindPersistentBuffer(
 	    FrameGraphBufferHandle handle,
@@ -228,6 +225,11 @@ class FrameGraph
 	void BindPersistentBuffer(
 	    FrameGraphBufferHandle handle,
 	    RhiOwnedResourceHandle resource,
+	    ResourceState currentState = ResourceState::Common) noexcept;
+	void BindPersistentBuffer(
+	    FrameGraphBufferHandle handle,
+	    RhiOwnedResourceHandle resource,
+	    const FrameGraphBufferDesc& desc,
 	    ResourceState currentState = ResourceState::Common) noexcept;
 	void ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept;
 	void ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept;
@@ -241,8 +243,10 @@ class FrameGraph
 	    RenderCommandContext& cmd,
 	    std::span<const FrameGraphTextureHandle> renderTargetHandles,
 	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
-	void CopyTexture(RenderCommandContext& cmd, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept;
-	void CopyBuffer(RenderCommandContext& cmd, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept;
+	void CopyTexture(RenderCommandContext& cmd, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle)
+	    const noexcept;
+	void CopyBuffer(RenderCommandContext& cmd, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle)
+	    const noexcept;
 	void ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
 	void ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
 	NativeResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
@@ -272,7 +276,10 @@ class FrameGraph
 		return field;
 	}
 
-	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(FrameGraphBufferHandle handle) const noexcept { return Read<TValue>(handle); }
+	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(FrameGraphBufferHandle handle) const noexcept
+	{
+		return Read<TValue>(handle);
+	}
 
 	template <typename TValue = void> ShaderRWTexture2D<TValue> CreateUAV(FrameGraphTextureHandle handle) const noexcept
 	{
@@ -381,18 +388,21 @@ class FrameGraph
 	float GetClearDepth(FrameGraphResourceHandle handle) const noexcept;
 	NativeResourceHandle ResolveResource(FrameGraphResourceHandle handle) const noexcept;
 	NativeTextureViewInfo ResolveNativeTextureView(FrameGraphResourceHandle handle, ResourceState state) const noexcept;
-	void CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept;
+	void CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle)
+	    const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;
 	void EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan) const noexcept;
 	void ReleaseExternalResourceViews() noexcept;
+	void ReleaseExternalResourceViews(FrameGraphResourceHandle handle) noexcept;
 	void EmitTransientAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
 	void EmitTransientAliasingBarriers(
 	    RenderCommandContext& cmd,
 	    std::string_view passName,
 	    const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
-	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
+	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
+	    const noexcept;
 	void ValidateExecutionBindings(const FrameGraphPlan& plan) const noexcept;
 	FrameGraphResourceHandle AllocateDynamicResourceHandle() noexcept;
 

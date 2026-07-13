@@ -38,6 +38,14 @@ class DirectShadowSignalDeviceAddressPass final
 	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    const DirectShadowSignalResources& shadowSignals,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
+	    FrameGraphBufferHandle hitVertices,
+	    FrameGraphBufferHandle hitIndices,
+	    FrameGraphBufferHandle hitInstances,
+	    FrameGraphBufferHandle hitMaterials,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

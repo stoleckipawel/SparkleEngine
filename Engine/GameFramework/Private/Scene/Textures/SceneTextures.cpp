@@ -58,3 +58,11 @@ TextureSnapshot SceneTextures::CaptureSnapshot() const
 	snapshot.texturePaths = m_texturePaths;
 	return snapshot;
 }
+
+TextureSnapshot SceneTextures::CaptureSnapshot(std::span<const std::filesystem::path> additionalTexturePaths) const
+{
+	SceneTextures combined;
+	combined.m_texturePaths = m_texturePaths;
+	combined.AppendTexturePaths(std::vector<std::filesystem::path>(additionalTexturePaths.begin(), additionalTexturePaths.end()));
+	return combined.CaptureSnapshot();
+}

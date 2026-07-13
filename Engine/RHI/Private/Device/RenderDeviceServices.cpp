@@ -127,6 +127,8 @@ void RenderDeviceServices::ResizeSwapChain() noexcept
 void RenderDeviceServices::BeginFrame() noexcept
 {
 	m_backend->BeginFrame();
+	RenderHardwareInterface& renderHardwareInterface = m_backend->GetRenderHardwareInterface();
+	renderHardwareInterface.GetDescriptorService().BeginFrame(renderHardwareInterface.GetCurrentFrameIndex());
 }
 
 RenderCommandList& RenderDeviceServices::GetCurrentGraphicsCommandList() noexcept

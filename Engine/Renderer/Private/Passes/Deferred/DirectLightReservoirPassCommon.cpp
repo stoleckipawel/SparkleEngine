@@ -12,6 +12,10 @@ namespace DirectLightReservoirPassCommon
 	    FrameGraphBuilder& builder,
 	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
 	    DirectLightReservoirCommonParameters& parameters)
 	{
 		parameters.GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
@@ -19,6 +23,10 @@ namespace DirectLightReservoirPassCommon
 		parameters.GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 		parameters.GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 		parameters.SceneDepth = builder.CreateSRV(sceneDepth);
+		parameters.DirectionalLights = builder.CreateSRV(directionalLights);
+		parameters.PointLights = builder.CreateSRV(pointLights);
+		parameters.SpotLights = builder.CreateSRV(spotLights);
+		parameters.RectLights = builder.CreateSRV(rectLights);
 	}
 
 	void SetParameters(
@@ -30,9 +38,5 @@ namespace DirectLightReservoirPassCommon
 		parameters.PerFrame = passRuntimeServices.PerFrame;
 		parameters.PerView = viewData.perViewData;
 		parameters.ViewLighting = frame.lighting.GetConstants();
-		parameters.DirectionalLights = frame.lighting.GetDirectionalLightsShaderResourceView();
-		parameters.PointLights = frame.lighting.GetPointLightsShaderResourceView();
-		parameters.SpotLights = frame.lighting.GetSpotLightsShaderResourceView();
-		parameters.RectLights = frame.lighting.GetRectLightsShaderResourceView();
 	}
 }

@@ -21,14 +21,15 @@ D3D12ResourceService::D3D12ResourceService(
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12DescriptorService& descriptorService,
     const RhiCapabilities& capabilities) noexcept :
-	m_rhi(&rhi), m_memoryAllocator(&memoryAllocator), m_descriptorHeapManager(&descriptorHeapManager),
-	m_descriptorService(&descriptorService), m_capabilities(&capabilities)
+    m_rhi(&rhi),
+    m_memoryAllocator(&memoryAllocator),
+    m_descriptorHeapManager(&descriptorHeapManager),
+    m_descriptorService(&descriptorService),
+    m_capabilities(&capabilities)
 {
 }
 
-std::unique_ptr<Texture> D3D12ResourceService::CreateTexture(
-    RhiTextureUploadDesc textureUpload,
-    std::wstring_view debugName)
+std::unique_ptr<Texture> D3D12ResourceService::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
 {
 	(void) debugName;
 	if (m_rhi == nullptr || m_descriptorHeapManager == nullptr || !textureUpload.IsValid())
@@ -47,8 +48,7 @@ RhiOwnedResourceHandle D3D12ResourceService::CreateTextureResource(
     RhiMemoryResidencyClass residencyClass,
     std::wstring_view debugName)
 {
-	if (m_memoryAllocator == nullptr || m_capabilities == nullptr ||
-	    !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc))
+	if (m_memoryAllocator == nullptr || m_capabilities == nullptr || !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc))
 	{
 		return {};
 	}
@@ -148,8 +148,32 @@ bool D3D12ResourceService::CreateStructuredBuffer(
 {
 	outResource = {};
 	outView = {};
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || m_descriptorService == nullptr || data == nullptr || sizeInBytes == 0 ||
-	    strideInBytes == 0)
+	if (m_descriptorService == nullptr || !CreateStructuredBufferResource(data, sizeInBytes, strideInBytes, debugName, outResource))
+	{
+		return false;
+	}
+
+	outView = m_descriptorService->CreateResourceView(
+	    RhiResourceViewDesc::BufferShaderResource(GetNativeResource(outResource), sizeInBytes, strideInBytes));
+	if (!outView)
+	{
+		ReleaseOwnedResource(outResource);
+		outResource = {};
+		return false;
+	}
+
+	return true;
+}
+
+bool D3D12ResourceService::CreateStructuredBufferResource(
+    const void* data,
+    std::size_t sizeInBytes,
+    std::uint32_t strideInBytes,
+    std::wstring_view debugName,
+    RhiOwnedResourceHandle& outResource)
+{
+	outResource = {};
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
 	{
 		return false;
 	}
@@ -185,16 +209,7 @@ bool D3D12ResourceService::CreateStructuredBuffer(
 	ownedRecord->CpuMappedAddress = nullptr;
 
 	outResource = WrapOwnedResource(std::move(ownedRecord));
-	outView = m_descriptorService->CreateResourceView(
-	    RhiResourceViewDesc::BufferShaderResource(GetNativeResource(outResource), sizeInBytes, strideInBytes));
-	if (!outView)
-	{
-		ReleaseOwnedResource(outResource);
-		outResource = {};
-		return false;
-	}
-
-	return true;
+	return static_cast<bool>(outResource);
 }
 
 bool D3D12ResourceService::CreateIndexBuffer(

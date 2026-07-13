@@ -74,8 +74,8 @@ void SceneOutlinerPanel::BuildToolbar() noexcept
 
 void SceneOutlinerPanel::BuildFooter() noexcept
 {
-	const std::size_t totalCount =
-	    m_gameScene->GetCameras().GetCameraCount() + m_gameScene->GetLighting().GetLightCount() + m_gameScene->GetMeshes().GetMeshCount();
+	const std::size_t totalCount = 1u + m_gameScene->GetCameras().GetCameraCount() + m_gameScene->GetLighting().GetLightCount() +
+	                               m_gameScene->GetMeshes().GetMeshCount();
 	const std::size_t displayedCount = CountVisibleEntries();
 	const bool hasValidSelection = IsSelectionValid();
 	ImGui::Separator();
@@ -130,6 +130,16 @@ void SceneOutlinerPanel::BuildLightSection() noexcept
 
 	const std::vector<SceneOutlinerEntry> entries = SceneOutlinerEntries::BuildLightEntries(*m_gameScene);
 	DrawEntrySection("Lights", "Lights", "No lights in scene", entries);
+}
+
+void SceneOutlinerPanel::BuildSkySection() noexcept
+{
+	if (m_activeFilter != SceneOutlinerFilter::All)
+	{
+		return;
+	}
+
+	DrawEntrySection("Sky", "Sky", "", SceneOutlinerEntries::BuildSkyEntries(*m_gameScene));
 }
 
 void SceneOutlinerPanel::BuildMeshSection() noexcept
@@ -208,6 +218,7 @@ std::size_t SceneOutlinerPanel::CountVisibleEntries() const noexcept
 	};
 
 	count += countVisible(SceneOutlinerEntries::BuildCameraEntries(*m_gameScene));
+	count += countVisible(SceneOutlinerEntries::BuildSkyEntries(*m_gameScene));
 	count += countVisible(SceneOutlinerEntries::BuildLightEntries(*m_gameScene));
 	count += countVisible(SceneOutlinerEntries::BuildMeshEntries(*m_gameScene));
 
@@ -376,6 +387,7 @@ void SceneOutlinerPanel::BuildUI(bool disableInteraction)
 		ImGui::TableHeadersRow();
 
 		BuildCameraSection();
+		BuildSkySection();
 		BuildLightSection();
 		BuildMeshSection();
 		ImGui::EndTable();

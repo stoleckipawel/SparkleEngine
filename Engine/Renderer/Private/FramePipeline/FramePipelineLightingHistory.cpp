@@ -7,16 +7,14 @@
 #include "Frame/Lighting/ReferenceLightingState.h"
 #include "Host/RendererSystemRoot.h"
 #include "Providers/RendererImageProviderStack.h"
-#include "Textures/TextureManager.h"
 
 void FramePipeline::UpdateLightingHistoryState(const FrameContext& frame) noexcept
 {
-	const Texture* environmentTexture = m_systems->GetTextureManager().ResolveEnvironmentMapTexture();
 	switch (GetLightingMode())
 	{
 		case LightingMode::RestirPathTraced:
 		{
-			const std::uint64_t stateKey = BuildLightingSceneStateKey(frame, environmentTexture);
+			const std::uint64_t stateKey = BuildLightingSceneStateKey(frame);
 			if (m_restirLightingSceneStateKey != 0u && stateKey != m_restirLightingSceneStateKey)
 			{
 				ResetRestirLightingHistory();
@@ -27,7 +25,7 @@ void FramePipeline::UpdateLightingHistoryState(const FrameContext& frame) noexce
 		}
 		case LightingMode::ReferencePathTraced:
 		{
-			const std::uint64_t stateKey = BuildReferenceLightingStateKey(frame, environmentTexture);
+			const std::uint64_t stateKey = BuildReferenceLightingStateKey(frame);
 			if (m_referenceLightingStateKey != 0u && stateKey != m_referenceLightingStateKey)
 			{
 				ResetReferenceLightingHistory();

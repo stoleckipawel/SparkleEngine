@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Descriptors/RhiDescriptorService.h"
+#include "Frame/RhiFrameConstants.h"
 #include "Resources/RhiResourceView.h"
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/VulkanIncludes.h"
 
+#include <array>
 #include <cstdint>
 #include <vector>
 
@@ -29,7 +31,7 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	const VulkanDescriptorAllocator& GetAllocator() const noexcept { return m_allocator; }
 	void SetSamplerLibrary(VulkanSamplerLibrary& samplerLibrary) noexcept;
 
-	void BeginFrame(std::uint32_t frameIndex) noexcept;
+	void BeginFrame(std::uint32_t frameIndex) noexcept override;
 	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) override;
 	void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept override;
 	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) override;
@@ -75,6 +77,7 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	VkImageView CreateImageView(const RhiResourceViewDesc& desc) const;
 	VkFormat ResolveViewFormat(const RhiResourceViewDesc& desc) const noexcept;
 	VkImageAspectFlags ResolveViewAspectMask(const RhiResourceViewDesc& desc) const noexcept;
+	void DestroyResourceView(ResourceViewRecord& record) noexcept;
 
 	VulkanRhi& m_rhi;
 	VulkanGpuMemoryAllocator& m_memoryAllocator;
@@ -83,5 +86,7 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	VulkanSamplerLibrary* m_samplerLibrary = nullptr;
 	std::vector<ResourceViewRecord> m_resourceViewRecords;
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
+	std::array<std::vector<ResourceViewRecord>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
 	std::vector<RhiResourceViewHandle> m_swapChainBackBufferViews;
+	std::uint32_t m_currentFrameIndex = 0;
 };

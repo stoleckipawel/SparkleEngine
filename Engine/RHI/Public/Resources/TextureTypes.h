@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RHI/Public/Formats/PixelFormat.h"
+
 #include <cstdint>
 #include <string>
 
@@ -22,6 +24,7 @@ struct TextureRuntimeInfo final
 	std::uint32_t Height = 0;
 	std::uint32_t ArraySize = 0;
 	TextureResourceDimension Dimension = TextureResourceDimension::Texture2D;
+	PixelFormat Format = PixelFormat::Unknown;
 	std::string FormatName;
 	TextureFormatIntent FormatIntent = TextureFormatIntent::Unknown;
 	std::uint16_t MipCount = 0;

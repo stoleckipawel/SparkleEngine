@@ -27,10 +27,11 @@ namespace SceneOutlinerEntries
 		for (std::size_t cameraIndex = 0; cameraIndex < sceneCameras.size(); ++cameraIndex)
 		{
 			const SceneCameraEntry& camera = sceneCameras[cameraIndex];
-			entries.push_back(SceneOutlinerEntry{
-			    camera.name.empty() ? "Camera " + std::to_string(cameraIndex + 1) : camera.name,
-			    "Camera",
-			    SceneObjectSelection::Camera(cameraIndex)});
+			entries.push_back(
+			    SceneOutlinerEntry{
+			        camera.name.empty() ? "Camera " + std::to_string(cameraIndex + 1) : camera.name,
+			        "Camera",
+			        SceneObjectSelection::Camera(cameraIndex)});
 		}
 
 		return entries;
@@ -45,13 +46,19 @@ namespace SceneOutlinerEntries
 		for (std::size_t lightIndex = 0; lightIndex < lights.size(); ++lightIndex)
 		{
 			const SceneLightDesc& light = lights[lightIndex];
-			entries.push_back(SceneOutlinerEntry{
-			    SceneObjectPresentation::BuildLightLabel(light, lightIndex),
-			    SceneObjectPresentation::GetLightTypeLabel(light.GetKind()),
-			    SceneObjectSelection::Light(lightIndex)});
+			entries.push_back(
+			    SceneOutlinerEntry{
+			        SceneObjectPresentation::BuildLightLabel(light, lightIndex),
+			        SceneObjectPresentation::GetLightTypeLabel(light.GetKind()),
+			        SceneObjectSelection::Light(lightIndex)});
 		}
 
 		return entries;
+	}
+
+	std::vector<SceneOutlinerEntry> BuildSkyEntries(const GameScene& gameScene)
+	{
+		return {SceneOutlinerEntry{gameScene.GetSky().HasSky() ? "Sky" : "Sky (Engine Default)", "Sky", SceneObjectSelection::Sky()}};
 	}
 
 	std::vector<SceneOutlinerEntry> BuildMeshEntries(const GameScene& gameScene)

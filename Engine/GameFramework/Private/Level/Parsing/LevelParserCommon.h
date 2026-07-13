@@ -13,6 +13,7 @@ namespace LevelParsing
 		None = 0,
 		Level,
 		Camera,
+		Sky,
 		Lighting,
 		SceneAssets
 	};
@@ -33,6 +34,10 @@ namespace LevelParsing
 		if (sectionName == "Camera")
 		{
 			return LevelFileSection::Camera;
+		}
+		if (sectionName == "Sky")
+		{
+			return LevelFileSection::Sky;
 		}
 		if (sectionName == "Lighting")
 		{

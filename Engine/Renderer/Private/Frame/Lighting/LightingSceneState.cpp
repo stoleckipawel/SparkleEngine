@@ -100,21 +100,26 @@ namespace
 		return Hash::ContinueFnv1a64Value(hash, reinterpret_cast<std::uintptr_t>(material.textureBindingSet));
 	}
 
-	std::uint64_t AppendEnvironmentState(std::uint64_t hash, const Texture* environmentTexture) noexcept
+	std::uint64_t AppendSkyState(std::uint64_t hash, const RenderSkyData& sky) noexcept
 	{
-		hash = LightingStateHash::AppendBool(hash, environmentTexture != nullptr);
-		if (environmentTexture == nullptr)
+		const Texture* skyTexture = sky.skyTexture;
+		hash = LightingStateHash::AppendBool(hash, sky.enabled);
+		hash = LightingStateHash::AppendFloat3(hash, sky.color);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.intensity);
+		hash = LightingStateHash::AppendBool(hash, skyTexture != nullptr);
+		if (skyTexture == nullptr)
 		{
 			return hash;
 		}
 
-		hash = Hash::ContinueFnv1a64Value(hash, reinterpret_cast<std::uintptr_t>(environmentTexture));
-		const TextureRuntimeInfo runtimeInfo = environmentTexture->GetRuntimeInfo();
+		hash = Hash::ContinueFnv1a64Value(hash, reinterpret_cast<std::uintptr_t>(skyTexture));
+		const TextureRuntimeInfo runtimeInfo = skyTexture->GetRuntimeInfo();
 		hash = LightingStateHash::AppendBool(hash, runtimeInfo.IsValid);
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.Width);
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.Height);
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.ArraySize);
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.Dimension);
+		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.Format);
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.FormatIntent);
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.MipCount);
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.EstimatedByteSize);
@@ -124,10 +129,10 @@ namespace
 	}
 }
 
-std::uint64_t BuildLightingSceneStateKey(const FrameContext& frame, const Texture* environmentTexture) noexcept
+std::uint64_t BuildLightingSceneStateKey(const FrameContext& frame) noexcept
 {
 	std::uint64_t hash = Hash::kFnv64OffsetBasis;
-	hash = AppendEnvironmentState(hash, environmentTexture);
+	hash = AppendSkyState(hash, frame.sceneData.sky);
 	hash = AppendLightsState(hash, frame.sceneData.directionalLights);
 	hash = AppendLightsState(hash, frame.sceneData.pointLights);
 	hash = AppendLightsState(hash, frame.sceneData.spotLights);

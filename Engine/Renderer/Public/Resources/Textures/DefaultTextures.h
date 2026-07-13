@@ -14,7 +14,7 @@ enum class DefaultTexture : std::uint8_t
 	Green,
 	Blue,
 	Normal,
-	Cubemap,
+	Sky,
 
 	Count
 };

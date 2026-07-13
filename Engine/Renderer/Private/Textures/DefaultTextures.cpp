@@ -11,7 +11,7 @@ namespace
 	    {"Green", "Defaults/default_green.stex"},
 	    {"Blue", "Defaults/default_blue.stex"},
 	    {"Normal", "Defaults/default_normal.stex"},
-	    {"Cubemap", "Defaults/default_cubemap.stex"}};
+	    {"Sky", "Defaults/default_cubemap.stex"}};
 
 	constexpr DefaultTextureDesc kUnknownDefaultTextureDesc{};
 }  // namespace

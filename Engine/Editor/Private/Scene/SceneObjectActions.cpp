@@ -15,6 +15,8 @@ namespace SceneObjectActions
 		{
 			case SceneObjectType::Camera:
 				return selection.index < gameScene.GetCameras().GetCameraCount();
+			case SceneObjectType::Sky:
+				return selection.index == 0;
 			case SceneObjectType::Light:
 				return selection.index < gameScene.GetLighting().GetLightCount();
 			case SceneObjectType::Mesh:
@@ -31,6 +33,11 @@ namespace SceneObjectActions
 		{
 			case SceneObjectType::Camera:
 				return gameScene.GetCameras().GetActiveCamera().GetCameraComponent().IsVisible();
+			case SceneObjectType::Sky:
+			{
+				const SceneSkyDesc* sky = gameScene.GetSky().GetSky();
+				return sky == nullptr || sky->enabled;
+			}
 			case SceneObjectType::Light:
 				return gameScene.GetLighting().IsLightVisible(selection.index);
 			case SceneObjectType::Mesh:
@@ -61,6 +68,13 @@ namespace SceneObjectActions
 				}
 				CameraComponent& camera = gameScene.GetCameras().GetActiveCamera().GetCameraComponent();
 				camera.SetVisible(!camera.IsVisible());
+				break;
+			}
+			case SceneObjectType::Sky:
+			{
+				SceneSkyDesc sky = gameScene.GetSky().GetSky() != nullptr ? *gameScene.GetSky().GetSky() : SceneSkyDesc{};
+				sky.enabled = !sky.enabled;
+				gameScene.GetSky().SetSky(std::move(sky));
 				break;
 			}
 			case SceneObjectType::Light:

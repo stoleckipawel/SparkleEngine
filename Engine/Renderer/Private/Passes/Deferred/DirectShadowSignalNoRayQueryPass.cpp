@@ -33,9 +33,21 @@ void DirectShadowSignalNoRayQueryPass::DeclareResources(
     FrameGraphBuilder& builder,
     FrameGraphTextureHandle sceneDepth,
     const DirectShadowSignalResources& shadowSignals,
+    FrameGraphBufferHandle directionalLights,
+    FrameGraphBufferHandle pointLights,
+    FrameGraphBufferHandle spotLights,
+    FrameGraphBufferHandle rectLights,
     ParameterInstance& parameters)
 {
-	DirectShadowSignalPassCommon::DeclareResources(builder, sceneDepth, shadowSignals, *parameters);
+	DirectShadowSignalPassCommon::DeclareResources(
+	    builder,
+	    sceneDepth,
+	    shadowSignals,
+	    directionalLights,
+	    pointLights,
+	    spotLights,
+	    rectLights,
+	    *parameters);
 }
 
 void DirectShadowSignalNoRayQueryPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

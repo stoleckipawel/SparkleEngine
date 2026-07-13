@@ -16,6 +16,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
+#include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Host/RendererSystemRoot.h"
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
@@ -400,6 +401,50 @@ void FramePipeline::RecordFrame() noexcept
 	}
 
 	BindExposureHistoryFrameGraphResources();
+	if (frame.sceneData.sky.skyTexture != nullptr)
+	{
+		m_frameGraph->BindPersistentTexture(m_frameResources.External.Sky, *frame.sceneData.sky.skyTexture, ResourceState::ShaderResource);
+	}
+	else
+	{
+		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.External.Sky);
+	}
+	const auto bindFrameBuffer = [this](FrameGraphBufferHandle handle, const FrameBufferResource& buffer, const char* name)
+	{
+		if (buffer)
+		{
+			m_frameGraph->BindPersistentBuffer(
+			    handle,
+			    buffer.Resource,
+			    FrameGraphBufferDesc::Create(name, buffer.SizeInBytes, buffer.StrideInBytes),
+			    ResourceState::ShaderResource);
+		}
+		else
+		{
+			m_frameGraph->ClearPersistentBufferBinding(handle);
+		}
+	};
+	bindFrameBuffer(m_frameResources.External.DirectionalLights, frame.lighting.GetDirectionalLightsBuffer(), "DirectionalLights");
+	bindFrameBuffer(m_frameResources.External.PointLights, frame.lighting.GetPointLightsBuffer(), "PointLights");
+	bindFrameBuffer(m_frameResources.External.SpotLights, frame.lighting.GetSpotLightsBuffer(), "SpotLights");
+	bindFrameBuffer(m_frameResources.External.RectLights, frame.lighting.GetRectLightsBuffer(), "RectLights");
+	bindFrameBuffer(m_frameResources.External.MeshInstances, frame.meshInstances.GetBuffer(), "MeshInstances");
+	bindFrameBuffer(m_frameResources.External.RayTracingHitVertices, frame.rayTracingHitData.GetVertexBuffer(), "RayTracingHitVertices");
+	bindFrameBuffer(
+	    m_frameResources.External.RayTracingHitSkinInfluences,
+	    frame.rayTracingHitData.GetSkinInfluenceBuffer(),
+	    "RayTracingHitSkinInfluences");
+	bindFrameBuffer(m_frameResources.External.RayTracingHitIndices, frame.rayTracingHitData.GetIndexBuffer(), "RayTracingHitIndices");
+	bindFrameBuffer(
+	    m_frameResources.External.RayTracingHitInstances,
+	    frame.rayTracingHitData.GetInstanceBuffer(),
+	    "RayTracingHitInstances");
+	bindFrameBuffer(
+	    m_frameResources.External.RayTracingHitMaterials,
+	    frame.rayTracingHitData.GetMaterialBuffer(),
+	    "RayTracingHitMaterials");
+	bindFrameBuffer(m_frameResources.External.JointMatrices, frame.skinning.GetBuffer(), "JointMatrices");
+	bindFrameBuffer(m_frameResources.External.PreviousJointMatrices, frame.skinning.GetPreviousBuffer(), "PreviousJointMatrices");
 	BindDirectLightReservoirHistoryFrameGraphResources();
 	BindReferenceLightingHistoryFrameGraphResources();
 	BindRestirIndirectReservoirHistoryFrameGraphResources();

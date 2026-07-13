@@ -34,17 +34,9 @@ SkinningFrameData& SkinningFrameData::operator=(SkinningFrameData&& other) noexc
 	m_renderHardwareInterface = other.m_renderHardwareInterface;
 	m_buffer = other.m_buffer;
 	m_previousBuffer = other.m_previousBuffer;
-	m_view = other.m_view;
-	m_previousView = other.m_previousView;
-	m_shaderResourceView = other.m_shaderResourceView;
-	m_previousShaderResourceView = other.m_previousShaderResourceView;
 	other.m_renderHardwareInterface = nullptr;
-	other.m_buffer = {};
-	other.m_previousBuffer = {};
-	other.m_view = {};
-	other.m_previousView = {};
-	other.m_shaderResourceView = {};
-	other.m_previousShaderResourceView = {};
+	other.m_buffer.Reset();
+	other.m_previousBuffer.Reset();
 	return *this;
 }
 
@@ -52,8 +44,8 @@ SkinningFrameData SkinningFrameData::Build(RenderHardwareInterface& renderHardwa
 {
 	std::vector<JointMatrixData> matrices;
 	std::vector<JointMatrixData> previousMatrices;
-	matrices.reserve((std::max<std::size_t>)(sceneData.jointMatrices.size(), 1u));
-	previousMatrices.reserve((std::max<std::size_t>)(sceneData.previousJointMatrices.size(), 1u));
+	matrices.reserve((std::max<std::size_t>) (sceneData.jointMatrices.size(), 1u));
+	previousMatrices.reserve((std::max<std::size_t>) (sceneData.previousJointMatrices.size(), 1u));
 	if (sceneData.jointMatrices.empty())
 	{
 		matrices.push_back(JointMatrixData{.SkinningMTX = MathUtils::IdentityFloat4x4()});
@@ -66,53 +58,46 @@ SkinningFrameData SkinningFrameData::Build(RenderHardwareInterface& renderHardwa
 			matrices.push_back(JointMatrixData{.SkinningMTX = matrix});
 		}
 		const std::vector<DirectX::XMFLOAT4X4>& sourcePreviousMatrices =
-		    sceneData.previousJointMatrices.size() == sceneData.jointMatrices.size() ? sceneData.previousJointMatrices : sceneData.jointMatrices;
+		    sceneData.previousJointMatrices.size() == sceneData.jointMatrices.size() ? sceneData.previousJointMatrices
+		                                                                             : sceneData.jointMatrices;
 		for (const DirectX::XMFLOAT4X4& matrix : sourcePreviousMatrices)
 		{
 			previousMatrices.push_back(JointMatrixData{.SkinningMTX = matrix});
 		}
 	}
 
-	RhiOwnedResourceHandle buffer = {};
-	RhiOwnedResourceHandle previousBuffer = {};
-	RhiResourceViewHandle view = {};
-	RhiResourceViewHandle previousView = {};
-	const bool created = renderHardwareInterface.GetResourceService().CreateStructuredBuffer(
+	FrameBufferResource buffer{
+	    .SizeInBytes = matrices.size() * sizeof(JointMatrixData),
+	    .StrideInBytes = static_cast<std::uint32_t>(sizeof(JointMatrixData))};
+	FrameBufferResource previousBuffer{
+	    .SizeInBytes = previousMatrices.size() * sizeof(JointMatrixData),
+	    .StrideInBytes = static_cast<std::uint32_t>(sizeof(JointMatrixData))};
+	const bool created = renderHardwareInterface.GetResourceService().CreateStructuredBufferResource(
 	    matrices.data(),
-	    matrices.size() * sizeof(JointMatrixData),
-	    static_cast<std::uint32_t>(sizeof(JointMatrixData)),
+	    buffer.SizeInBytes,
+	    buffer.StrideInBytes,
 	    L"SkinningJointMatrices",
-	    buffer,
-	    view);
-	const bool previousCreated = renderHardwareInterface.GetResourceService().CreateStructuredBuffer(
+	    buffer.Resource);
+	const bool previousCreated = renderHardwareInterface.GetResourceService().CreateStructuredBufferResource(
 	    previousMatrices.data(),
-	    previousMatrices.size() * sizeof(JointMatrixData),
-	    static_cast<std::uint32_t>(sizeof(JointMatrixData)),
+	    previousBuffer.SizeInBytes,
+	    previousBuffer.StrideInBytes,
 	    L"PreviousSkinningJointMatrices",
-	    previousBuffer,
-	    previousView);
-	if (!created || !buffer || !view || !previousCreated || !previousBuffer || !previousView)
+	    previousBuffer.Resource);
+	if (!created || !buffer || !previousCreated || !previousBuffer)
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_skinningFrameDataLogger,
 		    "SkinningFrameData::Build: failed to upload {} joint matrices ({} bytes).",
 		    matrices.size(),
 		    matrices.size() * sizeof(JointMatrixData));
-		if (view)
-		{
-			renderHardwareInterface.GetDescriptorService().ReleaseResourceView(view);
-		}
-		if (previousView)
-		{
-			renderHardwareInterface.GetDescriptorService().ReleaseResourceView(previousView);
-		}
 		if (buffer)
 		{
-			renderHardwareInterface.GetResourceService().ReleaseOwnedResource(buffer);
+			renderHardwareInterface.GetResourceService().ReleaseOwnedResource(buffer.Resource);
 		}
 		if (previousBuffer)
 		{
-			renderHardwareInterface.GetResourceService().ReleaseOwnedResource(previousBuffer);
+			renderHardwareInterface.GetResourceService().ReleaseOwnedResource(previousBuffer.Resource);
 		}
 		return {};
 	}
@@ -121,15 +106,6 @@ SkinningFrameData SkinningFrameData::Build(RenderHardwareInterface& renderHardwa
 	frameData.m_renderHardwareInterface = &renderHardwareInterface;
 	frameData.m_buffer = buffer;
 	frameData.m_previousBuffer = previousBuffer;
-	frameData.m_view = view;
-	frameData.m_previousView = previousView;
-	frameData.m_shaderResourceView = renderHardwareInterface.GetDescriptorService().GetResourceViewGpuHandle(view);
-	frameData.m_previousShaderResourceView = renderHardwareInterface.GetDescriptorService().GetResourceViewGpuHandle(previousView);
-	if (!frameData.m_shaderResourceView || !frameData.m_previousShaderResourceView)
-	{
-		SPDLOG_LOGGER_WARN(g_skinningFrameDataLogger, "SkinningFrameData::Build: uploaded joint matrix buffer has no shader-resource descriptor.");
-		return {};
-	}
 	return frameData;
 }
 
@@ -137,29 +113,17 @@ void SkinningFrameData::Release() noexcept
 {
 	if (m_renderHardwareInterface != nullptr)
 	{
-		if (m_view)
-		{
-			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_view);
-		}
-		if (m_previousView)
-		{
-			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_previousView);
-		}
 		if (m_buffer)
 		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_buffer);
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_buffer.Resource);
 		}
 		if (m_previousBuffer)
 		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_previousBuffer);
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_previousBuffer.Resource);
 		}
 	}
 
 	m_renderHardwareInterface = nullptr;
-	m_buffer = {};
-	m_previousBuffer = {};
-	m_view = {};
-	m_previousView = {};
-	m_shaderResourceView = {};
-	m_previousShaderResourceView = {};
+	m_buffer.Reset();
+	m_previousBuffer.Reset();
 }

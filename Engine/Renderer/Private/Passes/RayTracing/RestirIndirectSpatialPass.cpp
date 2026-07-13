@@ -14,7 +14,6 @@
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
-#include "Textures/TextureManager.h"
 
 void RestirIndirectSpatialPassParameters::Describe(ShaderParameterStructBuilder<RestirIndirectSpatialPassParameters>& builder)
 {
@@ -44,17 +43,30 @@ void RestirIndirectSpatialPassParameters::Describe(ShaderParameterStructBuilder<
 	builder.Uniform("PerTemporal", &RestirIndirectSpatialPassParameters::PerTemporal, ShaderStageVisibility::Compute);
 	builder.Uniform("ViewLighting", &RestirIndirectSpatialPassParameters::ViewLighting, ShaderStageVisibility::Compute);
 	builder.Uniform("RayTracedShadows", &RestirIndirectSpatialPassParameters::RayTracedShadows, ShaderStageVisibility::Compute);
-	builder.Uniform("RestirIndirectConstants", &RestirIndirectSpatialPassParameters::RestirIndirectConstants, ShaderStageVisibility::Compute);
+	builder.Uniform("Sky", &RestirIndirectSpatialPassParameters::Sky, ShaderStageVisibility::Compute);
+	builder.Uniform(
+	    "RestirIndirectConstants",
+	    &RestirIndirectSpatialPassParameters::RestirIndirectConstants,
+	    ShaderStageVisibility::Compute);
 	builder.ReadTexture("GBufferBaseColor", &RestirIndirectSpatialPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 	builder.ReadTexture("GBufferNormal", &RestirIndirectSpatialPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 	builder.ReadTexture("GBufferMaterial", &RestirIndirectSpatialPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 	builder.ReadTexture("SceneDepth", &RestirIndirectSpatialPassParameters::SceneDepth, ShaderStageVisibility::Compute);
 	builder.ReadTexture("SkyTexture", &RestirIndirectSpatialPassParameters::SkyTexture, ShaderStageVisibility::Compute);
 	builder.Sampler("SamplerLinearClamp", &RestirIndirectSpatialPassParameters::SamplerLinearClamp, ShaderStageVisibility::Compute);
-	builder.ReadBuffer("RayTracingHitVertices", &RestirIndirectSpatialPassParameters::RayTracingHitVertices, ShaderStageVisibility::Compute);
+	builder.ReadBuffer(
+	    "RayTracingHitVertices",
+	    &RestirIndirectSpatialPassParameters::RayTracingHitVertices,
+	    ShaderStageVisibility::Compute);
 	builder.ReadBuffer("RayTracingHitIndices", &RestirIndirectSpatialPassParameters::RayTracingHitIndices, ShaderStageVisibility::Compute);
-	builder.ReadBuffer("RayTracingHitInstances", &RestirIndirectSpatialPassParameters::RayTracingHitInstances, ShaderStageVisibility::Compute);
-	builder.ReadBuffer("RayTracingHitMaterials", &RestirIndirectSpatialPassParameters::RayTracingHitMaterials, ShaderStageVisibility::Compute);
+	builder.ReadBuffer(
+	    "RayTracingHitInstances",
+	    &RestirIndirectSpatialPassParameters::RayTracingHitInstances,
+	    ShaderStageVisibility::Compute);
+	builder.ReadBuffer(
+	    "RayTracingHitMaterials",
+	    &RestirIndirectSpatialPassParameters::RayTracingHitMaterials,
+	    ShaderStageVisibility::Compute);
 	builder.ReadBuffer("MeshInstances", &RestirIndirectSpatialPassParameters::MeshInstances, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("SkinInfluences", &RestirIndirectSpatialPassParameters::SkinInfluences, ShaderStageVisibility::Compute);
 	builder.ReadBuffer("JointMatrices", &RestirIndirectSpatialPassParameters::JointMatrices, ShaderStageVisibility::Compute);
@@ -92,6 +104,18 @@ void RestirIndirectSpatialPass::DeclareResources(
     FrameGraphTextureHandle currentWeight,
     FrameGraphTextureHandle currentSurface,
     FrameGraphAccelerationStructureHandle sceneTlas,
+    FrameGraphTextureHandle sky,
+    FrameGraphBufferHandle directionalLights,
+    FrameGraphBufferHandle pointLights,
+    FrameGraphBufferHandle spotLights,
+    FrameGraphBufferHandle rectLights,
+    FrameGraphBufferHandle hitVertices,
+    FrameGraphBufferHandle hitSkinInfluences,
+    FrameGraphBufferHandle hitIndices,
+    FrameGraphBufferHandle hitInstances,
+    FrameGraphBufferHandle hitMaterials,
+    FrameGraphBufferHandle meshInstances,
+    FrameGraphBufferHandle jointMatrices,
     ParameterInstance& parameters)
 {
 	parameters->TemporalReservoirSampleTexture = builder.CreateSRV(temporalSample);
@@ -104,6 +128,18 @@ void RestirIndirectSpatialPass::DeclareResources(
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->SceneDepth = builder.CreateSRV(scene.SceneDepth);
+	parameters->SkyTexture = builder.CreateSRV(sky);
+	parameters->DirectionalLights = builder.CreateSRV(directionalLights);
+	parameters->PointLights = builder.CreateSRV(pointLights);
+	parameters->SpotLights = builder.CreateSRV(spotLights);
+	parameters->RectLights = builder.CreateSRV(rectLights);
+	parameters->RayTracingHitVertices = builder.CreateSRV(hitVertices);
+	parameters->SkinInfluences = builder.CreateSRV(hitSkinInfluences);
+	parameters->RayTracingHitIndices = builder.CreateSRV(hitIndices);
+	parameters->RayTracingHitInstances = builder.CreateSRV(hitInstances);
+	parameters->RayTracingHitMaterials = builder.CreateSRV(hitMaterials);
+	parameters->MeshInstances = builder.CreateSRV(meshInstances);
+	parameters->JointMatrices = builder.CreateSRV(jointMatrices);
 }
 
 void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
@@ -115,12 +151,9 @@ void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, Parameter
 		return;
 	}
 
-	const TextureManager* textures = context.RuntimeServices.Textures;
-	const RhiDescriptorTableBinding environment =
-	    textures != nullptr ? textures->GetShaderResourceBinding(textures->ResolveEnvironmentMapTexture()) : RhiDescriptorTableBinding{};
 	const RenderBindingSet* materialTextureTable = context.Frame.sceneData.materialTextureTable;
 	const std::uint32_t descriptorCount = context.Frame.sceneData.materialTextureTableDescriptorCount;
-	if (!environment || !context.Frame.sceneData.materialTextureTableValid || materialTextureTable == nullptr || !*materialTextureTable ||
+	if (!context.Frame.sceneData.materialTextureTableValid || materialTextureTable == nullptr || !*materialTextureTable ||
 	    descriptorCount == 0u || descriptorCount > MaterialTextureTableFixedCapacity ||
 	    materialTextureTable->GetDescriptorCount() < descriptorCount)
 	{
@@ -131,18 +164,10 @@ void RestirIndirectSpatialPass::Execute(PassExecutionContext& context, Parameter
 	parameters->PerView = context.Frame.mainView.perViewData;
 	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
 	parameters->ViewLighting = context.Frame.lighting.GetConstants();
-	parameters->DirectionalLights = context.Frame.lighting.GetDirectionalLightsShaderResourceView();
-	parameters->PointLights = context.Frame.lighting.GetPointLightsShaderResourceView();
-	parameters->SpotLights = context.Frame.lighting.GetSpotLightsShaderResourceView();
-	parameters->RectLights = context.Frame.lighting.GetRectLightsShaderResourceView();
-	parameters->RayTracingHitVertices = context.Frame.rayTracingHitData.GetVertexShaderResourceView();
-	parameters->RayTracingHitIndices = context.Frame.rayTracingHitData.GetIndexShaderResourceView();
-	parameters->RayTracingHitInstances = context.Frame.rayTracingHitData.GetInstanceShaderResourceView();
-	parameters->RayTracingHitMaterials = context.Frame.rayTracingHitData.GetMaterialShaderResourceView();
-	parameters->MeshInstances = context.Frame.meshInstances.GetShaderResourceView();
-	parameters->SkinInfluences = context.Frame.rayTracingHitData.GetSkinInfluenceShaderResourceView();
-	parameters->JointMatrices = context.Frame.skinning.GetShaderResourceView();
-	parameters->SkyTexture = environment;
+	parameters->Sky = SkyUniformData{
+	    .Color = context.Frame.sceneData.sky.color,
+	    .Intensity = context.Frame.sceneData.sky.intensity,
+	    .Enabled = context.Frame.sceneData.sky.enabled ? 1u : 0u};
 	parameters->MaterialTextureTable = materialTextureTable->GetTableBinding(0);
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,

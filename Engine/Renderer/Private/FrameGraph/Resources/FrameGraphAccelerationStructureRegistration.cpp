@@ -80,35 +80,6 @@ FrameGraphAccelerationStructureHandle FrameGraph::ImportAccelerationStructure(
 	return FrameGraphAccelerationStructureHandle{handle};
 }
 
-FrameGraphAccelerationStructureHandle FrameGraph::ImportPersistentAccelerationStructure(
-    const FrameGraphAccelerationStructureDesc& desc,
-    NativeResourceHandle resource,
-    RhiGpuVirtualAddress gpuAddress,
-    ResourceState initialState) noexcept
-{
-	if (!resource || gpuAddress == 0)
-	{
-		FailInvalidAccelerationStructureBinding(
-		    "ImportPersistentAccelerationStructure",
-		    desc.name,
-		    FrameGraphResourceHandle::Invalid(),
-		    initialState,
-		    static_cast<bool>(resource),
-		    gpuAddress);
-	}
-
-	const FrameGraphAccelerationStructureDesc resolvedDesc = ResolveAccelerationStructureDesc(desc, "PersistentAccelerationStructure");
-	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterPersistentAccelerationStructure(handle, resolvedDesc, initialState);
-	m_resourceStateTracker.RegisterResource(handle, initialState);
-	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
-	FrameGraphResourceAccess access{};
-	access.resource = resource;
-	access.accelerationStructureGpuAddress = gpuAddress;
-	m_resourceResolver.SetResolvedAccess(handle, access);
-	return FrameGraphAccelerationStructureHandle{handle};
-}
-
 FrameGraphAccelerationStructureHandle FrameGraph::ReservePersistentAccelerationStructure(
     const FrameGraphAccelerationStructureDesc& desc,
     ResourceState initialState) noexcept

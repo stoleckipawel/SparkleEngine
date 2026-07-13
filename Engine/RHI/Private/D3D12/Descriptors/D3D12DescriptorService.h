@@ -2,7 +2,9 @@
 
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "Descriptors/RhiDescriptorService.h"
+#include "Frame/RhiFrameConstants.h"
 
+#include <array>
 #include <cstdint>
 #include <vector>
 
@@ -18,8 +20,10 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	    D3D12Rhi& rhi,
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    const RhiCapabilities& capabilities) noexcept;
+	~D3D12DescriptorService() noexcept override;
 
 	ID3D12DescriptorHeap* GetShaderResourceDescriptorHeap() const noexcept;
+	void BeginFrame(std::uint32_t frameIndex) noexcept override;
 	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) override;
 	void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept override;
 	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) override;
@@ -67,6 +71,8 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
 	ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) noexcept;
 	const ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) const noexcept;
+	void DestroyResourceView(ResourceViewRecord& record) noexcept;
+	void ReleaseAllResourceViews() noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
@@ -76,4 +82,6 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	std::vector<std::uint32_t> m_freeDescriptorTableIndices;
 	std::vector<ResourceViewRecord> m_resourceViewRecords;
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
+	std::array<std::vector<ResourceViewRecord>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
+	std::uint32_t m_currentFrameIndex = 0;
 };

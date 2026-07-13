@@ -31,4 +31,9 @@ Use these as source material behind the implementation spine:
 
 - `Rendering/IndirectLightingArtifactInvestigation.md`: root cause, accepted fixes, and regression checks for the resolved indirect-lighting descriptor-lifetime artifact.
 
+## Rendering System Designs
+
+- `Rendering/SkyActorSystemDesign.md`: implemented ownership and data-flow contract for the level-authored sky, including the game-framework/renderer boundary and source-backed rationale.
+- `Rendering/FrameGraphResourceReferenceDesign.md`: implemented RDG-style resource/view and external-resource contract that keeps ordinary raw RHI descriptors below the frame-graph execution boundary.
+
 Keep new docs only when they describe an active implementation prompt, a source-backed contract, or a reference-backed rendering decision that the source cannot make obvious by itself.

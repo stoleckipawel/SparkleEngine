@@ -33,6 +33,26 @@ D3D12DescriptorService::D3D12DescriptorService(
 {
 }
 
+D3D12DescriptorService::~D3D12DescriptorService() noexcept
+{
+	ReleaseAllResourceViews();
+}
+
+void D3D12DescriptorService::BeginFrame(std::uint32_t frameIndex) noexcept
+{
+	if (frameIndex >= m_retiredResourceViews.size())
+	{
+		return;
+	}
+
+	for (ResourceViewRecord& record : m_retiredResourceViews[frameIndex])
+	{
+		DestroyResourceView(record);
+	}
+	m_retiredResourceViews[frameIndex].clear();
+	m_currentFrameIndex = frameIndex;
+}
+
 ID3D12DescriptorHeap* D3D12DescriptorService::GetShaderResourceDescriptorHeap() const noexcept
 {
 	if (m_descriptorHeapManager == nullptr)
@@ -258,9 +278,34 @@ void D3D12DescriptorService::ReleaseResourceView(RhiResourceViewHandle view) noe
 		return;
 	}
 
-	ReleaseDescriptor(record->descriptorType, record->descriptorAllocation);
+	m_retiredResourceViews[m_currentFrameIndex].push_back(*record);
 	*record = ResourceViewRecord{};
 	m_freeResourceViewIndices.push_back(view.Value - 1u);
+}
+
+void D3D12DescriptorService::DestroyResourceView(ResourceViewRecord& record) noexcept
+{
+	if (record.IsAllocated())
+	{
+		ReleaseDescriptor(record.descriptorType, record.descriptorAllocation);
+		record = {};
+	}
+}
+
+void D3D12DescriptorService::ReleaseAllResourceViews() noexcept
+{
+	for (ResourceViewRecord& record : m_resourceViewRecords)
+	{
+		DestroyResourceView(record);
+	}
+	for (std::vector<ResourceViewRecord>& retiredViews : m_retiredResourceViews)
+	{
+		for (ResourceViewRecord& record : retiredViews)
+		{
+			DestroyResourceView(record);
+		}
+		retiredViews.clear();
+	}
 }
 
 RhiCpuDescriptorHandle D3D12DescriptorService::GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept

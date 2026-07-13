@@ -13,6 +13,7 @@
 #include "SceneData/Caching/MaterialCacheUtils.h"
 #include "SceneData/RenderMeshSnapshotAdapter.h"
 #include "Scene/Meshes/MeshSnapshot.h"
+#include "Textures/TextureManager.h"
 
 #include <cstddef>
 #include <unordered_map>
@@ -53,8 +54,11 @@ namespace
 	}
 }
 
-RenderSceneDataBuilder::RenderSceneDataBuilder(MaterialCacheManager& materialCache, GPUMeshCache& gpuMeshCache) noexcept :
-    m_materialCache(&materialCache), m_gpuMeshCache(&gpuMeshCache)
+RenderSceneDataBuilder::RenderSceneDataBuilder(
+    MaterialCacheManager& materialCache,
+    GPUMeshCache& gpuMeshCache,
+    TextureManager& textureManager) noexcept :
+    m_materialCache(&materialCache), m_gpuMeshCache(&gpuMeshCache), m_textureManager(&textureManager)
 {
 }
 
@@ -74,8 +78,43 @@ RenderSceneData RenderSceneDataBuilder::Build(const RenderSceneSnapshot& sceneSn
 
 	BuildMaterials(sceneSnapshot, sceneData);
 	BuildMeshInstanceBatches(sceneSnapshot, sceneData);
+	BuildSky(sceneSnapshot, sceneData);
 	RenderLightingBuilder::Build(sceneSnapshot.lighting, sceneData);
 	return sceneData;
+}
+
+void RenderSceneDataBuilder::BuildSky(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const
+{
+	if (m_textureManager == nullptr)
+	{
+		return;
+	}
+
+	const SceneSkyDesc* sky = sceneSnapshot.sky.sky ? &*sceneSnapshot.sky.sky : nullptr;
+	if (sky == nullptr)
+	{
+		sceneData.sky.skyTexture = m_textureManager->ResolveDefaultSkyTexture();
+		return;
+	}
+
+	sceneData.sky.enabled = sky->enabled;
+	sceneData.sky.color = sky->color;
+	sceneData.sky.intensity = sky->intensity;
+	if (!sky->skyTexture.IsValid())
+	{
+		sceneData.sky.skyTexture = m_textureManager->ResolveDefaultSkyTexture();
+		return;
+	}
+
+	sceneData.sky.skyTexture = m_textureManager->GetSceneTexture(sky->skyTexture.texturePath);
+	if (sceneData.sky.skyTexture == nullptr)
+	{
+		sceneData.sky.skyTexture = m_textureManager->GetTexture(TextureId::Checker);
+		SPDLOG_LOGGER_ERROR(
+		    g_renderSceneDataBuilderLogger,
+		    "RenderSceneDataBuilder: level sky texture '{}' is unavailable; using the diagnostic checker texture.",
+		    sky->skyTexture.texturePath);
+	}
 }
 
 void RenderSceneDataBuilder::BuildMaterials(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const
@@ -119,7 +158,10 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		    previousIt != m_previousSkinningMatricesBySkeletonAsset.end() && previousIt->second.size() == pose.skinningMatrices.size()
 		        ? previousIt->second
 		        : pose.skinningMatrices;
-		sceneData.previousJointMatrices.insert(sceneData.previousJointMatrices.end(), previousSkinningMatrices.begin(), previousSkinningMatrices.end());
+		sceneData.previousJointMatrices.insert(
+		    sceneData.previousJointMatrices.end(),
+		    previousSkinningMatrices.begin(),
+		    previousSkinningMatrices.end());
 		currentSkinningMatricesBySkeletonAsset.emplace(pose.skeletonAssetId, pose.skinningMatrices);
 	}
 
@@ -142,8 +184,9 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 
 		MeshDraw draw = {};
 		draw.Transform.WorldMatrix = meshInstance.worldMatrix;
-		draw.Transform.PreviousWorldMatrix =
-		    sourceInstanceIndex < m_previousMeshWorldMatrices.size() ? m_previousMeshWorldMatrices[sourceInstanceIndex] : meshInstance.worldMatrix;
+		draw.Transform.PreviousWorldMatrix = sourceInstanceIndex < m_previousMeshWorldMatrices.size()
+		                                         ? m_previousMeshWorldMatrices[sourceInstanceIndex]
+		                                         : meshInstance.worldMatrix;
 		draw.Transform.WorldInvTranspose = meshInstance.worldInvTranspose;
 		draw.Material.Slot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
 		draw.Source.SourceInstanceIndex = sourceInstanceIndex;
@@ -162,12 +205,13 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		renderItems.push_back(
 		    MeshRenderItem{
 		        .draw = draw,
-		        .materialBindingSet = draw.Material.Slot < sceneData.materials.size() ? sceneData.materials[draw.Material.Slot].textureBindingSet
-		                                                                           : nullptr,
+		        .materialBindingSet =
+		            draw.Material.Slot < sceneData.materials.size() ? sceneData.materials[draw.Material.Slot].textureBindingSet : nullptr,
 		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex)});
 	}
 
-	const std::vector<RenderMeshInstanceGroup> renderInstanceGroups = RenderMeshSnapshotAdapter::BuildRenderMeshInstanceGroups(sceneSnapshot.meshes);
+	const std::vector<RenderMeshInstanceGroup> renderInstanceGroups =
+	    RenderMeshSnapshotAdapter::BuildRenderMeshInstanceGroups(sceneSnapshot.meshes);
 	MeshInstanceBatchBuilder batchBuilder;
 	MeshInstanceBatchBuildResult batchBuildResult = batchBuilder.Build(
 	    renderItems,
@@ -191,7 +235,8 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		loggedMissingMeshBatchWarning = true;
 		SPDLOG_LOGGER_WARN(
 		    g_renderSceneDataBuilderLogger,
-		    "RenderSceneDataBuilder: scene has {} mesh instances but produced no render batches (candidates={}, rejected={}, missingGpuMesh={}, invalidGroup={}, invalidMaterial={}).",
+		    "RenderSceneDataBuilder: scene has {} mesh instances but produced no render batches (candidates={}, rejected={}, "
+		    "missingGpuMesh={}, invalidGroup={}, invalidMaterial={}).",
 		    sceneSnapshot.meshes.meshInstances.size(),
 		    batchBuildResult.diagnostics.CandidateItemCount,
 		    batchBuildResult.diagnostics.RejectedCandidateCount,

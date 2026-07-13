@@ -30,13 +30,13 @@ std::uint64_t BuildReferenceLightingSettingsKey() noexcept
 	return Hash::FinalizeFnv1a64(hash);
 }
 
-std::uint64_t BuildReferenceLightingStateKey(const FrameContext& frame, const Texture* environmentTexture) noexcept
+std::uint64_t BuildReferenceLightingStateKey(const FrameContext& frame) noexcept
 {
 	std::uint64_t hash = Hash::kFnv64OffsetBasis;
 	hash = Hash::ContinueFnv1a64Value(hash, CVarRenderViewMode.Get());
 	const PerViewCameraConstantBufferData& camera = frame.mainView.perViewData.Camera;
 	hash = LightingStateHash::AppendMatrix(hash, camera.ViewMTX);
 	hash = LightingStateHash::AppendMatrix(hash, camera.ProjectionMTX);
-	hash = Hash::ContinueFnv1a64Value(hash, BuildLightingSceneStateKey(frame, environmentTexture));
+	hash = Hash::ContinueFnv1a64Value(hash, BuildLightingSceneStateKey(frame));
 	return Hash::FinalizeFnv1a64(hash);
 }

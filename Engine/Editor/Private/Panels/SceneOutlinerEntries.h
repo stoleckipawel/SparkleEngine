@@ -17,6 +17,7 @@ struct SceneOutlinerEntry
 namespace SceneOutlinerEntries
 {
 	std::vector<SceneOutlinerEntry> BuildCameraEntries(const GameScene& gameScene);
+	std::vector<SceneOutlinerEntry> BuildSkyEntries(const GameScene& gameScene);
 	std::vector<SceneOutlinerEntry> BuildLightEntries(const GameScene& gameScene);
 	std::vector<SceneOutlinerEntry> BuildMeshEntries(const GameScene& gameScene);
 }  // namespace SceneOutlinerEntries

@@ -7,6 +7,7 @@ enum class SceneObjectType : std::uint8_t
 {
 	None = 0,
 	Camera,
+	Sky,
 	Light,
 	Mesh
 };
@@ -18,10 +19,8 @@ struct SceneObjectSelection final
 
 	static SceneObjectSelection None() noexcept { return {}; }
 	static SceneObjectSelection Camera(std::size_t cameraIndex = 0) noexcept { return {SceneObjectType::Camera, cameraIndex}; }
-	static SceneObjectSelection Light(std::size_t lightIndex) noexcept
-	{
-		return {SceneObjectType::Light, lightIndex};
-	}
+	static SceneObjectSelection Sky() noexcept { return {SceneObjectType::Sky, 0}; }
+	static SceneObjectSelection Light(std::size_t lightIndex) noexcept { return {SceneObjectType::Light, lightIndex}; }
 	static SceneObjectSelection Mesh(std::size_t meshIndex) noexcept { return {SceneObjectType::Mesh, meshIndex}; }
 
 	bool IsNone() const noexcept { return type == SceneObjectType::None; }

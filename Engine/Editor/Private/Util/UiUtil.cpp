@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <vector>
 
 #include <imgui.h>
 
@@ -956,6 +957,40 @@ namespace UiUtil
 
 		ImGui::TableSetColumnIndex(1);
 		bool changed = ImGui::Checkbox("##value", &value);
+		if (resetValue != nullptr)
+		{
+			if (DrawDetailsResetButton(2, value != *resetValue))
+			{
+				value = *resetValue;
+				changed = true;
+			}
+		}
+		else
+		{
+			DrawDetailsEmptyUtility(2);
+		}
+
+		EndDetailsRow();
+		return changed;
+	}
+
+	bool EditDetailsText(const char* label, std::string& value, const std::string* resetValue)
+	{
+		if (!BeginDetailsRow(label, 1))
+		{
+			return false;
+		}
+
+		std::vector<char> buffer((std::max) (std::size_t{1024}, value.size() + 1u), '\0');
+		std::copy(value.begin(), value.end(), buffer.begin());
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		bool changed = ImGui::InputText("##value", buffer.data(), buffer.size());
+		if (changed)
+		{
+			value = buffer.data();
+		}
+
 		if (resetValue != nullptr)
 		{
 			if (DrawDetailsResetButton(2, value != *resetValue))

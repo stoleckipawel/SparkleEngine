@@ -5,6 +5,7 @@
 #include "Panels/SceneLightInspector.h"
 #include "Panels/SceneMaterialVariantInspector.h"
 #include "Panels/SceneMeshInspector.h"
+#include "Panels/SceneSkyInspector.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/SceneObjectPresentation.h"
 #include "Scene/GameScene.h"
@@ -48,6 +49,8 @@ std::string SceneInspectorPanel::BuildSelectionTitle() const
 				}
 			}
 			return "Light " + std::to_string(m_selection->index + 1);
+		case SceneObjectType::Sky:
+			return "Sky";
 		case SceneObjectType::Mesh:
 			return "Mesh " + std::to_string(m_selection->index + 1);
 		case SceneObjectType::None:
@@ -76,6 +79,8 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 				}
 			}
 			return "Light";
+		case SceneObjectType::Sky:
+			return "Sky";
 		case SceneObjectType::Mesh:
 			return "Static Mesh";
 		case SceneObjectType::None:
@@ -161,6 +166,9 @@ void SceneInspectorPanel::BuildSelectionInspector() noexcept
 			break;
 		case SceneObjectType::Light:
 			SceneLightInspector::Build(*m_gameScene, m_selection->index, m_filterText);
+			break;
+		case SceneObjectType::Sky:
+			SceneSkyInspector::Build(*m_gameScene, m_filterText);
 			break;
 		case SceneObjectType::Mesh:
 			SceneMeshInspector::Build(*m_gameScene, m_selection->index, m_filterText);

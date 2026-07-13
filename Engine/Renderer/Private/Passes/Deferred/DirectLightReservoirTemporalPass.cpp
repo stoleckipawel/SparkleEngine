@@ -36,6 +36,10 @@ void DirectLightReservoirTemporalPass::DeclareResources(
     FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals,
+    FrameGraphBufferHandle directionalLights,
+    FrameGraphBufferHandle pointLights,
+    FrameGraphBufferHandle spotLights,
+    FrameGraphBufferHandle rectLights,
     ParameterInstance& parameters)
 {
 	parameters->TemporalReservoirSample = builder.CreateUAV(shadowSignals.TemporalReservoirSample);
@@ -43,7 +47,15 @@ void DirectLightReservoirTemporalPass::DeclareResources(
 	parameters->PreviousReservoirSample = builder.CreateSRV(shadowSignals.PreviousReservoirSample);
 	parameters->PreviousReservoirWeight = builder.CreateSRV(shadowSignals.PreviousReservoirWeight);
 	parameters->PreviousReservoirSurface = builder.CreateSRV(shadowSignals.PreviousReservoirSurface);
-	DirectLightReservoirPassCommon::DeclareResources(builder, sceneDepth, gbuffer, *parameters);
+	DirectLightReservoirPassCommon::DeclareResources(
+	    builder,
+	    sceneDepth,
+	    gbuffer,
+	    directionalLights,
+	    pointLights,
+	    spotLights,
+	    rectLights,
+	    *parameters);
 	parameters->GBufferMotionVector = builder.CreateSRV(gbuffer.MotionVector);
 }
 

@@ -17,8 +17,12 @@ VulkanResourceService::VulkanResourceService(
     VulkanGpuMemoryAllocator& memoryAllocator,
     VulkanDescriptorManager& descriptorManager,
     const RhiCapabilities& capabilities) noexcept :
-	m_rhi(&rhi), m_commandContext(&commandContext), m_memoryAllocator(&memoryAllocator), m_descriptorManager(&descriptorManager),
-	m_capabilities(&capabilities), m_textureFactory(std::make_unique<VulkanTextureFactory>(memoryAllocator))
+    m_rhi(&rhi),
+    m_commandContext(&commandContext),
+    m_memoryAllocator(&memoryAllocator),
+    m_descriptorManager(&descriptorManager),
+    m_capabilities(&capabilities),
+    m_textureFactory(std::make_unique<VulkanTextureFactory>(memoryAllocator))
 {
 }
 
@@ -51,8 +55,7 @@ RhiOwnedResourceHandle VulkanResourceService::CreateTextureResource(
     std::wstring_view debugName)
 {
 	(void) initialState;
-	if (m_textureFactory == nullptr || m_capabilities == nullptr ||
-	    !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc))
+	if (m_textureFactory == nullptr || m_capabilities == nullptr || !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc))
 	{
 		return {};
 	}
@@ -127,7 +130,32 @@ bool VulkanResourceService::CreateStructuredBuffer(
 {
 	outResource = {};
 	outView = {};
-	if (m_memoryAllocator == nullptr || m_descriptorManager == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
+	if (m_descriptorManager == nullptr || !CreateStructuredBufferResource(data, sizeInBytes, strideInBytes, debugName, outResource))
+	{
+		return false;
+	}
+
+	outView = m_descriptorManager->CreateResourceView(
+	    RhiResourceViewDesc::BufferShaderResource(GetNativeResource(outResource), sizeInBytes, strideInBytes));
+	if (!outView)
+	{
+		ReleaseOwnedResource(outResource);
+		outResource = {};
+		return false;
+	}
+
+	return true;
+}
+
+bool VulkanResourceService::CreateStructuredBufferResource(
+    const void* data,
+    std::size_t sizeInBytes,
+    std::uint32_t strideInBytes,
+    std::wstring_view debugName,
+    RhiOwnedResourceHandle& outResource)
+{
+	outResource = {};
+	if (m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
 	{
 		return false;
 	}
@@ -145,16 +173,7 @@ bool VulkanResourceService::CreateStructuredBuffer(
 	}
 
 	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
-	outView = m_descriptorManager->CreateResourceView(
-	    RhiResourceViewDesc::BufferShaderResource(GetNativeResource(outResource), sizeInBytes, strideInBytes));
-	if (!outView)
-	{
-		ReleaseOwnedResource(outResource);
-		outResource = {};
-		return false;
-	}
-
-	return true;
+	return static_cast<bool>(outResource);
 }
 
 bool VulkanResourceService::CreateIndexBuffer(

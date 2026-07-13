@@ -1,9 +1,7 @@
 #pragma once
 
 #include "RayTracing/RayTracingHitData.h"
-#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
-#include "RHI/Public/Interop/RhiNativeHandles.h"
-#include "RHI/Public/Resources/RhiResourceView.h"
+#include "Frame/Core/FrameBufferResource.h"
 
 #include <cstdint>
 
@@ -24,11 +22,11 @@ class RayTracingHitDataFrameData final
 	bool IsValid() const noexcept;
 	std::uint32_t GetInstanceCount() const noexcept { return m_instanceCount; }
 	std::uint32_t GetMaterialCount() const noexcept { return m_materialCount; }
-	RhiGpuDescriptorHandle GetVertexShaderResourceView() const noexcept { return m_vertexShaderResourceView; }
-	RhiGpuDescriptorHandle GetSkinInfluenceShaderResourceView() const noexcept { return m_skinInfluenceShaderResourceView; }
-	RhiGpuDescriptorHandle GetIndexShaderResourceView() const noexcept { return m_indexShaderResourceView; }
-	RhiGpuDescriptorHandle GetInstanceShaderResourceView() const noexcept { return m_instanceShaderResourceView; }
-	RhiGpuDescriptorHandle GetMaterialShaderResourceView() const noexcept { return m_materialShaderResourceView; }
+	const FrameBufferResource& GetVertexBuffer() const noexcept { return m_vertexBuffer; }
+	const FrameBufferResource& GetSkinInfluenceBuffer() const noexcept { return m_skinInfluenceBuffer; }
+	const FrameBufferResource& GetIndexBuffer() const noexcept { return m_indexBuffer; }
+	const FrameBufferResource& GetInstanceBuffer() const noexcept { return m_instanceBuffer; }
+	const FrameBufferResource& GetMaterialBuffer() const noexcept { return m_materialBuffer; }
 
 	static RayTracingHitDataFrameData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
@@ -36,21 +34,11 @@ class RayTracingHitDataFrameData final
 	void Release() noexcept;
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
-	RhiOwnedResourceHandle m_vertexBuffer = {};
-	RhiOwnedResourceHandle m_skinInfluenceBuffer = {};
-	RhiOwnedResourceHandle m_indexBuffer = {};
-	RhiOwnedResourceHandle m_instanceBuffer = {};
-	RhiOwnedResourceHandle m_materialBuffer = {};
-	RhiResourceViewHandle m_vertexView = {};
-	RhiResourceViewHandle m_skinInfluenceView = {};
-	RhiResourceViewHandle m_indexView = {};
-	RhiResourceViewHandle m_instanceView = {};
-	RhiResourceViewHandle m_materialView = {};
-	RhiGpuDescriptorHandle m_vertexShaderResourceView = {};
-	RhiGpuDescriptorHandle m_skinInfluenceShaderResourceView = {};
-	RhiGpuDescriptorHandle m_indexShaderResourceView = {};
-	RhiGpuDescriptorHandle m_instanceShaderResourceView = {};
-	RhiGpuDescriptorHandle m_materialShaderResourceView = {};
+	FrameBufferResource m_vertexBuffer;
+	FrameBufferResource m_skinInfluenceBuffer;
+	FrameBufferResource m_indexBuffer;
+	FrameBufferResource m_instanceBuffer;
+	FrameBufferResource m_materialBuffer;
 	std::uint32_t m_instanceCount = 0u;
 	std::uint32_t m_materialCount = 0u;
 };

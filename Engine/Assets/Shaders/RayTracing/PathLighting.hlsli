@@ -1,7 +1,7 @@
 #ifndef SPARKLE_RAY_TRACING_PATH_LIGHTING_HLSLI
 #define SPARKLE_RAY_TRACING_PATH_LIGHTING_HLSLI
 
-#include "Lighting/SkyEnvironment.hlsli"
+#include "Lighting/Sky.hlsli"
 #include "RayTracing/PathSampling.hlsli"
 #include "RayTracing/PathTrace.hlsli"
 #include "RayTracing/RayTracingHitLighting.hlsli"
@@ -69,7 +69,7 @@ namespace RayTracingPathLighting
 
 		result.RejectionReason = RayTracingPathSample::RejectionReasonTraceMiss;
 		result.SurfaceRejectionReason = RayTracingHitSurface::ReasonNoHit;
-		result.MissRadiance = SampleSkyEnvironmentRadiance(skyTexture, skySampler, sample.DirectionWorld);
+		result.MissRadiance = SampleSkyRadiance(skyTexture, skySampler, sample.DirectionWorld);
 		result.IncidentRadiance = result.MissRadiance;
 		return result;
 	}

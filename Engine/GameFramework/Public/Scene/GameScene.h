@@ -10,6 +10,7 @@
 #include "GameFramework/Public/Scene/GameSceneController.h"
 #include "GameFramework/Public/Scene/Meshes/SceneMeshes.h"
 #include "GameFramework/Public/Scene/Skeletons/SceneSkeletons.h"
+#include "GameFramework/Public/Scene/Sky/SceneSky.h"
 #include "GameFramework/Public/Scene/GameSceneSnapshot.h"
 #include "GameFramework/Public/Scene/Textures/SceneTextures.h"
 
@@ -52,6 +53,8 @@ class SPARKLE_ENGINE_API GameScene final
 	const SceneCameras& GetCameras() const noexcept { return m_cameras; }
 	SceneLighting& GetLighting() noexcept { return m_lighting; }
 	const SceneLighting& GetLighting() const noexcept { return m_lighting; }
+	SceneSky& GetSky() noexcept { return m_sky; }
+	const SceneSky& GetSky() const noexcept { return m_sky; }
 
 	GameSceneLoadResult LoadLevel(const LevelAsset& level);
 	GameSceneLoadResult LoadLevel(const LevelDesc& desc);
@@ -84,6 +87,7 @@ class SPARKLE_ENGINE_API GameScene final
 	SceneMaterialVariants m_materialVariants;
 	SceneMeshes m_meshes;
 	SceneSkeletons m_skeletons;
+	SceneSky m_sky;
 	SceneTextures m_textures;
 	std::string m_activeLevelName;
 	LevelDesc m_activeLevelDesc;

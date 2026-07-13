@@ -72,6 +72,10 @@ class DirectLightReservoirSpatialPass final
 	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    const DirectShadowSignalResources& shadowSignals,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

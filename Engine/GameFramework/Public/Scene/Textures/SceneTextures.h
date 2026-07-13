@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <span>
 #include <vector>
 
 class SPARKLE_ENGINE_API SceneTextures final
@@ -25,6 +26,7 @@ class SPARKLE_ENGINE_API SceneTextures final
 	void AppendMaterialTextureReferences(const std::vector<MaterialDesc>& materialDescs);
 	void AppendTexturePaths(const std::vector<std::filesystem::path>& texturePaths);
 	TextureSnapshot CaptureSnapshot() const;
+	TextureSnapshot CaptureSnapshot(std::span<const std::filesystem::path> additionalTexturePaths) const;
 	void Reset() noexcept { m_texturePaths.clear(); }
 
   private:

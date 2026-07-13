@@ -49,6 +49,7 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 	m_activeLevelName = desc.name;
 	m_activeLevelDesc = desc;
 	m_cameras.Reset(desc.cameraDesc);
+	m_sky.ApplyFromDesc(desc.sky);
 	m_lighting.ApplyFromDesc(desc.lights);
 	for (const std::unique_ptr<GameSceneController>& controller : m_controllers)
 	{
@@ -67,15 +68,8 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 
 bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 {
-	GameSceneAssetPayloadAppender appender(
-	    m_cameras,
-	    m_lighting,
-	    m_materials,
-	    m_materialVariants,
-	    m_meshes,
-	    m_skeletons,
-	    m_animations,
-	    m_textures);
+	GameSceneAssetPayloadAppender
+	    appender(m_cameras, m_lighting, m_materials, m_materialVariants, m_meshes, m_skeletons, m_animations, m_textures);
 	if (!appender.Append(std::move(sceneAssetPayload)))
 	{
 		return false;
@@ -96,17 +90,13 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 
 void GameScene::Update(float deltaSeconds)
 {
-	const GameSceneUpdateContext preAnimationContext{
-	    .deltaSeconds = deltaSeconds,
-	    .phase = GameSceneUpdatePhase::PreAnimation};
+	const GameSceneUpdateContext preAnimationContext{.deltaSeconds = deltaSeconds, .phase = GameSceneUpdatePhase::PreAnimation};
 	RunControllers(m_controllers, *this, preAnimationContext);
 
 	m_animations.Update(deltaSeconds, m_skeletons);
 	m_meshes.ApplyMorphWeights(m_animations.GetActiveMorphWeights());
 
-	const GameSceneUpdateContext postAnimationContext{
-	    .deltaSeconds = deltaSeconds,
-	    .phase = GameSceneUpdatePhase::PostAnimation};
+	const GameSceneUpdateContext postAnimationContext{.deltaSeconds = deltaSeconds, .phase = GameSceneUpdatePhase::PostAnimation};
 	RunControllers(m_controllers, *this, postAnimationContext);
 }
 
@@ -136,7 +126,16 @@ GameSceneSnapshot GameScene::CaptureSnapshot() const
 	snapshot.camera = m_cameras.GetActiveCamera().CaptureSnapshot();
 	snapshot.animations = m_animations.CaptureSnapshot();
 	snapshot.lighting = m_lighting.CaptureSnapshot();
-	snapshot.textures = m_textures.CaptureSnapshot();
+	snapshot.sky = m_sky.CaptureSnapshot();
+	if (const SceneSkyDesc* sky = m_sky.GetSky(); sky != nullptr && sky->skyTexture.IsValid())
+	{
+		const std::filesystem::path skyTexturePath(sky->skyTexture.texturePath);
+		snapshot.textures = m_textures.CaptureSnapshot(std::span<const std::filesystem::path>(&skyTexturePath, 1));
+	}
+	else
+	{
+		snapshot.textures = m_textures.CaptureSnapshot();
+	}
 	snapshot.materials = m_materials.CaptureSnapshot();
 	snapshot.meshes = m_meshes.CaptureSnapshot();
 	return snapshot;
@@ -151,6 +150,7 @@ void GameScene::Clear()
 	m_materialVariants.Reset();
 	m_meshes.Reset();
 	m_skeletons.Clear();
+	m_sky.Reset();
 	m_animations.Clear();
 	m_textures.Reset();
 	m_cameras.Reset();

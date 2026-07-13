@@ -24,10 +24,10 @@ struct DirectLightReservoirCommonParameters
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderUniform<ViewLightingData> ViewLighting;
-	ShaderBufferSRV DirectionalLights;
-	ShaderBufferSRV PointLights;
-	ShaderBufferSRV SpotLights;
-	ShaderBufferSRV RectLights;
+	ShaderBuffer<void> DirectionalLights;
+	ShaderBuffer<void> PointLights;
+	ShaderBuffer<void> SpotLights;
+	ShaderBuffer<void> RectLights;
 
 	template <typename TParameters> static void DescribeGBuffer(ShaderParameterStructBuilder<TParameters>& builder)
 	{
@@ -98,6 +98,10 @@ namespace DirectLightReservoirPassCommon
 	    FrameGraphBuilder& builder,
 	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
 	    DirectLightReservoirCommonParameters& parameters);
 
 	void SetParameters(

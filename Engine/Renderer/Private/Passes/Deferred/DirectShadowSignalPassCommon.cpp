@@ -15,12 +15,20 @@ void DirectShadowSignalPassCommon::DeclareResources(
     FrameGraphBuilder& builder,
     FrameGraphTextureHandle sceneDepth,
     const DirectShadowSignalResources& shadowSignals,
+    FrameGraphBufferHandle directionalLights,
+    FrameGraphBufferHandle pointLights,
+    FrameGraphBufferHandle spotLights,
+    FrameGraphBufferHandle rectLights,
     DirectShadowSignalCommonPassParameters& parameters)
 {
 	parameters.ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
 	parameters.CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
 	parameters.CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
 	parameters.SceneDepth = builder.CreateSRV(sceneDepth);
+	parameters.DirectionalLights = builder.CreateSRV(directionalLights);
+	parameters.PointLights = builder.CreateSRV(pointLights);
+	parameters.SpotLights = builder.CreateSRV(spotLights);
+	parameters.RectLights = builder.CreateSRV(rectLights);
 }
 
 void DirectShadowSignalPassCommon::DeclareRayQueryResources(
@@ -28,10 +36,22 @@ void DirectShadowSignalPassCommon::DeclareRayQueryResources(
     FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals,
+    FrameGraphBufferHandle directionalLights,
+    FrameGraphBufferHandle pointLights,
+    FrameGraphBufferHandle spotLights,
+    FrameGraphBufferHandle rectLights,
+    FrameGraphBufferHandle hitVertices,
+    FrameGraphBufferHandle hitIndices,
+    FrameGraphBufferHandle hitInstances,
+    FrameGraphBufferHandle hitMaterials,
     DirectShadowSignalRayQueryPassParameters& parameters)
 {
-	DeclareResources(builder, sceneDepth, shadowSignals, parameters);
+	DeclareResources(builder, sceneDepth, shadowSignals, directionalLights, pointLights, spotLights, rectLights, parameters);
 	parameters.GBufferNormal = builder.CreateSRV(gbuffer.Normal);
+	parameters.RayTracingHitVertices = builder.CreateSRV(hitVertices);
+	parameters.RayTracingHitIndices = builder.CreateSRV(hitIndices);
+	parameters.RayTracingHitInstances = builder.CreateSRV(hitInstances);
+	parameters.RayTracingHitMaterials = builder.CreateSRV(hitMaterials);
 }
 
 void DirectShadowSignalPassCommon::SetParameters(
@@ -44,10 +64,6 @@ void DirectShadowSignalPassCommon::SetParameters(
 	parameters.PerView = viewData.perViewData;
 	parameters.PerTemporal = viewData.perTemporalData;
 	parameters.ViewLighting = frame.lighting.GetConstants();
-	parameters.DirectionalLights = frame.lighting.GetDirectionalLightsShaderResourceView();
-	parameters.PointLights = frame.lighting.GetPointLightsShaderResourceView();
-	parameters.SpotLights = frame.lighting.GetSpotLightsShaderResourceView();
-	parameters.RectLights = frame.lighting.GetRectLightsShaderResourceView();
 }
 
 void DirectShadowSignalPassCommon::SetRayQueryParameters(
@@ -58,10 +74,6 @@ void DirectShadowSignalPassCommon::SetRayQueryParameters(
     bool hasSceneTlas)
 {
 	SetParameters(parameters, frame, viewData, passRuntimeServices);
-	parameters.RayTracingHitVertices = frame.rayTracingHitData.GetVertexShaderResourceView();
-	parameters.RayTracingHitIndices = frame.rayTracingHitData.GetIndexShaderResourceView();
-	parameters.RayTracingHitInstances = frame.rayTracingHitData.GetInstanceShaderResourceView();
-	parameters.RayTracingHitMaterials = frame.rayTracingHitData.GetMaterialShaderResourceView();
 	parameters.MaterialTextureSampler = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -72,9 +84,8 @@ void DirectShadowSignalPassCommon::SetRayQueryParameters(
 	const RenderBindingSet* materialTextureTable = frame.sceneData.materialTextureTable;
 	const std::uint32_t descriptorCount = frame.sceneData.materialTextureTableDescriptorCount;
 	const bool materialTextureTableAvailable =
-	    frame.sceneData.materialTextureTableValid && materialTextureTable != nullptr && *materialTextureTable &&
-	    descriptorCount > 0u && descriptorCount <= MaterialTextureTableFixedCapacity &&
-	    materialTextureTable->GetDescriptorCount() >= descriptorCount;
+	    frame.sceneData.materialTextureTableValid && materialTextureTable != nullptr && *materialTextureTable && descriptorCount > 0u &&
+	    descriptorCount <= MaterialTextureTableFixedCapacity && materialTextureTable->GetDescriptorCount() >= descriptorCount;
 	if (materialTextureTableAvailable)
 	{
 		parameters.MaterialTextureTable = materialTextureTable->GetTableBinding(0);

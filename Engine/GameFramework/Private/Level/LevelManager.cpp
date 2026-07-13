@@ -7,6 +7,7 @@
 #include "Scene/GameScene.h"
 #include "Scene/Camera/SceneCamera.h"
 #include "Scene/Lighting/SceneLighting.h"
+#include "Scene/Sky/SceneSky.h"
 #include "Environment/EnvironmentVariables.h"
 
 #include <memory>
@@ -72,7 +73,6 @@ void LevelManager::InitializeStartupLevel() noexcept
 	}
 
 	m_activeLevel = startupLevel;
-
 }
 
 std::vector<std::string> LevelManager::GetRegisteredLevelNames() const
@@ -110,7 +110,6 @@ void LevelManager::RequestLevelChange(std::string_view requestedLevelName) noexc
 		{
 			return;
 		}
-
 	}
 
 	m_pendingLevelChange = requestedLevel;
@@ -180,10 +179,9 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 		return loadResult;
 	}
 
-	const bool hasSceneAssetPayload = sceneAssetLoadResult.sceneAssetPayload.HasMeshes() ||
-	                                  !sceneAssetLoadResult.sceneAssetPayload.cameras.empty() ||
-	                                  !sceneAssetLoadResult.sceneAssetPayload.lights.empty() ||
-	                                  !sceneAssetLoadResult.sceneAssetPayload.skeletons.empty();
+	const bool hasSceneAssetPayload =
+	    sceneAssetLoadResult.sceneAssetPayload.HasMeshes() || !sceneAssetLoadResult.sceneAssetPayload.cameras.empty() ||
+	    !sceneAssetLoadResult.sceneAssetPayload.lights.empty() || !sceneAssetLoadResult.sceneAssetPayload.skeletons.empty();
 	if (hasSceneAssetPayload && !m_gameScene->AppendSceneAssetPayload(std::move(sceneAssetLoadResult.sceneAssetPayload)))
 	{
 		loadResult.status = GameSceneLoadStatus::Failed;
@@ -206,6 +204,7 @@ void LevelManager::CaptureSceneToLevel() noexcept
 	LevelDesc desc = m_activeLevel->BuildDescription();
 
 	desc.lights = m_gameScene->GetLighting().CaptureToDesc();
+	desc.sky = m_gameScene->GetSky().CaptureToDesc();
 	desc.cameraDesc = m_gameScene->GetCameras().GetActiveCamera().CaptureToDesc();
 
 	m_activeLevel->SetLevelDesc(desc);

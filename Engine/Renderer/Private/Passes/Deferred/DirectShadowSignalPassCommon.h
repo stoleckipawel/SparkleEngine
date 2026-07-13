@@ -24,10 +24,10 @@ struct DirectShadowSignalCommonPassParameters
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderUniform<ViewLightingData> ViewLighting;
-	ShaderBufferSRV DirectionalLights;
-	ShaderBufferSRV PointLights;
-	ShaderBufferSRV SpotLights;
-	ShaderBufferSRV RectLights;
+	ShaderBuffer<void> DirectionalLights;
+	ShaderBuffer<void> PointLights;
+	ShaderBuffer<void> SpotLights;
+	ShaderBuffer<void> RectLights;
 
 	template <typename TParameters> static void Describe(ShaderParameterStructBuilder<TParameters>& builder)
 	{
@@ -57,8 +57,7 @@ struct DirectShadowSignalCommonPassParameters
 		    ShaderStageVisibility::Compute);
 		builder.Uniform(
 		    "PerTemporal",
-		    static_cast<ShaderUniform<PerTemporalConstantBufferData> TParameters::*>(
-		        &DirectShadowSignalCommonPassParameters::PerTemporal),
+		    static_cast<ShaderUniform<PerTemporalConstantBufferData> TParameters::*>(&DirectShadowSignalCommonPassParameters::PerTemporal),
 		    ShaderStageVisibility::Compute);
 		builder.Uniform(
 		    "ViewLighting",
@@ -66,19 +65,19 @@ struct DirectShadowSignalCommonPassParameters
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "DirectionalLights",
-		    static_cast<ShaderBufferSRV TParameters::*>(&DirectShadowSignalCommonPassParameters::DirectionalLights),
+		    static_cast<ShaderBuffer<void> TParameters::*>(&DirectShadowSignalCommonPassParameters::DirectionalLights),
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "PointLights",
-		    static_cast<ShaderBufferSRV TParameters::*>(&DirectShadowSignalCommonPassParameters::PointLights),
+		    static_cast<ShaderBuffer<void> TParameters::*>(&DirectShadowSignalCommonPassParameters::PointLights),
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "SpotLights",
-		    static_cast<ShaderBufferSRV TParameters::*>(&DirectShadowSignalCommonPassParameters::SpotLights),
+		    static_cast<ShaderBuffer<void> TParameters::*>(&DirectShadowSignalCommonPassParameters::SpotLights),
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "RectLights",
-		    static_cast<ShaderBufferSRV TParameters::*>(&DirectShadowSignalCommonPassParameters::RectLights),
+		    static_cast<ShaderBuffer<void> TParameters::*>(&DirectShadowSignalCommonPassParameters::RectLights),
 		    ShaderStageVisibility::Compute);
 	}
 };
@@ -87,10 +86,10 @@ struct DirectShadowSignalRayQueryPassParameters : DirectShadowSignalCommonPassPa
 {
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
-	ShaderBufferSRV RayTracingHitVertices;
-	ShaderBufferSRV RayTracingHitIndices;
-	ShaderBufferSRV RayTracingHitInstances;
-	ShaderBufferSRV RayTracingHitMaterials;
+	ShaderBuffer<void> RayTracingHitVertices;
+	ShaderBuffer<void> RayTracingHitIndices;
+	ShaderBuffer<void> RayTracingHitInstances;
+	ShaderBuffer<void> RayTracingHitMaterials;
 	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
 	ShaderSamplerSet MaterialTextureSampler;
 
@@ -108,19 +107,19 @@ struct DirectShadowSignalRayQueryPassParameters : DirectShadowSignalCommonPassPa
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "RayTracingHitVertices",
-		    static_cast<ShaderBufferSRV TParameters::*>(&DirectShadowSignalRayQueryPassParameters::RayTracingHitVertices),
+		    static_cast<ShaderBuffer<void> TParameters::*>(&DirectShadowSignalRayQueryPassParameters::RayTracingHitVertices),
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "RayTracingHitIndices",
-		    static_cast<ShaderBufferSRV TParameters::*>(&DirectShadowSignalRayQueryPassParameters::RayTracingHitIndices),
+		    static_cast<ShaderBuffer<void> TParameters::*>(&DirectShadowSignalRayQueryPassParameters::RayTracingHitIndices),
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "RayTracingHitInstances",
-		    static_cast<ShaderBufferSRV TParameters::*>(&DirectShadowSignalRayQueryPassParameters::RayTracingHitInstances),
+		    static_cast<ShaderBuffer<void> TParameters::*>(&DirectShadowSignalRayQueryPassParameters::RayTracingHitInstances),
 		    ShaderStageVisibility::Compute);
 		builder.ReadBuffer(
 		    "RayTracingHitMaterials",
-		    static_cast<ShaderBufferSRV TParameters::*>(&DirectShadowSignalRayQueryPassParameters::RayTracingHitMaterials),
+		    static_cast<ShaderBuffer<void> TParameters::*>(&DirectShadowSignalRayQueryPassParameters::RayTracingHitMaterials),
 		    ShaderStageVisibility::Compute);
 		builder.ReadTexture(
 		    "MaterialTextureTable",
@@ -140,6 +139,10 @@ namespace DirectShadowSignalPassCommon
 	    FrameGraphBuilder& builder,
 	    FrameGraphTextureHandle sceneDepth,
 	    const DirectShadowSignalResources& shadowSignals,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
 	    DirectShadowSignalCommonPassParameters& parameters);
 
 	void DeclareRayQueryResources(
@@ -147,6 +150,14 @@ namespace DirectShadowSignalPassCommon
 	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    const DirectShadowSignalResources& shadowSignals,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
+	    FrameGraphBufferHandle hitVertices,
+	    FrameGraphBufferHandle hitIndices,
+	    FrameGraphBufferHandle hitInstances,
+	    FrameGraphBufferHandle hitMaterials,
 	    DirectShadowSignalRayQueryPassParameters& parameters);
 
 	void SetParameters(

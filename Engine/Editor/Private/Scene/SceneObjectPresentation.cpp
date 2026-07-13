@@ -60,6 +60,8 @@ namespace SceneObjectPresentation
 		{
 			case SceneObjectType::Camera:
 				return UiUtil::EditorIcon::Camera;
+			case SceneObjectType::Sky:
+				return UiUtil::EditorIcon::ViewLit;
 			case SceneObjectType::Light:
 				if (gameScene != nullptr)
 				{

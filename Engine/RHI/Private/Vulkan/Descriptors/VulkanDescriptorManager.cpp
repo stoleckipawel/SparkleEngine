@@ -30,6 +30,17 @@ VulkanDescriptorManager::~VulkanDescriptorManager() noexcept
 
 void VulkanDescriptorManager::BeginFrame(std::uint32_t frameIndex) noexcept
 {
+	if (frameIndex >= m_retiredResourceViews.size())
+	{
+		return;
+	}
+
+	for (ResourceViewRecord& record : m_retiredResourceViews[frameIndex])
+	{
+		DestroyResourceView(record);
+	}
+	m_retiredResourceViews[frameIndex].clear();
+	m_currentFrameIndex = frameIndex;
 	m_allocator.BeginFrame(frameIndex);
 }
 
@@ -193,14 +204,7 @@ void VulkanDescriptorManager::ReleaseResourceView(RhiResourceViewHandle view) no
 		return;
 	}
 
-	if (record->OwnsImageView && record->ImageView != VK_NULL_HANDLE)
-	{
-		vkDestroyImageView(m_rhi.GetDevice(), record->ImageView, nullptr);
-	}
-	if (record->DescriptorHandle)
-	{
-		m_allocator.ReleaseRegisteredDescriptor(record->DescriptorHandle);
-	}
+	m_retiredResourceViews[m_currentFrameIndex].push_back(*record);
 	*record = {};
 	m_freeResourceViewIndices.push_back(view.Value - 1u);
 }
@@ -305,9 +309,10 @@ VkImageAspectFlags VulkanDescriptorManager::ResolveImageViewAspectMask(VkImageVi
 
 void VulkanDescriptorManager::RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept
 {
-	ReleaseAllResourceViews();
-	m_resourceViewRecords.clear();
-	m_freeResourceViewIndices.clear();
+	for (const RhiResourceViewHandle view : m_swapChainBackBufferViews)
+	{
+		ReleaseResourceView(view);
+	}
 	m_swapChainBackBufferViews.clear();
 
 	const std::uint32_t backBufferCount = swapChain.GetBackBufferCount();
@@ -332,16 +337,29 @@ void VulkanDescriptorManager::ReleaseAllResourceViews() noexcept
 {
 	for (ResourceViewRecord& record : m_resourceViewRecords)
 	{
-		if (record.OwnsImageView && record.ImageView != VK_NULL_HANDLE)
-		{
-			vkDestroyImageView(m_rhi.GetDevice(), record.ImageView, nullptr);
-		}
-		if (record.DescriptorHandle)
-		{
-			m_allocator.ReleaseRegisteredDescriptor(record.DescriptorHandle);
-		}
-		record = {};
+		DestroyResourceView(record);
 	}
+	for (std::vector<ResourceViewRecord>& retiredViews : m_retiredResourceViews)
+	{
+		for (ResourceViewRecord& record : retiredViews)
+		{
+			DestroyResourceView(record);
+		}
+		retiredViews.clear();
+	}
+}
+
+void VulkanDescriptorManager::DestroyResourceView(ResourceViewRecord& record) noexcept
+{
+	if (record.OwnsImageView && record.ImageView != VK_NULL_HANDLE)
+	{
+		vkDestroyImageView(m_rhi.GetDevice(), record.ImageView, nullptr);
+	}
+	if (record.DescriptorHandle)
+	{
+		m_allocator.ReleaseRegisteredDescriptor(record.DescriptorHandle);
+	}
+	record = {};
 }
 
 RhiResourceViewHandle VulkanDescriptorManager::MakeResourceViewHandle(std::uint32_t index) noexcept

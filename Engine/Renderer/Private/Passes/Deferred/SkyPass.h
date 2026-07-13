@@ -6,6 +6,7 @@
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/SkyUniformData.h"
 
 #include <cstdint>
 
@@ -14,17 +15,18 @@ struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeServices;
-struct RenderViewData;
+struct FrameContext;
 
 struct SkyPassParameters
 {
 	ShaderRWTexture2D<void> SceneColor;
 	ShaderTexture2D<void> SceneDepth;
-	ShaderTexture2DSRV SkyTexture;
+	ShaderTexture2D<void> SkyTexture;
 	ShaderSamplerSet SamplerLinearClamp;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
+	ShaderUniform<SkyUniformData> Sky;
 
 	static void Describe(ShaderParameterStructBuilder<SkyPassParameters>& builder)
 	{
@@ -35,6 +37,7 @@ struct SkyPassParameters
 		builder.Uniform("PerFrame", &SkyPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &SkyPassParameters::PerView, ShaderStageVisibility::Compute);
 		builder.Uniform("PerTemporal", &SkyPassParameters::PerTemporal, ShaderStageVisibility::Compute);
+		builder.Uniform("Sky", &SkyPassParameters::Sky, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -57,11 +60,12 @@ class SkyPass final
 	    FrameGraphBuilder& builder,
 	    FrameGraphTextureHandle output,
 	    FrameGraphTextureHandle sceneDepth,
+	    FrameGraphTextureHandle sky,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:
-	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const;
+	void SetParameters(ParameterInstance& parameters, const FrameContext& frame, const PassRuntimeServices& passRuntimeServices) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 };

@@ -35,6 +35,10 @@ void DirectLightingPass::DeclareResources(
     FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals,
+    FrameGraphBufferHandle directionalLights,
+    FrameGraphBufferHandle pointLights,
+    FrameGraphBufferHandle spotLights,
+    FrameGraphBufferHandle rectLights,
     ParameterInstance& parameters)
 {
 	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
@@ -48,6 +52,10 @@ void DirectLightingPass::DeclareResources(
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 	parameters->SceneDepth = builder.CreateSRV(sceneDepth);
+	parameters->DirectionalLights = builder.CreateSRV(directionalLights);
+	parameters->PointLights = builder.CreateSRV(pointLights);
+	parameters->SpotLights = builder.CreateSRV(spotLights);
+	parameters->RectLights = builder.CreateSRV(rectLights);
 }
 
 void DirectLightingPass::SetParameters(
@@ -60,10 +68,6 @@ void DirectLightingPass::SetParameters(
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
 	parameters->ViewLighting = frame.lighting.GetConstants();
-	parameters->DirectionalLights = frame.lighting.GetDirectionalLightsShaderResourceView();
-	parameters->PointLights = frame.lighting.GetPointLightsShaderResourceView();
-	parameters->SpotLights = frame.lighting.GetSpotLightsShaderResourceView();
-	parameters->RectLights = frame.lighting.GetRectLightsShaderResourceView();
 }
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

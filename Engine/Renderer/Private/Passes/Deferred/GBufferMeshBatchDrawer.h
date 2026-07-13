@@ -15,6 +15,7 @@ class GBufferMeshBatchDrawer final
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    const FrameContext& frame,
+	    const GBufferPass::Parameters& parameters,
 	    const PassRuntimeServices& passRuntimeServices,
 	    const RasterPassPipelineRuntime& runtime,
 	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata);

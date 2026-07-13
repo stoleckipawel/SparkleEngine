@@ -4,6 +4,7 @@
 #include "Level/Parsing/CameraSectionParser.h"
 #include "Level/Parsing/LevelParserCommon.h"
 #include "Level/Parsing/LightingSectionParser.h"
+#include "Level/Parsing/SkySectionParser.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Level/Level.h"
 
@@ -50,6 +51,9 @@ namespace
 
 			case LevelParsing::LevelFileSection::Camera:
 				return LevelParsing::ParseCameraSectionField(parsedLine, levelDesc, errorMessage);
+
+			case LevelParsing::LevelFileSection::Sky:
+				return LevelParsing::ParseSkySectionField(parsedLine, levelDesc, errorMessage);
 
 			case LevelParsing::LevelFileSection::Lighting:
 				return LevelParsing::ParseLightingSectionField(parsedLine, levelDesc, errorMessage);
@@ -165,6 +169,7 @@ bool LevelParser::SaveToFile(const LevelAsset& level, std::string* errorMessage)
 	const LevelDesc levelDesc = level.BuildDescription();
 	WriteLevelSection(output, level);
 	LevelParsing::WriteCameraSection(output, levelDesc);
+	LevelParsing::WriteSkySection(output, levelDesc);
 	LevelParsing::WriteLightingSection(output, levelDesc);
 	WriteSceneAssetsSection(output, levelDesc);
 

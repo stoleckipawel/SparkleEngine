@@ -98,19 +98,11 @@ class FrameGraphBuilder final
 
 	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
 	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
-	FrameGraphTextureHandle ImportPersistentTexture(
-	    const FrameGraphTextureDesc& desc,
-	    NativeResourceHandle resource,
-	    ResourceState initialState) noexcept;
 	FrameGraphTextureHandle ReservePersistentTexture(
 	    const FrameGraphTextureDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
 	FrameGraphBufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
-	FrameGraphBufferHandle ImportPersistentBuffer(
-	    const FrameGraphBufferDesc& desc,
-	    NativeResourceHandle resource,
-	    ResourceState initialState) noexcept;
 	FrameGraphBufferHandle ReservePersistentBuffer(
 	    const FrameGraphBufferDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
@@ -120,43 +112,9 @@ class FrameGraphBuilder final
 	    NativeResourceHandle resource,
 	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
-	FrameGraphAccelerationStructureHandle ImportPersistentAccelerationStructure(
-	    const FrameGraphAccelerationStructureDesc& desc,
-	    NativeResourceHandle resource,
-	    RhiGpuVirtualAddress gpuAddress,
-	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	FrameGraphAccelerationStructureHandle ReservePersistentAccelerationStructure(
 	    const FrameGraphAccelerationStructureDesc& desc,
 	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
-	void BindPersistentAccelerationStructure(
-	    FrameGraphAccelerationStructureHandle handle,
-	    NativeResourceHandle resource,
-	    RhiGpuVirtualAddress gpuAddress,
-	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
-	void BindPersistentAccelerationStructure(
-	    FrameGraphAccelerationStructureHandle handle,
-	    RhiOwnedResourceHandle resource,
-	    RhiGpuVirtualAddress gpuAddress,
-	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
-	void ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept;
-	void BindPersistentTexture(
-	    FrameGraphTextureHandle handle,
-	    NativeResourceHandle resource,
-	    ResourceState currentState = ResourceState::Common) noexcept;
-	void BindPersistentTexture(
-	    FrameGraphTextureHandle handle,
-	    RhiOwnedResourceHandle resource,
-	    ResourceState currentState = ResourceState::Common) noexcept;
-	void ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept;
-	void BindPersistentBuffer(
-	    FrameGraphBufferHandle handle,
-	    NativeResourceHandle resource,
-	    ResourceState currentState = ResourceState::Common) noexcept;
-	void BindPersistentBuffer(
-	    FrameGraphBufferHandle handle,
-	    RhiOwnedResourceHandle resource,
-	    ResourceState currentState = ResourceState::Common) noexcept;
-	void ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept;
 	void ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept

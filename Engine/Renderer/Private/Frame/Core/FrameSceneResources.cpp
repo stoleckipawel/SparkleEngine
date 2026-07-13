@@ -4,7 +4,21 @@
 #include "Frame/Core/FrameRenderFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
+#include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
+#include "RayTracing/RayTracingHitData.h"
+#include "ShaderData/RenderConstantBufferData.h"
+#include "ShaderData/RenderViewLightingData.h"
+
+namespace
+{
+	template <typename TValue> FrameGraphBufferHandle ReserveExternalBuffer(FrameGraphBuilder& builder, const char* name)
+	{
+		return builder.ReservePersistentBuffer(
+		    FrameGraphBufferDesc::Create(name, sizeof(TValue), static_cast<std::uint32_t>(sizeof(TValue))),
+		    ResourceState::ShaderResource);
+	}
+}
 
 void CreateFrameSceneResources(
     FrameGraphBuilder& builder,
@@ -108,6 +122,9 @@ void CreateFrameSceneResources(
 	    reserveRestirIndirectHistory("CurrentRestirIndirectReservoirWeight", PixelFormat::R32G32B32A32_Float);
 	const FrameGraphTextureHandle currentRestirIndirectReservoirSurface =
 	    reserveRestirIndirectHistory("CurrentRestirIndirectReservoirSurface", PixelFormat::R16G16B16A16_Float);
+	const FrameGraphTextureHandle sky = builder.ReservePersistentTexture(
+	    FrameGraphTextureDesc::CreateColor("Sky", 1, 1, PixelFormat::R8G8B8A8_UNorm),
+	    ResourceState::ShaderResource);
 
 	resources.Transient.Scene = SceneRenderTargets{
 	    .SceneColor = sceneColor,
@@ -115,6 +132,19 @@ void CreateFrameSceneResources(
 	    .FinalSceneColor = finalSceneColor,
 	    .BackBuffer = backBuffer};
 	resources.Transient.Exposure = exposure;
+	resources.External.Sky = sky;
+	resources.External.DirectionalLights = ReserveExternalBuffer<DirectionalLightConstantBufferData>(builder, "DirectionalLights");
+	resources.External.PointLights = ReserveExternalBuffer<PointLightConstantBufferData>(builder, "PointLights");
+	resources.External.SpotLights = ReserveExternalBuffer<SpotLightConstantBufferData>(builder, "SpotLights");
+	resources.External.RectLights = ReserveExternalBuffer<RectLightConstantBufferData>(builder, "RectLights");
+	resources.External.MeshInstances = ReserveExternalBuffer<MeshInstanceData>(builder, "MeshInstances");
+	resources.External.RayTracingHitVertices = ReserveExternalBuffer<RayTracingHitVertex>(builder, "RayTracingHitVertices");
+	resources.External.RayTracingHitSkinInfluences = ReserveExternalBuffer<VertexSkinInfluenceData>(builder, "RayTracingHitSkinInfluences");
+	resources.External.RayTracingHitIndices = ReserveExternalBuffer<std::uint32_t>(builder, "RayTracingHitIndices");
+	resources.External.RayTracingHitInstances = ReserveExternalBuffer<RayTracingHitInstance>(builder, "RayTracingHitInstances");
+	resources.External.RayTracingHitMaterials = ReserveExternalBuffer<RayTracingHitMaterial>(builder, "RayTracingHitMaterials");
+	resources.External.JointMatrices = ReserveExternalBuffer<JointMatrixData>(builder, "JointMatrices");
+	resources.External.PreviousJointMatrices = ReserveExternalBuffer<JointMatrixData>(builder, "PreviousJointMatrices");
 	resources.History.PreviousExposure = previousExposure;
 	resources.History.CurrentExposure = currentExposure;
 	resources.History.PreviousDirectLightReservoirSample = previousDirectLightReservoirSample;

@@ -7,6 +7,7 @@
 #include "Renderer/Public/SceneData/SpotLight.h"
 #include "SceneData/MaterialData.h"
 #include "SceneData/RenderMeshWorkloadSummary.h"
+#include "SceneData/RenderSkyData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
 
 #include <DirectXMath.h>
@@ -21,6 +22,7 @@ struct SPARKLE_RENDERER_API RenderSceneData
 	std::vector<PointLight> pointLights;
 	std::vector<SpotLight> spotLights;
 	std::vector<RectLight> rectLights;
+	RenderSkyData sky;
 	std::vector<MeshDraw> meshInstances;
 	std::vector<MeshInstanceBatch> meshInstanceBatches;
 	std::vector<DirectX::XMFLOAT4X4> jointMatrices;

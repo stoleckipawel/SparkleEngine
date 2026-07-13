@@ -90,6 +90,14 @@ void PathTracedDirectLightingPass::DeclareResources(
     const SceneRenderTargets& sceneTargets,
     const GBufferRenderTargets& gbuffer,
     FrameGraphAccelerationStructureHandle sceneTlas,
+    FrameGraphBufferHandle directionalLights,
+    FrameGraphBufferHandle pointLights,
+    FrameGraphBufferHandle spotLights,
+    FrameGraphBufferHandle rectLights,
+    FrameGraphBufferHandle hitVertices,
+    FrameGraphBufferHandle hitIndices,
+    FrameGraphBufferHandle hitInstances,
+    FrameGraphBufferHandle hitMaterials,
     ParameterInstance& parameters)
 {
 	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
@@ -101,6 +109,14 @@ void PathTracedDirectLightingPass::DeclareResources(
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 	parameters->SceneDepth = builder.CreateSRV(sceneTargets.SceneDepth);
+	parameters->DirectionalLights = builder.CreateSRV(directionalLights);
+	parameters->PointLights = builder.CreateSRV(pointLights);
+	parameters->SpotLights = builder.CreateSRV(spotLights);
+	parameters->RectLights = builder.CreateSRV(rectLights);
+	parameters->RayTracingHitVertices = builder.CreateSRV(hitVertices);
+	parameters->RayTracingHitIndices = builder.CreateSRV(hitIndices);
+	parameters->RayTracingHitInstances = builder.CreateSRV(hitInstances);
+	parameters->RayTracingHitMaterials = builder.CreateSRV(hitMaterials);
 }
 
 void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
@@ -115,14 +131,6 @@ void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, Parame
 	parameters->PerView = context.Frame.mainView.perViewData;
 	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
 	parameters->ViewLighting = context.Frame.lighting.GetConstants();
-	parameters->DirectionalLights = context.Frame.lighting.GetDirectionalLightsShaderResourceView();
-	parameters->PointLights = context.Frame.lighting.GetPointLightsShaderResourceView();
-	parameters->SpotLights = context.Frame.lighting.GetSpotLightsShaderResourceView();
-	parameters->RectLights = context.Frame.lighting.GetRectLightsShaderResourceView();
-	parameters->RayTracingHitVertices = context.Frame.rayTracingHitData.GetVertexShaderResourceView();
-	parameters->RayTracingHitIndices = context.Frame.rayTracingHitData.GetIndexShaderResourceView();
-	parameters->RayTracingHitInstances = context.Frame.rayTracingHitData.GetInstanceShaderResourceView();
-	parameters->RayTracingHitMaterials = context.Frame.rayTracingHitData.GetMaterialShaderResourceView();
 	parameters->MaterialTextureSampler = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -131,10 +139,10 @@ void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, Parame
 
 	const RenderBindingSet* materialTextureTable = context.Frame.sceneData.materialTextureTable;
 	const std::uint32_t descriptorCount = context.Frame.sceneData.materialTextureTableDescriptorCount;
-	const bool materialTextureTableAvailable =
-	    context.Frame.sceneData.materialTextureTableValid && materialTextureTable != nullptr && *materialTextureTable &&
-	    descriptorCount > 0u && descriptorCount <= MaterialTextureTableFixedCapacity &&
-	    materialTextureTable->GetDescriptorCount() >= descriptorCount;
+	const bool materialTextureTableAvailable = context.Frame.sceneData.materialTextureTableValid && materialTextureTable != nullptr &&
+	                                           *materialTextureTable && descriptorCount > 0u &&
+	                                           descriptorCount <= MaterialTextureTableFixedCapacity &&
+	                                           materialTextureTable->GetDescriptorCount() >= descriptorCount;
 	if (materialTextureTableAvailable)
 	{
 		parameters->MaterialTextureTable = materialTextureTable->GetTableBinding(0);

@@ -4,4 +4,8 @@
 
 class FrameGraphBuilder;
 
-void AddSkyPass(FrameGraphBuilder& builder, FrameGraphTextureHandle output, FrameGraphTextureHandle sceneDepth);
+void AddSkyPass(
+    FrameGraphBuilder& builder,
+    FrameGraphTextureHandle output,
+    FrameGraphTextureHandle sceneDepth,
+    FrameGraphTextureHandle sky);

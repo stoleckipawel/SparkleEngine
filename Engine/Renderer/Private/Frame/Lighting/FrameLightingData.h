@@ -1,9 +1,7 @@
 #pragma once
 
-#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
-#include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "Frame/Core/FrameBufferResource.h"
 #include "ShaderData/RenderViewLightingData.h"
-#include "RHI/Public/Resources/RhiResourceView.h"
 
 class RenderHardwareInterface;
 struct RenderSceneData;
@@ -20,10 +18,10 @@ class FrameLightingData final
 	FrameLightingData& operator=(FrameLightingData&& other) noexcept;
 
 	const ViewLightingData& GetConstants() const noexcept { return m_constants; }
-	RhiGpuDescriptorHandle GetDirectionalLightsShaderResourceView() const noexcept { return m_directionalLightsShaderResourceView; }
-	RhiGpuDescriptorHandle GetPointLightsShaderResourceView() const noexcept { return m_pointLightsShaderResourceView; }
-	RhiGpuDescriptorHandle GetSpotLightsShaderResourceView() const noexcept { return m_spotLightsShaderResourceView; }
-	RhiGpuDescriptorHandle GetRectLightsShaderResourceView() const noexcept { return m_rectLightsShaderResourceView; }
+	const FrameBufferResource& GetDirectionalLightsBuffer() const noexcept { return m_directionalLights; }
+	const FrameBufferResource& GetPointLightsBuffer() const noexcept { return m_pointLights; }
+	const FrameBufferResource& GetSpotLightsBuffer() const noexcept { return m_spotLights; }
+	const FrameBufferResource& GetRectLightsBuffer() const noexcept { return m_rectLights; }
 
 	static FrameLightingData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
@@ -32,16 +30,8 @@ class FrameLightingData final
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	ViewLightingData m_constants = {};
-	RhiOwnedResourceHandle m_directionalLightsBuffer = {};
-	RhiOwnedResourceHandle m_pointLightsBuffer = {};
-	RhiOwnedResourceHandle m_spotLightsBuffer = {};
-	RhiOwnedResourceHandle m_rectLightsBuffer = {};
-	RhiResourceViewHandle m_directionalLightsView = {};
-	RhiResourceViewHandle m_pointLightsView = {};
-	RhiResourceViewHandle m_spotLightsView = {};
-	RhiResourceViewHandle m_rectLightsView = {};
-	RhiGpuDescriptorHandle m_directionalLightsShaderResourceView = {};
-	RhiGpuDescriptorHandle m_pointLightsShaderResourceView = {};
-	RhiGpuDescriptorHandle m_spotLightsShaderResourceView = {};
-	RhiGpuDescriptorHandle m_rectLightsShaderResourceView = {};
+	FrameBufferResource m_directionalLights;
+	FrameBufferResource m_pointLights;
+	FrameBufferResource m_spotLights;
+	FrameBufferResource m_rectLights;
 };

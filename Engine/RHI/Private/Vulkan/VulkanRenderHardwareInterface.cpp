@@ -467,10 +467,6 @@ void VulkanRenderHardwareInterface::SetCurrentFrameIndex(std::uint32_t frameInde
 
 void VulkanRenderHardwareInterface::ResetTransientFrameResources() noexcept
 {
-	if (m_descriptorManager != nullptr)
-	{
-		m_descriptorManager->BeginFrame(m_currentFrameIndex);
-	}
 	if (m_constantBufferManager != nullptr)
 	{
 		m_constantBufferManager->BeginFrame(m_currentFrameIndex);

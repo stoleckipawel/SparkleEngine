@@ -37,6 +37,10 @@ class DirectShadowSignalNoRayQueryPass final
 	    FrameGraphBuilder& builder,
 	    FrameGraphTextureHandle sceneDepth,
 	    const DirectShadowSignalResources& shadowSignals,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

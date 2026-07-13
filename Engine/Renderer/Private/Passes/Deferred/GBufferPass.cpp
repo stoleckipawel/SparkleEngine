@@ -54,26 +54,28 @@ const RenderPassDefinition& GBufferPass::GetDefinition() noexcept
 {
 	static const RenderPassDefinition definition{
 	    .PassName = PassName,
-	    .ShaderPackage = ShaderPackageDefinition{
-	        .PackageId = RendererShaderPackages::GBuffer.data(),
-	        .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel},
+	    .ShaderPackage =
+	        ShaderPackageDefinition{
+	            .PackageId = RendererShaderPackages::GBuffer.data(),
+	            .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel},
 	    .PipelineKind = RenderPassDefinitionPipelineKind::Graphics,
 	    .AllowInputAssemblerInputLayout = true,
 	    .BindingLayoutDebugName = L"GBuffer_BindingLayout",
 	    .PipelineStateDebugName = L"GBuffer_PipelineState",
 	    .Graphics = RenderPassGraphicsPipelineDefinition{
 	        .VertexLayout = RhiVertexLayoutKind::StaticMesh,
-	        .DepthTest = RhiDepthTestDesc{
-	            .DepthEnable = true,
-	            .DepthWriteEnable = true,
-	            .DepthFunc = DepthConvention::GetDepthComparisonLessEqualFunc()},
-	        .RenderTargetFormats = {
-	            GBufferFormats::BaseColor,
-	            GBufferFormats::Normal,
-	            GBufferFormats::Material,
-	            GBufferFormats::Emissive,
-	            GBufferFormats::Subsurface,
-	            GBufferFormats::MotionVector},
+	        .DepthTest =
+	            RhiDepthTestDesc{
+	                .DepthEnable = true,
+	                .DepthWriteEnable = true,
+	                .DepthFunc = DepthConvention::GetDepthComparisonLessEqualFunc()},
+	        .RenderTargetFormats =
+	            {GBufferFormats::BaseColor,
+	             GBufferFormats::Normal,
+	             GBufferFormats::Material,
+	             GBufferFormats::Emissive,
+	             GBufferFormats::Subsurface,
+	             GBufferFormats::MotionVector},
 	        .RenderTargetCount = 6,
 	        .DepthStencilFormat = GBufferFormats::RasterizedDeviceZ}};
 	return definition;
@@ -85,10 +87,16 @@ void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& para
 	ConfigurePipeline(context.Commands, context.Frame.mainView);
 	PrepareTargets(context, parameters.GetFields());
 	BindPassResources(context.Resources, context.Commands, parameters, context.RuntimeServices);
-	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame, context.RuntimeServices);
+	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame, parameters.GetFields(), context.RuntimeServices);
 }
 
-void GBufferPass::DeclareResources(FrameGraphBuilder& builder, const GBufferRenderTargets& targets, ParameterInstance& parameters)
+void GBufferPass::DeclareResources(
+    FrameGraphBuilder& builder,
+    const GBufferRenderTargets& targets,
+    FrameGraphBufferHandle meshInstances,
+    FrameGraphBufferHandle jointMatrices,
+    FrameGraphBufferHandle previousJointMatrices,
+    ParameterInstance& parameters)
 {
 	parameters->BaseColor = builder.CreateRenderTarget(targets.BaseColor);
 	parameters->Normal = builder.CreateRenderTarget(targets.Normal);
@@ -97,6 +105,9 @@ void GBufferPass::DeclareResources(FrameGraphBuilder& builder, const GBufferRend
 	parameters->Subsurface = builder.CreateRenderTarget(targets.Subsurface);
 	parameters->MotionVector = builder.CreateRenderTarget(targets.MotionVector);
 	parameters->DeviceZ = builder.CreateDepthTarget(targets.DeviceZ);
+	parameters->MeshInstances = builder.CreateSRV(meshInstances);
+	parameters->JointMatrices = builder.CreateSRV(jointMatrices);
+	parameters->PreviousJointMatrices = builder.CreateSRV(previousJointMatrices);
 	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
 }
 
@@ -137,10 +148,10 @@ void GBufferPass::ConfigurePipeline(RenderCommandContext& cmd, const RenderViewD
 }
 
 void GBufferPass::BindPassResources(
-	const FrameGraphResourceCommands& resources,
-	RenderCommandContext& cmd,
-	const ParameterInstance& parameters,
-	const PassRuntimeServices& passRuntimeServices) const
+    const FrameGraphResourceCommands& resources,
+    RenderCommandContext& cmd,
+    const ParameterInstance& parameters,
+    const PassRuntimeServices& passRuntimeServices) const
 {
 	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
 	const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
@@ -157,10 +168,11 @@ void GBufferPass::BindPassResources(
 }
 
 void GBufferPass::DrawOpaqueMeshes(
-	const FrameGraphResourceCommands& resources,
-	RenderCommandContext& cmd,
-	const FrameContext& frame,
-	const PassRuntimeServices& passRuntimeServices) const
+    const FrameGraphResourceCommands& resources,
+    RenderCommandContext& cmd,
+    const FrameContext& frame,
+    const Parameters& parameters,
+    const PassRuntimeServices& passRuntimeServices) const
 {
-	GBufferMeshBatchDrawer::DrawOpaqueMeshes(resources, cmd, frame, passRuntimeServices, m_runtime, GetDrawParameterMetadata());
+	GBufferMeshBatchDrawer::DrawOpaqueMeshes(resources, cmd, frame, parameters, passRuntimeServices, m_runtime, GetDrawParameterMetadata());
 }

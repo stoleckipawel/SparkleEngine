@@ -1,8 +1,6 @@
 #pragma once
 
-#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
-#include "RHI/Public/Interop/RhiNativeHandles.h"
-#include "RHI/Public/Resources/RhiResourceView.h"
+#include "Frame/Core/FrameBufferResource.h"
 
 class RenderHardwareInterface;
 struct RenderSceneData;
@@ -18,9 +16,9 @@ class SkinningFrameData final
 	SkinningFrameData(SkinningFrameData&& other) noexcept;
 	SkinningFrameData& operator=(SkinningFrameData&& other) noexcept;
 
-	bool IsValid() const noexcept { return static_cast<bool>(m_shaderResourceView); }
-	RhiGpuDescriptorHandle GetShaderResourceView() const noexcept { return m_shaderResourceView; }
-	RhiGpuDescriptorHandle GetPreviousShaderResourceView() const noexcept { return m_previousShaderResourceView; }
+	bool IsValid() const noexcept { return m_buffer.IsValid() && m_previousBuffer.IsValid(); }
+	const FrameBufferResource& GetBuffer() const noexcept { return m_buffer; }
+	const FrameBufferResource& GetPreviousBuffer() const noexcept { return m_previousBuffer; }
 
 	static SkinningFrameData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
@@ -28,10 +26,6 @@ class SkinningFrameData final
 	void Release() noexcept;
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
-	RhiOwnedResourceHandle m_buffer = {};
-	RhiOwnedResourceHandle m_previousBuffer = {};
-	RhiResourceViewHandle m_view = {};
-	RhiResourceViewHandle m_previousView = {};
-	RhiGpuDescriptorHandle m_shaderResourceView = {};
-	RhiGpuDescriptorHandle m_previousShaderResourceView = {};
+	FrameBufferResource m_buffer;
+	FrameBufferResource m_previousBuffer;
 };

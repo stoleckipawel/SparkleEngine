@@ -44,14 +44,6 @@ FrameGraphTextureHandle FrameGraphBuilder::ImportTexture(
 	return m_frameGraph.ImportTexture(desc, resource, initialState);
 }
 
-FrameGraphTextureHandle FrameGraphBuilder::ImportPersistentTexture(
-    const FrameGraphTextureDesc& desc,
-    NativeResourceHandle resource,
-    ResourceState initialState) noexcept
-{
-	return m_frameGraph.ImportPersistentTexture(desc, resource, initialState);
-}
-
 FrameGraphTextureHandle FrameGraphBuilder::ReservePersistentTexture(
     const FrameGraphTextureDesc& desc,
     ResourceState initialState) noexcept
@@ -70,14 +62,6 @@ FrameGraphBufferHandle FrameGraphBuilder::ImportBuffer(
     ResourceState initialState) noexcept
 {
 	return m_frameGraph.ImportBuffer(desc, resource, initialState);
-}
-
-FrameGraphBufferHandle FrameGraphBuilder::ImportPersistentBuffer(
-    const FrameGraphBufferDesc& desc,
-    NativeResourceHandle resource,
-    ResourceState initialState) noexcept
-{
-	return m_frameGraph.ImportPersistentBuffer(desc, resource, initialState);
 }
 
 FrameGraphBufferHandle FrameGraphBuilder::ReservePersistentBuffer(
@@ -101,85 +85,11 @@ FrameGraphAccelerationStructureHandle FrameGraphBuilder::ImportAccelerationStruc
 	return m_frameGraph.ImportAccelerationStructure(desc, resource, gpuAddress, initialState);
 }
 
-FrameGraphAccelerationStructureHandle FrameGraphBuilder::ImportPersistentAccelerationStructure(
-    const FrameGraphAccelerationStructureDesc& desc,
-    NativeResourceHandle resource,
-    RhiGpuVirtualAddress gpuAddress,
-    ResourceState initialState) noexcept
-{
-	return m_frameGraph.ImportPersistentAccelerationStructure(desc, resource, gpuAddress, initialState);
-}
-
 FrameGraphAccelerationStructureHandle FrameGraphBuilder::ReservePersistentAccelerationStructure(
     const FrameGraphAccelerationStructureDesc& desc,
     ResourceState initialState) noexcept
 {
 	return m_frameGraph.ReservePersistentAccelerationStructure(desc, initialState);
-}
-
-void FrameGraphBuilder::BindPersistentAccelerationStructure(
-    FrameGraphAccelerationStructureHandle handle,
-    NativeResourceHandle resource,
-    RhiGpuVirtualAddress gpuAddress,
-    ResourceState currentState) noexcept
-{
-	m_frameGraph.BindPersistentAccelerationStructure(handle, resource, gpuAddress, currentState);
-}
-
-void FrameGraphBuilder::BindPersistentAccelerationStructure(
-    FrameGraphAccelerationStructureHandle handle,
-    RhiOwnedResourceHandle resource,
-    RhiGpuVirtualAddress gpuAddress,
-    ResourceState currentState) noexcept
-{
-	m_frameGraph.BindPersistentAccelerationStructure(handle, resource, gpuAddress, currentState);
-}
-
-void FrameGraphBuilder::ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept
-{
-	m_frameGraph.ClearPersistentAccelerationStructureBinding(handle);
-}
-
-void FrameGraphBuilder::BindPersistentTexture(
-    FrameGraphTextureHandle handle,
-    NativeResourceHandle resource,
-    ResourceState currentState) noexcept
-{
-	m_frameGraph.BindPersistentTexture(handle, resource, currentState);
-}
-
-void FrameGraphBuilder::BindPersistentTexture(
-    FrameGraphTextureHandle handle,
-    RhiOwnedResourceHandle resource,
-    ResourceState currentState) noexcept
-{
-	m_frameGraph.BindPersistentTexture(handle, resource, currentState);
-}
-
-void FrameGraphBuilder::ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept
-{
-	m_frameGraph.ClearPersistentTextureBinding(handle);
-}
-
-void FrameGraphBuilder::BindPersistentBuffer(
-    FrameGraphBufferHandle handle,
-    NativeResourceHandle resource,
-    ResourceState currentState) noexcept
-{
-	m_frameGraph.BindPersistentBuffer(handle, resource, currentState);
-}
-
-void FrameGraphBuilder::BindPersistentBuffer(
-    FrameGraphBufferHandle handle,
-    RhiOwnedResourceHandle resource,
-    ResourceState currentState) noexcept
-{
-	m_frameGraph.BindPersistentBuffer(handle, resource, currentState);
-}
-
-void FrameGraphBuilder::ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept
-{
-	m_frameGraph.ClearPersistentBufferBinding(handle);
 }
 
 void FrameGraphBuilder::ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept

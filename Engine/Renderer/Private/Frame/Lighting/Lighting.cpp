@@ -19,10 +19,8 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	const LightingMode lightingMode = GetLightingMode();
 	const PixelFormat radianceFormat =
 	    lightingMode == LightingMode::ReferencePathTraced ? PixelFormat::R32G32B32A32_Float : FrameRenderFormats::SceneColor;
-	const bool createRayReconstructionGuides =
-	    lightingMode == LightingMode::RestirPathTraced && IsRayReconstructionEnabled();
-	resources.Transient.Lighting =
-	    CreateLightingRenderTargets(builder, sceneExtent, radianceFormat, createRayReconstructionGuides);
+	const bool createRayReconstructionGuides = lightingMode == LightingMode::RestirPathTraced && IsRayReconstructionEnabled();
+	resources.Transient.Lighting = CreateLightingRenderTargets(builder, sceneExtent, radianceFormat, createRayReconstructionGuides);
 	AddLightingTargetClearPass(builder, resources.Transient.Lighting);
 
 	switch (lightingMode)
@@ -40,7 +38,7 @@ void AddLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExt
 	                                                   ? CreateReferenceLightingSample(builder, sceneExtent)
 	                                                   : resources.Transient.Scene.SceneColor;
 	AddLightingCompositePass(builder, lightingSample, resources.Transient.Lighting, resources.Transient.GBuffer);
-	AddSkyPass(builder, lightingSample, resources.Transient.Scene.SceneDepth);
+	AddSkyPass(builder, lightingSample, resources.Transient.Scene.SceneDepth, resources.External.Sky);
 
 	switch (lightingMode)
 	{

@@ -160,6 +160,11 @@ void D3D12Texture::WriteShaderResourceView(RhiCpuDescriptorHandle destination) c
 	m_rhi.GetDevice()->CreateShaderResourceView(m_textureResource.Get(), &srvDesc, nativeDestination);
 }
 
+NativeResourceHandle D3D12Texture::GetNativeResource() const noexcept
+{
+	return NativeResourceHandle{m_textureResource.Get()};
+}
+
 TextureRuntimeInfo D3D12Texture::GetRuntimeInfo() const noexcept
 {
 	TextureRuntimeInfo info;
@@ -167,6 +172,7 @@ TextureRuntimeInfo D3D12Texture::GetRuntimeInfo() const noexcept
 	info.Height = m_textureUpload.Height;
 	info.ArraySize = m_textureUpload.GetArraySize();
 	info.Dimension = m_textureUpload.Dimension;
+	info.Format = m_textureUpload.Format;
 	info.FormatName = D3D12TextureFormatName(m_textureUpload.Format);
 	info.FormatIntent = m_textureUpload.FormatIntent;
 	info.MipCount = m_textureUpload.GetMipCount();

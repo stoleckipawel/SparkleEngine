@@ -111,46 +111,6 @@ class ShaderTexture2DSRV final
 	RhiDescriptorTableBinding m_descriptorTable = {};
 };
 
-using ShaderTexture3DSRV = ShaderTexture2DSRV;
-using ShaderTextureCubeSRV = ShaderTexture2DSRV;
-
-class ShaderBufferSRV final
-{
-  public:
-	using Semantic = ReadBuffer;
-
-	ShaderBufferSRV() = default;
-
-	ShaderBufferSRV& operator=(RhiDescriptorTableBinding descriptorTable) noexcept
-	{
-		m_descriptorTable = descriptorTable;
-		m_gpuDescriptor = {};
-		return *this;
-	}
-
-	ShaderBufferSRV& operator=(RhiGpuDescriptorHandle descriptorTable) noexcept
-	{
-		m_descriptorTable = {};
-		m_gpuDescriptor = descriptorTable;
-		return *this;
-	}
-
-	RhiDescriptorTableBinding GetDescriptorTable() const noexcept { return m_descriptorTable; }
-	RhiGpuDescriptorHandle GetGpuDescriptor() const noexcept { return m_gpuDescriptor; }
-
-	bool IsBound() const noexcept { return static_cast<bool>(m_descriptorTable) || static_cast<bool>(m_gpuDescriptor); }
-
-	void Reset() noexcept
-	{
-		m_descriptorTable = {};
-		m_gpuDescriptor = {};
-	}
-
-  private:
-	RhiDescriptorTableBinding m_descriptorTable = {};
-	RhiGpuDescriptorHandle m_gpuDescriptor = {};
-};
-
 template <std::size_t ArrayCount> class ShaderTexture2DTableSRV final
 {
   public:
@@ -162,29 +122,6 @@ template <std::size_t ArrayCount> class ShaderTexture2DTableSRV final
 	ShaderTexture2DTableSRV() = default;
 
 	ShaderTexture2DTableSRV& operator=(RhiDescriptorTableBinding descriptorTable) noexcept
-	{
-		m_descriptorTable = descriptorTable;
-		return *this;
-	}
-
-	RhiDescriptorTableBinding GetDescriptorTable() const noexcept { return m_descriptorTable; }
-
-	bool IsBound() const noexcept { return static_cast<bool>(m_descriptorTable); }
-
-	void Reset() noexcept { m_descriptorTable = {}; }
-
-  private:
-	RhiDescriptorTableBinding m_descriptorTable = {};
-};
-
-class ShaderTexture2DUAV final
-{
-  public:
-	using Semantic = RWTexture;
-
-	ShaderTexture2DUAV() = default;
-
-	ShaderTexture2DUAV& operator=(RhiDescriptorTableBinding descriptorTable) noexcept
 	{
 		m_descriptorTable = descriptorTable;
 		return *this;
@@ -388,20 +325,6 @@ template <std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTextur
 	static constexpr bool FrameGraphTracked = false;
 };
 
-template <> struct ShaderParameterFieldTraits<ShaderBufferSRV>
-{
-	using Semantic = ReadBuffer;
-	static constexpr std::uint32_t FieldArrayCount = 1;
-	static constexpr bool FrameGraphTracked = false;
-};
-
-template <> struct ShaderParameterFieldTraits<ShaderTexture2DUAV>
-{
-	using Semantic = RWTexture;
-	static constexpr std::uint32_t FieldArrayCount = 1;
-	static constexpr bool FrameGraphTracked = false;
-};
-
 template <> struct ShaderParameterFieldTraits<ShaderAccelerationStructure>
 {
 	using Semantic = AccelerationStructure;
@@ -527,32 +450,16 @@ inline bool BindParameterField(PassParameterSet& parameterSet, const char* name,
 	return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
 }
 
-inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderBufferSRV& field)
-{
-	if (field.GetDescriptorTable())
-	{
-		return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
-	}
-
-	return parameterSet.SetShaderResourceView(name, field.GetGpuDescriptor());
-}
-
 template <std::size_t ArrayCount>
 inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DTableSRV<ArrayCount>& field)
 {
 	return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
 }
 
-inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DUAV& field)
-{
-	return parameterSet.SetUnorderedAccessView(name, field.GetDescriptorTable());
-}
-
 inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderAccelerationStructure& field)
 {
-	return field.IsBound() &&
-	       (field.GetHandle().IsValid() ? parameterSet.SetAccelerationStructure(name, field.GetHandle())
-	                                    : parameterSet.SetAccelerationStructure(name, field.GetGpuAddress()));
+	return field.IsBound() && (field.GetHandle().IsValid() ? parameterSet.SetAccelerationStructure(name, field.GetHandle())
+	                                                       : parameterSet.SetAccelerationStructure(name, field.GetGpuAddress()));
 }
 
 template <typename TValue, std::size_t ArrayCount>

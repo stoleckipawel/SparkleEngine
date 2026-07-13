@@ -39,9 +39,14 @@ class SceneOutlinerPanel final
 	bool IsSelectionValid() const noexcept;
 	void EnsureValidSelection() noexcept;
 	void BuildCameraSection() noexcept;
+	void BuildSkySection() noexcept;
 	void BuildLightSection() noexcept;
 	void BuildMeshSection() noexcept;
-	void DrawEntrySection(const char* id, const char* label, const char* emptyText, const std::vector<SceneOutlinerEntry>& entries) noexcept;
+	void DrawEntrySection(
+	    const char* id,
+	    const char* label,
+	    const char* emptyText,
+	    const std::vector<SceneOutlinerEntry>& entries) noexcept;
 	bool PassesActiveFilter(const SceneObjectSelection& selection) const noexcept;
 	bool MatchesSearch(const char* label, const char* typeLabel) const noexcept;
 	std::size_t CountVisibleEntries() const noexcept;

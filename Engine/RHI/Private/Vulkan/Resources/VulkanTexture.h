@@ -27,6 +27,7 @@ class VulkanTexture final : public Texture
 	VulkanTexture(VulkanTexture&&) = delete;
 	VulkanTexture& operator=(VulkanTexture&&) = delete;
 
+	NativeResourceHandle GetNativeResource() const noexcept override;
 	void WriteShaderResourceView(RhiCpuDescriptorHandle destination) const override;
 	TextureRuntimeInfo GetRuntimeInfo() const noexcept override;
 

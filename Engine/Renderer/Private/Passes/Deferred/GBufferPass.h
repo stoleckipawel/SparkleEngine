@@ -36,6 +36,9 @@ struct GBufferPassParameters
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderSamplerSet SamplerAniso16xWrap;
+	ShaderBuffer<MeshInstanceData> MeshInstances;
+	ShaderBuffer<JointMatrixData> JointMatrices;
+	ShaderBuffer<JointMatrixData> PreviousJointMatrices;
 
 	static void Describe(ShaderParameterStructBuilder<GBufferPassParameters>& builder)
 	{
@@ -50,6 +53,9 @@ struct GBufferPassParameters
 		builder.Uniform("PerView", &GBufferPassParameters::PerView, ShaderStageVisibility::Vertex);
 		builder.Uniform("PerTemporal", &GBufferPassParameters::PerTemporal, ShaderStageVisibility::Vertex | ShaderStageVisibility::Pixel);
 		builder.Sampler("SamplerAniso16xWrap", &GBufferPassParameters::SamplerAniso16xWrap, ShaderStageVisibility::Pixel);
+		builder.ReadBuffer("MeshInstances", &GBufferPassParameters::MeshInstances, ShaderStageVisibility::Vertex);
+		builder.ReadBuffer("JointMatrices", &GBufferPassParameters::JointMatrices, ShaderStageVisibility::Vertex);
+		builder.ReadBuffer("PreviousJointMatrices", &GBufferPassParameters::PreviousJointMatrices, ShaderStageVisibility::Vertex);
 	}
 };
 
@@ -107,15 +113,18 @@ class GBufferPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(FrameGraphBuilder& builder, const GBufferRenderTargets& targets, ParameterInstance& parameters);
+	static void DeclareResources(
+	    FrameGraphBuilder& builder,
+	    const GBufferRenderTargets& targets,
+	    FrameGraphBufferHandle meshInstances,
+	    FrameGraphBufferHandle jointMatrices,
+	    FrameGraphBufferHandle previousJointMatrices,
+	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
 
   private:
-	void SetParameters(
-	    ParameterInstance& parameters,
-	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices) const;
+	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const;
 	void PrepareTargets(PassExecutionContext& context, const Parameters& parameters) const;
 	void ConfigurePipeline(RenderCommandContext& cmd, const RenderViewData& viewData) const;
 	void BindPassResources(
@@ -127,6 +136,7 @@ class GBufferPass final
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    const FrameContext& frame,
+	    const Parameters& parameters,
 	    const PassRuntimeServices& passRuntimeServices) const;
 
 	const RasterPassPipelineRuntime& m_runtime;

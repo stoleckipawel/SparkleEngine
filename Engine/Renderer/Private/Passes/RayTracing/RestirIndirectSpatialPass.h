@@ -10,6 +10,7 @@
 #include "SceneData/MaterialTextureTableCapability.h"
 #include "ShaderData/RenderConstantBufferData.h"
 #include "ShaderData/RenderViewLightingData.h"
+#include "ShaderData/SkyUniformData.h"
 
 #include <cstdint>
 
@@ -26,23 +27,24 @@ struct RestirIndirectSpatialPassParameters
 	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderUniform<ViewLightingData> ViewLighting;
 	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
+	ShaderUniform<SkyUniformData> Sky;
 	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> SceneDepth;
-	ShaderTexture2DSRV SkyTexture;
+	ShaderTexture2D<void> SkyTexture;
 	ShaderSamplerSet SamplerLinearClamp;
-	ShaderBufferSRV RayTracingHitVertices;
-	ShaderBufferSRV RayTracingHitIndices;
-	ShaderBufferSRV RayTracingHitInstances;
-	ShaderBufferSRV RayTracingHitMaterials;
-	ShaderBufferSRV MeshInstances;
-	ShaderBufferSRV SkinInfluences;
-	ShaderBufferSRV JointMatrices;
-	ShaderBufferSRV DirectionalLights;
-	ShaderBufferSRV PointLights;
-	ShaderBufferSRV SpotLights;
-	ShaderBufferSRV RectLights;
+	ShaderBuffer<void> RayTracingHitVertices;
+	ShaderBuffer<void> RayTracingHitIndices;
+	ShaderBuffer<void> RayTracingHitInstances;
+	ShaderBuffer<void> RayTracingHitMaterials;
+	ShaderBuffer<void> MeshInstances;
+	ShaderBuffer<void> SkinInfluences;
+	ShaderBuffer<void> JointMatrices;
+	ShaderBuffer<void> DirectionalLights;
+	ShaderBuffer<void> PointLights;
+	ShaderBuffer<void> SpotLights;
+	ShaderBuffer<void> RectLights;
 	ShaderTexture2DTableSRV<MaterialTextureTableFixedCapacity> MaterialTextureTable;
 	ShaderSamplerSet MaterialTextureSampler;
 	ShaderUniform<RestirIndirectLightingUniformData> RestirIndirectConstants;
@@ -77,6 +79,18 @@ class RestirIndirectSpatialPass final
 	    FrameGraphTextureHandle currentWeight,
 	    FrameGraphTextureHandle currentSurface,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
+	    FrameGraphTextureHandle sky,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
+	    FrameGraphBufferHandle hitVertices,
+	    FrameGraphBufferHandle hitSkinInfluences,
+	    FrameGraphBufferHandle hitIndices,
+	    FrameGraphBufferHandle hitInstances,
+	    FrameGraphBufferHandle hitMaterials,
+	    FrameGraphBufferHandle meshInstances,
+	    FrameGraphBufferHandle jointMatrices,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

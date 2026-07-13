@@ -34,6 +34,7 @@ class SPARKLE_RHI_API RhiDescriptorService
   public:
 	virtual ~RhiDescriptorService() noexcept = default;
 
+	virtual void BeginFrame(std::uint32_t frameIndex) noexcept = 0;
 	virtual std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) = 0;
 	virtual void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept = 0;
 	virtual RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) = 0;

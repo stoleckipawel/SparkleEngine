@@ -8,12 +8,13 @@
 
 class GPUMeshCache;
 class MaterialCacheManager;
+class TextureManager;
 struct RenderSceneData;
 
 class RenderSceneDataBuilder final
 {
   public:
-	RenderSceneDataBuilder(MaterialCacheManager& materialCache, GPUMeshCache& gpuMeshCache) noexcept;
+	RenderSceneDataBuilder(MaterialCacheManager& materialCache, GPUMeshCache& gpuMeshCache, TextureManager& textureManager) noexcept;
 	~RenderSceneDataBuilder() noexcept = default;
 
 	RenderSceneDataBuilder(const RenderSceneDataBuilder&) = delete;
@@ -23,12 +24,14 @@ class RenderSceneDataBuilder final
 
 	RenderSceneData Build(const RenderSceneSnapshot& sceneSnapshot);
 
- private:
+  private:
 	void BuildMaterials(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const;
+	void BuildSky(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const;
 	void BuildMeshInstanceBatches(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData);
 
 	MaterialCacheManager* m_materialCache = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
+	TextureManager* m_textureManager = nullptr;
 	std::vector<DirectX::XMFLOAT4X4> m_previousMeshWorldMatrices;
 	std::unordered_map<Assets::CookedAssetId, std::vector<DirectX::XMFLOAT4X4>> m_previousSkinningMatricesBySkeletonAsset;
 };

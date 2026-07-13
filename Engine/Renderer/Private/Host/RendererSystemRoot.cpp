@@ -38,7 +38,6 @@ RendererSystemRoot::~RendererSystemRoot() noexcept
 	{
 		GetBackend().Flush();
 	}
-
 }
 
 RenderDeviceServices& RendererSystemRoot::GetBackend() noexcept
@@ -148,7 +147,7 @@ void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noex
 {
 	m_textureManager = std::make_unique<TextureManager>(GetRenderHardwareInterface());
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
-	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache);
+	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache, *m_textureManager);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
 

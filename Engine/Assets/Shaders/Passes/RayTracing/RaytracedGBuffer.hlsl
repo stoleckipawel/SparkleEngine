@@ -2,7 +2,6 @@
 #include "Debug/InstanceView.hlsli"
 #include "Geometry/ScreenSpace.hlsli"
 #include "Geometry/Transforms.hlsli"
-#include "Lighting/SkyEnvironment.hlsli"
 #include "Passes/Deferred/GBufferPacking.hlsli"
 #include "Passes/Deferred/MotionVector.hlsli"
 

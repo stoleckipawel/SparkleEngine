@@ -55,6 +55,12 @@ class D3D12ResourceService final : public RhiResourceService
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
 	    RhiResourceViewHandle& outView) override;
+	bool CreateStructuredBufferResource(
+	    const void* data,
+	    std::size_t sizeInBytes,
+	    std::uint32_t strideInBytes,
+	    std::wstring_view debugName,
+	    RhiOwnedResourceHandle& outResource) override;
 	bool CreateIndexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,

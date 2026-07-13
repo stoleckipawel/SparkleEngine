@@ -36,19 +36,28 @@ struct DirectLightingPassParameters
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderUniform<ViewLightingData> ViewLighting;
-	ShaderBufferSRV DirectionalLights;
-	ShaderBufferSRV PointLights;
-	ShaderBufferSRV SpotLights;
-	ShaderBufferSRV RectLights;
+	ShaderBuffer<void> DirectionalLights;
+	ShaderBuffer<void> PointLights;
+	ShaderBuffer<void> SpotLights;
+	ShaderBuffer<void> RectLights;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightingPassParameters>& builder)
 	{
 		builder.RWTexture("DirectDiffuse", &DirectLightingPassParameters::DirectDiffuse, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSpecular", &DirectLightingPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSubsurface", &DirectLightingPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
-		builder.ReadTexture("ShadowVisibilitySignal", &DirectLightingPassParameters::ShadowVisibilitySignal, ShaderStageVisibility::Compute);
-		builder.ReadTexture("CurrentReservoirSample", &DirectLightingPassParameters::CurrentReservoirSample, ShaderStageVisibility::Compute);
-		builder.ReadTexture("CurrentReservoirWeight", &DirectLightingPassParameters::CurrentReservoirWeight, ShaderStageVisibility::Compute);
+		builder.ReadTexture(
+		    "ShadowVisibilitySignal",
+		    &DirectLightingPassParameters::ShadowVisibilitySignal,
+		    ShaderStageVisibility::Compute);
+		builder.ReadTexture(
+		    "CurrentReservoirSample",
+		    &DirectLightingPassParameters::CurrentReservoirSample,
+		    ShaderStageVisibility::Compute);
+		builder.ReadTexture(
+		    "CurrentReservoirWeight",
+		    &DirectLightingPassParameters::CurrentReservoirWeight,
+		    ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferBaseColor", &DirectLightingPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &DirectLightingPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DirectLightingPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
@@ -86,6 +95,10 @@ class DirectLightingPass final
 	    FrameGraphTextureHandle sceneDepth,
 	    const GBufferRenderTargets& gbuffer,
 	    const DirectShadowSignalResources& shadowSignals,
+	    FrameGraphBufferHandle directionalLights,
+	    FrameGraphBufferHandle pointLights,
+	    FrameGraphBufferHandle spotLights,
+	    FrameGraphBufferHandle rectLights,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

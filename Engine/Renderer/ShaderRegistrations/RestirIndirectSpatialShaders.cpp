@@ -8,6 +8,7 @@
 #include "Shaders/Authoring/GlobalShader.h"
 #include "ShaderData/RenderConstantBufferData.h"
 #include "ShaderData/RenderViewLightingData.h"
+#include "ShaderData/SkyUniformData.h"
 
 class RestirIndirectSpatialCS final : public TGlobalShader<RestirIndirectSpatialCS>
 {
@@ -26,6 +27,7 @@ class RestirIndirectSpatialCS final : public TGlobalShader<RestirIndirectSpatial
 	SHADER_PARAMETER_CBUFFER_NAMED(PerTemporal, PerTemporalConstantBufferData, PerTemporalConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(ViewLighting, ViewLighting, ViewLightingData)
 	SHADER_PARAMETER_CBUFFER_NAMED(RayTracedShadows, RayTracedShadowUniformData, RayTracedShadowUniformData)
+	SHADER_PARAMETER_CBUFFER_NAMED(Sky, SkyUniformData, SkyUniformData)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)

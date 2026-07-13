@@ -325,7 +325,11 @@ void VulkanTexture::UploadImage(std::wstring_view debugName)
 	if (!VulkanResult::Succeeded(allocateResult))
 	{
 		vkDestroyCommandPool(m_rhi.GetDevice(), commandPool, nullptr);
-		Diagnostics::Fail(g_vulkanTextureLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkAllocateCommandBuffers", allocateResult));
+		Diagnostics::Fail(
+		    g_vulkanTextureLogger,
+		    __FILE__,
+		    __LINE__,
+		    VulkanResult::FormatFailure("vkAllocateCommandBuffers", allocateResult));
 		return;
 	}
 
@@ -354,7 +358,7 @@ void VulkanTexture::UploadImage(std::wstring_view debugName)
 			const VkResult submitResult = vkQueueSubmit(m_rhi.GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
 			if (VulkanResult::Succeeded(submitResult))
 			{
-				(void)vkQueueWaitIdle(m_rhi.GetGraphicsQueue());
+				(void) vkQueueWaitIdle(m_rhi.GetGraphicsQueue());
 			}
 			else
 			{
@@ -419,10 +423,12 @@ VkImageViewCreateInfo VulkanTexture::BuildImageViewCreateInfo() const noexcept
 
 void VulkanTexture::WriteShaderResourceView(RhiCpuDescriptorHandle destination) const
 {
-	m_descriptorManager.GetAllocator().WriteImageDescriptor(
-	    destination,
-	    ERhiResourceViewKind::TextureShaderResource,
-	    m_imageView);
+	m_descriptorManager.GetAllocator().WriteImageDescriptor(destination, ERhiResourceViewKind::TextureShaderResource, m_imageView);
+}
+
+NativeResourceHandle VulkanTexture::GetNativeResource() const noexcept
+{
+	return NativeResourceHandle{m_imageAllocation != nullptr ? m_imageAllocation->Image : VK_NULL_HANDLE};
 }
 
 TextureRuntimeInfo VulkanTexture::GetRuntimeInfo() const noexcept
@@ -432,6 +438,7 @@ TextureRuntimeInfo VulkanTexture::GetRuntimeInfo() const noexcept
 	info.Height = m_textureUpload.Height;
 	info.ArraySize = m_textureUpload.GetArraySize();
 	info.Dimension = m_textureUpload.Dimension;
+	info.Format = m_textureUpload.Format;
 	info.FormatName = PixelFormatName(m_textureUpload.Format);
 	info.FormatIntent = m_textureUpload.FormatIntent;
 	info.MipCount = m_textureUpload.GetMipCount();

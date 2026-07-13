@@ -1,7 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/SkyPass.h"
 
-#include "Frame/Core/RenderViewData.h"
+#include "Frame/Core/FrameContext.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Core/ComputePassUtilities.h"
@@ -9,7 +9,6 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
-#include "Textures/TextureManager.h"
 
 SkyPass::SkyPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -29,21 +28,23 @@ void SkyPass::DeclareResources(
     FrameGraphBuilder& builder,
     FrameGraphTextureHandle output,
     FrameGraphTextureHandle sceneDepth,
+    FrameGraphTextureHandle sky,
     ParameterInstance& parameters)
 {
 	parameters->SceneColor = builder.CreateUAV(output);
 	parameters->SceneDepth = builder.CreateSRV(sceneDepth);
+	parameters->SkyTexture = builder.CreateSRV(sky);
 }
 
-void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices)
-    const
+void SkyPass::SetParameters(ParameterInstance& parameters, const FrameContext& frame, const PassRuntimeServices& passRuntimeServices) const
 {
 	parameters->PerFrame = passRuntimeServices.PerFrame;
-	parameters->PerView = viewData.perViewData;
-	parameters->PerTemporal = viewData.perTemporalData;
-	const TextureManager* textures = passRuntimeServices.Textures;
-	parameters->SkyTexture =
-	    textures != nullptr ? textures->GetShaderResourceBinding(textures->ResolveEnvironmentMapTexture()) : RhiDescriptorTableBinding{};
+	parameters->PerView = frame.mainView.perViewData;
+	parameters->PerTemporal = frame.mainView.perTemporalData;
+	parameters->Sky = SkyUniformData{
+	    .Color = frame.sceneData.sky.color,
+	    .Intensity = frame.sceneData.sky.intensity,
+	    .Enabled = frame.sceneData.sky.enabled ? 1u : 0u};
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -52,7 +53,7 @@ void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData&
 
 void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
-	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
+	SetParameters(parameters, context.Frame, context.RuntimeServices);
 	ComputePassUtilities::DispatchSized<SkyPass>(
 	    context,
 	    m_runtime,

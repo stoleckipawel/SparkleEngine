@@ -15,6 +15,14 @@ void AddPathTracedDirectLightingPass(FrameGraphBuilder& builder, const FrameAsse
 	    resources.Transient.Scene,
 	    resources.Transient.GBuffer,
 	    resources.SceneTlas,
+	    resources.External.DirectionalLights,
+	    resources.External.PointLights,
+	    resources.External.SpotLights,
+	    resources.External.RectLights,
+	    resources.External.RayTracingHitVertices,
+	    resources.External.RayTracingHitIndices,
+	    resources.External.RayTracingHitInstances,
+	    resources.External.RayTracingHitMaterials,
 	    parameters);
 	LightingRayTracingPasses::AddSceneTlasComputePass<PathTracedDirectLightingPass>(
 	    builder,

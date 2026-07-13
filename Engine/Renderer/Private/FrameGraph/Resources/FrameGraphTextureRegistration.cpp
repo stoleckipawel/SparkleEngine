@@ -2,6 +2,7 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "Core/Public/Diagnostics/Verify.h"
+#include "RHI/Public/Resources/Texture.h"
 #include "Window/Window.h"
 
 #include <format>
@@ -42,7 +43,8 @@ namespace FrameGraphTextureRegistration
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "FrameGraph external resource validation failed: operation='{}' resource='{}' initialState={} remediation='provide a valid native backing resource before importing it into the frame graph'",
+		        "FrameGraph external resource validation failed: operation='{}' resource='{}' initialState={} remediation='provide a valid "
+		        "native backing resource before importing it into the frame graph'",
 		        operation,
 		        resourceName.empty() ? "<unnamed>" : resourceName,
 		        ResourceStateToString(initialState)));
@@ -65,7 +67,9 @@ namespace FrameGraphTextureRegistration
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "FrameGraph persistent-buffer validation failed: operation='{}' resource='{}' handle={} state={} hasResource={} remediation='bind persistent buffers through a valid frame-graph buffer handle with a native backing resource before declaring the pass resource use'",
+		        "FrameGraph persistent-buffer validation failed: operation='{}' resource='{}' handle={} state={} hasResource={} "
+		        "remediation='bind persistent buffers through a valid frame-graph buffer handle with a native backing resource before "
+		        "declaring the pass resource use'",
 		        operation,
 		        resourceName.empty() ? "<unnamed>" : resourceName,
 		        FormatResourceHandle(handle),
@@ -85,7 +89,9 @@ namespace FrameGraphTextureRegistration
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "FrameGraph persistent-texture validation failed: operation='{}' resource='{}' handle={} state={} hasResource={} remediation='bind persistent textures through a valid frame-graph texture handle with a native backing resource before declaring the pass resource use'",
+		        "FrameGraph persistent-texture validation failed: operation='{}' resource='{}' handle={} state={} hasResource={} "
+		        "remediation='bind persistent textures through a valid frame-graph texture handle with a native backing resource before "
+		        "declaring the pass resource use'",
 		        operation,
 		        resourceName.empty() ? "<unnamed>" : resourceName,
 		        FormatResourceHandle(handle),
@@ -117,35 +123,15 @@ FrameGraphTextureHandle FrameGraph::ImportTexture(
 
 	const FrameGraphTextureDesc resolvedDesc = FrameGraphTextureRegistration::ResolveTextureDesc(desc, *m_window, "ImportedTexture");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterImportedTexture(handle, resolvedDesc, FrameGraphTextureRegistration::ResolveTextureResourceKind(desc.kind), initialState);
+	m_resourceRegistry
+	    .RegisterImportedTexture(handle, resolvedDesc, FrameGraphTextureRegistration::ResolveTextureResourceKind(desc.kind), initialState);
 	m_resourceStateTracker.RegisterResource(handle, initialState);
 	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
 	m_resourceResolver.RegisterResource(handle, resource);
 	return FrameGraphTextureHandle{handle};
 }
 
-FrameGraphTextureHandle FrameGraph::ImportPersistentTexture(
-    const FrameGraphTextureDesc& desc,
-    NativeResourceHandle resource,
-    ResourceState initialState) noexcept
-{
-	if (!resource)
-	{
-		FrameGraphTextureRegistration::FailMissingBackingResource("ImportPersistentTexture", desc.name, initialState);
-	}
-
-	const FrameGraphTextureDesc resolvedDesc = FrameGraphTextureRegistration::ResolveTextureDesc(desc, *m_window, "PersistentTexture");
-	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterPersistentTexture(handle, resolvedDesc, FrameGraphTextureRegistration::ResolveTextureResourceKind(desc.kind), initialState);
-	m_resourceStateTracker.RegisterResource(handle, initialState);
-	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
-	m_resourceResolver.RegisterResource(handle, resource);
-	return FrameGraphTextureHandle{handle};
-}
-
-FrameGraphTextureHandle FrameGraph::ReservePersistentTexture(
-    const FrameGraphTextureDesc& desc,
-    ResourceState initialState) noexcept
+FrameGraphTextureHandle FrameGraph::ReservePersistentTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {
 	const FrameGraphTextureDesc resolvedDesc = FrameGraphTextureRegistration::ResolveTextureDesc(desc, *m_window, "PersistentTexture");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
@@ -167,17 +153,16 @@ FrameGraphTextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& d
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
 	m_virtualTransientResources.push_back(
 	    VirtualTransientResource{.handle = handle, .resourceClass = FrameGraphResourceClass::Texture, .textureDesc = resolvedDesc});
-	m_resourceRegistry.RegisterTransientTexture(
-	    handle,
-	    resolvedDesc,
-	    kind,
-	    ResourceState::Undefined);
+	m_resourceRegistry.RegisterTransientTexture(handle, resolvedDesc, kind, ResourceState::Undefined);
 	m_resourceStateTracker.RegisterResource(handle, ResourceState::Undefined);
 	m_resourceResolver.ClearResolvedAccess(handle);
 	return FrameGraphTextureHandle{handle};
 }
 
-FrameGraphBufferHandle FrameGraph::ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept
+FrameGraphBufferHandle FrameGraph::ImportBuffer(
+    const FrameGraphBufferDesc& desc,
+    NativeResourceHandle resource,
+    ResourceState initialState) noexcept
 {
 	if (!resource)
 	{
@@ -205,9 +190,7 @@ FrameGraphBufferHandle FrameGraph::CreateBuffer(const FrameGraphBufferDesc& desc
 	return FrameGraphBufferHandle{handle};
 }
 
-FrameGraphBufferHandle FrameGraph::ReservePersistentBuffer(
-    const FrameGraphBufferDesc& desc,
-    ResourceState initialState) noexcept
+FrameGraphBufferHandle FrameGraph::ReservePersistentBuffer(const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept
 {
 	const FrameGraphBufferDesc resolvedDesc = FrameGraphTextureRegistration::ResolveBufferDesc(desc, "PersistentBuffer");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
@@ -218,29 +201,7 @@ FrameGraphBufferHandle FrameGraph::ReservePersistentBuffer(
 	return FrameGraphBufferHandle{handle};
 }
 
-FrameGraphBufferHandle FrameGraph::ImportPersistentBuffer(
-    const FrameGraphBufferDesc& desc,
-    NativeResourceHandle resource,
-    ResourceState initialState) noexcept
-{
-	if (!resource)
-	{
-		FrameGraphTextureRegistration::FailMissingBackingResource("ImportPersistentBuffer", desc.name, initialState);
-	}
-
-	const FrameGraphBufferDesc resolvedDesc = FrameGraphTextureRegistration::ResolveBufferDesc(desc, "PersistentBuffer");
-	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterPersistentBuffer(handle, resolvedDesc, initialState);
-	m_resourceStateTracker.RegisterResource(handle, initialState);
-	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
-	m_resourceResolver.RegisterResource(handle, resource);
-	return FrameGraphBufferHandle{handle};
-}
-
-void FrameGraph::BindPersistentBuffer(
-    FrameGraphBufferHandle handle,
-    NativeResourceHandle resource,
-    ResourceState currentState) noexcept
+void FrameGraph::BindPersistentBuffer(FrameGraphBufferHandle handle, NativeResourceHandle resource, ResourceState currentState) noexcept
 {
 	if (!handle.IsValid())
 	{
@@ -279,14 +240,16 @@ void FrameGraph::BindPersistentBuffer(
 		    static_cast<bool>(resource));
 	}
 
-	m_resourceResolver.RegisterResource(resourceHandle, resource);
+	FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(resourceHandle);
+	if (access.resource.Value != resource.Value)
+	{
+		ReleaseExternalResourceViews(resourceHandle);
+		access.resource = resource;
+	}
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
 }
 
-void FrameGraph::BindPersistentTexture(
-    FrameGraphTextureHandle handle,
-    NativeResourceHandle resource,
-    ResourceState currentState) noexcept
+void FrameGraph::BindPersistentTexture(FrameGraphTextureHandle handle, NativeResourceHandle resource, ResourceState currentState) noexcept
 {
 	if (!handle.IsValid())
 	{
@@ -325,14 +288,16 @@ void FrameGraph::BindPersistentTexture(
 		    static_cast<bool>(resource));
 	}
 
-	m_resourceResolver.RegisterResource(resourceHandle, resource);
+	FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(resourceHandle);
+	if (access.resource.Value != resource.Value)
+	{
+		ReleaseExternalResourceViews(resourceHandle);
+		access.resource = resource;
+	}
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
 }
 
-void FrameGraph::BindPersistentTexture(
-    FrameGraphTextureHandle handle,
-    RhiOwnedResourceHandle resource,
-    ResourceState currentState) noexcept
+void FrameGraph::BindPersistentTexture(FrameGraphTextureHandle handle, RhiOwnedResourceHandle resource, ResourceState currentState) noexcept
 {
 	if (m_renderHardwareInterface == nullptr || !resource)
 	{
@@ -345,6 +310,35 @@ void FrameGraph::BindPersistentTexture(
 	}
 
 	BindPersistentTexture(handle, m_renderHardwareInterface->GetResourceService().GetNativeResource(resource), currentState);
+}
+
+void FrameGraph::BindPersistentTexture(FrameGraphTextureHandle handle, const Texture& texture, ResourceState currentState) noexcept
+{
+	if (!handle.IsValid())
+	{
+		return;
+	}
+
+	const TextureRuntimeInfo runtimeInfo = texture.GetRuntimeInfo();
+	if (!runtimeInfo.IsValid || !texture.GetNativeResource())
+	{
+		FrameGraphTextureRegistration::FailInvalidPersistentTextureBinding(
+		    "BindPersistentTexture",
+		    {},
+		    handle.GetResourceHandle(),
+		    currentState,
+		    false);
+	}
+
+	FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle.GetResourceHandle());
+	if (metadata.textureDesc.format != runtimeInfo.Format)
+	{
+		ReleaseExternalResourceViews(handle.GetResourceHandle());
+	}
+	metadata.textureDesc.width = runtimeInfo.Width;
+	metadata.textureDesc.height = runtimeInfo.Height;
+	metadata.textureDesc.format = runtimeInfo.Format;
+	BindPersistentTexture(handle, texture.GetNativeResource(), currentState);
 }
 
 void FrameGraph::ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept
@@ -360,15 +354,13 @@ void FrameGraph::ClearPersistentTextureBinding(FrameGraphTextureHandle handle) n
 		return;
 	}
 
+	ReleaseExternalResourceViews(resourceHandle);
 	m_resourceResolver.ClearResolvedAccess(resourceHandle);
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, metadata.initialState);
 }
 
-void FrameGraph::BindPersistentBuffer(
-    FrameGraphBufferHandle handle,
-    RhiOwnedResourceHandle resource,
-    ResourceState currentState) noexcept
+void FrameGraph::BindPersistentBuffer(FrameGraphBufferHandle handle, RhiOwnedResourceHandle resource, ResourceState currentState) noexcept
 {
 	if (m_renderHardwareInterface == nullptr || !resource)
 	{
@@ -381,6 +373,28 @@ void FrameGraph::BindPersistentBuffer(
 	}
 
 	BindPersistentBuffer(handle, m_renderHardwareInterface->GetResourceService().GetNativeResource(resource), currentState);
+}
+
+void FrameGraph::BindPersistentBuffer(
+    FrameGraphBufferHandle handle,
+    RhiOwnedResourceHandle resource,
+    const FrameGraphBufferDesc& desc,
+    ResourceState currentState) noexcept
+{
+	if (!handle.IsValid())
+	{
+		return;
+	}
+
+	FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle.GetResourceHandle());
+	const std::string resourceName = metadata.bufferDesc.name;
+	const FrameGraphBufferDesc resolvedDesc = FrameGraphTextureRegistration::ResolveBufferDesc(desc, resourceName);
+	if (metadata.bufferDesc.sizeInBytes != resolvedDesc.sizeInBytes || metadata.bufferDesc.strideInBytes != resolvedDesc.strideInBytes)
+	{
+		ReleaseExternalResourceViews(handle.GetResourceHandle());
+	}
+	metadata.bufferDesc = resolvedDesc;
+	BindPersistentBuffer(handle, resource, currentState);
 }
 
 void FrameGraph::ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept
@@ -396,6 +410,7 @@ void FrameGraph::ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noe
 		return;
 	}
 
+	ReleaseExternalResourceViews(resourceHandle);
 	m_resourceResolver.ClearResolvedAccess(resourceHandle);
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, metadata.initialState);

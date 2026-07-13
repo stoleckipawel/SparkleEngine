@@ -37,6 +37,14 @@ void RaytracedGBufferPass::DeclareResources(
     FrameGraphBuilder& builder,
     const GBufferRenderTargets& targets,
     FrameGraphAccelerationStructureHandle sceneTlas,
+    FrameGraphBufferHandle hitVertices,
+    FrameGraphBufferHandle hitSkinInfluences,
+    FrameGraphBufferHandle hitIndices,
+    FrameGraphBufferHandle hitInstances,
+    FrameGraphBufferHandle hitMaterials,
+    FrameGraphBufferHandle meshInstances,
+    FrameGraphBufferHandle jointMatrices,
+    FrameGraphBufferHandle previousJointMatrices,
     ParameterInstance& parameters)
 {
 	parameters->GBufferBaseColor = builder.CreateUAV(targets.BaseColor);
@@ -47,6 +55,14 @@ void RaytracedGBufferPass::DeclareResources(
 	parameters->GBufferDeviceZ = builder.CreateUAV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
 	parameters->SceneTlas = builder.Read(sceneTlas);
+	parameters->RayTracingHitVertices = builder.CreateSRV(hitVertices);
+	parameters->SkinInfluences = builder.CreateSRV(hitSkinInfluences);
+	parameters->RayTracingHitIndices = builder.CreateSRV(hitIndices);
+	parameters->RayTracingHitInstances = builder.CreateSRV(hitInstances);
+	parameters->RayTracingHitMaterials = builder.CreateSRV(hitMaterials);
+	parameters->MeshInstances = builder.CreateSRV(meshInstances);
+	parameters->JointMatrices = builder.CreateSRV(jointMatrices);
+	parameters->PreviousJointMatrices = builder.CreateSRV(previousJointMatrices);
 }
 
 void RaytracedGBufferPass::SetParameters(
@@ -58,14 +74,6 @@ void RaytracedGBufferPass::SetParameters(
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
-	parameters->RayTracingHitVertices = frame.rayTracingHitData.GetVertexShaderResourceView();
-	parameters->RayTracingHitIndices = frame.rayTracingHitData.GetIndexShaderResourceView();
-	parameters->RayTracingHitInstances = frame.rayTracingHitData.GetInstanceShaderResourceView();
-	parameters->RayTracingHitMaterials = frame.rayTracingHitData.GetMaterialShaderResourceView();
-	parameters->MeshInstances = frame.meshInstances.GetShaderResourceView();
-	parameters->SkinInfluences = frame.rayTracingHitData.GetSkinInfluenceShaderResourceView();
-	parameters->JointMatrices = frame.skinning.GetShaderResourceView();
-	parameters->PreviousJointMatrices = frame.skinning.GetPreviousShaderResourceView();
 	parameters->MaterialTextureSampler = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -78,9 +86,7 @@ void RaytracedGBufferPass::Execute(PassExecutionContext& context, ParameterInsta
 	const RayTracingPassCapabilities rayTracingCapabilities =
 	    RayTracingPassCapabilityQuery::Build(context.Frame, context.RuntimeServices.RayTracing);
 	if (!rayTracingCapabilities.InlineRayQueryAvailable ||
-	    !RayTracingPassCapabilityQuery::CanUseSceneTlas(
-	        rayTracingCapabilities,
-	        RayTracingSceneTlasShaderAccessMode::Descriptor))
+	    !RayTracingPassCapabilityQuery::CanUseSceneTlas(rayTracingCapabilities, RayTracingSceneTlasShaderAccessMode::Descriptor))
 	{
 		return;
 	}

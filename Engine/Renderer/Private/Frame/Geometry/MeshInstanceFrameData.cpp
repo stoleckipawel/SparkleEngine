@@ -7,6 +7,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "ShaderData/RenderConstantBufferData.h"
 
+#include <algorithm>
 #include <vector>
 
 static const auto g_meshInstanceFrameDataLogger = Logging::GetOrCreateLogger("Renderer.MeshInstanceFrameData");
@@ -31,26 +32,15 @@ MeshInstanceFrameData& MeshInstanceFrameData::operator=(MeshInstanceFrameData&& 
 	Release();
 	m_renderHardwareInterface = other.m_renderHardwareInterface;
 	m_buffer = other.m_buffer;
-	m_view = other.m_view;
-	m_shaderResourceView = other.m_shaderResourceView;
 	other.m_renderHardwareInterface = nullptr;
-	other.m_buffer = {};
-	other.m_view = {};
-	other.m_shaderResourceView = {};
+	other.m_buffer.Reset();
 	return *this;
 }
 
-MeshInstanceFrameData MeshInstanceFrameData::Build(
-    RenderHardwareInterface& renderHardwareInterface,
-    const RenderSceneData& sceneData)
+MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData)
 {
-	if (sceneData.meshInstances.empty())
-	{
-		return {};
-	}
-
 	std::vector<MeshInstanceData> instances;
-	instances.reserve(sceneData.meshInstances.size());
+	instances.reserve(std::max<std::size_t>(sceneData.meshInstances.size(), 1));
 	for (const MeshDraw& draw : sceneData.meshInstances)
 	{
 		instances.push_back(
@@ -59,23 +49,26 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(
 		        .PreviousWorldMTX = draw.Transform.PreviousWorldMatrix,
 		        .WorldInvTransposeMTX = draw.Transform.WorldInvTranspose,
 		        .MaterialSlot = draw.Material.Slot,
-		        .Flags = draw.Geometry.MeshKind == RenderMeshKind::Skeletal && draw.Skinning.JointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset
+		        .Flags = draw.Geometry.MeshKind == RenderMeshKind::Skeletal &&
+		                         draw.Skinning.JointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset
 		                     ? MeshInstanceFlag_Skinned
 		                     : 0u,
 		        .JointMatrixOffset = draw.Skinning.JointMatrixOffset,
 		        .DebugData = static_cast<std::uint32_t>(instances.size())});
 	}
+	if (instances.empty())
+	{
+		// Keep the graph binding valid for an empty scene. No draw indexes this sentinel.
+		instances.emplace_back();
+	}
 
-	RhiOwnedResourceHandle buffer = {};
-	RhiResourceViewHandle view = {};
-	const bool created = renderHardwareInterface.GetResourceService().CreateStructuredBuffer(
-	    instances.data(),
-	    instances.size() * sizeof(MeshInstanceData),
-	    static_cast<std::uint32_t>(sizeof(MeshInstanceData)),
-	    L"MeshInstances",
-	    buffer,
-	    view);
-	if (!created || !buffer || !view)
+	FrameBufferResource buffer{
+	    .SizeInBytes = instances.size() * sizeof(MeshInstanceData),
+	    .StrideInBytes = static_cast<std::uint32_t>(sizeof(MeshInstanceData))};
+	const bool created =
+	    renderHardwareInterface.GetResourceService()
+	        .CreateStructuredBufferResource(instances.data(), buffer.SizeInBytes, buffer.StrideInBytes, L"MeshInstances", buffer.Resource);
+	if (!created || !buffer)
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_meshInstanceFrameDataLogger,
@@ -88,15 +81,6 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(
 	MeshInstanceFrameData frameData;
 	frameData.m_renderHardwareInterface = &renderHardwareInterface;
 	frameData.m_buffer = buffer;
-	frameData.m_view = view;
-	frameData.m_shaderResourceView = renderHardwareInterface.GetDescriptorService().GetResourceViewGpuHandle(view);
-	if (!frameData.m_shaderResourceView)
-	{
-		SPDLOG_LOGGER_WARN(
-		    g_meshInstanceFrameDataLogger,
-		    "MeshInstanceFrameData::Build: uploaded mesh instance buffer has no shader-resource descriptor; instance batches will be skipped.");
-		return {};
-	}
 	return frameData;
 }
 
@@ -104,18 +88,12 @@ void MeshInstanceFrameData::Release() noexcept
 {
 	if (m_renderHardwareInterface != nullptr)
 	{
-		if (m_view)
-		{
-			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(m_view);
-		}
 		if (m_buffer)
 		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_buffer);
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_buffer.Resource);
 		}
 	}
 
 	m_renderHardwareInterface = nullptr;
-	m_buffer = {};
-	m_view = {};
-	m_shaderResourceView = {};
+	m_buffer.Reset();
 }

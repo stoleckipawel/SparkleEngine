@@ -37,9 +37,30 @@ void DirectShadowSignalDeviceAddressPass::DeclareResources(
     FrameGraphTextureHandle sceneDepth,
     const GBufferRenderTargets& gbuffer,
     const DirectShadowSignalResources& shadowSignals,
+    FrameGraphBufferHandle directionalLights,
+    FrameGraphBufferHandle pointLights,
+    FrameGraphBufferHandle spotLights,
+    FrameGraphBufferHandle rectLights,
+    FrameGraphBufferHandle hitVertices,
+    FrameGraphBufferHandle hitIndices,
+    FrameGraphBufferHandle hitInstances,
+    FrameGraphBufferHandle hitMaterials,
     ParameterInstance& parameters)
 {
-	DirectShadowSignalPassCommon::DeclareRayQueryResources(builder, sceneDepth, gbuffer, shadowSignals, *parameters);
+	DirectShadowSignalPassCommon::DeclareRayQueryResources(
+	    builder,
+	    sceneDepth,
+	    gbuffer,
+	    shadowSignals,
+	    directionalLights,
+	    pointLights,
+	    spotLights,
+	    rectLights,
+	    hitVertices,
+	    hitIndices,
+	    hitInstances,
+	    hitMaterials,
+	    *parameters);
 }
 
 void DirectShadowSignalDeviceAddressPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
