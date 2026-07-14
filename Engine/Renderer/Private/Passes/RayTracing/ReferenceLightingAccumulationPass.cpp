@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Core/ComputePassUtilities.h"
@@ -60,24 +59,6 @@ const RenderPassDefinition& ReferenceLightingAccumulationPass::GetDefinition() n
 	    L"ReferenceLightingAccumulation_BindingLayout",
 	    L"ReferenceLightingAccumulation_PipelineState");
 	return definition;
-}
-
-void ReferenceLightingAccumulationPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle referenceLightingSample,
-    FrameGraphTextureHandle sceneColor,
-    FrameGraphTextureHandle previousReferenceLighting,
-    FrameGraphTextureHandle currentReferenceLighting,
-    FrameGraphTextureHandle referenceSampleValidity,
-    FrameGraphTextureHandle gBufferMotionVector,
-    ParameterInstance& parameters)
-{
-	parameters->ReferenceLightingSample = builder.CreateSRV(referenceLightingSample);
-	parameters->SceneColorTexture = builder.CreateUAV(sceneColor);
-	parameters->PreviousReferenceLighting = builder.CreateSRV(previousReferenceLighting);
-	parameters->CurrentReferenceLighting = builder.CreateUAV(currentReferenceLighting);
-	parameters->ReferenceSampleValidity = builder.CreateSRV(referenceSampleValidity);
-	parameters->GBufferMotionVector = builder.CreateSRV(gBufferMotionVector);
 }
 
 void ReferenceLightingAccumulationPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

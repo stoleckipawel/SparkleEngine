@@ -286,7 +286,7 @@ namespace PassUtilities
 	    FrameGraphTextureHandle destinationHandle,
 	    FrameGraphTextureHandle sourceHandle)
 	{
-		builder.AddPass(
+		builder.Execute(
 		    name,
 		    EFrameGraphPassFlags::Transfer,
 			[destinationHandle, sourceHandle](PassResourceBuilder& resourceBuilder)
@@ -302,7 +302,7 @@ namespace PassUtilities
 
 	inline void AddCopyBufferPass(FrameGraphBuilder& builder, std::string_view name, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle)
 	{
-		builder.AddPass(
+		builder.Execute(
 		    name,
 		    EFrameGraphPassFlags::Transfer,
 			[destinationHandle, sourceHandle](PassResourceBuilder& resourceBuilder)

@@ -5,7 +5,6 @@
 
 #include <cstdint>
 
-class FrameGraphBuilder;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct RenderPassDefinition;
@@ -33,15 +32,6 @@ class DirectShadowSignalNoRayQueryPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle sceneDepth,
-	    const DirectShadowSignalResources& shadowSignals,
-	    FrameGraphBufferHandle directionalLights,
-	    FrameGraphBufferHandle pointLights,
-	    FrameGraphBufferHandle spotLights,
-	    FrameGraphBufferHandle rectLights,
-	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:

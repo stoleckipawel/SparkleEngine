@@ -31,11 +31,6 @@ const RenderPassDefinition& ComputeClearPass::GetDefinition() noexcept
 	return definition;
 }
 
-void ComputeClearPass::DeclareResources(FrameGraphBuilder& builder, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters)
-{
-	parameters->Output = builder.CreateUAV(outputTexture);
-}
-
 void ComputeClearPass::Execute(
     PassExecutionContext& context,
     const ComputeClearPass::ParameterInstance& parameters,
@@ -51,14 +46,11 @@ void AddComputeClearPass(
     FrameGraphTextureHandle outputTexture,
     RenderViewportExtent outputExtent)
 {
-	auto& parameters = builder.AllocPassParameters<ComputeClearPass>();
-	ComputeClearPass::DeclareResources(builder, outputTexture, parameters);
-	builder.AddComputePass<ComputeClearPass>(
+	auto& parameters = builder.AllocParameters<ComputeClearPass::Parameters>();
+	parameters->Output = builder.CreateUAV(outputTexture);
+	builder.Dispatch<ComputeClearPass>(
 	    passName,
 	    parameters,
-	    [outputExtent](PassExecutionContext& context, ComputeClearPass::ParameterInstance& passParameters)
-	    {
-		    const ComputeClearPass pass(context.RuntimeServices.GetPassRuntime<ComputeClearPass>());
-		    pass.Execute(context, passParameters, outputExtent.Width, outputExtent.Height);
-	    });
+	    outputExtent.Width,
+	    outputExtent.Height);
 }

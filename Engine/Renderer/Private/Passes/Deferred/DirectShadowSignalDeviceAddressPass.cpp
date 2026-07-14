@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -30,37 +29,6 @@ const RenderPassDefinition& DirectShadowSignalDeviceAddressPass::GetDefinition()
 	    L"DirectShadowSignalDeviceAddress_PipelineState",
 	    RayTracingShaderFeatureFlags::DeviceAddressRayQuery);
 	return definition;
-}
-
-void DirectShadowSignalDeviceAddressPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneDepth,
-    const GBufferRenderTargets& gbuffer,
-    const DirectShadowSignalResources& shadowSignals,
-    FrameGraphBufferHandle directionalLights,
-    FrameGraphBufferHandle pointLights,
-    FrameGraphBufferHandle spotLights,
-    FrameGraphBufferHandle rectLights,
-    FrameGraphBufferHandle hitVertices,
-    FrameGraphBufferHandle hitIndices,
-    FrameGraphBufferHandle hitInstances,
-    FrameGraphBufferHandle hitMaterials,
-    ParameterInstance& parameters)
-{
-	DirectShadowSignalPassCommon::DeclareRayQueryResources(
-	    builder,
-	    sceneDepth,
-	    gbuffer,
-	    shadowSignals,
-	    directionalLights,
-	    pointLights,
-	    spotLights,
-	    rectLights,
-	    hitVertices,
-	    hitIndices,
-	    hitInstances,
-	    hitMaterials,
-	    *parameters);
 }
 
 void DirectShadowSignalDeviceAddressPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

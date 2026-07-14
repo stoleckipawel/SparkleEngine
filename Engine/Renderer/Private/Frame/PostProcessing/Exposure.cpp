@@ -20,7 +20,10 @@ void AddExposurePass(
 	        ? ExposureMomentChain::AddDownsample(builder, sceneExtent, finalSceneColor)
 	        : ExposureMomentChain::AddReduction(builder, sceneExtent, finalSceneColor);
 
-	auto& parameters = builder.AllocPassParameters<ExposurePass>();
-	ExposurePass::DeclareResources(builder, moments.TextureHandle, history.Previous, history.Current, exposure, parameters);
-	builder.AddComputeShaderPass<ExposurePass>(parameters);
+	auto& parameters = builder.AllocParameters<ExposurePass::Parameters>();
+	parameters->LuminanceMoments = builder.CreateSRV(moments.TextureHandle);
+	parameters->PreviousExposureTexture = builder.CreateSRV(history.Previous);
+	parameters->ExposureHistoryTexture = builder.CreateUAV(history.Current);
+	parameters->ExposureTexture = builder.CreateUAV(exposure);
+	builder.Dispatch<ExposurePass>(parameters);
 }

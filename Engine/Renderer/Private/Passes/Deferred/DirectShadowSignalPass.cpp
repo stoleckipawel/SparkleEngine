@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -27,39 +26,6 @@ const RenderPassDefinition& DirectShadowSignalPass::GetDefinition() noexcept
 	    L"DirectShadowSignal_PipelineState",
 	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
-}
-
-void DirectShadowSignalPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneDepth,
-    const GBufferRenderTargets& gbuffer,
-    FrameGraphAccelerationStructureHandle sceneTlas,
-    const DirectShadowSignalResources& shadowSignals,
-    FrameGraphBufferHandle directionalLights,
-    FrameGraphBufferHandle pointLights,
-    FrameGraphBufferHandle spotLights,
-    FrameGraphBufferHandle rectLights,
-    FrameGraphBufferHandle hitVertices,
-    FrameGraphBufferHandle hitIndices,
-    FrameGraphBufferHandle hitInstances,
-    FrameGraphBufferHandle hitMaterials,
-    ParameterInstance& parameters)
-{
-	DirectShadowSignalPassCommon::DeclareRayQueryResources(
-	    builder,
-	    sceneDepth,
-	    gbuffer,
-	    shadowSignals,
-	    directionalLights,
-	    pointLights,
-	    spotLights,
-	    rectLights,
-	    hitVertices,
-	    hitIndices,
-	    hitInstances,
-	    hitMaterials,
-	    *parameters);
-	parameters->SceneTlas = builder.Read(sceneTlas);
 }
 
 void DirectShadowSignalPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Core/ComputePassUtilities.h"
@@ -100,55 +99,6 @@ const RenderPassDefinition& RestirIndirectTemporalPass::GetDefinition() noexcept
 	    L"RestirIndirectTemporal_PipelineState",
 	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
-}
-
-void RestirIndirectTemporalPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    const SceneRenderTargets& scene,
-    const GBufferRenderTargets& gbuffer,
-    FrameGraphTextureHandle temporalSample,
-    FrameGraphTextureHandle temporalWeight,
-    FrameGraphTextureHandle previousSample,
-    FrameGraphTextureHandle previousWeight,
-    FrameGraphTextureHandle previousSurface,
-    FrameGraphAccelerationStructureHandle sceneTlas,
-    FrameGraphTextureHandle sky,
-    FrameGraphBufferHandle directionalLights,
-    FrameGraphBufferHandle pointLights,
-    FrameGraphBufferHandle spotLights,
-    FrameGraphBufferHandle rectLights,
-    FrameGraphBufferHandle hitVertices,
-    FrameGraphBufferHandle hitSkinInfluences,
-    FrameGraphBufferHandle hitIndices,
-    FrameGraphBufferHandle hitInstances,
-    FrameGraphBufferHandle hitMaterials,
-    FrameGraphBufferHandle meshInstances,
-    FrameGraphBufferHandle jointMatrices,
-    ParameterInstance& parameters)
-{
-	parameters->TemporalReservoirSampleTexture = builder.CreateUAV(temporalSample);
-	parameters->TemporalReservoirWeightTexture = builder.CreateUAV(temporalWeight);
-	parameters->PreviousReservoirSampleTexture = builder.CreateSRV(previousSample);
-	parameters->PreviousReservoirWeightTexture = builder.CreateSRV(previousWeight);
-	parameters->PreviousReservoirSurfaceTexture = builder.CreateSRV(previousSurface);
-	parameters->GBufferMotionVector = builder.CreateSRV(gbuffer.MotionVector);
-	parameters->SceneTlas = builder.Read(sceneTlas);
-	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
-	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
-	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
-	parameters->SceneDepth = builder.CreateSRV(scene.SceneDepth);
-	parameters->SkyTexture = builder.CreateSRV(sky);
-	parameters->DirectionalLights = builder.CreateSRV(directionalLights);
-	parameters->PointLights = builder.CreateSRV(pointLights);
-	parameters->SpotLights = builder.CreateSRV(spotLights);
-	parameters->RectLights = builder.CreateSRV(rectLights);
-	parameters->RayTracingHitVertices = builder.CreateSRV(hitVertices);
-	parameters->SkinInfluences = builder.CreateSRV(hitSkinInfluences);
-	parameters->RayTracingHitIndices = builder.CreateSRV(hitIndices);
-	parameters->RayTracingHitInstances = builder.CreateSRV(hitInstances);
-	parameters->RayTracingHitMaterials = builder.CreateSRV(hitMaterials);
-	parameters->MeshInstances = builder.CreateSRV(meshInstances);
-	parameters->JointMatrices = builder.CreateSRV(jointMatrices);
 }
 
 void RestirIndirectTemporalPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

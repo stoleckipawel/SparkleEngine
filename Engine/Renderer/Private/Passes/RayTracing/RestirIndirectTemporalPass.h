@@ -14,7 +14,6 @@
 
 #include <cstdint>
 
-class FrameGraphBuilder;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct RenderPassDefinition;
@@ -70,29 +69,6 @@ class RestirIndirectTemporalPass final
 	using PipelineRuntime = ComputePassPipelineRuntime;
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    const SceneRenderTargets& scene,
-	    const GBufferRenderTargets& gbuffer,
-	    FrameGraphTextureHandle temporalSample,
-	    FrameGraphTextureHandle temporalWeight,
-	    FrameGraphTextureHandle previousSample,
-	    FrameGraphTextureHandle previousWeight,
-	    FrameGraphTextureHandle previousSurface,
-	    FrameGraphAccelerationStructureHandle sceneTlas,
-	    FrameGraphTextureHandle sky,
-	    FrameGraphBufferHandle directionalLights,
-	    FrameGraphBufferHandle pointLights,
-	    FrameGraphBufferHandle spotLights,
-	    FrameGraphBufferHandle rectLights,
-	    FrameGraphBufferHandle hitVertices,
-	    FrameGraphBufferHandle hitSkinInfluences,
-	    FrameGraphBufferHandle hitIndices,
-	    FrameGraphBufferHandle hitInstances,
-	    FrameGraphBufferHandle hitMaterials,
-	    FrameGraphBufferHandle meshInstances,
-	    FrameGraphBufferHandle jointMatrices,
-	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:

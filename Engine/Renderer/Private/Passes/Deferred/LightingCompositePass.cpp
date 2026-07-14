@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Deferred/LightingCompositePass.h"
 
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -23,23 +22,6 @@ const RenderPassDefinition& LightingCompositePass::GetDefinition() noexcept
 	    L"LightingComposite_BindingLayout",
 	    L"LightingComposite_PipelineState");
 	return definition;
-}
-
-void LightingCompositePass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle output,
-    const LightingRenderTargets& lighting,
-    const GBufferRenderTargets& gbuffer,
-    ParameterInstance& parameters)
-{
-	parameters->SceneColor = builder.CreateUAV(output);
-	parameters->DirectDiffuse = builder.CreateSRV(lighting.DirectDiffuse);
-	parameters->DirectSpecular = builder.CreateSRV(lighting.DirectSpecular);
-	parameters->DirectSubsurface = builder.CreateSRV(lighting.DirectSubsurface);
-	parameters->IndirectDiffuse = builder.CreateSRV(lighting.IndirectDiffuse);
-	parameters->IndirectSpecular = builder.CreateSRV(lighting.IndirectSpecular);
-	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
-	parameters->GBufferEmissive = builder.CreateSRV(gbuffer.Emissive);
 }
 
 void LightingCompositePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

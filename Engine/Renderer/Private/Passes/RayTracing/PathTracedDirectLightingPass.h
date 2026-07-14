@@ -13,7 +13,6 @@
 
 #include <cstdint>
 
-class FrameGraphBuilder;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct RenderPassDefinition;
@@ -64,21 +63,6 @@ class PathTracedDirectLightingPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    const LightingRenderTargets& lighting,
-	    const SceneRenderTargets& sceneTargets,
-	    const GBufferRenderTargets& gbuffer,
-	    FrameGraphAccelerationStructureHandle sceneTlas,
-	    FrameGraphBufferHandle directionalLights,
-	    FrameGraphBufferHandle pointLights,
-	    FrameGraphBufferHandle spotLights,
-	    FrameGraphBufferHandle rectLights,
-	    FrameGraphBufferHandle hitVertices,
-	    FrameGraphBufferHandle hitIndices,
-	    FrameGraphBufferHandle hitInstances,
-	    FrameGraphBufferHandle hitMaterials,
-	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:

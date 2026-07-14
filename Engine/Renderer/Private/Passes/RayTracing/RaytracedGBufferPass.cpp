@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Core/ComputePassUtilities.h"
@@ -31,38 +30,6 @@ const RenderPassDefinition& RaytracedGBufferPass::GetDefinition() noexcept
 	    L"RaytracedGBuffer_PipelineState",
 	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
-}
-
-void RaytracedGBufferPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    const GBufferRenderTargets& targets,
-    FrameGraphAccelerationStructureHandle sceneTlas,
-    FrameGraphBufferHandle hitVertices,
-    FrameGraphBufferHandle hitSkinInfluences,
-    FrameGraphBufferHandle hitIndices,
-    FrameGraphBufferHandle hitInstances,
-    FrameGraphBufferHandle hitMaterials,
-    FrameGraphBufferHandle meshInstances,
-    FrameGraphBufferHandle jointMatrices,
-    FrameGraphBufferHandle previousJointMatrices,
-    ParameterInstance& parameters)
-{
-	parameters->GBufferBaseColor = builder.CreateUAV(targets.BaseColor);
-	parameters->GBufferNormal = builder.CreateUAV(targets.Normal);
-	parameters->GBufferMaterial = builder.CreateUAV(targets.Material);
-	parameters->GBufferEmissive = builder.CreateUAV(targets.Emissive);
-	parameters->GBufferSubsurface = builder.CreateUAV(targets.Subsurface);
-	parameters->GBufferDeviceZ = builder.CreateUAV(targets.DeviceZ);
-	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
-	parameters->SceneTlas = builder.Read(sceneTlas);
-	parameters->RayTracingHitVertices = builder.CreateSRV(hitVertices);
-	parameters->SkinInfluences = builder.CreateSRV(hitSkinInfluences);
-	parameters->RayTracingHitIndices = builder.CreateSRV(hitIndices);
-	parameters->RayTracingHitInstances = builder.CreateSRV(hitInstances);
-	parameters->RayTracingHitMaterials = builder.CreateSRV(hitMaterials);
-	parameters->MeshInstances = builder.CreateSRV(meshInstances);
-	parameters->JointMatrices = builder.CreateSRV(jointMatrices);
-	parameters->PreviousJointMatrices = builder.CreateSRV(previousJointMatrices);
 }
 
 void RaytracedGBufferPass::SetParameters(

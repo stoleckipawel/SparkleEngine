@@ -4,7 +4,6 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Lighting/ShadowVisibility.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -27,35 +26,6 @@ const RenderPassDefinition& DirectLightingPass::GetDefinition() noexcept
 	    L"DirectLighting_BindingLayout",
 	    L"DirectLighting_PipelineState");
 	return definition;
-}
-
-void DirectLightingPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    const LightingRenderTargets& lighting,
-    FrameGraphTextureHandle sceneDepth,
-    const GBufferRenderTargets& gbuffer,
-    const DirectShadowSignalResources& shadowSignals,
-    FrameGraphBufferHandle directionalLights,
-    FrameGraphBufferHandle pointLights,
-    FrameGraphBufferHandle spotLights,
-    FrameGraphBufferHandle rectLights,
-    ParameterInstance& parameters)
-{
-	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
-	parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
-	parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
-	parameters->ShadowVisibilitySignal = builder.CreateSRV(shadowSignals.Visibility);
-	parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Current);
-	parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
-	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
-	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
-	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
-	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
-	parameters->SceneDepth = builder.CreateSRV(sceneDepth);
-	parameters->DirectionalLights = builder.CreateSRV(directionalLights);
-	parameters->PointLights = builder.CreateSRV(pointLights);
-	parameters->SpotLights = builder.CreateSRV(spotLights);
-	parameters->RectLights = builder.CreateSRV(rectLights);
 }
 
 void DirectLightingPass::SetParameters(

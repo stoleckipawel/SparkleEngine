@@ -14,7 +14,6 @@
 
 #include <cstdint>
 
-class FrameGraphBuilder;
 struct ComputePassPipelineRuntime;
 struct FrameContext;
 struct PassExecutionContext;
@@ -72,25 +71,6 @@ class PathTracedIndirectLightingPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    const LightingRenderTargets& lighting,
-	    const SceneRenderTargets& sceneTargets,
-	    const GBufferRenderTargets& gbuffer,
-	    FrameGraphAccelerationStructureHandle sceneTlas,
-	    FrameGraphTextureHandle sky,
-	    FrameGraphBufferHandle directionalLights,
-	    FrameGraphBufferHandle pointLights,
-	    FrameGraphBufferHandle spotLights,
-	    FrameGraphBufferHandle rectLights,
-	    FrameGraphBufferHandle hitVertices,
-	    FrameGraphBufferHandle hitSkinInfluences,
-	    FrameGraphBufferHandle hitIndices,
-	    FrameGraphBufferHandle hitInstances,
-	    FrameGraphBufferHandle hitMaterials,
-	    FrameGraphBufferHandle meshInstances,
-	    FrameGraphBufferHandle jointMatrices,
-	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:

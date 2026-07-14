@@ -9,7 +9,6 @@
 
 #include <type_traits>
 
-class FrameGraphBuilder;
 struct FrameContext;
 struct PassRuntimeServices;
 struct RenderViewData;
@@ -94,16 +93,6 @@ struct DirectLightReservoirCommonParameters
 
 namespace DirectLightReservoirPassCommon
 {
-	void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle sceneDepth,
-	    const GBufferRenderTargets& gbuffer,
-	    FrameGraphBufferHandle directionalLights,
-	    FrameGraphBufferHandle pointLights,
-	    FrameGraphBufferHandle spotLights,
-	    FrameGraphBufferHandle rectLights,
-	    DirectLightReservoirCommonParameters& parameters);
-
 	void SetParameters(
 	    DirectLightReservoirCommonParameters& parameters,
 	    const FrameContext& frame,

@@ -43,7 +43,6 @@ class ComputeClearPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const PassParameterLayout& GetParameterLayout() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(FrameGraphBuilder& builder, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, const ParameterInstance& parameters, std::uint32_t width, std::uint32_t height)
 	    const noexcept;
 

@@ -2,7 +2,6 @@
 #include "Passes/Deferred/SceneDepthPass.h"
 
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -24,16 +23,6 @@ const RenderPassDefinition& SceneDepthPass::GetDefinition() noexcept
 	    L"SceneDepth_BindingLayout",
 	    L"SceneDepth_PipelineState");
 	return definition;
-}
-
-void SceneDepthPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle gbufferDeviceZ,
-    FrameGraphTextureHandle sceneDepth,
-    ParameterInstance& parameters)
-{
-	parameters->GBufferDeviceZ = builder.CreateSRV(gbufferDeviceZ);
-	parameters->SceneDepth = builder.CreateUAV(sceneDepth);
 }
 
 void SceneDepthPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

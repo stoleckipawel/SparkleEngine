@@ -28,21 +28,14 @@ class FrameGraphBuilder final
 	explicit FrameGraphBuilder(FrameGraph& frameGraph) noexcept;
 
 	template <typename SetupFn, typename ExecuteFn>
-	void AddPass(std::string_view name, EFrameGraphPassFlags flags, SetupFn&& setupFn, ExecuteFn&& executeFn)
+	void Execute(std::string_view name, EFrameGraphPassFlags flags, SetupFn&& setupFn, ExecuteFn&& executeFn)
 	{
 		m_frameGraph.AddPass(name, flags, std::forward<SetupFn>(setupFn), std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
-	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
-	void AddRasterPass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
+	template <typename TPass> void Draw(typename TPass::ParameterInstance& parameters)
 	{
-		m_frameGraph.AddRasterPass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
-	}
-
-	template <typename TPass> void AddRasterShaderPass(typename TPass::ParameterInstance& parameters)
-	{
-		AddRasterPass<TPass>(
+		RegisterRasterPass<TPass>(
 		    TPass::PassName,
 		    parameters,
 		    [](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
@@ -52,16 +45,9 @@ class FrameGraphBuilder final
 		    });
 	}
 
-	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
-	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
-	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
+	template <typename TPass> void Dispatch(typename TPass::ParameterInstance& parameters)
 	{
-		m_frameGraph.AddComputePass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
-	}
-
-	template <typename TPass> void AddComputeShaderPass(typename TPass::ParameterInstance& parameters)
-	{
-		AddComputePass<TPass>(
+		RegisterComputePass<TPass>(
 		    TPass::PassName,
 		    parameters,
 		    [](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
@@ -72,13 +58,23 @@ class FrameGraphBuilder final
 	}
 
 	template <typename TPass>
-	void AddSizedComputeShaderPass(
+	void Dispatch(
 	    typename TPass::ParameterInstance& parameters,
 	    std::uint32_t outputWidth,
 	    std::uint32_t outputHeight)
 	{
-		AddComputePass<TPass>(
-		    TPass::PassName,
+		Dispatch<TPass>(TPass::PassName, parameters, outputWidth, outputHeight);
+	}
+
+	template <typename TPass>
+	void Dispatch(
+	    std::string_view name,
+	    typename TPass::ParameterInstance& parameters,
+	    std::uint32_t outputWidth,
+	    std::uint32_t outputHeight)
+	{
+		RegisterComputePass<TPass>(
+		    name,
 		    parameters,
 		    [outputWidth, outputHeight](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
 		    {
@@ -90,11 +86,6 @@ class FrameGraphBuilder final
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
 	{
 		return m_frameGraph.AllocParameters<TParameters>();
-	}
-
-	template <typename TPass> typename TPass::ParameterInstance& AllocPassParameters()
-	{
-		return m_frameGraph.AllocPassParameters<TPass>();
 	}
 
 	FrameGraphTextureHandle ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
@@ -159,6 +150,20 @@ class FrameGraphBuilder final
 	const FrameGraph& GetGraph() const noexcept { return m_frameGraph; }
 
   private:
+	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
+	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
+	void RegisterRasterPass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
+	{
+		m_frameGraph.AddRasterPass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
+	}
+
+	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
+	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
+	void RegisterComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
+	{
+		m_frameGraph.AddComputePass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
+	}
+
 	FrameGraph& m_frameGraph;
 };
 

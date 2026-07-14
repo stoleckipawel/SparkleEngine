@@ -1,12 +1,10 @@
 #pragma once
 
 #include "Frame/PostProcessing/ExposureUniformData.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-class FrameGraphBuilder;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct RenderPassDefinition;
@@ -42,13 +40,6 @@ class ExposurePass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle luminanceMoments,
-	    FrameGraphTextureHandle previousExposure,
-	    FrameGraphTextureHandle currentExposure,
-	    FrameGraphTextureHandle exposure,
-	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:

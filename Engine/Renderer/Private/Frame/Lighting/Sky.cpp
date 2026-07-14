@@ -6,7 +6,9 @@
 
 void AddSkyPass(FrameGraphBuilder& builder, FrameGraphTextureHandle output, FrameGraphTextureHandle sceneDepth, FrameGraphTextureHandle sky)
 {
-	auto& parameters = builder.AllocPassParameters<SkyPass>();
-	SkyPass::DeclareResources(builder, output, sceneDepth, sky, parameters);
-	builder.AddComputeShaderPass<SkyPass>(parameters);
+	auto& parameters = builder.AllocParameters<SkyPass::Parameters>();
+	parameters->SceneColor = builder.CreateUAV(output);
+	parameters->SceneDepth = builder.CreateSRV(sceneDepth);
+	parameters->SkyTexture = builder.CreateSRV(sky);
+	builder.Dispatch<SkyPass>(parameters);
 }

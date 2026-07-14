@@ -8,7 +8,6 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Deferred/GBufferFormats.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Deferred/GBufferMeshBatchDrawer.h"
@@ -23,6 +22,7 @@
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 
 #include "RHI/Public/Bindings/RenderBindingSet.h"
+#include "RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "ShaderData/RenderConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -90,27 +90,6 @@ void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& para
 	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame, parameters.GetFields(), context.RuntimeServices);
 }
 
-void GBufferPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    const GBufferRenderTargets& targets,
-    FrameGraphBufferHandle meshInstances,
-    FrameGraphBufferHandle jointMatrices,
-    FrameGraphBufferHandle previousJointMatrices,
-    ParameterInstance& parameters)
-{
-	parameters->BaseColor = builder.CreateRenderTarget(targets.BaseColor);
-	parameters->Normal = builder.CreateRenderTarget(targets.Normal);
-	parameters->Material = builder.CreateRenderTarget(targets.Material);
-	parameters->Emissive = builder.CreateRenderTarget(targets.Emissive);
-	parameters->Subsurface = builder.CreateRenderTarget(targets.Subsurface);
-	parameters->MotionVector = builder.CreateRenderTarget(targets.MotionVector);
-	parameters->DeviceZ = builder.CreateDepthTarget(targets.DeviceZ);
-	parameters->MeshInstances = builder.CreateSRV(meshInstances);
-	parameters->JointMatrices = builder.CreateSRV(jointMatrices);
-	parameters->PreviousJointMatrices = builder.CreateSRV(previousJointMatrices);
-	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
-}
-
 void GBufferPass::SetParameters(
     ParameterInstance& parameters,
     const RenderViewData& viewData,
@@ -119,6 +98,7 @@ void GBufferPass::SetParameters(
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
+	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
 	const bool valid = parameters.Sync();
 	assert(valid);
 }

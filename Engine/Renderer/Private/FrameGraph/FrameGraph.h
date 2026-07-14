@@ -153,24 +153,6 @@ class FrameGraph
 		return instance;
 	}
 
-	template <typename TPass> typename TPass::ParameterInstance& AllocPassParameters()
-	{
-		using Parameters = typename TPass::Parameters;
-		using ParameterInstance = typename TPass::ParameterInstance;
-
-		struct AllocatedPassParameterInstance final : AllocatedParameterInstanceBase
-		{
-			explicit AllocatedPassParameterInstance(const ShaderParameterStructMetadata<Parameters>& metadata) : Instance(metadata) {}
-
-			ParameterInstance Instance;
-		};
-
-		auto allocation = std::make_unique<AllocatedPassParameterInstance>(TPass::GetParameterMetadata());
-		ParameterInstance& instance = allocation->Instance;
-		m_allocatedParameterInstances.push_back(std::unique_ptr<AllocatedParameterInstanceBase>(std::move(allocation)));
-		return instance;
-	}
-
 	FrameGraphTextureHandle ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
 	FrameGraphTextureHandle ReservePersistentTexture(
 	    const FrameGraphTextureDesc& desc,

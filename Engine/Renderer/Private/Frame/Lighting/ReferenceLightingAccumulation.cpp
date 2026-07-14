@@ -9,15 +9,12 @@ void AddReferenceLightingAccumulationPass(
     FrameGraphTextureHandle referenceSample,
     const FrameAssemblyResourceLayout& resources)
 {
-	auto& parameters = builder.AllocPassParameters<ReferenceLightingAccumulationPass>();
-	ReferenceLightingAccumulationPass::DeclareResources(
-	    builder,
-	    referenceSample,
-	    resources.Transient.Scene.SceneColor,
-	    resources.History.ReferenceLighting.Previous,
-	    resources.History.ReferenceLighting.Current,
-	    resources.Transient.Lighting.IndirectDiffuse,
-	    resources.Transient.GBuffer.MotionVector,
-	    parameters);
-	builder.AddComputeShaderPass<ReferenceLightingAccumulationPass>(parameters);
+	auto& parameters = builder.AllocParameters<ReferenceLightingAccumulationPass::Parameters>();
+	parameters->ReferenceLightingSample = builder.CreateSRV(referenceSample);
+	parameters->SceneColorTexture = builder.CreateUAV(resources.Transient.Scene.SceneColor);
+	parameters->PreviousReferenceLighting = builder.CreateSRV(resources.History.ReferenceLighting.Previous);
+	parameters->CurrentReferenceLighting = builder.CreateUAV(resources.History.ReferenceLighting.Current);
+	parameters->ReferenceSampleValidity = builder.CreateSRV(resources.Transient.Lighting.IndirectDiffuse);
+	parameters->GBufferMotionVector = builder.CreateSRV(resources.Transient.GBuffer.MotionVector);
+	builder.Dispatch<ReferenceLightingAccumulationPass>(parameters);
 }

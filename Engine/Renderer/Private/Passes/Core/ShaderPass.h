@@ -10,7 +10,6 @@
 
 class RenderCommandContext;
 class FrameGraphResourceCommands;
-class FrameGraphBuilder;
 class PassResourceBuilder;
 class PassParameterLayout;
 class RenderHardwareInterface;

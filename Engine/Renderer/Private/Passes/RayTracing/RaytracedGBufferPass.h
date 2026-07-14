@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <type_traits>
 
-class FrameGraphBuilder;
 struct ComputePassPipelineRuntime;
 struct FrameContext;
 struct PassExecutionContext;
@@ -107,19 +106,6 @@ class RaytracedGBufferPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    const GBufferRenderTargets& targets,
-	    FrameGraphAccelerationStructureHandle sceneTlas,
-	    FrameGraphBufferHandle hitVertices,
-	    FrameGraphBufferHandle hitSkinInfluences,
-	    FrameGraphBufferHandle hitIndices,
-	    FrameGraphBufferHandle hitInstances,
-	    FrameGraphBufferHandle hitMaterials,
-	    FrameGraphBufferHandle meshInstances,
-	    FrameGraphBufferHandle jointMatrices,
-	    FrameGraphBufferHandle previousJointMatrices,
-	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:

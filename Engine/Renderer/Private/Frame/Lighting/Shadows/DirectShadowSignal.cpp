@@ -17,55 +17,42 @@ void AddDirectShadowSignalPass(
     const DirectShadowSignalResources& shadowSignals,
     const FrameAssemblyExternalResources& externalResources)
 {
-	auto& noRayParameters = builder.AllocPassParameters<DirectShadowSignalNoRayQueryPass>();
-	DirectShadowSignalNoRayQueryPass::DeclareResources(
-	    builder,
-	    sceneTargets.SceneDepth,
-	    shadowSignals,
-	    externalResources.DirectionalLights,
-	    externalResources.PointLights,
-	    externalResources.SpotLights,
-	    externalResources.RectLights,
-	    noRayParameters);
-	LightingRayTracingPasses::AddNoRayQueryComputePass<DirectShadowSignalNoRayQueryPass>(builder, noRayParameters);
+	const auto bindCommonParameters = [&](auto& parameters)
+	{
+		parameters->ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
+		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Current);
+		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
+		parameters->SceneDepth = builder.CreateSRV(sceneTargets.SceneDepth);
+		parameters->DirectionalLights = builder.CreateSRV(externalResources.DirectionalLights);
+		parameters->PointLights = builder.CreateSRV(externalResources.PointLights);
+		parameters->SpotLights = builder.CreateSRV(externalResources.SpotLights);
+		parameters->RectLights = builder.CreateSRV(externalResources.RectLights);
+	};
+	const auto bindRayQueryParameters = [&](auto& parameters)
+	{
+		bindCommonParameters(parameters);
+		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
+		parameters->RayTracingHitVertices = builder.CreateSRV(externalResources.RayTracingHitVertices);
+		parameters->RayTracingHitIndices = builder.CreateSRV(externalResources.RayTracingHitIndices);
+		parameters->RayTracingHitInstances = builder.CreateSRV(externalResources.RayTracingHitInstances);
+		parameters->RayTracingHitMaterials = builder.CreateSRV(externalResources.RayTracingHitMaterials);
+	};
 
-	auto& descriptorParameters = builder.AllocPassParameters<DirectShadowSignalPass>();
-	DirectShadowSignalPass::DeclareResources(
-	    builder,
-	    sceneTargets.SceneDepth,
-	    gbuffer,
-	    sceneTlas,
-	    shadowSignals,
-	    externalResources.DirectionalLights,
-	    externalResources.PointLights,
-	    externalResources.SpotLights,
-	    externalResources.RectLights,
-	    externalResources.RayTracingHitVertices,
-	    externalResources.RayTracingHitIndices,
-	    externalResources.RayTracingHitInstances,
-	    externalResources.RayTracingHitMaterials,
-	    descriptorParameters);
-	LightingRayTracingPasses::AddSceneTlasComputePass<DirectShadowSignalPass>(
+	auto& noRayParameters = builder.AllocParameters<DirectShadowSignalNoRayQueryPass::Parameters>();
+	bindCommonParameters(noRayParameters);
+	LightingRayTracingPasses::DispatchNoRayQuery<DirectShadowSignalNoRayQueryPass>(builder, noRayParameters);
+
+	auto& descriptorParameters = builder.AllocParameters<DirectShadowSignalPass::Parameters>();
+	bindRayQueryParameters(descriptorParameters);
+	descriptorParameters->SceneTlas = builder.Read(sceneTlas);
+	LightingRayTracingPasses::DispatchSceneTlas<DirectShadowSignalPass>(
 	    builder,
 	    descriptorParameters,
 	    RayTracingSceneTlasShaderAccessMode::Descriptor);
 
-	auto& addressParameters = builder.AllocPassParameters<DirectShadowSignalDeviceAddressPass>();
-	DirectShadowSignalDeviceAddressPass::DeclareResources(
-	    builder,
-	    sceneTargets.SceneDepth,
-	    gbuffer,
-	    shadowSignals,
-	    externalResources.DirectionalLights,
-	    externalResources.PointLights,
-	    externalResources.SpotLights,
-	    externalResources.RectLights,
-	    externalResources.RayTracingHitVertices,
-	    externalResources.RayTracingHitIndices,
-	    externalResources.RayTracingHitInstances,
-	    externalResources.RayTracingHitMaterials,
-	    addressParameters);
-	LightingRayTracingPasses::AddSceneTlasComputePass<DirectShadowSignalDeviceAddressPass>(
+	auto& addressParameters = builder.AllocParameters<DirectShadowSignalDeviceAddressPass::Parameters>();
+	bindRayQueryParameters(addressParameters);
+	LightingRayTracingPasses::DispatchSceneTlas<DirectShadowSignalDeviceAddressPass>(
 	    builder,
 	    addressParameters,
 	    RayTracingSceneTlasShaderAccessMode::ShaderDeviceAddress);

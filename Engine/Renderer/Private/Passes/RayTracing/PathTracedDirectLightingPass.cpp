@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Core/ComputePassUtilities.h"
@@ -82,41 +81,6 @@ const RenderPassDefinition& PathTracedDirectLightingPass::GetDefinition() noexce
 	    L"PathTracedDirectLighting_PipelineState",
 	    RayTracingShaderFeatureFlags::DescriptorRayQuery);
 	return definition;
-}
-
-void PathTracedDirectLightingPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    const LightingRenderTargets& lighting,
-    const SceneRenderTargets& sceneTargets,
-    const GBufferRenderTargets& gbuffer,
-    FrameGraphAccelerationStructureHandle sceneTlas,
-    FrameGraphBufferHandle directionalLights,
-    FrameGraphBufferHandle pointLights,
-    FrameGraphBufferHandle spotLights,
-    FrameGraphBufferHandle rectLights,
-    FrameGraphBufferHandle hitVertices,
-    FrameGraphBufferHandle hitIndices,
-    FrameGraphBufferHandle hitInstances,
-    FrameGraphBufferHandle hitMaterials,
-    ParameterInstance& parameters)
-{
-	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
-	parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
-	parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
-	parameters->SceneTlas = builder.Read(sceneTlas);
-	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
-	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
-	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
-	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
-	parameters->SceneDepth = builder.CreateSRV(sceneTargets.SceneDepth);
-	parameters->DirectionalLights = builder.CreateSRV(directionalLights);
-	parameters->PointLights = builder.CreateSRV(pointLights);
-	parameters->SpotLights = builder.CreateSRV(spotLights);
-	parameters->RectLights = builder.CreateSRV(rectLights);
-	parameters->RayTracingHitVertices = builder.CreateSRV(hitVertices);
-	parameters->RayTracingHitIndices = builder.CreateSRV(hitIndices);
-	parameters->RayTracingHitInstances = builder.CreateSRV(hitInstances);
-	parameters->RayTracingHitMaterials = builder.CreateSRV(hitMaterials);
 }
 
 void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

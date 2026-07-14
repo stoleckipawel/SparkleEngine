@@ -7,7 +7,6 @@
 
 #include <cstdint>
 
-class FrameGraphBuilder;
 struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
@@ -51,12 +50,6 @@ class LightingCompositePass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle output,
-	    const LightingRenderTargets& lighting,
-	    const GBufferRenderTargets& gbuffer,
-	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:

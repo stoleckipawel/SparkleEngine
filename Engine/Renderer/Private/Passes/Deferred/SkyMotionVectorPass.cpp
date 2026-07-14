@@ -2,7 +2,6 @@
 #include "Passes/Deferred/SkyMotionVectorPass.h"
 
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -24,16 +23,6 @@ const RenderPassDefinition& SkyMotionVectorPass::GetDefinition() noexcept
 	    L"SkyMotionVector_BindingLayout",
 	    L"SkyMotionVector_PipelineState");
 	return definition;
-}
-
-void SkyMotionVectorPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle deviceZ,
-    FrameGraphTextureHandle motionVector,
-    ParameterInstance& parameters)
-{
-	parameters->GBufferDeviceZ = builder.CreateSRV(deviceZ);
-	parameters->GBufferMotionVector = builder.CreateUAV(motionVector);
 }
 
 void SkyMotionVectorPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

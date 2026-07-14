@@ -2,7 +2,6 @@
 #include "Passes/Presentation/OutputEncodingPass.h"
 
 #include "Frame/Presentation/OutputEncodingSettings.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -24,16 +23,6 @@ const RenderPassDefinition& OutputEncodingPass::GetDefinition() noexcept
 	    L"OutputEncoding_BindingLayout",
 	    L"OutputEncoding_PipelineState");
 	return definition;
-}
-
-void OutputEncodingPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle displayLinearColor,
-    FrameGraphTextureHandle encodedColor,
-    ParameterInstance& parameters)
-{
-	parameters->EncodedColor = builder.CreateUAV(encodedColor);
-	parameters->DisplayLinearColor = builder.CreateSRV(displayLinearColor);
 }
 
 void OutputEncodingPass::Execute(

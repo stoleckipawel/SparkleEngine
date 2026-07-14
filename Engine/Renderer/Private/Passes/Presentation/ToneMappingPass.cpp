@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameRenderFormats.h"
 #include "Frame/Presentation/ToneMappingSettings.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -25,18 +24,6 @@ const RenderPassDefinition& ToneMappingPass::GetDefinition() noexcept
 	    L"ToneMapping_BindingLayout",
 	    L"ToneMapping_PipelineState");
 	return definition;
-}
-
-void ToneMappingPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneColor,
-    FrameGraphTextureHandle exposure,
-    FrameGraphTextureHandle toneMappedColor,
-    ParameterInstance& parameters)
-{
-	parameters->ToneMappedColor = builder.CreateUAV(toneMappedColor);
-	parameters->SceneColor = builder.CreateSRV(sceneColor);
-	parameters->ExposureTexture = builder.CreateSRV(exposure);
 }
 
 void ToneMappingPass::Execute(

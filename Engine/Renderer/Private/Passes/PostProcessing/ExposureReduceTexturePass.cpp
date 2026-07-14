@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/PostProcessing/ExposureReduceTexturePass.h"
 
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -23,16 +22,6 @@ const RenderPassDefinition& ExposureReduceTexturePass::GetDefinition() noexcept
 	    L"ExposureReduceTexture_BindingLayout",
 	    L"ExposureReduceTexture_PipelineState");
 	return definition;
-}
-
-void ExposureReduceTexturePass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle inputMoments,
-    FrameGraphTextureHandle outputMoments,
-    ParameterInstance& parameters)
-{
-	parameters->LuminanceMomentsInput = builder.CreateSRV(inputMoments);
-	parameters->LuminanceMomentsOutput = builder.CreateUAV(outputMoments);
 }
 
 void ExposureReduceTexturePass::Execute(

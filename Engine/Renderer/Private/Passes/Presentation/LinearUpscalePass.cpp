@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Presentation/LinearUpscalePass.h"
 
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -26,25 +25,15 @@ const RenderPassDefinition& LinearUpscalePass::GetDefinition() noexcept
 	return definition;
 }
 
-void LinearUpscalePass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle scalingInputColor,
-    FrameGraphTextureHandle scalingOutputColor,
-    ParameterInstance& parameters)
-{
-	parameters->ScalingOutputColor = builder.CreateUAV(scalingOutputColor);
-	parameters->ScalingInputColor = builder.CreateSRV(scalingInputColor);
-	parameters->SamplerLinearClamp = RhiSamplerDesc{
-	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::Linear,
-	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
-}
-
 void LinearUpscalePass::Execute(
     PassExecutionContext& context,
     ParameterInstance& parameters,
     std::uint32_t outputWidth,
     std::uint32_t outputHeight) const
 {
+	parameters->SamplerLinearClamp = RhiSamplerDesc{
+	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
+	    .MipFilter = RhiSamplerMipFilter::Linear,
+	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
 	ComputePassUtilities::DispatchSized<LinearUpscalePass>(context, m_runtime, parameters, outputWidth, outputHeight);
 }

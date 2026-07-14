@@ -2,7 +2,6 @@
 #include "Passes/PostProcessing/ExposurePass.h"
 
 #include "Frame/Presentation/ToneMappingSettings.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -24,20 +23,6 @@ const RenderPassDefinition& ExposurePass::GetDefinition() noexcept
 	    L"Exposure_BindingLayout",
 	    L"Exposure_PipelineState");
 	return definition;
-}
-
-void ExposurePass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle luminanceMoments,
-    FrameGraphTextureHandle previousExposure,
-    FrameGraphTextureHandle currentExposure,
-    FrameGraphTextureHandle exposure,
-    ParameterInstance& parameters)
-{
-	parameters->ExposureTexture = builder.CreateUAV(exposure);
-	parameters->ExposureHistoryTexture = builder.CreateUAV(currentExposure);
-	parameters->PreviousExposureTexture = builder.CreateSRV(previousExposure);
-	parameters->LuminanceMoments = builder.CreateSRV(luminanceMoments);
 }
 
 void ExposurePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

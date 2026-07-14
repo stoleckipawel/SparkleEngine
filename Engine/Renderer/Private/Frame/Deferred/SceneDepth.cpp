@@ -9,7 +9,8 @@ void AddLinearizeDeviceZPass(
     FrameGraphTextureHandle deviceZ,
     FrameGraphTextureHandle sceneDepth)
 {
-	auto& parameters = builder.AllocPassParameters<SceneDepthPass>();
-	SceneDepthPass::DeclareResources(builder, deviceZ, sceneDepth, parameters);
-	builder.AddComputeShaderPass<SceneDepthPass>(parameters);
+	auto& parameters = builder.AllocParameters<SceneDepthPass::Parameters>();
+	parameters->GBufferDeviceZ = builder.CreateSRV(deviceZ);
+	parameters->SceneDepth = builder.CreateUAV(sceneDepth);
+	builder.Dispatch<SceneDepthPass>(parameters);
 }

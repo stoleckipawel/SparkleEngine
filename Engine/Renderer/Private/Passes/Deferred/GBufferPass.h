@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
@@ -14,7 +13,6 @@
 class RenderCommandContext;
 struct RasterPassPipelineRuntime;
 struct RenderPassDefinition;
-class FrameGraphBuilder;
 struct PassExecutionContext;
 struct RenderSceneData;
 struct MeshInstanceBatch;
@@ -113,13 +111,6 @@ class GBufferPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    const GBufferRenderTargets& targets,
-	    FrameGraphBufferHandle meshInstances,
-	    FrameGraphBufferHandle jointMatrices,
-	    FrameGraphBufferHandle previousJointMatrices,
-	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
 

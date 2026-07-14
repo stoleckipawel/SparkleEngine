@@ -10,7 +10,8 @@ void AddLinearUpscalePass(
     FrameGraphTextureHandle outputColor,
     RenderViewportExtent outputExtent)
 {
-	auto& parameters = builder.AllocPassParameters<LinearUpscalePass>();
-	LinearUpscalePass::DeclareResources(builder, inputColor, outputColor, parameters);
-	builder.AddSizedComputeShaderPass<LinearUpscalePass>(parameters, outputExtent.Width, outputExtent.Height);
+	auto& parameters = builder.AllocParameters<LinearUpscalePass::Parameters>();
+	parameters->ScalingInputColor = builder.CreateSRV(inputColor);
+	parameters->ScalingOutputColor = builder.CreateUAV(outputColor);
+	builder.Dispatch<LinearUpscalePass>(parameters, outputExtent.Width, outputExtent.Height);
 }

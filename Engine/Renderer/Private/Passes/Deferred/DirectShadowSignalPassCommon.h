@@ -8,8 +8,6 @@
 #include "ShaderData/RenderConstantBufferData.h"
 #include "ShaderData/RenderViewLightingData.h"
 
-class FrameGraphBuilder;
-struct DirectShadowSignalResources;
 struct FrameContext;
 struct PassRuntimeServices;
 struct RenderViewData;
@@ -135,31 +133,6 @@ struct DirectShadowSignalRayQueryPassParameters : DirectShadowSignalCommonPassPa
 
 namespace DirectShadowSignalPassCommon
 {
-	void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle sceneDepth,
-	    const DirectShadowSignalResources& shadowSignals,
-	    FrameGraphBufferHandle directionalLights,
-	    FrameGraphBufferHandle pointLights,
-	    FrameGraphBufferHandle spotLights,
-	    FrameGraphBufferHandle rectLights,
-	    DirectShadowSignalCommonPassParameters& parameters);
-
-	void DeclareRayQueryResources(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle sceneDepth,
-	    const GBufferRenderTargets& gbuffer,
-	    const DirectShadowSignalResources& shadowSignals,
-	    FrameGraphBufferHandle directionalLights,
-	    FrameGraphBufferHandle pointLights,
-	    FrameGraphBufferHandle spotLights,
-	    FrameGraphBufferHandle rectLights,
-	    FrameGraphBufferHandle hitVertices,
-	    FrameGraphBufferHandle hitIndices,
-	    FrameGraphBufferHandle hitInstances,
-	    FrameGraphBufferHandle hitMaterials,
-	    DirectShadowSignalRayQueryPassParameters& parameters);
-
 	void SetParameters(
 	    DirectShadowSignalCommonPassParameters& parameters,
 	    const FrameContext& frame,

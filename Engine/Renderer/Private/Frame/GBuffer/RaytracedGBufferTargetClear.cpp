@@ -24,7 +24,7 @@ namespace
 
 void AddRaytracedGBufferTargetClearPass(FrameGraphBuilder& builder, const GBufferRenderTargets& targets)
 {
-	builder.AddPass(
+	builder.Execute(
 	    "RaytracedGBufferTargetClear",
 	    EFrameGraphPassFlags::Raster,
 	    [targets](PassResourceBuilder& resourceBuilder)

@@ -20,7 +20,7 @@ The foundations are nevertheless not yet solid enough for unbounded feature grow
 1. RHI GPU lifetime was only partially unified. Priority 0A now makes descriptor allocations, tables, and views retire through the backend's waited frame-slot boundary and protects recycled table/view records with generations. Runtime material-rebuild validation remains before final acceptance.
 2. Material textures used a second resource model outside `RhiOwnedResourceHandle` and `RhiResourceViewHandle`. Priority 0B removed that hierarchy, its hidden uploads, lifetime-long staging, and per-texture Vulkan queue-idle wait. Build and runtime validation remain pending by explicit instruction.
 
-Priority 1A has also moved persistent temporal mechanics and validity out of `FramePipeline`. Feature code retains temporal meaning and pass use, while the frame graph owns history allocation, in-flight version rotation, validity, and retirement. Its code and static deletion gates are complete; build and runtime validation remain deferred by explicit instruction.
+Priority 1A has also moved persistent temporal mechanics and validity out of `FramePipeline`. Its frontend follow-through now uses an Unreal-RDG-shaped pass workflow: feature files allocate a typed pass-parameter block, assign named graph reads/writes/targets, and finish with `Dispatch`, `Draw`, or `Execute`. Feature code retains temporal meaning and pass use, while the frame graph owns history allocation, in-flight version rotation, validity, and retirement. Its code and static deletion gates are complete; build and runtime validation remain deferred by explicit instruction.
 
 These were correctness and scalability issues, not presentation issues. Their implementations must pass the deferred runtime acceptance before adding another descriptor model, streaming, or asynchronous compute.
 
@@ -54,12 +54,13 @@ Application/Editor remains the composition root: it constructs these modules, ow
 | GPU object model | Priority 0B implemented; build/runtime validation pending | The polymorphic texture hierarchy and its separate creation, view, upload, and destruction rules have been deleted. Sampled textures now use generic RHI resources, views, and explicit uploads. |
 | In-flight lifetime | Priorities 0A and 0B implemented; runtime stress validation pending | Resources, descriptor allocations, descriptor tables, views, and texture staging now have backend-owned deferred reuse. The legacy texture hierarchy and its bespoke destruction paths have been deleted. |
 | Feature ownership | Priority 1A implemented; build/runtime validation pending | Feature files declare their history invalidation inputs and consume named previous/current textures. The frame graph lazily owns backing resources, in-flight rotation, validity, and retirement. `FramePipeline` contains no history resource object, frame index plumbing, reset generation, binding, or commit sequence. |
+| Frame pass frontend | Priority 1A follow-through implemented; build/runtime validation pending | Frame feature files allocate typed `Pass::Parameters`, state named SRV/UAV/render/depth intent, and issue `Dispatch`, `Draw`, or `Execute`. The duplicate `DeclareResources` and pass-specific allocation/add wrappers have been deleted. |
 | Material bindings | Needs work | Per-material binding sets and a global material table are both valid policies, but ownership is exposed as raw pointers and repeated availability checks across passes. |
 | Queue model | Intentionally limited | The public submission contract exposes only graphics command lists. This is honest today but must be extended before real asynchronous copy/compute scheduling. |
 
 The passing boundary script is evidence that compile-time direction is healthy, not evidence that runtime ownership is complete. The current check protects Renderer/RHI source dependencies; it does not prove descriptor lifetime, upload behavior, or feature ownership.
 
-## What The NVIDIA And AMD References Actually Support
+## What The NVIDIA, AMD, And Epic References Actually Support
 
 There is no single "NVIDIA architecture" or "AMD architecture" to copy. The reviewed repositories serve different purposes. The useful result is the set of principles on which they agree, plus the places where Sparkle should intentionally choose one model.
 
@@ -100,6 +101,18 @@ That supports Sparkle's provider direction:
 
 [Cauldron](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron) demonstrates explicit upload heaps, command-list rings, resource-view heaps, static/dynamic buffer suballocation, and parallel D3D12/Vulkan implementations. Those mechanics reinforce the need for bounded uploads and explicit resource ownership. Its latest release is from 2022, and its feature organization is intentionally sample-framework oriented, so it should be treated as historical implementation evidence rather than the target module design for Sparkle.
 
+### Epic Unreal RDG: pass parameters are the frontend dependency declaration
+
+[Unreal Engine's Render Dependency Graph documentation](https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine) separates graph setup from execution and uses explicit pass-parameter structures to declare resource dependencies. The graph uses those declarations to derive transitions and resource lifetimes, while common raster and compute work is expressed through focused draw/dispatch utilities.
+
+Sparkle now follows that frontend shape without importing Unreal's macros or object model:
+
+- a feature allocates `Pass::Parameters` from `FrameGraphBuilder`;
+- the feature assigns named SRV, UAV, render-target, depth-target, and acceleration-structure fields directly from graph handles;
+- `Dispatch`, `Draw`, or `Execute` is the terminal operation visible at the callsite;
+- sampler defaults, pipeline setup, shader constants, command recording, and backend mechanics remain in the pass implementation;
+- no second `DeclareResources` function duplicates the pass-parameter structure or hides feature dependencies behind a positional forwarding call.
+
 ### Reference conclusion
 
 The practical cross-reference principles are:
@@ -110,6 +123,7 @@ The practical cross-reference principles are:
 4. Make uploads part of an explicit command/submission lifetime.
 5. Let features own temporal meaning and resource use; keep repeated persistent-resource mechanics in the Renderer resource layer.
 6. Keep native SDK/API translation in narrow backend/provider bridges.
+7. Make feature pass dependencies readable from a typed parameter block at the graph-construction callsite.
 
 Sparkle already satisfied principles 2 and 6. Priorities 0A, 0B, and 1A now implement principles 3, 4, and 5 in code; deferred build/runtime validation and the Priority 1B material-state cleanup remain.
 
@@ -316,6 +330,35 @@ Feature code declares resource use and the values that invalidate accumulated hi
 | Every Renderer-owned persistent GPU texture history follows the same record and lifetime pattern. | Fulfilled statically | Exposure, reference lighting, direct-light reservoirs, and indirect ReSTIR reservoirs all use `CreateTextureHistory`. The deleted `Persistent*History` classes have no remaining references. |
 
 Priority 1A is therefore **implementation-complete but not runtime-accepted**. Final acceptance requires the explicitly deferred build plus resize, lighting-mode, settings, scene-state, and several-frames-in-flight history scenarios.
+
+### Priority 1A frontend follow-through: explicit pass parameters and terminal graph operations
+
+The first attempt at simplifying Frame pass callsites was rejected because it hid dependencies inside convenience argument forwarding. That approach was fully reverted. The implemented replacement follows the requested Unreal RDG direction: the pass parameter type is the dependency contract, and the feature callsite visibly fills that contract.
+
+The completed migration covers deferred depth, raster and ray-traced GBuffer, sky motion vectors, direct lighting, direct reservoirs, shadow visibility, reference lighting, path-traced lighting, indirect ReSTIR, sky, exposure and its moment chain, presentation, debug visualization, ray-tracing scene work, provider work, copy/clear utilities, and the generic graph-pass frontend.
+
+Before and after:
+
+| Before | After |
+| --- | --- |
+| `AllocPassParameters<Pass>()` couples allocation to a pass wrapper. | `AllocParameters<Pass::Parameters>()` makes the parameter structure the visible graph contract. |
+| `Pass::DeclareResources(builder, positional..., parameters)` hides reads and writes in a second file. | The feature assigns each named parameter from `CreateSRV`, `CreateUAV`, `CreateRenderTarget`, `CreateDepthTarget`, or `Read`. |
+| `AddComputeShaderPass`, `AddSizedComputeShaderPass`, `AddRasterShaderPass`, and `AddPass` expose several add-style entry points. | Feature code terminates with `Dispatch`, `Draw`, or `Execute`. |
+| Parameter fields and `DeclareResources` repeat the same resource map. | The parameter fields are the single resource map; every pass-level and shared `DeclareResources` declaration and implementation was deleted. |
+| Sampler defaults can be hidden in graph-resource declaration helpers. | Sampler and runtime constant setup stays in pass execution code; the Frame frontend contains graph intent only. |
+
+Acceptance status:
+
+| Criterion | Status | Evidence / remaining work |
+| --- | --- | --- |
+| Frame pass callsites visibly declare typed resource intent before execution. | **Fulfilled statically** | All migrated feature passes allocate `Pass::Parameters` and assign named graph bindings at the callsite. |
+| The public feature vocabulary is `Execute`, `Dispatch`, and `Draw`. | **Fulfilled statically** | Old builder calls have no production hits; lower-level registration remains private inside `FrameGraphBuilder`. |
+| No duplicate resource-declaration workflow remains. | **Fulfilled statically** | `rg "DeclareResources|AllocPassParameters|AddComputeShaderPass|AddSizedComputeShaderPass|AddRasterShaderPass|builder\\.AddPass" Engine/Renderer` returns no hits. |
+| Pass implementation details stay out of `Renderer/Private/Frame` callsites. | **Fulfilled for migrated pass construction; broader Frame data preparation remains separate work** | Shader/pipeline execution, samplers, constant setup, command recording, and RHI operations remain below the pass frontend. CPU-to-GPU per-frame data preparation was not falsely folded into this pass migration. |
+| Repository architecture boundaries remain valid. | **Fulfilled statically** | `CMake/ArchitectureBoundaryCheck.cmake` passes with no new violations. |
+| Engine compilation and D3D12/Vulkan runtime behavior are validated. | **Pending by explicit instruction** | No engine build, backend compile, or runtime launch was performed. |
+
+This follow-through is **code-complete and statically accepted, but not runtime-accepted**.
 
 ## Priority 1B: Make Material GPU State A Stable Renderer-Owned Table
 

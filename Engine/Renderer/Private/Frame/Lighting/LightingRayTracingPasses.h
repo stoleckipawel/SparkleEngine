@@ -22,9 +22,9 @@ namespace LightingRayTracingPasses
 	}
 
 	template <typename TPass>
-	void AddNoRayQueryComputePass(FrameGraphBuilder& builder, typename TPass::ParameterInstance& parameters)
+	void DispatchNoRayQuery(FrameGraphBuilder& builder, typename TPass::ParameterInstance& parameters)
 	{
-		builder.AddPass(
+		builder.Execute(
 		    TPass::PassName,
 		    EFrameGraphPassFlags::Compute,
 		    [&parameters](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
@@ -52,12 +52,12 @@ namespace LightingRayTracingPasses
 	}
 
 	template <typename TPass>
-	void AddSceneTlasComputePass(
+	void DispatchSceneTlas(
 	    FrameGraphBuilder& builder,
 	    typename TPass::ParameterInstance& parameters,
 	    RayTracingSceneTlasShaderAccessMode accessMode)
 	{
-		builder.AddPass(
+		builder.Execute(
 		    TPass::PassName,
 		    EFrameGraphPassFlags::Compute,
 		    [&parameters, accessMode](PassResourceBuilder& resourceBuilder, const FrameContext& frame)

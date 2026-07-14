@@ -2,7 +2,6 @@
 #include "Passes/Deferred/SkyPass.h"
 
 #include "Frame/Core/FrameContext.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -22,18 +21,6 @@ const RenderPassDefinition& SkyPass::GetDefinition() noexcept
 	static const RenderPassDefinition definition =
 	    ComputePassUtilities::BuildDefinition(PassName, RendererShaderPackages::Sky, L"Sky_BindingLayout", L"Sky_PipelineState");
 	return definition;
-}
-
-void SkyPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle output,
-    FrameGraphTextureHandle sceneDepth,
-    FrameGraphTextureHandle sky,
-    ParameterInstance& parameters)
-{
-	parameters->SceneColor = builder.CreateUAV(output);
-	parameters->SceneDepth = builder.CreateSRV(sceneDepth);
-	parameters->SkyTexture = builder.CreateSRV(sky);
 }
 
 void SkyPass::SetParameters(ParameterInstance& parameters, const FrameContext& frame, const PassRuntimeServices& passRuntimeServices) const

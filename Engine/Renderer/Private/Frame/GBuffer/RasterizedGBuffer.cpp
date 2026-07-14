@@ -10,13 +10,16 @@ void AddRasterizedGBufferPass(
     const GBufferRenderTargets& targets,
     const FrameAssemblyExternalResources& externalResources)
 {
-	auto& parameters = builder.AllocPassParameters<GBufferPass>();
-	GBufferPass::DeclareResources(
-	    builder,
-	    targets,
-	    externalResources.MeshInstances,
-	    externalResources.JointMatrices,
-	    externalResources.PreviousJointMatrices,
-	    parameters);
-	builder.AddRasterShaderPass<GBufferPass>(parameters);
+	auto& parameters = builder.AllocParameters<GBufferPass::Parameters>();
+	parameters->BaseColor = builder.CreateRenderTarget(targets.BaseColor);
+	parameters->Normal = builder.CreateRenderTarget(targets.Normal);
+	parameters->Material = builder.CreateRenderTarget(targets.Material);
+	parameters->Emissive = builder.CreateRenderTarget(targets.Emissive);
+	parameters->Subsurface = builder.CreateRenderTarget(targets.Subsurface);
+	parameters->MotionVector = builder.CreateRenderTarget(targets.MotionVector);
+	parameters->DeviceZ = builder.CreateDepthTarget(targets.DeviceZ);
+	parameters->MeshInstances = builder.CreateSRV<MeshInstanceData>(externalResources.MeshInstances);
+	parameters->JointMatrices = builder.CreateSRV<JointMatrixData>(externalResources.JointMatrices);
+	parameters->PreviousJointMatrices = builder.CreateSRV<JointMatrixData>(externalResources.PreviousJointMatrices);
+	builder.Draw<GBufferPass>(parameters);
 }

@@ -3,7 +3,6 @@
 
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Passes/Core/ComputePassUtilities.h"
 #include "Passes/Core/RenderPassDefinition.h"
@@ -27,27 +26,6 @@ const RenderPassDefinition& DirectShadowSignalNoRayQueryPass::GetDefinition() no
 	    L"DirectShadowSignalNoRayQuery_BindingLayout",
 	    L"DirectShadowSignalNoRayQuery_PipelineState");
 	return definition;
-}
-
-void DirectShadowSignalNoRayQueryPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneDepth,
-    const DirectShadowSignalResources& shadowSignals,
-    FrameGraphBufferHandle directionalLights,
-    FrameGraphBufferHandle pointLights,
-    FrameGraphBufferHandle spotLights,
-    FrameGraphBufferHandle rectLights,
-    ParameterInstance& parameters)
-{
-	DirectShadowSignalPassCommon::DeclareResources(
-	    builder,
-	    sceneDepth,
-	    shadowSignals,
-	    directionalLights,
-	    pointLights,
-	    spotLights,
-	    rectLights,
-	    *parameters);
 }
 
 void DirectShadowSignalNoRayQueryPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

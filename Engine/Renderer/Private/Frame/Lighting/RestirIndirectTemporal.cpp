@@ -10,31 +10,31 @@ void AddRestirIndirectTemporalPass(
     const RestirIndirectWorkingReservoirs& workingReservoirs,
     const FrameAssemblyResourceLayout& resources)
 {
-	auto& parameters = builder.AllocPassParameters<RestirIndirectTemporalPass>();
-	RestirIndirectTemporalPass::DeclareResources(
-	    builder,
-	    resources.Transient.Scene,
-	    resources.Transient.GBuffer,
-	    workingReservoirs.TemporalSample,
-	    workingReservoirs.TemporalWeight,
-	    resources.History.RestirIndirectReservoir.Sample.Previous,
-	    resources.History.RestirIndirectReservoir.Weight.Previous,
-	    resources.History.RestirIndirectReservoir.Surface.Previous,
-	    resources.SceneTlas,
-	    resources.External.Sky,
-	    resources.External.DirectionalLights,
-	    resources.External.PointLights,
-	    resources.External.SpotLights,
-	    resources.External.RectLights,
-	    resources.External.RayTracingHitVertices,
-	    resources.External.RayTracingHitSkinInfluences,
-	    resources.External.RayTracingHitIndices,
-	    resources.External.RayTracingHitInstances,
-	    resources.External.RayTracingHitMaterials,
-	    resources.External.MeshInstances,
-	    resources.External.JointMatrices,
-	    parameters);
-	LightingRayTracingPasses::AddSceneTlasComputePass<RestirIndirectTemporalPass>(
+	auto& parameters = builder.AllocParameters<RestirIndirectTemporalPass::Parameters>();
+	parameters->TemporalReservoirSampleTexture = builder.CreateUAV(workingReservoirs.TemporalSample);
+	parameters->TemporalReservoirWeightTexture = builder.CreateUAV(workingReservoirs.TemporalWeight);
+	parameters->PreviousReservoirSampleTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Sample.Previous);
+	parameters->PreviousReservoirWeightTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Weight.Previous);
+	parameters->PreviousReservoirSurfaceTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Surface.Previous);
+	parameters->GBufferMotionVector = builder.CreateSRV(resources.Transient.GBuffer.MotionVector);
+	parameters->SceneTlas = builder.Read(resources.SceneTlas);
+	parameters->GBufferBaseColor = builder.CreateSRV(resources.Transient.GBuffer.BaseColor);
+	parameters->GBufferNormal = builder.CreateSRV(resources.Transient.GBuffer.Normal);
+	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);
+	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
+	parameters->SkyTexture = builder.CreateSRV(resources.External.Sky);
+	parameters->DirectionalLights = builder.CreateSRV(resources.External.DirectionalLights);
+	parameters->PointLights = builder.CreateSRV(resources.External.PointLights);
+	parameters->SpotLights = builder.CreateSRV(resources.External.SpotLights);
+	parameters->RectLights = builder.CreateSRV(resources.External.RectLights);
+	parameters->RayTracingHitVertices = builder.CreateSRV(resources.External.RayTracingHitVertices);
+	parameters->SkinInfluences = builder.CreateSRV(resources.External.RayTracingHitSkinInfluences);
+	parameters->RayTracingHitIndices = builder.CreateSRV(resources.External.RayTracingHitIndices);
+	parameters->RayTracingHitInstances = builder.CreateSRV(resources.External.RayTracingHitInstances);
+	parameters->RayTracingHitMaterials = builder.CreateSRV(resources.External.RayTracingHitMaterials);
+	parameters->MeshInstances = builder.CreateSRV(resources.External.MeshInstances);
+	parameters->JointMatrices = builder.CreateSRV(resources.External.JointMatrices);
+	LightingRayTracingPasses::DispatchSceneTlas<RestirIndirectTemporalPass>(
 	    builder,
 	    parameters,
 	    RayTracingSceneTlasShaderAccessMode::Descriptor);

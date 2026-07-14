@@ -4,55 +4,11 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Lighting/ShadowVisibility.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "SceneData/MaterialTextureTableCapability.h"
-
-void DirectShadowSignalPassCommon::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneDepth,
-    const DirectShadowSignalResources& shadowSignals,
-    FrameGraphBufferHandle directionalLights,
-    FrameGraphBufferHandle pointLights,
-    FrameGraphBufferHandle spotLights,
-    FrameGraphBufferHandle rectLights,
-    DirectShadowSignalCommonPassParameters& parameters)
-{
-	parameters.ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
-	parameters.CurrentReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Current);
-	parameters.CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
-	parameters.SceneDepth = builder.CreateSRV(sceneDepth);
-	parameters.DirectionalLights = builder.CreateSRV(directionalLights);
-	parameters.PointLights = builder.CreateSRV(pointLights);
-	parameters.SpotLights = builder.CreateSRV(spotLights);
-	parameters.RectLights = builder.CreateSRV(rectLights);
-}
-
-void DirectShadowSignalPassCommon::DeclareRayQueryResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneDepth,
-    const GBufferRenderTargets& gbuffer,
-    const DirectShadowSignalResources& shadowSignals,
-    FrameGraphBufferHandle directionalLights,
-    FrameGraphBufferHandle pointLights,
-    FrameGraphBufferHandle spotLights,
-    FrameGraphBufferHandle rectLights,
-    FrameGraphBufferHandle hitVertices,
-    FrameGraphBufferHandle hitIndices,
-    FrameGraphBufferHandle hitInstances,
-    FrameGraphBufferHandle hitMaterials,
-    DirectShadowSignalRayQueryPassParameters& parameters)
-{
-	DeclareResources(builder, sceneDepth, shadowSignals, directionalLights, pointLights, spotLights, rectLights, parameters);
-	parameters.GBufferNormal = builder.CreateSRV(gbuffer.Normal);
-	parameters.RayTracingHitVertices = builder.CreateSRV(hitVertices);
-	parameters.RayTracingHitIndices = builder.CreateSRV(hitIndices);
-	parameters.RayTracingHitInstances = builder.CreateSRV(hitInstances);
-	parameters.RayTracingHitMaterials = builder.CreateSRV(hitMaterials);
-}
 
 void DirectShadowSignalPassCommon::SetParameters(
     DirectShadowSignalCommonPassParameters& parameters,

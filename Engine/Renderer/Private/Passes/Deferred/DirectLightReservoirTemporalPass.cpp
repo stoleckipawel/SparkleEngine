@@ -4,7 +4,6 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderViewData.h"
 #include "Frame/Lighting/ShadowVisibility.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/Core/ComputePassUtilities.h"
@@ -29,34 +28,6 @@ const RenderPassDefinition& DirectLightReservoirTemporalPass::GetDefinition() no
 	    L"DirectLightReservoirTemporal_BindingLayout",
 	    L"DirectLightReservoirTemporal_PipelineState");
 	return definition;
-}
-
-void DirectLightReservoirTemporalPass::DeclareResources(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneDepth,
-    const GBufferRenderTargets& gbuffer,
-    const DirectShadowSignalResources& shadowSignals,
-    FrameGraphBufferHandle directionalLights,
-    FrameGraphBufferHandle pointLights,
-    FrameGraphBufferHandle spotLights,
-    FrameGraphBufferHandle rectLights,
-    ParameterInstance& parameters)
-{
-	parameters->TemporalReservoirSample = builder.CreateUAV(shadowSignals.TemporalReservoirSample);
-	parameters->TemporalReservoirWeight = builder.CreateUAV(shadowSignals.TemporalReservoirWeight);
-	parameters->PreviousReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Previous);
-	parameters->PreviousReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Previous);
-	parameters->PreviousReservoirSurface = builder.CreateSRV(shadowSignals.ReservoirHistory.Surface.Previous);
-	DirectLightReservoirPassCommon::DeclareResources(
-	    builder,
-	    sceneDepth,
-	    gbuffer,
-	    directionalLights,
-	    pointLights,
-	    spotLights,
-	    rectLights,
-	    *parameters);
-	parameters->GBufferMotionVector = builder.CreateSRV(gbuffer.MotionVector);
 }
 
 void DirectLightReservoirTemporalPass::SetParameters(

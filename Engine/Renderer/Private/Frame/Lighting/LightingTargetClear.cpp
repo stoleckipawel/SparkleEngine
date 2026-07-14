@@ -33,7 +33,7 @@ namespace
 
 void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting)
 {
-	builder.AddPass(
+	builder.Execute(
 	    kLightingTargetClearPassName,
 	    EFrameGraphPassFlags::Raster,
 	    [lighting](PassResourceBuilder& resourceBuilder)

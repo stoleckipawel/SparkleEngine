@@ -30,7 +30,7 @@ void AddRayReconstructionPass(
 		return;
 	}
 
-	builder.AddPass(
+	builder.Execute(
 	    passName,
 	    EFrameGraphPassFlags::ExternalProvider,
 	    [providerInputs](PassResourceBuilder& resourceBuilder)

@@ -10,7 +10,6 @@
 
 #include <cstdint>
 
-class FrameGraphBuilder;
 struct RenderPassDefinition;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
@@ -56,12 +55,6 @@ class SkyPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const RenderPassDefinition& GetDefinition() noexcept;
-	static void DeclareResources(
-	    FrameGraphBuilder& builder,
-	    FrameGraphTextureHandle output,
-	    FrameGraphTextureHandle sceneDepth,
-	    FrameGraphTextureHandle sky,
-	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:
