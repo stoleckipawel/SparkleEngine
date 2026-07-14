@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "SceneData/MaterialTextureTable.h"
 
-#include "Resources/Texture.h"
 #include "SceneData/MaterialTextureTableCapability.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -12,32 +11,32 @@
 void MaterialTextureTable::Reset() noexcept
 {
 	m_bindingSet.reset();
-	m_textures.clear();
+	m_textureViews.clear();
 	m_textureCount = 0u;
 }
 
-std::uint32_t MaterialTextureTable::GetOrAddTextureIndex(const Texture* texture)
+std::uint32_t MaterialTextureTable::GetOrAddTextureIndex(RhiResourceViewHandle textureView)
 {
-	if (texture == nullptr)
+	if (!textureView)
 	{
 		return MaterialTextureInvalidIndex;
 	}
 
-	for (std::uint32_t index = 0u; index < static_cast<std::uint32_t>(m_textures.size()); ++index)
+	for (std::uint32_t index = 0u; index < static_cast<std::uint32_t>(m_textureViews.size()); ++index)
 	{
-		if (m_textures[index] == texture)
+		if (m_textureViews[index] == textureView)
 		{
 			return index;
 		}
 	}
 
-	if (m_textures.size() >= static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))
+	if (m_textureViews.size() >= static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))
 	{
 		return MaterialTextureInvalidIndex;
 	}
 
-	const std::uint32_t index = static_cast<std::uint32_t>(m_textures.size());
-	m_textures.push_back(texture);
+	const std::uint32_t index = static_cast<std::uint32_t>(m_textureViews.size());
+	m_textureViews.push_back(textureView);
 	return index;
 }
 
@@ -45,18 +44,18 @@ MaterialTextureTableBuildResult MaterialTextureTable::BuildBindingSet(RenderHard
 {
 	m_bindingSet.reset();
 	m_textureCount = 0u;
-	if (m_textures.empty())
+	if (m_textureViews.empty())
 	{
 		return MaterialTextureTableBuildResult{.FailureReason = "empty-texture-table"};
 	}
-	if (m_textures.size() > MaterialTextureTableFixedCapacity)
+	if (m_textureViews.size() > MaterialTextureTableFixedCapacity)
 	{
 		return MaterialTextureTableBuildResult{.FailureReason = "fixed-capacity-descriptor-array-overflow"};
 	}
 
-	for (const Texture* texture : m_textures)
+	for (const RhiResourceViewHandle textureView : m_textureViews)
 	{
-		if (texture == nullptr)
+		if (!textureView)
 		{
 			return MaterialTextureTableBuildResult{.FailureReason = "missing-texture-descriptor"};
 		}
@@ -65,18 +64,21 @@ MaterialTextureTableBuildResult MaterialTextureTable::BuildBindingSet(RenderHard
 	auto bindingSet = renderHardwareInterface.GetDescriptorService().CreateBindingSet(
 	    RenderBindingSetDesc{
 	        .DescriptorType = ERhiDescriptorAllocatorType::ShaderResource,
-	        .DescriptorCount = static_cast<std::uint32_t>(m_textures.size())});
+	        .DescriptorCount = static_cast<std::uint32_t>(m_textureViews.size())});
 	if (!bindingSet || !*bindingSet)
 	{
 		return MaterialTextureTableBuildResult{.FailureReason = "descriptor-table-allocation-failed"};
 	}
 
-	for (std::uint32_t index = 0u; index < static_cast<std::uint32_t>(m_textures.size()); ++index)
+	for (std::uint32_t index = 0u; index < static_cast<std::uint32_t>(m_textureViews.size()); ++index)
 	{
-		m_textures[index]->WriteShaderResourceView(bindingSet->GetCpuDescriptorHandle(index));
+		if (!bindingSet->WriteResourceView(index, m_textureViews[index]))
+		{
+			return MaterialTextureTableBuildResult{.FailureReason = "resource-view-write-failed"};
+		}
 	}
 
-	m_textureCount = static_cast<std::uint32_t>(m_textures.size());
+	m_textureCount = static_cast<std::uint32_t>(m_textureViews.size());
 	m_bindingSet = std::move(bindingSet);
 	return MaterialTextureTableBuildResult{
 	    .Valid = true,

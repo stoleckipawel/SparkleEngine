@@ -401,9 +401,18 @@ void FramePipeline::RecordFrame() noexcept
 	}
 
 	BindExposureHistoryFrameGraphResources();
-	if (frame.sceneData.sky.skyTexture != nullptr)
+	if (frame.sceneData.sky.HasTexture())
 	{
-		m_frameGraph->BindPersistentTexture(m_frameResources.External.Sky, *frame.sceneData.sky.skyTexture, ResourceState::ShaderResource);
+		m_frameGraph->BindPersistentTexture(
+		    m_frameResources.External.Sky,
+		    frame.sceneData.sky.textureResource,
+		    frame.sceneData.sky.textureView,
+		    FrameGraphTextureDesc::CreateColor(
+		        "Sky",
+		        frame.sceneData.sky.textureWidth,
+		        frame.sceneData.sky.textureHeight,
+		        frame.sceneData.sky.textureFormat),
+		    ResourceState::ShaderResource);
 	}
 	else
 	{

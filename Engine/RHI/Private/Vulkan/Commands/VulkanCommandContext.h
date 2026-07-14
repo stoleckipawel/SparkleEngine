@@ -28,6 +28,7 @@ class VulkanCommandContext final
 
 	VulkanRenderCommandList& GetCommandList(std::uint32_t frameIndex) noexcept;
 	VkCommandBuffer GetCommandBuffer(std::uint32_t frameIndex) const noexcept;
+	bool IsCommandBufferRecording(VkCommandBuffer commandBuffer) const noexcept;
 	VkSemaphore GetImageAvailableSemaphore(std::uint32_t frameIndex) const noexcept;
 	VkSemaphore GetRenderFinishedSemaphore(std::uint32_t frameIndex) const noexcept;
 	std::uint64_t GetNextRetireFenceValue() const noexcept { return m_nextRetireFenceValue; }

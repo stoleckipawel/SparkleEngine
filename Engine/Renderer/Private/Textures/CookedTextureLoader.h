@@ -4,10 +4,18 @@
 
 #include <filesystem>
 
+struct LoadedTextureData final
+{
+	RhiTextureUploadDesc Upload;
+	TextureFormatIntent FormatIntent = TextureFormatIntent::Unknown;
+
+	bool IsValid() const noexcept { return Upload.IsValid(); }
+};
+
 class CookedTextureLoader final
 {
   public:
-	static RhiTextureUploadDesc Load(const std::filesystem::path& texturePath);
+	static LoadedTextureData Load(const std::filesystem::path& texturePath);
 
 	CookedTextureLoader() = delete;
 	~CookedTextureLoader() = delete;

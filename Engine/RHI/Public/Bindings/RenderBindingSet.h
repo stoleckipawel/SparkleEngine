@@ -31,6 +31,7 @@ class SPARKLE_RHI_API RenderBindingSet final
 	std::uint32_t GetDescriptorCount() const noexcept { return m_descriptorCount; }
 	RhiCpuDescriptorHandle GetCpuDescriptorHandle(std::uint32_t descriptorIndex = 0) const noexcept;
 	RhiDescriptorTableBinding GetTableBinding(std::uint32_t descriptorIndex = 0) const noexcept;
+	bool WriteResourceView(std::uint32_t descriptorIndex, RhiResourceViewHandle view) noexcept;
 
   private:
 	void Reset() noexcept;

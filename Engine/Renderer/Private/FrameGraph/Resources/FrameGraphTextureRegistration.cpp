@@ -2,7 +2,6 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "Core/Public/Diagnostics/Verify.h"
-#include "RHI/Public/Resources/Texture.h"
 #include "Window/Window.h"
 
 #include <format>
@@ -259,33 +258,47 @@ void FrameGraph::BindPersistentTexture(FrameGraphTextureHandle handle, RhiOwnedR
 	BindPersistentTexture(handle, m_renderHardwareInterface->GetResourceService().GetNativeResource(resource), currentState);
 }
 
-void FrameGraph::BindPersistentTexture(FrameGraphTextureHandle handle, const Texture& texture, ResourceState currentState) noexcept
+void FrameGraph::BindPersistentTexture(
+    FrameGraphTextureHandle handle,
+    RhiOwnedResourceHandle resource,
+    RhiResourceViewHandle shaderResourceView,
+    const FrameGraphTextureDesc& desc,
+    ResourceState currentState) noexcept
 {
-	if (!handle.IsValid())
+	if (!handle.IsValid() || !resource || !shaderResourceView || m_renderHardwareInterface == nullptr)
 	{
 		return;
 	}
 
-	const TextureRuntimeInfo runtimeInfo = texture.GetRuntimeInfo();
-	if (!runtimeInfo.IsValid || !texture.GetNativeResource())
+	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
+	if (!m_resourceRegistry.IsRegistered(resourceHandle))
 	{
-		FrameGraphTextureRegistration::FailInvalidPersistentTextureBinding(
-		    "BindPersistentTexture",
-		    {},
-		    handle.GetResourceHandle(),
-		    currentState,
-		    false);
+		return;
 	}
 
-	FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle.GetResourceHandle());
-	if (metadata.textureDesc.format != runtimeInfo.Format)
+	FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
+	if (metadata.resourceClass != FrameGraphResourceClass::Texture || metadata.ownership != FrameGraphResourceOwnership::ExternalPersistent)
 	{
-		ReleaseExternalResourceViews(handle.GetResourceHandle());
+		return;
 	}
-	metadata.textureDesc.width = runtimeInfo.Width;
-	metadata.textureDesc.height = runtimeInfo.Height;
-	metadata.textureDesc.format = runtimeInfo.Format;
-	BindPersistentTexture(handle, texture.GetNativeResource(), currentState);
+	const FrameGraphTextureDesc resolvedDesc = FrameGraphTextureRegistration::ResolveTextureDesc(desc, *m_window, metadata.debugName);
+	if (metadata.textureDesc.width != resolvedDesc.width || metadata.textureDesc.height != resolvedDesc.height ||
+	    metadata.textureDesc.format != resolvedDesc.format)
+	{
+		ReleaseExternalResourceViews(resourceHandle);
+	}
+	metadata.textureDesc = resolvedDesc;
+	BindPersistentTexture(handle, resource, currentState);
+	FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(resourceHandle);
+	if (access.shaderResourceView != shaderResourceView)
+	{
+		if (access.shaderResourceView && access.ownsShaderResourceView)
+		{
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.shaderResourceView);
+		}
+		access.shaderResourceView = shaderResourceView;
+		access.ownsShaderResourceView = false;
+	}
 }
 
 void FrameGraph::ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept

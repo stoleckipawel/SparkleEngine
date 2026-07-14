@@ -1,14 +1,11 @@
 #include "D3D12/Resources/D3D12ResourceService.h"
 
 #include "D3D12/D3D12TypeConversions.h"
-#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "D3D12/Descriptors/D3D12DescriptorService.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
-#include "D3D12/Textures/TextureFactory.h"
 #include "RHI/Public/Diagnostics/RhiDiagnostics.h"
-#include "Resources/Texture.h"
 #include "Validation/RhiContract.h"
 
 #include <algorithm>
@@ -18,27 +15,13 @@
 D3D12ResourceService::D3D12ResourceService(
     D3D12Rhi& rhi,
     D3D12GpuMemoryAllocator& memoryAllocator,
-    D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12DescriptorService& descriptorService,
     const RhiCapabilities& capabilities) noexcept :
     m_rhi(&rhi),
     m_memoryAllocator(&memoryAllocator),
-    m_descriptorHeapManager(&descriptorHeapManager),
     m_descriptorService(&descriptorService),
     m_capabilities(&capabilities)
 {
-}
-
-std::unique_ptr<Texture> D3D12ResourceService::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
-{
-	(void) debugName;
-	if (m_rhi == nullptr || m_descriptorHeapManager == nullptr || !textureUpload.IsValid())
-	{
-		return {};
-	}
-
-	std::unique_ptr<TextureFactory> textureFactory = TextureFactory::Create(*m_rhi, *m_descriptorHeapManager);
-	return textureFactory != nullptr ? textureFactory->CreateTexture(std::move(textureUpload)) : std::unique_ptr<Texture>{};
 }
 
 RhiOwnedResourceHandle D3D12ResourceService::CreateTextureResource(

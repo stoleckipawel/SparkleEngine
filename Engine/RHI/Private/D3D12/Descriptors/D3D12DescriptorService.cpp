@@ -278,6 +278,36 @@ RhiResourceViewHandle D3D12DescriptorService::CreateResourceView(const RhiResour
 	return RhiResourceViewHandle::Make(static_cast<std::uint32_t>(m_resourceViewRecords.size() - 1u), 0u);
 }
 
+bool D3D12DescriptorService::WriteResourceView(
+    RhiDescriptorTableHandle tableHandle,
+    std::uint32_t descriptorIndex,
+    RhiResourceViewHandle view) noexcept
+{
+	const DescriptorTableRecord* const table = FindDescriptorTableRecord(tableHandle);
+	const ResourceViewRecord* const resourceView = FindResourceViewRecord(view);
+	if (m_rhi == nullptr || table == nullptr || resourceView == nullptr || descriptorIndex >= table->descriptorCount ||
+	    table->descriptorType != resourceView->descriptorType)
+	{
+		return false;
+	}
+
+	ID3D12Device* const device = m_rhi->GetDevice().Get();
+	if (device == nullptr)
+	{
+		return false;
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE destination = table->nativeHandle.GetCPU();
+	destination.ptr += static_cast<SIZE_T>(descriptorIndex) * table->nativeHandle.GetIncrementSize();
+	const D3D12_CPU_DESCRIPTOR_HANDLE source{resourceView->descriptorAllocation.CpuHandle.Value};
+	device->CopyDescriptorsSimple(
+	    1,
+	    destination,
+	    source,
+	    D3D12TypeConversions::ToDescriptorHeapType(table->descriptorType));
+	return true;
+}
+
 void D3D12DescriptorService::ReleaseResourceView(RhiResourceViewHandle view) noexcept
 {
 	ResourceViewRecord* const record = FindResourceViewRecord(view);
@@ -504,10 +534,21 @@ bool D3D12DescriptorService::WriteResourceViewDescriptor(
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
 			viewDesc.Format = ResolveTextureShaderResourceViewFormat(desc.Format);
-			viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 			viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-			viewDesc.Texture2D.MostDetailedMip = desc.Texture.MostDetailedMip;
-			viewDesc.Texture2D.MipLevels = desc.Texture.MipCount;
+			if (desc.TextureDimension == TextureResourceDimension::TextureCube)
+			{
+				viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+				viewDesc.TextureCube.MostDetailedMip = desc.Texture.MostDetailedMip;
+				viewDesc.TextureCube.MipLevels = desc.Texture.MipCount;
+				viewDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+			}
+			else
+			{
+				viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+				viewDesc.Texture2D.MostDetailedMip = desc.Texture.MostDetailedMip;
+				viewDesc.Texture2D.MipLevels = desc.Texture.MipCount;
+				viewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+			}
 			device->CreateShaderResourceView(D3D12TypeConversions::ToResource(desc.Resource), &viewDesc, nativeDestination);
 			return true;
 		}

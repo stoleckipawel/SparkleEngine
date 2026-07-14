@@ -81,3 +81,9 @@ void RenderBindingSet::Reset() noexcept
 	m_tableHandle = {};
 	m_descriptorCount = 0;
 }
+
+bool RenderBindingSet::WriteResourceView(std::uint32_t descriptorIndex, RhiResourceViewHandle view) noexcept
+{
+	return m_descriptorService != nullptr && RhiContract::IsBindingSetDescriptorIndexValid(descriptorIndex, m_descriptorCount) &&
+	       m_descriptorService->WriteResourceView(m_tableHandle, descriptorIndex, view);
+}

@@ -1,9 +1,14 @@
 #pragma once
 
+#include "../Interop/RhiNativeHandles.h"
 #include "../Resources/RhiResourceDesc.h"
+#include "../Resources/RhiTextureUpload.h"
 #include "../RHIAPI.h"
 
 #include <cstdint>
+#include <string_view>
+
+class RenderCommandList;
 
 class SPARKLE_RHI_API RhiUploadService
 {
@@ -11,4 +16,10 @@ class SPARKLE_RHI_API RhiUploadService
 	virtual ~RhiUploadService() noexcept = default;
 
 	virtual RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes) = 0;
+	virtual bool UploadTexture(
+	    RenderCommandList& commandList,
+	    RhiOwnedResourceHandle destination,
+	    const RhiTextureUploadDesc& textureUpload,
+	    ResourceState finalState,
+	    std::wstring_view debugName) = 0;
 };

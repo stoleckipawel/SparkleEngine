@@ -9,11 +9,9 @@
 #include <string_view>
 #include <vector>
 
-class D3D12DescriptorHeapManager;
 class D3D12DescriptorService;
 class D3D12GpuMemoryAllocator;
 class D3D12Rhi;
-class Texture;
 struct D3D12GpuAllocationRecord;
 struct D3D12GpuHeapRecord;
 struct ID3D12Resource;
@@ -24,11 +22,9 @@ class D3D12ResourceService final : public RhiResourceService
 	D3D12ResourceService(
 	    D3D12Rhi& rhi,
 	    D3D12GpuMemoryAllocator& memoryAllocator,
-	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    D3D12DescriptorService& descriptorService,
 	    const RhiCapabilities& capabilities) noexcept;
 
-	std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateTextureResource(
 	    const RhiTextureResourceDesc& desc,
 	    ResourceState initialState,
@@ -114,7 +110,6 @@ class D3D12ResourceService final : public RhiResourceService
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
-	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12DescriptorService* m_descriptorService = nullptr;
 	const RhiCapabilities* m_capabilities = nullptr;
 	std::vector<PendingOwnedResourceRelease> m_pendingOwnedResourceReleases;

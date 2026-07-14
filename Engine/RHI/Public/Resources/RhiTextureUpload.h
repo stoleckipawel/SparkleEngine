@@ -27,7 +27,6 @@ struct RhiTextureUploadDesc
 	std::uint32_t ArraySize = 1;
 	TextureResourceDimension Dimension = TextureResourceDimension::Texture2D;
 	PixelFormat Format = PixelFormat::Unknown;
-	TextureFormatIntent FormatIntent = TextureFormatIntent::Unknown;
 	std::vector<RhiTextureArraySliceUploadData> ArraySlices;
 
 	std::uint16_t GetMipCount() const noexcept

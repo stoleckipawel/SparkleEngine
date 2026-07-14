@@ -17,7 +17,7 @@ GameFramework does not depend on Renderer or RHI. Renderer consumes GameFramewor
 
 The foundations are nevertheless not yet solid enough for unbounded feature growth. The three highest-risk gaps identified by the audit were:
 
-1. RHI GPU lifetime was only partially unified. Priority 0A now makes descriptor allocations, tables, and views retire through the backend's waited frame-slot boundary and protects recycled table/view records with generations. Runtime material-rebuild stress validation remains before final acceptance.
+1. RHI GPU lifetime was only partially unified. Priority 0A now makes descriptor allocations, tables, and views retire through the backend's waited frame-slot boundary and protects recycled table/view records with generations. Priority 0B now routes sampled textures through that same resource/view lifetime model and fence-retired upload storage. Runtime material-rebuild and texture-upload validation remains before final acceptance.
 2. Material textures use a second resource model outside `RhiOwnedResourceHandle` and `RhiResourceViewHandle`. That path records hidden uploads, keeps upload allocations with textures, and performs a queue-wide idle wait for every Vulkan texture upload.
 3. The GameFramework-to-Renderer snapshot has no stable per-instance identity or revision contract. It copies static data each frame, exports raw `Mesh*`, keys GPU meshes by pointer, and keys temporal data by vector position or shared skeleton asset.
 
@@ -51,7 +51,7 @@ Application/Editor remains the composition root: it constructs these modules, ow
 | Vendor provider boundary | Good | External image features are isolated behind Renderer provider code and bounded RHI interop. The provider remains a client of the engine rather than defining it. |
 | Scene handoff | High risk | The snapshot copies static collections, includes raw mesh pointers, and lacks scene-instance/revision semantics. The Renderer copy is field-for-field rather than a real import boundary. |
 | GPU object model | High risk | Generic owned resources/views coexist with a polymorphic `Texture` hierarchy that has separate creation, view, upload, and destruction rules. |
-| In-flight lifetime | Priority 0A implemented; stress validation pending | Resources, descriptor allocations, descriptor tables, and views now have backend-owned deferred reuse. The legacy texture hierarchy remains the exception to remove in Priority 0B. |
+| In-flight lifetime | Priorities 0A and 0B implemented; runtime stress validation pending | Resources, descriptor allocations, descriptor tables, views, and texture staging now have backend-owned deferred reuse. The legacy texture hierarchy and its bespoke destruction paths have been deleted. |
 | Feature ownership | Needs work | `FramePipeline` owns exposure, reference-lighting, direct-reservoir, and indirect-reservoir resources, validity flags, resets, and feature keys. |
 | Material bindings | Needs work | Per-material binding sets and a global material table are both valid policies, but ownership is exposed as raw pointers and repeated availability checks across passes. |
 | Queue model | Intentionally limited | The public submission contract exposes only graphics command lists. This is honest today but must be extended before real asynchronous copy/compute scheduling. |
@@ -177,20 +177,32 @@ Items 1-5 are implemented. Item 6 is deliberately the Priority 0B deletion gate;
 
 ## Priority 0B: Replace The Second Texture Path With Generic RHI Resources, Views, And Uploads
 
-### Current evidence
+### Implementation status: code and static deletion checks complete; build and runtime validation intentionally pending
 
-[`RhiResourceService`](../../../Engine/RHI/Public/Resources/RhiResourceService.h) exposes both:
+The implementation is present in the working tree. In accordance with the priority execution rule, no engine build, backend compile, or runtime launch was performed for Priority 0B; those checks remain pending until explicitly requested.
+
+- [`TextureManager`](../../../Engine/Renderer/Private/Textures/TextureManager.cpp) now owns non-polymorphic `RendererTexture` records containing generic owned-resource and resource-view handles plus CPU metadata.
+- [`RhiUploadService`](../../../Engine/RHI/Public/Resources/RhiUploadService.h) now accepts explicit texture uploads recorded into the Renderer-selected graphics command list.
+- D3D12 staging resources are retained by `D3D12UploadService` until the stamped submission fence completes; Vulkan staging resources enter the existing allocator retirement queue with the command context's next retire fence.
+- Vulkan texture uploads use the active frame command buffer and contain no private command pool, private queue submission, or per-texture queue-idle wait. A canceled/non-recording frame command buffer is rejected and default loading retries on a later valid frame.
+- Material binding sets and the global material texture table copy logical `RhiResourceViewHandle` records through `RhiDescriptorService`; they no longer ask a texture object to write native descriptors.
+- The sky persistent import passes its existing generic resource and view to the frame graph. The frame graph tracks the view as borrowed, avoiding a duplicate SRV and avoiding ownership ambiguity.
+- The legacy `Texture` base class, D3D12/Vulkan subclasses, factories, old constant-buffer-manager names, backend-specific texture upload/destruction paths, `RhiResourceService::CreateTexture`, and the legacy frame-graph overload have been deleted.
+
+### Baseline evidence addressed by this priority
+
+Before this implementation, [`RhiResourceService`](../../../Engine/RHI/Public/Resources/RhiResourceService.h) exposed both:
 
 - `CreateTextureResource(...) -> RhiOwnedResourceHandle`; and
 - `CreateTexture(...) -> std::unique_ptr<Texture>`.
 
-The polymorphic [`Texture`](../../../Engine/RHI/Public/Resources/Texture.h) exposes a native resource and writes its own SRV into arbitrary CPU descriptor storage. Renderer [`TextureManager`](../../../Engine/Renderer/Private/Textures/TextureManager.cpp) owns these objects, material code asks them to write descriptors, and the frame graph borrows their native handles.
+The now-deleted polymorphic `Texture` exposed a native resource and wrote its own SRV into arbitrary CPU descriptor storage. Renderer [`TextureManager`](../../../Engine/Renderer/Private/Textures/TextureManager.cpp) owned these objects, material code asked them to write descriptors, and the frame graph borrowed their native handles.
 
 The backend behavior is more serious than the duplicated API:
 
-- [`D3D12Texture`](../../../Engine/RHI/Private/D3D12/Resources/D3D12Texture.cpp) records copies and a transition directly into the current frame command list, and keeps its upload allocation until the texture is destroyed.
-- [`VulkanTexture`](../../../Engine/RHI/Private/Vulkan/Resources/VulkanTexture.cpp) creates a transient command pool and buffer, submits directly to the graphics queue, and calls `vkQueueWaitIdle` for each texture upload. It also destroys its image view, descriptor, image, and upload allocation through a path separate from generic RHI retirement.
-- [`RhiUploadService`](../../../Engine/RHI/Public/Resources/RhiUploadService.h) currently handles only uniform constant-buffer allocation, so textures cannot use a shared explicit upload contract.
+- The now-deleted `D3D12Texture` recorded copies and a transition directly into the current frame command list, and kept its upload allocation until the texture was destroyed.
+- The now-deleted `VulkanTexture` created a transient command pool and buffer, submitted directly to the graphics queue, and called `vkQueueWaitIdle` for each texture upload. It also destroyed its image view, descriptor, image, and upload allocation through a path separate from generic RHI retirement.
+- [`RhiUploadService`](../../../Engine/RHI/Public/Resources/RhiUploadService.h) handled only uniform constant-buffer allocation, so textures could not use a shared explicit upload contract.
 
 This path hides command recording inside resource construction, serializes Vulkan texture loading, holds staging memory too long on D3D12, and creates two answers for resource/view lifetime.
 
@@ -204,7 +216,7 @@ This path hides command recording inside resource construction, serializes Vulka
 | Materials ask a texture object to write backend descriptors. | RHI creates a resource view; binding tables consume logical RHI view/binding records. |
 | Frame graph has special overloads for legacy `Texture`. | All persistent textures register through the generic owned-resource/view path. |
 
-### Implementation batch
+### Implemented batch
 
 1. Extend `RhiTextureResourceDesc` only as needed to represent the existing cooked texture cases: mip count, array size, and 2D/cube dimension. Keep color-space/format intent in Renderer metadata unless it changes native creation.
 2. Add an explicit texture write/upload operation to the existing `RhiUploadService`. Renderer supplies the destination handle and chooses when the upload is recorded; RHI owns staging layout, native copies, transitions, and fence retirement.
@@ -213,13 +225,19 @@ This path hides command recording inside resource construction, serializes Vulka
 5. Create material SRVs through `RhiDescriptorService::CreateResourceView`; populate binding tables from logical views/bindings rather than `Texture::WriteShaderResourceView`.
 6. Delete `Texture`, `D3D12Texture`, `VulkanTexture`, their factories, `RhiResourceService::CreateTexture`, and the special frame-graph texture registration overload after all callers migrate.
 
+All six implementation items are present. The migration did not retain a compatibility wrapper or second texture factory. The existing upload service, descriptor services, backend memory allocators, and `TextureManager` were extended instead of introducing another manager or lifetime layer.
+
 ### Acceptance bar
 
-- `rg "class Texture|D3D12Texture|VulkanTexture|WriteShaderResourceView" Engine/RHI Engine/Renderer` has no legacy resource-path hits.
-- Vulkan texture loading contains no per-texture `vkQueueWaitIdle`.
-- Upload allocations are released after their copy fence, not when the sampled texture is destroyed.
-- Material, sky, frame-graph, and provider paths use the same resource/view lifetime model on both backends.
-- No shader ABI, material slot count, cooked texture payload, classic TLAS, or PTLAS contract changes are required.
+| Criterion | Status | Evidence / remaining work |
+| --- | --- | --- |
+| No legacy `Texture`, `D3D12Texture`, `VulkanTexture`, or `WriteShaderResourceView` resource path remains. | **Fulfilled by static inspection** | Exact legacy class/symbol and deleted-file searches return no hits in RHI or Renderer. The broader literal pattern `class Texture` also matches valid names such as `TextureManager` and `enum class Texture...`; those are not legacy resource-path hits. |
+| Vulkan texture loading contains no per-texture `vkQueueWaitIdle`. | **Fulfilled by static inspection** | `rg "vkQueueWaitIdle" Engine/RHI Engine/Renderer` returns no hits. Uploads record into the active graphics command buffer. |
+| Upload allocations are released after their copy fence, not when the sampled texture is destroyed. | **Implemented; runtime verification pending** | D3D12 holds staging in `D3D12UploadService` until `GetCompletedValue()` reaches the stamped next fence. Vulkan queues staging in `VulkanGpuMemoryAllocator` using `GetNextRetireFenceValue()`. A multi-frame upload run has not yet been executed. |
+| Material, sky, frame-graph, and provider paths use the same resource/view lifetime model on both backends. | **Implemented by code inspection; runtime backend parity pending** | Materials consume logical views, sky imports the generic resource/view pair without creating a duplicate SRV, and no Renderer or provider caller can construct the deleted legacy texture type. D3D12/Vulkan runtime comparison remains pending. |
+| Shader ABI, material slot count, cooked texture payload, classic TLAS, and PTLAS contracts remain unchanged. | **Fulfilled by diff inspection** | Shader files, material slot constants/layouts, cooked texture asset structures/payload parsing, and acceleration-structure contracts were not changed by this priority. |
+
+Priority 0B is therefore **implementation-complete but not runtime-accepted**. Final acceptance requires the explicitly deferred build plus D3D12/Vulkan runtime upload, material, sky, and several-frames-in-flight retirement scenarios.
 
 ## Priority 0C: Give The GameFramework / Renderer Boundary Stable Identity And Revisions
 
@@ -404,7 +422,7 @@ This is also why a wholesale adoption of either NVRHI or Cauldron is not recomme
 | Order | Change list | Main outcome | Expected deletion/simplification |
 | --- | --- | --- | --- |
 | 1 | Fence-safe descriptor-table retirement (implemented; runtime stress pending) | Removes the in-flight descriptor reuse correctness hole without stalls. | Deleted immediate table/view record reuse and the shader-resource-only descriptor API; no caller-side fence or flush branch was added. |
-| 2 | Generic texture resource/view/upload migration | Removes per-texture Vulkan idle waits and the second GPU object model. | Deletes `Texture`, both backend subclasses, factories, special frame-graph overloads, and descriptor-writing methods. |
+| 2 | Generic texture resource/view/upload migration (implemented; build/runtime validation pending) | Removes per-texture Vulkan idle waits and the second GPU object model. | Deleted `Texture`, both backend subclasses, factories, the special frame-graph overload, duplicate sky SRV creation, and texture-driven descriptor writes. |
 | 3 | Stable GameFramework scene/animation IDs | Fixes temporal identity under visibility/order changes and shared skeletons. | Removes vector-position and skeleton-only temporal maps. |
 | 4 | Scene revisions and asset-keyed Renderer import | Makes static scene synchronization incremental and lifetime safe. | Removes raw mesh pointer keys, field-for-field Renderer snapshot, deep material comparisons, repeated texture traversal, and broad level cache invalidation. |
 | 5 | Stable material GPU table and semantic scene keys | Makes material ownership explicit and history invalidation deterministic. | Removes raw binding pointers and pointer/native-address hashing from frame data. |

@@ -4,7 +4,6 @@
 
 #include "Scene/Materials/MaterialDesc.h"
 #include "Scene/Materials/MaterialSnapshot.h"
-#include "Resources/Texture.h"
 #include "SceneData/MaterialData.h"
 #include "SceneData/RenderSceneData.h"
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
@@ -12,6 +11,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
 #include "Textures/TextureManager.h"
+#include "Textures/RendererTexture.h"
 
 static const auto g_materialCacheManagerLogger = Logging::GetOrCreateLogger("Renderer.MaterialCache");
 
@@ -69,7 +69,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 	{
 		MaterialData material = MaterialData::FromDesc(desc);
 
-		const Texture* textures[MaterialTextureSlots::Count] = {
+		const RendererTexture* textures[MaterialTextureSlots::Count] = {
 		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::Diffuse), DefaultTexture::White),
 		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::NormalMap), DefaultTexture::Normal),
 		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::Roughness), DefaultTexture::White),
@@ -104,8 +104,11 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 				    std::format("MaterialCacheManager::Rebuild: Material texture slot {} resolved to null.", slot));
 			}
 
-			textures[slot]->WriteShaderResourceView(textureBindingSet->GetCpuDescriptorHandle(slot));
-			material.materialTextureIndices[slot] = m_materialTextureTable.GetOrAddTextureIndex(textures[slot]);
+			if (!textureBindingSet->WriteResourceView(slot, textures[slot]->ShaderResourceView))
+			{
+				return;
+			}
+			material.materialTextureIndices[slot] = m_materialTextureTable.GetOrAddTextureIndex(textures[slot]->ShaderResourceView);
 		}
 
 		material.textureBindingSet = textureBindingSet.get();

@@ -8,7 +8,7 @@
 #include <vector>
 
 class VulkanCommandContext;
-class VulkanConstantBufferManager;
+class VulkanUploadService;
 class VulkanCaptureService;
 class VulkanDescriptorManager;
 class VulkanGpuMemoryAllocator;
@@ -118,7 +118,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	VulkanSwapChain* m_swapChain = nullptr;
 	VulkanCommandContext* m_commandContext = nullptr;
 	std::unique_ptr<VulkanDescriptorManager> m_descriptorManager;
-	std::unique_ptr<VulkanConstantBufferManager> m_constantBufferManager;
+	std::unique_ptr<VulkanUploadService> m_uploadService;
 	std::unique_ptr<VulkanSamplerLibrary> m_samplerLibrary;
 	std::unique_ptr<VulkanImGuiBackend> m_imguiBackend;
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;

@@ -4,22 +4,17 @@
 #include "../Memory/RhiMemoryTypes.h"
 #include "../Resources/RhiResourceDesc.h"
 #include "../Resources/RhiResourceView.h"
-#include "../Resources/RhiTextureUpload.h"
 #include "../RHIAPI.h"
 
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 #include <string_view>
-
-class Texture;
 
 class SPARKLE_RHI_API RhiResourceService
 {
   public:
 	virtual ~RhiResourceService() noexcept = default;
 
-	virtual std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName) = 0;
 	virtual RhiOwnedResourceHandle CreateTextureResource(
 	    const RhiTextureResourceDesc& desc,
 	    ResourceState initialState,

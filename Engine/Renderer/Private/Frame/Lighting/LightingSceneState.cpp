@@ -4,7 +4,6 @@
 #include "Core/Public/Hash/HashUtils.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Lighting/LightingStateHash.h"
-#include "RHI/Public/Resources/Texture.h"
 
 #include <cstdint>
 #include <vector>
@@ -102,28 +101,24 @@ namespace
 
 	std::uint64_t AppendSkyState(std::uint64_t hash, const RenderSkyData& sky) noexcept
 	{
-		const Texture* skyTexture = sky.skyTexture;
 		hash = LightingStateHash::AppendBool(hash, sky.enabled);
 		hash = LightingStateHash::AppendFloat3(hash, sky.color);
 		hash = Hash::ContinueFnv1a64Value(hash, sky.intensity);
-		hash = LightingStateHash::AppendBool(hash, skyTexture != nullptr);
-		if (skyTexture == nullptr)
+		hash = LightingStateHash::AppendBool(hash, sky.HasTexture());
+		if (!sky.HasTexture())
 		{
 			return hash;
 		}
 
-		hash = Hash::ContinueFnv1a64Value(hash, reinterpret_cast<std::uintptr_t>(skyTexture));
-		const TextureRuntimeInfo runtimeInfo = skyTexture->GetRuntimeInfo();
-		hash = LightingStateHash::AppendBool(hash, runtimeInfo.IsValid);
-		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.Width);
-		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.Height);
-		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.ArraySize);
-		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.Dimension);
-		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.Format);
-		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.FormatIntent);
-		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.MipCount);
-		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.EstimatedByteSize);
-		return Hash::ContinueFnv1a64Value(hash, skyTexture->GetNativeResource().Value);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.textureView.Value);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.textureWidth);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.textureHeight);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.textureArraySize);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.textureDimension);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.textureFormat);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.textureFormatIntent);
+		hash = Hash::ContinueFnv1a64Value(hash, sky.textureMipCount);
+		return Hash::ContinueFnv1a64Value(hash, sky.textureEstimatedByteSize);
 	}
 }
 

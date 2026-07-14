@@ -1,14 +1,11 @@
 #include "Vulkan/Resources/VulkanResourceService.h"
 
-#include "Resources/Texture.h"
 #include "Validation/RhiContract.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
 #include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
-#include "Vulkan/Resources/VulkanTexture.h"
-#include "Vulkan/Textures/VulkanTextureFactory.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
 VulkanResourceService::VulkanResourceService(
@@ -21,30 +18,13 @@ VulkanResourceService::VulkanResourceService(
     m_commandContext(&commandContext),
     m_memoryAllocator(&memoryAllocator),
     m_descriptorManager(&descriptorManager),
-    m_capabilities(&capabilities),
-    m_textureFactory(std::make_unique<VulkanTextureFactory>(memoryAllocator))
+	m_capabilities(&capabilities)
 {
 }
 
 VulkanResourceService::~VulkanResourceService() noexcept
 {
-	m_textureFactory.reset();
 	FlushDeferredResourceReleases();
-}
-
-std::unique_ptr<Texture> VulkanResourceService::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
-{
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || m_descriptorManager == nullptr || !textureUpload.IsValid())
-	{
-		return {};
-	}
-
-	return std::make_unique<VulkanTexture>(
-	    *m_rhi,
-	    *m_memoryAllocator,
-	    *m_descriptorManager,
-	    std::move(textureUpload),
-	    debugName.empty() ? L"VulkanTexture" : debugName);
 }
 
 RhiOwnedResourceHandle VulkanResourceService::CreateTextureResource(
@@ -55,12 +35,15 @@ RhiOwnedResourceHandle VulkanResourceService::CreateTextureResource(
     std::wstring_view debugName)
 {
 	(void) initialState;
-	if (m_textureFactory == nullptr || m_capabilities == nullptr || !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc))
+	if (m_memoryAllocator == nullptr || m_capabilities == nullptr || !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc))
 	{
 		return {};
 	}
 
-	return m_textureFactory->CreateTextureResource(desc, category, residencyClass, debugName);
+	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc);
+	std::unique_ptr<VulkanGpuAllocationRecord> record =
+	    m_memoryAllocator->CreateImage(imageCreateInfo, category, residencyClass, debugName);
+	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
 RhiOwnedResourceHandle VulkanResourceService::CreateBufferResource(

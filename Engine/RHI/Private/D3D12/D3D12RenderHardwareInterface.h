@@ -10,7 +10,7 @@
 
 class D3D12DescriptorHeapManager;
 class D3D12DescriptorService;
-class D3D12ConstantBufferManager;
+class D3D12UploadService;
 class D3D12CaptureService;
 class D3D12ImGuiBackend;
 class D3D12InteropService;
@@ -33,7 +33,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    D3D12GpuMemoryAllocator& memoryAllocator,
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    D3D12SwapChain& swapChain,
-	    D3D12ConstantBufferManager& constantBufferManager) noexcept;
+	    D3D12UploadService& uploadService) noexcept;
 	~D3D12RenderHardwareInterface() noexcept;
 
 	D3D12RenderHardwareInterface(const D3D12RenderHardwareInterface&) = delete;
@@ -116,7 +116,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
-	D3D12ConstantBufferManager* m_constantBufferManager = nullptr;
+	D3D12UploadService* m_uploadService = nullptr;
 	std::unique_ptr<D3D12DescriptorService> m_descriptorService;
 	std::unique_ptr<D3D12ImGuiBackend> m_imguiBackend;
 	RhiCapabilities m_capabilities;

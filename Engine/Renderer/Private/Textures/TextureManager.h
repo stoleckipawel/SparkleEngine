@@ -4,18 +4,17 @@
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "Renderer/Public/RendererAPI.h"
 #include "Scene/Textures/TextureSnapshot.h"
+#include "Textures/RendererTexture.h"
 
 #include <array>
 #include <cstdint>
 #include <filesystem>
-#include <memory>
+#include <optional>
 #include <unordered_set>
 #include <unordered_map>
 #include <string>
 
 class RenderHardwareInterface;
-class Texture;
-
 namespace Assets
 {
 	struct CookedTextureReference;
@@ -51,12 +50,14 @@ class SPARKLE_RENDERER_API TextureManager final
 
 	void UnloadAll() noexcept;
 
-	Texture* GetTexture(TextureId id) noexcept;
-	const Texture* GetTexture(TextureId id) const noexcept;
-	const Texture* ResolveDefaultSkyTexture() const noexcept;
-	Texture* GetSceneTexture(const std::filesystem::path& texturePath) noexcept;
-	const Texture* GetSceneTexture(const std::filesystem::path& texturePath) const noexcept;
-	const Texture* ResolveTextureReferenceOrDefault(const Assets::CookedTextureReference* textureReference, DefaultTexture fallbackType)
+	RendererTexture* GetTexture(TextureId id) noexcept;
+	const RendererTexture* GetTexture(TextureId id) const noexcept;
+	const RendererTexture* ResolveDefaultSkyTexture() const noexcept;
+	RendererTexture* GetSceneTexture(const std::filesystem::path& texturePath) noexcept;
+	const RendererTexture* GetSceneTexture(const std::filesystem::path& texturePath) const noexcept;
+	const RendererTexture* ResolveTextureReferenceOrDefault(
+	    const Assets::CookedTextureReference* textureReference,
+	    DefaultTexture fallbackType)
 	    const;
 
 	bool IsLoaded(TextureId id) const noexcept;
@@ -70,14 +71,16 @@ class SPARKLE_RENDERER_API TextureManager final
 	static constexpr std::size_t kTextureCount = static_cast<std::size_t>(TextureId::Count);
 	using TextureCacheKey = std::wstring;
 
-	std::array<std::unique_ptr<Texture>, kTextureCount> m_textures{};
-	std::unordered_map<TextureCacheKey, std::unique_ptr<Texture>> m_pathTextures;
+	std::array<std::optional<RendererTexture>, kTextureCount> m_textures{};
+	std::unordered_map<TextureCacheKey, RendererTexture> m_pathTextures;
 	std::unordered_set<TextureCacheKey> m_defaultPathTextureKeys;
+	bool m_defaultsLoaded = false;
 
 	void LoadDefaultTextures();
-	Texture* LoadFromPath(const std::filesystem::path& texturePath);
-	std::unique_ptr<Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const;
-	const Texture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
+	RendererTexture* LoadFromPath(const std::filesystem::path& texturePath);
+	std::optional<RendererTexture> CreateTextureFromPath(const std::filesystem::path& texturePath) const;
+	const RendererTexture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
+	void ReleaseTexture(RendererTexture& texture) noexcept;
 	void RegisterDefaultPathTexture(const std::filesystem::path& texturePath);
-	static TextureDiagnosticsRow BuildDiagnosticsRow(const Texture& texture, TextureDiagnosticsKind kind, const std::string& key);
+	TextureDiagnosticsRow BuildDiagnosticsRow(const RendererTexture& texture, TextureDiagnosticsKind kind, const std::string& key) const;
 };

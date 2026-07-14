@@ -6,8 +6,8 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/SwapChain/D3D12SwapChain.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
-#include "D3D12/Resources/D3D12ConstantBufferManager.h"
 #include "D3D12/Resources/D3D12FrameResource.h"
+#include "D3D12/Resources/D3D12UploadService.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 
 #include "Window/Window.h"
@@ -46,7 +46,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	std::unique_ptr<D3D12DescriptorHeapManager> m_descriptorHeapManager;
 	std::unique_ptr<D3D12SwapChain> m_swapChain;
 	std::unique_ptr<D3D12FrameResourceManager> m_frameResourceManager;
-	std::unique_ptr<D3D12ConstantBufferManager> m_constantBufferManager;
+	std::unique_ptr<D3D12UploadService> m_uploadService;
 	std::unique_ptr<D3D12RenderHardwareInterface> m_renderHardwareInterface;
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
 };
@@ -84,7 +84,10 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
 		    std::make_unique<D3D12FrameResourceManager>(*services->m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 	}
 	{
-		services->m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(*services->m_frameResourceManager);
+		services->m_uploadService = std::make_unique<D3D12UploadService>(
+		    *services->m_rhi,
+		    *services->m_frameResourceManager,
+		    services->m_rhi->GetMemoryAllocator());
 	}
 	{
 		services->m_renderHardwareInterface = std::make_unique<D3D12RenderHardwareInterface>(
@@ -92,7 +95,7 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
 		    services->m_rhi->GetMemoryAllocator(),
 		    *services->m_descriptorHeapManager,
 		    *services->m_swapChain,
-		    *services->m_constantBufferManager);
+		    *services->m_uploadService);
 	}
 	{
 		services->m_samplerLibrary =
@@ -111,7 +114,7 @@ D3D12RenderDeviceServices::~D3D12RenderDeviceServices() noexcept
 
 	m_samplerLibrary.reset();
 	m_renderHardwareInterface.reset();
-	m_constantBufferManager.reset();
+	m_uploadService.reset();
 	m_frameResourceManager.reset();
 	m_swapChain.reset();
 	m_descriptorHeapManager.reset();
@@ -155,6 +158,7 @@ void D3D12RenderDeviceServices::BeginFrame() noexcept
 	m_rhi->SetCurrentFrameIndex(frameIndex);
 	m_frameResourceManager->BeginFrame(m_rhi->GetFence().Get(), m_rhi->GetFenceEvent(), frameIndex);
 	m_rhi->WaitForGPU(frameIndex);
+	m_uploadService->BeginFrame();
 	m_renderHardwareInterface->GetResourceService().DrainCompletedResourceReleases();
 	m_rhi->ResetCommandAllocator(frameIndex);
 	m_rhi->ResetCommandList(frameIndex);

@@ -43,6 +43,10 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept override;
 
 	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) override;
+	bool WriteResourceView(
+	    RhiDescriptorTableHandle tableHandle,
+	    std::uint32_t descriptorIndex,
+	    RhiResourceViewHandle view) noexcept override;
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;

@@ -353,6 +353,29 @@ void VulkanDescriptorAllocator::WriteSamplerDescriptor(RhiCpuDescriptorHandle de
 	entry.Image = VkDescriptorImageInfo{.sampler = sampler, .imageView = VK_NULL_HANDLE, .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED};
 }
 
+bool VulkanDescriptorAllocator::WriteRegisteredDescriptor(
+    RhiCpuDescriptorHandle destination,
+    RhiGpuDescriptorHandle source) noexcept
+{
+	RhiDescriptorTableHandle tableHandle{};
+	std::uint32_t descriptorIndex = 0;
+	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(destination, tableHandle, descriptorIndex))
+	{
+		return false;
+	}
+
+	std::scoped_lock lock(m_mutex);
+	DescriptorTableRecord* const table = FindTableRecord(tableHandle);
+	const DescriptorEntry* const sourceEntry = FindRegisteredEntry(source);
+	if (table == nullptr || sourceEntry == nullptr || sourceEntry->Kind == EntryKind::Empty || descriptorIndex >= table->Entries.size())
+	{
+		return false;
+	}
+
+	table->Entries[descriptorIndex] = *sourceEntry;
+	return true;
+}
+
 VkDescriptorSet VulkanDescriptorAllocator::AllocateTransientSet(
     VkDescriptorSetLayout layout,
     const CompiledBinding* bindings,

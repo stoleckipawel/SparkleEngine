@@ -18,11 +18,10 @@
 #include "D3D12/Pipeline/D3D12PipelineService.h"
 #include "D3D12/Presentation/D3D12PresentationService.h"
 #include "D3D12/RayTracing/D3D12RayTracingServices.h"
-#include "D3D12/Resources/D3D12ConstantBufferManager.h"
 #include "D3D12/Resources/D3D12ResourceService.h"
+#include "D3D12/Resources/D3D12UploadService.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 #include "D3D12/UI/D3D12ImGuiBackend.h"
-#include "Resources/Texture.h"
 #include "Shaders/CookedShaderPackage.h"
 
 #include <d3d12.h>
@@ -76,8 +75,8 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
     D3D12GpuMemoryAllocator& memoryAllocator,
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12SwapChain& swapChain,
-    D3D12ConstantBufferManager& constantBufferManager) noexcept :
-	m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain), m_constantBufferManager(&constantBufferManager)
+    D3D12UploadService& uploadService) noexcept :
+	m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain), m_uploadService(&uploadService)
 {
 	m_interopService = std::make_unique<D3D12InteropService>(*this);
 	m_captureService = std::make_unique<D3D12CaptureService>(*this);
@@ -85,7 +84,7 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	m_pipelineService = std::make_unique<D3D12PipelineService>(rhi);
 	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);
 	m_resourceService =
-	    std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, descriptorHeapManager, *m_descriptorService, m_capabilities);
+	    std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, *m_descriptorService, m_capabilities);
 	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, rhi.GetNvapiRayTracingProvider());
 	for (std::uint32_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
 	{
@@ -218,12 +217,12 @@ RhiPipelineService& D3D12RenderHardwareInterface::GetPipelineService() noexcept
 
 RhiUploadService& D3D12RenderHardwareInterface::GetUploadService() noexcept
 {
-	return *m_constantBufferManager;
+	return *m_uploadService;
 }
 
 const RhiUploadService& D3D12RenderHardwareInterface::GetUploadService() const noexcept
 {
-	return *m_constantBufferManager;
+	return *m_uploadService;
 }
 
 RhiRayTracingService& D3D12RenderHardwareInterface::GetRayTracingService() noexcept

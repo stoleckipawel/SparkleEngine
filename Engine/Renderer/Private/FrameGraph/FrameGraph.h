@@ -35,7 +35,6 @@ class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;
 struct PassRuntimeServices;
 class Window;
-class Texture;
 struct FrameContext;
 
 class FrameGraph
@@ -202,7 +201,9 @@ class FrameGraph
 	    ResourceState currentState = ResourceState::Common) noexcept;
 	void BindPersistentTexture(
 	    FrameGraphTextureHandle handle,
-	    const Texture& texture,
+	    RhiOwnedResourceHandle resource,
+	    RhiResourceViewHandle shaderResourceView,
+	    const FrameGraphTextureDesc& desc,
 	    ResourceState currentState = ResourceState::Common) noexcept;
 	void ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept;
 	void BindPersistentBuffer(

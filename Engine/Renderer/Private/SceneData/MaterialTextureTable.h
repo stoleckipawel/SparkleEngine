@@ -4,9 +4,10 @@
 #include <memory>
 #include <vector>
 
+#include "RHI/Public/Resources/RhiResourceView.h"
+
 class RenderBindingSet;
 class RenderHardwareInterface;
-class Texture;
 
 inline constexpr std::uint32_t MaterialTextureInvalidIndex = UINT32_MAX;
 
@@ -29,7 +30,7 @@ class MaterialTextureTable final
 	MaterialTextureTable& operator=(MaterialTextureTable&&) noexcept = default;
 
 	void Reset() noexcept;
-	std::uint32_t GetOrAddTextureIndex(const Texture* texture);
+	std::uint32_t GetOrAddTextureIndex(RhiResourceViewHandle textureView);
 	MaterialTextureTableBuildResult BuildBindingSet(RenderHardwareInterface& renderHardwareInterface);
 
 	bool IsValid() const noexcept { return m_bindingSet != nullptr && m_textureCount > 0u; }
@@ -37,7 +38,7 @@ class MaterialTextureTable final
 	std::uint32_t GetTextureCount() const noexcept { return m_textureCount; }
 
   private:
-	std::vector<const Texture*> m_textures;
+	std::vector<RhiResourceViewHandle> m_textureViews;
 	std::unique_ptr<RenderBindingSet> m_bindingSet;
 	std::uint32_t m_textureCount = 0u;
 };

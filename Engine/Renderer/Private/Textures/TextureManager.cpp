@@ -5,8 +5,11 @@
 #include "Assets/Cooked/CookedTextureReference.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
+#include "RHI/Public/Commands/RenderCommandList.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Resources/Texture.h"
+#include "RHI/Public/Descriptors/RhiDescriptorService.h"
+#include "RHI/Public/Resources/RhiResourceService.h"
+#include "RHI/Public/Resources/RhiUploadService.h"
 #include "Textures/CookedTextureLoader.h"
 
 #include <algorithm>
@@ -15,7 +18,23 @@
 
 static const auto g_textureManagerLogger = Logging::GetOrCreateLogger("Renderer.TextureManager");
 
-std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesystem::path& texturePath) const
+namespace
+{
+	std::uint64_t CalculateTexturePayloadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
+	{
+		std::uint64_t byteCount = 0;
+		for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
+		{
+			for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
+			{
+				byteCount += mipLevel.Data.size();
+			}
+		}
+		return byteCount;
+	}
+}
+
+std::optional<RendererTexture> TextureManager::CreateTextureFromPath(const std::filesystem::path& texturePath) const
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -24,22 +43,83 @@ std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesy
 		    __FILE__,
 		    __LINE__,
 		    "TextureManager::CreateTextureFromPath: render hardware interface is unavailable.");
-		return nullptr;
+		return std::nullopt;
 	}
 
-	RhiTextureUploadDesc textureUpload = CookedTextureLoader::Load(texturePath);
-	if (!textureUpload.IsValid())
+	LoadedTextureData loadedTexture = CookedTextureLoader::Load(texturePath);
+	if (!loadedTexture.IsValid())
 	{
-		return {};
+		return std::nullopt;
 	}
 
-	return m_renderHardwareInterface->GetResourceService().CreateTexture(std::move(textureUpload), texturePath.filename().wstring());
+	const RhiTextureUploadDesc& textureUpload = loadedTexture.Upload;
+	RhiResourceService& resourceService = m_renderHardwareInterface->GetResourceService();
+	RhiDescriptorService& descriptorService = m_renderHardwareInterface->GetDescriptorService();
+	const std::wstring debugName = texturePath.filename().wstring();
+	const RhiTextureResourceDesc resourceDesc{
+	    .Width = textureUpload.Width,
+	    .Height = textureUpload.Height,
+	    .Format = textureUpload.Format,
+	    .MipLevels = textureUpload.GetMipCount(),
+	    .ArraySize = textureUpload.GetArraySize(),
+	    .Dimension = textureUpload.Dimension};
+	RhiOwnedResourceHandle resource = resourceService.CreateTextureResource(
+	    resourceDesc,
+	    ResourceState::CopyDest,
+	    RhiMemoryCategory::Texture,
+	    RhiMemoryResidencyClass::DeviceLocal,
+	    debugName);
+	if (!resource)
+	{
+		return std::nullopt;
+	}
+
+	RenderCommandList& commandList = m_renderHardwareInterface->GetGraphicsCommandList(m_renderHardwareInterface->GetCurrentFrameIndex());
+	if (!m_renderHardwareInterface->GetUploadService().UploadTexture(
+	        commandList,
+	        resource,
+	        textureUpload,
+	        ResourceState::ShaderResource,
+	        debugName))
+	{
+		resourceService.ReleaseOwnedResource(resource);
+		return std::nullopt;
+	}
+
+	const NativeResourceHandle nativeResource = resourceService.GetNativeResource(resource);
+	RhiResourceViewHandle shaderResourceView = descriptorService.CreateResourceView(
+	    RhiResourceViewDesc::TextureShaderResource(
+	        nativeResource,
+	        textureUpload.Format,
+	        RhiTextureViewRange{
+	            .MostDetailedMip = 0,
+	            .MipCount = textureUpload.GetMipCount(),
+	            .FirstArraySlice = 0,
+	            .ArraySize = textureUpload.GetArraySize()},
+	        textureUpload.Dimension));
+	if (!shaderResourceView)
+	{
+		resourceService.ReleaseOwnedResource(resource);
+		return std::nullopt;
+	}
+
+	return RendererTexture{
+	    .Resource = resource,
+	    .ShaderResourceView = shaderResourceView,
+	    .Width = textureUpload.Width,
+	    .Height = textureUpload.Height,
+	    .ArraySize = textureUpload.ArraySize,
+	    .Dimension = textureUpload.Dimension,
+	    .Format = textureUpload.Format,
+	    .FormatIntent = loadedTexture.FormatIntent,
+	    .MipCount = textureUpload.GetMipCount(),
+	    .EstimatedByteSize = CalculateTexturePayloadBytes(textureUpload),
+	    .UploadReady = true};
 }
 
 TextureManager::TextureManager(RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface)
 {
-	LoadDefaults();
 }
 
 TextureManager::~TextureManager() noexcept
@@ -49,13 +129,25 @@ TextureManager::~TextureManager() noexcept
 
 void TextureManager::LoadDefaults()
 {
-	LoadTexture(TextureId::Checker, DefaultTextures::GetPath(DefaultTexture::Checkerboard));
-	LoadTexture(TextureId::DefaultSky, DefaultTextures::GetPath(DefaultTexture::Sky));
+	if (m_defaultsLoaded)
+	{
+		return;
+	}
+	if (GetTexture(TextureId::Checker) == nullptr)
+	{
+		LoadTexture(TextureId::Checker, DefaultTextures::GetPath(DefaultTexture::Checkerboard));
+	}
+	if (GetTexture(TextureId::DefaultSky) == nullptr)
+	{
+		LoadTexture(TextureId::DefaultSky, DefaultTextures::GetPath(DefaultTexture::Sky));
+	}
 	LoadDefaultTextures();
+	m_defaultsLoaded = GetTexture(TextureId::Checker) != nullptr && GetTexture(TextureId::DefaultSky) != nullptr;
 }
 
 void TextureManager::LoadSceneTextures(const TextureSnapshot& textureSnapshot)
 {
+	LoadDefaults();
 	for (const std::filesystem::path& texturePath : textureSnapshot.texturePaths)
 	{
 		LoadFromPath(texturePath);
@@ -73,6 +165,7 @@ void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& rela
 
 	if (m_textures[index])
 	{
+		ReleaseTexture(*m_textures[index]);
 		m_textures[index].reset();
 	}
 
@@ -87,7 +180,7 @@ void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& rela
 	}
 }
 
-Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
+RendererTexture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 {
 	const auto resolvedPathResult = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
 	if (!resolvedPathResult)
@@ -113,10 +206,10 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 
 	if (auto it = m_pathTextures.find(cacheKey); it != m_pathTextures.end())
 	{
-		return it->second.get();
+		return &it->second;
 	}
 
-	auto texture = CreateTextureFromPath(resolvedPath);
+	std::optional<RendererTexture> texture = CreateTextureFromPath(resolvedPath);
 	if (!texture)
 	{
 		SPDLOG_LOGGER_WARN(
@@ -126,16 +219,18 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 		return nullptr;
 	}
 
-	Texture* texturePtr = texture.get();
-	m_pathTextures.emplace(cacheKey, std::move(texture));
-
-	return texturePtr;
+	auto [inserted, wasInserted] = m_pathTextures.emplace(cacheKey, std::move(*texture));
+	return wasInserted ? &inserted->second : nullptr;
 }
 void TextureManager::UnloadTexture(TextureId id) noexcept
 {
 	const auto index = static_cast<std::size_t>(id);
 	if (index < kTextureCount)
 	{
+		if (m_textures[index])
+		{
+			ReleaseTexture(*m_textures[index]);
+		}
 		m_textures[index].reset();
 	}
 }
@@ -150,34 +245,44 @@ void TextureManager::UnloadSceneTextures() noexcept
 			continue;
 		}
 
+		ReleaseTexture(it->second);
 		it = m_pathTextures.erase(it);
 	}
 }
 
 void TextureManager::UnloadAll() noexcept
 {
+	for (auto& entry : m_pathTextures)
+	{
+		ReleaseTexture(entry.second);
+	}
 	m_pathTextures.clear();
 	m_defaultPathTextureKeys.clear();
 	for (auto& texture : m_textures)
 	{
+		if (texture)
+		{
+			ReleaseTexture(*texture);
+		}
 		texture.reset();
 	}
+	m_defaultsLoaded = false;
 }
 
-Texture* TextureManager::GetTexture(TextureId id) noexcept
+RendererTexture* TextureManager::GetTexture(TextureId id) noexcept
 {
-	return const_cast<Texture*>(std::as_const(*this).GetTexture(id));
+	return const_cast<RendererTexture*>(std::as_const(*this).GetTexture(id));
 }
 
-const Texture* TextureManager::GetTexture(TextureId id) const noexcept
+const RendererTexture* TextureManager::GetTexture(TextureId id) const noexcept
 {
 	const auto index = static_cast<std::size_t>(id);
-	return (index < kTextureCount) ? m_textures[index].get() : nullptr;
+	return index < kTextureCount && m_textures[index] ? &*m_textures[index] : nullptr;
 }
 
-const Texture* TextureManager::ResolveDefaultSkyTexture() const noexcept
+const RendererTexture* TextureManager::ResolveDefaultSkyTexture() const noexcept
 {
-	if (const Texture* skyTexture = GetTexture(TextureId::DefaultSky))
+	if (const RendererTexture* skyTexture = GetTexture(TextureId::DefaultSky))
 	{
 		return skyTexture;
 	}
@@ -185,29 +290,29 @@ const Texture* TextureManager::ResolveDefaultSkyTexture() const noexcept
 	return GetTexture(TextureId::Checker);
 }
 
-Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) noexcept
+RendererTexture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) noexcept
 {
-	return const_cast<Texture*>(std::as_const(*this).GetSceneTexture(texturePath));
+	return const_cast<RendererTexture*>(std::as_const(*this).GetSceneTexture(texturePath));
 }
 
-const Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) const noexcept
+const RendererTexture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) const noexcept
 {
 	return FindPathTexture(texturePath);
 }
 
-const Texture* TextureManager::ResolveTextureReferenceOrDefault(
+const RendererTexture* TextureManager::ResolveTextureReferenceOrDefault(
     const Assets::CookedTextureReference* textureReference,
     DefaultTexture fallbackType) const
 {
 	if (textureReference && textureReference->IsValid())
 	{
-		if (const Texture* texture = GetSceneTexture(textureReference->texturePath))
+		if (const RendererTexture* texture = GetSceneTexture(textureReference->texturePath))
 		{
 			return texture;
 		}
 	}
 
-	if (const Texture* texture = FindPathTexture(DefaultTextures::GetPath(fallbackType)))
+	if (const RendererTexture* texture = FindPathTexture(DefaultTextures::GetPath(fallbackType)))
 	{
 		return texture;
 	}
@@ -216,7 +321,7 @@ const Texture* TextureManager::ResolveTextureReferenceOrDefault(
 	    g_textureManagerLogger,
 	    "{}",
 	    std::format("TextureManager: Falling back to checkerboard for {} default texture", DefaultTextures::GetName(fallbackType)));
-	if (const Texture* texture = FindPathTexture(DefaultTextures::GetPath(DefaultTexture::Checkerboard)))
+	if (const RendererTexture* texture = FindPathTexture(DefaultTextures::GetPath(DefaultTexture::Checkerboard)))
 	{
 		return texture;
 	}
@@ -227,7 +332,7 @@ const Texture* TextureManager::ResolveTextureReferenceOrDefault(
 bool TextureManager::IsLoaded(TextureId id) const noexcept
 {
 	const auto index = static_cast<std::size_t>(id);
-	return (index < kTextureCount) && (m_textures[index] != nullptr);
+	return index < kTextureCount && m_textures[index].has_value();
 }
 
 std::size_t TextureManager::GetLoadedCount() const noexcept
@@ -251,7 +356,7 @@ TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot() const
 
 	for (std::size_t index = 0; index < kTextureCount; ++index)
 	{
-		const std::unique_ptr<Texture>& texture = m_textures[index];
+		const std::optional<RendererTexture>& texture = m_textures[index];
 		if (!texture)
 		{
 			continue;
@@ -269,7 +374,7 @@ TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot() const
 
 		const bool defaultOrFallback = m_defaultPathTextureKeys.contains(cacheKey);
 		const TextureDiagnosticsKind kind = defaultOrFallback ? TextureDiagnosticsKind::DefaultPath : TextureDiagnosticsKind::Scene;
-		snapshot.Rows.push_back(BuildDiagnosticsRow(*texture, kind, std::filesystem::path(cacheKey).generic_string()));
+		snapshot.Rows.push_back(BuildDiagnosticsRow(texture, kind, std::filesystem::path(cacheKey).generic_string()));
 	}
 
 	std::sort(
@@ -322,7 +427,7 @@ void TextureManager::RegisterDefaultPathTexture(const std::filesystem::path& tex
 	m_defaultPathTextureKeys.insert(cacheKey);
 }
 
-const Texture* TextureManager::FindPathTexture(const std::filesystem::path& texturePath) const noexcept
+const RendererTexture* TextureManager::FindPathTexture(const std::filesystem::path& texturePath) const noexcept
 {
 	const auto resolvedPath = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
 	if (!resolvedPath)
@@ -338,29 +443,51 @@ const Texture* TextureManager::FindPathTexture(const std::filesystem::path& text
 
 	if (auto it = m_pathTextures.find(cacheKey); it != m_pathTextures.end())
 	{
-		return it->second.get();
+		return &it->second;
 	}
 
 	return nullptr;
 }
 
-TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(const Texture& texture, TextureDiagnosticsKind kind, const std::string& key)
+void TextureManager::ReleaseTexture(RendererTexture& texture) noexcept
 {
-	const TextureRuntimeInfo textureInfo = texture.GetRuntimeInfo();
+	if (m_renderHardwareInterface != nullptr)
+	{
+		if (texture.ShaderResourceView)
+		{
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(texture.ShaderResourceView);
+		}
+		if (texture.Resource)
+		{
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(texture.Resource);
+		}
+	}
+	texture = {};
+}
+
+TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(
+    const RendererTexture& texture,
+    TextureDiagnosticsKind kind,
+    const std::string& key) const
+{
 	TextureDiagnosticsRow row;
 	row.Key = key;
 	row.Kind = kind;
-	row.Dimension = textureInfo.Dimension;
-	row.FormatIntent = textureInfo.FormatIntent;
-	row.ResidencyState = textureInfo.IsValid ? TextureDiagnosticsResidencyState::Resident : TextureDiagnosticsResidencyState::Unloaded;
-	row.Width = textureInfo.Width;
-	row.Height = textureInfo.Height;
-	row.ArraySize = textureInfo.ArraySize;
-	row.Format = PixelFormatName(textureInfo.Format);
-	row.MipCount = textureInfo.MipCount;
-	row.EstimatedByteSize = textureInfo.EstimatedByteSize;
-	row.GpuShaderResourceViewId = textureInfo.GpuShaderResourceViewId;
-	row.Loaded = textureInfo.IsValid;
+	row.Dimension = texture.Dimension;
+	row.FormatIntent = texture.FormatIntent;
+	row.ResidencyState = texture ? TextureDiagnosticsResidencyState::Resident : TextureDiagnosticsResidencyState::Unloaded;
+	row.Width = texture.Width;
+	row.Height = texture.Height;
+	row.ArraySize = texture.ArraySize;
+	row.Format = PixelFormatName(texture.Format);
+	row.MipCount = texture.MipCount;
+	row.EstimatedByteSize = texture.EstimatedByteSize;
+	row.GpuShaderResourceViewId = m_renderHardwareInterface != nullptr ?
+	                                  m_renderHardwareInterface->GetDescriptorService()
+	                                      .GetResourceViewGpuHandle(texture.ShaderResourceView)
+	                                      .Value :
+	                                  0;
+	row.Loaded = static_cast<bool>(texture);
 	row.StreamManaged = false;
 	return row;
 }

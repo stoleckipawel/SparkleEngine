@@ -146,6 +146,24 @@ VkCommandBuffer VulkanCommandContext::GetCommandBuffer(std::uint32_t frameIndex)
 	return GetFrameState(frameIndex).CommandBuffer;
 }
 
+bool VulkanCommandContext::IsCommandBufferRecording(VkCommandBuffer commandBuffer) const noexcept
+{
+	if (commandBuffer == VK_NULL_HANDLE)
+	{
+		return false;
+	}
+
+	for (const FrameState& frameState : m_frames)
+	{
+		if (frameState.CommandBuffer == commandBuffer)
+		{
+			return frameState.IsRecording;
+		}
+	}
+
+	return false;
+}
+
 VkSemaphore VulkanCommandContext::GetImageAvailableSemaphore(std::uint32_t frameIndex) const noexcept
 {
 	return GetFrameState(frameIndex).ImageAvailableSemaphore;

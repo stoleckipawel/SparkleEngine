@@ -2,6 +2,7 @@
 
 #include "../Formats/PixelFormat.h"
 #include "../Interop/ResourceState.h"
+#include "TextureTypes.h"
 
 #include <array>
 #include <cstdint>
@@ -65,6 +66,8 @@ struct RhiTextureResourceDesc
 	std::uint32_t Height = 1;
 	PixelFormat Format = PixelFormat::Unknown;
 	std::uint16_t MipLevels = 1;
+	std::uint16_t ArraySize = 1;
+	TextureResourceDimension Dimension = TextureResourceDimension::Texture2D;
 	bool AllowRenderTarget = false;
 	bool AllowDepthStencil = false;
 	bool AllowUnorderedAccess = false;

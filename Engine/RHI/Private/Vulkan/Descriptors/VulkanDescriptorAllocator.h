@@ -47,6 +47,7 @@ class VulkanDescriptorAllocator final
 	void ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept;
 	void WriteImageDescriptor(RhiCpuDescriptorHandle destination, ERhiResourceViewKind viewKind, VkImageView imageView) noexcept;
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
+	bool WriteRegisteredDescriptor(RhiCpuDescriptorHandle destination, RhiGpuDescriptorHandle source) noexcept;
 
 	VkDescriptorSet AllocateTransientSet(
 	    VkDescriptorSetLayout layout,

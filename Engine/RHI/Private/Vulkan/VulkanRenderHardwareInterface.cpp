@@ -3,7 +3,6 @@
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
 #include "Frame/RhiFrameConstants.h"
-#include "Resources/Texture.h"
 #include "Shaders/CookedShaderPackage.h"
 #include "Vulkan/Capture/VulkanCaptureService.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
@@ -19,8 +18,8 @@
 #include "Vulkan/Pipeline/VulkanPipelineService.h"
 #include "Vulkan/Presentation/VulkanPresentationService.h"
 #include "Vulkan/RayTracing/VulkanRayTracingServices.h"
-#include "Vulkan/Resources/VulkanConstantBufferManager.h"
 #include "Vulkan/Resources/VulkanResourceService.h"
+#include "Vulkan/Resources/VulkanUploadService.h"
 #include "Vulkan/Samplers/VulkanSamplerLibrary.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/UI/VulkanImGuiBackend.h"
@@ -88,7 +87,7 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	m_rayTracingServices = std::make_unique<VulkanRayTracingServices>(rhi, memoryAllocator);
 	m_descriptorManager = std::make_unique<VulkanDescriptorManager>(rhi, memoryAllocator, m_capabilities);
 	m_resourceService = std::make_unique<VulkanResourceService>(rhi, commandContext, memoryAllocator, *m_descriptorManager, m_capabilities);
-	m_constantBufferManager = std::make_unique<VulkanConstantBufferManager>(memoryAllocator);
+	m_uploadService = std::make_unique<VulkanUploadService>(commandContext, memoryAllocator);
 	m_samplerLibrary = std::make_unique<VulkanSamplerLibrary>(rhi, *m_descriptorManager);
 	m_descriptorManager->SetSamplerLibrary(*m_samplerLibrary);
 	m_imguiBackend = std::make_unique<VulkanImGuiBackend>(*this);
@@ -109,7 +108,7 @@ VulkanRenderHardwareInterface::~VulkanRenderHardwareInterface() noexcept
 	m_samplerLibrary.reset();
 	m_imguiBackend.reset();
 	m_resourceService.reset();
-	m_constantBufferManager.reset();
+	m_uploadService.reset();
 }
 
 ERhiBackendApi VulkanRenderHardwareInterface::GetBackendApi() const noexcept
@@ -154,12 +153,12 @@ RhiPipelineService& VulkanRenderHardwareInterface::GetPipelineService() noexcept
 
 RhiUploadService& VulkanRenderHardwareInterface::GetUploadService() noexcept
 {
-	return *m_constantBufferManager;
+	return *m_uploadService;
 }
 
 const RhiUploadService& VulkanRenderHardwareInterface::GetUploadService() const noexcept
 {
-	return *m_constantBufferManager;
+	return *m_uploadService;
 }
 
 RhiRayTracingService& VulkanRenderHardwareInterface::GetRayTracingService() noexcept
@@ -470,9 +469,9 @@ void VulkanRenderHardwareInterface::SetCurrentFrameIndex(std::uint32_t frameInde
 
 void VulkanRenderHardwareInterface::ResetTransientFrameResources() noexcept
 {
-	if (m_constantBufferManager != nullptr)
+	if (m_uploadService != nullptr)
 	{
-		m_constantBufferManager->BeginFrame(m_currentFrameIndex);
+		m_uploadService->BeginFrame(m_currentFrameIndex);
 	}
 }
 

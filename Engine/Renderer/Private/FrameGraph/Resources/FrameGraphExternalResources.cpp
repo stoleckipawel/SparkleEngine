@@ -87,6 +87,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
+				access.ownsShaderResourceView = static_cast<bool>(access.shaderResourceView);
 			}
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
@@ -115,6 +116,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
+				access.ownsShaderResourceView = static_cast<bool>(access.shaderResourceView);
 			}
 		}
 		else if (metadata.kind == FrameGraphResourceKind::Buffer)
@@ -126,6 +128,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				        access.resource,
 				        metadata.bufferDesc.sizeInBytes,
 				        metadata.bufferDesc.strideInBytes));
+				access.ownsShaderResourceView = static_cast<bool>(access.shaderResourceView);
 			}
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
@@ -189,8 +192,12 @@ void FrameGraph::ReleaseExternalResourceViews(FrameGraphResourceHandle handle) n
 
 	if (access.shaderResourceView)
 	{
-		m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.shaderResourceView);
+		if (access.ownsShaderResourceView)
+		{
+			m_renderHardwareInterface->GetDescriptorService().ReleaseResourceView(access.shaderResourceView);
+		}
 		access.shaderResourceView = {};
+		access.ownsShaderResourceView = false;
 	}
 
 	if (access.unorderedAccessView)

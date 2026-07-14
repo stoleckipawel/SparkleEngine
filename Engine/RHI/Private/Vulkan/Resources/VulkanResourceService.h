@@ -7,12 +7,10 @@
 #include <memory>
 #include <string_view>
 
-class Texture;
 class VulkanCommandContext;
 class VulkanDescriptorManager;
 class VulkanGpuMemoryAllocator;
 class VulkanRhi;
-class VulkanTextureFactory;
 
 class VulkanResourceService final : public RhiResourceService
 {
@@ -30,7 +28,6 @@ class VulkanResourceService final : public RhiResourceService
 	VulkanResourceService(VulkanResourceService&&) = delete;
 	VulkanResourceService& operator=(VulkanResourceService&&) = delete;
 
-	std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateTextureResource(
 	    const RhiTextureResourceDesc& desc,
 	    ResourceState initialState,
@@ -101,5 +98,4 @@ class VulkanResourceService final : public RhiResourceService
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	VulkanDescriptorManager* m_descriptorManager = nullptr;
 	const RhiCapabilities* m_capabilities = nullptr;
-	std::unique_ptr<VulkanTextureFactory> m_textureFactory;
 };

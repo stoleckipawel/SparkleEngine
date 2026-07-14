@@ -45,6 +45,10 @@ class SPARKLE_RHI_API RhiDescriptorService
 	virtual void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept = 0;
 	virtual RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept = 0;
 	virtual RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) = 0;
+	virtual bool WriteResourceView(
+	    RhiDescriptorTableHandle tableHandle,
+	    std::uint32_t descriptorIndex,
+	    RhiResourceViewHandle view) noexcept = 0;
 	virtual void ReleaseResourceView(RhiResourceViewHandle view) noexcept = 0;
 	virtual RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept = 0;
 	virtual RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept = 0;

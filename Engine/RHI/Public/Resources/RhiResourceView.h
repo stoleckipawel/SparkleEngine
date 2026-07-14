@@ -4,6 +4,7 @@
 #include "../Formats/PixelFormat.h"
 #include "../Interop/RhiNativeHandles.h"
 #include "RhiResourceDesc.h"
+#include "TextureTypes.h"
 
 #include <cstdint>
 
@@ -42,12 +43,22 @@ struct RhiResourceViewDesc
 	NativeResourceHandle Resource = {};
 	PixelFormat Format = PixelFormat::Unknown;
 	RhiTextureViewRange Texture = {};
+	TextureResourceDimension TextureDimension = TextureResourceDimension::Texture2D;
 	RhiBufferViewRange Buffer = {};
 	RhiGpuVirtualAddress AccelerationStructureGpuAddress = 0;
 
-	static constexpr RhiResourceViewDesc TextureShaderResource(NativeResourceHandle resource, PixelFormat format) noexcept
+	static constexpr RhiResourceViewDesc TextureShaderResource(
+	    NativeResourceHandle resource,
+	    PixelFormat format,
+	    RhiTextureViewRange range = {},
+	    TextureResourceDimension dimension = TextureResourceDimension::Texture2D) noexcept
 	{
-		return RhiResourceViewDesc{.Kind = ERhiResourceViewKind::TextureShaderResource, .Resource = resource, .Format = format};
+		return RhiResourceViewDesc{
+		    .Kind = ERhiResourceViewKind::TextureShaderResource,
+		    .Resource = resource,
+		    .Format = format,
+		    .Texture = range,
+		    .TextureDimension = dimension};
 	}
 
 	static constexpr RhiResourceViewDesc TextureUnorderedAccess(NativeResourceHandle resource, PixelFormat format) noexcept

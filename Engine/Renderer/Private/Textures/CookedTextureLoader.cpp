@@ -91,7 +91,7 @@ static bool TryResolveFormatIntent(std::uint32_t storedValue, TextureFormatInten
 	return false;
 }
 
-RhiTextureUploadDesc CookedTextureLoader::Load(const std::filesystem::path& texturePath)
+LoadedTextureData CookedTextureLoader::Load(const std::filesystem::path& texturePath)
 {
 	const std::filesystem::path resolvedPath = Filesystem::ResolveAssetPathValidated(texturePath, AssetType::Texture);
 	std::vector<std::uint8_t> fileBytes;
@@ -143,7 +143,6 @@ RhiTextureUploadDesc CookedTextureLoader::Load(const std::filesystem::path& text
 	textureUpload.ArraySize = header.GetArraySize();
 	textureUpload.Dimension = header.GetDimension();
 	textureUpload.Format = PixelFormatFromSerializedTextureFormat(header.format);
-	textureUpload.FormatIntent = formatIntent;
 	textureUpload.ArraySlices.resize(textureUpload.ArraySize);
 
 	const std::uint32_t mipCount = static_cast<std::uint32_t>(mipHeaders.size() / textureUpload.ArraySize);
@@ -185,5 +184,5 @@ RhiTextureUploadDesc CookedTextureLoader::Load(const std::filesystem::path& text
 		return {};
 	}
 
-	return textureUpload;
+	return LoadedTextureData{.Upload = std::move(textureUpload), .FormatIntent = formatIntent};
 }

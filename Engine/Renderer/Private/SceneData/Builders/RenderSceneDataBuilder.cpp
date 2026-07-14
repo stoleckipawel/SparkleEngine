@@ -14,6 +14,7 @@
 #include "SceneData/RenderMeshSnapshotAdapter.h"
 #include "Scene/Meshes/MeshSnapshot.h"
 #include "Textures/TextureManager.h"
+#include "Textures/RendererTexture.h"
 
 #include <cstddef>
 #include <unordered_map>
@@ -89,11 +90,29 @@ void RenderSceneDataBuilder::BuildSky(const RenderSceneSnapshot& sceneSnapshot, 
 	{
 		return;
 	}
+	const auto setSkyTexture = [&sceneData](const RendererTexture* texture)
+	{
+		if (texture == nullptr || !*texture)
+		{
+			return;
+		}
+
+		sceneData.sky.textureResource = texture->Resource;
+		sceneData.sky.textureView = texture->ShaderResourceView;
+		sceneData.sky.textureWidth = texture->Width;
+		sceneData.sky.textureHeight = texture->Height;
+		sceneData.sky.textureArraySize = texture->ArraySize;
+		sceneData.sky.textureDimension = texture->Dimension;
+		sceneData.sky.textureFormat = texture->Format;
+		sceneData.sky.textureFormatIntent = texture->FormatIntent;
+		sceneData.sky.textureMipCount = texture->MipCount;
+		sceneData.sky.textureEstimatedByteSize = texture->EstimatedByteSize;
+	};
 
 	const SceneSkyDesc* sky = sceneSnapshot.sky.sky ? &*sceneSnapshot.sky.sky : nullptr;
 	if (sky == nullptr)
 	{
-		sceneData.sky.skyTexture = m_textureManager->ResolveDefaultSkyTexture();
+		setSkyTexture(m_textureManager->ResolveDefaultSkyTexture());
 		return;
 	}
 
@@ -102,19 +121,20 @@ void RenderSceneDataBuilder::BuildSky(const RenderSceneSnapshot& sceneSnapshot, 
 	sceneData.sky.intensity = sky->intensity;
 	if (!sky->skyTexture.IsValid())
 	{
-		sceneData.sky.skyTexture = m_textureManager->ResolveDefaultSkyTexture();
+		setSkyTexture(m_textureManager->ResolveDefaultSkyTexture());
 		return;
 	}
 
-	sceneData.sky.skyTexture = m_textureManager->GetSceneTexture(sky->skyTexture.texturePath);
-	if (sceneData.sky.skyTexture == nullptr)
+	const RendererTexture* skyTexture = m_textureManager->GetSceneTexture(sky->skyTexture.texturePath);
+	if (skyTexture == nullptr)
 	{
-		sceneData.sky.skyTexture = m_textureManager->GetTexture(TextureId::Checker);
+		skyTexture = m_textureManager->GetTexture(TextureId::Checker);
 		SPDLOG_LOGGER_ERROR(
 		    g_renderSceneDataBuilderLogger,
 		    "RenderSceneDataBuilder: level sky texture '{}' is unavailable; using the diagnostic checker texture.",
 		    sky->skyTexture.texturePath);
 	}
+	setSkyTexture(skyTexture);
 }
 
 void RenderSceneDataBuilder::BuildMaterials(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const

@@ -109,10 +109,15 @@ RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResou
 		case ERhiResourceViewKind::TextureUnorderedAccess:
 		{
 			const VkImageView imageView = CreateImageView(desc);
-			RhiGpuDescriptorHandle descriptorHandle = {};
-			if (imageView != VK_NULL_HANDLE)
+			if (imageView == VK_NULL_HANDLE)
 			{
-				descriptorHandle = m_allocator.RegisterImageDescriptor(desc.Kind, imageView);
+				return {};
+			}
+			const RhiGpuDescriptorHandle descriptorHandle = m_allocator.RegisterImageDescriptor(desc.Kind, imageView);
+			if (!descriptorHandle)
+			{
+				vkDestroyImageView(m_rhi.GetDevice(), imageView, nullptr);
+				return {};
 			}
 			return AddResourceView(
 			    ResourceViewRecord{
@@ -129,17 +134,24 @@ RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResou
 		}
 		case ERhiResourceViewKind::RenderTarget:
 		case ERhiResourceViewKind::DepthStencil:
+		{
+			const VkImageView imageView = CreateImageView(desc);
+			if (imageView == VK_NULL_HANDLE)
+			{
+				return {};
+			}
 			return AddResourceView(
 			    ResourceViewRecord{
 			        .Kind = desc.Kind,
 			        .Image = static_cast<VkImage>(desc.Resource.Value),
-			        .ImageView = CreateImageView(desc),
+			        .ImageView = imageView,
 			        .Format = desc.Format,
 			        .Texture = desc.Texture,
 			        .Usage = desc.Kind == ERhiResourceViewKind::DepthStencil ?
 			                     static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) :
 			                     static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT),
 			        .OwnsImageView = true});
+		}
 		case ERhiResourceViewKind::BufferShaderResource:
 		case ERhiResourceViewKind::BufferUnorderedAccess:
 		{
@@ -200,6 +212,21 @@ void VulkanDescriptorManager::ReleaseResourceView(RhiResourceViewHandle view) no
 	const std::uint16_t preservedGeneration = record->Generation;
 	*record = {};
 	record->Generation = preservedGeneration;
+}
+
+bool VulkanDescriptorManager::WriteResourceView(
+    RhiDescriptorTableHandle tableHandle,
+    std::uint32_t descriptorIndex,
+    RhiResourceViewHandle view) noexcept
+{
+	const ResourceViewRecord* const resourceView = FindResourceViewRecord(view);
+	if (resourceView == nullptr || !resourceView->DescriptorHandle)
+	{
+		return false;
+	}
+
+	const RhiCpuDescriptorHandle destination = m_allocator.GetDescriptorTableCpuHandle(tableHandle, descriptorIndex);
+	return destination && m_allocator.WriteRegisteredDescriptor(destination, resourceView->DescriptorHandle);
 }
 
 RhiCpuDescriptorHandle VulkanDescriptorManager::GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept
@@ -422,7 +449,7 @@ VkImageView VulkanDescriptorManager::CreateImageView(const RhiResourceViewDesc& 
 	    .pNext = nullptr,
 	    .flags = 0,
 	    .image = static_cast<VkImage>(desc.Resource.Value),
-	    .viewType = VK_IMAGE_VIEW_TYPE_2D,
+	    .viewType = desc.TextureDimension == TextureResourceDimension::TextureCube ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D,
 	    .format = ResolveViewFormat(desc),
 	    .components =
 	        VkComponentMapping{
