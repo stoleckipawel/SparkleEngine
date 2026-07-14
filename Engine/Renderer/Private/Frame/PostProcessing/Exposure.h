@@ -10,5 +10,5 @@ void AddExposurePass(
 	FrameGraphBuilder& builder,
 	RenderViewportExtent sceneExtent,
 	FrameGraphTextureHandle finalSceneColor,
-	const FrameGraphTextureHistoryHandles& history,
+	const FrameGraphTextureHistory& history,
 	FrameGraphTextureHandle exposure);

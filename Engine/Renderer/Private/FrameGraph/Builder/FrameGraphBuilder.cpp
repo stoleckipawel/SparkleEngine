@@ -48,6 +48,11 @@ FrameGraphTextureHandle FrameGraphBuilder::CreateTexture(const FrameGraphTexture
 	return m_frameGraph.CreateTexture(desc);
 }
 
+FrameGraphTextureHistory FrameGraphBuilder::CreateTextureHistory(const FrameGraphTextureDesc& desc) noexcept
+{
+	return m_frameGraph.CreateTextureHistory(desc);
+}
+
 FrameGraphBufferHandle FrameGraphBuilder::ReservePersistentBuffer(
     const FrameGraphBufferDesc& desc,
     ResourceState initialState) noexcept

@@ -3,8 +3,9 @@
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Frame/Builders/PerFrameDataBuilder.h"
 #include "Frame/Core/FrameAssembly.h"
+#include "Frame/Lighting/LightingHistoryContinuity.h"
 #include "Providers/RendererImageProviderStack.h"
-#include "Resources/History/PersistentFrameHistory.h"
+#include "Resources/History/FrameHistory.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "ShaderData/PerFrameConstantBufferData.h"
@@ -13,6 +14,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -66,14 +68,12 @@ class FramePipeline final
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
 	void ResetTemporalState(std::string_view reason) noexcept;
-	void AdvanceTemporalResetGeneration() noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
 	const FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() const noexcept;
 
 	RendererSystemRoot* m_systems = nullptr;
-	PersistentFrameHistory m_history;
 	std::unique_ptr<FrameGraph> m_frameGraph;
 	PerFrameDataBuilder m_perFrameDataBuilder;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
@@ -85,12 +85,11 @@ class FramePipeline final
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	FrameAssemblyResourceLayout m_frameResources = {};
 	PerFrameConstantBufferData m_perFrameData = {};
+	std::optional<LightingHistoryContinuity> m_previousLightingHistory;
 	RenderSceneSnapshot m_sceneSnapshot = {};
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;
 	GBufferMode m_gBufferMode = GBufferMode::Rasterized;
 	LightingMode m_lightingMode = LightingMode::RestirPathTraced;
-	std::uint64_t m_temporalResetGeneration = 1u;
-	std::uint64_t m_lastBuiltTemporalResetGeneration = 0u;
 	ImageProviderGraphKey m_imageProviderFrameGraphKey = {};
 };

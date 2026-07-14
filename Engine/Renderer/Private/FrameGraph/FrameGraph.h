@@ -15,11 +15,14 @@
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHistory.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Passes/Core/ShaderPass.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Frame/RhiFrameConstants.h"
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -173,6 +176,9 @@ class FrameGraph
 	    const FrameGraphTextureDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
+	FrameGraphTextureHistory CreateTextureHistory(const FrameGraphTextureDesc& desc) noexcept;
+	void InvalidateTextureHistory(FrameGraphTextureHistory history) noexcept;
+	bool IsTextureHistoryValid(FrameGraphTextureHistory history) const noexcept;
 	FrameGraphBufferHandle ReservePersistentBuffer(
 	    const FrameGraphBufferDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
@@ -392,7 +398,27 @@ class FrameGraph
 	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
 	    const noexcept;
 	void ValidateExecutionBindings(const FrameGraphPlan& plan) const noexcept;
+	void PrepareTextureHistories(const FrameGraphPlan& plan);
+	void CommitTextureHistories() const noexcept;
+	void ReleaseTextureHistories() noexcept;
 	FrameGraphResourceHandle AllocateDynamicResourceHandle() noexcept;
+
+	struct TextureHistoryRecord
+	{
+		FrameGraphTextureHistory handles = {};
+		FrameGraphTextureDesc desc = {};
+		std::array<RhiOwnedResourceHandle, RhiFrameConstants::FramesInFlight> resources = {};
+		std::array<ResourceState, RhiFrameConstants::FramesInFlight> states = {};
+		std::array<std::uint64_t, RhiFrameConstants::FramesInFlight> generations = {};
+		std::uint64_t generation = 1u;
+		std::uint32_t previousIndex = 0u;
+		std::uint32_t currentIndex = 0u;
+		bool usedThisFrame = false;
+		bool writtenThisFrame = false;
+		bool allowRenderTarget = false;
+		bool allowDepthStencil = false;
+		bool allowUnorderedAccess = false;
+	};
 
 	struct VirtualTransientResource
 	{
@@ -420,6 +446,7 @@ class FrameGraph
 	std::vector<FrameGraphProductRoot> m_productRoots;
 	std::uint32_t m_nextDynamicResourceIndex = 0;
 	std::vector<VirtualTransientResource> m_virtualTransientResources;
+	mutable std::vector<TextureHistoryRecord> m_textureHistories;
 	mutable std::unique_ptr<FrameGraphTransientAllocator> m_transientAllocator;
 	std::vector<std::unique_ptr<AllocatedParameterInstanceBase>> m_allocatedParameterInstances;
 };

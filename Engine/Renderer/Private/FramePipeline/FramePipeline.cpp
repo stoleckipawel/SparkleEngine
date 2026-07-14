@@ -11,8 +11,6 @@
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
-#include "Frame/Lighting/ReferenceLightingState.h"
-#include "Frame/Lighting/RestirLightingState.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
@@ -36,9 +34,7 @@
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
-FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
-	m_systems(&systems),
-	m_history(systems.GetRenderHardwareInterface())
+FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&systems)
 {
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
 	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
@@ -125,14 +121,8 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 	m_frameGraphOutputExtent = dependencies.outputExtent;
 	m_frameGraphPresentsToBackBuffer = dependencies.presentSceneToBackBuffer;
 	m_frameResources = buildResult.Resources;
-	m_history.SetGraphLayout(m_frameResources.History);
 	m_gBufferMode = CVarGBufferMode.Get();
 	m_lightingMode = GetLightingMode();
-	m_history.Configure(
-	    FrameHistoryRequirements{
-	        .RenderExtent = m_frameGraphRenderExtent,
-	        .ReferenceLighting = m_lightingMode == LightingMode::ReferencePathTraced,
-	        .RestirLighting = m_lightingMode == LightingMode::RestirPathTraced});
 	m_imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	m_frameGraph = std::move(buildResult.Graph);
 }
@@ -167,18 +157,10 @@ void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noe
 
 void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
 {
-	AdvanceTemporalResetGeneration();
+	InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
+	m_previousLightingHistory.reset();
 	m_systems->GetTemporalDataBuilder().ResetHistory(reason);
 	m_systems->GetImageProviders().ResetHistory();
-}
-
-void FramePipeline::AdvanceTemporalResetGeneration() noexcept
-{
-	++m_temporalResetGeneration;
-	if (m_temporalResetGeneration == 0)
-	{
-		++m_temporalResetGeneration;
-	}
 }
 
 void FramePipeline::BeginFrame() noexcept
@@ -325,22 +307,28 @@ void FramePipeline::RecordFrame() noexcept
 	FrameContext& frame = *frameSlot;
 	if (GetLightingMode() == LightingMode::RestirPathTraced)
 	{
-		const std::uint64_t historyKey = BuildRestirLightingHistoryKey(frame);
-		if (m_history.SetRestirLightingSemanticKey(historyKey))
+		const bool lightingChanged = !m_previousLightingHistory ||
+		                             frame.lightingHistory.RestirLighting != m_previousLightingHistory->RestirLighting;
+		if (lightingChanged)
 		{
+			InvalidateRestirLightingHistory(*m_frameGraph, m_frameResources.History);
 			m_systems->GetImageProviders().ResetHistory();
 		}
 	}
 	else if (GetLightingMode() == LightingMode::ReferencePathTraced)
 	{
-		m_history.SetReferenceLightingSemanticKey(BuildReferenceLightingHistoryKey(frame));
+		const bool lightingChanged = !m_previousLightingHistory ||
+		                             frame.lightingHistory.ReferenceLighting != m_previousLightingHistory->ReferenceLighting;
+		if (lightingChanged)
+		{
+			m_frameGraph->InvalidateTextureHistory(m_frameResources.History.ReferenceLighting);
+		}
 	}
-	if (frame.mainView.perTemporalData.HistoryValid == 0u &&
-	    m_lastBuiltTemporalResetGeneration == m_temporalResetGeneration)
+	if (frame.mainView.perTemporalData.HistoryValid == 0u)
 	{
-		AdvanceTemporalResetGeneration();
+		InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
 	}
-	m_lastBuiltTemporalResetGeneration = m_temporalResetGeneration;
+	m_previousLightingHistory = frame.lightingHistory;
 
 	m_systems->GetImageProviders().SetupFrame(
 	    ImageProviderFrameContext{
@@ -375,7 +363,6 @@ void FramePipeline::RecordFrame() noexcept
 		}
 	}
 
-	m_history.Bind(*m_frameGraph, renderHardwareInterface.GetCurrentFrameIndex(), m_temporalResetGeneration);
 	if (frame.sceneData.sky.HasTexture())
 	{
 		const RendererTexture& skyTexture = *frame.sceneData.sky.texture;
@@ -444,7 +431,7 @@ void FramePipeline::RecordFrame() noexcept
 	    .HardwareInterface = renderHardwareInterface,
 	    .RuntimeManager = m_systems->GetPipelineStateManager(),
 	    .PerFrame = m_perFrameData,
-	    .History = m_history.GetValidity(),
+	    .History = ResolveFrameHistoryValidity(*m_frameGraph, m_frameResources.History),
 	    .Textures = &m_systems->GetTextureManager(),
 	    .RayTracing = &rayTracingPassServices,
 	    .ImageProviders = &imageProviderPassServices};
@@ -465,6 +452,5 @@ void FramePipeline::SubmitFrame() noexcept
 
 void FramePipeline::EndFrame() noexcept
 {
-	m_history.CommitFrame();
 	m_systems->GetBackend().AdvanceFrameInFlight();
 }

@@ -25,10 +25,12 @@ FrameGraph::~FrameGraph()
 	}
 
 	ReleaseExternalResourceViews();
+	ReleaseTextureHistories();
 }
 
 const FrameGraphPlan& FrameGraph::Compile()
 {
+	PrepareTextureHistories(m_compiledPlan);
 	SyncImportedResourceAccesses();
 	BuildTransientMaterializationPlan(m_compiledPlan);
 	FrameGraphCompiler compiler(m_compiledPlan, m_resourceRegistry, m_resourceStateTracker);

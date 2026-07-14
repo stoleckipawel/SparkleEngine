@@ -15,6 +15,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHistory.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
@@ -101,6 +102,7 @@ class FrameGraphBuilder final
 	    const FrameGraphTextureDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
+	FrameGraphTextureHistory CreateTextureHistory(const FrameGraphTextureDesc& desc) noexcept;
 	FrameGraphBufferHandle ReservePersistentBuffer(
 	    const FrameGraphBufferDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;

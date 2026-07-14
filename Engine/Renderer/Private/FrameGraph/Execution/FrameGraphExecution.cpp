@@ -86,6 +86,7 @@ void FrameGraph::Execute(
 		graphDiagnostics.InsertFrameEndResourceBarrierMarker();
 	}
 	EmitCompiledBarriers(cmd, "FrameEnd", plan.finalBarriers);
+	CommitTextureHistories();
 }
 
 void FrameGraph::ValidateExecutionBindings(const FrameGraphPlan& plan) const noexcept
