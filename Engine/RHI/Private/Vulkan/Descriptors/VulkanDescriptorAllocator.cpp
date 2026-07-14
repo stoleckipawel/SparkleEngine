@@ -77,7 +77,17 @@ RhiDescriptorAllocation VulkanDescriptorAllocator::AllocateDescriptor(ERhiDescri
 
 void VulkanDescriptorAllocator::BeginFrame(std::uint32_t frameIndex) noexcept
 {
+	if (frameIndex >= RhiFrameConstants::FramesInFlight)
+	{
+		return;
+	}
+
 	std::scoped_lock lock(m_mutex);
+	for (const std::uint32_t tableIndex : m_retiredTableIndices[frameIndex])
+	{
+		RecycleTableRecord(tableIndex);
+	}
+	m_retiredTableIndices[frameIndex].clear();
 	m_currentFrameIndex = frameIndex;
 	if (m_framePoolPages.size() <= frameIndex)
 	{
@@ -101,25 +111,30 @@ void VulkanDescriptorAllocator::BeginFrame(std::uint32_t frameIndex) noexcept
 
 void VulkanDescriptorAllocator::ReleaseDescriptor(ERhiDescriptorAllocatorType, const RhiDescriptorAllocation& allocation) noexcept
 {
-	std::uint32_t tableIndex = 0;
+	RhiDescriptorTableHandle tableHandle{};
 	std::uint32_t descriptorIndex = 0;
-	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(allocation.CpuHandle, tableIndex, descriptorIndex) || descriptorIndex != 0)
+	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(allocation.CpuHandle, tableHandle, descriptorIndex) || descriptorIndex != 0)
 	{
 		return;
 	}
-	ReleaseDescriptorTable(VulkanDescriptorHandles::MakeTableHandle(tableIndex));
+	ReleaseDescriptorTable(tableHandle);
 }
 
 RhiDescriptorTableHandle VulkanDescriptorAllocator::AllocateDescriptorTable(
     ERhiDescriptorAllocatorType descriptorType,
     std::uint32_t descriptorCount)
 {
-	if (descriptorCount == 0)
+	if (descriptorCount == 0 || descriptorCount > VulkanDescriptorHandles::MaximumCpuDescriptorCount)
 	{
 		return {};
 	}
 
 	std::scoped_lock lock(m_mutex);
+	if (m_freeTableIndices.empty() && m_tables.size() >= RhiDescriptorTableHandle::MaximumRecordCount)
+	{
+		return {};
+	}
+
 	DescriptorTableRecord record{};
 	record.Type = descriptorType;
 	record.Entries.assign(descriptorCount, DescriptorEntry{});
@@ -129,12 +144,13 @@ RhiDescriptorTableHandle VulkanDescriptorAllocator::AllocateDescriptorTable(
 	{
 		const std::uint32_t index = m_freeTableIndices.back();
 		m_freeTableIndices.pop_back();
+		record.Generation = m_tables[index].Generation;
 		m_tables[index] = std::move(record);
-		return VulkanDescriptorHandles::MakeTableHandle(index);
+		return VulkanDescriptorHandles::MakeTableHandle(index, m_tables[index].Generation);
 	}
 
 	m_tables.push_back(std::move(record));
-	return VulkanDescriptorHandles::MakeTableHandle(static_cast<std::uint32_t>(m_tables.size() - 1));
+	return VulkanDescriptorHandles::MakeTableHandle(static_cast<std::uint32_t>(m_tables.size() - 1), 0u);
 }
 
 RhiCpuDescriptorHandle VulkanDescriptorAllocator::GetDescriptorTableCpuHandle(
@@ -147,7 +163,7 @@ RhiCpuDescriptorHandle VulkanDescriptorAllocator::GetDescriptorTableCpuHandle(
 	{
 		return {};
 	}
-	return VulkanDescriptorHandles::MakeCpuDescriptorHandle(tableHandle.Value - 1u, descriptorIndex);
+	return VulkanDescriptorHandles::MakeCpuDescriptorHandle(tableHandle, descriptorIndex);
 }
 
 void VulkanDescriptorAllocator::ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept
@@ -158,8 +174,17 @@ void VulkanDescriptorAllocator::ReleaseDescriptorTable(RhiDescriptorTableHandle 
 	{
 		return;
 	}
-	*record = DescriptorTableRecord{};
-	m_freeTableIndices.push_back(tableHandle.Value - 1u);
+
+	std::uint32_t tableIndex = 0;
+	std::uint16_t generation = 0;
+	if (!tableHandle.Decode(tableIndex, generation))
+	{
+		return;
+	}
+
+	record->Entries.clear();
+	record->Allocated = false;
+	m_retiredTableIndices[m_currentFrameIndex].push_back(tableIndex);
 }
 
 RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterImageDescriptor(ERhiResourceViewKind viewKind, VkImageView imageView)
@@ -290,38 +315,40 @@ void VulkanDescriptorAllocator::WriteImageDescriptor(
     ERhiResourceViewKind viewKind,
     VkImageView imageView) noexcept
 {
-	std::uint32_t tableIndex = 0;
+	RhiDescriptorTableHandle tableHandle{};
 	std::uint32_t descriptorIndex = 0;
-	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(destination, tableIndex, descriptorIndex) || imageView == VK_NULL_HANDLE)
+	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(destination, tableHandle, descriptorIndex) || imageView == VK_NULL_HANDLE)
 	{
 		return;
 	}
 
 	std::scoped_lock lock(m_mutex);
-	if (tableIndex >= m_tables.size() || descriptorIndex >= m_tables[tableIndex].Entries.size())
+	DescriptorTableRecord* const record = FindTableRecord(tableHandle);
+	if (record == nullptr || descriptorIndex >= record->Entries.size())
 	{
 		return;
 	}
-	DescriptorEntry& entry = m_tables[tableIndex].Entries[descriptorIndex];
+	DescriptorEntry& entry = record->Entries[descriptorIndex];
 	entry.Kind = ToImageEntryKind(viewKind);
 	entry.Image = VkDescriptorImageInfo{.sampler = VK_NULL_HANDLE, .imageView = imageView, .imageLayout = ToImageLayout(entry.Kind)};
 }
 
 void VulkanDescriptorAllocator::WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept
 {
-	std::uint32_t tableIndex = 0;
+	RhiDescriptorTableHandle tableHandle{};
 	std::uint32_t descriptorIndex = 0;
-	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(destination, tableIndex, descriptorIndex) || sampler == VK_NULL_HANDLE)
+	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(destination, tableHandle, descriptorIndex) || sampler == VK_NULL_HANDLE)
 	{
 		return;
 	}
 
 	std::scoped_lock lock(m_mutex);
-	if (tableIndex >= m_tables.size() || descriptorIndex >= m_tables[tableIndex].Entries.size())
+	DescriptorTableRecord* const record = FindTableRecord(tableHandle);
+	if (record == nullptr || descriptorIndex >= record->Entries.size())
 	{
 		return;
 	}
-	DescriptorEntry& entry = m_tables[tableIndex].Entries[descriptorIndex];
+	DescriptorEntry& entry = record->Entries[descriptorIndex];
 	entry.Kind = EntryKind::Sampler;
 	entry.Image = VkDescriptorImageInfo{.sampler = sampler, .imageView = VK_NULL_HANDLE, .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED};
 }
@@ -556,21 +583,46 @@ VkImageLayout VulkanDescriptorAllocator::ToImageLayout(EntryKind kind) noexcept
 
 VulkanDescriptorAllocator::DescriptorTableRecord* VulkanDescriptorAllocator::FindTableRecord(RhiDescriptorTableHandle tableHandle) noexcept
 {
-	if (!tableHandle || tableHandle.Value - 1u >= m_tables.size() || !m_tables[tableHandle.Value - 1u].Allocated)
+	std::uint32_t tableIndex = 0;
+	std::uint16_t generation = 0;
+	if (!tableHandle.Decode(tableIndex, generation) || tableIndex >= m_tables.size())
 	{
 		return nullptr;
 	}
-	return &m_tables[tableHandle.Value - 1u];
+
+	DescriptorTableRecord& record = m_tables[tableIndex];
+	return record.Allocated && record.Generation == generation ? &record : nullptr;
 }
 
 const VulkanDescriptorAllocator::DescriptorTableRecord* VulkanDescriptorAllocator::FindTableRecord(
     RhiDescriptorTableHandle tableHandle) const noexcept
 {
-	if (!tableHandle || tableHandle.Value - 1u >= m_tables.size() || !m_tables[tableHandle.Value - 1u].Allocated)
+	std::uint32_t tableIndex = 0;
+	std::uint16_t generation = 0;
+	if (!tableHandle.Decode(tableIndex, generation) || tableIndex >= m_tables.size())
 	{
 		return nullptr;
 	}
-	return &m_tables[tableHandle.Value - 1u];
+
+	const DescriptorTableRecord& record = m_tables[tableIndex];
+	return record.Allocated && record.Generation == generation ? &record : nullptr;
+}
+
+void VulkanDescriptorAllocator::RecycleTableRecord(std::uint32_t tableIndex) noexcept
+{
+	if (tableIndex >= m_tables.size())
+	{
+		return;
+	}
+
+	DescriptorTableRecord& record = m_tables[tableIndex];
+	if (record.Allocated || record.Generation == RhiDescriptorTableHandle::MaximumGeneration)
+	{
+		return;
+	}
+
+	++record.Generation;
+	m_freeTableIndices.push_back(tableIndex);
 }
 
 VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::FindRegisteredEntry(RhiGpuDescriptorHandle handle) noexcept

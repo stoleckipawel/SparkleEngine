@@ -36,7 +36,7 @@ D3D12DescriptorService::D3D12DescriptorService(
 
 D3D12DescriptorService::~D3D12DescriptorService() noexcept
 {
-	ReleaseAllResourceViews();
+	ReleaseAllDescriptors();
 }
 
 void D3D12DescriptorService::BeginFrame(std::uint32_t frameIndex) noexcept
@@ -46,9 +46,23 @@ void D3D12DescriptorService::BeginFrame(std::uint32_t frameIndex) noexcept
 		return;
 	}
 
-	for (ResourceViewRecord& record : m_retiredResourceViews[frameIndex])
+	for (const RetiredDescriptorAllocation& retired : m_retiredDescriptorAllocations[frameIndex])
 	{
-		DestroyResourceView(record);
+		DestroyDescriptorAllocation(retired.descriptorType, retired.allocation);
+	}
+	m_retiredDescriptorAllocations[frameIndex].clear();
+
+	for (const RetiredDescriptorTable& retired : m_retiredDescriptorTables[frameIndex])
+	{
+		DestroyDescriptorTable(retired.descriptorType, retired.nativeHandle, retired.descriptorCount);
+		RecycleDescriptorTableRecord(retired.recordIndex);
+	}
+	m_retiredDescriptorTables[frameIndex].clear();
+
+	for (RetiredResourceView& retired : m_retiredResourceViews[frameIndex])
+	{
+		DestroyResourceView(retired.record);
+		RecycleResourceViewRecord(retired.recordIndex);
 	}
 	m_retiredResourceViews[frameIndex].clear();
 	m_currentFrameIndex = frameIndex;
@@ -99,22 +113,22 @@ void D3D12DescriptorService::ReleaseDescriptor(
     ERhiDescriptorAllocatorType descriptorType,
     const RhiDescriptorAllocation& allocation) noexcept
 {
-	if (m_descriptorHeapManager == nullptr || !allocation.CpuHandle)
+	if (m_descriptorHeapManager == nullptr || !allocation.IsValid())
 	{
 		return;
 	}
 
-	m_descriptorHeapManager->FreeHandle(
-	    D3D12TypeConversions::ToDescriptorHeapType(descriptorType),
-	    D3D12_CPU_DESCRIPTOR_HANDLE{allocation.CpuHandle.Value},
-	    D3D12_GPU_DESCRIPTOR_HANDLE{allocation.GpuHandle.Value});
+	m_retiredDescriptorAllocations[m_currentFrameIndex].push_back(
+	    RetiredDescriptorAllocation{.descriptorType = descriptorType, .allocation = allocation});
 }
 
 RhiDescriptorTableHandle D3D12DescriptorService::AllocateDescriptorTable(
     ERhiDescriptorAllocatorType descriptorType,
     std::uint32_t descriptorCount)
 {
-	if (m_descriptorHeapManager == nullptr || descriptorCount == 0)
+	if (m_descriptorHeapManager == nullptr || descriptorCount == 0 ||
+	    (m_freeDescriptorTableIndices.empty() &&
+	     m_descriptorTableRecords.size() >= RhiDescriptorTableHandle::MaximumRecordCount))
 	{
 		return {};
 	}
@@ -135,12 +149,14 @@ RhiDescriptorTableHandle D3D12DescriptorService::AllocateDescriptorTable(
 	{
 		const std::uint32_t recordIndex = m_freeDescriptorTableIndices.back();
 		m_freeDescriptorTableIndices.pop_back();
+		const std::uint16_t generation = m_descriptorTableRecords[recordIndex].generation;
 		m_descriptorTableRecords[recordIndex] = record;
-		return RhiDescriptorTableHandle{recordIndex + 1u};
+		m_descriptorTableRecords[recordIndex].generation = generation;
+		return RhiDescriptorTableHandle::Make(recordIndex, generation);
 	}
 
 	m_descriptorTableRecords.push_back(record);
-	return RhiDescriptorTableHandle{static_cast<std::uint32_t>(m_descriptorTableRecords.size())};
+	return RhiDescriptorTableHandle::Make(static_cast<std::uint32_t>(m_descriptorTableRecords.size() - 1u), 0u);
 }
 
 RhiCpuDescriptorHandle D3D12DescriptorService::GetDescriptorTableCpuHandle(
@@ -181,46 +197,25 @@ void D3D12DescriptorService::ReleaseDescriptorTable(RhiDescriptorTableHandle tab
 		return;
 	}
 
-	m_descriptorHeapManager->FreeContiguous(
-	    D3D12TypeConversions::ToDescriptorHeapType(record->descriptorType),
-	    record->nativeHandle,
-	    record->descriptorCount);
-	*record = DescriptorTableRecord{};
-	m_freeDescriptorTableIndices.push_back(tableHandle.Value - 1u);
-}
-
-void D3D12DescriptorService::AllocateShaderResourceDescriptor(
-    RhiCpuDescriptorHandle& outCpuHandle,
-    RhiGpuDescriptorHandle& outGpuHandle)
-{
-	outCpuHandle = {};
-	outGpuHandle = {};
-	if (m_descriptorHeapManager == nullptr)
+	std::uint32_t recordIndex = 0;
+	std::uint16_t generation = 0;
+	if (!tableHandle.Decode(recordIndex, generation))
 	{
 		return;
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle{};
-	m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, cpuHandle, gpuHandle);
-	outCpuHandle.Value = cpuHandle.ptr;
-	outGpuHandle.Value = gpuHandle.ptr;
-}
-
-void D3D12DescriptorService::ReleaseShaderResourceDescriptor(
-    RhiCpuDescriptorHandle cpuHandle,
-    RhiGpuDescriptorHandle gpuHandle) noexcept
-{
-	if (m_descriptorHeapManager == nullptr || !cpuHandle)
+	m_retiredDescriptorTables[m_currentFrameIndex].push_back(
+	    RetiredDescriptorTable{
+	        .descriptorType = record->descriptorType,
+	        .descriptorCount = record->descriptorCount,
+	        .nativeHandle = record->nativeHandle,
+	        .recordIndex = recordIndex});
+	record->descriptorCount = 0;
+	record->nativeHandle = {};
+	if (m_samplerTableHandle == tableHandle)
 	{
-		return;
+		m_samplerTableHandle = {};
 	}
-
-	D3D12_CPU_DESCRIPTOR_HANDLE nativeCpuHandle{};
-	nativeCpuHandle.ptr = cpuHandle.Value;
-	D3D12_GPU_DESCRIPTOR_HANDLE nativeGpuHandle{};
-	nativeGpuHandle.ptr = gpuHandle.Value;
-	m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, nativeCpuHandle, nativeGpuHandle);
 }
 
 RhiDescriptorTableBinding D3D12DescriptorService::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept
@@ -255,7 +250,7 @@ RhiResourceViewHandle D3D12DescriptorService::CreateResourceView(const RhiResour
 
 	if (!WriteResourceViewDescriptor(desc, allocation.CpuHandle))
 	{
-		ReleaseDescriptor(descriptorType, allocation);
+		DestroyDescriptorAllocation(descriptorType, allocation);
 		return {};
 	}
 
@@ -268,12 +263,19 @@ RhiResourceViewHandle D3D12DescriptorService::CreateResourceView(const RhiResour
 	{
 		const std::uint32_t recordIndex = m_freeResourceViewIndices.back();
 		m_freeResourceViewIndices.pop_back();
+		const std::uint16_t generation = m_resourceViewRecords[recordIndex].generation;
 		m_resourceViewRecords[recordIndex] = record;
-		return RhiResourceViewHandle{recordIndex + 1u};
+		m_resourceViewRecords[recordIndex].generation = generation;
+		return RhiResourceViewHandle::Make(recordIndex, generation);
+	}
+	if (m_resourceViewRecords.size() >= RhiResourceViewHandle::MaximumRecordCount)
+	{
+		DestroyDescriptorAllocation(descriptorType, allocation);
+		return {};
 	}
 
 	m_resourceViewRecords.push_back(record);
-	return RhiResourceViewHandle{static_cast<std::uint32_t>(m_resourceViewRecords.size())};
+	return RhiResourceViewHandle::Make(static_cast<std::uint32_t>(m_resourceViewRecords.size() - 1u), 0u);
 }
 
 void D3D12DescriptorService::ReleaseResourceView(RhiResourceViewHandle view) noexcept
@@ -284,34 +286,131 @@ void D3D12DescriptorService::ReleaseResourceView(RhiResourceViewHandle view) noe
 		return;
 	}
 
-	m_retiredResourceViews[m_currentFrameIndex].push_back(*record);
-	*record = ResourceViewRecord{};
-	m_freeResourceViewIndices.push_back(view.Value - 1u);
+	std::uint32_t recordIndex = 0;
+	std::uint16_t generation = 0;
+	if (!view.Decode(recordIndex, generation))
+	{
+		return;
+	}
+
+	m_retiredResourceViews[m_currentFrameIndex].push_back(RetiredResourceView{.record = *record, .recordIndex = recordIndex});
+	record->descriptorAllocation = {};
 }
 
 void D3D12DescriptorService::DestroyResourceView(ResourceViewRecord& record) noexcept
 {
 	if (record.IsAllocated())
 	{
-		ReleaseDescriptor(record.descriptorType, record.descriptorAllocation);
-		record = {};
+		DestroyDescriptorAllocation(record.descriptorType, record.descriptorAllocation);
+		record.descriptorAllocation = {};
 	}
 }
 
-void D3D12DescriptorService::ReleaseAllResourceViews() noexcept
+void D3D12DescriptorService::DestroyDescriptorAllocation(
+    ERhiDescriptorAllocatorType descriptorType,
+    const RhiDescriptorAllocation& allocation) noexcept
 {
+	if (m_descriptorHeapManager == nullptr || !allocation.IsValid())
+	{
+		return;
+	}
+
+	m_descriptorHeapManager->FreeHandle(
+	    D3D12TypeConversions::ToDescriptorHeapType(descriptorType),
+	    D3D12_CPU_DESCRIPTOR_HANDLE{allocation.CpuHandle.Value},
+	    D3D12_GPU_DESCRIPTOR_HANDLE{allocation.GpuHandle.Value});
+}
+
+void D3D12DescriptorService::DestroyDescriptorTable(
+    ERhiDescriptorAllocatorType descriptorType,
+    const D3D12DescriptorHandle& nativeHandle,
+    std::uint32_t descriptorCount) noexcept
+{
+	if (m_descriptorHeapManager != nullptr && nativeHandle.IsValid())
+	{
+		m_descriptorHeapManager->FreeContiguous(
+		    D3D12TypeConversions::ToDescriptorHeapType(descriptorType),
+		    nativeHandle,
+		    descriptorCount);
+	}
+}
+
+void D3D12DescriptorService::RecycleDescriptorTableRecord(std::uint32_t recordIndex) noexcept
+{
+	if (recordIndex >= m_descriptorTableRecords.size())
+	{
+		return;
+	}
+
+	DescriptorTableRecord& record = m_descriptorTableRecords[recordIndex];
+	if (record.IsAllocated() || record.generation == RhiDescriptorTableHandle::MaximumGeneration)
+	{
+		return;
+	}
+
+	++record.generation;
+	m_freeDescriptorTableIndices.push_back(recordIndex);
+}
+
+void D3D12DescriptorService::RecycleResourceViewRecord(std::uint32_t recordIndex) noexcept
+{
+	if (recordIndex >= m_resourceViewRecords.size())
+	{
+		return;
+	}
+
+	ResourceViewRecord& record = m_resourceViewRecords[recordIndex];
+	if (record.IsAllocated() || record.generation == RhiResourceViewHandle::MaximumGeneration)
+	{
+		return;
+	}
+
+	++record.generation;
+	m_freeResourceViewIndices.push_back(recordIndex);
+}
+
+void D3D12DescriptorService::ReleaseAllDescriptors() noexcept
+{
+	for (auto& retiredAllocations : m_retiredDescriptorAllocations)
+	{
+		for (const RetiredDescriptorAllocation& retired : retiredAllocations)
+		{
+			DestroyDescriptorAllocation(retired.descriptorType, retired.allocation);
+		}
+		retiredAllocations.clear();
+	}
+
+	for (DescriptorTableRecord& record : m_descriptorTableRecords)
+	{
+		DestroyDescriptorTable(record.descriptorType, record.nativeHandle, record.descriptorCount);
+		record.nativeHandle = {};
+		record.descriptorCount = 0;
+	}
+	for (auto& retiredTables : m_retiredDescriptorTables)
+	{
+		for (const RetiredDescriptorTable& table : retiredTables)
+		{
+			DestroyDescriptorTable(table.descriptorType, table.nativeHandle, table.descriptorCount);
+		}
+		retiredTables.clear();
+	}
+
 	for (ResourceViewRecord& record : m_resourceViewRecords)
 	{
 		DestroyResourceView(record);
 	}
-	for (std::vector<ResourceViewRecord>& retiredViews : m_retiredResourceViews)
+	for (auto& retiredViews : m_retiredResourceViews)
 	{
-		for (ResourceViewRecord& record : retiredViews)
+		for (RetiredResourceView& retired : retiredViews)
 		{
-			DestroyResourceView(record);
+			DestroyResourceView(retired.record);
 		}
 		retiredViews.clear();
 	}
+
+	m_freeDescriptorTableIndices.clear();
+	m_freeResourceViewIndices.clear();
+	m_samplerTableHandle = {};
 }
 
 RhiCpuDescriptorHandle D3D12DescriptorService::GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept
@@ -506,46 +605,54 @@ bool D3D12DescriptorService::WriteResourceViewDescriptor(
 D3D12DescriptorService::DescriptorTableRecord* D3D12DescriptorService::FindDescriptorTableRecord(
     RhiDescriptorTableHandle tableHandle) noexcept
 {
-	if (!tableHandle || tableHandle.Value == 0 || tableHandle.Value > m_descriptorTableRecords.size())
+	std::uint32_t recordIndex = 0;
+	std::uint16_t generation = 0;
+	if (!tableHandle.Decode(recordIndex, generation) || recordIndex >= m_descriptorTableRecords.size())
 	{
 		return nullptr;
 	}
 
-	DescriptorTableRecord& record = m_descriptorTableRecords[tableHandle.Value - 1u];
-	return record.IsAllocated() ? &record : nullptr;
+	DescriptorTableRecord& record = m_descriptorTableRecords[recordIndex];
+	return record.IsAllocated() && record.generation == generation ? &record : nullptr;
 }
 
 const D3D12DescriptorService::DescriptorTableRecord* D3D12DescriptorService::FindDescriptorTableRecord(
     RhiDescriptorTableHandle tableHandle) const noexcept
 {
-	if (!tableHandle || tableHandle.Value == 0 || tableHandle.Value > m_descriptorTableRecords.size())
+	std::uint32_t recordIndex = 0;
+	std::uint16_t generation = 0;
+	if (!tableHandle.Decode(recordIndex, generation) || recordIndex >= m_descriptorTableRecords.size())
 	{
 		return nullptr;
 	}
 
-	const DescriptorTableRecord& record = m_descriptorTableRecords[tableHandle.Value - 1u];
-	return record.IsAllocated() ? &record : nullptr;
+	const DescriptorTableRecord& record = m_descriptorTableRecords[recordIndex];
+	return record.IsAllocated() && record.generation == generation ? &record : nullptr;
 }
 
 D3D12DescriptorService::ResourceViewRecord* D3D12DescriptorService::FindResourceViewRecord(RhiResourceViewHandle view) noexcept
 {
-	if (!view || view.Value == 0 || view.Value > m_resourceViewRecords.size())
+	std::uint32_t recordIndex = 0;
+	std::uint16_t generation = 0;
+	if (!view.Decode(recordIndex, generation) || recordIndex >= m_resourceViewRecords.size())
 	{
 		return nullptr;
 	}
 
-	ResourceViewRecord& record = m_resourceViewRecords[view.Value - 1u];
-	return record.IsAllocated() ? &record : nullptr;
+	ResourceViewRecord& record = m_resourceViewRecords[recordIndex];
+	return record.IsAllocated() && record.generation == generation ? &record : nullptr;
 }
 
 const D3D12DescriptorService::ResourceViewRecord* D3D12DescriptorService::FindResourceViewRecord(
     RhiResourceViewHandle view) const noexcept
 {
-	if (!view || view.Value == 0 || view.Value > m_resourceViewRecords.size())
+	std::uint32_t recordIndex = 0;
+	std::uint16_t generation = 0;
+	if (!view.Decode(recordIndex, generation) || recordIndex >= m_resourceViewRecords.size())
 	{
 		return nullptr;
 	}
 
-	const ResourceViewRecord& record = m_resourceViewRecords[view.Value - 1u];
-	return record.IsAllocated() ? &record : nullptr;
+	const ResourceViewRecord& record = m_resourceViewRecords[recordIndex];
+	return record.IsAllocated() && record.generation == generation ? &record : nullptr;
 }

@@ -1,17 +1,14 @@
 #pragma once
 
+#include "../Core/RhiGenerationalHandle.h"
 #include "../Formats/PixelFormat.h"
 #include "../Interop/RhiNativeHandles.h"
 #include "RhiResourceDesc.h"
 
 #include <cstdint>
 
-struct RhiResourceViewHandle
-{
-	std::uint32_t Value = 0;
-
-	constexpr explicit operator bool() const noexcept { return Value != 0; }
-};
+struct RhiResourceViewHandleTag;
+using RhiResourceViewHandle = RhiGenerationalHandle<RhiResourceViewHandleTag>;
 
 enum class ERhiResourceViewKind : std::uint8_t
 {

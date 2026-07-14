@@ -40,8 +40,6 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept override;
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
-	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle) override;
-	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept override;
 	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept override;
 
 	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) override;
@@ -68,6 +66,7 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 		VkImageUsageFlags Usage = 0;
 		RhiGpuDescriptorHandle DescriptorHandle = {};
 		bool OwnsImageView = false;
+		std::uint16_t Generation = 0;
 
 		bool IsAllocated() const noexcept
 		{
@@ -76,10 +75,16 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 		}
 	};
 
-	static RhiResourceViewHandle MakeResourceViewHandle(std::uint32_t index) noexcept;
+	struct RetiredResourceView final
+	{
+		ResourceViewRecord Record;
+		std::uint32_t RecordIndex = 0;
+	};
+
 	RhiResourceViewHandle AddResourceView(ResourceViewRecord record);
 	ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) noexcept;
 	const ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) const noexcept;
+	void RecycleResourceViewRecord(std::uint32_t recordIndex) noexcept;
 	VkImageView CreateImageView(const RhiResourceViewDesc& desc) const;
 	VkFormat ResolveViewFormat(const RhiResourceViewDesc& desc) const noexcept;
 	VkImageAspectFlags ResolveViewAspectMask(const RhiResourceViewDesc& desc) const noexcept;
@@ -92,7 +97,7 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	VulkanSamplerLibrary* m_samplerLibrary = nullptr;
 	std::vector<ResourceViewRecord> m_resourceViewRecords;
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
-	std::array<std::vector<ResourceViewRecord>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
+	std::array<std::vector<RetiredResourceView>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
 	std::vector<RhiResourceViewHandle> m_swapChainBackBufferViews;
 	std::uint32_t m_currentFrameIndex = 0;
 };

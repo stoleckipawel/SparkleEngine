@@ -36,9 +36,10 @@ void VulkanDescriptorManager::BeginFrame(std::uint32_t frameIndex) noexcept
 		return;
 	}
 
-	for (ResourceViewRecord& record : m_retiredResourceViews[frameIndex])
+	for (RetiredResourceView& retired : m_retiredResourceViews[frameIndex])
 	{
-		DestroyResourceView(record);
+		DestroyResourceView(retired.Record);
+		RecycleResourceViewRecord(retired.RecordIndex);
 	}
 	m_retiredResourceViews[frameIndex].clear();
 	m_currentFrameIndex = frameIndex;
@@ -88,24 +89,6 @@ RhiCpuDescriptorHandle VulkanDescriptorManager::GetDescriptorTableCpuHandle(
 void VulkanDescriptorManager::ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept
 {
 	m_allocator.ReleaseDescriptorTable(tableHandle);
-}
-
-void VulkanDescriptorManager::AllocateShaderResourceDescriptor(
-    RhiCpuDescriptorHandle& outCpuHandle,
-    RhiGpuDescriptorHandle& outGpuHandle)
-{
-	const RhiDescriptorAllocation allocation = AllocateDescriptor(ERhiDescriptorAllocatorType::ShaderResource);
-	outCpuHandle = allocation.CpuHandle;
-	outGpuHandle = allocation.GpuHandle;
-}
-
-void VulkanDescriptorManager::ReleaseShaderResourceDescriptor(
-    RhiCpuDescriptorHandle cpuHandle,
-    RhiGpuDescriptorHandle gpuHandle) noexcept
-{
-	ReleaseDescriptor(
-	    ERhiDescriptorAllocatorType::ShaderResource,
-	    RhiDescriptorAllocation{.CpuHandle = cpuHandle, .GpuHandle = gpuHandle});
 }
 
 RhiDescriptorTableBinding VulkanDescriptorManager::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept
@@ -205,9 +188,18 @@ void VulkanDescriptorManager::ReleaseResourceView(RhiResourceViewHandle view) no
 		return;
 	}
 
-	m_retiredResourceViews[m_currentFrameIndex].push_back(*record);
+	std::uint32_t recordIndex = 0;
+	std::uint16_t generation = 0;
+	if (!view.Decode(recordIndex, generation))
+	{
+		return;
+	}
+
+	m_retiredResourceViews[m_currentFrameIndex].push_back(
+	    RetiredResourceView{.Record = *record, .RecordIndex = recordIndex});
+	const std::uint16_t preservedGeneration = record->Generation;
 	*record = {};
-	m_freeResourceViewIndices.push_back(view.Value - 1u);
+	record->Generation = preservedGeneration;
 }
 
 RhiCpuDescriptorHandle VulkanDescriptorManager::GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept
@@ -337,14 +329,16 @@ void VulkanDescriptorManager::ReleaseAllResourceViews() noexcept
 	{
 		DestroyResourceView(record);
 	}
-	for (std::vector<ResourceViewRecord>& retiredViews : m_retiredResourceViews)
+	for (auto& retiredViews : m_retiredResourceViews)
 	{
-		for (ResourceViewRecord& record : retiredViews)
+		for (RetiredResourceView& retired : retiredViews)
 		{
-			DestroyResourceView(record);
+			DestroyResourceView(retired.Record);
 		}
 		retiredViews.clear();
 	}
+	m_freeResourceViewIndices.clear();
+	m_swapChainBackBufferViews.clear();
 }
 
 void VulkanDescriptorManager::DestroyResourceView(ResourceViewRecord& record) noexcept
@@ -360,43 +354,65 @@ void VulkanDescriptorManager::DestroyResourceView(ResourceViewRecord& record) no
 	record = {};
 }
 
-RhiResourceViewHandle VulkanDescriptorManager::MakeResourceViewHandle(std::uint32_t index) noexcept
-{
-	return RhiResourceViewHandle{index + 1u};
-}
-
 RhiResourceViewHandle VulkanDescriptorManager::AddResourceView(ResourceViewRecord record)
 {
 	if (!m_freeResourceViewIndices.empty())
 	{
 		const std::uint32_t index = m_freeResourceViewIndices.back();
 		m_freeResourceViewIndices.pop_back();
+		record.Generation = m_resourceViewRecords[index].Generation;
 		m_resourceViewRecords[index] = record;
-		return MakeResourceViewHandle(index);
+		return RhiResourceViewHandle::Make(index, record.Generation);
 	}
 
+	if (m_resourceViewRecords.size() >= RhiResourceViewHandle::MaximumRecordCount)
+	{
+		DestroyResourceView(record);
+		return {};
+	}
 	m_resourceViewRecords.push_back(record);
-	return MakeResourceViewHandle(static_cast<std::uint32_t>(m_resourceViewRecords.size() - 1u));
+	return RhiResourceViewHandle::Make(static_cast<std::uint32_t>(m_resourceViewRecords.size() - 1u), 0u);
 }
 
 VulkanDescriptorManager::ResourceViewRecord* VulkanDescriptorManager::FindResourceViewRecord(RhiResourceViewHandle view) noexcept
 {
-	if (!view || view.Value - 1u >= m_resourceViewRecords.size())
+	std::uint32_t recordIndex = 0;
+	std::uint16_t generation = 0;
+	if (!view.Decode(recordIndex, generation) || recordIndex >= m_resourceViewRecords.size())
 	{
 		return nullptr;
 	}
-	ResourceViewRecord& record = m_resourceViewRecords[view.Value - 1u];
-	return record.IsAllocated() ? &record : nullptr;
+	ResourceViewRecord& record = m_resourceViewRecords[recordIndex];
+	return record.IsAllocated() && record.Generation == generation ? &record : nullptr;
 }
 
 const VulkanDescriptorManager::ResourceViewRecord* VulkanDescriptorManager::FindResourceViewRecord(RhiResourceViewHandle view) const noexcept
 {
-	if (!view || view.Value - 1u >= m_resourceViewRecords.size())
+	std::uint32_t recordIndex = 0;
+	std::uint16_t generation = 0;
+	if (!view.Decode(recordIndex, generation) || recordIndex >= m_resourceViewRecords.size())
 	{
 		return nullptr;
 	}
-	const ResourceViewRecord& record = m_resourceViewRecords[view.Value - 1u];
-	return record.IsAllocated() ? &record : nullptr;
+	const ResourceViewRecord& record = m_resourceViewRecords[recordIndex];
+	return record.IsAllocated() && record.Generation == generation ? &record : nullptr;
+}
+
+void VulkanDescriptorManager::RecycleResourceViewRecord(std::uint32_t recordIndex) noexcept
+{
+	if (recordIndex >= m_resourceViewRecords.size())
+	{
+		return;
+	}
+
+	ResourceViewRecord& record = m_resourceViewRecords[recordIndex];
+	if (record.IsAllocated() || record.Generation == RhiResourceViewHandle::MaximumGeneration)
+	{
+		return;
+	}
+
+	++record.Generation;
+	m_freeResourceViewIndices.push_back(recordIndex);
 }
 
 VkImageView VulkanDescriptorManager::CreateImageView(const RhiResourceViewDesc& desc) const

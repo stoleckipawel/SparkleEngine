@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../Core/RhiGenerationalHandle.h"
+
 #include <cstdint>
 
 struct RhiCpuDescriptorHandle
@@ -32,12 +34,8 @@ struct RhiDescriptorAllocation
 	constexpr bool IsValid() const noexcept { return static_cast<bool>(CpuHandle); }
 };
 
-struct RhiDescriptorTableHandle
-{
-	std::uint32_t Value = 0;
-
-	constexpr explicit operator bool() const noexcept { return Value != 0; }
-};
+struct RhiDescriptorTableHandleTag;
+using RhiDescriptorTableHandle = RhiGenerationalHandle<RhiDescriptorTableHandleTag>;
 
 struct RhiDescriptorTableBinding
 {

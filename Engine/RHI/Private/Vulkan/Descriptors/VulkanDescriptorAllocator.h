@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Descriptors/RhiDescriptorHandles.h"
+#include "Frame/RhiFrameConstants.h"
 #include "Resources/RhiResourceView.h"
 #include "Samplers/RhiSamplerDesc.h"
 #include "Vulkan/VulkanIncludes.h"
@@ -112,6 +113,7 @@ class VulkanDescriptorAllocator final
 		ERhiDescriptorAllocatorType Type = ERhiDescriptorAllocatorType::ShaderResource;
 		std::vector<DescriptorEntry> Entries;
 		bool Allocated = false;
+		std::uint16_t Generation = 0;
 	};
 
 	struct DescriptorPoolPage final
@@ -131,6 +133,7 @@ class VulkanDescriptorAllocator final
 
 	DescriptorTableRecord* FindTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
+	void RecycleTableRecord(std::uint32_t tableIndex) noexcept;
 	DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) noexcept;
 	const DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) const noexcept;
 	static DescriptorCounts GetPoolRequirements(
@@ -153,6 +156,7 @@ class VulkanDescriptorAllocator final
 	std::vector<std::vector<DescriptorPoolPage>> m_framePoolPages;
 	std::vector<DescriptorTableRecord> m_tables;
 	std::vector<std::uint32_t> m_freeTableIndices;
+	std::array<std::vector<std::uint32_t>, RhiFrameConstants::FramesInFlight> m_retiredTableIndices;
 	std::vector<DescriptorEntry> m_registeredDescriptors;
 	std::vector<std::uint32_t> m_freeRegisteredDescriptorIndices;
 	VkBuffer m_fallbackBuffer = VK_NULL_HANDLE;

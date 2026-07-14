@@ -86,11 +86,10 @@ void D3D12ImGuiBackend::AllocateDescriptor(
     D3D12_GPU_DESCRIPTOR_HANDLE* outGpuHandle)
 {
 	auto* renderHardware = static_cast<D3D12RenderHardwareInterface*>(info->UserData);
-	RhiCpuDescriptorHandle cpuHandle{};
-	RhiGpuDescriptorHandle gpuHandle{};
-	renderHardware->GetDescriptorService().AllocateShaderResourceDescriptor(cpuHandle, gpuHandle);
-	*outCpuHandle = ToD3D12CpuDescriptor(cpuHandle);
-	*outGpuHandle = ToD3D12GpuDescriptor(gpuHandle);
+	const RhiDescriptorAllocation allocation =
+	    renderHardware->GetDescriptorService().AllocateDescriptor(ERhiDescriptorAllocatorType::ShaderResource);
+	*outCpuHandle = ToD3D12CpuDescriptor(allocation.CpuHandle);
+	*outGpuHandle = ToD3D12GpuDescriptor(allocation.GpuHandle);
 }
 
 void D3D12ImGuiBackend::ReleaseDescriptor(
@@ -99,9 +98,11 @@ void D3D12ImGuiBackend::ReleaseDescriptor(
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
 	auto* renderHardware = static_cast<D3D12RenderHardwareInterface*>(info->UserData);
-	renderHardware->GetDescriptorService().ReleaseShaderResourceDescriptor(
-	    RhiCpuDescriptorHandle{cpuHandle.ptr},
-	    RhiGpuDescriptorHandle{gpuHandle.ptr});
+	renderHardware->GetDescriptorService().ReleaseDescriptor(
+	    ERhiDescriptorAllocatorType::ShaderResource,
+	    RhiDescriptorAllocation{
+	        .CpuHandle = RhiCpuDescriptorHandle{cpuHandle.ptr},
+	        .GpuHandle = RhiGpuDescriptorHandle{gpuHandle.ptr}});
 }
 
 ID3D12Device* D3D12ImGuiBackend::ToD3D12Device(NativeGraphicsDeviceHandle handle) noexcept

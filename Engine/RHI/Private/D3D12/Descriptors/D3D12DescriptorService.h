@@ -36,8 +36,6 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	    RhiDescriptorTableHandle tableHandle,
 	    std::uint32_t descriptorIndex = 0) const noexcept;
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
-	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle) override;
-	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept override;
 	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept override;
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
 	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) override;
@@ -52,8 +50,17 @@ class D3D12DescriptorService final : public RhiDescriptorService
 		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
 		std::uint32_t descriptorCount = 0;
 		D3D12DescriptorHandle nativeHandle;
+		std::uint16_t generation = 0;
 
 		bool IsAllocated() const noexcept { return nativeHandle.IsValid(); }
+	};
+
+	struct RetiredDescriptorTable
+	{
+		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
+		std::uint32_t descriptorCount = 0;
+		D3D12DescriptorHandle nativeHandle;
+		std::uint32_t recordIndex = 0;
 	};
 
 	struct ResourceViewRecord
@@ -61,8 +68,21 @@ class D3D12DescriptorService final : public RhiDescriptorService
 		ERhiResourceViewKind kind = ERhiResourceViewKind::TextureShaderResource;
 		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
 		RhiDescriptorAllocation descriptorAllocation = {};
+		std::uint16_t generation = 0;
 
 		bool IsAllocated() const noexcept { return descriptorAllocation.IsValid(); }
+	};
+
+	struct RetiredResourceView
+	{
+		ResourceViewRecord record;
+		std::uint32_t recordIndex = 0;
+	};
+
+	struct RetiredDescriptorAllocation
+	{
+		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
+		RhiDescriptorAllocation allocation = {};
 	};
 
 	static ERhiDescriptorAllocatorType ResolveResourceViewDescriptorAllocatorType(ERhiResourceViewKind kind) noexcept;
@@ -71,8 +91,15 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
 	ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) noexcept;
 	const ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) const noexcept;
+	void DestroyDescriptorAllocation(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept;
+	void DestroyDescriptorTable(
+	    ERhiDescriptorAllocatorType descriptorType,
+	    const D3D12DescriptorHandle& nativeHandle,
+	    std::uint32_t descriptorCount) noexcept;
+	void RecycleDescriptorTableRecord(std::uint32_t recordIndex) noexcept;
 	void DestroyResourceView(ResourceViewRecord& record) noexcept;
-	void ReleaseAllResourceViews() noexcept;
+	void RecycleResourceViewRecord(std::uint32_t recordIndex) noexcept;
+	void ReleaseAllDescriptors() noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
@@ -82,6 +109,8 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	std::vector<std::uint32_t> m_freeDescriptorTableIndices;
 	std::vector<ResourceViewRecord> m_resourceViewRecords;
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
-	std::array<std::vector<ResourceViewRecord>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
+	std::array<std::vector<RetiredDescriptorAllocation>, RhiFrameConstants::FramesInFlight> m_retiredDescriptorAllocations;
+	std::array<std::vector<RetiredDescriptorTable>, RhiFrameConstants::FramesInFlight> m_retiredDescriptorTables;
+	std::array<std::vector<RetiredResourceView>, RhiFrameConstants::FramesInFlight> m_retiredResourceViews;
 	std::uint32_t m_currentFrameIndex = 0;
 };

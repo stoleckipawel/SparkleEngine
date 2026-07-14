@@ -8,13 +8,15 @@
 class VulkanDescriptorHandles final
 {
   public:
-	static RhiDescriptorTableHandle MakeTableHandle(std::uint32_t index) noexcept;
+	static constexpr std::uint32_t MaximumCpuDescriptorCount = 0xFFFFu;
+
+	static RhiDescriptorTableHandle MakeTableHandle(std::uint32_t index, std::uint16_t generation) noexcept;
 	static RhiGpuDescriptorHandle MakeGpuDescriptorHandle(std::uint32_t index) noexcept;
-	static RhiCpuDescriptorHandle MakeCpuDescriptorHandle(std::uint32_t tableIndex, std::uint32_t descriptorIndex) noexcept;
+	static RhiCpuDescriptorHandle MakeCpuDescriptorHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex) noexcept;
 	static bool DecodeGpuDescriptorHandle(RhiGpuDescriptorHandle handle, std::uint32_t& outIndex) noexcept;
 	static bool DecodeCpuDescriptorHandle(
 	    RhiCpuDescriptorHandle handle,
-	    std::uint32_t& outTableIndex,
+	    RhiDescriptorTableHandle& outTableHandle,
 	    std::uint32_t& outDescriptorIndex) noexcept;
 	static RhiCpuDescriptorHandle MakeImageViewCpuHandle(VkImageView imageView) noexcept;
 	static VkImageView DecodeImageViewCpuHandle(RhiCpuDescriptorHandle handle) noexcept;
@@ -26,6 +28,7 @@ class VulkanDescriptorHandles final
 	static constexpr std::uint64_t GpuDescriptorMagic = 0x5350564B00000000ull;
 	static constexpr std::uintptr_t CpuDescriptorMagic = static_cast<std::uintptr_t>(0x4350000000000000ull);
 	static constexpr std::uintptr_t CpuDescriptorMagicMask = static_cast<std::uintptr_t>(0xFFFF000000000000ull);
-	static constexpr std::uintptr_t CpuDescriptorIndexMask = static_cast<std::uintptr_t>(0xFFFFFFull);
-	static constexpr std::uint32_t CpuDescriptorTableShift = 24u;
+	static constexpr std::uintptr_t CpuDescriptorIndexMask = static_cast<std::uintptr_t>(0xFFFFull);
+	static constexpr std::uintptr_t CpuDescriptorTableMask = static_cast<std::uintptr_t>(0xFFFFFFFFull);
+	static constexpr std::uint32_t CpuDescriptorTableShift = 16u;
 };

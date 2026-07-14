@@ -22,6 +22,7 @@ Use these as source material behind the implementation spine:
 - `Architecture/00-Review/F_StagedDeletionFirstImprovementPlan.md`: staged improvement plan that favors net code and depot-size removal while preserving fatal guardrails and graphics profiler/debugger support.
 - `Architecture/00-Review/G_AdvancedGraphicsEngineExecutiveSummary.md`: executive summary of advanced graphics requirements, priorities, skips, and wording to avoid.
 - `Architecture/00-Review/H_AdvancedGraphicsEngineerPersona.md`: neutral persona target for the advanced graphics engineer Sparkle should help develop and demonstrate.
+- `Architecture/00-Review/I_GameFrameworkRendererRhiResponsibilityExecutiveSummary.md`: source-backed current-state audit and ordered implementation decision for GameFramework, Renderer, and RHI ownership, lifetime, and data flow.
 
 ## Review Background
 
