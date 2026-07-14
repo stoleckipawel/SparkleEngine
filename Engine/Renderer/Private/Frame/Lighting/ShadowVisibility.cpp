@@ -33,10 +33,5 @@ DirectShadowSignalResources CreateDirectShadowSignalResources(
 	    .Visibility = resources.Transient.ShadowVisibilitySignal,
 	    .TemporalReservoirSample = resources.Transient.DirectLightTemporalReservoirSample,
 	    .TemporalReservoirWeight = resources.Transient.DirectLightTemporalReservoirWeight,
-	    .PreviousReservoirSample = resources.History.PreviousDirectLightReservoirSample,
-	    .PreviousReservoirWeight = resources.History.PreviousDirectLightReservoirWeight,
-	    .PreviousReservoirSurface = resources.History.PreviousDirectLightReservoirSurface,
-	    .CurrentReservoirSample = resources.History.CurrentDirectLightReservoirSample,
-	    .CurrentReservoirWeight = resources.History.CurrentDirectLightReservoirWeight,
-	    .CurrentReservoirSurface = resources.History.CurrentDirectLightReservoirSurface};
+	    .ReservoirHistory = resources.History.DirectLightReservoir};
 }

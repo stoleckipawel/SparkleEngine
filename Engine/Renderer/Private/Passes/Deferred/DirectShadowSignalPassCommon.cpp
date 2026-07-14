@@ -22,8 +22,8 @@ void DirectShadowSignalPassCommon::DeclareResources(
     DirectShadowSignalCommonPassParameters& parameters)
 {
 	parameters.ShadowVisibilitySignal = builder.CreateUAV(shadowSignals.Visibility);
-	parameters.CurrentReservoirSample = builder.CreateSRV(shadowSignals.CurrentReservoirSample);
-	parameters.CurrentReservoirWeight = builder.CreateSRV(shadowSignals.CurrentReservoirWeight);
+	parameters.CurrentReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Current);
+	parameters.CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
 	parameters.SceneDepth = builder.CreateSRV(sceneDepth);
 	parameters.DirectionalLights = builder.CreateSRV(directionalLights);
 	parameters.PointLights = builder.CreateSRV(pointLights);

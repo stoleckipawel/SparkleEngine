@@ -3,6 +3,7 @@
 
 #include "Frame/Core/FrameRenderFormats.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
+#include "Resources/History/FrameHistory.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
@@ -42,86 +43,6 @@ void CreateFrameSceneResources(
 
 	const FrameGraphTextureHandle exposure =
 	    builder.CreateTexture(FrameGraphTextureDesc::CreateColor("Exposure", 1, 1, PixelFormat::R32G32B32A32_Float));
-	const FrameGraphTextureHandle previousExposure = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor("PreviousExposureHistory", 1, 1, PixelFormat::R32G32B32A32_Float),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle currentExposure = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor("CurrentExposureHistory", 1, 1, PixelFormat::R32G32B32A32_Float),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle previousDirectLightReservoirSample = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "PreviousDirectLightReservoirSample",
-	        renderExtent.Width,
-	        renderExtent.Height,
-	        PixelFormat::R32G32B32A32_Float),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle previousDirectLightReservoirWeight = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "PreviousDirectLightReservoirWeight",
-	        renderExtent.Width,
-	        renderExtent.Height,
-	        PixelFormat::R32G32B32A32_Float),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle previousDirectLightReservoirSurface = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "PreviousDirectLightReservoirSurface",
-	        renderExtent.Width,
-	        renderExtent.Height,
-	        PixelFormat::R16G16B16A16_Float),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle currentDirectLightReservoirSample = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "CurrentDirectLightReservoirSample",
-	        renderExtent.Width,
-	        renderExtent.Height,
-	        PixelFormat::R32G32B32A32_Float),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle currentDirectLightReservoirWeight = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "CurrentDirectLightReservoirWeight",
-	        renderExtent.Width,
-	        renderExtent.Height,
-	        PixelFormat::R32G32B32A32_Float),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle currentDirectLightReservoirSurface = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "CurrentDirectLightReservoirSurface",
-	        renderExtent.Width,
-	        renderExtent.Height,
-	        PixelFormat::R16G16B16A16_Float),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle previousReferenceLighting = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "PreviousReferenceLightingHistory",
-	        renderExtent.Width,
-	        renderExtent.Height,
-	        PixelFormat::R32G32B32A32_Float),
-	    ResourceState::ShaderResource);
-	const FrameGraphTextureHandle currentReferenceLighting = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "CurrentReferenceLightingHistory",
-	        renderExtent.Width,
-	        renderExtent.Height,
-	        PixelFormat::R32G32B32A32_Float),
-	    ResourceState::ShaderResource);
-	const auto reserveRestirIndirectHistory = [&](const char* name, PixelFormat format)
-	{
-		return builder.ReservePersistentTexture(
-		    FrameGraphTextureDesc::CreateColor(name, renderExtent.Width, renderExtent.Height, format),
-		    ResourceState::ShaderResource);
-	};
-	const FrameGraphTextureHandle previousRestirIndirectReservoirSample =
-	    reserveRestirIndirectHistory("PreviousRestirIndirectReservoirSample", PixelFormat::R32G32B32A32_Float);
-	const FrameGraphTextureHandle previousRestirIndirectReservoirWeight =
-	    reserveRestirIndirectHistory("PreviousRestirIndirectReservoirWeight", PixelFormat::R32G32B32A32_Float);
-	const FrameGraphTextureHandle previousRestirIndirectReservoirSurface =
-	    reserveRestirIndirectHistory("PreviousRestirIndirectReservoirSurface", PixelFormat::R16G16B16A16_Float);
-	const FrameGraphTextureHandle currentRestirIndirectReservoirSample =
-	    reserveRestirIndirectHistory("CurrentRestirIndirectReservoirSample", PixelFormat::R32G32B32A32_Float);
-	const FrameGraphTextureHandle currentRestirIndirectReservoirWeight =
-	    reserveRestirIndirectHistory("CurrentRestirIndirectReservoirWeight", PixelFormat::R32G32B32A32_Float);
-	const FrameGraphTextureHandle currentRestirIndirectReservoirSurface =
-	    reserveRestirIndirectHistory("CurrentRestirIndirectReservoirSurface", PixelFormat::R16G16B16A16_Float);
 	const FrameGraphTextureHandle sky = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor("Sky", 1, 1, PixelFormat::R8G8B8A8_UNorm),
 	    ResourceState::ShaderResource);
@@ -145,22 +66,7 @@ void CreateFrameSceneResources(
 	resources.External.RayTracingHitMaterials = ReserveExternalBuffer<RayTracingHitMaterial>(builder, "RayTracingHitMaterials");
 	resources.External.JointMatrices = ReserveExternalBuffer<JointMatrixData>(builder, "JointMatrices");
 	resources.External.PreviousJointMatrices = ReserveExternalBuffer<JointMatrixData>(builder, "PreviousJointMatrices");
-	resources.History.PreviousExposure = previousExposure;
-	resources.History.CurrentExposure = currentExposure;
-	resources.History.PreviousDirectLightReservoirSample = previousDirectLightReservoirSample;
-	resources.History.PreviousDirectLightReservoirWeight = previousDirectLightReservoirWeight;
-	resources.History.PreviousDirectLightReservoirSurface = previousDirectLightReservoirSurface;
-	resources.History.CurrentDirectLightReservoirSample = currentDirectLightReservoirSample;
-	resources.History.CurrentDirectLightReservoirWeight = currentDirectLightReservoirWeight;
-	resources.History.CurrentDirectLightReservoirSurface = currentDirectLightReservoirSurface;
-	resources.History.PreviousReferenceLighting = previousReferenceLighting;
-	resources.History.CurrentReferenceLighting = currentReferenceLighting;
-	resources.History.PreviousRestirIndirectReservoirSample = previousRestirIndirectReservoirSample;
-	resources.History.PreviousRestirIndirectReservoirWeight = previousRestirIndirectReservoirWeight;
-	resources.History.PreviousRestirIndirectReservoirSurface = previousRestirIndirectReservoirSurface;
-	resources.History.CurrentRestirIndirectReservoirSample = currentRestirIndirectReservoirSample;
-	resources.History.CurrentRestirIndirectReservoirWeight = currentRestirIndirectReservoirWeight;
-	resources.History.CurrentRestirIndirectReservoirSurface = currentRestirIndirectReservoirSurface;
+	resources.History = DeclareFrameHistoryResources(builder, renderExtent);
 	resources.ViewportProducts.SceneColor = sceneColor;
 	resources.ViewportProducts.SceneDepth = sceneDepth;
 	resources.ViewportProducts.FinalSceneColor = finalSceneColor;

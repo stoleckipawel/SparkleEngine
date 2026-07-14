@@ -84,7 +84,7 @@ void ReferenceLightingAccumulationPass::Execute(PassExecutionContext& context, P
 {
 	parameters->ReferenceLightingAccumulationConstants = ReferenceLightingAccumulationUniformData{
 	    .SamplesPerFrame = BuildPathTracedLightingSettings().SamplesPerPixel,
-	    .HistoryValid = context.RuntimeServices.ReferenceLightingHistoryValid ? 1u : 0u};
+	    .HistoryValid = context.RuntimeServices.History.ReferenceLighting ? 1u : 0u};
 	ComputePassUtilities::DispatchSized<ReferenceLightingAccumulationPass>(
 	    context,
 	    m_runtime,

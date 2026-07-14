@@ -22,11 +22,11 @@ void AddRestirIndirectReservoirClearPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     const RestirIndirectWorkingReservoirs& workingReservoirs,
-    const FrameAssemblyHistoryResources& history)
+    const FrameGraphReservoirHistoryHandles& history)
 {
 	AddComputeClearPass(builder, "ClearRestirIndirectTemporalSample", workingReservoirs.TemporalSample, sceneExtent);
 	AddComputeClearPass(builder, "ClearRestirIndirectTemporalWeight", workingReservoirs.TemporalWeight, sceneExtent);
-	AddComputeClearPass(builder, "ClearRestirIndirectCurrentSample", history.CurrentRestirIndirectReservoirSample, sceneExtent);
-	AddComputeClearPass(builder, "ClearRestirIndirectCurrentWeight", history.CurrentRestirIndirectReservoirWeight, sceneExtent);
-	AddComputeClearPass(builder, "ClearRestirIndirectCurrentSurface", history.CurrentRestirIndirectReservoirSurface, sceneExtent);
+	AddComputeClearPass(builder, "ClearRestirIndirectCurrentSample", history.Sample.Current, sceneExtent);
+	AddComputeClearPass(builder, "ClearRestirIndirectCurrentWeight", history.Weight.Current, sceneExtent);
+	AddComputeClearPass(builder, "ClearRestirIndirectCurrentSurface", history.Surface.Current, sceneExtent);
 }

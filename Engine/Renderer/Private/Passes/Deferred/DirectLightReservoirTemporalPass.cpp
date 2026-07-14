@@ -44,9 +44,9 @@ void DirectLightReservoirTemporalPass::DeclareResources(
 {
 	parameters->TemporalReservoirSample = builder.CreateUAV(shadowSignals.TemporalReservoirSample);
 	parameters->TemporalReservoirWeight = builder.CreateUAV(shadowSignals.TemporalReservoirWeight);
-	parameters->PreviousReservoirSample = builder.CreateSRV(shadowSignals.PreviousReservoirSample);
-	parameters->PreviousReservoirWeight = builder.CreateSRV(shadowSignals.PreviousReservoirWeight);
-	parameters->PreviousReservoirSurface = builder.CreateSRV(shadowSignals.PreviousReservoirSurface);
+	parameters->PreviousReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Previous);
+	parameters->PreviousReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Previous);
+	parameters->PreviousReservoirSurface = builder.CreateSRV(shadowSignals.ReservoirHistory.Surface.Previous);
 	DirectLightReservoirPassCommon::DeclareResources(
 	    builder,
 	    sceneDepth,
@@ -67,7 +67,7 @@ void DirectLightReservoirTemporalPass::SetParameters(
 {
 	DirectLightReservoirPassCommon::SetParameters(*parameters, frame, viewData, passRuntimeServices);
 	PerTemporalConstantBufferData reservoirTemporalData = viewData.perTemporalData;
-	if (!passRuntimeServices.DirectLightReservoirHistoryValid)
+	if (!passRuntimeServices.History.DirectLightReservoir)
 	{
 		reservoirTemporalData.HistoryValid = 0u;
 	}

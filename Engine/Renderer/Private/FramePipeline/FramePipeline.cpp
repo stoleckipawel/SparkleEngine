@@ -36,7 +36,9 @@
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
-FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&systems)
+FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept :
+	m_systems(&systems),
+	m_history(systems.GetRenderHardwareInterface())
 {
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
 	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
@@ -47,20 +49,10 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&
 	}
 
 	InitializeFrameGraph();
-	CreateExposureHistoryResources();
-	CreateDirectLightReservoirHistoryResources();
-	CreateReferenceLightingHistoryResources();
-	CreateRestirIndirectReservoirHistoryResources();
 	BindWindowResizeEvent();
 }
 
-FramePipeline::~FramePipeline() noexcept
-{
-	ReleaseDirectLightReservoirHistoryResources();
-	ReleaseReferenceLightingHistoryResources();
-	ReleaseRestirIndirectReservoirHistoryResources();
-	ReleaseExposureHistoryResources();
-}
+FramePipeline::~FramePipeline() noexcept = default;
 
 void FramePipeline::PrepareHostFrame() noexcept
 {
@@ -133,10 +125,14 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 	m_frameGraphOutputExtent = dependencies.outputExtent;
 	m_frameGraphPresentsToBackBuffer = dependencies.presentSceneToBackBuffer;
 	m_frameResources = buildResult.Resources;
+	m_history.SetGraphLayout(m_frameResources.History);
 	m_gBufferMode = CVarGBufferMode.Get();
 	m_lightingMode = GetLightingMode();
-	m_referenceLightingSettingsKey = BuildReferenceLightingSettingsKey();
-	m_restirLightingSettingsKey = BuildRestirLightingSettingsKey();
+	m_history.Configure(
+	    FrameHistoryRequirements{
+	        .RenderExtent = m_frameGraphRenderExtent,
+	        .ReferenceLighting = m_lightingMode == LightingMode::ReferencePathTraced,
+	        .RestirLighting = m_lightingMode == LightingMode::RestirPathTraced});
 	m_imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	m_frameGraph = std::move(buildResult.Graph);
 }
@@ -167,24 +163,32 @@ void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noe
 
 	m_frameGraph.reset();
 	InitializeFrameGraph(resolution);
-	CreateDirectLightReservoirHistoryResources();
-	CreateReferenceLightingHistoryResources();
-	CreateRestirIndirectReservoirHistoryResources();
+}
+
+void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
+{
+	AdvanceTemporalResetGeneration();
+	m_systems->GetTemporalDataBuilder().ResetHistory(reason);
+	m_systems->GetImageProviders().ResetHistory();
+}
+
+void FramePipeline::AdvanceTemporalResetGeneration() noexcept
+{
+	++m_temporalResetGeneration;
+	if (m_temporalResetGeneration == 0)
+	{
+		++m_temporalResetGeneration;
+	}
 }
 
 void FramePipeline::BeginFrame() noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
-	TemporalDataBuilder& temporalDataBuilder = m_systems->GetTemporalDataBuilder();
 
 	if (m_bResizePending)
 	{
 		m_bResizePending = false;
-		temporalDataBuilder.ResetHistory("Window resize");
-		ResetExposureHistory();
-		ResetReferenceLightingHistory();
-		ResetRestirLightingHistory();
-		m_systems->GetImageProviders().ResetHistory();
+		ResetTemporalState("Window resize");
 
 		if (m_systems->GetWindow().HasValidSize())
 		{
@@ -203,68 +207,30 @@ void FramePipeline::BeginFrame() noexcept
 	const bool presentationChanged = presentsToBackBuffer != m_frameGraphPresentsToBackBuffer;
 	if (resolutionChanged || presentationChanged)
 	{
-		temporalDataBuilder.ResetHistory(presentationChanged ? "Frame presentation mode changed" : "Frame resolution changed");
-		ResetExposureHistory();
-		ResetReferenceLightingHistory();
-		ResetRestirLightingHistory();
-		m_systems->GetImageProviders().ResetHistory();
+		ResetTemporalState(presentationChanged ? "Frame presentation mode changed" : "Frame resolution changed");
 		RefreshFrameExecution(frameResolution);
 	}
 
 	const GBufferMode gBufferMode = CVarGBufferMode.Get();
 	if (gBufferMode != m_gBufferMode)
 	{
-		temporalDataBuilder.ResetHistory("GBuffer mode changed");
-		ResetExposureHistory();
-		ResetReferenceLightingHistory();
-		ResetRestirLightingHistory();
-		m_systems->GetImageProviders().ResetHistory();
+		ResetTemporalState("GBuffer mode changed");
 		RefreshFrameExecution(ResolveFrameResolution());
 	}
 
 	const LightingMode lightingMode = GetLightingMode();
 	if (lightingMode != m_lightingMode)
 	{
-		temporalDataBuilder.ResetHistory("Lighting mode changed");
-		ResetExposureHistory();
-		ResetReferenceLightingHistory();
-		ResetRestirLightingHistory();
-		m_systems->GetImageProviders().ResetHistory();
+		ResetTemporalState("Lighting mode changed");
 		RefreshFrameExecution(ResolveFrameResolution());
-	}
-
-	const std::uint64_t referenceLightingSettingsKey = BuildReferenceLightingSettingsKey();
-	if (referenceLightingSettingsKey != m_referenceLightingSettingsKey)
-	{
-		m_referenceLightingSettingsKey = referenceLightingSettingsKey;
-		if (lightingMode == LightingMode::ReferencePathTraced)
-		{
-			ResetReferenceLightingHistory();
-			m_systems->GetImageProviders().ResetHistory();
-		}
-	}
-
-	const std::uint64_t restirLightingSettingsKey = BuildRestirLightingSettingsKey();
-	if (restirLightingSettingsKey != m_restirLightingSettingsKey)
-	{
-		m_restirLightingSettingsKey = restirLightingSettingsKey;
-		if (lightingMode == LightingMode::RestirPathTraced)
-		{
-			ResetRestirLightingHistory();
-			m_systems->GetImageProviders().ResetHistory();
-		}
 	}
 
 	const ImageProviderGraphKey imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	if (imageProviderFrameGraphKey != m_imageProviderFrameGraphKey)
 	{
-		temporalDataBuilder.ResetHistory("Image provider graph mode changed");
-		ResetExposureHistory();
-		ResetReferenceLightingHistory();
-		ResetRestirLightingHistory();
 		m_systems->RefreshImageProviders();
+		ResetTemporalState("Image provider graph mode changed");
 		RefreshFrameExecution(ResolveFrameResolution());
-		m_systems->GetImageProviders().ResetHistory();
 		m_imageProviderFrameGraphKey = imageProviderFrameGraphKey;
 	}
 
@@ -340,10 +306,7 @@ void FramePipeline::RecordFrame() noexcept
 	SceneRenderStateCoordinator* sceneRenderStateCoordinator = m_systems->GetSceneRenderStateCoordinator();
 	if (sceneRenderStateCoordinator != nullptr && sceneRenderStateCoordinator->ConsumeTemporalHistoryResetRequest(temporalResetReason))
 	{
-		m_systems->GetTemporalDataBuilder().ResetHistory(temporalResetReason);
-		ResetExposureHistory();
-		ResetReferenceLightingHistory();
-		ResetRestirLightingHistory();
+		ResetTemporalState(temporalResetReason);
 	}
 
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[renderHardwareInterface.GetCurrentFrameIndex()];
@@ -360,13 +323,24 @@ void FramePipeline::RecordFrame() noexcept
 		    m_systems->GetTemporalDataBuilder()));
 	}();
 	FrameContext& frame = *frameSlot;
-	UpdateLightingHistoryState(frame);
-	if (frame.mainView.perTemporalData.HistoryValid == 0u)
+	if (GetLightingMode() == LightingMode::RestirPathTraced)
 	{
-		ResetExposureHistory();
-		ResetReferenceLightingHistory();
-		ResetRestirLightingHistory();
+		const std::uint64_t historyKey = BuildRestirLightingHistoryKey(frame);
+		if (m_history.SetRestirLightingSemanticKey(historyKey))
+		{
+			m_systems->GetImageProviders().ResetHistory();
+		}
 	}
+	else if (GetLightingMode() == LightingMode::ReferencePathTraced)
+	{
+		m_history.SetReferenceLightingSemanticKey(BuildReferenceLightingHistoryKey(frame));
+	}
+	if (frame.mainView.perTemporalData.HistoryValid == 0u &&
+	    m_lastBuiltTemporalResetGeneration == m_temporalResetGeneration)
+	{
+		AdvanceTemporalResetGeneration();
+	}
+	m_lastBuiltTemporalResetGeneration = m_temporalResetGeneration;
 
 	m_systems->GetImageProviders().SetupFrame(
 	    ImageProviderFrameContext{
@@ -401,7 +375,7 @@ void FramePipeline::RecordFrame() noexcept
 		}
 	}
 
-	BindExposureHistoryFrameGraphResources();
+	m_history.Bind(*m_frameGraph, renderHardwareInterface.GetCurrentFrameIndex(), m_temporalResetGeneration);
 	if (frame.sceneData.sky.HasTexture())
 	{
 		const RendererTexture& skyTexture = *frame.sceneData.sky.texture;
@@ -456,10 +430,6 @@ void FramePipeline::RecordFrame() noexcept
 	    "RayTracingHitMaterials");
 	bindFrameBuffer(m_frameResources.External.JointMatrices, frame.skinning.GetBuffer(), "JointMatrices");
 	bindFrameBuffer(m_frameResources.External.PreviousJointMatrices, frame.skinning.GetPreviousBuffer(), "PreviousJointMatrices");
-	BindDirectLightReservoirHistoryFrameGraphResources();
-	BindReferenceLightingHistoryFrameGraphResources();
-	BindRestirIndirectReservoirHistoryFrameGraphResources();
-
 	m_frameGraph->Setup(frame);
 	const FrameGraphPlan& compiledPlan = m_frameGraph->Compile();
 	RenderCommandList& commandList = m_systems->GetBackend().GetCurrentGraphicsCommandList();
@@ -474,10 +444,7 @@ void FramePipeline::RecordFrame() noexcept
 	    .HardwareInterface = renderHardwareInterface,
 	    .RuntimeManager = m_systems->GetPipelineStateManager(),
 	    .PerFrame = m_perFrameData,
-	    .ExposureHistoryValid = m_exposureHistoryValid,
-	    .ReferenceLightingHistoryValid = m_referenceLightingHistoryValid,
-	    .DirectLightReservoirHistoryValid = m_directLightReservoirHistoryValid,
-	    .RestirIndirectReservoirHistoryValid = m_restirIndirectReservoirHistoryValid,
+	    .History = m_history.GetValidity(),
 	    .Textures = &m_systems->GetTextureManager(),
 	    .RayTracing = &rayTracingPassServices,
 	    .ImageProviders = &imageProviderPassServices};
@@ -498,10 +465,6 @@ void FramePipeline::SubmitFrame() noexcept
 
 void FramePipeline::EndFrame() noexcept
 {
-	const bool restirLightingActive = GetLightingMode() == LightingMode::RestirPathTraced;
-	m_exposureHistoryValid = HasExposureHistoryResources();
-	m_referenceLightingHistoryValid = GetLightingMode() == LightingMode::ReferencePathTraced && HasReferenceLightingHistoryResources();
-	m_directLightReservoirHistoryValid = restirLightingActive && HasDirectLightReservoirHistoryResources();
-	m_restirIndirectReservoirHistoryValid = restirLightingActive && HasRestirIndirectReservoirHistoryResources();
+	m_history.CommitFrame();
 	m_systems->GetBackend().AdvanceFrameInFlight();
 }

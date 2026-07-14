@@ -2,6 +2,7 @@
 
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
+#include "Resources/History/FrameHistory.h"
 
 #include "ShaderData/PerFrameConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -21,10 +22,7 @@ struct PassRuntimeServices
 	RenderHardwareInterface& HardwareInterface;
 	const PipelineStateManager& RuntimeManager;
 	const PerFrameConstantBufferData& PerFrame;
-	bool ExposureHistoryValid = false;
-	bool ReferenceLightingHistoryValid = false;
-	bool DirectLightReservoirHistoryValid = false;
-	bool RestirIndirectReservoirHistoryValid = false;
+	FrameHistoryValidity History = {};
 	const TextureManager* Textures = nullptr;
 	const RenderRayTracingPassServices* RayTracing = nullptr;
 	const RendererImageProviderPassServices* ImageProviders = nullptr;

@@ -20,6 +20,8 @@ The foundations are nevertheless not yet solid enough for unbounded feature grow
 1. RHI GPU lifetime was only partially unified. Priority 0A now makes descriptor allocations, tables, and views retire through the backend's waited frame-slot boundary and protects recycled table/view records with generations. Runtime material-rebuild validation remains before final acceptance.
 2. Material textures used a second resource model outside `RhiOwnedResourceHandle` and `RhiResourceViewHandle`. Priority 0B removed that hierarchy, its hidden uploads, lifetime-long staging, and per-texture Vulkan queue-idle wait. Build and runtime validation remain pending by explicit instruction.
 
+Priority 1A has also moved persistent temporal mechanics and validity out of `FramePipeline`. Feature code retains temporal meaning and pass use, while one typed Renderer resource set owns concrete declarations and lifecycle fan-out. Its code and static deletion gates are complete; build and runtime validation remain deferred by explicit instruction.
+
 These were correctness and scalability issues, not presentation issues. Their implementations must pass the deferred runtime acceptance before adding another descriptor model, streaming, or asynchronous compute.
 
 The recommended direction is deliberately narrow:
@@ -51,7 +53,7 @@ Application/Editor remains the composition root: it constructs these modules, ow
 | Scene handoff | Accepted current design | GameFramework publishes the current scene snapshot and Renderer consumes it privately. No additional scene-synchronization change program is planned. |
 | GPU object model | Priority 0B implemented; build/runtime validation pending | The polymorphic texture hierarchy and its separate creation, view, upload, and destruction rules have been deleted. Sampled textures now use generic RHI resources, views, and explicit uploads. |
 | In-flight lifetime | Priorities 0A and 0B implemented; runtime stress validation pending | Resources, descriptor allocations, descriptor tables, views, and texture staging now have backend-owned deferred reuse. The legacy texture hierarchy and its bespoke destruction paths have been deleted. |
-| Feature ownership | Needs work | `FramePipeline` owns exposure, reference-lighting, direct-reservoir, and indirect-reservoir resources, validity flags, resets, and feature keys. |
+| Feature ownership | Priority 1A implemented; build/runtime validation pending | Feature files declare semantic continuity and pass/resource use. A typed Renderer history resource set owns names, formats, sizing, frame-slot allocation, validity, graph binding, and retirement; `FramePipeline` coordinates it through one temporal reset generation. |
 | Material bindings | Needs work | Per-material binding sets and a global material table are both valid policies, but ownership is exposed as raw pointers and repeated availability checks across passes. |
 | Queue model | Intentionally limited | The public submission contract exposes only graphics command lists. This is honest today but must be extended before real asynchronous copy/compute scheduling. |
 
@@ -106,10 +108,10 @@ The practical cross-reference principles are:
 2. Put barrier and scheduling policy above the low-level interface.
 3. Never recycle GPU-visible storage until the relevant submission has completed.
 4. Make uploads part of an explicit command/submission lifetime.
-5. Let features own their persistent GPU state.
+5. Let features own temporal meaning and resource use; keep repeated persistent-resource mechanics in the Renderer resource layer.
 6. Keep native SDK/API translation in narrow backend/provider bridges.
 
-Sparkle already satisfies principles 2 and 6. The immediate work is principles 3, 4, and 5.
+Sparkle already satisfied principles 2 and 6. Priorities 0A, 0B, and 1A now implement principles 3, 4, and 5 in code; deferred build/runtime validation and the Priority 1B material-state cleanup remain.
 
 ## Legacy-Removal Completion Gate
 
@@ -119,7 +121,7 @@ Every priority is a replacement, not an addition. A priority is not complete whi
 | --- | --- |
 | 0A | Immediate descriptor/table reuse paths, recycled unversioned table/view records, and the shader-resource-only allocate/release convenience API. |
 | 0B | `Texture`, `D3D12Texture`, `VulkanTexture`, texture factories, `RhiResourceService::CreateTexture`, object-owned descriptor writes, private upload submissions, and special frame-graph texture overloads. |
-| 1A | Feature-specific history resources, validity fields, state keys, reset methods, and reset fan-out in `FramePipeline`; no forwarding methods remain after feature ownership moves. |
+| 1A | Feature-specific history resources, validity fields, state keys, reset methods, and lifecycle fan-out in `FramePipeline`; no forwarding methods or intermediate feature history wrappers remain. |
 | 1B | Raw binding-set pointers in frame data, repeated pass-local readiness branches, pointer/native-address semantic hashes, and duplicate ownership facts outside `MaterialCacheManager`. |
 | 2A | Ad hoc/private upload submission and wait paths replaced by the first real multi-queue workload; no speculative queue facade or unused parallel submission API is retained. |
 | 2B | Misplaced exports/includes and obsolete public helpers are deleted or relocated; no compatibility facade is added in front of them. |
@@ -235,9 +237,44 @@ Priority 0B is therefore **implementation-complete but not runtime-accepted**. F
 
 ## Priority 1A: Move Persistent History To The Feature That Uses It
 
-### Current evidence
+### Implementation status: code, deduplication, and static deletion checks complete; build and runtime validation intentionally pending
 
-[`FramePipeline`](../../../Engine/Renderer/Private/FramePipeline/FramePipeline.h) owns:
+The implementation is present in the working tree. In accordance with the priority execution rule, no engine build, backend compile, or runtime launch was performed for Priority 1A.
+
+The ownership and frontend shape after the change is:
+
+- [`FrameHistory`](../../../Engine/Renderer/Private/Resources/History/FrameHistory.h) exposes the complete intent-level graph layout as named exposure, reference-lighting, direct-reservoir, and indirect-reservoir records.
+- [`PersistentFrameHistory`](../../../Engine/Renderer/Private/Resources/History/PersistentFrameHistory.h) is one concrete resource aggregate. It hides the four physical history declarations and fans out graph-layout assignment, activation, binding, validity, and commit operations.
+- [`PersistentTextureHistory`](../../../Engine/Renderer/Private/Resources/History/PersistentTextureHistory.h) owns the common frame-slot allocation, graph binding, reset consumption, validity, and retirement mechanics outside the pass/resource frontend.
+- [`PersistentReservoirHistory`](../../../Engine/Renderer/Private/Resources/History/PersistentReservoirHistory.h) composes three persistent textures behind named sample/weight/surface handles.
+- [`ReferenceLightingState`](../../../Engine/Renderer/Private/Frame/Lighting/ReferenceLightingState.cpp) and [`RestirLightingState`](../../../Engine/Renderer/Private/Frame/Lighting/RestirLightingState.cpp) retain only the feature-authored values that define semantic continuity.
+- [`FramePipeline`](../../../Engine/Renderer/Private/FramePipeline/FramePipeline.h) retains one `PersistentFrameHistory` and one `m_temporalResetGeneration`; it no longer contains per-feature resource objects, validity booleans, formats, extents, or lifecycle fan-out.
+
+Resize, presentation, resolution, GBuffer, lighting-mode, provider-graph, and scene-coordinator invalidations use one `ResetTemporalState` path. Feature settings and scene inputs are combined into one semantic history key by the feature state builders, while the shared resource primitive performs the mechanical invalidation and binding work.
+
+The required cleanup pass also completed:
+
+- the five `FramePipeline*History.cpp` implementations and the pipeline-local reservoir helper were deleted rather than retained as forwarding compatibility layers;
+- the flat 16-field history handle bag was replaced with four feature-shaped graph records;
+- the intermediate feature history headers and `.cpp` files were deleted after names, formats, sizing, graph declaration, and repeated frame-slot/resource mechanics moved to `Resources/History`;
+- `FrameSceneResources` declares the complete history layout with one intent-level call; it contains no history formats, persistent allocation calls, or per-feature reserve sequence;
+- `FramePipeline` performs one graph-layout assignment, one activation declaration, one bind, one validity export, and one commit rather than repeating each operation for four histories;
+- reservoir graph handles are grouped as named sample/weight/surface previous/current pairs, and the indirect clear helper accepts only that reservoir record;
+- exposure and direct-shadow assembly preserve those history records through frontend plumbing instead of flattening them back into unrelated handle arguments or fields;
+- reference and ReSTIR settings/scene hashes were each collapsed into one feature-level history key instead of being passed through separate settings/state update calls.
+
+A repository-wide Renderer audit found no additional ordinary persistent GPU histories outside these four declarations. The remaining history-related state is intentionally different:
+
+- `TemporalDataBuilder` owns CPU camera/jitter continuity, not a GPU resource;
+- `SkinningFrameData::PreviousBuffer` uploads the previous pose supplied in the current frame snapshot and does not persist a resource across frames;
+- image reconstruction/upscaling providers own opaque SDK histories and receive only reset intent through `RendererImageProviderStack`;
+- shader uniform `HistoryValid` fields describe pass behavior and do not own lifetime.
+
+These paths should not be wrapped in `PersistentTextureHistory`. Future Renderer-owned previous/current GPU textures should extend the concrete frame-history layout and implementation under `Resources/History`; pass/resource frontend files should consume the named record without adding allocation, frame-slot, format, binding, or commit code.
+
+### Baseline evidence addressed by this priority
+
+Before this implementation, [`FramePipeline`](../../../Engine/Renderer/Private/FramePipeline/FramePipeline.h) owned:
 
 - exposure history resources and validity;
 - reference-lighting history resources, extent, validity, and state/settings keys;
@@ -246,33 +283,39 @@ Priority 0B is therefore **implementation-complete but not runtime-accepted**. F
 - all feature-specific create/release/bind/reset methods;
 - all reset decisions for window, resolution, GBuffer mode, lighting mode, scene state, and provider graph changes.
 
-The implementation is split into several `.cpp` files, but all methods and members still belong to one class. Every temporal feature therefore expands the central pipeline's knowledge and reset matrix.
+The implementation was split into several `.cpp` files, but all methods and members still belonged to one class. Every temporal feature therefore expanded the central pipeline's knowledge and reset matrix.
 
-### Target ownership
+### Implemented ownership
 
-- Exposure/post-processing owns exposure history.
-- Reference-lighting owns reference accumulation history and its scene/settings key.
-- Direct-light reservoir owns direct reservoir history.
-- ReSTIR indirect owns indirect reservoir history.
+- Exposure/post-processing owns exposure history meaning and pass usage.
+- Reference-lighting owns the scene/settings key and accumulation pass usage.
+- Direct-light reservoir owns its temporal/spatial pass usage.
+- ReSTIR indirect owns its semantic key and temporal/spatial/resolve pass usage.
+- `Resources/History` owns the concrete physical resource catalog and repeated lifecycle mechanics.
 - Image providers continue to own provider-specific histories.
 - `FramePipeline` owns only frame coordination, the frame graph, a temporal reset generation, and submission.
 
-Each existing feature unit should expose small operations such as reserve graph handles, ensure physical resources, bind current/previous resources, consume a reset epoch, and report readiness. Do not create a generic `HistoryManager`; temporal resources have different formats, invalidation rules, and feature meanings.
+Feature code declares resource use and the values that define semantic continuity. Formats, sizing, frame slots, and lifecycle operations are not frontend concerns. The concrete aggregate is not a generic `HistoryManager`: it contains no feature settings, scene hashing, reset decisions, pass scheduling, or provider policy.
 
 ### Before and after
 
 | Before | After |
 | --- | --- |
-| Adding a temporal feature edits `FramePipeline.h`, multiple reset branches, pass runtime services, and end-of-frame validity updates. | Adding a temporal feature edits its feature owner and graph assembly; FramePipeline sends one temporal reset generation/reason. |
-| Feature history is a collection of arrays and booleans in a coordinator. | A vertical feature slice owns its resources, keys, validity, and binding. |
+| Adding a temporal feature edits `FramePipeline.h`, multiple reset branches, pass runtime services, and end-of-frame validity updates. | A feature declares pass use and a semantic key; the concrete history resource set supplies its layout, frame-slot lifetime, activation, binding, validity, and commit. |
+| Feature history is a collection of arrays and booleans in a coordinator. | `Frame` sees named previous/current resource records; reusable Renderer resource objects own every concrete lifecycle detail. |
 | Reset logic is repeated across mode/resize/state branches. | Pipeline increments one temporal reset generation; features decide what that invalidates. |
 
 ### Acceptance bar
 
-- `FramePipeline.h` has no exposure/reference/direct/indirect history resource arrays or feature-specific validity booleans.
-- Resize/mode/scene changes advance one explicit temporal reset generation rather than calling every feature reset function.
-- Each feature can be destroyed and have its resources safely retired without changing pipeline-wide destruction code.
-- No generic history abstraction is introduced.
+| Criterion | Status | Evidence / remaining work |
+| --- | --- | --- |
+| `FramePipeline.h` has no exposure/reference/direct/indirect history resource arrays or feature-specific validity booleans. | Fulfilled statically | The pipeline contains one concrete history aggregate. Named resource arrays, extents, validity flags, formats, and lifecycle methods are absent. |
+| Resize/mode/scene changes advance one explicit temporal reset generation rather than calling every feature reset function. | Fulfilled statically | Global invalidation paths call `ResetTemporalState`; camera/temporal invalidity advances the same generation. No feature reset fan-out functions remain. |
+| Each feature can be disabled and have its resources safely retired without changing pipeline-wide destruction code. | Fulfilled in code; runtime pending | The concrete aggregate translates feature activation intent into primitive release. Persistent resource primitives retire through `RhiResourceService`; `FramePipeline` has a default destructor and no history destruction sequence. Runtime retirement still requires deferred multi-frame validation. |
+| No generic history policy manager is introduced; repeated physical mechanics are not left in feature files. | Fulfilled statically | `Resources/History` implements a concrete typed resource set and common mechanics. Feature state builders still own semantic keys, while the pipeline still owns reset decisions. |
+| Every Renderer-owned persistent GPU texture history follows the same record and lifetime pattern. | Fulfilled statically | Exposure, reference lighting, direct-light reservoirs, and indirect ReSTIR reservoirs are the complete ordinary GPU-history inventory. All names, formats, sizing, frame-slot allocation, binding, validity aggregation, and retirement code exists only under `Resources/History`. |
+
+Priority 1A is therefore **implementation-complete but not runtime-accepted**. Final acceptance requires the explicitly deferred build plus resize, lighting-mode, settings, scene-state, and several-frames-in-flight history scenarios.
 
 ## Priority 1B: Make Material GPU State A Stable Renderer-Owned Table
 
@@ -368,7 +411,7 @@ This program must not turn into architecture theatre.
 
 - Do not add diagnostics, logging, reports, dashboards, or validation layers as the deliverable.
 - Do not replace the frame graph or move its scheduling/barrier policy into RHI.
-- Do not add a generic resource manager, history manager, scene synchronization framework, or wrapper RHI.
+- Do not add a generic resource manager, central history policy manager, scene synchronization framework, or wrapper RHI. Reusable physical history-resource mechanics are allowed and should stay outside feature/pass frontend files.
 - Do not copy NVRHI reference counting wholesale; copy the completeness of its lifetime contract.
 - Do not copy Cauldron's sample framework organization wholesale.
 - Do not expose native fences, descriptor heaps, command pools, or resources to ordinary Renderer code.

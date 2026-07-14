@@ -198,7 +198,7 @@ void RestirIndirectTemporalPass::Execute(PassExecutionContext& context, Paramete
 	    .MaxDistance = settings.MaxDistance};
 
 	PerTemporalConstantBufferData temporalData = context.Frame.mainView.perTemporalData;
-	if (!context.RuntimeServices.RestirIndirectReservoirHistoryValid)
+	if (!context.RuntimeServices.History.RestirIndirectReservoir)
 	{
 		temporalData.HistoryValid = 0u;
 	}

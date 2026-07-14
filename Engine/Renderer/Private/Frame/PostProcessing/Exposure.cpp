@@ -8,12 +8,11 @@
 #include "Passes/PostProcessing/ExposurePass.h"
 
 void AddExposurePass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    FrameGraphTextureHandle finalSceneColor,
-    FrameGraphTextureHandle previousExposure,
-    FrameGraphTextureHandle currentExposure,
-    FrameGraphTextureHandle exposure)
+	FrameGraphBuilder& builder,
+	RenderViewportExtent sceneExtent,
+	FrameGraphTextureHandle finalSceneColor,
+	const FrameGraphTextureHistoryHandles& history,
+	FrameGraphTextureHandle exposure)
 {
 	const EngineExposureMeteringMethod meteringMethod = SanitizeExposureMeteringMethod(CVarExposureMeteringMethod.Get());
 	const ExposureMomentChain::Texture moments =
@@ -22,6 +21,6 @@ void AddExposurePass(
 	        : ExposureMomentChain::AddReduction(builder, sceneExtent, finalSceneColor);
 
 	auto& parameters = builder.AllocPassParameters<ExposurePass>();
-	ExposurePass::DeclareResources(builder, moments.TextureHandle, previousExposure, currentExposure, exposure, parameters);
+	ExposurePass::DeclareResources(builder, moments.TextureHandle, history.Previous, history.Current, exposure, parameters);
 	builder.AddComputeShaderPass<ExposurePass>(parameters);
 }

@@ -2,11 +2,13 @@
 #include "Frame/Lighting/RestirLightingState.h"
 
 #include "Core/Public/Hash/HashUtils.h"
+#include "Frame/Core/FrameContext.h"
+#include "Frame/Lighting/LightingSceneState.h"
 #include "Lighting/LightingCVars.h"
 #include "RayTracing/Effects/RestirLighting/RestirIndirectLightingSettings.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 
-std::uint64_t BuildRestirLightingSettingsKey() noexcept
+std::uint64_t BuildRestirLightingHistoryKey(const FrameContext& frame) noexcept
 {
 	const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
 	std::uint64_t hash = Hash::kFnv64OffsetBasis;
@@ -20,5 +22,6 @@ std::uint64_t BuildRestirLightingSettingsKey() noexcept
 	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxPointLights.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxSpotLights.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxRectLights.Get());
+	hash = Hash::ContinueFnv1a64Value(hash, BuildLightingSceneStateKey(frame));
 	return Hash::FinalizeFnv1a64(hash);
 }

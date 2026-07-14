@@ -14,8 +14,8 @@ void AddReferenceLightingAccumulationPass(
 	    builder,
 	    referenceSample,
 	    resources.Transient.Scene.SceneColor,
-	    resources.History.PreviousReferenceLighting,
-	    resources.History.CurrentReferenceLighting,
+	    resources.History.ReferenceLighting.Previous,
+	    resources.History.ReferenceLighting.Current,
 	    resources.Transient.Lighting.IndirectDiffuse,
 	    resources.Transient.GBuffer.MotionVector,
 	    parameters);

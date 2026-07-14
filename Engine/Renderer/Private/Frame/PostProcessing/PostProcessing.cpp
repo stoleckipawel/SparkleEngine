@@ -15,8 +15,7 @@ void AddPreReconstructionPostProcessingPasses(
 	    builder,
 	    renderExtent,
 	    resources.Transient.Scene.SceneColor,
-	    resources.History.PreviousExposure,
-	    resources.History.CurrentExposure,
+	    resources.History.Exposure,
 	    resources.Transient.Exposure);
 }
 

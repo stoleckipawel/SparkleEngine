@@ -42,9 +42,9 @@ void DirectLightReservoirSpatialPass::DeclareResources(
 {
 	parameters->TemporalReservoirSample = builder.CreateSRV(shadowSignals.TemporalReservoirSample);
 	parameters->TemporalReservoirWeight = builder.CreateSRV(shadowSignals.TemporalReservoirWeight);
-	parameters->CurrentReservoirSample = builder.CreateUAV(shadowSignals.CurrentReservoirSample);
-	parameters->CurrentReservoirWeight = builder.CreateUAV(shadowSignals.CurrentReservoirWeight);
-	parameters->CurrentReservoirSurface = builder.CreateUAV(shadowSignals.CurrentReservoirSurface);
+	parameters->CurrentReservoirSample = builder.CreateUAV(shadowSignals.ReservoirHistory.Sample.Current);
+	parameters->CurrentReservoirWeight = builder.CreateUAV(shadowSignals.ReservoirHistory.Weight.Current);
+	parameters->CurrentReservoirSurface = builder.CreateUAV(shadowSignals.ReservoirHistory.Surface.Current);
 	DirectLightReservoirPassCommon::DeclareResources(
 	    builder,
 	    sceneDepth,
