@@ -15,17 +15,16 @@ GameFramework  --->  Renderer  --->  RHI  --->  D3D12 / Vulkan
 
 GameFramework does not depend on Renderer or RHI. Renderer consumes GameFramework privately and RHI publicly. RHI does not depend on Renderer. The architecture boundary check passes. The Renderer frame graph decides pass dependencies, transient lifetimes, aliasing, resource states, and barriers; RHI performs the backend commands. This is the right split and should not be replaced.
 
-The foundations are nevertheless not yet solid enough for unbounded feature growth. The three highest-risk gaps identified by the audit were:
+The foundations are nevertheless not yet solid enough for unbounded feature growth. The two highest-risk gaps retained by the implementation plan are:
 
-1. RHI GPU lifetime was only partially unified. Priority 0A now makes descriptor allocations, tables, and views retire through the backend's waited frame-slot boundary and protects recycled table/view records with generations. Priority 0B now routes sampled textures through that same resource/view lifetime model and fence-retired upload storage. Runtime material-rebuild and texture-upload validation remains before final acceptance.
-2. Material textures use a second resource model outside `RhiOwnedResourceHandle` and `RhiResourceViewHandle`. That path records hidden uploads, keeps upload allocations with textures, and performs a queue-wide idle wait for every Vulkan texture upload.
-3. The GameFramework-to-Renderer snapshot has no stable per-instance identity or revision contract. It copies static data each frame, exports raw `Mesh*`, keys GPU meshes by pointer, and keys temporal data by vector position or shared skeleton asset.
+1. RHI GPU lifetime was only partially unified. Priority 0A now makes descriptor allocations, tables, and views retire through the backend's waited frame-slot boundary and protects recycled table/view records with generations. Runtime material-rebuild validation remains before final acceptance.
+2. Material textures used a second resource model outside `RhiOwnedResourceHandle` and `RhiResourceViewHandle`. Priority 0B removed that hierarchy, its hidden uploads, lifetime-long staging, and per-texture Vulkan queue-idle wait. Build and runtime validation remain pending by explicit instruction.
 
-These are correctness and scalability issues, not presentation issues. They should be fixed before adding another large renderer feature, another descriptor model, streaming, or asynchronous compute.
+These were correctness and scalability issues, not presentation issues. Their implementations must pass the deferred runtime acceptance before adding another descriptor model, streaming, or asynchronous compute.
 
 The recommended direction is deliberately narrow:
 
-- GameFramework owns durable CPU scene and asset identity, then publishes stable IDs, revisions, and immutable change records.
+- GameFramework owns authored CPU scene and asset data and publishes the current renderer-neutral scene snapshot.
 - Renderer owns the imported render scene, GPU feature policy, frame graph, pass scheduling, persistent feature histories, and renderer-facing material/mesh tables.
 - RHI owns every native GPU object, upload implementation, descriptor allocation, queue, fence, synchronization primitive, and deferred destruction rule.
 
@@ -35,7 +34,7 @@ Do not add a fourth abstraction layer. Strengthen and simplify the three layers 
 
 | Layer | Must own | May publish upward/downward | Must not own |
 | --- | --- | --- | --- |
-| GameFramework | Levels, scene components, transforms, animation state, lights, cameras, material descriptions, cooked asset identity, immutable CPU asset payloads, stable scene-instance IDs, scene and asset revisions. | A renderer-neutral, lifetime-safe scene snapshot/change set containing IDs, revisions, authored values, and immutable payload references. | RHI handles, descriptor indices, GPU addresses, resource states, barriers, frame-graph handles, render passes, temporal render history. |
+| GameFramework | Levels, scene components, transforms, animation state, lights, cameras, material descriptions, cooked asset references, and authored CPU asset data. | The current renderer-neutral scene snapshot containing authored values and asset references. | RHI handles, descriptor indices, GPU addresses, resource states, barriers, frame-graph handles, render passes, temporal render history. |
 | Renderer | Imported render-scene state, GPU mesh/material/texture indexing, culling/batching, shader payloads, frame graph, render modes, feature policy, pass order, persistent feature history, acceleration-structure policy, provider placement, viewport products. | Backend-neutral resource/view/binding descriptions and command intent through public RHI contracts. | Native D3D12/Vulkan objects, physical descriptor allocation, fence completion rules, staging allocation, queue implementation, authored game-scene ownership. |
 | RHI | Devices, native resources and views, memory allocation, upload staging, descriptors, pipelines, command lists, queues, fences, swapchain execution, deferred destruction, backend capabilities, bounded native interop. | Opaque handles, capabilities, allocation facts, submission/retirement tokens, and explicit command operations. | Scene semantics, material semantics, render-feature selection, pass ordering, temporal-history policy, frame-graph dependency analysis. |
 
@@ -49,14 +48,14 @@ Application/Editor remains the composition root: it constructs these modules, ow
 | Native API containment | Strong | Ordinary Renderer code contains no D3D12/Vulkan identifiers; native escape is confined to RHI and dedicated provider bridges. |
 | Frame graph versus RHI | Strong | Renderer compiles dependencies, transients, aliasing, final states, and barriers; RHI command lists execute transitions, UAV barriers, aliases, draws, and dispatches. |
 | Vendor provider boundary | Good | External image features are isolated behind Renderer provider code and bounded RHI interop. The provider remains a client of the engine rather than defining it. |
-| Scene handoff | High risk | The snapshot copies static collections, includes raw mesh pointers, and lacks scene-instance/revision semantics. The Renderer copy is field-for-field rather than a real import boundary. |
-| GPU object model | High risk | Generic owned resources/views coexist with a polymorphic `Texture` hierarchy that has separate creation, view, upload, and destruction rules. |
+| Scene handoff | Accepted current design | GameFramework publishes the current scene snapshot and Renderer consumes it privately. No additional scene-synchronization change program is planned. |
+| GPU object model | Priority 0B implemented; build/runtime validation pending | The polymorphic texture hierarchy and its separate creation, view, upload, and destruction rules have been deleted. Sampled textures now use generic RHI resources, views, and explicit uploads. |
 | In-flight lifetime | Priorities 0A and 0B implemented; runtime stress validation pending | Resources, descriptor allocations, descriptor tables, views, and texture staging now have backend-owned deferred reuse. The legacy texture hierarchy and its bespoke destruction paths have been deleted. |
 | Feature ownership | Needs work | `FramePipeline` owns exposure, reference-lighting, direct-reservoir, and indirect-reservoir resources, validity flags, resets, and feature keys. |
 | Material bindings | Needs work | Per-material binding sets and a global material table are both valid policies, but ownership is exposed as raw pointers and repeated availability checks across passes. |
 | Queue model | Intentionally limited | The public submission contract exposes only graphics command lists. This is honest today but must be extended before real asynchronous copy/compute scheduling. |
 
-The passing boundary script is evidence that compile-time direction is healthy, not evidence that runtime ownership is complete. The current check protects Renderer/RHI source dependencies; it does not prove scene identity, descriptor lifetime, upload behavior, or feature ownership.
+The passing boundary script is evidence that compile-time direction is healthy, not evidence that runtime ownership is complete. The current check protects Renderer/RHI source dependencies; it does not prove descriptor lifetime, upload behavior, or feature ownership.
 
 ## What The NVIDIA And AMD References Actually Support
 
@@ -82,10 +81,7 @@ Sparkle does not need NVRHI's reference-counted API or automatic barriers. It do
 
 [Donut's repository structure](https://github.com/NVIDIA-RTX/Donut#structure) separates core utilities, scene/engine maintenance, rendering passes, and application hosting. Its [scene refresh path](https://github.com/NVIDIA-RTX/Donut/blob/main/src/engine/Scene.cpp) tracks structure and transform changes, updates dirty materials, and resizes or updates GPU arrays only when required. Its render pass classes own their device handles, shaders, layouts, buffers, pipelines, and binding caches; for example, [ForwardShadingPass](https://github.com/NVIDIA-RTX/Donut/blob/main/include/donut/render/ForwardShadingPass.h).
 
-Sparkle should borrow two principles, not Donut's exact class hierarchy:
-
-- scene-to-renderer synchronization should be revision/change driven;
-- persistent resources should normally be owned by the renderer feature that gives them meaning.
+Sparkle should borrow Donut's feature-ownership principle, not its exact class hierarchy: persistent resources should normally be owned by the renderer feature that gives them meaning. Donut's scene-maintenance model is not part of this implementation plan.
 
 ### AMD FidelityFX: the engine remains in control of scheduling and backend translation
 
@@ -111,10 +107,9 @@ The practical cross-reference principles are:
 3. Never recycle GPU-visible storage until the relevant submission has completed.
 4. Make uploads part of an explicit command/submission lifetime.
 5. Let features own their persistent GPU state.
-6. Synchronize scene changes through stable identity and dirty/revision information.
-7. Keep native SDK/API translation in narrow backend/provider bridges.
+6. Keep native SDK/API translation in narrow backend/provider bridges.
 
-Sparkle already satisfies principles 2 and 7. The immediate work is principles 3, 4, 5, and 6.
+Sparkle already satisfies principles 2 and 6. The immediate work is principles 3, 4, and 5.
 
 ## Legacy-Removal Completion Gate
 
@@ -124,7 +119,6 @@ Every priority is a replacement, not an addition. A priority is not complete whi
 | --- | --- |
 | 0A | Immediate descriptor/table reuse paths, recycled unversioned table/view records, and the shader-resource-only allocate/release convenience API. |
 | 0B | `Texture`, `D3D12Texture`, `VulkanTexture`, texture factories, `RhiResourceService::CreateTexture`, object-owned descriptor writes, private upload submissions, and special frame-graph texture overloads. |
-| 0C | Pointer-keyed mesh identity, vector-position temporal identity, skeleton-asset-only pose identity, raw mutable asset pointers in snapshots, the field-for-field Renderer snapshot, per-frame deep material comparison, and repeated texture-path traversal. |
 | 1A | Feature-specific history resources, validity fields, state keys, reset methods, and reset fan-out in `FramePipeline`; no forwarding methods remain after feature ownership moves. |
 | 1B | Raw binding-set pointers in frame data, repeated pass-local readiness branches, pointer/native-address semantic hashes, and duplicate ownership facts outside `MaterialCacheManager`. |
 | 2A | Ad hoc/private upload submission and wait paths replaced by the first real multi-queue workload; no speculative queue facade or unused parallel submission API is retained. |
@@ -186,7 +180,7 @@ The implementation is present in the working tree. In accordance with the priori
 - D3D12 staging resources are retained by `D3D12UploadService` until the stamped submission fence completes; Vulkan staging resources enter the existing allocator retirement queue with the command context's next retire fence.
 - Vulkan texture uploads use the active frame command buffer and contain no private command pool, private queue submission, or per-texture queue-idle wait. A canceled/non-recording frame command buffer is rejected and default loading retries on a later valid frame.
 - Material binding sets and the global material texture table copy logical `RhiResourceViewHandle` records through `RhiDescriptorService`; they no longer ask a texture object to write native descriptors.
-- The sky persistent import passes its existing generic resource and view to the frame graph. The frame graph tracks the view as borrowed, avoiding a duplicate SRV and avoiding ownership ambiguity.
+- `RenderSkyData` carries one non-owning reference to the canonical Renderer texture record rather than flattening its resource, view, and metadata fields. The sky persistent import passes that record's existing generic resource and view to the frame graph, which tracks the view as borrowed and does not create a duplicate SRV.
 - The legacy `Texture` base class, D3D12/Vulkan subclasses, factories, old constant-buffer-manager names, backend-specific texture upload/destruction paths, `RhiResourceService::CreateTexture`, and the legacy frame-graph overload have been deleted.
 
 ### Baseline evidence addressed by this priority
@@ -239,67 +233,6 @@ All six implementation items are present. The migration did not retain a compati
 
 Priority 0B is therefore **implementation-complete but not runtime-accepted**. Final acceptance requires the explicitly deferred build plus D3D12/Vulkan runtime upload, material, sky, and several-frames-in-flight retirement scenarios.
 
-## Priority 0C: Give The GameFramework / Renderer Boundary Stable Identity And Revisions
-
-### Current evidence
-
-- [`GameScene::CaptureSnapshot`](../../../Engine/GameFramework/Private/Scene/GameScene.cpp) copies camera, animation, lighting, sky, texture paths, material descriptions, and mesh records every frame.
-- [`MeshInstanceSnapshot`](../../../Engine/GameFramework/Public/Scene/Meshes/MeshSnapshot.h) includes both cooked asset identity and a raw `const Mesh*`.
-- [`SceneMeshes::CaptureSnapshot`](../../../Engine/GameFramework/Private/Scene/Meshes/SceneMeshes.cpp) filters by visibility and appends visible instances in the current vector order.
-- [`RenderSceneSnapshot`](../../../Engine/Renderer/Private/SceneData/Lifecycle/RenderSceneSnapshot.cpp) is a field-for-field move of `GameSceneSnapshot`; it does not convert identity, lifetime, or semantics.
-- [`GPUMeshCache`](../../../Engine/Renderer/Private/Meshes/GPUMeshCache.h) is keyed by raw `const Mesh*` and is cleared as a whole on level unload.
-- [`RenderSceneDataBuilder`](../../../Engine/Renderer/Private/SceneData/Builders/RenderSceneDataBuilder.cpp) stores previous transforms by snapshot vector index and previous skin matrices by skeleton asset ID.
-- Material descriptions are copied and then deep-compared in [`MaterialCacheUtils`](../../../Engine/Renderer/Private/SceneData/Caching/MaterialCacheUtils.cpp). Texture paths are traversed and normalized/cache-checked again each frame.
-
-This is not a lifetime-safe immutable snapshot and it is not an incremental synchronization contract. Visibility changes or insertion/removal can move an instance to a different vector position, causing the wrong previous transform to be used. Multiple animated instances sharing one skeleton asset can also share one previous-pose key. Pointer-keyed mesh caches make allocator addresses part of renderer identity.
-
-### Target handoff
-
-GameFramework should publish two kinds of facts through the existing scene snapshot family:
-
-1. Dynamic frame facts: stable instance ID, transform, pose, visibility, camera, and lights.
-2. Revisioned static facts: mesh asset payload/reference, material description, texture reference, instance topology, and skeleton binding only when their revision changes.
-
-Minimum identity fields:
-
-- `SceneEpoch`: changes when a level/scene identity is replaced;
-- `SceneInstanceId`: stable for the lifetime of one component/instance;
-- `StructureRevision`: changes on add/remove/reparent/mesh assignment;
-- `MaterialRevision` and `TextureRevision`: change when their authored tables change;
-- an animation-instance or pose ID, distinct from the shared skeleton asset ID.
-
-Cooked asset ID plus mesh asset index should identify immutable mesh assets. `SceneInstanceId` should identify temporal and per-instance state. These are different jobs and should remain different types.
-
-### Before and after
-
-| Before | After |
-| --- | --- |
-| Raw `Mesh*` and vector position participate in identity. | Cooked asset keys identify assets; stable scene IDs identify instances. |
-| Full material/texture/static mesh facts are copied and compared every frame. | Revisions allow Renderer to skip unchanged static import work. |
-| Renderer cache lifetime is "until level unload, then Flush and clear all." | Renderer adds/updates/removes records by scene epoch, revision, and stable ID; RHI retires old GPU objects. |
-| Skeleton asset ID identifies previous pose. | Animation/scene instance ID identifies previous pose; skeleton asset ID identifies shared skeleton data. |
-| `RenderSceneSnapshot` duplicates the source snapshot without translating it. | Either use `GameSceneSnapshot` directly as import input or make the Renderer type a real persistent imported state; remove the field-for-field copy. |
-
-### Implementation batches
-
-1. Add scene epoch, revisions, and stable per-instance IDs in GameFramework. Assign IDs when components/instances are created, not during snapshot capture.
-2. Change temporal transform/pose maps in Renderer to stable instance IDs immediately. This yields a correctness improvement before the full data-flow refactor.
-3. Change `GPUMeshCache` to a cooked mesh asset key. During migration, the raw mesh pointer may supply upload bytes, but it must no longer be the cache key or temporal identity.
-4. Move immutable mesh payload ownership to a lifetime-safe asset record. Emit an owned/shared immutable payload only for asset-add/change records, then remove raw `Mesh*` from the public snapshot.
-5. Add revision checks to existing `MaterialCacheManager` and `TextureManager`; remove per-frame deep material comparison and repeated full texture-path traversal.
-6. Delete the field-for-field `RenderSceneSnapshot` once Renderer has a real import/cache boundary.
-
-This does not require a new ECS, a new scene graph, or a general event bus. It extends the IDs and snapshots already present.
-
-### Acceptance bar
-
-- Toggling visibility, inserting/removing an instance, or reordering scene storage does not transfer motion history to another object.
-- Two animated characters using the same skeleton asset maintain independent previous poses.
-- `GPUMeshCache` contains no raw-pointer key.
-- `MeshInstanceSnapshot` contains no raw `Mesh*` once immutable asset records are in place.
-- An unchanged scene frame does not deep-copy/compare all materials or revisit every texture path.
-- Level changes no longer require a GPU-wide flush merely to make Renderer cache destruction safe.
-
 ## Priority 1A: Move Persistent History To The Feature That Uses It
 
 ### Current evidence
@@ -322,7 +255,7 @@ The implementation is split into several `.cpp` files, but all methods and membe
 - Direct-light reservoir owns direct reservoir history.
 - ReSTIR indirect owns indirect reservoir history.
 - Image providers continue to own provider-specific histories.
-- `FramePipeline` owns only frame coordination, the frame graph, a scene/frame reset epoch, and submission.
+- `FramePipeline` owns only frame coordination, the frame graph, a temporal reset generation, and submission.
 
 Each existing feature unit should expose small operations such as reserve graph handles, ensure physical resources, bind current/previous resources, consume a reset epoch, and report readiness. Do not create a generic `HistoryManager`; temporal resources have different formats, invalidation rules, and feature meanings.
 
@@ -330,14 +263,14 @@ Each existing feature unit should expose small operations such as reserve graph 
 
 | Before | After |
 | --- | --- |
-| Adding a temporal feature edits `FramePipeline.h`, multiple reset branches, pass runtime services, and end-of-frame validity updates. | Adding a temporal feature edits its feature owner and graph assembly; FramePipeline sends one reset epoch/reason. |
+| Adding a temporal feature edits `FramePipeline.h`, multiple reset branches, pass runtime services, and end-of-frame validity updates. | Adding a temporal feature edits its feature owner and graph assembly; FramePipeline sends one temporal reset generation/reason. |
 | Feature history is a collection of arrays and booleans in a coordinator. | A vertical feature slice owns its resources, keys, validity, and binding. |
-| Reset logic is repeated across mode/resize/state branches. | Pipeline increments one history epoch; features decide what that invalidates. |
+| Reset logic is repeated across mode/resize/state branches. | Pipeline increments one temporal reset generation; features decide what that invalidates. |
 
 ### Acceptance bar
 
 - `FramePipeline.h` has no exposure/reference/direct/indirect history resource arrays or feature-specific validity booleans.
-- Resize/mode/scene changes advance one explicit temporal reset epoch rather than calling every feature reset function.
+- Resize/mode/scene changes advance one explicit temporal reset generation rather than calling every feature reset function.
 - Each feature can be destroyed and have its resources safely retired without changing pipeline-wide destruction code.
 - No generic history abstraction is introduced.
 
@@ -355,15 +288,15 @@ The issue is not that both exist. The issue is how their ownership leaks:
 - many passes repeat pointer, count, capacity, and validity checks;
 - [`LightingSceneState`](../../../Engine/Renderer/Private/Frame/Lighting/LightingSceneState.cpp) hashes GPU mesh, texture, binding-set, material-table, and native-resource addresses into temporal scene identity.
 
-Allocator address reuse is not a durable content revision. It can cause a false reset or, worse, fail to distinguish semantically changed state that happens to reuse an address.
+Allocator address reuse is not durable semantic state. It can cause a false reset or, worse, fail to distinguish changed material state that happens to reuse an address.
 
 ### Implementation batch
 
 1. Make the existing `MaterialCacheManager` the sole owner of material GPU records and both binding policies. Do not add another material manager.
-2. Give material GPU records and the scene texture table stable Renderer IDs/revisions.
+2. Give material GPU records value-like Renderer handles and give each rebuilt scene texture table an explicit Renderer-local generation.
 3. Store material IDs/indices and value-like logical table bindings in frame/pass data, not pointers to owner internals.
 4. Centralize table readiness/capability resolution when building frame scene data; passes consume the resolved binding or an invalid value without repeating ownership checks.
-5. Build lighting/temporal scene keys from scene epoch, asset/material/texture revisions, stable instance IDs, and authored values. Remove CPU/native pointer values from semantic hashes.
+5. Build lighting/temporal keys from existing authored scene/material values, cooked asset identifiers, logical GPU handles, and Renderer-local table generations. Remove CPU/native pointer values from semantic hashes. This does not require a new GameFramework synchronization contract.
 6. After Priority 0B, populate both material policies from generic RHI resource views and delete texture-driven descriptor writes.
 
 ### Acceptance bar
@@ -404,16 +337,16 @@ This program refines the active architecture direction rather than replacing it.
 
 | Existing requirement | How this decision satisfies it |
 | --- | --- |
-| Renderer-first product identity | Work is concentrated on scene-to-renderer import, renderer feature ownership, and explicit D3D12/Vulkan execution. It does not broaden GameFramework into a full game engine or add unrelated systems. |
+| Renderer-first product identity | Work is concentrated on renderer feature ownership and explicit D3D12/Vulkan execution. The current GameFramework snapshot boundary remains unchanged. |
 | Explicit ownership of resources, descriptors, queues, fences, and native handles | Priorities 0A, 0B, and 2A make ownership and completion rules uniform while keeping native implementation in RHI. |
 | Frame graph owns high-level state/barrier policy | The current Renderer frame graph is retained. RHI continues to execute backend-neutral transition/alias/UAV commands. |
 | D3D12/Vulkan parity | Every foundation change has one public observable contract and requires both backend implementations before completion. |
-| Preserve shader/compiler/runtime ABI strength | The program changes resource ownership and scene identity without changing shader payload layouts, cooked packages, or reflection contracts. |
+| Preserve shader/compiler/runtime ABI strength | The program changes GPU resource and feature ownership without changing shader payload layouts, cooked packages, or reflection contracts. |
 | Preserve classic TLAS and PTLAS | Acceleration-structure policy remains Renderer-owned and native execution remains RHI-owned; neither path is demoted or replaced. |
 | Provider-neutral SDK integration | Renderer chooses placement and inputs, provider bridges translate, and RHI supplies bounded native interop. SDKs do not acquire engine ownership. |
-| Deletion-first implementation | The texture change deletes a complete parallel hierarchy; the scene change deletes pointer-keyed caches, duplicate snapshots, and deep comparisons; feature ownership deletes central pipeline fan-out. |
+| Deletion-first implementation | The texture change deletes a complete parallel hierarchy; material ownership deletes raw binding pointers and duplicate readiness state; feature ownership deletes central pipeline fan-out. |
 | No diagnostics/logging as substitute for behavior | Every acceptance criterion is a runtime ownership, correctness, synchronization, code-shape, or deletion result. No new observer system is proposed. |
-| Avoid new wrappers and scaffolding | Work extends existing descriptor services, upload service, snapshots, caches, feature units, and frame graph. New types are limited to stable IDs/revisions and value records that replace unsafe pointers. |
+| Avoid new wrappers and scaffolding | Work extends existing descriptor services, upload service, caches, feature units, and frame graph. New types are limited to value records, logical handles, and local generations that replace unsafe pointers or duplicated state. |
 
 This is also why a wholesale adoption of either NVRHI or Cauldron is not recommended. Sparkle's existing frame graph, shader system, RHI services, and provider boundaries already satisfy important repository requirements; the right move is to complete their contracts and remove the parallel paths.
 
@@ -423,13 +356,11 @@ This is also why a wholesale adoption of either NVRHI or Cauldron is not recomme
 | --- | --- | --- | --- |
 | 1 | Fence-safe descriptor-table retirement (implemented; runtime stress pending) | Removes the in-flight descriptor reuse correctness hole without stalls. | Deleted immediate table/view record reuse and the shader-resource-only descriptor API; no caller-side fence or flush branch was added. |
 | 2 | Generic texture resource/view/upload migration (implemented; build/runtime validation pending) | Removes per-texture Vulkan idle waits and the second GPU object model. | Deleted `Texture`, both backend subclasses, factories, the special frame-graph overload, duplicate sky SRV creation, and texture-driven descriptor writes. |
-| 3 | Stable GameFramework scene/animation IDs | Fixes temporal identity under visibility/order changes and shared skeletons. | Removes vector-position and skeleton-only temporal maps. |
-| 4 | Scene revisions and asset-keyed Renderer import | Makes static scene synchronization incremental and lifetime safe. | Removes raw mesh pointer keys, field-for-field Renderer snapshot, deep material comparisons, repeated texture traversal, and broad level cache invalidation. |
-| 5 | Stable material GPU table and semantic scene keys | Makes material ownership explicit and history invalidation deterministic. | Removes raw binding pointers and pointer/native-address hashing from frame data. |
-| 6 | Feature-owned persistent histories | Stops `FramePipeline` from growing with every temporal feature. | Removes feature arrays, booleans, keys, and repeated reset fan-out from the central pipeline. |
-| 7 | Queue/submission extension for the first real async workload | Enables copy/compute overlap without moving scheduler policy into RHI. | Replaces ad hoc upload submission; should not be built speculatively. |
+| 3 | Feature-owned persistent histories | Stops `FramePipeline` from growing with every temporal feature. | Removes feature arrays, booleans, keys, and repeated reset fan-out from the central pipeline. |
+| 4 | Stable material GPU table and semantic scene keys | Makes material ownership explicit and history invalidation deterministic using existing authored/cooked values and logical handles. | Removes raw binding pointers and pointer/native-address hashing from frame data. |
+| 5 | Queue/submission extension for the first real async workload | Enables copy/compute overlap without moving scheduler policy into RHI. | Replaces graphics-queue-only upload scheduling when a measured workload justifies it; it should not be built speculatively. |
 
-Change lists 1-4 are the foundation. Change lists 5-6 make continued renderer feature development sustainable. Change list 7 is a capability expansion and should wait for a measured workload.
+Change lists 1-2 are the GPU ownership foundation. Change lists 3-4 make continued renderer feature development sustainable. Change list 5 is a capability expansion and should wait for a measured workload.
 
 ## Non-Goals And Guardrails
 
@@ -443,21 +374,19 @@ This program must not turn into architecture theatre.
 - Do not expose native fences, descriptor heaps, command pools, or resources to ordinary Renderer code.
 - Do not use `Flush`, `WaitForIdle`, or `vkQueueWaitIdle` as a normal mutation/lifetime mechanism.
 - Do not build async compute/copy abstractions without a real feature ready to consume them.
-- Do not redesign GameFramework into an ECS as part of stable identity/revision work.
+- Do not expand the current GameFramework/Renderer scene handoff as part of the remaining Renderer/RHI priorities.
 - Do not change shader ABI, cooked packages, classic TLAS/PTLAS, material slots, or provider contracts unless a migration step proves it is necessary.
 
 ## Definition Of A Solid Foundation
 
 The repository is ready for aggressive renderer development when all of the following are true:
 
-- GameFramework snapshots contain stable scene/animation identity and no borrowed mutable asset pointers.
-- Renderer imports static scene state only when revisions change and processes dynamic transforms/poses by stable instance ID.
 - RHI has one resource/view/upload/destruction contract for material, history, frame-graph, ray-tracing, and provider resources.
 - No GPU-visible resource, view, descriptor, binding table, or pipeline storage is recycled before the submission using it completes.
 - Vulkan texture upload does not idle the graphics queue per texture.
 - Persistent history is owned by its renderer feature, not by the central frame coordinator.
 - Renderer frame/pass data carries IDs, indices, handles, and immutable values rather than raw pointers to cache-owned binding objects.
-- Semantic history keys contain stable IDs/revisions and authored values, not allocator or native addresses.
+- Semantic history keys contain existing authored/cooked values, logical handles, and Renderer-local table generations, not allocator or native addresses.
 - Renderer still owns frame-graph dependency/barrier/queue policy; RHI still owns backend execution.
 - D3D12 and Vulkan pass the same lifetime, material, scene mutation, level change, and temporal-history scenarios.
 - The existing architecture boundary check still passes.
@@ -468,9 +397,9 @@ If only three investments are approved now, approve these in order:
 
 1. Fence-safe descriptor and binding-table retirement.
 2. Deletion of the legacy texture path in favor of generic RHI resources/views and explicit uploads.
-3. Stable GameFramework scene identity and revisioned Renderer synchronization.
+3. Feature-owned persistent histories that remove feature-specific resource and reset fan-out from `FramePipeline`.
 
-Those changes produce a visible before/after in correctness, Vulkan loading behavior, memory lifetime, scene scalability, and the cost of adding future features. Feature-history ownership should follow immediately after them.
+Those changes produce a visible before/after in correctness, Vulkan loading behavior, memory lifetime, central-pipeline size, and the cost of adding future renderer features. Stable material GPU ownership should follow them without introducing a new GameFramework synchronization program.
 
 ## Reviewed Source Revisions
 

@@ -31,6 +31,7 @@
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
+#include "Textures/RendererTexture.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
@@ -403,15 +404,16 @@ void FramePipeline::RecordFrame() noexcept
 	BindExposureHistoryFrameGraphResources();
 	if (frame.sceneData.sky.HasTexture())
 	{
+		const RendererTexture& skyTexture = *frame.sceneData.sky.texture;
 		m_frameGraph->BindPersistentTexture(
 		    m_frameResources.External.Sky,
-		    frame.sceneData.sky.textureResource,
-		    frame.sceneData.sky.textureView,
+		    skyTexture.Resource,
+		    skyTexture.ShaderResourceView,
 		    FrameGraphTextureDesc::CreateColor(
 		        "Sky",
-		        frame.sceneData.sky.textureWidth,
-		        frame.sceneData.sky.textureHeight,
-		        frame.sceneData.sky.textureFormat),
+		        skyTexture.Width,
+		        skyTexture.Height,
+		        skyTexture.Format),
 		    ResourceState::ShaderResource);
 	}
 	else

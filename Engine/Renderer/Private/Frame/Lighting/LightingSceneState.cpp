@@ -4,6 +4,7 @@
 #include "Core/Public/Hash/HashUtils.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Lighting/LightingStateHash.h"
+#include "Textures/RendererTexture.h"
 
 #include <cstdint>
 #include <vector>
@@ -110,15 +111,7 @@ namespace
 			return hash;
 		}
 
-		hash = Hash::ContinueFnv1a64Value(hash, sky.textureView.Value);
-		hash = Hash::ContinueFnv1a64Value(hash, sky.textureWidth);
-		hash = Hash::ContinueFnv1a64Value(hash, sky.textureHeight);
-		hash = Hash::ContinueFnv1a64Value(hash, sky.textureArraySize);
-		hash = Hash::ContinueFnv1a64Value(hash, sky.textureDimension);
-		hash = Hash::ContinueFnv1a64Value(hash, sky.textureFormat);
-		hash = Hash::ContinueFnv1a64Value(hash, sky.textureFormatIntent);
-		hash = Hash::ContinueFnv1a64Value(hash, sky.textureMipCount);
-		return Hash::ContinueFnv1a64Value(hash, sky.textureEstimatedByteSize);
+		return Hash::ContinueFnv1a64Value(hash, sky.texture->ShaderResourceView.Value);
 	}
 }
 

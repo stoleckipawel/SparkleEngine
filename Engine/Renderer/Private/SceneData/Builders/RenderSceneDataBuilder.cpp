@@ -90,51 +90,37 @@ void RenderSceneDataBuilder::BuildSky(const RenderSceneSnapshot& sceneSnapshot, 
 	{
 		return;
 	}
-	const auto setSkyTexture = [&sceneData](const RendererTexture* texture)
-	{
-		if (texture == nullptr || !*texture)
-		{
-			return;
-		}
 
-		sceneData.sky.textureResource = texture->Resource;
-		sceneData.sky.textureView = texture->ShaderResourceView;
-		sceneData.sky.textureWidth = texture->Width;
-		sceneData.sky.textureHeight = texture->Height;
-		sceneData.sky.textureArraySize = texture->ArraySize;
-		sceneData.sky.textureDimension = texture->Dimension;
-		sceneData.sky.textureFormat = texture->Format;
-		sceneData.sky.textureFormatIntent = texture->FormatIntent;
-		sceneData.sky.textureMipCount = texture->MipCount;
-		sceneData.sky.textureEstimatedByteSize = texture->EstimatedByteSize;
-	};
-
+	const RendererTexture* skyTexture = nullptr;
 	const SceneSkyDesc* sky = sceneSnapshot.sky.sky ? &*sceneSnapshot.sky.sky : nullptr;
 	if (sky == nullptr)
 	{
-		setSkyTexture(m_textureManager->ResolveDefaultSkyTexture());
-		return;
+		skyTexture = m_textureManager->ResolveDefaultSkyTexture();
+	}
+	else
+	{
+		sceneData.sky.enabled = sky->enabled;
+		sceneData.sky.color = sky->color;
+		sceneData.sky.intensity = sky->intensity;
+		if (!sky->skyTexture.IsValid())
+		{
+			skyTexture = m_textureManager->ResolveDefaultSkyTexture();
+		}
+		else
+		{
+			skyTexture = m_textureManager->GetSceneTexture(sky->skyTexture.texturePath);
+			if (skyTexture == nullptr)
+			{
+				skyTexture = m_textureManager->GetTexture(TextureId::Checker);
+				SPDLOG_LOGGER_ERROR(
+				    g_renderSceneDataBuilderLogger,
+				    "RenderSceneDataBuilder: level sky texture '{}' is unavailable; using the diagnostic checker texture.",
+				    sky->skyTexture.texturePath);
+			}
+		}
 	}
 
-	sceneData.sky.enabled = sky->enabled;
-	sceneData.sky.color = sky->color;
-	sceneData.sky.intensity = sky->intensity;
-	if (!sky->skyTexture.IsValid())
-	{
-		setSkyTexture(m_textureManager->ResolveDefaultSkyTexture());
-		return;
-	}
-
-	const RendererTexture* skyTexture = m_textureManager->GetSceneTexture(sky->skyTexture.texturePath);
-	if (skyTexture == nullptr)
-	{
-		skyTexture = m_textureManager->GetTexture(TextureId::Checker);
-		SPDLOG_LOGGER_ERROR(
-		    g_renderSceneDataBuilderLogger,
-		    "RenderSceneDataBuilder: level sky texture '{}' is unavailable; using the diagnostic checker texture.",
-		    sky->skyTexture.texturePath);
-	}
-	setSkyTexture(skyTexture);
+	sceneData.sky.texture = skyTexture != nullptr && *skyTexture ? skyTexture : nullptr;
 }
 
 void RenderSceneDataBuilder::BuildMaterials(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const
