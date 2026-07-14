@@ -23,19 +23,19 @@ void AddDirectShadowSignalPass(
 		parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Current);
 		parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
 		parameters->SceneDepth = builder.CreateSRV(sceneTargets.SceneDepth);
-		parameters->DirectionalLights = builder.CreateSRV(externalResources.DirectionalLights);
-		parameters->PointLights = builder.CreateSRV(externalResources.PointLights);
-		parameters->SpotLights = builder.CreateSRV(externalResources.SpotLights);
-		parameters->RectLights = builder.CreateSRV(externalResources.RectLights);
+		parameters->DirectionalLights = builder.CreateSRV(externalResources.Scene.Lighting.DirectionalLights);
+		parameters->PointLights = builder.CreateSRV(externalResources.Scene.Lighting.PointLights);
+		parameters->SpotLights = builder.CreateSRV(externalResources.Scene.Lighting.SpotLights);
+		parameters->RectLights = builder.CreateSRV(externalResources.Scene.Lighting.RectLights);
 	};
 	const auto bindRayQueryParameters = [&](auto& parameters)
 	{
 		bindCommonParameters(parameters);
 		parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
-		parameters->RayTracingHitVertices = builder.CreateSRV(externalResources.RayTracingHitVertices);
-		parameters->RayTracingHitIndices = builder.CreateSRV(externalResources.RayTracingHitIndices);
-		parameters->RayTracingHitInstances = builder.CreateSRV(externalResources.RayTracingHitInstances);
-		parameters->RayTracingHitMaterials = builder.CreateSRV(externalResources.RayTracingHitMaterials);
+		parameters->RayTracingHitVertices = builder.CreateSRV(externalResources.Scene.RayTracing.Vertices);
+		parameters->RayTracingHitIndices = builder.CreateSRV(externalResources.Scene.RayTracing.Indices);
+		parameters->RayTracingHitInstances = builder.CreateSRV(externalResources.Scene.RayTracing.Instances);
+		parameters->RayTracingHitMaterials = builder.CreateSRV(externalResources.Scene.RayTracing.Materials);
 	};
 
 	auto& noRayParameters = builder.AllocParameters<DirectShadowSignalNoRayQueryPass::Parameters>();

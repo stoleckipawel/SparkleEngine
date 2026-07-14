@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RayTracing/Diagnostics/RayTracingPerformanceMetrics.h"
-#include "Frame/RayTracing/RayTracingSceneFrameData.h"
+#include "RayTracing/Scene/RayTracingSceneFrameData.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 

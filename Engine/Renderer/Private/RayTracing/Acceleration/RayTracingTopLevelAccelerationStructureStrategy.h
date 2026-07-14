@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/RayTracing/RayTracingSceneFrameData.h"
+#include "RayTracing/Scene/RayTracingSceneFrameData.h"
 #include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureBuildStats.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"

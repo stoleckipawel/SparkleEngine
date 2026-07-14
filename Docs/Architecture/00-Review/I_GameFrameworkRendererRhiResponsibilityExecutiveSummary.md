@@ -1,7 +1,7 @@
 # I. GameFramework / Renderer / RHI Responsibility Executive Summary
 
 Status: current-state architecture audit and implementation decision
-Date: 2026-07-14
+Date: 2026-07-15
 Scope: ownership, lifetime, data flow, and future development boundaries across GameFramework, Renderer, and RHI
 
 ## Executive Verdict
@@ -20,7 +20,7 @@ The foundations are nevertheless not yet solid enough for unbounded feature grow
 1. RHI GPU lifetime was only partially unified. Priority 0A now makes descriptor allocations, tables, and views retire through the backend's waited frame-slot boundary and protects recycled table/view records with generations. Runtime material-rebuild validation remains before final acceptance.
 2. Material textures used a second resource model outside `RhiOwnedResourceHandle` and `RhiResourceViewHandle`. Priority 0B removed that hierarchy, its hidden uploads, lifetime-long staging, and per-texture Vulkan queue-idle wait. Build and runtime validation remain pending by explicit instruction.
 
-Priority 1A has also moved persistent temporal mechanics and validity out of `FramePipeline`. Its frontend follow-through now uses an Unreal-RDG-shaped pass workflow: feature files allocate a typed pass-parameter block, assign named graph reads/writes/targets, and finish with `Dispatch`, `Draw`, or `Execute`. Feature code retains temporal meaning and pass use, while the frame graph owns history allocation, in-flight version rotation, validity, and retirement. Its code and static deletion gates are complete; build and runtime validation remain deferred by explicit instruction.
+Priority 1A has also moved persistent temporal mechanics and validity out of `FramePipeline`. Its frontend follow-through now uses an Unreal-RDG-shaped pass workflow: feature files allocate a typed pass-parameter block, assign named graph reads/writes/targets, and finish with `Dispatch`, `Draw`, or `Execute`. The subsequent scene-GPU cleanup removes per-buffer upload ownership and graph-import plumbing from `Renderer/Private/Frame`: Frame receives one plain GPU projection of `RenderSceneData` and binds one grouped scene-resource contract. Feature code retains temporal meaning and pass use, while the frame graph owns history allocation, in-flight version rotation, validity, and retirement. Its code and static deletion gates are complete; build and runtime validation remain deferred by explicit instruction.
 
 These were correctness and scalability issues, not presentation issues. Their implementations must pass the deferred runtime acceptance before adding another descriptor model, streaming, or asynchronous compute.
 
@@ -55,6 +55,7 @@ Application/Editor remains the composition root: it constructs these modules, ow
 | In-flight lifetime | Priorities 0A and 0B implemented; runtime stress validation pending | Resources, descriptor allocations, descriptor tables, views, and texture staging now have backend-owned deferred reuse. The legacy texture hierarchy and its bespoke destruction paths have been deleted. |
 | Feature ownership | Priority 1A implemented; build/runtime validation pending | Feature files declare their history invalidation inputs and consume named previous/current textures. The frame graph lazily owns backing resources, in-flight rotation, validity, and retirement. `FramePipeline` contains no history resource object, frame index plumbing, reset generation, binding, or commit sequence. |
 | Frame pass frontend | Priority 1A follow-through implemented; build/runtime validation pending | Frame feature files allocate typed `Pass::Parameters`, state named SRV/UAV/render/depth intent, and issue `Dispatch`, `Draw`, or `Execute`. The duplicate `DeclareResources` and pass-specific allocation/add wrappers have been deleted. |
+| Scene GPU-data preparation | Frontend follow-through implemented; build/runtime validation pending | `RenderSceneGpuData` is a plain value beside `RenderSceneData`; one implementation performs conversion, upload, declaration, and graph import. No manager, subsystem root member, or per-domain forwarding class remains. |
 | Material bindings | Needs work | Per-material binding sets and a global material table are both valid policies, but ownership is exposed as raw pointers and repeated availability checks across passes. |
 | Queue model | Intentionally limited | The public submission contract exposes only graphics command lists. This is honest today but must be extended before real asynchronous copy/compute scheduling. |
 
@@ -280,7 +281,7 @@ The required cleanup pass also completed:
 A repository-wide Renderer audit found no additional ordinary persistent GPU histories outside these four declarations. The remaining history-related state is intentionally different:
 
 - `TemporalDataBuilder` owns CPU camera/jitter continuity, not a GPU resource;
-- `SkinningFrameData::PreviousBuffer` uploads the previous pose supplied in the current frame snapshot and does not persist a resource across frames;
+- `RenderSceneGpuData::Geometry` uploads the previous pose supplied in the current frame snapshot and does not persist a resource across frames;
 - image reconstruction/upscaling providers own opaque SDK histories and receive only reset intent through `RendererImageProviderStack`;
 - shader uniform `HistoryValid` fields describe pass behavior and do not own lifetime.
 
@@ -354,11 +355,50 @@ Acceptance status:
 | Frame pass callsites visibly declare typed resource intent before execution. | **Fulfilled statically** | All migrated feature passes allocate `Pass::Parameters` and assign named graph bindings at the callsite. |
 | The public feature vocabulary is `Execute`, `Dispatch`, and `Draw`. | **Fulfilled statically** | Old builder calls have no production hits; lower-level registration remains private inside `FrameGraphBuilder`. |
 | No duplicate resource-declaration workflow remains. | **Fulfilled statically** | `rg "DeclareResources|AllocPassParameters|AddComputeShaderPass|AddSizedComputeShaderPass|AddRasterShaderPass|builder\\.AddPass" Engine/Renderer` returns no hits. |
-| Pass implementation details stay out of `Renderer/Private/Frame` callsites. | **Fulfilled for migrated pass construction; broader Frame data preparation remains separate work** | Shader/pipeline execution, samplers, constant setup, command recording, and RHI operations remain below the pass frontend. CPU-to-GPU per-frame data preparation was not falsely folded into this pass migration. |
+| Pass implementation details stay out of `Renderer/Private/Frame` callsites. | **Fulfilled for migrated pass construction and scene GPU-data preparation** | Shader/pipeline execution, samplers, constant setup, command recording, upload ownership, and external-buffer import mechanics remain below the Frame frontend. |
 | Repository architecture boundaries remain valid. | **Fulfilled statically** | `CMake/ArchitectureBoundaryCheck.cmake` passes with no new violations. |
 | Engine compilation and D3D12/Vulkan runtime behavior are validated. | **Pending by explicit instruction** | No engine build, backend compile, or runtime launch was performed. |
 
 This follow-through is **code-complete and statically accepted, but not runtime-accepted**.
+
+### Frame frontend follow-through: one scene GPU-data contract
+
+The next repeated-mechanics bottleneck was CPU-to-GPU scene preparation. `FrameContext` directly invoked four RHI-aware builders, `Renderer/Private/Frame` owned the generic uploaded-buffer RAII type, graph assembly declared thirteen unrelated external-buffer handles, and `FramePipeline` repeated the bind/clear/descriptor operation for every buffer.
+
+The first cleanup attempt copied the shape of Unreal's GPU Scene too literally. It renamed the four builders, placed a `GpuScene` service in the system root, and retained four classes whose main purpose was forwarding `Build` and getter calls. That made the directory look organized without materially reducing concepts. Those service and forwarding layers have now been deleted.
+
+The retained boundary is smaller and data-oriented:
+
+- [`RenderSceneGpuData`](../../../Engine/Renderer/Private/SceneData/RenderSceneGpuData.h) is the plain GPU projection stored beside `RenderSceneData`; lighting, geometry, and ray-tracing fields are public data rather than getter-only owner classes;
+- [`RenderSceneGpuData.cpp`](../../../Engine/Renderer/Private/SceneData/RenderSceneGpuData.cpp) is the single implementation unit for CPU-to-shader conversion, upload, graph-resource declaration, and external-buffer import;
+- [`OwnedStructuredBuffer`](../../../Engine/Renderer/Private/Resources/OwnedStructuredBuffer.h) is the only retained helper because it has real ownership meaning: it pairs an opaque resource handle with its deferred release and the size/stride facts required for graph import;
+- `FrameContext` performs one `BuildRenderSceneGpuData(...)` operation, and `FramePipeline` performs one `BindRenderSceneGpuResources(...)` operation;
+- `RendererSystemRoot` owns no scene-GPU service and exposes no forwarding getter.
+
+Before and after:
+
+| Before | After |
+| --- | --- |
+| Four Frame-domain builders accept `RenderHardwareInterface` and each mix payload conversion with upload ownership. | One free operation produces the GPU projection of `RenderSceneData`; there is no manager or forwarding class hierarchy. |
+| `FrameBufferResource` lives under `Frame/Core` and exposes byte size, stride, release, and RHI ownership to Frame code. | One reusable `OwnedStructuredBuffer` carries actual ownership and import facts outside Frame; Frame contains no creation or release code. |
+| `FrameAssemblyExternalResources` is a flat bag of thirteen unrelated buffer handles. | One `Scene` record groups lighting, geometry, and ray-tracing graph resources by their meaning at pass callsites. |
+| `FramePipeline` repeats thirteen bind-or-clear calls and reconstructs every buffer descriptor. | One bind operation imports the complete scene GPU-data value through its matching graph contract. |
+| The first cleanup adds `GpuScene`, four renamed data-owner classes, a system-root member, and getter scaffolding. | Those layers are deleted; one plain data contract and one cohesive implementation remain. |
+| An unused `PerViewDataBuilder::BuildMainView` reaches into RHI presentation state. | The unused overload is deleted; Frame builds the requested view from explicit camera, viewport, and scissor intent. |
+| TLAS frame data is declared under `Frame` despite being produced and consumed by the ray-tracing scene system. | `RayTracingSceneFrameData` lives under `RayTracing/Scene`. |
+
+Acceptance status:
+
+| Criterion | Status | Evidence / remaining work |
+| --- | --- | --- |
+| `Renderer/Private/Frame` contains no structured-buffer creation, upload, release, owned-handle storage, or resource-service lookup. | **Fulfilled statically** | `CreateStructuredBufferResource`, `ReleaseOwnedResource`, `OwnedStructuredBuffer`, `RhiOwnedResourceHandle`, and `GetResourceService` have no Frame hits. The context builder receives one narrow resource-service reference for the scene projection call. |
+| Frame construction requests one coherent scene GPU-data result. | **Fulfilled statically** | `BuildFrameContext` contains one `BuildRenderSceneGpuData(resourceService, frame.sceneData)` call instead of four RHI-aware builders. |
+| Scene graph resources are grouped and imported in one place. | **Fulfilled statically** | Lighting, geometry, and ray-tracing handles are nested under `RenderSceneGpuResources`; the old flat handle and pipeline bind paths have no hits. |
+| Superseded Frame types and forwarding compatibility layers are removed. | **Fulfilled statically** | `FrameBufferResource`, `MeshInstanceFrameData`, `SkinningFrameData`, `FrameLightingData`, `RayTracingHitDataFrameData`, `GpuScene`, and its four renamed domain classes are deleted, not wrapped. |
+| Buffer uploads use the graph's deferred upload queue. | **Not yet available; explicitly not claimed** | Epic recommends queued RDG buffer uploads, but Sparkle's `RhiUploadService` currently exposes texture upload and uniform allocation only. Existing structured-buffer upload behavior remains in `RenderSceneGpuData.cpp` until that RHI contract is implemented. |
+| Engine compilation and D3D12/Vulkan runtime behavior are validated. | **Pending by explicit instruction** | No engine build, backend compile, or runtime launch was performed. |
+
+This cleanup is **code-complete and statically accepted for the Frame/scene-GPU boundary, but not runtime-accepted**.
 
 ## Priority 1B: Make Material GPU State A Stable Renderer-Owned Table
 

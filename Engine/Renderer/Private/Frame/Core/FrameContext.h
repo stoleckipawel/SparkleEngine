@@ -2,21 +2,14 @@
 
 #include "Renderer/Public/RendererAPI.h"
 #include "Frame/Core/RenderViewData.h"
-#include "Frame/Geometry/MeshInstanceFrameData.h"
-#include "Frame/Lighting/FrameLightingData.h"
-#include "Frame/RayTracing/RayTracingSceneFrameData.h"
-#include "Frame/RayTracing/RayTracingHitDataFrameData.h"
-#include "Frame/Geometry/SkinningFrameData.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RayTracing/Scene/RayTracingSceneFrameData.h"
 #include "SceneData/RenderSceneData.h"
+#include "SceneData/RenderSceneGpuData.h"
 
 struct SPARKLE_RENDERER_API FrameContext
 {
 	RenderSceneData sceneData = {};
+	RenderSceneGpuData sceneGpuData = {};
 	RayTracingSceneFrameData rayTracingScene = {};
 	RenderViewData mainView = {};
-	FrameLightingData lighting = {};
-	MeshInstanceFrameData meshInstances = {};
-	RayTracingHitDataFrameData rayTracingHitData = {};
-	SkinningFrameData skinning = {};
 };

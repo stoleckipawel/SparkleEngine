@@ -2,15 +2,14 @@
 #include "Frame/Builders/BuildFrameContext.h"
 #include "Frame/Core/FrameContext.h"
 
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
-#include "Frame/Lighting/FrameLightingData.h"
 #include "Frame/Temporal/TemporalFrameState.h"
 #include "Camera/RenderCamera.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
+#include "SceneData/RenderSceneGpuData.h"
 
 #include <cstdio>
 #include <utility>
@@ -40,7 +39,7 @@ namespace
 
 FrameContext BuildFrameContext(
     const RenderSceneSnapshot& sceneSnapshot,
-    RenderHardwareInterface& renderHardwareInterface,
+    RhiResourceService& resourceService,
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,
     RenderSceneDataBuilder& renderSceneDataBuilder,
@@ -55,10 +54,7 @@ FrameContext BuildFrameContext(
 	{
 		renderRayTracingScene->PlanFrame(frame.sceneData, cameraData.Position);
 	}
-	frame.meshInstances = MeshInstanceFrameData::Build(renderHardwareInterface, frame.sceneData);
-	frame.rayTracingHitData = RayTracingHitDataFrameData::Build(renderHardwareInterface, frame.sceneData);
-	frame.skinning = SkinningFrameData::Build(renderHardwareInterface, frame.sceneData);
-	frame.lighting = FrameLightingData::Build(renderHardwareInterface, frame.sceneData);
+	frame.sceneGpuData = BuildRenderSceneGpuData(resourceService, frame.sceneData);
 	const RhiViewport sceneViewport = BuildSceneViewport(sceneExtent);
 	frame.mainView = perViewDataBuilder.BuildView(cameraData, sceneViewport, BuildSceneScissorRect(sceneExtent));
 	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(renderCamera, frame.mainView.perViewData.Camera, sceneViewport);

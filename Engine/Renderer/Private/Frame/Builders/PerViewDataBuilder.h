@@ -2,9 +2,6 @@
 
 #include "Frame/Core/RenderViewData.h"
 
-class RenderCamera;
-class RenderHardwareInterface;
-
 class PerViewDataBuilder final
 {
   public:
@@ -20,10 +17,6 @@ class PerViewDataBuilder final
 	    const PerViewCameraConstantBufferData& cameraData,
 	    const RhiViewport& viewport,
 	    const RhiRect& scissorRect) const noexcept;
-
-	RenderViewData BuildMainView(
-	    const RenderCamera& renderCamera,
-	    const RenderHardwareInterface& renderHardwareInterface) const noexcept;
 
   private:
 	static PerViewConstantBufferData BuildPerViewData(const PerViewCameraConstantBufferData& cameraData) noexcept;

@@ -16,7 +16,6 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
-#include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Host/RendererSystemRoot.h"
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
@@ -31,6 +30,7 @@
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
+#include "SceneData/RenderSceneGpuData.h"
 #include "Textures/RendererTexture.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
@@ -299,7 +299,7 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		return std::make_unique<FrameContext>(BuildFrameContext(
 		    m_sceneSnapshot,
-		    renderHardwareInterface,
+		    renderHardwareInterface.GetResourceService(),
 		    m_systems->GetRenderCamera(),
 		    m_frameGraphRenderExtent,
 		    m_systems->GetRenderSceneDataBuilder(),
@@ -386,42 +386,7 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.External.Sky);
 	}
-	const auto bindFrameBuffer = [this](FrameGraphBufferHandle handle, const FrameBufferResource& buffer, const char* name)
-	{
-		if (buffer)
-		{
-			m_frameGraph->BindPersistentBuffer(
-			    handle,
-			    buffer.GetResource(),
-			    FrameGraphBufferDesc::Create(name, buffer.GetSizeInBytes(), buffer.GetStrideInBytes()),
-			    ResourceState::ShaderResource);
-		}
-		else
-		{
-			m_frameGraph->ClearPersistentBufferBinding(handle);
-		}
-	};
-	bindFrameBuffer(m_frameResources.External.DirectionalLights, frame.lighting.GetDirectionalLightsBuffer(), "DirectionalLights");
-	bindFrameBuffer(m_frameResources.External.PointLights, frame.lighting.GetPointLightsBuffer(), "PointLights");
-	bindFrameBuffer(m_frameResources.External.SpotLights, frame.lighting.GetSpotLightsBuffer(), "SpotLights");
-	bindFrameBuffer(m_frameResources.External.RectLights, frame.lighting.GetRectLightsBuffer(), "RectLights");
-	bindFrameBuffer(m_frameResources.External.MeshInstances, frame.meshInstances.GetBuffer(), "MeshInstances");
-	bindFrameBuffer(m_frameResources.External.RayTracingHitVertices, frame.rayTracingHitData.GetVertexBuffer(), "RayTracingHitVertices");
-	bindFrameBuffer(
-	    m_frameResources.External.RayTracingHitSkinInfluences,
-	    frame.rayTracingHitData.GetSkinInfluenceBuffer(),
-	    "RayTracingHitSkinInfluences");
-	bindFrameBuffer(m_frameResources.External.RayTracingHitIndices, frame.rayTracingHitData.GetIndexBuffer(), "RayTracingHitIndices");
-	bindFrameBuffer(
-	    m_frameResources.External.RayTracingHitInstances,
-	    frame.rayTracingHitData.GetInstanceBuffer(),
-	    "RayTracingHitInstances");
-	bindFrameBuffer(
-	    m_frameResources.External.RayTracingHitMaterials,
-	    frame.rayTracingHitData.GetMaterialBuffer(),
-	    "RayTracingHitMaterials");
-	bindFrameBuffer(m_frameResources.External.JointMatrices, frame.skinning.GetBuffer(), "JointMatrices");
-	bindFrameBuffer(m_frameResources.External.PreviousJointMatrices, frame.skinning.GetPreviousBuffer(), "PreviousJointMatrices");
+	BindRenderSceneGpuResources(*m_frameGraph, m_frameResources.External.Scene, frame.sceneGpuData);
 	m_frameGraph->Setup(frame);
 	const FrameGraphPlan& compiledPlan = m_frameGraph->Compile();
 	RenderCommandList& commandList = m_systems->GetBackend().GetCurrentGraphicsCommandList();

@@ -37,7 +37,7 @@ void DirectLightingPass::SetParameters(
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = viewData.perViewData;
 	parameters->PerTemporal = viewData.perTemporalData;
-	parameters->ViewLighting = frame.lighting.GetConstants();
+	parameters->ViewLighting = frame.sceneGpuData.Lighting.Constants;
 }
 
 void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

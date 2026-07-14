@@ -1,6 +1,6 @@
 #include "../../PCH.h"
 
-#include "Frame/Geometry/SkinningFrameData.h"
+#include "GpuScene/GpuSceneSkinning.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Math/MathUtils.h"
@@ -12,9 +12,9 @@
 #include <utility>
 #include <vector>
 
-static const auto g_skinningFrameDataLogger = Logging::GetOrCreateLogger("Renderer.SkinningFrameData");
+static const auto g_gpuSceneSkinningLogger = Logging::GetOrCreateLogger("Renderer.GpuScene.Skinning");
 
-SkinningFrameData SkinningFrameData::Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData)
+GpuSceneSkinning GpuSceneSkinning::Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData)
 {
 	std::vector<JointMatrixData> matrices;
 	std::vector<JointMatrixData> previousMatrices;
@@ -40,29 +40,31 @@ SkinningFrameData SkinningFrameData::Build(RenderHardwareInterface& renderHardwa
 		}
 	}
 
-	FrameBufferResource buffer = FrameBufferResource::Upload(
+	GpuSceneBuffer buffer = GpuSceneBuffer::Upload(
 	    renderHardwareInterface.GetResourceService(),
 	    matrices.data(),
 	    matrices.size() * sizeof(JointMatrixData),
 	    static_cast<std::uint32_t>(sizeof(JointMatrixData)),
 	    L"SkinningJointMatrices");
-	FrameBufferResource previousBuffer = FrameBufferResource::Upload(
+		
+	GpuSceneBuffer previousBuffer = GpuSceneBuffer::Upload(
 	    renderHardwareInterface.GetResourceService(),
 	    previousMatrices.data(),
 	    previousMatrices.size() * sizeof(JointMatrixData),
 	    static_cast<std::uint32_t>(sizeof(JointMatrixData)),
 	    L"PreviousSkinningJointMatrices");
+
 	if (!buffer || !previousBuffer)
 	{
 		SPDLOG_LOGGER_WARN(
-		    g_skinningFrameDataLogger,
-		    "SkinningFrameData::Build: failed to upload {} joint matrices ({} bytes).",
+		    g_gpuSceneSkinningLogger,
+		    "GpuSceneSkinning::Build: failed to upload {} joint matrices ({} bytes).",
 		    matrices.size(),
 		    matrices.size() * sizeof(JointMatrixData));
 		return {};
 	}
 
-	SkinningFrameData frameData;
+	GpuSceneSkinning frameData;
 	frameData.m_buffer = std::move(buffer);
 	frameData.m_previousBuffer = std::move(previousBuffer);
 	return frameData;

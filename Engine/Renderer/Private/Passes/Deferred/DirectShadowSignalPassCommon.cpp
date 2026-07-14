@@ -19,7 +19,7 @@ void DirectShadowSignalPassCommon::SetParameters(
 	parameters.PerFrame = passRuntimeServices.PerFrame;
 	parameters.PerView = viewData.perViewData;
 	parameters.PerTemporal = viewData.perTemporalData;
-	parameters.ViewLighting = frame.lighting.GetConstants();
+	parameters.ViewLighting = frame.sceneGpuData.Lighting.Constants;
 }
 
 void DirectShadowSignalPassCommon::SetRayQueryParameters(
@@ -50,6 +50,6 @@ void DirectShadowSignalPassCommon::SetRayQueryParameters(
 	    passRuntimeServices.RayTracing,
 	    hasSceneTlas,
 	    capabilities.TriangleMaterialDataAvailable && materialTextureTableAvailable,
-	    frame.rayTracingHitData.GetInstanceCount(),
-	    frame.rayTracingHitData.GetMaterialCount());
+	    frame.sceneGpuData.RayTracing.InstanceCount,
+	    frame.sceneGpuData.RayTracing.MaterialCount);
 }

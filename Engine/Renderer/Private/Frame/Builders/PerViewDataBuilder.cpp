@@ -2,9 +2,6 @@
 
 #include "PerViewDataBuilder.h"
 
-#include "Camera/RenderCamera.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
-
 PerViewConstantBufferData PerViewDataBuilder::BuildPerViewData(const PerViewCameraConstantBufferData& cameraData) noexcept
 {
 	PerViewConstantBufferData perViewData{};
@@ -22,14 +19,4 @@ RenderViewData PerViewDataBuilder::BuildView(
 	viewData.viewport = viewport;
 	viewData.scissorRect = scissorRect;
 	return viewData;
-}
-
-RenderViewData PerViewDataBuilder::BuildMainView(
-    const RenderCamera& renderCamera,
-    const RenderHardwareInterface& renderHardwareInterface) const noexcept
-{
-	return BuildView(
-	    renderCamera.GetCameraConstantBufferData(),
-	    renderHardwareInterface.GetPresentationService().GetBackBufferViewport(),
-	    renderHardwareInterface.GetPresentationService().GetBackBufferScissorRect());
 }

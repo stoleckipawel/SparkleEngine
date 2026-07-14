@@ -4,27 +4,42 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string_view>
 
 class RhiResourceService;
 
-class FrameBufferResource final
+class OwnedStructuredBuffer final
 {
   public:
-	FrameBufferResource() noexcept = default;
-	~FrameBufferResource() noexcept;
+	OwnedStructuredBuffer() noexcept = default;
+	~OwnedStructuredBuffer() noexcept;
 
-	FrameBufferResource(const FrameBufferResource&) = delete;
-	FrameBufferResource& operator=(const FrameBufferResource&) = delete;
-	FrameBufferResource(FrameBufferResource&& other) noexcept;
-	FrameBufferResource& operator=(FrameBufferResource&& other) noexcept;
+	OwnedStructuredBuffer(const OwnedStructuredBuffer&) = delete;
+	OwnedStructuredBuffer& operator=(const OwnedStructuredBuffer&) = delete;
+	OwnedStructuredBuffer(OwnedStructuredBuffer&& other) noexcept;
+	OwnedStructuredBuffer& operator=(OwnedStructuredBuffer&& other) noexcept;
 
-	static FrameBufferResource Upload(
+	static OwnedStructuredBuffer Upload(
 	    RhiResourceService& resourceService,
 	    const void* data,
 	    std::size_t sizeInBytes,
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName);
+
+	template <typename TValue>
+	static OwnedStructuredBuffer Upload(
+	    RhiResourceService& resourceService,
+	    std::span<const TValue> values,
+	    std::wstring_view debugName)
+	{
+		return Upload(
+		    resourceService,
+		    values.data(),
+		    values.size_bytes(),
+		    static_cast<std::uint32_t>(sizeof(TValue)),
+		    debugName);
+	}
 
 	bool IsValid() const noexcept { return m_resource && m_sizeInBytes > 0 && m_strideInBytes > 0; }
 	explicit operator bool() const noexcept { return IsValid(); }

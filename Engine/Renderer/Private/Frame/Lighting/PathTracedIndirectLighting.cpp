@@ -17,17 +17,17 @@ void AddPathTracedIndirectLightingPass(FrameGraphBuilder& builder, const FrameAs
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 	parameters->SkyTexture = builder.CreateSRV(resources.External.Sky);
-	parameters->DirectionalLights = builder.CreateSRV(resources.External.DirectionalLights);
-	parameters->PointLights = builder.CreateSRV(resources.External.PointLights);
-	parameters->SpotLights = builder.CreateSRV(resources.External.SpotLights);
-	parameters->RectLights = builder.CreateSRV(resources.External.RectLights);
-	parameters->RayTracingHitVertices = builder.CreateSRV(resources.External.RayTracingHitVertices);
-	parameters->SkinInfluences = builder.CreateSRV(resources.External.RayTracingHitSkinInfluences);
-	parameters->RayTracingHitIndices = builder.CreateSRV(resources.External.RayTracingHitIndices);
-	parameters->RayTracingHitInstances = builder.CreateSRV(resources.External.RayTracingHitInstances);
-	parameters->RayTracingHitMaterials = builder.CreateSRV(resources.External.RayTracingHitMaterials);
-	parameters->MeshInstances = builder.CreateSRV(resources.External.MeshInstances);
-	parameters->JointMatrices = builder.CreateSRV(resources.External.JointMatrices);
+	parameters->DirectionalLights = builder.CreateSRV(resources.External.Scene.Lighting.DirectionalLights);
+	parameters->PointLights = builder.CreateSRV(resources.External.Scene.Lighting.PointLights);
+	parameters->SpotLights = builder.CreateSRV(resources.External.Scene.Lighting.SpotLights);
+	parameters->RectLights = builder.CreateSRV(resources.External.Scene.Lighting.RectLights);
+	parameters->RayTracingHitVertices = builder.CreateSRV(resources.External.Scene.RayTracing.Vertices);
+	parameters->SkinInfluences = builder.CreateSRV(resources.External.Scene.RayTracing.SkinInfluences);
+	parameters->RayTracingHitIndices = builder.CreateSRV(resources.External.Scene.RayTracing.Indices);
+	parameters->RayTracingHitInstances = builder.CreateSRV(resources.External.Scene.RayTracing.Instances);
+	parameters->RayTracingHitMaterials = builder.CreateSRV(resources.External.Scene.RayTracing.Materials);
+	parameters->MeshInstances = builder.CreateSRV(resources.External.Scene.Geometry.MeshInstances);
+	parameters->JointMatrices = builder.CreateSRV(resources.External.Scene.Geometry.JointMatrices);
 	LightingRayTracingPasses::DispatchSceneTlas<PathTracedIndirectLightingPass>(
 	    builder,
 	    parameters,

@@ -210,7 +210,7 @@ namespace
 	    std::size_t batchIndex,
 	    std::uint32_t viewModeIndex)
 	{
-		if (!frame.skinning.IsValid())
+		if (!frame.sceneGpuData.Geometry.HasSkinning())
 		{
 			SPDLOG_LOGGER_WARN(
 			    g_gbufferMeshBatchDrawerLogger,
@@ -255,7 +255,7 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 	const RenderSceneData& sceneData = frame.sceneData;
 	const std::uint32_t viewModeIndex = passRuntimeServices.PerFrame.ViewModeIndex;
 
-	if (!frame.meshInstances.IsValid())
+	if (!frame.sceneGpuData.Geometry.HasMeshInstances())
 	{
 		if (!sceneData.meshInstanceBatches.empty())
 		{

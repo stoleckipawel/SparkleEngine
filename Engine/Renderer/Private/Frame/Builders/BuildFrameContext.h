@@ -4,7 +4,7 @@
 
 class PerViewDataBuilder;
 class RenderCamera;
-class RenderHardwareInterface;
+class RhiResourceService;
 class TemporalDataBuilder;
 class RenderSceneDataBuilder;
 class RenderRayTracingScene;
@@ -13,7 +13,7 @@ struct RenderSceneSnapshot;
 
 FrameContext BuildFrameContext(
     const RenderSceneSnapshot& sceneSnapshot,
-    RenderHardwareInterface& renderHardwareInterface,
+    RhiResourceService& resourceService,
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,
     RenderSceneDataBuilder& renderSceneDataBuilder,

@@ -22,13 +22,13 @@ void AddRaytracedGBufferPass(
 	parameters->GBufferDeviceZ = builder.CreateUAV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
 	parameters->SceneTlas = builder.Read(sceneTlas);
-	parameters->RayTracingHitVertices = builder.CreateSRV(externalResources.RayTracingHitVertices);
-	parameters->SkinInfluences = builder.CreateSRV(externalResources.RayTracingHitSkinInfluences);
-	parameters->RayTracingHitIndices = builder.CreateSRV(externalResources.RayTracingHitIndices);
-	parameters->RayTracingHitInstances = builder.CreateSRV(externalResources.RayTracingHitInstances);
-	parameters->RayTracingHitMaterials = builder.CreateSRV(externalResources.RayTracingHitMaterials);
-	parameters->MeshInstances = builder.CreateSRV(externalResources.MeshInstances);
-	parameters->JointMatrices = builder.CreateSRV(externalResources.JointMatrices);
-	parameters->PreviousJointMatrices = builder.CreateSRV(externalResources.PreviousJointMatrices);
+	parameters->RayTracingHitVertices = builder.CreateSRV(externalResources.Scene.RayTracing.Vertices);
+	parameters->SkinInfluences = builder.CreateSRV(externalResources.Scene.RayTracing.SkinInfluences);
+	parameters->RayTracingHitIndices = builder.CreateSRV(externalResources.Scene.RayTracing.Indices);
+	parameters->RayTracingHitInstances = builder.CreateSRV(externalResources.Scene.RayTracing.Instances);
+	parameters->RayTracingHitMaterials = builder.CreateSRV(externalResources.Scene.RayTracing.Materials);
+	parameters->MeshInstances = builder.CreateSRV(externalResources.Scene.Geometry.MeshInstances);
+	parameters->JointMatrices = builder.CreateSRV(externalResources.Scene.Geometry.JointMatrices);
+	parameters->PreviousJointMatrices = builder.CreateSRV(externalResources.Scene.Geometry.PreviousJointMatrices);
 	builder.Dispatch<RaytracedGBufferPass>(parameters);
 }

@@ -5,21 +5,8 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Resources/History/FrameHistory.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
-#include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
-#include "RayTracing/RayTracingHitData.h"
-#include "ShaderData/RenderConstantBufferData.h"
-#include "ShaderData/RenderViewLightingData.h"
-
-namespace
-{
-	template <typename TValue> FrameGraphBufferHandle ReserveExternalBuffer(FrameGraphBuilder& builder, const char* name)
-	{
-		return builder.ReservePersistentBuffer(
-		    FrameGraphBufferDesc::Create(name, sizeof(TValue), static_cast<std::uint32_t>(sizeof(TValue))),
-		    ResourceState::ShaderResource);
-	}
-}
+#include "SceneData/RenderSceneGpuData.h"
 
 void CreateFrameSceneResources(
     FrameGraphBuilder& builder,
@@ -54,18 +41,7 @@ void CreateFrameSceneResources(
 	    .BackBuffer = backBuffer};
 	resources.Transient.Exposure = exposure;
 	resources.External.Sky = sky;
-	resources.External.DirectionalLights = ReserveExternalBuffer<DirectionalLightConstantBufferData>(builder, "DirectionalLights");
-	resources.External.PointLights = ReserveExternalBuffer<PointLightConstantBufferData>(builder, "PointLights");
-	resources.External.SpotLights = ReserveExternalBuffer<SpotLightConstantBufferData>(builder, "SpotLights");
-	resources.External.RectLights = ReserveExternalBuffer<RectLightConstantBufferData>(builder, "RectLights");
-	resources.External.MeshInstances = ReserveExternalBuffer<MeshInstanceData>(builder, "MeshInstances");
-	resources.External.RayTracingHitVertices = ReserveExternalBuffer<RayTracingHitVertex>(builder, "RayTracingHitVertices");
-	resources.External.RayTracingHitSkinInfluences = ReserveExternalBuffer<VertexSkinInfluenceData>(builder, "RayTracingHitSkinInfluences");
-	resources.External.RayTracingHitIndices = ReserveExternalBuffer<std::uint32_t>(builder, "RayTracingHitIndices");
-	resources.External.RayTracingHitInstances = ReserveExternalBuffer<RayTracingHitInstance>(builder, "RayTracingHitInstances");
-	resources.External.RayTracingHitMaterials = ReserveExternalBuffer<RayTracingHitMaterial>(builder, "RayTracingHitMaterials");
-	resources.External.JointMatrices = ReserveExternalBuffer<JointMatrixData>(builder, "JointMatrices");
-	resources.External.PreviousJointMatrices = ReserveExternalBuffer<JointMatrixData>(builder, "PreviousJointMatrices");
+	resources.External.Scene = DeclareRenderSceneGpuResources(builder);
 	resources.History = DeclareFrameHistoryResources(builder, renderExtent);
 	resources.ViewportProducts.SceneColor = sceneColor;
 	resources.ViewportProducts.SceneDepth = sceneDepth;

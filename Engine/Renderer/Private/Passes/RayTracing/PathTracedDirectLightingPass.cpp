@@ -94,7 +94,7 @@ void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, Parame
 	parameters->PerFrame = context.RuntimeServices.PerFrame;
 	parameters->PerView = context.Frame.mainView.perViewData;
 	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
-	parameters->ViewLighting = context.Frame.lighting.GetConstants();
+	parameters->ViewLighting = context.Frame.sceneGpuData.Lighting.Constants;
 	parameters->MaterialTextureSampler = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -115,8 +115,8 @@ void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, Parame
 	    context.RuntimeServices.RayTracing,
 	    context.Frame.rayTracingScene.HasTraceableInstances(),
 	    capabilities.TriangleMaterialDataAvailable && materialTextureTableAvailable,
-	    context.Frame.rayTracingHitData.GetInstanceCount(),
-	    context.Frame.rayTracingHitData.GetMaterialCount());
+	    context.Frame.sceneGpuData.RayTracing.InstanceCount,
+	    context.Frame.sceneGpuData.RayTracing.MaterialCount);
 
 	const PathTracedLightingSettings settings = BuildPathTracedLightingSettings();
 	parameters->PathTracedLightingConstants = PathTracedLightingUniformData{

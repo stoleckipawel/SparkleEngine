@@ -21,10 +21,10 @@ void AddDirectLightReservoirPasses(
 		parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 		parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 		parameters->SceneDepth = builder.CreateSRV(sceneTargets.SceneDepth);
-		parameters->DirectionalLights = builder.CreateSRV(externalResources.DirectionalLights);
-		parameters->PointLights = builder.CreateSRV(externalResources.PointLights);
-		parameters->SpotLights = builder.CreateSRV(externalResources.SpotLights);
-		parameters->RectLights = builder.CreateSRV(externalResources.RectLights);
+		parameters->DirectionalLights = builder.CreateSRV(externalResources.Scene.Lighting.DirectionalLights);
+		parameters->PointLights = builder.CreateSRV(externalResources.Scene.Lighting.PointLights);
+		parameters->SpotLights = builder.CreateSRV(externalResources.Scene.Lighting.SpotLights);
+		parameters->RectLights = builder.CreateSRV(externalResources.Scene.Lighting.RectLights);
 	};
 
 	auto& temporalParameters = builder.AllocParameters<DirectLightReservoirTemporalPass::Parameters>();

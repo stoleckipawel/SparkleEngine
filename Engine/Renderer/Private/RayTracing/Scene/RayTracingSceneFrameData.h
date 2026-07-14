@@ -6,7 +6,7 @@
 
 #include <cstdint>
 
-struct RayTracingSceneFrameData
+struct RayTracingSceneFrameData final
 {
 	bool IsAvailable = false;
 	RhiOwnedResourceHandle TlasResource = {};

@@ -75,8 +75,8 @@ void RaytracedGBufferPass::Execute(PassExecutionContext& context, ParameterInsta
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
 	parameters->RaytracedGBufferConstants = RaytracedGBufferUniformData{
 	    .RayTracingHitDataAvailable = rayTracingCapabilities.HitDataAvailable ? 1u : 0u,
-	    .RayTracingHitInstanceCount = context.Frame.rayTracingHitData.GetInstanceCount(),
-	    .RayTracingHitMaterialCount = context.Frame.rayTracingHitData.GetMaterialCount()};
+	    .RayTracingHitInstanceCount = context.Frame.sceneGpuData.RayTracing.InstanceCount,
+	    .RayTracingHitMaterialCount = context.Frame.sceneGpuData.RayTracing.MaterialCount};
 	ComputePassUtilities::DispatchSized<RaytracedGBufferPass>(
 	    context,
 	    m_runtime,

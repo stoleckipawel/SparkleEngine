@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Resources/RhiResourceDesc.h"
 #include "ShaderData/PerTemporalConstantBufferData.h"
 #include "ShaderData/PerViewConstantBufferData.h"
 #include "Frame/Temporal/TemporalFrameState.h"

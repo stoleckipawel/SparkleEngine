@@ -1,21 +1,21 @@
-#include "../../PCH.h"
-#include "Frame/Core/FrameBufferResource.h"
+#include "../PCH.h"
+#include "Resources/OwnedStructuredBuffer.h"
 
 #include "RHI/Public/Resources/RhiResourceService.h"
 
 #include <utility>
 
-FrameBufferResource::~FrameBufferResource() noexcept
+OwnedStructuredBuffer::~OwnedStructuredBuffer() noexcept
 {
 	Reset();
 }
 
-FrameBufferResource::FrameBufferResource(FrameBufferResource&& other) noexcept
+OwnedStructuredBuffer::OwnedStructuredBuffer(OwnedStructuredBuffer&& other) noexcept
 {
 	*this = std::move(other);
 }
 
-FrameBufferResource& FrameBufferResource::operator=(FrameBufferResource&& other) noexcept
+OwnedStructuredBuffer& OwnedStructuredBuffer::operator=(OwnedStructuredBuffer&& other) noexcept
 {
 	if (this == &other)
 	{
@@ -34,14 +34,14 @@ FrameBufferResource& FrameBufferResource::operator=(FrameBufferResource&& other)
 	return *this;
 }
 
-FrameBufferResource FrameBufferResource::Upload(
+OwnedStructuredBuffer OwnedStructuredBuffer::Upload(
     RhiResourceService& resourceService,
     const void* data,
     std::size_t sizeInBytes,
     std::uint32_t strideInBytes,
     std::wstring_view debugName)
 {
-	FrameBufferResource buffer;
+	OwnedStructuredBuffer buffer;
 	buffer.m_resourceService = &resourceService;
 	if (!resourceService.CreateStructuredBufferResource(
 	        data,
@@ -58,7 +58,7 @@ FrameBufferResource FrameBufferResource::Upload(
 	return buffer;
 }
 
-void FrameBufferResource::Reset() noexcept
+void OwnedStructuredBuffer::Reset() noexcept
 {
 	if (m_resourceService != nullptr && m_resource)
 	{
