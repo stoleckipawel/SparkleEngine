@@ -3,6 +3,8 @@
 
 #include "DxcShaderBackend.h"
 
+#include "SpirVBindingNormalizer.h"
+
 #include "Backend/ShaderBackendFactory.h"
 #include "Compiler/ShaderCompileProfile.h"
 #include "Compiler/ShaderCompilerPathUtils.h"
@@ -179,6 +181,16 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 	{
 		return ShaderCompileResult::Failure("Failed to extract shader bytecode");
 	}
+	if (IsSpirVTarget(options.Target))
+	{
+		std::string normalizationError;
+		if (!SpirVBindingNormalizer::Normalize(bytecode, options.DescriptorBindingRemaps, normalizationError))
+		{
+			return ShaderCompileResult::Failure(
+			    std::string{"SPIR-V descriptor binding normalization failed for source '"} +
+			    options.SourcePath.generic_string() + "' - " + normalizationError);
+		}
+	}
 
 	// PDBs only meaningful for DXIL today; SPIR-V output does not produce a
 	// DXC PDB blob, so SaveShaderSymbols returns an empty path harmlessly.
@@ -304,6 +316,7 @@ void DxcShaderBackend::BuildCompileArguments(
 	if (IsSpirVTarget(options.Target))
 	{
 		outArgs.push_back(L"-spirv");
+		outArgs.push_back(L"-fspv-use-unknown-image-format");
 		switch (options.Target)
 		{
 			case ShaderTarget::SpirV14:

@@ -21,6 +21,8 @@ struct RhiPartitionedTlasCapabilities
 	ERhiPartitionedTlasProvider Provider = ERhiPartitionedTlasProvider::None;
 	bool RequiresNvidiaDevice = false;
 	bool RunsOnNvidiaDevice = false;
+	bool SupportsDescriptorAccess = false;
+	bool SupportsShaderDeviceAddressAccess = false;
 	bool SupportsVulkanNativePartitionedAccelerationStructure = false;
 	bool SupportsVulkanExtension = false;
 	bool SupportsVulkanFeatureQuery = false;

@@ -54,7 +54,6 @@ struct NativeTextureViewInfo
 	std::uint32_t SubresourceLayerCount = 1;
 	std::uint32_t NativeFlags = 0;
 	std::uint32_t NativeUsage = 0;
-	bool ReadWrite = false;
 
 	constexpr explicit operator bool() const noexcept { return Resource && View && Width != 0 && Height != 0; }
 };

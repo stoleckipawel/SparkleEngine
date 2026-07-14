@@ -68,6 +68,12 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 		VkImageUsageFlags Usage = 0;
 		RhiGpuDescriptorHandle DescriptorHandle = {};
 		bool OwnsImageView = false;
+
+		bool IsAllocated() const noexcept
+		{
+			return Image != VK_NULL_HANDLE || Buffer != VK_NULL_HANDLE || AccelerationStructure != VK_NULL_HANDLE ||
+			       ImageView != VK_NULL_HANDLE || static_cast<bool>(DescriptorHandle);
+		}
 	};
 
 	static RhiResourceViewHandle MakeResourceViewHandle(std::uint32_t index) noexcept;

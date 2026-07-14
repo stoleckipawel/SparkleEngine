@@ -24,10 +24,10 @@ MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(
 		return MaterialTextureTableCapabilityReport{
 		    .StatusReason = "backend-descriptor-model-unknown"};
 	}
-	if (capabilities.BackendApi == ERhiBackendApi::Vulkan)
+	if (!capabilities.DescriptorIndexing.SupportsSampledImageArrayNonUniformIndexing)
 	{
 		return MaterialTextureTableCapabilityReport{
-		    .StatusReason = "vulkan-descriptor-indexing-capability-not-reported"};
+		    .StatusReason = "sampled-image-array-non-uniform-indexing-unavailable"};
 	}
 
 	const std::uint32_t shaderResourceCapacity = ResolveShaderResourceDescriptorCapacity(capabilities.BindingLimits);

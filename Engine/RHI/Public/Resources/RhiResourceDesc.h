@@ -53,9 +53,10 @@ struct RhiRect
 
 enum class RhiTransientAllocationPool : std::uint8_t
 {
-	Color = 0,
-	Depth = 1,
-	Buffer = 2,
+	Texture = 0,
+	RenderTargetTexture = 1,
+	DepthStencilTexture = 2,
+	Buffer = 3,
 };
 
 struct RhiTextureResourceDesc
@@ -67,6 +68,7 @@ struct RhiTextureResourceDesc
 	bool AllowRenderTarget = false;
 	bool AllowDepthStencil = false;
 	bool AllowUnorderedAccess = false;
+	bool operator==(const RhiTextureResourceDesc&) const = default;
 };
 
 struct RhiBufferResourceDesc
@@ -74,6 +76,7 @@ struct RhiBufferResourceDesc
 	std::uint64_t SizeInBytes = 0;
 	std::uint32_t StrideInBytes = 0;
 	bool AllowUnorderedAccess = false;
+	bool operator==(const RhiBufferResourceDesc&) const = default;
 };
 
 struct RhiResourceAllocationInfo

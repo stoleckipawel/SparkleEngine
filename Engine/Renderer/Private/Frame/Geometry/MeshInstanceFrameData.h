@@ -9,12 +9,12 @@ class MeshInstanceFrameData final
 {
   public:
 	MeshInstanceFrameData() noexcept = default;
-	~MeshInstanceFrameData() noexcept;
+	~MeshInstanceFrameData() noexcept = default;
 
 	MeshInstanceFrameData(const MeshInstanceFrameData&) = delete;
 	MeshInstanceFrameData& operator=(const MeshInstanceFrameData&) = delete;
-	MeshInstanceFrameData(MeshInstanceFrameData&& other) noexcept;
-	MeshInstanceFrameData& operator=(MeshInstanceFrameData&& other) noexcept;
+	MeshInstanceFrameData(MeshInstanceFrameData&& other) noexcept = default;
+	MeshInstanceFrameData& operator=(MeshInstanceFrameData&& other) noexcept = default;
 
 	bool IsValid() const noexcept { return m_buffer.IsValid(); }
 	const FrameBufferResource& GetBuffer() const noexcept { return m_buffer; }
@@ -22,8 +22,5 @@ class MeshInstanceFrameData final
 	static MeshInstanceFrameData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
   private:
-	void Release() noexcept;
-
-	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	FrameBufferResource m_buffer;
 };

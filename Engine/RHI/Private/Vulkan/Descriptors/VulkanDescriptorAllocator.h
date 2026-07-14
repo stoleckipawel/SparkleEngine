@@ -5,6 +5,7 @@
 #include "Samplers/RhiSamplerDesc.h"
 #include "Vulkan/VulkanIncludes.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -46,7 +47,11 @@ class VulkanDescriptorAllocator final
 	void WriteImageDescriptor(RhiCpuDescriptorHandle destination, ERhiResourceViewKind viewKind, VkImageView imageView) noexcept;
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
 
-	VkDescriptorSet AllocateTransientSet(VkDescriptorSetLayout layout);
+	VkDescriptorSet AllocateTransientSet(
+	    VkDescriptorSetLayout layout,
+	    const CompiledBinding* bindings,
+	    std::size_t bindingCount,
+	    std::uint32_t setIndex);
 	void WriteFallbackDescriptors(VkDescriptorSet descriptorSet, const CompiledBinding* bindings, std::size_t bindingCount, std::uint32_t setIndex) noexcept;
 	void WriteDescriptorTable(
 	    VkDescriptorSet descriptorSet,
@@ -80,6 +85,18 @@ class VulkanDescriptorAllocator final
 		AccelerationStructure,
 		PartitionedAccelerationStructure,
 	};
+	enum class PoolClass : std::uint8_t
+	{
+		UniformBuffer,
+		StorageBuffer,
+		SampledImage,
+		StorageImage,
+		Sampler,
+		AccelerationStructure,
+		Count,
+	};
+	static constexpr std::size_t DescriptorPoolTypeCount = static_cast<std::size_t>(PoolClass::Count);
+	using DescriptorCounts = std::array<std::uint32_t, DescriptorPoolTypeCount>;
 
 	struct DescriptorEntry final
 	{
@@ -101,6 +118,8 @@ class VulkanDescriptorAllocator final
 	{
 		VkDescriptorPool Pool = VK_NULL_HANDLE;
 		std::uint32_t AllocatedSets = 0;
+		DescriptorCounts Capacity = {};
+		DescriptorCounts Remaining = {};
 	};
 
 	static constexpr std::uint32_t DescriptorSetsPerPage = 256;
@@ -114,7 +133,17 @@ class VulkanDescriptorAllocator final
 	const DescriptorTableRecord* FindTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
 	DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) noexcept;
 	const DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) const noexcept;
-	VkDescriptorPool CreatePoolPage();
+	static DescriptorCounts GetPoolRequirements(
+	    const CompiledBinding* bindings,
+	    std::size_t bindingCount,
+	    std::uint32_t setIndex) noexcept;
+	static bool CanAllocateFromPage(
+	    const DescriptorPoolPage& page,
+	    const DescriptorCounts& requirements) noexcept;
+	static void ConsumePoolCapacity(
+	    DescriptorPoolPage& page,
+	    const DescriptorCounts& requirements) noexcept;
+	VkDescriptorPool CreatePoolPage(const DescriptorCounts& capacity);
 	VkBuffer EnsureFallbackBuffer() noexcept;
 	void WriteEntries(VkDescriptorSet descriptorSet, const CompiledBinding& binding, std::span<const DescriptorEntry> entries) noexcept;
 

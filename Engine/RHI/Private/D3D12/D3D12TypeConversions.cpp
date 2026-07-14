@@ -191,19 +191,6 @@ DXGI_FORMAT D3D12TypeConversions::ToIndexFormat(RhiIndexFormat format) noexcept
 	}
 }
 
-D3D12_HEAP_FLAGS D3D12TypeConversions::ToHeapFlags(RhiTransientAllocationPool pool) noexcept
-{
-	switch (pool)
-	{
-		case RhiTransientAllocationPool::Buffer:
-			return D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
-		case RhiTransientAllocationPool::Color:
-		case RhiTransientAllocationPool::Depth:
-		default:
-			return D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES;
-	}
-}
-
 D3D12_RESOURCE_DESC D3D12TypeConversions::BuildTextureResourceDesc(const RhiTextureResourceDesc& desc) noexcept
 {
 	D3D12_RESOURCE_DESC resourceDesc{};

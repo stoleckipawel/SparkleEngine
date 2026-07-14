@@ -29,7 +29,7 @@ namespace
 	{
 		return resourceService.CreateTextureResource(
 		    desc,
-		    ResourceState::ShaderResource,
+		    ResourceState::Undefined,
 		    RhiMemoryCategory::Texture,
 		    RhiMemoryResidencyClass::DeviceLocal,
 		    debugName);
@@ -97,7 +97,8 @@ bool BindReservoirHistoryResources(
     FrameGraph& frameGraph,
     std::uint32_t currentFrameIndex,
     const ReservoirHistoryFrameGraphHandles& handles,
-    const ReservoirHistoryResourceSet& resources) noexcept
+    const ReservoirHistoryResourceSet& resources,
+    ResourceState currentState) noexcept
 {
 	const std::uint32_t previousFrameIndex =
 	    (currentFrameIndex + RhiFrameConstants::FramesInFlight - 1u) % RhiFrameConstants::FramesInFlight;
@@ -109,12 +110,12 @@ bool BindReservoirHistoryResources(
 		return false;
 	}
 
-	frameGraph.BindPersistentTexture(handles.PreviousSample, previous.Sample, ResourceState::ShaderResource);
-	frameGraph.BindPersistentTexture(handles.PreviousWeight, previous.Weight, ResourceState::ShaderResource);
-	frameGraph.BindPersistentTexture(handles.PreviousSurface, previous.Surface, ResourceState::ShaderResource);
-	frameGraph.BindPersistentTexture(handles.CurrentSample, current.Sample, ResourceState::ShaderResource);
-	frameGraph.BindPersistentTexture(handles.CurrentWeight, current.Weight, ResourceState::ShaderResource);
-	frameGraph.BindPersistentTexture(handles.CurrentSurface, current.Surface, ResourceState::ShaderResource);
+	frameGraph.BindPersistentTexture(handles.PreviousSample, previous.Sample, currentState);
+	frameGraph.BindPersistentTexture(handles.PreviousWeight, previous.Weight, currentState);
+	frameGraph.BindPersistentTexture(handles.PreviousSurface, previous.Surface, currentState);
+	frameGraph.BindPersistentTexture(handles.CurrentSample, current.Sample, currentState);
+	frameGraph.BindPersistentTexture(handles.CurrentWeight, current.Weight, currentState);
+	frameGraph.BindPersistentTexture(handles.CurrentSurface, current.Surface, currentState);
 	return true;
 }
 

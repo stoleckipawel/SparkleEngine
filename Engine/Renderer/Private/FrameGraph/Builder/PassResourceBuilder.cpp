@@ -2,110 +2,32 @@
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 
 #include <cassert>
-#include <utility>
+#include <string>
 
-PassResourceDeclarationSink::PassResourceDeclarationSink(std::vector<PassResourceDeclaration>& declarations) noexcept :
-	m_declarations(&declarations)
-{
-}
-
-FrameGraphResourceHandle PassResourceDeclarationSink::Read(
-	FrameGraphResourceHandle handle,
-	ResourceUsage usage,
-	std::string_view label) noexcept
-{
-	assert(IsReadOnlyUsage(usage));
-	Record(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
-	return handle;
-}
-
-FrameGraphResourceHandle PassResourceDeclarationSink::Write(
-	FrameGraphResourceHandle handle,
-	ResourceUsage usage,
-	std::string_view label) noexcept
-{
-	assert(IsWriteOnlyUsage(usage));
-	Record(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
-	return handle;
-}
-
-FrameGraphResourceHandle PassResourceDeclarationSink::Use(
-	FrameGraphResourceHandle handle,
-	ResourceUsage usage,
-	std::string_view label) noexcept
-{
-	assert(IsReadWriteUsage(usage));
-	Record(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
-	return handle;
-}
-
-void PassResourceDeclarationSink::Record(PassResourceDeclaration declaration) noexcept
-{
-	assert(declaration.handle.IsValid());
-	assert(m_declarations != nullptr);
-	m_declarations->push_back(std::move(declaration));
-}
-
-PassResourceBuilder::PassResourceBuilder(PassResourceDeclarationSink& declarations) noexcept : m_declarations(&declarations) {}
-
-FrameGraphResourceHandle PassResourceBuilder::Read(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
-{
-	assert(m_declarations != nullptr);
-	assert(IsReadOnlyUsage(usage));
-	return m_declarations->Read(handle, usage);
-}
-
-FrameGraphResourceHandle PassResourceBuilder::Write(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
-{
-	assert(m_declarations != nullptr);
-	assert(IsWriteOnlyUsage(usage));
-	return m_declarations->Write(handle, usage);
-}
-
-FrameGraphResourceHandle PassResourceBuilder::Use(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
-{
-	assert(m_declarations != nullptr);
-	assert(IsReadWriteUsage(usage));
-	return m_declarations->Use(handle, usage);
-}
+PassResourceBuilder::PassResourceBuilder(std::vector<PassResourceDeclaration>& declarations) noexcept : m_declarations(&declarations) {}
 
 FrameGraphResourceHandle PassResourceBuilder::Read(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(m_declarations != nullptr);
 	assert(IsReadOnlyUsage(usage));
-	return m_declarations->Read(handle, usage, label);
+	Record(handle, usage, label);
+	return handle;
 }
 
 FrameGraphResourceHandle PassResourceBuilder::Write(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(m_declarations != nullptr);
 	assert(IsWriteOnlyUsage(usage));
-	return m_declarations->Write(handle, usage, label);
+	Record(handle, usage, label);
+	return handle;
 }
 
 FrameGraphResourceHandle PassResourceBuilder::Use(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(m_declarations != nullptr);
 	assert(IsReadWriteUsage(usage));
-	return m_declarations->Use(handle, usage, label);
-}
-
-FrameGraphTextureHandle PassResourceBuilder::Read(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept
-{
-	assert(handle.IsValid());
-	return FrameGraphTextureHandle{Read(handle.GetResourceHandle(), usage)};
-}
-
-FrameGraphTextureHandle PassResourceBuilder::Write(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept
-{
-	assert(handle.IsValid());
-	return FrameGraphTextureHandle{Write(handle.GetResourceHandle(), usage)};
-}
-
-FrameGraphTextureHandle PassResourceBuilder::Use(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept
-{
-	assert(handle.IsValid());
-	return FrameGraphTextureHandle{Use(handle.GetResourceHandle(), usage)};
+	Record(handle, usage, label);
+	return handle;
 }
 
 FrameGraphTextureHandle PassResourceBuilder::Read(FrameGraphTextureHandle handle, ResourceUsage usage, std::string_view label) noexcept
@@ -126,24 +48,6 @@ FrameGraphTextureHandle PassResourceBuilder::Use(FrameGraphTextureHandle handle,
 	return FrameGraphTextureHandle{Use(handle.GetResourceHandle(), usage, label)};
 }
 
-FrameGraphBufferHandle PassResourceBuilder::Read(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept
-{
-	assert(handle.IsValid());
-	return FrameGraphBufferHandle{Read(handle.GetResourceHandle(), usage)};
-}
-
-FrameGraphBufferHandle PassResourceBuilder::Write(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept
-{
-	assert(handle.IsValid());
-	return FrameGraphBufferHandle{Write(handle.GetResourceHandle(), usage)};
-}
-
-FrameGraphBufferHandle PassResourceBuilder::Use(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept
-{
-	assert(handle.IsValid());
-	return FrameGraphBufferHandle{Use(handle.GetResourceHandle(), usage)};
-}
-
 FrameGraphBufferHandle PassResourceBuilder::Read(FrameGraphBufferHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(handle.IsValid());
@@ -160,24 +64,6 @@ FrameGraphBufferHandle PassResourceBuilder::Use(FrameGraphBufferHandle handle, R
 {
 	assert(handle.IsValid());
 	return FrameGraphBufferHandle{Use(handle.GetResourceHandle(), usage, label)};
-}
-
-FrameGraphAccelerationStructureHandle PassResourceBuilder::Read(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage) noexcept
-{
-	assert(handle.IsValid());
-	return FrameGraphAccelerationStructureHandle{Read(handle.GetResourceHandle(), usage)};
-}
-
-FrameGraphAccelerationStructureHandle PassResourceBuilder::Write(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage) noexcept
-{
-	assert(handle.IsValid());
-	return FrameGraphAccelerationStructureHandle{Write(handle.GetResourceHandle(), usage)};
-}
-
-FrameGraphAccelerationStructureHandle PassResourceBuilder::Use(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage) noexcept
-{
-	assert(handle.IsValid());
-	return FrameGraphAccelerationStructureHandle{Use(handle.GetResourceHandle(), usage)};
 }
 
 FrameGraphAccelerationStructureHandle PassResourceBuilder::Read(
@@ -205,4 +91,11 @@ FrameGraphAccelerationStructureHandle PassResourceBuilder::Use(
 {
 	assert(handle.IsValid());
 	return FrameGraphAccelerationStructureHandle{Use(handle.GetResourceHandle(), usage, label)};
+}
+
+void PassResourceBuilder::Record(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
+{
+	assert(handle.IsValid());
+	assert(m_declarations != nullptr);
+	m_declarations->push_back(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
 }

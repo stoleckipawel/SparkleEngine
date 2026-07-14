@@ -133,57 +133,20 @@ namespace
 	    const wchar_t* debugName,
 	    FrameBufferResource& outBuffer) noexcept
 	{
-		outBuffer.Reset();
 		if (data.empty())
 		{
+			outBuffer.Reset();
 			return false;
 		}
 
-		outBuffer.SizeInBytes = data.size() * sizeof(TData);
-		outBuffer.StrideInBytes = static_cast<std::uint32_t>(sizeof(TData));
-		const bool created =
-		    renderHardwareInterface.GetResourceService()
-		        .CreateStructuredBufferResource(data.data(), outBuffer.SizeInBytes, outBuffer.StrideInBytes, debugName, outBuffer.Resource);
-		return created && outBuffer.IsValid();
+		outBuffer = FrameBufferResource::Upload(
+		    renderHardwareInterface.GetResourceService(),
+		    data.data(),
+		    data.size() * sizeof(TData),
+		    static_cast<std::uint32_t>(sizeof(TData)),
+		    debugName);
+		return outBuffer.IsValid();
 	}
-}
-
-RayTracingHitDataFrameData::~RayTracingHitDataFrameData() noexcept
-{
-	Release();
-}
-
-RayTracingHitDataFrameData::RayTracingHitDataFrameData(RayTracingHitDataFrameData&& other) noexcept
-{
-	*this = std::move(other);
-}
-
-RayTracingHitDataFrameData& RayTracingHitDataFrameData::operator=(RayTracingHitDataFrameData&& other) noexcept
-{
-	if (this == &other)
-	{
-		return *this;
-	}
-
-	Release();
-	m_renderHardwareInterface = other.m_renderHardwareInterface;
-	m_vertexBuffer = other.m_vertexBuffer;
-	m_indexBuffer = other.m_indexBuffer;
-	m_skinInfluenceBuffer = other.m_skinInfluenceBuffer;
-	m_instanceBuffer = other.m_instanceBuffer;
-	m_materialBuffer = other.m_materialBuffer;
-	m_instanceCount = other.m_instanceCount;
-	m_materialCount = other.m_materialCount;
-
-	other.m_renderHardwareInterface = nullptr;
-	other.m_vertexBuffer.Reset();
-	other.m_indexBuffer.Reset();
-	other.m_skinInfluenceBuffer.Reset();
-	other.m_instanceBuffer.Reset();
-	other.m_materialBuffer.Reset();
-	other.m_instanceCount = 0u;
-	other.m_materialCount = 0u;
-	return *this;
 }
 
 bool RayTracingHitDataFrameData::IsValid() const noexcept
@@ -317,7 +280,6 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 	}
 
 	RayTracingHitDataFrameData frameData;
-	frameData.m_renderHardwareInterface = &renderHardwareInterface;
 	frameData.m_instanceCount = static_cast<std::uint32_t>(instances.size());
 	frameData.m_materialCount = static_cast<std::uint32_t>(materials.size());
 	if (!UploadStructuredBuffer(renderHardwareInterface, vertices, L"RayTracingHitVertices", frameData.m_vertexBuffer) ||
@@ -326,45 +288,8 @@ RayTracingHitDataFrameData RayTracingHitDataFrameData::Build(
 	    !UploadStructuredBuffer(renderHardwareInterface, instances, L"RayTracingHitInstances", frameData.m_instanceBuffer) ||
 	    !UploadStructuredBuffer(renderHardwareInterface, materials, L"RayTracingHitMaterials", frameData.m_materialBuffer))
 	{
-		frameData.Release();
 		return {};
 	}
 
 	return frameData;
-}
-
-void RayTracingHitDataFrameData::Release() noexcept
-{
-	if (m_renderHardwareInterface != nullptr)
-	{
-		if (m_vertexBuffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_vertexBuffer.Resource);
-		}
-		if (m_indexBuffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_indexBuffer.Resource);
-		}
-		if (m_skinInfluenceBuffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_skinInfluenceBuffer.Resource);
-		}
-		if (m_instanceBuffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_instanceBuffer.Resource);
-		}
-		if (m_materialBuffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_materialBuffer.Resource);
-		}
-	}
-
-	m_renderHardwareInterface = nullptr;
-	m_vertexBuffer.Reset();
-	m_indexBuffer.Reset();
-	m_skinInfluenceBuffer.Reset();
-	m_instanceBuffer.Reset();
-	m_materialBuffer.Reset();
-	m_instanceCount = 0u;
-	m_materialCount = 0u;
 }

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "RenderConstantBufferValidation.h"
-
 #include <DirectXMath.h>
 
 #include <cstdint>
@@ -47,4 +45,8 @@ struct alignas(256) MeshInstanceDrawConstantBufferData
 	uint32_t FirstInstance = 0;
 	DirectX::XMUINT3 Padding = {0, 0, 0};
 };
-RHI_CBV_CHECK(MeshInstanceDrawConstantBufferData);
+static_assert(std::is_standard_layout_v<MeshInstanceDrawConstantBufferData>);
+static_assert(std::is_trivially_copyable_v<MeshInstanceDrawConstantBufferData>);
+static_assert(alignof(MeshInstanceDrawConstantBufferData) >= 256);
+static_assert(sizeof(MeshInstanceDrawConstantBufferData) % 256 == 0);
+static_assert(sizeof(MeshInstanceDrawConstantBufferData) <= 64 * 1024);

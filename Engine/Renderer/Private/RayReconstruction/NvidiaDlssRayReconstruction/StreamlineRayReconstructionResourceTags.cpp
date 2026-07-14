@@ -16,44 +16,34 @@ sl::Result TagRayReconstructionResourcesForFrame(
 	sl::Extent exposureExtent = BuildStreamlineExtent(RenderViewportExtent{1u, 1u});
 	StreamlineTaggedTextureResource noisyColor(
 	    evaluation.BackendApi,
-	    evaluation.NativeNoisyInputColorView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeNoisyInputColorView);
 	StreamlineTaggedTextureResource outputColor(
 	    evaluation.BackendApi,
-	    evaluation.NativeOutputColorView,
-	    StreamlineTextureAccess::ReadWrite);
+	    evaluation.NativeOutputColorView);
 	StreamlineTaggedTextureResource depth(
 	    evaluation.BackendApi,
-	    evaluation.NativeDepthView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeDepthView);
 	StreamlineTaggedTextureResource motionVectors(
 	    evaluation.BackendApi,
-	    evaluation.NativeMotionVectorsView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeMotionVectorsView);
 	StreamlineTaggedTextureResource normals(
 	    evaluation.BackendApi,
-	    evaluation.NativeNormalsView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeNormalsView);
 	StreamlineTaggedTextureResource roughness(
 	    evaluation.BackendApi,
-	    evaluation.NativeRoughnessView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeRoughnessView);
 	StreamlineTaggedTextureResource diffuseAlbedo(
 	    evaluation.BackendApi,
-	    evaluation.NativeDiffuseAlbedoView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeDiffuseAlbedoView);
 	StreamlineTaggedTextureResource specularAlbedo(
 	    evaluation.BackendApi,
-	    evaluation.NativeSpecularAlbedoView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeSpecularAlbedoView);
 	StreamlineTaggedTextureResource specularHitDistance(
 	    evaluation.BackendApi,
-	    evaluation.NativeSpecularHitDistanceView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeSpecularHitDistanceView);
 	StreamlineTaggedTextureResource exposure(
 	    evaluation.BackendApi,
-	    evaluation.NativeExposureView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeExposureView);
 
 	std::array<sl::ResourceTag, 10> tags = {
 	    sl::ResourceTag{noisyColor.Get(), sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},

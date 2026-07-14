@@ -44,11 +44,10 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::BuildFromCapabilities(c
 {
 	const ERhiBackendApi backendApi = capabilities.BackendApi;
 	const RhiRayTracingCapabilities& rayTracing = capabilities.RayTracing;
-	const bool supportsClassicDescriptorTlas = rayTracing.Groups.ClassicTlas.SupportsClassicTlasBuild;
-	const bool supportsPartitionedDescriptorTlas = rayTracing.Groups.PartitionedTlas.SupportsVulkanDescriptorPath ||
-	                                               rayTracing.Groups.PartitionedTlas.SupportsD3D12NvapiPartitionedTlas ||
-	                                               rayTracing.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas;
-	const bool supportsPartitionedShaderDeviceAddress = rayTracing.Groups.PartitionedTlas.SupportsVulkanShaderDeviceAddressPath;
+	const bool supportsClassicDescriptorTlas = rayTracing.Groups.ClassicTlas.SupportsClassicTlasBuild &&
+	                                           rayTracing.Groups.AccelerationStructures.SupportsAccelerationStructureShaderBinding;
+	const bool supportsPartitionedDescriptorTlas = rayTracing.Groups.PartitionedTlas.SupportsDescriptorAccess;
+	const bool supportsPartitionedShaderDeviceAddress = rayTracing.Groups.PartitionedTlas.SupportsShaderDeviceAddressAccess;
 	return RayTracingCapabilityReport{
 	    .BackendApi = backendApi,
 	    .Core =

@@ -94,6 +94,7 @@ void VulkanDescriptorAllocator::BeginFrame(std::uint32_t frameIndex) noexcept
 		if (VulkanResult::Succeeded(result))
 		{
 			page.AllocatedSets = 0;
+			page.Remaining = page.Capacity;
 		}
 	}
 }
@@ -276,7 +277,12 @@ void VulkanDescriptorAllocator::ReleaseRegisteredDescriptor(RhiGpuDescriptorHand
 	{
 		return;
 	}
+	if (m_registeredDescriptors[index].Kind == EntryKind::Empty)
+	{
+		return;
+	}
 	m_registeredDescriptors[index] = DescriptorEntry{};
+	m_freeRegisteredDescriptorIndices.push_back(index);
 }
 
 void VulkanDescriptorAllocator::WriteImageDescriptor(
@@ -320,7 +326,11 @@ void VulkanDescriptorAllocator::WriteSamplerDescriptor(RhiCpuDescriptorHandle de
 	entry.Image = VkDescriptorImageInfo{.sampler = sampler, .imageView = VK_NULL_HANDLE, .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED};
 }
 
-VkDescriptorSet VulkanDescriptorAllocator::AllocateTransientSet(VkDescriptorSetLayout layout)
+VkDescriptorSet VulkanDescriptorAllocator::AllocateTransientSet(
+    VkDescriptorSetLayout layout,
+    const CompiledBinding* bindings,
+    std::size_t bindingCount,
+    std::uint32_t setIndex)
 {
 	if (layout == VK_NULL_HANDLE)
 	{
@@ -332,11 +342,12 @@ VkDescriptorSet VulkanDescriptorAllocator::AllocateTransientSet(VkDescriptorSetL
 	{
 		m_framePoolPages.resize(static_cast<std::size_t>(m_currentFrameIndex) + 1u);
 	}
+	const DescriptorCounts requirements = GetPoolRequirements(bindings, bindingCount, setIndex);
 
 	std::vector<DescriptorPoolPage>& poolPages = m_framePoolPages[m_currentFrameIndex];
 	for (DescriptorPoolPage& page : poolPages)
 	{
-		if (page.AllocatedSets >= DescriptorSetsPerPage)
+		if (page.AllocatedSets >= DescriptorSetsPerPage || !CanAllocateFromPage(page, requirements))
 		{
 			continue;
 		}
@@ -352,12 +363,19 @@ VkDescriptorSet VulkanDescriptorAllocator::AllocateTransientSet(VkDescriptorSetL
 		if (VulkanResult::Succeeded(result))
 		{
 			++page.AllocatedSets;
+			ConsumePoolCapacity(page, requirements);
 			return descriptorSet;
 		}
 	}
 
 	DescriptorPoolPage page{};
-	page.Pool = CreatePoolPage();
+	constexpr DescriptorCounts defaultCapacity = {1024, 1024, 1024, 512, 256, 128};
+	for (std::size_t index = 0; index < page.Capacity.size(); ++index)
+	{
+		page.Capacity[index] = std::max(defaultCapacity[index], requirements[index]);
+	}
+	page.Remaining = page.Capacity;
+	page.Pool = CreatePoolPage(page.Capacity);
 	if (page.Pool == VK_NULL_HANDLE)
 	{
 		return VK_NULL_HANDLE;
@@ -377,6 +395,7 @@ VkDescriptorSet VulkanDescriptorAllocator::AllocateTransientSet(VkDescriptorSetL
 		return VK_NULL_HANDLE;
 	}
 	++page.AllocatedSets;
+	ConsumePoolCapacity(page, requirements);
 	poolPages.push_back(page);
 	return descriptorSet;
 }
@@ -575,24 +594,103 @@ const VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::Fin
 	return &m_registeredDescriptors[index];
 }
 
-VkDescriptorPool VulkanDescriptorAllocator::CreatePoolPage()
+VulkanDescriptorAllocator::DescriptorCounts VulkanDescriptorAllocator::GetPoolRequirements(
+    const CompiledBinding* bindings,
+    std::size_t bindingCount,
+    std::uint32_t setIndex) noexcept
 {
-	std::vector<VkDescriptorPoolSize> poolSizes{
-	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 1024},
-	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = 1024},
-	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .descriptorCount = 1024},
-	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = 512},
-	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 256},
-	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = 128}};
-	if (m_rhi.GetFeatureStatus().EnabledMutableDescriptorType)
+	DescriptorCounts requirements = {};
+	if (bindings == nullptr)
 	{
-		poolSizes.push_back(VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT, .descriptorCount = 128});
+		return requirements;
 	}
-	if (m_rhi.GetRayTracingCapabilities().Groups.PartitionedTlas.Supported)
+	for (std::size_t bindingIndex = 0; bindingIndex < bindingCount; ++bindingIndex)
 	{
-		poolSizes.push_back(
-		    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV, .descriptorCount = 128});
+		const CompiledBinding& binding = bindings[bindingIndex];
+		if (binding.BindingPoint.Set != setIndex || binding.Type == CompiledBindingType::PushConstants)
+		{
+			continue;
+		}
+
+		PoolClass poolClass = PoolClass::Count;
+		switch (binding.SemanticKind)
+		{
+			case ShaderParameterSemanticKind::UniformData:
+				poolClass = PoolClass::UniformBuffer;
+				break;
+			case ShaderParameterSemanticKind::ReadBuffer:
+			case ShaderParameterSemanticKind::RWBuffer:
+				poolClass = PoolClass::StorageBuffer;
+				break;
+			case ShaderParameterSemanticKind::ReadTexture:
+				poolClass = PoolClass::SampledImage;
+				break;
+			case ShaderParameterSemanticKind::RWTexture:
+				poolClass = PoolClass::StorageImage;
+				break;
+			case ShaderParameterSemanticKind::SamplerSet:
+				poolClass = PoolClass::Sampler;
+				break;
+			case ShaderParameterSemanticKind::AccelerationStructure:
+				poolClass = PoolClass::AccelerationStructure;
+				break;
+			default:
+				break;
+		}
+		if (poolClass != PoolClass::Count)
+		{
+			const std::size_t poolIndex = static_cast<std::size_t>(poolClass);
+			requirements[poolIndex] += binding.DescriptorCount;
+		}
 	}
+	return requirements;
+}
+
+bool VulkanDescriptorAllocator::CanAllocateFromPage(
+    const DescriptorPoolPage& page,
+    const DescriptorCounts& requirements) noexcept
+{
+	for (std::size_t index = 0; index < requirements.size(); ++index)
+	{
+		if (requirements[index] > page.Remaining[index])
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+void VulkanDescriptorAllocator::ConsumePoolCapacity(
+    DescriptorPoolPage& page,
+    const DescriptorCounts& requirements) noexcept
+{
+	for (std::size_t index = 0; index < requirements.size(); ++index)
+	{
+		page.Remaining[index] -= requirements[index];
+	}
+}
+
+VkDescriptorPool VulkanDescriptorAllocator::CreatePoolPage(const DescriptorCounts& capacity)
+{
+	const std::array<VkDescriptorPoolSize, DescriptorPoolTypeCount> poolSizes{
+	    VkDescriptorPoolSize{
+	        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	        .descriptorCount = capacity[static_cast<std::size_t>(PoolClass::UniformBuffer)]},
+	    VkDescriptorPoolSize{
+	        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+	        .descriptorCount = capacity[static_cast<std::size_t>(PoolClass::StorageBuffer)]},
+	    VkDescriptorPoolSize{
+	        .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+	        .descriptorCount = capacity[static_cast<std::size_t>(PoolClass::SampledImage)]},
+	    VkDescriptorPoolSize{
+	        .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+	        .descriptorCount = capacity[static_cast<std::size_t>(PoolClass::StorageImage)]},
+	    VkDescriptorPoolSize{
+	        .type = VK_DESCRIPTOR_TYPE_SAMPLER,
+	        .descriptorCount = capacity[static_cast<std::size_t>(PoolClass::Sampler)]},
+	    VkDescriptorPoolSize{
+	        .type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+	        .descriptorCount = capacity[static_cast<std::size_t>(PoolClass::AccelerationStructure)]}};
 	const VkDescriptorPoolCreateInfo createInfo{
 	    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 	    .pNext = nullptr,

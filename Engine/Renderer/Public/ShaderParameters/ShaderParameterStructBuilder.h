@@ -20,14 +20,21 @@ template <typename TParameters> class ShaderParameterStructMetadata final
   public:
 	ShaderParameterStructMetadata() = default;
 
-	ShaderParameterStructMetadata(PassParameterLayout layout, std::vector<ShaderParameterStructBinding<TParameters>> bindings) :
-	    m_layout(std::move(layout)), m_bindings(std::move(bindings))
+	ShaderParameterStructMetadata(
+	    PassParameterLayout layout,
+	    std::vector<ShaderParameterStructBinding<TParameters>> bindings,
+	    std::vector<bool> graphResourceParameters) :
+	    m_layout(std::move(layout)),
+	    m_bindings(std::move(bindings)),
+	    m_graphResourceParameters(std::move(graphResourceParameters))
 	{
+		assert(m_graphResourceParameters.size() == m_bindings.size());
 	}
 
 	const PassParameterLayout& GetLayout() const noexcept { return m_layout; }
 
 	const std::vector<ShaderParameterStructBinding<TParameters>>& GetBindings() const noexcept { return m_bindings; }
+	const std::vector<bool>& GetGraphResourceParameters() const noexcept { return m_graphResourceParameters; }
 
 	bool Commit(const TParameters& parameters, PassParameterSet& parameterSet, std::vector<std::string>* failedBindings = nullptr) const
 	{
@@ -71,6 +78,7 @@ template <typename TParameters> class ShaderParameterStructMetadata final
   private:
 	PassParameterLayout m_layout;
 	std::vector<ShaderParameterStructBinding<TParameters>> m_bindings;
+	std::vector<bool> m_graphResourceParameters;
 };
 
 template <typename TParameters> class ShaderParameterStructBuilder final
@@ -157,7 +165,10 @@ template <typename TParameters> class ShaderParameterStructBuilder final
 
 	const PassParameterLayout& GetLayout() const noexcept { return m_layout; }
 
-	ShaderParameterStructMetadata<TParameters> Build() const { return ShaderParameterStructMetadata<TParameters>(m_layout, m_bindings); }
+	ShaderParameterStructMetadata<TParameters> Build() const
+	{
+		return ShaderParameterStructMetadata<TParameters>(m_layout, m_bindings, m_graphResourceParameters);
+	}
 
 	static ShaderParameterStructMetadata<TParameters> BuildMetadata(const char* debugName)
 	{
@@ -184,14 +195,12 @@ template <typename TParameters> class ShaderParameterStructBuilder final
 		        {
 			        return BindParameterField(parameterSet, bindingName, parameters.*member);
 		        }});
+		m_graphResourceParameters.push_back(ShaderParameterFieldTraits<TField>::UsesGraphResource);
 
-		return m_layout.Add<ActualSemantic>(
-		    name,
-		    visibility,
-		    ShaderParameterFieldTraits<TField>::FieldArrayCount,
-		    ShaderParameterFieldTraits<TField>::FrameGraphTracked);
+		return m_layout.Add<ActualSemantic>(name, visibility, ShaderParameterFieldTraits<TField>::FieldArrayCount);
 	}
 
 	PassParameterLayout m_layout;
 	std::vector<ShaderParameterStructBinding<TParameters>> m_bindings;
+	std::vector<bool> m_graphResourceParameters;
 };

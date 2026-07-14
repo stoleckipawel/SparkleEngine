@@ -135,6 +135,8 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	    .MaxSamplerDescriptors = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE,
 	    .MaxDescriptorTableEntries = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
 	    .MaxPushConstantBytes = 256};
+	capabilities.DescriptorIndexing = RhiDescriptorIndexingCapabilities{
+	    .SupportsSampledImageArrayNonUniformIndexing = true};
 	capabilities.UploadReadback = RhiUploadReadbackCapabilities{
 	    .SupportsBufferUpload = true,
 	    .SupportsTextureUpload = true,

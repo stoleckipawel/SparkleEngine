@@ -21,7 +21,7 @@ class FrameGraphExecutionDiagnostics final
 	ScopedGpuScope BeginPassScope(PassExecutionDiagnostics& passDiagnostics) const noexcept;
 	void InsertPassAliasingBarrierMarker(const FrameGraphPassNode& passRecord) const;
 	void InsertPassResourceBarrierMarker(const FrameGraphPassNode& passRecord) const;
-	void InsertFrameEndAliasingBarrierMarker() const;
+	void InsertFrameBeginAliasingBarrierMarker() const;
 	void InsertFrameEndResourceBarrierMarker() const;
 
   private:

@@ -23,23 +23,13 @@ class FrameGraphResourceRegistry final
 	    const FrameGraphTextureDesc& desc,
 	    FrameGraphResourceKind kind,
 	    ResourceState initialState) noexcept;
-	void RegisterImportedTexture(
-	    FrameGraphResourceHandle handle,
-	    const FrameGraphTextureDesc& desc,
-	    FrameGraphResourceKind kind,
-	    ResourceState initialState) noexcept;
 	void RegisterTransientBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
-	void RegisterImportedBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
 	void RegisterPersistentTexture(
 	    FrameGraphResourceHandle handle,
 	    const FrameGraphTextureDesc& desc,
 	    FrameGraphResourceKind kind,
 	    ResourceState initialState) noexcept;
 	void RegisterPersistentBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
-	void RegisterImportedAccelerationStructure(
-	    FrameGraphResourceHandle handle,
-	    const FrameGraphAccelerationStructureDesc& desc,
-	    ResourceState initialState) noexcept;
 	void RegisterPersistentAccelerationStructure(
 	    FrameGraphResourceHandle handle,
 	    const FrameGraphAccelerationStructureDesc& desc,

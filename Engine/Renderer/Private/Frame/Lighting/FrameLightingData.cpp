@@ -28,50 +28,14 @@ namespace
 			uploadData.push_back(TData{});
 		}
 
-		outBuffer.SizeInBytes = uploadData.size() * sizeof(TData);
-		outBuffer.StrideInBytes = static_cast<std::uint32_t>(sizeof(TData));
-		const bool created = renderHardwareInterface.GetResourceService().CreateStructuredBufferResource(
+		outBuffer = FrameBufferResource::Upload(
+		    renderHardwareInterface.GetResourceService(),
 		    uploadData.data(),
-		    outBuffer.SizeInBytes,
-		    outBuffer.StrideInBytes,
-		    debugName,
-		    outBuffer.Resource);
-		return created && outBuffer.IsValid();
+		    uploadData.size() * sizeof(TData),
+		    static_cast<std::uint32_t>(sizeof(TData)),
+		    debugName);
+		return outBuffer.IsValid();
 	}
-}
-
-FrameLightingData::~FrameLightingData() noexcept
-{
-	Release();
-}
-
-FrameLightingData::FrameLightingData(FrameLightingData&& other) noexcept
-{
-	*this = std::move(other);
-}
-
-FrameLightingData& FrameLightingData::operator=(FrameLightingData&& other) noexcept
-{
-	if (this == &other)
-	{
-		return *this;
-	}
-
-	Release();
-	m_renderHardwareInterface = other.m_renderHardwareInterface;
-	m_constants = other.m_constants;
-	m_directionalLights = other.m_directionalLights;
-	m_pointLights = other.m_pointLights;
-	m_spotLights = other.m_spotLights;
-	m_rectLights = other.m_rectLights;
-
-	other.m_renderHardwareInterface = nullptr;
-	other.m_constants = {};
-	other.m_directionalLights.Reset();
-	other.m_pointLights.Reset();
-	other.m_spotLights.Reset();
-	other.m_rectLights.Reset();
-	return *this;
 }
 
 FrameLightingData FrameLightingData::Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData)
@@ -148,7 +112,6 @@ FrameLightingData FrameLightingData::Build(RenderHardwareInterface& renderHardwa
 	}
 
 	FrameLightingData frameData;
-	frameData.m_renderHardwareInterface = &renderHardwareInterface;
 	frameData.m_constants = ViewLightingData{
 	    .DirectionalLightCount = static_cast<std::uint32_t>(directionalLightCount),
 	    .PointLightCount = static_cast<std::uint32_t>(pointLightCount),
@@ -166,34 +129,4 @@ FrameLightingData FrameLightingData::Build(RenderHardwareInterface& renderHardwa
 	}
 
 	return frameData;
-}
-
-void FrameLightingData::Release() noexcept
-{
-	if (m_renderHardwareInterface != nullptr)
-	{
-		if (m_directionalLights)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_directionalLights.Resource);
-		}
-		if (m_pointLights)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_pointLights.Resource);
-		}
-		if (m_spotLights)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_spotLights.Resource);
-		}
-		if (m_rectLights)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_rectLights.Resource);
-		}
-	}
-
-	m_renderHardwareInterface = nullptr;
-	m_constants = {};
-	m_directionalLights.Reset();
-	m_pointLights.Reset();
-	m_spotLights.Reset();
-	m_rectLights.Reset();
 }

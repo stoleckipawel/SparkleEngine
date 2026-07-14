@@ -143,7 +143,7 @@ class SPARKLE_RENDERER_API ShaderPass
 		const std::vector<PassParameterDesc>& parameters = layout->GetParameters();
 		for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(parameters.size()); ++index)
 		{
-			if (!IsFrameGraphParameter(parameters[index]))
+			if (!parameterSet.UsesGraphResource(index))
 			{
 				continue;
 			}
@@ -212,31 +212,6 @@ class SPARKLE_RENDERER_API ShaderPass
 		}
 
 		return false;
-	}
-
-	static bool IsFrameGraphParameter(const PassParameterDesc& parameter) noexcept
-	{
-		if (!parameter.FrameGraphTracked)
-		{
-			return false;
-		}
-
-		switch (parameter.Kind)
-		{
-			case ShaderParameterSemanticKind::ReadTexture:
-			case ShaderParameterSemanticKind::ReadBuffer:
-			case ShaderParameterSemanticKind::RWTexture:
-			case ShaderParameterSemanticKind::RWBuffer:
-			case ShaderParameterSemanticKind::RenderTarget:
-			case ShaderParameterSemanticKind::DepthTarget:
-			case ShaderParameterSemanticKind::AccelerationStructure:
-				return true;
-			case ShaderParameterSemanticKind::UniformData:
-			case ShaderParameterSemanticKind::SamplerSet:
-				return false;
-			default:
-				return false;
-		}
 	}
 
   private:

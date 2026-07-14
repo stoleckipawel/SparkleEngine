@@ -3,7 +3,6 @@
 #include "RHI/Public/Formats/PixelFormat.h"
 
 #include <cstdint>
-#include <string>
 
 enum class TextureFormatIntent : std::uint8_t
 {
@@ -25,7 +24,6 @@ struct TextureRuntimeInfo final
 	std::uint32_t ArraySize = 0;
 	TextureResourceDimension Dimension = TextureResourceDimension::Texture2D;
 	PixelFormat Format = PixelFormat::Unknown;
-	std::string FormatName;
 	TextureFormatIntent FormatIntent = TextureFormatIntent::Unknown;
 	std::uint16_t MipCount = 0;
 	std::uint64_t EstimatedByteSize = 0;

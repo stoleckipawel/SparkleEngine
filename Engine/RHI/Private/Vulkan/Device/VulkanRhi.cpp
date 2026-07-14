@@ -407,14 +407,21 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 		PhysicalDeviceCandidate candidate;
 		candidate.Device = device;
 		candidate.Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		candidate.Features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 		candidate.Features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 		vkGetPhysicalDeviceProperties(device, &candidate.Properties);
 		if (candidate.Properties.apiVersion < VK_API_VERSION_1_3)
 		{
 			continue;
 		}
-		candidate.Features.pNext = &candidate.Features13;
+		candidate.Features.pNext = &candidate.Features12;
+		candidate.Features12.pNext = &candidate.Features13;
 		vkGetPhysicalDeviceFeatures2(device, &candidate.Features);
+		if (candidate.Features.features.shaderStorageImageReadWithoutFormat != VK_TRUE ||
+		    candidate.Features.features.shaderStorageImageWriteWithoutFormat != VK_TRUE)
+		{
+			continue;
+		}
 		candidate.GraphicsQueueFamilyIndex = FindGraphicsQueueFamily(device);
 		if (candidate.GraphicsQueueFamilyIndex == UINT32_MAX)
 		{
@@ -430,7 +437,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 		    g_vulkanRhiLogger,
 		    __FILE__,
 		    __LINE__,
-		    "No Vulkan 1.3 physical device exposes a graphics queue family.");
+		    "No Vulkan 1.3 physical device exposes a graphics queue and formatless storage-image reads and writes.");
 	}
 
 	std::sort(
@@ -447,6 +454,13 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_featureStatus.SupportsSamplerAnisotropy = selected.Features.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.SupportsFillModeNonSolid = selected.Features.features.fillModeNonSolid == VK_TRUE;
 	m_featureStatus.SupportsShaderInt64 = selected.Features.features.shaderInt64 == VK_TRUE;
+	m_featureStatus.SupportsStorageImageReadWithoutFormat =
+	    selected.Features.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
+	m_featureStatus.SupportsStorageImageWriteWithoutFormat =
+	    selected.Features.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
+	m_featureStatus.SupportsSampledImageArrayNonUniformIndexing =
+	    selected.Features12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
+	m_featureStatus.SupportsShaderDemoteToHelperInvocation = selected.Features13.shaderDemoteToHelperInvocation == VK_TRUE;
 	m_featureStatus.SupportsMutableDescriptorType = QueryMutableDescriptorTypeFeature(m_physicalDevice);
 	m_featureStatus.RayTracing = VulkanRayTracingFeatureQuery::Query(m_physicalDevice);
 
@@ -510,22 +524,41 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	enabledFeatures.features.samplerAnisotropy = m_featureStatus.SupportsSamplerAnisotropy ? VK_TRUE : VK_FALSE;
 	enabledFeatures.features.fillModeNonSolid = m_featureStatus.SupportsFillModeNonSolid ? VK_TRUE : VK_FALSE;
 	enabledFeatures.features.shaderInt64 = m_featureStatus.SupportsShaderInt64 ? VK_TRUE : VK_FALSE;
+	enabledFeatures.features.shaderStorageImageReadWithoutFormat =
+	    m_featureStatus.SupportsStorageImageReadWithoutFormat ? VK_TRUE : VK_FALSE;
+	enabledFeatures.features.shaderStorageImageWriteWithoutFormat =
+	    m_featureStatus.SupportsStorageImageWriteWithoutFormat ? VK_TRUE : VK_FALSE;
 	m_featureStatus.EnabledSamplerAnisotropy = enabledFeatures.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.EnabledFillModeNonSolid = enabledFeatures.features.fillModeNonSolid == VK_TRUE;
 	m_featureStatus.EnabledShaderInt64 = enabledFeatures.features.shaderInt64 == VK_TRUE;
+	m_featureStatus.EnabledStorageImageReadWithoutFormat =
+	    enabledFeatures.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
+	m_featureStatus.EnabledStorageImageWriteWithoutFormat =
+	    enabledFeatures.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
 	VkPhysicalDeviceVulkan13Features enabledFeatures13{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+	VkPhysicalDeviceVulkan12Features enabledFeatures12{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
 	void** enabledNext = &enabledFeatures.pNext;
+	if (m_adapterInfo.ApiVersion >= VK_API_VERSION_1_2)
+	{
+		enabledFeatures12.shaderSampledImageArrayNonUniformIndexing =
+		    m_featureStatus.SupportsSampledImageArrayNonUniformIndexing ? VK_TRUE : VK_FALSE;
+		*enabledNext = &enabledFeatures12;
+		enabledNext = &enabledFeatures12.pNext;
+		m_featureStatus.EnabledSampledImageArrayNonUniformIndexing =
+		    enabledFeatures12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
+	}
 	if (m_adapterInfo.ApiVersion >= VK_API_VERSION_1_3)
 	{
 		enabledFeatures13.synchronization2 = m_featureStatus.SupportsSynchronization2 ? VK_TRUE : VK_FALSE;
 		enabledFeatures13.dynamicRendering = m_featureStatus.SupportsDynamicRendering ? VK_TRUE : VK_FALSE;
+		enabledFeatures13.shaderDemoteToHelperInvocation =
+		    m_featureStatus.SupportsShaderDemoteToHelperInvocation ? VK_TRUE : VK_FALSE;
 		*enabledNext = &enabledFeatures13;
 		enabledNext = &enabledFeatures13.pNext;
 		m_featureStatus.EnabledSynchronization2 = enabledFeatures13.synchronization2 == VK_TRUE;
 		m_featureStatus.EnabledDynamicRendering = enabledFeatures13.dynamicRendering == VK_TRUE;
+		m_featureStatus.EnabledShaderDemoteToHelperInvocation = enabledFeatures13.shaderDemoteToHelperInvocation == VK_TRUE;
 	}
-	VkPhysicalDeviceBufferDeviceAddressFeatures enabledBufferDeviceAddressFeatures{
-	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES};
 	VkPhysicalDeviceAccelerationStructureFeaturesKHR enabledAccelerationStructureFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR};
 	VkPhysicalDeviceRayTracingPipelineFeaturesKHR enabledRayTracingPipelineFeatures{
@@ -537,11 +570,9 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT};
 	if (m_featureStatus.RayTracing.EnabledBackend)
 	{
-		enabledBufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+		enabledFeatures12.bufferDeviceAddress = VK_TRUE;
 		enabledAccelerationStructureFeatures.accelerationStructure = VK_TRUE;
 		enabledRayQueryFeatures.rayQuery = VK_TRUE;
-		*enabledNext = &enabledBufferDeviceAddressFeatures;
-		enabledNext = &enabledBufferDeviceAddressFeatures.pNext;
 		*enabledNext = &enabledAccelerationStructureFeatures;
 		enabledNext = &enabledAccelerationStructureFeatures.pNext;
 		if (m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
@@ -664,6 +695,8 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .Provider = ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure,
 	    .RequiresNvidiaDevice = true,
 	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == kNvidiaVendorId,
+	    .SupportsDescriptorAccess = false,
+	    .SupportsShaderDeviceAddressAccess = false,
 	    .SupportsVulkanNativePartitionedAccelerationStructure =
 	        m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
 	    .SupportsVulkanExtension = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
@@ -728,6 +761,12 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .Provider = ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure,
 	    .RequiresNvidiaDevice = true,
 	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == kNvidiaVendorId,
+	    .SupportsDescriptorAccess = false,
+	    .SupportsShaderDeviceAddressAccess = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
+	                                         m_featureStatus.EnabledShaderInt64 &&
+	                                         m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension &&
+	                                         m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature &&
+	                                         m_rayTracingCapabilities.SupportsInlineRayQuery,
 	    .SupportsVulkanNativePartitionedAccelerationStructure =
 	        m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,
 	    .SupportsVulkanExtension = m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension,

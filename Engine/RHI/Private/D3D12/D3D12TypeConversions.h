@@ -20,7 +20,6 @@ class D3D12TypeConversions final
 	static D3D12_RESOURCE_STATES ToResourceStates(ResourceState state) noexcept;
 	static D3D12_PRIMITIVE_TOPOLOGY ToPrimitiveTopology(RhiPrimitiveTopology topology) noexcept;
 	static DXGI_FORMAT ToIndexFormat(RhiIndexFormat format) noexcept;
-	static D3D12_HEAP_FLAGS ToHeapFlags(RhiTransientAllocationPool pool) noexcept;
 	static D3D12_RESOURCE_DESC BuildTextureResourceDesc(const RhiTextureResourceDesc& desc) noexcept;
 	static D3D12_RESOURCE_DESC BuildBufferResourceDesc(const RhiBufferResourceDesc& desc) noexcept;
 	static D3D12_CLEAR_VALUE BuildClearValue(const RhiOptimizedClearValue& clearValue) noexcept;

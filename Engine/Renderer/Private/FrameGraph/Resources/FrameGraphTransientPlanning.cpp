@@ -81,23 +81,23 @@ namespace
 		}
 
 		clearValue.ValueType = RhiOptimizedClearValue::Type::Color;
-		clearValue.Color = {0.0f, 0.0f, 0.0f, 1.0f};
+		clearValue.Color = desc.clearColor;
 		return clearValue;
 	}
 
-	FrameGraphTransientResourcePlan::AllocationPool ResolveTransientAllocationPool(FrameGraphResourceKind kind) noexcept
+	RhiTransientAllocationPool ResolveTransientAllocationPool(FrameGraphResourceKind kind, bool requiresRenderTarget) noexcept
 	{
 		if (kind == FrameGraphResourceKind::DepthStencil)
 		{
-			return FrameGraphTransientResourcePlan::AllocationPool::Depth;
+			return RhiTransientAllocationPool::DepthStencilTexture;
 		}
 
 		if (kind == FrameGraphResourceKind::Buffer)
 		{
-			return FrameGraphTransientResourcePlan::AllocationPool::Buffer;
+			return RhiTransientAllocationPool::Buffer;
 		}
 
-		return FrameGraphTransientResourcePlan::AllocationPool::Color;
+		return requiresRenderTarget ? RhiTransientAllocationPool::RenderTargetTexture : RhiTransientAllocationPool::Texture;
 	}
 }  // namespace
 
@@ -119,6 +119,8 @@ void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const n
 		const bool requiresUnorderedAccess = RequiresUnorderedAccess(plan, transientResource.handle);
 		const bool requiresRenderTarget = RequiresRenderTarget(plan, transientResource.handle);
 		const bool isBuffer = resourceMetadata.resourceClass == FrameGraphResourceClass::Buffer;
+		const bool hasOptimizedClearValue = !isBuffer &&
+		                                         (resourceMetadata.kind == FrameGraphResourceKind::DepthStencil || requiresRenderTarget);
 		const RhiBufferResourceDesc bufferResourceDesc =
 		    isBuffer ? BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess) : RhiBufferResourceDesc{};
 		const RhiTextureResourceDesc textureResourceDesc =
@@ -131,7 +133,6 @@ void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const n
 		const RhiResourceAllocationInfo allocationInfo = isBuffer
 		                                                     ? m_renderHardwareInterface->GetResourceService().GetBufferAllocationInfo(bufferResourceDesc)
 		                                                     : m_renderHardwareInterface->GetResourceService().GetTextureAllocationInfo(textureResourceDesc);
-		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transients.resources.size());
 		plan.transients.resources.push_back(
 		    FrameGraphTransientResourcePlan{
 		        .handle = transientResource.handle,
@@ -140,18 +141,17 @@ void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const n
 		        .bufferDesc = transientResource.bufferDesc,
 		        .kind = resourceMetadata.kind,
 		        .physicalAllocation = FrameGraphTransientResourcePlan::PhysicalAllocationPlan{
-		            .allocationIndex = allocationIndex,
 		            .physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX,
-		            .pool = ResolveTransientAllocationPool(resourceMetadata.kind),
+		            .pool = ResolveTransientAllocationPool(resourceMetadata.kind, requiresRenderTarget),
 		            .sizeInBytes = allocationInfo.SizeInBytes,
 		            .alignment = allocationInfo.Alignment,
 		            .memoryBlockOffset = 0,
 		            .textureResourceDesc = textureResourceDesc,
 		            .bufferResourceDesc = bufferResourceDesc,
-		            .optimizedClearValue = isBuffer
-		                                       ? RhiOptimizedClearValue{}
-		                                       : BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind),
-		            .hasOptimizedClearValue = !isBuffer,
+		            .optimizedClearValue = hasOptimizedClearValue
+		                                       ? BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind)
+		                                       : RhiOptimizedClearValue{},
+		            .hasOptimizedClearValue = hasOptimizedClearValue,
 		            .initialState = resourceMetadata.initialState}});
 	}
 }
@@ -159,6 +159,7 @@ void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const n
 void FrameGraph::EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan) const noexcept
 {
 	assert(m_transientAllocator != nullptr);
+	m_transientAllocator->Prepare(plan.transients);
 
 	for (const FrameGraphTransientResourcePlan& transientPlan : plan.transients.resources)
 	{
@@ -168,7 +169,7 @@ void FrameGraph::EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan
 		switch (transientPlan.kind)
 		{
 			case FrameGraphResourceKind::DepthStencil:
-				access.resource = allocation.depthStencilResource;
+				access.resource = allocation.resource;
 				access.depthStencilView = allocation.depthStencilView;
 				if (allocation.shaderResourceView)
 				{
@@ -176,7 +177,7 @@ void FrameGraph::EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan
 				}
 				break;
 			case FrameGraphResourceKind::ColorRenderTarget:
-				access.resource = allocation.renderTargetResource;
+				access.resource = allocation.resource;
 				access.renderTargetView = allocation.renderTargetView;
 				if (allocation.shaderResourceView)
 				{
@@ -188,7 +189,7 @@ void FrameGraph::EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan
 				}
 				break;
 			case FrameGraphResourceKind::Buffer:
-				access.resource = allocation.buffer;
+				access.resource = allocation.resource;
 				if (allocation.shaderResourceView)
 				{
 					access.shaderResourceView = allocation.shaderResourceView;

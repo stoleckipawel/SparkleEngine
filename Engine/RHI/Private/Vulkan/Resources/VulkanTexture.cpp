@@ -167,15 +167,17 @@ namespace
 		    static_cast<std::uint32_t>(copyRegions.size()),
 		    copyRegions.data());
 
+		const VulkanResourceStateMapping shaderResourceState =
+		    VulkanTypeConversions::ToResourceStateMapping(ResourceState::ShaderResource);
 		const VkImageMemoryBarrier2 toShaderRead{
 		    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 		    .pNext = nullptr,
 		    .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
 		    .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-		    .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-		    .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+		    .dstStageMask = shaderResourceState.StageMask,
+		    .dstAccessMask = shaderResourceState.AccessMask,
 		    .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		    .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		    .newLayout = shaderResourceState.ImageLayout,
 		    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		    .image = image,
@@ -439,7 +441,6 @@ TextureRuntimeInfo VulkanTexture::GetRuntimeInfo() const noexcept
 	info.ArraySize = m_textureUpload.GetArraySize();
 	info.Dimension = m_textureUpload.Dimension;
 	info.Format = m_textureUpload.Format;
-	info.FormatName = PixelFormatName(m_textureUpload.Format);
 	info.FormatIntent = m_textureUpload.FormatIntent;
 	info.MipCount = m_textureUpload.GetMipCount();
 	info.EstimatedByteSize = CalculatePayloadBytes(m_textureUpload);

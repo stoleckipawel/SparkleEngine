@@ -31,7 +31,7 @@ void FramePipeline::CreateExposureHistoryResources() noexcept
 
 		historyResource = resourceService.CreateTextureResource(
 		    historyDesc,
-		    ResourceState::ShaderResource,
+		    ResourceState::Undefined,
 		    RhiMemoryCategory::Texture,
 		    RhiMemoryResidencyClass::DeviceLocal,
 		    L"ExposureHistory");
@@ -79,8 +79,9 @@ void FramePipeline::BindExposureHistoryFrameGraphResources() noexcept
 		return;
 	}
 
-	m_frameGraph->BindPersistentTexture(m_frameResources.History.PreviousExposure, previousExposure, ResourceState::ShaderResource);
-	m_frameGraph->BindPersistentTexture(m_frameResources.History.CurrentExposure, currentExposure, ResourceState::ShaderResource);
+	const ResourceState currentState = m_exposureHistoryValid ? ResourceState::ShaderResource : ResourceState::Undefined;
+	m_frameGraph->BindPersistentTexture(m_frameResources.History.PreviousExposure, previousExposure, currentState);
+	m_frameGraph->BindPersistentTexture(m_frameResources.History.CurrentExposure, currentExposure, currentState);
 }
 
 void FramePipeline::ResetExposureHistory() noexcept

@@ -44,32 +44,41 @@ void SceneSkyInspector::Build(GameScene& gameScene, const std::string& filterTex
 	}
 
 	SceneSkyDesc sky = *currentSky;
+	bool skyChanged = false;
 	if (UiUtil::MatchesDetailsFilter(filterText, "Rendering", "sky texture color intensity enabled visible"))
 	{
 		if (UiUtil::BeginDetailsCategory("Rendering"))
 		{
 			constexpr bool kDefaultEnabled = true;
-			UiUtil::EditDetailsCheckbox("Enabled", sky.enabled, &kDefaultEnabled);
+			skyChanged |= UiUtil::EditDetailsCheckbox("Enabled", sky.enabled, &kDefaultEnabled);
 
 			float color[3] = {sky.color.x, sky.color.y, sky.color.z};
 			const float defaultColor[3] = {1.0f, 1.0f, 1.0f};
 			if (UiUtil::EditDetailsColor3("Color", color, defaultColor))
 			{
 				sky.color = {(std::max) (0.0f, color[0]), (std::max) (0.0f, color[1]), (std::max) (0.0f, color[2])};
+				skyChanged = true;
 			}
 
 			constexpr float kDefaultIntensity = 1.0f;
 			if (UiUtil::EditDetailsFloat("Intensity", sky.intensity, 0.01f, 0.0f, 0.0f, "%.3f", &kDefaultIntensity))
 			{
 				sky.intensity = (std::max) (0.0f, sky.intensity);
+				skyChanged = true;
 			}
 
 			const std::string defaultTexture;
-			UiUtil::EditDetailsText("Texture", sky.skyTexture.texturePath, &defaultTexture);
-			sky.skyTexture.textureGroup = TextureGroup::HdrColor;
+			if (UiUtil::EditDetailsText("Texture", sky.skyTexture.texturePath, &defaultTexture))
+			{
+				sky.skyTexture.textureGroup = TextureGroup::HdrColor;
+				skyChanged = true;
+			}
 			UiUtil::EndDetailsCategory();
 		}
 	}
 
-	sceneSky.SetSky(std::move(sky));
+	if (skyChanged)
+	{
+		sceneSky.SetSky(std::move(sky));
+	}
 }

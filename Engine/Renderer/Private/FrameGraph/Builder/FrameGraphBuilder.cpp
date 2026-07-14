@@ -31,17 +31,9 @@ namespace
 
 FrameGraphBuilder::FrameGraphBuilder(FrameGraph& frameGraph) noexcept : m_frameGraph(frameGraph) {}
 
-FrameGraphTextureHandle FrameGraphBuilder::ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
+FrameGraphTextureHandle FrameGraphBuilder::ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {
-	return m_frameGraph.ImportTexture(desc, initialState);
-}
-
-FrameGraphTextureHandle FrameGraphBuilder::ImportTexture(
-    const FrameGraphTextureDesc& desc,
-    NativeResourceHandle resource,
-    ResourceState initialState) noexcept
-{
-	return m_frameGraph.ImportTexture(desc, resource, initialState);
+	return m_frameGraph.ImportBackBuffer(desc, initialState);
 }
 
 FrameGraphTextureHandle FrameGraphBuilder::ReservePersistentTexture(
@@ -56,14 +48,6 @@ FrameGraphTextureHandle FrameGraphBuilder::CreateTexture(const FrameGraphTexture
 	return m_frameGraph.CreateTexture(desc);
 }
 
-FrameGraphBufferHandle FrameGraphBuilder::ImportBuffer(
-    const FrameGraphBufferDesc& desc,
-    NativeResourceHandle resource,
-    ResourceState initialState) noexcept
-{
-	return m_frameGraph.ImportBuffer(desc, resource, initialState);
-}
-
 FrameGraphBufferHandle FrameGraphBuilder::ReservePersistentBuffer(
     const FrameGraphBufferDesc& desc,
     ResourceState initialState) noexcept
@@ -74,15 +58,6 @@ FrameGraphBufferHandle FrameGraphBuilder::ReservePersistentBuffer(
 FrameGraphBufferHandle FrameGraphBuilder::CreateBuffer(const FrameGraphBufferDesc& desc) noexcept
 {
 	return m_frameGraph.CreateBuffer(desc);
-}
-
-FrameGraphAccelerationStructureHandle FrameGraphBuilder::ImportAccelerationStructure(
-    const FrameGraphAccelerationStructureDesc& desc,
-    NativeResourceHandle resource,
-    RhiGpuVirtualAddress gpuAddress,
-    ResourceState initialState) noexcept
-{
-	return m_frameGraph.ImportAccelerationStructure(desc, resource, gpuAddress, initialState);
 }
 
 FrameGraphAccelerationStructureHandle FrameGraphBuilder::ReservePersistentAccelerationStructure(

@@ -173,10 +173,7 @@ void RestirIndirectTemporalPass::Execute(PassExecutionContext& context, Paramete
 	parameters->PerView = context.Frame.mainView.perViewData;
 	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
 	parameters->ViewLighting = context.Frame.lighting.GetConstants();
-	parameters->Sky = SkyUniformData{
-	    .Color = context.Frame.sceneData.sky.color,
-	    .Intensity = context.Frame.sceneData.sky.intensity,
-	    .Enabled = context.Frame.sceneData.sky.enabled ? 1u : 0u};
+	parameters->Sky = MakeSkyUniformData(context.Frame.sceneData.sky);
 	parameters->MaterialTextureTable = materialTextureTable->GetTableBinding(0);
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,

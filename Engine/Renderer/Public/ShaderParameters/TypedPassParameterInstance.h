@@ -11,7 +11,10 @@ template <typename TParameters> class TypedPassParameterInstance final : public 
 	using Parameters = TParameters;
 	using Metadata = ShaderParameterStructMetadata<TParameters>;
 
-	explicit TypedPassParameterInstance(const Metadata& metadata) : m_metadata(&metadata), m_parameterSet(metadata.GetLayout()) {}
+	explicit TypedPassParameterInstance(const Metadata& metadata) :
+	    m_metadata(&metadata), m_parameterSet(metadata.GetLayout(), metadata.GetGraphResourceParameters())
+	{
+	}
 
 	TParameters& GetFields() noexcept
 	{

@@ -22,11 +22,6 @@ static std::uint64_t D3D12TextureCalculatePayloadBytes(const RhiTextureUploadDes
 	return byteCount;
 }
 
-static const char* D3D12TextureFormatName(PixelFormat format) noexcept
-{
-	return PixelFormatName(format);
-}
-
 D3D12Texture::D3D12Texture(D3D12Rhi& rhi, RhiTextureUploadDesc textureUpload, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi),
     m_textureUpload(std::move(textureUpload)),
@@ -173,7 +168,6 @@ TextureRuntimeInfo D3D12Texture::GetRuntimeInfo() const noexcept
 	info.ArraySize = m_textureUpload.GetArraySize();
 	info.Dimension = m_textureUpload.Dimension;
 	info.Format = m_textureUpload.Format;
-	info.FormatName = D3D12TextureFormatName(m_textureUpload.Format);
 	info.FormatIntent = m_textureUpload.FormatIntent;
 	info.MipCount = m_textureUpload.GetMipCount();
 	info.EstimatedByteSize = D3D12TextureCalculatePayloadBytes(m_textureUpload);

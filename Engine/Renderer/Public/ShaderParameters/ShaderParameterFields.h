@@ -294,91 +294,91 @@ template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTr
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
-	static constexpr bool FrameGraphTracked = true;
+	static constexpr bool UsesGraphResource = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTexture3D<TValue, ArrayCount>>
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
-	static constexpr bool FrameGraphTracked = true;
+	static constexpr bool UsesGraphResource = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTextureCube<TValue, ArrayCount>>
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
-	static constexpr bool FrameGraphTracked = true;
+	static constexpr bool UsesGraphResource = true;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderTexture2DSRV>
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = 1;
-	static constexpr bool FrameGraphTracked = false;
+	static constexpr bool UsesGraphResource = false;
 };
 
 template <std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTexture2DTableSRV<ArrayCount>>
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
-	static constexpr bool FrameGraphTracked = false;
+	static constexpr bool UsesGraphResource = false;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderAccelerationStructure>
 {
 	using Semantic = AccelerationStructure;
 	static constexpr std::uint32_t FieldArrayCount = 1;
-	static constexpr bool FrameGraphTracked = true;
+	static constexpr bool UsesGraphResource = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderRWTexture2D<TValue, ArrayCount>>
 {
 	using Semantic = RWTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
-	static constexpr bool FrameGraphTracked = true;
+	static constexpr bool UsesGraphResource = true;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderRenderTarget>
 {
 	using Semantic = RenderTarget;
 	static constexpr std::uint32_t FieldArrayCount = 1;
-	static constexpr bool FrameGraphTracked = true;
+	static constexpr bool UsesGraphResource = true;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderDepthTarget>
 {
 	using Semantic = DepthTarget;
 	static constexpr std::uint32_t FieldArrayCount = 1;
-	static constexpr bool FrameGraphTracked = true;
+	static constexpr bool UsesGraphResource = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderBuffer<TValue, ArrayCount>>
 {
 	using Semantic = ReadBuffer;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
-	static constexpr bool FrameGraphTracked = true;
+	static constexpr bool UsesGraphResource = true;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderRWBuffer<TValue, ArrayCount>>
 {
 	using Semantic = RWBuffer;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
-	static constexpr bool FrameGraphTracked = true;
+	static constexpr bool UsesGraphResource = true;
 };
 
 template <typename TValue> struct ShaderParameterFieldTraits<ShaderUniform<TValue>>
 {
 	using Semantic = UniformData<TValue>;
 	static constexpr std::uint32_t FieldArrayCount = 1;
-	static constexpr bool FrameGraphTracked = false;
+	static constexpr bool UsesGraphResource = false;
 };
 
 template <> struct ShaderParameterFieldTraits<ShaderSamplerSet>
 {
 	using Semantic = SamplerSet;
 	static constexpr std::uint32_t FieldArrayCount = 1;
-	static constexpr bool FrameGraphTracked = false;
+	static constexpr bool UsesGraphResource = false;
 };
 
 template <typename T, typename = void> struct IsShaderParameterField : std::false_type

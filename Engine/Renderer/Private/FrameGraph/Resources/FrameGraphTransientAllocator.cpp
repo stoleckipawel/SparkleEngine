@@ -44,22 +44,52 @@ FrameGraphTransientAllocator::FrameGraphTransientAllocator(RenderHardwareInterfa
 
 void FrameGraphTransientAllocator::Reset() noexcept
 {
-	ReleaseAllocationDescriptors(m_colorAllocations);
-	ReleaseAllocationDescriptors(m_depthAllocations);
-	ReleaseAllocationDescriptors(m_bufferAllocations);
-	m_colorAllocations.clear();
-	m_depthAllocations.clear();
-	m_bufferAllocations.clear();
+	ReleaseAllocations();
+	if (m_renderHardwareInterface != nullptr)
+	{
+		for (MemoryBlockRecord& block : m_memoryBlocks)
+		{
+			m_renderHardwareInterface->GetResourceService().ReleaseTransientMemoryBlock(block.memoryBlock);
+		}
+	}
+	m_allocations.clear();
+	m_memoryBlocks.clear();
+	m_planEntries.clear();
 }
 
-void FrameGraphTransientAllocator::ReleaseAllocationDescriptors(AllocationList& allocations) noexcept
+void FrameGraphTransientAllocator::Prepare(const FrameGraphTransientPlan& plan) noexcept
+{
+	std::vector<PlanEntry> planEntries;
+	planEntries.reserve(plan.resources.size());
+	for (const FrameGraphTransientResourcePlan& resource : plan.resources)
+	{
+		planEntries.push_back(
+		    PlanEntry{
+		        .handle = resource.handle,
+		        .physicalBlockIndex = resource.physicalAllocation.physicalBlockIndex,
+		        .textureDesc = resource.physicalAllocation.textureResourceDesc,
+		        .bufferDesc = resource.physicalAllocation.bufferResourceDesc,
+		        .requiresShaderResourceView = RequiresShaderResourceView(resource),
+		        .requiresUnorderedAccessView = RequiresUnorderedAccessView(resource)});
+	}
+
+	if (planEntries == m_planEntries)
+	{
+		return;
+	}
+
+	Reset();
+	m_planEntries = std::move(planEntries);
+}
+
+void FrameGraphTransientAllocator::ReleaseAllocations() noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
 		return;
 	}
 
-	for (AllocationRecord& allocation : allocations)
+	for (AllocationRecord& allocation : m_allocations)
 	{
 		if (allocation.renderTargetView)
 		{
@@ -85,117 +115,61 @@ void FrameGraphTransientAllocator::ReleaseAllocationDescriptors(AllocationList& 
 			allocation.unorderedAccessView = {};
 		}
 
-		if (allocation.ownedDepthStencilResource)
+		if (allocation.ownedResource)
 		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(allocation.ownedDepthStencilResource);
-			allocation.ownedDepthStencilResource = {};
+			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(allocation.ownedResource);
+			allocation.ownedResource = {};
 		}
-
-		if (allocation.ownedRenderTargetResource)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(allocation.ownedRenderTargetResource);
-			allocation.ownedRenderTargetResource = {};
-		}
-
-		if (allocation.ownedBuffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(allocation.ownedBuffer);
-			allocation.ownedBuffer = {};
-		}
-
-		allocation.depthStencilResource = {};
-		allocation.renderTargetResource = {};
-		allocation.buffer = {};
+		allocation.resource = {};
 	}
 }
 
 FrameGraphTransientAllocator::AllocationRecord& FrameGraphTransientAllocator::Materialize(
     const FrameGraphTransientResourcePlan& transientPlan)
 {
-	AllocationList& allocations = GetAllocationList(transientPlan.physicalAllocation.pool);
-	if (AllocationRecord* existingAllocation = const_cast<AllocationRecord*>(FindAllocationInList(allocations, transientPlan.handle)))
+	if (AllocationRecord* existingAllocation = const_cast<AllocationRecord*>(FindAllocation(transientPlan.handle)))
 	{
 		return *existingAllocation;
 	}
 
-	allocations.push_back(CreateAllocationRecord(transientPlan));
-	return allocations.back();
+	m_allocations.push_back(CreateAllocationRecord(transientPlan));
+	return m_allocations.back();
 }
 
 const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindAllocation(FrameGraphResourceHandle handle) const noexcept
 {
-	if (const AllocationRecord* depthAllocation = FindDepthAllocation(handle))
-	{
-		return depthAllocation;
-	}
-
-	if (const AllocationRecord* bufferAllocation = FindBufferAllocation(handle))
-	{
-		return bufferAllocation;
-	}
-
-	return FindColorAllocation(handle);
-}
-
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindDepthAllocation(
-    FrameGraphResourceHandle handle) const noexcept
-{
-	return FindAllocationInList(m_depthAllocations, handle);
-}
-
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindColorAllocation(
-    FrameGraphResourceHandle handle) const noexcept
-{
-	return FindAllocationInList(m_colorAllocations, handle);
-}
-
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindBufferAllocation(
-    FrameGraphResourceHandle handle) const noexcept
-{
-	return FindAllocationInList(m_bufferAllocations, handle);
-}
-
-FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetAllocationList(
-    FrameGraphTransientResourcePlan::AllocationPool pool) noexcept
-{
-	switch (pool)
-	{
-		case FrameGraphTransientResourcePlan::AllocationPool::Depth:
-			return m_depthAllocations;
-		case FrameGraphTransientResourcePlan::AllocationPool::Buffer:
-			return m_bufferAllocations;
-		default:
-			return m_colorAllocations;
-	}
-}
-
-const FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetAllocationList(
-    FrameGraphTransientResourcePlan::AllocationPool pool) const noexcept
-{
-	switch (pool)
-	{
-		case FrameGraphTransientResourcePlan::AllocationPool::Depth:
-			return m_depthAllocations;
-		case FrameGraphTransientResourcePlan::AllocationPool::Buffer:
-			return m_bufferAllocations;
-		default:
-			return m_colorAllocations;
-	}
-}
-
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindAllocationInList(
-    const AllocationList& allocations,
-    FrameGraphResourceHandle handle) const noexcept
-{
 	const auto it = std::find_if(
-	    allocations.begin(),
-	    allocations.end(),
+	    m_allocations.begin(),
+	    m_allocations.end(),
 	    [handle](const AllocationRecord& allocation)
 	    {
 		    return allocation.handle == handle;
 	    });
 
-	return it != allocations.end() ? &(*it) : nullptr;
+	return it != m_allocations.end() ? &(*it) : nullptr;
+}
+
+RhiOwnedMemoryBlockHandle FrameGraphTransientAllocator::GetOrCreateMemoryBlock(
+    const FrameGraphTransientResourcePlan& transientPlan)
+{
+	const std::uint32_t blockIndex = transientPlan.physicalAllocation.physicalBlockIndex;
+	const auto blockIt = std::find_if(
+	    m_memoryBlocks.begin(),
+	    m_memoryBlocks.end(),
+	    [blockIndex](const MemoryBlockRecord& block) { return block.physicalBlockIndex == blockIndex; });
+	if (blockIt != m_memoryBlocks.end())
+	{
+		return blockIt->memoryBlock;
+	}
+
+	const std::wstring debugName = L"FG_TransientBlock_" + std::to_wstring(blockIndex);
+	const RhiOwnedMemoryBlockHandle memoryBlock = m_renderHardwareInterface->GetResourceService().CreateTransientMemoryBlock(
+	    transientPlan.physicalAllocation.pool,
+	    transientPlan.physicalAllocation.sizeInBytes,
+	    transientPlan.physicalAllocation.alignment,
+	    debugName);
+	m_memoryBlocks.push_back(MemoryBlockRecord{.physicalBlockIndex = blockIndex, .memoryBlock = memoryBlock});
+	return memoryBlock;
 }
 
 FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::CreateAllocationRecord(
@@ -209,25 +183,31 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 	AllocationRecord allocation;
 	allocation.handle = transientPlan.handle;
 	allocation.kind = transientPlan.kind;
+	const RhiOwnedMemoryBlockHandle memoryBlock = GetOrCreateMemoryBlock(transientPlan);
+	const std::uint64_t memoryBlockOffset = transientPlan.physicalAllocation.memoryBlockOffset;
 
 	switch (transientPlan.kind)
 	{
 		case FrameGraphResourceKind::DepthStencil:
 		{
 			const std::wstring debugName = BuildWideDebugName(transientPlan.textureDesc.name, L"FG_DepthTransient");
-			allocation.ownedDepthStencilResource = m_renderHardwareInterface->GetResourceService().CreateTextureResource(
-			    transientPlan.physicalAllocation.textureResourceDesc,
-			    transientPlan.physicalAllocation.initialState,
-			    RhiMemoryCategory::TransientResource,
-			    RhiMemoryResidencyClass::Transient,
+			allocation.ownedResource = m_renderHardwareInterface->GetResourceService().CreateAliasingTextureResource(
+			    memoryBlock,
+			    memoryBlockOffset,
+			    RhiTransientTextureAllocationDesc{
+			        .ResourceDesc = transientPlan.physicalAllocation.textureResourceDesc,
+			        .ClearValue = transientPlan.physicalAllocation.hasOptimizedClearValue
+			                          ? transientPlan.physicalAllocation.optimizedClearValue
+			                          : RhiOptimizedClearValue{},
+			        .InitialState = transientPlan.physicalAllocation.initialState},
 			    debugName);
-			allocation.depthStencilResource = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedDepthStencilResource);
+			allocation.resource = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedResource);
 			allocation.depthStencilView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-			    RhiResourceViewDesc::DepthStencil(allocation.depthStencilResource, transientPlan.textureDesc.format));
+			    RhiResourceViewDesc::DepthStencil(allocation.resource, transientPlan.textureDesc.format));
 			if (RequiresShaderResourceView(transientPlan))
 			{
 				allocation.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-				    RhiResourceViewDesc::TextureShaderResource(allocation.depthStencilResource, transientPlan.textureDesc.format));
+				    RhiResourceViewDesc::TextureShaderResource(allocation.resource, transientPlan.textureDesc.format));
 			}
 			break;
 		}
@@ -235,29 +215,33 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 		case FrameGraphResourceKind::ColorRenderTarget:
 		{
 			const std::wstring debugName = BuildWideDebugName(transientPlan.textureDesc.name, L"FG_ColorTransient");
-			allocation.ownedRenderTargetResource = m_renderHardwareInterface->GetResourceService().CreateTextureResource(
-			    transientPlan.physicalAllocation.textureResourceDesc,
-			    transientPlan.physicalAllocation.initialState,
-			    RhiMemoryCategory::TransientResource,
-			    RhiMemoryResidencyClass::Transient,
+			allocation.ownedResource = m_renderHardwareInterface->GetResourceService().CreateAliasingTextureResource(
+			    memoryBlock,
+			    memoryBlockOffset,
+			    RhiTransientTextureAllocationDesc{
+			        .ResourceDesc = transientPlan.physicalAllocation.textureResourceDesc,
+			        .ClearValue = transientPlan.physicalAllocation.hasOptimizedClearValue
+			                          ? transientPlan.physicalAllocation.optimizedClearValue
+			                          : RhiOptimizedClearValue{},
+			        .InitialState = transientPlan.physicalAllocation.initialState},
 			    debugName);
-			allocation.renderTargetResource = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedRenderTargetResource);
+			allocation.resource = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedResource);
 			if (transientPlan.physicalAllocation.textureResourceDesc.AllowRenderTarget)
 			{
 				allocation.renderTargetView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-				    RhiResourceViewDesc::RenderTarget(allocation.renderTargetResource, transientPlan.textureDesc.format));
+				    RhiResourceViewDesc::RenderTarget(allocation.resource, transientPlan.textureDesc.format));
 			}
 
 			if (RequiresShaderResourceView(transientPlan))
 			{
 				allocation.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-				    RhiResourceViewDesc::TextureShaderResource(allocation.renderTargetResource, transientPlan.textureDesc.format));
+				    RhiResourceViewDesc::TextureShaderResource(allocation.resource, transientPlan.textureDesc.format));
 			}
 
 			if (RequiresUnorderedAccessView(transientPlan))
 			{
 				allocation.unorderedAccessView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-				    RhiResourceViewDesc::TextureUnorderedAccess(allocation.renderTargetResource, transientPlan.textureDesc.format));
+				    RhiResourceViewDesc::TextureUnorderedAccess(allocation.resource, transientPlan.textureDesc.format));
 			}
 			break;
 		}
@@ -265,18 +249,19 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 		case FrameGraphResourceKind::Buffer:
 		{
 			const std::wstring debugName = BuildWideDebugName(transientPlan.bufferDesc.name, L"FG_BufferTransient");
-			allocation.ownedBuffer = m_renderHardwareInterface->GetResourceService().CreateBufferResource(
-			    transientPlan.physicalAllocation.bufferResourceDesc,
-			    transientPlan.physicalAllocation.initialState,
-			    RhiMemoryCategory::TransientResource,
-			    RhiMemoryResidencyClass::Transient,
+			allocation.ownedResource = m_renderHardwareInterface->GetResourceService().CreateAliasingBufferResource(
+			    memoryBlock,
+			    memoryBlockOffset,
+			    RhiTransientBufferAllocationDesc{
+			        .ResourceDesc = transientPlan.physicalAllocation.bufferResourceDesc,
+			        .InitialState = transientPlan.physicalAllocation.initialState},
 			    debugName);
-			allocation.buffer = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedBuffer);
+			allocation.resource = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedResource);
 
 			if (RequiresShaderResourceView(transientPlan))
 			{
 				allocation.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(RhiResourceViewDesc::BufferShaderResource(
-				    allocation.buffer,
+				    allocation.resource,
 				    transientPlan.bufferDesc.sizeInBytes,
 				    transientPlan.bufferDesc.strideInBytes));
 			}
@@ -284,7 +269,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			if (RequiresUnorderedAccessView(transientPlan))
 			{
 				allocation.unorderedAccessView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(RhiResourceViewDesc::BufferUnorderedAccess(
-				    allocation.buffer,
+				    allocation.resource,
 				    transientPlan.bufferDesc.sizeInBytes,
 				    transientPlan.bufferDesc.strideInBytes));
 			}

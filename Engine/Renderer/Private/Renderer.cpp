@@ -25,21 +25,6 @@ const ViewportRenderProducts& Renderer::GetViewportRenderProducts() const noexce
 	return m_framePipeline->GetViewportRenderProducts();
 }
 
-RenderHardwareInterface& Renderer::GetRenderHardwareInterface() noexcept
-{
-	return m_systemRoot->GetRenderHardwareInterface();
-}
-
-const RenderHardwareInterface& Renderer::GetRenderHardwareInterface() const noexcept
-{
-	return m_systemRoot->GetRenderHardwareInterface();
-}
-
-RhiCommandSubmissionService& Renderer::GetCommandSubmissionService() noexcept
-{
-	return m_systemRoot->GetBackend();
-}
-
 RhiImGuiRenderer& Renderer::GetImGuiRenderer() noexcept
 {
 	return m_systemRoot->GetImGuiRenderer();
@@ -83,6 +68,26 @@ void Renderer::RecordHostFrame() noexcept
 void Renderer::SubmitHostFrame() noexcept
 {
 	m_framePipeline->SubmitHostFrame();
+}
+
+void Renderer::WaitForIdle() noexcept
+{
+	m_systemRoot->GetBackend().WaitForIdle();
+}
+
+void Renderer::BeginHostPresentation(const float clearColor[4]) noexcept
+{
+	m_systemRoot->GetRenderHardwareInterface().GetPresentationService().BeginPresentRenderPass(clearColor);
+}
+
+void Renderer::BeginHostOverlayPresentation() noexcept
+{
+	m_systemRoot->GetRenderHardwareInterface().GetPresentationService().BeginPresentOverlayPass();
+}
+
+void Renderer::EndHostPresentation() noexcept
+{
+	m_systemRoot->GetRenderHardwareInterface().GetPresentationService().EndPresentRenderPass();
 }
 
 ViewportPresentationProduct Renderer::BeginViewportPresentation(RenderOutputFlags output) noexcept

@@ -8,34 +8,10 @@
 #include "ShaderData/RenderConstantBufferData.h"
 
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 static const auto g_meshInstanceFrameDataLogger = Logging::GetOrCreateLogger("Renderer.MeshInstanceFrameData");
-
-MeshInstanceFrameData::~MeshInstanceFrameData() noexcept
-{
-	Release();
-}
-
-MeshInstanceFrameData::MeshInstanceFrameData(MeshInstanceFrameData&& other) noexcept
-{
-	*this = std::move(other);
-}
-
-MeshInstanceFrameData& MeshInstanceFrameData::operator=(MeshInstanceFrameData&& other) noexcept
-{
-	if (this == &other)
-	{
-		return *this;
-	}
-
-	Release();
-	m_renderHardwareInterface = other.m_renderHardwareInterface;
-	m_buffer = other.m_buffer;
-	other.m_renderHardwareInterface = nullptr;
-	other.m_buffer.Reset();
-	return *this;
-}
 
 MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData)
 {
@@ -62,13 +38,13 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& rend
 		instances.emplace_back();
 	}
 
-	FrameBufferResource buffer{
-	    .SizeInBytes = instances.size() * sizeof(MeshInstanceData),
-	    .StrideInBytes = static_cast<std::uint32_t>(sizeof(MeshInstanceData))};
-	const bool created =
-	    renderHardwareInterface.GetResourceService()
-	        .CreateStructuredBufferResource(instances.data(), buffer.SizeInBytes, buffer.StrideInBytes, L"MeshInstances", buffer.Resource);
-	if (!created || !buffer)
+	FrameBufferResource buffer = FrameBufferResource::Upload(
+	    renderHardwareInterface.GetResourceService(),
+	    instances.data(),
+	    instances.size() * sizeof(MeshInstanceData),
+	    static_cast<std::uint32_t>(sizeof(MeshInstanceData)),
+	    L"MeshInstances");
+	if (!buffer)
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_meshInstanceFrameDataLogger,
@@ -79,21 +55,6 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& rend
 	}
 
 	MeshInstanceFrameData frameData;
-	frameData.m_renderHardwareInterface = &renderHardwareInterface;
-	frameData.m_buffer = buffer;
+	frameData.m_buffer = std::move(buffer);
 	return frameData;
-}
-
-void MeshInstanceFrameData::Release() noexcept
-{
-	if (m_renderHardwareInterface != nullptr)
-	{
-		if (m_buffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_buffer.Resource);
-		}
-	}
-
-	m_renderHardwareInterface = nullptr;
-	m_buffer.Reset();
 }

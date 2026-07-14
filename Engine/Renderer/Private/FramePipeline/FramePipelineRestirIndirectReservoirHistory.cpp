@@ -65,7 +65,8 @@ void FramePipeline::BindRestirIndirectReservoirHistoryFrameGraphResources() noex
 	        *m_frameGraph,
 	        m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex(),
 	        handles,
-	        m_restirIndirectReservoirHistoryResources))
+	        m_restirIndirectReservoirHistoryResources,
+	        m_restirIndirectReservoirHistoryValid ? ResourceState::ShaderResource : ResourceState::Undefined))
 	{
 		m_restirIndirectReservoirHistoryValid = false;
 	}

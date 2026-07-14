@@ -123,9 +123,7 @@ namespace
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.FormatIntent);
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.MipCount);
 		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.EstimatedByteSize);
-		hash = Hash::ContinueFnv1a64Value(hash, runtimeInfo.GpuShaderResourceViewId);
-		hash = Hash::ContinueFnv1a64Value(hash, static_cast<std::uint64_t>(runtimeInfo.FormatName.size()));
-		return Hash::ContinueFnv1a64(hash, runtimeInfo.FormatName.data(), runtimeInfo.FormatName.size());
+		return Hash::ContinueFnv1a64Value(hash, skyTexture->GetNativeResource().Value);
 	}
 }
 

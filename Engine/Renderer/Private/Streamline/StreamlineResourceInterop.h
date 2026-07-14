@@ -7,12 +7,6 @@
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 #include <sl.h>
 
-enum class StreamlineTextureAccess
-{
-	ReadOnly,
-	ReadWrite
-};
-
 // Keeps a Streamline resource and its optional Vulkan subresource range in one
 // stable object so feature-specific tag builders do not duplicate backend rules.
 class StreamlineTaggedTextureResource final
@@ -20,8 +14,7 @@ class StreamlineTaggedTextureResource final
   public:
 	StreamlineTaggedTextureResource(
 	    ERhiBackendApi backendApi,
-	    const NativeTextureViewInfo& view,
-	    StreamlineTextureAccess access) noexcept;
+	    const NativeTextureViewInfo& view) noexcept;
 
 	StreamlineTaggedTextureResource(const StreamlineTaggedTextureResource&) = delete;
 	StreamlineTaggedTextureResource& operator=(const StreamlineTaggedTextureResource&) = delete;

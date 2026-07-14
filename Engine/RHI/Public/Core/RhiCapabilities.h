@@ -53,6 +53,11 @@ struct RhiQueueCapabilities
 	bool SupportsCopy = false;
 };
 
+struct RhiDescriptorIndexingCapabilities
+{
+	bool SupportsSampledImageArrayNonUniformIndexing = false;
+};
+
 struct RhiBackendVersionInfo
 {
 	ERhiBackendVersionSemantic Semantic = ERhiBackendVersionSemantic::Unknown;
@@ -150,6 +155,7 @@ struct RhiCapabilities
 	RhiBackendVersionInfo BackendVersion;
 	ERhiDescriptorModel DescriptorModel = ERhiDescriptorModel::Unknown;
 	RhiBindingLimits BindingLimits;
+	RhiDescriptorIndexingCapabilities DescriptorIndexing;
 	RhiUploadReadbackCapabilities UploadReadback;
 	std::array<RhiFormatSupport, kRhiCapabilityPixelFormats.size()> FormatSupport = {};
 	bool SupportsTimestampQueries = false;

@@ -44,6 +44,35 @@ bool RhiContract::IsTextureResourceDescUsable(const RhiCapabilities& capabilitie
 	       (!desc.AllowUnorderedAccess || formatSupport->SupportsUnorderedAccess);
 }
 
+bool RhiContract::IsResourceViewDescUsable(const RhiResourceViewDesc& desc) noexcept
+{
+	switch (desc.Kind)
+	{
+		case ERhiResourceViewKind::TextureShaderResource:
+		case ERhiResourceViewKind::TextureUnorderedAccess:
+		case ERhiResourceViewKind::RenderTarget:
+		case ERhiResourceViewKind::DepthStencil:
+			return desc.Resource && desc.Format != PixelFormat::Unknown && desc.Texture.MipCount != 0 && desc.Texture.ArraySize != 0;
+		case ERhiResourceViewKind::BufferShaderResource:
+		case ERhiResourceViewKind::BufferUnorderedAccess:
+			if (!desc.Resource || desc.Buffer.SizeInBytes == 0)
+			{
+				return false;
+			}
+			if (desc.Buffer.StrideInBytes == 0)
+			{
+				return desc.Buffer.OffsetInBytes % sizeof(std::uint32_t) == 0 &&
+			       desc.Buffer.SizeInBytes % sizeof(std::uint32_t) == 0;
+			}
+			return desc.Buffer.OffsetInBytes % desc.Buffer.StrideInBytes == 0 &&
+			       desc.Buffer.SizeInBytes % desc.Buffer.StrideInBytes == 0;
+		case ERhiResourceViewKind::AccelerationStructureShaderResource:
+			return desc.AccelerationStructureGpuAddress != 0;
+	}
+
+	return false;
+}
+
 bool RhiContract::IsRayTracingGeometryDescUsable(const RhiRayTracingGeometryDesc& geometry) noexcept
 {
 	return geometry.VertexBuffer != 0 && geometry.IndexBuffer != 0 && geometry.VertexStrideInBytes >= sizeof(float) * 3u &&

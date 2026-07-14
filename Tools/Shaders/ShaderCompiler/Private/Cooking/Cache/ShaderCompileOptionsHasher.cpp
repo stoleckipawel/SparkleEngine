@@ -51,6 +51,16 @@ std::uint64_t ShaderCompileOptionsHasher::Compute(const ShaderCompileOptions& op
 		canonical += define;
 	}
 
+	for (const ShaderDescriptorBindingRemap& remap : options.DescriptorBindingRemaps)
+	{
+		canonical += '|';
+		canonical += remap.Name;
+		canonical += ':';
+		canonical += std::to_string(remap.Set);
+		canonical += ':';
+		canonical += std::to_string(remap.Binding);
+	}
+
 	const std::uint64_t hash = Hash::Fnv1a64(canonical);
 	return hash != 0 ? hash : Hash::kFnv64OffsetBasis;
 }

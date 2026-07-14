@@ -1,10 +1,9 @@
 #pragma once
 
-#include "RenderConstantBufferValidation.h"
-
 #include <DirectXMath.h>
 
 #include <cstdint>
+#include <type_traits>
 
 struct alignas(256) PerTemporalConstantBufferData
 {
@@ -17,4 +16,8 @@ struct alignas(256) PerTemporalConstantBufferData
 	DirectX::XMFLOAT4 _pad0 = {};
 	DirectX::XMFLOAT4 _pad1 = {};
 };
-RHI_CBV_CHECK(PerTemporalConstantBufferData);
+static_assert(std::is_standard_layout_v<PerTemporalConstantBufferData>);
+static_assert(std::is_trivially_copyable_v<PerTemporalConstantBufferData>);
+static_assert(alignof(PerTemporalConstantBufferData) >= 256);
+static_assert(sizeof(PerTemporalConstantBufferData) % 256 == 0);
+static_assert(sizeof(PerTemporalConstantBufferData) <= 64 * 1024);

@@ -282,7 +282,6 @@ std::unique_ptr<D3D12GpuHeapRecord> D3D12GpuMemoryAllocator::CreateTransientHeap
 	}
 
 	D3D12MA::ALLOCATION_DESC allocationDesc = {};
-	allocationDesc.Flags = D3D12MA::ALLOCATION_FLAG_CAN_ALIAS;
 	allocationDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
 	allocationDesc.ExtraHeapFlags = ToTransientHeapFlags(pool);
 
@@ -471,8 +470,10 @@ D3D12_HEAP_FLAGS D3D12GpuMemoryAllocator::ToTransientHeapFlags(RhiTransientAlloc
 	{
 		case RhiTransientAllocationPool::Buffer:
 			return D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
-		case RhiTransientAllocationPool::Depth:
-		case RhiTransientAllocationPool::Color:
+		case RhiTransientAllocationPool::Texture:
+			return D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
+		case RhiTransientAllocationPool::RenderTargetTexture:
+		case RhiTransientAllocationPool::DepthStencilTexture:
 		default:
 			return D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES;
 	}

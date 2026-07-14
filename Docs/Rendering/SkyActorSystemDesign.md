@@ -171,9 +171,9 @@ The intended lifetime split is:
 ```text
 RenderSkyData.skyTexture               persistent renderer texture identity
     -> frame assembly registration     bind external resource to this graph
-    -> FrameGraphTextureRef            graph-owned resource identity
-    -> FrameGraphTextureSRVRef         graph-owned sampled view
-    -> pass parameter                  no RHI descriptor visible to the pass
+    -> FrameGraphTextureHandle         graph-owned resource identity
+    -> ShaderTexture2D field           declared sampled access
+    -> RHI-created SRV                 execution detail owned below the pass
 ```
 
 For Sparkle's persistent graph structure, `FrameAssemblyResourceLayout` owns an external sky texture handle reserved when the graph is built. Before `FrameGraph::Setup()`, frame assembly binds the selected renderer texture and its metadata to that handle. A changed backing texture or view-relevant description retires previously materialized graph views before new ones are created.
@@ -191,10 +191,12 @@ This is equivalent in responsibility to Unreal's registration of an external tex
 Add one small, explicitly bound constant buffer:
 
 ```hlsl
-struct SkyUniformData
+cbuffer SkyUniformData
 {
-    float3 Color;
-    float Intensity;
+    float3 SkyColor;
+    float SkyIntensity;
+    uint SkyEnabled;
+    uint3 SkyPadding;
 };
 ```
 
@@ -204,13 +206,13 @@ All sky consumers call the shared radiance function with the same texture, sampl
 float3 SampleSkyRadiance(
     Texture2D skyTexture,
     SamplerState skySampler,
-    SkyUniformData sky,
     float3 worldDirection)
 {
-    return skyTexture.SampleLevel(
+    float3 radiance = skyTexture.SampleLevel(
         skySampler,
         ComputeSkyUv(worldDirection),
-        0.0f).rgb * sky.Color * sky.Intensity;
+        0.0f).rgb;
+    return SkyEnabled != 0 ? radiance * SkyColor * SkyIntensity : 0.0f.xxx;
 }
 ```
 
@@ -289,7 +291,7 @@ This is a renderer responsibility. `SceneSky` should not know which histories ex
 |---|---|---|
 | Level fields and defaults | `LevelDesc` / level parser | GPU texture or descriptor |
 | Editable sky state | `SceneSky` in `GameScene` | render passes or history |
-| Cross-module values | `SkySnapshot` | RHI types |
+| Cross-module values | `SceneSkySnapshot` | RHI types |
 | Texture import identity | asset/cooking system | per-pass bindings |
 | Texture resource residency | `TextureManager` | editor state or graph views |
 | Resolved sky identity and constants | `RenderSkyData` in `FrameContext::sceneData` | descriptors or graph references |
@@ -343,20 +345,20 @@ Recommended: reserve it in the design but omit it from the first public contract
 
 Status: approved and implemented through the persistent frame-graph external-resource path.
 
-Recommended: `RenderSkyData` stores a backend-neutral persistent texture identity, frame assembly registers it as a `FrameGraphTextureRef`, and the pass creates a graph-tracked SRV. Reject raw RHI descriptor bindings in scene data and untracked `ShaderTexture2DSRV` use for sky.
+Recommended: `RenderSkyData` stores a backend-neutral persistent texture identity, frame assembly registers it as a `FrameGraphTextureHandle`, and the pass declares graph-tracked sampled access. Reject raw RHI descriptor bindings in scene data and untracked `ShaderTexture2DSRV` use for sky.
 
 ## Implemented sequence
 
 1. Add `SkyDesc`, `[Sky]` parsing/writing, and level round-trip tests.
 2. Add `SceneSky`, editor selection/outliner/inspector, and `LevelManager` capture.
-3. Add `SkySnapshot` to the game and renderer snapshot boundary, including texture residency.
+3. Add `SceneSkySnapshot` to the game and renderer snapshot boundary, including texture residency.
 4. Complete the generalized external texture registration and graph-view path described in `FrameGraphResourceReferenceDesign.md`.
 5. Add `RenderSkyData`, reserve/bind the external sky graph reference, and remove per-pass global sky resolution.
 6. Add explicit sky constants and graph-created SRVs to every sky consumer, then update the shared HLSL evaluation.
 7. Include all sky state in temporal/reference invalidation.
 8. Rename the fallback to `TextureId::DefaultSky` and remove the global sky lookup after all consumers use scene data.
 
-The old global lookup and descriptor cache were removed only after all raster and ray-traced consumers were migrated. Validation includes C++ builds, registration validation, DXIL/SPIR-V shader cooking, architecture checks, and editor runtime startup.
+The old global lookup and temporary descriptor cache were removed only after all raster and ray-traced consumers were migrated. A final cleanup moved GPU-safe view retirement into the RHI descriptor owner, removed unused graph import/pass-through APIs, and retained `SceneSkySnapshot` as the intentional mutable-game-state to immutable-render-state boundary. Validation includes C++ builds, registration validation, DXIL/SPIR-V shader cooking, architecture checks, and editor runtime startup.
 
 ## Acceptance criteria
 

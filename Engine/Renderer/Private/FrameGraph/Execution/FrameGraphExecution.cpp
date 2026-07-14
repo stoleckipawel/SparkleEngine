@@ -54,6 +54,11 @@ void FrameGraph::Execute(
 
 	EnsureTransientResourcesMaterialized(plan);
 	ValidateExecutionBindings(plan);
+	if (!plan.initialTransientAliasingBarriers.empty())
+	{
+		graphDiagnostics.InsertFrameBeginAliasingBarrierMarker();
+	}
+	EmitTransientAliasingBarriers(cmd, "FrameBegin", plan.initialTransientAliasingBarriers);
 
 	for (const FrameGraphPassIndex passIndex : plan.executionOrder)
 	{
@@ -76,11 +81,6 @@ void FrameGraph::Execute(
 		}
 	}
 
-	if (!plan.finalTransientAliasingBarriers.empty())
-	{
-		graphDiagnostics.InsertFrameEndAliasingBarrierMarker();
-	}
-	EmitTransientAliasingBarriers(cmd, "FrameEnd", plan.finalTransientAliasingBarriers);
 	if (!plan.finalBarriers.empty())
 	{
 		graphDiagnostics.InsertFrameEndResourceBarrierMarker();

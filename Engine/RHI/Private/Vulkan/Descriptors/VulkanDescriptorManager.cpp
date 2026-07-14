@@ -10,6 +10,7 @@
 #include "Vulkan/Samplers/VulkanSamplerLibrary.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/VulkanTypeConversions.h"
+#include "Validation/RhiContract.h"
 
 #include <utility>
 
@@ -114,7 +115,7 @@ RhiDescriptorTableBinding VulkanDescriptorManager::GetSharedSamplerBinding(const
 
 RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResourceViewDesc& desc)
 {
-	if (!desc.Resource && desc.Kind != ERhiResourceViewKind::AccelerationStructureShaderResource)
+	if (!RhiContract::IsResourceViewDescUsable(desc))
 	{
 		return {};
 	}
@@ -243,8 +244,6 @@ NativeTextureViewInfo VulkanDescriptorManager::GetNativeTextureViewInfo(RhiResou
 	                            VulkanTypeConversions::ToVkFormat(record->Format);
 	const VkImageUsageFlags allocationUsage = allocation != nullptr ? allocation->Usage : 0;
 	const VkImageUsageFlags usage = allocationUsage != 0 ? allocationUsage : record->Usage;
-	const bool readWrite = (usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0 || record->Kind == ERhiResourceViewKind::TextureUnorderedAccess;
-
 	return NativeTextureViewInfo{
 	    .Resource = NativeResourceHandle{record->Image},
 	    .View = NativeTextureViewHandle{record->ImageView},
@@ -260,8 +259,7 @@ NativeTextureViewInfo VulkanDescriptorManager::GetNativeTextureViewInfo(RhiResou
 	    .SubresourceBaseArrayLayer = record->Texture.FirstArraySlice,
 	    .SubresourceLayerCount = record->Texture.ArraySize,
 	    .NativeFlags = allocation != nullptr ? static_cast<std::uint32_t>(allocation->ImageFlags) : 0u,
-	    .NativeUsage = static_cast<std::uint32_t>(usage),
-	    .ReadWrite = readWrite};
+	    .NativeUsage = static_cast<std::uint32_t>(usage)};
 }
 
 VkImageView VulkanDescriptorManager::GetRegisteredImageView(RhiGpuDescriptorHandle descriptorHandle) const noexcept
@@ -387,7 +385,8 @@ VulkanDescriptorManager::ResourceViewRecord* VulkanDescriptorManager::FindResour
 	{
 		return nullptr;
 	}
-	return &m_resourceViewRecords[view.Value - 1u];
+	ResourceViewRecord& record = m_resourceViewRecords[view.Value - 1u];
+	return record.IsAllocated() ? &record : nullptr;
 }
 
 const VulkanDescriptorManager::ResourceViewRecord* VulkanDescriptorManager::FindResourceViewRecord(RhiResourceViewHandle view) const noexcept
@@ -396,7 +395,8 @@ const VulkanDescriptorManager::ResourceViewRecord* VulkanDescriptorManager::Find
 	{
 		return nullptr;
 	}
-	return &m_resourceViewRecords[view.Value - 1u];
+	const ResourceViewRecord& record = m_resourceViewRecords[view.Value - 1u];
+	return record.IsAllocated() ? &record : nullptr;
 }
 
 VkImageView VulkanDescriptorManager::CreateImageView(const RhiResourceViewDesc& desc) const

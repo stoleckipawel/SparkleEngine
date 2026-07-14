@@ -9,36 +9,10 @@
 #include "SceneData/RenderSceneData.h"
 
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 static const auto g_skinningFrameDataLogger = Logging::GetOrCreateLogger("Renderer.SkinningFrameData");
-
-SkinningFrameData::~SkinningFrameData() noexcept
-{
-	Release();
-}
-
-SkinningFrameData::SkinningFrameData(SkinningFrameData&& other) noexcept
-{
-	*this = std::move(other);
-}
-
-SkinningFrameData& SkinningFrameData::operator=(SkinningFrameData&& other) noexcept
-{
-	if (this == &other)
-	{
-		return *this;
-	}
-
-	Release();
-	m_renderHardwareInterface = other.m_renderHardwareInterface;
-	m_buffer = other.m_buffer;
-	m_previousBuffer = other.m_previousBuffer;
-	other.m_renderHardwareInterface = nullptr;
-	other.m_buffer.Reset();
-	other.m_previousBuffer.Reset();
-	return *this;
-}
 
 SkinningFrameData SkinningFrameData::Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData)
 {
@@ -66,64 +40,30 @@ SkinningFrameData SkinningFrameData::Build(RenderHardwareInterface& renderHardwa
 		}
 	}
 
-	FrameBufferResource buffer{
-	    .SizeInBytes = matrices.size() * sizeof(JointMatrixData),
-	    .StrideInBytes = static_cast<std::uint32_t>(sizeof(JointMatrixData))};
-	FrameBufferResource previousBuffer{
-	    .SizeInBytes = previousMatrices.size() * sizeof(JointMatrixData),
-	    .StrideInBytes = static_cast<std::uint32_t>(sizeof(JointMatrixData))};
-	const bool created = renderHardwareInterface.GetResourceService().CreateStructuredBufferResource(
+	FrameBufferResource buffer = FrameBufferResource::Upload(
+	    renderHardwareInterface.GetResourceService(),
 	    matrices.data(),
-	    buffer.SizeInBytes,
-	    buffer.StrideInBytes,
-	    L"SkinningJointMatrices",
-	    buffer.Resource);
-	const bool previousCreated = renderHardwareInterface.GetResourceService().CreateStructuredBufferResource(
+	    matrices.size() * sizeof(JointMatrixData),
+	    static_cast<std::uint32_t>(sizeof(JointMatrixData)),
+	    L"SkinningJointMatrices");
+	FrameBufferResource previousBuffer = FrameBufferResource::Upload(
+	    renderHardwareInterface.GetResourceService(),
 	    previousMatrices.data(),
-	    previousBuffer.SizeInBytes,
-	    previousBuffer.StrideInBytes,
-	    L"PreviousSkinningJointMatrices",
-	    previousBuffer.Resource);
-	if (!created || !buffer || !previousCreated || !previousBuffer)
+	    previousMatrices.size() * sizeof(JointMatrixData),
+	    static_cast<std::uint32_t>(sizeof(JointMatrixData)),
+	    L"PreviousSkinningJointMatrices");
+	if (!buffer || !previousBuffer)
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_skinningFrameDataLogger,
 		    "SkinningFrameData::Build: failed to upload {} joint matrices ({} bytes).",
 		    matrices.size(),
 		    matrices.size() * sizeof(JointMatrixData));
-		if (buffer)
-		{
-			renderHardwareInterface.GetResourceService().ReleaseOwnedResource(buffer.Resource);
-		}
-		if (previousBuffer)
-		{
-			renderHardwareInterface.GetResourceService().ReleaseOwnedResource(previousBuffer.Resource);
-		}
 		return {};
 	}
 
 	SkinningFrameData frameData;
-	frameData.m_renderHardwareInterface = &renderHardwareInterface;
-	frameData.m_buffer = buffer;
-	frameData.m_previousBuffer = previousBuffer;
+	frameData.m_buffer = std::move(buffer);
+	frameData.m_previousBuffer = std::move(previousBuffer);
 	return frameData;
-}
-
-void SkinningFrameData::Release() noexcept
-{
-	if (m_renderHardwareInterface != nullptr)
-	{
-		if (m_buffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_buffer.Resource);
-		}
-		if (m_previousBuffer)
-		{
-			m_renderHardwareInterface->GetResourceService().ReleaseOwnedResource(m_previousBuffer.Resource);
-		}
-	}
-
-	m_renderHardwareInterface = nullptr;
-	m_buffer.Reset();
-	m_previousBuffer.Reset();
 }

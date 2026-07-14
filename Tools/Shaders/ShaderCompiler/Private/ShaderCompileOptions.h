@@ -8,6 +8,13 @@
 #include <string>
 #include <vector>
 
+struct ShaderDescriptorBindingRemap final
+{
+	std::string Name;
+	std::uint32_t Set = 0;
+	std::uint32_t Binding = 0;
+};
+
 // Inputs to one shader compile invocation. Owned by the offline tool; runtime
 // modules must not include this header.
 struct ShaderCompileOptions
@@ -29,4 +36,5 @@ struct ShaderCompileOptions
 
 	std::vector<std::filesystem::path> AdditionalIncludeDirs;
 	std::vector<std::string> Defines;
+	std::vector<ShaderDescriptorBindingRemap> DescriptorBindingRemaps;
 };

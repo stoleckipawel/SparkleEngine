@@ -149,6 +149,7 @@ RhiPartitionedTlasCapabilities D3D12NvapiRayTracingProvider::QueryPartitionedTla
 	const bool supportsStandard =
 	    (nativeCaps & NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAP_STANDARD) == NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAP_STANDARD;
 	capabilities.SupportsD3D12NvapiPartitionedTlas = supportsStandard;
+	capabilities.SupportsDescriptorAccess = supportsStandard;
 	capabilities.Supported = supportsStandard;
 	capabilities.SupportsCpuPackedOperations = supportsStandard;
 	capabilities.SupportsGpuDrivenOperations = supportsStandard;

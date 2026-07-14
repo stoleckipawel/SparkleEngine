@@ -42,7 +42,7 @@ void FramePipeline::CreateReferenceLightingHistoryResources() noexcept
 		{
 			resource = resourceService.CreateTextureResource(
 			    desc,
-			    ResourceState::ShaderResource,
+			    ResourceState::Undefined,
 			    RhiMemoryCategory::Texture,
 			    RhiMemoryResidencyClass::DeviceLocal,
 			    L"ReferenceLightingHistory");
@@ -90,8 +90,9 @@ void FramePipeline::BindReferenceLightingHistoryFrameGraphResources() noexcept
 		m_referenceLightingHistoryValid = false;
 		return;
 	}
-	m_frameGraph->BindPersistentTexture(m_frameResources.History.PreviousReferenceLighting, previous, ResourceState::ShaderResource);
-	m_frameGraph->BindPersistentTexture(m_frameResources.History.CurrentReferenceLighting, current, ResourceState::ShaderResource);
+	const ResourceState currentState = m_referenceLightingHistoryValid ? ResourceState::ShaderResource : ResourceState::Undefined;
+	m_frameGraph->BindPersistentTexture(m_frameResources.History.PreviousReferenceLighting, previous, currentState);
+	m_frameGraph->BindPersistentTexture(m_frameResources.History.CurrentReferenceLighting, current, currentState);
 }
 
 void FramePipeline::ResetReferenceLightingHistory() noexcept

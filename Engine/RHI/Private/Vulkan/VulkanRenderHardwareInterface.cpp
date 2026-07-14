@@ -263,6 +263,9 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	    .MaxSamplerDescriptors = properties.limits.maxDescriptorSetSamplers,
 	    .MaxDescriptorTableEntries = properties.limits.maxDescriptorSetSampledImages + properties.limits.maxDescriptorSetStorageImages,
 	    .MaxPushConstantBytes = properties.limits.maxPushConstantsSize};
+	capabilities.DescriptorIndexing = RhiDescriptorIndexingCapabilities{
+	    .SupportsSampledImageArrayNonUniformIndexing =
+	        m_rhi != nullptr && m_rhi->GetFeatureStatus().EnabledSampledImageArrayNonUniformIndexing};
 	capabilities.UploadReadback = RhiUploadReadbackCapabilities{
 	    .SupportsBufferUpload = true,
 	    .SupportsTextureUpload = true,

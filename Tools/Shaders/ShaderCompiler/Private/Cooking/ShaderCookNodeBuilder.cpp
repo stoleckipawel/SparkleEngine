@@ -32,6 +32,22 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	compileOptions.EnableOptimizations = settings.enableOptimizations;
 	compileOptions.TreatWarningsAsErrors = settings.treatWarningsAsErrors;
 	compileOptions.StripDebugInfo = settings.stripDebugInfo;
+	const std::vector<PassParameterDesc>& parameters = package.bindingLayout.GetParameters();
+	compileOptions.DescriptorBindingRemaps.reserve(parameters.size());
+	for (std::uint32_t parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex)
+	{
+		const PassParameterDesc& parameter = parameters[parameterIndex];
+		if (parameter.Kind == ShaderParameterSemanticKind::RenderTarget ||
+		    parameter.Kind == ShaderParameterSemanticKind::DepthTarget)
+		{
+			continue;
+		}
+		compileOptions.DescriptorBindingRemaps.push_back(
+		    ShaderDescriptorBindingRemap{
+		        .Name = std::string(parameter.GetShaderName()),
+		        .Set = 0,
+		        .Binding = parameterIndex});
+	}
 
 	if (settings.forceMissingIncludeForValidation && packageIndex == 0 && stageIndex == 0 && targetIndex == 0)
 	{

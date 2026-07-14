@@ -6,8 +6,10 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace Filesystem
 {
@@ -70,6 +72,10 @@ namespace Filesystem
 
 	// Source asset resolution
 	std::optional<std::filesystem::path> ResolveAssetPathNormalized(const std::filesystem::path& inputPath, AssetType type);
+	void AppendNormalizedAssetPaths(
+	    std::span<const std::filesystem::path> inputPaths,
+	    AssetType type,
+	    std::vector<std::filesystem::path>& destination);
 	std::optional<std::filesystem::path> ResolveAssetPath(const std::filesystem::path& inputPath, AssetType type);
 	std::filesystem::path ResolveAssetPathValidated(const std::filesystem::path& inputPath, AssetType type);
 	const std::filesystem::path& GetShaderSymbolsOutputPath();

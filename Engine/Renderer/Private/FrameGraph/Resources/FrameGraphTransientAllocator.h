@@ -19,12 +19,8 @@ class FrameGraphTransientAllocator final
 		RhiResourceViewHandle depthStencilView = {};
 		RhiResourceViewHandle shaderResourceView = {};
 		RhiResourceViewHandle unorderedAccessView = {};
-		RhiOwnedResourceHandle ownedDepthStencilResource = {};
-		RhiOwnedResourceHandle ownedRenderTargetResource = {};
-		RhiOwnedResourceHandle ownedBuffer = {};
-		NativeResourceHandle depthStencilResource;
-		NativeResourceHandle renderTargetResource;
-		NativeResourceHandle buffer;
+		RhiOwnedResourceHandle ownedResource = {};
+		NativeResourceHandle resource = {};
 	};
 
 	explicit FrameGraphTransientAllocator(RenderHardwareInterface& renderHardwareInterface) noexcept;
@@ -36,23 +32,34 @@ class FrameGraphTransientAllocator final
 	FrameGraphTransientAllocator& operator=(FrameGraphTransientAllocator&&) = delete;
 
 	void Reset() noexcept;
+	void Prepare(const FrameGraphTransientPlan& plan) noexcept;
 	AllocationRecord& Materialize(const FrameGraphTransientResourcePlan& transientPlan);
 	const AllocationRecord* FindAllocation(FrameGraphResourceHandle handle) const noexcept;
-	const AllocationRecord* FindDepthAllocation(FrameGraphResourceHandle handle) const noexcept;
-	const AllocationRecord* FindColorAllocation(FrameGraphResourceHandle handle) const noexcept;
-	const AllocationRecord* FindBufferAllocation(FrameGraphResourceHandle handle) const noexcept;
 
   private:
-	using AllocationList = std::vector<AllocationRecord>;
+	struct PlanEntry
+	{
+		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
+		std::uint32_t physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
+		RhiTextureResourceDesc textureDesc = {};
+		RhiBufferResourceDesc bufferDesc = {};
+		bool requiresShaderResourceView = false;
+		bool requiresUnorderedAccessView = false;
+		bool operator==(const PlanEntry&) const = default;
+	};
 
-	void ReleaseAllocationDescriptors(AllocationList& allocations) noexcept;
+	struct MemoryBlockRecord
+	{
+		std::uint32_t physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
+		RhiOwnedMemoryBlockHandle memoryBlock = {};
+	};
+
+	void ReleaseAllocations() noexcept;
 	AllocationRecord CreateAllocationRecord(const FrameGraphTransientResourcePlan& transientPlan);
-	AllocationList& GetAllocationList(FrameGraphTransientResourcePlan::AllocationPool pool) noexcept;
-	const AllocationList& GetAllocationList(FrameGraphTransientResourcePlan::AllocationPool pool) const noexcept;
-	const AllocationRecord* FindAllocationInList(const AllocationList& allocations, FrameGraphResourceHandle handle) const noexcept;
+	RhiOwnedMemoryBlockHandle GetOrCreateMemoryBlock(const FrameGraphTransientResourcePlan& transientPlan);
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
-	AllocationList m_colorAllocations;
-	AllocationList m_depthAllocations;
-	AllocationList m_bufferAllocations;
+	std::vector<PlanEntry> m_planEntries;
+	std::vector<MemoryBlockRecord> m_memoryBlocks;
+	std::vector<AllocationRecord> m_allocations;
 };

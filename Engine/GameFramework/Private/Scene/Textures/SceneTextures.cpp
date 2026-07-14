@@ -3,7 +3,6 @@
 #include "Scene/Textures/SceneTextures.h"
 
 #include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Paths/PathUtils.h"
 
 void SceneTextures::AppendMaterialTextureReferences(const std::vector<MaterialDesc>& materialDescs)
 {
@@ -29,27 +28,9 @@ void SceneTextures::AppendMaterialTextureReferences(const std::vector<MaterialDe
 	AppendTexturePaths(referencedTexturePaths);
 }
 
-void SceneTextures::AppendTexturePaths(const std::vector<std::filesystem::path>& texturePaths)
+void SceneTextures::AppendTexturePaths(std::span<const std::filesystem::path> texturePaths)
 {
-	for (const std::filesystem::path& texturePath : texturePaths)
-	{
-		std::filesystem::path normalizedPath;
-		if (auto resolvedPath = Filesystem::ResolveAssetPath(texturePath, AssetType::Texture))
-		{
-			normalizedPath = Paths::Normalize(*resolvedPath);
-		}
-		else
-		{
-			normalizedPath = Paths::Normalize(texturePath);
-		}
-
-		if (normalizedPath.empty())
-		{
-			continue;
-		}
-
-		m_texturePaths.push_back(std::move(normalizedPath));
-	}
+	Filesystem::AppendNormalizedAssetPaths(texturePaths, AssetType::Texture, m_texturePaths);
 }
 
 TextureSnapshot SceneTextures::CaptureSnapshot() const
@@ -61,8 +42,7 @@ TextureSnapshot SceneTextures::CaptureSnapshot() const
 
 TextureSnapshot SceneTextures::CaptureSnapshot(std::span<const std::filesystem::path> additionalTexturePaths) const
 {
-	SceneTextures combined;
-	combined.m_texturePaths = m_texturePaths;
-	combined.AppendTexturePaths(std::vector<std::filesystem::path>(additionalTexturePaths.begin(), additionalTexturePaths.end()));
-	return combined.CaptureSnapshot();
+	TextureSnapshot snapshot = CaptureSnapshot();
+	Filesystem::AppendNormalizedAssetPaths(additionalTexturePaths, AssetType::Texture, snapshot.texturePaths);
+	return snapshot;
 }

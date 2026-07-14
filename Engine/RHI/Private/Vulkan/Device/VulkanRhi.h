@@ -31,12 +31,20 @@ struct VulkanFeatureStatus final
 	bool SupportsSamplerAnisotropy = false;
 	bool SupportsFillModeNonSolid = false;
 	bool SupportsShaderInt64 = false;
+	bool SupportsStorageImageReadWithoutFormat = false;
+	bool SupportsStorageImageWriteWithoutFormat = false;
+	bool SupportsSampledImageArrayNonUniformIndexing = false;
+	bool SupportsShaderDemoteToHelperInvocation = false;
 	bool SupportsMutableDescriptorType = false;
 	bool EnabledSynchronization2 = false;
 	bool EnabledDynamicRendering = false;
 	bool EnabledSamplerAnisotropy = false;
 	bool EnabledFillModeNonSolid = false;
 	bool EnabledShaderInt64 = false;
+	bool EnabledStorageImageReadWithoutFormat = false;
+	bool EnabledStorageImageWriteWithoutFormat = false;
+	bool EnabledSampledImageArrayNonUniformIndexing = false;
+	bool EnabledShaderDemoteToHelperInvocation = false;
 	bool EnabledMutableDescriptorType = false;
 	VulkanRayTracingFeatureStatus RayTracing;
 };
@@ -86,6 +94,7 @@ class VulkanRhi final
 		VkPhysicalDevice Device = VK_NULL_HANDLE;
 		VkPhysicalDeviceProperties Properties = {};
 		VkPhysicalDeviceFeatures2 Features = {};
+		VkPhysicalDeviceVulkan12Features Features12 = {};
 		VkPhysicalDeviceVulkan13Features Features13 = {};
 		std::uint32_t GraphicsQueueFamilyIndex = UINT32_MAX;
 		std::uint32_t Score = 0;

@@ -415,8 +415,8 @@ void FramePipeline::RecordFrame() noexcept
 		{
 			m_frameGraph->BindPersistentBuffer(
 			    handle,
-			    buffer.Resource,
-			    FrameGraphBufferDesc::Create(name, buffer.SizeInBytes, buffer.StrideInBytes),
+			    buffer.GetResource(),
+			    FrameGraphBufferDesc::Create(name, buffer.GetSizeInBytes(), buffer.GetStrideInBytes()),
 			    ResourceState::ShaderResource);
 		}
 		else

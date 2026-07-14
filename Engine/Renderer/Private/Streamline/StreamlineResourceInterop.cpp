@@ -4,17 +4,13 @@
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 namespace
 {
-	constexpr std::uint32_t kD3D12UnorderedAccess = 0x00000008u;
-	constexpr std::uint32_t kD3D12ShaderResource = 0x00000040u | 0x00000080u;
-
 	sl::Resource BuildStreamlineTextureResource(
 	    ERhiBackendApi backendApi,
-	    const NativeTextureViewInfo& view,
-	    std::uint32_t d3d12State) noexcept
+	    const NativeTextureViewInfo& view) noexcept
 	{
 		if (backendApi != ERhiBackendApi::Vulkan)
 		{
-			return sl::Resource{sl::ResourceType::eTex2d, view.Resource.Value, d3d12State};
+			return sl::Resource{sl::ResourceType::eTex2d, view.Resource.Value, view.NativeState};
 		}
 
 		sl::Resource resource{
@@ -47,12 +43,8 @@ namespace
 
 StreamlineTaggedTextureResource::StreamlineTaggedTextureResource(
     ERhiBackendApi backendApi,
-    const NativeTextureViewInfo& view,
-    StreamlineTextureAccess access) noexcept :
-    m_resource(BuildStreamlineTextureResource(
-        backendApi,
-        view,
-        access == StreamlineTextureAccess::ReadWrite ? kD3D12UnorderedAccess : kD3D12ShaderResource)),
+    const NativeTextureViewInfo& view) noexcept :
+	m_resource(BuildStreamlineTextureResource(backendApi, view)),
     m_subresourceRange(BuildStreamlineSubresourceRange(view))
 {
 	if (backendApi == ERhiBackendApi::Vulkan)

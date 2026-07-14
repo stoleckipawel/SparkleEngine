@@ -24,7 +24,7 @@ class SPARKLE_ENGINE_API SceneTextures final
 	const std::filesystem::path& GetTexturePath(std::size_t index) const noexcept { return m_texturePaths[index]; }
 
 	void AppendMaterialTextureReferences(const std::vector<MaterialDesc>& materialDescs);
-	void AppendTexturePaths(const std::vector<std::filesystem::path>& texturePaths);
+	void AppendTexturePaths(std::span<const std::filesystem::path> texturePaths);
 	TextureSnapshot CaptureSnapshot() const;
 	TextureSnapshot CaptureSnapshot(std::span<const std::filesystem::path> additionalTexturePaths) const;
 	void Reset() noexcept { m_texturePaths.clear(); }

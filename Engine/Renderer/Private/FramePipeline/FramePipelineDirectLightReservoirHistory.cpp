@@ -66,7 +66,8 @@ void FramePipeline::BindDirectLightReservoirHistoryFrameGraphResources() noexcep
 	        *m_frameGraph,
 	        m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex(),
 	        handles,
-	        m_directLightReservoirHistoryResources))
+	        m_directLightReservoirHistoryResources,
+	        m_directLightReservoirHistoryValid ? ResourceState::ShaderResource : ResourceState::Undefined))
 	{
 		m_directLightReservoirHistoryValid = false;
 	}

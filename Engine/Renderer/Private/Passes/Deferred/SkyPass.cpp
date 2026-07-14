@@ -41,10 +41,7 @@ void SkyPass::SetParameters(ParameterInstance& parameters, const FrameContext& f
 	parameters->PerFrame = passRuntimeServices.PerFrame;
 	parameters->PerView = frame.mainView.perViewData;
 	parameters->PerTemporal = frame.mainView.perTemporalData;
-	parameters->Sky = SkyUniformData{
-	    .Color = frame.sceneData.sky.color,
-	    .Intensity = frame.sceneData.sky.intensity,
-	    .Enabled = frame.sceneData.sky.enabled ? 1u : 0u};
+	parameters->Sky = MakeSkyUniformData(frame.sceneData.sky);
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,

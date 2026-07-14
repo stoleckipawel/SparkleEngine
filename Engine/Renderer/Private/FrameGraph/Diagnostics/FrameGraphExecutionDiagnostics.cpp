@@ -64,9 +64,9 @@ void FrameGraphExecutionDiagnostics::InsertPassResourceBarrierMarker(const Frame
 	InsertDetailedMarker(marker);
 }
 
-void FrameGraphExecutionDiagnostics::InsertFrameEndAliasingBarrierMarker() const
+void FrameGraphExecutionDiagnostics::InsertFrameBeginAliasingBarrierMarker() const
 {
-	InsertDetailedMarker("Renderer.FrameGraph.FrameEnd.AliasingBarriers");
+	InsertDetailedMarker("Renderer.FrameGraph.FrameBegin.AliasingBarriers");
 }
 
 void FrameGraphExecutionDiagnostics::InsertFrameEndResourceBarrierMarker() const

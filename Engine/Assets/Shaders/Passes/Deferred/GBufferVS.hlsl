@@ -27,14 +27,10 @@ void main(in VS::Input Input, out VS::Output Output)
 
 	// Rasterize jittered samples for DLSS/DLAA, but keep motion-vector inputs unjittered.
 	Output.Position = jitteredPositionClip;
-	Output.PositionWorld = positionWorld.xyz;
 	Output.NormalWorld = normalWorld;
 	Output.TangentWorld = float4(tangentWorld, Input.Tangent.w);
 	Output.BitangentWorld = bitangentWorld;
 	Output.TexCoord = Input.TexCoord;
-	Output.Color = Input.Color;
-	Output.InstanceId = instanceId;
-	Output.ClipPosition = positionClip;
 	Output.PrevClipPosition = previousClipPosition;
 	Output.DebugData = meshInstance.DebugData;
 }

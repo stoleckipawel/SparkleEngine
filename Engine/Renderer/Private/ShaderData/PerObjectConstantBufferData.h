@@ -1,18 +1,21 @@
 #pragma once
 
-#include "RenderConstantBufferValidation.h"
-
 #include <DirectXMath.h>
 
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
 struct alignas(256) PerObjectVSConstantBufferData
 {
 	DirectX::XMFLOAT4X4 WorldMTX;
 	DirectX::XMFLOAT3X4 WorldInvTransposeMTX;
 };
-RHI_CBV_CHECK(PerObjectVSConstantBufferData);
+static_assert(std::is_standard_layout_v<PerObjectVSConstantBufferData>);
+static_assert(std::is_trivially_copyable_v<PerObjectVSConstantBufferData>);
+static_assert(alignof(PerObjectVSConstantBufferData) >= 256);
+static_assert(sizeof(PerObjectVSConstantBufferData) % 256 == 0);
+static_assert(sizeof(PerObjectVSConstantBufferData) <= 64 * 1024);
 
 struct alignas(256) PerObjectPSConstantBufferData
 {
@@ -32,7 +35,11 @@ struct alignas(256) PerObjectPSConstantBufferData
 	float SubsurfaceStrength = 0.0f;
 	DirectX::XMFLOAT3 _padPerObjectPS0 = {0.0f, 0.0f, 0.0f};
 };
-RHI_CBV_CHECK(PerObjectPSConstantBufferData);
+static_assert(std::is_standard_layout_v<PerObjectPSConstantBufferData>);
+static_assert(std::is_trivially_copyable_v<PerObjectPSConstantBufferData>);
+static_assert(alignof(PerObjectPSConstantBufferData) >= 256);
+static_assert(sizeof(PerObjectPSConstantBufferData) % 256 == 0);
+static_assert(sizeof(PerObjectPSConstantBufferData) <= 64 * 1024);
 static_assert(offsetof(PerObjectPSConstantBufferData, BaseColor) == 0, "PerObjectPSConstantBufferData::BaseColor must start at c0");
 static_assert(
     offsetof(PerObjectPSConstantBufferData, EmissiveColor) == 16,

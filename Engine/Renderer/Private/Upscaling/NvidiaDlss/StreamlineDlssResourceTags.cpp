@@ -16,24 +16,19 @@ sl::Result TagDlssResourcesForFrame(
 	sl::Extent exposureExtent = BuildStreamlineExtent(RenderViewportExtent{1u, 1u});
 	StreamlineTaggedTextureResource colorIn(
 	    evaluation.BackendApi,
-	    evaluation.NativeScalingInputColorView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeScalingInputColorView);
 	StreamlineTaggedTextureResource colorOut(
 	    evaluation.BackendApi,
-	    evaluation.NativeScalingOutputColorView,
-	    StreamlineTextureAccess::ReadWrite);
+	    evaluation.NativeScalingOutputColorView);
 	StreamlineTaggedTextureResource depth(
 	    evaluation.BackendApi,
-	    evaluation.NativeDepthView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeDepthView);
 	StreamlineTaggedTextureResource motionVectors(
 	    evaluation.BackendApi,
-	    evaluation.NativeMotionVectorsView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeMotionVectorsView);
 	StreamlineTaggedTextureResource exposure(
 	    evaluation.BackendApi,
-	    evaluation.NativeExposureView,
-	    StreamlineTextureAccess::ReadOnly);
+	    evaluation.NativeExposureView);
 
 	std::array<sl::ResourceTag, 5> tags = {
 	    sl::ResourceTag{colorIn.Get(), sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},

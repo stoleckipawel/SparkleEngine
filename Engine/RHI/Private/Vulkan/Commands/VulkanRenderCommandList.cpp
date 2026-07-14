@@ -745,8 +745,8 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	    .flags = VK_GEOMETRY_OPAQUE_BIT_KHR};
 	const VkBuildAccelerationStructureFlagsKHR nativeBuildFlags =
 	    VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
-	    (buildMode == ERhiClassicTlasBuildMode::Update ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-	                                                   : static_cast<VkBuildAccelerationStructureFlagsKHR>(0));
+	    (buildMode != ERhiClassicTlasBuildMode::Build ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+	                                                  : static_cast<VkBuildAccelerationStructureFlagsKHR>(0));
 	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
 	    .pNext = nullptr,
@@ -1225,7 +1225,11 @@ VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(
 	if (descriptorSets[setIndex] == VK_NULL_HANDLE || boundSets[setIndex])
 	{
 		const VkDescriptorSet previousSet = descriptorSets[setIndex];
-		descriptorSets[setIndex] = m_descriptorAllocator->AllocateTransientSet(layout->GetDescriptorSetLayouts()[setIndex]);
+		descriptorSets[setIndex] = m_descriptorAllocator->AllocateTransientSet(
+		    layout->GetDescriptorSetLayouts()[setIndex],
+		    layout->GetBindings(),
+		    layout->GetBindingCount(),
+		    setIndex);
 		if (descriptorSets[setIndex] != VK_NULL_HANDLE)
 		{
 			m_descriptorAllocator->WriteFallbackDescriptors(

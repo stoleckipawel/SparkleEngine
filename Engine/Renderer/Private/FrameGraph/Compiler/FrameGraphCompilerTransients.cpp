@@ -6,21 +6,6 @@
 
 namespace
 {
-	using AllocationPool = FrameGraphTransientResourcePlan::AllocationPool;
-
-	bool AreTextureResourceDescsEqual(const RhiTextureResourceDesc& lhs, const RhiTextureResourceDesc& rhs) noexcept
-	{
-		return lhs.Width == rhs.Width && lhs.Height == rhs.Height && lhs.Format == rhs.Format && lhs.MipLevels == rhs.MipLevels &&
-		       lhs.AllowRenderTarget == rhs.AllowRenderTarget && lhs.AllowDepthStencil == rhs.AllowDepthStencil &&
-		       lhs.AllowUnorderedAccess == rhs.AllowUnorderedAccess;
-	}
-
-	bool AreBufferResourceDescsEqual(const RhiBufferResourceDesc& lhs, const RhiBufferResourceDesc& rhs) noexcept
-	{
-		return lhs.SizeInBytes == rhs.SizeInBytes && lhs.StrideInBytes == rhs.StrideInBytes &&
-		       lhs.AllowUnorderedAccess == rhs.AllowUnorderedAccess;
-	}
-
 	bool AreClearValuesEqual(const RhiOptimizedClearValue& lhs, const RhiOptimizedClearValue& rhs, FrameGraphResourceKind kind) noexcept
 	{
 		if (lhs.ValueType != rhs.ValueType || lhs.Format != rhs.Format)
@@ -50,51 +35,52 @@ namespace
 	}
 
 	bool CanSharePhysicalBlock(
-	    const FrameGraphTransientPhysicalBlockPlan& block,
+	    const FrameGraphTransientResourcePlan& currentOwner,
 	    const FrameGraphTransientResourcePlan& transientPlan) noexcept
 	{
+		const auto& ownerPhysicalPlan = currentOwner.physicalAllocation;
 		const auto& physicalPlan = transientPlan.physicalAllocation;
-		if (block.pool != physicalPlan.pool)
+		if (ownerPhysicalPlan.pool != physicalPlan.pool)
 		{
 			return false;
 		}
 
-		if (block.lastExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX ||
+		if (currentOwner.lifetime.lastExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX ||
 		    transientPlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX)
 		{
 			return false;
 		}
 
-		if (block.lastExecutionIndex >= transientPlan.lifetime.firstExecutionIndex)
+		if (currentOwner.lifetime.lastExecutionIndex >= transientPlan.lifetime.firstExecutionIndex)
 		{
 			return false;
 		}
 
-		if (block.alignment != physicalPlan.alignment || block.sizeInBytes < physicalPlan.sizeInBytes ||
-		    block.memoryBlockOffset != physicalPlan.memoryBlockOffset)
+		if (ownerPhysicalPlan.alignment != physicalPlan.alignment || ownerPhysicalPlan.sizeInBytes < physicalPlan.sizeInBytes ||
+		    ownerPhysicalPlan.memoryBlockOffset != physicalPlan.memoryBlockOffset)
 		{
 			return false;
 		}
 
-		if (block.pool == AllocationPool::Buffer)
+		if (ownerPhysicalPlan.pool == RhiTransientAllocationPool::Buffer)
 		{
-			if (!AreBufferResourceDescsEqual(block.bufferResourceDesc, physicalPlan.bufferResourceDesc))
+			if (ownerPhysicalPlan.bufferResourceDesc != physicalPlan.bufferResourceDesc)
 			{
 				return false;
 			}
 		}
-		else if (!AreTextureResourceDescsEqual(block.textureResourceDesc, physicalPlan.textureResourceDesc))
+		else if (ownerPhysicalPlan.textureResourceDesc != physicalPlan.textureResourceDesc)
 		{
 			return false;
 		}
 
-		if (block.hasOptimizedClearValue != physicalPlan.hasOptimizedClearValue)
+		if (ownerPhysicalPlan.hasOptimizedClearValue != physicalPlan.hasOptimizedClearValue)
 		{
 			return false;
 		}
 
-		if (block.hasOptimizedClearValue &&
-		    !AreClearValuesEqual(block.optimizedClearValue, physicalPlan.optimizedClearValue, transientPlan.kind))
+		if (ownerPhysicalPlan.hasOptimizedClearValue &&
+		    !AreClearValuesEqual(ownerPhysicalPlan.optimizedClearValue, physicalPlan.optimizedClearValue, transientPlan.kind))
 		{
 			return false;
 		}
@@ -102,33 +88,6 @@ namespace
 		return true;
 	}
 
-	void ExtendTransientLifetimesToFrame(
-	    FrameGraphTransientPlan& transientPlan,
-	    const std::vector<FrameGraphPassIndex>& executionOrder) noexcept
-	{
-		if (!transientPlan.options.extendLifetimesToFrame || executionOrder.empty())
-		{
-			return;
-		}
-
-		const FrameGraphPassIndex firstExecutionIndex = 0;
-		const FrameGraphPassIndex lastExecutionIndex = static_cast<FrameGraphPassIndex>(executionOrder.size() - 1);
-		const FrameGraphPassIndex firstUserPass = executionOrder.front();
-		const FrameGraphPassIndex lastUserPass = executionOrder.back();
-
-		for (FrameGraphTransientResourcePlan& resourcePlan : transientPlan.resources)
-		{
-			if (resourcePlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX)
-			{
-				continue;
-			}
-
-			resourcePlan.lifetime.firstExecutionIndex = firstExecutionIndex;
-			resourcePlan.lifetime.lastExecutionIndex = lastExecutionIndex;
-			resourcePlan.lifetime.firstUserPass = firstUserPass;
-			resourcePlan.lifetime.lastUserPass = lastUserPass;
-		}
-	}
 }  // namespace
 
 void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
@@ -204,9 +163,12 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 			transientPlan->lifetime.requiredStates.push_back(productRoot.requiredState);
 		}
 		transientPlan->lifetime.readUsed = true;
+		if (!m_plan.executionOrder.empty())
+		{
+			transientPlan->lifetime.lastExecutionIndex = static_cast<FrameGraphPassIndex>(m_plan.executionOrder.size() - 1);
+			transientPlan->lifetime.lastUserPass = m_plan.executionOrder.back();
+		}
 	}
-
-	ExtendTransientLifetimesToFrame(m_plan.transients, m_plan.executionOrder);
 
 	const auto unusedIt = std::remove_if(
 	    m_plan.transients.resources.begin(),
@@ -216,12 +178,6 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 		    return transientPlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX;
 	    });
 	m_plan.transients.resources.erase(unusedIt, m_plan.transients.resources.end());
-
-	for (std::size_t transientIndex = 0; transientIndex < m_plan.transients.resources.size(); ++transientIndex)
-	{
-		m_plan.transients.resources[transientIndex].physicalAllocation.allocationIndex =
-		    static_cast<std::uint32_t>(transientIndex);
-	}
 
 	for (const FrameGraphTransientResourcePlan& transientPlan : m_plan.transients.resources)
 	{
@@ -272,7 +228,10 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 		FrameGraphTransientPhysicalBlockPlan* selectedBlock = nullptr;
 		for (FrameGraphTransientPhysicalBlockPlan& block : m_plan.transients.physicalBlocks)
 		{
-			if (!m_plan.transients.options.enableAliasing || !CanSharePhysicalBlock(block, *transientPlan))
+			assert(!block.handles.empty());
+			const FrameGraphTransientResourcePlan* currentOwner = FindTransientResourcePlan(block.handles.back());
+			assert(currentOwner != nullptr);
+			if (!CanSharePhysicalBlock(*currentOwner, *transientPlan))
 			{
 				continue;
 			}
@@ -287,22 +246,11 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 			m_plan.transients.physicalBlocks.push_back(
 			    FrameGraphTransientPhysicalBlockPlan{
 			        .physicalBlockIndex = blockIndex,
-			        .pool = transientPlan->physicalAllocation.pool,
-			        .sizeInBytes = transientPlan->physicalAllocation.sizeInBytes,
-			        .alignment = transientPlan->physicalAllocation.alignment,
-			        .memoryBlockOffset = transientPlan->physicalAllocation.memoryBlockOffset,
-			        .textureResourceDesc = transientPlan->physicalAllocation.textureResourceDesc,
-			        .bufferResourceDesc = transientPlan->physicalAllocation.bufferResourceDesc,
-			        .optimizedClearValue = transientPlan->physicalAllocation.optimizedClearValue,
-			        .hasOptimizedClearValue = transientPlan->physicalAllocation.hasOptimizedClearValue,
-			        .firstExecutionIndex = transientPlan->lifetime.firstExecutionIndex,
-			        .lastExecutionIndex = transientPlan->lifetime.lastExecutionIndex,
 			        .handles = {transientPlan->handle}});
 			selectedBlock = &m_plan.transients.physicalBlocks.back();
 		}
 		else
 		{
-			selectedBlock->lastExecutionIndex = transientPlan->lifetime.lastExecutionIndex;
 			selectedBlock->handles.push_back(transientPlan->handle);
 		}
 
@@ -321,11 +269,7 @@ void FrameGraphCompiler::BuildTransientAliasingBarriers() noexcept
 	{
 		passRecord.transientAliasingBarriers.clear();
 	}
-	m_plan.finalTransientAliasingBarriers.clear();
-	if (!m_plan.transients.options.enableAliasing)
-	{
-		return;
-	}
+	m_plan.initialTransientAliasingBarriers.clear();
 
 	for (const FrameGraphTransientPhysicalBlockPlan& block : m_plan.transients.physicalBlocks)
 	{
@@ -374,5 +318,15 @@ void FrameGraphCompiler::BuildTransientAliasingBarriers() noexcept
 			assert(barrier.executeAfterPass < m_plan.passes.size());
 			m_plan.passes[barrier.executeAfterPass].transientAliasingBarriers.push_back(barrier);
 		}
+
+		const FrameGraphTransientResourcePlan& lastOwner = *orderedPlans.back();
+		const FrameGraphTransientResourcePlan& firstOwner = *orderedPlans.front();
+		m_plan.initialTransientAliasingBarriers.push_back(
+		    FrameGraphAliasingBarrier{
+		        .physicalBlockIndex = block.physicalBlockIndex,
+		        .beforeHandle = lastOwner.handle,
+		        .afterHandle = firstOwner.handle,
+		        .executeBeforePass = lastOwner.lifetime.lastUserPass,
+		        .executeAfterPass = firstOwner.lifetime.firstUserPass});
 	}
 }

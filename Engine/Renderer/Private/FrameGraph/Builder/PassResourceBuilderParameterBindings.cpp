@@ -20,7 +20,7 @@ bool PassResourceBuilder::DeclareParameterUsages(const PassParameterSet& paramet
 	for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(parameters.size()); ++index)
 	{
 		const PassParameterDesc& parameter = parameters[index];
-		if (!HasFrameGraphUsage(parameter))
+		if (!parameterSet.UsesGraphResource(index))
 		{
 			continue;
 		}
@@ -60,32 +60,6 @@ bool PassResourceBuilder::DeclareParameterUsages(const PassParameterSet& paramet
 	}
 
 	return true;
-}
-
-bool PassResourceBuilder::HasFrameGraphUsage(const PassParameterDesc& parameter) noexcept
-{
-	if (!parameter.FrameGraphTracked)
-	{
-		return false;
-	}
-
-	switch (parameter.Kind)
-	{
-		case ShaderParameterSemanticKind::ReadTexture:
-		case ShaderParameterSemanticKind::ReadBuffer:
-		case ShaderParameterSemanticKind::RWTexture:
-		case ShaderParameterSemanticKind::RWBuffer:
-		case ShaderParameterSemanticKind::RenderTarget:
-		case ShaderParameterSemanticKind::DepthTarget:
-		case ShaderParameterSemanticKind::AccelerationStructure:
-			return true;
-		case ShaderParameterSemanticKind::UniformData:
-		case ShaderParameterSemanticKind::SamplerSet:
-			return false;
-		default:
-			assert(false);
-			return false;
-	}
 }
 
 ResourceUsage PassResourceBuilder::GetFrameGraphUsage(const PassParameterDesc& parameter) noexcept
@@ -167,16 +141,16 @@ void PassResourceBuilder::DeclareResourceHandle(
 
 	if (IsReadOnlyUsage(usage))
 	{
-		m_declarations->Read(handle, usage, label);
+		Read(handle, usage, label);
 		return;
 	}
 
 	if (IsWriteOnlyUsage(usage))
 	{
-		m_declarations->Write(handle, usage, label);
+		Write(handle, usage, label);
 		return;
 	}
 
 	assert(IsReadWriteUsage(usage));
-	m_declarations->Use(handle, usage, label);
+	Use(handle, usage, label);
 }

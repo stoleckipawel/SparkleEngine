@@ -22,6 +22,7 @@ enum class ERhiClassicTlasBuildFlags : std::uint8_t
 enum class ERhiClassicTlasBuildMode : std::uint8_t
 {
 	Build,
+	BuildAllowUpdate,
 	Update,
 };
 

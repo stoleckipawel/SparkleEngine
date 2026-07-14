@@ -1,10 +1,9 @@
 #pragma once
 
-#include "RenderConstantBufferValidation.h"
-
 #include <DirectXMath.h>
 
 #include <cstdint>
+#include <type_traits>
 
 struct alignas(256) PerFrameConstantBufferData
 {
@@ -18,4 +17,8 @@ struct alignas(256) PerFrameConstantBufferData
 	DirectX::XMFLOAT2 ViewportSize;
 	DirectX::XMFLOAT2 ViewportSizeInv;
 };
-RHI_CBV_CHECK(PerFrameConstantBufferData);
+static_assert(std::is_standard_layout_v<PerFrameConstantBufferData>);
+static_assert(std::is_trivially_copyable_v<PerFrameConstantBufferData>);
+static_assert(alignof(PerFrameConstantBufferData) >= 256);
+static_assert(sizeof(PerFrameConstantBufferData) % 256 == 0);
+static_assert(sizeof(PerFrameConstantBufferData) <= 64 * 1024);

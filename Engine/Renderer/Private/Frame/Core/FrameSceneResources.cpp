@@ -36,7 +36,7 @@ void CreateFrameSceneResources(
 	const FrameGraphTextureHandle finalSceneColor = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor("FinalSceneColor", outputExtent.Width, outputExtent.Height, FrameRenderFormats::SceneColor));
 
-	const FrameGraphTextureHandle backBuffer = builder.ImportTexture(
+	const FrameGraphTextureHandle backBuffer = builder.ImportBackBuffer(
 	    FrameGraphTextureDesc::CreateColor("BackBuffer", outputExtent.Width, outputExtent.Height, backBufferFormat),
 	    ResourceState::Present);
 

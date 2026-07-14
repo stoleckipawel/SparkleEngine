@@ -9,13 +9,15 @@ file(TO_CMAKE_PATH "${SPARKLE_REPO_ROOT}" SPARKLE_REPO_ROOT)
 set(SPARKLE_BOUNDARY_SOURCE_FILE_REGEX "\\.(c|cc|cpp|cxx|h|hh|hpp|hxx|inl|cmake)$|/CMakeLists\\.txt$")
 set(SPARKLE_BOUNDARY_NATIVE_API_REGEX "<d3d12\\.h>|<vulkan/vulkan\\.h>|ID3D12|D3D12_|Vk[A-Z]|vk[A-Z]|Vulkan::Vulkan|\"D3D12/|\"Vulkan/")
 set(SPARKLE_BOUNDARY_NATIVE_PTLAS_REGEX "VK_NV_partitioned_acceleration_structure|VkPartitionedAccelerationStructure|VkBuildPartitionedAccelerationStructure|VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV|vk(Get|Cmd)PartitionedAccelerationStructures|NvAPI_D3D12|NVAPI_D3D12|D3D12_RTAS_PARTITIONED_TLAS|ExecuteIndirectRTASOperations")
-set(SPARKLE_BOUNDARY_RENDERER_SHADER_DATA_REGEX "Per(Frame|View|Object|Temporal)ConstantBufferData|PerViewCameraConstantBufferData|Render(ViewCamera|ViewLighting|ConstantBuffer)Data|RenderConstantBufferValidation|MeshInstanceShaderData|MeshInstanceData|VertexSkinInfluenceData|JointMatrixData")
+set(SPARKLE_BOUNDARY_RENDERER_SHADER_DATA_REGEX "Per(Frame|View|Object|Temporal)ConstantBufferData|PerViewCameraConstantBufferData|Render(ViewCamera|ViewLighting|ConstantBuffer)Data|MeshInstanceShaderData|MeshInstanceData|VertexSkinInfluenceData|JointMatrixData")
 set(SPARKLE_BOUNDARY_D3D12_IN_VULKAN_REGEX "D3D12/|<d3d12\\.h>|ID3D12|D3D12_")
 set(SPARKLE_BOUNDARY_VULKAN_IN_D3D12_REGEX "Vulkan/|<vulkan/vulkan\\.h>|Vk[A-Z]|vk[A-Z]|Vulkan::Vulkan")
 set(SPARKLE_BOUNDARY_RENDERER_HIGH_LEVEL_ORCHESTRATOR_REGEX
     "^Engine/Renderer/Private/(Host/RendererSystemRoot|FramePipeline/FramePipeline|Providers/RendererImageProviderStack)\\.(cpp|h)$")
 set(SPARKLE_BOUNDARY_RENDERER_PROVIDER_DETAIL_REGEX
     "Streamline/|Upscaling/Nvidia|RayReconstruction/Nvidia|NvidiaDlss")
+set(SPARKLE_BOUNDARY_RENDERER_VENDOR_INTEROP_REGEX
+    "^Engine/Renderer/Private/(Streamline|Upscaling/NvidiaDlss|RayReconstruction/NvidiaDlssRayReconstruction)/")
 
 set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_FAILURES "")
 
@@ -65,12 +67,21 @@ function(sparkle_boundary_scan_file absolute_path)
         math(EXPR _line_number "${_line_number} + 1")
         string(REPLACE "__SPARKLE_SEMICOLON__" ";" _line "${_line}")
 
-        if(_relative_path MATCHES "^Engine/RHI/" AND _line MATCHES "Renderer/Private")
+        if(_relative_path MATCHES "^Engine/RHI/" AND _line MATCHES "#include[^\n]*Renderer/|SparkleRenderer")
             sparkle_boundary_append_failure(
-                "RHI_NO_RENDERER_PRIVATE"
+                "RHI_NO_RENDERER_DEPENDENCY"
                 "${_relative_path}"
                 "${_line_number}"
-                "RHI code must not include Renderer-private headers."
+                "RHI must not include or link Renderer; the dependency direction is Renderer to public RHI."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/RHI/Public/" AND _line MATCHES "FrameGraph")
+            sparkle_boundary_append_failure(
+                "RHI_PUBLIC_NO_FRAME_GRAPH_POLICY"
+                "${_relative_path}"
+                "${_line_number}"
+                "Frame-graph tracking and lifetime policy belongs to Renderer metadata, not public RHI contracts."
                 "${_line}")
         endif()
 
@@ -90,6 +101,35 @@ function(sparkle_boundary_scan_file absolute_path)
 				"${_line_number}"
 				"Renderer code must not depend on D3D12/Vulkan native APIs."
 				"${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/" AND _line MATCHES "RHI/Private")
+            sparkle_boundary_append_failure(
+                "RENDERER_NO_RHI_PRIVATE"
+                "${_relative_path}"
+                "${_line_number}"
+                "Renderer may consume only public RHI contracts, never backend or common RHI implementation headers."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/" AND
+           NOT _relative_path MATCHES "${SPARKLE_BOUNDARY_RENDERER_VENDOR_INTEROP_REGEX}" AND
+           _line MATCHES "ERhiBackendApi::(D3D12|Vulkan)")
+            sparkle_boundary_append_failure(
+                "RENDERER_NO_BACKEND_POLICY_BRANCH"
+                "${_relative_path}"
+                "${_line_number}"
+                "Renderer policy must branch on neutral capabilities; backend identity is reserved for dedicated external-provider interop adapters."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/Public/" AND _line MATCHES "RenderHardwareInterface|RenderDeviceServices")
+            sparkle_boundary_append_failure(
+                "RENDERER_PUBLIC_NO_RHI_DEVICE_ESCAPE_HATCH"
+                "${_relative_path}"
+                "${_line_number}"
+                "Renderer public APIs must expose focused renderer operations instead of the complete RHI device facade."
+                "${_line}")
         endif()
 
         if(_relative_path MATCHES "^Engine/Renderer/" AND _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_PTLAS_REGEX}")

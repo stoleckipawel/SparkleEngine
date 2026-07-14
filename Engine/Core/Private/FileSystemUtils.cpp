@@ -595,6 +595,21 @@ namespace Filesystem
 		return std::nullopt;
 	}
 
+	void AppendNormalizedAssetPaths(
+	    std::span<const std::filesystem::path> inputPaths,
+	    AssetType type,
+	    std::vector<std::filesystem::path>& destination)
+	{
+		for (const std::filesystem::path& inputPath : inputPaths)
+		{
+			std::filesystem::path normalizedPath = ResolveAssetPathNormalized(inputPath, type).value_or(Paths::Normalize(inputPath));
+			if (!normalizedPath.empty())
+			{
+				destination.push_back(std::move(normalizedPath));
+			}
+		}
+	}
+
 	std::optional<std::filesystem::path> ResolveAssetPath(const std::filesystem::path& inputPath, AssetType type)
 	{
 		if (inputPath.empty())

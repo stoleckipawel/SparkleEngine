@@ -32,7 +32,7 @@ namespace PassUtilities
 	inline const PassParameterSet& GetEmptyPassParameterSet() noexcept
 	{
 		static const PassParameterLayout emptyLayout("PassUtilities.EmptyPassParameters");
-		static const PassParameterSet emptyParameters(emptyLayout);
+		static const PassParameterSet emptyParameters(emptyLayout, {});
 		return emptyParameters;
 	}
 

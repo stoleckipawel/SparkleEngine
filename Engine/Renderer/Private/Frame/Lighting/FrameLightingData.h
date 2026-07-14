@@ -10,12 +10,12 @@ class FrameLightingData final
 {
   public:
 	FrameLightingData() noexcept = default;
-	~FrameLightingData() noexcept;
+	~FrameLightingData() noexcept = default;
 
 	FrameLightingData(const FrameLightingData&) = delete;
 	FrameLightingData& operator=(const FrameLightingData&) = delete;
-	FrameLightingData(FrameLightingData&& other) noexcept;
-	FrameLightingData& operator=(FrameLightingData&& other) noexcept;
+	FrameLightingData(FrameLightingData&& other) noexcept = default;
+	FrameLightingData& operator=(FrameLightingData&& other) noexcept = default;
 
 	const ViewLightingData& GetConstants() const noexcept { return m_constants; }
 	const FrameBufferResource& GetDirectionalLightsBuffer() const noexcept { return m_directionalLights; }
@@ -26,9 +26,6 @@ class FrameLightingData final
 	static FrameLightingData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
   private:
-	void Release() noexcept;
-
-	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	ViewLightingData m_constants = {};
 	FrameBufferResource m_directionalLights;
 	FrameBufferResource m_pointLights;

@@ -307,6 +307,7 @@ std::unique_ptr<VulkanGpuAllocationRecord> VulkanGpuMemoryAllocator::CreateBuffe
 	if (record != nullptr)
 	{
 		record->ResourceSizeInBytes = bufferCreateInfo.size;
+		record->Usage = bufferCreateInfo.usage;
 		if ((bufferCreateInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0 && m_rhi.GetGetBufferDeviceAddress() != nullptr)
 		{
 			const VkBufferDeviceAddressInfo addressInfo{.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, .pNext = nullptr, .buffer = buffer};
@@ -438,6 +439,7 @@ std::unique_ptr<VulkanGpuAllocationRecord> VulkanGpuMemoryAllocator::CreateAlias
 	    CreateAliasingAllocationRecord(VulkanGpuAllocationResourceKind::Buffer, buffer, VK_NULL_HANDLE, memoryBlock, debugName);
 	if (record != nullptr)
 	{
+		record->Usage = bufferCreateInfo.usage;
 		record->ResourceSizeInBytes = bufferCreateInfo.size;
 	}
 	return record;

@@ -4,8 +4,6 @@
 #include "Shaders/CookedShaderReloadResult.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
-#include "RHI/Public/Commands/RhiCommandSubmissionService.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
 
@@ -35,9 +33,6 @@ class SPARKLE_RENDERER_API Renderer final
 
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
 
-	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
-	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
-	RhiCommandSubmissionService& GetCommandSubmissionService() noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
@@ -47,6 +42,10 @@ class SPARKLE_RENDERER_API Renderer final
 	void PrepareHostFrame() noexcept;
 	void RecordHostFrame() noexcept;
 	void SubmitHostFrame() noexcept;
+	void WaitForIdle() noexcept;
+	void BeginHostPresentation(const float clearColor[4]) noexcept;
+	void BeginHostOverlayPresentation() noexcept;
+	void EndHostPresentation() noexcept;
 	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
 	void EndViewportPresentation(RenderOutputFlags output) noexcept;
 	ViewportCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;

@@ -36,20 +36,6 @@ namespace FrameGraphTextureRegistration
 		return resolvedDesc;
 	}
 
-	void FailMissingBackingResource(std::string_view operation, std::string_view resourceName, ResourceState initialState) noexcept
-	{
-		Diagnostics::Fail(
-		    g_frameGraphTextureLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format(
-		        "FrameGraph external resource validation failed: operation='{}' resource='{}' initialState={} remediation='provide a valid "
-		        "native backing resource before importing it into the frame graph'",
-		        operation,
-		        resourceName.empty() ? "<unnamed>" : resourceName,
-		        ResourceStateToString(initialState)));
-	}
-
 	std::string FormatResourceHandle(FrameGraphResourceHandle handle)
 	{
 		return handle.IsValid() ? std::format("{}", handle.index) : "invalid";
@@ -100,7 +86,7 @@ namespace FrameGraphTextureRegistration
 	}
 }  // namespace FrameGraphTextureRegistration
 
-FrameGraphTextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
+FrameGraphTextureHandle FrameGraph::ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {
 	const FrameGraphTextureDesc resolvedDesc = FrameGraphTextureRegistration::ResolveTextureDesc(desc, *m_window, "BackBuffer");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
@@ -108,26 +94,6 @@ FrameGraphTextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& d
 	m_resourceStateTracker.RegisterResource(handle, initialState);
 	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
 	m_resourceResolver.ClearResolvedAccess(handle);
-	return FrameGraphTextureHandle{handle};
-}
-
-FrameGraphTextureHandle FrameGraph::ImportTexture(
-    const FrameGraphTextureDesc& desc,
-    NativeResourceHandle resource,
-    ResourceState initialState) noexcept
-{
-	if (!resource)
-	{
-		FrameGraphTextureRegistration::FailMissingBackingResource("ImportTexture", desc.name, initialState);
-	}
-
-	const FrameGraphTextureDesc resolvedDesc = FrameGraphTextureRegistration::ResolveTextureDesc(desc, *m_window, "ImportedTexture");
-	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry
-	    .RegisterImportedTexture(handle, resolvedDesc, FrameGraphTextureRegistration::ResolveTextureResourceKind(desc.kind), initialState);
-	m_resourceStateTracker.RegisterResource(handle, initialState);
-	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
-	m_resourceResolver.RegisterResource(handle, resource);
 	return FrameGraphTextureHandle{handle};
 }
 
@@ -157,25 +123,6 @@ FrameGraphTextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& d
 	m_resourceStateTracker.RegisterResource(handle, ResourceState::Undefined);
 	m_resourceResolver.ClearResolvedAccess(handle);
 	return FrameGraphTextureHandle{handle};
-}
-
-FrameGraphBufferHandle FrameGraph::ImportBuffer(
-    const FrameGraphBufferDesc& desc,
-    NativeResourceHandle resource,
-    ResourceState initialState) noexcept
-{
-	if (!resource)
-	{
-		FrameGraphTextureRegistration::FailMissingBackingResource("ImportBuffer", desc.name, initialState);
-	}
-
-	const FrameGraphBufferDesc resolvedDesc = FrameGraphTextureRegistration::ResolveBufferDesc(desc, "ImportedBuffer");
-	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterImportedBuffer(handle, resolvedDesc, initialState);
-	m_resourceStateTracker.RegisterResource(handle, initialState);
-	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
-	m_resourceResolver.RegisterResource(handle, resource);
-	return FrameGraphBufferHandle{handle};
 }
 
 FrameGraphBufferHandle FrameGraph::CreateBuffer(const FrameGraphBufferDesc& desc) noexcept

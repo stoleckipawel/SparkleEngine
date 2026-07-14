@@ -9,12 +9,12 @@ class SkinningFrameData final
 {
   public:
 	SkinningFrameData() noexcept = default;
-	~SkinningFrameData() noexcept;
+	~SkinningFrameData() noexcept = default;
 
 	SkinningFrameData(const SkinningFrameData&) = delete;
 	SkinningFrameData& operator=(const SkinningFrameData&) = delete;
-	SkinningFrameData(SkinningFrameData&& other) noexcept;
-	SkinningFrameData& operator=(SkinningFrameData&& other) noexcept;
+	SkinningFrameData(SkinningFrameData&& other) noexcept = default;
+	SkinningFrameData& operator=(SkinningFrameData&& other) noexcept = default;
 
 	bool IsValid() const noexcept { return m_buffer.IsValid() && m_previousBuffer.IsValid(); }
 	const FrameBufferResource& GetBuffer() const noexcept { return m_buffer; }
@@ -23,9 +23,6 @@ class SkinningFrameData final
 	static SkinningFrameData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
   private:
-	void Release() noexcept;
-
-	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	FrameBufferResource m_buffer;
 	FrameBufferResource m_previousBuffer;
 };

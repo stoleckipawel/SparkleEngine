@@ -182,14 +182,12 @@ struct PassParameterBinding
 class PassParameterSet final
 {
   public:
-	PassParameterSet() = default;
-	explicit PassParameterSet(const PassParameterLayout& layout) { Reset(layout); }
-
-	void Reset(const PassParameterLayout& layout)
+	PassParameterSet(const PassParameterLayout& layout, std::vector<bool> graphResourceParameters) :
+	    m_layout(&layout),
+	    m_bindings(layout.GetParameterCount()),
+	    m_graphResourceParameters(std::move(graphResourceParameters))
 	{
-		m_layout = &layout;
-		m_bindings.clear();
-		m_bindings.resize(layout.GetParameterCount());
+		assert(m_graphResourceParameters.size() == layout.GetParameterCount());
 	}
 
 	void ClearBindings() noexcept
@@ -300,6 +298,11 @@ class PassParameterSet final
 
 		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.Table = descriptorTable});
 		return true;
+	}
+
+	bool UsesGraphResource(std::uint32_t index) const noexcept
+	{
+		return index < m_graphResourceParameters.size() && m_graphResourceParameters[index];
 	}
 
 	bool SetShaderResourceView(const char* name, RhiGpuDescriptorHandle descriptorTable)
@@ -548,4 +551,5 @@ class PassParameterSet final
 
 	const PassParameterLayout* m_layout = nullptr;
 	std::vector<PassParameterBinding> m_bindings;
+	std::vector<bool> m_graphResourceParameters;
 };

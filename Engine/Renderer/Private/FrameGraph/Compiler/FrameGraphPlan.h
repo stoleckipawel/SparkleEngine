@@ -19,14 +19,6 @@ using FrameGraphResourceIndex = std::uint32_t;
 static constexpr FrameGraphPassIndex INVALID_FRAME_GRAPH_PASS_INDEX = static_cast<FrameGraphPassIndex>(-1);
 static constexpr FrameGraphResourceIndex INVALID_FRAME_GRAPH_RESOURCE_INDEX = static_cast<FrameGraphResourceIndex>(-1);
 
-#ifndef SPARKLE_FRAMEGRAPH_TRANSIENT_ALIASING_ENABLED
-	#define SPARKLE_FRAMEGRAPH_TRANSIENT_ALIASING_ENABLED 0
-#endif
-
-#ifndef SPARKLE_FRAMEGRAPH_TRANSIENT_EXTEND_LIFETIMES
-	#define SPARKLE_FRAMEGRAPH_TRANSIENT_EXTEND_LIFETIMES 0
-#endif
-
 struct FrameGraphBarrier
 {
 	enum class Type : std::uint8_t
@@ -101,14 +93,6 @@ struct FrameGraphResourceNode
 	std::vector<FrameGraphResourceVersion> versions;
 };
 
-struct FrameGraphTransientPlanningOptions
-{
-	bool enableAliasing = SPARKLE_FRAMEGRAPH_TRANSIENT_ALIASING_ENABLED != 0;
-	bool extendLifetimesToFrame = SPARKLE_FRAMEGRAPH_TRANSIENT_EXTEND_LIFETIMES != 0;
-
-	static constexpr FrameGraphTransientPlanningOptions Default() noexcept { return FrameGraphTransientPlanningOptions{}; }
-};
-
 struct FrameGraphTransientLifetime
 {
 	FrameGraphPassIndex firstUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
@@ -133,18 +117,10 @@ struct FrameGraphTransientLifetime
 
 struct FrameGraphTransientResourcePlan
 {
-	enum class AllocationPool : std::uint8_t
-	{
-		Color,
-		Depth,
-		Buffer
-	};
-
 	struct PhysicalAllocationPlan
 	{
-		std::uint32_t allocationIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
 		std::uint32_t physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
-		AllocationPool pool = AllocationPool::Color;
+		RhiTransientAllocationPool pool = RhiTransientAllocationPool::Texture;
 		std::uint64_t sizeInBytes = 0;
 		std::uint64_t alignment = 0;
 		std::uint64_t memoryBlockOffset = 0;
@@ -167,28 +143,16 @@ struct FrameGraphTransientResourcePlan
 struct FrameGraphTransientPhysicalBlockPlan
 {
 	std::uint32_t physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
-	FrameGraphTransientResourcePlan::AllocationPool pool = FrameGraphTransientResourcePlan::AllocationPool::Color;
-	std::uint64_t sizeInBytes = 0;
-	std::uint64_t alignment = 0;
-	std::uint64_t memoryBlockOffset = 0;
-	RhiTextureResourceDesc textureResourceDesc{};
-	RhiBufferResourceDesc bufferResourceDesc{};
-	RhiOptimizedClearValue optimizedClearValue{};
-	bool hasOptimizedClearValue = false;
-	FrameGraphPassIndex firstExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
-	FrameGraphPassIndex lastExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
 	std::vector<FrameGraphResourceHandle> handles;
 };
 
 struct FrameGraphTransientPlan
 {
-	FrameGraphTransientPlanningOptions options = FrameGraphTransientPlanningOptions::Default();
 	std::vector<FrameGraphTransientResourcePlan> resources;
 	std::vector<FrameGraphTransientPhysicalBlockPlan> physicalBlocks;
 
 	void Clear() noexcept
 	{
-		options = FrameGraphTransientPlanningOptions::Default();
 		resources.clear();
 		physicalBlocks.clear();
 	}
@@ -201,7 +165,7 @@ struct FrameGraphPlan
 	std::vector<FrameGraphProductRoot> productRoots;
 	FrameGraphTransientPlan transients;
 	std::vector<FrameGraphPassIndex> executionOrder;
-	std::vector<FrameGraphAliasingBarrier> finalTransientAliasingBarriers;
+	std::vector<FrameGraphAliasingBarrier> initialTransientAliasingBarriers;
 	std::vector<FrameGraphBarrier> finalBarriers;
 
 	void Clear() noexcept
@@ -211,7 +175,7 @@ struct FrameGraphPlan
 		productRoots.clear();
 		transients.Clear();
 		executionOrder.clear();
-		finalTransientAliasingBarriers.clear();
+		initialTransientAliasingBarriers.clear();
 		finalBarriers.clear();
 	}
 };

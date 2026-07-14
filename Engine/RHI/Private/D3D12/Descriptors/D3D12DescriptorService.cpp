@@ -6,6 +6,7 @@
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
+#include "Validation/RhiContract.h"
 
 #include <d3d12.h>
 
@@ -240,6 +241,11 @@ void D3D12DescriptorService::SetSamplerTableHandle(RhiDescriptorTableHandle samp
 
 RhiResourceViewHandle D3D12DescriptorService::CreateResourceView(const RhiResourceViewDesc& desc)
 {
+	if (!RhiContract::IsResourceViewDescUsable(desc))
+	{
+		return {};
+	}
+
 	const ERhiDescriptorAllocatorType descriptorType = ResolveResourceViewDescriptorAllocatorType(desc.Kind);
 	RhiDescriptorAllocation allocation = AllocateDescriptor(descriptorType);
 	if (!allocation.IsValid())
@@ -320,9 +326,10 @@ RhiGpuDescriptorHandle D3D12DescriptorService::GetResourceViewGpuHandle(RhiResou
 	return record != nullptr ? record->descriptorAllocation.GpuHandle : RhiGpuDescriptorHandle{};
 }
 
-NativeTextureViewInfo D3D12DescriptorService::GetNativeTextureViewInfo(RhiResourceViewHandle, ResourceState) const noexcept
+NativeTextureViewInfo D3D12DescriptorService::GetNativeTextureViewInfo(RhiResourceViewHandle, ResourceState state) const noexcept
 {
-	return {};
+	return NativeTextureViewInfo{
+	    .NativeState = static_cast<std::uint32_t>(D3D12TypeConversions::ToResourceStates(state))};
 }
 
 ERhiDescriptorAllocatorType D3D12DescriptorService::ResolveResourceViewDescriptorAllocatorType(

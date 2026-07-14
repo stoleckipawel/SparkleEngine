@@ -38,8 +38,7 @@ void FrameGraph::Setup(const FrameContext& frame)
 	{
 		auto& pass = m_passes[passIndex];
 		std::vector<PassResourceDeclaration> declarations;
-		PassResourceDeclarationSink declarationSink(declarations);
-		PassResourceBuilder builder(declarationSink);
+		PassResourceBuilder builder(declarations);
 		pass.setupCallback(builder, frame);
 		FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(pass.name, pass.flags, declarations);
 		m_compiledPlan.passes.push_back(

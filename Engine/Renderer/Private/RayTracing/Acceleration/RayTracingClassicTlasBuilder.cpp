@@ -218,7 +218,11 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	const bool canRefit = HasFlag(requestedBuildFlags, ERhiClassicTlasBuildFlags::AllowUpdate) && m_resourcesAllowUpdate &&
 	                      m_tlas.IsValid() && m_tlas.instanceCount == stats.Build.InstanceCount &&
 	                      prebuildInfo.UpdateScratchDataSizeInBytes > 0;
-	const ERhiClassicTlasBuildMode buildMode = canRefit ? ERhiClassicTlasBuildMode::Update : ERhiClassicTlasBuildMode::Build;
+	const ERhiClassicTlasBuildMode buildMode =
+	    canRefit ? ERhiClassicTlasBuildMode::Update
+	             : (HasFlag(requestedBuildFlags, ERhiClassicTlasBuildFlags::AllowUpdate)
+	                    ? ERhiClassicTlasBuildMode::BuildAllowUpdate
+	                    : ERhiClassicTlasBuildMode::Build);
 	const char* const tlasEventName = canRefit ? "Classic TLAS Refit" : "Classic TLAS Build";
 	{
 		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope(tlasEventName) : ScopedGpuScope{};

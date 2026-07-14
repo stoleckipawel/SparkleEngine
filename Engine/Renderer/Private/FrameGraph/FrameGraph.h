@@ -169,28 +169,15 @@ class FrameGraph
 		return instance;
 	}
 
-	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
-	FrameGraphTextureHandle ImportTexture(
-	    const FrameGraphTextureDesc& desc,
-	    NativeResourceHandle resource,
-	    ResourceState initialState) noexcept;
+	FrameGraphTextureHandle ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
 	FrameGraphTextureHandle ReservePersistentTexture(
 	    const FrameGraphTextureDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
-	FrameGraphBufferHandle ImportBuffer(
-	    const FrameGraphBufferDesc& desc,
-	    NativeResourceHandle resource,
-	    ResourceState initialState) noexcept;
 	FrameGraphBufferHandle ReservePersistentBuffer(
 	    const FrameGraphBufferDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
-	FrameGraphAccelerationStructureHandle ImportAccelerationStructure(
-	    const FrameGraphAccelerationStructureDesc& desc,
-	    NativeResourceHandle resource,
-	    RhiGpuVirtualAddress gpuAddress,
-	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	FrameGraphAccelerationStructureHandle ReservePersistentAccelerationStructure(
 	    const FrameGraphAccelerationStructureDesc& desc,
 	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;

@@ -113,14 +113,10 @@ bool EditorApplication::Tick()
 	m_ui->SetViewportSceneColorTextureId(sceneColorPresentation.TextureId);
 	m_ui->Update();
 
-	RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-
 	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
-	RhiPresentationService& presentationService = renderHardware.GetPresentationService();
-	presentationService.BeginPresentRenderPass(editorClearColor);
+	renderer.BeginHostPresentation(editorClearColor);
 	m_ui->Render();
-
-	presentationService.EndPresentRenderPass();
+	renderer.EndHostPresentation();
 
 	renderer.EndViewportPresentation(RenderOutputFlags::SceneColor);
 

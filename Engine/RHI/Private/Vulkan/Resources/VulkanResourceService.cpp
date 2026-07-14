@@ -396,7 +396,23 @@ RhiOwnedResourceHandle VulkanResourceService::CreateAliasingBufferResource(
 	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
-bool VulkanResourceService::SupportsUnorderedAccess(NativeResourceHandle) const noexcept
+bool VulkanResourceService::SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept
 {
-	return false;
+	const VulkanGpuAllocationRecord* const record =
+	    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
+	if (record == nullptr)
+	{
+		return false;
+	}
+
+	switch (record->ResourceKind)
+	{
+		case VulkanGpuAllocationResourceKind::Image:
+			return (record->Usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0;
+		case VulkanGpuAllocationResourceKind::Buffer:
+			return (record->Usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) != 0;
+		case VulkanGpuAllocationResourceKind::Unknown:
+		default:
+			return false;
+	}
 }

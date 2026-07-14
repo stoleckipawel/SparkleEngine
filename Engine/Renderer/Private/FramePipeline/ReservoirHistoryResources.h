@@ -4,6 +4,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "RHI/Public/Interop/ResourceState.h"
 
 #include <array>
 #include <cstdint>
@@ -53,6 +54,7 @@ bool BindReservoirHistoryResources(
     FrameGraph& frameGraph,
     std::uint32_t currentFrameIndex,
     const ReservoirHistoryFrameGraphHandles& handles,
-    const ReservoirHistoryResourceSet& resources) noexcept;
+    const ReservoirHistoryResourceSet& resources,
+    ResourceState currentState) noexcept;
 
 bool HasReservoirHistoryResources(const ReservoirHistoryResourceSet& resources) noexcept;

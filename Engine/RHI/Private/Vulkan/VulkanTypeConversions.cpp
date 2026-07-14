@@ -273,13 +273,12 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 			    .ImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL};
 		case ResourceState::ShaderResource:
 			return VulkanResourceStateMapping{
-			    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-			                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+			    .StageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
 			    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 		case ResourceState::UnorderedAccess:
 			return VulkanResourceStateMapping{
-			    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+			    .StageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
 			    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 		case ResourceState::RayTracingAccelerationStructure:

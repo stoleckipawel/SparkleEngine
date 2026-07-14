@@ -12,12 +12,12 @@ class RayTracingHitDataFrameData final
 {
   public:
 	RayTracingHitDataFrameData() noexcept = default;
-	~RayTracingHitDataFrameData() noexcept;
+	~RayTracingHitDataFrameData() noexcept = default;
 
 	RayTracingHitDataFrameData(const RayTracingHitDataFrameData&) = delete;
 	RayTracingHitDataFrameData& operator=(const RayTracingHitDataFrameData&) = delete;
-	RayTracingHitDataFrameData(RayTracingHitDataFrameData&& other) noexcept;
-	RayTracingHitDataFrameData& operator=(RayTracingHitDataFrameData&& other) noexcept;
+	RayTracingHitDataFrameData(RayTracingHitDataFrameData&& other) noexcept = default;
+	RayTracingHitDataFrameData& operator=(RayTracingHitDataFrameData&& other) noexcept = default;
 
 	bool IsValid() const noexcept;
 	std::uint32_t GetInstanceCount() const noexcept { return m_instanceCount; }
@@ -31,9 +31,6 @@ class RayTracingHitDataFrameData final
 	static RayTracingHitDataFrameData Build(RenderHardwareInterface& renderHardwareInterface, const RenderSceneData& sceneData);
 
   private:
-	void Release() noexcept;
-
-	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	FrameBufferResource m_vertexBuffer;
 	FrameBufferResource m_skinInfluenceBuffer;
 	FrameBufferResource m_indexBuffer;
