@@ -53,7 +53,7 @@ Application/Editor remains the composition root: it constructs these modules, ow
 | Scene handoff | Accepted current design | GameFramework publishes the current scene snapshot and Renderer consumes it privately. No additional scene-synchronization change program is planned. |
 | GPU object model | Priority 0B implemented; build/runtime validation pending | The polymorphic texture hierarchy and its separate creation, view, upload, and destruction rules have been deleted. Sampled textures now use generic RHI resources, views, and explicit uploads. |
 | In-flight lifetime | Priorities 0A and 0B implemented; runtime stress validation pending | Resources, descriptor allocations, descriptor tables, views, and texture staging now have backend-owned deferred reuse. The legacy texture hierarchy and its bespoke destruction paths have been deleted. |
-| Feature ownership | Priority 1A implemented; build/runtime validation pending | Feature files declare semantic continuity and consume named previous/current textures. The frame graph lazily owns backing resources, in-flight rotation, validity, and retirement. `FramePipeline` contains no history resource object, frame index plumbing, reset generation, binding, or commit sequence. |
+| Feature ownership | Priority 1A implemented; build/runtime validation pending | Feature files declare their history invalidation inputs and consume named previous/current textures. The frame graph lazily owns backing resources, in-flight rotation, validity, and retirement. `FramePipeline` contains no history resource object, frame index plumbing, reset generation, binding, or commit sequence. |
 | Material bindings | Needs work | Per-material binding sets and a global material table are both valid policies, but ownership is exposed as raw pointers and repeated availability checks across passes. |
 | Queue model | Intentionally limited | The public submission contract exposes only graphics command lists. This is honest today but must be extended before real asynchronous copy/compute scheduling. |
 
@@ -246,10 +246,10 @@ The ownership and frontend shape after the change is:
 - [`FrameHistory`](../../../Engine/Renderer/Private/Resources/History/FrameHistory.h) exposes the complete intent-level graph layout as named exposure, reference-lighting, direct-reservoir, and indirect-reservoir records.
 - [`FrameGraphTextureHistory`](../../../Engine/Renderer/Public/FrameGraph/FrameGraphTextureHistory.h) is the frontend contract: `Previous` and `Current`, with no allocation or lifetime controls.
 - [`FrameGraphTextureHistory`](../../../Engine/Renderer/Private/FrameGraph/Resources/FrameGraphTextureHistory.cpp) implements lazy physical allocation, safe in-flight rotation, first-use validity, explicit invalidation, state preservation, and deferred release inside the frame graph.
-- [`LightingHistoryContinuity`](../../../Engine/Renderer/Private/Frame/Lighting/LightingHistoryContinuity.cpp) captures the feature-authored settings, scene, and camera values that determine whether accumulation remains meaningful.
+- [`ReferenceLightingInvalidation`](../../../Engine/Renderer/Private/Frame/Lighting/ReferenceLightingInvalidation.cpp) and [`RestirLightingInvalidation`](../../../Engine/Renderer/Private/Frame/Lighting/RestirLightingInvalidation.cpp) own the feature-specific invalidation hashes for settings, scene, and camera values that determine whether accumulation remains meaningful.
 - [`FramePipeline`](../../../Engine/Renderer/Private/FramePipeline/FramePipeline.h) contains no history owner, per-feature resources, frame index plumbing, validity booleans, formats, extents, reset generation, or lifecycle fan-out.
 
-Resize, presentation, resolution, GBuffer, lighting-mode, provider-graph, and scene-coordinator invalidations use one `ResetTemporalState` intent path. Feature continuity is captured in each `FrameContext` and compared with the preceding frame; changed continuity explicitly invalidates the affected graph history. No semantic key is stored in a resource object.
+Resize, presentation, resolution, GBuffer, lighting-mode, provider-graph, and scene-coordinator invalidations use one `ResetTemporalState` intent path. Only the active lighting feature computes its explicitly named invalidation hash and compares it with its preceding value; a changed hash explicitly invalidates only the affected graph history. No semantic key is stored in a resource object.
 
 The required cleanup pass also completed:
 
@@ -261,7 +261,7 @@ The required cleanup pass also completed:
 - active passes cause history resources to materialize lazily, so inactive reference or ReSTIR histories consume no physical allocation;
 - reservoir graph handles are grouped as named sample/weight/surface previous/current pairs, and the indirect clear helper accepts only that reservoir record;
 - exposure and direct-shadow assembly preserve those history records through frontend plumbing instead of flattening them back into unrelated handle arguments or fields;
-- reference and ReSTIR continuity is captured once in the frame context and compared as feature state, not stored as resource configuration.
+- reference and ReSTIR own separate invalidation-hash builders; only the active feature's hash is evaluated and compared by frame coordination, never stored as resource configuration.
 
 A repository-wide Renderer audit found no additional ordinary persistent GPU histories outside these four declarations. The remaining history-related state is intentionally different:
 
@@ -288,14 +288,14 @@ The implementation was split into several `.cpp` files, but all methods and memb
 ### Implemented ownership
 
 - Exposure/post-processing owns exposure history meaning and pass usage.
-- Reference-lighting owns its continuity definition and accumulation pass usage.
+- Reference-lighting owns its invalidation-hash definition and accumulation pass usage.
 - Direct-light reservoir owns its temporal/spatial pass usage.
-- ReSTIR indirect owns its continuity definition and temporal/spatial/resolve pass usage.
+- ReSTIR indirect owns its invalidation-hash definition and temporal/spatial/resolve pass usage.
 - The frame graph owns concrete physical resources and repeated lifecycle mechanics.
 - Image providers continue to own provider-specific histories.
 - `FramePipeline` owns only frame coordination, the frame graph, invalidation intent, and submission.
 
-Feature code declares resource use and the values that define semantic continuity. Physical versions, frame slots, state preservation, validity, and lifecycle operations are frame-graph concerns. The graph contains no feature settings, scene hashing, reset decisions, or provider policy.
+Feature code declares resource use and the values that invalidate accumulated history. Physical versions, frame slots, state preservation, validity, and lifecycle operations are frame-graph concerns. The graph contains no feature settings, scene hashing, reset decisions, or provider policy.
 
 ### Before and after
 
@@ -303,7 +303,7 @@ Feature code declares resource use and the values that define semantic continuit
 | --- | --- |
 | Adding a temporal feature edits `FramePipeline.h`, multiple reset branches, pass runtime services, and end-of-frame validity updates. | A feature declares a texture history and consumes `Previous`/`Current`; the frame graph supplies lifetime, rotation, validity, and release. |
 | Feature history is a collection of arrays and booleans in a coordinator. | `Frame` sees named previous/current textures that behave like other graph resources. |
-| Reset logic is repeated across mode/resize/state branches. | Global events express one invalidate-history intent; feature continuity invalidates only the affected record. |
+| Reset logic is repeated across mode/resize/state branches. | Global events express one invalidate-history intent; each feature's invalidation hash invalidates only the affected record. |
 
 ### Acceptance bar
 
@@ -312,7 +312,7 @@ Feature code declares resource use and the values that define semantic continuit
 | `FramePipeline.h` has no exposure/reference/direct/indirect history resource arrays or feature-specific validity booleans. | Fulfilled statically | The pipeline contains no history owner, arrays, extents, validity flags, formats, frame indices, reset generation, or lifecycle methods. |
 | Resize/mode/scene changes invalidate temporal content without feature reset fan-out. | Fulfilled statically; supersedes the reset-generation mechanism | The user-directed simplification removed the reset generation entirely. Global invalidation is one intent call; the frame graph handles physical validity internally. |
 | Each feature can be disabled and have its resources safely retired without changing pipeline-wide destruction code. | Fulfilled in code; runtime pending | Only histories referenced by active pass declarations materialize. The owning frame graph retires resources through `RhiResourceService` in its existing destruction path. Runtime retirement still requires deferred multi-frame validation. |
-| No generic history policy manager is introduced; repeated physical mechanics are not left in feature files. | Fulfilled statically | The generic frame-graph history record owns only resource mechanics. Feature continuity and invalidation decisions remain in feature/frame coordination code. |
+| No generic history policy manager is introduced; repeated physical mechanics are not left in feature files. | Fulfilled statically | The generic frame-graph history record owns only resource mechanics. Feature-specific invalidation hashes and decisions remain in feature/frame coordination code. |
 | Every Renderer-owned persistent GPU texture history follows the same record and lifetime pattern. | Fulfilled statically | Exposure, reference lighting, direct-light reservoirs, and indirect ReSTIR reservoirs all use `CreateTextureHistory`. The deleted `Persistent*History` classes have no remaining references. |
 
 Priority 1A is therefore **implementation-complete but not runtime-accepted**. Final acceptance requires the explicitly deferred build plus resize, lighting-mode, settings, scene-state, and several-frames-in-flight history scenarios.

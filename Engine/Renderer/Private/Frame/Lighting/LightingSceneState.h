@@ -4,4 +4,4 @@
 
 struct FrameContext;
 
-std::uint64_t BuildLightingSceneStateKey(const FrameContext& frame) noexcept;
+std::uint64_t BuildLightingSceneInvalidationHash(const FrameContext& frame) noexcept;

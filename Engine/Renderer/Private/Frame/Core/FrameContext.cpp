@@ -6,7 +6,6 @@
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Lighting/FrameLightingData.h"
-#include "Frame/Lighting/LightingHistoryContinuity.h"
 #include "Frame/Temporal/TemporalFrameState.h"
 #include "Camera/RenderCamera.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
@@ -64,7 +63,6 @@ FrameContext BuildFrameContext(
 	frame.mainView = perViewDataBuilder.BuildView(cameraData, sceneViewport, BuildSceneScissorRect(sceneExtent));
 	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(renderCamera, frame.mainView.perViewData.Camera, sceneViewport);
 	frame.mainView.temporalState = BuildRenderTemporalFrameState(frame.mainView.perTemporalData);
-	frame.lightingHistory = BuildLightingHistoryContinuity(frame);
 
 	return frame;
 }

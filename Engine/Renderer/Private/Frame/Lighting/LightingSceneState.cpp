@@ -4,6 +4,8 @@
 #include "Core/Public/Hash/HashUtils.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Lighting/LightingStateHash.h"
+#include "Lighting/LightingCVars.h"
+#include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "Textures/RendererTexture.h"
 
 #include <cstdint>
@@ -115,9 +117,16 @@ namespace
 	}
 }
 
-std::uint64_t BuildLightingSceneStateKey(const FrameContext& frame) noexcept
+std::uint64_t BuildLightingSceneInvalidationHash(const FrameContext& frame) noexcept
 {
 	std::uint64_t hash = Hash::kFnv64OffsetBasis;
+	hash = Hash::ContinueFnv1a64Value(hash, CVarRayTracedShadowsEnabled.Get());
+	hash = Hash::ContinueFnv1a64Value(hash, CVarRayTracedShadowNormalBias.Get());
+	hash = Hash::ContinueFnv1a64Value(hash, CVarRayTracedShadowMaxDistance.Get());
+	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxDirectionalLights.Get());
+	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxPointLights.Get());
+	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxSpotLights.Get());
+	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxRectLights.Get());
 	hash = AppendSkyState(hash, frame.sceneData.sky);
 	hash = AppendLightsState(hash, frame.sceneData.directionalLights);
 	hash = AppendLightsState(hash, frame.sceneData.pointLights);

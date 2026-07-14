@@ -3,7 +3,6 @@
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Frame/Builders/PerFrameDataBuilder.h"
 #include "Frame/Core/FrameAssembly.h"
-#include "Frame/Lighting/LightingHistoryContinuity.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Resources/History/FrameHistory.h"
 #include "RHI/Public/Interop/ResourceState.h"
@@ -85,7 +84,8 @@ class FramePipeline final
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	FrameAssemblyResourceLayout m_frameResources = {};
 	PerFrameConstantBufferData m_perFrameData = {};
-	std::optional<LightingHistoryContinuity> m_previousLightingHistory;
+	std::optional<std::uint64_t> m_previousReferenceLightingHistoryInvalidationHash;
+	std::optional<std::uint64_t> m_previousRestirLightingHistoryInvalidationHash;
 	RenderSceneSnapshot m_sceneSnapshot = {};
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;

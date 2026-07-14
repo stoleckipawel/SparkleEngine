@@ -11,6 +11,8 @@
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
+#include "Frame/Lighting/ReferenceLightingInvalidation.h"
+#include "Frame/Lighting/RestirLightingInvalidation.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
@@ -158,7 +160,8 @@ void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noe
 void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
 {
 	InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
-	m_previousLightingHistory.reset();
+	m_previousReferenceLightingHistoryInvalidationHash.reset();
+	m_previousRestirLightingHistoryInvalidationHash.reset();
 	m_systems->GetTemporalDataBuilder().ResetHistory(reason);
 	m_systems->GetImageProviders().ResetHistory();
 }
@@ -307,29 +310,31 @@ void FramePipeline::RecordFrame() noexcept
 	FrameContext& frame = *frameSlot;
 	if (GetLightingMode() == LightingMode::RestirPathTraced)
 	{
-		const bool lightingChanged = !m_previousLightingHistory ||
-		                             frame.lightingHistory.RestirLighting != m_previousLightingHistory->RestirLighting;
-		if (lightingChanged)
+		const std::uint64_t invalidationHash = BuildRestirLightingHistoryInvalidationHash(frame);
+		const bool historyInvalidationRequired = !m_previousRestirLightingHistoryInvalidationHash ||
+		                                         invalidationHash != *m_previousRestirLightingHistoryInvalidationHash;
+		if (historyInvalidationRequired)
 		{
 			InvalidateRestirLightingHistory(*m_frameGraph, m_frameResources.History);
 			m_systems->GetImageProviders().ResetHistory();
 		}
+		m_previousRestirLightingHistoryInvalidationHash = invalidationHash;
 	}
 	else if (GetLightingMode() == LightingMode::ReferencePathTraced)
 	{
-		const bool lightingChanged = !m_previousLightingHistory ||
-		                             frame.lightingHistory.ReferenceLighting != m_previousLightingHistory->ReferenceLighting;
-		if (lightingChanged)
+		const std::uint64_t invalidationHash = BuildReferenceLightingHistoryInvalidationHash(frame);
+		const bool historyInvalidationRequired = !m_previousReferenceLightingHistoryInvalidationHash ||
+		                                         invalidationHash != *m_previousReferenceLightingHistoryInvalidationHash;
+		if (historyInvalidationRequired)
 		{
 			m_frameGraph->InvalidateTextureHistory(m_frameResources.History.ReferenceLighting);
 		}
+		m_previousReferenceLightingHistoryInvalidationHash = invalidationHash;
 	}
 	if (frame.mainView.perTemporalData.HistoryValid == 0u)
 	{
 		InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
 	}
-	m_previousLightingHistory = frame.lightingHistory;
-
 	m_systems->GetImageProviders().SetupFrame(
 	    ImageProviderFrameContext{
 	        .RenderExtent = m_frameGraphRenderExtent,
