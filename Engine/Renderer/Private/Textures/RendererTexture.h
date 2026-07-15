@@ -19,10 +19,9 @@ struct RendererTexture final
 	TextureFormatIntent FormatIntent = TextureFormatIntent::Unknown;
 	std::uint16_t MipCount = 0;
 	std::uint64_t EstimatedByteSize = 0;
-	bool UploadReady = false;
 
 	constexpr explicit operator bool() const noexcept
 	{
-		return Resource && ShaderResourceView && UploadReady;
+		return Resource && ShaderResourceView;
 	}
 };

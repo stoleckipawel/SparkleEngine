@@ -86,9 +86,14 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	m_resourceService =
 	    std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, *m_descriptorService, m_capabilities);
 	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, rhi.GetNvapiRayTracingProvider());
-	for (std::uint32_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
+	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		m_commandLists[frameIndex] = std::make_unique<D3D12RenderCommandList>(*this, rhi.GetCommandList(frameIndex).Get());
+		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
+		for (std::uint32_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
+		{
+			m_commandLists[queueIndex][frameIndex] =
+			    std::make_unique<D3D12RenderCommandList>(*this, rhi.GetCommandList(queueType, frameIndex).Get(), queueType);
+		}
 	}
 
 	m_diagnostics = CreateD3D12RenderDiagnostics(rhi);
@@ -97,6 +102,24 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 }
 
 D3D12RenderHardwareInterface::~D3D12RenderHardwareInterface() noexcept = default;
+
+void D3D12RenderHardwareInterface::BeginResourceTracking(NativeResourceHandle resource) noexcept
+{
+	if (m_resourceService != nullptr)
+	{
+		m_resourceService->BeginResourceTracking(resource);
+	}
+}
+
+void D3D12RenderHardwareInterface::EndResourceTracking(
+	NativeResourceHandle resource,
+	RhiSubmissionToken submissionToken) noexcept
+{
+	if (m_resourceService != nullptr)
+	{
+		m_resourceService->EndResourceTracking(resource, submissionToken);
+	}
+}
 
 ERhiBackendApi D3D12RenderHardwareInterface::GetBackendApi() const noexcept
 {
@@ -152,13 +175,18 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
-	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
+	capabilities.Queues = RhiQueueCapabilities{
+	    .SupportsGraphics = true,
+	    .SupportsCompute = true,
+	    .SupportsCopy = true,
+	    .ComputeIsIndependent = true,
+	    .CopyIsIndependent = true};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12Managed;
 	capabilities.MemorySupport = BuildBackendMemorySupport(m_diagnostics.get());
 	capabilities.ExternalFeatureInterop = BuildD3D12ExternalFeatureInteropCapabilities(
 	    m_rhi,
-	    !m_commandLists.empty() && m_commandLists[0] != nullptr);
+	    m_commandLists[RhiQueueTypeToIndex(ERhiQueueType::Graphics)][0] != nullptr);
 	return capabilities;
 }
 
@@ -284,11 +312,16 @@ NativeGraphicsQueueHandle D3D12RenderHardwareInterface::GetGraphicsQueueHandle()
 
 RenderCommandList& D3D12RenderHardwareInterface::GetGraphicsCommandList(std::uint32_t frameIndex) noexcept
 {
+	return GetCommandList(ERhiQueueType::Graphics, frameIndex);
+}
+
+RenderCommandList& D3D12RenderHardwareInterface::GetCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
+{
 	if (m_resourceService != nullptr)
 	{
 		m_resourceService->DrainCompletedResourceReleases();
 	}
-	return *m_commandLists[frameIndex];
+	return *m_commandLists[RhiQueueTypeToIndex(queueType)][frameIndex];
 }
 
 RhiRayTracingCapabilities D3D12RenderHardwareInterface::GetRayTracingCapabilities() const noexcept

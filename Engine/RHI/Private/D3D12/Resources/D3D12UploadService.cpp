@@ -11,6 +11,7 @@
 #include "Interop/RhiInteropService.h"
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <vector>
 
@@ -107,17 +108,18 @@ bool D3D12UploadService::UploadTexture(
 		return false;
 	}
 
+	const ResourceState submittedFinalState =
+	    commandList.GetQueueType() == ERhiQueueType::Copy ? ResourceState::Common : finalState;
 	const D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 	    destinationRecord->Resource.Get(),
 	    D3D12_RESOURCE_STATE_COPY_DEST,
-	    D3D12TypeConversions::ToResourceStates(finalState));
+	    D3D12TypeConversions::ToResourceStates(submittedFinalState));
 	d3dCommandList->ResourceBarrier(1, &barrier);
+	commandList.TrackResource(NativeResourceHandle{destinationRecord->Resource.Get()});
+	commandList.TrackResource(NativeResourceHandle{stagingResource->Resource.Get()});
 
 	DrainCompletedTextureUploads();
-	m_pendingTextureUploads.push_back(
-	    PendingTextureUpload{
-	        .StagingResource = std::move(stagingResource),
-	        .RetireFenceValue = m_rhi->GetNextFenceValue()});
+	m_pendingTextureUploads.push_back(PendingTextureUpload{.StagingResource = std::move(stagingResource)});
 	return true;
 }
 
@@ -128,13 +130,27 @@ void D3D12UploadService::DrainCompletedTextureUploads() noexcept
 		return;
 	}
 
-	const std::uint64_t completedFenceValue = m_rhi != nullptr && m_rhi->GetFence() ? m_rhi->GetFence()->GetCompletedValue() : UINT64_MAX;
+	std::array<std::uint64_t, RhiQueueTypeCount> completedValues{};
+	if (m_rhi != nullptr)
+	{
+		for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
+		{
+			completedValues[queueIndex] =
+			    m_rhi->GetCompletedSubmissionValue(static_cast<ERhiQueueType>(queueIndex));
+		}
+	}
+	else
+	{
+		completedValues.fill(UINT64_MAX);
+	}
 	const auto firstPending = std::remove_if(
 	    m_pendingTextureUploads.begin(),
 	    m_pendingTextureUploads.end(),
-	    [completedFenceValue](const PendingTextureUpload& upload)
+	    [&completedValues](const PendingTextureUpload& upload)
 	    {
-		    return upload.StagingResource == nullptr || upload.RetireFenceValue <= completedFenceValue;
+		    return upload.StagingResource == nullptr ||
+		           (upload.StagingResource->RecordingReferenceCount == 0 &&
+		            upload.StagingResource->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingTextureUploads.erase(firstPending, m_pendingTextureUploads.end());
 }

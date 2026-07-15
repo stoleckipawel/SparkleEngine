@@ -3,6 +3,7 @@
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "Renderer/Public/RendererAPI.h"
+#include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "Scene/Textures/TextureSnapshot.h"
 #include "Textures/RendererTexture.h"
 
@@ -13,8 +14,12 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <string>
+#include <vector>
 
-class RenderHardwareInterface;
+class RenderCommandList;
+class RhiDescriptorService;
+class RhiResourceService;
+class RhiUploadService;
 namespace Assets
 {
 	struct CookedTextureReference;
@@ -31,7 +36,10 @@ enum class TextureId : uint8_t
 class SPARKLE_RENDERER_API TextureManager final
 {
   public:
-	explicit TextureManager(RenderHardwareInterface& renderHardwareInterface) noexcept;
+	TextureManager(
+	    RhiResourceService& resourceService,
+	    RhiDescriptorService& descriptorService,
+	    RhiUploadService& uploadService) noexcept;
 
 	~TextureManager() noexcept;
 
@@ -40,33 +48,27 @@ class SPARKLE_RENDERER_API TextureManager final
 	TextureManager(TextureManager&&) = delete;
 	TextureManager& operator=(TextureManager&&) = delete;
 
-	void LoadDefaults();
-	void LoadSceneTextures(const TextureSnapshot& textureSnapshot);
+	std::vector<NativeResourceHandle> LoadSceneTextures(
+	    const TextureSnapshot& textureSnapshot,
+	    RenderCommandList& commandList);
 
-	void LoadTexture(TextureId id, const std::filesystem::path& relativePath);
-
-	void UnloadTexture(TextureId id) noexcept;
 	void UnloadSceneTextures() noexcept;
-
 	void UnloadAll() noexcept;
 
-	RendererTexture* GetTexture(TextureId id) noexcept;
 	const RendererTexture* GetTexture(TextureId id) const noexcept;
 	const RendererTexture* ResolveDefaultSkyTexture() const noexcept;
-	RendererTexture* GetSceneTexture(const std::filesystem::path& texturePath) noexcept;
 	const RendererTexture* GetSceneTexture(const std::filesystem::path& texturePath) const noexcept;
 	const RendererTexture* ResolveTextureReferenceOrDefault(
 	    const Assets::CookedTextureReference* textureReference,
 	    DefaultTexture fallbackType)
 	    const;
 
-	bool IsLoaded(TextureId id) const noexcept;
-
-	std::size_t GetLoadedCount() const noexcept;
 	TextureDiagnosticsSnapshot CaptureDiagnosticsSnapshot() const;
 
   private:
-	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
+	RhiResourceService& m_resourceService;
+	RhiDescriptorService& m_descriptorService;
+	RhiUploadService& m_uploadService;
 
 	static constexpr std::size_t kTextureCount = static_cast<std::size_t>(TextureId::Count);
 	using TextureCacheKey = std::wstring;
@@ -76,9 +78,21 @@ class SPARKLE_RENDERER_API TextureManager final
 	std::unordered_set<TextureCacheKey> m_defaultPathTextureKeys;
 	bool m_defaultsLoaded = false;
 
-	void LoadDefaultTextures();
-	RendererTexture* LoadFromPath(const std::filesystem::path& texturePath);
-	std::optional<RendererTexture> CreateTextureFromPath(const std::filesystem::path& texturePath) const;
+	void LoadDefaults(RenderCommandList& commandList, std::vector<NativeResourceHandle>& uploadedResources);
+	void LoadTexture(
+	    TextureId id,
+	    const std::filesystem::path& relativePath,
+	    RenderCommandList& commandList,
+	    std::vector<NativeResourceHandle>& uploadedResources);
+	void LoadDefaultTextures(RenderCommandList& commandList, std::vector<NativeResourceHandle>& uploadedResources);
+	RendererTexture* LoadFromPath(
+	    const std::filesystem::path& texturePath,
+	    RenderCommandList& commandList,
+	    std::vector<NativeResourceHandle>& uploadedResources);
+	std::optional<RendererTexture> CreateTextureFromPath(
+	    const std::filesystem::path& texturePath,
+	    RenderCommandList& commandList,
+	    std::vector<NativeResourceHandle>& uploadedResources) const;
 	const RendererTexture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
 	void ReleaseTexture(RendererTexture& texture) noexcept;
 	void RegisterDefaultPathTexture(const std::filesystem::path& texturePath);

@@ -3,9 +3,12 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl/client.h>
+#include <array>
+#include <cstdint>
 #include <memory>
 
 #include "Frame/RhiFrameConstants.h"
+#include "Commands/RhiQueue.h"
 #include "D3D12/RayTracing/D3D12NvapiRayTracingProvider.h"
 #include "Device/RenderHardwareInterface.h"
 #include "Interop/RhiExternalFeatureHooks.h"
@@ -32,20 +35,34 @@ class D3D12Rhi final
 	D3D12Rhi(D3D12Rhi&&) = delete;
 	D3D12Rhi& operator=(D3D12Rhi&&) = delete;
 
-	void ResetCommandAllocator(uint32_t frameInFlightIndex) noexcept;
+	void ResetCommandAllocator(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept;
+	void ResetCommandAllocator(uint32_t frameInFlightIndex) noexcept
+	{
+		ResetCommandAllocator(ERhiQueueType::Graphics, frameInFlightIndex);
+	}
 
-	void ResetCommandList(uint32_t frameInFlightIndex) noexcept;
+	void ResetCommandList(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept;
+	void ResetCommandList(uint32_t frameInFlightIndex) noexcept { ResetCommandList(ERhiQueueType::Graphics, frameInFlightIndex); }
 
-	void CloseCommandList(uint32_t frameInFlightIndex) noexcept;
+	void CloseCommandList(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept;
+	void CloseCommandList(uint32_t frameInFlightIndex) noexcept { CloseCommandList(ERhiQueueType::Graphics, frameInFlightIndex); }
 
-	void ExecuteCommandList(uint32_t frameInFlightIndex) noexcept;
+	void ExecuteCommandList(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept;
+	void ExecuteCommandList(uint32_t frameInFlightIndex) noexcept { ExecuteCommandList(ERhiQueueType::Graphics, frameInFlightIndex); }
 
 	void SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept;
 	uint32_t GetCurrentFrameIndex() const noexcept;
 
-	void Signal(uint32_t frameInFlightIndex) noexcept;
+	RhiSubmissionToken Signal(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept;
+	RhiSubmissionToken Signal(uint32_t frameInFlightIndex) noexcept { return Signal(ERhiQueueType::Graphics, frameInFlightIndex); }
 
-	void WaitForGPU(uint32_t frameInFlightIndex) noexcept;
+	void WaitForGPU(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept;
+	void WaitForGPU(uint32_t frameInFlightIndex) noexcept { WaitForGPU(ERhiQueueType::Graphics, frameInFlightIndex); }
+	void QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept;
+	void WaitForSubmission(RhiSubmissionToken token) noexcept;
+	bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept;
+	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept;
+	std::uint64_t GetCompletedSubmissionValue(ERhiQueueType queueType) const noexcept;
 
 	void Flush() noexcept;
 	bool IsValidationEnabled() const noexcept;
@@ -64,12 +81,16 @@ class D3D12Rhi final
 	const ComPtr<IDXGIAdapter1>& GetAdapter() const noexcept;
 	const ComPtr<ID3D12Device10>& GetDevice() const noexcept;
 	const ComPtr<ID3D12CommandQueue>& GetCommandQueue() const noexcept;
+	const ComPtr<ID3D12CommandQueue>& GetCommandQueue(ERhiQueueType queueType) const noexcept;
 	ID3D12CommandQueue* GetPresentationCommandQueue() const noexcept;
 	const ComPtr<ID3D12CommandAllocator>& GetCommandAllocator(uint32_t frameInFlightIndex) const noexcept;
+	const ComPtr<ID3D12CommandAllocator>& GetCommandAllocator(ERhiQueueType queueType, uint32_t frameInFlightIndex) const noexcept;
 	const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList(uint32_t frameInFlightIndex) const noexcept;
+	const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList(ERhiQueueType queueType, uint32_t frameInFlightIndex) const noexcept;
 	const ComPtr<ID3D12Fence1>& GetFence() const noexcept;
+	const ComPtr<ID3D12Fence1>& GetFence(ERhiQueueType queueType) const noexcept;
 	HANDLE GetFenceEvent() const noexcept;
-	uint64_t GetNextFenceValue() const noexcept;
+	HANDLE GetFenceEvent(ERhiQueueType queueType) const noexcept;
 	D3D_FEATURE_LEVEL GetDeviceFeatureLevel() const noexcept;
 	D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() noexcept;
 	const D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() const noexcept;
@@ -88,6 +109,16 @@ class D3D12Rhi final
 	void NotifyExternalPresentationReady(bool ready) noexcept;
 
   private:
+	struct QueueState final
+	{
+		ComPtr<ID3D12CommandQueue> CommandQueue;
+		ComPtr<ID3D12Fence1> Fence;
+		HANDLE FenceEvent = nullptr;
+		std::uint64_t NextSubmissionValue = 1;
+		std::uint64_t LastSubmittedValue = 0;
+		std::array<std::uint64_t, RhiFrameConstants::FramesInFlight> FrameSubmissionValues{};
+	};
+
 	void SelectAdapter() noexcept;
 	void CreateFactory();
 	void CreateDevice();
@@ -110,16 +141,11 @@ class D3D12Rhi final
 	ComPtr<ID3D12Device10> m_externalDevice = nullptr;
 	D3D12NvapiRayTracingProvider m_nvapiRayTracingProvider;
 	std::unique_ptr<D3D12GpuMemoryAllocator> m_memoryAllocator;
-	ComPtr<ID3D12CommandQueue> m_cmdQueue = nullptr;
+	std::array<QueueState, RhiQueueTypeCount> m_queues{};
 	ComPtr<ID3D12CommandQueue> m_externalCommandQueue = nullptr;
-	ComPtr<ID3D12CommandAllocator> m_cmdAllocator[RhiFrameConstants::FramesInFlight] = {};
-	ComPtr<ID3D12GraphicsCommandList7> m_cmdList[RhiFrameConstants::FramesInFlight] = {};
+	std::array<std::array<ComPtr<ID3D12CommandAllocator>, RhiFrameConstants::FramesInFlight>, RhiQueueTypeCount> m_cmdAllocators{};
+	std::array<std::array<ComPtr<ID3D12GraphicsCommandList7>, RhiFrameConstants::FramesInFlight>, RhiQueueTypeCount> m_cmdLists{};
 	uint32_t m_currentFrameIndex = 0;
-
-	uint64_t m_fenceValues[RhiFrameConstants::FramesInFlight] = {0};
-	uint64_t m_nextFenceValue = 1;
-	ComPtr<ID3D12Fence1> m_fence = nullptr;
-	HANDLE m_fenceEvent = nullptr;
 	D3D_FEATURE_LEVEL m_desiredD3DFeatureLevel = D3D_FEATURE_LEVEL_12_1;
 	RhiRayTracingCapabilities m_rayTracingCapabilities = {};
 	RhiExternalFeatureHooks m_externalFeatureHooks = {};

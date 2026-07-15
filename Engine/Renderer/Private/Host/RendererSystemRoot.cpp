@@ -145,7 +145,11 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 
 void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noexcept
 {
-	m_textureManager = std::make_unique<TextureManager>(GetRenderHardwareInterface());
+	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
+	m_textureManager = std::make_unique<TextureManager>(
+	    renderHardware.GetResourceService(),
+	    renderHardware.GetDescriptorService(),
+	    renderHardware.GetUploadService());
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
 	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache, *m_textureManager);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();

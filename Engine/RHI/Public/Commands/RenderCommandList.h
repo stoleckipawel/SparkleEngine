@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/RhiBackendApi.h"
+#include "RhiQueue.h"
 #include "../Descriptors/RhiDescriptorHandles.h"
 #include "../Diagnostics/RhiDiagnostics.h"
 #include "../Interop/ResourceState.h"
@@ -11,7 +12,9 @@
 #include "../RHIAPI.h"
 
 #include <cstdint>
+#include <span>
 #include <string_view>
+#include <vector>
 
 class SPARKLE_RHI_API RenderCommandList
 {
@@ -19,6 +22,33 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual ~RenderCommandList() noexcept = default;
 
 	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
+	virtual ERhiQueueType GetQueueType() const noexcept = 0;
+	void TrackResource(NativeResourceHandle resource)
+	{
+		if (!resource)
+		{
+			return;
+		}
+		for (const NativeResourceHandle tracked : m_trackedResources)
+		{
+			if (tracked.Value == resource.Value)
+			{
+				return;
+			}
+		}
+		m_trackedResources.push_back(resource);
+		OnResourceTrackingStarted(resource);
+	}
+	std::span<const NativeResourceHandle> GetTrackedResources() const noexcept { return m_trackedResources; }
+	void ResolveTrackedResources(RhiSubmissionToken submissionToken) noexcept
+	{
+		for (const NativeResourceHandle resource : m_trackedResources)
+		{
+			OnResourceTrackingFinished(resource, submissionToken);
+		}
+		m_trackedResources.clear();
+	}
+	void ResetTrackedResources() noexcept { ResolveTrackedResources({}); }
 	virtual NativeGraphicsCommandListHandle GetNativeHandle(const struct RhiNativeInteropRequest& request) const noexcept = 0;
 	virtual bool SupportsDiagnosticScopes() const noexcept = 0;
 	virtual void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept = 0;
@@ -87,4 +117,14 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept = 0;
 	virtual void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept = 0;
 	virtual void UnorderedAccessBarrier(NativeResourceHandle resource) noexcept = 0;
+
+
+  protected:
+	virtual void OnResourceTrackingStarted(NativeResourceHandle resource) noexcept = 0;
+	virtual void OnResourceTrackingFinished(
+	    NativeResourceHandle resource,
+	    RhiSubmissionToken submissionToken) noexcept = 0;
+
+  private:
+	std::vector<NativeResourceHandle> m_trackedResources;
 };

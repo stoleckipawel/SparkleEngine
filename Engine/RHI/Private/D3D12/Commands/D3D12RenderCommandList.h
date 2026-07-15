@@ -10,9 +10,13 @@ class D3D12RenderHardwareInterface;
 class D3D12RenderCommandList final : public RenderCommandList
 {
   public:
-	D3D12RenderCommandList(D3D12RenderHardwareInterface& owner, ID3D12GraphicsCommandList7* commandList) noexcept;
+	D3D12RenderCommandList(
+	    D3D12RenderHardwareInterface& owner,
+	    ID3D12GraphicsCommandList7* commandList,
+	    ERhiQueueType queueType = ERhiQueueType::Graphics) noexcept;
 
 	ERhiBackendApi GetBackendApi() const noexcept override;
+	ERhiQueueType GetQueueType() const noexcept override { return m_queueType; }
 	NativeGraphicsCommandListHandle GetNativeHandle(const RhiNativeInteropRequest& request) const noexcept override;
 	bool SupportsDiagnosticScopes() const noexcept override;
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept override;
@@ -81,6 +85,12 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void UnorderedAccessBarrier(NativeResourceHandle resource) noexcept override;
 
   private:
+	void OnResourceTrackingStarted(NativeResourceHandle resource) noexcept override;
+	void OnResourceTrackingFinished(
+	    NativeResourceHandle resource,
+	    RhiSubmissionToken submissionToken) noexcept override;
+
 	D3D12RenderHardwareInterface* m_owner = nullptr;
 	ID3D12GraphicsCommandList7* m_commandList = nullptr;
+	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
 };

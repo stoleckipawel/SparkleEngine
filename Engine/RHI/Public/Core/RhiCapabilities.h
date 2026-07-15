@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RhiBackendApi.h"
+#include "../Commands/RhiQueue.h"
 #include "../Formats/PixelFormat.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Shaders/CookedShaderPackage.h"
@@ -51,6 +52,24 @@ struct RhiQueueCapabilities
 	bool SupportsGraphics = false;
 	bool SupportsCompute = false;
 	bool SupportsCopy = false;
+	bool ComputeIsIndependent = false;
+	bool CopyIsIndependent = false;
+
+	constexpr bool Supports(ERhiQueueType queue) const noexcept
+	{
+		switch (queue)
+		{
+			case ERhiQueueType::Graphics:
+				return SupportsGraphics;
+			case ERhiQueueType::Compute:
+				return SupportsCompute;
+			case ERhiQueueType::Copy:
+				return SupportsCopy;
+			case ERhiQueueType::Count:
+			default:
+				return false;
+		}
+	}
 };
 
 struct RhiDescriptorIndexingCapabilities

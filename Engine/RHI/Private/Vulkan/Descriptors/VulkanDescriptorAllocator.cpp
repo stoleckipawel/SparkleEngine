@@ -793,7 +793,7 @@ VkBuffer VulkanDescriptorAllocator::EnsureFallbackBuffer() noexcept
 		return m_fallbackBuffer;
 	}
 
-	const VkBufferCreateInfo bufferInfo{
+	VkBufferCreateInfo bufferInfo{
 	    .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 	    .pNext = nullptr,
 	    .flags = 0,
@@ -802,6 +802,7 @@ VkBuffer VulkanDescriptorAllocator::EnsureFallbackBuffer() noexcept
 	    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 	    .queueFamilyIndexCount = 0,
 	    .pQueueFamilyIndices = nullptr};
+	m_rhi.ConfigureResourceQueueSharing(bufferInfo);
 	if (vkCreateBuffer(m_rhi.GetDevice(), &bufferInfo, nullptr, &m_fallbackBuffer) != VK_SUCCESS || m_fallbackBuffer == VK_NULL_HANDLE)
 	{
 		return VK_NULL_HANDLE;

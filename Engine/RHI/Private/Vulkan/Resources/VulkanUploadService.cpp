@@ -197,7 +197,9 @@ bool VulkanUploadService::UploadTexture(
 	    static_cast<std::uint32_t>(copyRegions.size()),
 	    copyRegions.data());
 
-	const VulkanResourceStateMapping finalStateMapping = VulkanTypeConversions::ToResourceStateMapping(finalState);
+	const ResourceState submittedFinalState =
+	    commandList.GetQueueType() == ERhiQueueType::Copy ? ResourceState::Common : finalState;
+	const VulkanResourceStateMapping finalStateMapping = VulkanTypeConversions::ToResourceStateMapping(submittedFinalState);
 	const VkImageMemoryBarrier2 toFinalState{
 	    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 	    .pNext = nullptr,
@@ -218,6 +220,8 @@ bool VulkanUploadService::UploadTexture(
 	    .pImageMemoryBarriers = &toFinalState};
 	vkCmdPipelineBarrier2(commandBuffer, &finalStateDependency);
 
-	m_memoryAllocator->QueueDestroyResource(std::move(stagingResource), m_commandContext->GetNextRetireFenceValue());
+	commandList.TrackResource(NativeResourceHandle{destinationRecord->Image});
+	commandList.TrackResource(NativeResourceHandle{stagingResource->Buffer});
+	m_memoryAllocator->QueueDestroyResource(std::move(stagingResource));
 	return true;
 }

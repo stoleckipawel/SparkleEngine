@@ -2,11 +2,13 @@
 
 #include "Vulkan/VulkanIncludes.h"
 
+#include "Commands/RhiQueue.h"
 #include "Diagnostics/RhiDiagnostics.h"
 #include "RayTracing/RhiRayTracingDesc.h"
 #include "Vulkan/Diagnostics/VulkanDebugLayer.h"
 #include "Vulkan/Device/VulkanRayTracingFeatureQuery.h"
 
+#include <array>
 #include <cstdint>
 #include <mutex>
 #include <string>
@@ -27,6 +29,7 @@ struct VulkanAdapterInfo final
 struct VulkanFeatureStatus final
 {
 	bool SupportsSynchronization2 = false;
+	bool SupportsTimelineSemaphore = false;
 	bool SupportsDynamicRendering = false;
 	bool SupportsSamplerAnisotropy = false;
 	bool SupportsFillModeNonSolid = false;
@@ -37,6 +40,7 @@ struct VulkanFeatureStatus final
 	bool SupportsShaderDemoteToHelperInvocation = false;
 	bool SupportsMutableDescriptorType = false;
 	bool EnabledSynchronization2 = false;
+	bool EnabledTimelineSemaphore = false;
 	bool EnabledDynamicRendering = false;
 	bool EnabledSamplerAnisotropy = false;
 	bool EnabledFillModeNonSolid = false;
@@ -68,7 +72,12 @@ class VulkanRhi final
 	VkPhysicalDevice GetPhysicalDevice() const noexcept;
 	VkDevice GetDevice() const noexcept;
 	VkQueue GetGraphicsQueue() const noexcept;
+	VkQueue GetQueue(ERhiQueueType queueType) const noexcept;
 	std::uint32_t GetGraphicsQueueFamilyIndex() const noexcept;
+	std::uint32_t GetQueueFamilyIndex(ERhiQueueType queueType) const noexcept;
+	bool HasIndependentQueue(ERhiQueueType queueType) const noexcept;
+	void ConfigureResourceQueueSharing(VkBufferCreateInfo& createInfo) const noexcept;
+	void ConfigureResourceQueueSharing(VkImageCreateInfo& createInfo) const noexcept;
 	PFN_vkSetDebugUtilsObjectNameEXT GetSetDebugUtilsObjectName() const noexcept;
 	PFN_vkCmdBeginDebugUtilsLabelEXT GetCmdBeginDebugUtilsLabel() const noexcept;
 	PFN_vkCmdEndDebugUtilsLabelEXT GetCmdEndDebugUtilsLabel() const noexcept;
@@ -96,7 +105,7 @@ class VulkanRhi final
 		VkPhysicalDeviceFeatures2 Features = {};
 		VkPhysicalDeviceVulkan12Features Features12 = {};
 		VkPhysicalDeviceVulkan13Features Features13 = {};
-		std::uint32_t GraphicsQueueFamilyIndex = UINT32_MAX;
+		std::array<std::uint32_t, RhiQueueTypeCount> QueueFamilyIndices = {UINT32_MAX, UINT32_MAX, UINT32_MAX};
 		std::uint32_t Score = 0;
 	};
 
@@ -115,6 +124,8 @@ class VulkanRhi final
 	static bool IsInstanceExtensionAvailable(const char* extensionName) noexcept;
 	static bool IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept;
 	static std::uint32_t FindGraphicsQueueFamily(VkPhysicalDevice device) noexcept;
+	static std::uint32_t FindDedicatedComputeQueueFamily(VkPhysicalDevice device) noexcept;
+	static std::uint32_t FindDedicatedCopyQueueFamily(VkPhysicalDevice device) noexcept;
 	static std::uint32_t ScorePhysicalDevice(const VkPhysicalDeviceProperties& properties) noexcept;
 	static VulkanAdapterInfo BuildAdapterInfo(const VkPhysicalDeviceProperties& properties);
 	static std::string FormatApiVersion(std::uint32_t version);
@@ -130,8 +141,9 @@ class VulkanRhi final
 	VulkanDebugLayer m_debugLayer;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device = VK_NULL_HANDLE;
-	VkQueue m_graphicsQueue = VK_NULL_HANDLE;
-	std::uint32_t m_graphicsQueueFamilyIndex = UINT32_MAX;
+	std::array<VkQueue, RhiQueueTypeCount> m_queues = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
+	std::array<std::uint32_t, RhiQueueTypeCount> m_queueFamilyIndices = {UINT32_MAX, UINT32_MAX, UINT32_MAX};
+	std::vector<std::uint32_t> m_uniqueQueueFamilyIndices;
 	PFN_vkSetDebugUtilsObjectNameEXT m_setDebugUtilsObjectName = nullptr;
 	PFN_vkCmdBeginDebugUtilsLabelEXT m_cmdBeginDebugUtilsLabel = nullptr;
 	PFN_vkCmdEndDebugUtilsLabelEXT m_cmdEndDebugUtilsLabel = nullptr;

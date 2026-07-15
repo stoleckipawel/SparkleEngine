@@ -72,6 +72,42 @@ ERhiBackendApi VulkanRenderCommandList::GetBackendApi() const noexcept
 	return ERhiBackendApi::Vulkan;
 }
 
+void VulkanRenderCommandList::OnResourceTrackingStarted(NativeResourceHandle resource) noexcept
+{
+	VulkanGpuAllocationRecord* record =
+	    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
+	if (record == nullptr)
+	{
+		return;
+	}
+	++record->RecordingReferenceCount;
+	if (record->ParentMemoryBlock != nullptr)
+	{
+		++record->ParentMemoryBlock->RecordingReferenceCount;
+	}
+}
+
+void VulkanRenderCommandList::OnResourceTrackingFinished(
+	NativeResourceHandle resource,
+	RhiSubmissionToken submissionToken) noexcept
+{
+	VulkanGpuAllocationRecord* record =
+	    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
+	if (record == nullptr)
+	{
+		return;
+	}
+	record->RecordingReferenceCount = record->RecordingReferenceCount > 0 ? record->RecordingReferenceCount - 1 : 0;
+	record->LastUse.MarkUsed(submissionToken);
+	if (record->ParentMemoryBlock != nullptr)
+	{
+		VulkanGpuMemoryBlockRecord& memoryBlock = *record->ParentMemoryBlock;
+		memoryBlock.RecordingReferenceCount =
+		    memoryBlock.RecordingReferenceCount > 0 ? memoryBlock.RecordingReferenceCount - 1 : 0;
+		memoryBlock.LastUse.MarkUsed(submissionToken);
+	}
+}
+
 NativeGraphicsCommandListHandle VulkanRenderCommandList::GetNativeHandle(const RhiNativeInteropRequest&) const noexcept
 {
 	return NativeGraphicsCommandListHandle{m_commandBuffer};
@@ -857,6 +893,8 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 
 void VulkanRenderCommandList::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
 {
+	TrackResource(destinationResource);
+	TrackResource(sourceResource);
 	if (m_commandBuffer == VK_NULL_HANDLE || m_memoryAllocator == nullptr || !destinationResource || !sourceResource)
 	{
 		return;
@@ -925,6 +963,8 @@ void VulkanRenderCommandList::CopyResource(NativeResourceHandle destinationResou
 
 void VulkanRenderCommandList::AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept
 {
+	TrackResource(beforeResource);
+	TrackResource(afterResource);
 	if (m_commandBuffer == VK_NULL_HANDLE || (!beforeResource && !afterResource))
 	{
 		return;
@@ -953,6 +993,7 @@ void VulkanRenderCommandList::AliasResource(NativeResourceHandle beforeResource,
 
 void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {
+	TrackResource(resource);
 	if (m_commandBuffer == VK_NULL_HANDLE || !resource || before == after)
 	{
 		return;
@@ -1044,6 +1085,7 @@ void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, 
 
 void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle resource) noexcept
 {
+	TrackResource(resource);
 	if (m_commandBuffer == VK_NULL_HANDLE)
 	{
 		return;

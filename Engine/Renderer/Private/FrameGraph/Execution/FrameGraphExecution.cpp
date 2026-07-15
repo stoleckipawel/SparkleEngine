@@ -63,6 +63,13 @@ void FrameGraph::Execute(
 	for (const FrameGraphPassIndex passIndex : plan.executionOrder)
 	{
 		const FrameGraphPassNode& passRecord = plan.passes[passIndex];
+		for (const PassResourceDeclaration& declaration : passRecord.declarations)
+		{
+			if (declaration.handle.IsValid())
+			{
+				cmd.GetRenderCommandList().TrackResource(m_resourceResolver.GetResolvedAccess(declaration.handle).resource);
+			}
+		}
 		graphDiagnostics.InsertPassAliasingBarrierMarker(passRecord);
 		EmitTransientAliasingBarriers(cmd, passRecord.passName, passRecord.transientAliasingBarriers);
 		graphDiagnostics.InsertPassResourceBarrierMarker(passRecord);

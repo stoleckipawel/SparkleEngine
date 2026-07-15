@@ -13,14 +13,35 @@
 #include <string>
 #include <vector>
 
-D3D12RenderCommandList::D3D12RenderCommandList(D3D12RenderHardwareInterface& owner, ID3D12GraphicsCommandList7* commandList) noexcept :
-    m_owner(&owner), m_commandList(commandList)
+D3D12RenderCommandList::D3D12RenderCommandList(
+    D3D12RenderHardwareInterface& owner,
+    ID3D12GraphicsCommandList7* commandList,
+    ERhiQueueType queueType) noexcept :
+    m_owner(&owner), m_commandList(commandList), m_queueType(queueType)
 {
 }
 
 ERhiBackendApi D3D12RenderCommandList::GetBackendApi() const noexcept
 {
 	return ERhiBackendApi::D3D12;
+}
+
+void D3D12RenderCommandList::OnResourceTrackingStarted(NativeResourceHandle resource) noexcept
+{
+	if (m_owner != nullptr)
+	{
+		m_owner->BeginResourceTracking(resource);
+	}
+}
+
+void D3D12RenderCommandList::OnResourceTrackingFinished(
+	NativeResourceHandle resource,
+	RhiSubmissionToken submissionToken) noexcept
+{
+	if (m_owner != nullptr)
+	{
+		m_owner->EndResourceTracking(resource, submissionToken);
+	}
 }
 
 NativeGraphicsCommandListHandle D3D12RenderCommandList::GetNativeHandle(const RhiNativeInteropRequest&) const noexcept
@@ -479,6 +500,8 @@ void D3D12RenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const
 
 void D3D12RenderCommandList::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
 {
+	TrackResource(destinationResource);
+	TrackResource(sourceResource);
 	if (m_commandList != nullptr)
 	{
 		m_commandList->CopyResource(
@@ -494,8 +517,8 @@ void D3D12RenderCommandList::AliasResource(NativeResourceHandle beforeResource, 
 		return;
 	}
 
-	(void) beforeResource;
-	(void) afterResource;
+	TrackResource(beforeResource);
+	TrackResource(afterResource);
 
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
@@ -507,6 +530,7 @@ void D3D12RenderCommandList::AliasResource(NativeResourceHandle beforeResource, 
 
 void D3D12RenderCommandList::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {
+	TrackResource(resource);
 	if (m_commandList == nullptr)
 	{
 		return;
@@ -524,6 +548,7 @@ void D3D12RenderCommandList::TransitionResource(NativeResourceHandle resource, R
 
 void D3D12RenderCommandList::UnorderedAccessBarrier(NativeResourceHandle resource) noexcept
 {
+	TrackResource(resource);
 	if (m_commandList == nullptr)
 	{
 		return;

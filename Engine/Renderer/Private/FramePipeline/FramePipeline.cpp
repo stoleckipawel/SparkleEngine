@@ -233,7 +233,22 @@ void FramePipeline::SetupFrame() noexcept
 	RefreshViewportRenderProducts();
 
 	m_sceneSnapshot.Capture(m_systems->GetGameScene().CaptureSnapshot());
-	m_systems->GetTextureManager().LoadSceneTextures(m_sceneSnapshot.textures);
+	RenderDeviceServices& backend = m_systems->GetBackend();
+	RenderCommandList& graphicsCommandList = backend.GetCurrentGraphicsCommandList();
+	const bool useCopyQueue = m_systems->GetRenderHardwareInterface().GetCapabilities().Queues.SupportsCopy;
+	RenderCommandList& uploadCommandList =
+	    useCopyQueue ? backend.BeginCommandList(ERhiQueueType::Copy) : graphicsCommandList;
+	const std::vector<NativeResourceHandle> uploadedResources =
+	    m_systems->GetTextureManager().LoadSceneTextures(m_sceneSnapshot.textures, uploadCommandList);
+	if (useCopyQueue)
+	{
+		const RhiSubmissionToken uploadToken = backend.SubmitCommandList(uploadCommandList);
+		backend.QueueWait(ERhiQueueType::Graphics, uploadToken);
+		for (const NativeResourceHandle resource : uploadedResources)
+		{
+			graphicsCommandList.TransitionResource(resource, ResourceState::Common, ResourceState::ShaderResource);
+		}
+	}
 	m_systems->GetRenderCamera().Update(m_sceneSnapshot.camera);
 
 	const RenderViewportExtent renderExtent =

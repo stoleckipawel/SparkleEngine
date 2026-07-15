@@ -141,6 +141,38 @@ RenderCommandList& RenderDeviceServices::GetGraphicsCommandList(std::uint32_t fr
 	return m_backend->GetGraphicsCommandList(frameIndex);
 }
 
+RenderCommandList& RenderDeviceServices::BeginCommandList(ERhiQueueType queueType) noexcept
+{
+	return m_backend->BeginCommandList(queueType);
+}
+
+RhiSubmissionToken RenderDeviceServices::SubmitCommandList(
+	RenderCommandList& commandList,
+	std::span<const RhiSubmissionToken> waitTokens) noexcept
+{
+	return m_backend->SubmitCommandList(commandList, waitTokens);
+}
+
+void RenderDeviceServices::QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept
+{
+	m_backend->QueueWait(waitQueue, executionToken);
+}
+
+void RenderDeviceServices::WaitForSubmission(RhiSubmissionToken token) noexcept
+{
+	m_backend->WaitForSubmission(token);
+}
+
+bool RenderDeviceServices::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
+{
+	return m_backend->IsSubmissionComplete(token);
+}
+
+RhiSubmissionToken RenderDeviceServices::GetLastSubmittedToken(ERhiQueueType queueType) const noexcept
+{
+	return m_backend->GetLastSubmittedToken(queueType);
+}
+
 void RenderDeviceServices::SubmitFrame() noexcept
 {
 	m_backend->SubmitFrame();

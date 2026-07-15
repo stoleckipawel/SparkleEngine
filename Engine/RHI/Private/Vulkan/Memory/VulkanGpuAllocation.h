@@ -2,6 +2,7 @@
 
 #include "Interop/RhiNativeHandles.h"
 #include "Memory/RhiMemoryTypes.h"
+#include "Commands/RhiQueue.h"
 #include "Vulkan/VulkanIncludes.h"
 
 #include <cstdint>
@@ -50,6 +51,8 @@ struct VulkanGpuAllocationRecord final
 	bool IsMapped = false;
 	void* CpuMappedAddress = nullptr;
 	bool OwnsAllocation = true;
+	RhiSubmissionState LastUse;
+	std::uint32_t RecordingReferenceCount = 0;
 
 	VulkanGpuAllocationRecord() noexcept = default;
 	~VulkanGpuAllocationRecord() noexcept;
@@ -74,6 +77,8 @@ struct VulkanGpuMemoryBlockRecord final
 	std::wstring DebugName;
 	VulkanGpuMemoryAllocator* Owner = nullptr;
 	std::uint32_t AliasingResourceCount = 0;
+	RhiSubmissionState LastUse;
+	std::uint32_t RecordingReferenceCount = 0;
 
 	VulkanGpuMemoryBlockRecord() noexcept = default;
 	~VulkanGpuMemoryBlockRecord() noexcept;

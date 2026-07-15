@@ -6,6 +6,7 @@
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 
 #include <cstddef>
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -58,9 +59,9 @@ class VulkanGpuMemoryAllocator final
 	VulkanGpuAllocationRecord* FindAllocationRecord(NativeResourceHandle resource) const noexcept;
 	VulkanGpuAllocationRecord* FindAllocationRecordByDeviceAddress(VkDeviceAddress deviceAddress) const noexcept;
 
-	void QueueDestroyResource(std::unique_ptr<VulkanGpuAllocationRecord> record, std::uint64_t retireFenceValue) noexcept;
-	void QueueDestroyMemoryBlock(std::unique_ptr<VulkanGpuMemoryBlockRecord> record, std::uint64_t retireFenceValue) noexcept;
-	void DrainCompletedReleases(std::uint64_t completedFenceValue) noexcept;
+	void QueueDestroyResource(std::unique_ptr<VulkanGpuAllocationRecord> record) noexcept;
+	void QueueDestroyMemoryBlock(std::unique_ptr<VulkanGpuMemoryBlockRecord> record) noexcept;
+	void DrainCompletedReleases(const std::array<std::uint64_t, RhiQueueTypeCount>& completedValues) noexcept;
 	void FlushPendingReleases() noexcept;
 
   private:

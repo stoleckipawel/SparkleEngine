@@ -260,15 +260,8 @@ void D3D12ResourceService::ReleaseOwnedResource(RhiOwnedResourceHandle resource)
 		return;
 	}
 
-	std::uint64_t retireFenceValue = 0;
-	if (m_rhi != nullptr)
-	{
-		retireFenceValue = m_rhi->GetNextFenceValue();
-	}
-
 	DrainCompletedResourceReleases();
-	m_pendingOwnedResourceReleases.push_back(
-	    PendingOwnedResourceRelease{.Record = std::move(ownedRecord), .RetireFenceValue = retireFenceValue});
+	m_pendingOwnedResourceReleases.push_back(PendingOwnedResourceRelease{.Record = std::move(ownedRecord)});
 }
 
 void D3D12ResourceService::DrainCompletedResourceReleases() noexcept
@@ -278,27 +271,39 @@ void D3D12ResourceService::DrainCompletedResourceReleases() noexcept
 		return;
 	}
 
-	std::uint64_t completedFenceValue = UINT64_MAX;
-	if (m_rhi != nullptr && m_rhi->GetFence())
+	std::array<std::uint64_t, RhiQueueTypeCount> completedValues{};
+	if (m_rhi != nullptr)
 	{
-		completedFenceValue = m_rhi->GetFence()->GetCompletedValue();
+		for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
+		{
+			completedValues[queueIndex] =
+			    m_rhi->GetCompletedSubmissionValue(static_cast<ERhiQueueType>(queueIndex));
+		}
+	}
+	else
+	{
+		completedValues.fill(UINT64_MAX);
 	}
 
 	auto eraseBegin = std::remove_if(
 	    m_pendingOwnedResourceReleases.begin(),
 	    m_pendingOwnedResourceReleases.end(),
-	    [completedFenceValue](const PendingOwnedResourceRelease& pendingRelease)
+	    [&completedValues](const PendingOwnedResourceRelease& pendingRelease)
 	    {
-		    return pendingRelease.Record == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
+		    return pendingRelease.Record == nullptr ||
+		           (pendingRelease.Record->RecordingReferenceCount == 0 &&
+		            pendingRelease.Record->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingOwnedResourceReleases.erase(eraseBegin, m_pendingOwnedResourceReleases.end());
 
 	auto heapEraseBegin = std::remove_if(
 	    m_pendingOwnedMemoryBlockReleases.begin(),
 	    m_pendingOwnedMemoryBlockReleases.end(),
-	    [completedFenceValue](const PendingOwnedMemoryBlockRelease& pendingRelease)
+	    [&completedValues](const PendingOwnedMemoryBlockRelease& pendingRelease)
 	    {
-		    return pendingRelease.Record == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
+		    return pendingRelease.Record == nullptr ||
+		           (pendingRelease.Record->RecordingReferenceCount == 0 &&
+		            pendingRelease.Record->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingOwnedMemoryBlockReleases.erase(heapEraseBegin, m_pendingOwnedMemoryBlockReleases.end());
 }
@@ -368,15 +373,8 @@ void D3D12ResourceService::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle
 		return;
 	}
 
-	std::uint64_t retireFenceValue = 0;
-	if (m_rhi != nullptr)
-	{
-		retireFenceValue = m_rhi->GetNextFenceValue();
-	}
-
 	DrainCompletedResourceReleases();
-	m_pendingOwnedMemoryBlockReleases.push_back(
-	    PendingOwnedMemoryBlockRelease{.Record = std::move(ownedMemoryBlock), .RetireFenceValue = retireFenceValue});
+	m_pendingOwnedMemoryBlockReleases.push_back(PendingOwnedMemoryBlockRelease{.Record = std::move(ownedMemoryBlock)});
 }
 
 RhiOwnedResourceHandle D3D12ResourceService::CreateAliasingTextureResource(
@@ -432,6 +430,51 @@ RhiOwnedResourceHandle D3D12ResourceService::CreateAliasingBufferResource(
 bool D3D12ResourceService::SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept
 {
 	return ResourceSupportsUnorderedAccess(static_cast<ID3D12Resource*>(resource.Value));
+}
+
+void D3D12ResourceService::BeginResourceTracking(NativeResourceHandle resource) noexcept
+{
+	if (m_memoryAllocator == nullptr || !resource)
+	{
+		return;
+	}
+
+	D3D12GpuAllocationRecord* record =
+	    m_memoryAllocator->FindAllocationRecord(static_cast<ID3D12Resource*>(resource.Value));
+	if (record == nullptr)
+	{
+		return;
+	}
+	++record->RecordingReferenceCount;
+	if (record->ParentHeap != nullptr)
+	{
+		++record->ParentHeap->RecordingReferenceCount;
+	}
+}
+
+void D3D12ResourceService::EndResourceTracking(
+	NativeResourceHandle resource,
+	RhiSubmissionToken submissionToken) noexcept
+{
+	if (m_memoryAllocator == nullptr || !resource)
+	{
+		return;
+	}
+
+	D3D12GpuAllocationRecord* record =
+	    m_memoryAllocator->FindAllocationRecord(static_cast<ID3D12Resource*>(resource.Value));
+	if (record == nullptr)
+	{
+		return;
+	}
+	record->RecordingReferenceCount = record->RecordingReferenceCount > 0 ? record->RecordingReferenceCount - 1 : 0;
+	record->LastUse.MarkUsed(submissionToken);
+	if (record->ParentHeap != nullptr)
+	{
+		D3D12GpuHeapRecord& heap = *record->ParentHeap;
+		heap.RecordingReferenceCount = heap.RecordingReferenceCount > 0 ? heap.RecordingReferenceCount - 1 : 0;
+		heap.LastUse.MarkUsed(submissionToken);
+	}
 }
 
 std::wstring D3D12ResourceService::CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName)

@@ -210,8 +210,7 @@ void VulkanResourceService::ReleaseOwnedResource(RhiOwnedResourceHandle resource
 		return;
 	}
 
-	const std::uint64_t retireFenceValue = m_commandContext != nullptr ? m_commandContext->GetNextRetireFenceValue() : 0;
-	m_memoryAllocator->QueueDestroyResource(std::move(record), retireFenceValue);
+	m_memoryAllocator->QueueDestroyResource(std::move(record));
 	DrainCompletedResourceReleases();
 }
 
@@ -232,7 +231,13 @@ void VulkanResourceService::DrainCompletedResourceReleases() noexcept
 
 	if (m_commandContext != nullptr)
 	{
-		m_memoryAllocator->DrainCompletedReleases(m_commandContext->GetCompletedRetireFenceValue());
+		std::array<std::uint64_t, RhiQueueTypeCount> completedValues{};
+		for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
+		{
+			completedValues[queueIndex] =
+			    m_commandContext->GetCompletedSubmissionValue(static_cast<ERhiQueueType>(queueIndex));
+		}
+		m_memoryAllocator->DrainCompletedReleases(completedValues);
 	}
 	else
 	{
@@ -324,8 +329,7 @@ void VulkanResourceService::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandl
 		return;
 	}
 
-	const std::uint64_t retireFenceValue = m_commandContext != nullptr ? m_commandContext->GetNextRetireFenceValue() : 0;
-	m_memoryAllocator->QueueDestroyMemoryBlock(std::move(record), retireFenceValue);
+	m_memoryAllocator->QueueDestroyMemoryBlock(std::move(record));
 	DrainCompletedResourceReleases();
 }
 

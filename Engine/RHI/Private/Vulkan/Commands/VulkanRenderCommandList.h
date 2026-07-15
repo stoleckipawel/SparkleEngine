@@ -22,6 +22,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void SetMemoryAllocator(const VulkanGpuMemoryAllocator* memoryAllocator) noexcept { m_memoryAllocator = memoryAllocator; }
 	void SetDescriptorManager(const VulkanDescriptorManager* descriptorManager) noexcept { m_descriptorManager = descriptorManager; }
 	void SetDescriptorAllocator(VulkanDescriptorAllocator* descriptorAllocator) noexcept { m_descriptorAllocator = descriptorAllocator; }
+	void SetQueueType(ERhiQueueType queueType) noexcept { m_queueType = queueType; }
 	void CloseOpenRendering() noexcept;
 	void SetNativeCommandBuffer(
 	    VkCommandBuffer commandBuffer,
@@ -30,6 +31,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	    PFN_vkCmdInsertDebugUtilsLabelEXT insertLabel) noexcept;
 
 	ERhiBackendApi GetBackendApi() const noexcept override;
+	ERhiQueueType GetQueueType() const noexcept override { return m_queueType; }
 	NativeGraphicsCommandListHandle GetNativeHandle(const RhiNativeInteropRequest& request) const noexcept override;
 	bool SupportsDiagnosticScopes() const noexcept override;
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept override;
@@ -98,6 +100,11 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void UnorderedAccessBarrier(NativeResourceHandle resource) noexcept override;
 
   private:
+	void OnResourceTrackingStarted(NativeResourceHandle resource) noexcept override;
+	void OnResourceTrackingFinished(
+	    NativeResourceHandle resource,
+	    RhiSubmissionToken submissionToken) noexcept override;
+
 	static const CompiledBinding* FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept;
 	static VkShaderStageFlags ToVkShaderStages(ShaderStageMask visibilityMask) noexcept;
 	static void ConfigurePartitionedTlasInput(
@@ -133,6 +140,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	const VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	const VulkanDescriptorManager* m_descriptorManager = nullptr;
 	VulkanDescriptorAllocator* m_descriptorAllocator = nullptr;
+	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
 	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
 	const VulkanBindingLayout* m_graphicsBindingLayout = nullptr;
 	const VulkanBindingLayout* m_computeBindingLayout = nullptr;

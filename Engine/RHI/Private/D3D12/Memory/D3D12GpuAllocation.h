@@ -2,6 +2,7 @@
 
 #include "Interop/RhiNativeHandles.h"
 #include "Memory/RhiMemoryTypes.h"
+#include "Commands/RhiQueue.h"
 
 #include <d3d12.h>
 #include <wrl/client.h>
@@ -31,6 +32,8 @@ struct D3D12GpuAllocationRecord final
 	D3D12GpuMemoryAllocator* Owner = nullptr;
 	bool IsMapped = false;
 	void* CpuMappedAddress = nullptr;
+	RhiSubmissionState LastUse;
+	std::uint32_t RecordingReferenceCount = 0;
 
 	D3D12GpuAllocationRecord() noexcept = default;
 	~D3D12GpuAllocationRecord() noexcept;
@@ -51,6 +54,8 @@ struct D3D12GpuHeapRecord final
 	std::wstring DebugName;
 	D3D12GpuMemoryAllocator* Owner = nullptr;
 	std::uint32_t AliasingResourceCount = 0;
+	RhiSubmissionState LastUse;
+	std::uint32_t RecordingReferenceCount = 0;
 
 	D3D12GpuHeapRecord() noexcept = default;
 	~D3D12GpuHeapRecord() noexcept;

@@ -91,12 +91,17 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	m_samplerLibrary = std::make_unique<VulkanSamplerLibrary>(rhi, *m_descriptorManager);
 	m_descriptorManager->SetSamplerLibrary(*m_samplerLibrary);
 	m_imguiBackend = std::make_unique<VulkanImGuiBackend>(*this);
-	for (std::uint32_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
+	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		commandContext.GetCommandList(frameIndex).SetRhi(&rhi);
-		commandContext.GetCommandList(frameIndex).SetMemoryAllocator(&memoryAllocator);
-		commandContext.GetCommandList(frameIndex).SetDescriptorManager(m_descriptorManager.get());
-		commandContext.GetCommandList(frameIndex).SetDescriptorAllocator(&m_descriptorManager->GetAllocator());
+		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
+		for (std::uint32_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
+		{
+			VulkanRenderCommandList& commandList = commandContext.GetCommandList(queueType, frameIndex);
+			commandList.SetRhi(&rhi);
+			commandList.SetMemoryAllocator(&memoryAllocator);
+			commandList.SetDescriptorManager(m_descriptorManager.get());
+			commandList.SetDescriptorAllocator(&m_descriptorManager->GetAllocator());
+		}
 	}
 	m_diagnostics = CreateVulkanRenderDiagnostics(rhi, memoryAllocator);
 	RebuildSwapChainBackBufferViews();
@@ -224,11 +229,16 @@ NativeGraphicsQueueHandle VulkanRenderHardwareInterface::GetGraphicsQueueHandle(
 
 RenderCommandList& VulkanRenderHardwareInterface::GetGraphicsCommandList(std::uint32_t) noexcept
 {
+	return GetCommandList(ERhiQueueType::Graphics, m_currentFrameIndex);
+}
+
+RenderCommandList& VulkanRenderHardwareInterface::GetCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
+{
 	if (m_resourceService != nullptr)
 	{
 		m_resourceService->DrainCompletedResourceReleases();
 	}
-	return m_commandContext->GetCommandList(m_currentFrameIndex);
+	return m_commandContext->GetCommandList(queueType, frameIndex);
 }
 
 RhiRayTracingCapabilities VulkanRenderHardwareInterface::GetRayTracingCapabilities() const noexcept
@@ -281,7 +291,14 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
-	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
+	const bool hasComputeQueue = m_rhi != nullptr && m_rhi->HasIndependentQueue(ERhiQueueType::Compute);
+	const bool hasCopyQueue = m_rhi != nullptr && m_rhi->HasIndependentQueue(ERhiQueueType::Copy);
+	capabilities.Queues = RhiQueueCapabilities{
+	    .SupportsGraphics = true,
+	    .SupportsCompute = hasComputeQueue,
+	    .SupportsCopy = hasCopyQueue,
+	    .ComputeIsIndependent = hasComputeQueue,
+	    .CopyIsIndependent = hasCopyQueue};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VulkanManaged;
 	capabilities.MemorySupport = BuildBackendMemorySupport(m_diagnostics.get());

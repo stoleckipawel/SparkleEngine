@@ -479,6 +479,24 @@ D3D12_HEAP_FLAGS D3D12GpuMemoryAllocator::ToTransientHeapFlags(RhiTransientAlloc
 	}
 }
 
+D3D12GpuAllocationRecord* D3D12GpuMemoryAllocator::FindAllocationRecord(ID3D12Resource* resource) const noexcept
+{
+	if (m_impl == nullptr || resource == nullptr)
+	{
+		return nullptr;
+	}
+
+	std::scoped_lock lock(m_impl->recordsMutex);
+	const auto record = std::find_if(
+	    m_impl->liveRecords.begin(),
+	    m_impl->liveRecords.end(),
+	    [resource](const D3D12GpuAllocationRecord* candidate) noexcept
+	    {
+		    return candidate != nullptr && candidate->Resource.Get() == resource;
+	    });
+	return record != m_impl->liveRecords.end() ? *record : nullptr;
+}
+
 void D3D12GpuMemoryAllocator::RegisterAllocationRecord(D3D12GpuAllocationRecord& record) noexcept
 {
 	if (m_impl == nullptr)

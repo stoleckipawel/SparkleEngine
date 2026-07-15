@@ -65,6 +65,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
+	RenderCommandList& GetCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	ID3D12DescriptorHeap* GetD3D12ShaderResourceDescriptorHeap() const noexcept;
@@ -101,6 +102,8 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
+	void BeginResourceTracking(NativeResourceHandle resource) noexcept;
+	void EndResourceTracking(NativeResourceHandle resource, RhiSubmissionToken submissionToken) noexcept;
 	bool BuildPartitionedTopLevelAccelerationStructure(
 	    ID3D12GraphicsCommandList7* commandList,
 	    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;
@@ -121,5 +124,5 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	std::unique_ptr<D3D12ImGuiBackend> m_imguiBackend;
 	RhiCapabilities m_capabilities;
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
-	std::array<std::unique_ptr<RenderCommandList>, RhiFrameConstants::FramesInFlight> m_commandLists;
+	std::array<std::array<std::unique_ptr<RenderCommandList>, RhiFrameConstants::FramesInFlight>, RhiQueueTypeCount> m_commandLists;
 };

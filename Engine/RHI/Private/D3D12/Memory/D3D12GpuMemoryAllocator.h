@@ -58,6 +58,7 @@ class D3D12GpuMemoryAllocator final
 	    const D3D12_RESOURCE_DESC& resourceDesc,
 	    D3D12_RESOURCE_STATES initialState,
 	    std::wstring_view debugName) noexcept;
+	D3D12GpuAllocationRecord* FindAllocationRecord(ID3D12Resource* resource) const noexcept;
 
   private:
 	struct Impl;

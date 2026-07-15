@@ -11,6 +11,7 @@
 
 class D3D12DescriptorService;
 class D3D12GpuMemoryAllocator;
+class D3D12RenderHardwareInterface;
 class D3D12Rhi;
 struct D3D12GpuAllocationRecord;
 struct D3D12GpuHeapRecord;
@@ -90,16 +91,18 @@ class D3D12ResourceService final : public RhiResourceService
 	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
 
   private:
+	friend class D3D12RenderHardwareInterface;
+	void BeginResourceTracking(NativeResourceHandle resource) noexcept;
+	void EndResourceTracking(NativeResourceHandle resource, RhiSubmissionToken submissionToken) noexcept;
+
 	struct PendingOwnedResourceRelease
 	{
 		std::unique_ptr<D3D12GpuAllocationRecord> Record;
-		std::uint64_t RetireFenceValue = 0;
 	};
 
 	struct PendingOwnedMemoryBlockRelease
 	{
 		std::unique_ptr<D3D12GpuHeapRecord> Record;
-		std::uint64_t RetireFenceValue = 0;
 	};
 
 	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);

@@ -38,7 +38,6 @@ class D3D12UploadService final : public RhiUploadService
 	struct PendingTextureUpload final
 	{
 		std::unique_ptr<D3D12GpuAllocationRecord> StagingResource;
-		std::uint64_t RetireFenceValue = 0;
 	};
 
 	void DrainCompletedTextureUploads() noexcept;

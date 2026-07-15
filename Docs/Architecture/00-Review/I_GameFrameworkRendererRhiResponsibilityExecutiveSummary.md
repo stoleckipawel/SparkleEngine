@@ -57,7 +57,7 @@ Application/Editor remains the composition root: it constructs these modules, ow
 | Frame pass frontend | Priority 1A follow-through implemented; build/runtime validation pending | Frame feature files allocate typed `Pass::Parameters`, state named SRV/UAV/render/depth intent, and issue `Dispatch`, `Draw`, or `Execute`. The duplicate `DeclareResources` and pass-specific allocation/add wrappers have been deleted. |
 | Scene GPU-data preparation | Frontend follow-through implemented; build/runtime validation pending | `RenderSceneGpuData` is a plain value beside `RenderSceneData`; one implementation performs conversion, upload, declaration, and graph import. No manager, subsystem root member, or per-domain forwarding class remains. |
 | Material bindings | Needs work | Per-material binding sets and a global material table are both valid policies, but ownership is exposed as raw pointers and repeated availability checks across passes. |
-| Queue model | Intentionally limited | The public submission contract exposes only graphics command lists. This is honest today but must be extended before real asynchronous copy/compute scheduling. |
+| Queue model | Priority 2A substrate and first copy workload implemented; async-compute frame-graph batching remains | The public contract exposes truthful queue capabilities, queue-typed command lists, value submission tokens, GPU queue waits, and completion queries. Texture uploads use copy when supported and graphics consumes the copy token without a CPU stall. |
 
 The passing boundary script is evidence that compile-time direction is healthy, not evidence that runtime ownership is complete. The current check protects Renderer/RHI source dependencies; it does not prove descriptor lifetime, upload behavior, or feature ownership.
 
@@ -243,8 +243,8 @@ All six implementation items are present. The migration did not retain a compati
 | Criterion | Status | Evidence / remaining work |
 | --- | --- | --- |
 | No legacy `Texture`, `D3D12Texture`, `VulkanTexture`, or `WriteShaderResourceView` resource path remains. | **Fulfilled by static inspection** | Exact legacy class/symbol and deleted-file searches return no hits in RHI or Renderer. The broader literal pattern `class Texture` also matches valid names such as `TextureManager` and `enum class Texture...`; those are not legacy resource-path hits. |
-| Vulkan texture loading contains no per-texture `vkQueueWaitIdle`. | **Fulfilled by static inspection** | `rg "vkQueueWaitIdle" Engine/RHI Engine/Renderer` returns no hits. Uploads record into the active graphics command buffer. |
-| Upload allocations are released after their copy fence, not when the sampled texture is destroyed. | **Implemented; runtime verification pending** | D3D12 holds staging in `D3D12UploadService` until `GetCompletedValue()` reaches the stamped next fence. Vulkan queues staging in `VulkanGpuMemoryAllocator` using `GetNextRetireFenceValue()`. A multi-frame upload run has not yet been executed. |
+| Vulkan texture loading contains no per-texture `vkQueueWaitIdle`. | **Fulfilled by static inspection** | `rg "vkQueueWaitIdle" Engine/RHI Engine/Renderer` returns no hits. Uploads record on copy when a dedicated transfer queue is available and otherwise use graphics. |
+| Upload allocations are released after their copy submission, not when the sampled texture is destroyed. | **Implemented; runtime verification pending** | Both backends retain staging through command-list recording, stamp its actual `(queue, value)` at submission, and drain only after that queue value completes. No guessed next-graphics fence remains. A multi-frame upload run has not yet been executed. |
 | Material, sky, frame-graph, and provider paths use the same resource/view lifetime model on both backends. | **Implemented by code inspection; runtime backend parity pending** | Materials consume logical views, sky imports the generic resource/view pair without creating a duplicate SRV, and no Renderer or provider caller can construct the deleted legacy texture type. D3D12/Vulkan runtime comparison remains pending. |
 | Shader ABI, material slot count, cooked texture payload, classic TLAS, and PTLAS contracts remain unchanged. | **Fulfilled by diff inspection** | Shader files, material slot constants/layouts, cooked texture asset structures/payload parsing, and acceleration-structure contracts were not changed by this priority. |
 
@@ -434,7 +434,19 @@ Allocator address reuse is not durable semantic state. It can cause a false rese
 
 ## Priority 2A: Add Queue/Submissions Only When A Real Workload Needs Them
 
+The implementation research and activated integration direction are recorded in [`J_NvidiaMultiQueueSubmissionResearch.md`](J_NvidiaMultiQueueSubmissionResearch.md).
+
 [`RhiCommandSubmissionService`](../../../Engine/RHI/Public/Commands/RhiCommandSubmissionService.h) currently exposes only graphics command lists and frame submission. That is acceptable while Sparkle intentionally records one graphics-queue frame. It is not enough for asynchronous uploads or compute.
+
+### Current implementation state
+
+Priority 2A is activated by the existing texture upload workload. `FramePipeline` selects copy when the backend truthfully exposes it, `TextureManager` remains unaware of submission policy, and `RhiUploadService` records the native copy. The copy submission returns `RhiSubmissionToken { Queue, Value }`; graphics installs a GPU wait and performs the final `Common -> ShaderResource` transition because a D3D12 copy queue cannot legally perform that transition. No upload path calls `Flush`, `WaitForIdle`, or a queue-idle function.
+
+RHI owns three D3D12 command queues with independent monotonic fences. Vulkan selects dedicated compute and transfer families when available, aliases unavailable roles to graphics without advertising asynchronous capability, uses one timeline semaphore per logical queue, and keeps binary semaphores at the acquire/present edge. Vulkan resources use concurrent sharing across the selected families so this initial queue integration does not rely on missing ownership transfers.
+
+Command lists retain recorded resource references. Submission resolves those references to the returned queue token; release moves ownership to retirement, and retirement requires every recorded reference to be submitted or cancelled and every stamped queue value to complete. This also handles release-after-recording but before submission without falling back to allocator addresses, a guessed next graphics fence, or a device flush.
+
+The remaining Priority 2A integration is frame-graph asynchronous compute: add explicit pass opt-in, reusable per-queue command-list pools, queue-local batch compilation, and cross-queue batch dependencies. Existing compute passes intentionally remain on graphics until that executor path lands; exposing a physical compute queue is not treated as permission to migrate them automatically.
 
 Do not build a generic queue scheduler now. First complete lifetime and upload unification. Before the first real copy-queue streaming or asynchronous-compute feature lands:
 

@@ -12,6 +12,8 @@
 
 #include "Window/Window.h"
 
+#include <array>
+#include <span>
 
 class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 {
@@ -35,6 +37,14 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	void BeginFrame() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
+	RenderCommandList& BeginCommandList(ERhiQueueType queueType) noexcept override;
+	RhiSubmissionToken SubmitCommandList(
+	    RenderCommandList& commandList,
+	    std::span<const RhiSubmissionToken> waitTokens) noexcept override;
+	void QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept override;
+	void WaitForSubmission(RhiSubmissionToken token) noexcept override;
+	bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept override;
+	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept override;
 	void SubmitFrame() noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
 	void CloseExecuteAndFlushCurrentFrame() noexcept override;
@@ -49,6 +59,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	std::unique_ptr<D3D12UploadService> m_uploadService;
 	std::unique_ptr<D3D12RenderHardwareInterface> m_renderHardwareInterface;
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
+	std::array<bool, RhiQueueTypeCount> m_queueRecording{};
 };
 
 std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(
@@ -157,11 +168,14 @@ void D3D12RenderDeviceServices::BeginFrame() noexcept
 	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
 	m_rhi->SetCurrentFrameIndex(frameIndex);
 	m_frameResourceManager->BeginFrame(m_rhi->GetFence().Get(), m_rhi->GetFenceEvent(), frameIndex);
-	m_rhi->WaitForGPU(frameIndex);
+	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
+	{
+		m_rhi->WaitForGPU(static_cast<ERhiQueueType>(queueIndex), frameIndex);
+		m_queueRecording[queueIndex] = false;
+	}
 	m_uploadService->BeginFrame();
 	m_renderHardwareInterface->GetResourceService().DrainCompletedResourceReleases();
-	m_rhi->ResetCommandAllocator(frameIndex);
-	m_rhi->ResetCommandList(frameIndex);
+	(void)BeginCommandList(ERhiQueueType::Graphics);
 }
 
 RenderCommandList& D3D12RenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
@@ -174,13 +188,72 @@ RenderCommandList& D3D12RenderDeviceServices::GetGraphicsCommandList(std::uint32
 	return m_renderHardwareInterface->GetGraphicsCommandList(frameIndex);
 }
 
+RenderCommandList& D3D12RenderDeviceServices::BeginCommandList(ERhiQueueType queueType) noexcept
+{
+	const std::size_t queueIndex = RhiQueueTypeToIndex(queueType);
+	const UINT frameIndex = m_rhi->GetCurrentFrameIndex();
+	if (!m_queueRecording[queueIndex])
+	{
+		m_rhi->ResetCommandAllocator(queueType, frameIndex);
+		m_rhi->ResetCommandList(queueType, frameIndex);
+		m_queueRecording[queueIndex] = true;
+		m_renderHardwareInterface->GetCommandList(queueType, frameIndex).ResetTrackedResources();
+	}
+	return m_renderHardwareInterface->GetCommandList(queueType, frameIndex);
+}
+
+RhiSubmissionToken D3D12RenderDeviceServices::SubmitCommandList(
+	RenderCommandList& commandList,
+	std::span<const RhiSubmissionToken> waitTokens) noexcept
+{
+	const ERhiQueueType queueType = commandList.GetQueueType();
+	const std::size_t queueIndex = RhiQueueTypeToIndex(queueType);
+	if (!m_queueRecording[queueIndex])
+	{
+		return m_rhi->GetLastSubmittedToken(queueType);
+	}
+
+	for (const RhiSubmissionToken waitToken : waitTokens)
+	{
+		m_rhi->QueueWait(queueType, waitToken);
+	}
+	const UINT frameIndex = m_rhi->GetCurrentFrameIndex();
+	m_rhi->CloseCommandList(queueType, frameIndex);
+	m_rhi->ExecuteCommandList(queueType, frameIndex);
+	const RhiSubmissionToken submissionToken = m_rhi->Signal(queueType, frameIndex);
+	commandList.ResolveTrackedResources(submissionToken);
+	m_queueRecording[queueIndex] = false;
+	return submissionToken;
+}
+
+void D3D12RenderDeviceServices::QueueWait(
+	ERhiQueueType waitQueue,
+	RhiSubmissionToken executionToken) noexcept
+{
+	m_rhi->QueueWait(waitQueue, executionToken);
+}
+
+void D3D12RenderDeviceServices::WaitForSubmission(RhiSubmissionToken token) noexcept
+{
+	m_rhi->WaitForSubmission(token);
+}
+
+bool D3D12RenderDeviceServices::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
+{
+	return m_rhi->IsSubmissionComplete(token);
+}
+
+RhiSubmissionToken D3D12RenderDeviceServices::GetLastSubmittedToken(ERhiQueueType queueType) const noexcept
+{
+	return m_rhi->GetLastSubmittedToken(queueType);
+}
+
 void D3D12RenderDeviceServices::SubmitFrame() noexcept
 {
 	const UINT frameIndex = m_rhi->GetCurrentFrameIndex();
-	m_rhi->CloseCommandList(frameIndex);
-	m_rhi->ExecuteCommandList(frameIndex);
-	m_rhi->Signal(frameIndex);
-	m_frameResourceManager->EndFrame(m_rhi->GetNextFenceValue() - 1);
+	RenderCommandList& graphicsCommandList = m_renderHardwareInterface->GetGraphicsCommandList(frameIndex);
+	const RhiSubmissionToken submissionToken = SubmitCommandList(graphicsCommandList, {});
+	m_frameResourceManager->EndFrame(submissionToken.Value);
 	m_swapChain->Present();
 }
 
@@ -191,8 +264,10 @@ void D3D12RenderDeviceServices::AdvanceFrameInFlight() noexcept
 
 void D3D12RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
 {
-	const UINT frameIndex = m_rhi->GetCurrentFrameIndex();
-	m_rhi->CloseCommandList(frameIndex);
-	m_rhi->ExecuteCommandList(frameIndex);
+	if (m_queueRecording[RhiQueueTypeToIndex(ERhiQueueType::Graphics)])
+	{
+		RenderCommandList& graphicsCommandList = GetCurrentGraphicsCommandList();
+		(void)SubmitCommandList(graphicsCommandList, {});
+	}
 	m_renderHardwareInterface->WaitForIdle();
 }
