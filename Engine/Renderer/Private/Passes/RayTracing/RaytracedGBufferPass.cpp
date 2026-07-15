@@ -12,7 +12,6 @@
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
-#include "SceneData/MaterialTextureTableCapability.h"
 
 RaytracedGBufferPass::RaytracedGBufferPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
@@ -62,15 +61,7 @@ void RaytracedGBufferPass::Execute(PassExecutionContext& context, ParameterInsta
 		return;
 	}
 
-	const RenderBindingSet* materialTextureTable = context.Frame.sceneData.materialTextureTable;
-	const std::uint32_t descriptorCount = context.Frame.sceneData.materialTextureTableDescriptorCount;
-	if (!context.Frame.sceneData.materialTextureTableValid || materialTextureTable == nullptr || !*materialTextureTable ||
-	    descriptorCount == 0u || descriptorCount > MaterialTextureTableFixedCapacity ||
-	    materialTextureTable->GetDescriptorCount() < descriptorCount)
-	{
-		return;
-	}
-	parameters->MaterialTextureTable = materialTextureTable->GetTableBinding(0);
+	parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
 
 	SetParameters(parameters, context.Frame, context.Frame.mainView, context.RuntimeServices);
 	parameters->RaytracedGBufferConstants = RaytracedGBufferUniformData{

@@ -9,12 +9,23 @@
 #include "SceneData/RenderMeshWorkloadSummary.h"
 #include "SceneData/RenderSkyData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
+#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 
 #include <DirectXMath.h>
 
 #include <vector>
 
-class RenderBindingSet;
+struct ResolvedMaterialTextureTable final
+{
+	RhiDescriptorTableBinding Binding = {};
+	std::uint32_t DescriptorCount = 0u;
+	std::uint64_t Generation = 0u;
+
+	constexpr explicit operator bool() const noexcept
+	{
+		return static_cast<bool>(Binding) && DescriptorCount != 0u && Generation != 0u;
+	}
+};
 
 struct SPARKLE_RENDERER_API RenderSceneData
 {
@@ -29,8 +40,5 @@ struct SPARKLE_RENDERER_API RenderSceneData
 	std::vector<DirectX::XMFLOAT4X4> previousJointMatrices;
 	RenderMeshWorkloadSummary meshWorkload;
 	std::vector<MaterialData> materials;
-	const RenderBindingSet* materialTextureTable = nullptr;
-	std::uint32_t materialTextureTableDescriptorCount = 0u;
-	bool materialTextureTableValid = false;
-	const char* materialTextureTableStatusReason = "not-built";
+	ResolvedMaterialTextureTable materialTextureTable = {};
 };

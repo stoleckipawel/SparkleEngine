@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
 
 class RenderBindingSet;
@@ -15,7 +16,6 @@ struct MaterialTextureTableBuildResult final
 {
 	bool Valid = false;
 	const char* FailureReason = "not-built";
-	std::uint32_t TextureCount = 0u;
 };
 
 class MaterialTextureTable final
@@ -33,12 +33,11 @@ class MaterialTextureTable final
 	std::uint32_t GetOrAddTextureIndex(RhiResourceViewHandle textureView);
 	MaterialTextureTableBuildResult BuildBindingSet(RenderHardwareInterface& renderHardwareInterface);
 
-	bool IsValid() const noexcept { return m_bindingSet != nullptr && m_textureCount > 0u; }
-	const RenderBindingSet* GetBindingSet() const noexcept { return m_bindingSet.get(); }
-	std::uint32_t GetTextureCount() const noexcept { return m_textureCount; }
+	bool IsValid() const noexcept { return m_bindingSet != nullptr && !m_textureViews.empty(); }
+	RhiDescriptorTableBinding GetTableBinding() const noexcept;
+	std::uint32_t GetTextureCount() const noexcept { return static_cast<std::uint32_t>(m_textureViews.size()); }
 
   private:
 	std::vector<RhiResourceViewHandle> m_textureViews;
 	std::unique_ptr<RenderBindingSet> m_bindingSet;
-	std::uint32_t m_textureCount = 0u;
 };

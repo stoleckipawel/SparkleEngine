@@ -2,8 +2,6 @@
 
 #include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
 
-#include <cstdint>
-
 struct FrameContext;
 struct RenderRayTracingPassServices;
 
@@ -18,7 +16,6 @@ struct RayTracingPassCapabilities final
 	bool TriangleMaterialDataAvailable = false;
 	bool HitDataAvailable = false;
 	bool MaterialTextureTableAvailable = false;
-	std::uint32_t MaterialTextureTableDescriptorCount = 0u;
 };
 
 namespace RayTracingPassCapabilityQuery

@@ -17,6 +17,14 @@
 
 class RenderCommandContext;
 struct MeshData;
+struct GpuMeshHandle final
+{
+	std::uint64_t Value = 0u;
+
+	constexpr explicit operator bool() const noexcept { return Value != 0u; }
+	constexpr bool operator==(const GpuMeshHandle&) const noexcept = default;
+};
+
 struct GPUMeshBounds final
 {
 	DirectX::XMFLOAT3 Min = {};
@@ -33,7 +41,7 @@ struct GPUMeshUploadDesc
 class SPARKLE_RENDERER_API GPUMesh final
 {
   public:
-	GPUMesh() = default;
+	explicit GPUMesh(GpuMeshHandle handle = {}) noexcept : m_handle(handle) {}
 	~GPUMesh() noexcept;
 
 	GPUMesh(const GPUMesh&) = delete;
@@ -50,6 +58,7 @@ class SPARKLE_RENDERER_API GPUMesh final
 	std::uint32_t GetVertexCount() const noexcept { return m_vertexCount; }
 
 	bool IsValid() const noexcept { return m_vertexBuffer && m_indexBuffer; }
+	GpuMeshHandle GetHandle() const noexcept { return m_handle; }
 
 	RhiVertexBufferView GetVertexBufferView() const noexcept;
 	RhiIndexBufferView GetIndexBufferView() const noexcept;
@@ -66,6 +75,7 @@ class SPARKLE_RENDERER_API GPUMesh final
 
   private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
+	GpuMeshHandle m_handle = {};
 	RhiOwnedResourceHandle m_vertexBuffer = {};
 	RhiOwnedResourceHandle m_indexBuffer = {};
 	GPUSkinInfluenceBuffer m_skinInfluences;

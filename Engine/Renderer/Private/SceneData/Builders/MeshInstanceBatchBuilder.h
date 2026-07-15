@@ -2,18 +2,17 @@
 
 #include "Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
+#include "SceneData/MaterialData.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 
 class GPUMesh;
-class RenderBindingSet;
-
 struct MeshRenderItem final
 {
 	MeshDraw draw;
-	const RenderBindingSet* materialBindingSet = nullptr;
+	MaterialGpuHandle materialGpuHandle = {};
 	RenderMeshInstanceGroupIndex instanceGroupIndex = kInvalidRenderMeshInstanceGroupIndex;
 	std::uint32_t renderStateKey = 0;
 	std::uint32_t renderLayer = 0;
@@ -45,7 +44,7 @@ class MeshInstanceBatchBuilder final
 	struct BatchKey final
 	{
 		const GPUMesh* gpuMesh = nullptr;
-		const RenderBindingSet* materialBindingSet = nullptr;
+		MaterialGpuHandle materialGpuHandle = {};
 		std::uint32_t materialSlot = 0;
 		std::uint64_t skeletonAssetId = 0;
 		RenderMeshKind meshKind = RenderMeshKind::Static;

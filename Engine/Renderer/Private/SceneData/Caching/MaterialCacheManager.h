@@ -25,12 +25,12 @@ class MaterialCacheManager final
 	MaterialCacheManager& operator=(MaterialCacheManager&&) = delete;
 
 	void BuildMaterials(const MaterialSnapshot& materialSnapshot, RenderSceneData& sceneData);
-	void Rebuild(const MaterialSnapshot& materialSnapshot);
 	void Reset() noexcept;
 
  private:
-	void ReleaseMaterialTextureBindingSets() noexcept;
+	bool Rebuild(const MaterialSnapshot& materialSnapshot);
 	void PublishMaterialTextureTable(RenderSceneData& sceneData) const noexcept;
+	std::uint64_t GetNextGeneration() const noexcept;
 
 	TextureManager* m_textureManager = nullptr;
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
@@ -38,7 +38,7 @@ class MaterialCacheManager final
 	std::vector<MaterialData> m_cachedMaterialData;
 	std::vector<std::unique_ptr<RenderBindingSet>> m_materialTextureBindingSets;
 	MaterialTextureTable m_materialTextureTable;
-	MaterialTextureTableBuildResult m_materialTextureTableBuildResult = {};
+	std::uint64_t m_generation = 0u;
 	bool m_materialCacheBuilt = false;
 	bool m_cachedFromSceneMaterials = false;
 };

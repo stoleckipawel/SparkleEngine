@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Descriptors/RhiDescriptorHandles.h"
+#include "../Resources/RhiResourceView.h"
 #include "../RHIAPI.h"
 
 #include <cstdint>

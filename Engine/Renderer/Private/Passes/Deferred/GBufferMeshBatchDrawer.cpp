@@ -9,7 +9,6 @@
 #include "Meshes/GPUMesh.h"
 #include "Passes/Core/PassUtilities.h"
 #include "Pipeline/PassPipelineRuntime.h"
-#include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/MaterialData.h"
 #include "SceneData/RenderSceneData.h"
@@ -32,21 +31,22 @@ namespace
 			return false;
 		}
 
-		const RenderBindingSet* materialTextureBindingSet = sceneData.materials[materialSlot].textureBindingSet;
-		if (materialTextureBindingSet == nullptr || !*materialTextureBindingSet)
+		const MaterialData& material = sceneData.materials[materialSlot];
+		if (!material.gpuHandle || !material.rasterTextureTable)
 		{
 			return false;
 		}
 
-		drawParameters->PerObjectPS = sceneData.materials[materialSlot].ToPerObjectPSData();
-		drawParameters->TextureBaseColor = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::BaseColor);
-		drawParameters->TextureNormal = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Normal);
-		drawParameters->TextureRoughness = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Roughness);
-		drawParameters->TextureMetallic = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Metallic);
-		drawParameters->TextureOcclusion = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Occlusion);
-		drawParameters->TextureEmissive = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Emissive);
-		drawParameters->TextureSubsurfaceColor = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::SubsurfaceColor);
-		drawParameters->TextureSubsurfaceStrength = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::SubsurfaceStrength);
+		drawParameters->PerObjectPS = material.ToPerObjectPSData();
+		const RhiDescriptorTableHandle textureTable = material.rasterTextureTable.Table;
+		drawParameters->TextureBaseColor = {textureTable, MaterialTextureSlots::BaseColor};
+		drawParameters->TextureNormal = {textureTable, MaterialTextureSlots::Normal};
+		drawParameters->TextureRoughness = {textureTable, MaterialTextureSlots::Roughness};
+		drawParameters->TextureMetallic = {textureTable, MaterialTextureSlots::Metallic};
+		drawParameters->TextureOcclusion = {textureTable, MaterialTextureSlots::Occlusion};
+		drawParameters->TextureEmissive = {textureTable, MaterialTextureSlots::Emissive};
+		drawParameters->TextureSubsurfaceColor = {textureTable, MaterialTextureSlots::SubsurfaceColor};
+		drawParameters->TextureSubsurfaceStrength = {textureTable, MaterialTextureSlots::SubsurfaceStrength};
 		return true;
 	}
 

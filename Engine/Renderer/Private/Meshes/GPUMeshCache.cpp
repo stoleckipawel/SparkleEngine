@@ -21,7 +21,7 @@ GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 		return it->second.get();
 	}
 
-	auto gpuMesh = std::make_unique<GPUMesh>();
+	auto gpuMesh = std::make_unique<GPUMesh>(AllocateHandle());
 	if (!gpuMesh->Upload(*m_renderHardwareInterface, GPUMeshUploadDescBuilder::Build(cpuMesh)))
 	{
 		SPDLOG_LOGGER_ERROR(g_gpuMeshCacheLogger, "[GPUMeshCache] Failed to upload mesh to GPU");
@@ -32,6 +32,16 @@ GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 	m_cache.insert_or_assign(key, std::move(gpuMesh));
 
 	return result;
+}
+
+GpuMeshHandle GPUMeshCache::AllocateHandle() noexcept
+{
+	const GpuMeshHandle handle{m_nextGpuMeshHandle++};
+	if (m_nextGpuMeshHandle == 0u)
+	{
+		m_nextGpuMeshHandle = 1u;
+	}
+	return handle;
 }
 
 void GPUMeshCache::Clear() noexcept

@@ -5,8 +5,6 @@
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
-#include "RHI/Public/Bindings/RenderBindingSet.h"
-#include "SceneData/MaterialTextureTableCapability.h"
 
 namespace
 {
@@ -23,18 +21,6 @@ namespace
 		return rayTracingServices->Scene != nullptr ? &rayTracingServices->Scene->GetCapabilities() : nullptr;
 	}
 
-	bool HasMaterialTextureTable(const FrameContext& frame) noexcept
-	{
-		const RenderBindingSet* materialTextureTable = frame.sceneData.materialTextureTable;
-		if (!frame.sceneData.materialTextureTableValid || materialTextureTable == nullptr || !*materialTextureTable)
-		{
-			return false;
-		}
-
-		const std::uint32_t descriptorCount = frame.sceneData.materialTextureTableDescriptorCount;
-		return descriptorCount != 0u && descriptorCount <= MaterialTextureTableFixedCapacity &&
-		       materialTextureTable->GetDescriptorCount() >= descriptorCount;
-	}
 }
 
 namespace RayTracingPassCapabilityQuery
@@ -49,8 +35,7 @@ namespace RayTracingPassCapabilityQuery
 		    .SceneTlasShaderAccessMode = frame.rayTracingScene.TlasShaderAccessMode,
 		    .TriangleMaterialDataAvailable = frame.sceneGpuData.RayTracing.IsValid(),
 		    .HitDataAvailable = frame.sceneGpuData.RayTracing.IsValid() && frame.sceneGpuData.Geometry.HasMeshInstances(),
-		    .MaterialTextureTableAvailable = HasMaterialTextureTable(frame),
-		    .MaterialTextureTableDescriptorCount = frame.sceneData.materialTextureTableDescriptorCount};
+		    .MaterialTextureTableAvailable = static_cast<bool>(frame.sceneData.materialTextureTable)};
 
 		if (capabilityReport != nullptr)
 		{

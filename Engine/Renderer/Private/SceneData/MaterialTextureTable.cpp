@@ -12,7 +12,6 @@ void MaterialTextureTable::Reset() noexcept
 {
 	m_bindingSet.reset();
 	m_textureViews.clear();
-	m_textureCount = 0u;
 }
 
 std::uint32_t MaterialTextureTable::GetOrAddTextureIndex(RhiResourceViewHandle textureView)
@@ -43,7 +42,6 @@ std::uint32_t MaterialTextureTable::GetOrAddTextureIndex(RhiResourceViewHandle t
 MaterialTextureTableBuildResult MaterialTextureTable::BuildBindingSet(RenderHardwareInterface& renderHardwareInterface)
 {
 	m_bindingSet.reset();
-	m_textureCount = 0u;
 	if (m_textureViews.empty())
 	{
 		return MaterialTextureTableBuildResult{.FailureReason = "empty-texture-table"};
@@ -78,10 +76,13 @@ MaterialTextureTableBuildResult MaterialTextureTable::BuildBindingSet(RenderHard
 		}
 	}
 
-	m_textureCount = static_cast<std::uint32_t>(m_textureViews.size());
 	m_bindingSet = std::move(bindingSet);
 	return MaterialTextureTableBuildResult{
 	    .Valid = true,
-	    .FailureReason = "available",
-	    .TextureCount = m_textureCount};
+	    .FailureReason = "available"};
+}
+
+RhiDescriptorTableBinding MaterialTextureTable::GetTableBinding() const noexcept
+{
+	return m_bindingSet != nullptr ? m_bindingSet->GetTableBinding(0u) : RhiDescriptorTableBinding{};
 }

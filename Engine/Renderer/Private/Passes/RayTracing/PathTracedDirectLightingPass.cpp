@@ -14,7 +14,6 @@
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "Renderer/ShaderRegistrations/RendererShaderPackages.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
-#include "SceneData/MaterialTextureTableCapability.h"
 
 void PathTracedDirectLightingPassParameters::Describe(ShaderParameterStructBuilder<PathTracedDirectLightingPassParameters>& builder)
 {
@@ -101,15 +100,10 @@ void PathTracedDirectLightingPass::Execute(PassExecutionContext& context, Parame
 	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
 	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 
-	const RenderBindingSet* materialTextureTable = context.Frame.sceneData.materialTextureTable;
-	const std::uint32_t descriptorCount = context.Frame.sceneData.materialTextureTableDescriptorCount;
-	const bool materialTextureTableAvailable = context.Frame.sceneData.materialTextureTableValid && materialTextureTable != nullptr &&
-	                                           *materialTextureTable && descriptorCount > 0u &&
-	                                           descriptorCount <= MaterialTextureTableFixedCapacity &&
-	                                           materialTextureTable->GetDescriptorCount() >= descriptorCount;
+	const bool materialTextureTableAvailable = static_cast<bool>(context.Frame.sceneData.materialTextureTable);
 	if (materialTextureTableAvailable)
 	{
-		parameters->MaterialTextureTable = materialTextureTable->GetTableBinding(0);
+		parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
 	}
 	parameters->RayTracedShadows = RayTracedShadowPassData::Build(
 	    context.RuntimeServices.RayTracing,

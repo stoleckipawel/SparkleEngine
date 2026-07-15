@@ -10,6 +10,7 @@
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
+#include "SceneData/MaterialTextureTableCapability.h"
 #include "Textures/TextureManager.h"
 #include "Textures/RendererTexture.h"
 
@@ -35,17 +36,19 @@ void MaterialCacheManager::BuildMaterials(const MaterialSnapshot& materialSnapsh
 
 	if (!m_materialCacheBuilt || materialSetChanged)
 	{
-		Rebuild(materialSnapshot);
+		if (!Rebuild(materialSnapshot))
+		{
+			sceneData.materials.clear();
+			sceneData.materialTextureTable = {};
+			return;
+		}
 	}
 
-	if (!m_cachedMaterialData.empty())
-	{
-		sceneData.materials = m_cachedMaterialData;
-		PublishMaterialTextureTable(sceneData);
-	}
+	sceneData.materials = m_cachedMaterialData;
+	PublishMaterialTextureTable(sceneData);
 }
 
-void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
+bool MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 {
 	if (!m_textureManager || !m_renderHardwareInterface)
 	{
@@ -54,20 +57,21 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		    __FILE__,
 		    __LINE__,
 		    "MaterialCacheManager::Rebuild: required renderer dependencies are unavailable.");
-		return;
+		return false;
 	}
 
-	ReleaseMaterialTextureBindingSets();
-	m_materialTextureTable.Reset();
-	m_materialTextureTableBuildResult = {};
-	m_cachedMaterialData.clear();
-	m_cachedMaterialSnapshot.Reset();
-	m_materialCacheBuilt = false;
-	m_cachedFromSceneMaterials = materialSnapshot.HasMaterials();
+	const std::uint64_t nextGeneration = GetNextGeneration();
+	std::vector<MaterialData> rebuiltMaterialData;
+	std::vector<std::unique_ptr<RenderBindingSet>> rebuiltRasterTextureTables;
+	MaterialTextureTable rebuiltSceneTextureTable;
 
-	auto buildMaterialTable = [this](const MaterialDesc& desc)
+	auto buildMaterialTable =
+	    [this, nextGeneration, &rebuiltMaterialData, &rebuiltRasterTextureTables, &rebuiltSceneTextureTable](
+	        const MaterialDesc& desc,
+	        std::uint32_t materialIndex) -> bool
 	{
 		MaterialData material = MaterialData::FromDesc(desc);
+		material.gpuHandle = MaterialGpuHandle{.Index = materialIndex, .Generation = nextGeneration};
 
 		const RendererTexture* textures[MaterialTextureSlots::Count] = {
 		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::Diffuse), DefaultTexture::White),
@@ -90,7 +94,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 			    __FILE__,
 			    __LINE__,
 			    "MaterialCacheManager::Rebuild: failed to allocate material texture binding set.");
-			return;
+			return false;
 		}
 
 		for (std::uint32_t slot = 0; slot < MaterialTextureSlots::Count; ++slot)
@@ -102,73 +106,100 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 				    __FILE__,
 				    __LINE__,
 				    std::format("MaterialCacheManager::Rebuild: Material texture slot {} resolved to null.", slot));
+				return false;
 			}
 
-			if (!textureBindingSet->WriteResourceView(slot, textures[slot]->ShaderResourceView))
+			const RhiResourceViewHandle textureView = textures[slot]->ShaderResourceView;
+			if (!textureBindingSet->WriteResourceView(slot, textureView))
 			{
-				return;
+				return false;
 			}
-			material.materialTextureIndices[slot] = m_materialTextureTable.GetOrAddTextureIndex(textures[slot]->ShaderResourceView);
+			material.materialTextureIndices[slot] = rebuiltSceneTextureTable.GetOrAddTextureIndex(textureView);
 		}
 
-		material.textureBindingSet = textureBindingSet.get();
-		m_materialTextureBindingSets.push_back(std::move(textureBindingSet));
-		m_cachedMaterialData.push_back(material);
+		material.rasterTextureTable = textureBindingSet->GetTableBinding(0u);
+		if (!material.rasterTextureTable)
+		{
+			return false;
+		}
+		rebuiltRasterTextureTables.push_back(std::move(textureBindingSet));
+		rebuiltMaterialData.push_back(material);
+		return true;
 	};
 
 	if (materialSnapshot.HasMaterials())
 	{
-		m_cachedMaterialSnapshot = materialSnapshot;
-		m_cachedMaterialData.reserve(materialSnapshot.materialDescs.size());
-		m_materialTextureBindingSets.reserve(materialSnapshot.materialDescs.size());
+		rebuiltMaterialData.reserve(materialSnapshot.materialDescs.size());
+		rebuiltRasterTextureTables.reserve(materialSnapshot.materialDescs.size());
 
-		for (const auto& desc : materialSnapshot.materialDescs)
+		for (std::uint32_t materialIndex = 0u;
+		     materialIndex < static_cast<std::uint32_t>(materialSnapshot.materialDescs.size());
+		     ++materialIndex)
 		{
-			buildMaterialTable(desc);
+			if (!buildMaterialTable(materialSnapshot.materialDescs[materialIndex], materialIndex))
+			{
+				return false;
+			}
 		}
 	}
 	else
 	{
-		m_cachedMaterialData.reserve(1);
-		m_materialTextureBindingSets.reserve(1);
+		rebuiltMaterialData.reserve(1);
+		rebuiltRasterTextureTables.reserve(1);
 
 		MaterialDesc defaultMaterial;
 		defaultMaterial.name = "Renderer_DefaultMaterial";
-		buildMaterialTable(defaultMaterial);
+		if (!buildMaterialTable(defaultMaterial, 0u))
+		{
+			return false;
+		}
 	}
 
-	m_materialTextureTableBuildResult = m_materialTextureTable.BuildBindingSet(*m_renderHardwareInterface);
-	if (!m_materialTextureTableBuildResult.Valid)
+	const MaterialTextureTableBuildResult rebuiltSceneTableResult =
+	    rebuiltSceneTextureTable.BuildBindingSet(*m_renderHardwareInterface);
+	if (!rebuiltSceneTableResult.Valid)
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_materialCacheManagerLogger,
 		    "MaterialCacheManager::Rebuild: material texture table unavailable: reason={}.",
-		    m_materialTextureTableBuildResult.FailureReason);
+		    rebuiltSceneTableResult.FailureReason);
 	}
 
+	m_cachedMaterialSnapshot = materialSnapshot;
+	m_cachedMaterialData = std::move(rebuiltMaterialData);
+	// Replacing the owning binding sets releases the old descriptor tables through the RHI's per-frame retirement path.
+	m_materialTextureBindingSets = std::move(rebuiltRasterTextureTables);
+	m_materialTextureTable = std::move(rebuiltSceneTextureTable);
+	m_generation = nextGeneration;
 	m_materialCacheBuilt = true;
+	m_cachedFromSceneMaterials = materialSnapshot.HasMaterials();
+	return true;
 }
 
 void MaterialCacheManager::Reset() noexcept
 {
-	ReleaseMaterialTextureBindingSets();
+	m_materialTextureBindingSets.clear();
 	m_materialTextureTable.Reset();
-	m_materialTextureTableBuildResult = {};
 	m_cachedMaterialData.clear();
 	m_cachedMaterialSnapshot.Reset();
 	m_materialCacheBuilt = false;
 	m_cachedFromSceneMaterials = false;
 }
 
-void MaterialCacheManager::ReleaseMaterialTextureBindingSets() noexcept
-{
-	m_materialTextureBindingSets.clear();
-}
-
 void MaterialCacheManager::PublishMaterialTextureTable(RenderSceneData& sceneData) const noexcept
 {
-	sceneData.materialTextureTable = m_materialTextureTable.GetBindingSet();
-	sceneData.materialTextureTableDescriptorCount = m_materialTextureTable.GetTextureCount();
-	sceneData.materialTextureTableValid = m_materialTextureTableBuildResult.Valid && m_materialTextureTable.IsValid();
-	sceneData.materialTextureTableStatusReason = m_materialTextureTableBuildResult.FailureReason;
+	const std::uint32_t descriptorCount = m_materialTextureTable.GetTextureCount();
+	const RhiDescriptorTableBinding binding = m_materialTextureTable.GetTableBinding();
+	const bool ready = m_materialTextureTable.IsValid() && binding && descriptorCount <= MaterialTextureTableFixedCapacity;
+	sceneData.materialTextureTable = ready ? ResolvedMaterialTextureTable{
+	                                                 .Binding = binding,
+	                                                 .DescriptorCount = descriptorCount,
+	                                                 .Generation = m_generation}
+	                                           : ResolvedMaterialTextureTable{};
+}
+
+std::uint64_t MaterialCacheManager::GetNextGeneration() const noexcept
+{
+	const std::uint64_t nextGeneration = m_generation + 1u;
+	return nextGeneration != 0u ? nextGeneration : 1u;
 }

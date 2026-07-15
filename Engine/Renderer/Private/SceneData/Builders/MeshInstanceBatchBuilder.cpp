@@ -165,7 +165,7 @@ bool MeshInstanceBatchBuilder::IsValidCandidate(
 		return false;
 	}
 
-	if (options.requireMaterialBindingSet && item.materialBindingSet == nullptr)
+	if (options.requireMaterialBindingSet && !item.materialGpuHandle)
 	{
 		if (options.collectDiagnostics)
 		{
@@ -182,7 +182,7 @@ MeshInstanceBatchBuilder::BatchKey MeshInstanceBatchBuilder::MakeBatchKey(const 
 {
 	return BatchKey{
 	    .gpuMesh = item.draw.Geometry.GpuMesh,
-	    .materialBindingSet = item.materialBindingSet,
+	    .materialGpuHandle = item.materialGpuHandle,
 	    .materialSlot = item.draw.Material.Slot,
 	    .skeletonAssetId = item.draw.Skinning.SkeletonAssetId,
 	    .meshKind = item.draw.Geometry.MeshKind,

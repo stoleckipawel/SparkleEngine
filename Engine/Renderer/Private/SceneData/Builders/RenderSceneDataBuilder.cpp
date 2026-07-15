@@ -196,6 +196,7 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		draw.Transform.WorldInvTranspose = meshInstance.worldInvTranspose;
 		draw.Material.Slot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
 		draw.Source.SourceInstanceIndex = sourceInstanceIndex;
+		draw.Source.MeshAssetId = meshInstance.meshAssetId;
 		draw.Skinning.SkeletonAssetId = meshInstance.skeletonAssetId;
 		draw.Skinning.JointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;
 		if (meshInstance.meshKind == SceneMeshKind::Skeletal)
@@ -211,8 +212,8 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		renderItems.push_back(
 		    MeshRenderItem{
 		        .draw = draw,
-		        .materialBindingSet =
-		            draw.Material.Slot < sceneData.materials.size() ? sceneData.materials[draw.Material.Slot].textureBindingSet : nullptr,
+		        .materialGpuHandle =
+		            draw.Material.Slot < sceneData.materials.size() ? sceneData.materials[draw.Material.Slot].gpuHandle : MaterialGpuHandle{},
 		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex)});
 	}
 

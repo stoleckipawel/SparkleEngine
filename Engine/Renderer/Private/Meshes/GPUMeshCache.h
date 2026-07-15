@@ -3,6 +3,7 @@
 #include "Renderer/Public/RendererAPI.h"
 #include "Meshes/GPUMesh.h"
 
+#include <cstdint>
 #include <memory>
 #include <unordered_map>
 
@@ -29,6 +30,9 @@ class SPARKLE_RENDERER_API GPUMeshCache final
 	const GPUMesh* Find(const Mesh& cpuMesh) const noexcept;
 
   private:
+	GpuMeshHandle AllocateHandle() noexcept;
+
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
+	std::uint64_t m_nextGpuMeshHandle = 1u;
 	std::unordered_map<const Mesh*, std::unique_ptr<GPUMesh>> m_cache;
 };

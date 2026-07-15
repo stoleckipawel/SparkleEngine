@@ -108,21 +108,12 @@ void RestirIndirectResolvePass::Execute(PassExecutionContext& context, Parameter
 		return;
 	}
 
-	const RenderBindingSet* materialTextureTable = context.Frame.sceneData.materialTextureTable;
-	const std::uint32_t descriptorCount = context.Frame.sceneData.materialTextureTableDescriptorCount;
-	if (!context.Frame.sceneData.materialTextureTableValid || materialTextureTable == nullptr || !*materialTextureTable ||
-	    descriptorCount == 0u || descriptorCount > MaterialTextureTableFixedCapacity ||
-	    materialTextureTable->GetDescriptorCount() < descriptorCount)
-	{
-		return;
-	}
-
 	parameters->PerFrame = context.RuntimeServices.PerFrame;
 	parameters->PerView = context.Frame.mainView.perViewData;
 	parameters->PerTemporal = context.Frame.mainView.perTemporalData;
 	parameters->ViewLighting = context.Frame.sceneGpuData.Lighting.Constants;
 	parameters->Sky = MakeSkyUniformData(context.Frame.sceneData.sky);
-	parameters->MaterialTextureTable = materialTextureTable->GetTableBinding(0);
+	parameters->MaterialTextureTable = context.Frame.sceneData.materialTextureTable.Binding;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,

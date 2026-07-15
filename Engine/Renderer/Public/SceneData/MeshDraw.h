@@ -38,6 +38,7 @@ struct SPARKLE_RENDERER_API MeshDrawSkinning final
 struct SPARKLE_RENDERER_API MeshDrawSourceIdentity final
 {
 	std::uint32_t SourceInstanceIndex = 0;
+	std::uint64_t MeshAssetId = 0;
 };
 
 struct SPARKLE_RENDERER_API MeshDrawGeometry final

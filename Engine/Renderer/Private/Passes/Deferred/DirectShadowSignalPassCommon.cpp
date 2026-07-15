@@ -8,7 +8,6 @@
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "RayTracing/RayTracingPassCapabilityQuery.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
-#include "SceneData/MaterialTextureTableCapability.h"
 
 void DirectShadowSignalPassCommon::SetParameters(
     DirectShadowSignalCommonPassParameters& parameters,
@@ -37,14 +36,10 @@ void DirectShadowSignalPassCommon::SetRayQueryParameters(
 	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 
 	const RayTracingPassCapabilities capabilities = RayTracingPassCapabilityQuery::Build(frame, passRuntimeServices.RayTracing);
-	const RenderBindingSet* materialTextureTable = frame.sceneData.materialTextureTable;
-	const std::uint32_t descriptorCount = frame.sceneData.materialTextureTableDescriptorCount;
-	const bool materialTextureTableAvailable =
-	    frame.sceneData.materialTextureTableValid && materialTextureTable != nullptr && *materialTextureTable && descriptorCount > 0u &&
-	    descriptorCount <= MaterialTextureTableFixedCapacity && materialTextureTable->GetDescriptorCount() >= descriptorCount;
+	const bool materialTextureTableAvailable = static_cast<bool>(frame.sceneData.materialTextureTable);
 	if (materialTextureTableAvailable)
 	{
-		parameters.MaterialTextureTable = materialTextureTable->GetTableBinding(0);
+		parameters.MaterialTextureTable = frame.sceneData.materialTextureTable.Binding;
 	}
 	parameters.RayTracedShadows = RayTracedShadowPassData::Build(
 	    passRuntimeServices.RayTracing,

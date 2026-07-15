@@ -5,6 +5,7 @@
 #include "Frame/Core/FrameContext.h"
 #include "Frame/Lighting/LightingStateHash.h"
 #include "Lighting/LightingCVars.h"
+#include "Meshes/GPUMesh.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowCVars.h"
 #include "Textures/RendererTexture.h"
 
@@ -79,7 +80,9 @@ namespace
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Skinning.SkeletonAssetId);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Skinning.JointMatrixOffset);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Geometry.MeshKind);
-		return Hash::ContinueFnv1a64Value(hash, reinterpret_cast<std::uintptr_t>(draw.Geometry.GpuMesh));
+		hash = Hash::ContinueFnv1a64Value(hash, draw.Source.MeshAssetId);
+		const GpuMeshHandle gpuMeshHandle = draw.Geometry.GpuMesh != nullptr ? draw.Geometry.GpuMesh->GetHandle() : GpuMeshHandle{};
+		return Hash::ContinueFnv1a64Value(hash, gpuMeshHandle.Value);
 	}
 
 	std::uint64_t AppendMaterialState(std::uint64_t hash, const MaterialData& material) noexcept
@@ -99,7 +102,8 @@ namespace
 		{
 			hash = Hash::ContinueFnv1a64Value(hash, textureIndex);
 		}
-		return Hash::ContinueFnv1a64Value(hash, reinterpret_cast<std::uintptr_t>(material.textureBindingSet));
+		hash = Hash::ContinueFnv1a64Value(hash, material.gpuHandle.Index);
+		return Hash::ContinueFnv1a64Value(hash, material.gpuHandle.Generation);
 	}
 
 	std::uint64_t AppendSkyState(std::uint64_t hash, const RenderSkyData& sky) noexcept
@@ -151,8 +155,8 @@ std::uint64_t BuildLightingSceneInvalidationHash(const FrameContext& frame) noex
 		hash = AppendMaterialState(hash, material);
 	}
 
-	hash = Hash::ContinueFnv1a64Value(hash, reinterpret_cast<std::uintptr_t>(frame.sceneData.materialTextureTable));
-	hash = Hash::ContinueFnv1a64Value(hash, frame.sceneData.materialTextureTableDescriptorCount);
-	hash = LightingStateHash::AppendBool(hash, frame.sceneData.materialTextureTableValid);
+	hash = Hash::ContinueFnv1a64Value(hash, frame.sceneData.materialTextureTable.Binding.Table.Value);
+	hash = Hash::ContinueFnv1a64Value(hash, frame.sceneData.materialTextureTable.DescriptorCount);
+	hash = Hash::ContinueFnv1a64Value(hash, frame.sceneData.materialTextureTable.Generation);
 	return Hash::FinalizeFnv1a64(hash);
 }

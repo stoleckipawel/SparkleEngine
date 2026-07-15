@@ -2,6 +2,7 @@
 
 #include "Core/Public/Assets/TextureGroup.h"
 #include "Renderer/Public/RendererAPI.h"
+#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "ShaderData/PerObjectConstantBufferData.h"
 
 #include <DirectXMath.h>
@@ -9,8 +10,6 @@
 #include <cstdint>
 
 struct MaterialDesc;
-class RenderBindingSet;
-
 namespace MaterialTextureSlots
 {
 	constexpr std::uint32_t BaseColor = 0;
@@ -26,8 +25,18 @@ namespace MaterialTextureSlots
 
 inline constexpr std::uint32_t InvalidMaterialTextureIndex = UINT32_MAX;
 
+struct MaterialGpuHandle final
+{
+	std::uint32_t Index = UINT32_MAX;
+	std::uint64_t Generation = 0u;
+
+	constexpr explicit operator bool() const noexcept { return Index != UINT32_MAX && Generation != 0u; }
+	constexpr bool operator==(const MaterialGpuHandle&) const noexcept = default;
+};
+
 struct SPARKLE_RENDERER_API MaterialData
 {
+	MaterialGpuHandle gpuHandle = {};
 	DirectX::XMFLOAT4 baseColor = {1.0f, 1.0f, 1.0f, 1.0f};
 	float metallic = 0.0f;
 	float roughness = 0.5f;
@@ -49,7 +58,7 @@ struct SPARKLE_RENDERER_API MaterialData
 	    InvalidMaterialTextureIndex,
 	    InvalidMaterialTextureIndex};
 
-	const RenderBindingSet* textureBindingSet = nullptr;
+	RhiDescriptorTableBinding rasterTextureTable = {};
 
 	static MaterialData FromDesc(const MaterialDesc& desc);
 
