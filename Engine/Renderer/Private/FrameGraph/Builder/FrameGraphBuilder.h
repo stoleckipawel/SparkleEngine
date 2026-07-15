@@ -28,9 +28,30 @@ class FrameGraphBuilder final
 	explicit FrameGraphBuilder(FrameGraph& frameGraph) noexcept;
 
 	template <typename SetupFn, typename ExecuteFn>
-	void Execute(std::string_view name, EFrameGraphPassFlags flags, SetupFn&& setupFn, ExecuteFn&& executeFn)
+	void Execute(std::string_view name, EFrameGraphPassKind kind, SetupFn&& setupFn, ExecuteFn&& executeFn)
 	{
-		m_frameGraph.AddPass(name, flags, std::forward<SetupFn>(setupFn), std::forward<ExecuteFn>(executeFn));
+		Execute(
+		    name,
+		    kind,
+		    EFrameGraphQueuePreference::Graphics,
+		    std::forward<SetupFn>(setupFn),
+		    std::forward<ExecuteFn>(executeFn));
+	}
+
+	template <typename SetupFn, typename ExecuteFn>
+	void Execute(
+	    std::string_view name,
+	    EFrameGraphPassKind kind,
+	    EFrameGraphQueuePreference queuePreference,
+	    SetupFn&& setupFn,
+	    ExecuteFn&& executeFn)
+	{
+		m_frameGraph.AddPass(
+		    name,
+		    kind,
+		    queuePreference,
+		    std::forward<SetupFn>(setupFn),
+		    std::forward<ExecuteFn>(executeFn));
 	}
 
 	template <typename TPass> void Draw(typename TPass::ParameterInstance& parameters)
@@ -66,6 +87,18 @@ class FrameGraphBuilder final
 		Dispatch<TPass>(TPass::PassName, parameters, outputWidth, outputHeight);
 	}
 
+	template <typename TPass> void DispatchAsync(typename TPass::ParameterInstance& parameters)
+	{
+		RegisterAsyncComputePass<TPass>(
+		    TPass::PassName,
+		    parameters,
+		    [](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
+		    {
+			    const TPass pass(context.RuntimeServices.GetPassRuntime<TPass>());
+			    pass.Execute(context, passParameters);
+		    });
+	}
+
 	template <typename TPass>
 	void Dispatch(
 	    std::string_view name,
@@ -74,6 +107,32 @@ class FrameGraphBuilder final
 	    std::uint32_t outputHeight)
 	{
 		RegisterComputePass<TPass>(
+		    name,
+		    parameters,
+		    [outputWidth, outputHeight](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
+		    {
+			    const TPass pass(context.RuntimeServices.GetPassRuntime<TPass>());
+			    pass.Execute(context, passParameters, outputWidth, outputHeight);
+		    });
+	}
+
+	template <typename TPass>
+	void DispatchAsync(
+	    typename TPass::ParameterInstance& parameters,
+	    std::uint32_t outputWidth,
+	    std::uint32_t outputHeight)
+	{
+		DispatchAsync<TPass>(TPass::PassName, parameters, outputWidth, outputHeight);
+	}
+
+	template <typename TPass>
+	void DispatchAsync(
+	    std::string_view name,
+	    typename TPass::ParameterInstance& parameters,
+	    std::uint32_t outputWidth,
+	    std::uint32_t outputHeight)
+	{
+		RegisterAsyncComputePass<TPass>(
 		    name,
 		    parameters,
 		    [outputWidth, outputHeight](PassExecutionContext& context, typename TPass::ParameterInstance& passParameters)
@@ -162,6 +221,13 @@ class FrameGraphBuilder final
 	void RegisterComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		m_frameGraph.AddComputePass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
+	}
+
+	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
+	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
+	void RegisterAsyncComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
+	{
+		m_frameGraph.AddAsyncComputePass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
 	}
 
 	FrameGraph& m_frameGraph;

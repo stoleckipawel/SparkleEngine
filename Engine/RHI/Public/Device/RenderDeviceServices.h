@@ -40,9 +40,8 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	void WaitForIdle() noexcept override;
-	void Flush() noexcept override;
-	void ResizeSwapChain() noexcept override;
-	void BeginFrame() noexcept override;
+	void ResizeSwapChain() noexcept;
+	void BeginFrame() noexcept;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	RenderCommandList& BeginCommandList(ERhiQueueType queueType) noexcept override;
@@ -53,9 +52,9 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	void WaitForSubmission(RhiSubmissionToken token) noexcept override;
 	bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept override;
 	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept override;
-	void SubmitFrame() noexcept override;
-	void AdvanceFrameInFlight() noexcept override;
-	void CloseExecuteAndFlushCurrentFrame() noexcept override;
+	void SubmitFrame() noexcept;
+	void AdvanceFrameInFlight() noexcept;
+	void CloseExecuteAndFlushCurrentFrame() noexcept;
 
   private:
 	RenderDeviceServices() noexcept;

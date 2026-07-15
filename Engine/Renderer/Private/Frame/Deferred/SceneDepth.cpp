@@ -12,5 +12,5 @@ void AddLinearizeDeviceZPass(
 	auto& parameters = builder.AllocParameters<SceneDepthPass::Parameters>();
 	parameters->GBufferDeviceZ = builder.CreateSRV(deviceZ);
 	parameters->SceneDepth = builder.CreateUAV(sceneDepth);
-	builder.Dispatch<SceneDepthPass>(parameters);
+	builder.DispatchAsync<SceneDepthPass>(parameters);
 }

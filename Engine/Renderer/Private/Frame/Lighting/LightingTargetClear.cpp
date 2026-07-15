@@ -35,7 +35,7 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 {
 	builder.Execute(
 	    kLightingTargetClearPassName,
-	    EFrameGraphPassFlags::Raster,
+	    EFrameGraphPassKind::Raster,
 	    [lighting](PassResourceBuilder& resourceBuilder)
 	    {
 		    resourceBuilder.Write(lighting.DirectDiffuse, ResourceUsage::RenderTarget, "DirectDiffuse");

@@ -27,6 +27,8 @@ class D3D12DescriptorHeapManager final
 		gpuHandle = handle.GetGPU();
 	}
 	void FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
+	D3D12DescriptorHandle AllocateResourceViewCopySource();
+	void FreeResourceViewCopySource(const D3D12DescriptorHandle& handle) noexcept;
 
 	D3D12DescriptorHandle AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t count)
 	{
@@ -50,6 +52,8 @@ class D3D12DescriptorHeapManager final
 
 	std::unique_ptr<D3D12DescriptorHeap> m_HeapSRV;
 	std::unique_ptr<D3D12DescriptorAllocator> m_AllocatorSRV;
+	std::unique_ptr<D3D12DescriptorHeap> m_HeapResourceViewCopySources;
+	std::unique_ptr<D3D12DescriptorAllocator> m_AllocatorResourceViewCopySources;
 
 	std::unique_ptr<D3D12DescriptorHeap> m_HeapSampler;
 	std::unique_ptr<D3D12DescriptorAllocator> m_AllocatorSampler;

@@ -248,16 +248,39 @@ RhiResourceViewHandle D3D12DescriptorService::CreateResourceView(const RhiResour
 		return {};
 	}
 
-	if (!WriteResourceViewDescriptor(desc, allocation.CpuHandle))
+	D3D12DescriptorHandle copySourceHandle;
+	RhiCpuDescriptorHandle descriptorWriteTarget = allocation.CpuHandle;
+	if (descriptorType == ERhiDescriptorAllocatorType::ShaderResource)
 	{
+		copySourceHandle = m_descriptorHeapManager->AllocateResourceViewCopySource();
+		if (!copySourceHandle.IsValid())
+		{
+			DestroyDescriptorAllocation(descriptorType, allocation);
+			return {};
+		}
+		descriptorWriteTarget = RhiCpuDescriptorHandle{copySourceHandle.GetCPU().ptr};
+	}
+
+	if (!WriteResourceViewDescriptor(desc, descriptorWriteTarget))
+	{
+		m_descriptorHeapManager->FreeResourceViewCopySource(copySourceHandle);
 		DestroyDescriptorAllocation(descriptorType, allocation);
 		return {};
+	}
+	if (copySourceHandle.IsValid())
+	{
+		m_rhi->GetDevice()->CopyDescriptorsSimple(
+		    1,
+		    D3D12_CPU_DESCRIPTOR_HANDLE{allocation.CpuHandle.Value},
+		    copySourceHandle.GetCPU(),
+		    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	ResourceViewRecord record{};
 	record.kind = desc.Kind;
 	record.descriptorType = descriptorType;
 	record.descriptorAllocation = allocation;
+	record.copySourceHandle = copySourceHandle;
 
 	if (!m_freeResourceViewIndices.empty())
 	{
@@ -299,7 +322,9 @@ bool D3D12DescriptorService::WriteResourceView(
 
 	D3D12_CPU_DESCRIPTOR_HANDLE destination = table->nativeHandle.GetCPU();
 	destination.ptr += static_cast<SIZE_T>(descriptorIndex) * table->nativeHandle.GetIncrementSize();
-	const D3D12_CPU_DESCRIPTOR_HANDLE source{resourceView->descriptorAllocation.CpuHandle.Value};
+	const D3D12_CPU_DESCRIPTOR_HANDLE source = resourceView->copySourceHandle.IsValid()
+	                                                   ? resourceView->copySourceHandle.GetCPU()
+	                                                   : D3D12_CPU_DESCRIPTOR_HANDLE{resourceView->descriptorAllocation.CpuHandle.Value};
 	device->CopyDescriptorsSimple(
 	    1,
 	    destination,
@@ -325,6 +350,7 @@ void D3D12DescriptorService::ReleaseResourceView(RhiResourceViewHandle view) noe
 
 	m_retiredResourceViews[m_currentFrameIndex].push_back(RetiredResourceView{.record = *record, .recordIndex = recordIndex});
 	record->descriptorAllocation = {};
+	record->copySourceHandle = {};
 }
 
 void D3D12DescriptorService::DestroyResourceView(ResourceViewRecord& record) noexcept
@@ -333,6 +359,11 @@ void D3D12DescriptorService::DestroyResourceView(ResourceViewRecord& record) noe
 	{
 		DestroyDescriptorAllocation(record.descriptorType, record.descriptorAllocation);
 		record.descriptorAllocation = {};
+	}
+	if (record.copySourceHandle.IsValid())
+	{
+		m_descriptorHeapManager->FreeResourceViewCopySource(record.copySourceHandle);
+		record.copySourceHandle = {};
 	}
 }
 
@@ -446,7 +477,12 @@ void D3D12DescriptorService::ReleaseAllDescriptors() noexcept
 RhiCpuDescriptorHandle D3D12DescriptorService::GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept
 {
 	const ResourceViewRecord* const record = FindResourceViewRecord(view);
-	return record != nullptr ? record->descriptorAllocation.CpuHandle : RhiCpuDescriptorHandle{};
+	if (record == nullptr)
+	{
+		return {};
+	}
+	return record->copySourceHandle.IsValid() ? RhiCpuDescriptorHandle{record->copySourceHandle.GetCPU().ptr} :
+	                                           record->descriptorAllocation.CpuHandle;
 }
 
 RhiGpuDescriptorHandle D3D12DescriptorService::GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept

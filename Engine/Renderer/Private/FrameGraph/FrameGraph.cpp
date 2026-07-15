@@ -33,7 +33,9 @@ const FrameGraphPlan& FrameGraph::Compile()
 	PrepareTextureHistories(m_compiledPlan);
 	SyncImportedResourceAccesses();
 	BuildTransientMaterializationPlan(m_compiledPlan);
-	FrameGraphCompiler compiler(m_compiledPlan, m_resourceRegistry, m_resourceStateTracker);
+	const RhiQueueCapabilities queueCapabilities =
+	    m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetCapabilities().Queues : RhiQueueCapabilities{};
+	FrameGraphCompiler compiler(m_compiledPlan, m_resourceRegistry, m_resourceStateTracker, queueCapabilities);
 	compiler.Compile();
 	return m_compiledPlan;
 }

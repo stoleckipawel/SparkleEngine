@@ -3,6 +3,7 @@
 #include "Vulkan/Device/VulkanRhi.h"
 
 #include "CVars/RHICVars.h"
+#include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
 
@@ -136,6 +137,10 @@ VulkanRhi::~VulkanRhi() noexcept
 
 	if (m_device != VK_NULL_HANDLE)
 	{
+		for (std::unique_ptr<VulkanCommandQueue>& queue : m_queues)
+		{
+			queue.reset();
+		}
 		vkDestroyDevice(m_device, nullptr);
 		m_device = VK_NULL_HANDLE;
 	}
@@ -202,7 +207,18 @@ VkQueue VulkanRhi::GetGraphicsQueue() const noexcept
 
 VkQueue VulkanRhi::GetQueue(ERhiQueueType queueType) const noexcept
 {
-	return m_queues[RhiQueueTypeToIndex(queueType)];
+	const std::unique_ptr<VulkanCommandQueue>& queue = m_queues[RhiQueueTypeToIndex(queueType)];
+	return queue != nullptr ? queue->GetNativeQueue() : VK_NULL_HANDLE;
+}
+
+VulkanCommandQueue& VulkanRhi::GetCommandQueue(ERhiQueueType queueType) noexcept
+{
+	return *m_queues[RhiQueueTypeToIndex(queueType)];
+}
+
+const VulkanCommandQueue& VulkanRhi::GetCommandQueue(ERhiQueueType queueType) const noexcept
+{
+	return *m_queues[RhiQueueTypeToIndex(queueType)];
 }
 
 std::uint32_t VulkanRhi::GetGraphicsQueueFamilyIndex() const noexcept
@@ -243,6 +259,17 @@ void VulkanRhi::ConfigureResourceQueueSharing(VkImageCreateInfo& createInfo) con
 		return;
 	}
 	createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+	createInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(m_uniqueQueueFamilyIndices.size());
+	createInfo.pQueueFamilyIndices = m_uniqueQueueFamilyIndices.data();
+}
+
+void VulkanRhi::ConfigureResourceQueueSharing(VkSwapchainCreateInfoKHR& createInfo) const noexcept
+{
+	if (m_uniqueQueueFamilyIndices.size() <= 1)
+	{
+		return;
+	}
+	createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 	createInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(m_uniqueQueueFamilyIndices.size());
 	createInfo.pQueueFamilyIndices = m_uniqueQueueFamilyIndices.data();
 }
@@ -691,7 +718,12 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		vkGetDeviceQueue(m_device, m_queueFamilyIndices[queueIndex], 0, &m_queues[queueIndex]);
+		VkQueue nativeQueue = VK_NULL_HANDLE;
+		vkGetDeviceQueue(m_device, m_queueFamilyIndices[queueIndex], 0, &nativeQueue);
+		m_queues[queueIndex] = std::make_unique<VulkanCommandQueue>(
+		    *this,
+		    static_cast<ERhiQueueType>(queueIndex),
+		    nativeQueue);
 	}
 	if (GetGraphicsQueue() == VK_NULL_HANDLE)
 	{
@@ -907,7 +939,8 @@ void VulkanRhi::NameBootstrapObjects() noexcept
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
 		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
-		if (m_queues[queueIndex] == VK_NULL_HANDLE)
+		const VulkanCommandQueue& queue = *m_queues[queueIndex];
+		if (queue.GetNativeQueue() == VK_NULL_HANDLE)
 		{
 			continue;
 		}
@@ -916,8 +949,15 @@ void VulkanRhi::NameBootstrapObjects() noexcept
 		    m_setDebugUtilsObjectName,
 		    m_device,
 		    VK_OBJECT_TYPE_QUEUE,
-		    reinterpret_cast<std::uint64_t>(m_queues[queueIndex]),
+		    reinterpret_cast<std::uint64_t>(queue.GetNativeQueue()),
 		    queueName);
+		const std::string timelineName = std::format("Sparkle Vulkan {} Queue Timeline", RhiQueueTypeToString(queueType));
+		(void)VulkanDebugNames::SetObjectName(
+		    m_setDebugUtilsObjectName,
+		    m_device,
+		    VK_OBJECT_TYPE_SEMAPHORE,
+		    reinterpret_cast<std::uint64_t>(queue.GetTimelineSemaphore()),
+		    timelineName);
 	}
 }
 

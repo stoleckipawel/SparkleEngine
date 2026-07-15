@@ -2,7 +2,7 @@
 
 #include "FrameGraph/Diagnostics/FrameGraphResourceContractDiagnostics.h"
 
-#include "FrameGraph/FrameGraphPassFlags.h"
+#include "FrameGraph/FrameGraphPassKind.h"
 #include "FrameGraph/ResourceUsage.h"
 #include "Core/Public/Diagnostics/Verify.h"
 
@@ -25,10 +25,10 @@ namespace
 
 bool FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(
     std::string_view passName,
-    EFrameGraphPassFlags flags,
+    EFrameGraphPassKind passKind,
     const std::vector<PassResourceDeclaration>& declarations) noexcept
 {
-	assert(HasExactlyOnePassKind(flags));
+	assert(IsValidFrameGraphPassKind(passKind));
 
 	for (const PassResourceDeclaration& declaration : declarations)
 	{

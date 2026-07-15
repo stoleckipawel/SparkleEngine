@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 enum class ERhiQueueType : std::uint8_t
 {
@@ -56,6 +57,8 @@ struct RhiSubmissionState final
 {
 	std::array<std::uint64_t, RhiQueueTypeCount> Values{};
 
+	constexpr void Clear() noexcept { Values.fill(0); }
+
 	constexpr void MarkUsed(RhiSubmissionToken token) noexcept
 	{
 		if (token.IsValid())
@@ -63,6 +66,29 @@ struct RhiSubmissionState final
 			std::uint64_t& value = Values[RhiQueueTypeToIndex(token.Queue)];
 			value = value < token.Value ? token.Value : value;
 		}
+	}
+
+	constexpr RhiSubmissionToken GetToken(ERhiQueueType queue) const noexcept
+	{
+		return queue != ERhiQueueType::Count
+		           ? RhiSubmissionToken{.Queue = queue, .Value = Values[RhiQueueTypeToIndex(queue)]}
+		           : RhiSubmissionToken{};
+	}
+
+	constexpr std::size_t CopyTokens(std::span<RhiSubmissionToken> destination) const noexcept
+	{
+		std::size_t count = 0;
+		for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount && count < destination.size(); ++queueIndex)
+		{
+			const std::uint64_t value = Values[queueIndex];
+			if (value != 0)
+			{
+				destination[count++] = RhiSubmissionToken{
+				    .Queue = static_cast<ERhiQueueType>(queueIndex),
+				    .Value = value};
+			}
+		}
+		return count;
 	}
 
 	constexpr bool IsComplete(const std::array<std::uint64_t, RhiQueueTypeCount>& completedValues) const noexcept

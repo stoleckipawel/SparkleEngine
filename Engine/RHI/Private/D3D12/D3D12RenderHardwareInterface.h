@@ -1,10 +1,8 @@
 #pragma once
 
-#include "Frame/RhiFrameConstants.h"
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "Device/RenderHardwareInterface.h"
 
-#include <array>
 #include <memory>
 #include <string>
 
@@ -12,6 +10,7 @@ class D3D12DescriptorHeapManager;
 class D3D12DescriptorService;
 class D3D12UploadService;
 class D3D12CaptureService;
+class D3D12CommandContext;
 class D3D12ImGuiBackend;
 class D3D12InteropService;
 class D3D12GpuMemoryAllocator;
@@ -66,6 +65,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
 	RenderCommandList& GetCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
+	void SetCommandContext(D3D12CommandContext& commandContext) noexcept { m_commandContext = &commandContext; }
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	ID3D12DescriptorHeap* GetD3D12ShaderResourceDescriptorHeap() const noexcept;
@@ -120,9 +120,9 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
 	D3D12UploadService* m_uploadService = nullptr;
+	D3D12CommandContext* m_commandContext = nullptr;
 	std::unique_ptr<D3D12DescriptorService> m_descriptorService;
 	std::unique_ptr<D3D12ImGuiBackend> m_imguiBackend;
 	RhiCapabilities m_capabilities;
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
-	std::array<std::array<std::unique_ptr<RenderCommandList>, RhiFrameConstants::FramesInFlight>, RhiQueueTypeCount> m_commandLists;
 };

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "FrameGraph/FrameGraphPassFlags.h"
-
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cstdint>

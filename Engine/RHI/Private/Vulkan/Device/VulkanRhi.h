@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -53,6 +54,8 @@ struct VulkanFeatureStatus final
 	VulkanRayTracingFeatureStatus RayTracing;
 };
 
+class VulkanCommandQueue;
+
 class VulkanRhi final
 {
   public:
@@ -73,11 +76,14 @@ class VulkanRhi final
 	VkDevice GetDevice() const noexcept;
 	VkQueue GetGraphicsQueue() const noexcept;
 	VkQueue GetQueue(ERhiQueueType queueType) const noexcept;
+	VulkanCommandQueue& GetCommandQueue(ERhiQueueType queueType) noexcept;
+	const VulkanCommandQueue& GetCommandQueue(ERhiQueueType queueType) const noexcept;
 	std::uint32_t GetGraphicsQueueFamilyIndex() const noexcept;
 	std::uint32_t GetQueueFamilyIndex(ERhiQueueType queueType) const noexcept;
 	bool HasIndependentQueue(ERhiQueueType queueType) const noexcept;
 	void ConfigureResourceQueueSharing(VkBufferCreateInfo& createInfo) const noexcept;
 	void ConfigureResourceQueueSharing(VkImageCreateInfo& createInfo) const noexcept;
+	void ConfigureResourceQueueSharing(VkSwapchainCreateInfoKHR& createInfo) const noexcept;
 	PFN_vkSetDebugUtilsObjectNameEXT GetSetDebugUtilsObjectName() const noexcept;
 	PFN_vkCmdBeginDebugUtilsLabelEXT GetCmdBeginDebugUtilsLabel() const noexcept;
 	PFN_vkCmdEndDebugUtilsLabelEXT GetCmdEndDebugUtilsLabel() const noexcept;
@@ -141,7 +147,7 @@ class VulkanRhi final
 	VulkanDebugLayer m_debugLayer;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device = VK_NULL_HANDLE;
-	std::array<VkQueue, RhiQueueTypeCount> m_queues = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
+	std::array<std::unique_ptr<VulkanCommandQueue>, RhiQueueTypeCount> m_queues{};
 	std::array<std::uint32_t, RhiQueueTypeCount> m_queueFamilyIndices = {UINT32_MAX, UINT32_MAX, UINT32_MAX};
 	std::vector<std::uint32_t> m_uniqueQueueFamilyIndices;
 	PFN_vkSetDebugUtilsObjectNameEXT m_setDebugUtilsObjectName = nullptr;

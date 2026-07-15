@@ -3,10 +3,10 @@
 
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
-#include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Frame/Core/FrameContext.h"
 #include "FrameGraph/Diagnostics/FrameGraphExecutionDiagnostics.h"
-
+#include "FrameGraph/Execution/FrameGraphSubmissionExecutor.h"
+#include "RHI/Public/Commands/RhiCommandSubmissionService.h"
 
 #include <format>
 #include <string>
@@ -37,62 +37,47 @@ namespace
 		        hasResource,
 		        gpuAddress));
 	}
+
 }
 
 void FrameGraph::Execute(
     const FrameGraphPlan& plan,
-    RenderCommandContext& cmd,
+    RhiCommandSubmissionService& submissionService,
     const FrameContext& frame,
     const PassRuntimeServices& passRuntimeServices,
     FrameExecutionDiagnostics& frameDiagnostics) const
 {
-	FrameGraphExecutionDiagnostics graphDiagnostics(frameDiagnostics, cmd);
-	if (graphDiagnostics.ShouldEmitDetailedMarkers())
-	{
-		cmd.EnableDrawDispatchDiagnostics();
-	}
-
 	EnsureTransientResourcesMaterialized(plan);
 	ValidateExecutionBindings(plan);
+	RenderCommandList& initialGraphicsCommandList = submissionService.GetCurrentGraphicsCommandList();
+	RenderCommandContext initialCommands(initialGraphicsCommandList);
+	FrameGraphExecutionDiagnostics initialDiagnostics(frameDiagnostics, initialCommands);
+	if (initialDiagnostics.ShouldEmitDetailedMarkers())
+	{
+		initialCommands.EnableDrawDispatchDiagnostics();
+	}
 	if (!plan.initialTransientAliasingBarriers.empty())
 	{
-		graphDiagnostics.InsertFrameBeginAliasingBarrierMarker();
+		initialDiagnostics.InsertFrameBeginAliasingBarrierMarker();
 	}
-	EmitTransientAliasingBarriers(cmd, "FrameBegin", plan.initialTransientAliasingBarriers);
+	EmitTransientAliasingBarriers(initialCommands, "FrameBegin", plan.initialTransientAliasingBarriers);
+	EmitCompiledBarriers(initialCommands, "FrameBegin", plan.initialBarriers);
 
-	for (const FrameGraphPassIndex passIndex : plan.executionOrder)
-	{
-		const FrameGraphPassNode& passRecord = plan.passes[passIndex];
-		for (const PassResourceDeclaration& declaration : passRecord.declarations)
-		{
-			if (declaration.handle.IsValid())
-			{
-				cmd.GetRenderCommandList().TrackResource(m_resourceResolver.GetResolvedAccess(declaration.handle).resource);
-			}
-		}
-		graphDiagnostics.InsertPassAliasingBarrierMarker(passRecord);
-		EmitTransientAliasingBarriers(cmd, passRecord.passName, passRecord.transientAliasingBarriers);
-		graphDiagnostics.InsertPassResourceBarrierMarker(passRecord);
-		EmitCompiledBarriers(cmd, passRecord.passName, passRecord.compiledBarriers);
-		PassExecutionDiagnostics passDiagnostics(
-		    frameDiagnostics,
-		    cmd,
-		    passRecord.eventScopeLabel,
-		    passRecord.passKind);
-		auto passScope = graphDiagnostics.BeginPassScope(passDiagnostics);
-		PassExecutionContext passContext{cmd, frame, passRuntimeServices, passDiagnostics, FrameGraphResourceCommands{*this}};
-		m_passes[passIndex].executeCallback(passContext);
-		if (passRecord.passKind == EFrameGraphPassFlags::ExternalProvider)
-		{
-			cmd.GetRenderCommandList().ResetBoundState();
-		}
-	}
-
+	FrameGraphSubmissionExecutor submissionExecutor(
+	    *this,
+	    plan,
+	    submissionService,
+	    frame,
+	    passRuntimeServices,
+	    frameDiagnostics);
+	RenderCommandList& finalGraphicsCommandList = submissionExecutor.Execute(initialGraphicsCommandList);
+	RenderCommandContext finalCommands(finalGraphicsCommandList);
+	FrameGraphExecutionDiagnostics finalDiagnostics(frameDiagnostics, finalCommands);
 	if (!plan.finalBarriers.empty())
 	{
-		graphDiagnostics.InsertFrameEndResourceBarrierMarker();
+		finalDiagnostics.InsertFrameEndResourceBarrierMarker();
 	}
-	EmitCompiledBarriers(cmd, "FrameEnd", plan.finalBarriers);
+	EmitCompiledBarriers(finalCommands, "FrameEnd", plan.finalBarriers);
 	CommitTextureHistories();
 }
 

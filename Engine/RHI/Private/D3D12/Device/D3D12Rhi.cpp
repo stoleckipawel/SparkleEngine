@@ -1,5 +1,6 @@
 #include "PCH.h"
 #include "D3D12/Device/D3D12Rhi.h"
+#include "D3D12/Commands/D3D12CommandQueue.h"
 #include "D3D12/Diagnostics/D3D12DebugLayer.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "CVars/RHICVars.h"
@@ -10,24 +11,6 @@
 static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
 static constexpr std::uint32_t kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes = 4096;
 static constexpr std::uint32_t kNvidiaVendorId = 0x10DE;
-
-static D3D12_COMMAND_LIST_TYPE ToD3D12CommandListType(ERhiQueueType queueType) noexcept
-{
-	switch (queueType)
-	{
-		case ERhiQueueType::Graphics:
-			return D3D12_COMMAND_LIST_TYPE_DIRECT;
-		case ERhiQueueType::Compute:
-			return D3D12_COMMAND_LIST_TYPE_COMPUTE;
-		case ERhiQueueType::Copy:
-			return D3D12_COMMAND_LIST_TYPE_COPY;
-		case ERhiQueueType::Count:
-			break;
-	}
-
-	Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "Invalid RHI queue type");
-	return D3D12_COMMAND_LIST_TYPE_DIRECT;
-}
 
 static bool IsNvidiaAdapter(IDXGIAdapter1* adapter) noexcept
 {
@@ -80,25 +63,13 @@ D3D12Rhi::D3D12Rhi(RhiExternalFeatureHooks externalFeatureHooks) noexcept :
 		CheckShaderModel6Support();
 	}
 	{
-		CreateCommandQueue();
-	}
-	{
-		CreateCommandAllocators();
-	}
-	{
-		CreateCommandLists();
+		CreateCommandQueues();
 	}
 	{
 		RefreshPartitionedTlasCommandListCapability();
 	}
-	{
-		CreateFenceAndEvent();
-	}
-
 	constexpr uint32_t kInitialFrameIndex = 0;
 	SetCurrentFrameIndex(kInitialFrameIndex);
-	ResetCommandAllocator(kInitialFrameIndex);
-	ResetCommandList(kInitialFrameIndex);
 }
 
 void D3D12Rhi::SelectAdapter() noexcept
@@ -333,7 +304,7 @@ void D3D12Rhi::RefreshPartitionedTlasCommandListCapability() noexcept
 		return;
 	}
 
-	const bool supportsCommandListInterface = GetCommandList(ERhiQueueType::Graphics, 0) != nullptr;
+	const bool supportsCommandListInterface = m_device != nullptr;
 	partitionedTlas.SupportsD3D12CommandListInterface = supportsCommandListInterface;
 	if (!supportsCommandListInterface)
 	{
@@ -366,8 +337,9 @@ void D3D12Rhi::RefreshPartitionedTlasCommandListCapability() noexcept
 	}
 }
 
-void D3D12Rhi::CreateCommandQueue()
+void D3D12Rhi::CreateCommandQueues()
 {
+	ComPtr<ID3D12CommandQueue> nativeGraphicsQueue;
 	D3D12_COMMAND_QUEUE_DESC graphicsQueueDesc = {};
 	graphicsQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	graphicsQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
@@ -395,12 +367,12 @@ void D3D12Rhi::CreateCommandQueue()
 				{
 					m_externalDevice = std::move(externalDevice);
 					m_externalCommandQueue = std::move(externalQueue);
-					m_queues[RhiQueueTypeToIndex(ERhiQueueType::Graphics)].CommandQueue = std::move(nativeQueue);
+					nativeGraphicsQueue = std::move(nativeQueue);
 				}
 			}
 		}
 
-		if (m_queues[RhiQueueTypeToIndex(ERhiQueueType::Graphics)].CommandQueue == nullptr)
+		if (nativeGraphicsQueue == nullptr)
 		{
 			DisableExternalFeatureHooks();
 		}
@@ -408,62 +380,11 @@ void D3D12Rhi::CreateCommandQueue()
 
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		QueueState& queue = m_queues[queueIndex];
-		if (queue.CommandQueue != nullptr)
-		{
-			continue;
-		}
-
-		D3D12_COMMAND_QUEUE_DESC queueDesc = graphicsQueueDesc;
-		queueDesc.Type = ToD3D12CommandListType(static_cast<ERhiQueueType>(queueIndex));
-		CHECK(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(queue.CommandQueue.ReleaseAndGetAddressOf())));
-	}
-}
-
-void D3D12Rhi::CreateCommandAllocators()
-{
-	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
-	{
-		const D3D12_COMMAND_LIST_TYPE commandListType = ToD3D12CommandListType(static_cast<ERhiQueueType>(queueIndex));
-		for (std::size_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
-		{
-			CHECK(m_device->CreateCommandAllocator(
-			    commandListType,
-			    IID_PPV_ARGS(m_cmdAllocators[queueIndex][frameIndex].ReleaseAndGetAddressOf())));
-		}
-	}
-}
-
-void D3D12Rhi::CreateCommandLists()
-{
-	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
-	{
-		const D3D12_COMMAND_LIST_TYPE commandListType = ToD3D12CommandListType(static_cast<ERhiQueueType>(queueIndex));
-		for (std::size_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
-		{
-			CHECK(m_device->CreateCommandList(
-			    0,
-			    commandListType,
-			    m_cmdAllocators[queueIndex][frameIndex].Get(),
-			    nullptr,
-			    IID_PPV_ARGS(m_cmdLists[queueIndex][frameIndex].ReleaseAndGetAddressOf())));
-
-			CHECK(m_cmdLists[queueIndex][frameIndex]->Close());
-		}
-	}
-}
-
-void D3D12Rhi::CreateFenceAndEvent()
-{
-	for (QueueState& queue : m_queues)
-	{
-		CHECK(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(queue.Fence.ReleaseAndGetAddressOf())));
-		queue.FenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-
-		if (queue.FenceEvent == nullptr)
-		{
-			Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "Failed to create queue fence event");
-		}
+		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
+		ComPtr<ID3D12CommandQueue> nativeQueue = queueType == ERhiQueueType::Graphics
+		                                                   ? std::move(nativeGraphicsQueue)
+		                                                   : ComPtr<ID3D12CommandQueue>{};
+		m_queues[queueIndex] = std::make_unique<D3D12CommandQueue>(*m_device.Get(), queueType, std::move(nativeQueue));
 	}
 }
 
@@ -504,36 +425,12 @@ const ComPtr<ID3D12CommandQueue>& D3D12Rhi::GetCommandQueue() const noexcept
 
 const ComPtr<ID3D12CommandQueue>& D3D12Rhi::GetCommandQueue(ERhiQueueType queueType) const noexcept
 {
-	return m_queues[RhiQueueTypeToIndex(queueType)].CommandQueue;
+	return m_queues[RhiQueueTypeToIndex(queueType)]->GetNativeQueue();
 }
 
 ID3D12CommandQueue* D3D12Rhi::GetPresentationCommandQueue() const noexcept
 {
 	return m_externalCommandQueue != nullptr ? m_externalCommandQueue.Get() : GetCommandQueue().Get();
-}
-
-const ComPtr<ID3D12CommandAllocator>& D3D12Rhi::GetCommandAllocator(uint32_t frameInFlightIndex) const noexcept
-{
-	return GetCommandAllocator(ERhiQueueType::Graphics, frameInFlightIndex);
-}
-
-const ComPtr<ID3D12CommandAllocator>& D3D12Rhi::GetCommandAllocator(
-	ERhiQueueType queueType,
-	uint32_t frameInFlightIndex) const noexcept
-{
-	return m_cmdAllocators[RhiQueueTypeToIndex(queueType)][frameInFlightIndex];
-}
-
-const ComPtr<ID3D12GraphicsCommandList7>& D3D12Rhi::GetCommandList(uint32_t frameInFlightIndex) const noexcept
-{
-	return GetCommandList(ERhiQueueType::Graphics, frameInFlightIndex);
-}
-
-const ComPtr<ID3D12GraphicsCommandList7>& D3D12Rhi::GetCommandList(
-	ERhiQueueType queueType,
-	uint32_t frameInFlightIndex) const noexcept
-{
-	return m_cmdLists[RhiQueueTypeToIndex(queueType)][frameInFlightIndex];
 }
 
 const ComPtr<ID3D12Fence1>& D3D12Rhi::GetFence() const noexcept
@@ -543,7 +440,7 @@ const ComPtr<ID3D12Fence1>& D3D12Rhi::GetFence() const noexcept
 
 const ComPtr<ID3D12Fence1>& D3D12Rhi::GetFence(ERhiQueueType queueType) const noexcept
 {
-	return m_queues[RhiQueueTypeToIndex(queueType)].Fence;
+	return m_queues[RhiQueueTypeToIndex(queueType)]->GetFence();
 }
 
 HANDLE D3D12Rhi::GetFenceEvent() const noexcept
@@ -553,7 +450,7 @@ HANDLE D3D12Rhi::GetFenceEvent() const noexcept
 
 HANDLE D3D12Rhi::GetFenceEvent(ERhiQueueType queueType) const noexcept
 {
-	return m_queues[RhiQueueTypeToIndex(queueType)].FenceEvent;
+	return m_queues[RhiQueueTypeToIndex(queueType)]->GetFenceEvent();
 }
 
 D3D_FEATURE_LEVEL D3D12Rhi::GetDeviceFeatureLevel() const noexcept
@@ -665,92 +562,16 @@ void D3D12Rhi::DisableExternalFeatureHooks() noexcept
 	NotifyExternalPresentationReady(false);
 }
 
-void D3D12Rhi::CloseCommandList(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept
+void D3D12Rhi::ExecuteCommandLists(
+	ERhiQueueType queueType,
+	std::span<ID3D12CommandList* const> commandLists) noexcept
 {
-	const ComPtr<ID3D12GraphicsCommandList7>& commandList = GetCommandList(queueType, frameInFlightIndex);
-	if (commandList == nullptr)
-	{
-		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "CloseCommandList called without a valid command list");
-		return;
-	}
-
-	const HRESULT closeResult = commandList->Close();
-	if (FAILED(closeResult))
-	{
-		RhiDiagnosticMessage message;
-		while (TryPopDebugMessage(message))
-		{
-			SPDLOG_LOGGER_ERROR(g_d3d12RhiLogger, "D3D12 debug message before command-list close failure: {}", message.Text);
-		}
-	}
-	CHECK(closeResult);
+	m_queues[RhiQueueTypeToIndex(queueType)]->Execute(commandLists);
 }
 
-void D3D12Rhi::ResetCommandAllocator(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept
+RhiSubmissionToken D3D12Rhi::Signal(ERhiQueueType queueType) noexcept
 {
-	const ComPtr<ID3D12CommandAllocator>& allocator = GetCommandAllocator(queueType, frameInFlightIndex);
-	if (allocator == nullptr)
-	{
-		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ResetCommandAllocator called with missing allocator");
-		return;
-	}
-
-	CHECK(allocator->Reset());
-}
-
-void D3D12Rhi::ResetCommandList(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept
-{
-	const ComPtr<ID3D12GraphicsCommandList7>& commandList = GetCommandList(queueType, frameInFlightIndex);
-	const ComPtr<ID3D12CommandAllocator>& allocator = GetCommandAllocator(queueType, frameInFlightIndex);
-	if (commandList == nullptr)
-	{
-		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ResetCommandList called without a valid command list");
-		return;
-	}
-	if (allocator == nullptr)
-	{
-		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ResetCommandList called with missing allocator");
-		return;
-	}
-
-	CHECK(commandList->Reset(allocator.Get(), nullptr));
-}
-
-void D3D12Rhi::ExecuteCommandList(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept
-{
-	const ComPtr<ID3D12GraphicsCommandList7>& commandList = GetCommandList(queueType, frameInFlightIndex);
-	const ComPtr<ID3D12CommandQueue>& commandQueue = GetCommandQueue(queueType);
-	if (commandList == nullptr || commandQueue == nullptr)
-	{
-		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ExecuteCommandList called without valid command list or queue");
-		return;
-	}
-
-	ID3D12CommandList* commandLists[] = {commandList.Get()};
-	commandQueue->ExecuteCommandLists(1, commandLists);
-}
-
-void D3D12Rhi::WaitForGPU(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept
-{
-	const QueueState& queue = m_queues[RhiQueueTypeToIndex(queueType)];
-	const RhiSubmissionToken token{.Queue = queueType, .Value = queue.FrameSubmissionValues[frameInFlightIndex]};
-	WaitForSubmission(token);
-}
-
-RhiSubmissionToken D3D12Rhi::Signal(ERhiQueueType queueType, uint32_t frameInFlightIndex) noexcept
-{
-	QueueState& queue = m_queues[RhiQueueTypeToIndex(queueType)];
-	if (queue.CommandQueue == nullptr || queue.Fence == nullptr)
-	{
-		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "Signal called without command queue or fence");
-		return {};
-	}
-
-	const std::uint64_t submissionValue = queue.NextSubmissionValue++;
-	CHECK(queue.CommandQueue->Signal(queue.Fence.Get(), submissionValue));
-	queue.LastSubmittedValue = submissionValue;
-	queue.FrameSubmissionValues[frameInFlightIndex] = submissionValue;
-	return RhiSubmissionToken{.Queue = queueType, .Value = submissionValue};
+	return m_queues[RhiQueueTypeToIndex(queueType)]->Signal();
 }
 
 void D3D12Rhi::QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept
@@ -760,15 +581,9 @@ void D3D12Rhi::QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionTo
 		return;
 	}
 
-	QueueState& waitingQueue = m_queues[RhiQueueTypeToIndex(waitQueue)];
-	const QueueState& executionQueue = m_queues[RhiQueueTypeToIndex(executionToken.Queue)];
-	if (waitingQueue.CommandQueue == nullptr || executionQueue.Fence == nullptr)
-	{
-		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "QueueWait called without valid queue synchronization state");
-		return;
-	}
-
-	CHECK(waitingQueue.CommandQueue->Wait(executionQueue.Fence.Get(), executionToken.Value));
+	m_queues[RhiQueueTypeToIndex(waitQueue)]->WaitFor(
+	    *m_queues[RhiQueueTypeToIndex(executionToken.Queue)],
+	    executionToken.Value);
 }
 
 void D3D12Rhi::WaitForSubmission(RhiSubmissionToken token) noexcept
@@ -778,18 +593,7 @@ void D3D12Rhi::WaitForSubmission(RhiSubmissionToken token) noexcept
 		return;
 	}
 
-	const QueueState& queue = m_queues[RhiQueueTypeToIndex(token.Queue)];
-	if (queue.Fence == nullptr || queue.FenceEvent == nullptr)
-	{
-		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "WaitForSubmission called without a fence or event");
-		return;
-	}
-
-	if (queue.Fence->GetCompletedValue() < token.Value)
-	{
-		CHECK(queue.Fence->SetEventOnCompletion(token.Value, queue.FenceEvent));
-		WaitForSingleObject(queue.FenceEvent, INFINITE);
-	}
+	m_queues[RhiQueueTypeToIndex(token.Queue)]->WaitForSubmission(token.Value);
 }
 
 bool D3D12Rhi::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
@@ -799,21 +603,17 @@ bool D3D12Rhi::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
 		return true;
 	}
 
-	const QueueState& queue = m_queues[RhiQueueTypeToIndex(token.Queue)];
-	return queue.Fence != nullptr && queue.Fence->GetCompletedValue() >= token.Value;
+	return m_queues[RhiQueueTypeToIndex(token.Queue)]->IsSubmissionComplete(token.Value);
 }
 
 RhiSubmissionToken D3D12Rhi::GetLastSubmittedToken(ERhiQueueType queueType) const noexcept
 {
-	return RhiSubmissionToken{
-	    .Queue = queueType,
-	    .Value = m_queues[RhiQueueTypeToIndex(queueType)].LastSubmittedValue};
+	return m_queues[RhiQueueTypeToIndex(queueType)]->GetLastSubmittedToken();
 }
 
 std::uint64_t D3D12Rhi::GetCompletedSubmissionValue(ERhiQueueType queueType) const noexcept
 {
-	const QueueState& queue = m_queues[RhiQueueTypeToIndex(queueType)];
-	return queue.Fence != nullptr ? queue.Fence->GetCompletedValue() : 0;
+	return m_queues[RhiQueueTypeToIndex(queueType)]->GetCompletedSubmissionValue();
 }
 
 void D3D12Rhi::Flush() noexcept
@@ -821,7 +621,7 @@ void D3D12Rhi::Flush() noexcept
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
 		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
-		WaitForSubmission(Signal(queueType, m_currentFrameIndex));
+		WaitForSubmission(Signal(queueType));
 	}
 }
 
@@ -903,22 +703,9 @@ void D3D12Rhi::CollectCrashDiagnostics() noexcept
 
 D3D12Rhi::~D3D12Rhi() noexcept
 {
-	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
+	for (std::unique_ptr<D3D12CommandQueue>& queue : m_queues)
 	{
-		for (std::size_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
-		{
-			m_cmdLists[queueIndex][frameIndex].Reset();
-			m_cmdAllocators[queueIndex][frameIndex].Reset();
-		}
-
-		QueueState& queue = m_queues[queueIndex];
-		if (queue.FenceEvent != nullptr)
-		{
-			CloseHandle(queue.FenceEvent);
-			queue.FenceEvent = nullptr;
-		}
-		queue.Fence.Reset();
-		queue.CommandQueue.Reset();
+		queue.reset();
 	}
 
 	m_externalCommandQueue.Reset();

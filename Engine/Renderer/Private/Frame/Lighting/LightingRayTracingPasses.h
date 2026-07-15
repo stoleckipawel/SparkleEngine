@@ -26,7 +26,7 @@ namespace LightingRayTracingPasses
 	{
 		builder.Execute(
 		    TPass::PassName,
-		    EFrameGraphPassFlags::Compute,
+		    EFrameGraphPassKind::Compute,
 		    [&parameters](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
 		    {
 			    if (!UsesNoRayQuery(frame))
@@ -59,7 +59,7 @@ namespace LightingRayTracingPasses
 	{
 		builder.Execute(
 		    TPass::PassName,
-		    EFrameGraphPassFlags::Compute,
+		    EFrameGraphPassKind::Compute,
 		    [&parameters, accessMode](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
 		    {
 			    if (!UsesSceneTlasAccessMode(frame, accessMode))

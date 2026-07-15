@@ -22,7 +22,7 @@ void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAcceler
 {
 	builder.Execute(
 	    RayTracingSceneFrameGraphContract::kSceneBuildPassName,
-	    EFrameGraphPassFlags::Compute,
+	    EFrameGraphPassKind::Compute,
 	    [sceneTlas](PassResourceBuilder& resourceBuilder, const FrameContext& frame)
 	    {
 		    if (!sceneTlas.IsValid() || !frame.rayTracingScene.HasBoundTlas())

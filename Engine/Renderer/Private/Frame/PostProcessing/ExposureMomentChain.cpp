@@ -31,7 +31,7 @@ namespace ExposureMomentChain
 		auto& parameters = builder.AllocParameters<ExposureReduceScenePass::Parameters>();
 		parameters->SceneColor = builder.CreateSRV(sceneColor);
 		parameters->LuminanceMomentsOutput = builder.CreateUAV(output.TextureHandle);
-		builder.Dispatch<ExposureReduceScenePass>(parameters, output.Width, output.Height);
+		builder.DispatchAsync<ExposureReduceScenePass>(parameters, output.Width, output.Height);
 	}
 
 	void AddReduceTexturePass(FrameGraphBuilder& builder, const Texture& input, const Texture& output)
@@ -39,7 +39,7 @@ namespace ExposureMomentChain
 		auto& parameters = builder.AllocParameters<ExposureReduceTexturePass::Parameters>();
 		parameters->LuminanceMomentsInput = builder.CreateSRV(input.TextureHandle);
 		parameters->LuminanceMomentsOutput = builder.CreateUAV(output.TextureHandle);
-		builder.Dispatch<ExposureReduceTexturePass>(parameters, output.Width, output.Height);
+		builder.DispatchAsync<ExposureReduceTexturePass>(parameters, output.Width, output.Height);
 	}
 
 	void AddDownsampleScenePass(FrameGraphBuilder& builder, FrameGraphTextureHandle sceneColor, const Texture& output)
@@ -47,7 +47,7 @@ namespace ExposureMomentChain
 		auto& parameters = builder.AllocParameters<ExposureDownsampleScenePass::Parameters>();
 		parameters->SceneColor = builder.CreateSRV(sceneColor);
 		parameters->LuminanceMomentsOutput = builder.CreateUAV(output.TextureHandle);
-		builder.Dispatch<ExposureDownsampleScenePass>(parameters, output.Width, output.Height);
+		builder.DispatchAsync<ExposureDownsampleScenePass>(parameters, output.Width, output.Height);
 	}
 
 	void AddDownsampleTexturePass(FrameGraphBuilder& builder, const Texture& input, const Texture& output)
@@ -55,7 +55,7 @@ namespace ExposureMomentChain
 		auto& parameters = builder.AllocParameters<ExposureDownsampleTexturePass::Parameters>();
 		parameters->LuminanceMomentsInput = builder.CreateSRV(input.TextureHandle);
 		parameters->LuminanceMomentsOutput = builder.CreateUAV(output.TextureHandle);
-		builder.Dispatch<ExposureDownsampleTexturePass>(parameters, output.Width, output.Height);
+		builder.DispatchAsync<ExposureDownsampleTexturePass>(parameters, output.Width, output.Height);
 	}
 
 	Texture AddReduction(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, FrameGraphTextureHandle sceneColor)

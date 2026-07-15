@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
+#include "RHI/Public/Commands/RhiQueueCapabilities.h"
 
 class FrameGraphResourceRegistry;
 class FrameGraphResourceStateTracker;
@@ -11,7 +12,8 @@ class FrameGraphCompiler final
 	FrameGraphCompiler(
 	    FrameGraphPlan& plan,
 	    FrameGraphResourceRegistry& resourceRegistry,
-	    FrameGraphResourceStateTracker& resourceStateTracker) noexcept;
+	    FrameGraphResourceStateTracker& resourceStateTracker,
+	    const RhiQueueCapabilities& queueCapabilities) noexcept;
 
 	void Compile() noexcept;
 
@@ -28,9 +30,13 @@ class FrameGraphCompiler final
 	void BuildPassSuccessorsAndInDegrees() noexcept;
 	void BuildTopologicalExecutionOrder() noexcept;
 	void ValidateExecutionOrder() const noexcept;
+	void AssignPassQueues() noexcept;
+	void BuildSubmissionBatches() noexcept;
+	void AddSynchronizationDependency(FrameGraphPassNode& passRecord, FrameGraphPassIndex dependency) noexcept;
 	void BuildTransientResourceLifetimes() noexcept;
 	void BuildTransientPhysicalBlockAssignments() noexcept;
 	void BuildTransientAliasingBarriers() noexcept;
+	void BuildResourceBarriers() noexcept;
 	void ResetCompiledResourceStatesForBarrierPlanning() noexcept;
 	ResourceState InferRequiredResourceState(const PassResourceDeclaration& declaration, const FrameGraphResourceNode& resource)
 	    const noexcept;
@@ -48,4 +54,5 @@ class FrameGraphCompiler final
 	FrameGraphPlan& m_plan;
 	FrameGraphResourceRegistry& m_resourceRegistry;
 	FrameGraphResourceStateTracker& m_resourceStateTracker;
+	RhiQueueCapabilities m_queueCapabilities;
 };

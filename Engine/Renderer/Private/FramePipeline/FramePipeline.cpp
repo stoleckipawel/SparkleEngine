@@ -147,7 +147,7 @@ void FramePipeline::RefreshFrameExecution() noexcept
 void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
-	backend.Flush();
+	backend.WaitForIdle();
 	for (std::unique_ptr<FrameContext>& frameContext : m_frameContexts)
 	{
 		frameContext.reset();
@@ -177,7 +177,7 @@ void FramePipeline::BeginFrame() noexcept
 
 		if (m_systems->GetWindow().HasValidSize())
 		{
-			backend.Flush();
+			backend.WaitForIdle();
 			backend.ResizeSwapChain();
 			RefreshFrameExecution(ResolveFrameResolution());
 		}
@@ -235,11 +235,14 @@ void FramePipeline::SetupFrame() noexcept
 	m_sceneSnapshot.Capture(m_systems->GetGameScene().CaptureSnapshot());
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	RenderCommandList& graphicsCommandList = backend.GetCurrentGraphicsCommandList();
-	const bool useCopyQueue = m_systems->GetRenderHardwareInterface().GetCapabilities().Queues.SupportsCopy;
+	TextureManager& textureManager = m_systems->GetTextureManager();
+	const bool useCopyQueue = textureManager.HasPendingSceneTextureUploads(m_sceneSnapshot.textures) &&
+	                          m_systems->GetRenderHardwareInterface().GetCapabilities().Queues.SupportsIndependent(
+	                              ERhiQueueType::Copy);
 	RenderCommandList& uploadCommandList =
 	    useCopyQueue ? backend.BeginCommandList(ERhiQueueType::Copy) : graphicsCommandList;
 	const std::vector<NativeResourceHandle> uploadedResources =
-	    m_systems->GetTextureManager().LoadSceneTextures(m_sceneSnapshot.textures, uploadCommandList);
+	    textureManager.LoadSceneTextures(m_sceneSnapshot.textures, uploadCommandList);
 	if (useCopyQueue)
 	{
 		const RhiSubmissionToken uploadToken = backend.SubmitCommandList(uploadCommandList);
@@ -404,8 +407,6 @@ void FramePipeline::RecordFrame() noexcept
 	BindRenderSceneGpuResources(*m_frameGraph, m_frameResources.External.Scene, frame.sceneGpuData);
 	m_frameGraph->Setup(frame);
 	const FrameGraphPlan& compiledPlan = m_frameGraph->Compile();
-	RenderCommandList& commandList = m_systems->GetBackend().GetCurrentGraphicsCommandList();
-	RenderCommandContext cmd(commandList);
 	const RenderRayTracingPassServices rayTracingPassServices{
 	    .Scene = activeRayTracingScene,
 	    .CapabilityReport = activeRayTracingScene != nullptr ? &activeRayTracingScene->GetCapabilities() : nullptr,
@@ -422,12 +423,7 @@ void FramePipeline::RecordFrame() noexcept
 	    .ImageProviders = &imageProviderPassServices};
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
-	auto gpuFrameScope =
-	    CVarRendererDiagnosticMarkerVerbosity.Get() != RendererDiagnosticMarkerVerbosity::Off
-	        ? frameDiagnostics.BeginGpuScope(cmd, "GPU Frame", RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255})
-	        : ScopedGpuScope{};
-
-	m_frameGraph->Execute(compiledPlan, cmd, frame, passRuntimeServices, frameDiagnostics);
+	m_frameGraph->Execute(compiledPlan, m_systems->GetBackend(), frame, passRuntimeServices, frameDiagnostics);
 }
 
 void FramePipeline::SubmitFrame() noexcept

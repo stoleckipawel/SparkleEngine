@@ -15,6 +15,11 @@
 #include <cstring>
 #include <vector>
 
+namespace
+{
+	const auto g_d3d12UploadLogger = Logging::GetOrCreateLogger("RHI.D3D12.Upload");
+}
+
 D3D12UploadService::D3D12UploadService(
     D3D12Rhi& rhi,
     D3D12FrameResourceManager& frameResourceManager,
@@ -53,6 +58,14 @@ bool D3D12UploadService::UploadTexture(
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr || destinationRecord == nullptr || destinationRecord->Resource == nullptr ||
 	    !textureUpload.IsValid() || commandList.GetBackendApi() != ERhiBackendApi::D3D12)
 	{
+		SPDLOG_LOGGER_ERROR(
+		    g_d3d12UploadLogger,
+		    "UploadTexture rejected invalid input (rhi={}, allocator={}, destination={}, uploadValid={}, backend={}).",
+		    m_rhi != nullptr,
+		    m_memoryAllocator != nullptr,
+		    destinationRecord != nullptr && destinationRecord->Resource != nullptr,
+		    textureUpload.IsValid(),
+		    static_cast<std::uint32_t>(commandList.GetBackendApi()));
 		return false;
 	}
 
@@ -61,6 +74,7 @@ bool D3D12UploadService::UploadTexture(
 	auto* const d3dCommandList = static_cast<ID3D12GraphicsCommandList*>(nativeCommandList.Value);
 	if (d3dCommandList == nullptr)
 	{
+		SPDLOG_LOGGER_ERROR(g_d3d12UploadLogger, "UploadTexture could not resolve the native command list.");
 		return false;
 	}
 
@@ -68,6 +82,7 @@ bool D3D12UploadService::UploadTexture(
 	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(destinationRecord->Resource.Get(), 0, subresourceCount);
 	if (uploadBufferSize == 0)
 	{
+		SPDLOG_LOGGER_ERROR(g_d3d12UploadLogger, "UploadTexture calculated an empty intermediate buffer.");
 		return false;
 	}
 
@@ -79,6 +94,10 @@ bool D3D12UploadService::UploadTexture(
 	    debugName.empty() ? L"TextureUpload" : debugName);
 	if (stagingResource == nullptr || stagingResource->Resource == nullptr)
 	{
+		SPDLOG_LOGGER_ERROR(
+		    g_d3d12UploadLogger,
+		    "UploadTexture failed to allocate {} bytes of staging memory.",
+		    uploadBufferSize);
 		return false;
 	}
 
@@ -105,6 +124,12 @@ bool D3D12UploadService::UploadTexture(
 	        subresourceCount,
 	        subresources.data()) == 0)
 	{
+		SPDLOG_LOGGER_ERROR(
+		    g_d3d12UploadLogger,
+		    "UploadTexture failed to record {} subresources ({} staging bytes) on the {} queue.",
+		    subresourceCount,
+		    uploadBufferSize,
+		    RhiQueueTypeToString(commandList.GetQueueType()));
 		return false;
 	}
 

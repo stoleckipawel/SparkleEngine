@@ -10,22 +10,6 @@
 
 namespace
 {
-	bool HasCompiledBarrier(
-	    const FrameGraphPassNode& passRecord,
-	    FrameGraphResourceHandle handle,
-	    FrameGraphBarrier::Type type) noexcept
-	{
-		const auto it = std::find_if(
-		    passRecord.compiledBarriers.begin(),
-		    passRecord.compiledBarriers.end(),
-		    [handle, type](const FrameGraphBarrier& barrier)
-		    {
-			    return barrier.handle == handle && barrier.type == type;
-		    });
-
-		return it != passRecord.compiledBarriers.end();
-	}
-
 	void ValidateResourceVersionGraph(const FrameGraphPlan& plan) noexcept
 	{
 		for (const FrameGraphResourceNode& resource : plan.resources)
@@ -56,8 +40,12 @@ namespace
 FrameGraphCompiler::FrameGraphCompiler(
 	FrameGraphPlan& plan,
 	FrameGraphResourceRegistry& resourceRegistry,
-	FrameGraphResourceStateTracker& resourceStateTracker) noexcept :
-	m_plan(plan), m_resourceRegistry(resourceRegistry), m_resourceStateTracker(resourceStateTracker)
+	FrameGraphResourceStateTracker& resourceStateTracker,
+	const RhiQueueCapabilities& queueCapabilities) noexcept :
+	m_plan(plan),
+	m_resourceRegistry(resourceRegistry),
+	m_resourceStateTracker(resourceStateTracker),
+	m_queueCapabilities(queueCapabilities)
 {
 }
 
@@ -66,7 +54,9 @@ void FrameGraphCompiler::Compile() noexcept
 	BuildCompiledPlanResources();
 	m_plan.executionOrder.clear();
 	m_plan.executionOrder.reserve(m_plan.passes.size());
+	m_plan.initialBarriers.clear();
 	m_plan.finalBarriers.clear();
+	m_plan.submissionBatches.clear();
 
 	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
@@ -75,107 +65,19 @@ void FrameGraphCompiler::Compile() noexcept
 		passRecord.inDegree = 0;
 		passRecord.alive = true;
 		passRecord.compiledBarriers.clear();
+		passRecord.compiledReleaseBarriers.clear();
+		passRecord.synchronizationDependencies.clear();
 	}
 
 	BuildResourceVersionGraph();
 	ValidateResourceVersionGraph(m_plan);
 	FinalizePassDependencies();
+	AssignPassQueues();
 	BuildTransientResourceLifetimes();
 	BuildTransientPhysicalBlockAssignments();
 	BuildTransientAliasingBarriers();
-	ResetCompiledResourceStatesForBarrierPlanning();
-
-	for (const FrameGraphPassIndex passIndex : m_plan.executionOrder)
-	{
-		FrameGraphPassNode& passRecord = m_plan.passes[passIndex];
-		for (const PassResourceDeclaration& declaration : passRecord.declarations)
-		{
-			if (!declaration.handle.IsValid())
-			{
-				continue;
-			}
-
-			FrameGraphResourceNode& compiledResource = GetCompiledResourceEntry(declaration.handle);
-			const ResourceState requiredState = InferRequiredResourceState(declaration, compiledResource);
-			if (FrameGraphCompilerRayTracing::UsesRayTracingState(declaration))
-			{
-				if (FrameGraphCompilerRayTracing::RequiresTransitionBarrier(compiledResource.currentState, requiredState))
-				{
-					passRecord.compiledBarriers.push_back(
-					    FrameGraphBarrier{
-					        .handle = declaration.handle,
-					        .type = FrameGraphBarrier::Type::Transition,
-					        .before = compiledResource.currentState,
-					        .after = requiredState,
-					        .label = declaration.label});
-					compiledResource.currentState = requiredState;
-					m_resourceStateTracker.UpdateCurrentState(declaration.handle, requiredState);
-				}
-
-				if (compiledResource.pendingAccelerationStructureBarrier
-				    && !HasCompiledBarrier(passRecord, declaration.handle, FrameGraphBarrier::Type::AccelerationStructure))
-				{
-					passRecord.compiledBarriers.push_back(
-					    FrameGraphBarrier{
-					        .handle = declaration.handle,
-					        .type = FrameGraphBarrier::Type::AccelerationStructure,
-					        .before = requiredState,
-					        .after = requiredState,
-					        .label = declaration.label});
-				}
-
-				compiledResource.pendingAccelerationStructureBarrier = declaration.usage == ResourceUsage::AccelerationStructureBuild;
-			}
-			else if (compiledResource.currentState != requiredState)
-			{
-				passRecord.compiledBarriers.push_back(
-				    FrameGraphBarrier{
-				        .handle = declaration.handle,
-				        .type = FrameGraphBarrier::Type::Transition,
-				        .before = compiledResource.currentState,
-				        .after = requiredState,
-				        .label = declaration.label});
-				compiledResource.currentState = requiredState;
-				m_resourceStateTracker.UpdateCurrentState(declaration.handle, requiredState);
-			}
-			else if (
-			    requiredState == ResourceState::UnorderedAccess && WritesToUsage(declaration.usage) &&
-			    !HasCompiledBarrier(passRecord, declaration.handle, FrameGraphBarrier::Type::UnorderedAccess))
-			{
-				passRecord.compiledBarriers.push_back(
-				    FrameGraphBarrier{
-				        .handle = declaration.handle,
-				        .type = FrameGraphBarrier::Type::UnorderedAccess,
-				        .before = requiredState,
-				        .after = requiredState,
-				        .label = declaration.label});
-			}
-		}
-	}
-
-	for (FrameGraphResourceNode& compiledResource : m_plan.resources)
-	{
-		if (!ShouldRestoreFinalState(compiledResource))
-		{
-			continue;
-		}
-
-		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(compiledResource.handle);
-		if (compiledResource.currentState == compiledResource.finalState)
-		{
-			continue;
-		}
-
-		m_plan.finalBarriers.push_back(
-		    FrameGraphBarrier{
-		        .handle = entry.handle,
-		        .type = FrameGraphBarrier::Type::Transition,
-		        .before = compiledResource.currentState,
-		        .after = compiledResource.finalState,
-		        .label = "FinalState"});
-		compiledResource.currentState = compiledResource.finalState;
-		m_resourceStateTracker.UpdateCurrentState(compiledResource.handle, entry.finalState);
-	}
+	BuildResourceBarriers();
+	BuildSubmissionBatches();
 }
 
 void FrameGraphCompiler::BuildCompiledPlanResources() noexcept

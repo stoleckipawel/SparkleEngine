@@ -9,5 +9,5 @@ void AddSkyMotionVectorPass(FrameGraphBuilder& builder, const GBufferRenderTarge
 	auto& parameters = builder.AllocParameters<SkyMotionVectorPass::Parameters>();
 	parameters->GBufferDeviceZ = builder.CreateSRV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
-	builder.Dispatch<SkyMotionVectorPass>(parameters);
+	builder.DispatchAsync<SkyMotionVectorPass>(parameters);
 }

@@ -61,6 +61,15 @@ std::optional<RendererTexture> TextureManager::CreateTextureFromPath(
 	    debugName);
 	if (!resource)
 	{
+		SPDLOG_LOGGER_WARN(
+		    g_textureManagerLogger,
+		    "TextureManager::CreateTextureFromPath: Resource creation failed for '{}' ({}x{}, mips={}, slices={}, format={}).",
+		    texturePath.string(),
+		    resourceDesc.Width,
+		    resourceDesc.Height,
+		    resourceDesc.MipLevels,
+		    resourceDesc.ArraySize,
+		    static_cast<std::uint32_t>(resourceDesc.Format));
 		return std::nullopt;
 	}
 
@@ -71,6 +80,11 @@ std::optional<RendererTexture> TextureManager::CreateTextureFromPath(
 	        ResourceState::ShaderResource,
 	        debugName))
 	{
+		SPDLOG_LOGGER_WARN(
+		    g_textureManagerLogger,
+		    "TextureManager::CreateTextureFromPath: Upload recording failed for '{}' on the {} queue.",
+		    texturePath.string(),
+		    RhiQueueTypeToString(commandList.GetQueueType()));
 		m_resourceService.ReleaseOwnedResource(resource);
 		return std::nullopt;
 	}
@@ -88,6 +102,10 @@ std::optional<RendererTexture> TextureManager::CreateTextureFromPath(
 	        textureUpload.Dimension));
 	if (!shaderResourceView)
 	{
+		SPDLOG_LOGGER_WARN(
+		    g_textureManagerLogger,
+		    "TextureManager::CreateTextureFromPath: Shader-resource view creation failed for '{}'.",
+		    texturePath.string());
 		m_resourceService.ReleaseOwnedResource(resource);
 		return std::nullopt;
 	}
@@ -152,6 +170,23 @@ std::vector<NativeResourceHandle> TextureManager::LoadSceneTextures(
 	return uploadedResources;
 }
 
+bool TextureManager::HasPendingSceneTextureUploads(const TextureSnapshot& textureSnapshot) const noexcept
+{
+	if (!m_defaultsLoaded)
+	{
+		return true;
+	}
+	for (const std::filesystem::path& texturePath : textureSnapshot.texturePaths)
+	{
+		const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texturePath);
+		if (resolved && !m_pathTextures.contains(resolved->CacheKey))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void TextureManager::LoadTexture(
 	TextureId id,
 	const std::filesystem::path& relativePath,
@@ -187,8 +222,8 @@ RendererTexture* TextureManager::LoadFromPath(
 	RenderCommandList& commandList,
 	std::vector<NativeResourceHandle>& uploadedResources)
 {
-	const auto resolvedPathResult = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
-	if (!resolvedPathResult)
+	const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texturePath);
+	if (!resolved)
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_textureManagerLogger,
@@ -197,34 +232,22 @@ RendererTexture* TextureManager::LoadFromPath(
 		return nullptr;
 	}
 
-	const std::filesystem::path& resolvedPath = *resolvedPathResult;
-
-	const TextureCacheKey cacheKey = Paths::MakePathKey(resolvedPath);
-	if (cacheKey.empty())
-	{
-		SPDLOG_LOGGER_WARN(
-		    g_textureManagerLogger,
-		    "{}",
-		    std::format("TextureManager::LoadFromPath: Failed to canonicalize '{}'", resolvedPath.string()));
-		return nullptr;
-	}
-
-	if (auto it = m_pathTextures.find(cacheKey); it != m_pathTextures.end())
+	if (auto it = m_pathTextures.find(resolved->CacheKey); it != m_pathTextures.end())
 	{
 		return &it->second;
 	}
 
-	std::optional<RendererTexture> texture = CreateTextureFromPath(resolvedPath, commandList, uploadedResources);
+	std::optional<RendererTexture> texture = CreateTextureFromPath(resolved->Path, commandList, uploadedResources);
 	if (!texture)
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_textureManagerLogger,
 		    "{}",
-		    std::format("TextureManager::LoadFromPath: Failed to create texture for '{}'", resolvedPath.string()));
+		    std::format("TextureManager::LoadFromPath: Failed to create texture for '{}'", resolved->Path.string()));
 		return nullptr;
 	}
 
-	auto [inserted, wasInserted] = m_pathTextures.emplace(cacheKey, std::move(*texture));
+	auto [inserted, wasInserted] = m_pathTextures.emplace(resolved->CacheKey, std::move(*texture));
 	return wasInserted ? &inserted->second : nullptr;
 }
 void TextureManager::UnloadSceneTextures() noexcept
@@ -376,41 +399,45 @@ void TextureManager::LoadDefaultTextures(
 
 void TextureManager::RegisterDefaultPathTexture(const std::filesystem::path& texturePath)
 {
-	const auto resolvedPath = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
-	if (!resolvedPath)
+	const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texturePath);
+	if (!resolved)
 	{
 		return;
 	}
 
-	const TextureCacheKey cacheKey = Paths::MakePathKey(*resolvedPath);
-	if (cacheKey.empty())
-	{
-		return;
-	}
-
-	m_defaultPathTextureKeys.insert(cacheKey);
+	m_defaultPathTextureKeys.insert(resolved->CacheKey);
 }
 
 const RendererTexture* TextureManager::FindPathTexture(const std::filesystem::path& texturePath) const noexcept
 {
-	const auto resolvedPath = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
-	if (!resolvedPath)
+	const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texturePath);
+	if (!resolved)
 	{
 		return nullptr;
 	}
 
-	const TextureCacheKey cacheKey = Paths::MakePathKey(*resolvedPath);
-	if (cacheKey.empty())
-	{
-		return nullptr;
-	}
-
-	if (auto it = m_pathTextures.find(cacheKey); it != m_pathTextures.end())
+	if (auto it = m_pathTextures.find(resolved->CacheKey); it != m_pathTextures.end())
 	{
 		return &it->second;
 	}
 
 	return nullptr;
+}
+
+std::optional<TextureManager::ResolvedTexturePath> TextureManager::ResolveTexturePath(
+    const std::filesystem::path& texturePath) const noexcept
+{
+	const auto resolvedPath = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
+	if (!resolvedPath)
+	{
+		return std::nullopt;
+	}
+	TextureCacheKey cacheKey = Paths::MakePathKey(*resolvedPath);
+	if (cacheKey.empty())
+	{
+		return std::nullopt;
+	}
+	return ResolvedTexturePath{.Path = *resolvedPath, .CacheKey = std::move(cacheKey)};
 }
 
 void TextureManager::ReleaseTexture(RendererTexture& texture) noexcept

@@ -2,7 +2,7 @@
 
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 
-#include "FrameGraph/FrameGraphPassFlags.h"
+#include "FrameGraph/FrameGraphPassKind.h"
 
 #include <string>
 #include <string_view>
@@ -14,13 +14,13 @@ class PassExecutionDiagnostics final
 	    FrameExecutionDiagnostics& frameDiagnostics,
 	    RenderCommandContext& commands,
 	    std::string_view passScopeLabel,
-	    EFrameGraphPassFlags passKind) noexcept;
+	    EFrameGraphPassKind passKind) noexcept;
 
 	ScopedGpuScope BeginPassGpuScope() noexcept;
 	ScopedGpuScope BeginGpuScope(std::string_view label) noexcept;
 
   private:
-	static RhiDiagnosticLabelColor GetPassEventColor(EFrameGraphPassFlags passKind) noexcept;
+	static RhiDiagnosticLabelColor GetPassEventColor(EFrameGraphPassKind passKind) noexcept;
 	std::string FormatEventScopeLabel(std::string_view label) const;
 
 	FrameExecutionDiagnostics* m_frameDiagnostics = nullptr;

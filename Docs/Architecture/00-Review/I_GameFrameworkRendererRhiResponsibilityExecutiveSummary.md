@@ -57,7 +57,7 @@ Application/Editor remains the composition root: it constructs these modules, ow
 | Frame pass frontend | Priority 1A follow-through implemented; build/runtime validation pending | Frame feature files allocate typed `Pass::Parameters`, state named SRV/UAV/render/depth intent, and issue `Dispatch`, `Draw`, or `Execute`. The duplicate `DeclareResources` and pass-specific allocation/add wrappers have been deleted. |
 | Scene GPU-data preparation | Frontend follow-through implemented; build/runtime validation pending | `RenderSceneGpuData` is a plain value beside `RenderSceneData`; one implementation performs conversion, upload, declaration, and graph import. No manager, subsystem root member, or per-domain forwarding class remains. |
 | Material bindings | Needs work | Per-material binding sets and a global material table are both valid policies, but ownership is exposed as raw pointers and repeated availability checks across passes. |
-| Queue model | Priority 2A substrate and first copy workload implemented; async-compute frame-graph batching remains | The public contract exposes truthful queue capabilities, queue-typed command lists, value submission tokens, GPU queue waits, and completion queries. Texture uploads use copy when supported and graphics consumes the copy token without a CPU stall. |
+| Queue model | Priority 2A active for upload, transfer, and selected compute workloads | The frame graph resolves explicit async intent against truthful capabilities, compiles queue batches and dependencies, and falls back to graphics. RHI owns queue-typed recording, value tokens, native waits, frame completion, and retirement. |
 
 The passing boundary script is evidence that compile-time direction is healthy, not evidence that runtime ownership is complete. The current check protects Renderer/RHI source dependencies; it does not prove descriptor lifetime, upload behavior, or feature ownership.
 
@@ -436,24 +436,26 @@ Allocator address reuse is not durable semantic state. It can cause a false rese
 
 The implementation research and activated integration direction are recorded in [`J_NvidiaMultiQueueSubmissionResearch.md`](J_NvidiaMultiQueueSubmissionResearch.md).
 
-[`RhiCommandSubmissionService`](../../../Engine/RHI/Public/Commands/RhiCommandSubmissionService.h) currently exposes only graphics command lists and frame submission. That is acceptable while Sparkle intentionally records one graphics-queue frame. It is not enough for asynchronous uploads or compute.
+[`RhiCommandSubmissionService`](../../../Engine/RHI/Public/Commands/RhiCommandSubmissionService.h) now exposes queue-typed command-list acquisition, value submission tokens, GPU queue waits, completion queries, and frame submission. It contains no scheduling policy: the Renderer frame graph is the sole owner of pass queue selection and batch dependencies.
 
 ### Current implementation state
 
-Priority 2A is activated by the existing texture upload workload. `FramePipeline` selects copy when the backend truthfully exposes it, `TextureManager` remains unaware of submission policy, and `RhiUploadService` records the native copy. The copy submission returns `RhiSubmissionToken { Queue, Value }`; graphics installs a GPU wait and performs the final `Common -> ShaderResource` transition because a D3D12 copy queue cannot legally perform that transition. No upload path calls `Flush`, `WaitForIdle`, or a queue-idle function.
+Priority 2A is active for uploads, frame-graph transfer, and selected compute work. `FramePipeline` selects copy when the backend truthfully exposes it, `TextureManager` remains unaware of submission policy, and `RhiUploadService` records the native copy. The copy submission returns `RhiSubmissionToken { Queue, Value }`; graphics installs a GPU wait and performs the final `Common -> ShaderResource` transition because a D3D12 copy queue cannot legally perform that transition. No ordinary upload or cross-queue dependency performs a CPU wait.
 
-RHI owns three D3D12 command queues with independent monotonic fences. Vulkan selects dedicated compute and transfer families when available, aliases unavailable roles to graphics without advertising asynchronous capability, uses one timeline semaphore per logical queue, and keeps binary semaphores at the acquire/present edge. Vulkan resources use concurrent sharing across the selected families so this initial queue integration does not rely on missing ownership transfers.
+RHI owns three D3D12 command queues with independent monotonic fences. Vulkan selects dedicated compute and transfer families when available, aliases unavailable roles to graphics without advertising asynchronous capability, uses one timeline semaphore per logical queue, and keeps binary semaphores at the acquire/present edge. Vulkan resources and swapchain images use concurrent sharing across selected families. Both backends use dynamically growing per-frame, per-queue command-list pools and wait the last real queue submission before recycling a frame slot.
 
-Command lists retain recorded resource references. Submission resolves those references to the returned queue token; release moves ownership to retirement, and retirement requires every recorded reference to be submitted or cancelled and every stamped queue value to complete. This also handles release-after-recording but before submission without falling back to allocator addresses, a guessed next graphics fence, or a device flush.
+Command lists retain recorded resource references. Submission resolves those references to the returned queue token; release moves ownership to retirement, and retirement requires every recorded reference to be submitted or cancelled and every stamped queue value to complete. Descriptor ranges and pools remain in the existing descriptor services and are recycled only after the owning frame slot's actual graphics, compute, and copy submissions complete. This handles release-after-recording without allocator addresses, guessed graphics fences, a second retirement manager, or a device flush.
 
-The remaining Priority 2A integration is frame-graph asynchronous compute: add explicit pass opt-in, reusable per-queue command-list pools, queue-local batch compilation, and cross-queue batch dependencies. Existing compute passes intentionally remain on graphics until that executor path lands; exposing a physical compute queue is not treated as permission to migrate them automatically.
+The frame graph now supports explicit `AsyncCompute` and `AsyncCopy` intent, resolves it against truthful queue capabilities, compiles queue-local batches and cross-queue token dependencies, and emits conservative producer-release/consumer-acquire transitions through `Common`. Scene-depth linearization, sky motion vectors, the exposure moment chain, and exposure history update opt into compute; copy helpers opt into copy. All other compute remains graphics work until its workload is reviewed, so exposing a physical queue is never treated as permission for automatic migration.
 
-Do not build a generic queue scheduler now. First complete lifetime and upload unification. Before the first real copy-queue streaming or asynchronous-compute feature lands:
+The execution prologue is submitted separately whenever non-graphics batches exist, allowing independent async work to wait on initialization without waiting on unrelated graphics passes. RHI frame completion performs the single compute/copy-to-graphics join before presentation and frame-slot reuse. The duplicate public `Flush()` alias was removed; `WaitForIdle()` is the single explicit full-device synchronization operation.
 
-1. RHI should expose backend-neutral graphics/compute/copy queue capability, submission tokens, and queue waits.
-2. Renderer frame graph should assign passes/uploads to queues and compile inter-queue dependencies.
-3. RHI should translate that plan to native queues, fences/timeline semaphores, and waits.
-4. Resource/descriptor retirement should use the submission token of the last queue that referenced the object.
+The completed ownership contract is:
+
+1. RHI exposes backend-neutral graphics/compute/copy capabilities, submission tokens, queue waits, and completion.
+2. Renderer frame graph assigns passes/uploads to queues and compiles inter-queue dependencies.
+3. RHI translates that plan to native queues, fences/timeline semaphores, and waits.
+4. Resource and descriptor retirement is held until every queue token that can reference the object is complete.
 
 This preserves the same split used for barriers: Renderer decides scheduling policy; RHI owns physical execution and synchronization.
 
@@ -496,9 +498,9 @@ This is also why a wholesale adoption of either NVRHI or Cauldron is not recomme
 | 2 | Generic texture resource/view/upload migration (implemented; build/runtime validation pending) | Removes per-texture Vulkan idle waits and the second GPU object model. | Deleted `Texture`, both backend subclasses, factories, the special frame-graph overload, duplicate sky SRV creation, and texture-driven descriptor writes. |
 | 3 | Feature-owned persistent histories | Stops `FramePipeline` from growing with every temporal feature. | Removes feature arrays, booleans, keys, and repeated reset fan-out from the central pipeline. |
 | 4 | Stable material GPU table and semantic scene keys | Makes material ownership explicit and history invalidation deterministic using existing authored/cooked values and logical handles. | Removes raw binding pointers and pointer/native-address hashing from frame data. |
-| 5 | Queue/submission extension for the first real async workload | Enables copy/compute overlap without moving scheduler policy into RHI. | Replaces graphics-queue-only upload scheduling when a measured workload justifies it; it should not be built speculatively. |
+| 5 | Queue/submission extension for active async workloads (implemented; extended stress pending) | Enables copy/compute overlap without moving scheduler policy into RHI. | Replaced graphics-only upload/transfer recording and fixed command-list storage with capability-driven frame-graph batches and reusable backend pools. |
 
-Change lists 1-2 are the GPU ownership foundation. Change lists 3-4 make continued renderer feature development sustainable. Change list 5 is a capability expansion and should wait for a measured workload.
+Change lists 1-2 are the GPU ownership foundation. Change lists 3-4 make continued renderer feature development sustainable. Change list 5 now has concrete consumers: texture uploads, graph transfer passes, and four reviewed compute workloads.
 
 ## Non-Goals And Guardrails
 

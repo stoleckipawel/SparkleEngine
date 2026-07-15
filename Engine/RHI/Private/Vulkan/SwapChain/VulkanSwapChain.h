@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Device/RenderHardwareInterface.h"
+#include "Frame/RhiFrameConstants.h"
 #include "Formats/PixelFormat.h"
 #include "Vulkan/VulkanIncludes.h"
 
@@ -22,7 +23,7 @@ class VulkanSwapChain final
 	VulkanSwapChain(VulkanSwapChain&&) = delete;
 	VulkanSwapChain& operator=(VulkanSwapChain&&) = delete;
 
-	bool AcquireNextImage(VkSemaphore imageAvailableSemaphore) noexcept;
+	bool AcquireNextImage(std::uint32_t frameIndex) noexcept;
 	bool Present(VkSemaphore renderFinishedSemaphore) noexcept;
 	void Resize() noexcept;
 
@@ -30,6 +31,7 @@ class VulkanSwapChain final
 	NativeResourceHandle GetCurrentBackBufferResource() const noexcept;
 	VkImage GetCurrentBackBufferImage() const noexcept;
 	VkImageView GetCurrentBackBufferImageView() const noexcept;
+	VkSemaphore GetImageAvailableSemaphore(std::uint32_t frameIndex) const noexcept;
 	VkSemaphore GetCurrentRenderFinishedSemaphore() const noexcept;
 	VkImage GetBackBufferImage(std::uint32_t index) const noexcept;
 	VkImageView GetBackBufferImageView(std::uint32_t index) const noexcept;
@@ -48,6 +50,8 @@ class VulkanSwapChain final
 	};
 
 	void CreateSurface();
+	void CreatePresentationSemaphores();
+	void ReleasePresentationSemaphores() noexcept;
 	void CreateSwapChain(VkSwapchainKHR oldSwapChain = VK_NULL_HANDLE);
 	void CreateBackBufferImageViews();
 	void ReleaseBackBufferImageViews() noexcept;
@@ -68,5 +72,6 @@ class VulkanSwapChain final
 	VkExtent2D m_extent = {};
 	PixelFormat m_backBufferFormat = PixelFormat::Unknown;
 	std::vector<BackBufferRecord> m_backBuffers;
+	std::array<VkSemaphore, RhiFrameConstants::FramesInFlight> m_imageAvailableSemaphores{};
 	std::uint32_t m_currentBackBufferIndex = 0;
 };

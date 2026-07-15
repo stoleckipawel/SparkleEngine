@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FrameGraph/FrameGraphPassFlags.h"
+#include "FrameGraph/FrameGraphPassKind.h"
 #include "FrameGraph/PassResourceDeclaration.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
@@ -11,7 +11,7 @@ namespace FrameGraphResourceContractDiagnostics
 {
 	bool ValidatePassDeclarations(
 	    std::string_view passName,
-	    EFrameGraphPassFlags flags,
+	    EFrameGraphPassKind passKind,
 	    const std::vector<PassResourceDeclaration>& declarations) noexcept;
 
 	bool ValidatePassParameterBinding(

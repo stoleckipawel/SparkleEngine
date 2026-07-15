@@ -20,6 +20,7 @@ VulkanSwapChain::VulkanSwapChain(VulkanRhi& rhi, Window& window, PixelFormat bac
     m_rhi(rhi), m_window(&window), m_backBufferFormat(backBufferFormat)
 {
 	CreateSurface();
+	CreatePresentationSemaphores();
 	CreateSwapChain();
 	CreateBackBufferImageViews();
 }
@@ -28,6 +29,7 @@ VulkanSwapChain::~VulkanSwapChain() noexcept
 {
 	m_rhi.WaitForIdle();
 	ReleaseSwapChain();
+	ReleasePresentationSemaphores();
 	if (m_surface != VK_NULL_HANDLE)
 	{
 		vkDestroySurfaceKHR(m_rhi.GetInstance(), m_surface, nullptr);
@@ -35,7 +37,7 @@ VulkanSwapChain::~VulkanSwapChain() noexcept
 	}
 }
 
-bool VulkanSwapChain::AcquireNextImage(VkSemaphore imageAvailableSemaphore) noexcept
+bool VulkanSwapChain::AcquireNextImage(std::uint32_t frameIndex) noexcept
 {
 	if (m_swapChain == VK_NULL_HANDLE || !HasValidWindowSize())
 	{
@@ -46,7 +48,7 @@ bool VulkanSwapChain::AcquireNextImage(VkSemaphore imageAvailableSemaphore) noex
 	    m_rhi.GetDevice(),
 	    m_swapChain,
 	    std::numeric_limits<std::uint64_t>::max(),
-	    imageAvailableSemaphore,
+	    GetImageAvailableSemaphore(frameIndex),
 	    VK_NULL_HANDLE,
 	    &m_currentBackBufferIndex);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -131,6 +133,11 @@ VkImageView VulkanSwapChain::GetCurrentBackBufferImageView() const noexcept
 	return GetBackBufferImageView(m_currentBackBufferIndex);
 }
 
+VkSemaphore VulkanSwapChain::GetImageAvailableSemaphore(std::uint32_t frameIndex) const noexcept
+{
+	return m_imageAvailableSemaphores[frameIndex % m_imageAvailableSemaphores.size()];
+}
+
 VkSemaphore VulkanSwapChain::GetCurrentRenderFinishedSemaphore() const noexcept
 {
 	return m_currentBackBufferIndex < m_backBuffers.size() ? m_backBuffers[m_currentBackBufferIndex].RenderFinishedSemaphore : VK_NULL_HANDLE;
@@ -198,7 +205,7 @@ void VulkanSwapChain::CreateSwapChain(VkSwapchainKHR oldSwapChain)
 	m_presentMode = SelectPresentMode();
 	m_extent = SelectExtent(capabilities);
 
-	const VkSwapchainCreateInfoKHR createInfo{
+	VkSwapchainCreateInfoKHR createInfo{
 	    .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 	    .pNext = nullptr,
 	    .flags = 0,
@@ -217,6 +224,7 @@ void VulkanSwapChain::CreateSwapChain(VkSwapchainKHR oldSwapChain)
 	    .presentMode = m_presentMode,
 	    .clipped = VK_TRUE,
 	    .oldSwapchain = oldSwapChain};
+	m_rhi.ConfigureResourceQueueSharing(createInfo);
 
 	result = vkCreateSwapchainKHR(m_rhi.GetDevice(), &createInfo, nullptr, &m_swapChain);
 	if (!VulkanResult::Succeeded(result))
@@ -260,6 +268,38 @@ void VulkanSwapChain::CreateBackBufferImageViews()
 		m_backBuffers.push_back(record);
 	}
 	m_currentBackBufferIndex = 0;
+}
+
+void VulkanSwapChain::CreatePresentationSemaphores()
+{
+	const VkSemaphoreCreateInfo createInfo{
+	    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+	    .pNext = nullptr,
+	    .flags = 0};
+	for (VkSemaphore& semaphore : m_imageAvailableSemaphores)
+	{
+		const VkResult result = vkCreateSemaphore(m_rhi.GetDevice(), &createInfo, nullptr, &semaphore);
+		if (!VulkanResult::Succeeded(result))
+		{
+			Diagnostics::Fail(
+			    g_vulkanSwapChainLogger,
+			    __FILE__,
+			    __LINE__,
+			    VulkanResult::FormatFailure("vkCreateSemaphore(imageAvailable)", result));
+		}
+	}
+}
+
+void VulkanSwapChain::ReleasePresentationSemaphores() noexcept
+{
+	for (VkSemaphore& semaphore : m_imageAvailableSemaphores)
+	{
+		if (semaphore != VK_NULL_HANDLE)
+		{
+			vkDestroySemaphore(m_rhi.GetDevice(), semaphore, nullptr);
+			semaphore = VK_NULL_HANDLE;
+		}
+	}
 }
 
 void VulkanSwapChain::ReleaseBackBufferImageViews() noexcept

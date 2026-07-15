@@ -2,6 +2,7 @@
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
 #include "D3D12/Commands/D3D12RenderCommandList.h"
+#include "Resources/RhiResourceView.h"
 
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {
@@ -12,6 +13,13 @@ D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&r
 	    L"CBVSRVUAVHeap");
 
 	m_AllocatorSRV = std::make_unique<D3D12DescriptorAllocator>(m_HeapSRV.get());
+	m_HeapResourceViewCopySources = std::make_unique<D3D12DescriptorHeap>(
+	    *m_rhi,
+	    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+	    D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
+	    L"ResourceViewCopySourceHeap",
+	    RhiResourceViewHandle::MaximumRecordCount);
+	m_AllocatorResourceViewCopySources = std::make_unique<D3D12DescriptorAllocator>(m_HeapResourceViewCopySources.get());
 
 	m_HeapSampler = std::make_unique<D3D12DescriptorHeap>(
 	    *m_rhi,
@@ -33,6 +41,16 @@ D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&r
 }
 
 D3D12DescriptorHeapManager::~D3D12DescriptorHeapManager() noexcept = default;
+
+D3D12DescriptorHandle D3D12DescriptorHeapManager::AllocateResourceViewCopySource()
+{
+	return m_AllocatorResourceViewCopySources->Allocate();
+}
+
+void D3D12DescriptorHeapManager::FreeResourceViewCopySource(const D3D12DescriptorHandle& handle) noexcept
+{
+	m_AllocatorResourceViewCopySources->Free(handle);
+}
 
 void D3D12DescriptorHeapManager::BindGlobalDescriptorState(D3D12RenderCommandList& commandList) const
 {

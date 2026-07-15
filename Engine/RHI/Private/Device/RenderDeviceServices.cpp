@@ -111,12 +111,7 @@ RhiImGuiRenderer& RenderDeviceServices::GetImGuiRenderer() noexcept
 
 void RenderDeviceServices::WaitForIdle() noexcept
 {
-	m_backend->Flush();
-}
-
-void RenderDeviceServices::Flush() noexcept
-{
-	m_backend->Flush();
+	m_backend->WaitForIdle();
 }
 
 void RenderDeviceServices::ResizeSwapChain() noexcept

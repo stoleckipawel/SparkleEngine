@@ -25,5 +25,5 @@ void AddExposurePass(
 	parameters->PreviousExposureTexture = builder.CreateSRV(history.Previous);
 	parameters->ExposureHistoryTexture = builder.CreateUAV(history.Current);
 	parameters->ExposureTexture = builder.CreateUAV(exposure);
-	builder.Dispatch<ExposurePass>(parameters);
+	builder.DispatchAsync<ExposurePass>(parameters);
 }

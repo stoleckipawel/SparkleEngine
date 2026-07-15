@@ -29,7 +29,7 @@ void AddUpscalerPass(
 
 	builder.Execute(
 	    "Upscaler",
-	    EFrameGraphPassFlags::ExternalProvider,
+	    EFrameGraphPassKind::ExternalProvider,
 	    [inputs](PassResourceBuilder& resourceBuilder)
 	    {
 		    resourceBuilder.Read(inputs.InputColor, ResourceUsage::ShaderRead, "InputColor");

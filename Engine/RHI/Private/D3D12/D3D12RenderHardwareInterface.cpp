@@ -2,7 +2,7 @@
 
 #include "D3D12/D3D12RenderHardwareInterface.h"
 
-#include "D3D12/Commands/D3D12RenderCommandList.h"
+#include "D3D12/Commands/D3D12CommandContext.h"
 #include "D3D12/Capture/D3D12CaptureService.h"
 #include "D3D12/Device/D3D12ExternalFeatureInteropCapabilities.h"
 #include "D3D12/Device/D3D12Rhi.h"
@@ -86,16 +86,6 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	m_resourceService =
 	    std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, *m_descriptorService, m_capabilities);
 	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, rhi.GetNvapiRayTracingProvider());
-	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
-	{
-		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
-		for (std::uint32_t frameIndex = 0; frameIndex < RhiFrameConstants::FramesInFlight; ++frameIndex)
-		{
-			m_commandLists[queueIndex][frameIndex] =
-			    std::make_unique<D3D12RenderCommandList>(*this, rhi.GetCommandList(queueType, frameIndex).Get(), queueType);
-		}
-	}
-
 	m_diagnostics = CreateD3D12RenderDiagnostics(rhi);
 	m_capabilities = BuildCapabilities();
 	m_imguiBackend = std::make_unique<D3D12ImGuiBackend>(*this);
@@ -175,18 +165,15 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
-	capabilities.Queues = RhiQueueCapabilities{
-	    .SupportsGraphics = true,
-	    .SupportsCompute = true,
-	    .SupportsCopy = true,
-	    .ComputeIsIndependent = true,
-	    .CopyIsIndependent = true};
+	capabilities.Queues.Set(ERhiQueueType::Graphics, true, true);
+	capabilities.Queues.Set(ERhiQueueType::Compute, true, true);
+	capabilities.Queues.Set(ERhiQueueType::Copy, true, true);
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12Managed;
 	capabilities.MemorySupport = BuildBackendMemorySupport(m_diagnostics.get());
 	capabilities.ExternalFeatureInterop = BuildD3D12ExternalFeatureInteropCapabilities(
 	    m_rhi,
-	    m_commandLists[RhiQueueTypeToIndex(ERhiQueueType::Graphics)][0] != nullptr);
+	    m_rhi != nullptr && m_rhi->GetDevice() != nullptr);
 	return capabilities;
 }
 
@@ -321,7 +308,7 @@ RenderCommandList& D3D12RenderHardwareInterface::GetCommandList(ERhiQueueType qu
 	{
 		m_resourceService->DrainCompletedResourceReleases();
 	}
-	return *m_commandLists[RhiQueueTypeToIndex(queueType)][frameIndex];
+	return m_commandContext->GetCurrentCommandList(queueType, frameIndex);
 }
 
 RhiRayTracingCapabilities D3D12RenderHardwareInterface::GetRayTracingCapabilities() const noexcept

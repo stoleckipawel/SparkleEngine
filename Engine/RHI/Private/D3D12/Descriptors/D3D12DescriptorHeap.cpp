@@ -6,12 +6,17 @@ static const auto g_descriptorHeapLogger = Logging::GetOrCreateLogger("RHI.D3D12
 static constexpr UINT kRenderTargetDescriptorHeapSize = 4096;
 static constexpr UINT kDepthStencilDescriptorHeapSize = 4096;
 
-D3D12DescriptorHeap::D3D12DescriptorHeap(D3D12Rhi& rhi, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, LPCWSTR name) :
+D3D12DescriptorHeap::D3D12DescriptorHeap(
+    D3D12Rhi& rhi,
+    D3D12_DESCRIPTOR_HEAP_TYPE type,
+    D3D12_DESCRIPTOR_HEAP_FLAGS flags,
+    LPCWSTR name,
+    UINT descriptorCount) :
     m_rhi(&rhi)
 {
 	m_desc.Type = type;
 	m_desc.Flags = flags;
-	m_desc.NumDescriptors = GetNumDescriptors();
+	m_desc.NumDescriptors = descriptorCount != 0 ? descriptorCount : GetNumDescriptors();
 
 	CHECK(m_rhi->GetDevice()->CreateDescriptorHeap(&m_desc, IID_PPV_ARGS(m_heap.ReleaseAndGetAddressOf())));
 	m_heap->SetName(name);

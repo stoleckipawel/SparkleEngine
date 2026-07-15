@@ -4,15 +4,16 @@
 #include "FrameGraph/Diagnostics/FrameGraphResourceContractDiagnostics.h"
 #include "Frame/Core/FrameContext.h"
 
+#include <cassert>
 #include <string>
 #include <utility>
 
 namespace
 {
-	std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
+	std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassKind passKind)
 	{
 		std::string label{"FrameGraph/"};
-		label += FrameGraphPassKindToString(flags);
+		label += FrameGraphPassKindToString(passKind);
 		label += "/";
 		label += std::to_string(passIndex);
 		label += "/";
@@ -40,15 +41,16 @@ void FrameGraph::Setup(const FrameContext& frame)
 		std::vector<PassResourceDeclaration> declarations;
 		PassResourceBuilder builder(declarations);
 		pass.setupCallback(builder, frame);
-		FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(pass.name, pass.flags, declarations);
+		FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(pass.name, pass.kind, declarations);
+		assert(IsQueuePreferenceCompatible(pass.kind, pass.queuePreference));
 		m_compiledPlan.passes.push_back(
 		    FrameGraphPassNode{
 		        .index = static_cast<FrameGraphPassIndex>(passIndex),
 		        .passName = pass.name,
-		        .flags = pass.flags,
-		        .passKind = GetFrameGraphPassKind(pass.flags),
+		        .kind = pass.kind,
+		        .queuePreference = pass.queuePreference,
 		        .diagnosticName = FormatPassDiagnosticName(pass.name),
-		        .eventScopeLabel = FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.flags),
+		        .eventScopeLabel = FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.kind),
 		        .declarations = std::move(declarations)});
 	}
 }

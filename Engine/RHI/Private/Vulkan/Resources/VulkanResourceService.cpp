@@ -1,7 +1,7 @@
 #include "Vulkan/Resources/VulkanResourceService.h"
 
 #include "Validation/RhiContract.h"
-#include "Vulkan/Commands/VulkanCommandContext.h"
+#include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
@@ -10,12 +10,10 @@
 
 VulkanResourceService::VulkanResourceService(
     VulkanRhi& rhi,
-    VulkanCommandContext& commandContext,
     VulkanGpuMemoryAllocator& memoryAllocator,
     VulkanDescriptorManager& descriptorManager,
     const RhiCapabilities& capabilities) noexcept :
     m_rhi(&rhi),
-    m_commandContext(&commandContext),
     m_memoryAllocator(&memoryAllocator),
     m_descriptorManager(&descriptorManager),
 	m_capabilities(&capabilities)
@@ -229,13 +227,13 @@ void VulkanResourceService::DrainCompletedResourceReleases() noexcept
 		return;
 	}
 
-	if (m_commandContext != nullptr)
+	if (m_rhi != nullptr)
 	{
 		std::array<std::uint64_t, RhiQueueTypeCount> completedValues{};
 		for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 		{
-			completedValues[queueIndex] =
-			    m_commandContext->GetCompletedSubmissionValue(static_cast<ERhiQueueType>(queueIndex));
+			completedValues[queueIndex] = m_rhi->GetCommandQueue(
+			    static_cast<ERhiQueueType>(queueIndex)).GetCompletedSubmissionValue();
 		}
 		m_memoryAllocator->DrainCompletedReleases(completedValues);
 	}

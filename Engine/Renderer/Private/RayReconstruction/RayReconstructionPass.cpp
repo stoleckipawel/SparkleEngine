@@ -32,7 +32,7 @@ void AddRayReconstructionPass(
 
 	builder.Execute(
 	    passName,
-	    EFrameGraphPassFlags::ExternalProvider,
+	    EFrameGraphPassKind::ExternalProvider,
 	    [providerInputs](PassResourceBuilder& resourceBuilder)
 	    {
 		    resourceBuilder.Read(providerInputs.NoisyInputColor, ResourceUsage::ShaderRead, "NoisyInputColor");

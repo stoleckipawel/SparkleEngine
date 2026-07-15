@@ -72,6 +72,7 @@ class D3D12DescriptorService final : public RhiDescriptorService
 		ERhiResourceViewKind kind = ERhiResourceViewKind::TextureShaderResource;
 		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
 		RhiDescriptorAllocation descriptorAllocation = {};
+		D3D12DescriptorHandle copySourceHandle = {};
 		std::uint16_t generation = 0;
 
 		bool IsAllocated() const noexcept { return descriptorAllocation.IsValid(); }

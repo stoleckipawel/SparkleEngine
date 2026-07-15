@@ -8,7 +8,12 @@ using Microsoft::WRL::ComPtr;
 class D3D12DescriptorHeap
 {
   public:
-	explicit D3D12DescriptorHeap(D3D12Rhi& rhi, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, LPCWSTR name);
+	explicit D3D12DescriptorHeap(
+	    D3D12Rhi& rhi,
+	    D3D12_DESCRIPTOR_HEAP_TYPE type,
+	    D3D12_DESCRIPTOR_HEAP_FLAGS flags,
+	    LPCWSTR name,
+	    UINT descriptorCount = 0);
 
 	D3D12DescriptorHeap(const D3D12DescriptorHeap&) = delete;
 	D3D12DescriptorHeap& operator=(const D3D12DescriptorHeap&) = delete;

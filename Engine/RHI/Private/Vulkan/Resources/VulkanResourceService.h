@@ -7,7 +7,6 @@
 #include <memory>
 #include <string_view>
 
-class VulkanCommandContext;
 class VulkanDescriptorManager;
 class VulkanGpuMemoryAllocator;
 class VulkanRhi;
@@ -17,7 +16,6 @@ class VulkanResourceService final : public RhiResourceService
   public:
 	VulkanResourceService(
 	    VulkanRhi& rhi,
-	    VulkanCommandContext& commandContext,
 	    VulkanGpuMemoryAllocator& memoryAllocator,
 	    VulkanDescriptorManager& descriptorManager,
 	    const RhiCapabilities& capabilities) noexcept;
@@ -94,7 +92,6 @@ class VulkanResourceService final : public RhiResourceService
 
   private:
 	VulkanRhi* m_rhi = nullptr;
-	VulkanCommandContext* m_commandContext = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	VulkanDescriptorManager* m_descriptorManager = nullptr;
 	const RhiCapabilities* m_capabilities = nullptr;

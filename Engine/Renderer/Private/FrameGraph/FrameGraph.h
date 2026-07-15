@@ -1,6 +1,7 @@
 #pragma once
 
-#include "FrameGraph/FrameGraphPassFlags.h"
+#include "FrameGraph/FrameGraphPassKind.h"
+#include "FrameGraph/FrameGraphQueuePreference.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "FrameGraph/PassResourceDeclaration.h"
@@ -34,14 +35,18 @@
 #include <vector>
 
 class RenderCommandContext;
+class RhiCommandSubmissionService;
 class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;
+class FrameGraphSubmissionExecutor;
 struct PassRuntimeServices;
 class Window;
 struct FrameContext;
 
 class FrameGraph
 {
+	friend class FrameGraphSubmissionExecutor;
+
   private:
 	struct AllocatedParameterInstanceBase
 	{
@@ -58,7 +63,12 @@ class FrameGraph
 	FrameGraph& operator=(FrameGraph&&) = delete;
 
 	template <typename SetupFn, typename ExecuteFn>
-	void AddPass(std::string_view name, EFrameGraphPassFlags flags, SetupFn&& setupFn, ExecuteFn&& executeFn)
+	void AddPass(
+	    std::string_view name,
+	    EFrameGraphPassKind kind,
+	    EFrameGraphQueuePreference queuePreference,
+	    SetupFn&& setupFn,
+	    ExecuteFn&& executeFn)
 	{
 		using SetupFnType = std::decay_t<SetupFn>;
 		using ExecuteFnType = std::decay_t<ExecuteFn>;
@@ -76,8 +86,10 @@ class FrameGraph
 
 		m_passes.push_back(
 		    RegisteredPass{
-		        std::string(name),
-		        flags,
+		        .name = std::string(name),
+		        .kind = kind,
+		        .queuePreference = queuePreference,
+		        .setupCallback =
 		        [setup = std::move(normalizedSetup)](PassResourceBuilder& builder, const FrameContext& frame) mutable
 		        {
 			        if constexpr (std::is_invocable_v<SetupFnType&, PassResourceBuilder&, const FrameContext&>)
@@ -89,6 +101,7 @@ class FrameGraph
 				        setup(builder);
 			        }
 		        },
+		        .executeCallback =
 		        [execute = std::move(normalizedExecute)](PassExecutionContext& context) mutable
 		        {
 			        execute(context);
@@ -101,7 +114,8 @@ class FrameGraph
 	{
 		AddTypedShaderPass(
 		    name,
-		    EFrameGraphPassFlags::Raster,
+		    EFrameGraphPassKind::Raster,
+		    EFrameGraphQueuePreference::Graphics,
 		    parameters,
 		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
@@ -116,7 +130,24 @@ class FrameGraph
 	{
 		AddTypedShaderPass(
 		    name,
-		    EFrameGraphPassFlags::Compute,
+		    EFrameGraphPassKind::Compute,
+		    EFrameGraphQueuePreference::Graphics,
+		    parameters,
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    {
+			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
+		    },
+		    std::forward<ExecuteFn>(executeFn));
+	}
+
+	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
+	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
+	void AddAsyncComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
+	{
+		AddTypedShaderPass(
+		    name,
+		    EFrameGraphPassKind::Compute,
+		    EFrameGraphQueuePreference::AsyncCompute,
 		    parameters,
 		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
@@ -131,7 +162,7 @@ class FrameGraph
 
 	void Execute(
 	    const FrameGraphPlan& plan,
-	    RenderCommandContext& cmd,
+	    RhiCommandSubmissionService& submissionService,
 	    const FrameContext& frame,
 	    const PassRuntimeServices& passRuntimeServices,
 	    FrameExecutionDiagnostics& frameDiagnostics) const;
@@ -321,7 +352,8 @@ class FrameGraph
 	template <typename TParameterBindings, typename SetupFn, typename ExecuteFn>
 	void AddTypedShaderPass(
 	    std::string_view name,
-	    EFrameGraphPassFlags flags,
+	    EFrameGraphPassKind kind,
+	    EFrameGraphQueuePreference queuePreference,
 	    TParameterBindings& parameters,
 	    SetupFn&& setupFn,
 	    ExecuteFn&& executeFn)
@@ -332,14 +364,17 @@ class FrameGraph
 
 		m_passes.push_back(
 		    RegisteredPass{
-		        std::string(name),
-		        flags,
+		        .name = std::string(name),
+		        .kind = kind,
+		        .queuePreference = queuePreference,
+		        .setupCallback =
 		        [parameterBindings, passName, setupValid, setupFn = std::forward<SetupFn>(setupFn)](
 		            PassResourceBuilder& builder,
 		            const FrameContext&) mutable
 		        {
 			        *setupValid = setupFn(builder, *parameterBindings, passName.c_str());
 		        },
+		        .executeCallback =
 		        MakeParameterizedExecuteCallback(
 		            parameterBindings,
 		            [setupValid, executeFn = std::forward<ExecuteFn>(executeFn)](
@@ -413,7 +448,8 @@ class FrameGraph
 	struct RegisteredPass
 	{
 		std::string name;
-		EFrameGraphPassFlags flags = EFrameGraphPassFlags::None;
+		EFrameGraphPassKind kind = EFrameGraphPassKind::None;
+		EFrameGraphQueuePreference queuePreference = EFrameGraphQueuePreference::Graphics;
 		SetupCallback setupCallback;
 		ExecuteCallback executeCallback;
 	};

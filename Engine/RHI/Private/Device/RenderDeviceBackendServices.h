@@ -17,7 +17,7 @@ class RenderDeviceBackendServices
 	virtual RenderHardwareInterface& GetRenderHardwareInterface() noexcept = 0;
 	virtual const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept = 0;
 	virtual RhiImGuiRenderer& GetImGuiRenderer() noexcept = 0;
-	virtual void Flush() noexcept = 0;
+	virtual void WaitForIdle() noexcept = 0;
 	virtual void ResizeSwapChain() noexcept = 0;
 	virtual void BeginFrame() noexcept = 0;
 	virtual RenderCommandList& GetCurrentGraphicsCommandList() noexcept = 0;

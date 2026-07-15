@@ -4,6 +4,8 @@
 
 #include "Frame/RhiFrameConstants.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
+#include "Vulkan/Commands/VulkanCommandQueue.h"
+#include "Vulkan/Commands/VulkanRenderCommandList.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
@@ -12,9 +14,7 @@
 #include "Window/Window.h"
 
 #include <array>
-#include <algorithm>
 #include <span>
-#include <vector>
 
 class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 {
@@ -32,7 +32,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept override;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
-	void Flush() noexcept override;
+	void WaitForIdle() noexcept override;
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
@@ -58,10 +58,9 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	std::unique_ptr<VulkanCommandContext> m_commandContext;
 	std::unique_ptr<VulkanRenderHardwareInterface> m_renderHardwareInterface;
 	std::uint32_t m_currentFrameIndex = 0;
-	std::array<bool, RhiQueueTypeCount> m_queueRecording{};
-	std::array<std::vector<RhiSubmissionToken>, RhiQueueTypeCount> m_pendingQueueWaits;
+	std::array<RhiSubmissionState, RhiQueueTypeCount> m_pendingQueueWaits;
 	bool m_hasAcquiredBackBuffer = false;
-	bool m_graphicsReadyForPresent = false;
+	bool m_hasConsumedAcquireSemaphore = false;
 };
 
 std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(
@@ -129,10 +128,10 @@ RhiImGuiRenderer& VulkanRenderDeviceServices::GetImGuiRenderer() noexcept
 	return m_renderHardwareInterface->GetImGuiRenderer();
 }
 
-void VulkanRenderDeviceServices::Flush() noexcept
+void VulkanRenderDeviceServices::WaitForIdle() noexcept
 {
 	m_hasAcquiredBackBuffer = false;
-	m_graphicsReadyForPresent = false;
+	m_hasConsumedAcquireSemaphore = false;
 	m_renderHardwareInterface->WaitForIdle();
 }
 
@@ -146,17 +145,18 @@ void VulkanRenderDeviceServices::ResizeSwapChain() noexcept
 void VulkanRenderDeviceServices::BeginFrame() noexcept
 {
 	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
-	m_queueRecording.fill(false);
-	m_graphicsReadyForPresent = false;
+	m_hasConsumedAcquireSemaphore = false;
+	for (RhiSubmissionState& waits : m_pendingQueueWaits)
+	{
+		waits.Clear();
+	}
 	m_commandContext->BeginFrame(m_currentFrameIndex);
-	m_queueRecording[RhiQueueTypeToIndex(ERhiQueueType::Graphics)] = true;
-	m_renderHardwareInterface->GetCommandList(ERhiQueueType::Graphics, m_currentFrameIndex).ResetTrackedResources();
+	(void)BeginCommandList(ERhiQueueType::Graphics);
 	m_renderHardwareInterface->ResetTransientFrameResources();
-	m_hasAcquiredBackBuffer = m_swapChain->AcquireNextImage(m_commandContext->GetImageAvailableSemaphore(m_currentFrameIndex));
+	m_hasAcquiredBackBuffer = m_swapChain->AcquireNextImage(m_currentFrameIndex);
 	if (!m_hasAcquiredBackBuffer)
 	{
 		m_commandContext->CancelFrame(m_currentFrameIndex);
-		m_queueRecording[RhiQueueTypeToIndex(ERhiQueueType::Graphics)] = false;
 		m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
 	}
 }
@@ -173,14 +173,7 @@ RenderCommandList& VulkanRenderDeviceServices::GetGraphicsCommandList(std::uint3
 
 RenderCommandList& VulkanRenderDeviceServices::BeginCommandList(ERhiQueueType queueType) noexcept
 {
-	const std::size_t queueIndex = RhiQueueTypeToIndex(queueType);
-	if (!m_queueRecording[queueIndex])
-	{
-		m_commandContext->BeginCommandList(queueType, m_currentFrameIndex);
-		m_queueRecording[queueIndex] = true;
-		m_renderHardwareInterface->GetCommandList(queueType, m_currentFrameIndex).ResetTrackedResources();
-	}
-	return m_renderHardwareInterface->GetCommandList(queueType, m_currentFrameIndex);
+	return m_commandContext->BeginCommandList(queueType, m_currentFrameIndex);
 }
 
 RhiSubmissionToken VulkanRenderDeviceServices::SubmitCommandList(
@@ -189,34 +182,28 @@ RhiSubmissionToken VulkanRenderDeviceServices::SubmitCommandList(
 {
 	const ERhiQueueType queueType = commandList.GetQueueType();
 	const std::size_t queueIndex = RhiQueueTypeToIndex(queueType);
-	if (!m_queueRecording[queueIndex])
+	RhiSubmissionState resolvedWaits = m_pendingQueueWaits[queueIndex];
+	for (const RhiSubmissionToken waitToken : waitTokens)
 	{
-		return m_commandContext->GetLastSubmittedToken(queueType);
+		resolvedWaits.MarkUsed(waitToken);
 	}
-
-	RhiSubmissionToken token{};
-	std::vector<RhiSubmissionToken> resolvedWaitTokens = m_pendingQueueWaits[queueIndex];
-	resolvedWaitTokens.insert(resolvedWaitTokens.end(), waitTokens.begin(), waitTokens.end());
-	m_pendingQueueWaits[queueIndex].clear();
-	if (queueType == ERhiQueueType::Graphics && m_hasAcquiredBackBuffer)
+	m_pendingQueueWaits[queueIndex].Clear();
+	std::array<RhiSubmissionToken, RhiQueueTypeCount> resolvedWaitTokens{};
+	const std::size_t resolvedWaitCount = resolvedWaits.CopyTokens(resolvedWaitTokens);
+	VkSemaphore binaryWaitSemaphore = VK_NULL_HANDLE;
+	if (queueType == ERhiQueueType::Graphics && m_hasAcquiredBackBuffer && !m_hasConsumedAcquireSemaphore)
 	{
-		const VkSemaphore imageAvailableSemaphore = m_commandContext->GetImageAvailableSemaphore(m_currentFrameIndex);
-		const VkSemaphore renderFinishedSemaphore = m_swapChain->GetCurrentRenderFinishedSemaphore();
-		token = m_commandContext->SubmitCommandList(
-		    queueType,
-		    m_currentFrameIndex,
-		    resolvedWaitTokens,
-		    imageAvailableSemaphore,
-		    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		    renderFinishedSemaphore);
-		m_graphicsReadyForPresent = token.IsValid();
+		binaryWaitSemaphore = m_swapChain->GetImageAvailableSemaphore(m_currentFrameIndex);
+		m_hasConsumedAcquireSemaphore = true;
 	}
-	else
-	{
-		token = m_commandContext->SubmitCommandList(queueType, m_currentFrameIndex, resolvedWaitTokens);
-	}
+	auto& vulkanCommandList = static_cast<VulkanRenderCommandList&>(commandList);
+	const RhiSubmissionToken token = m_commandContext->SubmitCommandList(
+	    vulkanCommandList,
+	    m_currentFrameIndex,
+	    std::span<const RhiSubmissionToken>(resolvedWaitTokens.data(), resolvedWaitCount),
+	    binaryWaitSemaphore,
+	    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 	commandList.ResolveTrackedResources(token);
-	m_queueRecording[queueIndex] = false;
 	return token;
 }
 
@@ -228,27 +215,25 @@ void VulkanRenderDeviceServices::QueueWait(
 	{
 		return;
 	}
-	auto& waits = m_pendingQueueWaits[RhiQueueTypeToIndex(waitQueue)];
-	const auto existing = std::find(waits.begin(), waits.end(), executionToken);
-	if (existing == waits.end())
-	{
-		waits.push_back(executionToken);
-	}
+	m_pendingQueueWaits[RhiQueueTypeToIndex(waitQueue)].MarkUsed(executionToken);
 }
 
 void VulkanRenderDeviceServices::WaitForSubmission(RhiSubmissionToken token) noexcept
 {
-	m_commandContext->WaitForSubmission(token);
+	if (token.IsValid())
+	{
+		m_rhi->GetCommandQueue(token.Queue).WaitForSubmission(token.Value);
+	}
 }
 
 bool VulkanRenderDeviceServices::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
 {
-	return m_commandContext->IsSubmissionComplete(token);
+	return !token.IsValid() || m_rhi->GetCommandQueue(token.Queue).IsSubmissionComplete(token.Value);
 }
 
 RhiSubmissionToken VulkanRenderDeviceServices::GetLastSubmittedToken(ERhiQueueType queueType) const noexcept
 {
-	return m_commandContext->GetLastSubmittedToken(queueType);
+	return m_rhi->GetCommandQueue(queueType).GetLastSubmittedToken();
 }
 
 void VulkanRenderDeviceServices::SubmitFrame() noexcept
@@ -259,12 +244,29 @@ void VulkanRenderDeviceServices::SubmitFrame() noexcept
 	}
 
 	const VkSemaphore renderFinishedSemaphore = m_swapChain->GetCurrentRenderFinishedSemaphore();
-	if (m_queueRecording[RhiQueueTypeToIndex(ERhiQueueType::Graphics)])
+	RenderCommandList& graphicsCommandList = GetCurrentGraphicsCommandList();
+	auto& vulkanCommandList = static_cast<VulkanRenderCommandList&>(graphicsCommandList);
+	RhiSubmissionState waits = m_pendingQueueWaits[RhiQueueTypeToIndex(ERhiQueueType::Graphics)];
+	m_pendingQueueWaits[RhiQueueTypeToIndex(ERhiQueueType::Graphics)].Clear();
+	for (const ERhiQueueType queueType : {ERhiQueueType::Compute, ERhiQueueType::Copy})
 	{
-		RenderCommandList& graphicsCommandList = GetCurrentGraphicsCommandList();
-		(void)SubmitCommandList(graphicsCommandList, {});
+		waits.MarkUsed(m_rhi->GetCommandQueue(queueType).GetLastSubmittedToken());
 	}
-	if (!m_graphicsReadyForPresent)
+	std::array<RhiSubmissionToken, RhiQueueTypeCount> waitTokens{};
+	const std::size_t waitTokenCount = waits.CopyTokens(waitTokens);
+	const VkSemaphore acquireSemaphore = m_hasConsumedAcquireSemaphore
+	                                         ? VK_NULL_HANDLE
+	                                         : m_swapChain->GetImageAvailableSemaphore(m_currentFrameIndex);
+	const RhiSubmissionToken frameToken = m_commandContext->SubmitCommandList(
+	    vulkanCommandList,
+	    m_currentFrameIndex,
+	    std::span<const RhiSubmissionToken>(waitTokens.data(), waitTokenCount),
+	    acquireSemaphore,
+	    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+	    renderFinishedSemaphore);
+	graphicsCommandList.ResolveTrackedResources(frameToken);
+	m_hasConsumedAcquireSemaphore = true;
+	if (!frameToken.IsValid())
 	{
 		m_hasAcquiredBackBuffer = false;
 		return;
@@ -274,7 +276,7 @@ void VulkanRenderDeviceServices::SubmitFrame() noexcept
 		m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
 	}
 	m_hasAcquiredBackBuffer = false;
-	m_graphicsReadyForPresent = false;
+	m_hasConsumedAcquireSemaphore = false;
 }
 
 void VulkanRenderDeviceServices::AdvanceFrameInFlight() noexcept

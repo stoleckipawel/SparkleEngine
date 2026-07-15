@@ -79,7 +79,7 @@ void SceneRenderStateCoordinator::InvalidateSceneScopedRendererState() noexcept
 {
 	if (m_backendServices)
 	{
-		m_backendServices->Flush();
+		m_backendServices->WaitForIdle();
 	}
 
 	if (m_rayTracingScene)

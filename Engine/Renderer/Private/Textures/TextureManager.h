@@ -51,6 +51,7 @@ class SPARKLE_RENDERER_API TextureManager final
 	std::vector<NativeResourceHandle> LoadSceneTextures(
 	    const TextureSnapshot& textureSnapshot,
 	    RenderCommandList& commandList);
+	bool HasPendingSceneTextureUploads(const TextureSnapshot& textureSnapshot) const noexcept;
 
 	void UnloadSceneTextures() noexcept;
 	void UnloadAll() noexcept;
@@ -72,6 +73,11 @@ class SPARKLE_RENDERER_API TextureManager final
 
 	static constexpr std::size_t kTextureCount = static_cast<std::size_t>(TextureId::Count);
 	using TextureCacheKey = std::wstring;
+	struct ResolvedTexturePath final
+	{
+		std::filesystem::path Path;
+		TextureCacheKey CacheKey;
+	};
 
 	std::array<std::optional<RendererTexture>, kTextureCount> m_textures{};
 	std::unordered_map<TextureCacheKey, RendererTexture> m_pathTextures;
@@ -94,6 +100,7 @@ class SPARKLE_RENDERER_API TextureManager final
 	    RenderCommandList& commandList,
 	    std::vector<NativeResourceHandle>& uploadedResources) const;
 	const RendererTexture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
+	std::optional<ResolvedTexturePath> ResolveTexturePath(const std::filesystem::path& texturePath) const noexcept;
 	void ReleaseTexture(RendererTexture& texture) noexcept;
 	void RegisterDefaultPathTexture(const std::filesystem::path& texturePath);
 	TextureDiagnosticsRow BuildDiagnosticsRow(const RendererTexture& texture, TextureDiagnosticsKind kind, const std::string& key) const;

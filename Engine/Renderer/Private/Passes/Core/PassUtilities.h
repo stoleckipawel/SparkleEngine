@@ -288,7 +288,8 @@ namespace PassUtilities
 	{
 		builder.Execute(
 		    name,
-		    EFrameGraphPassFlags::Transfer,
+		    EFrameGraphPassKind::Transfer,
+		    EFrameGraphQueuePreference::Copy,
 			[destinationHandle, sourceHandle](PassResourceBuilder& resourceBuilder)
 		    {
 				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource, "Source");
@@ -304,7 +305,8 @@ namespace PassUtilities
 	{
 		builder.Execute(
 		    name,
-		    EFrameGraphPassFlags::Transfer,
+		    EFrameGraphPassKind::Transfer,
+		    EFrameGraphQueuePreference::Copy,
 			[destinationHandle, sourceHandle](PassResourceBuilder& resourceBuilder)
 		    {
 				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource, "Source");

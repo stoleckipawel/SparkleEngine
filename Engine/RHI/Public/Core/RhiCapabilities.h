@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RhiBackendApi.h"
-#include "../Commands/RhiQueue.h"
+#include "../Commands/RhiQueueCapabilities.h"
 #include "../Formats/PixelFormat.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Shaders/CookedShaderPackage.h"
@@ -45,31 +45,6 @@ struct RhiUploadReadbackCapabilities
 	bool SupportsBufferUpload = false;
 	bool SupportsTextureUpload = false;
 	bool SupportsReadback = false;
-};
-
-struct RhiQueueCapabilities
-{
-	bool SupportsGraphics = false;
-	bool SupportsCompute = false;
-	bool SupportsCopy = false;
-	bool ComputeIsIndependent = false;
-	bool CopyIsIndependent = false;
-
-	constexpr bool Supports(ERhiQueueType queue) const noexcept
-	{
-		switch (queue)
-		{
-			case ERhiQueueType::Graphics:
-				return SupportsGraphics;
-			case ERhiQueueType::Compute:
-				return SupportsCompute;
-			case ERhiQueueType::Copy:
-				return SupportsCopy;
-			case ERhiQueueType::Count:
-			default:
-				return false;
-		}
-	}
 };
 
 struct RhiDescriptorIndexingCapabilities
@@ -156,15 +131,30 @@ struct RhiFormatSupport
 	bool SupportsDepthStencil = false;
 };
 
-inline constexpr std::array<PixelFormat, 8> kRhiCapabilityPixelFormats = {
-	PixelFormat::R8G8B8A8_UNorm,
-	PixelFormat::B8G8R8A8_UNorm,
+inline constexpr std::array<PixelFormat, 23> kRhiCapabilityPixelFormats = {
 	PixelFormat::R32G32B32A32_Float,
 	PixelFormat::R16G16B16A16_Float,
+	PixelFormat::R8G8B8A8_UNorm,
+	PixelFormat::R8G8B8A8_UNorm_Srgb,
 	PixelFormat::R16G16_Float,
 	PixelFormat::D32_Float,
-	PixelFormat::D24_UNorm_S8_UInt,
 	PixelFormat::R32_Float,
+	PixelFormat::D24_UNorm_S8_UInt,
+	PixelFormat::BC1_UNorm,
+	PixelFormat::BC1_UNorm_Srgb,
+	PixelFormat::BC2_UNorm,
+	PixelFormat::BC2_UNorm_Srgb,
+	PixelFormat::BC3_UNorm,
+	PixelFormat::BC3_UNorm_Srgb,
+	PixelFormat::BC4_UNorm,
+	PixelFormat::BC4_SNorm,
+	PixelFormat::BC5_UNorm,
+	PixelFormat::BC5_SNorm,
+	PixelFormat::B8G8R8A8_UNorm,
+	PixelFormat::B8G8R8A8_UNorm_Srgb,
+	PixelFormat::BC6H_UF16,
+	PixelFormat::BC7_UNorm,
+	PixelFormat::BC7_UNorm_Srgb,
 };
 
 struct RhiCapabilities

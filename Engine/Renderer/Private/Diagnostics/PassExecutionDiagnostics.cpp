@@ -8,7 +8,7 @@ PassExecutionDiagnostics::PassExecutionDiagnostics(
     FrameExecutionDiagnostics& frameDiagnostics,
     RenderCommandContext& commands,
     std::string_view passScopeLabel,
-    EFrameGraphPassFlags passKind) noexcept :
+    EFrameGraphPassKind passKind) noexcept :
     m_frameDiagnostics(&frameDiagnostics),
     m_commands(&commands),
     m_passScopeLabel(passScopeLabel),
@@ -38,17 +38,17 @@ ScopedGpuScope PassExecutionDiagnostics::BeginGpuScope(std::string_view label) n
 	return m_frameDiagnostics->BeginGpuScope(*m_commands, eventLabel, m_passColor);
 }
 
-RhiDiagnosticLabelColor PassExecutionDiagnostics::GetPassEventColor(EFrameGraphPassFlags passKind) noexcept
+RhiDiagnosticLabelColor PassExecutionDiagnostics::GetPassEventColor(EFrameGraphPassKind passKind) noexcept
 {
 	switch (passKind)
 	{
-		case EFrameGraphPassFlags::Raster:
+		case EFrameGraphPassKind::Raster:
 			return RhiDiagnosticLabelColor{.Red = 76, .Green = 148, .Blue = 255, .Alpha = 255};
-		case EFrameGraphPassFlags::Compute:
+		case EFrameGraphPassKind::Compute:
 			return RhiDiagnosticLabelColor{.Red = 255, .Green = 162, .Blue = 76, .Alpha = 255};
-		case EFrameGraphPassFlags::Transfer:
+		case EFrameGraphPassKind::Transfer:
 			return RhiDiagnosticLabelColor{.Red = 115, .Green = 204, .Blue = 122, .Alpha = 255};
-		case EFrameGraphPassFlags::ExternalProvider:
+		case EFrameGraphPassKind::ExternalProvider:
 			return RhiDiagnosticLabelColor{.Red = 186, .Green = 128, .Blue = 255, .Alpha = 255};
 		default:
 			return RhiDiagnosticLabelColor{.Red = 224, .Green = 224, .Blue = 224, .Alpha = 255};

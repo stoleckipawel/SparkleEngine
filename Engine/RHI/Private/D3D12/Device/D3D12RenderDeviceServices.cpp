@@ -3,6 +3,7 @@
 #include "Device/RenderDeviceBackendFactory.h"
 
 #include "D3D12/D3D12RenderHardwareInterface.h"
+#include "D3D12/Commands/D3D12CommandContext.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/SwapChain/D3D12SwapChain.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
@@ -32,7 +33,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept override;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
-	void Flush() noexcept override;
+	void WaitForIdle() noexcept override;
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
@@ -58,8 +59,8 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	std::unique_ptr<D3D12FrameResourceManager> m_frameResourceManager;
 	std::unique_ptr<D3D12UploadService> m_uploadService;
 	std::unique_ptr<D3D12RenderHardwareInterface> m_renderHardwareInterface;
+	std::unique_ptr<D3D12CommandContext> m_commandContext;
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
-	std::array<bool, RhiQueueTypeCount> m_queueRecording{};
 };
 
 std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(
@@ -109,6 +110,12 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
 		    *services->m_uploadService);
 	}
 	{
+		services->m_commandContext = std::make_unique<D3D12CommandContext>(
+		    *services->m_rhi,
+		    *services->m_renderHardwareInterface);
+		services->m_renderHardwareInterface->SetCommandContext(*services->m_commandContext);
+	}
+	{
 		services->m_samplerLibrary =
 		    std::make_unique<D3D12SamplerLibrary>(*services->m_rhi, services->m_renderHardwareInterface->GetDescriptorService());
 	}
@@ -124,6 +131,7 @@ D3D12RenderDeviceServices::~D3D12RenderDeviceServices() noexcept
 	}
 
 	m_samplerLibrary.reset();
+	m_commandContext.reset();
 	m_renderHardwareInterface.reset();
 	m_uploadService.reset();
 	m_frameResourceManager.reset();
@@ -153,7 +161,7 @@ RhiImGuiRenderer& D3D12RenderDeviceServices::GetImGuiRenderer() noexcept
 	return m_renderHardwareInterface->GetImGuiRenderer();
 }
 
-void D3D12RenderDeviceServices::Flush() noexcept
+void D3D12RenderDeviceServices::WaitForIdle() noexcept
 {
 	m_renderHardwareInterface->WaitForIdle();
 }
@@ -167,12 +175,8 @@ void D3D12RenderDeviceServices::BeginFrame() noexcept
 {
 	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
 	m_rhi->SetCurrentFrameIndex(frameIndex);
+	m_commandContext->BeginFrame(frameIndex);
 	m_frameResourceManager->BeginFrame(m_rhi->GetFence().Get(), m_rhi->GetFenceEvent(), frameIndex);
-	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
-	{
-		m_rhi->WaitForGPU(static_cast<ERhiQueueType>(queueIndex), frameIndex);
-		m_queueRecording[queueIndex] = false;
-	}
 	m_uploadService->BeginFrame();
 	m_renderHardwareInterface->GetResourceService().DrainCompletedResourceReleases();
 	(void)BeginCommandList(ERhiQueueType::Graphics);
@@ -190,40 +194,14 @@ RenderCommandList& D3D12RenderDeviceServices::GetGraphicsCommandList(std::uint32
 
 RenderCommandList& D3D12RenderDeviceServices::BeginCommandList(ERhiQueueType queueType) noexcept
 {
-	const std::size_t queueIndex = RhiQueueTypeToIndex(queueType);
-	const UINT frameIndex = m_rhi->GetCurrentFrameIndex();
-	if (!m_queueRecording[queueIndex])
-	{
-		m_rhi->ResetCommandAllocator(queueType, frameIndex);
-		m_rhi->ResetCommandList(queueType, frameIndex);
-		m_queueRecording[queueIndex] = true;
-		m_renderHardwareInterface->GetCommandList(queueType, frameIndex).ResetTrackedResources();
-	}
-	return m_renderHardwareInterface->GetCommandList(queueType, frameIndex);
+	return m_commandContext->BeginCommandList(queueType, m_rhi->GetCurrentFrameIndex());
 }
 
 RhiSubmissionToken D3D12RenderDeviceServices::SubmitCommandList(
 	RenderCommandList& commandList,
 	std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
-	const ERhiQueueType queueType = commandList.GetQueueType();
-	const std::size_t queueIndex = RhiQueueTypeToIndex(queueType);
-	if (!m_queueRecording[queueIndex])
-	{
-		return m_rhi->GetLastSubmittedToken(queueType);
-	}
-
-	for (const RhiSubmissionToken waitToken : waitTokens)
-	{
-		m_rhi->QueueWait(queueType, waitToken);
-	}
-	const UINT frameIndex = m_rhi->GetCurrentFrameIndex();
-	m_rhi->CloseCommandList(queueType, frameIndex);
-	m_rhi->ExecuteCommandList(queueType, frameIndex);
-	const RhiSubmissionToken submissionToken = m_rhi->Signal(queueType, frameIndex);
-	commandList.ResolveTrackedResources(submissionToken);
-	m_queueRecording[queueIndex] = false;
-	return submissionToken;
+	return m_commandContext->SubmitCommandList(commandList, m_rhi->GetCurrentFrameIndex(), waitTokens);
 }
 
 void D3D12RenderDeviceServices::QueueWait(
@@ -252,6 +230,10 @@ void D3D12RenderDeviceServices::SubmitFrame() noexcept
 {
 	const UINT frameIndex = m_rhi->GetCurrentFrameIndex();
 	RenderCommandList& graphicsCommandList = m_renderHardwareInterface->GetGraphicsCommandList(frameIndex);
+	for (const ERhiQueueType queueType : {ERhiQueueType::Compute, ERhiQueueType::Copy})
+	{
+		m_rhi->QueueWait(ERhiQueueType::Graphics, m_rhi->GetLastSubmittedToken(queueType));
+	}
 	const RhiSubmissionToken submissionToken = SubmitCommandList(graphicsCommandList, {});
 	m_frameResourceManager->EndFrame(submissionToken.Value);
 	m_swapChain->Present();
@@ -264,10 +246,12 @@ void D3D12RenderDeviceServices::AdvanceFrameInFlight() noexcept
 
 void D3D12RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
 {
-	if (m_queueRecording[RhiQueueTypeToIndex(ERhiQueueType::Graphics)])
+	RenderCommandList* const graphicsCommandList = m_commandContext->TryGetCurrentCommandList(
+	    ERhiQueueType::Graphics,
+	    m_rhi->GetCurrentFrameIndex());
+	if (graphicsCommandList != nullptr && m_commandContext->IsRecording(*graphicsCommandList, m_rhi->GetCurrentFrameIndex()))
 	{
-		RenderCommandList& graphicsCommandList = GetCurrentGraphicsCommandList();
-		(void)SubmitCommandList(graphicsCommandList, {});
+		(void)SubmitCommandList(*graphicsCommandList, {});
 	}
 	m_renderHardwareInterface->WaitForIdle();
 }

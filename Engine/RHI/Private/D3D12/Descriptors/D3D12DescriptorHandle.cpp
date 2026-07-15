@@ -14,7 +14,7 @@ D3D12DescriptorHandle::D3D12DescriptorHandle(
 
 	m_cpuHandle.ptr = cpuStartHandle.ptr + static_cast<SIZE_T>(m_incrementSize) * static_cast<SIZE_T>(m_index);
 
-	if (IsShaderVisible())
+	if (gpuStartHandle.ptr != 0)
 	{
 		m_gpuHandle.ptr = gpuStartHandle.ptr + static_cast<SIZE_T>(m_incrementSize) * static_cast<SIZE_T>(m_index);
 	}
@@ -22,5 +22,5 @@ D3D12DescriptorHandle::D3D12DescriptorHandle(
 
 bool D3D12DescriptorHandle::IsShaderVisible() const noexcept
 {
-	return (m_descriptorType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) || (m_descriptorType == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+	return m_gpuHandle.ptr != 0;
 }

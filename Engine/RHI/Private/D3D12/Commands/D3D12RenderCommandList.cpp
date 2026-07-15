@@ -541,8 +541,20 @@ void D3D12RenderCommandList::TransitionResource(NativeResourceHandle resource, R
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	barrier.Transition.pResource = D3D12TypeConversions::ToResource(resource);
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12TypeConversions::ToResourceStates(before);
-	barrier.Transition.StateAfter = D3D12TypeConversions::ToResourceStates(after);
+	const auto resolveState = [this](ResourceState state)
+	{
+		if (m_queueType == ERhiQueueType::Compute && state == ResourceState::ShaderResource)
+		{
+			return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+		}
+		return D3D12TypeConversions::ToResourceStates(state);
+	};
+	barrier.Transition.StateBefore = resolveState(before);
+	barrier.Transition.StateAfter = resolveState(after);
+	if (barrier.Transition.StateBefore == barrier.Transition.StateAfter)
+	{
+		return;
+	}
 	m_commandList->ResourceBarrier(1, &barrier);
 }
 

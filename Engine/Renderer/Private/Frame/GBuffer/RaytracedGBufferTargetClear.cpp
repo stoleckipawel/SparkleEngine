@@ -26,7 +26,7 @@ void AddRaytracedGBufferTargetClearPass(FrameGraphBuilder& builder, const GBuffe
 {
 	builder.Execute(
 	    "RaytracedGBufferTargetClear",
-	    EFrameGraphPassFlags::Raster,
+	    EFrameGraphPassKind::Raster,
 	    [targets](PassResourceBuilder& resourceBuilder)
 	    {
 		    for (const FrameGraphTextureHandle target : GetRaytracedGBufferTargets(targets))

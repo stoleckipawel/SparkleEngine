@@ -1000,8 +1000,26 @@ void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, 
 	}
 	EndDynamicRenderingIfNeeded();
 
-	VulkanResourceStateMapping sourceState = VulkanTypeConversions::ToResourceStateMapping(before);
-	const VulkanResourceStateMapping destinationState = VulkanTypeConversions::ToResourceStateMapping(after);
+	const auto resolveState = [this](ResourceState state)
+	{
+		VulkanResourceStateMapping mapping = VulkanTypeConversions::ToResourceStateMapping(state);
+		if (m_queueType != ERhiQueueType::Compute)
+		{
+			return mapping;
+		}
+		if (state == ResourceState::ShaderResource || state == ResourceState::UnorderedAccess)
+		{
+			mapping.StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+		}
+		else if (state == ResourceState::RayTracingAccelerationStructure)
+		{
+			mapping.StageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+			                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+		}
+		return mapping;
+	};
+	VulkanResourceStateMapping sourceState = resolveState(before);
+	const VulkanResourceStateMapping destinationState = resolveState(after);
 	VulkanGpuAllocationRecord* const record = m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
 
 	if (record != nullptr && record->ResourceKind == VulkanGpuAllocationResourceKind::Buffer && record->Buffer != VK_NULL_HANDLE)
@@ -1092,7 +1110,11 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle resour
 	}
 	EndDynamicRenderingIfNeeded();
 
-	VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+	VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+	if (m_queueType == ERhiQueueType::Graphics)
+	{
+		srcStageMask |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+	}
 	VkAccessFlags2 srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
 	VkPipelineStageFlags2 dstStageMask = srcStageMask;
 	VkAccessFlags2 dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
@@ -1102,8 +1124,11 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle resour
 	{
 		srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
 		srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-		dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-		               VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+		dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+		if (m_queueType == ERhiQueueType::Graphics)
+		{
+			dstStageMask |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+		}
 		dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
 	}
 

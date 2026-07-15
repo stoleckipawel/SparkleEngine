@@ -1,12 +1,14 @@
 #pragma once
 
-#include "FrameGraph/FrameGraphPassFlags.h"
+#include "FrameGraph/FrameGraphPassKind.h"
+#include "FrameGraph/FrameGraphQueuePreference.h"
 #include "FrameGraph/FrameGraphResourceTypes.h"
 #include "FrameGraph/PassResourceDeclaration.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
+#include "RHI/Public/Commands/RhiQueue.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 
 #include <cstdint>
@@ -63,17 +65,32 @@ struct FrameGraphPassNode
 {
 	FrameGraphPassIndex index = INVALID_FRAME_GRAPH_PASS_INDEX;
 	std::string passName;
-	EFrameGraphPassFlags flags = EFrameGraphPassFlags::None;
-	EFrameGraphPassFlags passKind = EFrameGraphPassFlags::None;
+	EFrameGraphPassKind kind = EFrameGraphPassKind::None;
+	EFrameGraphQueuePreference queuePreference = EFrameGraphQueuePreference::Graphics;
+	ERhiQueueType queue = ERhiQueueType::Graphics;
 	std::string diagnosticName;
 	std::string eventScopeLabel;
 	std::vector<PassResourceDeclaration> declarations;
 	std::vector<FrameGraphPassIndex> dependsOn;
+	std::vector<FrameGraphPassIndex> synchronizationDependencies;
 	std::vector<FrameGraphPassIndex> successors;
 	std::uint32_t inDegree = 0;
 	bool alive = true;
 	std::vector<FrameGraphAliasingBarrier> transientAliasingBarriers;
 	std::vector<FrameGraphBarrier> compiledBarriers;
+	std::vector<FrameGraphBarrier> compiledReleaseBarriers;
+};
+
+using FrameGraphSubmissionBatchIndex = std::uint32_t;
+static constexpr FrameGraphSubmissionBatchIndex INVALID_FRAME_GRAPH_SUBMISSION_BATCH_INDEX =
+    static_cast<FrameGraphSubmissionBatchIndex>(-1);
+
+struct FrameGraphSubmissionBatch final
+{
+	FrameGraphSubmissionBatchIndex index = INVALID_FRAME_GRAPH_SUBMISSION_BATCH_INDEX;
+	ERhiQueueType queue = ERhiQueueType::Graphics;
+	std::vector<FrameGraphPassIndex> passes;
+	std::vector<FrameGraphSubmissionBatchIndex> waitForBatches;
 };
 
 struct FrameGraphResourceNode
@@ -166,7 +183,9 @@ struct FrameGraphPlan
 	FrameGraphTransientPlan transients;
 	std::vector<FrameGraphPassIndex> executionOrder;
 	std::vector<FrameGraphAliasingBarrier> initialTransientAliasingBarriers;
+	std::vector<FrameGraphBarrier> initialBarriers;
 	std::vector<FrameGraphBarrier> finalBarriers;
+	std::vector<FrameGraphSubmissionBatch> submissionBatches;
 
 	void Clear() noexcept
 	{
@@ -176,6 +195,8 @@ struct FrameGraphPlan
 		transients.Clear();
 		executionOrder.clear();
 		initialTransientAliasingBarriers.clear();
+		initialBarriers.clear();
 		finalBarriers.clear();
+		submissionBatches.clear();
 	}
 };

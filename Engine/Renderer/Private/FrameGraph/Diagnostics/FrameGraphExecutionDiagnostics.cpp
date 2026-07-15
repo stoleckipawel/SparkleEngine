@@ -54,7 +54,7 @@ void FrameGraphExecutionDiagnostics::InsertPassAliasingBarrierMarker(const Frame
 
 void FrameGraphExecutionDiagnostics::InsertPassResourceBarrierMarker(const FrameGraphPassNode& passRecord) const
 {
-	if (passRecord.compiledBarriers.empty())
+	if (passRecord.compiledBarriers.empty() && passRecord.compiledReleaseBarriers.empty())
 	{
 		return;
 	}

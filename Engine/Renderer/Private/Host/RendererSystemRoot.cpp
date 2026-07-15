@@ -36,7 +36,7 @@ RendererSystemRoot::~RendererSystemRoot() noexcept
 {
 	if (m_backend != nullptr)
 	{
-		GetBackend().Flush();
+		GetBackend().WaitForIdle();
 	}
 }
 
@@ -120,7 +120,7 @@ void RendererSystemRoot::RefreshImageProviders() noexcept
 		return;
 	}
 
-	GetBackend().Flush();
+	GetBackend().WaitForIdle();
 	m_imageProviders->Refresh(GetRenderHardwareInterface());
 }
 

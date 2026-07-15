@@ -2,24 +2,22 @@
 
 #include "Vulkan/Commands/VulkanCommandContext.h"
 
+#include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 #include "Vulkan/Core/VulkanResult.h"
+#include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
+#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
+#include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 
-#include <array>
 #include <format>
 #include <string>
-#include <vector>
 
 static const auto g_vulkanCommandContextLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Commands");
 
 VulkanCommandContext::VulkanCommandContext(VulkanRhi& rhi) : m_rhi(rhi)
 {
-	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
-	{
-		CreateQueueState(static_cast<ERhiQueueType>(queueIndex));
-	}
 	for (std::uint32_t frameIndex = 0; frameIndex < m_frames.size(); ++frameIndex)
 	{
 		CreateFrameState(frameIndex);
@@ -28,14 +26,10 @@ VulkanCommandContext::VulkanCommandContext(VulkanRhi& rhi) : m_rhi(rhi)
 
 VulkanCommandContext::~VulkanCommandContext() noexcept
 {
-	WaitForIdle();
+	m_rhi.WaitForIdle();
 	for (FrameState& frameState : m_frames)
 	{
 		DestroyFrameState(frameState);
-	}
-	for (QueueState& queueState : m_queues)
-	{
-		DestroyQueueState(queueState);
 	}
 }
 
@@ -43,36 +37,45 @@ void VulkanCommandContext::BeginFrame(std::uint32_t frameIndex) noexcept
 {
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		WaitForSubmission(
-		    GetQueueFrameState(static_cast<ERhiQueueType>(queueIndex), frameIndex).SubmissionToken);
-	}
-	BeginCommandList(ERhiQueueType::Graphics, frameIndex);
-}
-
-void VulkanCommandContext::BeginCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
-{
-	QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
-	WaitForSubmission(frameState.SubmissionToken);
-
-	if (frameState.CommandPool != VK_NULL_HANDLE)
-	{
-		const VkResult resetPoolResult = vkResetCommandPool(m_rhi.GetDevice(), frameState.CommandPool, 0);
-		if (!VulkanResult::Succeeded(resetPoolResult))
+		QueueFrameState& frameState = GetQueueFrameState(static_cast<ERhiQueueType>(queueIndex), frameIndex);
+		if (frameState.LastSubmission.IsValid())
 		{
-			Diagnostics::Fail(
-			    g_vulkanCommandContextLogger,
-			    __FILE__,
-			    __LINE__,
-			    VulkanResult::FormatFailure("vkResetCommandPool", resetPoolResult));
+			m_rhi.GetCommandQueue(frameState.LastSubmission.Queue).WaitForSubmission(frameState.LastSubmission.Value);
+		}
+		if (frameState.CommandPool != VK_NULL_HANDLE)
+		{
+			const VkResult resetPoolResult = vkResetCommandPool(m_rhi.GetDevice(), frameState.CommandPool, 0);
+			if (!VulkanResult::Succeeded(resetPoolResult))
+			{
+				Diagnostics::Fail(
+				    g_vulkanCommandContextLogger,
+				    __FILE__,
+				    __LINE__,
+				    VulkanResult::FormatFailure("vkResetCommandPool", resetPoolResult));
+			}
+		}
+		frameState.NextSlot = 0;
+		frameState.CurrentSlot = nullptr;
+		for (const std::unique_ptr<CommandSlot>& slot : frameState.Slots)
+		{
+			slot->IsRecording = false;
 		}
 	}
+}
+
+VulkanRenderCommandList& VulkanCommandContext::BeginCommandList(
+	ERhiQueueType queueType,
+	std::uint32_t frameIndex) noexcept
+{
+	QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
+	CommandSlot& slot = GetOrCreateSlot(queueType, frameIndex);
 
 	const VkCommandBufferBeginInfo beginInfo{
 	    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	    .pNext = nullptr,
 	    .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 	    .pInheritanceInfo = nullptr};
-	const VkResult beginResult = vkBeginCommandBuffer(frameState.CommandBuffer, &beginInfo);
+	const VkResult beginResult = vkBeginCommandBuffer(slot.CommandBuffer, &beginInfo);
 	if (!VulkanResult::Succeeded(beginResult))
 	{
 		Diagnostics::Fail(
@@ -81,175 +84,89 @@ void VulkanCommandContext::BeginCommandList(ERhiQueueType queueType, std::uint32
 		    __LINE__,
 		    VulkanResult::FormatFailure("vkBeginCommandBuffer", beginResult));
 	}
-	frameState.IsRecording = true;
-}
-
-RhiSubmissionToken VulkanCommandContext::SubmitFrame(
-	std::uint32_t frameIndex,
-	VkSemaphore waitSemaphore,
-	VkSemaphore signalSemaphore) noexcept
-{
-	return SubmitCommandList(
-	    ERhiQueueType::Graphics,
-	    frameIndex,
-	    {},
-	    waitSemaphore,
-	    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-	    signalSemaphore);
+	slot.CommandList->ResetTrackedResources();
+	slot.CommandList->ResetBoundState();
+	slot.IsRecording = true;
+	frameState.CurrentSlot = &slot;
+	return *slot.CommandList;
 }
 
 RhiSubmissionToken VulkanCommandContext::SubmitCommandList(
-	ERhiQueueType queueType,
+	VulkanRenderCommandList& commandList,
 	std::uint32_t frameIndex,
 	std::span<const RhiSubmissionToken> waitTokens,
 	VkSemaphore binaryWaitSemaphore,
 	VkPipelineStageFlags binaryWaitStage,
 	VkSemaphore binarySignalSemaphore) noexcept
 {
+	const ERhiQueueType queueType = commandList.GetQueueType();
 	QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
-	if (frameState.IsRecording)
-	{
-		if (frameState.CommandList)
-		{
-			frameState.CommandList->CloseOpenRendering();
-		}
-		const VkResult endResult = vkEndCommandBuffer(frameState.CommandBuffer);
-		if (!VulkanResult::Succeeded(endResult))
-		{
-			Diagnostics::Fail(
-			    g_vulkanCommandContextLogger,
-			    __FILE__,
-			    __LINE__,
-			    VulkanResult::FormatFailure("vkEndCommandBuffer", endResult));
-		}
-		frameState.IsRecording = false;
-	}
-
-	std::vector<VkSemaphore> waitSemaphores;
-	std::vector<std::uint64_t> waitValues;
-	std::vector<VkPipelineStageFlags> waitStages;
-	waitSemaphores.reserve(waitTokens.size() + (binaryWaitSemaphore != VK_NULL_HANDLE ? 1u : 0u));
-	waitValues.reserve(waitSemaphores.capacity());
-	waitStages.reserve(waitSemaphores.capacity());
-	for (const RhiSubmissionToken token : waitTokens)
-	{
-		if (!token.IsValid() || token.Queue == queueType)
-		{
-			continue;
-		}
-		waitSemaphores.push_back(m_queues[RhiQueueTypeToIndex(token.Queue)].TimelineSemaphore);
-		waitValues.push_back(token.Value);
-		waitStages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-	}
-	if (binaryWaitSemaphore != VK_NULL_HANDLE)
-	{
-		waitSemaphores.push_back(binaryWaitSemaphore);
-		waitValues.push_back(0);
-		waitStages.push_back(binaryWaitStage);
-	}
-
-	QueueState& queue = m_queues[RhiQueueTypeToIndex(queueType)];
-	const std::uint64_t submissionValue = queue.NextSubmissionValue++;
-	std::array<VkSemaphore, 2> signalSemaphores = {queue.TimelineSemaphore, binarySignalSemaphore};
-	std::array<std::uint64_t, 2> signalValues = {submissionValue, 0};
-	const std::uint32_t signalCount = binarySignalSemaphore != VK_NULL_HANDLE ? 2u : 1u;
-	const VkTimelineSemaphoreSubmitInfo timelineInfo{
-	    .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
-	    .pNext = nullptr,
-	    .waitSemaphoreValueCount = static_cast<std::uint32_t>(waitValues.size()),
-	    .pWaitSemaphoreValues = waitValues.empty() ? nullptr : waitValues.data(),
-	    .signalSemaphoreValueCount = signalCount,
-	    .pSignalSemaphoreValues = signalValues.data()};
-	const VkSubmitInfo submitInfo{
-	    .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-	    .pNext = &timelineInfo,
-	    .waitSemaphoreCount = static_cast<std::uint32_t>(waitSemaphores.size()),
-	    .pWaitSemaphores = waitSemaphores.empty() ? nullptr : waitSemaphores.data(),
-	    .pWaitDstStageMask = waitStages.empty() ? nullptr : waitStages.data(),
-	    .commandBufferCount = 1,
-	    .pCommandBuffers = &frameState.CommandBuffer,
-	    .signalSemaphoreCount = signalCount,
-	    .pSignalSemaphores = signalSemaphores.data()};
-
-	const VkResult submitResult = vkQueueSubmit(m_rhi.GetQueue(queueType), 1, &submitInfo, VK_NULL_HANDLE);
-	if (!VulkanResult::Succeeded(submitResult))
+	CommandSlot* slot = FindSlot(commandList, frameIndex);
+	if (slot == nullptr || !slot->IsRecording)
 	{
 		Diagnostics::Fail(
 		    g_vulkanCommandContextLogger,
 		    __FILE__,
 		    __LINE__,
-		    VulkanResult::FormatFailure("vkQueueSubmit", submitResult));
+		    "SubmitCommandList requires a recording command list from the current frame");
 		return {};
 	}
 
-	queue.LastSubmittedValue = submissionValue;
-	frameState.SubmissionToken = RhiSubmissionToken{.Queue = queueType, .Value = submissionValue};
-	return frameState.SubmissionToken;
+	commandList.CloseOpenRendering();
+	const VkResult endResult = vkEndCommandBuffer(slot->CommandBuffer);
+	if (!VulkanResult::Succeeded(endResult))
+	{
+		Diagnostics::Fail(
+		    g_vulkanCommandContextLogger,
+		    __FILE__,
+		    __LINE__,
+		    VulkanResult::FormatFailure("vkEndCommandBuffer", endResult));
+	}
+	slot->IsRecording = false;
+
+	frameState.LastSubmission = m_rhi.GetCommandQueue(queueType).Submit(
+	    VulkanQueueSubmission{
+	        .CommandBuffer = slot->CommandBuffer,
+	        .WaitTokens = waitTokens,
+	        .BinaryWaitSemaphore = binaryWaitSemaphore,
+	        .BinaryWaitStage = binaryWaitStage,
+	        .BinarySignalSemaphore = binarySignalSemaphore});
+	return frameState.LastSubmission;
 }
 
 void VulkanCommandContext::CancelFrame(std::uint32_t frameIndex) noexcept
 {
-	QueueFrameState& frameState = GetQueueFrameState(ERhiQueueType::Graphics, frameIndex);
-	if (frameState.IsRecording)
-	{
-		(void)SubmitCommandList(ERhiQueueType::Graphics, frameIndex);
-	}
-}
-
-void VulkanCommandContext::WaitForIdle() noexcept
-{
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		WaitForSubmission(GetLastSubmittedToken(static_cast<ERhiQueueType>(queueIndex)));
+		QueueFrameState& frameState = GetQueueFrameState(static_cast<ERhiQueueType>(queueIndex), frameIndex);
+		for (const std::unique_ptr<CommandSlot>& slot : frameState.Slots)
+		{
+			if (slot->IsRecording)
+			{
+				(void)SubmitCommandList(*slot->CommandList, frameIndex);
+			}
+		}
 	}
 }
 
-void VulkanCommandContext::WaitForSubmission(RhiSubmissionToken token) noexcept
+void VulkanCommandContext::ConfigureCommandLists(
+	VulkanGpuMemoryAllocator& memoryAllocator,
+	VulkanDescriptorManager& descriptorManager,
+	VulkanDescriptorAllocator& descriptorAllocator) noexcept
 {
-	if (!token.IsValid())
+	m_memoryAllocator = &memoryAllocator;
+	m_descriptorManager = &descriptorManager;
+	m_descriptorAllocator = &descriptorAllocator;
+	for (FrameState& frame : m_frames)
 	{
-		return;
+		for (QueueFrameState& queueFrame : frame.Queues)
+		{
+			for (const std::unique_ptr<CommandSlot>& slot : queueFrame.Slots)
+			{
+				ConfigureCommandList(*slot->CommandList);
+			}
+		}
 	}
-
-	const VkSemaphore semaphore = m_queues[RhiQueueTypeToIndex(token.Queue)].TimelineSemaphore;
-	const VkSemaphoreWaitInfo waitInfo{
-	    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
-	    .pNext = nullptr,
-	    .flags = 0,
-	    .semaphoreCount = 1,
-	    .pSemaphores = &semaphore,
-	    .pValues = &token.Value};
-	const VkResult waitResult = vkWaitSemaphores(m_rhi.GetDevice(), &waitInfo, UINT64_MAX);
-	if (!VulkanResult::Succeeded(waitResult))
-	{
-		Diagnostics::Fail(
-		    g_vulkanCommandContextLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkWaitSemaphores", waitResult));
-	}
-}
-
-bool VulkanCommandContext::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
-{
-	return !token.IsValid() || GetCompletedSubmissionValue(token.Queue) >= token.Value;
-}
-
-RhiSubmissionToken VulkanCommandContext::GetLastSubmittedToken(ERhiQueueType queueType) const noexcept
-{
-	return RhiSubmissionToken{
-	    .Queue = queueType,
-	    .Value = m_queues[RhiQueueTypeToIndex(queueType)].LastSubmittedValue};
-}
-
-std::uint64_t VulkanCommandContext::GetCompletedSubmissionValue(ERhiQueueType queueType) const noexcept
-{
-	std::uint64_t completedValue = 0;
-	const VkResult result = vkGetSemaphoreCounterValue(
-	    m_rhi.GetDevice(),
-	    m_queues[RhiQueueTypeToIndex(queueType)].TimelineSemaphore,
-	    &completedValue);
-	return VulkanResult::Succeeded(result) ? completedValue : 0;
 }
 
 VulkanRenderCommandList& VulkanCommandContext::GetCommandList(std::uint32_t frameIndex) noexcept
@@ -259,7 +176,16 @@ VulkanRenderCommandList& VulkanCommandContext::GetCommandList(std::uint32_t fram
 
 VulkanRenderCommandList& VulkanCommandContext::GetCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
 {
-	return *GetQueueFrameState(queueType, frameIndex).CommandList;
+	QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
+	if (frameState.CurrentSlot == nullptr)
+	{
+		Diagnostics::Fail(
+		    g_vulkanCommandContextLogger,
+		    __FILE__,
+		    __LINE__,
+		    "GetCommandList called before BeginCommandList");
+	}
+	return *frameState.CurrentSlot->CommandList;
 }
 
 VkCommandBuffer VulkanCommandContext::GetCommandBuffer(std::uint32_t frameIndex) const noexcept
@@ -269,7 +195,8 @@ VkCommandBuffer VulkanCommandContext::GetCommandBuffer(std::uint32_t frameIndex)
 
 VkCommandBuffer VulkanCommandContext::GetCommandBuffer(ERhiQueueType queueType, std::uint32_t frameIndex) const noexcept
 {
-	return GetQueueFrameState(queueType, frameIndex).CommandBuffer;
+	const QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
+	return frameState.CurrentSlot != nullptr ? frameState.CurrentSlot->CommandBuffer : VK_NULL_HANDLE;
 }
 
 bool VulkanCommandContext::IsCommandBufferRecording(VkCommandBuffer commandBuffer) const noexcept
@@ -282,23 +209,24 @@ bool VulkanCommandContext::IsCommandBufferRecording(VkCommandBuffer commandBuffe
 	{
 		for (const QueueFrameState& queueFrame : frame.Queues)
 		{
-			if (queueFrame.CommandBuffer == commandBuffer)
+			for (const std::unique_ptr<CommandSlot>& slot : queueFrame.Slots)
 			{
-				return queueFrame.IsRecording;
+				if (slot->CommandBuffer == commandBuffer)
+				{
+					return slot->IsRecording;
+				}
 			}
 		}
 	}
 	return false;
 }
 
-VkSemaphore VulkanCommandContext::GetImageAvailableSemaphore(std::uint32_t frameIndex) const noexcept
+bool VulkanCommandContext::IsRecording(
+	const VulkanRenderCommandList& commandList,
+	std::uint32_t frameIndex) const noexcept
 {
-	return m_frames[frameIndex % m_frames.size()].ImageAvailableSemaphore;
-}
-
-VkSemaphore VulkanCommandContext::GetRenderFinishedSemaphore(std::uint32_t frameIndex) const noexcept
-{
-	return m_frames[frameIndex % m_frames.size()].RenderFinishedSemaphore;
+	const CommandSlot* slot = FindSlot(commandList, frameIndex);
+	return slot != nullptr && slot->IsRecording;
 }
 
 VulkanCommandContext::QueueFrameState& VulkanCommandContext::GetQueueFrameState(
@@ -315,38 +243,6 @@ const VulkanCommandContext::QueueFrameState& VulkanCommandContext::GetQueueFrame
 	return m_frames[frameIndex % m_frames.size()].Queues[RhiQueueTypeToIndex(queueType)];
 }
 
-void VulkanCommandContext::CreateQueueState(ERhiQueueType queueType)
-{
-	QueueState& queue = m_queues[RhiQueueTypeToIndex(queueType)];
-	const VkSemaphoreTypeCreateInfo timelineCreateInfo{
-	    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-	    .pNext = nullptr,
-	    .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
-	    .initialValue = 0};
-	const VkSemaphoreCreateInfo semaphoreInfo{
-	    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-	    .pNext = &timelineCreateInfo,
-	    .flags = 0};
-	const VkResult result = vkCreateSemaphore(m_rhi.GetDevice(), &semaphoreInfo, nullptr, &queue.TimelineSemaphore);
-	if (!VulkanResult::Succeeded(result))
-	{
-		Diagnostics::Fail(
-		    g_vulkanCommandContextLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkCreateSemaphore(timeline)", result));
-	}
-}
-
-void VulkanCommandContext::DestroyQueueState(QueueState& queueState) noexcept
-{
-	if (queueState.TimelineSemaphore != VK_NULL_HANDLE)
-	{
-		vkDestroySemaphore(m_rhi.GetDevice(), queueState.TimelineSemaphore, nullptr);
-		queueState.TimelineSemaphore = VK_NULL_HANDLE;
-	}
-}
-
 void VulkanCommandContext::CreateFrameState(std::uint32_t frameIndex)
 {
 	FrameState& frame = m_frames[frameIndex];
@@ -359,7 +255,7 @@ void VulkanCommandContext::CreateFrameState(std::uint32_t frameIndex)
 		    .pNext = nullptr,
 		    .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 		    .queueFamilyIndex = m_rhi.GetQueueFamilyIndex(queueType)};
-		VkResult result = vkCreateCommandPool(m_rhi.GetDevice(), &poolCreateInfo, nullptr, &queueFrame.CommandPool);
+		const VkResult result = vkCreateCommandPool(m_rhi.GetDevice(), &poolCreateInfo, nullptr, &queueFrame.CommandPool);
 		if (!VulkanResult::Succeeded(result))
 		{
 			Diagnostics::Fail(
@@ -368,54 +264,7 @@ void VulkanCommandContext::CreateFrameState(std::uint32_t frameIndex)
 			    __LINE__,
 			    VulkanResult::FormatFailure("vkCreateCommandPool", result));
 		}
-
-		const VkCommandBufferAllocateInfo allocateInfo{
-		    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-		    .pNext = nullptr,
-		    .commandPool = queueFrame.CommandPool,
-		    .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-		    .commandBufferCount = 1};
-		result = vkAllocateCommandBuffers(m_rhi.GetDevice(), &allocateInfo, &queueFrame.CommandBuffer);
-		if (!VulkanResult::Succeeded(result))
-		{
-			Diagnostics::Fail(
-			    g_vulkanCommandContextLogger,
-			    __FILE__,
-			    __LINE__,
-			    VulkanResult::FormatFailure("vkAllocateCommandBuffers", result));
-		}
-
-		queueFrame.CommandList = std::make_unique<VulkanRenderCommandList>();
-		queueFrame.CommandList->SetQueueType(queueType);
-		queueFrame.CommandList->SetNativeCommandBuffer(
-		    queueFrame.CommandBuffer,
-		    m_rhi.GetCmdBeginDebugUtilsLabel(),
-		    m_rhi.GetCmdEndDebugUtilsLabel(),
-		    m_rhi.GetCmdInsertDebugUtilsLabel());
 		NameQueueFrameState(queueType, frameIndex, queueFrame);
-	}
-
-	const VkSemaphoreCreateInfo semaphoreInfo{
-	    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-	    .pNext = nullptr,
-	    .flags = 0};
-	VkResult result = vkCreateSemaphore(m_rhi.GetDevice(), &semaphoreInfo, nullptr, &frame.ImageAvailableSemaphore);
-	if (!VulkanResult::Succeeded(result))
-	{
-		Diagnostics::Fail(
-		    g_vulkanCommandContextLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkCreateSemaphore(imageAvailable)", result));
-	}
-	result = vkCreateSemaphore(m_rhi.GetDevice(), &semaphoreInfo, nullptr, &frame.RenderFinishedSemaphore);
-	if (!VulkanResult::Succeeded(result))
-	{
-		Diagnostics::Fail(
-		    g_vulkanCommandContextLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkCreateSemaphore(renderFinished)", result));
 	}
 }
 
@@ -423,23 +272,12 @@ void VulkanCommandContext::DestroyFrameState(FrameState& frameState) noexcept
 {
 	for (QueueFrameState& queueFrame : frameState.Queues)
 	{
-		queueFrame.CommandList.reset();
+		queueFrame.Slots.clear();
 		if (queueFrame.CommandPool != VK_NULL_HANDLE)
 		{
 			vkDestroyCommandPool(m_rhi.GetDevice(), queueFrame.CommandPool, nullptr);
 			queueFrame.CommandPool = VK_NULL_HANDLE;
-			queueFrame.CommandBuffer = VK_NULL_HANDLE;
 		}
-	}
-	if (frameState.RenderFinishedSemaphore != VK_NULL_HANDLE)
-	{
-		vkDestroySemaphore(m_rhi.GetDevice(), frameState.RenderFinishedSemaphore, nullptr);
-		frameState.RenderFinishedSemaphore = VK_NULL_HANDLE;
-	}
-	if (frameState.ImageAvailableSemaphore != VK_NULL_HANDLE)
-	{
-		vkDestroySemaphore(m_rhi.GetDevice(), frameState.ImageAvailableSemaphore, nullptr);
-		frameState.ImageAvailableSemaphore = VK_NULL_HANDLE;
 	}
 }
 
@@ -455,18 +293,105 @@ void VulkanCommandContext::NameQueueFrameState(
 	}
 
 	const std::string poolName = std::format("Sparkle Vulkan {} Command Pool Frame {}", RhiQueueTypeToString(queueType), frameIndex);
-	const std::string commandBufferName =
-	    std::format("Sparkle Vulkan {} Command Buffer Frame {}", RhiQueueTypeToString(queueType), frameIndex);
 	(void)VulkanDebugNames::SetObjectName(
 	    setObjectName,
 	    m_rhi.GetDevice(),
 	    VK_OBJECT_TYPE_COMMAND_POOL,
 	    reinterpret_cast<std::uint64_t>(frameState.CommandPool),
 	    poolName);
+}
+
+VulkanCommandContext::CommandSlot& VulkanCommandContext::GetOrCreateSlot(
+	ERhiQueueType queueType,
+	std::uint32_t frameIndex) noexcept
+{
+	QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
+	const std::size_t slotIndex = frameState.NextSlot++;
+	if (slotIndex < frameState.Slots.size())
+	{
+		return *frameState.Slots[slotIndex];
+	}
+
+	auto slot = std::make_unique<CommandSlot>();
+	const VkCommandBufferAllocateInfo allocateInfo{
+	    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+	    .pNext = nullptr,
+	    .commandPool = frameState.CommandPool,
+	    .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+	    .commandBufferCount = 1};
+	const VkResult result = vkAllocateCommandBuffers(m_rhi.GetDevice(), &allocateInfo, &slot->CommandBuffer);
+	if (!VulkanResult::Succeeded(result))
+	{
+		Diagnostics::Fail(
+		    g_vulkanCommandContextLogger,
+		    __FILE__,
+		    __LINE__,
+		    VulkanResult::FormatFailure("vkAllocateCommandBuffers", result));
+	}
+
+	slot->CommandList = std::make_unique<VulkanRenderCommandList>();
+	slot->CommandList->SetQueueType(queueType);
+	slot->CommandList->SetNativeCommandBuffer(
+	    slot->CommandBuffer,
+	    m_rhi.GetCmdBeginDebugUtilsLabel(),
+	    m_rhi.GetCmdEndDebugUtilsLabel(),
+	    m_rhi.GetCmdInsertDebugUtilsLabel());
+	ConfigureCommandList(*slot->CommandList);
+	NameCommandSlot(queueType, frameIndex, slotIndex, *slot);
+	frameState.Slots.push_back(std::move(slot));
+	return *frameState.Slots.back();
+}
+
+VulkanCommandContext::CommandSlot* VulkanCommandContext::FindSlot(
+	VulkanRenderCommandList& commandList,
+	std::uint32_t frameIndex) noexcept
+{
+	return const_cast<CommandSlot*>(std::as_const(*this).FindSlot(commandList, frameIndex));
+}
+
+const VulkanCommandContext::CommandSlot* VulkanCommandContext::FindSlot(
+	const VulkanRenderCommandList& commandList,
+	std::uint32_t frameIndex) const noexcept
+{
+	const QueueFrameState& frameState = GetQueueFrameState(commandList.GetQueueType(), frameIndex);
+	for (const std::unique_ptr<CommandSlot>& slot : frameState.Slots)
+	{
+		if (slot->CommandList.get() == &commandList)
+		{
+			return slot.get();
+		}
+	}
+	return nullptr;
+}
+
+void VulkanCommandContext::ConfigureCommandList(VulkanRenderCommandList& commandList) noexcept
+{
+	commandList.SetRhi(&m_rhi);
+	commandList.SetMemoryAllocator(m_memoryAllocator);
+	commandList.SetDescriptorManager(m_descriptorManager);
+	commandList.SetDescriptorAllocator(m_descriptorAllocator);
+}
+
+void VulkanCommandContext::NameCommandSlot(
+	ERhiQueueType queueType,
+	std::uint32_t frameIndex,
+	std::size_t slotIndex,
+	CommandSlot& slot) noexcept
+{
+	PFN_vkSetDebugUtilsObjectNameEXT setObjectName = m_rhi.GetSetDebugUtilsObjectName();
+	if (setObjectName == nullptr)
+	{
+		return;
+	}
+	const std::string name = std::format(
+	    "Sparkle Vulkan {} Command Buffer Frame {} Slot {}",
+	    RhiQueueTypeToString(queueType),
+	    frameIndex,
+	    slotIndex);
 	(void)VulkanDebugNames::SetObjectName(
 	    setObjectName,
 	    m_rhi.GetDevice(),
 	    VK_OBJECT_TYPE_COMMAND_BUFFER,
-	    reinterpret_cast<std::uint64_t>(frameState.CommandBuffer),
-	    commandBufferName);
+	    reinterpret_cast<std::uint64_t>(slot.CommandBuffer),
+	    name);
 }
