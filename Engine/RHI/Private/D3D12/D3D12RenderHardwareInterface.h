@@ -96,6 +96,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
 
   private:
+	friend class D3D12InteropService;
 	friend class D3D12RenderCommandList;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)

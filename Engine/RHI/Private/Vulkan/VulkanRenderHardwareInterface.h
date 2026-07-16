@@ -102,6 +102,8 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void RebuildSwapChainBackBufferViews() noexcept;
 
   private:
+	friend class VulkanInteropService;
+
 	RhiCapabilities BuildCapabilities() const noexcept;
 	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
 	RhiResourceViewHandle GetCurrentBackBufferViewHandle() const noexcept;

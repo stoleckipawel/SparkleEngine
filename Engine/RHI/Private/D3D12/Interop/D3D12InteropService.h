@@ -10,6 +10,11 @@ class D3D12InteropService final : public RhiInteropService
 	explicit D3D12InteropService(D3D12RenderHardwareInterface& owner) noexcept;
 
 	RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept override;
+	NativeTextureViewInfo GetNativeTextureViewInfo(
+	    RhiResourceViewHandle view,
+	    RhiResourceHandle resource,
+	    ResourceState state,
+	    const RhiNativeInteropRequest& request) const noexcept override;
 
   private:
 	D3D12RenderHardwareInterface* m_owner = nullptr;

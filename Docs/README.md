@@ -4,8 +4,6 @@ This folder keeps active architecture guidance. Old review notes, superseded sta
 
 ## Architecture Review Source Set
 
-Use these as source material behind the implementation spine:
-
 - `Architecture/00-Review/D_WholeRepositoryArchitectureMap.md`: full repository map covering modules, code weight, public/private API shape, runtime flow, tools, memory, GPU/CPU surfaces, and cleanup-grade architecture scores.
 - `Architecture/00-Review/E_ExternalRendererRepositoryComparison.md`: source-linked comparison against vendor renderer frameworks, RHIs, SDKs, sample frameworks, and branch/productization patterns.
 - `Architecture/00-Review/F_StagedDeletionFirstImprovementPlan.md`: staged improvement plan that favors net code and depot-size removal while preserving fatal guardrails and graphics profiler/debugger support.

@@ -158,7 +158,7 @@ NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(
 		return {};
 	}
 
-	NativeTextureViewInfo nativeView = m_renderHardwareInterface->GetDescriptorService().GetNativeTextureViewInfo(
+	NativeTextureViewInfo nativeView = m_renderHardwareInterface->GetInteropService().GetNativeTextureViewInfo(
 	    view,
 	    ResolveResource(handle),
 	    state,

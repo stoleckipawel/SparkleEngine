@@ -1,5 +1,6 @@
 #include "Vulkan/Interop/VulkanInteropService.h"
 
+#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
 VulkanInteropService::VulkanInteropService(VulkanRenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
@@ -22,4 +23,17 @@ RhiNativeDeviceQueueInterop VulkanInteropService::GetDeviceQueueInterop(RhiNativ
 	            .GraphicsQueue = m_owner != nullptr ? m_owner->GetVulkanGraphicsQueue() : nullptr,
 	            .GraphicsQueueFamilyIndex = m_owner != nullptr ? m_owner->GetVulkanGraphicsQueueFamilyIndex() : UINT32_MAX},
 	    .Request = request};
+}
+
+NativeTextureViewInfo VulkanInteropService::GetNativeTextureViewInfo(
+	RhiResourceViewHandle view,
+	RhiResourceHandle resource,
+	ResourceState state,
+	const RhiNativeInteropRequest& request) const noexcept
+{
+	if (!IsRhiNativeInteropRequestValid(request) || m_owner == nullptr || m_owner->m_descriptorManager == nullptr)
+	{
+		return {};
+	}
+	return m_owner->m_descriptorManager->ResolveNativeTextureViewInfo(view, resource, state);
 }
