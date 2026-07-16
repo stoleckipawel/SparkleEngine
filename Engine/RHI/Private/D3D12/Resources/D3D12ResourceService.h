@@ -68,7 +68,7 @@ class D3D12ResourceService final : public RhiResourceService
 	void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept override;
 	void DrainCompletedResourceReleases() noexcept override;
 	void FlushDeferredResourceReleases() noexcept override;
-	NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept override;
+	RhiResourceHandle GetResourceHandle(RhiOwnedResourceHandle resource) const noexcept override;
 	RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept override;
 	RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept override;
 	RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept override;
@@ -88,12 +88,12 @@ class D3D12ResourceService final : public RhiResourceService
 	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientBufferAllocationDesc& desc,
 	    std::wstring_view debugName) override;
-	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
+	bool SupportsUnorderedAccess(RhiResourceHandle resource) const noexcept override;
 
   private:
 	friend class D3D12RenderHardwareInterface;
-	void BeginResourceTracking(NativeResourceHandle resource) noexcept;
-	void EndResourceTracking(NativeResourceHandle resource, RhiSubmissionToken submissionToken) noexcept;
+	void BeginResourceTracking(RhiResourceHandle resource) noexcept;
+	void EndResourceTracking(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept;
 
 	struct PendingOwnedResourceRelease
 	{

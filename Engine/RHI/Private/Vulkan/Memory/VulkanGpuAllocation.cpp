@@ -57,14 +57,14 @@ VulkanGpuAllocationRecord* GetVulkanGpuAllocationRecord(RhiOwnedResourceHandle h
 	return static_cast<VulkanGpuAllocationRecord*>(handle.Value);
 }
 
-NativeResourceHandle GetVulkanNativeResource(VulkanGpuAllocationRecord& record) noexcept
+RhiResourceHandle GetVulkanResourceHandle(VulkanGpuAllocationRecord& record) noexcept
 {
 	switch (record.ResourceKind)
 	{
 		case VulkanGpuAllocationResourceKind::Buffer:
-			return NativeResourceHandle{record.Buffer};
+			return RhiResourceHandle{record.Buffer};
 		case VulkanGpuAllocationResourceKind::Image:
-			return NativeResourceHandle{record.Image};
+			return RhiResourceHandle{record.Image};
 		case VulkanGpuAllocationResourceKind::Unknown:
 		default:
 			return {};

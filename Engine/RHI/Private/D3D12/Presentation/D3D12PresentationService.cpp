@@ -19,9 +19,9 @@ RhiCpuDescriptorHandle D3D12PresentationService::GetBackBufferRenderTargetView()
 	return m_owner != nullptr ? m_owner->GetBackBufferRenderTargetView() : RhiCpuDescriptorHandle{};
 }
 
-NativeResourceHandle D3D12PresentationService::GetBackBufferResource() const noexcept
+RhiResourceHandle D3D12PresentationService::GetBackBufferResource() const noexcept
 {
-	return m_owner != nullptr ? m_owner->GetBackBufferResource() : NativeResourceHandle{};
+	return m_owner != nullptr ? m_owner->GetBackBufferResource() : RhiResourceHandle{};
 }
 
 std::uint64_t D3D12PresentationService::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept

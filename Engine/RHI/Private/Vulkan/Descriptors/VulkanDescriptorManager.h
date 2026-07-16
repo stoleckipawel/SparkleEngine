@@ -2,6 +2,7 @@
 
 #include "Descriptors/RhiDescriptorService.h"
 #include "Frame/RhiFrameConstants.h"
+#include "Interop/RhiNativeHandles.h"
 #include "Resources/RhiResourceView.h"
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/VulkanIncludes.h"
@@ -13,6 +14,7 @@
 class VulkanRhi;
 class VulkanSwapChain;
 class VulkanGpuMemoryAllocator;
+class VulkanInteropService;
 class VulkanSamplerLibrary;
 struct RhiCapabilities;
 
@@ -50,7 +52,6 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
-	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
 	VkImageView GetRegisteredImageView(RhiGpuDescriptorHandle descriptorHandle) const noexcept;
 	VkImageAspectFlags ResolveImageViewAspectMask(VkImageView imageView) const noexcept;
 	void RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept;
@@ -58,6 +59,13 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	void ReleaseAllResourceViews() noexcept;
 
   private:
+	friend class VulkanInteropService;
+
+	NativeTextureViewInfo ResolveNativeTextureViewInfo(
+	    RhiResourceViewHandle view,
+	    RhiResourceHandle resource,
+	    ResourceState state) const noexcept;
+
 	struct ResourceViewRecord final
 	{
 		ERhiResourceViewKind Kind = ERhiResourceViewKind::TextureShaderResource;

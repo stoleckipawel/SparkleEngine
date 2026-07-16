@@ -1,13 +1,12 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
 #include "Scene/Camera/CameraSnapshot.h"
 
 #include "ShaderData/RenderViewCameraData.h"
 #include "Math/Frustum.h"
 #include <DirectXMath.h>
 
-class SPARKLE_RENDERER_API RenderCamera final
+class RenderCamera final
 {
   public:
 	RenderCamera() noexcept;

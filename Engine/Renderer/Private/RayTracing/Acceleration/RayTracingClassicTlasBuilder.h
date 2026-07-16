@@ -2,7 +2,6 @@
 
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Acceleration/RayTracingTopLevelAccelerationStructureBuildStats.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
 #include <DirectXMath.h>
@@ -12,6 +11,7 @@
 #include <vector>
 
 class RenderCommandContext;
+class RenderHardwareInterface;
 class RayTracingPerformanceDiagnostics;
 struct RayTracingPtlasPartitionPlan;
 struct RenderSceneData;

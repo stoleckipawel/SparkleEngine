@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Interop/RhiNativeHandles.h"
 #include "../Resources/RhiResourceDesc.h"
+#include "../Resources/RhiResourceHandles.h"
 #include "../Resources/RhiTextureUpload.h"
 #include "../RHIAPI.h"
 

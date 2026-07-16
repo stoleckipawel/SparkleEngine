@@ -4,13 +4,15 @@
 #include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
-#include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
 
 #include <span>
 
 class FrameGraph;
 class RenderCommandContext;
+struct NativeTextureViewInfo;
+struct RhiNativeInteropRequest;
 
 class FrameGraphResourceCommands final
 {
@@ -29,8 +31,11 @@ class FrameGraphResourceCommands final
 	void CopyBuffer(RenderCommandContext& cmd, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept;
 	void ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
 	void ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
-	NativeResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
-	NativeTextureViewInfo ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state) const noexcept;
+	RhiResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
+	NativeTextureViewInfo ResolveNativeTextureView(
+	    FrameGraphTextureHandle handle,
+	    ResourceState state,
+	    const RhiNativeInteropRequest& request) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;

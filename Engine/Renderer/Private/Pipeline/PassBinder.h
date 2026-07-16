@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Pipeline/PassBindingOverrides.h"
+#include "RHI/Public/Pipeline/RhiPipelineStateDesc.h"
 
 #include <cstdint>
 #include <span>

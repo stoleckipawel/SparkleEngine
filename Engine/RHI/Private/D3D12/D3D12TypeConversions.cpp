@@ -108,7 +108,7 @@ ID3D12GraphicsCommandList* D3D12TypeConversions::ToGraphicsCommandList(NativeGra
 	return static_cast<ID3D12GraphicsCommandList*>(handle.Value);
 }
 
-ID3D12Resource* D3D12TypeConversions::ToResource(NativeResourceHandle handle) noexcept
+ID3D12Resource* D3D12TypeConversions::ToResource(RhiResourceHandle handle) noexcept
 {
 	return static_cast<ID3D12Resource*>(handle.Value);
 }

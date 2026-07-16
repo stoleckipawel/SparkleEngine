@@ -51,30 +51,51 @@ void AddRayReconstructionPass(
 		    if (context.RuntimeServices.ImageProviders != nullptr && context.RuntimeServices.ImageProviders->RayReconstruction != nullptr)
 		    {
 			    RenderCommandList& commandList = context.Commands.GetRenderCommandList();
+			    const RhiNativeInteropRequest interopRequest{
+			        .Consumer = ERhiNativeInteropConsumer::RayReconstructionProvider,
+			        .Reason = passName};
 			    (void) context.RuntimeServices.ImageProviders->RayReconstruction->Evaluate(
 			        RayReconstructionEvaluationDesc{
 			            .BackendApi = commandList.GetBackendApi(),
-			            .NativeCommandList = commandList.GetNativeHandle(
-			                RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::RayReconstructionProvider, .Reason = passName}),
+			            .NativeCommandList = commandList.GetNativeHandle(interopRequest),
 			            .NativeNoisyInputColorView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.NoisyInputColor, ResourceState::ShaderResource),
+			                context.Resources.ResolveNativeTextureView(
+			                    providerInputs.NoisyInputColor,
+			                    ResourceState::ShaderResource,
+			                    interopRequest),
 			            .NativeOutputColorView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.OutputColor, ResourceState::UnorderedAccess),
-			            .NativeDepthView = context.Resources.ResolveNativeTextureView(providerInputs.Depth, ResourceState::ShaderResource),
+			                context.Resources.ResolveNativeTextureView(
+			                    providerInputs.OutputColor,
+			                    ResourceState::UnorderedAccess,
+			                    interopRequest),
+			            .NativeDepthView =
+			                context.Resources.ResolveNativeTextureView(providerInputs.Depth, ResourceState::ShaderResource, interopRequest),
 			            .NativeMotionVectorsView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.MotionVectors, ResourceState::ShaderResource),
+			                context.Resources.ResolveNativeTextureView(
+			                    providerInputs.MotionVectors,
+			                    ResourceState::ShaderResource,
+			                    interopRequest),
 			            .NativeExposureView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.Exposure, ResourceState::ShaderResource),
+			                context.Resources.ResolveNativeTextureView(providerInputs.Exposure, ResourceState::ShaderResource, interopRequest),
 			            .NativeNormalsView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.Normals, ResourceState::ShaderResource),
+			                context.Resources.ResolveNativeTextureView(providerInputs.Normals, ResourceState::ShaderResource, interopRequest),
 			            .NativeRoughnessView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.Roughness, ResourceState::ShaderResource),
+			                context.Resources.ResolveNativeTextureView(providerInputs.Roughness, ResourceState::ShaderResource, interopRequest),
 			            .NativeDiffuseAlbedoView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.DiffuseAlbedo, ResourceState::ShaderResource),
+			                context.Resources.ResolveNativeTextureView(
+			                    providerInputs.DiffuseAlbedo,
+			                    ResourceState::ShaderResource,
+			                    interopRequest),
 			            .NativeSpecularAlbedoView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.SpecularAlbedo, ResourceState::ShaderResource),
+			                context.Resources.ResolveNativeTextureView(
+			                    providerInputs.SpecularAlbedo,
+			                    ResourceState::ShaderResource,
+			                    interopRequest),
 			            .NativeSpecularHitDistanceView =
-			                context.Resources.ResolveNativeTextureView(providerInputs.SpecularHitDistance, ResourceState::ShaderResource),
+			                context.Resources.ResolveNativeTextureView(
+			                    providerInputs.SpecularHitDistance,
+			                    ResourceState::ShaderResource,
+			                    interopRequest),
 			            .RenderExtent = renderExtent,
 			            .OutputExtent = outputExtent});
 		    }

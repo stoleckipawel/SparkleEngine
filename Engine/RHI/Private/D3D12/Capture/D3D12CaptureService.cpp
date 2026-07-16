@@ -66,7 +66,7 @@ RhiCaptureResult D3D12CaptureService::CaptureTextureToBmp(const RhiTextureCaptur
 }
 
 bool D3D12CaptureService::CaptureNativeTextureToBmp(
-    NativeResourceHandle resource,
+    RhiResourceHandle resource,
     ResourceState sourceState,
     const std::filesystem::path& outputPath) noexcept
 {

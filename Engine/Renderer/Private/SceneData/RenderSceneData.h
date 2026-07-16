@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
 #include "Renderer/Public/SceneData/DirectionalLight.h"
 #include "Renderer/Public/SceneData/PointLight.h"
 #include "Renderer/Public/SceneData/RectLight.h"
@@ -27,7 +26,7 @@ struct ResolvedMaterialTextureTable final
 	}
 };
 
-struct SPARKLE_RENDERER_API RenderSceneData
+struct RenderSceneData
 {
 	std::vector<DirectionalLight> directionalLights;
 	std::vector<PointLight> pointLights;

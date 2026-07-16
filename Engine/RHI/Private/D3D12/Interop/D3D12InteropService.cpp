@@ -6,6 +6,10 @@ D3D12InteropService::D3D12InteropService(D3D12RenderHardwareInterface& owner) no
 
 RhiNativeDeviceQueueInterop D3D12InteropService::GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept
 {
+	if (!IsRhiNativeInteropRequestValid(request))
+	{
+		return {};
+	}
 	return RhiNativeDeviceQueueInterop{
 	    .BackendApi = m_owner != nullptr ? m_owner->GetBackendApi() : ERhiBackendApi::Unknown,
 	    .Device = m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{},

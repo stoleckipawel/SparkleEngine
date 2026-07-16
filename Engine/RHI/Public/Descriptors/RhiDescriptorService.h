@@ -1,16 +1,16 @@
 #pragma once
 
 #include "../Bindings/RenderBindingSet.h"
-#include "../Commands/RenderCommandList.h"
 #include "../Core/RhiCapabilities.h"
 #include "../Descriptors/RhiDescriptorHandles.h"
-#include "../Interop/RhiNativeHandles.h"
 #include "../Resources/RhiResourceView.h"
 #include "../Samplers/RhiSamplerDesc.h"
 #include "../RHIAPI.h"
 
 #include <cstdint>
 #include <memory>
+
+class RenderCommandList;
 
 constexpr const char* RhiDescriptorAllocatorTypeToString(ERhiDescriptorAllocatorType type) noexcept
 {
@@ -52,5 +52,4 @@ class SPARKLE_RHI_API RhiDescriptorService
 	virtual void ReleaseResourceView(RhiResourceViewHandle view) noexcept = 0;
 	virtual RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept = 0;
 	virtual RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept = 0;
-	virtual NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept = 0;
 };

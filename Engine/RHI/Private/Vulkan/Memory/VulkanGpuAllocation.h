@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Interop/RhiNativeHandles.h"
+#include "Resources/RhiResourceHandles.h"
 #include "Memory/RhiMemoryTypes.h"
 #include "Commands/RhiQueue.h"
 #include "Vulkan/VulkanIncludes.h"
@@ -92,7 +92,7 @@ struct VulkanGpuMemoryBlockRecord final
 RhiOwnedResourceHandle MakeVulkanOwnedResourceHandle(std::unique_ptr<VulkanGpuAllocationRecord> record) noexcept;
 std::unique_ptr<VulkanGpuAllocationRecord> TakeVulkanOwnedResourceHandle(RhiOwnedResourceHandle handle) noexcept;
 VulkanGpuAllocationRecord* GetVulkanGpuAllocationRecord(RhiOwnedResourceHandle handle) noexcept;
-NativeResourceHandle GetVulkanNativeResource(VulkanGpuAllocationRecord& record) noexcept;
+RhiResourceHandle GetVulkanResourceHandle(VulkanGpuAllocationRecord& record) noexcept;
 void SetVulkanAllocationRecordDebugName(VulkanGpuAllocationRecord& record, std::wstring_view debugName) noexcept;
 
 RhiOwnedMemoryBlockHandle MakeVulkanOwnedMemoryBlockHandle(std::unique_ptr<VulkanGpuMemoryBlockRecord> record) noexcept;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RhiAccelerationStructureDesc.h"
-#include "../Interop/RhiNativeHandles.h"
+#include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
 
 #include <array>

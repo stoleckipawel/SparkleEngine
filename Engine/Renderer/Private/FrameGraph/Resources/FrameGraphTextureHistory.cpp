@@ -2,6 +2,7 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "FrameGraph/ResourceUsage.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Memory/RhiMemoryTypes.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 #include "RHI/Public/Resources/RhiResourceService.h"

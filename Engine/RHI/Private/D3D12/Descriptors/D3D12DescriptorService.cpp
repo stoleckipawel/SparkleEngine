@@ -487,9 +487,13 @@ RhiGpuDescriptorHandle D3D12DescriptorService::GetResourceViewGpuHandle(RhiResou
 	return record != nullptr ? record->descriptorAllocation.GpuHandle : RhiGpuDescriptorHandle{};
 }
 
-NativeTextureViewInfo D3D12DescriptorService::GetNativeTextureViewInfo(RhiResourceViewHandle, ResourceState state) const noexcept
+NativeTextureViewInfo D3D12DescriptorService::ResolveNativeTextureViewInfo(
+	RhiResourceViewHandle,
+	RhiResourceHandle resource,
+	ResourceState state) const noexcept
 {
 	return NativeTextureViewInfo{
+	    .Resource = NativeResourceHandle{resource.Value},
 	    .NativeState = static_cast<std::uint32_t>(D3D12TypeConversions::ToResourceStates(state))};
 }
 

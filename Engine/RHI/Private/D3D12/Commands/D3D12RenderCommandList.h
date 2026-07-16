@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Device/RenderHardwareInterface.h"
+#include "Commands/RenderCommandList.h"
 
 #include <d3d12.h>
 #include <cstdint>
@@ -17,6 +17,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 
 	ERhiBackendApi GetBackendApi() const noexcept override;
 	ERhiQueueType GetQueueType() const noexcept override { return m_queueType; }
+	ID3D12GraphicsCommandList7* GetD3D12CommandList() const noexcept { return m_commandList; }
 	NativeGraphicsCommandListHandle GetNativeHandle(const RhiNativeInteropRequest& request) const noexcept override;
 	bool SupportsDiagnosticScopes() const noexcept override;
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept override;
@@ -79,15 +80,15 @@ class D3D12RenderCommandList final : public RenderCommandList
 	    RhiGpuVirtualAddress resultGpuAddress,
 	    ERhiClassicTlasBuildMode buildMode = ERhiClassicTlasBuildMode::Build) noexcept override;
 	void BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept override;
-	void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept override;
-	void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept override;
-	void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept override;
-	void UnorderedAccessBarrier(NativeResourceHandle resource) noexcept override;
+	void CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept override;
+	void AliasResource(RhiResourceHandle beforeResource, RhiResourceHandle afterResource) noexcept override;
+	void TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept override;
+	void UnorderedAccessBarrier(RhiResourceHandle resource) noexcept override;
 
   private:
-	void OnResourceTrackingStarted(NativeResourceHandle resource) noexcept override;
+	void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept override;
 	void OnResourceTrackingFinished(
-	    NativeResourceHandle resource,
+	    RhiResourceHandle resource,
 	    RhiSubmissionToken submissionToken) noexcept override;
 
 	D3D12RenderHardwareInterface* m_owner = nullptr;

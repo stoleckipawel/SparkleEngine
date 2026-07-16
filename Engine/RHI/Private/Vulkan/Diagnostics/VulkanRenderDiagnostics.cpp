@@ -2,6 +2,7 @@
 
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 
+#include "Commands/RenderCommandList.h"
 #include "Device/RenderHardwareInterface.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
@@ -41,7 +42,7 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 		    debugName);
 	}
 
-	void SetDebugName(NativeResourceHandle resource, std::wstring_view debugName) noexcept override
+	void SetDebugName(RhiResourceHandle resource, std::wstring_view debugName) noexcept override
 	{
 		SetDebugName(VK_OBJECT_TYPE_UNKNOWN, reinterpret_cast<std::uint64_t>(resource.Value), debugName);
 	}

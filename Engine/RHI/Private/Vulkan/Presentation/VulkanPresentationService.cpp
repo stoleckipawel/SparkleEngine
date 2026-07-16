@@ -19,9 +19,9 @@ RhiCpuDescriptorHandle VulkanPresentationService::GetBackBufferRenderTargetView(
 	return m_owner != nullptr ? m_owner->GetBackBufferRenderTargetView() : RhiCpuDescriptorHandle{};
 }
 
-NativeResourceHandle VulkanPresentationService::GetBackBufferResource() const noexcept
+RhiResourceHandle VulkanPresentationService::GetBackBufferResource() const noexcept
 {
-	return m_owner != nullptr ? m_owner->GetBackBufferResource() : NativeResourceHandle{};
+	return m_owner != nullptr ? m_owner->GetBackBufferResource() : RhiResourceHandle{};
 }
 
 std::uint64_t VulkanPresentationService::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept

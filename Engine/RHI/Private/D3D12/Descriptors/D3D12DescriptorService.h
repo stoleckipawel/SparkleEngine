@@ -3,12 +3,14 @@
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "Descriptors/RhiDescriptorService.h"
 #include "Frame/RhiFrameConstants.h"
+#include "Interop/RhiNativeHandles.h"
 
 #include <array>
 #include <cstdint>
 #include <vector>
 
 class D3D12DescriptorHeapManager;
+class D3D12InteropService;
 class D3D12Rhi;
 struct RhiCapabilities;
 struct ID3D12DescriptorHeap;
@@ -46,9 +48,15 @@ class D3D12DescriptorService final : public RhiDescriptorService
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
-	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
 
   private:
+	friend class D3D12InteropService;
+
+	NativeTextureViewInfo ResolveNativeTextureViewInfo(
+	    RhiResourceViewHandle view,
+	    RhiResourceHandle resource,
+	    ResourceState state) const noexcept;
+
 	struct DescriptorTableRecord
 	{
 		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;

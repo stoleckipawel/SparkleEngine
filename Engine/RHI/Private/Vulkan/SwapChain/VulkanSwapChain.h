@@ -28,7 +28,7 @@ class VulkanSwapChain final
 	void Resize() noexcept;
 
 	std::uint32_t GetCurrentBackBufferIndex() const noexcept { return m_currentBackBufferIndex; }
-	NativeResourceHandle GetCurrentBackBufferResource() const noexcept;
+	RhiResourceHandle GetCurrentBackBufferResource() const noexcept;
 	VkImage GetCurrentBackBufferImage() const noexcept;
 	VkImageView GetCurrentBackBufferImageView() const noexcept;
 	VkSemaphore GetImageAvailableSemaphore(std::uint32_t frameIndex) const noexcept;

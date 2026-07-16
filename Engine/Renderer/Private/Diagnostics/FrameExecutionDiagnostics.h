@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Diagnostics/RhiDiagnostics.h"
 
 #include <cstdint>
 #include <string>

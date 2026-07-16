@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Interop/RhiNativeHandles.h"
 #include "../Memory/RhiMemoryTypes.h"
 #include "../Resources/RhiResourceDesc.h"
 #include "../Resources/RhiResourceView.h"
 #include "../RHIAPI.h"
+#include "RhiResourceHandles.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -57,7 +57,7 @@ class SPARKLE_RHI_API RhiResourceService
 	virtual void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept = 0;
 	virtual void DrainCompletedResourceReleases() noexcept = 0;
 	virtual void FlushDeferredResourceReleases() noexcept = 0;
-	virtual NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept = 0;
+	virtual RhiResourceHandle GetResourceHandle(RhiOwnedResourceHandle resource) const noexcept = 0;
 	virtual RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept = 0;
 	virtual RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept = 0;
 	virtual RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept = 0;
@@ -77,5 +77,5 @@ class SPARKLE_RHI_API RhiResourceService
 	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientBufferAllocationDesc& desc,
 	    std::wstring_view debugName) = 0;
-	virtual bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept = 0;
+	virtual bool SupportsUnorderedAccess(RhiResourceHandle resource) const noexcept = 0;
 };

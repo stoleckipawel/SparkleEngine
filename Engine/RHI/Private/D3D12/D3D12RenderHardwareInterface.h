@@ -72,7 +72,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	RhiViewport GetBackBufferViewport() const noexcept;
 	RhiRect GetBackBufferScissorRect() const noexcept;
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept;
-	NativeResourceHandle GetBackBufferResource() const noexcept;
+	RhiResourceHandle GetBackBufferResource() const noexcept;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
 	    const RhiRayTracingGeometryDesc& geometry) const noexcept;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
@@ -102,8 +102,8 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
-	void BeginResourceTracking(NativeResourceHandle resource) noexcept;
-	void EndResourceTracking(NativeResourceHandle resource, RhiSubmissionToken submissionToken) noexcept;
+	void BeginResourceTracking(RhiResourceHandle resource) noexcept;
+	void EndResourceTracking(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept;
 	bool BuildPartitionedTopLevelAccelerationStructure(
 	    ID3D12GraphicsCommandList7* commandList,
 	    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;

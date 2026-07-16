@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
 
 #include <cstddef>
 #include <cstdint>

@@ -2,6 +2,8 @@
 
 #include "D3D12/Diagnostics/D3D12RenderDiagnostics.h"
 
+#include "Commands/RenderCommandList.h"
+
 #include "Frame/RhiFrameConstants.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
@@ -45,7 +47,7 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 		    debugName);
 	}
 
-	void SetDebugName(NativeResourceHandle resource, std::wstring_view debugName) noexcept override
+	void SetDebugName(RhiResourceHandle resource, std::wstring_view debugName) noexcept override
 	{
 		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(resource.Value), debugName);
 	}

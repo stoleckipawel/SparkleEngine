@@ -13,7 +13,7 @@ void FrameGraphResourceResolver::ClearResolvedAccess(FrameGraphResourceHandle ha
 	SetResolvedAccess(handle, FrameGraphResourceAccess{});
 }
 
-void FrameGraphResourceResolver::RegisterResource(FrameGraphResourceHandle handle, NativeResourceHandle resource) noexcept
+void FrameGraphResourceResolver::RegisterResource(FrameGraphResourceHandle handle, RhiResourceHandle resource) noexcept
 {
 	FrameGraphResourceAccess access{};
 	access.resource = resource;

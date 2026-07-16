@@ -83,8 +83,8 @@ void FrameGraph::EmitTransientAliasingBarriers(
 		assert(barrier.beforeHandle.IsValid());
 		assert(barrier.afterHandle.IsValid());
 
-		const NativeResourceHandle beforeResource = ResolveResource(barrier.beforeHandle);
-		const NativeResourceHandle afterResource = ResolveResource(barrier.afterHandle);
+		const RhiResourceHandle beforeResource = ResolveResource(barrier.beforeHandle);
+		const RhiResourceHandle afterResource = ResolveResource(barrier.afterHandle);
 
 		if (!beforeResource || !afterResource)
 		{
@@ -112,7 +112,7 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_vie
 {
 	for (const FrameGraphBarrier& barrier : barriers)
 	{
-		const NativeResourceHandle resource = ResolveResource(barrier.handle);
+		const RhiResourceHandle resource = ResolveResource(barrier.handle);
 		if (!resource)
 		{
 			std::string_view resourceName = "<unknown>";

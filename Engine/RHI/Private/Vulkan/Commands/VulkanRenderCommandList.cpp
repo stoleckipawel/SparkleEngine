@@ -11,6 +11,7 @@
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
 #include "Vulkan/Pipeline/VulkanPipelineState.h"
 #include "Vulkan/VulkanTypeConversions.h"
+#include "Interop/RhiInteropService.h"
 
 #include <algorithm>
 #include <format>
@@ -72,7 +73,7 @@ ERhiBackendApi VulkanRenderCommandList::GetBackendApi() const noexcept
 	return ERhiBackendApi::Vulkan;
 }
 
-void VulkanRenderCommandList::OnResourceTrackingStarted(NativeResourceHandle resource) noexcept
+void VulkanRenderCommandList::OnResourceTrackingStarted(RhiResourceHandle resource) noexcept
 {
 	VulkanGpuAllocationRecord* record =
 	    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
@@ -88,7 +89,7 @@ void VulkanRenderCommandList::OnResourceTrackingStarted(NativeResourceHandle res
 }
 
 void VulkanRenderCommandList::OnResourceTrackingFinished(
-	NativeResourceHandle resource,
+	RhiResourceHandle resource,
 	RhiSubmissionToken submissionToken) noexcept
 {
 	VulkanGpuAllocationRecord* record =
@@ -108,9 +109,9 @@ void VulkanRenderCommandList::OnResourceTrackingFinished(
 	}
 }
 
-NativeGraphicsCommandListHandle VulkanRenderCommandList::GetNativeHandle(const RhiNativeInteropRequest&) const noexcept
+NativeGraphicsCommandListHandle VulkanRenderCommandList::GetNativeHandle(const RhiNativeInteropRequest& request) const noexcept
 {
-	return NativeGraphicsCommandListHandle{m_commandBuffer};
+	return IsRhiNativeInteropRequestValid(request) ? NativeGraphicsCommandListHandle{m_commandBuffer} : NativeGraphicsCommandListHandle{};
 }
 
 bool VulkanRenderCommandList::SupportsDiagnosticScopes() const noexcept
@@ -891,7 +892,7 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
-void VulkanRenderCommandList::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
+void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept
 {
 	TrackResource(destinationResource);
 	TrackResource(sourceResource);
@@ -961,7 +962,7 @@ void VulkanRenderCommandList::CopyResource(NativeResourceHandle destinationResou
 	}
 }
 
-void VulkanRenderCommandList::AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept
+void VulkanRenderCommandList::AliasResource(RhiResourceHandle beforeResource, RhiResourceHandle afterResource) noexcept
 {
 	TrackResource(beforeResource);
 	TrackResource(afterResource);
@@ -991,7 +992,7 @@ void VulkanRenderCommandList::AliasResource(NativeResourceHandle beforeResource,
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
-void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
+void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {
 	TrackResource(resource);
 	if (m_commandBuffer == VK_NULL_HANDLE || !resource || before == after)
@@ -1101,7 +1102,7 @@ void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, 
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
-void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle resource) noexcept
+void VulkanRenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource) noexcept
 {
 	TrackResource(resource);
 	if (m_commandBuffer == VK_NULL_HANDLE)

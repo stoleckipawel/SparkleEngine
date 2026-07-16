@@ -2,6 +2,7 @@
 
 #include "D3D12/UI/D3D12ImGuiBackend.h"
 
+#include "Commands/RenderCommandList.h"
 #include "Frame/RhiFrameConstants.h"
 #include "D3D12/D3D12RenderHardwareInterface.h"
 #include "D3D12/D3D12TypeConversions.h"

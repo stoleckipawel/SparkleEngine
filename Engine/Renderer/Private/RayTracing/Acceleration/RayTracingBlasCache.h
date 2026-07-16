@@ -1,6 +1,5 @@
 #pragma once
 
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
 #include <cstdint>
@@ -10,6 +9,7 @@
 class GPUMesh;
 class RayTracingPerformanceDiagnostics;
 class RenderCommandContext;
+class RenderHardwareInterface;
 struct MeshDraw;
 struct RenderSceneData;
 
@@ -18,7 +18,7 @@ class RayTracingBlasCache final
   public:
 	struct BlasHandle final
 	{
-		NativeResourceHandle resource = {};
+		RhiResourceHandle resource = {};
 		RhiGpuVirtualAddress gpuAddress = 0;
 		bool builtThisFrame = false;
 

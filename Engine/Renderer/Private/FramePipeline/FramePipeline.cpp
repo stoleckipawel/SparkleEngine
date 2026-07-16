@@ -241,13 +241,13 @@ void FramePipeline::SetupFrame() noexcept
 	                              ERhiQueueType::Copy);
 	RenderCommandList& uploadCommandList =
 	    useCopyQueue ? backend.BeginCommandList(ERhiQueueType::Copy) : graphicsCommandList;
-	const std::vector<NativeResourceHandle> uploadedResources =
+	const std::vector<RhiResourceHandle> uploadedResources =
 	    textureManager.LoadSceneTextures(m_sceneSnapshot.textures, uploadCommandList);
 	if (useCopyQueue)
 	{
 		const RhiSubmissionToken uploadToken = backend.SubmitCommandList(uploadCommandList);
 		backend.QueueWait(ERhiQueueType::Graphics, uploadToken);
-		for (const NativeResourceHandle resource : uploadedResources)
+		for (const RhiResourceHandle resource : uploadedResources)
 		{
 			graphicsCommandList.TransitionResource(resource, ResourceState::Common, ResourceState::ShaderResource);
 		}

@@ -469,7 +469,6 @@ Observed patterns:
 
 Style risks:
 
-- Some CMake docs/comments contain mojibake box-drawing text.
 - CMake source ownership is convenient but less reviewable than explicit file lists for release-critical modules.
 - Formatter workflow is launcher-owned, not root-owned.
 - Debug/report concepts often become structs and public APIs rather than internal, transient views.

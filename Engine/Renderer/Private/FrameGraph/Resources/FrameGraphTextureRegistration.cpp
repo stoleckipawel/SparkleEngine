@@ -2,6 +2,7 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "Core/Public/Diagnostics/Verify.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
 #include <format>
@@ -147,7 +148,7 @@ FrameGraphBufferHandle FrameGraph::ReservePersistentBuffer(const FrameGraphBuffe
 	return FrameGraphBufferHandle{handle};
 }
 
-void FrameGraph::BindPersistentBuffer(FrameGraphBufferHandle handle, NativeResourceHandle resource, ResourceState currentState) noexcept
+void FrameGraph::BindPersistentBuffer(FrameGraphBufferHandle handle, RhiResourceHandle resource, ResourceState currentState) noexcept
 {
 	if (!handle.IsValid())
 	{
@@ -195,7 +196,7 @@ void FrameGraph::BindPersistentBuffer(FrameGraphBufferHandle handle, NativeResou
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
 }
 
-void FrameGraph::BindPersistentTexture(FrameGraphTextureHandle handle, NativeResourceHandle resource, ResourceState currentState) noexcept
+void FrameGraph::BindPersistentTexture(FrameGraphTextureHandle handle, RhiResourceHandle resource, ResourceState currentState) noexcept
 {
 	if (!handle.IsValid())
 	{
@@ -255,7 +256,7 @@ void FrameGraph::BindPersistentTexture(FrameGraphTextureHandle handle, RhiOwnedR
 		    false);
 	}
 
-	BindPersistentTexture(handle, m_renderHardwareInterface->GetResourceService().GetNativeResource(resource), currentState);
+	BindPersistentTexture(handle, m_renderHardwareInterface->GetResourceService().GetResourceHandle(resource), currentState);
 }
 
 void FrameGraph::BindPersistentTexture(
@@ -332,7 +333,7 @@ void FrameGraph::BindPersistentBuffer(FrameGraphBufferHandle handle, RhiOwnedRes
 		    false);
 	}
 
-	BindPersistentBuffer(handle, m_renderHardwareInterface->GetResourceService().GetNativeResource(resource), currentState);
+	BindPersistentBuffer(handle, m_renderHardwareInterface->GetResourceService().GetResourceHandle(resource), currentState);
 }
 
 void FrameGraph::BindPersistentBuffer(

@@ -201,7 +201,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			                          : RhiOptimizedClearValue{},
 			        .InitialState = transientPlan.physicalAllocation.initialState},
 			    debugName);
-			allocation.resource = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedResource);
+			allocation.resource = m_renderHardwareInterface->GetResourceService().GetResourceHandle(allocation.ownedResource);
 			allocation.depthStencilView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 			    RhiResourceViewDesc::DepthStencil(allocation.resource, transientPlan.textureDesc.format));
 			if (RequiresShaderResourceView(transientPlan))
@@ -225,7 +225,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			                          : RhiOptimizedClearValue{},
 			        .InitialState = transientPlan.physicalAllocation.initialState},
 			    debugName);
-			allocation.resource = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedResource);
+			allocation.resource = m_renderHardwareInterface->GetResourceService().GetResourceHandle(allocation.ownedResource);
 			if (transientPlan.physicalAllocation.textureResourceDesc.AllowRenderTarget)
 			{
 				allocation.renderTargetView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
@@ -256,7 +256,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			        .ResourceDesc = transientPlan.physicalAllocation.bufferResourceDesc,
 			        .InitialState = transientPlan.physicalAllocation.initialState},
 			    debugName);
-			allocation.resource = m_renderHardwareInterface->GetResourceService().GetNativeResource(allocation.ownedResource);
+			allocation.resource = m_renderHardwareInterface->GetResourceService().GetResourceHandle(allocation.ownedResource);
 
 			if (RequiresShaderResourceView(transientPlan))
 			{

@@ -2,8 +2,7 @@
 
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
-#include "Renderer/Public/RendererAPI.h"
-#include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "Scene/Textures/TextureSnapshot.h"
 #include "Textures/RendererTexture.h"
 
@@ -33,7 +32,7 @@ enum class TextureId : uint8_t
 	Count
 };
 
-class SPARKLE_RENDERER_API TextureManager final
+class TextureManager final
 {
   public:
 	TextureManager(
@@ -48,7 +47,7 @@ class SPARKLE_RENDERER_API TextureManager final
 	TextureManager(TextureManager&&) = delete;
 	TextureManager& operator=(TextureManager&&) = delete;
 
-	std::vector<NativeResourceHandle> LoadSceneTextures(
+	std::vector<RhiResourceHandle> LoadSceneTextures(
 	    const TextureSnapshot& textureSnapshot,
 	    RenderCommandList& commandList);
 	bool HasPendingSceneTextureUploads(const TextureSnapshot& textureSnapshot) const noexcept;
@@ -84,21 +83,21 @@ class SPARKLE_RENDERER_API TextureManager final
 	std::unordered_set<TextureCacheKey> m_defaultPathTextureKeys;
 	bool m_defaultsLoaded = false;
 
-	void LoadDefaults(RenderCommandList& commandList, std::vector<NativeResourceHandle>& uploadedResources);
+	void LoadDefaults(RenderCommandList& commandList, std::vector<RhiResourceHandle>& uploadedResources);
 	void LoadTexture(
 	    TextureId id,
 	    const std::filesystem::path& relativePath,
 	    RenderCommandList& commandList,
-	    std::vector<NativeResourceHandle>& uploadedResources);
-	void LoadDefaultTextures(RenderCommandList& commandList, std::vector<NativeResourceHandle>& uploadedResources);
+	    std::vector<RhiResourceHandle>& uploadedResources);
+	void LoadDefaultTextures(RenderCommandList& commandList, std::vector<RhiResourceHandle>& uploadedResources);
 	RendererTexture* LoadFromPath(
 	    const std::filesystem::path& texturePath,
 	    RenderCommandList& commandList,
-	    std::vector<NativeResourceHandle>& uploadedResources);
+	    std::vector<RhiResourceHandle>& uploadedResources);
 	std::optional<RendererTexture> CreateTextureFromPath(
 	    const std::filesystem::path& texturePath,
 	    RenderCommandList& commandList,
-	    std::vector<NativeResourceHandle>& uploadedResources) const;
+	    std::vector<RhiResourceHandle>& uploadedResources) const;
 	const RendererTexture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
 	std::optional<ResolvedTexturePath> ResolveTexturePath(const std::filesystem::path& texturePath) const noexcept;
 	void ReleaseTexture(RendererTexture& texture) noexcept;

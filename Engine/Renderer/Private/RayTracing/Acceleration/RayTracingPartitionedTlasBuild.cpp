@@ -179,7 +179,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 
 	for (void* resourceValue : builtBlasResources)
 	{
-		cmd.UnorderedAccessBarrier(NativeResourceHandle{resourceValue});
+		cmd.UnorderedAccessBarrier(RhiResourceHandle{resourceValue});
 	}
 
 	{

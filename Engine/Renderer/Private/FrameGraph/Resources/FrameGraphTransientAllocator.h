@@ -1,7 +1,8 @@
 #pragma once
 
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
+#include "RHI/Public/Resources/RhiResourceView.h"
 
 #include <memory>
 #include <vector>
@@ -20,7 +21,7 @@ class FrameGraphTransientAllocator final
 		RhiResourceViewHandle shaderResourceView = {};
 		RhiResourceViewHandle unorderedAccessView = {};
 		RhiOwnedResourceHandle ownedResource = {};
-		NativeResourceHandle resource = {};
+		RhiResourceHandle resource = {};
 	};
 
 	explicit FrameGraphTransientAllocator(RenderHardwareInterface& renderHardwareInterface) noexcept;

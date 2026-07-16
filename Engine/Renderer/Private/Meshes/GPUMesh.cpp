@@ -2,6 +2,7 @@
 #include "Meshes/GPUMesh.h"
 
 #include "Commands/RenderCommandContext.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Meshes/MeshData.h"
 
 #include <algorithm>

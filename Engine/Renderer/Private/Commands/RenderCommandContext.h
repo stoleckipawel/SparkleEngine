@@ -1,13 +1,11 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
-
-#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Commands/RenderCommandList.h"
 
 #include <cstdint>
 #include <string_view>
 
-class SPARKLE_RENDERER_API RenderCommandContext final
+class RenderCommandContext final
 {
   public:
 	explicit RenderCommandContext(RenderCommandList& commandList) noexcept;
@@ -97,11 +95,11 @@ class SPARKLE_RENDERER_API RenderCommandContext final
 	void EndDiagnosticScope() noexcept;
 	void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 
-	void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept;
+	void CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept;
 
-	void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept;
-	void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept;
-	void UnorderedAccessBarrier(NativeResourceHandle resource) noexcept;
+	void AliasResource(RhiResourceHandle beforeResource, RhiResourceHandle afterResource) noexcept;
+	void TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept;
+	void UnorderedAccessBarrier(RhiResourceHandle resource) noexcept;
 
 	RenderCommandList& GetRenderCommandList() const noexcept { return *m_commandList; }
 

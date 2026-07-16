@@ -137,7 +137,7 @@ bool D3D12ResourceService::CreateStructuredBuffer(
 	}
 
 	outView = m_descriptorService->CreateResourceView(
-	    RhiResourceViewDesc::BufferShaderResource(GetNativeResource(outResource), sizeInBytes, strideInBytes));
+	    RhiResourceViewDesc::BufferShaderResource(GetResourceHandle(outResource), sizeInBytes, strideInBytes));
 	if (!outView)
 	{
 		ReleaseOwnedResource(outResource);
@@ -313,9 +313,9 @@ void D3D12ResourceService::FlushDeferredResourceReleases() noexcept
 	DrainCompletedResourceReleases();
 }
 
-NativeResourceHandle D3D12ResourceService::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
+RhiResourceHandle D3D12ResourceService::GetResourceHandle(RhiOwnedResourceHandle resource) const noexcept
 {
-	return NativeResourceHandle{GetD3D12Resource(resource)};
+	return RhiResourceHandle{GetD3D12Resource(resource)};
 }
 
 RhiGpuVirtualAddress D3D12ResourceService::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept
@@ -427,12 +427,12 @@ RhiOwnedResourceHandle D3D12ResourceService::CreateAliasingBufferResource(
 	return ownedResource != nullptr ? WrapOwnedResource(std::move(ownedResource)) : RhiOwnedResourceHandle{};
 }
 
-bool D3D12ResourceService::SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept
+bool D3D12ResourceService::SupportsUnorderedAccess(RhiResourceHandle resource) const noexcept
 {
 	return ResourceSupportsUnorderedAccess(static_cast<ID3D12Resource*>(resource.Value));
 }
 
-void D3D12ResourceService::BeginResourceTracking(NativeResourceHandle resource) noexcept
+void D3D12ResourceService::BeginResourceTracking(RhiResourceHandle resource) noexcept
 {
 	if (m_memoryAllocator == nullptr || !resource)
 	{
@@ -453,7 +453,7 @@ void D3D12ResourceService::BeginResourceTracking(NativeResourceHandle resource) 
 }
 
 void D3D12ResourceService::EndResourceTracking(
-	NativeResourceHandle resource,
+	RhiResourceHandle resource,
 	RhiSubmissionToken submissionToken) noexcept
 {
 	if (m_memoryAllocator == nullptr || !resource)

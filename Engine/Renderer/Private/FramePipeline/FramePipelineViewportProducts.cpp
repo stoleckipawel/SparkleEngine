@@ -121,9 +121,9 @@ ViewportCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportC
 	}
 
 	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(product->Handle);
-	const NativeResourceHandle resource = resourceHandle.IsValid() && m_frameGraph != nullptr ?
+	const RhiResourceHandle resource = resourceHandle.IsValid() && m_frameGraph != nullptr ?
 	                                          m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle}) :
-	                                          NativeResourceHandle{};
+	                                          RhiResourceHandle{};
 	if (!resource)
 	{
 		result.FailureReason = "Viewport output resource is not available";
@@ -162,7 +162,7 @@ void FramePipeline::TransitionRenderProduct(RenderProductHandle handle, Resource
 		return;
 	}
 
-	const NativeResourceHandle resource = m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle});
+	const RhiResourceHandle resource = m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle});
 	if (!resource)
 	{
 		return;

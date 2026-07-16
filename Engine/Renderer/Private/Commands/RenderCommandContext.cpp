@@ -256,22 +256,22 @@ void RenderCommandContext::InsertDiagnosticMarker(std::string_view label, RhiDia
 	m_commandList->InsertDiagnosticMarker(label, color);
 }
 
-void RenderCommandContext::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
+void RenderCommandContext::CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept
 {
 	m_commandList->CopyResource(destinationResource, sourceResource);
 }
 
-void RenderCommandContext::AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept
+void RenderCommandContext::AliasResource(RhiResourceHandle beforeResource, RhiResourceHandle afterResource) noexcept
 {
 	m_commandList->AliasResource(beforeResource, afterResource);
 }
 
-void RenderCommandContext::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
+void RenderCommandContext::TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {
 	m_commandList->TransitionResource(resource, before, after);
 }
 
-void RenderCommandContext::UnorderedAccessBarrier(NativeResourceHandle resource) noexcept
+void RenderCommandContext::UnorderedAccessBarrier(RhiResourceHandle resource) noexcept
 {
 	m_commandList->UnorderedAccessBarrier(resource);
 }

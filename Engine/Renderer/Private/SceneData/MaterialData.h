@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/Public/Assets/TextureGroup.h"
-#include "Renderer/Public/RendererAPI.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "ShaderData/PerObjectConstantBufferData.h"
 
@@ -34,7 +33,7 @@ struct MaterialGpuHandle final
 	constexpr bool operator==(const MaterialGpuHandle&) const noexcept = default;
 };
 
-struct SPARKLE_RENDERER_API MaterialData
+struct MaterialData
 {
 	MaterialGpuHandle gpuHandle = {};
 	DirectX::XMFLOAT4 baseColor = {1.0f, 1.0f, 1.0f, 1.0f};

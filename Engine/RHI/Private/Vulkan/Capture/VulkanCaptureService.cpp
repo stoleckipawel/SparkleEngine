@@ -87,7 +87,7 @@ RhiCaptureResult VulkanCaptureService::CaptureTextureToBmp(const RhiTextureCaptu
 }
 
 bool VulkanCaptureService::CaptureNativeTextureToBmp(
-    NativeResourceHandle resource,
+    RhiResourceHandle resource,
     std::uint32_t width,
     std::uint32_t height,
     ResourceState sourceState,

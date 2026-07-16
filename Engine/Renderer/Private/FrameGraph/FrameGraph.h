@@ -21,7 +21,6 @@
 #include "Passes/Core/ShaderPass.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Frame/RhiFrameConstants.h"
 #include <array>
 #include <cstdint>
@@ -41,6 +40,9 @@ class FrameGraphTransientAllocator;
 class FrameGraphSubmissionExecutor;
 struct PassRuntimeServices;
 class Window;
+class RenderHardwareInterface;
+struct NativeTextureViewInfo;
+struct RhiNativeInteropRequest;
 struct FrameContext;
 
 class FrameGraph
@@ -201,7 +203,7 @@ class FrameGraph
 	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void BindPersistentAccelerationStructure(
 	    FrameGraphAccelerationStructureHandle handle,
-	    NativeResourceHandle resource,
+	    RhiResourceHandle resource,
 	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void BindPersistentAccelerationStructure(
@@ -212,7 +214,7 @@ class FrameGraph
 	void ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept;
 	void BindPersistentTexture(
 	    FrameGraphTextureHandle handle,
-	    NativeResourceHandle resource,
+	    RhiResourceHandle resource,
 	    ResourceState currentState = ResourceState::Common) noexcept;
 	void BindPersistentTexture(
 	    FrameGraphTextureHandle handle,
@@ -227,7 +229,7 @@ class FrameGraph
 	void ClearPersistentTextureBinding(FrameGraphTextureHandle handle) noexcept;
 	void BindPersistentBuffer(
 	    FrameGraphBufferHandle handle,
-	    NativeResourceHandle resource,
+	    RhiResourceHandle resource,
 	    ResourceState currentState = ResourceState::Common) noexcept;
 	void BindPersistentBuffer(
 	    FrameGraphBufferHandle handle,
@@ -256,8 +258,11 @@ class FrameGraph
 	    const noexcept;
 	void ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
 	void ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
-	NativeResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
-	NativeTextureViewInfo ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state) const noexcept;
+	RhiResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
+	NativeTextureViewInfo ResolveNativeTextureView(
+	    FrameGraphTextureHandle handle,
+	    ResourceState state,
+	    const RhiNativeInteropRequest& request) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;
@@ -397,8 +402,11 @@ class FrameGraph
 	RhiGpuVirtualAddress ResolveAccelerationStructureGpuAddress(FrameGraphResourceHandle handle) const noexcept;
 	std::array<float, 4> GetClearColor(FrameGraphResourceHandle handle) const noexcept;
 	float GetClearDepth(FrameGraphResourceHandle handle) const noexcept;
-	NativeResourceHandle ResolveResource(FrameGraphResourceHandle handle) const noexcept;
-	NativeTextureViewInfo ResolveNativeTextureView(FrameGraphResourceHandle handle, ResourceState state) const noexcept;
+	RhiResourceHandle ResolveResource(FrameGraphResourceHandle handle) const noexcept;
+	NativeTextureViewInfo ResolveNativeTextureView(
+	    FrameGraphResourceHandle handle,
+	    ResourceState state,
+	    const RhiNativeInteropRequest& request) const noexcept;
 	void CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle)
 	    const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;

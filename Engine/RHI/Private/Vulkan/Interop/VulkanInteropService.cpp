@@ -6,6 +6,10 @@ VulkanInteropService::VulkanInteropService(VulkanRenderHardwareInterface& owner)
 
 RhiNativeDeviceQueueInterop VulkanInteropService::GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept
 {
+	if (!IsRhiNativeInteropRequestValid(request))
+	{
+		return {};
+	}
 	return RhiNativeDeviceQueueInterop{
 	    .BackendApi = m_owner != nullptr ? m_owner->GetBackendApi() : ERhiBackendApi::Unknown,
 	    .Device = m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{},

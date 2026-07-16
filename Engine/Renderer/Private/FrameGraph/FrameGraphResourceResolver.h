@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
-#include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
 
 #include <vector>
 
 struct FrameGraphResourceAccess
 {
-	NativeResourceHandle resource = {};
+	RhiResourceHandle resource = {};
 	RhiGpuVirtualAddress accelerationStructureGpuAddress = 0;
 	RhiResourceViewHandle renderTargetView = {};
 	RhiResourceViewHandle depthStencilView = {};
@@ -32,7 +32,7 @@ class FrameGraphResourceResolver final
 
 	void Clear() noexcept;
 	void ClearResolvedAccess(FrameGraphResourceHandle handle) noexcept;
-	void RegisterResource(FrameGraphResourceHandle handle, NativeResourceHandle resource) noexcept;
+	void RegisterResource(FrameGraphResourceHandle handle, RhiResourceHandle resource) noexcept;
 	void SetResolvedAccess(FrameGraphResourceHandle handle, const FrameGraphResourceAccess& access) noexcept;
 
 	FrameGraphResourceAccess& GetResolvedAccess(FrameGraphResourceHandle handle) noexcept;

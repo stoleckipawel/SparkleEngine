@@ -47,23 +47,23 @@ void AddUpscalerPass(
 		    }
 
 		    RenderCommandList& commandList = context.Commands.GetRenderCommandList();
+		    const RhiNativeInteropRequest interopRequest{
+		        .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
+		        .Reason = "Evaluate upscaler pass"};
 		    (void) context.RuntimeServices.ImageProviders->Upscaling->Evaluate(
 		        UpscalerEvaluationDesc{
 		            .BackendApi = commandList.GetBackendApi(),
-		            .NativeCommandList = commandList.GetNativeHandle(
-		                RhiNativeInteropRequest{
-		                    .Consumer = ERhiNativeInteropConsumer::UpscalerProvider,
-		                    .Reason = "Evaluate upscaler pass"}),
+		            .NativeCommandList = commandList.GetNativeHandle(interopRequest),
 		            .NativeScalingInputColorView =
-		                context.Resources.ResolveNativeTextureView(inputs.InputColor, ResourceState::ShaderResource),
+		                context.Resources.ResolveNativeTextureView(inputs.InputColor, ResourceState::ShaderResource, interopRequest),
 		            .NativeDepthView =
-		                context.Resources.ResolveNativeTextureView(inputs.Depth, ResourceState::ShaderResource),
+		                context.Resources.ResolveNativeTextureView(inputs.Depth, ResourceState::ShaderResource, interopRequest),
 		            .NativeMotionVectorsView =
-		                context.Resources.ResolveNativeTextureView(inputs.MotionVectors, ResourceState::ShaderResource),
+		                context.Resources.ResolveNativeTextureView(inputs.MotionVectors, ResourceState::ShaderResource, interopRequest),
 		            .NativeExposureView =
-		                context.Resources.ResolveNativeTextureView(inputs.Exposure, ResourceState::ShaderResource),
+		                context.Resources.ResolveNativeTextureView(inputs.Exposure, ResourceState::ShaderResource, interopRequest),
 		            .NativeScalingOutputColorView =
-		                context.Resources.ResolveNativeTextureView(inputs.OutputColor, ResourceState::UnorderedAccess),
+		                context.Resources.ResolveNativeTextureView(inputs.OutputColor, ResourceState::UnorderedAccess, interopRequest),
 		            .RenderExtent = renderExtent,
 		            .OutputExtent = outputExtent});
 	    });

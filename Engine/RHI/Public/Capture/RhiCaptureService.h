@@ -2,7 +2,7 @@
 
 #include "../Core/RhiBackendApi.h"
 #include "../Interop/ResourceState.h"
-#include "../Interop/RhiNativeHandles.h"
+#include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
 
 #include <cstdint>
@@ -17,7 +17,7 @@ enum class ERhiCaptureStatus : std::uint8_t
 
 struct RhiTextureCaptureRequest final
 {
-	NativeResourceHandle Resource = {};
+	RhiResourceHandle Resource = {};
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
 	ResourceState SourceState = ResourceState::Common;

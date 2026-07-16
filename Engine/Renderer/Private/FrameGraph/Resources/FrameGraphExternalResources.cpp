@@ -3,6 +3,7 @@
 
 #include "Commands/RenderCommandContext.h"
 #include "Core/Public/Diagnostics/Verify.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cassert>
 #include <format>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Interop/RhiNativeHandles.h"
+#include "Resources/RhiResourceHandles.h"
 #include "RayTracing/RhiPartitionedTlasService.h"
 #include "Vulkan/VulkanIncludes.h"
 

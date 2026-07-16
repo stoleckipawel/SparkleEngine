@@ -1,11 +1,10 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
 #include "Meshes/GPUSkinInfluenceBuffer.h"
 #include "RayTracing/RayTracingHitData.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
-#include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
 #include "Scene/Meshes/MeshSkinningData.h"
 
@@ -16,6 +15,7 @@
 #include <vector>
 
 class RenderCommandContext;
+class RenderHardwareInterface;
 struct MeshData;
 struct GpuMeshHandle final
 {
@@ -38,7 +38,7 @@ struct GPUMeshUploadDesc
 	std::span<const VertexSkinInfluence> skinInfluences = {};
 };
 
-class SPARKLE_RENDERER_API GPUMesh final
+class GPUMesh final
 {
   public:
 	explicit GPUMesh(GpuMeshHandle handle = {}) noexcept : m_handle(handle) {}

@@ -9,6 +9,7 @@
 #include "../Pipeline/RhiPipelineStateDesc.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Resources/RhiResourceDesc.h"
+#include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
 
 #include <cstdint>
@@ -23,13 +24,13 @@ class SPARKLE_RHI_API RenderCommandList
 
 	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
 	virtual ERhiQueueType GetQueueType() const noexcept = 0;
-	void TrackResource(NativeResourceHandle resource)
+	void TrackResource(RhiResourceHandle resource)
 	{
 		if (!resource)
 		{
 			return;
 		}
-		for (const NativeResourceHandle tracked : m_trackedResources)
+		for (const RhiResourceHandle tracked : m_trackedResources)
 		{
 			if (tracked.Value == resource.Value)
 			{
@@ -39,10 +40,10 @@ class SPARKLE_RHI_API RenderCommandList
 		m_trackedResources.push_back(resource);
 		OnResourceTrackingStarted(resource);
 	}
-	std::span<const NativeResourceHandle> GetTrackedResources() const noexcept { return m_trackedResources; }
+	std::span<const RhiResourceHandle> GetTrackedResources() const noexcept { return m_trackedResources; }
 	void ResolveTrackedResources(RhiSubmissionToken submissionToken) noexcept
 	{
-		for (const NativeResourceHandle resource : m_trackedResources)
+		for (const RhiResourceHandle resource : m_trackedResources)
 		{
 			OnResourceTrackingFinished(resource, submissionToken);
 		}
@@ -113,18 +114,18 @@ class SPARKLE_RHI_API RenderCommandList
 	    RhiGpuVirtualAddress resultGpuAddress,
 	    ERhiClassicTlasBuildMode buildMode = ERhiClassicTlasBuildMode::Build) noexcept = 0;
 	virtual void BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept = 0;
-	virtual void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept = 0;
-	virtual void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept = 0;
-	virtual void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept = 0;
-	virtual void UnorderedAccessBarrier(NativeResourceHandle resource) noexcept = 0;
+	virtual void CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept = 0;
+	virtual void AliasResource(RhiResourceHandle beforeResource, RhiResourceHandle afterResource) noexcept = 0;
+	virtual void TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept = 0;
+	virtual void UnorderedAccessBarrier(RhiResourceHandle resource) noexcept = 0;
 
 
   protected:
-	virtual void OnResourceTrackingStarted(NativeResourceHandle resource) noexcept = 0;
+	virtual void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept = 0;
 	virtual void OnResourceTrackingFinished(
-	    NativeResourceHandle resource,
+	    RhiResourceHandle resource,
 	    RhiSubmissionToken submissionToken) noexcept = 0;
 
   private:
-	std::vector<NativeResourceHandle> m_trackedResources;
+	std::vector<RhiResourceHandle> m_trackedResources;
 };

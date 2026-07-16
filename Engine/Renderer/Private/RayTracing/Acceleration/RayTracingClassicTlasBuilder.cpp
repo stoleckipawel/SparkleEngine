@@ -8,6 +8,7 @@
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <unordered_set>
@@ -212,7 +213,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 
 	for (void* resourceValue : builtBlasResources)
 	{
-		cmd.UnorderedAccessBarrier(NativeResourceHandle{resourceValue});
+		cmd.UnorderedAccessBarrier(RhiResourceHandle{resourceValue});
 	}
 
 	const bool canRefit = HasFlag(requestedBuildFlags, ERhiClassicTlasBuildFlags::AllowUpdate) && m_resourcesAllowUpdate &&

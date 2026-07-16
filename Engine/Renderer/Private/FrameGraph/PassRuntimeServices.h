@@ -5,9 +5,9 @@
 #include "Resources/History/FrameHistory.h"
 
 #include "ShaderData/PerFrameConstantBufferData.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 
+class RenderHardwareInterface;
 class TextureManager;
 
 // Stable execute-time runtime services exposed to FrameGraph passes.

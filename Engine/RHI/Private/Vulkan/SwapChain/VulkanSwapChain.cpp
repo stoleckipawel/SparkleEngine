@@ -120,9 +120,9 @@ void VulkanSwapChain::Resize() noexcept
 	CreateBackBufferImageViews();
 }
 
-NativeResourceHandle VulkanSwapChain::GetCurrentBackBufferResource() const noexcept
+RhiResourceHandle VulkanSwapChain::GetCurrentBackBufferResource() const noexcept
 {
-	return NativeResourceHandle{GetCurrentBackBufferImage()};
+	return RhiResourceHandle{GetCurrentBackBufferImage()};
 }
 
 VkImage VulkanSwapChain::GetCurrentBackBufferImage() const noexcept

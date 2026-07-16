@@ -14,7 +14,7 @@ class VulkanCaptureService final : public RhiCaptureService
 
   private:
 	bool CaptureNativeTextureToBmp(
-	    NativeResourceHandle resource,
+	    RhiResourceHandle resource,
 	    std::uint32_t width,
 	    std::uint32_t height,
 	    ResourceState sourceState,

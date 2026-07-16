@@ -2,6 +2,8 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "Config/DepthConvention.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Interop/RhiInteropService.h"
 
 #include <cassert>
 
@@ -86,7 +88,7 @@ float FrameGraph::GetClearDepth(FrameGraphResourceHandle handle) const noexcept
 	return DepthConvention::GetClearDepth();
 }
 
-NativeResourceHandle FrameGraph::ResolveResource(FrameGraphResourceHandle handle) const noexcept
+RhiResourceHandle FrameGraph::ResolveResource(FrameGraphResourceHandle handle) const noexcept
 {
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
 	const FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
@@ -100,7 +102,7 @@ NativeResourceHandle FrameGraph::ResolveResource(FrameGraphResourceHandle handle
 	{
 		case FrameGraphResourceKind::BackBuffer:
 			return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetPresentationService().GetBackBufferResource()
-			                                          : NativeResourceHandle{};
+			                                          : RhiResourceHandle{};
 		case FrameGraphResourceKind::DepthStencil:
 		case FrameGraphResourceKind::ColorRenderTarget:
 		case FrameGraphResourceKind::Buffer:
@@ -110,7 +112,10 @@ NativeResourceHandle FrameGraph::ResolveResource(FrameGraphResourceHandle handle
 	}
 }
 
-NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(FrameGraphResourceHandle handle, ResourceState state) const noexcept
+NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(
+	FrameGraphResourceHandle handle,
+	ResourceState state,
+	const RhiNativeInteropRequest& request) const noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -153,12 +158,11 @@ NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(FrameGraphResourceHan
 		return {};
 	}
 
-	NativeTextureViewInfo nativeView =
-	    m_renderHardwareInterface->GetDescriptorService().GetNativeTextureViewInfo(view, state);
-	if (!nativeView.Resource)
-	{
-		nativeView.Resource = ResolveResource(handle);
-	}
+	NativeTextureViewInfo nativeView = m_renderHardwareInterface->GetDescriptorService().GetNativeTextureViewInfo(
+	    view,
+	    ResolveResource(handle),
+	    state,
+	    request);
 	if (nativeView.Width == 0u || nativeView.Height == 0u)
 	{
 		nativeView.Width = metadata.textureDesc.width;

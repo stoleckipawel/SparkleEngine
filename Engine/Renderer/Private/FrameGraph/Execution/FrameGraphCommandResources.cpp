@@ -119,16 +119,19 @@ void FrameGraph::ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureH
 	cmd.ClearDepthStencil(ResolveDepthStencilView(resourceHandle), GetClearDepth(resourceHandle));
 }
 
-NativeResourceHandle FrameGraph::ResolveResource(FrameGraphTextureHandle handle) const noexcept
+RhiResourceHandle FrameGraph::ResolveResource(FrameGraphTextureHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveResource(handle.GetResourceHandle());
 }
 
-NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state) const noexcept
+NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(
+	FrameGraphTextureHandle handle,
+	ResourceState state,
+	const RhiNativeInteropRequest& request) const noexcept
 {
 	assert(handle.IsValid());
-	return ResolveNativeTextureView(handle.GetResourceHandle(), state);
+	return ResolveNativeTextureView(handle.GetResourceHandle(), state, request);
 }
 
 void FrameGraph::CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept
@@ -143,8 +146,8 @@ void FrameGraph::CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandl
 	    destinationMetadata.kind == sourceMetadata.kind || (destinationMetadata.resourceClass == FrameGraphResourceClass::Texture &&
 	                                                        sourceMetadata.resourceClass == FrameGraphResourceClass::Texture));
 
-	const NativeResourceHandle destinationResource = ResolveResource(destinationHandle);
-	const NativeResourceHandle sourceResource = ResolveResource(sourceHandle);
+	const RhiResourceHandle destinationResource = ResolveResource(destinationHandle);
+	const RhiResourceHandle sourceResource = ResolveResource(sourceHandle);
 	assert(destinationResource);
 	assert(sourceResource);
 	cmd.CopyResource(destinationResource, sourceResource);

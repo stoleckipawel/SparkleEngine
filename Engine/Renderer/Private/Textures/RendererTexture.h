@@ -1,8 +1,8 @@
 #pragma once
 
 #include "RHI/Public/Formats/PixelFormat.h"
-#include "RHI/Public/Interop/RhiNativeHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "RHI/Public/Resources/TextureTypes.h"
 
 #include <cstdint>

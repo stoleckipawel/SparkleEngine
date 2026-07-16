@@ -3,12 +3,12 @@
 #include "D3D12/Resources/D3D12UploadService.h"
 
 #include "Commands/RenderCommandList.h"
+#include "D3D12/Commands/D3D12RenderCommandList.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "D3D12/Resources/D3D12FrameResource.h"
-#include "Interop/RhiInteropService.h"
 
 #include <algorithm>
 #include <array>
@@ -69,9 +69,7 @@ bool D3D12UploadService::UploadTexture(
 		return false;
 	}
 
-	const NativeGraphicsCommandListHandle nativeCommandList = commandList.GetNativeHandle(
-	    RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Unknown, .Reason = "RHI texture upload"});
-	auto* const d3dCommandList = static_cast<ID3D12GraphicsCommandList*>(nativeCommandList.Value);
+	auto* const d3dCommandList = static_cast<D3D12RenderCommandList&>(commandList).GetD3D12CommandList();
 	if (d3dCommandList == nullptr)
 	{
 		SPDLOG_LOGGER_ERROR(g_d3d12UploadLogger, "UploadTexture could not resolve the native command list.");
@@ -140,8 +138,8 @@ bool D3D12UploadService::UploadTexture(
 	    D3D12_RESOURCE_STATE_COPY_DEST,
 	    D3D12TypeConversions::ToResourceStates(submittedFinalState));
 	d3dCommandList->ResourceBarrier(1, &barrier);
-	commandList.TrackResource(NativeResourceHandle{destinationRecord->Resource.Get()});
-	commandList.TrackResource(NativeResourceHandle{stagingResource->Resource.Get()});
+	commandList.TrackResource(RhiResourceHandle{destinationRecord->Resource.Get()});
+	commandList.TrackResource(RhiResourceHandle{stagingResource->Resource.Get()});
 
 	DrainCompletedTextureUploads();
 	m_pendingTextureUploads.push_back(PendingTextureUpload{.StagingResource = std::move(stagingResource)});

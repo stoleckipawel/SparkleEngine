@@ -13,7 +13,7 @@ class D3D12TypeConversions final
 	static DXGI_FORMAT ToDxgiFormat(PixelFormat format) noexcept;
 	static D3D12_COMPARISON_FUNC ToComparisonFunc(CompareOp compareOp) noexcept;
 	static ID3D12GraphicsCommandList* ToGraphicsCommandList(NativeGraphicsCommandListHandle handle) noexcept;
-	static ID3D12Resource* ToResource(NativeResourceHandle handle) noexcept;
+	static ID3D12Resource* ToResource(RhiResourceHandle handle) noexcept;
 	static D3D12_CPU_DESCRIPTOR_HANDLE ToCpuDescriptor(RhiCpuDescriptorHandle handle) noexcept;
 	static D3D12_GPU_DESCRIPTOR_HANDLE ToGpuDescriptor(RhiGpuDescriptorHandle handle) noexcept;
 	static D3D12_DESCRIPTOR_HEAP_TYPE ToDescriptorHeapType(ERhiDescriptorAllocatorType descriptorType) noexcept;

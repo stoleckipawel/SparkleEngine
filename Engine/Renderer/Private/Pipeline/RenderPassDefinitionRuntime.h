@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RHI/Public/Device/RenderHardwareInterface.h"
+
 #include "Passes/Core/RenderPassDefinition.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "Pipeline/RenderPassShaderRuntime.h"

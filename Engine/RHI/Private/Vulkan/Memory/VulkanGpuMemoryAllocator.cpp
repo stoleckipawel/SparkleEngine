@@ -475,7 +475,7 @@ bool VulkanGpuMemoryAllocator::WriteAllocation(VulkanGpuAllocationRecord& record
 	return true;
 }
 
-VulkanGpuAllocationRecord* VulkanGpuMemoryAllocator::FindAllocationRecord(NativeResourceHandle resource) const noexcept
+VulkanGpuAllocationRecord* VulkanGpuMemoryAllocator::FindAllocationRecord(RhiResourceHandle resource) const noexcept
 {
 	if (m_impl == nullptr || !resource)
 	{
@@ -490,7 +490,7 @@ VulkanGpuAllocationRecord* VulkanGpuMemoryAllocator::FindAllocationRecord(Native
 			continue;
 		}
 
-		if (GetVulkanNativeResource(*record).Value == resource.Value)
+		if (GetVulkanResourceHandle(*record).Value == resource.Value)
 		{
 			return record;
 		}

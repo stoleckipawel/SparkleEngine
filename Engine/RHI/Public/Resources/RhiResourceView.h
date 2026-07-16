@@ -2,8 +2,8 @@
 
 #include "../Core/RhiGenerationalHandle.h"
 #include "../Formats/PixelFormat.h"
-#include "../Interop/RhiNativeHandles.h"
 #include "RhiResourceDesc.h"
+#include "RhiResourceHandles.h"
 #include "TextureTypes.h"
 
 #include <cstdint>
@@ -40,7 +40,7 @@ struct RhiBufferViewRange
 struct RhiResourceViewDesc
 {
 	ERhiResourceViewKind Kind = ERhiResourceViewKind::TextureShaderResource;
-	NativeResourceHandle Resource = {};
+	RhiResourceHandle Resource = {};
 	PixelFormat Format = PixelFormat::Unknown;
 	RhiTextureViewRange Texture = {};
 	TextureResourceDimension TextureDimension = TextureResourceDimension::Texture2D;
@@ -48,7 +48,7 @@ struct RhiResourceViewDesc
 	RhiGpuVirtualAddress AccelerationStructureGpuAddress = 0;
 
 	static constexpr RhiResourceViewDesc TextureShaderResource(
-	    NativeResourceHandle resource,
+	    RhiResourceHandle resource,
 	    PixelFormat format,
 	    RhiTextureViewRange range = {},
 	    TextureResourceDimension dimension = TextureResourceDimension::Texture2D) noexcept
@@ -61,23 +61,23 @@ struct RhiResourceViewDesc
 		    .TextureDimension = dimension};
 	}
 
-	static constexpr RhiResourceViewDesc TextureUnorderedAccess(NativeResourceHandle resource, PixelFormat format) noexcept
+	static constexpr RhiResourceViewDesc TextureUnorderedAccess(RhiResourceHandle resource, PixelFormat format) noexcept
 	{
 		return RhiResourceViewDesc{.Kind = ERhiResourceViewKind::TextureUnorderedAccess, .Resource = resource, .Format = format};
 	}
 
-	static constexpr RhiResourceViewDesc RenderTarget(NativeResourceHandle resource, PixelFormat format) noexcept
+	static constexpr RhiResourceViewDesc RenderTarget(RhiResourceHandle resource, PixelFormat format) noexcept
 	{
 		return RhiResourceViewDesc{.Kind = ERhiResourceViewKind::RenderTarget, .Resource = resource, .Format = format};
 	}
 
-	static constexpr RhiResourceViewDesc DepthStencil(NativeResourceHandle resource, PixelFormat format) noexcept
+	static constexpr RhiResourceViewDesc DepthStencil(RhiResourceHandle resource, PixelFormat format) noexcept
 	{
 		return RhiResourceViewDesc{.Kind = ERhiResourceViewKind::DepthStencil, .Resource = resource, .Format = format};
 	}
 
 	static constexpr RhiResourceViewDesc BufferShaderResource(
-	    NativeResourceHandle resource,
+	    RhiResourceHandle resource,
 	    std::uint64_t sizeInBytes,
 	    std::uint32_t strideInBytes = 0,
 	    std::uint64_t offsetInBytes = 0) noexcept
@@ -89,7 +89,7 @@ struct RhiResourceViewDesc
 	}
 
 	static constexpr RhiResourceViewDesc BufferUnorderedAccess(
-	    NativeResourceHandle resource,
+	    RhiResourceHandle resource,
 	    std::uint64_t sizeInBytes,
 	    std::uint32_t strideInBytes = 0,
 	    std::uint64_t offsetInBytes = 0) noexcept

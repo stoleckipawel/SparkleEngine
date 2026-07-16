@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Pipeline/PassBindingOverrides.h"
-#include "RendererAPI.h"
 #include "ShaderParameters/PassParameterSet.h"
 
 #include <cstdint>
@@ -32,16 +31,16 @@ struct ComputeDispatchDesc
 	std::uint32_t GroupCountZ = 1;
 };
 
-SPARKLE_RENDERER_API bool DeclareShaderPassParameterUsages(
+bool DeclareShaderPassParameterUsages(
     PassResourceBuilder& builder,
     const PassParameterSet& parameterSet,
     const char* passName = nullptr) noexcept;
-SPARKLE_RENDERER_API void DispatchComputeShaderPass(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept;
-SPARKLE_RENDERER_API bool ValidateShaderPassLayout(
+void DispatchComputeShaderPass(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept;
+bool ValidateShaderPassLayout(
     const PassParameterLayout& layout,
     ShaderPassKind passKind,
     const char* passName) noexcept;
-SPARKLE_RENDERER_API void BindComputeShaderPass(
+void BindComputeShaderPass(
     RenderCommandContext& cmd,
 	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
@@ -53,7 +52,7 @@ SPARKLE_RENDERER_API void BindComputeShaderPass(
     const PassBindingOverrides* overrides = nullptr,
     bool bindLayout = true) noexcept;
 
-SPARKLE_RENDERER_API void BindRasterShaderPass(
+void BindRasterShaderPass(
     RenderCommandContext& cmd,
 	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
@@ -65,9 +64,9 @@ SPARKLE_RENDERER_API void BindRasterShaderPass(
     const PassBindingOverrides* overrides = nullptr,
     bool bindLayout = true) noexcept;
 
-SPARKLE_RENDERER_API void ReportInvalidShaderPassParameterSet(const char* passName, const PassParameterSet& parameterSet) noexcept;
+void ReportInvalidShaderPassParameterSet(const char* passName, const PassParameterSet& parameterSet) noexcept;
 
-class SPARKLE_RENDERER_API ShaderPass
+class ShaderPass
 {
   public:
 	virtual ~ShaderPass() noexcept = default;

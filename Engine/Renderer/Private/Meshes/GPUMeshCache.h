@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
 #include "Meshes/GPUMesh.h"
 
 #include <cstdint>
@@ -10,7 +9,7 @@
 class Mesh;
 class RenderHardwareInterface;
 
-class SPARKLE_RENDERER_API GPUMeshCache final
+class GPUMeshCache final
 {
   public:
 	explicit GPUMeshCache(RenderHardwareInterface& renderHardwareInterface) noexcept;

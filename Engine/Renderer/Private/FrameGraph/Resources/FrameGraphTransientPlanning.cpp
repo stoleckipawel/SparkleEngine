@@ -4,6 +4,7 @@
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
 #include "Config/DepthConvention.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cassert>
 #include <string>

@@ -2,6 +2,7 @@
 
 #include "../Core/RhiBackendApi.h"
 #include "../Interop/RhiNativeHandles.h"
+#include "../Resources/RhiResourceView.h"
 #include "../RHIAPI.h"
 
 #include <cstdint>
@@ -20,6 +21,11 @@ struct RhiNativeInteropRequest final
 	ERhiNativeInteropConsumer Consumer = ERhiNativeInteropConsumer::Unknown;
 	const char* Reason = "";
 };
+
+constexpr bool IsRhiNativeInteropRequestValid(const RhiNativeInteropRequest& request) noexcept
+{
+	return request.Consumer != ERhiNativeInteropConsumer::Unknown && request.Reason != nullptr && request.Reason[0] != '\0';
+}
 
 struct RhiNativeVulkanDeviceQueueInterop final
 {
@@ -53,4 +59,9 @@ class SPARKLE_RHI_API RhiInteropService
 	virtual ~RhiInteropService() noexcept = default;
 
 	virtual RhiNativeDeviceQueueInterop GetDeviceQueueInterop(RhiNativeInteropRequest request) const noexcept = 0;
+	virtual NativeTextureViewInfo GetNativeTextureViewInfo(
+	    RhiResourceViewHandle view,
+	    RhiResourceHandle resource,
+	    ResourceState state,
+	    const RhiNativeInteropRequest& request) const noexcept = 0;
 };

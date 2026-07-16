@@ -6,6 +6,7 @@
 #include "Core/Public/Math/MathUtils.h"
 #include "Meshes/GPUMesh.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/RenderSceneData.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 
@@ -426,7 +427,7 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildHandle(const Entry& en
 	}
 
 	return BlasHandle{
-	    .resource = m_renderHardwareInterface->GetResourceService().GetNativeResource(entry.accelerationStructureBuffer),
+	    .resource = m_renderHardwareInterface->GetResourceService().GetResourceHandle(entry.accelerationStructureBuffer),
 	    .gpuAddress = m_renderHardwareInterface->GetResourceService().GetResourceGpuVirtualAddress(entry.accelerationStructureBuffer)};
 }
 

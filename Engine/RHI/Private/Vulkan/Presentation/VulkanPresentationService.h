@@ -12,7 +12,7 @@ class VulkanPresentationService final : public RhiPresentationService
 	RhiViewport GetBackBufferViewport() const noexcept override;
 	RhiRect GetBackBufferScissorRect() const noexcept override;
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override;
-	NativeResourceHandle GetBackBufferResource() const noexcept override;
+	RhiResourceHandle GetBackBufferResource() const noexcept override;
 	std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	void BeginPresentRenderPass(const float clearColor[4]) noexcept override;
 	void BeginPresentOverlayPass() noexcept override;

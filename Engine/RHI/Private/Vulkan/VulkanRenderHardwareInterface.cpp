@@ -355,9 +355,9 @@ RhiCpuDescriptorHandle VulkanRenderHardwareInterface::GetBackBufferRenderTargetV
 	                                        RhiCpuDescriptorHandle{};
 }
 
-NativeResourceHandle VulkanRenderHardwareInterface::GetBackBufferResource() const noexcept
+RhiResourceHandle VulkanRenderHardwareInterface::GetBackBufferResource() const noexcept
 {
-	return m_swapChain != nullptr ? m_swapChain->GetCurrentBackBufferResource() : NativeResourceHandle{};
+	return m_swapChain != nullptr ? m_swapChain->GetCurrentBackBufferResource() : RhiResourceHandle{};
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo VulkanRenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(

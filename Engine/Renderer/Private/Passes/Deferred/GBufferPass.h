@@ -6,7 +6,6 @@
 #include "Frame/Targets/FrameRenderTargets.h"
 
 #include "ShaderData/RenderConstantBufferData.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cstddef>
 

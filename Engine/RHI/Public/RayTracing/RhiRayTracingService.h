@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Interop/RhiNativeHandles.h"
 #include "../Memory/RhiMemoryTypes.h"
 #include "../RayTracing/RhiClassicTlasService.h"
 #include "../RayTracing/RhiPartitionedTlasService.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Resources/RhiResourceDesc.h"
+#include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
 
 #include <cstdint>

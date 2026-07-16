@@ -3,6 +3,7 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "Core/Public/Diagnostics/Verify.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <format>
 
@@ -66,7 +67,7 @@ FrameGraphAccelerationStructureHandle FrameGraph::ReservePersistentAccelerationS
 
 void FrameGraph::BindPersistentAccelerationStructure(
     FrameGraphAccelerationStructureHandle handle,
-    NativeResourceHandle resource,
+    RhiResourceHandle resource,
     RhiGpuVirtualAddress gpuAddress,
     ResourceState currentState) noexcept
 {
@@ -137,7 +138,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 
 	BindPersistentAccelerationStructure(
 	    handle,
-	    m_renderHardwareInterface->GetResourceService().GetNativeResource(resource),
+	    m_renderHardwareInterface->GetResourceService().GetResourceHandle(resource),
 	    gpuAddress,
 	    currentState);
 }

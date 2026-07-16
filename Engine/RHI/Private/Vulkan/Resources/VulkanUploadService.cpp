@@ -3,8 +3,8 @@
 #include "Vulkan/Resources/VulkanUploadService.h"
 
 #include "Commands/RenderCommandList.h"
-#include "Interop/RhiInteropService.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
+#include "Vulkan/Commands/VulkanRenderCommandList.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/VulkanTypeConversions.h"
@@ -109,9 +109,7 @@ bool VulkanUploadService::UploadTexture(
 		return false;
 	}
 
-	const NativeGraphicsCommandListHandle nativeCommandList = commandList.GetNativeHandle(
-	    RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Unknown, .Reason = "RHI texture upload"});
-	const VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(nativeCommandList.Value);
+	const VkCommandBuffer commandBuffer = static_cast<VulkanRenderCommandList&>(commandList).GetVulkanCommandBuffer();
 	if (commandBuffer == VK_NULL_HANDLE || !m_commandContext->IsCommandBufferRecording(commandBuffer))
 	{
 		return false;
@@ -220,8 +218,8 @@ bool VulkanUploadService::UploadTexture(
 	    .pImageMemoryBarriers = &toFinalState};
 	vkCmdPipelineBarrier2(commandBuffer, &finalStateDependency);
 
-	commandList.TrackResource(NativeResourceHandle{destinationRecord->Image});
-	commandList.TrackResource(NativeResourceHandle{stagingResource->Buffer});
+	commandList.TrackResource(RhiResourceHandle{destinationRecord->Image});
+	commandList.TrackResource(RhiResourceHandle{stagingResource->Buffer});
 	m_memoryAllocator->QueueDestroyResource(std::move(stagingResource));
 	return true;
 }

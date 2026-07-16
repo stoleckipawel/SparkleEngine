@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RayTracing/Scene/RayTracingSceneTlasShaderAccessMode.h"
-#include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
 
 #include <cstdint>

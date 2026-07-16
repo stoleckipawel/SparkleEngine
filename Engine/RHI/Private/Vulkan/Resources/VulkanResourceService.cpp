@@ -117,7 +117,7 @@ bool VulkanResourceService::CreateStructuredBuffer(
 	}
 
 	outView = m_descriptorManager->CreateResourceView(
-	    RhiResourceViewDesc::BufferShaderResource(GetNativeResource(outResource), sizeInBytes, strideInBytes));
+	    RhiResourceViewDesc::BufferShaderResource(GetResourceHandle(outResource), sizeInBytes, strideInBytes));
 	if (!outView)
 	{
 		ReleaseOwnedResource(outResource);
@@ -243,10 +243,10 @@ void VulkanResourceService::DrainCompletedResourceReleases() noexcept
 	}
 }
 
-NativeResourceHandle VulkanResourceService::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
+RhiResourceHandle VulkanResourceService::GetResourceHandle(RhiOwnedResourceHandle resource) const noexcept
 {
 	VulkanGpuAllocationRecord* const record = GetVulkanGpuAllocationRecord(resource);
-	return record != nullptr ? GetVulkanNativeResource(*record) : NativeResourceHandle{};
+	return record != nullptr ? GetVulkanResourceHandle(*record) : RhiResourceHandle{};
 }
 
 RhiGpuVirtualAddress VulkanResourceService::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept
@@ -381,7 +381,7 @@ RhiOwnedResourceHandle VulkanResourceService::CreateAliasingBufferResource(
 	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
-bool VulkanResourceService::SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept
+bool VulkanResourceService::SupportsUnorderedAccess(RhiResourceHandle resource) const noexcept
 {
 	const VulkanGpuAllocationRecord* const record =
 	    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;

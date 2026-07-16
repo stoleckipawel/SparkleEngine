@@ -69,7 +69,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	RhiViewport GetBackBufferViewport() const noexcept;
 	RhiRect GetBackBufferScissorRect() const noexcept;
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept;
-	NativeResourceHandle GetBackBufferResource() const noexcept;
+	RhiResourceHandle GetBackBufferResource() const noexcept;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
 	    const RhiRayTracingGeometryDesc& geometry) const noexcept;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(

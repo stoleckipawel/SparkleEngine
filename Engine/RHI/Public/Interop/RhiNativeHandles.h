@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 struct NativeGraphicsDeviceHandle
 {
 	void* Value = nullptr;
@@ -56,18 +58,4 @@ struct NativeTextureViewInfo
 	std::uint32_t NativeUsage = 0;
 
 	constexpr explicit operator bool() const noexcept { return Resource && View && Width != 0 && Height != 0; }
-};
-
-struct RhiOwnedMemoryBlockHandle
-{
-	void* Value = nullptr;
-
-	constexpr explicit operator bool() const noexcept { return Value != nullptr; }
-};
-
-struct RhiOwnedResourceHandle
-{
-	void* Value = nullptr;
-
-	constexpr explicit operator bool() const noexcept { return Value != nullptr; }
 };

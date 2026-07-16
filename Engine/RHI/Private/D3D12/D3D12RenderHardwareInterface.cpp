@@ -2,6 +2,7 @@
 
 #include "D3D12/D3D12RenderHardwareInterface.h"
 
+#include "Commands/RenderCommandList.h"
 #include "D3D12/Commands/D3D12CommandContext.h"
 #include "D3D12/Capture/D3D12CaptureService.h"
 #include "D3D12/Device/D3D12ExternalFeatureInteropCapabilities.h"
@@ -93,7 +94,7 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 
 D3D12RenderHardwareInterface::~D3D12RenderHardwareInterface() noexcept = default;
 
-void D3D12RenderHardwareInterface::BeginResourceTracking(NativeResourceHandle resource) noexcept
+void D3D12RenderHardwareInterface::BeginResourceTracking(RhiResourceHandle resource) noexcept
 {
 	if (m_resourceService != nullptr)
 	{
@@ -102,7 +103,7 @@ void D3D12RenderHardwareInterface::BeginResourceTracking(NativeResourceHandle re
 }
 
 void D3D12RenderHardwareInterface::EndResourceTracking(
-	NativeResourceHandle resource,
+	RhiResourceHandle resource,
 	RhiSubmissionToken submissionToken) noexcept
 {
 	if (m_resourceService != nullptr)
@@ -351,9 +352,9 @@ RhiCpuDescriptorHandle D3D12RenderHardwareInterface::GetBackBufferRenderTargetVi
 	return m_swapChain != nullptr ? RhiCpuDescriptorHandle{m_swapChain->GetCPUHandle().ptr} : RhiCpuDescriptorHandle{};
 }
 
-NativeResourceHandle D3D12RenderHardwareInterface::GetBackBufferResource() const noexcept
+RhiResourceHandle D3D12RenderHardwareInterface::GetBackBufferResource() const noexcept
 {
-	return NativeResourceHandle{m_swapChain != nullptr ? m_swapChain->GetCurrentResource() : nullptr};
+	return RhiResourceHandle{m_swapChain != nullptr ? m_swapChain->GetCurrentResource() : nullptr};
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(
@@ -406,7 +407,7 @@ void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor
 		return;
 	}
 
-	NativeResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
+	RhiResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
 	if (!presentTexture)
 	{
 		return;
@@ -433,7 +434,7 @@ void D3D12RenderHardwareInterface::BeginPresentOverlayPass() noexcept
 		return;
 	}
 
-	NativeResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
+	RhiResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
 	if (!presentTexture)
 	{
 		return;
@@ -457,7 +458,7 @@ void D3D12RenderHardwareInterface::EndPresentRenderPass() noexcept
 		return;
 	}
 
-	NativeResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
+	RhiResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
 	if (!presentTexture)
 	{
 		return;

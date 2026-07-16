@@ -241,7 +241,10 @@ RhiGpuDescriptorHandle VulkanDescriptorManager::GetResourceViewGpuHandle(RhiReso
 	return record != nullptr ? record->DescriptorHandle : RhiGpuDescriptorHandle{};
 }
 
-NativeTextureViewInfo VulkanDescriptorManager::GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept
+NativeTextureViewInfo VulkanDescriptorManager::ResolveNativeTextureViewInfo(
+	RhiResourceViewHandle view,
+	RhiResourceHandle,
+	ResourceState state) const noexcept
 {
 	const ResourceViewRecord* const record = FindResourceViewRecord(view);
 	if (record == nullptr || record->Image == VK_NULL_HANDLE || record->ImageView == VK_NULL_HANDLE)
@@ -249,11 +252,11 @@ NativeTextureViewInfo VulkanDescriptorManager::GetNativeTextureViewInfo(RhiResou
 		return {};
 	}
 
-	const VulkanGpuAllocationRecord* const allocation = m_memoryAllocator.FindAllocationRecord(NativeResourceHandle{record->Image});
+	const VulkanGpuAllocationRecord* const allocation = m_memoryAllocator.FindAllocationRecord(RhiResourceHandle{record->Image});
 	const VulkanResourceStateMapping stateMapping = VulkanTypeConversions::ToResourceStateMapping(state);
 	const RhiResourceViewDesc viewDesc{
 	    .Kind = record->Kind,
-	    .Resource = NativeResourceHandle{record->Image},
+	    .Resource = RhiResourceHandle{record->Image},
 	    .Format = record->Format,
 	    .Texture = record->Texture};
 	const VkImageAspectFlags aspectMask = ResolveViewAspectMask(viewDesc);
@@ -315,7 +318,7 @@ VkImageAspectFlags VulkanDescriptorManager::ResolveImageViewAspectMask(VkImageVi
 
 		const RhiResourceViewDesc viewDesc{
 		    .Kind = record.Kind,
-		    .Resource = NativeResourceHandle{record.Image},
+		    .Resource = RhiResourceHandle{record.Image},
 		    .Format = record.Format,
 		    .Texture = record.Texture};
 		return ResolveViewAspectMask(viewDesc);

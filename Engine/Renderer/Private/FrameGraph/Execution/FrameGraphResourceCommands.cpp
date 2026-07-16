@@ -2,6 +2,7 @@
 #include "FrameGraph/Execution/FrameGraphResourceCommands.h"
 
 #include "FrameGraph/FrameGraph.h"
+#include "RHI/Public/Interop/RhiInteropService.h"
 
 FrameGraphResourceCommands::FrameGraphResourceCommands(const FrameGraph& frameGraph) noexcept : m_frameGraph(&frameGraph)
 {
@@ -49,14 +50,17 @@ void FrameGraphResourceCommands::ClearDepthStencil(RenderCommandContext& cmd, Fr
 	m_frameGraph->ClearDepthStencil(cmd, handle);
 }
 
-NativeResourceHandle FrameGraphResourceCommands::ResolveResource(FrameGraphTextureHandle handle) const noexcept
+RhiResourceHandle FrameGraphResourceCommands::ResolveResource(FrameGraphTextureHandle handle) const noexcept
 {
 	return m_frameGraph->ResolveResource(handle);
 }
 
-NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state) const noexcept
+NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(
+	FrameGraphTextureHandle handle,
+	ResourceState state,
+	const RhiNativeInteropRequest& request) const noexcept
 {
-	return m_frameGraph->ResolveNativeTextureView(handle, state);
+	return m_frameGraph->ResolveNativeTextureView(handle, state, request);
 }
 
 RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept

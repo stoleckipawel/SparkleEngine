@@ -7,6 +7,7 @@
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Pipeline/D3D12PipelineState.h"
+#include "Interop/RhiInteropService.h"
 #include "Validation/RhiContract.h"
 
 #include <array>
@@ -26,7 +27,7 @@ ERhiBackendApi D3D12RenderCommandList::GetBackendApi() const noexcept
 	return ERhiBackendApi::D3D12;
 }
 
-void D3D12RenderCommandList::OnResourceTrackingStarted(NativeResourceHandle resource) noexcept
+void D3D12RenderCommandList::OnResourceTrackingStarted(RhiResourceHandle resource) noexcept
 {
 	if (m_owner != nullptr)
 	{
@@ -35,7 +36,7 @@ void D3D12RenderCommandList::OnResourceTrackingStarted(NativeResourceHandle reso
 }
 
 void D3D12RenderCommandList::OnResourceTrackingFinished(
-	NativeResourceHandle resource,
+	RhiResourceHandle resource,
 	RhiSubmissionToken submissionToken) noexcept
 {
 	if (m_owner != nullptr)
@@ -44,9 +45,9 @@ void D3D12RenderCommandList::OnResourceTrackingFinished(
 	}
 }
 
-NativeGraphicsCommandListHandle D3D12RenderCommandList::GetNativeHandle(const RhiNativeInteropRequest&) const noexcept
+NativeGraphicsCommandListHandle D3D12RenderCommandList::GetNativeHandle(const RhiNativeInteropRequest& request) const noexcept
 {
-	return NativeGraphicsCommandListHandle{m_commandList};
+	return IsRhiNativeInteropRequestValid(request) ? NativeGraphicsCommandListHandle{m_commandList} : NativeGraphicsCommandListHandle{};
 }
 
 bool D3D12RenderCommandList::SupportsDiagnosticScopes() const noexcept
@@ -494,11 +495,11 @@ void D3D12RenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const
 	EndDiagnosticScope();
 	if (submitted)
 	{
-		UnorderedAccessBarrier(NativeResourceHandle{nullptr});
+		UnorderedAccessBarrier(RhiResourceHandle{nullptr});
 	}
 }
 
-void D3D12RenderCommandList::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
+void D3D12RenderCommandList::CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept
 {
 	TrackResource(destinationResource);
 	TrackResource(sourceResource);
@@ -510,7 +511,7 @@ void D3D12RenderCommandList::CopyResource(NativeResourceHandle destinationResour
 	}
 }
 
-void D3D12RenderCommandList::AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept
+void D3D12RenderCommandList::AliasResource(RhiResourceHandle beforeResource, RhiResourceHandle afterResource) noexcept
 {
 	if (m_commandList == nullptr)
 	{
@@ -528,7 +529,7 @@ void D3D12RenderCommandList::AliasResource(NativeResourceHandle beforeResource, 
 	m_commandList->ResourceBarrier(1, &barrier);
 }
 
-void D3D12RenderCommandList::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
+void D3D12RenderCommandList::TransitionResource(RhiResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {
 	TrackResource(resource);
 	if (m_commandList == nullptr)
@@ -558,7 +559,7 @@ void D3D12RenderCommandList::TransitionResource(NativeResourceHandle resource, R
 	m_commandList->ResourceBarrier(1, &barrier);
 }
 
-void D3D12RenderCommandList::UnorderedAccessBarrier(NativeResourceHandle resource) noexcept
+void D3D12RenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource) noexcept
 {
 	TrackResource(resource);
 	if (m_commandList == nullptr)

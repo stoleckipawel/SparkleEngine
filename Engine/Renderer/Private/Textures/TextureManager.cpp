@@ -36,7 +36,7 @@ namespace
 std::optional<RendererTexture> TextureManager::CreateTextureFromPath(
     const std::filesystem::path& texturePath,
     RenderCommandList& commandList,
-    std::vector<NativeResourceHandle>& uploadedResources) const
+    std::vector<RhiResourceHandle>& uploadedResources) const
 {
 	LoadedTextureData loadedTexture = CookedTextureLoader::Load(texturePath);
 	if (!loadedTexture.IsValid())
@@ -89,7 +89,7 @@ std::optional<RendererTexture> TextureManager::CreateTextureFromPath(
 		return std::nullopt;
 	}
 
-	const NativeResourceHandle nativeResource = m_resourceService.GetNativeResource(resource);
+	const RhiResourceHandle nativeResource = m_resourceService.GetResourceHandle(resource);
 	RhiResourceViewHandle shaderResourceView = m_descriptorService.CreateResourceView(
 	    RhiResourceViewDesc::TextureShaderResource(
 	        nativeResource,
@@ -139,7 +139,7 @@ TextureManager::~TextureManager() noexcept
 	UnloadAll();
 }
 
-void TextureManager::LoadDefaults(RenderCommandList& commandList, std::vector<NativeResourceHandle>& uploadedResources)
+void TextureManager::LoadDefaults(RenderCommandList& commandList, std::vector<RhiResourceHandle>& uploadedResources)
 {
 	if (m_defaultsLoaded)
 	{
@@ -157,11 +157,11 @@ void TextureManager::LoadDefaults(RenderCommandList& commandList, std::vector<Na
 	m_defaultsLoaded = GetTexture(TextureId::Checker) != nullptr && GetTexture(TextureId::DefaultSky) != nullptr;
 }
 
-std::vector<NativeResourceHandle> TextureManager::LoadSceneTextures(
+std::vector<RhiResourceHandle> TextureManager::LoadSceneTextures(
 	const TextureSnapshot& textureSnapshot,
 	RenderCommandList& commandList)
 {
-	std::vector<NativeResourceHandle> uploadedResources;
+	std::vector<RhiResourceHandle> uploadedResources;
 	LoadDefaults(commandList, uploadedResources);
 	for (const std::filesystem::path& texturePath : textureSnapshot.texturePaths)
 	{
@@ -191,7 +191,7 @@ void TextureManager::LoadTexture(
 	TextureId id,
 	const std::filesystem::path& relativePath,
 	RenderCommandList& commandList,
-	std::vector<NativeResourceHandle>& uploadedResources)
+	std::vector<RhiResourceHandle>& uploadedResources)
 {
 	const auto index = static_cast<std::size_t>(id);
 	if (index >= kTextureCount)
@@ -220,7 +220,7 @@ void TextureManager::LoadTexture(
 RendererTexture* TextureManager::LoadFromPath(
 	const std::filesystem::path& texturePath,
 	RenderCommandList& commandList,
-	std::vector<NativeResourceHandle>& uploadedResources)
+	std::vector<RhiResourceHandle>& uploadedResources)
 {
 	const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texturePath);
 	if (!resolved)
@@ -379,7 +379,7 @@ TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot() const
 
 void TextureManager::LoadDefaultTextures(
 	RenderCommandList& commandList,
-	std::vector<NativeResourceHandle>& uploadedResources)
+	std::vector<RhiResourceHandle>& uploadedResources)
 {
 	for (std::uint8_t index = 0; index < static_cast<std::uint8_t>(DefaultTexture::Count); ++index)
 	{
