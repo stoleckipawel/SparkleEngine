@@ -3,7 +3,7 @@
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 
 #include "Commands/RenderCommandList.h"
-#include "Device/RenderHardwareInterface.h"
+#include "Interop/RhiInteropService.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
@@ -19,16 +19,6 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 	explicit VulkanRenderObjectDiagnostics(VulkanRhi& rhi) noexcept : m_rhi(rhi) {}
 
 	bool SupportsObjectNames() const noexcept override { return m_rhi.GetSetDebugUtilsObjectName() != nullptr; }
-
-	void SetDebugName(NativeGraphicsDeviceHandle device, std::wstring_view debugName) noexcept override
-	{
-		SetDebugName(VK_OBJECT_TYPE_DEVICE, reinterpret_cast<std::uint64_t>(device.Value), debugName);
-	}
-
-	void SetDebugName(NativeGraphicsQueueHandle queue, std::wstring_view debugName) noexcept override
-	{
-		SetDebugName(VK_OBJECT_TYPE_QUEUE, reinterpret_cast<std::uint64_t>(queue.Value), debugName);
-	}
 
 	void SetDebugName(const RenderCommandList& commandList, std::wstring_view debugName) noexcept override
 	{

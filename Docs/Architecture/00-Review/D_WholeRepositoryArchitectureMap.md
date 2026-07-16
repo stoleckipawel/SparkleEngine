@@ -170,9 +170,9 @@ Stage 05 catalog result:
 
 - `Projects/Showcase/Levels.catalog` is now the tiny project-owned level catalog.
 - Each default level has `Id`, `DisplayName`, `Source`, and `Default` metadata.
-- Runtime level discovery prefers available catalog levels, then falls back to scanning `Projects/Showcase/Levels`.
+- Runtime level discovery loads catalog levels whose source and optional pack are available.
 - Asset cook discovery reads catalog `Default` levels and filters project source scenes to the level-referenced scene assets.
-- Optional content pack state is represented by `OptionalPack` on levels and `Id`/`Root`/`Available` pack metadata; `Bistro` is currently represented as an optional pack candidate, not removed.
+- Optional content pack state is represented by `OptionalPack` on levels and `Id`/`Root`/`Available` pack metadata; `Bistro` remains cataloged after removal from the core tree.
 
 Stage 06 optional pack boundary:
 
@@ -408,7 +408,7 @@ Current memory-related ownership:
 | RHI public | `RhiMemoryUsageSnapshot`, category stats, allocation details, JSON dump support. | Useful but broad. |
 | Renderer public | `RendererMemoryDiagnosticsSnapshot`, pressure thresholds, texture streaming policy snapshot, scene memory report. | Product value if it drives streaming; bloat if only displayed. |
 | Renderer private | Memory monitor and texture/mesh/ray tracing categories. | Good place for policy. |
-| Content depot | `Projects/Showcase` is about 2.79 GB. | Biggest memory/depot pressure signal is content packaging, not code. |
+| Content depot | The initial audit measured `Projects/Showcase` at about 2.79 GB. | Biggest memory/depot pressure signal was content packaging, not code. |
 
 Best next shape:
 

@@ -33,11 +33,12 @@ Do not chase feature count. Build a repo where a senior reviewer can quickly ans
 - How would a neural rendering prototype become an efficient shader/kernel path?
 - What is product code, what is experimental, and what has been intentionally deleted?
 
-Persona filter:
+Near-term change gate:
 
-- The engine should develop the advanced graphics engineer described in `H_AdvancedGraphicsEngineerPersona.md`.
-- Every staged refactor should improve at least one persona pillar: explicit graphics API ownership, renderer feature depth, shader/kernel craft, GPU architecture thinking, neural rendering readiness, debugging/tool fluency, or product engineering discipline.
-- If a task cannot name the preserved capability and the code/API/content weight it removes, it should not be promoted into the near-term plan.
+- Modify existing planning text; do not add documentation or policy files unless the replacement removes more than it adds.
+- Reject new diagnostics, runtime logs, validation paths, report formats, panels, wrapper layers, abstract contracts, and future-feature scaffolding.
+- Preserve the shader compiler/cook/runtime ABI through deletion and simplification; clean renderer, RHI, frame graph, shader, and pass code before measurement-only work.
+- Accept a rendering feature only when its integration is direct and contextual and its support code is outweighed by deletion or consolidation.
 
 ## Top Priorities
 
@@ -137,14 +138,13 @@ Do not bolt on a heavy ML stack yet. Prepare the architecture first.
 
 Target evidence:
 
-- shader ABI can represent tensor-like resources, feature profiles, specialization constants, and provider resource contracts
-- Slang/HLSL path is kept clean for neural shader experiments
-- one design note maps model-to-shader translation: source model, operator subset, tensor layout, resource binding, dispatch schedule, memory footprint, precision, validation
-- one small future prototype can demonstrate a neural denoiser/operator only if it replaces an existing debug/demo path
+- existing shader ABI remains capable of representing tensor-like resources, feature profiles, specialization constants, and provider resource contracts
+- existing Slang/HLSL path stays clean for neural shader experiments
+- any prototype replaces an existing debug/demo path and simplifies the resulting integration
 
 Skip for now:
 
-- bundling PyTorch, TensorFlow, ONNX Runtime, CUDA, or vendor-specific compute backends into the engine
+- bundling runtime ML frameworks or vendor-specific compute backends into the engine
 - training workflows inside the engine
 - broad ML framework integration without a concrete renderer feature
 
@@ -187,7 +187,7 @@ These are the capabilities the repo should grow toward, mostly by replacing and 
 | API debugging and capture | PIX/RenderDoc/Nsight markers, debug layers, screenshot/BMP capture. | Preserve backend-native support and harden capture with narrow ownership. |
 | GPU performance | Pass timings, memory budget, descriptors, pipeline pressure. | Late profiler-driven pass using existing scopes/snapshots only. |
 | Ray tracing/GI | BLAS/TLAS lifecycle, classic TLAS and PTLAS, reservoir direct lighting, path/reference mode. | Preserve both TLAS paths; minimize PTLAS implementation. |
-| Neural readiness | Slang/HLSL-friendly ABI, tensor/operator design note, feature gates. | Architecture first, tiny prototype later. |
+| Neural readiness | Existing Slang/HLSL-friendly ABI and feature gates. | Keep the current architecture clean; prototype only through replacement. |
 | Productization | Curated level set, optional content packs, smaller launcher, clear packages. | Remove bloat before adding polish. |
 
 ## What To Prioritize
@@ -249,7 +249,7 @@ Use instead:
 | Renderer | Frame graph, typed passes, shader ABI, classic TLAS and PTLAS, direct lighting reservoir, clear reference mode. | Future scaffolding, fallback-as-architecture, extra debug views. |
 | Tools | Shader compiler, package inspection, minimal cook, minimal launcher. | Diagnostic artifacts, stats CSV by default, tool APIs with no consumer. |
 | Content | Multiple levels, curated default level set, manifests/content catalogs, optional large packs. | Uncataloged multi-GB showcase content in core repo. |
-| ML/neural | Slang/HLSL readiness, tensor/operator design note. | Runtime ML frameworks, training stack, vendor-specific kernels without feature need. |
+| ML/neural | Existing Slang/HLSL readiness. | Runtime ML frameworks, training stack, vendor-specific kernels without feature need. |
 | Docs | Existing architecture maps and decision text. | New docs before code cleanup, outside-reference trails, company names, cosmetic docs. |
 
 ## Success Bar

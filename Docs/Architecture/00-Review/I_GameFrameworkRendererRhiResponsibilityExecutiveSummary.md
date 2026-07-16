@@ -434,7 +434,7 @@ Allocator address reuse is not durable semantic state. It can cause a false rese
 
 ## Priority 2A: Add Queue/Submissions Only When A Real Workload Needs Them
 
-The implementation research and activated integration direction are recorded in [`J_NvidiaMultiQueueSubmissionResearch.md`](J_NvidiaMultiQueueSubmissionResearch.md).
+The implementation research and activated integration direction have been folded into this section; the standalone research note was removed after the queue contract was completed.
 
 [`RhiCommandSubmissionService`](../../../Engine/RHI/Public/Commands/RhiCommandSubmissionService.h) exposes queue-typed command-list acquisition/submission, value submission tokens, GPU queue waits, and completion queries. Frame and swapchain lifecycle remains in `RenderDeviceServices`. Neither service contains scheduling policy: the Renderer frame graph is the sole owner of pass queue selection and batch dependencies.
 
@@ -461,7 +461,34 @@ This preserves the same split used for barriers: Renderer decides scheduling pol
 
 ## Priority 2B: Trim Misplaced Public Surface After The Ownership Work
 
-This is a cleanup, not a prerequisite:
+Priority 2B is complete. The cleanup changed API placement and dependency direction without adding another service, manager, or facade.
+
+### Completed implementation
+
+- Renderer-private helpers no longer carry `SPARKLE_RENDERER_API`. Cross-module Renderer contracts remain under `Renderer/Public`; private camera, frame/context, mesh/cache, scene/material, texture, and shader-pass helpers are ordinary private types.
+- Renderer frame/context and other stored-service headers no longer include the full `RenderHardwareInterface.h`. Headers include the value types they store and forward-declare services they only reference; `.cpp` files include the complete RHI contract where they call it. The single remaining Renderer-private include is intentional: the inline render-pass definition runtime calls RHI services from its template body.
+- Ordinary resource execution uses `RhiResourceHandle`; owned allocation records use `RhiOwnedResourceHandle` and `RhiOwnedMemoryBlockHandle`. These backend-neutral handles live in `Resources/RhiResourceHandles.h` and no longer come from the native-interop header.
+- Native device, queue, command-list, resource, and view values remain in `Interop/RhiNativeHandles.h`. Command-list, device/queue, and texture-view extraction all require a valid `RhiNativeInteropRequest`; unknown consumers or empty reasons return an invalid result. Unused native device/queue overloads were deleted from the general diagnostics contract.
+- Native texture-view extraction was relocated from the general descriptor service to the existing `RhiInteropService`. D3D12/Vulkan interop implementations validate the request and call private backend descriptor translation; ordinary Renderer descriptor code cannot request a native resource.
+- Backend upload implementations use private typed command-list accessors. They no longer manufacture an `Unknown` public interop request to reach their own native command buffer.
+- Renderer provider code is the only Renderer code that includes native-handle definitions. The frame graph transports explicit provider requests but keeps ordinary resource resolution backend-neutral.
+- The shader split was retained after audit: RHI owns cooked bytecode, reflection/binding-layout contracts, and backend pipeline creation; Renderer owns shader/package selection, registration, pass definitions, and pass policy. No parallel shader service was introduced.
+- The presentation/UI split was retained after audit: D3D12/Vulkan swapchain, present, and ImGui backend calls remain RHI-private; Application/Editor continues to own window, UI-frame, and presentation orchestration through the existing Renderer host contract.
+
+### Closure evidence
+
+| Acceptance check | Result |
+| --- | --- |
+| Renderer-private exported helpers | No `SPARKLE_RENDERER_API` remains under `Engine/Renderer/Private`. |
+| Renderer-private full-RHI header dependency | No unused umbrella include remains; the only match is the inline `RenderPassDefinitionRuntime.h` implementation dependency. |
+| Native resource handles in ordinary execution | `NativeResourceHandle` remains only in the interop payload and D3D12/Vulkan private translation; ordinary execution uses `RhiResourceHandle`. |
+| Native handle access | Public extraction paths require a valid `RhiNativeInteropRequest`; backend uploads use private typed access. |
+| D3D12/Vulkan parity | Both backend libraries and `ShowcaseEditor` build successfully; bounded startup smoke tests remained live for eight seconds on each backend. |
+| Architecture boundaries | `architecture_boundary_check` passes with no new violations. |
+
+Validation completed on 2026-07-16 with the `DevelopmentEditor` `ShowcaseEditor` build, bounded D3D12/Vulkan startup smoke tests, and the architecture boundary target.
+
+The governing cleanup rules remain:
 
 - remove export macros from Renderer-private helpers that are not true cross-module contracts;
 - remove unused full-RHI includes from Renderer frame/context types;
@@ -499,8 +526,9 @@ This is also why a wholesale adoption of either NVRHI or Cauldron is not recomme
 | 3 | Feature-owned persistent histories | Stops `FramePipeline` from growing with every temporal feature. | Removes feature arrays, booleans, keys, and repeated reset fan-out from the central pipeline. |
 | 4 | Stable material GPU table and semantic scene keys | Makes material ownership explicit and history invalidation deterministic using existing authored/cooked values and logical handles. | Removes raw binding pointers and pointer/native-address hashing from frame data. |
 | 5 | Queue/submission extension for active async workloads (completed and validated) | Enables copy/compute overlap without moving scheduler policy into RHI. | Replaced graphics-only upload/transfer recording and fixed command-list storage with capability-driven frame-graph batches and reusable backend pools. |
+| 6 | Misplaced public-surface cleanup (completed and validated) | Keeps ordinary Renderer/RHI work backend-neutral while bounding native integration to explicit interop requests. | Removed private Renderer exports, unused private-header umbrella RHI dependencies, native handles from ordinary resource identity, descriptor-service native extraction, and upload-service interop misuse. |
 
-Change lists 1-2 are the GPU ownership foundation. Change lists 3-4 make continued renderer feature development sustainable. Change list 5 now has concrete consumers: texture uploads, graph transfer passes, and four reviewed compute workloads.
+Change lists 1-2 are the GPU ownership foundation. Change lists 3-4 make continued renderer feature development sustainable. Change list 5 now has concrete consumers: texture uploads, graph transfer passes, and four reviewed compute workloads. Change list 6 closes the public/private surface after that ownership work.
 
 ## Non-Goals And Guardrails
 
@@ -528,6 +556,7 @@ The repository is ready for aggressive renderer development when all of the foll
 - Renderer frame/pass data carries IDs, indices, handles, and immutable values rather than raw pointers to cache-owned binding objects.
 - Semantic history keys contain existing authored/cooked values, logical handles, and Renderer-local table generations, not allocator or native addresses.
 - Renderer still owns frame-graph dependency/barrier/queue policy; RHI still owns backend execution.
+- Native handles are obtainable only through explicit request-scoped interop used by provider, validation/debug, or RHI-private presentation integration.
 - D3D12 and Vulkan pass the same lifetime, material, scene mutation, level change, and temporal-history scenarios.
 - The existing architecture boundary check still passes.
 

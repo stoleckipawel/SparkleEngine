@@ -10,7 +10,7 @@
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
-#include "Device/RenderHardwareInterface.h"
+#include "Interop/RhiInteropService.h"
 
 #include <array>
 #include <cstring>
@@ -25,16 +25,6 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 {
   public:
 	bool SupportsObjectNames() const noexcept override { return true; }
-
-	void SetDebugName(NativeGraphicsDeviceHandle device, std::wstring_view debugName) noexcept override
-	{
-		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(device.Value), debugName);
-	}
-
-	void SetDebugName(NativeGraphicsQueueHandle queue, std::wstring_view debugName) noexcept override
-	{
-		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(queue.Value), debugName);
-	}
 
 	void SetDebugName(const RenderCommandList& commandList, std::wstring_view debugName) noexcept override
 	{
