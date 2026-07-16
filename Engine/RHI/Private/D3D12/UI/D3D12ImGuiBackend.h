@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Device/RenderHardwareInterface.h"
+#include "Interop/RhiNativeHandles.h"
 #include "UI/RhiImGuiRenderer.h"
 
 #include <d3d12.h>
@@ -17,6 +17,7 @@ class D3D12ImGuiBackend final : public RhiImGuiRenderer
 
 	bool Initialize() override;
 	void BeginFrame() noexcept override;
+	std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	void RenderDrawData(ImDrawData* drawData) noexcept override;
 	void Render(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept;
 	void Shutdown() noexcept override;

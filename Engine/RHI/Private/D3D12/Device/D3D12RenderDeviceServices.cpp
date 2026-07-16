@@ -178,7 +178,6 @@ void D3D12RenderDeviceServices::BeginFrame() noexcept
 	m_commandContext->BeginFrame(frameIndex);
 	m_frameResourceManager->BeginFrame(m_rhi->GetFence().Get(), m_rhi->GetFenceEvent(), frameIndex);
 	m_uploadService->BeginFrame();
-	m_renderHardwareInterface->GetResourceService().DrainCompletedResourceReleases();
 	(void)BeginCommandList(ERhiQueueType::Graphics);
 }
 

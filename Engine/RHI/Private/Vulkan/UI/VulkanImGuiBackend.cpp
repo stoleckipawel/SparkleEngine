@@ -4,13 +4,19 @@
 
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
+#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
 #include <backends/imgui_impl_vulkan.h>
 
 static const auto g_vulkanImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.Vulkan.ImGui");
 
-VulkanImGuiBackend::VulkanImGuiBackend(VulkanRenderHardwareInterface& renderHardware) noexcept : m_renderHardware(&renderHardware) {}
+VulkanImGuiBackend::VulkanImGuiBackend(
+    VulkanRenderHardwareInterface& renderHardware,
+    VulkanDescriptorManager& descriptorManager) noexcept :
+    m_renderHardware(&renderHardware), m_descriptorManager(&descriptorManager)
+{
+}
 
 bool VulkanImGuiBackend::Initialize()
 {
@@ -100,6 +106,11 @@ bool VulkanImGuiBackend::Initialize()
 void VulkanImGuiBackend::BeginFrame() noexcept
 {
 	ImGui_ImplVulkan_NewFrame();
+}
+
+std::uint64_t VulkanImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
+{
+	return m_descriptorManager != nullptr ? GetTextureId(m_descriptorManager->GetRegisteredImageView(shaderResourceView)) : 0;
 }
 
 void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept

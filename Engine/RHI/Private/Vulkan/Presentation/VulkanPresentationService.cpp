@@ -24,11 +24,6 @@ RhiResourceHandle VulkanPresentationService::GetBackBufferResource() const noexc
 	return m_owner != nullptr ? m_owner->GetBackBufferResource() : RhiResourceHandle{};
 }
 
-std::uint64_t VulkanPresentationService::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
-{
-	return m_owner != nullptr ? m_owner->ResolveImGuiTextureId(shaderResourceView) : 0;
-}
-
 void VulkanPresentationService::BeginPresentRenderPass(const float clearColor[4]) noexcept
 {
 	if (m_owner != nullptr)

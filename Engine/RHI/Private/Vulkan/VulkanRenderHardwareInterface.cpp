@@ -90,7 +90,7 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	m_uploadService = std::make_unique<VulkanUploadService>(commandContext, memoryAllocator);
 	m_samplerLibrary = std::make_unique<VulkanSamplerLibrary>(rhi, *m_descriptorManager);
 	m_descriptorManager->SetSamplerLibrary(*m_samplerLibrary);
-	m_imguiBackend = std::make_unique<VulkanImGuiBackend>(*this);
+	m_imguiBackend = std::make_unique<VulkanImGuiBackend>(*this, *m_descriptorManager);
 	commandContext.ConfigureCommandLists(
 	    memoryAllocator,
 	    *m_descriptorManager,
@@ -106,16 +106,6 @@ VulkanRenderHardwareInterface::~VulkanRenderHardwareInterface() noexcept
 	m_imguiBackend.reset();
 	m_resourceService.reset();
 	m_uploadService.reset();
-}
-
-ERhiBackendApi VulkanRenderHardwareInterface::GetBackendApi() const noexcept
-{
-	return ERhiBackendApi::Vulkan;
-}
-
-CookedShaderBinaryFormat VulkanRenderHardwareInterface::GetRequiredShaderBinaryFormat() const noexcept
-{
-	return CookedShaderBinaryFormat::SpirV;
 }
 
 std::uint32_t VulkanRenderHardwareInterface::GetCurrentFrameIndex() const noexcept
@@ -275,7 +265,6 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	    m_diagnostics.get(),
 	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
 	    m_rhi != nullptr && m_rhi->IsValidationEnabled());
-	capabilities.SupportsTimestampQueries = capabilities.Diagnostics.SupportsTimestampQueries;
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
@@ -396,17 +385,6 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateRayTracingInstanceBu
 {
 	return m_rayTracingServices != nullptr ? m_rayTracingServices->CreateInstanceBuffer(instances, instanceCount, debugName) :
 	                                        RhiOwnedResourceHandle{};
-}
-
-std::uint64_t VulkanRenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
-{
-	if (m_descriptorManager == nullptr || m_imguiBackend == nullptr)
-	{
-		return 0;
-	}
-
-	const VkImageView imageView = m_descriptorManager->GetRegisteredImageView(shaderResourceView);
-	return m_imguiBackend->GetTextureId(imageView);
 }
 
 void VulkanRenderHardwareInterface::BeginPresentRenderPass(const float clearColor[4]) noexcept

@@ -22,7 +22,6 @@ class SPARKLE_RHI_API RhiRayTracingService
 	virtual const RhiClassicTlasService& GetClassicTlasService() const noexcept;
 	virtual RhiPartitionedTlasService& GetPartitionedTlasService() noexcept;
 	virtual const RhiPartitionedTlasService& GetPartitionedTlasService() const noexcept;
-	virtual RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept = 0;
 	virtual RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
 	    const RhiRayTracingGeometryDesc& geometry) const noexcept = 0;
 	virtual RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(

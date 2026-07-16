@@ -12,7 +12,7 @@ RhiNativeDeviceQueueInterop VulkanInteropService::GetDeviceQueueInterop(RhiNativ
 		return {};
 	}
 	return RhiNativeDeviceQueueInterop{
-	    .BackendApi = m_owner != nullptr ? m_owner->GetBackendApi() : ERhiBackendApi::Unknown,
+	    .BackendApi = m_owner != nullptr ? m_owner->GetCapabilities().BackendApi : ERhiBackendApi::Unknown,
 	    .Device = m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{},
 	    .GraphicsQueue = m_owner != nullptr ? m_owner->GetGraphicsQueueHandle() : NativeGraphicsQueueHandle{},
 	    .Vulkan =

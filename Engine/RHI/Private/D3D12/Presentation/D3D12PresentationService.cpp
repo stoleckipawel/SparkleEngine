@@ -24,11 +24,6 @@ RhiResourceHandle D3D12PresentationService::GetBackBufferResource() const noexce
 	return m_owner != nullptr ? m_owner->GetBackBufferResource() : RhiResourceHandle{};
 }
 
-std::uint64_t D3D12PresentationService::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
-{
-	return m_owner != nullptr ? m_owner->ResolveImGuiTextureId(shaderResourceView) : 0;
-}
-
 void D3D12PresentationService::BeginPresentRenderPass(const float clearColor[4]) noexcept
 {
 	if (m_owner != nullptr)

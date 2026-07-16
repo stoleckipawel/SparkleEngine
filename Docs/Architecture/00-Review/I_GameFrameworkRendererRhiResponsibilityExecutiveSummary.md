@@ -475,6 +475,18 @@ Priority 2B is complete. The cleanup changed API placement and dependency direct
 - The shader split was retained after audit: RHI owns cooked bytecode, reflection/binding-layout contracts, and backend pipeline creation; Renderer owns shader/package selection, registration, pass definitions, and pass policy. No parallel shader service was introduced.
 - The presentation/UI split was retained after audit: D3D12/Vulkan swapchain, present, and ImGui backend calls remain RHI-private; Application/Editor continues to own window, UI-frame, and presentation orchestration through the existing Renderer host contract.
 
+### Post-closure NVRHI/AMD alignment pass
+
+The public and backend contracts were compared again against the pinned [NVRHI device/command-list interface](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/include/nvrhi/nvrhi.h) and the current FidelityFX SDK Cauldron2 [device](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/render/device.h) and [command-list](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/render/commandlist.h) contracts. The useful production pattern is consistent across them: queue type and submission completion are explicit values, native queue execution remains backend-owned, capability truth is queried from the device, and presentation/UI translation is not renderer scheduling policy.
+
+The follow-up cleanup therefore deleted duplicated or misplaced routes instead of adding another abstraction:
+
+- `RhiCapabilities` is the single public source for backend identity, required cooked shader format, diagnostic timestamp support, and ray-tracing capabilities. Duplicate virtual backend/shader-format queries, the duplicate top-level timestamp flag, and the ray-tracing-service capability alias were removed.
+- ImGui texture-ID translation moved from `RhiPresentationService` to the existing `RhiImGuiRenderer`. Presentation now describes back-buffer and present-pass work only; D3D12/Vulkan descriptor translation stays in their private UI backends.
+- Deferred resource-release drain/flush operations were removed from `RhiResourceService`. They remain private backend implementation mechanics. Descriptor frame advancement remains callable only by the owning `RenderDeviceServices`, not by ordinary descriptor consumers.
+- The queue design required no new scheduler or wrapper. `ERhiQueueType`, `RhiSubmissionToken`, queue waits, per-queue completion, truthful independent-queue capabilities, Renderer-owned graph assignment, and backend-owned fence/timeline execution already match the relevant production contracts.
+- No diagnostics or logging path was added as part of the cleanup.
+
 ### Closure evidence
 
 | Acceptance check | Result |
@@ -483,6 +495,9 @@ Priority 2B is complete. The cleanup changed API placement and dependency direct
 | Renderer-private full-RHI header dependency | No unused umbrella include remains; the only match is the inline `RenderPassDefinitionRuntime.h` implementation dependency. |
 | Native resource handles in ordinary execution | `NativeResourceHandle` remains only in the interop payload and D3D12/Vulkan private translation; ordinary execution uses `RhiResourceHandle`. |
 | Native handle access | Public extraction paths require a valid `RhiNativeInteropRequest`; backend uploads use private typed access. |
+| Capability authority | Backend identity, shader format, timestamps, queues, and ray tracing are exposed through the immutable `RhiCapabilities` snapshot without duplicate public aliases. |
+| Presentation/UI separation | `RhiPresentationService` has no ImGui descriptor API; texture-ID translation is implemented by the existing D3D12/Vulkan private ImGui backends. |
+| Backend lifecycle surface | Resource retirement drain/flush is absent from `RhiResourceService`; descriptor frame advancement is private to the device owner. |
 | D3D12/Vulkan parity | Both backend libraries and `ShowcaseEditor` build successfully; bounded startup smoke tests remained live for eight seconds on each backend. |
 | Architecture boundaries | `architecture_boundary_check` passes with no new violations. |
 

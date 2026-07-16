@@ -1,6 +1,9 @@
 #pragma once
 
+#include "../Descriptors/RhiDescriptorHandles.h"
 #include "../RHIAPI.h"
+
+#include <cstdint>
 
 struct ImDrawData;
 
@@ -11,6 +14,7 @@ class SPARKLE_RHI_API RhiImGuiRenderer
 
 	virtual bool Initialize() = 0;
 	virtual void BeginFrame() noexcept = 0;
+	virtual std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept = 0;
 	virtual void RenderDrawData(ImDrawData* drawData) noexcept = 0;
 	virtual void Shutdown() noexcept = 0;
 };

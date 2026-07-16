@@ -43,6 +43,11 @@ void D3D12ImGuiBackend::BeginFrame() noexcept
 	ImGui_ImplDX12_NewFrame();
 }
 
+std::uint64_t D3D12ImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
+{
+	return shaderResourceView.Value;
+}
+
 void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 {
 	if (m_renderHardware == nullptr)

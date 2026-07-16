@@ -58,11 +58,6 @@ RhiRayTracingCapabilities D3D12RayTracingServices::GetCapabilities() const noexc
 	return m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 }
 
-RhiRayTracingCapabilities D3D12RayTracingServices::GetRayTracingCapabilities() const noexcept
-{
-	return GetCapabilities();
-}
-
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBottomLevelAccelerationStructurePrebuildInfo(
     const RhiRayTracingGeometryDesc& geometry) const noexcept
 {

@@ -41,8 +41,6 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	D3D12RenderHardwareInterface& operator=(D3D12RenderHardwareInterface&&) = delete;
 
 	const RhiCapabilities& GetCapabilities() const noexcept { return m_capabilities; }
-	ERhiBackendApi GetBackendApi() const noexcept;
-	CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept;
 	std::uint32_t GetCurrentFrameIndex() const noexcept;
 	RhiResourceService& GetResourceService() noexcept;
 	const RhiResourceService& GetResourceService() const noexcept;
@@ -87,7 +85,6 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,
 	    std::wstring_view debugName);
-	std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept;
 	void BeginPresentRenderPass(const float clearColor[4]) noexcept;
 	void BeginPresentOverlayPass() noexcept;
 	void EndPresentRenderPass() noexcept;

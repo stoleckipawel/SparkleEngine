@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Capture/RhiCaptureService.h"
-#include "../Core/RhiBackendApi.h"
 #include "../Core/RhiCapabilities.h"
 #include "../Descriptors/RhiDescriptorService.h"
 #include "../Diagnostics/RhiDiagnostics.h"
@@ -21,8 +20,6 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual ~RenderHardwareInterface() noexcept = default;
 
 	virtual const RhiCapabilities& GetCapabilities() const noexcept = 0;
-	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
-	virtual CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept = 0;
 	virtual std::uint32_t GetCurrentFrameIndex() const noexcept = 0;
 
 	virtual RhiResourceService& GetResourceService() noexcept = 0;

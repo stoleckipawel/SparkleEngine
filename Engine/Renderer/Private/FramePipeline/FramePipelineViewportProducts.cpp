@@ -10,6 +10,7 @@
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
+#include "RHI/Public/UI/RhiImGuiRenderer.h"
 
 namespace
 {
@@ -69,14 +70,14 @@ ViewportPresentationProduct FramePipeline::BeginViewportPresentation(RenderOutpu
 	TransitionRenderProduct(product->Handle, ResourceState::ShaderResource);
 
 	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(product->Handle);
-	const std::uint64_t textureId = m_systems->GetRenderHardwareInterface().GetPresentationService().ResolveImGuiTextureId(
+	const std::uint64_t textureId = m_systems->GetBackend().GetImGuiRenderer().ResolveTextureId(
 	    m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}));
 	if (textureId == 0)
 	{
 		return ViewportPresentationProduct{
 		    .Output = output,
 		    .Product = *product,
-		    .FailureReason = "RHI presentation service did not resolve a texture id"};
+		    .FailureReason = "RHI ImGui renderer did not resolve a texture id"};
 	}
 
 	return ViewportPresentationProduct{

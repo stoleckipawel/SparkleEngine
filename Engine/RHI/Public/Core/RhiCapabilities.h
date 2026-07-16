@@ -167,7 +167,6 @@ struct RhiCapabilities
 	RhiDescriptorIndexingCapabilities DescriptorIndexing;
 	RhiUploadReadbackCapabilities UploadReadback;
 	std::array<RhiFormatSupport, kRhiCapabilityPixelFormats.size()> FormatSupport = {};
-	bool SupportsTimestampQueries = false;
 	RhiBackendDiagnosticsSupport Diagnostics;
 	RhiRayTracingCapabilities RayTracing;
 	bool SupportsMeshShaders = false;

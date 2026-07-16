@@ -112,16 +112,6 @@ void D3D12RenderHardwareInterface::EndResourceTracking(
 	}
 }
 
-ERhiBackendApi D3D12RenderHardwareInterface::GetBackendApi() const noexcept
-{
-	return ERhiBackendApi::D3D12;
-}
-
-CookedShaderBinaryFormat D3D12RenderHardwareInterface::GetRequiredShaderBinaryFormat() const noexcept
-{
-	return CookedShaderBinaryFormat::Dxil;
-}
-
 RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 {
 	RhiCapabilities capabilities{};
@@ -162,7 +152,6 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	    m_diagnostics.get(),
 	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
 	    m_rhi != nullptr && m_rhi->IsValidationEnabled());
-	capabilities.SupportsTimestampQueries = capabilities.Diagnostics.SupportsTimestampQueries;
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
@@ -393,11 +382,6 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
 {
 	return m_rayTracingServices != nullptr ? m_rayTracingServices->CreateInstanceBuffer(instances, instanceCount, debugName) :
 	                                        RhiOwnedResourceHandle{};
-}
-
-std::uint64_t D3D12RenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
-{
-	return shaderResourceView.Value;
 }
 
 void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor[4]) noexcept

@@ -25,7 +25,6 @@ class D3D12RayTracingServices final : public RhiRayTracingService
 	RhiPartitionedTlasService& GetPartitionedTlasService() noexcept override;
 	const RhiPartitionedTlasService& GetPartitionedTlasService() const noexcept override;
 	RhiRayTracingCapabilities GetCapabilities() const noexcept;
-	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept override;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
 	    const RhiRayTracingGeometryDesc& geometry) const noexcept override;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(

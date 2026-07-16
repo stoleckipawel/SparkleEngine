@@ -78,11 +78,6 @@ RhiRayTracingCapabilities VulkanRayTracingServices::GetCapabilities() const noex
 	return m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 }
 
-RhiRayTracingCapabilities VulkanRayTracingServices::GetRayTracingCapabilities() const noexcept
-{
-	return GetCapabilities();
-}
-
 RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetBottomLevelAccelerationStructurePrebuildInfo(
     const RhiRayTracingGeometryDesc& geometry) const noexcept
 {

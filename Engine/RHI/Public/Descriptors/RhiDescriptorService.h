@@ -11,6 +11,7 @@
 #include <memory>
 
 class RenderCommandList;
+class RenderDeviceServices;
 
 constexpr const char* RhiDescriptorAllocatorTypeToString(ERhiDescriptorAllocatorType type) noexcept
 {
@@ -34,7 +35,6 @@ class SPARKLE_RHI_API RhiDescriptorService
   public:
 	virtual ~RhiDescriptorService() noexcept = default;
 
-	virtual void BeginFrame(std::uint32_t frameIndex) noexcept = 0;
 	virtual std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) = 0;
 	virtual void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept = 0;
 	virtual RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) = 0;
@@ -52,4 +52,8 @@ class SPARKLE_RHI_API RhiDescriptorService
 	virtual void ReleaseResourceView(RhiResourceViewHandle view) noexcept = 0;
 	virtual RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept = 0;
 	virtual RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept = 0;
+
+  private:
+	friend class RenderDeviceServices;
+	virtual void BeginFrame(std::uint32_t frameIndex) noexcept = 0;
 };

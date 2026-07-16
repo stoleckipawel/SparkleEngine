@@ -6,8 +6,6 @@
 #include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
 
-#include <cstdint>
-
 class SPARKLE_RHI_API RhiPresentationService
 {
   public:
@@ -17,7 +15,6 @@ class SPARKLE_RHI_API RhiPresentationService
 	virtual RhiRect GetBackBufferScissorRect() const noexcept = 0;
 	virtual RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept = 0;
 	virtual RhiResourceHandle GetBackBufferResource() const noexcept = 0;
-	virtual std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept = 0;
 	virtual void BeginPresentRenderPass(const float clearColor[4]) noexcept = 0;
 	virtual void BeginPresentOverlayPass() noexcept = 0;
 	virtual void EndPresentRenderPass() noexcept = 0;

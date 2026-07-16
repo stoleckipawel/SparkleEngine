@@ -9,6 +9,7 @@
 
 class VulkanDescriptorManager;
 class VulkanGpuMemoryAllocator;
+class VulkanRenderHardwareInterface;
 class VulkanRhi;
 
 class VulkanResourceService final : public RhiResourceService
@@ -66,8 +67,6 @@ class VulkanResourceService final : public RhiResourceService
 	    RhiOwnedResourceHandle& outResource,
 	    RhiIndexBufferView& outView) override;
 	void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept override;
-	void DrainCompletedResourceReleases() noexcept override;
-	void FlushDeferredResourceReleases() noexcept override;
 	RhiResourceHandle GetResourceHandle(RhiOwnedResourceHandle resource) const noexcept override;
 	RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept override;
 	RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept override;
@@ -91,6 +90,10 @@ class VulkanResourceService final : public RhiResourceService
 	bool SupportsUnorderedAccess(RhiResourceHandle resource) const noexcept override;
 
   private:
+	friend class VulkanRenderHardwareInterface;
+	void DrainCompletedResourceReleases() noexcept;
+	void FlushDeferredResourceReleases() noexcept;
+
 	VulkanRhi* m_rhi = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	VulkanDescriptorManager* m_descriptorManager = nullptr;
