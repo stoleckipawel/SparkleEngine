@@ -217,10 +217,6 @@ namespace SparkleLauncher
 			{
 				AddPlannedEffect(plan, "Override shader cache directory: " + plan.Request.ShaderCacheDirectory.string() + ".");
 			}
-			if (!plan.Request.ShaderDebugArtifactDirectory.empty())
-			{
-				AddPlannedEffect(plan, "Write shader debug artifacts to " + plan.Request.ShaderDebugArtifactDirectory.string() + ".");
-			}
 			if (plan.Request.ShaderPackages.empty())
 			{
 				AddPlannedEffect(plan, "Cook shader packages for " + plan.Request.ProjectId + ".");

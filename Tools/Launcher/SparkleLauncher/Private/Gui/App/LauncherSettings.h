@@ -22,7 +22,6 @@ namespace SparkleLauncher
 		const QString& ShaderTargetPreset() const;
 		const QString& ShaderCustomTargets() const;
 		const QString& ShaderCacheDirectory() const;
-		const QString& ShaderDebugArtifactDirectory() const;
 		const QString& LaunchBackend() const;
 		const QString& LaunchTarget() const;
 		const QString& LaunchStartupLevel() const;
@@ -36,7 +35,6 @@ namespace SparkleLauncher
 		bool ShaderEnableOptimizations() const;
 		bool ShaderWarningsAsErrors() const;
 		bool ShaderStripDebugInfo() const;
-		bool ShaderWriteDebugArtifacts() const;
 		bool ForceConfigure() const;
 		bool ForceRecook() const;
 		bool ConfirmForceRecook() const;
@@ -53,7 +51,6 @@ namespace SparkleLauncher
 		void SetShaderTargetPreset(const QString& preset);
 		void SetShaderCustomTargets(const QString& targets);
 		void SetShaderCacheDirectory(const QString& path);
-		void SetShaderDebugArtifactDirectory(const QString& path);
 		void SetShaderEnableDebugInfo(bool enabled);
 		void SetShaderEnableOptimizations(bool enabled);
 		void SetShaderWarningsAsErrors(bool enabled);
@@ -67,7 +64,6 @@ namespace SparkleLauncher
 		void SetLaunchCVars(const QString& cvars);
 		void SetCleanScope(const QString& scope);
 		void SetShaderUseCache(bool enabled);
-		void SetShaderWriteDebugArtifacts(bool enabled);
 		void SetForceConfigure(bool enabled);
 		void SetForceRecook(bool enabled);
 		void SetConfirmForceRecook(bool enabled);
@@ -85,7 +81,6 @@ namespace SparkleLauncher
 		QString m_shaderTargetPreset = "default";
 		QString m_shaderCustomTargets = "DxilSm66, SpirV16";
 		QString m_shaderCacheDirectory;
-		QString m_shaderDebugArtifactDirectory;
 		QString m_launchBackend;
 		QString m_launchTarget = "editor";
 		QString m_launchStartupLevel;
@@ -99,7 +94,6 @@ namespace SparkleLauncher
 		bool m_shaderEnableOptimizations = true;
 		bool m_shaderWarningsAsErrors = true;
 		bool m_shaderStripDebugInfo = true;
-		bool m_shaderWriteDebugArtifacts = false;
 		bool m_forceConfigure = false;
 		bool m_forceRecook = false;
 		bool m_confirmForceRecook = false;

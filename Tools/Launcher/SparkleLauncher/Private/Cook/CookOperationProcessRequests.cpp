@@ -41,11 +41,6 @@ namespace SparkleLauncher
 		arguments.push_back(plan.Request.ShaderWarningsAsErrors ? "on" : "off");
 		arguments.push_back("--strip-debug");
 		arguments.push_back(plan.Request.ShaderStripDebugInfo ? "on" : "off");
-		if (!plan.Request.ShaderDebugArtifactDirectory.empty())
-		{
-			arguments.push_back("--debug-artifacts");
-			arguments.push_back(plan.Request.ShaderDebugArtifactDirectory.string());
-		}
 	}
 
 	static ProcessRequest MakeAssetCookerRequest(const CookOperationPlan& plan, std::string_view command, std::string_view logFileName)

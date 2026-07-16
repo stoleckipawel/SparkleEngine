@@ -5,8 +5,6 @@
 #include "LauncherProjectModel.h"
 #include "LauncherSettings.h"
 
-#include "SparkleLauncher/LauncherPaths.h"
-
 namespace SparkleLauncher
 {
 	WorkspaceIde ResolveSelectedWorkspaceIde(const LauncherSettings& settings)
@@ -47,20 +45,6 @@ namespace SparkleLauncher
 		return "DxilSm66, SpirV16";
 	}
 
-	QString ResolveShaderDebugArtifactDirectory(
-	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
-	    const LauncherSettings& settings)
-	{
-		if (!settings.ShaderDebugArtifactDirectory().trimmed().isEmpty())
-		{
-			return settings.ShaderDebugArtifactDirectory().trimmed();
-		}
-
-		const QString projectId = projectModel.ActiveProjectId().isEmpty() ? "Workspace" : projectModel.ActiveProjectId();
-		return QString::fromStdString((GetDiagnosticsDirectory(repositoryRoot) / "ShaderDebugArtifacts" / projectId.toStdString()).string());
-	}
-
 	BuildWorkspaceOperationRequest BuildWorkspacePlanRequest(
 	    const std::filesystem::path& repositoryRoot,
 	    const LauncherProjectModel& projectModel,
@@ -99,10 +83,6 @@ namespace SparkleLauncher
 		request.ShaderEnableOptimizations = settings.ShaderEnableOptimizations();
 		request.ShaderWarningsAsErrors = settings.ShaderWarningsAsErrors();
 		request.ShaderStripDebugInfo = settings.ShaderStripDebugInfo();
-		request.ShaderWriteDebugArtifacts = settings.ShaderWriteDebugArtifacts();
-		request.ShaderDebugArtifactDirectory = settings.ShaderWriteDebugArtifacts() ?
-		                                          ResolveShaderDebugArtifactDirectory(repositoryRoot, projectModel, settings) :
-		                                          QString();
 		request.LaunchBackend = settings.LaunchBackend();
 		request.LaunchTarget = settings.LaunchTarget();
 		request.LaunchStartupLevel = settings.LaunchStartupLevel();

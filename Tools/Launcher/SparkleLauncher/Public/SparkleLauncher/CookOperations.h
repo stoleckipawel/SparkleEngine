@@ -47,7 +47,6 @@ namespace SparkleLauncher
 		std::vector<std::string> ShaderTargets;
 		std::string ShaderBackend = "auto";
 		std::filesystem::path ShaderCacheDirectory;
-		std::filesystem::path ShaderDebugArtifactDirectory;
 		bool ShaderUseCache = true;
 		bool ShaderEnableDebugInfo = false;
 		bool ShaderEnableOptimizations = true;

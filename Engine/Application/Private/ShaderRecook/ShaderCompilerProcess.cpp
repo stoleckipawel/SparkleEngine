@@ -42,8 +42,6 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookReq
 		arguments += CommandLine::QuotePath(std::filesystem::path(request.Target));
 	}
 
-	arguments += " --debug-artifacts ";
-	arguments += CommandLine::QuotePath(Filesystem::GetShaderDebugArtifactRootPath());
 	return RunCommand(executablePath, projectDirectory, arguments);
 }
 

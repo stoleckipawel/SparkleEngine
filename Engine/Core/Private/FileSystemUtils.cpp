@@ -41,7 +41,6 @@ namespace Filesystem::Private
 		std::filesystem::path cookedAnimationRootPath;
 		std::filesystem::path sceneAssetRegistryPath;
 		std::filesystem::path shaderCacheRootPath;
-		std::filesystem::path shaderDebugArtifactRootPath;
 		std::filesystem::path shaderRecookSignalPath;
 		std::filesystem::path projectPath;
 		std::filesystem::path projectAssetsPath;
@@ -256,7 +255,6 @@ namespace Filesystem::Private
 		state.buildOutputRootPath = state.packageRuntimeRoot ? Paths::Normalize(state.workspacePath / "build") : Filesystem::ResolveBuildOutputRootPath();
 		state.logsRootPath = state.packageRuntimeRoot ? Paths::Normalize(state.workspacePath / "logs") : Filesystem::ResolveLogsRootPath();
 		state.shaderCacheRootPath = Paths::Normalize(state.buildOutputRootPath / "Cache" / "Shaders");
-		state.shaderDebugArtifactRootPath = Paths::Normalize(state.shaderCacheRootPath / "Debug");
 		state.shaderRecookSignalPath = Filesystem::BuildShaderRecookSignalPath(state.shaderCacheRootPath);
 		InitializeProjectOutputPaths(state);
 
@@ -408,11 +406,6 @@ namespace Filesystem
 	const std::filesystem::path& GetShaderCacheRootPath()
 	{
 		return Private::GetAssetPathState().shaderCacheRootPath;
-	}
-
-	const std::filesystem::path& GetShaderDebugArtifactRootPath()
-	{
-		return Private::GetAssetPathState().shaderDebugArtifactRootPath;
 	}
 
 	const std::filesystem::path& GetShaderRecookSignalPath()

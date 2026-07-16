@@ -169,7 +169,7 @@ namespace SparkleLauncher
 			AddProjectGeneratedTargets(plan, false, false, true);
 			return;
 		case CleanScope::ShaderCache:
-			AddCleanTarget(plan, "Shader cache", GetBuildDirectory(plan.RepositoryRoot) / "Cache" / "Shaders", "Local shader cache, recook signal, debug artifacts, and transient shader outputs.");
+			AddCleanTarget(plan, "Shader cache", GetBuildDirectory(plan.RepositoryRoot) / "Cache" / "Shaders", "Local shader cache, recook signal, and transient shader outputs.");
 			return;
 		case CleanScope::ThirdPartyDependencyCache:
 			AddCleanTarget(plan, "Third-party dependency cache", GetBuildDirectory(plan.RepositoryRoot) / "_deps", "FetchContent dependency cache; configure will re-download dependencies.");

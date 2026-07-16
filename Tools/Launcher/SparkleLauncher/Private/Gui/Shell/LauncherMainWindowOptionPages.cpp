@@ -189,7 +189,7 @@ namespace SparkleLauncher
 			    {"Generated artifacts", "artifacts", "Runnable artifacts, libraries, symbols, diagnostics, and generated project outputs under artifacts/.", QString(), "Build and packages"},
 			    {"Packaged outputs", "packages", "Release layouts and assembled package outputs under dist/.", "dist", "Build and packages"},
 			    {"IDE and workspace state", "workspace-state", "Local IDE state and ImGui workspace state generated on this machine.", ".vs, .vscode, imgui.ini, Projects/*/imgui.ini", "Workspace state"},
-			    {"Shader cache", "shader-cache", "Transient shader cache, recook signal, debug artifacts, and shader outputs.", QString(), "Caches"},
+			    {"Shader cache", "shader-cache", "Transient shader cache, recook signal, and shader outputs.", QString(), "Caches"},
 			    {"Source dependency cache", "deps", "Downloaded source dependency cache. Configure will re-download source dependency groups.", QString(), "Caches"},
 			    {"Logs", "logs", "Repository, launcher, and project logs.", "logs, user-local launcher logs, Projects/*/logs", "Logs"},
 			}};

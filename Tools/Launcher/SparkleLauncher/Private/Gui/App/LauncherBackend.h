@@ -50,7 +50,6 @@ namespace SparkleLauncher
 		QString ShaderTargets;
 		QString ShaderBackend;
 		QString ShaderCacheDirectory;
-		QString ShaderDebugArtifactDirectory;
 		QString LaunchBackend;
 		QString LaunchTarget;
 		QString LaunchStartupLevel;
@@ -66,7 +65,6 @@ namespace SparkleLauncher
 		bool ShaderEnableOptimizations = true;
 		bool ShaderWarningsAsErrors = true;
 		bool ShaderStripDebugInfo = true;
-		bool ShaderWriteDebugArtifacts = false;
 		bool ForceConfigure = false;
 		bool ForceRecook = false;
 		bool ConfirmForceRecook = false;

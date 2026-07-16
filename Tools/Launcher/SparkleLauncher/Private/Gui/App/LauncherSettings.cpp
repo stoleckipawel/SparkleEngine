@@ -93,11 +93,6 @@ namespace SparkleLauncher
 		return m_shaderCacheDirectory;
 	}
 
-	const QString& LauncherSettings::ShaderDebugArtifactDirectory() const
-	{
-		return m_shaderDebugArtifactDirectory;
-	}
-
 	const QString& LauncherSettings::LaunchBackend() const
 	{
 		return m_launchBackend;
@@ -161,11 +156,6 @@ namespace SparkleLauncher
 	bool LauncherSettings::ShaderStripDebugInfo() const
 	{
 		return m_shaderStripDebugInfo;
-	}
-
-	bool LauncherSettings::ShaderWriteDebugArtifacts() const
-	{
-		return m_shaderWriteDebugArtifacts;
 	}
 
 	bool LauncherSettings::ForceConfigure() const
@@ -278,16 +268,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_shaderCacheDirectory = path;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetShaderDebugArtifactDirectory(const QString& path)
-	{
-		if (m_shaderDebugArtifactDirectory == path)
-		{
-			return;
-		}
-		m_shaderDebugArtifactDirectory = path;
 		emit SettingsChanged();
 	}
 
@@ -419,16 +399,6 @@ namespace SparkleLauncher
 			return;
 		}
 		m_shaderStripDebugInfo = enabled;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetShaderWriteDebugArtifacts(bool enabled)
-	{
-		if (m_shaderWriteDebugArtifacts == enabled)
-		{
-			return;
-		}
-		m_shaderWriteDebugArtifacts = enabled;
 		emit SettingsChanged();
 	}
 

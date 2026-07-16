@@ -50,7 +50,6 @@ namespace Filesystem
 	const std::filesystem::path& GetCookedAnimationRootPath();
 	const std::filesystem::path& GetSceneAssetRegistryPath();
 	const std::filesystem::path& GetShaderCacheRootPath();
-	const std::filesystem::path& GetShaderDebugArtifactRootPath();
 	const std::filesystem::path& GetShaderRecookSignalPath();
 	std::filesystem::path BuildShaderRecookSignalPath(const std::filesystem::path& shaderCacheRootPath);
 

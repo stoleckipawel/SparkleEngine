@@ -17,10 +17,6 @@ namespace SparkleLauncher
 	WorkspaceIde ResolveSelectedWorkspaceIde(const LauncherSettings& settings);
 	QString ResolveSelectedWorkspaceIdeName(const LauncherSettings& settings);
 	QString ResolveShaderTargetSelection(const LauncherSettings& settings);
-	QString ResolveShaderDebugArtifactDirectory(
-	    const std::filesystem::path& repositoryRoot,
-	    const LauncherProjectModel& projectModel,
-	    const LauncherSettings& settings);
 
 	BuildWorkspaceOperationRequest BuildWorkspacePlanRequest(
 	    const std::filesystem::path& repositoryRoot,
