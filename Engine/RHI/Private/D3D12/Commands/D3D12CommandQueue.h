@@ -6,7 +6,16 @@
 #include <wrl/client.h>
 
 #include <cstdint>
+#include <mutex>
 #include <span>
+
+class D3D12CommandQueue;
+
+struct D3D12QueueWait final
+{
+	const D3D12CommandQueue* ProducerQueue = nullptr;
+	std::uint64_t SubmissionValue = 0;
+};
 
 class D3D12CommandQueue final
 {
@@ -24,10 +33,12 @@ class D3D12CommandQueue final
 
 	static D3D12_COMMAND_LIST_TYPE GetNativeCommandListType(ERhiQueueType queueType) noexcept;
 
-	void Execute(std::span<ID3D12CommandList* const> commandLists) noexcept;
-	RhiSubmissionToken Signal() noexcept;
+	RhiSubmissionToken Submit(
+	    std::span<ID3D12CommandList* const> commandLists,
+	    std::span<const D3D12QueueWait> waits = {}) noexcept;
 	void WaitFor(const D3D12CommandQueue& executionQueue, std::uint64_t submissionValue) noexcept;
 	void WaitForSubmission(std::uint64_t submissionValue) noexcept;
+	void WaitForIdle() noexcept;
 	bool IsSubmissionComplete(std::uint64_t submissionValue) const noexcept;
 
 	RhiSubmissionToken GetLastSubmittedToken() const noexcept;
@@ -44,4 +55,6 @@ class D3D12CommandQueue final
 	HANDLE m_fenceEvent = nullptr;
 	std::uint64_t m_nextSubmissionValue = 1;
 	std::uint64_t m_lastSubmittedValue = 0;
+	mutable std::mutex m_submissionMutex;
+	std::mutex m_cpuWaitMutex;
 };

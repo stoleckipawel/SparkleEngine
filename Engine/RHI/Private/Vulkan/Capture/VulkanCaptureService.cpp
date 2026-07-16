@@ -1,7 +1,8 @@
 #include "Vulkan/Capture/VulkanCaptureService.h"
 
 #include "Capture/RhiBmpWriter.h"
-#include "Vulkan/VulkanRenderHardwareInterface.h"
+#include "Vulkan/Commands/VulkanCommandQueue.h"
+#include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
 namespace
@@ -70,7 +71,7 @@ namespace
 	}
 }
 
-VulkanCaptureService::VulkanCaptureService(VulkanRenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
+VulkanCaptureService::VulkanCaptureService(VulkanRhi& rhi) noexcept : m_rhi(&rhi) {}
 
 RhiCaptureResult VulkanCaptureService::CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept
 {
@@ -92,17 +93,16 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
     ResourceState sourceState,
     const std::filesystem::path& outputPath) noexcept
 {
-	if (m_owner == nullptr || resource.Value == nullptr || width == 0 || height == 0)
+	if (m_rhi == nullptr || resource.Value == nullptr || width == 0 || height == 0)
 	{
 		return false;
 	}
 
-	const VkDevice device = m_owner->GetVulkanDevice();
-	const VkPhysicalDevice physicalDevice = m_owner->GetVulkanPhysicalDevice();
-	const VkQueue queue = m_owner->GetVulkanGraphicsQueue();
-	const std::uint32_t queueFamilyIndex = m_owner->GetVulkanGraphicsQueueFamilyIndex();
+	const VkDevice device = m_rhi->GetDevice();
+	const VkPhysicalDevice physicalDevice = m_rhi->GetPhysicalDevice();
+	const std::uint32_t queueFamilyIndex = m_rhi->GetGraphicsQueueFamilyIndex();
 	const VkImage sourceImage = static_cast<VkImage>(resource.Value);
-	if (device == VK_NULL_HANDLE || physicalDevice == VK_NULL_HANDLE || queue == VK_NULL_HANDLE || sourceImage == VK_NULL_HANDLE)
+	if (device == VK_NULL_HANDLE || physicalDevice == VK_NULL_HANDLE || sourceImage == VK_NULL_HANDLE)
 	{
 		return false;
 	}
@@ -216,31 +216,17 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
 		return false;
 	}
 
-	const VkSubmitInfo submitInfo{
-	    .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-	    .pNext = nullptr,
-	    .waitSemaphoreCount = 0,
-	    .pWaitSemaphores = nullptr,
-	    .pWaitDstStageMask = nullptr,
-	    .commandBufferCount = 1,
-	    .pCommandBuffers = &commandBuffer,
-	    .signalSemaphoreCount = 0,
-	    .pSignalSemaphores = nullptr};
-	VkFence fence = VK_NULL_HANDLE;
-	const VkFenceCreateInfo fenceInfo{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-	if (vkCreateFence(device, &fenceInfo, nullptr, &fence) != VK_SUCCESS || vkQueueSubmit(queue, 1, &submitInfo, fence) != VK_SUCCESS ||
-	    vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+	VulkanCommandQueue& graphicsQueue = m_rhi->GetCommandQueue(ERhiQueueType::Graphics);
+	const RhiSubmissionToken captureToken =
+	    graphicsQueue.Submit(VulkanQueueSubmission{.CommandBuffer = commandBuffer});
+	if (!captureToken.IsValid())
 	{
-		if (fence != VK_NULL_HANDLE)
-		{
-			vkDestroyFence(device, fence, nullptr);
-		}
 		vkDestroyCommandPool(device, commandPool, nullptr);
 		vkFreeMemory(device, readbackMemory, nullptr);
 		vkDestroyBuffer(device, readbackBuffer, nullptr);
 		return false;
 	}
-	vkDestroyFence(device, fence, nullptr);
+	graphicsQueue.WaitForSubmission(captureToken.Value);
 
 	void* mappedData = nullptr;
 	const bool mapped = vkMapMemory(device, readbackMemory, 0, readbackSize, 0, &mappedData) == VK_SUCCESS && mappedData != nullptr;

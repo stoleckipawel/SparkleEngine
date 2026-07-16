@@ -3,12 +3,12 @@
 #include "Capture/RhiCaptureService.h"
 #include "Vulkan/VulkanIncludes.h"
 
-class VulkanRenderHardwareInterface;
+class VulkanRhi;
 
 class VulkanCaptureService final : public RhiCaptureService
 {
   public:
-	explicit VulkanCaptureService(VulkanRenderHardwareInterface& owner) noexcept;
+	explicit VulkanCaptureService(VulkanRhi& rhi) noexcept;
 
 	RhiCaptureResult CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept override;
 
@@ -20,5 +20,5 @@ class VulkanCaptureService final : public RhiCaptureService
 	    ResourceState sourceState,
 	    const std::filesystem::path& outputPath) noexcept;
 
-	VulkanRenderHardwareInterface* m_owner = nullptr;
+	VulkanRhi* m_rhi = nullptr;
 };

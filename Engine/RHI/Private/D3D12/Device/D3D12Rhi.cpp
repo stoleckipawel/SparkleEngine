@@ -435,22 +435,12 @@ ID3D12CommandQueue* D3D12Rhi::GetPresentationCommandQueue() const noexcept
 
 const ComPtr<ID3D12Fence1>& D3D12Rhi::GetFence() const noexcept
 {
-	return GetFence(ERhiQueueType::Graphics);
-}
-
-const ComPtr<ID3D12Fence1>& D3D12Rhi::GetFence(ERhiQueueType queueType) const noexcept
-{
-	return m_queues[RhiQueueTypeToIndex(queueType)]->GetFence();
+	return m_queues[RhiQueueTypeToIndex(ERhiQueueType::Graphics)]->GetFence();
 }
 
 HANDLE D3D12Rhi::GetFenceEvent() const noexcept
 {
-	return GetFenceEvent(ERhiQueueType::Graphics);
-}
-
-HANDLE D3D12Rhi::GetFenceEvent(ERhiQueueType queueType) const noexcept
-{
-	return m_queues[RhiQueueTypeToIndex(queueType)]->GetFenceEvent();
+	return m_queues[RhiQueueTypeToIndex(ERhiQueueType::Graphics)]->GetFenceEvent();
 }
 
 D3D_FEATURE_LEVEL D3D12Rhi::GetDeviceFeatureLevel() const noexcept
@@ -562,16 +552,36 @@ void D3D12Rhi::DisableExternalFeatureHooks() noexcept
 	NotifyExternalPresentationReady(false);
 }
 
-void D3D12Rhi::ExecuteCommandLists(
+RhiSubmissionToken D3D12Rhi::SubmitCommandLists(
 	ERhiQueueType queueType,
-	std::span<ID3D12CommandList* const> commandLists) noexcept
+	std::span<ID3D12CommandList* const> commandLists,
+	std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
-	m_queues[RhiQueueTypeToIndex(queueType)]->Execute(commandLists);
-}
+	RhiSubmissionState waitState;
+	for (const RhiSubmissionToken token : waitTokens)
+	{
+		if (token.Queue != queueType)
+		{
+			waitState.MarkUsed(token);
+		}
+	}
 
-RhiSubmissionToken D3D12Rhi::Signal(ERhiQueueType queueType) noexcept
-{
-	return m_queues[RhiQueueTypeToIndex(queueType)]->Signal();
+	std::array<D3D12QueueWait, RhiQueueTypeCount> waits{};
+	std::size_t waitCount = 0;
+	for (std::size_t waitQueueIndex = 0; waitQueueIndex < RhiQueueTypeCount; ++waitQueueIndex)
+	{
+		const ERhiQueueType waitQueue = static_cast<ERhiQueueType>(waitQueueIndex);
+		const RhiSubmissionToken token = waitState.GetToken(waitQueue);
+		if (token.IsValid())
+		{
+			waits[waitCount++] = D3D12QueueWait{
+			    .ProducerQueue = m_queues[waitQueueIndex].get(),
+			    .SubmissionValue = token.Value};
+		}
+	}
+	return m_queues[RhiQueueTypeToIndex(queueType)]->Submit(
+	    commandLists,
+	    std::span<const D3D12QueueWait>(waits.data(), waitCount));
 }
 
 void D3D12Rhi::QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept
@@ -620,8 +630,7 @@ void D3D12Rhi::Flush() noexcept
 {
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
-		WaitForSubmission(Signal(queueType));
+		m_queues[queueIndex]->WaitForIdle();
 	}
 }
 

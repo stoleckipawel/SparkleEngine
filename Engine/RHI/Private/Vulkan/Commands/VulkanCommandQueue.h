@@ -4,6 +4,8 @@
 #include "Vulkan/VulkanIncludes.h"
 
 #include <cstdint>
+#include <memory>
+#include <mutex>
 #include <span>
 
 class VulkanRhi;
@@ -17,10 +19,19 @@ struct VulkanQueueSubmission final
 	VkSemaphore BinarySignalSemaphore = VK_NULL_HANDLE;
 };
 
+struct VulkanNativeQueueState final
+{
+	VkQueue Queue = VK_NULL_HANDLE;
+	mutable std::mutex SubmissionMutex;
+};
+
 class VulkanCommandQueue final
 {
   public:
-	VulkanCommandQueue(VulkanRhi& rhi, ERhiQueueType queueType, VkQueue nativeQueue) noexcept;
+	VulkanCommandQueue(
+	    VulkanRhi& rhi,
+	    ERhiQueueType queueType,
+	    std::shared_ptr<VulkanNativeQueueState> nativeQueue) noexcept;
 	~VulkanCommandQueue() noexcept;
 
 	VulkanCommandQueue(const VulkanCommandQueue&) = delete;
@@ -35,13 +46,13 @@ class VulkanCommandQueue final
 	RhiSubmissionToken GetLastSubmittedToken() const noexcept;
 	std::uint64_t GetCompletedSubmissionValue() const noexcept;
 	ERhiQueueType GetQueueType() const noexcept { return m_queueType; }
-	VkQueue GetNativeQueue() const noexcept { return m_queue; }
+	VkQueue GetNativeQueue() const noexcept { return m_nativeQueue != nullptr ? m_nativeQueue->Queue : VK_NULL_HANDLE; }
 	VkSemaphore GetTimelineSemaphore() const noexcept { return m_timelineSemaphore; }
 
   private:
 	VulkanRhi& m_rhi;
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
-	VkQueue m_queue = VK_NULL_HANDLE;
+	std::shared_ptr<VulkanNativeQueueState> m_nativeQueue;
 	VkSemaphore m_timelineSemaphore = VK_NULL_HANDLE;
 	std::uint64_t m_nextSubmissionValue = 1;
 	std::uint64_t m_lastSubmittedValue = 0;

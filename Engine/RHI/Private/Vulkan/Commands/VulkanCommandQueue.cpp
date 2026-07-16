@@ -5,7 +5,6 @@
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 
-#include <algorithm>
 #include <array>
 
 namespace
@@ -16,8 +15,8 @@ namespace
 VulkanCommandQueue::VulkanCommandQueue(
 	VulkanRhi& rhi,
 	ERhiQueueType queueType,
-	VkQueue nativeQueue) noexcept :
-	m_rhi(rhi), m_queueType(queueType), m_queue(nativeQueue)
+	std::shared_ptr<VulkanNativeQueueState> nativeQueue) noexcept :
+	m_rhi(rhi), m_queueType(queueType), m_nativeQueue(std::move(nativeQueue))
 {
 	const VkSemaphoreTypeCreateInfo timelineCreateInfo{
 	    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
@@ -50,7 +49,7 @@ VulkanCommandQueue::~VulkanCommandQueue() noexcept
 
 RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submission) noexcept
 {
-	if (m_queue == VK_NULL_HANDLE || submission.CommandBuffer == VK_NULL_HANDLE)
+	if (m_nativeQueue == nullptr || m_nativeQueue->Queue == VK_NULL_HANDLE || submission.CommandBuffer == VK_NULL_HANDLE)
 	{
 		Diagnostics::Fail(g_vulkanCommandQueueLogger, __FILE__, __LINE__, "Submit called without a queue or command buffer");
 		return {};
@@ -91,6 +90,7 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 		++waitCount;
 	}
 
+	std::lock_guard lock(m_nativeQueue->SubmissionMutex);
 	const std::uint64_t submissionValue = m_nextSubmissionValue++;
 	const std::array<VkSemaphore, 2> signalSemaphores = {m_timelineSemaphore, submission.BinarySignalSemaphore};
 	const std::array<std::uint64_t, 2> signalValues = {submissionValue, 0};
@@ -113,7 +113,7 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	    .signalSemaphoreCount = signalCount,
 	    .pSignalSemaphores = signalSemaphores.data()};
 
-	const VkResult submitResult = vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+	const VkResult submitResult = vkQueueSubmit(m_nativeQueue->Queue, 1, &submitInfo, VK_NULL_HANDLE);
 	if (!VulkanResult::Succeeded(submitResult))
 	{
 		Diagnostics::Fail(
@@ -160,6 +160,11 @@ bool VulkanCommandQueue::IsSubmissionComplete(std::uint64_t submissionValue) con
 
 RhiSubmissionToken VulkanCommandQueue::GetLastSubmittedToken() const noexcept
 {
+	if (m_nativeQueue == nullptr)
+	{
+		return {};
+	}
+	std::lock_guard lock(m_nativeQueue->SubmissionMutex);
 	return RhiSubmissionToken{.Queue = m_queueType, .Value = m_lastSubmittedValue};
 }
 

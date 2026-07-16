@@ -1,8 +1,8 @@
 #include "D3D12/Capture/D3D12CaptureService.h"
 
 #include "Capture/RhiBmpWriter.h"
-#include "D3D12/D3D12RenderHardwareInterface.h"
 #include "D3D12/D3D12TypeConversions.h"
+#include "D3D12/Device/D3D12Rhi.h"
 
 #include <d3d12.h>
 #include <wrl/client.h>
@@ -50,7 +50,7 @@ namespace
 	}
 }
 
-D3D12CaptureService::D3D12CaptureService(D3D12RenderHardwareInterface& owner) noexcept : m_owner(&owner) {}
+D3D12CaptureService::D3D12CaptureService(D3D12Rhi& rhi) noexcept : m_rhi(&rhi) {}
 
 RhiCaptureResult D3D12CaptureService::CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept
 {
@@ -70,10 +70,9 @@ bool D3D12CaptureService::CaptureNativeTextureToBmp(
     ResourceState sourceState,
     const std::filesystem::path& outputPath) noexcept
 {
-	ID3D12Device* const device = m_owner != nullptr ? static_cast<ID3D12Device*>(m_owner->GetDeviceHandle().Value) : nullptr;
-	ID3D12CommandQueue* const queue = m_owner != nullptr ? static_cast<ID3D12CommandQueue*>(m_owner->GetGraphicsQueueHandle().Value) : nullptr;
+	ID3D12Device* const device = m_rhi != nullptr ? m_rhi->GetDevice().Get() : nullptr;
 	ID3D12Resource* const sourceResource = static_cast<ID3D12Resource*>(resource.Value);
-	if (device == nullptr || queue == nullptr || sourceResource == nullptr)
+	if (device == nullptr || sourceResource == nullptr)
 	{
 		return false;
 	}
@@ -153,30 +152,13 @@ bool D3D12CaptureService::CaptureNativeTextureToBmp(
 	}
 
 	ID3D12CommandList* const commandLists[] = {commandList.Get()};
-	queue->ExecuteCommandLists(1, commandLists);
-
-	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-	if (FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence))) || FAILED(queue->Signal(fence.Get(), 1)))
+	const RhiSubmissionToken captureToken =
+	    m_rhi->SubmitCommandLists(ERhiQueueType::Graphics, commandLists);
+	if (!captureToken.IsValid())
 	{
 		return false;
 	}
-
-	if (fence->GetCompletedValue() < 1)
-	{
-		const HANDLE fenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
-		if (fenceEvent == nullptr)
-		{
-			return false;
-		}
-		const HRESULT eventResult = fence->SetEventOnCompletion(1, fenceEvent);
-		if (FAILED(eventResult))
-		{
-			CloseHandle(fenceEvent);
-			return false;
-		}
-		WaitForSingleObject(fenceEvent, INFINITE);
-		CloseHandle(fenceEvent);
-	}
+	m_rhi->WaitForSubmission(captureToken);
 
 	void* mappedData = nullptr;
 	D3D12_RANGE readRange{0, static_cast<SIZE_T>(totalBytes)};

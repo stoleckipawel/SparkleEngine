@@ -36,12 +36,14 @@ class D3D12Rhi final
 	D3D12Rhi(D3D12Rhi&&) = delete;
 	D3D12Rhi& operator=(D3D12Rhi&&) = delete;
 
-	void ExecuteCommandLists(ERhiQueueType queueType, std::span<ID3D12CommandList* const> commandLists) noexcept;
+	RhiSubmissionToken SubmitCommandLists(
+	    ERhiQueueType queueType,
+	    std::span<ID3D12CommandList* const> commandLists,
+	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
 
 	void SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept;
 	uint32_t GetCurrentFrameIndex() const noexcept;
 
-	RhiSubmissionToken Signal(ERhiQueueType queueType) noexcept;
 	void QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept;
 	void WaitForSubmission(RhiSubmissionToken token) noexcept;
 	bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept;
@@ -68,9 +70,7 @@ class D3D12Rhi final
 	const ComPtr<ID3D12CommandQueue>& GetCommandQueue(ERhiQueueType queueType) const noexcept;
 	ID3D12CommandQueue* GetPresentationCommandQueue() const noexcept;
 	const ComPtr<ID3D12Fence1>& GetFence() const noexcept;
-	const ComPtr<ID3D12Fence1>& GetFence(ERhiQueueType queueType) const noexcept;
 	HANDLE GetFenceEvent() const noexcept;
-	HANDLE GetFenceEvent(ERhiQueueType queueType) const noexcept;
 	D3D_FEATURE_LEVEL GetDeviceFeatureLevel() const noexcept;
 	D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() noexcept;
 	const D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() const noexcept;

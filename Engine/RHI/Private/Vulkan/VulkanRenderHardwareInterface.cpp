@@ -81,7 +81,7 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
     m_rhi(&rhi), m_swapChain(&swapChain), m_commandContext(&commandContext)
 {
 	m_interopService = std::make_unique<VulkanInteropService>(*this);
-	m_captureService = std::make_unique<VulkanCaptureService>(*this);
+	m_captureService = std::make_unique<VulkanCaptureService>(rhi);
 	m_presentationService = std::make_unique<VulkanPresentationService>(*this);
 	m_pipelineService = std::make_unique<VulkanPipelineService>(rhi);
 	m_rayTracingServices = std::make_unique<VulkanRayTracingServices>(rhi, memoryAllocator);
@@ -279,11 +279,17 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
-	const bool hasComputeQueue = m_rhi != nullptr && m_rhi->HasIndependentQueue(ERhiQueueType::Compute);
-	const bool hasCopyQueue = m_rhi != nullptr && m_rhi->HasIndependentQueue(ERhiQueueType::Copy);
+	const bool hasComputeQueue = m_rhi != nullptr && m_rhi->GetQueue(ERhiQueueType::Compute) != VK_NULL_HANDLE;
+	const bool hasCopyQueue = m_rhi != nullptr && m_rhi->GetQueue(ERhiQueueType::Copy) != VK_NULL_HANDLE;
 	capabilities.Queues.Set(ERhiQueueType::Graphics, true, true);
-	capabilities.Queues.Set(ERhiQueueType::Compute, hasComputeQueue, hasComputeQueue);
-	capabilities.Queues.Set(ERhiQueueType::Copy, hasCopyQueue, hasCopyQueue);
+	capabilities.Queues.Set(
+	    ERhiQueueType::Compute,
+	    hasComputeQueue,
+	    hasComputeQueue && m_rhi->HasIndependentQueue(ERhiQueueType::Compute));
+	capabilities.Queues.Set(
+	    ERhiQueueType::Copy,
+	    hasCopyQueue,
+	    hasCopyQueue && m_rhi->HasIndependentQueue(ERhiQueueType::Copy));
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VulkanManaged;
 	capabilities.MemorySupport = BuildBackendMemorySupport(m_diagnostics.get());

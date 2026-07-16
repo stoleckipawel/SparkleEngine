@@ -79,7 +79,7 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain), m_uploadService(&uploadService)
 {
 	m_interopService = std::make_unique<D3D12InteropService>(*this);
-	m_captureService = std::make_unique<D3D12CaptureService>(*this);
+	m_captureService = std::make_unique<D3D12CaptureService>(rhi);
 	m_presentationService = std::make_unique<D3D12PresentationService>(*this);
 	m_pipelineService = std::make_unique<D3D12PipelineService>(rhi);
 	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);

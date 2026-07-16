@@ -6,6 +6,7 @@
 #include "Diagnostics/RhiDiagnostics.h"
 #include "RayTracing/RhiRayTracingDesc.h"
 #include "Vulkan/Diagnostics/VulkanDebugLayer.h"
+#include "Vulkan/Device/VulkanQueueTopology.h"
 #include "Vulkan/Device/VulkanRayTracingFeatureQuery.h"
 
 #include <array>
@@ -80,6 +81,7 @@ class VulkanRhi final
 	const VulkanCommandQueue& GetCommandQueue(ERhiQueueType queueType) const noexcept;
 	std::uint32_t GetGraphicsQueueFamilyIndex() const noexcept;
 	std::uint32_t GetQueueFamilyIndex(ERhiQueueType queueType) const noexcept;
+	std::uint32_t GetQueueIndex(ERhiQueueType queueType) const noexcept;
 	bool HasIndependentQueue(ERhiQueueType queueType) const noexcept;
 	void ConfigureResourceQueueSharing(VkBufferCreateInfo& createInfo) const noexcept;
 	void ConfigureResourceQueueSharing(VkImageCreateInfo& createInfo) const noexcept;
@@ -111,7 +113,7 @@ class VulkanRhi final
 		VkPhysicalDeviceFeatures2 Features = {};
 		VkPhysicalDeviceVulkan12Features Features12 = {};
 		VkPhysicalDeviceVulkan13Features Features13 = {};
-		std::array<std::uint32_t, RhiQueueTypeCount> QueueFamilyIndices = {UINT32_MAX, UINT32_MAX, UINT32_MAX};
+		VulkanQueueTopology QueueTopology;
 		std::uint32_t Score = 0;
 	};
 
@@ -129,9 +131,6 @@ class VulkanRhi final
 	static bool IsLayerAvailable(const char* layerName) noexcept;
 	static bool IsInstanceExtensionAvailable(const char* extensionName) noexcept;
 	static bool IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept;
-	static std::uint32_t FindGraphicsQueueFamily(VkPhysicalDevice device) noexcept;
-	static std::uint32_t FindDedicatedComputeQueueFamily(VkPhysicalDevice device) noexcept;
-	static std::uint32_t FindDedicatedCopyQueueFamily(VkPhysicalDevice device) noexcept;
 	static std::uint32_t ScorePhysicalDevice(const VkPhysicalDeviceProperties& properties) noexcept;
 	static VulkanAdapterInfo BuildAdapterInfo(const VkPhysicalDeviceProperties& properties);
 	static std::string FormatApiVersion(std::uint32_t version);
@@ -148,8 +147,7 @@ class VulkanRhi final
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device = VK_NULL_HANDLE;
 	std::array<std::unique_ptr<VulkanCommandQueue>, RhiQueueTypeCount> m_queues{};
-	std::array<std::uint32_t, RhiQueueTypeCount> m_queueFamilyIndices = {UINT32_MAX, UINT32_MAX, UINT32_MAX};
-	std::vector<std::uint32_t> m_uniqueQueueFamilyIndices;
+	VulkanQueueTopology m_queueTopology;
 	PFN_vkSetDebugUtilsObjectNameEXT m_setDebugUtilsObjectName = nullptr;
 	PFN_vkCmdBeginDebugUtilsLabelEXT m_cmdBeginDebugUtilsLabel = nullptr;
 	PFN_vkCmdEndDebugUtilsLabelEXT m_cmdEndDebugUtilsLabel = nullptr;

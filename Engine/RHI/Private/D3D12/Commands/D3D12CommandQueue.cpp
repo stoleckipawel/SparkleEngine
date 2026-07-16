@@ -80,25 +80,25 @@ D3D12_COMMAND_LIST_TYPE D3D12CommandQueue::GetNativeCommandListType(ERhiQueueTyp
 	}
 }
 
-void D3D12CommandQueue::Execute(std::span<ID3D12CommandList* const> commandLists) noexcept
+RhiSubmissionToken D3D12CommandQueue::Submit(
+	std::span<ID3D12CommandList* const> commandLists,
+	std::span<const D3D12QueueWait> waits) noexcept
 {
-	if (m_queue == nullptr || commandLists.empty())
+	if (m_queue == nullptr || m_fence == nullptr || commandLists.empty())
 	{
-		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Execute called without a queue or command lists");
-		return;
-	}
-
-	m_queue->ExecuteCommandLists(static_cast<UINT>(commandLists.size()), commandLists.data());
-}
-
-RhiSubmissionToken D3D12CommandQueue::Signal() noexcept
-{
-	if (m_queue == nullptr || m_fence == nullptr)
-	{
-		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Signal called without queue synchronization state");
+		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Submit called without queue submission state");
 		return {};
 	}
 
+	std::lock_guard lock(m_submissionMutex);
+	for (const D3D12QueueWait& wait : waits)
+	{
+		if (wait.ProducerQueue != nullptr && wait.ProducerQueue != this && wait.SubmissionValue != 0)
+		{
+			CHECK(m_queue->Wait(wait.ProducerQueue->m_fence.Get(), wait.SubmissionValue));
+		}
+	}
+	m_queue->ExecuteCommandLists(static_cast<UINT>(commandLists.size()), commandLists.data());
 	const std::uint64_t submissionValue = m_nextSubmissionValue++;
 	CHECK(m_queue->Signal(m_fence.Get(), submissionValue));
 	m_lastSubmittedValue = submissionValue;
@@ -119,6 +119,7 @@ void D3D12CommandQueue::WaitFor(
 		return;
 	}
 
+	std::lock_guard lock(m_submissionMutex);
 	CHECK(m_queue->Wait(executionQueue.m_fence.Get(), submissionValue));
 }
 
@@ -134,8 +135,27 @@ void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcep
 		return;
 	}
 
+	std::lock_guard lock(m_cpuWaitMutex);
 	CHECK(m_fence->SetEventOnCompletion(submissionValue, m_fenceEvent));
 	WaitForSingleObject(m_fenceEvent, INFINITE);
+}
+
+void D3D12CommandQueue::WaitForIdle() noexcept
+{
+	if (m_queue == nullptr || m_fence == nullptr)
+	{
+		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Idle wait requested without synchronization state");
+		return;
+	}
+
+	std::uint64_t submissionValue = 0;
+	{
+		std::lock_guard lock(m_submissionMutex);
+		submissionValue = m_nextSubmissionValue++;
+		CHECK(m_queue->Signal(m_fence.Get(), submissionValue));
+		m_lastSubmittedValue = submissionValue;
+	}
+	WaitForSubmission(submissionValue);
 }
 
 bool D3D12CommandQueue::IsSubmissionComplete(std::uint64_t submissionValue) const noexcept
@@ -145,6 +165,7 @@ bool D3D12CommandQueue::IsSubmissionComplete(std::uint64_t submissionValue) cons
 
 RhiSubmissionToken D3D12CommandQueue::GetLastSubmittedToken() const noexcept
 {
+	std::lock_guard lock(m_submissionMutex);
 	return RhiSubmissionToken{.Queue = m_queueType, .Value = m_lastSubmittedValue};
 }
 

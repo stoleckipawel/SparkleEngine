@@ -236,7 +236,9 @@ void D3D12DescriptorService::SetSamplerTableHandle(RhiDescriptorTableHandle samp
 
 RhiResourceViewHandle D3D12DescriptorService::CreateResourceView(const RhiResourceViewDesc& desc)
 {
-	if (!RhiContract::IsResourceViewDescUsable(desc))
+	if (!RhiContract::IsResourceViewDescUsable(desc) || m_rhi == nullptr || m_descriptorHeapManager == nullptr ||
+	    (m_freeResourceViewIndices.empty() &&
+	     m_resourceViewRecords.size() >= RhiResourceViewHandle::MaximumRecordCount))
 	{
 		return {};
 	}
@@ -291,12 +293,6 @@ RhiResourceViewHandle D3D12DescriptorService::CreateResourceView(const RhiResour
 		m_resourceViewRecords[recordIndex].generation = generation;
 		return RhiResourceViewHandle::Make(recordIndex, generation);
 	}
-	if (m_resourceViewRecords.size() >= RhiResourceViewHandle::MaximumRecordCount)
-	{
-		DestroyDescriptorAllocation(descriptorType, allocation);
-		return {};
-	}
-
 	m_resourceViewRecords.push_back(record);
 	return RhiResourceViewHandle::Make(static_cast<std::uint32_t>(m_resourceViewRecords.size() - 1u), 0u);
 }

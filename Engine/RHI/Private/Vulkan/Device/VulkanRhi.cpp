@@ -228,50 +228,53 @@ std::uint32_t VulkanRhi::GetGraphicsQueueFamilyIndex() const noexcept
 
 std::uint32_t VulkanRhi::GetQueueFamilyIndex(ERhiQueueType queueType) const noexcept
 {
-	return m_queueFamilyIndices[RhiQueueTypeToIndex(queueType)];
+	return m_queueTopology.Get(queueType).FamilyIndex;
+}
+
+std::uint32_t VulkanRhi::GetQueueIndex(ERhiQueueType queueType) const noexcept
+{
+	return m_queueTopology.Get(queueType).QueueIndex;
 }
 
 bool VulkanRhi::HasIndependentQueue(ERhiQueueType queueType) const noexcept
 {
-	if (queueType == ERhiQueueType::Graphics)
-	{
-		return GetQueue(queueType) != VK_NULL_HANDLE;
-	}
-
-	return GetQueue(queueType) != VK_NULL_HANDLE && GetQueue(queueType) != GetQueue(ERhiQueueType::Graphics);
+	return m_queueTopology.HasIndependentQueue(queueType);
 }
 
 void VulkanRhi::ConfigureResourceQueueSharing(VkBufferCreateInfo& createInfo) const noexcept
 {
-	if (m_uniqueQueueFamilyIndices.size() <= 1)
+	const std::span<const std::uint32_t> familyIndices = m_queueTopology.GetFamilyIndices();
+	if (familyIndices.size() <= 1)
 	{
 		return;
 	}
 	createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-	createInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(m_uniqueQueueFamilyIndices.size());
-	createInfo.pQueueFamilyIndices = m_uniqueQueueFamilyIndices.data();
+	createInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(familyIndices.size());
+	createInfo.pQueueFamilyIndices = familyIndices.data();
 }
 
 void VulkanRhi::ConfigureResourceQueueSharing(VkImageCreateInfo& createInfo) const noexcept
 {
-	if (m_uniqueQueueFamilyIndices.size() <= 1)
+	const std::span<const std::uint32_t> familyIndices = m_queueTopology.GetFamilyIndices();
+	if (familyIndices.size() <= 1)
 	{
 		return;
 	}
 	createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-	createInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(m_uniqueQueueFamilyIndices.size());
-	createInfo.pQueueFamilyIndices = m_uniqueQueueFamilyIndices.data();
+	createInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(familyIndices.size());
+	createInfo.pQueueFamilyIndices = familyIndices.data();
 }
 
 void VulkanRhi::ConfigureResourceQueueSharing(VkSwapchainCreateInfoKHR& createInfo) const noexcept
 {
-	if (m_uniqueQueueFamilyIndices.size() <= 1)
+	const std::span<const std::uint32_t> familyIndices = m_queueTopology.GetFamilyIndices();
+	if (familyIndices.size() <= 1)
 	{
 		return;
 	}
 	createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-	createInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(m_uniqueQueueFamilyIndices.size());
-	createInfo.pQueueFamilyIndices = m_uniqueQueueFamilyIndices.data();
+	createInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(familyIndices.size());
+	createInfo.pQueueFamilyIndices = familyIndices.data();
 }
 
 PFN_vkSetDebugUtilsObjectNameEXT VulkanRhi::GetSetDebugUtilsObjectName() const noexcept
@@ -495,10 +498,10 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 		{
 			continue;
 		}
-		candidate.QueueFamilyIndices[RhiQueueTypeToIndex(ERhiQueueType::Graphics)] = FindGraphicsQueueFamily(device);
-		candidate.QueueFamilyIndices[RhiQueueTypeToIndex(ERhiQueueType::Compute)] = FindDedicatedComputeQueueFamily(device);
-		candidate.QueueFamilyIndices[RhiQueueTypeToIndex(ERhiQueueType::Copy)] = FindDedicatedCopyQueueFamily(device);
-		if (candidate.QueueFamilyIndices[RhiQueueTypeToIndex(ERhiQueueType::Graphics)] == UINT32_MAX)
+		candidate.QueueTopology = VulkanQueueTopology::Select(device);
+		if (!candidate.QueueTopology.Supports(ERhiQueueType::Graphics) ||
+		    !candidate.QueueTopology.Supports(ERhiQueueType::Compute) ||
+		    !candidate.QueueTopology.Supports(ERhiQueueType::Copy))
 		{
 			continue;
 		}
@@ -522,24 +525,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 
 	const PhysicalDeviceCandidate& selected = candidates.front();
 	m_physicalDevice = selected.Device;
-	m_queueFamilyIndices = selected.QueueFamilyIndices;
-	for (ERhiQueueType queueType : {ERhiQueueType::Compute, ERhiQueueType::Copy})
-	{
-		if (m_queueFamilyIndices[RhiQueueTypeToIndex(queueType)] == UINT32_MAX)
-		{
-			m_queueFamilyIndices[RhiQueueTypeToIndex(queueType)] =
-			    m_queueFamilyIndices[RhiQueueTypeToIndex(ERhiQueueType::Graphics)];
-		}
-	}
-	m_uniqueQueueFamilyIndices.clear();
-	for (const std::uint32_t familyIndex : m_queueFamilyIndices)
-	{
-		if (std::find(m_uniqueQueueFamilyIndices.begin(), m_uniqueQueueFamilyIndices.end(), familyIndex) ==
-		    m_uniqueQueueFamilyIndices.end())
-		{
-			m_uniqueQueueFamilyIndices.push_back(familyIndex);
-		}
-	}
+	m_queueTopology = selected.QueueTopology;
 	m_adapterInfo = BuildAdapterInfo(selected.Properties);
 	m_featureStatus.SupportsSynchronization2 = selected.Features13.synchronization2 == VK_TRUE;
 	m_featureStatus.SupportsTimelineSemaphore = selected.Features12.timelineSemaphore == VK_TRUE;
@@ -561,18 +547,22 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 
 void VulkanRhi::CreateLogicalDevice() noexcept
 {
-	const float queuePriority = 1.0f;
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	for (const std::uint32_t familyIndex : m_uniqueQueueFamilyIndices)
+	std::vector<std::vector<float>> queuePriorities;
+	const std::span<const VulkanQueueFamilyRequest> familyRequests = m_queueTopology.GetFamilyRequests();
+	queueCreateInfos.reserve(familyRequests.size());
+	queuePriorities.reserve(familyRequests.size());
+	for (const VulkanQueueFamilyRequest& familyRequest : familyRequests)
 	{
+		queuePriorities.emplace_back(familyRequest.QueueCount, 1.0f);
 		queueCreateInfos.push_back(
 		    VkDeviceQueueCreateInfo{
 		        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
 		        .pNext = nullptr,
 		        .flags = 0,
-		        .queueFamilyIndex = familyIndex,
-		        .queueCount = 1,
-		        .pQueuePriorities = &queuePriority});
+		        .queueFamilyIndex = familyRequest.FamilyIndex,
+		        .queueCount = familyRequest.QueueCount,
+		        .pQueuePriorities = queuePriorities.back().data()});
 	}
 
 	std::vector<const char*> deviceExtensions;
@@ -716,14 +706,30 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		Diagnostics::Fail(g_vulkanRhiLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateDevice", result));
 	}
 
+	std::array<std::shared_ptr<VulkanNativeQueueState>, RhiQueueTypeCount> nativeQueues{};
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
-		VkQueue nativeQueue = VK_NULL_HANDLE;
-		vkGetDeviceQueue(m_device, m_queueFamilyIndices[queueIndex], 0, &nativeQueue);
+		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
+		const VulkanQueueLocation& queueLocation = m_queueTopology.Get(queueType);
+		for (std::size_t previousQueueIndex = 0; previousQueueIndex < queueIndex; ++previousQueueIndex)
+		{
+			if (m_queueTopology.Get(static_cast<ERhiQueueType>(previousQueueIndex)) == queueLocation)
+			{
+				nativeQueues[queueIndex] = nativeQueues[previousQueueIndex];
+				break;
+			}
+		}
+		if (nativeQueues[queueIndex] == nullptr)
+		{
+			VkQueue nativeQueue = VK_NULL_HANDLE;
+			vkGetDeviceQueue(m_device, queueLocation.FamilyIndex, queueLocation.QueueIndex, &nativeQueue);
+			nativeQueues[queueIndex] = std::make_shared<VulkanNativeQueueState>();
+			nativeQueues[queueIndex]->Queue = nativeQueue;
+		}
 		m_queues[queueIndex] = std::make_unique<VulkanCommandQueue>(
 		    *this,
-		    static_cast<ERhiQueueType>(queueIndex),
-		    nativeQueue);
+		    queueType,
+		    nativeQueues[queueIndex]);
 	}
 	if (GetGraphicsQueue() == VK_NULL_HANDLE)
 	{
@@ -998,13 +1004,16 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    m_featureStatus.RayTracing.EnabledBackend,
 	    m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure);
 	const std::string adapterSummary = std::format(
-	    "Vulkan adapter: name='{}', api={}, driver={}, queueFamilies(graphics={}, compute={}, copy={}), independent(compute={}, copy={})",
+	    "Vulkan adapter: name='{}', api={}, driver={}, queues(graphics={}:{}, compute={}:{}, copy={}:{}), independent(compute={}, copy={})",
 	    m_adapterInfo.Name,
 	    FormatApiVersion(m_adapterInfo.ApiVersion),
 	    m_adapterInfo.Driver,
 	    GetQueueFamilyIndex(ERhiQueueType::Graphics),
+	    GetQueueIndex(ERhiQueueType::Graphics),
 	    GetQueueFamilyIndex(ERhiQueueType::Compute),
+	    GetQueueIndex(ERhiQueueType::Compute),
 	    GetQueueFamilyIndex(ERhiQueueType::Copy),
+	    GetQueueIndex(ERhiQueueType::Copy),
 	    HasIndependentQueue(ERhiQueueType::Compute),
 	    HasIndependentQueue(ERhiQueueType::Copy));
 	const std::string providerSummary = std::format(
@@ -1107,62 +1116,6 @@ bool VulkanRhi::IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* 
 	return std::any_of(extensions.begin(), extensions.end(), [extensionName](const VkExtensionProperties& extension) noexcept {
 		return std::string_view(extension.extensionName) == extensionName;
 	});
-}
-
-std::uint32_t VulkanRhi::FindGraphicsQueueFamily(VkPhysicalDevice device) noexcept
-{
-	std::uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-	for (std::uint32_t familyIndex = 0; familyIndex < queueFamilies.size(); ++familyIndex)
-	{
-		if ((queueFamilies[familyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
-		{
-			return familyIndex;
-		}
-	}
-
-	return UINT32_MAX;
-}
-
-std::uint32_t VulkanRhi::FindDedicatedComputeQueueFamily(VkPhysicalDevice device) noexcept
-{
-	std::uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-	for (std::uint32_t familyIndex = 0; familyIndex < queueFamilies.size(); ++familyIndex)
-	{
-		const VkQueueFlags flags = queueFamilies[familyIndex].queueFlags;
-		if ((flags & VK_QUEUE_COMPUTE_BIT) != 0 && (flags & VK_QUEUE_GRAPHICS_BIT) == 0)
-		{
-			return familyIndex;
-		}
-	}
-
-	return UINT32_MAX;
-}
-
-std::uint32_t VulkanRhi::FindDedicatedCopyQueueFamily(VkPhysicalDevice device) noexcept
-{
-	std::uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-	for (std::uint32_t familyIndex = 0; familyIndex < queueFamilies.size(); ++familyIndex)
-	{
-		const VkQueueFlags flags = queueFamilies[familyIndex].queueFlags;
-		if ((flags & VK_QUEUE_TRANSFER_BIT) != 0 && (flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == 0)
-		{
-			return familyIndex;
-		}
-	}
-
-	return UINT32_MAX;
 }
 
 std::uint32_t VulkanRhi::ScorePhysicalDevice(const VkPhysicalDeviceProperties& properties) noexcept

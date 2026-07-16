@@ -11,6 +11,8 @@ The primary references were inspected at these exact revisions on 2026-07-15:
 - [NVIDIA RTXDI 3.0](https://github.com/NVIDIA-RTX/RTXDI), which uses Donut and NVRHI as the D3D12/Vulkan application and RHI layers rather than defining a second submission system.
 - [AMD Render Pipeline Shaders `f3330f53`](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/tree/f3330f5306d15af8529a310f6255225c864b0961), including its [node queue requirements and async preference](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/include/rps/runtime/common/rps_runtime.h#L197-L213), [queue capability input](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/include/rps/runtime/common/rps_runtime.h#L590-L601), and [compiled queue-batch/fence layout](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/include/rps/runtime/common/rps_runtime.h#L790-L821).
 
+The queue-topology deep dive was cross-checked on 2026-07-16 against NVIDIA's [nvpro_core Vulkan queue selection](https://github.com/nvpro-samples/nvpro_core/blob/master/nvvk/context_vk.cpp), which scores specialized families and requests multiple queue indices when a family exposes them, and Streamline's [explicit Vulkan queue-family/queue-index contract](https://github.com/NVIDIA-RTX/Streamline/blob/main/docs/ProgrammingGuideManualHooking.md).
+
 NVRHI and Donut are references for responsibility boundaries and proven synchronization shapes, not APIs to reproduce mechanically. Sparkle keeps its own value handles, frame graph, descriptor services, resource allocator, and backend interop contracts.
 
 ## Findings from NVRHI
@@ -43,12 +45,12 @@ Sparkle direction:
 
 NVRHI D3D12 owns one native command queue and fence progression per exposed queue. A wait calls `ID3D12CommandQueue::Wait` on the waiting queue using the producing queue's fence and submitted value.
 
-NVRHI Vulkan owns a timeline semaphore and monotonically increasing counter per queue. A submission includes accumulated timeline waits and signals the queue's own tracking semaphore. Completion is read from that semaphore counter. This remains valid when multiple logical queue roles alias the same Vulkan queue family/handle, although Sparkle should omit redundant waits when roles resolve to the same physical queue.
+NVRHI Vulkan owns a timeline semaphore and monotonically increasing counter per logical queue. A submission includes accumulated timeline waits and signals the queue's own tracking semaphore. Completion is read from that semaphore counter, while submission access to a native `VkQueue` is serialized. Sparkle preserves logical tokens when roles alias but gives every exact `(family index, queue index)` alias one shared native submission mutex. This satisfies Vulkan's external-synchronization rule without inventing a second queue manager.
 
 Sparkle direction:
 
 - D3D12: one queue/fence progression for each enabled queue role;
-- Vulkan: select graphics, compute, and transfer families with dedicated-family preference and legal alias fallback; use timeline semaphores for queue tokens and binary semaphores only for acquire/present;
+- Vulkan: select graphics, compute, and transfer locations by both family and queue index, preferring specialized families and otherwise using unused compatible queue indices before legal alias fallback; use timeline semaphores for queue tokens and binary semaphores only for acquire/present;
 - keep native fences and semaphores private to the backend.
 
 ### Lifetime follows submitted references, not the current frame
@@ -123,16 +125,18 @@ There is one policy owner and one execution owner:
 6. Add frame-graph queue assignment and batch compilation. Raster and external-provider work remains graphics. Transfer work prefers copy. Compute work remains graphics unless explicitly marked asynchronous and the backend exposes compute.
 7. Validate multi-frame replacement/destruction, resize, cancellation, device idle, capture/interoperability, D3D12, and Vulkan.
 
-## Integrated implementation — 2026-07-15
+## Integrated implementation — 2026-07-16
 
 The multi-queue path is now active rather than capability-only:
 
 - backend-neutral `ERhiQueueType`, `RhiSubmissionToken`, queue capabilities, queue-typed command lists, GPU queue waits, CPU token waits, and completion queries;
-- D3D12 graphics/compute/copy queues with one monotonically increasing fence progression per queue;
-- Vulkan dedicated-family selection with truthful alias fallback, per-queue timeline semaphores, and binary acquire/present bridging;
+- D3D12 graphics/compute/copy queue owners with atomic wait/execute/signal submission and one monotonically increasing fence progression per queue;
+- Vulkan queue topology selected by `(family index, queue index)`, with specialized-family preference, unused-index selection, legal alias fallback, accurate device queue counts, and shared synchronization for aliased native queues;
+- per-logical-queue Vulkan timeline semaphores and swapchain-owned binary acquire/present bridging;
 - concurrent Vulkan resource and swapchain-image sharing across selected queue families;
+- separate physical queue owners and command recording contexts: queue classes own native submission synchronization and counters, while contexts own only reusable allocator/list or pool/buffer slots;
 - dynamically growing command-list pools per frame slot and queue on both backends, replacing the fixed one-list-per-queue design;
-- frame-graph queue intent, capability resolution, queue-local batch compilation, and token dependencies between producer and consumer batches;
+- separate frame-graph pass kind and queue preference value types, with capability resolution, queue-local batch compilation, and producer/consumer token dependencies owned by the compiler;
 - conservative cross-queue state handoff through `Common`: the producer performs the release transition, RHI installs a queue wait, and the consumer performs its legal queue-local transition;
 - a separate graphics prologue whenever non-graphics batches exist, so async work waits for frame initialization/acquire state without inheriting unrelated graphics pass work;
 - one highest timeline wait per producing queue in Vulkan submissions, avoiding duplicate semaphore entries;
@@ -145,12 +149,13 @@ The multi-queue path is now active rather than capability-only:
 - one end-of-frame graphics join over the latest compute and copy values before presentation and frame-slot reuse;
 - one public idle operation, `WaitForIdle()`, after deleting the duplicate `Flush()` facade operation.
 - D3D12 CPU-only canonical resource-view descriptors feeding shader-visible tables, rather than illegally reading shader-visible descriptors as copy sources; the existing descriptor service remains the only descriptor owner.
+- backend texture capture submits through the existing graphics queue owner and waits its returned token, eliminating feature-local D3D12 fences and Vulkan fence submissions.
 
 The queue decision is deliberately not a generic scheduler. Pass authors choose ordinary compute or async-capable compute; transfer helpers declare async-copy eligibility. The frame graph resolves that intent against capabilities, owns dependency policy, and emits batches. Features do not acquire queues or manage fences.
 
 Resource, staging, transient-memory, and command-list retirement is token-exact. Descriptor ranges and Vulkan descriptor pools remain owned by the existing backend descriptor services; their frame slot is reused only after the command context waits that slot's actual last submission on graphics, compute, and copy. This is conservative but safe and avoids introducing a second descriptor-lifetime manager. Finer per-table token retirement is warranted only if profiling shows frame-slot retention to be material.
 
-`ShowcaseEditor` builds successfully in `DevelopmentEditor` with both backends compiled. A cooked Showcase workload ran for 15 seconds on D3D12 with the debug layer and on Vulkan with validation enabled; both runs remained active until the bounded smoke harness stopped them and logged no error, critical, or validation messages. The architecture-boundary target also passes. Resize and prolonged several-frames-in-flight replacement stress remain separate acceptance work.
+`ShowcaseEditor` builds successfully in `DevelopmentEditor` with both backends compiled. The 2026-07-16 deep-dive rerun kept a cooked Showcase workload active for a bounded 12-second run on D3D12 and Vulkan; both were stopped by the harness and produced no standard-error output. The architecture-boundary target also passes. Resize and prolonged several-frames-in-flight replacement stress remain separate acceptance work.
 
 ## Explicit non-goals
 

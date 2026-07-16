@@ -85,11 +85,6 @@ RhiSubmissionToken D3D12CommandContext::SubmitCommandList(
 	}
 
 	const ERhiQueueType queueType = commandList.GetQueueType();
-	for (const RhiSubmissionToken waitToken : waitTokens)
-	{
-		m_rhi->QueueWait(queueType, waitToken);
-	}
-
 	const HRESULT closeResult = slot->NativeCommandList->Close();
 	if (FAILED(closeResult))
 	{
@@ -114,8 +109,7 @@ RhiSubmissionToken D3D12CommandContext::SubmitCommandList(
 		return {};
 	}
 	ID3D12CommandList* nativeCommandLists[] = {slot->NativeCommandList.Get()};
-	m_rhi->ExecuteCommandLists(queueType, nativeCommandLists);
-	const RhiSubmissionToken submissionToken = m_rhi->Signal(queueType);
+	const RhiSubmissionToken submissionToken = m_rhi->SubmitCommandLists(queueType, nativeCommandLists, waitTokens);
 	commandList.ResolveTrackedResources(submissionToken);
 	slot->Recording = false;
 	GetQueueFrameState(queueType, frameIndex).LastSubmission = submissionToken;
