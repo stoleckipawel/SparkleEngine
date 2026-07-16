@@ -557,6 +557,12 @@ RhiSubmissionToken D3D12Rhi::SubmitCommandLists(
 	std::span<ID3D12CommandList* const> commandLists,
 	std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
+	if (!IsRhiQueueTypeValid(queueType))
+	{
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "Command submission rejected an invalid queue type");
+		return {};
+	}
+
 	RhiSubmissionState waitState;
 	for (const RhiSubmissionToken token : waitTokens)
 	{
@@ -586,7 +592,7 @@ RhiSubmissionToken D3D12Rhi::SubmitCommandLists(
 
 void D3D12Rhi::QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept
 {
-	if (!executionToken.IsValid() || waitQueue == executionToken.Queue)
+	if (!IsRhiQueueTypeValid(waitQueue) || !executionToken.IsValid() || waitQueue == executionToken.Queue)
 	{
 		return;
 	}
@@ -618,15 +624,23 @@ bool D3D12Rhi::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
 
 RhiSubmissionToken D3D12Rhi::GetLastSubmittedToken(ERhiQueueType queueType) const noexcept
 {
+	if (!IsRhiQueueTypeValid(queueType))
+	{
+		return {};
+	}
 	return m_queues[RhiQueueTypeToIndex(queueType)]->GetLastSubmittedToken();
 }
 
 std::uint64_t D3D12Rhi::GetCompletedSubmissionValue(ERhiQueueType queueType) const noexcept
 {
+	if (!IsRhiQueueTypeValid(queueType))
+	{
+		return 0;
+	}
 	return m_queues[RhiQueueTypeToIndex(queueType)]->GetCompletedSubmissionValue();
 }
 
-void D3D12Rhi::Flush() noexcept
+void D3D12Rhi::WaitForIdle() noexcept
 {
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{

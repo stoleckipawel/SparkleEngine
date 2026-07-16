@@ -4,6 +4,7 @@
 
 #include "CVars/RHICVars.h"
 #include "Frame/RhiFrameConstants.h"
+#include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/VulkanTypeConversions.h"
@@ -44,29 +45,30 @@ bool VulkanSwapChain::AcquireNextImage(std::uint32_t frameIndex) noexcept
 		return false;
 	}
 
-	const VkResult result = vkAcquireNextImageKHR(
-	    m_rhi.GetDevice(),
-	    m_swapChain,
-	    std::numeric_limits<std::uint64_t>::max(),
-	    GetImageAvailableSemaphore(frameIndex),
-	    VK_NULL_HANDLE,
-	    &m_currentBackBufferIndex);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	for (std::uint32_t attempt = 0; attempt < 2; ++attempt)
 	{
-		Resize();
-		return false;
-	}
-	if (result == VK_SUBOPTIMAL_KHR)
-	{
-		return true;
-	}
-	if (!VulkanResult::Succeeded(result))
-	{
+		const VkResult result = vkAcquireNextImageKHR(
+		    m_rhi.GetDevice(),
+		    m_swapChain,
+		    std::numeric_limits<std::uint64_t>::max(),
+		    GetImageAvailableSemaphore(frameIndex),
+		    VK_NULL_HANDLE,
+		    &m_currentBackBufferIndex);
+		if (result == VK_ERROR_OUT_OF_DATE_KHR && attempt == 0)
+		{
+			Resize();
+			continue;
+		}
+		if (result == VK_SUBOPTIMAL_KHR || VulkanResult::Succeeded(result))
+		{
+			return true;
+		}
+
 		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkAcquireNextImageKHR", result));
 		return false;
 	}
 
-	return true;
+	return false;
 }
 
 bool VulkanSwapChain::Present(VkSemaphore renderFinishedSemaphore) noexcept
@@ -87,7 +89,7 @@ bool VulkanSwapChain::Present(VkSemaphore renderFinishedSemaphore) noexcept
 	    .pImageIndices = &m_currentBackBufferIndex,
 	    .pResults = nullptr};
 
-	const VkResult result = vkQueuePresentKHR(m_rhi.GetGraphicsQueue(), &presentInfo);
+	const VkResult result = m_rhi.GetCommandQueue(ERhiQueueType::Graphics).Present(presentInfo);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
 		Resize();

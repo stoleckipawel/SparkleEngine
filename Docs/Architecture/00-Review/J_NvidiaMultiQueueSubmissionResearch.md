@@ -1,8 +1,10 @@
-# NVIDIA/AMD Multi-Queue Submission Research And Sparkle Integration Direction
+# NVIDIA/AMD Multi-Queue Submission Research And Completed Sparkle Integration
+
+> **Status: closed.** Priority 2A was implementation-audited and validated on 2026-07-16. The active graphics, compute, and copy workloads use this architecture; no foundational follow-up remains in this record.
 
 ## Scope and pinned references
 
-This record activates Priority 2A and captures the external evidence used to evolve Sparkle's graphics-only frame submission into a backend-neutral multi-queue model. NVIDIA NVRHI/Donut are the primary backend and application references; AMD RPS provides an independent render-graph scheduling cross-check. It is intentionally implementation-facing: every adopted concept must have one owner in Sparkle, and concepts that do not yet serve a workload are recorded without adding duplicate managers or compatibility layers.
+This record closes Priority 2A and captures the external evidence used to evolve Sparkle's graphics-only frame submission into a backend-neutral multi-queue model. NVIDIA NVRHI/Donut are the primary backend and application references; AMD RPS provides an independent render-graph scheduling cross-check. It is intentionally implementation-facing: every adopted concept has one owner in Sparkle, without duplicate managers or compatibility layers.
 
 The primary references were inspected at these exact revisions on 2026-07-15:
 
@@ -64,7 +66,7 @@ Sparkle direction:
 - release moves ownership into retirement with the record's last-use token;
 - retirement drains by querying that token's producing queue;
 - resources never submitted can retire immediately;
-- descriptor-table retirement follows the same rule and must not remain a frame-index ring once multi-queue recording is active.
+- descriptor reuse must be gated by completed submissions. Per-object token stamping is exact; conservative frame-slot grouping is also valid when that slot cannot recycle until its actual last graphics, compute, and copy submissions have completed.
 
 This is stricter than conservatively stamping everything with the next graphics fence. Conservative graphics stamping becomes incorrect once the last use can occur on compute or copy.
 
@@ -140,6 +142,7 @@ The multi-queue path is now active rather than capability-only:
 - conservative cross-queue state handoff through `Common`: the producer performs the release transition, RHI installs a queue wait, and the consumer performs its legal queue-local transition;
 - a separate graphics prologue whenever non-graphics batches exist, so async work waits for frame initialization/acquire state without inheriting unrelated graphics pass work;
 - one highest timeline wait per producing queue in Vulkan submissions, avoiding duplicate semaphore entries;
+- invalid queue identities and future/unsubmitted token values are rejected before a native CPU or GPU wait can be installed;
 - command-list resource retention from recording through submission, per-queue last-use state, and token-driven resource, transient-memory, and staging retirement;
 - texture uploads recorded on copy where supported, followed by a graphics token wait and graphics-side shader-resource transition without a CPU stall;
 - copy upload lists opened only when the texture cache reports pending uploads, avoiding an empty copy submission and graphics wait on resident frames;
@@ -147,15 +150,16 @@ The multi-queue path is now active rather than capability-only:
 - explicit async-compute opt-in for scene-depth linearization, sky motion vectors, the exposure moment chain, and exposure history update;
 - automatic graphics fallback for every async pass/transfer when the corresponding independent queue is unavailable;
 - one end-of-frame graphics join over the latest compute and copy values before presentation and frame-slot reuse;
+- Vulkan submission and presentation both pass through the shared physical queue mutex, including aliased logical roles, and an out-of-date acquire rebuilds and retries once before cancellation;
 - one public idle operation, `WaitForIdle()`, after deleting the duplicate `Flush()` facade operation.
 - D3D12 CPU-only canonical resource-view descriptors feeding shader-visible tables, rather than illegally reading shader-visible descriptors as copy sources; the existing descriptor service remains the only descriptor owner.
 - backend texture capture submits through the existing graphics queue owner and waits its returned token, eliminating feature-local D3D12 fences and Vulkan fence submissions.
 
 The queue decision is deliberately not a generic scheduler. Pass authors choose ordinary compute or async-capable compute; transfer helpers declare async-copy eligibility. The frame graph resolves that intent against capabilities, owns dependency policy, and emits batches. Features do not acquire queues or manage fences.
 
-Resource, staging, transient-memory, and command-list retirement is token-exact. Descriptor ranges and Vulkan descriptor pools remain owned by the existing backend descriptor services; their frame slot is reused only after the command context waits that slot's actual last submission on graphics, compute, and copy. This is conservative but safe and avoids introducing a second descriptor-lifetime manager. Finer per-table token retirement is warranted only if profiling shows frame-slot retention to be material.
+Resource, staging, transient-memory, and command-list retirement is token-exact. Descriptor ranges and Vulkan descriptor pools remain owned by the existing backend descriptor services and are conservatively grouped by frame slot; recycling occurs only after the command context waits that slot's actual last submission on graphics, compute, and copy. This is token-gated, safe for in-flight replacement, and avoids a second descriptor-lifetime manager. Finer per-table token stamping is an optimization only if profiling shows frame-slot retention to be material.
 
-`ShowcaseEditor` builds successfully in `DevelopmentEditor` with both backends compiled. The 2026-07-16 deep-dive rerun kept a cooked Showcase workload active for a bounded 12-second run on D3D12 and Vulkan; both were stopped by the harness and produced no standard-error output. The architecture-boundary target also passes. Resize and prolonged several-frames-in-flight replacement stress remain separate acceptance work.
+`ShowcaseEditor` builds successfully in `DevelopmentEditor` with both backends compiled. Final D3D12 and Vulkan workload runs exercised startup copy uploads, async-compute passes, normal frame-slot rotation, and presentation. Each backend then remained active through 24 consecutive live window resizes and was stopped by the bounded harness with no standard-error output. The architecture-boundary target and `git diff --check` pass. Static ownership inspection confirms that only `D3D12CommandQueue` calls `ExecuteCommandLists`, only `VulkanCommandQueue` calls `vkQueueSubmit`/`vkQueuePresentKHR`, and capture uses those queue owners rather than feature-local fences.
 
 ## Explicit non-goals
 
@@ -167,13 +171,19 @@ Resource, staging, transient-memory, and command-list retirement is token-exact.
 - No flush after ordinary upload or cross-queue dependency.
 - No compatibility wrapper preserving the old graphics-only submission implementation once all callers migrate.
 
-## Acceptance criteria
+## Acceptance closure
 
-- D3D12 and Vulkan expose truthful graphics/compute/copy capabilities and queue-typed command lists.
-- Every successful submission returns a durable logical token; queue waits consume tokens without a CPU stall.
-- The existing graphics-only frame renders through the generic submission path.
-- Copy uploads can overlap CPU and graphics work and synchronize through a token dependency without `Flush`, `WaitForIdle`, `vkQueueWaitIdle`, or per-upload fence creation.
-- Async-compute passes are opt-in, compiled by the frame graph, and fall back to graphics when unsupported.
-- Resource, descriptor, staging, transient-memory, and command-list retirement use the last submission token that referenced the object.
-- Acquire/present synchronization stays backend-owned and is bridged into the graphics submission without leaking native semaphores or queues.
-- Queue diagnostics report logical role, physical aliasing, submitted value, and completed value.
+| Criterion | Status | Verified implementation evidence |
+| --- | --- | --- |
+| D3D12 and Vulkan expose truthful graphics/compute/copy capability and queue-typed command lists. | Fulfilled | `RhiQueueCapabilities` separates support from independent execution; every `RenderCommandList` carries one `ERhiQueueType`; Vulkan topology uses both family and queue index. |
+| Every successful submission returns a durable logical token and GPU waits do not stall the CPU. | Fulfilled | Both queue owners return `RhiSubmissionToken { Queue, Value }`; frame-graph dependencies become native queue waits; invalid and unsubmitted values are rejected before waiting. |
+| The ordinary graphics frame uses the generic submission path. | Fulfilled | The prologue, queue-local batches, final graphics barriers, presentation join, uploads, and capture all submit through `RhiCommandSubmissionService` or the same backend queue owner. |
+| Copy uploads synchronize without an ordinary `Flush`, `WaitForIdle`, `vkQueueWaitIdle`, or per-upload fence. | Fulfilled | `FramePipeline` selects copy only when independently supported, submits once, installs a graphics token wait, and performs the graphics-legal final transition. |
+| Async compute is explicit and falls back safely. | Fulfilled | Scene-depth linearization, sky motion vectors, exposure moments, and exposure history explicitly call `DispatchAsync`; the compiler falls back to graphics unless compute is independent. |
+| Resource, descriptor, staging, transient-memory, and command-list recycling is safe across all queues. | Fulfilled | Resources, heaps, staging, and command slots use per-queue last-use tokens. Descriptor recycling is conservatively frame-slot grouped and occurs only after that slot's last graphics, compute, and copy tokens complete. |
+| Acquire and present synchronization remains backend-owned. | Fulfilled | Vulkan swapchain binary semaphores are bridged into graphics timeline submissions; presentation is serialized by the graphics queue owner. D3D12 performs the final compute/copy-to-graphics join before swapchain presentation. |
+| Queue state is inspectable without exposing synchronization policy to Renderer features. | Fulfilled | Native queue/timeline objects carry logical-role debug names; Vulkan reports exact family/index topology and alias capability; submitted tokens and completion are queryable through the backend-neutral submission service. |
+
+## Final decision
+
+Priority 2A is complete and closed. Future streaming or compute features must declare work through the existing Renderer queue preference and frame-graph dependency model, while RHI continues to own physical queues, native synchronization, presentation bridging, and retirement. Such features extend this foundation; they do not require another scheduler, queue manager, lifetime manager, or reopening of this change list.

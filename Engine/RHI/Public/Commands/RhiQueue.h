@@ -17,6 +17,11 @@ enum class ERhiQueueType : std::uint8_t
 
 constexpr std::size_t RhiQueueTypeCount = static_cast<std::size_t>(ERhiQueueType::Count);
 
+constexpr bool IsRhiQueueTypeValid(ERhiQueueType queue) noexcept
+{
+	return static_cast<std::size_t>(queue) < RhiQueueTypeCount;
+}
+
 constexpr std::size_t RhiQueueTypeToIndex(ERhiQueueType queue) noexcept
 {
 	return static_cast<std::size_t>(queue);
@@ -45,7 +50,7 @@ struct RhiSubmissionToken final
 
 	constexpr bool IsValid() const noexcept
 	{
-		return Queue != ERhiQueueType::Count && Value != 0;
+		return IsRhiQueueTypeValid(Queue) && Value != 0;
 	}
 
 	constexpr explicit operator bool() const noexcept { return IsValid(); }
@@ -70,7 +75,7 @@ struct RhiSubmissionState final
 
 	constexpr RhiSubmissionToken GetToken(ERhiQueueType queue) const noexcept
 	{
-		return queue != ERhiQueueType::Count
+		return IsRhiQueueTypeValid(queue)
 		           ? RhiSubmissionToken{.Queue = queue, .Value = Values[RhiQueueTypeToIndex(queue)]}
 		           : RhiSubmissionToken{};
 	}

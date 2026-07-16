@@ -211,7 +211,7 @@ void VulkanRenderDeviceServices::QueueWait(
 	ERhiQueueType waitQueue,
 	RhiSubmissionToken executionToken) noexcept
 {
-	if (!executionToken.IsValid() || waitQueue == executionToken.Queue)
+	if (!IsRhiQueueTypeValid(waitQueue) || !executionToken.IsValid() || waitQueue == executionToken.Queue)
 	{
 		return;
 	}
@@ -233,7 +233,7 @@ bool VulkanRenderDeviceServices::IsSubmissionComplete(RhiSubmissionToken token) 
 
 RhiSubmissionToken VulkanRenderDeviceServices::GetLastSubmittedToken(ERhiQueueType queueType) const noexcept
 {
-	return m_rhi->GetCommandQueue(queueType).GetLastSubmittedToken();
+	return IsRhiQueueTypeValid(queueType) ? m_rhi->GetCommandQueue(queueType).GetLastSubmittedToken() : RhiSubmissionToken{};
 }
 
 void VulkanRenderDeviceServices::SubmitFrame() noexcept

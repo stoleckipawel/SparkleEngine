@@ -14,7 +14,7 @@ struct RhiQueueCapabilities final
 {
 	constexpr void Set(ERhiQueueType queue, bool supported, bool independent) noexcept
 	{
-		if (queue == ERhiQueueType::Count)
+		if (!IsRhiQueueTypeValid(queue))
 		{
 			return;
 		}
@@ -26,7 +26,7 @@ struct RhiQueueCapabilities final
 
 	constexpr RhiQueueCapability Get(ERhiQueueType queue) const noexcept
 	{
-		return queue != ERhiQueueType::Count ? Entries[RhiQueueTypeToIndex(queue)] : RhiQueueCapability{};
+		return IsRhiQueueTypeValid(queue) ? Entries[RhiQueueTypeToIndex(queue)] : RhiQueueCapability{};
 	}
 
 	constexpr bool Supports(ERhiQueueType queue) const noexcept { return Get(queue).Supported; }

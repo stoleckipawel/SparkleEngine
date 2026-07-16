@@ -50,7 +50,7 @@ class D3D12Rhi final
 	RhiSubmissionToken GetLastSubmittedToken(ERhiQueueType queueType) const noexcept;
 	std::uint64_t GetCompletedSubmissionValue(ERhiQueueType queueType) const noexcept;
 
-	void Flush() noexcept;
+	void WaitForIdle() noexcept;
 	bool IsValidationEnabled() const noexcept;
 	bool SupportsDebugMessages() const noexcept;
 	bool TryPopDebugMessage(RhiDiagnosticMessage& outMessage) noexcept;

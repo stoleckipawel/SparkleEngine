@@ -90,6 +90,23 @@ RhiSubmissionToken D3D12CommandQueue::Submit(
 		return {};
 	}
 
+	for (const D3D12QueueWait& wait : waits)
+	{
+		if (wait.SubmissionValue == 0 || wait.ProducerQueue == this)
+		{
+			continue;
+		}
+		if (wait.ProducerQueue == nullptr || !wait.ProducerQueue->HasSubmitted(wait.SubmissionValue))
+		{
+			Diagnostics::Fail(
+			    g_d3d12CommandQueueLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Submit rejected a wait for an unknown or unsubmitted queue value");
+			return {};
+		}
+	}
+
 	std::lock_guard lock(m_submissionMutex);
 	for (const D3D12QueueWait& wait : waits)
 	{
@@ -118,6 +135,11 @@ void D3D12CommandQueue::WaitFor(
 		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Queue wait requested without synchronization state");
 		return;
 	}
+	if (!executionQueue.HasSubmitted(submissionValue))
+	{
+		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Queue wait rejected an unsubmitted value");
+		return;
+	}
 
 	std::lock_guard lock(m_submissionMutex);
 	CHECK(m_queue->Wait(executionQueue.m_fence.Get(), submissionValue));
@@ -125,7 +147,16 @@ void D3D12CommandQueue::WaitFor(
 
 void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcept
 {
-	if (submissionValue == 0 || IsSubmissionComplete(submissionValue))
+	if (submissionValue == 0)
+	{
+		return;
+	}
+	if (!HasSubmitted(submissionValue))
+	{
+		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
+		return;
+	}
+	if (IsSubmissionComplete(submissionValue))
 	{
 		return;
 	}
@@ -156,6 +187,12 @@ void D3D12CommandQueue::WaitForIdle() noexcept
 		m_lastSubmittedValue = submissionValue;
 	}
 	WaitForSubmission(submissionValue);
+}
+
+bool D3D12CommandQueue::HasSubmitted(std::uint64_t submissionValue) const noexcept
+{
+	std::lock_guard lock(m_submissionMutex);
+	return submissionValue != 0 && submissionValue <= m_lastSubmittedValue;
 }
 
 bool D3D12CommandQueue::IsSubmissionComplete(std::uint64_t submissionValue) const noexcept

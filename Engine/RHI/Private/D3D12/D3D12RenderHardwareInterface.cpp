@@ -254,7 +254,7 @@ void D3D12RenderHardwareInterface::WaitForIdle() noexcept
 {
 	if (m_rhi != nullptr)
 	{
-		m_rhi->Flush();
+		m_rhi->WaitForIdle();
 		if (m_resourceService != nullptr)
 		{
 			m_resourceService->FlushDeferredResourceReleases();

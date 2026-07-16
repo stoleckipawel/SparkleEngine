@@ -39,6 +39,7 @@ class D3D12CommandQueue final
 	void WaitFor(const D3D12CommandQueue& executionQueue, std::uint64_t submissionValue) noexcept;
 	void WaitForSubmission(std::uint64_t submissionValue) noexcept;
 	void WaitForIdle() noexcept;
+	bool HasSubmitted(std::uint64_t submissionValue) const noexcept;
 	bool IsSubmissionComplete(std::uint64_t submissionValue) const noexcept;
 
 	RhiSubmissionToken GetLastSubmittedToken() const noexcept;

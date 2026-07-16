@@ -40,7 +40,9 @@ class VulkanCommandQueue final
 	VulkanCommandQueue& operator=(VulkanCommandQueue&&) = delete;
 
 	RhiSubmissionToken Submit(const VulkanQueueSubmission& submission) noexcept;
+	VkResult Present(const VkPresentInfoKHR& presentInfo) noexcept;
 	void WaitForSubmission(std::uint64_t submissionValue) noexcept;
+	bool HasSubmitted(std::uint64_t submissionValue) const noexcept;
 	bool IsSubmissionComplete(std::uint64_t submissionValue) const noexcept;
 
 	RhiSubmissionToken GetLastSubmittedToken() const noexcept;

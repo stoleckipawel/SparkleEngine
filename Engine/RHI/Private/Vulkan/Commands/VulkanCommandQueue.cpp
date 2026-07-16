@@ -58,10 +58,20 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	RhiSubmissionState waitState;
 	for (const RhiSubmissionToken token : submission.WaitTokens)
 	{
-		if (token.Queue != m_queueType)
+		if (!token.IsValid() || token.Queue == m_queueType)
 		{
-			waitState.MarkUsed(token);
+			continue;
 		}
+		if (!m_rhi.GetCommandQueue(token.Queue).HasSubmitted(token.Value))
+		{
+			Diagnostics::Fail(
+			    g_vulkanCommandQueueLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Submit rejected a wait for an unsubmitted queue value");
+			return {};
+		}
+		waitState.MarkUsed(token);
 	}
 
 	std::array<VkSemaphore, RhiQueueTypeCount + 1> waitSemaphores{};
@@ -128,9 +138,29 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	return RhiSubmissionToken{.Queue = m_queueType, .Value = submissionValue};
 }
 
+VkResult VulkanCommandQueue::Present(const VkPresentInfoKHR& presentInfo) noexcept
+{
+	if (m_nativeQueue == nullptr || m_nativeQueue->Queue == VK_NULL_HANDLE)
+	{
+		return VK_ERROR_INITIALIZATION_FAILED;
+	}
+
+	std::lock_guard lock(m_nativeQueue->SubmissionMutex);
+	return vkQueuePresentKHR(m_nativeQueue->Queue, &presentInfo);
+}
+
 void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcept
 {
-	if (submissionValue == 0 || IsSubmissionComplete(submissionValue))
+	if (submissionValue == 0)
+	{
+		return;
+	}
+	if (!HasSubmitted(submissionValue))
+	{
+		Diagnostics::Fail(g_vulkanCommandQueueLogger, __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
+		return;
+	}
+	if (IsSubmissionComplete(submissionValue))
 	{
 		return;
 	}
@@ -151,6 +181,16 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 		    __LINE__,
 		    VulkanResult::FormatFailure("vkWaitSemaphores", result));
 	}
+}
+
+bool VulkanCommandQueue::HasSubmitted(std::uint64_t submissionValue) const noexcept
+{
+	if (m_nativeQueue == nullptr)
+	{
+		return false;
+	}
+	std::lock_guard lock(m_nativeQueue->SubmissionMutex);
+	return submissionValue != 0 && submissionValue <= m_lastSubmittedValue;
 }
 
 bool VulkanCommandQueue::IsSubmissionComplete(std::uint64_t submissionValue) const noexcept
