@@ -1911,6 +1911,22 @@ Important semantic decisions:
 - A task function receives its context explicitly; scheduler thread-local globals are not business-data channels.
 - Tasks return an explicit TaskResult or are noexcept. Exceptions at the boundary are captured, reported, and cause a defined dependent cancellation policy. They are never silently swallowed.
 
+### Prompt 01 Implemented Baseline — Serial Semantics Before Scheduling
+
+As of 2026-07-18, `Engine/Tasks` implements the deliberately serial subset of this design. This is the executable reference model that later worker implementations must preserve, not a temporary single-threaded API:
+
+- `TaskGraphBuilder` issues builder-identity and generation-validated `TaskNodeHandle` values; public callers never receive a task-record pointer.
+- `Compile()` snapshots immutable topology and rejects invalid names/policies, invalid/foreign/stale handles, self or duplicate edges, both ordinary dependency cycles and nested start/completion deadlocks, and configured task/edge overflow before any body can run.
+- The serial `TaskExecutor` chooses the lowest builder index among ready nodes. This makes the oracle deterministic without claiming that later parallel body order will be deterministic.
+- A nested child may start only after its parent's body. The parent reaches logical completion only after its own body and every nested descendant settle; continuations of the parent therefore observe the whole group.
+- The first executed failure is retained. Normal dependents settle as cancelled without running; nodes explicitly marked `Cleanup` still run once their prerequisites settle. Every accepted node obtains exactly one terminal `TaskResult`.
+- Each submission has a distinct execution generation and owns the terminal results it exposes. A compiled graph is reusable with separate `TaskExecutionContext` bindings; graph callables are released with the graph and are not retained by an already-settled execution.
+- Builder and executor capacities are explicit. There is no overflow path that silently admits more task or edge records, and rejected submissions execute no bodies.
+
+The current public concepts already have named future consumers: renderer extraction/recording DAGs, GameFramework system phases, editor document operations, asset/tool pipelines, and RHI command preparation. Their integrations remain deferred; no consumer dependency points back into `SparkleTasks`. Ready queues, runtime records, adjacency representation, and settlement counters remain private so Prompt 02 can change scheduling mechanics without changing graph meaning.
+
+The implementation was gated with a transient contract harness that repeated every scenario through the serial executor, checked graph reuse and retained-result lifetime, and exhaustively enumerated all directed four-node graphs against an independent topological oracle. For every accepted DAG it injected failure and cancellation at each node and verified deterministic body selection plus exactly-once terminal accounting. A transient dependency scan rejected forbidden product/graphics/platform dependencies, worker/wait primitives, and rejected task aliases. Both passed before their test source, CTest target, and boundary script were removed; Sparkle retains the production contract and this evidence rather than a prompt-specific maintained test subsystem. MT-03–06 and MT-10 are avoided because this phase publishes no cross-thread payload and contains no worker or wait protocol; MT-13–15, MT-23, MT-29, and MT-44 were falsified through immutable topology, dual-cycle validation, unfinished-count settlement, bounded rejection, generation validation, and exhaustive oracle comparison.
+
 ### Structured Task Scopes and Owner Lifetime
 
 An executor lifetime is too broad to prove that captured engine objects are alive. Every asynchronous run therefore belongs to a `TaskScope` owned by an existing product lifetime:

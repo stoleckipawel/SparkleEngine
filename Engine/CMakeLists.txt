@@ -13,6 +13,7 @@ include(${CMAKE_SOURCE_DIR}/CMake/Dependencies/FetchDependencies.cmake)
 # CORE MODULES (always built - the foundation of the engine)
 # ============================================================================
 add_subdirectory(Core)           # SparkleCore.dll     - Math, Memory, Events, Logging
+add_subdirectory(Tasks)          # SparkleTasks.dll    - Deterministic task topology and execution
 add_subdirectory(Platform)       # SparklePlatform.dll - Window, Input, FileSystem
 add_subdirectory(RHI)            # SparkleRHI.dll      - D3D12/Vulkan abstraction
 add_subdirectory(Renderer)       # SparkleRenderer.dll - Rendering pipeline
@@ -26,6 +27,7 @@ add_subdirectory(Application)    # SparkleApplication/SparkleApplicationEditor -
 # Projects should explicitly link only the modules they need:
 #
 #   SparkleCore         - Math, Memory, Events, Logging (required by all)
+#   SparkleTasks        - Engine task topology/execution (independent of product modules)
 #   SparklePlatform     - Window, Input (required for windowed apps)
 #   SparkleRHI          - D3D12/Vulkan abstraction (required for rendering)
 #   SparkleRenderer     - High-level rendering (requires RHI)

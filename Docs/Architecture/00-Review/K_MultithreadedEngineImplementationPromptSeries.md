@@ -165,6 +165,7 @@ Concurrency correctness must be encoded at the narrowest reusable ownership boun
 - use generalized abstractions only when at least two real consumers share the same lifetime semantics; do not generalize feature policy into Core;
 - place CVars/settings in the owning subsystem's dedicated `*CVars`/settings unit, never in a general parser, launch loop, or unrelated orchestrator;
 - add only essential correctness assertions, failure diagnostics, and profiler labels with a concrete vendor/API precedent and a falsifying use; no per-item log spam, speculative counters, or diagnostic mirrors of ordinary state;
+- prompt-specific unit tests, stress harnesses, fault injectors, and boundary-check scripts are disposable verification scaffolding: create them, run the required gate, preserve the command/result and invariant learned, then delete their source, CMake targets, fixtures, generated data, and dedicated test directories before handoff. Do not leave Sparkle with a parallel maintained test product. Existing reusable product validation or an owner-approved permanent test facility may be used, but a prompt does not create one implicitly;
 - do not run a full repository build, all scenes, all backends, and heavyweight captures after every prompt or every edit. At the end of an ordinary code prompt, run the smallest affected target compile and focused deterministic test once. Full D3D12/Vulkan product builds and representative-scene matrices belong to integration gates 00, 05, 13, 20–22, and 29, or when the changed ABI/backend boundary specifically requires them;
 - performance captures belong to measurement prompts 05, 23–25, 28, and 29. Other prompts reuse the last compatible baseline and add a new capture only when their acceptance claim depends on timing;
 - documentation-only prompts run link/search/format checks, not product builds.
@@ -326,6 +327,8 @@ The range notation is inclusive. It does not mean every hazard needs a bespoke t
 
 ## Prompt 00 — Establish the Before-State and Invariants
 
+Target CL Title: `Sparkle: Establish Concurrency Before-State and Invariants`
+
 ~~~text
 Implement Prompt 00 from K_MultithreadedEngineImplementationPromptSeries.md.
 
@@ -386,6 +389,8 @@ Forbidden: implementing the job system, moving renderer threads, speculative met
 
 ## Prompt 01 — Build the Serial Task Graph Contract
 
+Target CL Title: `SparkleTasks: Build the Deterministic Serial Task Graph Contract`
+
 ~~~text
 Implement Prompt 01 from K_MultithreadedEngineImplementationPromptSeries.md only after Prompt 00 passes.
 
@@ -426,7 +431,15 @@ Positive patterns: serial reference first, immutable topology, generation handle
 Forbidden: std::future as task identity, fire-and-forget lifetime, worker threads, busy waiting, unbounded heap fallback.
 ~~~
 
+### Prompt 01 completion record — 2026-07-18
+
+Status: **passed**. `SparkleTasks` now contains only the serial contract owned by this prompt. Its public surface is `TaskName`/`TaskDesc`, generation-validated `TaskNodeHandle`, `TaskGraphBuilder`, immutable `CompiledTaskGraph`, `TaskExecution`/`TaskExecutionContext`, `TaskResult`, and `TaskExecutor`; topology, ready ordering, runtime records, and counters are private.
+
+A transient `SparkleTasks.SerialContract` harness ran the eight contract groups three times. It covered the requested basic shapes, nested group completion and nested failure, first-failure/cleanup policy, reusable topology with separate contexts, result/callable lifetime, every public invalid-input class, builder/executor overflow with no body execution, stale/foreign result queries, and exhaustive four-node directed-graph comparison with failure/cancellation injected at each accepted node. A transient dependency scan proved the module had no Application, GameFramework, Renderer, RHI, Editor, Assets, or Platform dependency and contained no worker/wait primitive or noncanonical alias. Both focused checks passed in `DevelopmentEditor`; no wider engine or scene build was used. In accordance with Rule 11, the harness, CTest target, boundary script, and dedicated test directory were deleted after the gate; these paragraphs retain evidence, not a maintained test subsystem.
+
 ## Prompt 02 — Add the Fixed Worker Executor
+
+Target CL Title: `SparkleTasks: Add the Fixed Worker Executor`
 
 ~~~text
 Implement Prompt 02 only after Prompt 01 passes.
@@ -472,6 +485,8 @@ Forbidden: detached threads, one thread per system, busy-yield waits, silent exc
 ~~~
 
 ## Prompt 03 — Complete Structured Task-Runtime Semantics
+
+Target CL Title: `SparkleTasks: Complete Structured Runtime Semantics`
 
 ~~~text
 Implement Prompt 03 only after Prompt 02 passes.
@@ -521,6 +536,8 @@ Forbidden: detached work, arbitrary cancellation callbacks, worker waits, pollin
 
 ## Prompt 04 — Prove SparkleTasks in Real Tool Workflows
 
+Target CL Title: `SparkleTools: Integrate SparkleTasks into Production Workflows`
+
 ~~~text
 Implement Prompt 04 only after Prompt 03 passes.
 
@@ -569,6 +586,8 @@ Forbidden: parallel publish-as-finished, shared unsafe importer/compiler instanc
 
 ## Prompt 05 — Build the Serial ECS Identity and Storage Kernel
 
+Target CL Title: `SparkleGameFramework: Build the Serial ECS Storage Kernel`
+
 ~~~text
 Implement Prompt 05 only after Prompt 03 passes. Prompt 04 may proceed independently but must use the same SparkleTasks contracts.
 
@@ -609,6 +628,8 @@ Forbidden: archetype chunks, reflection framework, prefab system, public registr
 ~~~
 
 ## Prompt 06 — Add ECS Queries, Structural Epochs, and Entity Commands
+
+Target CL Title: `SparkleGameFramework: Add ECS Queries, Structural Epochs, and Entity Commands`
 
 ~~~text
 Implement Prompt 06 only after Prompt 05 passes.
@@ -653,6 +674,8 @@ Forbidden: shared command buffer across jobs without partition protocol, mutatio
 
 ## Prompt 07 — Convert Existing Scene Instance Data to ECS Components
 
+Target CL Title: `SparkleGameFramework: Convert Scene Instance Data to ECS Components`
+
 ~~~text
 Implement Prompt 07 only after Prompt 06 passes.
 
@@ -694,6 +717,8 @@ Forbidden: giant GodComponent, raw Mesh ownership in ECS, duplicate Scene* vecto
 
 ## Prompt 08 — Make Transform/Derived State Explicit and Publish the Change Journal
 
+Target CL Title: `SparkleGameFramework: Publish Explicit Derived State through the Change Journal`
+
 ~~~text
 Implement Prompt 08 only after Prompt 07 passes.
 
@@ -734,6 +759,8 @@ Forbidden: mutable const cache, full shared-scene mutex, unbounded history, edit
 ~~~
 
 ## Prompt 09 — Implement Transactional Asynchronous Scene Loading
+
+Target CL Title: `SparkleGameFramework: Implement Transactional Asynchronous Scene Loading`
 
 ~~~text
 Implement Prompt 09 only after Prompts 06 and 08 pass.
@@ -779,6 +806,8 @@ Forbidden: nested synchronous loads from worker, UI/global callbacks during deco
 
 ## Prompt 10 — Build the ECS-Aware Game System Graph and Parallel Animation
 
+Target CL Title: `SparkleGameFramework: Add the ECS System Graph and Parallel Animation`
+
 ~~~text
 Implement Prompt 10 only after Prompt 08 passes; use Prompt 09 contracts where loading affects target generations.
 
@@ -822,6 +851,8 @@ Forbidden: parallel virtual Entity::Update, shared morph/pose pushes, mutable as
 
 ## Prompt 11 — Convert the Editor to Immutable Models and Semantic Commands
 
+Target CL Title: `SparkleEditor: Adopt Immutable Models and Semantic Commands`
+
 ~~~text
 Implement Prompt 11 only after Prompts 09 and 10 pass.
 
@@ -864,6 +895,8 @@ Forbidden: mutex around panels/scene, worker ImGui calls, raw registry in Editor
 
 ## Prompt 12 — Establish the Immutable Game/Render Data Contract
 
+Target CL Title: `SparkleRenderer: Establish the Immutable Game-to-Render Contract`
+
 ~~~text
 Implement Prompt 12 only after Prompts 08 and 10 pass.
 
@@ -905,6 +938,8 @@ Forbidden: shared scene mutex, raw object pointer, renderer ECS query, array ind
 ~~~
 
 ## Prompt 13 — Add RenderThread Ownership and the Bounded RenderFrameQueue
+
+Target CL Title: `SparkleRenderer: Add RenderThread Ownership and the Bounded Frame Queue`
 
 ~~~text
 Implement Prompt 13 only after Prompt 12 passes.
@@ -952,6 +987,8 @@ Forbidden: generally thread-safe renderer root, unbounded queue, main routine re
 
 ## Prompt 14 — Convert Editor UI, Viewport, and Capture Across the Render Boundary
 
+Target CL Title: `SparkleEditor: Move Viewport and Capture Work across the Render Boundary`
+
 ~~~text
 Implement Prompt 14 only after Prompts 11 and 13 pass.
 
@@ -992,6 +1029,8 @@ Forbidden: live descriptor/cache pointer, UI worker callback, WaitForIdle captur
 ~~~
 
 ## Prompt 15 — Build the Persistent Render/GPU Scene
+
+Target CL Title: `SparkleRenderer: Build the Persistent Render and GPU Scene`
 
 ~~~text
 Implement Prompt 15 only after Prompt 13 passes.
@@ -1034,6 +1073,8 @@ Forbidden: parallel full rebuild, frame-wide reupload, vector-position identity,
 ~~~
 
 ## Prompt 16 — Complete Runtime Residency and Generation-Based Reload/Retirement
+
+Target CL Title: `SparkleRenderer: Add Runtime Residency and Generation-Based Retirement`
 
 ~~~text
 Implement Prompt 16 only after Prompts 04 and 15 pass.
@@ -1081,6 +1122,8 @@ Forbidden: synchronous load in frame path, mixed shader generations, raw resourc
 ~~~
 
 ## Prompt 17 — Decompose Renderer Preparation into a Task DAG
+
+Target CL Title: `SparkleRenderer: Decompose Renderer Preparation into a Task DAG`
 
 ~~~text
 Implement Prompt 17 only after Prompts 10 and 15 pass.
@@ -1132,6 +1175,8 @@ Forbidden: tiny task per object, shared vector push/mutex, parallel lazy cache f
 
 ## Prompt 18 — Add D3D12 Worker Recording Contexts
 
+Target CL Title: `SparkleRHI: Add D3D12 Worker Command Recording Contexts`
+
 ~~~text
 Implement Prompt 18 only after Prompt 17 passes.
 
@@ -1182,6 +1227,8 @@ Forbidden: allocator mutex around concurrent record, reset by worker without tok
 
 ## Prompt 19 — Add Vulkan Worker Recording Contexts
 
+Target CL Title: `SparkleRHI: Add Vulkan Worker Command Recording Contexts`
+
 ~~~text
 Implement Prompt 19 only after Prompt 17 passes. Match the common lease semantics proven by Prompt 18 without copying D3D12 internals.
 
@@ -1231,6 +1278,8 @@ Forbidden: one pool shared with mutex as final design, D3D12 assumptions copied 
 ~~~
 
 ## Prompt 20 — Compile and Execute Parallel Frame-Graph Recording Groups
+
+Target CL Title: `SparkleRenderer: Execute Parallel Frame-Graph Recording Groups`
 
 ~~~text
 Implement Prompt 20 only after Prompts 18 and 19 pass.
@@ -1283,6 +1332,8 @@ Forbidden: parallelize all passes flag, infer barriers inside independent list, 
 
 ## Prompt 21 — Add Measured Intra-Pass Scaling and Close Advanced-Feature Preservation
 
+Target CL Title: `SparkleRenderer: Add Measured Intra-Pass Scaling and Preserve Advanced Features`
+
 ~~~text
 Implement Prompt 21 only after Prompt 20 passes.
 
@@ -1326,6 +1377,8 @@ Forbidden: task per draw, completion-order draw submission, provider-owned sched
 ~~~
 
 ## Prompt 22 — Reliability, Tools, Packages, and Deletion Closure
+
+Target CL Title: `SparkleEngine: Close Multithreading Reliability, Tooling, and Legacy Deletions`
 
 ~~~text
 Implement Prompt 22 only after Prompts 14, 16, and 21 pass.
@@ -1376,6 +1429,8 @@ Forbidden: keep old path “for safety,” new diagnostic subsystem, unowned pac
 
 ## Prompt 23 — Initial Full-System Performance Characterization and Tuning
 
+Target CL Title: `SparkleEngine: Characterize and Tune Full-System Multithreading Performance`
+
 ~~~text
 Implement Prompt 23 only after Prompt 22 passes.
 
@@ -1418,6 +1473,8 @@ Forbidden: premature portfolio-complete claim, cherry-picked FPS, one-backend cl
 ~~~
 
 ## Prompt 24 — Harden Atomic Protocols and Scheduler Failure Modes
+
+Target CL Title: `SparkleTasks: Harden Atomic Protocols and Scheduler Failure Modes`
 
 ~~~text
 Implement Prompt 24 only after Prompt 23 passes.
@@ -1463,6 +1520,8 @@ Forbidden: “works on x64,” relaxed-by-default, raw-pointer lock-free reclama
 
 ## Prompt 25 — Characterize CPU Topology, Worker Policy, Contention, and False Sharing
 
+Target CL Title: `SparkleTasks: Tune Worker Policy for CPU Topology and Contention`
+
 ~~~text
 Implement Prompt 25 only after Prompt 24 passes.
 
@@ -1504,6 +1563,8 @@ Forbidden: logical-core worship, pin-everything policy, priority as correctness,
 
 ## Prompt 26 — Integrate Reduction, Scan/Compaction, Partition, and Deterministic Merge
 
+Target CL Title: `SparkleEngine: Add Parallel Reduction, Compaction, Partition, and Deterministic Merge`
+
 ~~~text
 Implement Prompt 26 only after Prompt 25 passes.
 
@@ -1543,6 +1604,8 @@ Forbidden: atomic append everywhere, nondeterministic package order, assuming fl
 ~~~
 
 ## Prompt 27 — Complete Staged I/O and Cold-Cache PSO/Resource Hitch Control
+
+Target CL Title: `SparkleEngine: Add Staged I/O and Cold-Cache Hitch Control`
 
 ~~~text
 Implement Prompt 27 only after Prompt 26 passes.
@@ -1594,6 +1657,8 @@ Forbidden: “async” blocked frame worker, warm-cache-only proof, PSO creation
 
 ## Prompt 28 — Prove GPU Queue Concurrency, Frame Pacing, and Correlated Latency
 
+Target CL Title: `SparkleRenderer: Prove GPU Queue Concurrency, Frame Pacing, and Latency`
+
 ~~~text
 Implement Prompt 28 only after Prompt 27 passes.
 
@@ -1633,6 +1698,8 @@ Forbidden: two queues imply overlap, FPS-only latency claim, vendor-only frame i
 ~~~
 
 ## Prompt 29 — Production Forensics, Expert Defense, and Final Portfolio Release
+
+Target CL Title: `SparkleEngine: Complete Production Forensics and Portfolio Release`
 
 ~~~text
 Implement Prompt 29 only after Prompt 28 passes.
