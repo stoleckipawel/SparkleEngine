@@ -214,6 +214,9 @@ Unless a section explicitly says “Current,” architectural descriptions are r
 | A: hardware-aware performance | CPU scheduling was detailed; GPU bandwidth, descriptor, residency, list fragmentation, and pipeline effects were not gates | Add CPU/GPU non-regression and memory-budget gates | Existing profiler captures and allocator/capability data |
 | A: cross-IHV SDK discipline | Providers were only called serial islands | Add provider instance, tagged-resource, capability, failure, and callback ownership rules | Provider matrix and threaded reload/resize tests |
 | A: render/pass architecture | Strong frame-graph recording design | Require declared histories/resources and forbid execute-time resource/PSO creation | Parallel-safety audit per pass |
+| A/D: renderer-front-end CPU work | “Transforms, lighting, visibility, batching” was too coarse to prove common engine cases | Bind separate view/LOD, light classification, shadow-caster, retained/dynamic draw, sort/instancing, skinning, RT-input and GPU-scene tasks | Prompt 17 output ledger, stable serial/parallel sets and critical-path capture |
+| A: explicit RHI CPU work | Command recording and PSOs were covered, but native buffer/image/view, allocation/bind, descriptor update, aggregation and retirement cases were not individually closed | Add the renderer/RHI use-case completeness audit and Prompt 27 staged native-work contract | Per-operation safety/owner ledger, cold-cache/concurrency matrix and backend validation |
+| A/E: command production architecture | Unreal-style translation, native recording, “merging,” batching and submission could be conflated | Teach five layers, retain Sparkle direct native recording, qualify every merge, and gate any future software RHI stream by ADR/profile evidence | Same compiled plan, deterministic aggregation, batch/latency sweep, no speculative `RhiThread` |
 | A: shader/compiler ABI | Parallel cooking and reload were covered, but ABI preservation was implied | Add immutable shader-generation and compiler-context contract | DXIL/SPIR-V cook, reflection/layout parity, generation swap tests |
 | A: classic TLAS/PTLAS product readiness | Mentioned in GPU-scene data, tests, and benchmarks, not protected as equal product paths | Add explicit RT preservation contract and per-backend gates | Build/update/trace/lifetime tests for both paths where supported |
 | A: neural rendering readiness | Only deferred heavy ML features | Preserve tensor-like resource/layout/profile expressiveness without adding ML runtime | Shader contract tests and one replacement-based prototype gate |
@@ -4947,10 +4950,11 @@ This program is complete when all of the following are true:
 
 ### Rendering
 
-- Frame preparation contains measured task-parallel work.
+- Frame preparation separately closes applicable visibility/LOD, light classification, shadow-caster, retained/dynamic draw, sorting/instancing, skinning/morph, RT-input and GPU-scene dirty-planning use cases with serial equivalence.
 - Frame-graph recording groups have explicit state and deterministic submission contracts.
 - D3D12 allocators/lists and Vulkan command pools/buffers are worker-local and frame-retired.
 - Recording group, command-buffer, and submission sizes are measured; neither tiny-list overhead nor giant-list underutilization is accepted by assumption.
+- Preparation, native recording, optional software translation, aggregation, submission batching and queue submission have distinct owners/metrics; the accepted design retains no speculative software RHI stream or translation thread.
 - Pass runtime/PSO state is prewarmed before parallel recording.
 - Upload and transient descriptor allocations have parallel-safe ownership.
 - Both backends pass native and engine validation in serial and parallel modes.
@@ -4961,6 +4965,7 @@ This program is complete when all of the following are true:
 - Screenshot/BMP capture and native debugger/profiler hooks remain functional without routine device idle.
 - CPU gains do not buy unjustified GPU barrier, descriptor, memory, pipeline, command-list, residency, or RT regressions.
 - cold-cache PSO/resource creation has deduplication, concurrency/memory budgets, late/miss/fallback policy, and no recording-time lazy creation.
+- Shader compilation, pipeline creation, buffer/image/view creation, allocation/binding, descriptor update, upload and readiness have separately audited stages on both native backends where applicable.
 - graphics/compute/copy overlap is graph-derived and proven on queue timelines; extra queues are removed or kept serial when synchronization/bandwidth cost loses.
 - simulation, render submission, GPU, present, and provider work share a correlated frame identity and bounded CPU-lead/latency policy.
 
