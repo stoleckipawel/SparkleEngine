@@ -9,7 +9,7 @@
 #include <memory>
 
 class FrameExecutionDiagnostics;
-class GameScene;
+class GameWorld;
 class GPUMeshCache;
 class LevelManager;
 class MaterialCacheManager;
@@ -33,7 +33,7 @@ class Window;
 class RendererSystemRoot final
 {
   public:
-	RendererSystemRoot(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept;
+	RendererSystemRoot(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept;
 	~RendererSystemRoot() noexcept;
 
 	RendererSystemRoot(const RendererSystemRoot&) = delete;
@@ -42,8 +42,8 @@ class RendererSystemRoot final
 	RendererSystemRoot& operator=(RendererSystemRoot&&) = delete;
 
 	Timer& GetTimer() noexcept { return *m_timer; }
-	GameScene& GetGameScene() noexcept { return *m_gameScene; }
-	const GameScene& GetGameScene() const noexcept { return *m_gameScene; }
+	GameWorld& GetGameWorld() noexcept { return *m_gameWorld; }
+	const GameWorld& GetGameWorld() const noexcept { return *m_gameWorld; }
 	Window& GetWindow() noexcept { return *m_window; }
 	const Window& GetWindow() const noexcept { return *m_window; }
 
@@ -83,7 +83,7 @@ class RendererSystemRoot final
 	void InitializeSceneSystems(LevelManager& levelManager) noexcept;
 
 	Timer* m_timer = nullptr;
-	GameScene* m_gameScene = nullptr;
+	GameWorld* m_gameWorld = nullptr;
 	Window* m_window = nullptr;
 
 	std::unique_ptr<RendererBackendSystem> m_backend;

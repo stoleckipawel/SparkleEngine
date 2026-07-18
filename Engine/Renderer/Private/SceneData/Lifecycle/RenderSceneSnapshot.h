@@ -8,7 +8,7 @@
 #include "GameFramework/Public/Scene/Sky/SceneSkySnapshot.h"
 #include "GameFramework/Public/Scene/Textures/TextureSnapshot.h"
 
-struct GameSceneSnapshot;
+struct GameWorldSnapshot;
 
 struct RenderSceneSnapshot final
 {
@@ -20,6 +20,6 @@ struct RenderSceneSnapshot final
 	MeshSnapshot meshes = {};
 	MaterialSnapshot materials = {};
 
-	void Capture(GameSceneSnapshot&& gameSceneSnapshot) noexcept;
+	void Capture(GameWorldSnapshot&& gameWorldSnapshot) noexcept;
 	void Reset() noexcept;
 };

@@ -1,13 +1,12 @@
 #include "PCH.h"
-#include "World/SceneWorld.h"
+#include "World/GameWorldState.h"
 
 #include "World/ECS/Components/EditorComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/Components/TransformComponents.h"
-#include "World/SceneWorldTransforms.h"
+#include "World/WorldTransformConversion.h"
 
 #include <algorithm>
-#include <cmath>
 
 namespace
 {
@@ -37,7 +36,7 @@ namespace
 
 namespace ECS
 {
-	EntityId SceneWorld::AddCamera(SceneCameraEntry&& entry, bool active)
+	EntityId GameWorldState::AddCamera(SceneCameraEntry&& entry, bool active)
 	{
 		const EntityId entity = m_registry.Create();
 		if (!entity.IsValid())
@@ -48,10 +47,11 @@ namespace ECS
 		Transform transform(entry.desc.position, {entry.desc.pitchRadians, entry.desc.yawRadians, 0.0f});
 		CameraMovementSettings movement;
 		movement.moveSpeed = entry.desc.moveSpeed;
-		const LocalTransform local = SceneWorldTransforms::ToLocal(transform);
+		const LocalTransform local = WorldTransformConversion::ToLocal(transform);
 		const bool added = m_registry.Add(entity, local) &&
-		                   m_registry.Add(entity, SceneWorldTransforms::BuildWorld(local)) &&
+		                   m_registry.Add(entity, WorldTransform{}) &&
 		                   m_registry.Add(entity, ToCameraData(entry.desc, 16.0f / 9.0f, active)) &&
+		                   m_registry.Add(entity, CameraDerivedState{}) &&
 		                   m_registry.Add(entity, ToMovementComponent(movement)) &&
 		                   m_registry.Add(entity, Visibility{}) &&
 		                   m_registry.Add(entity, Name{std::move(entry.name)}) &&
@@ -66,6 +66,10 @@ namespace ECS
 			m_registry.Destroy(entity);
 			return EntityId::Invalid();
 		}
+		MarkTransformDirty(entity);
+		RecordChange(entity, WorldChangeKind::EntityCreated, WorldDataKind::World);
+		RecordChange(entity, WorldChangeKind::ComponentAdded, WorldDataKind::Camera);
+		RecordChange(entity, WorldChangeKind::ComponentAdded, WorldDataKind::LocalTransform);
 		if (active || !m_activeCamera.IsValid())
 		{
 			SetActiveCamera(entity);
@@ -73,10 +77,11 @@ namespace ECS
 		return entity;
 	}
 
-	std::size_t SceneWorld::GetCameraCount() const noexcept { return Count<Camera>(); }
-	EntityId SceneWorld::GetCameraEntity(std::size_t index) const noexcept { return EntityAt<Camera>(index); }
+	std::size_t GameWorldState::GetCameraCount() const noexcept { return Count<Camera>(); }
+	EntityId GameWorldState::GetCameraEntity(std::size_t index) const noexcept { return EntityAt<Camera>(index); }
+	bool GameWorldState::IsCamera(EntityId entity) const noexcept { return m_registry.Get<Camera>(entity) != nullptr; }
 
-	std::optional<SceneCameraEntry> SceneWorld::ReadCamera(EntityId entity) const
+	std::optional<SceneCameraEntry> GameWorldState::ReadCamera(EntityId entity) const
 	{
 		const Camera* camera = m_registry.Get<Camera>(entity);
 		const LocalTransform* local = m_registry.Get<LocalTransform>(entity);
@@ -89,7 +94,7 @@ namespace ECS
 		{
 			entry.name = name->Value;
 		}
-		const Transform transform = SceneWorldTransforms::ToPublic(*local);
+		const Transform transform = WorldTransformConversion::ToPublic(*local);
 		const DirectX::XMFLOAT3 rotation = transform.GetRotationEuler();
 		entry.desc.position = transform.GetTranslation();
 		entry.desc.pitchRadians = rotation.x;
@@ -102,7 +107,7 @@ namespace ECS
 		return entry;
 	}
 
-	bool SceneWorld::SetActiveCamera(EntityId entity) noexcept
+	bool GameWorldState::SetActiveCamera(EntityId entity) noexcept
 	{
 		const Camera* selected = m_registry.Get<Camera>(entity);
 		if (selected == nullptr || selected->ProjectionKind != CameraProjectionKind::Perspective)
@@ -116,6 +121,7 @@ namespace ECS
 				Camera inactive = *previous;
 				inactive.Active = false;
 				m_registry.Replace(m_activeCamera, inactive);
+				RecordChange(m_activeCamera, WorldChangeKind::ValueChanged, WorldDataKind::Camera);
 			}
 		}
 		Camera active = *selected;
@@ -125,10 +131,11 @@ namespace ECS
 			return false;
 		}
 		m_activeCamera = entity;
+		RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::Camera);
 		return true;
 	}
 
-	bool SceneWorld::WriteCameraDesc(EntityId entity, const CameraDesc& desc) noexcept
+	bool GameWorldState::WriteCameraDesc(EntityId entity, const CameraDesc& desc) noexcept
 	{
 		const Camera* existing = m_registry.Get<Camera>(entity);
 		if (existing == nullptr)
@@ -138,17 +145,27 @@ namespace ECS
 		Transform transform(desc.position, {desc.pitchRadians, desc.yawRadians, 0.0f});
 		CameraMovementSettings movement = ReadCameraMovement(entity);
 		movement.moveSpeed = desc.moveSpeed;
-		return WriteTransform(entity, transform) &&
-		       m_registry.Replace(entity, ToCameraData(desc, existing->AspectRatio, existing->Active)) &&
-		       WriteCameraMovement(entity, movement);
+		const bool written = WriteTransform(entity, transform) &&
+		                     m_registry.Replace(entity, ToCameraData(desc, existing->AspectRatio, existing->Active)) &&
+		                     WriteCameraMovement(entity, movement);
+		if (written)
+		{
+			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::Camera);
+		}
+		return written;
 	}
 
-	bool SceneWorld::WriteCameraMovement(EntityId entity, const CameraMovementSettings& settings) noexcept
+	bool GameWorldState::WriteCameraMovement(EntityId entity, const CameraMovementSettings& settings) noexcept
 	{
-		return m_registry.Replace(entity, ToMovementComponent(settings));
+		const bool written = m_registry.Replace(entity, ToMovementComponent(settings));
+		if (written)
+		{
+			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::CameraMovement);
+		}
+		return written;
 	}
 
-	CameraMovementSettings SceneWorld::ReadCameraMovement(EntityId entity) const noexcept
+	CameraMovementSettings GameWorldState::ReadCameraMovement(EntityId entity) const noexcept
 	{
 		CameraMovementSettings settings;
 		if (const CameraMovement* movement = m_registry.Get<CameraMovement>(entity))
@@ -164,13 +181,13 @@ namespace ECS
 		return settings;
 	}
 
-	float SceneWorld::ReadCameraAspectRatio(EntityId entity) const noexcept
+	float GameWorldState::ReadCameraAspectRatio(EntityId entity) const noexcept
 	{
 		const Camera* camera = m_registry.Get<Camera>(entity);
 		return camera != nullptr ? camera->AspectRatio : 1.0f;
 	}
 
-	bool SceneWorld::WriteCameraAspectRatio(EntityId entity, float aspectRatio) noexcept
+	bool GameWorldState::WriteCameraAspectRatio(EntityId entity, float aspectRatio) noexcept
 	{
 		const Camera* camera = m_registry.Get<Camera>(entity);
 		if (camera == nullptr)
@@ -179,22 +196,32 @@ namespace ECS
 		}
 		Camera updated = *camera;
 		updated.AspectRatio = aspectRatio;
-		return m_registry.Replace(entity, updated);
+		const bool written = m_registry.Replace(entity, updated);
+		if (written)
+		{
+			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::Camera);
+		}
+		return written;
 	}
 
-	bool SceneWorld::WriteTransform(EntityId entity, const Transform& transform) noexcept
+	bool GameWorldState::WriteTransform(EntityId entity, const Transform& transform) noexcept
 	{
-		const LocalTransform local = SceneWorldTransforms::ToLocal(transform);
-		return m_registry.Replace(entity, local) && m_registry.Replace(entity, SceneWorldTransforms::BuildWorld(local));
+		const bool written = m_registry.Replace(entity, WorldTransformConversion::ToLocal(transform));
+		if (written)
+		{
+			MarkTransformDirty(entity);
+			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::LocalTransform);
+		}
+		return written;
 	}
 
-	Transform SceneWorld::ReadTransform(EntityId entity) const noexcept
+	Transform GameWorldState::ReadTransform(EntityId entity) const noexcept
 	{
 		const LocalTransform* local = m_registry.Get<LocalTransform>(entity);
-		return local == nullptr ? Transform{} : SceneWorldTransforms::ToPublic(*local);
+		return local == nullptr ? Transform{} : WorldTransformConversion::ToPublic(*local);
 	}
 
-	bool SceneWorld::WriteVisibility(EntityId entity, bool visible) noexcept
+	bool GameWorldState::WriteVisibility(EntityId entity, bool visible) noexcept
 	{
 		const Visibility* visibility = m_registry.Get<Visibility>(entity);
 		if (visibility == nullptr)
@@ -203,16 +230,21 @@ namespace ECS
 		}
 		Visibility updated = *visibility;
 		updated.Visible = visible;
-		return m_registry.Replace(entity, updated);
+		const bool written = m_registry.Replace(entity, updated);
+		if (written)
+		{
+			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::Visibility);
+		}
+		return written;
 	}
 
-	bool SceneWorld::ReadVisibility(EntityId entity) const noexcept
+	bool GameWorldState::ReadVisibility(EntityId entity) const noexcept
 	{
 		const Visibility* visibility = m_registry.Get<Visibility>(entity);
 		return visibility != nullptr && visibility->Visible;
 	}
 
-	CameraSnapshot SceneWorld::CaptureCamera(EntityId entity) const noexcept
+	CameraSnapshot GameWorldState::CaptureCamera(EntityId entity) const noexcept
 	{
 		CameraSnapshot snapshot;
 		const Camera* camera = m_registry.Get<Camera>(entity);
@@ -220,11 +252,14 @@ namespace ECS
 		{
 			return snapshot;
 		}
-		const Transform transform = ReadTransform(entity);
-		const DirectX::XMFLOAT3 rotation = transform.GetRotationEuler();
-		const float cosPitch = std::cos(rotation.x);
-		snapshot.position = transform.GetTranslation();
-		snapshot.direction = {std::sin(rotation.y) * cosPitch, std::sin(rotation.x), std::cos(rotation.y) * cosPitch};
+		const LocalTransform* local = m_registry.Get<LocalTransform>(entity);
+		const CameraDerivedState* derived = m_registry.Get<CameraDerivedState>(entity);
+		if (local == nullptr || derived == nullptr)
+		{
+			return snapshot;
+		}
+		snapshot.position = local->Translation;
+		snapshot.direction = derived->Direction;
 		snapshot.fovYDegrees = camera->VerticalFieldOfViewDegrees;
 		snapshot.aspectRatio = camera->AspectRatio;
 		snapshot.nearZ = camera->NearPlane;

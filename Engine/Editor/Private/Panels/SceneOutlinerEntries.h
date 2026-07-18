@@ -1,11 +1,10 @@
 #pragma once
 
 #include "Scene/SceneObjectSelection.h"
+#include "World/WorldReadView.h"
 
 #include <string>
 #include <vector>
-
-class GameScene;
 
 struct SceneOutlinerEntry
 {
@@ -16,8 +15,8 @@ struct SceneOutlinerEntry
 
 namespace SceneOutlinerEntries
 {
-	std::vector<SceneOutlinerEntry> BuildCameraEntries(const GameScene& gameScene);
-	std::vector<SceneOutlinerEntry> BuildSkyEntries(const GameScene& gameScene);
-	std::vector<SceneOutlinerEntry> BuildLightEntries(const GameScene& gameScene);
-	std::vector<SceneOutlinerEntry> BuildMeshEntries(const GameScene& gameScene);
+	std::vector<SceneOutlinerEntry> BuildCameraEntries(const WorldReadView& readView);
+	std::vector<SceneOutlinerEntry> BuildSkyEntries(const WorldReadView& readView);
+	std::vector<SceneOutlinerEntry> BuildLightEntries(const WorldReadView& readView);
+	std::vector<SceneOutlinerEntry> BuildMeshEntries(const WorldReadView& readView);
 }  // namespace SceneOutlinerEntries

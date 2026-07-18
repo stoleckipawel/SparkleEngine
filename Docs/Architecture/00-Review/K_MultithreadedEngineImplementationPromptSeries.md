@@ -1103,6 +1103,46 @@ Positive patterns: explicit derived-data phase, dirty ranges, sequenced typed jo
 Forbidden: mutable const cache, full shared-scene mutex, unbounded history, editor/renderer direct registry traversal.
 ~~~
 
+### Prompt 08 completion record
+
+Prompt 08 is complete. `GameWorld` is now the only public gameplay-world owner name and private `ECS::GameWorldState` is the only storage/domain-operation owner. The old `GameScene` and private `SceneWorld` files, types, variables, includes, and compatibility spellings were removed together; current C++ search finds none. `GameWorld` owns level lifecycle, controller phases, commit, journal publication, and public read acquisition. `GameWorldState` owns the registry, world resources, dirty collection, explicit derived evaluation, and immutable generation construction. Legitimate scene-asset, editor-scene, and renderer `RenderScene*` names remain because those identify different domains rather than a competing world owner.
+
+`Transform` is now a pure TRS value: its const matrix and inverse-transpose reads calculate without mutable caches. `TransformEvaluationSystem` and `CameraDerivedStateEvaluationSystem` are focused serial phase implementations under `Private/World/Systems`; they consume sorted/unique dirty `EntityId` values and write `WorldTransform` plus `CameraDerivedState` before publication. Camera, mesh, and light construction installs derived-output components but does not treat their placeholder values as authoritative. Local transform mutation only marks input dirty; the `GameWorld` commit boundary performs evaluation. No transform hierarchy was introduced because the runtime still has no hierarchy owner or cycle contract.
+
+`WorldChangeJournal` is a private bounded mechanism under `Private/World/Publication`. Each committed record carries a monotonic `WorldSequence`, generational `EntityId`, `WorldChangeKind`, and `WorldDataKind`. Pending changes and dirty IDs are capacity-bounded; overflow collapses to one `WorldReset` and forces a full baseline rather than allocating an unbounded fallback or publishing a partial delta. The journal retains at most 64 immutable batches of at most 4,096 records, filters partially acknowledged batches, and protects only its narrow batch metadata with a mutex. Readers retain shared immutable batch storage, so eviction cannot reclaim an observed batch. A cursor older than the retained interval receives `ResyncRequired`, acquires the current full `WorldReadView`, acknowledges its sequence, and resumes from later deltas.
+
+`WorldReadView` is a deliberately narrow public cross-module value contract containing current camera, light, mesh, and sky editor/game fields. `GameWorldState` copies the previous immutable generation and patches only changed stable entities; a reset, initial publication, or journal overflow rebuilds a full baseline. Publication uses `std::atomic<std::shared_ptr<const Storage>>` release/store and acquire/load. The shared generation pins reclamation without exposing registry/storage/query APIs. `GameWorld::CaptureSnapshot` now obtains active-camera data from the committed read generation, and the editor outliner builds its model from one pinned `WorldReadView` per UI build rather than directly enumerating mutable world storage. The remaining whole renderer snapshot and editor mutation facades are explicit Prompt 11/12 deletion targets, not new consumers of ECS internals.
+
+`SkyEnvironment` is now authoritative typed world-resource data in `GameWorldState` and participates in the same journal/read publication. `SceneSky` remains only as the previously declared Prompt 11 non-owning command/read adapter: it stores no sky data, returns descriptions by value, and exposes no mutable pointer. This prompt did not create another `Scene*` runtime facade.
+
+Preserve ledger:
+
+- preserved level loading, default/active camera behavior, camera navigation, Showcase motion, mesh/material visibility, light editing, sky editing/capture, animation/morph updates, renderer snapshot compatibility, editor selection, and save-boundary capture;
+- preserved existing matrix convention and generational `EntityId`; no parallel scheduler, hierarchy, event-sourcing framework, public diagnostics/reporting API, or renderer thread was added;
+- preserved the temporary focused `SceneCameras`, `SceneLighting`, `SceneMeshes`, and `SceneSky` command adapters only for their named Prompt 10/11 consumers.
+
+Delete ledger:
+
+- deleted `GameScene`, `GameSceneController`, `GameSceneSnapshot`, private `SceneWorld`, `SceneWorld*` domain filenames, old includes, and all `gameScene`/`m_gameScene` variable spellings; their canonical replacements are `GameWorld`, `GameWorldController`, `GameWorldSnapshot`, `GameWorldState`, and `gameWorld`/`m_gameWorld`;
+- deleted mutable transform matrix caching, write-on-read invalidation, and camera direction recomputation in camera capture;
+- deleted `SceneSky` mutable pointer access and wrapper-owned mutable sky authority;
+- the old full `GameWorldSnapshot` renderer path and remaining `Scene*` editor/game adapters are not silently accepted as final: Prompts 10-12 retain their existing exact deletion gates.
+
+Rule 13 access inventory:
+
+| Data source / transform / publication | Authoritative and derived ownership / layout | Stable identity and deterministic rule | Exact precedent and measured falsifier |
+|---|---|---|---|
+| owner-written `LocalTransform` -> `WorldTransform` | packed `LocalTransform` is authoritative TRS input; packed `WorldTransform` is derived matrix/inverse-transpose output | dirty generational `EntityId` values sort and deduplicate before one serial evaluation; overflow evaluates the complete dense local-transform pool | Epic Mass fragment/processor separation and Fabian access-driven layout in J; disposable validation checked translated matrices and static-frame non-publication |
+| camera local rotation -> `CameraDerivedState` | camera direction is a derived packed column, never a mutable const cache or controller-owned duplicate | the same committed dirty order evaluates quaternion-rotated normalized +Z after transforms | NVIDIA Donut camera/application separation, AMD Cauldron scene-camera derived view data, and Epic component/controller/view separation recorded in J; disposable validation checked unit direction and generation-only visibility |
+| component/resource mutations -> `WorldChangeJournal` | owner-thread pending records are bounded; journal batches are immutable retained publications | sequence assignment occurs only in commit order; records carry generational entity identity and typed kind/data, never pointer or completion order | Epic game/render dirty-proxy model (`EPIC-OWN`) and Donut persistent scene dirty-state interface at pinned `bc1ea24`; partial-ack replay and 70 delayed publications falsified duplication and retention errors |
+| committed state -> `WorldReadView` | current immutable generation owns sorted camera/light/mesh columns plus optional sky; previous published generation is copied and patched by changed ID | full baselines sort by `EntityId`; incremental erase/upsert uses the same ordering; release/acquire publishes one complete generation | C++ release/acquire ownership publication and Epic proxy isolation in J; four concurrent readers plus retained old views falsified torn publication and early reclamation |
+| sky edit/load -> `SkyEnvironment` | `GameWorldState` owns one typed world resource; `SceneSky` is a non-owning value/command adapter | resource changes sequence with component changes; absent/present state is copied into each published generation | Epic Mass subsystem/resource separation and AMD/NVIDIA scene resource separation in J; editor and level capture compile/behavior validation falsified a second mutable authority |
+| published view -> editor/renderer compatibility | editor outliner uses one pinned generation; active render camera snapshot is built from the committed generation, while remaining renderer data stays on the named Prompt 12 bridge | stable `EntityId` replaces dense-position identity and a view sequence identifies its exact commit | Epic game/render proxy separation (`EPIC-OWN`); focused Editor/Renderer/Showcase build plus disposable camera publication checks falsified direct registry leakage and stale camera reads |
+
+Rule 12 structure and naming reconciliation: stable cross-module contracts live in `Public/World/{GameWorld,GameWorldController,GameWorldSnapshot,WorldChange,WorldReadView,SkyEnvironment}.*`. Storage and orchestration remain private in `Private/World/GameWorldState.*` and domain-specific `GameWorld{Cameras,Lighting,Meshes,Animations}.cpp`. `Private/World/Systems` owns the two explicit derived evaluators; `Private/World/Publication` owns journal/read storage mechanics; `WorldTransformConversion.*` owns only public/ECS transform conversion. No renderer/editor module includes a private ECS header. The touched code contains no local class/struct declaration, new god file, compatibility header, or duplicate settings/diagnostics family.
+
+Validation was proportionate to the changed boundary. One focused DevelopmentEditor build compiled `SparkleGameFramework`, its Renderer/Editor dependencies, and `ShowcaseEditor`. One disposable `Prompt08WorldPublicationValidation` target then checked static no-change frames, explicit transform/camera evaluation, immutable old-generation pinning, partial journal acknowledgement, four concurrent readers during 70 owner publications, bounded retention, and `ResyncRequired`; it returned success. Its source and CMake target were deleted and CMake was regenerated afterward. No full repository/backend matrix, permanent test product, report framework, or extra product logging was added.
+
 ## Prompt 09 — Implement Transactional Asynchronous Scene Loading
 
 Target CL Title: `SparkleGameFramework: Implement Transactional Asynchronous Scene Loading`
@@ -1162,13 +1202,13 @@ Target CL Title: `SparkleGameFramework: Add the ECS System Graph and Parallel An
 Implement Prompt 10 only after Prompt 08 passes; use Prompt 09 contracts where loading affects target generations.
 
 Objective:
-Replace the legacy `GameSceneController` arbitrary mutable-world access with an ECS-aware `GameSystemGraph` and prove the first real gameplay parallel workload through movement, animation pose, morph, skinning, transform, and extraction dependencies.
+Replace the legacy `GameWorldController` arbitrary mutable-world access with an ECS-aware `GameSystemGraph` and prove the first real gameplay parallel workload through movement, animation pose, morph, skinning, transform, and extraction dependencies.
 
 Non-negotiable repository rules:
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
-- Audit GameSceneController, GameCameraController, ShowcaseSceneController, world-private animation evaluators/samplers, remaining SceneMeshes compatibility access, skeleton data, transform/extraction phases. `SceneAnimations` was already deleted and must not be recreated.
+- Audit GameWorldController, GameCameraController, ShowcaseSceneController, world-private animation evaluators/samplers, remaining SceneMeshes compatibility access, skeleton data, transform/extraction phases. `SceneAnimations` was already deleted and must not be recreated.
 - Search for graph/access/resource-domain counterparts before adding system descriptors.
 - Use SparkleTasks; do not add an ECS scheduler, controller pool, animation threads, or worker waits.
 - Refactor whole-scene mutable APIs and delete migrated controller paths in this prompt.
@@ -1182,8 +1222,8 @@ Required implementation:
 6. Partition leading component/query ranges. Each task writes exclusive slots/ranges; no per-task shared vector push or asset mutation.
 7. Deterministically merge by system/entity/partition key, commit outputs, then run transform/derived state and extraction phases.
 8. Add small-work serial thresholds and reusable/per-execution arenas; remove steady-state nested target scans and per-joint heap churn where measured/touched.
-9. Delete GameSceneController::Update(GameScene&) and the temporary legacy adapter after current camera/Showcase consumers migrate.
-10. Delete `GameSceneController`, `GameCameraController`, `ShowcaseSceneController`, and migrated camera/mesh animation facade writes rather than retaining callback adapters. Input collection publishes intent; systems consume it through declared resource/component access.
+9. Delete GameWorldController::Update(GameWorld&) and the temporary legacy adapter after current camera/Showcase consumers migrate.
+10. Delete `GameWorldController`, `GameCameraController`, `ShowcaseSceneController`, and migrated camera/mesh animation facade writes rather than retaining callback adapters. Input collection publishes intent; systems consume it through declared resource/component access.
 11. Rename remaining animation mechanisms by their actual operation (`AnimationSampler`, `AnimationPoseEvaluator`, `MorphWeightEvaluator`, animation output storage) and remove the misleading `SceneAnimation*` implementation family. Do not replace it with one animation god subsystem.
 
 Validation:
@@ -1240,7 +1280,7 @@ Validation:
 - Editor responsive under load/cook/search/preview; background cannot starve frame.
 
 Acceptance gate:
-- UI/panels no longer retain `GameWorld*`, legacy `GameScene*`, mesh/light/camera facade pointers, mutable spans, or durable indices.
+- UI/panels no longer retain `GameWorld*`, legacy `GameWorld*`, mesh/light/camera facade pointers, mutable spans, or durable indices.
 - Direct SceneObjectActions mutations and superseded host service are deleted.
 - `SceneCameraView`, `SceneMeshView`, `SceneCameras`, and editor-facing `SceneLighting`/`SceneSky` access are deleted once semantic commands cover their final consumers; panels contain no compatibility facade references.
 - One operation service/runtime exists and exposes workflow state, not scheduler internals.
@@ -1258,13 +1298,13 @@ Target CL Title: `SparkleRenderer: Establish the Immutable Game-to-Render Contra
 Implement Prompt 12 only after Prompts 08 and 10 pass.
 
 Objective:
-Replace GameSceneSnapshot/raw mesh pointer/direct lifecycle coupling with stable RenderObjectId, immutable asset handles, sequenced RenderWorldDelta, RenderFrameDynamicData, versioned frame metadata, and a headless-replayable renderer input contract. Keep renderer execution serial.
+Replace GameWorldSnapshot/raw mesh pointer/direct lifecycle coupling with stable RenderObjectId, immutable asset handles, sequenced RenderWorldDelta, RenderFrameDynamicData, versioned frame metadata, and a headless-replayable renderer input contract. Keep renderer execution serial.
 
 Non-negotiable repository rules:
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
-- Audit GameSceneSnapshot/MeshSnapshot, Renderer facade/SystemRoot, RenderSceneDataBuilder, SceneRenderStateCoordinator, temporal inputs, RT instances, providers, capture, level callbacks, asset handles.
+- Audit GameWorldSnapshot/MeshSnapshot, Renderer facade/SystemRoot, RenderSceneDataBuilder, SceneRenderStateCoordinator, temporal inputs, RT instances, providers, capture, level callbacks, asset handles.
 - Reuse existing handle/packet/arena/math/frame-generation types; do not create a second scene schema or broad renderer snapshot API.
 - Renderer must not depend on ECS or dereference `GameWorld` after conversion.
 - Refactor and delete each old read/callback path when its packet equivalent lands.
@@ -1289,7 +1329,7 @@ Validation:
 Acceptance gate:
 - Renderer consumes a recorded stream with `GameWorld` destroyed.
 - MeshInstanceSnapshot raw pointer and old full snapshot boundary are deleted.
-- `GameSceneSnapshot` and all domain `*Snapshot` compatibility families listed in the Prompt 07 final-vocabulary table are deleted; only deliberately named renderer packets/read models remain.
+- `GameWorldSnapshot` and all domain `*Snapshot` compatibility families listed in the Prompt 07 final-vocabulary table are deleted; only deliberately named renderer packets/read models remain.
 - `RendererSystemRoot` has no `GameWorld` access and no direct lifecycle callbacks.
 - Serial output matches baseline before render threading.
 
@@ -1329,7 +1369,7 @@ Required implementation:
 10. Preserve immutable static assets through versioned handles and residency operations. Mesh geometry, material definitions, textures, skeletons, animation clips, BLAS payload identity, and shader packages are not copied into per-frame dynamic streams.
 11. Produce small, representative, high-instance, high-light, animated/skinned/morph, RT/PTLAS, structural-churn, and mostly-static workloads. Compare the replaced snapshot/object path with the new serial stream path for output identity and relevant packet bytes, allocations, extraction/apply time, bytes read/written, cache misses/bandwidth where available, dirty rows/ranges, and projected upload bytes.
 12. Record rejected alternatives: full snapshot, one AoS object per renderable, universal SoA, immediate archetype conversion, renderer ECS query, hash lookup in every hot pass, and duplicated current/previous data. Keep an alternative only if a source-backed measured workload beats the selected layout.
-13. Delete `GameSceneSnapshot`, raw `Mesh*` packet fields, converted parallel scene vectors, old full-scene extraction/build path, and temporary compatibility schema after parity. Repository search must find one game-to-render data path.
+13. Delete `GameWorldSnapshot`, raw `Mesh*` packet fields, converted parallel scene vectors, old full-scene extraction/build path, and temporary compatibility schema after parity. Repository search must find one game-to-render data path.
 14. Update J's Two Data Streams section and the Prompt 12/15 field ledgers with the concrete accepted layouts and measurements; label unmeasured hardware claims as pending rather than inferring benefit.
 
 Validation:
@@ -1825,7 +1865,7 @@ Non-negotiable repository rules:
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
-- Audit every remaining std::thread/jthread/async/future/mutex/shared_mutex/condition variable/atomic/memory-order operation, standard/Qt/native wait or detach, TaskExecutor instance, WaitForIdle call site, GameScene snapshot/pointer, controller, Scene* facade, host-render path, direct lifecycle callback, default report/artifact, launcher command/package kind. Search Engine, Tools, and Projects owned sources; exclude generated/external code but include wrapper policy and third-party worker counts.
+- Audit every remaining std::thread/jthread/async/future/mutex/shared_mutex/condition variable/atomic/memory-order operation, standard/Qt/native wait or detach, TaskExecutor instance, WaitForIdle call site, GameWorld snapshot/pointer, controller, Scene* facade, host-render path, direct lifecycle callback, default report/artifact, launcher command/package kind. Search Engine, Tools, and Projects owned sources; exclude generated/external code but include wrapper policy and third-party worker counts.
 - Search before adding any reliability helper; consolidate into current owner and delete obsolete mechanisms.
 - Daily refactor is mandatory for every retained legacy hotspot touched.
 - No new feature, framework, report system, task UI, or package kind is allowed in closure.

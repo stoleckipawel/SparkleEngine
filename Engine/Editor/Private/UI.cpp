@@ -3,7 +3,7 @@
 #include "Window/Window.h"
 #include "Input/InputSystem.h"
 #include "Level/LevelManager.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Timer.h"
 
 #include "Console/EditorConsoleSystem.h"
@@ -116,7 +116,7 @@ bool UI::ConsumeShaderRecookRequest() noexcept
 UI::UI(EditorHostServices hostServices) :
 	m_timer(&hostServices.RuntimeTimer),
 	m_levelManager(hostServices.Levels),
-	m_gameScene(hostServices.Scene),
+	m_gameWorld(hostServices.World),
 	m_imguiRenderer(&hostServices.ImGuiRenderer),
 	m_window(&hostServices.HostWindow),
 	m_inputSystem(&hostServices.Input),
@@ -234,11 +234,11 @@ void UI::InitializeDefaultPanels()
 			    m_editorConsoleSystem->SubmitLine("RecompileShaders " + packageId);
 		    }
 	    });
-	if (m_gameScene != nullptr)
+	if (m_gameWorld != nullptr)
 	{
-		m_sceneSelection = SceneObjectSelection::Camera(m_gameScene->GetCameras().GetCameraEntity(0));
-		m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(*m_gameScene, m_sceneSelection, SceneOutlinerWidth);
-		m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection, SceneInspectorWidth);
+		m_sceneSelection = SceneObjectSelection::Camera(m_gameWorld->GetCameras().GetCameraEntity(0));
+		m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(*m_gameWorld, m_sceneSelection, SceneOutlinerWidth);
+		m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(*m_gameWorld, m_sceneSelection, SceneInspectorWidth);
 	}
 }
 
@@ -286,12 +286,12 @@ void UI::ConfigureMainMenuBarWindowActions()
 MeshPreviewGeometry UI::BuildMeshPreviewGeometry(std::uintptr_t meshRuntimeId) const
 {
 	MeshPreviewGeometry geometry;
-	if (m_gameScene == nullptr || meshRuntimeId == 0)
+	if (m_gameWorld == nullptr || meshRuntimeId == 0)
 	{
 		return geometry;
 	}
 
-	const SceneMeshes& sceneMeshes = m_gameScene->GetMeshes();
+	const SceneMeshes& sceneMeshes = m_gameWorld->GetMeshes();
 	for (std::size_t meshIndex = 0; meshIndex < sceneMeshes.GetMeshCount(); ++meshIndex)
 	{
 		const SceneMeshView meshInstance = sceneMeshes.GetMesh(meshIndex);

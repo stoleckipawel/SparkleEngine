@@ -2,7 +2,7 @@
 #include "Panels/SceneLightInspector.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Lighting/PointLightDesc.h"
 #include "Scene/Lighting/RectLightDesc.h"
 #include "Scene/Lighting/SceneDirectionalLightDesc.h"
@@ -23,20 +23,20 @@ namespace
 	constexpr float kAreaLightSizeSliderMax = 100.0f;
 }
 
-void SceneLightInspector::Build(GameScene& gameScene, EntityId lightEntity, const std::string& filterText) noexcept
+void SceneLightInspector::Build(GameWorld& gameWorld, EntityId lightEntity, const std::string& filterText) noexcept
 {
-	const std::optional<SceneLightDesc> sceneLight = gameScene.GetLighting().GetLight(lightEntity);
+	const std::optional<SceneLightDesc> sceneLight = gameWorld.GetLighting().GetLight(lightEntity);
 	if (!sceneLight)
 	{
 		UiUtil::DrawDetailsEmptyState();
 		return;
 	}
 
-	BuildGenericLight(gameScene, lightEntity, *sceneLight, filterText);
+	BuildGenericLight(gameWorld, lightEntity, *sceneLight, filterText);
 }
 
 void SceneLightInspector::BuildGenericLight(
-    GameScene& gameScene,
+    GameWorld& gameWorld,
     EntityId lightEntity,
     const SceneLightDesc& sceneLight,
     const std::string& filterText) noexcept
@@ -62,7 +62,7 @@ void SceneLightInspector::BuildGenericLight(
 		BuildRectLightCategory(filterText, *rect);
 	}
 
-	gameScene.GetLighting().SetLight(lightEntity, std::move(lightDesc));
+	gameWorld.GetLighting().SetLight(lightEntity, std::move(lightDesc));
 }
 
 void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept

@@ -12,20 +12,20 @@ class SceneTextures;
 
 namespace ECS
 {
-	class SceneWorld;
+	class GameWorldState;
 }
 
-class GameSceneAssetPayloadAppender final
+class GameWorldAssetPayloadAppender final
 {
   public:
-	GameSceneAssetPayloadAppender(
+	GameWorldAssetPayloadAppender(
 	    SceneCameras& cameras,
 	    SceneLighting& lighting,
 	    SceneMaterials& materials,
 	    SceneMaterialVariants& materialVariants,
 	    SceneMeshes& meshes,
 	    SceneSkeletons& skeletons,
-	    ECS::SceneWorld& world,
+	    ECS::GameWorldState& world,
 	    SceneTextures& textures) noexcept;
 
 	bool Append(SceneAssetPayload&& sceneAssetPayload);
@@ -37,6 +37,6 @@ class GameSceneAssetPayloadAppender final
 	SceneMaterialVariants& m_materialVariants;
 	SceneMeshes& m_meshes;
 	SceneSkeletons& m_skeletons;
-	ECS::SceneWorld& m_world;
+	ECS::GameWorldState& m_state;
 	SceneTextures& m_textures;
 };

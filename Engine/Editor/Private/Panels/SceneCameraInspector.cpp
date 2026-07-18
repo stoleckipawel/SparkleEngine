@@ -2,15 +2,15 @@
 #include "Panels/SceneCameraInspector.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Camera/SceneCameraView.h"
 #include "Util/UiUtil.h"
 
 #include <cstdio>
 
-void SceneCameraInspector::Build(GameScene& gameScene, const std::string& filterText) noexcept
+void SceneCameraInspector::Build(GameWorld& gameWorld, const std::string& filterText) noexcept
 {
-	SceneCameraView sceneCamera = gameScene.GetCameras().GetActiveCamera();
+	SceneCameraView sceneCamera = gameWorld.GetCameras().GetActiveCamera();
 	if (!sceneCamera.IsValid())
 	{
 		return;

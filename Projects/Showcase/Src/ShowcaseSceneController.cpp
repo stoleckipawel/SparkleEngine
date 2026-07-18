@@ -1,6 +1,6 @@
 #include "ShowcaseSceneController.h"
 
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Meshes/SceneMeshes.h"
 
 #include <DirectXMath.h>
@@ -74,28 +74,28 @@ namespace
 	}
 }
 
-void ShowcaseSceneController::OnSceneReset(GameScene& scene)
+void ShowcaseSceneController::OnWorldReset(GameWorld& world)
 {
 	Reset();
 }
 
-void ShowcaseSceneController::OnSceneAssetsAppended(GameScene& scene)
+void ShowcaseSceneController::OnSceneAssetsAppended(GameWorld& world)
 {
 	m_needsTargetRefresh = true;
 }
 
-void ShowcaseSceneController::Update(GameScene& scene, const GameSceneUpdateContext& context)
+void ShowcaseSceneController::Update(GameWorld& world, const GameWorldUpdateContext& context)
 {
-	if (context.phase != GameSceneUpdatePhase::PreAnimation)
+	if (context.phase != GameWorldUpdatePhase::PreAnimation)
 	{
 		return;
 	}
 
 	if (m_needsTargetRefresh)
 	{
-		RefreshAnimatedMeshes(scene);
+		RefreshAnimatedMeshes(world);
 	}
-	ApplyMovement(scene, context.deltaSeconds);
+	ApplyMovement(world, context.deltaSeconds);
 }
 
 void ShowcaseSceneController::Reset() noexcept
@@ -105,9 +105,9 @@ void ShowcaseSceneController::Reset() noexcept
 	m_animatedMeshes.clear();
 }
 
-void ShowcaseSceneController::RefreshAnimatedMeshes(GameScene& scene)
+void ShowcaseSceneController::RefreshAnimatedMeshes(GameWorld& world)
 {
-	SceneMeshes& meshes = scene.GetMeshes();
+	SceneMeshes& meshes = world.GetMeshes();
 	m_animatedMeshes.clear();
 	for (std::size_t meshIndex = 0; meshIndex < meshes.GetMeshCount(); ++meshIndex)
 	{
@@ -127,7 +127,7 @@ void ShowcaseSceneController::RefreshAnimatedMeshes(GameScene& scene)
 	m_needsTargetRefresh = false;
 }
 
-void ShowcaseSceneController::ApplyMovement(GameScene& scene, float deltaSeconds) noexcept
+void ShowcaseSceneController::ApplyMovement(GameWorld& world, float deltaSeconds) noexcept
 {
 	if (m_animatedMeshes.empty())
 	{
@@ -137,7 +137,7 @@ void ShowcaseSceneController::ApplyMovement(GameScene& scene, float deltaSeconds
 	m_motionTimeSeconds += (std::max)(0.0f, deltaSeconds);
 	const bool usePtlasDemoLanes = m_animatedMeshes.size() > 1;
 
-	SceneMeshes& meshes = scene.GetMeshes();
+	SceneMeshes& meshes = world.GetMeshes();
 	for (const AnimatedMesh& animatedMesh : m_animatedMeshes)
 	{
 		SceneMeshView mesh = meshes.GetMesh(animatedMesh.MeshEntity);

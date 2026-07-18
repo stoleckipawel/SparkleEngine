@@ -1,16 +1,16 @@
 #include "PCH.h"
 #include "Panels/SceneSkyInspector.h"
 
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Sky/SceneSky.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
 #include <utility>
 
-void SceneSkyInspector::Build(GameScene& gameScene, const std::string& filterText) noexcept
+void SceneSkyInspector::Build(GameWorld& gameWorld, const std::string& filterText) noexcept
 {
-	SceneSky& sceneSky = gameScene.GetSky();
+	SceneSky& sceneSky = gameWorld.GetSky();
 	bool hasSky = sceneSky.HasSky();
 	if (UiUtil::MatchesDetailsFilter(filterText, "Sky", "override default texture color intensity enabled visible"))
 	{
@@ -37,8 +37,8 @@ void SceneSkyInspector::Build(GameScene& gameScene, const std::string& filterTex
 		}
 	}
 
-	const SceneSkyDesc* currentSky = sceneSky.GetSky();
-	if (!hasSky || currentSky == nullptr)
+	const std::optional<SceneSkyDesc> currentSky = sceneSky.GetSky();
+	if (!hasSky || !currentSky)
 	{
 		return;
 	}

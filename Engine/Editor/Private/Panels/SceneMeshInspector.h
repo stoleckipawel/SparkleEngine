@@ -4,14 +4,14 @@
 #include <string>
 #include "World/EntityId.h"
 
-class GameScene;
+class GameWorld;
 class Mesh;
 class SceneMeshView;
 
 class SceneMeshInspector final
 {
   public:
-	static void Build(GameScene& gameScene, EntityId meshEntity, const std::string& filterText) noexcept;
+	static void Build(GameWorld& gameWorld, EntityId meshEntity, const std::string& filterText) noexcept;
 
   private:
 	static void BuildTransformCategory(const std::string& filterText, SceneMeshView& mesh) noexcept;

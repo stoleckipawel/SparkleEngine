@@ -10,9 +10,9 @@
 class RendererState final
 {
   public:
-	RendererState(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept
+	RendererState(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept
 	{
-		m_systems = std::make_unique<RendererSystemRoot>(timer, gameScene, window, levelManager);
+		m_systems = std::make_unique<RendererSystemRoot>(timer, gameWorld, window, levelManager);
 		m_pipeline = std::make_unique<FramePipeline>(*m_systems);
 		m_systems->PostLoad();
 	}
@@ -49,9 +49,9 @@ class RendererState final
 	std::unique_ptr<FramePipeline> m_pipeline;
 };
 
-Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept
+Renderer::Renderer(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept
 {
-	m_state = std::make_unique<RendererState>(timer, gameScene, window, levelManager);
+	m_state = std::make_unique<RendererState>(timer, gameWorld, window, levelManager);
 }
 
 Renderer::~Renderer() noexcept = default;

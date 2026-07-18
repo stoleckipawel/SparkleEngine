@@ -9,12 +9,12 @@
 #include <optional>
 #include <vector>
 
-class GameScene;
+class GameWorld;
 
 class SPARKLE_ENGINE_API SceneLighting final
 {
   public:
-	explicit SceneLighting(GameScene& scene) noexcept;
+	explicit SceneLighting(GameWorld& world) noexcept;
 	~SceneLighting() noexcept = default;
 
 	SceneLighting(const SceneLighting&) = delete;
@@ -36,9 +36,9 @@ class SPARKLE_ENGINE_API SceneLighting final
 	void ApplyFromDesc(const std::vector<SceneLightDesc>& lights);
 	void AppendLight(SceneLightDesc light);
 	std::vector<SceneLightDesc> CaptureToDesc() const;
-	LightingSnapshot CaptureSnapshot() const noexcept;
+	LightingSnapshot CaptureSnapshot() const;
 
   private:
-	friend class GameScene;
-	GameScene* m_scene = nullptr;
+	friend class GameWorld;
+	GameWorld* m_world = nullptr;
 };

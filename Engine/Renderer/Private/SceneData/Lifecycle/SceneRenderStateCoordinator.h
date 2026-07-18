@@ -10,7 +10,7 @@ class MaterialCacheManager;
 class RenderCamera;
 class RenderDeviceServices;
 class RenderRayTracingScene;
-class GameScene;
+class GameWorld;
 class TextureManager;
 
 class SceneRenderStateCoordinator final
@@ -18,7 +18,7 @@ class SceneRenderStateCoordinator final
   public:
 	SceneRenderStateCoordinator(
 	    LevelChangeEvents& levelChangeEvents,
-	    GameScene& gameScene,
+	    GameWorld& gameWorld,
 	    RenderDeviceServices& backendServices,
 	    GPUMeshCache& gpuMeshCache,
 	    TextureManager& textureManager,
@@ -42,7 +42,7 @@ class SceneRenderStateCoordinator final
 	void RefreshSceneScopedRendererState() noexcept;
 	void ReleaseSceneScopedMaterialResources() noexcept;
 
-	GameScene* m_gameScene = nullptr;
+	GameWorld* m_gameWorld = nullptr;
 	RenderDeviceServices* m_backendServices = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
 	TextureManager* m_textureManager = nullptr;

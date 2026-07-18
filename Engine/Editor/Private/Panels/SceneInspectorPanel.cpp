@@ -8,7 +8,7 @@
 #include "Panels/SceneSkyInspector.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/SceneObjectPresentation.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Lighting/SceneLightDesc.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Style/SparkleUiPalette.h"
@@ -20,8 +20,8 @@
 
 #include <imgui.h>
 
-SceneInspectorPanel::SceneInspectorPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels) noexcept :
-    m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
+SceneInspectorPanel::SceneInspectorPanel(GameWorld& gameWorld, SceneObjectSelection& selection, float widthPixels) noexcept :
+    m_gameWorld(&gameWorld), m_selection(&selection), m_widthPixels(widthPixels)
 {
 }
 
@@ -35,16 +35,16 @@ std::string SceneInspectorPanel::BuildSelectionTitle() const
 	switch (m_selection->type)
 	{
 		case SceneObjectType::Camera:
-			if (m_gameScene != nullptr)
+			if (m_gameWorld != nullptr)
 			{
-				const SceneCameraEntry camera = m_gameScene->GetCameras().GetCameraEntryByEntity(m_selection->entity);
+				const SceneCameraEntry camera = m_gameWorld->GetCameras().GetCameraEntryByEntity(m_selection->entity);
 				return camera.name.empty() ? "Camera" : camera.name;
 			}
 			return "Scene Camera";
 		case SceneObjectType::Light:
-			if (m_gameScene != nullptr)
+			if (m_gameWorld != nullptr)
 			{
-				if (const std::optional<SceneLightDesc> light = m_gameScene->GetLighting().GetLight(m_selection->entity))
+				if (const std::optional<SceneLightDesc> light = m_gameWorld->GetLighting().GetLight(m_selection->entity))
 				{
 					return SceneObjectPresentation::BuildLightLabel(*light, m_selection->entity.GetSlot());
 				}
@@ -72,9 +72,9 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 		case SceneObjectType::Camera:
 			return "Camera";
 		case SceneObjectType::Light:
-			if (m_gameScene != nullptr)
+			if (m_gameWorld != nullptr)
 			{
-				if (const std::optional<SceneLightDesc> light = m_gameScene->GetLighting().GetLight(m_selection->entity))
+				if (const std::optional<SceneLightDesc> light = m_gameWorld->GetLighting().GetLight(m_selection->entity))
 				{
 					return SceneObjectPresentation::GetLightTypeLabel(light->GetKind());
 				}
@@ -94,7 +94,7 @@ void SceneInspectorPanel::BuildSelectionHeader() noexcept
 {
 	const std::string title = BuildSelectionTitle();
 	const char* subtitle = BuildSelectionSubtitle();
-	const UiUtil::EditorIcon icon = SceneObjectPresentation::BuildSelectionIcon(m_selection, m_gameScene);
+	const UiUtil::EditorIcon icon = SceneObjectPresentation::BuildSelectionIcon(m_selection, m_gameWorld);
 
 	constexpr float kHeaderHeight = 30.0f;
 	constexpr float kHeaderPaddingX = 8.0f;
@@ -163,16 +163,16 @@ void SceneInspectorPanel::BuildSelectionInspector() noexcept
 	switch (m_selection->type)
 	{
 		case SceneObjectType::Camera:
-			SceneCameraInspector::Build(*m_gameScene, m_filterText);
+			SceneCameraInspector::Build(*m_gameWorld, m_filterText);
 			break;
 		case SceneObjectType::Light:
-			SceneLightInspector::Build(*m_gameScene, m_selection->entity, m_filterText);
+			SceneLightInspector::Build(*m_gameWorld, m_selection->entity, m_filterText);
 			break;
 		case SceneObjectType::Sky:
-			SceneSkyInspector::Build(*m_gameScene, m_filterText);
+			SceneSkyInspector::Build(*m_gameWorld, m_filterText);
 			break;
 		case SceneObjectType::Mesh:
-			SceneMeshInspector::Build(*m_gameScene, m_selection->entity, m_filterText);
+			SceneMeshInspector::Build(*m_gameWorld, m_selection->entity, m_filterText);
 			break;
 		case SceneObjectType::None:
 		default:
@@ -203,7 +203,7 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 
 	m_widthPixels = ImGui::GetWindowWidth();
 
-	if (m_gameScene == nullptr || m_selection == nullptr)
+	if (m_gameWorld == nullptr || m_selection == nullptr)
 	{
 		ImGui::TextDisabled("Scene inspector unavailable");
 		ImGui::End();
@@ -225,10 +225,10 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 			ImGui::EndTabItem();
 		}
 
-		if (m_gameScene->GetMaterialVariants().GetVariantCount() > 0 && ImGui::BeginTabItem("Variants"))
+		if (m_gameWorld->GetMaterialVariants().GetVariantCount() > 0 && ImGui::BeginTabItem("Variants"))
 		{
 			ImGui::Spacing();
-			SceneMaterialVariantInspector::Build(*m_gameScene);
+			SceneMaterialVariantInspector::Build(*m_gameWorld);
 			ImGui::EndTabItem();
 		}
 

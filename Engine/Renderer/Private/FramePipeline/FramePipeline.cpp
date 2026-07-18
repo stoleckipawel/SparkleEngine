@@ -26,7 +26,7 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
@@ -232,7 +232,7 @@ void FramePipeline::SetupFrame() noexcept
 	timer.Tick();
 	RefreshViewportRenderProducts();
 
-	m_sceneSnapshot.Capture(m_systems->GetGameScene().CaptureSnapshot());
+	m_sceneSnapshot.Capture(m_systems->GetGameWorld().CaptureSnapshot());
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	RenderCommandList& graphicsCommandList = backend.GetCurrentGraphicsCommandList();
 	TextureManager& textureManager = m_systems->GetTextureManager();

@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <string>
 
-class GameScene;
+class GameWorld;
 struct SceneLightDesc;
 struct SceneObjectSelection;
 
@@ -15,6 +15,6 @@ namespace SceneObjectPresentation
 	UiUtil::EditorIcon GetLightIcon(SceneLightKind kind) noexcept;
 	const char* GetLightTypeLabel(SceneLightKind kind) noexcept;
 	std::string BuildLightLabel(const SceneLightDesc& light, std::size_t lightIndex);
-	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection& selection, const GameScene* gameScene) noexcept;
-	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection* selection, const GameScene* gameScene) noexcept;
+	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection& selection, const GameWorld* gameWorld) noexcept;
+	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection* selection, const GameWorld* gameWorld) noexcept;
 }  // namespace SceneObjectPresentation

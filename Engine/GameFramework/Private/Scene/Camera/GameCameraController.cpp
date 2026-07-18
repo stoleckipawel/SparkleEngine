@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Scene/Camera/GameCameraController.h"
 #include "Input/InputSystem.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Camera/SceneCameraView.h"
 #include "Window/Window.h"
 #include "Events/ScopedEventHandle.h"
@@ -84,31 +84,31 @@ GameCameraController::~GameCameraController() noexcept
 	}
 }
 
-void GameCameraController::OnSceneReset(GameScene& scene)
+void GameCameraController::OnWorldReset(GameWorld& world)
 {
-	m_scene = nullptr;
+	m_world = nullptr;
 	m_cameraEntity = {};
 	ResetMovementIntent();
 }
 
-void GameCameraController::OnLevelLoaded(GameScene& scene, const LevelDesc& levelDesc)
+void GameCameraController::OnLevelLoaded(GameWorld& world, const LevelDesc& levelDesc)
 {
-	RefreshActiveCamera(scene);
+	RefreshActiveCamera(world);
 }
 
-void GameCameraController::OnSceneAssetsAppended(GameScene& scene)
+void GameCameraController::OnSceneAssetsAppended(GameWorld& world)
 {
-	RefreshActiveCamera(scene);
+	RefreshActiveCamera(world);
 }
 
-void GameCameraController::Update(GameScene& scene, const GameSceneUpdateContext& context)
+void GameCameraController::Update(GameWorld& world, const GameWorldUpdateContext& context)
 {
-	if (context.phase != GameSceneUpdatePhase::PreAnimation)
+	if (context.phase != GameWorldUpdatePhase::PreAnimation)
 	{
 		return;
 	}
 
-	RefreshActiveCamera(scene);
+	RefreshActiveCamera(world);
 	const float deltaTime = static_cast<float>(m_timer.GetDelta(TimeDomain::Scaled));
 	if (deltaTime <= 0.0f)
 	{
@@ -148,21 +148,21 @@ void GameCameraController::ApplyMovement(float deltaTime) noexcept
 	camera.SetTransform(transform);
 }
 
-void GameCameraController::RefreshActiveCamera(GameScene& scene) noexcept
+void GameCameraController::RefreshActiveCamera(GameWorld& world) noexcept
 {
-	const EntityId activeCamera = scene.GetCameras().GetActiveCamera().GetEntity();
-	if (m_scene == &scene && m_cameraEntity == activeCamera)
+	const EntityId activeCamera = world.GetCameras().GetActiveCamera().GetEntity();
+	if (m_world == &world && m_cameraEntity == activeCamera)
 	{
 		return;
 	}
-	m_scene = &scene;
+	m_world = &world;
 	m_cameraEntity = activeCamera;
 	ApplyAspectRatio();
 }
 
 SceneCameraView GameCameraController::ResolveCamera() const noexcept
 {
-	return m_scene != nullptr ? m_scene->GetCameras().GetCamera(m_cameraEntity) : SceneCameraView{};
+	return m_world != nullptr ? m_world->GetCameras().GetCamera(m_cameraEntity) : SceneCameraView{};
 }
 
 void GameCameraController::ApplyAspectRatio() noexcept

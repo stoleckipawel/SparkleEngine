@@ -6,7 +6,7 @@
 #include "GameFramework/Public/Scene/Transform.h"
 #include "GameFramework/Public/World/EntityId.h"
 
-class GameScene;
+class GameWorld;
 
 // A non-owning, entity-bound view of camera instance data. Camera navigation and
 // input behavior belong to a controller; collection and active-camera policy
@@ -31,8 +31,8 @@ class SPARKLE_ENGINE_API SceneCameraView final
 
   private:
 	friend class SceneCameras;
-	SceneCameraView(GameScene& scene, EntityId entity) noexcept : m_scene(&scene), m_entity(entity) {}
+	SceneCameraView(GameWorld& world, EntityId entity) noexcept : m_world(&world), m_entity(entity) {}
 
-	GameScene* m_scene = nullptr;
+	GameWorld* m_world = nullptr;
 	EntityId m_entity;
 };

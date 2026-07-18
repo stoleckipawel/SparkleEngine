@@ -1,11 +1,13 @@
 #pragma once
 
+#include "World/WorldReadView.h"
+
 #include <cstddef>
 
 #include <string>
 #include <vector>
 
-class GameScene;
+class GameWorld;
 struct SceneOutlinerEntry;
 struct SceneObjectSelection;
 
@@ -20,7 +22,7 @@ enum class SceneOutlinerFilter
 class SceneOutlinerPanel final
 {
   public:
-	SceneOutlinerPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels = 320.0f) noexcept;
+	SceneOutlinerPanel(GameWorld& gameWorld, SceneObjectSelection& selection, float widthPixels = 320.0f) noexcept;
 	~SceneOutlinerPanel() = default;
 
 	SceneOutlinerPanel(const SceneOutlinerPanel&) = delete;
@@ -56,7 +58,8 @@ class SceneOutlinerPanel final
 	void DrawSectionRow(const char* id, const char* label, std::size_t count, bool& open) noexcept;
 	void DrawSelectionEntry(const char* label, const char* typeLabel, const SceneObjectSelection& selection) noexcept;
 
-	GameScene* m_gameScene = nullptr;
+	GameWorld* m_gameWorld = nullptr;
+	WorldReadView m_readView;
 	SceneObjectSelection* m_selection = nullptr;
 	float m_widthPixels = 320.0f;
 	float m_topInsetPixels = 0.0f;

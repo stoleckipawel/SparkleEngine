@@ -9,12 +9,17 @@
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
 #include "GameFramework/Public/Scene/Meshes/MeshSnapshot.h"
 #include "GameFramework/Public/Scene/Transform.h"
+#include "GameFramework/Public/World/SkyEnvironment.h"
+#include "GameFramework/Public/World/WorldReadView.h"
 #include "World/ECS/EntityRegistry.h"
+#include "World/Publication/WorldChangeJournal.h"
 #include "World/Resources/SceneAnimationResources.h"
 #include "World/Resources/SceneDeformationStateStore.h"
 #include "World/Resources/SceneMeshResources.h"
 #include "World/SceneMeshInstanceData.h"
 
+#include <atomic>
+#include <memory>
 #include <optional>
 
 class Mesh;
@@ -22,16 +27,18 @@ class SceneSkeletons;
 
 namespace ECS
 {
-	class SceneWorld final
+	class GameWorldState final
 	{
 	  public:
-		void Clear() noexcept;
+		GameWorldState();
+		void Clear();
 		bool IsAlive(EntityId entity) const noexcept { return m_registry.IsAlive(entity); }
 		bool Destroy(EntityId entity) noexcept;
 
 		EntityId AddCamera(SceneCameraEntry&& entry, bool active = false);
 		std::size_t GetCameraCount() const noexcept;
 		EntityId GetCameraEntity(std::size_t index) const noexcept;
+		bool IsCamera(EntityId entity) const noexcept;
 		std::optional<SceneCameraEntry> ReadCamera(EntityId entity) const;
 		bool SetActiveCamera(EntityId entity) noexcept;
 		EntityId GetActiveCamera() const noexcept { return m_activeCamera; }
@@ -67,13 +74,29 @@ namespace ECS
 		std::optional<SceneLightDesc> ReadLight(EntityId entity) const;
 		bool WriteLight(EntityId entity, SceneLightDesc&& desc);
 		std::vector<SceneLightDesc> CaptureLightsToDesc() const;
-		LightingSnapshot CaptureLighting() const noexcept;
+		LightingSnapshot CaptureLighting() const;
 
 		void AppendAnimationClips(std::vector<SceneAnimationClipDesc>&& clips);
 		void UpdateAnimations(float deltaSeconds, const SceneSkeletons& skeletons);
 		const SceneAnimationSnapshot& GetAnimationOutput() const noexcept { return m_animationResources.GetDerivedOutput(); }
 
+		std::optional<SkyEnvironment> ReadSkyEnvironment() const { return m_skyEnvironment; }
+		bool HasSkyEnvironment() const noexcept { return m_skyEnvironment.has_value(); }
+		void WriteSkyEnvironment(SkyEnvironment environment) noexcept;
+		void RemoveSkyEnvironment() noexcept;
+		void NotifyResourceChanged(WorldDataKind data) noexcept;
+
+		void CommitDerivedStateAndPublish();
+		WorldReadView AcquireReadView() const noexcept;
+		WorldChangeBatch ReadChanges(WorldSequence acknowledgedSequence) const;
+
 	  private:
+		void MarkTransformDirty(EntityId entity) noexcept;
+		void RecordChange(EntityId entity, WorldChangeKind kind, WorldDataKind data) noexcept;
+		void PublishReadView(std::span<const WorldChange> changes, WorldSequence sequence, bool fullBaseline);
+		WorldCameraReadData BuildCameraReadData(EntityId entity) const;
+		WorldLightReadData BuildLightReadData(EntityId entity) const;
+		WorldMeshReadData BuildMeshReadData(EntityId entity) const;
 		template <typename T> std::size_t Count() const noexcept
 		{
 			const ComponentStorage<T>* storage = m_registry.FindStorage<T>();
@@ -91,6 +114,15 @@ namespace ECS
 		SceneAnimationResources m_animationResources;
 		SceneDeformationStateStore m_deformationStates;
 		std::vector<MeshInstanceGroupSnapshot> m_meshInstanceGroups;
+		std::optional<SkyEnvironment> m_skyEnvironment;
+		std::vector<EntityId> m_dirtyTransforms;
+		std::vector<WorldChange> m_pendingChanges;
+		WorldChangeJournal m_changeJournal;
+		std::atomic<std::shared_ptr<const WorldReadView::Storage>> m_publishedReadView;
+		std::uint64_t m_readGeneration = 0;
+		bool m_forceFullPublication = true;
+		bool m_evaluateAllTransforms = false;
+		bool m_changesOverflowed = false;
 		EntityId m_activeCamera;
 		std::uint64_t m_nextCameraIdentity = 0;
 		std::uint64_t m_nextLightIdentity = 0;

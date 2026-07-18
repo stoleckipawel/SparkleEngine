@@ -2,19 +2,19 @@
 
 #include "RenderSceneSnapshot.h"
 
-#include "GameFramework/Public/Scene/GameSceneSnapshot.h"
+#include "GameFramework/Public/World/GameWorldSnapshot.h"
 
 #include <utility>
 
-void RenderSceneSnapshot::Capture(GameSceneSnapshot&& gameSceneSnapshot) noexcept
+void RenderSceneSnapshot::Capture(GameWorldSnapshot&& gameWorldSnapshot) noexcept
 {
-	camera = std::move(gameSceneSnapshot.camera);
-	animations = std::move(gameSceneSnapshot.animations);
-	lighting = std::move(gameSceneSnapshot.lighting);
-	sky = std::move(gameSceneSnapshot.sky);
-	textures = std::move(gameSceneSnapshot.textures);
-	meshes = std::move(gameSceneSnapshot.meshes);
-	materials = std::move(gameSceneSnapshot.materials);
+	camera = std::move(gameWorldSnapshot.camera);
+	animations = std::move(gameWorldSnapshot.animations);
+	lighting = std::move(gameWorldSnapshot.lighting);
+	sky = std::move(gameWorldSnapshot.sky);
+	textures = std::move(gameWorldSnapshot.textures);
+	meshes = std::move(gameWorldSnapshot.meshes);
+	materials = std::move(gameWorldSnapshot.materials);
 }
 
 void RenderSceneSnapshot::Reset() noexcept

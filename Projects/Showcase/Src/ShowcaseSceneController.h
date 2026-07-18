@@ -1,20 +1,20 @@
 #pragma once
 
-#include "Scene/GameSceneController.h"
+#include "World/GameWorldController.h"
 #include "Scene/Transform.h"
 #include "World/EntityId.h"
 
 #include <cstddef>
 #include <vector>
 
-class GameScene;
+class GameWorld;
 
-class ShowcaseSceneController final : public GameSceneController
+class ShowcaseSceneController final : public GameWorldController
 {
   public:
-	void OnSceneReset(GameScene& scene) override;
-	void OnSceneAssetsAppended(GameScene& scene) override;
-	void Update(GameScene& scene, const GameSceneUpdateContext& context) override;
+	void OnWorldReset(GameWorld& world) override;
+	void OnSceneAssetsAppended(GameWorld& world) override;
+	void Update(GameWorld& world, const GameWorldUpdateContext& context) override;
 
   private:
 	struct AnimatedMesh final
@@ -25,8 +25,8 @@ class ShowcaseSceneController final : public GameSceneController
 	};
 
 	void Reset() noexcept;
-	void RefreshAnimatedMeshes(GameScene& scene);
-	void ApplyMovement(GameScene& scene, float deltaSeconds) noexcept;
+	void RefreshAnimatedMeshes(GameWorld& world);
+	void ApplyMovement(GameWorld& world, float deltaSeconds) noexcept;
 
 	bool m_needsTargetRefresh = true;
 	float m_motionTimeSeconds = 0.0f;

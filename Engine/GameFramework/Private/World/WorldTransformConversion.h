@@ -4,7 +4,7 @@
 
 class Transform;
 
-namespace ECS::SceneWorldTransforms
+namespace ECS::WorldTransformConversion
 {
 	LocalTransform ToLocal(const Transform& transform) noexcept;
 	Transform ToPublic(const LocalTransform& transform) noexcept;

@@ -11,8 +11,8 @@
 #include <cstddef>
 #include <vector>
 
-class GameScene;
-class GameSceneAssetPayloadAppender;
+class GameWorld;
+class GameWorldAssetPayloadAppender;
 class Mesh;
 
 namespace ECS
@@ -40,15 +40,15 @@ class SPARKLE_ENGINE_API SceneMeshView final
 
   private:
 	friend class SceneMeshes;
-	SceneMeshView(GameScene& scene, EntityId entity) noexcept : m_scene(&scene), m_entity(entity) {}
-	GameScene* m_scene = nullptr;
+	SceneMeshView(GameWorld& world, EntityId entity) noexcept : m_world(&world), m_entity(entity) {}
+	GameWorld* m_world = nullptr;
 	EntityId m_entity;
 };
 
 class SPARKLE_ENGINE_API SceneMeshes final
 {
   public:
-	explicit SceneMeshes(GameScene& scene) noexcept;
+	explicit SceneMeshes(GameWorld& world) noexcept;
 	~SceneMeshes() noexcept = default;
 
 	SceneMeshes(const SceneMeshes&) = delete;
@@ -67,9 +67,9 @@ class SPARKLE_ENGINE_API SceneMeshes final
 	MeshSnapshot CaptureSnapshot() const;
 
   private:
-	friend class GameScene;
-	friend class GameSceneAssetPayloadAppender;
+	friend class GameWorld;
+	friend class GameWorldAssetPayloadAppender;
 	bool AppendMesh(ECS::SceneMeshInstanceData&& instance);
 	void AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& groups);
-	GameScene* m_scene = nullptr;
+	GameWorld* m_world = nullptr;
 };

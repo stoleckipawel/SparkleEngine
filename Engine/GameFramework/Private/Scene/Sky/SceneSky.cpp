@@ -1,44 +1,55 @@
 #include "PCH.h"
 #include "Scene/Sky/SceneSky.h"
 
+#include "World/GameWorld.h"
+#include "World/GameWorldState.h"
+
 #include <utility>
 
 void SceneSky::ApplyFromDesc(std::optional<SceneSkyDesc> sky) noexcept
 {
-	m_sky = std::move(sky);
+	if (sky)
+	{
+		m_world->m_state->WriteSkyEnvironment(SkyEnvironment{.Description = std::move(*sky)});
+	}
+	else
+	{
+		m_world->m_state->RemoveSkyEnvironment();
+	}
 }
 
 void SceneSky::Reset() noexcept
 {
-	m_sky.reset();
+	m_world->m_state->RemoveSkyEnvironment();
 }
 
-const SceneSkyDesc* SceneSky::GetSky() const noexcept
+bool SceneSky::HasSky() const noexcept
 {
-	return m_sky ? &*m_sky : nullptr;
+	return m_world->m_state->HasSkyEnvironment();
 }
 
-SceneSkyDesc* SceneSky::GetSky() noexcept
+std::optional<SceneSkyDesc> SceneSky::GetSky() const
 {
-	return m_sky ? &*m_sky : nullptr;
+	const std::optional<SkyEnvironment> sky = m_world->m_state->ReadSkyEnvironment();
+	return sky ? std::optional<SceneSkyDesc>(sky->Description) : std::nullopt;
 }
 
 void SceneSky::SetSky(SceneSkyDesc sky)
 {
-	m_sky = std::move(sky);
+	m_world->m_state->WriteSkyEnvironment(SkyEnvironment{.Description = std::move(sky)});
 }
 
 void SceneSky::RemoveSky() noexcept
 {
-	m_sky.reset();
+	m_world->m_state->RemoveSkyEnvironment();
 }
 
 std::optional<SceneSkyDesc> SceneSky::CaptureToDesc() const
 {
-	return m_sky;
+	return GetSky();
 }
 
 SceneSkySnapshot SceneSky::CaptureSnapshot() const
 {
-	return SceneSkySnapshot{m_sky};
+	return SceneSkySnapshot{GetSky()};
 }

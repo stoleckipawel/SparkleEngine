@@ -4,7 +4,7 @@
 #include "Assets/SceneAssetManager.h"
 #include "Level/Level.h"
 #include "Level/LevelRegistry.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Camera/SceneCameraView.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Sky/SceneSky.h"
@@ -28,8 +28,8 @@ namespace
 	}
 }
 
-LevelManager::LevelManager(GameScene& scene, Assets::SceneAssetManager& sceneAssetManager) :
-    m_gameScene(&scene), m_sceneAssetManager(&sceneAssetManager), m_levelRegistry(std::make_unique<LevelRegistry>())
+LevelManager::LevelManager(GameWorld& world, Assets::SceneAssetManager& sceneAssetManager) :
+    m_gameWorld(&world), m_sceneAssetManager(&sceneAssetManager), m_levelRegistry(std::make_unique<LevelRegistry>())
 {
 	InitializeStartupLevel();
 }
@@ -38,7 +38,7 @@ LevelManager::~LevelManager() noexcept = default;
 
 void LevelManager::InitializeStartupLevel() noexcept
 {
-	if (!m_gameScene)
+	if (!m_gameWorld)
 	{
 		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Cannot initialize startup level because required services are unavailable");
 		return;
@@ -60,7 +60,7 @@ void LevelManager::InitializeStartupLevel() noexcept
 
 	const std::string startupLevelName(startupLevel->GetName());
 
-	const GameSceneLoadResult loadResult = LoadLevelFromUnloadedState(*startupLevel);
+	const GameWorldLoadResult loadResult = LoadLevelFromUnloadedState(*startupLevel);
 	if (!loadResult.Succeeded())
 	{
 		m_activeLevel = nullptr;
@@ -151,11 +151,11 @@ bool LevelManager::SaveActiveLevel() noexcept
 	return true;
 }
 
-GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& level) noexcept
+GameWorldLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& level) noexcept
 {
-	if (!m_gameScene || !m_sceneAssetManager)
+	if (!m_gameWorld || !m_sceneAssetManager)
 	{
-		GameSceneLoadResult unavailableResult;
+		GameWorldLoadResult unavailableResult;
 		unavailableResult.errorMessage = "Required runtime services are unavailable";
 		return unavailableResult;
 	}
@@ -165,7 +165,7 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 	m_sceneAssetManager->UnloadAll();
 
 	const LevelDesc& levelDesc = level.GetLevelDesc();
-	GameSceneLoadResult loadResult = m_gameScene->LoadLevel(levelDesc);
+	GameWorldLoadResult loadResult = m_gameWorld->LoadLevel(levelDesc);
 	if (!loadResult.Succeeded())
 	{
 		return loadResult;
@@ -174,7 +174,7 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 	Assets::SceneAssetLoadResult sceneAssetLoadResult = m_sceneAssetManager->LoadSceneAssets(levelDesc.sceneAssetIds);
 	if (!sceneAssetLoadResult.Succeeded())
 	{
-		loadResult.status = GameSceneLoadStatus::Failed;
+		loadResult.status = GameWorldLoadStatus::Failed;
 		loadResult.errorMessage = std::move(sceneAssetLoadResult.errorMessage);
 		return loadResult;
 	}
@@ -182,37 +182,37 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 	const bool hasSceneAssetPayload =
 	    sceneAssetLoadResult.sceneAssetPayload.HasMeshes() || !sceneAssetLoadResult.sceneAssetPayload.cameras.empty() ||
 	    !sceneAssetLoadResult.sceneAssetPayload.lights.empty() || !sceneAssetLoadResult.sceneAssetPayload.skeletons.empty();
-	if (hasSceneAssetPayload && !m_gameScene->AppendSceneAssetPayload(std::move(sceneAssetLoadResult.sceneAssetPayload)))
+	if (hasSceneAssetPayload && !m_gameWorld->AppendSceneAssetPayload(std::move(sceneAssetLoadResult.sceneAssetPayload)))
 	{
-		loadResult.status = GameSceneLoadStatus::Failed;
-		loadResult.errorMessage = "GameScene rejected the loaded scene asset payload";
+		loadResult.status = GameWorldLoadStatus::Failed;
+		loadResult.errorMessage = "GameWorld rejected the loaded scene asset payload";
 		return loadResult;
 	}
 
-	m_gameScene->GetCameras().SetPrimaryCameraActive();
+	m_gameWorld->GetCameras().SetPrimaryCameraActive();
 
 	return loadResult;
 }
 
 void LevelManager::CaptureSceneToLevel() noexcept
 {
-	if (m_activeLevel == nullptr || !m_gameScene)
+	if (m_activeLevel == nullptr || !m_gameWorld)
 	{
 		return;
 	}
 
 	LevelDesc desc = m_activeLevel->BuildDescription();
 
-	desc.lights = m_gameScene->GetLighting().CaptureToDesc();
-	desc.sky = m_gameScene->GetSky().CaptureToDesc();
-	desc.cameraDesc = m_gameScene->GetCameras().GetActiveCamera().GetDesc();
+	desc.lights = m_gameWorld->GetLighting().CaptureToDesc();
+	desc.sky = m_gameWorld->GetSky().CaptureToDesc();
+	desc.cameraDesc = m_gameWorld->GetCameras().GetActiveCamera().GetDesc();
 
 	m_activeLevel->SetLevelDesc(desc);
 }
 
 void LevelManager::ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcept
 {
-	if (!m_gameScene)
+	if (!m_gameWorld)
 	{
 		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Cannot process level change because required services are unavailable");
 		return;
@@ -233,12 +233,12 @@ void LevelManager::ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcep
 	willUnloadArgs.requestedLevelName = requestedLevelName;
 	m_levelChangeEvents.OnLevelWillUnload.Broadcast(willUnloadArgs);
 
-	m_gameScene->Clear();
+	m_gameWorld->Clear();
 	m_activeLevel = nullptr;
 
 	m_levelChangeEvents.OnLevelUnloaded.Broadcast(previousLevelName);
 
-	GameSceneLoadResult loadResult = LoadLevelFromUnloadedState(requestedLevel);
+	GameWorldLoadResult loadResult = LoadLevelFromUnloadedState(requestedLevel);
 	if (!loadResult.Succeeded())
 	{
 		SPDLOG_LOGGER_WARN(

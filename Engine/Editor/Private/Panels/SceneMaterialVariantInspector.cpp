@@ -2,7 +2,7 @@
 
 #include "Panels/SceneMaterialVariantInspector.h"
 
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Materials/SceneMaterialVariants.h"
 #include "Scene/Meshes/SceneMeshes.h"
 #include "Util/UiUtil.h"
@@ -11,9 +11,9 @@
 
 namespace SceneMaterialVariantInspector
 {
-	void Build(GameScene& gameScene) noexcept
+	void Build(GameWorld& gameWorld) noexcept
 	{
-		SceneMaterialVariants& variants = gameScene.GetMaterialVariants();
+		SceneMaterialVariants& variants = gameWorld.GetMaterialVariants();
 		if (variants.GetVariantCount() == 0)
 		{
 			UiUtil::DrawDetailsEmptyState();
@@ -41,7 +41,7 @@ namespace SceneMaterialVariantInspector
 				const bool selected = variantIndex == activeVariantIndex;
 				if (ImGui::Selectable(variant.name.c_str(), selected))
 				{
-					variants.ApplyVariant(static_cast<SceneMaterialVariantIndex>(variantIndex), gameScene.GetMeshes());
+					variants.ApplyVariant(static_cast<SceneMaterialVariantIndex>(variantIndex), gameWorld.GetMeshes());
 				}
 
 				if (selected)

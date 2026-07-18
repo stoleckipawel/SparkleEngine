@@ -1,11 +1,11 @@
 #include "PCH.h"
-#include "World/SceneWorld.h"
+#include "World/GameWorldState.h"
 
 #include "Scene/Lighting/Snapshots/SceneLightingSnapshotBuilder.h"
 #include "World/ECS/Components/EditorComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/Components/TransformComponents.h"
-#include "World/SceneWorldTransforms.h"
+#include "World/WorldTransformConversion.h"
 
 namespace
 {
@@ -81,7 +81,7 @@ namespace
 
 namespace ECS
 {
-	EntityId SceneWorld::AddLight(SceneLightDesc&& desc)
+	EntityId GameWorldState::AddLight(SceneLightDesc&& desc)
 	{
 		const EntityId entity = m_registry.Create();
 		if (!entity.IsValid())
@@ -89,9 +89,9 @@ namespace ECS
 			return entity;
 		}
 		const Transform transform(DirectX::XMLoadFloat4x4(&desc.common.worldTransform));
-		const LocalTransform local = SceneWorldTransforms::ToLocal(transform);
+		const LocalTransform local = WorldTransformConversion::ToLocal(transform);
 		const bool added = m_registry.Add(entity, local) &&
-		                   m_registry.Add(entity, SceneWorldTransforms::BuildWorld(local)) &&
+		                   m_registry.Add(entity, WorldTransform{}) &&
 		                   m_registry.Add(entity, ToLightComponent(desc)) &&
 		                   m_registry.Add(entity, Visibility{.Visible = desc.common.visible}) &&
 		                   m_registry.Add(entity, Name{std::move(desc.common.name)}) &&
@@ -106,13 +106,17 @@ namespace ECS
 			m_registry.Destroy(entity);
 			return EntityId::Invalid();
 		}
+		MarkTransformDirty(entity);
+		RecordChange(entity, WorldChangeKind::EntityCreated, WorldDataKind::World);
+		RecordChange(entity, WorldChangeKind::ComponentAdded, WorldDataKind::Light);
+		RecordChange(entity, WorldChangeKind::ComponentAdded, WorldDataKind::LocalTransform);
 		return entity;
 	}
 
-	std::size_t SceneWorld::GetLightCount() const noexcept { return Count<Light>(); }
-	EntityId SceneWorld::GetLightEntity(std::size_t index) const noexcept { return EntityAt<Light>(index); }
+	std::size_t GameWorldState::GetLightCount() const noexcept { return Count<Light>(); }
+	EntityId GameWorldState::GetLightEntity(std::size_t index) const noexcept { return EntityAt<Light>(index); }
 
-	std::optional<SceneLightDesc> SceneWorld::ReadLight(EntityId entity) const
+	std::optional<SceneLightDesc> GameWorldState::ReadLight(EntityId entity) const
 	{
 		const Light* light = m_registry.Get<Light>(entity);
 		if (light == nullptr)
@@ -124,7 +128,10 @@ namespace ECS
 		{
 			desc.common.name = name->Value;
 		}
-		DirectX::XMStoreFloat4x4(&desc.common.worldTransform, ReadTransform(entity).GetWorldMatrix());
+		if (const WorldTransform* transform = m_registry.Get<WorldTransform>(entity))
+		{
+			desc.common.worldTransform = transform->Matrix;
+		}
 		desc.common.color = light->Color;
 		desc.common.intensity = light->Intensity;
 		desc.common.visible = ReadVisibility(entity);
@@ -132,20 +139,25 @@ namespace ECS
 		return desc;
 	}
 
-	bool SceneWorld::WriteLight(EntityId entity, SceneLightDesc&& desc)
+	bool GameWorldState::WriteLight(EntityId entity, SceneLightDesc&& desc)
 	{
 		if (m_registry.Get<Light>(entity) == nullptr)
 		{
 			return false;
 		}
 		const Transform transform(DirectX::XMLoadFloat4x4(&desc.common.worldTransform));
-		return WriteTransform(entity, transform) &&
-		       m_registry.Replace(entity, ToLightComponent(desc)) &&
-		       m_registry.Replace(entity, Name{std::move(desc.common.name)}) &&
-		       WriteVisibility(entity, desc.common.visible);
+		const bool written = WriteTransform(entity, transform) &&
+		                     m_registry.Replace(entity, ToLightComponent(desc)) &&
+		                     m_registry.Replace(entity, Name{std::move(desc.common.name)}) &&
+		                     WriteVisibility(entity, desc.common.visible);
+		if (written)
+		{
+			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::Light);
+		}
+		return written;
 	}
 
-	std::vector<SceneLightDesc> SceneWorld::CaptureLightsToDesc() const
+	std::vector<SceneLightDesc> GameWorldState::CaptureLightsToDesc() const
 	{
 		std::vector<SceneLightDesc> lights;
 		lights.reserve(GetLightCount());
@@ -159,7 +171,7 @@ namespace ECS
 		return lights;
 	}
 
-	LightingSnapshot SceneWorld::CaptureLighting() const noexcept
+	LightingSnapshot GameWorldState::CaptureLighting() const
 	{
 		return SceneLightingSnapshotBuilder::BuildSnapshot(CaptureLightsToDesc());
 	}

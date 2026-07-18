@@ -6,7 +6,7 @@
 #include "RuntimeConsole/RuntimeConsoleHost.h"
 #include "Assets/SceneAssetManager.h"
 #include "Input/InputSystem.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Camera/GameCameraController.h"
 #include "Level/LevelManager.h"
 #include "Time/Timer.h"
@@ -44,9 +44,9 @@ InputSystem& RuntimeApplication::GetInputSystem() noexcept
 	return *m_inputSystem;
 }
 
-GameScene* RuntimeApplication::GetGameScene() const noexcept
+GameWorld* RuntimeApplication::GetGameWorld() const noexcept
 {
-	return m_gameScene.get();
+	return m_gameWorld.get();
 }
 
 LevelManager* RuntimeApplication::GetLevelManager() const noexcept
@@ -78,18 +78,18 @@ void RuntimeApplication::Initialize()
 	}
 
 	{
-		m_gameScene = std::make_unique<GameScene>();
-		m_gameScene->RegisterController(std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window));
-		if (m_options.SceneSetupCallback)
+		m_gameWorld = std::make_unique<GameWorld>();
+		m_gameWorld->RegisterController(std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window));
+		if (m_options.WorldSetupCallback)
 		{
-			m_options.SceneSetupCallback(*m_gameScene);
+			m_options.WorldSetupCallback(*m_gameWorld);
 		}
 		m_sceneAssetManager = std::make_unique<Assets::SceneAssetManager>();
-		m_levelManager = std::make_unique<LevelManager>(*m_gameScene, *m_sceneAssetManager);
+		m_levelManager = std::make_unique<LevelManager>(*m_gameWorld, *m_sceneAssetManager);
 	}
 
 	{
-		m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
+		m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameWorld, *m_window, *m_levelManager);
 	}
 
 	if (m_options.EnableRuntimeConsole)
@@ -131,10 +131,10 @@ RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 
 void RuntimeApplication::UpdateRuntime() noexcept
 {
-	if (m_gameScene && m_timer)
+	if (m_gameWorld && m_timer)
 	{
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
-		m_gameScene->Update(deltaSeconds);
+		m_gameWorld->Update(deltaSeconds);
 	}
 }
 
@@ -198,7 +198,7 @@ void RuntimeApplication::Shutdown()
 	m_renderer.reset();
 	m_levelManager.reset();
 	m_sceneAssetManager.reset();
-	m_gameScene.reset();
+	m_gameWorld.reset();
 	m_inputSystem.reset();
 	m_window.reset();
 	m_timer.reset();

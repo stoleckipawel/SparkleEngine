@@ -8,12 +8,12 @@
 
 #include <cstddef>
 
-class GameScene;
+class GameWorld;
 
 class SPARKLE_ENGINE_API SceneCameras final
 {
   public:
-	explicit SceneCameras(GameScene& scene) noexcept;
+	explicit SceneCameras(GameWorld& world) noexcept;
 	~SceneCameras() noexcept = default;
 
 	SceneCameras(const SceneCameras&) = delete;
@@ -38,7 +38,7 @@ class SPARKLE_ENGINE_API SceneCameras final
 	void Reset(const CameraDesc& defaultCameraDesc = CameraDesc{});
 
   private:
-	friend class GameScene;
+	friend class GameWorld;
 
-	GameScene* m_scene = nullptr;
+	GameWorld* m_world = nullptr;
 };

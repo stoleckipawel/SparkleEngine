@@ -2,13 +2,13 @@
 
 #include <string>
 
-class GameScene;
+class GameWorld;
 class SceneCameraView;
 
 class SceneCameraInspector final
 {
   public:
-	static void Build(GameScene& gameScene, const std::string& filterText) noexcept;
+	static void Build(GameWorld& gameWorld, const std::string& filterText) noexcept;
 
   private:
 	static void BuildTransformCategory(const std::string& filterText, SceneCameraView sceneCamera) noexcept;

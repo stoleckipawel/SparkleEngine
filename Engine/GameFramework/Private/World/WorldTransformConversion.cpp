@@ -1,9 +1,9 @@
 #include "PCH.h"
-#include "World/SceneWorldTransforms.h"
+#include "World/WorldTransformConversion.h"
 
 #include "GameFramework/Public/Scene/Transform.h"
 
-namespace ECS::SceneWorldTransforms
+namespace ECS::WorldTransformConversion
 {
 	LocalTransform ToLocal(const Transform& transform) noexcept
 	{
@@ -31,7 +31,9 @@ namespace ECS::SceneWorldTransforms
 	WorldTransform BuildWorld(const LocalTransform& transform) noexcept
 	{
 		WorldTransform world;
-		DirectX::XMStoreFloat4x4(&world.Matrix, ToPublic(transform).GetWorldMatrix());
+		const DirectX::XMMATRIX matrix = ToPublic(transform).GetWorldMatrix();
+		DirectX::XMStoreFloat4x4(&world.Matrix, matrix);
+		DirectX::XMStoreFloat4x4(&world.InverseTranspose, DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, matrix)));
 		return world;
 	}
 }

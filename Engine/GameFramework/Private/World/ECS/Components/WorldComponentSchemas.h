@@ -16,6 +16,11 @@ namespace ECS
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.WorldTransform"), 1, "sparkle.world.WorldTransform"};
 	};
+	template <> struct ComponentSchemaTraits<CameraDerivedState> final
+	{
+		static constexpr ComponentSchema Schema{
+		    MakeComponentSchemaId("sparkle.world.CameraDerivedState"), 1, "sparkle.world.CameraDerivedState"};
+	};
 	template <> struct ComponentSchemaTraits<MeshInstance> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.MeshInstance"), 1, "sparkle.world.MeshInstance"};
@@ -63,6 +68,7 @@ namespace ECS
 
 	static_assert(GetComponentSchema<LocalTransform>().Id.Value == 0x189d4521623a0032ull);
 	static_assert(GetComponentSchema<WorldTransform>().Id.Value == 0xda6d95badcb7e697ull);
+	static_assert(GetComponentSchema<CameraDerivedState>().Id.Value == 0x3e943bc738fe2b5eull);
 	static_assert(GetComponentSchema<MeshInstance>().Id.Value == 0x75f1f38b60ad26c9ull);
 	static_assert(GetComponentSchema<Visibility>().Id.Value == 0xe0676cf454dca3dfull);
 	static_assert(GetComponentSchema<Camera>().Id.Value == 0x75e15d3fe7ce766cull);

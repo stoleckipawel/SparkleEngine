@@ -6,15 +6,17 @@
 
 #include <optional>
 
+class GameWorld;
+
 class SPARKLE_ENGINE_API SceneSky final
 {
   public:
+	explicit SceneSky(GameWorld& world) noexcept : m_world(&world) {}
 	void ApplyFromDesc(std::optional<SceneSkyDesc> sky) noexcept;
 	void Reset() noexcept;
 
-	bool HasSky() const noexcept { return m_sky.has_value(); }
-	const SceneSkyDesc* GetSky() const noexcept;
-	SceneSkyDesc* GetSky() noexcept;
+	bool HasSky() const noexcept;
+	std::optional<SceneSkyDesc> GetSky() const;
 	void SetSky(SceneSkyDesc sky = {});
 	void RemoveSky() noexcept;
 
@@ -22,5 +24,5 @@ class SPARKLE_ENGINE_API SceneSky final
 	SceneSkySnapshot CaptureSnapshot() const;
 
   private:
-	std::optional<SceneSkyDesc> m_sky;
+	GameWorld* m_world = nullptr;
 };

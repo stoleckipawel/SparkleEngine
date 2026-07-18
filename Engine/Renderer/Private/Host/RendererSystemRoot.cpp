@@ -17,7 +17,7 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "RHI/Public/CVars/RHICVars.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
@@ -25,8 +25,8 @@
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
-RendererSystemRoot::RendererSystemRoot(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
-    m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
+RendererSystemRoot::RendererSystemRoot(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept :
+    m_timer(&timer), m_gameWorld(&gameWorld), m_window(&window)
 {
 	InitializeCoreSystems();
 	InitializeSceneSystems(levelManager);
@@ -82,12 +82,12 @@ std::uint64_t RendererSystemRoot::GetShaderPackageGeneration() const noexcept
 
 MeshDiagnosticsSnapshot RendererSystemRoot::CaptureMeshDiagnostics() const
 {
-	if (m_gameScene == nullptr)
+	if (m_gameWorld == nullptr)
 	{
 		return MeshDiagnosticsSnapshot{};
 	}
 
-	return MeshDiagnosticsCollector::Capture(m_gameScene->GetMeshes(), m_gpuMeshCache.get());
+	return MeshDiagnosticsCollector::Capture(m_gameWorld->GetMeshes(), m_gpuMeshCache.get());
 }
 
 TextureDiagnosticsSnapshot RendererSystemRoot::CaptureTextureDiagnostics() const
@@ -159,7 +159,7 @@ void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noex
 
 	m_sceneRenderStateCoordinator = std::make_unique<SceneRenderStateCoordinator>(
 	    levelManager.GetLevelChangeEvents(),
-	    *m_gameScene,
+	    *m_gameWorld,
 	    GetBackend(),
 	    *m_gpuMeshCache,
 	    *m_textureManager,

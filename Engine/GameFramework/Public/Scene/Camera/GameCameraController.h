@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Scene/GameSceneController.h"
+#include "GameFramework/Public/World/GameWorldController.h"
 #include "GameFramework/Public/World/EntityId.h"
 
 #include "Events/EventHandle.h"
@@ -11,13 +11,13 @@ class Timer;
 class InputSystem;
 class Window;
 class SceneCameraView;
-class GameScene;
+class GameWorld;
 struct KeyboardEvent;
 struct MouseButtonEvent;
 struct MouseMoveEvent;
 struct MouseWheelEvent;
 
-class SPARKLE_ENGINE_API GameCameraController final : public GameSceneController
+class SPARKLE_ENGINE_API GameCameraController final : public GameWorldController
 {
   public:
 	GameCameraController(Timer& timer, InputSystem& inputSystem, Window& window) noexcept;
@@ -28,13 +28,13 @@ class SPARKLE_ENGINE_API GameCameraController final : public GameSceneController
 	GameCameraController(GameCameraController&&) = delete;
 	GameCameraController& operator=(GameCameraController&&) = delete;
 
-	void OnSceneReset(GameScene& scene) override;
-	void OnLevelLoaded(GameScene& scene, const LevelDesc& levelDesc) override;
-	void OnSceneAssetsAppended(GameScene& scene) override;
-	void Update(GameScene& scene, const GameSceneUpdateContext& context) override;
+	void OnWorldReset(GameWorld& world) override;
+	void OnLevelLoaded(GameWorld& world, const LevelDesc& levelDesc) override;
+	void OnSceneAssetsAppended(GameWorld& world) override;
+	void Update(GameWorld& world, const GameWorldUpdateContext& context) override;
 
   private:
-	void RefreshActiveCamera(GameScene& scene) noexcept;
+	void RefreshActiveCamera(GameWorld& world) noexcept;
 	SceneCameraView ResolveCamera() const noexcept;
 	void ApplyAspectRatio() noexcept;
 	void ApplyMovement(float deltaTime) noexcept;
@@ -49,7 +49,7 @@ class SPARKLE_ENGINE_API GameCameraController final : public GameSceneController
 	Timer& m_timer;
 	InputSystem& m_inputSystem;
 	Window& m_window;
-	GameScene* m_scene = nullptr;
+	GameWorld* m_world = nullptr;
 	EntityId m_cameraEntity;
 
 	ScopedEventHandle m_windowResizeHandle;

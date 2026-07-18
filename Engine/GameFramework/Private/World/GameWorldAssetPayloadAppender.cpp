@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Scene/GameSceneAssetPayloadAppender.h"
+#include "World/GameWorldAssetPayloadAppender.h"
 
 #include "Assets/SceneAssetPayload.h"
 #include "Scene/Camera/SceneCameraEntry.h"
@@ -12,19 +12,19 @@
 #include "Scene/Meshes/SceneMeshes.h"
 #include "Scene/Skeletons/SceneSkeletons.h"
 #include "Scene/Textures/SceneTextures.h"
-#include "World/SceneWorld.h"
+#include "World/GameWorldState.h"
 
 #include <memory>
 #include <utility>
 
-GameSceneAssetPayloadAppender::GameSceneAssetPayloadAppender(
+GameWorldAssetPayloadAppender::GameWorldAssetPayloadAppender(
     SceneCameras& cameras,
     SceneLighting& lighting,
     SceneMaterials& materials,
     SceneMaterialVariants& materialVariants,
     SceneMeshes& meshes,
     SceneSkeletons& skeletons,
-    ECS::SceneWorld& world,
+    ECS::GameWorldState& world,
     SceneTextures& textures) noexcept :
     m_cameras(cameras),
     m_lighting(lighting),
@@ -32,18 +32,20 @@ GameSceneAssetPayloadAppender::GameSceneAssetPayloadAppender(
     m_materialVariants(materialVariants),
     m_meshes(meshes),
     m_skeletons(skeletons),
-	m_world(world),
+	m_state(world),
     m_textures(textures)
 {
 }
 
-bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload)
+bool GameWorldAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload)
 {
 	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty() && sceneAssetPayload.lights.empty() &&
 	    sceneAssetPayload.skeletons.empty() && sceneAssetPayload.animations.empty())
 	{
 		return false;
 	}
+	const bool hasSkeletons = !sceneAssetPayload.skeletons.empty();
+	const bool hasMaterials = !sceneAssetPayload.materials.empty();
 
 	if (!sceneAssetPayload.skeletons.empty())
 	{
@@ -52,7 +54,7 @@ bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload
 
 	if (!sceneAssetPayload.animations.empty())
 	{
-		m_world.AppendAnimationClips(std::move(sceneAssetPayload.animations));
+		m_state.AppendAnimationClips(std::move(sceneAssetPayload.animations));
 	}
 
 	if (!sceneAssetPayload.materials.empty())
@@ -101,6 +103,15 @@ bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload
 	for (SceneLightDesc& light : sceneAssetPayload.lights)
 	{
 		m_lighting.AppendLight(std::move(light));
+	}
+	if (hasSkeletons)
+	{
+		m_state.NotifyResourceChanged(WorldDataKind::Skeleton);
+	}
+	if (hasMaterials)
+	{
+		m_state.NotifyResourceChanged(WorldDataKind::Material);
+		m_state.NotifyResourceChanged(WorldDataKind::Texture);
 	}
 
 	return true;

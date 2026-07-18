@@ -10,7 +10,7 @@
 class Timer;
 class Window;
 class InputSystem;
-class GameScene;
+class GameWorld;
 class Renderer;
 class LevelManager;
 class RuntimeConsoleHost;
@@ -29,7 +29,7 @@ enum class RuntimeApplicationFrameResult : std::uint8_t
 struct RuntimeApplicationOptions final
 {
 	bool EnableRuntimeConsole = true;
-	std::function<void(GameScene&)> SceneSetupCallback;
+	std::function<void(GameWorld&)> WorldSetupCallback;
 };
 
 class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
@@ -52,7 +52,7 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	Timer& GetTimer() noexcept;
 	Window& GetWindow() noexcept;
 	InputSystem& GetInputSystem() noexcept;
-	GameScene* GetGameScene() const noexcept;
+	GameWorld* GetGameWorld() const noexcept;
 	LevelManager* GetLevelManager() const noexcept;
 	Renderer& GetRenderer() noexcept;
 	bool Tick() override;
@@ -62,7 +62,7 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	std::unique_ptr<Timer> m_timer;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<InputSystem> m_inputSystem;
-	std::unique_ptr<GameScene> m_gameScene;
+	std::unique_ptr<GameWorld> m_gameWorld;
 	std::unique_ptr<Assets::SceneAssetManager> m_sceneAssetManager;
 	std::unique_ptr<LevelManager> m_levelManager;
 	std::unique_ptr<Renderer> m_renderer;

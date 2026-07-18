@@ -4,13 +4,13 @@
 
 #include <string>
 
-class GameScene;
+class GameWorld;
 struct SceneObjectSelection;
 
 class SceneInspectorPanel final
 {
   public:
-	SceneInspectorPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels = 560.0f) noexcept;
+	SceneInspectorPanel(GameWorld& gameWorld, SceneObjectSelection& selection, float widthPixels = 560.0f) noexcept;
 	~SceneInspectorPanel() = default;
 
 	SceneInspectorPanel(const SceneInspectorPanel&) = delete;
@@ -30,7 +30,7 @@ class SceneInspectorPanel final
 	void BuildDetailsToolbar() noexcept;
 	void BuildSelectionInspector() noexcept;
 
-	GameScene* m_gameScene = nullptr;
+	GameWorld* m_gameWorld = nullptr;
 	SceneObjectSelection* m_selection = nullptr;
 	float m_widthPixels = 560.0f;
 	float m_topInsetPixels = 0.0f;

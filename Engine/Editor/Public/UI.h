@@ -27,7 +27,7 @@ class EngineRenderingSettingsSection;
 class EditorRestartService;
 class InputSystem;
 class LevelManager;
-class GameScene;
+class GameWorld;
 class Window;
 class RhiImGuiRenderer;
 struct MeshPreviewGeometry;
@@ -36,7 +36,7 @@ struct EditorHostServices final
 {
 	Timer& RuntimeTimer;
 	LevelManager* Levels = nullptr;
-	GameScene* Scene = nullptr;
+	GameWorld* World = nullptr;
 	RhiImGuiRenderer& ImGuiRenderer;
 	Window& HostWindow;
 	InputSystem& Input;
@@ -108,7 +108,7 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<EditorRestartService> m_restartService;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
-	GameScene* m_gameScene = nullptr;
+	GameWorld* m_gameWorld = nullptr;
 	RhiImGuiRenderer* m_imguiRenderer = nullptr;
 	Window* m_window = nullptr;
 	InputSystem* m_inputSystem = nullptr;

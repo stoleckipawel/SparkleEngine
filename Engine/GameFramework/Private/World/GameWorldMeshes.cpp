@@ -1,16 +1,16 @@
 #include "PCH.h"
-#include "World/SceneWorld.h"
+#include "World/GameWorldState.h"
 
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/SkeletalCookedMesh.h"
 #include "World/ECS/Components/EditorComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/Components/TransformComponents.h"
-#include "World/SceneWorldTransforms.h"
+#include "World/WorldTransformConversion.h"
 
 namespace ECS
 {
-	EntityId SceneWorld::AddMesh(SceneMeshInstanceData&& instance)
+	EntityId GameWorldState::AddMesh(SceneMeshInstanceData&& instance)
 	{
 		const SceneMeshResourceHandle resource = m_meshResources.Add(std::move(instance.Resource));
 		if (!resource.IsValid())
@@ -23,7 +23,7 @@ namespace ECS
 			m_meshResources.Remove(resource);
 			return entity;
 		}
-		const LocalTransform local = SceneWorldTransforms::ToLocal(instance.LocalTransform);
+		const LocalTransform local = WorldTransformConversion::ToLocal(instance.LocalTransform);
 		const SceneStateHandle morphState = instance.Kind == SceneMeshKind::Skeletal
 		                                        ? m_deformationStates.AddMorphWeights(instance.InitialMorphWeights)
 		                                        : SceneStateHandle{};
@@ -37,7 +37,7 @@ namespace ECS
 		    .InstanceGroupIndex = instance.InstanceGroupIndex,
 		    .SourceNodeIndex = instance.SourceNodeIndex};
 		bool added = m_registry.Add(entity, local) &&
-		                   m_registry.Add(entity, SceneWorldTransforms::BuildWorld(local)) &&
+		                   m_registry.Add(entity, WorldTransform{}) &&
 		                   m_registry.Add(entity, mesh) &&
 		                   m_registry.Add(entity, Visibility{}) &&
 		                   m_registry.Add(
@@ -63,31 +63,35 @@ namespace ECS
 			}
 			return EntityId::Invalid();
 		}
+		MarkTransformDirty(entity);
+		RecordChange(entity, WorldChangeKind::EntityCreated, WorldDataKind::World);
+		RecordChange(entity, WorldChangeKind::ComponentAdded, WorldDataKind::MeshInstance);
+		RecordChange(entity, WorldChangeKind::ComponentAdded, WorldDataKind::LocalTransform);
 		return entity;
 	}
 
-	std::size_t SceneWorld::GetMeshCount() const noexcept { return Count<MeshInstance>(); }
-	EntityId SceneWorld::GetMeshEntity(std::size_t index) const noexcept { return EntityAt<MeshInstance>(index); }
+	std::size_t GameWorldState::GetMeshCount() const noexcept { return Count<MeshInstance>(); }
+	EntityId GameWorldState::GetMeshEntity(std::size_t index) const noexcept { return EntityAt<MeshInstance>(index); }
 
-	const Mesh* SceneWorld::ResolveMesh(EntityId entity) const noexcept
+	const Mesh* GameWorldState::ResolveMesh(EntityId entity) const noexcept
 	{
 		const MeshInstance* mesh = m_registry.Get<MeshInstance>(entity);
 		return mesh == nullptr ? nullptr : m_meshResources.Resolve(mesh->Resource);
 	}
 
-	bool SceneWorld::IsSkeletalMesh(EntityId entity) const noexcept
+	bool GameWorldState::IsSkeletalMesh(EntityId entity) const noexcept
 	{
 		const MeshInstance* mesh = m_registry.Get<MeshInstance>(entity);
 		return mesh != nullptr && mesh->Kind == SceneMeshKind::Skeletal;
 	}
 
-	MaterialHandle SceneWorld::ReadMeshMaterial(EntityId entity) const noexcept
+	MaterialHandle GameWorldState::ReadMeshMaterial(EntityId entity) const noexcept
 	{
 		const MeshInstance* mesh = m_registry.Get<MeshInstance>(entity);
 		return mesh == nullptr ? MaterialHandle::Invalid() : mesh->Material;
 	}
 
-	bool SceneWorld::WriteMeshMaterial(EntityId entity, MaterialHandle material) noexcept
+	bool GameWorldState::WriteMeshMaterial(EntityId entity, MaterialHandle material) noexcept
 	{
 		const MeshInstance* mesh = m_registry.Get<MeshInstance>(entity);
 		if (mesh == nullptr)
@@ -96,37 +100,43 @@ namespace ECS
 		}
 		MeshInstance updated = *mesh;
 		updated.Material = material;
-		return m_registry.Replace(entity, updated);
+		const bool written = m_registry.Replace(entity, updated);
+		if (written)
+		{
+			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::MeshInstance);
+		}
+		return written;
 	}
 
-	Assets::CookedAssetId SceneWorld::ReadMeshAssetId(EntityId entity) const noexcept
+	Assets::CookedAssetId GameWorldState::ReadMeshAssetId(EntityId entity) const noexcept
 	{
 		const MeshInstance* mesh = m_registry.Get<MeshInstance>(entity);
 		return mesh == nullptr ? Assets::InvalidCookedAssetId : mesh->MeshAssetId;
 	}
 
-	Assets::CookedAssetId SceneWorld::ReadSkeletonAssetId(EntityId entity) const noexcept
+	Assets::CookedAssetId GameWorldState::ReadSkeletonAssetId(EntityId entity) const noexcept
 	{
 		const MeshInstance* mesh = m_registry.Get<MeshInstance>(entity);
 		return mesh == nullptr ? Assets::InvalidCookedAssetId : mesh->SkeletonAssetId;
 	}
 
-	std::uint32_t SceneWorld::ReadMeshSourceNodeIndex(EntityId entity) const noexcept
+	std::uint32_t GameWorldState::ReadMeshSourceNodeIndex(EntityId entity) const noexcept
 	{
 		const MeshInstance* mesh = m_registry.Get<MeshInstance>(entity);
 		return mesh == nullptr ? Assets::kInvalidCookedSceneSourceNodeIndex : mesh->SourceNodeIndex;
 	}
 
-	void SceneWorld::AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& groups)
+	void GameWorldState::AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& groups)
 	{
 		m_meshInstanceGroups.reserve(m_meshInstanceGroups.size() + groups.size());
 		for (MeshInstanceGroupSnapshot& group : groups)
 		{
 			m_meshInstanceGroups.push_back(std::move(group));
 		}
+		RecordChange(EntityId::Invalid(), WorldChangeKind::ResourceChanged, WorldDataKind::MeshInstance);
 	}
 
-	MeshSnapshot SceneWorld::CaptureMeshes() const
+	MeshSnapshot GameWorldState::CaptureMeshes() const
 	{
 		MeshSnapshot snapshot;
 		const ComponentStorage<MeshInstance>* meshes = m_registry.FindStorage<MeshInstance>();
@@ -153,11 +163,15 @@ namespace ECS
 			{
 				continue;
 			}
-			const Transform transform = ReadTransform(entity);
+			const WorldTransform* transform = m_registry.Get<WorldTransform>(entity);
+			if (transform == nullptr)
+			{
+				continue;
+			}
 			MeshInstanceSnapshot instance;
 			instance.mesh = resource;
-			DirectX::XMStoreFloat4x4(&instance.worldMatrix, transform.GetWorldMatrix());
-			DirectX::XMStoreFloat3x4(&instance.worldInvTranspose, transform.GetWorldInverseTransposeMatrix());
+			instance.worldMatrix = transform->Matrix;
+			DirectX::XMStoreFloat3x4(&instance.worldInvTranspose, DirectX::XMLoadFloat4x4(&transform->InverseTranspose));
 			instance.materialHandle = mesh.Material;
 			instance.meshAssetId = mesh.MeshAssetId;
 			instance.skeletonAssetId = mesh.SkeletonAssetId;
@@ -178,7 +192,7 @@ namespace ECS
 		return snapshot;
 	}
 
-	void SceneWorld::ApplyMorphWeights(std::span<const SceneMorphWeightSnapshot> weights)
+	void GameWorldState::ApplyMorphWeights(std::span<const SceneMorphWeightSnapshot> weights)
 	{
 		if (weights.empty())
 		{
@@ -209,6 +223,7 @@ namespace ECS
 				{
 					skeletal->SetMorphWeights(weightsForNode.weights);
 				}
+				RecordChange(entities[index], WorldChangeKind::ValueChanged, WorldDataKind::MorphState);
 			}
 		}
 	}

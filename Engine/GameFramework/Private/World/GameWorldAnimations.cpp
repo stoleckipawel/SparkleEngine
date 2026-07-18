@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "World/SceneWorld.h"
+#include "World/GameWorldState.h"
 
 #include "Scene/Animations/SceneAnimationDiagnostics.h"
 #include "Scene/Animations/SceneAnimationPoseEvaluator.h"
@@ -13,7 +13,7 @@
 
 namespace ECS
 {
-	void SceneWorld::AppendAnimationClips(std::vector<SceneAnimationClipDesc>&& clips)
+	void GameWorldState::AppendAnimationClips(std::vector<SceneAnimationClipDesc>&& clips)
 	{
 		for (SceneAnimationClipDesc& clip : clips)
 		{
@@ -50,11 +50,14 @@ namespace ECS
 			if (!added)
 			{
 				m_registry.Destroy(entity);
+				continue;
 			}
+			RecordChange(entity, WorldChangeKind::EntityCreated, WorldDataKind::World);
+			RecordChange(entity, WorldChangeKind::ComponentAdded, WorldDataKind::AnimationState);
 		}
 	}
 
-	void SceneWorld::UpdateAnimations(float deltaSeconds, const SceneSkeletons& skeletons)
+	void GameWorldState::UpdateAnimations(float deltaSeconds, const SceneSkeletons& skeletons)
 	{
 		SceneAnimationSnapshot output;
 		const ComponentStorage<AnimationState>* animations = m_registry.FindStorage<AnimationState>();
@@ -79,6 +82,7 @@ namespace ECS
 				state.TimeSeconds = state.Looping ? std::fmod(state.TimeSeconds, clip->durationSeconds)
 				                                  : std::min(state.TimeSeconds, clip->durationSeconds);
 				m_registry.Replace(entities[index], state);
+				RecordChange(entities[index], WorldChangeKind::ValueChanged, WorldDataKind::AnimationState);
 			}
 			SceneAnimationPoseEvaluator::AppendMatchingPose(*clip, state.TimeSeconds, skeletons, output.poses);
 			SceneMorphWeightEvaluator::AppendSnapshots(*clip, state.TimeSeconds, output.morphWeights);

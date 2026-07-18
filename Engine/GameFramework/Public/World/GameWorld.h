@@ -6,11 +6,13 @@
 #include "GameFramework/Public/Scene/Lighting/SceneLighting.h"
 #include "GameFramework/Public/Scene/Materials/SceneMaterials.h"
 #include "GameFramework/Public/Scene/Materials/SceneMaterialVariants.h"
-#include "GameFramework/Public/Scene/GameSceneController.h"
+#include "GameFramework/Public/World/GameWorldController.h"
 #include "GameFramework/Public/Scene/Meshes/SceneMeshes.h"
 #include "GameFramework/Public/Scene/Skeletons/SceneSkeletons.h"
 #include "GameFramework/Public/Scene/Sky/SceneSky.h"
-#include "GameFramework/Public/Scene/GameSceneSnapshot.h"
+#include "GameFramework/Public/World/GameWorldSnapshot.h"
+#include "GameFramework/Public/World/WorldChange.h"
+#include "GameFramework/Public/World/WorldReadView.h"
 #include "GameFramework/Public/Scene/Textures/SceneTextures.h"
 #include "GameFramework/Public/World/EntityId.h"
 
@@ -23,36 +25,36 @@
 
 namespace ECS
 {
-	class SceneWorld;
+	class GameWorldState;
 }
 
 class LevelAsset;
 struct SceneAssetPayload;
 
-enum class GameSceneLoadStatus : std::uint8_t
+enum class GameWorldLoadStatus : std::uint8_t
 {
 	Succeeded = 0,
 	Failed
 };
 
-struct SPARKLE_ENGINE_API GameSceneLoadResult
+struct SPARKLE_ENGINE_API GameWorldLoadResult
 {
-	GameSceneLoadStatus status = GameSceneLoadStatus::Failed;
+	GameWorldLoadStatus status = GameWorldLoadStatus::Failed;
 	std::string errorMessage;
 
-	bool Succeeded() const noexcept { return status == GameSceneLoadStatus::Succeeded; }
+	bool Succeeded() const noexcept { return status == GameWorldLoadStatus::Succeeded; }
 };
 
-class SPARKLE_ENGINE_API GameScene final
+class SPARKLE_ENGINE_API GameWorld final
 {
   public:
-	GameScene();
-	~GameScene() noexcept;
+	GameWorld();
+	~GameWorld() noexcept;
 
-	GameScene(const GameScene&) = delete;
-	GameScene& operator=(const GameScene&) = delete;
-	GameScene(GameScene&&) = delete;
-	GameScene& operator=(GameScene&&) = delete;
+	GameWorld(const GameWorld&) = delete;
+	GameWorld& operator=(const GameWorld&) = delete;
+	GameWorld(GameWorld&&) = delete;
+	GameWorld& operator=(GameWorld&&) = delete;
 
 	SceneCameras& GetCameras() noexcept { return m_cameras; }
 	const SceneCameras& GetCameras() const noexcept { return m_cameras; }
@@ -61,13 +63,16 @@ class SPARKLE_ENGINE_API GameScene final
 	SceneSky& GetSky() noexcept { return m_sky; }
 	const SceneSky& GetSky() const noexcept { return m_sky; }
 
-	GameSceneLoadResult LoadLevel(const LevelAsset& level);
-	GameSceneLoadResult LoadLevel(const LevelDesc& desc);
+	GameWorldLoadResult LoadLevel(const LevelAsset& level);
+	GameWorldLoadResult LoadLevel(const LevelDesc& desc);
 	void Update(float deltaSeconds);
 	bool AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload);
-	GameSceneSnapshot CaptureSnapshot() const;
+	GameWorldSnapshot CaptureSnapshot() const;
+	WorldReadView AcquireReadView() const noexcept;
+	WorldChangeBatch ReadChanges(const WorldChangeCursor& cursor) const;
+	bool AcknowledgeChanges(WorldChangeCursor& cursor, WorldSequence sequence) const noexcept;
 	std::string_view GetActiveLevelName() const noexcept { return m_activeLevelName; }
-	void RegisterController(std::unique_ptr<GameSceneController>&& controller);
+	void RegisterController(std::unique_ptr<GameWorldController>&& controller);
 
 	void Clear();
 	bool IsEntityAlive(EntityId entity) const noexcept;
@@ -89,8 +94,10 @@ class SPARKLE_ENGINE_API GameScene final
 	friend class SceneLighting;
 	friend class SceneMeshes;
 	friend class SceneMeshView;
+	friend class SceneSky;
+	void CommitWorldChanges();
 
-	std::unique_ptr<ECS::SceneWorld> m_world;
+	std::unique_ptr<ECS::GameWorldState> m_state;
 	SceneCameras m_cameras;
 	SceneLighting m_lighting;
 	SceneMaterials m_materials;
@@ -101,5 +108,5 @@ class SPARKLE_ENGINE_API GameScene final
 	SceneTextures m_textures;
 	std::string m_activeLevelName;
 	LevelDesc m_activeLevelDesc;
-	std::vector<std::unique_ptr<GameSceneController>> m_controllers;
+	std::vector<std::unique_ptr<GameWorldController>> m_controllers;
 };

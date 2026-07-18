@@ -9,7 +9,7 @@
 #include "GameFramework/Public/Scene/Sky/SceneSkySnapshot.h"
 #include "GameFramework/Public/Scene/Textures/TextureSnapshot.h"
 
-struct SPARKLE_ENGINE_API GameSceneSnapshot
+struct SPARKLE_ENGINE_API GameWorldSnapshot
 {
 	CameraSnapshot camera = {};
 	SceneAnimationSnapshot animations = {};

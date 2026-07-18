@@ -2,10 +2,10 @@
 
 #include <string>
 
-class GameScene;
+class GameWorld;
 
 class SceneSkyInspector final
 {
   public:
-	static void Build(GameScene& gameScene, const std::string& filterText) noexcept;
+	static void Build(GameWorld& gameWorld, const std::string& filterText) noexcept;
 };

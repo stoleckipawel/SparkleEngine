@@ -45,7 +45,7 @@ void EditorApplication::Initialize()
 		m_ui = std::make_unique<UI>(EditorHostServices{
 		    .RuntimeTimer = m_runtimeApplication->GetTimer(),
 		    .Levels = m_runtimeApplication->GetLevelManager(),
-		    .Scene = m_runtimeApplication->GetGameScene(),
+		    .World = m_runtimeApplication->GetGameWorld(),
 		    .ImGuiRenderer = renderer.GetImGuiRenderer(),
 		    .HostWindow = m_runtimeApplication->GetWindow(),
 		    .Input = m_runtimeApplication->GetInputSystem()});

@@ -1,8 +1,8 @@
 #pragma once
 
-class GameScene;
+class GameWorld;
 
 namespace SceneMaterialVariantInspector
 {
-	void Build(GameScene& gameScene) noexcept;
+	void Build(GameWorld& gameWorld) noexcept;
 }

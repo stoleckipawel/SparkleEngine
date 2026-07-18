@@ -7,20 +7,20 @@
 #include "Level/LevelChangeEvents.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "Textures/TextureManager.h"
 
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     LevelChangeEvents& levelChangeEvents,
-    GameScene& gameScene,
+    GameWorld& gameWorld,
     RenderDeviceServices& backendServices,
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
     RenderCamera& renderCamera,
     MaterialCacheManager& materialCache,
     RenderRayTracingScene& rayTracingScene) noexcept :
-    m_gameScene(&gameScene),
+    m_gameWorld(&gameWorld),
     m_backendServices(&backendServices),
     m_gpuMeshCache(&gpuMeshCache),
     m_textureManager(&textureManager),
@@ -96,9 +96,9 @@ void SceneRenderStateCoordinator::InvalidateSceneScopedRendererState() noexcept
 
 void SceneRenderStateCoordinator::RefreshSceneScopedRendererState() noexcept
 {
-	if (m_gameScene && m_renderCamera)
+	if (m_gameWorld && m_renderCamera)
 	{
-		m_renderCamera->ForceUpdate(m_gameScene->CaptureSnapshot().camera);
+		m_renderCamera->ForceUpdate(m_gameWorld->CaptureSnapshot().camera);
 	}
 }
 

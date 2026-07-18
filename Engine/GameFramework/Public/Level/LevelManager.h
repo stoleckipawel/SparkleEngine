@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "Level/LevelChangeEvents.h"
@@ -10,8 +10,8 @@
 
 class LevelAsset;
 class LevelRegistry;
-class GameScene;
-struct GameSceneLoadResult;
+class GameWorld;
+struct GameWorldLoadResult;
 namespace Assets
 {
 	class SceneAssetManager;
@@ -20,7 +20,7 @@ namespace Assets
 class SPARKLE_ENGINE_API LevelManager final
 {
   public:
-	LevelManager(GameScene& scene, Assets::SceneAssetManager& sceneAssetManager);
+	LevelManager(GameWorld& world, Assets::SceneAssetManager& sceneAssetManager);
 	~LevelManager() noexcept;
 
 	LevelManager(const LevelManager&) = delete;
@@ -44,10 +44,10 @@ class SPARKLE_ENGINE_API LevelManager final
   private:
 	void CaptureSceneToLevel() noexcept;
 	void InitializeStartupLevel() noexcept;
-	GameSceneLoadResult LoadLevelFromUnloadedState(const LevelAsset& level) noexcept;
+	GameWorldLoadResult LoadLevelFromUnloadedState(const LevelAsset& level) noexcept;
 	void ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcept;
 
-	GameScene* m_gameScene = nullptr;
+	GameWorld* m_gameWorld = nullptr;
 	Assets::SceneAssetManager* m_sceneAssetManager = nullptr;
 	std::unique_ptr<LevelRegistry> m_levelRegistry;
 	LevelChangeEvents m_levelChangeEvents;

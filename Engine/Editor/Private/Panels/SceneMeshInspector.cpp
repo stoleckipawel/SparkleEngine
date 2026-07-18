@@ -2,7 +2,7 @@
 #include "Panels/SceneMeshInspector.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "Scene/GameScene.h"
+#include "World/GameWorld.h"
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/SceneMeshes.h"
@@ -11,9 +11,9 @@
 
 #include <cstdio>
 
-void SceneMeshInspector::Build(GameScene& gameScene, EntityId meshEntity, const std::string& filterText) noexcept
+void SceneMeshInspector::Build(GameWorld& gameWorld, EntityId meshEntity, const std::string& filterText) noexcept
 {
-	SceneMeshView meshInstance = gameScene.GetMeshes().GetMesh(meshEntity);
+	SceneMeshView meshInstance = gameWorld.GetMeshes().GetMesh(meshEntity);
 	if (!meshInstance.IsValid())
 	{
 		UiUtil::DrawDetailsEmptyState();

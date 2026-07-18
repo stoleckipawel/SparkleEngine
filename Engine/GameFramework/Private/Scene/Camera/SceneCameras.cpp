@@ -1,14 +1,14 @@
 #include "PCH.h"
 #include "Scene/Camera/SceneCameras.h"
 
-#include "Scene/GameScene.h"
-#include "World/SceneWorld.h"
+#include "World/GameWorld.h"
+#include "World/GameWorldState.h"
 
-SceneCameras::SceneCameras(GameScene& scene) noexcept : m_scene(&scene) {}
+SceneCameras::SceneCameras(GameWorld& world) noexcept : m_world(&world) {}
 
 SceneCameraView SceneCameras::GetActiveCamera() const noexcept
 {
-	return GetCamera(m_scene->m_world->GetActiveCamera());
+	return GetCamera(m_world->m_state->GetActiveCamera());
 }
 
 SceneCameraView SceneCameras::GetCamera(std::size_t cameraIndex) const noexcept
@@ -18,37 +18,37 @@ SceneCameraView SceneCameras::GetCamera(std::size_t cameraIndex) const noexcept
 
 SceneCameraView SceneCameras::GetCamera(EntityId entity) const noexcept
 {
-	return IsCamera(entity) ? SceneCameraView(*m_scene, entity) : SceneCameraView{};
+	return IsCamera(entity) ? SceneCameraView(*m_world, entity) : SceneCameraView{};
 }
 
-std::size_t SceneCameras::GetCameraCount() const noexcept { return m_scene->m_world->GetCameraCount(); }
+std::size_t SceneCameras::GetCameraCount() const noexcept { return m_world->m_state->GetCameraCount(); }
 
 EntityId SceneCameras::GetCameraEntity(std::size_t cameraIndex) const noexcept
 {
-	return m_scene->m_world->GetCameraEntity(cameraIndex);
+	return m_world->m_state->GetCameraEntity(cameraIndex);
 }
 
 SceneCameraEntry SceneCameras::GetCameraEntry(std::size_t cameraIndex) const
 {
-	const std::optional<SceneCameraEntry> entry = m_scene->m_world->ReadCamera(GetCameraEntity(cameraIndex));
+	const std::optional<SceneCameraEntry> entry = m_world->m_state->ReadCamera(GetCameraEntity(cameraIndex));
 	return entry.value_or(SceneCameraEntry{});
 }
 
 SceneCameraEntry SceneCameras::GetCameraEntryByEntity(EntityId entity) const
 {
-	return m_scene->m_world->ReadCamera(entity).value_or(SceneCameraEntry{});
+	return m_world->m_state->ReadCamera(entity).value_or(SceneCameraEntry{});
 }
 
-bool SceneCameras::IsCamera(EntityId entity) const noexcept { return m_scene->m_world->ReadCamera(entity).has_value(); }
+bool SceneCameras::IsCamera(EntityId entity) const noexcept { return m_world->m_state->IsCamera(entity); }
 
 void SceneCameras::AddCamera(SceneCameraEntry&& cameraEntry)
 {
-	m_scene->m_world->AddCamera(std::move(cameraEntry));
+	m_world->m_state->AddCamera(std::move(cameraEntry));
 }
 
 bool SceneCameras::SetActiveCamera(std::size_t cameraIndex) noexcept { return SetActiveCamera(GetCameraEntity(cameraIndex)); }
 
-bool SceneCameras::SetActiveCamera(EntityId entity) noexcept { return m_scene->m_world->SetActiveCamera(entity); }
+bool SceneCameras::SetActiveCamera(EntityId entity) noexcept { return m_world->m_state->SetActiveCamera(entity); }
 
 bool SceneCameras::SetPrimaryCameraActive() noexcept
 {
@@ -69,8 +69,8 @@ void SceneCameras::Reset(const CameraDesc& defaultCameraDesc)
 		SceneCameraEntry entry;
 		entry.name = "Scene Camera";
 		entry.desc = defaultCameraDesc;
-		m_scene->m_world->AddCamera(std::move(entry), true);
+		m_world->m_state->AddCamera(std::move(entry), true);
 		return;
 	}
-	m_scene->m_world->WriteCameraDesc(m_scene->m_world->GetActiveCamera(), defaultCameraDesc);
+	m_world->m_state->WriteCameraDesc(m_world->m_state->GetActiveCamera(), defaultCameraDesc);
 }

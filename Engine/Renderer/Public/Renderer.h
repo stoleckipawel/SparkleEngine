@@ -13,14 +13,14 @@
 class Timer;
 class RhiImGuiRenderer;
 class LevelManager;
-class GameScene;
+class GameWorld;
 class Window;
 class RendererState;
 
 class SPARKLE_RENDERER_API Renderer final
 {
   public:
-	Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept;
+	Renderer(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;

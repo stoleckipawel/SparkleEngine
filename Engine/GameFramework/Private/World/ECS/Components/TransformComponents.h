@@ -16,5 +16,11 @@ namespace ECS
 	struct WorldTransform final
 	{
 		DirectX::XMFLOAT4X4 Matrix = MathUtils::IdentityFloat4x4();
+		DirectX::XMFLOAT4X4 InverseTranspose = MathUtils::IdentityFloat4x4();
+	};
+
+	struct CameraDerivedState final
+	{
+		DirectX::XMFLOAT3 Direction{0.0f, 0.0f, 1.0f};
 	};
 }

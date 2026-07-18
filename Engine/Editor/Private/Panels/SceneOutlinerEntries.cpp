@@ -2,14 +2,6 @@
 #include "Panels/SceneOutlinerEntries.h"
 
 #include "Scene/SceneObjectPresentation.h"
-#include "Scene/GameScene.h"
-#include "Scene/Camera/SceneCameraEntry.h"
-#include "Scene/Lighting/SceneLightDesc.h"
-#include "Scene/Lighting/SceneLighting.h"
-#include "Scene/Meshes/SceneMeshes.h"
-
-#include <optional>
-
 namespace
 {
 	std::string BuildMeshLabel(std::size_t meshIndex)
@@ -20,54 +12,53 @@ namespace
 
 namespace SceneOutlinerEntries
 {
-	std::vector<SceneOutlinerEntry> BuildCameraEntries(const GameScene& gameScene)
+	std::vector<SceneOutlinerEntry> BuildCameraEntries(const WorldReadView& readView)
 	{
 		std::vector<SceneOutlinerEntry> entries;
-		entries.reserve(gameScene.GetCameras().GetCameraCount());
+		entries.reserve(readView.GetCameras().size());
 
-		for (std::size_t cameraIndex = 0; cameraIndex < gameScene.GetCameras().GetCameraCount(); ++cameraIndex)
+		for (std::size_t cameraIndex = 0; cameraIndex < readView.GetCameras().size(); ++cameraIndex)
 		{
-			const SceneCameraEntry camera = gameScene.GetCameras().GetCameraEntry(cameraIndex);
+			const WorldCameraReadData& camera = readView.GetCameras()[cameraIndex];
 			entries.push_back(
 			    SceneOutlinerEntry{
-			        camera.name.empty() ? "Camera " + std::to_string(cameraIndex + 1) : camera.name,
+			        camera.Name.empty() ? "Camera " + std::to_string(cameraIndex + 1) : camera.Name,
 			        "Camera",
-			        SceneObjectSelection::Camera(gameScene.GetCameras().GetCameraEntity(cameraIndex))});
+			        SceneObjectSelection::Camera(camera.Entity)});
 		}
 
 		return entries;
 	}
 
-	std::vector<SceneOutlinerEntry> BuildLightEntries(const GameScene& gameScene)
+	std::vector<SceneOutlinerEntry> BuildLightEntries(const WorldReadView& readView)
 	{
 		std::vector<SceneOutlinerEntry> entries;
-		entries.reserve(gameScene.GetLighting().GetLightCount());
+		entries.reserve(readView.GetLights().size());
 
-		for (std::size_t lightIndex = 0; lightIndex < gameScene.GetLighting().GetLightCount(); ++lightIndex)
+		for (std::size_t lightIndex = 0; lightIndex < readView.GetLights().size(); ++lightIndex)
 		{
-			const std::optional<SceneLightDesc> light = gameScene.GetLighting().GetLight(lightIndex);
-			if (!light)
-			{
-				continue;
-			}
+			const WorldLightReadData& light = readView.GetLights()[lightIndex];
 			entries.push_back(
 			    SceneOutlinerEntry{
-			        SceneObjectPresentation::BuildLightLabel(*light, lightIndex),
-			        SceneObjectPresentation::GetLightTypeLabel(light->GetKind()),
-			        SceneObjectSelection::Light(gameScene.GetLighting().GetLightEntity(lightIndex))});
+			        SceneObjectPresentation::BuildLightLabel(light.Description, lightIndex),
+			        SceneObjectPresentation::GetLightTypeLabel(light.Description.GetKind()),
+			        SceneObjectSelection::Light(light.Entity)});
 		}
 
 		return entries;
 	}
 
-	std::vector<SceneOutlinerEntry> BuildSkyEntries(const GameScene& gameScene)
+	std::vector<SceneOutlinerEntry> BuildSkyEntries(const WorldReadView& readView)
 	{
-		return {SceneOutlinerEntry{gameScene.GetSky().HasSky() ? "Sky" : "Sky (Engine Default)", "Sky", SceneObjectSelection::Sky()}};
+		return {SceneOutlinerEntry{
+		    readView.GetSkyEnvironment().has_value() ? "Sky" : "Sky (Engine Default)",
+		    "Sky",
+		    SceneObjectSelection::Sky()}};
 	}
 
-	std::vector<SceneOutlinerEntry> BuildMeshEntries(const GameScene& gameScene)
+	std::vector<SceneOutlinerEntry> BuildMeshEntries(const WorldReadView& readView)
 	{
-		const std::size_t meshCount = gameScene.GetMeshes().GetMeshCount();
+		const std::size_t meshCount = readView.GetMeshes().size();
 		std::vector<SceneOutlinerEntry> entries;
 		entries.reserve(meshCount);
 
@@ -77,7 +68,7 @@ namespace SceneOutlinerEntries
 			    SceneOutlinerEntry{
 			        BuildMeshLabel(meshIndex),
 			        "Static Mesh",
-			        SceneObjectSelection::Mesh(gameScene.GetMeshes().GetMeshEntity(meshIndex))});
+			        SceneObjectSelection::Mesh(readView.GetMeshes()[meshIndex].Entity)});
 		}
 
 		return entries;
