@@ -80,6 +80,40 @@ namespace ECS
 		return true;
 	}
 
+	bool EntityRegistry::Clear() noexcept
+	{
+		if (!CanMutateStructure())
+		{
+			return false;
+		}
+		m_componentTypes.Clear();
+		m_freeSlots.clear();
+		for (std::size_t slotIndex = m_slots.size(); slotIndex > 0; --slotIndex)
+		{
+			const EntityId::Slot slot = static_cast<EntityId::Slot>(slotIndex - 1);
+			EntitySlot& entry = m_slots[slot];
+			if (entry.Alive)
+			{
+				entry.Alive = false;
+				if (entry.Generation == (std::numeric_limits<EntityId::Generation>::max)())
+				{
+					entry.Retired = true;
+				}
+				else
+				{
+					++entry.Generation;
+				}
+			}
+			if (!entry.Retired)
+			{
+				m_freeSlots.push_back(slot);
+			}
+		}
+		m_liveCount = 0;
+		AdvanceStructureVersion();
+		return true;
+	}
+
 	StructureFrozenEpoch EntityRegistry::FreezeStructure() noexcept
 	{
 		if (m_structureFrozen || m_frozenEpochGeneration == (std::numeric_limits<std::uint64_t>::max)())

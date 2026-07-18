@@ -6,6 +6,8 @@
 #include "Scene/Lighting/SceneLightDesc.h"
 #include "Scene/Lighting/SceneLighting.h"
 
+#include <optional>
+
 namespace SceneObjectPresentation
 {
 	UiUtil::EditorIcon GetLightIcon(SceneLightKind kind) noexcept
@@ -65,7 +67,7 @@ namespace SceneObjectPresentation
 			case SceneObjectType::Light:
 				if (gameScene != nullptr)
 				{
-					if (const SceneLightDesc* light = gameScene->GetLighting().GetLight(selection.index))
+					if (const std::optional<SceneLightDesc> light = gameScene->GetLighting().GetLight(selection.entity))
 					{
 						return GetLightIcon(light->GetKind());
 					}

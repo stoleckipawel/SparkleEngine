@@ -3,8 +3,7 @@
 #include <string>
 
 class GameScene;
-class CameraComponent;
-class SceneCamera;
+class SceneCameraView;
 
 class SceneCameraInspector final
 {
@@ -12,10 +11,10 @@ class SceneCameraInspector final
 	static void Build(GameScene& gameScene, const std::string& filterText) noexcept;
 
   private:
-	static void BuildTransformCategory(const std::string& filterText, CameraComponent& cameraComponent) noexcept;
-	static void BuildCameraCategory(const std::string& filterText, CameraComponent& cameraComponent) noexcept;
-	static void BuildMovementCategory(const std::string& filterText, SceneCamera& sceneCamera) noexcept;
-	static void BuildAdvancedParametersCategory(const std::string& filterText, CameraComponent& cameraComponent) noexcept;
+	static void BuildTransformCategory(const std::string& filterText, SceneCameraView sceneCamera) noexcept;
+	static void BuildCameraCategory(const std::string& filterText, SceneCameraView sceneCamera) noexcept;
+	static void BuildMovementCategory(const std::string& filterText, SceneCameraView sceneCamera) noexcept;
+	static void BuildAdvancedParametersCategory(const std::string& filterText, SceneCameraView sceneCamera) noexcept;
 
 	static constexpr float kPositionSliderMin = -500.0f;
 	static constexpr float kPositionSliderMax = 500.0f;

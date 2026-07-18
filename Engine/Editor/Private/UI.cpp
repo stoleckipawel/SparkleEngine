@@ -22,7 +22,6 @@
 
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
 #include "Scene/Meshes/Mesh.h"
-#include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/MeshData.h"
 #include "Scene/Meshes/SceneMeshes.h"
 
@@ -237,7 +236,7 @@ void UI::InitializeDefaultPanels()
 	    });
 	if (m_gameScene != nullptr)
 	{
-		m_sceneSelection = SceneObjectSelection::Camera();
+		m_sceneSelection = SceneObjectSelection::Camera(m_gameScene->GetCameras().GetCameraEntity(0));
 		m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(*m_gameScene, m_sceneSelection, SceneOutlinerWidth);
 		m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection, SceneInspectorWidth);
 	}
@@ -295,13 +294,13 @@ MeshPreviewGeometry UI::BuildMeshPreviewGeometry(std::uintptr_t meshRuntimeId) c
 	const SceneMeshes& sceneMeshes = m_gameScene->GetMeshes();
 	for (std::size_t meshIndex = 0; meshIndex < sceneMeshes.GetMeshCount(); ++meshIndex)
 	{
-		const MeshComponent* meshComponent = sceneMeshes.GetMeshComponent(meshIndex);
-		if (meshComponent == nullptr)
+		const SceneMeshView meshInstance = sceneMeshes.GetMesh(meshIndex);
+		if (!meshInstance.IsValid())
 		{
 			continue;
 		}
 
-		const Mesh* mesh = meshComponent->GetMesh();
+		const Mesh* mesh = meshInstance.GetMesh();
 		if (mesh == nullptr || reinterpret_cast<std::uintptr_t>(mesh) != meshRuntimeId)
 		{
 			continue;

@@ -1,63 +1,47 @@
 #include "PCH.h"
 #include "Scene/Lighting/SceneLighting.h"
 
-#include "Scene/Lighting/Snapshots/SceneLightingSnapshotBuilder.h"
+#include "Scene/GameScene.h"
+#include "World/SceneWorld.h"
 
-#include <utility>
+SceneLighting::SceneLighting(GameScene& scene) noexcept : m_scene(&scene) {}
+
+std::size_t SceneLighting::GetLightCount() const noexcept { return m_scene->m_world->GetLightCount(); }
+
+EntityId SceneLighting::GetLightEntity(std::size_t index) const noexcept { return m_scene->m_world->GetLightEntity(index); }
+
+std::optional<SceneLightDesc> SceneLighting::GetLight(std::size_t index) const { return GetLight(GetLightEntity(index)); }
+
+std::optional<SceneLightDesc> SceneLighting::GetLight(EntityId entity) const { return m_scene->m_world->ReadLight(entity); }
+
+bool SceneLighting::IsLightVisible(std::size_t index) const noexcept { return IsLightVisible(GetLightEntity(index)); }
+
+bool SceneLighting::IsLightVisible(EntityId entity) const noexcept { return m_scene->m_world->ReadVisibility(entity); }
+
+void SceneLighting::SetLightVisible(std::size_t index, bool visible) { SetLightVisible(GetLightEntity(index), visible); }
+
+void SceneLighting::SetLightVisible(EntityId entity, bool visible) { m_scene->m_world->WriteVisibility(entity, visible); }
+
+bool SceneLighting::SetLight(std::size_t lightIndex, SceneLightDesc light)
+{
+	return SetLight(GetLightEntity(lightIndex), std::move(light));
+}
+
+bool SceneLighting::SetLight(EntityId entity, SceneLightDesc light)
+{
+	return m_scene->m_world->WriteLight(entity, std::move(light));
+}
 
 void SceneLighting::ApplyFromDesc(const std::vector<SceneLightDesc>& lights)
 {
-	m_lights = lights;
-}
-
-void SceneLighting::AppendLight(SceneLightDesc light)
-{
-	m_lights.push_back(std::move(light));
-}
-
-const SceneLightDesc* SceneLighting::GetLight(std::size_t index) const noexcept
-{
-	return index < m_lights.size() ? &m_lights[index] : nullptr;
-}
-
-bool SceneLighting::IsLightVisible(std::size_t index) const noexcept
-{
-	const SceneLightDesc* light = GetLight(index);
-	return light == nullptr || light->common.visible;
-}
-
-void SceneLighting::SetLightVisible(std::size_t index, bool visible)
-{
-	if (index >= m_lights.size())
+	for (const SceneLightDesc& light : lights)
 	{
-		return;
+		m_scene->m_world->AddLight(SceneLightDesc(light));
 	}
-
-	m_lights[index].common.visible = visible;
 }
 
-bool SceneLighting::ApplyLightDesc(std::size_t lightIndex, SceneLightDesc light)
-{
-	if (lightIndex >= m_lights.size())
-	{
-		return false;
-	}
+void SceneLighting::AppendLight(SceneLightDesc light) { m_scene->m_world->AddLight(std::move(light)); }
 
-	m_lights[lightIndex] = std::move(light);
-	return true;
-}
+std::vector<SceneLightDesc> SceneLighting::CaptureToDesc() const { return m_scene->m_world->CaptureLightsToDesc(); }
 
-std::vector<SceneLightDesc> SceneLighting::CaptureToDesc() const
-{
-	return m_lights;
-}
-
-LightingSnapshot SceneLighting::CaptureSnapshot() const noexcept
-{
-	return SceneLightingSnapshotBuilder::BuildSnapshot(m_lights);
-}
-
-void SceneLighting::Reset() noexcept
-{
-	m_lights.clear();
-}
+LightingSnapshot SceneLighting::CaptureSnapshot() const noexcept { return m_scene->m_world->CaptureLighting(); }

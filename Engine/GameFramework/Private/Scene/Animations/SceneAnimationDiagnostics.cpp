@@ -2,7 +2,7 @@
 
 #include "Scene/Animations/SceneAnimationDiagnostics.h"
 
-static const auto g_sceneAnimationsLogger = Logging::GetOrCreateLogger("GameFramework.SceneAnimations");
+static const auto g_animationEvaluationLogger = Logging::GetOrCreateLogger("GameFramework.AnimationEvaluation");
 
 namespace SceneAnimationDiagnostics
 {
@@ -27,8 +27,8 @@ namespace SceneAnimationDiagnostics
 	void LogUnsupportedRuntimeChannels(const SceneAnimationClipDesc& clip, std::uint32_t unsupportedRuntimeChannelCount)
 	{
 		SPDLOG_LOGGER_WARN(
-		    g_sceneAnimationsLogger,
-		    "SceneAnimations: clip '{}' has {} unsupported runtime animation channel(s); playback applies translation, rotation, scale, and skeletal morph-weight channels.",
+		    g_animationEvaluationLogger,
+		    "Animation evaluation: clip '{}' has {} unsupported runtime animation channel(s); playback applies translation, rotation, scale, and skeletal morph-weight channels.",
 		    clip.name,
 		    unsupportedRuntimeChannelCount);
 	}

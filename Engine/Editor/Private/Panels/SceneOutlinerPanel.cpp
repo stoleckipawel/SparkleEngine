@@ -106,7 +106,7 @@ void SceneOutlinerPanel::EnsureValidSelection() noexcept
 
 	if (!IsSelectionValid())
 	{
-		*m_selection = SceneObjectSelection::Camera();
+		*m_selection = SceneObjectSelection::Camera(m_gameScene->GetCameras().GetCameraEntity(0));
 	}
 }
 

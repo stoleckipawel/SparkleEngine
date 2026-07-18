@@ -5,7 +5,7 @@
 #include "Level/Level.h"
 #include "Level/LevelRegistry.h"
 #include "Scene/GameScene.h"
-#include "Scene/Camera/SceneCamera.h"
+#include "Scene/Camera/SceneCameraView.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Sky/SceneSky.h"
 #include "Environment/EnvironmentVariables.h"
@@ -189,7 +189,7 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 		return loadResult;
 	}
 
-	m_gameScene->GetCameras().ApplyPrimaryCamera();
+	m_gameScene->GetCameras().SetPrimaryCameraActive();
 
 	return loadResult;
 }
@@ -205,7 +205,7 @@ void LevelManager::CaptureSceneToLevel() noexcept
 
 	desc.lights = m_gameScene->GetLighting().CaptureToDesc();
 	desc.sky = m_gameScene->GetSky().CaptureToDesc();
-	desc.cameraDesc = m_gameScene->GetCameras().GetActiveCamera().CaptureToDesc();
+	desc.cameraDesc = m_gameScene->GetCameras().GetActiveCamera().GetDesc();
 
 	m_activeLevel->SetLevelDesc(desc);
 }

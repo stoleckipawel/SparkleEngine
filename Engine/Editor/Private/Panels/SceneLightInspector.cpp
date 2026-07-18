@@ -12,6 +12,7 @@
 #include "Util/UiUtil.h"
 
 #include <algorithm>
+#include <optional>
 #include <utility>
 
 namespace
@@ -22,21 +23,21 @@ namespace
 	constexpr float kAreaLightSizeSliderMax = 100.0f;
 }
 
-void SceneLightInspector::Build(GameScene& gameScene, std::size_t lightIndex, const std::string& filterText) noexcept
+void SceneLightInspector::Build(GameScene& gameScene, EntityId lightEntity, const std::string& filterText) noexcept
 {
-	const SceneLightDesc* sceneLight = gameScene.GetLighting().GetLight(lightIndex);
-	if (sceneLight == nullptr)
+	const std::optional<SceneLightDesc> sceneLight = gameScene.GetLighting().GetLight(lightEntity);
+	if (!sceneLight)
 	{
 		UiUtil::DrawDetailsEmptyState();
 		return;
 	}
 
-	BuildGenericLight(gameScene, lightIndex, *sceneLight, filterText);
+	BuildGenericLight(gameScene, lightEntity, *sceneLight, filterText);
 }
 
 void SceneLightInspector::BuildGenericLight(
     GameScene& gameScene,
-    std::size_t lightIndex,
+    EntityId lightEntity,
     const SceneLightDesc& sceneLight,
     const std::string& filterText) noexcept
 {
@@ -61,7 +62,7 @@ void SceneLightInspector::BuildGenericLight(
 		BuildRectLightCategory(filterText, *rect);
 	}
 
-	gameScene.GetLighting().ApplyLightDesc(lightIndex, std::move(lightDesc));
+	gameScene.GetLighting().SetLight(lightEntity, std::move(lightDesc));
 }
 
 void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept

@@ -2,6 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/GameSceneController.h"
+#include "GameFramework/Public/World/EntityId.h"
 
 #include "Events/EventHandle.h"
 #include "Events/ScopedEventHandle.h"
@@ -9,7 +10,7 @@
 class Timer;
 class InputSystem;
 class Window;
-class SceneCamera;
+class SceneCameraView;
 class GameScene;
 struct KeyboardEvent;
 struct MouseButtonEvent;
@@ -34,7 +35,9 @@ class SPARKLE_ENGINE_API GameCameraController final : public GameSceneController
 
   private:
 	void RefreshActiveCamera(GameScene& scene) noexcept;
+	SceneCameraView ResolveCamera() const noexcept;
 	void ApplyAspectRatio() noexcept;
+	void ApplyMovement(float deltaTime) noexcept;
 	void OnMouseButtonPressed(const MouseButtonEvent& event) noexcept;
 	void OnMouseButtonReleased(const MouseButtonEvent& event) noexcept;
 	void OnKeyboardEvent(const KeyboardEvent& event) noexcept;
@@ -46,7 +49,8 @@ class SPARKLE_ENGINE_API GameCameraController final : public GameSceneController
 	Timer& m_timer;
 	InputSystem& m_inputSystem;
 	Window& m_window;
-	SceneCamera* m_camera = nullptr;
+	GameScene* m_scene = nullptr;
+	EntityId m_cameraEntity;
 
 	ScopedEventHandle m_windowResizeHandle;
 	EventHandle m_mouseButtonPressedHandle;

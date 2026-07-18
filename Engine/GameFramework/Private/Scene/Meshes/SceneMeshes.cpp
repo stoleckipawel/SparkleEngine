@@ -1,113 +1,95 @@
 #include "PCH.h"
-
 #include "Scene/Meshes/SceneMeshes.h"
 
-#include "Scene/Meshes/MeshComponent.h"
-#include "Scene/Meshes/SceneMorphWeightApplicator.h"
+#include "Scene/GameScene.h"
+#include "World/SceneMeshInstanceData.h"
+#include "World/SceneWorld.h"
 
-SceneMeshes::SceneMeshes() noexcept = default;
+SceneMeshes::SceneMeshes(GameScene& scene) noexcept : m_scene(&scene) {}
 
-SceneMeshes::~SceneMeshes() noexcept = default;
+std::size_t SceneMeshes::GetMeshCount() const noexcept { return m_scene->m_world->GetMeshCount(); }
 
-void SceneMeshes::AppendMeshComponents(std::vector<std::unique_ptr<MeshComponent>>&& meshes)
+std::size_t SceneMeshes::GetMeshInstanceGroupCount() const noexcept { return m_scene->m_world->GetMeshInstanceGroupCount(); }
+
+EntityId SceneMeshes::GetMeshEntity(std::size_t index) const noexcept { return m_scene->m_world->GetMeshEntity(index); }
+
+SceneMeshView SceneMeshes::GetMesh(std::size_t index) const noexcept { return GetMesh(GetMeshEntity(index)); }
+
+SceneMeshView SceneMeshes::GetMesh(EntityId entity) const noexcept { return SceneMeshView(*m_scene, entity); }
+
+bool SceneMeshes::AppendMesh(ECS::SceneMeshInstanceData&& instance)
 {
-	if (meshes.empty())
-	{
-		return;
-	}
-
-	m_meshes.reserve(m_meshes.size() + meshes.size());
-	for (std::unique_ptr<MeshComponent>& mesh : meshes)
-	{
-		if (!mesh)
-		{
-			continue;
-		}
-
-		m_meshes.push_back(std::move(mesh));
-	}
+	return m_scene->m_world->AddMesh(std::move(instance)).IsValid();
 }
 
-void SceneMeshes::AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& meshInstanceGroups)
+void SceneMeshes::AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& groups)
 {
-	if (meshInstanceGroups.empty())
-	{
-		return;
-	}
-
-	m_meshInstanceGroups.reserve(m_meshInstanceGroups.size() + meshInstanceGroups.size());
-	for (MeshInstanceGroupSnapshot& meshInstanceGroup : meshInstanceGroups)
-	{
-		m_meshInstanceGroups.push_back(meshInstanceGroup);
-	}
-}
-
-void SceneMeshes::ApplyMorphWeights(std::span<const SceneMorphWeightSnapshot> morphWeights)
-{
-	if (morphWeights.empty())
-	{
-		return;
-	}
-
-	SceneMorphWeightApplicator::Apply(morphWeights, m_meshes);
+	m_scene->m_world->AppendMeshInstanceGroups(std::move(groups));
 }
 
 bool SceneMeshes::SetMeshMaterial(SceneMeshInstanceIndex meshInstanceIndex, MaterialHandle materialHandle) noexcept
 {
-	if (meshInstanceIndex >= m_meshes.size() || !m_meshes[meshInstanceIndex])
-	{
-		return false;
-	}
-
-	m_meshes[meshInstanceIndex]->SetMaterialHandle(materialHandle);
-	return true;
+	return m_scene->m_world->WriteMeshMaterial(GetMeshEntity(meshInstanceIndex), materialHandle);
 }
 
-void SceneMeshes::Reset() noexcept
+MeshSnapshot SceneMeshes::CaptureSnapshot() const { return m_scene->m_world->CaptureMeshes(); }
+
+bool SceneMeshView::IsValid() const noexcept { return m_scene != nullptr && m_scene->m_world->IsAlive(m_entity); }
+
+const Mesh* SceneMeshView::GetMesh() const noexcept
 {
-	m_meshes.clear();
-	m_meshInstanceGroups.clear();
+	return IsValid() ? m_scene->m_world->ResolveMesh(m_entity) : nullptr;
 }
 
-MeshSnapshot SceneMeshes::CaptureSnapshot() const
+bool SceneMeshView::IsVisible() const noexcept { return IsValid() && m_scene->m_world->ReadVisibility(m_entity); }
+
+void SceneMeshView::SetVisible(bool visible) noexcept
 {
-	MeshSnapshot snapshot;
-	snapshot.meshInstances.reserve(m_meshes.size());
-	snapshot.meshInstanceGroups = m_meshInstanceGroups;
-	for (MeshInstanceGroupSnapshot& meshInstanceGroup : snapshot.meshInstanceGroups)
+	if (IsValid())
 	{
-		meshInstanceGroup.firstInstance = kInvalidSceneMeshInstanceIndex;
-		meshInstanceGroup.instanceCount = 0;
+		m_scene->m_world->WriteVisibility(m_entity, visible);
 	}
+}
 
-	for (const std::unique_ptr<MeshComponent>& mesh : m_meshes)
+bool SceneMeshView::IsSkeletal() const noexcept { return IsValid() && m_scene->m_world->IsSkeletalMesh(m_entity); }
+
+Transform SceneMeshView::GetTransform() const noexcept
+{
+	return IsValid() ? m_scene->m_world->ReadTransform(m_entity) : Transform{};
+}
+
+void SceneMeshView::SetTransform(const Transform& transform) noexcept
+{
+	if (IsValid())
 	{
-		if (!mesh || !mesh->IsVisible() || !mesh->HasMesh())
-		{
-			continue;
-		}
-
-		MeshInstanceSnapshot meshInstance = {};
-		meshInstance.mesh = mesh->GetMesh();
-		DirectX::XMStoreFloat4x4(&meshInstance.worldMatrix, mesh->GetWorldMatrix());
-		DirectX::XMStoreFloat3x4(&meshInstance.worldInvTranspose, mesh->GetWorldInverseTransposeMatrix());
-		meshInstance.materialHandle = mesh->GetMaterialHandle();
-		meshInstance.meshAssetId = mesh->GetMeshAssetId();
-		meshInstance.skeletonAssetId = mesh->GetSkeletonAssetId();
-		meshInstance.meshKind = mesh->GetMeshKind();
-		meshInstance.meshAssetIndex = mesh->GetMeshAssetIndex();
-		meshInstance.instanceGroupIndex = mesh->GetMeshInstanceGroupIndex();
-		if (meshInstance.instanceGroupIndex < snapshot.meshInstanceGroups.size())
-		{
-			MeshInstanceGroupSnapshot& meshInstanceGroup = snapshot.meshInstanceGroups[meshInstance.instanceGroupIndex];
-			if (meshInstanceGroup.instanceCount == 0)
-			{
-				meshInstanceGroup.firstInstance = static_cast<SceneMeshInstanceIndex>(snapshot.meshInstances.size());
-			}
-			++meshInstanceGroup.instanceCount;
-		}
-		snapshot.meshInstances.push_back(meshInstance);
+		m_scene->m_world->WriteTransform(m_entity, transform);
 	}
+}
 
-	return snapshot;
+MaterialHandle SceneMeshView::GetMaterialHandle() const noexcept
+{
+	return IsValid() ? m_scene->m_world->ReadMeshMaterial(m_entity) : MaterialHandle::Invalid();
+}
+
+void SceneMeshView::SetMaterialHandle(MaterialHandle material) noexcept
+{
+	if (IsValid())
+	{
+		m_scene->m_world->WriteMeshMaterial(m_entity, material);
+	}
+}
+
+Assets::CookedAssetId SceneMeshView::GetMeshAssetId() const noexcept
+{
+	return IsValid() ? m_scene->m_world->ReadMeshAssetId(m_entity) : Assets::InvalidCookedAssetId;
+}
+
+Assets::CookedAssetId SceneMeshView::GetSkeletonAssetId() const noexcept
+{
+	return IsValid() ? m_scene->m_world->ReadSkeletonAssetId(m_entity) : Assets::InvalidCookedAssetId;
+}
+
+std::uint32_t SceneMeshView::GetSourceNodeIndex() const noexcept
+{
+	return IsValid() ? m_scene->m_world->ReadMeshSourceNodeIndex(m_entity) : Assets::kInvalidCookedSceneSourceNodeIndex;
 }

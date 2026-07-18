@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
+#include "World/EntityId.h"
 
 enum class SceneObjectType : std::uint8_t
 {
@@ -15,14 +15,14 @@ enum class SceneObjectType : std::uint8_t
 struct SceneObjectSelection final
 {
 	SceneObjectType type = SceneObjectType::None;
-	std::size_t index = 0;
+	EntityId entity;
 
 	static SceneObjectSelection None() noexcept { return {}; }
-	static SceneObjectSelection Camera(std::size_t cameraIndex = 0) noexcept { return {SceneObjectType::Camera, cameraIndex}; }
-	static SceneObjectSelection Sky() noexcept { return {SceneObjectType::Sky, 0}; }
-	static SceneObjectSelection Light(std::size_t lightIndex) noexcept { return {SceneObjectType::Light, lightIndex}; }
-	static SceneObjectSelection Mesh(std::size_t meshIndex) noexcept { return {SceneObjectType::Mesh, meshIndex}; }
+	static SceneObjectSelection Camera(EntityId entity) noexcept { return {SceneObjectType::Camera, entity}; }
+	static SceneObjectSelection Sky() noexcept { return {SceneObjectType::Sky, EntityId::Invalid()}; }
+	static SceneObjectSelection Light(EntityId entity) noexcept { return {SceneObjectType::Light, entity}; }
+	static SceneObjectSelection Mesh(EntityId entity) noexcept { return {SceneObjectType::Mesh, entity}; }
 
 	bool IsNone() const noexcept { return type == SceneObjectType::None; }
-	bool operator==(const SceneObjectSelection& other) const noexcept { return type == other.type && index == other.index; }
+	bool operator==(const SceneObjectSelection& other) const noexcept { return type == other.type && entity == other.entity; }
 };

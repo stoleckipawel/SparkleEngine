@@ -20,6 +20,7 @@ namespace ECS
 		bool Destroy(EntityId entity);
 		bool IsAlive(EntityId entity) const noexcept;
 		bool Reserve(std::size_t entityCapacity);
+		bool Clear() noexcept;
 		std::size_t GetLiveCount() const noexcept { return m_liveCount; }
 		std::uint64_t GetStructureVersion() const noexcept { return m_structureVersion; }
 		bool IsStructureFrozen() const noexcept { return m_structureFrozen; }

@@ -6,7 +6,6 @@
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/Mesh.h"
-#include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/MeshData.h"
 #include "Scene/Meshes/SceneMeshes.h"
 #include "SceneData/Builders/MeshInstanceBatchBuilder.h"
@@ -26,13 +25,13 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 
 	for (std::size_t meshIndex = 0; meshIndex < sceneMeshes.GetMeshCount(); ++meshIndex)
 	{
-		const MeshComponent* meshComponent = sceneMeshes.GetMeshComponent(meshIndex);
-		if (meshComponent == nullptr)
+		const SceneMeshView meshInstance = sceneMeshes.GetMesh(meshIndex);
+		if (!meshInstance.IsValid())
 		{
 			continue;
 		}
 
-		const Mesh* mesh = meshComponent->GetMesh();
+		const Mesh* mesh = meshInstance.GetMesh();
 		if (mesh == nullptr)
 		{
 			continue;
@@ -53,18 +52,18 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		}
 
 		++row->InstanceCount;
-		if (meshComponent->IsVisible())
+		if (meshInstance.IsVisible())
 		{
 			++row->VisibleInstanceCount;
 		}
-		if (meshComponent->IsSkeletalMeshComponent())
+		if (meshInstance.IsSkeletal())
 		{
 			++row->SkinnedInstanceCount;
 			row->HasSkeletonBinding = true;
 			row->HasSkinInfluences = true;
 		}
 
-		const MaterialHandle materialHandle = meshComponent->GetMaterialHandle();
+		const MaterialHandle materialHandle = meshInstance.GetMaterialHandle();
 		if (!row->HasMaterial && materialHandle.IsValid())
 		{
 			row->HasMaterial = true;

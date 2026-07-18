@@ -8,8 +8,12 @@ class SceneMaterials;
 class SceneMaterialVariants;
 class SceneMeshes;
 class SceneSkeletons;
-class SceneAnimations;
 class SceneTextures;
+
+namespace ECS
+{
+	class SceneWorld;
+}
 
 class GameSceneAssetPayloadAppender final
 {
@@ -21,7 +25,7 @@ class GameSceneAssetPayloadAppender final
 	    SceneMaterialVariants& materialVariants,
 	    SceneMeshes& meshes,
 	    SceneSkeletons& skeletons,
-	    SceneAnimations& animations,
+	    ECS::SceneWorld& world,
 	    SceneTextures& textures) noexcept;
 
 	bool Append(SceneAssetPayload&& sceneAssetPayload);
@@ -33,6 +37,6 @@ class GameSceneAssetPayloadAppender final
 	SceneMaterialVariants& m_materialVariants;
 	SceneMeshes& m_meshes;
 	SceneSkeletons& m_skeletons;
-	SceneAnimations& m_animations;
+	ECS::SceneWorld& m_world;
 	SceneTextures& m_textures;
 };

@@ -1,7 +1,6 @@
 #include "ShowcaseSceneController.h"
 
 #include "Scene/GameScene.h"
-#include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/SceneMeshes.h"
 
 #include <DirectXMath.h>
@@ -112,16 +111,16 @@ void ShowcaseSceneController::RefreshAnimatedMeshes(GameScene& scene)
 	m_animatedMeshes.clear();
 	for (std::size_t meshIndex = 0; meshIndex < meshes.GetMeshCount(); ++meshIndex)
 	{
-		const MeshComponent* mesh = meshes.GetMeshComponent(meshIndex);
-		if (mesh == nullptr || !mesh->IsSkeletalMeshComponent())
+		const SceneMeshView mesh = meshes.GetMesh(meshIndex);
+		if (!mesh.IsValid() || !mesh.IsSkeletal())
 		{
 			continue;
 		}
 
 		m_animatedMeshes.push_back(
 		    AnimatedMesh{
-		        .MeshIndex = meshIndex,
-		        .BaseTransform = mesh->GetTransform(),
+		        .MeshEntity = mesh.GetEntity(),
+		        .BaseTransform = mesh.GetTransform(),
 		        .LaneIndex = m_animatedMeshes.size()});
 	}
 
@@ -141,8 +140,8 @@ void ShowcaseSceneController::ApplyMovement(GameScene& scene, float deltaSeconds
 	SceneMeshes& meshes = scene.GetMeshes();
 	for (const AnimatedMesh& animatedMesh : m_animatedMeshes)
 	{
-		MeshComponent* mesh = meshes.GetMeshComponent(animatedMesh.MeshIndex);
-		if (mesh == nullptr)
+		SceneMeshView mesh = meshes.GetMesh(animatedMesh.MeshEntity);
+		if (!mesh.IsValid())
 		{
 			continue;
 		}
@@ -154,6 +153,6 @@ void ShowcaseSceneController::ApplyMovement(GameScene& scene, float deltaSeconds
 		              m_motionTimeSeconds)
 		        : BuildOscillatingSceneAssetTransform(
 		              m_motionTimeSeconds * kSceneAssetOscillationSpeedRadiansPerSecond);
-		mesh->SetTransform(Transform(animatedMesh.BaseTransform.GetWorldMatrix() * motionTransform));
+		mesh.SetTransform(Transform(animatedMesh.BaseTransform.GetWorldMatrix() * motionTransform));
 	}
 }

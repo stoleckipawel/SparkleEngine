@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include "World/EntityId.h"
 
 class GameScene;
 struct PointLightDesc;
@@ -13,12 +14,12 @@ struct SpotLightDesc;
 class SceneLightInspector final
 {
   public:
-	static void Build(GameScene& gameScene, std::size_t lightIndex, const std::string& filterText) noexcept;
+	static void Build(GameScene& gameScene, EntityId lightEntity, const std::string& filterText) noexcept;
 
   private:
 	static void BuildGenericLight(
 	    GameScene& gameScene,
-	    std::size_t lightIndex,
+	    EntityId lightEntity,
 	    const SceneLightDesc& sceneLight,
 	    const std::string& filterText) noexcept;
 	static void BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept;

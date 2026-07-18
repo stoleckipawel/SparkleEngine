@@ -4,15 +4,15 @@
 #include "Assets/SceneAssetPayload.h"
 #include "Scene/Camera/SceneCameraEntry.h"
 #include "Scene/Camera/SceneCameras.h"
-#include "Scene/Animations/SceneAnimations.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Materials/SceneMaterials.h"
 #include "Scene/Materials/SceneMaterialVariantPayloadApplier.h"
 #include "Scene/Materials/SceneMaterialVariants.h"
-#include "Scene/Meshes/SceneAssetMeshComponentFactory.h"
+#include "Scene/Meshes/SceneAssetMeshInstanceBuilder.h"
 #include "Scene/Meshes/SceneMeshes.h"
 #include "Scene/Skeletons/SceneSkeletons.h"
 #include "Scene/Textures/SceneTextures.h"
+#include "World/SceneWorld.h"
 
 #include <memory>
 #include <utility>
@@ -24,7 +24,7 @@ GameSceneAssetPayloadAppender::GameSceneAssetPayloadAppender(
     SceneMaterialVariants& materialVariants,
     SceneMeshes& meshes,
     SceneSkeletons& skeletons,
-    SceneAnimations& animations,
+    ECS::SceneWorld& world,
     SceneTextures& textures) noexcept :
     m_cameras(cameras),
     m_lighting(lighting),
@@ -32,7 +32,7 @@ GameSceneAssetPayloadAppender::GameSceneAssetPayloadAppender(
     m_materialVariants(materialVariants),
     m_meshes(meshes),
     m_skeletons(skeletons),
-    m_animations(animations),
+	m_world(world),
     m_textures(textures)
 {
 }
@@ -52,7 +52,7 @@ bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload
 
 	if (!sceneAssetPayload.animations.empty())
 	{
-		m_animations.AppendClips(std::move(sceneAssetPayload.animations));
+		m_world.AppendAnimationClips(std::move(sceneAssetPayload.animations));
 	}
 
 	if (!sceneAssetPayload.materials.empty())
@@ -66,20 +66,26 @@ bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload
 	const auto sceneMeshBaseIndex = static_cast<SceneMeshInstanceIndex>(m_meshes.GetMeshCount());
 	const auto sceneGroupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(m_meshes.GetMeshInstanceGroupCount());
 
-	std::vector<std::unique_ptr<MeshComponent>> meshComponents;
-	if (!SceneAssetMeshComponentFactory::BuildMeshComponents(
+	std::vector<ECS::SceneMeshInstanceData> meshInstances;
+	if (!SceneAssetMeshInstanceBuilder::BuildInstances(
 	        sceneAssetPayload,
 	        m_materials,
 	        materialBaseHandle,
 	        sceneGroupBaseIndex,
-	        meshComponents))
+	        meshInstances))
 	{
 		return false;
 	}
 
-	m_meshes.AppendMeshComponents(std::move(meshComponents));
+	for (ECS::SceneMeshInstanceData& meshInstance : meshInstances)
+	{
+		if (!m_meshes.AppendMesh(std::move(meshInstance)))
+		{
+			return false;
+		}
+	}
 	m_meshes.AppendMeshInstanceGroups(
-	    SceneAssetMeshComponentFactory::BuildMeshInstanceGroups(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex));
+	    SceneAssetMeshInstanceBuilder::BuildGroups(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex));
 	m_materialVariants.AppendVariants(
 	    SceneMaterialVariantPayloadApplier::BuildVariantDescs(sceneAssetPayload),
 	    SceneMaterialVariantPayloadApplier::BuildVariantBindings(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex));
@@ -89,7 +95,7 @@ bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload
 		SceneCameraEntry sceneCamera;
 		sceneCamera.name = std::move(camera.name);
 		sceneCamera.desc = camera.desc;
-		m_cameras.AppendCamera(std::move(sceneCamera));
+		m_cameras.AddCamera(std::move(sceneCamera));
 	}
 
 	for (SceneLightDesc& light : sceneAssetPayload.lights)

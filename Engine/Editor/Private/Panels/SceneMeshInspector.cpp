@@ -5,43 +5,36 @@
 #include "Scene/GameScene.h"
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/Mesh.h"
-#include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/SceneMeshes.h"
 #include "Scene/Transform.h"
 #include "Util/UiUtil.h"
 
 #include <cstdio>
 
-void SceneMeshInspector::Build(GameScene& gameScene, std::size_t meshIndex, const std::string& filterText) noexcept
+void SceneMeshInspector::Build(GameScene& gameScene, EntityId meshEntity, const std::string& filterText) noexcept
 {
-	if (meshIndex >= gameScene.GetMeshes().GetMeshCount())
+	SceneMeshView meshInstance = gameScene.GetMeshes().GetMesh(meshEntity);
+	if (!meshInstance.IsValid())
 	{
 		UiUtil::DrawDetailsEmptyState();
 		return;
 	}
 
-	MeshComponent* meshComponent = gameScene.GetMeshes().GetMeshComponent(meshIndex);
-	if (meshComponent == nullptr)
-	{
-		UiUtil::DrawDetailsEmptyState();
-		return;
-	}
-
-	Mesh* mesh = meshComponent->GetMesh();
+	const Mesh* mesh = meshInstance.GetMesh();
 	if (mesh == nullptr)
 	{
 		UiUtil::DrawDetailsEmptyState();
 		return;
 	}
 
-	BuildTransformCategory(filterText, *meshComponent);
-	BuildStaticMeshCategory(filterText, *mesh, *meshComponent);
+	BuildTransformCategory(filterText, meshInstance);
+	BuildStaticMeshCategory(filterText, *mesh, meshInstance);
 	BuildStaticMeshAdvancedCategory(filterText, *mesh);
-	BuildAdvancedParametersCategory(filterText, *meshComponent);
-	BuildMaterialsCategory(filterText, *meshComponent);
+	BuildAdvancedParametersCategory(filterText, meshInstance);
+	BuildMaterialsCategory(filterText, meshInstance);
 }
 
-void SceneMeshInspector::BuildTransformCategory(const std::string& filterText, MeshComponent& meshComponent) noexcept
+void SceneMeshInspector::BuildTransformCategory(const std::string& filterText, SceneMeshView& mesh) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Transform", "location rotation scale transform"))
 	{
@@ -53,13 +46,15 @@ void SceneMeshInspector::BuildTransformCategory(const std::string& filterText, M
 		return;
 	}
 
-	Transform& transform = meshComponent.GetTransform();
+	Transform transform = mesh.GetTransform();
+	bool changed = false;
 	DirectX::XMFLOAT3 translation = transform.GetTranslation();
 	float translationValues[3] = {translation.x, translation.y, translation.z};
 	const float defaultTranslation[3] = {0.0f, 0.0f, 0.0f};
 	if (UiUtil::EditDetailsFloat3("Location", translationValues, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f", defaultTranslation))
 	{
 		transform.SetTranslation({translationValues[0], translationValues[1], translationValues[2]});
+		changed = true;
 	}
 
 	DirectX::XMFLOAT3 rotationEuler = transform.GetRotationEuler();
@@ -69,6 +64,7 @@ void SceneMeshInspector::BuildTransformCategory(const std::string& filterText, M
 	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f", defaultRotation))
 	{
 		transform.SetRotationEuler(MathUtils::DegreesToRadians(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]}));
+		changed = true;
 	}
 
 	DirectX::XMFLOAT3 scale = transform.GetScale();
@@ -77,12 +73,17 @@ void SceneMeshInspector::BuildTransformCategory(const std::string& filterText, M
 	if (UiUtil::EditDetailsFloat3("Scale", scaleValues, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f", defaultScale))
 	{
 		transform.SetScale({scaleValues[0], scaleValues[1], scaleValues[2]});
+		changed = true;
+	}
+	if (changed)
+	{
+		mesh.SetTransform(transform);
 	}
 
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneMeshInspector::BuildStaticMeshCategory(const std::string& filterText, const Mesh& mesh, MeshComponent& meshComponent) noexcept
+void SceneMeshInspector::BuildStaticMeshCategory(const std::string& filterText, const Mesh& mesh, SceneMeshView& instance) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Static Mesh", "type mesh asset rendering"))
 	{
@@ -125,7 +126,7 @@ void SceneMeshInspector::BuildStaticMeshAdvancedCategory(const std::string& filt
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneMeshInspector::BuildAdvancedParametersCategory(const std::string& filterText, MeshComponent& meshComponent) noexcept
+void SceneMeshInspector::BuildAdvancedParametersCategory(const std::string& filterText, SceneMeshView& mesh) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Advanced", "visible visibility hidden"))
 	{
@@ -138,16 +139,16 @@ void SceneMeshInspector::BuildAdvancedParametersCategory(const std::string& filt
 	}
 
 	constexpr bool kDefaultVisible = true;
-	bool visible = meshComponent.IsVisible();
+	bool visible = mesh.IsVisible();
 	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
 	{
-		meshComponent.SetVisible(visible);
+		mesh.SetVisible(visible);
 	}
 
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneMeshInspector::BuildMaterialsCategory(const std::string& filterText, const MeshComponent& meshComponent) noexcept
+void SceneMeshInspector::BuildMaterialsCategory(const std::string& filterText, const SceneMeshView& mesh) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Materials", "element material slot surface"))
 	{
@@ -160,7 +161,7 @@ void SceneMeshInspector::BuildMaterialsCategory(const std::string& filterText, c
 	}
 
 	char buffer[64] = {};
-	const MaterialHandle materialHandle = meshComponent.GetMaterialHandle();
+	const MaterialHandle materialHandle = mesh.GetMaterialHandle();
 	std::snprintf(buffer, sizeof(buffer), "Material %u", materialHandle.IsValid() ? materialHandle.GetIndex() : 0u);
 	UiUtil::DrawDetailsAssetRow("Element 0", UiUtil::EditorIcon::Material, buffer, "Material slot");
 	UiUtil::EndDetailsCategory();

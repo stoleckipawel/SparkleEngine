@@ -2,7 +2,7 @@
 #include "Scene/Camera/GameCameraController.h"
 #include "Input/InputSystem.h"
 #include "Scene/GameScene.h"
-#include "Scene/Camera/SceneCamera.h"
+#include "Scene/Camera/SceneCameraView.h"
 #include "Window/Window.h"
 #include "Events/ScopedEventHandle.h"
 #include "Input/Keyboard/Key.h"
@@ -14,6 +14,8 @@
 #include "Core/Public/Time/Timer.h"
 
 #include <DirectXMath.h>
+
+#include <cmath>
 
 GameCameraController::GameCameraController(Timer& timer, InputSystem& inputSystem, Window& window) noexcept :
     m_timer(timer), m_inputSystem(inputSystem), m_window(window)
@@ -84,7 +86,8 @@ GameCameraController::~GameCameraController() noexcept
 
 void GameCameraController::OnSceneReset(GameScene& scene)
 {
-	m_camera = nullptr;
+	m_scene = nullptr;
+	m_cameraEntity = {};
 	ResetMovementIntent();
 }
 
@@ -106,49 +109,66 @@ void GameCameraController::Update(GameScene& scene, const GameSceneUpdateContext
 	}
 
 	RefreshActiveCamera(scene);
-	if (m_camera == nullptr)
-	{
-		return;
-	}
-
 	const float deltaTime = static_cast<float>(m_timer.GetDelta(TimeDomain::Scaled));
-	CameraComponent& cameraComponent = m_camera->GetCameraComponent();
-	const CameraMovementSettings& settings = m_camera->GetSettings();
-
 	if (deltaTime <= 0.0f)
 	{
 		return;
 	}
+	ApplyMovement(deltaTime);
+}
 
+void GameCameraController::ApplyMovement(float deltaTime) noexcept
+{
+	SceneCameraView camera = ResolveCamera();
+	if (!camera.IsValid())
+	{
+		return;
+	}
+
+	const CameraMovementSettings settings = camera.GetMovementSettings();
 	const float speed = settings.moveSpeed * (m_sprintHeld ? settings.sprintMultiplier : 1.0f);
 	const float distance = speed * deltaTime;
 	const float forwardAxis = (m_forwardHeld ? 1.0f : 0.0f) - (m_backwardHeld ? 1.0f : 0.0f);
 	const float rightAxis = (m_rightHeld ? 1.0f : 0.0f) - (m_leftHeld ? 1.0f : 0.0f);
 	const float upAxis = (m_upHeld ? 1.0f : 0.0f) - (m_downHeld ? 1.0f : 0.0f);
+	if (forwardAxis == 0.0f && rightAxis == 0.0f && upAxis == 0.0f)
+	{
+		return;
+	}
 
-	if (forwardAxis != 0.0f)
-	{
-		cameraComponent.MoveForward(distance * forwardAxis);
-	}
-	if (rightAxis != 0.0f)
-	{
-		cameraComponent.MoveRight(distance * rightAxis);
-	}
-	if (upAxis != 0.0f)
-	{
-		cameraComponent.MoveUp(distance * upAxis);
-	}
+	Transform transform = camera.GetTransform();
+	const DirectX::XMFLOAT3 rotation = transform.GetRotationEuler();
+	const float sinYaw = std::sin(rotation.y);
+	const float cosYaw = std::cos(rotation.y);
+	const float cosPitch = std::cos(rotation.x);
+	const float sinPitch = std::sin(rotation.x);
+	transform.TranslateScaled({sinYaw * cosPitch, -sinPitch, cosYaw * cosPitch}, distance * forwardAxis);
+	transform.TranslateScaled({cosYaw, 0.0f, -sinYaw}, distance * rightAxis);
+	transform.TranslateScaled({0.0f, 1.0f, 0.0f}, distance * upAxis);
+	camera.SetTransform(transform);
 }
 
 void GameCameraController::RefreshActiveCamera(GameScene& scene) noexcept
 {
-	m_camera = &scene.GetCameras().GetActiveCamera();
+	const EntityId activeCamera = scene.GetCameras().GetActiveCamera().GetEntity();
+	if (m_scene == &scene && m_cameraEntity == activeCamera)
+	{
+		return;
+	}
+	m_scene = &scene;
+	m_cameraEntity = activeCamera;
 	ApplyAspectRatio();
+}
+
+SceneCameraView GameCameraController::ResolveCamera() const noexcept
+{
+	return m_scene != nullptr ? m_scene->GetCameras().GetCamera(m_cameraEntity) : SceneCameraView{};
 }
 
 void GameCameraController::ApplyAspectRatio() noexcept
 {
-	if (m_camera == nullptr)
+	SceneCameraView camera = ResolveCamera();
+	if (!camera.IsValid())
 	{
 		return;
 	}
@@ -157,7 +177,7 @@ void GameCameraController::ApplyAspectRatio() noexcept
 	const float height = static_cast<float>(m_window.GetHeight());
 	if (width > 0.0f && height > 0.0f)
 	{
-		m_camera->GetCameraComponent().SetAspectRatio(width / height);
+		camera.SetAspectRatio(width / height);
 	}
 }
 
@@ -231,18 +251,21 @@ void GameCameraController::OnMouseMove(const MouseMoveEvent& event) noexcept
 	{
 		return;
 	}
-	if (m_camera == nullptr)
+	SceneCameraView camera = ResolveCamera();
+	if (!camera.IsValid())
 	{
 		return;
 	}
 
-	CameraComponent& cameraComponent = m_camera->GetCameraComponent();
-	const CameraMovementSettings& settings = m_camera->GetSettings();
-	const DirectX::XMFLOAT3 rotationEuler = cameraComponent.GetTransform().GetRotationEuler();
+	const CameraMovementSettings settings = camera.GetMovementSettings();
+	Transform transform = camera.GetTransform();
+	const DirectX::XMFLOAT3 rotationEuler = transform.GetRotationEuler();
 	const float ySign = settings.invertY ? 1.0f : -1.0f;
 	const float yawDelta = static_cast<float>(event.Delta.X) * settings.mouseSensitivity;
 	const float pitchDelta = ySign * static_cast<float>(event.Delta.Y) * settings.mouseSensitivity;
-	cameraComponent.SetYawPitch(rotationEuler.y + yawDelta, rotationEuler.x + pitchDelta);
+	constexpr float MaxPitch = DirectX::XM_PIDIV2 - 0.01f;
+	transform.SetYawPitch(rotationEuler.y + yawDelta, rotationEuler.x + pitchDelta, -MaxPitch, MaxPitch);
+	camera.SetTransform(transform);
 	m_inputSystem.CenterCursor(m_window.GetHWND());
 }
 
@@ -257,14 +280,15 @@ void GameCameraController::OnMouseWheel(const MouseWheelEvent& event) noexcept
 	{
 		return;
 	}
-	if (m_camera == nullptr)
+	SceneCameraView camera = ResolveCamera();
+	if (!camera.IsValid())
 	{
 		return;
 	}
 
-	CameraMovementSettings settings = m_camera->GetSettings();
+	CameraMovementSettings settings = camera.GetMovementSettings();
 	settings.moveSpeed += event.Delta * settings.speedStep;
-	m_camera->SetSettings(settings);
+	camera.SetMovementSettings(settings);
 }
 
 void GameCameraController::ResetMovementIntent() noexcept

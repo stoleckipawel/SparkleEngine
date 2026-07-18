@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <string>
+#include <optional>
 
 #include <imgui.h>
 
@@ -34,25 +35,25 @@ std::string SceneInspectorPanel::BuildSelectionTitle() const
 	switch (m_selection->type)
 	{
 		case SceneObjectType::Camera:
-			if (m_gameScene != nullptr && m_selection->index < m_gameScene->GetCameras().GetCameraCount())
+			if (m_gameScene != nullptr)
 			{
-				const std::string& name = m_gameScene->GetCameras().GetCameraEntries()[m_selection->index].name;
-				return name.empty() ? "Camera " + std::to_string(m_selection->index + 1) : name;
+				const SceneCameraEntry camera = m_gameScene->GetCameras().GetCameraEntryByEntity(m_selection->entity);
+				return camera.name.empty() ? "Camera" : camera.name;
 			}
 			return "Scene Camera";
 		case SceneObjectType::Light:
 			if (m_gameScene != nullptr)
 			{
-				if (const SceneLightDesc* light = m_gameScene->GetLighting().GetLight(m_selection->index))
+				if (const std::optional<SceneLightDesc> light = m_gameScene->GetLighting().GetLight(m_selection->entity))
 				{
-					return SceneObjectPresentation::BuildLightLabel(*light, m_selection->index);
+					return SceneObjectPresentation::BuildLightLabel(*light, m_selection->entity.GetSlot());
 				}
 			}
-			return "Light " + std::to_string(m_selection->index + 1);
+			return "Light";
 		case SceneObjectType::Sky:
 			return "Sky";
 		case SceneObjectType::Mesh:
-			return "Mesh " + std::to_string(m_selection->index + 1);
+			return "Mesh " + std::to_string(m_selection->entity.GetSlot() + 1u);
 		case SceneObjectType::None:
 		default:
 			return "No Selection";
@@ -73,7 +74,7 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 		case SceneObjectType::Light:
 			if (m_gameScene != nullptr)
 			{
-				if (const SceneLightDesc* light = m_gameScene->GetLighting().GetLight(m_selection->index))
+				if (const std::optional<SceneLightDesc> light = m_gameScene->GetLighting().GetLight(m_selection->entity))
 				{
 					return SceneObjectPresentation::GetLightTypeLabel(light->GetKind());
 				}
@@ -165,13 +166,13 @@ void SceneInspectorPanel::BuildSelectionInspector() noexcept
 			SceneCameraInspector::Build(*m_gameScene, m_filterText);
 			break;
 		case SceneObjectType::Light:
-			SceneLightInspector::Build(*m_gameScene, m_selection->index, m_filterText);
+			SceneLightInspector::Build(*m_gameScene, m_selection->entity, m_filterText);
 			break;
 		case SceneObjectType::Sky:
 			SceneSkyInspector::Build(*m_gameScene, m_filterText);
 			break;
 		case SceneObjectType::Mesh:
-			SceneMeshInspector::Build(*m_gameScene, m_selection->index, m_filterText);
+			SceneMeshInspector::Build(*m_gameScene, m_selection->entity, m_filterText);
 			break;
 		case SceneObjectType::None:
 		default:

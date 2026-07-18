@@ -2,6 +2,7 @@
 
 #include "Scene/GameSceneController.h"
 #include "Scene/Transform.h"
+#include "World/EntityId.h"
 
 #include <cstddef>
 #include <vector>
@@ -18,7 +19,7 @@ class ShowcaseSceneController final : public GameSceneController
   private:
 	struct AnimatedMesh final
 	{
-		std::size_t MeshIndex = 0;
+		EntityId MeshEntity;
 		Transform BaseTransform;
 		std::size_t LaneIndex = 0;
 	};

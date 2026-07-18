@@ -3,7 +3,6 @@
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Level/LevelDesc.h"
 #include "GameFramework/Public/Scene/Camera/SceneCameras.h"
-#include "GameFramework/Public/Scene/Animations/SceneAnimations.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLighting.h"
 #include "GameFramework/Public/Scene/Materials/SceneMaterials.h"
 #include "GameFramework/Public/Scene/Materials/SceneMaterialVariants.h"
@@ -13,6 +12,7 @@
 #include "GameFramework/Public/Scene/Sky/SceneSky.h"
 #include "GameFramework/Public/Scene/GameSceneSnapshot.h"
 #include "GameFramework/Public/Scene/Textures/SceneTextures.h"
+#include "GameFramework/Public/World/EntityId.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -20,6 +20,11 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+namespace ECS
+{
+	class SceneWorld;
+}
 
 class LevelAsset;
 struct SceneAssetPayload;
@@ -65,6 +70,8 @@ class SPARKLE_ENGINE_API GameScene final
 	void RegisterController(std::unique_ptr<GameSceneController>&& controller);
 
 	void Clear();
+	bool IsEntityAlive(EntityId entity) const noexcept;
+	bool DestroyEntity(EntityId entity) noexcept;
 
 	SceneMaterials& GetMaterials() noexcept { return m_materials; }
 	const SceneMaterials& GetMaterials() const noexcept { return m_materials; }
@@ -76,12 +83,15 @@ class SPARKLE_ENGINE_API GameScene final
 	const SceneTextures& GetTextures() const noexcept { return m_textures; }
 	SceneSkeletons& GetSkeletons() noexcept { return m_skeletons; }
 	const SceneSkeletons& GetSkeletons() const noexcept { return m_skeletons; }
-	SceneAnimations& GetAnimations() noexcept { return m_animations; }
-	const SceneAnimations& GetAnimations() const noexcept { return m_animations; }
-
   private:
+	friend class SceneCameraView;
+	friend class SceneCameras;
+	friend class SceneLighting;
+	friend class SceneMeshes;
+	friend class SceneMeshView;
+
+	std::unique_ptr<ECS::SceneWorld> m_world;
 	SceneCameras m_cameras;
-	SceneAnimations m_animations;
 	SceneLighting m_lighting;
 	SceneMaterials m_materials;
 	SceneMaterialVariants m_materialVariants;

@@ -1,10 +1,8 @@
 #include "PCH.h"
 #include "Scene/SceneObjectActions.h"
 
-#include "Scene/Camera/CameraComponent.h"
 #include "Scene/GameScene.h"
 #include "Scene/Lighting/SceneLighting.h"
-#include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/SceneMeshes.h"
 
 namespace SceneObjectActions
@@ -14,13 +12,13 @@ namespace SceneObjectActions
 		switch (selection.type)
 		{
 			case SceneObjectType::Camera:
-				return selection.index < gameScene.GetCameras().GetCameraCount();
+				return gameScene.IsEntityAlive(selection.entity) && gameScene.GetCameras().IsCamera(selection.entity);
 			case SceneObjectType::Sky:
-				return selection.index == 0;
+				return true;
 			case SceneObjectType::Light:
-				return selection.index < gameScene.GetLighting().GetLightCount();
+				return gameScene.IsEntityAlive(selection.entity) && gameScene.GetLighting().GetLight(selection.entity).has_value();
 			case SceneObjectType::Mesh:
-				return selection.index < gameScene.GetMeshes().GetMeshCount();
+				return gameScene.IsEntityAlive(selection.entity) && gameScene.GetMeshes().GetMesh(selection.entity).IsValid();
 			case SceneObjectType::None:
 			default:
 				return false;
@@ -32,24 +30,16 @@ namespace SceneObjectActions
 		switch (selection.type)
 		{
 			case SceneObjectType::Camera:
-				return gameScene.GetCameras().GetActiveCamera().GetCameraComponent().IsVisible();
+				return gameScene.GetCameras().GetCamera(selection.entity).IsVisible();
 			case SceneObjectType::Sky:
 			{
 				const SceneSkyDesc* sky = gameScene.GetSky().GetSky();
 				return sky == nullptr || sky->enabled;
 			}
 			case SceneObjectType::Light:
-				return gameScene.GetLighting().IsLightVisible(selection.index);
+				return gameScene.GetLighting().IsLightVisible(selection.entity);
 			case SceneObjectType::Mesh:
-				if (selection.index >= gameScene.GetMeshes().GetMeshCount())
-				{
-					return true;
-				}
-				if (const MeshComponent* meshComponent = gameScene.GetMeshes().GetMeshComponent(selection.index))
-				{
-					return meshComponent->IsVisible();
-				}
-				return true;
+				return gameScene.GetMeshes().GetMesh(selection.entity).IsVisible();
 			case SceneObjectType::None:
 			default:
 				return true;
@@ -62,11 +52,7 @@ namespace SceneObjectActions
 		{
 			case SceneObjectType::Camera:
 			{
-				if (!gameScene.GetCameras().ApplyCamera(selection.index))
-				{
-					break;
-				}
-				CameraComponent& camera = gameScene.GetCameras().GetActiveCamera().GetCameraComponent();
+				SceneCameraView camera = gameScene.GetCameras().GetCamera(selection.entity);
 				camera.SetVisible(!camera.IsVisible());
 				break;
 			}
@@ -78,15 +64,12 @@ namespace SceneObjectActions
 				break;
 			}
 			case SceneObjectType::Light:
-				gameScene.GetLighting().SetLightVisible(selection.index, !gameScene.GetLighting().IsLightVisible(selection.index));
+				gameScene.GetLighting().SetLightVisible(selection.entity, !gameScene.GetLighting().IsLightVisible(selection.entity));
 				break;
 			case SceneObjectType::Mesh:
-				if (selection.index < gameScene.GetMeshes().GetMeshCount())
+				if (SceneMeshView mesh = gameScene.GetMeshes().GetMesh(selection.entity); mesh.IsValid())
 				{
-					if (MeshComponent* meshComponent = gameScene.GetMeshes().GetMeshComponent(selection.index))
-					{
-						meshComponent->SetVisible(!meshComponent->IsVisible());
-					}
+					mesh.SetVisible(!mesh.IsVisible());
 				}
 				break;
 			case SceneObjectType::None:
@@ -99,7 +82,7 @@ namespace SceneObjectActions
 	{
 		if (selection.type == SceneObjectType::Camera)
 		{
-			gameScene.GetCameras().ApplyCamera(selection.index);
+			gameScene.GetCameras().SetActiveCamera(selection.entity);
 		}
 	}
 }  // namespace SceneObjectActions
