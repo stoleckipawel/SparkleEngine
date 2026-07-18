@@ -112,6 +112,17 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
+        if((_relative_path MATCHES "^Engine/(Renderer|Editor)/" OR
+            _relative_path MATCHES "^Engine/GameFramework/Public/") AND
+           _line MATCHES "#include[^\n]*(World/ECS|GameFramework/Private/World)")
+            sparkle_boundary_append_failure(
+                "ECS_STORAGE_REMAINS_GAMEFRAMEWORK_PRIVATE"
+                "${_relative_path}"
+                "${_line_number}"
+                "Renderer, Editor, and GameFramework public contracts may consume stable world capabilities, never private ECS storage."
+                "${_line}")
+        endif()
+
         if(_relative_path MATCHES "^Engine/Renderer/" AND
            NOT _relative_path MATCHES "${SPARKLE_BOUNDARY_RENDERER_VENDOR_INTEROP_REGEX}" AND
            _line MATCHES "ERhiBackendApi::(D3D12|Vulkan)")
@@ -199,6 +210,8 @@ sparkle_boundary_collect_source_files(
     SPARKLE_BOUNDARY_SOURCE_FILES
     "Engine/RHI"
     "Engine/Renderer"
+    "Engine/Editor"
+    "Engine/GameFramework/Public"
     "Tools/Shaders/ShaderCompiler")
 
 foreach(_file IN LISTS SPARKLE_BOUNDARY_SOURCE_FILES)
