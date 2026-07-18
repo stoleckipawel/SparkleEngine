@@ -2215,22 +2215,88 @@ struct RenderWorldDelta
 };
 ~~~
 
-RenderFrameDynamicData contains current frame values:
+RenderFrameDynamicData contains current frame values. The following named streams are the design contract; exact column grouping remains evidence-driven:
 
 ~~~cpp
+struct TransformStream
+{
+    Span<RenderObjectId> objects;
+    Span<Matrix3x4> current;
+    Span<Matrix3x4> previous;
+};
+
+struct BoundsStream
+{
+    Span<RenderObjectId> objects;
+    Span<Bounds> bounds;
+    Span<VisibilityBits> visibility;
+};
+
+struct SkinningStream
+{
+    Span<SkinningRange> instances; // object + matrix offset/count
+    Span<Matrix3x4> jointMatrices;
+};
+
+struct MorphStream
+{
+    Span<MorphRange> instances; // object + weight offset/count
+    Span<float> weights;
+};
+
 struct RenderFrameDynamicData
 {
     FrameId frame;
     CameraPacket camera;
-    SoA<RenderObjectId, Matrix3x4, Matrix3x4> currentAndPreviousTransforms;
-    SoA<RenderObjectId, Bounds> bounds;
-    Span<SkinningPalettePacket> skinning;
-    Span<MorphWeightPacket> morphWeights;
+    TransformStream transforms;
+    BoundsStream bounds;
+    SkinningStream skinning;
+    MorphStream morph;
     Span<DynamicLightPacket> lights;
 };
 ~~~
 
 The concrete SoA layout should follow measured access patterns. The design point is stable IDs and dense, immutable dynamic arrays, not one copied polymorphic object graph.
+
+### Binding DOD Contract for the Two Streams
+
+The two-stream boundary is a data-oriented transform, not merely a thread-safe DTO layer. Richard Fabian's *Data-Oriented Design* starts from the type, frequency, quantity, shape, probability, producer, consumer, and transformation of real data. Sparkle applies that discipline explicitly:
+
+| Question | `RenderWorldDelta` | `RenderFrameDynamicData` | Persistent `RenderWorld` / GPU scene |
+|---|---|---|---|
+| Frequency | only committed create/destroy/static/resource changes | once per accepted frame for values actually consumed that frame | retained across frames; updated only by accepted delta/dynamic dirty ranges |
+| Shape | bounded operation batches; AoS records are valid when each operation consumes all fields | dense columns or cohesive AoS/AoSoA blocks chosen per pass access; no object graph | stable-slot tables, free lists/generations, dirty bitsets/ranges, packed GPU-facing tables |
+| Identity | `RenderObjectId` plus scene/sequence generation | dense row-to-`RenderObjectId` mapping; row order is not durable identity | stable render slot/generation mapped explicitly from `RenderObjectId` |
+| Ownership | packet-slot arena, immutable after publication | packet-slot arena, immutable after publication | render coordinator owns mutation and GPU lifetime |
+| Consumer | delta apply, residency, proxy/static-table maintenance | view/culling/motion/skinning/light preparation | render preparation, raster/RT instance building, upload/retirement |
+| Failure policy | reject gap/stale/duplicate sequence or request full resync | reject wrong scene/frame generation; never partially publish | retain last accepted generation; token-retire replaced storage |
+
+Binding rules:
+
+- GameFramework ECS is the authoritative mutable world-instance source. `RenderWorld` is a deliberately derived, versioned, render-owned projection—not a second gameplay authority. No renderer change flows backward into ECS storage.
+- Extraction is an explicit bulk transform over a frozen world epoch. It reads only declared component/resource columns, writes packet-owned non-overlapping ranges, and publishes after deterministic fan-in. It never calls per-entity virtual render functions or chases renderer-owned pointers.
+- Split data by consumer and frequency before splitting by C++ type. Camera/view constants, transforms, previous transforms, bounds, visibility, skinning offsets, flat joint matrices, morph offsets/weights, and light data are separate only when their passes use them differently. Cohesive fields that are always read together stay together.
+- Variable-length data uses offsets/counts into flat packet arrays. A packet row must not contain an owning vector, allocator, callback, mutex, service, or pointer into GameFramework storage.
+- `RenderWorldDelta` is not forced into SoA. Structural operations are relatively cold and normally consume a whole record; compact typed AoS batches can be the better layout. Measure before columnizing them.
+- `RenderFrameDynamicData` is not a generic `SoA<T...>` abstraction chosen for appearance. Each named stream documents producer, consumers, cardinality, update frequency, stable key, layout, alignment, and serial/parallel partition unit.
+- Renderer application resolves IDs once into stable render slots, then hot renderer loops operate on packed render-owned slot/range data. Repeated hash lookup, sparse ECS join, asset pointer traversal, and per-object polymorphism are forbidden in frame-hot preparation.
+- Static mesh/material/skeleton/texture payloads cross as immutable versioned handles and residency commands, never repeated per-frame copies. Dynamic instance values cross separately.
+- Dirty tracking exists at the narrowest useful granularity: structural operation, component column, render slot, contiguous range, or GPU page. A single transform change must not rebuild scene-wide arrays or upload unrelated materials/lights.
+- Previous-frame/temporal data has one owner and explicit rollover. Do not duplicate current/previous transforms independently in GameFramework, packet construction, RenderWorld, and GPU buffers without a named need and generation rule.
+- Sorting, bucketing, compaction, and deduplication use stable keys and task-local outputs followed by deterministic merge. Task completion order never defines render row, draw, light, or upload order.
+- DOD success is measured against the replaced path: bytes read/written, allocation count, packet bytes, extraction/apply time, cache misses, bandwidth, branch behavior, dirty/upload bytes, and serial/parallel crossover. “Uses ECS/SoA” is not evidence.
+
+The source boundary is deliberately honest:
+
+| Source precedent | What Sparkle adopts | What Sparkle does **not** claim |
+|---|---|---|
+| Richard Fabian, *Data-Oriented Design* | design from real data shape/frequency/access and transforms; normalize hot/cold relationships; avoid generic abstraction that obscures the actual stream | that every field must be SoA or every object model must become one universal ECS |
+| Epic MassEntity | data-only fragments, query batches, transient views, chunk-aware iteration, deferred composition changes | that Sparkle already needs Mass-scale archetype/chunk storage |
+| Epic game/render proxy model | game-owned source and renderer-owned mirror/proxy, explicit dirty propagation, no game-object dereference on render work | that Unreal's class hierarchy or exact proxy API is Sparkle's packet schema |
+| NVIDIA Donut `Scene` | persistent material/geometry/instance GPU buffers and distinct structure/transform dirty state | that Donut supplies a general GameFramework ECS or Sparkle's two-stream API |
+| AMD Cauldron/Detroit/RDNA guidance | separate API-independent scene transforms from GPU textures/buffers/passes; indexed resource arrays; split vertex streams by pass access; stable ordered batching | that AMD publishes a general game-world ECS matching Sparkle's design |
+
+The inspected NVIDIA and AMD renderer repositories support persistent renderer tables, access-specific streams, indexed resources, and batching, but they do not establish a general game-world ECS. Epic MassEntity and Fabian are the binding references for GameFramework DOD; Epic's proxy model plus the NVIDIA/AMD renderer sources are the binding references for the extraction and renderer side. Where none of those sources supports a proposed abstraction, the plan must stop and request a product/evidence decision rather than inventing it for portfolio value.
 
 ### Frame Packet
 
@@ -5127,6 +5193,7 @@ The following links are the direct source/documentation trail used for the archi
 
 - [Donut ThreadPool interface at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/include/donut/engine/ThreadPool.h)
 - [Donut ThreadPool implementation at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/src/engine/ThreadPool.cpp)
+- [Donut persistent scene material/geometry/instance buffers and dirty-state interface at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/include/donut/engine/Scene.h)
 - [nvpro_core `parallel_batches`/`parallel_ranges` vocabulary at bc19d6a](https://github.com/nvpro-samples/nvpro_core/blob/bc19d6ac3ef62938d0ea0e099735878457ce1b6e/nvh/parallel_work.hpp)
 - [NVRHI Programming Guide at 8e8c36e](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md)
 - [NVRHI `ICommandList`, `CommandQueue`, execution, wait, and lifetime-tracker vocabulary at 8e8c36e](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/include/nvrhi/nvrhi.h)
@@ -5153,6 +5220,8 @@ The following links are the direct source/documentation trail used for the archi
 - [AMD Ryzen CPU Performance Guide](https://gpuopen.com/learn/ryzen-performance/)
 - [AMD CPU Core Count Detection on Windows](https://gpuopen.com/learn/cpu-core-count-detection-windows/)
 - [AMD RDNA Performance Guide](https://gpuopen.com/learn/rdna-performance-guide/)
+- [AMD Radeon Cauldron scene/data/backend separation](https://gpuopen.com/radeon-cauldron-new-sdk-framework/)
+- [AMD Porting Detroit Part 1: indexed resource arrays and batched primitives](https://gpuopen.com/learn/porting-detroit-1/)
 - [AMD Driver Experiments: detecting command allocator synchronization bugs](https://gpuopen.com/learn/rdts-driver-experiments/)
 - [AMD RPS multithreading tutorial](https://gpuopen.com/learn/rps-tutorial/rps-tutorial-part4/)
 - [AMD RPS Vulkan multithreading implementation test at f3330f5](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/tests/gui/test_multithreading_vk.cpp)
@@ -5191,6 +5260,8 @@ The following links are the direct source/documentation trail used for the archi
 - [Shader Development and asynchronous Shader Compile Workers](https://dev.epicgames.com/documentation/unreal-engine/shader-development-in-unreal-engine?lang=en-US)
 - [Unreal Swarm static-lighting distribution](https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-swarm-in-unreal-engine)
 - [MassEntity Overview](https://dev.epicgames.com/documentation/unreal-engine/overview-of-mass-entity-in-unreal-engine?lang=en-US)
+- [Epic graphics programming overview: game/render ownership and renderer-private scene state](https://dev.epicgames.com/documentation/en-us/unreal-engine/graphics-programming-overview-for-unreal-engine)
+- [Epic transient `FMassEntityView` lifetime contract](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/MassEntity/FMassEntityView)
 
 ### O3DE
 
@@ -5209,6 +5280,8 @@ The following links are the direct source/documentation trail used for the archi
 
 ### ECS and Data-Oriented Storage Sources
 
+- [Richard Fabian, *Data-Oriented Design* online edition](https://www.dataorienteddesign.com/dodbook/)
+- [Richard Fabian: data type, frequency, quantity, shape, probability, consumers, and access questions](https://www.dataorienteddesign.com/dodbook/node2.html)
 - [Unity ECS samples at 6786a74](https://github.com/Unity-Technologies/EntityComponentSystemSamples/tree/6786a741ee1f118ed14cecfa02beae8e926937b0)
 - [Unity entity command-buffer guidance at 6786a74](https://github.com/Unity-Technologies/EntityComponentSystemSamples/blob/6786a741ee1f118ed14cecfa02beae8e926937b0/EntitiesSamples/Docs/entity-command-buffers.md)
 - [EnTT registry at 1333fa5](https://github.com/skypjack/entt/blob/1333fa53129e7cfded5a9640c4336a254049917b/src/entt/entity/registry.hpp)

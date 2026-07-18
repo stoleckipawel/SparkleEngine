@@ -173,6 +173,42 @@ Concurrency correctness must be encoded at the narrowest reusable ownership boun
 
 The completion report must say why each validation action was proportionate and confirm that the touched product functions contain no local class/struct declarations. More logs, assertions, targets, and repeated full builds are not stronger evidence when they do not cross the changed invariant.
 
+### 12. Reinforce Module, Folder, File, and Type Ownership
+
+Every prompt must improve the physical repository structure of the architectural path it touches. Structure is part of the implementation contract, not optional cleanup after behavior works:
+
+- before editing, map every touched and proposed file to its owning module, subsystem responsibility, public/private status, primary type or operation, and direct consumer;
+- inspect the touched file's neighboring directory and semantic counterparts before choosing a destination. Extend an established coherent folder vocabulary; do not create synonymous trees, generic dumping grounds such as `Misc`, or a one-file directory without a demonstrated growth boundary;
+- public folders contain stable cross-module contracts only. Runtime records, queues, native/backend mechanisms, policy implementation, and orchestration details remain private to their owner;
+- a significant public class or contract has a filename that matches its canonical primary type. A `.cpp` normally matches the public/private type or clearly named operation it implements. Small tightly coupled private helpers may share an implementation unit; do not fragment one responsibility across ceremonial files;
+- separate orchestration from mechanism when they have different owners or reasons to change. Folder and file boundaries must reveal that distinction without forcing readers through wrapper-only layers;
+- when an existing touched file, class, or function is materially misplaced or misleadingly named, move or rename it in the same prompt. Update includes, forward declarations, exports, CMake membership/source groups, generated/package references, profiler labels, tests, and documentation atomically; leave no compatibility include or duplicate spelling after the gate;
+- review nearby files that participate in the same changed ownership path. Reassign them when the prompt exposes the same structural defect, but do not authorize repository-wide cosmetic moves unrelated to the vertical slice;
+- CMake targets and dependency direction remain the authority for module ownership. A folder move may clarify architecture but must never conceal an illegal link/include edge or create a convenience dependency;
+- do not equate more folders/files with better architecture. Each boundary must communicate a stable responsibility, ownership/lifetime boundary, backend split, or independently changing implementation concern;
+- before acceptance, print the touched subtree, search old paths/names, inspect target sources/includes, and confirm that filenames, primary types, namespaces, exports, and directory ownership tell one coherent story.
+
+The completion report must contain a **structure reconciliation** listing files retained, moved, renamed, split, merged, or deliberately co-located, with the ownership reason for each decision. “Existing location” is not a justification by itself.
+
+### 13. Evidence-Grounded Data-Oriented Design
+
+Data-oriented design is binding wherever a prompt creates, migrates, publishes, stores, transforms, sorts, uploads, or repeatedly traverses data. An ECS, array, packet, or `SoA` name does not satisfy this rule by itself:
+
+- before choosing a schema, record the real producer, consumer(s), type, frequency, quantity/cardinality, shape, value distribution/probability where relevant, mutation phase, lifetime, access order, stable key, and bandwidth/latency constraint;
+- design the transformation and access pattern first. A generic container, reflection layer, object hierarchy, visitor, or template must not hide the concrete operation performed on the actual data;
+- maintain one authoritative mutable source per domain. Editor models, render packets, render proxies, GPU tables, caches, and cooked products are explicitly versioned derived projections with one-way publication and rejection/resync rules—not competing authorities;
+- separate hot/cold, static/dynamic, structural/per-frame, CPU/GPU, and authoring/runtime data according to consumers and update frequency. Do not split cohesive fields that are always consumed together;
+- choose AoS, SoA, AoSoA, sparse set, archetype chunk, indexed table, flat stream, or packed record from measured access. No layout is a universal DOD badge. Record the serial baseline and why rejected layouts lose for this workload;
+- use stable generational IDs and immutable/versioned handles across storage and owner boundaries. Dense indices, pointers, iterators, spans, component references, and arena addresses never become durable identity;
+- variable-length products use offsets/counts into bounded flat storage or another explicitly justified packed representation; hot records do not own vectors, strings, callbacks, mutexes, allocators, services, or heavyweight assets;
+- process dense ranges/batches with explicit read/write columns and non-overlapping outputs. Structural mutation occurs at an owner commit through deterministic command buffers; queries/views are transient and cannot escape their epoch;
+- prefer task-local or range-local outputs followed by stable-key compaction, bucketing, reduction, or deterministic merge. Completion order never defines IDs, packet rows, draw order, upload order, or serialized output;
+- persistent renderer/GPU data is updated by stable slot and dirty range/page. Removing avoidable rebuild/copy/upload work precedes parallelizing what remains;
+- validate with relevant bytes read/written, allocations, working-set/packet size, cache misses, bandwidth, branch behavior, iteration/extraction/apply time, dirty/upload bytes, and serial/parallel crossover. Keep only metrics that test the chosen access hypothesis;
+- every material DOD choice cites an exact applicable source from J: Richard Fabian for data/access methodology, Epic MassEntity for data-only/query/deferred-structure practice, Epic game/render proxies for ownership separation, and NVIDIA/AMD renderer sources for persistent/indexed/access-specific renderer data. Do not attribute a general ECS to NVIDIA or AMD: the reviewed sources do not provide one. If no source and no measured Sparkle product need supports a new abstraction, do not add it.
+
+The completion report must contain a **DOD reconciliation**: replaced object/pointer/full-copy path; authoritative and derived stores; data/access inventory; selected and rejected layouts; stable identity; mutation/publication phases; deterministic partition/merge; source trace; and measurements. “Cache friendly,” “ECS,” and “SoA” without this evidence are rejected claims.
+
 ## Required Prompt Completion Report
 
 Every completed prompt returns this report:
@@ -190,7 +226,9 @@ Every completed prompt returns this report:
 11. **Legacy-concurrency reconciliation:** LC IDs touched, retained-invariant proof, mechanisms deleted, newly discovered hits, and named deferrals.
 12. **Hazard closure:** applicable MT IDs, source-backed pattern, falsifying evidence, and unresolved risk.
 13. **Naming reconciliation:** canonical terms and rejected aliases searched, use/rename decisions, profiler/thread-label updates, and proof that no permanent synonym remains.
-14. **Gate:** PASS or BLOCKED with concrete reason.
+14. **Structure reconciliation:** module/folder/public-private ownership, filename-to-primary-type alignment, bounded moves/renames, updated includes/CMake/docs, and deliberate co-location decisions.
+15. **DOD reconciliation:** data/access inventory, authority and derived projections, chosen/rejected layouts, stable identity, phase/lifetime, deterministic transforms, exact source trace, and measured evidence.
+16. **Gate:** PASS or BLOCKED with concrete reason.
 
 ## Prompt Sequence and Dependencies
 
@@ -200,8 +238,9 @@ Every completed prompt returns this report:
 | 01 | serial task graph and task-execution contracts | 00 |
 | 02 | fixed worker executor, work stealing, sleep/wake | 01 |
 | 03 | dependencies, scopes, cancellation, lanes, shutdown, instrumentation | 02 |
-| 04 | shader/texture/tool SparkleTasks pilots | 03 |
-| 05 | ECS `EntityId`, registry, sparse-set component storage | 03 |
+| 03R | completed-work readability and physical-structure reconciliation | 03 |
+| 04 | shader/texture/tool SparkleTasks pilots | 03R |
+| 05 | ECS `EntityId`, registry, sparse-set component storage | 03R |
 | 06 | ECS queries, structural epochs, deterministic entity commands | 05 |
 | 07 | current scene data converted to ECS components/facades | 06 |
 | 08 | explicit transform/camera derived-data system and change journal | 07 |
@@ -209,7 +248,8 @@ Every completed prompt returns this report:
 | 10 | ECS-aware system graph and parallel animation/morph/skinning | 08 |
 | 11 | immutable editor scene model, commands, transactions, operations | 09, 10 |
 | 12 | stable render IDs, immutable packet/delta contract, headless replay | 08, 10 |
-| 13 | dedicated render coordinator and bounded `RenderFrameQueue` | 12 |
+| 12D | prove the Two Data Streams DOD extraction/render layout | 12 |
+| 13 | dedicated render coordinator and bounded `RenderFrameQueue` | 12D |
 | 14 | editor UI/viewport/capture packet conversion | 11, 13 |
 | 15 | persistent render/GPU scene and dirty-range updates | 13 |
 | 16 | generation-based shader/asset residency and deferred retirement | 04, 15 |
@@ -310,10 +350,12 @@ This is the minimum hazard pre-mortem scope. A prompt must add any other MT ID m
 |---:|---|---|
 | 00 | MT-01–12, MT-16–18, MT-23–27, MT-31–44 | repository ownership/blocking census, before-state failure reproductions, thread/idle/lock/allocator/native call-chain inventory |
 | 01–03 | MT-03–06, MT-10, MT-12–25, MT-41–44 | serial DAG oracle, exactly-once settlement, predicate sleep/wake, nested-child exhaustion, no busy wait, grain/topology/false-sharing stress |
+| 03R | MT-05, MT-10, MT-13–17, MT-23, MT-41–44 | ownership-to-file map, no hidden local lifecycle types, preserved serial/parallel contract, dependency-boundary scan, old-path/alias audit |
 | 04 | MT-05–10, MT-16–19, MT-23–24, MT-27, MT-29, MT-31, MT-41–43 | scoped process/I/O lifetime, Qt affinity, bounded memory/concurrency, deterministic transactional fan-in, close/cancel/failure stress |
 | 05–08 | MT-01–04, MT-11, MT-19–21, MT-25–31, MT-41–43 | stable generational identity, frozen structural epochs, exclusive query ranges, deterministic command playback, DOD/cache evidence |
 | 09–11 | MT-01–10, MT-16, MT-23–24, MT-27, MT-29–31, MT-41–43 | isolated generation build/commit, immutable editor model, owner commands, undo/redo and document-close cancellation stress |
 | 12–14 | MT-01–12, MT-23, MT-27, MT-29, MT-31, MT-33–40, MT-41–43 | packet replay, bounded `RenderFrameQueue`, owner affinity, delayed consumer, copied UI data, sequenced commands, latency/backpressure evidence |
+| 12D | MT-01–04, MT-11, MT-19–21, MT-23, MT-25–31, MT-41–43 | data/access inventory, object/full-copy deletion, concrete stream layouts, stable-key extraction, dirty-range hypothesis, cache/bandwidth/bytes evidence |
 | 15–16 | MT-01–10, MT-23, MT-26–31, MT-33, MT-36–39, MT-41–43 | persistent proxies, generation readiness, dirty ranges, delayed-GPU retirement, no ordinary idle, failure retains prior generation |
 | 17 | MT-02–06, MT-09, MT-13, MT-19–31, MT-36, MT-39, MT-41–43 | immutable task inputs, task-private ranges, critical-path DAG, skew/grain tests, deterministic merge, prewarmed runtime |
 | 18–20 | MT-09–10, MT-13, MT-19–21, MT-25–27, MT-29, MT-32–41, MT-43 | exclusive backend leases, token reset, native validation, same compiled order, group-size/list/submit/memory sweep, no worker submit/wait |
@@ -337,6 +379,8 @@ Objective:
 Create the verified before-state and invariant vocabulary required for every later multithreading change. This prompt changes no ownership architecture and introduces no new task/ECS/render framework.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Search before adding; use/extend/replace existing timing, validation, launch-setting, and test facilities.
 - Apply the daily-refactor rule to touched baseline/launch code and remove only directly exposed duplication/dead code.
@@ -399,6 +443,8 @@ Objective:
 Create SparkleTasks' deterministic serial foundation: task identity, immutable compiled topology, execution generations, prerequisites, fan-in, nested completion semantics, explicit failure, and bounded graph storage. Do not create worker threads yet.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Search for existing task, graph, event, handle/generation, arena/pool, result/error, and test-runner counterparts before adding types.
 - Reuse or refactor coherent Core facilities; do not create parallel handle/result/assertion families.
@@ -449,6 +495,8 @@ Objective:
 Execute the same compiled task contract on a fixed worker set with local ready queues, external injection, work stealing, sleep/wake, and safe repeated startup/shutdown. Preserve exact serial semantics.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Search for repository thread wrappers, naming/priority helpers, semaphore/condition-variable utilities, allocators, and queue implementations before adding counterparts.
 - One executor owns workers; do not add feature/subsystem threads or a second pool.
@@ -504,6 +552,8 @@ Objective:
 Complete the production SparkleTasks contract: `TaskScope` hierarchy, cooperative cancellation, `TaskEvent`, `ParallelFor`, FrameCritical/Background/BlockingIo lanes, host joins, failure/finally semantics, private profiler events, and ordered shutdown. This is the engine job system, but `Job` is not a parallel API vocabulary.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Search for cancellation, events, scoped handles, process/file completion, profiler scopes, lane/thread configuration, and shutdown orchestration counterparts.
 - Do not repurpose Core Event as a cross-thread callback bus; its current callbacks remain owner-thread-affine.
@@ -551,17 +601,72 @@ LC-05 is closed as owner-only. Input registration and dispatch assert the existi
 
 A disposable harness passed twenty repeated DevelopmentEditor cycles covering scope settlement, exclusive/non-overlapping ParallelFor coverage, continuations, stale/double TaskEvent signalling, cancellation wakeup, cleanup/finally execution, invalid policy/cross-lane graphs, sustained Background plus BlockingIo load with FrameCritical progress under 200 ms, ordered drain/cancel shutdown, and Input self-unsubscribe/unsubscribe-other/subscribe-during-dispatch/nested/deferred behavior. A focused DebugEditor death case confirmed that destroying an explicitly unsettled scope owner terminates at the development assertion after safe cancellation/join. MSVC on this Windows configuration provides no supported ThreadSanitizer mode. The transient source, target, and capture artifacts were deleted after validation.
 
+## Prompt 03R — Reconcile Completed Runtime Structure and Readability
+
+Target CL Title: `SparkleTasks: Reconcile Runtime Structure and Readability`
+
+~~~text
+Implement Prompt 03R only after Prompt 03 passes and before Prompt 04 or Prompt 05 begins.
+
+Objective:
+Adversarially reconcile the completed Prompt 00–03 work with K Rules 2, 10, 11, and 12. Make SparkleTasks and the Prompt 03 InputSystem changes read like one production architecture through module ownership, folder placement, filenames, primary type names, public/private boundaries, and short policy-focused orchestration. Preserve the proven task-runtime behavior. This is a remediation and structure gate, not a feature prompt.
+
+Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit the complete `Engine/Tasks` subtree and the directly touched InputSystem registration/dispatch path, including files introduced or modified by Prompts 00–03. Completed work has no grandfather clause.
+- Enforce Rule 11: product function bodies contain no local class/struct definitions; lifecycle, synchronization, runtime-record, visitor, and policy types live at the narrowest file-private or owning-type scope. Short local lambdas remain only for genuinely inline algorithms/callbacks.
+- Enforce J's canonical vocabulary and Rule 10 across filenames, types, functions, namespaces, profiler/thread labels, comments, includes, CMake, and documentation. Delete compatibility filenames/includes and rejected aliases before the gate.
+- Search the repository for existing module/folder conventions and semantic counterparts before moving or splitting anything. Do not impose a generic enterprise layout or create one-file ceremonial directories.
+- Keep `SparkleTasks` dependent only on Core and platform system libraries. Application, GameFramework, Renderer, RHI, Editor, Assets, Platform windows/input, and product policy remain outside the module.
+- Preserve one executor family, the serial oracle, graph semantics, scope/event/cancellation behavior, lane isolation, shutdown, InputSystem routing/order, and private-only instrumentation.
+- Do not introduce a new task feature, public diagnostic, settings surface, abstraction family, compatibility facade, permanent test target, or broad unrelated cleanup.
+
+Required implementation:
+1. Print and review the current `Engine/Tasks` tree and the touched InputSystem files. Produce a before/target responsibility map for every source/header and every significant class, struct, free function, and PImpl: owning module; subsystem responsibility; public/private status; primary type/operation; direct consumers; retain/move/rename/split/merge decision.
+2. Keep stable cross-module contracts in `Engine/Tasks/Public`. Confirm each significant public contract has a canonical matching filename and contains no queue, worker-record, topology-storage, profiler-provider, native wait, or product-policy implementation detail. Merge or split headers only when the resulting contract has one clear consumer-facing responsibility.
+3. Reconcile the private tree around real reasons to change. Evaluate, at minimum, coherent groups for graph/topology construction, execution/result state and the serial oracle, worker scheduling/executor mechanism, structured lifetime/external completion, and private profiling. Create a directory only when at least two cohesive files or a demonstrated backend/growth boundary justify it; otherwise retain deliberate file-private co-location.
+4. Adversarially review `TaskExecutor.cpp`. Separate the public executor facade from fixed-worker/lane/run mechanism if their ownership and change reasons are currently obscured. Do not add wrapper-only layers. The worker/deque/injection/parking implementation remains private and no queue type appears in a public header.
+5. Adversarially review `TaskExecutorInternal.h`. Its filename and placement must match what it actually owns. If it primarily contains execution result/state and serial-execution contracts, rename/move or split it accordingly; do not leave an `Executor` filename as a miscellaneous internal bucket.
+6. Review `SerialTaskExecutor.cpp`, `TaskExecution.cpp`, `TaskGraph.cpp`, `ParallelFor.cpp`, `TaskScope.cpp`, `TaskEvent.cpp`, and `TaskProfiler.*` for filename-to-primary-type/operation alignment. Rename or co-locate deliberately; remove duplicated validation, lane naming, completion accounting, or lifetime helpers exposed by the reorganization without changing semantics.
+7. Audit every Prompt 00–03 touched function for local type declarations and complex lifecycle/policy lambdas. Move local types to file-private or owning-type scope. Extract a lambda only when it contains multi-step lifecycle, synchronization, error policy, or reusable scheduling behavior; do not turn simple traversal predicates into ceremonial functions.
+8. Review InputSystem's owner-thread and deferred-dispatch implementation. Keep callback snapshot semantics obvious in `ProcessDeferredEvents` and dispatch orchestration; retain a file-private re-entry/lifetime helper only if it is specific to InputSystem and clearer than a generalized Core utility. Do not create a generic guard unless at least two real consumers share the same invariant.
+9. Update every moved/renamed path atomically: includes, forward declarations, export boundaries, CMake globs/source groups, module comments, documentation links, profiler labels when responsibility names change, and any generated/package references. Delete old files and compatibility includes in this prompt.
+10. Re-run the Tasks forbidden-dependency and canonical/rejected-alias searches. Search old filenames and directories explicitly and require zero owned-source hits. Confirm CMake target membership follows the physical tree and no move changed dependency direction.
+11. Update Prompt 03 implementation evidence with the final structure reconciliation: exact retained/moved/renamed/split/merged/co-located files and the ownership reason. Do not claim that a move improved architecture without naming the responsibility boundary it exposes.
+
+Validation:
+- Focused `SparkleTasks` and `SparklePlatform` compile after all moves/renames; do not build the full repository.
+- Disposable contract smoke validation covers serial and 1/2/N execution, graph failure/cleanup, scope cancellation, TaskEvent wake, ParallelFor coverage, shutdown, and InputSystem self-unsubscribe/nested/deferred snapshot behavior when implementation—not only paths—changed. Delete its source, CMake target, fixtures, and generated data after the run.
+- Dependency scan proves SparkleTasks includes/links no forbidden engine/product module.
+- Touched-scope source audit proves no function-local class/struct declarations, no obsolete path or compatibility include, and no rejected concurrency alias.
+- Public-header audit proves private queue/worker/run/profiler/native-wait implementation does not leak through the stable contract.
+- Tree review proves every new directory has at least two cohesive files or a documented backend/growth boundary, and every deliberately flat/co-located file has a stated reason.
+
+Acceptance gate:
+- A reader can locate graph construction, execution state, scheduling mechanism, structured lifetime/completion, algorithms, and instrumentation from folder and filenames without reading implementation bodies first.
+- Public filenames and primary contracts agree; private filenames describe their actual responsibility; CMake and include paths agree with the physical architecture.
+- `TaskExecutor` orchestration is not a dumping ground for unrelated graph, execution-result, profiling, event, or InputSystem policy.
+- Completed Prompt 00–03 behavior and API meaning remain intact, with focused validation passing.
+- No local product type declaration, compatibility path, duplicate helper family, generic dumping-ground folder, or unjustified one-file directory remains in the audited scope.
+- The completion report contains the complete Rule 12 structure reconciliation and a deletion ledger for every old path/name.
+
+Positive patterns: ownership-revealing tree, matching file/type names, private mechanisms, policy-focused orchestration, bounded atomic moves, deliberate co-location.
+Forbidden: cosmetic folder churn, one class per file dogma, wrapper-only layers, generic `Common`/`Misc` dumping grounds, compatibility headers, feature work hidden inside cleanup.
+~~~
+
 ## Prompt 04 — Prove SparkleTasks in Real Tool Workflows
 
 Target CL Title: `SparkleTools: Integrate SparkleTasks into Production Workflows`
 
 ~~~text
-Implement Prompt 04 only after Prompt 03 passes.
+Implement Prompt 04 only after Prompt 03R passes.
 
 Objective:
 Replace ad-hoc/as-serial application and tool concurrency with SparkleTasks in coarse, useful pilots: shader recook process coordination, launcher operations/process I/O, texture request cooking, and safe shader cook nodes. Preserve deterministic transactional output and explicit external-process lifetime.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Search each tool for existing planners, batches, compiler sessions, COM/thread setup, process readers, caches, registries, publication, status/progress, and cancellation.
 - Extend existing plans rather than creating alternate Async cookers or parallel pipelines.
@@ -606,12 +711,14 @@ Forbidden: parallel publish-as-finished, shared unsafe importer/compiler instanc
 Target CL Title: `SparkleGameFramework: Build the Serial ECS Storage Kernel`
 
 ~~~text
-Implement Prompt 05 only after Prompt 03 passes. Prompt 04 may proceed independently but must use the same SparkleTasks contracts.
+Implement Prompt 05 only after Prompt 03R passes. Prompt 04 may proceed independently but must use the same SparkleTasks contracts.
 
 Objective:
 Replace the unused owning Entity model with the private serial ECS foundation: generational EntityId, registry, per-type sparse-set component storage, stable schema IDs, and invariant tests. Do not parallelize systems yet.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Search Entity, Component, SceneCameras/Meshes/Lighting/Animations, handles, registries, sparse/dense containers, type IDs, serialization schemas, and editor selection before adding types.
 - ECS internals remain GameFramework-private; do not add a standalone ECS SDK/module or expose storage to Renderer/Editor.
@@ -655,6 +762,8 @@ Objective:
 Make ECS iteration and structural mutation safe for future jobs: typed read/write queries, include/exclude filtering, frozen structural epochs, task-local EntityCommandBuffer, deterministic playback, and temporary entity remapping. Execute serially.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Search existing view/span/range, command, change-list, transaction, type-access, and deterministic-sort facilities before adding counterparts.
 - Do not add a generic query language, runtime reflection DSL, or editor-facing raw registry API.
@@ -700,6 +809,8 @@ Objective:
 Move current camera, mesh-instance, visibility, light, transform, animation playback, and cold editor metadata instance state into ECS component pools while keeping GameScene as the coherent world facade. Compatibility facades may remain only as non-owning single-source views.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit every field/call site in SceneCameras, SceneMeshes, SceneLighting, SceneAnimations, MeshComponent, CameraComponent, Transform, GameScene snapshot/loading, Showcase, editor inspectors, and renderer extraction.
 - For every field classify: ECS component, immutable asset resource, world service/resource, derived output, editor-only metadata, or obsolete.
@@ -743,6 +854,8 @@ Objective:
 Remove write-on-read transform/camera caches, evaluate derived world state in explicit serial systems, and create the bounded sequenced world change journal/read publication that renderer/editor will consume.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Search all Transform and camera direction/matrix getters, dirty flags, bounds calculations, snapshot extraction, editor reads, temporal history, and change notifications.
 - Reuse existing math/identity/scene-generation types; do not create duplicate matrix conventions.
@@ -786,6 +899,8 @@ Objective:
 Replace destructive synchronous level loading with a scoped read/decode/validate/assemble pipeline that produces immutable EntityBlueprint packages and commits atomically while preserving the old scene on failure/cancellation.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit LevelManager, LevelRegistry/Asset, SceneAssetManager/Registry, manifest/payload loaders/appenders/translators, file utilities, lifecycle events, editor level menu, asset residency, and save behavior.
 - Extend existing load translators and registries; do not create Async duplicates or a second asset database.
@@ -832,6 +947,8 @@ Objective:
 Replace arbitrary GameSceneController mutable access with an ECS-aware GameSystemGraph and prove the first real gameplay parallel workload through movement, animation pose, morph, skinning, transform, and extraction dependencies.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit GameSceneController, GameCameraController, ShowcaseSceneController, SceneAnimations/evaluators/samplers, SceneMeshes morph application, skeleton data, transform/extraction phases.
 - Search for graph/access/resource-domain counterparts before adding system descriptors.
@@ -877,6 +994,8 @@ Objective:
 Remove live GameScene pointer/index mutation from editor panels. Make editor main own ImGui/selection/transactions, consume immutable WorldReadView-derived EditorSceneModel, submit stable EntityId semantic commands, and manage background workflows through one EditorOperationService.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit UI host services, SceneObjectSelection/Actions/Presentation, outliner entries/panel, all inspectors, material variants, level menu, viewport, shader recook, preview/search/save/package workflows.
 - Before adding model/command/operation types, search for existing selection, transaction, status, request/result, preview, and restart/recook services; consolidate rather than duplicate.
@@ -921,6 +1040,8 @@ Objective:
 Replace GameSceneSnapshot/raw mesh pointer/direct lifecycle coupling with stable RenderObjectId, immutable asset handles, sequenced RenderWorldDelta, RenderFrameDynamicData, versioned frame metadata, and a headless-replayable renderer input contract. Keep renderer execution serial.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit GameSceneSnapshot/MeshSnapshot, Renderer facade/SystemRoot, RenderSceneDataBuilder, SceneRenderStateCoordinator, temporal inputs, RT instances, providers, capture, level callbacks, asset handles.
 - Reuse existing handle/packet/arena/math/frame-generation types; do not create a second scene schema or broad renderer snapshot API.
@@ -954,17 +1075,76 @@ Positive patterns: stable separate identities, immutable handles, structural/dyn
 Forbidden: shared scene mutex, raw object pointer, renderer ECS query, array index temporal identity, dual packet/snapshot path.
 ~~~
 
+## Prompt 12D — Prove the Two Data Streams Data-Oriented Boundary
+
+Target CL Title: `SparkleEngine: Prove the Data-Oriented Game-to-Render Streams`
+
+~~~text
+Implement Prompt 12D only after Prompt 12 passes and before Prompt 13 begins.
+
+Objective:
+Make `RenderWorldDelta` and `RenderFrameDynamicData` a measured data-oriented transform from GameFramework's frozen ECS/read publication into renderer-owned persistent tables. Remove any remaining object-shaped/full-scene extraction, generic cosmetic SoA, redundant authority, pointer chasing, or per-frame static duplication before renderer threading begins. Preserve serial rendering and every current raster, RT, temporal, provider, editor-viewport, and capture input.
+
+Non-negotiable repository rules:
+- Apply Rule 13: audit every GameFramework source column, extraction transform, packet field, RenderWorld proxy/table, and planned GPU upload consumed by the two streams. No field exists only because the old object carried it.
+- Apply Rule 12: make GameFramework publication, extraction contracts, renderer input streams, and render-owned table files/folders reveal their ownership and data-flow direction.
+- Trace every material decision to Richard Fabian's data/access methodology, Epic MassEntity or game/render proxy documentation, NVIDIA Donut renderer scene buffers/dirty state, or AMD Cauldron/Detroit/RDNA renderer data guidance. State the scope of the precedent. Do not claim NVIDIA/AMD provides Sparkle's GameFramework ECS.
+- If no source and no measured Sparkle consumer supports a proposed abstraction, field, index, cache, or layout, do not add it.
+- GameFramework ECS remains the only authoritative mutable world-instance source. Render packets and RenderWorld are versioned one-way derived projections; renderer state never mutates ECS or editor authoring truth.
+- Renderer does not query ECS, retain `GameScene`, invoke entity/component behavior, or consume raw pointers/references/spans into GameFramework storage.
+- Keep renderer execution serial. Do not begin RenderThread, frame queue, parallel extraction, persistent GPU-scene implementation, or command recording work owned by later prompts.
+
+Required implementation:
+1. Build a field-level data/access ledger for all current camera, view, transform/current-previous transform, bounds, visibility, mesh instance, material, light, animation, skinning, morph, RT instance, temporal/history, provider, editor viewport, and capture inputs. For each field record producer, consumer passes, cardinality, frequency, mutation phase, read grouping, stable key, lifetime, current bytes/allocation, and retain/move/split/delete decision.
+2. Build an authority/projection ledger: authored/cooked source → ECS/runtime resource → frozen world view/change journal → packet stream → RenderWorld slot/table → later GPU table. Name the sole authority and generation/rejection/resync rule at every arrow. Delete any unowned duplicate mutable copy exposed by the audit.
+3. Replace a generic `SoA<T...>` or object-shaped “packet per entity” with named concrete streams whose columns match real consumers. At minimum decide and document layouts for transforms/current-previous transforms, bounds/visibility, lights, skinning palettes, morph weights, and RT instance inputs. Keep cohesive AoS/AoSoA blocks when consumers read all fields together; use SoA only where access differs materially.
+4. Encode variable-length skinning/morph/instance payloads as bounded flat arrays plus offsets/counts or another source-backed measured packed layout. Packet records contain no owning vector/string, allocator, callback, mutex, service, raw asset pointer, component reference, or nested polymorphic object.
+5. Keep `RenderWorldDelta` as typed bounded operation batches with scene/sequence metadata. Choose AoS or columnar form per operation consumption and measured size; do not force cold structural records into SoA. Define stale, duplicate, gap, overflow, and full-resync behavior before application.
+6. Make extraction one explicit serial bulk transform over a frozen world epoch using declared component/resource reads. Resolve `EntityId` to `RenderObjectId` through one mapping authority, produce stable-key task-partition-ready ranges, and never expose ECS dense indices as render identity.
+7. Make the serial RenderWorld representation persistent and indexed: stable render slots/generations, packed per-consumer tables, free/reuse policy, asset-handle generations, and dirty columns/ranges. Prompt 15 owns persistent GPU allocation/upload/retirement, but this prompt must give it a concrete CPU-side source layout rather than another scene-wide builder.
+8. Define current/previous/temporal ownership once. State exactly where previous transforms, camera cuts, history reset, jitter/sample, exposure, resolution, and provider frame tags roll over; delete redundant rollover or recomputation paths.
+9. Define deterministic extraction and apply order with stable `(scene, sequence, render object, stream/local)` keys. Sorting, bucketing, compaction, and deduplication use packet/range-local outputs and deterministic merge; completion order is never semantic.
+10. Preserve immutable static assets through versioned handles and residency operations. Mesh geometry, material definitions, textures, skeletons, animation clips, BLAS payload identity, and shader packages are not copied into per-frame dynamic streams.
+11. Produce small, representative, high-instance, high-light, animated/skinned/morph, RT/PTLAS, structural-churn, and mostly-static workloads. Compare the replaced snapshot/object path with the new serial stream path for output identity and relevant packet bytes, allocations, extraction/apply time, bytes read/written, cache misses/bandwidth where available, dirty rows/ranges, and projected upload bytes.
+12. Record rejected alternatives: full snapshot, one AoS object per renderable, universal SoA, immediate archetype conversion, renderer ECS query, hash lookup in every hot pass, and duplicated current/previous data. Keep an alternative only if a source-backed measured workload beats the selected layout.
+13. Delete `GameSceneSnapshot`, raw `Mesh*` packet fields, converted parallel scene vectors, old full-scene extraction/build path, and temporary compatibility schema after parity. Repository search must find one game-to-render data path.
+14. Update J's Two Data Streams section and the Prompt 12/15 field ledgers with the concrete accepted layouts and measurements; label unmeasured hardware claims as pending rather than inferring benefit.
+
+Validation:
+- Headless record/replay destroys or mutates GameScene/ECS storage immediately after packet publication and delays consumption; output remains valid and deterministic.
+- Field/ownership audit proves every packet byte has a named consumer and every consumer reads an owned immutable value or stable versioned handle.
+- Serial old/new comparison preserves raster draw identity/order, camera/view values, classic TLAS/PTLAS instance identity, reservoir-light identity, skinning/morph output, temporal resets, provider tags, viewport and capture inputs.
+- Mostly-static scene changes zero objects for many frames, then one transform/light/material/object at a time; only the documented stream rows and RenderWorld dirty ranges change.
+- Structural create/update/destroy replay covers stale/duplicate/gap/overflow/full-resync and stable-slot reuse generations.
+- Variable-length offset/count fuzzing rejects overlap/out-of-bounds/stale generation and releases packet arenas without retained pointers.
+- Representative layout comparison records packet bytes, allocations, extraction/apply time and available cache/bandwidth counters; unsupported counters are stated, not replaced with logging.
+- Dependency scan proves Renderer includes no ECS storage/private GameFramework header and GameFramework has no Renderer/RHI dependency.
+
+Acceptance gate:
+- The two streams are concrete named access-driven schemas, not generic containers or copied object graphs.
+- GameFramework has one mutable world authority; renderer has one versioned derived projection and no backward mutation path.
+- Static/structural/dynamic/temporal data have explicit frequencies, owners, generations and consumers; variable data is flat and bounded.
+- Renderer hot preparation can begin from stable render slots and dense per-consumer ranges without ECS joins, object polymorphism, raw asset traversal, or repeated scene-wide hash lookup.
+- One-object changes do not rebuild or republish unrelated scene-wide data; full resync is an exceptional explicit recovery path.
+- Old snapshot/object/parallel-vector paths are deleted, serial feature parity passes, and the DOD reconciliation contains exact source and measurement evidence.
+
+Positive patterns: access-driven concrete streams, one-way derived projection, stable slots, flat bounded arrays, hot/cold and static/dynamic split, deterministic bulk transform, measured layout.
+Forbidden: DOD by naming, universal SoA, renderer ECS access, per-entity virtual extraction, raw pointers, nested packet containers, duplicated authority, full rebuild disguised as parallel work.
+~~~
+
 ## Prompt 13 — Add RenderThread Ownership and the Bounded RenderFrameQueue
 
 Target CL Title: `SparkleRenderer: Add RenderThread Ownership and the Bounded Frame Queue`
 
 ~~~text
-Implement Prompt 13 only after Prompt 12 passes.
+Implement Prompt 13 only after Prompt 12D passes.
 
 Objective:
 Move RendererSystemRoot, FramePipeline, mutable RHI ownership, submit/present, and renderer resource creation/destruction to one `RenderCoordinator` running on `RenderThread`. Connect GameThread/EditorThread producers through bounded frame slots and sequenced control commands. Keep renderer preparation/recording serial inside the coordinator initially.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit runtime/editor loops, renderer facade/host phases, window/swapchain resize, minimize/restore, provider affinity, capture, shutdown/device loss, RHI creation/destruction and submission.
 - Audit LC-08 through LC-10 and LC-16/LC-18: Streamline global locking, D3D12 queue submission/CPU-wait mutexes, Vulkan native queue external synchronization, every renderer/RHI idle wrapper and native wait. A mutex-protected queue is not a substitute for one submission owner.
@@ -1013,6 +1193,8 @@ Objective:
 Make all editor-to-render data owned/versioned: copied ImGui draw packets, viewport requests/products, rendering settings commands, preview/capture requests, and narrow completion results. Remove live editor/renderer pointer sharing.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit UI NewFrame/Build/Render, ImDrawData lifetime, RhiImGuiRenderer, viewport panels/contracts, settings panels, preview geometry, diagnostics providers, screenshot/BMP path, resize/docking.
 - Search existing packet/viewport/capture handles and reuse/consolidate them.
@@ -1056,6 +1238,8 @@ Objective:
 Stop rebuilding/uploading unchanged scene-wide arrays. Make RenderWorld proxies and GPU-scene slots persistent, apply structural deltas, update dirty dynamic ranges, and prepare token-based removal/retirement while preserving raster and RT identity.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit RenderSceneDataBuilder, BuildRenderSceneGpuData, mesh/material/texture caches, structured buffers, uploads, raster/RT instance planning, BLAS/classic TLAS/PTLAS paths, allocator/budget data.
 - Refactor existing caches/builders into one persistent owner; do not add a parallel GpuScene2 or retain full rebuild as product path.
@@ -1100,6 +1284,8 @@ Objective:
 Connect asynchronous CPU asset generations, render uploads, shader package replacement, readiness, fallback, eviction, and deferred retirement without worker waits or routine device idle.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit current mesh/texture/material/animation/shader load/reload, resource caches, upload service, frame graph copy work, shader package/reflection/runtime/PSO ownership, WaitForIdle reload paths.
 - Reconcile LC-01, LC-08, LC-14, and LC-16. Trace idle calls through wrappers to native drains and remove duplicate nesting, not merely the highest-level spelling.
@@ -1149,6 +1335,8 @@ Objective:
 Replace monolithic mutable renderer preparation with pure/coarse task nodes over immutable packet/render-world inputs and task-private outputs: transforms/bounds, visibility, batching, lighting, skinning/morph, material classification, RT planning, deterministic merge.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit RenderSceneDataBuilder and all called builders/caches/scratch vectors, pass setup dependencies, temporal/lighting/RT planners, profiler scopes.
 - Search existing frame-graph/task graph structures but do not make frame graph schedule non-render CPU policy or create a second task runtime.
@@ -1201,6 +1389,8 @@ Objective:
 Make D3D12 command recording ownership safe for future frame-graph fan-out: per-worker/per-frame/per-queue allocator/list contexts, explicit lease lifetime, worker-local or preassigned transient upload/descriptor allocation, and token-based reset/reuse. Do not enable general parallel pass recording yet.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit D3D12CommandContext, allocator/list slot selection, command queues/tokens, frame-resource rotation, upload allocator, descriptor heaps, resource barriers, PassBinder, PipelineStateManager, debug names/markers.
 - Reconcile LC-09, LC-11, LC-13, LC-14, and LC-18 explicitly: `D3D12LinearAllocator` atomics, `D3D12DescriptorAllocator` mutex, queue submit/CPU-wait locks, frame-resource native waits, and GPU allocation-record synchronization are inputs to the redesign, not approved final recording primitives.
@@ -1253,6 +1443,8 @@ Objective:
 Make Vulkan command recording ownership safe: per-worker/per-frame/per-queue-family command-pool/buffer contexts, external synchronization compliance, transient descriptor/upload ownership, reset/retirement, and preserved debug/validation behavior. Do not enable general parallel pass recording yet.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit VulkanCommandContext, command pools/buffers, queue families/timeline semaphores, frame resources, descriptor pools/sets, uploads, pipeline/layout creation, debug labels.
 - Reconcile LC-10, LC-12, LC-14, LC-15, LC-16, and LC-18 explicitly: native queue mutex, the broad VulkanDescriptorAllocator mutex, allocation/pending-release records, validation-message ingestion, command-context/swap-chain device-idle calls, and timeline waits.
@@ -1305,6 +1497,8 @@ Objective:
 Use frame-graph dependencies to compile eligible pass recording groups, lease worker contexts, record concurrently, deterministically aggregate closed native command objects, and submit measured batches in unchanged compiled order with explicit entry/exit resource-state contracts on both backends. Keep preparation, native recording, software translation, aggregation, submission batching, and queue submission as distinct concepts.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit FrameGraphCompiler/Execution/Submission, queue batches/waits, barrier planner, pass side effects, immediate command-list use, provider/present/readback islands, pass markers.
 - Extend the existing frame graph; do not create a second render graph or let SparkleTasks decide GPU resource/queue ordering.
@@ -1358,6 +1552,8 @@ Objective:
 Add intra-pass chunked recording where pass-level parallelism is insufficient and close the full serial/threaded/parallel preservation matrix for raster, classic TLAS, PTLAS, reservoir lighting, reference path tracing, temporal/providers, shader ABI, capture, and both backends.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Profile first to identify one or two expensive draw/dispatch planning/recording passes; do not add generic chunking to every pass.
 - Reuse RecordingPlan/leases and existing pass/batch structures; no special per-feature thread systems.
@@ -1404,6 +1600,8 @@ Objective:
 Close cross-subsystem reliability, deterministic cook/package workflows, editor lifecycle stress, public-surface review, and every compatibility/deletion ledger so one coherent architecture remains.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Audit every remaining std::thread/jthread/async/future/mutex/shared_mutex/condition variable/atomic/memory-order operation, standard/Qt/native wait or detach, TaskExecutor instance, WaitForIdle call site, GameScene snapshot/pointer, controller, Scene* facade, host-render path, direct lifecycle callback, default report/artifact, launcher command/package kind. Search Engine, Tools, and Projects owned sources; exclude generated/external code but include wrapper policy and third-party worker counts.
 - Search before adding any reliability helper; consolidate into current owner and delete obsolete mechanisms.
@@ -1455,6 +1653,8 @@ Objective:
 Tune the completed base architecture with representative evidence and establish the full-system reference captures required by the expert-hardening prompts. Do not declare the multithreading program or portfolio complete in this prompt.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Use existing profiler/debugger/allocator/timestamp/benchmark launch hooks and manually maintained concise results.
 - Search and consolidate existing docs rather than adding another architecture/policy document. Update J, K, and the owned concise product overview only where necessary.
@@ -1500,6 +1700,8 @@ Objective:
 Turn the task/packet runtime's real atomic and sleeping protocols into explainable state machines with reference implementations, lifetime proof, and adversarial failure tests. Improve current production owners; do not add a generic lock-free library.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Inspect every atomic, condition variable, semaphore, queue state, generation counter and wait predicate before adding a primitive; record use/extend/replace/add decisions.
 - Revisit retained legacy synchronization from LC-06/07/09/10/13-15/18: Logger publication, Timer pause flag, ProcessRunner only if any atomic remains, D3D12 linear/high-water state only if retained, queue submission values, Vulkan validation messages, allocation retirement, and native wait serialization. `relaxed` must name the independent invariant it serves.
@@ -1546,6 +1748,8 @@ Objective:
 Make SparkleTasks scale from low-core machines to high-core/SMT/chiplet/heterogeneous systems through evidence-driven worker policy, while keeping topology handling private and OS-neutral by default.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Inspect existing platform CPU queries, launch settings, profiler metadata and external-library thread controls before adding topology code or configuration.
 - Use NVIDIA's thread-limiting and AMD's Ryzen/core-detection guidance as hypothesis sources, not universal constants. Pre-mortem MT-17–28 and MT-41–44, including SMT siblings, cache/chiplet traffic, false sharing, context switches, nested workers, power/frequency, and profiling perturbation.
@@ -1589,6 +1793,8 @@ Objective:
 Demonstrate parallel-algorithm depth beyond parallel_for by improving real Sparkle data paths with serial oracles, deterministic contracts and measured crossover thresholds.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Search ECS queries/commands, GPU-scene dirty updates, renderer preparation and cooker package/layout code for existing reductions, append loops, sorts, prefix offsets and merge helpers.
 - Extend or replace existing algorithms; do not add a generic parallel-algorithm framework or duplicate buffers/helpers.
@@ -1631,6 +1837,8 @@ Objective:
 Turn current loading, cooking, shader reload and render resource creation into one bounded staged pipeline that distinguishes I/O completion, decode/build, shader compilation, native pipeline/resource creation, upload, owner commit and readiness; control first-run PSO/resource hitches without introducing a second cache or blocking recording.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Inspect scene/asset/texture/shader reads, ProcessRunner, recook/reload, residency, PipelineStateManager, native device creation and all synchronous waits before adding a stage or cache.
 - Inventory D3D12/Vulkan graphics/compute/RT pipeline creation, buffer/image/view creation, memory allocation/binding, descriptor writes/updates, acceleration-structure allocation/build inputs and all driver-facing locks. A vendor recommendation to parallelize does not override native external-synchronization or Sparkle owner contracts.
@@ -1683,6 +1891,8 @@ Objective:
 Correlate CPU tasks, render submission, GPU graphics/compute/copy execution and presentation; retain only queue overlap and pipeline depth that improve a measured product objective without violating provider ownership or latency.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Inspect existing `FrameId`/sequence markers, frame-graph queue assignment, RHI timelines, present path, provider/frame-generation integration, `RenderFrameQueue`, and profiler hooks before adding fields or events.
 - Keep the frame graph as queue/dependency/barrier authority and the render coordinator as submit/present owner.
@@ -1725,6 +1935,8 @@ Objective:
 Prove the completed architecture can be diagnosed, defended and reproduced at an AMD/NVIDIA graphics/systems interview bar, then release a concise honest portfolio without adding an interview-only product surface.
 
 Non-negotiable repository rules:
+- Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
+- Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
 - Use existing engine instrumentation and external primary tools; do not add a crash service, telemetry/report framework, task panel or benchmark product.
 - Search/consolidate J, K and the existing concise product overview. Do not create another architecture/policy document.
@@ -1743,10 +1955,11 @@ Required implementation:
 9. Rerun the exact repository-wide legacy-concurrency audit from Prompt 00. Explain every retained standard/Qt/native primitive from owner to falsifying test, verify no old LC replacement path reappeared during tuning, and include the zero-unclassified result in the portfolio review.
 10. Reconcile MT-01 through MT-44 against the final code. For every ID, link the concrete preventing owner/pattern and test/trace, or mark it non-applicable with a reviewable reason. Run an adversarial review that attempts to reintroduce raw cross-owner state, worker wait, tiny work, false sharing, native allocator sharing, premature GPU reuse, nondeterministic merge, and misleading performance claims.
 11. Close every row in `Renderer/RHI Use-Case-to-Prompt Coverage` with code/test/capture evidence or a source-backed non-applicability decision. Teach back light/shadow/mesh preparation, shader/PSO/resource staging, direct versus software-translated RHI recording, D3D12/Vulkan list ownership, the qualified meanings of merge, submit batching, retirement, and the CPU-task versus GPU-queue distinction. Distributed light baking and an RHI translation thread remain defer decisions unless separately approved through their product/ADR gates.
-12. Update release-facing Current/validated status and limitations only after evidence passes; close J's Definition of Done and every K gate.
+12. Close Rule 13 repository-wide. For each frame-hot GameFramework, editor publication, game-to-render extraction, RenderWorld/GPU-scene, cooker, and renderer-preparation stream, link the authoritative/derived ownership, data/access inventory, concrete layout, stable identity, deterministic transform, replaced object/full-copy path, exact source precedent, and measurement. Demonstrate the Two Data Streams and one representative ECS system live from source columns through packet and render slot to projected GPU update.
+13. Update release-facing Current/validated status and limitations only after evidence passes; close J's Definition of Done and every K gate.
 
 Validation:
-- All 30 prompt reports exist; exact commands/configurations/hardware are recorded and representative reruns are comparable within stated variability.
+- All 32 prompt reports exist; exact commands/configurations/hardware are recorded and representative reruns are comparable within stated variability.
 - Three incident regressions fail before their fixes or fault injection and pass after; native validation and sanitizer-supported runs remain clean.
 - Portfolio claims link to code/tests/captures and separate CPU/GPU/latency causality.
 - A mock adversarial review can alter a scenario or trace and still receive a reasoned answer, not a memorized script.
@@ -1767,12 +1980,15 @@ Forbidden: memorized definitions, fabricated capture, cherry-picked FPS, generat
 
 The series is complete only when:
 
-- all 30 prompt reports exist and every gate is PASS;
+- all 32 prompt reports exist and every gate is PASS;
 - J's Definition of Done is satisfied by executable evidence;
 - all compatibility/deletion ledgers are closed;
 - the current repository-wide concurrency scan has zero unclassified hits and each retained primitive has an owner, invariant, blocking/affinity policy, and falsifying test;
 - MT-01 through MT-44 have concrete final-code prevention evidence or reviewable non-applicability, and each implementation report contains its applicable hazard pre-mortem/closure;
 - the repository has one coherent ownership/data path per responsibility;
+- touched architecture subtrees consistently express module and subsystem ownership through folders, public/private placement, filenames, primary type names, namespaces, exports, and CMake targets; old paths and compatibility spellings are absent;
+- every frame-hot or cross-owner data path has a Rule 13 DOD reconciliation: one authority, explicit derived projections, measured access-driven layout, stable identity, bounded lifetime, deterministic transformation, deleted object/full-copy predecessor, and exact applicable source precedent;
+- GameFramework-to-render publication uses the single proven `RenderWorldDelta` plus `RenderFrameDynamicData` boundary; Renderer performs no ECS query, gameplay-object dereference, or scene-wide rebuild for an isolated dirty change;
 - the implementation remains understandable in serial mode;
 - the owner can explain and defend every major design, tradeoff, failure mode, and measurement without relying on this document as a script.
 
