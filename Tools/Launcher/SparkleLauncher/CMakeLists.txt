@@ -205,6 +205,7 @@ target_include_directories(SparkleLauncher
 target_link_libraries(SparkleLauncher
     PRIVATE
         SparkleLauncherCore
+        SparkleCore
         Qt6::Widgets
 )
 
@@ -258,6 +259,7 @@ sparkle_configure_launcher_artifacts(SparkleLauncherProbe)
 target_link_libraries(SparkleLauncherProbe
     PRIVATE
         SparkleLauncherCore
+        SparkleCore
 )
 
 target_compile_features(SparkleLauncherProbe PRIVATE cxx_std_20)

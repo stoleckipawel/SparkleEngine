@@ -1,6 +1,7 @@
 #include "Cli/CommandRegistry.h"
 #include "Cli/ICommand.h"
 #include "Constants/ShaderCompilerConstants.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <iostream>
 #include <span>
@@ -9,6 +10,7 @@
 
 int main(int argc, char** argv)
 {
+	Threading::SetCurrentThreadRole("Sparkle.ToolMain");
 	const CommandRegistry registry;
 
 	if (argc >= 2)

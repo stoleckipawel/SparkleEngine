@@ -5,6 +5,7 @@
 
 #include "Renderer.h"
 #include "ShaderRecook/ShaderRecookPublicationReader.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <algorithm>
 #include <exception>
@@ -405,6 +406,7 @@ ShaderRecookCoordinator::ProcessResult ShaderRecookCoordinator::RunRecookProcess
     std::uint64_t baselinePublicationId,
     ShaderRecookRequest request) noexcept
 {
+	Threading::SetCurrentThreadRole("Sparkle.Tool.ShaderRecook");
 	ProcessResult result;
 	result.RequestId = requestId;
 	result.BaselinePublicationId = baselinePublicationId;

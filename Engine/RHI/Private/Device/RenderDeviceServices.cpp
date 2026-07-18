@@ -10,7 +10,9 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 #include <string>
+#include <utility>
 
 static std::shared_ptr<spdlog::logger> g_rhiServicesLogger = Logging::GetOrCreateLogger("RHI.Services");
 
@@ -31,7 +33,35 @@ static void ValidateBackBufferFormat(PixelFormat backBufferFormat) noexcept
 	}
 }
 
-RenderDeviceServices::RenderDeviceServices() noexcept = default;
+class RenderDeviceServicesState final
+{
+  public:
+	~RenderDeviceServicesState() noexcept { m_owner.AssertAccess(); }
+
+	void SetBackend(std::unique_ptr<RenderDeviceBackendServices> backend) noexcept
+	{
+		m_owner.AssertAccess();
+		m_backend = std::move(backend);
+	}
+
+	RenderDeviceBackendServices& Backend(std::source_location location = std::source_location::current()) noexcept
+	{
+		m_owner.AssertAccess(location);
+		return *m_backend;
+	}
+
+	const RenderDeviceBackendServices& Backend(std::source_location location = std::source_location::current()) const noexcept
+	{
+		m_owner.AssertAccess(location);
+		return *m_backend;
+	}
+
+  private:
+	Threading::OwnerThread m_owner{"RenderDeviceServices"};
+	std::unique_ptr<RenderDeviceBackendServices> m_backend;
+};
+
+RenderDeviceServices::RenderDeviceServices() noexcept : m_state(std::make_unique<RenderDeviceServicesState>()) {}
 
 RenderDeviceServices::~RenderDeviceServices() noexcept = default;
 
@@ -65,7 +95,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 	{
 		case ERhiBackendApi::D3D12:
 		#if SPARKLE_RHI_WITH_D3D12
-			services->m_backend = CreateD3D12RenderDeviceServices(window, backBufferFormat, externalFeatureHooks);
+			services->m_state->SetBackend(CreateD3D12RenderDeviceServices(window, backBufferFormat, externalFeatureHooks));
 			break;
 		#else
 			FailUnsupportedRhiBackend(backendApi);
@@ -73,7 +103,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 		#endif
 		case ERhiBackendApi::Vulkan:
 		#if SPARKLE_RHI_WITH_VULKAN
-			services->m_backend = CreateVulkanRenderDeviceServices(window, backBufferFormat, externalFeatureHooks);
+			services->m_state->SetBackend(CreateVulkanRenderDeviceServices(window, backBufferFormat, externalFeatureHooks));
 			break;
 		#else
 			FailUnsupportedRhiBackend(backendApi);
@@ -89,96 +119,97 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 
 const RhiCapabilities& RenderDeviceServices::GetCapabilities() const noexcept
 {
-	const RenderDeviceBackendServices& backend = *m_backend;
+	const RenderDeviceBackendServices& backend = m_state->Backend();
 	return backend.GetRenderHardwareInterface().GetCapabilities();
 }
 
 RenderHardwareInterface& RenderDeviceServices::GetRenderHardwareInterface() noexcept
 {
-	return m_backend->GetRenderHardwareInterface();
+	return m_state->Backend().GetRenderHardwareInterface();
 }
 
 const RenderHardwareInterface& RenderDeviceServices::GetRenderHardwareInterface() const noexcept
 {
-	const RenderDeviceBackendServices& backend = *m_backend;
+	const RenderDeviceBackendServices& backend = m_state->Backend();
 	return backend.GetRenderHardwareInterface();
 }
 
 RhiImGuiRenderer& RenderDeviceServices::GetImGuiRenderer() noexcept
 {
-	return m_backend->GetImGuiRenderer();
+	return m_state->Backend().GetImGuiRenderer();
 }
 
 void RenderDeviceServices::WaitForIdle() noexcept
 {
-	m_backend->WaitForIdle();
+	m_state->Backend().WaitForIdle();
 }
 
 void RenderDeviceServices::ResizeSwapChain() noexcept
 {
-	m_backend->ResizeSwapChain();
+	m_state->Backend().ResizeSwapChain();
 }
 
 void RenderDeviceServices::BeginFrame() noexcept
 {
-	m_backend->BeginFrame();
-	RenderHardwareInterface& renderHardwareInterface = m_backend->GetRenderHardwareInterface();
+	RenderDeviceBackendServices& backend = m_state->Backend();
+	backend.BeginFrame();
+	RenderHardwareInterface& renderHardwareInterface = backend.GetRenderHardwareInterface();
 	renderHardwareInterface.GetDescriptorService().BeginFrame(renderHardwareInterface.GetCurrentFrameIndex());
 }
 
 RenderCommandList& RenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
 {
-	return m_backend->GetCurrentGraphicsCommandList();
+	return m_state->Backend().GetCurrentGraphicsCommandList();
 }
 
 RenderCommandList& RenderDeviceServices::GetGraphicsCommandList(std::uint32_t frameIndex) noexcept
 {
-	return m_backend->GetGraphicsCommandList(frameIndex);
+	return m_state->Backend().GetGraphicsCommandList(frameIndex);
 }
 
 RenderCommandList& RenderDeviceServices::BeginCommandList(ERhiQueueType queueType) noexcept
 {
-	return m_backend->BeginCommandList(queueType);
+	return m_state->Backend().BeginCommandList(queueType);
 }
 
 RhiSubmissionToken RenderDeviceServices::SubmitCommandList(
 	RenderCommandList& commandList,
 	std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
-	return m_backend->SubmitCommandList(commandList, waitTokens);
+	return m_state->Backend().SubmitCommandList(commandList, waitTokens);
 }
 
 void RenderDeviceServices::QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept
 {
-	m_backend->QueueWait(waitQueue, executionToken);
+	m_state->Backend().QueueWait(waitQueue, executionToken);
 }
 
 void RenderDeviceServices::WaitForSubmission(RhiSubmissionToken token) noexcept
 {
-	m_backend->WaitForSubmission(token);
+	m_state->Backend().WaitForSubmission(token);
 }
 
 bool RenderDeviceServices::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
 {
-	return m_backend->IsSubmissionComplete(token);
+	return m_state->Backend().IsSubmissionComplete(token);
 }
 
 RhiSubmissionToken RenderDeviceServices::GetLastSubmittedToken(ERhiQueueType queueType) const noexcept
 {
-	return m_backend->GetLastSubmittedToken(queueType);
+	return m_state->Backend().GetLastSubmittedToken(queueType);
 }
 
 void RenderDeviceServices::SubmitFrame() noexcept
 {
-	m_backend->SubmitFrame();
+	m_state->Backend().SubmitFrame();
 }
 
 void RenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
-	m_backend->AdvanceFrameInFlight();
+	m_state->Backend().AdvanceFrameInFlight();
 }
 
 void RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
 {
-	m_backend->CloseExecuteAndFlushCurrentFrame();
+	m_state->Backend().CloseExecuteAndFlushCurrentFrame();
 }

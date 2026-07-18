@@ -4,6 +4,7 @@
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 #include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QThread>
@@ -331,6 +332,7 @@ namespace SparkleLauncher
 		ProcessRunnerFactory processRunnerFactory = m_processRunnerFactory;
 
 		QThread* workerThread = QThread::create([this, category, title, runId, operationIdText, processRunnerFactory, request = std::move(request)]() {
+			Threading::SetCurrentThreadRole("Sparkle.Tool.Operation");
 			const std::string operationId = request.OperationId.toStdString();
 			std::unique_ptr<IProcessRunner> processRunner = processRunnerFactory();
 			if (processRunner == nullptr)

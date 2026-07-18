@@ -156,6 +156,21 @@ J's **Canonical Concurrency and Rendering Vocabulary** is binding. Before adding
 
 Every prompt searches for both the canonical term and rejected aliases in its touched scope. A rename updates filenames, C++ symbols, tests, profiler/debugger labels, comments, CMake references, and documents in one prompt; compatibility aliases are temporary within that prompt and deleted before its gate. The completion report must include a naming reconciliation even when the decision is to retain an accurate existing name.
 
+### 11. Readable Product Code and Proportionate Validation
+
+Concurrency correctness must be encoded at the narrowest reusable ownership boundary, not repeated as logging/assertion boilerplate throughout orchestration code. Follow the owner/context/lease separation used by the NVIDIA, AMD, Epic, and O3DE references in J:
+
+- implementation types own mechanism and invariants; orchestrators express order and policy in short, readable calls;
+- prefer an owner-bound access type, scoped lease, typed token, or one gateway assertion over copying `AssertOwnerThread("method")` into every facade method;
+- use generalized abstractions only when at least two real consumers share the same lifetime semantics; do not generalize feature policy into Core;
+- place CVars/settings in the owning subsystem's dedicated `*CVars`/settings unit, never in a general parser, launch loop, or unrelated orchestrator;
+- add only essential correctness assertions, failure diagnostics, and profiler labels with a concrete vendor/API precedent and a falsifying use; no per-item log spam, speculative counters, or diagnostic mirrors of ordinary state;
+- do not run a full repository build, all scenes, all backends, and heavyweight captures after every prompt or every edit. At the end of an ordinary code prompt, run the smallest affected target compile and focused deterministic test once. Full D3D12/Vulkan product builds and representative-scene matrices belong to integration gates 00, 05, 13, 20–22, and 29, or when the changed ABI/backend boundary specifically requires them;
+- performance captures belong to measurement prompts 05, 23–25, 28, and 29. Other prompts reuse the last compatible baseline and add a new capture only when their acceptance claim depends on timing;
+- documentation-only prompts run link/search/format checks, not product builds.
+
+The completion report must say why each validation action was proportionate. More logs, assertions, targets, and repeated full builds are not stronger evidence when they do not cross the changed invariant.
+
 ## Required Prompt Completion Report
 
 Every completed prompt returns this report:

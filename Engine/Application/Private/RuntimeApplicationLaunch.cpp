@@ -4,6 +4,7 @@
 
 #include "Application.h"
 #include "RuntimeApplication.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 
 int RunRuntimeApplication()
 {
@@ -12,6 +13,7 @@ int RunRuntimeApplication()
 
 int RunRuntimeApplication(RuntimeApplicationOptions options)
 {
+	Threading::SetCurrentThreadRole("Sparkle.GameThread");
 	Application::ConfigureProcessFromCommandLine();
 
 	RuntimeApplication app(std::move(options));

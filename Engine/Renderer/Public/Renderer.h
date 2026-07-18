@@ -15,8 +15,7 @@ class RhiImGuiRenderer;
 class LevelManager;
 class GameScene;
 class Window;
-class FramePipeline;
-class RendererSystemRoot;
+class RendererState;
 
 class SPARKLE_RENDERER_API Renderer final
 {
@@ -53,6 +52,5 @@ class SPARKLE_RENDERER_API Renderer final
 	void OnRender() noexcept;
 
   private:
-	std::unique_ptr<RendererSystemRoot> m_systemRoot;
-	std::unique_ptr<FramePipeline> m_framePipeline;
+	std::unique_ptr<RendererState> m_state;
 };

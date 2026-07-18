@@ -3,6 +3,7 @@
 #include "SparkleLauncher/ProcessRunner.h"
 #include "SparkleLauncher/ProjectDiscovery.h"
 #include "SparkleLauncher/RepositoryLocator.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <filesystem>
 #include <iostream>
@@ -11,6 +12,7 @@
 
 int main(int argc, char** argv)
 {
+	Threading::SetCurrentThreadRole("Sparkle.ToolMain");
 	std::string errorMessage;
 	const std::filesystem::path startPath = argc > 1 ? std::filesystem::path(argv[1]) : std::filesystem::current_path();
 	const std::optional<SparkleLauncher::RepositoryRoot> repositoryRoot = SparkleLauncher::TryFindRepositoryRoot(startPath, errorMessage);

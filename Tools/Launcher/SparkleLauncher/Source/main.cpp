@@ -1,5 +1,6 @@
 #include "LauncherGuiApp.h"
 #include "../Private/Shell/LauncherShell.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <iostream>
 #include <string_view>
@@ -22,6 +23,7 @@ namespace SparkleLauncherMain
 
 int main(int argc, char** argv)
 {
+	Threading::SetCurrentThreadRole("Sparkle.ToolMain");
 #if !defined(_WIN32)
 	std::cerr << "SparkleLauncher GUI is currently implemented for Windows.\n";
 #endif

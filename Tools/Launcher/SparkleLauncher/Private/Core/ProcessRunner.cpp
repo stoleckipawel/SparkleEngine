@@ -1,4 +1,5 @@
 #include "SparkleLauncher/ProcessRunner.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <algorithm>
 #include <cwchar>
@@ -286,6 +287,7 @@ namespace SparkleLauncher
 
 		result.Launched = true;
 		std::thread readerThread([&result, &request, &logStream, readPipe]() {
+			Threading::SetCurrentThreadRole("Sparkle.Tool.ProcessOutput");
 			char buffer[4096];
 			DWORD bytesRead = 0;
 			while (ReadFile(readPipe, buffer, static_cast<DWORD>(sizeof(buffer)), &bytesRead, nullptr) && bytesRead > 0)

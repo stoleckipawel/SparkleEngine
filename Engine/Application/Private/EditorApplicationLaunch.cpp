@@ -4,6 +4,7 @@
 
 #include "Application.h"
 #include "EditorApplication.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 
 int RunEditorApplication()
 {
@@ -12,6 +13,7 @@ int RunEditorApplication()
 
 int RunEditorApplication(RuntimeApplicationOptions options)
 {
+	Threading::SetCurrentThreadRole("Sparkle.EditorThread");
 	Application::ConfigureProcessFromCommandLine();
 
 	EditorApplication app(std::move(options));

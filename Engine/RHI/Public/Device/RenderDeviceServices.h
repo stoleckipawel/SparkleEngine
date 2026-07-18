@@ -12,7 +12,7 @@
 
 class Window;
 class RhiImGuiRenderer;
-class RenderDeviceBackendServices;
+class RenderDeviceServicesState;
 
 class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionService
 {
@@ -59,5 +59,5 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
   private:
 	RenderDeviceServices() noexcept;
 
-	std::unique_ptr<RenderDeviceBackendServices> m_backend;
+	std::unique_ptr<RenderDeviceServicesState> m_state;
 };

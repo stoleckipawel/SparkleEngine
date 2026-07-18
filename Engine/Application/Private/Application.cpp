@@ -3,6 +3,7 @@
 #include "Application.h"
 
 #include "ApplicationCommandLineCVars.h"
+#include "Concurrency/ConcurrencyLaunchCVars.h"
 #include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
@@ -16,6 +17,7 @@ void Application::ConfigureProcessFromCommandLine() noexcept
 		_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 	}
 
+	ConcurrencyLaunchCVars::Register();
 	ApplyPersistedEngineRenderingSettingsToCVars();
 	ApplicationCommandLineCVars::Apply();
 }
