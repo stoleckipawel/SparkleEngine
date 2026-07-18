@@ -3,6 +3,7 @@
 Status: proposed target architecture and implementation program
 Date: 2026-07-16
 Last adversarial conformance review: 2026-07-18
+Last NVIDIA/AMD/Epic naming review: 2026-07-18 (repository revisions pinned in the source matrix)
 Scope: runtime, renderer, RHI, editor, asset and shader tools, learning evidence, and portfolio presentation
 Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), and [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md)
 Repository context: [D. Whole Repository Architecture Map](D_WholeRepositoryArchitectureMap.md)
@@ -46,14 +47,15 @@ If an earlier proof is missing, later parallelism is not ready. For example, a w
 
 ### The Study Loop
 
-Use the same six-step loop for every topic:
+Use the same seven-step loop for every topic:
 
 1. **Observe:** find the current Sparkle code path and describe what it does today without proposing a fix.
 2. **Model:** name the owner, readers, writers, lifetime, publication point, and ordering constraints.
-3. **Build serially:** express the new contract through the deterministic serial executor or serial consumer first.
-4. **Parallelize one proven range:** add tasks only where inputs and output ownership are explicit.
-5. **Try to falsify it:** inject delays, cancellation, stale generations, small workloads, shutdown, and backend-specific validation.
-6. **Measure and teach back:** explain what improved, what stayed serial, what became more expensive, and why the result remains correct.
+3. **Pre-mortem:** select applicable MT hazard IDs from the Professional Multithreading Failure Atlas and predict how each failure would appear in this exact path.
+4. **Build serially:** express the new contract through the deterministic serial executor or serial consumer first.
+5. **Parallelize one proven range:** add tasks only where inputs and output ownership are explicit.
+6. **Try to falsify it:** inject delays, cancellation, stale generations, small workloads, shutdown, and backend-specific validation.
+7. **Measure and teach back:** explain what improved, what stayed serial, what became more expensive, and why the result remains correct.
 
 The objective is not merely to remember APIs. You should be able to predict failure before running the code, draw the happens-before and lifetime edges, and explain why a rejected design is unsafe or unnecessarily complex.
 
@@ -95,7 +97,7 @@ At every arrow ask four questions: who writes, who reads, what establishes happe
 |---|---|---|---|
 | 1. Current frame and ownership | Current Repository State; Thread Roles | why current serial code is correct and where lifetime coupling exists | annotated current CPU timeline |
 | 2. Memory model | Learning Foundations; Ownership State Machine | data race, atomicity, release/acquire, publication, reclamation | packet publication stress test |
-| 3. Job system | SparkleTasks Job System Design | ready queues, dependencies, continuations, sleep/wake, cancellation, scopes | serial and 1/2/N-worker graph tests |
+| 3. Engine job system | SparkleTasks Task Runtime Design | ready queues, dependencies, continuations, sleep/wake, cancellation, scopes | serial and 1/2/N-worker graph tests |
 | 4. ECS and DOD | GameFramework ECS sections | entity versus object, sparse/dense storage, queries, structural epochs, AoS/SoA choices | randomized registry/query reference tests |
 | 5. Cross-thread world/render contract | Cross-Thread Scene Contract | stable generations, deltas, dynamic streams, proxies, backpressure | headless packet replay without `GameScene` |
 | 6. Render pipeline | Renderer Redesign | render ownership, persistent GPU data, preparation DAG, submission authority | serial/threaded renderer parity capture |
@@ -103,11 +105,12 @@ At every arrow ask four questions: who writes, who reads, what establishes happe
 | 8. Async product workflows | Loading, Editor, Tools | I/O lanes, stale results, atomic publication, UI affinity, deterministic tools | cancel/fail/reload tests retaining old generation |
 | 9. Feature preservation | Advanced Graphics Feature Preservation | why threading must preserve RT, temporal, providers, shader ABI, capture | feature-specific serial/parallel matrix |
 | 10. Performance and portfolio | Verification, Performance, Portfolio | Amdahl's law, critical path, task grain, CPU/GPU separation, honest claims | reproducible p50/p95 captures and live demonstration |
-| 11. Atomic and synchronization depth | Expert Concurrency Core; Tutorial 10 | modification order, CAS loops, ABA, progress guarantees, primitive selection | mailbox/deque litmus and reclamation tests |
+| 11. Atomic and synchronization depth | Expert Concurrency Core; Tutorial 10 | modification order, CAS loops, ABA, progress guarantees, primitive selection | bounded-queue/deque litmus and reclamation tests |
 | 12. CPU topology and scheduler behavior | Expert Concurrency Core; Tutorial 11 | physical/logical cores, SMT, cache domains, priority inversion, oversubscription | worker-count/topology capture matrix |
 | 13. Parallel algorithms and streaming | Tutorials 12-13 | partition, reduction, scan, deterministic merge, I/O/decode/upload pipelines | real cooker/ECS/PSO cold-cache workloads |
 | 14. GPU queue and frame latency | Tutorial 14; Renderer/RHI sections | CPU tasks versus GPU queues, overlap, fences, pacing, backpressure, input-to-present | D3D12/Vulkan queue and latency captures |
 | 15. Production diagnosis and interview defense | Tutorial 15; Interview Readiness Audit | races, deadlocks, stalls, crash evidence, tool choice, causal explanation | injected failures, traces, whiteboard and coding drills |
+| 16. Professional failure recognition | Professional Multithreading Failure Atlas; K hazard traceability | recognize MT-01–MT-44 from code and traces, select a source-backed engine pattern, and design a falsifying test | pre-mortem and hazard-closure report for each implementation prompt |
 
 ### Teach-Back Standard
 
@@ -117,6 +120,7 @@ Before advancing from a lesson, explain it without reading the document. A satis
 - the invariant being introduced
 - the synchronization or ownership edge enforcing it
 - one tempting incorrect implementation and its failure mode
+- the applicable MT hazard ID and the NVIDIA/AMD/Epic or specification precedent that makes the chosen pattern recognizable
 - the chosen design's cost or limitation
 - the test that would disprove your claim if the implementation were wrong
 
@@ -241,7 +245,7 @@ Consequences:
 
 - SparkleTasks is internal engine infrastructure. It does not promise a public plugin ecosystem or general-purpose API stability.
 - The frame graph remains the renderer scheduler; SparkleTasks only executes CPU work made legal by existing ownership and graph decisions.
-- The RHI remains the explicit low-level D3D12/Vulkan service layer. RecordingContextLease expresses temporary ownership; it does not hide queues, commands, barriers, descriptors, or native backend rules.
+- The RHI remains the explicit low-level D3D12/Vulkan service layer. `RhiCommandRecordingLease` expresses temporary ownership; it does not hide queues, commands, barriers, descriptors, or native backend rules.
 - Tools may use SparkleTasks only when they are part of the owned build, cook, shader, launch, clean, or package workflows.
 - Research features may consume the infrastructure, but may not add scheduler primitives, packet fields, or shipping graph complexity without a product feature need.
 
@@ -275,12 +279,91 @@ Several kinds of concurrency are often collapsed into one phrase. Sparkle must n
 |---|---|---:|---:|
 | Background concurrency | File/process work overlaps the application | One shader-recook future and a process-output reader thread | Managed background and blocking-I/O lanes |
 | Task parallelism | Independent CPU work overlaps inside one frame or cook | No general system | Work-stealing task runtime and dependency graphs |
-| Game/render pipelining | Game frame N+1 overlaps render frame N | No | Dedicated render thread and bounded packet mailbox |
+| Game/render pipelining | Game frame N+1 overlaps render frame N | No | Dedicated RenderThread and bounded `RenderFrameQueue` |
 | Parallel command recording | CPU workers build command lists/buffers together | No | Frame-graph recording groups and worker-local RHI contexts |
 | GPU queue concurrency | Graphics, compute, and copy execute concurrently | Yes | Preserve, measure, and feed it more efficiently |
 | Frames in flight | CPU and GPU work on different frames | Yes at the RHI/frame-resource level | Make CPU packet/resource ownership explicit |
 
 GPU async compute is not CPU multithreading. A copy queue upload is not a background CPU task. Multiple frames in flight do not make the application loop multithreaded. The final documentation, profiler, and portfolio material should keep these distinctions visible.
+
+### Renderer/RHI Multithreading Use-Case Completeness Audit
+
+The governing documents require more than a task runtime and a few parallel passes. A requires explicit command-list, queue, descriptor, memory, pipeline, shader, barrier, ray-tracing, and lifetime competence. D identifies current CPU work in scene construction, frame-graph setup/compile, shader/texture loading, pipeline creation, recording, and submission. E requires a renderer/RHI split grounded in NVRHI, Donut, and other production references. G/H require demonstrable graphics-engine skill without weakening the renderer's existing product features. Therefore, a renderer/RHI use case is complete only when it has an owner, a serial oracle, a bounded parallel policy, native-API validation, performance evidence, and a K prompt.
+
+The status words are binding:
+
+- **Implement** means build and retain a useful Sparkle product path after serial/parallel parity and performance gates.
+- **Measured candidate** means build only when a named current path is a measured critical-path or hitch source; delete a losing parallel variant.
+- **Study/lab** means understand and, where specified, exercise the mechanism without adding a second shipping architecture.
+- **Know and defer** means be able to defend why the technique exists and why Sparkle does not yet need it.
+- **Reject** means the mechanism would duplicate an existing authority or solve no durable Sparkle problem.
+
+#### Renderer Front-End and Scene Preparation
+
+| Common engine use case | Sparkle decision | Existing Sparkle substrate | Required proof / K home |
+|---|---|---|---|
+| Apply scene changes to render-owned proxies | Implement | `RenderSceneSnapshot`, planned `RenderWorldDelta`, current `RenderSceneDataBuilder` | Stable generation and previous-frame identity; Prompts 12, 15, 17 |
+| Transform propagation, world bounds, previous transforms | Implement | `MeshDrawTransform`, snapshot transforms, skinning state | Range ownership, serial equivalence, bounds reduction; Prompts 08, 10, 17, 26 |
+| Per-view frustum visibility, distance/LOD and render relevance | Implement | Current camera/view and mesh classifications, but no complete retained visibility contract | Deterministic visible sets and view identity; Prompt 17 |
+| Light visibility, classification and compact light packets | Implement | Current light arrays and native reservoir-lighting paths | Stable light IDs/order, visible-light lists, serial/parallel reservoir parity; Prompt 17 |
+| Shadow-view setup, light/frustum intersection and caster lists | Implement when shadow path consumes raster caster lists; otherwise build the planning contract with the first such path | Current shadow visibility/direct-shadow feature surface | Per-light/view private results, deterministic caster order, large-light stress; Prompts 17, 21 |
+| Skinning, morph and animation-derived render data | Implement | Existing skeletal mesh, morph weights and joint matrices | Game-system producer plus render preparation consumer; Prompts 10, 17 |
+| Raster pass eligibility and material/pipeline classification | Implement | `MeshRenderItem`, `RenderMeshKind`, material handles and pass runtimes | Immutable tables, no lazy cache mutation, stable pass buckets; Prompt 17 |
+| Static/retained versus dynamic draw preparation | Implement incrementally, using current `MeshDraw` and `MeshInstanceBatch` rather than cloning Unreal's types | `MeshDraw`, `MeshRenderItem`, `MeshInstanceBatchBuilder` | Cache only view-independent state; explicit invalidation/lifetime; Prompt 17 |
+| Draw sorting, state bucketing, compatible instancing and batch formation | Implement | `MeshInstanceBatchBuilder` already has batch keys and auto/preserved groups | Stable keys/tie-breaks, transparent-order preservation, measured crossover; Prompts 17, 26 |
+| Per-view/per-pass constants and descriptor table preparation | Implement | pass parameter/binder, RHI upload and descriptor services | Preassigned or worker-local slices, no hot shared cursor; Prompts 17-20 |
+| GPU-scene dirty-range coalescing, scan/compaction and upload planning | Implement | current rebuilt scene uploads; planned persistent `GpuScene` | Dirty-only work, deterministic compaction and retirement; Prompts 15, 26 |
+| BLAS eligibility/build inputs and update/refit/rebuild/compaction decisions | Implement where supported by current RT product paths | classic acceleration-structure RHI and mesh RT data | Per-asset ownership, scratch/result lifetime, cold/create cost; Prompts 16, 17, 21, 27 |
+| Classic TLAS and PTLAS instance planning | Implement separately | existing classic TLAS and PTLAS contracts | Add/remove/update/generation parity, never conflate build modes; Prompts 17, 21 |
+| Frame-graph declaration production | Keep coordinator commit serial; measured private producers may run in parallel | mutable `FrameGraphBuilder` and typed pass setup | No concurrent builder mutation; private declarations merge deterministically; Prompt 17/20 only after evidence |
+| Frame-graph compile algorithms: culling, lifetime analysis, barrier and queue planning | Measured candidate after topology reuse is evaluated | existing `FrameGraphCompiler` | Same compiled plan and diagnostics; never split barrier authority; Prompt 20/23 |
+
+This table deliberately names light and shadow work more precisely than “build lighting.” Runtime light processing can include classifying visible lights, building light-grid or compact light records, deriving shadow views, intersecting light frusta with scene bounds, and building caster lists. The GPU lighting/shadow algorithm remains a renderer decision; CPU tasks only prepare independent immutable inputs. Unreal Swarm/Lightmass is a different case: distributed offline static-light baking. Sparkle should know that architecture but not create a distributed bake farm until a real static-light product and content workflow exist.
+
+#### RHI Back End, Resource Work, and Command Production
+
+| Common engine use case | Sparkle decision | Boundary that must remain visible | Required proof / K home |
+|---|---|---|---|
+| Shader source compilation and permutation cooking | Implement as bounded tool/process work | Compiling source is not creating a native pipeline | Prompts 04, 22, 27 |
+| Shader package I/O, reflection/layout validation and generation publication | Implement | Workers build candidates; one owner publishes a complete immutable generation | Prompts 16, 27 |
+| Graphics/compute PSO creation, precaching and cache persistence | Implement | Key discovery/deduplication, native creation, cache commit and not-ready policy are distinct stages | Prompt 27 |
+| Ray-tracing pipeline/library/collection creation | Measured candidate; D3D12 collection or Vulkan pipeline-library mechanisms are backend-specific experiments | Do not leak backend pipeline-library nouns into common RHI | Prompt 27, with Prompt 21 RT parity |
+| Buffer/image and view creation | Implement as bounded resource-stage work where the backend/device contract permits it | Exclusive output objects; render-owned commit and generation | Prompt 27 |
+| GPU memory allocation/suballocation and memory binding | Implement owner-local or parallel by independent arenas; measure driver/allocator contention | Allocation, binding, residency, upload, and publication are not one operation | Prompts 15, 16, 27 |
+| Descriptor allocation and descriptor writes/updates | Implement by lifetime domain | Persistent registry remains render-owned; transient recording pages are worker-local/preassigned | Prompts 18, 19, 27 |
+| Decode/decompress/transcode and upload-copy preparation | Implement staged | Blocking I/O, CPU transform, copy recording, GPU completion and readiness are separate | Prompts 04, 09, 16, 27 |
+| Command allocator/pool/list acquisition, begin, end and reset | Implement | One exclusive lease; GPU token controls reuse | Prompts 18, 19 |
+| Pass-level parallel native command recording | Implement | Same frame-graph plan, private native list/buffer, coordinator submission | Prompt 20 |
+| Intra-pass draw/dispatch/build-input chunk recording | Implement only for measured heavy passes | Bounded chunks, deterministic range order, serial threshold | Prompt 21 |
+| Platform-neutral software RHI command encoding and later translation | Study/lab; know and defer in production | Unreal's `FRHICommand` replay layer is not present in Sparkle today | Tutorial 16; ADR gate below |
+| Command-list aggregation/chaining and native submission batching | Implement | Aggregation preserves logical order; it does not concatenate native command buffers | Prompts 20, 21, 28 |
+| Barrier/preamble/postamble recording | Implement under compiler/coordinator authority | Workers do not discover global state from completion order | Prompt 20 |
+| Graphics/compute/copy queue submit and present | Keep one coordinator owner, not a parallel worker workload | Native queues often require external synchronization; ordering/timeline ownership stays singular | Prompts 20, 28 |
+| Deferred destruction, descriptor/resource retirement and garbage collection | Implement as token-driven owner work | CPU task completion is not GPU last use | Prompts 15, 16, 22 |
+| Readback, screenshot and capture encode/write | Implement staged, with provider/native calls as serial islands until audited | GPU readback completion precedes CPU encode/write; UI does not poll a mutable buffer | Prompts 14, 21, 22 |
+| Device-loss/crash-dump and validation callback intake | Keep callback intake narrow and owner processing serialized | This is a correctness boundary, not useful fan-out work | Prompts 19, 22, 29 |
+
+NVIDIA's Vulkan guidance explicitly lists command recording, buffer/image creation, descriptor updates, pipeline creation, and memory allocation/binding as task-graph candidates. That is a candidate inventory, not permission to call one device or allocator object concurrently without checking its API synchronization contract. Sparkle must pair every native operation with exclusive input/output ownership, a device-loss policy, a concurrency/memory budget, and backend validation.
+
+#### Offline, Tool, and GPU-Concurrency Cases That Must Not Be Mislabelled
+
+| Case | Decision | Why |
+|---|---|---|
+| Static light baking and distributed lighting build | Know and defer | Useful Epic Swarm/Lightmass precedent, but no current Sparkle static-lighting product justifies agents/coordinator/network scheduling |
+| Shader/texture/mesh cooking and package emission | Implement | Real current tools with independent inputs, deterministic fan-in and transactional outputs |
+| Mipmap/texture compression and mesh processing | Measured candidate in existing cookers | Useful only when current stages are CPU-critical and deterministic |
+| GPU async compute/copy | Preserve and measure | GPU queue overlap is heterogeneous scheduling, not CPU multithreading |
+| GPU-driven culling/indirect or device-generated commands | Future renderer feature, not a CPU-threading checkbox | It may remove CPU draw work rather than parallelize it; evaluate as renderer architecture |
+
+#### Completeness Verdict
+
+The prior J/K direction covered the broad architecture but was not sufficiently falsifiable at the use-case level. The additive closure is:
+
+1. Prompt 17 must separately prove visibility/LOD, light preparation, shadow planning/caster lists, retained/dynamic draw preparation, sorting/instancing, skinning/morph, RT inputs, and dirty GPU-scene planning where those paths exist.
+2. Prompts 18-21 must distinguish command preparation, native recording, optional software translation, ordered aggregation, native submission batching, and queue submission.
+3. Prompt 27 must include shader workers, PSOs, RT pipelines where applicable, buffer/image/view creation, allocation/binding, descriptor updates, and resource readiness as bounded stages rather than one vague “resource creation” task.
+4. Prompts 14/16/22 must prove readback/capture, retirement, validation callback, reload, resize, and shutdown ownership.
+5. Every unavailable product feature is recorded as know/defer, not silently claimed as implemented. Sparkle does not add a fake light baker, RHI thread, or GPU-driven renderer merely to fill a résumé table.
 
 ## Current Repository State
 
@@ -360,6 +443,87 @@ This ordering is simple and currently correct, but it leaves the game, editor, r
 | Asset cooker | Stages, scenes, texture requests, texture cooks, and shader cook nodes loop serially | Natural task DAG with high-value coarse work |
 | Launcher | ProcessRunner uses a reader thread around blocking child-process I/O | Blocking I/O must not consume frame workers |
 
+### Binding Legacy-Concurrency Convergence Audit
+
+The preceding table describes architectural opportunities. This audit is stricter: it records the concurrency mechanisms that already exist and makes each one an explicit migration obligation. Existing code receives no grandfather clause. A mutex, atomic, thread, future, native wait, or device-idle call may remain only when its owner, protected invariant, lifetime, blocking policy, and target architecture are defensible after the relevant K prompt.
+
+Use these dispositions consistently:
+
+- **KEEP + HARDEN** means the synchronization protects a real boundary that tasks do not remove. Narrow its critical section, state its invariant, test it, and keep it private.
+- **OWNER-ONLY** means move mutation to the named owner and use commands/results at the boundary. A defensive native mutex may remain only if the API or provider can genuinely enter from more than one thread.
+- **REPLACE** means migrate the consumer to SparkleTasks or an owned data protocol and delete the old mechanism in the named prompt.
+- **DELETE WAIT** means replace a global drain with a completion token, generation, or deferred-retirement rule. Final shutdown and unrecoverable device reinitialization are separate, explicitly labelled cases.
+- **PROVE OR REMOVE** means the current code suggests cross-thread intent but the repository does not yet demonstrate a necessary cross-thread consumer. Do not preserve speculative synchronization.
+
+| ID | Current source and mechanism | Adversarial finding | Required target and owning K prompt | Closure proof |
+|---|---|---|---|---|
+| LC-01 | [ShaderRecookCoordinator.cpp](../../../Engine/Application/Private/ShaderRecook/ShaderRecookCoordinator.cpp) and its header use a polled `std::future`/`std::async`; accepted reload calls `Renderer::WaitForIdle` | Bespoke lifetime, zero-time polling, and a full GPU drain mix process execution, publication, and render lifetime | **REPLACE** with scoped Background/BlockingIo work and owner-thread generation acceptance in Prompt 04; **DELETE WAIT** through generation swap and token retirement in Prompt 16 | no future/async/polling in the path; failure preserves the active generation; stale completion is rejected; accepted reload does not idle the device |
+| LC-02 | [LauncherBackend.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Gui/App/LauncherBackend.cpp) creates one `QThread` per operation | Thread-per-operation is an unbounded scheduling policy and duplicates engine task lifetime; Qt object affinity makes arbitrary worker callbacks dangerous | **REPLACE** operation execution with one scoped operation service backed by SparkleTasks in Prompt 04; deliver immutable progress/result messages to the Qt owner thread | repeated launch/cancel/close uses bounded lanes, no per-operation QThread remains, and no UI object is touched off-owner |
+| LC-03 | [ProcessRunner.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Core/ProcessRunner.cpp) creates a pipe reader `std::thread` while its caller polls the child every 50 ms; `ProcessRunner.h` has an atomic cancel flag | Nested ad-hoc concurrency, periodic wakeups, ambiguous child/pipe shutdown, and blocking work can escape structured lifetime | **REPLACE** reader thread, polling loop, and standalone cancel protocol with BlockingIo completion and scope cancellation in Prompt 04; re-audit staged process I/O in Prompt 27 | cancellation at launch/read/exit settles once, drains or closes handles by policy, retains diagnostics, joins no detached thread, and cannot occupy a frame worker |
+| LC-04 | [AssetCookerToolProcess.cpp](../../../Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerToolProcess.cpp) performs an infinite native child-process wait | A top-level CLI host may block, but this call is unsafe if reused inside a worker and has no bounded cancellation story | **OWNER-ONLY/REPLACE AT ASYNC CALL SITES** in Prompts 04 and 27: keep a synchronous host adapter only at the outer CLI boundary; scheduled use must enter BlockingIo and settle through a result | call graph proves no frame/background worker performs the native wait; cancellation/shutdown tests cover the scheduled path |
+| LC-05 | [InputSystem.h](../../../Engine/Platform/Public/Input/InputSystem.h) and [InputSystem.cpp](../../../Engine/Platform/Private/Input/InputSystem.cpp) protect callback vectors with `m_CallbackMutex` and invoke callbacks while the mutex is held | A callback that unsubscribes/re-subscribes can deadlock; slow or re-entrant user code extends the critical section; the mutex hides an unspecified dispatch-thread contract | **KEEP + HARDEN or OWNER-ONLY**, decided in Prompt 03 and closed in Prompt 22: declare input dispatch/registration affinity; snapshot eligible callbacks under the lock and invoke after unlock, or make the entire registry owner-thread-only. Workers publish commands/results rather than input callbacks | re-entrant unsubscribe/register tests pass; callbacks never run under the registry lock; stable handle and deferred-event semantics remain correct |
+| LC-06 | [Logger.cpp](../../../Engine/Core/Private/Diagnostics/Logger.cpp) uses a registry mutex, a mutex-backed sink, a relaxed level atomic, and release/acquire initialization publication | Logging is legitimate cross-thread infrastructure, not a job-system workload. Replacing it with tasks would be incorrect, but lock scope and initialization edges must be explainable | **KEEP + HARDEN** in Prompts 00 and 24; keep registry/sink internals private, avoid calling unknown code under the registry lock, and document each atomic invariant | concurrent initialize/get/set/shutdown policy is tested; every atomic order has a stated edge; no scheduler dependency or public mutable registry is introduced |
+| LC-07 | [Timer.h](../../../Engine/Core/Public/Time/Timer.h) uses a relaxed atomic pause flag | Relaxed is sufficient only for an independent flag; the atomic must not be mistaken for publication of timer state, and no necessary cross-thread caller is established by its presence | **PROVE OR REMOVE** in Prompts 00 and 24: document a real cross-thread pause contract or restore owner-thread non-atomic state; never use the flag to publish adjacent fields | call-site audit names the writer/readers and invariant; test proves only the flag is communicated, or the unnecessary atomic is gone |
+| LC-08 | [StreamlineRuntimeSupport.cpp](../../../Engine/Renderer/Private/Streamline/StreamlineRuntimeSupport.cpp) protects global initialization/device/presentation state with one mutex and holds it across Streamline API calls | A global lock makes provider affinity implicit and risks lock-held re-entry or long external calls; it must not become permission for arbitrary threads to call the provider | **OWNER-ONLY/NARROW** in Prompts 13, 16, and 28: render coordinator owns frame/device/presentation provider actions; application lifecycle owns init/shutdown; retain synchronization only for a documented SDK callback boundary and do not hold an engine lock across provider calls when a two-phase transition is possible | provider affinity assertions, enabled/disabled/failure/shutdown stress, no uncontrolled shared queue use, and a documented SDK re-entry policy |
+| LC-09 | [D3D12CommandQueue.cpp](../../../Engine/RHI/Private/D3D12/Commands/D3D12CommandQueue.cpp) serializes submit/state with `m_submissionMutex` and native event waits with `m_cpuWaitMutex` | Mutex-protected submission is not a submission architecture. Infinite CPU waits are valid only at declared host/reuse/drain boundaries, never inside frame tasks | **OWNER-ONLY** in Prompts 13 and 18; render coordinator submits. Keep a narrow CPU-wait serialization primitive only if multiple declared host waiters remain; replace routine drains with tokens in Prompt 16 and verify in Prompt 28 | wrong-thread submit asserts; workers only record; every CPU wait has a boundary/timeout diagnostic; ordinary reload/scene work uses tokens |
+| LC-10 | [VulkanCommandQueue.cpp](../../../Engine/RHI/Private/Vulkan/Commands/VulkanCommandQueue.cpp) locks the shared native queue around submit/present and submitted-value reads | Vulkan requires external queue synchronization, so the native mutex can be necessary; it does not justify multi-owner submission | **KEEP + HARDEN under OWNER-ONLY** in Prompts 13 and 19: the coordinator owns submit/present; the mutex documents Vulkan/provider sharing only where unavoidable; Prompt 28 proves provider queue ownership | one submission authority, Vulkan external-synchronization compliance, provider sharing contract, and no worker submit/present |
+| LC-11 | [D3D12DescriptorAllocator.cpp](../../../Engine/RHI/Private/D3D12/Descriptors/D3D12DescriptorAllocator.cpp) uses one mutex for persistent allocation/free | The lock is acceptable for infrequent persistent descriptors but becomes a frame-hot contention point if parallel recording allocates through it | **KEEP PERSISTENT / REPLACE TRANSIENT** in Prompt 18: preplan or lease worker-local transient descriptor pages; render owner retains persistent allocation and fence-delayed reclamation | parallel recording performs no contended per-draw allocation; pages cannot reset before their GPU token; persistent handle reuse is validated |
+| LC-12 | [VulkanDescriptorAllocator.cpp](../../../Engine/RHI/Private/Vulkan/Descriptors/VulkanDescriptorAllocator.cpp) places table, registration, write, lookup, retirement, and recycling under one mutex | One broad allocator lock hides distinct persistent, per-frame, and recording-time ownership and could serialize every worker | **SPLIT BY LIFETIME** in Prompt 19: worker/frame-local pool leases for transient recording, render-owned persistent registry, token/generation retirement; retain only measured shared-state locks | command-pool/descriptor-pool external synchronization passes validation; no lock-held native/update work on the recording hot path; stale handles are rejected |
+| LC-13 | [D3D12LinearAllocator.cpp](../../../Engine/RHI/Private/D3D12/Resources/D3D12LinearAllocator.cpp) uses atomic compare/exchange for a shared bump offset and relaxed high-water tracking | A lock-free bump pointer can still be a contended cache line; reset safety is external and not encoded by the atomics; acquire/release does not by itself make reuse safe | **REPLACE HOT-PATH SHARING** with worker-local pages/leases and GPU-token reset in Prompt 18; formally audit remaining atomics in Prompt 24 | allocation ranges never overlap, reset-before-retire fails, workers do not contend on one offset, and memory orders state the actual publication invariant |
+| LC-14 | [D3D12GpuMemoryAllocator.cpp](../../../Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator.cpp) and [VulkanGpuMemoryAllocator.cpp](../../../Engine/RHI/Private/Vulkan/Memory/VulkanGpuMemoryAllocator.cpp) lock allocation-record, diagnostic, and pending-release state | These locks protect real bookkeeping/lifetime state, but snapshots and destruction must not widen a frame-hot critical section or return unstable pointers | **KEEP + HARDEN** in Prompts 16, 18/19, and 24: render-owner mutation where possible, copy diagnostic aggregates under lock then format/use after unlock, token-gated release, no worker-visible mutable record pointer | delayed-GPU and concurrent diagnostic stress; no external/provider callback while locked; returned handles/records have an explicit lifetime |
+| LC-15 | [VulkanRhi.cpp](../../../Engine/RHI/Private/Vulkan/Device/VulkanRhi.cpp) protects validation callback messages with `m_diagnosticMessagesMutex` | Driver callbacks may be concurrent, so synchronization is required; consuming or logging while holding the callback lock can create re-entry and stalls | **KEEP + HARDEN** in Prompts 00 and 24: callback only appends bounded owned data; owner swaps/drains then processes outside the lock | concurrent callback/drain stress has bounded memory, no re-entry deadlock, and preserves validation messages |
+| LC-16 | Renderer/RHI lifecycle contains many `WaitForIdle` calls: shader acceptance, scene invalidation, image-provider refresh, frame-graph refresh, resize, swap-chain/context/UI/backend destruction, and explicit flush | The sites are not equivalent. Current Vulkan resize can drain in FramePipeline, device services, and swap chain for one operation. Treating them uniformly would either preserve stalls or remove necessary destruction safety | **CLASSIFY ALL** in Prompt 00; **DELETE DATA-PATH WAITS** in Prompts 13-16 and 22; keep exactly one owner-level final drain for shutdown/device reinitialization. Resize/recreate uses the narrowest required token or one documented drain until tokenized replacement is proven | a site-by-site ledger names caller, reason, frequency, owner, queues/resources covered, replacement, and prompt; no duplicate nested drain; profiler proves no ordinary scene/reload/capture idle |
+| LC-17 | [LauncherGuiApp.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Gui/App/LauncherGuiApp.cpp) uses a timed sleep during shadow-executable handoff and Qt `startDetached`; launcher operations also intentionally detach external products | An external process lifetime is not an engine task lifetime. Some detach is product behavior, while sleeps used as synchronization are fragile | **PRESERVE EXPLICIT PROCESS DETACH / REPLACE TIMING ASSUMPTION** in Prompts 04 and 22: model handoff readiness/ownership, retain `startDetached` only for intentionally independent products, and never use it to escape an owned task | restart/launch integration tests prove handoff without arbitrary timing dependence; every detached process has an explicit independent-lifetime reason |
+| LC-18 | D3D12 frame resources and command queues use native infinite fence waits; Vulkan uses timeline/device waits | GPU completion sometimes requires a blocking host boundary, but an infinite worker wait causes pool starvation and masks device-loss/hang diagnosis | **OWNER-ONLY** in Prompts 13, 18, 19, and 28: workers return dependencies; coordinator/host parks only at frame-slot reuse, explicit flush, or shutdown, with development timeout/hang diagnostics and device-loss policy | repository audit finds no GPU wait on a SparkleTasks worker; delayed/hung GPU tests identify the waited token and settle shutdown policy |
+
+#### Current `WaitForIdle` Call-Site Census
+
+This census distinguishes calls from wrapper declarations/forwarders. Prompt 00 must regenerate it from the current call graph; these initial classifications are not implementation claims.
+
+| Call-site group | Current purpose | Initial classification | Required convergence |
+|---|---|---|---|
+| `ShaderRecookCoordinator::ApplyCompletedResult` | accepted shader reload | data-path debt | generation-safe swap plus last-use token retirement; zero idle in Prompt 16 |
+| `SceneRenderStateCoordinator::InvalidateSceneScopedRendererState` | level/scene renderer-cache clear | data-path debt | sequenced scene-generation invalidation and deferred retirement in Prompts 13/15/16 |
+| `RendererSystemRoot::RefreshImageProviders` | recreate provider-facing image state | rare transition currently implemented as global drain | coordinator command, generation ownership, and narrow last-use waits in Prompts 13/16; retain a drain only if the provider contract proves it unavoidable |
+| `FramePipeline::RefreshFrameExecution` | destroy/rebuild frame contexts and graph | resize/settings data-path debt | retire the old frame-execution generation by its queue tokens; no unconditional drain in Prompt 16 |
+| `FramePipeline` pending-resize branch | pre-resize drain, then calls `RefreshFrameExecution`, which drains again | duplicate data-path debt on both backends | one resize owner; eliminate the duplicate before tokenization is considered complete |
+| `VulkanRenderDeviceServices::ResizeSwapChain` and `VulkanSwapChain::Resize` | each drains again beneath the FramePipeline resize | nested Vulkan duplicate; one resize can currently reach four idle calls when the outer refresh path is counted | collapse immediately to one coordinator-owned boundary, then use per-generation/per-image completion where supported in Prompts 13/16/19 |
+| `CloseExecuteAndFlushCurrentFrame` in D3D12/Vulkan services | explicit submit-and-flush API | declared host/debug boundary, subject to call-site audit | never reachable from a frame worker or routine update; name the reason and waited tokens; delete consumers using it as lifecycle convenience |
+| D3D12/Vulkan ImGui backend `Shutdown` | destroy UI backend resources | teardown | preserve safety but make it part of one top-level coordinator drain; nested child shutdown must not drain independently |
+| `RendererSystemRoot`, D3D12/Vulkan device services, `VulkanRhi`, `VulkanSwapChain`, and `VulkanCommandContext` destructors | layered teardown safety | final shutdown, but duplicated across ownership layers | one owner performs the final GPU drain before child destruction; lower layers assert safe teardown or use already-complete tokens |
+| D3D12/Vulkan RHI and render-device `WaitForIdle` methods | wrapper/native implementation | mechanism, not a classification | keep a narrow private final-drain operation; prohibit using the public-looking wrapper as routine lifetime management |
+
+The current resize path is a useful lesson: every individual wait can look locally defensive while their composition is globally poor. High-quality concurrency review follows the full call chain and counts native drains per user operation; it does not stop after classifying method names.
+
+This ledger is a verified starting snapshot, not permission to ignore later discoveries. Prompt 00 must regenerate the search from the then-current repository and append any new item before implementation begins. Prompt 22 must drive the ledger to zero **unclassified** primitives; it must not drive the repository to zero mutexes or atomics. The quality target is zero accidental ownership, zero duplicate scheduling systems, zero unexplained blocking, and zero lock-held arbitrary callbacks.
+
+### Lock and Wait Review Standard
+
+For every retained or introduced critical section, the implementing prompt must answer all of the following in code review:
+
+1. What invariant and fields does the lock protect?
+2. Which thread roles may acquire it, and what is the total lock order?
+3. Can it be acquired from a task that may suspend, join, invoke a callback, call a provider/driver, perform I/O, allocate unpredictably, or wait for the GPU? If yes, redesign or prove why the boundary is unavoidable.
+4. Is user, UI, event, provider, logging, destruction, or native API code executed while held? Default answer must be no; use snapshot-under-lock/apply-after-unlock or a two-phase state transition.
+5. Is the data better expressed as single-owner state, immutable publication, per-worker storage, deterministic merge, or a completion token?
+6. What contention, re-entry, cancellation, shutdown, and failure test would falsify the design?
+
+A mutex is not automatically legacy debt, and lock-free code is not automatically higher quality. `VulkanCommandQueue` external synchronization and validation-callback ingestion are examples of legitimate boundaries. The InputSystem callback-under-lock and a shared atomic upload bump pointer on a future recording hot path are examples that require architectural correction. The deciding questions are ownership, lifetime, blocking, and measured contention.
+
+### Required Repository Audit Query
+
+At Prompt 00, after every stage touching concurrency, and at Prompt 22/29 closure, search at least the owned Engine/Tools/Projects source roots for:
+
+~~~text
+std::thread|std::jthread|std::async|std::future|std::mutex|std::shared_mutex
+std::condition_variable|std::atomic|memory_order|wait_for|sleep_for
+QThread|QtConcurrent|QFuture|QMutex|QThreadPool|msleep|startDetached
+WaitForSingleObject|CreateEvent|SetEventOnCompletion|WaitForIdle|vkDeviceWaitIdle
+TaskExecutor|TaskScope|TaskEvent|ParallelFor|BlockingIo
+~~~
+
+Every hit is assigned a ledger ID, owner, disposition, target prompt, and evidence. Generated, build, external, and third-party trees may be excluded from the ownership ledger, but wrapped third-party behavior and internal worker counts remain part of oversubscription and shutdown analysis.
+
 ### The Most Important Correctness Finding
 
 The current GameSceneSnapshot looks detached because it owns vectors, but MeshInstanceSnapshot carries a raw const Mesh pointer. The renderer also reaches GameScene through RendererSystemRoot for diagnostics and coordinates scene invalidation through direct event callbacks.
@@ -393,9 +557,9 @@ This yields clearer systems than widespread mutex protection.
 
 ### Happens-Before and Publication
 
-Writing a frame packet and placing its slot index in a mailbox are separate operations. The consumer must not see the index before the packet contents are visible.
+Writing a frame packet and placing its slot index in `RenderFrameQueue` are separate operations. The consumer must not see the index before the packet contents are visible.
 
-The packet mailbox should use a release operation when the producer publishes a ready slot and an acquire operation when the render thread consumes it. Reusing the slot requires a second acknowledged transition. The queue implementation may use atomics and semaphores internally, but its public contract must describe:
+The frame queue should use a release operation when the producer publishes a ready slot and an acquire operation when RenderThread consumes it. Reusing the slot requires a second acknowledged transition. The queue implementation may use atomics and semaphores internally, but its public contract must describe:
 
 - producer-only writable state
 - immutable published state
@@ -607,7 +771,7 @@ Teach-back questions:
 
 ### Tutorial 2 — Happens-Before, Publication, and Reclamation
 
-Suppose the main thread fills a frame packet, stores its pointer in a mailbox, and the render thread sees the pointer. Seeing a non-null address does not by itself guarantee the packet writes are visible in the required order. Publication needs a release operation by the producer and an acquire operation by the consumer, or an equivalent mutex/semaphore contract.
+Suppose GameThread fills a frame packet, publishes its slot through `RenderFrameQueue`, and RenderThread sees that slot. Seeing a valid slot index does not by itself guarantee the packet writes are visible in the required order. Publication needs a release operation by the producer and an acquire operation by the consumer, or an equivalent mutex/semaphore contract.
 
 Think in three events:
 
@@ -799,7 +963,7 @@ Final teach-back challenge:
 
 ### Tutorial 10 — Atomic Protocols, Litmus Tests, and Lifetime
 
-Treat an atomic protocol as a tiny distributed state machine. Start with Sparkle's bounded frame mailbox because its payload, ownership, and capacity are concrete. The producer owns `Writing`; release-publishes `Ready`; the renderer acquire-claims `Rendering`; CPU acknowledgement permits packet-arena reuse. GPU completion is deliberately absent from this CPU mailbox protocol and belongs to render-owned retirement.
+Treat an atomic protocol as a tiny distributed state machine. Start with Sparkle's bounded `RenderFrameQueue` because its payload, ownership, and capacity are concrete. The producer owns `Writing`; release-publishes `Ready`; the renderer acquire-claims `Rendering`; CPU acknowledgement permits packet-arena reuse. GPU completion is deliberately absent from this CPU queue protocol and belongs to render-owned retirement.
 
 Build three test versions:
 
@@ -817,7 +981,7 @@ Interview drills:
 - Give an ABA example using a recycled task slot and repair it with bounded generations/lifetime.
 - Distinguish atomicity, ordering, visibility, ownership, and reclamation.
 
-Do not add a generic lock-free queue in this tutorial. The artifact is a verified protocol test for a production mailbox/task slot that Sparkle actually needs.
+Do not add a generic lock-free queue in this tutorial. The artifact is a verified protocol test for the production `RenderFrameQueue`/task slot that Sparkle actually needs.
 
 ### Tutorial 11 — Work Stealing Meets Real CPU Topology
 
@@ -902,7 +1066,7 @@ Then compare:
 - graphics-only versus measured async-compute/copy candidates;
 - frame-generation/provider disabled and enabled paths.
 
-Use queue timelines to prove overlap. Extra async compute is rejected when fences, bandwidth contention, or lost occupancy make the frame worse. Extra CPU lead is rejected when latency rises without a required throughput benefit. Vendor latency integrations may be added only through the existing provider-neutral boundary; the engine-owned frame markers and bounded mailbox remain authoritative.
+Use queue timelines to prove overlap. Extra async compute is rejected when fences, bandwidth contention, or lost occupancy make the frame worse. Extra CPU lead is rejected when latency rises without a required throughput benefit. Vendor latency integrations may be added only through the existing provider-neutral boundary; the engine-owned frame markers and bounded `RenderFrameQueue` remain authoritative.
 
 Interview drills:
 
@@ -939,6 +1103,153 @@ Tool intent matters:
 
 Prepare three incident narratives: a race/lifetime defect, a deadlock/stall, and a scaling regression. Each narrative needs evidence, root cause, rejected hypotheses, fix, regression test, and post-fix measurement.
 
+### Tutorial 16 — Draw Preparation, Recording, Translation, Aggregation, and Submission
+
+These terms are often mixed together in renderer discussions. They describe different representations, owners, and opportunities for parallelism. A strong interview answer follows one draw all the way to the GPU and says exactly where its data changes form.
+
+#### The Five Layers
+
+~~~text
+render-owned scene/proxies
+  -> visible MeshDraw / MeshInstanceBatch data
+  -> compiled FrameGraph pass + RecordingPlan
+  -> Sparkle RenderCommandList backed by one native D3D12 list or Vulkan buffer
+  -> ordered submission batch
+  -> native graphics / compute / copy queue
+~~~
+
+1. **Preparation** decides *what* should be drawn or dispatched. It performs visibility, LOD, light/shadow classification, pass eligibility, draw sorting, instancing, RT build-input selection, and immutable parameter preparation. It should not emit native commands while global caches are still changing.
+2. **Recording** calls RHI/native methods to encode commands into an exclusively owned command list or buffer. Recording can happen concurrently because each task owns a different native object and transient allocation range.
+3. **Translation** means replaying one command representation into another. Unreal's render front end records platform-neutral `FRHICommand` objects; an RHI thread or translate task executes them through an `IRHICommandContext`. Sparkle's `RenderCommandList` is currently a virtual interface directly implemented by D3D12/Vulkan command objects, so Sparkle has no equivalent software replay layer.
+4. **Aggregation** orders already-recorded lists/buffers into the sequence required by the compiled graph. It is a stable fan-in operation, not bytewise concatenation and not completion-order submission.
+5. **Submission batching** chooses how many ordered closed lists/buffers are passed to a native queue call and when. Fewer calls reduce CPU fixed cost; delaying a batch too long can leave the GPU idle or increase latency.
+
+The essential ownership timeline is:
+
+~~~text
+coordinator: compile plan -> reserve/prewarm -> launch recording tasks -----------> ordered submit -> present
+worker A:                                      lease -> begin -> record -> close --/
+worker B:                                      lease -> begin -> record -> close -/
+GPU:                                                                       execute in compiled order
+~~~
+
+Worker completion order is deliberately absent from GPU semantics.
+
+#### Unreal's Two Command-List Layers
+
+Epic's public model is valuable because it makes translation explicit:
+
+~~~text
+RenderThread / frontend tasks
+  encode FRHICommand records into FRHICommandList
+RHIThread / translate tasks
+  execute records through IRHICommandContext
+platform RHI
+  records/submits native command lists or buffers
+~~~
+
+That layer can decouple a high-level render producer from platform translation, preserve a serial/bypass mode, and allow frontend and backend parallelism. It also costs command memory, captured-argument copies, replay dispatch, a new lifetime boundary, more frame lead, and another debugging representation. Operations that cannot be deferred safely may force a flush or require data copying.
+
+Sparkle should learn this architecture without pretending it already exists. The current direct path is simpler:
+
+~~~text
+frame-graph execute task
+  -> RenderCommandList virtual call
+  -> D3D12RenderCommandList / VulkanRenderCommandList
+  -> native command object
+~~~
+
+Adding `RhiThread` now would be naming without mechanism. Adding the mechanism would mean defining a complete immutable software command ABI for every command, copying pointer-referenced data, versioning/debugging the stream, replaying it, and proving lower critical-path time than direct native recording. The production ADR gate is therefore:
+
+- a trace shows direct RHI/backend translation or submit preparation is a persistent render-coordinator critical path after parallel native recording;
+- a software command stream supplies a durable platform, capture/replay, validation, or scheduling benefit beyond “another thread”;
+- memory, latency, lifetime and debugging costs are measured;
+- serial direct, software-stream direct-translate, and threaded translate modes execute the same semantic plan;
+- the accepted design replaces a path rather than coexisting indefinitely as an unaudited second RHI.
+
+Until all five conditions hold, Sparkle implements direct parallel native recording and studies Unreal translation as a know-and-defer alternative.
+
+#### What “Merge” Can Mean
+
+Use the qualified term; never say only “merge command lists.”
+
+| Qualified operation | Meaning | Sparkle owner |
+|---|---|---|
+| **draw merge / dynamic instancing** | Replace compatible draws with an instanced/batched draw after state/binding comparison | renderer preparation (`MeshInstanceBatchBuilder` or its coherent successor) |
+| **task-result merge** | Stable concatenate, reduce, scan/scatter, or sort task-private results | SparkleTasks continuation / renderer preparation join |
+| **recording-group aggregation** | Place closed command lists/buffers in compiled submission order | frame-graph executor |
+| **render-pass merge** | Combine compatible graph passes/rendering scopes while preserving resource semantics | frame-graph compiler, only after measurement |
+| **native submit batching** | Pass several ordered lists/buffers in one queue submission | render coordinator / RHI submission service |
+| **driver optimization** | Native driver may optimize across work supplied together | driver; never an engine correctness assumption |
+
+Native D3D12 command lists and Vulkan command buffers are opaque. Sparkle does not append their bytes, reopen them from another worker, or let a worker “merge” by submitting early.
+
+#### Building Recording Groups and Chunks
+
+Pass-level recording exploits independent graph work. Intra-pass recording divides one expensive pass. The algorithm is the same shape:
+
+1. estimate CPU recording cost from prior scopes and current draw/dispatch/build-input counts;
+2. retain serial execution below a measured crossover;
+3. partition stable ordered ranges by estimated cost, not merely equal object count;
+4. prepare shared immutable pass state once;
+5. assign every range a private command object, upload slice, descriptor slice and result slot;
+6. place barriers, render-target state, common viewport/scissor and render-pass preamble in compiler/coordinator work unless the backend contract explicitly assigns them to each list;
+7. record only the range body on workers;
+8. join all range tasks without making workers wait;
+9. aggregate result slots by `SubmissionOrderKey` and range index;
+10. submit at a point that balances CPU overhead, GPU starvation and latency.
+
+Cost partitioning matters. Ten thousand cheap state-identical draws and one hundred descriptor-heavy draws are not necessarily equal recording work. Initial heuristics can use draw/dispatch counts; retained policy needs measured record time per group/pass and must avoid self-tuning instability inside one frame.
+
+#### D3D12 Shape
+
+- One command list and allocator are recorded by only one task at a time.
+- Allocator reuse is gated by completion of all GPU work recorded with it.
+- The practical ownership dimension is buffered frame × queue × recording context, bounded for memory.
+- Independent direct command lists are the baseline. Bundles are an optional measured reuse mechanism, not the synonym for parallel recording.
+- An ordered array of closed command lists can be supplied in one `ExecuteCommandLists` call. This reduces fixed submit cost and gives the runtime visibility of the batch, but it does not relax the frame graph's order or barriers.
+- Splitting every pass into a separate `ExecuteCommandLists` call can add CPU overhead and unintended ordering boundaries; accumulating the whole frame can increase GPU starvation/latency. Prompt 28 measures the middle ground.
+
+#### Vulkan Shape
+
+- Command pools are externally synchronized, so a worker uses only its leased pool/context.
+- Independent passes may use separate primary command buffers.
+- Draw-heavy work inside one rendering scope may use worker-recorded secondary command buffers executed by an ordered primary through `vkCmdExecuteCommands`.
+- Secondary buffers require correct inheritance/dynamic-rendering information and can cost more than they save; they are a policy option, not the common RHI abstraction.
+- AMD's Detroit example keeps pipeline barriers, render targets, and viewport setup out of worker secondary buffers, records descriptor/buffer/draw bodies in parallel, then restores serial render-list order. Sparkle adopts this as an instructive starting pattern, not a universal restriction for every Vulkan path.
+- Command-buffer boundaries do not create all required memory dependencies. The frame graph remains responsible for barriers, queue-family ownership and cross-queue synchronization.
+
+#### Light, Shadow, and Mesh Examples
+
+“Parallel lighting” can mean very different work:
+
+- CPU classification of visible lights and construction of compact light records;
+- parallel light-grid/cluster input generation;
+- per-light shadow-view and frustum construction;
+- parallel intersection of scene bounds with shadow frusta and deterministic caster-list merge;
+- shadow draw preparation and command recording by light/view/chunk;
+- GPU tiled/clustered lighting or asynchronous compute, which is GPU concurrency rather than CPU tasks;
+- offline static-light baking, potentially distributed, which is a tools/content product.
+
+Sparkle's useful near-term examples are the first five because they feed existing lighting, shadow, mesh, and frame-graph paths. It must preserve stable light identities required by reservoirs and transparent/caster ordering. It should not claim a distributed light-bake implementation merely because Unreal Swarm exists.
+
+Epic's mesh-draw design contributes three enduring lessons. First, cache only view-independent draw state and retain a simpler dynamic path for small/editor work. Second, cached draw references require explicit invalidation and resource lifetime. Third, parallel pass setup and dispatch should scale by pass and draw count while stable ordering survives task completion. Sparkle applies those lessons to current `MeshDraw`, `MeshRenderItem`, `MeshInstanceBatch`, and GPU-scene structures; it does not create an `FMeshDrawCommand` clone or copy Unreal prefixes.
+
+#### Interview Teach-Back
+
+Be able to answer these without notes while drawing the ownership timeline:
+
+- Why can two D3D12 command lists record concurrently while one list cannot?
+- Why does a per-thread Vulkan command pool solve correctness and reduce contention, and when does it waste memory?
+- What does Unreal translate, and why is Sparkle's current RHI not doing that?
+- What are five meanings of “merge” and which owner performs each?
+- Why can fewer queue submissions improve CPU time yet worsen latency?
+- Where do barriers live when workers record only pass bodies?
+- How do transparent and shadow-caster order remain deterministic?
+- When should a small pass stay serial?
+- How do shader compilation, PSO creation, resource upload, and command recording differ in ownership and readiness?
+- Why is async compute not evidence of CPU multithreading?
+
 ## AMD/NVIDIA Expert Interview Readiness Audit
 
 ### Evidence Boundary
@@ -973,7 +1284,7 @@ The common bar is not memorizing APIs. It is the ability to move from first prin
 | shader/PSO/resource hitches | prewarm/generation present | cold-cache dedupe, memory budget, late/miss/fallback policy | production render residency work |
 | D3D12/Vulkan recording | strong | explicit API validation under migration/delay and batch/submission cost | production dual-backend work |
 | GPU queue concurrency | partial async compute/copy policy | measured queue overlap, ownership transfer, fence/bandwidth cost | frame-graph/RHI integration |
-| frame pacing and latency | bounded mailbox and input-to-present metric | correlated stage markers, CPU lead policy, provider queue constraints | production telemetry through existing hooks |
+| frame pacing and latency | bounded `RenderFrameQueue` and input-to-present metric | correlated stage markers, CPU lead policy, provider queue constraints | production telemetry through existing hooks |
 | production debugging | stress/validation strong | OS ready-time/context-switch analysis, crash dumps, incident narratives | focused diagnostic lab + regressions |
 | portability | D3D12/Vulkan strong | weakly ordered CPU reasoning and topology-neutral defaults | tests and documented policy |
 | communication/leadership | portfolio narrative present | concise incident/design review and adversarial interview defense | teach-back and reviewed artifacts |
@@ -1025,7 +1336,7 @@ Answer each with a Sparkle example, invariant, tradeoff, failure test, and measu
 
 ### Whiteboard and Coding Drills
 
-- Draw and implement a bounded SPSC generation mailbox with close/cancel semantics; test wrap and shutdown.
+- Draw and implement a bounded SPSC generation queue with close/cancel semantics; test wrap and shutdown.
 - Given a task DAG with mixed costs, identify the critical path, maximum theoretical speedup, and a useful scheduling order.
 - Repair a deadlock involving world commit, renderer cache, and a completion callback without adding a global recursive mutex.
 - Convert an atomic append compaction into task-local count/scan/scatter and state determinism policy.
@@ -1044,10 +1355,13 @@ GitHub implementation observations below are tied to a listed commit wherever th
 | Source | Inspected revision | Relevant mechanisms | Sparkle lesson |
 |---|---|---|---|
 | NVIDIA Donut | bc1ea24b0486f1c00d89327fe16c0b4dd11c5937 | Small FIFO thread pool used for asynchronous scene/texture loading | Useful background-content pattern; insufficient for a renderer dependency graph |
+| NVIDIA nvpro_core | bc19d6ac3ef62938d0ea0e099735878457ce1b6e | `parallel_batches`/`parallel_ranges`, command pools, ring fences, batch submission | Range/batch and command terminology is precise; Sparkle keeps CPU task queues distinct from GPU command queues |
 | NVIDIA NVRHI | 8e8c36e37558acec333204619b95d9d2fcdc4a79 | Concurrent command-list recording and explicit state assumptions across lists | Parallel recording requires explicit entry/exit or permanent resource states |
 | AMD FidelityFX SDK Cauldron2 | 60f4ea81909200d8542eca14dccb2628b763a9a3 | Task manager used mainly for content loading; fan-in completion callback | Continuations are useful; a loading pool is not a general frame scheduler |
+| AMD Render Pipeline Shaders | f3330f5306d15af8529a310f6255225c864b0961 | render-graph builder/node IDs, command batches, record info/context, acquired command buffers; sample `Job`/`WaitHandle` pool | Borrow render-command specificity and parallel range ownership; do not import sample-only `Job` vocabulary into SparkleTasks |
 | AMD Cauldron (legacy) | b92d559bd083f44df9f8f42a6ad149c1584ae94c | Simple global FIFO worker pool | Good historical sample, not the target scheduler architecture |
 | Epic Unreal Engine documentation | UE 5.8 documentation, accessed 2026-07-17 | Tasks DAG, game/render/RHI separation, render proxies, RDG parallel execute, asynchronous level-loading constraints | Strong ownership and dependency model; defer global/UI/transaction interaction during worker loading; do not add a separate RHI thread without need |
+| Epic mesh drawing / RHI translation documentation | UE 5.7/5.8 documentation, accessed 2026-07-18 | retained/dynamic mesh draw preparation, parallel pass setup/dispatch, software RHI command translation, ordered async list submission | Separate preparation, translation, aggregation, and native submission; reuse Sparkle draw data rather than cloning Unreal types |
 | Epic MassEntity documentation | UE 5.8 documentation, accessed 2026-07-17 | Data-only entities/fragments, archetypes, queries, processors, deferred command buffer | Strong ECS/DOD model; Sparkle should borrow separation and deferred structure without copying Mass scale |
 | O3DE AzCore + Atom | 68683f23fb747380d3efa2424bd5f30242e9c5a2 | Retained task graph, task executor, jobified frame scheduler, thread-local command pools | Closest open-source structural reference for scheduler-to-renderer integration |
 | Unity EntityComponentSystemSamples | 6786a741ee1f118ed14cecfa02beae8e926937b0 | Entities/Jobs examples, component queries, command-buffer playback, deterministic parallel sort keys | Direct public proof of ECS-to-job integration and deferred structural mutation |
@@ -1055,8 +1369,10 @@ GitHub implementation observations below are tied to a listed commit wherever th
 | Google Filament | 398d13c4abd148ea6e139b05e5418efa37d284d3 | Work-stealing jobs, parent completion counts, parallel_for, cache-line-sized job records | Strong scheduler mechanics; Sparkle should use dependencies instead of normal worker waits |
 | Microsoft DirectX Graphics Samples | 357ade6ec6ff0d9dcadc48f35c7a28e37c0cdf7a | Per-frame/per-worker allocators and command lists, serial ordered submission | Clear D3D12 proof of parallel recording constraints |
 | NVIDIA CPU/API guidance | articles accessed 2026-07-18 | worker-count/topology scaling, balanced command recording, separate submission, resource-creation and queue costs | Measure physical/logical-core policies and native work distribution; do not maximize threads blindly |
-| NVIDIA stdexec | main reviewed 2026-07-18 | composable senders, schedulers, structured scopes, I/O and GPU execution contexts | Study future standard direction; keep one bounded SparkleTasks runtime rather than importing a second model |
+| NVIDIA Vulkan/PSO/RT pipeline guidance | articles accessed 2026-07-18 | parallel command recording, image/buffer creation, descriptor updates, allocation/binding, asynchronous PSOs and RT pipeline collections | Treat native creation as bounded keyed work with exclusive results, cold-cache/memory evidence, and backend-specific policy |
+| NVIDIA stdexec | 711da5971a8e8e940763c11bf6bbeb1c1bb22c3a | composable senders, schedulers, structured scopes, I/O and GPU execution contexts | Study future standard direction; keep one bounded SparkleTasks runtime rather than importing a second model |
 | AMD Ryzen/Radeon guidance | articles/tools accessed 2026-07-18 | CPU-bound diagnosis, parallel PSO/list verification, queue/barrier/wave timelines | Require cold-cache CPU captures and AMD GPU queue evidence, not vendor-neutral assumptions alone |
+| AMD RPS and Detroit rendering studies | articles/source accessed 2026-07-18 | whole-graph ranges, within-pass secondary command buffers, render-list partitioning by draw count, stable ordered fan-in | Compile meaningful ranges; keep barriers/preamble authoritative; preserve transparent and pass order independent of completion |
 | AMD FidelityFX frame interpolation | SDK guide accessed 2026-07-18 | explicit game/compute/present/acquire queue ownership and frame pacing | Provider integrations must declare queue exclusivity, synchronization and pacing through the existing boundary |
 | Microsoft DirectStorage samples | main reviewed 2026-07-18 | queued small reads, CPU/GPU decompression, low-CPU streaming | Preserve a staged I/O completion seam; adopt only after current blocking-I/O pipeline is measured |
 
@@ -1220,6 +1536,76 @@ The engine-wide additions are not justified by fashion or by the existence of a 
 
 The command buffer, read view, and change journal are a Sparkle composition of these ownership/generation principles, not a claim that NVIDIA, AMD, Epic, or O3DE exposes identical APIs. This distinction matters: reference prestige validates mechanisms, while current Sparkle data flow determines the actual interface.
 
+## Canonical Concurrency and Rendering Vocabulary
+
+Naming is part of the architecture. A reviewer should be able to infer whether an object is CPU work, an OS thread, a renderer message, a native command-recording resource, or a completion proof before opening its implementation. Sparkle therefore adopts the common semantic overlap of the inspected NVIDIA, AMD/GPUOpen, and Epic sources; it does **not** copy vendor prefixes, Unreal's `F`/`T` prefixes, C API Hungarian notation, or a sample's local spelling.
+
+The inspected sources do not expose one universal dialect. NVIDIA Donut and AMD Cauldron2 use `Task`; AMD RPS's test-only pool uses `Job`; Epic describes Tasks as a job manager; NVIDIA stdexec uses sender/scheduler/operation vocabulary. The stable industry distinction is more important than choosing a brand: CPU schedulable work is a **task**, a physical execution agent is a **thread/worker**, and RHI/GPU work is a **command list/buffer** submitted to a **command queue**. Sparkle uses that distinction everywhere.
+
+### Vendor Naming Crosswalk and Sparkle Decision
+
+| Responsibility | NVIDIA precedent | AMD/GPUOpen precedent | Epic precedent | Sparkle canonical name | Rejected synonyms in new code |
+|---|---|---|---|---|---|
+| schedulable CPU unit | Donut `ThreadPoolTask`; stdexec `task` | Cauldron2 `Task`; RPS sample `Job` | `UE::Tasks::FTask` / `TTask` | `Task` | `Job`, `WorkItem`, `Work`, `ThreadTask` |
+| debug/configuration record for CPU work | task callable/name in the reviewed runtimes | Cauldron `Task`; explicit RPS record info conventions | task debug name + priority | `TaskDesc`, matching Sparkle's existing `*Desc` convention | `JobInfo`, `TaskConfig`, `TaskData` |
+| build-time graph reference | stdexec composed sender expressions | `RpsNodeId`, `RpsRenderGraphBuilder` | prerequisite task handles | `TaskNodeHandle` | bare `TaskNode`, pointer-like `TaskRef`, integer `TaskId` at the public boundary |
+| immutable reusable dependency topology | stdexec composition | `RpsRenderGraph` after update/schedule | prerequisite DAG / TaskGraph | `CompiledTaskGraph` | `JobGraph`, mutable `TaskGraph` after compile |
+| one submitted graph/single-task instance | sender operation/execution concepts | graph execute/record invocation | `FTask` is a handle to an actual launched task | `TaskExecution` | `TaskRun`, `JobInstance`, `Future` |
+| per-submission bindings/state | execution context conventions | `RpsRenderGraphExecuteInfo`, record info/context | task body plus captured/explicit inputs | `TaskExecutionContext` | `TaskRunContext`, `JobContext`, unqualified `Context` |
+| engine that makes tasks runnable | scheduler/execution context; Donut `ThreadPool` | Cauldron `TaskManager`; RPS `RpsAfxThreadPool` | scheduler and worker backend | `TaskExecutor` | public `TaskManager`, `JobSystem` type, `ThreadPool` type |
+| lifetime-bounded structured work | stdexec `async_scope` | completion callback/fan-in is a narrower precursor | nested tasks and task lifetime | `TaskScope` | `TaskOwner`, `AsyncGroup`, unstructured fire-and-forget |
+| externally triggered dependency | completion/wait primitives | RPS pool `WaitHandle` is a sample-local blocking handle | `FTaskEvent` | `TaskEvent` | generic `Event` in Tasks, `TaskFence`, CPU `Semaphore` as public API |
+| data-parallel range operation | nvpro `parallel_batches`, `parallel_ranges`; stdexec bulk algorithms | RPS partitions command and draw ranges | `ParallelFor` | `ParallelFor` with `ParallelForPolicy` | `ParallelJobs`, `ForEachAsync` |
+| latency class, not a physical queue/thread | scheduler/execution-context policy | background loading pool / explicit GPU queue classes | task priority classes | `TaskLane::{FrameCritical, Background, BlockingIo}` | `TaskLane::Frame`, `FastQueue`, `SlowThread`, priority used as a correctness edge |
+| runtime/game owner thread | Donut application main loop | Cauldron main loop | `GameThread` | `GameThread` in runtime hosts | ambiguous `Main` in runtime-only ownership assertions |
+| editor/UI owner thread | no editor-specific contract in inspected sources | no editor-specific contract in inspected sources | game/editor main-thread constraints | `EditorThread` in the editor host | `UiWorker`, generic `MainThread` when editor affinity matters |
+| renderer owner thread/service | explicit submission-thread guidance | render host owns acquire/record/submit ordering | `RenderThread` | physical role/debug name `RenderThread`; owning type `RenderCoordinator` | service class `RenderThread`, `RendererWorker`, `RenderManager` |
+| optional deferred RHI translation thread | no equivalent required by NVRHI | no equivalent in the inspected RPS design | `RHIThread` | reserved; do not use until such a thread exists | calling recording workers an `RHIThread` |
+| game-to-render bounded publication | producer/consumer queues and ring resources | queued frames / command batches | game-to-render enqueued work and frame lead | `RenderFrameQueue` containing `RenderFramePacket` slots | `RenderFrameMailbox`, `FramePipe`, `FrameBuffer` |
+| ordered non-frame renderer control | command enqueue patterns | explicit host operations | render commands / render command pipes | `RenderControlCommandQueue` | unqualified `CommandQueue`, `RenderThreadCommands`, `MessageBus` |
+| renderer pass-facing command API | NVRHI `ICommandList` | RPS callback command buffer/context | `FRHICommandList`, `IRHICommandContext` | existing `RenderCommandContext` | `RenderContext`, `GraphicsContext`, `CommandEncoder` alias |
+| native backend recording owner | NVRHI `ICommandList`; Vulkan/D3D12 native objects | `RpsRuntimeCommandBuffer`, acquired command buffers | parallel `IRHICommandContext` | backend-private `<Backend>CommandRecordingContext` | `WorkerContext`, `ThreadContext`, `CommandListPoolItem` |
+| exclusive borrowed recording capability | command-list ownership/lifetime tracker | acquire/record contract | acquired parallel command context | public `RhiCommandRecordingLease` | `RecordingContextLease`, `CommandContextHandle`, raw allocator/pool pointer |
+| GPU submission ordering/completion proof | NVRHI `CommandQueue`, execution instance; nvpro fences | RPS command batches/fence IDs | RHI command-list submit/fence | existing `ERhiQueueType` and `RhiSubmissionToken` | CPU `TaskEvent`, `TaskToken`, bare `Fence` in cross-module code |
+| deterministic scheduled GPU unit | nvpro `BatchSubmission` | `RpsCommandBatch` / batch layout | RHI submit state and parallel command lists | existing `FrameGraphSubmissionBatch`; `RecordingGroup` for its recordable subset | `TaskBatch`, `RenderJob`, `CommandTask` |
+
+The crosswalk is semantic evidence, not an assertion that the vendor APIs are interchangeable. For example, AMD RPS `WaitHandle` belongs to a small test framework, Epic `FTask` is a reference-counted launched-task handle, and NVRHI's returned command-list instance value is queue completion information. Sparkle adopts the responsibility a name communicates, then applies its own lifetime and boundedness rules.
+
+### Binding Naming Grammar
+
+1. **Task, thread, command, and queue are never synonyms.** A task is schedulable CPU work; a worker thread executes tasks; a render control command crosses into the render owner; a command list/buffer records RHI work; a GPU queue executes submitted command buffers.
+2. **`Record`, `Submit`, and `Execute` describe different stages.** CPU task bodies execute. Workers record command lists/buffers. The render coordinator submits them. GPU queues execute them. Do not say a worker “submits a recording task” when it only records commands.
+3. **A `Graph` is topology; an `Execution` is one submission.** `CompiledTaskGraph` is immutable and reusable. `TaskExecution` has one generation, terminal state, result, and completion lifetime. `TaskExecutionContext` contains bindings/state for that submission.
+4. **A `Handle` identifies; a `Token` proves; a `Lease` borrows exclusively; a `Context` supplies transient operating state.** Handles are copyable only when identity/lifetime rules allow it and normally carry generation validation. Tokens prove ordering, completion, or permission but do not expose an object's general API. A lease is move-only, scoped, and returns exclusive capacity. A context is not an owner and must not become a service locator.
+5. **A `Scope` owns asynchronous lifetime.** `TaskScope` cancellation and settlement follow the owning application/world/document/frame/tool lifetime. A scope is not a queue, a task group, or a mutex namespace.
+6. **A `Lane` is executor policy, not correctness or hardware identity.** `FrameCritical`, `Background`, and `BlockingIo` select capacity and latency policy. Dependencies determine correctness. `ERhiQueueType::{Graphics, Compute, Copy}` names GPU capability; these types must never be overloaded.
+7. **A `Queue` name must say what it queues.** Use `RenderFrameQueue`, `RenderControlCommandQueue`, private `TaskInjectionQueue`, and existing backend `CommandQueue` names. Bare `Queue`, `WorkQueue`, and `CommandQueue` are forbidden outside a scope where the qualifier is already encoded by the containing backend type.
+8. **A service is named for the responsibility it coordinates.** Use `TaskExecutor`, `RenderCoordinator`, `EditorOperationService`, and `FrameGraphSubmissionExecutor`. Do not add `*Manager` or `*System` merely because a type owns several fields. Existing established names are changed only when their responsibility is materially false or the touched migration would otherwise create two meanings.
+9. **Avoid implementation-advertising names.** `Async*`, `ThreadSafe*`, `LockFree*`, `MultiThreaded*`, `New*`, `*2`, and `MT*` do not establish ownership or correctness. Asynchrony belongs in the operation contract and return type; thread safety belongs in documented invariants and tests.
+10. **Use existing Sparkle lexical conventions.** New C++ types use PascalCase without Unreal `F`/`T` prefixes; descriptors remain `*Desc`; RHI public types retain the `Rhi`/`ERhi` convention; backend-private types retain `D3D12` or `Vulkan`; acronyms follow current names such as `Rhi`, `Gpu`, `Io`, `D3D12`, and `Vulkan`. Do not normalize unrelated legacy spellings during this program.
+11. **Thread role names must tell the truth.** Runtime, editor, renderer, task, and blocking-I/O roles use debugger/profiler names such as `Sparkle.GameThread`, `Sparkle.EditorThread`, `Sparkle.RenderThread`, `Sparkle.Task.FrameCritical.0`, and `Sparkle.Task.BlockingIo.0`. `RHIThread` is reserved until Sparkle actually owns a deferred translation thread.
+12. **One concept has one canonical search term.** Compatibility aliases are allowed only during the prompt that deletes their callers; they may not enter new signatures, tests, documentation, captures, or profiler labels.
+
+### Planned-Name Reconciliation Before Implementation
+
+These are design-document renames, not claims that the corresponding code exists:
+
+| Earlier plan spelling | Canonical spelling | Reason and migration rule |
+|---|---|---|
+| `TaskNode` token | `TaskNodeHandle` | says it is a generation-validated reference, not the task record itself |
+| `TaskRun` | `TaskExecution` | matches one submitted execution and avoids a vague verb-as-type beside compiled topology |
+| `TaskRunContext` | `TaskExecutionContext` | binds the context to one submission and leaves plain `Context` unavailable |
+| `TaskLane::Frame` | `TaskLane::FrameCritical` | communicates latency/capacity policy rather than ownership of a frame |
+| `TaskSchedulerConfig` | `TaskExecutorConfig` | configuration belongs to the executor host contract; no second public scheduler object exists |
+| `RenderThread` service type | `RenderCoordinator` | separates the physical thread role from the object owning renderer lifecycle and submission |
+| `RenderFrameMailbox` | `RenderFrameQueue` | matches the bounded producer/consumer structure and avoids introducing actor terminology nowhere else used in Sparkle |
+| `RenderThreadCommands` | `RenderControlCommandQueue` | distinguishes lifecycle/settings commands from RHI command recording and GPU queues |
+| `RecordingContextLease` | `RhiCommandRecordingLease` | establishes module, command-recording responsibility, and move-only exclusive borrowing |
+| generic `WorkerRecordingContext` | backend-private `<Backend>CommandRecordingContext` | records native backend commands; task-worker identity is runtime state, not the type's ownership |
+| “job system” as a C++ type/module name | `SparkleTasks` task runtime; “job system” only as the recognized architectural category | keeps searchable interview vocabulary without creating `Job` and `Task` aliases |
+
+Before Prompt 01 adds a public symbol, search the repository and this document for its canonical term and every rejected synonym. If an existing strong Sparkle type already satisfies the responsibility, use or extend it. If a current name materially conflicts, the owning prompt records use/extend/replace/add, updates call sites and profiler labels atomically, and deletes the old spelling before its gate. No permanent typedef, duplicate header, or documentation alias remains merely to make a vendor name appear in the repository.
+
 ## Target Architecture
 
 ### Dependency Shape
@@ -1247,12 +1633,11 @@ Engine/
     Public/
       Task.h
       TaskGraph.h
-      TaskGroup.h
       TaskEvent.h
       ParallelFor.h
       TaskExecutor.h
       TaskScope.h
-      TaskSchedulerConfig.h
+      TaskExecutorConfig.h
     Private/
       TaskRecord.h
       TaskPool.*
@@ -1299,9 +1684,9 @@ Engine/Renderer/
     RenderObjectId.h
   Private/
     Threading/
-      RenderThread.*
-      RenderFrameMailbox.*
-      RenderThreadCommands.*
+      RenderCoordinator.*
+      RenderFrameQueue.*
+      RenderControlCommandQueue.*
     SceneData/
       RenderWorld.*
       RenderWorldDelta.*
@@ -1314,14 +1699,14 @@ Engine/Renderer/
 
 Engine/RHI/
   Public/
-    RecordingContextLease.h
+    RhiCommandRecordingLease.h
   Private/<backend>/
-    WorkerRecordingContext.*
+    CommandRecordingContext.*
     WorkerUploadArena.*
     WorkerDescriptorArena.*
 ~~~
 
-Names may follow existing repository conventions, but the responsibilities and dependency direction should remain.
+The names above are canonical under the vocabulary section. A backend-private type expands `<Backend>` in C++ (`D3D12CommandRecordingContext` or `VulkanCommandRecordingContext`) even when the backend directory makes a shorter filename reasonable. The responsibilities and dependency direction are binding.
 
 Only stable cross-module contracts belong in `Public`. System graph compilation, journal retention, editor models/operations, worker scheduling, and concrete load stages stay private. If existing conventions favor fewer files, co-locate small types; the tree communicates responsibility, not a requirement to manufacture one class per line.
 
@@ -1349,7 +1734,7 @@ Pass authoring rules remain:
 - execute records commands only; it does not discover hidden dependencies, allocate undeclared resources, create pipelines, or retain packet memory
 - a provider that needs native interop receives only tagged resources and timing/camera data through its narrow bridge
 
-RecordingContextLease is a capability token proving temporary exclusive access to backend recording state. It is not a new command API and must not become a convenience wrapper over RenderCommandList.
+`RhiCommandRecordingLease` is a move-only capability proving temporary exclusive access to backend recording state. It is not a new command API and must not become a convenience wrapper over `RenderCommandContext`.
 
 ### Public-Surface Budget
 
@@ -1377,14 +1762,14 @@ A proposed public type fails review when its only consumer is an editor panel, t
 
 | Role | Owns | May access | Must not do |
 |---|---|---|---|
-| Main/game thread | Window pump, input, GameScene structural commit, level/editor command application, world/read/render publication | Immutable asset registry and narrow product-owned renderer results | Touch mutable renderer/RHI state; block for routine render completion |
-| Editor main thread | ImGui/UI model, editor transactions/commands, viewport and operation requests | Published `WorldReadView`/editor model and narrow immutable renderer/operation results | Traverse worker-mutated GameScene storage; give live ImGui/editor pointers to workers or render thread |
+| GameThread | Runtime window pump, input, GameScene structural commit, level command application, world/read/render publication | Immutable asset registry and narrow product-owned renderer results | Touch mutable renderer/RHI state; block for routine render completion |
+| EditorThread | ImGui/UI model, editor transactions/commands, viewport and operation requests | Published `WorldReadView`/editor model and narrow immutable renderer/operation results | Traverse worker-mutated GameScene storage; give live ImGui/editor pointers to workers or RenderThread |
 | Render coordinator | RendererSystemRoot, FramePipeline coordination, RenderWorld, GPU caches, RHI creation/destruction, submit/present | Published frame packets and task results | Dereference GameScene; execute blocking tool/file work |
-| Frame workers | Data-pure game/render tasks and command recording with leased local contexts | Immutable inputs, disjoint output slices, concurrent task runtime | Wait on other tasks, submit queues, mutate global caches, destroy RHI resources |
-| Background/IO workers | File reads, child processes, imports, compression/compilation where safe | Explicit task input and output publication objects | Consume latency-sensitive frame-worker capacity |
+| FrameCritical task workers | Data-pure game/render tasks and command recording with leased local contexts | Immutable inputs, disjoint output slices, concurrent task runtime | Wait on other tasks, submit queues, mutate global caches, destroy RHI resources |
+| Background/BlockingIo task workers | File reads, child processes, imports, compression/compilation where safe | Explicit task input and output publication objects | Consume latency-sensitive FrameCritical capacity |
 | GPU queues | Execute compiled command streams | RHI resources covered by barriers/fences | Be described as CPU task concurrency |
 
-Each engine-created thread must have a stable name visible to the platform debugger and existing PIX/Nsight/profiler-visible CPU instrumentation. The initial names can be Sparkle.Main, Sparkle.Render, Sparkle.Frame.0…N, and Sparkle.Background.0…M. This requirement does not authorize a new profiling framework.
+The row label `Render coordinator` names the owning service; its physical role and debugger label are `RenderThread`. Each engine-created thread must have a stable name visible to the platform debugger and existing PIX/Nsight/profiler-visible CPU instrumentation. Use `Sparkle.GameThread`, `Sparkle.EditorThread`, `Sparkle.RenderThread`, `Sparkle.Task.FrameCritical.0…N`, `Sparkle.Task.Background.0…M`, and `Sparkle.Task.BlockingIo.0…M` where those roles exist. A command-line tool uses `Sparkle.ToolMain`. This requirement does not authorize a new profiling framework.
 
 ### Frame Pipeline
 
@@ -1440,9 +1825,9 @@ GPU-resource retirement is separate. A CPU packet can be reusable after render r
 
 Do not encode both lifetimes in one boolean.
 
-## SparkleTasks Job System Design
+## SparkleTasks Task Runtime Design (Engine Job System)
 
-`SparkleTasks` **is Sparkle's job system**. This document prefers “task” for a scheduled unit and “task graph” for dependencies because Epic and O3DE use that vocabulary, but the engine feature normally called a job system is absolutely being implemented: fixed workers, work stealing, job/task records, dependencies, fan-out/fan-in, parallel-for, cancellation, lanes, sleeping/waking, deterministic serial execution, scopes, and shutdown.
+`SparkleTasks` **is Sparkle's engine job system**, expressed with the canonical `Task` vocabulary shared by Epic Tasks, NVIDIA Donut/stdexec, and AMD Cauldron2. “Job system” remains the architectural/interview category and a useful research search term; `Job` does not become a second C++ noun for the same scheduled unit. The runtime implements fixed workers, work stealing, task records, dependencies, fan-out/fan-in, `ParallelFor`, cancellation, lanes, sleeping/waking, deterministic serial execution, scopes, and shutdown.
 
 It is not a wrapper around `std::async`, a thread-per-subsystem design, or merely an offline thread pool. Its renderer, ECS, editor, loading, and tool consumers are required acceptance evidence.
 
@@ -1473,7 +1858,7 @@ Illustrative API, not a frozen header:
 ~~~cpp
 enum class TaskLane : uint8_t
 {
-    Frame,
+    FrameCritical,
     Background,
     BlockingIo
 };
@@ -1481,7 +1866,7 @@ enum class TaskLane : uint8_t
 struct TaskDesc
 {
     TaskName name;
-    TaskLane lane = TaskLane::Frame;
+    TaskLane lane = TaskLane::FrameCritical;
     TaskPriority priority = TaskPriority::Normal;
     CancellationToken cancellation;
 };
@@ -1490,23 +1875,23 @@ class TaskGraphBuilder
 {
 public:
     template<class Fn>
-    TaskNode Add(TaskDesc desc, Fn&& function);
+    TaskNodeHandle Add(TaskDesc desc, Fn&& function);
 
-    void DependsOn(TaskNode task, TaskNode prerequisite);
-    TaskNode WhenAll(TaskName name, std::span<const TaskNode> prerequisites);
+    void DependsOn(TaskNodeHandle task, TaskNodeHandle prerequisite);
+    TaskNodeHandle WhenAll(TaskName name, std::span<const TaskNodeHandle> prerequisites);
     CompiledTaskGraph Compile();
 };
 
 class TaskExecutor
 {
 public:
-    TaskRun Submit(const CompiledTaskGraph&, TaskRunContext&);
-    TaskRun Submit(TaskDesc, TaskFunction);
+    TaskExecution Submit(const CompiledTaskGraph&, TaskExecutionContext&);
+    TaskExecution Submit(TaskDesc, TaskFunction);
     void PumpAdoptedThread(TaskLane, uint32_t budget);
 };
 
 template<class Range, class Fn>
-TaskNode ParallelFor(
+TaskNodeHandle ParallelFor(
     TaskGraphBuilder& graph,
     TaskDesc desc,
     Range range,
@@ -1516,9 +1901,9 @@ TaskNode ParallelFor(
 
 Important semantic decisions:
 
-- TaskNode is a builder-local token, not a pointer.
+- `TaskNodeHandle` is a builder-local, generation-validated handle, not a pointer or a runtime task object.
 - A compiled graph owns immutable topology and may be reusable if its bindings are supplied per run.
-- TaskRun tracks one submission generation.
+- `TaskExecution` tracks one submission generation and its terminal accounting; `TaskExecutionContext` supplies that submission's bindings/state.
 - Handles use generation counters so stale handles fail deterministically.
 - A task function receives its context explicitly; scheduler thread-local globals are not business-data channels.
 - Tasks return an explicit TaskResult or are noexcept. Exceptions at the boundary are captured, reported, and cause a defined dependent cancellation policy. They are never silently swallowed.
@@ -1592,12 +1977,12 @@ child.Wait(); // prohibited in normal worker code
 Use:
 
 ~~~cpp
-TaskNode child = graph.Add(...);
-TaskNode continuation = graph.Add(...);
+TaskNodeHandle child = graph.Add(...);
+TaskNodeHandle continuation = graph.Add(...);
 graph.DependsOn(continuation, child);
 ~~~
 
-Development builds should detect a worker blocking on a TaskRun and report the task name and submission graph. This rule prevents pool exhaustion and makes the critical path inspectable.
+Development builds should detect a worker blocking on a `TaskExecution` and report the task name and submission graph. This rule prevents pool exhaustion and makes the critical path inspectable.
 
 ### Graph Validation and Boundedness
 
@@ -1612,21 +1997,21 @@ TaskGraphBuilder::Compile must reject:
 
 Graph storage is bounded per run. Overflow returns a controlled build/submission failure before any task starts; it does not silently heap-allocate an unbounded graph during a frame.
 
-Task priority is a scheduling hint, never a correctness mechanism. A frame task must not depend on an unscheduled low-priority background task or a blocking-I/O task. Runtime content that is not ready uses an existing resident fallback or delays publication at an explicit host boundary. If an external event is genuinely frame-critical, its continuation is injected into the frame lane only after the external operation completes.
+Task priority is a scheduling hint, never a correctness mechanism. A FrameCritical task must not depend on an unscheduled low-priority Background task or a BlockingIo task. Runtime content that is not ready uses an existing resident fallback or delays publication at an explicit host boundary. If an external event is genuinely frame-critical, its continuation is injected into the FrameCritical lane only after the external operation completes.
 
 ### Executor and Render Shutdown Order
 
 Shutdown is part of the concurrency design:
 
 1. Application stops accepting gameplay/editor commands that can publish new frames.
-2. Frame mailbox closes and wakes both producer and consumer.
+2. `RenderFrameQueue` closes and wakes both producer and consumer.
 3. Render coordinator consumes or cancels accepted packets according to explicit policy.
 4. Recording/preparation task runs settle; no task may retain renderer state afterward.
 5. Render coordinator performs the one legitimate final GPU drain, destroys swapchain/RHI state on its owner thread, and exits.
 6. Background tool/process tasks are cancelled or drained according to product workflow.
 7. Task executors stop accepting work, wake workers, join threads, and release task arenas last.
 
-Device loss follows a separate controlled render-thread failure path; it must not strand a mailbox slot, task continuation, or editor waiter.
+Device loss follows a separate controlled RenderThread failure path; it must not strand a frame-queue slot, task continuation, or editor waiter.
 
 ### Events
 
@@ -1646,7 +2031,7 @@ GPU frame completion should normally remain in the RHI token/retirement system. 
 
 Frame tasks and blocking work require different policies.
 
-Frame lane:
+Frame-critical lane:
 
 - approximately hardware_concurrency minus main, render, and essential platform threads
 - short, nonblocking tasks
@@ -1941,6 +2326,21 @@ Candidate task outputs must be independent:
 - no task mutates PipelineStateManager or TextureCache
 - no task calls GameScene
 
+The first production DAG must expose the renderer-heavy cases rather than hide them behind one `Build lighting` or `Mesh classification` node. Its logical products are:
+
+- transformed bounds and previous-transform ranges
+- per-view visibility/relevance/LOD results with stable object tie-breaks
+- visible-light classifications and compact light records preserving `RenderLightId`
+- shadow-view/frustum work and caster lists where the current shadow path consumes them
+- skinning/morph output ranges
+- raster pass/material eligibility records derived from immutable pipeline/layout tables
+- retained view-independent `MeshDraw` data plus dynamic per-view records, using explicit generation invalidation
+- stable state buckets and `MeshInstanceBatch` results, with transparent-order constraints
+- BLAS build/update inputs and distinct classic TLAS/PTLAS instance plans
+- dirty GPU-scene ranges and upload/copy descriptions
+
+Do not invent an Unreal-shaped draw-command class merely to make the list familiar. Start from Sparkle's existing `MeshDraw`, `MeshRenderItem`, `MeshInstanceBatch`, and `MeshInstanceBatchBuilder`; refactor or replace them only where one responsibility, cache lifetime, or immutable recording input is otherwise impossible to state.
+
 Frame-graph setup should initially remain on the render coordinator. Epic’s RDG design similarly separates setup from eligible parallel execute work, and Sparkle’s graph builder is mutable. Later, expensive setup producers may generate declarations privately, but a parallel mutation free-for-all is not a first target.
 
 Frame-graph setup/compile remains serial initially. Only if existing profiler scopes later show repeated compile is a material critical-path cost may Sparkle retain/reuse compiled topology behind a direct FrameGraphKey covering resolution classes, product feature configuration, view count, backend capabilities, and explicit capture modes. Such a cache must replace repeated work, have complete invalidation tests, and remain frame-graph-private; it is not a prerequisite or a generalized cache subsystem.
@@ -1958,6 +2358,8 @@ struct RecordingGroup
     Span<CompiledPassId> passes;
     Span<ResourceState> entryStates;
     Span<ResourceState> exitStates;
+    uint32_t estimatedCommandCount;
+    uint32_t estimatedRecordingCost;
     SubmissionOrderKey order;
 };
 
@@ -1982,6 +2384,16 @@ Execution becomes:
 
 Parallel completion order must not change GPU submission order.
 
+`RecordingGroup` is a private compiled unit, not automatically one command list, one task, one pass, or one native submission. The execution layer may combine adjacent tiny groups into one recording task, split one measured-heavy group into ordered chunks, aggregate several closed native lists into one submission batch, or submit an early batch to avoid GPU starvation. Those decisions must preserve the same compiled pass/resource order and be observable through existing profiler counters.
+
+The following terms are mandatory in implementation and review:
+
+- **recording group**: compiled CPU recording ownership and state contract
+- **recording chunk**: an ordered intra-group range such as draws, instances, shadow views, or RT build inputs
+- **submission batch**: ordered closed native command objects supplied to one queue operation
+- **translation**: replay of a software RHI command stream into another command representation; not present in the approved Sparkle design
+- **aggregation**: deterministic fan-in/order of closed command objects; never native-buffer concatenation
+
 ### Choosing Recording Granularity
 
 There are two useful levels.
@@ -2001,6 +2413,8 @@ Intra-pass draw chunking:
 - backend may use D3D12 direct command lists/bundles and Vulkan primary/secondary command buffers according to measured overhead and render-pass constraints
 
 The compiler should group tiny adjacent passes instead of producing hundreds of microtasks. A measured minimum recording-cost threshold belongs in policy.
+
+Partition by estimated recording cost when draw counts are misleading, retain a serial path below the crossover, and bound lists by both available contexts and native-memory budget. Capture draws/dispatches/build inputs per list, recording time, close/finalization time, list count, submit call count, submit CPU time, first-work availability, GPU gaps, and p95/p99 latency. “More balanced workers” is not sufficient evidence if submission is delayed or the GPU loses performance.
 
 ### Pass Parallel-Safety Audit
 
@@ -3044,7 +3458,7 @@ Window messages, input subscriptions, and existing `Event` callbacks stay on the
 - viewport and UI packets use bounded frame slots
 - application/document shutdown cancels operations, drains child I/O, rejects late publications, then destroys editor models
 
-The portfolio demonstration must show a level load or cook running while the editor remains interactive, cancellation leaving the old scene/publication intact, and stale completion being rejected. It must also show that heavy background work cannot starve the frame lane.
+The portfolio demonstration must show a level load or cook running while the editor remains interactive, cancellation leaving the old scene/publication intact, and stale completion being rejected. It must also show that heavy Background work cannot starve the FrameCritical lane.
 
 ## Tools and Content Pipeline
 
@@ -3180,7 +3594,7 @@ The portfolio should not claim mastery because many threads appear in a trace. I
 | exclusive partitioned writes | pose slots, transforms, culling/recording ranges | race-free data parallelism without locks | overlap/off-by-one and allocator contention |
 | deterministic task-local merge | world commands, animation outputs, manifests | result determinism despite nondeterministic scheduling | completion-order IDs/output drift |
 | immutable release/acquire publication | world read view, frame packets, load packages, tool generations | visibility, ownership transfer, reclamation | stale generation and early reuse |
-| bounded producer/consumer mailbox | main-to-render frames, editor/render requests | backpressure, latency, sleep/wake semantics | unbounded backlog or lost wakeup |
+| bounded producer/consumer queue | game-to-render frames, editor/render requests | backpressure, latency, sleep/wake semantics | unbounded backlog or lost wakeup |
 | serial owner / actor-like command queue | world commit, render/RHI submission, editor transactions | affinity and invariant protection without broad locks | reentrancy and out-of-order commands |
 | blocking-I/O lane + continuation | manifests, files, compiler/process pipes | oversubscription control and nonblocking frame workers | pipe/file wait exhausting compute workers |
 | deferred retirement | render assets, shader generations, published read storage | CPU versus consumer/GPU lifetime separation | use-after-free and never-reclaimed generations |
@@ -3265,7 +3679,7 @@ Use permanent threads only for roles that require affinity or a serial event loo
 
 ### Why Not “Lock-Free Everywhere”
 
-The frame packet mailbox is single-producer/single-consumer and a good bounded specialization. Worker queues are performance-sensitive and can benefit from work-stealing deques. Many other structures are not.
+`RenderFrameQueue` is single-producer/single-consumer and a good bounded specialization. Worker queues are performance-sensitive and can benefit from work-stealing deques. Many other structures are not.
 
 A mutex-protected rare shader-generation swap is simpler than a lock-free lifetime protocol. A locked external injection queue is acceptable if ordinary worker spawning stays local. Measure contention before introducing harder reclamation schemes.
 
@@ -3327,7 +3741,7 @@ The same output and invariants should hold. This makes concurrency a selectable 
 | Negative pattern | Why it fails | Enforced alternative |
 |---|---|---|
 | Thread per feature/subsystem | Load imbalance and oversubscription | Task graph on a bounded worker set |
-| std::async per operation | Uncontrolled threads/semantics and weak diagnostics | Executor lane and TaskRun |
+| std::async per operation | Uncontrolled threads/semantics and weak diagnostics | executor lane and `TaskExecution` |
 | Raw pointers in frame packets | Cross-thread lifetime race | Stable handles and packet-owned values |
 | Mutex around the whole GameScene | Serializes frame pipeline and hides ownership | RenderWorld proxies and deltas |
 | Make every component/object thread-safe | Distributed locks cannot express frame-phase invariants and make composition unsafe | Owner commit, declared system domains, immutable views |
@@ -3360,6 +3774,116 @@ The same output and invariants should hold. This makes concurrency a selectable 
 | Blocking decoder/compiler internally oversubscribes | Core and memory collapse | Concurrency limiter and nested-thread policy |
 | Lock-free structure without reclamation proof | Rare correctness failures | Simple ownership/lock until measured |
 | CPU tasks called “async compute” | Misleading architecture and metrics | Separate CPU task, GPU queue, and frame timelines |
+
+## Professional Multithreading Failure Atlas
+
+The negative-pattern summary above is intentionally compact. This atlas is the implementation review contract. Its purpose is to help the owner recognize common failures from code, traces, symptoms, and interview scenarios before they become repository conventions.
+
+The names used here are deliberately conventional. A professional engine programmer should immediately recognize **task DAG**, **structured/nested task lifetime**, **owner thread**, **immutable publication**, **game/render proxy**, **bounded producer-consumer queue**, **serial fallback**, **parallel-for grain**, **worker-local allocator**, **per-thread/per-frame command pool**, **deterministic fan-in**, **fence/timeline retirement**, **critical path**, and **backpressure**. Sparkle may use engine-specific types, but it must not invent obscure names for established ideas.
+
+### Vendor Evidence and Implementation Key
+
+The atlas cites these primary sources and implementations by short key:
+
+| Key | Primary evidence | What Sparkle learns—not blindly copies |
+|---|---|---|
+| NV-CPU | NVIDIA, [Limiting CPU Threads for Better Game Performance](https://developer.nvidia.com/blog/limiting-cpu-threads-for-better-game-performance/) | logical-core-minus-N is not a universal policy; oversubscription, SMT sharing, chiplet/cache traffic, locks, atomics, false sharing, context switches, and power behavior can reverse scaling |
+| NV-VK | NVIDIA, [Vulkan Dos and Don'ts](https://developer.nvidia.com/blog/vulkan-dos-donts/) and [Advanced API Performance: Command Buffers](https://developer.nvidia.com/blog/advanced-api-performance-command-buffers/) | explicit APIs require application-side recording parallelism; command-buffer setup/reset, tiny buffers, submit count, queue waits, reuse, and batching/latency must be measured |
+| NV-PAR | NVIDIA nvpro_core [parallel_work](https://github.com/nvpro-samples/nvpro_core/blob/master/nvh/parallel_work.hpp) and [ring/allocator documentation](https://github.com/nvpro-samples/nvpro_core/blob/master/nvvk/README.md) | familiar range/batch APIs, workload-dependent serial thresholds, ringed GPU-lifetime resources, per-thread resource allocators, and explicit warnings that sample utilities are not production proof |
+| NV-TASK | NVIDIA [stdexec](https://github.com/NVIDIA/stdexec) and Donut [ThreadPool interface](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/include/donut/engine/ThreadPool.h)/[implementation](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/src/engine/ThreadPool.cpp) | structured composition and a bounded pool are recognizable precedents; Donut's small pool is a reference baseline, not sufficient evidence for Sparkle's dependencies, scopes, lanes, cancellation, or work stealing |
+| NV-TRACE | NVIDIA [Nsight Systems User Guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html) | inspect scheduling, context switches, long blocking runtime calls, lock waits, file I/O, CPU/GPU gaps, and backtraces rather than inferring from thread utilization |
+| AMD-CPU | AMD, [Ryzen CPU Performance Guide](https://gpuopen.com/learn/ryzen-performance/) and [CPU Core Count Detection](https://gpuopen.com/learn/cpu-core-count-detection-windows/) | prefer thread-local/range-local data, prevent false sharing, understand physical/logical topology, and profile pool size instead of assuming it |
+| AMD-RDNA | AMD, [RDNA Performance Guide](https://gpuopen.com/learn/rdna-performance-guide/) and [Driver Experiments](https://gpuopen.com/learn/rdts-driver-experiments/) | command allocators are not thread-safe; use allocator-per-recording-thread-per-frame, avoid tiny command buffers/excess submits, reuse allocations, and treat a driver thread-safety workaround fixing a bug as evidence of an application synchronization defect |
+| AMD-RPS | AMD Render Pipeline Shaders [Vulkan multithreading test](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/main/tests/gui/test_multithreading_vk.cpp), [D3D12 test](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/main/tests/gui/test_multithreading_d3d12.cpp), [shared test](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/main/tests/gui/test_multithreading_shared.hpp), and [tutorial](https://gpuopen.com/learn/rps-tutorial/rps-tutorial-part4/) | graph-planned command ranges, exclusive command buffers, fan-out/fan-in, backend-specific render-pass handling, and tests across thread counts; sample locks and waits are study material, not a license to place them on Sparkle's final hot path |
+| AMD-PORT | AMD, [Porting Detroit: multithreaded render lists](https://gpuopen.com/learn/porting-detroit-3/) | use the job system, pool-per-thread, recycled buffers, draw-count-aware job splitting, and restore deterministic single-thread order before execution, especially for transparency |
+| AMD-TASK | AMD FidelityFX Cauldron2 [TaskManager interface](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/core/taskmanager.h)/[implementation](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/core/taskmanager.cpp) | a real AMD sample framework has centralized task management; Sparkle still needs its own stronger structured-lifetime and lane contract because a vendor sample is not automatically a production engine architecture |
+| EPIC-TASK | Epic, [Tasks System](https://dev.epicgames.com/documentation/en-us/unreal-engine/tasks-systems-in-unreal-engine) and [`ParallelFor`](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Core/ParallelFor) | prerequisites avoid blocking workers; nested tasks express completion lifetime; busy-wait task-helping caused deadlocks, latency, spinning, and stack growth; long/blocking work must not clog the task graph; grain and forced-serial modes are first-class |
+| EPIC-OWN | Epic, [Threaded Rendering](https://dev.epicgames.com/documentation/en-us/unreal-engine/threaded-rendering-in-unreal-engine) | game-owned objects must not be cached/read by renderer code; mirror required values into render-owned proxies, use asynchronous commands/fences, and do not guess-and-check race freedom |
+| EPIC-RHI | Epic, [Parallel Rendering Overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/parallel-rendering-overview-for-unreal-engine) | preserve single-thread submission order, use owned command data/context, bound frame lead, isolate exceptional flush/copy operations, and keep independent serial/parallel debug controls |
+| EPIC-TRACE | Epic, [Task Graph Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/task-graph-insights-in-unreal-engine-5) and [Timing Insights](https://dev.epicgames.com/documentation/unreal-engine/timing-insights-in-unreal-engine-5) | record create/launch/schedule/start/finish/complete stages, prerequisites/nesting, critical path, thread/core tracks, callers/callees, and context switches |
+
+These sources are precedents, not templates to paste. A sample can use a global wait, lazy creation lock, fixed partition, or small thread pool because its product scope is narrow. Sparkle adopts the recognizable **pattern and invariant**, then validates it against Sparkle's renderer, editor, tools, two backends, lifetime, and latency requirements.
+
+### A. Correctness, Ownership, and Lifetime Failures
+
+| ID | Frequent mistake and recognizable symptom | Required Sparkle pattern | Mandatory falsification |
+|---|---|---|---|
+| MT-01 | A render task retains `GameScene*`, component/object pointers, vector references, or UI objects. It works until mutation, unload, GC, reallocation, or document close. This is Epic's canonical game/render race. (EPIC-OWN) | Separate game-owned state from render-owned proxies; packet-owned values and stable generational asset/object handles cross the boundary | mutate/unload/reallocate immediately after packet publication while delaying render consumption; no source-owner access or stale dereference |
+| MT-02 | A producer publishes a pointer/reference and continues mutating its reachable graph; `const` is treated as synchronization | immutable-after-publication value graph, ownership transfer, or versioned copy-on-write generation | randomized post-publish mutation attempts assert or create a new generation; serial/threaded packet replay is identical |
+| MT-03 | An atomic ready flag exists, but payload writes do not happen-before payload reads; relaxed ordering is used as a slogan | locked publication or explicit release-publish/acquire-claim state machine whose payload lifetime is proven | mutex and sequentially-consistent reference protocols plus delayed weak-order stress produce the same observations |
+| MT-04 | IDs, slots, task runs, or resources are reused without a generation; stale completion mutates a new occupant—the logical ABA problem | generational handles, monotonic sequence values, bounded wrap policy, and stale-result rejection | force tiny counters/wrap and delayed old completion; new occupant is never accepted as the old operation |
+| MT-05 | Detached task/lambda captures `this`, a raw service, document, world, frame arena, or stack reference | structured `TaskScope`; child/nested completion is part of owner completion; immutable input ownership is explicit (NV-TASK, EPIC-TASK) | destroy/cancel every owner immediately after spawn and at every stage; no callback-after-destroy, access, leak, or unjoined task |
+| MT-06 | Failure, exception, cancellation, or shutdown skips decrement/signal/publication, so a run or waiter never settles | exactly-once terminal state and finally/cleanup edge for success, failure, cancellation, and rejection | race cancel/fail/complete/shutdown millions of times; every accepted run reaches exactly one terminal result |
+| MT-07 | Cancellation is treated as thread termination or immediate resource destruction | cooperative checkpoints; cancellation stops future publication while already-enqueued GPU/native work retires normally | cancel before start, mid-CPU, mid-I/O, after submit, and during shutdown; prior generation remains usable and GPU objects outlive last use |
+| MT-08 | Arbitrary callback, event, logging, driver/provider, destruction, or UI code runs under an engine lock; re-entry deadlocks or widens the critical section | snapshot-under-lock/apply-after-unlock, two-phase transition, typed owner-thread command/result | callback self-unsubscribes, subscribes, nests dispatch, logs, destroys its owner, and is deliberately slow; no engine lock is held |
+| MT-09 | A function is “thread-safe” but is called from the wrong required thread: Qt/ImGui, windowing, COM mode, provider, Vulkan pool, renderer owner | explicit thread-role/affinity assertions and owner command boundary | deliberately call from every wrong role; development assertion identifies owner and operation before native corruption |
+| MT-10 | Shutdown destroys services, arenas, RHI, UI, or provider before producers stop and accepted work settles | ordered shutdown: close acceptance → cancel/drain scopes → close `RenderFrameQueue`/events → settle GPU → destroy owner resources → join owner → stop executor | shutdown with every queue empty/full and tasks blocked/running/completing; no stranded slot, wait, callback, handle, or native validation error |
+| MT-11 | A giant mutex is added around `GameScene`, Renderer, registry, or allocator and described as architecture | single mutable owner, immutable read views, commands, range ownership, and narrow locks only for true shared boundaries | contention trace plus wrong-thread assertions show no frame-scale lock convoy; serial mode uses the same ownership path |
+| MT-12 | Lock order is implicit; one path takes A→B while callback/shutdown takes B→A | documented global lock order, no blocking/callback under lock, or remove nesting through ownership/commands | lock-order inversion injection and timeout-backed deadlock test identify the cycle; production path has no cycle |
+
+### B. Task-Graph, Progress, and Scheduling Failures
+
+| ID | Frequent mistake and recognizable symptom | Required Sparkle pattern | Mandatory falsification |
+|---|---|---|---|
+| MT-13 | A worker launches children then waits; all workers can become parents waiting for work that cannot run | prerequisite/subsequent DAG and nested completion, with host waits only at declared boundaries (EPIC-TASK) | fill every worker with a parent spawning a child; completion succeeds at 1/2/N workers without emergency threads |
+| MT-14 | A waiting worker spins or executes unrelated tasks recursively; CPU burns, unrelated long work delays resumption, circular dependencies or stack overflow appear | predicate parking and explicit dependencies; no generic busy-wait/help loop. Epic deprecated this behavior for these failure modes (EPIC-TASK) | empty-queue wait consumes negligible CPU; recursive-wait and unrelated-long-task scenarios terminate predictably |
+| MT-15 | Condition-variable wait uses `if`, notification is emitted without protected state, or shutdown misses a sleeper | state change and predicate share one synchronization protocol; wait is predicate-based; close wakes all | notify-before-park, park-before-notify, spurious wake, close-while-empty/full, and last-worker shutdown stress |
+| MT-16 | File/process/pipe/GPU wait or decoder/compiler blocking occupies frame workers | separate bounded BlockingIo policy and external-completion event; CPU continuation returns to appropriate lane | saturate files/process pipes and delay GPU while frame work continues within budget; task-worker stack never contains native blocking wait |
+| MT-17 | Each subsystem/library creates its own pool or permanent thread; context switching and cache pressure grow invisibly | one engine executor family with host/lane policy; inventory third-party internal workers and reserve capacity (NV-CPU) | system trace counts runnable threads, migrations, context switches, and third-party workers under simultaneous cook/render/provider load |
+| MT-18 | Worker count is `hardware_concurrency()-N`, logical-core count, or a compile-time constant for every topology/workload | conservative measured default, 0/1/2/N override, physical/logical/topology metadata, interactive/background budget (NV-CPU, AMD-CPU) | tiny/heavy workloads across available topologies; keep fewer workers when p95/latency/throughput wins and record the negative scaling |
+| MT-19 | One task per entity/draw/descriptor or an unconditional `ParallelFor`; scheduling is slower than work | coarse ranges, workload-specific grain, serial crossover, and instrumentation. Epic and nvpro expose batch/serial controls (EPIC-TASK, NV-PAR) | sweep grain from serial to tiny; retain measured crossover and ensure tiny scenes choose serial automatically |
+| MT-20 | Equal item counts are assumed equal cost; one worker becomes the straggler while others idle | dynamic work distribution/work stealing or cost-aware ranges, exclusive outputs, deterministic fan-in | adversarial skew places expensive items together; trace shows bounded tail and result order remains stable |
+| MT-21 | The design creates global barriers after every phase; the frame becomes a sequence of “parallel” islands dominated by the slowest task | dependency DAG exposes earliest-start edges and joins only true consumers; measure critical path, not total work | remove/inject delay into one non-critical branch; unrelated successors start without waiting for a global barrier |
+| MT-22 | Priority is required for correctness or used to hide missing dependencies; inversion/starvation follows | dependencies and lanes express correctness; priority is a measured hint with aging/fairness | sustained background/high-priority load cannot starve accepted frame, cleanup, or cancellation/finally work |
+| MT-23 | Producer queues, frame packets, captures, uploads, decompressed assets, or compile jobs are unbounded | fixed slots/weighted budgets and explicit reject/block/defer/drop/coalesce policy | slow consumer and burst producer reach a stable memory ceiling and expected backpressure without deadlock |
+| MT-24 | Third-party compiler, decoder, provider, middleware, or parallel algorithm spawns internal workers inside N engine tasks | concurrency budget includes nested/internal threads; per-library session limit or serial outer policy | trace total runnable threads and memory at 1/N outer jobs; select the combination that improves throughput without foreground regression |
+
+### C. Data Layout, Contention, and Determinism Failures
+
+| ID | Frequent mistake and recognizable symptom | Required Sparkle pattern | Mandatory falsification |
+|---|---|---|---|
+| MT-25 | Per-worker counters/flags/queue indices occupy one cache line; there is little lock time but scaling collapses | cache-line-separated hot writable state, worker-local aggregation, read-mostly cold metadata elsewhere (NV-CPU, AMD-CPU) | padding/layout A/B with cache/remote traffic counters; randomized worker placement; keep padding only with evidence |
+| MT-26 | Every task contends on one atomic bump pointer, shared vector push, allocator mutex, registry, logger, or descriptor cursor | worker-local pages/arenas/partials plus preassigned ranges and deterministic merge | contention profile shows no frame-hot shared cursor; allocations/ranges never overlap and reset is token-safe |
+| MT-27 | Parallelism multiplies scratch, command allocators, descriptor pools, command buffers, and decoded assets by workers × frames × queues | explicit memory equation, capacity budget, page reuse, spill policy, and high-water evidence | maximum configured workers/frames/queues stays within budget; overflow follows a tested deterministic slow/fail path |
+| MT-28 | Object-oriented pointer chasing and scattered ownership consume memory bandwidth, so more cores only increase misses | DOD by measured access pattern: dense hot components/ranges, cold metadata split, stable handles, batch iteration | compare cache misses/bandwidth and serial baseline; do not claim DOD because a type is named ECS |
+| MT-29 | Completion order determines entity IDs, vector order, diagnostics, package bytes, draw order, or command submission | stable `(system, partition, local)`/asset/pass keys and ordered fan-in; completion order is never semantic (AMD-PORT, EPIC-RHI) | randomized delays/work stealing at 0/1/2/N workers produce identical promised output/order/hash |
+| MT-30 | ECS/registry/vector structure changes while ranges or queries execute; dense indices/pointers become invalid | frozen structural epoch and per-task command buffers committed by owner after readers join | randomized create/destroy/add/remove during scheduled reads is rejected/deferred and stale generations fail safely |
+| MT-31 | Duplicate “async” and legacy representations both own truth during migration | one authoritative storage/identity with compatibility as read/command adapter and a deletion gate | mutation through every supported facade converges on one source; repository search finds no second owner or new legacy consumer |
+
+### D. Renderer, RHI, and CPU/GPU Concurrency Failures
+
+| ID | Frequent mistake and recognizable symptom | Required Sparkle pattern | Mandatory falsification |
+|---|---|---|---|
+| MT-32 | Two tasks record through one D3D12 allocator/list or one Vulkan command pool; adding a mutex “fixes” native errors but serializes recording | exclusive `RhiCommandRecordingLease`; allocator/pool per recording context × buffered frame × queue/family (AMD-RDNA, AMD-RPS, NV-VK) | concurrent-use and reset misuse assert; D3D12 GPU validation and Vulkan synchronization validation pass under migration/delay |
+| MT-33 | CPU frame end resets/reuses descriptors, upload pages, command allocators, or resources still referenced by GPU | last-use fence/timeline token, ringed frame resources, generation retirement; CPU completion and GPU completion are distinct (NV-PAR) | delay GPU beyond several CPU frames; reset-before-token fails and memory remains valid until the exact queues complete |
+| MT-34 | Any worker/provider thread may submit or present because the queue has a mutex | render coordinator is engine submission authority; native queue lock remains only for documented external synchronization/provider sharing | wrong-thread submit/present fails; token/submission order matches serial compiled plan on both backends |
+| MT-35 | Many tiny command buffers and submits multiply CPU/GPU overhead; or giant buffers leave most CPU cores idle | measured recording groups with enough commands, bounded list/submit count, backend-specific secondary/bundle policy (NV-VK, AMD-RDNA) | sweep group size/list/submit count; record CPU record time, GPU time, bubbles, memory, and latency—not only worker utilization |
+| MT-36 | Pipeline/layout/descriptor/resource creation or cache insertion happens lazily inside parallel recording | prewarm/materialize immutable pass runtime before fan-out; bounded background creation publishes a later generation | cold-cache recording asserts rather than surprise-blocks; randomized first-use never mutates shared runtime from workers |
+| MT-37 | `WaitForIdle`, queue wait, readback, or flush becomes ordinary scene/reload/resize/capture synchronization | sequenced command, relevant completion token, versioned swap, and deferred retirement; exactly one final shutdown/device-reinit drain | native idle-call counter is zero for ordinary operations and detects nested wrapper drains; delayed GPU still makes progress |
+| MT-38 | Submission batching is treated as always good, or CPU is allowed arbitrarily far ahead; throughput rises while input latency/pacing worsens | bounded zero/one-ahead modes, early-submit/submit-batch policy chosen from correlated latency and queue evidence (NV-VK, EPIC-RHI) | compare CPU/GPU-bound zero/one-ahead and batch sizes; report throughput, queue gaps, backpressure, pacing, and input-to-present |
+| MT-39 | Parallel recording changes barriers, transparent order, temporal history, provider tags, or queue ownership even though images often look correct | same compiled frame-graph plan and single-thread semantic order; deterministic merge/submission; feature-specific history/generation identity (AMD-PORT, EPIC-RHI) | serial/parallel barrier/submission plan comparison, transparent overlap scene, temporal reset, RT/provider/capture matrix, both native validators |
+| MT-40 | The engine expects the Vulkan/D3D12 driver to provide CPU parallelism, or confuses CPU jobs, GPU async compute, multi-queue execution, and frames in flight | explicitly separate CPU task DAG, render pipeline, recording contexts, GPU queue graph, and frame-lifetime timeline (NV-VK, AMD-RDNA) | profiler diagram labels each timeline and dependency; every overlap claim identifies actual simultaneous intervals and synchronization |
+
+### E. Verification, Debugging, and Performance-Claim Failures
+
+| ID | Frequent mistake and recognizable symptom | Required Sparkle pattern | Mandatory falsification |
+|---|---|---|---|
+| MT-41 | “It ran 100 times” or “the race detector was quiet” is called proof; only Debug or one backend is tested | ownership proof plus serial oracle, randomized stress, optimized build, supported sanitizer, native validation, and D3D12/Vulkan parity | test matrix records tool/backend/configuration gaps honestly; injected defect is detected by at least one test/tool |
+| MT-42 | Tests use sleeps to force order and become flaky or accidentally pass on faster hardware | controllable barriers/events/fault hooks in test ownership seams; virtualized generation/delay, not wall-clock correctness | randomized scheduling with explicit checkpoints; changing machine speed does not change expected state transitions |
+| MT-43 | CPU utilization, thread count, FPS, or average time is the result; critical path, p95/p99, latency, memory, GPU regressions, and profiler overhead are ignored | timeline-first causal experiment with serial control, p50/p95/p99, critical path, blocked/runnable states, cache/contention, memory, GPU and latency evidence (NV-TRACE, EPIC-TRACE) | independent rerun, capture-on/off comparison, negative-result retention, and attribution to removed work/data/jobs/pipeline/GPU separately |
+| MT-44 | Lock-free is selected for portfolio value without progress, ABA, lifetime, reclamation, or oracle proof | simple owner/lock first; optimize one measured bounded protocol against locked and SC references | wrap/reclamation/contention/failure tests; if lifetime proof is incomplete, the lock-free path is deleted rather than documented as “future fix” |
+
+### How to Use the Atlas During Implementation
+
+Every K prompt must perform a **hazard pre-mortem** before editing:
+
+1. list the MT IDs the change could introduce or expose;
+2. identify the source-backed professional pattern being implemented;
+3. name the invariant and the concrete failure injection/test/trace that can disprove it;
+4. run serial and smallest-thread modes before N-worker performance work;
+5. close the hazards in the completion report. “Not observed” is not closure.
+
+When a new mistake is discovered, add it to this atlas only if it is materially distinct. Do not create a new document, lint framework, runtime hazard registry, or shipping diagnostic API. The atlas is a review vocabulary; executable ownership, assertions, tests, validation, and traces are the proof.
 
 ## Migration Program
 
@@ -3413,12 +3937,15 @@ Work:
 6. Save reference images and deterministic scene/camera scripts.
 7. Record the preservation baseline for classic TLAS, PTLAS, native reservoir lighting, reference path mode, temporal/providers, screenshot capture, shader packages, the existing multi-level/content workflow, and both backends; record the curated-level/optional-pack target as a gap rather than implying it already exists.
 8. Audit current public observation APIs and default reports/artifacts so later stages have explicit deletion targets.
+9. Regenerate LC-01 through LC-18 from all owned Engine/Tools/Projects concurrency hits. Record owner, invariant, affinity/blocking/lifetime policy, disposition, closing stage/prompt, and falsifying test; count nested native GPU drains per top-level operation.
+10. Produce the canonical naming ledger from the vocabulary section. Search symbols, filenames, CMake, tests, comments, profiler labels, and thread labels for both canonical terms and semantic aliases; assign every conflict **keep**, **rename in exact owning prompt**, or **delete as alias**. Do not rename unrelated established code in this baseline stage.
 
 Exit criteria:
 
 - baseline commands/settings and essential captures use the existing validation artifact workflow rather than a new report format
 - both D3D12 and Vulkan validation runs are clean
-- every important WaitForIdle site is classified as shutdown, boundary, or data-path debt
+- every standard/Qt/native concurrency primitive and every `WaitForIdle` call site is classified; nested drains and callback-under-lock are recorded, and each replacement has an exact deletion prompt
+- CPU tasks, OS threads, render control commands, RHI command recording, GPU queues, handles, tokens, leases, contexts, and scopes have one documented meaning; every planned rename and debugger/profiler label has an exact owning prompt
 - product, developer-preview, research, and unsupported states are explicit without adding a new feature registry
 
 Learning evidence:
@@ -3439,7 +3966,9 @@ Code areas:
 - new Engine/Tasks
 - root/module CMake files
 - Engine/Application/Private/ShaderRecook
+- Engine/Platform Input callback registry
 - Tools/Cooking/TextureCooker
+- Tools/Cooking/AssetCooker child-process dispatch
 - Tools/Shaders/ShaderCompiler
 - Tools/Launcher process orchestration
 
@@ -3452,10 +3981,15 @@ Work:
 5. Parallelize safe shader cook nodes with compiler-session constraints and deterministic emission.
 6. Keep TaskExecutor/task-graph internals private and verify that every public primitive has at least two owned consumers or is required by the host seam.
 7. Add structured application, world/document, asset-generation, frame, and tool-invocation scopes with parent cancellation and settlement assertions.
+8. Replace LauncherBackend's QThread-per-operation and ProcessRunner's reader-thread/polling/cancel trio with the same scoped operation and BlockingIo contracts; preserve Qt owner affinity and intentionally independent external-process launches.
+9. Remove InputSystem callback-under-lock: declare dispatch affinity and snapshot callbacks before invocation, or prove owner-only registry semantics; cover re-entrant registration/unsubscription.
+10. Restrict AssetCookerToolProcess's synchronous native wait to an outer CLI host adapter; all scheduled use settles through BlockingIo.
 
 Delete:
 
 - the ShaderRecookCoordinator std::future/std::async execution path
+- LauncherBackend per-operation QThreads, ProcessRunner pipe-reader thread/50 ms polling, and duplicate atomic cancellation after structured migration
+- lock-held InputSystem subscriber invocation
 - any temporary second ad-hoc pool introduced during the pilot
 
 Exit criteria:
@@ -3464,7 +3998,9 @@ Exit criteria:
 - outputs match serial byte-for-byte where formats are deterministic
 - worker counts 0/1/2/N work
 - failed/cancelled cooks never publish partial registries
-- interactive shader recook cannot starve the frame lane
+- interactive shader recook cannot starve the FrameCritical lane
+- launcher close/cancel/restart cannot strand a QThread, child, pipe, or Qt callback; no task worker performs a native process wait
+- input callback self-unsubscribe/nested-dispatch tests cannot deadlock and user callbacks execute outside the registry lock
 - DXIL/SPIR-V packages, reflection/layout verification, package IDs, and registries match serial output
 
 Learning evidence:
@@ -3636,7 +4172,7 @@ Learning evidence:
 - transform cache race before/after explanation
 - editor command/read-publication lifetime trace
 
-### Stage 3 — Dedicated Render Coordinator and Bounded Mailbox
+### Stage 3 — Dedicated Render Coordinator and Bounded Frame Queue
 
 Goals:
 
@@ -3654,7 +4190,7 @@ Code areas:
 Work:
 
 1. Move RendererSystemRoot, FramePipeline, RHI creation/destruction, submission, and present to RenderThread.
-2. Add bounded frame slots and mailbox with clear publication/reuse transitions.
+2. Add bounded `RenderFrameQueue` slots with clear publication/reuse transitions.
 3. Add sequenced render commands for resize, settings, capture, shader generation, and shutdown.
 4. Copy/convert ImGui draw output into EditorRenderPacket.
 5. Migrate only required editor consumers to narrow immutable product results and delete broader observation routes made redundant by the thread boundary.
@@ -3832,7 +4368,7 @@ Work:
 2. Consolidate task, frame-graph, GPU-scene, upload, and retirement evidence into existing profiler/allocator hooks and delete superseded diagnostic snapshots or reports.
 3. Finish deterministic transactional cook publication.
 4. Route cancellation and progress through the existing owned tool workflow; do not add a renderer/task diagnostic panel.
-5. Audit every remaining thread, mutex, future, and WaitForIdle.
+5. Audit every remaining standard/Qt/native thread, mutex, atomic, future, wait/detach, callback registry, queue/allocator lock, and `WaitForIdle` call site; reconcile LC-01 through LC-18 and all later discoveries to zero unclassified mechanisms.
 6. Remove legacy host-render and snapshot paths.
 7. Make asset cooking/package fan-out start from project catalogs, preserve the curated in-repo level set, and support optional heavyweight content packs.
 8. Keep only owned build/cook/run/clean/package/inspection launcher paths; delete diagnostic or package variants without consumers.
@@ -3881,7 +4417,7 @@ Goals:
 
 Work:
 
-1. Harden mailbox/task-slot atomic protocols with mutex/SC/acquire-release references, generation-wrap stress, cancellation, and shutdown.
+1. Harden `RenderFrameQueue`/task-slot atomic protocols with mutex/SC/acquire-release references, generation-wrap stress, cancellation, and shutdown.
 2. Characterize physical/logical-core-like worker policies, SMT/cache-domain behavior, oversubscription, ready time, migrations, false sharing, and priority inversion using optimized builds and system traces.
 3. Implement serial and parallel reduction, scan/compaction, stable partition/bucketing, and deterministic merge in existing ECS/cooker/GPU-scene workloads.
 4. Complete the staged I/O/decode/validate/commit/upload pipeline and cold-cache PSO/resource-creation policy with bounded concurrency and explicit late/miss/fallback behavior.
@@ -3911,7 +4447,7 @@ The stages can be organized into reviewable change sets:
 9. Immutable editor scene model, stable selection, and command/transaction conversion
 10. Render world delta and dynamic packet
 11. Serial renderer conversion to new data contract
-12. Bounded mailbox and render coordinator
+12. Bounded `RenderFrameQueue` and render coordinator
 13. Editor UI/viewport packet conversion
 14. Persistent GPU scene
 15. Deferred scene/shader generation retirement
@@ -3947,7 +4483,7 @@ Functional:
 
 Lifetime:
 
-- stale TaskNode/TaskRun generation
+- stale `TaskNodeHandle`/`TaskExecution` generation
 - task captures destroyed input rejected by ownership policy tests
 - run destroyed only after children settle
 - scheduler shutdown with idle, queued, running, cancelled, and event-blocked work
@@ -4156,7 +4692,7 @@ Task runtime:
 - cancellation/failure count
 - physical/logical processor count, selected worker cap, and relevant cache/topology metadata
 - context switches, migrations, ready/preempted time, wake count, and steal failures in focused system captures
-- contention/false-sharing evidence for scheduler/mailbox hot state
+- contention/false-sharing evidence for scheduler/frame-queue hot state
 - third-party/internal worker counts during compiler/decode workloads
 
 ECS/GameFramework:
@@ -4395,15 +4931,17 @@ This program is complete when all of the following are true:
 - The frame graph remains the only render scheduler/barrier authority and the RHI remains explicit.
 - SparkleTasks has no renderer, RHI, provider, scene, or product-policy dependency.
 - Public task/renderer seams contain no worker/cache/timing observation API.
+- planned concurrency symbols use the canonical crosswalk: no permanent owned-source alias remains for `TaskExecution`, `TaskNodeHandle`, `RenderCoordinator`, `RenderFrameQueue`, `RenderControlCommandQueue`, or `RhiCommandRecordingLease`; physical thread labels describe roles that actually exist.
 
 ### Tasks
 
 - SparkleTasks supports prerequisites, fan-in, nested work, cancellation, failure, lanes, private capture-time instrumentation, and serial execution.
 - Normal worker tasks do not block on other tasks.
-- Frame and blocking-I/O workloads cannot starve each other.
+- No generic busy-wait/help loop executes unrelated tasks while waiting; idle and dependency waits park through a lost-wakeup-safe predicate protocol.
+- FrameCritical and BlockingIo workloads cannot starve each other.
 - Scheduler tests pass at 1/2/N workers and during repeated shutdown stress.
 - application, world/document, asset-generation, frame, and tool scopes cancel and settle before their captured owners/storage are destroyed.
-- mailbox/task-slot atomic protocols have mutex/SC references, documented memory orders, generation-wrap/ABA tests, and separate reuse/reclamation proof.
+- `RenderFrameQueue`/task-slot atomic protocols have mutex/SC references, documented memory orders, generation-wrap/ABA tests, and separate reuse/reclamation proof.
 - worker policy is measured on physical/logical-core-like configurations; topology metadata, oversubscription, ready time, migrations, false sharing, and third-party workers are accounted for.
 - priority inversion, lost wake, thundering herd, worker-wait, cancellation, and shutdown failures have injected regression tests.
 
@@ -4412,6 +4950,7 @@ This program is complete when all of the following are true:
 - Frame preparation contains measured task-parallel work.
 - Frame-graph recording groups have explicit state and deterministic submission contracts.
 - D3D12 allocators/lists and Vulkan command pools/buffers are worker-local and frame-retired.
+- Recording group, command-buffer, and submission sizes are measured; neither tiny-list overhead nor giant-list underutilization is accepted by assumption.
 - Pass runtime/PSO state is prewarmed before parallel recording.
 - Upload and transient descriptor allocations have parallel-safe ownership.
 - Both backends pass native and engine validation in serial and parallel modes.
@@ -4439,7 +4978,7 @@ This program is complete when all of the following are true:
 - tool publication is transactional and deterministic.
 - cancellation and progress are observable and safe.
 - runtime loading follows bounded read/decode/upload/residency states without frame-worker blocking.
-- runtime loading distinguishes I/O completion from CPU jobs and exposes one internal staged seam for a future measured I/O backend without duplicating asset ownership.
+- runtime loading distinguishes I/O completion from CPU tasks and exposes one internal staged seam for a future measured I/O backend without duplicating asset ownership.
 - real ECS/cooker/GPU-scene paths demonstrate task-local reduction, scan/compaction or stable partition/merge where useful, with serial oracle and deterministic policy.
 - curated multiple levels, optional heavyweight content packs, and owned runtime/editor/tools/symbols/content packages remain supported.
 - launcher and cooker task use is restricted to owned product workflows.
@@ -4451,6 +4990,8 @@ This program is complete when all of the following are true:
 - CPU task concurrency, render pipelining, GPU queue concurrency, and frames in flight are explained separately
 - limitations and tradeoffs are documented
 - all replaced legacy paths are removed
+- every MT-01–MT-44 hazard is closed by a concrete preventing pattern plus falsifying test/trace, or has a reviewable non-applicability reason
+- source precedents remain traceable to official NVIDIA, AMD/GPUOpen, Epic, language, or API materials; vendor samples are never treated as standalone correctness/performance proof
 - every change set closes its capability-preservation and replacement/deletion ledgers
 - shipping defaults contain no research-only task/data path
 - broad workload analysis is late and uses consolidated existing hooks
@@ -4459,15 +5000,16 @@ This program is complete when all of the following are true:
 - the existing concise overview lets a reviewer locate the RHI contract, frame-graph/pass rules, shader source-to-package path, feature classification, and backend support without reading this entire study
 - executable include/dependency/boundary checks cover the new Tasks, packet, Renderer, and RHI directions
 - executable ownership tests cover GameFramework systems/commands/scopes and the editor read-model/operation boundary
+- repository-wide canonical and rejected-alias searches are classified; C++ symbols, filenames, CMake, tests, comments, thread names, and profiler labels agree on the same responsibility vocabulary
 - three concurrency incident reports demonstrate race/lifetime, deadlock/stall, and scaling/latency diagnosis with exact reproduction, trace, root cause, fix, regression and post-fix measurement
 - AMD/NVIDIA-relevant captures include optimized-build CPU scheduling, D3D12/Vulkan recording, AMD GPU queue/barrier behavior where hardware is available, and NVIDIA/system CPU-GPU timelines where available; unavailable hardware is stated, never simulated as proof
-- the owner can complete the expert question bank, atomic/mailbox coding drill, task-DAG analysis, native recording review, and trace diagnosis without relying on memorized slogans
+- the owner can complete the expert question bank, bounded-queue atomic coding drill, task-DAG analysis, native recording review, and trace diagnosis without relying on memorized slogans
 
 ## Immediate Next Implementation Slice
 
 The first code change after accepting this design should be Stage 0 plus the smallest part of Stage 1:
 
-1. add thread-role/FrameId/SceneGeneration vocabulary and CPU timing points
+1. add canonical thread-role/`FrameId`/`SceneGeneration` vocabulary, the planned-name reconciliation ledger, and CPU timing points
 2. record current D3D12/Vulkan baselines
 3. scaffold SparkleTasks with serial executor and dependency graph tests
 4. add the fixed worker executor, cancellation, and private profiler/debugger instrumentation
@@ -4504,10 +5046,18 @@ These are the principal Sparkle sources inspected for this study. They should be
 | [D3D12CommandContext.cpp](../../../Engine/RHI/Private/D3D12/Commands/D3D12CommandContext.cpp) | Command allocator/list slots are selected through one mutable frame/queue context |
 | [VulkanCommandContext.cpp](../../../Engine/RHI/Private/Vulkan/Commands/VulkanCommandContext.cpp) | Command buffers share a frame/queue command-pool context unsuitable for concurrent recording |
 | [ShaderRecookCoordinator.cpp](../../../Engine/Application/Private/ShaderRecook/ShaderRecookCoordinator.cpp) | A polled std::async job launches the compiler and accepted reloads wait for RHI idle |
+| [InputSystem.h](../../../Engine/Platform/Public/Input/InputSystem.h) and [InputSystem.cpp](../../../Engine/Platform/Private/Input/InputSystem.cpp) | The callback registry is mutex-protected, but arbitrary callbacks are invoked while the mutex is held; re-entrant unsubscribe/register is a concrete legacy-quality hazard |
+| [Logger.cpp](../../../Engine/Core/Private/Diagnostics/Logger.cpp) and [Timer.h](../../../Engine/Core/Public/Time/Timer.h) | Existing mutex/atomic infrastructure must be kept only with explicit registry/publication/independent-flag invariants; it is not automatically a task-system migration target |
 | [AssetCookerDispatcher.cpp](../../../Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerDispatcher.cpp) | Cook stages and per-scene imports/builds execute serially |
+| [AssetCookerToolProcess.cpp](../../../Tools/Cooking/AssetCooker/Private/Dispatch/AssetCookerToolProcess.cpp) | A native infinite child-process wait is acceptable only at the outer synchronous CLI boundary; scheduled work requires the BlockingIo contract |
 | [TextureCookRequestBatchProcessor.cpp](../../../Tools/Cooking/TextureCooker/Private/Cooking/TextureCookRequestBatchProcessor.cpp) | Texture requests use one cooker in a serial batch loop |
 | [ShaderPackageCooker.cpp](../../../Tools/Shaders/ShaderCompiler/Private/Cooking/ShaderPackageCooker.cpp) | Planned shader cook nodes execute serially before package emission |
-| [ProcessRunner.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Core/ProcessRunner.cpp) | Child-process output uses blocking reader-thread behavior that belongs on an I/O lane |
+| [LauncherBackend.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Gui/App/LauncherBackend.cpp), [ProcessRunner.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Core/ProcessRunner.cpp), and [LauncherGuiApp.cpp](../../../Tools/Launcher/SparkleLauncher/Private/Gui/App/LauncherGuiApp.cpp) | Launcher work layers QThread-per-operation over a pipe-reader std::thread and 50 ms process polling; intentionally detached products must be distinguished from owned tasks and timed handoff assumptions |
+| [StreamlineRuntimeSupport.cpp](../../../Engine/Renderer/Private/Streamline/StreamlineRuntimeSupport.cpp) | One global mutex protects provider lifecycle/device/presentation state and is held across external SDK calls; future coordinator affinity must narrow this boundary |
+| [D3D12CommandQueue.cpp](../../../Engine/RHI/Private/D3D12/Commands/D3D12CommandQueue.cpp) and [VulkanCommandQueue.cpp](../../../Engine/RHI/Private/Vulkan/Commands/VulkanCommandQueue.cpp) | Submission mutexes serialize native queues today; Vulkan external synchronization can remain necessary, but the target engine contract is one coordinator submission owner and no worker GPU waits |
+| [D3D12DescriptorAllocator.cpp](../../../Engine/RHI/Private/D3D12/Descriptors/D3D12DescriptorAllocator.cpp), [VulkanDescriptorAllocator.cpp](../../../Engine/RHI/Private/Vulkan/Descriptors/VulkanDescriptorAllocator.cpp), and [D3D12LinearAllocator.cpp](../../../Engine/RHI/Private/D3D12/Resources/D3D12LinearAllocator.cpp) | Shared locks/atomics protect current allocation, but parallel recording requires lifetime-split persistent state and token-safe worker-local transient pages instead of hot shared cursors |
+| [D3D12GpuMemoryAllocator.cpp](../../../Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator.cpp), [VulkanGpuMemoryAllocator.cpp](../../../Engine/RHI/Private/Vulkan/Memory/VulkanGpuMemoryAllocator.cpp), and [VulkanRhi.cpp](../../../Engine/RHI/Private/Vulkan/Device/VulkanRhi.cpp) | Record/pending-release and validation-callback locks are legitimate boundaries that need narrow snapshot/drain semantics and lifetime tests, not blind deletion |
+| [FramePipeline.cpp](../../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp), [VulkanRenderDeviceServices.cpp](../../../Engine/RHI/Private/Vulkan/Device/VulkanRenderDeviceServices.cpp), and [VulkanSwapChain.cpp](../../../Engine/RHI/Private/Vulkan/SwapChain/VulkanSwapChain.cpp) | Resize can currently reach multiple nested device-idle drains; the migration must count native drains per operation and converge on one owner/token policy |
 
 ## Primary Source Trail
 
@@ -4517,11 +5067,19 @@ The following links are the direct source/documentation trail used for the archi
 
 - [Donut ThreadPool interface at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/include/donut/engine/ThreadPool.h)
 - [Donut ThreadPool implementation at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/src/engine/ThreadPool.cpp)
+- [nvpro_core `parallel_batches`/`parallel_ranges` vocabulary at bc19d6a](https://github.com/nvpro-samples/nvpro_core/blob/bc19d6ac3ef62938d0ea0e099735878457ce1b6e/nvh/parallel_work.hpp)
 - [NVRHI Programming Guide at 8e8c36e](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md)
+- [NVRHI `ICommandList`, `CommandQueue`, execution, wait, and lifetime-tracker vocabulary at 8e8c36e](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/include/nvrhi/nvrhi.h)
 - [Advanced API Performance: CPUs](https://developer.nvidia.com/blog/advanced-api-performance-cpus/)
 - [Limiting CPU Threads for Better Game Performance](https://developer.nvidia.com/blog/limiting-cpu-threads-for-better-game-performance/)
+- [Vulkan Dos and Don'ts](https://developer.nvidia.com/blog/vulkan-dos-donts/)
+- [Advanced API Performance: Command Buffers](https://developer.nvidia.com/blog/advanced-api-performance-command-buffers/)
+- [Advanced API Performance: Pipeline State Objects](https://developer.nvidia.com/blog/advanced-api-performance-pipeline-state-objects/)
+- [Parallel Shader Compilation for Ray Tracing Pipeline States](https://developer.nvidia.com/blog/parallel-shader-compilation-ray-tracing-pipeline-states/)
+- [nvpro_core ring resources, command pools, batching, and per-thread allocator guidance at bc19d6a](https://github.com/nvpro-samples/nvpro_core/blob/bc19d6ac3ef62938d0ea0e099735878457ce1b6e/nvvk/README.md)
 - [NVIDIA Nsight Systems](https://developer.nvidia.com/nsight-systems)
-- [NVIDIA stdexec](https://github.com/NVIDIA/stdexec)
+- [Nsight Systems User Guide: scheduling, context switches, waits, OS runtime and I/O traces](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
+- [NVIDIA stdexec structured execution vocabulary at 711da59](https://github.com/NVIDIA/stdexec/tree/711da5971a8e8e940763c11bf6bbeb1c1bb22c3a)
 - [NVIDIA Reflex](https://developer.nvidia.com/performance-rendering-tools/reflex)
 - [Streamline Reflex/PCL programming guide](https://github.com/NVIDIA-RTX/Streamline/blob/main/docs/ProgrammingGuideReflex.md)
 
@@ -4529,8 +5087,19 @@ The following links are the direct source/documentation trail used for the archi
 
 - [FidelityFX SDK Cauldron2 TaskManager interface at 60f4ea8](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/core/taskmanager.h)
 - [FidelityFX SDK Cauldron2 TaskManager implementation at 60f4ea8](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/core/taskmanager.cpp)
+- [AMD RPS sample `RpsAfxThreadPool`, `Job`, and `WaitHandle` vocabulary at f3330f5](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/tools/app_framework/afx_threadpool.hpp)
+- [AMD RPS render-graph, command-batch, record-info, command-buffer, and callback-context vocabulary at f3330f5](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/include/rps/runtime/common/rps_runtime.h)
 - [Legacy AMD Cauldron thread pool at b92d559](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/b92d559bd083f44df9f8f42a6ad149c1584ae94c/src/common/Misc/threadpool.h)
 - [AMD Ryzen CPU Performance Guide](https://gpuopen.com/learn/ryzen-performance/)
+- [AMD CPU Core Count Detection on Windows](https://gpuopen.com/learn/cpu-core-count-detection-windows/)
+- [AMD RDNA Performance Guide](https://gpuopen.com/learn/rdna-performance-guide/)
+- [AMD Driver Experiments: detecting command allocator synchronization bugs](https://gpuopen.com/learn/rdts-driver-experiments/)
+- [AMD RPS multithreading tutorial](https://gpuopen.com/learn/rps-tutorial/rps-tutorial-part4/)
+- [AMD RPS Vulkan multithreading implementation test at f3330f5](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/tests/gui/test_multithreading_vk.cpp)
+- [AMD RPS D3D12 multithreading implementation test at f3330f5](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/tests/gui/test_multithreading_d3d12.cpp)
+- [AMD RPS shared graph/range/thread-count test contract at f3330f5](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/tests/gui/test_multithreading_shared.hpp)
+- [Porting Detroit: deterministic multithreaded render lists and per-thread Vulkan pools](https://gpuopen.com/learn/porting-detroit-3/)
+- [Porting Detroit: pipeline-cache, creation, and batching lessons](https://gpuopen.com/learn/porting-detroit-1/)
 - [AMD profiling-tool selection guide](https://gpuopen.com/learn/amd-lab-notes/amd-lab-notes-profilers-readme/)
 - [Radeon GPU Profiler](https://gpuopen.com/rgp/)
 - [Understanding RGP and GPUView queue graphs](https://gpuopen.com/learn/understanding-graphs-in-radeon-gpu-profiler-and-gpuview/)
@@ -4541,11 +5110,26 @@ The following links are the direct source/documentation trail used for the archi
 ### Epic Games
 
 - [Tasks System](https://dev.epicgames.com/documentation/en-us/unreal-engine/tasks-systems-in-unreal-engine)
+- [Tasks System API references (`FTaskHandle`, `FTaskEvent`, `FPipe`)](https://dev.epicgames.com/documentation/en-us/unreal-engine/tasks-system-references-in-unreal-engine)
+- [`ParallelFor` API and blocking/grain warnings](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Core/ParallelFor)
 - [Threaded Rendering](https://dev.epicgames.com/documentation/en-us/unreal-engine/threaded-rendering-in-unreal-engine)
 - [Parallel Rendering Overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/parallel-rendering-overview-for-unreal-engine)
+- [Mesh Drawing Pipeline](https://dev.epicgames.com/documentation/unreal-engine/mesh-drawing-pipeline-in-unreal-engine?application_version=5.7)
+- [`FRenderCommandList`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RenderCore/FRenderCommandList)
+- [`FRHICommandListExecutor`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RHI/FRHICommandListExecutor)
+- [`QueueAsyncCommandListSubmit`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RHI/FRHICommandListImmediate/QueueAsyncCommandListSubmit)
+- [`IRHICommandContext`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RHI/IRHICommandContext)
+- [`FDynamicRHI::RHIGetParallelCommandContext`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/RHI/FDynamicRHI/RHIGetParallelCommandContext)
+- [Task Graph Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/task-graph-insights-in-unreal-engine-5)
+- [Timing Insights](https://dev.epicgames.com/documentation/en-us/unreal-engine/timing-insights-in-unreal-engine-5)
+- [Epic Unreal Tasks source path—official repository access required](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Tasks/Task.h)
+- [Epic Unreal ParallelFor source path—official repository access required](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Async/ParallelFor.h)
+- [Epic Unreal rendering-thread source path—official repository access required](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/RenderCore/Public/RenderingThread.h)
 - [Render Dependency Graph](https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine)
 - [Asynchronous Level Loading](https://dev.epicgames.com/documentation/unreal-engine/asynchronous-level-loading-in-unreal-engine?lang=en-US)
 - [PSO Precaching](https://dev.epicgames.com/documentation/unreal-engine/pso-precaching-for-unreal-engine)
+- [Shader Development and asynchronous Shader Compile Workers](https://dev.epicgames.com/documentation/unreal-engine/shader-development-in-unreal-engine?lang=en-US)
+- [Unreal Swarm static-lighting distribution](https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-swarm-in-unreal-engine)
 - [MassEntity Overview](https://dev.epicgames.com/documentation/unreal-engine/overview-of-mass-entity-in-unreal-engine?lang=en-US)
 
 ### O3DE
@@ -4574,6 +5158,9 @@ The following links are the direct source/documentation trail used for the archi
 
 - [DirectX 12 Multithreading sample overview at 357ade6](https://github.com/microsoft/DirectX-Graphics-Samples/blob/357ade6ec6ff0d9dcadc48f35c7a28e37c0cdf7a/Samples/Desktop/D3D12Multithreading/readme.md)
 - [D3D12Multithreading FrameResource at 357ade6](https://github.com/microsoft/DirectX-Graphics-Samples/blob/357ade6ec6ff0d9dcadc48f35c7a28e37c0cdf7a/Samples/Desktop/D3D12Multithreading/src/FrameResource.cpp)
+- [D3D12 command queue and command-list design](https://learn.microsoft.com/en-us/windows/win32/direct3d12/design-philosophy-of-command-queues-and-command-lists)
+- [`ExecuteCommandLists` batching and ordering contract](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-executecommandlists)
+- [D3D12 recording command lists and bundles](https://learn.microsoft.com/en-us/windows/win32/direct3d12/recording-command-lists-and-bundles)
 - [DirectStorage samples](https://github.com/microsoft/DirectStorage)
 - [Windows CPU analysis with WPA](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/cpu-analysis)
 - [Windows CPU Sets](https://learn.microsoft.com/en-us/windows/win32/procthread/cpu-sets)
