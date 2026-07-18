@@ -1,6 +1,7 @@
 #include "TaskExecutorInternal.h"
 
 #include "TaskExecutionContext.h"
+#include "TaskProfiler.h"
 
 #include <exception>
 #include <format>
@@ -10,6 +11,22 @@
 
 namespace TaskDetail
 {
+	namespace
+	{
+		struct SerialTaskState final
+		{
+			std::uint32_t RemainingPrerequisites = 0;
+			std::uint32_t UnfinishedCount = 1;
+			bool ParentBodyComplete = true;
+			bool BlockedByPrerequisite = false;
+			bool BlockedByParent = false;
+			bool Scheduled = false;
+			bool BodyComplete = false;
+			bool Terminal = false;
+			TaskResult AggregateResult = TaskResult::Success();
+		};
+	}
+
 	TaskResult InvokeTask(const CompiledTaskNode& node, TaskExecutionContext& context)
 	{
 		if (!node.Function)
@@ -34,21 +51,9 @@ namespace TaskDetail
 	CompletedTaskExecution ExecuteSerial(
 	    const CompiledTaskGraphData& graph,
 	    TaskExecutionContext& context,
-	    std::uint64_t generation)
+	    std::uint64_t generation,
+	    std::stop_token cancellation)
 	{
-		struct RuntimeTaskState final
-		{
-			std::uint32_t RemainingPrerequisites = 0;
-			std::uint32_t UnfinishedCount = 1;
-			bool ParentBodyComplete = true;
-			bool BlockedByPrerequisite = false;
-			bool BlockedByParent = false;
-			bool Scheduled = false;
-			bool BodyComplete = false;
-			bool Terminal = false;
-			TaskResult AggregateResult = TaskResult::Success();
-		};
-
 		CompletedTaskExecution execution;
 		execution.Generation = generation;
 		execution.BuilderIdentity = graph.BuilderIdentity;
@@ -56,18 +61,22 @@ namespace TaskDetail
 		execution.TaskResults.resize(graph.Nodes.size());
 		execution.Settled.resize(graph.Nodes.size(), false);
 
-		std::vector<RuntimeTaskState> runtime(graph.Nodes.size());
+		std::vector<SerialTaskState> runtime(graph.Nodes.size());
 		for (std::uint32_t index = 0; index < graph.Nodes.size(); ++index)
 		{
 			runtime[index].RemainingPrerequisites = static_cast<std::uint32_t>(graph.Nodes[index].Prerequisites.size());
 			runtime[index].UnfinishedCount += static_cast<std::uint32_t>(graph.Nodes[index].NestedChildren.size());
 			runtime[index].ParentBodyComplete = !graph.Nodes[index].Parent.has_value();
+			for (const std::uint32_t prerequisite : graph.Nodes[index].Prerequisites)
+			{
+				RecordTaskDependency(generation, prerequisite, index);
+			}
 		}
 
 		std::priority_queue<std::uint32_t, std::vector<std::uint32_t>, std::greater<>> ready;
 		auto trySchedule = [&](std::uint32_t index)
 		{
-			RuntimeTaskState& task = runtime[index];
+			SerialTaskState& task = runtime[index];
 			if (!task.Scheduled && !task.BodyComplete && task.RemainingPrerequisites == 0 && task.ParentBodyComplete)
 			{
 				task.Scheduled = true;
@@ -84,7 +93,7 @@ namespace TaskDetail
 		std::function<void(std::uint32_t)> completeTask;
 		completeTask = [&](std::uint32_t index)
 		{
-			RuntimeTaskState& completed = runtime[index];
+			SerialTaskState& completed = runtime[index];
 			if (completed.Terminal)
 			{
 				return;
@@ -96,7 +105,7 @@ namespace TaskDetail
 
 			for (const std::uint32_t dependentIndex : graph.Nodes[index].Dependents)
 			{
-				RuntimeTaskState& dependent = runtime[dependentIndex];
+				SerialTaskState& dependent = runtime[dependentIndex];
 				dependent.BlockedByPrerequisite |= !completed.AggregateResult.Succeeded();
 				--dependent.RemainingPrerequisites;
 				trySchedule(dependentIndex);
@@ -105,7 +114,7 @@ namespace TaskDetail
 			if (graph.Nodes[index].Parent.has_value())
 			{
 				const std::uint32_t parentIndex = *graph.Nodes[index].Parent;
-				RuntimeTaskState& parent = runtime[parentIndex];
+				SerialTaskState& parent = runtime[parentIndex];
 				if (!completed.AggregateResult.Succeeded() && parent.AggregateResult.Succeeded())
 				{
 					parent.AggregateResult = completed.AggregateResult;
@@ -121,13 +130,17 @@ namespace TaskDetail
 		{
 			const std::uint32_t index = ready.top();
 			ready.pop();
-			RuntimeTaskState& task = runtime[index];
+			SerialTaskState& task = runtime[index];
 			const CompiledTaskNode& node = graph.Nodes[index];
+			const auto taskStart = BeginTaskProfile(node.Desc, generation, index, 0);
 
-			const bool blocked = task.BlockedByPrerequisite || task.BlockedByParent;
+			const bool blocked = task.BlockedByPrerequisite || task.BlockedByParent || cancellation.stop_requested();
+			TaskExecutionContext taskContext = context;
+			TaskExecutionContextAccess::Bind(taskContext, generation, node.Desc.Lane, cancellation);
 			TaskResult bodyResult = blocked && node.Desc.CompletionPolicy == TaskCompletionPolicy::Normal
 			                            ? TaskResult::Cancelled("A prerequisite or nested parent did not succeed.")
-			                            : InvokeTask(node, context);
+			                            : InvokeTask(node, taskContext);
+			EndTaskProfile(node.Desc, generation, index, 0, bodyResult, taskStart);
 
 			task.BodyComplete = true;
 			task.AggregateResult = bodyResult;
@@ -140,7 +153,7 @@ namespace TaskDetail
 
 			for (const std::uint32_t childIndex : node.NestedChildren)
 			{
-				RuntimeTaskState& child = runtime[childIndex];
+				SerialTaskState& child = runtime[childIndex];
 				child.ParentBodyComplete = true;
 				child.BlockedByParent = !bodyResult.Succeeded();
 				trySchedule(childIndex);

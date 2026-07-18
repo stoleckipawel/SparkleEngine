@@ -4,7 +4,12 @@
 #include "TaskGraphInternal.h"
 
 #include <cstdint>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <stop_token>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace TaskDetail
@@ -26,10 +31,25 @@ namespace TaskDetail
 	CompletedTaskExecution ExecuteSerial(
 	    const CompiledTaskGraphData& graph,
 	    TaskExecutionContext& context,
-	    std::uint64_t generation);
+	    std::uint64_t generation,
+	    std::stop_token cancellation);
+
+	bool IsExecutorWorker(const void* executorIdentity) noexcept;
 }
 
 struct TaskExecution::State final
 {
+	explicit State(std::uint64_t generation = 0) { Data.Generation = generation; Data.Status = TaskExecutionStatus::Pending; }
+
+	void Publish(TaskDetail::CompletedTaskExecution completed);
+	void RequestCancellation() noexcept { Cancellation.request_stop(); }
+
+	mutable std::mutex Mutex;
+	std::condition_variable Condition;
 	TaskDetail::CompletedTaskExecution Data;
+	std::stop_source Cancellation;
+	std::thread::id JoinThread;
+	const void* ExecutorIdentity = nullptr;
+	bool Settled = false;
+	std::function<void()> OnSettled;
 };

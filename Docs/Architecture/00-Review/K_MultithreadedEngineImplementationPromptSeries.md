@@ -161,6 +161,7 @@ Every prompt searches for both the canonical term and rejected aliases in its to
 Concurrency correctness must be encoded at the narrowest reusable ownership boundary, not repeated as logging/assertion boilerplate throughout orchestration code. Follow the owner/context/lease separation used by the NVIDIA, AMD, Epic, and O3DE references in J:
 
 - implementation types own mechanism and invariants; orchestrators express order and policy in short, readable calls;
+- do not declare local classes or structs inside product function bodies. Lifecycle guards, runtime records, visitors, and policy objects belong at the narrowest file-private or owning-class scope where their complete invariant can be read and reused. Short algorithm/callback lambdas may remain local; extract them when they acquire multi-step lifecycle, synchronization, or policy behavior;
 - prefer an owner-bound access type, scoped lease, typed token, or one gateway assertion over copying `AssertOwnerThread("method")` into every facade method;
 - use generalized abstractions only when at least two real consumers share the same lifetime semantics; do not generalize feature policy into Core;
 - place CVars/settings in the owning subsystem's dedicated `*CVars`/settings unit, never in a general parser, launch loop, or unrelated orchestrator;
@@ -170,7 +171,7 @@ Concurrency correctness must be encoded at the narrowest reusable ownership boun
 - performance captures belong to measurement prompts 05, 23–25, 28, and 29. Other prompts reuse the last compatible baseline and add a new capture only when their acceptance claim depends on timing;
 - documentation-only prompts run link/search/format checks, not product builds.
 
-The completion report must say why each validation action was proportionate. More logs, assertions, targets, and repeated full builds are not stronger evidence when they do not cross the changed invariant.
+The completion report must say why each validation action was proportionate and confirm that the touched product functions contain no local class/struct declarations. More logs, assertions, targets, and repeated full builds are not stronger evidence when they do not cross the changed invariant.
 
 ## Required Prompt Completion Report
 
@@ -486,7 +487,7 @@ Forbidden: detached threads, one thread per system, busy-yield waits, silent exc
 
 ### Prompt 02 completion record — 2026-07-18
 
-Status: **passed**. `TaskExecutorConfig::WorkerCount` now selects the unchanged serial oracle at 0 or an executor-owned fixed set at 1/2/N. Private worker deques use owner-end consumption and opposite-end stealing; external work uses a synchronized injection queue; condition-variable parking uses a mutex-protected epoch and rescan protocol. Atomic prerequisite, nested unfinished, schedule, and terminal transitions settle each accepted node once. `MaximumActiveExecutions` bounds concurrent run storage. Workers use Core's existing thread-role naming and add no priority/affinity policy.
+Status: **passed**. Prompt 02 proved the unchanged serial oracle at 0 or one executor-owned fixed set at 1/2/N; Prompt 03 subsequently split the host configuration into explicit FrameCritical/Background/BlockingIo worker counts without adding another executor family. Private worker deques use owner-end consumption and opposite-end stealing; external work uses a synchronized injection queue; condition-variable parking uses a mutex-protected epoch and rescan protocol. Atomic prerequisite, nested unfinished, schedule, and terminal transitions settle each accepted node once. `MaximumActiveExecutions` bounds concurrent run storage. Workers use Core's existing thread-role naming and add no priority/affinity policy.
 
 The private lifecycle is `Accepting → Draining|Cancelling → Stopping → Stopped`. Admission and run registration are atomic under the lifecycle mutex; drain and cancel reject late submissions, cancellation prevents queued normal bodies while preserving cleanup, workers stop only after active runs settle, all threads join, and repeated shutdown is idempotent. Same-executor recursive worker submission rejects instead of blocking. Submission remains a settled host boundary until Prompt 03 introduces scopes.
 
@@ -541,6 +542,14 @@ Acceptance gate:
 Positive patterns: structured concurrency, cooperative cancellation, continuations, bounded host waits, private instrumentation.
 Forbidden: detached work, arbitrary cancellation callbacks, worker waits, polling futures, priority used as correctness.
 ~~~
+
+Implementation evidence (2026-07-18): **passed with one external-tool limitation**. SparkleTasks now exposes one structured runtime family: parent/child `TaskScope`, downward cancellation and upward settlement, owned asynchronous contexts, bounded owner-thread joins, generation-safe one-shot `TaskEvent`, explicit-grain `ParallelFor`, and `TaskLane::{FrameCritical, Background, BlockingIo}`. The executor owns isolated capacity for each configured lane while retaining the zero-worker serial oracle; a graph is rejected if it requests an unconfigured lane or makes FrameCritical correctness depend on Background/BlockingIo work. Same-executor workers cannot submit or wait. Normal nodes cancel through dependency state, cleanup nodes still settle, and shutdown cancellation wakes event-blocked work through a private stop notification rather than polling or arbitrary user callbacks.
+
+Private Windows TraceLogging events provide `TaskBegin`, `TaskEnd`, and `TaskDependency` records containing name, lane, run generation, task/worker index, duration, outcome, and dependency edges. They have no public callback, snapshot, log, CVar, or editor surface and do not read the clock when the provider is disabled. This environment could compile/link the provider but could not start an ETW capture session because `logman` requires administrator access; no in-engine diagnostic bypass was added.
+
+LC-05 is closed as owner-only. Input registration and dispatch assert the existing `OwnerThread`; the obsolete callback mutex is removed. Each dispatch invokes a copied eligible-callback snapshot. Unsubscribe/subscribe during a dispatch affects the next snapshot; a nested dispatch takes a new current-registry snapshot; nested deferred-phase processing is suppressed while newly queued deferred events remain ordered in that phase. User callbacks run under no registry lock. The follow-up readability audit moved lifecycle guards and runtime records out of function bodies so orchestration remains policy-focused as the subsystem grows.
+
+A disposable harness passed twenty repeated DevelopmentEditor cycles covering scope settlement, exclusive/non-overlapping ParallelFor coverage, continuations, stale/double TaskEvent signalling, cancellation wakeup, cleanup/finally execution, invalid policy/cross-lane graphs, sustained Background plus BlockingIo load with FrameCritical progress under 200 ms, ordered drain/cancel shutdown, and Input self-unsubscribe/unsubscribe-other/subscribe-during-dispatch/nested/deferred behavior. A focused DebugEditor death case confirmed that destroying an explicitly unsettled scope owner terminates at the development assertion after safe cancellation/join. MSVC on this Windows configuration provides no supported ThreadSanitizer mode. The transient source, target, and capture artifacts were deleted after validation.
 
 ## Prompt 04 — Prove SparkleTasks in Real Tool Workflows
 

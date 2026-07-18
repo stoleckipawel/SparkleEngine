@@ -24,6 +24,11 @@ namespace
 		return policy == TaskCompletionPolicy::Normal || policy == TaskCompletionPolicy::Cleanup;
 	}
 
+	bool IsValidTaskLane(TaskLane lane) noexcept
+	{
+		return lane == TaskLane::FrameCritical || lane == TaskLane::Background || lane == TaskLane::BlockingIo;
+	}
+
 	TaskGraphError MakeError(TaskGraphErrorCode code, std::string message)
 	{
 		return TaskGraphError{.Code = code, .Message = std::move(message)};
@@ -160,6 +165,11 @@ bool TaskDetail::TaskGraphAccess::Decode(
 	return outIndex < taskCount;
 }
 
+void TaskDetail::TaskGraphAccess::RecordError(TaskGraphBuilder& builder, TaskGraphErrorCode code, std::string message)
+{
+	builder.m_state->RecordError(code, std::move(message));
+}
+
 CompiledTaskGraph::CompiledTaskGraph(std::shared_ptr<const TaskDetail::CompiledTaskGraphData> data) noexcept : m_data(std::move(data)) {}
 
 bool CompiledTaskGraph::IsValid() const noexcept
@@ -196,6 +206,11 @@ TaskNodeHandle TaskGraphBuilder::Add(TaskDesc desc, TaskFunction function)
 	if (!desc.Name.IsValid())
 	{
 		m_state->RecordError(TaskGraphErrorCode::InvalidTaskName, "Task names must be non-empty and at most 96 bytes.");
+		return {};
+	}
+	if (!IsValidTaskLane(desc.Lane))
+	{
+		m_state->RecordError(TaskGraphErrorCode::InvalidTaskLane, "Task lane is not recognized.");
 		return {};
 	}
 	if (!IsValidCompletionPolicy(desc.CompletionPolicy))
@@ -279,14 +294,19 @@ bool TaskGraphBuilder::DependsOn(TaskNodeHandle task, TaskNodeHandle prerequisit
 	return true;
 }
 
-TaskNodeHandle TaskGraphBuilder::WhenAll(TaskName name, std::span<const TaskNodeHandle> prerequisites)
+TaskNodeHandle TaskGraphBuilder::WhenAll(TaskDesc desc, std::span<const TaskNodeHandle> prerequisites)
 {
-	TaskNodeHandle barrier = Add(TaskDesc{.Name = std::move(name)}, [](TaskExecutionContext&) { return TaskResult::Success(); });
+	TaskNodeHandle barrier = Add(std::move(desc), [](TaskExecutionContext&) { return TaskResult::Success(); });
 	for (const TaskNodeHandle prerequisite : prerequisites)
 	{
 		DependsOn(barrier, prerequisite);
 	}
 	return barrier;
+}
+
+TaskNodeHandle TaskGraphBuilder::WhenAll(TaskName name, std::span<const TaskNodeHandle> prerequisites)
+{
+	return WhenAll(TaskDesc{.Name = std::move(name)}, prerequisites);
 }
 
 TaskNodeHandle TaskGraphBuilder::ContinueWith(TaskNodeHandle prerequisite, TaskDesc desc, TaskFunction function)
@@ -322,11 +342,27 @@ CompiledTaskGraph TaskGraphBuilder::Compile() const
 		const auto& node = data->Nodes[taskIndex];
 		for (const std::uint32_t prerequisite : node.Prerequisites)
 		{
+			if (node.Desc.Lane == TaskLane::FrameCritical && data->Nodes[prerequisite].Desc.Lane != TaskLane::FrameCritical)
+			{
+				data->Error = MakeError(
+				    TaskGraphErrorCode::InvalidLaneDependency,
+				    "A FrameCritical task cannot depend on Background or BlockingIo work.");
+				return CompiledTaskGraph(std::move(data));
+			}
 			startAdjacency[prerequisite].push_back(taskIndex);
 			completionAdjacency[prerequisite].push_back(taskIndex);
 		}
 		if (node.Parent.has_value())
 		{
+			const auto& parent = data->Nodes[*node.Parent];
+			if (node.Desc.Lane != parent.Desc.Lane &&
+			    (node.Desc.Lane == TaskLane::FrameCritical || parent.Desc.Lane == TaskLane::FrameCritical))
+			{
+				data->Error = MakeError(
+				    TaskGraphErrorCode::InvalidLaneDependency,
+				    "FrameCritical parent and nested task completion must remain in the FrameCritical lane.");
+				return CompiledTaskGraph(std::move(data));
+			}
 			startAdjacency[*node.Parent].push_back(taskIndex);
 			completionAdjacency[taskIndex].push_back(*node.Parent);
 		}

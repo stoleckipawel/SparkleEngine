@@ -4,7 +4,27 @@
 
 #include <utility>
 
-TaskExecution::TaskExecution(std::unique_ptr<State> state) noexcept : m_state(std::move(state)) {}
+void TaskExecution::State::Publish(TaskDetail::CompletedTaskExecution completed)
+{
+	std::function<void()> onSettled;
+	{
+		std::lock_guard lock(Mutex);
+		if (Settled)
+		{
+			return;
+		}
+		Data = std::move(completed);
+		Settled = true;
+		onSettled = std::move(OnSettled);
+	}
+	Condition.notify_all();
+	if (onSettled)
+	{
+		onSettled();
+	}
+}
+
+TaskExecution::TaskExecution(std::shared_ptr<State> state) noexcept : m_state(std::move(state)) {}
 
 TaskExecution::TaskExecution() noexcept = default;
 
@@ -19,25 +39,66 @@ bool TaskExecution::IsValid() const noexcept
 	return m_state != nullptr;
 }
 
+bool TaskExecution::IsSettled() const noexcept
+{
+	if (m_state == nullptr)
+	{
+		return false;
+	}
+	std::lock_guard lock(m_state->Mutex);
+	return m_state->Settled;
+}
+
+bool TaskExecution::WaitFor(std::chrono::milliseconds timeout) const
+{
+	if (m_state == nullptr || timeout < std::chrono::milliseconds::zero() ||
+	    TaskDetail::IsExecutorWorker(m_state->ExecutorIdentity) || std::this_thread::get_id() != m_state->JoinThread)
+	{
+		return false;
+	}
+	std::unique_lock lock(m_state->Mutex);
+	return m_state->Condition.wait_for(lock, timeout, [this] { return m_state->Settled; });
+}
+
 std::uint64_t TaskExecution::GetGeneration() const noexcept
 {
-	return m_state != nullptr ? m_state->Data.Generation : 0;
+	if (m_state == nullptr)
+	{
+		return 0;
+	}
+	std::lock_guard lock(m_state->Mutex);
+	return m_state->Data.Generation;
 }
 
 TaskExecutionStatus TaskExecution::GetStatus() const noexcept
 {
-	return m_state != nullptr ? m_state->Data.Status : TaskExecutionStatus::Invalid;
+	if (m_state == nullptr)
+	{
+		return TaskExecutionStatus::Invalid;
+	}
+	std::lock_guard lock(m_state->Mutex);
+	return m_state->Data.Status;
 }
 
-const TaskResult& TaskExecution::GetResult() const noexcept
+TaskResult TaskExecution::GetResult() const
 {
 	static const TaskResult invalidResult = TaskResult::Cancelled("Invalid task execution.");
-	return m_state != nullptr ? m_state->Data.Result : invalidResult;
+	if (m_state == nullptr)
+	{
+		return invalidResult;
+	}
+	std::lock_guard lock(m_state->Mutex);
+	return m_state->Data.Result;
 }
 
-std::string_view TaskExecution::GetFirstFailureTaskName() const noexcept
+std::string TaskExecution::GetFirstFailureTaskName() const
 {
-	return m_state != nullptr ? std::string_view(m_state->Data.FirstFailureTaskName) : std::string_view{};
+	if (m_state == nullptr)
+	{
+		return {};
+	}
+	std::lock_guard lock(m_state->Mutex);
+	return m_state->Data.FirstFailureTaskName;
 }
 
 std::optional<TaskResult> TaskExecution::GetTaskResult(TaskNodeHandle handle) const
@@ -47,6 +108,7 @@ std::optional<TaskResult> TaskExecution::GetTaskResult(TaskNodeHandle handle) co
 		return std::nullopt;
 	}
 
+	std::lock_guard lock(m_state->Mutex);
 	const auto& data = m_state->Data;
 	std::uint32_t index = 0;
 	if (!TaskDetail::TaskGraphAccess::Decode(
@@ -64,5 +126,10 @@ std::optional<TaskResult> TaskExecution::GetTaskResult(TaskNodeHandle handle) co
 
 std::uint32_t TaskExecution::GetSettledTaskCount() const noexcept
 {
-	return m_state != nullptr ? m_state->Data.SettledTaskCount : 0;
+	if (m_state == nullptr)
+	{
+		return 0;
+	}
+	std::lock_guard lock(m_state->Mutex);
+	return m_state->Data.SettledTaskCount;
 }

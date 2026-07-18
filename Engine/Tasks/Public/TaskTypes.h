@@ -33,6 +33,13 @@ enum class TaskCompletionPolicy : std::uint8_t
 	Cleanup
 };
 
+enum class TaskLane : std::uint8_t
+{
+	FrameCritical,
+	Background,
+	BlockingIo
+};
+
 enum class TaskOutcome : std::uint8_t
 {
 	Succeeded,
@@ -70,5 +77,6 @@ using TaskFunction = std::function<TaskResult(TaskExecutionContext&)>;
 struct TaskDesc final
 {
 	TaskName Name;
+	TaskLane Lane = TaskLane::FrameCritical;
 	TaskCompletionPolicy CompletionPolicy = TaskCompletionPolicy::Normal;
 };

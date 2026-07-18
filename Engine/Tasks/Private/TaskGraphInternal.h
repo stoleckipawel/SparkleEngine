@@ -41,5 +41,6 @@ namespace TaskDetail
 		    std::uint32_t builderGeneration,
 		    std::uint32_t taskCount,
 		    std::uint32_t& outIndex) noexcept;
+		static void RecordError(TaskGraphBuilder& builder, TaskGraphErrorCode code, std::string message);
 	};
 }

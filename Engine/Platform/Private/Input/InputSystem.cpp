@@ -12,6 +12,39 @@
 #include <cstdio>
 #include <utility>
 
+namespace
+{
+	class DeferredEventProcessingGuard final
+	{
+	  public:
+		explicit DeferredEventProcessingGuard(bool& isProcessing) noexcept : m_isProcessing(isProcessing)
+		{
+			if (!m_isProcessing)
+			{
+				m_isProcessing = true;
+				m_didBegin = true;
+			}
+		}
+
+		~DeferredEventProcessingGuard()
+		{
+			if (m_didBegin)
+			{
+				m_isProcessing = false;
+			}
+		}
+
+		DeferredEventProcessingGuard(const DeferredEventProcessingGuard&) = delete;
+		DeferredEventProcessingGuard& operator=(const DeferredEventProcessingGuard&) = delete;
+
+		explicit operator bool() const noexcept { return m_didBegin; }
+
+	  private:
+		bool& m_isProcessing;
+		bool m_didBegin = false;
+	};
+}
+
 std::unique_ptr<InputSystem> InputSystem::Create()
 {
 #if defined(_WIN32) || defined(_WIN64)
@@ -39,6 +72,7 @@ const InputState& InputSystem::GetState(InputLayer Layer) const noexcept
 
 void InputSystem::BeginFrame()
 {
+	m_OwnerThread.AssertAccess();
 	m_State.BeginFrame();
 	for (InputState& layerState : m_LayerStates)
 	{
@@ -49,6 +83,13 @@ void InputSystem::BeginFrame()
 
 void InputSystem::ProcessDeferredEvents()
 {
+	m_OwnerThread.AssertAccess();
+	const DeferredEventProcessingGuard processing(m_bIsProcessingDeferredEvents);
+	if (!processing)
+	{
+		return;
+	}
+
 	if (m_captureQuery)
 	{
 		const bool wantsCaptureInput = m_captureQuery();
@@ -71,6 +112,7 @@ void InputSystem::ClearDeferredQueues()
 
 void InputSystem::SubscribeToWindow(Window& window)
 {
+	m_OwnerThread.AssertAccess();
 	auto handle = window.OnWindowMessage.Add(
 	    [this](WindowMessageEvent& event)
 	    {
@@ -89,6 +131,7 @@ void InputSystem::HandleWindowMessage(WindowMessageEvent& event)
 
 bool InputSystem::OnWindowMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2)
 {
+	m_OwnerThread.AssertAccess();
 	if (!m_Backend)
 	{
 		return false;
@@ -227,8 +270,7 @@ InputLayer InputSystem::ResolveTargetLayer(const InputBackendResult& Result)
 
 EventHandle InputSystem::SubscribeKeyboard(KeyboardCallback Callback, InputLayer Layer, DispatchMode Mode)
 {
-	std::lock_guard<std::mutex> lock(m_CallbackMutex);
-
+	m_OwnerThread.AssertAccess();
 	EventHandle handle{GenerateCallbackId()};
 	GetCallbacks<KeyboardEvent>().push_back({std::move(Callback), handle, Layer, Mode});
 	return handle;
@@ -236,8 +278,7 @@ EventHandle InputSystem::SubscribeKeyboard(KeyboardCallback Callback, InputLayer
 
 EventHandle InputSystem::SubscribeMouseButton(MouseButtonCallback Callback, InputLayer Layer, DispatchMode Mode)
 {
-	std::lock_guard<std::mutex> lock(m_CallbackMutex);
-
+	m_OwnerThread.AssertAccess();
 	EventHandle handle{GenerateCallbackId()};
 	GetCallbacks<MouseButtonEvent>().push_back({std::move(Callback), handle, Layer, Mode});
 	return handle;
@@ -245,8 +286,7 @@ EventHandle InputSystem::SubscribeMouseButton(MouseButtonCallback Callback, Inpu
 
 EventHandle InputSystem::SubscribeMouseMove(MouseMoveCallback Callback, InputLayer Layer, DispatchMode Mode)
 {
-	std::lock_guard<std::mutex> lock(m_CallbackMutex);
-
+	m_OwnerThread.AssertAccess();
 	EventHandle handle{GenerateCallbackId()};
 	GetCallbacks<MouseMoveEvent>().push_back({std::move(Callback), handle, Layer, Mode});
 	return handle;
@@ -254,8 +294,7 @@ EventHandle InputSystem::SubscribeMouseMove(MouseMoveCallback Callback, InputLay
 
 EventHandle InputSystem::SubscribeMouseWheel(MouseWheelCallback Callback, InputLayer Layer, DispatchMode Mode)
 {
-	std::lock_guard<std::mutex> lock(m_CallbackMutex);
-
+	m_OwnerThread.AssertAccess();
 	EventHandle handle{GenerateCallbackId()};
 	GetCallbacks<MouseWheelEvent>().push_back({std::move(Callback), handle, Layer, Mode});
 	return handle;
@@ -263,6 +302,7 @@ EventHandle InputSystem::SubscribeMouseWheel(MouseWheelCallback Callback, InputL
 
 void InputSystem::Unsubscribe(EventHandle Handle)
 {
+	m_OwnerThread.AssertAccess();
 	if (!Handle.IsValid())
 	{
 		return;
@@ -273,8 +313,6 @@ void InputSystem::Unsubscribe(EventHandle Handle)
 
 void InputSystem::UnsubscribeFromAll(EventHandle Handle)
 {
-	std::lock_guard<std::mutex> lock(m_CallbackMutex);
-
 	auto removeByHandle = [&Handle](auto& callbacks)
 	{
 		callbacks.erase(

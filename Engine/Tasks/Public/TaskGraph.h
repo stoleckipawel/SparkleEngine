@@ -57,7 +57,10 @@ enum class TaskGraphErrorCode : std::uint8_t
 	None,
 	InvalidLimits,
 	InvalidTaskName,
+	InvalidTaskLane,
 	InvalidCompletionPolicy,
+	InvalidLaneDependency,
+	InvalidParallelForPolicy,
 	TaskCapacityExceeded,
 	EdgeCapacityExceeded,
 	InvalidHandle,
@@ -112,6 +115,7 @@ class SPARKLE_TASKS_API TaskGraphBuilder final
 	TaskNodeHandle Add(TaskDesc desc, TaskFunction function);
 	TaskNodeHandle AddNested(TaskNodeHandle parent, TaskDesc desc, TaskFunction function);
 	bool DependsOn(TaskNodeHandle task, TaskNodeHandle prerequisite);
+	TaskNodeHandle WhenAll(TaskDesc desc, std::span<const TaskNodeHandle> prerequisites);
 	TaskNodeHandle WhenAll(TaskName name, std::span<const TaskNodeHandle> prerequisites);
 	TaskNodeHandle ContinueWith(TaskNodeHandle prerequisite, TaskDesc desc, TaskFunction function);
 
@@ -121,6 +125,7 @@ class SPARKLE_TASKS_API TaskGraphBuilder final
 	const TaskGraphError& GetError() const noexcept;
 
   private:
+	friend struct TaskDetail::TaskGraphAccess;
 	struct State;
 	std::unique_ptr<State> m_state;
 };

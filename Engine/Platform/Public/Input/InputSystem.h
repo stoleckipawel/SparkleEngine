@@ -13,12 +13,12 @@
 #include "Input/Events/MouseMoveEvent.h"
 #include "Input/Events/MouseWheelEvent.h"
 #include "Input/Routing/InputFocusRouter.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <array>
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <tuple>
 #include <vector>
 
@@ -175,13 +175,14 @@ class SPARKLE_PLATFORM_API InputSystem
 	InputState m_State;
 	std::array<InputState, LayerCount> m_LayerStates{};
 
-	std::mutex m_CallbackMutex;
+	Threading::OwnerThread m_OwnerThread{"InputSystem registration and dispatch"};
 
 	CallbackTuple m_Callbacks;
 
 	DeferredQueueTuple m_DeferredQueues;
 
 	uint32_t m_NextCallbackId = 1;
+	bool m_bIsProcessingDeferredEvents = false;
 
 	std::array<bool, LayerCount> m_LayerEnabled = {true, true, true};
 	InputLayer m_ActiveLayer = InputLayer::Gameplay;
@@ -213,31 +214,26 @@ template <typename TEvent> std::vector<InputSystem::RoutedInputEvent<TEvent>>& I
 
 template <typename TEvent> void InputSystem::DispatchToCallbacks(const TEvent& Event, DispatchMode TargetMode, InputLayer TargetLayer)
 {
-	std::lock_guard<std::mutex> lock(m_CallbackMutex);
-
+	m_OwnerThread.AssertAccess();
+	// A dispatch owns a callback snapshot. Registry changes affect the next snapshot;
+	// a nested dispatch takes a new snapshot of the current registry.
+	std::vector<InputCallback<TEvent>> callbacks;
 	for (const auto& entry : GetCallbacks<TEvent>())
 	{
-		if (entry.Mode != TargetMode)
+		if (entry.Mode == TargetMode && ShouldDispatchToLayer(entry.Layer, TargetLayer) && entry.Callback)
 		{
-			continue;
+			callbacks.push_back(entry.Callback);
 		}
-
-		if (!ShouldDispatchToLayer(entry.Layer, TargetLayer))
-		{
-			continue;
-		}
-
-		if (entry.Callback)
-		{
-			entry.Callback(Event);
-		}
+	}
+	for (const auto& callback : callbacks)
+	{
+		callback(Event);
 	}
 }
 
 template <typename TEvent> void InputSystem::QueueIfHasDeferredCallbacks(const TEvent& Event, InputLayer TargetLayer)
 {
-	std::lock_guard<std::mutex> lock(m_CallbackMutex);
-
+	m_OwnerThread.AssertAccess();
 	for (const auto& entry : GetCallbacks<TEvent>())
 	{
 		if (entry.Mode == DispatchMode::Deferred && ShouldDispatchToLayer(entry.Layer, TargetLayer))
@@ -262,8 +258,10 @@ template <typename TEvent> void InputSystem::ProcessEvent(const TEvent& Event, I
 template <typename TEvent> void InputSystem::ProcessDeferredEventsForType()
 {
 	auto& queue = GetDeferredQueue<TEvent>();
-	for (const auto& routedEvent : queue)
+	for (std::size_t index = 0; index < queue.size(); ++index)
 	{
+		const RoutedInputEvent<TEvent> routedEvent = queue[index];
 		DispatchToCallbacks<TEvent>(routedEvent.Event, DispatchMode::Deferred, routedEvent.TargetLayer);
 	}
+	queue.clear();
 }

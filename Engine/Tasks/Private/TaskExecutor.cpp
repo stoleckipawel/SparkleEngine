@@ -1,10 +1,13 @@
 #include "TaskExecutor.h"
 
 #include "TaskExecutorInternal.h"
+#include "TaskProfiler.h"
+#include "TaskScopeInternal.h"
 
 #include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <condition_variable>
 #include <deque>
@@ -18,7 +21,27 @@
 
 namespace
 {
+	constexpr std::size_t TaskLaneCount = 3;
 	thread_local const void* g_currentTaskExecutor = nullptr;
+
+	std::size_t LaneIndex(TaskLane lane) noexcept
+	{
+		return static_cast<std::size_t>(lane);
+	}
+
+	std::string_view LaneName(TaskLane lane) noexcept
+	{
+		switch (lane)
+		{
+			case TaskLane::FrameCritical:
+				return "FrameCritical";
+			case TaskLane::Background:
+				return "Background";
+			case TaskLane::BlockingIo:
+				return "BlockingIo";
+		}
+		return "Invalid";
+	}
 
 	TaskDetail::CompletedTaskExecution RejectedExecution(std::uint64_t generation, std::string_view reason)
 	{
@@ -28,6 +51,11 @@ namespace
 		execution.Result = TaskResult::Failure(reason);
 		return execution;
 	}
+}
+
+bool TaskDetail::IsExecutorWorker(const void* executorIdentity) noexcept
+{
+	return executorIdentity != nullptr && g_currentTaskExecutor == executorIdentity;
 }
 
 struct TaskExecutor::Implementation final
@@ -51,9 +79,22 @@ struct TaskExecutor::Implementation final
 
 	struct alignas(64) Worker final
 	{
+		TaskLane Lane = TaskLane::FrameCritical;
+		std::uint32_t LaneWorkerIndex = 0;
 		std::mutex QueueMutex;
 		std::deque<ReadyTask> ReadyQueue;
 		std::thread Thread;
+	};
+
+	struct LaneState final
+	{
+		std::mutex InjectionMutex;
+		std::deque<ReadyTask> InjectionQueue;
+		std::mutex WorkMutex;
+		std::condition_variable WorkCondition;
+		std::uint64_t WorkEpoch = 0;
+		bool StopWorkers = false;
+		std::vector<Worker*> Workers;
 	};
 
 	struct RuntimeTaskState final
@@ -72,10 +113,12 @@ struct TaskExecutor::Implementation final
 		RunState(
 		    Implementation& owner,
 		    std::shared_ptr<const TaskDetail::CompiledTaskGraphData> graph,
-		    TaskExecutionContext& context,
-		    std::uint64_t generation) :
-		    Owner(owner), Graph(std::move(graph)), Context(context), Generation(generation), Runtime(std::make_unique<RuntimeTaskState[]>(Graph->Nodes.size())),
-		    TaskResults(Graph->Nodes.size()), Settled(Graph->Nodes.size(), false)
+		    TaskExecutionContext context,
+		    std::shared_ptr<TaskExecution::State> execution) :
+		    Owner(owner), Graph(std::move(graph)), Context(std::move(context)), Execution(std::move(execution)),
+		    Generation(Execution->Data.Generation),
+		    Runtime(std::make_unique<RuntimeTaskState[]>(Graph->Nodes.size())), TaskResults(Graph->Nodes.size()),
+		    Settled(Graph->Nodes.size(), false)
 		{
 			for (std::uint32_t index = 0; index < Graph->Nodes.size(); ++index)
 			{
@@ -91,33 +134,38 @@ struct TaskExecutor::Implementation final
 
 		void Start()
 		{
+			for (std::uint32_t dependent = 0; dependent < Graph->Nodes.size(); ++dependent)
+			{
+				for (const std::uint32_t prerequisite : Graph->Nodes[dependent].Prerequisites)
+				{
+					TaskDetail::RecordTaskDependency(Generation, prerequisite, dependent);
+				}
+			}
 			if (Graph->Nodes.empty())
 			{
 				Finish();
 				return;
 			}
-
 			for (std::uint32_t index = 0; index < Graph->Nodes.size(); ++index)
 			{
-				TrySchedule(index, std::nullopt);
+				TrySchedule(index, nullptr);
 			}
 		}
 
-		void RequestCancellation() noexcept
-		{
-			CancelRequested.store(true, std::memory_order_release);
-		}
-
-		void Execute(std::uint32_t index, std::uint32_t workerIndex)
+		void Execute(std::uint32_t index, Worker& worker)
 		{
 			RuntimeTaskState& task = Runtime[index];
 			const TaskDetail::CompiledTaskNode& node = Graph->Nodes[index];
+			const std::stop_token cancellation = Execution->Cancellation.get_token();
+			const auto taskStart = TaskDetail::BeginTaskProfile(
+			    node.Desc, Generation, index, worker.LaneWorkerIndex);
 			const bool blocked = task.BlockedByPrerequisite.load(std::memory_order_acquire) ||
-			                     task.BlockedByParent.load(std::memory_order_acquire) ||
-			                     CancelRequested.load(std::memory_order_acquire);
+			                     task.BlockedByParent.load(std::memory_order_acquire) || cancellation.stop_requested();
+			TaskExecutionContext taskContext = Context;
+			TaskDetail::TaskExecutionContextAccess::Bind(taskContext, Generation, node.Desc.Lane, cancellation);
 			TaskResult bodyResult = blocked && node.Desc.CompletionPolicy == TaskCompletionPolicy::Normal
 			                            ? TaskResult::Cancelled("Task execution was cancelled or a prerequisite did not succeed.")
-			                            : TaskDetail::InvokeTask(node, Context);
+			                            : TaskDetail::InvokeTask(node, taskContext);
 
 			{
 				std::lock_guard lock(ResultMutex);
@@ -132,6 +180,7 @@ struct TaskExecutor::Implementation final
 			{
 				ObservedCancellation.store(true, std::memory_order_release);
 			}
+			TaskDetail::EndTaskProfile(node.Desc, Generation, index, worker.LaneWorkerIndex, bodyResult, taskStart);
 
 			for (const std::uint32_t childIndex : node.NestedChildren)
 			{
@@ -141,13 +190,12 @@ struct TaskExecutor::Implementation final
 					child.BlockedByParent.store(true, std::memory_order_release);
 				}
 				child.ParentBodyComplete.store(true, std::memory_order_release);
-				TrySchedule(childIndex, workerIndex);
+				TrySchedule(childIndex, &worker);
 			}
-
-			ReleaseUnfinished(index, workerIndex);
+			ReleaseUnfinished(index, &worker);
 		}
 
-		void TrySchedule(std::uint32_t index, std::optional<std::uint32_t> preferredWorker)
+		void TrySchedule(std::uint32_t index, Worker* preferredWorker)
 		{
 			RuntimeTaskState& task = Runtime[index];
 			if (task.RemainingPrerequisites.load(std::memory_order_acquire) != 0 ||
@@ -155,24 +203,26 @@ struct TaskExecutor::Implementation final
 			{
 				return;
 			}
-
 			bool expected = false;
 			if (task.Scheduled.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
 			{
-				Owner.Enqueue(ReadyTask{.Run = shared_from_this(), .TaskIndex = index}, preferredWorker);
+				const TaskLane lane = Graph->Nodes[index].Desc.Lane;
+				Owner.Enqueue(
+				    ReadyTask{.Run = shared_from_this(), .TaskIndex = index},
+				    preferredWorker != nullptr && preferredWorker->Lane == lane ? preferredWorker : nullptr,
+				    lane);
 			}
 		}
 
-		void ReleaseUnfinished(std::uint32_t index, std::uint32_t workerIndex)
+		void ReleaseUnfinished(std::uint32_t index, Worker* worker)
 		{
-			const std::uint32_t previous = Runtime[index].UnfinishedCount.fetch_sub(1, std::memory_order_acq_rel);
-			if (previous == 1)
+			if (Runtime[index].UnfinishedCount.fetch_sub(1, std::memory_order_acq_rel) == 1)
 			{
-				CompleteLogical(index, workerIndex);
+				CompleteLogical(index, worker);
 			}
 		}
 
-		void CompleteLogical(std::uint32_t index, std::uint32_t workerIndex)
+		void CompleteLogical(std::uint32_t index, Worker* worker)
 		{
 			bool expected = false;
 			if (!Runtime[index].Terminal.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
@@ -194,10 +244,9 @@ struct TaskExecutor::Implementation final
 				{
 					dependent.BlockedByPrerequisite.store(true, std::memory_order_release);
 				}
-				const std::uint32_t previous = dependent.RemainingPrerequisites.fetch_sub(1, std::memory_order_acq_rel);
-				if (previous == 1)
+				if (dependent.RemainingPrerequisites.fetch_sub(1, std::memory_order_acq_rel) == 1)
 				{
-					TrySchedule(dependentIndex, workerIndex);
+					TrySchedule(dependentIndex, worker);
 				}
 			}
 
@@ -212,11 +261,10 @@ struct TaskExecutor::Implementation final
 						TaskResults[parentIndex] = completedResult;
 					}
 				}
-				ReleaseUnfinished(parentIndex, workerIndex);
+				ReleaseUnfinished(parentIndex, worker);
 			}
 
-			const std::uint32_t settled = SettledTaskCount.fetch_add(1, std::memory_order_acq_rel) + 1u;
-			if (settled == Graph->Nodes.size())
+			if (SettledTaskCount.fetch_add(1, std::memory_order_acq_rel) + 1u == Graph->Nodes.size())
 			{
 				Finish();
 			}
@@ -228,20 +276,6 @@ struct TaskExecutor::Implementation final
 			if (!Finished.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
 			{
 				return;
-			}
-			Owner.OnExecutionSettled();
-			{
-				std::lock_guard lock(CompletionMutex);
-				CompletionVisible = true;
-			}
-			CompletionCondition.notify_all();
-		}
-
-		TaskDetail::CompletedTaskExecution WaitAndCollect()
-		{
-			{
-				std::unique_lock lock(CompletionMutex);
-				CompletionCondition.wait(lock, [this] { return CompletionVisible; });
 			}
 
 			TaskDetail::CompletedTaskExecution completed;
@@ -270,12 +304,14 @@ struct TaskExecutor::Implementation final
 				completed.Status = TaskExecutionStatus::Succeeded;
 				completed.Result = TaskResult::Success();
 			}
-			return completed;
+			Execution->Publish(std::move(completed));
+			Owner.OnExecutionSettled();
 		}
 
 		Implementation& Owner;
 		std::shared_ptr<const TaskDetail::CompiledTaskGraphData> Graph;
-		TaskExecutionContext& Context;
+		TaskExecutionContext Context;
+		std::shared_ptr<TaskExecution::State> Execution;
 		std::uint64_t Generation = 0;
 		std::unique_ptr<RuntimeTaskState[]> Runtime;
 		std::mutex ResultMutex;
@@ -285,34 +321,31 @@ struct TaskExecutor::Implementation final
 		TaskResult FirstFailure = TaskResult::Success();
 		std::atomic_uint32_t SettledTaskCount{0};
 		std::atomic_bool ObservedCancellation{false};
-		std::atomic_bool CancelRequested{false};
 		std::atomic_bool Finished{false};
-		std::mutex CompletionMutex;
-		std::condition_variable CompletionCondition;
-		bool CompletionVisible = false;
 	};
 
 	explicit Implementation(TaskExecutorConfig config) : Config(config)
 	{
-		if (Config.WorkerCount > MaximumWorkerCount || Config.MaximumTasksPerExecution == 0 ||
+		const std::uint32_t totalWorkers = config.FrameCriticalWorkerCount + config.BackgroundWorkerCount + config.BlockingIoWorkerCount;
+		const bool invalidSerialMix = config.FrameCriticalWorkerCount == 0 &&
+		                              (config.BackgroundWorkerCount != 0 || config.BlockingIoWorkerCount != 0);
+		if (totalWorkers > MaximumWorkerCount || invalidSerialMix || Config.MaximumTasksPerExecution == 0 ||
 		    Config.MaximumTasksPerExecution > TaskGraphLimits::HardMaximumTasks ||
-		    Config.MaximumEdgesPerExecution > TaskGraphLimits::HardMaximumEdges ||
-		    Config.MaximumActiveExecutions == 0)
+		    Config.MaximumEdgesPerExecution > TaskGraphLimits::HardMaximumEdges || Config.MaximumActiveExecutions == 0)
 		{
-			throw std::invalid_argument("TaskExecutorConfig contains an unsupported worker count or capacity.");
+			throw std::invalid_argument("TaskExecutorConfig contains an unsupported lane worker count or capacity.");
 		}
 
-		Workers.reserve(Config.WorkerCount);
-		Runs.reserve(Config.MaximumActiveExecutions);
+		Workers.reserve(totalWorkers);
+		Executions.reserve(Config.MaximumActiveExecutions);
+		AddWorkers(TaskLane::FrameCritical, config.FrameCriticalWorkerCount);
+		AddWorkers(TaskLane::Background, config.BackgroundWorkerCount);
+		AddWorkers(TaskLane::BlockingIo, config.BlockingIoWorkerCount);
 		try
 		{
-			for (std::uint32_t index = 0; index < Config.WorkerCount; ++index)
+			for (const auto& worker : Workers)
 			{
-				Workers.push_back(std::make_unique<Worker>());
-			}
-			for (std::uint32_t index = 0; index < Config.WorkerCount; ++index)
-			{
-				Workers[index]->Thread = std::thread([this, index] { WorkerMain(index); });
+				worker->Thread = std::thread([this, worker = worker.get()] { WorkerMain(*worker); });
 			}
 		}
 		catch (...)
@@ -328,55 +361,102 @@ struct TaskExecutor::Implementation final
 		Shutdown(TaskExecutorShutdownMode::Drain);
 	}
 
-	TaskDetail::CompletedTaskExecution Execute(
-	    const CompiledTaskGraph& graph,
-	    TaskExecutionContext& context,
-	    std::uint64_t generation)
+	void AddWorkers(TaskLane lane, std::uint32_t count)
 	{
+		LaneState& laneState = Lanes[LaneIndex(lane)];
+		laneState.Workers.reserve(count);
+		for (std::uint32_t index = 0; index < count; ++index)
+		{
+			auto worker = std::make_unique<Worker>();
+			worker->Lane = lane;
+			worker->LaneWorkerIndex = index;
+			laneState.Workers.push_back(worker.get());
+			Workers.push_back(std::move(worker));
+		}
+	}
+
+	std::uint32_t WorkerCount(TaskLane lane) const noexcept
+	{
+		return static_cast<std::uint32_t>(Lanes[LaneIndex(lane)].Workers.size());
+	}
+
+	std::shared_ptr<TaskExecution::State> Launch(
+	    const CompiledTaskGraph& graph,
+	    TaskExecutionContext context,
+	    const std::shared_ptr<TaskScope::State>& scope)
+	{
+		const std::uint64_t generation = NextExecutionGeneration.fetch_add(1, std::memory_order_relaxed);
+		auto execution = std::make_shared<TaskExecution::State>(generation);
+		execution->JoinThread = scope ? scope->OwnerThread : std::this_thread::get_id();
+		execution->ExecutorIdentity = this;
+		TaskDetail::TaskExecutionContextAccess::Bind(
+		    context, generation, TaskLane::FrameCritical, execution->Cancellation.get_token());
+
 		if (g_currentTaskExecutor == this)
 		{
-			return RejectedExecution(generation, "A task worker cannot synchronously submit work to its own executor.");
+			execution->Publish(RejectedExecution(generation, "A task worker cannot submit work to its own executor; use graph dependencies or nested tasks."));
+			return execution;
+		}
+		if (scope && context.HasUserData() && !context.HasOwnedUserData())
+		{
+			execution->Publish(RejectedExecution(generation, "Scoped asynchronous launch requires owned or empty TaskExecutionContext data."));
+			return execution;
 		}
 		if (!graph.IsValid())
 		{
-			return RejectedExecution(generation, graph.GetError().Message);
+			execution->Publish(RejectedExecution(generation, graph.GetError().Message));
+			return execution;
 		}
 		if (graph.GetTaskCount() > Config.MaximumTasksPerExecution || graph.GetEdgeCount() > Config.MaximumEdgesPerExecution)
 		{
-			return RejectedExecution(generation, "Compiled task graph exceeds this executor's bounded execution capacity.");
+			execution->Publish(RejectedExecution(generation, "Compiled task graph exceeds this executor's bounded execution capacity."));
+			return execution;
 		}
-
-		std::shared_ptr<RunState> run;
 		if (!Workers.empty())
 		{
-			run = std::make_shared<RunState>(*this, graph.m_data, context, generation);
+			for (const auto& node : graph.m_data->Nodes)
+			{
+				if (WorkerCount(node.Desc.Lane) == 0)
+				{
+					execution->Publish(RejectedExecution(generation, "Compiled task graph uses a lane with no configured workers."));
+					return execution;
+				}
+			}
+		}
+
+		auto run = Workers.empty() ? std::shared_ptr<RunState>{}
+		                           : std::make_shared<RunState>(*this, graph.m_data, std::move(context), execution);
+		if (scope && !scope->RegisterExecution(execution))
+		{
+			execution->Publish(RejectedExecution(generation, "TaskScope is closed, settled, or used from a non-owner thread."));
+			return execution;
 		}
 
 		{
 			std::lock_guard lock(StateMutex);
-			std::erase_if(Runs, [](const std::weak_ptr<RunState>& run) { return run.expired(); });
+			std::erase_if(Executions, [](const std::weak_ptr<TaskExecution::State>& item) { return item.expired(); });
 			if (State != LifecycleState::Accepting)
 			{
-				return RejectedExecution(generation, "Task executor is no longer accepting submissions.");
+				execution->Publish(RejectedExecution(generation, "Task executor is no longer accepting submissions."));
+				return execution;
 			}
 			if (ActiveExecutions >= Config.MaximumActiveExecutions)
 			{
-				return RejectedExecution(generation, "Task executor reached its active-execution capacity.");
+				execution->Publish(RejectedExecution(generation, "Task executor reached its active-execution capacity."));
+				return execution;
 			}
 			++ActiveExecutions;
-			if (run)
-			{
-				Runs.emplace_back(run);
-			}
+			Executions.emplace_back(execution);
 		}
 
 		if (Workers.empty())
 		{
 			try
 			{
-				TaskDetail::CompletedTaskExecution completed = TaskDetail::ExecuteSerial(*graph.m_data, context, generation);
+				auto completed = TaskDetail::ExecuteSerial(
+				    *graph.m_data, context, generation, execution->Cancellation.get_token());
+				execution->Publish(std::move(completed));
 				OnExecutionSettled();
-				return completed;
 			}
 			catch (...)
 			{
@@ -384,35 +464,35 @@ struct TaskExecutor::Implementation final
 				throw;
 			}
 		}
-
-		run->Start();
-		return run->WaitAndCollect();
+		else
+		{
+			run->Start();
+		}
+		return execution;
 	}
 
-	void Enqueue(ReadyTask task, std::optional<std::uint32_t> preferredWorker)
+	void Enqueue(ReadyTask task, Worker* preferredWorker, TaskLane lane)
 	{
-		if (preferredWorker.has_value())
+		LaneState& laneState = Lanes[LaneIndex(lane)];
+		if (preferredWorker != nullptr)
 		{
-			Worker& worker = *Workers[*preferredWorker];
-			std::lock_guard lock(worker.QueueMutex);
-			worker.ReadyQueue.push_front(std::move(task));
+			std::lock_guard lock(preferredWorker->QueueMutex);
+			preferredWorker->ReadyQueue.push_front(std::move(task));
 		}
 		else
 		{
-			std::lock_guard lock(InjectionMutex);
-			InjectionQueue.push_back(std::move(task));
+			std::lock_guard lock(laneState.InjectionMutex);
+			laneState.InjectionQueue.push_back(std::move(task));
 		}
-
 		{
-			std::lock_guard lock(WorkMutex);
-			++WorkEpoch;
+			std::lock_guard lock(laneState.WorkMutex);
+			++laneState.WorkEpoch;
 		}
-		WorkCondition.notify_one();
+		laneState.WorkCondition.notify_one();
 	}
 
-	bool TryPopLocal(std::uint32_t workerIndex, ReadyTask& task)
+	bool TryPopLocal(Worker& worker, ReadyTask& task)
 	{
-		Worker& worker = *Workers[workerIndex];
 		std::lock_guard lock(worker.QueueMutex);
 		if (worker.ReadyQueue.empty())
 		{
@@ -423,23 +503,25 @@ struct TaskExecutor::Implementation final
 		return true;
 	}
 
-	bool TryPopInjection(ReadyTask& task)
+	bool TryPopInjection(TaskLane lane, ReadyTask& task)
 	{
-		std::lock_guard lock(InjectionMutex);
-		if (InjectionQueue.empty())
+		LaneState& laneState = Lanes[LaneIndex(lane)];
+		std::lock_guard lock(laneState.InjectionMutex);
+		if (laneState.InjectionQueue.empty())
 		{
 			return false;
 		}
-		task = std::move(InjectionQueue.front());
-		InjectionQueue.pop_front();
+		task = std::move(laneState.InjectionQueue.front());
+		laneState.InjectionQueue.pop_front();
 		return true;
 	}
 
-	bool TrySteal(std::uint32_t workerIndex, ReadyTask& task)
+	bool TrySteal(Worker& worker, ReadyTask& task)
 	{
-		for (std::uint32_t offset = 1; offset < Workers.size(); ++offset)
+		const auto& laneWorkers = Lanes[LaneIndex(worker.Lane)].Workers;
+		for (std::uint32_t offset = 1; offset < laneWorkers.size(); ++offset)
 		{
-			Worker& victim = *Workers[(workerIndex + offset) % Workers.size()];
+			Worker& victim = *laneWorkers[(worker.LaneWorkerIndex + offset) % laneWorkers.size()];
 			std::lock_guard lock(victim.QueueMutex);
 			if (!victim.ReadyQueue.empty())
 			{
@@ -451,40 +533,41 @@ struct TaskExecutor::Implementation final
 		return false;
 	}
 
-	bool TryTakeWork(std::uint32_t workerIndex, ReadyTask& task)
+	bool TryTakeWork(Worker& worker, ReadyTask& task)
 	{
-		return TryPopLocal(workerIndex, task) || TryPopInjection(task) || TrySteal(workerIndex, task);
+		return TryPopLocal(worker, task) || TryPopInjection(worker.Lane, task) || TrySteal(worker, task);
 	}
 
-	void WorkerMain(std::uint32_t workerIndex)
+	void WorkerMain(Worker& worker)
 	{
 		g_currentTaskExecutor = this;
-		Threading::SetCurrentThreadRole("Sparkle.TaskWorker." + std::to_string(workerIndex));
-
+		Threading::SetCurrentThreadRole(
+		    "Sparkle.Task." + std::string(LaneName(worker.Lane)) + "." + std::to_string(worker.LaneWorkerIndex));
+		LaneState& laneState = Lanes[LaneIndex(worker.Lane)];
 		for (;;)
 		{
 			ReadyTask task;
-			if (TryTakeWork(workerIndex, task))
+			if (TryTakeWork(worker, task))
 			{
-				task.Run->Execute(task.TaskIndex, workerIndex);
+				task.Run->Execute(task.TaskIndex, worker);
 				continue;
 			}
-
-			std::unique_lock lock(WorkMutex);
-			const std::uint64_t observedEpoch = WorkEpoch;
-			if (TryTakeWork(workerIndex, task))
+			std::unique_lock lock(laneState.WorkMutex);
+			const std::uint64_t observedEpoch = laneState.WorkEpoch;
+			if (TryTakeWork(worker, task))
 			{
 				lock.unlock();
-				task.Run->Execute(task.TaskIndex, workerIndex);
+				task.Run->Execute(task.TaskIndex, worker);
 				continue;
 			}
-			WorkCondition.wait(lock, [this, observedEpoch] { return StopWorkers || WorkEpoch != observedEpoch; });
-			if (StopWorkers)
+			laneState.WorkCondition.wait(
+			    lock,
+			    [&laneState, observedEpoch] { return laneState.StopWorkers || laneState.WorkEpoch != observedEpoch; });
+			if (laneState.StopWorkers)
 			{
 				break;
 			}
 		}
-
 		g_currentTaskExecutor = nullptr;
 	}
 
@@ -501,9 +584,8 @@ struct TaskExecutor::Implementation final
 		{
 			return false;
 		}
-
 		std::unique_lock shutdownLock(ShutdownMutex);
-		std::vector<std::shared_ptr<RunState>> runsToCancel;
+		std::vector<std::shared_ptr<TaskExecution::State>> executionsToCancel;
 		{
 			std::unique_lock lock(StateMutex);
 			if (State == LifecycleState::Stopped)
@@ -516,26 +598,19 @@ struct TaskExecutor::Implementation final
 			}
 			if (State == LifecycleState::Cancelling)
 			{
-				for (auto iterator = Runs.begin(); iterator != Runs.end();)
+				for (auto& item : Executions)
 				{
-					if (auto run = iterator->lock())
+					if (auto execution = item.lock())
 					{
-						runsToCancel.push_back(std::move(run));
-						++iterator;
-					}
-					else
-					{
-						iterator = Runs.erase(iterator);
+						executionsToCancel.push_back(std::move(execution));
 					}
 				}
 			}
 		}
-
-		for (const auto& run : runsToCancel)
+		for (const auto& execution : executionsToCancel)
 		{
-			run->RequestCancellation();
+			execution->RequestCancellation();
 		}
-
 		{
 			std::unique_lock lock(StateMutex);
 			StateCondition.wait(lock, [this] { return ActiveExecutions == 0; });
@@ -546,7 +621,7 @@ struct TaskExecutor::Implementation final
 		{
 			std::lock_guard lock(StateMutex);
 			State = LifecycleState::Stopped;
-			Runs.clear();
+			Executions.clear();
 		}
 		StateCondition.notify_all();
 		return true;
@@ -554,12 +629,15 @@ struct TaskExecutor::Implementation final
 
 	void RequestWorkerStop() noexcept
 	{
+		for (LaneState& lane : Lanes)
 		{
-			std::lock_guard lock(WorkMutex);
-			StopWorkers = true;
-			++WorkEpoch;
+			{
+				std::lock_guard lock(lane.WorkMutex);
+				lane.StopWorkers = true;
+				++lane.WorkEpoch;
+			}
+			lane.WorkCondition.notify_all();
 		}
-		WorkCondition.notify_all();
 	}
 
 	void JoinWorkers() noexcept
@@ -575,18 +653,13 @@ struct TaskExecutor::Implementation final
 
 	static constexpr std::uint32_t MaximumWorkerCount = 256;
 	TaskExecutorConfig Config;
+	std::array<LaneState, TaskLaneCount> Lanes;
 	std::vector<std::unique_ptr<Worker>> Workers;
-	std::mutex InjectionMutex;
-	std::deque<ReadyTask> InjectionQueue;
-	std::mutex WorkMutex;
-	std::condition_variable WorkCondition;
-	std::uint64_t WorkEpoch = 0;
-	bool StopWorkers = false;
 	std::mutex StateMutex;
 	std::condition_variable StateCondition;
 	LifecycleState State = LifecycleState::Accepting;
 	std::uint32_t ActiveExecutions = 0;
-	std::vector<std::weak_ptr<RunState>> Runs;
+	std::vector<std::weak_ptr<TaskExecution::State>> Executions;
 	std::mutex ShutdownMutex;
 	std::atomic_uint64_t NextExecutionGeneration{1};
 };
@@ -597,10 +670,11 @@ TaskExecutor::~TaskExecutor() = default;
 
 TaskExecution TaskExecutor::Submit(const CompiledTaskGraph& graph, TaskExecutionContext& context)
 {
-	const std::uint64_t generation = m_implementation->NextExecutionGeneration.fetch_add(1, std::memory_order_relaxed);
-	context.SetExecutionGeneration(generation);
-	auto state = std::make_unique<TaskExecution::State>();
-	state->Data = m_implementation->Execute(graph, context, generation);
+	auto state = m_implementation->Launch(graph, context, {});
+	{
+		std::unique_lock lock(state->Mutex);
+		state->Condition.wait(lock, [&state] { return state->Settled; });
+	}
 	return TaskExecution(std::move(state));
 }
 
@@ -613,12 +687,26 @@ TaskExecution TaskExecutor::Submit(TaskDesc desc, TaskFunction function, TaskExe
 	return Submit(builder.Compile(), context);
 }
 
+TaskExecution TaskExecutor::Launch(TaskScope& scope, const CompiledTaskGraph& graph, TaskExecutionContext context)
+{
+	return TaskExecution(m_implementation->Launch(graph, std::move(context), scope.m_state));
+}
+
+TaskExecution TaskExecutor::Launch(TaskScope& scope, TaskDesc desc, TaskFunction function, TaskExecutionContext context)
+{
+	TaskGraphBuilder builder(TaskGraphLimits{
+	    .MaximumTasks = m_implementation->Config.MaximumTasksPerExecution,
+	    .MaximumEdges = m_implementation->Config.MaximumEdgesPerExecution});
+	builder.Add(std::move(desc), std::move(function));
+	return Launch(scope, builder.Compile(), std::move(context));
+}
+
 bool TaskExecutor::Shutdown(TaskExecutorShutdownMode mode) noexcept
 {
 	return m_implementation->Shutdown(mode);
 }
 
-std::uint32_t TaskExecutor::GetWorkerCount() const noexcept
+std::uint32_t TaskExecutor::GetWorkerCount(TaskLane lane) const noexcept
 {
-	return m_implementation->Config.WorkerCount;
+	return LaneIndex(lane) < TaskLaneCount ? m_implementation->WorkerCount(lane) : 0;
 }

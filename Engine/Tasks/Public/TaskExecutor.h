@@ -6,10 +6,14 @@
 #include <cstdint>
 #include <memory>
 
+class TaskScope;
+
 struct TaskExecutorConfig final
 {
-	// Zero retains the deterministic caller-thread reference path.
-	std::uint32_t WorkerCount = 0;
+	// All lane counts at zero retain the deterministic caller-thread reference path.
+	std::uint32_t FrameCriticalWorkerCount = 0;
+	std::uint32_t BackgroundWorkerCount = 0;
+	std::uint32_t BlockingIoWorkerCount = 0;
 	std::uint32_t MaximumTasksPerExecution = 1'024;
 	std::uint32_t MaximumEdgesPerExecution = 4'096;
 	std::uint32_t MaximumActiveExecutions = 64;
@@ -35,10 +39,12 @@ class SPARKLE_TASKS_API TaskExecutor final
 	// Submission is a host boundary and returns settled. Owned workers must express child work as graph edges.
 	TaskExecution Submit(const CompiledTaskGraph& graph, TaskExecutionContext& context);
 	TaskExecution Submit(TaskDesc desc, TaskFunction function, TaskExecutionContext& context);
+	TaskExecution Launch(TaskScope& scope, const CompiledTaskGraph& graph, TaskExecutionContext context = {});
+	TaskExecution Launch(TaskScope& scope, TaskDesc desc, TaskFunction function, TaskExecutionContext context = {});
 
 	// Cancel prevents queued normal bodies from starting; running bodies finish and cleanup nodes still settle.
 	bool Shutdown(TaskExecutorShutdownMode mode = TaskExecutorShutdownMode::Drain) noexcept;
-	std::uint32_t GetWorkerCount() const noexcept;
+	std::uint32_t GetWorkerCount(TaskLane lane) const noexcept;
 
   private:
 	struct Implementation;

@@ -1,11 +1,18 @@
 #pragma once
 
-#include "TasksAPI.h"
+#include "TaskTypes.h"
 
 #include <cstdint>
+#include <memory>
+#include <stop_token>
 #include <typeinfo>
 
 class TaskExecutor;
+class TaskEvent;
+namespace TaskDetail
+{
+	struct TaskExecutionContextAccess;
+}
 
 class SPARKLE_TASKS_API TaskExecutionContext final
 {
@@ -13,6 +20,10 @@ class SPARKLE_TASKS_API TaskExecutionContext final
 	TaskExecutionContext() noexcept = default;
 
 	template <typename T> explicit TaskExecutionContext(T& value) noexcept : m_userData(&value), m_userType(&typeid(T)) {}
+	template <typename T> explicit TaskExecutionContext(std::shared_ptr<T> value) noexcept :
+	    m_userData(value.get()), m_userType(&typeid(T)), m_userOwner(std::move(value))
+	{
+	}
 
 	template <typename T> T* TryGet() noexcept
 	{
@@ -25,13 +36,39 @@ class SPARKLE_TASKS_API TaskExecutionContext final
 	}
 
 	std::uint64_t GetExecutionGeneration() const noexcept { return m_executionGeneration; }
+	TaskLane GetLane() const noexcept { return m_lane; }
+	bool IsCancellationRequested() const noexcept { return m_cancellation.stop_requested(); }
+	bool HasUserData() const noexcept { return m_userData != nullptr; }
+	bool HasOwnedUserData() const noexcept { return m_userOwner != nullptr; }
 
   private:
 	friend class TaskExecutor;
+	friend class TaskEvent;
+	friend struct TaskDetail::TaskExecutionContextAccess;
 
-	void SetExecutionGeneration(std::uint64_t generation) noexcept { m_executionGeneration = generation; }
+	std::stop_token GetCancellationToken() const noexcept { return m_cancellation; }
 
 	void* m_userData = nullptr;
 	const std::type_info* m_userType = nullptr;
+	std::shared_ptr<void> m_userOwner;
+	std::stop_token m_cancellation;
 	std::uint64_t m_executionGeneration = 0;
+	TaskLane m_lane = TaskLane::FrameCritical;
 };
+
+namespace TaskDetail
+{
+	struct TaskExecutionContextAccess final
+	{
+		static void Bind(
+		    TaskExecutionContext& context,
+		    std::uint64_t generation,
+		    TaskLane lane,
+		    std::stop_token cancellation) noexcept
+		{
+			context.m_executionGeneration = generation;
+			context.m_lane = lane;
+			context.m_cancellation = cancellation;
+		}
+	};
+}
