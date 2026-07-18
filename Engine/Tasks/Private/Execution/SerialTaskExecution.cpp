@@ -1,7 +1,7 @@
-#include "TaskExecutorInternal.h"
+#include "TaskExecutionInternal.h"
 
 #include "TaskExecutionContext.h"
-#include "TaskProfiler.h"
+#include "Profiling/TaskProfiler.h"
 
 #include <exception>
 #include <format>

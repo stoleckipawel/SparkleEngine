@@ -1,7 +1,7 @@
 #pragma once
 
 #include "TaskExecution.h"
-#include "TaskGraphInternal.h"
+#include "Graph/TaskGraphInternal.h"
 
 #include <cstdint>
 #include <condition_variable>

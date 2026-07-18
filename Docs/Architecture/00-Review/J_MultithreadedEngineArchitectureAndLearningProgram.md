@@ -1634,23 +1634,37 @@ Suggested repository shape:
 Engine/
   Tasks/
     Public/
-      Task.h
+      TasksAPI.h
+      TaskTypes.h
       TaskGraph.h
-      TaskEvent.h
-      ParallelFor.h
+      TaskExecutionContext.h
+      TaskExecution.h
       TaskExecutor.h
       TaskScope.h
-      TaskExecutorConfig.h
+      TaskEvent.h
+      ParallelFor.h
     Private/
-      TaskRecord.h
-      TaskPool.*
-      Worker.*
-      WorkStealingDeque.*
-      InjectionQueue.*
-      TaskExecutor.*
-      TaskGraph.*
-      TaskProfilerAdapter.*
-    Tests/
+      Graph/
+        TaskGraph.*
+        TaskGraphInternal.h
+        ParallelFor.cpp
+      Execution/
+        TaskTypes.cpp
+        TaskExecution.cpp
+        TaskExecutionInternal.h
+        SerialTaskExecution.cpp
+      Scheduling/
+        TaskExecutor.cpp
+        TaskExecutorImplementation.*
+        TaskExecutorRuntime.h
+        ScheduledTaskExecution.*
+        TaskWorkerScheduling.cpp
+      Lifetime/
+        TaskScope.*
+        TaskScopeInternal.h
+        TaskEvent.cpp
+      Profiling/
+        TaskProfiler.*
 
 Engine/GameFramework/
   Public/
