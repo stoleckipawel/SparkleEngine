@@ -450,7 +450,7 @@ static bool AssetCookerRunShaders(
 {
 	const std::filesystem::path shaderCompilerPath = AssetCookerResolveToolPath(plan, "ShaderCompiler");
 	ToolConsole::Info("Cooking shaders: writing package payloads...");
-	const int exitCode = AssetCookerToolProcess::Run(shaderCompilerPath, {L"cook"}, plan.projectRoot);
+	const int exitCode = AssetCookerToolProcess::Run(shaderCompilerPath, {"cook"}, plan.projectRoot);
 	if (exitCode != 0)
 	{
 		diagnostics.AddError(AssetCookerCategory_Shaders, "Shader package cooking failed.");
@@ -498,7 +498,7 @@ static bool AssetCookerRunTextures(
 
 	const int exitCode = AssetCookerToolProcess::Run(
 	    textureCookerPath,
-	    {L"cook-request-file", textureRequestPath.wstring()},
+	    {"cook-request-file", textureRequestPath.string()},
 	    plan.projectRoot);
 	AssetCookerRemoveTempFile(textureRequestPath);
 	if (exitCode != 0)

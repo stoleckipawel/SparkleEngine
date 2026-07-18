@@ -4,10 +4,9 @@
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
-#include "Core/Public/Threading/ThreadOwnership.h"
-#include <QtCore/QProcess>
-#include <QtCore/QRegularExpression>
-#include <QtCore/QThread>
+#include "Operations/LauncherOperationRequestMapping.h"
+#include "Operations/LauncherOperationService.h"
+#include <QtCore/QMetaObject>
 
 #include <memory>
 #include <sstream>
@@ -18,92 +17,6 @@
 
 namespace SparkleLauncher
 {
-	static std::vector<std::string> SplitOptionList(const QString& text)
-	{
-		std::vector<std::string> values;
-		for (const QString& part : text.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
-		{
-			const QString trimmed = part.trimmed();
-			if (!trimmed.isEmpty())
-			{
-				values.push_back(trimmed.toStdString());
-			}
-		}
-		return values;
-	}
-
-	static std::vector<std::string> SplitCommandLineArguments(const QString& text)
-	{
-		std::vector<std::string> values;
-		for (const QString& part : QProcess::splitCommand(text))
-		{
-			if (!part.isEmpty())
-			{
-				values.push_back(part.toStdString());
-			}
-		}
-		return values;
-	}
-
-	static CleanScope ToCleanScope(const QString& text)
-	{
-		if (text == "all-cooked")
-		{
-			return CleanScope::AllCookedOutputs;
-		}
-		if (text == "build-tree")
-		{
-			return CleanScope::BuildTree;
-		}
-		if (text == "artifacts")
-		{
-			return CleanScope::ArtifactOutputs;
-		}
-		if (text == "packages")
-		{
-			return CleanScope::PackageOutputs;
-		}
-		if (text == "workspace-state")
-		{
-			return CleanScope::WorkspaceState;
-		}
-		if (text == "shader-cache")
-		{
-			return CleanScope::ShaderCache;
-		}
-		if (text == "deps")
-		{
-			return CleanScope::ThirdPartyDependencyCache;
-		}
-		if (text == "logs")
-		{
-			return CleanScope::Logs;
-		}
-		if (text == "clean-all")
-		{
-			return CleanScope::PristineGeneratedWorkspace;
-		}
-		return CleanScope::SelectedProjectCookedOutputs;
-	}
-
-	static std::vector<CleanScope> SplitCleanScopes(const QString& text)
-	{
-		std::vector<CleanScope> scopes;
-		for (const QString& part : text.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
-		{
-			const QString trimmed = part.trimmed();
-			if (!trimmed.isEmpty())
-			{
-				scopes.push_back(ToCleanScope(trimmed));
-			}
-		}
-		if (scopes.empty())
-		{
-			scopes.push_back(CleanScope::SelectedProjectCookedOutputs);
-		}
-		return scopes;
-	}
-
 	static void AppendLine(std::ostringstream& output, std::string_view text)
 	{
 		output << text << '\n';
@@ -148,86 +61,6 @@ namespace SparkleLauncher
 		}
 	}
 
-	static BuildWorkspaceOperationRequest MakeBuildRequest(const LauncherOperationRequest& request)
-	{
-		BuildWorkspaceOperationRequest buildRequest;
-		WorkspaceIde workspaceIde = WorkspaceIde::VisualStudio;
-		TryParseWorkspaceIde(request.WorkspaceIde.toStdString(), workspaceIde);
-		buildRequest.RepositoryRoot = request.RepositoryRoot;
-		buildRequest.ProjectId = request.ProjectId.toStdString();
-		buildRequest.EditorProfile = request.EditorProfile.toStdString();
-		buildRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
-		buildRequest.PreferredIde = workspaceIde;
-		buildRequest.SelectedTargets = SplitOptionList(request.SelectedTargets);
-		buildRequest.ForceConfigure = request.ForceConfigure;
-		return buildRequest;
-	}
-
-	static CookOperationRequest MakeCookRequest(const LauncherOperationRequest& request)
-	{
-		CookOperationRequest cookRequest;
-		cookRequest.RepositoryRoot = request.RepositoryRoot;
-		cookRequest.ProjectId = request.ProjectId.toStdString();
-		cookRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
-		cookRequest.Mode = request.ForceRecook ? CookMode::Force : CookMode::Incremental;
-		cookRequest.ForceRecookConfirmed = request.ConfirmForceRecook;
-		cookRequest.ShaderPackages = SplitOptionList(request.ShaderPackages);
-		cookRequest.ShaderTargets = SplitOptionList(request.ShaderTargets);
-		cookRequest.ShaderBackend = request.ShaderBackend.toStdString();
-		cookRequest.ShaderCacheDirectory = request.ShaderCacheDirectory.toStdString();
-		cookRequest.ShaderUseCache = request.ShaderUseCache;
-		cookRequest.ShaderEnableDebugInfo = request.ShaderEnableDebugInfo;
-		cookRequest.ShaderEnableOptimizations = request.ShaderEnableOptimizations;
-		cookRequest.ShaderWarningsAsErrors = request.ShaderWarningsAsErrors;
-		cookRequest.ShaderStripDebugInfo = request.ShaderStripDebugInfo;
-		return cookRequest;
-	}
-
-	static MaintenanceOperationRequest MakeMaintenanceRequest(const LauncherOperationRequest& request)
-	{
-		MaintenanceOperationRequest maintenanceRequest;
-		maintenanceRequest.RepositoryRoot = request.RepositoryRoot;
-		maintenanceRequest.ProjectId = request.ProjectId.toStdString();
-		maintenanceRequest.EditorProfile = request.EditorProfile.toStdString();
-		maintenanceRequest.RequestedCleanScope = ToCleanScope(request.CleanScope);
-		maintenanceRequest.RequestedCleanScopes = SplitCleanScopes(request.CleanScope);
-		for (const LauncherCleanTarget& target : request.CleanTargets)
-		{
-			MaintenanceCleanPathSpec cleanTarget;
-			cleanTarget.DisplayName = target.DisplayName.toStdString();
-			cleanTarget.Path = target.Path.toStdString();
-			cleanTarget.Detail = target.Detail.toStdString();
-			maintenanceRequest.RequestedCleanTargets.push_back(std::move(cleanTarget));
-		}
-		for (const QString& preservedPath : request.PreservedPaths)
-		{
-			if (!preservedPath.trimmed().isEmpty())
-			{
-				maintenanceRequest.PreservedPaths.push_back(preservedPath.toStdString());
-			}
-		}
-		maintenanceRequest.DestructiveActionConfirmed = request.ConfirmClean;
-		return maintenanceRequest;
-	}
-
-	static LaunchOperationRequest MakeLaunchRequest(const LauncherOperationRequest& request)
-	{
-		LaunchOperationRequest launchRequest;
-		launchRequest.RepositoryRoot = request.RepositoryRoot;
-		launchRequest.OperationId = request.OperationId.toStdString();
-		launchRequest.ProjectId = request.ProjectId.toStdString();
-		launchRequest.EditorProfile = request.EditorProfile.toStdString();
-		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
-		launchRequest.Target = request.LaunchTarget.toStdString();
-		launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
-		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
-		launchRequest.VSync = request.LaunchVSync.toStdString();
-		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
-		launchRequest.CustomArguments = SplitCommandLineArguments(request.LaunchCommandLineArguments);
-		launchRequest.CustomCVars = SplitOptionList(request.LaunchCVars);
-		return launchRequest;
-	}
-
 	static QString ToQtString(const std::ostringstream& output)
 	{
 		return QString::fromStdString(output.str());
@@ -247,21 +80,22 @@ namespace SparkleLauncher
 		return text;
 	}
 
-	LauncherBackend::LauncherBackend(QObject* parent)
-	    : LauncherBackend({}, parent)
-	{
-	}
+	LauncherBackend::LauncherBackend(QObject* parent) : LauncherBackend({}, parent) {}
 
-	LauncherBackend::LauncherBackend(ProcessRunnerFactory processRunnerFactory, QObject* parent)
-	    : QObject(parent)
-	    , m_processRunnerFactory(std::move(processRunnerFactory))
+	LauncherBackend::LauncherBackend(ProcessRunnerFactory processRunnerFactory, QObject* parent) : QObject(parent)
 	{
-		if (!m_processRunnerFactory)
+		if (!processRunnerFactory)
 		{
-			m_processRunnerFactory = []() { return std::make_unique<NativeProcessRunner>(); };
+			processRunnerFactory = []()
+			{
+				return std::make_unique<NativeProcessRunner>();
+			};
 		}
+		m_operationService = std::make_unique<LauncherOperationService>(std::move(processRunnerFactory));
 		PopulateOperationCatalog();
 	}
+
+	LauncherBackend::~LauncherBackend() = default;
 
 	const QVector<LauncherOperationDescriptor>& LauncherBackend::Operations() const
 	{
@@ -282,34 +116,37 @@ namespace SparkleLauncher
 		const std::string operationId = request.OperationId.toStdString();
 		switch (operation->Category)
 		{
-		case LauncherOperationCategory::Workspace:
-		{
-			const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(operationId, MakeBuildRequest(request));
-			AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
-			canRun = plan.CanRun;
-			break;
-		}
-		case LauncherOperationCategory::Cooking:
-		{
-			const CookOperationPlan plan = PlanCookOperation(operationId, MakeCookRequest(request));
-			AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
-			canRun = plan.CanRun;
-			break;
-		}
-		case LauncherOperationCategory::Maintenance:
-		{
-			const MaintenanceOperationPlan plan = PlanMaintenanceOperation(operationId, MakeMaintenanceRequest(request));
-			AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
-			canRun = plan.CanRun;
-			break;
-		}
-		case LauncherOperationCategory::Launch:
-		{
-			const LaunchOperationPlan plan = PlanLaunchOperation(request.OperationId.toStdString(), MakeLaunchRequest(request));
-			AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
-			canRun = plan.CanRun;
-			break;
-		}
+			case LauncherOperationCategory::Workspace:
+			{
+				const BuildWorkspaceOperationPlan plan =
+				    PlanBuildWorkspaceOperation(operationId, LauncherOperationRequestMapping::BuildWorkspace(request));
+				AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
+				canRun = plan.CanRun;
+				break;
+			}
+			case LauncherOperationCategory::Cooking:
+			{
+				const CookOperationPlan plan = PlanCookOperation(operationId, LauncherOperationRequestMapping::Cook(request));
+				AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
+				canRun = plan.CanRun;
+				break;
+			}
+			case LauncherOperationCategory::Maintenance:
+			{
+				const MaintenanceOperationPlan plan =
+				    PlanMaintenanceOperation(operationId, LauncherOperationRequestMapping::Maintenance(request));
+				AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
+				canRun = plan.CanRun;
+				break;
+			}
+			case LauncherOperationCategory::Launch:
+			{
+				const LaunchOperationPlan plan =
+				    PlanLaunchOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::Launch(request));
+				AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
+				canRun = plan.CanRun;
+				break;
+			}
 		}
 
 		emit OperationPreviewReady(operation->Id, operation->DisplayName, ToQtString(output), canRun);
@@ -329,85 +166,42 @@ namespace SparkleLauncher
 		const LauncherOperationCategory category = operation->Category;
 		const QString title = operation->DisplayName;
 		const QString operationIdText = operation->Id;
-		ProcessRunnerFactory processRunnerFactory = m_processRunnerFactory;
+		m_operationService->Launch(
+		    category,
+		    std::move(request),
+		    title.toStdString(),
+		    [this, runId, operationIdText](std::string_view output)
+		    {
+			    QueueOperationOutput(runId, operationIdText, QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size())));
+		    },
+		    [this, runId, operationIdText, title](OperationRecord record)
+		    {
+			    QueueOperationFinished(runId, operationIdText, title, std::move(record));
+		    });
+	}
 
-		QThread* workerThread = QThread::create([this, category, title, runId, operationIdText, processRunnerFactory, request = std::move(request)]() {
-			Threading::SetCurrentThreadRole("Sparkle.Tool.Operation");
-			const std::string operationId = request.OperationId.toStdString();
-			std::unique_ptr<IProcessRunner> processRunner = processRunnerFactory();
-			if (processRunner == nullptr)
-			{
-				OperationRecord failedRecord = MakeOperationRecord(operationId, title.toStdString());
-				failedRecord.Status = OperationStatus::Failed;
-				failedRecord.FailureSummary = "No process runner is available for this launcher operation.";
-				emit OperationFinished(runId, operationIdText, title, FormatOperationCompletion(failedRecord), -1);
-				return;
-			}
-			const ProcessOutputCallback outputCallback = [this, runId, operationIdText](std::string_view output) {
-				emit OperationOutputReceived(runId, operationIdText, QString::fromStdString(std::string(output)));
-			};
+	void LauncherBackend::QueueOperationOutput(QString runId, QString operationId, QString outputText)
+	{
+		QMetaObject::invokeMethod(
+		    this,
+		    [this, runId = std::move(runId), operationId = std::move(operationId), outputText = std::move(outputText)]
+		    {
+			    emit OperationOutputReceived(runId, operationId, outputText);
+		    },
+		    Qt::QueuedConnection);
+	}
 
-			OperationRecord record = MakeOperationRecord(operationId, title.toStdString());
-			switch (category)
-			{
-			case LauncherOperationCategory::Workspace:
-			{
-				BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(operationId, MakeBuildRequest(request));
-				if (!plan.CanRun)
-				{
-					record = plan.Operation;
-					record.Status = OperationStatus::Skipped;
-					record.FailureSummary = plan.ReadinessMessages.empty() ? "Operation readiness failed." : plan.ReadinessMessages.back();
-					break;
-				}
-				record = RunBuildWorkspaceOperationPlan(std::move(plan), *processRunner, outputCallback);
-				break;
-			}
-			case LauncherOperationCategory::Cooking:
-			{
-				CookOperationPlan plan = PlanCookOperation(operationId, MakeCookRequest(request));
-				if (!plan.CanRun)
-				{
-					record = plan.Operation;
-					record.Status = OperationStatus::Skipped;
-					record.FailureSummary = plan.ReadinessMessages.empty() ? "Operation readiness failed." : plan.ReadinessMessages.back();
-					break;
-				}
-				record = RunCookOperationPlan(std::move(plan), *processRunner, outputCallback);
-				break;
-			}
-			case LauncherOperationCategory::Maintenance:
-			{
-				MaintenanceOperationPlan plan = PlanMaintenanceOperation(operationId, MakeMaintenanceRequest(request));
-				if (!plan.CanRun)
-				{
-					record = plan.Operation;
-					record.Status = OperationStatus::Skipped;
-					record.FailureSummary = plan.ReadinessMessages.empty() ? "Operation readiness failed." : plan.ReadinessMessages.back();
-					break;
-				}
-				record = RunMaintenanceOperationPlan(std::move(plan), *processRunner, outputCallback);
-				break;
-			}
-			case LauncherOperationCategory::Launch:
-			{
-				LaunchOperationPlan plan = PlanLaunchOperation(request.OperationId.toStdString(), MakeLaunchRequest(request));
-				if (!plan.CanRun)
-				{
-					record = plan.Operation;
-					record.Status = OperationStatus::Skipped;
-					record.FailureSummary = plan.ReadinessMessages.empty() ? "Operation readiness failed." : plan.ReadinessMessages.back();
-					break;
-				}
-				record = RunLaunchOperationPlan(std::move(plan), *processRunner, outputCallback);
-				break;
-			}
-			}
-
-			emit OperationFinished(runId, operationIdText, title, FormatOperationCompletion(record), record.ExitCode.value_or(-1));
-		});
-		connect(workerThread, &QThread::finished, workerThread, &QObject::deleteLater);
-		workerThread->start();
+	void LauncherBackend::QueueOperationFinished(QString runId, QString operationId, QString title, OperationRecord record)
+	{
+		const QString status = FormatOperationCompletion(record);
+		const int exitCode = record.ExitCode.value_or(-1);
+		QMetaObject::invokeMethod(
+		    this,
+		    [this, runId = std::move(runId), operationId = std::move(operationId), title = std::move(title), status, exitCode]
+		    {
+			    emit OperationFinished(runId, operationId, title, status, exitCode);
+		    },
+		    Qt::QueuedConnection);
 	}
 
 	void LauncherBackend::PopulateOperationCatalog()

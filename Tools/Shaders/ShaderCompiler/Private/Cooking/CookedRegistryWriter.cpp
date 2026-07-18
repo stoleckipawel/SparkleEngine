@@ -13,12 +13,11 @@
 #include <fstream>
 
 bool CookedRegistryWriter::Write(
-	std::span<const CookedShaderPackageOutput> packages,
-	std::filesystem::path& outRegistryPath,
-	std::string& outErrorMessage)
+    std::span<const CookedShaderPackageOutput> packages,
+    const std::filesystem::path& storagePath,
+    std::string& outErrorMessage)
 {
-	outRegistryPath = Filesystem::GetCookedShaderRegistryPath();
-	const std::filesystem::path tempRegistryPath = Files::BuildTemporaryPath(outRegistryPath);
+	const std::filesystem::path tempRegistryPath = Files::BuildTemporaryPath(storagePath);
 	std::ofstream output;
 	if (!Files::TryOpenTextOutput(tempRegistryPath, output, outErrorMessage))
 	{
@@ -42,7 +41,7 @@ bool CookedRegistryWriter::Write(
 
 	if (!output.good())
 	{
-		outErrorMessage = "Failed to write shader registry output '" + outRegistryPath.string() + "'";
+		outErrorMessage = "Failed to write shader registry output '" + storagePath.string() + "'";
 		return false;
 	}
 
@@ -51,7 +50,7 @@ bool CookedRegistryWriter::Write(
 		return false;
 	}
 
-	if (!Files::TryFinalizeTemporaryFile(tempRegistryPath, outRegistryPath, outErrorMessage))
+	if (!Files::TryFinalizeTemporaryFile(tempRegistryPath, storagePath, outErrorMessage))
 	{
 		return false;
 	}

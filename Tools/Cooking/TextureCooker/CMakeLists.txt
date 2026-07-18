@@ -22,6 +22,8 @@ set(TEXTURE_COOKER_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/EncodeStage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookBatchExecutor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookMemoryLimiter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureAssetCooker.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/DdsTextureSourceLoader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/ExrTextureSourceLoader.cpp
@@ -50,6 +52,8 @@ set(TEXTURE_COOKER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/MipStage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/EncodeStage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookBatchExecutor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookMemoryLimiter.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureAssetCooker.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/DdsTextureSourceLoader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/ExrTextureSourceLoader.h
@@ -117,6 +121,7 @@ target_link_libraries(TextureCooker
         CMP_Core
         ToolConsoleSupport
         SparkleCore
+        SparkleTasks
         TextureCookShared
         TextureCookerMiniz
         SparkleRHI

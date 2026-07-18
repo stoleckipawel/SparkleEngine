@@ -42,9 +42,9 @@ static ShaderStageMask ToCookedShaderStageMask(ShaderStageVisibility visibility)
 }
 
 static void BuildBindingRecords(
-	const PassParameterLayout& layout,
-	Strings::StringTableBuilder& stringTable,
-	std::vector<CookedShaderBindingRecord>& outBindingRecords)
+    const PassParameterLayout& layout,
+    Strings::StringTableBuilder& stringTable,
+    std::vector<CookedShaderBindingRecord>& outBindingRecords)
 {
 	const std::vector<PassParameterDesc>& parameters = layout.GetParameters();
 	outBindingRecords.clear();
@@ -54,15 +54,16 @@ static void BuildBindingRecords(
 	{
 		const PassParameterDesc& parameter = parameters[parameterIndex];
 		const Strings::StringTableEntry nameEntry = stringTable.Add(parameter.Name);
-		outBindingRecords.push_back(CookedShaderBindingRecord{
-		    .Name = ToCookedShaderStringRef(nameEntry),
-		    .SemanticKind = parameter.Kind,
-		    .ResourceDomain = parameter.ResourceDomain,
-		    .Access = parameter.Access,
-		    .VisibilityMask = ToCookedShaderStageMask(parameter.Visibility),
-		    .LogicalBindingIndex = static_cast<std::uint32_t>(parameterIndex),
-		    .ArrayCount = parameter.ArrayCount,
-		    .ValueSizeInBytes = parameter.ValueSizeInBytes});
+		outBindingRecords.push_back(
+		    CookedShaderBindingRecord{
+		        .Name = ToCookedShaderStringRef(nameEntry),
+		        .SemanticKind = parameter.Kind,
+		        .ResourceDomain = parameter.ResourceDomain,
+		        .Access = parameter.Access,
+		        .VisibilityMask = ToCookedShaderStageMask(parameter.Visibility),
+		        .LogicalBindingIndex = static_cast<std::uint32_t>(parameterIndex),
+		        .ArrayCount = parameter.ArrayCount,
+		        .ValueSizeInBytes = parameter.ValueSizeInBytes});
 	}
 }
 
@@ -78,9 +79,7 @@ static bool LayoutUsesAccelerationStructure(const PassParameterLayout& layout) n
 	return false;
 }
 
-static void AddPipelineLayoutCounts(
-    const CookedShaderBindingRecord& bindingRecord,
-    CookedShaderPipelineLayoutRecord& layoutRecord) noexcept
+static void AddPipelineLayoutCounts(const CookedShaderBindingRecord& bindingRecord, CookedShaderPipelineLayoutRecord& layoutRecord) noexcept
 {
 	switch (bindingRecord.SemanticKind)
 	{
@@ -196,13 +195,14 @@ static void BuildRayTracingExportRecords(
 	for (const ShaderCookRayTracingExportDesc& rtExport : package.rayTracingExports)
 	{
 		const std::string& exportName = rtExport.exportName.empty() ? rtExport.entryPoint : rtExport.exportName;
-		outRecords.push_back(CookedShaderRayTracingExportRecord{
-		    .ExportName = ToCookedShaderStringRef(stringTable.Add(exportName)),
-		    .EntryPoint = ToCookedShaderStringRef(stringTable.Add(rtExport.entryPoint)),
-		    .BinaryRecordIndex = FindBinaryRecordIndexForStage(package, compiledStages, rtExport),
-		    .Kind = rtExport.kind,
-		    .Flags = 0,
-		    .ExportHash = Hash::Fnv1a64(exportName)});
+		outRecords.push_back(
+		    CookedShaderRayTracingExportRecord{
+		        .ExportName = ToCookedShaderStringRef(stringTable.Add(exportName)),
+		        .EntryPoint = ToCookedShaderStringRef(stringTable.Add(rtExport.entryPoint)),
+		        .BinaryRecordIndex = FindBinaryRecordIndexForStage(package, compiledStages, rtExport),
+		        .Kind = rtExport.kind,
+		        .Flags = 0,
+		        .ExportHash = Hash::Fnv1a64(exportName)});
 	}
 }
 
@@ -231,8 +231,8 @@ static std::uint32_t FindRayTracingExportIndex(
 static bool BuildRayTracingHitGroupRecords(
     const ShaderCookPackageDesc& package,
     Strings::StringTableBuilder& stringTable,
-	std::vector<CookedShaderRayTracingHitGroupRecord>& outRecords,
-	std::string& outErrorMessage)
+    std::vector<CookedShaderRayTracingHitGroupRecord>& outRecords,
+    std::string& outErrorMessage)
 {
 	outRecords.clear();
 	outRecords.reserve(package.rayTracingHitGroups.size());
@@ -252,10 +252,8 @@ static bool BuildRayTracingHitGroupRecords(
 			return false;
 		}
 
-		const std::uint32_t anyHitExportIndex = FindRayTracingExportIndex(
-		    package.rayTracingExports,
-		    hitGroup.anyHitExportName,
-		    CookedShaderRayTracingExportKind::AnyHit);
+		const std::uint32_t anyHitExportIndex =
+		    FindRayTracingExportIndex(package.rayTracingExports, hitGroup.anyHitExportName, CookedShaderRayTracingExportKind::AnyHit);
 		if (!hitGroup.anyHitExportName.empty() && anyHitExportIndex == UINT32_MAX)
 		{
 			outErrorMessage = std::format(
@@ -280,14 +278,15 @@ static bool BuildRayTracingHitGroupRecords(
 			return false;
 		}
 
-		outRecords.push_back(CookedShaderRayTracingHitGroupRecord{
-		    .HitGroupName = ToCookedShaderStringRef(stringTable.Add(hitGroup.name)),
-		    .Type = intersectionExportIndex != UINT32_MAX ? CookedShaderRayTracingHitGroupType::ProceduralPrimitive
-		                                                    : CookedShaderRayTracingHitGroupType::Triangles,
-		    .ClosestHitExportIndex = closestHitExportIndex,
-		    .AnyHitExportIndex = anyHitExportIndex,
-		    .IntersectionExportIndex = intersectionExportIndex,
-		    .HitGroupHash = Hash::Fnv1a64(hitGroup.name)});
+		outRecords.push_back(
+		    CookedShaderRayTracingHitGroupRecord{
+		        .HitGroupName = ToCookedShaderStringRef(stringTable.Add(hitGroup.name)),
+		        .Type = intersectionExportIndex != UINT32_MAX ? CookedShaderRayTracingHitGroupType::ProceduralPrimitive
+		                                                      : CookedShaderRayTracingHitGroupType::Triangles,
+		        .ClosestHitExportIndex = closestHitExportIndex,
+		        .AnyHitExportIndex = anyHitExportIndex,
+		        .IntersectionExportIndex = intersectionExportIndex,
+		        .HitGroupHash = Hash::Fnv1a64(hitGroup.name)});
 	}
 
 	outErrorMessage.clear();
@@ -295,10 +294,12 @@ static bool BuildRayTracingHitGroupRecords(
 }
 
 bool CookedPackageWriter::Write(
-	const ShaderCookPackageDesc& package,
-	std::span<const CookedStageBuild> compiledStages,
-	CookedShaderPackageOutput& outPackageOutput,
-	std::string& outErrorMessage)
+    const ShaderCookPackageDesc& package,
+    std::span<const CookedStageBuild> compiledStages,
+    const std::filesystem::path& storagePath,
+    const std::filesystem::path& publishedPath,
+    CookedShaderPackageOutput& outPackageOutput,
+    std::string& outErrorMessage)
 {
 	Strings::StringTableBuilder stringTable;
 	std::vector<CookedShaderBinaryRecord> binaryRecords;
@@ -386,8 +387,7 @@ bool CookedPackageWriter::Write(
 	header.SourceIdentityHash = SourceIdentityHasher::Compute(package, compiledStages);
 	header.BindingLayoutHash = bindingLayoutHash;
 
-	const std::filesystem::path packagePath = Paths::CookedShaderPackage(header.ShaderPackageKey);
-	const std::filesystem::path tempPackagePath = Files::BuildTemporaryPath(packagePath);
+	const std::filesystem::path tempPackagePath = Files::BuildTemporaryPath(storagePath);
 	std::ofstream output;
 	if (!Files::TryOpenBinaryOutput(tempPackagePath, output, outErrorMessage))
 	{
@@ -420,14 +420,14 @@ bool CookedPackageWriter::Write(
 		return false;
 	}
 
-	if (!Files::TryFinalizeTemporaryFile(tempPackagePath, packagePath, outErrorMessage))
+	if (!Files::TryFinalizeTemporaryFile(tempPackagePath, storagePath, outErrorMessage))
 	{
 		return false;
 	}
 
 	outPackageOutput.packageId = package.packageId;
 	outPackageOutput.bindingLayoutId = package.bindingLayoutId;
-	outPackageOutput.outputPath = packagePath;
+	outPackageOutput.outputPath = publishedPath;
 	outPackageOutput.packageKey = header.ShaderPackageKey;
 	outPackageOutput.sourceIdentityHash = header.SourceIdentityHash;
 	outPackageOutput.bindingLayoutHash = header.BindingLayoutHash;

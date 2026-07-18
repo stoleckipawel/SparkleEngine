@@ -4,11 +4,12 @@
 #include "Cooking/ShaderPackageCooker.h"
 
 #include "Backend/ShaderBackendPool.h"
-#include "Cooking/Cache/LocalDiskShaderArtifactStore.h"
 #include "Cooking/CookedShaderPackageEmitter.h"
-#include "Cooking/ShaderCookNodeExecutor.h"
+#include "Cooking/ShaderCookPlanExecutor.h"
 #include "Cooking/ShaderCookPlanBuilder.h"
 #include "Cooking/ShaderCookProgressReporter.h"
+#include "Cooking/ShaderCookNodeResult.h"
+#include <vector>
 
 ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSettings& settings) const
 {
@@ -21,23 +22,22 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 		return result;
 	}
 
-	LocalDiskShaderArtifactStore artifactStore(result.cacheDirectory);
 	ShaderCookExecutionCounters counters;
 	ShaderCookProgressReporter::PrintPlanSummary(plan, settings);
-	for (const CookNode& node : plan.nodes)
+	std::vector<ShaderCookNodeResult> nodeResults;
+	if (!ShaderCookPlanExecutor::Execute(settings, plan, result.cacheDirectory, nodeResults, result.errorMessage))
 	{
-		if (!ShaderCookNodeExecutor::Execute(
-		        settings,
-		        node,
-		        plan,
-		        backendPool,
-		        artifactStore,
-		        counters,
-		        result.errorMessage))
-		{
-			result.packages.clear();
-			return result;
-		}
+		result.packages.clear();
+		return result;
+	}
+	for (std::size_t index = 0; index < nodeResults.size(); ++index)
+	{
+		ShaderCookNodeResult& nodeResult = nodeResults[index];
+		plan.packageContexts[plan.nodes[index].packageIndex].compiledStages.push_back(std::move(nodeResult.CompiledStage));
+		++counters.processedNodeCount;
+		counters.cacheHitCount += nodeResult.CacheHit ? 1 : 0;
+		counters.cacheMissCount += nodeResult.CacheHit ? 0 : 1;
+		counters.backendInvocationCount += nodeResult.BackendInvoked ? 1 : 0;
 	}
 	result.backendInvocationCount = counters.backendInvocationCount;
 	result.cacheHitCount = counters.cacheHitCount;

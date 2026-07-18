@@ -120,6 +120,7 @@ target_link_libraries(SparkleApplicationEditor
         SparklePlatform
         SparkleGameFramework
         SparkleEditor
+        SparkleTasks
         imgui
 )
 

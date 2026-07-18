@@ -2,21 +2,24 @@
 
 #include <cstdint>
 #include <functional>
-#include <future>
+#include <memory>
 #include <string>
 
-#include "ShaderRecook/ShaderCompilerProcess.h"
 #include "ShaderRecook/ShaderRecookPublication.h"
 #include "ShaderRecook/ShaderRecookRequest.h"
 #include "ShaderRecook/ShaderSourceChangeTracker.h"
 
 class Renderer;
 struct CookedShaderReloadResult;
+struct ShaderRecookExecutionResult;
+class ShaderRecookExecutionService;
 
 class ShaderRecookCoordinator final
 {
   public:
 	using StatusHandler = std::function<void(std::string)>;
+	ShaderRecookCoordinator();
+	~ShaderRecookCoordinator();
 
 	void SetStatusHandler(StatusHandler handler);
 	void RequestRecook() noexcept;
@@ -26,16 +29,8 @@ class ShaderRecookCoordinator final
 	static std::string DescribeRequest(const ShaderRecookRequest& request);
 
   private:
-	struct ProcessResult final
-	{
-		std::uint64_t RequestId = 0;
-		std::uint64_t BaselinePublicationId = 0;
-		ShaderRecookRequest Request;
-		ShaderCompilerProcessResult Process;
-	};
-
 	void StartRecook(ShaderRecookRequest request) noexcept;
-	void CompleteRecook(Renderer& renderer, ProcessResult result) noexcept;
+	void CompleteRecook(Renderer& renderer, ShaderRecookExecutionResult result) noexcept;
 	CookedShaderReloadResult ReloadCookedShaders(Renderer& renderer) noexcept;
 	void HandleManualReload(Renderer& renderer) noexcept;
 	void HandleExternalRecookPublication(Renderer& renderer) noexcept;
@@ -48,19 +43,11 @@ class ShaderRecookCoordinator final
 	    ShaderRecookPublication& outPublication,
 	    std::string& outDiagnostic) noexcept;
 
-	static ProcessResult RunRecookProcess(
-	    std::uint64_t requestId,
-	    std::uint64_t baselinePublicationId,
-	    ShaderRecookRequest request) noexcept;
-
 	StatusHandler m_statusHandler;
-	std::future<ProcessResult> m_recookFuture;
+	std::unique_ptr<ShaderRecookExecutionService> m_executionService;
 	std::uint64_t m_nextRequestId = 1;
-	std::uint64_t m_activeRequestId = 0;
 	std::uint64_t m_latestRequestId = 0;
-	std::uint64_t m_activeBaselinePublicationId = 0;
 	std::uint64_t m_lastAcceptedPublicationId = 0;
-	ShaderRecookRequest m_activeRequest;
 	ShaderRecookRequest m_queuedRequest;
 	std::string m_lastPublicationDiagnostic;
 	ShaderSourceChangeTracker m_shaderSourceChangeTracker;

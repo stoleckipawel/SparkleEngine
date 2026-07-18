@@ -3,8 +3,10 @@
 #include "ShaderRecook/ShaderRecookRequest.h"
 
 #include <filesystem>
+#include <stop_token>
 #include <string>
 #include <string_view>
+#include <vector>
 
 struct ShaderCompilerProcessResult final
 {
@@ -21,7 +23,7 @@ class ShaderCompilerProcess final
   public:
 	ShaderCompilerProcess() = delete;
 
-	static ShaderCompilerProcessResult RunCook(const ShaderRecookRequest& request) noexcept;
+	static ShaderCompilerProcessResult RunCook(const ShaderRecookRequest& request, std::stop_token cancellation = {}) noexcept;
 	static ShaderCompilerProcessResult RunToolCommand(std::string_view command) noexcept;
 
   private:
@@ -30,5 +32,6 @@ class ShaderCompilerProcess final
 	static ShaderCompilerProcessResult RunCommand(
 	    const std::filesystem::path& executablePath,
 	    const std::filesystem::path& workingDirectory,
-	    std::string_view arguments) noexcept;
+	    std::vector<std::string> arguments,
+	    std::stop_token cancellation) noexcept;
 };

@@ -1,92 +1,18 @@
 #include "AssetCookerToolProcess.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Process/ChildProcess.h"
 #include "ToolConsole.h"
 
-#include <cwctype>
 #include <iostream>
-
-#if defined(_WIN32)
-	#define NOMINMAX
-	#ifndef WIN32_LEAN_AND_MEAN
-		#define WIN32_LEAN_AND_MEAN
-	#endif
-	#include <Windows.h>
-#else
-	#include <cstdlib>
-#endif
-
-static std::wstring AssetCookerQuoteCommandArgument(const std::wstring& argument)
-{
-	if (argument.empty())
-	{
-		return L"\"\"";
-	}
-
-	bool needsQuotes = false;
-	for (const wchar_t character : argument)
-	{
-		if (std::iswspace(character) || character == L'\"')
-		{
-			needsQuotes = true;
-			break;
-		}
-	}
-
-	if (!needsQuotes)
-	{
-		return argument;
-	}
-
-	std::wstring quotedArgument;
-	quotedArgument.push_back(L'\"');
-	int backslashCount = 0;
-	for (const wchar_t character : argument)
-	{
-		if (character == L'\\')
-		{
-			++backslashCount;
-			continue;
-		}
-
-		if (character == L'\"')
-		{
-			quotedArgument.append(static_cast<std::size_t>(backslashCount * 2 + 1), L'\\');
-			quotedArgument.push_back(character);
-			backslashCount = 0;
-			continue;
-		}
-
-		quotedArgument.append(static_cast<std::size_t>(backslashCount), L'\\');
-		backslashCount = 0;
-		quotedArgument.push_back(character);
-	}
-
-	quotedArgument.append(static_cast<std::size_t>(backslashCount * 2), L'\\');
-	quotedArgument.push_back(L'\"');
-	return quotedArgument;
-}
-
-static std::wstring AssetCookerBuildCommandLine(
-    const std::filesystem::path& executablePath,
-    const std::vector<std::wstring>& arguments)
-{
-	std::wstring commandLine = AssetCookerQuoteCommandArgument(executablePath.wstring());
-	for (const std::wstring& argument : arguments)
-	{
-		commandLine.push_back(L' ');
-		commandLine += AssetCookerQuoteCommandArgument(argument);
-	}
-	return commandLine;
-}
 
 int AssetCookerToolProcess::Run(
     const std::filesystem::path& executablePath,
-    const std::vector<std::wstring>& arguments,
-    const std::filesystem::path& workingDirectory)
+    const std::vector<std::string>& arguments,
+    const std::filesystem::path& workingDirectory,
+    std::stop_token cancellation)
 {
 	static const auto toolProcessLogger = Logging::GetOrCreateLogger("Tools.AssetCooker.Process");
-
 	ToolConsole::Message(
 	    std::cout,
 	    ToolConsoleSeverity::Info,
@@ -95,46 +21,23 @@ int AssetCookerToolProcess::Run(
 	     ToolConsole::PathField("path", executablePath),
 	     ToolConsole::PathField("workingDir", workingDirectory)});
 
-#if defined(_WIN32)
-	std::wstring commandLine = AssetCookerBuildCommandLine(executablePath, arguments);
-	STARTUPINFOW startupInfo = {};
-	startupInfo.cb = sizeof(startupInfo);
-	PROCESS_INFORMATION processInformation = {};
-
-	const std::wstring workingDirectoryString = workingDirectory.wstring();
-	const BOOL createdProcess = CreateProcessW(
-	    nullptr,
-	    commandLine.data(),
-	    nullptr,
-	    nullptr,
-	    TRUE,
-	    0,
-	    nullptr,
-	    workingDirectoryString.c_str(),
-	    &startupInfo,
-	    &processInformation);
-
-	if (!createdProcess)
+	Process::ChildProcessResult result = Process::ChildProcess::Run(Process::ChildProcessRequest{
+	    .ExecutablePath = executablePath,
+	    .Arguments = arguments,
+	    .WorkingDirectory = workingDirectory,
+	    .OutputCallback = [](std::string_view output) { std::cout.write(output.data(), static_cast<std::streamsize>(output.size())); },
+	    .Cancellation = cancellation});
+	if (!result.Launched)
 	{
 		ToolConsole::Message(
 		    std::cerr,
 		    ToolConsoleSeverity::Error,
 		    "Failed to launch tool",
-		    {ToolConsole::QuotedField("tool", executablePath.filename().string()), ToolConsole::PathField("path", executablePath)});
-		SPDLOG_LOGGER_ERROR(toolProcessLogger, "Failed to launch process '{}'", executablePath.string());
+		    {ToolConsole::QuotedField("tool", executablePath.filename().string()),
+		     ToolConsole::PathField("path", executablePath),
+		     ToolConsole::QuotedField("reason", result.FailureReason)});
+		SPDLOG_LOGGER_ERROR(toolProcessLogger, "Failed to launch process '{}': {}", executablePath.string(), result.FailureReason);
 		return 1;
 	}
-
-	WaitForSingleObject(processInformation.hProcess, INFINITE);
-	DWORD exitCode = 1;
-	GetExitCodeProcess(processInformation.hProcess, &exitCode);
-	CloseHandle(processInformation.hThread);
-	CloseHandle(processInformation.hProcess);
-	return static_cast<int>(exitCode);
-#else
-	const std::wstring commandLine = AssetCookerBuildCommandLine(executablePath, arguments);
-	const std::string narrowCommandLine(commandLine.begin(), commandLine.end());
-	const int exitCode = std::system(narrowCommandLine.c_str());
-	return exitCode;
-#endif
+	return result.ExitCode;
 }

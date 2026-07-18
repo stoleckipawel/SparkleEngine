@@ -25,7 +25,7 @@ namespace SparkleLauncher
 
 	static void AddEnvironment(LaunchOperationPlan& plan, std::string name, std::string value)
 	{
-		EnvironmentOverride overrideValue;
+		Process::EnvironmentOverride overrideValue;
 		overrideValue.Name = std::move(name);
 		overrideValue.Value = std::move(value);
 		plan.Environment.push_back(std::move(overrideValue));
@@ -295,7 +295,7 @@ namespace SparkleLauncher
 		{
 			dryRun << "\n  " << step.DisplayName << ": " << step.DisplayCommandLine;
 			dryRun << "\n    Working directory: " << plan.WorkingDirectory.string();
-			for (const EnvironmentOverride& overrideValue : plan.Environment)
+			for (const Process::EnvironmentOverride& overrideValue : plan.Environment)
 			{
 				dryRun << "\n    Env: " << overrideValue.Name << "=" << overrideValue.Value;
 			}

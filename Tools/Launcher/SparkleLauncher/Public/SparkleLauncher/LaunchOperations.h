@@ -70,7 +70,7 @@ namespace SparkleLauncher
 		std::string TargetName;
 		std::filesystem::path ExecutablePath;
 		std::filesystem::path WorkingDirectory;
-		std::vector<EnvironmentOverride> Environment;
+		std::vector<Process::EnvironmentOverride> Environment;
 		std::vector<LaunchOperationStep> Steps;
 		std::vector<std::string> PlannedEffects;
 		std::vector<std::string> ReadinessMessages;

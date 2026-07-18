@@ -12,6 +12,7 @@
 #include "ToolConsole.h"
 
 #include <iostream>
+#include <charconv>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -70,6 +71,7 @@ void CookShadersCommand::PrintHelp(std::ostream& output)
 	       << "  --backend <name>            Select a compiler backend, or auto.\n"
 	       << "  --debug-artifacts <dir>     Write debug artifact bundles outside runtime packages.\n"
 	       << "  --analysis <pass[,pass]>    Run optional analysis report passes such as cooked-shader-stats.\n"
+	       << "  --parallel-compiles <1-8>   Bound concurrent compiler sessions. Defaults to 4; use 1 as the serial oracle.\n"
 	       << "  --debug-info                Request backend debug information and symbol emission where supported.\n"
 	       << "  --disable-optimizations     Build shaders without backend optimization passes.\n"
 	       << "  --warnings-as-errors <on|off>  Treat shader warnings as hard errors. Defaults to on.\n"
@@ -207,6 +209,26 @@ bool CookShadersCommand::TryParseArguments(
 			}
 
 			AppendAnalysisPasses(args[index + 1], outSettings.analysisPasses);
+			++index;
+			continue;
+		}
+
+		if (args[index] == "--parallel-compiles")
+		{
+			if (index + 1 >= args.size())
+			{
+				outErrorMessage = "Missing value after --parallel-compiles";
+				return false;
+			}
+			std::uint32_t count = 0;
+			const std::string_view value = args[index + 1];
+			const auto parsed = std::from_chars(value.data(), value.data() + value.size(), count);
+			if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() || count < 1 || count > 8)
+			{
+				outErrorMessage = "Expected a value from 1 through 8 after --parallel-compiles";
+				return false;
+			}
+			outSettings.maximumParallelCompiles = count;
 			++index;
 			continue;
 		}

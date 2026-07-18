@@ -84,6 +84,9 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherBackend.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherGuiApp.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherSettings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationRequestMapping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationExecution.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationService.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherActionHistoryModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCleanUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.cpp
@@ -115,6 +118,9 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherBackend.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherGuiApp.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherSettings.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationRequestMapping.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationExecution.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherOperationService.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherActionHistoryModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCleanUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.h
@@ -182,7 +188,7 @@ target_compile_definitions(SparkleLauncherCore
         SPARKLE_ENABLE_NVIDIA_STREAMLINE=$<BOOL:${SPARKLE_ENABLE_NVIDIA_STREAMLINE}>
 )
 
-target_link_libraries(SparkleLauncherCore PRIVATE SparkleCore)
+target_link_libraries(SparkleLauncherCore PUBLIC SparkleCore)
 
 add_executable(SparkleLauncher WIN32
     ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp
@@ -196,6 +202,7 @@ target_include_directories(SparkleLauncher
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets
@@ -206,6 +213,7 @@ target_link_libraries(SparkleLauncher
     PRIVATE
         SparkleLauncherCore
         SparkleCore
+        SparkleTasks
         Qt6::Widgets
 )
 

@@ -132,6 +132,7 @@ void EditorApplication::Shutdown()
 	}
 
 	m_ui.reset();
+	m_shaderRecookCoordinator.reset();
 	m_runtimeApplication->Shutdown();
 	m_isEditorSessionActive = false;
 }

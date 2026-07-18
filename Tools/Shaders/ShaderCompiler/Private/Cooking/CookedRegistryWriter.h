@@ -11,6 +11,6 @@ class CookedRegistryWriter final
   public:
 	static bool Write(
 	    std::span<const CookedShaderPackageOutput> packages,
-	    std::filesystem::path& outRegistryPath,
+	    const std::filesystem::path& storagePath,
 	    std::string& outErrorMessage);
 };

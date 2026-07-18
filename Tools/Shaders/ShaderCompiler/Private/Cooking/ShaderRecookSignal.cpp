@@ -10,16 +10,18 @@
 #include <chrono>
 
 bool ShaderRecookSignal::Write(
-    const std::filesystem::path& cacheDirectory,
-    const std::filesystem::path& registryPath,
+    const std::filesystem::path& registryReadPath,
+    const std::filesystem::path& publishedRegistryPath,
+    const std::filesystem::path& signalStoragePath,
+    const std::filesystem::path& publishedSignalPath,
     ShaderRecookSignalResult& outResult,
     std::string& outErrorMessage)
 {
 	outResult = {};
-	outResult.signalPath = Paths::ShaderRecookSignal(cacheDirectory);
+	outResult.signalPath = publishedSignalPath;
 
 	std::vector<std::uint8_t> registryBytes;
-	if (!Files::TryReadAllBytes(registryPath, registryBytes, outErrorMessage))
+	if (!Files::TryReadAllBytes(registryReadPath, registryBytes, outErrorMessage))
 	{
 		outErrorMessage = "Failed to read shader registry for recook publication - " + outErrorMessage;
 		return false;
@@ -35,11 +37,11 @@ bool ShaderRecookSignal::Write(
 	writer.WriteString("status", "succeeded");
 	writer.WriteUInt64("publicationId", static_cast<std::uint64_t>(nanoseconds));
 	writer.WriteUInt64("publishedAtUnixMs", static_cast<std::uint64_t>(milliseconds));
-	writer.WriteString("registry", registryPath.generic_string());
+	writer.WriteString("registry", publishedRegistryPath.generic_string());
 	writer.WriteHexUInt64("registryHash", outResult.registryHash);
 	const std::string contents = writer.Finish();
 
-	if (!Files::TryWriteAllTextAtomic(outResult.signalPath, contents, outErrorMessage))
+	if (!Files::TryWriteAllTextAtomic(signalStoragePath, contents, outErrorMessage))
 	{
 		return false;
 	}

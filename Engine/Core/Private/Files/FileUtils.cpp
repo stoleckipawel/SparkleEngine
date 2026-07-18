@@ -5,9 +5,36 @@
 #include <format>
 #include <fstream>
 #include <limits>
+#include <unordered_set>
 
 namespace Files
 {
+	namespace
+	{
+		struct PublicationState final
+		{
+			FilePublication File;
+			std::filesystem::path BackupPath;
+			bool HadPublishedFile = false;
+			bool Published = false;
+		};
+
+		void RollbackPublication(std::vector<PublicationState>& states) noexcept
+		{
+			for (auto state = states.rbegin(); state != states.rend(); ++state)
+			{
+				std::error_code ec;
+				if (state->Published)
+					std::filesystem::remove(state->File.PublishedPath, ec);
+				if (state->HadPublishedFile)
+				{
+					ec.clear();
+					std::filesystem::rename(state->BackupPath, state->File.PublishedPath, ec);
+				}
+			}
+		}
+	}
+
 	static bool TryOpenOutput(
 	    const std::filesystem::path& path,
 	    const std::ios::openmode mode,
@@ -253,6 +280,70 @@ namespace Files
 		CleanupTemporaryFile(temporaryPath);
 		outErrorMessage = std::format("Failed to move temporary file '{}' into place as '{}'", temporaryPath.string(), finalPath.string());
 		return false;
+	}
+
+	bool TryPublishFileSet(std::span<const FilePublication> files, std::string& outErrorMessage)
+	{
+		std::vector<PublicationState> states;
+		states.reserve(files.size());
+		std::unordered_set<std::string> destinations;
+		for (const FilePublication& file : files)
+		{
+			std::error_code ec;
+			if (file.StagedPath.empty() || file.PublishedPath.empty() || !std::filesystem::is_regular_file(file.StagedPath, ec) || ec)
+			{
+				outErrorMessage = std::format("Publication input '{}' is missing or is not a file", file.StagedPath.string());
+				return false;
+			}
+			const std::string destination = file.PublishedPath.lexically_normal().generic_string();
+			if (!destinations.insert(destination).second)
+			{
+				outErrorMessage = std::format("Publication destination '{}' appears more than once", file.PublishedPath.string());
+				return false;
+			}
+			PublicationState& state = states.emplace_back();
+			state.File = file;
+			state.BackupPath = BuildTemporaryPath(file.PublishedPath, ".previous-generation");
+		}
+
+		for (PublicationState& state : states)
+		{
+			std::error_code ec;
+			std::filesystem::remove(state.BackupPath, ec);
+			ec.clear();
+			state.HadPublishedFile = std::filesystem::exists(state.File.PublishedPath, ec) && !ec;
+			if (state.HadPublishedFile)
+			{
+				std::filesystem::rename(state.File.PublishedPath, state.BackupPath, ec);
+				if (ec)
+				{
+					RollbackPublication(states);
+					outErrorMessage =
+					    std::format("Failed to preserve active output '{}' before publication", state.File.PublishedPath.string());
+					return false;
+				}
+			}
+			ec.clear();
+			std::filesystem::rename(state.File.StagedPath, state.File.PublishedPath, ec);
+			if (ec)
+			{
+				RollbackPublication(states);
+				outErrorMessage = std::format(
+				    "Failed to publish staged output '{}' as '{}'",
+				    state.File.StagedPath.string(),
+				    state.File.PublishedPath.string());
+				return false;
+			}
+			state.Published = true;
+		}
+
+		for (const PublicationState& state : states)
+		{
+			std::error_code ec;
+			std::filesystem::remove(state.BackupPath, ec);
+		}
+		outErrorMessage.clear();
+		return true;
 	}
 
 	void CleanupTemporaryFile(const std::filesystem::path& temporaryPath, std::ofstream* output) noexcept

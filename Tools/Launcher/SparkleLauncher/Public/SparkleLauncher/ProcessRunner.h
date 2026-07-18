@@ -1,6 +1,7 @@
 #pragma once
 
-#include <atomic>
+#include "Core/Public/Process/ChildProcess.h"
+
 #include <chrono>
 #include <filesystem>
 #include <functional>
@@ -10,22 +11,6 @@
 
 namespace SparkleLauncher
 {
-	struct EnvironmentOverride
-	{
-		std::string Name;
-		std::string Value;
-	};
-
-	class CancellationToken
-	{
-	public:
-		void RequestCancel() noexcept;
-		bool IsCancellationRequested() const noexcept;
-
-	private:
-		std::atomic_bool m_cancelRequested{false};
-	};
-
 	using ProcessOutputCallback = std::function<void(std::string_view)>;
 
 	struct ProcessRequest
@@ -33,10 +18,10 @@ namespace SparkleLauncher
 		std::filesystem::path ExecutablePath;
 		std::vector<std::string> Arguments;
 		std::filesystem::path WorkingDirectory;
-		std::vector<EnvironmentOverride> Environment;
+		std::vector<Process::EnvironmentOverride> Environment;
 		std::filesystem::path LogPath;
 		ProcessOutputCallback OutputCallback;
-		const CancellationToken* Cancellation = nullptr;
+		std::stop_token Cancellation;
 	};
 
 	struct ProcessResult

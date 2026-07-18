@@ -38,6 +38,7 @@ class SPARKLE_TASKS_API TaskExecutionContext final
 	std::uint64_t GetExecutionGeneration() const noexcept { return m_executionGeneration; }
 	TaskLane GetLane() const noexcept { return m_lane; }
 	bool IsCancellationRequested() const noexcept { return m_cancellation.stop_requested(); }
+	std::stop_token GetCancellationToken() const noexcept { return m_cancellation; }
 	bool HasUserData() const noexcept { return m_userData != nullptr; }
 	bool HasOwnedUserData() const noexcept { return m_userOwner != nullptr; }
 
@@ -45,8 +46,6 @@ class SPARKLE_TASKS_API TaskExecutionContext final
 	friend class TaskExecutor;
 	friend class TaskEvent;
 	friend struct TaskDetail::TaskExecutionContextAccess;
-
-	std::stop_token GetCancellationToken() const noexcept { return m_cancellation; }
 
 	void* m_userData = nullptr;
 	const std::type_info* m_userType = nullptr;

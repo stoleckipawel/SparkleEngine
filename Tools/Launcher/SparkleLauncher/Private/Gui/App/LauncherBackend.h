@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SparkleLauncher/ProcessRunner.h"
+#include "SparkleLauncher/OperationModel.h"
 
 #include <QtCore/QObject>
 #include <QtCore/QString>
@@ -12,6 +13,7 @@
 
 namespace SparkleLauncher
 {
+	class LauncherOperationService;
 	enum class LauncherOperationCategory
 	{
 		Workspace,
@@ -75,29 +77,37 @@ namespace SparkleLauncher
 	{
 		Q_OBJECT
 
-	public:
+	  public:
 		using ProcessRunnerFactory = std::function<std::unique_ptr<IProcessRunner>()>;
 
 		explicit LauncherBackend(QObject* parent = nullptr);
 		LauncherBackend(ProcessRunnerFactory processRunnerFactory, QObject* parent = nullptr);
+		~LauncherBackend() override;
 
 		const QVector<LauncherOperationDescriptor>& Operations() const;
 
 		void RequestOperationPreview(const LauncherOperationRequest& request);
 		void RunOperation(LauncherOperationRequest request);
 
-	signals:
+	  signals:
 		void OperationPreviewReady(const QString& operationId, const QString& title, const QString& previewText, bool canRun);
 		void OperationPreviewFailed(const QString& operationId, const QString& message);
 		void OperationStarted(const QString& runId, const QString& operationId, const QString& title);
 		void OperationOutputReceived(const QString& runId, const QString& operationId, const QString& outputText);
-		void OperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode);
+		void OperationFinished(
+		    const QString& runId,
+		    const QString& operationId,
+		    const QString& title,
+		    const QString& statusText,
+		    int exitCode);
 
-	private:
+	  private:
 		void PopulateOperationCatalog();
+		void QueueOperationOutput(QString runId, QString operationId, QString outputText);
+		void QueueOperationFinished(QString runId, QString operationId, QString title, OperationRecord record);
 		const LauncherOperationDescriptor* FindOperation(const QString& operationId) const;
 
 		QVector<LauncherOperationDescriptor> m_operations;
-		ProcessRunnerFactory m_processRunnerFactory;
+		std::unique_ptr<LauncherOperationService> m_operationService;
 	};
 }

@@ -3,12 +3,19 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
 namespace Files
 {
+	struct FilePublication final
+	{
+		std::filesystem::path StagedPath;
+		std::filesystem::path PublishedPath;
+	};
+
 	bool TryReadAllBytes(const std::filesystem::path& path, std::vector<std::uint8_t>& outBytes, std::string& outErrorMessage);
 	bool TryWriteAllBytes(const std::filesystem::path& path, const std::vector<std::uint8_t>& bytes, std::string& outErrorMessage);
 	bool TryWriteAllText(const std::filesystem::path& path, std::string_view text, std::string& outErrorMessage);
@@ -24,6 +31,7 @@ namespace Files
 	    const std::filesystem::path& temporaryPath,
 	    const std::filesystem::path& finalPath,
 	    std::string& outErrorMessage);
+	bool TryPublishFileSet(std::span<const FilePublication> files, std::string& outErrorMessage);
 	void CleanupTemporaryFile(const std::filesystem::path& temporaryPath, std::ofstream* output = nullptr) noexcept;
 	bool TryCloseOutput(std::ofstream& output, const std::filesystem::path& path, std::string& outErrorMessage);
 }

@@ -3,6 +3,7 @@
 #include "Backend/ShaderTarget.h"
 
 #include <filesystem>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -22,4 +23,5 @@ struct ShaderPackageCookSettings final
 	bool stripDebugInfo = true;
 	bool forceParameterStructMismatchForValidation = false;
 	bool forceMissingIncludeForValidation = false;
+	std::uint32_t maximumParallelCompiles = 4;
 };

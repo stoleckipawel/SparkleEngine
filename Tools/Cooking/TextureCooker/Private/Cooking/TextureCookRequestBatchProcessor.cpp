@@ -3,110 +3,102 @@
 #include "Cooking/TextureCookRequestBatchProcessor.h"
 
 #include "Constants/TextureCookerConstants.h"
-#include "Cooking/TextureAssetCooker.h"
+#include "Cooking/TextureCookBatchExecutor.h"
 
+#include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
-
 #include "ToolConsole.h"
 
 #include <iostream>
-#include <objbase.h>
 
-static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& request)
+namespace
 {
-	return ToolConsole::PathDisplayName(request.sourcePath);
+	constexpr std::size_t TextureCookMemoryBudget = 1024ull * 1024ull * 1024ull;
+
+	std::string RequestDisplayName(const TextureCookRequest& request)
+	{
+		return ToolConsole::PathDisplayName(request.sourcePath);
+	}
+
+	void CleanupStagedOutputs(const std::vector<TextureCookBatchItemResult>& results)
+	{
+		for (const TextureCookBatchItemResult& result : results)
+			if (!result.StagedOutputPath.empty())
+				Files::CleanupTemporaryFile(result.StagedOutputPath);
+	}
 }
 
-	TextureCookRequestBatchProcessor::ScopedComInitializer::~ScopedComInitializer()
+int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::path& requestFilePath) const
+{
+	std::string errorMessage;
+	std::vector<TextureCookRequest> requests;
+	if (!TryLoadRequests(requestFilePath, requests, errorMessage))
 	{
-		if (SUCCEEDED(m_result))
-		{
-			CoUninitialize();
-		}
+		ToolConsole::Message(
+		    std::cerr,
+		    ToolConsoleSeverity::Error,
+		    "Failed to load texture request file",
+		    {ToolConsole::PathField("requestFile", requestFilePath), ToolConsole::QuotedField("reason", errorMessage)});
+		return TextureCookerConstants::ExitLoadRequestFileFailed;
 	}
 
-	bool TextureCookRequestBatchProcessor::ScopedComInitializer::TryInitialize(std::string& outErrorMessage)
+	TextureCookBatchExecutionResult execution = TextureCookBatchExecutor::Execute(requests, TextureCookMemoryBudget);
+	bool succeeded = execution.Succeeded;
+	for (std::size_t index = 0; index < requests.size(); ++index)
 	{
-		m_result = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-		if (FAILED(m_result) && m_result != RPC_E_CHANGED_MODE)
+		const TextureCookBatchItemResult& result = execution.Items[index];
+		if (!result.Succeeded)
 		{
-			outErrorMessage = "failed to initialize COM for source texture loading";
-			return false;
-		}
-
-		outErrorMessage.clear();
-		return true;
-	}
-
-	int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::path& requestFilePath) const
-	{
-		std::string errorMessage;
-		ScopedComInitializer comInitializer;
-		if (!comInitializer.TryInitialize(errorMessage))
-		{
-			ToolConsole::Error(errorMessage);
-			return TextureCookerConstants::ExitComInitializationFailed;
-		}
-
-		std::vector<TextureCookRequest> requests;
-		if (!TryLoadRequests(requestFilePath, requests, errorMessage))
-		{
+			succeeded = false;
 			ToolConsole::Message(
 			    std::cerr,
 			    ToolConsoleSeverity::Error,
-			    "Failed to load texture request file",
-			    {ToolConsole::PathField("requestFile", requestFilePath), ToolConsole::QuotedField("reason", errorMessage)});
-			return TextureCookerConstants::ExitLoadRequestFileFailed;
+			    "Texture cook failed",
+			    {ToolConsole::Field("assetId", Formatting::FormatHexUInt64(requests[index].assetId)),
+			     ToolConsole::PathField("source", requests[index].sourcePath),
+			     ToolConsole::QuotedField("reason", result.Diagnostic)});
 		}
-
-		TextureAssetCooker cooker;
-		std::size_t cookedCount = 0;
-		for (std::size_t requestIndex = 0; requestIndex < requests.size(); ++requestIndex)
-		{
-			const TextureCookRequest& request = requests[requestIndex];
-			ToolConsole::Progress(
-			    std::cout,
-			    "Cooking",
-			    "texture",
-			    requestIndex + 1u,
-			    requests.size(),
-			    TextureCookerGetRequestDisplayName(request),
-			    {ToolConsole::Field("assetId", Formatting::FormatHexUInt64(request.assetId)),
-			     ToolConsole::Field("group", GetTextureGroupName(request.policy.textureGroup)),
-			     ToolConsole::Field("dimension", GetTextureDimensionName(request.policy.dimension)),
-			     ToolConsole::PathField("source", request.sourcePath),
-			     ToolConsole::PathField("output", request.outputPath)});
-
-			if (!TryProcessRequest(request, cooker, cookedCount, errorMessage))
-			{
-				ToolConsole::Error(errorMessage);
-				return TextureCookerConstants::ExitCookFailed;
-			}
-		}
-
-		return TextureCookerConstants::ExitSuccess;
 	}
-
-	bool TextureCookRequestBatchProcessor::TryLoadRequests(
-		const std::filesystem::path& requestFilePath,
-		std::vector<TextureCookRequest>& outRequests,
-		std::string& outErrorMessage)
+	if (!succeeded)
 	{
-		return LoadTextureCookRequestList(requestFilePath, outRequests, outErrorMessage);
+		CleanupStagedOutputs(execution.Items);
+		return TextureCookerConstants::ExitCookFailed;
 	}
 
-	bool TextureCookRequestBatchProcessor::TryProcessRequest(
-		const TextureCookRequest& request,
-		TextureAssetCooker& cooker,
-		std::size_t& outCookedCount,
-		std::string& outErrorMessage) const
+	std::vector<Files::FilePublication> publication;
+	publication.reserve(requests.size());
+	for (std::size_t index = 0; index < requests.size(); ++index)
+		publication.push_back({execution.Items[index].StagedOutputPath, requests[index].outputPath});
+	if (!Files::TryPublishFileSet(publication, errorMessage))
 	{
-		if (!cooker.Cook(request, outErrorMessage))
-		{
-			outErrorMessage = "failed to cook texture '" + request.sourcePath.string() + "' - " + outErrorMessage;
-			return false;
-		}
-		++outCookedCount;
-		outErrorMessage.clear();
-		return true;
+		CleanupStagedOutputs(execution.Items);
+		ToolConsole::Error("Failed to publish texture cook generation: " + errorMessage);
+		return TextureCookerConstants::ExitCookFailed;
 	}
+
+	for (std::size_t index = 0; index < requests.size(); ++index)
+	{
+		ToolConsole::Progress(
+		    std::cout,
+		    "Cooked",
+		    "texture",
+		    index + 1,
+		    requests.size(),
+		    RequestDisplayName(requests[index]),
+		    {ToolConsole::Field("assetId", Formatting::FormatHexUInt64(requests[index].assetId)),
+		     ToolConsole::PathField("output", requests[index].outputPath)});
+	}
+
+	ToolConsole::Info(
+	    "Texture cook peak admitted decompressed bytes: " + std::to_string(execution.PeakAdmittedBytes) +
+	    " (budget=" + std::to_string(TextureCookMemoryBudget) + ").");
+	return TextureCookerConstants::ExitSuccess;
+}
+
+bool TextureCookRequestBatchProcessor::TryLoadRequests(
+    const std::filesystem::path& requestFilePath,
+    std::vector<TextureCookRequest>& outRequests,
+    std::string& outErrorMessage)
+{
+	return LoadTextureCookRequestList(requestFilePath, outRequests, outErrorMessage);
+}

@@ -2,15 +2,18 @@
 #include "Core/Public/FileSystemUtils.h"
 
 #include "ShaderRecook/ShaderRecookCoordinator.h"
+#include "ShaderRecook/ShaderRecookExecutionService.h"
 
 #include "Renderer.h"
 #include "ShaderRecook/ShaderRecookPublicationReader.h"
-#include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <algorithm>
-#include <exception>
 #include <format>
 #include <utility>
+
+ShaderRecookCoordinator::ShaderRecookCoordinator() : m_executionService(std::make_unique<ShaderRecookExecutionService>()) {}
+
+ShaderRecookCoordinator::~ShaderRecookCoordinator() = default;
 
 void ShaderRecookCoordinator::SetStatusHandler(StatusHandler handler)
 {
@@ -55,42 +58,19 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 		HandleManualReload(renderer);
 	}
 
-	if (!m_hasActiveRecook || !m_recookFuture.valid())
+	if (!m_hasActiveRecook)
 	{
 		HandleExternalRecookPublication(renderer);
 		return;
 	}
 
-	using namespace std::chrono_literals;
-	if (m_recookFuture.wait_for(0ms) != std::future_status::ready)
+	ShaderRecookExecutionResult result;
+	if (!m_executionService->TryConsume(result))
 	{
 		return;
 	}
 
-	ProcessResult result;
-	try
-	{
-		result = m_recookFuture.get();
-	}
-	catch (const std::exception& exception)
-	{
-		result.RequestId = m_activeRequestId;
-		result.BaselinePublicationId = m_activeBaselinePublicationId;
-		result.Request = m_activeRequest;
-		result.Process.Output = exception.what();
-	}
-	catch (...)
-	{
-		result.RequestId = m_activeRequestId;
-		result.BaselinePublicationId = m_activeBaselinePublicationId;
-		result.Request = m_activeRequest;
-		result.Process.Output = "Unknown shader recook worker failure.";
-	}
-
 	m_hasActiveRecook = false;
-	m_activeRequestId = 0;
-	m_activeBaselinePublicationId = 0;
-	m_activeRequest = {};
 	CompleteRecook(renderer, std::move(result));
 
 	if (m_hasQueuedRecook)
@@ -109,42 +89,25 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 
 void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 {
-	try
+	const std::uint64_t requestId = m_nextRequestId++;
+	const std::uint64_t baselinePublicationId = ReadCurrentPublicationId();
+	std::string errorMessage;
+	if (!m_executionService->Start(requestId, baselinePublicationId, request, errorMessage))
 	{
-		const std::uint64_t requestId = m_nextRequestId++;
-		const std::uint64_t baselinePublicationId = ReadCurrentPublicationId();
-		m_activeRequestId = requestId;
-		m_latestRequestId = requestId;
-		m_activeBaselinePublicationId = baselinePublicationId;
-		m_activeRequest = request;
-		m_hasActiveRecook = true;
-		m_recookFuture =
-		    std::async(std::launch::async, &ShaderRecookCoordinator::RunRecookProcess, requestId, baselinePublicationId, request);
-
-		PublishStatus(
-		    std::format(
-		        "Shader recook #{} started for {} through the shader compiler process (baselinePublicationId={}).",
-		        requestId,
-		        DescribeRequest(request),
-		        baselinePublicationId));
+		PublishStatus("Shader recook failed before launch: " + errorMessage);
+		return;
 	}
-	catch (const std::exception& exception)
-	{
-		m_hasActiveRecook = false;
-		m_activeRequestId = 0;
-		m_activeBaselinePublicationId = 0;
-		PublishStatus(std::string("Shader recook failed before launch: ") + exception.what());
-	}
-	catch (...)
-	{
-		m_hasActiveRecook = false;
-		m_activeRequestId = 0;
-		m_activeBaselinePublicationId = 0;
-		PublishStatus("Shader recook failed before launch with an unknown error.");
-	}
+	m_latestRequestId = requestId;
+	m_hasActiveRecook = true;
+	PublishStatus(
+	    std::format(
+	        "Shader recook #{} started for {} through the shader compiler process (baselinePublicationId={}).",
+	        requestId,
+	        DescribeRequest(request),
+	        baselinePublicationId));
 }
 
-void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ProcessResult result) noexcept
+void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExecutionResult result) noexcept
 {
 	if (result.RequestId != m_latestRequestId)
 	{
@@ -399,18 +362,4 @@ bool ShaderRecookCoordinator::TryAcceptFreshPublication(
 	outPublication = publication;
 	outDiagnostic.clear();
 	return true;
-}
-
-ShaderRecookCoordinator::ProcessResult ShaderRecookCoordinator::RunRecookProcess(
-    std::uint64_t requestId,
-    std::uint64_t baselinePublicationId,
-    ShaderRecookRequest request) noexcept
-{
-	Threading::SetCurrentThreadRole("Sparkle.Tool.ShaderRecook");
-	ProcessResult result;
-	result.RequestId = requestId;
-	result.BaselinePublicationId = baselinePublicationId;
-	result.Request = request;
-	result.Process = ShaderCompilerProcess::RunCook(request);
-	return result;
 }

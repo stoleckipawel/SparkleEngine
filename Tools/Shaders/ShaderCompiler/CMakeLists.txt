@@ -79,6 +79,7 @@ target_link_libraries(ShaderCompiler
         ToolConsoleSupport
         ShaderContracts
         SparkleCore
+        SparkleTasks
         SparkleRHI
         SparkleRendererShaderRegistrations
         ${DXC_IMPORT_LIBRARY}

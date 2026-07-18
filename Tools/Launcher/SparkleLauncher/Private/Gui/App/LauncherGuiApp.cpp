@@ -11,7 +11,6 @@
 #include <QtCore/QDir>
 #include <QtCore/QObject>
 #include <QtCore/QProcess>
-#include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QtGui/QWindow>
 #include <QtWidgets/QApplication>
@@ -74,48 +73,30 @@ namespace SparkleLauncher
 		return std::nullopt;
 	}
 
-	static bool AreEquivalentPaths(const std::filesystem::path& left, const std::filesystem::path& right)
-	{
-		std::error_code errorCode;
-		if (std::filesystem::equivalent(left, right, errorCode))
-		{
-			return true;
-		}
-
-		errorCode.clear();
-		const std::filesystem::path normalizedLeft = std::filesystem::weakly_canonical(left, errorCode);
-		if (errorCode)
-		{
-			return false;
-		}
-
-		errorCode.clear();
-		const std::filesystem::path normalizedRight = std::filesystem::weakly_canonical(right, errorCode);
-		if (errorCode)
-		{
-			return false;
-		}
-
-		return normalizedLeft == normalizedRight;
-	}
-
 	static bool TryStartShadowLauncher(const std::filesystem::path& repositoryRoot, QString& outError)
 	{
 		const std::filesystem::path currentDirectory = std::filesystem::path(QCoreApplication::applicationDirPath().toStdString());
-		const std::filesystem::path shadowDirectory = GetLauncherStateDirectory(repositoryRoot) / "Live";
-		if (AreEquivalentPaths(currentDirectory, shadowDirectory))
+		const std::filesystem::path shadowRoot = GetLauncherStateDirectory(repositoryRoot) / "Live";
+		const std::filesystem::path relativeToShadow = currentDirectory.lexically_relative(shadowRoot);
+		if (!relativeToShadow.empty() && *relativeToShadow.begin() != "..")
 		{
 			return false;
 		}
 
 		const std::filesystem::path currentExecutable = std::filesystem::path(QCoreApplication::applicationFilePath().toStdString());
+		std::error_code errorCode;
+		const auto writeTime = std::filesystem::last_write_time(currentExecutable, errorCode);
+		if (errorCode)
+		{
+			outError = QStringLiteral("Launcher executable identity failed: %1").arg(QString::fromStdString(errorCode.message()));
+			return false;
+		}
+		const std::filesystem::path shadowDirectory = shadowRoot / ("Generation-" + std::to_string(writeTime.time_since_epoch().count()));
 		const std::filesystem::path shadowExecutable = shadowDirectory / currentExecutable.filename();
 
-		std::error_code errorCode;
-		for (int attempt = 0; attempt < 15; ++attempt)
+		errorCode.clear();
+		if (!std::filesystem::exists(shadowExecutable, errorCode))
 		{
-			errorCode.clear();
-			std::filesystem::remove_all(shadowDirectory, errorCode);
 			errorCode.clear();
 			std::filesystem::create_directories(shadowDirectory, errorCode);
 			if (!errorCode)
@@ -126,19 +107,15 @@ namespace SparkleLauncher
 				    shadowDirectory,
 				    std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing,
 				    errorCode);
-				if (!errorCode)
-				{
-					break;
-				}
 			}
-
-			if (attempt == 14)
+			if (errorCode)
 			{
-				outError = QStringLiteral("Launcher shadow copy failed: %1").arg(QString::fromStdString(errorCode.message()));
+				const std::string failure = errorCode.message();
+				errorCode.clear();
+				std::filesystem::remove_all(shadowDirectory, errorCode);
+				outError = QStringLiteral("Launcher shadow copy failed: %1").arg(QString::fromStdString(failure));
 				return false;
 			}
-
-			QThread::msleep(150);
 		}
 
 		QStringList arguments = QCoreApplication::arguments();
@@ -188,24 +165,36 @@ namespace SparkleLauncher
 			startupNotice = QString::fromStdString("Repository discovery failed: " + repositoryError);
 		}
 
-		QTimer::singleShot(0, &application, [repositoryRoot, startupNotice]() {
-			auto* settings = new LauncherSettings();
-			auto* projectModel = new LauncherProjectModel();
-			auto* backend = new LauncherBackend();
-			auto* mainWindow = new LauncherMainWindow(repositoryRoot, *projectModel, *settings, *backend);
-			mainWindow->SetStartupNotice(startupNotice);
-			ForceShowWindow(*mainWindow);
-			QTimer::singleShot(0, mainWindow, [mainWindow]() {
-				ForceShowWindow(*mainWindow);
-			});
-			QTimer::singleShot(250, mainWindow, [mainWindow]() {
-				ForceShowWindow(*mainWindow);
-			});
+		QTimer::singleShot(
+		    0,
+		    &application,
+		    [repositoryRoot, startupNotice]()
+		    {
+			    auto* settings = new LauncherSettings();
+			    auto* projectModel = new LauncherProjectModel();
+			    auto* backend = new LauncherBackend();
+			    auto* mainWindow = new LauncherMainWindow(repositoryRoot, *projectModel, *settings, *backend);
+			    mainWindow->SetStartupNotice(startupNotice);
+			    ForceShowWindow(*mainWindow);
+			    QTimer::singleShot(
+			        0,
+			        mainWindow,
+			        [mainWindow]()
+			        {
+				        ForceShowWindow(*mainWindow);
+			        });
+			    QTimer::singleShot(
+			        250,
+			        mainWindow,
+			        [mainWindow]()
+			        {
+				        ForceShowWindow(*mainWindow);
+			        });
 
-			QObject::connect(mainWindow, &QObject::destroyed, settings, &QObject::deleteLater);
-			QObject::connect(mainWindow, &QObject::destroyed, projectModel, &QObject::deleteLater);
-			QObject::connect(mainWindow, &QObject::destroyed, backend, &QObject::deleteLater);
-		});
+			    QObject::connect(mainWindow, &QObject::destroyed, settings, &QObject::deleteLater);
+			    QObject::connect(mainWindow, &QObject::destroyed, projectModel, &QObject::deleteLater);
+			    QObject::connect(mainWindow, &QObject::destroyed, backend, &QObject::deleteLater);
+		    });
 
 		return QApplication::exec();
 	}

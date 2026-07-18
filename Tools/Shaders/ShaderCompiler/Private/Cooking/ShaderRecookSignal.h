@@ -16,8 +16,10 @@ class ShaderRecookSignal final
 	ShaderRecookSignal() = delete;
 
 	static bool Write(
-	    const std::filesystem::path& cacheDirectory,
-	    const std::filesystem::path& registryPath,
+	    const std::filesystem::path& registryReadPath,
+	    const std::filesystem::path& publishedRegistryPath,
+	    const std::filesystem::path& signalStoragePath,
+	    const std::filesystem::path& publishedSignalPath,
 	    ShaderRecookSignalResult& outResult,
 	    std::string& outErrorMessage);
 };

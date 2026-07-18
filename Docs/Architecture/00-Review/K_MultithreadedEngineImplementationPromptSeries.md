@@ -223,6 +223,21 @@ Every prompt must prevent touched implementation units, classes, and functions f
 
 The completion report must include a **cohesion reconciliation**: responsibilities before/after, extracted owners, retained co-location, dependency direction, and why the result avoids both a god file and ceremonial fragmentation.
 
+### 15. Narrow Capability APIs and Integration-Surface Containment
+
+Multithreading is an implementation capability of the owning subsystem, not a second purpose imposed on every consumer. Every integration must preserve the receiving system's dominant intent:
+
+- receiving orchestrators call a narrow domain capability such as start/submit/cancel/consume; they do not construct task graphs, choose lanes/worker counts, maintain prerequisite counters, bridge stop tokens, or implement deterministic fan-in unless scheduling is their explicit subsystem purpose;
+- the subsystem that proves independence owns task partitioning, task-local state, lane policy, cancellation translation, result slots, merge order, and shutdown. Consumers provide domain inputs and consume domain results;
+- public/cross-module headers expose stable requests, immutable results, handles/tokens, and explicit lifetime operations only. `TaskExecutionContext`, executor/queue/worker records, native handles, compiler sessions, COM setup, and transaction backups stay behind private implementation boundaries;
+- use `std::stop_token` or a domain cancellation contract at a synchronous leaf seam; do not force an otherwise task-agnostic decoder, cooker, compiler, renderer, editor model, or RHI facade to include SparkleTasks types;
+- callback/progress hooks carry owned domain values and document delivery affinity. A receiving UI must not become the owner of I/O, process, task, or cancellation mechanics merely to display progress;
+- if integrating a feature adds more scheduling/lifetime code to a receiver than domain-policy code, stop and extract or strengthen the owning service API before acceptance. Moving the same leak into a helper lambda does not pass;
+- private facades/PImpls are justified when they prevent volatile task/native mechanisms from entering stable headers. Wrapper-only layers with no invariant, policy, ownership, or substitution seam remain forbidden;
+- audit transitive includes and links, not only symbol visibility. A private mechanism is still leaked when consumers must include its types, mirror its state machine, or link a dependency solely to satisfy an implementation detail.
+
+The completion report must contain an **integration-surface reconciliation**: receiver purpose before/after, exact capability hook, mechanism types hidden, domain values exposed, cancellation/progress affinity, transitive include/link changes, and an explanation of why adding another operation does not require copying concurrency boilerplate.
+
 ## Required Prompt Completion Report
 
 Every completed prompt returns this report:
@@ -243,6 +258,7 @@ Every completed prompt returns this report:
 14. **Structure reconciliation:** module/folder/public-private ownership, filename-to-primary-type alignment, bounded moves/renames, updated includes/CMake/docs, and deliberate co-location decisions.
 15. **DOD reconciliation:** data/access inventory, authority and derived projections, chosen/rejected layouts, stable identity, phase/lifetime, deterministic transforms, exact source trace, and measured evidence.
 16. **Gate:** PASS or BLOCKED with concrete reason.
+17. **Integration-surface reconciliation:** narrow hooks, hidden mechanism types, receiver responsibility before/after, dependency leakage removed, and scaling path for the next consumer.
 
 ## Prompt Sequence and Dependencies
 
@@ -708,6 +724,7 @@ Non-negotiable repository rules:
 - Extend existing plans rather than creating alternate Async cookers or parallel pipelines.
 - One task runtime with tool host policy; no std::async, detached reader threads, or tool-specific pools after migration.
 - Refactor duplicated process/result/publication logic in the touched path and delete the old execution route in this prompt.
+- Apply Rule 15: receiving editor/launcher/cooker code invokes domain capabilities; task graphs, lane policy, cancellation bridging, task-local setup, and fan-in remain private to the owning execution service.
 - Close LC-01 through LC-04 and LC-17 for the migrated call paths. Qt `startDetached` may remain only when launching a deliberately independent product; it may not substitute for scoped operation lifetime.
 
 Required implementation:
@@ -741,6 +758,26 @@ Acceptance gate:
 Positive patterns: coarse tasks, task-local contexts, deterministic fan-in, transactional publication, bounded memory.
 Forbidden: parallel publish-as-finished, shared unsafe importer/compiler instance, unbounded texture jobs, UI callbacks from I/O thread.
 ~~~
+
+### Prompt 04 implementation record
+
+The pilot now uses one SparkleTasks runtime per product/tool host. Editor shader recook is a scoped Background preparation plus BlockingIo compiler execution; request and publication generations are consumed only by the editor owner. Launcher operations execute as bounded BlockingIo tasks, while `LauncherOperationRequestMapping` owns Qt-to-domain translation and `LauncherOperationExecution` owns plan execution. The Qt backend only orchestrates, then queues immutable output/completion values through `QMetaObject::invokeMethod`. AssetCooker's synchronous CLI adapter and the launcher/editor scheduled paths share Core `Process::ChildProcess`; Windows process-tree ownership, overlapped pipe completion, stop-token cancellation, and handle cleanup live behind the platform facade. The former future, `QThread::create`, pipe-reader thread, 50 ms polling, atomic cancellation family, `_popen`, and infinite child wait were deleted.
+
+Texture requests retain the existing request loader and cooker pipeline. A bounded set of Background tasks owns COM initialization and one decoder/cooker context per request. Results occupy request-indexed slots, diagnostics retain `TextureAssetId`, and a weighted limiter admits the decoded mip payload through the pipeline. No task publishes. The owner validates every result, then publishes the staged set through `Files::TryPublishFileSet`, which preflights the complete set and restores the prior generation if any replacement fails. Shader cooking likewise extends the existing plan: bounded Background nodes own backend sessions and cache-store adapters, write node-indexed results, and the owner merges stages in plan order. Packages, registry, and recook signal are all staged; the signal is the last transaction member and therefore remains the activation marker. A failed/cancelled node never reaches emission, and failed publication restores the previous package/registry/signal set.
+
+Rule 13 access inventory:
+
+| Touched stream | Authority and derived ownership | Layout, identity, deterministic transform | Source precedent and falsifier |
+|---|---|---|---|
+| child command, environment, stdout/stderr, exit | request value is authoritative; OS process/job/pipe handles are private execution state; `ChildProcessResult` is the sole derived result | ordered byte stream plus one exit/cancel/failure record; executable/argument order is stable; one job owns descendants | EPIC-TASK long/blocking-work separation and J's BlockingIo contract; cancel while a shell descendant owns the pipe must settle promptly with captured preceding output |
+| launcher operation request/progress/result | Qt owner owns the request and UI; task owns an immutable request copy; queued Qt values own progress/result text | domain plan order is retained; `runId`/operation ID are stable identities; no QObject is dereferenced by process I/O | Epic task lifetime/continuation model and Qt owner-affinity inventory in J; close/cancel plus thread-affinity capture falsifies it |
+| texture request/source/decoded mips/cooked output | request list and source file are authoritative; each task exclusively owns loader, mip vectors, pipeline state, staged file, diagnostic slot, and memory lease | vector-of-slices/mips remains the existing traversal layout; `TextureAssetId` and sorted request index are stable; fan-in/publish is request order | AMD-CPU thread-local/range-local guidance and NV-PAR bounded batch/serial guidance; byte comparison, overlap stress, and peak admitted bytes falsify it |
+| shader registrations/plan/cache/node results/package registry | registrations and immutable plan are authoritative; task-local compiler session/store/result are derived; only owner mutates package contexts and counters | plan/node vectors remain contiguous; package key plus node index identify results; merge, diagnostic selection, registry order, and publication order are stable | EPIC-TASK prerequisite/fan-in model, AMD-RPS planned ranges, and NVIDIA bounded-thread guidance; serial/parallel DXIL/SPIR-V/package/reflection hashes falsify it |
+| generation-temporary files | published paths are authoritative; staged and backup paths are transaction-private | destination path is stable identity; complete-set preflight, ordered replace, reverse rollback, and signal-last commit are deterministic | existing Sparkle atomic-file convention extended to a file set; injected missing/locked destination and old-generation hash checks falsify it |
+
+Rule 12/14/15 cohesion record: Core's stable `Process/ChildProcess.h` facade is separated from `Private/Process/ChildProcessWindows.*`; generic multi-file publication remains beside Core file primitives. `ShaderRecookExecutionService` owns task graph/lane/scope/process execution so `ShaderRecookCoordinator` retains request, publication, and renderer-reload policy. `ShaderCookPlanExecutor` owns task partition/configuration and node failure selection so `ShaderPackageCooker` remains plan → deterministic merge → emit. `TextureCookBatchExecutor` owns task/COM/cancellation mechanics; `TextureAssetCooker` accepts only a standard stop token and remains a texture transformation, while the request processor retains load/diagnostic/publication policy. Launcher Qt mapping, domain execution, and scoped task lifetime are separate `Private/Gui/Operations/` owners; `LauncherBackend` now owns only preview/UI orchestration and owner-thread delivery. All scheduling types remain private, all cross-module surfaces are domain requests/results or the shared Core process/file contracts, and no compatibility path or second cooker/compiler/pool was retained.
+
+Focused DevelopmentEditor builds pass for `SparkleCore`, `SparkleApplicationEditor`, `AssetCookerCore`, `TextureCooker`, `ShaderCompiler`, and `SparkleLauncher`; no whole-repository build was run. A disposable Core smoke executable proved output capture, cancellation of a shell descendant that inherited the pipe, sub-second process-tree settlement, and complete file-set replacement; it exposed the missing process-tree ownership, which was fixed with a kill-on-close Windows job, and the smoke source/target were then deleted. A real GBuffer cook with four plan nodes produced byte-identical serial and four-session package/registry outputs (`C64E5BD...EBD3` and `6C09747F...19AE`). A real two-request texture batch produced identical outputs and a 2,400,000-byte admitted peak. The required multiple-4K/8K/HDR memory run, interactive FrameCritical latency capture, forced failure at every publication rename, and full launcher UI cancel/restart stress still require the representative assets and interactive harness; they are explicit evidence gaps, not reported passes.
 
 ## Prompt 05 — Build the Serial ECS Identity and Storage Kernel
 
