@@ -26,6 +26,7 @@ target_include_directories(SparkleTasks
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private)
 target_compile_features(SparkleTasks PUBLIC cxx_std_20)
+target_link_libraries(SparkleTasks PRIVATE SparkleCore)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_TASKS_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_TASKS_PRIVATE_SOURCES} ${SPARKLE_TASKS_PRIVATE_HEADERS})

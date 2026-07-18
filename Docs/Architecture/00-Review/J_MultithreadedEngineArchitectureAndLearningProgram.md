@@ -1976,6 +1976,29 @@ Task records should be small, stable, and allocation-conscious:
 - a per-run arena for graph instances and edges
 - generation validation in development builds
 
+### Prompt 02 Implemented Baseline — Fixed Workers Without Changing Graph Meaning
+
+As of 2026-07-18, `TaskExecutorConfig::WorkerCount` selects the execution mechanism while preserving the Prompt 01 graph/result contract. Zero workers execute the deterministic caller-thread oracle. Counts 1/2/N create exactly that many executor-owned `Sparkle.TaskWorker.<index>` threads, named through Core's existing `Threading::SetCurrentThreadRole`; SparkleTasks adds no second naming, priority, affinity, or subsystem-pool abstraction.
+
+The public executor remains intentionally synchronous at this stage: `Submit()` is a host boundary and returns a settled `TaskExecution`. This keeps the caller-owned `TaskExecutionContext` alive without inventing Prompt 03's `TaskScope` early. A task running on one of the executor's workers cannot synchronously submit back to that executor; it receives deterministic rejection instead of consuming a worker while waiting. Child and continuation work must be expressed in the compiled DAG. This is the practical MT-13 rule: workers execute nodes, hosts wait at declared boundaries.
+
+The scheduling mechanism is private:
+
+- each worker owns a mutex-protected deque, consumes its preferred end, and thieves consume the opposite end;
+- host submissions enter a synchronized injection queue; a worker that makes a dependent ready pushes it locally, preserving work-first locality;
+- an epoch protected by the parking mutex is changed after publication and checked with a condition-variable predicate; workers rescan while holding that mutex before sleeping, closing the notify-before-park window without polling;
+- prerequisite counts, nested unfinished counts, parent publication flags, schedule claims, and terminal claims use explicit release/acquire or acquire-release transitions; the callable/result payload itself is protected by the run result mutex;
+- each run allocates its runtime-state array and terminal-result storage once from the compiled bounded size. `MaximumActiveExecutions` bounds simultaneous runs, making the theoretical queued-record ceiling `MaximumActiveExecutions × MaximumTasksPerExecution`; overflow rejects before a body starts;
+- worker queue state is cache-line aligned because adjacent workers write independent mutex/deque state. Per-task runtime records are deliberately not padded: padding 1,024 records without cache/remote-traffic evidence would multiply run memory for résumé value, so Prompt 25 owns that A/B decision.
+
+The lifecycle state machine is `Accepting → Draining|Cancelling → Stopping → Stopped`. Acceptance and active-run registration share the state mutex, so shutdown cannot miss a run between admission and registration. Drain closes admission and lets accepted graphs finish. Cancel also marks accepted parallel runs: already-running bodies finish, queued normal bodies settle cancelled, and cleanup nodes execute. Zero-worker work has no queue to revoke, so an already-executing serial body drains; cooperative mid-body cancellation remains Prompt 03. Workers stop only after the active-run count reaches zero, every joinable thread is joined, repeated shutdown is idempotent, and late submission is rejected.
+
+Transient Prompt 02 validation was created, executed, and removed under K Rule 11. Prompt 01 parity and nested/failure/cleanup semantics passed at 0/1/2/8 workers with randomized yields. A 1,024-node DAG repeated 250 times crossed 1,021,500 atomic prerequisite transitions; concurrent external producers completed 400 submissions; bounded active-run overflow rejected; a root-local 256-node fan-out executed on multiple worker IDs and produced real opposite-thread steals; recursive same-executor submission rejected at one worker; 40 repeated 0–4-worker shutdown cycles, running-work drain, queued-work cancellation, cleanup settlement, and late rejection passed. Eight parked workers consumed 0 ms process CPU over a 200 ms idle interval.
+
+On the measured 16-physical-core/32-logical-thread host, the deliberately skewed transient batch took approximately 10.2–11.8 ms at one worker, 2.0–2.4 ms at 16 workers, 2.3–2.4 ms at 32 workers, and 2.3–2.8 ms at 33 workers. Parked enqueue-to-start was 128–195 µs in DevelopmentEditor; local dependent start was 50–67 µs and stolen dependent start 25–28 µs in the recorded runs. These are characterization points, not defaults or durable benchmarks. The current Visual Studio/MSVC Windows configuration has no supported ThreadSanitizer mode; the strongest available gate was repeated optimized stress plus one DebugEditor run. ETW context-switch traces, cache/remote-traffic counters, p95/p99 distributions, third-party nested-pool budgeting, grain-size policy, and a physical/logical default decision remain explicitly unclaimed and belong to Prompts 23–25.
+
+Hazard closure for this slice is therefore bounded: MT-13 rejects recursive worker submission; MT-14/15 use parked predicate/epoch progress and passed idle plus external-publication races; MT-17 keeps one executor-owned pool; MT-18/20 retain serial control and measured topology/skew behavior; MT-21 preserves dependency-driven readiness; MT-22 adds no priority correctness; MT-23 bounds active runs; MT-25 aligns only measured-by-layout worker state; MT-41 records the sanitizer gap; MT-42 uses atomic checkpoints for correctness ordering; MT-43 labels timing as characterization rather than a product claim; and MT-44 deliberately retains locked deques with no reclamation problem. MT-16, MT-19, and MT-24 are not falsely closed: BlockingIo lanes, grain policy, and third-party inner-thread budgets do not exist in this prompt and are owned by later stages.
+
 ### Dependency Rules
 
 The normal synchronization vocabulary is:

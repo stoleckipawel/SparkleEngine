@@ -484,6 +484,14 @@ Positive patterns: fixed ownership, work-first scheduling, stealing, parked idle
 Forbidden: detached threads, one thread per system, busy-yield waits, silent exception swallowing, lock-free rewrite without reclamation proof.
 ~~~
 
+### Prompt 02 completion record — 2026-07-18
+
+Status: **passed**. `TaskExecutorConfig::WorkerCount` now selects the unchanged serial oracle at 0 or an executor-owned fixed set at 1/2/N. Private worker deques use owner-end consumption and opposite-end stealing; external work uses a synchronized injection queue; condition-variable parking uses a mutex-protected epoch and rescan protocol. Atomic prerequisite, nested unfinished, schedule, and terminal transitions settle each accepted node once. `MaximumActiveExecutions` bounds concurrent run storage. Workers use Core's existing thread-role naming and add no priority/affinity policy.
+
+The private lifecycle is `Accepting → Draining|Cancelling → Stopping → Stopped`. Admission and run registration are atomic under the lifecycle mutex; drain and cancel reject late submissions, cancellation prevents queued normal bodies while preserving cleanup, workers stop only after active runs settle, all threads join, and repeated shutdown is idempotent. Same-executor recursive worker submission rejects instead of blocking. Submission remains a settled host boundary until Prompt 03 introduces scopes.
+
+A disposable harness passed Prompt 01 parity at 0/1/2/8 workers, more than one million dependency transitions, 400 concurrent external submissions, real opposite-thread stealing, active-run overflow, parked wakeup, recursive-submit rejection, 40 repeated lifecycle cycles, running-work drain, queued-work cancellation, cleanup, and late rejection. DevelopmentEditor passed three consecutive full runs and DebugEditor passed once. Eight idle workers used 0 ms process CPU over 200 ms. On the 16-core/32-thread host, the skewed batch measured approximately 10.2–11.8 ms at one worker, 2.0–2.4 ms at 16, 2.3–2.4 ms at 32, and 2.3–2.8 ms at 33; parked enqueue-to-start measured 128–195 µs. MSVC/Windows offered no supported ThreadSanitizer mode, and ETW context-switch, cache-traffic, percentile, and third-party nested-pool evidence remain unavailable rather than inferred. The harness and target were deleted after the gate.
+
 ## Prompt 03 — Complete Structured Task-Runtime Semantics
 
 Target CL Title: `SparkleTasks: Complete Structured Runtime Semantics`
