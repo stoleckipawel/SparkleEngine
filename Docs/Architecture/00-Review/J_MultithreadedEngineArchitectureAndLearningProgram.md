@@ -833,7 +833,7 @@ Learning exercise:
 
 ### Tutorial 4 — ECS, DOD, and Parallel Systems
 
-Before Prompt 05, the unused `Entity` owned heap-allocated polymorphic components and called virtual update methods. That was an object model, even though the types were named Entity and Component. Prompt 05 deletes that owner and establishes the serial identity/sparse-storage kernel; Prompts 06–11 still must add queries, migrate the live scene, move behavior into explicit systems, and prove parallel ranges.
+Before Prompt 05, the unused `Entity` owned heap-allocated polymorphic components and called virtual update methods. That was an object model, even though the types were named Entity and Component. Prompt 05 deletes that owner and establishes the serial identity/sparse-storage kernel; Prompt 06 adds frozen typed queries and deterministic deferred structure. Prompts 07–11 still must migrate the live scene, move behavior into explicit systems, publish data, and prove parallel ranges.
 
 Sparse-set storage solves two opposing needs:
 

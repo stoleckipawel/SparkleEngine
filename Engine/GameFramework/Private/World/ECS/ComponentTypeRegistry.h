@@ -17,6 +17,8 @@ namespace ECS
 	class ComponentTypeRegistry final
 	{
 	  public:
+		template <typename T> static RuntimeComponentTypeId GetTypeId() noexcept { return GetRuntimeComponentTypeId<T>(); }
+
 		template <ComponentStorageCompatible T> ComponentStorage<T>& GetOrCreate()
 		{
 			const RuntimeComponentTypeId typeId = GetRuntimeComponentTypeId<T>();

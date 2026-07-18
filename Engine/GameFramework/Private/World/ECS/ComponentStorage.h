@@ -14,6 +14,9 @@
 
 namespace ECS
 {
+	class EntityRegistry;
+	template <typename... AccessSpecs> class Query;
+
 	struct ComponentStorageVersion final
 	{
 		std::uint64_t Structure = 0;
@@ -144,6 +147,9 @@ namespace ECS
 		ComponentQueryVersion CaptureQueryVersion() const noexcept { return ComponentQueryVersion{m_version}; }
 
 	  private:
+		friend class EntityRegistry;
+		template <typename... AccessSpecs> friend class Query;
+
 		static constexpr std::uint32_t InvalidDenseIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 		std::uint32_t FindDenseIndex(EntityId entity) const noexcept
@@ -155,6 +161,14 @@ namespace ECS
 			const std::uint32_t denseIndex = m_sparse[entity.GetSlot()];
 			return denseIndex < m_entities.size() && m_entities[denseIndex] == entity ? denseIndex : InvalidDenseIndex;
 		}
+
+		T* GetMutable(EntityId entity) noexcept
+		{
+			const std::uint32_t denseIndex = FindDenseIndex(entity);
+			return denseIndex == InvalidDenseIndex ? nullptr : &m_components[denseIndex];
+		}
+
+		void MarkContentChanged() noexcept { ++m_version.Content; }
 
 		bool IsSlotOccupied(EntityId::Slot slot) const noexcept { return slot < m_sparse.size() && m_sparse[slot] < m_entities.size(); }
 

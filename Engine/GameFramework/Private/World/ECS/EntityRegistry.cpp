@@ -7,6 +7,11 @@ namespace ECS
 {
 	EntityId EntityRegistry::Create()
 	{
+		if (!CanMutateStructure())
+		{
+			return EntityId::Invalid();
+		}
+
 		if (!m_freeSlots.empty())
 		{
 			const EntityId::Slot slot = m_freeSlots.back();
@@ -14,6 +19,7 @@ namespace ECS
 			EntitySlot& entry = m_slots[slot];
 			entry.Alive = true;
 			++m_liveCount;
+			AdvanceStructureVersion();
 			return EntityId(slot, entry.Generation);
 		}
 
@@ -25,12 +31,13 @@ namespace ECS
 		const EntityId::Slot slot = static_cast<EntityId::Slot>(m_slots.size());
 		m_slots.push_back(EntitySlot{.Generation = 1, .Alive = true});
 		++m_liveCount;
+		AdvanceStructureVersion();
 		return EntityId(slot, 1);
 	}
 
 	bool EntityRegistry::Destroy(EntityId entity)
 	{
-		if (!IsAlive(entity))
+		if (!CanMutateStructure() || !IsAlive(entity))
 		{
 			return false;
 		}
@@ -39,6 +46,7 @@ namespace ECS
 		EntitySlot& entry = m_slots[entity.GetSlot()];
 		entry.Alive = false;
 		--m_liveCount;
+		AdvanceStructureVersion();
 
 		if (entry.Generation == (std::numeric_limits<EntityId::Generation>::max)())
 		{
@@ -61,9 +69,33 @@ namespace ECS
 		return entry.Alive && !entry.Retired && entry.Generation == entity.GetGeneration();
 	}
 
-	void EntityRegistry::Reserve(std::size_t entityCapacity)
+	bool EntityRegistry::Reserve(std::size_t entityCapacity)
 	{
+		if (!CanMutateStructure())
+		{
+			return false;
+		}
 		m_slots.reserve(entityCapacity);
 		m_freeSlots.reserve(entityCapacity);
+		return true;
+	}
+
+	StructureFrozenEpoch EntityRegistry::FreezeStructure() noexcept
+	{
+		if (m_structureFrozen || m_frozenEpochGeneration == (std::numeric_limits<std::uint64_t>::max)())
+		{
+			return {};
+		}
+		++m_frozenEpochGeneration;
+		m_structureFrozen = true;
+		return StructureFrozenEpoch(*this, m_frozenEpochGeneration);
+	}
+
+	void EntityRegistry::ReleaseFrozenEpoch(std::uint64_t generation) noexcept
+	{
+		if (IsFrozenEpochCurrent(generation))
+		{
+			m_structureFrozen = false;
+		}
 	}
 }
