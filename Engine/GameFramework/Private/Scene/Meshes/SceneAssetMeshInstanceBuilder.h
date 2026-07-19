@@ -6,13 +6,13 @@
 
 #include <vector>
 
-class SceneMaterials;
+class MaterialResourceStore;
 
 namespace SceneAssetMeshInstanceBuilder
 {
 	bool BuildInstances(
 	    SceneAssetPayload& payload,
-	    SceneMaterials& materials,
+	    MaterialResourceStore& materials,
 	    MaterialHandle materialBaseHandle,
 	    SceneMeshInstanceGroupIndex groupBaseIndex,
 	    std::vector<ECS::SceneMeshInstanceData>& outInstances);

@@ -3,8 +3,6 @@
 #include "Panels/SceneMaterialVariantInspector.h"
 
 #include "World/GameWorld.h"
-#include "Scene/Materials/SceneMaterialVariants.h"
-#include "Scene/Meshes/SceneMeshes.h"
 #include "Util/UiUtil.h"
 
 #include <imgui.h>
@@ -13,8 +11,8 @@ namespace SceneMaterialVariantInspector
 {
 	void Build(GameWorld& gameWorld) noexcept
 	{
-		SceneMaterialVariants& variants = gameWorld.GetMaterialVariants();
-		if (variants.GetVariantCount() == 0)
+		const std::size_t variantCount = gameWorld.GetMaterialVariantCount();
+		if (variantCount == 0)
 		{
 			UiUtil::DrawDetailsEmptyState();
 			return;
@@ -25,23 +23,25 @@ namespace SceneMaterialVariantInspector
 			return;
 		}
 
-		const SceneMaterialVariantIndex activeVariantIndex = variants.GetActiveVariantIndex();
+		const MaterialVariantIndex activeVariantIndex = gameWorld.GetActiveMaterialVariant();
 		const char* preview = "Select Variant";
-		if (activeVariantIndex < variants.GetVariantCount())
+		std::string activeVariantName;
+		if (activeVariantIndex < variantCount)
 		{
-			preview = variants.GetVariant(activeVariantIndex).name.c_str();
+			activeVariantName = gameWorld.GetMaterialVariantName(activeVariantIndex);
+			preview = activeVariantName.c_str();
 		}
 
 		ImGui::SetNextItemWidth(-1.0f);
 		if (ImGui::BeginCombo("##SceneMaterialVariant", preview))
 		{
-			for (std::size_t variantIndex = 0; variantIndex < variants.GetVariantCount(); ++variantIndex)
+			for (std::size_t variantIndex = 0; variantIndex < variantCount; ++variantIndex)
 			{
-				const SceneMaterialVariantDesc& variant = variants.GetVariant(variantIndex);
+				const std::string variantName(gameWorld.GetMaterialVariantName(variantIndex));
 				const bool selected = variantIndex == activeVariantIndex;
-				if (ImGui::Selectable(variant.name.c_str(), selected))
+				if (ImGui::Selectable(variantName.c_str(), selected))
 				{
-					variants.ApplyVariant(static_cast<SceneMaterialVariantIndex>(variantIndex), gameWorld.GetMeshes());
+					gameWorld.ApplyMaterialVariant(static_cast<MaterialVariantIndex>(variantIndex));
 				}
 
 				if (selected)

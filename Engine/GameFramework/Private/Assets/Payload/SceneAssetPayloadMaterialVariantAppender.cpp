@@ -53,7 +53,7 @@ namespace Assets
 	    std::uint32_t materialBaseIndex,
 	    std::string& errorMessage)
 	{
-		const auto variantBaseIndex = static_cast<SceneMaterialVariantIndex>(sceneAssetPayload.materialVariants.size());
+		const auto variantBaseIndex = static_cast<MaterialVariantIndex>(sceneAssetPayload.materialVariants.size());
 		sceneAssetPayload.materialVariants.reserve(sceneAssetPayload.materialVariants.size() + sceneManifest.materialVariants.size());
 		for (const CookedSceneMaterialVariantRecord& variantRecord : sceneManifest.materialVariants)
 		{

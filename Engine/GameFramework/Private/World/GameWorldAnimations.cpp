@@ -4,7 +4,7 @@
 #include "Scene/Animations/SceneAnimationDiagnostics.h"
 #include "Scene/Animations/SceneAnimationPoseEvaluator.h"
 #include "Scene/Animations/SceneMorphWeightEvaluator.h"
-#include "Scene/Skeletons/SceneSkeletons.h"
+#include "World/Resources/SkeletonResourceStore.h"
 #include "World/ECS/Components/AnimationComponents.h"
 #include "World/ECS/Components/EditorComponents.h"
 
@@ -57,7 +57,7 @@ namespace ECS
 		}
 	}
 
-	void GameWorldState::UpdateAnimations(float deltaSeconds, const SceneSkeletons& skeletons)
+	void GameWorldState::UpdateAnimations(float deltaSeconds, const SkeletonResourceStore& skeletons)
 	{
 		SceneAnimationSnapshot output;
 		const ComponentStorage<AnimationState>* animations = m_registry.FindStorage<AnimationState>();

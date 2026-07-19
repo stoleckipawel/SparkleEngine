@@ -2,11 +2,13 @@
 #include "World/GameWorld.h"
 
 #include "Assets/SceneAssetPayload.h"
-#include "World/GameWorldAssetPayloadAppender.h"
+#include "World/GameWorldSceneAssetCommitter.h"
 #include "World/GameWorldController.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
 #include "World/GameWorldState.h"
+#include "Level/Loading/SceneLoadPackage.h"
+#include "World/Resources/GameWorldResourceStores.h"
 
 #include <algorithm>
 #include <utility>
@@ -51,6 +53,7 @@ namespace
 
 GameWorld::GameWorld() :
     m_state(std::make_unique<ECS::GameWorldState>()),
+	m_resources(std::make_unique<GameWorldResourceStores>()),
     m_cameras(*this),
     m_lighting(*this),
     m_meshes(*this),
@@ -60,57 +63,13 @@ GameWorld::GameWorld() :
 
 GameWorld::~GameWorld() noexcept = default;
 
-GameWorldLoadResult GameWorld::LoadLevel(const LevelAsset& level)
+void GameWorld::InitializeStagedLevel(const LevelDesc& desc)
 {
-	return LoadLevel(level.BuildDescription());
-}
-
-GameWorldLoadResult GameWorld::LoadLevel(const LevelDesc& desc)
-{
-	GameWorldLoadResult result;
-	Clear();
 	m_activeLevelName = desc.name;
 	m_activeLevelDesc = desc;
 	m_cameras.Reset(desc.cameraDesc);
 	m_sky.ApplyFromDesc(desc.sky);
 	m_lighting.ApplyFromDesc(desc.lights);
-	for (const std::unique_ptr<GameWorldController>& controller : m_controllers)
-	{
-		if (!controller)
-		{
-			continue;
-		}
-
-		controller->OnLevelLoaded(*this, m_activeLevelDesc);
-	}
-	CommitWorldChanges();
-
-	result.status = GameWorldLoadStatus::Succeeded;
-
-	return result;
-}
-
-bool GameWorld::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
-{
-	GameWorldAssetPayloadAppender
-	    appender(m_cameras, m_lighting, m_materials, m_materialVariants, m_meshes, m_skeletons, *m_state, m_textures);
-	if (!appender.Append(std::move(sceneAssetPayload)))
-	{
-		return false;
-	}
-
-	for (const std::unique_ptr<GameWorldController>& controller : m_controllers)
-	{
-		if (!controller)
-		{
-			continue;
-		}
-
-		controller->OnSceneAssetsAppended(*this);
-	}
-	CommitWorldChanges();
-
-	return true;
 }
 
 void GameWorld::Update(float deltaSeconds)
@@ -118,7 +77,7 @@ void GameWorld::Update(float deltaSeconds)
 	const GameWorldUpdateContext preAnimationContext{.deltaSeconds = deltaSeconds, .phase = GameWorldUpdatePhase::PreAnimation};
 	RunControllers(m_controllers, *this, preAnimationContext);
 
-	m_state->UpdateAnimations(deltaSeconds, m_skeletons);
+	m_state->UpdateAnimations(deltaSeconds, m_resources->Skeletons);
 	m_state->ApplyMorphWeights(m_state->GetAnimationOutput().morphWeights);
 
 	const GameWorldUpdateContext postAnimationContext{.deltaSeconds = deltaSeconds, .phase = GameWorldUpdatePhase::PostAnimation};
@@ -147,6 +106,64 @@ void GameWorld::RegisterController(std::unique_ptr<GameWorldController>&& contro
 	CommitWorldChanges();
 }
 
+bool GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package, std::string& errorMessage)
+{
+	std::size_t expectedEntityCount = 1 + package.Level.lights.size();
+	for (const SceneAssetPayload& payload : package.AssetPayloads)
+	{
+		expectedEntityCount += payload.animations.size() + payload.staticMeshInstances.size() +
+		                       payload.skeletalMeshInstances.size() + payload.cameras.size() + payload.lights.size();
+	}
+	if (package.Entities.size() != expectedEntityCount)
+	{
+		errorMessage = "Scene load blueprint count does not match the entity construction records.";
+		return false;
+	}
+
+	GameWorld stagedWorld;
+	stagedWorld.InitializeStagedLevel(package.Level);
+
+	GameWorldSceneAssetCommitter committer(
+	    *stagedWorld.m_state,
+	    *stagedWorld.m_resources);
+	for (SceneAssetPayload& payload : package.AssetPayloads)
+	{
+		if (!committer.Commit(std::move(payload)))
+		{
+			errorMessage = "GameWorld rejected a validated scene asset payload.";
+			return false;
+		}
+	}
+	stagedWorld.GetCameras().SetPrimaryCameraActive();
+	if (stagedWorld.m_state->GetEntityCount() != package.Entities.size())
+	{
+		errorMessage = "Staged world entity count does not match the validated blueprint package.";
+		return false;
+	}
+
+	m_state.swap(stagedWorld.m_state);
+	m_resources.swap(stagedWorld.m_resources);
+	m_activeLevelName.swap(stagedWorld.m_activeLevelName);
+	std::swap(m_activeLevelDesc, stagedWorld.m_activeLevelDesc);
+	++m_generation;
+
+	errorMessage.clear();
+	return true;
+}
+
+void GameWorld::FinalizeSceneLoadCommit()
+{
+	for (const std::unique_ptr<GameWorldController>& controller : m_controllers)
+	{
+		if (!controller)
+			continue;
+		controller->OnWorldReset(*this);
+		controller->OnLevelLoaded(*this, m_activeLevelDesc);
+		controller->OnSceneAssetsAppended(*this);
+	}
+	CommitWorldChanges();
+}
+
 GameWorldSnapshot GameWorld::CaptureSnapshot() const
 {
 	GameWorldSnapshot snapshot;
@@ -158,13 +175,13 @@ GameWorldSnapshot GameWorld::CaptureSnapshot() const
 	if (sky && sky->skyTexture.IsValid())
 	{
 		const std::filesystem::path skyTexturePath(sky->skyTexture.texturePath);
-		snapshot.textures = m_textures.CaptureSnapshot(std::span<const std::filesystem::path>(&skyTexturePath, 1));
+		snapshot.textures = m_resources->Textures.CaptureSnapshot(std::span<const std::filesystem::path>(&skyTexturePath, 1));
 	}
 	else
 	{
-		snapshot.textures = m_textures.CaptureSnapshot();
+		snapshot.textures = m_resources->Textures.CaptureSnapshot();
 	}
-	snapshot.materials = m_materials.CaptureSnapshot();
+	snapshot.materials = m_resources->Materials.CaptureSnapshot();
 	snapshot.meshes = m_meshes.CaptureSnapshot();
 	return snapshot;
 }
@@ -193,26 +210,19 @@ bool GameWorld::AcknowledgeChanges(WorldChangeCursor& cursor, WorldSequence sequ
 
 void GameWorld::CommitWorldChanges() { m_state->CommitDerivedStateAndPublish(); }
 
-void GameWorld::Clear()
+std::size_t GameWorld::GetMaterialVariantCount() const noexcept { return m_resources->MaterialVariants.GetCount(); }
+
+std::string_view GameWorld::GetMaterialVariantName(std::size_t index) const noexcept
 {
-	m_state->Clear();
-	m_activeLevelName.clear();
-	m_activeLevelDesc = {};
-	m_materials.Reset();
-	m_materialVariants.Reset();
-	m_skeletons.Clear();
-	m_sky.Reset();
-	m_textures.Reset();
-	m_cameras.Reset();
+	return m_resources->MaterialVariants.GetName(index);
+}
 
-	for (const std::unique_ptr<GameWorldController>& controller : m_controllers)
-	{
-		if (!controller)
-		{
-			continue;
-		}
+MaterialVariantIndex GameWorld::GetActiveMaterialVariant() const noexcept { return m_resources->MaterialVariants.GetActive(); }
 
-		controller->OnWorldReset(*this);
-	}
-	CommitWorldChanges();
+bool GameWorld::ApplyMaterialVariant(MaterialVariantIndex index)
+{
+	const bool applied = m_resources->MaterialVariants.Apply(index, *m_state);
+	if (applied)
+		CommitWorldChanges();
+	return applied;
 }

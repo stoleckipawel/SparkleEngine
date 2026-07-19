@@ -4,6 +4,7 @@
 
 #include "Assets/Cooked/LoadedMeshAsset.h"
 #include "Assets/Loaders/MeshAssetLoader.h"
+#include "Assets/Loaders/CookedAssetFileSet.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Scene/Transform.h"
@@ -55,6 +56,7 @@ namespace Assets
 	bool SceneAssetPayloadMeshAppender::AppendMeshAssets(
 	    const SceneAssetId& sceneAssetId,
 	    const LoadedSceneManifest& sceneManifest,
+	    const CookedAssetFileSet& files,
 	    SceneAssetPayload& sceneAssetPayload,
 	    SceneMeshAssetIndex& outMeshAssetBaseIndex,
 	    std::string& errorMessage)
@@ -68,7 +70,7 @@ namespace Assets
 		{
 			LoadedMeshAsset loadedMesh;
 			const std::filesystem::path meshAssetPath = Paths::CookedMeshAsset(meshReference.meshAssetId);
-			if (!meshAssetLoader.Load(meshAssetPath, loadedMesh, errorMessage))
+			if (!meshAssetLoader.Decode(meshAssetPath, files.Find(meshAssetPath), loadedMesh, errorMessage))
 			{
 				errorMessage = std::format(
 				    "Failed to load cooked mesh asset {} from '{}' - {}",

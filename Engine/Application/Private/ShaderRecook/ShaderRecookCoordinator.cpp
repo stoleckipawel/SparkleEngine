@@ -11,7 +11,10 @@
 #include <format>
 #include <utility>
 
-ShaderRecookCoordinator::ShaderRecookCoordinator() : m_executionService(std::make_unique<ShaderRecookExecutionService>()) {}
+ShaderRecookCoordinator::ShaderRecookCoordinator(TaskExecutor& executor, TaskScope& applicationScope) :
+    m_executionService(std::make_unique<ShaderRecookExecutionService>(executor, applicationScope))
+{
+}
 
 ShaderRecookCoordinator::~ShaderRecookCoordinator() = default;
 

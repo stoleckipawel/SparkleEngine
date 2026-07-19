@@ -5,14 +5,15 @@
 #include "Assets/Cooked/LoadedAnimationAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
 #include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
-#include "Core/Public/Files/FileUtils.h"
-
 #include <cstdint>
-#include <vector>
 
 namespace Assets
 {
-	bool AnimationAssetLoader::Load(const std::filesystem::path& path, LoadedAnimationAsset& outAnimationAsset, std::string& outErrorMessage) const
+	bool AnimationAssetLoader::Decode(
+	    const std::filesystem::path& path,
+	    std::span<const std::uint8_t> bytes,
+	    LoadedAnimationAsset& outAnimationAsset,
+	    std::string& outErrorMessage) const
 	{
 		const CookedAssetLoaderContext diagnosticsContext =
 		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedAnimationAsset", kCookedAnimationAssetVersion);
@@ -22,13 +23,7 @@ namespace Assets
 			return false;
 		};
 
-		std::vector<std::uint8_t> fileBytes;
-		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
-		{
-			return fail("file", "readable cooked animation bytes", outErrorMessage);
-		}
-
-		CookedAssetByteReader reader(fileBytes);
+		CookedAssetByteReader reader(bytes);
 		if (!reader.Read(outAnimationAsset.header, outErrorMessage))
 		{
 			return fail("header", "CookedAnimationAssetHeader", outErrorMessage);

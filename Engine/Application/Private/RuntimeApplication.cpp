@@ -4,12 +4,12 @@
 #include "Window/Window.h"
 #include "Renderer.h"
 #include "RuntimeConsole/RuntimeConsoleHost.h"
-#include "Assets/SceneAssetManager.h"
 #include "Input/InputSystem.h"
 #include "World/GameWorld.h"
 #include "Scene/Camera/GameCameraController.h"
 #include "Level/LevelManager.h"
 #include "Time/Timer.h"
+#include "Concurrency/ApplicationTaskRuntime.h"
 
 
 #include <imgui.h>
@@ -59,6 +59,10 @@ Renderer& RuntimeApplication::GetRenderer() noexcept
 	return *m_renderer;
 }
 
+TaskExecutor& RuntimeApplication::GetTaskExecutor() noexcept { return m_taskRuntime->GetExecutor(); }
+
+TaskScope& RuntimeApplication::GetApplicationTaskScope() noexcept { return m_taskRuntime->GetApplicationScope(); }
+
 void RuntimeApplication::Initialize()
 {
 	if (m_isInitialized)
@@ -78,14 +82,17 @@ void RuntimeApplication::Initialize()
 	}
 
 	{
+		m_taskRuntime = std::make_unique<ApplicationTaskRuntime>();
 		m_gameWorld = std::make_unique<GameWorld>();
 		m_gameWorld->RegisterController(std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window));
 		if (m_options.WorldSetupCallback)
 		{
 			m_options.WorldSetupCallback(*m_gameWorld);
 		}
-		m_sceneAssetManager = std::make_unique<Assets::SceneAssetManager>();
-		m_levelManager = std::make_unique<LevelManager>(*m_gameWorld, *m_sceneAssetManager);
+		m_levelManager = std::make_unique<LevelManager>(
+		    *m_gameWorld,
+		    m_taskRuntime->GetExecutor(),
+		    m_taskRuntime->GetApplicationScope());
 	}
 
 	{
@@ -197,8 +204,8 @@ void RuntimeApplication::Shutdown()
 	m_runtimeConsoleHost.reset();
 	m_renderer.reset();
 	m_levelManager.reset();
-	m_sceneAssetManager.reset();
 	m_gameWorld.reset();
+	m_taskRuntime.reset();
 	m_inputSystem.reset();
 	m_window.reset();
 	m_timer.reset();

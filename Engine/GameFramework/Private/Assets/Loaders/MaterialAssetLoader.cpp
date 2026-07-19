@@ -5,14 +5,15 @@
 #include "Assets/Cooked/LoadedMaterialAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
 #include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
-#include "Core/Public/Files/FileUtils.h"
-
 #include <utility>
 
 namespace Assets
 {
-	bool MaterialAssetLoader::Load(const std::filesystem::path& path, LoadedMaterialAsset& outMaterialAsset, std::string& outErrorMessage)
-	    const
+	bool MaterialAssetLoader::Decode(
+	    const std::filesystem::path& path,
+	    std::span<const std::uint8_t> bytes,
+	    LoadedMaterialAsset& outMaterialAsset,
+	    std::string& outErrorMessage) const
 	{
 		const CookedAssetLoaderContext diagnosticsContext =
 		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedMaterialAsset", kCookedMaterialAssetVersion);
@@ -22,13 +23,7 @@ namespace Assets
 			return false;
 		};
 
-		std::vector<std::uint8_t> fileBytes;
-		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
-		{
-			return fail("file", "readable cooked material bytes", outErrorMessage);
-		}
-
-		CookedAssetByteReader reader(fileBytes);
+		CookedAssetByteReader reader(bytes);
 		if (!reader.Read(outMaterialAsset.header, outErrorMessage))
 		{
 			return fail("header", "CookedMaterialAssetHeader", outErrorMessage);

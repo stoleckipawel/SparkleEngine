@@ -5,14 +5,15 @@
 #include "Assets/Cooked/LoadedSkeletonAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
 #include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
-#include "Core/Public/Files/FileUtils.h"
-
 #include <cstdint>
-#include <vector>
 
 namespace Assets
 {
-	bool SkeletonAssetLoader::Load(const std::filesystem::path& path, LoadedSkeletonAsset& outSkeletonAsset, std::string& outErrorMessage) const
+	bool SkeletonAssetLoader::Decode(
+	    const std::filesystem::path& path,
+	    std::span<const std::uint8_t> bytes,
+	    LoadedSkeletonAsset& outSkeletonAsset,
+	    std::string& outErrorMessage) const
 	{
 		const CookedAssetLoaderContext diagnosticsContext =
 		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedSkeletonAsset", kCookedSkeletonAssetVersion);
@@ -22,13 +23,7 @@ namespace Assets
 			return false;
 		};
 
-		std::vector<std::uint8_t> fileBytes;
-		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
-		{
-			return fail("file", "readable cooked skeleton bytes", outErrorMessage);
-		}
-
-		CookedAssetByteReader reader(fileBytes);
+		CookedAssetByteReader reader(bytes);
 		if (!reader.Read(outSkeletonAsset.header, outErrorMessage))
 		{
 			return fail("header", "CookedSkeletonAssetHeader", outErrorMessage);

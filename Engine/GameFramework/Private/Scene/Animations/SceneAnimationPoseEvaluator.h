@@ -3,7 +3,7 @@
 #include "GameFramework/Public/Scene/Animations/SceneAnimation.h"
 #include "GameFramework/Public/Scene/Skeletons/SceneSkeleton.h"
 
-class SceneSkeletons;
+class SkeletonResourceStore;
 
 namespace SceneAnimationPoseEvaluator
 {
@@ -15,6 +15,6 @@ namespace SceneAnimationPoseEvaluator
 	void AppendMatchingPose(
 	    const SceneAnimationClipDesc& clip,
 	    float playbackTimeSeconds,
-	    const SceneSkeletons& skeletons,
+	    const SkeletonResourceStore& skeletons,
 	    std::vector<SceneAnimationPoseSnapshot>& outActivePoses);
 }

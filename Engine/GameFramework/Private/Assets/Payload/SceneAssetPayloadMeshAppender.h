@@ -9,12 +9,14 @@
 
 namespace Assets
 {
+	class CookedAssetFileSet;
 	class SceneAssetPayloadMeshAppender final
 	{
 	  public:
 		static bool AppendMeshAssets(
 		    const SceneAssetId& sceneAssetId,
 		    const LoadedSceneManifest& sceneManifest,
+		    const CookedAssetFileSet& files,
 		    SceneAssetPayload& sceneAssetPayload,
 		    SceneMeshAssetIndex& outMeshAssetBaseIndex,
 		    std::string& errorMessage);

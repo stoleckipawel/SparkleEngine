@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <cstdint>
 #include <string>
+#include <span>
 
 namespace Assets
 {
@@ -11,7 +12,11 @@ namespace Assets
 	class SkeletonAssetLoader final
 	{
 	  public:
-		bool Load(const std::filesystem::path& path, LoadedSkeletonAsset& outSkeletonAsset, std::string& outErrorMessage) const;
+		bool Decode(
+		    const std::filesystem::path& path,
+		    std::span<const std::uint8_t> bytes,
+		    LoadedSkeletonAsset& outSkeletonAsset,
+		    std::string& outErrorMessage) const;
 
 	  private:
 		static bool HasValidHeader(std::uint32_t jointStride) noexcept;

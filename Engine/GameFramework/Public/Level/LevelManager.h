@@ -2,8 +2,10 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "Level/LevelChangeEvents.h"
+#include "Level/LevelLoadOperation.h"
 
 #include <memory>
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -11,16 +13,20 @@
 class LevelAsset;
 class LevelRegistry;
 class GameWorld;
-struct GameWorldLoadResult;
 namespace Assets
 {
-	class SceneAssetManager;
+	class SceneLoadExecutionService;
 }
+class TaskExecutor;
+class TaskScope;
 
 class SPARKLE_ENGINE_API LevelManager final
 {
   public:
-	LevelManager(GameWorld& world, Assets::SceneAssetManager& sceneAssetManager);
+	LevelManager(
+	    GameWorld& world,
+	    TaskExecutor& taskExecutor,
+	    TaskScope& applicationScope);
 	~LevelManager() noexcept;
 
 	LevelManager(const LevelManager&) = delete;
@@ -29,10 +35,12 @@ class SPARKLE_ENGINE_API LevelManager final
 	LevelManager& operator=(LevelManager&&) = delete;
 
 	bool HasActiveLevel() const noexcept { return m_activeLevel != nullptr; }
-	bool IsLevelChangeInProgress() const noexcept { return m_bLevelChangeInProgress; }
+	bool IsLevelChangeInProgress() const noexcept { return m_levelChangeInProgress; }
 	std::vector<std::string> GetRegisteredLevelNames() const;
 	LevelChangeEvents& GetLevelChangeEvents() noexcept { return m_levelChangeEvents; }
 	const LevelChangeEvents& GetLevelChangeEvents() const noexcept { return m_levelChangeEvents; }
+	LevelLoadOperationProgress GetLoadProgress() const noexcept;
+	std::string_view GetLastLoadDiagnostic() const noexcept { return m_lastLoadDiagnostic; }
 
 	void RequestLevelChange(std::string_view requestedLevelName) noexcept;
 	void ProcessPendingLevelChange() noexcept;
@@ -44,14 +52,19 @@ class SPARKLE_ENGINE_API LevelManager final
   private:
 	void CaptureSceneToLevel() noexcept;
 	void InitializeStartupLevel() noexcept;
-	GameWorldLoadResult LoadLevelFromUnloadedState(const LevelAsset& level) noexcept;
-	void ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcept;
+	void StartLevelChange(LevelAsset& requestedLevel) noexcept;
+	void CompleteLevelChange() noexcept;
 
 	GameWorld* m_gameWorld = nullptr;
-	Assets::SceneAssetManager* m_sceneAssetManager = nullptr;
 	std::unique_ptr<LevelRegistry> m_levelRegistry;
+	std::unique_ptr<Assets::SceneLoadExecutionService> m_loadExecution;
 	LevelChangeEvents m_levelChangeEvents;
 	LevelAsset* m_activeLevel = nullptr;
 	LevelAsset* m_pendingLevelChange = nullptr;
-	bool m_bLevelChangeInProgress = false;
+	LevelAsset* m_loadingLevel = nullptr;
+	std::uint64_t m_nextRequestId = 1;
+	std::uint64_t m_latestRequestId = 0;
+	std::uint64_t m_documentGeneration = 1;
+	std::string m_lastLoadDiagnostic;
+	bool m_levelChangeInProgress = false;
 };

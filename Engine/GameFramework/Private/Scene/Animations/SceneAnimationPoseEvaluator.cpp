@@ -3,7 +3,7 @@
 #include "Scene/Animations/SceneAnimationPoseEvaluator.h"
 
 #include "Scene/Animations/SceneAnimationSampler.h"
-#include "Scene/Skeletons/SceneSkeletons.h"
+#include "World/Resources/SkeletonResourceStore.h"
 
 #include <vector>
 
@@ -143,10 +143,10 @@ namespace SceneAnimationPoseEvaluator
 	void AppendMatchingPose(
 	    const SceneAnimationClipDesc& clip,
 	    float playbackTimeSeconds,
-	    const SceneSkeletons& skeletons,
+	    const SkeletonResourceStore& skeletons,
 	    std::vector<SceneAnimationPoseSnapshot>& outActivePoses)
 	{
-		for (const SceneSkeletonDesc& skeleton : skeletons.GetSkeletons())
+		for (const SceneSkeletonDesc& skeleton : skeletons.GetAll())
 		{
 			if (skeleton.assetId != clip.targetSkeletonAssetId)
 			{

@@ -4,6 +4,7 @@
 
 #include "ApplicationCommandLineCVars.h"
 #include "Concurrency/ConcurrencyLaunchCVars.h"
+#include "Concurrency/TaskRuntimeCVars.h"
 #include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
@@ -18,6 +19,7 @@ void Application::ConfigureProcessFromCommandLine() noexcept
 	}
 
 	ConcurrencyLaunchCVars::Register();
+	TaskRuntimeCVars::Register();
 	ApplyPersistedEngineRenderingSettingsToCVars();
 	ApplicationCommandLineCVars::Apply();
 }

@@ -4,6 +4,7 @@
 
 #include "Assets/Cooked/LoadedAnimationAsset.h"
 #include "Assets/Loaders/AnimationAssetLoader.h"
+#include "Assets/Loaders/CookedAssetFileSet.h"
 #include "Assets/Translators/SceneAssetAnimationTranslator.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
@@ -15,6 +16,7 @@ namespace Assets
 {
 	bool SceneAssetPayloadAnimationAppender::AppendAnimations(
 	    const LoadedSceneManifest& sceneManifest,
+	    const CookedAssetFileSet& files,
 	    SceneAssetPayload& sceneAssetPayload,
 	    std::string& errorMessage)
 	{
@@ -25,7 +27,7 @@ namespace Assets
 		{
 			LoadedAnimationAsset animationAsset;
 			const std::filesystem::path animationAssetPath = Paths::CookedAnimationAsset(animationRef.animationAssetId);
-			if (!animationAssetLoader.Load(animationAssetPath, animationAsset, errorMessage))
+			if (!animationAssetLoader.Decode(animationAssetPath, files.Find(animationAssetPath), animationAsset, errorMessage))
 			{
 				errorMessage = std::format(
 				    "Failed to load cooked animation asset {} from '{}' - {}",

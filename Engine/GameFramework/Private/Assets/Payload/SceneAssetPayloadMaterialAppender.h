@@ -7,11 +7,13 @@
 
 namespace Assets
 {
+	class CookedAssetFileSet;
 	class SceneAssetPayloadMaterialAppender final
 	{
 	  public:
 		static bool AppendMaterials(
 		    const LoadedSceneManifest& sceneManifest,
+		    const CookedAssetFileSet& files,
 		    SceneAssetPayload& sceneAssetPayload,
 		    std::string& errorMessage);
 	};

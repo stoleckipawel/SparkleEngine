@@ -51,6 +51,7 @@ target_link_libraries(SparkleGameFramework
     PUBLIC
         SparkleCore
         SparklePlatform
+		SparkleTasks
 )
 
 sparkle_configure_runtime_support_artifacts(SparkleGameFramework)

@@ -132,23 +132,13 @@ namespace Assets
 		return true;
 	}
 
-	void SceneAssetRegistry::Clear() noexcept
-	{
-		m_entries.clear();
-	}
-
 	void SceneAssetRegistry::Upsert(std::string sceneAssetId, std::filesystem::path sceneManifestRelativePath)
 	{
 		m_entries[std::move(sceneAssetId)] = std::move(sceneManifestRelativePath);
 	}
 
-	std::optional<std::filesystem::path> SceneAssetRegistry::Resolve(std::string_view sceneAssetId) const
+	std::map<std::string, std::filesystem::path, std::less<>> SceneAssetRegistry::ReleaseEntries() noexcept
 	{
-		if (const auto it = m_entries.find(std::string(sceneAssetId)); it != m_entries.end())
-		{
-			return it->second;
-		}
-
-		return std::nullopt;
+		return std::move(m_entries);
 	}
 }

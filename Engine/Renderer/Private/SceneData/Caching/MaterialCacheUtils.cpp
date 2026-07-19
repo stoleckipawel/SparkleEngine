@@ -62,6 +62,10 @@ namespace MaterialCacheUtils
 
 	bool MaterialSnapshotEquals(const MaterialSnapshot& left, const MaterialSnapshot& right)
 	{
+		if (left.generation != right.generation)
+		{
+			return false;
+		}
 		if (left.materialDescs.size() != right.materialDescs.size())
 		{
 			return false;

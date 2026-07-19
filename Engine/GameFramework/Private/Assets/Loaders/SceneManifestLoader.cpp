@@ -6,14 +6,15 @@
 #include "Assets/Loaders/CookedAssetByteReader.h"
 #include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
 #include "Assets/Loaders/SceneManifestValidator.h"
-#include "Core/Public/Files/FileUtils.h"
-
 #include <cstdint>
-#include <vector>
 
 namespace Assets
 {
-	bool SceneManifestLoader::Load(const std::filesystem::path& path, LoadedSceneManifest& outManifest, std::string& outErrorMessage) const
+	bool SceneManifestLoader::Decode(
+	    const std::filesystem::path& path,
+	    std::span<const std::uint8_t> bytes,
+	    LoadedSceneManifest& outManifest,
+	    std::string& outErrorMessage) const
 	{
 		const CookedAssetLoaderContext diagnosticsContext =
 		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedSceneManifest", kCookedSceneManifestVersion);
@@ -23,13 +24,7 @@ namespace Assets
 			return false;
 		};
 
-		std::vector<std::uint8_t> fileBytes;
-		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
-		{
-			return fail("file", "readable cooked scene manifest bytes", outErrorMessage);
-		}
-
-		CookedAssetByteReader reader(fileBytes);
+		CookedAssetByteReader reader(bytes);
 		if (!reader.Read(outManifest.header, outErrorMessage))
 		{
 			return fail("header", "CookedSceneManifestHeader", outErrorMessage);

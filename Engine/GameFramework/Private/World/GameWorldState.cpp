@@ -18,25 +18,6 @@ namespace ECS
 		CommitDerivedStateAndPublish();
 	}
 
-	void GameWorldState::Clear()
-	{
-		m_registry.Clear();
-		m_meshResources.Clear();
-		m_animationResources.Clear();
-		m_deformationStates.Clear();
-		m_meshInstanceGroups.clear();
-		m_skyEnvironment.reset();
-		m_dirtyTransforms.clear();
-		m_pendingChanges.clear();
-		m_evaluateAllTransforms = false;
-		m_changesOverflowed = false;
-		m_activeCamera = EntityId::Invalid();
-		m_nextCameraIdentity = 0;
-		m_nextLightIdentity = 0;
-		m_forceFullPublication = true;
-		RecordChange(EntityId::Invalid(), WorldChangeKind::WorldReset, WorldDataKind::World);
-	}
-
 	bool GameWorldState::Destroy(EntityId entity) noexcept
 	{
 		const MeshInstance* mesh = m_registry.Get<MeshInstance>(entity);

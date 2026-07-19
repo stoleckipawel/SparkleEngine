@@ -225,7 +225,7 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 			ImGui::EndTabItem();
 		}
 
-		if (m_gameWorld->GetMaterialVariants().GetVariantCount() > 0 && ImGui::BeginTabItem("Variants"))
+		if (m_gameWorld->GetMaterialVariantCount() > 0 && ImGui::BeginTabItem("Variants"))
 		{
 			ImGui::Spacing();
 			SceneMaterialVariantInspector::Build(*m_gameWorld);

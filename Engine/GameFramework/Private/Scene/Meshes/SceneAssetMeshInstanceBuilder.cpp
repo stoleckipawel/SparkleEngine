@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Scene/Meshes/SceneAssetMeshInstanceBuilder.h"
 
-#include "Scene/Materials/SceneMaterials.h"
+#include "World/Resources/MaterialResourceStore.h"
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/SkeletalCookedMesh.h"
 
@@ -10,17 +10,17 @@ namespace
 	MaterialHandle ResolveMaterial(
 	    MaterialHandle payloadMaterial,
 	    MaterialHandle materialBaseHandle,
-	    SceneMaterials& materials) noexcept
+	    MaterialResourceStore& materials) noexcept
 	{
 		return payloadMaterial.IsValid() && materialBaseHandle.IsValid()
-		           ? MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex())
-		           : materials.GetOrCreateDefaultMaterialHandle();
+		           ? MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex(), materialBaseHandle.GetGeneration())
+		           : materials.GetOrCreateDefault();
 	}
 
 	MaterialHandle ResolveOptionalMaterial(MaterialHandle payloadMaterial, MaterialHandle materialBaseHandle) noexcept
 	{
 		return payloadMaterial.IsValid() && materialBaseHandle.IsValid()
-		           ? MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex())
+		           ? MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex(), materialBaseHandle.GetGeneration())
 		           : MaterialHandle::Invalid();
 	}
 
@@ -44,7 +44,7 @@ namespace SceneAssetMeshInstanceBuilder
 {
 	bool BuildInstances(
 	    SceneAssetPayload& payload,
-	    SceneMaterials& materials,
+	    MaterialResourceStore& materials,
 	    MaterialHandle materialBaseHandle,
 	    SceneMeshInstanceGroupIndex groupBaseIndex,
 	    std::vector<ECS::SceneMeshInstanceData>& outInstances)

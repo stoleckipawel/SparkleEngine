@@ -14,10 +14,9 @@ class GameWorld;
 class Renderer;
 class LevelManager;
 class RuntimeConsoleHost;
-namespace Assets
-{
-	class SceneAssetManager;
-}
+class TaskExecutor;
+class TaskScope;
+class ApplicationTaskRuntime;
 
 enum class RuntimeApplicationFrameResult : std::uint8_t
 {
@@ -55,6 +54,8 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	GameWorld* GetGameWorld() const noexcept;
 	LevelManager* GetLevelManager() const noexcept;
 	Renderer& GetRenderer() noexcept;
+	TaskExecutor& GetTaskExecutor() noexcept;
+	TaskScope& GetApplicationTaskScope() noexcept;
 	bool Tick() override;
 	void Shutdown() override;
 
@@ -63,10 +64,10 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<InputSystem> m_inputSystem;
 	std::unique_ptr<GameWorld> m_gameWorld;
-	std::unique_ptr<Assets::SceneAssetManager> m_sceneAssetManager;
 	std::unique_ptr<LevelManager> m_levelManager;
 	std::unique_ptr<Renderer> m_renderer;
 	std::unique_ptr<RuntimeConsoleHost> m_runtimeConsoleHost;
+	std::unique_ptr<ApplicationTaskRuntime> m_taskRuntime;
 	RuntimeApplicationOptions m_options;
 	bool m_isInitialized = false;
 };

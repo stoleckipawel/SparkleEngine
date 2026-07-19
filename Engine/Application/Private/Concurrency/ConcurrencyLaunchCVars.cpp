@@ -4,14 +4,8 @@
 
 #include "Core/Public/Console/CVar.h"
 
-#include <cstdint>
-
 namespace
 {
-	ConsoleVariable<std::uint32_t> g_taskWorkerCount(
-	    "task.WorkerCount", 0, "Development override for future engine task workers; 0 selects the measured default.");
-	ConsoleVariable<bool> g_taskSerialExecution(
-	    "task.SerialExecution", true, "Development serial oracle for the future task executor.");
 	ConsoleVariable<bool> g_threadedRenderer(
 	    "r.ThreadedRenderer", false, "Development switch reserved for the future renderer owner thread.");
 	ConsoleVariable<bool> g_parallelCommandRecording(

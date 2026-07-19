@@ -15,10 +15,13 @@ struct ShaderRecookExecutionResult final
 	ShaderCompilerProcessResult Process;
 };
 
+class TaskExecutor;
+class TaskScope;
+
 class ShaderRecookExecutionService final
 {
   public:
-	ShaderRecookExecutionService();
+	ShaderRecookExecutionService(TaskExecutor& executor, TaskScope& applicationScope);
 	~ShaderRecookExecutionService();
 
 	ShaderRecookExecutionService(const ShaderRecookExecutionService&) = delete;
@@ -32,6 +35,6 @@ class ShaderRecookExecutionService final
 	bool TryConsume(ShaderRecookExecutionResult& outResult) noexcept;
 
   private:
-	struct Implementation;
-	std::unique_ptr<Implementation> m_implementation;
+	struct ControlState;
+	std::unique_ptr<ControlState> m_control;
 };

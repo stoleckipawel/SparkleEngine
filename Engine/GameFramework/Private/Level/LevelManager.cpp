@@ -1,16 +1,14 @@
 #include "PCH.h"
 #include "Level/LevelManager.h"
 
-#include "Assets/SceneAssetManager.h"
+#include "Environment/EnvironmentVariables.h"
 #include "Level/Level.h"
 #include "Level/LevelRegistry.h"
-#include "World/GameWorld.h"
+#include "Level/Loading/SceneLoadExecutionService.h"
 #include "Scene/Camera/SceneCameraView.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Sky/SceneSky.h"
-#include "Environment/EnvironmentVariables.h"
-
-#include <memory>
+#include "World/GameWorld.h"
 
 static const auto g_levelManagerLogger = Logging::GetOrCreateLogger("GameFramework.LevelManager");
 
@@ -19,17 +17,20 @@ namespace
 	std::string ResolveRequestedStartupLevelName() noexcept
 	{
 		std::string requestedLevelName;
-		if (Environment::TryGetVariable("SPARKLE_STARTUP_LEVEL", requestedLevelName) && !requestedLevelName.empty())
-		{
-			return requestedLevelName;
-		}
-
-		return {};
+		return Environment::TryGetVariable("SPARKLE_STARTUP_LEVEL", requestedLevelName) && !requestedLevelName.empty()
+		           ? requestedLevelName
+		           : std::string{};
 	}
+
 }
 
-LevelManager::LevelManager(GameWorld& world, Assets::SceneAssetManager& sceneAssetManager) :
-    m_gameWorld(&world), m_sceneAssetManager(&sceneAssetManager), m_levelRegistry(std::make_unique<LevelRegistry>())
+LevelManager::LevelManager(
+    GameWorld& world,
+    TaskExecutor& taskExecutor,
+    TaskScope& applicationScope) :
+    m_gameWorld(&world),
+    m_levelRegistry(std::make_unique<LevelRegistry>()),
+    m_loadExecution(std::make_unique<Assets::SceneLoadExecutionService>(taskExecutor, applicationScope))
 {
 	InitializeStartupLevel();
 }
@@ -38,226 +39,170 @@ LevelManager::~LevelManager() noexcept = default;
 
 void LevelManager::InitializeStartupLevel() noexcept
 {
-	if (!m_gameWorld)
-	{
-		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Cannot initialize startup level because required services are unavailable");
-		return;
-	}
-
-	const std::string requestedStartupLevelName = ResolveRequestedStartupLevelName();
-	const std::string_view defaultLevelName = m_levelRegistry->GetDefaultLevelName();
-	LevelAsset* startupLevel =
-	    m_levelRegistry->FindLevel(requestedStartupLevelName.empty() ? defaultLevelName : std::string_view(requestedStartupLevelName));
+	const std::string requestedName = ResolveRequestedStartupLevelName();
+	const std::string_view startupName = requestedName.empty() ? m_levelRegistry->GetDefaultLevelName() : std::string_view(requestedName);
+	LevelAsset* startupLevel = m_levelRegistry->FindLevel(startupName);
 	if (!startupLevel)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_levelManagerLogger,
-		    "LevelManager: Startup level initialization failed because no registered level could be resolved for '{}'",
-		    requestedStartupLevelName.empty() ? std::string(m_levelRegistry->GetDefaultLevelName()) : requestedStartupLevelName);
-		m_activeLevel = nullptr;
+		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "No registered startup level could be resolved for '{}'.", std::string(startupName));
 		return;
 	}
-
-	const std::string startupLevelName(startupLevel->GetName());
-
-	const GameWorldLoadResult loadResult = LoadLevelFromUnloadedState(*startupLevel);
-	if (!loadResult.Succeeded())
-	{
-		m_activeLevel = nullptr;
-		SPDLOG_LOGGER_WARN(
-		    g_levelManagerLogger,
-		    "LevelManager: Startup level initialization failed for '{}'{}",
-		    startupLevelName,
-		    loadResult.errorMessage.empty() ? std::string() : std::string{" - "} + loadResult.errorMessage);
-		return;
-	}
-
-	m_activeLevel = startupLevel;
+	m_pendingLevelChange = startupLevel;
 }
 
-std::vector<std::string> LevelManager::GetRegisteredLevelNames() const
-{
-	return m_levelRegistry->GetLevelNames();
-}
+std::vector<std::string> LevelManager::GetRegisteredLevelNames() const { return m_levelRegistry->GetLevelNames(); }
 
 void LevelManager::RequestLevelChange(std::string_view requestedLevelName) noexcept
 {
 	if (requestedLevelName.empty())
-	{
 		return;
-	}
-
-	if (m_bLevelChangeInProgress)
-	{
-		return;
-	}
-
-	if (m_activeLevel != nullptr && requestedLevelName == m_activeLevel->GetName())
-	{
-		return;
-	}
-
 	LevelAsset* requestedLevel = m_levelRegistry->FindLevel(requestedLevelName);
 	if (!requestedLevel)
 	{
-		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Requested level '{}' is not registered", std::string(requestedLevelName));
+		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "Requested level '{}' is not registered.", std::string(requestedLevelName));
 		return;
 	}
-
-	if (m_pendingLevelChange != nullptr)
-	{
-		if (m_pendingLevelChange == requestedLevel)
-		{
-			return;
-		}
-	}
-
+	if (!m_levelChangeInProgress && m_activeLevel == requestedLevel)
+		return;
+	if (m_pendingLevelChange == requestedLevel || (m_levelChangeInProgress && m_loadingLevel == requestedLevel))
+		return;
 	m_pendingLevelChange = requestedLevel;
 }
 
 void LevelManager::ProcessPendingLevelChange() noexcept
 {
-	if (m_bLevelChangeInProgress || m_pendingLevelChange == nullptr)
+	if (m_pendingLevelChange && m_levelChangeInProgress)
 	{
-		return;
+		m_loadExecution->Cancel();
+		CompleteLevelChange();
+		if (m_levelChangeInProgress)
+			return;
 	}
-
-	LevelAsset* requestedLevel = m_pendingLevelChange;
-	m_pendingLevelChange = nullptr;
-	ProcessLevelChangeRequest(*requestedLevel);
+	if (m_pendingLevelChange)
+	{
+		LevelAsset* requestedLevel = m_pendingLevelChange;
+		m_pendingLevelChange = nullptr;
+		StartLevelChange(*requestedLevel);
+	}
+	CompleteLevelChange();
 }
 
-bool LevelManager::SaveActiveLevel() noexcept
+void LevelManager::StartLevelChange(LevelAsset& requestedLevel) noexcept
 {
-	if (m_activeLevel == nullptr)
-	{
-		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Cannot save level state because there is no active level");
-		return false;
-	}
-
-	CaptureSceneToLevel();
-
-	std::string errorMessage;
-	if (!m_levelRegistry->SaveLevel(*m_activeLevel, &errorMessage))
-	{
-		SPDLOG_LOGGER_WARN(
-		    g_levelManagerLogger,
-		    "LevelManager: Failed to persist state for level '{}'{}",
-		    std::string(m_activeLevel->GetName()),
-		    errorMessage.empty() ? std::string() : std::string{" - "} + errorMessage);
-		return false;
-	}
-
-	return true;
-}
-
-GameWorldLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& level) noexcept
-{
-	if (!m_gameWorld || !m_sceneAssetManager)
-	{
-		GameWorldLoadResult unavailableResult;
-		unavailableResult.errorMessage = "Required runtime services are unavailable";
-		return unavailableResult;
-	}
-
-	m_levelChangeEvents.OnLevelWillLoad.Broadcast(level.GetName());
-
-	m_sceneAssetManager->UnloadAll();
-
-	const LevelDesc& levelDesc = level.GetLevelDesc();
-	GameWorldLoadResult loadResult = m_gameWorld->LoadLevel(levelDesc);
-	if (!loadResult.Succeeded())
-	{
-		return loadResult;
-	}
-
-	Assets::SceneAssetLoadResult sceneAssetLoadResult = m_sceneAssetManager->LoadSceneAssets(levelDesc.sceneAssetIds);
-	if (!sceneAssetLoadResult.Succeeded())
-	{
-		loadResult.status = GameWorldLoadStatus::Failed;
-		loadResult.errorMessage = std::move(sceneAssetLoadResult.errorMessage);
-		return loadResult;
-	}
-
-	const bool hasSceneAssetPayload =
-	    sceneAssetLoadResult.sceneAssetPayload.HasMeshes() || !sceneAssetLoadResult.sceneAssetPayload.cameras.empty() ||
-	    !sceneAssetLoadResult.sceneAssetPayload.lights.empty() || !sceneAssetLoadResult.sceneAssetPayload.skeletons.empty();
-	if (hasSceneAssetPayload && !m_gameWorld->AppendSceneAssetPayload(std::move(sceneAssetLoadResult.sceneAssetPayload)))
-	{
-		loadResult.status = GameWorldLoadStatus::Failed;
-		loadResult.errorMessage = "GameWorld rejected the loaded scene asset payload";
-		return loadResult;
-	}
-
-	m_gameWorld->GetCameras().SetPrimaryCameraActive();
-
-	return loadResult;
-}
-
-void LevelManager::CaptureSceneToLevel() noexcept
-{
-	if (m_activeLevel == nullptr || !m_gameWorld)
-	{
-		return;
-	}
-
-	LevelDesc desc = m_activeLevel->BuildDescription();
-
-	desc.lights = m_gameWorld->GetLighting().CaptureToDesc();
-	desc.sky = m_gameWorld->GetSky().CaptureToDesc();
-	desc.cameraDesc = m_gameWorld->GetCameras().GetActiveCamera().GetDesc();
-
-	m_activeLevel->SetLevelDesc(desc);
-}
-
-void LevelManager::ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcept
-{
-	if (!m_gameWorld)
-	{
-		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Cannot process level change because required services are unavailable");
-		return;
-	}
-
-	m_bLevelChangeInProgress = true;
-
-	const std::string previousLevelName = m_activeLevel != nullptr ? std::string(m_activeLevel->GetName()) : std::string();
+	const std::string previousLevelName = m_activeLevel ? std::string(m_activeLevel->GetName()) : std::string{};
 	const std::string requestedLevelName(requestedLevel.GetName());
+	const std::uint64_t requestId = m_nextRequestId++;
+
+	m_loadExecution->Cancel();
+	m_latestRequestId = requestId;
+	m_loadingLevel = &requestedLevel;
+	m_levelChangeInProgress = true;
+	m_lastLoadDiagnostic.clear();
 
 	LevelChangeStartedEventArgs startedArgs;
 	startedArgs.previousLevelName = previousLevelName;
 	startedArgs.requestedLevelName = requestedLevelName;
 	m_levelChangeEvents.OnLevelChangeStarted.Broadcast(startedArgs);
+	m_levelChangeEvents.OnLevelWillLoad.Broadcast(requestedLevelName);
 
-	LevelWillUnloadEventArgs willUnloadArgs;
-	willUnloadArgs.previousLevelName = previousLevelName;
-	willUnloadArgs.requestedLevelName = requestedLevelName;
-	m_levelChangeEvents.OnLevelWillUnload.Broadcast(willUnloadArgs);
-
-	m_gameWorld->Clear();
-	m_activeLevel = nullptr;
-
-	m_levelChangeEvents.OnLevelUnloaded.Broadcast(previousLevelName);
-
-	GameWorldLoadResult loadResult = LoadLevelFromUnloadedState(requestedLevel);
-	if (!loadResult.Succeeded())
+	std::string errorMessage;
+	if (!m_loadExecution->Start(
+	        requestId,
+	        m_gameWorld->GetGeneration(),
+	        m_documentGeneration,
+	        requestedLevel.BuildDescription(),
+	        errorMessage))
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_levelManagerLogger,
-		    "LevelManager: Level change load failed for '{}'{}",
-		    requestedLevelName,
-		    loadResult.errorMessage.empty() ? std::string() : std::string{" - "} + loadResult.errorMessage);
-
+		m_lastLoadDiagnostic = std::move(errorMessage);
+		m_loadingLevel = nullptr;
+		m_levelChangeInProgress = false;
 		m_levelChangeEvents.OnLevelLoadFailed.Broadcast(requestedLevelName);
-		m_bLevelChangeInProgress = false;
+	}
+}
+
+void LevelManager::CompleteLevelChange() noexcept
+{
+	Assets::SceneLoadCompletion completion;
+	if (!m_loadExecution->TryConsume(completion))
+		return;
+
+	if (completion.RequestId != m_latestRequestId)
+		return;
+
+	LevelAsset* loadedLevel = m_loadingLevel;
+	m_loadingLevel = nullptr;
+	if (!completion.Succeeded() || !loadedLevel)
+	{
+		m_lastLoadDiagnostic = std::move(completion.Diagnostic);
+		m_levelChangeInProgress = false;
+		if (completion.Stage != LevelLoadOperationStage::Cancelled && loadedLevel)
+			m_levelChangeEvents.OnLevelLoadFailed.Broadcast(loadedLevel->GetName());
 		return;
 	}
 
-	m_activeLevel = &requestedLevel;
+	Assets::SceneLoadPackage& package = *completion.Package;
+	const bool stale = package.WorldGeneration != m_gameWorld->GetGeneration() ||
+	                   package.DocumentGeneration != m_documentGeneration ||
+	                   package.CatalogGeneration != m_loadExecution->GetCatalogGeneration();
+	if (stale)
+	{
+		m_lastLoadDiagnostic = "Scene load package was rejected because an owner generation changed.";
+		m_levelChangeInProgress = false;
+		m_levelChangeEvents.OnLevelLoadFailed.Broadcast(loadedLevel->GetName());
+		return;
+	}
 
+	const std::string previousLevelName = m_activeLevel ? std::string(m_activeLevel->GetName()) : std::string{};
+	const std::string loadedLevelName(loadedLevel->GetName());
+	std::string commitError;
+	if (!m_gameWorld->CommitSceneLoadPackage(std::move(*completion.Package), commitError))
+	{
+		m_lastLoadDiagnostic = std::move(commitError);
+		m_levelChangeInProgress = false;
+		m_levelChangeEvents.OnLevelLoadFailed.Broadcast(loadedLevelName);
+		return;
+	}
+
+	LevelWillUnloadEventArgs willUnloadArgs;
+	willUnloadArgs.previousLevelName = previousLevelName;
+	willUnloadArgs.requestedLevelName = loadedLevelName;
+	m_levelChangeEvents.OnLevelWillUnload.Broadcast(willUnloadArgs);
+	if (!previousLevelName.empty())
+		m_levelChangeEvents.OnLevelUnloaded.Broadcast(previousLevelName);
+	m_gameWorld->FinalizeSceneLoadCommit();
+	m_activeLevel = loadedLevel;
 	LevelChangedEventArgs changedArgs;
 	changedArgs.previousLevelName = previousLevelName;
-	changedArgs.activeLevelName = m_activeLevel != nullptr ? std::string(m_activeLevel->GetName()) : std::string();
+	changedArgs.activeLevelName = loadedLevelName;
 	m_levelChangeEvents.OnLevelChanged.Broadcast(changedArgs);
+	m_levelChangeInProgress = false;
+	m_lastLoadDiagnostic.clear();
+}
 
-	m_bLevelChangeInProgress = false;
+LevelLoadOperationProgress LevelManager::GetLoadProgress() const noexcept
+{
+	return m_loadExecution->GetProgress();
+}
+
+bool LevelManager::SaveActiveLevel() noexcept
+{
+	if (!m_activeLevel || m_levelChangeInProgress)
+		return false;
+	CaptureSceneToLevel();
+	std::string errorMessage;
+	if (m_levelRegistry->SaveLevel(*m_activeLevel, &errorMessage))
+		return true;
+	m_lastLoadDiagnostic = std::move(errorMessage);
+	return false;
+}
+
+void LevelManager::CaptureSceneToLevel() noexcept
+{
+	if (!m_activeLevel || !m_gameWorld)
+		return;
+	LevelDesc desc = m_activeLevel->BuildDescription();
+	desc.lights = m_gameWorld->GetLighting().CaptureToDesc();
+	desc.sky = m_gameWorld->GetSky().CaptureToDesc();
+	desc.cameraDesc = m_gameWorld->GetCameras().GetActiveCamera().GetDesc();
+	m_activeLevel->SetLevelDesc(desc);
 }

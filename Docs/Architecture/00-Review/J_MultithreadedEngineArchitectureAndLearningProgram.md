@@ -3457,7 +3457,7 @@ This same flow applies to mesh, texture, material, animation, and shader-package
 
 ### Transactional Asynchronous Level and Scene Loading
 
-The current `LevelManager` path is synchronous and destructive: it broadcasts unload events, clears `GameScene`, then reads the registry/manifests and assembles payloads. If loading fails, the previous playable scene has already been discarded. `SceneAssetManager` also stores loaded IDs and lazily mutates its registry state, so calling its current methods concurrently would race.
+Before Prompt 09, `LevelManager` was synchronous and destructive: it broadcast unload events, cleared the world, then read the registry/manifests and assembled payloads. Failure therefore discarded the previous playable scene, while `SceneAssetManager` kept loaded-ID bookkeeping beside a lazily mutated registry. Prompt 09 deleted that path and implemented the design below; it remains the normative contract for later streaming/residency work.
 
 Replace that path with a `SceneLoadOperation` in the world/editor-document task scope:
 
@@ -3504,6 +3504,10 @@ Binding rules:
 This is a deliberately useful new subsystem: it improves runtime level transitions, editor opening/reloading, automated level validation, and future streaming. It demonstrates blocking-I/O separation, fan-out/fan-in, cancellation, failure containment, deterministic merge, immutable publication, and safe owner-thread commit in one portfolio feature.
 
 Do not initially support partially interactive worlds, background UObject-style construction, or world partition. The first contract is whole-package preparation plus atomic commit; streaming cells can reuse it later if the content scale justifies them.
+
+Prompt 09 implementation note (2026-07-19): `ApplicationTaskRuntime` is now the single application-owned executor/root scope used by level loading and shader recooking. An immutable `SceneAssetCatalog` generation resolves request IDs before launch; the former one-method `SceneAssetManager` owner was deleted. Per-asset Document-scope work uses `SceneAssetFileReader` to read the manifest and referenced cooked files into a task-local `CookedAssetFileSet` on `BlockingIo`, then releases those raw buffers after `SceneAssetPayloadDecoder` invokes byte-only decoders and `SceneLoadPackageBuilder` builds schema-versioned `EntityBlueprint` records on `Background`. The unused synchronous loader entries and public payload DTO surface were deleted. Stable request index, never completion order, drives fan-in. The owner rejects request/world/document/catalog mismatches and `GameWorldSceneAssetCommitter` constructs a complete staged `GameWorldState` plus private resource stores before swapping generations. Staging does not invoke controllers or publish intermediate worlds; one owner finalization follows the swap. The old world survives every pre-swap error/cancellation path.
+
+This implementation also removed the public mutable `SceneMaterials`, `SceneTextures`, `SceneSkeletons`, and `SceneMaterialVariants` vector owners. Renderer access remains snapshot publication; editor material variants use narrow world reads/commands; payload-local material indices become generation-bearing runtime handles during staged construction. `SceneLoadExecutionService` owns lifetime, `SceneLoadTaskGraph` owns dependencies/lanes, `SceneLoadPackageBuilder` owns decode validation/blueprints, and the cooked loaders retain one synchronous low-level `Load` adapter for existing tool callers while the level path uses explicit read/`Decode` entry points. There is no `Async*` duplicate loader or second asset database.
 
 ## Editor Integration
 
@@ -4266,7 +4270,7 @@ Goals:
 Code areas:
 
 - `LevelManager` and level lifecycle results
-- `SceneAssetManager`, registry, manifest/payload loaders and appenders
+- `SceneAssetCatalog`/registry, manifest/payload loaders and appenders
 - GameFramework world/scene-generation task scope
 - Editor operation service and level UI state
 
@@ -4285,7 +4289,7 @@ Work:
 Delete:
 
 - destructive clear-before-load level replacement
-- mutable `SceneAssetManager` loaded-ID bookkeeping as a synchronization/lifetime mechanism
+- former mutable `SceneAssetManager` loaded-ID bookkeeping as a synchronization/lifetime mechanism
 - worker-callable inline level callbacks
 - any temporary synchronous fallback after editor/runtime parity and failure tests pass
 
@@ -5216,7 +5220,7 @@ These are the principal Sparkle sources inspected for this study. They should be
 | [GameWorldAnimations.cpp](../../../Engine/GameFramework/Private/World/GameWorldAnimations.cpp), [SceneAnimationPoseEvaluator.cpp](../../../Engine/GameFramework/Private/Scene/Animations/SceneAnimationPoseEvaluator.cpp), and [GameWorldMeshes.cpp](../../../Engine/GameFramework/Private/World/GameWorldMeshes.cpp) | Animation/pose/morph work remains serial and contains natural per-instance private-output boundaries for Prompt 10 |
 | [Transform.cpp](../../../Engine/GameFramework/Private/Scene/Transform.cpp), [TransformEvaluationSystem.cpp](../../../Engine/GameFramework/Private/World/Systems/TransformEvaluationSystem.cpp), and [CameraDerivedStateEvaluationSystem.cpp](../../../Engine/GameFramework/Private/World/Systems/CameraDerivedStateEvaluationSystem.cpp) | Prompt 08 removed write-on-read caches; owner-written local TRS becomes explicit derived matrix/direction output at commit |
 | [EntityId.h](../../../Engine/GameFramework/Public/World/EntityId.h) and private [World/ECS](../../../Engine/GameFramework/Private/World/ECS) storage | Generational identity, sparse component pools, frozen typed queries, and deterministic structural commands are private to `GameWorldState`; no old owning `Entity`/`Component` path remains |
-| [LevelManager.cpp](../../../Engine/GameFramework/Private/Level/LevelManager.cpp), [SceneAssetManager.cpp](../../../Engine/GameFramework/Private/Assets/SceneAssetManager.cpp), and [SceneAssetPayloadLoader.cpp](../../../Engine/GameFramework/Private/Assets/SceneAssetPayloadLoader.cpp) | Level replacement clears first and then performs synchronous registry/manifest/payload loading into mutable manager state |
+| [LevelManager.cpp](../../../Engine/GameFramework/Private/Level/LevelManager.cpp), deleted historical `SceneAssetManager`, [SceneAssetFileReader.cpp](../../../Engine/GameFramework/Private/Assets/Loading/SceneAssetFileReader.cpp), and [SceneAssetPayloadDecoder.cpp](../../../Engine/GameFramework/Private/Assets/Loading/SceneAssetPayloadDecoder.cpp) | Prompt 09 replaced clear-first loading and mutable manager bookkeeping with immutable catalog capture, scoped read/decode work, and transactional owner commit |
 | [Event.h](../../../Engine/Core/Public/Events/Event.h) | Callback storage and inline broadcast are unsynchronized and therefore an owner-thread primitive, not a worker notification channel |
 | [SceneObjectSelection.h](../../../Engine/Editor/Public/Scene/SceneObjectSelection.h), [SceneOutlinerEntries.cpp](../../../Engine/Editor/Private/Panels/SceneOutlinerEntries.cpp), and [SceneObjectActions.cpp](../../../Engine/Editor/Private/Scene/SceneObjectActions.cpp) | Selection uses generational `EntityId` and the outliner reads a pinned `WorldReadView`; inspectors/actions still mutate focused facades directly until Prompt 11 |
 | [GameWorldSnapshot.h](../../../Engine/GameFramework/Public/World/GameWorldSnapshot.h) and [MeshSnapshot.h](../../../Engine/GameFramework/Public/Scene/Meshes/MeshSnapshot.h) | Active camera data now comes from the committed read generation, but the compatibility renderer snapshot still carries raw mesh identity/lifetime until Prompt 12 |
@@ -5417,12 +5421,12 @@ Reserved truthful roles are `Sparkle.GameThread`, `Sparkle.EditorThread`, `Spark
 
 The current tree has GPU markers/timestamps, not a general CPU profiler API. `FrameGraphSubmissionExecutor` already emits `GPU Frame/<Queue>/Batch N` and pass scopes, with D3D12 PIX command-list events and Vulkan debug labels. No current cross-backend CPU hook covers game update, snapshot, scene/GPU-data build, graph setup/compile, submit, present, or idle waits. Prompt 00 therefore does **not** invent a profiler framework or pretend GPU markers measure CPU ownership. Capture CPU intervals in WPA/Nsight Systems and GPU work in PIX/Nsight Graphics/RGP; Prompt 05 owns any deliberately reviewed integration. This is explicit MT-43 measurement debt.
 
-Five CVars live together in the dedicated private `Concurrency/ConcurrencyLaunchCVars.cpp` settings unit; the generic command-line parser remains feature-agnostic. Defaults preserve the serial before-state and none has a consumer yet:
+Task controls live in the dedicated private `Concurrency/TaskRuntimeCVars.cpp` settings unit; dormant renderer launch controls remain separate in `ConcurrencyLaunchCVars.cpp`; the generic command-line parser stays feature-agnostic. Prompt 09 activated only the task controls through the application-owned runtime:
 
 | Control | Default | First semantic owner |
 |---|---:|---|
-| `task.WorkerCount` | `0` | Prompt 01/02; 0 selects measured default, explicit 1/2/N are experiments |
-| `task.SerialExecution` | `true` | Prompt 02 serial oracle |
+| `task.WorkerCount` | `0` | `ApplicationTaskRuntime`; 0 selects one Background worker until Prompt 25 establishes measured host/rendering capacity, explicit 1/2/N remain experiments |
+| `task.SerialExecution` | `false` | `ApplicationTaskRuntime`; true selects the zero-worker deterministic serial oracle |
 | `r.ThreadedRenderer` | `false` | Prompt 13 owner transition |
 | `r.ParallelCommandRecording` | `false` | Prompt 20 comparison |
 | `r.RenderPipelineDepth` | `0` | Prompt 13; initially only synchronous 0 and bounded-ahead 1 |
@@ -5435,7 +5439,7 @@ The current exhaustive search reconfirmed LC-01 through LC-18 and found no secon
 
 | IDs / current paths and users | Owner, invariant, blocking/affinity/lifetime policy | Disposition, closing prompt, falsifier |
 |---|---|---|
-| LC-01 `ShaderRecookCoordinator.{h,cpp}`: scoped task execution plus editor update/reload | Application scope owns Background/BlockingIo work; editor owner accepts request/publication generations | Prompt 04 process path closed; tokenized reload/idle removal Prompt 16; destroy/cancel/stale publication and zero idle audit |
+| LC-01 `ShaderRecookCoordinator.{h,cpp}`: scoped task execution plus editor update/reload | shared `ApplicationTaskRuntime` owns Background/BlockingIo work; an AssetGeneration child scope owns recook lifetime; editor owner accepts request/publication generations | Prompt 09 deleted the private recook executor; tokenized reload/idle removal Prompt 16; destroy/cancel/stale publication and zero idle audit |
 | LC-02 launcher `LauncherBackend` plus private operation mapping/execution | bounded host executor owns operations; Qt UI stays GUI-owner; queued immutable messages close cross-thread delivery | Prompt 04 closed operation QThreads; Prompt 22 repeats cancel/close/restart and Qt affinity checks |
 | LC-03 Core `ChildProcessWindows.cpp` through launcher `ProcessRunner` | BlockingIo caller owns child job, descendants, overlapped pipe, cancellation event, and result; no reader thread/polling/atomic cancel family | Prompt 04 closed; Prompt 27 hardens launch/read/exit faults and worker-stack policy |
 | LC-04 `AssetCookerToolProcess.cpp` through Core child process | CLI host may call synchronously; scheduled caller must use BlockingIo; event/cancel wait is not an uninterruptible native wait | Prompt 04 closed mechanism; Prompt 27 call graph and cancellation equivalence remain falsifiers |

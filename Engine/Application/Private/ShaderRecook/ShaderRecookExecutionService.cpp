@@ -8,25 +8,28 @@
 #include <exception>
 #include <utility>
 
-struct ShaderRecookExecutionService::Implementation final
+struct ShaderRecookExecutionService::ControlState final
 {
-	TaskExecutor Executor{TaskExecutorConfig{
-	    .FrameCriticalWorkerCount = 1,
-	    .BackgroundWorkerCount = 1,
-	    .BlockingIoWorkerCount = 1,
-	    .MaximumActiveExecutions = 2}};
-	TaskScope Scope{TaskScopeDesc{TaskScopeKind::Application, "Shader recook"}};
+	ControlState(TaskExecutor& executor, TaskScope& applicationScope) :
+	    Executor(executor), Scope(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Shader recook"}, &applicationScope)
+	{
+	}
+
+	TaskExecutor& Executor;
+	TaskScope Scope;
 	TaskExecution Execution;
 	std::shared_ptr<ShaderRecookExecutionResult> Result;
 };
 
-ShaderRecookExecutionService::ShaderRecookExecutionService() : m_implementation(std::make_unique<Implementation>()) {}
+ShaderRecookExecutionService::ShaderRecookExecutionService(TaskExecutor& executor, TaskScope& applicationScope) :
+    m_control(std::make_unique<ControlState>(executor, applicationScope))
+{
+}
 
 ShaderRecookExecutionService::~ShaderRecookExecutionService()
 {
-	m_implementation->Scope.Cancel();
-	m_implementation->Executor.Shutdown(TaskExecutorShutdownMode::Cancel);
-	m_implementation->Scope.JoinFor(std::chrono::milliseconds::zero());
+	m_control->Scope.Cancel();
+	m_control->Scope.JoinFor(std::chrono::milliseconds::max());
 }
 
 bool ShaderRecookExecutionService::Start(
@@ -35,7 +38,7 @@ bool ShaderRecookExecutionService::Start(
     ShaderRecookRequest request,
     std::string& outErrorMessage) noexcept
 {
-	if (m_implementation->Execution.IsValid() && !m_implementation->Execution.IsSettled())
+	if (m_control->Execution.IsValid() && !m_control->Execution.IsSettled())
 	{
 		outErrorMessage = "A shader recook execution is already active.";
 		return false;
@@ -43,16 +46,10 @@ bool ShaderRecookExecutionService::Start(
 
 	try
 	{
-		m_implementation->Result = std::make_shared<ShaderRecookExecutionResult>();
-		const std::shared_ptr<ShaderRecookExecutionResult> result = m_implementation->Result;
+		m_control->Result = std::make_shared<ShaderRecookExecutionResult>();
+		const std::shared_ptr<ShaderRecookExecutionResult> result = m_control->Result;
 		TaskGraphBuilder graph;
-		const TaskNodeHandle preparation = graph.Add(
-		    TaskDesc{TaskName("Prepare shader recook"), TaskLane::Background},
-		    [](TaskExecutionContext&)
-		    {
-			    return TaskResult::Success();
-		    });
-		const TaskNodeHandle process = graph.Add(
+		graph.Add(
 		    TaskDesc{TaskName("Run shader compiler"), TaskLane::BlockingIo},
 		    [requestId, baselinePublicationId, request = std::move(request), result](TaskExecutionContext& context)
 		    {
@@ -64,20 +61,19 @@ bool ShaderRecookExecutionService::Start(
 				    return TaskResult::Cancelled("Shader recook was cancelled.");
 			    return result->Process.Succeeded() ? TaskResult::Success() : TaskResult::Failure("Shader compiler process failed.");
 		    });
-		graph.DependsOn(process, preparation);
-		m_implementation->Execution = m_implementation->Executor.Launch(m_implementation->Scope, graph.Compile());
+		m_control->Execution = m_control->Executor.Launch(m_control->Scope, graph.Compile());
 		outErrorMessage.clear();
 		return true;
 	}
 	catch (const std::exception& exception)
 	{
-		m_implementation->Result.reset();
+		m_control->Result.reset();
 		outErrorMessage = exception.what();
 		return false;
 	}
 	catch (...)
 	{
-		m_implementation->Result.reset();
+		m_control->Result.reset();
 		outErrorMessage = "Unknown shader recook launch failure.";
 		return false;
 	}
@@ -85,10 +81,10 @@ bool ShaderRecookExecutionService::Start(
 
 bool ShaderRecookExecutionService::TryConsume(ShaderRecookExecutionResult& outResult) noexcept
 {
-	if (!m_implementation->Execution.IsValid() || !m_implementation->Execution.IsSettled())
+	if (!m_control->Execution.IsValid() || !m_control->Execution.IsSettled())
 		return false;
-	outResult = m_implementation->Result ? std::move(*m_implementation->Result) : ShaderRecookExecutionResult{};
-	m_implementation->Result.reset();
-	m_implementation->Execution = TaskExecution{};
+	outResult = m_control->Result ? std::move(*m_control->Result) : ShaderRecookExecutionResult{};
+	m_control->Result.reset();
+	m_control->Execution = TaskExecution{};
 	return true;
 }

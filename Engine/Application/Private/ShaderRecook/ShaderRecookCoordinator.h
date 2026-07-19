@@ -13,12 +13,14 @@ class Renderer;
 struct CookedShaderReloadResult;
 struct ShaderRecookExecutionResult;
 class ShaderRecookExecutionService;
+class TaskExecutor;
+class TaskScope;
 
 class ShaderRecookCoordinator final
 {
   public:
 	using StatusHandler = std::function<void(std::string)>;
-	ShaderRecookCoordinator();
+	ShaderRecookCoordinator(TaskExecutor& executor, TaskScope& applicationScope);
 	~ShaderRecookCoordinator();
 
 	void SetStatusHandler(StatusHandler handler);

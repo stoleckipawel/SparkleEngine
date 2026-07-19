@@ -23,7 +23,7 @@
 #include <optional>
 
 class Mesh;
-class SceneSkeletons;
+class SkeletonResourceStore;
 
 namespace ECS
 {
@@ -31,8 +31,8 @@ namespace ECS
 	{
 	  public:
 		GameWorldState();
-		void Clear();
 		bool IsAlive(EntityId entity) const noexcept { return m_registry.IsAlive(entity); }
+		std::size_t GetEntityCount() const noexcept { return m_registry.GetLiveCount(); }
 		bool Destroy(EntityId entity) noexcept;
 
 		EntityId AddCamera(SceneCameraEntry&& entry, bool active = false);
@@ -77,7 +77,7 @@ namespace ECS
 		LightingSnapshot CaptureLighting() const;
 
 		void AppendAnimationClips(std::vector<SceneAnimationClipDesc>&& clips);
-		void UpdateAnimations(float deltaSeconds, const SceneSkeletons& skeletons);
+		void UpdateAnimations(float deltaSeconds, const SkeletonResourceStore& skeletons);
 		const SceneAnimationSnapshot& GetAnimationOutput() const noexcept { return m_animationResources.GetDerivedOutput(); }
 
 		std::optional<SkyEnvironment> ReadSkyEnvironment() const { return m_skyEnvironment; }

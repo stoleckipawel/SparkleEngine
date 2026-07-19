@@ -4,6 +4,7 @@
 
 #include "Assets/Cooked/LoadedSkeletonAsset.h"
 #include "Assets/Loaders/SkeletonAssetLoader.h"
+#include "Assets/Loaders/CookedAssetFileSet.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Assets/Translators/SceneAssetSkeletonTranslator.h"
@@ -15,6 +16,7 @@ namespace Assets
 {
 	bool SceneAssetPayloadSkeletonAppender::AppendSkeletons(
 	    const LoadedSceneManifest& sceneManifest,
+	    const CookedAssetFileSet& files,
 	    SceneAssetPayload& sceneAssetPayload,
 	    std::string& errorMessage)
 	{
@@ -25,7 +27,7 @@ namespace Assets
 		{
 			LoadedSkeletonAsset skeletonAsset;
 			const std::filesystem::path skeletonAssetPath = Paths::CookedSkeletonAsset(skeletonRef.skeletonAssetId);
-			if (!skeletonAssetLoader.Load(skeletonAssetPath, skeletonAsset, errorMessage))
+			if (!skeletonAssetLoader.Decode(skeletonAssetPath, files.Find(skeletonAssetPath), skeletonAsset, errorMessage))
 			{
 				errorMessage = std::format(
 				    "Failed to load cooked skeleton asset {} from '{}' - {}",

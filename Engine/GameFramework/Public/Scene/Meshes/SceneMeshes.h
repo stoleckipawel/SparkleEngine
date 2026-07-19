@@ -9,16 +9,9 @@
 #include "GameFramework/Public/World/EntityId.h"
 
 #include <cstddef>
-#include <vector>
 
 class GameWorld;
-class GameWorldAssetPayloadAppender;
 class Mesh;
-
-namespace ECS
-{
-	struct SceneMeshInstanceData;
-}
 
 class SPARKLE_ENGINE_API SceneMeshView final
 {
@@ -33,7 +26,6 @@ class SPARKLE_ENGINE_API SceneMeshView final
 	Transform GetTransform() const noexcept;
 	void SetTransform(const Transform& transform) noexcept;
 	MaterialHandle GetMaterialHandle() const noexcept;
-	void SetMaterialHandle(MaterialHandle material) noexcept;
 	Assets::CookedAssetId GetMeshAssetId() const noexcept;
 	Assets::CookedAssetId GetSkeletonAssetId() const noexcept;
 	std::uint32_t GetSourceNodeIndex() const noexcept;
@@ -57,19 +49,14 @@ class SPARKLE_ENGINE_API SceneMeshes final
 	SceneMeshes& operator=(SceneMeshes&&) = delete;
 
 	std::size_t GetMeshCount() const noexcept;
-	std::size_t GetMeshInstanceGroupCount() const noexcept;
 	bool HasMeshes() const noexcept { return GetMeshCount() != 0; }
 	EntityId GetMeshEntity(std::size_t index) const noexcept;
 	SceneMeshView GetMesh(std::size_t index) const noexcept;
 	SceneMeshView GetMesh(EntityId entity) const noexcept;
 
-	bool SetMeshMaterial(SceneMeshInstanceIndex meshInstanceIndex, MaterialHandle materialHandle) noexcept;
 	MeshSnapshot CaptureSnapshot() const;
 
   private:
 	friend class GameWorld;
-	friend class GameWorldAssetPayloadAppender;
-	bool AppendMesh(ECS::SceneMeshInstanceData&& instance);
-	void AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& groups);
 	GameWorld* m_world = nullptr;
 };

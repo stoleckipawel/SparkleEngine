@@ -5,15 +5,17 @@
 #include "Assets/Cooked/CookedMeshAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
 #include "Assets/Loaders/CookedAssetLoaderDiagnostics.h"
-#include "Core/Public/Files/FileUtils.h"
-
 #include <algorithm>
 #include <iterator>
 #include <utility>
 
 namespace Assets
 {
-	bool MeshAssetLoader::Load(const std::filesystem::path& path, LoadedMeshAsset& outMeshAsset, std::string& outErrorMessage) const
+	bool MeshAssetLoader::Decode(
+	    const std::filesystem::path& path,
+	    std::span<const std::uint8_t> bytes,
+	    LoadedMeshAsset& outMeshAsset,
+	    std::string& outErrorMessage) const
 	{
 		const CookedAssetLoaderContext diagnosticsContext =
 		    CookedAssetLoaderDiagnostics::BuildContext(path, "CookedMeshAsset", kCookedMeshAssetVersion);
@@ -23,13 +25,7 @@ namespace Assets
 			return false;
 		};
 
-		std::vector<std::uint8_t> fileBytes;
-		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
-		{
-			return fail("file", "readable cooked mesh bytes", outErrorMessage);
-		}
-
-		CookedAssetByteReader reader(fileBytes);
+		CookedAssetByteReader reader(bytes);
 		CookedMeshAssetHeader header;
 		if (!reader.Read(header, outErrorMessage))
 		{

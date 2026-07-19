@@ -5,6 +5,7 @@
 #include "Assets/Cooked/LoadedMaterialAsset.h"
 #include "Assets/CookedAssembly/CookedMaterialTranslator.h"
 #include "Assets/Loaders/MaterialAssetLoader.h"
+#include "Assets/Loaders/CookedAssetFileSet.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
@@ -16,6 +17,7 @@ namespace Assets
 {
 	bool SceneAssetPayloadMaterialAppender::AppendMaterials(
 	    const LoadedSceneManifest& sceneManifest,
+	    const CookedAssetFileSet& files,
 	    SceneAssetPayload& sceneAssetPayload,
 	    std::string& errorMessage)
 	{
@@ -27,7 +29,7 @@ namespace Assets
 		{
 			LoadedMaterialAsset materialAsset;
 			const std::filesystem::path materialAssetPath = Paths::CookedMaterialAsset(materialReference.materialAssetId);
-			if (!materialAssetLoader.Load(materialAssetPath, materialAsset, errorMessage))
+			if (!materialAssetLoader.Decode(materialAssetPath, files.Find(materialAssetPath), materialAsset, errorMessage))
 			{
 				errorMessage = std::format(
 				    "Failed to load cooked material asset {} from '{}' - {}",

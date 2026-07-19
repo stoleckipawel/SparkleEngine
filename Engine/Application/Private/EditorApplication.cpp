@@ -30,12 +30,12 @@ void EditorApplication::Initialize()
 		m_runtimeApplication = std::make_unique<RuntimeApplication>(std::move(runtimeOptions));
 	}
 
+	m_runtimeApplication->Initialize();
 	if (!m_shaderRecookCoordinator)
 	{
-		m_shaderRecookCoordinator = std::make_unique<ShaderRecookCoordinator>();
+		m_shaderRecookCoordinator = std::make_unique<ShaderRecookCoordinator>(
+		    m_runtimeApplication->GetTaskExecutor(), m_runtimeApplication->GetApplicationTaskScope());
 	}
-
-	m_runtimeApplication->Initialize();
 	m_runtimeApplication->GetInputSystem().ClearInputCaptureQuery();
 	m_runtimeApplication->GetInputSystem().BeginInputRoutingFrame(false, false);
 

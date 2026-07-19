@@ -1,0 +1,26 @@
+#pragma once
+
+#include "GameFramework/Public/GameFrameworkAPI.h"
+
+#include <cstdint>
+#include <filesystem>
+#include <functional>
+#include <map>
+#include <string>
+
+namespace Assets
+{
+	inline constexpr std::uint32_t kSceneAssetRegistryVersion = 1;
+
+	class SPARKLE_ENGINE_API SceneAssetRegistry final
+	{
+	  public:
+		bool Load(std::string& outErrorMessage);
+		bool Save(std::string& outErrorMessage) const;
+		void Upsert(std::string sceneAssetId, std::filesystem::path sceneManifestRelativePath);
+		std::map<std::string, std::filesystem::path, std::less<>> ReleaseEntries() noexcept;
+
+	  private:
+		std::map<std::string, std::filesystem::path, std::less<>> m_entries;
+	};
+}
