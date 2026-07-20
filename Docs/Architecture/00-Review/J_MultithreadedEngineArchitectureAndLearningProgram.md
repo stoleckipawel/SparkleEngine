@@ -4,6 +4,7 @@ Status: proposed target architecture and implementation program
 Date: 2026-07-16
 Last adversarial conformance review: 2026-07-18
 Last NVIDIA/AMD/Epic naming review: 2026-07-18 (repository revisions pinned in the source matrix)
+Last persistent-identity source review: 2026-07-21 (NVIDIA/AMD revisions pinned in the source trail)
 Scope: runtime, renderer, RHI, editor, asset and shader tools, learning evidence, and portfolio presentation
 Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), and [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md)
 Repository context: [D. Whole Repository Architecture Map](D_WholeRepositoryArchitectureMap.md)
@@ -3059,6 +3060,34 @@ Rules:
 
 This gives the ECS, editor, load pipeline, render world, and future spatial queries one consistent stale-handle rule. `EntityId` is GameFramework's world identity; only explicit extraction creates a separate renderer identity.
 
+### Persistent Authored and Asset GUIDs
+
+`EntityId` solves runtime stale-handle detection; it is deliberately not serialized as identity across world reloads, asset moves, recooks, saves, or editor sessions. Those boundaries need a separate persistent identity contract. As of Prompt 10, Sparkle's `SceneAssetId::value` is the authored instance authority and `SceneLoadPackageBuilder::MakeAuthoredInstanceId` derives `SourceInstanceId` by applying 64-bit FNV-1a to that string. The load package rejects a collision among its current entries, but the result changes when the string is renamed, has only 64 bits, and has no independently assigned serialized lifetime. `SourceInstanceId` is therefore a migration key, not a GUID, and must not become a permanent save or asset-reference schema.
+
+The external source precedent is deliberately scoped. NVIDIA Donut defines a real `AdapterInfo::UUID` as [`std::array<uint8_t, 16>`](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/include/donut/app/DeviceManager.h#L230-L239) and its Vulkan backend copies [`VkPhysicalDeviceIDProperties::deviceUUID`](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/src/app/vulkan/DeviceManager_VK.cpp#L963-L977) into that value separately from the device pointer, vendor/device numbers, and LUID. AMD FidelityFX Cauldron2 uses a concrete 128-bit [`GUID` as the `IID_IFfxAntiLag2Data` key](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/render/dx12/device_dx12.cpp#L379-L395) for swap-chain private data, separately from the associated payload. These are actual vendor-repository UUID/GUID uses that demonstrate fixed-width identity separated from object address and payload; neither repository establishes a persistent authored-asset database for Sparkle. [IETF RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html) is the binding representation/generation reference, while Sparkle's editor, loader, and asset requirements determine the domain policy.
+
+| Identity | Authority and lifetime | Required use |
+|---|---|---|
+| `Guid` | Core 128-bit value primitive; nil is invalid | canonical parse/format, comparison, hashing, byte serialization, and UUID generation only; it is not a registry or owner |
+| `AssetGuid` | assigned once in asset metadata | survives source rename/move, recook, and content changes; duplicated/imported-as-new assets receive a new value |
+| `AuthoredInstanceGuid` | stored in level/document data | identifies one placed asset or authored object across rename, reorder, save, and reload; duplicate-instance creates a new value |
+| `AuthoredObjectGuid` | stored in source/import metadata or a preserved importer remap | identifies a camera, light, mesh, skeleton, animation, or other subobject independently of array position and display name |
+| `EntityId` | runtime `EntityRegistry` slot plus generation | compact ECS lookup and stale-handle rejection for one world lifetime; never substituted by a GUID in hot queries |
+| resource/render handle | generation-owned runtime store or extraction owner | compact validated lookup after resolving persistent identity; `RenderObjectId` remains distinct from both GUID and `EntityId` |
+| content hash | cooker/cache authority over bytes and options | deduplication, cache invalidation, and artifact verification; never reused as authored identity |
+
+The foundation is a value contract, not a global `GuidManager`. Core owns the representation and UUID generation; the domain that creates an asset, level instance, or imported object owns assignment and persistence. Public APIs use strong domain wrappers so an `AssetGuid` cannot be passed accidentally as an `AuthoredInstanceGuid`. Serialized bytes use one documented RFC byte order and canonical text form rather than the platform-dependent in-memory layout of Windows `GUID`. A random UUID is generated once at authoring creation and then persisted; reimport preserves the recorded value or uses an explicit source-object remap. Runtime loaders resolve GUIDs once into generation-bearing resource handles and `EntityId` values. Frame-critical systems, renderer preparation, and GPU tables do not perform repeated 128-bit GUID-map joins.
+
+The migration order is binding:
+
+1. Add the 16-byte `Guid` primitive with nil, comparison, hashing, strict canonical parsing/formatting, UUID generation, and deterministic serialization tests. Do not add a service locator, global registry, or implicit string conversion.
+2. Add strong `AssetGuid`, `AuthoredInstanceGuid`, and `AuthoredObjectGuid` values at their owning module boundaries. Asset metadata and level/document formats become the authorities; display name and path remain editable locators, not identity.
+3. Change cooked headers/manifests to carry persistent asset/object GUIDs and schema versions. Cooking may continue producing compact artifact/catalog keys, but those keys are derived lookup/cache data rather than authoring truth.
+4. Change `AuthoredIdentity` to carry asset, instance, and object GUIDs. Scene/package commit maps them deterministically to runtime `EntityId`; editor models may use the authored GUID only to restore selection or references across a new world generation.
+5. Replace `SceneAssetId::value`-hash identity, `authoredInstanceId`, and `SourceInstanceId`; delete `MakeAuthoredInstanceId` and temporary compatibility spellings after the level files migrate. Do not retain both hash and GUID as competing authorities.
+
+The gate must prove canonical text/binary round trips, malformed/version/variant rejection, nil rejection, deterministic ordering/hashing, and thread-safe generation. Moving or renaming an asset and recooking it preserves `AssetGuid`; renaming/reordering and saving/reloading an instance preserves `AuthoredInstanceGuid`; duplicating either produces a different GUID. Reimport preserves mapped object GUIDs when source ordering changes. Loading the same document twice produces different runtime `EntityId` values while resolving the same authored GUIDs. Repository and trace audits must show that GUID lookup occurs at load/editor/reference boundaries, not inside ECS animation, transform, extraction, renderer hot traversal, or GPU upload loops.
+
 ### Bounded Sparkle ECS Kernel
 
 The ECS is private GameFramework runtime infrastructure, not a new top-level product/module:
@@ -3155,7 +3184,7 @@ LevelDesc + cooked SceneAssetPayload
              ▼
 SceneLoadPackage
   EntityBlueprint[]
-    source identity / optional authored GUID
+    persistent authored instance/object GUIDs + editable source locator
     component records (Transform, MeshInstance, Camera, Light, ...)
              │ owner structural commit
              ▼
@@ -5255,6 +5284,8 @@ The following links are the direct source/documentation trail used for the archi
 
 - [Donut ThreadPool interface at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/include/donut/engine/ThreadPool.h)
 - [Donut ThreadPool implementation at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/src/engine/ThreadPool.cpp)
+- [Donut 16-byte `AdapterInfo::UUID` representation at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/include/donut/app/DeviceManager.h#L230-L239)
+- [Donut Vulkan device-UUID extraction at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/src/app/vulkan/DeviceManager_VK.cpp#L963-L977)
 - [Donut persistent scene material/geometry/instance buffers and dirty-state interface at bc1ea24](https://github.com/NVIDIA-RTX/Donut/blob/bc1ea24b0486f1c00d89327fe16c0b4dd11c5937/include/donut/engine/Scene.h)
 - [nvpro_core `parallel_batches`/`parallel_ranges` vocabulary at bc19d6a](https://github.com/nvpro-samples/nvpro_core/blob/bc19d6ac3ef62938d0ea0e099735878457ce1b6e/nvh/parallel_work.hpp)
 - [NVRHI Programming Guide at 8e8c36e](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md)
@@ -5276,6 +5307,7 @@ The following links are the direct source/documentation trail used for the archi
 
 - [FidelityFX SDK Cauldron2 TaskManager interface at 60f4ea8](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/core/taskmanager.h)
 - [FidelityFX SDK Cauldron2 TaskManager implementation at 60f4ea8](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/core/taskmanager.cpp)
+- [FidelityFX SDK Cauldron2 Anti-Lag 2 private-data GUID at 60f4ea8](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/Cauldron2/dx12/framework/render/dx12/device_dx12.cpp#L379-L395)
 - [AMD RPS sample `RpsAfxThreadPool`, `Job`, and `WaitHandle` vocabulary at f3330f5](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/tools/app_framework/afx_threadpool.hpp)
 - [AMD RPS render-graph, command-batch, record-info, command-buffer, and callback-context vocabulary at f3330f5](https://github.com/GPUOpen-LibrariesAndSDKs/RenderPipelineShaders/blob/f3330f5306d15af8529a310f6255225c864b0961/include/rps/runtime/common/rps_runtime.h)
 - [Legacy AMD Cauldron thread pool at b92d559](https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron/blob/b92d559bd083f44df9f8f42a6ad149c1584ae94c/src/common/Misc/threadpool.h)
@@ -5363,6 +5395,7 @@ The following links are the direct source/documentation trail used for the archi
 
 ### Language and API Specifications
 
+- [IETF RFC 9562: Universally Unique IDentifiers (UUIDs)](https://www.rfc-editor.org/rfc/rfc9562.html)
 - [C++ multi-threaded executions and data races](https://eel.is/c++draft/intro.races)
 - [C++ atomic ordering](https://eel.is/c++draft/atomics.order)
 - [C++ parallel algorithms](https://eel.is/c++draft/algorithms.parallel)
