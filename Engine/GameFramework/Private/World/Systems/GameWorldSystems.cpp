@@ -98,6 +98,7 @@ namespace ECS
 		    m_motionQuery(state.m_registry, epoch),
 		    m_playbackQuery(state.m_registry, epoch),
 		    m_poseQuery(state.m_registry, epoch),
+		    m_morphQuery(state.m_registry, epoch),
 		    m_transformQuery(state.m_registry, epoch),
 		    m_cameraDerivedQuery(state.m_registry, epoch),
 		    m_extractionQuery(state.m_registry, epoch)
@@ -196,20 +197,23 @@ namespace ECS
 		{
 			std::span<AnimationOutputStorage::MorphSampleSlot> samples = m_state.m_animationOutput.GetMorphSamples();
 			AnimationOutput& output = m_state.m_animationOutput.GetMutableOutput();
-			for (std::uint32_t index = begin; index < end; ++index)
-			{
-				const AnimationOutputStorage::MorphSampleSlot& sample = samples[index];
-				const AnimationState* state = m_state.m_registry.Get<AnimationState>(sample.AnimationEntity);
-				const ResolvedAnimationClip clip = m_resources.AnimationClips.Resolve(sample.Clip);
-				if (state == nullptr || !clip.IsValid() || sample.OutputIndex >= output.morphWeights.size() ||
-				    !MorphWeightEvaluator::Evaluate(
-				        *clip.Resource,
-				        sample.ChannelIndex,
-				        state->TimeSeconds,
-				        output.morphWeights[sample.OutputIndex].weights))
-					return false;
-			}
-			return true;
+			return m_morphQuery.ForEachEntityRange(
+			                           m_state.m_animationOutput.GetMorphEntities(),
+			                           begin,
+			                           end,
+			                           [this, samples, &output](std::size_t index, EntityId, const AnimationState& state)
+			                           {
+				                           const AnimationOutputStorage::MorphSampleSlot& sample = samples[index];
+				                           const ResolvedAnimationClip clip = m_resources.AnimationClips.Resolve(sample.Clip);
+				                           if (!clip.IsValid() || sample.OutputIndex >= output.morphWeights.size())
+					                           return;
+				                           MorphWeightEvaluator::Evaluate(
+				                               *clip.Resource,
+				                               sample.ChannelIndex,
+				                               state.TimeSeconds,
+				                               output.morphWeights[sample.OutputIndex].weights);
+			                           })
+			    .Succeeded();
 		}
 
 		bool RunSkinning(std::uint32_t begin, std::uint32_t end)
@@ -282,9 +286,10 @@ namespace ECS
 			                              m_state.m_systemArena.DirtyTransforms,
 			                              begin,
 			                              end,
-			                              [](std::size_t, EntityId, const LocalTransform& local, WorldTransform& world)
+			                              [this](std::size_t index, EntityId entity, const LocalTransform& local, WorldTransform& world)
 			                              {
 				                              TransformEvaluationSystem::Evaluate(local, world);
+				                              m_state.m_systemArena.EvaluatedTransforms[index] = entity;
 			                              })
 			    .Succeeded();
 		}
@@ -295,9 +300,10 @@ namespace ECS
 			                                    m_state.m_systemArena.DirtyTransforms,
 			                                    begin,
 			                                    end,
-			                                    [](std::size_t, EntityId, const LocalTransform& local, const Camera&, CameraDerivedState& derived)
+			                                    [this](std::size_t index, EntityId entity, const LocalTransform& local, const Camera&, CameraDerivedState& derived)
 			                                    {
 				                                    CameraDerivedStateEvaluationSystem::Evaluate(local, derived);
+				                                    m_state.m_systemArena.CameraDerivedChanges[index] = entity;
 			                                    })
 			    .Succeeded();
 		}
@@ -334,14 +340,14 @@ namespace ECS
 		bool CommitExtraction(std::uint32_t, std::uint32_t)
 		{
 			m_state.m_extraction.CommitMeshes(m_state.m_meshInstanceGroups);
-			for (EntityId entity : m_state.m_systemArena.DirtyTransforms)
-			{
-				if (!m_state.m_registry.IsAlive(entity))
-					continue;
+			std::erase(m_state.m_systemArena.EvaluatedTransforms, EntityId::Invalid());
+			SortUnique(m_state.m_systemArena.EvaluatedTransforms);
+			for (EntityId entity : m_state.m_systemArena.EvaluatedTransforms)
 				m_state.RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::WorldTransform);
-				if (m_state.m_registry.Get<Camera>(entity) != nullptr)
-					m_state.RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::CameraDerivedState);
-			}
+			std::erase(m_state.m_systemArena.CameraDerivedChanges, EntityId::Invalid());
+			SortUnique(m_state.m_systemArena.CameraDerivedChanges);
+			for (EntityId entity : m_state.m_systemArena.CameraDerivedChanges)
+				m_state.RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::CameraDerivedState);
 			m_state.PublishPendingChanges();
 			return true;
 		}
@@ -373,6 +379,7 @@ namespace ECS
 		OscillatingMotionQuery m_motionQuery;
 		PlaybackAdvanceQuery m_playbackQuery;
 		PoseEvaluationQuery m_poseQuery;
+		MorphEvaluationQuery m_morphQuery;
 		TransformEvaluationQuery m_transformQuery;
 		CameraDerivedStateQuery m_cameraDerivedQuery;
 		MeshExtractionQuery m_extractionQuery;
@@ -386,7 +393,8 @@ namespace ECS
 		camera.DeclareQuery<CameraMovementQuery>();
 		camera.Resources = {
 		    {GameSystemResourceDomain::UpdateInputs, GameSystemAccessMode::Read},
-		    {GameSystemResourceDomain::CameraInputIntent, GameSystemAccessMode::Read}};
+		    {GameSystemResourceDomain::CameraInputIntent, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Write}};
 		camera.Execution = Ranges(CameraGrain);
 		graph.Add(std::move(camera));
 
@@ -394,7 +402,8 @@ namespace ECS
 		motion.DeclareQuery<OscillatingMotionQuery>();
 		motion.Resources = {
 		    {GameSystemResourceDomain::UpdateInputs, GameSystemAccessMode::Read},
-		    {GameSystemResourceDomain::MotionClock, GameSystemAccessMode::Write}};
+		    {GameSystemResourceDomain::MotionClock, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Write}};
 		motion.Prerequisites = {GameWorldSystemIds::CameraMovement};
 		motion.Execution = Ranges(MotionGrain);
 		graph.Add(std::move(motion));
@@ -403,7 +412,8 @@ namespace ECS
 		playback.DeclareQuery<PlaybackAdvanceQuery>();
 		playback.Resources = {
 		    {GameSystemResourceDomain::UpdateInputs, GameSystemAccessMode::Read},
-		    {GameSystemResourceDomain::AnimationClips, GameSystemAccessMode::Read}};
+		    {GameSystemResourceDomain::AnimationClips, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Write}};
 		playback.Execution = Ranges(AnimationGrain);
 		graph.Add(std::move(playback));
 
@@ -447,6 +457,8 @@ namespace ECS
 		outputCommit.Resources = {
 		    {GameSystemResourceDomain::SkinningOutput, GameSystemAccessMode::Read},
 		    {GameSystemResourceDomain::MorphOutput, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::MotionClock, GameSystemAccessMode::Write},
 		    {GameSystemResourceDomain::DirtyTransforms, GameSystemAccessMode::Write},
 		    {GameSystemResourceDomain::WorldChanges, GameSystemAccessMode::Write}};
 		outputCommit.Prerequisites = {GameWorldSystemIds::SkinningMatrixEvaluation, GameWorldSystemIds::MorphOutputCommit};
@@ -455,12 +467,17 @@ namespace ECS
 
 		GameSystemDesc transform{GameWorldSystemIds::TransformEvaluation, "Game.TransformEvaluation", GameSystemPhase::Transform};
 		transform.DeclareQuery<TransformEvaluationQuery>();
-		transform.Resources = {{GameSystemResourceDomain::DirtyTransforms, GameSystemAccessMode::Read}};
+		transform.Resources = {
+		    {GameSystemResourceDomain::DirtyTransforms, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::TransformScratch, GameSystemAccessMode::Write}};
 		transform.Execution = Ranges(TransformGrain);
 		graph.Add(std::move(transform));
 
 		GameSystemDesc cameraDerived{GameWorldSystemIds::CameraDerivedState, "Game.CameraDerivedState", GameSystemPhase::Transform};
 		cameraDerived.DeclareQuery<CameraDerivedStateQuery>();
+		cameraDerived.Resources = {
+		    {GameSystemResourceDomain::DirtyTransforms, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::CameraDerivedScratch, GameSystemAccessMode::Write}};
 		cameraDerived.Prerequisites = {GameWorldSystemIds::TransformEvaluation};
 		cameraDerived.Execution = Ranges(TransformGrain);
 		graph.Add(std::move(cameraDerived));
@@ -479,6 +496,8 @@ namespace ECS
 		extractionCommit.Resources = {
 		    {GameSystemResourceDomain::ExtractionScratch, GameSystemAccessMode::Read},
 		    {GameSystemResourceDomain::ExtractionOutput, GameSystemAccessMode::Write},
+		    {GameSystemResourceDomain::TransformScratch, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::CameraDerivedScratch, GameSystemAccessMode::Read},
 		    {GameSystemResourceDomain::WorldChanges, GameSystemAccessMode::Write},
 		    {GameSystemResourceDomain::WorldPublication, GameSystemAccessMode::Write}};
 		extractionCommit.Prerequisites = {GameWorldSystemIds::MeshExtraction};
@@ -520,6 +539,11 @@ namespace ECS
 		}
 		state.m_systemArena.DirtyTransforms.reserve(
 		    state.m_systemArena.DirtyTransforms.size() + state.m_systemArena.CameraChanges.size() + state.m_systemArena.MotionChanges.size());
+		const std::size_t maximumDirtyCount = state.m_systemArena.DirtyTransforms.size() +
+		                                      state.m_systemArena.CameraChanges.size() +
+		                                      state.m_systemArena.MotionChanges.size();
+		state.m_systemArena.EvaluatedTransforms.assign(maximumDirtyCount, EntityId::Invalid());
+		state.m_systemArena.CameraDerivedChanges.assign(maximumDirtyCount, EntityId::Invalid());
 
 		StructureFrozenEpoch epoch = state.m_registry.FreezeStructure();
 		if (!epoch.IsValid())

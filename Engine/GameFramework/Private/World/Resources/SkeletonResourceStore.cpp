@@ -45,7 +45,7 @@ void SkeletonResourceStore::Append(std::vector<SkeletonResource>&& skeletons)
 		m_entries.push_back(std::move(entry));
 		m_byAssetId.emplace(m_entries.back().Resource.assetId, SkeletonResourceHandle{slot, m_entries.back().Generation});
 	}
-	
+
 }
 
 SkeletonResourceHandle SkeletonResourceStore::Find(Assets::CookedAssetId skeletonAssetId) const noexcept
@@ -62,16 +62,4 @@ ECS::SkeletonEvaluationData SkeletonResourceStore::Resolve(SkeletonResourceHandl
 	return entry.Generation == handle.Generation
 	           ? ECS::SkeletonEvaluationData{&entry.Resource, entry.BindLocalTransforms}
 	           : ECS::SkeletonEvaluationData{};
-}
-
-SkeletonNeutralPose SkeletonResourceStore::BuildNeutralPose(Assets::CookedAssetId skeletonAssetId) const
-{
-	SkeletonNeutralPose pose;
-	pose.skeletonAssetId = skeletonAssetId;
-	const ECS::SkeletonEvaluationData skeleton = Resolve(Find(skeletonAssetId));
-	if (!skeleton.IsValid())
-		return pose;
-	for (const SkeletonJoint& joint : skeleton.Resource->joints)
-		pose.jointMatrices.push_back(joint.bindPoseWorldTransform);
-	return pose;
 }

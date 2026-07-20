@@ -113,19 +113,6 @@ endif()
 add_subdirectory(Engine)
 add_subdirectory(Tools)
 
-add_executable(SparkleGameSystemGraphValidation EXCLUDE_FROM_ALL Prompt10Validation.cpp)
-target_compile_features(SparkleGameSystemGraphValidation PRIVATE cxx_std_20)
-target_include_directories(SparkleGameSystemGraphValidation PRIVATE
-    ${CMAKE_SOURCE_DIR}/Engine
-    ${CMAKE_SOURCE_DIR}/Engine/GameFramework/Private
-)
-target_link_libraries(SparkleGameSystemGraphValidation PRIVATE
-    SparkleGameFramework
-    SparkleTasks
-    SparkleCore
-    SparklePlatform
-)
-
 # ---------------------------
 # Auto-discover projects via .sparkle-project marker
 # ---------------------------

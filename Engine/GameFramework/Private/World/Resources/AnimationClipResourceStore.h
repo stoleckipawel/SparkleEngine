@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Scene/Animations/AnimationClipResource.h"
+#include "Animation/AnimationClipResource.h"
 #include "World/ECS/Components/AnimationComponents.h"
 #include "World/Resources/SkeletonResourceStore.h"
 

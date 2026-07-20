@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Assets/Cooked/LoadedSkeletonAsset.h"
-#include "GameFramework/Public/Scene/Skeletons/SkeletonResource.h"
+#include "Animation/SkeletonResource.h"
 
 #include <cstdint>
 

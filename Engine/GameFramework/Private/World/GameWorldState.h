@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Animation/AnimationOutputStorage.h"
-#include "GameFramework/Public/Scene/Animations/AnimationClipResource.h"
+#include "Animation/AnimationClipResource.h"
 #include "GameFramework/Public/Scene/Animations/AnimationOutput.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
@@ -83,7 +83,10 @@ namespace ECS
 		std::vector<SceneLightDesc> CaptureLightsToDesc() const;
 		LightingSnapshot CaptureLighting() const;
 
-		void AppendAnimationClips(std::vector<AnimationClipResource>&& clips, AnimationClipResourceStore& resources);
+		void AppendAnimationClips(
+		    std::vector<AnimationClipResource>&& clips,
+		    AnimationClipResourceStore& resources,
+		    std::uint64_t sourceInstanceId);
 		bool PrepareSystemResources(GameWorldResourceStores& resources);
 		bool ExecuteSystems(
 		    GameWorldResourceStores& resources,
@@ -119,6 +122,8 @@ namespace ECS
 			std::vector<EntityId> AnimationChanges;
 			std::vector<EntityId> MorphChanges;
 			std::vector<EntityId> DirtyTransforms;
+			std::vector<EntityId> EvaluatedTransforms;
+			std::vector<EntityId> CameraDerivedChanges;
 		};
 
 		void MarkTransformDirty(EntityId entity) noexcept;

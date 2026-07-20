@@ -44,6 +44,7 @@ namespace ECS
 		                       entity,
 		                       AuthoredIdentity{
 		                           .SourceAssetId = instance.MeshAssetId,
+		                           .SourceInstanceId = instance.SourceInstanceId,
 		                           .SourceObjectId = static_cast<std::uint64_t>(instance.SourceNodeIndex),
 		                           .Kind = AuthoredObjectKind::MeshInstance}) &&
 		                   m_registry.Add(entity, EditorMetadata{});

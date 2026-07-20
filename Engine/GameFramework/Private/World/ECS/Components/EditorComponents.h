@@ -19,6 +19,7 @@ namespace ECS
 	struct AuthoredIdentity final
 	{
 		Assets::CookedAssetId SourceAssetId = Assets::InvalidCookedAssetId;
+		std::uint64_t SourceInstanceId = 0;
 		std::uint64_t SourceObjectId = 0;
 		AuthoredObjectKind Kind = AuthoredObjectKind::Unknown;
 	};

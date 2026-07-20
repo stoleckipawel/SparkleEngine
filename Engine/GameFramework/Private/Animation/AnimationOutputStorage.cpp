@@ -2,6 +2,7 @@
 
 #include "Animation/AnimationOutputStorage.h"
 
+#include "World/ECS/Components/EditorComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/EntityRegistry.h"
 #include "World/Resources/MorphWeightStorage.h"
@@ -25,6 +26,7 @@ namespace ECS
 
 		m_poseWork.clear();
 		m_morphSamples.clear();
+		m_morphEntities.clear();
 		m_morphBindings.clear();
 		m_workIndexByEntitySlot.clear();
 		m_output.Reset();
@@ -43,7 +45,13 @@ namespace ECS
 				const ResolvedAnimationClip clip = clips.Resolve(clipHandle);
 				if (!clip.IsValid() || clip.TargetGeneration != targetGeneration)
 					continue;
-				PoseWorkSlot work{.Entity = entity, .Clip = clipHandle, .Skeleton = clip.Skeleton};
+				const AuthoredIdentity* authored = registry.Get<AuthoredIdentity>(entity);
+				const std::uint64_t sourceInstanceId = authored == nullptr ? 0 : authored->SourceInstanceId;
+				PoseWorkSlot work{
+				    .Entity = entity,
+				    .Clip = clipHandle,
+				    .Skeleton = clip.Skeleton,
+				    .SourceInstanceId = sourceInstanceId};
 				const SkeletonEvaluationData skeleton = skeletons.Resolve(clip.Skeleton);
 				if (skeleton.IsValid())
 				{
@@ -69,7 +77,8 @@ namespace ECS
 					output.targetNodeIndex = channel.targetNodeIndex;
 					output.weights.resize(4);
 					m_output.morphWeights.push_back(std::move(output));
-					m_morphSamples.push_back(MorphSampleSlot{entity, clipHandle, channelIndex, outputIndex});
+					m_morphSamples.push_back(MorphSampleSlot{entity, clipHandle, sourceInstanceId, channelIndex, outputIndex});
+					m_morphEntities.push_back(entity);
 				}
 			}
 		}
@@ -95,6 +104,9 @@ namespace ECS
 					if (mesh.Kind != SceneMeshKind::Skeletal || mesh.SourceNodeIndex != targetNode)
 						continue;
 					const EntityId targetEntity = meshes->GetEntities()[meshIndex];
+					const AuthoredIdentity* targetIdentity = registry.Get<AuthoredIdentity>(targetEntity);
+					if (targetIdentity == nullptr || targetIdentity->SourceInstanceId != sample.SourceInstanceId)
+						continue;
 					const MorphState* morph = registry.Get<MorphState>(targetEntity);
 					if (morph == nullptr || !morphWeights.PrepareWriteSize(morph->Weights, 4))
 						continue;
@@ -117,11 +129,14 @@ namespace ECS
 			{
 				SkinningState updated = skinnedMeshes->GetComponents()[index];
 				updated.Pose = {};
-				for (std::uint32_t poseIndex = 0; poseIndex < m_output.poses.size(); ++poseIndex)
+				const AuthoredIdentity* targetIdentity = registry.Get<AuthoredIdentity>(skinnedMeshes->GetEntities()[index]);
+				for (const PoseWorkSlot& work : m_poseWork)
 				{
-					if (m_output.poses[poseIndex].skeletonAssetId == updated.SkeletonAssetId)
+					if (targetIdentity != nullptr && work.SourceInstanceId == targetIdentity->SourceInstanceId &&
+					    work.PoseOutputIndex < m_output.poses.size() &&
+					    m_output.poses[work.PoseOutputIndex].skeletonAssetId == updated.SkeletonAssetId)
 					{
-						updated.Pose = AnimationOutputSlotHandle{poseIndex, targetGeneration};
+						updated.Pose = AnimationOutputSlotHandle{work.PoseOutputIndex, targetGeneration};
 						break;
 					}
 				}

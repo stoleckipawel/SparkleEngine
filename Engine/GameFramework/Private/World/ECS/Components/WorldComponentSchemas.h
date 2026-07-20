@@ -59,7 +59,7 @@ namespace ECS
 	};
 	template <> struct ComponentSchemaTraits<AuthoredIdentity> final
 	{
-		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.AuthoredIdentity"), 1, "sparkle.world.AuthoredIdentity"};
+		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.AuthoredIdentity"), 2, "sparkle.world.AuthoredIdentity"};
 	};
 	template <> struct ComponentSchemaTraits<EditorMetadata> final
 	{

@@ -9,11 +9,27 @@
 #include "World/ECS/Components/TransformComponents.h"
 #include "World/ECS/Components/WorldComponentSchemas.h"
 
+#include <cstdint>
 #include <format>
+#include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace
 {
+	std::uint64_t MakeAuthoredInstanceId(std::string_view identity) noexcept
+	{
+		constexpr std::uint64_t OffsetBasis = 14695981039346656037ull;
+		constexpr std::uint64_t Prime = 1099511628211ull;
+		std::uint64_t hash = OffsetBasis;
+		for (char character : identity)
+		{
+			hash ^= static_cast<std::uint8_t>(character);
+			hash *= Prime;
+		}
+		return hash == 0 ? 1 : hash;
+	}
+
 	template <typename... Components>
 	std::vector<ECS::ComponentSchema> Schemas() noexcept
 	{
@@ -76,16 +92,22 @@ namespace
 			add(
 			    std::format("{}:animation:{}", work.Id.value, animation.sourceAnimationIndex),
 			    Schemas<ECS::AnimationState, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
-		for (const SceneAssetPayload::StaticMeshInstance& instance : work.Payload.staticMeshInstances)
+		for (std::size_t index = 0; index < work.Payload.staticMeshInstances.size(); ++index)
+		{
+			const SceneAssetPayload::StaticMeshInstance& instance = work.Payload.staticMeshInstances[index];
 			add(
-			    std::format("{}:mesh:{}", work.Id.value, instance.sourceNodeIndex),
+			    std::format("{}:mesh:{}:{}", work.Id.value, instance.sourceNodeIndex, index),
 			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::MeshInstance, ECS::Visibility, ECS::AuthoredIdentity,
 			            ECS::EditorMetadata>());
-		for (const SceneAssetPayload::SkeletalMeshInstance& instance : work.Payload.skeletalMeshInstances)
+		}
+		for (std::size_t index = 0; index < work.Payload.skeletalMeshInstances.size(); ++index)
+		{
+			const SceneAssetPayload::SkeletalMeshInstance& instance = work.Payload.skeletalMeshInstances[index];
 			add(
-			    std::format("{}:skinned-mesh:{}", work.Id.value, instance.sourceNodeIndex),
+			    std::format("{}:skinned-mesh:{}:{}", work.Id.value, instance.sourceNodeIndex, index),
 			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::MeshInstance, ECS::Visibility, ECS::MorphState,
 			            ECS::SkinningState, ECS::AuthoredIdentity, ECS::EditorMetadata>());
+		}
 		for (std::size_t index = 0; index < work.Payload.cameras.size(); ++index)
 			add(
 			    std::format("{}:camera:{}", work.Id.value, index),
@@ -143,6 +165,7 @@ namespace Assets
 	{
 		if (!ValidateReferences(work.Payload, errorMessage))
 			return false;
+		work.Payload.authoredInstanceId = MakeAuthoredInstanceId(work.Id.value);
 		BuildBlueprints(work);
 		decodedBytes = EstimatePayloadBytes(work.Payload);
 		errorMessage.clear();
@@ -151,6 +174,16 @@ namespace Assets
 
 	bool SceneLoadPackageBuilder::Finalize(SceneLoadSharedState& state, std::string& errorMessage)
 	{
+		std::unordered_map<std::uint64_t, std::string_view> instanceIdentities;
+		for (const SceneAssetLoadWork& work : state.Assets)
+		{
+			const auto [existing, inserted] = instanceIdentities.emplace(work.Payload.authoredInstanceId, work.Id.value);
+			if (work.Payload.authoredInstanceId == 0 || (!inserted && existing->second != work.Id.value))
+			{
+				errorMessage = "Scene load package contains an invalid or colliding authored instance identity.";
+				return false;
+			}
+		}
 		std::unordered_set<Assets::CookedAssetId> skeletonAssets;
 		for (const SceneAssetLoadWork& work : state.Assets)
 			for (const SkeletonResource& skeleton : work.Payload.skeletons)

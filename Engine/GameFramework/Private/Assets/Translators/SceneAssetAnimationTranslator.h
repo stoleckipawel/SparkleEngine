@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Assets/Cooked/LoadedAnimationAsset.h"
-#include "GameFramework/Public/Scene/Animations/AnimationClipResource.h"
+#include "Animation/AnimationClipResource.h"
 
 namespace Assets
 {

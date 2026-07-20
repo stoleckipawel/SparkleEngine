@@ -27,7 +27,6 @@ class SkeletonResourceStore final
 	void Append(std::vector<SkeletonResource>&& skeletons);
 	SkeletonResourceHandle Find(Assets::CookedAssetId skeletonAssetId) const noexcept;
 	ECS::SkeletonEvaluationData Resolve(SkeletonResourceHandle handle) const noexcept;
-	SkeletonNeutralPose BuildNeutralPose(Assets::CookedAssetId skeletonAssetId) const;
 	std::size_t GetCount() const noexcept { return m_entries.size(); }
 
   private:

@@ -13,7 +13,8 @@ namespace ECS
 {
 	void GameWorldState::AppendAnimationClips(
 	    std::vector<AnimationClipResource>&& clips,
-	    AnimationClipResourceStore& resources)
+	    AnimationClipResourceStore& resources,
+	    std::uint64_t sourceInstanceId)
 	{
 		for (AnimationClipResource& clip : clips)
 		{
@@ -42,6 +43,7 @@ namespace ECS
 			                       entity,
 			                       AuthoredIdentity{
 			                           .SourceAssetId = animationAssetId,
+			                           .SourceInstanceId = sourceInstanceId,
 			                           .SourceObjectId = sourceAnimationIndex,
 			                           .Kind = AuthoredObjectKind::Animation}) &&
 			                   m_registry.Add(entity, EditorMetadata{});

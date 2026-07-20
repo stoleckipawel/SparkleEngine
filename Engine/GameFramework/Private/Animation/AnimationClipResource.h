@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAnimationAsset.h"
-#include "GameFramework/Public/GameFrameworkAPI.h"
 
 #include <DirectXMath.h>
 
@@ -10,7 +9,7 @@
 #include <string>
 #include <vector>
 
-struct SPARKLE_ENGINE_API AnimationKeyframe final
+struct AnimationKeyframe final
 {
 	float timeSeconds = 0.0f;
 	DirectX::XMFLOAT4 value = {};
@@ -18,7 +17,7 @@ struct SPARKLE_ENGINE_API AnimationKeyframe final
 	DirectX::XMFLOAT4 outTangent = {};
 };
 
-struct SPARKLE_ENGINE_API AnimationChannel final
+struct AnimationChannel final
 {
 	Assets::CookedAnimationTargetPath targetPath = Assets::CookedAnimationTargetPath::Unknown;
 	Assets::CookedAnimationInterpolation interpolation = Assets::CookedAnimationInterpolation::Linear;
@@ -28,7 +27,7 @@ struct SPARKLE_ENGINE_API AnimationChannel final
 	std::uint32_t keyframeCount = 0;
 };
 
-struct SPARKLE_ENGINE_API AnimationClipResource final
+struct AnimationClipResource final
 {
 	Assets::CookedAssetId animationAssetId = Assets::InvalidCookedAssetId;
 	Assets::CookedAssetId targetSkeletonAssetId = Assets::InvalidCookedAssetId;

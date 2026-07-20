@@ -24,6 +24,7 @@ namespace ECS
 			EntityId Entity;
 			AnimationResourceHandle Clip;
 			SkeletonResourceHandle Skeleton;
+			std::uint64_t SourceInstanceId = 0;
 			std::uint32_t PoseOutputIndex = (std::numeric_limits<std::uint32_t>::max)();
 			std::vector<AnimationJointTransform> LocalTransforms;
 			std::vector<DirectX::XMFLOAT4X4> ModelSpaceTransforms;
@@ -33,6 +34,7 @@ namespace ECS
 		{
 			EntityId AnimationEntity;
 			AnimationResourceHandle Clip;
+			std::uint64_t SourceInstanceId = 0;
 			std::uint32_t ChannelIndex = 0;
 			std::uint32_t OutputIndex = 0;
 		};
@@ -54,6 +56,7 @@ namespace ECS
 		PoseWorkSlot* FindPoseWork(EntityId entity) noexcept;
 		std::span<PoseWorkSlot> GetPoseWork() noexcept { return m_poseWork; }
 		std::span<MorphSampleSlot> GetMorphSamples() noexcept { return m_morphSamples; }
+		std::span<const EntityId> GetMorphEntities() const noexcept { return m_morphEntities; }
 		std::span<const MorphTargetBinding> GetMorphBindings() const noexcept { return m_morphBindings; }
 		AnimationOutput& GetMutableOutput() noexcept { return m_output; }
 		const AnimationOutput& GetOutput() const noexcept { return m_output; }
@@ -68,6 +71,7 @@ namespace ECS
 
 		std::vector<PoseWorkSlot> m_poseWork;
 		std::vector<MorphSampleSlot> m_morphSamples;
+		std::vector<EntityId> m_morphEntities;
 		std::vector<MorphTargetBinding> m_morphBindings;
 		std::vector<EntityWorkIndex> m_workIndexByEntitySlot;
 		AnimationOutput m_output;

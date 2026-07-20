@@ -37,8 +37,10 @@ namespace
 			case GameSystemResourceDomain::UpdateInputs:
 				return {GameSystemPhase::Simulation, GameSystemPhase::Animation};
 			case GameSystemResourceDomain::CameraInputIntent:
-			case GameSystemResourceDomain::MotionClock:
 				return {GameSystemPhase::Simulation, GameSystemPhase::Simulation};
+			case GameSystemResourceDomain::MotionClock:
+			case GameSystemResourceDomain::SystemChangeScratch:
+				return {GameSystemPhase::Simulation, GameSystemPhase::Deformation};
 			case GameSystemResourceDomain::AnimationClips:
 			case GameSystemResourceDomain::SkeletonResources:
 				return {GameSystemPhase::Animation, GameSystemPhase::Extraction};
@@ -51,6 +53,9 @@ namespace
 			case GameSystemResourceDomain::DirtyTransforms:
 			case GameSystemResourceDomain::WorldChanges:
 				return {GameSystemPhase::Deformation, GameSystemPhase::Extraction};
+			case GameSystemResourceDomain::TransformScratch:
+			case GameSystemResourceDomain::CameraDerivedScratch:
+				return {GameSystemPhase::Transform, GameSystemPhase::Extraction};
 			case GameSystemResourceDomain::MeshResources:
 			case GameSystemResourceDomain::ExtractionScratch:
 			case GameSystemResourceDomain::ExtractionOutput:
@@ -239,6 +244,13 @@ namespace ECS
 			if (system.Name.empty())
 			{
 				data->Error = {GameSystemGraphErrorCode::EmptySystemName, "A game system has an empty name."};
+				return CompiledGameSystemGraph(std::move(data));
+			}
+			if (system.Components.empty() && system.Resources.empty())
+			{
+				data->Error = {
+				    GameSystemGraphErrorCode::UndeclaredAccess,
+				    std::format("Game system '{}' declares no component query or resource access.", system.Name)};
 				return CompiledGameSystemGraph(std::move(data));
 			}
 			if (!systemById.emplace(system.Id.Value, index).second || !systemByName.emplace(system.Name, index).second)

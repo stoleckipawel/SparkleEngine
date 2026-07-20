@@ -8,6 +8,7 @@
 #include "GameFramework/Public/Scene/Transform.h"
 #include "GameFramework/Public/Scene/Meshes/Mesh.h"
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -20,6 +21,7 @@ namespace ECS
 		MaterialHandle Material = MaterialHandle::Invalid();
 		Assets::CookedAssetId MeshAssetId = Assets::InvalidCookedAssetId;
 		Assets::CookedAssetId SkeletonAssetId = Assets::InvalidCookedAssetId;
+		std::uint64_t SourceInstanceId = 0;
 		SceneMeshAssetIndex MeshAssetIndex = kInvalidSceneMeshAssetIndex;
 		SceneMeshInstanceGroupIndex InstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
 		std::uint32_t SourceNodeIndex = Assets::kInvalidCookedSceneSourceNodeIndex;

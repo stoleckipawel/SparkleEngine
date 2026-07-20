@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Scene/Animations/AnimationClipResource.h"
+#include "Animation/AnimationClipResource.h"
 
 #include <DirectXMath.h>
 

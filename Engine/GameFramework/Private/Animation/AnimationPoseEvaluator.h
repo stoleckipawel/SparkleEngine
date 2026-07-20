@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Animation/AnimationEvaluationTypes.h"
-#include "GameFramework/Public/Scene/Animations/AnimationClipResource.h"
+#include "Animation/AnimationClipResource.h"
 
 #include <DirectXMath.h>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Scene/Skeletons/SkeletonResource.h"
+#include "Animation/SkeletonResource.h"
 
 #include <DirectXMath.h>
 
