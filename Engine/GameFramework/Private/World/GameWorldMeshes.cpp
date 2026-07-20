@@ -2,8 +2,8 @@
 #include "World/GameWorldState.h"
 
 #include "Scene/Meshes/Mesh.h"
-#include "Scene/Meshes/SkeletalCookedMesh.h"
 #include "World/ECS/Components/EditorComponents.h"
+#include "World/ECS/Components/MotionComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/Components/TransformComponents.h"
 #include "World/WorldTransformConversion.h"
@@ -12,7 +12,7 @@ namespace ECS
 {
 	EntityId GameWorldState::AddMesh(SceneMeshInstanceData&& instance)
 	{
-		const SceneMeshResourceHandle resource = m_meshResources.Add(std::move(instance.Resource));
+		const MeshResourceHandle resource = m_meshResources.Add(std::move(instance.Resource));
 		if (!resource.IsValid())
 		{
 			return EntityId::Invalid();
@@ -24,9 +24,9 @@ namespace ECS
 			return entity;
 		}
 		const LocalTransform local = WorldTransformConversion::ToLocal(instance.LocalTransform);
-		const SceneStateHandle morphState = instance.Kind == SceneMeshKind::Skeletal
-		                                        ? m_deformationStates.AddMorphWeights(instance.InitialMorphWeights)
-		                                        : SceneStateHandle{};
+		const AnimationOutputSlotHandle morphState = instance.Kind == SceneMeshKind::Skeletal
+		                                                ? m_morphWeights.Add(instance.InitialMorphWeights)
+		                                                : AnimationOutputSlotHandle{};
 		const MeshInstance mesh{
 		    .Resource = resource,
 		    .MeshAssetId = instance.MeshAssetId,
@@ -52,6 +52,14 @@ namespace ECS
 			added = morphState.IsValid() &&
 			        m_registry.Add(entity, MorphState{.Weights = morphState}) &&
 			        m_registry.Add(entity, SkinningState{.SkeletonAssetId = instance.SkeletonAssetId});
+			if (added && m_oscillatingMeshMotionEnabled)
+			{
+				added = m_registry.Add(
+				    entity,
+				    OscillatingMotion{
+				        .BaseTransform = local,
+				        .LaneIndex = static_cast<std::uint32_t>(Count<OscillatingMotion>())});
+			}
 		}
 		if (!added)
 		{
@@ -59,7 +67,7 @@ namespace ECS
 			m_meshResources.Remove(resource);
 			if (morphState.IsValid())
 			{
-				m_deformationStates.Remove(morphState);
+				m_morphWeights.Remove(morphState);
 			}
 			return EntityId::Invalid();
 		}
@@ -138,93 +146,38 @@ namespace ECS
 
 	MeshSnapshot GameWorldState::CaptureMeshes() const
 	{
-		MeshSnapshot snapshot;
-		const ComponentStorage<MeshInstance>* meshes = m_registry.FindStorage<MeshInstance>();
-		if (meshes == nullptr)
-		{
-			return snapshot;
-		}
-		snapshot.meshInstances.reserve(meshes->GetEntities().size());
-		snapshot.meshInstanceGroups = m_meshInstanceGroups;
-		for (MeshInstanceGroupSnapshot& group : snapshot.meshInstanceGroups)
-		{
-			group.firstInstance = kInvalidSceneMeshInstanceIndex;
-			group.instanceCount = 0;
-		}
-
-		const std::span<const EntityId> entities = meshes->GetEntities();
-		const std::span<const MeshInstance> components = meshes->GetComponents();
-		for (std::size_t index = 0; index < entities.size(); ++index)
-		{
-			const EntityId entity = entities[index];
-			const MeshInstance& mesh = components[index];
-			const Mesh* resource = m_meshResources.Resolve(mesh.Resource);
-			if (!ReadVisibility(entity) || resource == nullptr)
-			{
-				continue;
-			}
-			const WorldTransform* transform = m_registry.Get<WorldTransform>(entity);
-			if (transform == nullptr)
-			{
-				continue;
-			}
-			MeshInstanceSnapshot instance;
-			instance.mesh = resource;
-			instance.worldMatrix = transform->Matrix;
-			DirectX::XMStoreFloat3x4(&instance.worldInvTranspose, DirectX::XMLoadFloat4x4(&transform->InverseTranspose));
-			instance.materialHandle = mesh.Material;
-			instance.meshAssetId = mesh.MeshAssetId;
-			instance.skeletonAssetId = mesh.SkeletonAssetId;
-			instance.meshKind = mesh.Kind;
-			instance.meshAssetIndex = mesh.MeshAssetIndex;
-			instance.instanceGroupIndex = mesh.InstanceGroupIndex;
-			if (instance.instanceGroupIndex < snapshot.meshInstanceGroups.size())
-			{
-				MeshInstanceGroupSnapshot& group = snapshot.meshInstanceGroups[instance.instanceGroupIndex];
-				if (group.instanceCount == 0)
-				{
-					group.firstInstance = static_cast<SceneMeshInstanceIndex>(snapshot.meshInstances.size());
-				}
-				++group.instanceCount;
-			}
-			snapshot.meshInstances.push_back(instance);
-		}
-		return snapshot;
+		return m_extraction.GetMeshes();
 	}
 
-	void GameWorldState::ApplyMorphWeights(std::span<const SceneMorphWeightSnapshot> weights)
+	void GameWorldState::ConfigureOscillatingMeshMotion(bool enabled)
 	{
-		if (weights.empty())
+		if (m_oscillatingMeshMotionEnabled == enabled)
+			return;
+		m_oscillatingMeshMotionEnabled = enabled;
+		m_motionTimeSeconds = 0.0f;
+		if (!enabled)
 		{
+			const ComponentStorage<OscillatingMotion>* motions = m_registry.FindStorage<OscillatingMotion>();
+			if (motions == nullptr)
+				return;
+			const std::vector<EntityId> entities(motions->GetEntities().begin(), motions->GetEntities().end());
+			for (EntityId entity : entities)
+				m_registry.Remove<OscillatingMotion>(entity);
 			return;
 		}
+
 		const ComponentStorage<MeshInstance>* meshes = m_registry.FindStorage<MeshInstance>();
 		if (meshes == nullptr)
-		{
 			return;
-		}
-		for (const SceneMorphWeightSnapshot& weightsForNode : weights)
+		std::uint32_t laneIndex = 0;
+		for (std::size_t index = 0; index < meshes->GetEntities().size(); ++index)
 		{
-			const std::span<const EntityId> entities = meshes->GetEntities();
-			const std::span<const MeshInstance> components = meshes->GetComponents();
-			for (std::size_t index = 0; index < components.size(); ++index)
-			{
-				const MeshInstance& mesh = components[index];
-				if (mesh.Kind != SceneMeshKind::Skeletal || mesh.SourceNodeIndex != weightsForNode.targetNodeIndex)
-				{
-					continue;
-				}
-				const MorphState* morph = m_registry.Get<MorphState>(entities[index]);
-				if (morph == nullptr || !m_deformationStates.WriteMorphWeights(morph->Weights, weightsForNode.weights))
-				{
-					continue;
-				}
-				if (auto* skeletal = dynamic_cast<SkeletalCookedMesh*>(m_meshResources.Resolve(mesh.Resource)))
-				{
-					skeletal->SetMorphWeights(weightsForNode.weights);
-				}
-				RecordChange(entities[index], WorldChangeKind::ValueChanged, WorldDataKind::MorphState);
-			}
+			if (meshes->GetComponents()[index].Kind != SceneMeshKind::Skeletal)
+				continue;
+			const EntityId entity = meshes->GetEntities()[index];
+			const LocalTransform* local = m_registry.Get<LocalTransform>(entity);
+			if (local != nullptr)
+				m_registry.Add(entity, OscillatingMotion{.BaseTransform = *local, .LaneIndex = laneIndex++});
 		}
 	}
 }

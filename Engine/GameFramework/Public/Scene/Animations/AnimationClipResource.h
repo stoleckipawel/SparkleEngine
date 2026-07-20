@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-struct SPARKLE_ENGINE_API SceneAnimationKeyframe
+struct SPARKLE_ENGINE_API AnimationKeyframe final
 {
 	float timeSeconds = 0.0f;
 	DirectX::XMFLOAT4 value = {};
@@ -18,7 +18,7 @@ struct SPARKLE_ENGINE_API SceneAnimationKeyframe
 	DirectX::XMFLOAT4 outTangent = {};
 };
 
-struct SPARKLE_ENGINE_API SceneAnimationChannel
+struct SPARKLE_ENGINE_API AnimationChannel final
 {
 	Assets::CookedAnimationTargetPath targetPath = Assets::CookedAnimationTargetPath::Unknown;
 	Assets::CookedAnimationInterpolation interpolation = Assets::CookedAnimationInterpolation::Linear;
@@ -28,7 +28,7 @@ struct SPARKLE_ENGINE_API SceneAnimationChannel
 	std::uint32_t keyframeCount = 0;
 };
 
-struct SPARKLE_ENGINE_API SceneAnimationClipDesc
+struct SPARKLE_ENGINE_API AnimationClipResource final
 {
 	Assets::CookedAssetId animationAssetId = Assets::InvalidCookedAssetId;
 	Assets::CookedAssetId targetSkeletonAssetId = Assets::InvalidCookedAssetId;
@@ -37,34 +37,6 @@ struct SPARKLE_ENGINE_API SceneAnimationClipDesc
 	float durationSeconds = 0.0f;
 	std::uint32_t channelCount = 0;
 	std::uint32_t keyframeCount = 0;
-	std::vector<SceneAnimationChannel> channels;
-	std::vector<SceneAnimationKeyframe> keyframes;
-};
-
-struct SPARKLE_ENGINE_API SceneAnimationPoseSnapshot
-{
-	Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId;
-	Assets::CookedAssetId animationAssetId = Assets::InvalidCookedAssetId;
-	std::string clipName;
-	float playbackTimeSeconds = 0.0f;
-	std::uint32_t jointCount = 0;
-	std::vector<DirectX::XMFLOAT4X4> skinningMatrices;
-};
-
-struct SPARKLE_ENGINE_API SceneMorphWeightSnapshot
-{
-	std::uint32_t targetNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
-	std::vector<float> weights;
-};
-
-struct SPARKLE_ENGINE_API SceneAnimationSnapshot
-{
-	std::vector<SceneAnimationPoseSnapshot> poses;
-	std::vector<SceneMorphWeightSnapshot> morphWeights;
-
-	void Reset() noexcept
-	{
-		poses.clear();
-		morphWeights.clear();
-	}
+	std::vector<AnimationChannel> channels;
+	std::vector<AnimationKeyframe> keyframes;
 };

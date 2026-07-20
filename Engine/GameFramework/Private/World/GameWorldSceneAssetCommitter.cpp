@@ -33,7 +33,7 @@ bool GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 	if (!sceneAssetPayload.skeletons.empty())
 		m_resources.Skeletons.Append(std::move(sceneAssetPayload.skeletons));
 	if (!sceneAssetPayload.animations.empty())
-		m_state.AppendAnimationClips(std::move(sceneAssetPayload.animations));
+		m_state.AppendAnimationClips(std::move(sceneAssetPayload.animations), m_resources.AnimationClips);
 	if (!sceneAssetPayload.materials.empty())
 		m_resources.Textures.AppendMaterialReferences(sceneAssetPayload.materials);
 

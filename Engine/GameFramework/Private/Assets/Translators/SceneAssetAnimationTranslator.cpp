@@ -20,11 +20,11 @@ namespace Assets
 		}
 	}
 
-	SceneAnimationClipDesc BuildSceneAssetAnimation(
+	AnimationClipResource BuildSceneAssetAnimation(
 	    const LoadedAnimationAsset& animationAsset,
 	    CookedAssetId animationAssetId)
 	{
-		SceneAnimationClipDesc clip{
+		AnimationClipResource clip{
 		    .animationAssetId = animationAssetId,
 		    .targetSkeletonAssetId = animationAsset.header.targetSkeletonAssetId,
 		    .name = AnimationNameToString(animationAsset.header),
@@ -38,7 +38,7 @@ namespace Assets
 		for (const CookedAnimationChannelRecord& channel : animationAsset.channels)
 		{
 			clip.channels.push_back(
-			    SceneAnimationChannel{
+			    AnimationChannel{
 			        .targetPath = channel.targetPath,
 			        .interpolation = channel.interpolation,
 			        .targetNodeIndex = channel.targetNodeIndex,
@@ -52,7 +52,7 @@ namespace Assets
 		for (const CookedAnimationKeyframeRecord& keyframe : animationAsset.keyframes)
 		{
 			clip.keyframes.push_back(
-			    SceneAnimationKeyframe{
+			    AnimationKeyframe{
 			        .timeSeconds = keyframe.timeSeconds,
 			        .value = keyframe.value,
 			        .inTangent = keyframe.inTangent,

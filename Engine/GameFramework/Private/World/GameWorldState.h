@@ -1,7 +1,10 @@
 #pragma once
 
-#include "GameFramework/Public/Scene/Animations/SceneAnimation.h"
+#include "Animation/AnimationOutputStorage.h"
+#include "GameFramework/Public/Scene/Animations/AnimationClipResource.h"
+#include "GameFramework/Public/Scene/Animations/AnimationOutput.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
+#include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "GameFramework/Public/Scene/Camera/CameraMovementSettings.h"
 #include "GameFramework/Public/Scene/Camera/CameraSnapshot.h"
 #include "GameFramework/Public/Scene/Camera/SceneCameraEntry.h"
@@ -13,10 +16,11 @@
 #include "GameFramework/Public/World/WorldReadView.h"
 #include "World/ECS/EntityRegistry.h"
 #include "World/Publication/WorldChangeJournal.h"
-#include "World/Resources/SceneAnimationResources.h"
-#include "World/Resources/SceneDeformationStateStore.h"
-#include "World/Resources/SceneMeshResources.h"
+#include "World/Extraction/WorldExtractionStorage.h"
+#include "World/Resources/MorphWeightStorage.h"
+#include "World/Resources/MeshResourceStore.h"
 #include "World/SceneMeshInstanceData.h"
+#include "World/Systems/GameSystemGraph.h"
 
 #include <atomic>
 #include <memory>
@@ -24,9 +28,13 @@
 
 class Mesh;
 class SkeletonResourceStore;
+class GameWorldResourceStores;
+class TaskExecutor;
 
 namespace ECS
 {
+	class GameWorldSystemRun;
+
 	class GameWorldState final
 	{
 	  public:
@@ -66,7 +74,6 @@ namespace ECS
 		void AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& groups);
 		std::size_t GetMeshInstanceGroupCount() const noexcept { return m_meshInstanceGroups.size(); }
 		MeshSnapshot CaptureMeshes() const;
-		void ApplyMorphWeights(std::span<const SceneMorphWeightSnapshot> weights);
 
 		EntityId AddLight(SceneLightDesc&& desc);
 		std::size_t GetLightCount() const noexcept;
@@ -76,9 +83,15 @@ namespace ECS
 		std::vector<SceneLightDesc> CaptureLightsToDesc() const;
 		LightingSnapshot CaptureLighting() const;
 
-		void AppendAnimationClips(std::vector<SceneAnimationClipDesc>&& clips);
-		void UpdateAnimations(float deltaSeconds, const SkeletonResourceStore& skeletons);
-		const SceneAnimationSnapshot& GetAnimationOutput() const noexcept { return m_animationResources.GetDerivedOutput(); }
+		void AppendAnimationClips(std::vector<AnimationClipResource>&& clips, AnimationClipResourceStore& resources);
+		bool PrepareSystemResources(GameWorldResourceStores& resources);
+		bool ExecuteSystems(
+		    GameWorldResourceStores& resources,
+		    TaskExecutor& executor,
+		    const CameraInputIntent& cameraIntent,
+		    float deltaSeconds);
+		const AnimationOutput& GetAnimationOutput() const noexcept { return m_animationOutput.GetOutput(); }
+		void ConfigureOscillatingMeshMotion(bool enabled);
 
 		std::optional<SkyEnvironment> ReadSkyEnvironment() const { return m_skyEnvironment; }
 		bool HasSkyEnvironment() const noexcept { return m_skyEnvironment.has_value(); }
@@ -91,8 +104,26 @@ namespace ECS
 		WorldChangeBatch ReadChanges(WorldSequence acknowledgedSequence) const;
 
 	  private:
+		friend class GameWorldSystemRun;
+		friend bool ExecuteGameWorldSystems(
+		    GameWorldState&,
+		    GameWorldResourceStores&,
+		    TaskExecutor&,
+		    const CameraInputIntent&,
+		    float);
+
+		struct SystemExecutionArena final
+		{
+			std::vector<EntityId> CameraChanges;
+			std::vector<EntityId> MotionChanges;
+			std::vector<EntityId> AnimationChanges;
+			std::vector<EntityId> MorphChanges;
+			std::vector<EntityId> DirtyTransforms;
+		};
+
 		void MarkTransformDirty(EntityId entity) noexcept;
 		void RecordChange(EntityId entity, WorldChangeKind kind, WorldDataKind data) noexcept;
+		void PublishPendingChanges();
 		void PublishReadView(std::span<const WorldChange> changes, WorldSequence sequence, bool fullBaseline);
 		WorldCameraReadData BuildCameraReadData(EntityId entity) const;
 		WorldLightReadData BuildLightReadData(EntityId entity) const;
@@ -110,9 +141,12 @@ namespace ECS
 		}
 
 		EntityRegistry m_registry;
-		SceneMeshResources m_meshResources;
-		SceneAnimationResources m_animationResources;
-		SceneDeformationStateStore m_deformationStates;
+		MeshResourceStore m_meshResources;
+		AnimationOutputStorage m_animationOutput;
+		MorphWeightStorage m_morphWeights;
+		WorldExtractionStorage m_extraction;
+		SystemExecutionArena m_systemArena;
+		CompiledGameSystemGraph m_systemGraph;
 		std::vector<MeshInstanceGroupSnapshot> m_meshInstanceGroups;
 		std::optional<SkyEnvironment> m_skyEnvironment;
 		std::vector<EntityId> m_dirtyTransforms;
@@ -126,5 +160,7 @@ namespace ECS
 		EntityId m_activeCamera;
 		std::uint64_t m_nextCameraIdentity = 0;
 		std::uint64_t m_nextLightIdentity = 0;
+		float m_motionTimeSeconds = 0.0f;
+		bool m_oscillatingMeshMotionEnabled = false;
 	};
 }

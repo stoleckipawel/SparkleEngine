@@ -2,7 +2,6 @@
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Scene/Animations/SceneAnimation.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshSnapshot.h"
 #include "GameFramework/Public/Scene/Transform.h"

@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "World/Resources/SceneMeshResources.h"
+#include "World/Resources/MeshResourceStore.h"
 
 #include "Scene/Meshes/Mesh.h"
 
@@ -7,7 +7,7 @@
 
 namespace ECS
 {
-	SceneMeshResourceHandle SceneMeshResources::Add(std::unique_ptr<Mesh>&& mesh)
+	MeshResourceHandle MeshResourceStore::Add(std::unique_ptr<Mesh>&& mesh)
 	{
 		if (!mesh)
 		{
@@ -19,24 +19,24 @@ namespace ECS
 			m_freeSlots.pop_back();
 			Entry& entry = m_entries[slot];
 			entry.Resource = std::move(mesh);
-			return SceneMeshResourceHandle{slot, entry.Generation};
+			return MeshResourceHandle{slot, entry.Generation};
 		}
-		if (m_entries.size() >= SceneMeshResourceHandle{}.Slot)
+		if (m_entries.size() >= MeshResourceHandle{}.Slot)
 		{
 			return {};
 		}
 
 		const auto slot = static_cast<std::uint32_t>(m_entries.size());
 		m_entries.push_back(Entry{.Resource = std::move(mesh)});
-		return SceneMeshResourceHandle{slot, m_entries.back().Generation};
+		return MeshResourceHandle{slot, m_entries.back().Generation};
 	}
 
-	Mesh* SceneMeshResources::Resolve(SceneMeshResourceHandle handle) noexcept
+	Mesh* MeshResourceStore::Resolve(MeshResourceHandle handle) noexcept
 	{
 		return const_cast<Mesh*>(std::as_const(*this).Resolve(handle));
 	}
 
-	const Mesh* SceneMeshResources::Resolve(SceneMeshResourceHandle handle) const noexcept
+	const Mesh* MeshResourceStore::Resolve(MeshResourceHandle handle) const noexcept
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
 		{
@@ -46,7 +46,7 @@ namespace ECS
 		return entry.Generation == handle.Generation ? entry.Resource.get() : nullptr;
 	}
 
-	bool SceneMeshResources::Remove(SceneMeshResourceHandle handle) noexcept
+	bool MeshResourceStore::Remove(MeshResourceHandle handle) noexcept
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
 		{
@@ -66,7 +66,7 @@ namespace ECS
 		return true;
 	}
 
-	void SceneMeshResources::Clear() noexcept
+	void MeshResourceStore::Clear() noexcept
 	{
 		m_entries.clear();
 		m_freeSlots.clear();

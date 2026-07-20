@@ -91,11 +91,14 @@ namespace Assets
 				                            : std::format("Level contains duplicate scene asset identity '{}'.", id.value);
 				return false;
 			}
-			const std::optional<std::filesystem::path> manifest = m_control->Catalog->Resolve(id.value);
+			const std::optional<std::filesystem::path> manifest = m_control->Catalog->Resolve(id.GetCatalogValue());
 			if (!manifest)
 			{
 				errorMessage = std::format(
-				    "Scene asset '{}' is absent from catalog generation {}.", id.value, m_control->Catalog->GetGeneration());
+				    "Scene asset catalog ID '{}' for instance '{}' is absent from catalog generation {}.",
+				    id.GetCatalogValue(),
+				    id.value,
+				    m_control->Catalog->GetGeneration());
 				return false;
 			}
 			shared->Assets.push_back(SceneAssetLoadWork{.Id = id, .ManifestPath = *manifest});

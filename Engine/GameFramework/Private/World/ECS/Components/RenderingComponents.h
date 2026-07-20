@@ -15,7 +15,7 @@
 
 namespace ECS
 {
-	struct SceneMeshResourceHandle final
+	struct MeshResourceHandle final
 	{
 		std::uint32_t Slot = (std::numeric_limits<std::uint32_t>::max)();
 		std::uint32_t Generation = 0;
@@ -24,12 +24,12 @@ namespace ECS
 		{
 			return Slot != (std::numeric_limits<std::uint32_t>::max)() && Generation != 0;
 		}
-		constexpr auto operator<=>(const SceneMeshResourceHandle&) const noexcept = default;
+		constexpr auto operator<=>(const MeshResourceHandle&) const noexcept = default;
 	};
 
 	struct MeshInstance final
 	{
-		SceneMeshResourceHandle Resource;
+		MeshResourceHandle Resource;
 		Assets::CookedAssetId MeshAssetId = Assets::InvalidCookedAssetId;
 		Assets::CookedAssetId SkeletonAssetId = Assets::InvalidCookedAssetId;
 		MaterialHandle Material = MaterialHandle::Invalid();

@@ -21,8 +21,6 @@ class SPARKLE_ENGINE_API SkeletalCookedMesh final : public Mesh
 
 	Assets::CookedAssetId GetAssetId() const noexcept { return m_assetId; }
 	const SkeletalMeshData& GetSkeletalMeshData() const noexcept { return m_skeletalData; }
-	void SetMorphWeights(std::span<const float> weights);
-	std::span<const float> GetMorphWeights() const noexcept { return m_morphWeights; }
 
   protected:
 	void GenerateGeometry(MeshData& outMeshData) const override;
@@ -30,6 +28,5 @@ class SPARKLE_ENGINE_API SkeletalCookedMesh final : public Mesh
   private:
 	SkeletalMeshData m_skeletalData;
 	MeshData m_baseGeometry;
-	std::vector<float> m_morphWeights;
 	Assets::CookedAssetId m_assetId = Assets::InvalidCookedAssetId;
 };

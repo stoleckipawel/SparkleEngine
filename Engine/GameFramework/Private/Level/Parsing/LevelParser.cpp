@@ -32,7 +32,14 @@ namespace
 	{
 		if (parsedLine.key == "Asset")
 		{
-			levelDesc.sceneAssetIds.push_back({Strings::UnquoteCopy(parsedLine.value)});
+			const std::string value = Strings::UnquoteCopy(parsedLine.value);
+			const std::size_t separator = value.find('|');
+			if (separator == std::string::npos)
+				levelDesc.sceneAssetIds.push_back({value});
+			else
+				levelDesc.sceneAssetIds.push_back({
+				    Strings::TrimCopy(std::string_view(value).substr(0, separator)),
+				    Strings::TrimCopy(std::string_view(value).substr(separator + 1))});
 		}
 
 		return true;
@@ -78,7 +85,10 @@ namespace
 		output << "[SceneAssets]\n";
 		for (const SceneAssetId& sceneAssetId : levelDesc.sceneAssetIds)
 		{
-			output << "Asset = " << sceneAssetId.value << "\n";
+			output << "Asset = " << sceneAssetId.value;
+			if (!sceneAssetId.catalogValue.empty() && sceneAssetId.catalogValue != sceneAssetId.value)
+				output << '|' << sceneAssetId.catalogValue;
+			output << "\n";
 		}
 	}
 }  // namespace

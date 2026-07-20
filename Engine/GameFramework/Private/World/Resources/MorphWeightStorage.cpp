@@ -1,11 +1,13 @@
 #include "PCH.h"
-#include "World/Resources/SceneDeformationStateStore.h"
 
+#include "World/Resources/MorphWeightStorage.h"
+
+#include <algorithm>
 #include <limits>
 
 namespace ECS
 {
-	SceneStateHandle SceneDeformationStateStore::AddMorphWeights(std::span<const float> weights)
+	AnimationOutputSlotHandle MorphWeightStorage::Add(std::span<const float> weights)
 	{
 		if (!m_freeSlots.empty())
 		{
@@ -14,53 +16,52 @@ namespace ECS
 			Entry& entry = m_entries[slot];
 			entry.Weights.assign(weights.begin(), weights.end());
 			entry.Occupied = true;
-			return SceneStateHandle{slot, entry.Generation};
+			return {slot, entry.Generation};
 		}
-		if (m_entries.size() >= SceneStateHandle{}.Slot)
-		{
+		if (m_entries.size() >= AnimationOutputSlotHandle{}.Slot)
 			return {};
-		}
 		const auto slot = static_cast<std::uint32_t>(m_entries.size());
 		m_entries.push_back(Entry{.Weights = std::vector<float>(weights.begin(), weights.end()), .Occupied = true});
-		return SceneStateHandle{slot, m_entries.back().Generation};
+		return {slot, m_entries.back().Generation};
 	}
 
-	bool SceneDeformationStateStore::WriteMorphWeights(SceneStateHandle handle, std::span<const float> weights)
+	bool MorphWeightStorage::PrepareWriteSize(AnimationOutputSlotHandle handle, std::size_t weightCount)
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
-		{
 			return false;
-		}
 		Entry& entry = m_entries[handle.Slot];
 		if (!entry.Occupied || entry.Generation != handle.Generation)
-		{
 			return false;
-		}
-		entry.Weights.assign(weights.begin(), weights.end());
+		entry.Weights.resize(weightCount);
 		return true;
 	}
 
-	std::span<const float> SceneDeformationStateStore::ReadMorphWeights(SceneStateHandle handle) const noexcept
+	bool MorphWeightStorage::Write(AnimationOutputSlotHandle handle, std::span<const float> weights) noexcept
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
-		{
+			return false;
+		Entry& entry = m_entries[handle.Slot];
+		if (!entry.Occupied || entry.Generation != handle.Generation || entry.Weights.size() != weights.size())
+			return false;
+		std::copy(weights.begin(), weights.end(), entry.Weights.begin());
+		return true;
+	}
+
+	std::span<const float> MorphWeightStorage::Read(AnimationOutputSlotHandle handle) const noexcept
+	{
+		if (!handle.IsValid() || handle.Slot >= m_entries.size())
 			return {};
-		}
 		const Entry& entry = m_entries[handle.Slot];
 		return entry.Occupied && entry.Generation == handle.Generation ? std::span<const float>(entry.Weights) : std::span<const float>{};
 	}
 
-	bool SceneDeformationStateStore::Remove(SceneStateHandle handle) noexcept
+	bool MorphWeightStorage::Remove(AnimationOutputSlotHandle handle) noexcept
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
-		{
 			return false;
-		}
 		Entry& entry = m_entries[handle.Slot];
 		if (!entry.Occupied || entry.Generation != handle.Generation)
-		{
 			return false;
-		}
 		entry.Weights.clear();
 		entry.Occupied = false;
 		if (entry.Generation != (std::numeric_limits<std::uint32_t>::max)())
@@ -71,7 +72,7 @@ namespace ECS
 		return true;
 	}
 
-	void SceneDeformationStateStore::Clear() noexcept
+	void MorphWeightStorage::Clear() noexcept
 	{
 		m_entries.clear();
 		m_freeSlots.clear();

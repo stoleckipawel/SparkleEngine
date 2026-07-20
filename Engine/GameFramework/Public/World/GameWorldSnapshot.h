@@ -2,7 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Camera/CameraSnapshot.h"
-#include "GameFramework/Public/Scene/Animations/SceneAnimation.h"
+#include "GameFramework/Public/Scene/Animations/AnimationOutput.h"
 #include "GameFramework/Public/Scene/Lighting/LightingSnapshot.h"
 #include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
 #include "GameFramework/Public/Scene/Meshes/MeshSnapshot.h"
@@ -12,7 +12,7 @@
 struct SPARKLE_ENGINE_API GameWorldSnapshot
 {
 	CameraSnapshot camera = {};
-	SceneAnimationSnapshot animations = {};
+	AnimationOutput animations = {};
 	LightingSnapshot lighting = {};
 	SceneSkySnapshot sky = {};
 	TextureSnapshot textures = {};

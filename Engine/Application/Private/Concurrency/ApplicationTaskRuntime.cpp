@@ -20,7 +20,7 @@ namespace
 		const std::uint32_t configuredWorkers = TaskRuntimeCVars::ResolveWorkerCount();
 		const std::uint32_t cpuWorkers = configuredWorkers == 0 ? 1u : configuredWorkers;
 		return TaskExecutorConfig{
-		    .FrameCriticalWorkerCount = 1,
+		    .FrameCriticalWorkerCount = cpuWorkers,
 		    .BackgroundWorkerCount = cpuWorkers,
 		    .BlockingIoWorkerCount = 1,
 		    .MaximumTasksPerExecution = 1'024,

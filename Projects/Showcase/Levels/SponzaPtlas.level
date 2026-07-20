@@ -30,13 +30,13 @@ DirectionalLight1CastShadow = true
 
 [SceneAssets]
 Asset = Sponza/Sponza
-Asset = CesiumMan/CesiumMan
-Asset = CesiumMan/CesiumMan
-Asset = CesiumMan/CesiumMan
-Asset = CesiumMan/CesiumMan
-Asset = CesiumMan/CesiumMan
-Asset = CesiumMan/CesiumMan
-Asset = CesiumMan/CesiumMan
-Asset = CesiumMan/CesiumMan
-Asset = CesiumMan/CesiumMan
-Asset = CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan00|CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan01|CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan02|CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan03|CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan04|CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan05|CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan06|CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan07|CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan08|CesiumMan/CesiumMan
+Asset = SponzaPtlas/CesiumMan09|CesiumMan/CesiumMan

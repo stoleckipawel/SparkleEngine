@@ -8,13 +8,13 @@
 
 namespace ECS
 {
-	class SceneMeshResources final
+	class MeshResourceStore final
 	{
 	  public:
-		SceneMeshResourceHandle Add(std::unique_ptr<Mesh>&& mesh);
-		Mesh* Resolve(SceneMeshResourceHandle handle) noexcept;
-		const Mesh* Resolve(SceneMeshResourceHandle handle) const noexcept;
-		bool Remove(SceneMeshResourceHandle handle) noexcept;
+		MeshResourceHandle Add(std::unique_ptr<Mesh>&& mesh);
+		Mesh* Resolve(MeshResourceHandle handle) noexcept;
+		const Mesh* Resolve(MeshResourceHandle handle) const noexcept;
+		bool Remove(MeshResourceHandle handle) noexcept;
 		void Clear() noexcept;
 
 	  private:

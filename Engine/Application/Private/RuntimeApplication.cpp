@@ -6,7 +6,7 @@
 #include "RuntimeConsole/RuntimeConsoleHost.h"
 #include "Input/InputSystem.h"
 #include "World/GameWorld.h"
-#include "Scene/Camera/GameCameraController.h"
+#include "Input/CameraInputIntentCollector.h"
 #include "Level/LevelManager.h"
 #include "Time/Timer.h"
 #include "Concurrency/ApplicationTaskRuntime.h"
@@ -83,8 +83,8 @@ void RuntimeApplication::Initialize()
 
 	{
 		m_taskRuntime = std::make_unique<ApplicationTaskRuntime>();
-		m_gameWorld = std::make_unique<GameWorld>();
-		m_gameWorld->RegisterController(std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window));
+		m_gameWorld = std::make_unique<GameWorld>(m_taskRuntime->GetExecutor());
+		m_cameraInputIntentCollector = std::make_unique<CameraInputIntentCollector>(*m_inputSystem, *m_window);
 		if (m_options.WorldSetupCallback)
 		{
 			m_options.WorldSetupCallback(*m_gameWorld);
@@ -140,6 +140,7 @@ void RuntimeApplication::UpdateRuntime() noexcept
 {
 	if (m_gameWorld && m_timer)
 	{
+		m_cameraInputIntentCollector->Publish(*m_gameWorld);
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
 		m_gameWorld->Update(deltaSeconds);
 	}
@@ -204,6 +205,7 @@ void RuntimeApplication::Shutdown()
 	m_runtimeConsoleHost.reset();
 	m_renderer.reset();
 	m_levelManager.reset();
+	m_cameraInputIntentCollector.reset();
 	m_gameWorld.reset();
 	m_taskRuntime.reset();
 	m_inputSystem.reset();

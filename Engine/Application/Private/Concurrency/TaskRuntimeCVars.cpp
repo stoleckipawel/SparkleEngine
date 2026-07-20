@@ -7,7 +7,7 @@
 namespace
 {
 	ConsoleVariable<std::uint32_t> g_workerCount(
-	    "task.WorkerCount", 0, "Background task-worker override; 0 selects the conservative one-worker default.");
+	    "task.WorkerCount", 0, "Frame-critical/background task-worker override; 0 selects one worker per CPU lane.");
 	ConsoleVariable<bool> g_serialExecution(
 	    "task.SerialExecution", false, "Run SparkleTasks on the deterministic caller-thread reference executor.");
 }

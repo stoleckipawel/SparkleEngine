@@ -21,19 +21,19 @@ namespace Assets
 		}
 	}
 
-	SceneSkeletonDesc BuildSceneAssetSkeleton(
+	SkeletonResource BuildSceneAssetSkeleton(
 	    const LoadedSkeletonAsset& skeletonAsset,
 	    CookedAssetId skeletonAssetId,
 	    std::uint32_t sourceSkinIndex)
 	{
-		SceneSkeletonDesc skeleton;
+		SkeletonResource skeleton;
 		skeleton.assetId = skeletonAssetId;
 		skeleton.sourceSkinIndex = sourceSkinIndex;
 		skeleton.joints.reserve(skeletonAsset.joints.size());
 
 		for (const CookedSkeletonJointRecord& jointRecord : skeletonAsset.joints)
 		{
-			SceneJointDesc joint;
+			SkeletonJoint joint;
 			joint.name = JointNameToString(jointRecord);
 			joint.sourceNodeIndex = jointRecord.sourceNodeIndex;
 			joint.parentJointIndex = jointRecord.parentJointIndex;

@@ -1,16 +1,13 @@
 #pragma once
 
-#include "GameFramework/Public/World/EntityId.h"
-
-#include <span>
-
 namespace ECS
 {
-	class EntityRegistry;
+	struct LocalTransform;
+	struct WorldTransform;
 
 	class TransformEvaluationSystem final
 	{
 	  public:
-		static void Evaluate(EntityRegistry& registry, std::span<const EntityId> dirtyEntities) noexcept;
+		static void Evaluate(const LocalTransform& local, WorldTransform& world) noexcept;
 	};
 }

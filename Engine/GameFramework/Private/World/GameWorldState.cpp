@@ -5,14 +5,18 @@
 #include "World/ECS/Components/TransformComponents.h"
 
 #include "World/Systems/CameraDerivedStateEvaluationSystem.h"
+#include "World/Systems/GameWorldSystems.h"
 #include "World/Systems/TransformEvaluationSystem.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace ECS
 {
-	GameWorldState::GameWorldState()
+	GameWorldState::GameWorldState() : m_systemGraph(BuildGameWorldSystemGraph())
 	{
+		if (!m_systemGraph)
+			throw std::runtime_error(m_systemGraph.GetError().Message);
 		m_dirtyTransforms.reserve(WorldChangeJournal::MaxChangesPerBatch);
 		m_pendingChanges.reserve(WorldChangeJournal::MaxChangesPerBatch);
 		CommitDerivedStateAndPublish();
@@ -21,9 +25,9 @@ namespace ECS
 	bool GameWorldState::Destroy(EntityId entity) noexcept
 	{
 		const MeshInstance* mesh = m_registry.Get<MeshInstance>(entity);
-		const SceneMeshResourceHandle meshResource = mesh == nullptr ? SceneMeshResourceHandle{} : mesh->Resource;
+		const MeshResourceHandle meshResource = mesh == nullptr ? MeshResourceHandle{} : mesh->Resource;
 		const MorphState* morph = m_registry.Get<MorphState>(entity);
-		const SceneStateHandle morphState = morph == nullptr ? SceneStateHandle{} : morph->Weights;
+		const AnimationOutputSlotHandle morphState = morph == nullptr ? AnimationOutputSlotHandle{} : morph->Weights;
 		const bool destroyed = m_registry.Destroy(entity);
 		if (!destroyed)
 		{
@@ -39,7 +43,7 @@ namespace ECS
 		}
 		if (morphState.IsValid())
 		{
-			m_deformationStates.Remove(morphState);
+			m_morphWeights.Remove(morphState);
 		}
 		RecordChange(entity, WorldChangeKind::EntityDestroyed, WorldDataKind::World);
 		return true;
@@ -116,13 +120,23 @@ namespace ECS
 		}
 		if (!dirtyEntities.empty())
 		{
-			TransformEvaluationSystem::Evaluate(m_registry, dirtyEntities);
-			CameraDerivedStateEvaluationSystem::Evaluate(m_registry, dirtyEntities);
 			for (EntityId entity : dirtyEntities)
 			{
 				if (!m_registry.IsAlive(entity))
 				{
 					continue;
+				}
+				if (const LocalTransform* local = m_registry.Get<LocalTransform>(entity))
+				{
+					WorldTransform world;
+					TransformEvaluationSystem::Evaluate(*local, world);
+					m_registry.Replace(entity, world);
+					if (m_registry.Get<Camera>(entity) != nullptr)
+					{
+						CameraDerivedState derived;
+						CameraDerivedStateEvaluationSystem::Evaluate(*local, derived);
+						m_registry.Replace(entity, derived);
+					}
 				}
 				RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::WorldTransform);
 				if (m_registry.Get<Camera>(entity) != nullptr)
@@ -133,7 +147,11 @@ namespace ECS
 		}
 		m_dirtyTransforms.clear();
 		m_evaluateAllTransforms = false;
+		PublishPendingChanges();
+	}
 
+	void GameWorldState::PublishPendingChanges()
+	{
 		if (m_pendingChanges.empty() && m_publishedReadView.load(std::memory_order_acquire) != nullptr)
 		{
 			return;

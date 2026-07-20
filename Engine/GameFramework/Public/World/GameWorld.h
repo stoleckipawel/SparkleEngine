@@ -2,10 +2,10 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Level/LevelDesc.h"
+#include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "GameFramework/Public/Scene/Camera/SceneCameras.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLighting.h"
 #include "GameFramework/Public/Scene/Materials/MaterialVariant.h"
-#include "GameFramework/Public/World/GameWorldController.h"
 #include "GameFramework/Public/Scene/Meshes/SceneMeshes.h"
 #include "GameFramework/Public/Scene/Sky/SceneSky.h"
 #include "GameFramework/Public/World/GameWorldSnapshot.h"
@@ -18,7 +18,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace ECS
 {
@@ -30,11 +29,12 @@ namespace Assets
 }
 
 struct GameWorldResourceStores;
+class TaskExecutor;
 
 class SPARKLE_ENGINE_API GameWorld final
 {
   public:
-	GameWorld();
+	explicit GameWorld(TaskExecutor& taskExecutor);
 	~GameWorld() noexcept;
 
 	GameWorld(const GameWorld&) = delete;
@@ -56,7 +56,8 @@ class SPARKLE_ENGINE_API GameWorld final
 	bool AcknowledgeChanges(WorldChangeCursor& cursor, WorldSequence sequence) const noexcept;
 	std::string_view GetActiveLevelName() const noexcept { return m_activeLevelName; }
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
-	void RegisterController(std::unique_ptr<GameWorldController>&& controller);
+	void PublishCameraInputIntent(const CameraInputIntent& intent) noexcept;
+	void EnableOscillatingMeshMotion(bool enabled = true);
 	std::size_t GetMaterialVariantCount() const noexcept;
 	std::string_view GetMaterialVariantName(std::size_t index) const noexcept;
 	MaterialVariantIndex GetActiveMaterialVariant() const noexcept;
@@ -82,12 +83,14 @@ class SPARKLE_ENGINE_API GameWorld final
 
 	std::unique_ptr<ECS::GameWorldState> m_state;
 	std::unique_ptr<GameWorldResourceStores> m_resources;
+	TaskExecutor& m_taskExecutor;
 	SceneCameras m_cameras;
 	SceneLighting m_lighting;
 	SceneMeshes m_meshes;
 	SceneSky m_sky;
 	std::string m_activeLevelName;
 	LevelDesc m_activeLevelDesc;
-	std::vector<std::unique_ptr<GameWorldController>> m_controllers;
+	CameraInputIntent m_cameraInputIntent;
+	bool m_oscillatingMeshMotionEnabled = false;
 	std::uint64_t m_generation = 1;
 };

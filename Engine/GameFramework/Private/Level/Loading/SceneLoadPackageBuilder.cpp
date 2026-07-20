@@ -28,8 +28,8 @@ namespace
 		       payload.skeletalMeshInstances.size() * sizeof(SceneAssetPayload::SkeletalMeshInstance) +
 		       payload.meshInstanceGroups.size() * sizeof(SceneAssetPayload::MeshInstanceGroup) +
 		       payload.materials.size() * sizeof(MaterialDesc) + payload.cameras.size() * sizeof(SceneAssetPayload::Camera) +
-		       payload.lights.size() * sizeof(SceneLightDesc) + payload.skeletons.size() * sizeof(SceneSkeletonDesc) +
-		       payload.animations.size() * sizeof(SceneAnimationClipDesc);
+		       payload.lights.size() * sizeof(SceneLightDesc) + payload.skeletons.size() * sizeof(SkeletonResource) +
+		       payload.animations.size() * sizeof(AnimationClipResource);
 	}
 
 	bool ValidateReferences(const SceneAssetPayload& payload, std::string& errorMessage)
@@ -72,7 +72,7 @@ namespace
 		{
 			work.Entities.push_back(Assets::EntityBlueprint{std::move(identity), std::move(schemas)});
 		};
-		for (const SceneAnimationClipDesc& animation : work.Payload.animations)
+		for (const AnimationClipResource& animation : work.Payload.animations)
 			add(
 			    std::format("{}:animation:{}", work.Id.value, animation.sourceAnimationIndex),
 			    Schemas<ECS::AnimationState, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
@@ -105,9 +105,19 @@ namespace
 		std::unordered_set<std::string> identities;
 		for (const Assets::EntityBlueprint& entity : entities)
 		{
-			if (entity.AuthoredIdentity.empty() || !identities.insert(entity.AuthoredIdentity).second || entity.Components.empty())
+			if (entity.AuthoredIdentity.empty())
 			{
-				errorMessage = "Scene load package contains a missing or duplicate authored entity contract.";
+				errorMessage = "Scene load package contains an empty authored entity identity.";
+				return false;
+			}
+			if (!identities.insert(entity.AuthoredIdentity).second)
+			{
+				errorMessage = std::format("Scene load package contains duplicate authored entity identity '{}'.", entity.AuthoredIdentity);
+				return false;
+			}
+			if (entity.Components.empty())
+			{
+				errorMessage = std::format("Scene load package entity '{}' has no component contract.", entity.AuthoredIdentity);
 				return false;
 			}
 			std::unordered_set<std::uint64_t> componentIds;
@@ -143,12 +153,8 @@ namespace Assets
 	{
 		std::unordered_set<Assets::CookedAssetId> skeletonAssets;
 		for (const SceneAssetLoadWork& work : state.Assets)
-			for (const SceneSkeletonDesc& skeleton : work.Payload.skeletons)
-				if (!skeletonAssets.insert(skeleton.assetId).second)
-				{
-					errorMessage = "Scene load package contains a duplicate skeleton resource identity.";
-					return false;
-				}
+			for (const SkeletonResource& skeleton : work.Payload.skeletons)
+				skeletonAssets.insert(skeleton.assetId);
 		for (const SceneAssetLoadWork& work : state.Assets)
 			for (const SceneAssetPayload::SkeletalMeshInstance& mesh : work.Payload.skeletalMeshInstances)
 				if (!skeletonAssets.contains(mesh.skeletonAssetId))

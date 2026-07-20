@@ -149,7 +149,7 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 
 	std::unordered_map<Assets::CookedAssetId, std::uint32_t> jointMatrixOffsets;
 	std::unordered_map<Assets::CookedAssetId, std::vector<DirectX::XMFLOAT4X4>> currentSkinningMatricesBySkeletonAsset;
-	for (const SceneAnimationPoseSnapshot& pose : sceneSnapshot.animations.poses)
+	for (const AnimationPoseOutput& pose : sceneSnapshot.animations.poses)
 	{
 		if (pose.skeletonAssetId == Assets::InvalidCookedAssetId || pose.skinningMatrices.empty())
 		{

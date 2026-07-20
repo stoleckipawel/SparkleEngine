@@ -3,11 +3,11 @@
 #include "Assets/Cooked/CookedAssetCommon.h"
 #include "Assets/SceneMaterialVariantPayload.h"
 #include "Assets/SceneMeshAssetPayload.h"
-#include "Scene/Animations/SceneAnimation.h"
+#include "Scene/Animations/AnimationClipResource.h"
 #include "Scene/Camera/CameraDesc.h"
 #include "Scene/Lighting/SceneLightDesc.h"
 #include "Scene/Materials/MaterialDesc.h"
-#include "Scene/Skeletons/SceneSkeleton.h"
+#include "Scene/Skeletons/SkeletonResource.h"
 
 #include <string>
 #include <vector>
@@ -37,8 +37,8 @@ struct SceneAssetPayload final
 	std::vector<MeshInstanceGroup> meshInstanceGroups;
 	std::vector<Camera> cameras;
 	std::vector<SceneLightDesc> lights;
-	std::vector<SceneSkeletonDesc> skeletons;
-	std::vector<SceneAnimationClipDesc> animations;
+	std::vector<SkeletonResource> skeletons;
+	std::vector<AnimationClipResource> animations;
 	std::vector<MaterialDesc> materials;
 	std::vector<MaterialVariant> materialVariants;
 	std::vector<MaterialVariantMapping> materialVariantMappings;

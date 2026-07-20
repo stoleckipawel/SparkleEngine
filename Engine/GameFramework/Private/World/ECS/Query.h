@@ -74,6 +74,13 @@ namespace ECS
 
 		bool IsValid() const noexcept { return GetValidity() == QueryIterationStatus::Success; }
 		std::size_t GetEstimatedEntityCount() const noexcept { return m_leadingEntities.size(); }
+		bool PrepareWriteTraversal() noexcept
+		{
+			if (GetValidity() != QueryIterationStatus::Success)
+				return false;
+			MarkWrites(std::index_sequence_for<AccessSpecs...>{});
+			return true;
+		}
 
 		template <typename Function> QueryIterationResult ForEach(Function&& function)
 		{
@@ -108,6 +115,64 @@ namespace ECS
 
 			const QueryIterationStatus finalStatus = GetValidity();
 			return {.Status = finalStatus, .EntityCount = entityCount};
+		}
+
+		template <typename Function>
+		QueryIterationResult ForEachRange(std::size_t begin, std::size_t end, Function&& function) const
+		{
+			const QueryIterationStatus initialStatus = GetValidity();
+			if (initialStatus != QueryIterationStatus::Success)
+				return {.Status = initialStatus};
+			if (begin > end || end > m_leadingEntities.size())
+				return {.Status = QueryIterationStatus::StaleView};
+
+			std::size_t entityCount = 0;
+			for (std::size_t leadingIndex = begin; leadingIndex < end; ++leadingIndex)
+			{
+				const EntityId entity = m_leadingEntities[leadingIndex];
+				if (!Matches(entity, std::index_sequence_for<AccessSpecs...>{}))
+					continue;
+				auto arguments = BuildArguments(entity, std::index_sequence_for<AccessSpecs...>{});
+				std::apply(
+				    [&](auto&... components)
+				    {
+					    std::invoke(function, leadingIndex, entity, components...);
+				    },
+				    arguments);
+				++entityCount;
+			}
+			return {.Status = GetValidity(), .EntityCount = entityCount};
+		}
+
+		template <typename Function>
+		QueryIterationResult ForEachEntityRange(
+		    std::span<const EntityId> entities,
+		    std::size_t begin,
+		    std::size_t end,
+		    Function&& function) const
+		{
+			const QueryIterationStatus initialStatus = GetValidity();
+			if (initialStatus != QueryIterationStatus::Success)
+				return {.Status = initialStatus};
+			if (begin > end || end > entities.size())
+				return {.Status = QueryIterationStatus::StaleView};
+
+			std::size_t entityCount = 0;
+			for (std::size_t targetIndex = begin; targetIndex < end; ++targetIndex)
+			{
+				const EntityId entity = entities[targetIndex];
+				if (!Matches(entity, std::index_sequence_for<AccessSpecs...>{}))
+					continue;
+				auto arguments = BuildArguments(entity, std::index_sequence_for<AccessSpecs...>{});
+				std::apply(
+				    [&](auto&... components)
+				    {
+					    std::invoke(function, targetIndex, entity, components...);
+				    },
+				    arguments);
+				++entityCount;
+			}
+			return {.Status = GetValidity(), .EntityCount = entityCount};
 		}
 
 	  private:
@@ -162,7 +227,7 @@ namespace ECS
 		}
 
 		template <typename AccessSpec>
-		auto BuildArgument(EntityId entity, ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage)
+		auto BuildArgument(EntityId entity, ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage) const
 		{
 			using Component = typename QueryAccessTraits<AccessSpec>::Component;
 			if constexpr (QueryAccessTraits<AccessSpec>::Mode == ComponentAccessMode::Read)
@@ -179,7 +244,7 @@ namespace ECS
 			}
 		}
 
-		template <std::size_t... Indices> auto BuildArguments(EntityId entity, std::index_sequence<Indices...>)
+		template <std::size_t... Indices> auto BuildArguments(EntityId entity, std::index_sequence<Indices...>) const
 		{
 			return std::tuple_cat(BuildArgument<AccessSpecs>(entity, std::get<Indices>(m_storages))...);
 		}

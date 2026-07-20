@@ -3,7 +3,6 @@
 
 #include "Assets/SceneAssetPayload.h"
 #include "World/GameWorldSceneAssetCommitter.h"
-#include "World/GameWorldController.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
 #include "World/GameWorldState.h"
@@ -11,6 +10,7 @@
 #include "World/Resources/GameWorldResourceStores.h"
 
 #include <algorithm>
+#include <stdexcept>
 #include <utility>
 
 namespace
@@ -34,26 +34,12 @@ namespace
 		return {};
 	}
 
-	void RunControllers(
-	    std::vector<std::unique_ptr<GameWorldController>>& controllers,
-	    GameWorld& world,
-	    const GameWorldUpdateContext& context)
-	{
-		for (const std::unique_ptr<GameWorldController>& controller : controllers)
-		{
-			if (!controller)
-			{
-				continue;
-			}
-
-			controller->Update(world, context);
-		}
-	}
 }
 
-GameWorld::GameWorld() :
+GameWorld::GameWorld(TaskExecutor& taskExecutor) :
     m_state(std::make_unique<ECS::GameWorldState>()),
 	m_resources(std::make_unique<GameWorldResourceStores>()),
+	m_taskExecutor(taskExecutor),
     m_cameras(*this),
     m_lighting(*this),
     m_meshes(*this),
@@ -74,36 +60,22 @@ void GameWorld::InitializeStagedLevel(const LevelDesc& desc)
 
 void GameWorld::Update(float deltaSeconds)
 {
-	const GameWorldUpdateContext preAnimationContext{.deltaSeconds = deltaSeconds, .phase = GameWorldUpdatePhase::PreAnimation};
-	RunControllers(m_controllers, *this, preAnimationContext);
-
-	m_state->UpdateAnimations(deltaSeconds, m_resources->Skeletons);
-	m_state->ApplyMorphWeights(m_state->GetAnimationOutput().morphWeights);
-
-	const GameWorldUpdateContext postAnimationContext{.deltaSeconds = deltaSeconds, .phase = GameWorldUpdatePhase::PostAnimation};
-	RunControllers(m_controllers, *this, postAnimationContext);
-	CommitWorldChanges();
+	if (!m_state->ExecuteSystems(*m_resources, m_taskExecutor, m_cameraInputIntent, deltaSeconds))
+		throw std::runtime_error("Game-system graph execution failed.");
+	m_cameraInputIntent.LookDeltaX = 0.0f;
+	m_cameraInputIntent.LookDeltaY = 0.0f;
+	m_cameraInputIntent.SpeedStepCount = 0.0f;
 }
 
-void GameWorld::RegisterController(std::unique_ptr<GameWorldController>&& controller)
+void GameWorld::PublishCameraInputIntent(const CameraInputIntent& intent) noexcept
 {
-	if (!controller)
-	{
-		return;
-	}
+	m_cameraInputIntent = intent;
+}
 
-	if (m_activeLevelName.empty())
-	{
-		controller->OnWorldReset(*this);
-	}
-	else
-	{
-		controller->OnLevelLoaded(*this, m_activeLevelDesc);
-		controller->OnSceneAssetsAppended(*this);
-	}
-
-	m_controllers.push_back(std::move(controller));
-	CommitWorldChanges();
+void GameWorld::EnableOscillatingMeshMotion(bool enabled)
+{
+	m_oscillatingMeshMotionEnabled = enabled;
+	m_state->ConfigureOscillatingMeshMotion(enabled);
 }
 
 bool GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package, std::string& errorMessage)
@@ -120,7 +92,9 @@ bool GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package, std::
 		return false;
 	}
 
-	GameWorld stagedWorld;
+	GameWorld stagedWorld(m_taskExecutor);
+	stagedWorld.m_oscillatingMeshMotionEnabled = m_oscillatingMeshMotionEnabled;
+	stagedWorld.m_state->ConfigureOscillatingMeshMotion(m_oscillatingMeshMotionEnabled);
 	stagedWorld.InitializeStagedLevel(package.Level);
 
 	GameWorldSceneAssetCommitter committer(
@@ -135,6 +109,11 @@ bool GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package, std::
 		}
 	}
 	stagedWorld.GetCameras().SetPrimaryCameraActive();
+	if (!stagedWorld.m_state->PrepareSystemResources(*stagedWorld.m_resources))
+	{
+		errorMessage = "Staged world could not resolve animation targets and output slots.";
+		return false;
+	}
 	if (stagedWorld.m_state->GetEntityCount() != package.Entities.size())
 	{
 		errorMessage = "Staged world entity count does not match the validated blueprint package.";
@@ -153,14 +132,6 @@ bool GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package, std::
 
 void GameWorld::FinalizeSceneLoadCommit()
 {
-	for (const std::unique_ptr<GameWorldController>& controller : m_controllers)
-	{
-		if (!controller)
-			continue;
-		controller->OnWorldReset(*this);
-		controller->OnLevelLoaded(*this, m_activeLevelDesc);
-		controller->OnSceneAssetsAppended(*this);
-	}
 	CommitWorldChanges();
 }
 

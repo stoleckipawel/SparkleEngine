@@ -4,12 +4,10 @@
 # project boundary instead of hiding it behind a single mixed executable.
 add_executable(ShowcaseEditor
     Src/EditorMain.cpp
-    Src/ShowcaseSceneController.cpp
 )
 
 add_executable(ShowcaseRuntime
     Src/RuntimeMain.cpp
-    Src/ShowcaseSceneController.cpp
 )
 
 target_compile_features(ShowcaseEditor PRIVATE cxx_std_20)

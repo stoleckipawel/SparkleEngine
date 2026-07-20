@@ -17,6 +17,7 @@ class RuntimeConsoleHost;
 class TaskExecutor;
 class TaskScope;
 class ApplicationTaskRuntime;
+class CameraInputIntentCollector;
 
 enum class RuntimeApplicationFrameResult : std::uint8_t
 {
@@ -68,6 +69,7 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	std::unique_ptr<Renderer> m_renderer;
 	std::unique_ptr<RuntimeConsoleHost> m_runtimeConsoleHost;
 	std::unique_ptr<ApplicationTaskRuntime> m_taskRuntime;
+	std::unique_ptr<CameraInputIntentCollector> m_cameraInputIntentCollector;
 	RuntimeApplicationOptions m_options;
 	bool m_isInitialized = false;
 };
