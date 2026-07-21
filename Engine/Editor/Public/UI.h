@@ -1,12 +1,17 @@
 #pragma once
 
 #include "EditorAPI.h"
+#include "Renderer/Public/Diagnostics/MeshPreviewGeometry.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
+#include "../../GameFramework/Public/World/WorldChange.h"
+#include "../../GameFramework/Public/World/WorldEditCommand.h"
+#include "../../GameFramework/Public/World/WorldMaterialVariantView.h"
+#include "../../GameFramework/Public/World/WorldReadView.h"
 
 #include <cstdint>
 #include <functional>
@@ -27,16 +32,19 @@ class EngineRenderingSettingsSection;
 class EditorRestartService;
 class InputSystem;
 class LevelManager;
-class GameWorld;
 class Window;
 class RhiImGuiRenderer;
-struct MeshPreviewGeometry;
 
 struct EditorHostServices final
 {
 	Timer& RuntimeTimer;
 	LevelManager* Levels = nullptr;
-	GameWorld* World = nullptr;
+	std::function<WorldReadView()> AcquireWorldReadView;
+	std::function<WorldChangeBatch(const WorldChangeCursor&)> ReadWorldChanges;
+	std::function<bool(WorldChangeCursor&, WorldSequence)> AcknowledgeWorldChanges;
+	std::function<std::uint64_t()> WorldGeneration;
+	std::function<WorldMaterialVariantView()> MaterialVariants;
+	std::function<WorldEditResult(WorldEditCommand, std::uint64_t)> SubmitWorldEdit;
 	RhiImGuiRenderer& ImGuiRenderer;
 	Window& HostWindow;
 	InputSystem& Input;
@@ -48,6 +56,7 @@ struct EditorDiagnosticsProviders final
 	std::function<MeshDiagnosticsSnapshot()> MeshDiagnostics;
 	std::function<TextureDiagnosticsSnapshot()> TextureDiagnostics;
 	std::function<RendererMemoryDiagnosticsSnapshot()> MemoryDiagnostics;
+	std::function<MeshPreviewGeometry(std::uintptr_t)> MeshPreview;
 };
 
 class SPARKLE_EDITOR_API UI final
@@ -79,6 +88,19 @@ class SPARKLE_EDITOR_API UI final
 	void NewFrame();
 
 	void Build();
+	void BeginInputRouting(bool disableInteraction);
+	float BuildMainMenuBar();
+	void BuildSceneOutliner(bool disableInteraction, float mainMenuBarHeight);
+	void BuildCenterWorkspace(bool disableInteraction, float mainMenuBarHeight);
+	void BuildViewport(
+	    bool disableInteraction,
+	    float topInset,
+	    float bottomInset,
+	    float outlinerWidth,
+	    float inspectorWidth);
+	void RegisterViewportInputRegion();
+	void BuildSceneInspector(bool disableInteraction, float mainMenuBarHeight);
+	void BuildUtilityPanels(bool disableInteraction);
 	bool IsReady() const noexcept;
 
 	void InitializeImGuiContext();
@@ -87,8 +109,9 @@ class SPARKLE_EDITOR_API UI final
 	bool InitializeGraphicsBackend();
 
 	void InitializeDefaultPanels();
+	void UpdateSceneModel();
+	void HandleTransactionShortcuts();
 	void ConfigureMainMenuBarWindowActions();
-	MeshPreviewGeometry BuildMeshPreviewGeometry(std::uintptr_t meshRuntimeId) const;
 
 	void SubscribeToWindowEvents(Window& window);
 
@@ -108,7 +131,6 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<EditorRestartService> m_restartService;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
-	GameWorld* m_gameWorld = nullptr;
 	RhiImGuiRenderer* m_imguiRenderer = nullptr;
 	Window* m_window = nullptr;
 	InputSystem* m_inputSystem = nullptr;
@@ -117,6 +139,10 @@ class SPARKLE_EDITOR_API UI final
 	std::function<MeshDiagnosticsSnapshot()> m_meshDiagnosticsProvider;
 	std::function<TextureDiagnosticsSnapshot()> m_textureDiagnosticsProvider;
 	std::function<RendererMemoryDiagnosticsSnapshot()> m_memoryDiagnosticsProvider;
+	std::function<MeshPreviewGeometry(std::uintptr_t)> m_meshPreviewProvider;
+	std::unique_ptr<class EditorSceneModelBuilder> m_sceneModelBuilder;
+	std::unique_ptr<class EditorTransactionManager> m_transactions;
+	std::shared_ptr<const class EditorSceneModel> m_sceneModel;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;
 	bool m_isImGuiContextInitialized = false;

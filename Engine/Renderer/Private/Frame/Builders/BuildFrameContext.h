@@ -9,10 +9,12 @@ class TemporalDataBuilder;
 class RenderSceneDataBuilder;
 class RenderRayTracingScene;
 struct FrameContext;
-struct RenderSceneSnapshot;
+class RenderWorld;
+struct RenderFrameDynamicData;
 
 FrameContext BuildFrameContext(
-    const RenderSceneSnapshot& sceneSnapshot,
+    const RenderWorld& world,
+    const RenderFrameDynamicData& dynamic,
     RhiResourceService& resourceService,
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,

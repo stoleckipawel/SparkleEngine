@@ -34,7 +34,7 @@ namespace Assets
 		std::uint32_t flags = 0;
 	};
 
-	struct SPARKLE_ENGINE_API CookedSceneAnimationRef
+	struct SPARKLE_ENGINE_API CookedAnimationReference
 	{
 		CookedAssetId animationAssetId = InvalidCookedAssetId;
 		std::uint32_t sourceAnimationIndex = 0;
@@ -58,7 +58,7 @@ namespace Assets
 }  // namespace Assets
 
 static_assert(std::is_trivially_copyable_v<Assets::CookedSceneSkeletonRef>, "CookedSceneSkeletonRef must stay trivially copyable.");
-static_assert(std::is_trivially_copyable_v<Assets::CookedSceneAnimationRef>, "CookedSceneAnimationRef must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedAnimationReference>, "CookedAnimationReference must stay trivially copyable.");
 static_assert(
     std::is_trivially_copyable_v<Assets::CookedSceneMaterialVariantRecord>,
     "CookedSceneMaterialVariantRecord must stay trivially copyable.");

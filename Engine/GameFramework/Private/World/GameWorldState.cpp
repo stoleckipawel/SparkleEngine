@@ -5,7 +5,7 @@
 #include "World/ECS/Components/TransformComponents.h"
 
 #include "World/Systems/CameraDerivedStateEvaluationSystem.h"
-#include "World/Systems/GameWorldSystems.h"
+#include "World/Systems/Descriptors/GameWorldSystemGraphBuilder.h"
 #include "World/Systems/TransformEvaluationSystem.h"
 
 #include <algorithm>

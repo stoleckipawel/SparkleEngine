@@ -21,9 +21,9 @@ namespace Assets
 	    std::string& errorMessage)
 	{
 		AnimationAssetLoader animationAssetLoader;
-		sceneAssetPayload.animations.reserve(sceneAssetPayload.animations.size() + sceneManifest.animationRefs.size());
+		sceneAssetPayload.animations.reserve(sceneAssetPayload.animations.size() + sceneManifest.animationReferences.size());
 
-		for (const CookedSceneAnimationRef& animationRef : sceneManifest.animationRefs)
+		for (const CookedAnimationReference& animationRef : sceneManifest.animationReferences)
 		{
 			LoadedAnimationAsset animationAsset;
 			const std::filesystem::path animationAssetPath = Paths::CookedAnimationAsset(animationRef.animationAssetId);

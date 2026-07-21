@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "World/GameWorldState.h"
 
-#include "Scene/Lighting/Snapshots/SceneLightingSnapshotBuilder.h"
 #include "World/ECS/Components/EditorComponents.h"
 #include "World/ECS/Components/RenderingComponents.h"
 #include "World/ECS/Components/TransformComponents.h"
@@ -171,8 +170,4 @@ namespace ECS
 		return lights;
 	}
 
-	LightingSnapshot GameWorldState::CaptureLighting() const
-	{
-		return SceneLightingSnapshotBuilder::BuildSnapshot(CaptureLightsToDesc());
-	}
 }

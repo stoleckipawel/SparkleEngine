@@ -2,13 +2,11 @@
 #include "Panels/SceneOutlinerPanel.h"
 
 #include "Core/Public/Strings/StringUtils.h"
-#include "Panels/SceneOutlinerEntries.h"
+#include "Scene/Model/EditorSceneModel.h"
+#include "Scene/Transactions/EditorTransactionManager.h"
+#include "Scene/Commands/SceneObjectCommandFactory.h"
 #include "Scene/SceneObjectSelection.h"
-#include "Scene/SceneObjectActions.h"
 #include "Scene/SceneObjectPresentation.h"
-#include "World/GameWorld.h"
-#include "Scene/Lighting/SceneLighting.h"
-#include "Scene/Meshes/SceneMeshes.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 
@@ -17,8 +15,9 @@
 
 #include <imgui.h>
 
-SceneOutlinerPanel::SceneOutlinerPanel(GameWorld& gameWorld, SceneObjectSelection& selection, float widthPixels) noexcept :
-    m_gameWorld(&gameWorld), m_selection(&selection), m_widthPixels(widthPixels)
+SceneOutlinerPanel::SceneOutlinerPanel(
+    SceneObjectSelection& selection, EditorTransactionManager& transactions, float widthPixels) noexcept :
+    m_transactions(&transactions), m_selection(&selection), m_widthPixels(widthPixels)
 {
 }
 
@@ -75,7 +74,7 @@ void SceneOutlinerPanel::BuildToolbar() noexcept
 void SceneOutlinerPanel::BuildFooter() noexcept
 {
 	const std::size_t totalCount =
-	    1u + m_readView.GetCameras().size() + m_readView.GetLights().size() + m_readView.GetMeshes().size();
+	    m_model ? 1u + m_model->GetCameras().size() + m_model->GetLights().size() + m_model->GetMeshes().size() : 0u;
 	const std::size_t displayedCount = CountVisibleEntries();
 	const bool hasValidSelection = IsSelectionValid();
 	ImGui::Separator();
@@ -89,12 +88,7 @@ void SceneOutlinerPanel::BuildFooter() noexcept
 
 bool SceneOutlinerPanel::IsSelectionValid() const noexcept
 {
-	if (m_gameWorld == nullptr || m_selection == nullptr)
-	{
-		return false;
-	}
-
-	return SceneObjectActions::IsSelectionValid(*m_gameWorld, *m_selection);
+	return m_model && m_selection && m_model->Contains(*m_selection);
 }
 
 void SceneOutlinerPanel::EnsureValidSelection() noexcept
@@ -106,7 +100,9 @@ void SceneOutlinerPanel::EnsureValidSelection() noexcept
 
 	if (!IsSelectionValid())
 	{
-		*m_selection = SceneObjectSelection::Camera(m_gameWorld->GetCameras().GetCameraEntity(0));
+		*m_selection = m_model && !m_model->GetCameras().empty()
+		                   ? SceneObjectSelection::Camera(m_model->GetCameras().front().Entity)
+		                   : SceneObjectSelection::None();
 	}
 }
 
@@ -117,8 +113,7 @@ void SceneOutlinerPanel::BuildCameraSection() noexcept
 		return;
 	}
 
-	const std::vector<SceneOutlinerEntry> entries = SceneOutlinerEntries::BuildCameraEntries(m_readView);
-	DrawEntrySection("Camera", "Camera", "No cameras in scene", entries);
+	DrawEntrySection("Camera", "Camera", "No cameras in scene", m_model->GetCameraEntries());
 }
 
 void SceneOutlinerPanel::BuildLightSection() noexcept
@@ -128,8 +123,7 @@ void SceneOutlinerPanel::BuildLightSection() noexcept
 		return;
 	}
 
-	const std::vector<SceneOutlinerEntry> entries = SceneOutlinerEntries::BuildLightEntries(m_readView);
-	DrawEntrySection("Lights", "Lights", "No lights in scene", entries);
+	DrawEntrySection("Lights", "Lights", "No lights in scene", m_model->GetLightEntries());
 }
 
 void SceneOutlinerPanel::BuildSkySection() noexcept
@@ -139,7 +133,8 @@ void SceneOutlinerPanel::BuildSkySection() noexcept
 		return;
 	}
 
-	DrawEntrySection("Sky", "Sky", "", SceneOutlinerEntries::BuildSkyEntries(m_readView));
+	const std::vector<EditorSceneEntry> skyEntries{m_model->GetSkyEntry()};
+	DrawEntrySection("Sky", "Sky", "", skyEntries);
 }
 
 void SceneOutlinerPanel::BuildMeshSection() noexcept
@@ -149,15 +144,14 @@ void SceneOutlinerPanel::BuildMeshSection() noexcept
 		return;
 	}
 
-	const std::vector<SceneOutlinerEntry> entries = SceneOutlinerEntries::BuildMeshEntries(m_readView);
-	DrawEntrySection("Meshes", "Meshes", "No meshes in scene", entries);
+	DrawEntrySection("Meshes", "Meshes", "No meshes in scene", m_model->GetMeshEntries());
 }
 
 void SceneOutlinerPanel::DrawEntrySection(
     const char* id,
     const char* label,
     const char* emptyText,
-    const std::vector<SceneOutlinerEntry>& entries) noexcept
+    const std::vector<EditorSceneEntry>& entries) noexcept
 {
 	bool open = true;
 	DrawSectionRow(id, label, entries.size(), open);
@@ -170,11 +164,11 @@ void SceneOutlinerPanel::DrawEntrySection(
 			ImGui::TextDisabled("%s", emptyText);
 		}
 
-		for (const SceneOutlinerEntry& entry : entries)
+		for (const EditorSceneEntry& entry : entries)
 		{
-			if (PassesActiveFilter(entry.selection) && MatchesSearch(entry.label.c_str(), entry.typeLabel.c_str()))
+			if (PassesActiveFilter(entry.Selection) && MatchesSearch(entry.Label.c_str(), entry.TypeLabel.c_str()))
 			{
-				DrawSelectionEntry(entry.label.c_str(), entry.typeLabel.c_str(), entry.selection);
+				DrawSelectionEntry(entry.Label.c_str(), entry.TypeLabel.c_str(), entry.Selection);
 			}
 		}
 	}
@@ -204,12 +198,12 @@ bool SceneOutlinerPanel::MatchesSearch(const char* label, const char* typeLabel)
 std::size_t SceneOutlinerPanel::CountVisibleEntries() const noexcept
 {
 	std::size_t count = 0;
-	const auto countVisible = [this](const std::vector<SceneOutlinerEntry>& entries) noexcept
+	const auto countVisible = [this](const std::vector<EditorSceneEntry>& entries) noexcept
 	{
 		std::size_t visibleCount = 0;
-		for (const SceneOutlinerEntry& entry : entries)
+		for (const EditorSceneEntry& entry : entries)
 		{
-			if (PassesActiveFilter(entry.selection) && MatchesSearch(entry.label.c_str(), entry.typeLabel.c_str()))
+			if (PassesActiveFilter(entry.Selection) && MatchesSearch(entry.Label.c_str(), entry.TypeLabel.c_str()))
 			{
 				++visibleCount;
 			}
@@ -217,33 +211,47 @@ std::size_t SceneOutlinerPanel::CountVisibleEntries() const noexcept
 		return visibleCount;
 	};
 
-	count += countVisible(SceneOutlinerEntries::BuildCameraEntries(m_readView));
-	count += countVisible(SceneOutlinerEntries::BuildSkyEntries(m_readView));
-	count += countVisible(SceneOutlinerEntries::BuildLightEntries(m_readView));
-	count += countVisible(SceneOutlinerEntries::BuildMeshEntries(m_readView));
+	if (!m_model) return 0;
+	count += countVisible(m_model->GetCameraEntries());
+	const EditorSceneEntry& sky = m_model->GetSkyEntry();
+	if (PassesActiveFilter(sky.Selection) && MatchesSearch(sky.Label.c_str(), sky.TypeLabel.c_str())) ++count;
+	count += countVisible(m_model->GetLightEntries());
+	count += countVisible(m_model->GetMeshEntries());
 
 	return count;
 }
 
 bool SceneOutlinerPanel::IsEntryVisible(const SceneObjectSelection& selection) const noexcept
 {
-	return SceneObjectActions::IsVisible(*m_gameWorld, selection);
+	const EditorSceneEntry* entry = m_model ? m_model->FindEntry(selection) : nullptr;
+	return entry == nullptr || entry->Visible;
 }
 
 void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selection) noexcept
 {
-	SceneObjectActions::ToggleVisibility(*m_gameWorld, selection);
+	if (!m_model || !m_transactions) return;
+	auto commands = SceneObjectCommandFactory::SetVisibility(*m_model, selection, !IsEntryVisible(selection));
+	if (!commands) return;
+	(void) m_transactions->Execute(
+	    std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration(),
+	    std::move(commands->CoalescingKey));
 }
 
 void SceneOutlinerPanel::SelectEntry(const SceneObjectSelection& selection) noexcept
 {
-	if (m_selection == nullptr || m_gameWorld == nullptr)
+	if (m_selection == nullptr || !m_model)
 	{
 		return;
 	}
 
 	*m_selection = selection;
-	SceneObjectActions::ApplySelection(*m_gameWorld, selection);
+	if (selection.type == SceneObjectType::Camera && m_transactions)
+	{
+		auto commands = SceneObjectCommandFactory::SetActiveCamera(*m_model, selection.entity);
+		if (commands)
+			(void) m_transactions->Execute(
+			    std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration());
+	}
 }
 
 void SceneOutlinerPanel::DrawSectionRow(const char* id, const char* label, std::size_t count, bool& open) noexcept
@@ -284,7 +292,8 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 
 	ImGui::TableSetColumnIndex(1);
 	ImGui::Indent(16.0f);
-	UiUtil::DrawEditorIcon(SceneObjectPresentation::BuildSelectionIcon(selection, m_gameWorld), typeLabel, !isSelected);
+	const EditorSceneEntry* entry = m_model ? m_model->FindEntry(selection) : nullptr;
+	UiUtil::DrawEditorIcon(SceneObjectPresentation::BuildSelectionIcon(selection, entry ? entry->LightKind : SceneLightKind::Unknown), typeLabel, !isSelected);
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 	{
 		SelectEntry(selection);
@@ -360,14 +369,12 @@ void SceneOutlinerPanel::BuildUI(bool disableInteraction)
 	m_widthPixels = ImGui::GetWindowWidth();
 	UiUtil::DrawPanelHeader("Scene", "Outliner");
 
-	if (m_gameWorld == nullptr || m_selection == nullptr)
+	if (!m_model || m_selection == nullptr)
 	{
 		ImGui::TextDisabled("Scene outliner unavailable");
 		ImGui::End();
 		return;
 	}
-	m_readView = m_gameWorld->AcquireReadView();
-
 	EnsureValidSelection();
 	ImGui::BeginDisabled(disableInteraction);
 	BuildToolbar();

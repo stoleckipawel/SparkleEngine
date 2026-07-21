@@ -37,7 +37,7 @@ namespace Assets
 		for (const CookedSceneSkeletonRef& reference : manifest.skeletonRefs)
 			if (!files.Read(Paths::CookedSkeletonAsset(reference.skeletonAssetId), retainedBytes, maximumBytes, errorMessage))
 				return false;
-		for (const CookedSceneAnimationRef& reference : manifest.animationRefs)
+		for (const CookedAnimationReference& reference : manifest.animationReferences)
 			if (!files.Read(Paths::CookedAnimationAsset(reference.animationAssetId), retainedBytes, maximumBytes, errorMessage))
 				return false;
 		errorMessage.clear();

@@ -3,7 +3,7 @@
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
 
 #include "ShaderParameters/PassParameterLayout.h"
-#include "Shaders/CookedShaderPackageCache.h"
+#include "Shaders/LoadedShaderPackage.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 

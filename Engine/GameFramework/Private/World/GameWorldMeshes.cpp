@@ -135,20 +135,16 @@ namespace ECS
 		return mesh == nullptr ? Assets::kInvalidCookedSceneSourceNodeIndex : mesh->SourceNodeIndex;
 	}
 
-	void GameWorldState::AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& groups)
+	void GameWorldState::AppendMeshInstanceGroups(std::vector<SceneMeshInstanceGroupData>&& groups)
 	{
 		m_meshInstanceGroups.reserve(m_meshInstanceGroups.size() + groups.size());
-		for (MeshInstanceGroupSnapshot& group : groups)
+		for (SceneMeshInstanceGroupData& group : groups)
 		{
 			m_meshInstanceGroups.push_back(std::move(group));
 		}
 		RecordChange(EntityId::Invalid(), WorldChangeKind::ResourceChanged, WorldDataKind::MeshInstance);
 	}
 
-	MeshSnapshot GameWorldState::CaptureMeshes() const
-	{
-		return m_extraction.GetMeshes();
-	}
 
 	void GameWorldState::ConfigureOscillatingMeshMotion(bool enabled)
 	{

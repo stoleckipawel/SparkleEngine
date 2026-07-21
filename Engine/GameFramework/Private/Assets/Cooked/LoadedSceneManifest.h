@@ -16,7 +16,7 @@ namespace Assets
 		std::vector<CookedSceneCameraRecord> cameras;
 		std::vector<CookedSceneLightRecord> lights;
 		std::vector<CookedSceneSkeletonRef> skeletonRefs;
-		std::vector<CookedSceneAnimationRef> animationRefs;
+		std::vector<CookedAnimationReference> animationReferences;
 		std::vector<float> morphWeights;
 		std::vector<CookedSceneMaterialVariantRecord> materialVariants;
 		std::vector<CookedSceneMaterialVariantMappingRecord> materialVariantMappings;

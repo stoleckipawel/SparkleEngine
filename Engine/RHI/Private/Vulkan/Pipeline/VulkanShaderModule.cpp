@@ -2,7 +2,7 @@
 
 #include "Vulkan/Pipeline/VulkanShaderModule.h"
 
-#include "Shaders/CookedShaderPackageCache.h"
+#include "Shaders/LoadedShaderPackage.h"
 #include "Strings/StringUtils.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"

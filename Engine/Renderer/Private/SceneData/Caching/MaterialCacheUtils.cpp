@@ -60,20 +60,20 @@ namespace MaterialCacheUtils
 		return 0;
 	}
 
-	bool MaterialSnapshotEquals(const MaterialSnapshot& left, const MaterialSnapshot& right)
+	bool MaterialTableEquals(const RenderMaterialTable& left, const RenderMaterialTable& right)
 	{
-		if (left.generation != right.generation)
+		if (left.Generation != right.Generation)
 		{
 			return false;
 		}
-		if (left.materialDescs.size() != right.materialDescs.size())
+		if (left.Values.size() != right.Values.size())
 		{
 			return false;
 		}
 
-		for (std::size_t index = 0; index < left.materialDescs.size(); ++index)
+		for (std::size_t index = 0; index < left.Values.size(); ++index)
 		{
-			if (!MaterialDescEquals(left.materialDescs[index], right.materialDescs[index]))
+			if (!MaterialDescEquals(left.Values[index], right.Values[index]))
 			{
 				return false;
 			}

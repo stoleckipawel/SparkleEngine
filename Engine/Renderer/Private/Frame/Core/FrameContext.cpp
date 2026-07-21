@@ -8,7 +8,7 @@
 #include "Camera/RenderCamera.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
-#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
+#include "SceneData/RenderWorld.h"
 #include "SceneData/RenderSceneGpuData.h"
 
 #include <cstdio>
@@ -38,7 +38,8 @@ namespace
 }
 
 FrameContext BuildFrameContext(
-    const RenderSceneSnapshot& sceneSnapshot,
+    const RenderWorld& world,
+    const RenderFrameDynamicData& dynamic,
     RhiResourceService& resourceService,
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,
@@ -48,7 +49,7 @@ FrameContext BuildFrameContext(
     TemporalDataBuilder& temporalDataBuilder)
 {
 	FrameContext frame{};
-	frame.sceneData = renderSceneDataBuilder.Build(sceneSnapshot);
+	frame.sceneData = renderSceneDataBuilder.Build(world, dynamic);
 	const PerViewCameraConstantBufferData cameraData = renderCamera.GetCameraConstantBufferData();
 	if (renderRayTracingScene != nullptr)
 	{

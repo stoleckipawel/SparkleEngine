@@ -2,8 +2,9 @@
 
 #include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
-#include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
+#include "GameFramework/Public/Rendering/RenderInputFrame.h"
 
+#include <cstdint>
 #include <vector>
 
 class MaterialResourceStore final
@@ -13,11 +14,13 @@ class MaterialResourceStore final
 	MaterialHandle Append(std::vector<MaterialDesc>&& descriptions);
 	MaterialHandle GetOrCreateDefault();
 	bool Contains(MaterialHandle handle) const noexcept;
-	MaterialSnapshot CaptureSnapshot() const;
+	std::uint64_t GetContentRevision() const noexcept { return m_contentRevision; }
+	RenderMaterialTable CaptureRenderTable() const;
 
   private:
 	static MaterialDesc CreateDefault();
 	std::vector<MaterialDesc> m_descriptions;
 	MaterialHandle m_default = MaterialHandle::Invalid();
 	std::uint32_t m_generation = 0;
+	std::uint64_t m_contentRevision = 0;
 };

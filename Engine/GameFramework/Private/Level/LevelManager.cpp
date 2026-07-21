@@ -5,9 +5,6 @@
 #include "Level/Level.h"
 #include "Level/LevelRegistry.h"
 #include "Level/Loading/SceneLoadExecutionService.h"
-#include "Scene/Camera/SceneCameraView.h"
-#include "Scene/Lighting/SceneLighting.h"
-#include "Scene/Sky/SceneSky.h"
 #include "World/GameWorld.h"
 
 static const auto g_levelManagerLogger = Logging::GetOrCreateLogger("GameFramework.LevelManager");
@@ -201,8 +198,18 @@ void LevelManager::CaptureSceneToLevel() noexcept
 	if (!m_activeLevel || !m_gameWorld)
 		return;
 	LevelDesc desc = m_activeLevel->BuildDescription();
-	desc.lights = m_gameWorld->GetLighting().CaptureToDesc();
-	desc.sky = m_gameWorld->GetSky().CaptureToDesc();
-	desc.cameraDesc = m_gameWorld->GetCameras().GetActiveCamera().GetDesc();
+	const WorldReadView view = m_gameWorld->AcquireReadView();
+	desc.lights.clear();
+	desc.lights.reserve(view.GetLights().size());
+	for (const WorldLightReadData& light : view.GetLights()) desc.lights.push_back(light.Description);
+	desc.sky = view.GetSkyEnvironment() ? std::optional<SceneSkyDesc>(view.GetSkyEnvironment()->Description) : std::nullopt;
+	for (const WorldCameraReadData& camera : view.GetCameras())
+	{
+		if (camera.Active)
+		{
+			desc.cameraDesc = camera.Description;
+			break;
+		}
+	}
 	m_activeLevel->SetLevelDesc(desc);
 }

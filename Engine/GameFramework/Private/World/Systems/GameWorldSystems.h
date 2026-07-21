@@ -7,10 +7,7 @@ class TaskExecutor;
 
 namespace ECS
 {
-	class CompiledGameSystemGraph;
 	class GameWorldState;
-
-	CompiledGameSystemGraph BuildGameWorldSystemGraph();
 	bool ExecuteGameWorldSystems(
 	    GameWorldState& state,
 	    GameWorldResourceStores& resources,

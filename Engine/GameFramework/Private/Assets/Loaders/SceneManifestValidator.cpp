@@ -52,7 +52,7 @@ namespace Assets
 				return false;
 			}
 
-			if (!manifest.animationRefs.empty() && !HasFeatureFlag(manifest.header.featureFlags, CookedSceneFeatureFlags::Animations))
+			if (!manifest.animationReferences.empty() && !HasFeatureFlag(manifest.header.featureFlags, CookedSceneFeatureFlags::Animations))
 			{
 				outErrorMessage = "Cooked scene manifest has animation refs but is missing the Animations feature flag";
 				return false;
@@ -328,9 +328,9 @@ namespace Assets
 
 		bool ValidateAnimationRefs(const LoadedSceneManifest& manifest, std::string& outErrorMessage)
 		{
-			for (std::size_t animationIndex = 0; animationIndex < manifest.animationRefs.size(); ++animationIndex)
+			for (std::size_t animationIndex = 0; animationIndex < manifest.animationReferences.size(); ++animationIndex)
 			{
-				if (manifest.animationRefs[animationIndex].animationAssetId == InvalidCookedAssetId)
+				if (manifest.animationReferences[animationIndex].animationAssetId == InvalidCookedAssetId)
 				{
 					outErrorMessage = std::format("Cooked scene animation ref {} has an invalid asset id", animationIndex);
 					return false;

@@ -2,7 +2,7 @@
 
 #include "SceneCooker.h"
 
-#include "Features/Animations/CookedSceneAnimationBuilder.h"
+#include "Features/Animations/CookedAnimationAssetBuilder.h"
 #include "Features/Cameras/CookedSceneCameraBuilder.h"
 #include "Features/Instances/CookedSceneInstanceBuilder.h"
 #include "Features/Lights/CookedSceneLightBuilder.h"
@@ -45,13 +45,13 @@ namespace
 			return false;
 		}
 
-		if (build.manifest.animationRefs.size() != importResult.scene.animations.size())
+		if (build.manifest.animationReferences.size() != importResult.scene.animations.size())
 		{
 			outErrorMessage = "Cooked scene animation metadata count does not match imported animation count";
 			return false;
 		}
 
-		if (build.outputs.animationAssets.size() != build.manifest.animationRefs.size())
+		if (build.outputs.animationAssets.size() != build.manifest.animationReferences.size())
 		{
 			outErrorMessage = "Cooked scene animation asset count does not match animation ref count";
 			return false;
@@ -105,7 +105,7 @@ bool SceneCooker::BuildManifest(
 	outBuild.manifest.materialVariants.clear();
 	outBuild.manifest.materialVariantMappings.clear();
 	CookedSceneSkeletonBuilder::BuildSkeletons(importResult, outBuild.identity.assetId, outBuild);
-	CookedSceneAnimationBuilder::BuildAnimations(importResult, outBuild.identity.assetId, outBuild);
+	CookedAnimationAssetBuilder::Build(importResult, outBuild.identity.assetId, outBuild);
 	if (!CookedSceneInstanceBuilder::BuildInstances(importResult, outBuild, outErrorMessage))
 	{
 		return false;
@@ -131,7 +131,7 @@ bool SceneCooker::BuildManifest(
 	outBuild.manifest.header.cameraCount = static_cast<std::uint32_t>(outBuild.manifest.cameras.size());
 	outBuild.manifest.header.lightCount = static_cast<std::uint32_t>(outBuild.manifest.lights.size());
 	outBuild.manifest.header.skeletonRefCount = static_cast<std::uint32_t>(outBuild.manifest.skeletonRefs.size());
-	outBuild.manifest.header.animationRefCount = static_cast<std::uint32_t>(outBuild.manifest.animationRefs.size());
+	outBuild.manifest.header.animationRefCount = static_cast<std::uint32_t>(outBuild.manifest.animationReferences.size());
 	outBuild.manifest.header.morphWeightCount = static_cast<std::uint32_t>(outBuild.manifest.morphWeights.size());
 	outBuild.manifest.header.materialVariantCount = static_cast<std::uint32_t>(outBuild.manifest.materialVariants.size());
 	outBuild.manifest.header.materialVariantMappingCount =
@@ -155,7 +155,7 @@ bool SceneCooker::WriteSceneManifestAndRegistry(const CookedSceneBuild& build, s
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.cameras, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.lights, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.skeletonRefs, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.animationRefs, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.animationReferences, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.morphWeights, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariants, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialVariantMappings, outErrorMessage))

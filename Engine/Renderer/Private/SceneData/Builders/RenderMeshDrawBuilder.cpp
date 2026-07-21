@@ -1,0 +1,166 @@
+#include "PCH.h"
+
+#include "RenderMeshDrawBuilder.h"
+
+#include "Meshes/GPUMeshCache.h"
+#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Scene/Meshes/Mesh.h"
+#include "SceneData/Builders/MeshInstanceBatchBuilder.h"
+#include "SceneData/Caching/MaterialCacheUtils.h"
+#include "SceneData/RenderMeshClassificationConversion.h"
+#include "SceneData/RenderSceneData.h"
+#include "SceneData/RenderWorld.h"
+#include "ShaderData/MeshInstanceShaderData.h"
+
+#include <utility>
+
+namespace
+{
+	const auto g_renderMeshDrawBuilderLogger = Logging::GetOrCreateLogger("Renderer.SceneData.Meshes");
+
+	void CountMeshInstanceWorkload(const std::vector<MeshDraw>& meshInstances, RenderMeshWorkloadSummary& workload) noexcept
+	{
+		for (const MeshDraw& meshInstance : meshInstances)
+			meshInstance.Geometry.MeshKind == RenderMeshKind::Skeletal ? ++workload.skinnedInstanceCount
+			                                                         : ++workload.staticInstanceCount;
+	}
+
+	void CountMeshBatchWorkload(const std::vector<MeshInstanceBatch>& meshBatches, RenderMeshWorkloadSummary& workload) noexcept
+	{
+		for (const MeshInstanceBatch& batch : meshBatches)
+			batch.meshKind == RenderMeshKind::Skeletal ? ++workload.skinnedBatchCount : ++workload.staticBatchCount;
+	}
+}
+
+RenderMeshDrawBuilder::RenderMeshDrawBuilder(GPUMeshCache& gpuMeshCache) noexcept : m_gpuMeshCache(&gpuMeshCache) {}
+
+void RenderMeshDrawBuilder::ResetHistory() noexcept
+{
+	m_previousWorldMatrices.clear();
+	m_previousSkinningMatrices.clear();
+}
+
+void RenderMeshDrawBuilder::Build(const RenderWorld& world, const RenderFrameDynamicData& dynamic, RenderSceneData& sceneData)
+{
+	if (world.GetProxies().empty() || m_gpuMeshCache == nullptr)
+	{
+		ResetHistory();
+		return;
+	}
+
+	std::map<RenderObjectId, std::uint32_t> jointMatrixOffsets;
+	AppendSkinningData(dynamic, sceneData, jointMatrixOffsets);
+
+	std::vector<MeshRenderItem> renderItems;
+	renderItems.reserve(dynamic.Objects.size());
+	std::map<RenderObjectId, DirectX::XMFLOAT4X4> currentWorldMatrices;
+	AppendVisibleMeshItems(world, dynamic, jointMatrixOffsets, sceneData, renderItems, currentWorldMatrices);
+	BuildBatches(world, std::move(renderItems), sceneData);
+
+	m_previousWorldMatrices = std::move(currentWorldMatrices);
+	m_previousSkinningMatrices = std::move(m_currentSkinningMatrices);
+	m_currentSkinningMatrices.clear();
+}
+
+void RenderMeshDrawBuilder::AppendSkinningData(
+	const RenderFrameDynamicData& dynamic,
+	RenderSceneData& sceneData,
+	std::map<RenderObjectId, std::uint32_t>& outJointMatrixOffsets)
+{
+	m_currentSkinningMatrices.clear();
+	for (const RenderSkinningData& pose : dynamic.Skinning)
+	{
+		if (!pose.Object.IsValid() || pose.SkeletonAssetId == Assets::InvalidCookedAssetId || pose.Matrices.empty()) continue;
+
+		const auto offset = static_cast<std::uint32_t>(sceneData.jointMatrices.size());
+		outJointMatrixOffsets.emplace(pose.Object, offset);
+		sceneData.jointMatrices.insert(sceneData.jointMatrices.end(), pose.Matrices.begin(), pose.Matrices.end());
+		const auto previous = m_previousSkinningMatrices.find(pose.Object);
+		const auto& previousMatrices = previous != m_previousSkinningMatrices.end() && previous->second.size() == pose.Matrices.size()
+		                                   ? previous->second : pose.Matrices;
+		sceneData.previousJointMatrices.insert(
+		    sceneData.previousJointMatrices.end(), previousMatrices.begin(), previousMatrices.end());
+		m_currentSkinningMatrices.emplace(pose.Object, pose.Matrices);
+	}
+}
+
+void RenderMeshDrawBuilder::AppendVisibleMeshItems(
+	const RenderWorld& world,
+	const RenderFrameDynamicData& dynamic,
+	const std::map<RenderObjectId, std::uint32_t>& jointMatrixOffsets,
+	const RenderSceneData& sceneData,
+	std::vector<MeshRenderItem>& outItems,
+	std::map<RenderObjectId, DirectX::XMFLOAT4X4>& outCurrentWorldMatrices)
+{
+	for (std::uint32_t sourceIndex = 0; sourceIndex < static_cast<std::uint32_t>(dynamic.Objects.size()); ++sourceIndex)
+	{
+		const RenderObjectDynamicData& object = dynamic.Objects[sourceIndex];
+		if (!object.Visible) continue;
+		const RenderProxy* proxy = world.Find(object.Object);
+		if (proxy == nullptr || !proxy->Mesh.IsValid()) continue;
+
+		GPUMesh* gpuMesh = m_gpuMeshCache->GetOrUpload(*proxy->Mesh.GetResource());
+		if (gpuMesh == nullptr || !gpuMesh->IsValid()) continue;
+		outCurrentWorldMatrices.emplace(object.Object, object.WorldMatrix);
+
+		MeshDraw draw = {};
+		draw.Transform.WorldMatrix = object.WorldMatrix;
+		const auto previousMatrix = m_previousWorldMatrices.find(object.Object);
+		draw.Transform.PreviousWorldMatrix = previousMatrix != m_previousWorldMatrices.end()
+		                                         ? previousMatrix->second : object.WorldMatrix;
+		draw.Transform.WorldInvTranspose = object.WorldInverseTranspose;
+		draw.Material.Slot = MaterialCacheUtils::ResolveMaterialSlot(proxy->Material, sceneData.materials.size());
+		draw.Source.SourceInstanceIndex = sourceIndex;
+		draw.Source.MeshAssetId = proxy->Mesh.GetAssetId();
+		draw.Skinning.SkeletonAssetId = proxy->SkeletonAssetId;
+		draw.Skinning.JointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;
+		if (proxy->MeshKind == SceneMeshKind::Skeletal)
+			if (const auto jointOffset = jointMatrixOffsets.find(object.Object); jointOffset != jointMatrixOffsets.end())
+				draw.Skinning.JointMatrixOffset = jointOffset->second;
+		draw.Geometry.MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy->MeshKind);
+		draw.Geometry.GpuMesh = gpuMesh;
+
+		outItems.push_back({.draw = draw,
+		                    .materialGpuHandle = draw.Material.Slot < sceneData.materials.size()
+		                                             ? sceneData.materials[draw.Material.Slot].gpuHandle : MaterialGpuHandle{},
+		                    .instanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(
+		                        proxy->InstanceGroupIndex)});
+	}
+}
+
+void RenderMeshDrawBuilder::BuildBatches(
+	const RenderWorld& world, std::vector<MeshRenderItem> items, RenderSceneData& sceneData) const
+{
+	std::vector<RenderMeshInstanceGroup> groups;
+	groups.reserve(world.GetInstanceGroups().size());
+	for (const RenderMeshInstanceGroupData& group : world.GetInstanceGroups())
+		groups.push_back({.groupKind = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupKind(group.Kind),
+		                  .instanceCount = group.InstanceCount});
+
+	MeshInstanceBatchBuilder builder;
+	MeshInstanceBatchBuildResult result = builder.Build(
+	    items, groups, {.enableAutoBatching = CVarRendererMeshAutoBatching.Get(),
+	                    .requireMaterialBindingSet = true, .collectDiagnostics = true});
+	sceneData.meshInstances = std::move(result.batchInstances);
+	sceneData.meshInstanceBatches = std::move(result.batches);
+	PublishWorkload(world, result, sceneData);
+}
+
+void RenderMeshDrawBuilder::PublishWorkload(
+	const RenderWorld& world, const MeshInstanceBatchBuildResult& result, RenderSceneData& sceneData) const
+{
+	sceneData.meshWorkload = {};
+	sceneData.meshWorkload.jointMatrixCount = static_cast<std::uint32_t>(sceneData.jointMatrices.size());
+	CountMeshInstanceWorkload(sceneData.meshInstances, sceneData.meshWorkload);
+	CountMeshBatchWorkload(sceneData.meshInstanceBatches, sceneData.meshWorkload);
+
+	static bool loggedMissingBatchWarning = false;
+	if (loggedMissingBatchWarning || world.GetProxies().empty() || !sceneData.meshInstanceBatches.empty()) return;
+	loggedMissingBatchWarning = true;
+	SPDLOG_LOGGER_WARN(
+	    g_renderMeshDrawBuilderLogger,
+	    "Scene has {} mesh proxies but produced no render batches (candidates={}, rejected={}, missingGpuMesh={}, invalidGroup={}, invalidMaterial={}).",
+	    world.GetProxies().size(), result.diagnostics.CandidateItemCount, result.diagnostics.RejectedCandidateCount,
+	    result.diagnostics.RejectedMissingGpuMeshCount, result.diagnostics.RejectedInvalidInstanceGroupCount,
+	    result.diagnostics.RejectedInvalidMaterialCount);
+}

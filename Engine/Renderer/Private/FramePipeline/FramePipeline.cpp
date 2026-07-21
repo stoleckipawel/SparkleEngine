@@ -26,10 +26,11 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "World/GameWorld.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
-#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
-#include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
+#include "SceneData/RenderWorld.h"
+#include "SceneData/Caching/MaterialCacheManager.h"
+#include "SceneData/Input/RenderInputConsumer.h"
+#include "Meshes/GPUMeshCache.h"
 #include "SceneData/RenderSceneGpuData.h"
 #include "Textures/RendererTexture.h"
 #include "Textures/TextureManager.h"
@@ -38,6 +39,9 @@
 
 FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&systems)
 {
+	m_renderInputConsumer = std::make_unique<RenderInputConsumer>(
+	    systems.GetRenderWorld(), systems.GetBackend(), systems.GetGpuMeshCache(), systems.GetTextureManager(),
+	    systems.GetMaterialCacheManager(), systems.GetRenderRayTracingScene());
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
 	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
 	RenderDiagnostics& backendDiagnostics = m_systems->GetRenderHardwareInterface().GetDiagnostics();
@@ -48,6 +52,11 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&
 
 	InitializeFrameGraph();
 	BindWindowResizeEvent();
+}
+
+void FramePipeline::SubmitRenderInput(RenderInputFrame input) noexcept
+{
+	m_renderInputConsumer->Submit(std::move(input));
 }
 
 FramePipeline::~FramePipeline() noexcept = default;
@@ -169,6 +178,9 @@ void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
 void FramePipeline::BeginFrame() noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
+	const RenderInputConsumeResult inputResult = m_renderInputConsumer->ConsumePending();
+	if (!inputResult.Accepted && !inputResult.Diagnostic.empty())
+		SPDLOG_WARN("Renderer rejected input: {}", inputResult.Diagnostic);
 
 	if (m_bResizePending)
 	{
@@ -232,17 +244,16 @@ void FramePipeline::SetupFrame() noexcept
 	timer.Tick();
 	RefreshViewportRenderProducts();
 
-	m_sceneSnapshot.Capture(m_systems->GetGameWorld().CaptureSnapshot());
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	RenderCommandList& graphicsCommandList = backend.GetCurrentGraphicsCommandList();
 	TextureManager& textureManager = m_systems->GetTextureManager();
-	const bool useCopyQueue = textureManager.HasPendingSceneTextureUploads(m_sceneSnapshot.textures) &&
+	const bool useCopyQueue = textureManager.HasPendingSceneTextureUploads(m_systems->GetRenderWorld().GetTextures()) &&
 	                          m_systems->GetRenderHardwareInterface().GetCapabilities().Queues.SupportsIndependent(
 	                              ERhiQueueType::Copy);
 	RenderCommandList& uploadCommandList =
 	    useCopyQueue ? backend.BeginCommandList(ERhiQueueType::Copy) : graphicsCommandList;
 	const std::vector<RhiResourceHandle> uploadedResources =
-	    textureManager.LoadSceneTextures(m_sceneSnapshot.textures, uploadCommandList);
+	    textureManager.LoadSceneTextures(m_systems->GetRenderWorld().GetTextures(), uploadCommandList);
 	if (useCopyQueue)
 	{
 		const RhiSubmissionToken uploadToken = backend.SubmitCommandList(uploadCommandList);
@@ -252,7 +263,7 @@ void FramePipeline::SetupFrame() noexcept
 			graphicsCommandList.TransitionResource(resource, ResourceState::Common, ResourceState::ShaderResource);
 		}
 	}
-	m_systems->GetRenderCamera().Update(m_sceneSnapshot.camera);
+	m_systems->GetRenderCamera().Update(m_renderInputConsumer->GetDynamicData().Camera);
 
 	const RenderViewportExtent renderExtent =
 	    m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
@@ -305,18 +316,18 @@ void FramePipeline::RecordFrame() noexcept
 	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get()};
 	const bool rayTracedShadowsEnabled = CVarRayTracedShadowsEnabled.Get();
 	RenderRayTracingScene* activeRayTracingScene = m_systems->GetRenderRayTracingScene();
-	std::string temporalResetReason;
-	SceneRenderStateCoordinator* sceneRenderStateCoordinator = m_systems->GetSceneRenderStateCoordinator();
-	if (sceneRenderStateCoordinator != nullptr && sceneRenderStateCoordinator->ConsumeTemporalHistoryResetRequest(temporalResetReason))
+	const RenderFrameDynamicData& dynamic = m_renderInputConsumer->GetDynamicData();
+	if (dynamic.Metadata.ResetHistory || m_systems->GetRenderWorld().ConsumeHistoryReset())
 	{
-		ResetTemporalState(temporalResetReason);
+		ResetTemporalState(dynamic.Metadata.CameraCut ? "Render input camera cut" : "Render input generation reset");
 	}
 
 	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[renderHardwareInterface.GetCurrentFrameIndex()];
 	frameSlot = [&]()
 	{
 		return std::make_unique<FrameContext>(BuildFrameContext(
-		    m_sceneSnapshot,
+		    m_systems->GetRenderWorld(),
+		    dynamic,
 		    renderHardwareInterface.GetResourceService(),
 		    m_systems->GetRenderCamera(),
 		    m_frameGraphRenderExtent,

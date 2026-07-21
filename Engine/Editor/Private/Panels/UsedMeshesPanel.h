@@ -1,27 +1,13 @@
 #pragma once
 
 #include "Renderer/Public/Meshes/MeshDiagnostics.h"
+#include "Renderer/Public/Diagnostics/MeshPreviewGeometry.h"
 
 #include <array>
 #include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
-
-struct MeshPreviewVertex final
-{
-	float X = 0.0f;
-	float Y = 0.0f;
-	float Z = 0.0f;
-};
-
-struct MeshPreviewGeometry final
-{
-	std::vector<MeshPreviewVertex> Vertices;
-	std::vector<std::uint32_t> Indices;
-
-	bool IsValid() const noexcept { return !Vertices.empty() && !Indices.empty(); }
-};
 
 class UsedMeshesPanel final
 {

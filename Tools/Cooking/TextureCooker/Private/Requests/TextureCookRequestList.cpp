@@ -3,615 +3,127 @@
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Strings/StringUtils.h"
+#include "TextureCookRequestCodec.h"
 
 #include <algorithm>
 #include <fstream>
+#include <ranges>
 #include <sstream>
-#include <string_view>
 
-	static constexpr std::string_view kTextureCookRequestHeader = "TextureCookRequests|1";
-	static constexpr std::size_t kTextureCookRequestFieldCount = 10;
-
-	static std::filesystem::path NormalizeRequestPath(std::string_view pathText)
+namespace
+{
+	void SortForSerialization(std::vector<TextureCookRequest>& requests)
 	{
-		return std::filesystem::path(std::string(pathText)).lexically_normal();
-	}
-
-	static bool TryParseTextureColorSpace(std::string_view value, TextureColorSpace& outColorSpace) noexcept
-	{
-		if (Strings::EqualsIgnoreCase(value, "linear"))
-		{
-			outColorSpace = TextureColorSpace::Linear;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "srgb"))
-		{
-			outColorSpace = TextureColorSpace::Srgb;
-			return true;
-		}
-
-		return false;
-	}
-
-	static bool TryParseTextureMipPolicy(std::string_view value, TextureMipPolicy& outMipPolicy) noexcept
-	{
-		if (Strings::EqualsIgnoreCase(value, "generate"))
-		{
-			outMipPolicy = TextureMipPolicy::Generate;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "preserve-existing") || Strings::EqualsIgnoreCase(value, "preserveexisting"))
-		{
-			outMipPolicy = TextureMipPolicy::PreserveExisting;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "no-mips") || Strings::EqualsIgnoreCase(value, "nomips"))
-		{
-			outMipPolicy = TextureMipPolicy::NoMips;
-			return true;
-		}
-
-		return false;
-	}
-
-	static bool TryParseTextureMipFilter(std::string_view value, TextureMipFilter& outMipFilter) noexcept
-	{
-		if (Strings::EqualsIgnoreCase(value, "regular"))
-		{
-			outMipFilter = TextureMipFilter::Regular;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "kaiser"))
-		{
-			outMipFilter = TextureMipFilter::Kaiser;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "normal-aware") || Strings::EqualsIgnoreCase(value, "normalaware"))
-		{
-			outMipFilter = TextureMipFilter::NormalAware;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "angular"))
-		{
-			outMipFilter = TextureMipFilter::Angular;
-			return true;
-		}
-
-		return false;
-	}
-
-	static bool TryParseTextureColorProcessingPolicy(
-	    std::string_view value,
-	    TextureColorProcessingPolicy& outColorProcessingPolicy) noexcept
-	{
-		if (Strings::EqualsIgnoreCase(value, "linear"))
-		{
-			outColorProcessingPolicy = TextureColorProcessingPolicy::Linear;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "srgb-linearize") || Strings::EqualsIgnoreCase(value, "srgblinearize"))
-		{
-			outColorProcessingPolicy = TextureColorProcessingPolicy::SrgbLinearize;
-			return true;
-		}
-
-		return false;
-	}
-
-	static bool TryParseTextureGroup(std::string_view value, TextureGroup& outTextureGroup) noexcept
-	{
-		if (Strings::EqualsIgnoreCase(value, "default") || Strings::EqualsIgnoreCase(value, "none"))
-		{
-			outTextureGroup = TextureGroup::Default;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "diffuse") || Strings::EqualsIgnoreCase(value, "albedo") ||
-		    Strings::EqualsIgnoreCase(value, "base-color") || Strings::EqualsIgnoreCase(value, "basecolor") ||
-		    Strings::EqualsIgnoreCase(value, "color"))
-		{
-			outTextureGroup = TextureGroup::Diffuse;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "roughness"))
-		{
-			outTextureGroup = TextureGroup::Roughness;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "metallic") || Strings::EqualsIgnoreCase(value, "metalness"))
-		{
-			outTextureGroup = TextureGroup::Metallic;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "ambient-occlusion") || Strings::EqualsIgnoreCase(value, "ambientocclusion") ||
-		    Strings::EqualsIgnoreCase(value, "occlusion") || Strings::EqualsIgnoreCase(value, "ao") ||
-		    Strings::EqualsIgnoreCase(value, "masks"))
-		{
-			outTextureGroup = TextureGroup::AmbientOcclusion;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "normal-map") || Strings::EqualsIgnoreCase(value, "normalmap"))
-		{
-			outTextureGroup = TextureGroup::NormalMap;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "hdr-color") || Strings::EqualsIgnoreCase(value, "hdrcolor"))
-		{
-			outTextureGroup = TextureGroup::HdrColor;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "emissive") || Strings::EqualsIgnoreCase(value, "emission"))
-		{
-			outTextureGroup = TextureGroup::Emissive;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "subsurface-color") || Strings::EqualsIgnoreCase(value, "subsurfacecolor"))
-		{
-			outTextureGroup = TextureGroup::SubsurfaceColor;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "subsurface-strength") || Strings::EqualsIgnoreCase(value, "subsurfacestrength"))
-		{
-			outTextureGroup = TextureGroup::SubsurfaceStrength;
-			return true;
-		}
-
-		return false;
-	}
-
-	static bool TryParseTextureDimension(std::string_view value, TextureDimension& outDimension) noexcept
-	{
-		if (Strings::EqualsIgnoreCase(value, "2d") || Strings::EqualsIgnoreCase(value, "texture2d"))
-		{
-			outDimension = TextureDimension::Texture2D;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "cube") || Strings::EqualsIgnoreCase(value, "texturecube"))
-		{
-			outDimension = TextureDimension::TextureCube;
-			return true;
-		}
-
-		return false;
-	}
-
-	static bool TryParseTextureChannelMask(std::string_view value, TextureChannelMask& outChannelMask) noexcept
-	{
-		if (Strings::EqualsIgnoreCase(value, "rgba") || Strings::EqualsIgnoreCase(value, "all") || Strings::EqualsIgnoreCase(value, "none"))
-		{
-			outChannelMask = TextureChannelMask::Rgba;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "r") || Strings::EqualsIgnoreCase(value, "red"))
-		{
-			outChannelMask = TextureChannelMask::Red;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "g") || Strings::EqualsIgnoreCase(value, "green"))
-		{
-			outChannelMask = TextureChannelMask::Green;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "b") || Strings::EqualsIgnoreCase(value, "blue"))
-		{
-			outChannelMask = TextureChannelMask::Blue;
-			return true;
-		}
-
-		if (Strings::EqualsIgnoreCase(value, "a") || Strings::EqualsIgnoreCase(value, "alpha"))
-		{
-			outChannelMask = TextureChannelMask::Alpha;
-			return true;
-		}
-
-		return false;
-	}
-
-	static bool ParseAssetId(std::string_view value, TextureAssetId& outAssetId) noexcept
-	{
-		std::uint64_t parsedAssetId = 0;
-		if (!Formatting::TryParseHexUInt64(value, parsedAssetId))
-		{
-			return false;
-		}
-
-		outAssetId = static_cast<TextureAssetId>(parsedAssetId);
-		return true;
-	}
-
-	static bool ParseRequestLine(
-	    std::string_view line,
-	    TextureCookRequest& outRequest,
-	    std::string& outErrorMessage)
-	{
-		const std::vector<std::string_view> fields = Strings::Split(line, '|');
-		if (fields.size() != kTextureCookRequestFieldCount)
-		{
-			outErrorMessage = "Texture cook request entry is malformed.";
-			return false;
-		}
-
-		if (fields[8].empty())
-		{
-			outErrorMessage = "Texture cook request entry is missing an output path.";
-			return false;
-		}
-
-		if (fields[9].empty())
-		{
-			outErrorMessage = "Texture cook request entry is missing a source path.";
-			return false;
-		}
-
-		if (!ParseAssetId(fields[0], outRequest.assetId))
-		{
-			outErrorMessage = "Texture cook request entry has an invalid asset id '" + std::string(fields[0]) + "'.";
-			return false;
-		}
-
-		if (!TryParseTextureColorSpace(fields[1], outRequest.policy.colorSpace))
-		{
-			outErrorMessage = "Texture cook request entry has an unknown color space '" + std::string(fields[1]) + "'.";
-			return false;
-		}
-
-		if (!TryParseTextureMipPolicy(fields[2], outRequest.policy.mipPolicy))
-		{
-			outErrorMessage = "Texture cook request entry has an unknown mip policy '" + std::string(fields[2]) + "'.";
-			return false;
-		}
-
-		if (!TryParseTextureMipFilter(fields[3], outRequest.policy.mipFilter))
-		{
-			outErrorMessage = "Texture cook request entry has an unknown mip filter '" + std::string(fields[3]) + "'.";
-			return false;
-		}
-
-		if (!TryParseTextureColorProcessingPolicy(fields[4], outRequest.policy.colorProcessingPolicy))
-		{
-			outErrorMessage = "Texture cook request entry has an unknown color processing policy '" + std::string(fields[4]) + "'.";
-			return false;
-		}
-
-		if (!TryParseTextureGroup(fields[5], outRequest.policy.textureGroup))
-		{
-			outErrorMessage = "Texture cook request entry has an unknown texture group '" + std::string(fields[5]) + "'.";
-			return false;
-		}
-
-		if (!TryParseTextureDimension(fields[6], outRequest.policy.dimension))
-		{
-			outErrorMessage = "Texture cook request entry has an unknown texture dimension '" + std::string(fields[6]) + "'.";
-			return false;
-		}
-
-		if (!TryParseTextureChannelMask(fields[7], outRequest.policy.channelMask))
-		{
-			outErrorMessage = "Texture cook request entry has an unknown channel mask '" + std::string(fields[7]) + "'.";
-			return false;
-		}
-
-		outRequest.outputPath = NormalizeRequestPath(fields[8]);
-		outRequest.sourcePath = NormalizeRequestPath(fields[9]);
-		if (!outRequest.IsValid())
-		{
-			outErrorMessage = "Texture cook request entry is invalid after parsing.";
-			return false;
-		}
-
-		outErrorMessage.clear();
-		return true;
-	}
-
-	static bool IsExpectedRequestHeader(std::string_view headerLine) noexcept
-	{
-		return headerLine == kTextureCookRequestHeader;
-	}
-
-	bool TextureCookPoliciesMatch(const TextureCookPolicy& lhs, const TextureCookPolicy& rhs) noexcept
-	{
-		return lhs.colorSpace == rhs.colorSpace && lhs.mipPolicy == rhs.mipPolicy && lhs.mipFilter == rhs.mipFilter &&
-		       lhs.colorProcessingPolicy == rhs.colorProcessingPolicy && lhs.textureGroup == rhs.textureGroup &&
-		       lhs.dimension == rhs.dimension && lhs.channelMask == rhs.channelMask;
-	}
-
-	bool TextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept
-	{
-		return lhs.assetId == rhs.assetId && lhs.sourcePath == rhs.sourcePath && lhs.outputPath == rhs.outputPath &&
-		       TextureCookPoliciesMatch(lhs.policy, rhs.policy);
-	}
-
-	void TextureCookRequestSet::Clear() noexcept
-	{
-		requestsById.clear();
-		requests.clear();
-	}
-
-	bool TextureCookRequestSet::Add(const TextureCookRequest& request, std::string& outErrorMessage)
-	{
-		const auto existingRequest = requestsById.find(request.assetId);
-		if (existingRequest == requestsById.end())
-		{
-			requestsById.emplace(request.assetId, request);
-			requests.push_back(request);
-			outErrorMessage.clear();
-			return true;
-		}
-
-		if (!TextureCookRequestsMatch(existingRequest->second, request))
-		{
-			outErrorMessage = "Texture cook request conflict for asset id '" + Formatting::FormatHexUInt64(request.assetId) + "'.";
-			return false;
-		}
-
-		outErrorMessage.clear();
-		return true;
-	}
-
-	void TextureCookRequestSet::MoveRequestsTo(std::vector<TextureCookRequest>& outRequests)
-	{
-		outRequests = std::move(requests);
-		requestsById.clear();
-		requests.clear();
-	}
-
-	const char* GetTextureColorSpaceName(TextureColorSpace colorSpace) noexcept
-	{
-		switch (colorSpace)
-		{
-			case TextureColorSpace::Linear:
-				return "linear";
-			case TextureColorSpace::Srgb:
-				return "srgb";
-		}
-
-		return "linear";
-	}
-
-	const char* GetTextureMipPolicyName(TextureMipPolicy mipPolicy) noexcept
-	{
-		switch (mipPolicy)
-		{
-			case TextureMipPolicy::Generate:
-				return "generate";
-			case TextureMipPolicy::PreserveExisting:
-				return "preserve-existing";
-			case TextureMipPolicy::NoMips:
-				return "no-mips";
-		}
-
-		return "generate";
-	}
-
-	const char* GetTextureMipFilterName(TextureMipFilter mipFilter) noexcept
-	{
-		switch (mipFilter)
-		{
-			case TextureMipFilter::Regular:
-				return "regular";
-			case TextureMipFilter::Kaiser:
-				return "kaiser";
-			case TextureMipFilter::NormalAware:
-				return "normal-aware";
-			case TextureMipFilter::Angular:
-				return "angular";
-		}
-
-		return "regular";
-	}
-
-	const char* GetTextureColorProcessingPolicyName(TextureColorProcessingPolicy colorProcessingPolicy) noexcept
-	{
-		switch (colorProcessingPolicy)
-		{
-			case TextureColorProcessingPolicy::Linear:
-				return "linear";
-			case TextureColorProcessingPolicy::SrgbLinearize:
-				return "srgb-linearize";
-		}
-
-		return "linear";
-	}
-
-	const char* GetTextureGroupName(TextureGroup textureGroup) noexcept
-	{
-		switch (textureGroup)
-		{
-			case TextureGroup::Default:
-				return "default";
-			case TextureGroup::Diffuse:
-				return "diffuse";
-			case TextureGroup::NormalMap:
-				return "normal-map";
-			case TextureGroup::Roughness:
-				return "roughness";
-			case TextureGroup::Metallic:
-				return "metallic";
-			case TextureGroup::AmbientOcclusion:
-				return "ambient-occlusion";
-			case TextureGroup::Emissive:
-				return "emissive";
-			case TextureGroup::SubsurfaceColor:
-				return "subsurface-color";
-			case TextureGroup::SubsurfaceStrength:
-				return "subsurface-strength";
-			case TextureGroup::HdrColor:
-				return "hdr-color";
-		}
-
-		return "default";
-	}
-
-	const char* GetTextureDimensionName(TextureDimension dimension) noexcept
-	{
-		switch (dimension)
-		{
-			case TextureDimension::Texture2D:
-				return "2d";
-			case TextureDimension::TextureCube:
-				return "cube";
-		}
-
-		return "2d";
-	}
-
-	const char* GetTextureChannelMaskName(TextureChannelMask channelMask) noexcept
-	{
-		switch (channelMask)
-		{
-			case TextureChannelMask::Rgba:
-				return "rgba";
-			case TextureChannelMask::Red:
-				return "red";
-			case TextureChannelMask::Green:
-				return "green";
-			case TextureChannelMask::Blue:
-				return "blue";
-			case TextureChannelMask::Alpha:
-				return "alpha";
-		}
-
-		return "rgba";
-	}
-
-	bool WriteTextureCookRequestList(
-	    const std::filesystem::path& outputPath,
-	    const std::vector<TextureCookRequest>& requests,
-	    std::string& outErrorMessage)
-	{
-		if (outputPath.empty())
-		{
-			outErrorMessage = "Texture cook request output path is empty.";
-			return false;
-		}
-
-		std::vector<TextureCookRequest> sortedRequests = requests;
-		std::sort(
-		    sortedRequests.begin(),
-		    sortedRequests.end(),
+		std::ranges::sort(
+		    requests,
 		    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs)
 		    {
-			    if (lhs.assetId != rhs.assetId)
-			    {
-				    return lhs.assetId < rhs.assetId;
-			    }
-
-			    return lhs.outputPath.generic_string() < rhs.outputPath.generic_string();
+			    return lhs.assetId != rhs.assetId ?
+			               lhs.assetId < rhs.assetId :
+			               lhs.outputPath.generic_string() < rhs.outputPath.generic_string();
 		    });
-
-		std::ostringstream output;
-		output << kTextureCookRequestHeader << '\n';
-		for (const TextureCookRequest& request : sortedRequests)
-		{
-			if (!request.IsValid())
-			{
-				outErrorMessage = "Texture cook request list contains an invalid request entry.";
-				return false;
-			}
-
-			output << Formatting::FormatHexUInt64(request.assetId) << '|' << GetTextureColorSpaceName(request.policy.colorSpace) << '|'
-			       << GetTextureMipPolicyName(request.policy.mipPolicy) << '|' << GetTextureMipFilterName(request.policy.mipFilter) << '|'
-			       << GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) << '|'
-			       << GetTextureGroupName(request.policy.textureGroup) << '|' << GetTextureDimensionName(request.policy.dimension) << '|'
-			       << GetTextureChannelMaskName(request.policy.channelMask) << '|'
-			       << request.outputPath.generic_string() << '|' << request.sourcePath.generic_string() << '\n';
-		}
-
-		if (!Files::TryWriteAllText(outputPath, output.str(), outErrorMessage))
-		{
-			return false;
-		}
-
-		outErrorMessage.clear();
-		return true;
 	}
 
-	bool LoadTextureCookRequestList(
-	    const std::filesystem::path& inputPath,
-	    std::vector<TextureCookRequest>& outRequests,
-	    std::string& outErrorMessage)
+	void SortForConsumption(std::vector<TextureCookRequest>& requests)
 	{
-		std::ifstream input(inputPath);
-		if (!input.is_open())
-		{
-			outErrorMessage = "Failed to open texture cook request file '" + inputPath.string() + "'.";
-			return false;
-		}
-
-		outRequests.clear();
-		TextureCookRequestSet requestSet;
-		bool foundHeader = false;
-		std::size_t lineNumber = 0;
-
-		for (std::string line; std::getline(input, line);)
-		{
-			++lineNumber;
-			const std::string trimmedLine = Strings::TrimCopy(line);
-			if (trimmedLine.empty())
-			{
-				continue;
-			}
-
-			if (!foundHeader)
-			{
-				if (!IsExpectedRequestHeader(trimmedLine))
-				{
-					outErrorMessage = "Texture cook request file '" + inputPath.string() + "' has an invalid header.";
-					return false;
-				}
-
-				foundHeader = true;
-				continue;
-			}
-
-			TextureCookRequest request;
-			if (!ParseRequestLine(trimmedLine, request, outErrorMessage))
-			{
-				outErrorMessage += " File: '" + inputPath.string() + "', line " + std::to_string(lineNumber);
-				return false;
-			}
-
-			if (!requestSet.Add(request, outErrorMessage))
-			{
-				outErrorMessage = "Texture cook request file contains conflicting requests for asset id '" +
-				                  Formatting::FormatHexUInt64(request.assetId) + "'.";
-				return false;
-			}
-		}
-
-		if (!foundHeader)
-		{
-			outErrorMessage = "Texture cook request file '" + inputPath.string() + "' is empty.";
-			return false;
-		}
-
-		requestSet.MoveRequestsTo(outRequests);
 		std::ranges::sort(
-		    outRequests,
+		    requests,
 		    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept
 		    {
 			    return lhs.assetId < rhs.assetId;
 		    });
-
-		outErrorMessage.clear();
-		return true;
 	}
+}
+
+bool WriteTextureCookRequestList(
+    const std::filesystem::path& outputPath,
+    const std::vector<TextureCookRequest>& requests,
+    std::string& outErrorMessage)
+{
+	if (outputPath.empty())
+	{
+		outErrorMessage = "Texture cook request output path is empty.";
+		return false;
+	}
+
+	std::vector<TextureCookRequest> sortedRequests = requests;
+	SortForSerialization(sortedRequests);
+	std::ostringstream output;
+	output << TextureCookRequestCodec::GetHeader() << '\n';
+	for (const TextureCookRequest& request : sortedRequests)
+	{
+		if (!request.IsValid())
+		{
+			outErrorMessage = "Texture cook request list contains an invalid request entry.";
+			return false;
+		}
+		output << TextureCookRequestCodec::FormatLine(request) << '\n';
+	}
+
+	if (!Files::TryWriteAllText(outputPath, output.str(), outErrorMessage))
+	{
+		return false;
+	}
+	outErrorMessage.clear();
+	return true;
+}
+
+bool LoadTextureCookRequestList(
+    const std::filesystem::path& inputPath,
+    std::vector<TextureCookRequest>& outRequests,
+    std::string& outErrorMessage)
+{
+	std::ifstream input(inputPath);
+	if (!input.is_open())
+	{
+		outErrorMessage = "Failed to open texture cook request file '" + inputPath.string() + "'.";
+		return false;
+	}
+
+	outRequests.clear();
+	TextureCookRequestSet requestSet;
+	bool foundHeader = false;
+	std::size_t lineNumber = 0;
+	for (std::string line; std::getline(input, line);)
+	{
+		++lineNumber;
+		const std::string trimmedLine = Strings::TrimCopy(line);
+		if (trimmedLine.empty())
+		{
+			continue;
+		}
+		if (!foundHeader)
+		{
+			if (!TextureCookRequestCodec::IsHeader(trimmedLine))
+			{
+				outErrorMessage = "Texture cook request file '" + inputPath.string() + "' has an invalid header.";
+				return false;
+			}
+			foundHeader = true;
+			continue;
+		}
+
+		TextureCookRequest request;
+		if (!TextureCookRequestCodec::ParseLine(trimmedLine, request, outErrorMessage))
+		{
+			outErrorMessage += " File: '" + inputPath.string() + "', line " + std::to_string(lineNumber);
+			return false;
+		}
+		if (!requestSet.Add(request, outErrorMessage))
+		{
+			outErrorMessage = "Texture cook request file contains conflicting requests for asset id '" +
+			                  Formatting::FormatHexUInt64(request.assetId) + "'.";
+			return false;
+		}
+	}
+
+	if (!foundHeader)
+	{
+		outErrorMessage = "Texture cook request file '" + inputPath.string() + "' is empty.";
+		return false;
+	}
+	requestSet.MoveRequestsTo(outRequests);
+	SortForConsumption(outRequests);
+	outErrorMessage.clear();
+	return true;
+}

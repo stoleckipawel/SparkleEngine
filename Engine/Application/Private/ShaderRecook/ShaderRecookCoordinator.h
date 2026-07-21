@@ -12,7 +12,7 @@
 class Renderer;
 struct CookedShaderReloadResult;
 struct ShaderRecookExecutionResult;
-class ShaderRecookExecutionService;
+class EditorOperationService;
 class TaskExecutor;
 class TaskScope;
 
@@ -20,7 +20,7 @@ class ShaderRecookCoordinator final
 {
   public:
 	using StatusHandler = std::function<void(std::string)>;
-	ShaderRecookCoordinator(TaskExecutor& executor, TaskScope& applicationScope);
+	explicit ShaderRecookCoordinator(EditorOperationService& operations);
 	~ShaderRecookCoordinator();
 
 	void SetStatusHandler(StatusHandler handler);
@@ -46,7 +46,7 @@ class ShaderRecookCoordinator final
 	    std::string& outDiagnostic) noexcept;
 
 	StatusHandler m_statusHandler;
-	std::unique_ptr<ShaderRecookExecutionService> m_executionService;
+	EditorOperationService* m_operations = nullptr;
 	std::uint64_t m_nextRequestId = 1;
 	std::uint64_t m_latestRequestId = 0;
 	std::uint64_t m_lastAcceptedPublicationId = 0;

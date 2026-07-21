@@ -4,7 +4,7 @@
 #include <string>
 #include "World/EntityId.h"
 
-class GameWorld;
+class EditorTransactionManager;
 struct PointLightDesc;
 struct RectLightDesc;
 struct SceneDirectionalLightDesc;
@@ -14,20 +14,21 @@ struct SpotLightDesc;
 class SceneLightInspector final
 {
   public:
-	static void Build(GameWorld& gameWorld, EntityId lightEntity, const std::string& filterText) noexcept;
+	static void Build(const SceneLightDesc&, EntityId, EditorTransactionManager&, std::uint64_t, const std::string&) noexcept;
 
   private:
 	static void BuildGenericLight(
-	    GameWorld& gameWorld,
+	    EditorTransactionManager& transactions,
+	    std::uint64_t worldGeneration,
 	    EntityId lightEntity,
 	    const SceneLightDesc& sceneLight,
 	    const std::string& filterText) noexcept;
-	static void BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept;
-	static void BuildDirectionalLightTransformCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept;
-	static void BuildDirectionalLightCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept;
-	static void BuildPointLightCategory(const std::string& filterText, PointLightDesc& lightDesc) noexcept;
-	static void BuildSpotLightCategory(const std::string& filterText, SpotLightDesc& lightDesc) noexcept;
-	static void BuildRectLightCategory(const std::string& filterText, RectLightDesc& lightDesc) noexcept;
+	static bool BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept;
+	static bool BuildDirectionalLightTransformCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept;
+	static bool BuildDirectionalLightCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept;
+	static bool BuildPointLightCategory(const std::string& filterText, PointLightDesc& lightDesc) noexcept;
+	static bool BuildSpotLightCategory(const std::string& filterText, SpotLightDesc& lightDesc) noexcept;
+	static bool BuildRectLightCategory(const std::string& filterText, RectLightDesc& lightDesc) noexcept;
 
 	static constexpr float kDirectionSliderMin = -1.0f;
 	static constexpr float kDirectionSliderMax = 1.0f;

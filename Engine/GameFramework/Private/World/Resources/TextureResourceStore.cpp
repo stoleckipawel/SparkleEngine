@@ -16,20 +16,19 @@ void TextureResourceStore::AppendMaterialReferences(const std::vector<MaterialDe
 
 void TextureResourceStore::AppendPaths(std::span<const std::filesystem::path> paths)
 {
+	const std::size_t previousCount = m_paths.size();
 	Filesystem::AppendNormalizedAssetPaths(paths, AssetType::Texture, m_paths);
+	if (m_paths.size() != previousCount) ++m_contentRevision;
 }
 
-TextureSnapshot TextureResourceStore::CaptureSnapshot() const
+RenderTextureTable TextureResourceStore::CaptureRenderTable() const
 {
-	TextureSnapshot snapshot;
-	snapshot.texturePaths = m_paths;
-	snapshot.generation = m_generation;
-	return snapshot;
+	return {.Paths = m_paths, .Generation = m_generation};
 }
 
-TextureSnapshot TextureResourceStore::CaptureSnapshot(std::span<const std::filesystem::path> additionalPaths) const
+RenderTextureTable TextureResourceStore::CaptureRenderTable(std::span<const std::filesystem::path> additionalPaths) const
 {
-	TextureSnapshot snapshot = CaptureSnapshot();
-	Filesystem::AppendNormalizedAssetPaths(additionalPaths, AssetType::Texture, snapshot.texturePaths);
-	return snapshot;
+	RenderTextureTable table = CaptureRenderTable();
+	Filesystem::AppendNormalizedAssetPaths(additionalPaths, AssetType::Texture, table.Paths);
+	return table;
 }

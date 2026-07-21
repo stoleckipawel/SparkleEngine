@@ -42,7 +42,7 @@ namespace Assets
 		    !reader.ReadArray(outManifest.header.cameraCount, outManifest.cameras, outErrorMessage) ||
 		    !reader.ReadArray(outManifest.header.lightCount, outManifest.lights, outErrorMessage) ||
 		    !reader.ReadArray(outManifest.header.skeletonRefCount, outManifest.skeletonRefs, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.animationRefCount, outManifest.animationRefs, outErrorMessage) ||
+		    !reader.ReadArray(outManifest.header.animationRefCount, outManifest.animationReferences, outErrorMessage) ||
 		    !reader.ReadArray(outManifest.header.morphWeightCount, outManifest.morphWeights, outErrorMessage) ||
 		    !reader.ReadArray(outManifest.header.materialVariantCount, outManifest.materialVariants, outErrorMessage) ||
 		    !reader.ReadArray(

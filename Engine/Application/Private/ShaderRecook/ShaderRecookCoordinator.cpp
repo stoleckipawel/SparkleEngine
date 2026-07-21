@@ -2,7 +2,7 @@
 #include "Core/Public/FileSystemUtils.h"
 
 #include "ShaderRecook/ShaderRecookCoordinator.h"
-#include "ShaderRecook/ShaderRecookExecutionService.h"
+#include "EditorOperations/EditorOperationService.h"
 
 #include "Renderer.h"
 #include "ShaderRecook/ShaderRecookPublicationReader.h"
@@ -11,8 +11,7 @@
 #include <format>
 #include <utility>
 
-ShaderRecookCoordinator::ShaderRecookCoordinator(TaskExecutor& executor, TaskScope& applicationScope) :
-    m_executionService(std::make_unique<ShaderRecookExecutionService>(executor, applicationScope))
+ShaderRecookCoordinator::ShaderRecookCoordinator(EditorOperationService& operations) : m_operations(&operations)
 {
 }
 
@@ -68,7 +67,7 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 	}
 
 	ShaderRecookExecutionResult result;
-	if (!m_executionService->TryConsume(result))
+	if (!m_operations->TryConsumeShaderRecook(result))
 	{
 		return;
 	}
@@ -95,7 +94,7 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 	const std::uint64_t requestId = m_nextRequestId++;
 	const std::uint64_t baselinePublicationId = ReadCurrentPublicationId();
 	std::string errorMessage;
-	if (!m_executionService->Start(requestId, baselinePublicationId, request, errorMessage))
+	if (!m_operations->StartShaderRecook(requestId, baselinePublicationId, request, errorMessage))
 	{
 		PublishStatus("Shader recook failed before launch: " + errorMessage);
 		return;

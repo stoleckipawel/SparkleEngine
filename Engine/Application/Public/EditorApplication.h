@@ -7,6 +7,7 @@
 
 class RuntimeApplication;
 class ShaderRecookCoordinator;
+class EditorOperationService;
 class UI;
 
 class SPARKLE_APPLICATION_API EditorApplication final : public Application
@@ -29,6 +30,7 @@ class SPARKLE_APPLICATION_API EditorApplication final : public Application
 	std::unique_ptr<RuntimeApplication> m_runtimeApplication;
 	std::unique_ptr<UI> m_ui;
 	std::unique_ptr<ShaderRecookCoordinator> m_shaderRecookCoordinator;
+	std::unique_ptr<EditorOperationService> m_operationService;
 	RuntimeApplicationOptions m_runtimeOptions;
 	bool m_isEditorSessionActive = false;
 };

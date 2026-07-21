@@ -17,7 +17,7 @@ namespace ECS
 		{
 			m_meshSlots.clear();
 			m_meshSlots.resize(meshCount);
-			m_meshes.meshInstances.reserve(meshCount);
+			m_extractedMeshes.reserve(meshCount);
 			m_structureVersion = registry.GetStructureVersion();
 		}
 		for (MeshSlot& slot : m_meshSlots)
@@ -25,12 +25,12 @@ namespace ECS
 		return true;
 	}
 
-	void WorldExtractionStorage::CommitMeshes(std::span<const MeshInstanceGroupSnapshot> groups)
+	void WorldExtractionStorage::CommitMeshes(std::span<const SceneMeshInstanceGroupData> groups)
 	{
 		std::sort(m_meshSlots.begin(), m_meshSlots.end(), [](const MeshSlot& lhs, const MeshSlot& rhs) { return lhs.Entity < rhs.Entity; });
-		m_meshes.meshInstances.clear();
-		m_meshes.meshInstanceGroups.assign(groups.begin(), groups.end());
-		for (MeshInstanceGroupSnapshot& group : m_meshes.meshInstanceGroups)
+		m_extractedMeshes.clear();
+		m_meshGroups.assign(groups.begin(), groups.end());
+		for (SceneMeshInstanceGroupData& group : m_meshGroups)
 		{
 			group.firstInstance = kInvalidSceneMeshInstanceIndex;
 			group.instanceCount = 0;
@@ -39,15 +39,14 @@ namespace ECS
 		{
 			if (!slot.Included)
 				continue;
-			MeshInstanceSnapshot instance = slot.Snapshot;
-			if (instance.instanceGroupIndex < m_meshes.meshInstanceGroups.size())
+			if (slot.InstanceGroupIndex < m_meshGroups.size())
 			{
-				MeshInstanceGroupSnapshot& group = m_meshes.meshInstanceGroups[instance.instanceGroupIndex];
+				SceneMeshInstanceGroupData& group = m_meshGroups[slot.InstanceGroupIndex];
 				if (group.instanceCount == 0)
-					group.firstInstance = static_cast<SceneMeshInstanceIndex>(m_meshes.meshInstances.size());
+					group.firstInstance = static_cast<SceneMeshInstanceIndex>(m_extractedMeshes.size());
 				++group.instanceCount;
 			}
-			m_meshes.meshInstances.push_back(std::move(instance));
+			m_extractedMeshes.push_back(slot);
 		}
 	}
 }

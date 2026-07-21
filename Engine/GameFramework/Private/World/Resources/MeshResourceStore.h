@@ -14,13 +14,14 @@ namespace ECS
 		MeshResourceHandle Add(std::unique_ptr<Mesh>&& mesh);
 		Mesh* Resolve(MeshResourceHandle handle) noexcept;
 		const Mesh* Resolve(MeshResourceHandle handle) const noexcept;
+		std::shared_ptr<const Mesh> ResolveImmutable(MeshResourceHandle handle) const noexcept;
 		bool Remove(MeshResourceHandle handle) noexcept;
 		void Clear() noexcept;
 
 	  private:
 		struct Entry final
 		{
-			std::unique_ptr<Mesh> Resource;
+			std::shared_ptr<Mesh> Resource;
 			std::uint32_t Generation = 1;
 		};
 

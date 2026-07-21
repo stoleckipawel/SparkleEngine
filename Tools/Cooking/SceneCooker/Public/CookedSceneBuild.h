@@ -48,7 +48,7 @@ struct CookedSceneManifestBuildData final
 	std::vector<Assets::CookedSceneCameraRecord> cameras;
 	std::vector<Assets::CookedSceneLightRecord> lights;
 	std::vector<Assets::CookedSceneSkeletonRef> skeletonRefs;
-	std::vector<Assets::CookedSceneAnimationRef> animationRefs;
+	std::vector<Assets::CookedAnimationReference> animationReferences;
 	std::vector<float> morphWeights;
 	std::vector<Assets::CookedSceneMaterialVariantRecord> materialVariants;
 	std::vector<Assets::CookedSceneMaterialVariantMappingRecord> materialVariantMappings;

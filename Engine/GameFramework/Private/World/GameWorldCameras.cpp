@@ -244,26 +244,4 @@ namespace ECS
 		return visibility != nullptr && visibility->Visible;
 	}
 
-	CameraSnapshot GameWorldState::CaptureCamera(EntityId entity) const noexcept
-	{
-		CameraSnapshot snapshot;
-		const Camera* camera = m_registry.Get<Camera>(entity);
-		if (camera == nullptr)
-		{
-			return snapshot;
-		}
-		const LocalTransform* local = m_registry.Get<LocalTransform>(entity);
-		const CameraDerivedState* derived = m_registry.Get<CameraDerivedState>(entity);
-		if (local == nullptr || derived == nullptr)
-		{
-			return snapshot;
-		}
-		snapshot.position = local->Translation;
-		snapshot.direction = derived->Direction;
-		snapshot.fovYDegrees = camera->VerticalFieldOfViewDegrees;
-		snapshot.aspectRatio = camera->AspectRatio;
-		snapshot.nearZ = camera->NearPlane;
-		snapshot.farZ = camera->FarPlane;
-		return snapshot;
-	}
 }

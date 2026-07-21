@@ -3,25 +3,25 @@
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Level/LevelDesc.h"
 #include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
-#include "GameFramework/Public/Scene/Camera/SceneCameras.h"
-#include "GameFramework/Public/Scene/Lighting/SceneLighting.h"
 #include "GameFramework/Public/Scene/Materials/MaterialVariant.h"
-#include "GameFramework/Public/Scene/Meshes/SceneMeshes.h"
-#include "GameFramework/Public/Scene/Sky/SceneSky.h"
-#include "GameFramework/Public/World/GameWorldSnapshot.h"
 #include "GameFramework/Public/World/WorldChange.h"
 #include "GameFramework/Public/World/WorldReadView.h"
 #include "GameFramework/Public/World/EntityId.h"
+#include "GameFramework/Public/Rendering/RenderInputFrame.h"
+#include "GameFramework/Public/World/WorldEditCommand.h"
+#include "GameFramework/Public/World/WorldMaterialVariantView.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace ECS
 {
 	class GameWorldState;
+	class RenderInputExtractor;
 }
 namespace Assets
 {
@@ -29,6 +29,7 @@ namespace Assets
 }
 
 struct GameWorldResourceStores;
+class WorldEditCommandQueue;
 class TaskExecutor;
 
 class SPARKLE_ENGINE_API GameWorld final
@@ -42,15 +43,8 @@ class SPARKLE_ENGINE_API GameWorld final
 	GameWorld(GameWorld&&) = delete;
 	GameWorld& operator=(GameWorld&&) = delete;
 
-	SceneCameras& GetCameras() noexcept { return m_cameras; }
-	const SceneCameras& GetCameras() const noexcept { return m_cameras; }
-	SceneLighting& GetLighting() noexcept { return m_lighting; }
-	const SceneLighting& GetLighting() const noexcept { return m_lighting; }
-	SceneSky& GetSky() noexcept { return m_sky; }
-	const SceneSky& GetSky() const noexcept { return m_sky; }
-
 	void Update(float deltaSeconds);
-	GameWorldSnapshot CaptureSnapshot() const;
+	RenderInputFrame ExtractRenderInput(RenderFrameMetadata metadata);
 	WorldReadView AcquireReadView() const noexcept;
 	WorldChangeBatch ReadChanges(const WorldChangeCursor& cursor) const;
 	bool AcknowledgeChanges(WorldChangeCursor& cursor, WorldSequence sequence) const noexcept;
@@ -62,20 +56,14 @@ class SPARKLE_ENGINE_API GameWorld final
 	std::string_view GetMaterialVariantName(std::size_t index) const noexcept;
 	MaterialVariantIndex GetActiveMaterialVariant() const noexcept;
 	bool ApplyMaterialVariant(MaterialVariantIndex index);
+	WorldMaterialVariantView CaptureMaterialVariants() const;
+	WorldEditResult SubmitEdit(WorldEditCommand command, std::uint64_t expectedGeneration);
 
 	bool IsEntityAlive(EntityId entity) const noexcept;
 	bool DestroyEntity(EntityId entity) noexcept;
 
-	SceneMeshes& GetMeshes() noexcept { return m_meshes; }
-	const SceneMeshes& GetMeshes() const noexcept { return m_meshes; }
   private:
 	friend class LevelManager;
-	friend class SceneCameraView;
-	friend class SceneCameras;
-	friend class SceneLighting;
-	friend class SceneMeshes;
-	friend class SceneMeshView;
-	friend class SceneSky;
 	void CommitWorldChanges();
 	void InitializeStagedLevel(const LevelDesc& desc);
 	bool CommitSceneLoadPackage(Assets::SceneLoadPackage&& package, std::string& errorMessage);
@@ -84,13 +72,11 @@ class SPARKLE_ENGINE_API GameWorld final
 	std::unique_ptr<ECS::GameWorldState> m_state;
 	std::unique_ptr<GameWorldResourceStores> m_resources;
 	TaskExecutor& m_taskExecutor;
-	SceneCameras m_cameras;
-	SceneLighting m_lighting;
-	SceneMeshes m_meshes;
-	SceneSky m_sky;
 	std::string m_activeLevelName;
 	LevelDesc m_activeLevelDesc;
 	CameraInputIntent m_cameraInputIntent;
 	bool m_oscillatingMeshMotionEnabled = false;
 	std::uint64_t m_generation = 1;
+	std::unique_ptr<WorldEditCommandQueue> m_editCommands;
+	std::unique_ptr<ECS::RenderInputExtractor> m_renderInputExtractor;
 };

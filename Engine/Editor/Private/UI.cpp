@@ -3,7 +3,6 @@
 #include "Window/Window.h"
 #include "Input/InputSystem.h"
 #include "Level/LevelManager.h"
-#include "World/GameWorld.h"
 #include "Timer.h"
 
 #include "Console/EditorConsoleSystem.h"
@@ -19,11 +18,11 @@
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Settings/EditorRestartService.h"
 #include "Style/SparkleUiTheme.h"
+#include "Scene/Model/EditorSceneModel.h"
+#include "Scene/Model/EditorSceneModelBuilder.h"
+#include "Scene/Transactions/EditorTransactionManager.h"
 
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
-#include "Scene/Meshes/Mesh.h"
-#include "Scene/Meshes/MeshData.h"
-#include "Scene/Meshes/SceneMeshes.h"
 
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
@@ -76,6 +75,7 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 	m_meshDiagnosticsProvider = std::move(providers.MeshDiagnostics);
 	m_textureDiagnosticsProvider = std::move(providers.TextureDiagnostics);
 	m_memoryDiagnosticsProvider = std::move(providers.MemoryDiagnostics);
+	m_meshPreviewProvider = std::move(providers.MeshPreview);
 
 	if (m_usedShadersPanel)
 	{
@@ -85,6 +85,7 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 	if (m_usedMeshesPanel)
 	{
 		m_usedMeshesPanel->SetDiagnosticsProvider(m_meshDiagnosticsProvider);
+		m_usedMeshesPanel->SetPreviewGeometryProvider(m_meshPreviewProvider);
 	}
 
 	if (m_usedTexturesPanel)
@@ -116,12 +117,18 @@ bool UI::ConsumeShaderRecookRequest() noexcept
 UI::UI(EditorHostServices hostServices) :
 	m_timer(&hostServices.RuntimeTimer),
 	m_levelManager(hostServices.Levels),
-	m_gameWorld(hostServices.World),
 	m_imguiRenderer(&hostServices.ImGuiRenderer),
 	m_window(&hostServices.HostWindow),
 	m_inputSystem(&hostServices.Input),
 	m_sceneSelection(SceneObjectSelection::None())
 {
+	m_sceneModelBuilder = std::make_unique<EditorSceneModelBuilder>(EditorSceneSource{
+	    .AcquireReadView = std::move(hostServices.AcquireWorldReadView),
+	    .ReadChanges = std::move(hostServices.ReadWorldChanges),
+	    .AcknowledgeChanges = std::move(hostServices.AcknowledgeWorldChanges),
+	    .WorldGeneration = std::move(hostServices.WorldGeneration),
+	    .MaterialVariants = std::move(hostServices.MaterialVariants)});
+	m_transactions = std::make_unique<EditorTransactionManager>(std::move(hostServices.SubmitWorldEdit));
 	InitializeImGuiContext();
 	SetupDPIScaling();
 
@@ -209,11 +216,7 @@ void UI::InitializeDefaultPanels()
 	m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
 	m_usedMeshesPanel = std::make_unique<UsedMeshesPanel>();
 	m_usedMeshesPanel->SetDiagnosticsProvider(m_meshDiagnosticsProvider);
-	m_usedMeshesPanel->SetPreviewGeometryProvider(
-	    [this](std::uintptr_t meshRuntimeId)
-	    {
-		    return BuildMeshPreviewGeometry(meshRuntimeId);
-	    });
+	m_usedMeshesPanel->SetPreviewGeometryProvider(m_meshPreviewProvider);
 	m_usedTexturesPanel = std::make_unique<UsedTexturesPanel>();
 	m_usedTexturesPanel->SetDiagnosticsProvider(m_textureDiagnosticsProvider);
 	m_usedShadersPanel->SetReloadHandler(
@@ -234,12 +237,11 @@ void UI::InitializeDefaultPanels()
 			    m_editorConsoleSystem->SubmitLine("RecompileShaders " + packageId);
 		    }
 	    });
-	if (m_gameWorld != nullptr)
-	{
-		m_sceneSelection = SceneObjectSelection::Camera(m_gameWorld->GetCameras().GetCameraEntity(0));
-		m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(*m_gameWorld, m_sceneSelection, SceneOutlinerWidth);
-		m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(*m_gameWorld, m_sceneSelection, SceneInspectorWidth);
-	}
+	m_sceneModel = m_sceneModelBuilder->Update();
+	if (m_sceneModel && !m_sceneModel->GetCameras().empty())
+		m_sceneSelection = SceneObjectSelection::Camera(m_sceneModel->GetCameras().front().Entity);
+	m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(m_sceneSelection, *m_transactions, SceneOutlinerWidth);
+	m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(m_sceneSelection, *m_transactions, SceneInspectorWidth);
 }
 
 void UI::ConfigureMainMenuBarWindowActions()
@@ -281,42 +283,6 @@ void UI::ConfigureMainMenuBarWindowActions()
 			    m_settingsPanel->SetOpen(true);
 		    }
 	    });
-}
-
-MeshPreviewGeometry UI::BuildMeshPreviewGeometry(std::uintptr_t meshRuntimeId) const
-{
-	MeshPreviewGeometry geometry;
-	if (m_gameWorld == nullptr || meshRuntimeId == 0)
-	{
-		return geometry;
-	}
-
-	const SceneMeshes& sceneMeshes = m_gameWorld->GetMeshes();
-	for (std::size_t meshIndex = 0; meshIndex < sceneMeshes.GetMeshCount(); ++meshIndex)
-	{
-		const SceneMeshView meshInstance = sceneMeshes.GetMesh(meshIndex);
-		if (!meshInstance.IsValid())
-		{
-			continue;
-		}
-
-		const Mesh* mesh = meshInstance.GetMesh();
-		if (mesh == nullptr || reinterpret_cast<std::uintptr_t>(mesh) != meshRuntimeId)
-		{
-			continue;
-		}
-
-		const MeshData& meshData = mesh->GetMeshData();
-		geometry.Vertices.reserve(meshData.vertices.size());
-		for (const VertexData& vertex : meshData.vertices)
-		{
-			geometry.Vertices.push_back(MeshPreviewVertex{vertex.position.x, vertex.position.y, vertex.position.z});
-		}
-		geometry.Indices.assign(meshData.indices.begin(), meshData.indices.end());
-		return geometry;
-	}
-
-	return geometry;
 }
 
 void UI::SubscribeToWindowEvents(Window& window)
@@ -365,29 +331,53 @@ void UI::NewFrame()
 
 void UI::Build()
 {
+	UpdateSceneModel();
+	HandleTransactionShortcuts();
 	const bool disableInteraction = m_levelManager != nullptr && m_levelManager->IsLevelChangeInProgress();
-	ImGuiIO& io = ImGui::GetIO();
-	if (m_inputSystem != nullptr)
-	{
-		m_inputSystem->BeginInputRoutingFrame(disableInteraction, io.WantTextInput || io.WantCaptureKeyboard);
-	}
-	float mainMenuBarHeight = 0.0f;
-	if (m_mainMenuBar)
-	{
-		m_mainMenuBar->BuildUI();
-		mainMenuBarHeight = m_mainMenuBar->GetHeight();
-	}
+	BeginInputRouting(disableInteraction);
+	const float mainMenuBarHeight = BuildMainMenuBar();
+	BuildSceneOutliner(disableInteraction, mainMenuBarHeight);
+	BuildCenterWorkspace(disableInteraction, mainMenuBarHeight);
+	BuildSceneInspector(disableInteraction, mainMenuBarHeight);
+	BuildUtilityPanels(disableInteraction);
 
-	if (m_sceneOutlinerPanel)
-	{
-		m_sceneOutlinerPanel->SetTopInset(mainMenuBarHeight);
-		m_sceneOutlinerPanel->BuildUI(disableInteraction);
-	}
+#if USE_IMGUI_DEMO_WINDOW
+	bool showDemoWindow = true;
+	ImGui::ShowDemoWindow(&showDemoWindow);
+#endif
 
+	ImGui::Render();
+}
+
+void UI::BeginInputRouting(bool disableInteraction)
+{
+	if (m_inputSystem == nullptr) return;
+	const ImGuiIO& io = ImGui::GetIO();
+	m_inputSystem->BeginInputRoutingFrame(disableInteraction, io.WantTextInput || io.WantCaptureKeyboard);
+}
+
+float UI::BuildMainMenuBar()
+{
+	if (!m_mainMenuBar) return 0.0f;
+	m_mainMenuBar->BuildUI();
+	return m_mainMenuBar->GetHeight();
+}
+
+void UI::BuildSceneOutliner(bool disableInteraction, float mainMenuBarHeight)
+{
+	if (!m_sceneOutlinerPanel) return;
+	m_sceneOutlinerPanel->SetTopInset(mainMenuBarHeight);
+	m_sceneOutlinerPanel->BuildUI(disableInteraction);
+}
+
+void UI::BuildCenterWorkspace(bool disableInteraction, float mainMenuBarHeight)
+{
+	const ImGuiIO& io = ImGui::GetIO();
 	const float outlinerWidth = m_sceneOutlinerPanel ? m_sceneOutlinerPanel->GetWidth() : SceneOutlinerWidth;
 	const float inspectorWidth = m_sceneInspectorPanel ? m_sceneInspectorPanel->GetWidth() : SceneInspectorWidth;
 	const float availableCenterHeight = (std::max) (0.0f, io.DisplaySize.y - mainMenuBarHeight);
 	const float viewportWidth = (std::max) (MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
+
 	float viewportTopPanelHeight = 0.0f;
 	if (m_viewportTopPanel)
 	{
@@ -396,58 +386,14 @@ void UI::Build()
 		viewportTopPanelHeight = m_viewportTopPanel->GetHeight();
 	}
 
-	const float availableViewportColumnHeight = (std::max) (0.0f, availableCenterHeight - viewportTopPanelHeight);
-	const float consoleDockHeight = m_editorConsoleSystem ? m_editorConsoleSystem->GetDockHeight(availableViewportColumnHeight) : 0.0f;
-
-	if (m_viewportPanel)
-	{
-		m_viewportPanel->SetTopInset(mainMenuBarHeight + viewportTopPanelHeight);
-		m_viewportPanel->SetBottomInset(consoleDockHeight);
-		m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
-		m_viewportPanel->BuildUI(disableInteraction);
-		if (m_inputSystem != nullptr)
-		{
-			float viewportLeft = 0.0f;
-			float viewportTop = 0.0f;
-			float viewportRight = 0.0f;
-			float viewportBottom = 0.0f;
-			if (m_viewportPanel->GetInputBounds(viewportLeft, viewportTop, viewportRight, viewportBottom))
-			{
-				m_inputSystem->RegisterInputTargetRegion(
-				    viewportLeft,
-				    viewportTop,
-				    viewportRight,
-				    viewportBottom,
-				    m_viewportPanel->GetTargetInputLayer());
-			}
-		}
-	}
-
-	if (m_sceneInspectorPanel)
-	{
-		m_sceneInspectorPanel->SetTopInset(mainMenuBarHeight);
-		m_sceneInspectorPanel->BuildUI(disableInteraction);
-	}
-
-	if (m_usedShadersPanel)
-	{
-		m_usedShadersPanel->BuildUI(disableInteraction);
-	}
-
-	if (m_usedMeshesPanel)
-	{
-		m_usedMeshesPanel->BuildUI(disableInteraction);
-	}
-
-	if (m_usedTexturesPanel)
-	{
-		m_usedTexturesPanel->BuildUI(disableInteraction);
-	}
-
-	if (m_settingsPanel)
-	{
-		m_settingsPanel->BuildUI(disableInteraction);
-	}
+	const float availableViewportHeight = (std::max) (0.0f, availableCenterHeight - viewportTopPanelHeight);
+	const float consoleDockHeight = m_editorConsoleSystem ? m_editorConsoleSystem->GetDockHeight(availableViewportHeight) : 0.0f;
+	BuildViewport(
+	    disableInteraction,
+	    mainMenuBarHeight + viewportTopPanelHeight,
+	    consoleDockHeight,
+	    outlinerWidth,
+	    inspectorWidth);
 
 	if (m_editorConsoleSystem)
 	{
@@ -455,16 +401,79 @@ void UI::Build()
 		    outlinerWidth,
 		    mainMenuBarHeight + availableCenterHeight,
 		    viewportWidth,
-		    availableViewportColumnHeight,
+		    availableViewportHeight,
 		    disableInteraction);
 	}
+}
 
-#if USE_IMGUI_DEMO_WINDOW
-	bool showDemoWindow = true;
-	ImGui::ShowDemoWindow(&showDemoWindow);
-#endif
+void UI::BuildViewport(
+    bool disableInteraction,
+    float topInset,
+    float bottomInset,
+    float outlinerWidth,
+    float inspectorWidth)
+{
+	if (!m_viewportPanel) return;
+	m_viewportPanel->SetTopInset(topInset);
+	m_viewportPanel->SetBottomInset(bottomInset);
+	m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
+	m_viewportPanel->BuildUI(disableInteraction);
+	RegisterViewportInputRegion();
+}
 
-	ImGui::Render();
+void UI::RegisterViewportInputRegion()
+{
+	if (!m_viewportPanel || !m_inputSystem) return;
+	float viewportLeft = 0.0f;
+	float viewportTop = 0.0f;
+	float viewportRight = 0.0f;
+	float viewportBottom = 0.0f;
+	if (!m_viewportPanel->GetInputBounds(viewportLeft, viewportTop, viewportRight, viewportBottom)) return;
+	m_inputSystem->RegisterInputTargetRegion(
+	    viewportLeft,
+	    viewportTop,
+	    viewportRight,
+	    viewportBottom,
+	    m_viewportPanel->GetTargetInputLayer());
+}
+
+void UI::BuildSceneInspector(bool disableInteraction, float mainMenuBarHeight)
+{
+	if (!m_sceneInspectorPanel) return;
+	m_sceneInspectorPanel->SetTopInset(mainMenuBarHeight);
+	m_sceneInspectorPanel->BuildUI(disableInteraction);
+}
+
+void UI::BuildUtilityPanels(bool disableInteraction)
+{
+	if (m_usedShadersPanel) m_usedShadersPanel->BuildUI(disableInteraction);
+	if (m_usedMeshesPanel) m_usedMeshesPanel->BuildUI(disableInteraction);
+	if (m_usedTexturesPanel) m_usedTexturesPanel->BuildUI(disableInteraction);
+	if (m_settingsPanel) m_settingsPanel->BuildUI(disableInteraction);
+}
+
+void UI::UpdateSceneModel()
+{
+	if (!m_sceneModelBuilder) return;
+	const std::uint64_t previousWorldGeneration = m_sceneModel ? m_sceneModel->GetWorldGeneration() : 0;
+	m_sceneModel = m_sceneModelBuilder->Update();
+	if (!m_sceneModel) return;
+	if (m_transactions) m_transactions->InvalidateForWorldGeneration(m_sceneModel->GetWorldGeneration());
+	if (previousWorldGeneration != 0 && previousWorldGeneration != m_sceneModel->GetWorldGeneration())
+		m_sceneSelection = SceneObjectSelection::None();
+	if (!m_sceneSelection.IsNone() && !m_sceneModel->Contains(m_sceneSelection))
+		m_sceneSelection = SceneObjectSelection::None();
+	if (m_sceneOutlinerPanel) m_sceneOutlinerPanel->SetModel(m_sceneModel);
+	if (m_sceneInspectorPanel) m_sceneInspectorPanel->SetModel(m_sceneModel);
+}
+
+void UI::HandleTransactionShortcuts()
+{
+	if (!m_sceneModel || !m_transactions || ImGui::GetIO().WantTextInput) return;
+	if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Z))
+		(void) m_transactions->Undo(m_sceneModel->GetWorldGeneration());
+	else if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Y))
+		(void) m_transactions->Redo(m_sceneModel->GetWorldGeneration());
 }
 void UI::Update()
 {

@@ -2,11 +2,7 @@
 #include "Scene/SceneObjectPresentation.h"
 
 #include "Scene/SceneObjectSelection.h"
-#include "World/GameWorld.h"
 #include "Scene/Lighting/SceneLightDesc.h"
-#include "Scene/Lighting/SceneLighting.h"
-
-#include <optional>
 
 namespace SceneObjectPresentation
 {
@@ -56,7 +52,7 @@ namespace SceneObjectPresentation
 		return std::string(GetLightTypeLabel(light.GetKind())) + " " + std::to_string(lightIndex + 1);
 	}
 
-	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection& selection, const GameWorld* gameWorld) noexcept
+	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection& selection, SceneLightKind lightKind) noexcept
 	{
 		switch (selection.type)
 		{
@@ -65,14 +61,7 @@ namespace SceneObjectPresentation
 			case SceneObjectType::Sky:
 				return UiUtil::EditorIcon::ViewLit;
 			case SceneObjectType::Light:
-				if (gameWorld != nullptr)
-				{
-					if (const std::optional<SceneLightDesc> light = gameWorld->GetLighting().GetLight(selection.entity))
-					{
-						return GetLightIcon(light->GetKind());
-					}
-				}
-				return UiUtil::EditorIcon::Light;
+				return GetLightIcon(lightKind);
 			case SceneObjectType::Mesh:
 				return UiUtil::EditorIcon::StaticMesh;
 			case SceneObjectType::None:
@@ -81,8 +70,8 @@ namespace SceneObjectPresentation
 		}
 	}
 
-	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection* selection, const GameWorld* gameWorld) noexcept
+	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection* selection, SceneLightKind lightKind) noexcept
 	{
-		return selection != nullptr ? BuildSelectionIcon(*selection, gameWorld) : UiUtil::EditorIcon::None;
+		return selection != nullptr ? BuildSelectionIcon(*selection, lightKind) : UiUtil::EditorIcon::None;
 	}
 }  // namespace SceneObjectPresentation

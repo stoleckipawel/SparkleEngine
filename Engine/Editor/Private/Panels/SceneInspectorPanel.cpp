@@ -8,9 +8,8 @@
 #include "Panels/SceneSkyInspector.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/SceneObjectPresentation.h"
-#include "World/GameWorld.h"
-#include "Scene/Lighting/SceneLightDesc.h"
-#include "Scene/Lighting/SceneLighting.h"
+#include "Scene/Model/EditorSceneModel.h"
+#include "Scene/Transactions/EditorTransactionManager.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 
@@ -20,8 +19,9 @@
 
 #include <imgui.h>
 
-SceneInspectorPanel::SceneInspectorPanel(GameWorld& gameWorld, SceneObjectSelection& selection, float widthPixels) noexcept :
-    m_gameWorld(&gameWorld), m_selection(&selection), m_widthPixels(widthPixels)
+SceneInspectorPanel::SceneInspectorPanel(
+    SceneObjectSelection& selection, EditorTransactionManager& transactions, float widthPixels) noexcept :
+    m_transactions(&transactions), m_selection(&selection), m_widthPixels(widthPixels)
 {
 }
 
@@ -35,18 +35,18 @@ std::string SceneInspectorPanel::BuildSelectionTitle() const
 	switch (m_selection->type)
 	{
 		case SceneObjectType::Camera:
-			if (m_gameWorld != nullptr)
+			if (m_model)
 			{
-				const SceneCameraEntry camera = m_gameWorld->GetCameras().GetCameraEntryByEntity(m_selection->entity);
-				return camera.name.empty() ? "Camera" : camera.name;
+				const WorldCameraReadData* camera = m_model->FindCamera(m_selection->entity);
+				return camera && !camera->Name.empty() ? camera->Name : "Camera";
 			}
 			return "Scene Camera";
 		case SceneObjectType::Light:
-			if (m_gameWorld != nullptr)
+			if (m_model)
 			{
-				if (const std::optional<SceneLightDesc> light = m_gameWorld->GetLighting().GetLight(m_selection->entity))
+				if (const WorldLightReadData* light = m_model->FindLight(m_selection->entity))
 				{
-					return SceneObjectPresentation::BuildLightLabel(*light, m_selection->entity.GetSlot());
+					return SceneObjectPresentation::BuildLightLabel(light->Description, m_selection->entity.GetSlot());
 				}
 			}
 			return "Light";
@@ -72,11 +72,11 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 		case SceneObjectType::Camera:
 			return "Camera";
 		case SceneObjectType::Light:
-			if (m_gameWorld != nullptr)
+			if (m_model)
 			{
-				if (const std::optional<SceneLightDesc> light = m_gameWorld->GetLighting().GetLight(m_selection->entity))
+				if (const WorldLightReadData* light = m_model->FindLight(m_selection->entity))
 				{
-					return SceneObjectPresentation::GetLightTypeLabel(light->GetKind());
+					return SceneObjectPresentation::GetLightTypeLabel(light->Description.GetKind());
 				}
 			}
 			return "Light";
@@ -94,7 +94,9 @@ void SceneInspectorPanel::BuildSelectionHeader() noexcept
 {
 	const std::string title = BuildSelectionTitle();
 	const char* subtitle = BuildSelectionSubtitle();
-	const UiUtil::EditorIcon icon = SceneObjectPresentation::BuildSelectionIcon(m_selection, m_gameWorld);
+	const EditorSceneEntry* entry = m_model && m_selection ? m_model->FindEntry(*m_selection) : nullptr;
+	const UiUtil::EditorIcon icon = SceneObjectPresentation::BuildSelectionIcon(
+	    m_selection, entry ? entry->LightKind : SceneLightKind::Unknown);
 
 	constexpr float kHeaderHeight = 30.0f;
 	constexpr float kHeaderPaddingX = 8.0f;
@@ -163,16 +165,19 @@ void SceneInspectorPanel::BuildSelectionInspector() noexcept
 	switch (m_selection->type)
 	{
 		case SceneObjectType::Camera:
-			SceneCameraInspector::Build(*m_gameWorld, m_filterText);
+			if (const WorldCameraReadData* camera = m_model->FindCamera(m_selection->entity))
+				SceneCameraInspector::Build(*camera, *m_transactions, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::Light:
-			SceneLightInspector::Build(*m_gameWorld, m_selection->entity, m_filterText);
+			if (const WorldLightReadData* light = m_model->FindLight(m_selection->entity))
+				SceneLightInspector::Build(light->Description, light->Entity, *m_transactions, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::Sky:
-			SceneSkyInspector::Build(*m_gameWorld, m_filterText);
+			SceneSkyInspector::Build(m_model->GetSkyEnvironment(), *m_transactions, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::Mesh:
-			SceneMeshInspector::Build(*m_gameWorld, m_selection->entity, m_filterText);
+			if (const WorldMeshReadData* mesh = m_model->FindMesh(m_selection->entity))
+				SceneMeshInspector::Build(*mesh, *m_transactions, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::None:
 		default:
@@ -203,7 +208,7 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 
 	m_widthPixels = ImGui::GetWindowWidth();
 
-	if (m_gameWorld == nullptr || m_selection == nullptr)
+	if (!m_model || !m_transactions || m_selection == nullptr)
 	{
 		ImGui::TextDisabled("Scene inspector unavailable");
 		ImGui::End();
@@ -225,10 +230,11 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 			ImGui::EndTabItem();
 		}
 
-		if (m_gameWorld->GetMaterialVariantCount() > 0 && ImGui::BeginTabItem("Variants"))
+		if (!m_model->GetMaterialVariants().Names.empty() && ImGui::BeginTabItem("Variants"))
 		{
 			ImGui::Spacing();
-			SceneMaterialVariantInspector::Build(*m_gameWorld);
+			SceneMaterialVariantInspector::Build(
+			    m_model->GetMaterialVariants(), *m_transactions, m_model->GetWorldGeneration());
 			ImGui::EndTabItem();
 		}
 

@@ -2,17 +2,15 @@
 #include "Panels/SceneLightInspector.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "World/GameWorld.h"
+#include "Scene/Transactions/EditorTransactionManager.h"
 #include "Scene/Lighting/PointLightDesc.h"
 #include "Scene/Lighting/RectLightDesc.h"
 #include "Scene/Lighting/SceneDirectionalLightDesc.h"
 #include "Scene/Lighting/SceneLightDesc.h"
-#include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Lighting/SpotLightDesc.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
-#include <optional>
 #include <utility>
 
 namespace
@@ -23,58 +21,60 @@ namespace
 	constexpr float kAreaLightSizeSliderMax = 100.0f;
 }
 
-void SceneLightInspector::Build(GameWorld& gameWorld, EntityId lightEntity, const std::string& filterText) noexcept
+void SceneLightInspector::Build(const SceneLightDesc& sceneLight, EntityId lightEntity,
+                                EditorTransactionManager& transactions, std::uint64_t worldGeneration,
+                                const std::string& filterText) noexcept
 {
-	const std::optional<SceneLightDesc> sceneLight = gameWorld.GetLighting().GetLight(lightEntity);
-	if (!sceneLight)
-	{
-		UiUtil::DrawDetailsEmptyState();
-		return;
-	}
-
-	BuildGenericLight(gameWorld, lightEntity, *sceneLight, filterText);
+	BuildGenericLight(transactions, worldGeneration, lightEntity, sceneLight, filterText);
 }
 
 void SceneLightInspector::BuildGenericLight(
-    GameWorld& gameWorld,
+    EditorTransactionManager& transactions,
+    std::uint64_t worldGeneration,
     EntityId lightEntity,
     const SceneLightDesc& sceneLight,
-    const std::string& filterText) noexcept
+	const std::string& filterText) noexcept
 {
 	SceneLightDesc lightDesc = sceneLight;
-	BuildLightCommonCategory(filterText, lightDesc);
+	bool changed = BuildLightCommonCategory(filterText, lightDesc);
 
 	if (SceneDirectionalLightDesc* directional = lightDesc.GetDirectional())
 	{
-		BuildDirectionalLightTransformCategory(filterText, *directional);
-		BuildDirectionalLightCategory(filterText, *directional);
+		changed |= BuildDirectionalLightTransformCategory(filterText, *directional);
+		changed |= BuildDirectionalLightCategory(filterText, *directional);
 	}
 	else if (PointLightDesc* point = lightDesc.GetPoint())
 	{
-		BuildPointLightCategory(filterText, *point);
+		changed |= BuildPointLightCategory(filterText, *point);
 	}
 	else if (SpotLightDesc* spot = lightDesc.GetSpot())
 	{
-		BuildSpotLightCategory(filterText, *spot);
+		changed |= BuildSpotLightCategory(filterText, *spot);
 	}
 	else if (RectLightDesc* rect = lightDesc.GetRect())
 	{
-		BuildRectLightCategory(filterText, *rect);
+		changed |= BuildRectLightCategory(filterText, *rect);
 	}
 
-	gameWorld.GetLighting().SetLight(lightEntity, std::move(lightDesc));
+	if (!changed) return;
+	(void) transactions.Execute(
+	    {0, SetLightDescriptionCommand{lightEntity, std::move(lightDesc)}},
+	    {0, SetLightDescriptionCommand{lightEntity, sceneLight}},
+	    worldGeneration,
+	    "light-description");
 }
 
-void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept
+bool SceneLightInspector::BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept
 {
+	bool changed = false;
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Light", "intensity lux candela luminance color visible visibility rendering"))
 	{
-		return;
+		return false;
 	}
 
 	if (!UiUtil::BeginDetailsCategory("Light"))
 	{
-		return;
+		return false;
 	}
 
 	float intensity = lightDesc.common.intensity;
@@ -94,6 +94,7 @@ void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText
 	        &kDefaultIntensity))
 	{
 		lightDesc.common.intensity = (std::max) (0.0f, intensity);
+		changed = true;
 	}
 
 	float colorValues[3] = {lightDesc.common.color.x, lightDesc.common.color.y, lightDesc.common.color.z};
@@ -101,6 +102,7 @@ void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText
 	if (UiUtil::EditDetailsColor3("Color", colorValues, defaultColor))
 	{
 		lightDesc.common.color = {colorValues[0], colorValues[1], colorValues[2]};
+		changed = true;
 	}
 
 	constexpr bool kDefaultVisible = true;
@@ -108,21 +110,23 @@ void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText
 	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
 	{
 		lightDesc.common.visible = visible;
+		changed = true;
 	}
 
 	UiUtil::EndDetailsCategory();
+	return changed;
 }
 
-void SceneLightInspector::BuildDirectionalLightTransformCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept
+bool SceneLightInspector::BuildDirectionalLightTransformCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Transform", "rotation direction transform"))
 	{
-		return;
+		return false;
 	}
 
 	if (!UiUtil::BeginDetailsCategory("Transform"))
 	{
-		return;
+		return false;
 	}
 
 	DirectX::XMFLOAT3 rotationDegrees = MathUtils::DirectionToRotationDegrees(lightDesc.direction);
@@ -133,21 +137,25 @@ void SceneLightInspector::BuildDirectionalLightTransformCategory(const std::stri
 	{
 		lightDesc.direction =
 		    MathUtils::RotationDegreesToDirection(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]});
+		UiUtil::EndDetailsCategory();
+		return true;
 	}
 
 	UiUtil::EndDetailsCategory();
+	return false;
 }
 
-void SceneLightInspector::BuildDirectionalLightCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept
+bool SceneLightInspector::BuildDirectionalLightCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept
 {
+	bool changed = false;
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Directional Light", "direction cast shadow rendering"))
 	{
-		return;
+		return false;
 	}
 
 	if (!UiUtil::BeginDetailsCategory("Directional Light"))
 	{
-		return;
+		return false;
 	}
 
 	float directionValues[3] = {lightDesc.direction.x, lightDesc.direction.y, lightDesc.direction.z};
@@ -155,6 +163,7 @@ void SceneLightInspector::BuildDirectionalLightCategory(const std::string& filte
 	if (UiUtil::EditDetailsFloat3("Direction", directionValues, 0.01f, kDirectionSliderMin, kDirectionSliderMax, "%.3f", defaultDirection))
 	{
 		lightDesc.direction = {directionValues[0], directionValues[1], directionValues[2]};
+		changed = true;
 	}
 
 	bool castShadow = lightDesc.castShadow;
@@ -162,6 +171,7 @@ void SceneLightInspector::BuildDirectionalLightCategory(const std::string& filte
 	if (UiUtil::EditDetailsCheckbox("Cast Shadow", castShadow, &kDefaultCastShadow))
 	{
 		lightDesc.castShadow = castShadow;
+		changed = true;
 	}
 
 	float angularDiameterDegrees = MathUtils::RadiansToDegrees(lightDesc.angularDiameterRadians);
@@ -176,20 +186,23 @@ void SceneLightInspector::BuildDirectionalLightCategory(const std::string& filte
 	        &kDefaultAngularDiameterDegrees))
 	{
 		lightDesc.angularDiameterRadians = MathUtils::DegreesToRadians((std::max) (0.0f, angularDiameterDegrees));
+		changed = true;
 	}
 	UiUtil::EndDetailsCategory();
+	return changed;
 }
 
-void SceneLightInspector::BuildPointLightCategory(const std::string& filterText, PointLightDesc& lightDesc) noexcept
+bool SceneLightInspector::BuildPointLightCategory(const std::string& filterText, PointLightDesc& lightDesc) noexcept
 {
+	bool changed = false;
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Point Light", "range radius attenuation point"))
 	{
-		return;
+		return false;
 	}
 
 	if (!UiUtil::BeginDetailsCategory("Point Light"))
 	{
-		return;
+		return false;
 	}
 
 	float range = lightDesc.range;
@@ -197,6 +210,7 @@ void SceneLightInspector::BuildPointLightCategory(const std::string& filterText,
 	if (UiUtil::EditDetailsFloat("Range", range, 0.05f, 0.0f, kRangeSliderMax, "%.3f", &kDefaultRange))
 	{
 		lightDesc.range = (std::max) (0.0f, range);
+		changed = true;
 	}
 
 	float sourceRadius = lightDesc.sourceRadius;
@@ -211,21 +225,24 @@ void SceneLightInspector::BuildPointLightCategory(const std::string& filterText,
 	        &kDefaultSourceRadius))
 	{
 		lightDesc.sourceRadius = (std::max) (0.0f, sourceRadius);
+		changed = true;
 	}
 
 	UiUtil::EndDetailsCategory();
+	return changed;
 }
 
-void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, SpotLightDesc& lightDesc) noexcept
+bool SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, SpotLightDesc& lightDesc) noexcept
 {
+	bool changed = false;
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Spot Light", "direction range cone angle spot"))
 	{
-		return;
+		return false;
 	}
 
 	if (!UiUtil::BeginDetailsCategory("Spot Light"))
 	{
-		return;
+		return false;
 	}
 
 	float directionValues[3] = {lightDesc.direction.x, lightDesc.direction.y, lightDesc.direction.z};
@@ -233,6 +250,7 @@ void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsFloat3("Direction", directionValues, 0.01f, kDirectionSliderMin, kDirectionSliderMax, "%.3f", defaultDirection))
 	{
 		lightDesc.direction = {directionValues[0], directionValues[1], directionValues[2]};
+		changed = true;
 	}
 
 	float range = lightDesc.range;
@@ -240,6 +258,7 @@ void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsFloat("Range", range, 0.05f, 0.0f, kRangeSliderMax, "%.3f", &kDefaultRange))
 	{
 		lightDesc.range = (std::max) (0.0f, range);
+		changed = true;
 	}
 
 	float sourceRadius = lightDesc.sourceRadius;
@@ -254,6 +273,7 @@ void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	        &kDefaultSourceRadius))
 	{
 		lightDesc.sourceRadius = (std::max) (0.0f, sourceRadius);
+		changed = true;
 	}
 
 	float innerConeDegrees = MathUtils::RadiansToDegrees(lightDesc.innerConeAngleRadians);
@@ -261,6 +281,7 @@ void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsFloat("Inner Cone", innerConeDegrees, 0.1f, 0.0f, 180.0f, "%.2f", &kDefaultInnerConeDegrees))
 	{
 		lightDesc.innerConeAngleRadians = MathUtils::DegreesToRadians((std::max) (0.0f, innerConeDegrees));
+		changed = true;
 	}
 
 	float outerConeDegrees = MathUtils::RadiansToDegrees(lightDesc.outerConeAngleRadians);
@@ -268,21 +289,24 @@ void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsFloat("Outer Cone", outerConeDegrees, 0.1f, 0.0f, 180.0f, "%.2f", &kDefaultOuterConeDegrees))
 	{
 		lightDesc.outerConeAngleRadians = MathUtils::DegreesToRadians((std::max) (0.0f, outerConeDegrees));
+		changed = true;
 	}
 
 	UiUtil::EndDetailsCategory();
+	return changed;
 }
 
-void SceneLightInspector::BuildRectLightCategory(const std::string& filterText, RectLightDesc& lightDesc) noexcept
+bool SceneLightInspector::BuildRectLightCategory(const std::string& filterText, RectLightDesc& lightDesc) noexcept
 {
+	bool changed = false;
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Rect Light", "direction tangent width height area rectangle quad shadow"))
 	{
-		return;
+		return false;
 	}
 
 	if (!UiUtil::BeginDetailsCategory("Rect Light"))
 	{
-		return;
+		return false;
 	}
 
 	float directionValues[3] = {lightDesc.direction.x, lightDesc.direction.y, lightDesc.direction.z};
@@ -290,6 +314,7 @@ void SceneLightInspector::BuildRectLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsFloat3("Direction", directionValues, 0.01f, kDirectionSliderMin, kDirectionSliderMax, "%.3f", defaultDirection))
 	{
 		lightDesc.direction = {directionValues[0], directionValues[1], directionValues[2]};
+		changed = true;
 	}
 
 	float tangentValues[3] = {lightDesc.tangent.x, lightDesc.tangent.y, lightDesc.tangent.z};
@@ -297,6 +322,7 @@ void SceneLightInspector::BuildRectLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsFloat3("Tangent", tangentValues, 0.01f, kDirectionSliderMin, kDirectionSliderMax, "%.3f", defaultTangent))
 	{
 		lightDesc.tangent = {tangentValues[0], tangentValues[1], tangentValues[2]};
+		changed = true;
 	}
 
 	float width = lightDesc.width;
@@ -304,12 +330,14 @@ void SceneLightInspector::BuildRectLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsFloat("Width", width, 0.05f, 0.0f, kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
 	{
 		lightDesc.width = (std::max) (0.0f, width);
+		changed = true;
 	}
 
 	float height = lightDesc.height;
 	if (UiUtil::EditDetailsFloat("Height", height, 0.05f, 0.0f, kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
 	{
 		lightDesc.height = (std::max) (0.0f, height);
+		changed = true;
 	}
 
 	bool castShadow = lightDesc.castShadow;
@@ -317,7 +345,9 @@ void SceneLightInspector::BuildRectLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsCheckbox("Cast Shadow", castShadow, &kDefaultCastShadow))
 	{
 		lightDesc.castShadow = castShadow;
+		changed = true;
 	}
 
 	UiUtil::EndDetailsCategory();
+	return changed;
 }

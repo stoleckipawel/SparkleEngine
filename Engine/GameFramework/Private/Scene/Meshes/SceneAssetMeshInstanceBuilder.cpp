@@ -100,17 +100,17 @@ namespace SceneAssetMeshInstanceBuilder
 		return true;
 	}
 
-	std::vector<MeshInstanceGroupSnapshot> BuildGroups(
+	std::vector<SceneMeshInstanceGroupData> BuildGroups(
 	    const SceneAssetPayload& payload,
 	    MaterialHandle materialBaseHandle,
 	    SceneMeshInstanceIndex meshBaseIndex)
 	{
-		std::vector<MeshInstanceGroupSnapshot> groups;
+		std::vector<SceneMeshInstanceGroupData> groups;
 		groups.reserve(payload.meshInstanceGroups.size());
 		for (const SceneAssetPayload::MeshInstanceGroup& source : payload.meshInstanceGroups)
 		{
 			groups.push_back(
-			    MeshInstanceGroupSnapshot{
+			    SceneMeshInstanceGroupData{
 			        .meshAssetId = ResolveGroupAsset(payload, source),
 			        .meshAssetIndex = source.meshAssetIndex,
 			        .materialHandle = ResolveOptionalMaterial(source.material, materialBaseHandle),

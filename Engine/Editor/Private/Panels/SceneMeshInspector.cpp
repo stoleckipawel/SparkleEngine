@@ -2,167 +2,74 @@
 #include "Panels/SceneMeshInspector.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "World/GameWorld.h"
-#include "Scene/Meshes/CookedMesh.h"
-#include "Scene/Meshes/Mesh.h"
-#include "Scene/Meshes/SceneMeshes.h"
-#include "Scene/Transform.h"
+#include "Scene/Transactions/EditorTransactionManager.h"
 #include "Util/UiUtil.h"
+#include "World/WorldReadView.h"
 
 #include <cstdio>
 
-void SceneMeshInspector::Build(GameWorld& gameWorld, EntityId meshEntity, const std::string& filterText) noexcept
+void SceneMeshInspector::Build(const WorldMeshReadData& mesh, EditorTransactionManager& transactions,
+                               std::uint64_t generation, const std::string& filter) noexcept
 {
-	SceneMeshView meshInstance = gameWorld.GetMeshes().GetMesh(meshEntity);
-	if (!meshInstance.IsValid())
-	{
-		UiUtil::DrawDetailsEmptyState();
-		return;
-	}
-
-	const Mesh* mesh = meshInstance.GetMesh();
-	if (mesh == nullptr)
-	{
-		UiUtil::DrawDetailsEmptyState();
-		return;
-	}
-
-	BuildTransformCategory(filterText, meshInstance);
-	BuildStaticMeshCategory(filterText, *mesh, meshInstance);
-	BuildStaticMeshAdvancedCategory(filterText, *mesh);
-	BuildAdvancedParametersCategory(filterText, meshInstance);
-	BuildMaterialsCategory(filterText, meshInstance);
+	BuildTransformCategory(filter, mesh, transactions, generation);
+	BuildStaticMeshCategory(filter, mesh);
+	BuildAdvancedParametersCategory(filter, mesh, transactions, generation);
+	BuildMaterialsCategory(filter, mesh);
 }
 
-void SceneMeshInspector::BuildTransformCategory(const std::string& filterText, SceneMeshView& mesh) noexcept
+void SceneMeshInspector::BuildTransformCategory(const std::string& filter, const WorldMeshReadData& mesh,
+                                                 EditorTransactionManager& transactions, std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Transform", "location rotation scale transform"))
+	if (!UiUtil::MatchesDetailsFilter(filter, "Transform", "location rotation scale transform") || !UiUtil::BeginDetailsCategory("Transform")) return;
+	Transform after = mesh.LocalTransform; bool changed = false;
+	auto translation = after.GetTranslation(); float p[3] = {translation.x, translation.y, translation.z}; const float dp[3] = {};
+	if (UiUtil::EditDetailsFloat3("Location", p, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f", dp))
 	{
-		return;
+		after.SetTranslation({p[0], p[1], p[2]}); changed = true;
 	}
-
-	if (!UiUtil::BeginDetailsCategory("Transform"))
+	auto degrees = MathUtils::RadiansToDegrees(after.GetRotationEuler()); float r[3] = {degrees.x, degrees.y, degrees.z}; const float dr[3] = {};
+	if (UiUtil::EditDetailsFloat3("Rotation", r, 0.1f, -360.0f, 360.0f, "%.2f", dr))
 	{
-		return;
+		after.SetRotationEuler(MathUtils::DegreesToRadians(DirectX::XMFLOAT3{r[0], r[1], r[2]})); changed = true;
 	}
-
-	Transform transform = mesh.GetTransform();
-	bool changed = false;
-	DirectX::XMFLOAT3 translation = transform.GetTranslation();
-	float translationValues[3] = {translation.x, translation.y, translation.z};
-	const float defaultTranslation[3] = {0.0f, 0.0f, 0.0f};
-	if (UiUtil::EditDetailsFloat3("Location", translationValues, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f", defaultTranslation))
+	auto scale = after.GetScale(); float s[3] = {scale.x, scale.y, scale.z}; const float ds[3] = {1.0f, 1.0f, 1.0f};
+	if (UiUtil::EditDetailsFloat3("Scale", s, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f", ds))
 	{
-		transform.SetTranslation({translationValues[0], translationValues[1], translationValues[2]});
-		changed = true;
-	}
-
-	DirectX::XMFLOAT3 rotationEuler = transform.GetRotationEuler();
-	const DirectX::XMFLOAT3 rotationDegrees = MathUtils::RadiansToDegrees(rotationEuler);
-	float rotationValues[3] = {rotationDegrees.x, rotationDegrees.y, rotationDegrees.z};
-	const float defaultRotation[3] = {0.0f, 0.0f, 0.0f};
-	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f", defaultRotation))
-	{
-		transform.SetRotationEuler(MathUtils::DegreesToRadians(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]}));
-		changed = true;
-	}
-
-	DirectX::XMFLOAT3 scale = transform.GetScale();
-	float scaleValues[3] = {scale.x, scale.y, scale.z};
-	const float defaultScale[3] = {1.0f, 1.0f, 1.0f};
-	if (UiUtil::EditDetailsFloat3("Scale", scaleValues, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f", defaultScale))
-	{
-		transform.SetScale({scaleValues[0], scaleValues[1], scaleValues[2]});
-		changed = true;
+		after.SetScale({s[0], s[1], s[2]}); changed = true;
 	}
 	if (changed)
-	{
-		mesh.SetTransform(transform);
-	}
-
+		(void) transactions.Execute({0, SetLocalTransformCommand{mesh.Entity, after}},
+		                           {0, SetLocalTransformCommand{mesh.Entity, mesh.LocalTransform}}, generation, "mesh-transform");
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneMeshInspector::BuildStaticMeshCategory(const std::string& filterText, const Mesh& mesh, SceneMeshView& instance) noexcept
+void SceneMeshInspector::BuildStaticMeshCategory(const std::string& filter, const WorldMeshReadData& mesh) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Static Mesh", "type mesh asset rendering"))
-	{
-		return;
-	}
-
-	if (!UiUtil::BeginDetailsCategory("Static Mesh"))
-	{
-		return;
-	}
-
-	const bool isCookedMesh = dynamic_cast<const CookedMesh*>(&mesh) != nullptr;
-	UiUtil::DrawDetailsAssetRow(
-	    "Mesh",
-	    UiUtil::EditorIcon::StaticMesh,
-	    isCookedMesh ? "Cooked Static Mesh" : "Procedural Mesh",
-	    isCookedMesh ? "Cooked asset" : "Generated geometry");
-	UiUtil::DrawDetailsValueRow("Type", isCookedMesh ? "Cooked" : "Procedural");
+	if (!UiUtil::MatchesDetailsFilter(filter, "Mesh", "type asset rendering skeletal static") || !UiUtil::BeginDetailsCategory("Mesh")) return;
+	const bool skeletal = mesh.Kind == SceneMeshKind::Skeletal;
+	UiUtil::DrawDetailsAssetRow("Mesh", UiUtil::EditorIcon::StaticMesh, skeletal ? "Cooked Skeletal Mesh" : "Cooked Static Mesh", "Generation-pinned asset reference");
+	UiUtil::DrawDetailsValueRow("Type", skeletal ? "Skeletal" : "Static");
+	char value[64] = {}; std::snprintf(value, sizeof(value), "%llu", static_cast<unsigned long long>(mesh.MeshAssetId));
+	UiUtil::DrawDetailsValueRow("Asset Id", value);
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneMeshInspector::BuildStaticMeshAdvancedCategory(const std::string& filterText, const Mesh& mesh) noexcept
+void SceneMeshInspector::BuildAdvancedParametersCategory(const std::string& filter, const WorldMeshReadData& mesh,
+                                                          EditorTransactionManager& transactions, std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Advanced Mesh Data", "vertices indices mesh data statistics"))
-	{
-		return;
-	}
+	if (!UiUtil::MatchesDetailsFilter(filter, "Advanced", "visible visibility hidden") || !UiUtil::BeginDetailsCategory("Advanced", false)) return;
+	bool visible = mesh.Visible; const bool defaultVisible = true;
+	if (UiUtil::EditDetailsCheckbox("Visible", visible, &defaultVisible))
+		(void) transactions.Execute({0, SetEntityVisibilityCommand{mesh.Entity, visible}},
+		                           {0, SetEntityVisibilityCommand{mesh.Entity, mesh.Visible}}, generation, "mesh-visibility");
+	UiUtil::EndDetailsCategory();
+}
 
-	if (!UiUtil::BeginDetailsCategory("Advanced Mesh Data", false))
-	{
-		return;
-	}
-
+void SceneMeshInspector::BuildMaterialsCategory(const std::string& filter, const WorldMeshReadData& mesh) noexcept
+{
+	if (!UiUtil::MatchesDetailsFilter(filter, "Materials", "element material slot surface") || !UiUtil::BeginDetailsCategory("Materials")) return;
 	char buffer[64] = {};
-	const MeshData& meshData = mesh.GetMeshData();
-	std::snprintf(buffer, sizeof(buffer), "%u", meshData.GetVertexCount());
-	UiUtil::DrawDetailsValueRow("Vertices", buffer);
-	std::snprintf(buffer, sizeof(buffer), "%u", meshData.GetIndexCount());
-	UiUtil::DrawDetailsValueRow("Indices", buffer);
-	UiUtil::EndDetailsCategory();
-}
-
-void SceneMeshInspector::BuildAdvancedParametersCategory(const std::string& filterText, SceneMeshView& mesh) noexcept
-{
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Advanced", "visible visibility hidden"))
-	{
-		return;
-	}
-
-	if (!UiUtil::BeginDetailsCategory("Advanced", false))
-	{
-		return;
-	}
-
-	constexpr bool kDefaultVisible = true;
-	bool visible = mesh.IsVisible();
-	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
-	{
-		mesh.SetVisible(visible);
-	}
-
-	UiUtil::EndDetailsCategory();
-}
-
-void SceneMeshInspector::BuildMaterialsCategory(const std::string& filterText, const SceneMeshView& mesh) noexcept
-{
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Materials", "element material slot surface"))
-	{
-		return;
-	}
-
-	if (!UiUtil::BeginDetailsCategory("Materials"))
-	{
-		return;
-	}
-
-	char buffer[64] = {};
-	const MaterialHandle materialHandle = mesh.GetMaterialHandle();
-	std::snprintf(buffer, sizeof(buffer), "Material %u", materialHandle.IsValid() ? materialHandle.GetIndex() : 0u);
+	std::snprintf(buffer, sizeof(buffer), "Material %u", mesh.Material.IsValid() ? mesh.Material.GetIndex() : 0u);
 	UiUtil::DrawDetailsAssetRow("Element 0", UiUtil::EditorIcon::Material, buffer, "Material slot");
 	UiUtil::EndDetailsCategory();
 }

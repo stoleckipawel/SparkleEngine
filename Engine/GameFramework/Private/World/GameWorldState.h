@@ -6,11 +6,8 @@
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "GameFramework/Public/Scene/Camera/CameraMovementSettings.h"
-#include "GameFramework/Public/Scene/Camera/CameraSnapshot.h"
 #include "GameFramework/Public/Scene/Camera/SceneCameraEntry.h"
-#include "GameFramework/Public/Scene/Lighting/LightingSnapshot.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
-#include "GameFramework/Public/Scene/Meshes/MeshSnapshot.h"
 #include "GameFramework/Public/Scene/Transform.h"
 #include "GameFramework/Public/World/SkyEnvironment.h"
 #include "GameFramework/Public/World/WorldReadView.h"
@@ -33,7 +30,12 @@ class TaskExecutor;
 
 namespace ECS
 {
-	class GameWorldSystemRun;
+	class RenderInputExtractor;
+	class SimulationSystemExecution;
+	class AnimationSystemExecution;
+	class TransformSystemExecution;
+	class MeshExtractionSystemExecution;
+	class SystemChangeCommitter;
 
 	class GameWorldState final
 	{
@@ -59,7 +61,6 @@ namespace ECS
 		Transform ReadTransform(EntityId entity) const noexcept;
 		bool WriteVisibility(EntityId entity, bool visible) noexcept;
 		bool ReadVisibility(EntityId entity) const noexcept;
-		CameraSnapshot CaptureCamera(EntityId entity) const noexcept;
 
 		EntityId AddMesh(SceneMeshInstanceData&& instance);
 		std::size_t GetMeshCount() const noexcept;
@@ -71,9 +72,16 @@ namespace ECS
 		Assets::CookedAssetId ReadMeshAssetId(EntityId entity) const noexcept;
 		Assets::CookedAssetId ReadSkeletonAssetId(EntityId entity) const noexcept;
 		std::uint32_t ReadMeshSourceNodeIndex(EntityId entity) const noexcept;
-		void AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& groups);
+		void AppendMeshInstanceGroups(std::vector<SceneMeshInstanceGroupData>&& groups);
 		std::size_t GetMeshInstanceGroupCount() const noexcept { return m_meshInstanceGroups.size(); }
-		MeshSnapshot CaptureMeshes() const;
+		std::span<const WorldExtractionStorage::MeshSlot> GetExtractedMeshes() const noexcept
+		{
+			return m_extraction.GetExtractedMeshes();
+		}
+		std::span<const SceneMeshInstanceGroupData> GetExtractedMeshGroups() const noexcept
+		{
+			return m_extraction.GetMeshGroups();
+		}
 
 		EntityId AddLight(SceneLightDesc&& desc);
 		std::size_t GetLightCount() const noexcept;
@@ -81,7 +89,6 @@ namespace ECS
 		std::optional<SceneLightDesc> ReadLight(EntityId entity) const;
 		bool WriteLight(EntityId entity, SceneLightDesc&& desc);
 		std::vector<SceneLightDesc> CaptureLightsToDesc() const;
-		LightingSnapshot CaptureLighting() const;
 
 		void AppendAnimationClips(
 		    std::vector<AnimationClipResource>&& clips,
@@ -107,7 +114,12 @@ namespace ECS
 		WorldChangeBatch ReadChanges(WorldSequence acknowledgedSequence) const;
 
 	  private:
-		friend class GameWorldSystemRun;
+		friend class RenderInputExtractor;
+		friend class SimulationSystemExecution;
+		friend class AnimationSystemExecution;
+		friend class TransformSystemExecution;
+		friend class MeshExtractionSystemExecution;
+		friend class SystemChangeCommitter;
 		friend bool ExecuteGameWorldSystems(
 		    GameWorldState&,
 		    GameWorldResourceStores&,
@@ -152,7 +164,7 @@ namespace ECS
 		WorldExtractionStorage m_extraction;
 		SystemExecutionArena m_systemArena;
 		CompiledGameSystemGraph m_systemGraph;
-		std::vector<MeshInstanceGroupSnapshot> m_meshInstanceGroups;
+		std::vector<SceneMeshInstanceGroupData> m_meshInstanceGroups;
 		std::optional<SkyEnvironment> m_skyEnvironment;
 		std::vector<EntityId> m_dirtyTransforms;
 		std::vector<WorldChange> m_pendingChanges;

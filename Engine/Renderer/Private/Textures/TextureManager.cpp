@@ -158,25 +158,25 @@ void TextureManager::LoadDefaults(RenderCommandList& commandList, std::vector<Rh
 }
 
 std::vector<RhiResourceHandle> TextureManager::LoadSceneTextures(
-	const TextureSnapshot& textureSnapshot,
+	const RenderTextureTable& textures,
 	RenderCommandList& commandList)
 {
 	std::vector<RhiResourceHandle> uploadedResources;
 	LoadDefaults(commandList, uploadedResources);
-	for (const std::filesystem::path& texturePath : textureSnapshot.texturePaths)
+	for (const std::filesystem::path& texturePath : textures.Paths)
 	{
 		LoadFromPath(texturePath, commandList, uploadedResources);
 	}
 	return uploadedResources;
 }
 
-bool TextureManager::HasPendingSceneTextureUploads(const TextureSnapshot& textureSnapshot) const noexcept
+bool TextureManager::HasPendingSceneTextureUploads(const RenderTextureTable& textures) const noexcept
 {
 	if (!m_defaultsLoaded)
 	{
 		return true;
 	}
-	for (const std::filesystem::path& texturePath : textureSnapshot.texturePaths)
+	for (const std::filesystem::path& texturePath : textures.Paths)
 	{
 		const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texturePath);
 		if (resolved && !m_pathTextures.contains(resolved->CacheKey))

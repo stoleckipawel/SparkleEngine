@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Assets/SceneAssetPayload.h"
-#include "Scene/Meshes/MeshSnapshot.h"
+#include "Scene/Meshes/MeshInstanceGroup.h"
 #include "World/SceneMeshInstanceData.h"
 
 #include <vector>
@@ -17,7 +17,7 @@ namespace SceneAssetMeshInstanceBuilder
 	    SceneMeshInstanceGroupIndex groupBaseIndex,
 	    std::vector<ECS::SceneMeshInstanceData>& outInstances);
 
-	std::vector<MeshInstanceGroupSnapshot> BuildGroups(
+	std::vector<SceneMeshInstanceGroupData> BuildGroups(
 	    const SceneAssetPayload& payload,
 	    MaterialHandle materialBaseHandle,
 	    SceneMeshInstanceIndex meshBaseIndex);

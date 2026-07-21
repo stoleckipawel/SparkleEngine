@@ -6,25 +6,25 @@ using namespace DirectX;
 
 RenderCamera::RenderCamera() noexcept
 {
-	RebuildMatrices(m_snapshot);
+	RebuildMatrices(m_camera);
 }
 
-void RenderCamera::Update(const CameraSnapshot& snapshot) noexcept
+void RenderCamera::Update(const RenderCameraData& camera) noexcept
 {
-	RebuildMatrices(snapshot);
+	RebuildMatrices(camera);
 }
 
-void RenderCamera::ForceUpdate(const CameraSnapshot& snapshot) noexcept
+void RenderCamera::ForceUpdate(const RenderCameraData& camera) noexcept
 {
-	RebuildMatrices(snapshot);
+	RebuildMatrices(camera);
 }
 
-void RenderCamera::RebuildMatrices(const CameraSnapshot& snapshot) noexcept
+void RenderCamera::RebuildMatrices(const RenderCameraData& camera) noexcept
 {
-	m_snapshot = snapshot;
+	m_camera = camera;
 
-	const XMFLOAT3 position = m_snapshot.position;
-	const XMFLOAT3& direction = m_snapshot.direction;
+	const XMFLOAT3 position = m_camera.Position;
+	const XMFLOAT3& direction = m_camera.Direction;
 
 	const XMVECTOR positionVec = XMLoadFloat3(&position);
 	const XMVECTOR directionVec = XMLoadFloat3(&direction);
@@ -35,10 +35,10 @@ void RenderCamera::RebuildMatrices(const CameraSnapshot& snapshot) noexcept
 	const XMMATRIX view = XMMatrixLookAtLH(positionVec, targetVec, worldUp);
 	XMStoreFloat4x4(&m_viewMatrix, view);
 
-	const float fovRadians = XMConvertToRadians(m_snapshot.fovYDegrees);
-	const float aspect = m_snapshot.aspectRatio;
-	const float nearZ = m_snapshot.nearZ;
-	const float farZ = m_snapshot.farZ;
+	const float fovRadians = XMConvertToRadians(m_camera.FovYDegrees);
+	const float aspect = m_camera.AspectRatio;
+	const float nearZ = m_camera.NearZ;
+	const float farZ = m_camera.FarZ;
 
 	const XMMATRIX proj = DepthConvention::CreatePerspectiveFovLH(fovRadians, aspect, nearZ, farZ);
 	XMStoreFloat4x4(&m_projectionMatrix, proj);
@@ -76,10 +76,10 @@ PerViewCameraConstantBufferData RenderCamera::GetCameraConstantBufferData() cons
 	XMStoreFloat4x4(&data.InvViewMTX, invView);
 	XMStoreFloat4x4(&data.InvProjectionMTX, invProjection);
 
-	data.Position = m_snapshot.position;
-	data.Direction = m_snapshot.direction;
-	data.NearZ = m_snapshot.nearZ;
-	data.FarZ = m_snapshot.farZ;
+	data.Position = m_camera.Position;
+	data.Direction = m_camera.Direction;
+	data.NearZ = m_camera.NearZ;
+	data.FarZ = m_camera.FarZ;
 
 	return data;
 }

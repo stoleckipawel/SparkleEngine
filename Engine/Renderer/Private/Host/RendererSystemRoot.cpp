@@ -7,7 +7,6 @@
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Host/RendererBackendSystem.h"
-#include "Level/LevelManager.h"
 #include "Meshes/GPUMeshCache.h"
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
@@ -17,19 +16,17 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "RHI/Public/CVars/RHICVars.h"
-#include "World/GameWorld.h"
+#include "SceneData/RenderWorld.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
-#include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
-RendererSystemRoot::RendererSystemRoot(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept :
-    m_timer(&timer), m_gameWorld(&gameWorld), m_window(&window)
+RendererSystemRoot::RendererSystemRoot(Timer& timer, Window& window) noexcept : m_timer(&timer), m_window(&window)
 {
 	InitializeCoreSystems();
-	InitializeSceneSystems(levelManager);
+	InitializeSceneSystems();
 }
 
 RendererSystemRoot::~RendererSystemRoot() noexcept
@@ -82,12 +79,7 @@ std::uint64_t RendererSystemRoot::GetShaderPackageGeneration() const noexcept
 
 MeshDiagnosticsSnapshot RendererSystemRoot::CaptureMeshDiagnostics() const
 {
-	if (m_gameWorld == nullptr)
-	{
-		return MeshDiagnosticsSnapshot{};
-	}
-
-	return MeshDiagnosticsCollector::Capture(m_gameWorld->GetMeshes(), m_gpuMeshCache.get());
+	return MeshDiagnosticsCollector::Capture(*m_renderWorld, m_gpuMeshCache.get());
 }
 
 TextureDiagnosticsSnapshot RendererSystemRoot::CaptureTextureDiagnostics() const
@@ -143,7 +135,7 @@ void RendererSystemRoot::InitializeCoreSystems() noexcept
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);
 }
 
-void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noexcept
+void RendererSystemRoot::InitializeSceneSystems() noexcept
 {
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
 	m_textureManager = std::make_unique<TextureManager>(
@@ -156,14 +148,10 @@ void RendererSystemRoot::InitializeSceneSystems(LevelManager& levelManager) noex
 	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
 
 	m_renderCamera = std::make_unique<RenderCamera>();
+	m_renderWorld = std::make_unique<RenderWorld>();
+}
 
-	m_sceneRenderStateCoordinator = std::make_unique<SceneRenderStateCoordinator>(
-	    levelManager.GetLevelChangeEvents(),
-	    *m_gameWorld,
-	    GetBackend(),
-	    *m_gpuMeshCache,
-	    *m_textureManager,
-	    *m_renderCamera,
-	    *m_materialCacheManager,
-	    *m_renderRayTracingScene);
+MeshPreviewGeometry RendererSystemRoot::CaptureMeshPreview(std::uintptr_t meshRuntimeId) const
+{
+	return MeshDiagnosticsCollector::CapturePreview(*m_renderWorld, meshRuntimeId);
 }

@@ -2,155 +2,98 @@
 #include "Panels/SceneCameraInspector.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "World/GameWorld.h"
-#include "Scene/Camera/SceneCameraView.h"
+#include "Scene/Transactions/EditorTransactionManager.h"
 #include "Util/UiUtil.h"
+#include "World/WorldReadView.h"
 
 #include <cstdio>
 
-void SceneCameraInspector::Build(GameWorld& gameWorld, const std::string& filterText) noexcept
+namespace
 {
-	SceneCameraView sceneCamera = gameWorld.GetCameras().GetActiveCamera();
-	if (!sceneCamera.IsValid())
+	void Submit(EditorTransactionManager& transactions, std::uint64_t generation, WorldEditPayload after, WorldEditPayload before,
+	            const char* key)
 	{
-		return;
+		(void) transactions.Execute({0, std::move(after)}, {0, std::move(before)}, generation, key);
 	}
-	BuildTransformCategory(filterText, sceneCamera);
-	BuildCameraCategory(filterText, sceneCamera);
-	BuildMovementCategory(filterText, sceneCamera);
-	BuildAdvancedParametersCategory(filterText, sceneCamera);
 }
 
-void SceneCameraInspector::BuildTransformCategory(const std::string& filterText, SceneCameraView sceneCamera) noexcept
+void SceneCameraInspector::Build(const WorldCameraReadData& camera, EditorTransactionManager& transactions,
+                                 std::uint64_t generation, const std::string& filter) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Transform", "location rotation scale position"))
-	{
-		return;
-	}
+	BuildTransformCategory(filter, camera, transactions, generation);
+	BuildCameraCategory(filter, camera, transactions, generation);
+	BuildMovementCategory(filter, camera, transactions, generation);
+	BuildAdvancedParametersCategory(filter, camera, transactions, generation);
+}
 
-	if (!UiUtil::BeginDetailsCategory("Transform"))
+void SceneCameraInspector::BuildTransformCategory(const std::string& filter, const WorldCameraReadData& camera,
+                                                   EditorTransactionManager& transactions, std::uint64_t generation) noexcept
+{
+	if (!UiUtil::MatchesDetailsFilter(filter, "Transform", "location rotation scale position") || !UiUtil::BeginDetailsCategory("Transform")) return;
+	Transform after = camera.LocalTransform;
+	bool changed = false;
+	auto position = after.GetTranslation();
+	float p[3] = {position.x, position.y, position.z};
+	const float defaultP[3] = {0.0f, 0.0f, -4.0f};
+	if (UiUtil::EditDetailsFloat3("Location", p, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f", defaultP))
 	{
-		return;
+		after.SetTranslation({p[0], p[1], p[2]}); changed = true;
 	}
-
-	Transform transform = sceneCamera.GetTransform();
-	DirectX::XMFLOAT3 position = transform.GetTranslation();
-	float positionValues[3] = {position.x, position.y, position.z};
-	const float defaultPosition[3] = {0.0f, 0.0f, -4.0f};
-	if (UiUtil::EditDetailsFloat3("Location", positionValues, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f", defaultPosition))
+	auto degrees = MathUtils::RadiansToDegrees(after.GetRotationEuler());
+	float r[3] = {degrees.x, degrees.y, degrees.z};
+	const float defaultR[3] = {};
+	if (UiUtil::EditDetailsFloat3("Rotation", r, 0.1f, -360.0f, 360.0f, "%.2f", defaultR))
 	{
-		transform.SetTranslation({positionValues[0], positionValues[1], positionValues[2]});
-		sceneCamera.SetTransform(transform);
+		after.SetRotationEuler(MathUtils::DegreesToRadians(DirectX::XMFLOAT3{r[0], r[1], r[2]})); changed = true;
 	}
-
-	DirectX::XMFLOAT3 rotationEuler = transform.GetRotationEuler();
-	const DirectX::XMFLOAT3 rotationDegrees = MathUtils::RadiansToDegrees(rotationEuler);
-	float rotationValues[3] = {rotationDegrees.x, rotationDegrees.y, rotationDegrees.z};
-	const float defaultRotation[3] = {0.0f, 0.0f, 0.0f};
-	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f", defaultRotation))
+	auto scale = after.GetScale();
+	float s[3] = {scale.x, scale.y, scale.z};
+	const float defaultS[3] = {1.0f, 1.0f, 1.0f};
+	if (UiUtil::EditDetailsFloat3("Scale", s, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f", defaultS))
 	{
-		transform.SetRotationEuler(
-		    MathUtils::DegreesToRadians(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]}));
-		sceneCamera.SetTransform(transform);
+		after.SetScale({s[0], s[1], s[2]}); changed = true;
 	}
-
-	DirectX::XMFLOAT3 scale = transform.GetScale();
-	float scaleValues[3] = {scale.x, scale.y, scale.z};
-	const float defaultScale[3] = {1.0f, 1.0f, 1.0f};
-	if (UiUtil::EditDetailsFloat3("Scale", scaleValues, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f", defaultScale))
-	{
-		transform.SetScale({scaleValues[0], scaleValues[1], scaleValues[2]});
-		sceneCamera.SetTransform(transform);
-	}
-
+	if (changed) Submit(transactions, generation, SetLocalTransformCommand{camera.Entity, after},
+	                    SetLocalTransformCommand{camera.Entity, camera.LocalTransform}, "camera-transform");
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneCameraInspector::BuildCameraCategory(const std::string& filterText, SceneCameraView sceneCamera) noexcept
+void SceneCameraInspector::BuildCameraCategory(const std::string& filter, const WorldCameraReadData& camera,
+                                                EditorTransactionManager& transactions, std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Camera", "field of view near clip far clip aspect ratio"))
-	{
-		return;
-	}
-
-	if (!UiUtil::BeginDetailsCategory("Camera"))
-	{
-		return;
-	}
-
-	char buffer[64] = {};
-	CameraDesc desc = sceneCamera.GetDesc();
-	float fovYDegrees = desc.fovYDegrees;
-	constexpr float kDefaultFovYDegrees = 60.0f;
-	if (UiUtil::EditDetailsFloat("Field Of View", fovYDegrees, 0.1f, 1.0f, 179.0f, "%.1f", &kDefaultFovYDegrees))
-	{
-		desc.fovYDegrees = fovYDegrees;
-		sceneCamera.SetDesc(desc);
-	}
-
-	float nearZ = desc.nearZ;
-	constexpr float kDefaultNearZ = 0.1f;
-	if (UiUtil::EditDetailsFloat("Near Clip", nearZ, 0.01f, 0.001f, desc.farZ, "%.3f", &kDefaultNearZ))
-	{
-		desc.nearZ = nearZ;
-		sceneCamera.SetDesc(desc);
-	}
-
-	float farZ = desc.farZ;
-	constexpr float kDefaultFarZ = 1000.0f;
-	if (UiUtil::EditDetailsFloat("Far Clip", farZ, 1.0f, desc.nearZ, 100000.0f, "%.3f", &kDefaultFarZ))
-	{
-		desc.farZ = farZ;
-		sceneCamera.SetDesc(desc);
-	}
-
-	std::snprintf(buffer, sizeof(buffer), "%.3f", sceneCamera.GetAspectRatio());
+	if (!UiUtil::MatchesDetailsFilter(filter, "Camera", "field of view near clip far clip aspect ratio") || !UiUtil::BeginDetailsCategory("Camera")) return;
+	CameraDesc after = camera.Description;
+	bool changed = false;
+	const float defaultFov = 60.0f, defaultNear = 0.1f, defaultFar = 1000.0f;
+	changed |= UiUtil::EditDetailsFloat("Field Of View", after.fovYDegrees, 0.1f, 1.0f, 179.0f, "%.1f", &defaultFov);
+	changed |= UiUtil::EditDetailsFloat("Near Clip", after.nearZ, 0.01f, 0.001f, after.farZ, "%.3f", &defaultNear);
+	changed |= UiUtil::EditDetailsFloat("Far Clip", after.farZ, 1.0f, after.nearZ, 100000.0f, "%.3f", &defaultFar);
+	char buffer[64] = {}; std::snprintf(buffer, sizeof(buffer), "%.3f", camera.AspectRatio);
 	UiUtil::DrawDetailsValueRow("Aspect Ratio", buffer);
+	if (changed) Submit(transactions, generation, SetCameraDescriptionCommand{camera.Entity, after},
+	                    SetCameraDescriptionCommand{camera.Entity, camera.Description}, "camera-description");
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneCameraInspector::BuildMovementCategory(const std::string& filterText, SceneCameraView sceneCamera) noexcept
+void SceneCameraInspector::BuildMovementCategory(const std::string& filter, const WorldCameraReadData& camera,
+                                                  EditorTransactionManager& transactions, std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Movement", "move speed navigation"))
-	{
-		return;
-	}
-
-	if (!UiUtil::BeginDetailsCategory("Movement"))
-	{
-		return;
-	}
-
-	CameraMovementSettings settings = sceneCamera.GetMovementSettings();
-	float moveSpeed = settings.moveSpeed;
-	constexpr float kDefaultMoveSpeed = 0.10f;
-	if (UiUtil::EditDetailsFloat("Move Speed", moveSpeed, 0.01f, 0.0001f, 10.0f, "%.4f", &kDefaultMoveSpeed))
-	{
-		settings.moveSpeed = moveSpeed;
-		sceneCamera.SetMovementSettings(settings);
-	}
-
+	if (!UiUtil::MatchesDetailsFilter(filter, "Movement", "move speed navigation") || !UiUtil::BeginDetailsCategory("Movement")) return;
+	CameraMovementSettings after = camera.Movement;
+	const float defaultSpeed = 0.10f;
+	if (UiUtil::EditDetailsFloat("Move Speed", after.moveSpeed, 0.01f, 0.0001f, 10.0f, "%.4f", &defaultSpeed))
+		Submit(transactions, generation, SetCameraMovementCommand{camera.Entity, after},
+		       SetCameraMovementCommand{camera.Entity, camera.Movement}, "camera-movement");
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneCameraInspector::BuildAdvancedParametersCategory(const std::string& filterText, SceneCameraView sceneCamera) noexcept
+void SceneCameraInspector::BuildAdvancedParametersCategory(const std::string& filter, const WorldCameraReadData& camera,
+                                                            EditorTransactionManager& transactions, std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filterText, "Advanced", "visible visibility hidden"))
-	{
-		return;
-	}
-
-	if (!UiUtil::BeginDetailsCategory("Advanced", false))
-	{
-		return;
-	}
-
-	constexpr bool kDefaultVisible = true;
-	bool visible = sceneCamera.IsVisible();
-	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
-	{
-		sceneCamera.SetVisible(visible);
-	}
-
+	if (!UiUtil::MatchesDetailsFilter(filter, "Advanced", "visible visibility hidden") || !UiUtil::BeginDetailsCategory("Advanced", false)) return;
+	bool visible = camera.Visible; const bool defaultVisible = true;
+	if (UiUtil::EditDetailsCheckbox("Visible", visible, &defaultVisible))
+		Submit(transactions, generation, SetEntityVisibilityCommand{camera.Entity, visible},
+		       SetEntityVisibilityCommand{camera.Entity, camera.Visible}, "camera-visibility");
 	UiUtil::EndDetailsCategory();
 }

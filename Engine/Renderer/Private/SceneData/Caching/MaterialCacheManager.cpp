@@ -3,7 +3,6 @@
 #include "MaterialCacheManager.h"
 
 #include "Scene/Materials/MaterialDesc.h"
-#include "Scene/Materials/MaterialSnapshot.h"
 #include "SceneData/MaterialData.h"
 #include "SceneData/RenderSceneData.h"
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
@@ -26,17 +25,17 @@ MaterialCacheManager::~MaterialCacheManager() noexcept
 	Reset();
 }
 
-void MaterialCacheManager::BuildMaterials(const MaterialSnapshot& materialSnapshot, RenderSceneData& sceneData)
+void MaterialCacheManager::BuildMaterials(const RenderMaterialTable& materials, RenderSceneData& sceneData)
 {
-	const bool shouldUseSceneMaterials = materialSnapshot.HasMaterials();
+	const bool shouldUseSceneMaterials = !materials.Values.empty();
 	const bool materialSetChanged =
 	    shouldUseSceneMaterials
-	        ? (!m_cachedFromSceneMaterials || !MaterialCacheUtils::MaterialSnapshotEquals(m_cachedMaterialSnapshot, materialSnapshot))
+	        ? (!m_cachedFromSceneMaterials || !MaterialCacheUtils::MaterialTableEquals(m_cachedMaterials, materials))
 	        : m_cachedFromSceneMaterials;
 
 	if (!m_materialCacheBuilt || materialSetChanged)
 	{
-		if (!Rebuild(materialSnapshot))
+		if (!Rebuild(materials))
 		{
 			sceneData.materials.clear();
 			sceneData.materialTextureTable = {};
@@ -48,7 +47,7 @@ void MaterialCacheManager::BuildMaterials(const MaterialSnapshot& materialSnapsh
 	PublishMaterialTextureTable(sceneData);
 }
 
-bool MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
+bool MaterialCacheManager::Rebuild(const RenderMaterialTable& materials)
 {
 	if (!m_textureManager || !m_renderHardwareInterface)
 	{
@@ -127,16 +126,16 @@ bool MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		return true;
 	};
 
-	if (materialSnapshot.HasMaterials())
+	if (!materials.Values.empty())
 	{
-		rebuiltMaterialData.reserve(materialSnapshot.materialDescs.size());
-		rebuiltRasterTextureTables.reserve(materialSnapshot.materialDescs.size());
+		rebuiltMaterialData.reserve(materials.Values.size());
+		rebuiltRasterTextureTables.reserve(materials.Values.size());
 
 		for (std::uint32_t materialIndex = 0u;
-		     materialIndex < static_cast<std::uint32_t>(materialSnapshot.materialDescs.size());
+		     materialIndex < static_cast<std::uint32_t>(materials.Values.size());
 		     ++materialIndex)
 		{
-			if (!buildMaterialTable(materialSnapshot.materialDescs[materialIndex], materialIndex))
+			if (!buildMaterialTable(materials.Values[materialIndex], materialIndex))
 			{
 				return false;
 			}
@@ -165,14 +164,14 @@ bool MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		    rebuiltSceneTableResult.FailureReason);
 	}
 
-	m_cachedMaterialSnapshot = materialSnapshot;
+	m_cachedMaterials = materials;
 	m_cachedMaterialData = std::move(rebuiltMaterialData);
 	// Replacing the owning binding sets releases the old descriptor tables through the RHI's per-frame retirement path.
 	m_materialTextureBindingSets = std::move(rebuiltRasterTextureTables);
 	m_materialTextureTable = std::move(rebuiltSceneTextureTable);
 	m_generation = nextGeneration;
 	m_materialCacheBuilt = true;
-	m_cachedFromSceneMaterials = materialSnapshot.HasMaterials();
+	m_cachedFromSceneMaterials = !materials.Values.empty();
 	return true;
 }
 
@@ -181,7 +180,7 @@ void MaterialCacheManager::Reset() noexcept
 	m_materialTextureBindingSets.clear();
 	m_materialTextureTable.Reset();
 	m_cachedMaterialData.clear();
-	m_cachedMaterialSnapshot.Reset();
+	m_cachedMaterials = {};
 	m_materialCacheBuilt = false;
 	m_cachedFromSceneMaterials = false;
 }

@@ -10,9 +10,9 @@
 class RendererState final
 {
   public:
-	RendererState(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept
+	RendererState(Timer& timer, Window& window) noexcept
 	{
-		m_systems = std::make_unique<RendererSystemRoot>(timer, gameWorld, window, levelManager);
+		m_systems = std::make_unique<RendererSystemRoot>(timer, window);
 		m_pipeline = std::make_unique<FramePipeline>(*m_systems);
 		m_systems->PostLoad();
 	}
@@ -49,9 +49,9 @@ class RendererState final
 	std::unique_ptr<FramePipeline> m_pipeline;
 };
 
-Renderer::Renderer(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept
+Renderer::Renderer(Timer& timer, Window& window) noexcept
 {
-	m_state = std::make_unique<RendererState>(timer, gameWorld, window, levelManager);
+	m_state = std::make_unique<RendererState>(timer, window);
 }
 
 Renderer::~Renderer() noexcept = default;
@@ -109,6 +109,16 @@ void Renderer::RecordHostFrame() noexcept
 void Renderer::SubmitHostFrame() noexcept
 {
 	m_state->Pipeline().SubmitHostFrame();
+}
+
+MeshPreviewGeometry Renderer::CaptureMeshPreview(std::uintptr_t meshRuntimeId) const
+{
+	return m_state->Systems().CaptureMeshPreview(meshRuntimeId);
+}
+
+void Renderer::SubmitRenderInput(RenderInputFrame input) noexcept
+{
+	m_state->Pipeline().SubmitRenderInput(std::move(input));
 }
 
 void Renderer::WaitForIdle() noexcept

@@ -9,6 +9,13 @@
 #include <cctype>
 #include <string_view>
 #include <system_error>
+#include <utility>
+
+#if defined(_WIN32)
+	#define WIN32_LEAN_AND_MEAN
+	#define NOMINMAX
+	#include <Windows.h>
+#endif
 
 namespace Filesystem::Private
 {
@@ -158,5 +165,151 @@ namespace Filesystem::Private
 		}
 
 		return std::nullopt;
+	}
+}
+
+namespace Filesystem
+{
+	std::filesystem::path GetExecutablePath()
+	{
+#if defined(_WIN32)
+		wchar_t buffer[MAX_PATH];
+		const DWORD length = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
+		if (length > 0 && length < MAX_PATH)
+		{
+			return std::filesystem::path(buffer);
+		}
+#endif
+		return {};
+	}
+
+	std::filesystem::path GetExecutableDirectory()
+	{
+		const std::filesystem::path executablePath = GetExecutablePath();
+		return executablePath.empty() ? std::filesystem::current_path() : executablePath.parent_path();
+	}
+
+	std::optional<std::filesystem::path> FindAncestorWithMarker(
+	    const std::filesystem::path& startDirectory,
+	    std::string_view markerFileName,
+	    std::uint32_t maxDepth)
+	{
+		if (startDirectory.empty() || markerFileName.empty())
+		{
+			return std::nullopt;
+		}
+
+		std::error_code errorCode;
+		std::filesystem::path currentDirectory = std::filesystem::weakly_canonical(startDirectory, errorCode);
+		if (errorCode)
+		{
+			currentDirectory = startDirectory;
+		}
+
+		for (std::uint32_t depth = 0; depth < maxDepth && !currentDirectory.empty(); ++depth)
+		{
+			if (std::filesystem::exists(currentDirectory / markerFileName, errorCode))
+			{
+				return currentDirectory;
+			}
+
+			std::filesystem::path parentDirectory = currentDirectory.parent_path();
+			if (parentDirectory == currentDirectory)
+			{
+				break;
+			}
+			currentDirectory = std::move(parentDirectory);
+		}
+		return std::nullopt;
+	}
+
+	std::optional<std::filesystem::path> DiscoverWorkspaceRoot()
+	{
+		if (const auto executableRoot = FindAncestorWithMarker(GetExecutableDirectory(), kWorkspaceMarker))
+		{
+			return Paths::Normalize(*executableRoot);
+		}
+
+		std::error_code errorCode;
+		if (const auto workingRoot = FindAncestorWithMarker(std::filesystem::current_path(errorCode), kWorkspaceMarker);
+		    workingRoot && !errorCode)
+		{
+			return Paths::Normalize(*workingRoot);
+		}
+		return std::nullopt;
+	}
+
+	std::optional<std::filesystem::path> DiscoverEngineRoot()
+	{
+		if (const auto executableRoot = FindAncestorWithMarker(GetExecutableDirectory(), kEngineMarker))
+		{
+			return Paths::Normalize(*executableRoot);
+		}
+
+		std::error_code errorCode;
+		if (const auto workingRoot = FindAncestorWithMarker(std::filesystem::current_path(errorCode), kEngineMarker);
+		    workingRoot && !errorCode)
+		{
+			return Paths::Normalize(*workingRoot);
+		}
+
+		if (const auto workspaceRoot = DiscoverWorkspaceRoot())
+		{
+			const std::filesystem::path enginePath = *workspaceRoot / "engine";
+			if (std::filesystem::exists(enginePath / kEngineMarker, errorCode))
+			{
+				return Paths::Normalize(enginePath);
+			}
+		}
+		return std::nullopt;
+	}
+
+	std::optional<std::filesystem::path> DiscoverProjectRoot()
+	{
+		if (const auto executableRoot = FindAncestorWithMarker(GetExecutableDirectory(), kProjectMarker))
+		{
+			return Paths::Normalize(*executableRoot);
+		}
+
+		std::error_code errorCode;
+		if (const auto workingRoot = FindAncestorWithMarker(std::filesystem::current_path(errorCode), kProjectMarker);
+		    workingRoot && !errorCode)
+		{
+			return Paths::Normalize(*workingRoot);
+		}
+
+		if (const auto workspaceProjectRoot = Private::DiscoverWorkspaceProjectRoot())
+		{
+			return Paths::Normalize(*workspaceProjectRoot);
+		}
+		return std::nullopt;
+	}
+
+	std::filesystem::path ResolveWorkspaceRootPath()
+	{
+		if (const auto workspaceRoot = DiscoverWorkspaceRoot())
+		{
+			return Paths::Normalize(*workspaceRoot);
+		}
+		if (const auto engineRoot = DiscoverEngineRoot())
+		{
+			return Paths::Normalize(engineRoot->parent_path());
+		}
+
+		std::error_code errorCode;
+		const std::filesystem::path workingDirectory = std::filesystem::current_path(errorCode);
+		return !workingDirectory.empty() && !errorCode ?
+		           Paths::Normalize(workingDirectory) :
+		           Paths::Normalize(GetExecutableDirectory());
+	}
+
+	std::filesystem::path ResolveBuildOutputRootPath()
+	{
+		return Paths::Normalize(ResolveWorkspaceRootPath() / "build");
+	}
+
+	std::filesystem::path ResolveLogsRootPath()
+	{
+		return Paths::Normalize(ResolveWorkspaceRootPath() / "logs");
 	}
 }

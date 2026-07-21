@@ -2,6 +2,7 @@
 
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
+#include "Diagnostics/MeshPreviewGeometry.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Shaders/CookedShaderReloadResult.h"
 
@@ -9,9 +10,7 @@
 #include <memory>
 
 class FrameExecutionDiagnostics;
-class GameWorld;
 class GPUMeshCache;
-class LevelManager;
 class MaterialCacheManager;
 class PerViewDataBuilder;
 class PipelineStateManager;
@@ -24,7 +23,7 @@ class RendererImageProviderStack;
 class RenderRayTracingScene;
 class RenderSceneDataBuilder;
 class RhiImGuiRenderer;
-class SceneRenderStateCoordinator;
+class RenderWorld;
 class TemporalDataBuilder;
 class TextureManager;
 class Timer;
@@ -33,7 +32,7 @@ class Window;
 class RendererSystemRoot final
 {
   public:
-	RendererSystemRoot(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept;
+	RendererSystemRoot(Timer& timer, Window& window) noexcept;
 	~RendererSystemRoot() noexcept;
 
 	RendererSystemRoot(const RendererSystemRoot&) = delete;
@@ -42,8 +41,6 @@ class RendererSystemRoot final
 	RendererSystemRoot& operator=(RendererSystemRoot&&) = delete;
 
 	Timer& GetTimer() noexcept { return *m_timer; }
-	GameWorld& GetGameWorld() noexcept { return *m_gameWorld; }
-	const GameWorld& GetGameWorld() const noexcept { return *m_gameWorld; }
 	Window& GetWindow() noexcept { return *m_window; }
 	const Window& GetWindow() const noexcept { return *m_window; }
 
@@ -65,13 +62,15 @@ class RendererSystemRoot final
 	PerViewDataBuilder& GetPerViewDataBuilder() noexcept { return *m_perViewDataBuilder; }
 	TemporalDataBuilder& GetTemporalDataBuilder() noexcept { return *m_temporalDataBuilder; }
 	RenderCamera& GetRenderCamera() noexcept { return *m_renderCamera; }
-	SceneRenderStateCoordinator* GetSceneRenderStateCoordinator() noexcept { return m_sceneRenderStateCoordinator.get(); }
+	RenderWorld& GetRenderWorld() noexcept { return *m_renderWorld; }
+	const RenderWorld& GetRenderWorld() const noexcept { return *m_renderWorld; }
 	RendererImageProviderStack& GetImageProviders() noexcept { return *m_imageProviders; }
 	const RendererImageProviderStack& GetImageProviders() const noexcept { return *m_imageProviders; }
 
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
+	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	void TickDiagnostics(std::uint64_t frameIndex) noexcept;
@@ -80,10 +79,9 @@ class RendererSystemRoot final
 
   private:
 	void InitializeCoreSystems() noexcept;
-	void InitializeSceneSystems(LevelManager& levelManager) noexcept;
+	void InitializeSceneSystems() noexcept;
 
 	Timer* m_timer = nullptr;
-	GameWorld* m_gameWorld = nullptr;
 	Window* m_window = nullptr;
 
 	std::unique_ptr<RendererBackendSystem> m_backend;
@@ -97,6 +95,6 @@ class RendererSystemRoot final
 	std::unique_ptr<PerViewDataBuilder> m_perViewDataBuilder;
 	std::unique_ptr<TemporalDataBuilder> m_temporalDataBuilder;
 	std::unique_ptr<RenderCamera> m_renderCamera;
-	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
+	std::unique_ptr<RenderWorld> m_renderWorld;
 	std::unique_ptr<RendererImageProviderStack> m_imageProviders;
 };

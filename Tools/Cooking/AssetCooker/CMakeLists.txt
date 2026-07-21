@@ -1,8 +1,12 @@
 set(ASSET_COOKER_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Api/AssetCookerService.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/DefaultTextureCookRequestBuilder.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/ImportedSceneCooker.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureRequestPlanBuilder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/AssetCookerDiagnostics.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Discovery/AssetCookerDiscovery.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerDispatcher.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerStageExecutor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerToolProcess.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Inspection/AssetCookerSourceInspection.cpp
 )
@@ -10,9 +14,13 @@ set(ASSET_COOKER_CORE_SOURCES
 set(ASSET_COOKER_CORE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Api/AssetCookerService.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Api/AssetCookerTypes.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/DefaultTextureCookRequestBuilder.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/ImportedSceneCooker.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureRequestPlanBuilder.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/AssetCookerDiagnostics.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Discovery/AssetCookerDiscovery.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerDispatcher.h
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerStageExecutor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerToolProcess.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Inspection/AssetCookerSourceInspection.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Planning/ProjectCookPlan.h

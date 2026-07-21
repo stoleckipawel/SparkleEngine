@@ -8,7 +8,7 @@
 #include "RHI/Public/Interop/ResourceState.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "ShaderData/PerFrameConstantBufferData.h"
-#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
+#include "Rendering/RenderInputFrame.h"
 #include "Viewport/ViewportContracts.h"
 
 #include <cstdint>
@@ -21,6 +21,7 @@ class FrameExecutionDiagnostics;
 struct FrameContext;
 class FrameGraph;
 class RendererSystemRoot;
+class RenderInputConsumer;
 
 struct FrameResolutionExtents final
 {
@@ -40,6 +41,7 @@ class FramePipeline final
 	FramePipeline& operator=(FramePipeline&&) = delete;
 
 	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept { m_viewportRenderRequest = request; }
+	void SubmitRenderInput(RenderInputFrame input) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }
 
 	void PrepareHostFrame() noexcept;
@@ -86,7 +88,7 @@ class FramePipeline final
 	PerFrameConstantBufferData m_perFrameData = {};
 	std::optional<std::uint64_t> m_previousReferenceLightingHistoryInvalidationHash;
 	std::optional<std::uint64_t> m_previousRestirLightingHistoryInvalidationHash;
-	RenderSceneSnapshot m_sceneSnapshot = {};
+	std::unique_ptr<RenderInputConsumer> m_renderInputConsumer;
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;
 	GBufferMode m_gBufferMode = GBufferMode::Rasterized;

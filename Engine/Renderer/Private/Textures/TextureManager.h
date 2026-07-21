@@ -3,7 +3,7 @@
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "RHI/Public/Resources/RhiResourceHandles.h"
-#include "Scene/Textures/TextureSnapshot.h"
+#include "Rendering/RenderInputFrame.h"
 #include "Textures/RendererTexture.h"
 
 #include <array>
@@ -48,9 +48,9 @@ class TextureManager final
 	TextureManager& operator=(TextureManager&&) = delete;
 
 	std::vector<RhiResourceHandle> LoadSceneTextures(
-	    const TextureSnapshot& textureSnapshot,
+	    const RenderTextureTable& textures,
 	    RenderCommandList& commandList);
-	bool HasPendingSceneTextureUploads(const TextureSnapshot& textureSnapshot) const noexcept;
+	bool HasPendingSceneTextureUploads(const RenderTextureTable& textures) const noexcept;
 
 	void UnloadSceneTextures() noexcept;
 	void UnloadAll() noexcept;

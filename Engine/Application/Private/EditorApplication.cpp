@@ -8,6 +8,8 @@
 #include "Input/InputSystem.h"
 #include "ShaderRecook/ShaderConsoleCommands.h"
 #include "ShaderRecook/ShaderRecookCoordinator.h"
+#include "EditorOperations/EditorOperationService.h"
+#include "World/GameWorld.h"
 
 
 EditorApplication::EditorApplication() = default;
@@ -31,21 +33,33 @@ void EditorApplication::Initialize()
 	}
 
 	m_runtimeApplication->Initialize();
-	if (!m_shaderRecookCoordinator)
+	if (!m_operationService)
 	{
-		m_shaderRecookCoordinator = std::make_unique<ShaderRecookCoordinator>(
+		m_operationService = std::make_unique<EditorOperationService>(
 		    m_runtimeApplication->GetTaskExecutor(), m_runtimeApplication->GetApplicationTaskScope());
 	}
+	if (!m_shaderRecookCoordinator)
+		m_shaderRecookCoordinator = std::make_unique<ShaderRecookCoordinator>(*m_operationService);
 	m_runtimeApplication->GetInputSystem().ClearInputCaptureQuery();
 	m_runtimeApplication->GetInputSystem().BeginInputRoutingFrame(false, false);
 
 	if (!m_ui)
 	{
 		Renderer& renderer = m_runtimeApplication->GetRenderer();
+		GameWorld& world = *m_runtimeApplication->GetGameWorld();
 		m_ui = std::make_unique<UI>(EditorHostServices{
 		    .RuntimeTimer = m_runtimeApplication->GetTimer(),
 		    .Levels = m_runtimeApplication->GetLevelManager(),
-		    .World = m_runtimeApplication->GetGameWorld(),
+		    .AcquireWorldReadView = [&world]() { return world.AcquireReadView(); },
+		    .ReadWorldChanges = [&world](const WorldChangeCursor& cursor) { return world.ReadChanges(cursor); },
+		    .AcknowledgeWorldChanges = [&world](WorldChangeCursor& cursor, WorldSequence sequence) {
+			    return world.AcknowledgeChanges(cursor, sequence);
+		    },
+		    .WorldGeneration = [&world]() noexcept { return world.GetGeneration(); },
+		    .MaterialVariants = [&world]() { return world.CaptureMaterialVariants(); },
+		    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation) {
+			    return world.SubmitEdit(std::move(command), generation);
+		    },
 		    .ImGuiRenderer = renderer.GetImGuiRenderer(),
 		    .HostWindow = m_runtimeApplication->GetWindow(),
 		    .Input = m_runtimeApplication->GetInputSystem()});
@@ -65,7 +79,8 @@ void EditorApplication::Initialize()
 		    .MemoryDiagnostics = [&renderer]()
 		    {
 			    return renderer.CaptureMemoryDiagnostics();
-		    }});
+		    },
+		    .MeshPreview = [&renderer](std::uintptr_t meshRuntimeId) { return renderer.CaptureMeshPreview(meshRuntimeId); }});
 		ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
 	}
 
@@ -133,6 +148,7 @@ void EditorApplication::Shutdown()
 
 	m_ui.reset();
 	m_shaderRecookCoordinator.reset();
+	m_operationService.reset();
 	m_runtimeApplication->Shutdown();
 	m_isEditorSessionActive = false;
 }

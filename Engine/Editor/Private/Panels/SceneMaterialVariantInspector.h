@@ -1,8 +1,11 @@
 #pragma once
 
-class GameWorld;
+#include <cstdint>
+
+class EditorTransactionManager;
+struct WorldMaterialVariantView;
 
 namespace SceneMaterialVariantInspector
 {
-	void Build(GameWorld& gameWorld) noexcept;
+	void Build(const WorldMaterialVariantView&, EditorTransactionManager&, std::uint64_t) noexcept;
 }

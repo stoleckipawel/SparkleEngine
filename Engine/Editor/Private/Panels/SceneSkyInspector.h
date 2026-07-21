@@ -1,11 +1,14 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
+#include <optional>
 
-class GameWorld;
+class EditorTransactionManager;
+struct SkyEnvironment;
 
 class SceneSkyInspector final
 {
   public:
-	static void Build(GameWorld& gameWorld, const std::string& filterText) noexcept;
+	static void Build(const std::optional<SkyEnvironment>&, EditorTransactionManager&, std::uint64_t, const std::string&) noexcept;
 };

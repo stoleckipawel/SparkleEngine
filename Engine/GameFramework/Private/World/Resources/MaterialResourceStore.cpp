@@ -17,6 +17,7 @@ MaterialHandle MaterialResourceStore::Append(std::vector<MaterialDesc>&& descrip
 	m_descriptions.reserve(m_descriptions.size() + descriptions.size());
 	for (MaterialDesc& description : descriptions)
 		m_descriptions.push_back(std::move(description));
+	++m_contentRevision;
 	return base;
 }
 
@@ -26,16 +27,14 @@ MaterialHandle MaterialResourceStore::GetOrCreateDefault()
 	{
 		m_default = MaterialHandle(static_cast<std::uint32_t>(m_descriptions.size()), m_generation);
 		m_descriptions.push_back(CreateDefault());
+		++m_contentRevision;
 	}
 	return m_default;
 }
 
-MaterialSnapshot MaterialResourceStore::CaptureSnapshot() const
+RenderMaterialTable MaterialResourceStore::CaptureRenderTable() const
 {
-	MaterialSnapshot snapshot;
-	snapshot.materialDescs = m_descriptions;
-	snapshot.generation = m_generation;
-	return snapshot;
+	return {.Values = m_descriptions, .Generation = m_generation};
 }
 
 bool MaterialResourceStore::Contains(MaterialHandle handle) const noexcept

@@ -2,7 +2,7 @@
 
 #include "Shaders/ShaderRayTracingMetadataValidation.h"
 
-#include "Shaders/CookedShaderPackageCache.h"
+#include "Shaders/LoadedShaderPackage.h"
 
 #include <algorithm>
 #include <format>

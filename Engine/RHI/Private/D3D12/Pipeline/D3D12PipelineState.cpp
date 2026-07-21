@@ -5,7 +5,7 @@
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Pipeline/D3D12VertexLayout.h"
 #include "Config/DepthConvention.h"
-#include "Shaders/CookedShaderPackageCache.h"
+#include "Shaders/LoadedShaderPackage.h"
 #include "Strings/StringUtils.h"
 
 #include <cstdio>

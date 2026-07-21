@@ -96,7 +96,7 @@ void RuntimeApplication::Initialize()
 	}
 
 	{
-		m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameWorld, *m_window, *m_levelManager);
+		m_renderer = std::make_unique<Renderer>(*m_timer, *m_window);
 	}
 
 	if (m_options.EnableRuntimeConsole)
@@ -143,6 +143,15 @@ void RuntimeApplication::UpdateRuntime() noexcept
 		m_cameraInputIntentCollector->Publish(*m_gameWorld);
 		const float deltaSeconds = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
 		m_gameWorld->Update(deltaSeconds);
+		if (m_renderer && m_window)
+		{
+			RenderFrameMetadata metadata;
+			metadata.FrameId = m_timer->GetFrameCount();
+			metadata.ProviderGeneration = m_renderer->GetShaderPackageGeneration();
+			metadata.RenderWidth = metadata.OutputWidth = m_window->GetWidth();
+			metadata.RenderHeight = metadata.OutputHeight = m_window->GetHeight();
+			m_renderer->SubmitRenderInput(m_gameWorld->ExtractRenderInput(metadata));
+		}
 	}
 }
 

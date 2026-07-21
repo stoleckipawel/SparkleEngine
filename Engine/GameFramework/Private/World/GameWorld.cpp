@@ -6,44 +6,20 @@
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
 #include "World/GameWorldState.h"
+#include "World/Extraction/RenderInputExtractor.h"
+#include "World/Editing/WorldEditCommandQueue.h"
 #include "Level/Loading/SceneLoadPackage.h"
 #include "World/Resources/GameWorldResourceStores.h"
 
-#include <algorithm>
 #include <stdexcept>
 #include <utility>
-
-namespace
-{
-	CameraSnapshot BuildCameraSnapshot(const WorldReadView& readView) noexcept
-	{
-		for (const WorldCameraReadData& camera : readView.GetCameras())
-		{
-			if (!camera.Active)
-			{
-				continue;
-			}
-			return CameraSnapshot{
-			    .position = camera.LocalTransform.GetTranslation(),
-			    .direction = camera.Direction,
-			    .fovYDegrees = camera.Description.fovYDegrees,
-			    .aspectRatio = camera.AspectRatio,
-			    .nearZ = camera.Description.nearZ,
-			    .farZ = camera.Description.farZ};
-		}
-		return {};
-	}
-
-}
 
 GameWorld::GameWorld(TaskExecutor& taskExecutor) :
     m_state(std::make_unique<ECS::GameWorldState>()),
 	m_resources(std::make_unique<GameWorldResourceStores>()),
 	m_taskExecutor(taskExecutor),
-    m_cameras(*this),
-    m_lighting(*this),
-    m_meshes(*this),
-    m_sky(*this)
+	m_editCommands(std::make_unique<WorldEditCommandQueue>()),
+	m_renderInputExtractor(std::make_unique<ECS::RenderInputExtractor>())
 {
 }
 
@@ -53,18 +29,37 @@ void GameWorld::InitializeStagedLevel(const LevelDesc& desc)
 {
 	m_activeLevelName = desc.name;
 	m_activeLevelDesc = desc;
-	m_cameras.Reset(desc.cameraDesc);
-	m_sky.ApplyFromDesc(desc.sky);
-	m_lighting.ApplyFromDesc(desc.lights);
+	if (m_state->GetCameraCount() == 0)
+	{
+		SceneCameraEntry entry;
+		entry.name = "Scene Camera";
+		entry.desc = desc.cameraDesc;
+		m_state->AddCamera(std::move(entry), true);
+	}
+	else
+	{
+		(void) m_state->WriteCameraDesc(m_state->GetActiveCamera(), desc.cameraDesc);
+	}
+	if (desc.sky)
+		m_state->WriteSkyEnvironment(SkyEnvironment{.Description = *desc.sky});
+	else
+		m_state->RemoveSkyEnvironment();
+	for (const SceneLightDesc& light : desc.lights) m_state->AddLight(SceneLightDesc(light));
 }
 
 void GameWorld::Update(float deltaSeconds)
 {
+	m_editCommands->Apply(m_generation, *m_state, *m_resources);
 	if (!m_state->ExecuteSystems(*m_resources, m_taskExecutor, m_cameraInputIntent, deltaSeconds))
 		throw std::runtime_error("Game-system graph execution failed.");
 	m_cameraInputIntent.LookDeltaX = 0.0f;
 	m_cameraInputIntent.LookDeltaY = 0.0f;
 	m_cameraInputIntent.SpeedStepCount = 0.0f;
+}
+
+WorldEditResult GameWorld::SubmitEdit(WorldEditCommand command, std::uint64_t expectedGeneration)
+{
+	return m_editCommands->Submit(std::move(command), expectedGeneration, m_generation, *m_state, *m_resources);
 }
 
 void GameWorld::PublishCameraInputIntent(const CameraInputIntent& intent) noexcept
@@ -108,7 +103,18 @@ bool GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package, std::
 			return false;
 		}
 	}
-	stagedWorld.GetCameras().SetPrimaryCameraActive();
+	bool primaryCameraSet = false;
+	for (std::size_t index = 1; index < stagedWorld.m_state->GetCameraCount(); ++index)
+	{
+		const std::optional<SceneCameraEntry> camera = stagedWorld.m_state->ReadCamera(stagedWorld.m_state->GetCameraEntity(index));
+		if (camera && camera->IsPerspective())
+		{
+			primaryCameraSet = stagedWorld.m_state->SetActiveCamera(stagedWorld.m_state->GetCameraEntity(index));
+			break;
+		}
+	}
+	if (!primaryCameraSet && stagedWorld.m_state->GetCameraCount() != 0)
+		(void) stagedWorld.m_state->SetActiveCamera(stagedWorld.m_state->GetCameraEntity(0));
 	if (!stagedWorld.m_state->PrepareSystemResources(*stagedWorld.m_resources))
 	{
 		errorMessage = "Staged world could not resolve animation targets and output slots.";
@@ -130,31 +136,14 @@ bool GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage&& package, std::
 	return true;
 }
 
+RenderInputFrame GameWorld::ExtractRenderInput(RenderFrameMetadata metadata)
+{
+	return m_renderInputExtractor->Extract(*m_state, *m_resources, AcquireReadView(), m_generation, metadata);
+}
+
 void GameWorld::FinalizeSceneLoadCommit()
 {
 	CommitWorldChanges();
-}
-
-GameWorldSnapshot GameWorld::CaptureSnapshot() const
-{
-	GameWorldSnapshot snapshot;
-	snapshot.camera = BuildCameraSnapshot(AcquireReadView());
-	snapshot.animations = m_state->GetAnimationOutput();
-	snapshot.lighting = m_lighting.CaptureSnapshot();
-	snapshot.sky = m_sky.CaptureSnapshot();
-	const std::optional<SceneSkyDesc> sky = m_sky.GetSky();
-	if (sky && sky->skyTexture.IsValid())
-	{
-		const std::filesystem::path skyTexturePath(sky->skyTexture.texturePath);
-		snapshot.textures = m_resources->Textures.CaptureSnapshot(std::span<const std::filesystem::path>(&skyTexturePath, 1));
-	}
-	else
-	{
-		snapshot.textures = m_resources->Textures.CaptureSnapshot();
-	}
-	snapshot.materials = m_resources->Materials.CaptureSnapshot();
-	snapshot.meshes = m_meshes.CaptureSnapshot();
-	return snapshot;
 }
 
 bool GameWorld::IsEntityAlive(EntityId entity) const noexcept { return m_state->IsAlive(entity); }
@@ -196,4 +185,16 @@ bool GameWorld::ApplyMaterialVariant(MaterialVariantIndex index)
 	if (applied)
 		CommitWorldChanges();
 	return applied;
+}
+
+WorldMaterialVariantView GameWorld::CaptureMaterialVariants() const
+{
+	WorldMaterialVariantView view;
+	view.Active = m_resources->MaterialVariants.GetActive();
+	view.Names.reserve(m_resources->MaterialVariants.GetCount());
+	for (std::size_t index = 0; index < m_resources->MaterialVariants.GetCount(); ++index)
+	{
+		view.Names.emplace_back(m_resources->MaterialVariants.GetName(index));
+	}
+	return view;
 }

@@ -4,23 +4,23 @@
 #include "Shaders/CookedShaderReloadResult.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
+#include "Diagnostics/MeshPreviewGeometry.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
+#include "Rendering/RenderInputFrame.h"
 
 #include <cstdint>
 #include <memory>
 
 class Timer;
 class RhiImGuiRenderer;
-class LevelManager;
-class GameWorld;
 class Window;
 class RendererState;
 
 class SPARKLE_RENDERER_API Renderer final
 {
   public:
-	Renderer(Timer& timer, GameWorld& gameWorld, Window& window, LevelManager& levelManager) noexcept;
+	Renderer(Timer& timer, Window& window) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;
@@ -29,6 +29,7 @@ class SPARKLE_RENDERER_API Renderer final
 	Renderer& operator=(Renderer&&) = delete;
 
 	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
+	void SubmitRenderInput(RenderInputFrame input) noexcept;
 
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
 
@@ -36,6 +37,7 @@ class SPARKLE_RENDERER_API Renderer final
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
+	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	void PrepareHostFrame() noexcept;
