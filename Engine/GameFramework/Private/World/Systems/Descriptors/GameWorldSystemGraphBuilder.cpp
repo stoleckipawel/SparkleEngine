@@ -94,6 +94,7 @@ namespace ECS
 		GameSystemDesc extraction{GameWorldSystemIds::MeshExtraction, "Game.MeshExtraction", GameSystemPhase::Extraction};
 		extraction.DeclareQuery<MeshExtractionQuery>();
 		extraction.Resources = {{GameSystemResourceDomain::MeshResources, GameSystemAccessMode::Read},
+		                        {GameSystemResourceDomain::SkeletonResources, GameSystemAccessMode::Read},
 		                        {GameSystemResourceDomain::SkinningOutput, GameSystemAccessMode::Read},
 		                        {GameSystemResourceDomain::MorphOutput, GameSystemAccessMode::Read},
 		                        {GameSystemResourceDomain::ExtractionScratch, GameSystemAccessMode::Write}};

@@ -1,13 +1,13 @@
 #include "PCH.h"
 #include "SceneData/RenderWorld.h"
 
-#include <set>
+#include "SceneData/Validation/RenderWorldDeltaValidator.h"
 
 RenderWorldApplyStatus RenderWorld::Apply(const RenderWorldDelta& delta, std::string& diagnostic)
 {
-	const RenderWorldApplyStatus sequenceStatus = ValidateSequence(delta, diagnostic);
-	if (sequenceStatus != RenderWorldApplyStatus::Applied) return sequenceStatus;
-	if (!ValidateOperations(delta, diagnostic)) return RenderWorldApplyStatus::Rejected;
+	const RenderWorldApplyStatus validationStatus = Validate(delta, diagnostic);
+	if (validationStatus != RenderWorldApplyStatus::Applied) return validationStatus;
+
 	if (delta.ResetScene)
 	{
 		m_proxies.clear();
@@ -23,71 +23,9 @@ RenderWorldApplyStatus RenderWorld::Apply(const RenderWorldDelta& delta, std::st
 	return RenderWorldApplyStatus::Applied;
 }
 
-RenderWorldApplyStatus RenderWorld::ValidateSequence(const RenderWorldDelta& delta, std::string& diagnostic) const
+RenderWorldApplyStatus RenderWorld::Validate(const RenderWorldDelta& delta, std::string& diagnostic) const
 {
-	if (delta.SceneGeneration == 0 || delta.SequenceNumber == 0)
-	{
-		diagnostic = "Render-world scene generation and sequence must be non-zero.";
-		return RenderWorldApplyStatus::Rejected;
-	}
-	if (delta.SceneGeneration < m_sceneGeneration)
-	{
-		diagnostic = "Render-world delta belongs to a stale scene generation.";
-		return RenderWorldApplyStatus::Stale;
-	}
-	if (delta.SceneGeneration == m_sceneGeneration && delta.SequenceNumber == m_sequenceNumber)
-	{
-		diagnostic = "Render-world delta is a duplicate.";
-		return RenderWorldApplyStatus::Duplicate;
-	}
-	if (delta.SceneGeneration == m_sceneGeneration && m_sequenceNumber != 0 && delta.SequenceNumber != m_sequenceNumber + 1)
-	{
-		diagnostic = "Render-world delta is out of order.";
-		return RenderWorldApplyStatus::OutOfOrder;
-	}
-	if (delta.SceneGeneration > m_sceneGeneration && !delta.ResetScene)
-	{
-		diagnostic = "A new render scene generation must begin with ResetScene.";
-		return RenderWorldApplyStatus::Rejected;
-	}
-	return RenderWorldApplyStatus::Applied;
-}
-
-bool RenderWorld::ValidateOperations(const RenderWorldDelta& delta, std::string& diagnostic) const
-{
-	const bool reset = delta.ResetScene;
-	if (reset && (!delta.Materials || !delta.Textures))
-	{
-		diagnostic = "Render-world reset must publish immutable material and texture tables.";
-		return false;
-	}
-	for (RenderObjectId object : delta.Destroys)
-	{
-		if (reset || !m_proxies.contains(object))
-		{
-			diagnostic = "Render-world destroy referenced an unavailable object.";
-			return false;
-		}
-	}
-	std::set<RenderObjectId> creates;
-	for (const RenderObjectCreate& create : delta.Creates)
-	{
-		if (!create.Object.IsValid() || !create.Mesh.IsValid() || (!reset && m_proxies.contains(create.Object)) ||
-		    !creates.insert(create.Object).second)
-		{
-			diagnostic = "Render-world create contained an invalid or duplicate identity/asset handle.";
-			return false;
-		}
-	}
-	for (const RenderObjectUpdate& update : delta.Updates)
-	{
-		if ((reset || !m_proxies.contains(update.Object)) && !creates.contains(update.Object))
-		{
-			diagnostic = "Render-world update referenced an unavailable object.";
-			return false;
-		}
-	}
-	return true;
+	return RenderWorldDeltaValidator::Validate(*this, delta, diagnostic);
 }
 
 void RenderWorld::ApplyDestroys(const RenderWorldDelta& delta)
@@ -98,18 +36,15 @@ void RenderWorld::ApplyDestroys(const RenderWorldDelta& delta)
 void RenderWorld::ApplyCreates(const RenderWorldDelta& delta)
 {
 	for (const RenderObjectCreate& create : delta.Creates)
-		m_proxies.emplace(create.Object, RenderProxy{create.Object, create.Mesh, create.Material,
-		                                              create.SkeletonAssetId, create.MeshKind,
-		                                              create.MeshAssetIndex, create.InstanceGroupIndex});
+		m_proxies.emplace(create.Object, RenderProxy{create.Object, create.Static});
 }
 
 void RenderWorld::ApplyUpdates(const RenderWorldDelta& delta)
 {
 	for (const RenderObjectUpdate& update : delta.Updates)
 	{
-		RenderProxy& proxy = m_proxies.at(update.Object);
-		proxy.Material = update.Material;
-		proxy.InstanceGroupIndex = update.InstanceGroupIndex;
+		const auto proxy = m_proxies.find(update.Object);
+		if (proxy != m_proxies.end()) proxy->second.Static = update.Static;
 	}
 }
 
@@ -117,8 +52,8 @@ void RenderWorld::PublishResources(const RenderWorldDelta& delta)
 {
 	if (delta.Materials) m_materials = *delta.Materials;
 	if (delta.Textures) m_textures = *delta.Textures;
-	m_sky = delta.Sky;
-	m_instanceGroups = delta.InstanceGroups;
+	if (delta.Sky.Published) m_sky = delta.Sky.Value;
+	if (delta.InstanceGroups.Published) m_instanceGroups = delta.InstanceGroups.Values;
 }
 
 const RenderProxy* RenderWorld::Find(RenderObjectId object) const noexcept

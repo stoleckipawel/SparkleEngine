@@ -10,7 +10,6 @@ struct RenderFrameMetadata final
 	std::uint64_t FrameId = 0;
 	std::uint64_t FrameGeneration = 0;
 	std::uint64_t ProviderGeneration = 0;
-	std::uint32_t JitterSampleIndex = 0;
 	std::uint32_t RenderWidth = 0;
 	std::uint32_t RenderHeight = 0;
 	std::uint32_t OutputWidth = 0;

@@ -24,18 +24,31 @@ RenderInputConsumer::RenderInputConsumer(
 {
 }
 
+bool RenderInputConsumer::Submit(RenderInputFrame input)
+{
+	if (m_pending) return false;
+	m_pending = std::move(input);
+	return true;
+}
+
 RenderInputConsumeResult RenderInputConsumer::ConsumePending() noexcept
 {
-	if (!m_pending) return {};
+	RenderInputConsumeResult result;
+	if (!m_pending) return result;
 	RenderInputFrame input = std::move(*m_pending);
 	m_pending.reset();
-	RenderInputConsumeResult result;
-	const RenderWorldApplyStatus status = m_world->Apply(input.WorldDelta, result.Diagnostic);
-	if (status != RenderWorldApplyStatus::Applied) return result;
+	if (m_world->Validate(input.WorldDelta, result.Diagnostic) != RenderWorldApplyStatus::Applied) return result;
+
+	bool historyResetRequired = false;
+	if (!m_validator.Validate(*m_world, input, historyResetRequired, result.Diagnostic)) return result;
+	if (m_world->Apply(input.WorldDelta, result.Diagnostic) != RenderWorldApplyStatus::Applied) return result;
+
+	input.Dynamic.Metadata.ResetHistory |= historyResetRequired;
+	m_validator.Commit(input.Dynamic.Metadata);
 	result.Accepted = true;
 	result.SceneReset = input.WorldDelta.ResetScene;
-	if (result.SceneReset) ResetSceneResources();
 	m_dynamic = std::move(input.Dynamic);
+	if (result.SceneReset) ResetSceneResources();
 	return result;
 }
 

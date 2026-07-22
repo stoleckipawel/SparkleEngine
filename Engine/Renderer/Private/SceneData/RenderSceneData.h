@@ -5,9 +5,11 @@
 #include "Renderer/Public/SceneData/RectLight.h"
 #include "Renderer/Public/SceneData/SpotLight.h"
 #include "SceneData/MaterialData.h"
+#include "SceneData/RenderLightCollection.h"
 #include "SceneData/RenderMeshWorkloadSummary.h"
 #include "SceneData/RenderSkyData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
+#include "Rendering/RenderObjectId.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 
 #include <DirectXMath.h>
@@ -28,10 +30,10 @@ struct ResolvedMaterialTextureTable final
 
 struct RenderSceneData
 {
-	std::vector<DirectionalLight> directionalLights;
-	std::vector<PointLight> pointLights;
-	std::vector<SpotLight> spotLights;
-	std::vector<RectLight> rectLights;
+	RenderLightCollection<DirectionalLight> directionalLights;
+	RenderLightCollection<PointLight> pointLights;
+	RenderLightCollection<SpotLight> spotLights;
+	RenderLightCollection<RectLight> rectLights;
 	RenderSkyData sky;
 	std::vector<MeshDraw> meshInstances;
 	std::vector<MeshInstanceBatch> meshInstanceBatches;

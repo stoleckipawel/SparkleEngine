@@ -31,6 +31,7 @@ class TaskExecutor;
 namespace ECS
 {
 	class RenderInputExtractor;
+	class RenderFrameDynamicDataExtractor;
 	class SimulationSystemExecution;
 	class AnimationSystemExecution;
 	class TransformSystemExecution;
@@ -115,6 +116,7 @@ namespace ECS
 
 	  private:
 		friend class RenderInputExtractor;
+		friend class RenderFrameDynamicDataExtractor;
 		friend class SimulationSystemExecution;
 		friend class AnimationSystemExecution;
 		friend class TransformSystemExecution;

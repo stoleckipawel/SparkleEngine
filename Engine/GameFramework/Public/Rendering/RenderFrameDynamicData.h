@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
+#include "GameFramework/Public/Rendering/RenderAssetHandles.h"
 #include "GameFramework/Public/Rendering/RenderFrameMetadata.h"
 #include "GameFramework/Public/Rendering/RenderObjectId.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
@@ -32,15 +33,23 @@ struct RenderObjectDynamicData final
 struct RenderSkinningData final
 {
 	RenderObjectId Object;
-	Assets::CookedAssetId SkeletonAssetId = Assets::InvalidCookedAssetId;
+	RenderSkeletonAssetHandle Skeleton;
+	RenderAnimationAssetHandle Animation;
 	std::vector<DirectX::XMFLOAT4X4> Matrices;
 };
 
 struct RenderMorphData final
 {
 	RenderObjectId Object;
+	RenderAnimationAssetHandle Animation;
 	std::uint32_t TargetNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
 	std::vector<float> Weights;
+};
+
+struct RenderLightData final
+{
+	RenderObjectId Object;
+	SceneLightDesc Description;
 };
 
 struct RenderFrameDynamicData final
@@ -48,7 +57,7 @@ struct RenderFrameDynamicData final
 	RenderFrameMetadata Metadata;
 	RenderCameraData Camera;
 	std::vector<RenderObjectDynamicData> Objects;
-	std::vector<SceneLightDesc> Lights;
+	std::vector<RenderLightData> Lights;
 	std::vector<RenderSkinningData> Skinning;
 	std::vector<RenderMorphData> MorphWeights;
 };

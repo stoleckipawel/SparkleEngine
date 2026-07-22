@@ -62,6 +62,7 @@ class FramePipeline final
 	bool ShouldOutputToBackBuffer() const noexcept;
 	RenderViewportExtent ResolveOutputExtent() const noexcept;
 	FrameResolutionExtents ResolveFrameResolution() const noexcept;
+	void FinalizeRenderInputMetadata(RenderInputFrame& input) const noexcept;
 	void BeginFrame() noexcept;
 	void SetupFrame() noexcept;
 	void RefreshViewportRenderProducts() noexcept;

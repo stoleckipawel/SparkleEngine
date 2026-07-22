@@ -13,22 +13,26 @@
 #include <optional>
 #include <vector>
 
-struct RenderObjectCreate final
+struct RenderObjectStaticData final
 {
-	RenderObjectId Object;
 	ImmutableRenderMeshHandle Mesh;
 	MaterialHandle Material = MaterialHandle::Invalid();
-	Assets::CookedAssetId SkeletonAssetId = Assets::InvalidCookedAssetId;
+	RenderSkeletonAssetHandle Skeleton;
 	SceneMeshKind MeshKind = SceneMeshKind::Static;
 	SceneMeshAssetIndex MeshAssetIndex = kInvalidSceneMeshAssetIndex;
 	SceneMeshInstanceGroupIndex InstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
 };
 
+struct RenderObjectCreate final
+{
+	RenderObjectId Object;
+	RenderObjectStaticData Static;
+};
+
 struct RenderObjectUpdate final
 {
 	RenderObjectId Object;
-	MaterialHandle Material = MaterialHandle::Invalid();
-	SceneMeshInstanceGroupIndex InstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
+	RenderObjectStaticData Static;
 };
 
 struct RenderMeshInstanceGroupData final
@@ -42,6 +46,18 @@ struct RenderMeshInstanceGroupData final
 	std::uint32_t Flags = 0;
 };
 
+struct RenderInstanceGroupPublication final
+{
+	bool Published = false;
+	std::vector<RenderMeshInstanceGroupData> Values;
+};
+
+struct RenderSkyPublication final
+{
+	bool Published = false;
+	std::optional<SceneSkyDesc> Value;
+};
+
 struct RenderWorldDelta final
 {
 	std::uint64_t SceneGeneration = 0;
@@ -50,10 +66,10 @@ struct RenderWorldDelta final
 	std::vector<RenderObjectCreate> Creates;
 	std::vector<RenderObjectUpdate> Updates;
 	std::vector<RenderObjectId> Destroys;
-	std::vector<RenderMeshInstanceGroupData> InstanceGroups;
 	// Immutable resource tables are structural publications. They are present on a
 	// scene reset, not recopied through every dynamic frame packet.
 	std::optional<RenderMaterialTable> Materials;
 	std::optional<RenderTextureTable> Textures;
-	std::optional<SceneSkyDesc> Sky;
+	RenderInstanceGroupPublication InstanceGroups;
+	RenderSkyPublication Sky;
 };

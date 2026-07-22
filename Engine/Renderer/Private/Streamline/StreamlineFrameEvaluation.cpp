@@ -12,9 +12,9 @@ StreamlineFrameEvaluation::StreamlineFrameEvaluation(
 {
 }
 
-bool StreamlineFrameEvaluation::AcquireFrameToken(std::uint64_t frameIndex) noexcept
+bool StreamlineFrameEvaluation::AcquireFrameToken(std::uint64_t frameId) noexcept
 {
-	const std::uint32_t streamlineFrameIndex = static_cast<std::uint32_t>(frameIndex);
+	const std::uint32_t streamlineFrameIndex = static_cast<std::uint32_t>(frameId);
 	return m_commandBuffer != nullptr &&
 	       slGetNewFrameToken(m_frameToken, &streamlineFrameIndex) == sl::Result::eOk &&
 	       m_frameToken != nullptr;

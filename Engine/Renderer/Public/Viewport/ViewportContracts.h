@@ -140,7 +140,9 @@ struct SPARKLE_RENDERER_API ViewportCaptureRequest
 {
 	RenderOutputFlags Output = RenderOutputFlags::SceneColor;
 	std::filesystem::path OutputPath;
-	std::uint32_t FrameIndex = 0;
+	// Zero accepts the currently published frame. A non-zero value rejects a
+	// capture if the requested render product has already advanced.
+	std::uint64_t ExpectedFrameId = 0;
 	std::uint32_t ViewMode = 0;
 	const char* ViewModeName = "";
 	const char* DebugName = "";
@@ -156,6 +158,9 @@ enum class ViewportCaptureStatus : std::uint8_t
 struct SPARKLE_RENDERER_API ViewportCaptureResult
 {
 	ViewportCaptureStatus Status = ViewportCaptureStatus::Failed;
+	std::uint64_t FrameId = 0;
+	std::uint64_t FrameGeneration = 0;
+	std::uint64_t ProviderGeneration = 0;
 	std::filesystem::path ArtifactPath;
 	const char* FailureReason = "";
 

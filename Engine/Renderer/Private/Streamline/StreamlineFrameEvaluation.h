@@ -18,7 +18,7 @@ class StreamlineFrameEvaluation final
 	    sl::ViewportHandle viewport,
 	    NativeGraphicsCommandListHandle commandList) noexcept;
 
-	bool AcquireFrameToken(std::uint64_t frameIndex) noexcept;
+	bool AcquireFrameToken(std::uint64_t frameId) noexcept;
 	bool SetViewConstants(const ImageProviderFrameContext& frameContext) noexcept;
 	bool Evaluate(sl::Feature feature) noexcept;
 

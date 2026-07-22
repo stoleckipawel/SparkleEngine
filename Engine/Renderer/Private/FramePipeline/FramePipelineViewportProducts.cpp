@@ -11,9 +11,18 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
+#include "SceneData/Input/RenderInputConsumer.h"
 
 namespace
 {
+	struct ResolvedViewportCaptureSource final
+	{
+		const RenderProduct* Product = nullptr;
+		FrameGraphResourceHandle FrameGraphResource;
+		RhiResourceHandle Resource;
+		ResourceState SourceState = ResourceState::Common;
+	};
+
 	bool IsCapturableViewportProductFormat(RenderProductFormat format) noexcept
 	{
 		switch (format)
@@ -27,9 +36,14 @@ namespace
 		}
 	}
 
-	ViewportCaptureResult ToViewportCaptureResult(const RhiCaptureResult& rhiResult) noexcept
+	ViewportCaptureResult ToViewportCaptureResult(
+	    const RhiCaptureResult& rhiResult,
+	    const RenderFrameMetadata& metadata) noexcept
 	{
 		ViewportCaptureResult result{};
+		result.FrameId = rhiResult.FrameId;
+		result.FrameGeneration = metadata.FrameGeneration;
+		result.ProviderGeneration = metadata.ProviderGeneration;
 		result.ArtifactPath = rhiResult.ArtifactPath;
 		result.FailureReason = rhiResult.FailureReason;
 		switch (rhiResult.Status)
@@ -46,6 +60,70 @@ namespace
 				break;
 		}
 		return result;
+	}
+
+	ViewportCaptureResult MakePendingCaptureResult(
+	    const ViewportCaptureRequest& request,
+	    const RenderFrameMetadata& metadata)
+	{
+		return ViewportCaptureResult{
+		    .FrameId = metadata.FrameId,
+		    .FrameGeneration = metadata.FrameGeneration,
+		    .ProviderGeneration = metadata.ProviderGeneration,
+		    .ArtifactPath = request.OutputPath};
+	}
+
+	bool ValidateCaptureRequest(
+	    const ViewportCaptureRequest& request,
+	    const RenderFrameMetadata& metadata,
+	    ViewportCaptureResult& result)
+	{
+		if (request.OutputPath.empty())
+		{
+			result.FailureReason = "Capture output path is not set";
+			return false;
+		}
+		if (request.ExpectedFrameId != 0 && request.ExpectedFrameId != metadata.FrameId)
+		{
+			result.FailureReason = "Viewport output belongs to a different frame identity";
+			return false;
+		}
+		return true;
+	}
+
+	bool ResolveCaptureSource(
+	    const ViewportRenderProducts& products,
+	    FrameGraph* frameGraph,
+	    RenderOutputFlags output,
+	    ResolvedViewportCaptureSource& source,
+	    ViewportCaptureResult& result)
+	{
+		source.Product = products.FindProduct(output);
+		if (source.Product == nullptr || !source.Product->Handle)
+		{
+			result.FailureReason = "Viewport output is not available";
+			return false;
+		}
+		if (!IsCapturableViewportProductFormat(source.Product->Format))
+		{
+			result.FailureReason = "Viewport output format is not supported for BMP capture";
+			return false;
+		}
+
+		source.FrameGraphResource = ToFrameGraphResourceHandle(source.Product->Handle);
+		if (!source.FrameGraphResource.IsValid() || frameGraph == nullptr)
+		{
+			result.FailureReason = "Viewport output resource is not available";
+			return false;
+		}
+		source.Resource = frameGraph->ResolveResource(FrameGraphTextureHandle{source.FrameGraphResource});
+		if (!source.Resource)
+		{
+			result.FailureReason = "Viewport output resource is not available";
+			return false;
+		}
+		source.SourceState = frameGraph->GetTrackedResourceState(source.FrameGraphResource);
+		return true;
 	}
 }
 
@@ -100,49 +178,24 @@ void FramePipeline::EndViewportPresentation(RenderOutputFlags output) noexcept
 
 ViewportCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
 {
-	ViewportCaptureResult result{};
-	result.ArtifactPath = request.OutputPath;
-	if (request.OutputPath.empty())
-	{
-		result.FailureReason = "Capture output path is not set";
+	const RenderFrameMetadata& metadata = m_renderInputConsumer->GetDynamicData().Metadata;
+	ViewportCaptureResult result = MakePendingCaptureResult(request, metadata);
+	if (!ValidateCaptureRequest(request, metadata, result)) return result;
+	ResolvedViewportCaptureSource source;
+	if (!ResolveCaptureSource(m_viewportRenderProducts, m_frameGraph.get(), request.Output, source, result))
 		return result;
-	}
 
-	const RenderProduct* product = m_viewportRenderProducts.FindProduct(request.Output);
-	if (product == nullptr || !product->Handle)
-	{
-		result.FailureReason = "Viewport output is not available";
-		return result;
-	}
-
-	if (!IsCapturableViewportProductFormat(product->Format))
-	{
-		result.FailureReason = "Viewport output format is not supported for BMP capture";
-		return result;
-	}
-
-	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(product->Handle);
-	const RhiResourceHandle resource = resourceHandle.IsValid() && m_frameGraph != nullptr ?
-	                                          m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle}) :
-	                                          RhiResourceHandle{};
-	if (!resource)
-	{
-		result.FailureReason = "Viewport output resource is not available";
-		return result;
-	}
-
-	const ResourceState sourceState = m_frameGraph->GetTrackedResourceState(resourceHandle);
 	return ToViewportCaptureResult(m_systems->GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
 	    RhiTextureCaptureRequest{
-	        .Resource = resource,
-	        .Width = product->Extent.Width,
-	        .Height = product->Extent.Height,
-	        .SourceState = sourceState,
+	        .Resource = source.Resource,
+	        .Width = source.Product->Extent.Width,
+	        .Height = source.Product->Extent.Height,
+	        .SourceState = source.SourceState,
 	        .OutputPath = request.OutputPath,
-	        .FrameIndex = request.FrameIndex,
+	        .FrameId = metadata.FrameId,
 	        .ViewMode = request.ViewMode,
 	        .ViewModeName = request.ViewModeName,
-	        .DebugName = request.DebugName}));
+	        .DebugName = request.DebugName}), metadata);
 }
 
 FrameGraphResourceHandle FramePipeline::ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept

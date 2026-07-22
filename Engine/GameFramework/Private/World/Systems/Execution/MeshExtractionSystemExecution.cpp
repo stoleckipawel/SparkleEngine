@@ -4,12 +4,15 @@
 
 #include "World/Extraction/WorldExtractionStorage.h"
 #include "World/GameWorldState.h"
+#include "World/Resources/SkeletonResourceStore.h"
 
 namespace ECS
 {
 	MeshExtractionSystemExecution::MeshExtractionSystemExecution(
-	    GameWorldState& state, const StructureFrozenEpoch& epoch) :
-	    m_state(state), m_query(state.m_registry, epoch)
+	    GameWorldState& state,
+	    const SkeletonResourceStore& skeletons,
+	    const StructureFrozenEpoch& epoch) :
+	    m_state(state), m_skeletons(skeletons), m_query(state.m_registry, epoch)
 	{
 	}
 
@@ -31,13 +34,15 @@ namespace ECS
 			                  const std::shared_ptr<const Mesh> resource = m_state.m_meshResources.ResolveImmutable(mesh.Resource);
 			                  slot.Included = resource != nullptr;
 			                  if (!slot.Included) return;
-			                  slot.Mesh = ImmutableRenderMeshHandle(mesh.MeshAssetId, mesh.Resource.Generation, resource);
+			                  slot.Mesh = ImmutableRenderMeshHandle(mesh.MeshAssetId, resource);
 			                  slot.WorldMatrix = world.Matrix;
 			                  DirectX::XMStoreFloat3x4(
 			                      &slot.WorldInverseTranspose,
 			                      DirectX::XMLoadFloat4x4(&world.InverseTranspose));
 			                  slot.Material = mesh.Material;
-			                  slot.SkeletonAssetId = mesh.SkeletonAssetId;
+			                  const SkeletonResourceHandle skeleton = m_skeletons.Find(mesh.SkeletonAssetId);
+			                  slot.Skeleton = skeleton.IsValid() ? RenderSkeletonAssetHandle(mesh.SkeletonAssetId)
+			                                                       : RenderSkeletonAssetHandle{};
 			                  slot.Kind = mesh.Kind;
 			                  slot.MeshAssetIndex = mesh.MeshAssetIndex;
 			                  slot.InstanceGroupIndex = mesh.InstanceGroupIndex;

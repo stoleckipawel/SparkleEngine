@@ -20,7 +20,7 @@ namespace ECS
 			DirectX::XMFLOAT4X4 WorldMatrix{};
 			DirectX::XMFLOAT3X4 WorldInverseTranspose{};
 			MaterialHandle Material = MaterialHandle::Invalid();
-			Assets::CookedAssetId SkeletonAssetId = Assets::InvalidCookedAssetId;
+			RenderSkeletonAssetHandle Skeleton;
 			SceneMeshKind Kind = SceneMeshKind::Static;
 			SceneMeshAssetIndex MeshAssetIndex = kInvalidSceneMeshAssetIndex;
 			SceneMeshInstanceGroupIndex InstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;

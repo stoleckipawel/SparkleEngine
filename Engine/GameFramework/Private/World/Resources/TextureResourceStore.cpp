@@ -4,6 +4,21 @@
 
 #include "Core/Public/FileSystemUtils.h"
 
+namespace
+{
+	RenderTextureTable BuildRenderTextureTable(
+	    std::span<const std::filesystem::path> paths,
+	    std::uint32_t generation)
+	{
+		RenderTextureTable table;
+		table.Generation = generation;
+		table.Assets.reserve(paths.size());
+		for (std::uint32_t index = 0; index < paths.size(); ++index)
+			table.Assets.push_back({RenderTextureAssetHandle{index}, paths[index]});
+		return table;
+	}
+}
+
 void TextureResourceStore::AppendMaterialReferences(const std::vector<MaterialDesc>& materials)
 {
 	std::vector<std::filesystem::path> paths;
@@ -23,12 +38,13 @@ void TextureResourceStore::AppendPaths(std::span<const std::filesystem::path> pa
 
 RenderTextureTable TextureResourceStore::CaptureRenderTable() const
 {
-	return {.Paths = m_paths, .Generation = m_generation};
+	return BuildRenderTextureTable(m_paths, m_generation);
 }
 
 RenderTextureTable TextureResourceStore::CaptureRenderTable(std::span<const std::filesystem::path> additionalPaths) const
 {
-	RenderTextureTable table = CaptureRenderTable();
-	Filesystem::AppendNormalizedAssetPaths(additionalPaths, AssetType::Texture, table.Paths);
-	return table;
+	std::vector<std::filesystem::path> paths = m_paths;
+	paths.reserve(paths.size() + additionalPaths.size());
+	Filesystem::AppendNormalizedAssetPaths(additionalPaths, AssetType::Texture, paths);
+	return BuildRenderTextureTable(paths, m_generation);
 }

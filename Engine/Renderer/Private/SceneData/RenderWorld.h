@@ -9,12 +9,7 @@
 struct RenderProxy final
 {
 	RenderObjectId Object;
-	ImmutableRenderMeshHandle Mesh;
-	MaterialHandle Material = MaterialHandle::Invalid();
-	Assets::CookedAssetId SkeletonAssetId = Assets::InvalidCookedAssetId;
-	SceneMeshKind MeshKind = SceneMeshKind::Static;
-	SceneMeshAssetIndex MeshAssetIndex = kInvalidSceneMeshAssetIndex;
-	SceneMeshInstanceGroupIndex InstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
+	RenderObjectStaticData Static;
 };
 
 enum class RenderWorldApplyStatus : std::uint8_t { Applied, Duplicate, Stale, OutOfOrder, Rejected };
@@ -23,6 +18,7 @@ class RenderWorld final
 {
   public:
 	RenderWorldApplyStatus Apply(const RenderWorldDelta& delta, std::string& diagnostic);
+	RenderWorldApplyStatus Validate(const RenderWorldDelta& delta, std::string& diagnostic) const;
 	const RenderProxy* Find(RenderObjectId object) const noexcept;
 	const std::map<RenderObjectId, RenderProxy>& GetProxies() const noexcept { return m_proxies; }
 	const RenderMaterialTable& GetMaterials() const noexcept { return m_materials; }
@@ -34,8 +30,6 @@ class RenderWorld final
 	bool ConsumeHistoryReset() noexcept { return std::exchange(m_historyReset, false); }
 
   private:
-	RenderWorldApplyStatus ValidateSequence(const RenderWorldDelta& delta, std::string& diagnostic) const;
-	bool ValidateOperations(const RenderWorldDelta& delta, std::string& diagnostic) const;
 	void ApplyDestroys(const RenderWorldDelta& delta);
 	void ApplyCreates(const RenderWorldDelta& delta);
 	void ApplyUpdates(const RenderWorldDelta& delta);

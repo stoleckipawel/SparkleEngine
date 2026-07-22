@@ -26,7 +26,7 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 
 	for (const auto& [object, proxy] : world.GetProxies())
 	{
-		const Mesh* mesh = proxy.Mesh.GetResource().get();
+		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
 		if (mesh == nullptr)
 		{
 			continue;
@@ -48,14 +48,14 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 
 		++row->InstanceCount;
 		++row->VisibleInstanceCount;
-		if (proxy.MeshKind == SceneMeshKind::Skeletal)
+		if (proxy.Static.MeshKind == SceneMeshKind::Skeletal)
 		{
 			++row->SkinnedInstanceCount;
 			row->HasSkeletonBinding = true;
 			row->HasSkinInfluences = true;
 		}
 
-		const MaterialHandle materialHandle = proxy.Material;
+		const MaterialHandle materialHandle = proxy.Static.Material;
 		if (!row->HasMaterial && materialHandle.IsValid())
 		{
 			row->HasMaterial = true;
@@ -103,7 +103,7 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 	}
 	for (const auto& [object, proxy] : world.GetProxies())
 	{
-		const Mesh* mesh = proxy.Mesh.GetResource().get();
+		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
 		if (mesh == nullptr)
 		{
 			continue;
@@ -120,18 +120,18 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 		                    .WorldInvTranspose = {}},
 		            .Material =
 		                MeshDrawMaterial{
-		                    .Slot = proxy.Material.IsValid() ? proxy.Material.GetIndex() : 0u},
+		                    .Slot = proxy.Static.Material.IsValid() ? proxy.Static.Material.GetIndex() : 0u},
 		            .Skinning =
 		                MeshDrawSkinning{
-		                    .SkeletonAssetId = proxy.SkeletonAssetId},
+		                    .SkeletonAssetId = proxy.Static.Skeleton.GetAssetId()},
 		            .Source =
 		                MeshDrawSourceIdentity{
 		                    .SourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())},
 		                    .Geometry =
 		                        MeshDrawGeometry{
-		                            .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy.MeshKind),
+		                            .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy.Static.MeshKind),
 		                            .GpuMesh = gpuMesh}},
-		        .instanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(proxy.InstanceGroupIndex)});
+		        .instanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(proxy.Static.InstanceGroupIndex)});
 	}
 
 	MeshInstanceBatchBuilder batchBuilder;
@@ -157,7 +157,7 @@ MeshPreviewGeometry MeshDiagnosticsCollector::CapturePreview(const RenderWorld& 
 	if (meshRuntimeId == 0) return geometry;
 	for (const auto& [object, proxy] : world.GetProxies())
 	{
-		const Mesh* mesh = proxy.Mesh.GetResource().get();
+		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
 		if (mesh == nullptr || reinterpret_cast<std::uintptr_t>(mesh) != meshRuntimeId) continue;
 		const MeshData& data = mesh->GetMeshData();
 		geometry.Vertices.reserve(data.vertices.size());

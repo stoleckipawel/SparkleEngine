@@ -41,7 +41,7 @@ namespace ECS
 		    m_simulation(state, cameraIntent, deltaSeconds, epoch),
 		    m_animation(state, resources, deltaSeconds, epoch),
 		    m_transform(state, epoch),
-		    m_extraction(state, epoch),
+		    m_extraction(state, resources.Skeletons, epoch),
 		    m_state(state)
 		{
 			BuildBindings();

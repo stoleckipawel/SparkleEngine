@@ -58,7 +58,7 @@ RhiCaptureResult D3D12CaptureService::CaptureTextureToBmp(const RhiTextureCaptur
 	return RhiCaptureResult{
 	    .Status = captured ? ERhiCaptureStatus::Succeeded : ERhiCaptureStatus::Failed,
 	    .BackendApi = ERhiBackendApi::D3D12,
-	    .FrameIndex = request.FrameIndex,
+	    .FrameId = request.FrameId,
 	    .ViewMode = request.ViewMode,
 	    .ViewModeName = request.ViewModeName,
 	    .ArtifactPath = captured ? request.OutputPath : std::filesystem::path{},

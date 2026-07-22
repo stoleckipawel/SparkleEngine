@@ -79,7 +79,7 @@ RhiCaptureResult VulkanCaptureService::CaptureTextureToBmp(const RhiTextureCaptu
 	return RhiCaptureResult{
 	    .Status = captured ? ERhiCaptureStatus::Succeeded : ERhiCaptureStatus::Failed,
 	    .BackendApi = ERhiBackendApi::Vulkan,
-	    .FrameIndex = request.FrameIndex,
+	    .FrameId = request.FrameId,
 	    .ViewMode = request.ViewMode,
 	    .ViewModeName = request.ViewModeName,
 	    .ArtifactPath = captured ? request.OutputPath : std::filesystem::path{},

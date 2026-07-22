@@ -2339,7 +2339,7 @@ Binding rules:
 - `RenderWorldDelta` is not forced into SoA. Structural operations are relatively cold and normally consume a whole record; compact typed AoS batches can be the better layout. Measure before columnizing them.
 - `RenderFrameDynamicData` is not a generic `SoA<T...>` abstraction chosen for appearance. Each named stream documents producer, consumers, cardinality, update frequency, stable key, layout, alignment, and serial/parallel partition unit.
 - Renderer application resolves IDs once into stable render slots, then hot renderer loops operate on packed render-owned slot/range data. Repeated hash lookup, sparse ECS join, asset pointer traversal, and per-object polymorphism are forbidden in frame-hot preparation.
-- Static mesh/material/skeleton/texture payloads cross as immutable versioned handles and residency commands, never repeated per-frame copies. Dynamic instance values cross separately.
+- Static mesh/material/skeleton/texture payloads cross as immutable typed handles and residency commands, never repeated per-frame copies. Regeneration republishes the newest immutable content; the render boundary does not retain content-version compatibility. Dynamic instance values cross separately.
 - Dirty tracking exists at the narrowest useful granularity: structural operation, component column, render slot, contiguous range, or GPU page. A single transform change must not rebuild scene-wide arrays or upload unrelated materials/lights.
 - Previous-frame/temporal data has one owner and explicit rollover. Do not duplicate current/previous transforms independently in GameFramework, packet construction, RenderWorld, and GPU buffers without a named need and generation rule.
 - Sorting, bucketing, compaction, and deduplication use stable keys and task-local outputs followed by deterministic merge. Task completion order never defines render row, draw, light, or upload order.
@@ -4256,7 +4256,7 @@ Work:
 8. Move editor selection and previous transform/skinning identity from vector positions to stable IDs.
 9. Publish level begin/end generations as data.
 10. Keep Renderer and ECS system execution serial while consuming the new contracts.
-11. Include versioned camera, jitter, motion/depth convention, exposure, resolution, history-reset, and provider tags required by existing temporal/product paths.
+11. Include exact camera, motion/depth convention, exposure, resolution, history-reset, frame-generation, and provider tags required by existing temporal/product paths. Keep jitter/sample policy renderer-private and derive it from `FrameId`.
 12. Prove that multiple cataloged levels and optional asset handles can enter/leave the render world without changing packet ownership.
 
 Delete:
@@ -5428,7 +5428,7 @@ There is no render thread or engine task executor. `RunRuntimeApplication` label
 
 The editor inserts recook coordination after begin-frame, then performs game update, viewport request, prepare/record, ImGui/viewport presentation, and submit on `Sparkle.EditorThread`. `RendererState` and `RenderDeviceServicesState` keep implementation pointers private and expose only owner-checked `Systems`/`Pipeline`/`Backend` gateways. They reuse Core's small `OwnerThread` invariant and report the caller through `std::source_location`; facade methods contain no repeated assertion strings and public headers do not expose the mechanism. This documents the current contract without making underlying objects thread-safe.
 
-The critical unsafe future boundary remains `GameSceneSnapshot::MeshInstanceSnapshot::Mesh`, a raw pointer into game/asset lifetime. A vector-valued snapshot is not yet a detached immutable render packet. Prompts 12 and 15 own that correction before Prompt 13 may move renderer ownership.
+Prompt 12 closed the critical raw game/asset boundary: the snapshot family and `MeshInstanceSnapshot::Mesh` are deleted, `RenderInputFrame` owns values plus immutable typed handles, and private renderer admission rejects incomplete generations before serial `RenderWorld` mutation. Content regeneration republishes the newest immutable handle; no content-version compatibility or metadata schema version crosses this boundary. Jitter/sample policy is renderer-private and derives from `FrameId`. The remaining future boundary for Prompt 13 is transport ownership and backpressure for a dedicated render owner; it may queue the existing structural/dynamic contract but may not reintroduce a snapshot, gameplay pointer, or second scene schema.
 
 ### Naming and deletion ledger
 
@@ -5437,13 +5437,13 @@ The critical unsafe future boundary remains `GameSceneSnapshot::MeshInstanceSnap
 | `RhiSubmissionToken`, `ERhiQueueType`, `RenderCommandList`, `FrameGraphSubmissionBatch` | **KEEP** | Existing strong GPU completion, GPU queue, recording, and compiled-submit vocabulary; never duplicate with fence/job aliases |
 | `FrameGraphPassNode` | **KEEP** | GPU graph node, not CPU `Task`; subsystem qualification prevents collision |
 | CLI `CommandRegistry`; launcher `OperationRecord` | **KEEP** | Product command/operation, neither render control command nor `TaskExecution` |
-| raw timer/frame counters and ambiguous `FrameIndex` | **RENAME IN OWNING PROMPT** | Prompt 12 introduces `FrameId`; Prompt 28 separates buffered slot and temporal/provider indices |
+| `FrameId`; RHI `GetCurrentFrameIndex`; shader/temporal sample indices | **KEEP DISTINCT / FINISH IN PROMPT 28** | Prompt 12 renamed logical provider/capture identity to `FrameId` and made capture staleness explicit as `ExpectedFrameId`; the RHI accessor still deliberately names the buffered frame slot, while Prompt 28 finishes shader/sample vocabulary without aliasing either as logical identity |
 | missing scene/level generation type | **ADD, DO NOT ALIAS** | `SceneGeneration` in Prompts 12/15; reject `WorldVersion`/`SceneRevision` substitutes |
 | request/publication IDs where monotonic order is meant | **RENAME IN OWNING PROMPT** | `SequenceNumber` in Prompts 04/12/16 |
 | `std::async`, operation `QThread`, pipe-reader `std::thread` used as scheduling | **DELETE AS ALIASES** | Prompts 04/22 replace them with scoped `TaskExecution`/BlockingIo; a physical thread remains a thread |
 | `Job`, `JobSystem`, `ThreadPool`, `WorkItem`, `TaskRun` | **DELETE/REJECT** | Canonical CPU vocabulary is `Task`, `TaskExecutor`, `TaskScope`, `TaskEvent`, `TaskExecution`; Prompt 01 owns implementation |
 | `RendererSystemRoot` as serial owner | **RENAME/REHOME IN OWNING PROMPT** | Prompt 13 establishes `RenderCoordinator`; reject temporary `RenderThreadManager` |
-| planned cross-owner frame data | **ADD, DO NOT ALIAS** | `RenderFramePacket`/`RenderFrameQueue` in Prompts 12/13; packet owns values/handles through queue lifetime |
+| current cross-owner frame data | **KEEP, EXTEND TRANSPORT ONLY** | Prompt 12 established `RenderInputFrame = RenderWorldDelta + RenderFrameDynamicData`; Prompt 13 may add the bounded owner queue/slot envelope but must not add a parallel snapshot or second scene payload |
 | planned recording ownership | **ADD, DO NOT ALIAS** | `RhiCommandRecordingLease` in Prompts 18/19; context/list reference is not exclusive-ownership proof |
 | `FenceHandle`, `GpuTask`, `CommandExecution` | **DELETE/REJECT** | Reuse `RhiSubmissionToken`; CPU `TaskExecution` never means GPU execution |
 | `Sparkle.RHIThread`/`RHIThread` | **DELETE/REJECT** | No such owner; submission remains with `RenderCoordinator` |

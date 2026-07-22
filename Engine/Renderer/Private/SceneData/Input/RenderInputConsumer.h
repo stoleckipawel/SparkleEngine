@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Rendering/RenderInputFrame.h"
+#include "SceneData/Input/Validation/RenderInputFrameValidator.h"
 
 #include <optional>
 #include <string>
@@ -31,7 +32,7 @@ class RenderInputConsumer final
 	    MaterialCacheManager& materialCache,
 	    RenderRayTracingScene* rayTracingScene) noexcept;
 
-	void Submit(RenderInputFrame input) noexcept { m_pending = std::move(input); }
+	bool Submit(RenderInputFrame input);
 	RenderInputConsumeResult ConsumePending() noexcept;
 	const RenderFrameDynamicData& GetDynamicData() const noexcept { return m_dynamic; }
 
@@ -44,5 +45,6 @@ class RenderInputConsumer final
 	MaterialCacheManager* m_materialCache = nullptr;
 	RenderRayTracingScene* m_rayTracingScene = nullptr;
 	std::optional<RenderInputFrame> m_pending;
+	RenderInputFrameValidator m_validator;
 	RenderFrameDynamicData m_dynamic;
 };

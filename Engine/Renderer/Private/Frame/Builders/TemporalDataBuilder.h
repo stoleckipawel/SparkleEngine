@@ -16,7 +16,8 @@ class TemporalDataBuilder final
 	PerTemporalConstantBufferData BuildTemporalData(
 	    const RenderCamera& renderCamera,
 	    const PerViewCameraConstantBufferData& cameraData,
-	    const RhiViewport& viewport) noexcept;
+	    const RhiViewport& viewport,
+	    std::uint64_t frameId) noexcept;
 
   private:
 	struct CameraPose
@@ -34,7 +35,6 @@ class TemporalDataBuilder final
 
 	CameraPose m_previousPose;
 	DirectX::XMFLOAT2 m_previousJitter = {};
-	uint32_t m_jitterIndex = 0;
 	bool m_hasPreviousPose = false;
 	bool m_resetRequested = false;
 };

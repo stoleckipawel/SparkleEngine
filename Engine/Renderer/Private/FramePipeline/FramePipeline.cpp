@@ -56,7 +56,18 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&
 
 void FramePipeline::SubmitRenderInput(RenderInputFrame input) noexcept
 {
-	m_renderInputConsumer->Submit(std::move(input));
+	FinalizeRenderInputMetadata(input);
+	if (!m_renderInputConsumer->Submit(std::move(input)))
+		SPDLOG_WARN("Renderer rejected a second render input before the serial pending frame was consumed.");
+}
+
+void FramePipeline::FinalizeRenderInputMetadata(RenderInputFrame& input) const noexcept
+{
+	const FrameResolutionExtents resolution = ResolveFrameResolution();
+	input.Dynamic.Metadata.RenderWidth = resolution.Render.Width;
+	input.Dynamic.Metadata.RenderHeight = resolution.Render.Height;
+	input.Dynamic.Metadata.OutputWidth = resolution.Output.Width;
+	input.Dynamic.Metadata.OutputHeight = resolution.Output.Height;
 }
 
 FramePipeline::~FramePipeline() noexcept = default;
@@ -179,7 +190,7 @@ void FramePipeline::BeginFrame() noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	const RenderInputConsumeResult inputResult = m_renderInputConsumer->ConsumePending();
-	if (!inputResult.Accepted && !inputResult.Diagnostic.empty())
+	if (!inputResult.Diagnostic.empty())
 		SPDLOG_WARN("Renderer rejected input: {}", inputResult.Diagnostic);
 
 	if (m_bResizePending)
@@ -368,7 +379,8 @@ void FramePipeline::RecordFrame() noexcept
 	    ImageProviderFrameContext{
 	        .RenderExtent = m_frameGraphRenderExtent,
 	        .OutputExtent = m_frameGraphOutputExtent,
-	        .FrameIndex = m_systems->GetTimer().GetFrameCount(),
+	        .FrameId = dynamic.Metadata.FrameId,
+	        .ProviderGeneration = dynamic.Metadata.ProviderGeneration,
 	        .Camera = frame.mainView.perViewData.Camera,
 	        .TemporalData = frame.mainView.perTemporalData,
 	        .TemporalState = frame.mainView.temporalState,

@@ -206,10 +206,18 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations PREFIX "Shader
 # library and excluded from default builds; it has no GameWorld or RHI lifetime.
 add_executable(RenderWorldContractValidation EXCLUDE_FROM_ALL
     ${CMAKE_CURRENT_SOURCE_DIR}/Validation/RenderWorldContractValidation.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Validation/RenderWorldContract/RenderWorldContractChecks.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Validation/RenderWorldContract/RenderWorldContractFixture.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Validation/RenderWorldContract/RenderWorldContractMetrics.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/SceneData/Input/Validation/RenderFrameDynamicDataValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/SceneData/Input/Validation/RenderFrameMetadataValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/SceneData/Input/Validation/RenderInputFrameValidator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Private/SceneData/Validation/RenderWorldDeltaValidator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SceneData/RenderWorld.cpp)
 target_include_directories(RenderWorldContractValidation PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Private
     ${CMAKE_CURRENT_SOURCE_DIR}/Public
+	${CMAKE_CURRENT_SOURCE_DIR}/Validation
     ${CMAKE_CURRENT_SOURCE_DIR}/..
     ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics)
 target_compile_features(RenderWorldContractValidation PRIVATE cxx_std_20)

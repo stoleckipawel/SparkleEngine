@@ -58,7 +58,11 @@ FrameContext BuildFrameContext(
 	frame.sceneGpuData = BuildRenderSceneGpuData(resourceService, frame.sceneData);
 	const RhiViewport sceneViewport = BuildSceneViewport(sceneExtent);
 	frame.mainView = perViewDataBuilder.BuildView(cameraData, sceneViewport, BuildSceneScissorRect(sceneExtent));
-	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(renderCamera, frame.mainView.perViewData.Camera, sceneViewport);
+	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(
+	    renderCamera,
+	    frame.mainView.perViewData.Camera,
+	    sceneViewport,
+	    dynamic.Metadata.FrameId);
 	frame.mainView.temporalState = BuildRenderTemporalFrameState(frame.mainView.perTemporalData);
 
 	return frame;

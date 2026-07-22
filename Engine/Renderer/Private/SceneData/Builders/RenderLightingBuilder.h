@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Scene/Lighting/SceneLightDesc.h"
+#include "Rendering/RenderFrameDynamicData.h"
 
 #include <vector>
 
@@ -8,5 +8,5 @@ struct RenderSceneData;
 
 namespace RenderLightingBuilder
 {
-	void Build(const std::vector<SceneLightDesc>& lights, RenderSceneData& sceneData) noexcept;
+	void Build(const std::vector<RenderLightData>& lights, RenderSceneData& sceneData) noexcept;
 }

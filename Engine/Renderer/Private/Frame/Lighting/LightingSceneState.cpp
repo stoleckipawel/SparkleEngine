@@ -63,12 +63,18 @@ namespace
 		return LightingStateHash::AppendBool(hash, light.castShadow);
 	}
 
-	template <typename TLight> std::uint64_t AppendLightsState(std::uint64_t hash, const std::vector<TLight>& lights) noexcept
+	template <typename TLight>
+	std::uint64_t AppendLightsState(
+	    std::uint64_t hash,
+	    const RenderLightCollection<TLight>& lights) noexcept
 	{
-		hash = AppendCount(hash, lights);
-		for (const TLight& light : lights)
+		hash = Hash::ContinueFnv1a64Value(hash, static_cast<std::uint64_t>(lights.size()));
+		for (std::size_t index = 0; index < lights.size(); ++index)
 		{
-			hash = AppendLightState(hash, light);
+			const RenderObjectId object = lights.GetObject(index);
+			hash = Hash::ContinueFnv1a64Value(hash, object.GetValue());
+			hash = Hash::ContinueFnv1a64Value(hash, object.GetGeneration());
+			hash = AppendLightState(hash, lights[index]);
 		}
 		return hash;
 	}

@@ -163,9 +163,9 @@ std::vector<RhiResourceHandle> TextureManager::LoadSceneTextures(
 {
 	std::vector<RhiResourceHandle> uploadedResources;
 	LoadDefaults(commandList, uploadedResources);
-	for (const std::filesystem::path& texturePath : textures.Paths)
+	for (const RenderTextureAsset& texture : textures.Assets)
 	{
-		LoadFromPath(texturePath, commandList, uploadedResources);
+		LoadFromPath(texture.Path, commandList, uploadedResources);
 	}
 	return uploadedResources;
 }
@@ -176,9 +176,9 @@ bool TextureManager::HasPendingSceneTextureUploads(const RenderTextureTable& tex
 	{
 		return true;
 	}
-	for (const std::filesystem::path& texturePath : textures.Paths)
+	for (const RenderTextureAsset& texture : textures.Assets)
 	{
-		const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texturePath);
+		const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texture.Path);
 		if (resolved && !m_pathTextures.contains(resolved->CacheKey))
 		{
 			return true;

@@ -77,7 +77,7 @@ bool EvaluateStreamlineRayReconstructionFrame(
 	}
 
 	StreamlineFrameEvaluation frameEvaluation(viewport, evaluation.NativeCommandList);
-	if (!frameEvaluation.AcquireFrameToken(frameContext.FrameIndex))
+	if (!frameEvaluation.AcquireFrameToken(frameContext.FrameId))
 	{
 		return false;
 	}

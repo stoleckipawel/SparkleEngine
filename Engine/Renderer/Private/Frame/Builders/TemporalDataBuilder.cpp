@@ -71,18 +71,18 @@ bool TemporalDataBuilder::IsLikelyCameraCut(const TemporalDataBuilder::CameraPos
 }
 
 PerTemporalConstantBufferData TemporalDataBuilder::BuildTemporalData(
-    const RenderCamera& renderCamera,
-    const PerViewCameraConstantBufferData& cameraData,
-    const RhiViewport& viewport) noexcept
+	const RenderCamera& renderCamera,
+	const PerViewCameraConstantBufferData& cameraData,
+	const RhiViewport& viewport,
+	std::uint64_t frameId) noexcept
 {
 	PerTemporalConstantBufferData temporalData{};
 	const CameraPose currentPose = CapturePose(renderCamera, cameraData);
 	const DirectX::XMFLOAT2 jitterCurrent = TemporalJitterPatterns::GenerateJitterOffset(
 	    viewport.Width,
 	    viewport.Height,
-	    m_jitterIndex,
+	    static_cast<std::uint32_t>(frameId % kMaxCachedJitteredFrames),
 	    TemporalJitterPatterns::Pattern::Halton);
-	m_jitterIndex = (m_jitterIndex + 1u) % kMaxCachedJitteredFrames;
 	temporalData.JitterCurrent = jitterCurrent;
 	temporalData.JitterPrevious = m_previousJitter;
 

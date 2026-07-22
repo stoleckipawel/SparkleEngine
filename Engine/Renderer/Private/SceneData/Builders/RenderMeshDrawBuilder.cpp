@@ -70,7 +70,7 @@ void RenderMeshDrawBuilder::AppendSkinningData(
 	m_currentSkinningMatrices.clear();
 	for (const RenderSkinningData& pose : dynamic.Skinning)
 	{
-		if (!pose.Object.IsValid() || pose.SkeletonAssetId == Assets::InvalidCookedAssetId || pose.Matrices.empty()) continue;
+		if (!pose.Object.IsValid() || !pose.Skeleton.IsValid() || !pose.Animation.IsValid() || pose.Matrices.empty()) continue;
 
 		const auto offset = static_cast<std::uint32_t>(sceneData.jointMatrices.size());
 		outJointMatrixOffsets.emplace(pose.Object, offset);
@@ -97,9 +97,9 @@ void RenderMeshDrawBuilder::AppendVisibleMeshItems(
 		const RenderObjectDynamicData& object = dynamic.Objects[sourceIndex];
 		if (!object.Visible) continue;
 		const RenderProxy* proxy = world.Find(object.Object);
-		if (proxy == nullptr || !proxy->Mesh.IsValid()) continue;
+		if (proxy == nullptr || !proxy->Static.Mesh.IsValid()) continue;
 
-		GPUMesh* gpuMesh = m_gpuMeshCache->GetOrUpload(*proxy->Mesh.GetResource());
+		GPUMesh* gpuMesh = m_gpuMeshCache->GetOrUpload(*proxy->Static.Mesh.GetResource());
 		if (gpuMesh == nullptr || !gpuMesh->IsValid()) continue;
 		outCurrentWorldMatrices.emplace(object.Object, object.WorldMatrix);
 
@@ -109,22 +109,22 @@ void RenderMeshDrawBuilder::AppendVisibleMeshItems(
 		draw.Transform.PreviousWorldMatrix = previousMatrix != m_previousWorldMatrices.end()
 		                                         ? previousMatrix->second : object.WorldMatrix;
 		draw.Transform.WorldInvTranspose = object.WorldInverseTranspose;
-		draw.Material.Slot = MaterialCacheUtils::ResolveMaterialSlot(proxy->Material, sceneData.materials.size());
+		draw.Material.Slot = MaterialCacheUtils::ResolveMaterialSlot(proxy->Static.Material, sceneData.materials.size());
 		draw.Source.SourceInstanceIndex = sourceIndex;
-		draw.Source.MeshAssetId = proxy->Mesh.GetAssetId();
-		draw.Skinning.SkeletonAssetId = proxy->SkeletonAssetId;
+		draw.Source.MeshAssetId = proxy->Static.Mesh.GetAssetId();
+		draw.Skinning.SkeletonAssetId = proxy->Static.Skeleton.GetAssetId();
 		draw.Skinning.JointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;
-		if (proxy->MeshKind == SceneMeshKind::Skeletal)
+		if (proxy->Static.MeshKind == SceneMeshKind::Skeletal)
 			if (const auto jointOffset = jointMatrixOffsets.find(object.Object); jointOffset != jointMatrixOffsets.end())
 				draw.Skinning.JointMatrixOffset = jointOffset->second;
-		draw.Geometry.MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy->MeshKind);
+		draw.Geometry.MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy->Static.MeshKind);
 		draw.Geometry.GpuMesh = gpuMesh;
 
 		outItems.push_back({.draw = draw,
 		                    .materialGpuHandle = draw.Material.Slot < sceneData.materials.size()
 		                                             ? sceneData.materials[draw.Material.Slot].gpuHandle : MaterialGpuHandle{},
 		                    .instanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(
-		                        proxy->InstanceGroupIndex)});
+		                        proxy->Static.InstanceGroupIndex)});
 	}
 }
 
