@@ -8,8 +8,7 @@
 
 namespace SceneMaterialVariantTranslator
 {
-	namespace
-	{
+
 		void AppendBindingsForMeshAsset(
 		    const SceneAssetPayload& sceneAssetPayload,
 		    const SceneAssetPayload::MaterialVariantMapping& mapping,
@@ -53,7 +52,7 @@ namespace SceneMaterialVariantTranslator
 				++localMeshInstanceIndex;
 			}
 		}
-	}
+
 
 	std::vector<MaterialVariantDesc> BuildDescriptions(const SceneAssetPayload& sceneAssetPayload)
 	{

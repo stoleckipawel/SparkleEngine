@@ -14,23 +14,24 @@
 
 #include <utility>
 
-namespace
+class RenderMeshDrawBuilderOperations final
 {
-	const auto g_renderMeshDrawBuilderLogger = Logging::GetOrCreateLogger("Renderer.SceneData.Meshes");
+  public:
+	inline static const auto g_renderMeshDrawBuilderLogger = Logging::GetOrCreateLogger("Renderer.SceneData.Meshes");
 
-	void CountMeshInstanceWorkload(const std::vector<MeshDraw>& meshInstances, RenderMeshWorkloadSummary& workload) noexcept
+	static void CountMeshInstanceWorkload(const std::vector<MeshDraw>& meshInstances, RenderMeshWorkloadSummary& workload) noexcept
 	{
 		for (const MeshDraw& meshInstance : meshInstances)
 			meshInstance.Geometry.MeshKind == RenderMeshKind::Skeletal ? ++workload.skinnedInstanceCount
 			                                                         : ++workload.staticInstanceCount;
 	}
 
-	void CountMeshBatchWorkload(const std::vector<MeshInstanceBatch>& meshBatches, RenderMeshWorkloadSummary& workload) noexcept
+	static void CountMeshBatchWorkload(const std::vector<MeshInstanceBatch>& meshBatches, RenderMeshWorkloadSummary& workload) noexcept
 	{
 		for (const MeshInstanceBatch& batch : meshBatches)
 			batch.meshKind == RenderMeshKind::Skeletal ? ++workload.skinnedBatchCount : ++workload.staticBatchCount;
 	}
-}
+};
 
 RenderMeshDrawBuilder::RenderMeshDrawBuilder(GPUMeshCache& gpuMeshCache) noexcept : m_gpuMeshCache(&gpuMeshCache) {}
 
@@ -151,14 +152,14 @@ void RenderMeshDrawBuilder::PublishWorkload(
 {
 	sceneData.meshWorkload = {};
 	sceneData.meshWorkload.jointMatrixCount = static_cast<std::uint32_t>(sceneData.jointMatrices.size());
-	CountMeshInstanceWorkload(sceneData.meshInstances, sceneData.meshWorkload);
-	CountMeshBatchWorkload(sceneData.meshInstanceBatches, sceneData.meshWorkload);
+	RenderMeshDrawBuilderOperations::CountMeshInstanceWorkload(sceneData.meshInstances, sceneData.meshWorkload);
+	RenderMeshDrawBuilderOperations::CountMeshBatchWorkload(sceneData.meshInstanceBatches, sceneData.meshWorkload);
 
 	static bool loggedMissingBatchWarning = false;
 	if (loggedMissingBatchWarning || world.GetProxies().empty() || !sceneData.meshInstanceBatches.empty()) return;
 	loggedMissingBatchWarning = true;
 	SPDLOG_LOGGER_WARN(
-	    g_renderMeshDrawBuilderLogger,
+	    RenderMeshDrawBuilderOperations::g_renderMeshDrawBuilderLogger,
 	    "Scene has {} mesh proxies but produced no render batches (candidates={}, rejected={}, missingGpuMesh={}, invalidGroup={}, invalidMaterial={}).",
 	    world.GetProxies().size(), result.diagnostics.CandidateItemCount, result.diagnostics.RejectedCandidateCount,
 	    result.diagnostics.RejectedMissingGpuMeshCount, result.diagnostics.RejectedInvalidInstanceGroupCount,

@@ -5,9 +5,10 @@
 #include <algorithm>
 #include <cstring>
 
-namespace
+class CookedSceneLightBuilderOperations final
 {
-	Assets::CookedSceneLightKind ToCookedLightKind(ImportedLightKind lightKind) noexcept
+  public:
+	static Assets::CookedSceneLightKind ToCookedLightKind(ImportedLightKind lightKind) noexcept
 	{
 		switch (lightKind)
 		{
@@ -25,7 +26,7 @@ namespace
 		}
 	}
 
-	Assets::CookedSceneLightRecord BuildLightRecord(const ImportedLight& importedLight)
+	static Assets::CookedSceneLightRecord BuildLightRecord(const ImportedLight& importedLight)
 	{
 		Assets::CookedSceneLightRecord lightRecord;
 		const std::size_t copyLength =
@@ -50,7 +51,7 @@ namespace
 		lightRecord.flags = importedLight.visible ? 1u : 0u;
 		return lightRecord;
 	}
-}  // namespace
+};
 
 void CookedSceneLightBuilder::BuildLights(const SourceImportResult& importResult, CookedSceneBuild& outBuild)
 {
@@ -59,6 +60,6 @@ void CookedSceneLightBuilder::BuildLights(const SourceImportResult& importResult
 
 	for (const ImportedLight& importedLight : importResult.scene.lights)
 	{
-		outBuild.manifest.lights.push_back(BuildLightRecord(importedLight));
+		outBuild.manifest.lights.push_back(CookedSceneLightBuilderOperations::BuildLightRecord(importedLight));
 	}
 }

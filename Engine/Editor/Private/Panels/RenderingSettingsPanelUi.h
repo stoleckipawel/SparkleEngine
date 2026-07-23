@@ -1,15 +1,11 @@
 #pragma once
 
-#include "Style/SparkleUiPalette.h"
-#include "Util/UiUtil.h"
-
 #include <imgui.h>
 
 #include <algorithm>
 #include <cstddef>
 #include <cfloat>
 #include <cstdint>
-#include <string>
 
 namespace RenderingSettingsPanelUi
 {
@@ -22,44 +18,9 @@ namespace RenderingSettingsPanelUi
 		ValueType Value{};
 	};
 
-	inline bool MatchesFilter(const char* filterText, const char* title, const char* keywords)
-	{
-		if (filterText == nullptr || filterText[0] == '\0')
-		{
-			return true;
-		}
-
-		return UiUtil::MatchesDetailsFilter(std::string(filterText), title, keywords);
-	}
-
-	inline bool BeginSettingsCategory(const char* label)
-	{
-		ImGui::PushStyleColor(ImGuiCol_Header, SparkleUiPalette::HeaderBackground());
-		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, SparkleUiPalette::HeaderBackgroundHovered());
-		ImGui::PushStyleColor(ImGuiCol_HeaderActive, SparkleUiPalette::HeaderBackgroundActive());
-		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextPrimary());
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 5.0f));
-		const bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
-		ImGui::PopStyleVar();
-		ImGui::PopStyleColor(4);
-		return open;
-	}
-
-	inline bool BeginSettingsTable(const char* id)
-	{
-		const ImGuiTableFlags tableFlags =
-		    ImGuiTableFlags_SizingStretchProp |
-		    ImGuiTableFlags_BordersInnerV |
-		    ImGuiTableFlags_BordersInnerH;
-		if (!ImGui::BeginTable(id, 2, tableFlags))
-		{
-			return false;
-		}
-
-		ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthFixed, kLabelColumnWidth);
-		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-		return true;
-	}
+	bool MatchesFilter(const char* filterText, const char* title, const char* keywords);
+	bool BeginSettingsCategory(const char* label);
+	bool BeginSettingsTable(const char* id);
 
 	template <typename OnChanged>
 	void DrawBooleanRow(const char* id, const char* label, bool value, OnChanged&& onChanged)

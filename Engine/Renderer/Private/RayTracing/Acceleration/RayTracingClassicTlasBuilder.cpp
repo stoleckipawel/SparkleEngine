@@ -15,26 +15,27 @@
 
 static const auto g_rayTracingClassicTlasBuilderLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
 
-namespace
+class RayTracingClassicTlasBuilderOperations final
 {
-	std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
+  public:
+	static std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
 	{
 		return alignment > 0 ? MathUtils::AlignUp(sizeInBytes, alignment) : sizeInBytes;
 	}
 
-	bool SupportsClassicTlasRefit(RenderHardwareInterface& renderHardwareInterface) noexcept
+	static bool SupportsClassicTlasRefit(RenderHardwareInterface& renderHardwareInterface) noexcept
 	{
 		return renderHardwareInterface.GetCapabilities().RayTracing.Groups.ClassicTlas.SupportsClassicTlasUpdate;
 	}
 
-	ERhiClassicTlasBuildFlags ResolveClassicTlasBuildFlags(RenderHardwareInterface& renderHardwareInterface) noexcept
+	static ERhiClassicTlasBuildFlags ResolveClassicTlasBuildFlags(RenderHardwareInterface& renderHardwareInterface) noexcept
 	{
 		return CVarRayTracingClassicTlasRefit.Get() && SupportsClassicTlasRefit(renderHardwareInterface)
 		           ? ERhiClassicTlasBuildFlags::AllowUpdate
 		           : ERhiClassicTlasBuildFlags::None;
 	}
 
-	std::uint64_t ResolveRequiredScratchSize(
+	static std::uint64_t ResolveRequiredScratchSize(
 	    const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo,
 	    ERhiClassicTlasBuildFlags buildFlags) noexcept
 	{
@@ -45,7 +46,7 @@ namespace
 		return (std::max) (prebuildInfo.ScratchDataSizeInBytes, prebuildInfo.UpdateScratchDataSizeInBytes);
 	}
 
-	RhiRayTracingInstanceFlags ResolveInstanceFlags(const RenderSceneData& sceneData, const MeshDraw& draw) noexcept
+	static RhiRayTracingInstanceFlags ResolveInstanceFlags(const RenderSceneData& sceneData, const MeshDraw& draw) noexcept
 	{
 		RhiRayTracingInstanceFlags flags = RhiRayTracingInstanceFlags::None;
 		if (draw.Material.Slot >= sceneData.materials.size())
@@ -63,7 +64,7 @@ namespace
 		}
 		return flags;
 	}
-}
+};
 
 RayTracingClassicTlasBuilder::RayTracingClassicTlasBuilder(RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface)
@@ -86,9 +87,9 @@ bool RayTracingClassicTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexc
 	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
 	    m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(
 	        instanceCapacity,
-	        ResolveClassicTlasBuildFlags(*m_renderHardwareInterface));
+	        RayTracingClassicTlasBuilderOperations::ResolveClassicTlasBuildFlags(*m_renderHardwareInterface));
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 ||
-	    ResolveRequiredScratchSize(prebuildInfo, ResolveClassicTlasBuildFlags(*m_renderHardwareInterface)) == 0)
+	    RayTracingClassicTlasBuilderOperations::ResolveRequiredScratchSize(prebuildInfo, RayTracingClassicTlasBuilderOperations::ResolveClassicTlasBuildFlags(*m_renderHardwareInterface)) == 0)
 	{
 		m_tlas = {};
 		return false;
@@ -152,7 +153,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 			        .InstanceID = index,
 			        .InstanceMask = 0xFFu,
 			        .InstanceContributionToHitGroupIndex = 0u,
-			        .Flags = ResolveInstanceFlags(sceneData, draw),
+			        .Flags = RayTracingClassicTlasBuilderOperations::ResolveInstanceFlags(sceneData, draw),
 			        .AccelerationStructure = blas.gpuAddress});
 		}
 	}
@@ -172,9 +173,9 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
 	    m_renderHardwareInterface->GetRayTracingService().GetTopLevelAccelerationStructurePrebuildInfo(
 	        stats.Build.InstanceCount,
-	        ResolveClassicTlasBuildFlags(*m_renderHardwareInterface));
-	const ERhiClassicTlasBuildFlags requestedBuildFlags = ResolveClassicTlasBuildFlags(*m_renderHardwareInterface);
-	const std::uint64_t requiredScratchSize = ResolveRequiredScratchSize(prebuildInfo, requestedBuildFlags);
+	        RayTracingClassicTlasBuilderOperations::ResolveClassicTlasBuildFlags(*m_renderHardwareInterface));
+	const ERhiClassicTlasBuildFlags requestedBuildFlags = RayTracingClassicTlasBuilderOperations::ResolveClassicTlasBuildFlags(*m_renderHardwareInterface);
+	const std::uint64_t requiredScratchSize = RayTracingClassicTlasBuilderOperations::ResolveRequiredScratchSize(prebuildInfo, requestedBuildFlags);
 	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || requiredScratchSize == 0)
 	{
 		m_tlas = {};
@@ -307,9 +308,9 @@ bool RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerati
 		return false;
 	}
 
-	const ERhiClassicTlasBuildFlags requestedBuildFlags = ResolveClassicTlasBuildFlags(*m_renderHardwareInterface);
+	const ERhiClassicTlasBuildFlags requestedBuildFlags = RayTracingClassicTlasBuilderOperations::ResolveClassicTlasBuildFlags(*m_renderHardwareInterface);
 	const bool requestedAllowUpdate = HasFlag(requestedBuildFlags, ERhiClassicTlasBuildFlags::AllowUpdate);
-	const std::uint64_t requiredScratchSize = ResolveRequiredScratchSize(prebuildInfo, requestedBuildFlags);
+	const std::uint64_t requiredScratchSize = RayTracingClassicTlasBuilderOperations::ResolveRequiredScratchSize(prebuildInfo, requestedBuildFlags);
 	if (m_resourcesAllowUpdate != requestedAllowUpdate)
 	{
 		if (m_scratchBuffer)
@@ -343,7 +344,7 @@ bool RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerati
 
 	if (!m_scratchBuffer)
 	{
-		const std::uint64_t alignedScratchSize = AlignRayTracingBufferSize(
+		const std::uint64_t alignedScratchSize = RayTracingClassicTlasBuilderOperations::AlignRayTracingBufferSize(
 		    requiredScratchSize,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.ScratchBufferByteAlignment);
 		m_scratchBuffer =
@@ -352,7 +353,7 @@ bool RayTracingClassicTlasBuilder::EnsureResources(const RhiRayTracingAccelerati
 	}
 	if (!m_accelerationStructureBuffer)
 	{
-		const std::uint64_t alignedAccelerationStructureSize = AlignRayTracingBufferSize(
+		const std::uint64_t alignedAccelerationStructureSize = RayTracingClassicTlasBuilderOperations::AlignRayTracingBufferSize(
 		    prebuildInfo.ResultDataMaxSizeInBytes,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.AccelerationStructureByteAlignment);
 		m_accelerationStructureBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingAccelerationStructureBuffer(

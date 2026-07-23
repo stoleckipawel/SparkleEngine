@@ -131,6 +131,11 @@ class VulkanRhi final
 	static bool IsLayerAvailable(const char* layerName) noexcept;
 	static bool IsInstanceExtensionAvailable(const char* extensionName) noexcept;
 	static bool IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept;
+	static bool QueryMutableDescriptorTypeFeature(VkPhysicalDevice physicalDevice) noexcept;
+	static bool AppendAvailableDeviceExtension(
+	    VkPhysicalDevice physicalDevice,
+	    std::vector<const char*>& extensions,
+	    const char* extensionName) noexcept;
 	static std::uint32_t ScorePhysicalDevice(const VkPhysicalDeviceProperties& properties) noexcept;
 	static VulkanAdapterInfo BuildAdapterInfo(const VkPhysicalDeviceProperties& properties);
 	static std::string FormatApiVersion(std::uint32_t version);
@@ -141,6 +146,10 @@ class VulkanRhi final
 	    VkDebugUtilsMessageTypeFlagsEXT messageTypes,
 	    const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
 	    void* userData) noexcept;
+
+	static constexpr std::uint32_t NvidiaVendorId = 0x10DE;
+	static constexpr const char* NvidiaBinaryImportExtensionName = "VK_NVX_binary_import";
+	static constexpr const char* NvidiaImageViewHandleExtensionName = "VK_NVX_image_view_handle";
 
 	VkInstance m_instance = VK_NULL_HANDLE;
 	VulkanDebugLayer m_debugLayer;

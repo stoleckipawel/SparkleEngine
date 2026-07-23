@@ -13,8 +13,9 @@
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
 #include "SceneData/Input/RenderInputConsumer.h"
 
-namespace
+class FramePipelineViewportProductsImplementation final
 {
+  public:
 	struct ResolvedViewportCaptureSource final
 	{
 		const RenderProduct* Product = nullptr;
@@ -23,7 +24,7 @@ namespace
 		ResourceState SourceState = ResourceState::Common;
 	};
 
-	bool IsCapturableViewportProductFormat(RenderProductFormat format) noexcept
+	static bool IsCapturableViewportProductFormat(RenderProductFormat format) noexcept
 	{
 		switch (format)
 		{
@@ -36,7 +37,7 @@ namespace
 		}
 	}
 
-	ViewportCaptureResult ToViewportCaptureResult(
+	static ViewportCaptureResult ToViewportCaptureResult(
 	    const RhiCaptureResult& rhiResult,
 	    const RenderFrameMetadata& metadata) noexcept
 	{
@@ -62,7 +63,7 @@ namespace
 		return result;
 	}
 
-	ViewportCaptureResult MakePendingCaptureResult(
+	static ViewportCaptureResult MakePendingCaptureResult(
 	    const ViewportCaptureRequest& request,
 	    const RenderFrameMetadata& metadata)
 	{
@@ -73,7 +74,7 @@ namespace
 		    .ArtifactPath = request.OutputPath};
 	}
 
-	bool ValidateCaptureRequest(
+	static bool ValidateCaptureRequest(
 	    const ViewportCaptureRequest& request,
 	    const RenderFrameMetadata& metadata,
 	    ViewportCaptureResult& result)
@@ -91,7 +92,7 @@ namespace
 		return true;
 	}
 
-	bool ResolveCaptureSource(
+	static bool ResolveCaptureSource(
 	    const ViewportRenderProducts& products,
 	    FrameGraph* frameGraph,
 	    RenderOutputFlags output,
@@ -125,7 +126,7 @@ namespace
 		source.SourceState = frameGraph->GetTrackedResourceState(source.FrameGraphResource);
 		return true;
 	}
-}
+};
 
 ViewportPresentationProduct FramePipeline::BeginViewportPresentation(RenderOutputFlags output) noexcept
 {
@@ -179,13 +180,13 @@ void FramePipeline::EndViewportPresentation(RenderOutputFlags output) noexcept
 ViewportCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
 {
 	const RenderFrameMetadata& metadata = m_renderInputConsumer->GetDynamicData().Metadata;
-	ViewportCaptureResult result = MakePendingCaptureResult(request, metadata);
-	if (!ValidateCaptureRequest(request, metadata, result)) return result;
-	ResolvedViewportCaptureSource source;
-	if (!ResolveCaptureSource(m_viewportRenderProducts, m_frameGraph.get(), request.Output, source, result))
+	ViewportCaptureResult result = FramePipelineViewportProductsImplementation::MakePendingCaptureResult(request, metadata);
+	if (!FramePipelineViewportProductsImplementation::ValidateCaptureRequest(request, metadata, result)) return result;
+	FramePipelineViewportProductsImplementation::ResolvedViewportCaptureSource source;
+	if (!FramePipelineViewportProductsImplementation::ResolveCaptureSource(m_viewportRenderProducts, m_frameGraph.get(), request.Output, source, result))
 		return result;
 
-	return ToViewportCaptureResult(m_systems->GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
+	return FramePipelineViewportProductsImplementation::ToViewportCaptureResult(m_systems->GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
 	    RhiTextureCaptureRequest{
 	        .Resource = source.Resource,
 	        .Width = source.Product->Extent.Width,

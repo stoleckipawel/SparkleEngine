@@ -8,15 +8,17 @@
 
 #include <cmath>
 
-namespace
+class TemporalDataPolicy final
 {
-constexpr uint32_t kMaxCachedJitteredFrames = 16u;
-// Donut-style temporal AA pattern baseline: Halton(2,3) sample sequence.
-// This keeps deterministic sub-pixel offsets and avoids RNG-sensitive temporal aliasing.
-constexpr float kCutPositionDeltaMeters = 5.0f;
-constexpr float kCutViewDirectionDotThreshold = 0.8660254f; // ~30 degrees.
-constexpr float kCutFovDeltaDegrees = 6.0f;
-}  // namespace
+  public:
+		static constexpr uint32_t kMaxCachedJitteredFrames = 16u;
+
+		// Donut-style temporal AA pattern baseline: Halton(2,3) sample sequence.
+		// This keeps deterministic sub-pixel offsets and avoids RNG-sensitive temporal aliasing.
+		static constexpr float kCutPositionDeltaMeters = 5.0f;
+		static constexpr float kCutViewDirectionDotThreshold = 0.8660254f; // ~30 degrees.
+		static constexpr float kCutFovDeltaDegrees = 6.0f;
+};
 
 void TemporalDataBuilder::ResetHistory(std::string_view reason) noexcept
 {
@@ -48,7 +50,7 @@ bool TemporalDataBuilder::IsLikelyCameraCut(const TemporalDataBuilder::CameraPos
 	const DirectX::XMVECTOR currentEye = DirectX::XMLoadFloat3(&currentPose.Position);
 	const DirectX::XMVECTOR eyeDelta = DirectX::XMVectorSubtract(currentEye, previousEye);
 	const float eyeDeltaLength = DirectX::XMVectorGetX(DirectX::XMVector3Length(eyeDelta));
-	if (eyeDeltaLength > kCutPositionDeltaMeters)
+	if (eyeDeltaLength > TemporalDataPolicy::kCutPositionDeltaMeters)
 	{
 		return true;
 	}
@@ -56,13 +58,13 @@ bool TemporalDataBuilder::IsLikelyCameraCut(const TemporalDataBuilder::CameraPos
 	const DirectX::XMVECTOR previousDirection = DirectX::XMLoadFloat3(&previousPose.Direction);
 	const DirectX::XMVECTOR currentDirection = DirectX::XMLoadFloat3(&currentPose.Direction);
 	const float directionDot = DirectX::XMVectorGetX(DirectX::XMVector3Dot(previousDirection, currentDirection));
-	if (directionDot < kCutViewDirectionDotThreshold)
+	if (directionDot < TemporalDataPolicy::kCutViewDirectionDotThreshold)
 	{
 		return true;
 	}
 
 	const float fovDelta = std::abs(previousPose.FovYDegrees - currentPose.FovYDegrees);
-	if (fovDelta > kCutFovDeltaDegrees)
+	if (fovDelta > TemporalDataPolicy::kCutFovDeltaDegrees)
 	{
 		return true;
 	}
@@ -81,7 +83,7 @@ PerTemporalConstantBufferData TemporalDataBuilder::BuildTemporalData(
 	const DirectX::XMFLOAT2 jitterCurrent = TemporalJitterPatterns::GenerateJitterOffset(
 	    viewport.Width,
 	    viewport.Height,
-	    static_cast<std::uint32_t>(frameId % kMaxCachedJitteredFrames),
+	    static_cast<std::uint32_t>(frameId % TemporalDataPolicy::kMaxCachedJitteredFrames),
 	    TemporalJitterPatterns::Pattern::Halton);
 	temporalData.JitterCurrent = jitterCurrent;
 	temporalData.JitterPrevious = m_previousJitter;

@@ -10,9 +10,10 @@
 
 static const auto g_gpuSkinInfluenceBufferLogger = Logging::GetOrCreateLogger("Renderer.GPUSkinInfluenceBuffer");
 
-namespace
+class GPUSkinInfluenceBufferOperations final
 {
-	VertexSkinInfluenceData ToGpuSkinInfluence(const VertexSkinInfluence& influence) noexcept
+  public:
+	static VertexSkinInfluenceData ToGpuSkinInfluence(const VertexSkinInfluence& influence) noexcept
 	{
 		return VertexSkinInfluenceData{
 		    .JointIndices =
@@ -26,7 +27,7 @@ namespace
 		         influence.jointWeights[2],
 		         influence.jointWeights[3]}};
 	}
-}
+};
 
 GPUSkinInfluenceBuffer::~GPUSkinInfluenceBuffer() noexcept
 {
@@ -47,7 +48,7 @@ bool GPUSkinInfluenceBuffer::Upload(
 	{
 		for (const VertexSkinInfluence& influence : skinInfluences)
 		{
-			gpuSkinInfluences.push_back(ToGpuSkinInfluence(influence));
+			gpuSkinInfluences.push_back(GPUSkinInfluenceBufferOperations::ToGpuSkinInfluence(influence));
 		}
 	}
 	else

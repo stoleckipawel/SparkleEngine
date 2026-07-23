@@ -7,10 +7,11 @@
 #include <algorithm>
 #include <cmath>
 
-namespace
+class RayTracingPtlasPartitionPlannerStateConstants final
 {
-	constexpr std::uint32_t kMaxPlannerPartitionsPerAxis = 64;
-}
+  public:
+	static constexpr std::uint32_t kMaxPlannerPartitionsPerAxis = 64;
+};
 
 void RayTracingPtlasPartitionPlanner::Clear() noexcept
 {
@@ -20,7 +21,7 @@ void RayTracingPtlasPartitionPlanner::Clear() noexcept
 
 RayTracingPtlasPartitionPlannerConfig RayTracingPtlasPartitionPlanner::SanitizeConfig(RayTracingPtlasPartitionPlannerConfig config) noexcept
 {
-	config.PartitionsPerAxis = std::clamp(config.PartitionsPerAxis, 1u, kMaxPlannerPartitionsPerAxis);
+	config.PartitionsPerAxis = std::clamp(config.PartitionsPerAxis, 1u, RayTracingPtlasPartitionPlannerStateConstants::kMaxPlannerPartitionsPerAxis);
 	config.ModeChangeDistance = (std::max)(config.ModeChangeDistance, 0.0f);
 	config.TransformDirtyEpsilon = (std::max)(config.TransformDirtyEpsilon, 0.0f);
 	return config;

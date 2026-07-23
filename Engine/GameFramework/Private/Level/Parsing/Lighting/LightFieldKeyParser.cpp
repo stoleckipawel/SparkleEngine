@@ -7,8 +7,7 @@
 
 namespace LevelParsing
 {
-	namespace
-	{
+
 		struct LightFieldPrefix final
 		{
 			std::string_view Text;
@@ -43,7 +42,7 @@ namespace LevelParsing
 			outField = key.substr(cursor);
 			return true;
 		}
-	}
+
 
 	bool TryParseLightFieldKey(std::string_view key, ParsedLightFieldKey& outKey) noexcept
 	{

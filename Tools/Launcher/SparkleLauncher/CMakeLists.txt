@@ -98,6 +98,7 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherWorkflowCatalog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowActivity.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherPageUtilities.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowHomePage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowOptionPages.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowOperations.cpp

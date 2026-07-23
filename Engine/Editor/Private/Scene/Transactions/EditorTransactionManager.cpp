@@ -3,10 +3,11 @@
 
 #include <utility>
 
-namespace
+class EditorTransactionManagerConstants final
 {
-	constexpr std::size_t MaximumTransactions = 256;
-}
+  public:
+	static constexpr std::size_t MaximumTransactions = 256;
+};
 
 WorldEditResult EditorTransactionManager::Submit(WorldEditCommand command, std::uint64_t worldGeneration)
 {
@@ -42,7 +43,7 @@ WorldEditResult EditorTransactionManager::Execute(
 	}
 	else
 	{
-		if (m_undo.size() == MaximumTransactions) m_undo.erase(m_undo.begin());
+		if (m_undo.size() == EditorTransactionManagerConstants::MaximumTransactions) m_undo.erase(m_undo.begin());
 		m_undo.push_back({std::move(forward), std::move(inverse), std::move(coalescingKey)});
 	}
 	m_redo.clear();

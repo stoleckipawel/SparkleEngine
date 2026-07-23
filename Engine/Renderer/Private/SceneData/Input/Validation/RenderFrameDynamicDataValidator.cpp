@@ -7,11 +7,12 @@
 #include <set>
 #include <tuple>
 
-namespace
+class RenderFrameDynamicDataValidatorImplementation final
 {
+  public:
 	using StaticDataByObject = std::map<RenderObjectId, const RenderObjectStaticData*>;
 
-	StaticDataByObject BuildProjectedObjects(const RenderWorld& world, const RenderWorldDelta& delta)
+	static StaticDataByObject BuildProjectedObjects(const RenderWorld& world, const RenderWorldDelta& delta)
 	{
 		StaticDataByObject objects;
 		if (!delta.ResetScene)
@@ -21,14 +22,14 @@ namespace
 		for (const RenderObjectUpdate& update : delta.Updates) objects[update.Object] = &update.Static;
 		return objects;
 	}
-}
+};
 
 bool RenderFrameDynamicDataValidator::Validate(
     const RenderWorld& world,
     const RenderInputFrame& input,
     std::string& diagnostic)
 {
-	const StaticDataByObject projectedObjects = BuildProjectedObjects(world, input.WorldDelta);
+	const RenderFrameDynamicDataValidatorImplementation::StaticDataByObject projectedObjects = RenderFrameDynamicDataValidatorImplementation::BuildProjectedObjects(world, input.WorldDelta);
 	std::set<RenderObjectId> dynamicObjects;
 	for (const RenderObjectDynamicData& object : input.Dynamic.Objects)
 		if (!object.Object.IsValid() || !projectedObjects.contains(object.Object) ||

@@ -9,9 +9,10 @@
 
 #include <sl_dlss.h>
 
-namespace
+class StreamlineDlssEvaluationOperations final
 {
-	bool HasRequiredNativeResources(const UpscalerEvaluationDesc& evaluation) noexcept
+  public:
+	static bool HasRequiredNativeResources(const UpscalerEvaluationDesc& evaluation) noexcept
 	{
 		return evaluation.NativeCommandList && AreStreamlineTextureViewsValid(
 		                                           evaluation.BackendApi,
@@ -21,7 +22,7 @@ namespace
 		                                           evaluation.NativeExposureView,
 		                                           evaluation.NativeScalingOutputColorView);
 	}
-}
+};
 
 RenderViewportExtent QueryStreamlineDlssOptimalRenderExtent(
     RenderViewportExtent outputExtent,
@@ -42,7 +43,7 @@ bool EvaluateStreamlineDlssFrame(
     sl::ViewportHandle viewport,
     const UpscalerEvaluationDesc& evaluation)
 {
-	if (!HasRequiredNativeResources(evaluation))
+	if (!StreamlineDlssEvaluationOperations::HasRequiredNativeResources(evaluation))
 	{
 		return false;
 	}

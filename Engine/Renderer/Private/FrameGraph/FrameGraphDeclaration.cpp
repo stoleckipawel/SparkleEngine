@@ -8,9 +8,10 @@
 #include <string>
 #include <utility>
 
-namespace
+class FrameGraphDeclarationOperations final
 {
-	std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassKind passKind)
+  public:
+	static std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassKind passKind)
 	{
 		std::string label{"FrameGraph/"};
 		label += FrameGraphPassKindToString(passKind);
@@ -21,13 +22,13 @@ namespace
 		return label;
 	}
 
-	std::string FormatPassDiagnosticName(std::string_view passName)
+	static std::string FormatPassDiagnosticName(std::string_view passName)
 	{
 		std::string name{"Renderer.FrameGraph."};
 		name.append(passName.begin(), passName.end());
 		return name;
 	}
-}  // namespace
+};
 
 void FrameGraph::Setup(const FrameContext& frame)
 {
@@ -49,8 +50,8 @@ void FrameGraph::Setup(const FrameContext& frame)
 		        .passName = pass.name,
 		        .kind = pass.kind,
 		        .queuePreference = pass.queuePreference,
-		        .diagnosticName = FormatPassDiagnosticName(pass.name),
-		        .eventScopeLabel = FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.kind),
+		        .diagnosticName = FrameGraphDeclarationOperations::FormatPassDiagnosticName(pass.name),
+		        .eventScopeLabel = FrameGraphDeclarationOperations::FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.kind),
 		        .declarations = std::move(declarations)});
 	}
 }

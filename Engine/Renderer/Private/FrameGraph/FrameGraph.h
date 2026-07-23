@@ -52,7 +52,18 @@ class FrameGraph
   private:
 	struct AllocatedParameterInstanceBase
 	{
-		virtual ~AllocatedParameterInstanceBase() noexcept = default;
+		virtual ~AllocatedParameterInstanceBase() noexcept;
+	};
+
+	template <typename TParameters>
+	struct AllocatedParameterInstance final : AllocatedParameterInstanceBase
+	{
+		explicit AllocatedParameterInstance(const ShaderParameterStructMetadata<TParameters>& metadata)
+		    : Instance(metadata)
+		{
+		}
+
+		TypedPassParameterInstance<TParameters> Instance;
 	};
 
   public:
@@ -170,17 +181,10 @@ class FrameGraph
 	    FrameExecutionDiagnostics& frameDiagnostics) const;
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
 	{
-		struct AllocatedParameterInstance final : AllocatedParameterInstanceBase
-		{
-			explicit AllocatedParameterInstance(const ShaderParameterStructMetadata<TParameters>& metadata) : Instance(metadata) {}
-
-			TypedPassParameterInstance<TParameters> Instance;
-		};
-
 		static const ShaderParameterStructMetadata<TParameters> metadata =
 		    ShaderParameterStructBuilder<TParameters>::BuildMetadata("FrameGraphParameters");
 
-		auto allocation = std::make_unique<AllocatedParameterInstance>(metadata);
+		auto allocation = std::make_unique<AllocatedParameterInstance<TParameters>>(metadata);
 		TypedPassParameterInstance<TParameters>& instance = allocation->Instance;
 		m_allocatedParameterInstances.push_back(std::unique_ptr<AllocatedParameterInstanceBase>(std::move(allocation)));
 		return instance;
@@ -307,26 +311,9 @@ class FrameGraph
 		return field;
 	}
 
-	ShaderAccelerationStructure Read(FrameGraphAccelerationStructureHandle handle) const noexcept
-	{
-		ShaderAccelerationStructure field;
-		field = handle;
-		return field;
-	}
-
-	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept
-	{
-		ShaderRenderTarget field;
-		field = handle;
-		return field;
-	}
-
-	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept
-	{
-		ShaderDepthTarget field;
-		field = handle;
-		return field;
-	}
+	ShaderAccelerationStructure Read(FrameGraphAccelerationStructureHandle handle) const noexcept;
+	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept;
+	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept;
 
 	template <typename TValue> ShaderUniform<TValue> Uniform(const TValue& value) const noexcept
 	{

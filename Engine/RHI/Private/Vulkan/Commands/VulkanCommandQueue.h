@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Commands/RhiQueue.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 #include "Vulkan/VulkanIncludes.h"
 
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <span>
 
 class VulkanRhi;
@@ -22,7 +22,6 @@ struct VulkanQueueSubmission final
 struct VulkanNativeQueueState final
 {
 	VkQueue Queue = VK_NULL_HANDLE;
-	mutable std::mutex SubmissionMutex;
 };
 
 class VulkanCommandQueue final
@@ -48,10 +47,19 @@ class VulkanCommandQueue final
 	RhiSubmissionToken GetLastSubmittedToken() const noexcept;
 	std::uint64_t GetCompletedSubmissionValue() const noexcept;
 	ERhiQueueType GetQueueType() const noexcept { return m_queueType; }
-	VkQueue GetNativeQueue() const noexcept { return m_nativeQueue != nullptr ? m_nativeQueue->Queue : VK_NULL_HANDLE; }
-	VkSemaphore GetTimelineSemaphore() const noexcept { return m_timelineSemaphore; }
+	VkQueue GetNativeQueue() const noexcept
+	{
+		m_owner.AssertAccess();
+		return m_nativeQueue != nullptr ? m_nativeQueue->Queue : VK_NULL_HANDLE;
+	}
+	VkSemaphore GetTimelineSemaphore() const noexcept
+	{
+		m_owner.AssertAccess();
+		return m_timelineSemaphore;
+	}
 
   private:
+	Threading::OwnerThread m_owner{"Vulkan command queue"};
 	VulkanRhi& m_rhi;
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
 	std::shared_ptr<VulkanNativeQueueState> m_nativeQueue;

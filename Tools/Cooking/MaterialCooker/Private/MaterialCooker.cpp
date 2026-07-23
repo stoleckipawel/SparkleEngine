@@ -17,9 +17,10 @@
 #include <optional>
 #include <utility>
 
-namespace
+class MaterialCookerOperations final
 {
-	bool BuildCookedTextureReferencePath(
+  public:
+	static bool BuildCookedTextureReferencePath(
 	    const TextureCookRequest& request,
 	    std::string& outTextureReferencePath,
 	    std::string& outErrorMessage)
@@ -34,7 +35,7 @@ namespace
 		outTextureReferencePath = relativePath->generic_string();
 		return true;
 	}
-}
+};
 
 bool MaterialCooker::BuildMaterialAssets(
     const SourceImportResult& importResult,
@@ -67,7 +68,7 @@ bool MaterialCooker::BuildMaterialAssets(
 		}
 
 		std::string textureReferencePath;
-		if (!BuildCookedTextureReferencePath(request, textureReferencePath, outErrorMessage))
+		if (!MaterialCookerOperations::BuildCookedTextureReferencePath(request, textureReferencePath, outErrorMessage))
 		{
 			return false;
 		}

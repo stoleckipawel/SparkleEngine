@@ -7,14 +7,15 @@
 #include <string>
 #include <utility>
 
-namespace
+class CookedAnimationAssetBuilderOperations final
 {
-	Assets::CookedAssetId BuildAnimationAssetId(std::string_view sceneAssetId, std::uint32_t sourceAnimationIndex)
+  public:
+	static Assets::CookedAssetId BuildAnimationAssetId(std::string_view sceneAssetId, std::uint32_t sourceAnimationIndex)
 	{
 		return Hash::Fnv1a64(std::string(sceneAssetId) + "#animation#" + std::to_string(sourceAnimationIndex));
 	}
 
-	Assets::CookedAnimationInterpolation ToCookedInterpolation(ImportedAnimationInterpolation interpolation) noexcept
+	static Assets::CookedAnimationInterpolation ToCookedInterpolation(ImportedAnimationInterpolation interpolation) noexcept
 	{
 		switch (interpolation)
 		{
@@ -25,7 +26,7 @@ namespace
 		}
 	}
 
-	Assets::CookedAnimationTargetPath ToCookedTargetPath(ImportedAnimationTargetPath targetPath) noexcept
+	static Assets::CookedAnimationTargetPath ToCookedTargetPath(ImportedAnimationTargetPath targetPath) noexcept
 	{
 		switch (targetPath)
 		{
@@ -38,13 +39,13 @@ namespace
 		}
 	}
 
-	Assets::CookedAssetId ResolveTargetSkeletonAssetId(const CookedSceneBuild& build, const ImportedAnimationClip& clip) noexcept
+	static Assets::CookedAssetId ResolveTargetSkeletonAssetId(const CookedSceneBuild& build, const ImportedAnimationClip& clip) noexcept
 	{
 		return clip.targetSkeletonIndex < build.manifest.skeletonRefs.size()
 		           ? build.manifest.skeletonRefs[clip.targetSkeletonIndex].skeletonAssetId
 		           : Assets::InvalidCookedAssetId;
 	}
-}
+};
 
 void CookedAnimationAssetBuilder::Build(
 	const SourceImportResult& importResult, std::string_view sceneAssetId, CookedSceneBuild& outBuild)
@@ -58,8 +59,8 @@ void CookedAnimationAssetBuilder::Build(
 	{
 		if (!importedClip.IsValid()) continue;
 		CookedAnimationAssetBuild animationAsset;
-		animationAsset.assetId = BuildAnimationAssetId(sceneAssetId, importedClip.sourceAnimationIndex);
-		animationAsset.targetSkeletonAssetId = ResolveTargetSkeletonAssetId(outBuild, importedClip);
+		animationAsset.assetId = CookedAnimationAssetBuilderOperations::BuildAnimationAssetId(sceneAssetId, importedClip.sourceAnimationIndex);
+		animationAsset.targetSkeletonAssetId = CookedAnimationAssetBuilderOperations::ResolveTargetSkeletonAssetId(outBuild, importedClip);
 		animationAsset.sourceAnimationIndex = importedClip.sourceAnimationIndex;
 		animationAsset.durationSeconds = importedClip.durationSeconds;
 		animationAsset.name = importedClip.name;
@@ -77,8 +78,8 @@ void CookedAnimationAssetBuilder::Build(
 				                                    .value = importedKeyframe.value,
 				                                    .inTangent = importedKeyframe.inTangent,
 				                                    .outTangent = importedKeyframe.outTangent});
-			animationAsset.channels.push_back({.targetPath = ToCookedTargetPath(importedChannel.targetPath),
-			                                   .interpolation = ToCookedInterpolation(sampler.interpolation),
+			animationAsset.channels.push_back({.targetPath = CookedAnimationAssetBuilderOperations::ToCookedTargetPath(importedChannel.targetPath),
+			                                   .interpolation = CookedAnimationAssetBuilderOperations::ToCookedInterpolation(sampler.interpolation),
 			                                   .targetNodeIndex = importedChannel.targetNodeIndex,
 			                                   .targetJointIndex = importedChannel.targetJointIndex,
 			                                   .firstKeyframe = firstKeyframe,

@@ -13,8 +13,7 @@
 
 namespace Filesystem::Private
 {
-	namespace
-	{
+
 		void RebuildTypedPaths(AssetPathState& state)
 		{
 			const auto buildPaths = [](const std::filesystem::path& root, auto& paths)
@@ -183,7 +182,7 @@ namespace Filesystem::Private
 			RebuildProjectPaths(state);
 			return state;
 		}
-	}
+
 
 	void RebuildProjectPaths(AssetPathState& state)
 	{

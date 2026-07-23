@@ -7,9 +7,10 @@
 #include <stdexcept>
 #include <utility>
 
-namespace
+class TaskExecutorMechanism final
 {
-	TaskDetail::CompletedTaskExecution RejectedExecution(std::uint64_t generation, std::string_view reason)
+  public:
+	static TaskDetail::CompletedTaskExecution RejectedExecution(std::uint64_t generation, std::string_view reason)
 	{
 		TaskDetail::CompletedTaskExecution execution;
 		execution.Generation = generation;
@@ -17,7 +18,7 @@ namespace
 		execution.Result = TaskResult::Failure(reason);
 		return execution;
 	}
-}
+};
 
 TaskExecutor::Implementation::Runtime::Runtime(TaskExecutorConfig config) : m_config(config)
 {
@@ -71,24 +72,24 @@ std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::Lau
 
 	if (TaskDetail::IsExecutorWorker(this))
 	{
-		execution->Publish(RejectedExecution(
+		execution->Publish(TaskExecutorMechanism::RejectedExecution(
 		    generation, "A task worker cannot submit work to its own executor; use graph dependencies or nested tasks."));
 		return execution;
 	}
 	if (scope && context.HasUserData() && !context.HasOwnedUserData())
 	{
-		execution->Publish(RejectedExecution(
+		execution->Publish(TaskExecutorMechanism::RejectedExecution(
 		    generation, "Scoped asynchronous launch requires owned or empty TaskExecutionContext data."));
 		return execution;
 	}
 	if (!graph.IsValid())
 	{
-		execution->Publish(RejectedExecution(generation, graph.GetError().Message));
+		execution->Publish(TaskExecutorMechanism::RejectedExecution(generation, graph.GetError().Message));
 		return execution;
 	}
 	if (graph.GetTaskCount() > m_config.MaximumTasksPerExecution || graph.GetEdgeCount() > m_config.MaximumEdgesPerExecution)
 	{
-		execution->Publish(RejectedExecution(generation, "Compiled task graph exceeds this executor's bounded execution capacity."));
+		execution->Publish(TaskExecutorMechanism::RejectedExecution(generation, "Compiled task graph exceeds this executor's bounded execution capacity."));
 		return execution;
 	}
 	if (!m_workers.empty())
@@ -97,7 +98,7 @@ std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::Lau
 		{
 			if (GetWorkerCount(node.Desc.Lane) == 0)
 			{
-				execution->Publish(RejectedExecution(generation, "Compiled task graph uses a lane with no configured workers."));
+				execution->Publish(TaskExecutorMechanism::RejectedExecution(generation, "Compiled task graph uses a lane with no configured workers."));
 				return execution;
 			}
 		}
@@ -108,7 +109,7 @@ std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::Lau
 	                                                  *this, graph.m_data, std::move(context), execution);
 	if (scope && !scope->RegisterExecution(execution))
 	{
-		execution->Publish(RejectedExecution(generation, "TaskScope is closed, settled, or used from a non-owner thread."));
+		execution->Publish(TaskExecutorMechanism::RejectedExecution(generation, "TaskScope is closed, settled, or used from a non-owner thread."));
 		return execution;
 	}
 
@@ -117,12 +118,12 @@ std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::Lau
 		std::erase_if(m_executions, [](const std::weak_ptr<TaskExecution::State>& item) { return item.expired(); });
 		if (m_lifecycle != LifecycleState::Accepting)
 		{
-			execution->Publish(RejectedExecution(generation, "Task executor is no longer accepting submissions."));
+			execution->Publish(TaskExecutorMechanism::RejectedExecution(generation, "Task executor is no longer accepting submissions."));
 			return execution;
 		}
 		if (m_activeExecutions >= m_config.MaximumActiveExecutions)
 		{
-			execution->Publish(RejectedExecution(generation, "Task executor reached its active-execution capacity."));
+			execution->Publish(TaskExecutorMechanism::RejectedExecution(generation, "Task executor reached its active-execution capacity."));
 			return execution;
 		}
 		++m_activeExecutions;

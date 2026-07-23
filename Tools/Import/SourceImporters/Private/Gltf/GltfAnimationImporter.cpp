@@ -9,9 +9,10 @@
 #include <limits>
 #include <utility>
 
-namespace
+class GltfAnimationImporterOperations final
 {
-	ImportedAnimationInterpolation ToImportedInterpolation(cgltf_interpolation_type interpolation) noexcept
+  public:
+	static ImportedAnimationInterpolation ToImportedInterpolation(cgltf_interpolation_type interpolation) noexcept
 	{
 		switch (interpolation)
 		{
@@ -25,7 +26,7 @@ namespace
 		}
 	}
 
-	ImportedAnimationTargetPath ToImportedTargetPath(cgltf_animation_path_type path) noexcept
+	static ImportedAnimationTargetPath ToImportedTargetPath(cgltf_animation_path_type path) noexcept
 	{
 		switch (path)
 		{
@@ -42,7 +43,7 @@ namespace
 		}
 	}
 
-	std::uint32_t GetValueComponentCount(ImportedAnimationTargetPath targetPath) noexcept
+	static std::uint32_t GetValueComponentCount(ImportedAnimationTargetPath targetPath) noexcept
 	{
 		switch (targetPath)
 		{
@@ -58,7 +59,7 @@ namespace
 		}
 	}
 
-	DirectX::XMFLOAT4 ReadOutputValue(const cgltf_accessor* accessor, std::size_t index, std::uint32_t componentCount) noexcept
+	static DirectX::XMFLOAT4 ReadOutputValue(const cgltf_accessor* accessor, std::size_t index, std::uint32_t componentCount) noexcept
 	{
 		DirectX::XMFLOAT4 value{};
 		if (accessor == nullptr || index >= accessor->count)
@@ -75,7 +76,7 @@ namespace
 		return value;
 	}
 
-	float ReadInputTime(const cgltf_accessor* accessor, std::size_t index) noexcept
+	static float ReadInputTime(const cgltf_accessor* accessor, std::size_t index) noexcept
 	{
 		if (accessor == nullptr || index >= accessor->count)
 		{
@@ -87,7 +88,7 @@ namespace
 		return value;
 	}
 
-	std::uint32_t FindSamplerIndex(const cgltf_animation& animation, const cgltf_animation_sampler* sampler) noexcept
+	static std::uint32_t FindSamplerIndex(const cgltf_animation& animation, const cgltf_animation_sampler* sampler) noexcept
 	{
 		if (sampler == nullptr)
 		{
@@ -105,7 +106,7 @@ namespace
 		return (std::numeric_limits<std::uint32_t>::max)();
 	}
 
-	std::pair<std::uint32_t, std::uint32_t> FindSkeletonJointForNode(const SourceImportResult& result, std::uint32_t sourceNodeIndex) noexcept
+	static std::pair<std::uint32_t, std::uint32_t> FindSkeletonJointForNode(const SourceImportResult& result, std::uint32_t sourceNodeIndex) noexcept
 	{
 		for (std::size_t skeletonIndex = 0; skeletonIndex < result.scene.skeletons.size(); ++skeletonIndex)
 		{
@@ -122,7 +123,7 @@ namespace
 		return {(std::numeric_limits<std::uint32_t>::max)(), (std::numeric_limits<std::uint32_t>::max)()};
 	}
 
-	ImportedAnimationSampler ImportSampler(
+	static ImportedAnimationSampler ImportSampler(
 	    const cgltf_animation_sampler& sampler,
 	    ImportedAnimationTargetPath targetPath,
 	    float& inOutClipDurationSeconds)
@@ -166,7 +167,7 @@ namespace
 
 		return importedSampler;
 	}
-}
+};
 
 void GltfAnimationImporter::ImportAnimations(const cgltf_data* data, SourceImportResult& result)
 {
@@ -188,8 +189,8 @@ void GltfAnimationImporter::ImportAnimations(const cgltf_data* data, SourceImpor
 		for (cgltf_size channelIndex = 0; channelIndex < animation.channels_count; ++channelIndex)
 		{
 			const cgltf_animation_channel& channel = animation.channels[channelIndex];
-			const ImportedAnimationTargetPath targetPath = ToImportedTargetPath(channel.target_path);
-			const std::uint32_t samplerIndex = FindSamplerIndex(animation, channel.sampler);
+			const ImportedAnimationTargetPath targetPath = GltfAnimationImporterOperations::ToImportedTargetPath(channel.target_path);
+			const std::uint32_t samplerIndex = GltfAnimationImporterOperations::FindSamplerIndex(animation, channel.sampler);
 			if (targetPath == ImportedAnimationTargetPath::Unknown || samplerIndex >= clip.samplers.size() || channel.target_node == nullptr)
 			{
 				continue;
@@ -197,7 +198,7 @@ void GltfAnimationImporter::ImportAnimations(const cgltf_data* data, SourceImpor
 
 			if (!clip.samplers[samplerIndex].IsValid())
 			{
-				clip.samplers[samplerIndex] = ImportSampler(*channel.sampler, targetPath, clip.durationSeconds);
+				clip.samplers[samplerIndex] = GltfAnimationImporterOperations::ImportSampler(*channel.sampler, targetPath, clip.durationSeconds);
 			}
 
 			if (!clip.samplers[samplerIndex].IsValid())
@@ -206,7 +207,7 @@ void GltfAnimationImporter::ImportAnimations(const cgltf_data* data, SourceImpor
 			}
 
 			const std::uint32_t targetNodeIndex = static_cast<std::uint32_t>(cgltf_node_index(data, channel.target_node));
-			const auto [targetSkeletonIndex, targetJointIndex] = FindSkeletonJointForNode(result, targetNodeIndex);
+			const auto [targetSkeletonIndex, targetJointIndex] = GltfAnimationImporterOperations::FindSkeletonJointForNode(result, targetNodeIndex);
 			if (clip.targetSkeletonIndex == (std::numeric_limits<std::uint32_t>::max)())
 			{
 				clip.targetSkeletonIndex = targetSkeletonIndex;

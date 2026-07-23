@@ -8,8 +8,9 @@
 #include <format>
 #include <utility>
 
-namespace
+class CookedShaderBindingValidationImplementation final
 {
+  public:
 	class ReflectedBindingValidator final
 	{
 	  public:
@@ -249,7 +250,7 @@ namespace
 		CookedShaderBinaryFormat m_requiredBinaryFormat;
 		std::string& m_errorMessage;
 	};
-}
+};
 
 bool CookedShaderBindingValidation::Validate(
     const LoadedShaderPackage& package,
@@ -258,5 +259,5 @@ bool CookedShaderBindingValidation::Validate(
     CookedShaderBinaryFormat requiredBinaryFormat,
     std::string& outErrorMessage)
 {
-	return ReflectedBindingValidator(package, definition, expectedParameters, requiredBinaryFormat, outErrorMessage).Validate();
+	return CookedShaderBindingValidationImplementation::ReflectedBindingValidator(package, definition, expectedParameters, requiredBinaryFormat, outErrorMessage).Validate();
 }

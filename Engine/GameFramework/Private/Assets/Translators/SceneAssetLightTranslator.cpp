@@ -6,8 +6,7 @@
 
 namespace Assets
 {
-	namespace
-	{
+
 		SceneLightPayload BuildSceneLightPayload(const CookedSceneLightRecord& lightRecord)
 		{
 			switch (lightRecord.kind)
@@ -68,7 +67,7 @@ namespace Assets
 
 			return std::string(lightRecord.name, length);
 		}
-	}  // namespace
+	  // namespace
 
 	SceneLightDesc BuildSceneAssetLight(const CookedSceneLightRecord& lightRecord, std::size_t lightIndex)
 	{

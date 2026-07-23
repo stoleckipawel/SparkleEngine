@@ -11,17 +11,18 @@
 #include <string>
 #include <unordered_map>
 
-namespace
+class MeshDiagnosticMetadataCatalogOperations final
 {
+  public:
 
-std::filesystem::path BuildCookedMeshMetadataPath(std::uint64_t meshAssetId)
+static std::filesystem::path BuildCookedMeshMetadataPath(std::uint64_t meshAssetId)
 {
 	std::filesystem::path metadataPath = Paths::CookedMeshAsset(meshAssetId);
 	metadataPath += ".meta.json";
 	return metadataPath;
 }
 
-std::optional<MeshDiagnosticMetadata> LoadCookedMeshMetadata(std::uint64_t meshAssetId)
+static std::optional<MeshDiagnosticMetadata> LoadCookedMeshMetadata(std::uint64_t meshAssetId)
 {
 	std::string metadataText;
 	std::string readError;
@@ -41,13 +42,13 @@ std::optional<MeshDiagnosticMetadata> LoadCookedMeshMetadata(std::uint64_t meshA
 	Json::TryReadStringProperty(metadataText, "source", metadata.SourcePath);
 	return metadata;
 }
-}
+};
 
 std::optional<MeshDiagnosticMetadata> FindMeshDiagnosticMetadata(const MeshDiagnosticsRow& row)
 {
 	if (row.MeshAssetId == 0) return std::nullopt;
 	static std::unordered_map<std::uint64_t, std::optional<MeshDiagnosticMetadata>> metadataCache;
 	auto [metadataIt, inserted] = metadataCache.try_emplace(row.MeshAssetId);
-	if (inserted) metadataIt->second = LoadCookedMeshMetadata(row.MeshAssetId);
+	if (inserted) metadataIt->second = MeshDiagnosticMetadataCatalogOperations::LoadCookedMeshMetadata(row.MeshAssetId);
 	return metadataIt->second;
 }

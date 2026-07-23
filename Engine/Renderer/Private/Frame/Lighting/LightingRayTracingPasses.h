@@ -8,18 +8,10 @@
 
 namespace LightingRayTracingPasses
 {
-	inline bool UsesNoRayQuery(const FrameContext& frame) noexcept
-	{
-		return !frame.rayTracingScene.HasTraceableInstances();
-	}
-
-	inline bool UsesSceneTlasAccessMode(
+	bool UsesNoRayQuery(const FrameContext& frame) noexcept;
+	bool UsesSceneTlasAccessMode(
 	    const FrameContext& frame,
-	    RayTracingSceneTlasShaderAccessMode accessMode) noexcept
-	{
-		return frame.rayTracingScene.HasTraceableInstances() && frame.rayTracingScene.HasBoundTlas() &&
-		       frame.rayTracingScene.TlasShaderAccessMode == accessMode;
-	}
+	    RayTracingSceneTlasShaderAccessMode accessMode) noexcept;
 
 	template <typename TPass>
 	void DispatchNoRayQuery(FrameGraphBuilder& builder, typename TPass::ParameterInstance& parameters)

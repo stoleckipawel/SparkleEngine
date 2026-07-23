@@ -7,20 +7,21 @@
 #include <stop_token>
 #include <utility>
 
-namespace
+class TaskEventIdentity final
 {
-	std::uint64_t AcquireTaskEventIdentity() noexcept
+  public:
+	static std::uint64_t AcquireTaskEventIdentity() noexcept
 	{
 		static std::atomic_uint64_t nextIdentity{1};
 		return nextIdentity.fetch_add(1, std::memory_order_relaxed);
 	}
-}
+};
 
 struct TaskEvent::State final
 {
 	class WaitRegistration;
 
-	std::uint64_t Identity = AcquireTaskEventIdentity();
+	std::uint64_t Identity = TaskEventIdentity::AcquireTaskEventIdentity();
 	std::uint64_t Generation = 1;
 	std::mutex Mutex;
 	std::condition_variable Condition;
@@ -41,6 +42,15 @@ class TaskEvent::State::WaitRegistration final
   private:
 	State& m_state;
 };
+
+TaskEventToken::TaskEventToken() noexcept = default;
+
+TaskEventToken::TaskEventToken(std::uint64_t identity, std::uint64_t generation) noexcept :
+	m_identity(identity), m_generation(generation)
+{
+}
+
+bool TaskEventToken::operator==(const TaskEventToken&) const noexcept = default;
 
 TaskEvent::TaskEvent() : m_state(std::make_shared<State>()) {}
 

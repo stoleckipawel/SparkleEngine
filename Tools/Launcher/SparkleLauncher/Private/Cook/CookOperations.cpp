@@ -15,8 +15,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		struct CookToolRuntimeReadiness
 		{
 			bool Ready = true;
@@ -118,7 +117,7 @@ namespace SparkleLauncher
 
 			return readiness;
 		}
-	}
+
 
 	static void AddReadiness(CookOperationPlan& plan, std::string message)
 	{

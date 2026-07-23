@@ -4,6 +4,17 @@
 
 #include <utility>
 
+TaskExecution::State::State(std::uint64_t generation)
+{
+	Data.Generation = generation;
+	Data.Status = TaskExecutionStatus::Pending;
+}
+
+void TaskExecution::State::RequestCancellation() noexcept
+{
+	Cancellation.request_stop();
+}
+
 void TaskExecution::State::Publish(TaskDetail::CompletedTaskExecution completed)
 {
 	std::function<void()> onSettled;

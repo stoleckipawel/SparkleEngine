@@ -14,9 +14,10 @@
 #include <cstdio>
 #include <utility>
 
-namespace
+class FrameContextOperations final
 {
-	RhiViewport BuildSceneViewport(RenderViewportExtent sceneExtent) noexcept
+  public:
+	static RhiViewport BuildSceneViewport(RenderViewportExtent sceneExtent) noexcept
 	{
 		return RhiViewport{
 		    .X = 0.0f,
@@ -27,7 +28,7 @@ namespace
 		    .MaxDepth = 1.0f};
 	}
 
-	RhiRect BuildSceneScissorRect(RenderViewportExtent sceneExtent) noexcept
+	static RhiRect BuildSceneScissorRect(RenderViewportExtent sceneExtent) noexcept
 	{
 		return RhiRect{
 		    .Left = 0,
@@ -35,7 +36,7 @@ namespace
 		    .Right = static_cast<std::int32_t>(sceneExtent.Width),
 		    .Bottom = static_cast<std::int32_t>(sceneExtent.Height)};
 	}
-}
+};
 
 FrameContext BuildFrameContext(
     const RenderWorld& world,
@@ -56,8 +57,8 @@ FrameContext BuildFrameContext(
 		renderRayTracingScene->PlanFrame(frame.sceneData, cameraData.Position);
 	}
 	frame.sceneGpuData = BuildRenderSceneGpuData(resourceService, frame.sceneData);
-	const RhiViewport sceneViewport = BuildSceneViewport(sceneExtent);
-	frame.mainView = perViewDataBuilder.BuildView(cameraData, sceneViewport, BuildSceneScissorRect(sceneExtent));
+	const RhiViewport sceneViewport = FrameContextOperations::BuildSceneViewport(sceneExtent);
+	frame.mainView = perViewDataBuilder.BuildView(cameraData, sceneViewport, FrameContextOperations::BuildSceneScissorRect(sceneExtent));
 	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(
 	    renderCamera,
 	    frame.mainView.perViewData.Camera,

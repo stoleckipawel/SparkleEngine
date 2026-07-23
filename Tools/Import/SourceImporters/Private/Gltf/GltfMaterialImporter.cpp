@@ -11,9 +11,10 @@
 
 static const auto g_gltfMaterialImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImporters.Gltf");
 
-namespace
+class GltfMaterialImporterOperations final
 {
-	void AppendFeatureName(std::string& unsupportedFeatures, std::string_view featureName)
+  public:
+	static void AppendFeatureName(std::string& unsupportedFeatures, std::string_view featureName)
 	{
 		if (!unsupportedFeatures.empty())
 		{
@@ -23,7 +24,7 @@ namespace
 		unsupportedFeatures += featureName;
 	}
 
-	void WarnUnsupportedFeatures(const cgltf_material& material, ImportedMaterialIndex materialIndex)
+	static void WarnUnsupportedFeatures(const cgltf_material& material, ImportedMaterialIndex materialIndex)
 	{
 		std::string unsupportedFeatures;
 		if (material.has_pbr_specular_glossiness)
@@ -82,7 +83,7 @@ namespace
 			        unsupportedFeatures));
 		}
 	}
-}
+};
 
 void GltfMaterialImporter::ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SourceImportResult& result)
 {
@@ -103,7 +104,7 @@ ImportedMaterial GltfMaterialImporter::ExtractMaterial(
     SourceImportResult& result)
 {
 	ImportedMaterial importedMaterial;
-	WarnUnsupportedFeatures(material, materialIndex);
+	GltfMaterialImporterOperations::WarnUnsupportedFeatures(material, materialIndex);
 	GltfMaterialPropertyMapper::Apply(material, importedMaterial);
 	GltfMaterialTextureMapper::Apply(material, materialIndex, sourceDirectory, importedMaterial, result);
 	return importedMaterial;

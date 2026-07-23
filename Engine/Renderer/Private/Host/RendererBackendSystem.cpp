@@ -1,25 +1,21 @@
 #include "PCH.h"
 #include "Host/RendererBackendSystem.h"
 
-#include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
-#include "Streamline/StreamlineRuntimeSupport.h"
 
-RendererBackendSystem::RendererBackendSystem(Window& window, PixelFormat backBufferFormat) noexcept
+RendererBackendSystem::RendererBackendSystem(
+    Window& window,
+    PixelFormat backBufferFormat,
+    const RendererBackendConfiguration& configuration) noexcept
 {
-	const ERhiBackendApi backendApi = ResolveDefaultRhiBackendApi();
-	(void) InitializeSharedStreamlineRuntime(backendApi);
 	m_services = RenderDeviceServices::Create(
 	    window,
-	    backendApi,
+	    configuration.BackendApi,
 	    backBufferFormat,
-	    GetSharedStreamlineRhiHooks());
+	    configuration.ExternalFeatureHooks);
 }
 
 RendererBackendSystem::~RendererBackendSystem() noexcept
 {
-	// RHI objects may still refer to upgraded external interfaces. Destroy them
-	// before shutting down the integration that owns those interfaces.
 	m_services.reset();
-	ShutdownSharedStreamlineRuntime();
 }

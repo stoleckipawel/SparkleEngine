@@ -32,12 +32,13 @@
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-namespace
+class EditorUiState final
 {
-	constexpr float SceneOutlinerWidth = 320.0f;
-	constexpr float SceneInspectorWidth = 560.0f;
-	constexpr float MinimumViewportExtent = 64.0f;
-}
+  public:
+	static constexpr float SceneOutlinerWidth = 320.0f;
+	static constexpr float SceneInspectorWidth = 560.0f;
+	static constexpr float MinimumViewportExtent = 64.0f;
+};
 
 const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
 {
@@ -197,7 +198,7 @@ void UI::InitializeDefaultPanels()
 	ConfigureMainMenuBarWindowActions();
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
 	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelManager);
-	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
+	m_viewportPanel = std::make_unique<ViewportPanel>(EditorUiState::SceneOutlinerWidth, EditorUiState::SceneInspectorWidth);
 	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>();
 	m_restartService = std::make_unique<EditorRestartService>();
 	m_settingsPanel = std::make_unique<SettingsPanel>();
@@ -240,8 +241,8 @@ void UI::InitializeDefaultPanels()
 	m_sceneModel = m_sceneModelBuilder->Update();
 	if (m_sceneModel && !m_sceneModel->GetCameras().empty())
 		m_sceneSelection = SceneObjectSelection::Camera(m_sceneModel->GetCameras().front().Entity);
-	m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(m_sceneSelection, *m_transactions, SceneOutlinerWidth);
-	m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(m_sceneSelection, *m_transactions, SceneInspectorWidth);
+	m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(m_sceneSelection, *m_transactions, EditorUiState::SceneOutlinerWidth);
+	m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(m_sceneSelection, *m_transactions, EditorUiState::SceneInspectorWidth);
 }
 
 void UI::ConfigureMainMenuBarWindowActions()
@@ -373,10 +374,10 @@ void UI::BuildSceneOutliner(bool disableInteraction, float mainMenuBarHeight)
 void UI::BuildCenterWorkspace(bool disableInteraction, float mainMenuBarHeight)
 {
 	const ImGuiIO& io = ImGui::GetIO();
-	const float outlinerWidth = m_sceneOutlinerPanel ? m_sceneOutlinerPanel->GetWidth() : SceneOutlinerWidth;
-	const float inspectorWidth = m_sceneInspectorPanel ? m_sceneInspectorPanel->GetWidth() : SceneInspectorWidth;
+	const float outlinerWidth = m_sceneOutlinerPanel ? m_sceneOutlinerPanel->GetWidth() : EditorUiState::SceneOutlinerWidth;
+	const float inspectorWidth = m_sceneInspectorPanel ? m_sceneInspectorPanel->GetWidth() : EditorUiState::SceneInspectorWidth;
 	const float availableCenterHeight = (std::max) (0.0f, io.DisplaySize.y - mainMenuBarHeight);
-	const float viewportWidth = (std::max) (MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
+	const float viewportWidth = (std::max) (EditorUiState::MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
 
 	float viewportTopPanelHeight = 0.0f;
 	if (m_viewportTopPanel)

@@ -7,6 +7,7 @@
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Host/RendererBackendSystem.h"
+#include "Host/RendererBackendConfiguration.h"
 #include "Meshes/GPUMeshCache.h"
 #include "Pipeline/PipelineStateManager.h"
 #include "Providers/RendererImageProviderStack.h"
@@ -20,22 +21,18 @@
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "Textures/TextureManager.h"
-#include "Time/Timer.h"
 #include "Window/Window.h"
 
-RendererSystemRoot::RendererSystemRoot(Timer& timer, Window& window) noexcept : m_timer(&timer), m_window(&window)
+RendererSystemRoot::RendererSystemRoot(
+    Window& window,
+    const RendererBackendConfiguration& backendConfiguration) noexcept :
+    m_window(&window)
 {
-	InitializeCoreSystems();
+	InitializeCoreSystems(backendConfiguration);
 	InitializeSceneSystems();
 }
 
-RendererSystemRoot::~RendererSystemRoot() noexcept
-{
-	if (m_backend != nullptr)
-	{
-		GetBackend().WaitForIdle();
-	}
-}
+RendererSystemRoot::~RendererSystemRoot() noexcept = default;
 
 RenderDeviceServices& RendererSystemRoot::GetBackend() noexcept
 {
@@ -112,13 +109,12 @@ void RendererSystemRoot::RefreshImageProviders() noexcept
 		return;
 	}
 
-	GetBackend().WaitForIdle();
 	m_imageProviders->Refresh(GetRenderHardwareInterface());
 }
 
-void RendererSystemRoot::InitializeCoreSystems() noexcept
+void RendererSystemRoot::InitializeCoreSystems(const RendererBackendConfiguration& backendConfiguration) noexcept
 {
-	m_backend = std::make_unique<RendererBackendSystem>(*m_window, CVarBackBufferFormat.Get());
+	m_backend = std::make_unique<RendererBackendSystem>(*m_window, CVarBackBufferFormat.Get(), backendConfiguration);
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
 	{
 		m_pipelineStateManager = std::make_unique<PipelineStateManager>(renderHardware);

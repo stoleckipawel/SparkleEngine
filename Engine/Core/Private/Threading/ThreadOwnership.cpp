@@ -16,11 +16,10 @@
 
 namespace Threading
 {
-	namespace
-	{
+
 		thread_local std::string g_currentThreadRole = "Sparkle.UnlabeledThread";
 		auto g_threadOwnershipLogger = Logging::GetOrCreateLogger("Threading.Ownership");
-	}
+
 
 	void SetCurrentThreadRole(std::string_view role) noexcept
 	{

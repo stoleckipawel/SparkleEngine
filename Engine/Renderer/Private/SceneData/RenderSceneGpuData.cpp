@@ -20,10 +20,11 @@
 #include <utility>
 #include <vector>
 
-namespace
+class RenderSceneGpuDataImplementation final
 {
+  public:
 	template <typename TValue>
-	OwnedStructuredBuffer Upload(
+	static OwnedStructuredBuffer Upload(
 	    RhiResourceService& resourceService,
 	    const std::vector<TValue>& values,
 	    const wchar_t* debugName)
@@ -32,7 +33,7 @@ namespace
 	}
 
 	template <typename TValue>
-	OwnedStructuredBuffer UploadWithEmptySentinel(
+	static OwnedStructuredBuffer UploadWithEmptySentinel(
 	    RhiResourceService& resourceService,
 	    std::vector<TValue> values,
 	    const wchar_t* debugName)
@@ -44,7 +45,7 @@ namespace
 		return Upload(resourceService, values, debugName);
 	}
 
-	RenderSceneGpuLightingData BuildLightingData(RhiResourceService& resourceService, const RenderSceneData& sceneData)
+	static RenderSceneGpuLightingData BuildLightingData(RhiResourceService& resourceService, const RenderSceneData& sceneData)
 	{
 		const std::size_t directionalLightCount =
 		    std::min(sceneData.directionalLights.size(), static_cast<std::size_t>(CVarMaxDirectionalLights.Get()));
@@ -138,7 +139,7 @@ namespace
 		return data;
 	}
 
-	RenderSceneGpuGeometryData BuildGeometryData(RhiResourceService& resourceService, const RenderSceneData& sceneData)
+	static RenderSceneGpuGeometryData BuildGeometryData(RhiResourceService& resourceService, const RenderSceneData& sceneData)
 	{
 		std::vector<MeshInstanceData> instances;
 		instances.reserve((std::max<std::size_t>)(sceneData.meshInstances.size(), 1u));
@@ -196,14 +197,14 @@ namespace
 		std::uint32_t IndexCount = 0u;
 	};
 
-	VertexSkinInfluenceData ToHitSkinInfluence(const VertexSkinInfluence& influence) noexcept
+	static VertexSkinInfluenceData ToHitSkinInfluence(const VertexSkinInfluence& influence) noexcept
 	{
 		return VertexSkinInfluenceData{
 		    .JointIndices = {influence.jointIndices[0], influence.jointIndices[1], influence.jointIndices[2], influence.jointIndices[3]},
 		    .JointWeights = {influence.jointWeights[0], influence.jointWeights[1], influence.jointWeights[2], influence.jointWeights[3]}};
 	}
 
-	std::uint32_t BuildHitMaterialFlags(const MaterialData& material) noexcept
+	static std::uint32_t BuildHitMaterialFlags(const MaterialData& material) noexcept
 	{
 		std::uint32_t flags = material.doubleSided ? RayTracingHitData::MaterialFlag_DoubleSided : 0u;
 		if (material.alphaMode == 0u)
@@ -225,7 +226,7 @@ namespace
 		return flags;
 	}
 
-	std::uint32_t BuildHitGeometryFlags(const MeshDraw& draw, const MaterialData* material) noexcept
+	static std::uint32_t BuildHitGeometryFlags(const MeshDraw& draw, const MaterialData* material) noexcept
 	{
 		std::uint32_t flags = draw.Geometry.MeshKind == RenderMeshKind::Skeletal ? RayTracingHitData::GeometryFlag_SkinnedMesh
 		                                                                      : RayTracingHitData::GeometryFlag_StaticMesh;
@@ -252,7 +253,7 @@ namespace
 		return flags;
 	}
 
-	RayTracingHitInstance BuildInvalidHitInstance(
+	static RayTracingHitInstance BuildInvalidHitInstance(
 	    const MeshDraw& draw,
 	    const MaterialData* material,
 	    std::uint32_t rejectionReason) noexcept
@@ -265,7 +266,7 @@ namespace
 		    .MaterialTextureFlags = material != nullptr ? material->textureFlags : 0u};
 	}
 
-	std::uint32_t ValidateMeshHitData(const GPUMesh& gpuMesh) noexcept
+	static std::uint32_t ValidateMeshHitData(const GPUMesh& gpuMesh) noexcept
 	{
 		if (!gpuMesh.HasRayTracingHitData())
 		{
@@ -288,7 +289,7 @@ namespace
 		return RayTracingHitData::Reason_None;
 	}
 
-	RenderSceneGpuRayTracingData BuildRayTracingData(RhiResourceService& resourceService, const RenderSceneData& sceneData)
+	static RenderSceneGpuRayTracingData BuildRayTracingData(RhiResourceService& resourceService, const RenderSceneData& sceneData)
 	{
 		if (sceneData.meshInstances.empty() || sceneData.materials.empty())
 		{
@@ -424,14 +425,14 @@ namespace
 		return data;
 	}
 
-	template <typename TValue> FrameGraphBufferHandle DeclareBuffer(FrameGraphBuilder& builder, const char* name)
+	template <typename TValue> static FrameGraphBufferHandle DeclareBuffer(FrameGraphBuilder& builder, const char* name)
 	{
 		return builder.ReservePersistentBuffer(
 		    FrameGraphBufferDesc::Create(name, sizeof(TValue), static_cast<std::uint32_t>(sizeof(TValue))),
 		    ResourceState::ShaderResource);
 	}
 
-	void BindBuffer(FrameGraph& graph, FrameGraphBufferHandle handle, const OwnedStructuredBuffer& buffer, const char* name) noexcept
+	static void BindBuffer(FrameGraph& graph, FrameGraphBufferHandle handle, const OwnedStructuredBuffer& buffer, const char* name) noexcept
 	{
 		if (!buffer)
 		{
@@ -444,14 +445,14 @@ namespace
 		    FrameGraphBufferDesc::Create(name, buffer.GetSizeInBytes(), buffer.GetStrideInBytes()),
 		    ResourceState::ShaderResource);
 	}
-}
+};
 
 RenderSceneGpuData BuildRenderSceneGpuData(RhiResourceService& resourceService, const RenderSceneData& sceneData)
 {
 	return RenderSceneGpuData{
-	    .Lighting = BuildLightingData(resourceService, sceneData),
-	    .Geometry = BuildGeometryData(resourceService, sceneData),
-	    .RayTracing = BuildRayTracingData(resourceService, sceneData)};
+	    .Lighting = RenderSceneGpuDataImplementation::BuildLightingData(resourceService, sceneData),
+	    .Geometry = RenderSceneGpuDataImplementation::BuildGeometryData(resourceService, sceneData),
+	    .RayTracing = RenderSceneGpuDataImplementation::BuildRayTracingData(resourceService, sceneData)};
 }
 
 RenderSceneGpuResources DeclareRenderSceneGpuResources(FrameGraphBuilder& builder)
@@ -459,22 +460,22 @@ RenderSceneGpuResources DeclareRenderSceneGpuResources(FrameGraphBuilder& builde
 	return RenderSceneGpuResources{
 	    .Lighting =
 	        RenderSceneGpuLightingResources{
-	            .DirectionalLights = DeclareBuffer<DirectionalLightConstantBufferData>(builder, "DirectionalLights"),
-	            .PointLights = DeclareBuffer<PointLightConstantBufferData>(builder, "PointLights"),
-	            .SpotLights = DeclareBuffer<SpotLightConstantBufferData>(builder, "SpotLights"),
-	            .RectLights = DeclareBuffer<RectLightConstantBufferData>(builder, "RectLights")},
+	            .DirectionalLights = RenderSceneGpuDataImplementation::DeclareBuffer<DirectionalLightConstantBufferData>(builder, "DirectionalLights"),
+	            .PointLights = RenderSceneGpuDataImplementation::DeclareBuffer<PointLightConstantBufferData>(builder, "PointLights"),
+	            .SpotLights = RenderSceneGpuDataImplementation::DeclareBuffer<SpotLightConstantBufferData>(builder, "SpotLights"),
+	            .RectLights = RenderSceneGpuDataImplementation::DeclareBuffer<RectLightConstantBufferData>(builder, "RectLights")},
 	    .Geometry =
 	        RenderSceneGpuGeometryResources{
-	            .MeshInstances = DeclareBuffer<MeshInstanceData>(builder, "MeshInstances"),
-	            .JointMatrices = DeclareBuffer<JointMatrixData>(builder, "JointMatrices"),
-	            .PreviousJointMatrices = DeclareBuffer<JointMatrixData>(builder, "PreviousJointMatrices")},
+	            .MeshInstances = RenderSceneGpuDataImplementation::DeclareBuffer<MeshInstanceData>(builder, "MeshInstances"),
+	            .JointMatrices = RenderSceneGpuDataImplementation::DeclareBuffer<JointMatrixData>(builder, "JointMatrices"),
+	            .PreviousJointMatrices = RenderSceneGpuDataImplementation::DeclareBuffer<JointMatrixData>(builder, "PreviousJointMatrices")},
 	    .RayTracing =
 	        RenderSceneGpuRayTracingResources{
-	            .Vertices = DeclareBuffer<RayTracingHitVertex>(builder, "RayTracingHitVertices"),
-	            .SkinInfluences = DeclareBuffer<VertexSkinInfluenceData>(builder, "RayTracingHitSkinInfluences"),
-	            .Indices = DeclareBuffer<std::uint32_t>(builder, "RayTracingHitIndices"),
-	            .Instances = DeclareBuffer<RayTracingHitInstance>(builder, "RayTracingHitInstances"),
-	            .Materials = DeclareBuffer<RayTracingHitMaterial>(builder, "RayTracingHitMaterials")}};
+	            .Vertices = RenderSceneGpuDataImplementation::DeclareBuffer<RayTracingHitVertex>(builder, "RayTracingHitVertices"),
+	            .SkinInfluences = RenderSceneGpuDataImplementation::DeclareBuffer<VertexSkinInfluenceData>(builder, "RayTracingHitSkinInfluences"),
+	            .Indices = RenderSceneGpuDataImplementation::DeclareBuffer<std::uint32_t>(builder, "RayTracingHitIndices"),
+	            .Instances = RenderSceneGpuDataImplementation::DeclareBuffer<RayTracingHitInstance>(builder, "RayTracingHitInstances"),
+	            .Materials = RenderSceneGpuDataImplementation::DeclareBuffer<RayTracingHitMaterial>(builder, "RayTracingHitMaterials")}};
 }
 
 void BindRenderSceneGpuResources(
@@ -482,24 +483,24 @@ void BindRenderSceneGpuResources(
     const RenderSceneGpuResources& resources,
     const RenderSceneGpuData& sceneGpuData) noexcept
 {
-	BindBuffer(graph, resources.Lighting.DirectionalLights, sceneGpuData.Lighting.DirectionalLights, "DirectionalLights");
-	BindBuffer(graph, resources.Lighting.PointLights, sceneGpuData.Lighting.PointLights, "PointLights");
-	BindBuffer(graph, resources.Lighting.SpotLights, sceneGpuData.Lighting.SpotLights, "SpotLights");
-	BindBuffer(graph, resources.Lighting.RectLights, sceneGpuData.Lighting.RectLights, "RectLights");
-	BindBuffer(graph, resources.Geometry.MeshInstances, sceneGpuData.Geometry.MeshInstances, "MeshInstances");
-	BindBuffer(graph, resources.Geometry.JointMatrices, sceneGpuData.Geometry.JointMatrices, "JointMatrices");
-	BindBuffer(
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.Lighting.DirectionalLights, sceneGpuData.Lighting.DirectionalLights, "DirectionalLights");
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.Lighting.PointLights, sceneGpuData.Lighting.PointLights, "PointLights");
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.Lighting.SpotLights, sceneGpuData.Lighting.SpotLights, "SpotLights");
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.Lighting.RectLights, sceneGpuData.Lighting.RectLights, "RectLights");
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.Geometry.MeshInstances, sceneGpuData.Geometry.MeshInstances, "MeshInstances");
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.Geometry.JointMatrices, sceneGpuData.Geometry.JointMatrices, "JointMatrices");
+	RenderSceneGpuDataImplementation::BindBuffer(
 	    graph,
 	    resources.Geometry.PreviousJointMatrices,
 	    sceneGpuData.Geometry.PreviousJointMatrices,
 	    "PreviousJointMatrices");
-	BindBuffer(graph, resources.RayTracing.Vertices, sceneGpuData.RayTracing.Vertices, "RayTracingHitVertices");
-	BindBuffer(
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.RayTracing.Vertices, sceneGpuData.RayTracing.Vertices, "RayTracingHitVertices");
+	RenderSceneGpuDataImplementation::BindBuffer(
 	    graph,
 	    resources.RayTracing.SkinInfluences,
 	    sceneGpuData.RayTracing.SkinInfluences,
 	    "RayTracingHitSkinInfluences");
-	BindBuffer(graph, resources.RayTracing.Indices, sceneGpuData.RayTracing.Indices, "RayTracingHitIndices");
-	BindBuffer(graph, resources.RayTracing.Instances, sceneGpuData.RayTracing.Instances, "RayTracingHitInstances");
-	BindBuffer(graph, resources.RayTracing.Materials, sceneGpuData.RayTracing.Materials, "RayTracingHitMaterials");
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.RayTracing.Indices, sceneGpuData.RayTracing.Indices, "RayTracingHitIndices");
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.RayTracing.Instances, sceneGpuData.RayTracing.Instances, "RayTracingHitInstances");
+	RenderSceneGpuDataImplementation::BindBuffer(graph, resources.RayTracing.Materials, sceneGpuData.RayTracing.Materials, "RayTracingHitMaterials");
 }

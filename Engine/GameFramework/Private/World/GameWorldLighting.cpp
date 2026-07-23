@@ -6,9 +6,10 @@
 #include "World/ECS/Components/TransformComponents.h"
 #include "World/WorldTransformConversion.h"
 
-namespace
+class GameWorldLightingOperations final
 {
-	ECS::Light ToLightComponent(const SceneLightDesc& desc) noexcept
+  public:
+	static ECS::Light ToLightComponent(const SceneLightDesc& desc) noexcept
 	{
 		ECS::Light light;
 		light.Kind = desc.GetKind();
@@ -45,7 +46,7 @@ namespace
 		return light;
 	}
 
-	SceneLightPayload ToLightPayload(const ECS::Light& light)
+	static SceneLightPayload ToLightPayload(const ECS::Light& light)
 	{
 		switch (light.Kind)
 		{
@@ -76,7 +77,7 @@ namespace
 				return std::monostate{};
 		}
 	}
-}
+};
 
 namespace ECS
 {
@@ -91,7 +92,7 @@ namespace ECS
 		const LocalTransform local = WorldTransformConversion::ToLocal(transform);
 		const bool added = m_registry.Add(entity, local) &&
 		                   m_registry.Add(entity, WorldTransform{}) &&
-		                   m_registry.Add(entity, ToLightComponent(desc)) &&
+		                   m_registry.Add(entity, GameWorldLightingOperations::ToLightComponent(desc)) &&
 		                   m_registry.Add(entity, Visibility{.Visible = desc.common.visible}) &&
 		                   m_registry.Add(entity, Name{std::move(desc.common.name)}) &&
 		                   m_registry.Add(
@@ -134,7 +135,7 @@ namespace ECS
 		desc.common.color = light->Color;
 		desc.common.intensity = light->Intensity;
 		desc.common.visible = ReadVisibility(entity);
-		desc.payload = ToLightPayload(*light);
+		desc.payload = GameWorldLightingOperations::ToLightPayload(*light);
 		return desc;
 	}
 
@@ -146,7 +147,7 @@ namespace ECS
 		}
 		const Transform transform(DirectX::XMLoadFloat4x4(&desc.common.worldTransform));
 		const bool written = WriteTransform(entity, transform) &&
-		                     m_registry.Replace(entity, ToLightComponent(desc)) &&
+		                     m_registry.Replace(entity, GameWorldLightingOperations::ToLightComponent(desc)) &&
 		                     m_registry.Replace(entity, Name{std::move(desc.common.name)}) &&
 		                     WriteVisibility(entity, desc.common.visible);
 		if (written)

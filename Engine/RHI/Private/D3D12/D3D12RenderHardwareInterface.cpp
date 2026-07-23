@@ -28,9 +28,10 @@
 #include <d3d12.h>
 #include <string>
 
-namespace
+class D3D12RenderHardwareInterfaceOperations final
 {
-	RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport(
+  public:
+	static RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport(
 	    const RenderDiagnostics* diagnostics,
 	    bool validationEnabled,
 	    bool supportsDebugLayer) noexcept
@@ -54,7 +55,7 @@ namespace
 		    .SupportsCrashDiagnostics = diagnosticsCapabilities.SupportsCrashDiagnostics};
 	}
 
-	RhiBackendMemorySupport BuildBackendMemorySupport(const RenderDiagnostics* diagnostics) noexcept
+	static RhiBackendMemorySupport BuildBackendMemorySupport(const RenderDiagnostics* diagnostics) noexcept
 	{
 		if (diagnostics == nullptr)
 		{
@@ -69,7 +70,7 @@ namespace
 		    .SupportsResidencyPressure = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries()};
 	}
 
-}
+};
 
 D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
     D3D12Rhi& rhi,
@@ -148,7 +149,7 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
 	}
-	capabilities.Diagnostics = BuildBackendDiagnosticsSupport(
+	capabilities.Diagnostics = D3D12RenderHardwareInterfaceOperations::BuildBackendDiagnosticsSupport(
 	    m_diagnostics.get(),
 	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
 	    m_rhi != nullptr && m_rhi->IsValidationEnabled());
@@ -160,7 +161,7 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	capabilities.Queues.Set(ERhiQueueType::Copy, true, true);
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12Managed;
-	capabilities.MemorySupport = BuildBackendMemorySupport(m_diagnostics.get());
+	capabilities.MemorySupport = D3D12RenderHardwareInterfaceOperations::BuildBackendMemorySupport(m_diagnostics.get());
 	capabilities.ExternalFeatureInterop = BuildD3D12ExternalFeatureInteropCapabilities(
 	    m_rhi,
 	    m_rhi != nullptr && m_rhi->GetDevice() != nullptr);

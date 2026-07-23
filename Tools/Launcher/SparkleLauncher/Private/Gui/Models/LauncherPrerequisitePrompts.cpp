@@ -14,8 +14,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		LauncherPrerequisiteDecision ReadyDecision()
 		{
 			LauncherPrerequisiteDecision decision;
@@ -109,7 +108,7 @@ namespace SparkleLauncher
 			    QMessageBox::Ok);
 			return result == QMessageBox::Ok;
 		}
-	}
+
 
 	LauncherPrerequisiteDecision ResolveWorkspacePrerequisitePrompt(
 	    QWidget* parent,

@@ -77,11 +77,6 @@ void D3D12ImGuiBackend::Render(NativeGraphicsCommandListHandle commandList, ImDr
 
 void D3D12ImGuiBackend::Shutdown() noexcept
 {
-	if (m_renderHardware != nullptr)
-	{
-		m_renderHardware->WaitForIdle();
-	}
-
 	ImGui_ImplDX12_InvalidateDeviceObjects();
 	ImGui_ImplDX12_Shutdown();
 }

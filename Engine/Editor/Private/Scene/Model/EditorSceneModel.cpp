@@ -5,10 +5,11 @@
 
 #include <algorithm>
 
-namespace
+class EditorSceneModelOperations final
 {
+  public:
 	template <typename T>
-	const T* FindByEntity(const std::vector<T>& values, EntityId entity) noexcept
+	static const T* FindByEntity(const std::vector<T>& values, EntityId entity) noexcept
 	{
 		const auto iterator = std::lower_bound(values.begin(), values.end(), entity, [](const T& value, EntityId key) {
 			return value.Entity < key;
@@ -16,11 +17,11 @@ namespace
 		return iterator != values.end() && iterator->Entity == entity ? &*iterator : nullptr;
 	}
 
-}
+};
 
-const WorldCameraReadData* EditorSceneModel::FindCamera(EntityId entity) const noexcept { return FindByEntity(m_cameras, entity); }
-const WorldLightReadData* EditorSceneModel::FindLight(EntityId entity) const noexcept { return FindByEntity(m_lights, entity); }
-const WorldMeshReadData* EditorSceneModel::FindMesh(EntityId entity) const noexcept { return FindByEntity(m_meshes, entity); }
+const WorldCameraReadData* EditorSceneModel::FindCamera(EntityId entity) const noexcept { return EditorSceneModelOperations::FindByEntity(m_cameras, entity); }
+const WorldLightReadData* EditorSceneModel::FindLight(EntityId entity) const noexcept { return EditorSceneModelOperations::FindByEntity(m_lights, entity); }
+const WorldMeshReadData* EditorSceneModel::FindMesh(EntityId entity) const noexcept { return EditorSceneModelOperations::FindByEntity(m_meshes, entity); }
 
 bool EditorSceneModel::Contains(const SceneObjectSelection& selection) const noexcept
 {

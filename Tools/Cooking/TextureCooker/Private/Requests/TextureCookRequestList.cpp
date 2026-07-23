@@ -10,9 +10,10 @@
 #include <ranges>
 #include <sstream>
 
-namespace
+class TextureCookRequestListOperations final
 {
-	void SortForSerialization(std::vector<TextureCookRequest>& requests)
+  public:
+	static void SortForSerialization(std::vector<TextureCookRequest>& requests)
 	{
 		std::ranges::sort(
 		    requests,
@@ -24,7 +25,7 @@ namespace
 		    });
 	}
 
-	void SortForConsumption(std::vector<TextureCookRequest>& requests)
+	static void SortForConsumption(std::vector<TextureCookRequest>& requests)
 	{
 		std::ranges::sort(
 		    requests,
@@ -33,7 +34,7 @@ namespace
 			    return lhs.assetId < rhs.assetId;
 		    });
 	}
-}
+};
 
 bool WriteTextureCookRequestList(
     const std::filesystem::path& outputPath,
@@ -47,7 +48,7 @@ bool WriteTextureCookRequestList(
 	}
 
 	std::vector<TextureCookRequest> sortedRequests = requests;
-	SortForSerialization(sortedRequests);
+	TextureCookRequestListOperations::SortForSerialization(sortedRequests);
 	std::ostringstream output;
 	output << TextureCookRequestCodec::GetHeader() << '\n';
 	for (const TextureCookRequest& request : sortedRequests)
@@ -123,7 +124,7 @@ bool LoadTextureCookRequestList(
 		return false;
 	}
 	requestSet.MoveRequestsTo(outRequests);
-	SortForConsumption(outRequests);
+	TextureCookRequestListOperations::SortForConsumption(outRequests);
 	outErrorMessage.clear();
 	return true;
 }

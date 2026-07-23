@@ -13,9 +13,10 @@
 #include <memory>
 #include <vector>
 
-namespace
+class VulkanClassicTlasServicesOperations final
 {
-	VkGeometryInstanceFlagsKHR ToNativeInstanceFlags(RhiRayTracingInstanceFlags flags) noexcept
+  public:
+	static VkGeometryInstanceFlagsKHR ToNativeInstanceFlags(RhiRayTracingInstanceFlags flags) noexcept
 	{
 		VkGeometryInstanceFlagsKHR nativeFlags = 0;
 		if (HasFlag(flags, RhiRayTracingInstanceFlags::TriangleFacingCullDisable))
@@ -32,7 +33,7 @@ namespace
 		}
 		return nativeFlags;
 	}
-}
+};
 
 VulkanClassicTlasServices::VulkanClassicTlasServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
     m_rhi(&rhi), m_memoryAllocator(&memoryAllocator)
@@ -114,7 +115,7 @@ RhiOwnedResourceHandle VulkanClassicTlasServices::CreateClassicTopLevelAccelerat
 		nativeInstance.instanceCustomIndex = source.InstanceID & 0x00FFFFFFu;
 		nativeInstance.mask = source.InstanceMask & 0xFFu;
 		nativeInstance.instanceShaderBindingTableRecordOffset = source.InstanceContributionToHitGroupIndex & 0x00FFFFFFu;
-		nativeInstance.flags = ToNativeInstanceFlags(source.Flags);
+		nativeInstance.flags = VulkanClassicTlasServicesOperations::ToNativeInstanceFlags(source.Flags);
 		nativeInstance.accelerationStructureReference = source.AccelerationStructure;
 	}
 

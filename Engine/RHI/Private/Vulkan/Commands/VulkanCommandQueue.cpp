@@ -6,11 +6,23 @@
 #include "Vulkan/Device/VulkanRhi.h"
 
 #include <array>
+#include <format>
 
-namespace
+class VulkanCommandQueuePolicy final
 {
-	static const auto g_vulkanCommandQueueLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Queue");
-}
+  public:
+	static const std::shared_ptr<spdlog::logger>& Logger()
+	{
+		static const auto logger = Logging::GetOrCreateLogger("RHI.Vulkan.Queue");
+		return logger;
+	}
+
+	#if SPARKLE_BUILD_SHIPPING
+	static constexpr std::uint64_t GpuWaitTimeoutNanoseconds = UINT64_MAX;
+	#else
+	static constexpr std::uint64_t GpuWaitTimeoutNanoseconds = 30'000'000'000ull;
+	#endif
+};
 
 VulkanCommandQueue::VulkanCommandQueue(
 	VulkanRhi& rhi,
@@ -31,7 +43,7 @@ VulkanCommandQueue::VulkanCommandQueue(
 	if (!VulkanResult::Succeeded(result))
 	{
 		Diagnostics::Fail(
-		    g_vulkanCommandQueueLogger,
+		    VulkanCommandQueuePolicy::Logger(),
 		    __FILE__,
 		    __LINE__,
 		    VulkanResult::FormatFailure("vkCreateSemaphore(timeline)", result));
@@ -40,6 +52,7 @@ VulkanCommandQueue::VulkanCommandQueue(
 
 VulkanCommandQueue::~VulkanCommandQueue() noexcept
 {
+	m_owner.AssertAccess();
 	if (m_timelineSemaphore != VK_NULL_HANDLE)
 	{
 		vkDestroySemaphore(m_rhi.GetDevice(), m_timelineSemaphore, nullptr);
@@ -49,9 +62,10 @@ VulkanCommandQueue::~VulkanCommandQueue() noexcept
 
 RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submission) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_nativeQueue == nullptr || m_nativeQueue->Queue == VK_NULL_HANDLE || submission.CommandBuffer == VK_NULL_HANDLE)
 	{
-		Diagnostics::Fail(g_vulkanCommandQueueLogger, __FILE__, __LINE__, "Submit called without a queue or command buffer");
+		Diagnostics::Fail(VulkanCommandQueuePolicy::Logger(), __FILE__, __LINE__, "Submit called without a queue or command buffer");
 		return {};
 	}
 
@@ -65,7 +79,7 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 		if (!m_rhi.GetCommandQueue(token.Queue).HasSubmitted(token.Value))
 		{
 			Diagnostics::Fail(
-			    g_vulkanCommandQueueLogger,
+			    VulkanCommandQueuePolicy::Logger(),
 			    __FILE__,
 			    __LINE__,
 			    "Submit rejected a wait for an unsubmitted queue value");
@@ -100,7 +114,6 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 		++waitCount;
 	}
 
-	std::lock_guard lock(m_nativeQueue->SubmissionMutex);
 	const std::uint64_t submissionValue = m_nextSubmissionValue++;
 	const std::array<VkSemaphore, 2> signalSemaphores = {m_timelineSemaphore, submission.BinarySignalSemaphore};
 	const std::array<std::uint64_t, 2> signalValues = {submissionValue, 0};
@@ -127,7 +140,7 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	if (!VulkanResult::Succeeded(submitResult))
 	{
 		Diagnostics::Fail(
-		    g_vulkanCommandQueueLogger,
+		    VulkanCommandQueuePolicy::Logger(),
 		    __FILE__,
 		    __LINE__,
 		    VulkanResult::FormatFailure("vkQueueSubmit", submitResult));
@@ -140,24 +153,25 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 
 VkResult VulkanCommandQueue::Present(const VkPresentInfoKHR& presentInfo) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_nativeQueue == nullptr || m_nativeQueue->Queue == VK_NULL_HANDLE)
 	{
 		return VK_ERROR_INITIALIZATION_FAILED;
 	}
 
-	std::lock_guard lock(m_nativeQueue->SubmissionMutex);
 	return vkQueuePresentKHR(m_nativeQueue->Queue, &presentInfo);
 }
 
 void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcept
 {
+	m_owner.AssertAccess();
 	if (submissionValue == 0)
 	{
 		return;
 	}
 	if (!HasSubmitted(submissionValue))
 	{
-		Diagnostics::Fail(g_vulkanCommandQueueLogger, __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
+		Diagnostics::Fail(VulkanCommandQueuePolicy::Logger(), __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
 		return;
 	}
 	if (IsSubmissionComplete(submissionValue))
@@ -172,44 +186,53 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 	    .semaphoreCount = 1,
 	    .pSemaphores = &m_timelineSemaphore,
 	    .pValues = &submissionValue};
-	const VkResult result = vkWaitSemaphores(m_rhi.GetDevice(), &waitInfo, UINT64_MAX);
+	const VkResult result = vkWaitSemaphores(
+	    m_rhi.GetDevice(),
+	    &waitInfo,
+	    VulkanCommandQueuePolicy::GpuWaitTimeoutNanoseconds);
 	if (!VulkanResult::Succeeded(result))
 	{
 		Diagnostics::Fail(
-		    g_vulkanCommandQueueLogger,
+		    VulkanCommandQueuePolicy::Logger(),
 		    __FILE__,
 		    __LINE__,
-		    VulkanResult::FormatFailure("vkWaitSemaphores", result));
+		    std::format(
+		        "{} while waiting for Vulkan {} queue submission {}.",
+		        VulkanResult::FormatFailure("vkWaitSemaphores", result),
+		        static_cast<std::uint32_t>(m_queueType),
+		        submissionValue));
 	}
 }
 
 bool VulkanCommandQueue::HasSubmitted(std::uint64_t submissionValue) const noexcept
 {
+	m_owner.AssertAccess();
 	if (m_nativeQueue == nullptr)
 	{
 		return false;
 	}
-	std::lock_guard lock(m_nativeQueue->SubmissionMutex);
 	return submissionValue != 0 && submissionValue <= m_lastSubmittedValue;
 }
 
 bool VulkanCommandQueue::IsSubmissionComplete(std::uint64_t submissionValue) const noexcept
 {
+	m_owner.AssertAccess();
 	return submissionValue == 0 || GetCompletedSubmissionValue() >= submissionValue;
 }
 
 RhiSubmissionToken VulkanCommandQueue::GetLastSubmittedToken() const noexcept
 {
+	m_owner.AssertAccess();
 	if (m_nativeQueue == nullptr)
 	{
 		return {};
 	}
-	std::lock_guard lock(m_nativeQueue->SubmissionMutex);
 	return RhiSubmissionToken{.Queue = m_queueType, .Value = m_lastSubmittedValue};
 }
 
 std::uint64_t VulkanCommandQueue::GetCompletedSubmissionValue() const noexcept
 {
+	m_owner.AssertAccess();
 	std::uint64_t completedValue = 0;
 	const VkResult result = vkGetSemaphoreCounterValue(m_rhi.GetDevice(), m_timelineSemaphore, &completedValue);
 	return VulkanResult::Succeeded(result) ? completedValue : 0;

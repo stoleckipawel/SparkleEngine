@@ -8,9 +8,10 @@
 
 #include <chrono>
 
-namespace
+class ApplicationTaskRuntimeOperations final
 {
-	TaskExecutorConfig BuildTaskExecutorConfig() noexcept
+  public:
+	static TaskExecutorConfig BuildTaskExecutorConfig() noexcept
 	{
 		if (TaskRuntimeCVars::UseSerialExecution())
 		{
@@ -27,10 +28,10 @@ namespace
 		    .MaximumEdgesPerExecution = 4'096,
 		    .MaximumActiveExecutions = 64};
 	}
-}
+};
 
 ApplicationTaskRuntime::ApplicationTaskRuntime() :
-    m_executor(std::make_unique<TaskExecutor>(BuildTaskExecutorConfig())),
+    m_executor(std::make_unique<TaskExecutor>(ApplicationTaskRuntimeOperations::BuildTaskExecutorConfig())),
     m_applicationScope(std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::Application, "Application"}))
 {
 }

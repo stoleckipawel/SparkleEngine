@@ -4,9 +4,10 @@
 #include <algorithm>
 #include <cassert>
 
-namespace
+class FrameGraphCompilerTransientsOperations final
 {
-	bool AreClearValuesEqual(const RhiOptimizedClearValue& lhs, const RhiOptimizedClearValue& rhs, FrameGraphResourceKind kind) noexcept
+  public:
+	static bool AreClearValuesEqual(const RhiOptimizedClearValue& lhs, const RhiOptimizedClearValue& rhs, FrameGraphResourceKind kind) noexcept
 	{
 		if (lhs.ValueType != rhs.ValueType || lhs.Format != rhs.Format)
 		{
@@ -34,7 +35,7 @@ namespace
 		return true;
 	}
 
-	bool CanSharePhysicalBlock(
+	static bool CanSharePhysicalBlock(
 	    const FrameGraphTransientResourcePlan& currentOwner,
 	    const FrameGraphTransientResourcePlan& transientPlan) noexcept
 	{
@@ -88,7 +89,7 @@ namespace
 		return true;
 	}
 
-}  // namespace
+};
 
 void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 {
@@ -231,7 +232,7 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 			assert(!block.handles.empty());
 			const FrameGraphTransientResourcePlan* currentOwner = FindTransientResourcePlan(block.handles.back());
 			assert(currentOwner != nullptr);
-			if (!CanSharePhysicalBlock(*currentOwner, *transientPlan))
+			if (!FrameGraphCompilerTransientsOperations::CanSharePhysicalBlock(*currentOwner, *transientPlan))
 			{
 				continue;
 			}

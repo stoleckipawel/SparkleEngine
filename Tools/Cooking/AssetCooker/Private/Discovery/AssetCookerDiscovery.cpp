@@ -16,6 +16,20 @@
 #include <utility>
 #include <vector>
 
+enum class AssetCookerDiscovery::CatalogSection
+{
+	None,
+	Level,
+	OptionalPack
+};
+
+struct AssetCookerDiscovery::CatalogLevel final
+{
+	std::filesystem::path SourcePath;
+	bool DefaultIncluded = true;
+	std::string OptionalPackId;
+};
+
 static bool AssetCookerPathExists(const std::filesystem::path& path)
 {
 	std::error_code errorCode;
@@ -208,7 +222,7 @@ static bool AssetCookerOptionalPackAvailable(
 	return AssetCookerPathExists(packPath.lexically_normal());
 }
 
-static bool AssetCookerCollectCatalogDefaultSceneIds(
+bool AssetCookerDiscovery::CollectCatalogDefaultSceneIds(
     const std::filesystem::path& projectRoot,
     std::set<std::string>& outSceneIds)
 {
@@ -218,20 +232,6 @@ static bool AssetCookerCollectCatalogDefaultSceneIds(
 	{
 		return false;
 	}
-
-	enum class CatalogSection
-	{
-		None,
-		Level,
-		OptionalPack
-	};
-
-	struct CatalogLevel final
-	{
-		std::filesystem::path sourcePath;
-		bool defaultIncluded = true;
-		std::string optionalPackId;
-	};
 
 	std::vector<CatalogLevel> catalogLevels;
 	std::map<std::string, std::pair<std::filesystem::path, bool>> optionalPacks;
@@ -273,19 +273,19 @@ static bool AssetCookerCollectCatalogDefaultSceneIds(
 		{
 			if (key == "Source")
 			{
-				currentLevel->sourcePath = projectRoot / std::filesystem::path(Strings::UnquoteCopy(value));
+				currentLevel->SourcePath = projectRoot / std::filesystem::path(Strings::UnquoteCopy(value));
 			}
 			else if (key == "Default")
 			{
 				bool defaultIncluded = true;
 				if (Strings::TryParseBool(value, defaultIncluded))
 				{
-					currentLevel->defaultIncluded = defaultIncluded;
+					currentLevel->DefaultIncluded = defaultIncluded;
 				}
 			}
 			else if (key == "OptionalPack")
 			{
-				currentLevel->optionalPackId = Strings::UnquoteCopy(value);
+				currentLevel->OptionalPackId = Strings::UnquoteCopy(value);
 			}
 			continue;
 		}
@@ -318,13 +318,13 @@ static bool AssetCookerCollectCatalogDefaultSceneIds(
 
 	for (const CatalogLevel& level : catalogLevels)
 	{
-		if (!level.defaultIncluded || level.sourcePath.empty() ||
-		    !AssetCookerOptionalPackAvailable(projectRoot, optionalPacks, level.optionalPackId))
+		if (!level.DefaultIncluded || level.SourcePath.empty() ||
+		    !AssetCookerOptionalPackAvailable(projectRoot, optionalPacks, level.OptionalPackId))
 		{
 			continue;
 		}
 
-		AssetCookerCollectLevelSceneIds(level.sourcePath.lexically_normal(), outSceneIds);
+		AssetCookerCollectLevelSceneIds(level.SourcePath.lexically_normal(), outSceneIds);
 	}
 
 	return true;
@@ -464,7 +464,7 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 		    outPlan.engineSceneCount,
 		    overrideCount);
 		std::set<std::string> catalogProjectSceneIds;
-		const bool catalogFound = AssetCookerCollectCatalogDefaultSceneIds(outPlan.projectRoot, catalogProjectSceneIds);
+		const bool catalogFound = CollectCatalogDefaultSceneIds(outPlan.projectRoot, catalogProjectSceneIds);
 		AssetCookerCollectSceneEntries(
 		    outPlan.projectRoot / "Assets" / "Meshes",
 		    "Project",

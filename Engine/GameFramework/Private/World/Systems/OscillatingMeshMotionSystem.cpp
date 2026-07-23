@@ -9,8 +9,9 @@
 #include <array>
 #include <cmath>
 
-namespace
+class OscillatingMeshMotionSystemImplementation final
 {
+  public:
 	struct MotionLane final
 	{
 		DirectX::XMFLOAT3 Center;
@@ -21,7 +22,7 @@ namespace
 		float FacingYaw;
 	};
 
-	constexpr std::array<MotionLane, 16> Lanes{{
+	static constexpr std::array<MotionLane, 16> Lanes{{
 	    {{-5.2f, 0.0f, -2.3f}, {1.0f, 0.0f, 0.0f}, 1.35f, 0.72f, 0.00f, DirectX::XM_PIDIV2},
 	    {{-2.8f, 0.0f, -1.5f}, {1.0f, 0.0f, 0.0f}, 1.15f, 0.89f, 1.10f, DirectX::XM_PIDIV2},
 	    {{-0.5f, 0.0f, -2.1f}, {1.0f, 0.0f, 0.0f}, 1.45f, 0.67f, 2.20f, DirectX::XM_PIDIV2},
@@ -40,12 +41,12 @@ namespace
 	    {{3.7f, 3.1f, -0.4f}, {0.0f, 0.0f, 1.0f}, 0.70f, 0.88f, 3.25f, 0.0f},
 	}};
 
-	DirectX::XMMATRIX BuildCharacterTransform(const DirectX::XMFLOAT3& translation, float yaw) noexcept
+	static DirectX::XMMATRIX BuildCharacterTransform(const DirectX::XMFLOAT3& translation, float yaw) noexcept
 	{
 		return DirectX::XMMatrixRotationX(-DirectX::XM_PIDIV2) * DirectX::XMMatrixRotationY(yaw) *
 		       DirectX::XMMatrixTranslation(translation.x, translation.y, translation.z);
 	}
-}
+};
 
 namespace ECS
 {
@@ -58,18 +59,18 @@ namespace ECS
 		DirectX::XMMATRIX animated;
 		if (useLanes)
 		{
-			const MotionLane& lane = Lanes[motion.LaneIndex % Lanes.size()];
+			const OscillatingMeshMotionSystemImplementation::MotionLane& lane = OscillatingMeshMotionSystemImplementation::Lanes[motion.LaneIndex % OscillatingMeshMotionSystemImplementation::Lanes.size()];
 			const float phase = timeSeconds * lane.Speed + lane.Phase;
 			const float distance = std::sin(phase) * lane.HalfDistance;
 			const DirectX::XMFLOAT3 position{
 			    lane.Center.x + lane.Axis.x * distance,
 			    lane.Center.y + lane.Axis.y * distance,
 			    lane.Center.z + lane.Axis.z * distance};
-			animated = BuildCharacterTransform(position, lane.FacingYaw + (std::cos(phase) < 0.0f ? DirectX::XM_PI : 0.0f));
+			animated = OscillatingMeshMotionSystemImplementation::BuildCharacterTransform(position, lane.FacingYaw + (std::cos(phase) < 0.0f ? DirectX::XM_PI : 0.0f));
 		}
 		else
 		{
-			animated = BuildCharacterTransform({std::sin(timeSeconds * 0.7f) * 5.25f, 0.0f, 0.0f}, DirectX::XM_PIDIV2);
+			animated = OscillatingMeshMotionSystemImplementation::BuildCharacterTransform({std::sin(timeSeconds * 0.7f) * 5.25f, 0.0f, 0.0f}, DirectX::XM_PIDIV2);
 		}
 		const Transform base = WorldTransformConversion::ToPublic(motion.BaseTransform);
 		transform = WorldTransformConversion::ToLocal(Transform(base.GetWorldMatrix() * animated));

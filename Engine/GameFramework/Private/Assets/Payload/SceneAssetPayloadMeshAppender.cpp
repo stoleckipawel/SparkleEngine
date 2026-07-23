@@ -18,8 +18,7 @@
 
 namespace Assets
 {
-	namespace
-	{
+
 		SceneMeshInstanceGroupKind ToSceneMeshInstanceGroupKind(CookedSceneInstanceGroupKind groupKind) noexcept
 		{
 			switch (groupKind)
@@ -51,7 +50,7 @@ namespace Assets
 			const auto last = first + instanceRecord.morphWeightCount;
 			return std::vector<float>(first, last);
 		}
-	}  // namespace
+	  // namespace
 
 	bool SceneAssetPayloadMeshAppender::AppendMeshAssets(
 	    const SceneAssetId& sceneAssetId,

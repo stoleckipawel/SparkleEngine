@@ -11,9 +11,10 @@
 #include <cstdint>
 #include <string>
 
-namespace
+class GltfMorphTargetImporterOperations final
 {
-	const cgltf_accessor* FindMorphAttribute(const cgltf_morph_target& target, cgltf_attribute_type type) noexcept
+  public:
+	static const cgltf_accessor* FindMorphAttribute(const cgltf_morph_target& target, cgltf_attribute_type type) noexcept
 	{
 		for (cgltf_size attributeIndex = 0; attributeIndex < target.attributes_count; ++attributeIndex)
 		{
@@ -26,7 +27,7 @@ namespace
 		return nullptr;
 	}
 
-	std::string BuildMorphTargetName(const cgltf_mesh& mesh, std::size_t targetIndex)
+	static std::string BuildMorphTargetName(const cgltf_mesh& mesh, std::size_t targetIndex)
 	{
 		if (targetIndex < mesh.target_names_count && mesh.target_names[targetIndex] != nullptr)
 		{
@@ -36,11 +37,11 @@ namespace
 		return "MorphTarget" + std::to_string(targetIndex);
 	}
 
-	float ReadMeshDefaultWeight(const cgltf_mesh& mesh, std::size_t targetIndex) noexcept
+	static float ReadMeshDefaultWeight(const cgltf_mesh& mesh, std::size_t targetIndex) noexcept
 	{
 		return targetIndex < mesh.weights_count && mesh.weights != nullptr ? mesh.weights[targetIndex] : 0.0f;
 	}
-}
+};
 
 std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
     const cgltf_mesh& mesh,
@@ -53,17 +54,17 @@ std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
 	for (cgltf_size targetIndex = 0; targetIndex < primitive.targets_count; ++targetIndex)
 	{
 		const cgltf_morph_target& sourceTarget = primitive.targets[targetIndex];
-		const cgltf_accessor* positions = FindMorphAttribute(sourceTarget, cgltf_attribute_type_position);
-		const cgltf_accessor* normals = FindMorphAttribute(sourceTarget, cgltf_attribute_type_normal);
-		const cgltf_accessor* tangents = FindMorphAttribute(sourceTarget, cgltf_attribute_type_tangent);
+		const cgltf_accessor* positions = GltfMorphTargetImporterOperations::FindMorphAttribute(sourceTarget, cgltf_attribute_type_position);
+		const cgltf_accessor* normals = GltfMorphTargetImporterOperations::FindMorphAttribute(sourceTarget, cgltf_attribute_type_normal);
+		const cgltf_accessor* tangents = GltfMorphTargetImporterOperations::FindMorphAttribute(sourceTarget, cgltf_attribute_type_tangent);
 		if (positions == nullptr && normals == nullptr && tangents == nullptr)
 		{
 			continue;
 		}
 
 		ImportedMorphTarget importedTarget;
-		importedTarget.name = BuildMorphTargetName(mesh, targetIndex);
-		importedTarget.defaultWeight = ReadMeshDefaultWeight(mesh, targetIndex);
+		importedTarget.name = GltfMorphTargetImporterOperations::BuildMorphTargetName(mesh, targetIndex);
+		importedTarget.defaultWeight = GltfMorphTargetImporterOperations::ReadMeshDefaultWeight(mesh, targetIndex);
 		importedTarget.deltas.resize(vertexCount);
 		for (std::uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 		{

@@ -28,7 +28,6 @@ VulkanSwapChain::VulkanSwapChain(VulkanRhi& rhi, Window& window, PixelFormat bac
 
 VulkanSwapChain::~VulkanSwapChain() noexcept
 {
-	m_rhi.WaitForIdle();
 	ReleaseSwapChain();
 	ReleasePresentationSemaphores();
 	if (m_surface != VK_NULL_HANDLE)
@@ -104,12 +103,17 @@ bool VulkanSwapChain::Present(VkSemaphore renderFinishedSemaphore) noexcept
 
 void VulkanSwapChain::Resize() noexcept
 {
+	m_rhi.WaitForIdle();
+	ResizeAfterDeviceIdle();
+}
+
+void VulkanSwapChain::ResizeAfterDeviceIdle() noexcept
+{
 	if (!HasValidWindowSize())
 	{
 		return;
 	}
 
-	m_rhi.WaitForIdle();
 	VkSwapchainKHR oldSwapChain = m_swapChain;
 	ReleaseBackBufferImageViews();
 	CreateSwapChain(oldSwapChain);

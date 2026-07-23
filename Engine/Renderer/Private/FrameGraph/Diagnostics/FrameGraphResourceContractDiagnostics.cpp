@@ -9,11 +9,12 @@
 #include <cassert>
 #include <string>
 
-namespace
+class FrameGraphResourceContractDiagnosticsOperations final
 {
-	static const auto g_frameGraphContractLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
+  public:
+	inline static const auto g_frameGraphContractLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
-	bool ReportValidationFailure(std::string_view passName, std::string_view message) noexcept
+	static bool ReportValidationFailure(std::string_view passName, std::string_view message) noexcept
 	{
 		std::string logMessage = "FrameGraph resource contract validation failed for pass '";
 		logMessage.append(passName.begin(), passName.end());
@@ -21,7 +22,7 @@ namespace
 		logMessage.append(message.begin(), message.end());
 		Diagnostics::Fail(g_frameGraphContractLogger, __FILE__, __LINE__, logMessage);
 	}
-}
+};
 
 bool FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(
     std::string_view passName,
@@ -42,7 +43,7 @@ bool FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(
 		message += "' uses unsupported resource usage ";
 		message += ResourceUsageToString(declaration.usage);
 		message += ".";
-		return ReportValidationFailure(passName, message);
+		return FrameGraphResourceContractDiagnosticsOperations::ReportValidationFailure(passName, message);
 	}
 
 	return true;
@@ -61,7 +62,7 @@ bool FrameGraphResourceContractDiagnostics::ValidatePassParameterBinding(
 	const PassParameterAccelerationStructureBindingData* accelerationStructureData = binding.AsAccelerationStructureData();
 	if (accelerationStructureData == nullptr)
 	{
-		return ReportValidationFailure(passName, "acceleration-structure parameter binding type did not match the reflected layout.");
+		return FrameGraphResourceContractDiagnosticsOperations::ReportValidationFailure(passName, "acceleration-structure parameter binding type did not match the reflected layout.");
 	}
 
 	if (!accelerationStructureData->Handle.IsValid())
@@ -69,7 +70,7 @@ bool FrameGraphResourceContractDiagnostics::ValidatePassParameterBinding(
 		std::string message = "acceleration-structure parameter '";
 		message += parameter.Name;
 		message += "' must be bound through a FrameGraph acceleration-structure handle so setup, compile, and diagnostics can track it.";
-		return ReportValidationFailure(passName, message);
+		return FrameGraphResourceContractDiagnosticsOperations::ReportValidationFailure(passName, message);
 	}
 
 	return true;

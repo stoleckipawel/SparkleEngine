@@ -17,97 +17,61 @@
 
 static const auto g_vulkanRhiLogger = Logging::GetOrCreateLogger("RHI.Vulkan");
 
-namespace
+bool VulkanRhi::QueryMutableDescriptorTypeFeature(VkPhysicalDevice physicalDevice) noexcept
 {
-	constexpr std::uint32_t kNvidiaVendorId = 0x10DE;
-	constexpr const char* kNvidiaBinaryImportExtensionName = "VK_NVX_binary_import";
-	constexpr const char* kNvidiaImageViewHandleExtensionName = "VK_NVX_image_view_handle";
-
-	bool IsVulkanDeviceExtensionAvailable(VkPhysicalDevice physicalDevice, const char* extensionName) noexcept
+	if (!IsDeviceExtensionAvailable(physicalDevice, VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME))
 	{
-		if (physicalDevice == VK_NULL_HANDLE || extensionName == nullptr)
-		{
-			return false;
-		}
-
-		std::uint32_t extensionCount = 0;
-		VkResult result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
-		if (!VulkanResult::Succeeded(result))
-		{
-			return false;
-		}
-
-		std::vector<VkExtensionProperties> extensions(extensionCount);
-		result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data());
-		if (!VulkanResult::Succeeded(result))
-		{
-			return false;
-		}
-
-		return std::any_of(
-		    extensions.begin(),
-		    extensions.end(),
-		    [extensionName](const VkExtensionProperties& extension) noexcept {
-			    return std::strcmp(extension.extensionName, extensionName) == 0;
-		    });
+		return false;
 	}
 
-	bool QueryMutableDescriptorTypeFeature(VkPhysicalDevice physicalDevice) noexcept
-	{
-		if (!IsVulkanDeviceExtensionAvailable(physicalDevice, VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME))
-		{
-			return false;
-		}
+	VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptorFeatures{
+	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT};
+	VkPhysicalDeviceFeatures2 features{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &mutableDescriptorFeatures};
+	vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
+	return mutableDescriptorFeatures.mutableDescriptorType == VK_TRUE;
+}
 
-		VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutableDescriptorFeatures{
-		    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT};
-		VkPhysicalDeviceFeatures2 features{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &mutableDescriptorFeatures};
-		vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
-		return mutableDescriptorFeatures.mutableDescriptorType == VK_TRUE;
+bool VulkanRhi::AppendAvailableDeviceExtension(
+    VkPhysicalDevice physicalDevice,
+    std::vector<const char*>& extensions,
+    const char* extensionName) noexcept
+{
+	if (extensionName == nullptr ||
+	    std::find_if(
+	        extensions.begin(),
+	        extensions.end(),
+	        [extensionName](const char* enabled) noexcept { return std::strcmp(enabled, extensionName) == 0; }) != extensions.end())
+	{
+		return false;
 	}
 
-	bool AppendAvailableDeviceExtension(
-	    VkPhysicalDevice physicalDevice,
-	    std::vector<const char*>& extensions,
-	    const char* extensionName) noexcept
+	std::uint32_t extensionCount = 0;
+	VkResult result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+	if (!VulkanResult::Succeeded(result))
 	{
-		if (extensionName == nullptr ||
-		    std::find_if(
-		        extensions.begin(),
-		        extensions.end(),
-		        [extensionName](const char* enabled) noexcept { return std::strcmp(enabled, extensionName) == 0; }) != extensions.end())
-		{
-			return false;
-		}
-
-		std::uint32_t extensionCount = 0;
-		VkResult result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
-		if (!VulkanResult::Succeeded(result))
-		{
-			return false;
-		}
-
-		std::vector<VkExtensionProperties> available(extensionCount);
-		result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, available.data());
-		if (!VulkanResult::Succeeded(result))
-		{
-			return false;
-		}
-
-		const bool availableOnDevice = std::any_of(
-		    available.begin(),
-		    available.end(),
-		    [extensionName](const VkExtensionProperties& properties) noexcept {
-			    return std::strcmp(properties.extensionName, extensionName) == 0;
-		    });
-		if (!availableOnDevice)
-		{
-			return false;
-		}
-
-		extensions.push_back(extensionName);
-		return true;
+		return false;
 	}
+
+	std::vector<VkExtensionProperties> available(extensionCount);
+	result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, available.data());
+	if (!VulkanResult::Succeeded(result))
+	{
+		return false;
+	}
+
+	const bool availableOnDevice = std::any_of(
+	    available.begin(),
+	    available.end(),
+	    [extensionName](const VkExtensionProperties& properties) noexcept {
+		    return std::strcmp(properties.extensionName, extensionName) == 0;
+	    });
+	if (!availableOnDevice)
+	{
+		return false;
+	}
+
+	extensions.push_back(extensionName);
+	return true;
 }
 
 VulkanRhi::VulkanRhi() noexcept
@@ -133,8 +97,6 @@ VulkanRhi::VulkanRhi() noexcept
 
 VulkanRhi::~VulkanRhi() noexcept
 {
-	WaitForIdle();
-
 	if (m_device != VK_NULL_HANDLE)
 	{
 		for (std::unique_ptr<VulkanCommandQueue>& queue : m_queues)
@@ -593,7 +555,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		{
 			deviceExtensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 		}
-		if (m_adapterInfo.VendorId == kNvidiaVendorId &&
+		if (m_adapterInfo.VendorId == NvidiaVendorId &&
 		    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension &&
 		    m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureFeature)
 		{
@@ -601,8 +563,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 			m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure = true;
 		}
 	}
-	AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, kNvidiaBinaryImportExtensionName);
-	AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, kNvidiaImageViewHandleExtensionName);
+	AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, NvidiaBinaryImportExtensionName);
+	AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, NvidiaImageViewHandleExtensionName);
 	for (const char* extension : deviceExtensions)
 	{
 		m_enabledDeviceExtensions.emplace_back(extension);
@@ -808,7 +770,7 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .Supported = false,
 	    .Provider = ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure,
 	    .RequiresNvidiaDevice = true,
-	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == kNvidiaVendorId,
+	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == NvidiaVendorId,
 	    .SupportsDescriptorAccess = false,
 	    .SupportsShaderDeviceAddressAccess = false,
 	    .SupportsVulkanNativePartitionedAccelerationStructure =
@@ -818,7 +780,7 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .SupportsVulkanFunctionLoading = false,
 	    .SupportsVulkanDescriptorPath = false,
 	    .SupportsVulkanShaderDeviceAddressPath = false,
-	    .CapabilityStatusReason = m_adapterInfo.VendorId != kNvidiaVendorId
+	    .CapabilityStatusReason = m_adapterInfo.VendorId != NvidiaVendorId
 	                                  ? "vulkan-nv-ptlas-requires-nvidia-device"
 	                                  : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
 	                                         ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"
@@ -874,7 +836,7 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	                 m_cmdBuildPartitionedAccelerationStructures != nullptr,
 	    .Provider = ERhiPartitionedTlasProvider::VulkanNvPartitionedAccelerationStructure,
 	    .RequiresNvidiaDevice = true,
-	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == kNvidiaVendorId,
+	    .RunsOnNvidiaDevice = m_adapterInfo.VendorId == NvidiaVendorId,
 	    .SupportsDescriptorAccess = false,
 	    .SupportsShaderDeviceAddressAccess = m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure &&
 	                                         m_featureStatus.EnabledShaderInt64 &&
@@ -909,7 +871,7 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	    .OperationDataSizeInBytes = static_cast<std::uint32_t>(sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV)),
 	    .OperationCountDataSizeInBytes = static_cast<std::uint32_t>(sizeof(std::uint32_t)),
 	    .CapabilityStatusReason =
-	        m_adapterInfo.VendorId != kNvidiaVendorId
+	        m_adapterInfo.VendorId != NvidiaVendorId
 	            ? "vulkan-nv-ptlas-requires-nvidia-device"
 	            : (!m_featureStatus.RayTracing.SupportsPartitionedAccelerationStructureExtension
 	                   ? "vulkan-nv-partitioned-acceleration-structure-extension-not-present"

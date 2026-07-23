@@ -12,23 +12,36 @@
 #include <utility>
 #include <vector>
 
-namespace
+RayTracingPtlasPartitionPlanner::RayTracingPtlasPartitionPlanner() noexcept = default;
+
+struct RayTracingPtlasPartitionPlanner::SceneBounds final
 {
-	struct SceneBounds final
-	{
-		DirectX::XMFLOAT3 Min = {};
-		DirectX::XMFLOAT3 Max = {};
-		bool Valid = false;
-	};
+	DirectX::XMFLOAT3 Min = {};
+	DirectX::XMFLOAT3 Max = {};
+	bool Valid = false;
+};
 
-	struct InstanceBounds final
-	{
-		DirectX::XMFLOAT3 Min = {};
-		DirectX::XMFLOAT3 Max = {};
-		bool Valid = false;
-	};
+struct RayTracingPtlasPartitionPlanner::InstanceBounds final
+{
+	DirectX::XMFLOAT3 Min = {};
+	DirectX::XMFLOAT3 Max = {};
+	bool Valid = false;
+};
 
-	void ExpandSceneBounds(SceneBounds& bounds, const DirectX::XMFLOAT3& point) noexcept
+struct RayTracingPtlasPartitionPlanner::ObservedInstance final
+{
+	const MeshDraw* Draw = nullptr;
+	std::uint32_t RenderInstanceIndex = 0;
+	std::uint32_t StableIndex = 0;
+	std::uint32_t LocalPartitionId = 0;
+	std::uint32_t PreviousPartitionId = 0;
+	bool DirtyTransform = false;
+	bool GlobalEligible = false;
+};
+
+void RayTracingPtlasPartitionPlanner::ExpandSceneBounds(
+    SceneBounds& bounds,
+    const DirectX::XMFLOAT3& point) noexcept
 	{
 		if (!bounds.Valid)
 		{
@@ -46,7 +59,7 @@ namespace
 		bounds.Max.z = (std::max)(bounds.Max.z, point.z);
 	}
 
-	DirectX::XMFLOAT3 TransformPoint(
+DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::TransformPoint(
 	    const DirectX::XMFLOAT3& point,
 	    const DirectX::XMFLOAT4X4& worldMatrix) noexcept
 	{
@@ -57,7 +70,8 @@ namespace
 		return transformed;
 	}
 
-	InstanceBounds ComputeInstanceWorldBounds(const MeshDraw& draw) noexcept
+RayTracingPtlasPartitionPlanner::InstanceBounds RayTracingPtlasPartitionPlanner::ComputeInstanceWorldBounds(
+    const MeshDraw& draw) noexcept
 	{
 		if (draw.Geometry.GpuMesh == nullptr || !draw.Geometry.GpuMesh->GetLocalBounds().Valid)
 		{
@@ -98,7 +112,8 @@ namespace
 		return worldBounds;
 	}
 
-	DirectX::XMFLOAT3 ComputeInstancePartitionPosition(const MeshDraw& draw) noexcept
+DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::ComputeInstancePartitionPosition(
+    const MeshDraw& draw) noexcept
 	{
 		const InstanceBounds bounds = ComputeInstanceWorldBounds(draw);
 		return DirectX::XMFLOAT3{
@@ -107,7 +122,8 @@ namespace
 		    0.5f * (bounds.Min.z + bounds.Max.z)};
 	}
 
-	SceneBounds ComputeSceneBounds(const RenderSceneData& sceneData) noexcept
+RayTracingPtlasPartitionPlanner::SceneBounds RayTracingPtlasPartitionPlanner::ComputeSceneBounds(
+    const RenderSceneData& sceneData) noexcept
 	{
 		SceneBounds bounds{};
 		for (const MeshDraw& draw : sceneData.meshInstances)
@@ -122,7 +138,11 @@ namespace
 		return bounds;
 	}
 
-	std::uint32_t QuantizeAxis(float value, float minValue, float maxValue, std::uint32_t partitionsPerAxis) noexcept
+std::uint32_t RayTracingPtlasPartitionPlanner::QuantizeAxis(
+    float value,
+    float minValue,
+    float maxValue,
+    std::uint32_t partitionsPerAxis) noexcept
 	{
 		const float extent = maxValue - minValue;
 		if (extent <= 0.0001f || partitionsPerAxis <= 1)
@@ -135,7 +155,7 @@ namespace
 		return static_cast<std::uint32_t>(scaled);
 	}
 
-	std::uint32_t ComputeGridPartitionId(
+std::uint32_t RayTracingPtlasPartitionPlanner::ComputeGridPartitionId(
 	    const DirectX::XMFLOAT3& position,
 	    const SceneBounds& bounds,
 	    std::uint32_t partitionsPerAxis) noexcept
@@ -145,7 +165,7 @@ namespace
 		return x + z * partitionsPerAxis;
 	}
 
-	DirectX::XMFLOAT3 ComputeGridPartitionCenter(
+DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::ComputeGridPartitionCenter(
 	    std::uint32_t partitionId,
 	    const SceneBounds& bounds,
 	    std::uint32_t partitionsPerAxis) noexcept
@@ -169,25 +189,28 @@ namespace
 		    bounds.Min.z + (static_cast<float>(z) + 0.5f) * extent.z * invPartitions};
 	}
 
-	std::uint64_t ComputeGridPartitionCount(std::uint32_t partitionsPerAxis) noexcept
+std::uint64_t RayTracingPtlasPartitionPlanner::ComputeGridPartitionCount(
+    std::uint32_t partitionsPerAxis) noexcept
 	{
 		const std::uint64_t partitions = partitionsPerAxis;
 		return partitions * partitions;
 	}
 
-	bool RequiresGlobalPartition(RayTracingPtlasPartitionUpdateMode updateMode) noexcept
+bool RayTracingPtlasPartitionPlanner::RequiresGlobalPartition(
+    RayTracingPtlasPartitionUpdateMode updateMode) noexcept
 	{
 		return updateMode == RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal ||
 		       updateMode == RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise;
 	}
 
-	float DistanceSquared(const DirectX::XMFLOAT3& lhs, const DirectX::XMFLOAT3& rhs) noexcept
+float RayTracingPtlasPartitionPlanner::DistanceSquared(
+    const DirectX::XMFLOAT3& lhs,
+    const DirectX::XMFLOAT3& rhs) noexcept
 	{
 		const float dx = lhs.x - rhs.x;
 		const float dy = lhs.y - rhs.y;
 		const float dz = lhs.z - rhs.z;
 		return dx * dx + dy * dy + dz * dz;
-	}
 }
 
 RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
@@ -236,17 +259,6 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		m_partitionStates[partitionId].FarFromCamera =
 		    DistanceSquared(partitionCenter, config.CameraPosition) >= modeChangeDistanceSquared;
 	}
-
-	struct ObservedInstance final
-	{
-		const MeshDraw* Draw = nullptr;
-		std::uint32_t RenderInstanceIndex = 0;
-		std::uint32_t StableIndex = 0;
-		std::uint32_t LocalPartitionId = 0;
-		std::uint32_t PreviousPartitionId = 0;
-		bool DirtyTransform = false;
-		bool GlobalEligible = false;
-	};
 
 	std::unordered_set<std::uint32_t> seenStableIndices;
 	seenStableIndices.reserve(sceneData.meshInstances.size());

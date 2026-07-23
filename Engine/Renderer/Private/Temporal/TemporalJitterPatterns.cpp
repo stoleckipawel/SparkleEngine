@@ -4,16 +4,17 @@
 
 #include <random>
 
-namespace
+class TemporalJitterPatternsOperations final
 {
-constexpr float kNormalizedOffsetRange = 0.5f;
-constexpr uint32_t kHaltonBaseX = 2u;
-constexpr uint32_t kHaltonBaseY = 3u;
-constexpr float kR2G = 1.32471795724474602596f;
-constexpr float kR2A1 = 1.0f / kR2G;
-constexpr float kR2A2 = 1.0f / (kR2G * kR2G);
+  public:
+static constexpr float kNormalizedOffsetRange = 0.5f;
+static constexpr uint32_t kHaltonBaseX = 2u;
+static constexpr uint32_t kHaltonBaseY = 3u;
+static constexpr float kR2G = 1.32471795724474602596f;
+static constexpr float kR2A1 = 1.0f / kR2G;
+static constexpr float kR2A2 = 1.0f / (kR2G * kR2G);
 
-float VanDerCorput(size_t base, size_t index) noexcept
+static float VanDerCorput(size_t base, size_t index) noexcept
 {
 	float result = 0.0f;
 	float f = 1.0f;
@@ -29,7 +30,7 @@ float VanDerCorput(size_t base, size_t index) noexcept
 	return result;
 }
 
-DirectX::XMFLOAT2 CalculateMSAAJitter(uint32_t index) noexcept
+static DirectX::XMFLOAT2 CalculateMSAAJitter(uint32_t index) noexcept
 {
 	const DirectX::XMFLOAT2 offsets[] = {
 		{0.0625f, -0.1875f},
@@ -43,27 +44,27 @@ DirectX::XMFLOAT2 CalculateMSAAJitter(uint32_t index) noexcept
 	return offsets[index % 8u];
 }
 
-DirectX::XMFLOAT2 CalculateHaltonJitter(uint32_t index) noexcept
+static DirectX::XMFLOAT2 CalculateHaltonJitter(uint32_t index) noexcept
 {
 	return {
 		VanDerCorput(kHaltonBaseX, index) - kNormalizedOffsetRange,
 		VanDerCorput(kHaltonBaseY, index) - kNormalizedOffsetRange};
 }
 
-DirectX::XMFLOAT2 CalculateR2Jitter(uint32_t index) noexcept
+static DirectX::XMFLOAT2 CalculateR2Jitter(uint32_t index) noexcept
 {
 	const float jitterX = fmodf(static_cast<float>(index) * kR2A1, 1.0f);
 	const float jitterY = fmodf(static_cast<float>(index) * kR2A2, 1.0f);
 	return {jitterX - kNormalizedOffsetRange, jitterY - kNormalizedOffsetRange};
 }
 
-DirectX::XMFLOAT2 CalculateWhiteNoiseJitter(uint32_t index) noexcept
+static DirectX::XMFLOAT2 CalculateWhiteNoiseJitter(uint32_t index) noexcept
 {
 	std::mt19937 rng(index);
 	std::uniform_real_distribution<float> distribution(-kNormalizedOffsetRange, kNormalizedOffsetRange);
 	return {distribution(rng), distribution(rng)};
 }
-}  // namespace
+};
 
 DirectX::XMFLOAT2 TemporalJitterPatterns::GeneratePatternSample(Pattern pattern, uint32_t frameIndex) noexcept
 {
@@ -72,16 +73,16 @@ DirectX::XMFLOAT2 TemporalJitterPatterns::GeneratePatternSample(Pattern pattern,
 	switch (pattern)
 	{
 	case Pattern::MSAA:
-		return CalculateMSAAJitter(frameIndex);
+		return TemporalJitterPatternsOperations::CalculateMSAAJitter(frameIndex);
 	case Pattern::Halton:
 	{
 		const uint32_t haltonFrameIndex = (frameIndex % kHaltonFrameWindow) + 1u;
-		return CalculateHaltonJitter(haltonFrameIndex);
+		return TemporalJitterPatternsOperations::CalculateHaltonJitter(haltonFrameIndex);
 	}
 	case Pattern::R2:
-		return CalculateR2Jitter(frameIndex);
+		return TemporalJitterPatternsOperations::CalculateR2Jitter(frameIndex);
 	case Pattern::WhiteNoise:
-		return CalculateWhiteNoiseJitter(frameIndex);
+		return TemporalJitterPatternsOperations::CalculateWhiteNoiseJitter(frameIndex);
 	case Pattern::None:
 		return {};
 	default:

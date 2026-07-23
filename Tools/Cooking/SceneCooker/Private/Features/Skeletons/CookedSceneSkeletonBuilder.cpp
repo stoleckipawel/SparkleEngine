@@ -9,20 +9,21 @@
 #include <string>
 #include <utility>
 
-namespace
+class CookedSceneSkeletonBuilderOperations final
 {
-	Assets::CookedAssetId BuildSkeletonAssetId(std::string_view sceneAssetId, std::uint32_t sourceSkinIndex)
+  public:
+	static Assets::CookedAssetId BuildSkeletonAssetId(std::string_view sceneAssetId, std::uint32_t sourceSkinIndex)
 	{
 		return Hash::Fnv1a64(std::string(sceneAssetId) + "#skeleton#" + std::to_string(sourceSkinIndex));
 	}
 
-	void CopyName(std::string_view sourceName, char (&destination)[64]) noexcept
+	static void CopyName(std::string_view sourceName, char (&destination)[64]) noexcept
 	{
 		std::memset(destination, 0, sizeof(destination));
 		const std::size_t copyLength = (std::min)(sourceName.size(), sizeof(destination) - 1u);
 		std::memcpy(destination, sourceName.data(), copyLength);
 	}
-}
+};
 
 void CookedSceneSkeletonBuilder::BuildSkeletons(const SourceImportResult& importResult, std::string_view sceneAssetId, CookedSceneBuild& outBuild)
 {
@@ -39,7 +40,7 @@ void CookedSceneSkeletonBuilder::BuildSkeletons(const SourceImportResult& import
 		}
 
 		CookedSkeletonAssetBuild skeletonAsset;
-		skeletonAsset.assetId = BuildSkeletonAssetId(sceneAssetId, importedSkeleton.sourceSkinIndex);
+		skeletonAsset.assetId = CookedSceneSkeletonBuilderOperations::BuildSkeletonAssetId(sceneAssetId, importedSkeleton.sourceSkinIndex);
 		skeletonAsset.sourceSkinIndex = importedSkeleton.sourceSkinIndex;
 		skeletonAsset.sourcePath = importResult.scene.sourcePath;
 		skeletonAsset.joints.reserve(importedSkeleton.joints.size());
@@ -47,7 +48,7 @@ void CookedSceneSkeletonBuilder::BuildSkeletons(const SourceImportResult& import
 		for (const ImportedJoint& importedJoint : importedSkeleton.joints)
 		{
 			Assets::CookedSkeletonJointRecord jointRecord;
-			CopyName(importedJoint.name, jointRecord.name);
+			CookedSceneSkeletonBuilderOperations::CopyName(importedJoint.name, jointRecord.name);
 			jointRecord.sourceNodeIndex = importedJoint.sourceNodeIndex;
 			jointRecord.parentJointIndex = importedJoint.parentJointIndex;
 			jointRecord.inverseBindMatrix = importedJoint.inverseBindMatrix;

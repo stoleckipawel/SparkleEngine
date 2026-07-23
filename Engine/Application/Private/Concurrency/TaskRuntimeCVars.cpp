@@ -4,17 +4,18 @@
 
 #include "Core/Public/Console/CVar.h"
 
-namespace
+class TaskRuntimeCVarsState final
 {
-	ConsoleVariable<std::uint32_t> g_workerCount(
-	    "task.WorkerCount", 0, "Frame-critical/background task-worker override; 0 selects one worker per CPU lane.");
-	ConsoleVariable<bool> g_serialExecution(
-	    "task.SerialExecution", false, "Run SparkleTasks on the deterministic caller-thread reference executor.");
-}
+  public:
+	inline static ConsoleVariable<std::uint32_t> g_workerCount{
+	    "task.WorkerCount", 0, "Frame-critical/background task-worker override; 0 selects one worker per CPU lane."};
+	inline static ConsoleVariable<bool> g_serialExecution{
+	    "task.SerialExecution", false, "Run SparkleTasks on the deterministic caller-thread reference executor."};
+};
 
 namespace TaskRuntimeCVars
 {
 	void Register() noexcept {}
-	std::uint32_t ResolveWorkerCount() noexcept { return g_workerCount.Get(); }
-	bool UseSerialExecution() noexcept { return g_serialExecution.Get(); }
+	std::uint32_t ResolveWorkerCount() noexcept { return TaskRuntimeCVarsState::g_workerCount.Get(); }
+	bool UseSerialExecution() noexcept { return TaskRuntimeCVarsState::g_serialExecution.Get(); }
 }

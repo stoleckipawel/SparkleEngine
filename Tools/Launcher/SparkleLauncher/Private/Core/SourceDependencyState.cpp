@@ -9,8 +9,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		bool PathHasContent(const std::filesystem::path& path)
 		{
 			std::error_code errorCode;
@@ -41,7 +40,7 @@ namespace SparkleLauncher
 			}
 			return stream.str();
 		}
-	}
+
 
 	const std::vector<SourceDependencyGroup>& GetSourceDependencyGroups()
 	{

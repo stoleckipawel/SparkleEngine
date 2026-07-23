@@ -10,20 +10,21 @@
 #include <algorithm>
 #include <string>
 
-namespace
+class FrameGraphTextureHistoryOperations final
 {
-	bool UsesHandle(const PassResourceDeclaration& declaration, FrameGraphTextureHandle handle) noexcept
+  public:
+	static bool UsesHandle(const PassResourceDeclaration& declaration, FrameGraphTextureHandle handle) noexcept
 	{
 		return declaration.handle == handle.GetResourceHandle();
 	}
 
-	std::wstring BuildHistoryResourceName(std::string_view name)
+	static std::wstring BuildHistoryResourceName(std::string_view name)
 	{
 		std::wstring result(name.begin(), name.end());
 		result.append(L"History");
 		return result;
 	}
-}
+};
 
 FrameGraphTextureHistory FrameGraph::CreateTextureHistory(const FrameGraphTextureDesc& desc) noexcept
 {
@@ -86,8 +87,8 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 		{
 			for (const PassResourceDeclaration& declaration : pass.declarations)
 			{
-				const bool usesPrevious = UsesHandle(declaration, history.handles.Previous);
-				const bool usesCurrent = UsesHandle(declaration, history.handles.Current);
+				const bool usesPrevious = FrameGraphTextureHistoryOperations::UsesHandle(declaration, history.handles.Previous);
+				const bool usesCurrent = FrameGraphTextureHistoryOperations::UsesHandle(declaration, history.handles.Current);
 				if (!usesPrevious && !usesCurrent)
 				{
 					continue;
@@ -152,7 +153,7 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 				    ResourceState::Undefined,
 				    RhiMemoryCategory::Texture,
 				    RhiMemoryResidencyClass::DeviceLocal,
-				    BuildHistoryResourceName(history.desc.name));
+				    FrameGraphTextureHistoryOperations::BuildHistoryResourceName(history.desc.name));
 			}
 		}
 

@@ -6,8 +6,7 @@
 
 namespace LevelParsing
 {
-	namespace
-	{
+
 		void WriteCommonFields(
 		    std::ofstream& output,
 		    std::string_view prefix,
@@ -58,7 +57,7 @@ namespace LevelParsing
 			output << prefix << "Height = " << value.height << "\n";
 			output << prefix << "CastShadow = " << (value.castShadow ? "true" : "false") << "\n";
 		}
-	}
+
 
 	void WriteLightingSectionValues(std::ofstream& output, const LevelDesc& levelDesc)
 	{

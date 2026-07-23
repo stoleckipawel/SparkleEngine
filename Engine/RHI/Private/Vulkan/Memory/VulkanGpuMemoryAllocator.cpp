@@ -51,15 +51,16 @@ struct VulkanGpuMemoryAllocator::Impl final
 	}
 };
 
-namespace
+class VulkanGpuMemoryAllocatorImplementation final
 {
+  public:
 	struct CategoryAggregation final
 	{
 		RhiMemoryCategoryStats Stats;
 		std::vector<std::uint32_t> UniqueHeapIndices;
 	};
 
-	VmaMemoryUsage ToVmaMemoryUsage(RhiMemoryResidencyClass residencyClass) noexcept
+	static VmaMemoryUsage ToVmaMemoryUsage(RhiMemoryResidencyClass residencyClass) noexcept
 	{
 		switch (residencyClass)
 		{
@@ -74,7 +75,7 @@ namespace
 		}
 	}
 
-	VmaAllocationCreateFlags ToVmaAllocationFlags(RhiMemoryResidencyClass residencyClass) noexcept
+	static VmaAllocationCreateFlags ToVmaAllocationFlags(RhiMemoryResidencyClass residencyClass) noexcept
 	{
 		switch (residencyClass)
 		{
@@ -90,7 +91,7 @@ namespace
 	}
 
 	template <typename RecordT>
-	CategoryAggregation& FindOrCreateAggregation(
+	static CategoryAggregation& FindOrCreateAggregation(
 	    std::vector<CategoryAggregation>& aggregations,
 	    const RecordT& record)
 	{
@@ -113,7 +114,7 @@ namespace
 		return aggregations.back();
 	}
 
-	void AddHeapReference(
+	static void AddHeapReference(
 	    CategoryAggregation& aggregation,
 	    std::uint32_t heapIndex,
 	    const std::array<VmaBudget, VK_MAX_MEMORY_HEAPS>& heapBudgets) noexcept
@@ -130,7 +131,7 @@ namespace
 			aggregation.Stats.BudgetBytes += heapBudgets[heapIndex].budget;
 		}
 	}
-}
+};
 
 VulkanGpuMemoryAllocator::VulkanGpuMemoryAllocator(VulkanRhi& rhi) noexcept : m_rhi(rhi), m_impl(std::make_unique<Impl>())
 {
@@ -207,7 +208,7 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 		snapshot.ApiUsageBytes += heapBudgets[heapIndex].usage;
 	}
 
-	std::vector<CategoryAggregation> aggregations;
+	std::vector<VulkanGpuMemoryAllocatorImplementation::CategoryAggregation> aggregations;
 	{
 		std::scoped_lock lock(m_impl->RecordsMutex);
 		aggregations.reserve(m_impl->LiveRecords.size());
@@ -219,7 +220,8 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 				continue;
 			}
 
-			CategoryAggregation& aggregation = FindOrCreateAggregation(aggregations, *record);
+			VulkanGpuMemoryAllocatorImplementation::CategoryAggregation& aggregation =
+			    VulkanGpuMemoryAllocatorImplementation::FindOrCreateAggregation(aggregations, *record);
 			++aggregation.Stats.AllocationCount;
 			++aggregation.Stats.ResourceCount;
 			aggregation.Stats.UsedBytes += record->UsedBytes;
@@ -229,7 +231,7 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 			{
 				snapshot.TransientUsageBytes += record->AllocatedBytes;
 			}
-			AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets);
+			VulkanGpuMemoryAllocatorImplementation::AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets);
 		}
 
 		for (const VulkanGpuMemoryBlockRecord* record : m_impl->LiveMemoryBlockRecords)
@@ -239,7 +241,8 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 				continue;
 			}
 
-			CategoryAggregation& aggregation = FindOrCreateAggregation(aggregations, *record);
+			VulkanGpuMemoryAllocatorImplementation::CategoryAggregation& aggregation =
+			    VulkanGpuMemoryAllocatorImplementation::FindOrCreateAggregation(aggregations, *record);
 			++aggregation.Stats.AllocationCount;
 			aggregation.Stats.ResourceCount += record->AliasingResourceCount;
 			aggregation.Stats.UsedBytes += record->UsedBytes;
@@ -249,7 +252,7 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 			{
 				snapshot.TransientUsageBytes += record->AllocatedBytes;
 			}
-			AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets);
+			VulkanGpuMemoryAllocatorImplementation::AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets);
 		}
 
 		for (const PendingAllocationRelease& pendingRelease : m_impl->PendingReleases)
@@ -272,7 +275,7 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 	}
 
 	snapshot.CategoryStats.reserve(aggregations.size());
-	for (const CategoryAggregation& aggregation : aggregations)
+	for (const VulkanGpuMemoryAllocatorImplementation::CategoryAggregation& aggregation : aggregations)
 	{
 		snapshot.CategoryStats.push_back(aggregation.Stats);
 	}
@@ -291,7 +294,7 @@ std::unique_ptr<VulkanGpuAllocationRecord> VulkanGpuMemoryAllocator::CreateBuffe
 		return {};
 	}
 
-	const VmaAllocationCreateInfo allocationCreateInfo{.flags = ToVmaAllocationFlags(residencyClass), .usage = ToVmaMemoryUsage(residencyClass)};
+	const VmaAllocationCreateInfo allocationCreateInfo{.flags = VulkanGpuMemoryAllocatorImplementation::ToVmaAllocationFlags(residencyClass), .usage = VulkanGpuMemoryAllocatorImplementation::ToVmaMemoryUsage(residencyClass)};
 	VkBufferCreateInfo nativeCreateInfo = bufferCreateInfo;
 	m_rhi.ConfigureResourceQueueSharing(nativeCreateInfo);
 	VkBuffer buffer = VK_NULL_HANDLE;
@@ -329,7 +332,7 @@ std::unique_ptr<VulkanGpuAllocationRecord> VulkanGpuMemoryAllocator::CreateImage
 		return {};
 	}
 
-	const VmaAllocationCreateInfo allocationCreateInfo{.flags = ToVmaAllocationFlags(residencyClass), .usage = ToVmaMemoryUsage(residencyClass)};
+	const VmaAllocationCreateInfo allocationCreateInfo{.flags = VulkanGpuMemoryAllocatorImplementation::ToVmaAllocationFlags(residencyClass), .usage = VulkanGpuMemoryAllocatorImplementation::ToVmaMemoryUsage(residencyClass)};
 	VkImageCreateInfo nativeCreateInfo = imageCreateInfo;
 	m_rhi.ConfigureResourceQueueSharing(nativeCreateInfo);
 	VkImage image = VK_NULL_HANDLE;

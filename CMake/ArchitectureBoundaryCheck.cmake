@@ -6,7 +6,7 @@ endif()
 
 file(TO_CMAKE_PATH "${SPARKLE_REPO_ROOT}" SPARKLE_REPO_ROOT)
 
-set(SPARKLE_BOUNDARY_SOURCE_FILE_REGEX "\\.(c|cc|cpp|cxx|h|hh|hpp|hxx|inl|cmake)$|/CMakeLists\\.txt$")
+set(SPARKLE_BOUNDARY_SOURCE_FILE_REGEX "\\.(c|cc|cpp|cppm|cxx|h|hh|hpp|hxx|inl|ixx|cmake)$|/CMakeLists\\.txt$")
 set(SPARKLE_BOUNDARY_NATIVE_API_REGEX "<d3d12\\.h>|<vulkan/vulkan\\.h>|ID3D12|D3D12_|Vk[A-Z]|vk[A-Z]|Vulkan::Vulkan|\"D3D12/|\"Vulkan/")
 set(SPARKLE_BOUNDARY_NATIVE_PTLAS_REGEX "VK_NV_partitioned_acceleration_structure|VkPartitionedAccelerationStructure|VkBuildPartitionedAccelerationStructure|VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV|vk(Get|Cmd)PartitionedAccelerationStructures|NvAPI_D3D12|NVAPI_D3D12|D3D12_RTAS_PARTITIONED_TLAS|ExecuteIndirectRTASOperations")
 set(SPARKLE_BOUNDARY_RENDERER_SHADER_DATA_REGEX "Per(Frame|View|Object|Temporal)ConstantBufferData|PerViewCameraConstantBufferData|Render(ViewCamera|ViewLighting|ConstantBuffer)Data|MeshInstanceShaderData|MeshInstanceData|VertexSkinInfluenceData|JointMatrixData")
@@ -57,6 +57,14 @@ function(sparkle_boundary_scan_file absolute_path)
     sparkle_boundary_relative_path(_relative_path "${absolute_path}")
 
     file(READ "${absolute_path}" _content)
+    if(_content MATCHES "namespace[ \t\r\n]*\\{")
+        sparkle_boundary_append_failure(
+            "NO_ANONYMOUS_NAMESPACE"
+            "${_relative_path}"
+            "1"
+            "Anonymous namespaces are forbidden; assign behavior to an owning type or an established named domain namespace."
+            "namespace {")
+    endif()
     string(REPLACE ";" "__SPARKLE_SEMICOLON__" _content "${_content}")
     string(REPLACE "\r\n" "\n" _content "${_content}")
     string(REPLACE "\r" "\n" _content "${_content}")
@@ -208,11 +216,9 @@ message(STATUS "Repository root: ${SPARKLE_REPO_ROOT}")
 
 sparkle_boundary_collect_source_files(
     SPARKLE_BOUNDARY_SOURCE_FILES
-    "Engine/RHI"
-    "Engine/Renderer"
-    "Engine/Editor"
-    "Engine/GameFramework/Public"
-    "Tools/Shaders/ShaderCompiler")
+    "Engine"
+    "Tools"
+    "Projects")
 
 foreach(_file IN LISTS SPARKLE_BOUNDARY_SOURCE_FILES)
     sparkle_boundary_scan_file("${_file}")

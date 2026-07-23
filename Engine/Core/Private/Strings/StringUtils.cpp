@@ -3,9 +3,81 @@
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <cctype>
+#include <sstream>
 
 namespace Strings
 {
+	bool IsAsciiWhitespace(char character) noexcept
+	{
+		return character == ' ' || character == '\t' || character == '\r' || character == '\n';
+	}
+
+	bool ContainsAsciiWhitespace(std::string_view str) noexcept
+	{
+		for (const char character : str)
+		{
+			if (IsAsciiWhitespace(character))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	std::string_view TrimAsciiWhitespace(std::string_view str) noexcept
+	{
+		constexpr std::string_view whitespace = " \t\r\n";
+		const std::size_t start = str.find_first_not_of(whitespace);
+		if (start == std::string_view::npos)
+		{
+			return {};
+		}
+		const std::size_t end = str.find_last_not_of(whitespace);
+		return str.substr(start, end - start + 1);
+	}
+
+	std::string_view Unquote(std::string_view str) noexcept
+	{
+		if (str.size() >= 2 && str.front() == '"' && str.back() == '"')
+		{
+			return str.substr(1, str.size() - 2);
+		}
+		return str;
+	}
+
+	std::string TrimCopy(std::string_view str)
+	{
+		return std::string(TrimAsciiWhitespace(str));
+	}
+
+	std::string UnquoteCopy(std::string_view str)
+	{
+		return std::string(Unquote(TrimAsciiWhitespace(str)));
+	}
+
+	std::vector<std::string_view> Split(std::string_view str, char separator, bool keepEmptyFields)
+	{
+		std::vector<std::string_view> fields;
+		std::size_t start = 0;
+		while (start <= str.size())
+		{
+			const std::size_t separatorIndex = str.find(separator, start);
+			const std::size_t end = separatorIndex == std::string_view::npos ? str.size() : separatorIndex;
+			const std::string_view field = str.substr(start, end - start);
+			if (keepEmptyFields || !field.empty())
+			{
+				fields.push_back(field);
+			}
+
+			if (separatorIndex == std::string_view::npos)
+			{
+				break;
+			}
+			start = separatorIndex + 1;
+		}
+		return fields;
+	}
+
 	std::string ToLowerCopy(std::string_view str)
 	{
 		std::string lowered(str);
@@ -162,5 +234,63 @@ namespace Strings
 			output += values[index];
 		}
 		return output;
+	}
+
+	bool TryParseFloat(std::string_view str, float& outValue)
+	{
+		const std::string trimmed = TrimCopy(str);
+		if (trimmed.empty())
+		{
+			return false;
+		}
+
+		try
+		{
+			std::size_t parsedLength = 0;
+			outValue = std::stof(trimmed, &parsedLength);
+			return parsedLength == trimmed.size();
+		}
+		catch (...)
+		{
+			return false;
+		}
+	}
+
+	bool TryParseFloat3(std::string_view str, DirectX::XMFLOAT3& outValue)
+	{
+		std::stringstream stream {std::string(str)};
+		std::string segment;
+		float values[3] = {};
+		for (int index = 0; index < 3; ++index)
+		{
+			if (!std::getline(stream, segment, ',') || !TryParseFloat(segment, values[index]))
+			{
+				return false;
+			}
+		}
+
+		outValue = {values[0], values[1], values[2]};
+		return true;
+	}
+
+	std::wstring ToWide(std::string_view str)
+	{
+		return std::wstring(str.begin(), str.end());
+	}
+
+	std::wstring ToWide(const std::filesystem::path& path)
+	{
+		return path.wstring();
+	}
+
+	std::string ToNarrow(std::wstring_view str)
+	{
+		std::string result;
+		result.reserve(str.size());
+		for (const wchar_t character : str)
+		{
+			result.push_back(static_cast<char>(character));
+		}
+		return result;
 	}
 }  // namespace Strings

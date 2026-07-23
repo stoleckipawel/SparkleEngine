@@ -4,8 +4,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		std::string QuoteDisplayArgument(std::string_view argument)
 		{
 			if (argument.empty())
@@ -23,7 +22,7 @@ namespace SparkleLauncher
 			quoted.push_back('"');
 			return quoted;
 		}
-	}
+
 
 	ProcessResult NativeProcessRunner::Run(const ProcessRequest& request)
 	{

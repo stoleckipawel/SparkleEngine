@@ -5,6 +5,36 @@
 #include "RuntimeConsole/RuntimeConsoleOverlay.h"
 #include "Renderer.h"
 
+class RuntimeConsoleOverlayFrameRenderer final
+{
+  public:
+	static void Render(RuntimeConsoleOverlay& overlay, Renderer& renderer);
+
+  private:
+	struct Context final
+	{
+		RuntimeConsoleOverlay& Overlay;
+		Renderer& RendererFacade;
+	};
+
+	static void Compose(void* opaqueContext) noexcept;
+};
+
+void RuntimeConsoleOverlayFrameRenderer::Render(RuntimeConsoleOverlay& overlay, Renderer& renderer)
+{
+	Context context {overlay, renderer};
+	renderer.RenderSerialUiFrame(&Compose, &context);
+}
+
+void RuntimeConsoleOverlayFrameRenderer::Compose(void* opaqueContext) noexcept
+{
+	Context& frame = *static_cast<Context*>(opaqueContext);
+	frame.Overlay.Update();
+	frame.RendererFacade.BeginHostOverlayPresentation();
+	frame.Overlay.Render();
+	frame.RendererFacade.EndHostPresentation();
+}
+
 RuntimeConsoleHost::RuntimeConsoleHost(Timer& timer, Window& window, Renderer& renderer)
 {
 	m_overlay = std::make_unique<RuntimeConsoleOverlay>(timer, window, renderer.GetImGuiRenderer());
@@ -30,15 +60,7 @@ void RuntimeConsoleHost::RenderFrameWithOverlay(Renderer& renderer, RuntimeUpdat
 		updateRuntime();
 	}
 
-	renderer.PrepareHostFrame();
-	renderer.RecordHostFrame();
-	m_overlay->Update();
-
-	renderer.BeginHostOverlayPresentation();
-	m_overlay->Render();
-	renderer.EndHostPresentation();
-
-	renderer.SubmitHostFrame();
+	RuntimeConsoleOverlayFrameRenderer::Render(*m_overlay, renderer);
 }
 
 void RuntimeConsoleHost::RenderFrameWithoutOverlay(Renderer& renderer, RuntimeUpdate& updateRuntime)

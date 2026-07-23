@@ -10,8 +10,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 #if defined(_WIN32)
 		bool WideContainsInsensitive(std::wstring_view text, std::wstring_view needle)
 		{
@@ -165,7 +164,7 @@ namespace SparkleLauncher
 
 			return capabilities;
 		}
-	}
+
 
 	const HostGraphicsCapabilities& GetHostGraphicsCapabilities()
 	{

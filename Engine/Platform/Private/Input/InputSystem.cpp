@@ -12,8 +12,9 @@
 #include <cstdio>
 #include <utility>
 
-namespace
+class InputSystemImplementation final
 {
+  public:
 	class DeferredEventProcessingGuard final
 	{
 	  public:
@@ -43,7 +44,7 @@ namespace
 		bool& m_isProcessing;
 		bool m_didBegin = false;
 	};
-}
+};
 
 std::unique_ptr<InputSystem> InputSystem::Create()
 {
@@ -84,7 +85,7 @@ void InputSystem::BeginFrame()
 void InputSystem::ProcessDeferredEvents()
 {
 	m_OwnerThread.AssertAccess();
-	const DeferredEventProcessingGuard processing(m_bIsProcessingDeferredEvents);
+	const InputSystemImplementation::DeferredEventProcessingGuard processing(m_bIsProcessingDeferredEvents);
 	if (!processing)
 	{
 		return;

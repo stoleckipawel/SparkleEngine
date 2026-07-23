@@ -16,26 +16,27 @@
 
 static const auto g_rayTracingBlasCacheLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
 
-namespace
+class RayTracingBlasCacheOperations final
 {
-	bool GeometryEquals(const RhiRayTracingGeometryDesc& left, const RhiRayTracingGeometryDesc& right) noexcept
+  public:
+	static bool GeometryEquals(const RhiRayTracingGeometryDesc& left, const RhiRayTracingGeometryDesc& right) noexcept
 	{
 		return left.VertexBuffer == right.VertexBuffer && left.VertexStrideInBytes == right.VertexStrideInBytes &&
 		       left.VertexCount == right.VertexCount && left.IndexBuffer == right.IndexBuffer && left.IndexCount == right.IndexCount &&
 		       left.IndexFormat == right.IndexFormat && left.Opaque == right.Opaque;
 	}
 
-	std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
+	static std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
 	{
 		return alignment > 0 ? MathUtils::AlignUp(sizeInBytes, alignment) : sizeInBytes;
 	}
 
-	bool IsSkinnedDraw(const MeshDraw& draw) noexcept
+	static bool IsSkinnedDraw(const MeshDraw& draw) noexcept
 	{
 		return draw.Geometry.MeshKind == RenderMeshKind::Skeletal;
 	}
 
-	DirectX::XMFLOAT3 TransformSkinnedPosition(
+	static DirectX::XMFLOAT3 TransformSkinnedPosition(
 	    const DirectX::XMFLOAT3& position,
 	    const VertexSkinInfluence& influence,
 	    std::uint32_t jointMatrixOffset,
@@ -69,7 +70,7 @@ namespace
 		DirectX::XMStoreFloat3(&result, totalWeight > 0.0f ? skinnedPosition : sourcePosition);
 		return result;
 	}
-}
+};
 
 RayTracingBlasCache::RayTracingBlasCache(RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface)
@@ -129,7 +130,7 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
     std::uint32_t renderInstanceIndex,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	if (IsSkinnedDraw(draw))
+	if (RayTracingBlasCacheOperations::IsSkinnedDraw(draw))
 	{
 		return EnsureSkinnedBlas(cmd, sceneData, draw, renderInstanceIndex, diagnostics);
 	}
@@ -314,7 +315,7 @@ bool RayTracingBlasCache::BuildSkinnedGeometry(
 			}
 		}
 		skinnedPositions.push_back(
-		    TransformSkinnedPosition(
+		    RayTracingBlasCacheOperations::TransformSkinnedPosition(
 		        vertices[vertexIndex].Position,
 		        skinInfluences[vertexIndex],
 		        draw.Skinning.JointMatrixOffset,
@@ -382,7 +383,7 @@ bool RayTracingBlasCache::EnsureEntryResources(
 
 	if (!entry.scratchBuffer)
 	{
-		const std::uint64_t alignedScratchSize = AlignRayTracingBufferSize(
+		const std::uint64_t alignedScratchSize = RayTracingBlasCacheOperations::AlignRayTracingBufferSize(
 		    prebuildInfo.ScratchDataSizeInBytes,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.ScratchBufferByteAlignment);
 		entry.scratchBuffer =
@@ -391,7 +392,7 @@ bool RayTracingBlasCache::EnsureEntryResources(
 	}
 	if (!entry.accelerationStructureBuffer)
 	{
-		const std::uint64_t alignedAccelerationStructureSize = AlignRayTracingBufferSize(
+		const std::uint64_t alignedAccelerationStructureSize = RayTracingBlasCacheOperations::AlignRayTracingBufferSize(
 		    prebuildInfo.ResultDataMaxSizeInBytes,
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.AccelerationStructureByteAlignment);
 		entry.accelerationStructureBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingAccelerationStructureBuffer(
@@ -416,7 +417,7 @@ bool RayTracingBlasCache::EnsureEntryResources(
 
 bool RayTracingBlasCache::GeometryMatches(const Entry& entry, const RhiRayTracingGeometryDesc& geometry) const noexcept
 {
-	return GeometryEquals(entry.geometry, geometry);
+	return RayTracingBlasCacheOperations::GeometryEquals(entry.geometry, geometry);
 }
 
 RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildHandle(const Entry& entry) const noexcept

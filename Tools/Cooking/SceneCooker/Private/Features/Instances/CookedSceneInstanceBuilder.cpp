@@ -5,9 +5,10 @@
 #include <cstdint>
 #include <limits>
 
-namespace
+class CookedSceneInstanceBuilderOperations final
 {
-	Assets::CookedSceneInstanceGroupKind ToCookedInstanceGroupKind(ImportedMeshInstanceGroupKind groupKind) noexcept
+  public:
+	static Assets::CookedSceneInstanceGroupKind ToCookedInstanceGroupKind(ImportedMeshInstanceGroupKind groupKind) noexcept
 	{
 		switch (groupKind)
 		{
@@ -21,7 +22,7 @@ namespace
 		}
 	}
 
-	bool ResolveMaterialAssetIndex(
+	static bool ResolveMaterialAssetIndex(
 	    const ImportedMeshInstance& importedInstance,
 	    const CookedSceneBuild& build,
 	    std::uint32_t& outMaterialAssetIndex,
@@ -43,7 +44,7 @@ namespace
 		return true;
 	}
 
-	bool ResolveMaterialAssetIndex(
+	static bool ResolveMaterialAssetIndex(
 	    const ImportedMeshInstanceGroup& importedGroup,
 	    const CookedSceneBuild& build,
 	    std::uint32_t& outMaterialAssetIndex,
@@ -65,7 +66,7 @@ namespace
 		return true;
 	}
 
-	bool SupportsMorphWeights(const ImportedMeshInstance& importedInstance, const CookedSceneBuild& build) noexcept
+	static bool SupportsMorphWeights(const ImportedMeshInstance& importedInstance, const CookedSceneBuild& build) noexcept
 	{
 		if (importedInstance.primitiveIndex >= build.manifest.meshAssetReferences.size())
 		{
@@ -74,7 +75,7 @@ namespace
 
 		return build.manifest.meshAssetReferences[importedInstance.primitiveIndex].meshAssetKind == Assets::CookedMeshAssetKind::Skeletal;
 	}
-}  // namespace
+};
 
 bool CookedSceneInstanceBuilder::BuildInstances(
     const SourceImportResult& importResult,
@@ -96,7 +97,7 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		}
 
 		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
-		if (!ResolveMaterialAssetIndex(importedInstance, build, materialAssetIndex, outErrorMessage))
+		if (!CookedSceneInstanceBuilderOperations::ResolveMaterialAssetIndex(importedInstance, build, materialAssetIndex, outErrorMessage))
 		{
 			return false;
 		}
@@ -127,7 +128,7 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 
 		std::uint32_t firstMorphWeight = Assets::kInvalidCookedSceneMorphWeightIndex;
 		std::uint32_t morphWeightCount = 0;
-		if (!importedInstance.morphWeights.empty() && SupportsMorphWeights(importedInstance, build))
+		if (!importedInstance.morphWeights.empty() && CookedSceneInstanceBuilderOperations::SupportsMorphWeights(importedInstance, build))
 		{
 			firstMorphWeight = static_cast<std::uint32_t>(build.manifest.morphWeights.size());
 			morphWeightCount = static_cast<std::uint32_t>(importedInstance.morphWeights.size());
@@ -159,7 +160,7 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		}
 
 		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
-		if (!ResolveMaterialAssetIndex(importedGroup, build, materialAssetIndex, outErrorMessage))
+		if (!CookedSceneInstanceBuilderOperations::ResolveMaterialAssetIndex(importedGroup, build, materialAssetIndex, outErrorMessage))
 		{
 			return false;
 		}
@@ -183,7 +184,7 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		        .materialAssetIndex = materialAssetIndex,
 		        .firstInstance = importedGroup.firstInstanceIndex,
 		        .instanceCount = importedGroup.instanceCount,
-		        .groupKind = ToCookedInstanceGroupKind(importedGroup.groupKind),
+		        .groupKind = CookedSceneInstanceBuilderOperations::ToCookedInstanceGroupKind(importedGroup.groupKind),
 		        .flags = importedGroup.flags});
 	}
 

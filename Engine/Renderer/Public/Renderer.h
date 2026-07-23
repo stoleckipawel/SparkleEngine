@@ -8,6 +8,8 @@
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
 #include "Rendering/RenderInputFrame.h"
+#include "Concurrency/RendererExecutionConfig.h"
+#include "RendererSerialUiCallback.h"
 
 #include <cstdint>
 #include <memory>
@@ -15,12 +17,12 @@
 class Timer;
 class RhiImGuiRenderer;
 class Window;
-class RendererState;
+class RendererFacadeState;
 
 class SPARKLE_RENDERER_API Renderer final
 {
   public:
-	Renderer(Timer& timer, Window& window) noexcept;
+	Renderer(Timer& timer, Window& window, RendererExecutionConfig config = {}) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;
@@ -31,7 +33,7 @@ class SPARKLE_RENDERER_API Renderer final
 	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
 	void SubmitRenderInput(RenderInputFrame input) noexcept;
 
-	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
+	ViewportRenderProducts GetViewportRenderProducts() const;
 
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
@@ -40,9 +42,7 @@ class SPARKLE_RENDERER_API Renderer final
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
-	void PrepareHostFrame() noexcept;
-	void RecordHostFrame() noexcept;
-	void SubmitHostFrame() noexcept;
+	void RenderSerialUiFrame(RendererSerialUiCallback composeUi, void* context) noexcept;
 	void WaitForIdle() noexcept;
 	void BeginHostPresentation(const float clearColor[4]) noexcept;
 	void BeginHostOverlayPresentation() noexcept;
@@ -54,5 +54,5 @@ class SPARKLE_RENDERER_API Renderer final
 	void OnRender() noexcept;
 
   private:
-	std::unique_ptr<RendererState> m_state;
+	std::unique_ptr<RendererFacadeState> m_state;
 };

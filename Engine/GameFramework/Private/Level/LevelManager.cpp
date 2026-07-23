@@ -9,9 +9,10 @@
 
 static const auto g_levelManagerLogger = Logging::GetOrCreateLogger("GameFramework.LevelManager");
 
-namespace
+class LevelManagerOperations final
 {
-	std::string ResolveRequestedStartupLevelName() noexcept
+  public:
+	static std::string ResolveRequestedStartupLevelName() noexcept
 	{
 		std::string requestedLevelName;
 		return Environment::TryGetVariable("SPARKLE_STARTUP_LEVEL", requestedLevelName) && !requestedLevelName.empty()
@@ -19,7 +20,7 @@ namespace
 		           : std::string{};
 	}
 
-}
+};
 
 LevelManager::LevelManager(
     GameWorld& world,
@@ -36,7 +37,7 @@ LevelManager::~LevelManager() noexcept = default;
 
 void LevelManager::InitializeStartupLevel() noexcept
 {
-	const std::string requestedName = ResolveRequestedStartupLevelName();
+	const std::string requestedName = LevelManagerOperations::ResolveRequestedStartupLevelName();
 	const std::string_view startupName = requestedName.empty() ? m_levelRegistry->GetDefaultLevelName() : std::string_view(requestedName);
 	LevelAsset* startupLevel = m_levelRegistry->FindLevel(startupName);
 	if (!startupLevel)

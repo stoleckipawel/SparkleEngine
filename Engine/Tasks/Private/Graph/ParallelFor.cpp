@@ -6,9 +6,10 @@
 #include <algorithm>
 #include <utility>
 
-namespace
+class ParallelForOperations final
 {
-	TaskName DerivedTaskName(const TaskName& base, std::string suffix)
+  public:
+	static TaskName DerivedTaskName(const TaskName& base, std::string suffix)
 	{
 		std::string value(base.Get());
 		if (value.size() + suffix.size() > TaskName::MaximumLength)
@@ -18,7 +19,7 @@ namespace
 		value += suffix;
 		return TaskName(value);
 	}
-}
+};
 
 TaskNodeHandle ParallelFor(
     TaskGraphBuilder& graph,
@@ -47,7 +48,7 @@ TaskNodeHandle ParallelFor(
 	}
 
 	TaskDesc groupDesc = desc;
-	groupDesc.Name = DerivedTaskName(desc.Name, ".Group");
+	groupDesc.Name = ParallelForOperations::DerivedTaskName(desc.Name, ".Group");
 	const TaskNodeHandle group = graph.Add(std::move(groupDesc), [](TaskExecutionContext&) { return TaskResult::Success(); });
 	if (!group)
 	{
@@ -70,7 +71,7 @@ TaskNodeHandle ParallelFor(
 		}
 
 		TaskDesc partitionDesc = desc;
-		partitionDesc.Name = DerivedTaskName(desc.Name, ".Range" + std::to_string(partition));
+		partitionDesc.Name = ParallelForOperations::DerivedTaskName(desc.Name, ".Range" + std::to_string(partition));
 		graph.AddNested(
 		    group,
 		    std::move(partitionDesc),

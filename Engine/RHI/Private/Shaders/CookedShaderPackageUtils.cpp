@@ -10,9 +10,10 @@
 #include <format>
 #include <string>
 
-namespace
+class CookedShaderPackageUtilsOperations final
 {
-	std::string NormalizeShaderPackageToken(std::string_view value, std::string_view fallback = {})
+  public:
+	static std::string NormalizeShaderPackageToken(std::string_view value, std::string_view fallback = {})
 	{
 		std::string normalized = Strings::ToLowerCopy(Strings::TrimAsciiWhitespace(value));
 		if (!normalized.empty())
@@ -23,7 +24,7 @@ namespace
 		return fallback.empty() ? std::string{} : std::string(fallback);
 	}
 
-	std::uint32_t ToLayoutVisibilityBits(ShaderStageVisibility visibility) noexcept
+	static std::uint32_t ToLayoutVisibilityBits(ShaderStageVisibility visibility) noexcept
 	{
 		switch (visibility)
 		{
@@ -42,11 +43,11 @@ namespace
 				return static_cast<std::uint32_t>(ShaderStageMask::None);
 		}
 	}
-}  // namespace
+};
 
 std::uint64_t BuildShaderPackageKey(std::string_view packageId)
 {
-	const std::string normalizedPackageId = NormalizeShaderPackageToken(packageId);
+	const std::string normalizedPackageId = CookedShaderPackageUtilsOperations::NormalizeShaderPackageToken(packageId);
 	return Hash::Fnv1a64(normalizedPackageId);
 }
 
@@ -61,13 +62,13 @@ std::uint64_t BuildShaderBlobId(
 	std::string canonical;
 	canonical.reserve(192);
 	canonical += "ShaderBlobId.v1|PackageId=";
-	canonical += NormalizeShaderPackageToken(packageId);
+	canonical += CookedShaderPackageUtilsOperations::NormalizeShaderPackageToken(packageId);
 	canonical += "|EntryPoint=";
 	canonical += Strings::TrimAsciiWhitespace(entryPoint);
 	canonical += "|ExportName=";
 	canonical += Strings::TrimAsciiWhitespace(exportName);
 	canonical += "|CompilerBackend=";
-	canonical += NormalizeShaderPackageToken(compilerBackendName);
+	canonical += CookedShaderPackageUtilsOperations::NormalizeShaderPackageToken(compilerBackendName);
 	canonical += "|CodegenTarget=";
 	canonical += Strings::TrimAsciiWhitespace(codegenTarget);
 	canonical += "|BinaryFormat=";
@@ -95,7 +96,7 @@ std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout)
 		canonicalLayout += '|';
 		canonicalLayout += std::to_string(static_cast<std::uint32_t>(parameter.Access));
 		canonicalLayout += '|';
-		canonicalLayout += std::to_string(ToLayoutVisibilityBits(parameter.Visibility));
+		canonicalLayout += std::to_string(CookedShaderPackageUtilsOperations::ToLayoutVisibilityBits(parameter.Visibility));
 		canonicalLayout += '|';
 		canonicalLayout += std::to_string(parameter.ArrayCount);
 		canonicalLayout += '|';

@@ -17,14 +17,15 @@
 
 static const auto g_gbufferMeshBatchDrawerLogger = Logging::GetOrCreateLogger("Renderer.GBufferMeshBatchDrawer");
 
-namespace
+class GBufferMeshBatchDrawerOperations final
 {
-	constexpr const char* ToMeshKindLabel(RenderMeshKind meshKind) noexcept
+  public:
+	static constexpr const char* ToMeshKindLabel(RenderMeshKind meshKind) noexcept
 	{
 		return meshKind == RenderMeshKind::Skeletal ? "skinned" : "static";
 	}
 
-	bool BindMaterial(const RenderSceneData& sceneData, GBufferPass::DrawParameterInstance& drawParameters, std::uint32_t materialSlot)
+	static bool BindMaterial(const RenderSceneData& sceneData, GBufferPass::DrawParameterInstance& drawParameters, std::uint32_t materialSlot)
 	{
 		if (materialSlot >= sceneData.materials.size())
 		{
@@ -50,7 +51,7 @@ namespace
 		return true;
 	}
 
-	bool ValidateBatch(const RenderSceneData& sceneData, const MeshInstanceBatch& batch, std::size_t batchIndex)
+	static bool ValidateBatch(const RenderSceneData& sceneData, const MeshInstanceBatch& batch, std::size_t batchIndex)
 	{
 		if (batch.instanceCount == 0)
 		{
@@ -89,7 +90,7 @@ namespace
 		return true;
 	}
 
-	bool HasValidSkinnedInstanceRange(const RenderSceneData& sceneData, const MeshInstanceBatch& batch) noexcept
+	static bool HasValidSkinnedInstanceRange(const RenderSceneData& sceneData, const MeshInstanceBatch& batch) noexcept
 	{
 		for (std::uint32_t instanceOffset = 0; instanceOffset < batch.instanceCount; ++instanceOffset)
 		{
@@ -103,7 +104,7 @@ namespace
 		return true;
 	}
 
-	bool DrawBatch(
+	static bool DrawBatch(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    const FrameContext& frame,
@@ -173,7 +174,7 @@ namespace
 		return true;
 	}
 
-	void DrawStaticBatch(
+	static void DrawStaticBatch(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    const FrameContext& frame,
@@ -198,7 +199,7 @@ namespace
 		    viewModeIndex);
 	}
 
-	void DrawSkinnedBatch(
+	static void DrawSkinnedBatch(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    const FrameContext& frame,
@@ -240,7 +241,7 @@ namespace
 		    batchIndex,
 		    viewModeIndex);
 	}
-}
+};
 
 void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
     const FrameGraphResourceCommands& resources,
@@ -270,14 +271,14 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 	for (std::size_t batchIndex = 0; batchIndex < sceneData.meshInstanceBatches.size(); ++batchIndex)
 	{
 		const MeshInstanceBatch& batch = sceneData.meshInstanceBatches[batchIndex];
-		if (!ValidateBatch(sceneData, batch, batchIndex))
+		if (!GBufferMeshBatchDrawerOperations::ValidateBatch(sceneData, batch, batchIndex))
 		{
 			continue;
 		}
 
 		if (batch.meshKind == RenderMeshKind::Skeletal)
 		{
-			DrawSkinnedBatch(
+			GBufferMeshBatchDrawerOperations::DrawSkinnedBatch(
 			    resources,
 			    cmd,
 			    frame,
@@ -291,7 +292,7 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 		}
 		else
 		{
-			DrawStaticBatch(
+			GBufferMeshBatchDrawerOperations::DrawStaticBatch(
 			    resources,
 			    cmd,
 			    frame,

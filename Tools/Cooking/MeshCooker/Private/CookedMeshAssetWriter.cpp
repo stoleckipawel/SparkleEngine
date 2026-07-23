@@ -11,16 +11,17 @@
 #include <filesystem>
 #include <fstream>
 
-namespace
+class CookedMeshAssetWriterOperations final
 {
-	std::filesystem::path BuildCookedMeshMetadataPath(Assets::CookedAssetId assetId)
+  public:
+	static std::filesystem::path BuildCookedMeshMetadataPath(Assets::CookedAssetId assetId)
 	{
 		std::filesystem::path metadataPath = Paths::CookedMeshAsset(assetId);
 		metadataPath += ".meta.json";
 		return metadataPath;
 	}
 
-	bool WriteMeshMetadata(const CookedMeshAssetBuild& meshAsset, std::string& outErrorMessage)
+	static bool WriteMeshMetadata(const CookedMeshAssetBuild& meshAsset, std::string& outErrorMessage)
 	{
 		Json::ObjectWriter writer;
 		writer.WriteString("schema", "cooked-mesh-metadata-v1");
@@ -29,7 +30,7 @@ namespace
 		writer.WriteString("source", meshAsset.sourcePath.generic_string());
 		return Files::TryWriteAllTextAtomic(BuildCookedMeshMetadataPath(meshAsset.assetId), writer.Finish(), outErrorMessage);
 	}
-}  // namespace
+};
 
 bool CookedMeshAssetWriter::WriteMeshAssets(const std::vector<CookedMeshAssetBuild>& meshAssets, std::string& outErrorMessage)
 {
@@ -72,7 +73,7 @@ bool CookedMeshAssetWriter::WriteMeshAssets(const std::vector<CookedMeshAssetBui
 			return false;
 		}
 
-		if (!WriteMeshMetadata(meshAsset, outErrorMessage))
+		if (!CookedMeshAssetWriterOperations::WriteMeshMetadata(meshAsset, outErrorMessage))
 		{
 			return false;
 		}

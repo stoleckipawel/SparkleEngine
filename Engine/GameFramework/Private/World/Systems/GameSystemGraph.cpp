@@ -15,10 +15,11 @@
 #include <unordered_map>
 #include <utility>
 
-namespace
+namespace ECS
 {
-	using namespace ECS;
-
+class GameSystemGraphImplementation final
+{
+  public:
 	struct GameSystemExecutionData final
 	{
 		std::span<const GameSystemExecutionBinding> Bindings;
@@ -30,7 +31,7 @@ namespace
 		GameSystemPhase Last;
 	};
 
-	constexpr ResourcePhaseRange GetResourcePhaseRange(GameSystemResourceDomain domain) noexcept
+	static constexpr ResourcePhaseRange GetResourcePhaseRange(GameSystemResourceDomain domain) noexcept
 	{
 		switch (domain)
 		{
@@ -65,10 +66,10 @@ namespace
 		return {GameSystemPhase::Extraction, GameSystemPhase::Simulation};
 	}
 
-	bool IsWrite(ComponentAccessMode mode) noexcept { return mode == ComponentAccessMode::Write; }
-	bool IsWrite(GameSystemAccessMode mode) noexcept { return mode == GameSystemAccessMode::Write; }
+	static bool IsWrite(ComponentAccessMode mode) noexcept { return mode == ComponentAccessMode::Write; }
+	static bool IsWrite(GameSystemAccessMode mode) noexcept { return mode == GameSystemAccessMode::Write; }
 
-	bool ComponentsConflict(const GameSystemDesc& lhs, const GameSystemDesc& rhs) noexcept
+	static bool ComponentsConflict(const GameSystemDesc& lhs, const GameSystemDesc& rhs) noexcept
 	{
 		for (const ComponentAccessDesc& left : lhs.Components)
 		{
@@ -81,7 +82,7 @@ namespace
 		return false;
 	}
 
-	bool ResourcesConflict(const GameSystemDesc& lhs, const GameSystemDesc& rhs) noexcept
+	static bool ResourcesConflict(const GameSystemDesc& lhs, const GameSystemDesc& rhs) noexcept
 	{
 		for (const GameSystemResourceAccess& left : lhs.Resources)
 		{
@@ -94,7 +95,7 @@ namespace
 		return false;
 	}
 
-	bool HasPath(const std::vector<std::vector<std::uint32_t>>& edges, std::uint32_t from, std::uint32_t to)
+	static bool HasPath(const std::vector<std::vector<std::uint32_t>>& edges, std::uint32_t from, std::uint32_t to)
 	{
 		std::vector<bool> visited(edges.size());
 		std::vector<std::uint32_t> stack{from};
@@ -113,7 +114,7 @@ namespace
 		return false;
 	}
 
-	bool AddEdge(std::vector<std::vector<std::uint32_t>>& edges, std::uint32_t from, std::uint32_t to)
+	static bool AddEdge(std::vector<std::vector<std::uint32_t>>& edges, std::uint32_t from, std::uint32_t to)
 	{
 		std::vector<std::uint32_t>& outgoing = edges[from];
 		if (std::find(outgoing.begin(), outgoing.end(), to) != outgoing.end())
@@ -122,7 +123,7 @@ namespace
 		return true;
 	}
 
-	std::uint32_t ResolvePartitionCount(std::uint32_t itemCount, const ParallelForPolicy& policy) noexcept
+	static std::uint32_t ResolvePartitionCount(std::uint32_t itemCount, const ParallelForPolicy& policy) noexcept
 	{
 		if (itemCount == 0)
 			return 0;
@@ -133,7 +134,7 @@ namespace
 		return (std::min)(policy.MaximumPartitions, grainPartitions);
 	}
 
-	TaskResult ExecutePartition(
+	static TaskResult ExecutePartition(
 	    std::uint32_t systemIndex,
 	    std::uint32_t partitionIndex,
 	    const ParallelForPolicy& policy,
@@ -159,10 +160,8 @@ namespace
 		           ? TaskResult::Success()
 		           : TaskResult::Failure("Game-system range rejected its declared access or target range.");
 	}
-}
+};
 
-namespace ECS
-{
 	struct CompiledGameSystemGraph::Data final
 	{
 		std::vector<GameSystemDesc> Systems;
@@ -211,7 +210,7 @@ namespace ECS
 				return false;
 			}
 		}
-		GameSystemExecutionData execution{bindings};
+		GameSystemGraphImplementation::GameSystemExecutionData execution{bindings};
 		TaskExecutionContext context(execution);
 		TaskExecution result = executor.Submit(m_data->Tasks, context);
 		if (!result.IsValid() || result.GetStatus() != TaskExecutionStatus::Succeeded)
@@ -273,7 +272,7 @@ namespace ECS
 			}
 			for (std::size_t left = 0; left < system.Resources.size(); ++left)
 			{
-				const ResourcePhaseRange range = GetResourcePhaseRange(system.Resources[left].Domain);
+				const GameSystemGraphImplementation::ResourcePhaseRange range = GameSystemGraphImplementation::GetResourcePhaseRange(system.Resources[left].Domain);
 				if (system.Phase < range.First || system.Phase > range.Last)
 				{
 					data->Error = {
@@ -316,7 +315,7 @@ namespace ECS
 					data->Error = {GameSystemGraphErrorCode::InvalidPhaseDependency, std::format("Game system '{}' depends on a later phase.", system.Name)};
 					return CompiledGameSystemGraph(std::move(data));
 				}
-				AddEdge(data->Edges, prerequisite->second, index);
+				GameSystemGraphImplementation::AddEdge(data->Edges, prerequisite->second, index);
 			}
 		}
 
@@ -327,9 +326,9 @@ namespace ECS
 				const GameSystemDesc& lhs = data->Systems[left];
 				const GameSystemDesc& rhs = data->Systems[right];
 				if (lhs.Phase < rhs.Phase)
-					AddEdge(data->Edges, left, right);
+					GameSystemGraphImplementation::AddEdge(data->Edges, left, right);
 				else if (rhs.Phase < lhs.Phase)
-					AddEdge(data->Edges, right, left);
+					GameSystemGraphImplementation::AddEdge(data->Edges, right, left);
 			}
 		}
 
@@ -339,9 +338,9 @@ namespace ECS
 			{
 				const GameSystemDesc& lhs = data->Systems[left];
 				const GameSystemDesc& rhs = data->Systems[right];
-				if (lhs.Phase != rhs.Phase || (!ComponentsConflict(lhs, rhs) && !ResourcesConflict(lhs, rhs)))
+				if (lhs.Phase != rhs.Phase || (!GameSystemGraphImplementation::ComponentsConflict(lhs, rhs) && !GameSystemGraphImplementation::ResourcesConflict(lhs, rhs)))
 					continue;
-				if (!HasPath(data->Edges, left, right) && !HasPath(data->Edges, right, left))
+				if (!GameSystemGraphImplementation::HasPath(data->Edges, left, right) && !GameSystemGraphImplementation::HasPath(data->Edges, right, left))
 				{
 					data->Error = {
 					    GameSystemGraphErrorCode::AmbiguousHazard,
@@ -355,7 +354,7 @@ namespace ECS
 		{
 			for (std::uint32_t to : data->Edges[from])
 			{
-				if (HasPath(data->Edges, to, from))
+				if (GameSystemGraphImplementation::HasPath(data->Edges, to, from))
 				{
 					data->Error = {GameSystemGraphErrorCode::Cycle, "Game-system prerequisites contain a cycle."};
 					return CompiledGameSystemGraph(std::move(data));
@@ -386,7 +385,7 @@ namespace ECS
 				    descriptor,
 				    [systemIndex](TaskExecutionContext& context)
 				    {
-					    return ExecutePartition(systemIndex, 0, ParallelForPolicy{1, (std::numeric_limits<std::uint32_t>::max)(), 1}, context);
+					    return GameSystemGraphImplementation::ExecutePartition(systemIndex, 0, ParallelForPolicy{1, (std::numeric_limits<std::uint32_t>::max)(), 1}, context);
 				    }));
 				continue;
 			}
@@ -400,7 +399,7 @@ namespace ECS
 				    TaskDesc{TaskName(taskName), TaskLane::FrameCritical},
 				    [systemIndex, partition, policy = system.Execution.RangePolicy](TaskExecutionContext& context)
 				    {
-					    return ExecutePartition(systemIndex, partition, policy, context);
+					    return GameSystemGraphImplementation::ExecutePartition(systemIndex, partition, policy, context);
 				    });
 			}
 		}

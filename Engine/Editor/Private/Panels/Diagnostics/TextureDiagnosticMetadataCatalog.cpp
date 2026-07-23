@@ -14,15 +14,16 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace
+class TextureDiagnosticMetadataCatalogImplementation final
 {
+  public:
 struct TextureDiagnosticMetadataCache final
 {
 	std::unordered_map<std::uint64_t, TextureDiagnosticMetadata> ByAssetId;
 	std::unordered_map<std::string, TextureDiagnosticMetadata> ByCookedPath;
 };
 
-bool EndsWithIgnoreCase(std::string_view value, std::string_view suffix) noexcept
+static bool EndsWithIgnoreCase(std::string_view value, std::string_view suffix) noexcept
 {
 	if (suffix.size() > value.size())
 	{
@@ -31,7 +32,7 @@ bool EndsWithIgnoreCase(std::string_view value, std::string_view suffix) noexcep
 	return Strings::EqualsIgnoreCase(value.substr(value.size() - suffix.size()), suffix);
 }
 
-std::optional<std::filesystem::path> FindLatestTextureCookSummary()
+static std::optional<std::filesystem::path> FindLatestTextureCookSummary()
 {
 	const std::filesystem::path summaryRoot = Filesystem::GetWorkspaceRootPath() / "artifacts" / "diagnostics" / "cook" / "Summaries";
 	std::error_code errorCode;
@@ -77,7 +78,7 @@ std::optional<std::filesystem::path> FindLatestTextureCookSummary()
 	return latestPath;
 }
 
-std::string_view FindJsonArray(std::string_view document, std::string_view key) noexcept
+static std::string_view FindJsonArray(std::string_view document, std::string_view key) noexcept
 {
 	std::size_t cursor = Json::FindPropertyValue(document, key);
 	if (cursor == std::string_view::npos || cursor >= document.size() || document[cursor] != '[')
@@ -134,7 +135,7 @@ std::string_view FindJsonArray(std::string_view document, std::string_view key) 
 	return {};
 }
 
-void ParseTextureCookSummaryArray(
+static void ParseTextureCookSummaryArray(
     std::string_view arrayText,
     TextureDiagnosticMetadataCache& outCache)
 {
@@ -177,7 +178,7 @@ void ParseTextureCookSummaryArray(
 	}
 }
 
-TextureDiagnosticMetadataCache LoadTextureDiagnosticMetadata()
+static TextureDiagnosticMetadataCache LoadTextureDiagnosticMetadata()
 {
 	TextureDiagnosticMetadataCache cache;
 	const std::optional<std::filesystem::path> summaryPath = FindLatestTextureCookSummary();
@@ -208,7 +209,7 @@ TextureDiagnosticMetadataCache LoadTextureDiagnosticMetadata()
 	return cache;
 }
 
-std::optional<std::uint64_t> TryParseCookedTextureAssetId(std::string_view key) noexcept
+static std::optional<std::uint64_t> TryParseCookedTextureAssetId(std::string_view key) noexcept
 {
 	const std::filesystem::path path{std::string(key)};
 	if (!Strings::EqualsIgnoreCase(path.extension().string(), ".stex"))
@@ -235,11 +236,11 @@ std::optional<std::uint64_t> TryParseCookedTextureAssetId(std::string_view key) 
 	return assetId;
 }
 
-}
+};
 
 std::optional<TextureDiagnosticMetadata> FindTextureDiagnosticMetadata(const TextureDiagnosticsRow& row)
 {
-	static const TextureDiagnosticMetadataCache metadata = LoadTextureDiagnosticMetadata();
+	static const TextureDiagnosticMetadataCatalogImplementation::TextureDiagnosticMetadataCache metadata = TextureDiagnosticMetadataCatalogImplementation::LoadTextureDiagnosticMetadata();
 	const std::filesystem::path rowPath{row.Key};
 	if (const auto metadataIt = metadata.ByCookedPath.find(rowPath.generic_string()); metadataIt != metadata.ByCookedPath.end())
 	{
@@ -250,7 +251,7 @@ std::optional<TextureDiagnosticMetadata> FindTextureDiagnosticMetadata(const Tex
 		return metadataIt->second;
 	}
 
-	const std::optional<std::uint64_t> assetId = TryParseCookedTextureAssetId(row.Key);
+	const std::optional<std::uint64_t> assetId = TextureDiagnosticMetadataCatalogImplementation::TryParseCookedTextureAssetId(row.Key);
 	if (!assetId)
 	{
 		return std::nullopt;

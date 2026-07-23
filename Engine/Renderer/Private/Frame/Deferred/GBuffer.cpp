@@ -12,9 +12,10 @@
 
 #include <array>
 
-namespace
+class GBufferOperations final
 {
-	FrameGraphTextureHandle CreateGBufferColor(
+  public:
+	static FrameGraphTextureHandle CreateGBufferColor(
 	    FrameGraphBuilder& builder,
 	    const char* name,
 	    RenderViewportExtent sceneExtent,
@@ -26,7 +27,7 @@ namespace
 		return builder.CreateTexture(desc);
 	}
 
-	FrameGraphTextureHandle CreateGBufferDeviceZ(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode)
+	static FrameGraphTextureHandle CreateGBufferDeviceZ(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode)
 	{
 		if (gBufferMode == GBufferMode::Raytraced)
 		{
@@ -45,20 +46,20 @@ namespace
 		        sceneExtent.Height,
 		        GBufferFormats::RasterizedDeviceZ));
 	}
-}
+};
 
 GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferMode gBufferMode)
 {
 	GBufferRenderTargets targets{};
-	targets.BaseColor = CreateGBufferColor(builder, "GBufferBaseColor", sceneExtent, GBufferFormats::BaseColor, {0.0f, 0.0f, 0.0f, 1.0f});
-	targets.Normal = CreateGBufferColor(builder, "GBufferNormal", sceneExtent, GBufferFormats::Normal, {0.0f, 0.0f, 1.0f, 0.0f});
-	targets.Material = CreateGBufferColor(builder, "GBufferMaterial", sceneExtent, GBufferFormats::Material, {0.0f, 1.0f, 1.0f, 0.04f});
-	targets.Emissive = CreateGBufferColor(builder, "GBufferEmissive", sceneExtent, GBufferFormats::Emissive, {0.0f, 0.0f, 0.0f, 0.0f});
+	targets.BaseColor = GBufferOperations::CreateGBufferColor(builder, "GBufferBaseColor", sceneExtent, GBufferFormats::BaseColor, {0.0f, 0.0f, 0.0f, 1.0f});
+	targets.Normal = GBufferOperations::CreateGBufferColor(builder, "GBufferNormal", sceneExtent, GBufferFormats::Normal, {0.0f, 0.0f, 1.0f, 0.0f});
+	targets.Material = GBufferOperations::CreateGBufferColor(builder, "GBufferMaterial", sceneExtent, GBufferFormats::Material, {0.0f, 1.0f, 1.0f, 0.04f});
+	targets.Emissive = GBufferOperations::CreateGBufferColor(builder, "GBufferEmissive", sceneExtent, GBufferFormats::Emissive, {0.0f, 0.0f, 0.0f, 0.0f});
 	targets.Subsurface =
-	    CreateGBufferColor(builder, "GBufferSubsurface", sceneExtent, GBufferFormats::Subsurface, {0.0f, 0.0f, 0.0f, 0.0f});
+	    GBufferOperations::CreateGBufferColor(builder, "GBufferSubsurface", sceneExtent, GBufferFormats::Subsurface, {0.0f, 0.0f, 0.0f, 0.0f});
 	targets.MotionVector =
-	    CreateGBufferColor(builder, "GBufferMotionVector", sceneExtent, GBufferFormats::MotionVector, {0.0f, 0.0f, 0.0f, 0.0f});
-	targets.DeviceZ = CreateGBufferDeviceZ(builder, sceneExtent, gBufferMode);
+	    GBufferOperations::CreateGBufferColor(builder, "GBufferMotionVector", sceneExtent, GBufferFormats::MotionVector, {0.0f, 0.0f, 0.0f, 0.0f});
+	targets.DeviceZ = GBufferOperations::CreateGBufferDeviceZ(builder, sceneExtent, gBufferMode);
 	return targets;
 }
 

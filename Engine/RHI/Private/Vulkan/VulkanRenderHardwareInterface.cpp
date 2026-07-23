@@ -30,9 +30,10 @@
 
 static const auto g_vulkanRenderHardwareInterfaceLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Interface");
 
-namespace
+class VulkanRenderHardwareInterfaceOperations final
 {
-	RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport(
+  public:
+	static RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport(
 	    const RenderDiagnostics* diagnostics,
 	    bool validationEnabled,
 	    bool supportsDebugLayer) noexcept
@@ -56,7 +57,7 @@ namespace
 		    .SupportsCrashDiagnostics = diagnosticsCapabilities.SupportsCrashDiagnostics};
 	}
 
-	RhiBackendMemorySupport BuildBackendMemorySupport(const RenderDiagnostics* diagnostics) noexcept
+	static RhiBackendMemorySupport BuildBackendMemorySupport(const RenderDiagnostics* diagnostics) noexcept
 	{
 		if (diagnostics == nullptr)
 		{
@@ -71,7 +72,7 @@ namespace
 		    .SupportsResidencyPressure = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries()};
 	}
 
-}
+};
 
 VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
     VulkanRhi& rhi,
@@ -261,7 +262,7 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
 	}
-	capabilities.Diagnostics = BuildBackendDiagnosticsSupport(
+	capabilities.Diagnostics = VulkanRenderHardwareInterfaceOperations::BuildBackendDiagnosticsSupport(
 	    m_diagnostics.get(),
 	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
 	    m_rhi != nullptr && m_rhi->IsValidationEnabled());
@@ -281,7 +282,7 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	    hasCopyQueue && m_rhi->HasIndependentQueue(ERhiQueueType::Copy));
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VulkanManaged;
-	capabilities.MemorySupport = BuildBackendMemorySupport(m_diagnostics.get());
+	capabilities.MemorySupport = VulkanRenderHardwareInterfaceOperations::BuildBackendMemorySupport(m_diagnostics.get());
 	capabilities.ExternalFeatureInterop = BuildVulkanExternalFeatureInteropCapabilities(m_rhi, m_commandContext != nullptr);
 	return capabilities;
 }

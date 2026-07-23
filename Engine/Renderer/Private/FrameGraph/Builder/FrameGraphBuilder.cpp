@@ -8,9 +8,10 @@
 
 #include <string_view>
 
-namespace
+class FrameGraphBuilderOperations final
 {
-	void ExportTextureIfValid(FrameGraphBuilder& builder, FrameGraphTextureHandle handle, std::string_view name) noexcept
+  public:
+	static void ExportTextureIfValid(FrameGraphBuilder& builder, FrameGraphTextureHandle handle, std::string_view name) noexcept
 	{
 		if (handle.IsValid())
 		{
@@ -18,7 +19,7 @@ namespace
 		}
 	}
 
-	void ExportFrameProductRoots(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources) noexcept
+	static void ExportFrameProductRoots(FrameGraphBuilder& builder, const FrameAssemblyResourceLayout& resources) noexcept
 	{
 		ExportTextureIfValid(builder, resources.ViewportProducts.SceneColor, "Viewport.SceneColor");
 		ExportTextureIfValid(builder, resources.ViewportProducts.FinalSceneColor, "Viewport.FinalSceneColor");
@@ -27,7 +28,7 @@ namespace
 		ExportTextureIfValid(builder, resources.ViewportProducts.Normals, "Viewport.Normals");
 		ExportTextureIfValid(builder, resources.ViewportProducts.MotionVectors, "Viewport.MotionVectors");
 	}
-}  // namespace
+};
 
 FrameGraphBuilder::FrameGraphBuilder(FrameGraph& frameGraph) noexcept : m_frameGraph(frameGraph) {}
 
@@ -101,7 +102,7 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	    m_dependencies.outputExtent,
 	    m_dependencies.renderHardwareInterface.GetPresentationService().GetPresentColorFormat(),
 	    m_dependencies.presentSceneToBackBuffer);
-	ExportFrameProductRoots(builder, frameLoop.Resources);
+	FrameGraphBuilderOperations::ExportFrameProductRoots(builder, frameLoop.Resources);
 
 	FrameGraphBuildResult result{};
 	result.Resources = frameLoop.Resources;

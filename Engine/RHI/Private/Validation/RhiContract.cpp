@@ -2,9 +2,10 @@
 
 #include "Validation/RhiContract.h"
 
-namespace
+class RhiContractOperations final
 {
-	std::uint32_t GetDescriptorLimit(const RhiCapabilities& capabilities, ERhiDescriptorAllocatorType descriptorType) noexcept
+  public:
+	static std::uint32_t GetDescriptorLimit(const RhiCapabilities& capabilities, ERhiDescriptorAllocatorType descriptorType) noexcept
 	{
 		switch (descriptorType)
 		{
@@ -17,11 +18,11 @@ namespace
 				return capabilities.BindingLimits.MaxDescriptorTableEntries;
 		}
 	}
-}
+};
 
 bool RhiContract::IsBindingSetDescUsable(const RhiCapabilities& capabilities, const RenderBindingSetDesc& desc) noexcept
 {
-	const std::uint32_t descriptorLimit = GetDescriptorLimit(capabilities, desc.DescriptorType);
+	const std::uint32_t descriptorLimit = RhiContractOperations::GetDescriptorLimit(capabilities, desc.DescriptorType);
 	return desc.DescriptorCount != 0 && (descriptorLimit == 0 || desc.DescriptorCount <= descriptorLimit);
 }
 

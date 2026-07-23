@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Commands/RhiQueue.h"
+#include "Core/Public/Threading/ThreadOwnership.h"
 
 #include <d3d12.h>
 #include <wrl/client.h>
 
 #include <cstdint>
-#include <mutex>
 #include <span>
 
 class D3D12CommandQueue;
@@ -45,17 +45,28 @@ class D3D12CommandQueue final
 	RhiSubmissionToken GetLastSubmittedToken() const noexcept;
 	std::uint64_t GetCompletedSubmissionValue() const noexcept;
 	ERhiQueueType GetQueueType() const noexcept { return m_queueType; }
-	const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& GetNativeQueue() const noexcept { return m_queue; }
-	const Microsoft::WRL::ComPtr<ID3D12Fence1>& GetFence() const noexcept { return m_fence; }
-	HANDLE GetFenceEvent() const noexcept { return m_fenceEvent; }
+	const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& GetNativeQueue() const noexcept
+	{
+		m_owner.AssertAccess();
+		return m_queue;
+	}
+	const Microsoft::WRL::ComPtr<ID3D12Fence1>& GetFence() const noexcept
+	{
+		m_owner.AssertAccess();
+		return m_fence;
+	}
+	HANDLE GetFenceEvent() const noexcept
+	{
+		m_owner.AssertAccess();
+		return m_fenceEvent;
+	}
 
   private:
+	Threading::OwnerThread m_owner{"D3D12 command queue"};
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_queue;
 	Microsoft::WRL::ComPtr<ID3D12Fence1> m_fence;
 	HANDLE m_fenceEvent = nullptr;
 	std::uint64_t m_nextSubmissionValue = 1;
 	std::uint64_t m_lastSubmittedValue = 0;
-	mutable std::mutex m_submissionMutex;
-	std::mutex m_cpuWaitMutex;
 };

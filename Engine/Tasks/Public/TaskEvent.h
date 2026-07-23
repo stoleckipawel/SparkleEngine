@@ -8,14 +8,14 @@
 class SPARKLE_TASKS_API TaskEventToken final
 {
   public:
-	TaskEventToken() noexcept = default;
+	TaskEventToken() noexcept;
 	bool IsValid() const noexcept { return m_identity != 0 && m_generation != 0; }
 	explicit operator bool() const noexcept { return IsValid(); }
-	bool operator==(const TaskEventToken&) const noexcept = default;
+	bool operator==(const TaskEventToken&) const noexcept;
 
   private:
 	friend class TaskEvent;
-	TaskEventToken(std::uint64_t identity, std::uint64_t generation) noexcept : m_identity(identity), m_generation(generation) {}
+	TaskEventToken(std::uint64_t identity, std::uint64_t generation) noexcept;
 
 	std::uint64_t m_identity = 0;
 	std::uint64_t m_generation = 0;

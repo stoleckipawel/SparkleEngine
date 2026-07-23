@@ -14,8 +14,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		QIcon CreateOverflowMenuButtonIcon(const QColor& color)
 		{
 			QPixmap pixmap(LauncherUi::Overflow::IconExtent, LauncherUi::Overflow::IconExtent);
@@ -32,7 +31,7 @@ namespace SparkleLauncher
 
 			return QIcon(pixmap);
 		}
-	}
+
 
 	QToolButton* CreateLauncherOverflowActionButton(
 	    QWidget* parent,

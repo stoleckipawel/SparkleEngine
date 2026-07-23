@@ -8,14 +8,15 @@
 
 #include <algorithm>
 
-namespace
+class GameWorldPublicationOperations final
 {
-	template <typename T> void EraseEntity(std::vector<T>& values, EntityId entity)
+  public:
+	template <typename T> static void EraseEntity(std::vector<T>& values, EntityId entity)
 	{
 		std::erase_if(values, [entity](const T& value) { return value.Entity == entity; });
 	}
 
-	template <typename T> void UpsertEntity(std::vector<T>& values, T value)
+	template <typename T> static void UpsertEntity(std::vector<T>& values, T value)
 	{
 		auto position = std::lower_bound(
 		    values.begin(), values.end(), value.Entity, [](const T& existing, EntityId entity) { return existing.Entity < entity; });
@@ -28,7 +29,7 @@ namespace
 			values.insert(position, std::move(value));
 		}
 	}
-}
+};
 
 namespace ECS
 {
@@ -148,20 +149,20 @@ namespace ECS
 			changedEntities.erase(std::unique(changedEntities.begin(), changedEntities.end()), changedEntities.end());
 			for (EntityId entity : changedEntities)
 			{
-				EraseEntity(next->Cameras, entity);
-				EraseEntity(next->Lights, entity);
-				EraseEntity(next->Meshes, entity);
+				GameWorldPublicationOperations::EraseEntity(next->Cameras, entity);
+				GameWorldPublicationOperations::EraseEntity(next->Lights, entity);
+				GameWorldPublicationOperations::EraseEntity(next->Meshes, entity);
 				if (m_registry.Get<Camera>(entity) != nullptr)
 				{
-					UpsertEntity(next->Cameras, BuildCameraReadData(entity));
+					GameWorldPublicationOperations::UpsertEntity(next->Cameras, BuildCameraReadData(entity));
 				}
 				if (m_registry.Get<Light>(entity) != nullptr)
 				{
-					UpsertEntity(next->Lights, BuildLightReadData(entity));
+					GameWorldPublicationOperations::UpsertEntity(next->Lights, BuildLightReadData(entity));
 				}
 				if (m_registry.Get<MeshInstance>(entity) != nullptr)
 				{
-					UpsertEntity(next->Meshes, BuildMeshReadData(entity));
+					GameWorldPublicationOperations::UpsertEntity(next->Meshes, BuildMeshReadData(entity));
 				}
 			}
 		}

@@ -3,10 +3,11 @@
 
 #include <algorithm>
 
-namespace
+class EditorSceneModelBuilderOperations final
 {
+  public:
 	template <typename T>
-	void PatchEntity(std::vector<T>& destination, std::span<const T> source, EntityId entity)
+	static void PatchEntity(std::vector<T>& destination, std::span<const T> source, EntityId entity)
 	{
 		auto destinationIterator = std::lower_bound(destination.begin(), destination.end(), entity,
 		    [](const T& value, EntityId key) { return value.Entity < key; });
@@ -22,7 +23,7 @@ namespace
 		else if (destinationIterator != destination.end() && destinationIterator->Entity == entity)
 			destination.erase(destinationIterator);
 	}
-}
+};
 
 std::shared_ptr<EditorSceneModel> EditorSceneModelBuilder::BuildFull(const WorldReadView& view, std::uint64_t worldGeneration)
 {
@@ -53,9 +54,9 @@ std::shared_ptr<EditorSceneModel> EditorSceneModelBuilder::BuildIncremental(
 		if (change.Kind == WorldChangeKind::WorldReset) return BuildFull(view, worldGeneration);
 		if (change.Entity.IsValid())
 		{
-			PatchEntity(model->m_cameras, view.GetCameras(), change.Entity);
-			PatchEntity(model->m_lights, view.GetLights(), change.Entity);
-			PatchEntity(model->m_meshes, view.GetMeshes(), change.Entity);
+			EditorSceneModelBuilderOperations::PatchEntity(model->m_cameras, view.GetCameras(), change.Entity);
+			EditorSceneModelBuilderOperations::PatchEntity(model->m_lights, view.GetLights(), change.Entity);
+			EditorSceneModelBuilderOperations::PatchEntity(model->m_meshes, view.GetMeshes(), change.Entity);
 		}
 		refreshSky |= change.Data == WorldDataKind::SkyEnvironment;
 		refreshVariants |= change.Data == WorldDataKind::Material;

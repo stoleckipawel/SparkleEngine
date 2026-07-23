@@ -11,12 +11,13 @@
 	#include <sl_dlss_d.h>
 #endif
 
-namespace
+class NvidiaDlssRayReconstructionProviderConstants final
 {
+  public:
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	constexpr std::uint32_t kRayReconstructionViewportId = 2u;
+	static constexpr std::uint32_t kRayReconstructionViewportId = 2u;
 #endif
-}
+};
 
 bool NvidiaDlssRayReconstructionProvider::Initialize(
     const RhiCapabilities& capabilities,
@@ -62,7 +63,7 @@ bool NvidiaDlssRayReconstructionProvider::Evaluate(const RayReconstructionEvalua
 	return EvaluateStreamlineRayReconstructionFrame(
 	    m_frameState.GetFrameContext(),
 	    m_frameState.GetQualityMode(),
-	    sl::ViewportHandle{kRayReconstructionViewportId},
+	    sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId},
 	    evaluation);
 #else
 	(void) evaluation;
@@ -75,8 +76,8 @@ void NvidiaDlssRayReconstructionProvider::Shutdown() noexcept
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	if (m_initialized)
 	{
-		(void) slFreeResources(sl::kFeatureDLSS_RR, sl::ViewportHandle{kRayReconstructionViewportId});
-		(void) slFreeResources(sl::kFeatureDLSS, sl::ViewportHandle{kRayReconstructionViewportId});
+		(void) slFreeResources(sl::kFeatureDLSS_RR, sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId});
+		(void) slFreeResources(sl::kFeatureDLSS, sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId});
 	}
 #endif
 	m_initialized = false;

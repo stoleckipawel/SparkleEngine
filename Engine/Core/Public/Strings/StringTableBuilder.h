@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Core/Public/CoreAPI.h"
+
 #include <cstdint>
 #include <string_view>
 #include <vector>
@@ -15,20 +17,10 @@ namespace Strings
 		explicit constexpr operator bool() const noexcept { return IsValid(); }
 	};
 
-	class StringTableBuilder final
+	class SPARKLE_CORE_API StringTableBuilder final
 	{
 	  public:
-		StringTableEntry Add(std::string_view value)
-		{
-			if (value.empty())
-			{
-				return {};
-			}
-
-			const std::uint32_t offset = static_cast<std::uint32_t>(m_bytes.size());
-			m_bytes.insert(m_bytes.end(), value.begin(), value.end());
-			return StringTableEntry{offset, static_cast<std::uint32_t>(value.size())};
-		}
+		StringTableEntry Add(std::string_view value);
 
 		const std::vector<std::uint8_t>& GetBytes() const noexcept { return m_bytes; }
 		std::vector<std::uint8_t>& GetBytes() noexcept { return m_bytes; }

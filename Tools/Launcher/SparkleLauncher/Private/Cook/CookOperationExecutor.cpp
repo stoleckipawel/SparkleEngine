@@ -7,10 +7,9 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		constexpr unsigned int kMissingRuntimeDependencyExitCode = 0xC0000135u;
-	}
+
 
 	static std::string MakeCookFailureSummary(const CookOperationProcessStep& step, const ProcessResult& result)
 	{

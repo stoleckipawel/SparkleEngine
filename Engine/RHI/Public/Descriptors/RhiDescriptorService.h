@@ -13,27 +13,12 @@
 class RenderCommandList;
 class RenderDeviceServices;
 
-constexpr const char* RhiDescriptorAllocatorTypeToString(ERhiDescriptorAllocatorType type) noexcept
-{
-	switch (type)
-	{
-		case ERhiDescriptorAllocatorType::ShaderResource:
-			return "ShaderResource";
-		case ERhiDescriptorAllocatorType::Sampler:
-			return "Sampler";
-		case ERhiDescriptorAllocatorType::RenderTarget:
-			return "RenderTarget";
-		case ERhiDescriptorAllocatorType::DepthStencil:
-			return "DepthStencil";
-	}
-
-	return "Unknown";
-}
+SPARKLE_RHI_API const char* RhiDescriptorAllocatorTypeToString(ERhiDescriptorAllocatorType type) noexcept;
 
 class SPARKLE_RHI_API RhiDescriptorService
 {
   public:
-	virtual ~RhiDescriptorService() noexcept = default;
+	virtual ~RhiDescriptorService() noexcept;
 
 	virtual std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) = 0;
 	virtual void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept = 0;

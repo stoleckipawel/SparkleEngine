@@ -8,8 +8,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		std::filesystem::path NormalizePathForCompare(const std::filesystem::path& path)
 		{
 			std::error_code errorCode;
@@ -41,7 +40,7 @@ namespace SparkleLauncher
 			}
 			return true;
 		}
-	}
+
 
 	static std::filesystem::path MakePlatformDeletePath(const std::filesystem::path& path)
 	{

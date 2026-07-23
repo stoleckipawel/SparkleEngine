@@ -8,13 +8,14 @@
 #include <cassert>
 #include <format>
 
-namespace
+class PipelineRuntimeLibraryOperations final
 {
-	std::string FormatPackageId(const ShaderPackageDefinition& package)
+  public:
+	static std::string FormatPackageId(const ShaderPackageDefinition& package)
 	{
 		return package.PackageId != nullptr ? std::string(package.PackageId) : std::string("<null>");
 	}
-}
+};
 
 bool PipelineRuntimeLibrary::LoadShaderPackage(
     RenderHardwareInterface& rhi,
@@ -26,7 +27,7 @@ bool PipelineRuntimeLibrary::LoadShaderPackage(
 	outLoadedPackage = nullptr;
 	if (request.BindingLayout == nullptr)
 	{
-		outErrorMessage = std::format("Render pass '{}' requested shader package '{}' with no binding layout", request.PassName, FormatPackageId(request.Package));
+		outErrorMessage = std::format("Render pass '{}' requested shader package '{}' with no binding layout", request.PassName, PipelineRuntimeLibraryOperations::FormatPackageId(request.Package));
 		return false;
 	}
 
@@ -38,7 +39,7 @@ bool PipelineRuntimeLibrary::LoadShaderPackage(
 		outErrorMessage = std::format(
 		    "Runtime validation rejected cooked shader package '{}' for pass '{}' with backend='{}' requiredFormat='{}' "
 		    "bindingLayout='{}' expectedStages='{}' loadTimeUs={} packagePath='{}' - {}",
-		    FormatPackageId(request.Package),
+		    PipelineRuntimeLibraryOperations::FormatPackageId(request.Package),
 		    request.PassName,
 		    RhiBackendApiToString(capabilities.BackendApi),
 		    CookedShaderBinaryFormatToString(requiredBinaryFormat),
@@ -69,7 +70,7 @@ bool PipelineRuntimeLibrary::ValidatePackageCapabilities(
 		outErrorMessage = std::format(
 		    "Render pass '{}' package '{}' requires acceleration-structure bindings, but backend '{}' reports ray tracing unsupported",
 		    request.PassName,
-		    FormatPackageId(request.Package),
+		    PipelineRuntimeLibraryOperations::FormatPackageId(request.Package),
 		    RhiBackendApiToString(capabilities.BackendApi));
 		return false;
 	}
@@ -80,7 +81,7 @@ bool PipelineRuntimeLibrary::ValidatePackageCapabilities(
 		outErrorMessage = std::format(
 		    "Render pass '{}' package '{}' requires inline ray query, but backend '{}' reports inline ray query unsupported",
 		    request.PassName,
-		    FormatPackageId(request.Package),
+		    PipelineRuntimeLibraryOperations::FormatPackageId(request.Package),
 		    RhiBackendApiToString(capabilities.BackendApi));
 		return false;
 	}

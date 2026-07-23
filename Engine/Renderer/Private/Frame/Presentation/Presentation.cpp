@@ -8,9 +8,10 @@
 #include "Passes/Presentation/ToneMappingPass.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 
-namespace
+class PresentationOperations final
 {
-	PixelFormat ResolveEncodedIntermediateFormat(PixelFormat backBufferFormat) noexcept
+  public:
+	static PixelFormat ResolveEncodedIntermediateFormat(PixelFormat backBufferFormat) noexcept
 	{
 		switch (backBufferFormat)
 		{
@@ -22,7 +23,7 @@ namespace
 				return backBufferFormat;
 		}
 	}
-}
+};
 
 void AddPresentationPass(
     FrameGraphBuilder& builder,
@@ -42,7 +43,7 @@ void AddPresentationPass(
 	        "EncodedSceneColor",
 	        sceneExtent.Width,
 	        sceneExtent.Height,
-	        ResolveEncodedIntermediateFormat(backBufferFormat)));
+	        PresentationOperations::ResolveEncodedIntermediateFormat(backBufferFormat)));
 
 	auto& toneMappingParameters = builder.AllocParameters<ToneMappingPass::Parameters>();
 	toneMappingParameters->SceneColor = builder.CreateSRV(sceneTargets.FinalSceneColor);

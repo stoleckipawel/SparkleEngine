@@ -20,14 +20,13 @@
 
 namespace ECS
 {
-	namespace
-	{
+
 		template <typename T> std::uint32_t StorageCount(const EntityRegistry& registry) noexcept
 		{
 			const ComponentStorage<T>* storage = registry.FindStorage<T>();
 			return storage == nullptr ? 0u : static_cast<std::uint32_t>(storage->GetEntities().size());
 		}
-	}
+
 
 	class GameWorldSystemBindingSet final
 	{

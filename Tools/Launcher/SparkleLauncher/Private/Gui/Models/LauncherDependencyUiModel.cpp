@@ -9,8 +9,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		QString ToQString(std::string_view text)
 		{
 			return QString::fromStdString(std::string(text));
@@ -62,7 +61,7 @@ namespace SparkleLauncher
 			}
 			return labels.join(", ");
 		}
-	}
+
 
 	const std::vector<DependencyGroupUiEntry>& GetDependencyGroups()
 	{

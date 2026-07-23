@@ -8,14 +8,15 @@
 
 #include <cstdio>
 
-namespace
+class SceneCameraInspectorOperations final
 {
-	void Submit(EditorTransactionManager& transactions, std::uint64_t generation, WorldEditPayload after, WorldEditPayload before,
+  public:
+	static void Submit(EditorTransactionManager& transactions, std::uint64_t generation, WorldEditPayload after, WorldEditPayload before,
 	            const char* key)
 	{
 		(void) transactions.Execute({0, std::move(after)}, {0, std::move(before)}, generation, key);
 	}
-}
+};
 
 void SceneCameraInspector::Build(const WorldCameraReadData& camera, EditorTransactionManager& transactions,
                                  std::uint64_t generation, const std::string& filter) noexcept
@@ -53,7 +54,7 @@ void SceneCameraInspector::BuildTransformCategory(const std::string& filter, con
 	{
 		after.SetScale({s[0], s[1], s[2]}); changed = true;
 	}
-	if (changed) Submit(transactions, generation, SetLocalTransformCommand{camera.Entity, after},
+	if (changed) SceneCameraInspectorOperations::Submit(transactions, generation, SetLocalTransformCommand{camera.Entity, after},
 	                    SetLocalTransformCommand{camera.Entity, camera.LocalTransform}, "camera-transform");
 	UiUtil::EndDetailsCategory();
 }
@@ -70,7 +71,7 @@ void SceneCameraInspector::BuildCameraCategory(const std::string& filter, const 
 	changed |= UiUtil::EditDetailsFloat("Far Clip", after.farZ, 1.0f, after.nearZ, 100000.0f, "%.3f", &defaultFar);
 	char buffer[64] = {}; std::snprintf(buffer, sizeof(buffer), "%.3f", camera.AspectRatio);
 	UiUtil::DrawDetailsValueRow("Aspect Ratio", buffer);
-	if (changed) Submit(transactions, generation, SetCameraDescriptionCommand{camera.Entity, after},
+	if (changed) SceneCameraInspectorOperations::Submit(transactions, generation, SetCameraDescriptionCommand{camera.Entity, after},
 	                    SetCameraDescriptionCommand{camera.Entity, camera.Description}, "camera-description");
 	UiUtil::EndDetailsCategory();
 }
@@ -82,7 +83,7 @@ void SceneCameraInspector::BuildMovementCategory(const std::string& filter, cons
 	CameraMovementSettings after = camera.Movement;
 	const float defaultSpeed = 0.10f;
 	if (UiUtil::EditDetailsFloat("Move Speed", after.moveSpeed, 0.01f, 0.0001f, 10.0f, "%.4f", &defaultSpeed))
-		Submit(transactions, generation, SetCameraMovementCommand{camera.Entity, after},
+		SceneCameraInspectorOperations::Submit(transactions, generation, SetCameraMovementCommand{camera.Entity, after},
 		       SetCameraMovementCommand{camera.Entity, camera.Movement}, "camera-movement");
 	UiUtil::EndDetailsCategory();
 }
@@ -93,7 +94,7 @@ void SceneCameraInspector::BuildAdvancedParametersCategory(const std::string& fi
 	if (!UiUtil::MatchesDetailsFilter(filter, "Advanced", "visible visibility hidden") || !UiUtil::BeginDetailsCategory("Advanced", false)) return;
 	bool visible = camera.Visible; const bool defaultVisible = true;
 	if (UiUtil::EditDetailsCheckbox("Visible", visible, &defaultVisible))
-		Submit(transactions, generation, SetEntityVisibilityCommand{camera.Entity, visible},
+		SceneCameraInspectorOperations::Submit(transactions, generation, SetEntityVisibilityCommand{camera.Entity, visible},
 		       SetEntityVisibilityCommand{camera.Entity, camera.Visible}, "camera-visibility");
 	UiUtil::EndDetailsCategory();
 }

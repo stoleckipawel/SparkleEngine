@@ -8,9 +8,10 @@
 #include <algorithm>
 #include <cassert>
 
-namespace
+class FrameGraphCompilerOperations final
 {
-	void ValidateResourceVersionGraph(const FrameGraphPlan& plan) noexcept
+  public:
+	static void ValidateResourceVersionGraph(const FrameGraphPlan& plan) noexcept
 	{
 		for (const FrameGraphResourceNode& resource : plan.resources)
 		{
@@ -35,7 +36,7 @@ namespace
 			}
 		}
 	}
-}  // namespace
+};
 
 FrameGraphCompiler::FrameGraphCompiler(
 	FrameGraphPlan& plan,
@@ -70,7 +71,7 @@ void FrameGraphCompiler::Compile() noexcept
 	}
 
 	BuildResourceVersionGraph();
-	ValidateResourceVersionGraph(m_plan);
+	FrameGraphCompilerOperations::ValidateResourceVersionGraph(m_plan);
 	FinalizePassDependencies();
 	AssignPassQueues();
 	BuildTransientResourceLifetimes();

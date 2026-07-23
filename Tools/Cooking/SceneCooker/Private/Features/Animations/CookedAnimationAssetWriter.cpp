@@ -10,15 +10,16 @@
 #include <cstring>
 #include <fstream>
 
-namespace
+class CookedAnimationAssetWriterOperations final
 {
-	void CopyName(std::string_view sourceName, char (&destination)[64]) noexcept
+  public:
+	static void CopyName(std::string_view sourceName, char (&destination)[64]) noexcept
 	{
 		std::memset(destination, 0, sizeof(destination));
 		const std::size_t copyLength = (std::min)(sourceName.size(), sizeof(destination) - 1u);
 		std::memcpy(destination, sourceName.data(), copyLength);
 	}
-}
+};
 
 bool CookedAnimationAssetWriter::WriteAnimationAssets(
     const std::vector<CookedAnimationAssetBuild>& animationAssets,
@@ -37,7 +38,7 @@ bool CookedAnimationAssetWriter::WriteAnimationAssets(
 		    .channelStride = sizeof(Assets::CookedAnimationChannelRecord),
 		    .keyframeStride = sizeof(Assets::CookedAnimationKeyframeRecord),
 		    .flags = 0};
-		CopyName(animationAsset.name, header.name);
+		CookedAnimationAssetWriterOperations::CopyName(animationAsset.name, header.name);
 
 		std::ofstream output;
 		if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))

@@ -13,13 +13,14 @@
 
 #include <algorithm>
 
-namespace
+class EditorConsoleSystemConstants final
 {
-	constexpr std::uint32_t kWindowsKeyDownMessage = 0x0100;
-	constexpr std::uintptr_t kTildeKey = 0xC0;
-	constexpr float kMinimumDockHeight = 160.0f;
-	constexpr float kMinimumViewportHeight = 64.0f;
-}
+  public:
+	static constexpr std::uint32_t kWindowsKeyDownMessage = 0x0100;
+	static constexpr std::uintptr_t kTildeKey = 0xC0;
+	static constexpr float kMinimumDockHeight = 160.0f;
+	static constexpr float kMinimumViewportHeight = 64.0f;
+};
 
 EditorConsoleSystem::EditorConsoleSystem()
 {
@@ -68,7 +69,7 @@ void EditorConsoleSystem::OpenConsole() noexcept
 
 bool EditorConsoleSystem::HandleShortcut(std::uint32_t message, std::uintptr_t key, bool wantsTextInput) noexcept
 {
-	if (message == kWindowsKeyDownMessage && key == kTildeKey && !wantsTextInput)
+	if (message == EditorConsoleSystemConstants::kWindowsKeyDownMessage && key == EditorConsoleSystemConstants::kTildeKey && !wantsTextInput)
 	{
 		RequestConsoleFocus();
 		return true;
@@ -86,14 +87,14 @@ void EditorConsoleSystem::BuildUI(bool disableInteraction)
 
 float EditorConsoleSystem::GetDockHeight(float availableHeight) noexcept
 {
-	const float maxDockHeight = (std::max) (0.0f, availableHeight - kMinimumViewportHeight);
+	const float maxDockHeight = (std::max) (0.0f, availableHeight - EditorConsoleSystemConstants::kMinimumViewportHeight);
 	if (maxDockHeight <= 0.0f)
 	{
 		m_dockHeight = 0.0f;
 		return m_dockHeight;
 	}
 
-	const float minDockHeight = (std::min) (kMinimumDockHeight, maxDockHeight);
+	const float minDockHeight = (std::min) (EditorConsoleSystemConstants::kMinimumDockHeight, maxDockHeight);
 	m_dockHeight = (std::clamp) (m_dockHeight, minDockHeight, maxDockHeight);
 	return m_dockHeight;
 }
@@ -107,8 +108,8 @@ void EditorConsoleSystem::BuildDockedUI(float left, float bottom, float width, f
 	}
 
 	const float top = bottom - height;
-	const float maxDockHeight = (std::max) (0.0f, availableHeight - kMinimumViewportHeight);
-	const float minDockHeight = (std::min) (kMinimumDockHeight, maxDockHeight);
+	const float maxDockHeight = (std::max) (0.0f, availableHeight - EditorConsoleSystemConstants::kMinimumViewportHeight);
+	const float minDockHeight = (std::min) (EditorConsoleSystemConstants::kMinimumDockHeight, maxDockHeight);
 	ImGui::SetNextWindowPos(ImVec2(left, top), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(width, minDockHeight), ImVec2(width, maxDockHeight));

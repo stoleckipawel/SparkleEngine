@@ -19,8 +19,9 @@
 
 static const auto g_vulkanPipelineStateLogger = Logging::GetOrCreateLogger("RHI.Vulkan.PipelineState");
 
-namespace
+class VulkanPipelineStateImplementation final
 {
+  public:
 	struct VulkanPipelineCacheKey final
 	{
 		std::uint64_t Layout = 0;
@@ -35,12 +36,12 @@ namespace
 		bool RenderWireframe = false;
 	};
 
-	std::string ToDebugName(const wchar_t* debugName)
+	static std::string ToDebugName(const wchar_t* debugName)
 	{
 		return debugName != nullptr ? Strings::ToNarrow(debugName) : std::string{"VulkanPipelineState"};
 	}
 
-	VkStencilOpState BuildStencilFaceState(
+	static VkStencilOpState BuildStencilFaceState(
 	    CompareOp compareOp,
 	    RhiStencilOp failOp,
 	    RhiStencilOp depthFailOp,
@@ -57,7 +58,7 @@ namespace
 		    .reference = 0};
 	}
 
-	bool HasStencilAspect(PixelFormat format) noexcept
+	static bool HasStencilAspect(PixelFormat format) noexcept
 	{
 		switch (format)
 		{
@@ -68,7 +69,7 @@ namespace
 		}
 	}
 
-	void HandlePipelineCreateFailure(std::string_view debugName, const char* functionName, VkResult result)
+	static void HandlePipelineCreateFailure(std::string_view debugName, const char* functionName, VkResult result)
 	{
 		Diagnostics::Fail(
 		    g_vulkanPipelineStateLogger,
@@ -77,16 +78,16 @@ namespace
 		    std::format("Failed to create Vulkan pipeline '{}': {}", debugName, VulkanResult::FormatFailure(functionName, result)));
 	}
 
-	VkFrontFace ToVkFrontFace(ERhiFrontFaceWinding winding) noexcept
+	static VkFrontFace ToVkFrontFace(ERhiFrontFaceWinding winding) noexcept
 	{
 		return winding == ERhiFrontFaceWinding::Clockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	}
-}
+};
 
 VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineStateDesc& desc) :
 	m_device(rhi.GetDevice()), m_bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)
 {
-	const std::string debugName = ToDebugName(desc.DebugName);
+	const std::string debugName = VulkanPipelineStateImplementation::ToDebugName(desc.DebugName);
 	VulkanPipelineLayoutBuilder layoutBuilder;
 	layoutBuilder.SetBindingLayout(desc.BindingLayout);
 	m_pipelineLayout = layoutBuilder.Build(rhi, debugName);
@@ -136,7 +137,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .rasterizerDiscardEnable = VK_FALSE,
 	    .polygonMode = desc.RenderWireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL,
 	    .cullMode = VulkanTypeConversions::ToVkCullModeFlags(desc.CullMode),
-	    .frontFace = ToVkFrontFace(desc.FrontFaceWinding),
+	    .frontFace = VulkanPipelineStateImplementation::ToVkFrontFace(desc.FrontFaceWinding),
 	    .depthBiasEnable = VK_FALSE,
 	    .depthBiasConstantFactor = 0.0f,
 	    .depthBiasClamp = 0.0f,
@@ -178,7 +179,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f}};
 
 	const bool hasDepthStencilFormat = desc.DepthStencilFormat != PixelFormat::Unknown;
-	const bool hasStencilFormat = HasStencilAspect(desc.DepthStencilFormat);
+	const bool hasStencilFormat = VulkanPipelineStateImplementation::HasStencilAspect(desc.DepthStencilFormat);
 	const VkPipelineDepthStencilStateCreateInfo depthStencilState{
 	    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
 	    .pNext = nullptr,
@@ -188,13 +189,13 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .depthCompareOp = VulkanTypeConversions::ToVkCompareOp(desc.DepthTest.DepthFunc),
 	    .depthBoundsTestEnable = VK_FALSE,
 	    .stencilTestEnable = hasStencilFormat && desc.StencilTest.StencilEnable ? VK_TRUE : VK_FALSE,
-	    .front = BuildStencilFaceState(
+	    .front = VulkanPipelineStateImplementation::BuildStencilFaceState(
 	        desc.StencilTest.FrontFaceStencilFunc,
 	        desc.StencilTest.FrontFaceStencilFailOp,
 	        desc.StencilTest.FrontFaceStencilDepthFailOp,
 	        desc.StencilTest.FrontFaceStencilPassOp,
 	        desc.StencilTest),
-	    .back = BuildStencilFaceState(
+	    .back = VulkanPipelineStateImplementation::BuildStencilFaceState(
 	        desc.StencilTest.BackFaceStencilFunc,
 	        desc.StencilTest.BackFaceStencilFailOp,
 	        desc.StencilTest.BackFaceStencilDepthFailOp,
@@ -226,7 +227,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .stencilAttachmentFormat =
 	        hasStencilFormat ? VulkanTypeConversions::ToVkFormat(desc.DepthStencilFormat) : VK_FORMAT_UNDEFINED};
 
-	const VulkanPipelineCacheKey cacheKey{
+	const VulkanPipelineStateImplementation::VulkanPipelineCacheKey cacheKey{
 	    .Layout = reinterpret_cast<std::uint64_t>(GetPipelineLayout()),
 	    .RenderTargetCount = desc.RenderTargetCount,
 	    .RenderTargetFormats = renderTargetFormats,
@@ -262,7 +263,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	const VkResult result = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &m_pipeline);
 	if (!VulkanResult::Succeeded(result))
 	{
-		HandlePipelineCreateFailure(debugName, "vkCreateGraphicsPipelines", result);
+		VulkanPipelineStateImplementation::HandlePipelineCreateFailure(debugName, "vkCreateGraphicsPipelines", result);
 	}
 
 	VulkanDebugNames::SetObjectName(
@@ -276,7 +277,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const ComputePipelineStateDesc& desc) :
 	m_device(rhi.GetDevice()), m_bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE)
 {
-	const std::string debugName = ToDebugName(desc.DebugName);
+	const std::string debugName = VulkanPipelineStateImplementation::ToDebugName(desc.DebugName);
 	VulkanPipelineLayoutBuilder layoutBuilder;
 	layoutBuilder.SetBindingLayout(desc.BindingLayout);
 	m_pipelineLayout = layoutBuilder.Build(rhi, debugName);
@@ -294,7 +295,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const ComputePipelineSt
 	const VkResult result = vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &m_pipeline);
 	if (!VulkanResult::Succeeded(result))
 	{
-		HandlePipelineCreateFailure(debugName, "vkCreateComputePipelines", result);
+		VulkanPipelineStateImplementation::HandlePipelineCreateFailure(debugName, "vkCreateComputePipelines", result);
 	}
 
 	VulkanDebugNames::SetObjectName(

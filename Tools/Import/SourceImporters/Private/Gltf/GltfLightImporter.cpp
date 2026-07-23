@@ -9,9 +9,10 @@
 #include <format>
 #include <utility>
 
-namespace
+class GltfLightImporterOperations final
 {
-	ImportedLightKind ToImportedLightKind(cgltf_light_type lightType) noexcept
+  public:
+	static ImportedLightKind ToImportedLightKind(cgltf_light_type lightType) noexcept
 	{
 		switch (lightType)
 		{
@@ -27,7 +28,7 @@ namespace
 		}
 	}
 
-	std::string ResolveLightName(const cgltf_node& node, const cgltf_light& light, std::uint32_t nodeIndex)
+	static std::string ResolveLightName(const cgltf_node& node, const cgltf_light& light, std::uint32_t nodeIndex)
 	{
 		if (node.name != nullptr && node.name[0] != '\0')
 		{
@@ -41,7 +42,7 @@ namespace
 
 		return std::format("glTF Light {}", nodeIndex);
 	}
-}  // namespace
+};
 
 void GltfLightImporter::ImportLights(const cgltf_data* data, SourceImportResult& result)
 {
@@ -63,8 +64,8 @@ void GltfLightImporter::ImportLights(const cgltf_data* data, SourceImportResult&
 		const DirectX::XMMATRIX worldTransform = GltfNodeTransformUtils::ComputeNodeWorldTransform(&node);
 
 		ImportedLight light;
-		light.name = ResolveLightName(node, sourceLight, static_cast<std::uint32_t>(nodeIndex));
-		light.kind = ToImportedLightKind(sourceLight.type);
+		light.name = GltfLightImporterOperations::ResolveLightName(node, sourceLight, static_cast<std::uint32_t>(nodeIndex));
+		light.kind = GltfLightImporterOperations::ToImportedLightKind(sourceLight.type);
 		light.color = {sourceLight.color[0], sourceLight.color[1], sourceLight.color[2]};
 		light.intensity = sourceLight.intensity;
 		light.range = sourceLight.range;

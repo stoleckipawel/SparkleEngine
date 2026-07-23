@@ -10,12 +10,13 @@
 	#include <sl_dlss.h>
 #endif
 
-namespace
+class NvidiaDlssUpscalerProviderConstants final
 {
+  public:
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	constexpr std::uint32_t kDlssViewportId = 1u;
+	static constexpr std::uint32_t kDlssViewportId = 1u;
 #endif
-}
+};
 
 bool NvidiaDlssUpscalerProvider::Initialize(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop)
 {
@@ -58,7 +59,7 @@ bool NvidiaDlssUpscalerProvider::Evaluate(const UpscalerEvaluationDesc& evaluati
 	return EvaluateStreamlineDlssFrame(
 	    m_frameState.GetFrameContext(),
 	    m_frameState.GetQualityMode(),
-	    sl::ViewportHandle{kDlssViewportId},
+	    sl::ViewportHandle{NvidiaDlssUpscalerProviderConstants::kDlssViewportId},
 	    evaluation);
 #else
 	(void) evaluation;
@@ -71,7 +72,7 @@ void NvidiaDlssUpscalerProvider::Shutdown() noexcept
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	if (m_initialized)
 	{
-		(void) slFreeResources(sl::kFeatureDLSS, sl::ViewportHandle{kDlssViewportId});
+		(void) slFreeResources(sl::kFeatureDLSS, sl::ViewportHandle{NvidiaDlssUpscalerProviderConstants::kDlssViewportId});
 	}
 #endif
 	m_initialized = false;

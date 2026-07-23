@@ -17,17 +17,18 @@
 #include <string>
 #include <vector>
 
-namespace
+class CookedShaderPackageCacheImplementation final
 {
+  public:
 	using PackageLoadClock = std::chrono::steady_clock;
 
-	std::uint64_t ToElapsedMicroseconds(PackageLoadClock::time_point start) noexcept
+	static std::uint64_t ToElapsedMicroseconds(PackageLoadClock::time_point start) noexcept
 	{
 		const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(PackageLoadClock::now() - start);
 		return static_cast<std::uint64_t>(elapsed.count());
 	}
 
-	CookedShaderPackageLoadReport MakeLoadReport(
+	static CookedShaderPackageLoadReport MakeLoadReport(
 	    std::uint64_t packageKey,
 	    std::filesystem::path packagePath,
 	    std::uint64_t generation,
@@ -55,7 +56,7 @@ namespace
 		return report;
 	}
 
-}
+};
 
 void CookedShaderPackageCache::Clear() noexcept
 {
@@ -77,10 +78,10 @@ bool CookedShaderPackageCache::LoadPackage(
     const LoadedShaderPackage*& outPackage)
 {
 	outPackage = nullptr;
-	const PackageLoadClock::time_point loadStart = PackageLoadClock::now();
+	const CookedShaderPackageCacheImplementation::PackageLoadClock::time_point loadStart = CookedShaderPackageCacheImplementation::PackageLoadClock::now();
 	if (!definition.IsValid())
 	{
-		m_lastLoadReport = MakeLoadReport(0, {}, m_generation, false, false, false, ToElapsedMicroseconds(loadStart), nullptr);
+		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(0, {}, m_generation, false, false, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), nullptr);
 		outErrorMessage = "Shader package definition is invalid.";
 		return false;
 	}
@@ -92,13 +93,13 @@ bool CookedShaderPackageCache::LoadPackage(
 		if (!ValidatePackage(*it->second, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
 		{
 			m_lastLoadReport =
-			    MakeLoadReport(packageKey, packagePath, m_generation, true, false, false, ToElapsedMicroseconds(loadStart), it->second.get());
+			    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, true, false, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), it->second.get());
 			return false;
 		}
 
 		outPackage = it->second.get();
 		m_lastLoadReport =
-		    MakeLoadReport(packageKey, packagePath, m_generation, true, false, true, ToElapsedMicroseconds(loadStart), outPackage);
+		    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, true, false, true, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), outPackage);
 		outErrorMessage.clear();
 		return true;
 	}
@@ -106,14 +107,14 @@ bool CookedShaderPackageCache::LoadPackage(
 	auto loadedPackage = std::make_unique<LoadedShaderPackage>();
 	if (!LoadPackageFromFile(packagePath, *loadedPackage, outErrorMessage))
 	{
-		m_lastLoadReport = MakeLoadReport(packageKey, packagePath, m_generation, false, false, false, ToElapsedMicroseconds(loadStart), nullptr);
+		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, false, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), nullptr);
 		return false;
 	}
 
 	if (!ValidatePackage(*loadedPackage, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
 	{
 		m_lastLoadReport =
-		    MakeLoadReport(packageKey, packagePath, m_generation, false, false, false, ToElapsedMicroseconds(loadStart), loadedPackage.get());
+		    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, false, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), loadedPackage.get());
 		return false;
 	}
 
@@ -121,7 +122,7 @@ bool CookedShaderPackageCache::LoadPackage(
 	m_packages.emplace(packageKey, std::move(loadedPackage));
 	outPackage = cachedPackage;
 	m_lastLoadReport =
-	    MakeLoadReport(packageKey, packagePath, m_generation, false, false, true, ToElapsedMicroseconds(loadStart), outPackage);
+	    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, false, true, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), outPackage);
 	outErrorMessage.clear();
 	return true;
 }
@@ -133,10 +134,10 @@ bool CookedShaderPackageCache::ReloadPackage(
     const LoadedShaderPackage*& outPackage)
 {
 	outPackage = nullptr;
-	const PackageLoadClock::time_point loadStart = PackageLoadClock::now();
+	const CookedShaderPackageCacheImplementation::PackageLoadClock::time_point loadStart = CookedShaderPackageCacheImplementation::PackageLoadClock::now();
 	if (!definition.IsValid())
 	{
-		m_lastLoadReport = MakeLoadReport(0, {}, m_generation, false, true, false, ToElapsedMicroseconds(loadStart), nullptr);
+		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(0, {}, m_generation, false, true, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), nullptr);
 		outErrorMessage = "Shader package definition is invalid.";
 		return false;
 	}
@@ -146,14 +147,14 @@ bool CookedShaderPackageCache::ReloadPackage(
 	const std::filesystem::path packagePath = Paths::CookedShaderPackage(packageKey);
 	if (!LoadPackageFromFile(packagePath, *loadedPackage, outErrorMessage))
 	{
-		m_lastLoadReport = MakeLoadReport(packageKey, packagePath, m_generation, false, true, false, ToElapsedMicroseconds(loadStart), nullptr);
+		m_lastLoadReport = CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, true, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), nullptr);
 		return false;
 	}
 
 	if (!ValidatePackage(*loadedPackage, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
 	{
 		m_lastLoadReport =
-		    MakeLoadReport(packageKey, packagePath, m_generation, false, true, false, ToElapsedMicroseconds(loadStart), loadedPackage.get());
+		    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, true, false, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), loadedPackage.get());
 		return false;
 	}
 
@@ -162,7 +163,7 @@ bool CookedShaderPackageCache::ReloadPackage(
 	++m_generation;
 	outPackage = cachedPackage;
 	m_lastLoadReport =
-	    MakeLoadReport(packageKey, packagePath, m_generation, false, true, true, ToElapsedMicroseconds(loadStart), outPackage);
+	    CookedShaderPackageCacheImplementation::MakeLoadReport(packageKey, packagePath, m_generation, false, true, true, CookedShaderPackageCacheImplementation::ToElapsedMicroseconds(loadStart), outPackage);
 	outErrorMessage.clear();
 	return true;
 }

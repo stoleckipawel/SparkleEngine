@@ -9,8 +9,7 @@
 
 namespace Assets
 {
-	namespace
-	{
+
 		struct PayloadMeshAssetBinding
 		{
 			CookedMeshAssetKind kind = CookedMeshAssetKind::Static;
@@ -45,7 +44,7 @@ namespace Assets
 
 			return bindings;
 		}
-	}  // namespace
+	  // namespace
 
 	bool SceneAssetPayloadMaterialVariantAppender::AppendMaterialVariants(
 	    const LoadedSceneManifest& sceneManifest,

@@ -13,13 +13,14 @@
 #include <algorithm>
 #include <utility>
 
-namespace
+class SceneLightInspectorConstants final
 {
-	constexpr float kAngularDiameterDragSpeedDegrees = 0.1f;
-	constexpr float kAngularDiameterSliderMaxDegrees = 30.0f;
-	constexpr float kSourceRadiusSliderMax = 25.0f;
-	constexpr float kAreaLightSizeSliderMax = 100.0f;
-}
+  public:
+	static constexpr float kAngularDiameterDragSpeedDegrees = 0.1f;
+	static constexpr float kAngularDiameterSliderMaxDegrees = 30.0f;
+	static constexpr float kSourceRadiusSliderMax = 25.0f;
+	static constexpr float kAreaLightSizeSliderMax = 100.0f;
+};
 
 void SceneLightInspector::Build(const SceneLightDesc& sceneLight, EntityId lightEntity,
                                 EditorTransactionManager& transactions, std::uint64_t worldGeneration,
@@ -179,9 +180,9 @@ bool SceneLightInspector::BuildDirectionalLightCategory(const std::string& filte
 	if (UiUtil::EditDetailsFloat(
 	        "Angular Diameter",
 	        angularDiameterDegrees,
-	        kAngularDiameterDragSpeedDegrees,
+	        SceneLightInspectorConstants::kAngularDiameterDragSpeedDegrees,
 	        0.0f,
-	        kAngularDiameterSliderMaxDegrees,
+	        SceneLightInspectorConstants::kAngularDiameterSliderMaxDegrees,
 	        "%.3f",
 	        &kDefaultAngularDiameterDegrees))
 	{
@@ -220,7 +221,7 @@ bool SceneLightInspector::BuildPointLightCategory(const std::string& filterText,
 	        sourceRadius,
 	        0.01f,
 	        0.0f,
-	        kSourceRadiusSliderMax,
+	        SceneLightInspectorConstants::kSourceRadiusSliderMax,
 	        "%.3f",
 	        &kDefaultSourceRadius))
 	{
@@ -268,7 +269,7 @@ bool SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	        sourceRadius,
 	        0.01f,
 	        0.0f,
-	        kSourceRadiusSliderMax,
+	        SceneLightInspectorConstants::kSourceRadiusSliderMax,
 	        "%.3f",
 	        &kDefaultSourceRadius))
 	{
@@ -327,14 +328,14 @@ bool SceneLightInspector::BuildRectLightCategory(const std::string& filterText, 
 
 	float width = lightDesc.width;
 	constexpr float kDefaultSize = 1.0f;
-	if (UiUtil::EditDetailsFloat("Width", width, 0.05f, 0.0f, kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
+	if (UiUtil::EditDetailsFloat("Width", width, 0.05f, 0.0f, SceneLightInspectorConstants::kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
 	{
 		lightDesc.width = (std::max) (0.0f, width);
 		changed = true;
 	}
 
 	float height = lightDesc.height;
-	if (UiUtil::EditDetailsFloat("Height", height, 0.05f, 0.0f, kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
+	if (UiUtil::EditDetailsFloat("Height", height, 0.05f, 0.0f, SceneLightInspectorConstants::kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
 	{
 		lightDesc.height = (std::max) (0.0f, height);
 		changed = true;

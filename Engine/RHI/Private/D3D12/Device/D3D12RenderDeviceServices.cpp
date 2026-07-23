@@ -125,11 +125,6 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
 
 D3D12RenderDeviceServices::~D3D12RenderDeviceServices() noexcept
 {
-	if (m_rhi != nullptr)
-	{
-		m_rhi->WaitForIdle();
-	}
-
 	m_samplerLibrary.reset();
 	m_commandContext.reset();
 	m_renderHardwareInterface.reset();
@@ -168,6 +163,7 @@ void D3D12RenderDeviceServices::WaitForIdle() noexcept
 
 void D3D12RenderDeviceServices::ResizeSwapChain() noexcept
 {
+	m_renderHardwareInterface->WaitForIdle();
 	m_swapChain->Resize();
 }
 

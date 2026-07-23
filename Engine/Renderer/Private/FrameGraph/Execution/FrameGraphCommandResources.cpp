@@ -6,8 +6,9 @@
 #include <array>
 #include <cassert>
 
-namespace
+class FrameGraphCommandResourcesImplementation final
 {
+  public:
 	struct FrameGraphFramebuffer final
 	{
 		std::array<RhiCpuDescriptorHandle, 8> renderTargetViews = {};
@@ -16,14 +17,14 @@ namespace
 
 		bool HasDepthStencil() const noexcept { return static_cast<bool>(depthStencilView); }
 	};
-}
+};
 
 void FrameGraph::BindRenderTarget(
     RenderCommandContext& cmd,
     FrameGraphTextureHandle renderTargetHandle,
     FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
-	FrameGraphFramebuffer framebuffer{};
+	FrameGraphCommandResourcesImplementation::FrameGraphFramebuffer framebuffer{};
 	framebuffer.renderTargetViews[0] = ResolveRenderTargetView(renderTargetHandle.GetResourceHandle());
 	framebuffer.renderTargetCount = 1u;
 	if (depthStencilHandle.IsValid())
@@ -44,7 +45,7 @@ void FrameGraph::BindRenderTargets(
 	assert(!renderTargetHandles.empty());
 	assert(renderTargetHandles.size() <= 8u);
 
-	FrameGraphFramebuffer framebuffer{};
+	FrameGraphCommandResourcesImplementation::FrameGraphFramebuffer framebuffer{};
 	framebuffer.renderTargetCount = static_cast<std::uint32_t>(renderTargetHandles.size());
 	for (std::size_t index = 0; index < renderTargetHandles.size(); ++index)
 	{

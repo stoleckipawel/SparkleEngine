@@ -8,8 +8,7 @@
 
 namespace Assets
 {
-	namespace
-	{
+
 		CameraProjectionKind ToCameraProjectionKind(CookedSceneCameraProjectionKind projectionKind) noexcept
 		{
 			switch (projectionKind)
@@ -39,7 +38,7 @@ namespace Assets
 
 			return std::string(cameraRecord.name, length);
 		}
-	}  // namespace
+	  // namespace
 
 	SceneAssetPayload::Camera BuildSceneAssetCamera(const CookedSceneCameraRecord& cameraRecord, std::size_t cameraIndex)
 	{

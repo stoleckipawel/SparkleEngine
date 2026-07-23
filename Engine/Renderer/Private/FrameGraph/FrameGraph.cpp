@@ -9,6 +9,8 @@
 
 static const auto g_frameGraphLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
+FrameGraph::AllocatedParameterInstanceBase::~AllocatedParameterInstanceBase() noexcept = default;
+
 FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window) :
     m_renderHardwareInterface(renderHardwareInterface),
     m_window(window),
@@ -26,6 +28,27 @@ FrameGraph::~FrameGraph()
 
 	ReleaseExternalResourceViews();
 	ReleaseTextureHistories();
+}
+
+ShaderAccelerationStructure FrameGraph::Read(FrameGraphAccelerationStructureHandle handle) const noexcept
+{
+	ShaderAccelerationStructure field;
+	field = handle;
+	return field;
+}
+
+ShaderRenderTarget FrameGraph::CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept
+{
+	ShaderRenderTarget field;
+	field = handle;
+	return field;
+}
+
+ShaderDepthTarget FrameGraph::CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept
+{
+	ShaderDepthTarget field;
+	field = handle;
+	return field;
 }
 
 const FrameGraphPlan& FrameGraph::Compile()

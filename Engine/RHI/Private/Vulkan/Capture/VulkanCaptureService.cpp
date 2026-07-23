@@ -5,9 +5,10 @@
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
-namespace
+class VulkanCaptureServiceOperations final
 {
-	std::uint32_t FindVulkanMemoryType(
+  public:
+	static std::uint32_t FindVulkanMemoryType(
 	    VkPhysicalDevice physicalDevice,
 	    std::uint32_t typeBits,
 	    VkMemoryPropertyFlags requiredFlags) noexcept
@@ -26,7 +27,7 @@ namespace
 		return UINT32_MAX;
 	}
 
-	void RecordCaptureTransition(
+	static void RecordCaptureTransition(
 	    VkCommandBuffer commandBuffer,
 	    VkImage image,
 	    ResourceState before,
@@ -69,7 +70,7 @@ namespace
 		    .pImageMemoryBarriers = &barrier};
 		vkCmdPipelineBarrier2(commandBuffer, &dependency);
 	}
-}
+};
 
 VulkanCaptureService::VulkanCaptureService(VulkanRhi& rhi) noexcept : m_rhi(&rhi) {}
 
@@ -127,7 +128,7 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
 
 	VkMemoryRequirements memoryRequirements{};
 	vkGetBufferMemoryRequirements(device, readbackBuffer, &memoryRequirements);
-	const std::uint32_t memoryTypeIndex = FindVulkanMemoryType(
+	const std::uint32_t memoryTypeIndex = VulkanCaptureServiceOperations::FindVulkanMemoryType(
 	    physicalDevice,
 	    memoryRequirements.memoryTypeBits,
 	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -195,7 +196,7 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
 		return false;
 	}
 
-	RecordCaptureTransition(commandBuffer, sourceImage, sourceState, ResourceState::CopySource);
+	VulkanCaptureServiceOperations::RecordCaptureTransition(commandBuffer, sourceImage, sourceState, ResourceState::CopySource);
 
 	const VkBufferImageCopy copyRegion{
 	    .bufferOffset = 0,
@@ -206,7 +207,7 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
 	    .imageExtent = VkExtent3D{.width = width, .height = height, .depth = 1}};
 	vkCmdCopyImageToBuffer(commandBuffer, sourceImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, readbackBuffer, 1, &copyRegion);
 
-	RecordCaptureTransition(commandBuffer, sourceImage, ResourceState::CopySource, sourceState);
+	VulkanCaptureServiceOperations::RecordCaptureTransition(commandBuffer, sourceImage, ResourceState::CopySource, sourceState);
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 	{

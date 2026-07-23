@@ -6,9 +6,10 @@
 
 #include <format>
 
-namespace
+class CookedShaderBindingDiagnosticsOperations final
 {
-	const char* FormatResourceKindName(CookedShaderResourceKind kind) noexcept
+  public:
+	static const char* FormatResourceKindName(CookedShaderResourceKind kind) noexcept
 	{
 		switch (kind)
 		{
@@ -29,7 +30,7 @@ namespace
 		}
 	}
 
-	const char* FormatResourceDimension(CookedShaderResourceDimension dimension) noexcept
+	static const char* FormatResourceDimension(CookedShaderResourceDimension dimension) noexcept
 	{
 		switch (dimension)
 		{
@@ -48,7 +49,7 @@ namespace
 		}
 	}
 
-	const char* FormatVisibility(ShaderStageVisibility visibility) noexcept
+	static const char* FormatVisibility(ShaderStageVisibility visibility) noexcept
 	{
 		switch (visibility)
 		{
@@ -62,7 +63,7 @@ namespace
 		}
 	}
 
-	const char* FormatSemanticKind(ShaderParameterSemanticKind kind) noexcept
+	static const char* FormatSemanticKind(ShaderParameterSemanticKind kind) noexcept
 	{
 		switch (kind)
 		{
@@ -79,7 +80,7 @@ namespace
 		}
 	}
 
-	std::string FormatExpectedParameters(const std::vector<PassParameterDesc>& expectedParameters)
+	static std::string FormatExpectedParameters(const std::vector<PassParameterDesc>& expectedParameters)
 	{
 		if (expectedParameters.empty())
 		{
@@ -102,7 +103,7 @@ namespace
 		return result;
 	}
 
-	void AppendReflectedBinding(
+	static void AppendReflectedBinding(
 	    std::string& result,
 	    const LoadedShaderPackage& package,
 	    const CookedShaderBinaryRecord& binaryRecord,
@@ -123,7 +124,7 @@ namespace
 		    resourceBinding.SizeInBytes);
 	}
 
-	std::string FormatReflectedBindings(
+	static std::string FormatReflectedBindings(
 	    const LoadedShaderPackage& package,
 	    const ShaderPackageDefinition& definition,
 	    CookedShaderBinaryFormat requiredBinaryFormat)
@@ -160,11 +161,11 @@ namespace
 
 		return result.empty() ? "<none>" : result;
 	}
-}
+};
 
 const char* CookedShaderBindingDiagnostics::FormatResourceKind(CookedShaderResourceKind kind) noexcept
 {
-	return FormatResourceKindName(kind);
+	return CookedShaderBindingDiagnosticsOperations::FormatResourceKindName(kind);
 }
 
 std::string CookedShaderBindingDiagnostics::Append(
@@ -176,9 +177,9 @@ std::string CookedShaderBindingDiagnostics::Append(
 {
 	message += std::format(
 	    " Expected runtime bindings=[{}]. Reflected {}/{} bindings=[{}].",
-	    FormatExpectedParameters(expectedParameters),
+	    CookedShaderBindingDiagnosticsOperations::FormatExpectedParameters(expectedParameters),
 	    CookedShaderBinaryFormatToString(requiredBinaryFormat),
 	    GetRuntimeShaderCodegenTarget(requiredBinaryFormat),
-	    FormatReflectedBindings(package, definition, requiredBinaryFormat));
+	    CookedShaderBindingDiagnosticsOperations::FormatReflectedBindings(package, definition, requiredBinaryFormat));
 	return message;
 }

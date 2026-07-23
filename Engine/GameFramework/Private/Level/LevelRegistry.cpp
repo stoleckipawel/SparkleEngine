@@ -11,9 +11,10 @@
 
 static const auto g_levelRegistryLogger = Logging::GetOrCreateLogger("GameFramework.LevelRegistry");
 
-namespace
+class LevelRegistryImplementation final
 {
-	constexpr const char* kLevelCatalogFileName = "Levels.catalog";
+  public:
+	static constexpr const char* kLevelCatalogFileName = "Levels.catalog";
 
 	struct LevelCatalogEntry final
 	{
@@ -41,7 +42,7 @@ namespace
 		OptionalPack
 	};
 
-	std::filesystem::path ResolveProjectPath(const std::filesystem::path& projectRoot, std::string_view value)
+	static std::filesystem::path ResolveProjectPath(const std::filesystem::path& projectRoot, std::string_view value)
 	{
 		std::filesystem::path path{Strings::UnquoteCopy(value)};
 		if (path.is_relative())
@@ -51,7 +52,7 @@ namespace
 		return path.lexically_normal();
 	}
 
-	bool OptionalPackAvailable(const LevelCatalog& catalog, const std::filesystem::path& projectRoot, std::string_view optionalPackId)
+	static bool OptionalPackAvailable(const LevelCatalog& catalog, const std::filesystem::path& projectRoot, std::string_view optionalPackId)
 	{
 		if (optionalPackId.empty())
 		{
@@ -75,7 +76,7 @@ namespace
 		return std::filesystem::exists(packPath.lexically_normal(), errorCode);
 	}
 
-	bool LoadLevelCatalog(const std::filesystem::path& projectRoot, LevelCatalog& outCatalog)
+	static bool LoadLevelCatalog(const std::filesystem::path& projectRoot, LevelCatalog& outCatalog)
 	{
 		const std::filesystem::path catalogPath = projectRoot / kLevelCatalogFileName;
 		std::ifstream input(catalogPath);
@@ -166,7 +167,7 @@ namespace
 
 		return true;
 	}
-}
+};
 
 LevelRegistry::LevelRegistry()
 {
@@ -178,13 +179,13 @@ LevelRegistry::~LevelRegistry() noexcept = default;
 void LevelRegistry::DiscoverLevels()
 {
 	const std::filesystem::path projectRoot = Filesystem::GetProjectPath();
-	LevelCatalog catalog;
-	if (LoadLevelCatalog(projectRoot, catalog))
+	LevelRegistryImplementation::LevelCatalog catalog;
+	if (LevelRegistryImplementation::LoadLevelCatalog(projectRoot, catalog))
 	{
 		std::string startupDefaultLevelName;
-		for (const LevelCatalogEntry& entry : catalog.levels)
+		for (const LevelRegistryImplementation::LevelCatalogEntry& entry : catalog.levels)
 		{
-			if (entry.sourcePath.empty() || !OptionalPackAvailable(catalog, projectRoot, entry.optionalPackId))
+			if (entry.sourcePath.empty() || !LevelRegistryImplementation::OptionalPackAvailable(catalog, projectRoot, entry.optionalPackId))
 			{
 				continue;
 			}
@@ -219,7 +220,7 @@ void LevelRegistry::DiscoverLevels()
 		return;
 	}
 
-	SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Required level catalog not found at '{}'", (projectRoot / kLevelCatalogFileName).string());
+	SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Required level catalog not found at '{}'", (projectRoot / LevelRegistryImplementation::kLevelCatalogFileName).string());
 }
 
 void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)

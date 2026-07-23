@@ -4,22 +4,23 @@
 
 #include <algorithm>
 
-namespace
+class MeshMorphEvaluatorOperations final
 {
-	void AddWeighted(DirectX::XMFLOAT3& value, const DirectX::XMFLOAT3& delta, float weight) noexcept
+  public:
+	static void AddWeighted(DirectX::XMFLOAT3& value, const DirectX::XMFLOAT3& delta, float weight) noexcept
 	{
 		value.x += delta.x * weight;
 		value.y += delta.y * weight;
 		value.z += delta.z * weight;
 	}
 
-	void AddWeightedTangent(DirectX::XMFLOAT4& value, const DirectX::XMFLOAT3& delta, float weight) noexcept
+	static void AddWeightedTangent(DirectX::XMFLOAT4& value, const DirectX::XMFLOAT3& delta, float weight) noexcept
 	{
 		value.x += delta.x * weight;
 		value.y += delta.y * weight;
 		value.z += delta.z * weight;
 	}
-}
+};
 
 namespace MeshMorphEvaluator
 {
@@ -49,9 +50,9 @@ namespace MeshMorphEvaluator
 			{
 				VertexData& vertex = meshData.vertices[vertexIndex];
 				const MeshMorphTargetDelta& delta = target.deltas[vertexIndex];
-				AddWeighted(vertex.position, delta.position, weight);
-				AddWeighted(vertex.normal, delta.normal, weight);
-				AddWeightedTangent(vertex.tangent, delta.tangent, weight);
+				MeshMorphEvaluatorOperations::AddWeighted(vertex.position, delta.position, weight);
+				MeshMorphEvaluatorOperations::AddWeighted(vertex.normal, delta.normal, weight);
+				MeshMorphEvaluatorOperations::AddWeightedTangent(vertex.tangent, delta.tangent, weight);
 			}
 		}
 	}

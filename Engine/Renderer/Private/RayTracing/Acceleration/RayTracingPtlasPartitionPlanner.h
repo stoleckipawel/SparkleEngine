@@ -86,12 +86,16 @@ struct RayTracingPtlasPartitionPlan final
 class RayTracingPtlasPartitionPlanner final
 {
   public:
-	RayTracingPtlasPartitionPlanner() noexcept = default;
+	RayTracingPtlasPartitionPlanner() noexcept;
 
 	RayTracingPtlasPartitionPlan Build(const RenderSceneData& sceneData, const RayTracingPtlasPartitionPlannerConfig& config) noexcept;
 	void Clear() noexcept;
 
   private:
+	struct SceneBounds;
+	struct InstanceBounds;
+	struct ObservedInstance;
+
 	struct PreviousInstanceState final
 	{
 		DirectX::XMFLOAT4X4 WorldMatrix = {};
@@ -107,6 +111,31 @@ class RayTracingPtlasPartitionPlanner final
 	};
 
 	static RayTracingPtlasPartitionPlannerConfig SanitizeConfig(RayTracingPtlasPartitionPlannerConfig config) noexcept;
+	static void ExpandSceneBounds(SceneBounds& bounds, const DirectX::XMFLOAT3& point) noexcept;
+	static DirectX::XMFLOAT3 TransformPoint(
+	    const DirectX::XMFLOAT3& point,
+	    const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
+	static InstanceBounds ComputeInstanceWorldBounds(const MeshDraw& draw) noexcept;
+	static DirectX::XMFLOAT3 ComputeInstancePartitionPosition(const MeshDraw& draw) noexcept;
+	static SceneBounds ComputeSceneBounds(const RenderSceneData& sceneData) noexcept;
+	static std::uint32_t QuantizeAxis(
+	    float value,
+	    float minValue,
+	    float maxValue,
+	    std::uint32_t partitionsPerAxis) noexcept;
+	static std::uint32_t ComputeGridPartitionId(
+	    const DirectX::XMFLOAT3& position,
+	    const SceneBounds& bounds,
+	    std::uint32_t partitionsPerAxis) noexcept;
+	static DirectX::XMFLOAT3 ComputeGridPartitionCenter(
+	    std::uint32_t partitionId,
+	    const SceneBounds& bounds,
+	    std::uint32_t partitionsPerAxis) noexcept;
+	static std::uint64_t ComputeGridPartitionCount(std::uint32_t partitionsPerAxis) noexcept;
+	static bool RequiresGlobalPartition(RayTracingPtlasPartitionUpdateMode updateMode) noexcept;
+	static float DistanceSquared(
+	    const DirectX::XMFLOAT3& lhs,
+	    const DirectX::XMFLOAT3& rhs) noexcept;
 	static bool IsTransformDirty(
 	    const DirectX::XMFLOAT4X4& current,
 	    const DirectX::XMFLOAT4X4& previous,

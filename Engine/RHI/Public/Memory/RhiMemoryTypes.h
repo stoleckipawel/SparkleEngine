@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../RHIAPI.h"
+
 #include <cstdint>
 #include <string_view>
 
@@ -23,43 +25,6 @@ enum class RhiMemoryResidencyClass : std::uint8_t
 	Transient,
 };
 
-constexpr std::string_view RhiMemoryCategoryName(RhiMemoryCategory category) noexcept
-{
-	switch (category)
-	{
-		case RhiMemoryCategory::Texture:
-			return "Texture";
-		case RhiMemoryCategory::Mesh:
-			return "Mesh";
-		case RhiMemoryCategory::RayTracing:
-			return "RayTracing";
-		case RhiMemoryCategory::TransientResource:
-			return "TransientResource";
-		case RhiMemoryCategory::Upload:
-			return "Upload";
-		case RhiMemoryCategory::Readback:
-			return "Readback";
-		case RhiMemoryCategory::ConstantBuffer:
-			return "ConstantBuffer";
-		case RhiMemoryCategory::Other:
-		default:
-			return "Other";
-	}
-}
-
-constexpr std::string_view RhiMemoryResidencyClassName(RhiMemoryResidencyClass residencyClass) noexcept
-{
-	switch (residencyClass)
-	{
-		case RhiMemoryResidencyClass::DeviceLocal:
-			return "DeviceLocal";
-		case RhiMemoryResidencyClass::HostUpload:
-			return "HostUpload";
-		case RhiMemoryResidencyClass::HostReadback:
-			return "HostReadback";
-		case RhiMemoryResidencyClass::Transient:
-			return "Transient";
-		default:
-			return "Unknown";
-	}
-}
+SPARKLE_RHI_API std::string_view RhiMemoryCategoryName(RhiMemoryCategory category) noexcept;
+SPARKLE_RHI_API std::string_view RhiMemoryResidencyClassName(
+    RhiMemoryResidencyClass residencyClass) noexcept;

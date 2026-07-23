@@ -4,14 +4,15 @@
 
 #include <cstdint>
 
-namespace
+class CookedSceneMetadataBuilderOperations final
 {
-	void AddFeatureFlag(std::uint32_t& flags, Assets::CookedSceneFeatureFlags flag) noexcept
+  public:
+	static void AddFeatureFlag(std::uint32_t& flags, Assets::CookedSceneFeatureFlags flag) noexcept
 	{
 		flags |= Assets::ToCookedSceneFeatureFlagMask(flag);
 	}
 
-	std::uint32_t BuildFeatureFlags(const SourceImportResult& importResult) noexcept
+	static std::uint32_t BuildFeatureFlags(const SourceImportResult& importResult) noexcept
 	{
 		std::uint32_t flags = 0;
 		if (!importResult.scene.cameras.empty())
@@ -76,9 +77,9 @@ namespace
 
 		return flags;
 	}
-}  // namespace
+};
 
 void CookedSceneMetadataBuilder::BuildMetadata(const SourceImportResult& importResult, CookedSceneBuild& outBuild)
 {
-	outBuild.manifest.header.featureFlags = BuildFeatureFlags(importResult);
+	outBuild.manifest.header.featureFlags = CookedSceneMetadataBuilderOperations::BuildFeatureFlags(importResult);
 }

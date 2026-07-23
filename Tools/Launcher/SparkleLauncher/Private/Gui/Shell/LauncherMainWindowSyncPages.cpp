@@ -58,8 +58,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		enum class LevelCatalogSection
 		{
 			None,
@@ -516,7 +515,7 @@ namespace SparkleLauncher
 			return detail;
 		}
 
-	}
+
 
 	void LauncherMainWindow::AddSyncDependencyBundles(QVBoxLayout& layout)
 	{

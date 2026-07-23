@@ -13,9 +13,10 @@
 #include <span>
 #include <vector>
 
-namespace
+class VulkanUploadServiceImplementation final
 {
-	constexpr VkDeviceSize TextureUploadAlignment = 4;
+  public:
+	static constexpr VkDeviceSize TextureUploadAlignment = 4;
 
 	struct TextureUploadRegion final
 	{
@@ -26,12 +27,12 @@ namespace
 		std::uint32_t ArrayLayer = 0;
 	};
 
-	VkDeviceSize AlignTextureUploadOffset(VkDeviceSize offset) noexcept
+	static VkDeviceSize AlignTextureUploadOffset(VkDeviceSize offset) noexcept
 	{
 		return (offset + TextureUploadAlignment - 1u) & ~(TextureUploadAlignment - 1u);
 	}
 
-	std::uint64_t CalculateTextureUploadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
+	static std::uint64_t CalculateTextureUploadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
 	{
 		VkDeviceSize offset = 0;
 		for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
@@ -45,7 +46,7 @@ namespace
 		return offset;
 	}
 
-	bool CopyTextureUploadData(
+	static bool CopyTextureUploadData(
 	    const RhiTextureUploadDesc& textureUpload,
 	    std::span<std::uint8_t> destination,
 	    std::vector<TextureUploadRegion>& regions) noexcept
@@ -76,7 +77,7 @@ namespace
 		}
 		return regions.size() == textureUpload.GetSubresourceCount();
 	}
-}
+};
 
 VulkanUploadService::VulkanUploadService(
     VulkanCommandContext& commandContext,
@@ -115,7 +116,7 @@ bool VulkanUploadService::UploadTexture(
 		return false;
 	}
 
-	const std::uint64_t uploadBufferBytes = CalculateTextureUploadBytes(textureUpload);
+	const std::uint64_t uploadBufferBytes = VulkanUploadServiceImplementation::CalculateTextureUploadBytes(textureUpload);
 	const VkBufferCreateInfo uploadBufferCreateInfo{
 	    .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 	    .pNext = nullptr,
@@ -136,9 +137,9 @@ bool VulkanUploadService::UploadTexture(
 	}
 
 	std::vector<std::uint8_t> uploadBytes(static_cast<std::size_t>(uploadBufferBytes));
-	std::vector<TextureUploadRegion> regions;
+	std::vector<VulkanUploadServiceImplementation::TextureUploadRegion> regions;
 	regions.reserve(textureUpload.GetSubresourceCount());
-	if (!CopyTextureUploadData(textureUpload, uploadBytes, regions) ||
+	if (!VulkanUploadServiceImplementation::CopyTextureUploadData(textureUpload, uploadBytes, regions) ||
 	    !m_memoryAllocator->WriteAllocation(*stagingResource, uploadBytes.data(), uploadBytes.size()))
 	{
 		return false;
@@ -172,7 +173,7 @@ bool VulkanUploadService::UploadTexture(
 
 	std::vector<VkBufferImageCopy> copyRegions;
 	copyRegions.reserve(regions.size());
-	for (const TextureUploadRegion& region : regions)
+	for (const VulkanUploadServiceImplementation::TextureUploadRegion& region : regions)
 	{
 		copyRegions.push_back(
 		    VkBufferImageCopy{

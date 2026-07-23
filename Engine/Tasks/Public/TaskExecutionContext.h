@@ -17,7 +17,7 @@ namespace TaskDetail
 class SPARKLE_TASKS_API TaskExecutionContext final
 {
   public:
-	TaskExecutionContext() noexcept = default;
+	TaskExecutionContext() noexcept;
 
 	template <typename T> explicit TaskExecutionContext(T& value) noexcept : m_userData(&value), m_userType(&typeid(T)) {}
 	template <typename T> explicit TaskExecutionContext(std::shared_ptr<T> value) noexcept :
@@ -63,11 +63,6 @@ namespace TaskDetail
 		    TaskExecutionContext& context,
 		    std::uint64_t generation,
 		    TaskLane lane,
-		    std::stop_token cancellation) noexcept
-		{
-			context.m_executionGeneration = generation;
-			context.m_lane = lane;
-			context.m_cancellation = cancellation;
-		}
+		    std::stop_token cancellation) noexcept;
 	};
 }

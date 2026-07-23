@@ -17,9 +17,10 @@
 #include <string>
 #include <vector>
 
-namespace
+class CookShadersCommandOperations final
 {
-	bool ContainsTarget(std::span<const ShaderTarget> targets, ShaderTarget target) noexcept
+  public:
+	static bool ContainsTarget(std::span<const ShaderTarget> targets, ShaderTarget target) noexcept
 	{
 		for (const ShaderTarget existingTarget : targets)
 		{
@@ -32,7 +33,7 @@ namespace
 		return false;
 	}
 
-	std::string FormatTargets(std::span<const ShaderTarget> targets)
+	static std::string FormatTargets(std::span<const ShaderTarget> targets)
 	{
 		std::string result;
 		for (std::size_t index = 0; index < targets.size(); ++index)
@@ -46,14 +47,14 @@ namespace
 		return result;
 	}
 
-	void AppendAnalysisPasses(std::string_view value, std::vector<std::string>& outPasses)
+	static void AppendAnalysisPasses(std::string_view value, std::vector<std::string>& outPasses)
 	{
 		for (const std::string_view token : Strings::Split(value, ',', false))
 		{
 			outPasses.emplace_back(token);
 		}
 	}
-}
+};
 
 void CookShadersCommand::PrintHelp(std::ostream& output)
 {
@@ -166,7 +167,7 @@ bool CookShadersCommand::TryParseArguments(
 				outSettings.targets.clear();
 				targetWasSpecified = true;
 			}
-			if (!ContainsTarget(outSettings.targets, parsed))
+			if (!CookShadersCommandOperations::ContainsTarget(outSettings.targets, parsed))
 			{
 				outSettings.targets.push_back(parsed);
 			}
@@ -208,7 +209,7 @@ bool CookShadersCommand::TryParseArguments(
 				return false;
 			}
 
-			AppendAnalysisPasses(args[index + 1], outSettings.analysisPasses);
+			CookShadersCommandOperations::AppendAnalysisPasses(args[index + 1], outSettings.analysisPasses);
 			++index;
 			continue;
 		}
@@ -373,7 +374,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	    {ToolConsole::Field("packages", std::to_string(cookResult.packages.size())),
 	     ToolConsole::PathField("packageRoot", Filesystem::GetCookedShaderPackageRootPath()),
 	     ToolConsole::PathField("registry", cookResult.registryPath),
-	     ToolConsole::QuotedField("targets", FormatTargets(settings.targets)),
+	     ToolConsole::QuotedField("targets", CookShadersCommandOperations::FormatTargets(settings.targets)),
 	     ToolConsole::PathField("recookSignal", cookResult.recookSignalPath),
 	     ToolConsole::Field("backendInvocations", std::to_string(cookResult.backendInvocationCount)),
 	     ToolConsole::Field("cacheHits", std::to_string(cookResult.cacheHitCount)),

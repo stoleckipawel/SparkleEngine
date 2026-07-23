@@ -2,9 +2,10 @@
 #include "Streamline/StreamlineResourceInterop.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-namespace
+class StreamlineResourceInteropOperations final
 {
-	sl::Resource BuildStreamlineTextureResource(
+  public:
+	static sl::Resource BuildStreamlineTextureResource(
 	    ERhiBackendApi backendApi,
 	    const NativeTextureViewInfo& view) noexcept
 	{
@@ -29,7 +30,7 @@ namespace
 		return resource;
 	}
 
-	sl::SubresourceRange BuildStreamlineSubresourceRange(const NativeTextureViewInfo& view) noexcept
+	static sl::SubresourceRange BuildStreamlineSubresourceRange(const NativeTextureViewInfo& view) noexcept
 	{
 		sl::SubresourceRange range{};
 		range.aspectMask = view.SubresourceAspectMask;
@@ -39,13 +40,13 @@ namespace
 		range.layerCount = view.SubresourceLayerCount;
 		return range;
 	}
-}
+};
 
 StreamlineTaggedTextureResource::StreamlineTaggedTextureResource(
     ERhiBackendApi backendApi,
     const NativeTextureViewInfo& view) noexcept :
-	m_resource(BuildStreamlineTextureResource(backendApi, view)),
-    m_subresourceRange(BuildStreamlineSubresourceRange(view))
+	m_resource(StreamlineResourceInteropOperations::BuildStreamlineTextureResource(backendApi, view)),
+    m_subresourceRange(StreamlineResourceInteropOperations::BuildStreamlineSubresourceRange(view))
 {
 	if (backendApi == ERhiBackendApi::Vulkan)
 	{

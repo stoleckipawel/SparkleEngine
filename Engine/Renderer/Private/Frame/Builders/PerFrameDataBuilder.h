@@ -4,13 +4,13 @@
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "ShaderData/PerFrameConstantBufferData.h"
 
-class Timer;
+struct TimeInfo;
 
 class PerFrameDataBuilder final
 {
   public:
-	PerFrameDataBuilder() noexcept = default;
-	~PerFrameDataBuilder() noexcept = default;
+	PerFrameDataBuilder() noexcept;
+	~PerFrameDataBuilder() noexcept;
 
 	PerFrameDataBuilder(const PerFrameDataBuilder&) = delete;
 	PerFrameDataBuilder& operator=(const PerFrameDataBuilder&) = delete;
@@ -18,7 +18,7 @@ class PerFrameDataBuilder final
 	PerFrameDataBuilder& operator=(PerFrameDataBuilder&&) = delete;
 
 	PerFrameConstantBufferData Build(
-	    const Timer& timer,
+	    const TimeInfo& timing,
 	    RenderViewMode viewMode,
 	    RenderViewportExtent sceneExtent) const noexcept;
 };

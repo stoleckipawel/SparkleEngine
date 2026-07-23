@@ -7,12 +7,13 @@
 
 #include <fstream>
 
-namespace
+class SceneAssetRegistryOperations final
 {
-	constexpr std::string_view kRegistryHeader = "[SceneAssetRegistry]";
-	constexpr std::string_view kEntriesHeader = "[Entries]";
+  public:
+	static constexpr std::string_view kRegistryHeader = "[SceneAssetRegistry]";
+	static constexpr std::string_view kEntriesHeader = "[Entries]";
 
-	bool TryParseRegistryEntry(std::string_view entryValue, std::string& outSceneAssetId, std::filesystem::path& outManifestRelativePath)
+	static bool TryParseRegistryEntry(std::string_view entryValue, std::string& outSceneAssetId, std::filesystem::path& outManifestRelativePath)
 	{
 		const std::size_t separatorIndex = entryValue.find('|');
 		if (separatorIndex == std::string_view::npos)
@@ -24,7 +25,7 @@ namespace
 		outManifestRelativePath = Strings::TrimCopy(entryValue.substr(separatorIndex + 1));
 		return !outSceneAssetId.empty() && !outManifestRelativePath.empty();
 	}
-}
+};
 
 namespace Assets
 {
@@ -56,13 +57,13 @@ namespace Assets
 				continue;
 			}
 
-			if (trimmedLine == kRegistryHeader)
+			if (trimmedLine == SceneAssetRegistryOperations::kRegistryHeader)
 			{
 				inEntriesSection = false;
 				continue;
 			}
 
-			if (trimmedLine == kEntriesHeader)
+			if (trimmedLine == SceneAssetRegistryOperations::kEntriesHeader)
 			{
 				inEntriesSection = true;
 				continue;
@@ -82,7 +83,7 @@ namespace Assets
 
 			std::string sceneAssetId;
 			std::filesystem::path manifestRelativePath;
-			if (!TryParseRegistryEntry(value, sceneAssetId, manifestRelativePath))
+			if (!SceneAssetRegistryOperations::TryParseRegistryEntry(value, sceneAssetId, manifestRelativePath))
 			{
 				outErrorMessage = "Failed to parse scene asset registry entry in '" + registryPath.string() + "'";
 				m_entries.clear();
@@ -114,9 +115,9 @@ namespace Assets
 			return false;
 		}
 
-		output << kRegistryHeader << "\n";
+		output << SceneAssetRegistryOperations::kRegistryHeader << "\n";
 		output << "Version = " << kSceneAssetRegistryVersion << "\n\n";
-		output << kEntriesHeader << "\n";
+		output << SceneAssetRegistryOperations::kEntriesHeader << "\n";
 		for (const auto& [sceneAssetId, manifestRelativePath] : m_entries)
 		{
 			output << "Entry = " << sceneAssetId << "|" << manifestRelativePath.generic_string() << "\n";

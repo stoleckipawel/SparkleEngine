@@ -15,9 +15,10 @@
 
 #include <objbase.h>
 
-namespace
+class AssetCookerSourceInspectionOperations final
 {
-	void PrintImportFeatureSummary(const std::filesystem::path& sourceScenePath, const SourceImportResult& importResult)
+  public:
+	static void PrintImportFeatureSummary(const std::filesystem::path& sourceScenePath, const SourceImportResult& importResult)
 	{
 		ToolConsole::Summary(
 		    std::cout,
@@ -35,7 +36,7 @@ namespace
 		     ToolConsole::Field("animations", std::to_string(importResult.GetAnimationCount()))});
 	}
 
-	void ConfigureProjectContextForSource(const std::filesystem::path& sourceScenePath)
+	static void ConfigureProjectContextForSource(const std::filesystem::path& sourceScenePath)
 	{
 		const std::filesystem::path searchRoot = sourceScenePath.has_parent_path() ? sourceScenePath.parent_path() : std::filesystem::current_path();
 		if (const std::optional<std::filesystem::path> projectRoot = Filesystem::FindAncestorWithMarker(searchRoot, Filesystem::kProjectMarker))
@@ -45,7 +46,7 @@ namespace
 	}
 
 	template <typename ImportedSceneHandler>
-	int RunWithImportedScene(const std::filesystem::path& sourceScenePath, ImportedSceneHandler&& importedSceneHandler)
+	static int RunWithImportedScene(const std::filesystem::path& sourceScenePath, ImportedSceneHandler&& importedSceneHandler)
 	{
 		ConfigureProjectContextForSource(sourceScenePath);
 
@@ -87,11 +88,11 @@ namespace
 
 		return exitCode;
 	}
-}
+};
 
 int AssetCookerSourceInspection::InspectSource(const std::filesystem::path& sourceScenePath)
 {
-	return RunWithImportedScene(
+	return AssetCookerSourceInspectionOperations::RunWithImportedScene(
 	    sourceScenePath,
 	    [](const SourceImportResult&) -> int
 	    {
@@ -103,7 +104,7 @@ int AssetCookerSourceInspection::CollectTextureRequests(
     const std::filesystem::path& sourceScenePath,
     const std::filesystem::path& outputRequestPath)
 {
-	return RunWithImportedScene(
+	return AssetCookerSourceInspectionOperations::RunWithImportedScene(
 	    sourceScenePath,
 	    [&](const SourceImportResult& importResult) -> int
 	    {

@@ -13,9 +13,10 @@ TRACELOGGING_DEFINE_PROVIDER(
     (0x109d07d6, 0xb67d, 0x4e26, 0x9f, 0xa2, 0x47, 0x96, 0xea, 0xe8, 0x14, 0x83));
 #endif
 
-namespace
+class TaskProfilerImplementation final
 {
-	const char* LaneName(TaskLane lane) noexcept
+  public:
+	static const char* LaneName(TaskLane lane) noexcept
 	{
 		switch (lane)
 		{
@@ -29,7 +30,7 @@ namespace
 		return "Invalid";
 	}
 
-	const char* OutcomeName(TaskOutcome outcome) noexcept
+	static const char* OutcomeName(TaskOutcome outcome) noexcept
 	{
 		switch (outcome)
 		{
@@ -50,9 +51,9 @@ namespace
 		~TaskProviderRegistration() { TraceLoggingUnregister(g_sparkleTasksProvider); }
 	};
 
-	TaskProviderRegistration g_taskProviderRegistration;
+	inline static TaskProviderRegistration g_taskProviderRegistration;
 #endif
-}
+};
 
 void TaskDetail::RecordTaskDependency(
     std::uint64_t generation,
@@ -93,7 +94,7 @@ TaskDetail::TaskProfileTimePoint TaskDetail::BeginTaskProfile(
 	    g_sparkleTasksProvider,
 	    "TaskBegin",
 	    TraceLoggingString(desc.Name.Get().data(), "Name"),
-	    TraceLoggingString(LaneName(desc.Lane), "Lane"),
+	    TraceLoggingString(TaskProfilerImplementation::LaneName(desc.Lane), "Lane"),
 	    TraceLoggingUInt64(generation, "Run"),
 	    TraceLoggingUInt32(taskIndex, "Task"),
 	    TraceLoggingUInt32(laneWorkerIndex, "Worker"));
@@ -127,12 +128,12 @@ void TaskDetail::EndTaskProfile(
 	    g_sparkleTasksProvider,
 	    "TaskEnd",
 	    TraceLoggingString(desc.Name.Get().data(), "Name"),
-	    TraceLoggingString(LaneName(desc.Lane), "Lane"),
+	    TraceLoggingString(TaskProfilerImplementation::LaneName(desc.Lane), "Lane"),
 	    TraceLoggingUInt64(generation, "Run"),
 	    TraceLoggingUInt32(taskIndex, "Task"),
 	    TraceLoggingUInt32(laneWorkerIndex, "Worker"),
 	    TraceLoggingInt64(duration, "DurationNs"),
-	    TraceLoggingString(OutcomeName(result.GetOutcome()), "Status"));
+	    TraceLoggingString(TaskProfilerImplementation::OutcomeName(result.GetOutcome()), "Status"));
 #else
 	(void)desc;
 	(void)generation;

@@ -11,8 +11,9 @@
 #include <objbase.h>
 #include <thread>
 
-namespace
+class TextureCookBatchExecutorImplementation final
 {
+  public:
 	class ScopedComInitializer final
 	{
 	  public:
@@ -38,11 +39,11 @@ namespace
 		HRESULT m_result = E_FAIL;
 	};
 
-	std::filesystem::path BuildStagedOutputPath(const std::filesystem::path& outputPath)
+	static std::filesystem::path BuildStagedOutputPath(const std::filesystem::path& outputPath)
 	{
 		return Files::BuildTemporaryPath(outputPath, ".cook-generation");
 	}
-}
+};
 
 TextureCookBatchExecutionResult TextureCookBatchExecutor::Execute(
     const std::vector<TextureCookRequest>& requests,
@@ -70,10 +71,10 @@ TextureCookBatchExecutionResult TextureCookBatchExecutor::Execute(
 		    {
 			    TextureCookBatchItemResult& itemResult = batchResult.Items[index];
 			    TextureCookRequest stagedRequest = requests[index];
-			    itemResult.StagedOutputPath = BuildStagedOutputPath(stagedRequest.outputPath);
+			    itemResult.StagedOutputPath = TextureCookBatchExecutorImplementation::BuildStagedOutputPath(stagedRequest.outputPath);
 			    stagedRequest.outputPath = itemResult.StagedOutputPath;
 			    Files::CleanupTemporaryFile(itemResult.StagedOutputPath);
-			    ScopedComInitializer com;
+			    TextureCookBatchExecutorImplementation::ScopedComInitializer com;
 			    if (!com.TryInitialize(itemResult.Diagnostic))
 				    return TaskResult::Failure(itemResult.Diagnostic);
 			    TextureAssetCooker cooker;

@@ -7,14 +7,15 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Upscaling/UpscalerProvider.h"
 
-namespace
+class UpscalerPassOperations final
 {
-	bool HasRequiredInputs(const UpscalerPassResources& inputs) noexcept
+  public:
+	static bool HasRequiredInputs(const UpscalerPassResources& inputs) noexcept
 	{
 		return inputs.InputColor.IsValid() && inputs.OutputColor.IsValid() && inputs.Depth.IsValid() &&
 		       inputs.MotionVectors.IsValid() && inputs.Exposure.IsValid();
 	}
-}
+};
 
 void AddUpscalerPass(
     FrameGraphBuilder& builder,
@@ -22,7 +23,7 @@ void AddUpscalerPass(
     RenderViewportExtent outputExtent,
     const UpscalerPassResources& inputs)
 {
-	if (!HasRequiredInputs(inputs))
+	if (!UpscalerPassOperations::HasRequiredInputs(inputs))
 	{
 		return;
 	}

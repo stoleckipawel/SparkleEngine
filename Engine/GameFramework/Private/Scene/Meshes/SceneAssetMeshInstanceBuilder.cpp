@@ -5,9 +5,10 @@
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/SkeletalCookedMesh.h"
 
-namespace
+class SceneAssetMeshInstanceBuilderOperations final
 {
-	MaterialHandle ResolveMaterial(
+  public:
+	static MaterialHandle ResolveMaterial(
 	    MaterialHandle payloadMaterial,
 	    MaterialHandle materialBaseHandle,
 	    MaterialResourceStore& materials) noexcept
@@ -17,14 +18,14 @@ namespace
 		           : materials.GetOrCreateDefault();
 	}
 
-	MaterialHandle ResolveOptionalMaterial(MaterialHandle payloadMaterial, MaterialHandle materialBaseHandle) noexcept
+	static MaterialHandle ResolveOptionalMaterial(MaterialHandle payloadMaterial, MaterialHandle materialBaseHandle) noexcept
 	{
 		return payloadMaterial.IsValid() && materialBaseHandle.IsValid()
 		           ? MaterialHandle(materialBaseHandle.GetIndex() + payloadMaterial.GetIndex(), materialBaseHandle.GetGeneration())
 		           : MaterialHandle::Invalid();
 	}
 
-	Assets::CookedAssetId ResolveGroupAsset(
+	static Assets::CookedAssetId ResolveGroupAsset(
 	    const SceneAssetPayload& payload,
 	    const SceneAssetPayload::MeshInstanceGroup& group) noexcept
 	{
@@ -38,7 +39,7 @@ namespace
 		           ? payload.staticMeshAssets[group.meshAssetIndex].assetId
 		           : Assets::InvalidCookedAssetId;
 	}
-}
+};
 
 namespace SceneAssetMeshInstanceBuilder
 {
@@ -64,7 +65,7 @@ namespace SceneAssetMeshInstanceBuilder
 			    ECS::SceneMeshInstanceData{
 			        .Resource = std::make_unique<CookedMesh>(MeshData(asset.mesh.geometry), asset.assetId),
 			        .LocalTransform = instance.transform,
-			        .Material = ResolveMaterial(instance.material, materialBaseHandle, materials),
+			        .Material = SceneAssetMeshInstanceBuilderOperations::ResolveMaterial(instance.material, materialBaseHandle, materials),
 			        .MeshAssetId = asset.assetId,
 			        .SourceInstanceId = payload.authoredInstanceId,
 			        .MeshAssetIndex = instance.meshAssetIndex,
@@ -88,7 +89,7 @@ namespace SceneAssetMeshInstanceBuilder
 			            asset.assetId,
 			            instance.morphWeights),
 			        .LocalTransform = instance.transform,
-			        .Material = ResolveMaterial(instance.material, materialBaseHandle, materials),
+			        .Material = SceneAssetMeshInstanceBuilderOperations::ResolveMaterial(instance.material, materialBaseHandle, materials),
 			        .MeshAssetId = asset.assetId,
 			        .SkeletonAssetId = instance.skeletonAssetId,
 			        .SourceInstanceId = payload.authoredInstanceId,
@@ -111,9 +112,9 @@ namespace SceneAssetMeshInstanceBuilder
 		{
 			groups.push_back(
 			    SceneMeshInstanceGroupData{
-			        .meshAssetId = ResolveGroupAsset(payload, source),
+			        .meshAssetId = SceneAssetMeshInstanceBuilderOperations::ResolveGroupAsset(payload, source),
 			        .meshAssetIndex = source.meshAssetIndex,
-			        .materialHandle = ResolveOptionalMaterial(source.material, materialBaseHandle),
+			        .materialHandle = SceneAssetMeshInstanceBuilderOperations::ResolveOptionalMaterial(source.material, materialBaseHandle),
 			        .firstInstance = source.firstInstance == kInvalidSceneMeshInstanceIndex
 			                             ? kInvalidSceneMeshInstanceIndex
 			                             : meshBaseIndex + source.firstInstance,

@@ -10,8 +10,7 @@
 
 namespace Assets
 {
-	namespace
-	{
+
 		bool HasFeatureFlag(std::uint32_t flags, CookedSceneFeatureFlags feature) noexcept
 		{
 			return (flags & ToCookedSceneFeatureFlagMask(feature)) != 0u;
@@ -374,7 +373,7 @@ namespace Assets
 
 			return true;
 		}
-	}
+
 
 	bool SceneManifestValidator::ValidateHeader(const LoadedSceneManifest& manifest, std::string& outErrorMessage)
 	{

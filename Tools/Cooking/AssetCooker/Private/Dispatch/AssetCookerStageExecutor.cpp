@@ -14,15 +14,16 @@
 #include <system_error>
 #include <utility>
 
-namespace
+class AssetCookerStageExecutorImplementation final
 {
-	bool FileExists(const std::filesystem::path& path)
+  public:
+	static bool FileExists(const std::filesystem::path& path)
 	{
 		std::error_code errorCode;
 		return std::filesystem::exists(path, errorCode);
 	}
 
-	std::filesystem::path ResolveToolPath(
+	static std::filesystem::path ResolveToolPath(
 	    const AssetCookerProjectCookPlan& plan, std::string_view executableName)
 	{
 		const std::string fileName = std::string(executableName) + ".exe";
@@ -32,7 +33,7 @@ namespace
 		                                  plan.repositoryRoot / "build" / "bin" / plan.toolConfiguration / fileName;
 	}
 
-	std::filesystem::path MakeTemporaryPath(
+	static std::filesystem::path MakeTemporaryPath(
 	    const AssetCookerProjectCookPlan& plan, std::string_view stem, std::string_view extension)
 	{
 		const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
@@ -59,7 +60,7 @@ namespace
 		std::filesystem::path m_path;
 	};
 
-	void AppendOutput(
+	static void AppendOutput(
 	    std::vector<AssetCookerOutputRecord>& outputs,
 	    AssetCookerCategory category,
 	    std::string assetId,
@@ -74,7 +75,7 @@ namespace
 		outputs.push_back(std::move(output));
 	}
 
-	bool RunShaders(
+	static bool RunShaders(
 	    const AssetCookerProjectCookPlan& plan,
 	    AssetCookerDiagnostics& diagnostics,
 	    std::vector<AssetCookerOutputRecord>& outputs)
@@ -101,7 +102,7 @@ namespace
 		return true;
 	}
 
-	bool RunTextures(
+	static bool RunTextures(
 	    const AssetCookerProjectCookPlan& plan,
 	    AssetCookerDiagnostics& diagnostics,
 	    std::vector<AssetCookerOutputRecord>& outputs)
@@ -143,7 +144,7 @@ namespace
 		return true;
 	}
 
-	bool RunSceneAssets(
+	static bool RunSceneAssets(
 	    const AssetCookerProjectCookPlan& plan,
 	    AssetCookerDiagnostics& diagnostics,
 	    std::vector<AssetCookerOutputRecord>& outputs)
@@ -205,7 +206,7 @@ namespace
 		    "Reload changed cooked materials.");
 		return true;
 	}
-}
+};
 
 const char* AssetCookerStageExecutor::GetStepName(AssetCookerPlanStep step) noexcept
 {
@@ -230,8 +231,8 @@ bool AssetCookerStageExecutor::ValidateCapabilities(
 	bool valid = true;
 	if (PlanUsesStep(plan, AssetCookerPlanStep::Shaders))
 	{
-		const std::filesystem::path compilerPath = ResolveToolPath(plan, "ShaderCompiler");
-		if (!FileExists(compilerPath))
+		const std::filesystem::path compilerPath = AssetCookerStageExecutorImplementation::ResolveToolPath(plan, "ShaderCompiler");
+		if (!AssetCookerStageExecutorImplementation::FileExists(compilerPath))
 		{
 			diagnostics.AddError(AssetCookerCategory_Shaders, "ShaderCompiler executable was not found.", compilerPath);
 			valid = false;
@@ -239,8 +240,8 @@ bool AssetCookerStageExecutor::ValidateCapabilities(
 	}
 	if (PlanUsesStep(plan, AssetCookerPlanStep::Textures))
 	{
-		const std::filesystem::path cookerPath = ResolveToolPath(plan, "TextureCooker");
-		if (!FileExists(cookerPath))
+		const std::filesystem::path cookerPath = AssetCookerStageExecutorImplementation::ResolveToolPath(plan, "TextureCooker");
+		if (!AssetCookerStageExecutorImplementation::FileExists(cookerPath))
 		{
 			diagnostics.AddError(AssetCookerCategory_Textures, "TextureCooker executable was not found.", cookerPath);
 			valid = false;
@@ -257,9 +258,9 @@ bool AssetCookerStageExecutor::Execute(
 {
 	switch (step)
 	{
-		case AssetCookerPlanStep::Shaders: return RunShaders(plan, diagnostics, outOutputs);
-		case AssetCookerPlanStep::Textures: return RunTextures(plan, diagnostics, outOutputs);
-		case AssetCookerPlanStep::SceneAssets: return RunSceneAssets(plan, diagnostics, outOutputs);
+		case AssetCookerPlanStep::Shaders: return AssetCookerStageExecutorImplementation::RunShaders(plan, diagnostics, outOutputs);
+		case AssetCookerPlanStep::Textures: return AssetCookerStageExecutorImplementation::RunTextures(plan, diagnostics, outOutputs);
+		case AssetCookerPlanStep::SceneAssets: return AssetCookerStageExecutorImplementation::RunSceneAssets(plan, diagnostics, outOutputs);
 		default: return false;
 	}
 }

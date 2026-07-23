@@ -11,8 +11,7 @@
 
 namespace TaskDetail
 {
-	namespace
-	{
+
 		struct SerialTaskState final
 		{
 			std::uint32_t RemainingPrerequisites = 0;
@@ -25,7 +24,7 @@ namespace TaskDetail
 			bool Terminal = false;
 			TaskResult AggregateResult = TaskResult::Success();
 		};
-	}
+
 
 	TaskResult InvokeTask(const CompiledTaskNode& node, TaskExecutionContext& context)
 	{

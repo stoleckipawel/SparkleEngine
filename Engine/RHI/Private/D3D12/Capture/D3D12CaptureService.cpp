@@ -7,9 +7,10 @@
 #include <d3d12.h>
 #include <wrl/client.h>
 
-namespace
+class D3D12CaptureServiceOperations final
 {
-	bool TryMapCaptureFormat(DXGI_FORMAT sourceFormat, RhiBmpSourceFormat& outFormat) noexcept
+  public:
+	static bool TryMapCaptureFormat(DXGI_FORMAT sourceFormat, RhiBmpSourceFormat& outFormat) noexcept
 	{
 		switch (sourceFormat)
 		{
@@ -29,7 +30,7 @@ namespace
 		}
 	}
 
-	void RecordCaptureTransition(
+	static void RecordCaptureTransition(
 	    ID3D12GraphicsCommandList* commandList,
 	    ID3D12Resource* resource,
 	    ResourceState before,
@@ -48,7 +49,7 @@ namespace
 		barrier.Transition.StateAfter = D3D12TypeConversions::ToResourceStates(after);
 		commandList->ResourceBarrier(1, &barrier);
 	}
-}
+};
 
 D3D12CaptureService::D3D12CaptureService(D3D12Rhi& rhi) noexcept : m_rhi(&rhi) {}
 
@@ -83,7 +84,7 @@ bool D3D12CaptureService::CaptureNativeTextureToBmp(
 		return false;
 	}
 	RhiBmpSourceFormat captureFormat = RhiBmpSourceFormat::Rgba8Unorm;
-	if (!TryMapCaptureFormat(sourceDesc.Format, captureFormat))
+	if (!D3D12CaptureServiceOperations::TryMapCaptureFormat(sourceDesc.Format, captureFormat))
 	{
 		return false;
 	}
@@ -132,7 +133,7 @@ bool D3D12CaptureService::CaptureNativeTextureToBmp(
 		return false;
 	}
 
-	RecordCaptureTransition(commandList.Get(), sourceResource, sourceState, ResourceState::CopySource);
+	D3D12CaptureServiceOperations::RecordCaptureTransition(commandList.Get(), sourceResource, sourceState, ResourceState::CopySource);
 
 	D3D12_TEXTURE_COPY_LOCATION sourceLocation{};
 	sourceLocation.pResource = sourceResource;
@@ -144,7 +145,7 @@ bool D3D12CaptureService::CaptureNativeTextureToBmp(
 	destinationLocation.PlacedFootprint = footprint;
 	commandList->CopyTextureRegion(&destinationLocation, 0, 0, 0, &sourceLocation, nullptr);
 
-	RecordCaptureTransition(commandList.Get(), sourceResource, ResourceState::CopySource, sourceState);
+	D3D12CaptureServiceOperations::RecordCaptureTransition(commandList.Get(), sourceResource, ResourceState::CopySource, sourceState);
 
 	if (FAILED(commandList->Close()))
 	{

@@ -6,8 +6,7 @@
 
 namespace Assets
 {
-	namespace
-	{
+
 		std::string AnimationNameToString(const CookedAnimationAssetHeader& header)
 		{
 			std::size_t length = 0;
@@ -18,7 +17,7 @@ namespace Assets
 			const std::string_view nameView(header.name, length);
 			return std::string(nameView);
 		}
-	}
+
 
 	AnimationClipResource BuildSceneAssetAnimation(
 	    const LoadedAnimationAsset& animationAsset,
@@ -48,7 +47,7 @@ namespace Assets
 		}
 
 		clip.keyframes.reserve(animationAsset.keyframes.size());
-		
+
 		for (const CookedAnimationKeyframeRecord& keyframe : animationAsset.keyframes)
 		{
 			clip.keyframes.push_back(

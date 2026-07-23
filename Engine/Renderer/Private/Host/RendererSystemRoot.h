@@ -26,13 +26,13 @@ class RhiImGuiRenderer;
 class RenderWorld;
 class TemporalDataBuilder;
 class TextureManager;
-class Timer;
 class Window;
+struct RendererBackendConfiguration;
 
 class RendererSystemRoot final
 {
   public:
-	RendererSystemRoot(Timer& timer, Window& window) noexcept;
+	RendererSystemRoot(Window& window, const RendererBackendConfiguration& backendConfiguration) noexcept;
 	~RendererSystemRoot() noexcept;
 
 	RendererSystemRoot(const RendererSystemRoot&) = delete;
@@ -40,7 +40,6 @@ class RendererSystemRoot final
 	RendererSystemRoot(RendererSystemRoot&&) = delete;
 	RendererSystemRoot& operator=(RendererSystemRoot&&) = delete;
 
-	Timer& GetTimer() noexcept { return *m_timer; }
 	Window& GetWindow() noexcept { return *m_window; }
 	const Window& GetWindow() const noexcept { return *m_window; }
 
@@ -78,10 +77,9 @@ class RendererSystemRoot final
 	void RefreshImageProviders() noexcept;
 
   private:
-	void InitializeCoreSystems() noexcept;
+	void InitializeCoreSystems(const RendererBackendConfiguration& backendConfiguration) noexcept;
 	void InitializeSceneSystems() noexcept;
 
-	Timer* m_timer = nullptr;
 	Window* m_window = nullptr;
 
 	std::unique_ptr<RendererBackendSystem> m_backend;

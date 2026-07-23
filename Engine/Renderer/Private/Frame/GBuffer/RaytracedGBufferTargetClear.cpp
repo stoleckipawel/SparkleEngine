@@ -7,9 +7,10 @@
 
 #include <array>
 
-namespace
+class RaytracedGBufferTargetClearOperations final
 {
-	auto GetRaytracedGBufferTargets(const GBufferRenderTargets& targets) noexcept
+  public:
+	static auto GetRaytracedGBufferTargets(const GBufferRenderTargets& targets) noexcept
 	{
 		return std::array{
 		    targets.BaseColor,
@@ -20,7 +21,7 @@ namespace
 		    targets.DeviceZ,
 		    targets.MotionVector};
 	}
-}
+};
 
 void AddRaytracedGBufferTargetClearPass(FrameGraphBuilder& builder, const GBufferRenderTargets& targets)
 {
@@ -29,14 +30,14 @@ void AddRaytracedGBufferTargetClearPass(FrameGraphBuilder& builder, const GBuffe
 	    EFrameGraphPassKind::Raster,
 	    [targets](PassResourceBuilder& resourceBuilder)
 	    {
-		    for (const FrameGraphTextureHandle target : GetRaytracedGBufferTargets(targets))
+		    for (const FrameGraphTextureHandle target : RaytracedGBufferTargetClearOperations::GetRaytracedGBufferTargets(targets))
 		    {
 			    resourceBuilder.Write(target, ResourceUsage::RenderTarget, "RaytracedGBufferTarget");
 		    }
 	    },
 	    [targets](PassExecutionContext& context)
 	    {
-		    for (const FrameGraphTextureHandle target : GetRaytracedGBufferTargets(targets))
+		    for (const FrameGraphTextureHandle target : RaytracedGBufferTargetClearOperations::GetRaytracedGBufferTargets(targets))
 		    {
 			    context.Resources.ClearRenderTarget(context.Commands, target);
 		    }

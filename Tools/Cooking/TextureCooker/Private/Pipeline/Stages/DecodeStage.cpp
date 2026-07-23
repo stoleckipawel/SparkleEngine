@@ -10,8 +10,7 @@
 
 namespace TextureCookPipeline
 {
-	namespace
-	{
+
 		bool DecodeMipLevel(
 		    const TextureMipLevelData& sourceMip,
 		    DXGI_FORMAT sourceFormat,
@@ -110,7 +109,7 @@ namespace TextureCookPipeline
 			return true;
 		}
 
-	}
+
 
 	bool BuildWorkingTexture(
 	    const TextureCookRequest& request,

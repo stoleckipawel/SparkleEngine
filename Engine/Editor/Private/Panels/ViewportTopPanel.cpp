@@ -13,9 +13,10 @@
 #include <cstdio>
 #include <string>
 
-namespace
+class ViewportTopPanelOperations final
 {
-	UiUtil::EditorIcon GetViewModeIcon(RenderViewMode viewMode) noexcept
+  public:
+	static UiUtil::EditorIcon GetViewModeIcon(RenderViewMode viewMode) noexcept
 	{
 		switch (viewMode)
 		{
@@ -57,7 +58,7 @@ namespace
 
 		return UiUtil::EditorIcon::ViewLit;
 	}
-}  // namespace
+};
 
 ViewportTopPanel::ViewportTopPanel(LevelManager* levelManager) noexcept
 {
@@ -135,7 +136,7 @@ void ViewportTopPanel::DrawViewModeCategory(const char* label) noexcept
 void ViewportTopPanel::DrawViewModeOption(RenderViewMode option, RenderViewMode currentViewMode) noexcept
 {
 	const bool selected = option == currentViewMode;
-	const std::string optionLabel = UiUtil::MakeIconLabel(GetViewModeIcon(option), GetViewModeLabel(option));
+	const std::string optionLabel = UiUtil::MakeIconLabel(ViewportTopPanelOperations::GetViewModeIcon(option), GetViewModeLabel(option));
 	if (ImGui::Selectable(optionLabel.c_str(), selected))
 	{
 		CVarRenderViewMode.Set(option);
@@ -174,7 +175,7 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(180.0f);
 	ImGui::BeginDisabled(disableInteraction);
-	const std::string previewLabel = UiUtil::MakeIconLabel(GetViewModeIcon(currentViewMode), GetViewModeLabel(currentViewMode));
+	const std::string previewLabel = UiUtil::MakeIconLabel(ViewportTopPanelOperations::GetViewModeIcon(currentViewMode), GetViewModeLabel(currentViewMode));
 	if (ImGui::BeginCombo("##ViewportViewMode", previewLabel.c_str()))
 	{
 		DrawViewModeOption(RenderViewMode::Lit, currentViewMode);

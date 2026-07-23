@@ -29,6 +29,11 @@ Window::~Window()
 	}
 }
 
+bool Window::ShouldStartFullscreen() noexcept
+{
+	return false;
+}
+
 void Window::RegisterWindowClass()
 {
 	WNDCLASSEXW wc{};
@@ -393,8 +398,8 @@ LRESULT Window::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
 void Window::OnSizeChanged(WPARAM sizeType, uint32_t width, uint32_t height)
 {
-	m_clientWidth = width;
-	m_clientHeight = height;
+	m_clientWidth.store(width, std::memory_order_release);
+	m_clientHeight.store(height, std::memory_order_release);
 
 	if (m_state != State::FullScreen)
 	{

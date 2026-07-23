@@ -12,9 +12,10 @@
 #include <limits>
 #include <utility>
 
-namespace
+class GltfSkinImporterOperations final
 {
-	std::uint32_t FindJointParentIndex(const cgltf_skin* skin, const cgltf_node* jointNode) noexcept
+  public:
+	static std::uint32_t FindJointParentIndex(const cgltf_skin* skin, const cgltf_node* jointNode) noexcept
 	{
 		if (skin == nullptr || jointNode == nullptr || jointNode->parent == nullptr)
 		{
@@ -31,7 +32,7 @@ namespace
 
 		return (std::numeric_limits<std::uint32_t>::max)();
 	}
-}  // namespace
+};
 
 ImportedSkinInfluence GltfSkinImporter::ReadSkinInfluence(
     const cgltf_accessor* joints,
@@ -100,7 +101,7 @@ ImportedSkeletonIndex GltfSkinImporter::ImportSkeleton(const cgltf_data* data, c
 		joint.name = jointNode != nullptr && jointNode->name != nullptr ? jointNode->name : std::format("Joint {}", jointIndex);
 		joint.sourceNodeIndex = jointNode != nullptr ? static_cast<std::uint32_t>(cgltf_node_index(data, jointNode))
 		                                             : (std::numeric_limits<std::uint32_t>::max)();
-		joint.parentJointIndex = FindJointParentIndex(skin, jointNode);
+		joint.parentJointIndex = GltfSkinImporterOperations::FindJointParentIndex(skin, jointNode);
 
 		const DirectX::XMMATRIX inverseBindMatrix =
 		    skin->inverse_bind_matrices != nullptr

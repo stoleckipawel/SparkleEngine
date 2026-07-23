@@ -26,7 +26,6 @@ VulkanCommandContext::VulkanCommandContext(VulkanRhi& rhi) : m_rhi(rhi)
 
 VulkanCommandContext::~VulkanCommandContext() noexcept
 {
-	m_rhi.WaitForIdle();
 	for (FrameState& frameState : m_frames)
 	{
 		DestroyFrameState(frameState);

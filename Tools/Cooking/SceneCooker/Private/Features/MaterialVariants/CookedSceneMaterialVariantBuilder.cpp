@@ -8,9 +8,10 @@
 #include <format>
 #include <string_view>
 
-namespace
+class CookedSceneMaterialVariantBuilderOperations final
 {
-	void CopyVariantName(std::string_view sourceName, char (&outName)[Assets::kCookedSceneMaterialVariantNameCapacity]) noexcept
+  public:
+	static void CopyVariantName(std::string_view sourceName, char (&outName)[Assets::kCookedSceneMaterialVariantNameCapacity]) noexcept
 	{
 		const std::size_t copyLength =
 		    (std::min)(sourceName.size(), static_cast<std::size_t>(Assets::kCookedSceneMaterialVariantNameCapacity - 1u));
@@ -20,7 +21,7 @@ namespace
 		}
 	}
 
-	Assets::CookedSceneMaterialVariantRecord BuildVariantRecord(const ImportedMaterialVariant& importedVariant)
+	static Assets::CookedSceneMaterialVariantRecord BuildVariantRecord(const ImportedMaterialVariant& importedVariant)
 	{
 		Assets::CookedSceneMaterialVariantRecord record;
 		CopyVariantName(importedVariant.name, record.name);
@@ -28,7 +29,7 @@ namespace
 		return record;
 	}
 
-	bool ResolveCookedMeshAssetIndex(
+	static bool ResolveCookedMeshAssetIndex(
 	    const SourceImportResult& importResult,
 	    const ImportedMaterialVariantMapping& importedMapping,
 	    std::uint32_t& outMeshAssetIndex,
@@ -52,7 +53,7 @@ namespace
 		return false;
 	}
 
-	bool BuildMappingRecord(
+	static bool BuildMappingRecord(
 	    const SourceImportResult& importResult,
 	    const CookedSceneBuild& build,
 	    const ImportedMaterialVariantMapping& importedMapping,
@@ -88,7 +89,7 @@ namespace
 		outRecord.materialAssetIndex = importedMapping.materialIndex;
 		return true;
 	}
-}  // namespace
+};
 
 bool CookedSceneMaterialVariantBuilder::BuildMaterialVariants(
     const SourceImportResult& importResult,
@@ -102,13 +103,13 @@ bool CookedSceneMaterialVariantBuilder::BuildMaterialVariants(
 
 	for (const ImportedMaterialVariant& importedVariant : importResult.scene.materialVariants)
 	{
-		outBuild.manifest.materialVariants.push_back(BuildVariantRecord(importedVariant));
+		outBuild.manifest.materialVariants.push_back(CookedSceneMaterialVariantBuilderOperations::BuildVariantRecord(importedVariant));
 	}
 
 	for (const ImportedMaterialVariantMapping& importedMapping : importResult.scene.materialVariantMappings)
 	{
 		Assets::CookedSceneMaterialVariantMappingRecord record;
-		if (!BuildMappingRecord(importResult, outBuild, importedMapping, record, outErrorMessage))
+		if (!CookedSceneMaterialVariantBuilderOperations::BuildMappingRecord(importResult, outBuild, importedMapping, record, outErrorMessage))
 		{
 			return false;
 		}

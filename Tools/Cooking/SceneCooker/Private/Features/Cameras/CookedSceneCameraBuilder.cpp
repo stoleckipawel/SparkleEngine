@@ -5,9 +5,10 @@
 #include <algorithm>
 #include <cstring>
 
-namespace
+class CookedSceneCameraBuilderOperations final
 {
-	Assets::CookedSceneCameraProjectionKind ToCookedCameraProjectionKind(ImportedCameraProjectionKind projectionKind) noexcept
+  public:
+	static Assets::CookedSceneCameraProjectionKind ToCookedCameraProjectionKind(ImportedCameraProjectionKind projectionKind) noexcept
 	{
 		switch (projectionKind)
 		{
@@ -21,7 +22,7 @@ namespace
 		}
 	}
 
-	Assets::CookedSceneCameraRecord BuildCameraRecord(const ImportedCamera& importedCamera)
+	static Assets::CookedSceneCameraRecord BuildCameraRecord(const ImportedCamera& importedCamera)
 	{
 		Assets::CookedSceneCameraRecord cameraRecord;
 		const std::size_t copyLength =
@@ -38,7 +39,7 @@ namespace
 		cameraRecord.sourceNodeIndex = importedCamera.sourceNodeIndex;
 		return cameraRecord;
 	}
-}  // namespace
+};
 
 void CookedSceneCameraBuilder::BuildCameras(const SourceImportResult& importResult, CookedSceneBuild& outBuild)
 {
@@ -47,6 +48,6 @@ void CookedSceneCameraBuilder::BuildCameras(const SourceImportResult& importResu
 
 	for (const ImportedCamera& importedCamera : importResult.scene.cameras)
 	{
-		outBuild.manifest.cameras.push_back(BuildCameraRecord(importedCamera));
+		outBuild.manifest.cameras.push_back(CookedSceneCameraBuilderOperations::BuildCameraRecord(importedCamera));
 	}
 }

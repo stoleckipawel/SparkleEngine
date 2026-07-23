@@ -5,17 +5,18 @@
 
 #include <algorithm>
 
-namespace
+class PathTracedLightingSettingsConstants final
 {
-	constexpr std::uint32_t MaxSupportedSamplesPerPixel = 4096u;
-	constexpr std::uint32_t MaxSupportedBounceCount = 16u;
-}
+  public:
+	static constexpr std::uint32_t MaxSupportedSamplesPerPixel = 4096u;
+	static constexpr std::uint32_t MaxSupportedBounceCount = 16u;
+};
 
 PathTracedLightingSettings BuildPathTracedLightingSettings() noexcept
 {
 	return PathTracedLightingSettings{
-	    .SamplesPerPixel = std::clamp(CVarPathTracedLightingSamplesPerPixel.Get(), 1u, MaxSupportedSamplesPerPixel),
-	    .BounceCount = std::clamp(CVarPathTracedLightingBounceCount.Get(), 1u, MaxSupportedBounceCount),
+	    .SamplesPerPixel = std::clamp(CVarPathTracedLightingSamplesPerPixel.Get(), 1u, PathTracedLightingSettingsConstants::MaxSupportedSamplesPerPixel),
+	    .BounceCount = std::clamp(CVarPathTracedLightingBounceCount.Get(), 1u, PathTracedLightingSettingsConstants::MaxSupportedBounceCount),
 	    .NormalBias = std::max(CVarPathTracedLightingNormalBias.Get(), 0.0f),
 	    .MaxDistance = std::max(CVarPathTracedLightingMaxDistance.Get(), 0.001f)};
 }

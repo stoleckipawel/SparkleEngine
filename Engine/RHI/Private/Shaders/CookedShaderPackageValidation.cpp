@@ -17,13 +17,11 @@
 #include "CookedShaderBindingValidation.h"
 #include "CookedShaderBindingRules.h"
 
-namespace
+class CookedShaderPackageValidationImplementation final
 {
-	constexpr std::array<ShaderStage, 6> kKnownShaderStages =
+  public:
+	static constexpr std::array<ShaderStage, 6> kKnownShaderStages =
 	    {ShaderStage::Vertex, ShaderStage::Pixel, ShaderStage::Geometry, ShaderStage::Hull, ShaderStage::Domain, ShaderStage::Compute};
-
-	using CookedShaderBindingRules::HasAllStages;
-	using CookedShaderBindingRules::ToPackageStageMask;
 
 	class CookedShaderPackageValidator final
 	{
@@ -209,7 +207,7 @@ namespace
 
 		bool ValidateDeclaredStages()
 		{
-			if (HasAllStages(m_package.GetHeader().DeclaredStages, m_definition.ExpectedStages))
+			if (CookedShaderBindingRules::HasAllStages(m_package.GetHeader().DeclaredStages, m_definition.ExpectedStages))
 			{
 				return true;
 			}
@@ -260,7 +258,7 @@ namespace
 			                     bindingRecord.SemanticKind == expectedParameter.Kind &&
 			                     bindingRecord.ResourceDomain == expectedParameter.ResourceDomain &&
 			                     bindingRecord.Access == expectedParameter.Access &&
-			                     bindingRecord.VisibilityMask == ToPackageStageMask(expectedParameter.Visibility) &&
+			                     bindingRecord.VisibilityMask == CookedShaderBindingRules::ToPackageStageMask(expectedParameter.Visibility) &&
 			                     bindingRecord.ArrayCount == expectedParameter.ArrayCount &&
 			                     bindingRecord.ValueSizeInBytes == expectedParameter.ValueSizeInBytes;
 			if (matches)
@@ -329,7 +327,9 @@ namespace
 				    m_definition.PackageId,
 				    static_cast<std::uint32_t>(binaryRecord.Stage)));
 			}
-			if (!HasAllStages(m_package.GetHeader().DeclaredStages, ToShaderStageMask(binaryRecord.Stage)))
+			if (!CookedShaderBindingRules::HasAllStages(
+			        m_package.GetHeader().DeclaredStages,
+			        ToShaderStageMask(binaryRecord.Stage)))
 			{
 				return Reject(std::format(
 				    "Cooked shader package '{}' contains a stage record outside its declared stage mask", m_definition.PackageId));
@@ -359,7 +359,7 @@ namespace
 		{
 			for (const ShaderStage stage : kKnownShaderStages)
 			{
-				if (!HasAllStages(m_definition.ExpectedStages, ToShaderStageMask(stage)) ||
+				if (!CookedShaderBindingRules::HasAllStages(m_definition.ExpectedStages, ToShaderStageMask(stage)) ||
 				    availableStages[static_cast<std::size_t>(stage)])
 				{
 					continue;
@@ -384,7 +384,7 @@ namespace
 		std::uint64_t m_expectedBindingLayoutHash;
 		std::string& m_errorMessage;
 	};
-}
+};
 
 bool CookedShaderPackageCache::ValidatePackage(
     const LoadedShaderPackage& package,
@@ -393,7 +393,7 @@ bool CookedShaderPackageCache::ValidatePackage(
     CookedShaderBinaryFormat requiredBinaryFormat,
     std::string& outErrorMessage)
 {
-	return CookedShaderPackageValidator(
+	return CookedShaderPackageValidationImplementation::CookedShaderPackageValidator(
 	           package, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage)
 	    .Validate();
 }

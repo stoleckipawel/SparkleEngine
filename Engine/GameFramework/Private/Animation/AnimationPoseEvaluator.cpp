@@ -6,15 +6,16 @@
 
 #include <algorithm>
 
-namespace
+class AnimationPoseEvaluatorOperations final
 {
-	DirectX::XMMATRIX Compose(const ECS::AnimationJointTransform& transform) noexcept
+  public:
+	static DirectX::XMMATRIX Compose(const ECS::AnimationJointTransform& transform) noexcept
 	{
 		return DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&transform.Scale)) *
 		       DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.Rotation)) *
 		       DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&transform.Translation));
 	}
-}
+};
 
 namespace AnimationPoseEvaluator
 {
@@ -53,7 +54,7 @@ namespace AnimationPoseEvaluator
 		}
 		for (std::size_t jointIndex = 0; jointIndex < localTransforms.size(); ++jointIndex)
 		{
-			DirectX::XMMATRIX model = Compose(localTransforms[jointIndex]);
+			DirectX::XMMATRIX model = AnimationPoseEvaluatorOperations::Compose(localTransforms[jointIndex]);
 			const std::uint32_t parent = skeleton.Resource->joints[jointIndex].parentJointIndex;
 			if (parent < modelSpaceTransforms.size())
 				model *= DirectX::XMLoadFloat4x4(&modelSpaceTransforms[parent]);

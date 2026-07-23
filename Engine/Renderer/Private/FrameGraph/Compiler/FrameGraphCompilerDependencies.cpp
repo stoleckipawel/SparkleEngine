@@ -7,9 +7,10 @@
 #include <string_view>
 #include <vector>
 
-namespace
+class FrameGraphCompilerDependenciesOperations final
 {
-	void AddRawDependency(std::vector<FrameGraphPassIndex>& dependsOn, FrameGraphPassIndex dependency) noexcept
+  public:
+	static void AddRawDependency(std::vector<FrameGraphPassIndex>& dependsOn, FrameGraphPassIndex dependency) noexcept
 	{
 		if (dependency == INVALID_FRAME_GRAPH_PASS_INDEX)
 		{
@@ -19,7 +20,7 @@ namespace
 		dependsOn.push_back(dependency);
 	}
 
-	void RegisterVersionReader(FrameGraphResourceVersion& version, FrameGraphPassIndex readerPass) noexcept
+	static void RegisterVersionReader(FrameGraphResourceVersion& version, FrameGraphPassIndex readerPass) noexcept
 	{
 		if (readerPass == INVALID_FRAME_GRAPH_PASS_INDEX)
 		{
@@ -32,7 +33,7 @@ namespace
 			version.readerPasses.push_back(readerPass);
 		}
 	}
-}  // namespace
+};
 
 void FrameGraphCompiler::BuildResourceVersionGraph() noexcept
 {
@@ -322,10 +323,10 @@ void FrameGraphCompiler::RegisterReadDependency(FrameGraphPassNode& passRecord, 
 	FrameGraphResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
 	if (currentVersion.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && currentVersion.writerPass != passRecord.index)
 	{
-		AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
+		FrameGraphCompilerDependenciesOperations::AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
 	}
 
-	RegisterVersionReader(currentVersion, passRecord.index);
+	FrameGraphCompilerDependenciesOperations::RegisterVersionReader(currentVersion, passRecord.index);
 }
 
 void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept
@@ -333,7 +334,7 @@ void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord,
 	const FrameGraphResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
 	if (currentVersion.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && currentVersion.writerPass != passRecord.index)
 	{
-		AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
+		FrameGraphCompilerDependenciesOperations::AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
 	}
 
 	for (const FrameGraphPassIndex readerPass : currentVersion.readerPasses)
@@ -343,7 +344,7 @@ void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord,
 			continue;
 		}
 
-		AddRawDependency(passRecord.dependsOn, readerPass);
+		FrameGraphCompilerDependenciesOperations::AddRawDependency(passRecord.dependsOn, readerPass);
 	}
 
 	resource.currentVersion = static_cast<std::uint32_t>(resource.versions.size());

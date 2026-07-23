@@ -19,10 +19,4 @@ static_assert(std::is_standard_layout_v<SkyUniformData>);
 static_assert(std::is_trivially_copyable_v<SkyUniformData>);
 static_assert(sizeof(SkyUniformData) == 32);
 
-inline SkyUniformData MakeSkyUniformData(const RenderSkyData& sky) noexcept
-{
-	return SkyUniformData{
-	    .Color = sky.color,
-	    .Intensity = sky.intensity,
-	    .Enabled = sky.enabled ? 1u : 0u};
-}
+SkyUniformData MakeSkyUniformData(const RenderSkyData& sky) noexcept;

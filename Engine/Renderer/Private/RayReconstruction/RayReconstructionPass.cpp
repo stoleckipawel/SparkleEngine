@@ -7,16 +7,17 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
 
-namespace
+class RayReconstructionPassOperations final
 {
-	bool HasRequiredInputs(const RayReconstructionPassResources& inputs) noexcept
+  public:
+	static bool HasRequiredInputs(const RayReconstructionPassResources& inputs) noexcept
 	{
 		return inputs.NoisyInputColor.IsValid() && inputs.OutputColor.IsValid() && inputs.Depth.IsValid() &&
 		       inputs.MotionVectors.IsValid() && inputs.Exposure.IsValid() && inputs.Normals.IsValid() &&
 		       inputs.Roughness.IsValid() && inputs.DiffuseAlbedo.IsValid() && inputs.SpecularAlbedo.IsValid() &&
 		       inputs.SpecularHitDistance.IsValid();
 	}
-}
+};
 
 void AddRayReconstructionPass(
     FrameGraphBuilder& builder,
@@ -25,7 +26,7 @@ void AddRayReconstructionPass(
     RenderViewportExtent outputExtent,
     const RayReconstructionPassResources& providerInputs)
 {
-	if (!HasRequiredInputs(providerInputs))
+	if (!RayReconstructionPassOperations::HasRequiredInputs(providerInputs))
 	{
 		return;
 	}

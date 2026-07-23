@@ -4,8 +4,9 @@
 #include <fstream>
 #include <vector>
 
-namespace
+class RhiBmpWriterImplementation final
 {
+  public:
 #pragma pack(push, 1)
 	struct BmpFileHeader final
 	{
@@ -32,13 +33,13 @@ namespace
 	};
 #pragma pack(pop)
 
-	std::byte ToByte(float value) noexcept
+	static std::byte ToByte(float value) noexcept
 	{
 		const float clamped = std::clamp(value, 0.0f, 1.0f);
 		return static_cast<std::byte>(static_cast<std::uint32_t>(clamped * 255.0f + 0.5f));
 	}
 
-	bool ConvertPixel(
+	static bool ConvertPixel(
 	    const std::byte* sourcePixel,
 	    RhiBmpSourceFormat sourceFormat,
 	    std::byte* outputPixel) noexcept
@@ -76,11 +77,11 @@ namespace
 		return false;
 	}
 
-	std::uint32_t GetSourcePixelStride(RhiBmpSourceFormat sourceFormat) noexcept
+	static std::uint32_t GetSourcePixelStride(RhiBmpSourceFormat sourceFormat) noexcept
 	{
 		return sourceFormat == RhiBmpSourceFormat::Rgba32Float ? 16u : 4u;
 	}
-}
+};
 
 bool WriteRhiBmp(
     const std::filesystem::path& outputPath,
@@ -105,7 +106,7 @@ bool WriteRhiBmp(
 		}
 	}
 
-	const std::uint32_t sourcePixelStride = GetSourcePixelStride(sourceFormat);
+	const std::uint32_t sourcePixelStride = RhiBmpWriterImplementation::GetSourcePixelStride(sourceFormat);
 	const std::uint32_t outputRowPitch = width * 4u;
 	std::vector<std::byte> outputPixels(static_cast<std::size_t>(outputRowPitch) * height);
 	for (std::uint32_t y = 0; y < height; ++y)
@@ -116,15 +117,15 @@ bool WriteRhiBmp(
 		{
 			const std::byte* sourcePixel = sourceRow + static_cast<std::size_t>(x) * sourcePixelStride;
 			std::byte* outputPixel = outputRow + static_cast<std::size_t>(x) * 4u;
-			if (!ConvertPixel(sourcePixel, sourceFormat, outputPixel))
+			if (!RhiBmpWriterImplementation::ConvertPixel(sourcePixel, sourceFormat, outputPixel))
 			{
 				return false;
 			}
 		}
 	}
 
-	BmpFileHeader fileHeader{};
-	BmpInfoHeader infoHeader{};
+	RhiBmpWriterImplementation::BmpFileHeader fileHeader{};
+	RhiBmpWriterImplementation::BmpInfoHeader infoHeader{};
 	infoHeader.Width = static_cast<std::int32_t>(width);
 	infoHeader.Height = -static_cast<std::int32_t>(height);
 	infoHeader.SizeImage = static_cast<std::uint32_t>(outputPixels.size());

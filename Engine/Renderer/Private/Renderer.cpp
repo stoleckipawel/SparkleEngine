@@ -1,162 +1,119 @@
 #include "PCH.h"
 #include "Renderer.h"
 
-#include "FramePipeline/FramePipeline.h"
-#include "Host/RendererSystemRoot.h"
-#include "RHI/Public/Device/RenderDeviceServices.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Core/Public/Threading/ThreadOwnership.h"
+#include "Concurrency/Coordinator/RenderCoordinator.h"
+#include "Integrations/RendererExternalRuntime.h"
 
-class RendererState final
+class RendererFacadeState final
 {
   public:
-	RendererState(Timer& timer, Window& window) noexcept
+	RendererFacadeState(Timer& timer, Window& window, RendererExecutionConfig config) :
+	    Coordinator(timer, window, config, ExternalRuntime.GetBackendConfiguration())
 	{
-		m_systems = std::make_unique<RendererSystemRoot>(timer, window);
-		m_pipeline = std::make_unique<FramePipeline>(*m_systems);
-		m_systems->PostLoad();
 	}
 
-	~RendererState() noexcept { m_owner.AssertAccess(); }
-
-	RendererSystemRoot& Systems(std::source_location location = std::source_location::current()) noexcept
-	{
-		m_owner.AssertAccess(location);
-		return *m_systems;
-	}
-
-	const RendererSystemRoot& Systems(std::source_location location = std::source_location::current()) const noexcept
-	{
-		m_owner.AssertAccess(location);
-		return *m_systems;
-	}
-
-	FramePipeline& Pipeline(std::source_location location = std::source_location::current()) noexcept
-	{
-		m_owner.AssertAccess(location);
-		return *m_pipeline;
-	}
-
-	const FramePipeline& Pipeline(std::source_location location = std::source_location::current()) const noexcept
-	{
-		m_owner.AssertAccess(location);
-		return *m_pipeline;
-	}
-
-  private:
-	Threading::OwnerThread m_owner{"Renderer"};
-	std::unique_ptr<RendererSystemRoot> m_systems;
-	std::unique_ptr<FramePipeline> m_pipeline;
+	RendererExternalRuntime ExternalRuntime;
+	RenderCoordinator Coordinator;
 };
 
-Renderer::Renderer(Timer& timer, Window& window) noexcept
+Renderer::Renderer(Timer& timer, Window& window, RendererExecutionConfig config) noexcept :
+    m_state(std::make_unique<RendererFacadeState>(timer, window, config))
 {
-	m_state = std::make_unique<RendererState>(timer, window);
 }
 
 Renderer::~Renderer() noexcept = default;
 
 void Renderer::SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept
 {
-	m_state->Pipeline().SubmitViewportRenderRequest(request);
+	m_state->Coordinator.SubmitViewportRequest(request);
 }
 
-const ViewportRenderProducts& Renderer::GetViewportRenderProducts() const noexcept
+ViewportRenderProducts Renderer::GetViewportRenderProducts() const
 {
-	return m_state->Pipeline().GetViewportRenderProducts();
+	return m_state->Coordinator.GetViewportRenderProducts();
 }
 
 RhiImGuiRenderer& Renderer::GetImGuiRenderer() noexcept
 {
-	return m_state->Systems().GetImGuiRenderer();
+	return m_state->Coordinator.GetSerialImGuiRenderer();
 }
 
 CookedShaderReloadResult Renderer::ReloadCookedShaders() noexcept
 {
-	return m_state->Systems().ReloadCookedShaders();
+	return m_state->Coordinator.ReloadCookedShaders();
 }
 
 std::uint64_t Renderer::GetShaderPackageGeneration() const noexcept
 {
-	return m_state->Systems().GetShaderPackageGeneration();
+	return m_state->Coordinator.GetShaderPackageGeneration();
 }
 
 MeshDiagnosticsSnapshot Renderer::CaptureMeshDiagnostics() const
 {
-	return m_state->Systems().CaptureMeshDiagnostics();
+	return m_state->Coordinator.CaptureMeshDiagnostics();
 }
 
 TextureDiagnosticsSnapshot Renderer::CaptureTextureDiagnostics() const
 {
-	return m_state->Systems().CaptureTextureDiagnostics();
+	return m_state->Coordinator.CaptureTextureDiagnostics();
 }
 
 RendererMemoryDiagnosticsSnapshot Renderer::CaptureMemoryDiagnostics() const
 {
-	return m_state->Systems().CaptureMemoryDiagnostics();
+	return m_state->Coordinator.CaptureMemoryDiagnostics();
 }
 
-void Renderer::PrepareHostFrame() noexcept
+void Renderer::RenderSerialUiFrame(RendererSerialUiCallback composeUi, void* context) noexcept
 {
-	m_state->Pipeline().PrepareHostFrame();
-}
-
-void Renderer::RecordHostFrame() noexcept
-{
-	m_state->Pipeline().RecordHostFrame();
-}
-
-void Renderer::SubmitHostFrame() noexcept
-{
-	m_state->Pipeline().SubmitHostFrame();
+	m_state->Coordinator.RenderSerialUiFrame(composeUi, context);
 }
 
 MeshPreviewGeometry Renderer::CaptureMeshPreview(std::uintptr_t meshRuntimeId) const
 {
-	return m_state->Systems().CaptureMeshPreview(meshRuntimeId);
+	return m_state->Coordinator.CaptureMeshPreview(meshRuntimeId);
 }
 
 void Renderer::SubmitRenderInput(RenderInputFrame input) noexcept
 {
-	m_state->Pipeline().SubmitRenderInput(std::move(input));
+	m_state->Coordinator.StageRenderInput(std::move(input));
 }
 
 void Renderer::WaitForIdle() noexcept
 {
-	m_state->Systems().GetBackend().WaitForIdle();
+	m_state->Coordinator.WaitForIdle();
 }
 
 void Renderer::BeginHostPresentation(const float clearColor[4]) noexcept
 {
-	m_state->Systems().GetRenderHardwareInterface().GetPresentationService().BeginPresentRenderPass(clearColor);
+	m_state->Coordinator.BeginSerialHostPresentation(clearColor);
 }
 
 void Renderer::BeginHostOverlayPresentation() noexcept
 {
-	m_state->Systems().GetRenderHardwareInterface().GetPresentationService().BeginPresentOverlayPass();
+	m_state->Coordinator.BeginSerialHostOverlayPresentation();
 }
 
 void Renderer::EndHostPresentation() noexcept
 {
-	m_state->Systems().GetRenderHardwareInterface().GetPresentationService().EndPresentRenderPass();
+	m_state->Coordinator.EndSerialHostPresentation();
 }
 
 ViewportPresentationProduct Renderer::BeginViewportPresentation(RenderOutputFlags output) noexcept
 {
-	return m_state->Pipeline().BeginViewportPresentation(output);
+	return m_state->Coordinator.BeginSerialViewportPresentation(output);
 }
 
 void Renderer::EndViewportPresentation(RenderOutputFlags output) noexcept
 {
-	m_state->Pipeline().EndViewportPresentation(output);
+	m_state->Coordinator.EndSerialViewportPresentation(output);
 }
 
 ViewportCaptureResult Renderer::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
 {
-	return m_state->Pipeline().CaptureViewportProductToBmp(request);
+	return m_state->Coordinator.CaptureViewportProductToBmp(request);
 }
 
 void Renderer::OnRender() noexcept
 {
-	m_state->Pipeline().OnRender();
+	m_state->Coordinator.RenderFrame();
 }

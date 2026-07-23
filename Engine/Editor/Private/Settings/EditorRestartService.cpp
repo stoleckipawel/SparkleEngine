@@ -10,9 +10,10 @@
 #include <string>
 #include <vector>
 
-namespace
+class EditorRestartServiceOperations final
 {
-	std::wstring QuoteCommandLineArgument(const std::wstring& argument)
+  public:
+	static std::wstring QuoteCommandLineArgument(const std::wstring& argument)
 	{
 		const bool needsQuotes = argument.find_first_of(L" \t\"") != std::wstring::npos;
 		if (!needsQuotes)
@@ -35,7 +36,7 @@ namespace
 		return result;
 	}
 
-	std::wstring BuildRelaunchCommandLine(const std::filesystem::path& executablePath)
+	static std::wstring BuildRelaunchCommandLine(const std::filesystem::path& executablePath)
 	{
 		int argumentCount = 0;
 		LPWSTR* arguments = CommandLineToArgvW(GetCommandLineW(), &argumentCount);
@@ -54,12 +55,12 @@ namespace
 		LocalFree(arguments);
 		return result;
 	}
-}
+};
 
 bool EditorRestartService::Restart(Window& hostWindow) const
 {
 	const std::filesystem::path executablePath = Filesystem::GetExecutablePath();
-	const std::wstring commandLine = BuildRelaunchCommandLine(executablePath);
+	const std::wstring commandLine = EditorRestartServiceOperations::BuildRelaunchCommandLine(executablePath);
 	std::vector<wchar_t> mutableCommandLine(commandLine.begin(), commandLine.end());
 	mutableCommandLine.push_back(L'\0');
 

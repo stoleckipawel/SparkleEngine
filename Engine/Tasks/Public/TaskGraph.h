@@ -21,11 +21,11 @@ class TaskExecutor;
 class SPARKLE_TASKS_API TaskNodeHandle final
 {
   public:
-	TaskNodeHandle() noexcept = default;
+	TaskNodeHandle() noexcept;
 
 	bool IsValid() const noexcept { return m_indexPlusOne != 0; }
 	explicit operator bool() const noexcept { return IsValid(); }
-	bool operator==(const TaskNodeHandle&) const noexcept = default;
+	bool operator==(const TaskNodeHandle&) const noexcept;
 
   private:
 	friend class TaskGraphBuilder;
@@ -33,10 +33,7 @@ class SPARKLE_TASKS_API TaskNodeHandle final
 	friend class TaskExecutor;
 	friend struct TaskDetail::TaskGraphAccess;
 
-	TaskNodeHandle(std::uint64_t builderIdentity, std::uint32_t builderGeneration, std::uint32_t index) noexcept :
-	    m_builderIdentity(builderIdentity), m_builderGeneration(builderGeneration), m_indexPlusOne(index + 1u)
-	{
-	}
+	TaskNodeHandle(std::uint64_t builderIdentity, std::uint32_t builderGeneration, std::uint32_t index) noexcept;
 
 	std::uint64_t m_builderIdentity = 0;
 	std::uint32_t m_builderGeneration = 0;
@@ -83,7 +80,7 @@ struct TaskGraphError final
 class SPARKLE_TASKS_API CompiledTaskGraph final
 {
   public:
-	CompiledTaskGraph() noexcept = default;
+	CompiledTaskGraph() noexcept;
 
 	bool IsValid() const noexcept;
 	explicit operator bool() const noexcept { return IsValid(); }

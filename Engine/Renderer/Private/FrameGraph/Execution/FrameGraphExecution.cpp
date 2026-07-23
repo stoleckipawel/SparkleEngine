@@ -11,11 +11,12 @@
 #include <format>
 #include <string>
 
-namespace
+class FrameGraphExecutionOperations final
 {
-	static const auto g_frameGraphExecutionLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
+  public:
+	inline static const auto g_frameGraphExecutionLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
-	void FailMissingExecutionBinding(
+	static void FailMissingExecutionBinding(
 	    std::string_view passName,
 	    const FrameGraphResourceMetadata& resource,
 	    bool hasResource,
@@ -38,7 +39,7 @@ namespace
 		        gpuAddress));
 	}
 
-}
+};
 
 void FrameGraph::Execute(
     const FrameGraphPlan& plan,
@@ -107,7 +108,7 @@ void FrameGraph::ValidateExecutionBindings(const FrameGraphPlan& plan) const noe
 				continue;
 			}
 
-			FailMissingExecutionBinding(
+			FrameGraphExecutionOperations::FailMissingExecutionBinding(
 			    passRecord.passName,
 			    resource,
 			    static_cast<bool>(access.resource),

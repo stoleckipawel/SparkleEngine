@@ -8,9 +8,10 @@
 #include <cstdint>
 #include <string>
 
-namespace
+class ShaderCompileProfileOperations final
 {
-	std::uint32_t GetProfileShaderModelMinor(ShaderTarget target) noexcept
+  public:
+	static std::uint32_t GetProfileShaderModelMinor(ShaderTarget target) noexcept
 	{
 		switch (target)
 		{
@@ -34,7 +35,7 @@ namespace
 				return CookedShaderPackageContract::ShaderModelMinor;
 		}
 	}
-}
+};
 
 const char* ShaderCompileProfile::GetShaderModelProfileName(ShaderTarget target)
 {
@@ -89,6 +90,6 @@ std::string ShaderCompileProfile::BuildTargetProfile(const ShaderCompileOptions&
 	profile += '_';
 	profile += std::to_string(CookedShaderPackageContract::ShaderModelMajor);
 	profile += '_';
-	profile += std::to_string(GetProfileShaderModelMinor(options.Target));
+	profile += std::to_string(ShaderCompileProfileOperations::GetProfileShaderModelMinor(options.Target));
 	return profile;
 }

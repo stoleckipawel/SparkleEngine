@@ -11,22 +11,23 @@
 
 #include <iostream>
 
-namespace
+class TextureCookRequestBatchProcessorOperations final
 {
-	constexpr std::size_t TextureCookMemoryBudget = 1024ull * 1024ull * 1024ull;
+  public:
+	static constexpr std::size_t TextureCookMemoryBudget = 1024ull * 1024ull * 1024ull;
 
-	std::string RequestDisplayName(const TextureCookRequest& request)
+	static std::string RequestDisplayName(const TextureCookRequest& request)
 	{
 		return ToolConsole::PathDisplayName(request.sourcePath);
 	}
 
-	void CleanupStagedOutputs(const std::vector<TextureCookBatchItemResult>& results)
+	static void CleanupStagedOutputs(const std::vector<TextureCookBatchItemResult>& results)
 	{
 		for (const TextureCookBatchItemResult& result : results)
 			if (!result.StagedOutputPath.empty())
 				Files::CleanupTemporaryFile(result.StagedOutputPath);
 	}
-}
+};
 
 int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::path& requestFilePath) const
 {
@@ -42,7 +43,7 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 		return TextureCookerConstants::ExitLoadRequestFileFailed;
 	}
 
-	TextureCookBatchExecutionResult execution = TextureCookBatchExecutor::Execute(requests, TextureCookMemoryBudget);
+	TextureCookBatchExecutionResult execution = TextureCookBatchExecutor::Execute(requests, TextureCookRequestBatchProcessorOperations::TextureCookMemoryBudget);
 	bool succeeded = execution.Succeeded;
 	for (std::size_t index = 0; index < requests.size(); ++index)
 	{
@@ -61,7 +62,7 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 	}
 	if (!succeeded)
 	{
-		CleanupStagedOutputs(execution.Items);
+		TextureCookRequestBatchProcessorOperations::CleanupStagedOutputs(execution.Items);
 		return TextureCookerConstants::ExitCookFailed;
 	}
 
@@ -71,7 +72,7 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 		publication.push_back({execution.Items[index].StagedOutputPath, requests[index].outputPath});
 	if (!Files::TryPublishFileSet(publication, errorMessage))
 	{
-		CleanupStagedOutputs(execution.Items);
+		TextureCookRequestBatchProcessorOperations::CleanupStagedOutputs(execution.Items);
 		ToolConsole::Error("Failed to publish texture cook generation: " + errorMessage);
 		return TextureCookerConstants::ExitCookFailed;
 	}
@@ -84,14 +85,14 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 		    "texture",
 		    index + 1,
 		    requests.size(),
-		    RequestDisplayName(requests[index]),
+		    TextureCookRequestBatchProcessorOperations::RequestDisplayName(requests[index]),
 		    {ToolConsole::Field("assetId", Formatting::FormatHexUInt64(requests[index].assetId)),
 		     ToolConsole::PathField("output", requests[index].outputPath)});
 	}
 
 	ToolConsole::Info(
 	    "Texture cook peak admitted decompressed bytes: " + std::to_string(execution.PeakAdmittedBytes) +
-	    " (budget=" + std::to_string(TextureCookMemoryBudget) + ").");
+	    " (budget=" + std::to_string(TextureCookRequestBatchProcessorOperations::TextureCookMemoryBudget) + ").");
 	return TextureCookerConstants::ExitSuccess;
 }
 

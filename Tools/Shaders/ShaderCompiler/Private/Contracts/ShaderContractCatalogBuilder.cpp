@@ -9,9 +9,10 @@
 #include <format>
 #include <unordered_map>
 
-namespace
+class ShaderContractCatalogBuilderOperations final
 {
-	ShaderContractStage BuildStageContract(const ShaderRegistrationDesc& shader)
+  public:
+	static ShaderContractStage BuildStageContract(const ShaderRegistrationDesc& shader)
 	{
 		ShaderContractStage stage;
 		stage.shaderName = std::string(shader.ShaderName);
@@ -35,7 +36,7 @@ namespace
 		return stage;
 	}
 
-	bool MatchesSelection(
+	static bool MatchesSelection(
 	    const ShaderContractStage& stage,
 	    ShaderContractSelectionKind selectionKind,
 	    std::string_view requestedId) noexcept
@@ -52,7 +53,7 @@ namespace
 		return false;
 	}
 
-	bool StageLess(const ShaderContractStage& lhs, const ShaderContractStage& rhs)
+	static bool StageLess(const ShaderContractStage& lhs, const ShaderContractStage& rhs)
 	{
 		if (lhs.packageId != rhs.packageId)
 		{
@@ -73,7 +74,7 @@ namespace
 		return lhs.shaderName < rhs.shaderName;
 	}
 
-	bool HitGroupLess(const ShaderContractRayTracingHitGroup& lhs, const ShaderContractRayTracingHitGroup& rhs)
+	static bool HitGroupLess(const ShaderContractRayTracingHitGroup& lhs, const ShaderContractRayTracingHitGroup& rhs)
 	{
 		if (lhs.packageId != rhs.packageId)
 		{
@@ -81,7 +82,7 @@ namespace
 		}
 		return lhs.name < rhs.name;
 	}
-}
+};
 
 ShaderContractCatalog ShaderContractCatalogBuilder::Build(
     ShaderContractSelectionKind selectionKind,
@@ -91,14 +92,14 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(
 	ShaderContractCatalog catalog;
 	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
 	{
-		ShaderContractStage stage = BuildStageContract(shader);
-		if (MatchesSelection(stage, selectionKind, requestedId))
+		ShaderContractStage stage = ShaderContractCatalogBuilderOperations::BuildStageContract(shader);
+		if (ShaderContractCatalogBuilderOperations::MatchesSelection(stage, selectionKind, requestedId))
 		{
 			catalog.stages.push_back(std::move(stage));
 		}
 	}
 
-	std::ranges::sort(catalog.stages, StageLess);
+	std::ranges::sort(catalog.stages, ShaderContractCatalogBuilderOperations::StageLess);
 
 	std::unordered_map<std::string, std::size_t> packageIndices;
 	for (const ShaderContractStage& stage : catalog.stages)
@@ -160,7 +161,7 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(
 
 	for (ShaderContractPackage& package : catalog.packages)
 	{
-		std::ranges::sort(package.rayTracingHitGroups, HitGroupLess);
+		std::ranges::sort(package.rayTracingHitGroups, ShaderContractCatalogBuilderOperations::HitGroupLess);
 	}
 
 	if (selectionKind != ShaderContractSelectionKind::All && catalog.packages.empty())

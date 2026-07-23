@@ -9,9 +9,10 @@
 #include <system_error>
 #include <utility>
 
-namespace
+class AssetPathResolutionOperations final
 {
-	std::optional<std::filesystem::path> TryResolveIn(
+  public:
+	static std::optional<std::filesystem::path> TryResolveIn(
 	    const std::filesystem::path& searchDirectory,
 	    const std::filesystem::path& relativePath,
 	    AssetType type)
@@ -39,7 +40,7 @@ namespace
 		}
 		return std::nullopt;
 	}
-}
+};
 
 namespace Filesystem
 {
@@ -111,16 +112,16 @@ namespace Filesystem
 		Private::AssetPathState& state = Private::GetAssetPathState();
 		if (type == AssetType::Texture && Strings::EqualsIgnoreCase(inputPath.extension().string(), ".stex"))
 		{
-			if (const auto cookedPath = TryResolveIn(state.cookedAssetRootPath, inputPath, type))
+			if (const auto cookedPath = AssetPathResolutionOperations::TryResolveIn(state.cookedAssetRootPath, inputPath, type))
 			{
 				return cookedPath;
 			}
 		}
-		if (const auto projectPath = TryResolveIn(state.projectAssetsPath, inputPath, type))
+		if (const auto projectPath = AssetPathResolutionOperations::TryResolveIn(state.projectAssetsPath, inputPath, type))
 		{
 			return projectPath;
 		}
-		return TryResolveIn(state.engineAssetsPath, inputPath, type);
+		return AssetPathResolutionOperations::TryResolveIn(state.engineAssetsPath, inputPath, type);
 	}
 
 	std::filesystem::path ResolveAssetPathValidated(const std::filesystem::path& inputPath, AssetType type)

@@ -14,8 +14,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		void AddStyleRule(QString& style, const QString& selector, const QString& body)
 		{
 			style += selector + " { " + body + " }";
@@ -25,7 +24,7 @@ namespace SparkleLauncher
 		{
 			return QString::fromLatin1(color);
 		}
-	}
+
 
 	void ApplyLauncherVisualStyle(QWidget& rootWidget)
 	{

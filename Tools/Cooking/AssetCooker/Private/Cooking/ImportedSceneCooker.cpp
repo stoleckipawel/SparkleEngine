@@ -15,8 +15,9 @@
 
 #include <objbase.h>
 
-namespace
+class ImportedSceneCookerImplementation final
 {
+  public:
 	class ComApartmentScope final
 	{
 	  public:
@@ -38,7 +39,7 @@ namespace
 		HRESULT m_result;
 	};
 
-	bool BuildCookedScene(
+	static bool BuildCookedScene(
 	    const AssetCookerSceneEntry& sceneEntry,
 	    const SourceImportResult& importResult,
 	    CookedSceneBuild& build,
@@ -67,7 +68,7 @@ namespace
 		return true;
 	}
 
-	bool WriteCookedScene(
+	static bool WriteCookedScene(
 	    const AssetCookerSceneEntry& sceneEntry, CookedSceneBuild& build, AssetCookerDiagnostics& diagnostics)
 	{
 		if (!CookedMeshAssetWriter::WriteMeshAssets(build.outputs.meshAssets, build.status.errorMessage))
@@ -98,7 +99,7 @@ namespace
 		return true;
 	}
 
-	void ReportCookedScene(
+	static void ReportCookedScene(
 	    const AssetCookerSceneEntry& sceneEntry,
 	    const SourceImportResult& importResult,
 	    const CookedSceneBuild& build)
@@ -125,7 +126,7 @@ namespace
 		     ToolConsole::Field("cookedLights", std::to_string(build.manifest.lights.size())),
 		     ToolConsole::PathField("manifest", build.identity.manifestPath)});
 	}
-}
+};
 
 bool ImportedSceneCooker::ImportAndVisit(
     const AssetCookerSceneEntry& sceneEntry,
@@ -133,7 +134,7 @@ bool ImportedSceneCooker::ImportAndVisit(
     AssetCookerDiagnostics& diagnostics,
     const SceneVisitor& visitor)
 {
-	const ComApartmentScope comApartment;
+	const ImportedSceneCookerImplementation::ComApartmentScope comApartment;
 	if (!comApartment.CanImport())
 	{
 		diagnostics.AddError(category, "Failed to initialize COM for source import.", sceneEntry.sourcePath);
@@ -164,10 +165,10 @@ bool ImportedSceneCooker::Cook(
 	}
 
 	CookedSceneBuild build;
-	if (!BuildCookedScene(sceneEntry, importResult, build, diagnostics) || !WriteCookedScene(sceneEntry, build, diagnostics))
+	if (!ImportedSceneCookerImplementation::BuildCookedScene(sceneEntry, importResult, build, diagnostics) || !ImportedSceneCookerImplementation::WriteCookedScene(sceneEntry, build, diagnostics))
 	{
 		return false;
 	}
-	ReportCookedScene(sceneEntry, importResult, build);
+	ImportedSceneCookerImplementation::ReportCookedScene(sceneEntry, importResult, build);
 	return true;
 }

@@ -20,9 +20,10 @@
 #include <fstream>
 #include <optional>
 
-namespace
+class SceneCookerOperations final
 {
-	bool ValidateSceneMetadataCounts(
+  public:
+	static bool ValidateSceneMetadataCounts(
 	    const SourceImportResult& importResult,
 	    const CookedSceneBuild& build,
 	    std::string& outErrorMessage)
@@ -72,7 +73,7 @@ namespace
 		outErrorMessage.clear();
 		return true;
 	}
-}
+};
 
 bool SceneCooker::ResolveSceneIdentity(
     const std::filesystem::path& sourceScenePath,
@@ -119,7 +120,7 @@ bool SceneCooker::BuildManifest(
 	CookedSceneCameraBuilder::BuildCameras(importResult, outBuild);
 	CookedSceneLightBuilder::BuildLights(importResult, outBuild);
 	CookedSceneMetadataBuilder::BuildMetadata(importResult, outBuild);
-	if (!ValidateSceneMetadataCounts(importResult, outBuild, outErrorMessage))
+	if (!SceneCookerOperations::ValidateSceneMetadataCounts(importResult, outBuild, outErrorMessage))
 	{
 		return false;
 	}

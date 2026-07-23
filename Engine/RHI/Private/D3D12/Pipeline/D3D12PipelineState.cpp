@@ -18,9 +18,10 @@ void D3D12PipelineState::SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pso
 	psoDesc.StreamOutput = {};
 }
 
-namespace
+class D3D12PipelineStateImplementation final
 {
-	D3D12_CULL_MODE ToD3D12CullMode(ERhiCullMode cullMode) noexcept
+  public:
+	static D3D12_CULL_MODE ToD3D12CullMode(ERhiCullMode cullMode) noexcept
 	{
 		switch (cullMode)
 		{
@@ -34,12 +35,12 @@ namespace
 		}
 	}
 
-	BOOL ToD3D12FrontCounterClockwise(ERhiFrontFaceWinding winding) noexcept
+	static BOOL ToD3D12FrontCounterClockwise(ERhiFrontFaceWinding winding) noexcept
 	{
 		return winding == ERhiFrontFaceWinding::CounterClockwise ? TRUE : FALSE;
 	}
 
-	D3D12_STENCIL_OP ToD3D12StencilOp(RhiStencilOp op) noexcept
+	static D3D12_STENCIL_OP ToD3D12StencilOp(RhiStencilOp op) noexcept
 	{
 		switch (op)
 		{
@@ -63,7 +64,7 @@ namespace
 		}
 	}
 
-	std::span<const D3D12_INPUT_ELEMENT_DESC> ResolveVertexLayout(RhiVertexLayoutKind layoutKind) noexcept
+	static std::span<const D3D12_INPUT_ELEMENT_DESC> ResolveVertexLayout(RhiVertexLayoutKind layoutKind) noexcept
 	{
 		switch (layoutKind)
 		{
@@ -79,7 +80,7 @@ namespace
 		std::string_view DebugArtifact = {};
 	};
 
-	ResolvedD3D12ShaderStage ResolveD3D12ShaderStage(const RhiShaderStageDesc& shaderDesc, std::string_view pipelineName, bool required)
+	static ResolvedD3D12ShaderStage ResolveD3D12ShaderStage(const RhiShaderStageDesc& shaderDesc, std::string_view pipelineName, bool required)
 	{
 		if (!shaderDesc.IsValid())
 		{
@@ -131,7 +132,7 @@ namespace
 		return resolved;
 	}
 
-	void LogShaderDebugArtifact(std::string_view stageName, std::string_view debugArtifact)
+	static void LogShaderDebugArtifact(std::string_view stageName, std::string_view debugArtifact)
 	{
 		if (!debugArtifact.empty())
 		{
@@ -142,7 +143,7 @@ namespace
 		}
 	}
 
-	std::string_view GetDiagnosticSeverityLabel(ERhiDiagnosticMessageSeverity severity) noexcept
+	static std::string_view GetDiagnosticSeverityLabel(ERhiDiagnosticMessageSeverity severity) noexcept
 	{
 		switch (severity)
 		{
@@ -160,7 +161,7 @@ namespace
 		}
 	}
 
-	std::string_view GetDiagnosticCategoryLabel(ERhiDiagnosticMessageCategory category) noexcept
+	static std::string_view GetDiagnosticCategoryLabel(ERhiDiagnosticMessageCategory category) noexcept
 	{
 		switch (category)
 		{
@@ -182,7 +183,7 @@ namespace
 		}
 	}
 
-	void LogDiagnosticMessage(const RhiDiagnosticMessage& diagnosticMessage) noexcept
+	static void LogDiagnosticMessage(const RhiDiagnosticMessage& diagnosticMessage) noexcept
 	{
 		const std::string message = std::format(
 		    "D3D12 diagnostic [{}:{}] {}",
@@ -206,7 +207,7 @@ namespace
 				break;
 		}
 	}
-}
+};
 
 void D3D12PipelineState::SetRasterizerState(
     D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
@@ -218,8 +219,8 @@ void D3D12PipelineState::SetRasterizerState(
 	auto& rs = psoDesc.RasterizerState;
 	rs = {};
 	rs.FillMode = bRenderWireframe ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
-	rs.CullMode = ToD3D12CullMode(cullMode);
-	rs.FrontCounterClockwise = ToD3D12FrontCounterClockwise(frontFaceWinding);
+	rs.CullMode = D3D12PipelineStateImplementation::ToD3D12CullMode(cullMode);
+	rs.FrontCounterClockwise = D3D12PipelineStateImplementation::ToD3D12FrontCounterClockwise(frontFaceWinding);
 	rs.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
 	rs.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
 	rs.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
@@ -258,14 +259,14 @@ void D3D12PipelineState::SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC&
 	ds.StencilWriteMask = stencilDesc.StencilWriteMask;
 
 	ds.FrontFace.StencilFunc = D3D12TypeConversions::ToComparisonFunc(stencilDesc.FrontFaceStencilFunc);
-	ds.FrontFace.StencilFailOp = ToD3D12StencilOp(stencilDesc.FrontFaceStencilFailOp);
-	ds.FrontFace.StencilDepthFailOp = ToD3D12StencilOp(stencilDesc.FrontFaceStencilDepthFailOp);
-	ds.FrontFace.StencilPassOp = ToD3D12StencilOp(stencilDesc.FrontFaceStencilPassOp);
+	ds.FrontFace.StencilFailOp = D3D12PipelineStateImplementation::ToD3D12StencilOp(stencilDesc.FrontFaceStencilFailOp);
+	ds.FrontFace.StencilDepthFailOp = D3D12PipelineStateImplementation::ToD3D12StencilOp(stencilDesc.FrontFaceStencilDepthFailOp);
+	ds.FrontFace.StencilPassOp = D3D12PipelineStateImplementation::ToD3D12StencilOp(stencilDesc.FrontFaceStencilPassOp);
 
 	ds.BackFace.StencilFunc = D3D12TypeConversions::ToComparisonFunc(stencilDesc.BackFaceStencilFunc);
-	ds.BackFace.StencilFailOp = ToD3D12StencilOp(stencilDesc.BackFaceStencilFailOp);
-	ds.BackFace.StencilDepthFailOp = ToD3D12StencilOp(stencilDesc.BackFaceStencilDepthFailOp);
-	ds.BackFace.StencilPassOp = ToD3D12StencilOp(stencilDesc.BackFaceStencilPassOp);
+	ds.BackFace.StencilFailOp = D3D12PipelineStateImplementation::ToD3D12StencilOp(stencilDesc.BackFaceStencilFailOp);
+	ds.BackFace.StencilDepthFailOp = D3D12PipelineStateImplementation::ToD3D12StencilOp(stencilDesc.BackFaceStencilDepthFailOp);
+	ds.BackFace.StencilPassOp = D3D12PipelineStateImplementation::ToD3D12StencilOp(stencilDesc.BackFaceStencilPassOp);
 }
 
 D3D12PipelineState::D3D12PipelineState(D3D12Rhi& rhi, const GraphicsPipelineStateDesc& desc) : m_rhi(rhi)
@@ -282,10 +283,10 @@ void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_GraphicsPipelineState";
-	const ResolvedD3D12ShaderStage vertexShader = ResolveD3D12ShaderStage(desc.VertexShader, pipelineName, true);
-	const ResolvedD3D12ShaderStage pixelShader = ResolveD3D12ShaderStage(desc.PixelShader, pipelineName, false);
+	const D3D12PipelineStateImplementation::ResolvedD3D12ShaderStage vertexShader = D3D12PipelineStateImplementation::ResolveD3D12ShaderStage(desc.VertexShader, pipelineName, true);
+	const D3D12PipelineStateImplementation::ResolvedD3D12ShaderStage pixelShader = D3D12PipelineStateImplementation::ResolveD3D12ShaderStage(desc.PixelShader, pipelineName, false);
 
-	const std::span<const D3D12_INPUT_ELEMENT_DESC> vertexLayout = ResolveVertexLayout(desc.VertexLayout);
+	const std::span<const D3D12_INPUT_ELEMENT_DESC> vertexLayout = D3D12PipelineStateImplementation::ResolveVertexLayout(desc.VertexLayout);
 	psoDesc.InputLayout.NumElements = static_cast<UINT>(vertexLayout.size());
 	psoDesc.InputLayout.pInputElementDescs = vertexLayout.data();
 	psoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
@@ -335,8 +336,8 @@ void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 	HRESULT hr = m_rhi.GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(m_pso.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		LogShaderDebugArtifact("vs", vertexShader.DebugArtifact);
-		LogShaderDebugArtifact("ps", pixelShader.DebugArtifact);
+		D3D12PipelineStateImplementation::LogShaderDebugArtifact("vs", vertexShader.DebugArtifact);
+		D3D12PipelineStateImplementation::LogShaderDebugArtifact("ps", pixelShader.DebugArtifact);
 		HandlePsoCreateFailure(hr);
 	}
 
@@ -347,7 +348,7 @@ void D3D12PipelineState::Create(const ComputePipelineStateDesc& desc)
 {
 	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_ComputePipelineState";
-	const ResolvedD3D12ShaderStage computeShader = ResolveD3D12ShaderStage(desc.ComputeShader, pipelineName, true);
+	const D3D12PipelineStateImplementation::ResolvedD3D12ShaderStage computeShader = D3D12PipelineStateImplementation::ResolveD3D12ShaderStage(desc.ComputeShader, pipelineName, true);
 	const auto* bindingLayout = static_cast<const D3D12BindingLayout*>(desc.BindingLayout);
 	psoDesc.pRootSignature = bindingLayout != nullptr ? bindingLayout->GetRootSignature().GetRaw() : nullptr;
 	psoDesc.CS = computeShader.Bytecode;
@@ -358,7 +359,7 @@ void D3D12PipelineState::Create(const ComputePipelineStateDesc& desc)
 	HRESULT hr = m_rhi.GetDevice()->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(m_pso.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		LogShaderDebugArtifact("cs", computeShader.DebugArtifact);
+		D3D12PipelineStateImplementation::LogShaderDebugArtifact("cs", computeShader.DebugArtifact);
 		HandlePsoCreateFailure(hr);
 	}
 
@@ -372,7 +373,7 @@ void D3D12PipelineState::HandlePsoCreateFailure(HRESULT hr) const noexcept
 	RhiDiagnosticMessage diagnosticMessage{};
 	while (m_rhi.TryPopDebugMessage(diagnosticMessage))
 	{
-		LogDiagnosticMessage(diagnosticMessage);
+		D3D12PipelineStateImplementation::LogDiagnosticMessage(diagnosticMessage);
 	}
 
 	char buf[256];

@@ -2,6 +2,7 @@
 
 #include "PassParameterSet.h"
 #include "../FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "Renderer/Public/RendererAPI.h"
 
 #include <array>
 #include <cstddef>
@@ -88,12 +89,12 @@ class ShaderTextureCube final : public ShaderParameterFields::ResourceArrayField
 	using Base::Base;
 };
 
-class ShaderTexture2DSRV final
+class SPARKLE_RENDERER_API ShaderTexture2DSRV final
 {
   public:
 	using Semantic = ReadTexture;
 
-	ShaderTexture2DSRV() = default;
+	ShaderTexture2DSRV();
 
 	ShaderTexture2DSRV& operator=(RhiDescriptorTableBinding descriptorTable) noexcept
 	{
@@ -137,12 +138,12 @@ template <std::size_t ArrayCount> class ShaderTexture2DTableSRV final
 	RhiDescriptorTableBinding m_descriptorTable = {};
 };
 
-class ShaderAccelerationStructure final
+class SPARKLE_RENDERER_API ShaderAccelerationStructure final
 {
   public:
 	using Semantic = AccelerationStructure;
 
-	ShaderAccelerationStructure() = default;
+	ShaderAccelerationStructure();
 
 	ShaderAccelerationStructure& operator=(RhiGpuVirtualAddress gpuAddress) noexcept
 	{
@@ -259,12 +260,12 @@ template <typename TValue> class ShaderUniform final
 	bool m_isBound = false;
 };
 
-class ShaderSamplerSet final
+class SPARKLE_RENDERER_API ShaderSamplerSet final
 {
   public:
 	using Semantic = SamplerSet;
 
-	ShaderSamplerSet() = default;
+	ShaderSamplerSet();
 
 	ShaderSamplerSet& operator=(RhiSamplerDesc sampler) noexcept
 	{
@@ -445,10 +446,10 @@ std::enable_if_t<(ArrayCount > 1), bool> BindParameterField(
 	return parameterSet.SetTextureArray(name, field.ToVector());
 }
 
-inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DSRV& field)
-{
-	return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
-}
+SPARKLE_RENDERER_API bool BindParameterField(
+    PassParameterSet& parameterSet,
+    const char* name,
+    const ShaderTexture2DSRV& field);
 
 template <std::size_t ArrayCount>
 inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DTableSRV<ArrayCount>& field)
@@ -456,11 +457,10 @@ inline bool BindParameterField(PassParameterSet& parameterSet, const char* name,
 	return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
 }
 
-inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderAccelerationStructure& field)
-{
-	return field.IsBound() && (field.GetHandle().IsValid() ? parameterSet.SetAccelerationStructure(name, field.GetHandle())
-	                                                       : parameterSet.SetAccelerationStructure(name, field.GetGpuAddress()));
-}
+SPARKLE_RENDERER_API bool BindParameterField(
+    PassParameterSet& parameterSet,
+    const char* name,
+    const ShaderAccelerationStructure& field);
 
 template <typename TValue, std::size_t ArrayCount>
 std::enable_if_t<ArrayCount == 1, bool> BindParameterField(
@@ -480,15 +480,14 @@ std::enable_if_t<(ArrayCount > 1), bool> BindParameterField(
 	return parameterSet.SetTextureArray(name, field.ToVector());
 }
 
-inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderRenderTarget& field)
-{
-	return parameterSet.SetTexture(name, field.GetValues()[0]);
-}
-
-inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderDepthTarget& field)
-{
-	return parameterSet.SetTexture(name, field.GetValues()[0]);
-}
+SPARKLE_RENDERER_API bool BindParameterField(
+    PassParameterSet& parameterSet,
+    const char* name,
+    const ShaderRenderTarget& field);
+SPARKLE_RENDERER_API bool BindParameterField(
+    PassParameterSet& parameterSet,
+    const char* name,
+    const ShaderDepthTarget& field);
 
 template <typename TValue, std::size_t ArrayCount>
 std::enable_if_t<ArrayCount == 1, bool> BindParameterField(
@@ -536,12 +535,7 @@ template <typename TValue> bool BindParameterField(PassParameterSet& parameterSe
 	return parameterSet.SetUniformDataReference(name, *field.GetValue());
 }
 
-inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderSamplerSet& field)
-{
-	if (!field.IsBound())
-	{
-		return false;
-	}
-
-	return parameterSet.SetSampler(name, field.GetSampler());
-}
+SPARKLE_RENDERER_API bool BindParameterField(
+    PassParameterSet& parameterSet,
+    const char* name,
+    const ShaderSamplerSet& field);

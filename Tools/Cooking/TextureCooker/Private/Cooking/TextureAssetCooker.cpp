@@ -14,9 +14,10 @@
 #include <fstream>
 #include <limits>
 
-namespace
+class TextureAssetCookerOperations final
 {
-	std::size_t CalculateTextureBytes(const TextureLoadResult& texture)
+  public:
+	static std::size_t CalculateTextureBytes(const TextureLoadResult& texture)
 	{
 		std::size_t bytes = 0;
 		for (const TextureArraySliceData& slice : texture.arraySlices)
@@ -24,7 +25,7 @@ namespace
 				bytes += mip.data.size();
 		return bytes;
 	}
-}
+};
 
 bool TextureAssetCooker::Cook(
     const TextureCookRequest& request,
@@ -43,7 +44,7 @@ bool TextureAssetCooker::Cook(
 	{
 		return false;
 	}
-	auto memoryLease = memoryLimiter.Acquire(CalculateTextureBytes(loadResult), cancellation);
+	auto memoryLease = memoryLimiter.Acquire(TextureAssetCookerOperations::CalculateTextureBytes(loadResult), cancellation);
 	if (!memoryLease.IsValid())
 	{
 		outErrorMessage = "Texture cook was cancelled while waiting for its decompressed-memory budget.";

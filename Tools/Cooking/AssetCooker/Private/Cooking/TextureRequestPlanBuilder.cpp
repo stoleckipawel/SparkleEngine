@@ -11,8 +11,9 @@
 #include <string>
 #include <vector>
 
-namespace
+class TextureRequestPlanBuilderImplementation final
 {
+  public:
 	enum class SceneRequestCollectionResult
 	{
 		Succeeded,
@@ -20,7 +21,7 @@ namespace
 		FatalFailure,
 	};
 
-	SceneRequestCollectionResult CollectSceneRequests(
+	static SceneRequestCollectionResult CollectSceneRequests(
 	    const AssetCookerSceneEntry& sceneEntry,
 	    AssetCookerDiagnostics& diagnostics,
 	    TextureCookRequestSet& requestSet)
@@ -62,7 +63,7 @@ namespace
 		     ToolConsole::QuotedField("scene", sceneEntry.relativePath)});
 		return SceneRequestCollectionResult::Succeeded;
 	}
-}
+};
 
 bool TextureRequestPlanBuilder::Build(
     const AssetCookerProjectCookPlan& plan,
@@ -82,12 +83,12 @@ bool TextureRequestPlanBuilder::Build(
 		    plan.sceneEntries.size(),
 		    sceneEntry.relativePath,
 		    {ToolConsole::Field("origin", sceneEntry.origin)});
-		const SceneRequestCollectionResult collectionResult = CollectSceneRequests(sceneEntry, diagnostics, requestSet);
-		if (collectionResult == SceneRequestCollectionResult::FatalFailure)
+		const TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult collectionResult = TextureRequestPlanBuilderImplementation::CollectSceneRequests(sceneEntry, diagnostics, requestSet);
+		if (collectionResult == TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult::FatalFailure)
 		{
 			return false;
 		}
-		failedSceneCount += collectionResult == SceneRequestCollectionResult::RecoverableFailure ? 1u : 0u;
+		failedSceneCount += collectionResult == TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult::RecoverableFailure ? 1u : 0u;
 	}
 
 	if (failedSceneCount != 0)

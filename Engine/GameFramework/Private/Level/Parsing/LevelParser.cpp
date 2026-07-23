@@ -10,9 +10,10 @@
 
 #include <fstream>
 
-namespace
+class LevelParserOperations final
 {
-	bool ParseLevelSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
+  public:
+	static bool ParseLevelSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
 	{
 		if (parsedLine.key == "Name")
 		{
@@ -28,7 +29,7 @@ namespace
 		return true;
 	}
 
-	bool ParseSceneAssetsSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
+	static bool ParseSceneAssetsSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
 	{
 		if (parsedLine.key == "Asset")
 		{
@@ -45,7 +46,7 @@ namespace
 		return true;
 	}
 
-	bool ParseField(
+	static bool ParseField(
 	    LevelParsing::LevelFileSection currentSection,
 	    const LevelParsing::ParsedLevelLine& parsedLine,
 	    LevelDesc& levelDesc,
@@ -74,13 +75,13 @@ namespace
 		}
 	}
 
-	void WriteLevelSection(std::ofstream& output, const LevelAsset& level)
+	static void WriteLevelSection(std::ofstream& output, const LevelAsset& level)
 	{
 		output << "[Level]\n";
 		output << "Name = " << level.GetName() << "\n\n";
 	}
 
-	void WriteSceneAssetsSection(std::ofstream& output, const LevelDesc& levelDesc)
+	static void WriteSceneAssetsSection(std::ofstream& output, const LevelDesc& levelDesc)
 	{
 		output << "[SceneAssets]\n";
 		for (const SceneAssetId& sceneAssetId : levelDesc.sceneAssetIds)
@@ -91,7 +92,7 @@ namespace
 			output << "\n";
 		}
 	}
-}  // namespace
+};
 
 std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::path& filePath, std::string& errorMessage)
 {
@@ -129,7 +130,7 @@ std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::pat
 		parsedLine.key = std::string(key);
 		parsedLine.value = std::string(value);
 
-		if (!ParseField(currentSection, parsedLine, levelDesc, errorMessage))
+		if (!LevelParserOperations::ParseField(currentSection, parsedLine, levelDesc, errorMessage))
 		{
 			return nullptr;
 		}
@@ -177,11 +178,11 @@ bool LevelParser::SaveToFile(const LevelAsset& level, std::string* errorMessage)
 	}
 
 	const LevelDesc levelDesc = level.BuildDescription();
-	WriteLevelSection(output, level);
+	LevelParserOperations::WriteLevelSection(output, level);
 	LevelParsing::WriteCameraSection(output, levelDesc);
 	LevelParsing::WriteSkySection(output, levelDesc);
 	LevelParsing::WriteLightingSection(output, levelDesc);
-	WriteSceneAssetsSection(output, levelDesc);
+	LevelParserOperations::WriteSceneAssetsSection(output, levelDesc);
 
 	if (!output.good())
 	{

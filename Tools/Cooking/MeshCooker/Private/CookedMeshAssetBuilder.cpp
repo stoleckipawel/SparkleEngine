@@ -9,14 +9,15 @@
 #include <cstring>
 #include <utility>
 
-namespace
+class CookedMeshAssetBuilderOperations final
 {
-	Assets::CookedAssetId BuildMeshAssetId(std::string_view sceneAssetId, std::size_t meshIndex) noexcept
+  public:
+	static Assets::CookedAssetId BuildMeshAssetId(std::string_view sceneAssetId, std::size_t meshIndex) noexcept
 	{
 		return Hash::Fnv1a64(std::string(sceneAssetId) + "#mesh#" + std::to_string(meshIndex));
 	}
 
-	Assets::CookedMeshSkinInfluence BuildCookedSkinInfluence(const ImportedSkinInfluence& skinInfluence) noexcept
+	static Assets::CookedMeshSkinInfluence BuildCookedSkinInfluence(const ImportedSkinInfluence& skinInfluence) noexcept
 	{
 		return Assets::CookedMeshSkinInfluence{
 		    .jointIndices =
@@ -31,7 +32,7 @@ namespace
 		         skinInfluence.jointWeights[3]}};
 	}
 
-	Assets::CookedMeshMorphTargetDelta BuildCookedMorphTargetDelta(const ImportedMorphTargetDelta& delta) noexcept
+	static Assets::CookedMeshMorphTargetDelta BuildCookedMorphTargetDelta(const ImportedMorphTargetDelta& delta) noexcept
 	{
 		return Assets::CookedMeshMorphTargetDelta{
 		    .position = delta.position,
@@ -39,13 +40,13 @@ namespace
 		    .tangent = delta.tangent};
 	}
 
-	void CopyMorphTargetName(std::string_view sourceName, char (&outName)[Assets::kCookedMeshMorphTargetNameCapacity]) noexcept
+	static void CopyMorphTargetName(std::string_view sourceName, char (&outName)[Assets::kCookedMeshMorphTargetNameCapacity]) noexcept
 	{
 		const std::size_t copyLength = (std::min)(sourceName.size(), static_cast<std::size_t>(Assets::kCookedMeshMorphTargetNameCapacity - 1u));
 		std::memcpy(outName, sourceName.data(), copyLength);
 		outName[copyLength] = '\0';
 	}
-}  // namespace
+};
 
 MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult& importResult, std::string_view sceneAssetId)
 {
@@ -58,7 +59,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 		const ImportedMeshPrimitive& importedPrimitive = importResult.scene.meshPrimitives[primitiveIndex];
 		const ImportedMeshGeometry& meshGeometry = importedPrimitive.geometry;
 		CookedMeshAssetBuild meshAsset;
-		meshAsset.assetId = BuildMeshAssetId(sceneAssetId, primitiveIndex);
+		meshAsset.assetId = CookedMeshAssetBuilderOperations::BuildMeshAssetId(sceneAssetId, primitiveIndex);
 		meshAsset.displayName = importedPrimitive.displayName;
 		meshAsset.sourcePath = importResult.scene.sourcePath;
 		meshAsset.assetKind = meshGeometry.HasSkinInfluences() ? Assets::CookedMeshAssetKind::Skeletal : Assets::CookedMeshAssetKind::Static;
@@ -81,7 +82,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 
 		for (const ImportedSkinInfluence& skinInfluence : meshGeometry.deformation.skinInfluences)
 		{
-			meshAsset.skinInfluences.push_back(BuildCookedSkinInfluence(skinInfluence));
+			meshAsset.skinInfluences.push_back(CookedMeshAssetBuilderOperations::BuildCookedSkinInfluence(skinInfluence));
 		}
 		meshAsset.indices = meshGeometry.indices;
 		if (meshAsset.IsSkeletal())
@@ -95,7 +96,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 				}
 
 				Assets::CookedMeshMorphTargetRecord record;
-				CopyMorphTargetName(morphTarget.name, record.name);
+				CookedMeshAssetBuilderOperations::CopyMorphTargetName(morphTarget.name, record.name);
 				record.defaultWeight = morphTarget.defaultWeight;
 				record.firstDelta = static_cast<std::uint32_t>(meshAsset.morphTargetDeltas.size());
 				record.deltaCount = static_cast<std::uint32_t>(morphTarget.deltas.size());
@@ -103,7 +104,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 				meshAsset.morphTargetDeltas.reserve(meshAsset.morphTargetDeltas.size() + morphTarget.deltas.size());
 				for (const ImportedMorphTargetDelta& delta : morphTarget.deltas)
 				{
-					meshAsset.morphTargetDeltas.push_back(BuildCookedMorphTargetDelta(delta));
+					meshAsset.morphTargetDeltas.push_back(CookedMeshAssetBuilderOperations::BuildCookedMorphTargetDelta(delta));
 				}
 			}
 		}

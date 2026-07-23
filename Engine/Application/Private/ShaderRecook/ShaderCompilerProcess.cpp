@@ -11,9 +11,10 @@
 #include <sstream>
 #include <system_error>
 
-namespace
+class ShaderCompilerProcessOperations final
 {
-	std::string BuildDisplayCommand(
+  public:
+	static std::string BuildDisplayCommand(
 	    const std::filesystem::path& executablePath,
 	    const std::vector<std::string>& arguments)
 	{
@@ -23,7 +24,7 @@ namespace
 			command << ' ' << CommandLine::QuoteArgument(argument);
 		return command.str();
 	}
-}
+};
 
 ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(
     const ShaderRecookRequest& request,
@@ -84,7 +85,7 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(
 	}
 
 	result.ExecutablePath = executablePath;
-	result.CommandLine = BuildDisplayCommand(executablePath, arguments);
+	result.CommandLine = ShaderCompilerProcessOperations::BuildDisplayCommand(executablePath, arguments);
 	Process::ChildProcessResult process = Process::ChildProcess::Run(Process::ChildProcessRequest{
 	    .ExecutablePath = executablePath,
 	    .Arguments = std::move(arguments),

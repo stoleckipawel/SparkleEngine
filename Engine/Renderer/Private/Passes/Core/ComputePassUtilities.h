@@ -30,23 +30,12 @@ namespace ComputePassUtilities
 		return metadata;
 	}
 
-	inline RenderPassDefinition BuildDefinition(
+	RenderPassDefinition BuildDefinition(
 	    const char* passName,
 	    std::string_view packageId,
 	    const wchar_t* bindingLayoutName,
 	    const wchar_t* pipelineStateName,
-	    CookedShaderPackageFeatureFlags requiredFeatures = CookedShaderPackageFeatureFlags::None)
-	{
-		return RenderPassDefinition{
-		    .PassName = passName,
-		    .ShaderPackage = ShaderPackageDefinition{
-		        .PackageId = packageId.data(),
-		        .ExpectedStages = ShaderStageMask::Compute,
-		        .RequiredFeatures = requiredFeatures},
-		    .PipelineKind = RenderPassDefinitionPipelineKind::Compute,
-		    .BindingLayoutDebugName = bindingLayoutName,
-		    .PipelineStateDebugName = pipelineStateName};
-	}
+	    CookedShaderPackageFeatureFlags requiredFeatures = CookedShaderPackageFeatureFlags::None);
 
 	template <typename TPass>
 	bool Dispatch(

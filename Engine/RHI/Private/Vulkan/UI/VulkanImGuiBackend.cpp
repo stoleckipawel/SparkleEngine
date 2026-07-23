@@ -163,11 +163,6 @@ std::uint64_t VulkanImGuiBackend::GetTextureId(VkImageView imageView) noexcept
 
 void VulkanImGuiBackend::Shutdown() noexcept
 {
-	if (m_renderHardware != nullptr)
-	{
-		m_renderHardware->WaitForIdle();
-	}
-
 	for (const TextureBinding& binding : m_textureBindings)
 	{
 		if (binding.DescriptorSet != VK_NULL_HANDLE)

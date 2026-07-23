@@ -5,8 +5,7 @@
 
 namespace SparkleLauncher::LauncherOperationRequestMapping
 {
-	namespace
-	{
+
 		std::vector<std::string> SplitList(const QString& text)
 		{
 			std::vector<std::string> values;
@@ -41,7 +40,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 				return CleanScope::PristineGeneratedWorkspace;
 			return CleanScope::SelectedProjectCookedOutputs;
 		}
-	}
+
 
 	BuildWorkspaceOperationRequest BuildWorkspace(const LauncherOperationRequest& request)
 	{

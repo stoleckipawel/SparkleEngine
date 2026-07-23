@@ -20,10 +20,9 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		constexpr int kSpaceSmall = LauncherUi::Space::Small;
-	}
+
 
 	std::filesystem::path FindLauncherVisualAsset(const std::filesystem::path& repositoryRoot, const QString& fileName)
 	{

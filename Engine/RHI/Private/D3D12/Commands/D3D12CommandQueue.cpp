@@ -4,11 +4,22 @@
 
 #include <format>
 
-namespace
+class D3D12CommandQueuePolicy final
 {
-	static const auto g_d3d12CommandQueueLogger = Logging::GetOrCreateLogger("RHI.D3D12.Queue");
+  public:
+	static const std::shared_ptr<spdlog::logger>& Logger()
+	{
+		static const auto logger = Logging::GetOrCreateLogger("RHI.D3D12.Queue");
+		return logger;
+	}
 
-	const wchar_t* QueueTypeToWideString(ERhiQueueType queueType) noexcept
+	#if SPARKLE_BUILD_SHIPPING
+	static constexpr DWORD GpuWaitTimeoutMilliseconds = INFINITE;
+	#else
+	static constexpr DWORD GpuWaitTimeoutMilliseconds = 30'000;
+	#endif
+
+	static const wchar_t* QueueTypeName(ERhiQueueType queueType) noexcept
 	{
 		switch (queueType)
 		{
@@ -23,7 +34,7 @@ namespace
 				return L"Unknown";
 		}
 	}
-}
+};
 
 D3D12CommandQueue::D3D12CommandQueue(
 	ID3D12Device& device,
@@ -45,17 +56,18 @@ D3D12CommandQueue::D3D12CommandQueue(
 	m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (m_fenceEvent == nullptr)
 	{
-		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Failed to create command queue fence event");
+		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Failed to create command queue fence event");
 	}
 
-	const std::wstring queueName = std::format(L"Sparkle {} Command Queue", QueueTypeToWideString(queueType));
-	const std::wstring fenceName = std::format(L"Sparkle {} Command Queue Fence", QueueTypeToWideString(queueType));
+	const std::wstring queueName = std::format(L"Sparkle {} Command Queue", D3D12CommandQueuePolicy::QueueTypeName(queueType));
+	const std::wstring fenceName = std::format(L"Sparkle {} Command Queue Fence", D3D12CommandQueuePolicy::QueueTypeName(queueType));
 	(void)m_queue->SetName(queueName.c_str());
 	(void)m_fence->SetName(fenceName.c_str());
 }
 
 D3D12CommandQueue::~D3D12CommandQueue() noexcept
 {
+	m_owner.AssertAccess();
 	if (m_fenceEvent != nullptr)
 	{
 		CloseHandle(m_fenceEvent);
@@ -75,7 +87,7 @@ D3D12_COMMAND_LIST_TYPE D3D12CommandQueue::GetNativeCommandListType(ERhiQueueTyp
 			return D3D12_COMMAND_LIST_TYPE_COPY;
 		case ERhiQueueType::Count:
 		default:
-			Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Invalid RHI queue type");
+			Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Invalid RHI queue type");
 			return D3D12_COMMAND_LIST_TYPE_DIRECT;
 	}
 }
@@ -84,9 +96,10 @@ RhiSubmissionToken D3D12CommandQueue::Submit(
 	std::span<ID3D12CommandList* const> commandLists,
 	std::span<const D3D12QueueWait> waits) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_queue == nullptr || m_fence == nullptr || commandLists.empty())
 	{
-		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Submit called without queue submission state");
+		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Submit called without queue submission state");
 		return {};
 	}
 
@@ -99,7 +112,7 @@ RhiSubmissionToken D3D12CommandQueue::Submit(
 		if (wait.ProducerQueue == nullptr || !wait.ProducerQueue->HasSubmitted(wait.SubmissionValue))
 		{
 			Diagnostics::Fail(
-			    g_d3d12CommandQueueLogger,
+			    D3D12CommandQueuePolicy::Logger(),
 			    __FILE__,
 			    __LINE__,
 			    "Submit rejected a wait for an unknown or unsubmitted queue value");
@@ -107,7 +120,6 @@ RhiSubmissionToken D3D12CommandQueue::Submit(
 		}
 	}
 
-	std::lock_guard lock(m_submissionMutex);
 	for (const D3D12QueueWait& wait : waits)
 	{
 		if (wait.ProducerQueue != nullptr && wait.ProducerQueue != this && wait.SubmissionValue != 0)
@@ -126,34 +138,35 @@ void D3D12CommandQueue::WaitFor(
 	const D3D12CommandQueue& executionQueue,
 	std::uint64_t submissionValue) noexcept
 {
+	m_owner.AssertAccess();
 	if (submissionValue == 0 || m_queueType == executionQueue.m_queueType)
 	{
 		return;
 	}
 	if (m_queue == nullptr || executionQueue.m_fence == nullptr)
 	{
-		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Queue wait requested without synchronization state");
+		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Queue wait requested without synchronization state");
 		return;
 	}
 	if (!executionQueue.HasSubmitted(submissionValue))
 	{
-		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Queue wait rejected an unsubmitted value");
+		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Queue wait rejected an unsubmitted value");
 		return;
 	}
 
-	std::lock_guard lock(m_submissionMutex);
 	CHECK(m_queue->Wait(executionQueue.m_fence.Get(), submissionValue));
 }
 
 void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcept
 {
+	m_owner.AssertAccess();
 	if (submissionValue == 0)
 	{
 		return;
 	}
 	if (!HasSubmitted(submissionValue))
 	{
-		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
+		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
 		return;
 	}
 	if (IsSubmissionComplete(submissionValue))
@@ -162,51 +175,61 @@ void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcep
 	}
 	if (m_fence == nullptr || m_fenceEvent == nullptr)
 	{
-		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "CPU wait requested without synchronization state");
+		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "CPU wait requested without synchronization state");
 		return;
 	}
 
-	std::lock_guard lock(m_cpuWaitMutex);
 	CHECK(m_fence->SetEventOnCompletion(submissionValue, m_fenceEvent));
-	WaitForSingleObject(m_fenceEvent, INFINITE);
+	const DWORD waitResult = WaitForSingleObject(m_fenceEvent, D3D12CommandQueuePolicy::GpuWaitTimeoutMilliseconds);
+	if (waitResult != WAIT_OBJECT_0)
+	{
+		Diagnostics::Fail(
+		    D3D12CommandQueuePolicy::Logger(),
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "D3D12 queue {} CPU wait failed or timed out for submission {} (wait result 0x{:08X}).",
+		        static_cast<std::uint32_t>(m_queueType),
+		        submissionValue,
+		        waitResult));
+	}
 }
 
 void D3D12CommandQueue::WaitForIdle() noexcept
 {
+	m_owner.AssertAccess();
 	if (m_queue == nullptr || m_fence == nullptr)
 	{
-		Diagnostics::Fail(g_d3d12CommandQueueLogger, __FILE__, __LINE__, "Idle wait requested without synchronization state");
+		Diagnostics::Fail(D3D12CommandQueuePolicy::Logger(), __FILE__, __LINE__, "Idle wait requested without synchronization state");
 		return;
 	}
 
-	std::uint64_t submissionValue = 0;
-	{
-		std::lock_guard lock(m_submissionMutex);
-		submissionValue = m_nextSubmissionValue++;
-		CHECK(m_queue->Signal(m_fence.Get(), submissionValue));
-		m_lastSubmittedValue = submissionValue;
-	}
+	const std::uint64_t submissionValue = m_nextSubmissionValue++;
+	CHECK(m_queue->Signal(m_fence.Get(), submissionValue));
+	m_lastSubmittedValue = submissionValue;
 	WaitForSubmission(submissionValue);
 }
 
 bool D3D12CommandQueue::HasSubmitted(std::uint64_t submissionValue) const noexcept
 {
-	std::lock_guard lock(m_submissionMutex);
+	m_owner.AssertAccess();
 	return submissionValue != 0 && submissionValue <= m_lastSubmittedValue;
 }
 
 bool D3D12CommandQueue::IsSubmissionComplete(std::uint64_t submissionValue) const noexcept
 {
+	m_owner.AssertAccess();
 	return submissionValue == 0 || (m_fence != nullptr && m_fence->GetCompletedValue() >= submissionValue);
 }
 
 RhiSubmissionToken D3D12CommandQueue::GetLastSubmittedToken() const noexcept
 {
-	std::lock_guard lock(m_submissionMutex);
+	m_owner.AssertAccess();
 	return RhiSubmissionToken{.Queue = m_queueType, .Value = m_lastSubmittedValue};
 }
 
 std::uint64_t D3D12CommandQueue::GetCompletedSubmissionValue() const noexcept
 {
+	m_owner.AssertAccess();
 	return m_fence != nullptr ? m_fence->GetCompletedValue() : 0;
 }

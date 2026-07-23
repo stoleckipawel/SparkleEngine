@@ -6,8 +6,7 @@
 
 namespace LevelParsing
 {
-	namespace
-	{
+
 		void SetLightPosition(SceneLightCommonDesc& common, const DirectX::XMFLOAT3& position) noexcept
 		{
 			common.worldTransform._41 = position.x;
@@ -254,7 +253,7 @@ namespace LevelParsing
 			light.payload = value;
 			return true;
 		}
-	}
+
 
 	bool ParseLightField(
 	    const ParsedLightFieldKey& key,

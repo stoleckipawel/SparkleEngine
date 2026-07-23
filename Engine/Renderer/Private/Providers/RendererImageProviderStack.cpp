@@ -10,10 +10,11 @@
 #include "Upscaling/UpscalerProviderFactory.h"
 #include "Upscaling/UpscalerSettings.h"
 
-namespace
+class RendererImageProviderStackOperations final
 {
+  public:
 	template <typename TProvider>
-	bool InitializeImageProvider(
+	static bool InitializeImageProvider(
 	    TProvider& provider,
 	    const RhiCapabilities& capabilities,
 	    RhiInteropService& interop,
@@ -24,7 +25,7 @@ namespace
 		    capabilities,
 		    interop.GetDeviceQueueInterop(RhiNativeInteropRequest{.Consumer = consumer, .Reason = reason}));
 	}
-}
+};
 
 RendererImageProviderStack::RendererImageProviderStack(RenderHardwareInterface& renderHardware)
 {
@@ -42,7 +43,7 @@ void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardw
 	RhiInteropService& interop = renderHardware.GetInteropService();
 
 	m_upscaler = CreateConfiguredUpscalerProvider();
-	if (m_upscaler != nullptr && !InitializeImageProvider(
+	if (m_upscaler != nullptr && !RendererImageProviderStackOperations::InitializeImageProvider(
 	                               *m_upscaler,
 	                               capabilities,
 	                               interop,
@@ -55,7 +56,7 @@ void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardw
 
 	m_rayReconstruction = CreateConfiguredRayReconstructionProvider();
 	m_rayReconstructionRequested = m_rayReconstruction != nullptr;
-	if (m_rayReconstruction != nullptr && !InitializeImageProvider(
+	if (m_rayReconstruction != nullptr && !RendererImageProviderStackOperations::InitializeImageProvider(
 	                                         *m_rayReconstruction,
 	                                         capabilities,
 	                                         interop,

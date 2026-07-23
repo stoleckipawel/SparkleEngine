@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "EditorApplication.h"
 
+#include "Editor/EditorUiFrameRenderer.h"
 #include "Editor/Public/UI.h"
 
 #include "RuntimeApplication.h"
@@ -10,7 +11,6 @@
 #include "ShaderRecook/ShaderRecookCoordinator.h"
 #include "EditorOperations/EditorOperationService.h"
 #include "World/GameWorld.h"
-
 
 EditorApplication::EditorApplication() = default;
 
@@ -29,6 +29,7 @@ void EditorApplication::Initialize()
 	{
 		RuntimeApplicationOptions runtimeOptions = m_runtimeOptions;
 		runtimeOptions.EnableRuntimeConsole = false;
+		runtimeOptions.AllowThreadedRenderer = false;
 		m_runtimeApplication = std::make_unique<RuntimeApplication>(std::move(runtimeOptions));
 	}
 
@@ -119,23 +120,7 @@ bool EditorApplication::Tick()
 	m_runtimeApplication->UpdateRuntime();
 	m_runtimeApplication->SubmitViewportRenderRequest(m_ui->GetViewportRenderRequest());
 
-	renderer.PrepareHostFrame();
-	renderer.RecordHostFrame();
-
-	const ViewportRenderProducts& viewportProducts = m_runtimeApplication->GetViewportRenderProducts();
-	m_ui->SetViewportRenderProducts(viewportProducts);
-	const ViewportPresentationProduct sceneColorPresentation = renderer.BeginViewportPresentation(RenderOutputFlags::SceneColor);
-	m_ui->SetViewportSceneColorTextureId(sceneColorPresentation.TextureId);
-	m_ui->Update();
-
-	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
-	renderer.BeginHostPresentation(editorClearColor);
-	m_ui->Render();
-	renderer.EndHostPresentation();
-
-	renderer.EndViewportPresentation(RenderOutputFlags::SceneColor);
-
-	renderer.SubmitHostFrame();
+	EditorUiFrameRenderer::Render(*m_runtimeApplication, renderer, *m_ui);
 	return true;
 }
 

@@ -3,37 +3,12 @@
 
 #include "Core/Public/Paths/PathUtils.h"
 
-#include "Core/Public/Paths/PathFormatting.h"
-#include "Paths/LogPathPolicy.h"
-
 #include <algorithm>
 #include <cwctype>
 #include <system_error>
 
 namespace Paths
 {
-	std::filesystem::path LogFile(std::string_view configuredFile, bool ensureParentExists)
-	{
-		std::filesystem::path configuredPath{std::string(configuredFile)};
-		if (!configuredFile.empty() && !configuredPath.empty())
-		{
-			if (!configuredPath.is_absolute())
-			{
-				configuredPath = Filesystem::ResolveLogsRootPath() / configuredPath;
-			}
-			if (ensureParentExists)
-			{
-				std::error_code errorCode;
-				std::filesystem::create_directories(configuredPath.parent_path(), errorCode);
-			}
-			return configuredPath;
-		}
-
-		const std::string sanitizedExecutableStem = PathFormatting::SanitizePathSegment(Filesystem::GetExecutablePath().stem().string());
-		return Private::DefaultLogDirectory(ensureParentExists, sanitizedExecutableStem) /
-		       PathFormatting::TimestampedFileName(sanitizedExecutableStem, ".log");
-	}
-
 	bool IsUnderRoot(const std::filesystem::path& path, const std::filesystem::path& root)
 	{
 		if (path.empty() || root.empty())

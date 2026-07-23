@@ -29,6 +29,7 @@ enum class RuntimeApplicationFrameResult : std::uint8_t
 struct RuntimeApplicationOptions final
 {
 	bool EnableRuntimeConsole = true;
+	bool AllowThreadedRenderer = true;
 	std::function<void(GameWorld&)> WorldSetupCallback;
 };
 
@@ -48,7 +49,7 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	RuntimeApplicationFrameResult BeginFrame();
 	void UpdateRuntime() noexcept;
 	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
-	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
+	ViewportRenderProducts GetViewportRenderProducts() const;
 	Timer& GetTimer() noexcept;
 	Window& GetWindow() noexcept;
 	InputSystem& GetInputSystem() noexcept;
@@ -61,6 +62,8 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	void Shutdown() override;
 
   private:
+	static bool WantsImGuiInputCapture() noexcept;
+
 	std::unique_ptr<Timer> m_timer;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<InputSystem> m_inputSystem;

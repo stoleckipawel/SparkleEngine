@@ -2,8 +2,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		LauncherOperationUiModel MakeOperationUiModel(
 		    const QString& operationId,
 		    const QString& displayName,
@@ -38,7 +37,7 @@ namespace SparkleLauncher
 			model.VisualAssetName = "workflow-fallback-tools.png";
 			return model;
 		}
-	}
+
 
 	LauncherOperationUiModel LauncherUiModelForOperation(const QString& operationId)
 	{

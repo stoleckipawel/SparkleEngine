@@ -12,9 +12,10 @@
 #include <sl_dlss.h>
 #include <sl_dlss_d.h>
 
-namespace
+class StreamlineRayReconstructionEvaluationOperations final
 {
-	bool HasRequiredNativeResources(const RayReconstructionEvaluationDesc& evaluation) noexcept
+  public:
+	static bool HasRequiredNativeResources(const RayReconstructionEvaluationDesc& evaluation) noexcept
 	{
 		return evaluation.NativeCommandList && AreStreamlineTextureViewsValid(
 		                                           evaluation.BackendApi,
@@ -30,7 +31,7 @@ namespace
 		                                           evaluation.NativeExposureView);
 	}
 
-	sl::DLSSDOptions BuildRayReconstructionOptions(
+	static sl::DLSSDOptions BuildRayReconstructionOptions(
 	    EUpscalerQualityMode qualityMode,
 	    RenderViewportExtent outputExtent) noexcept
 	{
@@ -50,14 +51,14 @@ namespace
 		return options;
 	}
 
-}
+};
 
 RenderViewportExtent QueryStreamlineRayReconstructionOptimalRenderExtent(
     RenderViewportExtent outputExtent,
     EUpscalerQualityMode qualityMode) noexcept
 {
 	sl::DLSSDOptimalSettings settings{};
-	const sl::DLSSDOptions options = BuildRayReconstructionOptions(qualityMode, outputExtent);
+	const sl::DLSSDOptions options = StreamlineRayReconstructionEvaluationOperations::BuildRayReconstructionOptions(qualityMode, outputExtent);
 	if (slDLSSDGetOptimalSettings(options, settings) != sl::Result::eOk)
 	{
 		return {};
@@ -71,7 +72,7 @@ bool EvaluateStreamlineRayReconstructionFrame(
     sl::ViewportHandle viewport,
     const RayReconstructionEvaluationDesc& evaluation)
 {
-	if (!HasRequiredNativeResources(evaluation))
+	if (!StreamlineRayReconstructionEvaluationOperations::HasRequiredNativeResources(evaluation))
 	{
 		return false;
 	}
@@ -88,7 +89,7 @@ bool EvaluateStreamlineRayReconstructionFrame(
 		return false;
 	}
 
-	sl::DLSSDOptions options = BuildRayReconstructionOptions(qualityMode, evaluation.OutputExtent);
+	sl::DLSSDOptions options = StreamlineRayReconstructionEvaluationOperations::BuildRayReconstructionOptions(qualityMode, evaluation.OutputExtent);
 	options.worldToCameraView = ToStreamlineMatrix(frameContext.Camera.ViewMTX);
 	options.cameraViewToWorld = ToStreamlineMatrix(frameContext.Camera.InvViewMTX);
 	if (slDLSSDSetOptions(viewport, options) != sl::Result::eOk || !frameEvaluation.SetViewConstants(frameContext))

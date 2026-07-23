@@ -9,9 +9,10 @@
 #include <format>
 #include <utility>
 
-namespace
+class GltfMaterialVariantImporterOperations final
 {
-	ImportedMaterialIndex ResolveImportedMaterialIndex(const cgltf_data* data, const cgltf_material* material) noexcept
+  public:
+	static ImportedMaterialIndex ResolveImportedMaterialIndex(const cgltf_data* data, const cgltf_material* material) noexcept
 	{
 		if (data == nullptr || material == nullptr || data->materials == nullptr || data->materials_count == 0)
 		{
@@ -27,7 +28,7 @@ namespace
 		return static_cast<ImportedMaterialIndex>(materialIndex);
 	}
 
-	std::string BuildVariantName(const cgltf_material_variant& variant, cgltf_size variantIndex)
+	static std::string BuildVariantName(const cgltf_material_variant& variant, cgltf_size variantIndex)
 	{
 		if (variant.name != nullptr && variant.name[0] != '\0')
 		{
@@ -37,7 +38,7 @@ namespace
 		return std::format("Variant{}", static_cast<std::uint32_t>(variantIndex));
 	}
 
-	void ImportVariantSet(const cgltf_data* data, SourceImportResult& result)
+	static void ImportVariantSet(const cgltf_data* data, SourceImportResult& result)
 	{
 		result.scene.materialVariants.reserve(data->variants_count);
 		for (cgltf_size variantIndex = 0; variantIndex < data->variants_count; ++variantIndex)
@@ -49,7 +50,7 @@ namespace
 		}
 	}
 
-	void ImportPrimitiveMappings(
+	static void ImportPrimitiveMappings(
 	    const cgltf_data* data,
 	    const cgltf_primitive& primitive,
 	    std::uint32_t sourceMeshIndex,
@@ -84,7 +85,7 @@ namespace
 			result.scene.materialVariantMappings.push_back(importedMapping);
 		}
 	}
-}  // namespace
+};
 
 void GltfMaterialVariantImporter::ImportMaterialVariants(const cgltf_data* data, SourceImportResult& result)
 {
@@ -93,13 +94,13 @@ void GltfMaterialVariantImporter::ImportMaterialVariants(const cgltf_data* data,
 		return;
 	}
 
-	ImportVariantSet(data, result);
+	GltfMaterialVariantImporterOperations::ImportVariantSet(data, result);
 	for (cgltf_size meshIndex = 0; meshIndex < data->meshes_count; ++meshIndex)
 	{
 		const cgltf_mesh& mesh = data->meshes[meshIndex];
 		for (cgltf_size primitiveIndex = 0; primitiveIndex < mesh.primitives_count; ++primitiveIndex)
 		{
-			ImportPrimitiveMappings(
+			GltfMaterialVariantImporterOperations::ImportPrimitiveMappings(
 			    data,
 			    mesh.primitives[primitiveIndex],
 			    static_cast<std::uint32_t>(meshIndex),

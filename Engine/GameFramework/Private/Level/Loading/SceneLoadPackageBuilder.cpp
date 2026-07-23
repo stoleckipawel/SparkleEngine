@@ -15,9 +15,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace
+class SceneLoadPackageBuilderOperations final
 {
-	std::uint64_t MakeAuthoredInstanceId(std::string_view identity) noexcept
+  public:
+	static std::uint64_t MakeAuthoredInstanceId(std::string_view identity) noexcept
 	{
 		constexpr std::uint64_t OffsetBasis = 14695981039346656037ull;
 		constexpr std::uint64_t Prime = 1099511628211ull;
@@ -31,12 +32,12 @@ namespace
 	}
 
 	template <typename... Components>
-	std::vector<ECS::ComponentSchema> Schemas() noexcept
+	static std::vector<ECS::ComponentSchema> Schemas() noexcept
 	{
 		return {ECS::GetComponentSchema<Components>()...};
 	}
 
-	std::size_t EstimatePayloadBytes(const SceneAssetPayload& payload) noexcept
+	static std::size_t EstimatePayloadBytes(const SceneAssetPayload& payload) noexcept
 	{
 		return payload.staticMeshAssets.size() * sizeof(SceneAssetPayload::StaticMeshAsset) +
 		       payload.skeletalMeshAssets.size() * sizeof(SceneAssetPayload::SkeletalMeshAsset) +
@@ -48,7 +49,7 @@ namespace
 		       payload.animations.size() * sizeof(AnimationClipResource);
 	}
 
-	bool ValidateReferences(const SceneAssetPayload& payload, std::string& errorMessage)
+	static bool ValidateReferences(const SceneAssetPayload& payload, std::string& errorMessage)
 	{
 		auto materialIsValid = [&payload](MaterialHandle handle)
 		{
@@ -82,7 +83,7 @@ namespace
 		return true;
 	}
 
-	void BuildBlueprints(Assets::SceneAssetLoadWork& work)
+	static void BuildBlueprints(Assets::SceneAssetLoadWork& work)
 	{
 		auto add = [&work](std::string identity, std::vector<ECS::ComponentSchema> schemas)
 		{
@@ -120,7 +121,7 @@ namespace
 			            ECS::EditorMetadata>());
 	}
 
-	bool HasUniqueBlueprintContract(
+	static bool HasUniqueBlueprintContract(
 	    const std::vector<Assets::EntityBlueprint>& entities,
 	    std::string& errorMessage)
 	{
@@ -154,7 +155,7 @@ namespace
 		}
 		return true;
 	}
-}
+};
 
 namespace Assets
 {
@@ -163,11 +164,11 @@ namespace Assets
 	    std::size_t& decodedBytes,
 	    std::string& errorMessage)
 	{
-		if (!ValidateReferences(work.Payload, errorMessage))
+		if (!SceneLoadPackageBuilderOperations::ValidateReferences(work.Payload, errorMessage))
 			return false;
-		work.Payload.authoredInstanceId = MakeAuthoredInstanceId(work.Id.value);
-		BuildBlueprints(work);
-		decodedBytes = EstimatePayloadBytes(work.Payload);
+		work.Payload.authoredInstanceId = SceneLoadPackageBuilderOperations::MakeAuthoredInstanceId(work.Id.value);
+		SceneLoadPackageBuilderOperations::BuildBlueprints(work);
+		decodedBytes = SceneLoadPackageBuilderOperations::EstimatePayloadBytes(work.Payload);
 		errorMessage.clear();
 		return true;
 	}
@@ -198,12 +199,12 @@ namespace Assets
 
 		state.Package->Entities.push_back(EntityBlueprint{
 		    std::format("level:{}:camera:0", state.Package->Level.name),
-		    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility,
+		    SceneLoadPackageBuilderOperations::Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility,
 		            ECS::CameraMovement, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>()});
 		for (std::size_t index = 0; index < state.Package->Level.lights.size(); ++index)
 			state.Package->Entities.push_back(EntityBlueprint{
 			    std::format("level:{}:light:{}", state.Package->Level.name, index),
-			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Light, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity,
+			    SceneLoadPackageBuilderOperations::Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Light, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity,
 			            ECS::EditorMetadata>()});
 		for (SceneAssetLoadWork& work : state.Assets)
 		{
@@ -211,6 +212,6 @@ namespace Assets
 				state.Package->Entities.push_back(std::move(entity));
 			state.Package->AssetPayloads.push_back(std::move(work.Payload));
 		}
-		return HasUniqueBlueprintContract(state.Package->Entities, errorMessage);
+		return SceneLoadPackageBuilderOperations::HasUniqueBlueprintContract(state.Package->Entities, errorMessage);
 	}
 }

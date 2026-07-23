@@ -9,9 +9,10 @@
 #include <string>
 #include <string_view>
 
-namespace
+class D3D12ExternalFeatureInteropCapabilitiesOperations final
 {
-	std::string NarrowAdapterDescription(std::wstring_view value)
+  public:
+	static std::string NarrowAdapterDescription(std::wstring_view value)
 	{
 		std::string result;
 		result.reserve(value.size());
@@ -26,7 +27,7 @@ namespace
 		return result;
 	}
 
-	RhiAdapterIdentity BuildD3D12AdapterIdentity(const D3D12Rhi* rhi) noexcept
+	static RhiAdapterIdentity BuildD3D12AdapterIdentity(const D3D12Rhi* rhi) noexcept
 	{
 		if (rhi == nullptr || rhi->GetAdapter() == nullptr)
 		{
@@ -49,7 +50,7 @@ namespace
 		identity.NativeLuidSizeInBytes = static_cast<std::uint32_t>(sizeof(adapterDesc.AdapterLuid));
 		return identity;
 	}
-}
+};
 
 RhiExternalFeatureInteropCapabilities BuildD3D12ExternalFeatureInteropCapabilities(
     const D3D12Rhi* rhi,
@@ -57,7 +58,7 @@ RhiExternalFeatureInteropCapabilities BuildD3D12ExternalFeatureInteropCapabiliti
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
 	capabilities.BridgeKind = ERhiExternalFeatureBridgeKind::D3D12NativeDevice;
-	capabilities.Adapter = BuildD3D12AdapterIdentity(rhi);
+	capabilities.Adapter = D3D12ExternalFeatureInteropCapabilitiesOperations::BuildD3D12AdapterIdentity(rhi);
 	capabilities.ExposesNativeDevice = rhi != nullptr && rhi->GetDevice() != nullptr;
 	capabilities.ExposesNativeGraphicsQueue = rhi != nullptr && rhi->GetCommandQueue() != nullptr;
 	capabilities.ExposesNativeGraphicsCommandList = hasGraphicsCommandList;

@@ -9,8 +9,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		QString SanitizeActionHistoryField(QString value)
 		{
 			value.replace('\t', ' ');
@@ -18,7 +17,7 @@ namespace SparkleLauncher
 			value.replace('\n', ' ');
 			return value.trimmed();
 		}
-	}
+
 
 	void LauncherActionHistoryModel::Load(const std::filesystem::path& repositoryRoot)
 	{

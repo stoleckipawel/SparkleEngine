@@ -4,9 +4,10 @@
 
 #include "Vulkan/Device/VulkanRhi.h"
 
-namespace
+class VulkanExternalFeatureInteropCapabilitiesOperations final
 {
-	RhiAdapterIdentity BuildVulkanAdapterIdentity(const VulkanRhi* rhi)
+  public:
+	static RhiAdapterIdentity BuildVulkanAdapterIdentity(const VulkanRhi* rhi)
 	{
 		if (rhi == nullptr)
 		{
@@ -20,7 +21,7 @@ namespace
 		    .VendorId = adapter.VendorId,
 		    .DeviceId = adapter.DeviceId};
 	}
-}
+};
 
 RhiExternalFeatureInteropCapabilities BuildVulkanExternalFeatureInteropCapabilities(
     const VulkanRhi* rhi,
@@ -28,7 +29,7 @@ RhiExternalFeatureInteropCapabilities BuildVulkanExternalFeatureInteropCapabilit
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
 	capabilities.BridgeKind = ERhiExternalFeatureBridgeKind::VulkanManualFunctionPointers;
-	capabilities.Adapter = BuildVulkanAdapterIdentity(rhi);
+	capabilities.Adapter = VulkanExternalFeatureInteropCapabilitiesOperations::BuildVulkanAdapterIdentity(rhi);
 	if (rhi != nullptr)
 	{
 		capabilities.VulkanHasInstanceHandle = rhi->GetInstance() != VK_NULL_HANDLE;

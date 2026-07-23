@@ -2,9 +2,10 @@
 
 #include "D3D12/D3D12TypeConversions.h"
 
-namespace
+class D3D12TypeConversionsOperations final
 {
-	DXGI_FORMAT ResolveTextureResourceFormat(const RhiTextureResourceDesc& desc) noexcept
+  public:
+	static DXGI_FORMAT ResolveTextureResourceFormat(const RhiTextureResourceDesc& desc) noexcept
 	{
 		if (!desc.AllowDepthStencil)
 		{
@@ -21,7 +22,7 @@ namespace
 				return D3D12TypeConversions::ToDxgiFormat(desc.Format);
 		}
 	}
-}
+};
 
 DXGI_FORMAT D3D12TypeConversions::ToDxgiFormat(PixelFormat format) noexcept
 {
@@ -200,7 +201,7 @@ D3D12_RESOURCE_DESC D3D12TypeConversions::BuildTextureResourceDesc(const RhiText
 	resourceDesc.Height = desc.Height;
 	resourceDesc.DepthOrArraySize = desc.ArraySize;
 	resourceDesc.MipLevels = desc.MipLevels;
-	resourceDesc.Format = ResolveTextureResourceFormat(desc);
+	resourceDesc.Format = D3D12TypeConversionsOperations::ResolveTextureResourceFormat(desc);
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.SampleDesc.Quality = 0;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;

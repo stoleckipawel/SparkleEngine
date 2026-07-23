@@ -7,21 +7,22 @@
 #include <iostream>
 #include <sstream>
 
-namespace
+class RenderWorldContractChecksOperations final
 {
-	bool Expect(bool condition, const char* message)
+  public:
+	static bool Expect(bool condition, const char* message)
 	{
 		if (!condition) std::cerr << message << '\n';
 		return condition;
 	}
 
-	RenderWorldApplyStatus Apply(RenderWorld& world, const RenderWorldDelta& delta)
+	static RenderWorldApplyStatus Apply(RenderWorld& world, const RenderWorldDelta& delta)
 	{
 		std::string diagnostic;
 		return world.Apply(delta, diagnostic);
 	}
 
-	std::string Fingerprint(const RenderWorld& world)
+	static std::string Fingerprint(const RenderWorld& world)
 	{
 		std::ostringstream value;
 		value << world.GetSceneGeneration() << ':' << world.GetSequenceNumber() << ':'
@@ -35,7 +36,7 @@ namespace
 			      << proxy.Static.Skeleton.GetAssetId();
 		return value.str();
 	}
-}
+};
 
 bool ValidateDeterministicRenderWorldReplay(
     const std::vector<RenderInputFrame>& recording,
@@ -47,21 +48,21 @@ bool ValidateDeterministicRenderWorldReplay(
 	const auto replayStart = std::chrono::steady_clock::now();
 	for (std::size_t index = 0; index < recording.size(); ++index)
 	{
-		if (!Expect(Apply(retainedWorld, recording[index].WorldDelta) == RenderWorldApplyStatus::Applied,
+		if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(retainedWorld, recording[index].WorldDelta) == RenderWorldApplyStatus::Applied,
 		            "First replay rejected a valid delta."))
 			return false;
-		if (!Expect(Apply(secondReplay, recording[index].WorldDelta) == RenderWorldApplyStatus::Applied,
+		if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(secondReplay, recording[index].WorldDelta) == RenderWorldApplyStatus::Applied,
 		            "Second replay rejected a valid delta."))
 			return false;
-		if (index == 1 && !Expect(retainedWorld.GetSky().has_value(),
+		if (index == 1 && !RenderWorldContractChecksOperations::Expect(retainedWorld.GetSky().has_value(),
 		                          "An omitted sky publication cleared retained sky state."))
 			return false;
 	}
 	replayElapsed = std::chrono::steady_clock::now() - replayStart;
-	if (!Expect(Fingerprint(retainedWorld) == Fingerprint(secondReplay),
+	if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Fingerprint(retainedWorld) == RenderWorldContractChecksOperations::Fingerprint(secondReplay),
 	            "Recorded replay produced different render-world state."))
 		return false;
-	return Expect(retainedWorld.GetProxies().size() == 1 && retainedWorld.Find(retainedObject) != nullptr &&
+	return RenderWorldContractChecksOperations::Expect(retainedWorld.GetProxies().size() == 1 && retainedWorld.Find(retainedObject) != nullptr &&
 	                  !retainedWorld.GetSky(),
 	              "Create/update/destroy replay did not reach the expected final state.");
 }
@@ -69,18 +70,18 @@ bool ValidateDeterministicRenderWorldReplay(
 bool ValidateRenderWorldOrdering(const std::vector<RenderInputFrame>& recording)
 {
 	RenderWorld world;
-	if (!Expect(Apply(world, recording[0].WorldDelta) == RenderWorldApplyStatus::Applied, "Initial reset was rejected."))
+	if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(world, recording[0].WorldDelta) == RenderWorldApplyStatus::Applied, "Initial reset was rejected."))
 		return false;
-	if (!Expect(Apply(world, recording[0].WorldDelta) == RenderWorldApplyStatus::Duplicate,
+	if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(world, recording[0].WorldDelta) == RenderWorldApplyStatus::Duplicate,
 	            "Duplicate delta was not rejected."))
 		return false;
 	RenderWorldDelta gap = recording[2].WorldDelta;
-	if (!Expect(Apply(world, gap) == RenderWorldApplyStatus::OutOfOrder, "Sequence gap was not rejected.")) return false;
+	if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(world, gap) == RenderWorldApplyStatus::OutOfOrder, "Sequence gap was not rejected.")) return false;
 
 	RenderWorldDelta newerWithoutReset;
 	newerWithoutReset.SceneGeneration = 2;
 	newerWithoutReset.SequenceNumber = 4;
-	if (!Expect(Apply(world, newerWithoutReset) == RenderWorldApplyStatus::Rejected,
+	if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(world, newerWithoutReset) == RenderWorldApplyStatus::Rejected,
 	            "New generation without reset was accepted."))
 		return false;
 
@@ -90,21 +91,21 @@ bool ValidateRenderWorldOrdering(const std::vector<RenderInputFrame>& recording)
 	incompleteReset.ResetScene = true;
 	incompleteReset.Materials = RenderMaterialTable{.Generation = 2};
 	incompleteReset.Textures = RenderTextureTable{.Generation = 2};
-	if (!Expect(Apply(world, incompleteReset) == RenderWorldApplyStatus::Rejected,
+	if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(world, incompleteReset) == RenderWorldApplyStatus::Rejected,
 	            "Incomplete scene publication was accepted."))
 		return false;
 
 	RenderWorldDelta nextGeneration = incompleteReset;
 	nextGeneration.Sky.Published = true;
 	nextGeneration.InstanceGroups.Published = true;
-	if (!Expect(Apply(world, nextGeneration) == RenderWorldApplyStatus::Applied,
+	if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(world, nextGeneration) == RenderWorldApplyStatus::Applied,
 	            "Valid next-generation reset was rejected."))
 		return false;
 
 	RenderWorldDelta stale;
 	stale.SceneGeneration = 1;
 	stale.SequenceNumber = 2;
-	return Expect(Apply(world, stale) == RenderWorldApplyStatus::Stale, "Stale generation was not rejected.");
+	return RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(world, stale) == RenderWorldApplyStatus::Stale, "Stale generation was not rejected.");
 }
 
 bool ValidateRejectedRenderWorldDeltas(const RenderInputFrame& resetFrame, RenderObjectId object)
@@ -112,7 +113,7 @@ bool ValidateRejectedRenderWorldDeltas(const RenderInputFrame& resetFrame, Rende
 	RenderWorld duplicateCreateWorld;
 	RenderWorldDelta duplicateCreate = resetFrame.WorldDelta;
 	duplicateCreate.Creates.push_back(duplicateCreate.Creates.front());
-	if (!Expect(Apply(duplicateCreateWorld, duplicateCreate) == RenderWorldApplyStatus::Rejected &&
+	if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(duplicateCreateWorld, duplicateCreate) == RenderWorldApplyStatus::Rejected &&
 	                duplicateCreateWorld.GetProxies().empty(),
 	            "Duplicate creates were not rejected before render-world mutation."))
 		return false;
@@ -120,15 +121,15 @@ bool ValidateRejectedRenderWorldDeltas(const RenderInputFrame& resetFrame, Rende
 	RenderWorld invalidTextureWorld;
 	RenderWorldDelta invalidTexture = resetFrame.WorldDelta;
 	invalidTexture.Textures->Assets.front().Handle.Index = 99;
-	if (!Expect(Apply(invalidTextureWorld, invalidTexture) == RenderWorldApplyStatus::Rejected,
+	if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(invalidTextureWorld, invalidTexture) == RenderWorldApplyStatus::Rejected,
 	            "Invalid texture generation was accepted."))
 		return false;
 
 	const auto rejects = [&resetFrame](RenderWorldDelta invalid)
 	{
 		RenderWorld world;
-		if (Apply(world, resetFrame.WorldDelta) != RenderWorldApplyStatus::Applied) return false;
-		return Apply(world, invalid) == RenderWorldApplyStatus::Rejected && world.GetSequenceNumber() == 1;
+		if (RenderWorldContractChecksOperations::Apply(world, resetFrame.WorldDelta) != RenderWorldApplyStatus::Applied) return false;
+		return RenderWorldContractChecksOperations::Apply(world, invalid) == RenderWorldApplyStatus::Rejected && world.GetSequenceNumber() == 1;
 	};
 
 	RenderWorldDelta duplicateUpdate;
@@ -136,24 +137,24 @@ bool ValidateRejectedRenderWorldDeltas(const RenderInputFrame& resetFrame, Rende
 	duplicateUpdate.SequenceNumber = 2;
 	duplicateUpdate.Updates = {{object, resetFrame.WorldDelta.Creates[0].Static},
 	                           {object, resetFrame.WorldDelta.Creates[0].Static}};
-	if (!Expect(rejects(duplicateUpdate), "Duplicate updates were not rejected atomically.")) return false;
+	if (!RenderWorldContractChecksOperations::Expect(rejects(duplicateUpdate), "Duplicate updates were not rejected atomically.")) return false;
 
 	RenderWorldDelta updateAndDestroy = duplicateUpdate;
 	updateAndDestroy.Updates.resize(1);
 	updateAndDestroy.Destroys.push_back(object);
-	if (!Expect(rejects(updateAndDestroy), "Conflicting update/destroy operations were not rejected atomically."))
+	if (!RenderWorldContractChecksOperations::Expect(rejects(updateAndDestroy), "Conflicting update/destroy operations were not rejected atomically."))
 		return false;
 
 	RenderWorldDelta duplicateDestroy;
 	duplicateDestroy.SceneGeneration = 1;
 	duplicateDestroy.SequenceNumber = 2;
 	duplicateDestroy.Destroys = {object, object};
-	if (!Expect(rejects(duplicateDestroy), "Duplicate destroys were not rejected atomically.")) return false;
+	if (!RenderWorldContractChecksOperations::Expect(rejects(duplicateDestroy), "Duplicate destroys were not rejected atomically.")) return false;
 
 	RenderWorldDelta wrongMaterial = duplicateUpdate;
 	wrongMaterial.Updates.resize(1);
 	wrongMaterial.Updates[0].Static.Material = MaterialHandle(0, 99);
-	return Expect(rejects(wrongMaterial), "Mismatched material generation was not rejected.");
+	return RenderWorldContractChecksOperations::Expect(rejects(wrongMaterial), "Mismatched material generation was not rejected.");
 }
 
 bool ValidateRenderInputFrameAdmission(const std::vector<RenderInputFrame>& recording)
@@ -164,12 +165,12 @@ bool ValidateRenderInputFrameAdmission(const std::vector<RenderInputFrame>& reco
 	{
 		std::string diagnostic;
 		bool reset = false;
-		if (!Expect(world.Validate(frame.WorldDelta, diagnostic) == RenderWorldApplyStatus::Applied,
+		if (!RenderWorldContractChecksOperations::Expect(world.Validate(frame.WorldDelta, diagnostic) == RenderWorldApplyStatus::Applied,
 		            "A valid frame delta failed preflight validation.") ||
-		    !Expect(validator.Validate(world, frame, reset, diagnostic),
+		    !RenderWorldContractChecksOperations::Expect(validator.Validate(world, frame, reset, diagnostic),
 		            "A valid dynamic frame failed admission validation."))
 			return false;
-		if (!Expect(Apply(world, frame.WorldDelta) == RenderWorldApplyStatus::Applied,
+		if (!RenderWorldContractChecksOperations::Expect(RenderWorldContractChecksOperations::Apply(world, frame.WorldDelta) == RenderWorldApplyStatus::Applied,
 		            "A validated frame failed application."))
 			return false;
 		validator.Commit(frame.Dynamic.Metadata);
@@ -179,28 +180,28 @@ bool ValidateRenderInputFrameAdmission(const std::vector<RenderInputFrame>& reco
 	duplicateFrame.WorldDelta.SequenceNumber = 4;
 	std::string diagnostic;
 	bool reset = false;
-	if (!Expect(!validator.Validate(world, duplicateFrame, reset, diagnostic), "Duplicate frame identity was accepted."))
+	if (!RenderWorldContractChecksOperations::Expect(!validator.Validate(world, duplicateFrame, reset, diagnostic), "Duplicate frame identity was accepted."))
 		return false;
 
 	RenderInputFrame missingDynamic = recording.back();
 	missingDynamic.WorldDelta.SequenceNumber = 4;
 	missingDynamic.Dynamic.Metadata = MakeRenderWorldContractMetadata(4, 1);
 	missingDynamic.Dynamic.Objects.clear();
-	if (!Expect(!validator.Validate(world, missingDynamic, reset, diagnostic),
+	if (!RenderWorldContractChecksOperations::Expect(!validator.Validate(world, missingDynamic, reset, diagnostic),
 	            "Incomplete dynamic object coverage was accepted."))
 		return false;
 
 	RenderInputFrame providerChange = recording.back();
 	providerChange.WorldDelta.SequenceNumber = 4;
 	providerChange.Dynamic.Metadata = MakeRenderWorldContractMetadata(4, 1, 8);
-	if (!Expect(validator.Validate(world, providerChange, reset, diagnostic) && reset,
+	if (!RenderWorldContractChecksOperations::Expect(validator.Validate(world, providerChange, reset, diagnostic) && reset,
 	            "Provider generation change did not request history reset."))
 		return false;
 
 	RenderInputFrame cutWithoutReset = providerChange;
 	cutWithoutReset.Dynamic.Metadata.CameraCut = true;
 	cutWithoutReset.Dynamic.Metadata.ResetHistory = false;
-	if (!Expect(!validator.Validate(world, cutWithoutReset, reset, diagnostic),
+	if (!RenderWorldContractChecksOperations::Expect(!validator.Validate(world, cutWithoutReset, reset, diagnostic),
 	            "Camera cut without history reset was accepted."))
 		return false;
 
@@ -210,7 +211,7 @@ bool ValidateRenderInputFrameAdmission(const std::vector<RenderInputFrame>& reco
 bool ValidateRetainedRenderWorldOwnership(const RenderWorld& world, RenderObjectId retainedObject)
 {
 	const RenderProxy* retained = world.Find(retainedObject);
-	return Expect(retained != nullptr && retained->Static.Mesh.IsValid() &&
+	return RenderWorldContractChecksOperations::Expect(retained != nullptr && retained->Static.Mesh.IsValid() &&
 	                  retained->Static.Mesh.GetResource()->GetMeshData().IsValid() &&
 	                  world.GetMaterials().Values.size() == 2 && world.GetTextures().Assets.size() == 1,
 	              "Render world lost immutable values/handles after producer and acknowledged packet storage were poisoned.");

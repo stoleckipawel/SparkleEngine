@@ -17,9 +17,10 @@
 
 static const auto g_textureManagerLogger = Logging::GetOrCreateLogger("Renderer.TextureManager");
 
-namespace
+class TextureManagerOperations final
 {
-	std::uint64_t CalculateTexturePayloadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
+  public:
+	static std::uint64_t CalculateTexturePayloadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
 	{
 		std::uint64_t byteCount = 0;
 		for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
@@ -31,7 +32,7 @@ namespace
 		}
 		return byteCount;
 	}
-}
+};
 
 std::optional<RendererTexture> TextureManager::CreateTextureFromPath(
     const std::filesystem::path& texturePath,
@@ -121,7 +122,7 @@ std::optional<RendererTexture> TextureManager::CreateTextureFromPath(
 	    .Format = textureUpload.Format,
 	    .FormatIntent = loadedTexture.FormatIntent,
 	    .MipCount = textureUpload.GetMipCount(),
-	    .EstimatedByteSize = CalculateTexturePayloadBytes(textureUpload)};
+	    .EstimatedByteSize = TextureManagerOperations::CalculateTexturePayloadBytes(textureUpload)};
 }
 
 TextureManager::TextureManager(

@@ -16,13 +16,14 @@
 #include <set>
 #include <utility>
 
-namespace
+class ShaderConsoleCommandsOperations final
 {
-	ConsoleCommandSeverity ResolveRecookStatusSeverity(const std::string& status) noexcept
+  public:
+	static ConsoleCommandSeverity ResolveRecookStatusSeverity(const std::string& status) noexcept
 	{
 		return status.find("failed") != std::string::npos ? ConsoleCommandSeverity::Error : ConsoleCommandSeverity::Info;
 	}
-}
+};
 
 void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Handlers handlers)
 {
@@ -100,7 +101,7 @@ void ShaderConsoleCommands::ConnectEditor(UI& ui, ShaderRecookCoordinator& coord
 	    {
 		    if (EditorConsoleSystem* consoleSystem = ui.GetEditorConsoleSystem())
 		    {
-			    const ConsoleCommandSeverity severity = ResolveRecookStatusSeverity(status);
+			    const ConsoleCommandSeverity severity = ShaderConsoleCommandsOperations::ResolveRecookStatusSeverity(status);
 			    consoleSystem->AppendOutput(ConsoleOutputRecord{.Severity = severity, .Text = std::move(status)});
 			    consoleSystem->OpenConsole();
 		    }

@@ -3,8 +3,9 @@
 #include "Core/Public/Math/MathUtils.h"
 #include "GameFramework/Public/Scene/Meshes/Mesh.h"
 
-namespace
+class RenderWorldContractFixtureImplementation final
 {
+  public:
 	class ValidationMesh final : public Mesh
 	{
 	  private:
@@ -16,7 +17,7 @@ namespace
 		}
 	};
 
-	RenderObjectStaticData MakeStatic(
+	static RenderObjectStaticData MakeStatic(
 	    const ImmutableRenderMeshHandle& mesh,
 	    MaterialHandle material,
 	    RenderSkeletonAssetHandle skeleton = {})
@@ -28,7 +29,7 @@ namespace
 		    .MeshKind = skeleton.IsValid() ? SceneMeshKind::Skeletal : SceneMeshKind::Static};
 	}
 
-	RenderInputFrame MakeResetFrame(
+	static RenderInputFrame MakeResetFrame(
 	    const ImmutableRenderMeshHandle& mesh,
 	    RenderObjectId staticObject,
 	    RenderObjectId skinnedObject)
@@ -65,7 +66,7 @@ namespace
 		return frame;
 	}
 
-	std::vector<RenderInputFrame> BuildRecording(
+	static std::vector<RenderInputFrame> BuildRecording(
 	    const ImmutableRenderMeshHandle& mesh,
 	    RenderObjectId staticObject,
 	    RenderObjectId skinnedObject)
@@ -98,7 +99,7 @@ namespace
 		recording.push_back(std::move(destroy));
 		return recording;
 	}
-}
+};
 
 void RenderWorldContractFixture::ReleaseProducerOwnership() noexcept
 {
@@ -111,9 +112,9 @@ RenderWorldContractFixture BuildRenderWorldContractFixture()
 	RenderWorldContractFixture fixture;
 	fixture.StaticObject = RenderObjectId::FromParts(7, 1);
 	fixture.SkinnedObject = RenderObjectId::FromParts(8, 1);
-	fixture.ProducerResource = std::make_shared<ValidationMesh>();
+	fixture.ProducerResource = std::make_shared<RenderWorldContractFixtureImplementation::ValidationMesh>();
 	fixture.ProducerMesh = ImmutableRenderMeshHandle(42, fixture.ProducerResource);
-	fixture.Recording = BuildRecording(fixture.ProducerMesh, fixture.StaticObject, fixture.SkinnedObject);
+	fixture.Recording = RenderWorldContractFixtureImplementation::BuildRecording(fixture.ProducerMesh, fixture.StaticObject, fixture.SkinnedObject);
 	return fixture;
 }
 

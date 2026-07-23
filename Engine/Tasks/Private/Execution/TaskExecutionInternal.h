@@ -39,10 +39,10 @@ namespace TaskDetail
 
 struct TaskExecution::State final
 {
-	explicit State(std::uint64_t generation = 0) { Data.Generation = generation; Data.Status = TaskExecutionStatus::Pending; }
+	explicit State(std::uint64_t generation = 0);
 
 	void Publish(TaskDetail::CompletedTaskExecution completed);
-	void RequestCancellation() noexcept { Cancellation.request_stop(); }
+	void RequestCancellation() noexcept;
 
 	mutable std::mutex Mutex;
 	std::condition_variable Condition;

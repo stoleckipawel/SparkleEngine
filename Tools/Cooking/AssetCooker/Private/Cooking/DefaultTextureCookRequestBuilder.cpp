@@ -9,8 +9,9 @@
 #include <string_view>
 #include <system_error>
 
-namespace
+class DefaultTextureCookRequestBuilderImplementation final
 {
+  public:
 	struct DefaultTextureCookDesc final
 	{
 		std::string_view SourceRelativePath;
@@ -22,7 +23,7 @@ namespace
 		TextureDimension Dimension;
 	};
 
-	constexpr std::array DefaultTextures = {
+	static constexpr std::array DefaultTextures = {
 	    DefaultTextureCookDesc{
 	        "Assets/Textures/Defaults/default_checkerboard.png",
 	        "Defaults/default_checkerboard.stex",
@@ -89,7 +90,7 @@ namespace
 	        TextureDimension::Texture2D},
 	};
 
-	bool AppendRequest(
+	static bool AppendRequest(
 	    const DefaultTextureCookDesc& description,
 	    TextureCookRequestSet& requestSet,
 	    std::string& outErrorMessage)
@@ -130,14 +131,14 @@ namespace
 		outErrorMessage.clear();
 		return true;
 	}
-}
+};
 
 bool DefaultTextureCookRequestBuilder::AppendTo(
     TextureCookRequestSet& requestSet, std::string& outErrorMessage)
 {
-	for (const DefaultTextureCookDesc& texture : DefaultTextures)
+	for (const DefaultTextureCookRequestBuilderImplementation::DefaultTextureCookDesc& texture : DefaultTextureCookRequestBuilderImplementation::DefaultTextures)
 	{
-		if (!AppendRequest(texture, requestSet, outErrorMessage))
+		if (!DefaultTextureCookRequestBuilderImplementation::AppendRequest(texture, requestSet, outErrorMessage))
 		{
 			return false;
 		}

@@ -7,11 +7,12 @@
 
 #include <array>
 
-namespace
+class LightingTargetClearOperations final
 {
-	constexpr const char* kLightingTargetClearPassName = "LightingTargetClear";
+  public:
+	static constexpr const char* kLightingTargetClearPassName = "LightingTargetClear";
 
-	auto GetLightingTargets(const LightingRenderTargets& lighting) noexcept
+	static auto GetLightingTargets(const LightingRenderTargets& lighting) noexcept
 	{
 		return std::array{
 		    lighting.DirectDiffuse,
@@ -21,7 +22,7 @@ namespace
 		    lighting.IndirectSpecular};
 	}
 
-	auto GetRayReconstructionGuideTargets(const LightingRenderTargets& lighting) noexcept
+	static auto GetRayReconstructionGuideTargets(const LightingRenderTargets& lighting) noexcept
 	{
 		return std::array{
 		    lighting.ReconstructionGuides.DiffuseAlbedo,
@@ -29,12 +30,12 @@ namespace
 		    lighting.ReconstructionGuides.Roughness,
 		    lighting.ReconstructionGuides.SpecularHitDistance};
 	}
-}
+};
 
 void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting)
 {
 	builder.Execute(
-	    kLightingTargetClearPassName,
+	    LightingTargetClearOperations::kLightingTargetClearPassName,
 	    EFrameGraphPassKind::Raster,
 	    [lighting](PassResourceBuilder& resourceBuilder)
 	    {
@@ -65,13 +66,13 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 	    },
 	    [lighting](PassExecutionContext& context)
 	    {
-		    for (FrameGraphTextureHandle target : GetLightingTargets(lighting))
+		    for (FrameGraphTextureHandle target : LightingTargetClearOperations::GetLightingTargets(lighting))
 		    {
 			    context.Resources.ClearRenderTarget(context.Commands, target);
 		    }
 		    if (lighting.ReconstructionGuides.IsValid())
 		    {
-			    for (FrameGraphTextureHandle target : GetRayReconstructionGuideTargets(lighting))
+			    for (FrameGraphTextureHandle target : LightingTargetClearOperations::GetRayReconstructionGuideTargets(lighting))
 			    {
 				    context.Resources.ClearRenderTarget(context.Commands, target);
 			    }

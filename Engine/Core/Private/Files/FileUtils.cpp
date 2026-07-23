@@ -9,8 +9,7 @@
 
 namespace Files
 {
-	namespace
-	{
+
 		struct PublicationState final
 		{
 			FilePublication File;
@@ -33,7 +32,7 @@ namespace Files
 				}
 			}
 		}
-	}
+
 
 	static bool TryOpenOutput(
 	    const std::filesystem::path& path,

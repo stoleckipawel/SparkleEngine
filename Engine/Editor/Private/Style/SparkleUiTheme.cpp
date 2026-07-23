@@ -13,8 +13,7 @@
 
 namespace SparkleUiTheme
 {
-	namespace
-	{
+
 		ImFont* g_bodyFont = nullptr;
 		ImFont* g_headingFont = nullptr;
 		ImFont* g_monoFont = nullptr;
@@ -69,7 +68,7 @@ namespace SparkleUiTheme
 			const float iconSize = baseSizePixels * 0.86f;
 			io.Fonts->AddFontFromFileTTF(fontPath, iconSize, &iconConfig, kFontAwesomeRanges);
 		}
-	}  // namespace
+	  // namespace
 
 	void ApplyEditorialDarkTheme()
 	{

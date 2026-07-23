@@ -6,6 +6,7 @@
 #include "Cooking/CookedRegistryWriter.h"
 #include "Cooking/ShaderCookResult.h"
 #include "Cooking/ShaderRecookSignal.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"

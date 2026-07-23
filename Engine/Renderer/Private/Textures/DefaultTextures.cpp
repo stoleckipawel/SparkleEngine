@@ -1,9 +1,10 @@
 #include "PCH.h"
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 
-namespace
+class DefaultTexturesConstants final
 {
-	constexpr DefaultTextureDesc kDefaultTextureDescs[] = {
+  public:
+	static constexpr DefaultTextureDesc kDefaultTextureDescs[] = {
 	    {"Checkerboard", "Defaults/default_checkerboard.stex"},
 	    {"White", "Defaults/default_white.stex"},
 	    {"Black", "Defaults/default_black.stex"},
@@ -13,13 +14,13 @@ namespace
 	    {"Normal", "Defaults/default_normal.stex"},
 	    {"Sky", "Defaults/default_cubemap.stex"}};
 
-	constexpr DefaultTextureDesc kUnknownDefaultTextureDesc{};
-}  // namespace
+	static constexpr DefaultTextureDesc kUnknownDefaultTextureDesc{};
+};
 
 const DefaultTextureDesc& DefaultTextures::GetDesc(DefaultTexture type)
 {
 	const auto index = static_cast<std::size_t>(type);
-	return index < static_cast<std::size_t>(DefaultTexture::Count) ? kDefaultTextureDescs[index] : kUnknownDefaultTextureDesc;
+	return index < static_cast<std::size_t>(DefaultTexture::Count) ? DefaultTexturesConstants::kDefaultTextureDescs[index] : DefaultTexturesConstants::kUnknownDefaultTextureDesc;
 }
 
 const char* DefaultTextures::GetName(DefaultTexture type)

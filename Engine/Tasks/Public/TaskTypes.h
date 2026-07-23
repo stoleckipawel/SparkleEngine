@@ -15,13 +15,13 @@ class SPARKLE_TASKS_API TaskName final
   public:
 	static constexpr std::size_t MaximumLength = 96;
 
-	TaskName() = default;
+	TaskName();
 	explicit TaskName(std::string_view value);
 
 	std::string_view Get() const noexcept { return m_value; }
 	bool IsValid() const noexcept { return !m_value.empty() && m_value.size() <= MaximumLength; }
 
-	bool operator==(const TaskName&) const noexcept = default;
+	bool operator==(const TaskName&) const noexcept;
 
   private:
 	std::string m_value;
@@ -51,7 +51,7 @@ class SPARKLE_TASKS_API TaskResult final
 {
   public:
 	static constexpr std::size_t MaximumMessageLength = 512;
-	TaskResult() noexcept = default;
+	TaskResult() noexcept;
 
 	static TaskResult Success() noexcept;
 	static TaskResult Failure(std::string_view message);
@@ -63,7 +63,7 @@ class SPARKLE_TASKS_API TaskResult final
 	bool Failed() const noexcept { return m_outcome == TaskOutcome::Failed; }
 	bool WasCancelled() const noexcept { return m_outcome == TaskOutcome::Cancelled; }
 
-	bool operator==(const TaskResult&) const noexcept = default;
+	bool operator==(const TaskResult&) const noexcept;
 
   private:
 	TaskResult(TaskOutcome outcome, std::string_view message);

@@ -5,9 +5,10 @@
 #include <bit>
 #include <limits>
 
-namespace
+class VulkanQueueTopologyOperations final
 {
-	bool SupportsQueueWork(VkQueueFlags flags, ERhiQueueType queueType) noexcept
+  public:
+	static bool SupportsQueueWork(VkQueueFlags flags, ERhiQueueType queueType) noexcept
 	{
 		switch (queueType)
 		{
@@ -22,7 +23,7 @@ namespace
 		}
 	}
 
-	std::uint32_t QueueSpecializationScore(VkQueueFlags flags, ERhiQueueType queueType) noexcept
+	static std::uint32_t QueueSpecializationScore(VkQueueFlags flags, ERhiQueueType queueType) noexcept
 	{
 		if (queueType == ERhiQueueType::Graphics)
 		{
@@ -48,7 +49,7 @@ namespace
 		return score;
 	}
 
-	VulkanQueueLocation SelectUnusedQueue(
+	static VulkanQueueLocation SelectUnusedQueue(
 		std::span<const VkQueueFamilyProperties> families,
 		std::vector<std::uint32_t>& usedQueueCounts,
 		ERhiQueueType queueType) noexcept
@@ -81,7 +82,7 @@ namespace
 		    .QueueIndex = usedQueueCounts[selectedFamily]++};
 	}
 
-	VulkanQueueLocation SelectFallbackQueue(
+	static VulkanQueueLocation SelectFallbackQueue(
 		std::span<const VkQueueFamilyProperties> families,
 		ERhiQueueType queueType,
 		std::span<const VulkanQueueLocation> selectedLocations) noexcept
@@ -95,7 +96,7 @@ namespace
 		}
 		return {};
 	}
-}
+};
 
 VulkanQueueTopology VulkanQueueTopology::Select(VkPhysicalDevice physicalDevice)
 {
@@ -112,14 +113,14 @@ VulkanQueueTopology VulkanQueueTopology::Select(VkPhysicalDevice physicalDevice)
 	std::vector<std::uint32_t> usedQueueCounts(familyCount, 0);
 
 	topology.m_locations[RhiQueueTypeToIndex(ERhiQueueType::Graphics)] =
-	    SelectUnusedQueue(families, usedQueueCounts, ERhiQueueType::Graphics);
+	    VulkanQueueTopologyOperations::SelectUnusedQueue(families, usedQueueCounts, ERhiQueueType::Graphics);
 	for (const ERhiQueueType queueType : {ERhiQueueType::Compute, ERhiQueueType::Copy})
 	{
 		VulkanQueueLocation& location = topology.m_locations[RhiQueueTypeToIndex(queueType)];
-		location = SelectUnusedQueue(families, usedQueueCounts, queueType);
+		location = VulkanQueueTopologyOperations::SelectUnusedQueue(families, usedQueueCounts, queueType);
 		if (!location.IsValid())
 		{
-			location = SelectFallbackQueue(families, queueType, topology.m_locations);
+			location = VulkanQueueTopologyOperations::SelectFallbackQueue(families, queueType, topology.m_locations);
 		}
 	}
 

@@ -12,10 +12,11 @@
 #include <format>
 #include <unordered_set>
 
-namespace
+class SceneLoadExecutionServiceConstants final
 {
-	constexpr std::size_t kMaximumAssetsPerRequest = 256;
-}
+  public:
+	static constexpr std::size_t kMaximumAssetsPerRequest = 256;
+};
 
 namespace Assets
 {
@@ -62,7 +63,7 @@ namespace Assets
 			errorMessage = "The previous scene load execution has not settled.";
 			return false;
 		}
-		if (level.sceneAssetIds.size() > kMaximumAssetsPerRequest)
+		if (level.sceneAssetIds.size() > SceneLoadExecutionServiceConstants::kMaximumAssetsPerRequest)
 		{
 			errorMessage = "Level exceeds the bounded scene-asset request capacity.";
 			return false;

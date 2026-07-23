@@ -10,9 +10,10 @@
 
 static const auto g_frameGraphBarrierLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
-namespace
+class FrameGraphBarrierPlanPlaybackOperations final
 {
-	std::string FormatResourceLabel(const FrameGraphResourceHandle handle) noexcept
+  public:
+	static std::string FormatResourceLabel(const FrameGraphResourceHandle handle) noexcept
 	{
 		if (!handle.IsValid())
 		{
@@ -22,7 +23,7 @@ namespace
 		return std::format("{}", handle.index);
 	}
 
-	void FailUnresolvedAliasingBarrier(
+	static void FailUnresolvedAliasingBarrier(
 	    std::string_view passName,
 	    const FrameGraphAliasingBarrier& barrier,
 	    std::string_view beforeResourceName,
@@ -42,7 +43,7 @@ namespace
 		        afterResourceName));
 	}
 
-	void FailUnresolvedResourceBarrier(
+	static void FailUnresolvedResourceBarrier(
 	    std::string_view passName,
 	    const FrameGraphBarrier& barrier,
 	    std::string_view resourceName) noexcept
@@ -60,7 +61,7 @@ namespace
 		        ResourceStateToString(barrier.before),
 		        ResourceStateToString(barrier.after)));
 	}
-}
+};
 
 void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept
 {
@@ -100,7 +101,7 @@ void FrameGraph::EmitTransientAliasingBarriers(
 				afterName = m_resourceRegistry.GetMetadata(barrier.afterHandle).debugName;
 			}
 
-			FailUnresolvedAliasingBarrier(passName, barrier, beforeName, afterName);
+			FrameGraphBarrierPlanPlaybackOperations::FailUnresolvedAliasingBarrier(passName, barrier, beforeName, afterName);
 		}
 
 		cmd.AliasResource(beforeResource, afterResource);
@@ -121,7 +122,7 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_vie
 				resourceName = m_resourceRegistry.GetMetadata(barrier.handle).debugName;
 			}
 
-			FailUnresolvedResourceBarrier(passName, barrier, resourceName);
+			FrameGraphBarrierPlanPlaybackOperations::FailUnresolvedResourceBarrier(passName, barrier, resourceName);
 		}
 
 		switch (barrier.type)

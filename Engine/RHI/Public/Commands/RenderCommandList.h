@@ -20,36 +20,14 @@
 class SPARKLE_RHI_API RenderCommandList
 {
   public:
-	virtual ~RenderCommandList() noexcept = default;
+	virtual ~RenderCommandList() noexcept;
 
 	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
 	virtual ERhiQueueType GetQueueType() const noexcept = 0;
-	void TrackResource(RhiResourceHandle resource)
-	{
-		if (!resource)
-		{
-			return;
-		}
-		for (const RhiResourceHandle tracked : m_trackedResources)
-		{
-			if (tracked.Value == resource.Value)
-			{
-				return;
-			}
-		}
-		m_trackedResources.push_back(resource);
-		OnResourceTrackingStarted(resource);
-	}
+	void TrackResource(RhiResourceHandle resource);
 	std::span<const RhiResourceHandle> GetTrackedResources() const noexcept { return m_trackedResources; }
-	void ResolveTrackedResources(RhiSubmissionToken submissionToken) noexcept
-	{
-		for (const RhiResourceHandle resource : m_trackedResources)
-		{
-			OnResourceTrackingFinished(resource, submissionToken);
-		}
-		m_trackedResources.clear();
-	}
-	void ResetTrackedResources() noexcept { ResolveTrackedResources({}); }
+	void ResolveTrackedResources(RhiSubmissionToken submissionToken) noexcept;
+	void ResetTrackedResources() noexcept;
 	virtual NativeGraphicsCommandListHandle GetNativeHandle(const struct RhiNativeInteropRequest& request) const noexcept = 0;
 	virtual bool SupportsDiagnosticScopes() const noexcept = 0;
 	virtual void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept = 0;

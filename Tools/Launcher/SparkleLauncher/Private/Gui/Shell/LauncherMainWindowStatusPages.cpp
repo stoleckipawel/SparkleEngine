@@ -57,8 +57,7 @@ namespace SparkleLauncher
 	static constexpr const char* kColorStateReady = LauncherUi::Color::StateSuccess;
 	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
 
-	namespace
-	{
+
 		QString CompactToolchainDetail(const ToolchainItemStatus& item)
 		{
 			if (item.State == ToolchainItemState::Found && !item.Path.empty())
@@ -75,7 +74,7 @@ namespace SparkleLauncher
 			}
 			return QString();
 		}
-	}
+
 
 	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
 	{

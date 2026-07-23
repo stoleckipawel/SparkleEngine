@@ -9,11 +9,12 @@
 
 #include <format>
 
-namespace
+class D3D12CommandContextOperations final
 {
-	static const auto g_d3d12CommandContextLogger = Logging::GetOrCreateLogger("RHI.D3D12.Commands");
+  public:
+	inline static const auto g_d3d12CommandContextLogger = Logging::GetOrCreateLogger("RHI.D3D12.Commands");
 
-	const wchar_t* QueueTypeToWideString(ERhiQueueType queueType) noexcept
+	static const wchar_t* QueueTypeToWideString(ERhiQueueType queueType) noexcept
 	{
 		switch (queueType)
 		{
@@ -28,7 +29,7 @@ namespace
 				return L"Unknown";
 		}
 	}
-}
+};
 
 D3D12CommandContext::D3D12CommandContext(
 	D3D12Rhi& rhi,
@@ -77,7 +78,7 @@ RhiSubmissionToken D3D12CommandContext::SubmitCommandList(
 	if (slot == nullptr || !slot->Recording)
 	{
 		Diagnostics::Fail(
-		    g_d3d12CommandContextLogger,
+		    D3D12CommandContextOperations::g_d3d12CommandContextLogger,
 		    __FILE__,
 		    __LINE__,
 		    "SubmitCommandList requires a recording command list from the current frame");
@@ -92,13 +93,13 @@ RhiSubmissionToken D3D12CommandContext::SubmitCommandList(
 		while (m_rhi->TryPopDebugMessage(diagnosticMessage))
 		{
 			SPDLOG_LOGGER_ERROR(
-			    g_d3d12CommandContextLogger,
+			    D3D12CommandContextOperations::g_d3d12CommandContextLogger,
 			    "D3D12 validation while closing {} command list: {}",
 			    RhiQueueTypeToString(commandList.GetQueueType()),
 			    diagnosticMessage.Text);
 		}
 		Diagnostics::Fail(
-		    g_d3d12CommandContextLogger,
+		    D3D12CommandContextOperations::g_d3d12CommandContextLogger,
 		    __FILE__,
 		    __LINE__,
 		    std::format(
@@ -139,7 +140,7 @@ RenderCommandList& D3D12CommandContext::GetCurrentCommandList(
 	if (commandList == nullptr)
 	{
 		Diagnostics::Fail(
-		    g_d3d12CommandContextLogger,
+		    D3D12CommandContextOperations::g_d3d12CommandContextLogger,
 		    __FILE__,
 		    __LINE__,
 		    std::format(
@@ -210,12 +211,12 @@ D3D12CommandContext::CommandSlot& D3D12CommandContext::GetOrCreateSlot(
 
 	const std::wstring allocatorName = std::format(
 	    L"Sparkle {} Command Allocator Frame {} Slot {}",
-	    QueueTypeToWideString(queueType),
+	    D3D12CommandContextOperations::QueueTypeToWideString(queueType),
 	    frameIndex,
 	    slotIndex);
 	const std::wstring commandListName = std::format(
 	    L"Sparkle {} Command List Frame {} Slot {}",
-	    QueueTypeToWideString(queueType),
+	    D3D12CommandContextOperations::QueueTypeToWideString(queueType),
 	    frameIndex,
 	    slotIndex);
 	(void)slot->Allocator->SetName(allocatorName.c_str());

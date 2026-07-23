@@ -39,6 +39,9 @@
 
 FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&systems)
 {
+	m_windowExtent = {
+	    static_cast<std::uint32_t>(systems.GetWindow().GetWidth()),
+	    static_cast<std::uint32_t>(systems.GetWindow().GetHeight())};
 	m_renderInputConsumer = std::make_unique<RenderInputConsumer>(
 	    systems.GetRenderWorld(), systems.GetBackend(), systems.GetGpuMeshCache(), systems.GetTextureManager(),
 	    systems.GetMaterialCacheManager(), systems.GetRenderRayTracingScene());
@@ -51,14 +54,12 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&
 	}
 
 	InitializeFrameGraph();
-	BindWindowResizeEvent();
 }
 
 void FramePipeline::SubmitRenderInput(RenderInputFrame input) noexcept
 {
 	FinalizeRenderInputMetadata(input);
-	if (!m_renderInputConsumer->Submit(std::move(input)))
-		SPDLOG_WARN("Renderer rejected a second render input before the serial pending frame was consumed.");
+	(void) m_renderInputConsumer->Submit(std::move(input));
 }
 
 void FramePipeline::FinalizeRenderInputMetadata(RenderInputFrame& input) const noexcept
@@ -72,39 +73,43 @@ void FramePipeline::FinalizeRenderInputMetadata(RenderInputFrame& input) const n
 
 FramePipeline::~FramePipeline() noexcept = default;
 
-void FramePipeline::PrepareHostFrame() noexcept
+void FramePipeline::RequestResize(RenderViewportExtent extent, bool minimized) noexcept
+{
+	m_windowExtent = extent;
+	m_windowMinimized = minimized;
+	m_bResizePending = true;
+}
+
+void FramePipeline::RenderSerialUiFrame(
+    const TimeInfo& timing,
+    RendererSerialUiCallback composeUi,
+    void* context) noexcept
 {
 	BeginFrame();
-	SetupFrame();
-}
-
-void FramePipeline::RecordHostFrame() noexcept
-{
+	SetupFrame(timing);
 	RecordFrame();
-}
-
-void FramePipeline::SubmitHostFrame() noexcept
-{
+	if (composeUi != nullptr) composeUi(context);
 	SubmitFrame();
 	EndFrame();
 }
 
-void FramePipeline::OnRender() noexcept
+void FramePipeline::OnRender(const TimeInfo& timing) noexcept
 {
-	PrepareHostFrame();
-	RecordHostFrame();
-	SubmitHostFrame();
+	BeginFrame();
+	SetupFrame(timing);
+	RecordFrame();
+	SubmitFrame();
+	EndFrame();
 }
 
 RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 {
-	const Window& window = m_systems->GetWindow();
 	if (m_viewportRenderRequest.Extent.IsValid())
 	{
 		return m_viewportRenderRequest.Extent;
 	}
 
-	return RenderViewportExtent{static_cast<std::uint32_t>(window.GetWidth()), static_cast<std::uint32_t>(window.GetHeight())};
+	return m_windowExtent;
 }
 
 FrameResolutionExtents FramePipeline::ResolveFrameResolution() const noexcept
@@ -149,16 +154,6 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 	m_frameGraph = std::move(buildResult.Graph);
 }
 
-void FramePipeline::BindWindowResizeEvent() noexcept
-{
-	auto handle = m_systems->GetWindow().OnResized.Add(
-	    [this]()
-	    {
-		    m_bResizePending = true;
-	    });
-	m_resizeHandle = ScopedEventHandle(m_systems->GetWindow().OnResized, handle);
-}
-
 void FramePipeline::RefreshFrameExecution() noexcept
 {
 	RefreshFrameExecution(ResolveFrameResolution());
@@ -166,8 +161,12 @@ void FramePipeline::RefreshFrameExecution() noexcept
 
 void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noexcept
 {
-	RenderDeviceServices& backend = m_systems->GetBackend();
-	backend.WaitForIdle();
+	m_systems->GetBackend().WaitForIdle();
+	RefreshFrameExecutionAfterDeviceIdle(resolution);
+}
+
+void FramePipeline::RefreshFrameExecutionAfterDeviceIdle(FrameResolutionExtents resolution) noexcept
+{
 	for (std::unique_ptr<FrameContext>& frameContext : m_frameContexts)
 	{
 		frameContext.reset();
@@ -189,20 +188,17 @@ void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
 void FramePipeline::BeginFrame() noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
-	const RenderInputConsumeResult inputResult = m_renderInputConsumer->ConsumePending();
-	if (!inputResult.Diagnostic.empty())
-		SPDLOG_WARN("Renderer rejected input: {}", inputResult.Diagnostic);
+	(void) m_renderInputConsumer->ConsumePending();
 
 	if (m_bResizePending)
 	{
 		m_bResizePending = false;
 		ResetTemporalState("Window resize");
 
-		if (m_systems->GetWindow().HasValidSize())
+		if (!m_windowMinimized && m_windowExtent.IsValid())
 		{
-			backend.WaitForIdle();
 			backend.ResizeSwapChain();
-			RefreshFrameExecution(ResolveFrameResolution());
+			RefreshFrameExecutionAfterDeviceIdle(ResolveFrameResolution());
 		}
 	}
 
@@ -236,9 +232,10 @@ void FramePipeline::BeginFrame() noexcept
 	const ImageProviderGraphKey imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	if (imageProviderFrameGraphKey != m_imageProviderFrameGraphKey)
 	{
+		backend.WaitForIdle();
 		m_systems->RefreshImageProviders();
 		ResetTemporalState("Image provider graph mode changed");
-		RefreshFrameExecution(ResolveFrameResolution());
+		RefreshFrameExecutionAfterDeviceIdle(ResolveFrameResolution());
 		m_imageProviderFrameGraphKey = imageProviderFrameGraphKey;
 	}
 
@@ -249,10 +246,8 @@ void FramePipeline::BeginFrame() noexcept
 	frameDiagnostics.ResolveTimings();
 }
 
-void FramePipeline::SetupFrame() noexcept
+void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
 {
-	Timer& timer = m_systems->GetTimer();
-	timer.Tick();
 	RefreshViewportRenderProducts();
 
 	RenderDeviceServices& backend = m_systems->GetBackend();
@@ -278,7 +273,7 @@ void FramePipeline::SetupFrame() noexcept
 
 	const RenderViewportExtent renderExtent =
 	    m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
-	m_perFrameData = m_perFrameDataBuilder.Build(timer, CVarRenderViewMode.Get(), renderExtent);
+	m_perFrameData = m_perFrameDataBuilder.Build(timing, CVarRenderViewMode.Get(), renderExtent);
 }
 
 void FramePipeline::RefreshViewportRenderProducts() noexcept

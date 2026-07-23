@@ -7,8 +7,7 @@
 
 namespace Assets
 {
-	namespace
-	{
+
 		std::string JointNameToString(const CookedSkeletonJointRecord& jointRecord)
 		{
 			std::size_t length = 0;
@@ -19,7 +18,7 @@ namespace Assets
 
 			return std::string(jointRecord.name, length);
 		}
-	}
+
 
 	SkeletonResource BuildSceneAssetSkeleton(
 	    const LoadedSkeletonAsset& skeletonAsset,

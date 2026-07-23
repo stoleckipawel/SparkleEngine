@@ -31,15 +31,16 @@ struct D3D12GpuMemoryAllocator::Impl
 	}
 };
 
-namespace
+class D3D12GpuMemoryAllocatorImplementation final
 {
+  public:
 	struct CategoryAggregation
 	{
 		RhiMemoryCategoryStats Stats;
 		std::vector<ID3D12Heap*> UniqueHeaps;
 	};
 
-	std::uint64_t GetBudgetBytesForResidency(
+	static std::uint64_t GetBudgetBytesForResidency(
 	    RhiMemoryResidencyClass residencyClass,
 	    const D3D12MA::Budget& localBudget,
 	    const D3D12MA::Budget& nonLocalBudget) noexcept
@@ -56,7 +57,7 @@ namespace
 		}
 	}
 
-	CategoryAggregation& FindOrCreateAggregation(
+	static CategoryAggregation& FindOrCreateAggregation(
 	    std::vector<CategoryAggregation>& aggregations,
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
@@ -83,7 +84,7 @@ namespace
 		return aggregations.back();
 	}
 
-	void AddBlockReference(CategoryAggregation& aggregation, D3D12MA::Allocation* allocation) noexcept
+	static void AddBlockReference(CategoryAggregation& aggregation, D3D12MA::Allocation* allocation) noexcept
 	{
 		if (allocation == nullptr)
 		{
@@ -104,7 +105,7 @@ namespace
 		}
 	}
 
-	std::string WideStringToUtf8(const wchar_t* text)
+	static std::string WideStringToUtf8(const wchar_t* text)
 	{
 		if (text == nullptr || text[0] == L'\0')
 		{
@@ -121,7 +122,7 @@ namespace
 		WideCharToMultiByte(CP_UTF8, 0, text, -1, result.data(), requiredBytes, nullptr, nullptr);
 		return result;
 	}
-}  // namespace
+};
 
 D3D12GpuMemoryAllocator::D3D12GpuMemoryAllocator(IDXGIAdapter* adapter, ID3D12Device* device) noexcept :
     m_impl(std::make_unique<Impl>())
@@ -172,7 +173,7 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 	snapshot.TotalBudgetBytes = localBudget.BudgetBytes + nonLocalBudget.BudgetBytes;
 	snapshot.ApiUsageBytes = localBudget.UsageBytes + nonLocalBudget.UsageBytes;
 
-	std::vector<CategoryAggregation> aggregations;
+	std::vector<D3D12GpuMemoryAllocatorImplementation::CategoryAggregation> aggregations;
 	{
 		std::scoped_lock lock(m_impl->recordsMutex);
 		aggregations.reserve(m_impl->liveRecords.size());
@@ -197,7 +198,8 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			{
 				snapshot.TransientUsageBytes += allocationBytes;
 			}
-			CategoryAggregation& aggregation = FindOrCreateAggregation(
+			D3D12GpuMemoryAllocatorImplementation::CategoryAggregation& aggregation =
+			    D3D12GpuMemoryAllocatorImplementation::FindOrCreateAggregation(
 			    aggregations,
 			    record->Category,
 			    record->ResidencyClass,
@@ -210,7 +212,7 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			}
 			aggregation.Stats.UsedBytes += allocationBytes;
 			aggregation.Stats.AllocatedBytes += allocationBytes;
-			AddBlockReference(aggregation, record->Allocation);
+			D3D12GpuMemoryAllocatorImplementation::AddBlockReference(aggregation, record->Allocation);
 		}
 
 		for (const D3D12GpuHeapRecord* record : m_impl->liveHeapRecords)
@@ -226,7 +228,8 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			{
 				snapshot.TransientUsageBytes += allocationBytes;
 			}
-			CategoryAggregation& aggregation = FindOrCreateAggregation(
+			D3D12GpuMemoryAllocatorImplementation::CategoryAggregation& aggregation =
+			    D3D12GpuMemoryAllocatorImplementation::FindOrCreateAggregation(
 			    aggregations,
 			    record->Category,
 			    record->ResidencyClass,
@@ -236,12 +239,12 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			aggregation.Stats.ResourceCount += record->AliasingResourceCount;
 			aggregation.Stats.UsedBytes += allocationBytes;
 			aggregation.Stats.AllocatedBytes += allocationBytes;
-			AddBlockReference(aggregation, record->Allocation);
+			D3D12GpuMemoryAllocatorImplementation::AddBlockReference(aggregation, record->Allocation);
 		}
 	}
 
 	snapshot.CategoryStats.reserve(aggregations.size());
-	for (const CategoryAggregation& aggregation : aggregations)
+	for (const D3D12GpuMemoryAllocatorImplementation::CategoryAggregation& aggregation : aggregations)
 	{
 		snapshot.CategoryStats.push_back(aggregation.Stats);
 	}
@@ -381,7 +384,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateResourc
 		    RhiMemoryResidencyClassName(residencyClass),
 		    liveAllocationCount,
 		    liveHeapCount,
-		    WideStringToUtf8(std::wstring(debugName).c_str()));
+		    D3D12GpuMemoryAllocatorImplementation::WideStringToUtf8(std::wstring(debugName).c_str()));
 		if (allocation != nullptr)
 		{
 			allocation->Release();

@@ -10,17 +10,17 @@
 #include "Level/LevelManager.h"
 #include "Time/Timer.h"
 #include "Concurrency/ApplicationTaskRuntime.h"
+#include "Concurrency/ConcurrencyLaunchCVars.h"
+#include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 
 
 #include <imgui.h>
 
-namespace
+bool RuntimeApplication::WantsImGuiInputCapture() noexcept
 {
-	bool WantsImGuiInputCapture() noexcept
-	{
-		const ImGuiContext* currentContext = ImGui::GetCurrentContext();
-		return currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
-	}
+	const ImGuiContext* currentContext = ImGui::GetCurrentContext();
+	return currentContext != nullptr &&
+	       (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
 }
 
 RuntimeApplication::RuntimeApplication() = default;
@@ -96,7 +96,13 @@ void RuntimeApplication::Initialize()
 	}
 
 	{
-		m_renderer = std::make_unique<Renderer>(*m_timer, *m_window);
+		RendererExecutionConfig rendererConfig;
+		if (m_options.AllowThreadedRenderer && !m_options.EnableRuntimeConsole &&
+		    ConcurrencyLaunchCVars::UseThreadedRenderer())
+			rendererConfig.Mode = ConcurrencyLaunchCVars::ResolveRenderPipelineDepth() == 0
+			                          ? RendererExecutionMode::ThreadedZeroAhead
+			                          : RendererExecutionMode::ThreadedOneAhead;
+		m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, rendererConfig);
 	}
 
 	if (m_options.EnableRuntimeConsole)
@@ -116,6 +122,7 @@ RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 	m_inputSystem->BeginFrame();
 	m_window->PollEvents();
 	m_inputSystem->ProcessDeferredEvents();
+	m_timer->Tick();
 
 	if (m_window->ShouldClose())
 	{
@@ -163,12 +170,11 @@ void RuntimeApplication::SubmitViewportRenderRequest(const ViewportRenderRequest
 	}
 }
 
-const ViewportRenderProducts& RuntimeApplication::GetViewportRenderProducts() const noexcept
+ViewportRenderProducts RuntimeApplication::GetViewportRenderProducts() const
 {
-	static const ViewportRenderProducts emptyProducts{};
 	if (!m_renderer)
 	{
-		return emptyProducts;
+		return {};
 	}
 
 	return m_renderer->GetViewportRenderProducts();

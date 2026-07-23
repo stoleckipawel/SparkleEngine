@@ -101,11 +101,6 @@ std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(
 
 VulkanRenderDeviceServices::~VulkanRenderDeviceServices() noexcept
 {
-	if (m_renderHardwareInterface != nullptr)
-	{
-		m_renderHardwareInterface->WaitForIdle();
-	}
-
 	m_renderHardwareInterface.reset();
 	m_commandContext.reset();
 	m_swapChain.reset();
@@ -138,7 +133,7 @@ void VulkanRenderDeviceServices::WaitForIdle() noexcept
 void VulkanRenderDeviceServices::ResizeSwapChain() noexcept
 {
 	m_renderHardwareInterface->WaitForIdle();
-	m_swapChain->Resize();
+	m_swapChain->ResizeAfterDeviceIdle();
 	m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
 }
 

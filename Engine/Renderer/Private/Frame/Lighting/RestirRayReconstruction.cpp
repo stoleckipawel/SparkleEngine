@@ -6,9 +6,10 @@
 #include "RayReconstruction/RayReconstructionPass.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
 
-namespace
+class RestirRayReconstructionOperations final
 {
-	RayReconstructionPassResources BuildRayReconstructionInputs(
+  public:
+	static RayReconstructionPassResources BuildRayReconstructionInputs(
 	    const SceneRenderTargets& sceneTargets,
 	    const GBufferRenderTargets& gbuffer,
 	    const LightingRenderTargets& lighting,
@@ -26,7 +27,7 @@ namespace
 		    .SpecularAlbedo = lighting.ReconstructionGuides.SpecularAlbedo,
 		    .SpecularHitDistance = lighting.ReconstructionGuides.SpecularHitDistance};
 	}
-}
+};
 
 void AddRestirRayReconstructionPass(
     FrameGraphBuilder& builder,
@@ -39,7 +40,7 @@ void AddRestirRayReconstructionPass(
 		return;
 	}
 
-	const RayReconstructionPassResources providerInputs = BuildRayReconstructionInputs(
+	const RayReconstructionPassResources providerInputs = RestirRayReconstructionOperations::BuildRayReconstructionInputs(
 	    resources.Transient.Scene,
 	    resources.Transient.GBuffer,
 	    resources.Transient.Lighting,

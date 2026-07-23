@@ -6,9 +6,10 @@
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 
-namespace
+class RayTracingPassCapabilityQueryOperations final
 {
-	const RayTracingCapabilityReport* ResolveCapabilityReport(const RenderRayTracingPassServices* rayTracingServices) noexcept
+  public:
+	static const RayTracingCapabilityReport* ResolveCapabilityReport(const RenderRayTracingPassServices* rayTracingServices) noexcept
 	{
 		if (rayTracingServices == nullptr)
 		{
@@ -21,7 +22,7 @@ namespace
 		return rayTracingServices->Scene != nullptr ? &rayTracingServices->Scene->GetCapabilities() : nullptr;
 	}
 
-}
+};
 
 namespace RayTracingPassCapabilityQuery
 {
@@ -29,7 +30,7 @@ namespace RayTracingPassCapabilityQuery
 	    const FrameContext& frame,
 	    const RenderRayTracingPassServices* rayTracingServices) noexcept
 	{
-		const RayTracingCapabilityReport* capabilityReport = ResolveCapabilityReport(rayTracingServices);
+		const RayTracingCapabilityReport* capabilityReport = RayTracingPassCapabilityQueryOperations::ResolveCapabilityReport(rayTracingServices);
 		RayTracingPassCapabilities result{
 		    .BoundSceneTlasAvailable = frame.rayTracingScene.HasBoundTlas(),
 		    .SceneTlasShaderAccessMode = frame.rayTracingScene.TlasShaderAccessMode,

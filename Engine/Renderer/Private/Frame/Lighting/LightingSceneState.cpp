@@ -12,14 +12,15 @@
 #include <cstdint>
 #include <vector>
 
-namespace
+class LightingSceneStateOperations final
 {
-	template <typename TValue> std::uint64_t AppendCount(std::uint64_t hash, const std::vector<TValue>& values) noexcept
+  public:
+	template <typename TValue> static std::uint64_t AppendCount(std::uint64_t hash, const std::vector<TValue>& values) noexcept
 	{
 		return Hash::ContinueFnv1a64Value(hash, static_cast<std::uint64_t>(values.size()));
 	}
 
-	std::uint64_t AppendLightState(std::uint64_t hash, const DirectionalLight& light) noexcept
+	static std::uint64_t AppendLightState(std::uint64_t hash, const DirectionalLight& light) noexcept
 	{
 		hash = LightingStateHash::AppendFloat3(hash, light.direction);
 		hash = Hash::ContinueFnv1a64Value(hash, light.intensity);
@@ -28,7 +29,7 @@ namespace
 		return LightingStateHash::AppendBool(hash, light.castShadow);
 	}
 
-	std::uint64_t AppendLightState(std::uint64_t hash, const PointLight& light) noexcept
+	static std::uint64_t AppendLightState(std::uint64_t hash, const PointLight& light) noexcept
 	{
 		hash = LightingStateHash::AppendFloat3(hash, light.position);
 		hash = Hash::ContinueFnv1a64Value(hash, light.range);
@@ -38,7 +39,7 @@ namespace
 		return LightingStateHash::AppendBool(hash, light.castShadow);
 	}
 
-	std::uint64_t AppendLightState(std::uint64_t hash, const SpotLight& light) noexcept
+	static std::uint64_t AppendLightState(std::uint64_t hash, const SpotLight& light) noexcept
 	{
 		hash = LightingStateHash::AppendFloat3(hash, light.position);
 		hash = Hash::ContinueFnv1a64Value(hash, light.range);
@@ -51,7 +52,7 @@ namespace
 		return LightingStateHash::AppendBool(hash, light.castShadow);
 	}
 
-	std::uint64_t AppendLightState(std::uint64_t hash, const RectLight& light) noexcept
+	static std::uint64_t AppendLightState(std::uint64_t hash, const RectLight& light) noexcept
 	{
 		hash = LightingStateHash::AppendFloat3(hash, light.position);
 		hash = Hash::ContinueFnv1a64Value(hash, light.width);
@@ -64,7 +65,7 @@ namespace
 	}
 
 	template <typename TLight>
-	std::uint64_t AppendLightsState(
+	static std::uint64_t AppendLightsState(
 	    std::uint64_t hash,
 	    const RenderLightCollection<TLight>& lights) noexcept
 	{
@@ -79,7 +80,7 @@ namespace
 		return hash;
 	}
 
-	std::uint64_t AppendMeshState(std::uint64_t hash, const MeshDraw& draw) noexcept
+	static std::uint64_t AppendMeshState(std::uint64_t hash, const MeshDraw& draw) noexcept
 	{
 		hash = LightingStateHash::AppendMatrix(hash, draw.Transform.WorldMatrix);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Material.Slot);
@@ -91,7 +92,7 @@ namespace
 		return Hash::ContinueFnv1a64Value(hash, gpuMeshHandle.Value);
 	}
 
-	std::uint64_t AppendMaterialState(std::uint64_t hash, const MaterialData& material) noexcept
+	static std::uint64_t AppendMaterialState(std::uint64_t hash, const MaterialData& material) noexcept
 	{
 		hash = LightingStateHash::AppendFloat4(hash, material.baseColor);
 		hash = Hash::ContinueFnv1a64Value(hash, material.metallic);
@@ -112,7 +113,7 @@ namespace
 		return Hash::ContinueFnv1a64Value(hash, material.gpuHandle.Generation);
 	}
 
-	std::uint64_t AppendSkyState(std::uint64_t hash, const RenderSkyData& sky) noexcept
+	static std::uint64_t AppendSkyState(std::uint64_t hash, const RenderSkyData& sky) noexcept
 	{
 		hash = LightingStateHash::AppendBool(hash, sky.enabled);
 		hash = LightingStateHash::AppendFloat3(hash, sky.color);
@@ -125,7 +126,7 @@ namespace
 
 		return Hash::ContinueFnv1a64Value(hash, sky.texture->ShaderResourceView.Value);
 	}
-}
+};
 
 std::uint64_t BuildLightingSceneInvalidationHash(const FrameContext& frame) noexcept
 {
@@ -137,28 +138,28 @@ std::uint64_t BuildLightingSceneInvalidationHash(const FrameContext& frame) noex
 	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxPointLights.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxSpotLights.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxRectLights.Get());
-	hash = AppendSkyState(hash, frame.sceneData.sky);
-	hash = AppendLightsState(hash, frame.sceneData.directionalLights);
-	hash = AppendLightsState(hash, frame.sceneData.pointLights);
-	hash = AppendLightsState(hash, frame.sceneData.spotLights);
-	hash = AppendLightsState(hash, frame.sceneData.rectLights);
+	hash = LightingSceneStateOperations::AppendSkyState(hash, frame.sceneData.sky);
+	hash = LightingSceneStateOperations::AppendLightsState(hash, frame.sceneData.directionalLights);
+	hash = LightingSceneStateOperations::AppendLightsState(hash, frame.sceneData.pointLights);
+	hash = LightingSceneStateOperations::AppendLightsState(hash, frame.sceneData.spotLights);
+	hash = LightingSceneStateOperations::AppendLightsState(hash, frame.sceneData.rectLights);
 
-	hash = AppendCount(hash, frame.sceneData.meshInstances);
+	hash = LightingSceneStateOperations::AppendCount(hash, frame.sceneData.meshInstances);
 	for (const MeshDraw& draw : frame.sceneData.meshInstances)
 	{
-		hash = AppendMeshState(hash, draw);
+		hash = LightingSceneStateOperations::AppendMeshState(hash, draw);
 	}
 
-	hash = AppendCount(hash, frame.sceneData.jointMatrices);
+	hash = LightingSceneStateOperations::AppendCount(hash, frame.sceneData.jointMatrices);
 	for (const DirectX::XMFLOAT4X4& jointMatrix : frame.sceneData.jointMatrices)
 	{
 		hash = LightingStateHash::AppendMatrix(hash, jointMatrix);
 	}
 
-	hash = AppendCount(hash, frame.sceneData.materials);
+	hash = LightingSceneStateOperations::AppendCount(hash, frame.sceneData.materials);
 	for (const MaterialData& material : frame.sceneData.materials)
 	{
-		hash = AppendMaterialState(hash, material);
+		hash = LightingSceneStateOperations::AppendMaterialState(hash, material);
 	}
 
 	hash = Hash::ContinueFnv1a64Value(hash, frame.sceneData.materialTextureTable.Binding.Table.Value);

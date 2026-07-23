@@ -196,10 +196,10 @@ Data-oriented design is binding wherever a prompt creates, migrates, publishes, 
 
 - before choosing a schema, record the real producer, consumer(s), type, frequency, quantity/cardinality, shape, value distribution/probability where relevant, mutation phase, lifetime, access order, stable key, and bandwidth/latency constraint;
 - design the transformation and access pattern first. A generic container, reflection layer, object hierarchy, visitor, or template must not hide the concrete operation performed on the actual data;
-- maintain one authoritative mutable source per domain. Editor models, render packets, render proxies, GPU tables, caches, and cooked products are explicitly versioned derived projections with one-way publication and rejection/resync rules—not competing authorities;
+- maintain one authoritative mutable source per domain. Editor models, render packets, render proxies, GPU tables, caches, and cooked products are explicitly sequenced or generation-tagged derived projections where stale rejection is required, with one-way publication and resync rules—not competing authorities;
 - separate hot/cold, static/dynamic, structural/per-frame, CPU/GPU, and authoring/runtime data according to consumers and update frequency. Do not split cohesive fields that are always consumed together;
 - choose AoS, SoA, AoSoA, sparse set, archetype chunk, indexed table, flat stream, or packed record from measured access. No layout is a universal DOD badge. Record the serial baseline and why rejected layouts lose for this workload;
-- use stable generational IDs and immutable/versioned handles across storage and owner boundaries. Dense indices, pointers, iterators, spans, component references, and arena addresses never become durable identity;
+- use stable generational IDs and immutable typed handles across storage and owner boundaries. Regenerated content republishes the newest immutable handle rather than adding content-version compatibility. Dense indices, pointers, iterators, spans, component references, and arena addresses never become durable identity;
 - variable-length products use offsets/counts into bounded flat storage or another explicitly justified packed representation; hot records do not own vectors, strings, callbacks, mutexes, allocators, services, or heavyweight assets;
 - process dense ranges/batches with explicit read/write columns and non-overlapping outputs. Structural mutation occurs at an owner commit through deterministic command buffers; queries/views are transient and cannot escape their epoch;
 - prefer task-local or range-local outputs followed by stable-key compaction, bucketing, reduction, or deterministic merge. Completion order never defines IDs, packet rows, draw order, upload order, or serialized output;
@@ -238,6 +238,20 @@ Multithreading is an implementation capability of the owning subsystem, not a se
 
 The completion report must contain an **integration-surface reconciliation**: receiver purpose before/after, exact capability hook, mechanism types hidden, domain values exposed, cancellation/progress affinity, transitive include/link changes, and an explanation of why adding another operation does not require copying concurrency boilerplate.
 
+### 16. Explicit Implementation Ownership and Declaration-Only Headers
+
+Owned C++ source must make behavior ownership visible without anonymous linkage scopes or executable header clutter:
+
+- anonymous/unnamed namespaces are forbidden in owned source. Do not satisfy this rule by renaming one to `Detail`, `Internal`, `Private`, `Local`, `Implementation`, or another arbitrary namespace;
+- behavior that supports one owning type belongs to that type as a private member/static member or to a cohesive implementation capability type. Free behavior may live in an already established named domain namespace only when that namespace is the real API/operation owner;
+- a file-local implementation type must name the capability, state, policy, encoding, formatting, or operation it owns. It must not become a generic bag of unrelated helpers or a second facade;
+- headers are declaration and collaboration surfaces. Only templates and trivial field getters, setters, and direct accessors may have bodies in headers. Constructors, destructors, algorithms, transforms, parsers, formatters, orchestration, validation, factories, and non-template operators belong in the matching `.cpp`; deleted special-member declarations remain declarations of the type contract;
+- never declare a class or struct inside a function body. Move lifecycle guards, records, visitors, callback state, and policies to the owning type or the narrowest cohesive implementation type. A short lambda is not a substitute when it acquires named state or multi-step policy;
+- keep validation and diagnostics at the owning invariant: one actionable failure path or assertion is preferred over repeated logging, mirrored state, per-item traces, or permanent prompt-specific harnesses;
+- before acceptance, scan all owned headers and touched sources for header bodies, function-local types, anonymous namespaces, invented namespace aliases, and diagnostic expansion. The anonymous-namespace scan is repository-wide and must be zero.
+
+The completion report must include an **implementation-shape reconciliation**: header bodies moved, local types reassigned, former anonymous behavior owners, retained template/accessor bodies, diagnostics removed/retained, and the zero-result searches used by the gate.
+
 ## Required Prompt Completion Report
 
 Every completed prompt returns this report:
@@ -259,6 +273,7 @@ Every completed prompt returns this report:
 15. **DOD reconciliation:** data/access inventory, authority and derived projections, chosen/rejected layouts, stable identity, phase/lifetime, deterministic transforms, exact source trace, and measured evidence.
 16. **Gate:** PASS or BLOCKED with concrete reason.
 17. **Integration-surface reconciliation:** narrow hooks, hidden mechanism types, receiver responsibility before/after, dependency leakage removed, and scaling path for the next consumer.
+18. **Implementation-shape reconciliation:** declaration-only header audit, function-local-type audit, anonymous-namespace ownership conversion, diagnostic reduction, and zero-result gate searches.
 
 ## Prompt Sequence and Dependencies
 
@@ -1500,7 +1515,7 @@ Non-negotiable repository rules:
 - Apply Rule 12: make GameFramework publication, extraction contracts, renderer input streams, and render-owned table files/folders reveal their ownership and data-flow direction.
 - Trace every material decision to Richard Fabian's data/access methodology, Epic MassEntity or game/render proxy documentation, NVIDIA Donut renderer scene buffers/dirty state, or AMD Cauldron/Detroit/RDNA renderer data guidance. State the scope of the precedent. Do not claim NVIDIA/AMD provides Sparkle's GameFramework ECS.
 - If no source and no measured Sparkle consumer supports a proposed abstraction, field, index, cache, or layout, do not add it.
-- GameFramework ECS remains the only authoritative mutable world-instance source. Render packets and RenderWorld are versioned one-way derived projections; renderer state never mutates ECS or editor authoring truth.
+- GameFramework ECS remains the only authoritative mutable world-instance source. Render packets and RenderWorld are sequenced one-way derived projections; renderer state never mutates ECS or editor authoring truth.
 - Renderer does not query ECS, retain `GameWorld`, invoke entity/component behavior, or consume raw pointers/references/spans into GameFramework storage.
 - Keep renderer execution serial. Do not begin RenderThread, frame queue, parallel extraction, persistent GPU-scene implementation, or command recording work owned by later prompts.
 
@@ -1512,7 +1527,7 @@ Required implementation:
 5. Keep `RenderWorldDelta` as typed bounded operation batches with scene/sequence metadata. Choose AoS or columnar form per operation consumption and measured size; do not force cold structural records into SoA. Define stale, duplicate, gap, overflow, and full-resync behavior before application.
 6. Make extraction one explicit serial bulk transform over a frozen world epoch using declared component/resource reads. Resolve `EntityId` to `RenderObjectId` through one mapping authority, produce stable-key task-partition-ready ranges, and never expose ECS dense indices as render identity.
 7. Make the serial RenderWorld representation persistent and indexed: stable render slots/generations, packed per-consumer tables, free/reuse policy, asset-handle generations, and dirty columns/ranges. Prompt 15 owns persistent GPU allocation/upload/retirement, but this prompt must give it a concrete CPU-side source layout rather than another scene-wide builder.
-8. Define current/previous/temporal ownership once. State exactly where previous transforms, camera cuts, history reset, jitter/sample, exposure, resolution, and provider frame tags roll over; delete redundant rollover or recomputation paths.
+8. Define current/previous/temporal ownership once. State exactly where previous transforms, camera cuts, history reset, exposure, resolution, and provider frame tags roll over; derive renderer-private jitter/sample state from `FrameId`; delete redundant rollover or app/game packet fields.
 9. Define deterministic extraction and apply order with stable `(scene, sequence, render object, stream/local)` keys. Sorting, bucketing, compaction, and deduplication use packet/range-local outputs and deterministic merge; completion order is never semantic.
 10. Preserve immutable static assets through typed handles and residency operations. Regeneration replaces the published immutable content rather than retaining compatibility versions. Mesh geometry, material definitions, textures, skeletons, animation clips, BLAS payload identity, and shader packages are not copied into per-frame dynamic streams.
 11. Produce small, representative, high-instance, high-light, animated/skinned/morph, RT/PTLAS, structural-churn, and mostly-static workloads. Compare the replaced snapshot/object path with the new serial stream path for output identity and relevant packet bytes, allocations, extraction/apply time, bytes read/written, cache misses/bandwidth where available, dirty rows/ranges, and projected upload bytes.
@@ -1522,7 +1537,7 @@ Required implementation:
 
 Validation:
 - Headless record/replay destroys or mutates `GameWorld`/ECS storage immediately after packet publication and delays consumption; output remains valid and deterministic.
-- Field/ownership audit proves every packet byte has a named consumer and every consumer reads an owned immutable value or stable versioned handle.
+- Field/ownership audit proves every packet byte has a named consumer and every consumer reads an owned immutable value or stable typed handle.
 - Serial old/new comparison preserves raster draw identity/order, camera/view values, classic TLAS/PTLAS instance identity, reservoir-light identity, skinning/morph output, temporal resets, provider tags, viewport and capture inputs.
 - Mostly-static scene changes zero objects for many frames, then one transform/light/material/object at a time; only the documented stream rows and RenderWorld dirty ranges change.
 - Structural create/update/destroy replay covers stale/duplicate/gap/overflow/full-resync and stable-slot reuse generations.
@@ -1541,6 +1556,22 @@ Acceptance gate:
 Positive patterns: access-driven concrete streams, one-way derived projection, stable slots, flat bounded arrays, hot/cold and static/dynamic split, deterministic bulk transform, measured layout.
 Forbidden: DOD by naming, universal SoA, renderer ECS access, per-entity virtual extraction, raw pointers, nested packet containers, duplicated authority, full rebuild disguised as parallel work.
 ~~~
+
+## Binding Changelist Design Gate for Prompts 13-29
+
+This gate is part of the acceptance criteria of every unfinished prompt from Prompt 13 through Prompt 29. A prompt does not pass merely because its feature works or its local validation bullets pass. The entire prompt changelist, including directly adjacent counterparts whose responsibilities are exposed by the work, must also pass this design gate:
+
+- Produce a responsibility and placement inventory for every added, modified, moved, or deleted owned-source file. Record its owning module/subsystem, architectural layer, primary responsibility, authoritative or derived data, allowed dependencies, public/private status, and final folder. Audit nearby counterparts before adding a new descriptor, service, queue, cache, builder, validator, adapter, or utility.
+- Separate orchestration from capability implementation hierarchically. Orchestration entry points may sequence phases, select policy, route typed inputs/results, and own lifecycle state; algorithms, validation, storage/cache mechanics, serialization/I/O, backend execution, and UI presentation belong to named capability files beneath the owning subsystem. An orchestration file must read as the system flow rather than contain the implementation of every phase.
+- Enforce single responsibility at class and function level. A class has one reason to change and must not mix lifecycle/orchestration, policy/validation, state/storage/cache, transport/serialization, backend execution, and presentation. Decompose multi-stage, deeply nested, or branch-heavy functions into named behaviors even when a behavior has one call site; the name and boundary must expose a real invariant or operation, not merely move lines.
+- Apply SOLID without speculative abstraction: extend behavior through the narrow owning capability; preserve substitutability of existing backend/provider contracts; keep interfaces consumer-specific and minimal; and make dependencies point toward stable contracts/owners rather than concrete peer internals. Do not add an interface, manager, service, or pass-through wrapper solely to satisfy a pattern or line-count target.
+- Apply DRY to authority and behavior, not just syntax. One owner implements each transform, validation rule, lifecycle transition, cache lookup, upload plan, or merge policy. Consolidate repeated logic at the narrowest correct owner and delete superseded copies, callback adapters, compatibility aliases, boolean-mode forks, and parallel old/new paths before the gate.
+- Audit god files, god classes, and god functions across the whole prompt changelist. File size and function length are locators, not verdicts; retained complexity requires a concrete cohesion reason, an explicit responsibility map, and a measured or testable falsifier. No touched hotspot may be waived as “pre-existing” when the prompt adds another responsibility to it.
+- Complete Rule 12 placement work before validation: filename matches the primary type/capability; public headers expose only durable contracts; private mechanisms remain private; folders express the subsystem hierarchy; bounded moves/renames update includes, source groups/CMake, tests, documentation, and deletion ledgers. Reject generic dumping grounds such as new catch-all `Common`, `Utils`, `Helpers`, `Managers`, or flat `Systems` folders without a single documented owner.
+- Record before/after structural evidence: responsibility/file map, hotspot disposition, dependency-direction and rejected-alias searches, moved/deleted path ledger, and relevant build/test/benchmark gates. The evidence must prove that the final tree is easier to navigate and reason about and that no temporary compatibility spelling or duplicate implementation remains.
+- Apply Rule 16 across the complete prompt changelist and owned repository baseline: no anonymous namespace, no arbitrary renamed substitute, no function-local class/struct, no non-template/non-accessor implementation body in a touched header, and no diagnostic scaffolding beyond the owning invariant. The completion evidence includes repository-wide anonymous-namespace and touched-header searches.
+
+This contract deliberately has no arbitrary maximum file length and does not require one file per function. A one-call helper or private capability is desirable when it names and isolates meaningful behavior; a content-free forwarding layer or cosmetic file split fails the gate.
 
 ## Prompt 13 — Add RenderThread Ownership and the Bounded RenderFrameQueue
 
@@ -1582,6 +1613,7 @@ Validation:
 - Capture shows GameThread N+1 / RenderThread N overlap without a routine GameThread wait and uses the canonical thread labels.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Mutable RendererSystemRoot/RHI has one `RenderCoordinator` owner on `RenderThread`.
 - Queue depth is fixed and no accepted slot is stranded.
 - Direct host-thread Prepare/Record/Submit product path is deleted; serial mode uses same consumer.
@@ -1591,6 +1623,26 @@ Acceptance gate:
 Positive patterns: single owner, bounded frame queue, sequenced `RenderControlCommandQueue`, explicit backpressure, ordered shutdown.
 Forbidden: generally thread-safe renderer root, unbounded queue, main routine render wait, device idle per frame, detached render thread.
 ~~~
+
+### Prompt 13 implementation record — 2026-07-23
+
+Status: **implementation complete; native runtime acceptance pending**. `Renderer` now owns one private `RenderCoordinator`; serial, threaded zero-ahead, and threaded one-ahead modes all enter the same coordinator contract. Threaded modes create and destroy `RendererSystemRoot`, `FramePipeline`, and mutable RHI state on `Sparkle.RenderThread`. The producer publishes an owned `RenderFramePacket` through fixed slots, while resize, settings, viewport, reload, capture, idle, presentation, and shutdown operations use a separately bounded, sequenced `RenderControlCommandQueue`. D3D12 and Vulkan queue operations assert their creating owner, and Streamline process lifetime is separated from coordinator-owned render calls through an active-call lease that never holds the engine state lock across SDK entry.
+
+Rule 13 access inventory:
+
+| Path | Authority and access | Layout, identity, and deterministic transform | Exact precedent and measured falsifier |
+|---|---|---|---|
+| game/editor producer → render frame | producer alone writes an acquired slot; coordinator alone consumes and retires it | one slot in serial/zero-ahead, two in one-ahead; ticket is `{slot, SequenceNumber}`; `Free → Writing → Ready → Rendering → Retired → Free` is the only legal order | J `EPIC-RHI` bounded frame-lead precedent and its release/acquire publication rule; replace only if correlated throughput/latency captures show that fixed zero/one-ahead policies are insufficient |
+| host → render control | producer assigns the sequence; coordinator applies commands in FIFO order | capacity 64, typed variant payload, optional narrow completion; no RHI command-list or GPU-submission identity is reused | J `EPIC-RHI`, Microsoft D3D12 queue ownership guidance, and the Vulkan threading/external-synchronization specification; change only if burst measurements prove a current product command cannot be bounded/coalesced |
+| coordinator → published UI reads | coordinator is mutable authority; producer receives copied viewport/diagnostic results | narrow copied products under one read-state lock and atomic shader generation; no renderer-root or cache pointer escapes | J immutable-publication rule; falsifier is a delayed reader retaining a live renderer pointer or measurable read-state contention |
+| coordinator → native queue | D3D12/Vulkan queue creator is the sole submit/present/wait owner | native fence/timeline values remain backend-private; owner assertion is checked before mutable queue entry | Microsoft D3D12 command-queue design and Vulkan external synchronization, cross-referenced by J LC-09/LC-10; falsifier is any required provider/native entry that proves a second queue participant |
+| application integration → Streamline | application lifetime owns initialize/shutdown; coordinator call lease owns admitted render-facing calls | locked state and active-call count only; SDK call occurs after unlock; shutdown closes admission then waits for leases | NVIDIA Streamline lifecycle/re-entry guidance catalogued in J; falsifier is provider re-entry/failure stress exposing callback-after-close or a lock-order cycle |
+
+Rule 12/16 placement reconciliation: durable mode configuration is public under `Renderer/Public/Concurrency`; fixed frame transport is private under `Concurrency/FrameQueue`; typed control transport and completion are private under `Concurrency/Control`; lifecycle, thread ownership, sequencing, and published read state are private under `Concurrency/Coordinator`; process-facing vendor lifetime is isolated under `Integrations`; backend bootstrap receives an immutable `RendererBackendConfiguration`; and `Renderer` remains the narrow application facade. Capability implementation is not embedded in the facade or coordinator. Anonymous namespaces were removed repository-wide without introducing `Detail`/`Internal` substitutes: cpp-local policies and transformations are owned by cohesive implementation types, or by an already established domain namespace. Behavioral header bodies touched by this work were moved to cpp files; templates and field accessors remain inline; function-local class/struct declarations are absent.
+
+Deletion ledger: the direct `PrepareHostFrame`/`RecordHostFrame`/`SubmitHostFrame` facade path, renderer-root timer ownership, renderer-root final idle wait, backend-owned Streamline process lifecycle, D3D12 submission/CPU-wait mutex permission, Vulkan submission mutex permission, duplicate queue rejection/stale-ticket warning logs, and the disposable render-concurrency validation executable/target are deleted. No callback adapter preserves the old host phase path.
+
+Focused evidence: DebugGame `SparkleTasks`, `SparkleGameFramework`, both RHI backends, and `SparkleRenderer` compile. The disposable CPU contract check proved fixed-slot backpressure, ticket publication/retirement, bounded FIFO control ordering, and shutdown settlement; an artificial 10 ms consumer delay produced 14.405 ms observed producer backpressure. The repository architecture gate passes, and searches over `Engine`, `Tools`, and `Projects` report zero anonymous namespaces and zero cpp function-local class/struct definitions. The disposable check was deleted after proof. D3D12/Vulkan image parity, resize/minimize/capture/device-loss stress, and native timeline capture remain required before changing this record to **passed**.
 
 ## Prompt 14 — Convert Editor UI, Viewport, and Capture Across the Render Boundary
 
@@ -1628,6 +1680,7 @@ Validation:
 - Editor close while capture/preview in flight has no late UI callback.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - No live ImGui/editor pointer crosses to render coordinator.
 - Viewport/capture products have stable versioned ownership.
 - Direct editor renderer mutation and redundant diagnostics routes are deleted.
@@ -1674,6 +1727,7 @@ Validation:
 - Measure upload bytes, resource creates, dirty ranges, memory/fragmentation before/after.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Persistent slots/generations are authoritative and full rebuild product path is deleted.
 - GPU resources outlive all referencing frames and eventually reclaim.
 - CPU reduction does not increase GPU time/barriers/descriptors/memory beyond justified budget.
@@ -1724,6 +1778,7 @@ Validation:
 - Budget/backpressure/eviction stress and eventual retirement.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - No frame worker waits for I/O/upload/residency.
 - One coherent generation visible per packet/recording run.
 - Previous valid generation survives all failure paths.
@@ -1778,6 +1833,7 @@ Validation:
 - Report merge/scratch overhead and Amdahl limits, not only worker utilization.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Preparation dependencies and exclusive outputs are explicit and tested.
 - Every applicable renderer-front-end row in K's Renderer/RHI Use-Case-to-Prompt Coverage ledger has real output and proof; unavailable shadow/draw/RT cases have a named non-applicability record, not an implied implementation.
 - No worker wait/global mutable scratch/lazy cache creation remains in task bodies.
@@ -1831,6 +1887,7 @@ Validation:
 - Memory scaling documented for frames × contexts × queues and bounded by configuration.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - No concurrent allocator/list use or premature reset is possible through supported API.
 - Public code contains `RhiCommandRecordingLease`; backend code contains `D3D12CommandRecordingContext`; rejected `RecordingContextLease`/`WorkerRecordingContext` aliases and filenames are absent.
 - Existing serial renderer records correctly through new context contract.
@@ -1885,6 +1942,7 @@ Validation:
 - Compare common RHI semantics to D3D12 while documenting backend-specific ownership differences.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - No Vulkan command pool is concurrently accessed through supported paths.
 - Rejected `RecordingContextLease`/`WorkerRecordingContext` aliases and filenames are absent; no D3D12 allocator/list noun leaks into the Vulkan/common contract.
 - Pool reset/reuse is completion-token safe.
@@ -1941,6 +1999,7 @@ Validation:
 - Architecture audit shows no software RHI replay objects, translate thread, raw native-buffer concatenation, or worker queue submission was introduced.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Only audited passes run parallel and native validation is clean on both backends.
 - GPU submission order/resource semantics remain frame-graph-defined.
 - Recording-group and submission-batch policies are independently measured; fewer submit calls are not accepted if they create material GPU starvation or latency regression.
@@ -1990,6 +2049,7 @@ Validation:
 - Tiny/normal cases do not exceed accepted overhead budget.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Intra-pass work is measured, bounded, deterministic, and uses common ownership.
 - No feature path is silently disabled/demoted to claim multithreading success.
 - Both native backends pass applicable validation and capability truth remains honest.
@@ -2042,6 +2102,7 @@ Validation:
 - Repository-wide canonical/rejected-alias searches have zero unclassified owned-source hits; filenames, symbols, tests, CMake, comments, profiler labels, and thread labels agree.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - One SparkleTasks runtime, one ECS world source, one packet/render path, one frame-graph authority, one owner per mutable subsystem.
 - Every deletion ledger closed; no indefinite compatibility route.
 - Every synchronization/blocking primitive is either a tested private implementation of the coherent architecture or deleted. Zero-unclassified—not zero-mutex—is the gate.
@@ -2090,6 +2151,7 @@ Validation:
 - No research-only graph/data/panel/log/report enabled in shipping defaults.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Reference evidence shows correctness, tradeoffs, limitations, and causality—not only FPS or thread count.
 - Representative large workloads improve where expected; tiny cases remain within budget.
 - CPU gains do not cause unjustified GPU/memory/latency/backend regressions.
@@ -2138,6 +2200,7 @@ Validation:
 - Timer pause and Logger initialization/level behavior have explicit writer/reader/lifetime contracts; any retained allocator/queue atomic has reset/submission ownership and wrap policy tested.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Every production atomic has a stated invariant and sufficient memory-order/lifetime proof.
 - No atomic remains solely because old code once anticipated concurrency; no atomic flag is treated as publication of unrelated fields.
 - Reference implementations can falsify the optimized protocol and remain in the existing test surface.
@@ -2184,6 +2247,7 @@ Validation:
 - Selected policy improves or preserves p95/p99 versus the old automatic choice on representative workloads and does not starve background completion.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Worker policy responds to measured workload/topology rather than maximizing logical threads.
 - Contention/false-sharing claims have counter or controlled-layout evidence.
 - No permanent hard affinity or priority policy remains without a documented cross-machine win and safe fallback.
@@ -2228,6 +2292,7 @@ Validation:
 - Performance evidence shows why each retained parallel algorithm beats or usefully complements the serial path at representative scale.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - At least three real paths demonstrate distinct parallel patterns without a new framework or shipping demo subsystem.
 - Output ownership and merge order are explicit; no hot shared append/accumulator is left by convenience.
 - Losing variants are deleted and nearby duplicate algorithms are converged.
@@ -2281,6 +2346,7 @@ Validation:
 - Accepted load/reload performs no routine device idle; parallel recording sees no lazy PSO/layout/resource mutation.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - I/O, CPU work, native creation, upload and publication are distinct owned stages with bounded backpressure.
 - First-run/cold-cache behavior is observable, deterministic where applicable and has an explicit user-visible policy.
 - One asset/shader/PSO generation authority remains; superseded paths and caches are deleted.
@@ -2326,6 +2392,7 @@ Validation:
 - Report CPU/GPU p50/p95/p99, pacing variance, stage latency and queue overlap with exact hardware/driver/configuration.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Every overlap claim identifies the two timelines, enabling dependency/fence and measured benefit.
 - Pipeline depth/backpressure has an explicit throughput-versus-latency product policy.
 - Provider queue ownership is documented and enforced; no shared queue can deadlock through uncontrolled submission.
@@ -2376,6 +2443,7 @@ Validation:
 - The renderer/RHI coverage ledger contains no “could be parallel” closure; each row is implemented/proven, explicitly non-applicable, or assigned to a separately approved future renderer program.
 
 Acceptance gate:
+- The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - The owner can design, code, debug, measure and teach the core engine concurrency concepts under questioning.
 - Sparkle solves real loading, framework, editor, renderer, RHI and tools problems with one coherent ownership architecture.
 - The final product has no interview-only subsystem, hidden duplicate path or unsupported vendor claim.

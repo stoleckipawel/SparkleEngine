@@ -3,6 +3,7 @@
 #include "Platform/Public/PlatformAPI.h"
 #include "Events/Event.h"
 #include <Windows.h>
+#include <atomic>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -44,9 +45,9 @@ class SPARKLE_PLATFORM_API Window final
 
 	HWND GetHWND() const noexcept { return m_hWnd; }
 
-	uint32_t GetWidth() const noexcept { return m_clientWidth; }
-	uint32_t GetHeight() const noexcept { return m_clientHeight; }
-	bool HasValidSize() const noexcept { return m_clientWidth > 0 && m_clientHeight > 0; }
+	uint32_t GetWidth() const noexcept { return m_clientWidth.load(std::memory_order_acquire); }
+	uint32_t GetHeight() const noexcept { return m_clientHeight.load(std::memory_order_acquire); }
+	bool HasValidSize() const noexcept { return GetWidth() > 0 && GetHeight() > 0; }
 
 	State GetState() const noexcept { return m_state; }
 	bool ShouldClose() const noexcept { return m_bShouldClose; }
@@ -70,7 +71,7 @@ class SPARKLE_PLATFORM_API Window final
 	void RegisterWindowClass();
 	void CreateWindowHandle(std::string_view title);
 	void ApplyInitialWindowState();
-	static bool ShouldStartFullscreen() noexcept { return false; }
+	static bool ShouldStartFullscreen() noexcept;
 	static int GetResizeBorderThickness() noexcept;
 	MONITORINFO GetCurrentMonitorInfo() const noexcept;
 
@@ -90,8 +91,8 @@ class SPARKLE_PLATFORM_API Window final
 	ATOM m_windowClassAtom = 0;
 
 	RECT m_windowedRect{};
-	uint32_t m_clientWidth = 0;
-	uint32_t m_clientHeight = 0;
+	std::atomic<uint32_t> m_clientWidth{0};
+	std::atomic<uint32_t> m_clientHeight{0};
 	State m_state = State::Normal;
 	int m_pendingShowCommand = kNoShowCommand;
 	bool m_bShouldClose = false;

@@ -8,9 +8,10 @@
 
 #include <algorithm>
 
-namespace
+class GameWorldCamerasOperations final
 {
-	ECS::Camera ToCameraData(const CameraDesc& desc, float aspectRatio, bool active) noexcept
+  public:
+	static ECS::Camera ToCameraData(const CameraDesc& desc, float aspectRatio, bool active) noexcept
 	{
 		return ECS::Camera{
 		    .VerticalFieldOfViewDegrees = std::clamp(desc.fovYDegrees, 1.0f, 179.0f),
@@ -21,7 +22,7 @@ namespace
 		    .Active = active};
 	}
 
-	ECS::CameraMovement ToMovementComponent(const CameraMovementSettings& settings) noexcept
+	static ECS::CameraMovement ToMovementComponent(const CameraMovementSettings& settings) noexcept
 	{
 		return ECS::CameraMovement{
 		    .MoveSpeed = std::clamp(settings.moveSpeed, settings.minMoveSpeed, settings.maxMoveSpeed),
@@ -32,7 +33,7 @@ namespace
 		    .MouseSensitivity = settings.mouseSensitivity,
 		    .InvertY = settings.invertY};
 	}
-}
+};
 
 namespace ECS
 {
@@ -50,9 +51,9 @@ namespace ECS
 		const LocalTransform local = WorldTransformConversion::ToLocal(transform);
 		const bool added = m_registry.Add(entity, local) &&
 		                   m_registry.Add(entity, WorldTransform{}) &&
-		                   m_registry.Add(entity, ToCameraData(entry.desc, 16.0f / 9.0f, active)) &&
+		                   m_registry.Add(entity, GameWorldCamerasOperations::ToCameraData(entry.desc, 16.0f / 9.0f, active)) &&
 		                   m_registry.Add(entity, CameraDerivedState{}) &&
-		                   m_registry.Add(entity, ToMovementComponent(movement)) &&
+		                   m_registry.Add(entity, GameWorldCamerasOperations::ToMovementComponent(movement)) &&
 		                   m_registry.Add(entity, Visibility{}) &&
 		                   m_registry.Add(entity, Name{std::move(entry.name)}) &&
 		                   m_registry.Add(
@@ -146,7 +147,7 @@ namespace ECS
 		CameraMovementSettings movement = ReadCameraMovement(entity);
 		movement.moveSpeed = desc.moveSpeed;
 		const bool written = WriteTransform(entity, transform) &&
-		                     m_registry.Replace(entity, ToCameraData(desc, existing->AspectRatio, existing->Active)) &&
+		                     m_registry.Replace(entity, GameWorldCamerasOperations::ToCameraData(desc, existing->AspectRatio, existing->Active)) &&
 		                     WriteCameraMovement(entity, movement);
 		if (written)
 		{
@@ -157,7 +158,7 @@ namespace ECS
 
 	bool GameWorldState::WriteCameraMovement(EntityId entity, const CameraMovementSettings& settings) noexcept
 	{
-		const bool written = m_registry.Replace(entity, ToMovementComponent(settings));
+		const bool written = m_registry.Replace(entity, GameWorldCamerasOperations::ToMovementComponent(settings));
 		if (written)
 		{
 			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::CameraMovement);

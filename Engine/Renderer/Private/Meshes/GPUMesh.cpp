@@ -9,9 +9,10 @@
 
 static const auto g_gpuMeshLogger = Logging::GetOrCreateLogger("Renderer.GPUMesh");
 
-namespace
+class GPUMeshOperations final
 {
-	GPUMeshBounds ComputeLocalBounds(const MeshData& meshData) noexcept
+  public:
+	static GPUMeshBounds ComputeLocalBounds(const MeshData& meshData) noexcept
 	{
 		GPUMeshBounds bounds{};
 		for (const VertexData& vertex : meshData.vertices)
@@ -33,7 +34,7 @@ namespace
 		}
 		return bounds;
 	}
-}
+};
 
 GPUMesh::~GPUMesh() noexcept
 {
@@ -95,7 +96,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
-	m_localBounds = ComputeLocalBounds(meshData);
+	m_localBounds = GPUMeshOperations::ComputeLocalBounds(meshData);
 	m_rayTracingHitVertices.clear();
 	m_rayTracingHitVertices.reserve(meshData.vertices.size());
 	for (const VertexData& vertex : meshData.vertices)

@@ -6,16 +6,17 @@
 
 #include <string>
 
-namespace
+class TaskWorkerSchedulingOperations final
 {
-	thread_local const void* g_currentTaskExecutor = nullptr;
+  public:
+	inline static thread_local const void* g_currentTaskExecutor = nullptr;
 
-	std::size_t LaneIndex(TaskLane lane) noexcept
+	static std::size_t LaneIndex(TaskLane lane) noexcept
 	{
 		return static_cast<std::size_t>(lane);
 	}
 
-	std::string_view LaneName(TaskLane lane) noexcept
+	static std::string_view LaneName(TaskLane lane) noexcept
 	{
 		switch (lane)
 		{
@@ -28,16 +29,16 @@ namespace
 		}
 		return "Invalid";
 	}
-}
+};
 
 bool TaskDetail::IsExecutorWorker(const void* executorIdentity) noexcept
 {
-	return executorIdentity != nullptr && g_currentTaskExecutor == executorIdentity;
+	return executorIdentity != nullptr && TaskWorkerSchedulingOperations::g_currentTaskExecutor == executorIdentity;
 }
 
 void TaskExecutor::Implementation::Runtime::AddWorkers(TaskLane lane, std::uint32_t count)
 {
-	TaskLaneState& laneState = m_lanes[LaneIndex(lane)];
+	TaskLaneState& laneState = m_lanes[TaskWorkerSchedulingOperations::LaneIndex(lane)];
 	laneState.Workers.reserve(count);
 	for (std::uint32_t index = 0; index < count; ++index)
 	{
@@ -51,13 +52,13 @@ void TaskExecutor::Implementation::Runtime::AddWorkers(TaskLane lane, std::uint3
 
 std::uint32_t TaskExecutor::Implementation::Runtime::GetWorkerCount(TaskLane lane) const noexcept
 {
-	const std::size_t index = LaneIndex(lane);
+	const std::size_t index = TaskWorkerSchedulingOperations::LaneIndex(lane);
 	return index < TaskLaneCount ? static_cast<std::uint32_t>(m_lanes[index].Workers.size()) : 0;
 }
 
 void TaskExecutor::Implementation::Runtime::Enqueue(ReadyTask task, TaskWorker* preferredWorker, TaskLane lane)
 {
-	TaskLaneState& laneState = m_lanes[LaneIndex(lane)];
+	TaskLaneState& laneState = m_lanes[TaskWorkerSchedulingOperations::LaneIndex(lane)];
 	if (preferredWorker != nullptr)
 	{
 		std::lock_guard lock(preferredWorker->QueueMutex);
@@ -89,7 +90,7 @@ bool TaskExecutor::Implementation::Runtime::TryPopLocal(TaskWorker& worker, Read
 
 bool TaskExecutor::Implementation::Runtime::TryPopInjection(TaskLane lane, ReadyTask& task)
 {
-	TaskLaneState& laneState = m_lanes[LaneIndex(lane)];
+	TaskLaneState& laneState = m_lanes[TaskWorkerSchedulingOperations::LaneIndex(lane)];
 	std::lock_guard lock(laneState.InjectionMutex);
 	if (laneState.InjectionQueue.empty())
 	{
@@ -102,7 +103,7 @@ bool TaskExecutor::Implementation::Runtime::TryPopInjection(TaskLane lane, Ready
 
 bool TaskExecutor::Implementation::Runtime::TrySteal(TaskWorker& worker, ReadyTask& task)
 {
-	const auto& laneWorkers = m_lanes[LaneIndex(worker.Lane)].Workers;
+	const auto& laneWorkers = m_lanes[TaskWorkerSchedulingOperations::LaneIndex(worker.Lane)].Workers;
 	for (std::uint32_t offset = 1; offset < laneWorkers.size(); ++offset)
 	{
 		TaskWorker& victim = *laneWorkers[(worker.LaneWorkerIndex + offset) % laneWorkers.size()];
@@ -124,10 +125,10 @@ bool TaskExecutor::Implementation::Runtime::TryTakeWork(TaskWorker& worker, Read
 
 void TaskExecutor::Implementation::Runtime::WorkerMain(TaskWorker& worker)
 {
-	g_currentTaskExecutor = this;
+	TaskWorkerSchedulingOperations::g_currentTaskExecutor = this;
 	Threading::SetCurrentThreadRole(
-	    "Sparkle.Task." + std::string(LaneName(worker.Lane)) + "." + std::to_string(worker.LaneWorkerIndex));
-	TaskLaneState& laneState = m_lanes[LaneIndex(worker.Lane)];
+	    "Sparkle.Task." + std::string(TaskWorkerSchedulingOperations::LaneName(worker.Lane)) + "." + std::to_string(worker.LaneWorkerIndex));
+	TaskLaneState& laneState = m_lanes[TaskWorkerSchedulingOperations::LaneIndex(worker.Lane)];
 	for (;;)
 	{
 		ReadyTask task;
@@ -151,7 +152,7 @@ void TaskExecutor::Implementation::Runtime::WorkerMain(TaskWorker& worker)
 			break;
 		}
 	}
-	g_currentTaskExecutor = nullptr;
+	TaskWorkerSchedulingOperations::g_currentTaskExecutor = nullptr;
 }
 
 void TaskExecutor::Implementation::Runtime::RequestWorkerStop() noexcept

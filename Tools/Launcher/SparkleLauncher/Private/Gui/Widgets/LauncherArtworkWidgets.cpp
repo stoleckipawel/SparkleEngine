@@ -11,8 +11,7 @@
 
 namespace SparkleLauncher
 {
-	namespace
-	{
+
 		QColor SurfaceColor()
 		{
 			return LauncherUi::Color::Hex(LauncherUi::Color::Background);
@@ -97,7 +96,7 @@ namespace SparkleLauncher
 			    targetSize.height());
 			painter.drawPixmap(targetRect.toRect(), scaled, cropRect);
 		}
-	}
+
 
 	LauncherArtworkSpec LauncherArtworkSpec::ForPreset(LauncherArtworkPreset preset)
 	{
@@ -182,8 +181,7 @@ namespace SparkleLauncher
 		return spec;
 	}
 
-	namespace
-	{
+
 		void PaintLayers(QPainter& painter, const QRectF& targetRect, const QVector<LauncherArtworkGradientLayer>& layers)
 		{
 			for (const LauncherArtworkGradientLayer& layer : layers)
@@ -202,7 +200,7 @@ namespace SparkleLauncher
 				painter.fillRect(area, gradient);
 			}
 		}
-	}
+
 
 	void PaintLauncherArtwork(QPainter& painter, const QRectF& targetRect, const QPixmap& source, const LauncherArtworkSpec& spec)
 	{
