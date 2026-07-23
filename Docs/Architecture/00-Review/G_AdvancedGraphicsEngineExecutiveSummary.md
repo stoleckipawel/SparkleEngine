@@ -1,8 +1,8 @@
 # G. Advanced Graphics Engine Executive Summary
 
 Status: advanced graphics requirements summary
-Date: 2026-07-04
-Scope: engine direction derived from senior graphics, graphics tools, advanced rendering, and neural rendering expectations
+Date: 2026-07-24
+Scope: engine direction derived from principal developer-technology, advanced graphics, graphics tools, path tracing, AI, neural rendering, and GPU systems expectations
 
 ## Purpose
 
@@ -16,7 +16,10 @@ The engine should read as a compact, serious renderer-first engine that proves:
 - GPU debugging and profiling fluency
 - shader compiler, reflection, cook, and runtime ABI discipline
 - first-principles performance thinking across CPU, GPU, memory, descriptors, and pipelines
-- readiness for neural rendering and GPU inference without premature dependency bloat
+- a real neural graphics result built on GPU-inference-ready architecture without premature dependency bloat
+- neural model/operator, training/export, inference, quality, and performance understanding
+- partner-facing integration and hardware/driver problem solving
+- linear algebra, calculus, numerical analysis, and performance modeling connected to code
 - clean technical writing and production-oriented code review judgment
 
 ## Executive Decision
@@ -31,6 +34,10 @@ Do not chase feature count. Build a repo where a senior reviewer can quickly ans
 - How is a frame analyzed for CPU/GPU cost?
 - How are ray tracing, GI, path tracing, and temporal/provider signals represented?
 - How would a neural rendering prototype become an efficient shader/kernel path?
+- What real neural graphics feature proves that path, and how does its quality/cost compare with the classical baseline?
+- Which model, data, precision, layout, and training/export decisions determine the runtime result?
+- What do CPU/GPU architecture and the driver contribute to the measured bottleneck?
+- Could another engine team adopt, debug, and tune the feature from the available contracts and guidance?
 - What is product code, what is experimental, and what has been intentionally deleted?
 
 Near-term change gate:
@@ -39,6 +46,21 @@ Near-term change gate:
 - Reject new diagnostics, runtime logs, validation paths, report formats, panels, wrapper layers, abstract contracts, and future-feature scaffolding.
 - Preserve the shader compiler/cook/runtime ABI through deletion and simplification; clean renderer, RHI, frame graph, shader, and pass code before measurement-only work.
 - Accept a rendering feature only when its integration is direct and contextual and its support code is outweighed by deletion or consolidation.
+
+## Principal Developer Technology Success Contract
+
+The canonical role matrix is `NV-PDTE-01` through `NV-PDTE-15` in [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md). The executive interpretation is:
+
+1. Keep the renderer/RHI/task/editor cleanup sequence intact.
+2. Turn neural readiness into one real replacement-based neural graphics feature after the required data, shader, resource, and profiling boundaries are stable.
+3. Demonstrate path tracing and neural rendering as product systems with quality, latency, memory, frame-pacing, backend, and fallback evidence.
+4. Treat training/offline model preparation and runtime inference as separate owned workloads; ship only validated immutable artifacts and the smallest required inference path.
+5. Require math derivation/reference tests for material algorithms and predicted-versus-measured performance reasoning.
+6. Build hardware/driver diagnosis into normal evidence: exact configuration, capability state, validation, captures, reduced reproduction, and scoped conclusion.
+7. Make one completed strategic feature usable as a partner-shaped integration case and explainable as a live demo, whitepaper-quality note, and talk outline.
+8. Treat AI tools as fallible accelerators. Verify every generated code, shader, model, test, citation, and claim independently.
+
+This raises the final bar without authorizing a generic ML framework, new telemetry product, speculative future-hardware API, training UI, second scheduler, or vendor-branded architecture.
 
 ## Top Priorities
 
@@ -132,21 +154,33 @@ Cut:
 - PTLAS planner metrics/diagnostics that do not build, update, or trace
 - metrics that do not drive shipping decisions
 
-### P1. Neural Rendering And GPU Inference Readiness
+### P1. Neural Rendering Foundation And Product Feature
 
-Do not bolt on a heavy ML stack yet. Prepare the architecture first.
+Do not bolt on a heavy ML stack. Prepare the architecture, then use it for one real feature.
 
-Target evidence:
+Foundation evidence:
 
 - existing shader ABI remains capable of representing tensor-like resources, feature profiles, specialization constants, and provider resource contracts
 - existing Slang/HLSL path stays clean for neural shader experiments
-- any prototype replaces an existing debug/demo path and simplifies the resulting integration
+- deterministic immutable model/operator artifacts can cross cook/runtime boundaries with explicit shape, layout, precision, capability, and lifetime
 
-Skip for now:
+Feature evidence:
+
+- one neural graphics path replaces or materially improves an existing denoising, reconstruction, sampling, texture/material, animation, or rendering path
+- a named classical baseline/fallback remains usable
+- model/operator math, data provenance, training or fine-tuning, export/cook, and inference ownership are reproducible
+- tensor layouts, precision, operators, batching, dispatch, memory, and synchronization are chosen from captures
+- quality metrics and visual failure cases are reported beside CPU/GPU latency, memory, and frame pacing
+- D3D12/Vulkan and hardware capability status are explicit; unsupported paths fall back honestly
+- the accepted feature deletes its temporary experiment and compatibility scaffolding
+
+Skip:
 
 - bundling runtime ML frameworks or vendor-specific compute backends into the engine
-- training workflows inside the engine
+- training workflows inside the runtime engine or editor
 - broad ML framework integration without a concrete renderer feature
+- empty tensor/model abstractions, mock models, or provider toggles presented as implementation
+- quality-only or speed-only claims
 
 ### Late. CPU/GPU Performance Evidence
 
@@ -187,7 +221,11 @@ These are the capabilities the repo should grow toward, mostly by replacing and 
 | API debugging and capture | PIX/RenderDoc/Nsight markers, debug layers, screenshot/BMP capture. | Preserve backend-native support and harden capture with narrow ownership. |
 | GPU performance | Pass timings, memory budget, descriptors, pipeline pressure. | Late profiler-driven pass using existing scopes/snapshots only. |
 | Ray tracing/GI | BLAS/TLAS lifecycle, classic TLAS and PTLAS, reservoir direct lighting, path/reference mode. | Preserve both TLAS paths; minimize PTLAS implementation. |
-| Neural readiness | Existing Slang/HLSL-friendly ABI and feature gates. | Keep the current architecture clean; prototype only through replacement. |
+| Neural foundation | Slang/HLSL-friendly ABI, tensor-like resource/precision/layout contracts, capability gates, deterministic artifacts. | Keep the architecture clean and feature-owned. |
+| Neural graphics implementation | Real model/operator path, classical fallback, quality/performance frontier, deterministic training/export and runtime inference. | One replacement vertical slice; no general runtime ML framework. |
+| Math and performance modeling | Derivation/reference tests, numerical limits, and predicted-versus-measured CPU/GPU cost. | Keep evidence with the owning algorithm and existing tools. |
+| Driver/hardware diagnosis | Exact hardware/driver/config, native validation, reduced reproducer, capability fallback. | Backend-private fixes and scoped conclusions. |
+| Technology transfer | Partner-shaped adoption case, live demo, concise whitepaper/talk-quality explanation. | Produce after the implementation and evidence are complete. |
 | Productization | Curated level set, optional content packs, smaller launcher, clear packages. | Remove bloat before adding polish. |
 
 ## What To Prioritize
@@ -202,12 +240,17 @@ These are the capabilities the repo should grow toward, mostly by replacing and 
 8. Slim launcher to build, cook, run, clean, package if owned.
 9. Reduce public renderer/RHI observation APIs.
 10. Defer profiling/measurement tasks until the renderer feature surface is ready.
+11. Establish deterministic model-artifact, shape/layout/precision, and capability contracts without adding a generic ML layer.
+12. Implement one real neural graphics replacement feature and tune its quality/performance frontier.
+13. Produce one hardware/driver reduced-repro case and one partner-shaped integration case from completed work.
+14. Publish a code-backed demo, whitepaper-quality result, and talk outline only after the relevant gates pass.
 
 ## What To Skip
 
 - broad ML framework integration
-- training pipelines inside the engine
+- training pipelines inside the runtime engine; isolated feature-owned offline study/export is allowed
 - vendor-specific compute backend work without a renderer feature
+- empty neural/tensor/model scaffolding or fake AI workloads
 - more debug panels
 - more runtime logs
 - more screenshots/capture artifacts
@@ -223,7 +266,7 @@ These are the capabilities the repo should grow toward, mostly by replacing and 
 
 Avoid:
 
-- naming companies, individuals, or external source material
+- naming companies, individuals, or external source material in release/product wording; internal source-trace and role-requirement documents may name exact sources
 - saying the engine is built for a specific outside target
 - claiming production parity with vendor SDKs
 - saying "RTXDI equivalent" unless the SDK is integrated and validated
@@ -236,7 +279,8 @@ Use instead:
 - "advanced graphics requirements"
 - "vendor-neutral provider boundary"
 - "native reservoir-based direct lighting"
-- "neural rendering readiness"
+- "neural rendering readiness" only for the foundation, never as the final feature claim
+- "neural graphics feature" only after real model/operator, quality, performance, artifact, and fallback gates pass
 - "workload analysis"
 - "profiler/debugger support"
 - "product path" and "experimental path"
@@ -249,7 +293,7 @@ Use instead:
 | Renderer | Frame graph, typed passes, shader ABI, classic TLAS and PTLAS, direct lighting reservoir, clear reference mode. | Future scaffolding, fallback-as-architecture, extra debug views. |
 | Tools | Shader compiler, package inspection, minimal cook, minimal launcher. | Diagnostic artifacts, stats CSV by default, tool APIs with no consumer. |
 | Content | Multiple levels, curated default level set, manifests/content catalogs, optional large packs. | Uncataloged multi-GB showcase content in core repo. |
-| ML/neural | Existing Slang/HLSL readiness. | Runtime ML frameworks, training stack, vendor-specific kernels without feature need. |
+| ML/neural | Existing Slang/HLSL foundation plus one future product-owned neural graphics replacement with deterministic artifacts and measured inference. | Runtime ML frameworks, runtime training stack, mock models, vendor-specific kernels without feature need. |
 | Docs | Existing architecture maps and decision text. | New docs before code cleanup, outside-reference trails, company names, cosmetic docs. |
 
 ## Success Bar
@@ -268,3 +312,7 @@ The repository is moving in the right direction when:
 - screenshot/BMP capture remains preserved and low-cost
 - ray tracing supports both classic TLAS and PTLAS as product paths where the backend supports them
 - neural rendering is prepared architecturally without heavy dependencies
+- at least one real neural graphics feature proves the preparation with model/artifact, quality, performance, memory, backend, and fallback evidence
+- one path-traced and one neural workload can be explained from math through shader/RHI execution to hardware/driver behavior
+- another engineer can reproduce, integrate, debug, and tune the strategic feature from the handoff material
+- completed strategic work has a live demo and whitepaper/talk-quality explanation without overstated claims

@@ -1,14 +1,16 @@
 # E. External Renderer Repository Comparison
 
 Status: source-linked external comparison
-Date: 2026-07-04
-Scope: vendor reference repositories/frameworks compared against SparkleEngine architecture, code construction, extensibility, productization, feature scope, and deletion-first improvement targets
+Date: 2026-07-24
+Scope: vendor reference repositories/frameworks compared against SparkleEngine architecture, developer-technology transfer, path tracing, neural graphics, code construction, extensibility, productization, feature scope, and deletion-first improvement targets
 
 ## Intent
 
 This document compares SparkleEngine against top-tier rendering repositories and SDKs. The purpose is not to copy their code. The purpose is to identify what makes those repositories production-grade or reviewable, then use that standard to slim and sharpen Sparkle.
 
 The main lesson is not "add more features." It is "make scope and ownership painfully clear."
+
+The supplied NVIDIA Principal Developer Technology Engineer posting adds a second comparison lens. The repository must eventually demonstrate the canonical `NV-PDTE-01` through `NV-PDTE-15` requirements in [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md): partner adoption, path tracing, a real neural graphics feature, neural model/workload tuning, low-level CPU/GPU optimization, architecture/driver diagnosis, mathematical rigor, AI fundamentals, and principal-quality communication. Vendor repositories remain precedents and study material; they do not by themselves prove Sparkle satisfies the role.
 
 ## Sources Reviewed
 
@@ -178,6 +180,32 @@ Action:
   - optional content package
 - Delete packaging code that is not going to be owned.
 
+### 8. Developer Technology Requires Transferable Evidence
+
+The strongest NVIDIA/AMD repositories do more than contain an algorithm:
+
+- the integration boundary and prerequisites are explicit;
+- application-owned resources and scheduling responsibilities are stated;
+- supported hardware/API paths are classified honestly;
+- sample or test content demonstrates the intended workload;
+- shader/model assets and runtime dependencies have deliberate packaging;
+- limitations and fallback behavior are visible;
+- performance guidance is tied to workload and architecture rather than presented as a universal slogan.
+
+Sparkle comparison:
+
+- Sparkle has strong internal RHI, shader, frame-graph, and provider foundations.
+- It does not yet have an externally adoptable neural-graphics integration case, model-training/export evidence, or a complete path from neural algorithm math to optimized runtime result.
+- Current internal documentation is extensive, but principal developer-technology evidence also requires a concise handoff, reduced reproducer, live demo, and result-focused technical note.
+
+Action:
+
+- Treat one future neural graphics feature as a technology-transfer vertical slice, not a framework milestone.
+- Record requirements, classical baseline, model/operator provenance, tensor shape/layout/precision, training/export, runtime integration, capability/fallback, D3D12/Vulkan behavior, quality, latency, memory, and hardware limits.
+- Produce a minimal adoption guide and reproducible workload after the implementation is real.
+- Keep all training/offline dependencies out of the runtime package and delete experimental scaffolding that the accepted feature does not need.
+- Preserve negative results and rejected layouts/precision/concurrency choices so the guidance reflects engineering judgment.
+
 ## Direct Comparison Matrix
 
 | Reference | Production pattern | Sparkle today | Improvement |
@@ -188,7 +216,7 @@ Action:
 | RTXDI | App owns resources, light buffers, shaders, render passes, GBuffer addressing; SDK supplies sampling/resampling math. | Sparkle owns direct lighting path natively. | Keep ownership; do not overclaim SDK equivalence. |
 | RTXPT | Pure path tracer, guide buffers, path-space decomposition, DLSS-RR support, focused sample. | Sparkle has reference path tracing but also realtime/deferred path and provider handoff. | Make reference mode clearly offline/progressive or clearly debug. |
 | SHARC | Shader-only library with integration guide. | Sparkle tends to promote feature scaffolding into renderer core. | For experimental lighting/cache features, prefer shader-only/sample-only first. |
-| RTXNS | Slang/neural examples and requirements are explicit. | Sparkle has Slang pipeline support but not neural feature gates/product plan. | Keep Slang ABI flexible; do not add neural features until resource/provider contracts are crisp. |
+| RTXNS | Slang/neural examples, training/inference structure, capability requirements, and sample ownership are explicit. | Sparkle has Slang pipeline support but no completed neural graphics feature or model workload evidence. | Keep the ABI flexible, then implement one replacement-based feature after resource/provider contracts are crisp; do not copy RTXNS into renderer core. |
 | Streamline | Include/source/shader/tools layout; release binaries outside repo; shipping integration guidance. | Sparkle has Streamline bridge in renderer provider target. | Keep bridge narrow and binary/package policy explicit. |
 | Cauldron | Static rapid-prototyping framework for D3D12/Vulkan FidelityFX samples. | Sparkle has more engine/editor/tooling scope. | Treat SDK integrations as sample/provider vertical slices, not renderer-wide design drivers. |
 | FidelityFX SDK | Kits/Samples/Tools/docs product split. | Sparkle has Engine/Tools/Projects/Docs but content and workflows are intermingled. | Move uncataloged heavy media and optional tools out of default runtime product. |
@@ -285,6 +313,11 @@ A strong game engine repo has:
 | Memory/perf evidence | Memory budgets and CPU/GPU timings guide decisions. | 3.2 |
 | Package/release contract | Runtime/editor/dev/content packages are intentional. | 3.0 |
 | Deletion culture | Stale scaffolding is removed aggressively. | 3.5 |
+| Partner adoption quality | Integration prerequisites, contracts, fallback, repro, and handoff are usable outside the authoring team. | 2.0 |
+| Neural graphics evidence | A real model/operator feature reports artifact provenance, quality, runtime cost, and fallback. | 1.0 |
+| Math and performance modeling | Algorithm derivation and predicted cost are checked against implementation and captures. | 2.0 |
+| Hardware/driver diagnosis | Exact configuration, native validation, reduced reproducers, and scoped conclusions distinguish app from driver behavior. | 2.8 |
+| Technical communication | Completed strategic work has a concise case study, live demo, and whitepaper/talk-quality explanation. | 2.5 |
 
 ## Gaps To Close Before Sparkle Feels Top-Tier
 
@@ -298,6 +331,11 @@ A strong game engine repo has:
 8. Collapse launcher to current workflows.
 9. Keep shader compiler strong but make debug artifacts opt-in or external.
 10. Keep profiler/debug-layer and screenshot/BMP capture support while deleting bespoke reports.
+11. Implement one real neural graphics feature only after its owning renderer/resource/artifact contracts are ready; readiness alone does not meet the final target.
+12. Add deterministic model provenance/export/cook and separate training versus inference performance evidence without adding a general ML runtime.
+13. Build one partner-shaped adoption case with explicit prerequisites, fallback, reduced repro, hardware/driver matrix, and handoff guidance.
+14. Tie material rendering/neural algorithms to math/reference tests and predicted-versus-measured CPU/GPU cost.
+15. Convert one completed strategic result into a concise live demo, whitepaper-quality note, and talk outline.
 
 ## What Not To Copy
 
@@ -305,6 +343,10 @@ A strong game engine repo has:
 - Do not copy NVRHI's reference-counted COM-style handle model unless replacing current resource ownership would delete more code. It likely would not.
 - Do not copy NRI's no-automatic-barrier philosophy into the renderer if the frame graph already owns barriers well.
 - Do not add RTXDI/SHARC/RTXNS just to look modern. Add them only when resource contracts are ready and when old code can be removed.
+- Do not treat a vendor sample, model, chart, or optimization recommendation as proof on Sparkle's workloads or hardware.
+- Do not copy a training stack into the runtime. Own a deterministic artifact boundary and the smallest inference implementation needed by the accepted feature.
+- Do not generalize a vendor/device/driver workaround. Scope it to exact evidence and retain a capability/fallback path.
+- Do not mistake a polished demo for partner readiness; adoption also requires ownership, failure, packaging, and debugging contracts.
 - Do not add uncataloged levels/content to prove features. Use curated levels and optional content packs.
 
 ## Bottom Line
@@ -320,3 +362,6 @@ To reach that level, Sparkle should remove more than it adds:
 - less content in the depot
 - clearer feature ownership
 - stronger release identity
+- one real path from neural model/operator math through deterministic artifacts to optimized renderer execution
+- partner-quality integration and driver/hardware diagnosis
+- concise, reproducible communication of completed results

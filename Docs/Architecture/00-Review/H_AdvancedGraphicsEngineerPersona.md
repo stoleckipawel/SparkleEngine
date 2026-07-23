@@ -1,8 +1,8 @@
 # H. Advanced Graphics Engineer Persona
 
 Status: personal capability target
-Date: 2026-07-04
-Scope: persona and growth direction for becoming a stronger advanced graphics, rendering, and GPU systems engineer
+Date: 2026-07-24
+Scope: persona and growth direction for principal-level advanced graphics, developer technology, rendering, GPU systems, and neural graphics engineering
 
 ## Persona Statement
 
@@ -19,6 +19,60 @@ The center of gravity is:
 - graphics debugging with PIX, RenderDoc, Nsight, and native API layers
 - neural rendering and GPU inference readiness without bloating the engine
 - practical productization: small APIs, clean ownership, useful tools, and code that other engineers can maintain
+
+## NVIDIA Principal Developer Technology Engineer Additive Target
+
+The supplied NVIDIA Principal Developer Technology Engineer posting (requisition `JR2013547`) raises this persona beyond strong internal renderer ownership. The target must also demonstrate the ability to help demanding game teams adopt advanced rendering and AI technology, tune it on real hardware, work at the architecture/driver boundary, and communicate the result at principal level.
+
+This is additive. Nothing in this section weakens the existing requirements for compact architecture, D3D12/Vulkan parity, deletion-first integration, deterministic behavior, low coupling, professional debugging, or measured performance.
+
+### Evidence Boundary
+
+A repository cannot prove a degree, a number of years in industry, willingness to travel, or employment history. It can prove equivalent technical depth, independent judgment, collaboration readiness, and communication quality through code, captures, reviews, incident analyses, reproducible demos, and technical writing. Public portfolio wording must never claim credentials or professional experience that are not true.
+
+### Canonical Role Requirement Matrix
+
+The identifiers below are the canonical traceability vocabulary for every other architecture document and future implementation prompt.
+
+| ID | Posting expectation | Additive Sparkle interpretation | Required evidence |
+|---|---|---|---|
+| `NV-PDTE-01` | Collaborate with leading game developers to adopt advanced GPU and AI technology | Design narrow integration contracts, diagnose partner-shaped workloads, preserve product constraints, and leave handoff-quality code and guidance | One integration case study with requirements, constraints, before-state, design review, adoption steps, failure handling, and measured result |
+| `NV-PDTE-02` | Advanced real-time rendering including path tracing | Own a path-traced feature through renderer, shaders, frame graph, RHI, temporal state, tools, and both supported APIs | Correctness images, D3D12/Vulkan validation, GPU captures, quality/performance comparison, and documented limitations |
+| `NV-PDTE-03` | Neural graphics and broader AI adoption in games | Deliver at least one real neural-graphics vertical slice that replaces or materially improves an existing denoising, reconstruction, sampling, texture/material, animation, or rendering path | Real model/operator path, classical baseline/fallback, deterministic assets, runtime integration, quality metrics, latency, memory, and backend/capability matrix |
+| `NV-PDTE-04` | Develop, profile, optimize, and tune neural rendering algorithms and AI models | Understand the model mathematically, choose layout/precision/operators deliberately, profile end-to-end inference, and tune the actual bottleneck rather than only wrapper overhead | Operator derivation, tensor shapes/layouts, precision study, per-stage capture, ablation, quality/performance frontier, and retained negative results |
+| `NV-PDTE-05` | Optimize GPU and system performance for fluid gameplay and complex AI behavior | Treat frame time, pacing, input-to-present latency, CPU/GPU overlap, memory, and background AI contention as one product budget | Correlated CPU/GPU timelines, p50/p95/p99, memory high-water, queue behavior, frame pacing, and bounded degradation under representative load |
+| `NV-PDTE-06` | Collaborate with architecture and driver teams on current and future hardware | Reason from API specifications, vendor guidance, GPU architecture, driver behavior, capability discovery, and portable fallback; produce minimal reproducible cases for suspected driver issues | Hardware/driver/config matrix, capability gates, backend-native validation, disassembly/counters where useful, driver-versus-application root-cause analysis, and a reduced reproducer |
+| `NV-PDTE-07` | Expert C++ development, optimization, and debugging | Build ownership-correct, low-overhead, reviewable C++ systems and debug races, lifetime faults, API misuse, memory pressure, and performance pathologies | Code review evidence, tests, sanitizer/native validation where available, incident reports, and before/after implementation-shape reconciliation |
+| `NV-PDTE-08` | Strong mathematics including linear algebra and calculus for problem solving and performance modeling | Derive coordinate transforms, sampling estimators, reconstruction filters, gradients, error metrics, numerical stability, and cost models rather than copying formulas blindly | A math note tied to executable tests, reference values, numerical-error bounds, and a prediction checked against measurements |
+| `NV-PDTE-09` | Excellent real-time graphics, GPU, shader-language, DirectX, and Vulkan knowledge | Maintain deep HLSL/Slang, DXIL/SPIR-V, D3D12/Vulkan, raster, compute, RT, synchronization, memory, and shader ABI competence | Paired backend implementation/captures, shader inspection, resource-state reasoning, and feature-specific validation |
+| `NV-PDTE-10` | In-depth CPU and GPU architecture fundamentals with hands-on low-level optimization | Explain cache, bandwidth, SIMD/waves, divergence, occupancy, registers, scheduling, topology, atomics, driver submission, and their interaction | Causal experiments using counters/disassembly/traces where available, serial controls, rejected alternatives, and architecture-specific conclusions |
+| `NV-PDTE-11` | Solid AI fundamentals and effective use of AI tools to program and design new solutions | Understand training/inference, optimization, generalization, datasets, loss/metrics, quantization, deployment, and tool-assisted engineering while independently verifying generated work | Model card/provenance, train/validation separation, reproducible export, inference contract, verification of AI-assisted code/design, and no unreviewed generated code |
+| `NV-PDTE-12` | Machine-learning algorithms plus inference and training workload optimization | Treat training and inference as different workloads; keep training/offline experimentation isolated from the runtime while proving informed optimization of both | Profiled training or fine-tuning study, runtime inference profile, batch/precision/memory/concurrency sweeps, deterministic artifact export, and deployment tradeoff |
+| `NV-PDTE-13` | Explore current GPU technology, develop new techniques, and communicate through demos, whitepapers, conferences, organization, and prioritization | Turn one bounded research or architecture hypothesis into a product-relevant experiment, keep it only if evidence wins, and make the result teachable and reproducible | Hypothesis and rejected alternatives, prototype-to-product/deletion decision, polished live demo, whitepaper-quality technical note, talk/deck outline, decision/incident records, and priority/deletion ledger |
+| `NV-PDTE-14` | Windows or Linux driver-development experience as a differentiator | Deepen Windows/D3D12 and Vulkan driver-facing knowledge now; preserve platform seams for a complete Linux/Vulkan slice rather than claiming unsupported portability | Correct API/driver ownership, validation and crash/repro workflow, platform boundary audit, and Linux evidence only after native build/run/validation on Linux |
+| `NV-PDTE-15` | Principal-level maturity equivalent to long professional experience | Demonstrate repeated end-to-end ownership, adversarial review, honest tradeoffs, cross-domain debugging, mentoring-quality explanation, and sustained simplification | Multiple completed vertical slices and incident reports whose evidence can be independently reproduced and defended |
+
+### Binding Interpretation
+
+- "Neural rendering readiness" is no longer the final bar. It remains the architectural prerequisite for `NV-PDTE-03` and `NV-PDTE-04`.
+- At least one neural-graphics feature must eventually execute a real model or neural operator path. A provider toggle, empty tensor abstraction, capability enum, mock model, shader demo disconnected from the renderer, or architecture-only note does not satisfy the requirement.
+- The neural feature must replace or improve a real current path. It must not add a second renderer, general ML runtime, generic tensor framework, or permanent research scheduler.
+- Training may remain an isolated offline workflow, but model provenance, dataset boundaries, export/cook reproducibility, precision/layout decisions, and runtime inference ownership must be explicit.
+- AI-assisted programming is allowed only with normal review. Generated code, tests, math, shader logic, citations, and performance claims are treated as untrusted until inspected and independently validated.
+- Partner collaboration is represented by integration quality: a narrow adoption surface, reproducible issue capture, precise constraints, graceful fallback, useful documentation, and code another engineer can own.
+- Future-hardware thinking means capability-driven design and measured hypotheses. It does not permit speculative public APIs, vendor branding, or claims about hardware that was not tested.
+- Whitepaper/conference quality means a technically rigorous explanation of a completed result. Documentation never substitutes for implementation or evidence.
+
+### Prompt-Level Persona Gate
+
+Every future implementation prompt must:
+
+1. list the applicable `NV-PDTE-*` requirements;
+2. state how the change advances or preserves them;
+3. name the concrete artifact or measurement that will demonstrate the claim;
+4. avoid adding role-shaped scaffolding without a current product use;
+5. report the requirement status as **advanced**, **preserved**, **not applicable**, or **blocked**, with a reason;
+6. identify any new gap exposed by the work without claiming it is solved.
 
 ## Core Identity
 
@@ -121,6 +175,8 @@ Sparkle evidence:
 
 - Slang/HLSL ABI stays flexible.
 - Neural work begins as a renderer feature slice only when it can replace or improve an existing path.
+- The completed portfolio includes at least one real neural graphics feature with a deterministic model/export contract, efficient runtime inference, a classical fallback, and measured quality/performance.
+- Training, fine-tuning, or model-conversion experiments remain isolated from the runtime package and publish only validated immutable artifacts.
 - No heavy runtime ML framework is added before the engine has a concrete feature need.
 
 ### 6. Debugging And Tool Fluency
@@ -166,6 +222,8 @@ Sparkle evidence:
 - State what is product-owned, experimental, skipped, or deleted.
 - Keep existing docs accurate, but do not create new docs as a substitute for code cleanup.
 - Prefer code shape, names, and ownership boundaries that make the decision obvious.
+- Translate a complex feature into an adoption guide, reduced reproducer, design review, live demo, and conference-quality explanation without overstating the result.
+- Communicate priorities, negative results, risks, hardware limits, and fallback policy as clearly as successes.
 
 ## Evidence To Build In Sparkle
 
@@ -181,10 +239,16 @@ The repo should gradually show this persona through code, not through more docum
 8. The launcher and cookers become workflow tools, not diagnostic shells.
 9. Multiple levels remain supported through catalogs/manifests without depot pollution.
 10. Every feature addition removes or simplifies nearby code when possible.
+11. At least one path-traced workload has paired API, quality, latency, and architecture evidence.
+12. At least one real neural-graphics feature meets `NV-PDTE-03`, `NV-PDTE-04`, `NV-PDTE-11`, and `NV-PDTE-12`.
+13. Neural training/export and runtime inference are separate, deterministic, and performance-budgeted.
+14. A hardware/driver issue can be reduced, classified, validated, and communicated professionally.
+15. Completed work has an adoption-quality integration note, a whitepaper-quality result, and a live technical demonstration.
+16. AI-assisted contributions are reviewed and validated to the same bar as manually authored work.
 
 ## Refactor Plan Contract
 
-Use this persona as a filter for `F_StagedDeletionFirstImprovementPlan.md`.
+Use this persona together with [K. Multithreaded Engine Implementation Prompt Series](K_MultithreadedEngineImplementationPromptSeries.md) and [L. SparkleEngine Integration Style Guide](L_SparkleEngineIntegrationStyleGuide.md) as the filter for every staged integration.
 
 A staged refactor is aligned with the persona only when it does at least one of these:
 
@@ -196,6 +260,8 @@ A staged refactor is aligned with the persona only when it does at least one of 
 - keeps shader ABI, cook, and runtime package behavior strong
 - improves content/project organization without reducing multi-level support
 - delays profiling until there is a stable feature path worth measuring
+- advances a concrete `NV-PDTE-*` requirement with code and evidence
+- improves partner adoption, reproducibility, mathematical rigor, hardware/driver diagnosis, or technical communication
 
 A staged refactor is misaligned when it:
 
@@ -205,6 +271,8 @@ A staged refactor is misaligned when it:
 - adds a diagnostic UI to make an unfinished feature look complete
 - removes a valuable capability instead of hardening and narrowing it
 - treats external architecture as something to copy rather than something to learn from
+- adds empty neural/AI abstractions, mock workloads, or role-keyword scaffolding without a replacement feature
+- uses AI-generated output without independent code, math, source, security, and performance review
 
 This persona should make the refactor plan stricter, not broader. If a task cannot explain which persona pillar it develops and which code or depot weight it removes, it should wait.
 
@@ -238,6 +306,15 @@ This persona should make the refactor plan stricter, not broader. If a task cann
 - Helps other teams integrate advanced features without accepting unnecessary complexity.
 - Builds systems that are impressive because they are smaller, sharper, and easier to trust.
 
+### Level 5: Principal Developer Technology Engineer Target
+
+- Leads adoption of path-traced and neural graphics technology across unfamiliar, partner-shaped engine constraints.
+- Tunes algorithms, models, shaders, CPU work, GPU work, memory, and frame pacing as one system.
+- Works effectively at the application, API, driver, and architecture boundary on current hardware while preparing capability-driven paths for future hardware.
+- Can profile and explain both training/offline model preparation and low-latency runtime inference without coupling the runtime to a research stack.
+- Produces reduced reproducers, best-practice guidance, technical demos, whitepaper-quality analysis, and conference-ready explanations.
+- Raises other engineers' effectiveness through precise reviews, principled prioritization, and maintainable integration surfaces.
+
 ## Anti-Persona
 
 Avoid becoming:
@@ -249,6 +326,10 @@ Avoid becoming:
 - the engineer who profiles too early before the feature path is stable
 - the engineer who treats PTLAS, upscaling, denoising, or neural rendering as branding instead of implementation work
 - the engineer who copies external architecture without adapting it to the engine's actual shape
+- the engineer who calls an empty tensor type, provider toggle, or mock shader "neural graphics"
+- the engineer who reports model quality without runtime cost, or runtime speed without quality and dataset context
+- the engineer who uses AI tools as an authority instead of a fallible accelerator
+- the engineer who confuses vendor-specific tuning with an untested universal best practice
 
 ## Personal North Star
 
@@ -260,7 +341,10 @@ The target is a rare mix:
 - disciplined enough to remove code
 - collaborative enough to make other engineers faster
 - curious enough to keep learning advanced rendering, GPU compute, and neural techniques
+- rigorous enough to derive and validate the math
+- practical enough to transfer technology into a partner-shaped engine
+- articulate enough to defend the work in a design review, whitepaper, live demo, or conference talk
 
 For Sparkle, this means becoming the engineer who can say:
 
-> This feature is real, the backend behavior is understood, the shader path is clean, the public API is small, the debug path is professional, and the repo got simpler after the change.
+> This feature is real, the math and model behavior are understood, the CPU/GPU and driver evidence is reproducible, the backend and fallback behavior are explicit, another engineer can adopt it, and the repo got simpler after the change.

@@ -1,10 +1,11 @@
 # K. Multithreaded Engine Implementation Prompt Series
 
 Status: required execution companion to J; no prompt implies implementation already exists
-Date: 2026-07-18
+Date: 2026-07-24
 Canonical naming authority: J's NVIDIA/AMD/Epic-grounded concurrency and rendering vocabulary; enforced by Rule 10
 Architecture and tutorial source: [J. Multithreaded Engine Architecture and Learning Program](J_MultithreadedEngineArchitectureAndLearningProgram.md)
 Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), and [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md)
+Coding and integration contract: [L. SparkleEngine Integration Style Guide](L_SparkleEngineIntegrationStyleGuide.md)
 
 ## Purpose
 
@@ -252,6 +253,28 @@ Owned C++ source must make behavior ownership visible without anonymous linkage 
 
 The completion report must include an **implementation-shape reconciliation**: header bodies moved, local types reassigned, former anonymous behavior owners, retained template/accessor bodies, diagnostics removed/retained, and the zero-result searches used by the gate.
 
+### 17. NVIDIA Principal Developer Technology Traceability
+
+Every prompt is reviewed against the canonical `NV-PDTE-01` through `NV-PDTE-15` requirements in H:
+
+- identify applicable role requirements before editing and mark each **advance**, **preserve**, **not applicable**, or **blocked**;
+- name the concrete code, test, capture, math/reference result, adoption artifact, or communication evidence expected from the prompt;
+- preserve path tracing, neural-foundation, AI/ML, CPU/GPU architecture, driver, partner-adoption and communication boundaries even when a prompt does not advance them;
+- do not add empty tensor/model types, AI managers, mock neural workloads, generic inference/training frameworks, speculative future-hardware APIs, permanent research graphs, or role-keyword scaffolding;
+- material rendering/neural algorithm changes include coordinate/operator math, numerical assumptions, reference values and a performance model checked against measurements;
+- AI-assisted code, shader, model, test, math, citation and design output is untrusted until independently inspected and validated under the same repository gate;
+- hardware/driver conclusions record exact adapter, driver, OS, backend, compiler, capabilities and workload. A suspected driver defect requires a reduced reproducer and application-versus-driver analysis;
+- feature boundaries are reviewed as partner adoption surfaces: prerequisites, owned inputs/outputs, failure/fallback, packaging, debugging and handoff must be narrow and explicit;
+- training/offline preparation and runtime inference remain separate owners/workloads/packages. Runtime consumes deterministic validated immutable artifacts;
+- quality and performance are reported together for path-traced/neural work, including a classical reference/fallback, visual failures, CPU/GPU latency, memory and frame pacing;
+- a claimed new technique begins as a bounded hypothesis with a baseline and deletion condition; it enters product code only after correctness, quality, performance and ownership evidence wins;
+- demo, whitepaper and conference-style artifacts are produced only by the designated closure prompts after the implementation passes; routine prompts do not grow documentation/reporting products;
+- repository evidence never implies a degree, years of employment, proprietary experience, Linux support or driver-development history that was not actually earned and validated.
+
+Prompts 00-29 establish the systems foundation and must preserve the role contract. Prompts 30-34 are the additive principal developer-technology evidence sequence. Completing Prompt 29 alone does not close the `NV-PDTE-*` matrix.
+
+The completion report must contain an **NV-PDTE reconciliation**: applicable IDs, advance/preserve/not-applicable/blocked status, exact evidence, honest gaps and proof that no role-only scaffolding was added.
+
 ## Required Prompt Completion Report
 
 Every completed prompt returns this report:
@@ -274,6 +297,7 @@ Every completed prompt returns this report:
 16. **Gate:** PASS or BLOCKED with concrete reason.
 17. **Integration-surface reconciliation:** narrow hooks, hidden mechanism types, receiver responsibility before/after, dependency leakage removed, and scaling path for the next consumer.
 18. **Implementation-shape reconciliation:** declaration-only header audit, function-local-type audit, anonymous-namespace ownership conversion, diagnostic reduction, and zero-result gate searches.
+19. **NV-PDTE reconciliation:** applicable role IDs, status, concrete evidence, preserved contracts, exposed gaps, AI-assisted-work verification where used, and role-only scaffolding audit.
 
 ## Prompt Sequence and Dependencies
 
@@ -311,6 +335,11 @@ Every completed prompt returns this report:
 | 27 | staged I/O and cold-cache PSO/resource-creation hitch control | 26 |
 | 28 | GPU queue concurrency, frame pacing, and correlated latency | 27 |
 | 29 | production forensics, expert defense, and final portfolio release | 28 |
+| 30 | path-tracing, mathematics, performance-model and partner-workload baseline | 29 |
+| 31 | neural feature selection, data/model provenance, training/export and artifact contract | 30 |
+| 32 | renderer-owned neural inference integration with classical fallback | 31 |
+| 33 | neural model/kernel/system tuning and hardware/driver investigation | 32 |
+| 34 | partner handoff, live demo, whitepaper/talk artifact and final role closure | 33 |
 
 ## J-to-K Scope Traceability
 
@@ -332,6 +361,11 @@ This ledger is a completeness check, not a substitute for reading J. A prompt ma
 | frame-graph authority, barriers, recording groups, submission | 20 | compiled plan inspection, serial/parallel execution of the same plan |
 | command preparation versus native recording versus optional software translation versus aggregation/submission batching | 17-21, 28 | representation/owner ledger, direct-path parity, list/chunk/batch metrics, explicit RHI-thread ADR rejection |
 | advanced graphics and vendor-neutral feature preservation | 16, 21-23, 27-29 | backend/feature matrix, image correctness, temporal/history, queue and capture tests |
+| principal path-tracing/math/partner evidence | 30, 34 | derivation/reference tests, paired backend quality/performance, integration case and reproducible handoff |
+| real neural graphics, training/export and inference | 31-34 | real artifact/model path, classical fallback, deterministic export, quality/performance frontier and final demo |
+| hardware/driver diagnosis and current/future architecture reasoning | 23, 27-30, 33-34 | exact configuration, counters/captures, native validation, reduced reproducer, capability/fallback and scoped conclusions |
+| AI fundamentals and independently verified AI-assisted engineering | 31-34 | provenance/model card, train/validation boundary, optimization decisions and code/math/source verification |
+| principal communication, organization and prioritization | 29-30, 34 | adoption guide, priority/deletion ledger, incident/review record, live demo, whitepaper-quality note and talk outline |
 | tools, packages, public-surface reduction, legacy deletion | 04, 22 | repository audit-to-zero, reproducible products/packages, closed deletion ledgers |
 | reduction/scan/compaction and deterministic parallel algorithms | 06, 10, 15, 26 | serial oracle, randomized edge cases, stable merge and crossover measurements |
 | CPU topology, OS scheduling, contention and oversubscription | 03, 23-25 | optimized system traces, topology metadata, worker-count and third-party-thread matrix |
@@ -410,6 +444,11 @@ This is the minimum hazard pre-mortem scope. A prompt must add any other MT ID m
 | 26–27 | MT-04–07, MT-13, MT-16, MT-19–31, MT-33, MT-36–37, MT-41–43 | deterministic parallel algorithm oracle, bounded staged I/O, cold-cache PSO/resource state machine, generation rejection |
 | 28 | MT-17–18, MT-24–27, MT-32–43 | correlated CPU/task/queue/present identity, queue overlap proof, provider ownership, pacing/backpressure and input-latency matrix |
 | 29 | MT-01–44 | injected incidents, independent reproduction, final zero-unclassified audit, live design/code/trace defense |
+| 30 | MT-23, MT-28–29, MT-32–43 | deterministic path-tracing workload, math/reference oracle, paired API capture, exact hardware/driver baseline, partner reproduction |
+| 31 | MT-01–07, MT-23–24, MT-27–31, MT-41–43 | bounded deterministic training/export, provenance, immutable artifact, no runtime training dependency, classical/reference oracle |
+| 32 | MT-01–13, MT-19–21, MT-23, MT-25–40, MT-41–43 | immutable model lifetime, persistent GPU data, declared inference passes, offline/runtime parity, classical fallback, backend validation |
+| 33 | MT-17–29, MT-32–44 | quality/performance ablation, topology/counter evidence, bounded memory, frame pacing, reduced driver repro, losing-path deletion |
+| 34 | MT-01–44 | clean reproduction, adversarial adoption review, final role/deletion audit, live failure/fallback demonstration, evidence-backed communication |
 
 The range notation is inclusive. It does not mean every hazard needs a bespoke test in every prompt; reuse the smallest existing proof that actually crosses the changed ownership path. It does mean no applicable hazard may be omitted because the happy path passed.
 
@@ -1570,6 +1609,7 @@ This gate is part of the acceptance criteria of every unfinished prompt from Pro
 - Complete Rule 12 placement work before validation: filename matches the primary type/capability; public headers expose only durable contracts; private mechanisms remain private; folders express the subsystem hierarchy; bounded moves/renames update includes, source groups/CMake, tests, documentation, and deletion ledgers. Reject generic dumping grounds such as new catch-all `Common`, `Utils`, `Helpers`, `Managers`, or flat `Systems` folders without a single documented owner.
 - Record before/after structural evidence: responsibility/file map, hotspot disposition, dependency-direction and rejected-alias searches, moved/deleted path ledger, and relevant build/test/benchmark gates. The evidence must prove that the final tree is easier to navigate and reason about and that no temporary compatibility spelling or duplicate implementation remains.
 - Apply Rule 16 across the complete prompt changelist and owned repository baseline: no anonymous namespace, no arbitrary renamed substitute, no function-local class/struct, no non-template/non-accessor implementation body in a touched header, and no diagnostic scaffolding beyond the owning invariant. The completion evidence includes repository-wide anonymous-namespace and touched-header searches.
+- Apply Rule 17 and L to the complete prompt changelist: identify applicable `NV-PDTE-*` requirements, preserve path-tracing/neural/AI/math/hardware-driver/partner boundaries, verify AI-assisted work independently, and reject role-only scaffolding. This does not require a prompt to implement neural work before Prompt 30; it requires every prompt to leave a clean, measurable integration surface for the later evidence program.
 
 This contract deliberately has no arbitrary maximum file length and does not require one file per function. A one-call helper or private capability is desirable when it names and isolates meaningful behavior; a content-free forwarding layer or cosmetic file split fails the gate.
 
@@ -2454,11 +2494,256 @@ Positive patterns: incident-based evidence, tool selection, live reasoning, caus
 Forbidden: memorized definitions, fabricated capture, cherry-picked FPS, generated report product, unbounded résumé feature, unsupported company/parity claim.
 ~~~
 
+Prompt 29 is the final multithreading/systems-foundation release. It is not the final `NV-PDTE-*` persona gate. The additive role sequence below begins only after Prompt 29 passes and must preserve its completed ownership, determinism, backend, reliability, performance and deletion contracts.
+
+## Prompt 30 - Establish the Principal Path-Tracing, Mathematics, and Partner Baseline
+
+Target CL Title: `SparkleRenderer: Establish the Principal Path-Tracing and Partner Baseline`
+
+~~~text
+Implement Prompt 30 only after Prompt 29 passes.
+
+Objective:
+Turn one representative Sparkle path-traced workload into a principal-level baseline that connects product requirements, rendering mathematics, shader/RHI execution, CPU/GPU system cost, exact hardware/driver configuration, and partner adoption constraints. Do not add a neural feature in this prompt.
+
+Non-negotiable repository rules:
+- Apply L in full, K Rules 1-17, and report the complete 19-item completion record.
+- Apply Rule 13 to path state, samples, bounces, material/light reads, random sequences, accumulation/history, guide buffers, RT structures, shader records, queues, packets, captures and readback.
+- Apply Rule 12/14/16 to every touched renderer, shader, RHI, project and documentation file; orchestration, estimator/math, scene setup, capture and comparison remain separate owners.
+- Advance `NV-PDTE-01`, `02`, `05`, `06`, `08`, `09`, `10`, `13` and `15`; preserve all other role contracts.
+- Use existing reference path, frame graph, RHI, shader package, capture and profiler/debugger hooks. Do not add a second path tracer, report framework, benchmark product or partner facade.
+- Keep D3D12/Vulkan behavior and current classic TLAS/PTLAS/provider/capture paths intact.
+
+Required implementation:
+1. Define one partner-shaped scenario: target visual result, scene/content constraints, resolution, frame/latency/memory budget, supported/fallback modes, integration inputs/outputs and failure behavior.
+2. Select a curated deterministic scene, camera path, light/material state, seed/sample schedule and reference-output procedure. Package heavy optional assets deliberately.
+3. Document the estimator and numerical contract used by the current path: coordinate spaces, throughput/radiance units, BRDF/PDF/MIS terms where applicable, termination, accumulation, precision and reference tolerances.
+4. Add the smallest executable reference tests for material math, sampling expectations, transforms, accumulation and numerical limits. Keep tests with the owning math/shader contract; do not create a general math-validation framework.
+5. Trace the complete frame from GameFramework/render input through RenderWorld, preparation, frame graph, shader parameters, BLAS/TLAS/PTLAS, command recording, submission, GPU execution, history and presentation.
+6. Record D3D12 and Vulkan images, native validation, shader/reflection state, CPU/GPU timings, RT build/update cost, upload/descriptor/memory pressure, queue behavior, frame pacing and input-to-present where applicable.
+7. Record exact CPU, GPU architecture/adapter, driver, OS, backend, compiler, resolution, feature/capability, provider, power and validation configuration.
+8. Compare a simple analytical cost prediction with measured path/sample/bounce/ray/workload behavior. Explain divergence through captures rather than changing the model to fit silently.
+9. Produce a concise internal adoption section in the existing appropriate document: prerequisites, integration contract, fallback, reproduction, debugging path, limitations and priority/deletion decisions.
+10. Delete temporary capture scripts, duplicate comparison paths and diagnostics that are not required for reproducibility through existing owned surfaces.
+
+Validation:
+- Deterministic reference values and image tolerances pass repeatedly.
+- D3D12/Vulkan outputs and feature/capability classifications are honest and native validation is clean.
+- Tiny and representative scenes, cold/warm state and classic TLAS/PTLAS where supported are recorded.
+- A second engineer can reproduce the workload from a clean checkout plus declared optional content.
+- The cost model predicts direction/order of magnitude or the discrepancy is explained by measured architecture/driver behavior.
+
+Acceptance gate:
+- One path-traced workload can be defended from math and data through shader/RHI/GPU result and system latency.
+- Partner requirements, fallback and adoption cost are explicit without a new broad API.
+- No neural/model/tensor framework, fake workload, report product or unsupported hardware claim was added.
+- `NV-PDTE-01/02/05/06/08/09/10/13/15` have concrete baseline evidence.
+
+Positive patterns: deterministic workload, executable math, exact configuration, paired API evidence, partner-shaped constraints, honest cost model.
+Forbidden: screenshot-only proof, FPS-only result, copied equation without tests, vendor sample as proof, unscoped driver claim, new benchmark/report system.
+~~~
+
+## Prompt 31 - Select the Neural Feature and Build the Deterministic Model Artifact Contract
+
+Target CL Title: `SparkleRenderer: Establish the Neural Feature and Model Artifact Contract`
+
+~~~text
+Implement Prompt 31 only after Prompt 30 passes.
+
+Objective:
+Select one current renderer/game path for a real neural replacement or material improvement, establish its classical baseline, model/data/math contract, isolated training or fine-tuning workflow, deterministic export/cook and immutable runtime artifact. Do not integrate GPU runtime inference yet.
+
+Non-negotiable repository rules:
+- Apply L in full, K Rules 1-17, Rule 13 DOD, Rule 12 structure, Rule 16 implementation ownership and the 19-item completion report.
+- Advance `NV-PDTE-03`, `04`, `08`, `11`, `12`, `13` and `15`; preserve the path-tracing/backend/system contracts.
+- Search existing denoising, reconstruction, upscaling, sampling, texture/material, animation, shader/provider and artifact/cook paths before selecting a feature.
+- Stop if no candidate has current product value, a legal/provenance-clean dataset or training source, a deterministic artifact route, a classical fallback and measurable quality/performance criteria.
+- Do not add a general tensor library, model manager, graph runtime, training UI, runtime Python/PyTorch/ONNX dependency, second asset database, opaque downloader or mock network.
+- Training/offline dependencies remain tool/research-only and are excluded from runtime/editor packages.
+
+Required implementation:
+1. Compare candidate features by current consumer, replaced work/code, dataset/provenance feasibility, mathematical clarity, expected quality gain, inference budget, backend feasibility, fallback and maintenance cost. Select one and record rejected candidates.
+2. Define the classical baseline and unchanged input/output semantics. The neural path must be switchable for controlled comparison and removable without breaking the baseline.
+3. Define data provenance, license, generation, train/validation/test split, preprocessing, augmentation and leakage controls. Do not commit uncataloged heavyweight data to the core depot.
+4. Define model/operator math: shapes, layout, normalization, receptive field/access, loss, quality metrics, gradients/optimization where applicable, numerical range, precision and expected runtime operations/bytes.
+5. Implement or adopt the smallest isolated training/fine-tuning/reference workflow required by the feature. Pin inputs/options/seeds and publish deterministic metadata.
+6. Measure training/offline preparation separately: step/epoch/export time as applicable, batch/precision behavior, CPU/GPU utilization, peak memory, convergence and retained negative trials. Do not build a telemetry platform.
+7. Define one canonical immutable runtime artifact carrying only required weights/constants/metadata with bounded shapes, layout, precision, checksum/provenance and feature capability requirements. Regenerate to the newest format; do not add legacy content-version compatibility.
+8. Integrate artifact validation/cooking into the existing narrow shader/asset/tool ownership path. Runtime packages contain the validated artifact, not the training stack or source dataset.
+9. Implement a deterministic offline/reference inference oracle for artifact/export validation and compare it with the training framework result within defined tolerance.
+10. Add malformed, wrong-shape/layout/precision, truncated, non-finite, provenance/checksum and unsupported-capability rejection tests at the artifact owner.
+11. Record AI-tool use, if any, and independently verify generated code, math, model design, data scripts, tests, citations and claims.
+12. Delete candidate spikes, duplicate exporters, debug dumps, compatibility artifacts and unused dependencies before the gate.
+
+Validation:
+- Repeated training/export or deterministic fixed-model export produces the promised artifact identity and reference output within defined policy.
+- Train/validation/test boundaries and data provenance are reviewable.
+- Classical baseline and offline neural reference run on the same representative inputs and quality metrics.
+- Runtime/editor/tool packages contain no training framework or source dataset dependency.
+- Artifact validation rejects malformed and unsupported input without partial publication.
+- Peak training/export memory and time are recorded for exact hardware/configuration.
+
+Acceptance gate:
+- A real feature, real data/model/operator path and real classical baseline are selected.
+- The artifact is deterministic, immutable, bounded, validated, package-owned and ready for runtime consumption.
+- Training/offline and runtime ownership are separate.
+- No generic ML framework surface, empty tensor abstraction, mock model or hidden data/license ambiguity remains.
+
+Positive patterns: feature replacement, model/data provenance, bounded artifact, deterministic export, offline oracle, classical baseline.
+Forbidden: AI branding, toy model disconnected from product, runtime training dependency, opaque weights, data leakage, quality metric without visual failures.
+~~~
+
+## Prompt 32 - Integrate Renderer-Owned Neural Inference with a Classical Fallback
+
+Target CL Title: `SparkleRenderer: Integrate the Neural Graphics Inference Path`
+
+~~~text
+Implement Prompt 32 only after Prompt 31 passes.
+
+Objective:
+Consume the accepted immutable artifact in one renderer-owned neural graphics path using existing shader, frame-graph, RenderWorld/GPU-scene, task and RHI contracts. Establish correctness and D3D12/Vulkan capability/fallback behavior before aggressive tuning.
+
+Non-negotiable repository rules:
+- Apply L in full, K Rules 1-17 and the 19-item completion report.
+- Apply Rule 13 to every tensor/image/buffer source, preprocessing transform, weight upload, intermediate, dispatch, history, output, fallback and hot traversal.
+- Apply Rule 12/14/15/16: separate feature orchestration, artifact decoding, resource state, preprocessing, inference kernels, postprocessing, quality comparison and backend capability policy by real owner.
+- Advance `NV-PDTE-03`, `04`, `05`, `07`, `08`, `09`, `10`, `11`, `12` and `15`.
+- Use existing HLSL/Slang, shader packages, frame graph, RHI services, renderer tasks, persistent GPU storage, descriptor/upload ownership and capture hooks.
+- Do not add a generic inference graph/runtime, CUDA/HIP backend, second frame graph, worker submit, per-frame model parse/upload, mutable model data, completion-order merge or app-level neural state.
+
+Required implementation:
+1. Define the feature-owned runtime request/state: artifact handle, bounded input/output descriptors, required history, precision/layout, capability and classical fallback. Keep volatile mechanics private.
+2. Resolve and validate the artifact outside frame-hot work. Create persistent renderer-owned weights/constants/resources and retire replacements by existing GPU lifetime rules.
+3. Implement explicit preprocessing, inference operator/kernel sequence and postprocessing through declared frame-graph resources/passes. Each pass declares reads/writes/history/queue and performs no lazy resource/PSO/model creation.
+4. Keep tensor/image layouts concrete and access-specific. Record selected and rejected AoS/SoA/packed/tiled/channel layouts, alignment, precision and shader access.
+5. Integrate the smallest CPU preparation through existing serial/task contracts. Use immutable inputs, exclusive ranges/task-local output and deterministic merge; retain a small-work serial path.
+6. Implement the shader/kernel path in HLSL/Slang with explicit bounds, coordinate convention, precision, wave/cooperative capability and fallback. Do not hide operations behind a general operator abstraction unless two current operators share the exact contract.
+7. Add D3D12/Vulkan resource, descriptor, synchronization and pipeline behavior through existing neutral RHI contracts. Backend-specific workarounds stay private and evidence-scoped.
+8. Compare runtime output with the offline/reference oracle and classical baseline using deterministic inputs, numerical tolerances, feature quality metrics and visual failure cases.
+9. Implement unsupported-artifact/capability/device/resource failure as a typed fallback to the classical path without partial history/publication or device idle.
+10. Preserve capture, temporal reset, resize/minimize, reload, level change, provider and shutdown behavior.
+11. Delete temporary CPU/reference runtime paths, per-frame debug dumps, duplicate feature settings and experiment scaffolding after parity.
+
+Validation:
+- Offline/reference and runtime neural outputs match defined numerical/quality tolerance.
+- Classical/neural comparison uses identical inputs and deterministic camera/workload.
+- D3D12/Vulkan native validation passes where the required capability exists; unsupported cases take the tested classical fallback.
+- Reload/resize/history reset/level change/delayed GPU/shutdown have no stale artifact/resource or partial output.
+- Packet/model memory poison and delayed consumption prove no transient pointer retention.
+- Serial/1/2/N task modes retain deterministic output where CPU preparation is parallel.
+
+Acceptance gate:
+- A real neural model/operator executes inside the actual renderer feature path.
+- Resources, passes, artifacts, CPU preparation, GPU lifetime and fallback have one clear owner each.
+- The classical product path remains valid and no generic ML/runtime architecture was added.
+- Correctness and backend/fallback behavior pass before performance claims.
+
+Positive patterns: concrete tensor layout, immutable artifact, persistent weights, declared passes, offline oracle, classical fallback.
+Forbidden: fake model, generic graph runtime, per-frame weight upload, hidden operator dependency, lazy recording mutation, quality-by-screenshot only.
+~~~
+
+## Prompt 33 - Tune the Neural Model, Kernels, System Path, and Driver Interaction
+
+Target CL Title: `SparkleRenderer: Tune Neural Graphics across Model, Kernel, and Hardware`
+
+~~~text
+Implement Prompt 33 only after Prompt 32 passes.
+
+Objective:
+Profile and optimize the accepted neural feature across model/algorithm, training/export, CPU preparation, GPU kernels, memory, scheduling, frame pacing and driver interaction. Keep only changes that improve the measured quality-performance-product frontier.
+
+Non-negotiable repository rules:
+- Apply L in full, K Rules 1-17 and the 19-item completion report.
+- Advance `NV-PDTE-04`, `05`, `06`, `08`, `09`, `10`, `11`, `12` and `15`; preserve partner/final communication for Prompt 34.
+- Use existing profiler/debugger/native validation/capture hooks plus appropriate external tools; do not add operator telemetry, CSV/JSON report generation, benchmark UI or permanent tuning switches.
+- Every optimization has a serial/classical/reference control, exact hardware/driver/configuration and a falsifiable hypothesis.
+- Keep quality, visual stability, temporal behavior, latency, memory and frame pacing beside throughput.
+- Driver workarounds require a reduced reproducer, exact applicability predicate and removal/retest rule.
+
+Required implementation:
+1. Build an end-to-end timeline separating input/preprocess, CPU preparation, uploads, each inference stage, postprocess, history, frame-graph scheduling, record, submit, GPU execution and presentation.
+2. Profile model/operator alternatives and ablations: capacity, receptive field/sequence length as applicable, loss/metric weighting, precision/quantization, pruning/fusion and artifact size. Retain the smallest model meeting quality/product targets.
+3. Profile training/offline configuration separately: batch, precision, data pipeline, optimizer/schedule where applicable, memory, convergence and export. Do not optimize training at the expense of runtime contract correctness.
+4. Profile kernel/layout alternatives: channel/tile/packing, vectorization/wave/cooperative operations, fusion, dispatch geometry, barriers, intermediates, shared memory, registers, occupancy, cache/bandwidth and divergence.
+5. Profile CPU/system alternatives: artifact resolution, preprocessing layout, task grain, allocation reuse, upload/descriptor staging, queue choice, frame overlap and background workload budgets.
+6. Measure tiny, representative and stress workloads; classical/neural; serial/task modes; cold/warm; D3D12/Vulkan; supported GPU architectures/drivers available; and concurrent representative gameplay/animation/background work.
+7. Record p50/p95/p99 CPU/GPU stage time, end-to-end frame time, frame pacing, input-to-present, peak resident/artifact/intermediate memory, upload bytes and quality metrics.
+8. Compare the math/operation/byte cost model with captures and counters/disassembly where available. Explain compute-, bandwidth-, occupancy-, synchronization-, driver- or latency-bound behavior.
+9. Investigate at least one hardware/driver-sensitive result. Reduce it outside the full feature where possible, classify application/API/driver ownership, validate the fix/fallback and avoid universal claims.
+10. Express future-hardware opportunities only as capability-driven hypotheses with the data/layout seam that would permit adoption. Do not add untested public APIs or dormant runtime paths.
+11. Remove tuning controls, model variants, kernels, layouts, workarounds and task policies that lose or have no current product use.
+
+Validation:
+- Independent reruns reproduce retained improvements within stated variability.
+- Quality does not regress outside the accepted frontier and visual/temporal failure cases remain bounded.
+- Tiny workload remains near classical/serial overhead budget; stress workload has a stable memory ceiling.
+- D3D12/Vulkan validation and capability/fallback remain correct.
+- Reduced hardware/driver case reproduces the issue and distinguishes application behavior from driver hypothesis.
+- Capture-on/off and instrumentation-overhead comparisons prevent measurement tooling from becoming the result.
+
+Acceptance gate:
+- The accepted model, precision, layout, kernels, task policy and frame placement are justified by measured product tradeoffs.
+- The feature meets its quality, latency, memory and pacing budget on every hardware/backend configuration claimed.
+- Negative results and unavailable hardware are retained honestly.
+- No losing tuning branch, speculative future path, broad workaround or measurement product remains.
+
+Positive patterns: end-to-end timeline, ablation, quality-performance frontier, architecture counters, reduced driver repro, negative-result deletion.
+Forbidden: FPS-only tuning, quality-only model choice, cherry-picked GPU, permanent experiment switches, unscoped workaround, future hardware by speculation.
+~~~
+
+## Prompt 34 - Complete Partner Handoff and Principal Developer Technology Evidence
+
+Target CL Title: `SparkleEngine: Complete Principal Developer Technology Evidence`
+
+~~~text
+Implement Prompt 34 only after Prompt 33 passes.
+
+Objective:
+Close `NV-PDTE-01` through `NV-PDTE-15` with reproducible implementation evidence, partner-quality handoff, live demonstration and concise technical communication. Remove all role-only scaffolding and leave the product smaller and maintainable.
+
+Non-negotiable repository rules:
+- Apply L in full, K Rules 1-17 and the 19-item completion report.
+- Use existing documentation and product/test/capture surfaces. Add one feature technical artifact only if no existing document can own the math/result without becoming incoherent; never add another policy, telemetry or report system.
+- Re-audit the entire neural/path-tracing ownership path for Rule 12/13/14/15/16, canonical vocabulary, SOLID/DRY, diagnostics, public surface, packages, licenses and deletion.
+- Verify every AI-assisted contribution independently and record the verification categories, not private prompts or generated chatter.
+- Do not claim degree, years, employer/partner experience, proprietary knowledge, Linux support, driver-development experience, hardware validation or production readiness that the evidence does not establish.
+
+Required implementation:
+1. Re-run Prompt 30 path-tracing and Prompt 31-33 neural feature matrices from a clean build with exact source revision, content/artifact identity, hardware, driver, OS, backend, compiler and configuration.
+2. Produce one partner-shaped handoff: requirements, prerequisites, integration boundary, build/cook/package steps, capability/fallback, tuning controls retained as product policy, debugging/capture workflow, known failures and adoption cost.
+3. Produce a minimal issue reproducer and incident narrative for the selected hardware/driver-sensitive case: symptom, hypotheses, isolation, ownership, fix/fallback, validation and retest condition.
+4. Produce a concise whitepaper-quality feature note in the correct existing documentation owner: problem, prior/classical path, math/model/data, architecture, artifact/training, runtime inference, DOD/layout, backend, optimization, quality, performance, limitations and future hypotheses.
+5. Produce a conference-talk outline and live demo script that teach the result without relying on hidden state or inflated claims. The demo covers classical/neural comparison, deterministic reload/fallback, D3D12/Vulkan status, captures and one failure/limitation.
+6. Perform an adversarial design/code review as if another engine team must maintain the integration. Address unclear ownership, excessive public surface, model/data/license ambiguity, hidden backend policy, fragile fallback, unreproducible tuning and god units.
+7. Close every `NV-PDTE-*` row with evidence, truthful non-code boundary, explicit unavailable platform/hardware or blocker. A blocked technical row prevents final PASS.
+8. Verify all model/source/data/third-party licenses and package ownership. No training dependency, source dataset, debug dump or optional heavyweight asset leaks into the runtime/core package.
+9. Delete temporary experiments, candidate models, duplicate artifacts, tuning flags, capture/report code, compatibility paths, unused abstractions, role-keyword types and stale claims.
+10. Update release-facing capability wording only after the exact backend/hardware/quality/performance gate passes.
+
+Validation:
+- Clean-checkout reproduction of path-tracing and neural outputs, quality metrics and representative performance.
+- A reviewer following only the handoff can build, run, switch/fallback, capture and diagnose the feature.
+- Whitepaper equations/claims link to executable reference tests and captures; tables state exact configuration and variability.
+- Live demo survives reload, resize, level change, unsupported capability/fallback, capture and shutdown.
+- Repository searches find no training runtime, mock model, duplicate inference path, role-only scaffold, unsupported claim or temporary tuning surface.
+- Full architecture, native validation, feature preservation, package and style-guide gates pass.
+
+Acceptance gate:
+- All technical `NV-PDTE-*` requirements have reproducible evidence; non-code credential/history boundaries are stated honestly.
+- The feature is real, mathematically understood, optimized across model/kernel/system, driver-aware, adoptable and maintainable.
+- Communication artifacts are concise consequences of completed work, not substitutes for it.
+- Sparkle contains no generic ML platform, second scheduler/renderer, public telemetry product, training UI or unsupported platform/vendor claim.
+- The final repository is smaller or more cohesive along the changed path and all deletion ledgers are closed.
+
+Positive patterns: partner handoff, clean reproduction, whitepaper-quality causality, live failure demo, honest scope, deletion closure.
+Forbidden: resume-keyword subsystem, fabricated partner claim, credentials inferred from code, benchmark theater, hidden dataset/model, presentation without implementation.
+~~~
+
 ## Final Series Gate
 
 The series is complete only when:
 
-- all 32 prompt reports exist and every gate is PASS;
+- all 37 prompt reports exist and every gate is PASS;
 - J's Definition of Done is satisfied by executable evidence;
 - all compatibility/deletion ledgers are closed;
 - the current repository-wide concurrency scan has zero unclassified hits and each retained primitive has an owner, invariant, blocking/affinity policy, and falsifying test;
@@ -2469,5 +2754,10 @@ The series is complete only when:
 - GameFramework-to-render publication uses the single proven `RenderWorldDelta` plus `RenderFrameDynamicData` boundary; Renderer performs no ECS query, gameplay-object dereference, or scene-wide rebuild for an isolated dirty change;
 - the implementation remains understandable in serial mode;
 - the owner can explain and defend every major design, tradeoff, failure mode, and measurement without relying on this document as a script.
+- every `NV-PDTE-01` through `NV-PDTE-15` requirement has reproducible technical evidence, a truthful non-code boundary or an explicit unavailable-hardware/platform statement; no technical row remains blocked;
+- one path-traced workload and one real neural graphics feature connect math/model/data through C++/shader/RHI execution to CPU/GPU/driver evidence, classical fallback and product latency/memory;
+- training/offline preparation and runtime inference remain separate, deterministic and intentionally packaged;
+- another engineer can adopt, reproduce, debug and tune the principal feature from the handoff;
+- the final live demo, whitepaper-quality note and talk outline are backed by code/tests/captures and introduce no runtime reporting product.
 
-If any condition is false, the multithreading program is still in progress. Do not relabel a partial infrastructure milestone as completion.
+If any condition is false, the complete principal developer-technology program is still in progress. Prompt 29 may still be a valid completed multithreading foundation, but it must not be relabeled as final `NV-PDTE-*` completion.

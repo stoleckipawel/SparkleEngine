@@ -5,10 +5,12 @@ Date: 2026-07-16
 Last adversarial conformance review: 2026-07-18
 Last NVIDIA/AMD/Epic naming review: 2026-07-18 (repository revisions pinned in the source matrix)
 Last persistent-identity source review: 2026-07-21 (NVIDIA/AMD revisions pinned in the source trail)
-Scope: runtime, renderer, RHI, editor, asset and shader tools, learning evidence, and portfolio presentation
+Last NVIDIA Principal Developer Technology role review: 2026-07-24 (requirements `NV-PDTE-01` through `NV-PDTE-15`)
+Scope: runtime, renderer, RHI, editor, asset and shader tools, principal developer-technology evidence, learning evidence, and portfolio presentation
 Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), and [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md)
 Repository context: [D. Whole Repository Architecture Map](D_WholeRepositoryArchitectureMap.md)
 Implementation companion: [K. Multithreaded Engine Implementation Prompt Series](K_MultithreadedEngineImplementationPromptSeries.md)
+Coding and integration contract: [L. SparkleEngine Integration Style Guide](L_SparkleEngineIntegrationStyleGuide.md)
 
 ## How to Use This as a Learning Document
 
@@ -220,7 +222,7 @@ Unless a section explicitly says “Current,” architectural descriptions are r
 | A/E: command production architecture | Unreal-style translation, native recording, “merging,” batching and submission could be conflated | Teach five layers, retain Sparkle direct native recording, qualify every merge, and gate any future software RHI stream by ADR/profile evidence | Same compiled plan, deterministic aggregation, batch/latency sweep, no speculative `RhiThread` |
 | A: shader/compiler ABI | Parallel cooking and reload were covered, but ABI preservation was implied | Add immutable shader-generation and compiler-context contract | DXIL/SPIR-V cook, reflection/layout parity, generation swap tests |
 | A: classic TLAS/PTLAS product readiness | Mentioned in GPU-scene data, tests, and benchmarks, not protected as equal product paths | Add explicit RT preservation contract and per-backend gates | Build/update/trace/lifetime tests for both paths where supported |
-| A: neural rendering readiness | Only deferred heavy ML features | Preserve tensor-like resource/layout/profile expressiveness without adding ML runtime | Shader contract tests and one replacement-based prototype gate |
+| A/H: neural rendering and AI depth | Only deferred heavy ML features and architectural readiness | Preserve tensor-like resource/layout/profile expressiveness, then require one real replacement-based neural graphics feature without a general ML runtime | Deterministic model artifact, classical baseline/fallback, quality metrics, inference latency/memory, training/export provenance, and backend/capability matrix |
 | A: production reviewability | Detailed plan risked becoming planning sprawl | Keep this as the single internal implementation program and require code-shaped evidence | No new policy/report documents; narrow APIs and deletion ledger |
 | E: declared product identity | “Renderer-first” appeared, but did not constrain scheduler/tool scope | Tasks is internal execution infrastructure for a compact renderer-first engine, not a product identity | Package/module dependency audit |
 | E: no extra rendering abstraction | Tasks and recording leases could be mistaken for another RHI layer | Tasks owns CPU execution only; frame graph owns scheduling; RHI remains explicit | Include/dependency boundary checks |
@@ -238,6 +240,39 @@ Unless a section explicitly says “Current,” architectural descriptions are r
 | H: professional tools, not bespoke diagnostics | New task timeline language was ambiguous | Reuse existing markers/debug layers/profiler scopes; no task panel | PIX/RenderDoc/Nsight-visible roles and scopes |
 | H: learn multithreading by useful production work | Renderer-only evidence would not prove lifecycle/editor/gameplay understanding | Use existing animation plus a needed async scene-load/editor-operation path to demonstrate distinct concurrency patterns | Code, stress tests, captures, and live cancel/fail/reload demo |
 | H: every addition simplifies nearby code | Present in some stage deletion lists, not global | Make simplification a program-level completion gate | Legacy futures, snapshots, waits, pools, and host paths removed |
+
+### NVIDIA Principal Developer Technology Additive Conformance
+
+The supplied NVIDIA Principal Developer Technology Engineer posting raises the complete-program evidence bar. The canonical interpretation is defined by `NV-PDTE-01` through `NV-PDTE-15` in H. J and K remain the ownership/concurrency foundation; they are now prerequisites for a later path-tracing, neural-graphics, hardware/driver, and technology-transfer evidence program rather than the final portfolio ceiling.
+
+| Role requirement | J/K foundation | Additive target after the foundation | Evidence gate |
+|---|---|---|---|
+| `NV-PDTE-01` partner adoption | Narrow packets, providers, editor commands, packages, deterministic tools | Apply one advanced feature to partner-shaped constraints and make adoption/debug/fallback explicit | Integration case study, handoff guide, reduced issue reproducer, measured result |
+| `NV-PDTE-02` path tracing | RT preservation, frame graph, persistent GPU scene, parallel recording | Own one representative path-traced workload from math and scene inputs to backend/hardware result | Paired API validation, reference images, quality/perf/memory/latency captures |
+| `NV-PDTE-03` neural graphics | Tensor-like ABI readiness and clean feature boundaries | Implement one real model/operator renderer feature that replaces or improves a classical path | Real artifact and inference, classical fallback, quality/performance frontier |
+| `NV-PDTE-04` neural algorithm/model tuning | DOD, task DAG, shader/cook pipeline, profiler discipline | Tune model/operator/layout/precision/dispatch from measured bottlenecks | Shapes/layout/precision record, ablation, per-stage profile, retained negative results |
+| `NV-PDTE-05` fluid system performance | Correlated frame identity, pacing, bounded background/frame work | Evaluate rendering plus AI workload contention under product latency and memory budgets | CPU/GPU timeline, p50/p95/p99, frame pacing, input-to-present, memory high-water |
+| `NV-PDTE-06` hardware/driver collaboration | Explicit RHI, capability state, native validation, incident practice | Classify current architecture/driver behavior and create a minimal external-quality reproducer | Exact adapter/driver/config, captures, disassembly/counters where useful, scoped conclusion |
+| `NV-PDTE-07` C++/debugging | Ownership architecture, SOLID/DOD gates, incident reports | Apply the same bar to neural/path-tracing implementation and integration code | Reviewable code, tests, sanitizer/native validation, implementation-shape reconciliation |
+| `NV-PDTE-08` mathematics | Deterministic algorithms and shader correctness | Derive estimators, transforms, filters, gradients, metrics, stability, and cost models | Math/reference note, executable values, error bounds, prediction versus measurement |
+| `NV-PDTE-09` APIs/shaders | D3D12/Vulkan and HLSL/Slang/DXIL/SPIR-V contracts | Demonstrate feature parity/fallback and shader/kernel inspection on the chosen feature | Backend captures, shader disassembly/reflection, state/synchronization explanation |
+| `NV-PDTE-10` CPU/GPU architecture | Topology, cache, false sharing, waves, bandwidth, queue analysis | Connect counters/disassembly and workload scaling to a concrete optimization decision | Causal A/B experiments and architecture-specific conclusion |
+| `NV-PDTE-11` AI fundamentals/tools | Structured immutable inputs and verified code process | Document model/data/loss/generalization/export/deployment and verify AI-assisted work independently | Model card/provenance, validation split, export tests, code/math/source review |
+| `NV-PDTE-12` training/inference | Bounded offline tasks and runtime publication | Profile training/offline preparation separately from low-latency inference | Precision/batch/memory/concurrency sweeps and deterministic published artifact |
+| `NV-PDTE-13` innovation/communication/leadership | Teach-backs, evidence reports, honest limitations | Test one bounded GPU/research hypothesis, keep or delete it from evidence, then turn completed strategic work into adoption, demo, whitepaper and talk material | Hypothesis/rejected alternatives, product/deletion decision, reproducible live demo, concise paper-quality note, talk outline, priority ledger |
+| `NV-PDTE-14` Windows/Linux driver readiness | Windows/D3D12 and Vulkan backend ownership | Preserve a clean platform seam and claim Linux only after a complete native Linux/Vulkan slice | Platform audit; native build/run/validation/capture/package evidence before support wording |
+| `NV-PDTE-15` principal maturity | Full ownership program and adversarial defense | Repeat end-to-end judgment across rendering, neural, performance, driver, and partner concerns | Multiple independently reproducible vertical slices and incidents |
+
+Binding rules:
+
+- Completion of Prompt 29 proves the multithreading and systems foundation, not all `NV-PDTE-*` evidence.
+- The final role target requires a real neural graphics result. A mock model, provider switch, tensor container, shader micro-demo, or design note is insufficient.
+- Training/offline model work is isolated from runtime packages. Runtime receives deterministic validated immutable artifacts.
+- Neural quality and performance are inseparable: report a classical baseline, dataset/workload scope, visual failures, quality metric, CPU/GPU latency, memory, and frame pacing.
+- Future-hardware work is a capability-driven hypothesis until tested. Driver conclusions are scoped to exact hardware, driver, OS, API, and reproduction.
+- AI-assisted output is untrusted input until code, shader, model, test, math, source, security, ABI, and performance review pass.
+- Communication artifacts follow completed engineering. They do not become runtime diagnostic/report infrastructure.
+- The additive role program must use the same ownership, DOD, task, renderer, RHI, deletion, and evidence contracts established here.
 
 ### Binding Product Identity
 
@@ -4647,6 +4682,37 @@ Exit criteria:
 - D3D12/Vulkan and AMD/NVIDIA captures support causal claims and explicitly record hardware/configuration limitations
 - the owner can explain memory model, OS scheduling, CPU/GPU queue synchronization, frame latency, and production diagnosis under adversarial questioning
 
+### Stage 10 - Principal Developer Technology Evidence
+
+This stage begins only after Stage 9 and Prompt 29 close the ownership, data, concurrency, renderer, RHI, reliability and evidence foundations. It must not destabilize those contracts.
+
+Goals:
+
+- close `NV-PDTE-01` through `NV-PDTE-15` with real Sparkle work rather than role-shaped scaffolding;
+- prove one path-traced workload from math through GPU/driver result;
+- deliver one real neural graphics replacement feature with deterministic training/export and optimized runtime inference;
+- demonstrate partner adoption, architecture/driver diagnosis and principal-quality communication.
+
+Work:
+
+1. Select a current renderer problem whose neural replacement has a clear classical baseline, product value, bounded data/artifact contract, and measurable quality/performance target.
+2. Establish reference math, data/provenance, training or fine-tuning, deterministic export/cook, tensor shape/layout/precision and classical fallback before runtime parallel optimization.
+3. Implement the smallest renderer-owned inference path through HLSL/Slang, frame graph and explicit RHI resources on supported D3D12/Vulkan capabilities.
+4. Tune algorithm, model, kernel, CPU preparation, memory, dispatch, precision and concurrency using quality/performance ablations and architecture counters/captures where available.
+5. Stress the accepted feature beside representative game/render workload for frame pacing, input latency, memory and background-work interference.
+6. Investigate at least one hardware/driver-sensitive case with exact configuration, native validation, a reduced reproducer and a scoped conclusion/fallback.
+7. Package the result as a partner-shaped adoption case, reproducible live demo, whitepaper-quality technical note and conference-talk outline.
+
+Exit criteria:
+
+- the feature runs a real model/operator path and improves or replaces a real path; no mock, empty abstraction or disconnected demo is counted;
+- quality, visual failure cases, CPU/GPU latency, memory, pacing and fallback are reported together;
+- training/offline preparation and runtime inference remain separate and deterministic;
+- both API paths are implemented where capability permits, or unsupported behavior is explicitly gated with a validated fallback;
+- no general ML framework, second scheduler, training UI, public telemetry system, speculative future-hardware contract or role-only subsystem remains;
+- another engineer can reproduce, integrate, debug and tune the feature from the handoff;
+- every role requirement is closed honestly, including non-code credential boundaries and unavailable hardware/platform evidence.
+
 ## Recommended Change Sets
 
 The stages can be organized into reviewable change sets:
@@ -4678,6 +4744,11 @@ The stages can be organized into reviewable change sets:
 25. Staged streaming and cold-cache PSO/resource creation
 26. GPU queue concurrency, pacing, and correlated latency
 27. Production forensic labs and expert interview defense
+28. Principal-role path-tracing/math/partner workload baseline
+29. Neural feature selection, dataset/model provenance, training/export and artifact contract
+30. Renderer-owned neural inference integration with classical fallback
+31. Neural model/kernel/system tuning plus hardware/driver investigation
+32. Partner handoff, reproducible demo, whitepaper/talk artifact and final role traceability
 
 Each change set should compile and run both backends where it touches shared rendering behavior.
 
@@ -4959,6 +5030,18 @@ End result:
 - peak resident memory
 - tool throughput and peak memory
 
+Principal developer-technology additions when the path-tracing/neural program begins:
+
+- path-traced image quality and convergence against a defined reference;
+- neural-versus-classical quality using feature-appropriate metrics and named visual failure cases;
+- model parameter/artifact bytes, tensor/intermediate bytes, precision and layout;
+- training/fine-tuning or offline preparation step time, peak CPU/GPU memory, batch behavior and output determinism;
+- runtime inference stage latency, dispatch count, occupancy/register/bandwidth evidence where available, and end-to-end frame contribution;
+- effect on frame pacing, input-to-present latency and concurrent gameplay/background work;
+- exact GPU architecture, adapter, driver, OS, API, shader compiler and capability state;
+- prediction from the algorithm/cost model versus measured result;
+- partner integration/build/cook/package cost and fallback behavior.
+
 ### Benchmark Matrix
 
 Use at least:
@@ -4973,6 +5056,11 @@ Use at least:
 - shader full cook and changed-package cook
 - texture cook batch with small images and memory-heavy 4K/8K HDR images
 - multi-scene asset cook
+- a representative path-traced stress/quality scene with a deterministic camera and reference result
+- the accepted neural graphics workload at tiny, representative and stress scale
+- the neural feature's classical baseline/fallback on the same input
+- training/offline model preparation and artifact export as a separate workload from runtime inference
+- a driver/hardware reduced reproducer when an applicable issue has been found
 
 Run:
 
@@ -4985,6 +5073,7 @@ Run:
 - cold and warm caches
 - CPU-bound, GPU-bound, VSync/present-mode, and supported provider/frame-generation variants for latency work
 - release/profile build with validation separately
+- every available target GPU architecture/driver configuration used for a role-facing claim, with unavailable configurations stated
 
 ### How to Report Speedup
 
@@ -5069,6 +5158,11 @@ Include:
 - manually maintained benchmark tables with machine/core/backend/configuration, not a generated report format
 - short sections on failed ideas and tradeoffs
 - pinned primary-source study links in this internal study only
+- one path-tracing case that connects estimator/math, shader/RHI execution, image quality, and hardware cost
+- one neural graphics case that connects model/data/training/export, tensor/kernel implementation, classical fallback, quality, latency, memory, and frame pacing
+- one partner-shaped integration and handoff guide
+- one application-versus-driver investigation with a reduced reproducer
+- one whitepaper-quality technical note and conference-talk outline derived from completed evidence
 
 ### Live Demonstration
 
@@ -5085,6 +5179,9 @@ A strong demo sequence:
 9. reload a level with frames in flight
 10. change worker count and show stable output
 11. show deliberately invalid system-resource and pass declarations rejected by safety assertions
+12. run the selected path-traced workload and explain the GPU/driver bottleneck from capture evidence
+13. switch the accepted neural feature between classical and neural paths, compare quality and cost, and show deterministic artifact/capability/fallback behavior
+14. reproduce one partner-shaped integration or driver issue and walk from symptom to reduced case, owner, fix/fallback and measured result
 
 The last item demonstrates understanding better than a perfect happy path: the system knows what is unsafe and explains why.
 
@@ -5222,6 +5319,20 @@ This program is complete when all of the following are true:
 - AMD/NVIDIA-relevant captures include optimized-build CPU scheduling, D3D12/Vulkan recording, AMD GPU queue/barrier behavior where hardware is available, and NVIDIA/system CPU-GPU timelines where available; unavailable hardware is stated, never simulated as proof
 - the owner can complete the expert question bank, bounded-queue atomic coding drill, task-DAG analysis, native recording review, and trace diagnosis without relying on memorized slogans
 
+### Principal Developer Technology Evidence
+
+- every `NV-PDTE-01` through `NV-PDTE-15` row has code/capture/artifact evidence, a truthful credential/non-code boundary, or an explicit blocked/unavailable status;
+- at least one path-traced workload is defended from math and scene data through shaders, frame graph, RHI, GPU execution, image result and system latency;
+- at least one real neural graphics feature executes a real model/operator path and reports deterministic artifact provenance, classical fallback, visual failures, quality, CPU/GPU latency, memory and frame pacing;
+- training/offline preparation and runtime inference have separate owners, dependency/package surfaces, profiles and optimization decisions;
+- tensor shapes, layouts, precision, operators, gradients/loss/metrics where applicable, and numerical limits are explained and checked by reference tests;
+- AI-assisted code, shaders, tests, math, citations and design are independently reviewed; no generated output is accepted as authority;
+- hardware/driver claims include exact configuration and capability state; suspected driver behavior has a reduced reproducer and application-versus-driver analysis;
+- a partner-shaped adoption case proves requirements discovery, narrow integration, failure/fallback, debugging, packaging, handoff and measured result;
+- completed strategic work has a reproducible live demo, concise whitepaper-quality technical note and conference-talk outline;
+- Linux or driver-development support is not claimed without real native evidence; degree, years and employment history are never inferred from the repository;
+- the additive role evidence introduces no general ML framework, second scheduler, training UI, permanent research graph, public telemetry product or unsupported vendor claim.
+
 ## Immediate Next Implementation Slice
 
 The first code change after accepting this design should be Stage 0 plus the smallest part of Stage 1:
@@ -5242,21 +5353,21 @@ These are the principal Sparkle sources inspected for this study. They should be
 
 | Source | What it establishes |
 |---|---|
-| [RuntimeApplication.cpp](../../../Engine/Application/Private/RuntimeApplication.cpp) | `GameWorld` update and `Renderer::OnRender` remain sequential on the application thread |
-| [EditorApplication.cpp](../../../Engine/Application/Private/EditorApplication.cpp) | Renderer prepare/record, editor UI, and submit are one ordered host-thread path |
-| [GameWorld.cpp](../../../Engine/GameFramework/Private/World/GameWorld.cpp) and [GameWorldState.cpp](../../../Engine/GameFramework/Private/World/GameWorldState.cpp) | Controller, animation, morph, explicit derived evaluation, journal commit, and immutable read publication are currently serial owner phases |
-| [GameWorldController.h](../../../Engine/GameFramework/Public/World/GameWorldController.h), [GameCameraController.cpp](../../../Engine/GameFramework/Private/Scene/Camera/GameCameraController.cpp), and [ShowcaseSceneController.cpp](../../../Projects/Showcase/Src/ShowcaseSceneController.cpp) | Controllers still receive mutable whole-world access; Prompt 10 replaces them with access-declared systems. Targets are generational entities rather than vector indices |
-| [GameWorldAnimations.cpp](../../../Engine/GameFramework/Private/World/GameWorldAnimations.cpp), [SceneAnimationPoseEvaluator.cpp](../../../Engine/GameFramework/Private/Scene/Animations/SceneAnimationPoseEvaluator.cpp), and [GameWorldMeshes.cpp](../../../Engine/GameFramework/Private/World/GameWorldMeshes.cpp) | Animation/pose/morph work remains serial and contains natural per-instance private-output boundaries for Prompt 10 |
+| [RuntimeApplication.cpp](../../../Engine/Application/Private/RuntimeApplication.cpp) | GameThread owns input, world update and immutable render-input publication; the renderer facade hands accepted input to the serial or dedicated render coordinator |
+| [EditorApplication.cpp](../../../Engine/Application/Private/EditorApplication.cpp) and [EditorUiFrameRenderer.cpp](../../../Engine/Application/Private/Editor/EditorUiFrameRenderer.cpp) | Editor host lifecycle and ImGui composition are explicit; substantive UI-frame rendering orchestration has a dedicated private capability |
+| [GameWorld.cpp](../../../Engine/GameFramework/Private/World/GameWorld.cpp) and [GameWorldState.cpp](../../../Engine/GameFramework/Private/World/GameWorldState.cpp) | GameThread owns structural commit and publication while the system graph executes declared simulation/animation/derived/extraction work through SparkleTasks |
+| [GameWorldSystems.cpp](../../../Engine/GameFramework/Private/World/Systems/GameWorldSystems.cpp), [CameraMovementSystem.cpp](../../../Engine/GameFramework/Private/World/Systems/CameraMovementSystem.cpp), and [OscillatingMeshMotionSystem.cpp](../../../Engine/GameFramework/Private/World/Systems/OscillatingMeshMotionSystem.cpp) | Prompt 10 replaced arbitrary whole-world controllers with access-declared systems over generational entity targets |
+| [GameWorldAnimations.cpp](../../../Engine/GameFramework/Private/World/GameWorldAnimations.cpp), [AnimationPoseEvaluator.cpp](../../../Engine/GameFramework/Private/Animation/AnimationPoseEvaluator.cpp), and [GameWorldMeshes.cpp](../../../Engine/GameFramework/Private/World/GameWorldMeshes.cpp) | Animation, pose, morph and skinning are decomposed into named operations and system execution with stable private/exclusive output storage |
 | [Transform.cpp](../../../Engine/GameFramework/Private/Scene/Transform.cpp), [TransformEvaluationSystem.cpp](../../../Engine/GameFramework/Private/World/Systems/TransformEvaluationSystem.cpp), and [CameraDerivedStateEvaluationSystem.cpp](../../../Engine/GameFramework/Private/World/Systems/CameraDerivedStateEvaluationSystem.cpp) | Prompt 08 removed write-on-read caches; owner-written local TRS becomes explicit derived matrix/direction output at commit |
 | [EntityId.h](../../../Engine/GameFramework/Public/World/EntityId.h) and private [World/ECS](../../../Engine/GameFramework/Private/World/ECS) storage | Generational identity, sparse component pools, frozen typed queries, and deterministic structural commands are private to `GameWorldState`; no old owning `Entity`/`Component` path remains |
 | [LevelManager.cpp](../../../Engine/GameFramework/Private/Level/LevelManager.cpp), deleted historical `SceneAssetManager`, [SceneAssetFileReader.cpp](../../../Engine/GameFramework/Private/Assets/Loading/SceneAssetFileReader.cpp), and [SceneAssetPayloadDecoder.cpp](../../../Engine/GameFramework/Private/Assets/Loading/SceneAssetPayloadDecoder.cpp) | Prompt 09 replaced clear-first loading and mutable manager bookkeeping with immutable catalog capture, scoped read/decode work, and transactional owner commit |
 | [Event.h](../../../Engine/Core/Public/Events/Event.h) | Callback storage and inline broadcast are unsynchronized and therefore an owner-thread primitive, not a worker notification channel |
-| [SceneObjectSelection.h](../../../Engine/Editor/Public/Scene/SceneObjectSelection.h), [SceneOutlinerEntries.cpp](../../../Engine/Editor/Private/Panels/SceneOutlinerEntries.cpp), and [SceneObjectActions.cpp](../../../Engine/Editor/Private/Scene/SceneObjectActions.cpp) | Selection uses generational `EntityId` and the outliner reads a pinned `WorldReadView`; inspectors/actions still mutate focused facades directly until Prompt 11 |
-| [GameWorldSnapshot.h](../../../Engine/GameFramework/Public/World/GameWorldSnapshot.h) and [MeshSnapshot.h](../../../Engine/GameFramework/Public/Scene/Meshes/MeshSnapshot.h) | Active camera data now comes from the committed read generation, but the compatibility renderer snapshot still carries raw mesh identity/lifetime until Prompt 12 |
-| [FramePipeline.cpp](../../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) | Snapshot capture, render-scene build, GPU uploads, graph setup/compile/execute, and submission form the current renderer critical path |
-| [RendererSystemRoot.cpp](../../../Engine/Renderer/Private/Host/RendererSystemRoot.cpp) | Renderer root owns caches/services and retains direct `GameWorld` compatibility responsibilities until renderer packets replace them |
+| [SceneObjectSelection.h](../../../Engine/Editor/Public/Scene/SceneObjectSelection.h), [SceneOutlinerPanel.cpp](../../../Engine/Editor/Private/Panels/SceneOutlinerPanel.cpp), [EditorSceneModel.cpp](../../../Engine/Editor/Private/Scene/Model/EditorSceneModel.cpp), and [SceneObjectCommandFactory.cpp](../../../Engine/Editor/Private/Scene/Commands/SceneObjectCommandFactory.cpp) | Prompt 11 moved selection and panels to generational `EntityId`, immutable editor models and semantic world commands |
+| [RenderInputFrame.h](../../../Engine/GameFramework/Public/Rendering/RenderInputFrame.h), [RenderWorldDelta.h](../../../Engine/GameFramework/Public/Rendering/RenderWorldDelta.h), and [RenderFrameDynamicData.h](../../../Engine/GameFramework/Public/Rendering/RenderFrameDynamicData.h) | Prompt 12 replaced broad raw-pointer snapshots with owned structural/dynamic render input and separate `RenderObjectId` identity |
+| [FramePipeline.cpp](../../../Engine/Renderer/Private/FramePipeline/FramePipeline.cpp) | Accepted render input, RenderWorld/GPU data, graph setup/compile/execute, presentation and product publication form the renderer critical path |
+| [RendererSystemRoot.cpp](../../../Engine/Renderer/Private/Host/RendererSystemRoot.cpp) | Renderer root owns render/RHI-facing caches and services behind render-coordinator ownership and no longer dereferences `GameWorld` |
 | [RenderSceneDataBuilder.cpp](../../../Engine/Renderer/Private/SceneData/Builders/RenderSceneDataBuilder.cpp) | Mesh, material-facing, skinning, batching, temporal, and lighting preparation is monolithic and vector-position-sensitive |
-| [SceneRenderStateCoordinator.cpp](../../../Engine/Renderer/Private/SceneData/Lifecycle/SceneRenderStateCoordinator.cpp) | Level lifecycle currently calls device idle and directly clears render state |
+| [RenderInputConsumer.cpp](../../../Engine/Renderer/Private/SceneData/Input/RenderInputConsumer.cpp) and [RenderWorld.cpp](../../../Engine/Renderer/Private/SceneData/RenderWorld.cpp) | Renderer validates and applies sequenced immutable input into render-owned state without direct world lifecycle callbacks |
 | [FrameGraphExecution.cpp](../../../Engine/Renderer/Private/FrameGraph/Execution/FrameGraphExecution.cpp) and [FrameGraphSubmissionExecutor.cpp](../../../Engine/Renderer/Private/FrameGraph/Execution/FrameGraphSubmissionExecutor.cpp) | Compiled queue batches exist, while CPU pass recording/submission traversal is serial |
 | [PipelineStateManager.h](../../../Engine/Renderer/Private/Pipeline/PipelineStateManager.h) | GetPassRuntime can lazily mutate type-indexed runtime/PSO storage |
 | [PassBinder.cpp](../../../Engine/Renderer/Private/Pipeline/PassBinder.cpp) | Pass recording allocates uniform constants from the RHI upload service |
