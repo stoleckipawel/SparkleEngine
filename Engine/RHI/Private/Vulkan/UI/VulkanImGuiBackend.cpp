@@ -20,15 +20,25 @@ VulkanImGuiBackend::VulkanImGuiBackend(
 
 bool VulkanImGuiBackend::Initialize()
 {
-	if (m_renderHardware == nullptr)
+	if (m_renderHardware == nullptr || m_imguiContext != nullptr)
 	{
-		return false;
+		return m_imguiContext != nullptr;
 	}
+
+	ImGuiContext* previousContext = ImGui::GetCurrentContext();
+	m_imguiContext = previousContext;
+	if (m_imguiContext == nullptr)
+	{
+		m_imguiContext = ImGui::CreateContext();
+		m_ownsContext = true;
+	}
+	ImGui::SetCurrentContext(m_imguiContext);
 
 	const std::uint32_t backBufferCount = m_renderHardware->GetSwapChainBackBufferCount();
 	const VkFormat colorFormat = m_renderHardware->GetNativeBackBufferFormat();
 	if (backBufferCount < 2 || colorFormat == VK_FORMAT_UNDEFINED)
 	{
+		RestoreContext(previousContext);
 		return false;
 	}
 
@@ -65,11 +75,13 @@ bool VulkanImGuiBackend::Initialize()
 	if (initInfo.Instance == VK_NULL_HANDLE || initInfo.PhysicalDevice == VK_NULL_HANDLE || initInfo.Device == VK_NULL_HANDLE ||
 	    initInfo.Queue == VK_NULL_HANDLE || initInfo.QueueFamily == UINT32_MAX)
 	{
+		RestoreContext(previousContext);
 		return false;
 	}
 
 	if (!ImGui_ImplVulkan_Init(&initInfo))
 	{
+		RestoreContext(previousContext);
 		return false;
 	}
 
@@ -97,15 +109,51 @@ bool VulkanImGuiBackend::Initialize()
 	{
 		SPDLOG_LOGGER_ERROR(g_vulkanImGuiBackendLogger, "{}", VulkanResult::FormatFailure("vkCreateSampler", samplerResult));
 		ImGui_ImplVulkan_Shutdown();
+		RestoreContext(previousContext);
 		return false;
 	}
 
+	RestoreContext(previousContext);
 	return true;
 }
 
 void VulkanImGuiBackend::BeginFrame() noexcept
 {
+	ImGuiContext* previousContext = ActivateContext();
 	ImGui_ImplVulkan_NewFrame();
+	RestoreContext(previousContext);
+}
+
+void VulkanImGuiBackend::PrepareResources() noexcept
+{
+	if (m_resourcesPrepared || m_imguiContext == nullptr)
+	{
+		return;
+	}
+
+	ImGuiContext* previousContext = ActivateContext();
+	ImGui_ImplVulkan_NewFrame();
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize = ImVec2(1.0f, 1.0f);
+	io.DeltaTime = 1.0f / 60.0f;
+	ImGui::NewFrame();
+	ImGui::Render();
+	RenderDrawData(ImGui::GetDrawData());
+	m_resourcesPrepared = GetFontTextureId() != 0;
+	RestoreContext(previousContext);
+}
+
+std::uint64_t VulkanImGuiBackend::GetFontTextureId() const noexcept
+{
+	if (m_imguiContext == nullptr)
+	{
+		return 0;
+	}
+	ImGuiContext* previousContext = ActivateContext();
+	const std::uint64_t textureId =
+	    static_cast<std::uint64_t>(ImGui::GetIO().Fonts->TexRef.GetTexID());
+	RestoreContext(previousContext);
+	return textureId;
 }
 
 std::uint64_t VulkanImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
@@ -120,6 +168,7 @@ void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 		return;
 	}
 
+	ImGuiContext* previousContext = ActivateContext();
 	RenderCommandList& commandList = m_renderHardware->GetGraphicsCommandList(m_renderHardware->GetCurrentFrameIndex());
 	VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(
 	    commandList.GetNativeHandle(
@@ -129,10 +178,12 @@ void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	        .Value);
 	if (commandBuffer == VK_NULL_HANDLE)
 	{
+		RestoreContext(previousContext);
 		return;
 	}
 
 	ImGui_ImplVulkan_RenderDrawData(drawData, commandBuffer);
+	RestoreContext(previousContext);
 }
 
 std::uint64_t VulkanImGuiBackend::GetTextureId(VkImageView imageView) noexcept
@@ -163,6 +214,11 @@ std::uint64_t VulkanImGuiBackend::GetTextureId(VkImageView imageView) noexcept
 
 void VulkanImGuiBackend::Shutdown() noexcept
 {
+	if (m_imguiContext == nullptr)
+	{
+		return;
+	}
+	ImGuiContext* previousContext = ActivateContext();
 	for (const TextureBinding& binding : m_textureBindings)
 	{
 		if (binding.DescriptorSet != VK_NULL_HANDLE)
@@ -179,4 +235,24 @@ void VulkanImGuiBackend::Shutdown() noexcept
 	}
 
 	ImGui_ImplVulkan_Shutdown();
+	RestoreContext(previousContext);
+	if (m_ownsContext)
+	{
+		ImGui::DestroyContext(m_imguiContext);
+	}
+	m_imguiContext = nullptr;
+	m_ownsContext = false;
+	m_resourcesPrepared = false;
+}
+
+ImGuiContext* VulkanImGuiBackend::ActivateContext() const noexcept
+{
+	ImGuiContext* previousContext = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext(m_imguiContext);
+	return previousContext;
+}
+
+void VulkanImGuiBackend::RestoreContext(ImGuiContext* context) noexcept
+{
+	ImGui::SetCurrentContext(context);
 }

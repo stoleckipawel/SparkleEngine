@@ -15,6 +15,7 @@
 #include <mutex>
 #include <optional>
 #include <thread>
+#include <vector>
 
 class RendererExecutionContext;
 class RhiImGuiRenderer;
@@ -36,12 +37,13 @@ class RenderCoordinator final
 
 	void StageRenderInput(RenderInputFrame input);
 	void StageEditorRenderPacket(EditorRenderPacket packet);
+	void SubmitRenderingSettings(EngineRenderingSettingsState settings);
 	void SubmitViewportRequest(const ViewportRenderRequest& request);
 	void RenderFrame();
 	void RenderSerialUiFrame(RendererSerialUiCallback composeUi, void* context);
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
-	std::uint64_t RegisterEditorTexture(std::uint64_t nativeTextureId);
+	EditorTextureHandle RegisterEditorTexture(std::uint64_t nativeTextureId);
 	RhiImGuiRenderer& GetSerialImGuiRenderer();
 	CookedShaderReloadResult ReloadCookedShaders();
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
@@ -55,7 +57,8 @@ class RenderCoordinator final
 	void EndSerialHostPresentation();
 	ViewportPresentationProduct BeginSerialViewportPresentation(RenderOutputFlags output);
 	void EndSerialViewportPresentation(RenderOutputFlags output);
-	ViewportCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request);
+	ViewportCaptureId RequestViewportCapture(ViewportCaptureRequest request);
+	bool TryTakeViewportCapture(ViewportCaptureReadback& readback);
 
 	RendererExecutionMode GetMode() const noexcept { return m_config.Mode; }
 
@@ -101,4 +104,6 @@ class RenderCoordinator final
 	mutable std::mutex m_readStateMutex;
 	ViewportRenderProducts m_publishedViewportProducts;
 	std::atomic<std::uint64_t> m_shaderPackageGeneration{0};
+	std::vector<ViewportCaptureReadback> m_publishedViewportCaptures;
+	std::uint64_t m_nextViewportCaptureId = 1;
 };

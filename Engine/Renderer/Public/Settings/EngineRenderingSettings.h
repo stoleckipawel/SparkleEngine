@@ -8,6 +8,7 @@
 #include "RendererAPI.h"
 
 #include <cstdint>
+#include <functional>
 #include <string>
 
 struct EngineRenderingSettingsState final
@@ -47,6 +48,8 @@ struct EngineRenderingSettingsState final
 class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 {
   public:
+	using CommitHandler = std::function<void(EngineRenderingSettingsState)>;
+
 	EngineRenderingSettingsSection();
 	EngineRenderingSettingsSection(const EngineRenderingSettingsSection&) = delete;
 	EngineRenderingSettingsSection& operator=(const EngineRenderingSettingsSection&) = delete;
@@ -54,6 +57,7 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 	EngineRenderingSettingsSection& operator=(EngineRenderingSettingsSection&&) = delete;
 
 	const EngineRenderingSettingsState& GetState() const noexcept { return m_state; }
+	void SetCommitHandler(CommitHandler handler);
 	void RefreshFromRuntimeState() noexcept;
 	void ApplyPersistedValuesToRuntimeState() noexcept;
 	bool HasPendingRestart() const noexcept;
@@ -91,13 +95,27 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 	void SetPtlasModeChangeDistance(float distance);
 
   private:
-	void RefreshAndPersistRuntimeState();
+	template <typename TValue>
+	void SetValue(TValue& destination, TValue value)
+	{
+		if (destination == value)
+		{
+			return;
+		}
+		destination = value;
+		CommitState();
+	}
+
+	void CommitState();
 	EngineRenderingSettingsState CaptureRuntimeState() const noexcept;
 	bool ComputePendingRestart(const EngineRenderingSettingsState& baseline, const EngineRenderingSettingsState& current) const noexcept;
 	std::string DescribePendingRestart(const EngineRenderingSettingsState& baseline, const EngineRenderingSettingsState& current) const;
 
 	EngineRenderingSettingsState m_state{};
 	EngineRenderingSettingsState m_sessionBaseline{};
+	CommitHandler m_commitHandler;
 };
 
 SPARKLE_RENDERER_API void ApplyPersistedEngineRenderingSettingsToCVars() noexcept;
+SPARKLE_RENDERER_API void ApplyEngineRenderingSettingsStateToCVars(
+    const EngineRenderingSettingsState& state) noexcept;

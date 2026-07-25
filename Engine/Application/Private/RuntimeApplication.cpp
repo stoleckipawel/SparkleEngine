@@ -102,6 +102,7 @@ void RuntimeApplication::Initialize()
 			rendererConfig.Mode = ConcurrencyLaunchCVars::ResolveRenderPipelineDepth() == 0
 			                          ? RendererExecutionMode::ThreadedZeroAhead
 			                          : RendererExecutionMode::ThreadedOneAhead;
+		rendererConfig.EnableEditorRenderPackets = m_options.EnableEditorRenderPackets;
 		m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, rendererConfig);
 	}
 

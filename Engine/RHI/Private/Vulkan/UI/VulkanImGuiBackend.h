@@ -7,6 +7,7 @@
 #include <vector>
 
 struct ImDrawData;
+struct ImGuiContext;
 class VulkanDescriptorManager;
 class VulkanRenderHardwareInterface;
 
@@ -17,6 +18,8 @@ class VulkanImGuiBackend final : public RhiImGuiRenderer
 
 	bool Initialize() override;
 	void BeginFrame() noexcept override;
+	void PrepareResources() noexcept override;
+	std::uint64_t GetFontTextureId() const noexcept override;
 	std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	void RenderDrawData(ImDrawData* drawData) noexcept override;
 	void Shutdown() noexcept override;
@@ -29,9 +32,14 @@ class VulkanImGuiBackend final : public RhiImGuiRenderer
 	};
 
 	std::uint64_t GetTextureId(VkImageView imageView) noexcept;
+	ImGuiContext* ActivateContext() const noexcept;
+	static void RestoreContext(ImGuiContext* context) noexcept;
 
 	VulkanRenderHardwareInterface* m_renderHardware = nullptr;
 	VulkanDescriptorManager* m_descriptorManager = nullptr;
 	VkSampler m_imguiSampler = VK_NULL_HANDLE;
 	std::vector<TextureBinding> m_textureBindings;
+	ImGuiContext* m_imguiContext = nullptr;
+	bool m_ownsContext = false;
+	bool m_resourcesPrepared = false;
 };

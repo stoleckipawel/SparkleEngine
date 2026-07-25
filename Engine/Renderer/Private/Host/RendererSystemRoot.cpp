@@ -79,9 +79,12 @@ MeshDiagnosticsSnapshot RendererSystemRoot::CaptureMeshDiagnostics() const
 	return MeshDiagnosticsCollector::Capture(*m_renderWorld, m_gpuMeshCache.get());
 }
 
-TextureDiagnosticsSnapshot RendererSystemRoot::CaptureTextureDiagnostics() const
+TextureDiagnosticsSnapshot RendererSystemRoot::CaptureTextureDiagnostics(
+    const TexturePreviewHandleResolver& resolvePreviewTexture) const
 {
-	return m_textureManager != nullptr ? m_textureManager->CaptureDiagnosticsSnapshot() : TextureDiagnosticsSnapshot{};
+	return m_textureManager != nullptr
+	           ? m_textureManager->CaptureDiagnosticsSnapshot(resolvePreviewTexture)
+	           : TextureDiagnosticsSnapshot{};
 }
 
 RendererMemoryDiagnosticsSnapshot RendererSystemRoot::CaptureMemoryDiagnostics() const

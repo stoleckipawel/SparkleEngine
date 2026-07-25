@@ -33,7 +33,7 @@ ViewportRenderProducts Renderer::GetViewportRenderProducts() const
 	return m_state->Coordinator.GetViewportRenderProducts();
 }
 
-std::uint64_t Renderer::RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept
+EditorTextureHandle Renderer::RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept
 {
 	return m_state->Coordinator.RegisterEditorTexture(nativeTextureId);
 }
@@ -88,6 +88,11 @@ void Renderer::SubmitEditorRenderPacket(EditorRenderPacket packet) noexcept
 	m_state->Coordinator.StageEditorRenderPacket(std::move(packet));
 }
 
+void Renderer::SubmitRenderingSettings(EngineRenderingSettingsState settings) noexcept
+{
+	m_state->Coordinator.SubmitRenderingSettings(std::move(settings));
+}
+
 void Renderer::WaitForIdle() noexcept
 {
 	m_state->Coordinator.WaitForIdle();
@@ -118,9 +123,16 @@ void Renderer::EndViewportPresentation(RenderOutputFlags output) noexcept
 	m_state->Coordinator.EndSerialViewportPresentation(output);
 }
 
-ViewportCaptureResult Renderer::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
+ViewportCaptureId Renderer::RequestViewportCapture(
+    ViewportCaptureRequest request) noexcept
 {
-	return m_state->Coordinator.CaptureViewportProductToBmp(request);
+	return m_state->Coordinator.RequestViewportCapture(std::move(request));
+}
+
+bool Renderer::TryTakeViewportCapture(
+    ViewportCaptureReadback& readback) noexcept
+{
+	return m_state->Coordinator.TryTakeViewportCapture(readback);
 }
 
 void Renderer::OnRender() noexcept

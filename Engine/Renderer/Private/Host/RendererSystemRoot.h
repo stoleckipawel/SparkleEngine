@@ -70,7 +70,8 @@ class RendererSystemRoot final
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;
-	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
+	TextureDiagnosticsSnapshot CaptureTextureDiagnostics(
+	    const TexturePreviewHandleResolver& resolvePreviewTexture) const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	void TickDiagnostics(std::uint64_t frameIndex) noexcept;
 	void PostLoad() noexcept;

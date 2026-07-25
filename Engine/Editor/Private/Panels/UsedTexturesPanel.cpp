@@ -170,7 +170,7 @@ void UsedTexturesPanel::DrawPreview(const TextureDiagnosticsRow& row) const
 	ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 	availableRegion.y = (std::max) (96.0f, availableRegion.y - detailsReserveHeight);
 
-	if (row.GpuShaderResourceViewId == 0 || row.Dimension != TextureResourceDimension::Texture2D)
+	if (!row.PreviewTexture || row.Dimension != TextureResourceDimension::Texture2D)
 	{
 		ImGui::BeginChild("##TexturePreviewUnavailable", ImVec2(0.0f, availableRegion.y), ImGuiChildFlags_Borders);
 		ImGui::TextDisabled(row.Dimension == TextureResourceDimension::TextureCube ? "Cubemap preview is not available in v1." : "No preview texture is available.");
@@ -190,7 +190,7 @@ void UsedTexturesPanel::DrawPreview(const TextureDiagnosticsRow& row) const
 	{
 		ImGui::SetCursorPosY(start.y + ((childRegion.y - imageSize.y) * 0.5f));
 	}
-	ImGui::Image(static_cast<ImTextureID>(row.GpuShaderResourceViewId), imageSize);
+	ImGui::Image(static_cast<ImTextureID>(row.PreviewTexture.Pack()), imageSize);
 	ImGui::EndChild();
 }
 

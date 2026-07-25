@@ -35,6 +35,8 @@ enum class TextureId : uint8_t
 class TextureManager final
 {
   public:
+	using PreviewTextureResolver = TexturePreviewHandleResolver;
+
 	TextureManager(
 	    RhiResourceService& resourceService,
 	    RhiDescriptorService& descriptorService,
@@ -63,7 +65,8 @@ class TextureManager final
 	    DefaultTexture fallbackType)
 	    const;
 
-	TextureDiagnosticsSnapshot CaptureDiagnosticsSnapshot() const;
+	TextureDiagnosticsSnapshot CaptureDiagnosticsSnapshot(
+	    const PreviewTextureResolver& resolvePreviewTexture) const;
 
   private:
 	RhiResourceService& m_resourceService;
@@ -102,5 +105,9 @@ class TextureManager final
 	std::optional<ResolvedTexturePath> ResolveTexturePath(const std::filesystem::path& texturePath) const noexcept;
 	void ReleaseTexture(RendererTexture& texture) noexcept;
 	void RegisterDefaultPathTexture(const std::filesystem::path& texturePath);
-	TextureDiagnosticsRow BuildDiagnosticsRow(const RendererTexture& texture, TextureDiagnosticsKind kind, const std::string& key) const;
+	TextureDiagnosticsRow BuildDiagnosticsRow(
+	    const RendererTexture& texture,
+	    TextureDiagnosticsKind kind,
+	    const std::string& key,
+	    const PreviewTextureResolver& resolvePreviewTexture) const;
 };

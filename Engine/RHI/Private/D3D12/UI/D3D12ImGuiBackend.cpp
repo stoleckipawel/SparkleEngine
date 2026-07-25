@@ -13,10 +13,19 @@ D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwar
 
 bool D3D12ImGuiBackend::Initialize()
 {
-	if (m_renderHardware == nullptr)
+	if (m_renderHardware == nullptr || m_imguiContext != nullptr)
 	{
-		return false;
+		return m_imguiContext != nullptr;
 	}
+
+	ImGuiContext* previousContext = ImGui::GetCurrentContext();
+	m_imguiContext = previousContext;
+	if (m_imguiContext == nullptr)
+	{
+		m_imguiContext = ImGui::CreateContext();
+		m_ownsContext = true;
+	}
+	ImGui::SetCurrentContext(m_imguiContext);
 
 	ImGui_ImplDX12_InitInfo initInfo = {};
 	initInfo.Device = ToD3D12Device(m_renderHardware->GetDeviceHandle());
@@ -31,16 +40,61 @@ bool D3D12ImGuiBackend::Initialize()
 
 	if (initInfo.Device == nullptr || initInfo.CommandQueue == nullptr || initInfo.SrvDescriptorHeap == nullptr)
 	{
+		RestoreContext(previousContext);
 		return false;
 	}
 
-	ImGui_ImplDX12_Init(&initInfo);
-	return true;
+	const bool initialized = ImGui_ImplDX12_Init(&initInfo);
+	RestoreContext(previousContext);
+	if (!initialized)
+	{
+		if (m_ownsContext)
+		{
+			ImGui::DestroyContext(m_imguiContext);
+		}
+		m_imguiContext = nullptr;
+		m_ownsContext = false;
+	}
+	return initialized;
 }
 
 void D3D12ImGuiBackend::BeginFrame() noexcept
 {
+	ImGuiContext* previousContext = ActivateContext();
 	ImGui_ImplDX12_NewFrame();
+	RestoreContext(previousContext);
+}
+
+void D3D12ImGuiBackend::PrepareResources() noexcept
+{
+	if (m_resourcesPrepared || m_imguiContext == nullptr)
+	{
+		return;
+	}
+
+	ImGuiContext* previousContext = ActivateContext();
+	ImGui_ImplDX12_NewFrame();
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize = ImVec2(1.0f, 1.0f);
+	io.DeltaTime = 1.0f / 60.0f;
+	ImGui::NewFrame();
+	ImGui::Render();
+	RenderDrawData(ImGui::GetDrawData());
+	m_resourcesPrepared = GetFontTextureId() != 0;
+	RestoreContext(previousContext);
+}
+
+std::uint64_t D3D12ImGuiBackend::GetFontTextureId() const noexcept
+{
+	if (m_imguiContext == nullptr)
+	{
+		return 0;
+	}
+	ImGuiContext* previousContext = ActivateContext();
+	const std::uint64_t textureId =
+	    static_cast<std::uint64_t>(ImGui::GetIO().Fonts->TexRef.GetTexID());
+	RestoreContext(previousContext);
+	return textureId;
 }
 
 std::uint64_t D3D12ImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
@@ -55,6 +109,7 @@ void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 		return;
 	}
 
+	ImGuiContext* previousContext = ActivateContext();
 	RenderCommandList& commandList = m_renderHardware->GetGraphicsCommandList(m_renderHardware->GetCurrentFrameIndex());
 	Render(
 	    commandList.GetNativeHandle(
@@ -62,6 +117,7 @@ void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	            .Consumer = ERhiNativeInteropConsumer::PresentationBridge,
 	            .Reason = "Render ImGui draw data through D3D12 backend"}),
 	    drawData);
+	RestoreContext(previousContext);
 }
 
 void D3D12ImGuiBackend::Render(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept
@@ -77,8 +133,33 @@ void D3D12ImGuiBackend::Render(NativeGraphicsCommandListHandle commandList, ImDr
 
 void D3D12ImGuiBackend::Shutdown() noexcept
 {
+	if (m_imguiContext == nullptr)
+	{
+		return;
+	}
+	ImGuiContext* previousContext = ActivateContext();
 	ImGui_ImplDX12_InvalidateDeviceObjects();
 	ImGui_ImplDX12_Shutdown();
+	RestoreContext(previousContext);
+	if (m_ownsContext)
+	{
+		ImGui::DestroyContext(m_imguiContext);
+	}
+	m_imguiContext = nullptr;
+	m_ownsContext = false;
+	m_resourcesPrepared = false;
+}
+
+ImGuiContext* D3D12ImGuiBackend::ActivateContext() const noexcept
+{
+	ImGuiContext* previousContext = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext(m_imguiContext);
+	return previousContext;
+}
+
+void D3D12ImGuiBackend::RestoreContext(ImGuiContext* context) noexcept
+{
+	ImGui::SetCurrentContext(context);
 }
 
 void D3D12ImGuiBackend::AllocateDescriptor(

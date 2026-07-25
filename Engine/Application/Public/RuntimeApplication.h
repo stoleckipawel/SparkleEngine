@@ -30,6 +30,7 @@ struct RuntimeApplicationOptions final
 {
 	bool EnableRuntimeConsole = true;
 	bool AllowThreadedRenderer = true;
+	bool EnableEditorRenderPackets = false;
 	std::function<void(GameWorld&)> WorldSetupCallback;
 };
 

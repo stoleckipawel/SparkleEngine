@@ -16,6 +16,8 @@
 class FramePipelineViewportProductsImplementation final
 {
   public:
+	static constexpr std::size_t CaptureCapacity = 3;
+
 	struct ResolvedViewportCaptureSource final
 	{
 		const RenderProduct* Product = nullptr;
@@ -37,30 +39,21 @@ class FramePipelineViewportProductsImplementation final
 		}
 	}
 
-	static ViewportCaptureResult ToViewportCaptureResult(
-	    const RhiCaptureResult& rhiResult,
-	    const RenderFrameMetadata& metadata) noexcept
+	static ViewportCapturePixelFormat ToViewportCapturePixelFormat(
+	    RhiBmpSourceFormat format) noexcept
 	{
-		ViewportCaptureResult result{};
-		result.FrameId = rhiResult.FrameId;
-		result.FrameGeneration = metadata.FrameGeneration;
-		result.ProviderGeneration = metadata.ProviderGeneration;
-		result.ArtifactPath = rhiResult.ArtifactPath;
-		result.FailureReason = rhiResult.FailureReason;
-		switch (rhiResult.Status)
+		switch (format)
 		{
-			case ERhiCaptureStatus::Succeeded:
-				result.Status = ViewportCaptureStatus::Succeeded;
-				break;
-			case ERhiCaptureStatus::Unsupported:
-				result.Status = ViewportCaptureStatus::Unavailable;
-				break;
-			case ERhiCaptureStatus::Failed:
+			case RhiBmpSourceFormat::Rgba32Float:
+				return ViewportCapturePixelFormat::Rgba32Float;
+			case RhiBmpSourceFormat::Rgba16Float:
+				return ViewportCapturePixelFormat::Rgba16Float;
+			case RhiBmpSourceFormat::Bgra8Unorm:
+				return ViewportCapturePixelFormat::Bgra8Unorm;
+			case RhiBmpSourceFormat::Rgba8Unorm:
 			default:
-				result.Status = ViewportCaptureStatus::Failed;
-				break;
+				return ViewportCapturePixelFormat::Rgba8Unorm;
 		}
-		return result;
 	}
 
 	static ViewportCaptureResult MakePendingCaptureResult(
@@ -177,16 +170,42 @@ void FramePipeline::EndViewportPresentation(RenderOutputFlags output) noexcept
 	TransitionRenderProduct(product->Handle, ResourceState::Common);
 }
 
-ViewportCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept
+bool FramePipeline::BeginViewportCapture(
+    ViewportCaptureId id,
+    const ViewportCaptureRequest& request) noexcept
 {
 	const RenderFrameMetadata& metadata = m_renderInputConsumer->GetDynamicData().Metadata;
 	ViewportCaptureResult result = FramePipelineViewportProductsImplementation::MakePendingCaptureResult(request, metadata);
-	if (!FramePipelineViewportProductsImplementation::ValidateCaptureRequest(request, metadata, result)) return result;
+	if (!id ||
+	    m_pendingViewportCaptures.size() >=
+	        FramePipelineViewportProductsImplementation::CaptureCapacity ||
+	    !FramePipelineViewportProductsImplementation::ValidateCaptureRequest(
+	        request,
+	        metadata,
+	        result))
+	{
+		result.Status = ViewportCaptureStatus::Failed;
+		m_completedViewportCaptures.push_back(
+		    ViewportCaptureReadback{.Id = id, .Result = std::move(result)});
+		return false;
+	}
 	FramePipelineViewportProductsImplementation::ResolvedViewportCaptureSource source;
-	if (!FramePipelineViewportProductsImplementation::ResolveCaptureSource(m_viewportRenderProducts, m_frameGraph.get(), request.Output, source, result))
-		return result;
+	if (!FramePipelineViewportProductsImplementation::ResolveCaptureSource(
+	        m_viewportRenderProducts,
+	        m_frameGraph.get(),
+	        request.Output,
+	        source,
+	        result))
+	{
+		result.Status = ViewportCaptureStatus::Failed;
+		m_completedViewportCaptures.push_back(
+		    ViewportCaptureReadback{.Id = id, .Result = std::move(result)});
+		return false;
+	}
 
-	return FramePipelineViewportProductsImplementation::ToViewportCaptureResult(m_systems->GetRenderHardwareInterface().GetCaptureService().CaptureTextureToBmp(
+	RhiCaptureService& captureService =
+	    m_systems->GetRenderHardwareInterface().GetCaptureService();
+	const RhiCaptureTicket ticket = captureService.BeginTextureReadback(
 	    RhiTextureCaptureRequest{
 	        .Resource = source.Resource,
 	        .Width = source.Product->Extent.Width,
@@ -197,7 +216,85 @@ ViewportCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportC
 	        .FrameId = metadata.FrameId,
 	        .ViewMode = request.ViewMode,
 	        .ViewModeName = request.ViewModeName,
-	        .DebugName = request.DebugName}), metadata);
+	        .DebugName = request.DebugName});
+	if (!ticket)
+	{
+		result.Status = ViewportCaptureStatus::Failed;
+		result.FailureReason = "The render backend could not begin viewport readback";
+		m_completedViewportCaptures.push_back(
+		    ViewportCaptureReadback{.Id = id, .Result = std::move(result)});
+		return false;
+	}
+	m_pendingViewportCaptures.push_back(
+	    std::make_unique<PendingViewportCapture>(
+	        PendingViewportCapture{
+	            .Id = id,
+	            .Ticket = ticket,
+	            .Metadata = metadata}));
+	return true;
+}
+
+void FramePipeline::PollViewportCaptures() noexcept
+{
+	RhiCaptureService& captureService =
+	    m_systems->GetRenderHardwareInterface().GetCaptureService();
+	for (std::size_t index = 0; index < m_pendingViewportCaptures.size();)
+	{
+		const std::unique_ptr<PendingViewportCapture>& pending =
+		    m_pendingViewportCaptures[index];
+		RhiCaptureReadback rhiReadback;
+		if (!captureService.TryTakeTextureReadback(
+		        pending->Ticket,
+		        rhiReadback))
+		{
+			++index;
+			continue;
+		}
+
+		if (m_completedViewportCaptures.size() >=
+		    FramePipelineViewportProductsImplementation::CaptureCapacity)
+		{
+			m_completedViewportCaptures.erase(
+			    m_completedViewportCaptures.begin());
+		}
+		m_completedViewportCaptures.push_back(
+		    ViewportCaptureReadback{
+		        .Id = pending->Id,
+		        .Result =
+		            ViewportCaptureResult{
+		                .Status =
+		                    rhiReadback.Result.Status ==
+		                            ERhiCaptureStatus::Succeeded
+		                        ? ViewportCaptureStatus::Succeeded
+		                        : ViewportCaptureStatus::Failed,
+		                .FrameId = rhiReadback.Result.FrameId,
+		                .FrameGeneration =
+		                    pending->Metadata.FrameGeneration,
+		                .ProviderGeneration =
+		                    pending->Metadata.ProviderGeneration,
+		                .ArtifactPath =
+		                    rhiReadback.Result.ArtifactPath,
+		                .FailureReason =
+		                    rhiReadback.Result.FailureReason},
+		        .Pixels = std::move(rhiReadback.Pixels),
+		        .Width = rhiReadback.Width,
+		        .Height = rhiReadback.Height,
+		        .RowPitch = rhiReadback.RowPitch,
+		        .Format =
+		            FramePipelineViewportProductsImplementation::
+		                ToViewportCapturePixelFormat(
+		                    rhiReadback.Format)});
+		m_pendingViewportCaptures.erase(
+		    m_pendingViewportCaptures.begin() + index);
+	}
+}
+
+std::vector<ViewportCaptureReadback>
+FramePipeline::TakeCompletedViewportCaptures()
+{
+	return std::exchange(
+	    m_completedViewportCaptures,
+	    std::vector<ViewportCaptureReadback>{});
 }
 
 FrameGraphResourceHandle FramePipeline::ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept

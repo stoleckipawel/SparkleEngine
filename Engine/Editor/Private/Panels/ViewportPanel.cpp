@@ -37,6 +37,8 @@ ViewportPanel::ViewportPanel(float leftInsetPixels, float rightInsetPixels) noex
 	m_renderRequest.Extent = RenderViewportExtent{1280u, 720u};
 }
 
+ViewportPanel::~ViewportPanel() noexcept = default;
+
 void ViewportPanel::SetTopInset(float topInsetPixels) noexcept
 {
 	m_topInsetPixels = topInsetPixels;

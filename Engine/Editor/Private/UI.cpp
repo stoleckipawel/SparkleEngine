@@ -23,8 +23,6 @@
 #include "Scene/Transactions/EditorTransactionManager.h"
 #include "Rendering/EditorRenderPacketBuilder.h"
 
-#include "RHI/Public/UI/RhiImGuiRenderer.h"
-
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 
@@ -64,11 +62,11 @@ void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexc
 	}
 }
 
-void UI::SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept
+void UI::SetViewportSceneColorTextureId(EditorTextureHandle texture) noexcept
 {
 	if (m_viewportPanel)
 	{
-		m_viewportPanel->SetSceneColorTextureId(textureId);
+		m_viewportPanel->SetSceneColorTextureId(texture.Pack());
 	}
 }
 
@@ -120,7 +118,6 @@ bool UI::ConsumeShaderRecookRequest() noexcept
 UI::UI(EditorHostServices hostServices) :
 	m_timer(&hostServices.RuntimeTimer),
 	m_levelManager(hostServices.Levels),
-	m_imguiRenderer(&hostServices.ImGuiRenderer),
 	m_window(&hostServices.HostWindow),
 	m_inputSystem(&hostServices.Input),
 	m_sceneSelection(SceneObjectSelection::None())
@@ -132,18 +129,18 @@ UI::UI(EditorHostServices hostServices) :
 	    .WorldGeneration = std::move(hostServices.WorldGeneration),
 	    .MaterialVariants = std::move(hostServices.MaterialVariants)});
 	m_transactions = std::make_unique<EditorTransactionManager>(std::move(hostServices.SubmitWorldEdit));
-	m_renderPacketBuilder =
-	    std::make_unique<EditorRenderPacketBuilder>(std::move(hostServices.RegisterEditorTexture));
+	m_renderPacketBuilder = std::make_unique<EditorRenderPacketBuilder>();
 	InitializeImGuiContext();
 	SetupDPIScaling();
 
 	if (!InitializeWin32Backend())
 		return;
 
-	if (!InitializeGraphicsBackend())
-		return;
-
 	InitializeDefaultPanels();
+	if (m_renderingSettings)
+	{
+		m_renderingSettings->SetCommitHandler(std::move(hostServices.SubmitRenderingSettings));
+	}
 	SubscribeToWindowEvents(hostServices.HostWindow);
 }
 
@@ -155,6 +152,7 @@ void UI::InitializeImGuiContext()
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.Fonts->SetTexID(static_cast<ImTextureID>(EditorTextureHandle::FontAtlas().Pack()));
 
 	ImGui::StyleColorsDark();
 	SparkleUiTheme::ApplyEditorialDarkTheme();
@@ -173,27 +171,6 @@ bool UI::InitializeWin32Backend()
 	ImGui_ImplWin32_Init(m_window->GetHWND());
 	m_isWin32BackendInitialized = true;
 	return true;
-}
-
-bool UI::InitializeGraphicsBackend()
-{
-	if (m_imguiRenderer == nullptr)
-	{
-		Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeGraphicsBackend: missing ImGui renderer");
-		return false;
-	}
-
-	m_isGraphicsBackendInitialized = m_imguiRenderer->Initialize();
-	if (!m_isGraphicsBackendInitialized)
-	{
-		Diagnostics::Fail(
-		    g_editorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "UI::InitializeGraphicsBackend: editor UI backend is not implemented for the active RHI backend");
-	}
-
-	return m_isGraphicsBackendInitialized;
 }
 
 void UI::InitializeDefaultPanels()
@@ -329,7 +306,6 @@ void UI::NewFrame()
 	io.DeltaTime = static_cast<float>(m_timer->GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds));
 	io.DisplaySize = ImVec2(m_window->GetWidth(), m_window->GetHeight());
 
-	m_imguiRenderer->BeginFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 }
@@ -494,22 +470,14 @@ void UI::Update()
 
 	NewFrame();
 	Build();
-	if (m_renderPacketBuilder != nullptr && ImGui::GetDrawData() != nullptr)
-	{
-		m_renderPacket = m_renderPacketBuilder->Build(*ImGui::GetDrawData(), m_viewportGeneration);
-	}
+	m_renderPacket =
+	    m_renderPacketBuilder->Build(*ImGui::GetDrawData(), m_viewportGeneration);
 }
 
 UI::~UI() noexcept
 {
 
 	m_windowMessageHandle.Reset();
-
-	if (m_isGraphicsBackendInitialized)
-	{
-		m_imguiRenderer->Shutdown();
-		m_isGraphicsBackendInitialized = false;
-	}
 
 	if (m_isWin32BackendInitialized)
 	{
@@ -527,7 +495,7 @@ UI::~UI() noexcept
 
 bool UI::IsReady() const noexcept
 {
-	return m_isImGuiContextInitialized && m_isWin32BackendInitialized && m_isGraphicsBackendInitialized;
+	return m_isImGuiContextInitialized && m_isWin32BackendInitialized;
 }
 
 void UI::SetupDPIScaling() noexcept

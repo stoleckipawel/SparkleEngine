@@ -14,6 +14,7 @@ enum class RendererExecutionMode : std::uint8_t
 struct SPARKLE_RENDERER_API RendererExecutionConfig final
 {
 	RendererExecutionMode Mode = RendererExecutionMode::Serial;
+	bool EnableEditorRenderPackets = false;
 
 	constexpr bool IsThreaded() const noexcept { return Mode != RendererExecutionMode::Serial; }
 	std::uint32_t ResolveFrameSlotCount() const noexcept;

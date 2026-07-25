@@ -209,21 +209,58 @@ class EngineRenderingSettingsOperations final
 		(void) variable->TrySetValueFromString(trimmedValue, errorMessage);
 	}
 
-	static std::vector<std::pair<std::string, std::string>> BuildRenderingSettingsConfigValues()
+	template <typename TValue>
+	static std::string PersistedValue(TValue value)
+	{
+		if constexpr (std::is_enum_v<TValue>)
+		{
+			return std::to_string(static_cast<std::underlying_type_t<TValue>>(value));
+		}
+		else if constexpr (std::is_same_v<TValue, bool>)
+		{
+			return value ? "1" : "0";
+		}
+		else
+		{
+			return std::to_string(value);
+		}
+	}
+
+	static std::vector<std::pair<std::string, std::string>> BuildRenderingSettingsConfigValues(
+	    const EngineRenderingSettingsState& state)
 	{
 		std::vector<std::pair<std::string, std::string>> values;
 		values.reserve(sizeof(kPersistedRenderingCVarNames) / sizeof(kPersistedRenderingCVarNames[0]));
-
-		const ConsoleVariableRegistry& registry = ConsoleVariableRegistry::Get();
-		for (const std::string_view cvarName : kPersistedRenderingCVarNames)
-		{
-			const ConsoleVariableBase* variable = registry.Find(cvarName);
-			if (variable != nullptr)
-			{
-				values.emplace_back(std::string(variable->GetName()), variable->GetValueAsString());
-			}
-		}
-
+		values.emplace_back("r.VSync", PersistedValue(state.VSync));
+		values.emplace_back("r.BackBufferFormat", PersistedValue(state.BackBufferFormat));
+		values.emplace_back("r.PreferHighPerformanceAdapter", PersistedValue(state.PreferHighPerformanceAdapter));
+		values.emplace_back("r.ToneMapper", PersistedValue(state.ToneMapper));
+		values.emplace_back("r.Exposure.Mode", PersistedValue(state.ExposureMode));
+		values.emplace_back("r.Exposure.MeteringMethod", PersistedValue(state.ExposureMeteringMethod));
+		values.emplace_back("r.OutputColorEncoding", PersistedValue(state.OutputColorEncoding));
+		values.emplace_back("r.Exposure.Manual", PersistedValue(state.ManualExposure));
+		values.emplace_back("r.Exposure.Compensation", PersistedValue(state.ExposureCompensation));
+		values.emplace_back("r.Exposure.TargetLuminance", PersistedValue(state.ExposureTargetLuminance));
+		values.emplace_back("r.Exposure.Min", PersistedValue(state.ExposureMin));
+		values.emplace_back("r.Exposure.Max", PersistedValue(state.ExposureMax));
+		values.emplace_back("r.Exposure.AdaptationSpeedUp", PersistedValue(state.ExposureAdaptationSpeedUp));
+		values.emplace_back("r.Exposure.AdaptationSpeedDown", PersistedValue(state.ExposureAdaptationSpeedDown));
+		values.emplace_back("r.Lighting.MaxDirectionalLights", PersistedValue(state.MaxDirectionalLights));
+		values.emplace_back("r.Lighting.MaxPointLights", PersistedValue(state.MaxPointLights));
+		values.emplace_back("r.Lighting.MaxSpotLights", PersistedValue(state.MaxSpotLights));
+		values.emplace_back("r.Lighting.MaxRectLights", PersistedValue(state.MaxRectLights));
+		values.emplace_back("r.MeshAutoBatching", PersistedValue(state.MeshAutoBatching));
+		values.emplace_back("r.Upscaler.Provider", PersistedValue(state.UpscalerProvider));
+		values.emplace_back("r.Upscaler.QualityMode", PersistedValue(state.UpscalerQualityMode));
+		values.emplace_back("r.RayReconstruction.Mode", PersistedValue(state.RayReconstructionMode));
+		values.emplace_back("r.GBuffer.Mode", PersistedValue(state.GBuffer));
+		values.emplace_back("r.Lighting.Mode", PersistedValue(state.Lighting));
+		values.emplace_back("r.RayTracing.Tlas.Refit", PersistedValue(state.RefitTlas));
+		values.emplace_back("r.RayTracing.PreferPartitionedTlas", PersistedValue(state.PtlasActive));
+		values.emplace_back("r.RayTracing.Ptlas.PartitionsPerAxis", PersistedValue(state.PtlasPartitionsPerAxis));
+		values.emplace_back("r.RayTracing.Ptlas.PartitionUpdateMode", PersistedValue(state.PtlasPartitionUpdateMode));
+		values.emplace_back("r.RayTracing.Ptlas.MarkAllDynamicInPartition", PersistedValue(state.PtlasMarkAllDynamicInPartition));
+		values.emplace_back("r.RayTracing.Ptlas.ModeChangeDistance", PersistedValue(state.PtlasModeChangeDistance));
 		return values;
 	}
 
@@ -270,271 +307,187 @@ std::string EngineRenderingSettingsSection::BuildPendingRestartMessage() const
 	return DescribePendingRestart(m_sessionBaseline, m_state);
 }
 
-void EngineRenderingSettingsSection::RefreshAndPersistRuntimeState()
+void EngineRenderingSettingsSection::SetCommitHandler(CommitHandler handler)
 {
-	m_state = CaptureRuntimeState();
-	EngineRenderingSettingsOperations::WriteRenderingSettingsConfigValues(EngineRenderingSettingsOperations::BuildRenderingSettingsConfigValues());
+	m_commitHandler = std::move(handler);
+}
+
+void EngineRenderingSettingsSection::CommitState()
+{
+	EngineRenderingSettingsOperations::WriteRenderingSettingsConfigValues(
+	    EngineRenderingSettingsOperations::BuildRenderingSettingsConfigValues(m_state));
+	if (m_commitHandler)
+	{
+		m_commitHandler(m_state);
+		return;
+	}
+	ApplyEngineRenderingSettingsStateToCVars(m_state);
 }
 
 void EngineRenderingSettingsSection::SetVSync(bool enabled)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarVSync, enabled))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.VSync, enabled);
 }
 
 void EngineRenderingSettingsSection::SetBackBufferFormat(PixelFormat format)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarBackBufferFormat, format))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.BackBufferFormat, format);
 }
 
 void EngineRenderingSettingsSection::SetPreferHighPerformanceAdapter(bool enabled)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarPreferHighPerformanceAdapter, enabled))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.PreferHighPerformanceAdapter, enabled);
 }
 
 void EngineRenderingSettingsSection::SetToneMapper(EngineToneMapper toneMapper)
 {
-	const EngineToneMapper sanitizedToneMapper = SanitizeToneMapper(toneMapper);
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarToneMapper, sanitizedToneMapper))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.ToneMapper, SanitizeToneMapper(toneMapper));
 }
 
 void EngineRenderingSettingsSection::SetExposureMode(EngineExposureMode mode)
 {
-	const EngineExposureMode sanitizedMode = SanitizeExposureMode(mode);
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMode, sanitizedMode))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.ExposureMode, SanitizeExposureMode(mode));
 }
 
 void EngineRenderingSettingsSection::SetExposureMeteringMethod(EngineExposureMeteringMethod method)
 {
-	const EngineExposureMeteringMethod sanitizedMethod = SanitizeExposureMeteringMethod(method);
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMeteringMethod, sanitizedMethod))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.ExposureMeteringMethod, SanitizeExposureMeteringMethod(method));
 }
 
 void EngineRenderingSettingsSection::SetOutputColorEncoding(EngineOutputColorEncoding encoding)
 {
-	const EngineOutputColorEncoding sanitizedEncoding = SanitizeOutputColorEncoding(encoding);
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarOutputColorEncoding, sanitizedEncoding))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.OutputColorEncoding, SanitizeOutputColorEncoding(encoding));
 }
 
 void EngineRenderingSettingsSection::SetManualExposure(float exposure)
 {
-	const float sanitizedExposure = SanitizeManualExposure(exposure);
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarManualExposure, sanitizedExposure))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.ManualExposure, SanitizeManualExposure(exposure));
 }
 
 void EngineRenderingSettingsSection::SetExposureCompensation(float compensation)
 {
-	const float sanitizedCompensation = SanitizeExposureCompensation(compensation);
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureCompensation, sanitizedCompensation))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.ExposureCompensation, SanitizeExposureCompensation(compensation));
 }
 
 void EngineRenderingSettingsSection::SetExposureTargetLuminance(float luminance)
 {
-	const float sanitizedLuminance = SanitizeExposureTargetLuminance(luminance);
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureTargetLuminance, sanitizedLuminance))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.ExposureTargetLuminance, SanitizeExposureTargetLuminance(luminance));
 }
 
 void EngineRenderingSettingsSection::SetExposureMin(float exposure)
 {
 	float minExposure = SanitizeExposureMin(exposure);
-	float maxExposure = SanitizeExposureMax(CVarExposureMax.Get());
+	float maxExposure = SanitizeExposureMax(m_state.ExposureMax);
 	SanitizeExposureRange(minExposure, maxExposure);
-
-	const bool changedMin = EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMin, minExposure);
-	const bool changedMax = EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMax, maxExposure);
-	if (changedMin || changedMax)
+	if (m_state.ExposureMin != minExposure || m_state.ExposureMax != maxExposure)
 	{
-		RefreshAndPersistRuntimeState();
+		m_state.ExposureMin = minExposure;
+		m_state.ExposureMax = maxExposure;
+		CommitState();
 	}
 }
 
 void EngineRenderingSettingsSection::SetExposureMax(float exposure)
 {
-	float minExposure = SanitizeExposureMin(CVarExposureMin.Get());
+	float minExposure = SanitizeExposureMin(m_state.ExposureMin);
 	float maxExposure = SanitizeExposureMax(exposure);
 	SanitizeExposureRange(minExposure, maxExposure);
-
-	const bool changedMin = EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMin, minExposure);
-	const bool changedMax = EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMax, maxExposure);
-	if (changedMin || changedMax)
+	if (m_state.ExposureMin != minExposure || m_state.ExposureMax != maxExposure)
 	{
-		RefreshAndPersistRuntimeState();
+		m_state.ExposureMin = minExposure;
+		m_state.ExposureMax = maxExposure;
+		CommitState();
 	}
 }
 
 void EngineRenderingSettingsSection::SetExposureAdaptationSpeedUp(float speed)
 {
-	const float sanitizedSpeed = SanitizeExposureAdaptationSpeed(speed);
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureAdaptationSpeedUp, sanitizedSpeed))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.ExposureAdaptationSpeedUp, SanitizeExposureAdaptationSpeed(speed));
 }
 
 void EngineRenderingSettingsSection::SetExposureAdaptationSpeedDown(float speed)
 {
-	const float sanitizedSpeed = SanitizeExposureAdaptationSpeed(speed);
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureAdaptationSpeedDown, sanitizedSpeed))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.ExposureAdaptationSpeedDown, SanitizeExposureAdaptationSpeed(speed));
 }
 
 void EngineRenderingSettingsSection::SetMaxDirectionalLights(std::uint32_t count)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxDirectionalLights, count))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.MaxDirectionalLights, count);
 }
 
 void EngineRenderingSettingsSection::SetMaxPointLights(std::uint32_t count)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxPointLights, count))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.MaxPointLights, count);
 }
 
 void EngineRenderingSettingsSection::SetMaxSpotLights(std::uint32_t count)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxSpotLights, count))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.MaxSpotLights, count);
 }
 
 void EngineRenderingSettingsSection::SetMaxRectLights(std::uint32_t count)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxRectLights, count))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.MaxRectLights, count);
 }
 
 void EngineRenderingSettingsSection::SetUpscalerProvider(EUpscalerProviderKind provider)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarUpscalerProvider, provider))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.UpscalerProvider, provider);
 }
 
 void EngineRenderingSettingsSection::SetUpscalerQualityMode(EUpscalerQualityMode mode)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarUpscalerQualityMode, mode))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.UpscalerQualityMode, mode);
 }
 
 void EngineRenderingSettingsSection::SetRayReconstructionMode(EngineRayReconstructionMode mode)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRayReconstructionMode, mode))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.RayReconstructionMode, mode);
 }
 
 void EngineRenderingSettingsSection::SetGBufferMode(GBufferMode mode)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarGBufferMode, mode))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.GBuffer, mode);
 }
 
 void EngineRenderingSettingsSection::SetLightingMode(LightingMode mode)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarLightingMode, mode))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.Lighting, mode);
 }
 
 void EngineRenderingSettingsSection::SetMeshAutoBatching(bool enabled)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRendererMeshAutoBatching, enabled))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.MeshAutoBatching, enabled);
 }
 
 void EngineRenderingSettingsSection::SetRefitTlas(bool enabled)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRayTracingClassicTlasRefit, enabled))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.RefitTlas, enabled);
 }
 
 void EngineRenderingSettingsSection::SetPtlasActive(bool active)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRayTracingPreferPartitionedTlas, active))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.PtlasActive, active);
 }
 
 void EngineRenderingSettingsSection::SetPtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRayTracingPartitionsPerAxis, partitionsPerAxis))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.PtlasPartitionsPerAxis, partitionsPerAxis);
 }
 
 void EngineRenderingSettingsSection::SetPtlasPartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRayTracingPtlasPartitionUpdateMode, mode))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.PtlasPartitionUpdateMode, mode);
 }
 
 void EngineRenderingSettingsSection::SetPtlasMarkAllDynamicInPartition(bool enabled)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRayTracingPtlasMarkAllDynamicInPartition, enabled))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.PtlasMarkAllDynamicInPartition, enabled);
 }
 
 void EngineRenderingSettingsSection::SetPtlasModeChangeDistance(float distance)
 {
-	if (EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRayTracingPtlasModeChangeDistance, distance))
-	{
-		RefreshAndPersistRuntimeState();
-	}
+	SetValue(m_state.PtlasModeChangeDistance, distance);
 }
 
 EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState() const noexcept
@@ -612,6 +565,72 @@ std::string EngineRenderingSettingsSection::DescribePendingRestart(
 	}
 	stream << ".";
 	return stream.str();
+}
+
+void ApplyEngineRenderingSettingsStateToCVars(
+    const EngineRenderingSettingsState& state) noexcept
+{
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarVSync, state.VSync);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarBackBufferFormat, state.BackBufferFormat);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarPreferHighPerformanceAdapter,
+	    state.PreferHighPerformanceAdapter);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarToneMapper, SanitizeToneMapper(state.ToneMapper));
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMode, SanitizeExposureMode(state.ExposureMode));
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarExposureMeteringMethod,
+	    SanitizeExposureMeteringMethod(state.ExposureMeteringMethod));
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarOutputColorEncoding,
+	    SanitizeOutputColorEncoding(state.OutputColorEncoding));
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarManualExposure,
+	    SanitizeManualExposure(state.ManualExposure));
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarExposureCompensation,
+	    SanitizeExposureCompensation(state.ExposureCompensation));
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarExposureTargetLuminance,
+	    SanitizeExposureTargetLuminance(state.ExposureTargetLuminance));
+	float minimumExposure = SanitizeExposureMin(state.ExposureMin);
+	float maximumExposure = SanitizeExposureMax(state.ExposureMax);
+	SanitizeExposureRange(minimumExposure, maximumExposure);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMin, minimumExposure);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarExposureMax, maximumExposure);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarExposureAdaptationSpeedUp,
+	    SanitizeExposureAdaptationSpeed(state.ExposureAdaptationSpeedUp));
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarExposureAdaptationSpeedDown,
+	    SanitizeExposureAdaptationSpeed(state.ExposureAdaptationSpeedDown));
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxDirectionalLights, state.MaxDirectionalLights);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxPointLights, state.MaxPointLights);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxSpotLights, state.MaxSpotLights);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarMaxRectLights, state.MaxRectLights);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarUpscalerProvider, state.UpscalerProvider);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarUpscalerQualityMode, state.UpscalerQualityMode);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarRayReconstructionMode,
+	    state.RayReconstructionMode);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarGBufferMode, state.GBuffer);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarLightingMode, state.Lighting);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRendererMeshAutoBatching, state.MeshAutoBatching);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(CVarRayTracingClassicTlasRefit, state.RefitTlas);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarRayTracingPreferPartitionedTlas,
+	    state.PtlasActive);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarRayTracingPartitionsPerAxis,
+	    state.PtlasPartitionsPerAxis);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarRayTracingPtlasPartitionUpdateMode,
+	    state.PtlasPartitionUpdateMode);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarRayTracingPtlasMarkAllDynamicInPartition,
+	    state.PtlasMarkAllDynamicInPartition);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarRayTracingPtlasModeChangeDistance,
+	    state.PtlasModeChangeDistance);
 }
 
 void ApplyPersistedEngineRenderingSettingsToCVars() noexcept

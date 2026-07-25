@@ -1,9 +1,13 @@
 #pragma once
 
+#include "../Editor/EditorTextureHandle.h"
 #include "../RendererAPI.h"
 
 #include <cstdint>
+#include <cstddef>
 #include <filesystem>
+#include <string>
+#include <vector>
 
 enum class RenderViewKind : std::uint8_t
 {
@@ -24,26 +28,10 @@ enum class RenderFeatureFlags : std::uint16_t
 	GizmoOverlay = 1 << 4,
 };
 
-constexpr RenderFeatureFlags operator|(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept
-{
-	return static_cast<RenderFeatureFlags>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
-}
-
-constexpr RenderFeatureFlags operator&(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept
-{
-	return static_cast<RenderFeatureFlags>(static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
-}
-
-constexpr RenderFeatureFlags& operator|=(RenderFeatureFlags& lhs, RenderFeatureFlags rhs) noexcept
-{
-	lhs = lhs | rhs;
-	return lhs;
-}
-
-constexpr bool HasAnyRenderFeatureFlags(RenderFeatureFlags flags, RenderFeatureFlags test) noexcept
-{
-	return (flags & test) != RenderFeatureFlags::None;
-}
+SPARKLE_RENDERER_API RenderFeatureFlags operator|(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept;
+SPARKLE_RENDERER_API RenderFeatureFlags operator&(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept;
+SPARKLE_RENDERER_API RenderFeatureFlags& operator|=(RenderFeatureFlags& lhs, RenderFeatureFlags rhs) noexcept;
+SPARKLE_RENDERER_API bool HasAnyRenderFeatureFlags(RenderFeatureFlags flags, RenderFeatureFlags test) noexcept;
 
 enum class RenderOutputFlags : std::uint16_t
 {
@@ -55,48 +43,32 @@ enum class RenderOutputFlags : std::uint16_t
 	OverlayMask = 1 << 4,
 };
 
-constexpr RenderOutputFlags operator|(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept
-{
-	return static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
-}
+SPARKLE_RENDERER_API RenderOutputFlags operator|(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept;
+SPARKLE_RENDERER_API RenderOutputFlags operator&(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept;
+SPARKLE_RENDERER_API RenderOutputFlags& operator|=(RenderOutputFlags& lhs, RenderOutputFlags rhs) noexcept;
+SPARKLE_RENDERER_API bool HasAnyRenderOutputFlags(RenderOutputFlags flags, RenderOutputFlags test) noexcept;
 
-constexpr RenderOutputFlags operator&(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept
-{
-	return static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
-}
-
-constexpr RenderOutputFlags& operator|=(RenderOutputFlags& lhs, RenderOutputFlags rhs) noexcept
-{
-	lhs = lhs | rhs;
-	return lhs;
-}
-
-constexpr bool HasAnyRenderOutputFlags(RenderOutputFlags flags, RenderOutputFlags test) noexcept
-{
-	return (flags & test) != RenderOutputFlags::None;
-}
-
-struct RenderViewportExtent
+struct SPARKLE_RENDERER_API RenderViewportExtent
 {
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
 
-	constexpr bool IsValid() const noexcept { return Width > 0 && Height > 0; }
-	constexpr bool operator==(const RenderViewportExtent&) const noexcept = default;
+	bool IsValid() const noexcept;
+	bool operator==(const RenderViewportExtent& other) const noexcept;
 };
 
-struct RenderViewSelectionToken
+struct SPARKLE_RENDERER_API RenderViewSelectionToken
 {
 	std::uint64_t Value = 0;
 
-	constexpr explicit operator bool() const noexcept { return Value != 0; }
+	explicit operator bool() const noexcept;
 };
 
-struct RenderProductHandle
+struct SPARKLE_RENDERER_API RenderProductHandle
 {
 	std::uint64_t Value = 0;
 
-	constexpr explicit operator bool() const noexcept { return Value != 0; }
+	explicit operator bool() const noexcept;
 };
 
 enum class RenderProductFormat : std::uint8_t
@@ -114,7 +86,7 @@ struct RenderProduct
 	RenderProductHandle Handle = {};
 	RenderViewportExtent Extent = {};
 	RenderProductFormat Format = RenderProductFormat::Unknown;
-	std::uint64_t EditorTextureHandle = 0;
+	EditorTextureHandle EditorTexture = {};
 };
 
 enum class ViewportPresentationStatus : std::uint8_t
@@ -131,10 +103,7 @@ struct SPARKLE_RENDERER_API ViewportPresentationProduct
 	ViewportPresentationStatus Status = ViewportPresentationStatus::Unavailable;
 	const char* FailureReason = "";
 
-	constexpr explicit operator bool() const noexcept
-	{
-		return Status == ViewportPresentationStatus::Ready && TextureId != 0;
-	}
+	explicit operator bool() const noexcept;
 };
 
 struct SPARKLE_RENDERER_API ViewportCaptureRequest
@@ -145,8 +114,8 @@ struct SPARKLE_RENDERER_API ViewportCaptureRequest
 	// capture if the requested render product has already advanced.
 	std::uint64_t ExpectedFrameId = 0;
 	std::uint32_t ViewMode = 0;
-	const char* ViewModeName = "";
-	const char* DebugName = "";
+	std::string ViewModeName;
+	std::string DebugName;
 };
 
 enum class ViewportCaptureStatus : std::uint8_t
@@ -163,13 +132,40 @@ struct SPARKLE_RENDERER_API ViewportCaptureResult
 	std::uint64_t FrameGeneration = 0;
 	std::uint64_t ProviderGeneration = 0;
 	std::filesystem::path ArtifactPath;
-	const char* FailureReason = "";
+	std::string FailureReason;
 
-	constexpr explicit operator bool() const noexcept
-	{
-		return Status == ViewportCaptureStatus::Succeeded;
-	}
+	explicit operator bool() const noexcept;
 };
+
+struct SPARKLE_RENDERER_API ViewportCaptureId
+{
+	std::uint64_t Value = 0;
+
+	explicit operator bool() const noexcept;
+};
+
+enum class ViewportCapturePixelFormat : std::uint8_t
+{
+	Rgba32Float = 0,
+	Rgba16Float,
+	Rgba8Unorm,
+	Bgra8Unorm,
+};
+
+struct SPARKLE_RENDERER_API ViewportCaptureReadback
+{
+	ViewportCaptureId Id;
+	ViewportCaptureResult Result;
+	std::vector<std::byte> Pixels;
+	std::uint32_t Width = 0;
+	std::uint32_t Height = 0;
+	std::uint32_t RowPitch = 0;
+	ViewportCapturePixelFormat Format =
+	    ViewportCapturePixelFormat::Rgba8Unorm;
+};
+
+SPARKLE_RENDERER_API bool WriteViewportCaptureBmp(
+    const ViewportCaptureReadback& readback) noexcept;
 
 struct SPARKLE_RENDERER_API ViewportRenderRequest
 {
@@ -186,13 +182,9 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 {
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
 	RenderOutputFlags GetAvailableOutputs() const noexcept { return m_availableOutputs; }
-	bool HasOutput(RenderOutputFlags output) const noexcept { return HasAnyRenderOutputFlags(m_availableOutputs, output); }
+	bool HasOutput(RenderOutputFlags output) const noexcept;
 
-	const RenderProduct* FindProduct(RenderOutputFlags output) const noexcept
-	{
-		const RenderProduct* product = SelectProduct(output);
-		return product != nullptr && HasOutput(output) ? product : nullptr;
-	}
+	const RenderProduct* FindProduct(RenderOutputFlags output) const noexcept;
 
 	const RenderProduct& GetSceneColor() const noexcept { return m_sceneColor; }
 	const RenderProduct& GetSceneDepth() const noexcept { return m_sceneDepth; }
@@ -200,95 +192,17 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 	const RenderProduct& GetNormals() const noexcept { return m_normals; }
 	const RenderProduct& GetOverlayMask() const noexcept { return m_overlayMask; }
 
-	void Clear() noexcept
-	{
-		m_availableOutputs = RenderOutputFlags::None;
-		m_sceneColor = {};
-		m_sceneDepth = {};
-		m_objectId = {};
-		m_normals = {};
-		m_overlayMask = {};
-	}
+	void Clear() noexcept;
 
 	void SetGeneration(std::uint64_t generation) noexcept { m_generation = generation; }
 
-	void ClearProduct(RenderOutputFlags output) noexcept
-	{
-		RenderProduct* product = SelectProduct(output);
-		if (product == nullptr)
-		{
-			return;
-		}
-
-		*product = {};
-		RemoveAvailableOutput(output);
-	}
-
-	void SetProduct(RenderOutputFlags output, RenderProduct product) noexcept
-	{
-		RenderProduct* target = SelectProduct(output);
-		if (target == nullptr)
-		{
-			return;
-		}
-
-		*target = product;
-		if (product.Handle)
-		{
-			m_availableOutputs |= output;
-		}
-		else
-		{
-			RemoveAvailableOutput(output);
-		}
-	}
+	void ClearProduct(RenderOutputFlags output) noexcept;
+	void SetProduct(RenderOutputFlags output, RenderProduct product) noexcept;
 
   private:
-	RenderProduct* SelectProduct(RenderOutputFlags output) noexcept
-	{
-		switch (output)
-		{
-			case RenderOutputFlags::SceneColor:
-				return &m_sceneColor;
-			case RenderOutputFlags::SceneDepth:
-				return &m_sceneDepth;
-			case RenderOutputFlags::ObjectId:
-				return &m_objectId;
-			case RenderOutputFlags::Normals:
-				return &m_normals;
-			case RenderOutputFlags::OverlayMask:
-				return &m_overlayMask;
-			case RenderOutputFlags::None:
-			default:
-				return nullptr;
-		}
-	}
-
-	const RenderProduct* SelectProduct(RenderOutputFlags output) const noexcept
-	{
-		switch (output)
-		{
-			case RenderOutputFlags::SceneColor:
-				return &m_sceneColor;
-			case RenderOutputFlags::SceneDepth:
-				return &m_sceneDepth;
-			case RenderOutputFlags::ObjectId:
-				return &m_objectId;
-			case RenderOutputFlags::Normals:
-				return &m_normals;
-			case RenderOutputFlags::OverlayMask:
-				return &m_overlayMask;
-			case RenderOutputFlags::None:
-			default:
-				return nullptr;
-		}
-	}
-
-	void RemoveAvailableOutput(RenderOutputFlags output) noexcept
-	{
-		m_availableOutputs = static_cast<RenderOutputFlags>(
-		    static_cast<std::uint16_t>(m_availableOutputs) & ~static_cast<std::uint16_t>(output));
-	}
+	RenderProduct* SelectProduct(RenderOutputFlags output) noexcept;
+	const RenderProduct* SelectProduct(RenderOutputFlags output) const noexcept;
+	void RemoveAvailableOutput(RenderOutputFlags output) noexcept;
 
 	RenderOutputFlags m_availableOutputs = RenderOutputFlags::None;
 	std::uint64_t m_generation = 0;

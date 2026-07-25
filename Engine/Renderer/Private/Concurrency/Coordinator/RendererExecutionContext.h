@@ -17,6 +17,10 @@ class RendererExecutionContext final
 {
   public:
 	RendererExecutionContext(Window& window, const RendererBackendConfiguration& backendConfiguration);
+	RendererExecutionContext(
+	    Window& window,
+	    const RendererBackendConfiguration& backendConfiguration,
+	    bool enableEditorRenderPackets);
 	~RendererExecutionContext() noexcept;
 
 	void ExecuteFrame(RenderFramePacket packet) noexcept;
@@ -33,7 +37,7 @@ class RendererExecutionContext final
 	const FramePipeline& GetPipeline() const noexcept;
 
   private:
-	void CompleteDiagnostics(const RenderDiagnosticsCommand& command) const;
+	void CompleteDiagnostics(const RenderDiagnosticsCommand& command);
 	void SettleRendererBeforeDestruction() noexcept;
 
 	Threading::OwnerThread m_owner{"RenderCoordinator renderer state"};

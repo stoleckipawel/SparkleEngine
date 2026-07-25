@@ -1,11 +1,16 @@
 #pragma once
 
 #include "../../../../RHI/Public/Resources/TextureTypes.h"
+#include "../../Editor/EditorTextureHandle.h"
 #include "../../RendererAPI.h"
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
+
+using TexturePreviewHandleResolver =
+    std::function<EditorTextureHandle(std::uint64_t)>;
 
 enum class TextureDiagnosticsKind : std::uint8_t
 {
@@ -33,7 +38,7 @@ struct SPARKLE_RENDERER_API TextureDiagnosticsRow final
 	std::string Format;
 	std::uint16_t MipCount = 0;
 	std::uint64_t EstimatedByteSize = 0;
-	std::uint64_t GpuShaderResourceViewId = 0;
+	EditorTextureHandle PreviewTexture = {};
 	bool Loaded = false;
 	bool StreamManaged = false;
 };

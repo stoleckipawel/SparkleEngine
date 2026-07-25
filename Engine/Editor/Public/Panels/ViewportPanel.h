@@ -10,7 +10,7 @@ class SPARKLE_EDITOR_API ViewportPanel final
 {
   public:
 	ViewportPanel(float leftInsetPixels = 320.0f, float rightInsetPixels = 456.0f) noexcept;
-	~ViewportPanel() = default;
+	~ViewportPanel() noexcept;
 
 	ViewportPanel(const ViewportPanel&) = delete;
 	ViewportPanel(ViewportPanel&&) = delete;

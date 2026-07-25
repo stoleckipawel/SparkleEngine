@@ -3,12 +3,6 @@
 
 #include <imgui.h>
 
-EditorRenderPacketBuilder::EditorRenderPacketBuilder(
-    std::function<std::uint64_t(std::uint64_t)> registerTexture) :
-	m_registerTexture(std::move(registerTexture))
-{
-}
-
 EditorRenderPacket EditorRenderPacketBuilder::Build(
     const ImDrawData& drawData,
     std::uint64_t viewportGeneration)
@@ -77,7 +71,7 @@ void EditorRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 		    static_cast<std::uint64_t>(command.GetTexID());
 		m_packet.Commands.push_back(EditorDrawCommand{
 		    .ClipRect = {command.ClipRect.x, command.ClipRect.y, command.ClipRect.z, command.ClipRect.w},
-		    .TextureHandle = m_registerTexture ? m_registerTexture(nativeTextureId) : 0,
+		    .TextureHandle = EditorTextureHandle::Unpack(nativeTextureId),
 		    .ElementCount = command.ElemCount,
 		    .IndexOffset = command.IdxOffset,
 		    .VertexOffset = static_cast<std::int32_t>(command.VtxOffset),

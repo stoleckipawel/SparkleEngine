@@ -68,6 +68,17 @@ void RenderCoordinator::StageEditorRenderPacket(EditorRenderPacket packet)
 	m_pendingEditorUi = std::move(packet);
 }
 
+void RenderCoordinator::SubmitRenderingSettings(EngineRenderingSettingsState settings)
+{
+	m_producerOwner.AssertAccess();
+	if (m_config.IsThreaded())
+	{
+		(void) SubmitControl(RenderSettingsChangedCommand{std::move(settings)});
+		return;
+	}
+	ApplyEngineRenderingSettingsStateToCVars(settings);
+}
+
 void RenderCoordinator::SubmitViewportRequest(const ViewportRenderRequest& request)
 {
 	m_producerOwner.AssertAccess();
@@ -134,7 +145,7 @@ ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 	return m_publishedViewportProducts;
 }
 
-std::uint64_t RenderCoordinator::RegisterEditorTexture(std::uint64_t nativeTextureId)
+EditorTextureHandle RenderCoordinator::RegisterEditorTexture(std::uint64_t nativeTextureId)
 {
 	m_producerOwner.AssertAccess();
 	return GetSerialContext().GetPipeline().RegisterEditorTexture(nativeTextureId);
@@ -183,7 +194,7 @@ MeshPreviewGeometry RenderCoordinator::CaptureMeshPreview(std::uintptr_t meshRun
 TextureDiagnosticsSnapshot RenderCoordinator::CaptureTextureDiagnostics()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded()) return GetSerialContext().GetSystems().CaptureTextureDiagnostics();
+	if (!m_config.IsThreaded()) return GetSerialContext().GetPipeline().CaptureTextureDiagnostics();
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<TextureDiagnosticsSnapshot>(SubmitSynchronousControl(
 	    RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Textures, 0, completion}, completion));
@@ -240,13 +251,39 @@ void RenderCoordinator::EndSerialViewportPresentation(RenderOutputFlags output)
 	GetSerialContext().GetPipeline().EndViewportPresentation(output);
 }
 
-ViewportCaptureResult RenderCoordinator::CaptureViewportProductToBmp(const ViewportCaptureRequest& request)
+ViewportCaptureId RenderCoordinator::RequestViewportCapture(
+    ViewportCaptureRequest request)
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded()) return GetSerialContext().GetPipeline().CaptureViewportProductToBmp(request);
-	auto completion = std::make_shared<RenderControlCompletion>();
-	return ExtractControlResult<ViewportCaptureResult>(
-	    SubmitSynchronousControl(RenderCaptureCommand{request, completion}, completion));
+	const ViewportCaptureId id{m_nextViewportCaptureId++};
+	if (m_config.IsThreaded())
+	{
+		return SubmitControl(RenderCaptureCommand{id, std::move(request)})
+		           ? id
+		           : ViewportCaptureId{};
+	}
+	(void) GetSerialContext().GetPipeline().BeginViewportCapture(id, request);
+	PublishReadState();
+	return id;
+}
+
+bool RenderCoordinator::TryTakeViewportCapture(
+    ViewportCaptureReadback& readback)
+{
+	m_producerOwner.AssertAccess();
+	if (!m_config.IsThreaded())
+	{
+		PublishReadState();
+	}
+	std::lock_guard lock(m_readStateMutex);
+	if (m_publishedViewportCaptures.empty())
+	{
+		return false;
+	}
+	readback = std::move(m_publishedViewportCaptures.front());
+	m_publishedViewportCaptures.erase(
+	    m_publishedViewportCaptures.begin());
+	return true;
 }
 
 void RenderCoordinator::Initialize()
@@ -259,7 +296,10 @@ void RenderCoordinator::Initialize()
 
 void RenderCoordinator::InitializeSerial()
 {
-	m_context = std::make_unique<RendererExecutionContext>(*m_window, m_backendConfiguration);
+	m_context = std::make_unique<RendererExecutionContext>(
+	    *m_window,
+	    m_backendConfiguration,
+	    m_config.EnableEditorRenderPackets);
 	SubmitResize();
 	PublishReadState();
 }
@@ -290,7 +330,10 @@ void RenderCoordinator::RenderThreadMain()
 	Threading::SetCurrentThreadRole("Sparkle.RenderThread");
 	try
 	{
-		m_context = std::make_unique<RendererExecutionContext>(*m_window, m_backendConfiguration);
+		m_context = std::make_unique<RendererExecutionContext>(
+		    *m_window,
+		    m_backendConfiguration,
+		    m_config.EnableEditorRenderPackets);
 		{
 			std::lock_guard lock(m_startMutex);
 			m_startSucceeded = true;
@@ -376,6 +419,17 @@ void RenderCoordinator::PublishReadState()
 	{
 		std::lock_guard lock(m_readStateMutex);
 		m_publishedViewportProducts = m_context->GetPipeline().GetViewportRenderProducts();
+		std::vector<ViewportCaptureReadback> captures =
+		    m_context->GetPipeline().TakeCompletedViewportCaptures();
+		for (ViewportCaptureReadback& capture : captures)
+		{
+			if (m_publishedViewportCaptures.size() >= 3)
+			{
+				m_publishedViewportCaptures.erase(
+				    m_publishedViewportCaptures.begin());
+			}
+			m_publishedViewportCaptures.push_back(std::move(capture));
+		}
 	}
 	m_shaderPackageGeneration.store(
 	    m_context->GetSystems().GetShaderPackageGeneration(),

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EditorTextureHandle.h"
 #include "../RendererAPI.h"
 
 #include <cstdint>
@@ -21,7 +22,7 @@ enum class EditorDrawCommandKind : std::uint8_t
 struct EditorDrawCommand final
 {
 	float ClipRect[4] = {};
-	std::uint64_t TextureHandle = 0;
+	EditorTextureHandle TextureHandle = {};
 	std::uint32_t ElementCount = 0;
 	std::uint32_t IndexOffset = 0;
 	std::int32_t VertexOffset = 0;

@@ -5,6 +5,7 @@
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
 #include "../../Renderer/Public/Editor/EditorRenderPacket.h"
+#include "../../Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
@@ -34,7 +35,6 @@ class EditorRestartService;
 class InputSystem;
 class LevelManager;
 class Window;
-class RhiImGuiRenderer;
 
 struct EditorHostServices final
 {
@@ -46,8 +46,7 @@ struct EditorHostServices final
 	std::function<std::uint64_t()> WorldGeneration;
 	std::function<WorldMaterialVariantView()> MaterialVariants;
 	std::function<WorldEditResult(WorldEditCommand, std::uint64_t)> SubmitWorldEdit;
-	std::function<std::uint64_t(std::uint64_t)> RegisterEditorTexture;
-	RhiImGuiRenderer& ImGuiRenderer;
+	std::function<void(EngineRenderingSettingsState)> SubmitRenderingSettings;
 	Window& HostWindow;
 	InputSystem& Input;
 };
@@ -75,7 +74,7 @@ class SPARKLE_EDITOR_API UI final
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
-	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
+	void SetViewportSceneColorTextureId(EditorTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
@@ -107,7 +106,6 @@ class SPARKLE_EDITOR_API UI final
 	void InitializeImGuiContext();
 
 	bool InitializeWin32Backend();
-	bool InitializeGraphicsBackend();
 
 	void InitializeDefaultPanels();
 	void UpdateSceneModel();
@@ -132,7 +130,6 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<EditorRestartService> m_restartService;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
-	RhiImGuiRenderer* m_imguiRenderer = nullptr;
 	Window* m_window = nullptr;
 	InputSystem* m_inputSystem = nullptr;
 	SceneObjectSelection m_sceneSelection = SceneObjectSelection::None();
@@ -151,7 +148,6 @@ class SPARKLE_EDITOR_API UI final
 	bool m_shaderRecookRequested = false;
 	bool m_isImGuiContextInitialized = false;
 	bool m_isWin32BackendInitialized = false;
-	bool m_isGraphicsBackendInitialized = false;
 
 	ScopedEventHandle m_windowMessageHandle;
 };

@@ -1,16 +1,9 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <filesystem>
 
-enum class RhiBmpSourceFormat : std::uint8_t
-{
-	Rgba32Float = 0,
-	Rgba16Float,
-	Rgba8Unorm,
-	Bgra8Unorm
-};
+#include "Capture/RhiCaptureService.h"
 
 bool WriteRhiBmp(
     const std::filesystem::path& outputPath,

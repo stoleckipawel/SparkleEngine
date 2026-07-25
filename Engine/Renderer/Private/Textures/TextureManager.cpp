@@ -335,7 +335,8 @@ const RendererTexture* TextureManager::ResolveTextureReferenceOrDefault(
 	return GetTexture(TextureId::Checker);
 }
 
-TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot() const
+TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot(
+    const PreviewTextureResolver& resolvePreviewTexture) const
 {
 	TextureDiagnosticsSnapshot snapshot;
 	snapshot.Rows.reserve(kTextureCount + m_pathTextures.size());
@@ -348,7 +349,11 @@ TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot() const
 			continue;
 		}
 
-		snapshot.Rows.push_back(BuildDiagnosticsRow(*texture, TextureDiagnosticsKind::DefaultSlot, std::format("slot:{}", index)));
+		snapshot.Rows.push_back(BuildDiagnosticsRow(
+		    *texture,
+		    TextureDiagnosticsKind::DefaultSlot,
+		    std::format("slot:{}", index),
+		    resolvePreviewTexture));
 	}
 
 	for (const auto& [cacheKey, texture] : m_pathTextures)
@@ -360,7 +365,11 @@ TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot() const
 
 		const bool defaultOrFallback = m_defaultPathTextureKeys.contains(cacheKey);
 		const TextureDiagnosticsKind kind = defaultOrFallback ? TextureDiagnosticsKind::DefaultPath : TextureDiagnosticsKind::Scene;
-		snapshot.Rows.push_back(BuildDiagnosticsRow(texture, kind, std::filesystem::path(cacheKey).generic_string()));
+		snapshot.Rows.push_back(BuildDiagnosticsRow(
+		    texture,
+		    kind,
+		    std::filesystem::path(cacheKey).generic_string(),
+		    resolvePreviewTexture));
 	}
 
 	std::sort(
@@ -457,7 +466,8 @@ void TextureManager::ReleaseTexture(RendererTexture& texture) noexcept
 TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(
     const RendererTexture& texture,
     TextureDiagnosticsKind kind,
-    const std::string& key) const
+    const std::string& key,
+    const PreviewTextureResolver& resolvePreviewTexture) const
 {
 	TextureDiagnosticsRow row;
 	row.Key = key;
@@ -471,7 +481,9 @@ TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(
 	row.Format = PixelFormatName(texture.Format);
 	row.MipCount = texture.MipCount;
 	row.EstimatedByteSize = texture.EstimatedByteSize;
-	row.GpuShaderResourceViewId = m_descriptorService.GetResourceViewGpuHandle(texture.ShaderResourceView).Value;
+	const std::uint64_t nativeTextureId =
+	    m_descriptorService.GetResourceViewGpuHandle(texture.ShaderResourceView).Value;
+	row.PreviewTexture = resolvePreviewTexture ? resolvePreviewTexture(nativeTextureId) : EditorTextureHandle{};
 	row.Loaded = static_cast<bool>(texture);
 	row.StreamManaged = false;
 	return row;

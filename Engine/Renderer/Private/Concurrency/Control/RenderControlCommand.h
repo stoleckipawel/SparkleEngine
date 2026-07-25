@@ -2,6 +2,7 @@
 
 #include "Concurrency/Control/RenderControlCompletion.h"
 #include "Concurrency/FrameQueue/RenderFrameQueue.h"
+#include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
 #include <cstdint>
 #include <memory>
@@ -50,8 +51,8 @@ struct RenderDiagnosticsCommand final
 
 struct RenderCaptureCommand final
 {
+	ViewportCaptureId Id;
 	ViewportCaptureRequest Request;
-	std::shared_ptr<RenderControlCompletion> Completion;
 };
 
 struct RenderRefreshProvidersCommand final
@@ -60,6 +61,7 @@ struct RenderRefreshProvidersCommand final
 
 struct RenderSettingsChangedCommand final
 {
+	EngineRenderingSettingsState Settings;
 };
 
 struct RenderShutdownCommand final

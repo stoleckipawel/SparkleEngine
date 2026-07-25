@@ -8,10 +8,18 @@
 
 RendererExecutionContext::RendererExecutionContext(
     Window& window,
-    const RendererBackendConfiguration& backendConfiguration)
+    const RendererBackendConfiguration& backendConfiguration) :
+	RendererExecutionContext(window, backendConfiguration, false)
+{
+}
+
+RendererExecutionContext::RendererExecutionContext(
+    Window& window,
+    const RendererBackendConfiguration& backendConfiguration,
+    bool enableEditorRenderPackets)
 {
 	m_systems = std::make_unique<RendererSystemRoot>(window, backendConfiguration);
-	m_pipeline = std::make_unique<FramePipeline>(*m_systems);
+	m_pipeline = std::make_unique<FramePipeline>(*m_systems, enableEditorRenderPackets);
 	m_systems->PostLoad();
 }
 
@@ -51,15 +59,16 @@ void RendererExecutionContext::ExecuteControl(const RenderControlPayload& payloa
 		    else if constexpr (std::is_same_v<TCommand, RenderDiagnosticsCommand>)
 			    CompleteDiagnostics(command);
 		    else if constexpr (std::is_same_v<TCommand, RenderCaptureCommand>)
-			    command.Completion->Complete(m_pipeline->CaptureViewportProductToBmp(command.Request));
+			    (void) m_pipeline->BeginViewportCapture(command.Id, command.Request);
 		    else if constexpr (std::is_same_v<TCommand, RenderRefreshProvidersCommand>)
 			    m_systems->RefreshImageProviders();
+		    else if constexpr (std::is_same_v<TCommand, RenderSettingsChangedCommand>)
+			    ApplyEngineRenderingSettingsStateToCVars(command.Settings);
 		    else if constexpr (std::is_same_v<TCommand, RenderShutdownCommand>)
 			    SettleRendererBeforeDestruction();
 		    else
 		    {
-			    // Frame-ready commands are consumed by RenderCoordinator. Settings
-			    // are read from their authoritative CVars at the next frame boundary.
+			    // Frame-ready commands are consumed by RenderCoordinator.
 		    }
 	    },
 	    payload);
@@ -104,7 +113,7 @@ const FramePipeline& RendererExecutionContext::GetPipeline() const noexcept
 	return *m_pipeline;
 }
 
-void RendererExecutionContext::CompleteDiagnostics(const RenderDiagnosticsCommand& command) const
+void RendererExecutionContext::CompleteDiagnostics(const RenderDiagnosticsCommand& command)
 {
 	switch (command.Kind)
 	{
@@ -115,7 +124,7 @@ void RendererExecutionContext::CompleteDiagnostics(const RenderDiagnosticsComman
 			command.Completion->Complete(m_systems->CaptureMeshPreview(command.MeshRuntimeId));
 			break;
 		case RenderDiagnosticsRequestKind::Textures:
-			command.Completion->Complete(m_systems->CaptureTextureDiagnostics());
+			command.Completion->Complete(m_pipeline->CaptureTextureDiagnostics());
 			break;
 		case RenderDiagnosticsRequestKind::Memory:
 			command.Completion->Complete(m_systems->CaptureMemoryDiagnostics());

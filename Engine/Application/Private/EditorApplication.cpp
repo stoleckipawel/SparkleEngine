@@ -29,7 +29,7 @@ void EditorApplication::Initialize()
 	{
 		RuntimeApplicationOptions runtimeOptions = m_runtimeOptions;
 		runtimeOptions.EnableRuntimeConsole = false;
-		runtimeOptions.AllowThreadedRenderer = false;
+		runtimeOptions.EnableEditorRenderPackets = true;
 		m_runtimeApplication = std::make_unique<RuntimeApplication>(std::move(runtimeOptions));
 	}
 
@@ -61,10 +61,9 @@ void EditorApplication::Initialize()
 		    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation) {
 			    return world.SubmitEdit(std::move(command), generation);
 		    },
-		    .RegisterEditorTexture = [&renderer](std::uint64_t nativeTextureId) {
-			    return renderer.RegisterEditorTexture(nativeTextureId);
+		    .SubmitRenderingSettings = [&renderer](EngineRenderingSettingsState settings) {
+			    renderer.SubmitRenderingSettings(std::move(settings));
 		    },
-		    .ImGuiRenderer = renderer.GetImGuiRenderer(),
 		    .HostWindow = m_runtimeApplication->GetWindow(),
 		    .Input = m_runtimeApplication->GetInputSystem()});
 		m_ui->SetDiagnosticsProviders(EditorDiagnosticsProviders{
@@ -121,9 +120,9 @@ bool EditorApplication::Tick()
 	}
 
 	m_runtimeApplication->UpdateRuntime();
-	m_runtimeApplication->SubmitViewportRenderRequest(m_ui->GetViewportRenderRequest());
 
 	EditorUiFrameRenderer::Render(*m_runtimeApplication, renderer, *m_ui);
+	m_runtimeApplication->SubmitViewportRenderRequest(m_ui->GetViewportRenderRequest());
 	return true;
 }
 

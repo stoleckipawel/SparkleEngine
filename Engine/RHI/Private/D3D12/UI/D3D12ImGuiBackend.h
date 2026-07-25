@@ -6,6 +6,7 @@
 #include <d3d12.h>
 
 struct ImDrawData;
+struct ImGuiContext;
 struct ImGui_ImplDX12_InitInfo;
 
 class D3D12RenderHardwareInterface;
@@ -17,6 +18,8 @@ class D3D12ImGuiBackend final : public RhiImGuiRenderer
 
 	bool Initialize() override;
 	void BeginFrame() noexcept override;
+	void PrepareResources() noexcept override;
+	std::uint64_t GetFontTextureId() const noexcept override;
 	std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	void RenderDrawData(ImDrawData* drawData) noexcept override;
 	void Render(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept;
@@ -37,6 +40,11 @@ class D3D12ImGuiBackend final : public RhiImGuiRenderer
 	static ID3D12GraphicsCommandList* ToD3D12GraphicsCommandList(NativeGraphicsCommandListHandle handle) noexcept;
 	static D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept;
 	static D3D12_GPU_DESCRIPTOR_HANDLE ToD3D12GpuDescriptor(RhiGpuDescriptorHandle handle) noexcept;
+	ImGuiContext* ActivateContext() const noexcept;
+	static void RestoreContext(ImGuiContext* context) noexcept;
 
 	D3D12RenderHardwareInterface* m_renderHardware = nullptr;
+	ImGuiContext* m_imguiContext = nullptr;
+	bool m_ownsContext = false;
+	bool m_resourcesPrepared = false;
 };

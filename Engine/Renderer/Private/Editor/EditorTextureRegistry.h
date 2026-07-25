@@ -8,14 +8,16 @@
 class EditorTextureRegistry final
 {
   public:
+	void PublishFontTexture(std::uint64_t nativeTextureId) noexcept;
 	EditorTextureHandle PublishViewportTexture(
 	    std::uint64_t nativeTextureId,
 	    std::uint64_t viewportGeneration) noexcept;
 	EditorTextureHandle Register(std::uint64_t nativeTextureId) noexcept;
-	std::uint64_t Resolve(std::uint64_t packedHandle) const noexcept;
+	std::uint64_t Resolve(EditorTextureHandle handle) const noexcept;
 	void RetireViewportTexture() noexcept;
 
   private:
+	std::uint64_t m_fontNativeTextureId = 0;
 	EditorTextureHandle m_viewportHandle;
 	std::uint64_t m_viewportNativeTextureId = 0;
 	struct Binding final

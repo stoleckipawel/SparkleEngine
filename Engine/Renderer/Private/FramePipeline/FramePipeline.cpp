@@ -29,6 +29,7 @@
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
+#include "RHI/Public/UI/RhiImGuiRenderer.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/RenderWorld.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
@@ -40,7 +41,11 @@
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
-FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&systems)
+FramePipeline::FramePipeline(
+    RendererSystemRoot& systems,
+    bool enableEditorRenderPackets) noexcept :
+	m_systems(&systems),
+	m_ownsEditorUiBackend(enableEditorRenderPackets)
 {
 	m_windowExtent = {
 	    static_cast<std::uint32_t>(systems.GetWindow().GetWidth()),
@@ -50,6 +55,10 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&
 	    systems.GetMaterialCacheManager(), systems.GetRenderRayTracingScene());
 	m_editorRenderPacketPlayer = std::make_unique<EditorRenderPacketPlayer>();
 	m_editorTextureRegistry = std::make_unique<EditorTextureRegistry>();
+	if (m_ownsEditorUiBackend)
+	{
+		(void) m_systems->GetImGuiRenderer().Initialize();
+	}
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
 	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
 	RenderDiagnostics& backendDiagnostics = m_systems->GetRenderHardwareInterface().GetDiagnostics();
@@ -76,11 +85,26 @@ void FramePipeline::FinalizeRenderInputMetadata(RenderInputFrame& input) const n
 	input.Dynamic.Metadata.OutputHeight = resolution.Output.Height;
 }
 
-FramePipeline::~FramePipeline() noexcept = default;
-
-std::uint64_t FramePipeline::RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept
+FramePipeline::~FramePipeline() noexcept
 {
-	return m_editorTextureRegistry->Register(nativeTextureId).Pack();
+	if (m_ownsEditorUiBackend)
+	{
+		m_systems->GetImGuiRenderer().Shutdown();
+	}
+}
+
+EditorTextureHandle FramePipeline::RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept
+{
+	return m_editorTextureRegistry->Register(nativeTextureId);
+}
+
+TextureDiagnosticsSnapshot FramePipeline::CaptureTextureDiagnostics()
+{
+	return m_systems->CaptureTextureDiagnostics(
+	    [this](std::uint64_t nativeTextureId)
+	    {
+		    return m_editorTextureRegistry->Register(nativeTextureId);
+	    });
 }
 
 void FramePipeline::RequestResize(RenderViewportExtent extent, bool minimized) noexcept
@@ -110,8 +134,7 @@ void FramePipeline::OnRender(
 	BeginFrame();
 	SetupFrame(timing);
 	RecordFrame();
-	RefreshViewportEditorTexture();
-	RenderEditorUi(editorUi);
+	RenderEditorPacket(editorUi);
 	SubmitFrame();
 	EndFrame();
 }
@@ -202,6 +225,7 @@ void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
 void FramePipeline::BeginFrame() noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
+	PollViewportCaptures();
 	(void) m_renderInputConsumer->ConsumePending();
 
 	if (m_bResizePending)
@@ -329,43 +353,46 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	}
 }
 
-void FramePipeline::RefreshViewportEditorTexture() noexcept
+void FramePipeline::PublishViewportEditorTexture(
+    const ViewportPresentationProduct& presentation) noexcept
+{
+	RenderProduct product = presentation.Product;
+	product.EditorTexture = m_editorTextureRegistry->PublishViewportTexture(
+	    presentation.TextureId,
+	    m_viewportRenderProducts.GetGeneration());
+	m_viewportRenderProducts.SetProduct(RenderOutputFlags::SceneColor, product);
+}
+
+void FramePipeline::RenderEditorPacket(const EditorRenderPacket& packet) noexcept
 {
 	const ViewportPresentationProduct presentation =
 	    BeginViewportPresentation(RenderOutputFlags::SceneColor);
 	if (!presentation)
 	{
+		m_editorTextureRegistry->RetireViewportTexture();
 		return;
 	}
 
-	RenderProduct product = presentation.Product;
-	product.EditorTextureHandle = m_editorTextureRegistry
-	                                  ->PublishViewportTexture(
-	                                      presentation.TextureId,
-	                                      m_viewportRenderProducts.GetGeneration())
-	                                  .Pack();
-	m_viewportRenderProducts.SetProduct(RenderOutputFlags::SceneColor, product);
-	EndViewportPresentation(RenderOutputFlags::SceneColor);
-}
-
-void FramePipeline::RenderEditorUi(const EditorRenderPacket& packet) noexcept
-{
+	PublishViewportEditorTexture(presentation);
 	if (!packet.HasDrawData() ||
 	    packet.ViewportGeneration != m_viewportRenderProducts.GetGeneration())
 	{
+		EndViewportPresentation(RenderOutputFlags::SceneColor);
 		return;
 	}
 
-	(void) BeginViewportPresentation(RenderOutputFlags::SceneColor);
 	constexpr float clearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
-	RhiPresentationService& presentation =
+	RhiPresentationService& hostPresentation =
 	    m_systems->GetRenderHardwareInterface().GetPresentationService();
-	presentation.BeginPresentRenderPass(clearColor);
+	hostPresentation.BeginPresentRenderPass(clearColor);
+	RhiImGuiRenderer& imguiRenderer = m_systems->GetImGuiRenderer();
+	imguiRenderer.PrepareResources();
+	m_editorTextureRegistry->PublishFontTexture(imguiRenderer.GetFontTextureId());
 	m_editorRenderPacketPlayer->Render(
 	    packet,
 	    *m_editorTextureRegistry,
-	    m_systems->GetImGuiRenderer());
-	presentation.EndPresentRenderPass();
+	    imguiRenderer);
+	hostPresentation.EndPresentRenderPass();
 	EndViewportPresentation(RenderOutputFlags::SceneColor);
 }
 

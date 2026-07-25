@@ -17,8 +17,7 @@ using RenderControlResult = std::variant<
     MeshDiagnosticsSnapshot,
     MeshPreviewGeometry,
     TextureDiagnosticsSnapshot,
-    RendererMemoryDiagnosticsSnapshot,
-    ViewportCaptureResult>;
+    RendererMemoryDiagnosticsSnapshot>;
 
 class RenderControlCompletion final
 {

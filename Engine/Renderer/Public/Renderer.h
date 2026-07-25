@@ -10,6 +10,7 @@
 #include "Rendering/RenderInputFrame.h"
 #include "Concurrency/RendererExecutionConfig.h"
 #include "Editor/EditorRenderPacket.h"
+#include "Settings/EngineRenderingSettings.h"
 #include "RendererSerialUiCallback.h"
 
 #include <cstdint>
@@ -34,9 +35,10 @@ class SPARKLE_RENDERER_API Renderer final
 	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
 	void SubmitRenderInput(RenderInputFrame input) noexcept;
 	void SubmitEditorRenderPacket(EditorRenderPacket packet) noexcept;
+	void SubmitRenderingSettings(EngineRenderingSettingsState settings) noexcept;
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
-	std::uint64_t RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept;
+	EditorTextureHandle RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept;
 
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
@@ -52,7 +54,8 @@ class SPARKLE_RENDERER_API Renderer final
 	void EndHostPresentation() noexcept;
 	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
 	void EndViewportPresentation(RenderOutputFlags output) noexcept;
-	ViewportCaptureResult CaptureViewportProductToBmp(const ViewportCaptureRequest& request) noexcept;
+	ViewportCaptureId RequestViewportCapture(ViewportCaptureRequest request) noexcept;
+	bool TryTakeViewportCapture(ViewportCaptureReadback& readback) noexcept;
 
 	void OnRender() noexcept;
 
