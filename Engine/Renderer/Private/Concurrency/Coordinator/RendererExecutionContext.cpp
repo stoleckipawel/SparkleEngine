@@ -27,7 +27,7 @@ void RendererExecutionContext::ExecuteFrame(RenderFramePacket packet) noexcept
 {
 	m_owner.AssertAccess();
 	m_pipeline->SubmitRenderInput(std::move(packet.Input));
-	m_pipeline->OnRender(packet.Timing);
+	m_pipeline->OnRender(packet.Timing, packet.EditorUi);
 }
 
 void RendererExecutionContext::ExecuteControl(const RenderControlPayload& payload) noexcept

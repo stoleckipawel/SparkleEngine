@@ -1,0 +1,89 @@
+#include "PCH.h"
+#include "Rendering/EditorRenderPacketBuilder.h"
+
+#include <imgui.h>
+
+EditorRenderPacketBuilder::EditorRenderPacketBuilder(
+    std::function<std::uint64_t(std::uint64_t)> registerTexture) :
+	m_registerTexture(std::move(registerTexture))
+{
+}
+
+EditorRenderPacket EditorRenderPacketBuilder::Build(
+    const ImDrawData& drawData,
+    std::uint64_t viewportGeneration)
+{
+	m_packet = {};
+	m_packet.UiFrameId = ImGui::GetFrameCount();
+	m_packet.ViewportGeneration = viewportGeneration;
+	m_packet.DisplayPosition[0] = drawData.DisplayPos.x;
+	m_packet.DisplayPosition[1] = drawData.DisplayPos.y;
+	m_packet.DisplaySize[0] = drawData.DisplaySize.x;
+	m_packet.DisplaySize[1] = drawData.DisplaySize.y;
+	m_packet.FramebufferScale[0] = drawData.FramebufferScale.x;
+	m_packet.FramebufferScale[1] = drawData.FramebufferScale.y;
+	Reserve(drawData);
+
+	for (const ImDrawList* drawList : drawData.CmdLists)
+	{
+		if (drawList != nullptr)
+		{
+			AppendDrawList(*drawList);
+		}
+	}
+	return std::move(m_packet);
+}
+
+void EditorRenderPacketBuilder::Reserve(const ImDrawData& drawData)
+{
+	m_packet.Vertices.reserve(drawData.TotalVtxCount);
+	m_packet.Indices.reserve(drawData.TotalIdxCount);
+	m_packet.DrawLists.reserve(drawData.CmdListsCount);
+	std::size_t commandCount = 0;
+	for (const ImDrawList* drawList : drawData.CmdLists)
+	{
+		if (drawList != nullptr)
+		{
+			commandCount += drawList->CmdBuffer.size();
+		}
+	}
+	m_packet.Commands.reserve(commandCount);
+}
+
+void EditorRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
+{
+	EditorDrawList packetList{
+	    .VertexOffset = static_cast<std::uint32_t>(m_packet.Vertices.size()),
+	    .VertexCount = static_cast<std::uint32_t>(drawList.VtxBuffer.size()),
+	    .IndexOffset = static_cast<std::uint32_t>(m_packet.Indices.size()),
+	    .IndexCount = static_cast<std::uint32_t>(drawList.IdxBuffer.size()),
+	    .CommandOffset = static_cast<std::uint32_t>(m_packet.Commands.size()),
+	    .CommandCount = static_cast<std::uint32_t>(drawList.CmdBuffer.size())};
+
+	for (const ImDrawVert& vertex : drawList.VtxBuffer)
+	{
+		m_packet.Vertices.push_back(EditorDrawVertex{
+		    .Position = {vertex.pos.x, vertex.pos.y},
+		    .Uv = {vertex.uv.x, vertex.uv.y},
+		    .Color = vertex.col});
+	}
+	for (ImDrawIdx index : drawList.IdxBuffer)
+	{
+		m_packet.Indices.push_back(index);
+	}
+	for (const ImDrawCmd& command : drawList.CmdBuffer)
+	{
+		const std::uint64_t nativeTextureId =
+		    static_cast<std::uint64_t>(command.GetTexID());
+		m_packet.Commands.push_back(EditorDrawCommand{
+		    .ClipRect = {command.ClipRect.x, command.ClipRect.y, command.ClipRect.z, command.ClipRect.w},
+		    .TextureHandle = m_registerTexture ? m_registerTexture(nativeTextureId) : 0,
+		    .ElementCount = command.ElemCount,
+		    .IndexOffset = command.IdxOffset,
+		    .VertexOffset = static_cast<std::int32_t>(command.VtxOffset),
+		    .Kind = command.UserCallback == ImDrawCallback_ResetRenderState
+		                ? EditorDrawCommandKind::ResetRenderState
+		                : EditorDrawCommandKind::Draw});
+	}
+	m_packet.DrawLists.push_back(packetList);
+}

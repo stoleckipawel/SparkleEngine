@@ -191,6 +191,7 @@ ViewportCaptureResult FramePipeline::CaptureViewportProductToBmp(const ViewportC
 	        .Resource = source.Resource,
 	        .Width = source.Product->Extent.Width,
 	        .Height = source.Product->Extent.Height,
+	        .SourceFormat = m_frameGraph->GetTextureFormat(FrameGraphTextureHandle{source.FrameGraphResource}),
 	        .SourceState = source.SourceState,
 	        .OutputPath = request.OutputPath,
 	        .FrameId = metadata.FrameId,

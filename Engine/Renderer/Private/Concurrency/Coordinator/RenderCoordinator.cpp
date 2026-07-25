@@ -62,6 +62,12 @@ void RenderCoordinator::StageRenderInput(RenderInputFrame input)
 	m_pendingInput = std::move(input);
 }
 
+void RenderCoordinator::StageEditorRenderPacket(EditorRenderPacket packet)
+{
+	m_producerOwner.AssertAccess();
+	m_pendingEditorUi = std::move(packet);
+}
+
 void RenderCoordinator::SubmitViewportRequest(const ViewportRenderRequest& request)
 {
 	m_producerOwner.AssertAccess();
@@ -77,8 +83,12 @@ void RenderCoordinator::RenderFrame()
 	if (!m_pendingInput) return;
 	if (!m_config.IsThreaded())
 	{
-		RenderFramePacket packet{std::move(*m_pendingInput), m_timer->GetTimeInfo()};
+		RenderFramePacket packet{
+		    .Input = std::move(*m_pendingInput),
+		    .Timing = m_timer->GetTimeInfo(),
+		    .EditorUi = m_pendingEditorUi ? std::move(*m_pendingEditorUi) : EditorRenderPacket{}};
 		m_pendingInput.reset();
+		m_pendingEditorUi.reset();
 		GetSerialContext().ExecuteFrame(std::move(packet));
 		PublishReadState();
 		return;
@@ -86,8 +96,12 @@ void RenderCoordinator::RenderFrame()
 
 	const std::optional<RenderFrameQueueTicket> ticket = m_frameQueue->Acquire();
 	if (!ticket) return;
-	RenderFramePacket packet{std::move(*m_pendingInput), m_timer->GetTimeInfo()};
+	RenderFramePacket packet{
+	    .Input = std::move(*m_pendingInput),
+	    .Timing = m_timer->GetTimeInfo(),
+	    .EditorUi = m_pendingEditorUi ? std::move(*m_pendingEditorUi) : EditorRenderPacket{}};
 	m_pendingInput.reset();
+	m_pendingEditorUi.reset();
 	if (!m_frameQueue->Publish(*ticket, std::move(packet)))
 	{
 		(void) m_frameQueue->Cancel(*ticket);
@@ -102,7 +116,9 @@ void RenderCoordinator::RenderFrame()
 		(void) m_frameQueue->WaitUntilReusable(*ticket);
 }
 
-void RenderCoordinator::RenderSerialUiFrame(RendererSerialUiCallback composeUi, void* context)
+void RenderCoordinator::RenderSerialUiFrame(
+    RendererSerialUiCallback composeUi,
+    void* context)
 {
 	m_producerOwner.AssertAccess();
 	StageInputInSerialContext();
@@ -116,6 +132,12 @@ ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 	if (!m_config.IsThreaded()) return GetSerialContext().GetPipeline().GetViewportRenderProducts();
 	std::lock_guard lock(m_readStateMutex);
 	return m_publishedViewportProducts;
+}
+
+std::uint64_t RenderCoordinator::RegisterEditorTexture(std::uint64_t nativeTextureId)
+{
+	m_producerOwner.AssertAccess();
+	return GetSerialContext().GetPipeline().RegisterEditorTexture(nativeTextureId);
 }
 
 RhiImGuiRenderer& RenderCoordinator::GetSerialImGuiRenderer()

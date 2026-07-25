@@ -114,6 +114,7 @@ struct RenderProduct
 	RenderProductHandle Handle = {};
 	RenderViewportExtent Extent = {};
 	RenderProductFormat Format = RenderProductFormat::Unknown;
+	std::uint64_t EditorTextureHandle = 0;
 };
 
 enum class ViewportPresentationStatus : std::uint8_t
@@ -173,6 +174,7 @@ struct SPARKLE_RENDERER_API ViewportCaptureResult
 struct SPARKLE_RENDERER_API ViewportRenderRequest
 {
 	std::uint64_t ViewportId = 0;
+	std::uint64_t Generation = 0;
 	RenderViewKind ViewKind = RenderViewKind::Game;
 	RenderViewportExtent Extent = {};
 	RenderViewSelectionToken ViewSelection = {};
@@ -182,6 +184,7 @@ struct SPARKLE_RENDERER_API ViewportRenderRequest
 
 struct SPARKLE_RENDERER_API ViewportRenderProducts
 {
+	std::uint64_t GetGeneration() const noexcept { return m_generation; }
 	RenderOutputFlags GetAvailableOutputs() const noexcept { return m_availableOutputs; }
 	bool HasOutput(RenderOutputFlags output) const noexcept { return HasAnyRenderOutputFlags(m_availableOutputs, output); }
 
@@ -206,6 +209,8 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 		m_normals = {};
 		m_overlayMask = {};
 	}
+
+	void SetGeneration(std::uint64_t generation) noexcept { m_generation = generation; }
 
 	void ClearProduct(RenderOutputFlags output) noexcept
 	{
@@ -286,6 +291,7 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 	}
 
 	RenderOutputFlags m_availableOutputs = RenderOutputFlags::None;
+	std::uint64_t m_generation = 0;
 	RenderProduct m_sceneColor = {};
 	RenderProduct m_sceneDepth = {};
 	RenderProduct m_objectId = {};

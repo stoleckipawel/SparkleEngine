@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/RhiBackendApi.h"
+#include "../Formats/PixelFormat.h"
 #include "../Interop/ResourceState.h"
 #include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
@@ -20,6 +21,7 @@ struct RhiTextureCaptureRequest final
 	RhiResourceHandle Resource = {};
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
+	PixelFormat SourceFormat = PixelFormat::Unknown;
 	ResourceState SourceState = ResourceState::Common;
 	std::filesystem::path OutputPath;
 	std::uint64_t FrameId = 0;

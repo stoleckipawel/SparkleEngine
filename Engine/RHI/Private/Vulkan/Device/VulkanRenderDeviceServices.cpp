@@ -241,6 +241,7 @@ void VulkanRenderDeviceServices::SubmitFrame() noexcept
 	const VkSemaphore renderFinishedSemaphore = m_swapChain->GetCurrentRenderFinishedSemaphore();
 	RenderCommandList& graphicsCommandList = GetCurrentGraphicsCommandList();
 	auto& vulkanCommandList = static_cast<VulkanRenderCommandList&>(graphicsCommandList);
+	m_renderHardwareInterface->PrepareCurrentBackBufferForPresentation(vulkanCommandList);
 	RhiSubmissionState waits = m_pendingQueueWaits[RhiQueueTypeToIndex(ERhiQueueType::Graphics)];
 	m_pendingQueueWaits[RhiQueueTypeToIndex(ERhiQueueType::Graphics)].Clear();
 	for (const ERhiQueueType queueType : {ERhiQueueType::Compute, ERhiQueueType::Copy})

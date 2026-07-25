@@ -31,6 +31,7 @@ ViewportPanel::ViewportPanel(float leftInsetPixels, float rightInsetPixels) noex
     m_leftInsetPixels(leftInsetPixels), m_rightInsetPixels(rightInsetPixels)
 {
 	m_renderRequest.ViewportId = 1;
+	m_renderRequest.Generation = 1;
 	m_renderRequest.ViewKind = RenderViewKind::Game;
 	m_renderRequest.RequestedOutputs = RenderOutputFlags::SceneColor | RenderOutputFlags::SceneDepth;
 	m_renderRequest.Extent = RenderViewportExtent{1280u, 720u};
@@ -56,7 +57,11 @@ void ViewportPanel::SetRequestedExtent(RenderViewportExtent extent) noexcept
 {
 	if (extent.IsValid())
 	{
-		m_renderRequest.Extent = extent;
+		if (!(m_renderRequest.Extent == extent))
+		{
+			m_renderRequest.Extent = extent;
+			++m_renderRequest.Generation;
+		}
 	}
 }
 
@@ -93,7 +98,8 @@ void ViewportPanel::UpdateRequestedExtent(float availableWidth, float availableH
 {
 	const float clampedWidth = (std::max) (ViewportPanelOperations::MinimumViewportExtent, availableWidth);
 	const float clampedHeight = (std::max) (ViewportPanelOperations::MinimumViewportExtent, availableHeight);
-	m_renderRequest.Extent = RenderViewportExtent{static_cast<std::uint32_t>(clampedWidth), static_cast<std::uint32_t>(clampedHeight)};
+	SetRequestedExtent(
+	    RenderViewportExtent{static_cast<std::uint32_t>(clampedWidth), static_cast<std::uint32_t>(clampedHeight)});
 }
 
 void ViewportPanel::BuildEmptyState() noexcept

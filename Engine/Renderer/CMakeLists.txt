@@ -185,6 +185,7 @@ target_link_libraries(SparkleRenderer
         SparklePlatform
         SparkleGameFramework
         SparkleRendererNvidiaStreamlineProviders
+        imgui
 )
 
 if(SPARKLE_BUILD_SHARED)

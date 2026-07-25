@@ -33,6 +33,11 @@ ViewportRenderProducts Renderer::GetViewportRenderProducts() const
 	return m_state->Coordinator.GetViewportRenderProducts();
 }
 
+std::uint64_t Renderer::RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept
+{
+	return m_state->Coordinator.RegisterEditorTexture(nativeTextureId);
+}
+
 RhiImGuiRenderer& Renderer::GetImGuiRenderer() noexcept
 {
 	return m_state->Coordinator.GetSerialImGuiRenderer();
@@ -76,6 +81,11 @@ MeshPreviewGeometry Renderer::CaptureMeshPreview(std::uintptr_t meshRuntimeId) c
 void Renderer::SubmitRenderInput(RenderInputFrame input) noexcept
 {
 	m_state->Coordinator.StageRenderInput(std::move(input));
+}
+
+void Renderer::SubmitEditorRenderPacket(EditorRenderPacket packet) noexcept
+{
+	m_state->Coordinator.StageEditorRenderPacket(std::move(packet));
 }
 
 void Renderer::WaitForIdle() noexcept

@@ -9,6 +9,7 @@
 #include "Viewport/ViewportContracts.h"
 #include "Rendering/RenderInputFrame.h"
 #include "Concurrency/RendererExecutionConfig.h"
+#include "Editor/EditorRenderPacket.h"
 #include "RendererSerialUiCallback.h"
 
 #include <cstdint>
@@ -32,8 +33,10 @@ class SPARKLE_RENDERER_API Renderer final
 
 	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
 	void SubmitRenderInput(RenderInputFrame input) noexcept;
+	void SubmitEditorRenderPacket(EditorRenderPacket packet) noexcept;
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
+	std::uint64_t RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept;
 
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;

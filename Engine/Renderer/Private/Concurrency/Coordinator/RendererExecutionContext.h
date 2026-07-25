@@ -21,7 +21,6 @@ class RendererExecutionContext final
 
 	void ExecuteFrame(RenderFramePacket packet) noexcept;
 	void ExecuteControl(const RenderControlPayload& payload) noexcept;
-
 	void StageSerialInput(RenderInputFrame input) noexcept;
 	void RenderSerialUiFrame(
 	    const TimeInfo& timing,

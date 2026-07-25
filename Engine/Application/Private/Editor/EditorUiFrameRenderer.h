@@ -11,7 +11,4 @@ class EditorUiFrameRenderer final
 
   private:
 	EditorUiFrameRenderer() = delete;
-
-	struct Context;
-	static void Compose(void* opaqueContext) noexcept;
 };

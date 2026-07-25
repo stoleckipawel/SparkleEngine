@@ -8,6 +8,36 @@
 class VulkanCaptureServiceOperations final
 {
   public:
+	static bool ResolveCaptureFormat(
+	    PixelFormat pixelFormat,
+	    RhiBmpSourceFormat& captureFormat,
+	    std::uint32_t& bytesPerPixel) noexcept
+	{
+		switch (pixelFormat)
+		{
+			case PixelFormat::R32G32B32A32_Float:
+				captureFormat = RhiBmpSourceFormat::Rgba32Float;
+				bytesPerPixel = 16;
+				return true;
+			case PixelFormat::R16G16B16A16_Float:
+				captureFormat = RhiBmpSourceFormat::Rgba16Float;
+				bytesPerPixel = 8;
+				return true;
+			case PixelFormat::R8G8B8A8_UNorm:
+			case PixelFormat::R8G8B8A8_UNorm_Srgb:
+				captureFormat = RhiBmpSourceFormat::Rgba8Unorm;
+				bytesPerPixel = 4;
+				return true;
+			case PixelFormat::B8G8R8A8_UNorm:
+			case PixelFormat::B8G8R8A8_UNorm_Srgb:
+				captureFormat = RhiBmpSourceFormat::Bgra8Unorm;
+				bytesPerPixel = 4;
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	static std::uint32_t FindVulkanMemoryType(
 	    VkPhysicalDevice physicalDevice,
 	    std::uint32_t typeBits,
@@ -76,7 +106,13 @@ VulkanCaptureService::VulkanCaptureService(VulkanRhi& rhi) noexcept : m_rhi(&rhi
 
 RhiCaptureResult VulkanCaptureService::CaptureTextureToBmp(const RhiTextureCaptureRequest& request) noexcept
 {
-	const bool captured = CaptureNativeTextureToBmp(request.Resource, request.Width, request.Height, request.SourceState, request.OutputPath);
+	const bool captured = CaptureNativeTextureToBmp(
+	    request.Resource,
+	    request.Width,
+	    request.Height,
+	    request.SourceFormat,
+	    request.SourceState,
+	    request.OutputPath);
 	return RhiCaptureResult{
 	    .Status = captured ? ERhiCaptureStatus::Succeeded : ERhiCaptureStatus::Failed,
 	    .BackendApi = ERhiBackendApi::Vulkan,
@@ -91,6 +127,7 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
     RhiResourceHandle resource,
     std::uint32_t width,
     std::uint32_t height,
+    PixelFormat sourceFormat,
     ResourceState sourceState,
     const std::filesystem::path& outputPath) noexcept
 {
@@ -108,7 +145,12 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
 		return false;
 	}
 
-	const VkDeviceSize bytesPerPixel = sizeof(float) * 4u;
+	RhiBmpSourceFormat captureFormat = RhiBmpSourceFormat::Rgba8Unorm;
+	std::uint32_t bytesPerPixel = 0;
+	if (!VulkanCaptureServiceOperations::ResolveCaptureFormat(sourceFormat, captureFormat, bytesPerPixel))
+	{
+		return false;
+	}
 	const VkDeviceSize readbackSize = static_cast<VkDeviceSize>(width) * height * bytesPerPixel;
 	const VkBufferCreateInfo bufferInfo{
 	    .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -237,8 +279,8 @@ bool VulkanCaptureService::CaptureNativeTextureToBmp(
 	                                  static_cast<const std::byte*>(mappedData),
 	                                  width,
 	                                  height,
-	                                  width * static_cast<std::uint32_t>(bytesPerPixel),
-	                                  RhiBmpSourceFormat::Rgba32Float)
+	                                  width * bytesPerPixel,
+	                                  captureFormat)
 	                            : false;
 	if (mapped)
 	{

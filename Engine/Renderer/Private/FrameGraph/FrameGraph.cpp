@@ -77,6 +77,16 @@ void FrameGraph::ExportTexture(FrameGraphTextureHandle handle, std::string_view 
 	        .name = std::string(name)});
 }
 
+PixelFormat FrameGraph::GetTextureFormat(FrameGraphTextureHandle handle) const noexcept
+{
+	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
+	if (!resourceHandle.IsValid() || !m_resourceRegistry.IsRegistered(resourceHandle))
+	{
+		return PixelFormat::Unknown;
+	}
+	return m_resourceRegistry.GetMetadata(resourceHandle).textureDesc.format;
+}
+
 ResourceState FrameGraph::GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept
 {
 	if (!handle.IsValid() || !m_resourceRegistry.IsRegistered(handle))

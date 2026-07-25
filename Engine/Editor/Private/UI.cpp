@@ -21,6 +21,7 @@
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/Model/EditorSceneModelBuilder.h"
 #include "Scene/Transactions/EditorTransactionManager.h"
+#include "Rendering/EditorRenderPacketBuilder.h"
 
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
 
@@ -56,6 +57,7 @@ const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
 
 void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept
 {
+	m_viewportGeneration = products.GetGeneration();
 	if (m_viewportPanel)
 	{
 		m_viewportPanel->SetRenderProducts(products);
@@ -130,6 +132,8 @@ UI::UI(EditorHostServices hostServices) :
 	    .WorldGeneration = std::move(hostServices.WorldGeneration),
 	    .MaterialVariants = std::move(hostServices.MaterialVariants)});
 	m_transactions = std::make_unique<EditorTransactionManager>(std::move(hostServices.SubmitWorldEdit));
+	m_renderPacketBuilder =
+	    std::make_unique<EditorRenderPacketBuilder>(std::move(hostServices.RegisterEditorTexture));
 	InitializeImGuiContext();
 	SetupDPIScaling();
 
@@ -407,6 +411,11 @@ void UI::BuildCenterWorkspace(bool disableInteraction, float mainMenuBarHeight)
 	}
 }
 
+EditorRenderPacket UI::ConsumeRenderPacket()
+{
+	return std::move(m_renderPacket);
+}
+
 void UI::BuildViewport(
     bool disableInteraction,
     float topInset,
@@ -485,16 +494,10 @@ void UI::Update()
 
 	NewFrame();
 	Build();
-}
-
-void UI::Render() noexcept
-{
-	if (!IsReady() || m_imguiRenderer == nullptr)
+	if (m_renderPacketBuilder != nullptr && ImGui::GetDrawData() != nullptr)
 	{
-		return;
+		m_renderPacket = m_renderPacketBuilder->Build(*ImGui::GetDrawData(), m_viewportGeneration);
 	}
-
-	m_imguiRenderer->RenderDrawData(ImGui::GetDrawData());
 }
 
 UI::~UI() noexcept

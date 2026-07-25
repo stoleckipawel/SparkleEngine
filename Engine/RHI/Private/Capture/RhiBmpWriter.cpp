@@ -1,5 +1,7 @@
 #include "Capture/RhiBmpWriter.h"
 
+#include <DirectXPackedVector.h>
+
 #include <algorithm>
 #include <fstream>
 #include <vector>
@@ -60,6 +62,15 @@ class RhiBmpWriterImplementation final
 			outputPixel[3] = ToByte(rgba[3]);
 			return true;
 		}
+		case RhiBmpSourceFormat::Rgba16Float:
+		{
+			const std::uint16_t* rgba = reinterpret_cast<const std::uint16_t*>(sourcePixel);
+			outputPixel[0] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[2]));
+			outputPixel[1] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[1]));
+			outputPixel[2] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[0]));
+			outputPixel[3] = ToByte(DirectX::PackedVector::XMConvertHalfToFloat(rgba[3]));
+			return true;
+		}
 		case RhiBmpSourceFormat::Rgba8Unorm:
 			outputPixel[0] = sourcePixel[2];
 			outputPixel[1] = sourcePixel[1];
@@ -79,7 +90,17 @@ class RhiBmpWriterImplementation final
 
 	static std::uint32_t GetSourcePixelStride(RhiBmpSourceFormat sourceFormat) noexcept
 	{
-		return sourceFormat == RhiBmpSourceFormat::Rgba32Float ? 16u : 4u;
+		switch (sourceFormat)
+		{
+			case RhiBmpSourceFormat::Rgba32Float:
+				return 16u;
+			case RhiBmpSourceFormat::Rgba16Float:
+				return 8u;
+			case RhiBmpSourceFormat::Rgba8Unorm:
+			case RhiBmpSourceFormat::Bgra8Unorm:
+			default:
+				return 4u;
+		}
 	}
 };
 

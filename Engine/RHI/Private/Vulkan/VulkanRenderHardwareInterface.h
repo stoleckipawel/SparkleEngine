@@ -10,6 +10,7 @@
 class VulkanCommandContext;
 class VulkanUploadService;
 class VulkanCaptureService;
+class VulkanRenderCommandList;
 class VulkanDescriptorManager;
 class VulkanGpuMemoryAllocator;
 class VulkanImGuiBackend;
@@ -17,7 +18,7 @@ class VulkanInteropService;
 class VulkanPipelineService;
 class VulkanPresentationService;
 class VulkanRayTracingServices;
-class VulkanRenderCommandList;
+class VulkanRenderDeviceServices;
 class VulkanResourceService;
 class VulkanRhi;
 class VulkanSamplerLibrary;
@@ -100,12 +101,14 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 
   private:
 	friend class VulkanInteropService;
+	friend class VulkanRenderDeviceServices;
 
 	RhiCapabilities BuildCapabilities() const noexcept;
 	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
 	RhiResourceViewHandle GetCurrentBackBufferViewHandle() const noexcept;
 	void BeginCurrentBackBufferRendering(const float* clearColor, bool clear) noexcept;
 	void EndCurrentBackBufferRendering() noexcept;
+	void PrepareCurrentBackBufferForPresentation(VulkanRenderCommandList& commandList) noexcept;
 	void TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, ResourceState newState) noexcept;
 
 	std::unique_ptr<VulkanInteropService> m_interopService;

@@ -35,12 +35,13 @@ class RenderCoordinator final
 	RenderCoordinator& operator=(const RenderCoordinator&) = delete;
 
 	void StageRenderInput(RenderInputFrame input);
+	void StageEditorRenderPacket(EditorRenderPacket packet);
 	void SubmitViewportRequest(const ViewportRenderRequest& request);
 	void RenderFrame();
-
 	void RenderSerialUiFrame(RendererSerialUiCallback composeUi, void* context);
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
+	std::uint64_t RegisterEditorTexture(std::uint64_t nativeTextureId);
 	RhiImGuiRenderer& GetSerialImGuiRenderer();
 	CookedShaderReloadResult ReloadCookedShaders();
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
@@ -90,6 +91,7 @@ class RenderCoordinator final
 	std::thread m_renderThread;
 	ScopedEventHandle m_resizeHandle;
 	std::optional<RenderInputFrame> m_pendingInput;
+	std::optional<EditorRenderPacket> m_pendingEditorUi;
 	std::uint64_t m_nextControlSequence = 1;
 	std::uint64_t m_lastConsumedControlSequence = 0;
 	mutable std::mutex m_startMutex;

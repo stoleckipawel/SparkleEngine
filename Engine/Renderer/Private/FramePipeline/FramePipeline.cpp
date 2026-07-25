@@ -6,6 +6,8 @@
 #include "Frame/RhiFrameConstants.h"
 #include "Debug/RendererCVars.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
+#include "Editor/EditorRenderPacketPlayer.h"
+#include "Editor/EditorTextureRegistry.h"
 #include "Frame/Builders/BuildFrameContext.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
@@ -26,6 +28,7 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/RenderWorld.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
@@ -45,6 +48,8 @@ FramePipeline::FramePipeline(RendererSystemRoot& systems) noexcept : m_systems(&
 	m_renderInputConsumer = std::make_unique<RenderInputConsumer>(
 	    systems.GetRenderWorld(), systems.GetBackend(), systems.GetGpuMeshCache(), systems.GetTextureManager(),
 	    systems.GetMaterialCacheManager(), systems.GetRenderRayTracingScene());
+	m_editorRenderPacketPlayer = std::make_unique<EditorRenderPacketPlayer>();
+	m_editorTextureRegistry = std::make_unique<EditorTextureRegistry>();
 	m_frameExecutionDiagnostics.resize(RhiFrameConstants::FramesInFlight);
 	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
 	RenderDiagnostics& backendDiagnostics = m_systems->GetRenderHardwareInterface().GetDiagnostics();
@@ -73,6 +78,11 @@ void FramePipeline::FinalizeRenderInputMetadata(RenderInputFrame& input) const n
 
 FramePipeline::~FramePipeline() noexcept = default;
 
+std::uint64_t FramePipeline::RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept
+{
+	return m_editorTextureRegistry->Register(nativeTextureId).Pack();
+}
+
 void FramePipeline::RequestResize(RenderViewportExtent extent, bool minimized) noexcept
 {
 	m_windowExtent = extent;
@@ -93,11 +103,15 @@ void FramePipeline::RenderSerialUiFrame(
 	EndFrame();
 }
 
-void FramePipeline::OnRender(const TimeInfo& timing) noexcept
+void FramePipeline::OnRender(
+    const TimeInfo& timing,
+    const EditorRenderPacket& editorUi) noexcept
 {
 	BeginFrame();
 	SetupFrame(timing);
 	RecordFrame();
+	RefreshViewportEditorTexture();
+	RenderEditorUi(editorUi);
 	SubmitFrame();
 	EndFrame();
 }
@@ -284,12 +298,13 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	        : ResolveFrameResolution();
 
 	m_viewportRenderProducts.Clear();
+	m_viewportRenderProducts.SetGeneration(m_viewportRenderRequest.Generation);
 	m_viewportRenderProducts.SetProduct(
 	    RenderOutputFlags::SceneColor,
 	    RenderProduct{
-	        ToRenderProductHandle(m_frameResources.ViewportProducts.FinalSceneColor),
-	        resolution.Output,
-	        RenderProductFormat::ColorLdr});
+	        .Handle = ToRenderProductHandle(m_frameResources.ViewportProducts.FinalSceneColor),
+	        .Extent = resolution.Output,
+	        .Format = RenderProductFormat::ColorLdr});
 
 	if (m_frameResources.ViewportProducts.SceneDepth.IsValid() &&
 	    HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
@@ -297,9 +312,9 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::SceneDepth,
 		    RenderProduct{
-		        ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth),
-		        resolution.Render,
-		        RenderProductFormat::Float});
+		        .Handle = ToRenderProductHandle(m_frameResources.ViewportProducts.SceneDepth),
+		        .Extent = resolution.Render,
+		        .Format = RenderProductFormat::Float});
 	}
 
 	if (m_frameResources.ViewportProducts.Normals.IsValid() &&
@@ -308,10 +323,50 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::Normals,
 		    RenderProduct{
-		        ToRenderProductHandle(m_frameResources.ViewportProducts.Normals),
-		        resolution.Render,
-		        RenderProductFormat::ColorHdr});
+		        .Handle = ToRenderProductHandle(m_frameResources.ViewportProducts.Normals),
+		        .Extent = resolution.Render,
+		        .Format = RenderProductFormat::ColorHdr});
 	}
+}
+
+void FramePipeline::RefreshViewportEditorTexture() noexcept
+{
+	const ViewportPresentationProduct presentation =
+	    BeginViewportPresentation(RenderOutputFlags::SceneColor);
+	if (!presentation)
+	{
+		return;
+	}
+
+	RenderProduct product = presentation.Product;
+	product.EditorTextureHandle = m_editorTextureRegistry
+	                                  ->PublishViewportTexture(
+	                                      presentation.TextureId,
+	                                      m_viewportRenderProducts.GetGeneration())
+	                                  .Pack();
+	m_viewportRenderProducts.SetProduct(RenderOutputFlags::SceneColor, product);
+	EndViewportPresentation(RenderOutputFlags::SceneColor);
+}
+
+void FramePipeline::RenderEditorUi(const EditorRenderPacket& packet) noexcept
+{
+	if (!packet.HasDrawData() ||
+	    packet.ViewportGeneration != m_viewportRenderProducts.GetGeneration())
+	{
+		return;
+	}
+
+	(void) BeginViewportPresentation(RenderOutputFlags::SceneColor);
+	constexpr float clearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
+	RhiPresentationService& presentation =
+	    m_systems->GetRenderHardwareInterface().GetPresentationService();
+	presentation.BeginPresentRenderPass(clearColor);
+	m_editorRenderPacketPlayer->Render(
+	    packet,
+	    *m_editorTextureRegistry,
+	    m_systems->GetImGuiRenderer());
+	presentation.EndPresentRenderPass();
+	EndViewportPresentation(RenderOutputFlags::SceneColor);
 }
 
 void FramePipeline::RecordFrame() noexcept

@@ -9,6 +9,7 @@
 #include "ShaderData/PerFrameConstantBufferData.h"
 #include "Rendering/RenderInputFrame.h"
 #include "RendererSerialUiCallback.h"
+#include "Renderer/Public/Editor/EditorRenderPacket.h"
 #include "Viewport/ViewportContracts.h"
 
 #include <cstdint>
@@ -18,6 +19,8 @@
 #include <vector>
 
 class FrameExecutionDiagnostics;
+class EditorRenderPacketPlayer;
+class EditorTextureRegistry;
 struct FrameContext;
 class FrameGraph;
 class RendererSystemRoot;
@@ -45,12 +48,13 @@ class FramePipeline final
 	void SubmitRenderInput(RenderInputFrame input) noexcept;
 	void RequestResize(RenderViewportExtent extent, bool minimized) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }
+	std::uint64_t RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept;
 
 	void RenderSerialUiFrame(
 	    const TimeInfo& timing,
 	    RendererSerialUiCallback composeUi,
 	    void* context) noexcept;
-	void OnRender(const TimeInfo& timing) noexcept;
+	void OnRender(const TimeInfo& timing, const EditorRenderPacket& editorUi) noexcept;
 
 	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
 	void EndViewportPresentation(RenderOutputFlags output) noexcept;
@@ -69,6 +73,8 @@ class FramePipeline final
 	void BeginFrame() noexcept;
 	void SetupFrame(const TimeInfo& timing) noexcept;
 	void RefreshViewportRenderProducts() noexcept;
+	void RefreshViewportEditorTexture() noexcept;
+	void RenderEditorUi(const EditorRenderPacket& packet) noexcept;
 	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
@@ -94,6 +100,8 @@ class FramePipeline final
 	std::optional<std::uint64_t> m_previousReferenceLightingHistoryInvalidationHash;
 	std::optional<std::uint64_t> m_previousRestirLightingHistoryInvalidationHash;
 	std::unique_ptr<RenderInputConsumer> m_renderInputConsumer;
+	std::unique_ptr<EditorRenderPacketPlayer> m_editorRenderPacketPlayer;
+	std::unique_ptr<EditorTextureRegistry> m_editorTextureRegistry;
 	bool m_bResizePending = false;
 	bool m_windowMinimized = false;
 	GBufferMode m_gBufferMode = GBufferMode::Rasterized;

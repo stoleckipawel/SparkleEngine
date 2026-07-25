@@ -253,7 +253,10 @@ namespace ECS
 		{
 			if constexpr (QueryAccessTraits<AccessSpec>::Writable)
 			{
-				storage->MarkContentChanged();
+				if (storage != nullptr)
+				{
+					storage->MarkContentChanged();
+				}
 			}
 		}
 

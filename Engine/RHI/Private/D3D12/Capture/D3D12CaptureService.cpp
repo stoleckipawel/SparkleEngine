@@ -17,6 +17,9 @@ class D3D12CaptureServiceOperations final
 		case DXGI_FORMAT_R32G32B32A32_FLOAT:
 			outFormat = RhiBmpSourceFormat::Rgba32Float;
 			return true;
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:
+			outFormat = RhiBmpSourceFormat::Rgba16Float;
+			return true;
 		case DXGI_FORMAT_R8G8B8A8_UNORM:
 		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
 			outFormat = RhiBmpSourceFormat::Rgba8Unorm;

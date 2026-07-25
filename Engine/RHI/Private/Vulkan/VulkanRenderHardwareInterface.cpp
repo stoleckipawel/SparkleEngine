@@ -569,6 +569,36 @@ void VulkanRenderHardwareInterface::EndCurrentBackBufferRendering() noexcept
 	m_isPresentRendering = false;
 }
 
+void VulkanRenderHardwareInterface::PrepareCurrentBackBufferForPresentation(
+    VulkanRenderCommandList& commandList) noexcept
+{
+	if (m_swapChain == nullptr)
+	{
+		return;
+	}
+
+	const RhiResourceHandle backBuffer = m_swapChain->GetCurrentBackBufferResource();
+	const std::span<const RhiResourceHandle> trackedResources = commandList.GetTrackedResources();
+	const bool transitionedByCommandList = std::any_of(
+	    trackedResources.begin(),
+	    trackedResources.end(),
+	    [backBuffer](RhiResourceHandle resource)
+	    {
+		    return resource.Value == backBuffer.Value;
+	    });
+	if (!transitionedByCommandList)
+	{
+		TransitionCurrentBackBuffer(commandList.GetVulkanCommandBuffer(), ResourceState::Present);
+		return;
+	}
+
+	const std::uint32_t backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
+	if (backBufferIndex < m_swapChainBackBufferLayouts.size())
+	{
+		m_swapChainBackBufferLayouts[backBufferIndex] = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	}
+}
+
 void VulkanRenderHardwareInterface::TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, ResourceState newState) noexcept
 {
 	if (m_swapChain == nullptr || commandBuffer == VK_NULL_HANDLE)

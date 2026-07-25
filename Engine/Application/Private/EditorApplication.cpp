@@ -61,6 +61,9 @@ void EditorApplication::Initialize()
 		    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation) {
 			    return world.SubmitEdit(std::move(command), generation);
 		    },
+		    .RegisterEditorTexture = [&renderer](std::uint64_t nativeTextureId) {
+			    return renderer.RegisterEditorTexture(nativeTextureId);
+		    },
 		    .ImGuiRenderer = renderer.GetImGuiRenderer(),
 		    .HostWindow = m_runtimeApplication->GetWindow(),
 		    .Input = m_runtimeApplication->GetInputSystem()});

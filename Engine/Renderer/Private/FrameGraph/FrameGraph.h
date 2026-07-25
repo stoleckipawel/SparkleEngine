@@ -246,6 +246,7 @@ class FrameGraph
 	    ResourceState currentState = ResourceState::Common) noexcept;
 	void ClearPersistentBufferBinding(FrameGraphBufferHandle handle) noexcept;
 	void ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept;
+	PixelFormat GetTextureFormat(FrameGraphTextureHandle handle) const noexcept;
 	ResourceState GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept;
 	void UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(

@@ -4,6 +4,7 @@
 #include "Renderer/Public/Diagnostics/MeshPreviewGeometry.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
+#include "../../Renderer/Public/Editor/EditorRenderPacket.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
@@ -45,6 +46,7 @@ struct EditorHostServices final
 	std::function<std::uint64_t()> WorldGeneration;
 	std::function<WorldMaterialVariantView()> MaterialVariants;
 	std::function<WorldEditResult(WorldEditCommand, std::uint64_t)> SubmitWorldEdit;
+	std::function<std::uint64_t(std::uint64_t)> RegisterEditorTexture;
 	RhiImGuiRenderer& ImGuiRenderer;
 	Window& HostWindow;
 	InputSystem& Input;
@@ -79,10 +81,9 @@ class SPARKLE_EDITOR_API UI final
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
+	EditorRenderPacket ConsumeRenderPacket();
 
 	void Update();
-
-	void Render() noexcept;
 
   private:
 	void NewFrame();
@@ -143,6 +144,9 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<class EditorSceneModelBuilder> m_sceneModelBuilder;
 	std::unique_ptr<class EditorTransactionManager> m_transactions;
 	std::shared_ptr<const class EditorSceneModel> m_sceneModel;
+	std::unique_ptr<class EditorRenderPacketBuilder> m_renderPacketBuilder;
+	EditorRenderPacket m_renderPacket;
+	std::uint64_t m_viewportGeneration = 0;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;
 	bool m_isImGuiContextInitialized = false;

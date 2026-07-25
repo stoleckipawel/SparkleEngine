@@ -17,6 +17,7 @@ class VulkanCaptureService final : public RhiCaptureService
 	    RhiResourceHandle resource,
 	    std::uint32_t width,
 	    std::uint32_t height,
+	    PixelFormat sourceFormat,
 	    ResourceState sourceState,
 	    const std::filesystem::path& outputPath) noexcept;
 
