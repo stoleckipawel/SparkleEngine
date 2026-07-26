@@ -6,55 +6,73 @@
 
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {
-	m_HeapSRV = std::make_unique<D3D12DescriptorHeap>(
+	m_shaderResourceHeap = std::make_unique<D3D12DescriptorHeap>(
 	    *m_rhi,
 	    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 	    D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
 	    L"CBVSRVUAVHeap");
 
-	m_AllocatorSRV = std::make_unique<D3D12DescriptorAllocator>(m_HeapSRV.get());
-	m_HeapResourceViewCopySources = std::make_unique<D3D12DescriptorHeap>(
+	m_shaderResourceAllocator = std::make_unique<D3D12DescriptorAllocator>(m_shaderResourceHeap.get());
+	m_resourceViewCopySourceHeap = std::make_unique<D3D12DescriptorHeap>(
 	    *m_rhi,
 	    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 	    D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
 	    L"ResourceViewCopySourceHeap",
 	    RhiResourceViewHandle::MaximumRecordCount);
-	m_AllocatorResourceViewCopySources = std::make_unique<D3D12DescriptorAllocator>(m_HeapResourceViewCopySources.get());
+	m_resourceViewCopySourceAllocator =
+	    std::make_unique<D3D12DescriptorAllocator>(m_resourceViewCopySourceHeap.get());
 
-	m_HeapSampler = std::make_unique<D3D12DescriptorHeap>(
+	m_samplerHeap = std::make_unique<D3D12DescriptorHeap>(
 	    *m_rhi,
 	    D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
 	    D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
 	    L"SamplerHeap");
 
-	m_AllocatorSampler = std::make_unique<D3D12DescriptorAllocator>(m_HeapSampler.get());
+	m_samplerAllocator = std::make_unique<D3D12DescriptorAllocator>(m_samplerHeap.get());
 
-	m_HeapDepthStencil =
+	m_depthStencilHeap =
 	    std::make_unique<D3D12DescriptorHeap>(*m_rhi, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, L"DepthStencilHeap");
 
-	m_AllocatorDepthStencil = std::make_unique<D3D12DescriptorAllocator>(m_HeapDepthStencil.get());
+	m_depthStencilAllocator = std::make_unique<D3D12DescriptorAllocator>(m_depthStencilHeap.get());
 
-	m_HeapRenderTarget =
+	m_renderTargetHeap =
 	    std::make_unique<D3D12DescriptorHeap>(*m_rhi, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, L"RenderTargetHeap");
 
-	m_AllocatorRenderTarget = std::make_unique<D3D12DescriptorAllocator>(m_HeapRenderTarget.get());
+	m_renderTargetAllocator = std::make_unique<D3D12DescriptorAllocator>(m_renderTargetHeap.get());
 }
 
 D3D12DescriptorHeapManager::~D3D12DescriptorHeapManager() noexcept = default;
 
+void D3D12DescriptorHeapManager::AllocateHandle(
+    D3D12_DESCRIPTOR_HEAP_TYPE type,
+    D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
+    D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle)
+{
+	const D3D12DescriptorHandle handle = GetAllocator(type)->Allocate();
+	cpuHandle = handle.GetCPU();
+	gpuHandle = handle.GetGPU();
+}
+
 D3D12DescriptorHandle D3D12DescriptorHeapManager::AllocateResourceViewCopySource()
 {
-	return m_AllocatorResourceViewCopySources->Allocate();
+	return m_resourceViewCopySourceAllocator->Allocate();
 }
 
 void D3D12DescriptorHeapManager::FreeResourceViewCopySource(const D3D12DescriptorHandle& handle) noexcept
 {
-	m_AllocatorResourceViewCopySources->Free(handle);
+	m_resourceViewCopySourceAllocator->Free(handle);
+}
+
+D3D12DescriptorHandle D3D12DescriptorHeapManager::AllocateContiguous(
+    D3D12_DESCRIPTOR_HEAP_TYPE type,
+    uint32_t count)
+{
+	return GetAllocator(type)->AllocateContiguous(count);
 }
 
 void D3D12DescriptorHeapManager::BindGlobalDescriptorState(D3D12RenderCommandList& commandList) const
 {
-	ID3D12DescriptorHeap* const heaps[] = {m_HeapSRV->GetRaw(), m_HeapSampler->GetRaw()};
+	ID3D12DescriptorHeap* const heaps[] = {m_shaderResourceHeap->GetRaw(), m_samplerHeap->GetRaw()};
 	commandList.SetShaderVisibleDescriptorHeaps(static_cast<std::uint32_t>(_countof(heaps)), heaps);
 }
 
@@ -119,18 +137,26 @@ void D3D12DescriptorHeapManager::FreeContiguous(
 	FreeContiguous(type, heap->GetHandleAt(index), count);
 }
 
+void D3D12DescriptorHeapManager::FreeContiguous(
+    D3D12_DESCRIPTOR_HEAP_TYPE type,
+    const D3D12DescriptorHandle& handle,
+    uint32_t count)
+{
+	GetAllocator(type)->FreeContiguous(handle, count);
+}
+
 D3D12DescriptorHeap* D3D12DescriptorHeapManager::GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept
 {
 	switch (type)
 	{
 		case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
-			return m_HeapSRV.get();
+			return m_shaderResourceHeap.get();
 		case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
-			return m_HeapSampler.get();
+			return m_samplerHeap.get();
 		case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
-			return m_HeapRenderTarget.get();
+			return m_renderTargetHeap.get();
 		case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
-			return m_HeapDepthStencil.get();
+			return m_depthStencilHeap.get();
 		default:
 			return nullptr;
 	}
@@ -141,13 +167,13 @@ D3D12DescriptorAllocator* D3D12DescriptorHeapManager::GetAllocator(D3D12_DESCRIP
 	switch (type)
 	{
 		case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
-			return m_AllocatorSRV.get();
+			return m_shaderResourceAllocator.get();
 		case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
-			return m_AllocatorSampler.get();
+			return m_samplerAllocator.get();
 		case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
-			return m_AllocatorRenderTarget.get();
+			return m_renderTargetAllocator.get();
 		case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
-			return m_AllocatorDepthStencil.get();
+			return m_depthStencilAllocator.get();
 		default:
 			return nullptr;
 	}

@@ -20,29 +20,21 @@ class D3D12DescriptorHeapManager final
 
 	void BindGlobalDescriptorState(D3D12RenderCommandList& commandList) const;
 
-	void AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle)
-	{
-		const D3D12DescriptorHandle handle = GetAllocator(type)->Allocate();
-		cpuHandle = handle.GetCPU();
-		gpuHandle = handle.GetGPU();
-	}
+	void AllocateHandle(
+	    D3D12_DESCRIPTOR_HEAP_TYPE type,
+	    D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
+	    D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
 	void FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 	D3D12DescriptorHandle AllocateResourceViewCopySource();
 	void FreeResourceViewCopySource(const D3D12DescriptorHandle& handle) noexcept;
 
-	D3D12DescriptorHandle AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t count)
-	{
-		return GetAllocator(type)->AllocateContiguous(count);
-	}
+	D3D12DescriptorHandle AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t count);
 	void FreeContiguous(
 	    D3D12_DESCRIPTOR_HEAP_TYPE type,
 	    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
 	    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle,
 	    uint32_t count);
-	void FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, const D3D12DescriptorHandle& handle, uint32_t count)
-	{
-		GetAllocator(type)->FreeContiguous(handle, count);
-	}
+	void FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, const D3D12DescriptorHandle& handle, uint32_t count);
 
 	D3D12DescriptorHeap* GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept;
 	D3D12DescriptorAllocator* GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept;
@@ -50,17 +42,17 @@ class D3D12DescriptorHeapManager final
   private:
 	D3D12Rhi* m_rhi = nullptr;
 
-	std::unique_ptr<D3D12DescriptorHeap> m_HeapSRV;
-	std::unique_ptr<D3D12DescriptorAllocator> m_AllocatorSRV;
-	std::unique_ptr<D3D12DescriptorHeap> m_HeapResourceViewCopySources;
-	std::unique_ptr<D3D12DescriptorAllocator> m_AllocatorResourceViewCopySources;
+	std::unique_ptr<D3D12DescriptorHeap> m_shaderResourceHeap;
+	std::unique_ptr<D3D12DescriptorAllocator> m_shaderResourceAllocator;
+	std::unique_ptr<D3D12DescriptorHeap> m_resourceViewCopySourceHeap;
+	std::unique_ptr<D3D12DescriptorAllocator> m_resourceViewCopySourceAllocator;
 
-	std::unique_ptr<D3D12DescriptorHeap> m_HeapSampler;
-	std::unique_ptr<D3D12DescriptorAllocator> m_AllocatorSampler;
+	std::unique_ptr<D3D12DescriptorHeap> m_samplerHeap;
+	std::unique_ptr<D3D12DescriptorAllocator> m_samplerAllocator;
 
-	std::unique_ptr<D3D12DescriptorHeap> m_HeapDepthStencil;
-	std::unique_ptr<D3D12DescriptorAllocator> m_AllocatorDepthStencil;
+	std::unique_ptr<D3D12DescriptorHeap> m_depthStencilHeap;
+	std::unique_ptr<D3D12DescriptorAllocator> m_depthStencilAllocator;
 
-	std::unique_ptr<D3D12DescriptorHeap> m_HeapRenderTarget;
-	std::unique_ptr<D3D12DescriptorAllocator> m_AllocatorRenderTarget;
+	std::unique_ptr<D3D12DescriptorHeap> m_renderTargetHeap;
+	std::unique_ptr<D3D12DescriptorAllocator> m_renderTargetAllocator;
 };

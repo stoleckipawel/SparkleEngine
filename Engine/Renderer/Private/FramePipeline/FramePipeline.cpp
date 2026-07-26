@@ -15,7 +15,7 @@
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "Frame/Lighting/ReferenceLightingInvalidation.h"
 #include "Frame/Lighting/RestirLightingInvalidation.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
+#include "FrameGraph/Builder/FrameGraphFactory.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Host/RendererSystemRoot.h"
@@ -177,6 +177,7 @@ void FramePipeline::InitializeFrameGraph(FrameResolutionExtents resolution) noex
 {
 	const FrameGraphDependencies dependencies{
 	    m_systems->GetRenderHardwareInterface(),
+	    m_systems->GetPipelineStateManager(),
 	    m_systems->GetWindow(),
 	    resolution.Render,
 	    resolution.Output,
@@ -284,20 +285,36 @@ void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
 
 void FramePipeline::BeginFrame() noexcept
 {
-	RenderDeviceServices& backend = m_systems->GetBackend();
+	PollFrameServices();
+	ConsumeRenderInput();
+	ApplyPendingResize();
+	RefreshGraphForResolutionAndPresentation();
+	RefreshGraphForRenderModes();
+	RefreshGraphForImageProvider();
+	BeginBackendFrame();
+}
+
+void FramePipeline::PollFrameServices() noexcept
+{
 	PollViewportCaptures();
 	PollRetiredFrameExecutions();
 	m_systems->PollRetiredImageProviders();
 	m_systems->GetPipelineStateManager().PollRetiredGenerations();
 	m_systems->GetTextureManager().PollResidency();
-	const RenderInputConsumeResult inputResult =
-	    m_renderInputConsumer->ConsumePending();
+}
+
+void FramePipeline::ConsumeRenderInput() noexcept
+{
+	const RenderInputConsumeResult inputResult = m_renderInputConsumer->ConsumePending();
 	if (inputResult.SceneReset)
 	{
 		m_gpuScene->Reset();
 		m_systems->GetTextureManager().UnloadSceneTextures();
 	}
+}
 
+void FramePipeline::ApplyPendingResize() noexcept
+{
 	if (m_bResizePending)
 	{
 		m_bResizePending = false;
@@ -305,11 +322,14 @@ void FramePipeline::BeginFrame() noexcept
 
 		if (!m_windowMinimized && m_windowExtent.IsValid())
 		{
-			backend.ResizeSwapChain();
+			m_systems->GetBackend().ResizeSwapChain();
 			RebuildFrameExecutionAfterSwapChainDrain(ResolveFrameResolution());
 		}
 	}
+}
 
+void FramePipeline::RefreshGraphForResolutionAndPresentation() noexcept
+{
 	const FrameResolutionExtents frameResolution = ResolveFrameResolution();
 	const bool presentsToBackBuffer = ShouldOutputToBackBuffer();
 	const bool resolutionChanged = frameResolution.Render.Width != m_frameGraphRenderExtent.Width ||
@@ -322,7 +342,10 @@ void FramePipeline::BeginFrame() noexcept
 		ResetTemporalState(presentationChanged ? "Frame presentation mode changed" : "Frame resolution changed");
 		RefreshFrameExecution(frameResolution);
 	}
+}
 
+void FramePipeline::RefreshGraphForRenderModes() noexcept
+{
 	const GBufferMode gBufferMode = CVarGBufferMode.Get();
 	if (gBufferMode != m_gBufferMode)
 	{
@@ -336,7 +359,10 @@ void FramePipeline::BeginFrame() noexcept
 		ResetTemporalState("Lighting mode changed");
 		RefreshFrameExecution(ResolveFrameResolution());
 	}
+}
 
+void FramePipeline::RefreshGraphForImageProvider() noexcept
+{
 	const ImageProviderGraphKey imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	if (imageProviderFrameGraphKey != m_imageProviderFrameGraphKey)
 	{
@@ -345,7 +371,11 @@ void FramePipeline::BeginFrame() noexcept
 		RefreshFrameExecution(ResolveFrameResolution());
 		m_imageProviderFrameGraphKey = imageProviderFrameGraphKey;
 	}
+}
 
+void FramePipeline::BeginBackendFrame() noexcept
+{
+	RenderDeviceServices& backend = m_systems->GetBackend();
 	backend.BeginFrame();
 	m_frameContexts[m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex()].reset();
 	m_systems->TickDiagnostics(m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex());
@@ -359,17 +389,37 @@ void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
 
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	RenderCommandList& graphicsCommandList = backend.GetCurrentGraphicsCommandList();
+	UploadPendingSceneTextures(backend, graphicsCommandList);
+
+	m_systems->GetRenderCamera().Update(m_renderInputConsumer->GetDynamicData().Camera);
+
+	const RenderViewportExtent renderExtent =
+	    m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
+	m_perFrameData = m_perFrameDataBuilder.Build(timing, CVarRenderViewMode.Get(), renderExtent);
+}
+
+void FramePipeline::UploadPendingSceneTextures(
+    RenderDeviceServices& backend,
+    RenderCommandList& graphicsCommandList)
+{
 	TextureManager& textureManager = m_systems->GetTextureManager();
 	const bool useCopyQueue = textureManager.HasPendingSceneTextureUploads(m_systems->GetRenderWorld().GetTextures()) &&
 	                          m_systems->GetRenderHardwareInterface().GetCapabilities().Queues.SupportsIndependent(
 	                              ERhiQueueType::Copy);
-	RenderCommandList& uploadCommandList =
-	    useCopyQueue ? backend.BeginCommandList(ERhiQueueType::Copy) : graphicsCommandList;
-	const std::vector<RhiResourceHandle> uploadedResources =
-	    textureManager.LoadSceneTextures(m_systems->GetRenderWorld().GetTextures(), uploadCommandList);
+
+	RhiCommandRecordingLease uploadLease;
+	RenderCommandList* uploadCommandList = &graphicsCommandList;
 	if (useCopyQueue)
 	{
-		const RhiSubmissionToken uploadToken = backend.SubmitCommandList(uploadCommandList);
+		uploadLease = backend.AcquireCommandRecordingLease(ERhiQueueType::Copy);
+		uploadCommandList = &uploadLease.GetCommandList();
+	}
+
+	const std::vector<RhiResourceHandle> uploadedResources =
+	    textureManager.LoadSceneTextures(m_systems->GetRenderWorld().GetTextures(), *uploadCommandList);
+	if (useCopyQueue)
+	{
+		const RhiSubmissionToken uploadToken = backend.SubmitCommandRecordingLease(std::move(uploadLease));
 		textureManager.RecordUploadSubmission(uploadToken);
 		backend.QueueWait(ERhiQueueType::Graphics, uploadToken);
 		for (const RhiResourceHandle resource : uploadedResources)
@@ -377,11 +427,6 @@ void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
 			graphicsCommandList.TransitionResource(resource, ResourceState::Common, ResourceState::ShaderResource);
 		}
 	}
-	m_systems->GetRenderCamera().Update(m_renderInputConsumer->GetDynamicData().Camera);
-
-	const RenderViewportExtent renderExtent =
-	    m_frameGraphRenderExtent.IsValid() ? m_frameGraphRenderExtent : ResolveFrameResolution().Render;
-	m_perFrameData = m_perFrameDataBuilder.Build(timing, CVarRenderViewMode.Get(), renderExtent);
 }
 
 void FramePipeline::RefreshViewportRenderProducts() noexcept

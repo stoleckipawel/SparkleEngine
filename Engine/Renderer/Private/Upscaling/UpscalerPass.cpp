@@ -28,7 +28,7 @@ void AddUpscalerPass(
 		return;
 	}
 
-	builder.Execute(
+	builder.AddPass(
 	    "Upscaler",
 	    EFrameGraphPassKind::ExternalProvider,
 	    [inputs](PassResourceBuilder& resourceBuilder)

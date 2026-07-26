@@ -3,6 +3,7 @@
 #include "Device/RenderDeviceServices.h"
 #include "Device/RenderDeviceBackendFactory.h"
 #include "Device/RenderDeviceBackendServices.h"
+#include "Device/RenderDeviceServicesState.h"
 #include "Presentation/RhiPresentationDefaults.h"
 #include "Shaders/CookedShaderPackageUtils.h"
 
@@ -10,56 +11,32 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
-#include "Core/Public/Threading/ThreadOwnership.h"
 #include <string>
 #include <utility>
 
-static std::shared_ptr<spdlog::logger> g_rhiServicesLogger = Logging::GetOrCreateLogger("RHI.Services");
-
-static void FailUnsupportedRhiBackend(ERhiBackendApi api) noexcept
+void RenderDeviceServices::FailCreation(std::string_view message) noexcept
 {
-	const std::string message =
-	    std::string("RHI backend '") + RhiBackendApiToString(api) + "' is not available in this RenderDeviceServices build.";
-	Diagnostics::Fail(g_rhiServicesLogger, __FILE__, __LINE__, message);
+	static const auto logger = Logging::GetOrCreateLogger("RHI.Services");
+	Diagnostics::Fail(logger, __FILE__, __LINE__, message);
 }
 
-static void ValidateBackBufferFormat(PixelFormat backBufferFormat) noexcept
+void RenderDeviceServices::FailUnsupportedBackend(ERhiBackendApi api) noexcept
+{
+	FailCreation(
+	    std::string("RHI backend '") +
+	    RhiBackendApiToString(api) +
+	    "' is not available in this RenderDeviceServices build.");
+}
+
+void RenderDeviceServices::ValidateBackBufferFormat(PixelFormat backBufferFormat) noexcept
 {
 	if (!RhiPresentationDefaults::IsSupportedBackBufferFormat(backBufferFormat))
 	{
-		const std::string message =
-		    std::string("Unsupported back buffer format for present swapchain: ") + PixelFormatName(backBufferFormat);
-		Diagnostics::Fail(g_rhiServicesLogger, __FILE__, __LINE__, message);
+		FailCreation(
+		    std::string("Unsupported back buffer format for present swapchain: ") +
+		    PixelFormatName(backBufferFormat));
 	}
 }
-
-class RenderDeviceServicesState final
-{
-  public:
-	~RenderDeviceServicesState() noexcept { m_owner.AssertAccess(); }
-
-	void SetBackend(std::unique_ptr<RenderDeviceBackendServices> backend) noexcept
-	{
-		m_owner.AssertAccess();
-		m_backend = std::move(backend);
-	}
-
-	RenderDeviceBackendServices& Backend(std::source_location location = std::source_location::current()) noexcept
-	{
-		m_owner.AssertAccess(location);
-		return *m_backend;
-	}
-
-	const RenderDeviceBackendServices& Backend(std::source_location location = std::source_location::current()) const noexcept
-	{
-		m_owner.AssertAccess(location);
-		return *m_backend;
-	}
-
-  private:
-	Threading::OwnerThread m_owner{"RenderDeviceServices"};
-	std::unique_ptr<RenderDeviceBackendServices> m_backend;
-};
 
 RenderDeviceServices::RenderDeviceServices() noexcept : m_state(std::make_unique<RenderDeviceServicesState>()) {}
 
@@ -98,7 +75,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 			services->m_state->SetBackend(CreateD3D12RenderDeviceServices(window, backBufferFormat, externalFeatureHooks));
 			break;
 		#else
-			FailUnsupportedRhiBackend(backendApi);
+			FailUnsupportedBackend(backendApi);
 			break;
 		#endif
 		case ERhiBackendApi::Vulkan:
@@ -106,12 +83,12 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 			services->m_state->SetBackend(CreateVulkanRenderDeviceServices(window, backBufferFormat, externalFeatureHooks));
 			break;
 		#else
-			FailUnsupportedRhiBackend(backendApi);
+			FailUnsupportedBackend(backendApi);
 			break;
 		#endif
 		case ERhiBackendApi::Unknown:
 		default:
-			FailUnsupportedRhiBackend(backendApi);
+			FailUnsupportedBackend(backendApi);
 	}
 
 	return services;
@@ -119,39 +96,39 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 
 const RhiCapabilities& RenderDeviceServices::GetCapabilities() const noexcept
 {
-	const RenderDeviceBackendServices& backend = m_state->Backend();
+	const RenderDeviceBackendServices& backend = m_state->GetBackend();
 	return backend.GetRenderHardwareInterface().GetCapabilities();
 }
 
 RenderHardwareInterface& RenderDeviceServices::GetRenderHardwareInterface() noexcept
 {
-	return m_state->Backend().GetRenderHardwareInterface();
+	return m_state->GetBackend().GetRenderHardwareInterface();
 }
 
 const RenderHardwareInterface& RenderDeviceServices::GetRenderHardwareInterface() const noexcept
 {
-	const RenderDeviceBackendServices& backend = m_state->Backend();
+	const RenderDeviceBackendServices& backend = m_state->GetBackend();
 	return backend.GetRenderHardwareInterface();
 }
 
 RhiImGuiRenderer& RenderDeviceServices::GetImGuiRenderer() noexcept
 {
-	return m_state->Backend().GetImGuiRenderer();
+	return m_state->GetBackend().GetImGuiRenderer();
 }
 
 void RenderDeviceServices::WaitForIdle() noexcept
 {
-	m_state->Backend().WaitForIdle();
+	m_state->GetBackend().WaitForIdle();
 }
 
 void RenderDeviceServices::ResizeSwapChain() noexcept
 {
-	m_state->Backend().ResizeSwapChain();
+	m_state->GetBackend().ResizeSwapChain();
 }
 
 void RenderDeviceServices::BeginFrame() noexcept
 {
-	RenderDeviceBackendServices& backend = m_state->Backend();
+	RenderDeviceBackendServices& backend = m_state->GetBackend();
 	backend.BeginFrame();
 	RenderHardwareInterface& renderHardwareInterface = backend.GetRenderHardwareInterface();
 	renderHardwareInterface.GetDescriptorService().BeginFrame(renderHardwareInterface.GetCurrentFrameIndex());
@@ -159,57 +136,70 @@ void RenderDeviceServices::BeginFrame() noexcept
 
 RenderCommandList& RenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
 {
-	return m_state->Backend().GetCurrentGraphicsCommandList();
+	return m_state->GetBackend().GetCurrentGraphicsCommandList();
 }
 
 RenderCommandList& RenderDeviceServices::GetGraphicsCommandList(std::uint32_t frameIndex) noexcept
 {
-	return m_state->Backend().GetGraphicsCommandList(frameIndex);
+	return m_state->GetBackend().GetGraphicsCommandList(frameIndex);
 }
 
-RenderCommandList& RenderDeviceServices::BeginCommandList(ERhiQueueType queueType) noexcept
+RenderCommandList& RenderDeviceServices::BeginCurrentGraphicsCommandList() noexcept
 {
-	return m_state->Backend().BeginCommandList(queueType);
+	return m_state->GetBackend().BeginCurrentGraphicsCommandList();
 }
 
-RhiSubmissionToken RenderDeviceServices::SubmitCommandList(
-	RenderCommandList& commandList,
-	std::span<const RhiSubmissionToken> waitTokens) noexcept
+RhiCommandRecordingLease RenderDeviceServices::AcquireCommandRecordingLease(
+    ERhiQueueType queueType,
+    RhiCommandRecordingOwner owner) noexcept
 {
-	return m_state->Backend().SubmitCommandList(commandList, waitTokens);
+	return m_state->GetBackend().AcquireCommandRecordingLease(queueType, owner);
+}
+
+RhiSubmissionToken RenderDeviceServices::SubmitCommandRecordingLease(
+    RhiCommandRecordingLease&& lease,
+    std::span<const RhiSubmissionToken> waitTokens) noexcept
+{
+	return m_state->GetBackend().SubmitCommandRecordingLease(std::move(lease), waitTokens);
+}
+
+RhiSubmissionToken RenderDeviceServices::SubmitCurrentGraphicsCommandList(
+    std::span<const RhiSubmissionToken> waitTokens) noexcept
+{
+	return m_state->GetBackend().SubmitCurrentGraphicsCommandList(waitTokens);
 }
 
 void RenderDeviceServices::QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept
 {
-	m_state->Backend().QueueWait(waitQueue, executionToken);
+	m_state->GetBackend().QueueWait(waitQueue, executionToken);
 }
 
 void RenderDeviceServices::WaitForSubmission(RhiSubmissionToken token) noexcept
 {
-	m_state->Backend().WaitForSubmission(token);
+	m_state->GetBackend().WaitForSubmission(token);
 }
 
 bool RenderDeviceServices::IsSubmissionComplete(RhiSubmissionToken token) const noexcept
 {
-	return m_state->Backend().IsSubmissionComplete(token);
+	return m_state->GetBackend().IsSubmissionComplete(token);
 }
 
 RhiSubmissionToken RenderDeviceServices::GetLastSubmittedToken(ERhiQueueType queueType) const noexcept
 {
-	return m_state->Backend().GetLastSubmittedToken(queueType);
+	return m_state->GetBackend().GetLastSubmittedToken(queueType);
 }
 
 void RenderDeviceServices::SubmitFrame() noexcept
 {
-	m_state->Backend().SubmitFrame();
+	m_state->GetBackend().SubmitFrame();
 }
 
 void RenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
-	m_state->Backend().AdvanceFrameInFlight();
+	m_state->GetBackend().AdvanceFrameInFlight();
 }
 
 void RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
 {
-	m_state->Backend().CloseExecuteAndFlushCurrentFrame();
+	m_state->GetBackend().CloseExecuteAndFlushCurrentFrame();
 }

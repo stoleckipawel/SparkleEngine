@@ -2,19 +2,9 @@
 
 #include "FrameGraph/Execution/FrameGraphSubmissionExecutor.h"
 
-#include "Commands/RenderCommandContext.h"
-#include "Diagnostics/FrameExecutionDiagnostics.h"
-#include "Diagnostics/PassExecutionDiagnostics.h"
-#include "Frame/Core/FrameContext.h"
-#include "FrameGraph/Diagnostics/FrameGraphExecutionDiagnostics.h"
-#include "FrameGraph/Execution/FrameGraphResourceCommands.h"
-#include "FrameGraph/FrameGraph.h"
 #include "RHI/Public/Commands/RhiCommandSubmissionService.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
 
 #include <algorithm>
-#include <array>
-#include <format>
 #include <span>
 
 FrameGraphSubmissionExecutor::FrameGraphSubmissionExecutor(
@@ -23,131 +13,110 @@ FrameGraphSubmissionExecutor::FrameGraphSubmissionExecutor(
 	RhiCommandSubmissionService& submissionService,
 	const FrameContext& frame,
 	const PassRuntimeServices& passRuntimeServices,
-	FrameExecutionDiagnostics& frameDiagnostics) noexcept :
-	m_frameGraph(frameGraph),
+	FrameExecutionDiagnostics& frameDiagnostics,
+	std::span<RhiSubmissionToken> batchTokens) noexcept :
 	m_plan(plan),
 	m_submissionService(submissionService),
-	m_frame(frame),
-	m_passRuntimeServices(passRuntimeServices),
-	m_frameDiagnostics(frameDiagnostics),
-	m_batchTokens(plan.submissionBatches.size())
+	m_batchRecorder(frameGraph, plan, frame, passRuntimeServices, frameDiagnostics),
+	m_batchTokens(batchTokens)
 {
 }
 
 RenderCommandList& FrameGraphSubmissionExecutor::Execute(RenderCommandList& initialGraphicsCommandList)
 {
 	m_initialGraphicsCommandList = &initialGraphicsCommandList;
-	const bool usesNonGraphicsQueue = std::any_of(
-	    m_plan.submissionBatches.begin(),
-	    m_plan.submissionBatches.end(),
-	    [](const FrameGraphSubmissionBatch& batch)
-	    {
-		    return batch.queue != ERhiQueueType::Graphics;
-	    });
-	if (usesNonGraphicsQueue)
-	{
-		// The prologue owns acquired-image and frame-initialization work. Async batches
-		// wait only for that work instead of an unrelated first graphics batch.
-		m_initializationToken = m_submissionService.SubmitCommandList(initialGraphicsCommandList);
-		m_initialGraphicsListAvailable = false;
-	}
+
+	SubmitInitializationIfRequired();
 
 	for (const FrameGraphSubmissionBatch& batch : m_plan.submissionBatches)
 	{
-		RhiSubmissionState waits;
-		for (const FrameGraphSubmissionBatchIndex dependencyBatch : batch.waitForBatches)
-		{
-			if (dependencyBatch < m_batchTokens.size())
-			{
-				waits.MarkUsed(m_batchTokens[dependencyBatch]);
-			}
-		}
-		if (batch.queue != ERhiQueueType::Graphics)
-		{
-			waits.MarkUsed(m_initializationToken);
-		}
-
-		std::array<RhiSubmissionToken, RhiQueueTypeCount> waitTokens{};
-		const std::size_t waitTokenCount = waits.CopyTokens(waitTokens);
-		RenderCommandList& commandList = AcquireCommandList(batch);
-		RecordBatch(batch, commandList);
-		m_batchTokens[batch.index] = m_submissionService.SubmitCommandList(
-		    commandList,
-		    std::span<const RhiSubmissionToken>(waitTokens.data(), waitTokenCount));
+		ExecuteBatch(batch);
 	}
 
 	if (m_initialGraphicsListAvailable)
 	{
 		return m_submissionService.GetCurrentGraphicsCommandList();
 	}
-	return m_submissionService.BeginCommandList(ERhiQueueType::Graphics);
+
+	return m_submissionService.BeginCurrentGraphicsCommandList();
 }
 
-RenderCommandList& FrameGraphSubmissionExecutor::AcquireCommandList(const FrameGraphSubmissionBatch& batch)
+void FrameGraphSubmissionExecutor::SubmitInitializationIfRequired()
 {
-	if (batch.queue == ERhiQueueType::Graphics && m_initialGraphicsListAvailable)
+	if (!UsesNonGraphicsQueue())
 	{
-		m_initialGraphicsListAvailable = false;
-		return *m_initialGraphicsCommandList;
+		return;
 	}
 
-	return m_submissionService.BeginCommandList(batch.queue);
+	m_initializationToken = m_submissionService.SubmitCurrentGraphicsCommandList();
+	m_initialGraphicsListAvailable = false;
 }
 
-void FrameGraphSubmissionExecutor::RecordBatch(
-	const FrameGraphSubmissionBatch& batch,
-	RenderCommandList& commandList) const
+FrameGraphSubmissionExecutor::BatchWaitTokens FrameGraphSubmissionExecutor::ResolveBatchWaits(
+    const FrameGraphSubmissionBatch& batch) const noexcept
 {
-	RenderCommandContext commands(commandList);
-	FrameGraphExecutionDiagnostics graphDiagnostics(m_frameDiagnostics, commands);
-	if (graphDiagnostics.ShouldEmitDetailedMarkers())
+	RhiSubmissionState waits;
+	for (const FrameGraphSubmissionBatchIndex dependencyBatch : batch.waitForBatches)
 	{
-		commands.EnableDrawDispatchDiagnostics();
+		if (dependencyBatch < m_batchTokens.size())
+		{
+			waits.MarkUsed(m_batchTokens[dependencyBatch]);
+		}
 	}
 
-	const std::string batchLabel = std::format(
-	    "GPU Frame/{}/Batch {}",
-	    RhiQueueTypeToString(batch.queue),
-	    batch.index);
-	auto batchScope = CVarRendererDiagnosticMarkerVerbosity.Get() != RendererDiagnosticMarkerVerbosity::Off
-	                      ? m_frameDiagnostics.BeginGpuScope(
-	                            commands,
-	                            batchLabel,
-	                            RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255})
-	                      : ScopedGpuScope{};
-
-	for (const FrameGraphPassIndex passIndex : batch.passes)
+	if (batch.queue != ERhiQueueType::Graphics)
 	{
-		const FrameGraphPassNode& passRecord = m_plan.passes[passIndex];
-		for (const PassResourceDeclaration& declaration : passRecord.declarations)
-		{
-			if (declaration.handle.IsValid())
-			{
-				commandList.TrackResource(m_frameGraph.m_resourceResolver.GetResolvedAccess(declaration.handle).resource);
-			}
-		}
-
-		graphDiagnostics.InsertPassAliasingBarrierMarker(passRecord);
-		m_frameGraph.EmitTransientAliasingBarriers(commands, passRecord.passName, passRecord.transientAliasingBarriers);
-		graphDiagnostics.InsertPassResourceBarrierMarker(passRecord);
-		m_frameGraph.EmitCompiledBarriers(commands, passRecord.passName, passRecord.compiledBarriers);
-		PassExecutionDiagnostics passDiagnostics(
-		    m_frameDiagnostics,
-		    commands,
-		    passRecord.eventScopeLabel,
-		    passRecord.kind);
-		auto passScope = graphDiagnostics.BeginPassScope(passDiagnostics);
-		PassExecutionContext passContext{
-		    commands,
-		    m_frame,
-		    m_passRuntimeServices,
-		    passDiagnostics,
-		    FrameGraphResourceCommands{m_frameGraph}};
-		m_frameGraph.m_passes[passIndex].executeCallback(passContext);
-		if (passRecord.kind == EFrameGraphPassKind::ExternalProvider)
-		{
-			commandList.ResetBoundState();
-		}
-		m_frameGraph.EmitCompiledBarriers(commands, passRecord.passName, passRecord.compiledReleaseBarriers);
+		waits.MarkUsed(m_initializationToken);
 	}
+
+	BatchWaitTokens result;
+	result.Count = waits.CopyTokens(result.Values);
+	return result;
+}
+
+void FrameGraphSubmissionExecutor::ExecuteBatch(const FrameGraphSubmissionBatch& batch)
+{
+	const BatchWaitTokens waits = ResolveBatchWaits(batch);
+	const bool usesCurrentGraphics =
+	    batch.queue == ERhiQueueType::Graphics && m_initialGraphicsListAvailable;
+	if (usesCurrentGraphics)
+	{
+		m_batchTokens[batch.index] = RecordAndSubmitCurrentGraphicsBatch(batch, waits);
+	}
+	else
+	{
+		m_batchTokens[batch.index] = RecordAndSubmitLeasedBatch(batch, waits);
+	}
+}
+
+RhiSubmissionToken FrameGraphSubmissionExecutor::RecordAndSubmitCurrentGraphicsBatch(
+    const FrameGraphSubmissionBatch& batch,
+    const BatchWaitTokens& waits)
+{
+	m_initialGraphicsListAvailable = false;
+	m_batchRecorder.Record(batch, *m_initialGraphicsCommandList);
+	return m_submissionService.SubmitCurrentGraphicsCommandList(
+	    std::span<const RhiSubmissionToken>(waits.Values.data(), waits.Count));
+}
+
+RhiSubmissionToken FrameGraphSubmissionExecutor::RecordAndSubmitLeasedBatch(
+    const FrameGraphSubmissionBatch& batch,
+    const BatchWaitTokens& waits)
+{
+	RhiCommandRecordingLease lease = m_submissionService.AcquireCommandRecordingLease(batch.queue);
+	m_batchRecorder.Record(batch, lease.GetCommandList());
+	return m_submissionService.SubmitCommandRecordingLease(
+	    std::move(lease),
+	    std::span<const RhiSubmissionToken>(waits.Values.data(), waits.Count));
+}
+
+bool FrameGraphSubmissionExecutor::UsesNonGraphicsQueue() const noexcept
+{
+	return std::any_of(
+	    m_plan.submissionBatches.begin(),
+	    m_plan.submissionBatches.end(),
+	    [](const FrameGraphSubmissionBatch& batch)
+	    {
+		    return batch.queue != ERhiQueueType::Graphics;
+	    });
 }

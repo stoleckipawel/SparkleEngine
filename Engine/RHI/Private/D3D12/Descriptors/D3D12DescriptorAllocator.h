@@ -1,15 +1,22 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-#include <mutex>
-#include <optional>
 #include "D3D12DescriptorHeap.h"
 
-class D3D12DescriptorAllocator
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <vector>
+
+namespace spdlog
+{
+	class logger;
+}
+
+class D3D12DescriptorAllocator final
 {
   public:
-	explicit D3D12DescriptorAllocator(D3D12DescriptorHeap* heap) : m_heap(heap) {}
+	explicit D3D12DescriptorAllocator(D3D12DescriptorHeap* heap) noexcept;
 
 	D3D12DescriptorHandle Allocate();
 
@@ -22,6 +29,7 @@ class D3D12DescriptorAllocator
   private:
 	std::optional<UINT> TryAllocateContiguousFromFreeListLocked(uint32_t count);
 	D3D12DescriptorHandle AllocateContiguousFromLinearRangeLocked(uint32_t count);
+	static const std::shared_ptr<spdlog::logger>& Logger() noexcept;
 
 	D3D12DescriptorHeap* m_heap;
 	std::vector<UINT> m_freeIndices;

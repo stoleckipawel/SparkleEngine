@@ -2,6 +2,7 @@
 
 #include "D3D12/Commands/D3D12CommandQueue.h"
 
+#include <chrono>
 #include <format>
 
 class D3D12CommandQueuePolicy final
@@ -180,17 +181,21 @@ void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcep
 	}
 
 	CHECK(m_fence->SetEventOnCompletion(submissionValue, m_fenceEvent));
+	const auto waitStart = std::chrono::steady_clock::now();
 	const DWORD waitResult = WaitForSingleObject(m_fenceEvent, D3D12CommandQueuePolicy::GpuWaitTimeoutMilliseconds);
 	if (waitResult != WAIT_OBJECT_0)
 	{
+		const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+		    std::chrono::steady_clock::now() - waitStart);
 		Diagnostics::Fail(
 		    D3D12CommandQueuePolicy::Logger(),
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "D3D12 queue {} CPU wait failed or timed out for submission {} (wait result 0x{:08X}).",
-		        static_cast<std::uint32_t>(m_queueType),
+		        "D3D12 {} queue CPU wait failed for submission {} after {} ms (wait result 0x{:08X}).",
+		        RhiQueueTypeToString(m_queueType),
 		        submissionValue,
+		        elapsed.count(),
 		        waitResult));
 	}
 }

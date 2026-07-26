@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
 
 class Window;
 class RhiImGuiRenderer;
@@ -44,10 +45,12 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	void BeginFrame() noexcept;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
-	RenderCommandList& BeginCommandList(ERhiQueueType queueType) noexcept override;
-	RhiSubmissionToken SubmitCommandList(
-	    RenderCommandList& commandList,
+	RenderCommandList& BeginCurrentGraphicsCommandList() noexcept override;
+	RhiCommandRecordingLease AcquireCommandRecordingLease(ERhiQueueType queueType, RhiCommandRecordingOwner owner = {}) noexcept override;
+	RhiSubmissionToken SubmitCommandRecordingLease(
+	    RhiCommandRecordingLease&& lease,
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept override;
+	RhiSubmissionToken SubmitCurrentGraphicsCommandList(std::span<const RhiSubmissionToken> waitTokens = {}) noexcept override;
 	void QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept override;
 	void WaitForSubmission(RhiSubmissionToken token) noexcept override;
 	bool IsSubmissionComplete(RhiSubmissionToken token) const noexcept override;
@@ -58,6 +61,9 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 
   private:
 	RenderDeviceServices() noexcept;
+	static void FailCreation(std::string_view message) noexcept;
+	static void FailUnsupportedBackend(ERhiBackendApi api) noexcept;
+	static void ValidateBackBufferFormat(PixelFormat backBufferFormat) noexcept;
 
 	std::unique_ptr<RenderDeviceServicesState> m_state;
 };

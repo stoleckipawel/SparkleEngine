@@ -6,7 +6,7 @@
 #include "RayReconstruction/RayReconstructionPass.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
 
-class RestirRayReconstructionOperations final
+class RestirRayReconstructionInputBuilder final
 {
   public:
 	static RayReconstructionPassResources BuildRayReconstructionInputs(
@@ -40,7 +40,7 @@ void AddRestirRayReconstructionPass(
 		return;
 	}
 
-	const RayReconstructionPassResources providerInputs = RestirRayReconstructionOperations::BuildRayReconstructionInputs(
+	const RayReconstructionPassResources providerInputs = RestirRayReconstructionInputBuilder::BuildRayReconstructionInputs(
 	    resources.Transient.Scene,
 	    resources.Transient.GBuffer,
 	    resources.Transient.Lighting,

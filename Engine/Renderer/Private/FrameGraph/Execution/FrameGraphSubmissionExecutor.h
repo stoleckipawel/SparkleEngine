@@ -1,8 +1,10 @@
 #pragma once
 
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
+#include "FrameGraph/Execution/FrameGraphBatchRecorder.h"
 
-#include <vector>
+#include <array>
+#include <span>
 
 class FrameExecutionDiagnostics;
 class FrameGraph;
@@ -20,21 +22,33 @@ class FrameGraphSubmissionExecutor final
 	    RhiCommandSubmissionService& submissionService,
 	    const FrameContext& frame,
 	    const PassRuntimeServices& passRuntimeServices,
-	    FrameExecutionDiagnostics& frameDiagnostics) noexcept;
+	    FrameExecutionDiagnostics& frameDiagnostics,
+	    std::span<RhiSubmissionToken> batchTokens) noexcept;
 
 	RenderCommandList& Execute(RenderCommandList& initialGraphicsCommandList);
 
   private:
-	RenderCommandList& AcquireCommandList(const FrameGraphSubmissionBatch& batch);
-	void RecordBatch(const FrameGraphSubmissionBatch& batch, RenderCommandList& commandList) const;
+	struct BatchWaitTokens final
+	{
+		std::array<RhiSubmissionToken, RhiQueueTypeCount> Values = {};
+		std::size_t Count = 0;
+	};
 
-	const FrameGraph& m_frameGraph;
+	void SubmitInitializationIfRequired();
+	BatchWaitTokens ResolveBatchWaits(const FrameGraphSubmissionBatch& batch) const noexcept;
+	void ExecuteBatch(const FrameGraphSubmissionBatch& batch);
+	RhiSubmissionToken RecordAndSubmitCurrentGraphicsBatch(
+	    const FrameGraphSubmissionBatch& batch,
+	    const BatchWaitTokens& waits);
+	RhiSubmissionToken RecordAndSubmitLeasedBatch(
+	    const FrameGraphSubmissionBatch& batch,
+	    const BatchWaitTokens& waits);
+	bool UsesNonGraphicsQueue() const noexcept;
+
 	const FrameGraphPlan& m_plan;
 	RhiCommandSubmissionService& m_submissionService;
-	const FrameContext& m_frame;
-	const PassRuntimeServices& m_passRuntimeServices;
-	FrameExecutionDiagnostics& m_frameDiagnostics;
-	std::vector<RhiSubmissionToken> m_batchTokens;
+	FrameGraphBatchRecorder m_batchRecorder;
+	std::span<RhiSubmissionToken> m_batchTokens;
 	RhiSubmissionToken m_initializationToken{};
 	RenderCommandList* m_initialGraphicsCommandList = nullptr;
 	bool m_initialGraphicsListAvailable = true;

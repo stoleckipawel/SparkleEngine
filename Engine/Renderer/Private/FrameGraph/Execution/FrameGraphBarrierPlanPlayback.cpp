@@ -7,10 +7,9 @@
 
 #include <cassert>
 #include <format>
+#include <memory>
 
-static const auto g_frameGraphBarrierLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
-
-class FrameGraphBarrierPlanPlaybackOperations final
+class FrameGraphBarrierFailureReporter final
 {
   public:
 	static std::string FormatResourceLabel(const FrameGraphResourceHandle handle) noexcept
@@ -30,7 +29,7 @@ class FrameGraphBarrierPlanPlaybackOperations final
 	    std::string_view afterResourceName) noexcept
 	{
 		Diagnostics::Fail(
-		    g_frameGraphBarrierLogger,
+		    Logger(),
 		    __FILE__,
 		    __LINE__,
 		    std::format(
@@ -49,7 +48,7 @@ class FrameGraphBarrierPlanPlaybackOperations final
 	    std::string_view resourceName) noexcept
 	{
 		Diagnostics::Fail(
-		    g_frameGraphBarrierLogger,
+		    Logger(),
 		    __FILE__,
 		    __LINE__,
 		    std::format(
@@ -60,6 +59,13 @@ class FrameGraphBarrierPlanPlaybackOperations final
 		        barrier.label.empty() ? "<unlabeled>" : barrier.label,
 		        ResourceStateToString(barrier.before),
 		        ResourceStateToString(barrier.after)));
+	}
+
+  private:
+	static const std::shared_ptr<spdlog::logger>& Logger() noexcept
+	{
+		static const auto logger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
+		return logger;
 	}
 };
 
@@ -101,7 +107,7 @@ void FrameGraph::EmitTransientAliasingBarriers(
 				afterName = m_resourceRegistry.GetMetadata(barrier.afterHandle).debugName;
 			}
 
-			FrameGraphBarrierPlanPlaybackOperations::FailUnresolvedAliasingBarrier(passName, barrier, beforeName, afterName);
+			FrameGraphBarrierFailureReporter::FailUnresolvedAliasingBarrier(passName, barrier, beforeName, afterName);
 		}
 
 		cmd.AliasResource(beforeResource, afterResource);
@@ -122,7 +128,7 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_vie
 				resourceName = m_resourceRegistry.GetMetadata(barrier.handle).debugName;
 			}
 
-			FrameGraphBarrierPlanPlaybackOperations::FailUnresolvedResourceBarrier(passName, barrier, resourceName);
+			FrameGraphBarrierFailureReporter::FailUnresolvedResourceBarrier(passName, barrier, resourceName);
 		}
 
 		switch (barrier.type)

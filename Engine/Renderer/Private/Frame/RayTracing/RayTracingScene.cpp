@@ -20,7 +20,7 @@ FrameGraphAccelerationStructureHandle CreateRayTracingSceneFrameGraphResource(Fr
 
 void AddRayTracingSceneBuildPasses(FrameGraphBuilder& builder, FrameGraphAccelerationStructureHandle sceneTlas)
 {
-	builder.Execute(
+	builder.AddPass(
 	    RayTracingSceneFrameGraphContract::kSceneBuildPassName,
 	    EFrameGraphPassKind::Compute,
 	    [sceneTlas](PassResourceBuilder& resourceBuilder, const FrameContext& frame)

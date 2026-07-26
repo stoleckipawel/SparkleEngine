@@ -3,7 +3,7 @@
 #include "D3D12/D3D12RenderHardwareInterface.h"
 
 #include "Commands/RenderCommandList.h"
-#include "D3D12/Commands/D3D12CommandContext.h"
+#include "D3D12/Commands/D3D12CommandRecordingContext.h"
 #include "D3D12/Capture/D3D12CaptureService.h"
 #include "D3D12/Device/D3D12ExternalFeatureInteropCapabilities.h"
 #include "D3D12/Device/D3D12Rhi.h"
@@ -27,50 +27,6 @@
 
 #include <d3d12.h>
 #include <string>
-
-class D3D12RenderHardwareInterfaceOperations final
-{
-  public:
-	static RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport(
-	    const RenderDiagnostics* diagnostics,
-	    bool validationEnabled,
-	    bool supportsDebugLayer) noexcept
-	{
-		if (diagnostics == nullptr)
-		{
-			return RhiBackendDiagnosticsSupport{
-			    .ValidationEnabled = validationEnabled,
-			    .SupportsDebugLayer = supportsDebugLayer};
-		}
-
-		const RhiDiagnosticsCapabilities diagnosticsCapabilities = diagnostics->GetCapabilities();
-		return RhiBackendDiagnosticsSupport{
-		    .ValidationEnabled = validationEnabled,
-		    .SupportsDebugLayer = supportsDebugLayer,
-		    .SupportsObjectNames = diagnosticsCapabilities.SupportsObjectNames,
-		    .SupportsGpuEvents = diagnosticsCapabilities.SupportsGpuEvents,
-		    .SupportsTimestampQueries = diagnosticsCapabilities.SupportsTimestampQueries,
-		    .SupportsDebugMessages = diagnosticsCapabilities.SupportsDebugMessages,
-		    .SupportsLiveObjectReports = diagnosticsCapabilities.SupportsLiveObjectReports,
-		    .SupportsCrashDiagnostics = diagnosticsCapabilities.SupportsCrashDiagnostics};
-	}
-
-	static RhiBackendMemorySupport BuildBackendMemorySupport(const RenderDiagnostics* diagnostics) noexcept
-	{
-		if (diagnostics == nullptr)
-		{
-			return {};
-		}
-
-		const RenderMemoryDiagnostics* const memoryDiagnostics = diagnostics->GetMemoryDiagnostics();
-		return RhiBackendMemorySupport{
-		    .SupportsMemoryDiagnostics = memoryDiagnostics != nullptr,
-		    .SupportsBudgetQueries = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries(),
-		    .SupportsDelayedDestructionTracking = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsDelayedDestructionTracking(),
-		    .SupportsResidencyPressure = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries()};
-	}
-
-};
 
 D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
     D3D12Rhi& rhi,
@@ -149,10 +105,7 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
 	}
-	capabilities.Diagnostics = D3D12RenderHardwareInterfaceOperations::BuildBackendDiagnosticsSupport(
-	    m_diagnostics.get(),
-	    m_rhi != nullptr && m_rhi->IsValidationEnabled(),
-	    m_rhi != nullptr && m_rhi->IsValidationEnabled());
+	capabilities.Diagnostics = BuildBackendDiagnosticsSupport();
 	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
@@ -161,11 +114,49 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	capabilities.Queues.Set(ERhiQueueType::Copy, true, true);
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12Managed;
-	capabilities.MemorySupport = D3D12RenderHardwareInterfaceOperations::BuildBackendMemorySupport(m_diagnostics.get());
+	capabilities.MemorySupport = BuildBackendMemorySupport();
 	capabilities.ExternalFeatureInterop = BuildD3D12ExternalFeatureInteropCapabilities(
 	    m_rhi,
 	    m_rhi != nullptr && m_rhi->GetDevice() != nullptr);
 	return capabilities;
+}
+
+RhiBackendDiagnosticsSupport D3D12RenderHardwareInterface::BuildBackendDiagnosticsSupport() const noexcept
+{
+	const bool validationEnabled = m_rhi != nullptr && m_rhi->IsValidationEnabled();
+	if (m_diagnostics == nullptr)
+	{
+		return RhiBackendDiagnosticsSupport{
+		    .ValidationEnabled = validationEnabled,
+		    .SupportsDebugLayer = validationEnabled};
+	}
+
+	const RhiDiagnosticsCapabilities diagnosticsCapabilities = m_diagnostics->GetCapabilities();
+	return RhiBackendDiagnosticsSupport{
+	    .ValidationEnabled = validationEnabled,
+	    .SupportsDebugLayer = validationEnabled,
+	    .SupportsObjectNames = diagnosticsCapabilities.SupportsObjectNames,
+	    .SupportsGpuEvents = diagnosticsCapabilities.SupportsGpuEvents,
+	    .SupportsTimestampQueries = diagnosticsCapabilities.SupportsTimestampQueries,
+	    .SupportsDebugMessages = diagnosticsCapabilities.SupportsDebugMessages,
+	    .SupportsLiveObjectReports = diagnosticsCapabilities.SupportsLiveObjectReports,
+	    .SupportsCrashDiagnostics = diagnosticsCapabilities.SupportsCrashDiagnostics};
+}
+
+RhiBackendMemorySupport D3D12RenderHardwareInterface::BuildBackendMemorySupport() const noexcept
+{
+	if (m_diagnostics == nullptr)
+	{
+		return {};
+	}
+
+	const RenderMemoryDiagnostics* const memoryDiagnostics = m_diagnostics->GetMemoryDiagnostics();
+	return RhiBackendMemorySupport{
+	    .SupportsMemoryDiagnostics = memoryDiagnostics != nullptr,
+	    .SupportsBudgetQueries = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries(),
+	    .SupportsDelayedDestructionTracking =
+	        memoryDiagnostics != nullptr && memoryDiagnostics->SupportsDelayedDestructionTracking(),
+	    .SupportsResidencyPressure = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries()};
 }
 
 RhiFormatSupport D3D12RenderHardwareInterface::QueryFormatSupport(PixelFormat format) const noexcept
@@ -178,7 +169,9 @@ RhiFormatSupport D3D12RenderHardwareInterface::QueryFormatSupport(PixelFormat fo
 
 	D3D12_FEATURE_DATA_FORMAT_SUPPORT data{};
 	data.Format = D3D12TypeConversions::ToDxgiFormat(format);
-	if (data.Format == DXGI_FORMAT_UNKNOWN || FAILED(m_rhi->GetDevice()->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &data, sizeof(data))))
+	const HRESULT supportResult =
+	    m_rhi->GetDevice()->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &data, sizeof(data));
+	if (data.Format == DXGI_FORMAT_UNKNOWN || FAILED(supportResult))
 	{
 		return support;
 	}
@@ -299,7 +292,13 @@ RenderCommandList& D3D12RenderHardwareInterface::GetCommandList(ERhiQueueType qu
 	{
 		m_resourceService->DrainCompletedResourceReleases();
 	}
-	return m_commandContext->GetCurrentCommandList(queueType, frameIndex);
+	return m_commandRecordingContext->GetCurrentCommandList(queueType, frameIndex);
+}
+
+void D3D12RenderHardwareInterface::SetCommandRecordingContext(
+    D3D12CommandRecordingContext& commandContext) noexcept
+{
+	m_commandRecordingContext = &commandContext;
 }
 
 RhiRayTracingCapabilities D3D12RenderHardwareInterface::GetRayTracingCapabilities() const noexcept

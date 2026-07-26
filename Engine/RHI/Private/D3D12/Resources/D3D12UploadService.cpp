@@ -3,29 +3,22 @@
 #include "D3D12/Resources/D3D12UploadService.h"
 
 #include "Commands/RenderCommandList.h"
+#include "D3D12/Commands/D3D12RecordingUploadPage.h"
 #include "D3D12/Commands/D3D12RenderCommandList.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
-#include "D3D12/Resources/D3D12FrameResource.h"
 
 #include <algorithm>
 #include <array>
 #include <cstring>
 #include <vector>
 
-class D3D12UploadServiceConstants final
-{
-  public:
-	inline static const auto g_d3d12UploadLogger = Logging::GetOrCreateLogger("RHI.D3D12.Upload");
-};
-
 D3D12UploadService::D3D12UploadService(
     D3D12Rhi& rhi,
-    D3D12FrameResourceManager& frameResourceManager,
     D3D12GpuMemoryAllocator& memoryAllocator) noexcept :
-	m_rhi(&rhi), m_frameResourceManager(&frameResourceManager), m_memoryAllocator(&memoryAllocator)
+	m_rhi(&rhi), m_memoryAllocator(&memoryAllocator)
 {
 }
 
@@ -36,16 +29,19 @@ void D3D12UploadService::BeginFrame() noexcept
 	DrainCompletedTextureUploads();
 }
 
-RhiGpuVirtualAddress D3D12UploadService::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes)
+RhiGpuVirtualAddress D3D12UploadService::AllocateUniformConstantBuffer(
+    RenderCommandList& commandList,
+    const void* data,
+    std::uint32_t sizeInBytes)
 {
-	if (m_frameResourceManager == nullptr || data == nullptr || sizeInBytes == 0)
+	if (commandList.GetBackendApi() != ERhiBackendApi::D3D12 || data == nullptr || sizeInBytes == 0)
 	{
 		return 0;
 	}
 
-	D3D12LinearAllocation allocation = m_frameResourceManager->GetCurrentAllocator().Allocate(sizeInBytes, 256);
-	std::memcpy(allocation.CpuPtr, data, sizeInBytes);
-	return allocation.GpuAddress;
+	D3D12RecordingUploadPage* const uploadPage =
+	    static_cast<D3D12RenderCommandList&>(commandList).GetRecordingUploadPage();
+	return uploadPage != nullptr ? uploadPage->AllocateAndCopy(data, sizeInBytes) : 0;
 }
 
 bool D3D12UploadService::UploadTexture(
@@ -56,33 +52,66 @@ bool D3D12UploadService::UploadTexture(
     std::wstring_view debugName)
 {
 	D3D12GpuAllocationRecord* const destinationRecord = GetD3D12GpuAllocationRecord(destination);
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || destinationRecord == nullptr || destinationRecord->Resource == nullptr ||
-	    !textureUpload.IsValid() || commandList.GetBackendApi() != ERhiBackendApi::D3D12)
+	if (!ValidateTextureUploadRequest(commandList, destinationRecord, textureUpload))
 	{
-		SPDLOG_LOGGER_ERROR(
-		    D3D12UploadServiceConstants::g_d3d12UploadLogger,
-		    "UploadTexture rejected invalid input (rhi={}, allocator={}, destination={}, uploadValid={}, backend={}).",
-		    m_rhi != nullptr,
-		    m_memoryAllocator != nullptr,
-		    destinationRecord != nullptr && destinationRecord->Resource != nullptr,
-		    textureUpload.IsValid(),
-		    static_cast<std::uint32_t>(commandList.GetBackendApi()));
 		return false;
 	}
 
-	auto* const d3dCommandList = static_cast<D3D12RenderCommandList&>(commandList).GetD3D12CommandList();
-	if (d3dCommandList == nullptr)
+	auto& d3dCommandList = static_cast<D3D12RenderCommandList&>(commandList);
+	if (d3dCommandList.GetD3D12CommandList() == nullptr)
 	{
-		SPDLOG_LOGGER_ERROR(D3D12UploadServiceConstants::g_d3d12UploadLogger, "UploadTexture could not resolve the native command list.");
 		return false;
 	}
 
 	const UINT subresourceCount = textureUpload.GetSubresourceCount();
-	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(destinationRecord->Resource.Get(), 0, subresourceCount);
+	std::unique_ptr<D3D12GpuAllocationRecord> stagingResource =
+	    CreateTextureStagingResource(*destinationRecord, subresourceCount, debugName);
+	if (stagingResource == nullptr)
+	{
+		return false;
+	}
+
+	if (!RecordTextureUpload(
+	        d3dCommandList,
+	        *destinationRecord,
+	        *stagingResource,
+	        textureUpload,
+	        finalState))
+	{
+		return false;
+	}
+
+	commandList.TrackResource(RhiResourceHandle{destinationRecord->Resource.Get()});
+	commandList.TrackResource(RhiResourceHandle{stagingResource->Resource.Get()});
+
+	DrainCompletedTextureUploads();
+	m_pendingTextureUploads.push_back(PendingTextureUpload{.StagingResource = std::move(stagingResource)});
+	return true;
+}
+
+bool D3D12UploadService::ValidateTextureUploadRequest(
+    const RenderCommandList& commandList,
+    const D3D12GpuAllocationRecord* destination,
+    const RhiTextureUploadDesc& textureUpload) const noexcept
+{
+	return m_rhi != nullptr &&
+	       m_memoryAllocator != nullptr &&
+	       destination != nullptr &&
+	       destination->Resource != nullptr &&
+	       textureUpload.IsValid() &&
+	       commandList.GetBackendApi() == ERhiBackendApi::D3D12;
+}
+
+std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadService::CreateTextureStagingResource(
+    const D3D12GpuAllocationRecord& destination,
+    std::uint32_t subresourceCount,
+    std::wstring_view debugName)
+{
+	const UINT64 uploadBufferSize =
+	    GetRequiredIntermediateSize(destination.Resource.Get(), 0, subresourceCount);
 	if (uploadBufferSize == 0)
 	{
-		SPDLOG_LOGGER_ERROR(D3D12UploadServiceConstants::g_d3d12UploadLogger, "UploadTexture calculated an empty intermediate buffer.");
-		return false;
+		return {};
 	}
 
 	std::unique_ptr<D3D12GpuAllocationRecord> stagingResource = m_memoryAllocator->CreateBuffer(
@@ -93,12 +122,21 @@ bool D3D12UploadService::UploadTexture(
 	    debugName.empty() ? L"TextureUpload" : debugName);
 	if (stagingResource == nullptr || stagingResource->Resource == nullptr)
 	{
-		SPDLOG_LOGGER_ERROR(
-		    D3D12UploadServiceConstants::g_d3d12UploadLogger,
-		    "UploadTexture failed to allocate {} bytes of staging memory.",
-		    uploadBufferSize);
-		return false;
+		return {};
 	}
+
+	return stagingResource;
+}
+
+bool D3D12UploadService::RecordTextureUpload(
+    D3D12RenderCommandList& commandList,
+    D3D12GpuAllocationRecord& destination,
+    D3D12GpuAllocationRecord& stagingResource,
+    const RhiTextureUploadDesc& textureUpload,
+    ResourceState finalState)
+{
+	ID3D12GraphicsCommandList4* const nativeCommandList = commandList.GetD3D12CommandList();
+	const UINT subresourceCount = textureUpload.GetSubresourceCount();
 
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
 	subresources.reserve(subresourceCount);
@@ -115,35 +153,24 @@ bool D3D12UploadService::UploadTexture(
 	}
 
 	if (UpdateSubresources(
-	        d3dCommandList,
-	        destinationRecord->Resource.Get(),
-	        stagingResource->Resource.Get(),
+	        nativeCommandList,
+	        destination.Resource.Get(),
+	        stagingResource.Resource.Get(),
 	        0,
 	        0,
 	        subresourceCount,
 	        subresources.data()) == 0)
 	{
-		SPDLOG_LOGGER_ERROR(
-		    D3D12UploadServiceConstants::g_d3d12UploadLogger,
-		    "UploadTexture failed to record {} subresources ({} staging bytes) on the {} queue.",
-		    subresourceCount,
-		    uploadBufferSize,
-		    RhiQueueTypeToString(commandList.GetQueueType()));
 		return false;
 	}
 
 	const ResourceState submittedFinalState =
 	    commandList.GetQueueType() == ERhiQueueType::Copy ? ResourceState::Common : finalState;
 	const D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-	    destinationRecord->Resource.Get(),
+	    destination.Resource.Get(),
 	    D3D12_RESOURCE_STATE_COPY_DEST,
 	    D3D12TypeConversions::ToResourceStates(submittedFinalState));
-	d3dCommandList->ResourceBarrier(1, &barrier);
-	commandList.TrackResource(RhiResourceHandle{destinationRecord->Resource.Get()});
-	commandList.TrackResource(RhiResourceHandle{stagingResource->Resource.Get()});
-
-	DrainCompletedTextureUploads();
-	m_pendingTextureUploads.push_back(PendingTextureUpload{.StagingResource = std::move(stagingResource)});
+	nativeCommandList->ResourceBarrier(1, &barrier);
 	return true;
 }
 

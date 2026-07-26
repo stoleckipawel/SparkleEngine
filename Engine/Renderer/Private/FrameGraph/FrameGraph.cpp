@@ -60,6 +60,7 @@ const FrameGraphPlan& FrameGraph::Compile()
 	    m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetCapabilities().Queues : RhiQueueCapabilities{};
 	FrameGraphCompiler compiler(m_compiledPlan, m_resourceRegistry, m_resourceStateTracker, queueCapabilities);
 	compiler.Compile();
+	m_submissionBatchTokens.resize(m_compiledPlan.submissionBatches.size());
 	return m_compiledPlan;
 }
 

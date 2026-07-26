@@ -13,71 +13,61 @@
 #include <span>
 #include <vector>
 
-class VulkanUploadServiceImplementation final
+VkDeviceSize VulkanUploadService::AlignTextureUploadOffset(VkDeviceSize offset) noexcept
 {
-  public:
-	static constexpr VkDeviceSize TextureUploadAlignment = 4;
+	return (offset + TextureUploadAlignment - 1u) & ~(TextureUploadAlignment - 1u);
+}
 
-	struct TextureUploadRegion final
+std::uint64_t VulkanUploadService::CalculateTextureUploadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
+{
+	VkDeviceSize offset = 0;
+	for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
 	{
-		VkDeviceSize Offset = 0;
-		std::uint32_t Width = 0;
-		std::uint32_t Height = 0;
-		std::uint32_t MipLevel = 0;
-		std::uint32_t ArrayLayer = 0;
-	};
-
-	static VkDeviceSize AlignTextureUploadOffset(VkDeviceSize offset) noexcept
-	{
-		return (offset + TextureUploadAlignment - 1u) & ~(TextureUploadAlignment - 1u);
-	}
-
-	static std::uint64_t CalculateTextureUploadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
-	{
-		VkDeviceSize offset = 0;
-		for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
+		for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
 		{
-			for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
-			{
-				offset = AlignTextureUploadOffset(offset);
-				offset += mipLevel.Data.size();
-			}
+			offset = AlignTextureUploadOffset(offset);
+			offset += mipLevel.Data.size();
 		}
-		return offset;
 	}
+	return offset;
+}
 
-	static bool CopyTextureUploadData(
-	    const RhiTextureUploadDesc& textureUpload,
-	    std::span<std::uint8_t> destination,
-	    std::vector<TextureUploadRegion>& regions) noexcept
+bool VulkanUploadService::CopyTextureUploadData(
+    const RhiTextureUploadDesc& textureUpload,
+    std::span<std::uint8_t> destination,
+    std::vector<VkBufferImageCopy>& regions) noexcept
+{
+	VkDeviceSize offset = 0;
+	for (std::uint32_t arrayLayer = 0; arrayLayer < textureUpload.ArraySlices.size(); ++arrayLayer)
 	{
-		VkDeviceSize offset = 0;
-		for (std::uint32_t arrayLayer = 0; arrayLayer < textureUpload.ArraySlices.size(); ++arrayLayer)
+		const RhiTextureArraySliceUploadData& arraySlice = textureUpload.ArraySlices[arrayLayer];
+		for (std::uint32_t mipIndex = 0; mipIndex < arraySlice.MipLevels.size(); ++mipIndex)
 		{
-			const RhiTextureArraySliceUploadData& arraySlice = textureUpload.ArraySlices[arrayLayer];
-			for (std::uint32_t mipIndex = 0; mipIndex < arraySlice.MipLevels.size(); ++mipIndex)
+			const RhiTextureMipUploadData& mipLevel = arraySlice.MipLevels[mipIndex];
+			offset = AlignTextureUploadOffset(offset);
+			if (offset + mipLevel.Data.size() > destination.size())
 			{
-				const RhiTextureMipUploadData& mipLevel = arraySlice.MipLevels[mipIndex];
-				offset = AlignTextureUploadOffset(offset);
-				if (offset + mipLevel.Data.size() > destination.size())
-				{
-					return false;
-				}
-
-				std::memcpy(destination.data() + offset, mipLevel.Data.data(), mipLevel.Data.size());
-				regions.push_back(
-				    TextureUploadRegion{
-				        .Offset = offset,
-				        .Width = mipLevel.Width,
-				        .Height = mipLevel.Height,
-				        .MipLevel = mipIndex,
-				        .ArrayLayer = arrayLayer});
-				offset += mipLevel.Data.size();
+				return false;
 			}
+
+			std::memcpy(destination.data() + offset, mipLevel.Data.data(), mipLevel.Data.size());
+			regions.push_back(
+			    VkBufferImageCopy{
+			        .bufferOffset = offset,
+			        .bufferRowLength = 0,
+			        .bufferImageHeight = 0,
+			        .imageSubresource = VkImageSubresourceLayers{
+			            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			            .mipLevel = mipIndex,
+			            .baseArrayLayer = arrayLayer,
+			            .layerCount = 1},
+			        .imageOffset = {},
+			        .imageExtent = VkExtent3D{.width = mipLevel.Width, .height = mipLevel.Height, .depth = 1}});
+			offset += mipLevel.Data.size();
 		}
-		return regions.size() == textureUpload.GetSubresourceCount();
 	}
-};
+	return regions.size() == textureUpload.GetSubresourceCount();
+}
 
 VulkanUploadService::VulkanUploadService(
     VulkanCommandContext& commandContext,
@@ -86,13 +76,19 @@ VulkanUploadService::VulkanUploadService(
 {
 }
 
+VulkanUploadService::~VulkanUploadService() noexcept = default;
+
 void VulkanUploadService::BeginFrame(std::uint32_t frameIndex) noexcept
 {
 	m_uniformAllocator.BeginFrame(frameIndex);
 }
 
-RhiGpuVirtualAddress VulkanUploadService::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes)
+RhiGpuVirtualAddress VulkanUploadService::AllocateUniformConstantBuffer(
+    RenderCommandList& commandList,
+    const void* data,
+    std::uint32_t sizeInBytes)
 {
+	(void)commandList;
 	return m_uniformAllocator.AllocateAndCopy(data, sizeInBytes);
 }
 
@@ -104,19 +100,62 @@ bool VulkanUploadService::UploadTexture(
     std::wstring_view debugName)
 {
 	VulkanGpuAllocationRecord* const destinationRecord = GetVulkanGpuAllocationRecord(destination);
-	if (m_commandContext == nullptr || m_memoryAllocator == nullptr || destinationRecord == nullptr ||
-	    destinationRecord->Image == VK_NULL_HANDLE || !textureUpload.IsValid() || commandList.GetBackendApi() != ERhiBackendApi::Vulkan)
+	if (!ValidateTextureUploadRequest(commandList, destinationRecord, textureUpload))
 	{
 		return false;
 	}
 
-	const VkCommandBuffer commandBuffer = static_cast<VulkanRenderCommandList&>(commandList).GetVulkanCommandBuffer();
-	if (commandBuffer == VK_NULL_HANDLE || !m_commandContext->IsCommandBufferRecording(commandBuffer))
+	std::vector<VkBufferImageCopy> copyRegions;
+	copyRegions.reserve(textureUpload.GetSubresourceCount());
+	std::unique_ptr<VulkanGpuAllocationRecord> stagingResource =
+	    CreateTextureStagingResource(textureUpload, debugName, copyRegions);
+	if (stagingResource == nullptr)
 	{
 		return false;
 	}
 
-	const std::uint64_t uploadBufferBytes = VulkanUploadServiceImplementation::CalculateTextureUploadBytes(textureUpload);
+	auto& vulkanCommandList = static_cast<VulkanRenderCommandList&>(commandList);
+	RecordTextureUpload(
+	    vulkanCommandList,
+	    *destinationRecord,
+	    *stagingResource,
+	    textureUpload,
+	    copyRegions,
+	    finalState);
+
+	commandList.TrackResource(RhiResourceHandle{destinationRecord->Image});
+	commandList.TrackResource(RhiResourceHandle{stagingResource->Buffer});
+	m_memoryAllocator->QueueDestroyResource(std::move(stagingResource));
+	return true;
+}
+
+bool VulkanUploadService::ValidateTextureUploadRequest(
+    const RenderCommandList& commandList,
+    const VulkanGpuAllocationRecord* destination,
+    const RhiTextureUploadDesc& textureUpload) const noexcept
+{
+	if (m_commandContext == nullptr ||
+	    m_memoryAllocator == nullptr ||
+	    destination == nullptr ||
+	    destination->Image == VK_NULL_HANDLE ||
+	    !textureUpload.IsValid() ||
+	    commandList.GetBackendApi() != ERhiBackendApi::Vulkan)
+	{
+		return false;
+	}
+
+	const VkCommandBuffer commandBuffer =
+	    static_cast<const VulkanRenderCommandList&>(commandList).GetVulkanCommandBuffer();
+	return commandBuffer != VK_NULL_HANDLE &&
+	       m_commandContext->IsCommandBufferRecording(commandBuffer);
+}
+
+std::unique_ptr<VulkanGpuAllocationRecord> VulkanUploadService::CreateTextureStagingResource(
+    const RhiTextureUploadDesc& textureUpload,
+    std::wstring_view debugName,
+    std::vector<VkBufferImageCopy>& copyRegions)
+{
+	const std::uint64_t uploadBufferBytes = CalculateTextureUploadBytes(textureUpload);
 	const VkBufferCreateInfo uploadBufferCreateInfo{
 	    .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 	    .pNext = nullptr,
@@ -126,6 +165,7 @@ bool VulkanUploadService::UploadTexture(
 	    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 	    .queueFamilyIndexCount = 0,
 	    .pQueueFamilyIndices = nullptr};
+
 	std::unique_ptr<VulkanGpuAllocationRecord> stagingResource = m_memoryAllocator->CreateBuffer(
 	    uploadBufferCreateInfo,
 	    RhiMemoryCategory::Upload,
@@ -133,18 +173,28 @@ bool VulkanUploadService::UploadTexture(
 	    debugName.empty() ? L"TextureUpload" : debugName);
 	if (stagingResource == nullptr || stagingResource->Buffer == VK_NULL_HANDLE)
 	{
-		return false;
+		return {};
 	}
 
 	std::vector<std::uint8_t> uploadBytes(static_cast<std::size_t>(uploadBufferBytes));
-	std::vector<VulkanUploadServiceImplementation::TextureUploadRegion> regions;
-	regions.reserve(textureUpload.GetSubresourceCount());
-	if (!VulkanUploadServiceImplementation::CopyTextureUploadData(textureUpload, uploadBytes, regions) ||
+	if (!CopyTextureUploadData(textureUpload, uploadBytes, copyRegions) ||
 	    !m_memoryAllocator->WriteAllocation(*stagingResource, uploadBytes.data(), uploadBytes.size()))
 	{
-		return false;
+		return {};
 	}
 
+	return stagingResource;
+}
+
+void VulkanUploadService::RecordTextureUpload(
+    VulkanRenderCommandList& commandList,
+    const VulkanGpuAllocationRecord& destination,
+    const VulkanGpuAllocationRecord& stagingResource,
+    const RhiTextureUploadDesc& textureUpload,
+    std::span<const VkBufferImageCopy> copyRegions,
+    ResourceState finalState) noexcept
+{
+	const VkCommandBuffer commandBuffer = commandList.GetVulkanCommandBuffer();
 	const VkImageSubresourceRange subresourceRange{
 	    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 	    .baseMipLevel = 0,
@@ -162,7 +212,7 @@ bool VulkanUploadService::UploadTexture(
 	    .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 	    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-	    .image = destinationRecord->Image,
+	    .image = destination.Image,
 	    .subresourceRange = subresourceRange};
 	const VkDependencyInfo transferDependency{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -170,28 +220,10 @@ bool VulkanUploadService::UploadTexture(
 	    .imageMemoryBarrierCount = 1,
 	    .pImageMemoryBarriers = &toTransfer};
 	vkCmdPipelineBarrier2(commandBuffer, &transferDependency);
-
-	std::vector<VkBufferImageCopy> copyRegions;
-	copyRegions.reserve(regions.size());
-	for (const VulkanUploadServiceImplementation::TextureUploadRegion& region : regions)
-	{
-		copyRegions.push_back(
-		    VkBufferImageCopy{
-		        .bufferOffset = region.Offset,
-		        .bufferRowLength = 0,
-		        .bufferImageHeight = 0,
-		        .imageSubresource = VkImageSubresourceLayers{
-		            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		            .mipLevel = region.MipLevel,
-		            .baseArrayLayer = region.ArrayLayer,
-		            .layerCount = 1},
-		        .imageOffset = {},
-		        .imageExtent = VkExtent3D{.width = region.Width, .height = region.Height, .depth = 1}});
-	}
 	vkCmdCopyBufferToImage(
 	    commandBuffer,
-	    stagingResource->Buffer,
-	    destinationRecord->Image,
+	    stagingResource.Buffer,
+	    destination.Image,
 	    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 	    static_cast<std::uint32_t>(copyRegions.size()),
 	    copyRegions.data());
@@ -210,7 +242,7 @@ bool VulkanUploadService::UploadTexture(
 	    .newLayout = finalStateMapping.ImageLayout,
 	    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 	    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-	    .image = destinationRecord->Image,
+	    .image = destination.Image,
 	    .subresourceRange = subresourceRange};
 	const VkDependencyInfo finalStateDependency{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -218,9 +250,4 @@ bool VulkanUploadService::UploadTexture(
 	    .imageMemoryBarrierCount = 1,
 	    .pImageMemoryBarriers = &toFinalState};
 	vkCmdPipelineBarrier2(commandBuffer, &finalStateDependency);
-
-	commandList.TrackResource(RhiResourceHandle{destinationRecord->Image});
-	commandList.TrackResource(RhiResourceHandle{stagingResource->Buffer});
-	m_memoryAllocator->QueueDestroyResource(std::move(stagingResource));
-	return true;
 }

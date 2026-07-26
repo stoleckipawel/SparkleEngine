@@ -8,38 +8,7 @@
 #include "FrameGraph/Execution/FrameGraphSubmissionExecutor.h"
 #include "RHI/Public/Commands/RhiCommandSubmissionService.h"
 
-#include <format>
-#include <string>
-
-class FrameGraphExecutionOperations final
-{
-  public:
-	inline static const auto g_frameGraphExecutionLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
-
-	static void FailMissingExecutionBinding(
-	    std::string_view passName,
-	    const FrameGraphResourceMetadata& resource,
-	    bool hasResource,
-	    RhiGpuVirtualAddress gpuAddress) noexcept
-	{
-		Diagnostics::Fail(
-		    g_frameGraphExecutionLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format(
-		        "FrameGraph execution binding validation failed: pass='{}' resource='{}' ownership={} kind={} hasResource={} gpuAddress={} remediation='bind the external/persistent resource before execution or gate the pass so it does not declare the missing resource'",
-		        passName,
-		        resource.debugName.empty() ? "<unnamed>" : resource.debugName,
-		        resource.ownership == FrameGraphResourceOwnership::Imported ? "Imported" : "ExternalPersistent",
-		        resource.kind == FrameGraphResourceKind::AccelerationStructure ? "AccelerationStructure"
-		        : resource.kind == FrameGraphResourceKind::Buffer              ? "Buffer"
-		        : resource.kind == FrameGraphResourceKind::DepthStencil        ? "DepthStencil"
-		                                                                      : "ColorRenderTarget",
-		        hasResource,
-		        gpuAddress));
-	}
-
-};
+#include <algorithm>
 
 void FrameGraph::Execute(
     const FrameGraphPlan& plan,
@@ -49,20 +18,10 @@ void FrameGraph::Execute(
     FrameExecutionDiagnostics& frameDiagnostics) const
 {
 	EnsureTransientResourcesMaterialized(plan);
-	ValidateExecutionBindings(plan);
+	std::fill(m_submissionBatchTokens.begin(), m_submissionBatchTokens.end(), RhiSubmissionToken{});
+
 	RenderCommandList& initialGraphicsCommandList = submissionService.GetCurrentGraphicsCommandList();
-	RenderCommandContext initialCommands(initialGraphicsCommandList);
-	FrameGraphExecutionDiagnostics initialDiagnostics(frameDiagnostics, initialCommands);
-	if (initialDiagnostics.ShouldEmitDetailedMarkers())
-	{
-		initialCommands.EnableDrawDispatchDiagnostics();
-	}
-	if (!plan.initialTransientAliasingBarriers.empty())
-	{
-		initialDiagnostics.InsertFrameBeginAliasingBarrierMarker();
-	}
-	EmitTransientAliasingBarriers(initialCommands, "FrameBegin", plan.initialTransientAliasingBarriers);
-	EmitCompiledBarriers(initialCommands, "FrameBegin", plan.initialBarriers);
+	RecordFrameBeginBarriers(plan, initialGraphicsCommandList, frameDiagnostics);
 
 	FrameGraphSubmissionExecutor submissionExecutor(
 	    *this,
@@ -70,49 +29,46 @@ void FrameGraph::Execute(
 	    submissionService,
 	    frame,
 	    passRuntimeServices,
-	    frameDiagnostics);
+	    frameDiagnostics,
+	    m_submissionBatchTokens);
 	RenderCommandList& finalGraphicsCommandList = submissionExecutor.Execute(initialGraphicsCommandList);
-	RenderCommandContext finalCommands(finalGraphicsCommandList);
-	FrameGraphExecutionDiagnostics finalDiagnostics(frameDiagnostics, finalCommands);
-	if (!plan.finalBarriers.empty())
-	{
-		finalDiagnostics.InsertFrameEndResourceBarrierMarker();
-	}
-	EmitCompiledBarriers(finalCommands, "FrameEnd", plan.finalBarriers);
+	RecordFrameEndBarriers(plan, finalGraphicsCommandList, frameDiagnostics);
+
 	CommitTextureHistories();
 }
 
-void FrameGraph::ValidateExecutionBindings(const FrameGraphPlan& plan) const noexcept
+void FrameGraph::RecordFrameBeginBarriers(
+    const FrameGraphPlan& plan,
+    RenderCommandList& commandList,
+    FrameExecutionDiagnostics& frameDiagnostics) const
 {
-	for (const FrameGraphPassIndex passIndex : plan.executionOrder)
+	RenderCommandContext commands(commandList);
+	FrameGraphExecutionDiagnostics diagnostics(frameDiagnostics, commands);
+	if (diagnostics.ShouldEmitDetailedMarkers())
 	{
-		const FrameGraphPassNode& passRecord = plan.passes[passIndex];
-		for (const PassResourceDeclaration& declaration : passRecord.declarations)
-		{
-			if (!declaration.handle.IsValid() || !m_resourceRegistry.IsRegistered(declaration.handle))
-			{
-				continue;
-			}
-
-			const FrameGraphResourceMetadata& resource = m_resourceRegistry.GetMetadata(declaration.handle);
-			if (!IsExternalFrameGraphResource(resource.ownership) || resource.kind == FrameGraphResourceKind::BackBuffer)
-			{
-				continue;
-			}
-
-			const FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(resource.handle);
-			const bool requiresGpuAddress = resource.kind == FrameGraphResourceKind::AccelerationStructure;
-			const bool hasRequiredBinding = access.resource && (!requiresGpuAddress || access.accelerationStructureGpuAddress != 0);
-			if (hasRequiredBinding)
-			{
-				continue;
-			}
-
-			FrameGraphExecutionOperations::FailMissingExecutionBinding(
-			    passRecord.passName,
-			    resource,
-			    static_cast<bool>(access.resource),
-			    access.accelerationStructureGpuAddress);
-		}
+		commands.EnableDrawDispatchDiagnostics();
 	}
+
+	if (!plan.initialTransientAliasingBarriers.empty())
+	{
+		diagnostics.InsertFrameBeginAliasingBarrierMarker();
+	}
+
+	EmitTransientAliasingBarriers(commands, "FrameBegin", plan.initialTransientAliasingBarriers);
+	EmitCompiledBarriers(commands, "FrameBegin", plan.initialBarriers);
+}
+
+void FrameGraph::RecordFrameEndBarriers(
+    const FrameGraphPlan& plan,
+    RenderCommandList& commandList,
+    FrameExecutionDiagnostics& frameDiagnostics) const
+{
+	RenderCommandContext commands(commandList);
+	FrameGraphExecutionDiagnostics diagnostics(frameDiagnostics, commands);
+	if (!plan.finalBarriers.empty())
+	{
+		diagnostics.InsertFrameEndResourceBarrierMarker();
+	}
+
+	EmitCompiledBarriers(commands, "FrameEnd", plan.finalBarriers);
 }

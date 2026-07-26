@@ -75,7 +75,7 @@ namespace PassUtilities
 	    FrameGraphTextureHandle destinationHandle,
 	    FrameGraphTextureHandle sourceHandle)
 	{
-		builder.Execute(
+		builder.AddPass(
 		    name,
 		    EFrameGraphPassKind::Transfer,
 		    EFrameGraphQueuePreference::Copy,
@@ -96,7 +96,7 @@ namespace PassUtilities
 	    FrameGraphBufferHandle destinationHandle,
 	    FrameGraphBufferHandle sourceHandle)
 	{
-		builder.Execute(
+		builder.AddPass(
 		    name,
 		    EFrameGraphPassKind::Transfer,
 		    EFrameGraphQueuePreference::Copy,

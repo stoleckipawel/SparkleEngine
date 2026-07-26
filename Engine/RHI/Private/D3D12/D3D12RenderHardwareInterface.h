@@ -10,7 +10,7 @@ class D3D12DescriptorHeapManager;
 class D3D12DescriptorService;
 class D3D12UploadService;
 class D3D12CaptureService;
-class D3D12CommandContext;
+class D3D12CommandRecordingContext;
 class D3D12ImGuiBackend;
 class D3D12InteropService;
 class D3D12GpuMemoryAllocator;
@@ -63,7 +63,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept;
 	RenderCommandList& GetCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
-	void SetCommandContext(D3D12CommandContext& commandContext) noexcept { m_commandContext = &commandContext; }
+	void SetCommandRecordingContext(D3D12CommandRecordingContext& commandContext) noexcept;
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	ID3D12DescriptorHeap* GetD3D12ShaderResourceDescriptorHeap() const noexcept;
@@ -106,6 +106,8 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    ID3D12GraphicsCommandList7* commandList,
 	    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;
 	RhiCapabilities BuildCapabilities() const noexcept;
+	RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport() const noexcept;
+	RhiBackendMemorySupport BuildBackendMemorySupport() const noexcept;
 	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
 
 	std::unique_ptr<D3D12InteropService> m_interopService;
@@ -118,7 +120,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
 	D3D12UploadService* m_uploadService = nullptr;
-	D3D12CommandContext* m_commandContext = nullptr;
+	D3D12CommandRecordingContext* m_commandRecordingContext = nullptr;
 	std::unique_ptr<D3D12DescriptorService> m_descriptorService;
 	std::unique_ptr<D3D12ImGuiBackend> m_imguiBackend;
 	RhiCapabilities m_capabilities;

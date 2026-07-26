@@ -134,13 +134,13 @@ void PassBinder::BindCompiledBinding(
 			assert(parameterBinding != nullptr);
 			const PassParameterUniformBindingData* uniformData = parameterBinding->AsUniformData();
 			assert(uniformData != nullptr);
-			BindGpuAddress(
-			    cmd,
-			    compiledBinding,
+
+			const RhiGpuVirtualAddress gpuAddress =
 			    renderHardwareInterface->GetUploadService().AllocateUniformConstantBuffer(
+			        cmd.GetRenderCommandList(),
 			        uniformData->Data,
-			        uniformData->SizeInBytes),
-			    isCompute);
+			        uniformData->SizeInBytes);
+			BindGpuAddress(cmd, compiledBinding, gpuAddress, isCompute);
 			return;
 		}
 		case CompiledBindingType::ReadOnlyAddress:
@@ -252,7 +252,8 @@ void PassBinder::BindCompiledBinding(
 			assert(parameterBinding != nullptr);
 			const PassParameterSamplerBindingData* samplerData = parameterBinding->AsSamplerData();
 			assert(samplerData != nullptr);
-			const RhiDescriptorTableBinding samplerBinding = renderHardwareInterface->GetDescriptorService().GetSharedSamplerBinding(samplerData->Desc);
+			const RhiDescriptorTableBinding samplerBinding =
+			    renderHardwareInterface->GetDescriptorService().GetSharedSamplerBinding(samplerData->Desc);
 			assert(static_cast<bool>(samplerBinding));
 			BindDescriptorTable(cmd, compiledBinding, samplerBinding, isCompute);
 			return;

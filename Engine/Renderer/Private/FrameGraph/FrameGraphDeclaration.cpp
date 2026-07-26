@@ -8,7 +8,7 @@
 #include <string>
 #include <utility>
 
-class FrameGraphDeclarationOperations final
+class FrameGraphPassLabelFormatter final
 {
   public:
 	static std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassKind passKind)
@@ -41,7 +41,7 @@ void FrameGraph::Setup(const FrameContext& frame)
 		auto& pass = m_passes[passIndex];
 		std::vector<PassResourceDeclaration> declarations;
 		PassResourceBuilder builder(declarations);
-		pass.setupCallback(builder, frame);
+		pass.active = pass.setupCallback(builder, frame);
 		FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(pass.name, pass.kind, declarations);
 		assert(IsQueuePreferenceCompatible(pass.kind, pass.queuePreference));
 		m_compiledPlan.passes.push_back(
@@ -50,8 +50,8 @@ void FrameGraph::Setup(const FrameContext& frame)
 		        .passName = pass.name,
 		        .kind = pass.kind,
 		        .queuePreference = pass.queuePreference,
-		        .diagnosticName = FrameGraphDeclarationOperations::FormatPassDiagnosticName(pass.name),
-		        .eventScopeLabel = FrameGraphDeclarationOperations::FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.kind),
+		        .diagnosticName = FrameGraphPassLabelFormatter::FormatPassDiagnosticName(pass.name),
+		        .eventScopeLabel = FrameGraphPassLabelFormatter::FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.kind),
 		        .declarations = std::move(declarations)});
 	}
 }

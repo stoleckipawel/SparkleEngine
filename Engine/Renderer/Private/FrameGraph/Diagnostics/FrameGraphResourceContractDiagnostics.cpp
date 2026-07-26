@@ -9,7 +9,7 @@
 #include <cassert>
 #include <string>
 
-class FrameGraphResourceContractDiagnosticsOperations final
+class FrameGraphResourceContractFailureReporter final
 {
   public:
 	inline static const auto g_frameGraphContractLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
@@ -43,7 +43,7 @@ bool FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(
 		message += "' uses unsupported resource usage ";
 		message += ResourceUsageToString(declaration.usage);
 		message += ".";
-		return FrameGraphResourceContractDiagnosticsOperations::ReportValidationFailure(passName, message);
+		return FrameGraphResourceContractFailureReporter::ReportValidationFailure(passName, message);
 	}
 
 	return true;
@@ -62,7 +62,7 @@ bool FrameGraphResourceContractDiagnostics::ValidatePassParameterBinding(
 	const PassParameterAccelerationStructureBindingData* accelerationStructureData = binding.AsAccelerationStructureData();
 	if (accelerationStructureData == nullptr)
 	{
-		return FrameGraphResourceContractDiagnosticsOperations::ReportValidationFailure(passName, "acceleration-structure parameter binding type did not match the reflected layout.");
+		return FrameGraphResourceContractFailureReporter::ReportValidationFailure(passName, "acceleration-structure parameter binding type did not match the reflected layout.");
 	}
 
 	if (!accelerationStructureData->Handle.IsValid())
@@ -70,7 +70,7 @@ bool FrameGraphResourceContractDiagnostics::ValidatePassParameterBinding(
 		std::string message = "acceleration-structure parameter '";
 		message += parameter.Name;
 		message += "' must be bound through a FrameGraph acceleration-structure handle so setup, compile, and diagnostics can track it.";
-		return FrameGraphResourceContractDiagnosticsOperations::ReportValidationFailure(passName, message);
+		return FrameGraphResourceContractFailureReporter::ReportValidationFailure(passName, message);
 	}
 
 	return true;

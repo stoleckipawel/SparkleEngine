@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cassert>
 
-class FrameGraphCompilerTransientsOperations final
+class FrameGraphTransientAliasingPolicy final
 {
   public:
 	static bool AreClearValuesEqual(const RhiOptimizedClearValue& lhs, const RhiOptimizedClearValue& rhs, FrameGraphResourceKind kind) noexcept
@@ -232,7 +232,7 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 			assert(!block.handles.empty());
 			const FrameGraphTransientResourcePlan* currentOwner = FindTransientResourcePlan(block.handles.back());
 			assert(currentOwner != nullptr);
-			if (!FrameGraphCompilerTransientsOperations::CanSharePhysicalBlock(*currentOwner, *transientPlan))
+			if (!FrameGraphTransientAliasingPolicy::CanSharePhysicalBlock(*currentOwner, *transientPlan))
 			{
 				continue;
 			}

@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <string>
 
-class FrameGraphTextureHistoryOperations final
+class FrameGraphTextureHistoryPlanner final
 {
   public:
 	static bool UsesHandle(const PassResourceDeclaration& declaration, FrameGraphTextureHandle handle) noexcept
@@ -87,8 +87,8 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 		{
 			for (const PassResourceDeclaration& declaration : pass.declarations)
 			{
-				const bool usesPrevious = FrameGraphTextureHistoryOperations::UsesHandle(declaration, history.handles.Previous);
-				const bool usesCurrent = FrameGraphTextureHistoryOperations::UsesHandle(declaration, history.handles.Current);
+				const bool usesPrevious = FrameGraphTextureHistoryPlanner::UsesHandle(declaration, history.handles.Previous);
+				const bool usesCurrent = FrameGraphTextureHistoryPlanner::UsesHandle(declaration, history.handles.Current);
 				if (!usesPrevious && !usesCurrent)
 				{
 					continue;
@@ -153,7 +153,7 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 				    ResourceState::Undefined,
 				    RhiMemoryCategory::Texture,
 				    RhiMemoryResidencyClass::DeviceLocal,
-				    FrameGraphTextureHistoryOperations::BuildHistoryResourceName(history.desc.name));
+				    FrameGraphTextureHistoryPlanner::BuildHistoryResourceName(history.desc.name));
 			}
 		}
 

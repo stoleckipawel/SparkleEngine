@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-class FrameGraphCompilerDependenciesOperations final
+class FrameGraphDependencyRegistrar final
 {
   public:
 	static void AddRawDependency(std::vector<FrameGraphPassIndex>& dependsOn, FrameGraphPassIndex dependency) noexcept
@@ -323,10 +323,10 @@ void FrameGraphCompiler::RegisterReadDependency(FrameGraphPassNode& passRecord, 
 	FrameGraphResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
 	if (currentVersion.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && currentVersion.writerPass != passRecord.index)
 	{
-		FrameGraphCompilerDependenciesOperations::AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
+		FrameGraphDependencyRegistrar::AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
 	}
 
-	FrameGraphCompilerDependenciesOperations::RegisterVersionReader(currentVersion, passRecord.index);
+	FrameGraphDependencyRegistrar::RegisterVersionReader(currentVersion, passRecord.index);
 }
 
 void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept
@@ -334,7 +334,7 @@ void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord,
 	const FrameGraphResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
 	if (currentVersion.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && currentVersion.writerPass != passRecord.index)
 	{
-		FrameGraphCompilerDependenciesOperations::AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
+		FrameGraphDependencyRegistrar::AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
 	}
 
 	for (const FrameGraphPassIndex readerPass : currentVersion.readerPasses)
@@ -344,7 +344,7 @@ void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord,
 			continue;
 		}
 
-		FrameGraphCompilerDependenciesOperations::AddRawDependency(passRecord.dependsOn, readerPass);
+		FrameGraphDependencyRegistrar::AddRawDependency(passRecord.dependsOn, readerPass);
 	}
 
 	resource.currentVersion = static_cast<std::uint32_t>(resource.versions.size());

@@ -11,6 +11,8 @@
 #include <array>
 #include <limits>
 
+PipelineStateManager::IRuntimeStorageHolder::~IRuntimeStorageHolder() noexcept = default;
+
 PipelineStateManager::PipelineStateManager(
     RenderDeviceServices& deviceServices) noexcept :
     m_deviceServices(&deviceServices),

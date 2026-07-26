@@ -9,7 +9,7 @@
 
 static const auto g_frameGraphAccelerationStructureLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
-class FrameGraphAccelerationStructureRegistrationOperations final
+class FrameGraphAccelerationStructureBindingValidator final
 {
   public:
 	static FrameGraphAccelerationStructureDesc ResolveAccelerationStructureDesc(
@@ -57,7 +57,7 @@ FrameGraphAccelerationStructureHandle FrameGraph::ReservePersistentAccelerationS
     const FrameGraphAccelerationStructureDesc& desc,
     ResourceState initialState) noexcept
 {
-	const FrameGraphAccelerationStructureDesc resolvedDesc = FrameGraphAccelerationStructureRegistrationOperations::ResolveAccelerationStructureDesc(desc, "PersistentAccelerationStructure");
+	const FrameGraphAccelerationStructureDesc resolvedDesc = FrameGraphAccelerationStructureBindingValidator::ResolveAccelerationStructureDesc(desc, "PersistentAccelerationStructure");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
 	m_resourceRegistry.RegisterPersistentAccelerationStructure(handle, resolvedDesc, initialState);
 	m_resourceStateTracker.RegisterResource(handle, initialState);
@@ -79,7 +79,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 
 	if (!resource || gpuAddress == 0)
 	{
-		FrameGraphAccelerationStructureRegistrationOperations::FailInvalidAccelerationStructureBinding(
+		FrameGraphAccelerationStructureBindingValidator::FailInvalidAccelerationStructureBinding(
 		    "BindPersistentAccelerationStructure",
 		    {},
 		    handle.GetResourceHandle(),
@@ -91,7 +91,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
 	if (!m_resourceRegistry.IsRegistered(resourceHandle))
 	{
-		FrameGraphAccelerationStructureRegistrationOperations::FailInvalidAccelerationStructureBinding(
+		FrameGraphAccelerationStructureBindingValidator::FailInvalidAccelerationStructureBinding(
 		    "BindPersistentAccelerationStructure",
 		    {},
 		    resourceHandle,
@@ -104,7 +104,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 	if (metadata.kind != FrameGraphResourceKind::AccelerationStructure
 	    || metadata.ownership != FrameGraphResourceOwnership::ExternalPersistent)
 	{
-		FrameGraphAccelerationStructureRegistrationOperations::FailInvalidAccelerationStructureBinding(
+		FrameGraphAccelerationStructureBindingValidator::FailInvalidAccelerationStructureBinding(
 		    "BindPersistentAccelerationStructure",
 		    metadata.debugName,
 		    resourceHandle,
@@ -128,7 +128,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 {
 	if (m_renderHardwareInterface == nullptr || !resource)
 	{
-		FrameGraphAccelerationStructureRegistrationOperations::FailInvalidAccelerationStructureBinding(
+		FrameGraphAccelerationStructureBindingValidator::FailInvalidAccelerationStructureBinding(
 		    "BindPersistentAccelerationStructure",
 		    {},
 		    handle.GetResourceHandle(),

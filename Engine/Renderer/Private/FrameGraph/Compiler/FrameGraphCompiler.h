@@ -3,6 +3,8 @@
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
 #include "RHI/Public/Commands/RhiQueueCapabilities.h"
 
+#include <vector>
+
 class FrameGraphResourceRegistry;
 class FrameGraphResourceStateTracker;
 
@@ -18,6 +20,14 @@ class FrameGraphCompiler final
 	void Compile() noexcept;
 
   private:
+	struct LastResourceAccess final
+	{
+		FrameGraphPassIndex Pass = INVALID_FRAME_GRAPH_PASS_INDEX;
+		ERhiQueueType Queue = ERhiQueueType::Graphics;
+	};
+
+	using LastResourceAccessTable = std::vector<LastResourceAccess>;
+
 	void BuildCompiledPlanResources() noexcept;
 	void BuildResourceVersionGraph() noexcept;
 	void FinalizePassDependencies() noexcept;
@@ -37,6 +47,32 @@ class FrameGraphCompiler final
 	void BuildTransientPhysicalBlockAssignments() noexcept;
 	void BuildTransientAliasingBarriers() noexcept;
 	void BuildResourceBarriers() noexcept;
+	void InitializeBarrierDependencies() noexcept;
+	void BuildPassResourceBarriers(
+	    FrameGraphPassIndex passIndex,
+	    LastResourceAccessTable& lastResourceAccesses) noexcept;
+	void BuildResourceBarrier(
+	    FrameGraphPassIndex passIndex,
+	    FrameGraphPassNode& passRecord,
+	    const PassResourceDeclaration& declaration,
+	    FrameGraphResourceNode& compiledResource,
+	    LastResourceAccess& lastAccess) noexcept;
+	void BuildQueueOwnershipBarriers(
+	    FrameGraphPassIndex passIndex,
+	    FrameGraphPassNode& passRecord,
+	    const PassResourceDeclaration& declaration,
+	    FrameGraphResourceNode& compiledResource,
+	    const LastResourceAccess& lastAccess) noexcept;
+	void BuildRequiredResourceBarriers(
+	    FrameGraphPassNode& passRecord,
+	    const PassResourceDeclaration& declaration,
+	    FrameGraphResourceNode& compiledResource) noexcept;
+	void BuildFinalResourceBarriers(
+	    const LastResourceAccessTable& lastResourceAccesses) noexcept;
+	static bool HasCompiledBarrier(
+	    const FrameGraphPassNode& passRecord,
+	    FrameGraphResourceHandle handle,
+	    FrameGraphBarrier::Type type) noexcept;
 	void ResetCompiledResourceStatesForBarrierPlanning() noexcept;
 	ResourceState InferRequiredResourceState(const PassResourceDeclaration& declaration, const FrameGraphResourceNode& resource)
 	    const noexcept;

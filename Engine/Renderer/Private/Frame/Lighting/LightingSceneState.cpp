@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <vector>
 
-class LightingSceneStateOperations final
+class LightingSceneStateHasher final
 {
   public:
 	template <typename TValue> static std::uint64_t AppendCount(std::uint64_t hash, const std::vector<TValue>& values) noexcept
@@ -141,34 +141,34 @@ std::uint64_t BuildLightingSceneInvalidationHash(const FrameContext& frame) noex
 	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxPointLights.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxSpotLights.Get());
 	hash = Hash::ContinueFnv1a64Value(hash, CVarMaxRectLights.Get());
-	hash = LightingSceneStateOperations::AppendSkyState(hash, frame.sceneData.sky);
-	hash = LightingSceneStateOperations::AppendLightsState(hash, frame.sceneData.directionalLights);
-	hash = LightingSceneStateOperations::AppendLightsState(hash, frame.sceneData.pointLights);
-	hash = LightingSceneStateOperations::AppendLightsState(hash, frame.sceneData.spotLights);
-	hash = LightingSceneStateOperations::AppendLightsState(hash, frame.sceneData.rectLights);
+	hash = LightingSceneStateHasher::AppendSkyState(hash, frame.sceneData.sky);
+	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.sceneData.directionalLights);
+	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.sceneData.pointLights);
+	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.sceneData.spotLights);
+	hash = LightingSceneStateHasher::AppendLightsState(hash, frame.sceneData.rectLights);
 
-	hash = LightingSceneStateOperations::AppendCount(hash, frame.sceneData.meshInstances);
+	hash = LightingSceneStateHasher::AppendCount(hash, frame.sceneData.meshInstances);
 	for (const MeshDraw& draw : frame.sceneData.meshInstances)
 	{
-		hash = LightingSceneStateOperations::AppendMeshState(hash, draw);
+		hash = LightingSceneStateHasher::AppendMeshState(hash, draw);
 	}
 
-	hash = LightingSceneStateOperations::AppendCount(hash, frame.sceneData.jointMatrices);
+	hash = LightingSceneStateHasher::AppendCount(hash, frame.sceneData.jointMatrices);
 	for (const DirectX::XMFLOAT4X4& jointMatrix : frame.sceneData.jointMatrices)
 	{
 		hash = LightingStateHash::AppendMatrix(hash, jointMatrix);
 	}
 
-	hash = LightingSceneStateOperations::AppendCount(hash, frame.sceneData.morphWeights);
+	hash = LightingSceneStateHasher::AppendCount(hash, frame.sceneData.morphWeights);
 	for (float morphWeight : frame.sceneData.morphWeights)
 	{
 		hash = Hash::ContinueFnv1a64Value(hash, morphWeight);
 	}
 
-	hash = LightingSceneStateOperations::AppendCount(hash, frame.sceneData.materials);
+	hash = LightingSceneStateHasher::AppendCount(hash, frame.sceneData.materials);
 	for (const MaterialData& material : frame.sceneData.materials)
 	{
-		hash = LightingSceneStateOperations::AppendMaterialState(hash, material);
+		hash = LightingSceneStateHasher::AppendMaterialState(hash, material);
 	}
 
 	hash = Hash::ContinueFnv1a64Value(hash, frame.sceneData.materialTextureTable.Binding.Table.Value);

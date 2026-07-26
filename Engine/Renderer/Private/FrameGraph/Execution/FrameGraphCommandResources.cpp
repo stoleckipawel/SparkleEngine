@@ -6,17 +6,13 @@
 #include <array>
 #include <cassert>
 
-class FrameGraphCommandResourcesImplementation final
+struct FrameGraphFramebuffer final
 {
-  public:
-	struct FrameGraphFramebuffer final
-	{
-		std::array<RhiCpuDescriptorHandle, 8> renderTargetViews = {};
-		std::uint32_t renderTargetCount = 0;
-		RhiCpuDescriptorHandle depthStencilView = {};
+	std::array<RhiCpuDescriptorHandle, 8> renderTargetViews = {};
+	std::uint32_t renderTargetCount = 0;
+	RhiCpuDescriptorHandle depthStencilView = {};
 
-		bool HasDepthStencil() const noexcept { return static_cast<bool>(depthStencilView); }
-	};
+	bool HasDepthStencil() const noexcept { return static_cast<bool>(depthStencilView); }
 };
 
 void FrameGraph::BindRenderTarget(
@@ -24,7 +20,7 @@ void FrameGraph::BindRenderTarget(
     FrameGraphTextureHandle renderTargetHandle,
     FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
-	FrameGraphCommandResourcesImplementation::FrameGraphFramebuffer framebuffer{};
+	FrameGraphFramebuffer framebuffer{};
 	framebuffer.renderTargetViews[0] = ResolveRenderTargetView(renderTargetHandle.GetResourceHandle());
 	framebuffer.renderTargetCount = 1u;
 	if (depthStencilHandle.IsValid())
@@ -45,7 +41,7 @@ void FrameGraph::BindRenderTargets(
 	assert(!renderTargetHandles.empty());
 	assert(renderTargetHandles.size() <= 8u);
 
-	FrameGraphCommandResourcesImplementation::FrameGraphFramebuffer framebuffer{};
+	FrameGraphFramebuffer framebuffer{};
 	framebuffer.renderTargetCount = static_cast<std::uint32_t>(renderTargetHandles.size());
 	for (std::size_t index = 0; index < renderTargetHandles.size(); ++index)
 	{

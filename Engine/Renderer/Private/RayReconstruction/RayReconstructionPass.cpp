@@ -31,7 +31,7 @@ void AddRayReconstructionPass(
 		return;
 	}
 
-	builder.Execute(
+	builder.AddPass(
 	    passName,
 	    EFrameGraphPassKind::ExternalProvider,
 	    [providerInputs](PassResourceBuilder& resourceBuilder)

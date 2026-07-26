@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Commands/RhiQueue.h"
+#include "Commands/RhiCommandRecordingLease.h"
 
 #include <cstdint>
 #include <span>
@@ -12,7 +12,7 @@ class RhiImGuiRenderer;
 class RenderDeviceBackendServices
 {
   public:
-	virtual ~RenderDeviceBackendServices() noexcept = default;
+	virtual ~RenderDeviceBackendServices() noexcept;
 
 	virtual RenderHardwareInterface& GetRenderHardwareInterface() noexcept = 0;
 	virtual const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept = 0;
@@ -22,9 +22,14 @@ class RenderDeviceBackendServices
 	virtual void BeginFrame() noexcept = 0;
 	virtual RenderCommandList& GetCurrentGraphicsCommandList() noexcept = 0;
 	virtual RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept = 0;
-	virtual RenderCommandList& BeginCommandList(ERhiQueueType queueType) noexcept = 0;
-	virtual RhiSubmissionToken SubmitCommandList(
-	    RenderCommandList& commandList,
+	virtual RenderCommandList& BeginCurrentGraphicsCommandList() noexcept = 0;
+	virtual RhiCommandRecordingLease AcquireCommandRecordingLease(
+	    ERhiQueueType queueType,
+	    RhiCommandRecordingOwner owner) noexcept = 0;
+	virtual RhiSubmissionToken SubmitCommandRecordingLease(
+	    RhiCommandRecordingLease&& lease,
+	    std::span<const RhiSubmissionToken> waitTokens) noexcept = 0;
+	virtual RhiSubmissionToken SubmitCurrentGraphicsCommandList(
 	    std::span<const RhiSubmissionToken> waitTokens) noexcept = 0;
 	virtual void QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept = 0;
 	virtual void WaitForSubmission(RhiSubmissionToken token) noexcept = 0;

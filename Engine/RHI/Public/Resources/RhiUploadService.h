@@ -13,9 +13,12 @@ class RenderCommandList;
 class SPARKLE_RHI_API RhiUploadService
 {
   public:
-	virtual ~RhiUploadService() noexcept = default;
+	virtual ~RhiUploadService() noexcept;
 
-	virtual RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes) = 0;
+	virtual RhiGpuVirtualAddress AllocateUniformConstantBuffer(
+	    RenderCommandList& commandList,
+	    const void* data,
+	    std::uint32_t sizeInBytes) = 0;
 	virtual bool UploadTexture(
 	    RenderCommandList& commandList,
 	    RhiOwnedResourceHandle destination,

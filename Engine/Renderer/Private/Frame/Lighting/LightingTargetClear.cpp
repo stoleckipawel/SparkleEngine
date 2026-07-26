@@ -7,7 +7,7 @@
 
 #include <array>
 
-class LightingTargetClearOperations final
+class LightingTargetClearPlan final
 {
   public:
 	static constexpr const char* kLightingTargetClearPassName = "LightingTargetClear";
@@ -34,8 +34,8 @@ class LightingTargetClearOperations final
 
 void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting)
 {
-	builder.Execute(
-	    LightingTargetClearOperations::kLightingTargetClearPassName,
+	builder.AddPass(
+	    LightingTargetClearPlan::kLightingTargetClearPassName,
 	    EFrameGraphPassKind::Raster,
 	    [lighting](PassResourceBuilder& resourceBuilder)
 	    {
@@ -66,13 +66,13 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 	    },
 	    [lighting](PassExecutionContext& context)
 	    {
-		    for (FrameGraphTextureHandle target : LightingTargetClearOperations::GetLightingTargets(lighting))
+		    for (FrameGraphTextureHandle target : LightingTargetClearPlan::GetLightingTargets(lighting))
 		    {
 			    context.Resources.ClearRenderTarget(context.Commands, target);
 		    }
 		    if (lighting.ReconstructionGuides.IsValid())
 		    {
-			    for (FrameGraphTextureHandle target : LightingTargetClearOperations::GetRayReconstructionGuideTargets(lighting))
+			    for (FrameGraphTextureHandle target : LightingTargetClearPlan::GetRayReconstructionGuideTargets(lighting))
 			    {
 				    context.Resources.ClearRenderTarget(context.Commands, target);
 			    }

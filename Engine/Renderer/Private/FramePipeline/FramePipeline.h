@@ -26,6 +26,8 @@ class EditorRenderPacketPlayer;
 class EditorTextureRegistry;
 struct FrameContext;
 class FrameGraph;
+class RenderCommandList;
+class RenderDeviceServices;
 class RendererSystemRoot;
 class RenderInputConsumer;
 class PersistentRenderGpuScene;
@@ -82,8 +84,18 @@ class FramePipeline final
 	FrameResolutionExtents ResolveFrameResolution() const noexcept;
 	void FinalizeRenderInputMetadata(RenderInputFrame& input) const noexcept;
 	void BeginFrame() noexcept;
+	void PollFrameServices() noexcept;
+	void ConsumeRenderInput() noexcept;
+	void ApplyPendingResize() noexcept;
+	void RefreshGraphForResolutionAndPresentation() noexcept;
+	void RefreshGraphForRenderModes() noexcept;
+	void RefreshGraphForImageProvider() noexcept;
+	void BeginBackendFrame() noexcept;
 	void PollViewportCaptures() noexcept;
 	void SetupFrame(const TimeInfo& timing) noexcept;
+	void UploadPendingSceneTextures(
+	    RenderDeviceServices& backend,
+	    RenderCommandList& graphicsCommandList);
 	void RefreshViewportRenderProducts() noexcept;
 	bool BeginViewportEditorTexturePresentation(
 	    RenderOutputFlags output) noexcept;

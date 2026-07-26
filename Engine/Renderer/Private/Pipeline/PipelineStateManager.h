@@ -31,28 +31,30 @@ class PipelineStateManager final
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 	void PollRetiredGenerations() noexcept;
 
-	template <typename TPass> const typename TPass::PipelineRuntime& GetPassRuntime() const noexcept
+	template <typename TPass> void MaterializePassRuntime() const noexcept
 	{
-		RuntimeStorageHolder<TPass>& holder =
-		    GetOrCreateRuntimeStorageHolder<TPass>();
+		RuntimeStorageHolder<TPass>& holder = GetOrCreateRuntimeStorageHolder<TPass>();
 		if (!holder.Runtime.has_value())
 		{
 			std::string errorMessage;
-			if (!holder.TryCreate(
-			        *m_renderHardwareInterface,
-			        m_activeGeneration->ShaderPackages,
-			        errorMessage))
+			if (!holder.TryCreate(*m_renderHardwareInterface, m_activeGeneration->ShaderPackages, errorMessage))
 			{
 				HandleRuntimeCreationFailure(errorMessage);
 			}
 		}
-		return *holder.Runtime;
+	}
+
+	template <typename TPass> const typename TPass::PipelineRuntime& GetPassRuntime() const noexcept
+	{
+		const RuntimeStorageHolder<TPass>* const holder = FindRuntimeStorageHolder<TPass>();
+		assert(holder != nullptr && holder->Runtime.has_value() && "Pass runtime must be materialized before recording.");
+		return *holder->Runtime;
 	}
 
   private:
 	struct IRuntimeStorageHolder
 	{
-		virtual ~IRuntimeStorageHolder() noexcept = default;
+		virtual ~IRuntimeStorageHolder() noexcept;
 		virtual bool TryCreateReplacement(
 		    RenderHardwareInterface& rhi,
 		    CookedShaderPackageCache& shaderPackages,
@@ -142,6 +144,13 @@ class PipelineStateManager final
 		    static_cast<RuntimeStorageHolder<TPass>*>(runtime->second.get());
 		assert(typedHolder != nullptr);
 		return *typedHolder;
+	}
+
+	template <typename TPass> const RuntimeStorageHolder<TPass>* FindRuntimeStorageHolder() const noexcept
+	{
+		const auto& holders = m_activeGeneration->RuntimeStorageByPassType;
+		const auto runtime = holders.find(typeid(TPass));
+		return runtime != holders.end() ? static_cast<const RuntimeStorageHolder<TPass>*>(runtime->second.get()) : nullptr;
 	}
 
 	RhiSubmissionState CaptureLastSubmittedState() const noexcept;

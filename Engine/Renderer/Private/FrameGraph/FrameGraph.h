@@ -47,7 +47,7 @@ struct FrameContext;
 
 class FrameGraph
 {
-	friend class FrameGraphSubmissionExecutor;
+	friend class FrameGraphBatchRecorder;
 
   private:
 	struct AllocatedParameterInstanceBase
@@ -113,6 +113,8 @@ class FrameGraph
 			        {
 				        setup(builder);
 			        }
+
+			        return true;
 		        },
 		        .executeCallback =
 		        [execute = std::move(normalizedExecute)](PassExecutionContext& context) mutable
@@ -130,7 +132,10 @@ class FrameGraph
 		    EFrameGraphPassKind::Raster,
 		    EFrameGraphQueuePreference::Graphics,
 		    parameters,
-		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    [](PassResourceBuilder& builder,
+		       const TParameterBindings& typedParameters,
+		       const FrameContext&,
+		       const char* passName)
 		    {
 			    return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
@@ -146,7 +151,10 @@ class FrameGraph
 		    EFrameGraphPassKind::Compute,
 		    EFrameGraphQueuePreference::Graphics,
 		    parameters,
-		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    [](PassResourceBuilder& builder,
+		       const TParameterBindings& typedParameters,
+		       const FrameContext&,
+		       const char* passName)
 		    {
 			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
@@ -162,9 +170,38 @@ class FrameGraph
 		    EFrameGraphPassKind::Compute,
 		    EFrameGraphQueuePreference::AsyncCompute,
 		    parameters,
-		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    [](PassResourceBuilder& builder,
+		       const TParameterBindings& typedParameters,
+		       const FrameContext&,
+		       const char* passName)
 		    {
 			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
+		    },
+		    std::forward<ExecuteFn>(executeFn));
+	}
+
+	template <typename TPass, typename TParameterBindings, typename ConditionFn, typename ExecuteFn>
+	    requires std::is_invocable_r_v<bool, std::decay_t<ConditionFn>&, const FrameContext&> &&
+	             std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
+	void AddConditionalComputePass(
+	    std::string_view name,
+	    TParameterBindings& parameters,
+	    ConditionFn&& condition,
+	    ExecuteFn&& executeFn)
+	{
+		AddTypedShaderPass(
+		    name,
+		    EFrameGraphPassKind::Compute,
+		    EFrameGraphQueuePreference::Graphics,
+		    parameters,
+		    [condition = std::forward<ConditionFn>(condition)](
+		        PassResourceBuilder& builder,
+		        const TParameterBindings& typedParameters,
+		        const FrameContext& frame,
+		        const char* passName) mutable
+		    {
+			    return condition(frame) &&
+			           ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
 		    std::forward<ExecuteFn>(executeFn));
 	}
@@ -324,7 +361,7 @@ class FrameGraph
 	}
 
   private:
-	using SetupCallback = std::function<void(PassResourceBuilder&, const FrameContext&)>;
+	using SetupCallback = std::function<bool(PassResourceBuilder&, const FrameContext&)>;
 	using ExecuteCallback = std::function<void(PassExecutionContext&)>;
 
 	template <typename TParameterBindings, typename ExecuteFn>
@@ -352,7 +389,6 @@ class FrameGraph
 	    ExecuteFn&& executeFn)
 	{
 		auto* parameterBindings = &parameters;
-		auto setupValid = std::make_shared<bool>(true);
 		std::string passName(name);
 
 		m_passes.push_back(
@@ -361,24 +397,19 @@ class FrameGraph
 		        .kind = kind,
 		        .queuePreference = queuePreference,
 		        .setupCallback =
-		        [parameterBindings, passName, setupValid, setupFn = std::forward<SetupFn>(setupFn)](
+		        [parameterBindings, passName, setupFn = std::forward<SetupFn>(setupFn)](
 		            PassResourceBuilder& builder,
-		            const FrameContext&) mutable
+		            const FrameContext& frame) mutable
 		        {
-			        *setupValid = setupFn(builder, *parameterBindings, passName.c_str());
+			        return setupFn(builder, *parameterBindings, frame, passName.c_str());
 		        },
 		        .executeCallback =
 		        MakeParameterizedExecuteCallback(
 		            parameterBindings,
-		            [setupValid, executeFn = std::forward<ExecuteFn>(executeFn)](
+		            [executeFn = std::forward<ExecuteFn>(executeFn)](
 		                PassExecutionContext& context,
 		                TParameterBindings& typedParameters) mutable
 		            {
-			            if (!*setupValid)
-			            {
-				            return;
-			            }
-
 			            executeFn(context, typedParameters);
 		            })});
 	}
@@ -410,7 +441,14 @@ class FrameGraph
 	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
 	    const noexcept;
-	void ValidateExecutionBindings(const FrameGraphPlan& plan) const noexcept;
+	void RecordFrameBeginBarriers(
+	    const FrameGraphPlan& plan,
+	    RenderCommandList& commandList,
+	    FrameExecutionDiagnostics& frameDiagnostics) const;
+	void RecordFrameEndBarriers(
+	    const FrameGraphPlan& plan,
+	    RenderCommandList& commandList,
+	    FrameExecutionDiagnostics& frameDiagnostics) const;
 	void PrepareTextureHistories(const FrameGraphPlan& plan);
 	void CommitTextureHistories() const noexcept;
 	void ReleaseTextureHistories() noexcept;
@@ -448,6 +486,7 @@ class FrameGraph
 		EFrameGraphQueuePreference queuePreference = EFrameGraphQueuePreference::Graphics;
 		SetupCallback setupCallback;
 		ExecuteCallback executeCallback;
+		bool active = true;
 	};
 
 	std::vector<RegisteredPass> m_passes;
@@ -457,6 +496,7 @@ class FrameGraph
 	mutable FrameGraphResourceStateTracker m_resourceStateTracker;
 	mutable FrameGraphResourceResolver m_resourceResolver;
 	FrameGraphPlan m_compiledPlan;
+	mutable std::vector<RhiSubmissionToken> m_submissionBatchTokens;
 	std::vector<FrameGraphProductRoot> m_productRoots;
 	std::uint32_t m_nextDynamicResourceIndex = 0;
 	std::vector<VirtualTransientResource> m_virtualTransientResources;

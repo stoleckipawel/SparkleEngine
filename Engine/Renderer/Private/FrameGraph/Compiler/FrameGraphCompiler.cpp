@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <cassert>
 
-class FrameGraphCompilerOperations final
+class FrameGraphResourceVersionValidator final
 {
   public:
 	static void ValidateResourceVersionGraph(const FrameGraphPlan& plan) noexcept
@@ -71,7 +71,7 @@ void FrameGraphCompiler::Compile() noexcept
 	}
 
 	BuildResourceVersionGraph();
-	FrameGraphCompilerOperations::ValidateResourceVersionGraph(m_plan);
+	FrameGraphResourceVersionValidator::ValidateResourceVersionGraph(m_plan);
 	FinalizePassDependencies();
 	AssignPassQueues();
 	BuildTransientResourceLifetimes();

@@ -6,9 +6,9 @@
 #include <memory>
 #include <vector>
 
-class D3D12FrameResourceManager;
 class D3D12GpuMemoryAllocator;
 class D3D12Rhi;
+class D3D12RenderCommandList;
 struct D3D12GpuAllocationRecord;
 
 class D3D12UploadService final : public RhiUploadService
@@ -16,7 +16,6 @@ class D3D12UploadService final : public RhiUploadService
   public:
 	D3D12UploadService(
 	    D3D12Rhi& rhi,
-	    D3D12FrameResourceManager& frameResourceManager,
 	    D3D12GpuMemoryAllocator& memoryAllocator) noexcept;
 	~D3D12UploadService() noexcept;
 
@@ -26,7 +25,10 @@ class D3D12UploadService final : public RhiUploadService
 	D3D12UploadService& operator=(D3D12UploadService&&) = delete;
 
 	void BeginFrame() noexcept;
-	RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes) override;
+	RhiGpuVirtualAddress AllocateUniformConstantBuffer(
+	    RenderCommandList& commandList,
+	    const void* data,
+	    std::uint32_t sizeInBytes) override;
 	bool UploadTexture(
 	    RenderCommandList& commandList,
 	    RhiOwnedResourceHandle destination,
@@ -40,10 +42,23 @@ class D3D12UploadService final : public RhiUploadService
 		std::unique_ptr<D3D12GpuAllocationRecord> StagingResource;
 	};
 
+	bool ValidateTextureUploadRequest(
+	    const RenderCommandList& commandList,
+	    const D3D12GpuAllocationRecord* destination,
+	    const RhiTextureUploadDesc& textureUpload) const noexcept;
+	std::unique_ptr<D3D12GpuAllocationRecord> CreateTextureStagingResource(
+	    const D3D12GpuAllocationRecord& destination,
+	    std::uint32_t subresourceCount,
+	    std::wstring_view debugName);
+	bool RecordTextureUpload(
+	    D3D12RenderCommandList& commandList,
+	    D3D12GpuAllocationRecord& destination,
+	    D3D12GpuAllocationRecord& stagingResource,
+	    const RhiTextureUploadDesc& textureUpload,
+	    ResourceState finalState);
 	void DrainCompletedTextureUploads() noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
-	D3D12FrameResourceManager* m_frameResourceManager = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 	std::vector<PendingTextureUpload> m_pendingTextureUploads;
 };
