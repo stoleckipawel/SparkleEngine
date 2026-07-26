@@ -305,7 +305,10 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
 	pending->Submission =
 	    m_rhi->GetCommandQueue(ERhiQueueType::Graphics)
 	        .Submit(VulkanQueueSubmission{
-	            .CommandBuffer = pending->CommandBuffer});
+	            .CommandBuffers =
+	                std::span<const VkCommandBuffer>(
+	                    &pending->CommandBuffer,
+	                    1)});
 	if (!pending->Submission.IsValid())
 	{
 		vkDestroyCommandPool(device, pending->CommandPool, nullptr);

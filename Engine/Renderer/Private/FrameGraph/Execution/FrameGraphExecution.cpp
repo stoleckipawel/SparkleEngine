@@ -14,7 +14,8 @@ void FrameGraph::Execute(
     RhiCommandSubmissionService& submissionService,
     const FrameContext& frame,
     const PassRuntimeServices& passRuntimeServices,
-    FrameExecutionDiagnostics& frameDiagnostics) const
+    FrameExecutionDiagnostics& frameDiagnostics,
+    TaskExecutor& taskExecutor) const
 {
 	EnsureTransientResourcesMaterialized(plan);
 	submissionService.PrepareCommandRecording();
@@ -31,6 +32,7 @@ void FrameGraph::Execute(
 	    frame,
 	    passRuntimeServices,
 	    frameDiagnostics,
+	    taskExecutor,
 	    m_submissionBatchTokens);
 	RenderCommandList& finalGraphicsCommandList = submissionExecutor.Execute(initialGraphicsCommandList);
 	RecordFrameEndBarriers(plan, finalGraphicsCommandList, frameDiagnostics);

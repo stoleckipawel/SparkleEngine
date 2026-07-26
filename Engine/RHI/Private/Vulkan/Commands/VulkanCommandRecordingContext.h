@@ -49,7 +49,15 @@ class VulkanCommandRecordingContext final
 	    VkSemaphore binaryWaitSemaphore = VK_NULL_HANDLE,
 	    VkPipelineStageFlags binaryWaitStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 	    VkSemaphore binarySignalSemaphore = VK_NULL_HANDLE) noexcept;
+	RhiSubmissionToken SubmitBatch(
+	    std::span<RhiCommandRecordingLease> leases,
+	    std::span<const RhiSubmissionToken> waitTokens = {},
+	    VkSemaphore binaryWaitSemaphore = VK_NULL_HANDLE,
+	    VkPipelineStageFlags binaryWaitStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+	    VkSemaphore binarySignalSemaphore = VK_NULL_HANDLE) noexcept;
 	RenderCommandList& BeginCurrentGraphicsCommandList(std::uint32_t frameIndex) noexcept;
+	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease(
+	    std::uint32_t frameIndex) noexcept;
 	RhiSubmissionToken SubmitCurrentGraphicsCommandList(
 	    std::uint32_t frameIndex,
 	    std::span<const RhiSubmissionToken> waitTokens = {},
@@ -116,6 +124,11 @@ class VulkanCommandRecordingContext final
 	void BeginSlot(CommandSlot& slot) noexcept;
 	void CloseSlot(CommandSlot& slot) noexcept;
 	void ReleaseSlot(CommandSlot& slot) noexcept;
+	CommandSlot* ConsumeClosedLease(
+	    RhiCommandRecordingLease&& lease) noexcept;
+	void ResolveSubmittedSlot(
+	    CommandSlot& slot,
+	    RhiSubmissionToken token) noexcept;
 	void DestroySlots() noexcept;
 
 	static void BeginLease(void* state) noexcept;

@@ -14,7 +14,8 @@ class PassExecutionDiagnostics final
 	    FrameExecutionDiagnostics& frameDiagnostics,
 	    RenderCommandContext& commands,
 	    std::string_view passScopeLabel,
-	    EFrameGraphPassKind passKind) noexcept;
+	    EFrameGraphPassKind passKind,
+	    bool allowTiming = true) noexcept;
 
 	ScopedGpuScope BeginPassGpuScope() noexcept;
 	ScopedGpuScope BeginGpuScope(std::string_view label) noexcept;
@@ -27,4 +28,5 @@ class PassExecutionDiagnostics final
 	RenderCommandContext* m_commands = nullptr;
 	std::string m_passScopeLabel;
 	RhiDiagnosticLabelColor m_passColor = {};
+	bool m_allowTiming = true;
 };

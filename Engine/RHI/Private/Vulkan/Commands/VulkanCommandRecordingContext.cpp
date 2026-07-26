@@ -103,40 +103,69 @@ RhiSubmissionToken VulkanCommandRecordingContext::Submit(
     VkPipelineStageFlags binaryWaitStage,
     VkSemaphore binarySignalSemaphore) noexcept
 {
-	m_owner.AssertAccess();
-	if (!lease.IsClosed())
-	{
-		lease.Close();
-	}
+	std::array<RhiCommandRecordingLease, 1> leases;
+	leases.front() = std::move(lease);
+	return SubmitBatch(
+	    leases,
+	    waitTokens,
+	    binaryWaitSemaphore,
+	    binaryWaitStage,
+	    binarySignalSemaphore);
+}
 
-	const RhiCommandRecordingLeaseBackendState leaseState = RhiCommandRecordingLeaseAccess::Consume(std::move(lease));
-	auto* const slot = static_cast<CommandSlot*>(leaseState.State);
-	if (slot == nullptr ||
-	    slot->Owner != this ||
-	    slot->State != SlotState::Closed ||
-	    !leaseState.Closed ||
-	    leaseState.CommandList != slot->CommandList.get() ||
-	    leaseState.QueueType != slot->QueueType ||
-	    leaseState.FrameSlot != slot->FrameSlot ||
-	    leaseState.ContextId.Value != slot->ContextIndex ||
-	    leaseState.Owner.WorkerIndex != slot->RecordingOwner.WorkerIndex ||
-	    leaseState.Owner.TaskIdentity != slot->RecordingOwner.TaskIdentity)
+RhiSubmissionToken VulkanCommandRecordingContext::SubmitBatch(
+    std::span<RhiCommandRecordingLease> leases,
+    std::span<const RhiSubmissionToken> waitTokens,
+    VkSemaphore binaryWaitSemaphore,
+    VkPipelineStageFlags binaryWaitStage,
+    VkSemaphore binarySignalSemaphore) noexcept
+{
+	m_owner.AssertAccess();
+	if (leases.empty() ||
+	    leases.size() > MaximumContextsPerFrameQueue)
 	{
 		return {};
 	}
 
-	const RhiSubmissionToken token = m_rhi->GetCommandQueue(slot->QueueType).Submit(
+	const ERhiQueueType queueType = leases.front().GetQueueType();
+	std::array<CommandSlot*, MaximumContextsPerFrameQueue> slots{};
+	std::array<VkCommandBuffer, MaximumContextsPerFrameQueue> commandBuffers{};
+
+	for (std::size_t index = 0; index < leases.size(); ++index)
+	{
+		if (!leases[index].IsClosed())
+		{
+			leases[index].Close();
+		}
+
+		CommandSlot* const slot =
+		    ConsumeClosedLease(std::move(leases[index]));
+		if (slot == nullptr ||
+		    slot->QueueType != queueType)
+		{
+			return {};
+		}
+
+		slots[index] = slot;
+		commandBuffers[index] = slot->CommandBuffer;
+	}
+
+	const RhiSubmissionToken token = m_rhi->GetCommandQueue(queueType).Submit(
 	    VulkanQueueSubmission{
-	        .CommandBuffer = slot->CommandBuffer,
+	        .CommandBuffers =
+	            std::span<const VkCommandBuffer>(
+	                commandBuffers.data(),
+	                leases.size()),
 	        .WaitTokens = waitTokens,
 	        .BinaryWaitSemaphore = binaryWaitSemaphore,
 	        .BinaryWaitStage = binaryWaitStage,
 	        .BinarySignalSemaphore = binarySignalSemaphore});
 
-	slot->CommandList->ResolveTrackedResources(token);
-	slot->CommandList->ResolveTransientAllocationUses(token);
-	slot->RetirementToken = token;
-	slot->State = SlotState::Submitted;
+	for (std::size_t index = 0; index < leases.size(); ++index)
+	{
+		ResolveSubmittedSlot(*slots[index], token);
+	}
+
 	return token;
 }
 
@@ -148,6 +177,24 @@ RenderCommandList& VulkanCommandRecordingContext::BeginCurrentGraphicsCommandLis
 	return frameState.CurrentLease->GetCommandList();
 }
 
+RhiCommandRecordingLease
+VulkanCommandRecordingContext::TakeCurrentGraphicsCommandRecordingLease(
+    std::uint32_t frameIndex) noexcept
+{
+	m_owner.AssertAccess();
+	QueueFrameState& frameState =
+	    GetQueueFrameState(ERhiQueueType::Graphics, frameIndex);
+	if (!frameState.CurrentLease.has_value())
+	{
+		return {};
+	}
+
+	RhiCommandRecordingLease lease(
+	    std::move(*frameState.CurrentLease));
+	frameState.CurrentLease.reset();
+	return lease;
+}
+
 RhiSubmissionToken VulkanCommandRecordingContext::SubmitCurrentGraphicsCommandList(
     std::uint32_t frameIndex,
     std::span<const RhiSubmissionToken> waitTokens,
@@ -155,14 +202,13 @@ RhiSubmissionToken VulkanCommandRecordingContext::SubmitCurrentGraphicsCommandLi
     VkPipelineStageFlags binaryWaitStage,
     VkSemaphore binarySignalSemaphore) noexcept
 {
-	QueueFrameState& frameState = GetQueueFrameState(ERhiQueueType::Graphics, frameIndex);
-	if (!frameState.CurrentLease.has_value())
+	RhiCommandRecordingLease lease =
+	    TakeCurrentGraphicsCommandRecordingLease(frameIndex);
+	if (!lease.IsValid())
 	{
 		return {};
 	}
 
-	RhiCommandRecordingLease lease(std::move(*frameState.CurrentLease));
-	frameState.CurrentLease.reset();
 	return Submit(std::move(lease), waitTokens, binaryWaitSemaphore, binaryWaitStage, binarySignalSemaphore);
 }
 
@@ -513,6 +559,43 @@ void VulkanCommandRecordingContext::ReleaseSlot(CommandSlot& slot) noexcept
 		    slot,
 		    "release a recording lease after submission");
 	}
+}
+
+VulkanCommandRecordingContext::CommandSlot*
+VulkanCommandRecordingContext::ConsumeClosedLease(
+    RhiCommandRecordingLease&& lease) noexcept
+{
+	const RhiCommandRecordingLeaseBackendState leaseState =
+	    RhiCommandRecordingLeaseAccess::Consume(std::move(lease));
+	auto* const slot =
+	    static_cast<CommandSlot*>(leaseState.State);
+	if (slot == nullptr ||
+	    slot->Owner != this ||
+	    slot->State != SlotState::Closed ||
+	    !leaseState.Closed ||
+	    leaseState.CommandList != slot->CommandList.get() ||
+	    leaseState.QueueType != slot->QueueType ||
+	    leaseState.FrameSlot != slot->FrameSlot ||
+	    leaseState.ContextId.Value != slot->ContextIndex ||
+	    leaseState.Owner.WorkerIndex !=
+	        slot->RecordingOwner.WorkerIndex ||
+	    leaseState.Owner.TaskIdentity !=
+	        slot->RecordingOwner.TaskIdentity)
+	{
+		return nullptr;
+	}
+
+	return slot;
+}
+
+void VulkanCommandRecordingContext::ResolveSubmittedSlot(
+    CommandSlot& slot,
+    RhiSubmissionToken token) noexcept
+{
+	slot.CommandList->ResolveTrackedResources(token);
+	slot.CommandList->ResolveTransientAllocationUses(token);
+	slot.RetirementToken = token;
+	slot.State = SlotState::Submitted;
 }
 
 void VulkanCommandRecordingContext::DestroySlots() noexcept

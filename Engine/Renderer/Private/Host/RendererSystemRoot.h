@@ -39,7 +39,7 @@ class RendererSystemRoot final
 	RendererSystemRoot(
 	    Window& window,
 	    const RendererBackendConfiguration& backendConfiguration,
-	    TaskExecutor& assetTaskExecutor,
+	    TaskExecutor& taskExecutor,
 	    TaskScope& applicationTaskScope) noexcept;
 	~RendererSystemRoot() noexcept;
 
@@ -73,6 +73,7 @@ class RendererSystemRoot final
 	const RenderWorld& GetRenderWorld() const noexcept { return *m_renderWorld; }
 	RendererImageProviderStack& GetImageProviders() noexcept { return *m_imageProviders; }
 	const RendererImageProviderStack& GetImageProviders() const noexcept { return *m_imageProviders; }
+	TaskExecutor& GetTaskExecutor() noexcept { return *m_taskExecutor; }
 
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
@@ -89,10 +90,11 @@ class RendererSystemRoot final
   private:
 	void InitializeCoreSystems(const RendererBackendConfiguration& backendConfiguration) noexcept;
 	void InitializeSceneSystems(
-	    TaskExecutor& assetTaskExecutor,
+	    TaskExecutor& taskExecutor,
 	    TaskScope& applicationTaskScope) noexcept;
 
 	Window* m_window = nullptr;
+	TaskExecutor* m_taskExecutor = nullptr;
 
 	std::unique_ptr<RendererBackendSystem> m_backend;
 	std::unique_ptr<PipelineStateManager> m_pipelineStateManager;

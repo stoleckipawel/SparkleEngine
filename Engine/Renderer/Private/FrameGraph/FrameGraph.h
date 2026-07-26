@@ -38,6 +38,8 @@ class RhiCommandSubmissionService;
 class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;
 class FrameGraphSubmissionExecutor;
+class FrameGraphRecordingChunkRecorder;
+class TaskExecutor;
 struct PassRuntimeServices;
 class Window;
 class RenderHardwareInterface;
@@ -47,7 +49,7 @@ struct FrameContext;
 
 class FrameGraph
 {
-	friend class FrameGraphBatchRecorder;
+	friend class FrameGraphRecordingChunkRecorder;
 
   private:
 	struct VirtualTransientResource;
@@ -217,7 +219,8 @@ class FrameGraph
 	    RhiCommandSubmissionService& submissionService,
 	    const FrameContext& frame,
 	    const PassRuntimeServices& passRuntimeServices,
-	    FrameExecutionDiagnostics& frameDiagnostics) const;
+	    FrameExecutionDiagnostics& frameDiagnostics,
+	    TaskExecutor& taskExecutor) const;
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
 	{
 		static const ShaderParameterStructMetadata<TParameters> metadata =
@@ -398,6 +401,7 @@ class FrameGraph
 		        .name = std::string(name),
 		        .kind = kind,
 		        .queuePreference = queuePreference,
+		        .executionModel = FrameGraphPassExecutionModel::TypedShader,
 		        .setupCallback =
 		        [parameterBindings, passName, setupFn = std::forward<SetupFn>(setupFn)](
 		            PassResourceBuilder& builder,
@@ -490,6 +494,7 @@ class FrameGraph
 		std::string name;
 		EFrameGraphPassKind kind = EFrameGraphPassKind::None;
 		EFrameGraphQueuePreference queuePreference = EFrameGraphQueuePreference::Graphics;
+		FrameGraphPassExecutionModel executionModel = FrameGraphPassExecutionModel::Callback;
 		SetupCallback setupCallback;
 		ExecuteCallback executeCallback;
 		bool active = true;

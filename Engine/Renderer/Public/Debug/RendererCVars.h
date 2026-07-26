@@ -21,6 +21,7 @@ extern SPARKLE_RENDERER_API ConsoleVariable<LightingMode> CVarLightingMode;
 extern SPARKLE_RENDERER_API ConsoleVariable<bool> CVarRendererMeshAutoBatching;
 extern SPARKLE_RENDERER_API ConsoleVariable<RendererDiagnosticMarkerVerbosity> CVarRendererDiagnosticMarkerVerbosity;
 extern SPARKLE_RENDERER_API ConsoleVariable<bool> CVarRendererDiagnosticGpuTiming;
+extern SPARKLE_RENDERER_API ConsoleVariable<bool> CVarRendererParallelFrameGraphRecording;
 extern SPARKLE_RENDERER_API ConsoleVariable<bool> CVarRayTracingClassicTlasRefit;
 extern SPARKLE_RENDERER_API ConsoleVariable<std::uint32_t> CVarRayTracingPartitionsPerAxis;
 extern SPARKLE_RENDERER_API ConsoleVariable<RayTracingPtlasPartitionUpdateMode> CVarRayTracingPtlasPartitionUpdateMode;

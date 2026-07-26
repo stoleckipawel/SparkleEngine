@@ -184,6 +184,7 @@ target_link_libraries(SparkleRenderer
     PRIVATE
         SparklePlatform
         SparkleGameFramework
+        SparkleTasks
         SparkleRendererNvidiaStreamlineProviders
         imgui
 )

@@ -75,7 +75,9 @@ VulkanCommandQueue::~VulkanCommandQueue() noexcept
 RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submission) noexcept
 {
 	m_owner.AssertAccess();
-	if (m_nativeQueue == nullptr || m_nativeQueue->Queue == VK_NULL_HANDLE || submission.CommandBuffer == VK_NULL_HANDLE)
+	if (m_nativeQueue == nullptr ||
+	    m_nativeQueue->Queue == VK_NULL_HANDLE ||
+	    submission.CommandBuffers.empty())
 	{
 		Diagnostics::Fail(GetLogger(), __FILE__, __LINE__, "Submit called without a queue or command buffer");
 		return {};
@@ -181,8 +183,10 @@ void VulkanCommandQueue::BuildNativeSubmission(
 	        nativeSubmission.WaitCount != 0 ? nativeSubmission.WaitSemaphores.data() : nullptr,
 	    .pWaitDstStageMask =
 	        nativeSubmission.WaitCount != 0 ? nativeSubmission.WaitStages.data() : nullptr,
-	    .commandBufferCount = 1,
-	    .pCommandBuffers = &submission.CommandBuffer,
+	    .commandBufferCount =
+	        static_cast<std::uint32_t>(
+	            submission.CommandBuffers.size()),
+	    .pCommandBuffers = submission.CommandBuffers.data(),
 	    .signalSemaphoreCount = nativeSubmission.SignalCount,
 	    .pSignalSemaphores = nativeSubmission.SignalSemaphores.data()};
 }

@@ -145,15 +145,17 @@ void VulkanRenderCommandList::ReleaseTransientAllocationUses(
 			continue;
 		}
 
+		allocation->LastUse.MarkUsed(submissionToken);
+		if (allocation->ParentMemoryBlock != nullptr)
+		{
+			allocation->ParentMemoryBlock->LastUse.MarkUsed(submissionToken);
+		}
+
 		const std::uint32_t previousReferences =
 		    allocation->RecordingReferenceCount.fetch_sub(
 		        1,
 		        std::memory_order_relaxed);
 		assert(previousReferences != 0);
-		if (submissionToken.IsValid())
-		{
-			allocation->LastUse.MarkUsed(submissionToken);
-		}
 
 		if (allocation->ParentMemoryBlock != nullptr)
 		{
@@ -164,10 +166,6 @@ void VulkanRenderCommandList::ReleaseTransientAllocationUses(
 			        1,
 			        std::memory_order_relaxed);
 			assert(previousBlockReferences != 0);
-			if (submissionToken.IsValid())
-			{
-				memoryBlock.LastUse.MarkUsed(submissionToken);
-			}
 		}
 	}
 	m_transientAllocationUses.clear();
@@ -180,9 +178,14 @@ void VulkanRenderCommandList::OnResourceTrackingStarted(RhiResourceHandle resour
 		return;
 	}
 
-	const VulkanRecordingResourceUseToken use =
-	    IsCoordinatorRecording() ? m_memoryAllocator->RetainCoordinatorRecordingResource(resource)
-	                             : m_memoryAllocator->RetainRecordingResource(resource);
+	VulkanRecordingResourceUseToken use =
+	    m_memoryAllocator->RetainRecordingResource(resource);
+	if (!use && IsCoordinatorRecording())
+	{
+		use =
+		    m_memoryAllocator->RetainCoordinatorRecordingResource(resource);
+	}
+
 	m_recordingResourceUses.push_back(RecordingResourceUse{.Resource = resource, .Token = use});
 }
 

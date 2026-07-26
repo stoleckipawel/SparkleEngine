@@ -11,27 +11,40 @@ class ScopedGpuScope;
 struct FrameContext;
 struct PassRuntimeServices;
 
-class FrameGraphBatchRecorder final
+struct RecordingChunk;
+
+class FrameGraphRecordingChunkRecorder final
 {
   public:
-	FrameGraphBatchRecorder(
+	FrameGraphRecordingChunkRecorder(
 	    const FrameGraph& frameGraph,
 	    const FrameGraphPlan& plan,
 	    const FrameContext& frame,
 	    const PassRuntimeServices& passRuntimeServices,
 	    FrameExecutionDiagnostics& frameDiagnostics) noexcept;
 
-	void Record(const FrameGraphSubmissionBatch& batch, RenderCommandList& commandList) const;
+	void Record(
+	    const RecordingChunk& chunk,
+	    RenderCommandList& commandList,
+	    bool allowTiming) const;
 
   private:
-	ScopedGpuScope BeginBatchScope(
-	    const FrameGraphSubmissionBatch& batch,
-	    RenderCommandContext& commands) const;
+	ScopedGpuScope BeginChunkScope(
+	    const RecordingChunk& chunk,
+	    RenderCommandContext& commands,
+	    bool allowTiming) const;
+	void RecordGroup(
+	    const RecordingGroup& group,
+	    RenderCommandList& commandList,
+	    RenderCommandContext& commands,
+	    FrameGraphExecutionDiagnostics& graphDiagnostics,
+	    bool allowTiming) const;
 	void RecordPass(
 	    FrameGraphPassIndex passIndex,
 	    RenderCommandList& commandList,
 	    RenderCommandContext& commands,
-	    FrameGraphExecutionDiagnostics& graphDiagnostics) const;
+	    FrameGraphExecutionDiagnostics& graphDiagnostics,
+	    bool allowTiming) const;
 	void TrackPassResources(
 	    const FrameGraphPassNode& pass,
 	    RenderCommandList& commandList) const;

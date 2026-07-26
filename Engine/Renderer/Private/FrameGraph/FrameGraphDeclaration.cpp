@@ -52,6 +52,7 @@ void FrameGraph::Setup(const FrameContext& frame)
 		        .queuePreference = pass.queuePreference,
 		        .diagnosticName = FrameGraphPassLabelFormatter::FormatPassDiagnosticName(pass.name),
 		        .eventScopeLabel = FrameGraphPassLabelFormatter::FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.kind),
-		        .declarations = std::move(declarations)});
+		        .declarations = std::move(declarations),
+		        .executionModel = pass.executionModel});
 	}
 }

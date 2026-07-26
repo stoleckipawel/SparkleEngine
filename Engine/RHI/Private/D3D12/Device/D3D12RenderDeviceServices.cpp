@@ -41,8 +41,12 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	RhiCommandRecordingLease AcquireCommandRecordingLease(
 	    ERhiQueueType queueType,
 	    RhiCommandRecordingOwner owner) noexcept override;
+	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease() noexcept override;
 	RhiSubmissionToken SubmitCommandRecordingLease(
 	    RhiCommandRecordingLease&& lease,
+	    std::span<const RhiSubmissionToken> waitTokens) noexcept override;
+	RhiSubmissionToken SubmitCommandRecordingBatch(
+	    std::span<RhiCommandRecordingLease> leases,
 	    std::span<const RhiSubmissionToken> waitTokens) noexcept override;
 	RhiSubmissionToken SubmitCurrentGraphicsCommandList(
 	    std::span<const RhiSubmissionToken> waitTokens) noexcept override;
@@ -224,11 +228,26 @@ RhiCommandRecordingLease D3D12RenderDeviceServices::AcquireCommandRecordingLease
 	return m_commandRecordingContext->Acquire(queueType, m_rhi->GetCurrentFrameIndex(), owner);
 }
 
+RhiCommandRecordingLease
+D3D12RenderDeviceServices::TakeCurrentGraphicsCommandRecordingLease() noexcept
+{
+	return m_commandRecordingContext
+	    ->TakeCurrentGraphicsCommandRecordingLease(
+	        m_rhi->GetCurrentFrameIndex());
+}
+
 RhiSubmissionToken D3D12RenderDeviceServices::SubmitCommandRecordingLease(
     RhiCommandRecordingLease&& lease,
     std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
 	return m_commandRecordingContext->Submit(std::move(lease), waitTokens);
+}
+
+RhiSubmissionToken D3D12RenderDeviceServices::SubmitCommandRecordingBatch(
+    std::span<RhiCommandRecordingLease> leases,
+    std::span<const RhiSubmissionToken> waitTokens) noexcept
+{
+	return m_commandRecordingContext->SubmitBatch(leases, waitTokens);
 }
 
 RhiSubmissionToken D3D12RenderDeviceServices::SubmitCurrentGraphicsCommandList(

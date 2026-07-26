@@ -161,11 +161,23 @@ RhiCommandRecordingLease RenderDeviceServices::AcquireCommandRecordingLease(
 	return m_state->GetBackend().AcquireCommandRecordingLease(queueType, owner);
 }
 
+RhiCommandRecordingLease RenderDeviceServices::TakeCurrentGraphicsCommandRecordingLease() noexcept
+{
+	return m_state->GetBackend().TakeCurrentGraphicsCommandRecordingLease();
+}
+
 RhiSubmissionToken RenderDeviceServices::SubmitCommandRecordingLease(
     RhiCommandRecordingLease&& lease,
     std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
 	return m_state->GetBackend().SubmitCommandRecordingLease(std::move(lease), waitTokens);
+}
+
+RhiSubmissionToken RenderDeviceServices::SubmitCommandRecordingBatch(
+    std::span<RhiCommandRecordingLease> leases,
+    std::span<const RhiSubmissionToken> waitTokens) noexcept
+{
+	return m_state->GetBackend().SubmitCommandRecordingBatch(leases, waitTokens);
 }
 
 RhiSubmissionToken RenderDeviceServices::SubmitCurrentGraphicsCommandList(

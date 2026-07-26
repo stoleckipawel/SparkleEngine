@@ -83,6 +83,14 @@ ScopedGpuScope FrameExecutionDiagnostics::BeginGpuScope(
 	return ScopedGpuScope{BeginGpuEvent(commands, label, color), BeginTimer(commands, label)};
 }
 
+ScopedGpuScope FrameExecutionDiagnostics::BeginGpuEventScope(
+    RenderCommandContext& commands,
+    std::string_view label,
+    RhiDiagnosticLabelColor color) noexcept
+{
+	return ScopedGpuScope{BeginGpuEvent(commands, label, color), ScopedGpuTimer{}};
+}
+
 void FrameExecutionDiagnostics::InsertGpuMarker(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color)
     const noexcept
 {

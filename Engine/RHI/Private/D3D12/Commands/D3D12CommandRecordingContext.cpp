@@ -87,29 +87,56 @@ RhiSubmissionToken D3D12CommandRecordingContext::Submit(
     RhiCommandRecordingLease&& lease,
     std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
-	if (!lease.IsClosed())
-	{
-		lease.Close();
-	}
+	std::array<RhiCommandRecordingLease, 1> leases;
+	leases.front() = std::move(lease);
+	return SubmitBatch(leases, waitTokens);
+}
 
-	const RhiCommandRecordingLeaseBackendState leaseState =
-	    RhiCommandRecordingLeaseAccess::Consume(std::move(lease));
-	auto* const slot = static_cast<CommandSlot*>(leaseState.State);
-	if (slot == nullptr || slot->Owner != this || slot->State != SlotState::Closed || !leaseState.Closed ||
-	    leaseState.QueueType != slot->QueueType || leaseState.FrameSlot != slot->FrameSlot ||
-	    leaseState.ContextId.Value != slot->ContextIndex ||
-	    leaseState.Owner.WorkerIndex != slot->RecordingOwner.WorkerIndex ||
-	    leaseState.Owner.TaskIdentity != slot->RecordingOwner.TaskIdentity)
+RhiSubmissionToken D3D12CommandRecordingContext::SubmitBatch(
+    std::span<RhiCommandRecordingLease> leases,
+    std::span<const RhiSubmissionToken> waitTokens) noexcept
+{
+	if (leases.empty() ||
+	    leases.size() > MaximumContextsPerFrameQueue)
 	{
 		return {};
 	}
 
-	ID3D12CommandList* nativeCommandLists[] = {slot->NativeCommandList.Get()};
-	const RhiSubmissionToken token = m_rhi->SubmitCommandLists(slot->QueueType, nativeCommandLists, waitTokens);
+	const ERhiQueueType queueType = leases.front().GetQueueType();
+	std::array<CommandSlot*, MaximumContextsPerFrameQueue> slots{};
+	std::array<ID3D12CommandList*, MaximumContextsPerFrameQueue> nativeCommandLists{};
 
-	slot->CommandList->ResolveTrackedResources(token);
-	slot->RetirementToken = token;
-	slot->State = SlotState::Submitted;
+	for (std::size_t index = 0; index < leases.size(); ++index)
+	{
+		if (!leases[index].IsClosed())
+		{
+			leases[index].Close();
+		}
+
+		CommandSlot* const slot =
+		    ConsumeClosedLease(std::move(leases[index]));
+		if (slot == nullptr ||
+		    slot->QueueType != queueType)
+		{
+			return {};
+		}
+
+		slots[index] = slot;
+		nativeCommandLists[index] = slot->NativeCommandList.Get();
+	}
+
+	const RhiSubmissionToken token = m_rhi->SubmitCommandLists(
+	    queueType,
+	    std::span<ID3D12CommandList* const>(
+	        nativeCommandLists.data(),
+	        leases.size()),
+	    waitTokens);
+
+	for (std::size_t index = 0; index < leases.size(); ++index)
+	{
+		ResolveSubmittedSlot(*slots[index], token);
+	}
+
 	return token;
 }
 
@@ -121,18 +148,34 @@ RenderCommandList& D3D12CommandRecordingContext::BeginCurrentGraphicsCommandList
 	return frameState.CurrentLease->GetCommandList();
 }
 
-RhiSubmissionToken D3D12CommandRecordingContext::SubmitCurrentGraphicsCommandList(
-    std::uint32_t frameIndex,
-    std::span<const RhiSubmissionToken> waitTokens) noexcept
+RhiCommandRecordingLease
+D3D12CommandRecordingContext::TakeCurrentGraphicsCommandRecordingLease(
+    std::uint32_t frameIndex) noexcept
 {
-	QueueFrameState& frameState = GetQueueFrameState(ERhiQueueType::Graphics, frameIndex);
-	if (frameState.CurrentLease == nullptr)
+	QueueFrameState& frameState =
+	    GetQueueFrameState(ERhiQueueType::Graphics, frameIndex);
+	if (!frameState.CurrentLease.has_value())
 	{
 		return {};
 	}
 
-	RhiCommandRecordingLease lease(std::move(*frameState.CurrentLease));
+	RhiCommandRecordingLease lease(
+	    std::move(*frameState.CurrentLease));
 	frameState.CurrentLease.reset();
+	return lease;
+}
+
+RhiSubmissionToken D3D12CommandRecordingContext::SubmitCurrentGraphicsCommandList(
+    std::uint32_t frameIndex,
+    std::span<const RhiSubmissionToken> waitTokens) noexcept
+{
+	RhiCommandRecordingLease lease =
+	    TakeCurrentGraphicsCommandRecordingLease(frameIndex);
+	if (!lease.IsValid())
+	{
+		return {};
+	}
+
 	return Submit(std::move(lease), waitTokens);
 }
 
@@ -301,6 +344,42 @@ void D3D12CommandRecordingContext::ReleaseSlot(CommandSlot& slot) noexcept
 	{
 		slot.State = SlotState::Available;
 	}
+}
+
+D3D12CommandRecordingContext::CommandSlot*
+D3D12CommandRecordingContext::ConsumeClosedLease(
+    RhiCommandRecordingLease&& lease) noexcept
+{
+	const RhiCommandRecordingLeaseBackendState leaseState =
+	    RhiCommandRecordingLeaseAccess::Consume(std::move(lease));
+	auto* const slot =
+	    static_cast<CommandSlot*>(leaseState.State);
+	if (slot == nullptr ||
+	    slot->Owner != this ||
+	    slot->State != SlotState::Closed ||
+	    !leaseState.Closed ||
+	    leaseState.CommandList != slot->CommandList.get() ||
+	    leaseState.QueueType != slot->QueueType ||
+	    leaseState.FrameSlot != slot->FrameSlot ||
+	    leaseState.ContextId.Value != slot->ContextIndex ||
+	    leaseState.Owner.WorkerIndex !=
+	        slot->RecordingOwner.WorkerIndex ||
+	    leaseState.Owner.TaskIdentity !=
+	        slot->RecordingOwner.TaskIdentity)
+	{
+		return nullptr;
+	}
+
+	return slot;
+}
+
+void D3D12CommandRecordingContext::ResolveSubmittedSlot(
+    CommandSlot& slot,
+    RhiSubmissionToken token) noexcept
+{
+	slot.CommandList->ResolveTrackedResources(token);
+	slot.RetirementToken = token;
+	slot.State = SlotState::Submitted;
 }
 
 RhiTransientDescriptorRange D3D12CommandRecordingContext::AllocateDescriptors(

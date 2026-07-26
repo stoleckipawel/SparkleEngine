@@ -37,6 +37,10 @@ ConsoleVariable<bool> CVarRendererDiagnosticGpuTiming(
     false,
     "Collect internal GPU timestamp timings from renderer diagnostic scopes. Profiler markers remain controlled by "
     "r.Diagnostics.MarkerVerbosity.");
+ConsoleVariable<bool> CVarRendererParallelFrameGraphRecording(
+    "r.FrameGraph.ParallelRecording",
+    true,
+    "Record compiled typed-shader frame-graph chunks through SparkleTasks.");
 ConsoleVariable<bool> CVarRayTracingClassicTlasRefit(
     "r.RayTracing.Tlas.Refit",
     true,

@@ -29,12 +29,13 @@
 RendererSystemRoot::RendererSystemRoot(
     Window& window,
     const RendererBackendConfiguration& backendConfiguration,
-    TaskExecutor& assetTaskExecutor,
+    TaskExecutor& taskExecutor,
     TaskScope& applicationTaskScope) noexcept :
-    m_window(&window)
+    m_window(&window),
+    m_taskExecutor(&taskExecutor)
 {
 	InitializeCoreSystems(backendConfiguration);
-	InitializeSceneSystems(assetTaskExecutor, applicationTaskScope);
+	InitializeSceneSystems(taskExecutor, applicationTaskScope);
 }
 
 RendererSystemRoot::~RendererSystemRoot() noexcept = default;
@@ -180,7 +181,7 @@ void RendererSystemRoot::InitializeCoreSystems(const RendererBackendConfiguratio
 }
 
 void RendererSystemRoot::InitializeSceneSystems(
-    TaskExecutor& assetTaskExecutor,
+    TaskExecutor& taskExecutor,
     TaskScope& applicationTaskScope) noexcept
 {
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
@@ -189,12 +190,12 @@ void RendererSystemRoot::InitializeSceneSystems(
 	    renderHardware.GetDescriptorService(),
 	    renderHardware.GetUploadService(),
 	    GetBackend(),
-	    assetTaskExecutor,
+	    taskExecutor,
 	    applicationTaskScope);
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
 	m_renderPreparationGraph =
 	    std::make_unique<RenderPreparationGraph>(
-	        assetTaskExecutor,
+	        taskExecutor,
 	        *m_materialCacheManager,
 	        *m_gpuMeshCache,
 	        *m_textureManager);

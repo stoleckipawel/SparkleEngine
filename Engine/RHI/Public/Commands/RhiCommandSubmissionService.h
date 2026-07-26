@@ -21,8 +21,12 @@ class SPARKLE_RHI_API RhiCommandSubmissionService
 	virtual RhiCommandRecordingLease AcquireCommandRecordingLease(
 	    ERhiQueueType queueType,
 	    RhiCommandRecordingOwner owner = {}) noexcept = 0;
+	virtual RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease() noexcept = 0;
 	virtual RhiSubmissionToken SubmitCommandRecordingLease(
 	    RhiCommandRecordingLease&& lease,
+	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept = 0;
+	virtual RhiSubmissionToken SubmitCommandRecordingBatch(
+	    std::span<RhiCommandRecordingLease> leases,
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept = 0;
 	virtual RhiSubmissionToken SubmitCurrentGraphicsCommandList(
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept = 0;

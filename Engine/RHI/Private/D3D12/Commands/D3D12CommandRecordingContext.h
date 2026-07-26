@@ -47,7 +47,12 @@ class D3D12CommandRecordingContext final
 	RhiSubmissionToken Submit(
 	    RhiCommandRecordingLease&& lease,
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
+	RhiSubmissionToken SubmitBatch(
+	    std::span<RhiCommandRecordingLease> leases,
+	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
 	RenderCommandList& BeginCurrentGraphicsCommandList(std::uint32_t frameIndex) noexcept;
+	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease(
+	    std::uint32_t frameIndex) noexcept;
 	RhiSubmissionToken SubmitCurrentGraphicsCommandList(
 	    std::uint32_t frameIndex,
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
@@ -97,6 +102,11 @@ class D3D12CommandRecordingContext final
 	void ResetSlot(CommandSlot& slot) noexcept;
 	void CloseSlot(CommandSlot& slot) noexcept;
 	void ReleaseSlot(CommandSlot& slot) noexcept;
+	CommandSlot* ConsumeClosedLease(
+	    RhiCommandRecordingLease&& lease) noexcept;
+	void ResolveSubmittedSlot(
+	    CommandSlot& slot,
+	    RhiSubmissionToken token) noexcept;
 	RhiTransientDescriptorRange AllocateDescriptors(CommandSlot& slot, std::uint32_t count) noexcept;
 	void ReleaseDescriptorPages() noexcept;
 

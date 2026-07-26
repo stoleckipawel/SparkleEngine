@@ -2,6 +2,7 @@
 #include "FrameGraphCompiler.h"
 
 #include "FrameGraph/Compiler/FrameGraphCompilerRayTracing.h"
+#include "FrameGraph/Compiler/FrameGraphRecordingPlanCompiler.h"
 #include "FrameGraph/FrameGraphResourceRegistry.h"
 #include "FrameGraph/FrameGraphResourceStateTracker.h"
 
@@ -79,6 +80,7 @@ void FrameGraphCompiler::Compile() noexcept
 	BuildTransientAliasingBarriers();
 	BuildResourceBarriers();
 	BuildSubmissionBatches();
+	FrameGraphRecordingPlanCompiler(m_plan).Compile();
 }
 
 void FrameGraphCompiler::BuildCompiledPlanResources() noexcept

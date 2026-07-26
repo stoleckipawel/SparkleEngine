@@ -18,7 +18,7 @@ class logger;
 
 struct VulkanQueueSubmission final
 {
-	VkCommandBuffer CommandBuffer = VK_NULL_HANDLE;
+	std::span<const VkCommandBuffer> CommandBuffers;
 	std::span<const RhiSubmissionToken> WaitTokens;
 	VkSemaphore BinaryWaitSemaphore = VK_NULL_HANDLE;
 	VkPipelineStageFlags BinaryWaitStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;

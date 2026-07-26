@@ -28,9 +28,6 @@ class VulkanRecordingResourceTable final
 	bool Resolve(
 	    RhiGpuVirtualAddress address,
 	    VulkanRecordingResource& outResource) const noexcept;
-	void Resolve(
-	    const VulkanGpuAllocationRecord& record,
-	    VulkanRecordingResource& outResource) const noexcept;
 	VulkanRecordingResourceUseToken Retain(RhiResourceHandle resource) const noexcept;
 	VulkanRecordingResourceUseToken Retain(VulkanGpuAllocationRecord& record) const noexcept;
 	void Release(
@@ -38,11 +35,27 @@ class VulkanRecordingResourceTable final
 	    RhiSubmissionToken submissionToken) const noexcept;
 
 	struct ResourceEntry;
+	struct AddressEntry;
 	struct ReadView;
 
+	static std::shared_ptr<ReadView> BuildReadView(
+	    std::span<VulkanGpuAllocationRecord* const> records);
+	static void CollectPublishedResources(
+	    std::span<VulkanGpuAllocationRecord* const> records,
+	    ReadView& readView);
+	static void BuildAddressProjections(ReadView& readView);
 	static const ResourceEntry* FindResource(
 	    const ReadView& readView,
 	    RhiResourceHandle resource) noexcept;
+	static const ResourceEntry* FindExactAddress(
+	    const ReadView& readView,
+	    RhiGpuVirtualAddress address) noexcept;
+	static const ResourceEntry* FindBufferAddress(
+	    const ReadView& readView,
+	    RhiGpuVirtualAddress address) noexcept;
+	static bool AddressEntryPrecedes(
+	    const AddressEntry& left,
+	    const AddressEntry& right) noexcept;
 	static VulkanRecordingResource BuildResource(
 	    const VulkanGpuAllocationRecord& record) noexcept;
 	static void RetainReference(VulkanGpuAllocationRecord& record) noexcept;

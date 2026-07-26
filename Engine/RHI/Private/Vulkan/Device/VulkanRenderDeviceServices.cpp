@@ -43,8 +43,12 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	RhiCommandRecordingLease AcquireCommandRecordingLease(
 	    ERhiQueueType queueType,
 	    RhiCommandRecordingOwner owner) noexcept override;
+	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease() noexcept override;
 	RhiSubmissionToken SubmitCommandRecordingLease(
 	    RhiCommandRecordingLease&& lease,
+	    std::span<const RhiSubmissionToken> waitTokens) noexcept override;
+	RhiSubmissionToken SubmitCommandRecordingBatch(
+	    std::span<RhiCommandRecordingLease> leases,
 	    std::span<const RhiSubmissionToken> waitTokens) noexcept override;
 	RhiSubmissionToken SubmitCurrentGraphicsCommandList(
 	    std::span<const RhiSubmissionToken> waitTokens) noexcept override;
@@ -76,6 +80,10 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	    VkSemaphore renderFinishedSemaphore) noexcept;
 	RhiSubmissionToken SubmitLease(
 	    RhiCommandRecordingLease&& lease,
+	    std::span<const RhiSubmissionToken> waitTokens,
+	    VkSemaphore binarySignalSemaphore = VK_NULL_HANDLE) noexcept;
+	RhiSubmissionToken SubmitLeaseBatch(
+	    std::span<RhiCommandRecordingLease> leases,
 	    std::span<const RhiSubmissionToken> waitTokens,
 	    VkSemaphore binarySignalSemaphore = VK_NULL_HANDLE) noexcept;
 
@@ -252,11 +260,26 @@ RhiCommandRecordingLease VulkanRenderDeviceServices::AcquireCommandRecordingLeas
 	    owner);
 }
 
+RhiCommandRecordingLease
+VulkanRenderDeviceServices::TakeCurrentGraphicsCommandRecordingLease() noexcept
+{
+	return m_commandRecordingContext
+	    ->TakeCurrentGraphicsCommandRecordingLease(
+	        m_currentFrameIndex);
+}
+
 RhiSubmissionToken VulkanRenderDeviceServices::SubmitCommandRecordingLease(
     RhiCommandRecordingLease&& lease,
     std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
 	return SubmitLease(std::move(lease), waitTokens);
+}
+
+RhiSubmissionToken VulkanRenderDeviceServices::SubmitCommandRecordingBatch(
+    std::span<RhiCommandRecordingLease> leases,
+    std::span<const RhiSubmissionToken> waitTokens) noexcept
+{
+	return SubmitLeaseBatch(leases, waitTokens);
 }
 
 RhiSubmissionToken VulkanRenderDeviceServices::SubmitCurrentGraphicsCommandList(
@@ -289,6 +312,33 @@ RhiSubmissionToken VulkanRenderDeviceServices::SubmitLease(
 	return m_commandRecordingContext->Submit(
 	    std::move(lease),
 	    std::span<const RhiSubmissionToken>(resolvedWaitTokens.data(), resolvedWaitCount),
+	    ConsumeAcquireSemaphore(queueType),
+	    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+	    binarySignalSemaphore);
+}
+
+RhiSubmissionToken VulkanRenderDeviceServices::SubmitLeaseBatch(
+    std::span<RhiCommandRecordingLease> leases,
+    std::span<const RhiSubmissionToken> waitTokens,
+    VkSemaphore binarySignalSemaphore) noexcept
+{
+	if (leases.empty())
+	{
+		return {};
+	}
+
+	const ERhiQueueType queueType = leases.front().GetQueueType();
+	const RhiSubmissionState resolvedWaits =
+	    ConsumeQueueWaits(queueType, waitTokens);
+	std::array<RhiSubmissionToken, RhiQueueTypeCount> resolvedWaitTokens{};
+	const std::size_t resolvedWaitCount =
+	    resolvedWaits.CopyTokens(resolvedWaitTokens);
+
+	return m_commandRecordingContext->SubmitBatch(
+	    leases,
+	    std::span<const RhiSubmissionToken>(
+	        resolvedWaitTokens.data(),
+	        resolvedWaitCount),
 	    ConsumeAcquireSemaphore(queueType),
 	    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 	    binarySignalSemaphore);

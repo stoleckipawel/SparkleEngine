@@ -674,7 +674,13 @@ void FramePipeline::ExecuteFrameGraph(
 	    .ImageProviders = &imageProviderPassServices};
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
-	m_frameGraph->Execute(compiledPlan, m_systems->GetBackend(), frame, passRuntimeServices, frameDiagnostics);
+	m_frameGraph->Execute(
+	    compiledPlan,
+	    m_systems->GetBackend(),
+	    frame,
+	    passRuntimeServices,
+	    frameDiagnostics,
+	    m_systems->GetTaskExecutor());
 }
 
 void FramePipeline::SubmitFrame() noexcept

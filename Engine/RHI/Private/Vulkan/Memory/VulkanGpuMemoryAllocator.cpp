@@ -592,7 +592,7 @@ bool VulkanGpuMemoryAllocator::ResolveCoordinatorRecordingResource(
 		return false;
 	}
 
-	m_recordingResources->Resolve(*record, outResource);
+	outResource = VulkanRecordingResourceTable::BuildResource(*record);
 	return true;
 }
 
@@ -607,7 +607,7 @@ bool VulkanGpuMemoryAllocator::ResolveCoordinatorRecordingAddress(
 		return false;
 	}
 
-	m_recordingResources->Resolve(*record, outResource);
+	outResource = VulkanRecordingResourceTable::BuildResource(*record);
 	return true;
 }
 

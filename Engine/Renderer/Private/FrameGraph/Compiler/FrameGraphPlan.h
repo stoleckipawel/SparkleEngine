@@ -2,6 +2,7 @@
 
 #include "FrameGraph/FrameGraphPassKind.h"
 #include "FrameGraph/FrameGraphQueuePreference.h"
+#include "FrameGraph/Compiler/FrameGraphRecordingPlan.h"
 #include "FrameGraph/FrameGraphResourceTypes.h"
 #include "FrameGraph/PassResourceDeclaration.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
@@ -20,6 +21,12 @@ using FrameGraphResourceIndex = std::uint32_t;
 
 static constexpr FrameGraphPassIndex INVALID_FRAME_GRAPH_PASS_INDEX = static_cast<FrameGraphPassIndex>(-1);
 static constexpr FrameGraphResourceIndex INVALID_FRAME_GRAPH_RESOURCE_INDEX = static_cast<FrameGraphResourceIndex>(-1);
+
+enum class FrameGraphPassExecutionModel : std::uint8_t
+{
+	Callback,
+	TypedShader,
+};
 
 struct FrameGraphBarrier
 {
@@ -79,6 +86,7 @@ struct FrameGraphPassNode
 	std::vector<FrameGraphAliasingBarrier> transientAliasingBarriers;
 	std::vector<FrameGraphBarrier> compiledBarriers;
 	std::vector<FrameGraphBarrier> compiledReleaseBarriers;
+	FrameGraphPassExecutionModel executionModel = FrameGraphPassExecutionModel::Callback;
 };
 
 using FrameGraphSubmissionBatchIndex = std::uint32_t;
@@ -91,6 +99,8 @@ struct FrameGraphSubmissionBatch final
 	ERhiQueueType queue = ERhiQueueType::Graphics;
 	std::vector<FrameGraphPassIndex> passes;
 	std::vector<FrameGraphSubmissionBatchIndex> waitForBatches;
+	RecordingChunkIndex recordingChunkOffset = InvalidRecordingChunkIndex;
+	std::uint32_t recordingChunkCount = 0;
 };
 
 struct FrameGraphResourceNode
@@ -120,16 +130,7 @@ struct FrameGraphTransientLifetime
 	bool writeUsed = false;
 	std::vector<ResourceState> requiredStates;
 
-	void Clear() noexcept
-	{
-		firstUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
-		lastUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
-		firstExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
-		lastExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
-		readUsed = false;
-		writeUsed = false;
-		requiredStates.clear();
-	}
+	void Clear() noexcept;
 };
 
 struct FrameGraphTransientResourcePlan
@@ -168,11 +169,7 @@ struct FrameGraphTransientPlan
 	std::vector<FrameGraphTransientResourcePlan> resources;
 	std::vector<FrameGraphTransientPhysicalBlockPlan> physicalBlocks;
 
-	void Clear() noexcept
-	{
-		resources.clear();
-		physicalBlocks.clear();
-	}
+	void Clear() noexcept;
 };
 
 struct FrameGraphPlan
@@ -186,17 +183,7 @@ struct FrameGraphPlan
 	std::vector<FrameGraphBarrier> initialBarriers;
 	std::vector<FrameGraphBarrier> finalBarriers;
 	std::vector<FrameGraphSubmissionBatch> submissionBatches;
+	RecordingPlan recording;
 
-	void Clear() noexcept
-	{
-		passes.clear();
-		resources.clear();
-		productRoots.clear();
-		transients.Clear();
-		executionOrder.clear();
-		initialTransientAliasingBarriers.clear();
-		initialBarriers.clear();
-		finalBarriers.clear();
-		submissionBatches.clear();
-	}
+	void Clear() noexcept;
 };

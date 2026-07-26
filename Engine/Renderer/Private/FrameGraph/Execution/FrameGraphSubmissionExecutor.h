@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
-#include "FrameGraph/Execution/FrameGraphBatchRecorder.h"
+#include "FrameGraph/Execution/FrameGraphRecordingExecutor.h"
 
 #include <array>
 #include <span>
@@ -10,6 +10,7 @@ class FrameExecutionDiagnostics;
 class FrameGraph;
 class RenderCommandList;
 class RhiCommandSubmissionService;
+class TaskExecutor;
 struct FrameContext;
 struct PassRuntimeServices;
 
@@ -23,6 +24,7 @@ class FrameGraphSubmissionExecutor final
 	    const FrameContext& frame,
 	    const PassRuntimeServices& passRuntimeServices,
 	    FrameExecutionDiagnostics& frameDiagnostics,
+	    TaskExecutor& taskExecutor,
 	    std::span<RhiSubmissionToken> batchTokens) noexcept;
 
 	RenderCommandList& Execute(RenderCommandList& initialGraphicsCommandList);
@@ -37,19 +39,16 @@ class FrameGraphSubmissionExecutor final
 	void SubmitInitializationIfRequired();
 	BatchWaitTokens ResolveBatchWaits(const FrameGraphSubmissionBatch& batch) const noexcept;
 	void ExecuteBatch(const FrameGraphSubmissionBatch& batch);
-	RhiSubmissionToken RecordAndSubmitCurrentGraphicsBatch(
+	RhiSubmissionToken RecordAndSubmitBatch(
 	    const FrameGraphSubmissionBatch& batch,
-	    const BatchWaitTokens& waits);
-	RhiSubmissionToken RecordAndSubmitLeasedBatch(
-	    const FrameGraphSubmissionBatch& batch,
-	    const BatchWaitTokens& waits);
+	    const BatchWaitTokens& waits,
+	    RhiCommandRecordingLease initializationLease);
 	bool UsesNonGraphicsQueue() const noexcept;
 
 	const FrameGraphPlan& m_plan;
 	RhiCommandSubmissionService& m_submissionService;
-	FrameGraphBatchRecorder m_batchRecorder;
+	FrameGraphRecordingExecutor m_recordingExecutor;
 	std::span<RhiSubmissionToken> m_batchTokens;
 	RhiSubmissionToken m_initializationToken{};
-	RenderCommandList* m_initialGraphicsCommandList = nullptr;
 	bool m_initialGraphicsListAvailable = true;
 };

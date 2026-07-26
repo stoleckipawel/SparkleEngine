@@ -117,6 +117,10 @@ class FrameExecutionDiagnostics final
 
 	bool IsGpuTimingAvailable() const noexcept;
 	ScopedGpuScope BeginGpuScope(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
+	ScopedGpuScope BeginGpuEventScope(
+	    RenderCommandContext& commands,
+	    std::string_view label,
+	    RhiDiagnosticLabelColor color = {}) noexcept;
 	void ResolveTimings() noexcept;
 
 	const std::vector<GpuTimingScope>& GetRecordedTimings() const noexcept;

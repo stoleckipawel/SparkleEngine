@@ -48,8 +48,12 @@ class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionSe
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	RenderCommandList& BeginCurrentGraphicsCommandList() noexcept override;
 	RhiCommandRecordingLease AcquireCommandRecordingLease(ERhiQueueType queueType, RhiCommandRecordingOwner owner = {}) noexcept override;
+	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease() noexcept override;
 	RhiSubmissionToken SubmitCommandRecordingLease(
 	    RhiCommandRecordingLease&& lease,
+	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept override;
+	RhiSubmissionToken SubmitCommandRecordingBatch(
+	    std::span<RhiCommandRecordingLease> leases,
 	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept override;
 	RhiSubmissionToken SubmitCurrentGraphicsCommandList(std::span<const RhiSubmissionToken> waitTokens = {}) noexcept override;
 	void QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept override;
