@@ -46,6 +46,10 @@ class OwnedStructuredBuffer final
 	RhiOwnedResourceHandle GetResource() const noexcept { return m_resource; }
 	std::uint64_t GetSizeInBytes() const noexcept { return m_sizeInBytes; }
 	std::uint32_t GetStrideInBytes() const noexcept { return m_strideInBytes; }
+	bool Write(
+	    std::size_t destinationOffsetInBytes,
+	    const void* data,
+	    std::size_t sizeInBytes) noexcept;
 	void Reset() noexcept;
 
   private:

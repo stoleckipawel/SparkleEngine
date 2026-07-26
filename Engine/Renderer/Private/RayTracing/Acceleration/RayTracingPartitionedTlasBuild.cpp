@@ -89,13 +89,19 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	     ++renderInstanceIndex)
 	{
 		const MeshDraw& draw = sceneData.meshInstances[renderInstanceIndex];
-		if (draw.Geometry.GpuMesh == nullptr || !draw.Geometry.GpuMesh->IsValid())
+		if (!draw.Geometry.Mesh)
 		{
 			++result.Stats.Candidates.MissingGpuMeshCount;
 			continue;
 		}
 
-		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, sceneData, draw, renderInstanceIndex, diagnostics);
+		const RayTracingBlasCache::BlasHandle blas =
+		    blasCache.EnsureBlas(
+		        cmd,
+		        sceneData,
+		        draw,
+		        draw.Source.GpuSceneSlot,
+		        diagnostics);
 		if (!blas.IsValid())
 		{
 			++result.Stats.Candidates.RejectedBlasCount;
@@ -117,7 +123,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		    RhiPartitionedTlasInstanceWriteDesc{
 		        .Transform = RayTracingPartitionedTlasStrategyDetails::BuildInstanceTransform(draw.Transform.WorldMatrix),
 		        .ExplicitBoundingBox = {},
-		        .InstanceID = renderInstanceIndex,
+		        .InstanceID = draw.Source.GpuSceneSlot,
 		        .InstanceMask = 0xFFu,
 		        .InstanceContributionToHitGroupIndex = 0u,
 		        .Flags = resolveInstanceFlags(draw),

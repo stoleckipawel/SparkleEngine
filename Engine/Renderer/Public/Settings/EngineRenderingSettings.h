@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RHI/Public/Presentation/RhiPresentationDefaults.h"
+#include "Renderer/Public/Debug/RenderViewMode.h"
 #include "Renderer/Public/Settings/EngineRenderingDisplayTypes.h"
 #include "Renderer/Public/Settings/EngineRenderingRayReconstructionTypes.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
@@ -43,6 +44,7 @@ struct EngineRenderingSettingsState final
 	RayTracingPtlasPartitionUpdateMode PtlasPartitionUpdateMode = RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition;
 	bool PtlasMarkAllDynamicInPartition = false;
 	float PtlasModeChangeDistance = 100.0f;
+	RenderViewMode ViewMode = RenderViewMode::Lit;
 };
 
 class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
@@ -93,6 +95,7 @@ class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
 	void SetPtlasPartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode);
 	void SetPtlasMarkAllDynamicInPartition(bool enabled);
 	void SetPtlasModeChangeDistance(float distance);
+	void SetRenderViewMode(RenderViewMode viewMode);
 
   private:
 	template <typename TValue>

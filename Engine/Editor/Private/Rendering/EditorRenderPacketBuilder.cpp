@@ -67,11 +67,11 @@ void EditorRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 	}
 	for (const ImDrawCmd& command : drawList.CmdBuffer)
 	{
-		const std::uint64_t nativeTextureId =
+		const std::uint64_t packedTextureHandle =
 		    static_cast<std::uint64_t>(command.GetTexID());
 		m_packet.Commands.push_back(EditorDrawCommand{
 		    .ClipRect = {command.ClipRect.x, command.ClipRect.y, command.ClipRect.z, command.ClipRect.w},
-		    .TextureHandle = EditorTextureHandle::Unpack(nativeTextureId),
+		    .TextureHandle = EditorTextureHandle::Unpack(packedTextureHandle),
 		    .ElementCount = command.ElemCount,
 		    .IndexOffset = command.IdxOffset,
 		    .VertexOffset = static_cast<std::int32_t>(command.VtxOffset),

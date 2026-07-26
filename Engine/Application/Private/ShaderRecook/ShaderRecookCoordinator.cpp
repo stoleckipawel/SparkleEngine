@@ -157,7 +157,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 		m_hasAcceptedPublication = true;
 		PublishStatus(
 		    std::format(
-		        "Shader recook #{} ({}) succeeded. Accepted publication {} and reloaded cooked shader packages after RHI idle.\nCommand: "
+		        "Shader recook #{} ({}) succeeded. Accepted publication {} and activated a validated shader runtime generation.\nCommand: "
 		        "{}\n\n{}",
 		        result.RequestId,
 		        DescribeRequest(result.Request),
@@ -180,8 +180,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExe
 
 CookedShaderReloadResult ShaderRecookCoordinator::ReloadCookedShaders(Renderer& renderer) noexcept
 {
-	PublishStatus("Shader reload accepted; waiting for RHI idle before replacing shader runtime state.");
-	renderer.WaitForIdle();
+	PublishStatus("Shader reload accepted; validating a replacement runtime generation at the render boundary.");
 	return renderer.ReloadCookedShaders();
 }
 
@@ -190,7 +189,10 @@ void ShaderRecookCoordinator::HandleManualReload(Renderer& renderer) noexcept
 	const CookedShaderReloadResult reloadResult = ReloadCookedShaders(renderer);
 	if (reloadResult)
 	{
-		PublishStatus(std::format("Manual shader reload completed after RHI idle (generation={}).", renderer.GetShaderPackageGeneration()));
+		PublishStatus(
+		    std::format(
+		        "Manual shader reload activated generation {} without a device-idle drain.",
+		        renderer.GetShaderPackageGeneration()));
 		return;
 	}
 
@@ -269,7 +271,7 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 	m_lastPublicationDiagnostic.clear();
 	PublishStatus(
 	    std::format(
-	        "External shader recook publication {} accepted and reloaded after RHI idle (generation={}).",
+	        "External shader recook publication {} accepted and activated without a device-idle drain (generation={}).",
 	        publication.PublicationId,
 	        renderer.GetShaderPackageGeneration()));
 }

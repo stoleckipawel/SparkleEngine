@@ -24,6 +24,7 @@ class VulkanCaptureService final : public RhiCaptureService
   private:
 	struct PendingReadback;
 	PendingReadback* FindPending(RhiCaptureTicket ticket) noexcept;
+	void DrainCancelledReadbacks() noexcept;
 	void ReleasePending(std::size_t index) noexcept;
 
 	VulkanRhi* m_rhi = nullptr;

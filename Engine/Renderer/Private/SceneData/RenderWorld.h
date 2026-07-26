@@ -3,8 +3,11 @@
 #include "Rendering/RenderWorldDelta.h"
 
 #include <map>
+#include <memory>
 #include <string>
-#include <utility>
+
+class GpuSceneSlotAllocator;
+class RhiCommandSubmissionService;
 
 struct RenderProxy final
 {
@@ -18,6 +21,10 @@ enum class RenderWorldApplyStatus : std::uint8_t { Applied, Duplicate, Stale, Ou
 class RenderWorld final
 {
   public:
+	explicit RenderWorld(
+	    RhiCommandSubmissionService* submissionService = nullptr);
+	~RenderWorld() noexcept;
+
 	RenderWorldApplyStatus Apply(const RenderWorldDelta& delta, std::string& diagnostic);
 	RenderWorldApplyStatus Validate(const RenderWorldDelta& delta, std::string& diagnostic) const;
 	const RenderProxy* Find(RenderObjectId object) const noexcept;
@@ -30,26 +37,15 @@ class RenderWorld final
 	std::uint64_t GetSequenceNumber() const noexcept { return m_sequenceNumber; }
 	std::uint64_t GetStructuralRevision() const noexcept { return m_structuralRevision; }
 	std::uint64_t GetMaterialRevision() const noexcept { return m_materialRevision; }
-	bool ConsumeHistoryReset() noexcept { return std::exchange(m_historyReset, false); }
+	bool ConsumeHistoryReset() noexcept;
 
   private:
 	void ApplyDestroys(const RenderWorldDelta& delta);
 	void ApplyCreates(const RenderWorldDelta& delta);
 	void ApplyUpdates(const RenderWorldDelta& delta);
 	void PublishResources(const RenderWorldDelta& delta);
-	std::uint32_t AllocateGpuSceneSlot(std::uint64_t sequenceNumber);
-	void RetireGpuSceneSlot(
-	    std::uint32_t slot,
-	    std::uint64_t sequenceNumber);
-	struct RetiredGpuSceneSlot final
-	{
-		std::uint32_t Slot = 0;
-		std::uint64_t SequenceNumber = 0;
-	};
 	std::map<RenderObjectId, RenderProxy> m_proxies;
-	std::vector<std::uint32_t> m_availableGpuSceneSlots;
-	std::vector<RetiredGpuSceneSlot> m_retiredGpuSceneSlots;
-	std::uint32_t m_nextGpuSceneSlot = 0;
+	std::unique_ptr<GpuSceneSlotAllocator> m_gpuSceneSlots;
 	RenderMaterialTable m_materials;
 	RenderTextureTable m_textures;
 	std::optional<SceneSkyDesc> m_sky;

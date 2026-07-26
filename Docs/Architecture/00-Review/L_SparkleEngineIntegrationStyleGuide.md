@@ -8,7 +8,7 @@ Last consolidated: 2026-07-24
 
 This guide consolidates SparkleEngine's existing architectural rules, implementation-prompt rules, engineering persona, repository structure, and established cleanup decisions into one attachment-ready contract. It is not a second architecture plan and does not replace the detailed reasoning, source research, prompt dependencies, or hazard atlas in J and K.
 
-It also makes the supplied NVIDIA Principal Developer Technology Engineer expectations executable through the canonical `NV-PDTE-01` through `NV-PDTE-15` matrix in H. The role raises the final bar to include partner technology adoption, path tracing, a real neural graphics feature, model/training/inference optimization, mathematics, CPU/GPU architecture, hardware/driver diagnosis, verified AI-tool use, and principal-quality communication.
+It also makes the supplied principal graphics engineering expectations executable through the canonical `PGE-01` through `PGE-15` matrix in A and the persona interpretation in H. The target raises the final bar to include partner technology adoption, path tracing, a real neural graphics feature, model/training/inference optimization, mathematics, CPU/GPU architecture, hardware/driver diagnosis, verified AI-tool use, and principal-quality communication.
 
 The intended result is a compact renderer-first engine whose code is:
 
@@ -27,9 +27,9 @@ The target engineering persona is defined in [H. Advanced Graphics Engineer Pers
 
 Add this block to each implementation prompt:
 
-> Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+> Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 
-Referencing the guide is sufficient; do not copy its rules into another policy document. A prompt may impose stricter requirements. It may not silently weaken ownership, correctness, feature-preservation, deterministic behavior, backend parity, `NV-PDTE-*` preservation, or evidence requirements.
+Referencing the guide is sufficient; do not copy its rules into another policy document. A prompt may impose stricter requirements. It may not silently weaken ownership, correctness, feature-preservation, deterministic behavior, backend parity, `PGE-*` preservation, or evidence requirements.
 
 ## Source Authority and Interpretation
 
@@ -89,7 +89,7 @@ Every integration MUST:
 - make the default workflow clean and intentional;
 - delete the path, authority, adapter, flag, or representation it replaces;
 - distinguish product, developer-preview, research, unsupported, and deleted states honestly;
-- identify applicable `NV-PDTE-*` requirements and preserve their future integration seams without adding empty role-shaped infrastructure;
+- identify applicable `PGE-*` requirements and preserve their future integration seams without adding empty role-shaped infrastructure;
 - preserve D3D12 and Vulkan behavior where supported;
 - preserve raster, classic TLAS, PTLAS, reservoir lighting, temporal/provider behavior, path/reference modes, shader packaging, capture, and owned tools when the change crosses those paths;
 - improve the touched ownership path rather than append another layer to it.
@@ -1477,9 +1477,9 @@ A change is ready only when the answer to each applicable question is yes.
 - Are performance claims causal and reproducible?
 - Are unavailable checks stated honestly?
 
-### Principal Developer Technology
+### Principal Graphics Engineering
 
-- Were applicable `NV-PDTE-*` requirements classified before implementation?
+- Were applicable `PGE-*` requirements classified before implementation?
 - Does each advanced role claim have concrete evidence?
 - Were path-tracing/neural/math/hardware-driver/partner seams preserved without empty scaffolding?
 - If AI tools were used materially, were code, shader, math, model, test, source and performance independently verified?
@@ -1509,7 +1509,7 @@ Every future prompt applying this guide ends with:
 15. **Naming audit** - canonical and rejected-alias searches.
 16. **Limitations and unavailable evidence** - precise and honest.
 17. **Acceptance status** - `PASS` or `BLOCKED`, with no partial-pass wording.
-18. **NV-PDTE reconciliation** - applicable IDs, advance/preserve/not-applicable/blocked status, exact evidence, AI-assisted verification where used, honest credential/platform/hardware boundaries, and role-only scaffolding audit.
+18. **PGE reconciliation** - applicable IDs, advance/preserve/not-applicable/blocked status, exact evidence, AI-assisted verification where used, honest credential/platform/hardware boundaries, and role-only scaffolding audit.
 
 ## 22. Immediate Stop Conditions
 
@@ -1564,7 +1564,7 @@ The following are rejected unless a prompt explicitly establishes and closes a n
 - full-scene rebuild/copy/upload where stable dirty data is available;
 - performance claims based only on FPS, utilization, traces, or one backend.
 
-## 24. NVIDIA Principal Developer Technology Review Gate
+## 24. Principal Graphics Engineering Review Gate
 
 This gate applies to every future prompt. It raises the final evidence bar while preserving all earlier architecture and style requirements.
 
@@ -1572,7 +1572,7 @@ This gate applies to every future prompt. It raises the final evidence bar while
 
 Before implementation:
 
-1. Read H's `NV-PDTE-01` through `NV-PDTE-15` matrix.
+1. Read A's `PGE-01` through `PGE-15` matrix and H's persona interpretation.
 2. List the applicable IDs.
 3. Mark each **advance**, **preserve**, **not applicable**, or **blocked**.
 4. Name the evidence expected from the current change.
@@ -1590,21 +1590,21 @@ After implementation:
 
 | Role requirement | Code/repository review question |
 |---|---|
-| `NV-PDTE-01` | Can another engine team integrate, configure, fail, fall back, capture, debug and tune this capability without receiving broad owner access? |
-| `NV-PDTE-02` | Does path tracing have explicit math, scene/resource inputs, RT lifetime, shader/frame-graph/RHI ownership, deterministic reference and paired API evidence? |
-| `NV-PDTE-03` | Does a real model/operator execute in a real product path and improve or replace a classical path? |
-| `NV-PDTE-04` | Are model/operator/layout/precision decisions based on ablation and end-to-end profiling rather than framework defaults? |
-| `NV-PDTE-05` | Are frame time, p95/p99, pacing, input latency, memory and concurrent workload interference inside a bounded product budget? |
-| `NV-PDTE-06` | Are API correctness, hardware capability and driver behavior separated with exact configuration and a reduced reproducer? |
-| `NV-PDTE-07` | Does the C++ express ownership/lifetime directly, remain cohesive, and pass debugging/validation/stress gates? |
-| `NV-PDTE-08` | Can the important math and numerical assumptions be derived, tested and connected to measured cost? |
-| `NV-PDTE-09` | Are HLSL/Slang, DXIL/SPIR-V, D3D12/Vulkan resources, synchronization and capability/fallback behavior explicit? |
-| `NV-PDTE-10` | Does the optimization explain CPU/GPU architecture effects using causal experiments, not slogans? |
-| `NV-PDTE-11` | Are model/data/loss/generalization/deployment understood, and was AI-assisted output independently verified? |
-| `NV-PDTE-12` | Are training/offline preparation and runtime inference separately owned, measured and packaged? |
-| `NV-PDTE-13` | Did one bounded GPU/research hypothesis become a measured product decision or get deleted, and is the result prioritized, reproducible and explainable through a concise review, demo, technical note and talk outline? |
-| `NV-PDTE-14` | Are Windows/Linux/driver claims limited to platforms and workflows actually built, run, validated and debugged? |
-| `NV-PDTE-15` | Does the change demonstrate independent end-to-end judgment and leave the system simpler for the next engineer? |
+| `PGE-01` | Can another engine team integrate, configure, fail, fall back, capture, debug and tune this capability without receiving broad owner access? |
+| `PGE-02` | Does path tracing have explicit math, scene/resource inputs, RT lifetime, shader/frame-graph/RHI ownership, deterministic reference and paired API evidence? |
+| `PGE-03` | Does a real model/operator execute in a real product path and improve or replace a classical path? |
+| `PGE-04` | Are model/operator/layout/precision decisions based on ablation and end-to-end profiling rather than framework defaults? |
+| `PGE-05` | Are frame time, p95/p99, pacing, input latency, memory and concurrent workload interference inside a bounded product budget? |
+| `PGE-06` | Are API correctness, hardware capability and driver behavior separated with exact configuration and a reduced reproducer? |
+| `PGE-07` | Does the C++ express ownership/lifetime directly, remain cohesive, and pass debugging/validation/stress gates? |
+| `PGE-08` | Can the important math and numerical assumptions be derived, tested and connected to measured cost? |
+| `PGE-09` | Are HLSL/Slang, DXIL/SPIR-V, D3D12/Vulkan resources, synchronization and capability/fallback behavior explicit? |
+| `PGE-10` | Does the optimization explain CPU/GPU architecture effects using causal experiments, not slogans? |
+| `PGE-11` | Are model/data/loss/generalization/deployment understood, and was AI-assisted output independently verified? |
+| `PGE-12` | Are training/offline preparation and runtime inference separately owned, measured and packaged? |
+| `PGE-13` | Did one bounded GPU/research hypothesis become a measured product decision or get deleted, and is the result prioritized, reproducible and explainable through a concise review, demo, technical note and talk outline? |
+| `PGE-14` | Are Windows/Linux/driver claims limited to platforms and workflows actually built, run, validated and debugged? |
+| `PGE-15` | Does the change demonstrate independent end-to-end judgment and leave the system simpler for the next engineer? |
 
 ### 24.3 Neural Feature Acceptance
 

@@ -25,7 +25,6 @@ struct RayTracingPtlasPartitionPlannerConfig final
 
 struct RayTracingPtlasPartitionEntryIdentity final
 {
-	std::uint32_t StableInstanceIndex = 0;
 	std::uint32_t RenderInstanceIndex = 0;
 	std::uint32_t GpuSceneSlot = 0;
 };

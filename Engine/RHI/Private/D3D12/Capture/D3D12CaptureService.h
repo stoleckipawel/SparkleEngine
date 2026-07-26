@@ -23,6 +23,7 @@ class D3D12CaptureService final : public RhiCaptureService
   private:
 	struct PendingReadback;
 	PendingReadback* FindPending(RhiCaptureTicket ticket) noexcept;
+	void DrainCancelledReadbacks() noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
 	std::vector<std::unique_ptr<PendingReadback>> m_pendingReadbacks;

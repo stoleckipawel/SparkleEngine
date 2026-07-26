@@ -74,7 +74,7 @@ class SPARKLE_EDITOR_API UI final
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
-	void SetViewportSceneColorTextureId(EditorTextureHandle texture) noexcept;
+	void SetViewportSceneColorTexture(EditorTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }

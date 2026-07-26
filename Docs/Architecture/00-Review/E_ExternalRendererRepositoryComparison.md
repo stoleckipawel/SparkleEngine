@@ -10,7 +10,7 @@ This document compares SparkleEngine against top-tier rendering repositories and
 
 The main lesson is not "add more features." It is "make scope and ownership painfully clear."
 
-The supplied NVIDIA Principal Developer Technology Engineer posting adds a second comparison lens. The repository must eventually demonstrate the canonical `NV-PDTE-01` through `NV-PDTE-15` requirements in [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md): partner adoption, path tracing, a real neural graphics feature, neural model/workload tuning, low-level CPU/GPU optimization, architecture/driver diagnosis, mathematical rigor, AI fundamentals, and principal-quality communication. Vendor repositories remain precedents and study material; they do not by themselves prove Sparkle satisfies the role.
+The supplied principal graphics engineering role set adds a second comparison lens. The repository must eventually demonstrate the canonical `PGE-01` through `PGE-15` requirements in [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md): partner adoption, path tracing, a real neural graphics feature, neural model/workload tuning, low-level CPU/GPU optimization, architecture/driver diagnosis, mathematical rigor, AI fundamentals, and principal-quality communication. Vendor repositories remain precedents and study material; they do not by themselves prove Sparkle satisfies the role.
 
 ## Sources Reviewed
 
@@ -196,7 +196,7 @@ Sparkle comparison:
 
 - Sparkle has strong internal RHI, shader, frame-graph, and provider foundations.
 - It does not yet have an externally adoptable neural-graphics integration case, model-training/export evidence, or a complete path from neural algorithm math to optimized runtime result.
-- Current internal documentation is extensive, but principal developer-technology evidence also requires a concise handoff, reduced reproducer, live demo, and result-focused technical note.
+- Current internal documentation is extensive, but principal graphics engineering evidence also requires a concise handoff, reduced reproducer, live demo, and result-focused technical note.
 
 Action:
 

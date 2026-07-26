@@ -41,7 +41,6 @@ class RendererImageProviderStack final
 	RendererImageProviderStack(RendererImageProviderStack&&) = delete;
 	RendererImageProviderStack& operator=(RendererImageProviderStack&&) = delete;
 
-	void Refresh(RenderHardwareInterface& renderHardware);
 	void ResetHistory() noexcept;
 	void SetupFrame(const ImageProviderFrameContext& frameContext);
 	RenderViewportExtent ResolveRenderExtent(

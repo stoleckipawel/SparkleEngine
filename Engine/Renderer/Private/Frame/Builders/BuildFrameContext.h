@@ -2,6 +2,8 @@
 
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
+#include <cstdint>
+
 class PerViewDataBuilder;
 class RenderCamera;
 class PersistentRenderGpuScene;
@@ -16,6 +18,7 @@ FrameContext BuildFrameContext(
     const RenderWorld& world,
     const RenderFrameDynamicData& dynamic,
     PersistentRenderGpuScene& gpuScene,
+    std::uint32_t frameIndex,
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,
     RenderSceneDataBuilder& renderSceneDataBuilder,

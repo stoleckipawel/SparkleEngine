@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Pipeline/RenderPassDefinitionRuntime.h"
+#include "RHI/Public/Commands/RhiQueue.h"
 #include "Shaders/CookedShaderReloadResult.h"
 
 #include <cassert>
@@ -10,13 +11,15 @@
 #include <string>
 #include <typeindex>
 #include <unordered_map>
+#include <vector>
 
+class RenderDeviceServices;
 class RenderHardwareInterface;
 
 class PipelineStateManager final
 {
   public:
-	explicit PipelineStateManager(RenderHardwareInterface& renderHardwareInterface) noexcept;
+	explicit PipelineStateManager(RenderDeviceServices& deviceServices) noexcept;
 	~PipelineStateManager() noexcept;
 
 	PipelineStateManager(const PipelineStateManager&) = delete;
@@ -24,28 +27,25 @@ class PipelineStateManager final
 	PipelineStateManager(PipelineStateManager&&) = delete;
 	PipelineStateManager& operator=(PipelineStateManager&&) = delete;
 
-	std::uint64_t GetShaderPackageGeneration() const noexcept { return m_shaderPackages.GetGeneration(); }
+	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
+	void PollRetiredGenerations() noexcept;
 
 	template <typename TPass> const typename TPass::PipelineRuntime& GetPassRuntime() const noexcept
 	{
-		RuntimeStorageHolder<TPass>& holder = GetOrCreateRuntimeStorageHolder<TPass>();
+		RuntimeStorageHolder<TPass>& holder =
+		    GetOrCreateRuntimeStorageHolder<TPass>();
 		if (!holder.Runtime.has_value())
 		{
 			std::string errorMessage;
-			if (!RenderPassDefinitionRuntime::TryCreateRuntimeStorage(
+			if (!holder.TryCreate(
 			        *m_renderHardwareInterface,
-			        m_shaderPackages,
-			        TPass::GetDefinition(),
-			        holder.Storage,
+			        m_activeGeneration->ShaderPackages,
 			        errorMessage))
 			{
 				HandleRuntimeCreationFailure(errorMessage);
 			}
-
-			holder.Runtime.emplace(RenderPassDefinitionRuntime::MakeRuntime<typename TPass::PipelineRuntime>(holder.Storage));
 		}
-
 		return *holder.Runtime;
 	}
 
@@ -53,31 +53,104 @@ class PipelineStateManager final
 	struct IRuntimeStorageHolder
 	{
 		virtual ~IRuntimeStorageHolder() noexcept = default;
+		virtual bool TryCreateReplacement(
+		    RenderHardwareInterface& rhi,
+		    CookedShaderPackageCache& shaderPackages,
+		    std::unique_ptr<IRuntimeStorageHolder>& outHolder,
+		    std::string& outErrorMessage) const = 0;
 	};
 
-	template <typename TPass> struct RuntimeStorageHolder final : IRuntimeStorageHolder
+	template <typename TPass>
+	struct RuntimeStorageHolder final : IRuntimeStorageHolder
 	{
+		bool TryCreate(
+		    RenderHardwareInterface& rhi,
+		    CookedShaderPackageCache& shaderPackages,
+		    std::string& outErrorMessage)
+		{
+			if (!RenderPassDefinitionRuntime::TryCreateRuntimeStorage(
+			        rhi,
+			        shaderPackages,
+			        TPass::GetDefinition(),
+			        Storage,
+			        outErrorMessage))
+			{
+				return false;
+			}
+			Runtime.emplace(
+			    RenderPassDefinitionRuntime::MakeRuntime<
+			        typename TPass::PipelineRuntime>(Storage));
+			return true;
+		}
+
+		bool TryCreateReplacement(
+		    RenderHardwareInterface& rhi,
+		    CookedShaderPackageCache& shaderPackages,
+		    std::unique_ptr<IRuntimeStorageHolder>& outHolder,
+		    std::string& outErrorMessage) const override
+		{
+			auto replacement =
+			    std::make_unique<RuntimeStorageHolder<TPass>>();
+			if (!replacement->TryCreate(
+			        rhi,
+			        shaderPackages,
+			        outErrorMessage))
+			{
+				return false;
+			}
+			outHolder = std::move(replacement);
+			return true;
+		}
+
 		RenderPassShaderRuntimeStorage Storage;
 		std::optional<typename TPass::PipelineRuntime> Runtime;
 	};
 
-	template <typename TPass> RuntimeStorageHolder<TPass>& GetOrCreateRuntimeStorageHolder() const noexcept
+	struct ShaderRuntimeGeneration final
+	{
+		std::uint64_t Generation = 1;
+		CookedShaderPackageCache ShaderPackages;
+		std::unordered_map<
+		    std::type_index,
+		    std::unique_ptr<IRuntimeStorageHolder>>
+		    RuntimeStorageByPassType;
+	};
+
+	struct RetiredShaderRuntimeGeneration final
+	{
+		RhiSubmissionState LastUse;
+		std::unique_ptr<ShaderRuntimeGeneration> Runtime;
+	};
+
+	template <typename TPass>
+	RuntimeStorageHolder<TPass>& GetOrCreateRuntimeStorageHolder() const noexcept
 	{
 		const std::type_index passType = typeid(TPass);
-		auto runtimeIt = m_runtimeStorageByPassType.find(passType);
-		if (runtimeIt == m_runtimeStorageByPassType.end())
+		auto& holders = m_activeGeneration->RuntimeStorageByPassType;
+		auto runtime = holders.find(passType);
+		if (runtime == holders.end())
 		{
-			runtimeIt = m_runtimeStorageByPassType.emplace(passType, std::make_unique<RuntimeStorageHolder<TPass>>()).first;
+			runtime =
+			    holders
+			        .emplace(
+			            passType,
+			            std::make_unique<RuntimeStorageHolder<TPass>>())
+			        .first;
 		}
 
-		auto* typedHolder = static_cast<RuntimeStorageHolder<TPass>*>(runtimeIt->second.get());
+		auto* typedHolder =
+		    static_cast<RuntimeStorageHolder<TPass>*>(runtime->second.get());
 		assert(typedHolder != nullptr);
 		return *typedHolder;
 	}
 
-	[[noreturn]] void HandleRuntimeCreationFailure(const std::string& errorMessage) const;
+	RhiSubmissionState CaptureLastSubmittedState() const noexcept;
+	bool IsComplete(const RhiSubmissionState& state) const noexcept;
+	[[noreturn]] void HandleRuntimeCreationFailure(
+	    const std::string& errorMessage) const;
 
+	RenderDeviceServices* m_deviceServices = nullptr;
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
-	mutable CookedShaderPackageCache m_shaderPackages;
-	mutable std::unordered_map<std::type_index, std::unique_ptr<IRuntimeStorageHolder>> m_runtimeStorageByPassType;
+	mutable std::unique_ptr<ShaderRuntimeGeneration> m_activeGeneration;
+	std::vector<RetiredShaderRuntimeGeneration> m_retiredGenerations;
 };

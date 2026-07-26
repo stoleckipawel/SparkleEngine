@@ -67,11 +67,6 @@ RenderProductHandle::operator bool() const noexcept
 	return Value != 0;
 }
 
-ViewportPresentationProduct::operator bool() const noexcept
-{
-	return Status == ViewportPresentationStatus::Ready && TextureId != 0;
-}
-
 ViewportCaptureResult::operator bool() const noexcept
 {
 	return Status == ViewportCaptureStatus::Succeeded;

@@ -2,7 +2,7 @@
 
 Status: required execution companion to J; no prompt implies implementation already exists
 Date: 2026-07-24
-Canonical naming authority: J's NVIDIA/AMD/Epic-grounded concurrency and rendering vocabulary; enforced by Rule 10
+Canonical naming authority: J's industry-grounded concurrency and rendering vocabulary; enforced by Rule 10
 Architecture and tutorial source: [J. Multithreaded Engine Architecture and Learning Program](J_MultithreadedEngineArchitectureAndLearningProgram.md)
 Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), and [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md)
 Coding and integration contract: [L. SparkleEngine Integration Style Guide](L_SparkleEngineIntegrationStyleGuide.md)
@@ -255,9 +255,9 @@ Owned C++ source must make behavior ownership visible without anonymous linkage 
 
 The completion report must include an **implementation-shape reconciliation**: header bodies moved, local types reassigned, former anonymous behavior owners, retained template/accessor bodies, diagnostics removed/retained, and the zero-result searches used by the gate.
 
-### 17. NVIDIA Principal Developer Technology Traceability
+### 17. Principal Graphics Engineering Traceability
 
-Every prompt is reviewed against the canonical `NV-PDTE-01` through `NV-PDTE-15` requirements in H:
+Every prompt is reviewed against the canonical `PGE-01` through `PGE-15` requirements in A and the persona interpretation in H:
 
 - identify applicable role requirements before editing and mark each **advance**, **preserve**, **not applicable**, or **blocked**;
 - name the concrete code, test, capture, math/reference result, adoption artifact, or communication evidence expected from the prompt;
@@ -273,9 +273,9 @@ Every prompt is reviewed against the canonical `NV-PDTE-01` through `NV-PDTE-15`
 - demo, whitepaper and conference-style artifacts are produced only by the designated closure prompts after the implementation passes; routine prompts do not grow documentation/reporting products;
 - repository evidence never implies a degree, years of employment, proprietary experience, Linux support or driver-development history that was not actually earned and validated.
 
-Prompts 00-29 establish the systems foundation and must preserve the role contract. Prompts 30-34 are the additive principal developer-technology evidence sequence. Completing Prompt 29 alone does not close the `NV-PDTE-*` matrix.
+Prompts 00-29 establish the systems foundation and must preserve the role contract. Prompts 30-34 are the additive principal graphics engineering evidence sequence. Completing Prompt 29 alone does not close the `PGE-*` matrix.
 
-The completion report must contain an **NV-PDTE reconciliation**: applicable IDs, advance/preserve/not-applicable/blocked status, exact evidence, honest gaps and proof that no role-only scaffolding was added.
+The completion report must contain an **PGE reconciliation**: applicable IDs, advance/preserve/not-applicable/blocked status, exact evidence, honest gaps and proof that no role-only scaffolding was added.
 
 ## Required Prompt Completion Report
 
@@ -299,7 +299,7 @@ Every completed prompt returns this report:
 16. **Gate:** PASS or BLOCKED with concrete reason.
 17. **Integration-surface reconciliation:** narrow hooks, hidden mechanism types, receiver responsibility before/after, dependency leakage removed, and scaling path for the next consumer.
 18. **Implementation-shape reconciliation:** declaration-only header audit, function-local-type audit, anonymous-namespace ownership conversion, diagnostic reduction, and zero-result gate searches.
-19. **NV-PDTE reconciliation:** applicable role IDs, status, concrete evidence, preserved contracts, exposed gaps, AI-assisted-work verification where used, and role-only scaffolding audit.
+19. **PGE reconciliation:** applicable role IDs, status, concrete evidence, preserved contracts, exposed gaps, AI-assisted-work verification where used, and role-only scaffolding audit.
 
 ## Prompt Sequence and Dependencies
 
@@ -376,8 +376,8 @@ This ledger is a completeness check, not a substitute for reading J. A prompt ma
 | GPU queue overlap, presentation pacing and latency | 13, 20-21, 28 | correlated frame markers, graphics/compute/copy timelines, pacing and CPU-lead results |
 | production concurrency diagnosis and interview defense | 22, 24-29 | injected incidents, exact tool evidence, regressions, coding/whiteboard/trace defense |
 | reliability, determinism, performance, and portfolio teaching proof | every prompt, finalized by 22-29 | stress matrix, reproducible measurements, limitations, independent teach-back |
-| NVIDIA/AMD/Epic-grounded professional failure prevention | every prompt, repository closure in 22 and 29 | MT-01–MT-44 pre-mortem, recognizable source-backed pattern, falsifying evidence, final non-applicability/closure review |
-| NVIDIA/AMD/Epic-grounded canonical vocabulary | 00-03, 12-13, 18-20; enforced by every prompt | naming crosswalk, no CPU-task/GPU-command ambiguity, rejected-alias audit, truthful thread/profiler labels |
+| industry-grounded professional failure prevention | every prompt, repository closure in 22 and 29 | MT-01–MT-44 pre-mortem, recognizable source-backed pattern, falsifying evidence, final non-applicability/closure review |
+| industry-grounded canonical vocabulary | 00-03, 12-13, 18-20; enforced by every prompt | naming crosswalk, no CPU-task/GPU-command ambiguity, rejected-alias audit, truthful thread/profiler labels |
 
 If a later repository discovery exposes a J responsibility with no row or prompt, update this ledger and the smallest owning prompt before implementing it. Do not hide the new obligation in a completion report.
 
@@ -465,7 +465,7 @@ Objective:
 Create the verified before-state and invariant vocabulary required for every later multithreading change. This prompt changes no ownership architecture and introduces no new task/ECS/render framework.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -507,7 +507,7 @@ Validation:
 - Run git diff whitespace/include/dependency checks.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Current serial frame flow and owners can be explained from evidence.
 - Baseline reproduction commands and essential captures exist in the existing artifact workflow.
 - Every owned concurrency primitive, WaitForIdle call site, detach, and direct lifecycle callback has a classification and exact target prompt; no category is summarized only at wrapper level.
@@ -531,7 +531,7 @@ Objective:
 Create SparkleTasks' deterministic serial foundation: task identity, immutable compiled topology, execution generations, prerequisites, fan-in, nested completion semantics, explicit failure, and bounded graph storage. Do not create worker threads yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -558,7 +558,7 @@ Validation:
 - Exhaustively enumerate small DAGs against a simple reference topological executor; inject failure/cancellation at each node and prove every accepted node/run has one terminal accounting path.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Serial graph output is deterministic and all counters settle exactly once.
 - Invalid graphs fail before a task body executes.
 - No worker, wait, lane, profiler, ECS, or renderer integration exists yet.
@@ -585,7 +585,7 @@ Objective:
 Execute the same compiled task contract on a fixed worker set with local ready queues, external injection, work stealing, sleep/wake, and safe repeated startup/shutdown. Preserve exact serial semantics.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -615,7 +615,7 @@ Validation:
 - Compare fewer-than-physical, physical, logical, and oversubscribed worker settings where the machine permits; trace runnable threads/context switches and use a deliberately skewed workload. Inspect adjacent worker hot fields for false sharing.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Parallel results equal serial results for all deterministic tests.
 - Idle workers park; no routine polling or worker blocking on child tasks.
 - Repeated shutdown has no leak, stranded run, lost wakeup, or callback-after-destroy.
@@ -644,7 +644,7 @@ Objective:
 Complete the production SparkleTasks contract: `TaskScope` hierarchy, cooperative cancellation, `TaskEvent`, `ParallelFor`, FrameCritical/Background/BlockingIo lanes, host joins, failure/finally semantics, private profiler events, and ordered shutdown. This is the engine job system, but `Job` is not a parallel API vocabulary.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -676,7 +676,7 @@ Validation:
 - Profiler capture shows names/lanes/dependencies without changing shipping public surface.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Every accepted `TaskExecution` settles exactly once under cancellation/failure/shutdown races.
 - Raw owner capture beyond scope lifetime is prohibited by design/tests.
 - Frame and blocking lanes cannot starve one another.
@@ -708,7 +708,7 @@ Objective:
 Adversarially reconcile the completed Prompt 00–03 work with K Rules 2, 10, 11, and 12. Make SparkleTasks and the Prompt 03 InputSystem changes read like one production architecture through module ownership, folder placement, filenames, primary type names, public/private boundaries, and short policy-focused orchestration. Preserve the proven task-runtime behavior. This is a remediation and structure gate, not a feature prompt.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit the complete `Engine/Tasks` subtree and the directly touched InputSystem registration/dispatch path, including files introduced or modified by Prompts 00–03. Completed work has no grandfather clause.
 - Enforce Rule 11: product function bodies contain no local class/struct definitions; lifecycle, synchronization, runtime-record, visitor, and policy types live at the narrowest file-private or owning-type scope. Short local lambdas remain only for genuinely inline algorithms/callbacks.
@@ -740,7 +740,7 @@ Validation:
 - Tree review proves every new directory has at least two cohesive files or a documented backend/growth boundary, and every deliberately flat/co-located file has a stated reason.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - A reader can locate graph construction, execution state, scheduling mechanism, structured lifetime/completion, algorithms, and instrumentation from folder and filenames without reading implementation bodies first.
 - Public filenames and primary contracts agree; private filenames describe their actual responsibility; CMake and include paths agree with the physical architecture.
 - `TaskExecutor` orchestration is not a dumping ground for unrelated graph, execution-result, profiling, event, or InputSystem policy.
@@ -783,7 +783,7 @@ Objective:
 Replace ad-hoc/as-serial application and tool concurrency with SparkleTasks in coarse, useful pilots: shader recook process coordination, launcher operations/process I/O, texture request cooking, and safe shader cook nodes. Preserve deterministic transactional output and explicit external-process lifetime.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -816,7 +816,7 @@ Validation:
 - Memory stress with multiple 4K/8K/HDR textures respects weighted limit.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Shader recook future/std::async, LauncherBackend operation QThreads, migrated reader threads/poll loops, and duplicate cancellation paths are deleted.
 - No duplicate cooker/compiler/publication pipeline exists.
 - Every remaining `startDetached`, native child wait, or Qt handoff delay has an explicit independent-process/outer-host justification and no task-lifetime responsibility.
@@ -858,7 +858,7 @@ Objective:
 Replace the unused owning Entity model with the private serial ECS foundation: generational EntityId, registry, per-type sparse-set component storage, stable schema IDs, and invariant tests. Do not parallelize systems yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -884,7 +884,7 @@ Validation:
 - Non-movable/owning component policy explicitly rejected or safely supported according to the chosen bounded contract.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Registry/storage invariants pass long randomized stress.
 - Renderer/Editor cannot include ECS storage headers.
 - No asset ownership, callbacks, mutexes, virtual Update/Render behavior, or raw scene pointers were introduced into data components.
@@ -927,7 +927,7 @@ Objective:
 Make ECS iteration and structural mutation safe for future jobs: typed read/write queries, include/exclude filtering, frozen structural epochs, task-local EntityCommandBuffer, deterministic playback, and temporary entity remapping. Execute serially.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -955,7 +955,7 @@ Validation:
 - Conflicting writes require explicit policy and never silently use task completion order.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Structure remains unchanged for the full query epoch.
 - Commands settle deterministically and preserve registry invariants.
 - No direct structural mutation path remains in any scene path converted during this prompt.
@@ -1002,7 +1002,7 @@ Objective:
 Move current camera, mesh-instance, visibility, light, transform, animation playback, and cold editor metadata instance state into ECS component pools while keeping GameScene as the coherent world facade. Compatibility facades may remain only as non-owning single-source views.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1028,7 +1028,7 @@ Validation:
 - Asset unload/replacement cannot leave a component with an unvalidated raw resource pointer.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - ECS is the sole mutable instance-state source for every converted type.
 - No new legacy Component/Entity consumer exists.
 - Compatibility facades are read/command adapters with explicit deletion in Prompt 10/11, not storage owners.
@@ -1140,7 +1140,7 @@ Objective:
 Remove write-on-read transform/camera caches, evaluate derived world state in explicit serial systems, and create the bounded sequenced world change journal/read publication that renderer/editor will consume.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1168,7 +1168,7 @@ Validation:
 - Delayed reader falls outside retention, resynchronizes, and never accesses reclaimed memory.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Published component/read data is immutable for its generation.
 - All current transform/camera consumers use explicit evaluated outputs.
 - Journal/read publication has bounded storage and tested reclamation.
@@ -1230,7 +1230,7 @@ Objective:
 Replace destructive synchronous level loading with a scoped read/decode/validate/assemble pipeline that produces immutable EntityBlueprint packages and commits atomically while preserving the old scene on failure/cancellation.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1261,7 +1261,7 @@ Validation:
 - Editor/application remains responsive and the FrameCritical lane meets budget during load.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - No clear-before-success and no accepted partial scene.
 - No mutable shared SceneAssetPayload/registry state across workers.
 - Old scene survives every failed/stale/cancelled pre-commit path.
@@ -1308,7 +1308,7 @@ Objective:
 Replace the legacy `GameWorldController` arbitrary mutable-world access with an ECS-aware `GameSystemGraph` and prove the first real gameplay parallel workload through movement, animation pose, morph, skinning, transform, and extraction dependencies.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1338,7 +1338,7 @@ Validation:
 - Animation-heavy benchmark shows crossover and critical path; tiny scene stays within overhead budget.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Current systems use typed narrow access; no arbitrary mutable-world controller execution remains.
 - Parallel output is deterministic/serial-equivalent.
 - Work uses SparkleTasks and explicit dependencies, not waits or extra pools.
@@ -1400,7 +1400,7 @@ Objective:
 Remove live `GameWorld` pointer/index mutation from editor panels. Make editor main own ImGui/selection/transactions, consume immutable `WorldReadView`-derived `EditorSceneModel`, submit stable `EntityId` semantic commands, and manage background workflows through one `EditorOperationService`.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1427,7 +1427,7 @@ Validation:
 - Editor responsive under load/cook/search/preview; background cannot starve frame.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - UI/panels no longer retain `GameWorld*`, legacy `GameWorld*`, mesh/light/camera facade pointers, mutable spans, or durable indices.
 - Direct SceneObjectActions mutations and superseded host service are deleted.
 - `SceneCameraView`, `SceneMeshView`, `SceneCameras`, and editor-facing `SceneLighting`/`SceneSky` access are deleted once semantic commands cover their final consumers; panels contain no compatibility facade references.
@@ -1470,7 +1470,7 @@ Objective:
 Replace GameWorldSnapshot/raw mesh pointer/direct lifecycle coupling with stable RenderObjectId, immutable asset handles, sequenced RenderWorldDelta, RenderFrameDynamicData, exact frame metadata, and a headless-replayable renderer input contract. Keep renderer execution serial.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1497,7 +1497,7 @@ Validation:
 - Packet bytes/build time measured; no broad public diagnostics added.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - Renderer consumes a recorded stream with `GameWorld` destroyed.
 - MeshInstanceSnapshot raw pointer and old full snapshot boundary are deleted.
 - `GameWorldSnapshot` and all domain `*Snapshot` compatibility families listed in the Prompt 07 final-vocabulary table are deleted; only deliberately named renderer packets/read models remain.
@@ -1580,7 +1580,7 @@ Objective:
 Make `RenderWorldDelta` and `RenderFrameDynamicData` a measured data-oriented transform from GameFramework's frozen ECS/read publication into renderer-owned persistent tables. Remove any remaining object-shaped/full-scene extraction, generic cosmetic SoA, redundant authority, pointer chasing, or per-frame static duplication before renderer threading begins. Preserve serial rendering and every current raster, RT, temporal, provider, editor-viewport, and capture input.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every GameFramework source column, extraction transform, packet field, RenderWorld proxy/table, and planned GPU upload consumed by the two streams. No field exists only because the old object carried it.
 - Apply Rule 12: make GameFramework publication, extraction contracts, renderer input streams, and render-owned table files/folders reveal their ownership and data-flow direction.
 - Trace every material decision to Richard Fabian's data/access methodology, Epic MassEntity or game/render proxy documentation, NVIDIA Donut renderer scene buffers/dirty state, or AMD Cauldron/Detroit/RDNA renderer data guidance. State the scope of the precedent. Do not claim NVIDIA/AMD provides Sparkle's GameFramework ECS.
@@ -1616,7 +1616,7 @@ Validation:
 - Dependency scan proves Renderer includes no ECS storage/private GameFramework header and GameFramework has no Renderer/RHI dependency.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The two streams are concrete named access-driven schemas, not generic containers or copied object graphs.
 - GameFramework has one mutable world authority; renderer has one sequenced derived projection and no backward mutation path.
 - Static/structural/dynamic/temporal data have explicit frequencies, owners, generations and consumers; variable data is flat and bounded.
@@ -1641,7 +1641,7 @@ This gate is part of the acceptance criteria of every unfinished prompt from Pro
 - Complete Rule 12 placement work before validation: filename matches the primary type/capability; public headers expose only durable contracts; private mechanisms remain private; folders express the subsystem hierarchy; bounded moves/renames update includes, source groups/CMake, tests, documentation, and deletion ledgers. Reject generic dumping grounds such as new catch-all `Common`, `Utils`, `Helpers`, `Managers`, or flat `Systems` folders without a single documented owner.
 - Record before/after structural evidence: responsibility/file map, hotspot disposition, dependency-direction and rejected-alias searches, moved/deleted path ledger, and relevant build/test/benchmark gates. The evidence must prove that the final tree is easier to navigate and reason about and that no temporary compatibility spelling or duplicate implementation remains.
 - Apply Rule 16 across the complete prompt changelist and owned repository baseline: no anonymous namespace, no arbitrary renamed substitute, no function-local class/struct, no non-template/non-accessor implementation body in a touched header, and no diagnostic scaffolding beyond the owning invariant. The completion evidence includes repository-wide anonymous-namespace and touched-header searches.
-- Apply Rule 17 and L to the complete prompt changelist: identify applicable `NV-PDTE-*` requirements, preserve path-tracing/neural/AI/math/hardware-driver/partner boundaries, verify AI-assisted work independently, and reject role-only scaffolding. This does not require a prompt to implement neural work before Prompt 30; it requires every prompt to leave a clean, measurable integration surface for the later evidence program.
+- Apply Rule 17 and L to the complete prompt changelist: identify applicable `PGE-*` requirements, preserve path-tracing/neural/AI/math/hardware-driver/partner boundaries, verify AI-assisted work independently, and reject role-only scaffolding. This does not require a prompt to implement neural work before Prompt 30; it requires every prompt to leave a clean, measurable integration surface for the later evidence program.
 
 This contract deliberately has no arbitrary maximum file length and does not require one file per function. A one-call helper or private capability is desirable when it names and isolates meaningful behavior; a content-free forwarding layer or cosmetic file split fails the gate.
 
@@ -1656,7 +1656,7 @@ Objective:
 Move RendererSystemRoot, FramePipeline, mutable RHI ownership, submit/present, and renderer resource creation/destruction to one `RenderCoordinator` running on `RenderThread`. Connect GameThread/EditorThread producers through bounded frame slots and sequenced control commands. Keep renderer preparation/recording serial inside the coordinator initially.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1686,7 +1686,7 @@ Validation:
 - Capture shows GameThread N+1 / RenderThread N overlap without a routine GameThread wait and uses the canonical thread labels.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Mutable RendererSystemRoot/RHI has one `RenderCoordinator` owner on `RenderThread`.
 - Queue depth is fixed and no accepted slot is stranded.
@@ -1729,7 +1729,7 @@ Objective:
 Make all editor-to-render data owned/versioned: copied ImGui draw packets, viewport requests/products, rendering settings commands, preview/capture requests, and narrow completion results. Remove live editor/renderer pointer sharing.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1755,7 +1755,7 @@ Validation:
 - Editor close while capture/preview in flight has no late UI callback.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - No live ImGui/editor pointer crosses to render coordinator.
 - Viewport/capture products have stable versioned ownership.
@@ -1765,6 +1765,26 @@ Acceptance gate:
 Positive patterns: copied transient UI data, versioned products, sequenced commands, narrow result.
 Forbidden: live descriptor/cache pointer, UI worker callback, WaitForIdle capture, unbounded capture queue.
 ~~~
+
+### Prompt 14 implementation record — 2026-07-26
+
+Status: **implementation complete; native runtime acceptance pending**. Editor main owns ImGui frame construction and copies draw lists into `EditorRenderPacket`; the render owner resolves only `EditorTextureHandle` values and plays the packet after acquisition. `ViewportRenderRequest`, `ViewportRenderProducts`, settings state, and capture requests cross through owned values or sequenced control commands. Capture admission, GPU readback, completed readbacks, and editor publication are each bounded; BMP encoding/writing runs through the document-scoped `EditorOperationService`. Cancellation no longer waits for a GPU token. The unused public serial viewport-presentation facade and its backend-native texture ID were deleted, so descriptor resolution is private to `FramePipeline`.
+
+PGE reconciliation: `PGE-01`, `PGE-05`, `PGE-07`, `PGE-09`, `PGE-10`, and `PGE-15` advance through the narrow integration contract, bounded nonblocking work, explicit ownership, paired backend implementation, and deletion of the superseded path. `PGE-02`, `PGE-06`, `PGE-13`, and `PGE-14` are preserved; native D3D12/Vulkan resize, minimized-window, capture, and delayed-render evidence is still blocked on an interactive run. `PGE-03`, `PGE-04`, `PGE-08`, `PGE-11`, and `PGE-12` are not applicable. No role-only scaffolding was added.
+
+Rule 13 access inventory:
+
+| Path | Authority, ownership, and layout | Stable identity and deterministic transform | Exact precedent and falsifier |
+|---|---|---|---|
+| ImGui draw data → `EditorRenderPacket` | editor main is the sole ImGui owner; packet vectors own converted vertices, 32-bit indices, commands, and list ranges | `UiFrameId`, viewport generation, and source list order; callbacks reduce to draw/reset commands before publication | NVIDIA Donut's `donut_app`/`donut_render` ownership split in E; falsified by any `ImDrawData*`/`ImDrawList*` crossing or by delayed playback differing from the source frame |
+| ImGui texture value → renderer texture binding | editor copies a packed `EditorTextureHandle`; `EditorTextureRegistry` alone maps it to a backend-native ID | handle index/generation; lookup is independent of descriptor address and packet completion order | NVRHI handle/lifetime guidance linked in E; zero public `ViewportPresentationProduct`, native texture-ID facade, and `RegisterEditorTexture` occurrences is the current structural result |
+| viewport request → product publication | producer owns request values; render owner owns GPU products and publishes copied descriptors | viewport/product generation plus render-product and editor-texture handles; stale packet generation is rejected before draw | J immutable publication and MT-31/MT-33; falsifier is resize/recreate with an old handle resolving after retirement |
+| settings/preview/capture → render owner | typed `RenderControlCommand` payload, FIFO sequence, capacity 64 | control sequence plus viewport/capture ID; no editor CVar or renderer-cache mutation | J bounded render-control precedent; zero direct editor `CVar*.Set` writes and zero direct editor texture registration routes |
+| capture copy → file result | frame pipeline admits at most three GPU readbacks, coordinator publishes at most three completed readbacks, and one editor operation owns encode/write | capture ID plus frame/provider generations; results apply only to the active document request | NVRHI token-lifetime model and J MT-23/MT-33/MT-37; falsifier is queue growth above three, a cancel-time GPU wait, late document application, or routine device idle |
+
+Rule 12 and implementation-shape reconciliation: editor draw conversion remains under `Editor/Private/Rendering`; editor capture orchestration is under `Application/Private/Editor/Capture`; public renderer contracts contain values and stable handles only; packet playback, texture resolution, viewport capture, and backend readback stay in renderer/RHI private owners. `EditorUiFrameRenderer` remains a dedicated application integration file. Non-accessor header bodies touched by the work are in cpp files, no function-local class/struct exists, and repository searches report zero anonymous namespaces. Product diagnostics were retained only for existing panels; the public native viewport-presentation path, direct editor render-view CVar write, direct texture-registration facade, raw viewport texture storage, and blocking capture cancellation were deleted.
+
+Focused evidence: fresh CMake generation succeeded; `ShowcaseEditor` passed a DebugEditor build; the architecture boundary target passed; ShaderCompiler CLI validation passed. Native delayed-render, dock/resize/minimize, cancellation-at-each-stage, and both-backend image/capture runs remain the explicit acceptance evidence gap.
 
 ## Prompt 15 — Build the Persistent Render/GPU Scene
 
@@ -1777,7 +1797,7 @@ Objective:
 Stop rebuilding/uploading unchanged scene-wide arrays. Make RenderWorld proxies and GPU-scene slots persistent, apply structural deltas, update dirty dynamic ranges, and prepare token-based removal/retirement while preserving raster and RT identity.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1804,7 +1824,7 @@ Validation:
 - Measure upload bytes, resource creates, dirty ranges, memory/fragmentation before/after.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Persistent slots/generations are authoritative and full rebuild product path is deleted.
 - GPU resources outlive all referencing frames and eventually reclaim.
@@ -1814,6 +1834,31 @@ Acceptance gate:
 Positive patterns: persistent state, delta application, dirty ranges, generation identity, token retirement.
 Forbidden: parallel full rebuild, frame-wide reupload, vector-position identity, immediate GPU free, hidden backend cache ownership.
 ~~~
+
+### Prompt 15 implementation record — 2026-07-26
+
+Status: **source implementation complete except for the morph-deformation contract; acceptance blocked**. `RenderWorld` applies sequenced deltas to persistent proxies and assigns token-retired `GpuSceneSlot` values. `PersistentRenderGpuScene` owns static RT topology and a frame-indexed ring for lights, mesh-instance values, raster slot indirection, joint matrices, RT instances, and RT materials. `PersistentStructuredBuffer` keeps a CPU shadow, grows geometrically, compares by element, and writes deterministic contiguous dirty ranges; unchanged ring generations emit no writes after warm-up. Static RT topology is replaced only on structural/mesh change, while material-only changes update ringed instance/material ranges. Raster, classic TLAS, PTLAS, and skinned-BLAS keys now use the same stable slot without conflating it with the current packed draw index.
+
+The remaining blocker is concrete rather than documentary: `RenderFrameDynamicData::MorphWeights` is produced by GameFramework but has no renderer deformation consumer. Adding an unused GPU buffer would violate the no-role-scaffolding rule, while mutating shared mesh assets or rebuilding per-instance meshes would violate this prompt. Prompt 15 cannot be marked passed until morph target deltas and current/previous weight ranges feed a real raster and RT deformation path with stable slots and parity evidence.
+
+PGE reconciliation: `PGE-02`, `PGE-05`, `PGE-07`, `PGE-09`, `PGE-10`, and `PGE-15` advance through persistent RT/raster identity, dirty-range CPU/GPU data flow, explicit D3D12/Vulkan writes, token retirement, and smaller ownership files. `PGE-01`, `PGE-06`, `PGE-08`, `PGE-13`, and `PGE-14` are preserved; native captures and the morph path are blocked evidence. `PGE-03`, `PGE-04`, `PGE-11`, and `PGE-12` are not applicable. AI-assisted edits were independently checked through source reconciliation, two configurations before the user-requested build stop, the shader tool, and zero-result ownership searches; no portfolio-only type was retained.
+
+Rule 13 access inventory:
+
+| Path | Authority, ownership, and layout | Stable identity and deterministic transform | Exact precedent and falsifier |
+|---|---|---|---|
+| `RenderWorldDelta` → persistent proxy table | render owner validates and commits create/update/destroy; logical destroy is immediate | `RenderObjectId` maps to one `GpuSceneSlot`; minimum completed retired slot is reused deterministically | J Tutorial 6 and MT-31/MT-33; falsifier is stale/out-of-order acceptance, packed-vector identity, or slot reuse before every recorded queue token completes |
+| immutable mesh handle → `GPUMeshCache` | cache owns one GPU mesh per asset generation and an O(1) handle lookup | `GpuMeshHandle` plus mesh asset generation; replacement removes the old lookup before publication | NVIDIA Donut persistent scene buffer/dirty interface at pinned commit `bc1ea24` and NVRHI handle guidance linked in E/J; falsifier is a steady-state linear handle scan or mutable asset pointer in `MeshDraw` |
+| scene values → GPU-scene payloads | `RenderGpuScenePayloadBuilder` performs pure packing; `PersistentRenderGpuScene` owns storage/update policy | stable-slot sparse mesh/RT arrays plus packed raster indirection; source order is deterministic | J persistent GPU-scene design and MT-28/MT-29; zero `BuildRenderSceneGpuData`, `SourceInstanceIndex`, `GpuScene2`, and completion-order merge occurrences |
+| dynamic payload → structured-buffer ring | current RHI frame index selects one of `FramesInFlight` owners; each owner keeps capacity and shadow bytes | element stride and ascending source index; adjacent changed elements coalesce into one write | D3D12 upload-resource and Vulkan host-visible range-update ownership described in J's RHI use-case inventory; falsifier is any unchanged post-warm-up write, overlapping frame-slot write, or whole-buffer replacement for one value |
+| RT topology/material split | persistent static owner holds vertices/skin influences/indices; per-frame owners hold sparse hit instances/materials | structural/material/texture revisions trigger only their owned transformation; binding view is per in-flight frame | NVRHI lifetime tracking and J MT-33/MT-39; falsifier is a material edit recreating topology, a delayed frame observing a later CPU binding view, or invalid sparse instance bounds |
+| logical removal → GPU reclamation | slot allocator captures last submitted tokens; RHI resource services already defer physical release by recorded last use | queue-specific submission tokens, never arbitrary frame distance | NVRHI lifetime tracking plus J LC-08/MT-33; falsifier is delayed completion followed by early slot/resource reuse or failure to reclaim after all tokens complete |
+
+Rule 12 and implementation-shape reconciliation: orchestration remains in `FramePipeline`; GPU-scene ownership, slot retirement, payload transformation, and structured-buffer dirty updates are separate files under `SceneData/GpuScene`; generic owned buffer lifetime remains under `Resources`; backend offset writes remain in their D3D12/Vulkan resource services. `RenderSceneGpuData` is now a non-owning frame binding view, not a second owner. `RenderSceneGpuData.cpp` lost the scene-wide build/upload implementation. Product mesh batching no longer collects hot-path diagnostic counters or emits the one-time compatibility warning; requested editor mesh diagnostics retain their existing on-demand collector. `GPUMeshCache::Resolve` no longer scans the cache. Touched headers contain only declarations, templates, setters/getters, and trivial predicates; no function-local type or anonymous namespace was introduced.
+
+Deletion ledger: frame-wide owning scene-buffer reconstruction, revision fingerprints, arbitrary delayed slot reuse, packed raster position as shader identity, duplicate PTLAS stable-index spelling, raw `GPUMesh*` in draw data, the public full-scene builder name, hot-path batch diagnostic collection/logging, and the linear GPU-mesh handle scan are deleted. No fallback full rebuild path remains.
+
+Focused evidence before build execution was stopped at the user's request: fresh CMake generation succeeded; DebugEditor `ShowcaseEditor` passed after the persistent-scene and Prompt 14 boundary changes; DebugGame `ShowcaseRuntime` had previously passed before the final cleanup and a final incremental DebugGame run was intentionally terminated on request. `ShaderCompiler cook --package GBuffer --no-cache` compiled four DXIL/SPIR-V stage jobs successfully. The architecture boundary target passed, and static searches report zero anonymous namespaces, zero function-local struct candidates in the touched set, zero renderer `GameWorld`/ECS references, and zero rejected aliases. Required GPU upload-byte/resource-create/fragmentation captures, D3D12/Vulkan raster/classic/PTLAS parity, delayed-completion stress, and the real morph deformation path remain blocked; therefore this record is not **passed**.
 
 ## Prompt 16 — Complete Runtime Residency and Generation-Based Reload/Retirement
 
@@ -1826,7 +1871,7 @@ Objective:
 Connect asynchronous CPU asset generations, render uploads, shader package replacement, readiness, fallback, eviction, and deferred retirement without worker waits or routine device idle.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1857,7 +1902,7 @@ Validation:
 - Budget/backpressure/eviction stress and eventual retirement.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - No frame worker waits for I/O/upload/residency.
 - One coherent generation visible per packet/recording run.
@@ -1880,7 +1925,7 @@ Objective:
 Replace monolithic mutable renderer preparation with pure/coarse task nodes over immutable packet/render-world inputs and task-private outputs: transforms/bounds, visibility, batching, lighting, skinning/morph, material classification, RT planning, deterministic merge.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1914,7 +1959,7 @@ Validation:
 - Report merge/scratch overhead and Amdahl limits, not only worker utilization.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Preparation dependencies and exclusive outputs are explicit and tested.
 - Every applicable renderer-front-end row in K's Renderer/RHI Use-Case-to-Prompt Coverage ledger has real output and proof; unavailable shadow/draw/RT cases have a named non-applicability record, not an implied implementation.
@@ -1937,7 +1982,7 @@ Objective:
 Make D3D12 command recording ownership safe for future frame-graph fan-out: per-worker/per-frame/per-queue allocator/list contexts, explicit lease lifetime, worker-local or preassigned transient upload/descriptor allocation, and token-based reset/reuse. Do not enable general parallel pass recording yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -1970,7 +2015,7 @@ Validation:
 - Memory scaling documented for frames × contexts × queues and bounded by configuration.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - No concurrent allocator/list use or premature reset is possible through supported API.
 - Public code contains `RhiCommandRecordingLease`; backend code contains `D3D12CommandRecordingContext`; rejected `RecordingContextLease`/`WorkerRecordingContext` aliases and filenames are absent.
@@ -1994,7 +2039,7 @@ Objective:
 Make Vulkan command recording ownership safe: per-worker/per-frame/per-queue-family command-pool/buffer contexts, external synchronization compliance, transient descriptor/upload ownership, reset/retirement, and preserved debug/validation behavior. Do not enable general parallel pass recording yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2027,7 +2072,7 @@ Validation:
 - Compare common RHI semantics to D3D12 while documenting backend-specific ownership differences.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - No Vulkan command pool is concurrently accessed through supported paths.
 - Rejected `RecordingContextLease`/`WorkerRecordingContext` aliases and filenames are absent; no D3D12 allocator/list noun leaks into the Vulkan/common contract.
@@ -2051,7 +2096,7 @@ Objective:
 Use frame-graph dependencies to compile eligible pass recording groups, lease worker contexts, record concurrently, deterministically aggregate closed native command objects, and submit measured batches in unchanged compiled order with explicit entry/exit resource-state contracts on both backends. Keep preparation, native recording, software translation, aggregation, submission batching, and queue submission as distinct concepts.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2086,7 +2131,7 @@ Validation:
 - Architecture audit shows no software RHI replay objects, translate thread, raw native-buffer concatenation, or worker queue submission was introduced.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Only audited passes run parallel and native validation is clean on both backends.
 - GPU submission order/resource semantics remain frame-graph-defined.
@@ -2109,7 +2154,7 @@ Objective:
 Add intra-pass chunked recording where pass-level parallelism is insufficient and close the full serial/threaded/parallel preservation matrix for raster, classic TLAS, PTLAS, reservoir lighting, reference path tracing, temporal/providers, shader ABI, capture, and both backends.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2138,7 +2183,7 @@ Validation:
 - Tiny/normal cases do not exceed accepted overhead budget.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Intra-pass work is measured, bounded, deterministic, and uses common ownership.
 - No feature path is silently disabled/demoted to claim multithreading success.
@@ -2160,7 +2205,7 @@ Objective:
 Close cross-subsystem reliability, deterministic cook/package workflows, editor lifecycle stress, public-surface review, and every compatibility/deletion ledger so one coherent architecture remains.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2193,7 +2238,7 @@ Validation:
 - Repository-wide canonical/rejected-alias searches have zero unclassified owned-source hits; filenames, symbols, tests, CMake, comments, profiler labels, and thread labels agree.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - One SparkleTasks runtime, one ECS world source, one packet/render path, one frame-graph authority, one owner per mutable subsystem.
 - Every deletion ledger closed; no indefinite compatibility route.
@@ -2216,7 +2261,7 @@ Objective:
 Tune the completed base architecture with representative evidence and establish the full-system reference captures required by the expert-hardening prompts. Do not declare the multithreading program or portfolio complete in this prompt.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2244,7 +2289,7 @@ Validation:
 - No research-only graph/data/panel/log/report enabled in shipping defaults.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Reference evidence shows correctness, tradeoffs, limitations, and causality—not only FPS or thread count.
 - Representative large workloads improve where expected; tiny cases remain within budget.
@@ -2266,7 +2311,7 @@ Objective:
 Turn the task/packet runtime's real atomic and sleeping protocols into explainable state machines with reference implementations, lifetime proof, and adversarial failure tests. Improve current production owners; do not add a generic lock-free library.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2295,7 +2340,7 @@ Validation:
 - Timer pause and Logger initialization/level behavior have explicit writer/reader/lifetime contracts; any retained allocator/queue atomic has reset/submission ownership and wrap policy tested.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Every production atomic has a stated invariant and sufficient memory-order/lifetime proof.
 - No atomic remains solely because old code once anticipated concurrency; no atomic flag is treated as publication of unrelated fields.
@@ -2317,7 +2362,7 @@ Objective:
 Make SparkleTasks scale from low-core machines to high-core/SMT/chiplet/heterogeneous systems through evidence-driven worker policy, while keeping topology handling private and OS-neutral by default.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2344,7 +2389,7 @@ Validation:
 - Selected policy improves or preserves p95/p99 versus the old automatic choice on representative workloads and does not starve background completion.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Worker policy responds to measured workload/topology rather than maximizing logical threads.
 - Contention/false-sharing claims have counter or controlled-layout evidence.
@@ -2365,7 +2410,7 @@ Objective:
 Demonstrate parallel-algorithm depth beyond parallel_for by improving real Sparkle data paths with serial oracles, deterministic contracts and measured crossover thresholds.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2391,7 +2436,7 @@ Validation:
 - Performance evidence shows why each retained parallel algorithm beats or usefully complements the serial path at representative scale.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - At least three real paths demonstrate distinct parallel patterns without a new framework or shipping demo subsystem.
 - Output ownership and merge order are explicit; no hot shared append/accumulator is left by convenience.
@@ -2412,7 +2457,7 @@ Objective:
 Turn current loading, cooking, shader reload and render resource creation into one bounded staged pipeline that distinguishes I/O completion, decode/build, shader compilation, native pipeline/resource creation, upload, owner commit and readiness; control first-run PSO/resource hitches without introducing a second cache or blocking recording.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2447,7 +2492,7 @@ Validation:
 - Accepted load/reload performs no routine device idle; parallel recording sees no lazy PSO/layout/resource mutation.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - I/O, CPU work, native creation, upload and publication are distinct owned stages with bounded backpressure.
 - First-run/cold-cache behavior is observable, deterministic where applicable and has an explicit user-visible policy.
@@ -2469,7 +2514,7 @@ Objective:
 Correlate CPU tasks, render submission, GPU graphics/compute/copy execution and presentation; retain only queue overlap and pipeline depth that improve a measured product objective without violating provider ownership or latency.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2495,7 +2540,7 @@ Validation:
 - Report CPU/GPU p50/p95/p99, pacing variance, stage latency and queue overlap with exact hardware/driver/configuration.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - Every overlap claim identifies the two timelines, enabling dependency/fence and measured benefit.
 - Pipeline depth/backpressure has an explicit throughput-versus-latency product policy.
@@ -2516,7 +2561,7 @@ Objective:
 Prove the completed architecture can be diagnosed, defended and reproduced at an AMD/NVIDIA graphics/systems interview bar, then release a concise honest portfolio without adding an interview-only product surface.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
@@ -2548,7 +2593,7 @@ Validation:
 - The renderer/RHI coverage ledger contains no “could be parallel” closure; each row is implemented/proven, explicitly non-applicable, or assigned to a separately approved future renderer program.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
 - The owner can design, code, debug, measure and teach the core engine concurrency concepts under questioning.
 - Sparkle solves real loading, framework, editor, renderer, RHI and tools problems with one coherent ownership architecture.
@@ -2560,7 +2605,7 @@ Positive patterns: incident-based evidence, tool selection, live reasoning, caus
 Forbidden: memorized definitions, fabricated capture, cherry-picked FPS, generated report product, unbounded résumé feature, unsupported company/parity claim.
 ~~~
 
-Prompt 29 is the final multithreading/systems-foundation release. It is not the final `NV-PDTE-*` persona gate. The additive role sequence below begins only after Prompt 29 passes and must preserve its completed ownership, determinism, backend, reliability, performance and deletion contracts.
+Prompt 29 is the final multithreading/systems-foundation release. It is not the final `PGE-*` persona gate. The additive role sequence below begins only after Prompt 29 passes and must preserve its completed ownership, determinism, backend, reliability, performance and deletion contracts.
 
 ## Prompt 30 - Establish the Principal Path-Tracing, Mathematics, and Partner Baseline
 
@@ -2573,11 +2618,11 @@ Objective:
 Turn one representative Sparkle path-traced workload into a principal-level baseline that connects product requirements, rendering mathematics, shader/RHI execution, CPU/GPU system cost, exact hardware/driver configuration, and partner adoption constraints. Do not add a neural feature in this prompt.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17 and report the complete 19-item completion record.
 - Apply Rule 13 to path state, samples, bounces, material/light reads, random sequences, accumulation/history, guide buffers, RT structures, shader records, queues, packets, captures and readback.
 - Apply Rule 12/14/16 to every touched renderer, shader, RHI, project and documentation file; orchestration, estimator/math, scene setup, capture and comparison remain separate owners.
-- Advance `NV-PDTE-01`, `02`, `05`, `06`, `08`, `09`, `10`, `13` and `15`; preserve all other role contracts.
+- Advance `PGE-01`, `02`, `05`, `06`, `08`, `09`, `10`, `13` and `15`; preserve all other role contracts.
 - Use existing reference path, frame graph, RHI, shader package, capture and profiler/debugger hooks. Do not add a second path tracer, report framework, benchmark product or partner facade.
 - Keep D3D12/Vulkan behavior and current classic TLAS/PTLAS/provider/capture paths intact.
 
@@ -2601,11 +2646,11 @@ Validation:
 - The cost model predicts direction/order of magnitude or the discrepancy is explained by measured architecture/driver behavior.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - One path-traced workload can be defended from math and data through shader/RHI/GPU result and system latency.
 - Partner requirements, fallback and adoption cost are explicit without a new broad API.
 - No neural/model/tensor framework, fake workload, report product or unsupported hardware claim was added.
-- `NV-PDTE-01/02/05/06/08/09/10/13/15` have concrete baseline evidence.
+- `PGE-01/02/05/06/08/09/10/13/15` have concrete baseline evidence.
 
 Positive patterns: deterministic workload, executable math, exact configuration, paired API evidence, partner-shaped constraints, honest cost model.
 Forbidden: screenshot-only proof, FPS-only result, copied equation without tests, vendor sample as proof, unscoped driver claim, new benchmark/report system.
@@ -2622,9 +2667,9 @@ Objective:
 Select one current renderer/game path for a real neural replacement or material improvement, establish its classical baseline, model/data/math contract, isolated training or fine-tuning workflow, deterministic export/cook and immutable runtime artifact. Do not integrate GPU runtime inference yet.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17, Rule 13 DOD, Rule 12 structure, Rule 16 implementation ownership and the 19-item completion report.
-- Advance `NV-PDTE-03`, `04`, `08`, `11`, `12`, `13` and `15`; preserve the path-tracing/backend/system contracts.
+- Advance `PGE-03`, `04`, `08`, `11`, `12`, `13` and `15`; preserve the path-tracing/backend/system contracts.
 - Search existing denoising, reconstruction, upscaling, sampling, texture/material, animation, shader/provider and artifact/cook paths before selecting a feature.
 - Stop if no candidate has current product value, a legal/provenance-clean dataset or training source, a deterministic artifact route, a classical fallback and measurable quality/performance criteria.
 - Do not add a general tensor library, model manager, graph runtime, training UI, runtime Python/PyTorch/ONNX dependency, second asset database, opaque downloader or mock network.
@@ -2653,7 +2698,7 @@ Validation:
 - Peak training/export memory and time are recorded for exact hardware/configuration.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - A real feature, real data/model/operator path and real classical baseline are selected.
 - The artifact is deterministic, immutable, bounded, validated, package-owned and ready for runtime consumption.
 - Training/offline and runtime ownership are separate.
@@ -2674,11 +2719,11 @@ Objective:
 Consume the accepted immutable artifact in one renderer-owned neural graphics path using existing shader, frame-graph, RenderWorld/GPU-scene, task and RHI contracts. Establish correctness and D3D12/Vulkan capability/fallback behavior before aggressive tuning.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17 and the 19-item completion report.
 - Apply Rule 13 to every tensor/image/buffer source, preprocessing transform, weight upload, intermediate, dispatch, history, output, fallback and hot traversal.
 - Apply Rule 12/14/15/16: separate feature orchestration, artifact decoding, resource state, preprocessing, inference kernels, postprocessing, quality comparison and backend capability policy by real owner.
-- Advance `NV-PDTE-03`, `04`, `05`, `07`, `08`, `09`, `10`, `11`, `12` and `15`.
+- Advance `PGE-03`, `04`, `05`, `07`, `08`, `09`, `10`, `11`, `12` and `15`.
 - Use existing HLSL/Slang, shader packages, frame graph, RHI services, renderer tasks, persistent GPU storage, descriptor/upload ownership and capture hooks.
 - Do not add a generic inference graph/runtime, CUDA/HIP backend, second frame graph, worker submit, per-frame model parse/upload, mutable model data, completion-order merge or app-level neural state.
 
@@ -2704,7 +2749,7 @@ Validation:
 - Serial/1/2/N task modes retain deterministic output where CPU preparation is parallel.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - A real neural model/operator executes inside the actual renderer feature path.
 - Resources, passes, artifacts, CPU preparation, GPU lifetime and fallback have one clear owner each.
 - The classical product path remains valid and no generic ML/runtime architecture was added.
@@ -2725,9 +2770,9 @@ Objective:
 Profile and optimize the accepted neural feature across model/algorithm, training/export, CPU preparation, GPU kernels, memory, scheduling, frame pacing and driver interaction. Keep only changes that improve the measured quality-performance-product frontier.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17 and the 19-item completion report.
-- Advance `NV-PDTE-04`, `05`, `06`, `08`, `09`, `10`, `11`, `12` and `15`; preserve partner/final communication for Prompt 34.
+- Advance `PGE-04`, `05`, `06`, `08`, `09`, `10`, `11`, `12` and `15`; preserve partner/final communication for Prompt 34.
 - Use existing profiler/debugger/native validation/capture hooks plus appropriate external tools; do not add operator telemetry, CSV/JSON report generation, benchmark UI or permanent tuning switches.
 - Every optimization has a serial/classical/reference control, exact hardware/driver/configuration and a falsifiable hypothesis.
 - Keep quality, visual stability, temporal behavior, latency, memory and frame pacing beside throughput.
@@ -2755,7 +2800,7 @@ Validation:
 - Capture-on/off and instrumentation-overhead comparisons prevent measurement tooling from becoming the result.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The accepted model, precision, layout, kernels, task policy and frame placement are justified by measured product tradeoffs.
 - The feature meets its quality, latency, memory and pacing budget on every hardware/backend configuration claimed.
 - Negative results and unavailable hardware are retained honestly.
@@ -2765,18 +2810,18 @@ Positive patterns: end-to-end timeline, ablation, quality-performance frontier, 
 Forbidden: FPS-only tuning, quality-only model choice, cherry-picked GPU, permanent experiment switches, unscoped workaround, future hardware by speculation.
 ~~~
 
-## Prompt 34 - Complete Partner Handoff and Principal Developer Technology Evidence
+## Prompt 34 - Complete Partner Handoff and Principal Graphics Engineering Evidence
 
-Target CL Title: `SparkleEngine: Complete Principal Developer Technology Evidence`
+Target CL Title: `SparkleEngine: Complete Principal Graphics Engineering Evidence`
 
 ~~~text
 Implement Prompt 34 only after Prompt 33 passes.
 
 Objective:
-Close `NV-PDTE-01` through `NV-PDTE-15` with reproducible implementation evidence, partner-quality handoff, live demonstration and concise technical communication. Remove all role-only scaffolding and leave the product smaller and maintainable.
+Close `PGE-01` through `PGE-15` with reproducible implementation evidence, partner-quality handoff, live demonstration and concise technical communication. Remove all role-only scaffolding and leave the product smaller and maintainable.
 
 Non-negotiable repository rules:
-- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal developer-technology, and completion-report gates as acceptance criteria. Before editing, list the applicable `NV-PDTE-01` through `NV-PDTE-15` requirements from H and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
+- Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply K Rules 1-17 and the 19-item completion report.
 - Use existing documentation and product/test/capture surfaces. Add one feature technical artifact only if no existing document can own the math/result without becoming incoherent; never add another policy, telemetry or report system.
 - Re-audit the entire neural/path-tracing ownership path for Rule 12/13/14/15/16, canonical vocabulary, SOLID/DRY, diagnostics, public surface, packages, licenses and deletion.
@@ -2790,7 +2835,7 @@ Required implementation:
 4. Produce a concise whitepaper-quality feature note in the correct existing documentation owner: problem, prior/classical path, math/model/data, architecture, artifact/training, runtime inference, DOD/layout, backend, optimization, quality, performance, limitations and future hypotheses.
 5. Produce a conference-talk outline and live demo script that teach the result without relying on hidden state or inflated claims. The demo covers classical/neural comparison, deterministic reload/fallback, D3D12/Vulkan status, captures and one failure/limitation.
 6. Perform an adversarial design/code review as if another engine team must maintain the integration. Address unclear ownership, excessive public surface, model/data/license ambiguity, hidden backend policy, fragile fallback, unreproducible tuning and god units.
-7. Close every `NV-PDTE-*` row with evidence, truthful non-code boundary, explicit unavailable platform/hardware or blocker. A blocked technical row prevents final PASS.
+7. Close every `PGE-*` row with evidence, truthful non-code boundary, explicit unavailable platform/hardware or blocker. A blocked technical row prevents final PASS.
 8. Verify all model/source/data/third-party licenses and package ownership. No training dependency, source dataset, debug dump or optional heavyweight asset leaks into the runtime/core package.
 9. Delete temporary experiments, candidate models, duplicate artifacts, tuning flags, capture/report code, compatibility paths, unused abstractions, role-keyword types and stale claims.
 10. Update release-facing capability wording only after the exact backend/hardware/quality/performance gate passes.
@@ -2804,8 +2849,8 @@ Validation:
 - Full architecture, native validation, feature preservation, package and style-guide gates pass.
 
 Acceptance gate:
-- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (NVIDIA Principal Developer Technology review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
-- All technical `NV-PDTE-*` requirements have reproducible evidence; non-code credential/history boundaries are stated honestly.
+- L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
+- All technical `PGE-*` requirements have reproducible evidence; non-code credential/history boundaries are stated honestly.
 - The feature is real, mathematically understood, optimized across model/kernel/system, driver-aware, adoptable and maintainable.
 - Communication artifacts are concise consequences of completed work, not substitutes for it.
 - Sparkle contains no generic ML platform, second scheduler/renderer, public telemetry product, training UI or unsupported platform/vendor claim.
@@ -2830,10 +2875,10 @@ The series is complete only when:
 - GameFramework-to-render publication uses the single proven `RenderWorldDelta` plus `RenderFrameDynamicData` boundary; Renderer performs no ECS query, gameplay-object dereference, or scene-wide rebuild for an isolated dirty change;
 - the implementation remains understandable in serial mode;
 - the owner can explain and defend every major design, tradeoff, failure mode, and measurement without relying on this document as a script.
-- every `NV-PDTE-01` through `NV-PDTE-15` requirement has reproducible technical evidence, a truthful non-code boundary or an explicit unavailable-hardware/platform statement; no technical row remains blocked;
+- every `PGE-01` through `PGE-15` requirement has reproducible technical evidence, a truthful non-code boundary or an explicit unavailable-hardware/platform statement; no technical row remains blocked;
 - one path-traced workload and one real neural graphics feature connect math/model/data through C++/shader/RHI execution to CPU/GPU/driver evidence, classical fallback and product latency/memory;
 - training/offline preparation and runtime inference remain separate, deterministic and intentionally packaged;
 - another engineer can adopt, reproduce, debug and tune the principal feature from the handoff;
 - the final live demo, whitepaper-quality note and talk outline are backed by code/tests/captures and introduce no runtime reporting product.
 
-If any condition is false, the complete principal developer-technology program is still in progress. Prompt 29 may still be a valid completed multithreading foundation, but it must not be relabeled as final `NV-PDTE-*` completion.
+If any condition is false, the complete principal graphics engineering program is still in progress. Prompt 29 may still be a valid completed multithreading foundation, but it must not be relabeled as final `PGE-*` completion.

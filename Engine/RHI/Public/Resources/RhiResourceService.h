@@ -47,6 +47,11 @@ class SPARKLE_RHI_API RhiResourceService
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource) = 0;
+	virtual bool WriteBufferResource(
+	    RhiOwnedResourceHandle resource,
+	    std::size_t destinationOffsetInBytes,
+	    const void* data,
+	    std::size_t sizeInBytes) noexcept = 0;
 	virtual bool CreateIndexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,

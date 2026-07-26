@@ -88,8 +88,8 @@ class LightingSceneStateOperations final
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Skinning.JointMatrixOffset);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Geometry.MeshKind);
 		hash = Hash::ContinueFnv1a64Value(hash, draw.Source.MeshAssetId);
-		const GpuMeshHandle gpuMeshHandle = draw.Geometry.GpuMesh != nullptr ? draw.Geometry.GpuMesh->GetHandle() : GpuMeshHandle{};
-		return Hash::ContinueFnv1a64Value(hash, gpuMeshHandle.Value);
+		hash = Hash::ContinueFnv1a64Value(hash, draw.Source.MeshGeneration);
+		return Hash::ContinueFnv1a64Value(hash, draw.Geometry.Mesh.Value);
 	}
 
 	static std::uint64_t AppendMaterialState(std::uint64_t hash, const MaterialData& material) noexcept

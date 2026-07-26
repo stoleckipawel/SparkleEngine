@@ -34,32 +34,19 @@ struct GBufferPassParameters
 	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderSamplerSet SamplerAniso16xWrap;
 	ShaderBuffer<MeshInstanceData> MeshInstances;
+	ShaderBuffer<std::uint32_t> MeshInstanceSlots;
 	ShaderBuffer<JointMatrixData> JointMatrices;
 	ShaderBuffer<JointMatrixData> PreviousJointMatrices;
 
-	static void Describe(ShaderParameterStructBuilder<GBufferPassParameters>& builder)
-	{
-		builder.RenderTarget("BaseColor", &GBufferPassParameters::BaseColor, ShaderStageVisibility::AllGraphics);
-		builder.RenderTarget("Normal", &GBufferPassParameters::Normal, ShaderStageVisibility::AllGraphics);
-		builder.RenderTarget("Material", &GBufferPassParameters::Material, ShaderStageVisibility::AllGraphics);
-		builder.RenderTarget("Emissive", &GBufferPassParameters::Emissive, ShaderStageVisibility::AllGraphics);
-		builder.RenderTarget("Subsurface", &GBufferPassParameters::Subsurface, ShaderStageVisibility::AllGraphics);
-		builder.RenderTarget("MotionVector", &GBufferPassParameters::MotionVector, ShaderStageVisibility::AllGraphics);
-		builder.DepthTarget("DeviceZ", &GBufferPassParameters::DeviceZ, ShaderStageVisibility::AllGraphics);
-		builder.Uniform("PerFrame", &GBufferPassParameters::PerFrame, ShaderStageVisibility::Pixel);
-		builder.Uniform("PerView", &GBufferPassParameters::PerView, ShaderStageVisibility::Vertex);
-		builder.Uniform("PerTemporal", &GBufferPassParameters::PerTemporal, ShaderStageVisibility::Vertex | ShaderStageVisibility::Pixel);
-		builder.Sampler("SamplerAniso16xWrap", &GBufferPassParameters::SamplerAniso16xWrap, ShaderStageVisibility::Pixel);
-		builder.ReadBuffer("MeshInstances", &GBufferPassParameters::MeshInstances, ShaderStageVisibility::Vertex);
-		builder.ReadBuffer("JointMatrices", &GBufferPassParameters::JointMatrices, ShaderStageVisibility::Vertex);
-		builder.ReadBuffer("PreviousJointMatrices", &GBufferPassParameters::PreviousJointMatrices, ShaderStageVisibility::Vertex);
-	}
+	static void Describe(
+	    ShaderParameterStructBuilder<GBufferPassParameters>& builder);
 };
 
 struct GBufferDrawParameters
 {
 	ShaderUniform<MeshInstanceDrawConstantBufferData> MeshInstanceDraw;
 	ShaderBuffer<MeshInstanceData> MeshInstances;
+	ShaderBuffer<std::uint32_t> MeshInstanceSlots;
 	ShaderBuffer<VertexSkinInfluenceData> SkinInfluences;
 	ShaderBuffer<JointMatrixData> JointMatrices;
 	ShaderBuffer<JointMatrixData> PreviousJointMatrices;
@@ -73,23 +60,8 @@ struct GBufferDrawParameters
 	ShaderTexture2DSRV TextureSubsurfaceColor;
 	ShaderTexture2DSRV TextureSubsurfaceStrength;
 
-	static void Describe(ShaderParameterStructBuilder<GBufferDrawParameters>& builder)
-	{
-		builder.Uniform("MeshInstanceDraw", &GBufferDrawParameters::MeshInstanceDraw, ShaderStageVisibility::Vertex);
-		builder.ReadBuffer("MeshInstances", &GBufferDrawParameters::MeshInstances, ShaderStageVisibility::Vertex);
-		builder.ReadBuffer("SkinInfluences", &GBufferDrawParameters::SkinInfluences, ShaderStageVisibility::Vertex);
-		builder.ReadBuffer("JointMatrices", &GBufferDrawParameters::JointMatrices, ShaderStageVisibility::Vertex);
-		builder.ReadBuffer("PreviousJointMatrices", &GBufferDrawParameters::PreviousJointMatrices, ShaderStageVisibility::Vertex);
-		builder.Uniform("PerObjectPS", &GBufferDrawParameters::PerObjectPS, ShaderStageVisibility::Pixel);
-		builder.ReadTexture("TextureBaseColor", &GBufferDrawParameters::TextureBaseColor, ShaderStageVisibility::Pixel);
-		builder.ReadTexture("TextureNormal", &GBufferDrawParameters::TextureNormal, ShaderStageVisibility::Pixel);
-		builder.ReadTexture("TextureRoughness", &GBufferDrawParameters::TextureRoughness, ShaderStageVisibility::Pixel);
-		builder.ReadTexture("TextureMetallic", &GBufferDrawParameters::TextureMetallic, ShaderStageVisibility::Pixel);
-		builder.ReadTexture("TextureOcclusion", &GBufferDrawParameters::TextureOcclusion, ShaderStageVisibility::Pixel);
-		builder.ReadTexture("TextureEmissive", &GBufferDrawParameters::TextureEmissive, ShaderStageVisibility::Pixel);
-		builder.ReadTexture("TextureSubsurfaceColor", &GBufferDrawParameters::TextureSubsurfaceColor, ShaderStageVisibility::Pixel);
-		builder.ReadTexture("TextureSubsurfaceStrength", &GBufferDrawParameters::TextureSubsurfaceStrength, ShaderStageVisibility::Pixel);
-	}
+	static void Describe(
+	    ShaderParameterStructBuilder<GBufferDrawParameters>& builder);
 };
 
 class GBufferPass final

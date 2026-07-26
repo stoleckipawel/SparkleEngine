@@ -1,12 +1,20 @@
 # G. Advanced Graphics Engine Executive Summary
 
-Status: advanced graphics requirements summary
-Date: 2026-07-24
-Scope: engine direction derived from principal developer-technology, advanced graphics, graphics tools, path tracing, AI, neural rendering, and GPU systems expectations
+Status: advanced graphics requirements summary and review entry point
+Date: 2026-07-26
+Scope: engine direction derived from principal graphics engineering, graphics tools, path tracing, AI, neural rendering, and GPU systems expectations
 
 ## Purpose
 
 This document turns advanced graphics engineering expectations into engine requirements. The goal is to steer SparkleEngine toward evidence that matters for advanced graphics and neural rendering work while preserving the repository's deletion-first cleanup direction.
+
+Use this as the short entry point. For the durable sources and decisions:
+
+- [A](A_PrincipalRenderingRequirements.md) defines the vendor-neutral `PGE-01` through `PGE-15` requirements.
+- [B](B_RoleSourceArchive.md) preserves every supplied role and CV requirement.
+- [C](C_CandidateAndRepositoryGapAssessment.md) grades the current candidate, public profile, and repository.
+- [F](F_6_12_MonthPrincipalGraphicsRoadmap.md) defines the six-to-twelve-month execution order and gates.
+- [H](H_AdvancedGraphicsEngineerPersona.md) defines the target operating persona.
 
 The engine should read as a compact, serious renderer-first engine that proves:
 
@@ -42,14 +50,15 @@ Do not chase feature count. Build a repo where a senior reviewer can quickly ans
 
 Near-term change gate:
 
-- Modify existing planning text; do not add documentation or policy files unless the replacement removes more than it adds.
-- Reject new diagnostics, runtime logs, validation paths, report formats, panels, wrapper layers, abstract contracts, and future-feature scaffolding.
-- Preserve the shader compiler/cook/runtime ABI through deletion and simplification; clean renderer, RHI, frame graph, shader, and pass code before measurement-only work.
-- Accept a rendering feature only when its integration is direct and contextual and its support code is outweighed by deletion or consolidation.
+- Stop broad feature work until a clean clone builds, the active tests and CI are credible, the license is not a placeholder, and the root README provides a two-minute review path.
+- Convert the existing path tracer/ReSTIR, paired RHI, and shader pipeline into one measured classical case study before adding another rendering technique.
+- The next major feature is one fixed neural GI denoiser from training data to shader inference; do not build a generic ML runtime.
+- Add diagnostics, records, scripts, or documentation only when they directly produce one of the three flagship evidence packages.
+- Preserve the shader compiler/cook/runtime ABI and paired API ownership while deleting superseded validation, report, provider, and planning surfaces.
 
-## Principal Developer Technology Success Contract
+## Principal Graphics Engineering Success Contract
 
-The canonical role matrix is `NV-PDTE-01` through `NV-PDTE-15` in [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md). The executive interpretation is:
+The canonical role matrix is `PGE-01` through `PGE-15` in [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md). The executive interpretation is:
 
 1. Keep the renderer/RHI/task/editor cleanup sequence intact.
 2. Turn neural readiness into one real replacement-based neural graphics feature after the required data, shader, resource, and profiling boundaries are stable.
@@ -79,9 +88,9 @@ Why this matters:
 
 - Senior graphics roles value judgment. A slim, declared product scope is stronger than a sprawling codebase.
 
-### Late. D3D12/Vulkan Workload Analysis
+### P0. D3D12/Vulkan Workload Analysis
 
-The repo should eventually prove it can analyze how graphics APIs are used, but this is late-stage work after renderer features and cleanup are stronger.
+The repo must turn its paired backends into a reviewer-ready workload comparison before further renderer breadth. This is evidence work around an existing feature, not a general profiler product.
 
 Target evidence:
 
@@ -182,7 +191,7 @@ Skip:
 - empty tensor/model abstractions, mock models, or provider toggles presented as implementation
 - quality-only or speed-only claims
 
-### Late. CPU/GPU Performance Evidence
+### P0. CPU/GPU Performance Evidence
 
 Profiling and measurement should be late-stage work. First make the renderer feature surface worth profiling: ray tracing, GI/path tracing, post-processing, denoising, upscaling, RHI, frame graph, shaders, and passes.
 

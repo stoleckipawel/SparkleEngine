@@ -34,7 +34,10 @@ namespace ECS
 			                  const std::shared_ptr<const Mesh> resource = m_state.m_meshResources.ResolveImmutable(mesh.Resource);
 			                  slot.Included = resource != nullptr;
 			                  if (!slot.Included) return;
-			                  slot.Mesh = ImmutableRenderMeshHandle(mesh.MeshAssetId, resource);
+			                  slot.Mesh = ImmutableRenderMeshHandle(
+			                      mesh.MeshAssetId,
+			                      mesh.Resource.Generation,
+			                      resource);
 			                  slot.WorldMatrix = world.Matrix;
 			                  DirectX::XMStoreFloat3x4(
 			                      &slot.WorldInverseTranspose,

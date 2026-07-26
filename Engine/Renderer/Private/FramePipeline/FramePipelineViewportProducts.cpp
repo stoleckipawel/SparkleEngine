@@ -2,6 +2,7 @@
 #include "FramePipeline/FramePipeline.h"
 
 #include "Commands/RenderCommandContext.h"
+#include "Editor/EditorTextureRegistry.h"
 #include "Frame/Core/RenderProductHandleUtils.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Host/RendererSystemRoot.h"
@@ -121,24 +122,21 @@ class FramePipelineViewportProductsImplementation final
 	}
 };
 
-ViewportPresentationProduct FramePipeline::BeginViewportPresentation(RenderOutputFlags output) noexcept
+bool FramePipeline::BeginViewportEditorTexturePresentation(
+    RenderOutputFlags output) noexcept
 {
 	const RenderProduct* product = m_viewportRenderProducts.FindProduct(output);
 	if (product == nullptr || !product->Handle)
 	{
-		return ViewportPresentationProduct{
-		    .Output = output,
-		    .FailureReason = "Viewport output is not available"};
+		return false;
 	}
 
 	if (m_frameGraph == nullptr)
 	{
-		return ViewportPresentationProduct{
-		    .Output = output,
-		    .Product = *product,
-		    .FailureReason = "Frame graph is not available"};
+		return false;
 	}
 
+	RenderProduct publishedProduct = *product;
 	TransitionRenderProduct(product->Handle, ResourceState::ShaderResource);
 
 	const FrameGraphResourceHandle resourceHandle = ResolveRenderProductResourceHandle(product->Handle);
@@ -146,20 +144,20 @@ ViewportPresentationProduct FramePipeline::BeginViewportPresentation(RenderOutpu
 	    m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}));
 	if (textureId == 0)
 	{
-		return ViewportPresentationProduct{
-		    .Output = output,
-		    .Product = *product,
-		    .FailureReason = "RHI ImGui renderer did not resolve a texture id"};
+		TransitionRenderProduct(product->Handle, ResourceState::Common);
+		return false;
 	}
 
-	return ViewportPresentationProduct{
-	    .Output = output,
-	    .Product = *product,
-	    .TextureId = textureId,
-	    .Status = ViewportPresentationStatus::Ready};
+	publishedProduct.EditorTexture =
+	    m_editorTextureRegistry->PublishViewportTexture(
+	        textureId,
+	        m_viewportRenderProducts.GetGeneration());
+	m_viewportRenderProducts.SetProduct(output, publishedProduct);
+	return true;
 }
 
-void FramePipeline::EndViewportPresentation(RenderOutputFlags output) noexcept
+void FramePipeline::EndViewportEditorTexturePresentation(
+    RenderOutputFlags output) noexcept
 {
 	const RenderProduct* product = m_viewportRenderProducts.FindProduct(output);
 	if (product == nullptr || !product->Handle)

@@ -5,8 +5,9 @@
 
 void main(in VS::Input Input, out VS::Output Output)
 {
-	const uint instanceId = FirstInstance + Input.InstanceId;
-	const MeshInstanceData meshInstance = MeshInstances[instanceId];
+	const uint packedInstanceId = FirstInstance + Input.InstanceId;
+	const uint instanceSlot = MeshInstanceSlots[packedInstanceId];
+	const MeshInstanceData meshInstance = MeshInstances[instanceSlot];
 	const float4x4 worldMatrix = meshInstance.WorldMTX;
 	const float4x4 previousWorldMatrix = meshInstance.PreviousWorldMTX;
 	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;

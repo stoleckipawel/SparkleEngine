@@ -7,6 +7,7 @@
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Meshes/GPUMesh.h"
+#include "Meshes/GPUMeshCache.h"
 #include "Passes/Core/PassUtilities.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -51,7 +52,11 @@ class GBufferMeshBatchDrawerOperations final
 		return true;
 	}
 
-	static bool ValidateBatch(const RenderSceneData& sceneData, const MeshInstanceBatch& batch, std::size_t batchIndex)
+	static const GPUMesh* ResolveValidBatch(
+	    const RenderSceneData& sceneData,
+	    const MeshInstanceBatch& batch,
+	    std::size_t batchIndex,
+	    const GPUMeshCache& meshes)
 	{
 		if (batch.instanceCount == 0)
 		{
@@ -60,7 +65,7 @@ class GBufferMeshBatchDrawerOperations final
 			    "GBuffer: {} batch {} is empty; skipped.",
 			    ToMeshKindLabel(batch.meshKind),
 			    batchIndex);
-			return false;
+			return nullptr;
 		}
 
 		if (batch.firstInstance >= sceneData.meshInstances.size() ||
@@ -74,20 +79,21 @@ class GBufferMeshBatchDrawerOperations final
 			    batch.firstInstance,
 			    batch.firstInstance + batch.instanceCount,
 			    sceneData.meshInstances.size());
-			return false;
+			return nullptr;
 		}
 
-		if (batch.gpuMesh == nullptr || !batch.gpuMesh->IsValid())
+		const GPUMesh* gpuMesh = meshes.Resolve(batch.Mesh);
+		if (gpuMesh == nullptr || !gpuMesh->IsValid())
 		{
 			SPDLOG_LOGGER_WARN(
 			    g_gbufferMeshBatchDrawerLogger,
 			    "GBuffer: {} batch {} has no valid GPU mesh; skipped.",
 			    ToMeshKindLabel(batch.meshKind),
 			    batchIndex);
-			return false;
+			return nullptr;
 		}
 
-		return true;
+		return gpuMesh;
 	}
 
 	static bool HasValidSkinnedInstanceRange(const RenderSceneData& sceneData, const MeshInstanceBatch& batch) noexcept
@@ -112,20 +118,19 @@ class GBufferMeshBatchDrawerOperations final
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const RasterPassPipelineRuntime& runtime,
 	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
+	    const GPUMesh& gpuMesh,
 	    const MeshInstanceBatch& batch,
 	    std::size_t batchIndex,
 	    std::uint32_t viewModeIndex)
 	{
 		const RenderSceneData& sceneData = frame.sceneData;
-		const GPUMesh* gpuMesh = batch.gpuMesh;
-		assert(gpuMesh != nullptr);
-
-		cmd.BindVertexBuffer(gpuMesh->GetVertexBufferView());
-		cmd.BindIndexBuffer(gpuMesh->GetIndexBufferView());
+		cmd.BindVertexBuffer(gpuMesh.GetVertexBufferView());
+		cmd.BindIndexBuffer(gpuMesh.GetIndexBufferView());
 
 		GBufferPass::DrawParameterInstance drawParameters(drawParameterMetadata);
 		drawParameters->MeshInstanceDraw = MeshInstanceDrawConstantBufferData{.FirstInstance = batch.firstInstance};
 		drawParameters->MeshInstances = passParameters.MeshInstances;
+		drawParameters->MeshInstanceSlots = passParameters.MeshInstanceSlots;
 		drawParameters->JointMatrices = passParameters.JointMatrices;
 		drawParameters->PreviousJointMatrices = passParameters.PreviousJointMatrices;
 		if (!BindMaterial(sceneData, drawParameters, batch.materialSlot))
@@ -148,7 +153,7 @@ class GBufferMeshBatchDrawerOperations final
 		    runtime.TwoSidedPipelineState};
 
 		PassBindingOverrides overrides;
-		overrides.SetDescriptorTable("SkinInfluences", gpuMesh->GetSkinInfluencesShaderResourceView());
+		overrides.SetDescriptorTable("SkinInfluences", gpuMesh.GetSkinInfluencesShaderResourceView());
 		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    resources,
 		    cmd,
@@ -170,7 +175,7 @@ class GBufferMeshBatchDrawerOperations final
 			return false;
 		}
 
-		cmd.DrawIndexedInstanced(gpuMesh->GetIndexCount(), batch.instanceCount, 0, 0, 0);
+		cmd.DrawIndexedInstanced(gpuMesh.GetIndexCount(), batch.instanceCount, 0, 0, 0);
 		return true;
 	}
 
@@ -182,6 +187,7 @@ class GBufferMeshBatchDrawerOperations final
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const RasterPassPipelineRuntime& runtime,
 	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
+	    const GPUMesh& gpuMesh,
 	    const MeshInstanceBatch& batch,
 	    std::size_t batchIndex,
 	    std::uint32_t viewModeIndex)
@@ -194,6 +200,7 @@ class GBufferMeshBatchDrawerOperations final
 		    renderHardwareInterface,
 		    runtime,
 		    drawParameterMetadata,
+		    gpuMesh,
 		    batch,
 		    batchIndex,
 		    viewModeIndex);
@@ -207,6 +214,7 @@ class GBufferMeshBatchDrawerOperations final
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const RasterPassPipelineRuntime& runtime,
 	    const GBufferPass::DrawParameterMetadata& drawParameterMetadata,
+	    const GPUMesh& gpuMesh,
 	    const MeshInstanceBatch& batch,
 	    std::size_t batchIndex,
 	    std::uint32_t viewModeIndex)
@@ -237,6 +245,7 @@ class GBufferMeshBatchDrawerOperations final
 		    renderHardwareInterface,
 		    runtime,
 		    drawParameterMetadata,
+		    gpuMesh,
 		    batch,
 		    batchIndex,
 		    viewModeIndex);
@@ -255,6 +264,10 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
 	const RenderSceneData& sceneData = frame.sceneData;
 	const std::uint32_t viewModeIndex = passRuntimeServices.PerFrame.ViewModeIndex;
+	if (passRuntimeServices.Meshes == nullptr)
+	{
+		return;
+	}
 
 	if (!frame.sceneGpuData->Geometry.HasMeshInstances())
 	{
@@ -271,7 +284,13 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 	for (std::size_t batchIndex = 0; batchIndex < sceneData.meshInstanceBatches.size(); ++batchIndex)
 	{
 		const MeshInstanceBatch& batch = sceneData.meshInstanceBatches[batchIndex];
-		if (!GBufferMeshBatchDrawerOperations::ValidateBatch(sceneData, batch, batchIndex))
+		const GPUMesh* gpuMesh =
+		    GBufferMeshBatchDrawerOperations::ResolveValidBatch(
+		        sceneData,
+		        batch,
+		        batchIndex,
+		        *passRuntimeServices.Meshes);
+		if (gpuMesh == nullptr)
 		{
 			continue;
 		}
@@ -286,6 +305,7 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 			    renderHardwareInterface,
 			    runtime,
 			    drawParameterMetadata,
+			    *gpuMesh,
 			    batch,
 			    batchIndex,
 			    viewModeIndex);
@@ -300,6 +320,7 @@ void GBufferMeshBatchDrawer::DrawOpaqueMeshes(
 			    renderHardwareInterface,
 			    runtime,
 			    drawParameterMetadata,
+			    *gpuMesh,
 			    batch,
 			    batchIndex,
 			    viewModeIndex);

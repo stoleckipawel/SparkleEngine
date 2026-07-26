@@ -6,6 +6,7 @@
 #include "Resources/History/FrameHistory.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
+#include "RHI/Public/Commands/RhiQueue.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "ShaderData/PerFrameConstantBufferData.h"
 #include "Rendering/RenderInputFrame.h"
@@ -51,7 +52,6 @@ class FramePipeline final
 	void SubmitRenderInput(RenderInputFrame input) noexcept;
 	void RequestResize(RenderViewportExtent extent, bool minimized) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }
-	EditorTextureHandle RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept;
 
 	void RenderSerialUiFrame(
 	    const TimeInfo& timing,
@@ -59,8 +59,6 @@ class FramePipeline final
 	    void* context) noexcept;
 	void OnRender(const TimeInfo& timing, const EditorRenderPacket& editorUi) noexcept;
 
-	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
-	void EndViewportPresentation(RenderOutputFlags output) noexcept;
 	bool BeginViewportCapture(
 	    ViewportCaptureId id,
 	    const ViewportCaptureRequest& request) noexcept;
@@ -72,7 +70,11 @@ class FramePipeline final
 	void InitializeFrameGraph(FrameResolutionExtents resolution) noexcept;
 	void RefreshFrameExecution() noexcept;
 	void RefreshFrameExecution(FrameResolutionExtents resolution) noexcept;
-	void RefreshFrameExecutionAfterDeviceIdle(FrameResolutionExtents resolution) noexcept;
+	void RebuildFrameExecutionAfterSwapChainDrain(FrameResolutionExtents resolution) noexcept;
+	void RetireFrameExecution() noexcept;
+	void PollRetiredFrameExecutions() noexcept;
+	RhiSubmissionState CaptureLastSubmittedState() const noexcept;
+	bool IsSubmissionStateComplete(const RhiSubmissionState& state) const noexcept;
 	bool ShouldOutputToBackBuffer() const noexcept;
 	RenderViewportExtent ResolveOutputExtent() const noexcept;
 	FrameResolutionExtents ResolveFrameResolution() const noexcept;
@@ -81,7 +83,10 @@ class FramePipeline final
 	void PollViewportCaptures() noexcept;
 	void SetupFrame(const TimeInfo& timing) noexcept;
 	void RefreshViewportRenderProducts() noexcept;
-	void PublishViewportEditorTexture(const ViewportPresentationProduct& presentation) noexcept;
+	bool BeginViewportEditorTexturePresentation(
+	    RenderOutputFlags output) noexcept;
+	void EndViewportEditorTexturePresentation(
+	    RenderOutputFlags output) noexcept;
 	void RenderEditorPacket(const EditorRenderPacket& packet) noexcept;
 	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
@@ -97,6 +102,13 @@ class FramePipeline final
 	PerFrameDataBuilder m_perFrameDataBuilder;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
 	std::vector<std::unique_ptr<FrameContext>> m_frameContexts;
+	struct RetiredFrameExecution final
+	{
+		RhiSubmissionState LastUse;
+		std::unique_ptr<FrameGraph> Graph;
+		std::vector<std::unique_ptr<FrameContext>> FrameContexts;
+	};
+	std::vector<RetiredFrameExecution> m_retiredFrameExecutions;
 	RenderViewportExtent m_frameGraphRenderExtent = {};
 	RenderViewportExtent m_frameGraphOutputExtent = {};
 	RenderViewportExtent m_windowExtent = {};

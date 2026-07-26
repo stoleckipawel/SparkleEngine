@@ -31,15 +31,19 @@
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
-#include "SceneData/RenderWorld.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
+#include "SceneData/GpuScene/PersistentRenderGpuScene.h"
 #include "SceneData/Input/RenderInputConsumer.h"
+#include "SceneData/RenderWorld.h"
 #include "Meshes/GPUMeshCache.h"
 #include "SceneData/RenderSceneGpuData.h"
 #include "Textures/RendererTexture.h"
 #include "Textures/TextureManager.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
+
+#include <algorithm>
+#include <array>
 
 FramePipeline::FramePipeline(
     RendererSystemRoot& systems,
@@ -54,7 +58,8 @@ FramePipeline::FramePipeline(
 	    std::make_unique<RenderInputConsumer>(systems.GetRenderWorld());
 
 	m_gpuScene = std::make_unique<PersistentRenderGpuScene>(
-	    systems.GetRenderHardwareInterface().GetResourceService());
+	    systems.GetRenderHardwareInterface().GetResourceService(),
+	    systems.GetGpuMeshCache());
 		
 	m_editorRenderPacketPlayer = std::make_unique<EditorRenderPacketPlayer>();
 	m_editorTextureRegistry = std::make_unique<EditorTextureRegistry>();
@@ -94,11 +99,6 @@ FramePipeline::~FramePipeline() noexcept
 	{
 		m_systems->GetImGuiRenderer().Shutdown();
 	}
-}
-
-EditorTextureHandle FramePipeline::RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept
-{
-	return m_editorTextureRegistry->Register(nativeTextureId);
 }
 
 TextureDiagnosticsSnapshot FramePipeline::CaptureTextureDiagnostics()
@@ -201,11 +201,11 @@ void FramePipeline::RefreshFrameExecution() noexcept
 
 void FramePipeline::RefreshFrameExecution(FrameResolutionExtents resolution) noexcept
 {
-	m_systems->GetBackend().WaitForIdle();
-	RefreshFrameExecutionAfterDeviceIdle(resolution);
+	RetireFrameExecution();
+	InitializeFrameGraph(resolution);
 }
 
-void FramePipeline::RefreshFrameExecutionAfterDeviceIdle(FrameResolutionExtents resolution) noexcept
+void FramePipeline::RebuildFrameExecutionAfterSwapChainDrain(FrameResolutionExtents resolution) noexcept
 {
 	for (std::unique_ptr<FrameContext>& frameContext : m_frameContexts)
 	{
@@ -214,6 +214,63 @@ void FramePipeline::RefreshFrameExecutionAfterDeviceIdle(FrameResolutionExtents 
 
 	m_frameGraph.reset();
 	InitializeFrameGraph(resolution);
+}
+
+void FramePipeline::RetireFrameExecution() noexcept
+{
+	if (m_frameGraph == nullptr)
+	{
+		return;
+	}
+
+	m_retiredFrameExecutions.push_back(
+	    RetiredFrameExecution{
+	        .LastUse = CaptureLastSubmittedState(),
+	        .Graph = std::move(m_frameGraph),
+	        .FrameContexts = std::move(m_frameContexts)});
+	m_frameContexts.resize(RhiFrameConstants::FramesInFlight);
+}
+
+void FramePipeline::PollRetiredFrameExecutions() noexcept
+{
+	m_retiredFrameExecutions.erase(
+	    std::remove_if(
+	        m_retiredFrameExecutions.begin(),
+	        m_retiredFrameExecutions.end(),
+	        [this](const RetiredFrameExecution& generation) noexcept
+	        {
+		        return IsSubmissionStateComplete(generation.LastUse);
+	        }),
+	    m_retiredFrameExecutions.end());
+}
+
+RhiSubmissionState FramePipeline::CaptureLastSubmittedState() const noexcept
+{
+	RhiSubmissionState state;
+	const RenderDeviceServices& backend = m_systems->GetBackend();
+	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
+	{
+		state.MarkUsed(
+		    backend.GetLastSubmittedToken(
+		        static_cast<ERhiQueueType>(queueIndex)));
+	}
+	return state;
+}
+
+bool FramePipeline::IsSubmissionStateComplete(
+    const RhiSubmissionState& state) const noexcept
+{
+	std::array<RhiSubmissionToken, RhiQueueTypeCount> tokens{};
+	const std::size_t tokenCount = state.CopyTokens(tokens);
+	const RenderDeviceServices& backend = m_systems->GetBackend();
+	for (std::size_t tokenIndex = 0; tokenIndex < tokenCount; ++tokenIndex)
+	{
+		if (!backend.IsSubmissionComplete(tokens[tokenIndex]))
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 void FramePipeline::ResetTemporalState(std::string_view reason) noexcept
@@ -229,11 +286,16 @@ void FramePipeline::BeginFrame() noexcept
 {
 	RenderDeviceServices& backend = m_systems->GetBackend();
 	PollViewportCaptures();
+	PollRetiredFrameExecutions();
+	m_systems->PollRetiredImageProviders();
+	m_systems->GetPipelineStateManager().PollRetiredGenerations();
+	m_systems->GetTextureManager().PollResidency();
 	const RenderInputConsumeResult inputResult =
 	    m_renderInputConsumer->ConsumePending();
 	if (inputResult.SceneReset)
 	{
 		m_gpuScene->Reset();
+		m_systems->GetTextureManager().UnloadSceneTextures();
 	}
 
 	if (m_bResizePending)
@@ -244,7 +306,7 @@ void FramePipeline::BeginFrame() noexcept
 		if (!m_windowMinimized && m_windowExtent.IsValid())
 		{
 			backend.ResizeSwapChain();
-			RefreshFrameExecutionAfterDeviceIdle(ResolveFrameResolution());
+			RebuildFrameExecutionAfterSwapChainDrain(ResolveFrameResolution());
 		}
 	}
 
@@ -278,10 +340,9 @@ void FramePipeline::BeginFrame() noexcept
 	const ImageProviderGraphKey imageProviderFrameGraphKey = m_systems->GetImageProviders().GetFrameGraphKey();
 	if (imageProviderFrameGraphKey != m_imageProviderFrameGraphKey)
 	{
-		backend.WaitForIdle();
 		m_systems->RefreshImageProviders();
 		ResetTemporalState("Image provider graph mode changed");
-		RefreshFrameExecutionAfterDeviceIdle(ResolveFrameResolution());
+		RefreshFrameExecution(ResolveFrameResolution());
 		m_imageProviderFrameGraphKey = imageProviderFrameGraphKey;
 	}
 
@@ -309,6 +370,7 @@ void FramePipeline::SetupFrame(const TimeInfo& timing) noexcept
 	if (useCopyQueue)
 	{
 		const RhiSubmissionToken uploadToken = backend.SubmitCommandList(uploadCommandList);
+		textureManager.RecordUploadSubmission(uploadToken);
 		backend.QueueWait(ERhiQueueType::Graphics, uploadToken);
 		for (const RhiResourceHandle resource : uploadedResources)
 		{
@@ -361,31 +423,20 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	}
 }
 
-void FramePipeline::PublishViewportEditorTexture(
-    const ViewportPresentationProduct& presentation) noexcept
-{
-	RenderProduct product = presentation.Product;
-	product.EditorTexture = m_editorTextureRegistry->PublishViewportTexture(
-	    presentation.TextureId,
-	    m_viewportRenderProducts.GetGeneration());
-	m_viewportRenderProducts.SetProduct(RenderOutputFlags::SceneColor, product);
-}
-
 void FramePipeline::RenderEditorPacket(const EditorRenderPacket& packet) noexcept
 {
-	const ViewportPresentationProduct presentation =
-	    BeginViewportPresentation(RenderOutputFlags::SceneColor);
-	if (!presentation)
+	if (!BeginViewportEditorTexturePresentation(
+	        RenderOutputFlags::SceneColor))
 	{
 		m_editorTextureRegistry->RetireViewportTexture();
 		return;
 	}
 
-	PublishViewportEditorTexture(presentation);
 	if (!packet.HasDrawData() ||
 	    packet.ViewportGeneration != m_viewportRenderProducts.GetGeneration())
 	{
-		EndViewportPresentation(RenderOutputFlags::SceneColor);
+		EndViewportEditorTexturePresentation(
+		    RenderOutputFlags::SceneColor);
 		return;
 	}
 
@@ -401,7 +452,8 @@ void FramePipeline::RenderEditorPacket(const EditorRenderPacket& packet) noexcep
 	    *m_editorTextureRegistry,
 	    imguiRenderer);
 	hostPresentation.EndPresentRenderPass();
-	EndViewportPresentation(RenderOutputFlags::SceneColor);
+	EndViewportEditorTexturePresentation(
+	    RenderOutputFlags::SceneColor);
 }
 
 void FramePipeline::RecordFrame() noexcept
@@ -418,20 +470,22 @@ void FramePipeline::RecordFrame() noexcept
 		ResetTemporalState(dynamic.Metadata.CameraCut ? "Render input camera cut" : "Render input generation reset");
 	}
 
-	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[renderHardwareInterface.GetCurrentFrameIndex()];
-	frameSlot = [&]()
-	{
-		return std::make_unique<FrameContext>(BuildFrameContext(
-		    m_systems->GetRenderWorld(),
-		    dynamic,
-		    *m_gpuScene,
-		    m_systems->GetRenderCamera(),
-		    m_frameGraphRenderExtent,
-		    m_systems->GetRenderSceneDataBuilder(),
-		    activeRayTracingScene,
-		    m_systems->GetPerViewDataBuilder(),
-		    m_systems->GetTemporalDataBuilder()));
-	}();
+	const std::uint32_t frameIndex =
+	    renderHardwareInterface.GetCurrentFrameIndex();
+	std::unique_ptr<FrameContext>& frameSlot =
+	    m_frameContexts[frameIndex];
+	frameSlot = std::make_unique<FrameContext>(
+	    BuildFrameContext(
+	        m_systems->GetRenderWorld(),
+	        dynamic,
+	        *m_gpuScene,
+	        frameIndex,
+	        m_systems->GetRenderCamera(),
+	        m_frameGraphRenderExtent,
+	        m_systems->GetRenderSceneDataBuilder(),
+	        activeRayTracingScene,
+	        m_systems->GetPerViewDataBuilder(),
+	        m_systems->GetTemporalDataBuilder()));
 	FrameContext& frame = *frameSlot;
 	if (GetLightingMode() == LightingMode::RestirPathTraced)
 	{
@@ -529,6 +583,7 @@ void FramePipeline::RecordFrame() noexcept
 	    .RuntimeManager = m_systems->GetPipelineStateManager(),
 	    .PerFrame = m_perFrameData,
 	    .History = ResolveFrameHistoryValidity(*m_frameGraph, m_frameResources.History),
+	    .Meshes = &m_systems->GetGpuMeshCache(),
 	    .Textures = &m_systems->GetTextureManager(),
 	    .RayTracing = &rayTracingPassServices,
 	    .ImageProviders = &imageProviderPassServices};
@@ -539,7 +594,10 @@ void FramePipeline::RecordFrame() noexcept
 
 void FramePipeline::SubmitFrame() noexcept
 {
-	m_systems->GetBackend().SubmitFrame();
+	RenderDeviceServices& backend = m_systems->GetBackend();
+	backend.SubmitFrame();
+	m_systems->GetTextureManager().RecordUploadSubmission(
+	    backend.GetLastSubmittedToken(ERhiQueueType::Graphics));
 }
 
 void FramePipeline::EndFrame() noexcept

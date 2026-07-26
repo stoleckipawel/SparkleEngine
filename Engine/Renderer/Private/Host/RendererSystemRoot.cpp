@@ -23,13 +23,18 @@
 #include "Textures/TextureManager.h"
 #include "Window/Window.h"
 
+#include <algorithm>
+#include <array>
+
 RendererSystemRoot::RendererSystemRoot(
     Window& window,
-    const RendererBackendConfiguration& backendConfiguration) noexcept :
+    const RendererBackendConfiguration& backendConfiguration,
+    TaskExecutor& assetTaskExecutor,
+    TaskScope& applicationTaskScope) noexcept :
     m_window(&window)
 {
 	InitializeCoreSystems(backendConfiguration);
-	InitializeSceneSystems();
+	InitializeSceneSystems(assetTaskExecutor, applicationTaskScope);
 }
 
 RendererSystemRoot::~RendererSystemRoot() noexcept = default;
@@ -112,7 +117,43 @@ void RendererSystemRoot::RefreshImageProviders() noexcept
 		return;
 	}
 
-	m_imageProviders->Refresh(GetRenderHardwareInterface());
+	RhiSubmissionState lastUse;
+	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
+	{
+		lastUse.MarkUsed(
+		    GetBackend().GetLastSubmittedToken(
+		        static_cast<ERhiQueueType>(queueIndex)));
+	}
+	m_retiredImageProviders.push_back(
+	    RetiredImageProviderGeneration{
+	        .LastUse = lastUse,
+	        .Providers = std::move(m_imageProviders)});
+	m_imageProviders =
+	    std::make_unique<RendererImageProviderStack>(
+	        GetRenderHardwareInterface());
+}
+
+void RendererSystemRoot::PollRetiredImageProviders() noexcept
+{
+	m_retiredImageProviders.erase(
+	    std::remove_if(
+	        m_retiredImageProviders.begin(),
+	        m_retiredImageProviders.end(),
+	        [this](const RetiredImageProviderGeneration& generation) noexcept
+	        {
+		        std::array<RhiSubmissionToken, RhiQueueTypeCount> tokens{};
+		        const std::size_t tokenCount =
+		            generation.LastUse.CopyTokens(tokens);
+		        for (std::size_t tokenIndex = 0; tokenIndex < tokenCount; ++tokenIndex)
+		        {
+			        if (!GetBackend().IsSubmissionComplete(tokens[tokenIndex]))
+			        {
+				        return false;
+			        }
+		        }
+		        return true;
+	        }),
+	    m_retiredImageProviders.end());
 }
 
 void RendererSystemRoot::InitializeCoreSystems(const RendererBackendConfiguration& backendConfiguration) noexcept
@@ -120,7 +161,7 @@ void RendererSystemRoot::InitializeCoreSystems(const RendererBackendConfiguratio
 	m_backend = std::make_unique<RendererBackendSystem>(*m_window, CVarBackBufferFormat.Get(), backendConfiguration);
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
 	{
-		m_pipelineStateManager = std::make_unique<PipelineStateManager>(renderHardware);
+		m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetBackend());
 	}
 	{
 		m_gpuMeshCache = std::make_unique<GPUMeshCache>(renderHardware);
@@ -129,25 +170,35 @@ void RendererSystemRoot::InitializeCoreSystems(const RendererBackendConfiguratio
 	RenderDiagnostics& backendDiagnostics = renderHardware.GetDiagnostics();
 	const RayTracingCapabilityReport rayTracingCapabilities = RayTracingCapabilityReporter::Build(renderHardware.GetCapabilities());
 	m_imageProviders = std::make_unique<RendererImageProviderStack>(renderHardware);
-	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(renderHardware, rayTracingCapabilities);
+	m_renderRayTracingScene =
+	    std::make_unique<RenderRayTracingScene>(
+	        renderHardware,
+	        *m_gpuMeshCache,
+	        rayTracingCapabilities);
 
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);
 }
 
-void RendererSystemRoot::InitializeSceneSystems() noexcept
+void RendererSystemRoot::InitializeSceneSystems(
+    TaskExecutor& assetTaskExecutor,
+    TaskScope& applicationTaskScope) noexcept
 {
 	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
 	m_textureManager = std::make_unique<TextureManager>(
 	    renderHardware.GetResourceService(),
 	    renderHardware.GetDescriptorService(),
-	    renderHardware.GetUploadService());
+	    renderHardware.GetUploadService(),
+	    GetBackend(),
+	    assetTaskExecutor,
+	    applicationTaskScope);
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
 	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache, *m_textureManager);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
 
 	m_renderCamera = std::make_unique<RenderCamera>();
-	m_renderWorld = std::make_unique<RenderWorld>();
+	m_renderWorld =
+	    std::make_unique<RenderWorld>(&GetBackend());
 }
 
 MeshPreviewGeometry RendererSystemRoot::CaptureMeshPreview(std::uintptr_t meshRuntimeId) const

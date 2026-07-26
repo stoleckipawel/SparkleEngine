@@ -153,6 +153,7 @@ bool D3D12GpuMemoryAllocator::SupportsBudgetQueries() const noexcept
 
 RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() const
 {
+	m_owner.AssertAccess();
 	RhiMemoryUsageSnapshot snapshot;
 	if (m_impl == nullptr || m_impl->allocator == nullptr)
 	{
@@ -484,6 +485,7 @@ D3D12_HEAP_FLAGS D3D12GpuMemoryAllocator::ToTransientHeapFlags(RhiTransientAlloc
 
 D3D12GpuAllocationRecord* D3D12GpuMemoryAllocator::FindAllocationRecord(ID3D12Resource* resource) const noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr || resource == nullptr)
 	{
 		return nullptr;
@@ -502,6 +504,7 @@ D3D12GpuAllocationRecord* D3D12GpuMemoryAllocator::FindAllocationRecord(ID3D12Re
 
 void D3D12GpuMemoryAllocator::RegisterAllocationRecord(D3D12GpuAllocationRecord& record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr)
 	{
 		return;
@@ -516,6 +519,7 @@ void D3D12GpuMemoryAllocator::RegisterAllocationRecord(D3D12GpuAllocationRecord&
 
 void D3D12GpuMemoryAllocator::UnregisterAllocationRecord(D3D12GpuAllocationRecord& record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr)
 	{
 		return;
@@ -528,6 +532,7 @@ void D3D12GpuMemoryAllocator::UnregisterAllocationRecord(D3D12GpuAllocationRecor
 
 void D3D12GpuMemoryAllocator::RegisterHeapRecord(D3D12GpuHeapRecord& record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr)
 	{
 		return;
@@ -542,6 +547,7 @@ void D3D12GpuMemoryAllocator::RegisterHeapRecord(D3D12GpuHeapRecord& record) noe
 
 void D3D12GpuMemoryAllocator::UnregisterHeapRecord(D3D12GpuHeapRecord& record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr)
 	{
 		return;

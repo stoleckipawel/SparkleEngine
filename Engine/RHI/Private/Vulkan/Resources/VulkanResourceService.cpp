@@ -157,6 +157,22 @@ bool VulkanResourceService::CreateStructuredBufferResource(
 	return static_cast<bool>(outResource);
 }
 
+bool VulkanResourceService::WriteBufferResource(
+    RhiOwnedResourceHandle resource,
+    std::size_t destinationOffsetInBytes,
+    const void* data,
+    std::size_t sizeInBytes) noexcept
+{
+	VulkanGpuAllocationRecord* const record =
+	    GetVulkanGpuAllocationRecord(resource);
+	return record != nullptr && m_memoryAllocator != nullptr &&
+	       m_memoryAllocator->WriteAllocation(
+	           *record,
+	           data,
+	           sizeInBytes,
+	           destinationOffsetInBytes);
+}
+
 bool VulkanResourceService::CreateIndexBuffer(
     const void* data,
     std::size_t sizeInBytes,

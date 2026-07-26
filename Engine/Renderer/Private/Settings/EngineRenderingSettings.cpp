@@ -490,6 +490,12 @@ void EngineRenderingSettingsSection::SetPtlasModeChangeDistance(float distance)
 	SetValue(m_state.PtlasModeChangeDistance, distance);
 }
 
+void EngineRenderingSettingsSection::SetRenderViewMode(
+    RenderViewMode viewMode)
+{
+	SetValue(m_state.ViewMode, viewMode);
+}
+
 EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState() const noexcept
 {
 	EngineRenderingSettingsState state;
@@ -524,6 +530,7 @@ EngineRenderingSettingsState EngineRenderingSettingsSection::CaptureRuntimeState
 	state.PtlasPartitionUpdateMode = CVarRayTracingPtlasPartitionUpdateMode.Get();
 	state.PtlasMarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get();
 	state.PtlasModeChangeDistance = CVarRayTracingPtlasModeChangeDistance.Get();
+	state.ViewMode = CVarRenderViewMode.Get();
 	return state;
 }
 
@@ -631,6 +638,9 @@ void ApplyEngineRenderingSettingsStateToCVars(
 	EngineRenderingSettingsOperations::SetCVarIfChanged(
 	    CVarRayTracingPtlasModeChangeDistance,
 	    state.PtlasModeChangeDistance);
+	EngineRenderingSettingsOperations::SetCVarIfChanged(
+	    CVarRenderViewMode,
+	    state.ViewMode);
 }
 
 void ApplyPersistedEngineRenderingSettingsToCVars() noexcept

@@ -29,11 +29,6 @@ struct RenderReloadShadersCommand final
 	std::shared_ptr<RenderControlCompletion> Completion;
 };
 
-struct RenderWaitForIdleCommand final
-{
-	std::shared_ptr<RenderControlCompletion> Completion;
-};
-
 enum class RenderDiagnosticsRequestKind : std::uint8_t
 {
 	Meshes,
@@ -73,7 +68,6 @@ using RenderControlPayload = std::variant<
     RenderResizeCommand,
     RenderViewportCommand,
     RenderReloadShadersCommand,
-    RenderWaitForIdleCommand,
     RenderDiagnosticsCommand,
     RenderCaptureCommand,
     RenderRefreshProvidersCommand,

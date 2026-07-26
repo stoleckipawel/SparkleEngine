@@ -4,10 +4,12 @@
 #include "Meshes/MeshDiagnostics.h"
 #include "Diagnostics/MeshPreviewGeometry.h"
 #include "Resources/Textures/TextureDiagnostics.h"
+#include "RHI/Public/Commands/RhiQueue.h"
 #include "Shaders/CookedShaderReloadResult.h"
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 class FrameExecutionDiagnostics;
 class GPUMeshCache;
@@ -26,13 +28,19 @@ class RhiImGuiRenderer;
 class RenderWorld;
 class TemporalDataBuilder;
 class TextureManager;
+class TaskExecutor;
+class TaskScope;
 class Window;
 struct RendererBackendConfiguration;
 
 class RendererSystemRoot final
 {
   public:
-	RendererSystemRoot(Window& window, const RendererBackendConfiguration& backendConfiguration) noexcept;
+	RendererSystemRoot(
+	    Window& window,
+	    const RendererBackendConfiguration& backendConfiguration,
+	    TaskExecutor& assetTaskExecutor,
+	    TaskScope& applicationTaskScope) noexcept;
 	~RendererSystemRoot() noexcept;
 
 	RendererSystemRoot(const RendererSystemRoot&) = delete;
@@ -76,10 +84,13 @@ class RendererSystemRoot final
 	void TickDiagnostics(std::uint64_t frameIndex) noexcept;
 	void PostLoad() noexcept;
 	void RefreshImageProviders() noexcept;
+	void PollRetiredImageProviders() noexcept;
 
   private:
 	void InitializeCoreSystems(const RendererBackendConfiguration& backendConfiguration) noexcept;
-	void InitializeSceneSystems() noexcept;
+	void InitializeSceneSystems(
+	    TaskExecutor& assetTaskExecutor,
+	    TaskScope& applicationTaskScope) noexcept;
 
 	Window* m_window = nullptr;
 
@@ -96,4 +107,10 @@ class RendererSystemRoot final
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<RenderWorld> m_renderWorld;
 	std::unique_ptr<RendererImageProviderStack> m_imageProviders;
+	struct RetiredImageProviderGeneration final
+	{
+		RhiSubmissionState LastUse;
+		std::unique_ptr<RendererImageProviderStack> Providers;
+	};
+	std::vector<RetiredImageProviderGeneration> m_retiredImageProviders;
 };

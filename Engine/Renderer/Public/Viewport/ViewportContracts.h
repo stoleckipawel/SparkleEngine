@@ -89,23 +89,6 @@ struct RenderProduct
 	EditorTextureHandle EditorTexture = {};
 };
 
-enum class ViewportPresentationStatus : std::uint8_t
-{
-	Unavailable = 0,
-	Ready = 1,
-};
-
-struct SPARKLE_RENDERER_API ViewportPresentationProduct
-{
-	RenderOutputFlags Output = RenderOutputFlags::None;
-	RenderProduct Product = {};
-	std::uint64_t TextureId = 0;
-	ViewportPresentationStatus Status = ViewportPresentationStatus::Unavailable;
-	const char* FailureReason = "";
-
-	explicit operator bool() const noexcept;
-};
-
 struct SPARKLE_RENDERER_API ViewportCaptureRequest
 {
 	RenderOutputFlags Output = RenderOutputFlags::SceneColor;

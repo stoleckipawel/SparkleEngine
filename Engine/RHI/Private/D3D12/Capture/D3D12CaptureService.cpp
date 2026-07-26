@@ -73,6 +73,7 @@ struct D3D12CaptureService::PendingReadback final
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT Footprint{};
 	std::uint64_t TotalBytes = 0;
 	RhiBmpSourceFormat Format = RhiBmpSourceFormat::Rgba8Unorm;
+	bool Cancelled = false;
 };
 
 D3D12CaptureService::D3D12CaptureService(D3D12Rhi& rhi) noexcept :
@@ -98,6 +99,7 @@ D3D12CaptureService::~D3D12CaptureService() noexcept
 RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(
     const RhiTextureCaptureRequest& request) noexcept
 {
+	DrainCancelledReadbacks();
 	ID3D12Device* const device =
 	    m_rhi != nullptr ? m_rhi->GetDevice().Get() : nullptr;
 	ID3D12Resource* const sourceResource =
@@ -216,6 +218,7 @@ bool D3D12CaptureService::TryTakeTextureReadback(
     RhiCaptureTicket ticket,
     RhiCaptureReadback& readback) noexcept
 {
+	DrainCancelledReadbacks();
 	PendingReadback* pending = FindPending(ticket);
 	if (pending == nullptr || m_rhi == nullptr ||
 	    !m_rhi->IsSubmissionComplete(pending->Submission))
@@ -281,11 +284,8 @@ void D3D12CaptureService::CancelTextureReadback(
 	{
 		return;
 	}
-	if (m_rhi != nullptr && (*iterator)->Submission.IsValid())
-	{
-		m_rhi->WaitForSubmission((*iterator)->Submission);
-	}
-	m_pendingReadbacks.erase(iterator);
+	(*iterator)->Cancelled = true;
+	DrainCancelledReadbacks();
 }
 
 D3D12CaptureService::PendingReadback* D3D12CaptureService::FindPending(
@@ -299,4 +299,26 @@ D3D12CaptureService::PendingReadback* D3D12CaptureService::FindPending(
 		}
 	}
 	return nullptr;
+}
+
+void D3D12CaptureService::DrainCancelledReadbacks() noexcept
+{
+	if (m_rhi == nullptr)
+	{
+		return;
+	}
+	for (std::size_t index = 0;
+	     index < m_pendingReadbacks.size();)
+	{
+		const std::unique_ptr<PendingReadback>& pending =
+		    m_pendingReadbacks[index];
+		if (!pending || !pending->Cancelled ||
+		    !m_rhi->IsSubmissionComplete(pending->Submission))
+		{
+			++index;
+			continue;
+		}
+		m_pendingReadbacks.erase(
+		    m_pendingReadbacks.begin() + index);
+	}
 }

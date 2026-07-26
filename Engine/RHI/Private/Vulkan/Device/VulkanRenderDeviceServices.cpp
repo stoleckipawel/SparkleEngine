@@ -149,6 +149,12 @@ void VulkanRenderDeviceServices::BeginFrame() noexcept
 	(void)BeginCommandList(ERhiQueueType::Graphics);
 	m_renderHardwareInterface->ResetTransientFrameResources();
 	m_hasAcquiredBackBuffer = m_swapChain->AcquireNextImage(m_currentFrameIndex);
+	if (!m_hasAcquiredBackBuffer && m_swapChain->ConsumeResizeRequest())
+	{
+		ResizeSwapChain();
+		m_hasAcquiredBackBuffer =
+		    m_swapChain->AcquireNextImage(m_currentFrameIndex);
+	}
 	if (!m_hasAcquiredBackBuffer)
 	{
 		m_commandContext->CancelFrame(m_currentFrameIndex);
@@ -269,7 +275,8 @@ void VulkanRenderDeviceServices::SubmitFrame() noexcept
 	}
 	if (m_swapChain->Present(renderFinishedSemaphore))
 	{
-		m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
+		(void)m_swapChain->ConsumeResizeRequest();
+		ResizeSwapChain();
 	}
 	m_hasAcquiredBackBuffer = false;
 	m_hasConsumedAcquireSemaphore = false;

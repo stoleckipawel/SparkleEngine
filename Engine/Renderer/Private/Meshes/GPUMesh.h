@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Meshes/GPUSkinInfluenceBuffer.h"
+#include "Renderer/Public/Meshes/GpuMeshHandle.h"
 #include "RayTracing/RayTracingHitData.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
@@ -17,13 +18,6 @@
 class RenderCommandContext;
 class RenderHardwareInterface;
 struct MeshData;
-struct GpuMeshHandle final
-{
-	std::uint64_t Value = 0u;
-
-	constexpr explicit operator bool() const noexcept { return Value != 0u; }
-	constexpr bool operator==(const GpuMeshHandle&) const noexcept = default;
-};
 
 struct GPUMeshBounds final
 {
@@ -41,7 +35,7 @@ struct GPUMeshUploadDesc
 class GPUMesh final
 {
   public:
-	explicit GPUMesh(GpuMeshHandle handle = {}) noexcept : m_handle(handle) {}
+	explicit GPUMesh(GpuMeshHandle handle = {}) noexcept;
 	~GPUMesh() noexcept;
 
 	GPUMesh(const GPUMesh&) = delete;

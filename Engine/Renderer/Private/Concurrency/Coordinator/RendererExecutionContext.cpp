@@ -5,21 +5,21 @@
 #include "Host/RendererBackendConfiguration.h"
 #include "Host/RendererSystemRoot.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
-
-RendererExecutionContext::RendererExecutionContext(
-    Window& window,
-    const RendererBackendConfiguration& backendConfiguration) :
-	RendererExecutionContext(window, backendConfiguration, false)
-{
-}
+#include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 
 RendererExecutionContext::RendererExecutionContext(
     Window& window,
     const RendererBackendConfiguration& backendConfiguration,
-    bool enableEditorRenderPackets)
+    const RendererExecutionConfig& executionConfig)
 {
-	m_systems = std::make_unique<RendererSystemRoot>(window, backendConfiguration);
-	m_pipeline = std::make_unique<FramePipeline>(*m_systems, enableEditorRenderPackets);
+	m_systems = std::make_unique<RendererSystemRoot>(
+	    window,
+	    backendConfiguration,
+	    *executionConfig.AssetTaskExecutor,
+	    *executionConfig.ApplicationTaskScope);
+	m_pipeline = std::make_unique<FramePipeline>(
+	    *m_systems,
+	    executionConfig.EnableEditorRenderPackets);
 	m_systems->PostLoad();
 }
 
@@ -51,11 +51,6 @@ void RendererExecutionContext::ExecuteControl(const RenderControlPayload& payloa
 			    m_pipeline->SubmitViewportRenderRequest(command.Request);
 		    else if constexpr (std::is_same_v<TCommand, RenderReloadShadersCommand>)
 			    command.Completion->Complete(m_systems->ReloadCookedShaders());
-		    else if constexpr (std::is_same_v<TCommand, RenderWaitForIdleCommand>)
-		    {
-			    m_systems->GetBackend().WaitForIdle();
-			    command.Completion->Complete(std::monostate{});
-		    }
 		    else if constexpr (std::is_same_v<TCommand, RenderDiagnosticsCommand>)
 			    CompleteDiagnostics(command);
 		    else if constexpr (std::is_same_v<TCommand, RenderCaptureCommand>)

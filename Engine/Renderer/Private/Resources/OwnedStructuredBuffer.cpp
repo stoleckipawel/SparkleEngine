@@ -58,6 +58,21 @@ OwnedStructuredBuffer OwnedStructuredBuffer::Upload(
 	return buffer;
 }
 
+bool OwnedStructuredBuffer::Write(
+    std::size_t destinationOffsetInBytes,
+    const void* data,
+    std::size_t sizeInBytes) noexcept
+{
+	return m_resourceService != nullptr && m_resource &&
+	       destinationOffsetInBytes <= m_sizeInBytes &&
+	       sizeInBytes <= m_sizeInBytes - destinationOffsetInBytes &&
+	       m_resourceService->WriteBufferResource(
+	           m_resource,
+	           destinationOffsetInBytes,
+	           data,
+	           sizeInBytes);
+}
+
 void OwnedStructuredBuffer::Reset() noexcept
 {
 	if (m_resourceService != nullptr && m_resource)

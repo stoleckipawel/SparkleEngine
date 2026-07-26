@@ -3,6 +3,7 @@
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 
 #include "Commands/RenderCommandContext.h"
+#include "Meshes/GPUMeshCache.h"
 #include "RHI/Public/CVars/RHICVars.h"
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
@@ -12,6 +13,7 @@
 
 RenderRayTracingScene::RenderRayTracingScene(
     RenderHardwareInterface& renderHardwareInterface,
+    const GPUMeshCache& meshes,
     const RayTracingCapabilityReport& capabilityReport) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface),
     m_capabilityReport(capabilityReport)
@@ -28,7 +30,10 @@ RenderRayTracingScene::RenderRayTracingScene(
 		return;
 	}
 
-	m_blasCache = std::make_unique<RayTracingBlasCache>(renderHardwareInterface);
+	m_blasCache =
+	    std::make_unique<RayTracingBlasCache>(
+	        renderHardwareInterface,
+	        meshes);
 	m_topLevelStrategyPrefersPartitionedTlas = CVarRayTracingPreferPartitionedTlas.Get();
 	m_topLevelAccelerationStructureStrategy =
 	    CreateRayTracingTopLevelAccelerationStructureStrategy(renderHardwareInterface, m_capabilityReport);

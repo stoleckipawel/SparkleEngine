@@ -33,11 +33,6 @@ ViewportRenderProducts Renderer::GetViewportRenderProducts() const
 	return m_state->Coordinator.GetViewportRenderProducts();
 }
 
-EditorTextureHandle Renderer::RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept
-{
-	return m_state->Coordinator.RegisterEditorTexture(nativeTextureId);
-}
-
 RhiImGuiRenderer& Renderer::GetImGuiRenderer() noexcept
 {
 	return m_state->Coordinator.GetSerialImGuiRenderer();
@@ -93,11 +88,6 @@ void Renderer::SubmitRenderingSettings(EngineRenderingSettingsState settings) no
 	m_state->Coordinator.SubmitRenderingSettings(std::move(settings));
 }
 
-void Renderer::WaitForIdle() noexcept
-{
-	m_state->Coordinator.WaitForIdle();
-}
-
 void Renderer::BeginHostPresentation(const float clearColor[4]) noexcept
 {
 	m_state->Coordinator.BeginSerialHostPresentation(clearColor);
@@ -111,16 +101,6 @@ void Renderer::BeginHostOverlayPresentation() noexcept
 void Renderer::EndHostPresentation() noexcept
 {
 	m_state->Coordinator.EndSerialHostPresentation();
-}
-
-ViewportPresentationProduct Renderer::BeginViewportPresentation(RenderOutputFlags output) noexcept
-{
-	return m_state->Coordinator.BeginSerialViewportPresentation(output);
-}
-
-void Renderer::EndViewportPresentation(RenderOutputFlags output) noexcept
-{
-	m_state->Coordinator.EndSerialViewportPresentation(output);
 }
 
 ViewportCaptureId Renderer::RequestViewportCapture(

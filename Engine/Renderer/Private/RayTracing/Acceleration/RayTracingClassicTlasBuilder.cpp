@@ -130,13 +130,19 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 		for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++index)
 		{
 			const MeshDraw& draw = sceneData.meshInstances[index];
-			if (draw.Geometry.GpuMesh == nullptr || !draw.Geometry.GpuMesh->IsValid())
+			if (!draw.Geometry.Mesh)
 			{
 				++stats.Candidates.MissingGpuMeshCount;
 				continue;
 			}
 
-			const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, sceneData, draw, index, diagnostics);
+			const RayTracingBlasCache::BlasHandle blas =
+			    blasCache.EnsureBlas(
+			        cmd,
+			        sceneData,
+			        draw,
+			        draw.Source.GpuSceneSlot,
+			        diagnostics);
 			if (!blas.IsValid())
 			{
 				++stats.Candidates.RejectedBlasCount;
@@ -150,7 +156,7 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 			instances.push_back(
 			    RhiRayTracingInstanceDesc{
 			        .Transform = BuildInstanceTransform(draw.Transform.WorldMatrix),
-			        .InstanceID = index,
+			        .InstanceID = draw.Source.GpuSceneSlot,
 			        .InstanceMask = 0xFFu,
 			        .InstanceContributionToHitGroupIndex = 0u,
 			        .Flags = RayTracingClassicTlasBuilderOperations::ResolveInstanceFlags(sceneData, draw),

@@ -177,7 +177,7 @@ sparkle_target_precompile_headers(SparkleRenderer
 
 # Renderer publicly exposes Core event handles and the RHI-facing render seam.
 # Platform and runtime scene modules remain implementation-only.
-target_link_libraries(SparkleRenderer 
+target_link_libraries(SparkleRenderer
     PUBLIC
         SparkleCore
         SparkleRHI

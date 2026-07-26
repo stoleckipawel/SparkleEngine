@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Public/Threading/ThreadOwnership.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "Memory/RhiMemoryDiagnostics.h"
 #include "Memory/RhiMemoryTypes.h"
@@ -86,5 +87,6 @@ class D3D12GpuMemoryAllocator final
 	friend struct D3D12GpuAllocationRecord;
 	friend struct D3D12GpuHeapRecord;
 
+	Threading::OwnerThread m_owner{"D3D12 GPU memory allocator"};
 	std::unique_ptr<Impl> m_impl;
 };

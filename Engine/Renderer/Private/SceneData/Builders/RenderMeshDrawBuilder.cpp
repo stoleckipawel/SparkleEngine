@@ -17,8 +17,6 @@
 class RenderMeshDrawBuilderOperations final
 {
   public:
-	inline static const auto g_renderMeshDrawBuilderLogger = Logging::GetOrCreateLogger("Renderer.SceneData.Meshes");
-
 	static void CountMeshInstanceWorkload(const std::vector<MeshDraw>& meshInstances, RenderMeshWorkloadSummary& workload) noexcept
 	{
 		for (const MeshDraw& meshInstance : meshInstances)
@@ -33,7 +31,11 @@ class RenderMeshDrawBuilderOperations final
 	}
 };
 
-RenderMeshDrawBuilder::RenderMeshDrawBuilder(GPUMeshCache& gpuMeshCache) noexcept : m_gpuMeshCache(&gpuMeshCache) {}
+RenderMeshDrawBuilder::RenderMeshDrawBuilder(
+    GPUMeshCache& gpuMeshCache) noexcept :
+	m_gpuMeshCache(gpuMeshCache)
+{
+}
 
 void RenderMeshDrawBuilder::ResetHistory() noexcept
 {
@@ -43,7 +45,7 @@ void RenderMeshDrawBuilder::ResetHistory() noexcept
 
 void RenderMeshDrawBuilder::Build(const RenderWorld& world, const RenderFrameDynamicData& dynamic, RenderSceneData& sceneData)
 {
-	if (world.GetProxies().empty() || m_gpuMeshCache == nullptr)
+	if (world.GetProxies().empty())
 	{
 		ResetHistory();
 		return;
@@ -100,7 +102,8 @@ void RenderMeshDrawBuilder::AppendVisibleMeshItems(
 		const RenderProxy* proxy = world.Find(object.Object);
 		if (proxy == nullptr || !proxy->Static.Mesh.IsValid()) continue;
 
-		GPUMesh* gpuMesh = m_gpuMeshCache->GetOrUpload(*proxy->Static.Mesh.GetResource());
+		GPUMesh* gpuMesh =
+		    m_gpuMeshCache.GetOrUpload(proxy->Static.Mesh);
 		if (gpuMesh == nullptr || !gpuMesh->IsValid()) continue;
 		outCurrentWorldMatrices.emplace(object.Object, object.WorldMatrix);
 
@@ -113,13 +116,17 @@ void RenderMeshDrawBuilder::AppendVisibleMeshItems(
 		draw.Material.Slot = MaterialCacheUtils::ResolveMaterialSlot(proxy->Static.Material, sceneData.materials.size());
 		draw.Source.GpuSceneSlot = proxy->GpuSceneSlot;
 		draw.Source.MeshAssetId = proxy->Static.Mesh.GetAssetId();
+		draw.Source.MeshGeneration = proxy->Static.Mesh.GetGeneration();
 		draw.Skinning.SkeletonAssetId = proxy->Static.Skeleton.GetAssetId();
 		draw.Skinning.JointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;
 		if (proxy->Static.MeshKind == SceneMeshKind::Skeletal)
 			if (const auto jointOffset = jointMatrixOffsets.find(object.Object); jointOffset != jointMatrixOffsets.end())
 				draw.Skinning.JointMatrixOffset = jointOffset->second;
 		draw.Geometry.MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy->Static.MeshKind);
-		draw.Geometry.GpuMesh = gpuMesh;
+		draw.Geometry.Mesh = gpuMesh->GetHandle();
+		draw.Geometry.LocalBoundsMin = gpuMesh->GetLocalBounds().Min;
+		draw.Geometry.LocalBoundsMax = gpuMesh->GetLocalBounds().Max;
+		draw.Geometry.HasLocalBounds = gpuMesh->GetLocalBounds().Valid;
 
 		outItems.push_back({.draw = draw,
 		                    .materialGpuHandle = draw.Material.Slot < sceneData.materials.size()
@@ -141,27 +148,17 @@ void RenderMeshDrawBuilder::BuildBatches(
 	MeshInstanceBatchBuilder builder;
 	MeshInstanceBatchBuildResult result = builder.Build(
 	    items, groups, {.enableAutoBatching = CVarRendererMeshAutoBatching.Get(),
-	                    .requireMaterialBindingSet = true, .collectDiagnostics = true});
+	                    .requireMaterialBindingSet = true});
 	sceneData.meshInstances = std::move(result.batchInstances);
 	sceneData.meshInstanceBatches = std::move(result.batches);
-	PublishWorkload(world, result, sceneData);
+	PublishWorkload(sceneData);
 }
 
 void RenderMeshDrawBuilder::PublishWorkload(
-	const RenderWorld& world, const MeshInstanceBatchBuildResult& result, RenderSceneData& sceneData) const
+    RenderSceneData& sceneData) const
 {
 	sceneData.meshWorkload = {};
 	sceneData.meshWorkload.jointMatrixCount = static_cast<std::uint32_t>(sceneData.jointMatrices.size());
 	RenderMeshDrawBuilderOperations::CountMeshInstanceWorkload(sceneData.meshInstances, sceneData.meshWorkload);
 	RenderMeshDrawBuilderOperations::CountMeshBatchWorkload(sceneData.meshInstanceBatches, sceneData.meshWorkload);
-
-	static bool loggedMissingBatchWarning = false;
-	if (loggedMissingBatchWarning || world.GetProxies().empty() || !sceneData.meshInstanceBatches.empty()) return;
-	loggedMissingBatchWarning = true;
-	SPDLOG_LOGGER_WARN(
-	    RenderMeshDrawBuilderOperations::g_renderMeshDrawBuilderLogger,
-	    "Scene has {} mesh proxies but produced no render batches (candidates={}, rejected={}, missingGpuMesh={}, invalidGroup={}, invalidMaterial={}).",
-	    world.GetProxies().size(), result.diagnostics.CandidateItemCount, result.diagnostics.RejectedCandidateCount,
-	    result.diagnostics.RejectedMissingGpuMeshCount, result.diagnostics.RejectedInvalidInstanceGroupCount,
-	    result.diagnostics.RejectedInvalidMaterialCount);
 }

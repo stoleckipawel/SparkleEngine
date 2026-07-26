@@ -62,11 +62,12 @@ void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexc
 	}
 }
 
-void UI::SetViewportSceneColorTextureId(EditorTextureHandle texture) noexcept
+void UI::SetViewportSceneColorTexture(
+    EditorTextureHandle texture) noexcept
 {
 	if (m_viewportPanel)
 	{
-		m_viewportPanel->SetSceneColorTextureId(texture.Pack());
+		m_viewportPanel->SetSceneColorTexture(texture);
 	}
 }
 
@@ -185,9 +186,12 @@ void UI::InitializeDefaultPanels()
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
 	ConfigureMainMenuBarWindowActions();
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
-	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelManager);
-	m_viewportPanel = std::make_unique<ViewportPanel>(EditorUiState::SceneOutlinerWidth, EditorUiState::SceneInspectorWidth);
 	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>();
+	m_viewportTopPanel =
+	    std::make_unique<ViewportTopPanel>(
+	        m_levelManager,
+	        m_renderingSettings.get());
+	m_viewportPanel = std::make_unique<ViewportPanel>(EditorUiState::SceneOutlinerWidth, EditorUiState::SceneInspectorWidth);
 	m_restartService = std::make_unique<EditorRestartService>();
 	m_settingsPanel = std::make_unique<SettingsPanel>();
 	m_settingsPanel->SetRenderingSettings(m_renderingSettings.get());

@@ -30,6 +30,14 @@ RenderCoordinator::RenderCoordinator(
     m_config(config),
     m_backendConfiguration(backendConfiguration)
 {
+	if (!m_config.HasAssetTaskRuntime())
+	{
+		Diagnostics::Fail(
+		    Logging::GetOrCreateLogger("Renderer.Concurrency"),
+		    __FILE__,
+		    __LINE__,
+		    "RendererExecutionConfig requires the application's TaskExecutor and root TaskScope");
+	}
 	Initialize();
 	m_resizeHandle = ScopedEventHandle(
 	    window.OnResized,
@@ -145,12 +153,6 @@ ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 	return m_publishedViewportProducts;
 }
 
-EditorTextureHandle RenderCoordinator::RegisterEditorTexture(std::uint64_t nativeTextureId)
-{
-	m_producerOwner.AssertAccess();
-	return GetSerialContext().GetPipeline().RegisterEditorTexture(nativeTextureId);
-}
-
 RhiImGuiRenderer& RenderCoordinator::GetSerialImGuiRenderer()
 {
 	m_producerOwner.AssertAccess();
@@ -209,18 +211,6 @@ RendererMemoryDiagnosticsSnapshot RenderCoordinator::CaptureMemoryDiagnostics()
 	    RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Memory, 0, completion}, completion));
 }
 
-void RenderCoordinator::WaitForIdle()
-{
-	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded())
-	{
-		GetSerialContext().GetSystems().GetBackend().WaitForIdle();
-		return;
-	}
-	auto completion = std::make_shared<RenderControlCompletion>();
-	(void) SubmitSynchronousControl(RenderWaitForIdleCommand{completion}, completion);
-}
-
 void RenderCoordinator::BeginSerialHostPresentation(const float clearColor[4])
 {
 	m_producerOwner.AssertAccess();
@@ -237,18 +227,6 @@ void RenderCoordinator::EndSerialHostPresentation()
 {
 	m_producerOwner.AssertAccess();
 	GetSerialContext().GetSystems().GetRenderHardwareInterface().GetPresentationService().EndPresentRenderPass();
-}
-
-ViewportPresentationProduct RenderCoordinator::BeginSerialViewportPresentation(RenderOutputFlags output)
-{
-	m_producerOwner.AssertAccess();
-	return GetSerialContext().GetPipeline().BeginViewportPresentation(output);
-}
-
-void RenderCoordinator::EndSerialViewportPresentation(RenderOutputFlags output)
-{
-	m_producerOwner.AssertAccess();
-	GetSerialContext().GetPipeline().EndViewportPresentation(output);
 }
 
 ViewportCaptureId RenderCoordinator::RequestViewportCapture(
@@ -299,7 +277,7 @@ void RenderCoordinator::InitializeSerial()
 	m_context = std::make_unique<RendererExecutionContext>(
 	    *m_window,
 	    m_backendConfiguration,
-	    m_config.EnableEditorRenderPackets);
+	    m_config);
 	SubmitResize();
 	PublishReadState();
 }
@@ -333,7 +311,7 @@ void RenderCoordinator::RenderThreadMain()
 		m_context = std::make_unique<RendererExecutionContext>(
 		    *m_window,
 		    m_backendConfiguration,
-		    m_config.EnableEditorRenderPackets);
+		    m_config);
 		{
 			std::lock_guard lock(m_startMutex);
 			m_startSucceeded = true;

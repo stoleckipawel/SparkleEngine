@@ -58,6 +58,11 @@ class D3D12ResourceService final : public RhiResourceService
 	    std::uint32_t strideInBytes,
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource) override;
+	bool WriteBufferResource(
+	    RhiOwnedResourceHandle resource,
+	    std::size_t destinationOffsetInBytes,
+	    const void* data,
+	    std::size_t sizeInBytes) noexcept override;
 	bool CreateIndexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,

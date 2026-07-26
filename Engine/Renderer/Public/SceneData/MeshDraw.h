@@ -1,13 +1,12 @@
 #pragma once
 
 #include "../RendererAPI.h"
+#include "Renderer/Public/Meshes/GpuMeshHandle.h"
 #include "Renderer/Public/SceneData/RenderMeshClassification.h"
 
 #include <DirectXMath.h>
 #include <cstdint>
 #include <limits>
-
-class GPUMesh;
 
 enum class MeshInstanceBatchSource : std::uint32_t
 {
@@ -39,12 +38,16 @@ struct SPARKLE_RENDERER_API MeshDrawSourceIdentity final
 {
 	std::uint32_t GpuSceneSlot = 0;
 	std::uint64_t MeshAssetId = 0;
+	std::uint32_t MeshGeneration = 0;
 };
 
 struct SPARKLE_RENDERER_API MeshDrawGeometry final
 {
 	RenderMeshKind MeshKind = RenderMeshKind::Static;
-	const GPUMesh* GpuMesh = nullptr;
+	GpuMeshHandle Mesh;
+	DirectX::XMFLOAT3 LocalBoundsMin = {};
+	DirectX::XMFLOAT3 LocalBoundsMax = {};
+	bool HasLocalBounds = false;
 };
 
 struct SPARKLE_RENDERER_API MeshDraw
@@ -58,7 +61,7 @@ struct SPARKLE_RENDERER_API MeshDraw
 
 struct SPARKLE_RENDERER_API MeshInstanceBatch
 {
-	const GPUMesh* gpuMesh = nullptr;
+	GpuMeshHandle Mesh;
 	std::uint32_t materialSlot = 0;
 	std::uint32_t firstInstance = 0;
 	std::uint32_t instanceCount = 0;

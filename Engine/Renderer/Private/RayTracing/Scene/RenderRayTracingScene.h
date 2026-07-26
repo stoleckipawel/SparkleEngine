@@ -14,6 +14,7 @@ namespace DirectX
 
 class RenderCommandContext;
 class RenderHardwareInterface;
+class GPUMeshCache;
 class PassExecutionDiagnostics;
 class RayTracingBlasCache;
 class RayTracingTopLevelAccelerationStructureStrategy;
@@ -23,7 +24,10 @@ struct RenderSceneData;
 class RenderRayTracingScene final
 {
   public:
-	RenderRayTracingScene(RenderHardwareInterface& renderHardwareInterface, const RayTracingCapabilityReport& capabilityReport) noexcept;
+	RenderRayTracingScene(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const GPUMeshCache& meshes,
+	    const RayTracingCapabilityReport& capabilityReport) noexcept;
 	~RenderRayTracingScene() noexcept;
 
 	RenderRayTracingScene(const RenderRayTracingScene&) = delete;

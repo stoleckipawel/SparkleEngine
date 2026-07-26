@@ -2,6 +2,7 @@
 
 #include "RayTracing/Acceleration/RayTracingBlasCache.h"
 
+#include "Meshes/GPUMeshCache.h"
 #include "Commands/RenderCommandContext.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Meshes/GPUMesh.h"
@@ -72,8 +73,31 @@ class RayTracingBlasCacheOperations final
 	}
 };
 
-RayTracingBlasCache::RayTracingBlasCache(RenderHardwareInterface& renderHardwareInterface) noexcept :
-    m_renderHardwareInterface(&renderHardwareInterface)
+bool RayTracingBlasCache::SkinnedEntryKey::operator==(
+    const SkinnedEntryKey& other) const noexcept
+{
+	return Mesh == other.Mesh &&
+	       GpuSceneSlot == other.GpuSceneSlot;
+}
+
+std::size_t
+RayTracingBlasCache::SkinnedEntryKeyHash::operator()(
+    const SkinnedEntryKey& key) const noexcept
+{
+	const std::size_t meshHash =
+	    std::hash<std::uint64_t>{}(key.Mesh.Value);
+	const std::size_t slotHash =
+	    std::hash<std::uint32_t>{}(key.GpuSceneSlot);
+	return meshHash ^
+	       (slotHash + 0x9e3779b9u + (meshHash << 6u) +
+	        (meshHash >> 2u));
+}
+
+RayTracingBlasCache::RayTracingBlasCache(
+    RenderHardwareInterface& renderHardwareInterface,
+    const GPUMeshCache& meshes) noexcept :
+    m_renderHardwareInterface(&renderHardwareInterface),
+    m_meshes(&meshes)
 {
 }
 
@@ -109,7 +133,7 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
 	++m_currentFrameStats.referencedMeshCount;
 
 	const RhiRayTracingGeometryDesc geometry = gpuMesh.GetRayTracingGeometry();
-	auto [it, inserted] = m_entries.try_emplace(&gpuMesh);
+	auto [it, inserted] = m_entries.try_emplace(gpuMesh.GetHandle());
 	Entry& entry = it->second;
 	entry.touchedThisFrame = true;
 
@@ -127,19 +151,26 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureBlas(
     RenderCommandContext& cmd,
     const RenderSceneData& sceneData,
     const MeshDraw& draw,
-    std::uint32_t renderInstanceIndex,
+    std::uint32_t gpuSceneSlot,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
 	if (RayTracingBlasCacheOperations::IsSkinnedDraw(draw))
 	{
-		return EnsureSkinnedBlas(cmd, sceneData, draw, renderInstanceIndex, diagnostics);
+		return EnsureSkinnedBlas(
+		    cmd,
+		    sceneData,
+		    draw,
+		    gpuSceneSlot,
+		    diagnostics);
 	}
 
-	if (draw.Geometry.GpuMesh == nullptr)
+	const GPUMesh* gpuMesh =
+	    m_meshes != nullptr ? m_meshes->Resolve(draw.Geometry.Mesh) : nullptr;
+	if (gpuMesh == nullptr)
 	{
 		return {};
 	}
-	return EnsureBlas(cmd, *draw.Geometry.GpuMesh, diagnostics);
+	return EnsureBlas(cmd, *gpuMesh, diagnostics);
 }
 
 RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildBlas(
@@ -183,10 +214,12 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureSkinnedBlas(
     RenderCommandContext& cmd,
     const RenderSceneData& sceneData,
     const MeshDraw& draw,
-    std::uint32_t renderInstanceIndex,
+    std::uint32_t gpuSceneSlot,
     RayTracingPerformanceDiagnostics* diagnostics) noexcept
 {
-	if (m_renderHardwareInterface == nullptr || draw.Geometry.GpuMesh == nullptr || !draw.Geometry.GpuMesh->IsValid())
+	const GPUMesh* gpuMesh =
+	    m_meshes != nullptr ? m_meshes->Resolve(draw.Geometry.Mesh) : nullptr;
+	if (m_renderHardwareInterface == nullptr || gpuMesh == nullptr || !gpuMesh->IsValid())
 	{
 		return {};
 	}
@@ -194,8 +227,8 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::EnsureSkinnedBlas(
 	++m_currentFrameStats.referencedMeshCount;
 
 	SkinnedEntryKey key{
-	    .Mesh = draw.Geometry.GpuMesh,
-	    .RenderInstanceIndex = renderInstanceIndex};
+	    .Mesh = draw.Geometry.Mesh,
+	    .GpuSceneSlot = gpuSceneSlot};
 	auto [it, inserted] = m_skinnedEntries.try_emplace(key);
 	(void)inserted;
 	Entry& entry = it->second;
@@ -245,6 +278,10 @@ void RayTracingBlasCache::Clear() noexcept
 	{
 		ReleaseEntryResources(entry);
 	}
+	for (auto& [key, entry] : m_skinnedEntries)
+	{
+		ReleaseEntryResources(entry);
+	}
 
 	m_entries.clear();
 	m_skinnedEntries.clear();
@@ -281,13 +318,15 @@ bool RayTracingBlasCache::BuildSkinnedGeometry(
     Entry& entry,
     RhiRayTracingGeometryDesc& outGeometry) noexcept
 {
-	if (m_renderHardwareInterface == nullptr || draw.Geometry.GpuMesh == nullptr ||
+	const GPUMesh* resolvedMesh =
+	    m_meshes != nullptr ? m_meshes->Resolve(draw.Geometry.Mesh) : nullptr;
+	if (m_renderHardwareInterface == nullptr || resolvedMesh == nullptr ||
 	    draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset)
 	{
 		return false;
 	}
 
-	const GPUMesh& gpuMesh = *draw.Geometry.GpuMesh;
+	const GPUMesh& gpuMesh = *resolvedMesh;
 	if (!gpuMesh.HasRayTracingHitData() || !gpuMesh.HasSkinInfluences() ||
 	    gpuMesh.GetRayTracingHitVertices().size() != gpuMesh.GetSkinInfluences().size() ||
 	    sceneData.jointMatrices.empty())

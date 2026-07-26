@@ -185,6 +185,7 @@ bool VulkanGpuMemoryAllocator::SupportsBudgetQueries() const noexcept
 
 RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() const
 {
+	m_owner.AssertAccess();
 	RhiMemoryUsageSnapshot snapshot;
 	if (m_impl == nullptr || m_impl->Allocator == nullptr)
 	{
@@ -454,9 +455,16 @@ std::unique_ptr<VulkanGpuAllocationRecord> VulkanGpuMemoryAllocator::CreateAlias
 	return record;
 }
 
-bool VulkanGpuMemoryAllocator::WriteAllocation(VulkanGpuAllocationRecord& record, const void* data, std::size_t sizeInBytes) noexcept
+bool VulkanGpuMemoryAllocator::WriteAllocation(
+    VulkanGpuAllocationRecord& record,
+    const void* data,
+    std::size_t sizeInBytes,
+    std::size_t destinationOffsetInBytes) noexcept
 {
-	if (m_impl == nullptr || m_impl->Allocator == nullptr || record.Allocation == nullptr || data == nullptr || sizeInBytes == 0)
+	if (m_impl == nullptr || m_impl->Allocator == nullptr ||
+	    record.Allocation == nullptr || data == nullptr || sizeInBytes == 0 ||
+	    destinationOffsetInBytes > record.ResourceSizeInBytes ||
+	    sizeInBytes > record.ResourceSizeInBytes - destinationOffsetInBytes)
 	{
 		return false;
 	}
@@ -470,8 +478,15 @@ bool VulkanGpuMemoryAllocator::WriteAllocation(VulkanGpuAllocationRecord& record
 
 	record.IsMapped = true;
 	record.CpuMappedAddress = mappedData;
-	std::memcpy(mappedData, data, sizeInBytes);
-	(void)vmaFlushAllocation(m_impl->Allocator, record.Allocation, 0, sizeInBytes);
+	std::memcpy(
+	    static_cast<std::byte*>(mappedData) + destinationOffsetInBytes,
+	    data,
+	    sizeInBytes);
+	(void)vmaFlushAllocation(
+	    m_impl->Allocator,
+	    record.Allocation,
+	    destinationOffsetInBytes,
+	    sizeInBytes);
 	vmaUnmapMemory(m_impl->Allocator, record.Allocation);
 	record.IsMapped = false;
 	record.CpuMappedAddress = nullptr;
@@ -480,6 +495,7 @@ bool VulkanGpuMemoryAllocator::WriteAllocation(VulkanGpuAllocationRecord& record
 
 VulkanGpuAllocationRecord* VulkanGpuMemoryAllocator::FindAllocationRecord(RhiResourceHandle resource) const noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr || !resource)
 	{
 		return nullptr;
@@ -504,6 +520,7 @@ VulkanGpuAllocationRecord* VulkanGpuMemoryAllocator::FindAllocationRecord(RhiRes
 
 VulkanGpuAllocationRecord* VulkanGpuMemoryAllocator::FindAllocationRecordByDeviceAddress(VkDeviceAddress deviceAddress) const noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr || deviceAddress == 0)
 	{
 		return nullptr;
@@ -523,6 +540,7 @@ VulkanGpuAllocationRecord* VulkanGpuMemoryAllocator::FindAllocationRecordByDevic
 
 void VulkanGpuMemoryAllocator::QueueDestroyResource(std::unique_ptr<VulkanGpuAllocationRecord> record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr || record == nullptr)
 	{
 		return;
@@ -534,6 +552,7 @@ void VulkanGpuMemoryAllocator::QueueDestroyResource(std::unique_ptr<VulkanGpuAll
 
 void VulkanGpuMemoryAllocator::QueueDestroyMemoryBlock(std::unique_ptr<VulkanGpuMemoryBlockRecord> record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr || record == nullptr)
 	{
 		return;
@@ -546,6 +565,7 @@ void VulkanGpuMemoryAllocator::QueueDestroyMemoryBlock(std::unique_ptr<VulkanGpu
 void VulkanGpuMemoryAllocator::DrainCompletedReleases(
 	const std::array<std::uint64_t, RhiQueueTypeCount>& completedValues) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr)
 	{
 		return;
@@ -750,6 +770,7 @@ void VulkanGpuMemoryAllocator::SetMemoryBlockDebugName(VulkanGpuMemoryBlockRecor
 
 void VulkanGpuMemoryAllocator::RegisterAllocationRecord(VulkanGpuAllocationRecord& record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr)
 	{
 		return;
@@ -764,6 +785,7 @@ void VulkanGpuMemoryAllocator::RegisterAllocationRecord(VulkanGpuAllocationRecor
 
 void VulkanGpuMemoryAllocator::UnregisterAllocationRecord(VulkanGpuAllocationRecord& record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr)
 	{
 		return;
@@ -776,6 +798,7 @@ void VulkanGpuMemoryAllocator::UnregisterAllocationRecord(VulkanGpuAllocationRec
 
 void VulkanGpuMemoryAllocator::RegisterMemoryBlockRecord(VulkanGpuMemoryBlockRecord& record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr)
 	{
 		return;
@@ -790,6 +813,7 @@ void VulkanGpuMemoryAllocator::RegisterMemoryBlockRecord(VulkanGpuMemoryBlockRec
 
 void VulkanGpuMemoryAllocator::UnregisterMemoryBlockRecord(VulkanGpuMemoryBlockRecord& record) noexcept
 {
+	m_owner.AssertAccess();
 	if (m_impl == nullptr)
 	{
 		return;

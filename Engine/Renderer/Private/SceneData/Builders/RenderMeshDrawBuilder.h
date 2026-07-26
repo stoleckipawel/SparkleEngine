@@ -11,7 +11,6 @@ class RenderWorld;
 struct RenderFrameDynamicData;
 struct RenderSceneData;
 struct MeshRenderItem;
-struct MeshInstanceBatchBuildResult;
 
 // Converts immutable render proxies and per-frame object state into GPU-ready mesh draws.
 // This capability exclusively owns mesh temporal history; scene orchestration does not.
@@ -34,9 +33,9 @@ class RenderMeshDrawBuilder final
 	    std::vector<MeshRenderItem>& outItems,
 	    std::map<RenderObjectId, DirectX::XMFLOAT4X4>& outCurrentWorldMatrices);
 	void BuildBatches(const RenderWorld& world, std::vector<MeshRenderItem> items, RenderSceneData& sceneData) const;
-	void PublishWorkload(const RenderWorld& world, const MeshInstanceBatchBuildResult& result, RenderSceneData& sceneData) const;
+	void PublishWorkload(RenderSceneData& sceneData) const;
 
-	GPUMeshCache* m_gpuMeshCache = nullptr;
+	GPUMeshCache& m_gpuMeshCache;
 	std::map<RenderObjectId, DirectX::XMFLOAT4X4> m_previousWorldMatrices;
 	std::map<RenderObjectId, std::vector<DirectX::XMFLOAT4X4>> m_previousSkinningMatrices;
 	std::map<RenderObjectId, std::vector<DirectX::XMFLOAT4X4>> m_currentSkinningMatrices;

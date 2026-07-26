@@ -32,7 +32,7 @@ struct RayTracingPtlasPartitionPlanner::ObservedInstance final
 {
 	const MeshDraw* Draw = nullptr;
 	std::uint32_t RenderInstanceIndex = 0;
-	std::uint32_t StableIndex = 0;
+	std::uint32_t GpuSceneSlot = 0;
 	std::uint32_t LocalPartitionId = 0;
 	std::uint32_t PreviousPartitionId = 0;
 	bool DirtyTransform = false;
@@ -73,22 +73,21 @@ DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::TransformPoint(
 RayTracingPtlasPartitionPlanner::InstanceBounds RayTracingPtlasPartitionPlanner::ComputeInstanceWorldBounds(
     const MeshDraw& draw) noexcept
 	{
-		if (draw.Geometry.GpuMesh == nullptr || !draw.Geometry.GpuMesh->GetLocalBounds().Valid)
+		if (!draw.Geometry.Mesh || !draw.Geometry.HasLocalBounds)
 		{
 			const DirectX::XMFLOAT3 position{draw.Transform.WorldMatrix._41, draw.Transform.WorldMatrix._42, draw.Transform.WorldMatrix._43};
 			return InstanceBounds{.Min = position, .Max = position, .Valid = true};
 		}
 
-		const GPUMeshBounds& localBounds = draw.Geometry.GpuMesh->GetLocalBounds();
 		const DirectX::XMFLOAT3 corners[] = {
-		    {localBounds.Min.x, localBounds.Min.y, localBounds.Min.z},
-		    {localBounds.Max.x, localBounds.Min.y, localBounds.Min.z},
-		    {localBounds.Min.x, localBounds.Max.y, localBounds.Min.z},
-		    {localBounds.Max.x, localBounds.Max.y, localBounds.Min.z},
-		    {localBounds.Min.x, localBounds.Min.y, localBounds.Max.z},
-		    {localBounds.Max.x, localBounds.Min.y, localBounds.Max.z},
-		    {localBounds.Min.x, localBounds.Max.y, localBounds.Max.z},
-		    {localBounds.Max.x, localBounds.Max.y, localBounds.Max.z}};
+		    {draw.Geometry.LocalBoundsMin.x, draw.Geometry.LocalBoundsMin.y, draw.Geometry.LocalBoundsMin.z},
+		    {draw.Geometry.LocalBoundsMax.x, draw.Geometry.LocalBoundsMin.y, draw.Geometry.LocalBoundsMin.z},
+		    {draw.Geometry.LocalBoundsMin.x, draw.Geometry.LocalBoundsMax.y, draw.Geometry.LocalBoundsMin.z},
+		    {draw.Geometry.LocalBoundsMax.x, draw.Geometry.LocalBoundsMax.y, draw.Geometry.LocalBoundsMin.z},
+		    {draw.Geometry.LocalBoundsMin.x, draw.Geometry.LocalBoundsMin.y, draw.Geometry.LocalBoundsMax.z},
+		    {draw.Geometry.LocalBoundsMax.x, draw.Geometry.LocalBoundsMin.y, draw.Geometry.LocalBoundsMax.z},
+		    {draw.Geometry.LocalBoundsMin.x, draw.Geometry.LocalBoundsMax.y, draw.Geometry.LocalBoundsMax.z},
+		    {draw.Geometry.LocalBoundsMax.x, draw.Geometry.LocalBoundsMax.y, draw.Geometry.LocalBoundsMax.z}};
 
 		InstanceBounds worldBounds{};
 		for (const DirectX::XMFLOAT3& corner : corners)
@@ -311,7 +310,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		    ObservedInstance{
 		        .Draw = &draw,
 		        .RenderInstanceIndex = renderInstanceIndex,
-		        .StableIndex = stableIndex,
+		        .GpuSceneSlot = stableIndex,
 		        .LocalPartitionId = localPartitionId,
 		        .PreviousPartitionId = previous != nullptr ? previous->PartitionId : localPartitionId,
 		        .DirtyTransform = dirtyTransform,
@@ -358,9 +357,8 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		RayTracingPtlasPartitionEntry entry{
 		    .Identity =
 		        RayTracingPtlasPartitionEntryIdentity{
-		            .StableInstanceIndex = observed.StableIndex,
 		            .RenderInstanceIndex = observed.RenderInstanceIndex,
-		            .GpuSceneSlot = draw.Source.GpuSceneSlot},
+		            .GpuSceneSlot = observed.GpuSceneSlot},
 		    .Assignment =
 		        RayTracingPtlasPartitionAssignment{
 		            .PartitionId = partitionId,
@@ -388,7 +386,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 				plan.Counts.MaxInstancesPerPartition = (std::max)(plan.Counts.MaxInstancesPerPartition, instanceCount);
 			}
 		}
-		nextPrevious[observed.StableIndex] = PreviousInstanceState{
+		nextPrevious[observed.GpuSceneSlot] = PreviousInstanceState{
 		    .WorldMatrix = draw.Transform.WorldMatrix,
 		    .LocalPartitionId = observed.LocalPartitionId,
 		    .PartitionId = partitionId,

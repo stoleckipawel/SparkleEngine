@@ -8,6 +8,7 @@
 #include "RayTracing/Scene/RenderRayTracingPassServices.h"
 
 class RenderHardwareInterface;
+class GPUMeshCache;
 class TextureManager;
 
 // Stable execute-time runtime services exposed to FrameGraph passes.
@@ -23,6 +24,7 @@ struct PassRuntimeServices
 	const PipelineStateManager& RuntimeManager;
 	const PerFrameConstantBufferData& PerFrame;
 	FrameHistoryValidity History = {};
+	const GPUMeshCache* Meshes = nullptr;
 	const TextureManager* Textures = nullptr;
 	const RenderRayTracingPassServices* RayTracing = nullptr;
 	const RendererImageProviderPassServices* ImageProviders = nullptr;

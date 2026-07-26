@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Public/Threading/ThreadOwnership.h"
 #include "Memory/RhiMemoryDiagnostics.h"
 #include "Memory/RhiMemoryTypes.h"
 #include "Resources/RhiResourceDesc.h"
@@ -55,7 +56,11 @@ class VulkanGpuMemoryAllocator final
 	    std::uint64_t memoryBlockOffset,
 	    const VkBufferCreateInfo& bufferCreateInfo,
 	    std::wstring_view debugName) noexcept;
-	bool WriteAllocation(VulkanGpuAllocationRecord& record, const void* data, std::size_t sizeInBytes) noexcept;
+	bool WriteAllocation(
+	    VulkanGpuAllocationRecord& record,
+	    const void* data,
+	    std::size_t sizeInBytes,
+	    std::size_t destinationOffsetInBytes = 0) noexcept;
 	VulkanGpuAllocationRecord* FindAllocationRecord(RhiResourceHandle resource) const noexcept;
 	VulkanGpuAllocationRecord* FindAllocationRecordByDeviceAddress(VkDeviceAddress deviceAddress) const noexcept;
 
@@ -104,5 +109,6 @@ class VulkanGpuMemoryAllocator final
 	friend void SetVulkanMemoryBlockRecordDebugName(VulkanGpuMemoryBlockRecord& record, std::wstring_view debugName) noexcept;
 
 	VulkanRhi& m_rhi;
+	Threading::OwnerThread m_owner{"Vulkan GPU memory allocator"};
 	std::unique_ptr<Impl> m_impl;
 };

@@ -3,10 +3,10 @@
 Status: proposed target architecture and implementation program
 Date: 2026-07-16
 Last adversarial conformance review: 2026-07-18
-Last NVIDIA/AMD/Epic naming review: 2026-07-18 (repository revisions pinned in the source matrix)
+Last external architecture naming review: 2026-07-18 (repository revisions pinned in the source matrix)
 Last persistent-identity source review: 2026-07-21 (NVIDIA/AMD revisions pinned in the source trail)
-Last NVIDIA Principal Developer Technology role review: 2026-07-24 (requirements `NV-PDTE-01` through `NV-PDTE-15`)
-Scope: runtime, renderer, RHI, editor, asset and shader tools, principal developer-technology evidence, learning evidence, and portfolio presentation
+Last principal graphics engineering requirements review: 2026-07-24 (requirements `PGE-01` through `PGE-15`)
+Scope: runtime, renderer, RHI, editor, asset and shader tools, principal graphics engineering evidence, learning evidence, and portfolio presentation
 Governing requirements: [A. Principal Rendering Requirements](A_PrincipalRenderingRequirements.md), [E. External Renderer Repository Comparison](E_ExternalRendererRepositoryComparison.md), [G. Advanced Graphics Engine Executive Summary](G_AdvancedGraphicsEngineExecutiveSummary.md), and [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md)
 Repository context: [D. Whole Repository Architecture Map](D_WholeRepositoryArchitectureMap.md)
 Implementation companion: [K. Multithreaded Engine Implementation Prompt Series](K_MultithreadedEngineImplementationPromptSeries.md)
@@ -241,31 +241,31 @@ Unless a section explicitly says “Current,” architectural descriptions are r
 | H: learn multithreading by useful production work | Renderer-only evidence would not prove lifecycle/editor/gameplay understanding | Use existing animation plus a needed async scene-load/editor-operation path to demonstrate distinct concurrency patterns | Code, stress tests, captures, and live cancel/fail/reload demo |
 | H: every addition simplifies nearby code | Present in some stage deletion lists, not global | Make simplification a program-level completion gate | Legacy futures, snapshots, waits, pools, and host paths removed |
 
-### NVIDIA Principal Developer Technology Additive Conformance
+### Principal Graphics Engineering Additive Conformance
 
-The supplied NVIDIA Principal Developer Technology Engineer posting raises the complete-program evidence bar. The canonical interpretation is defined by `NV-PDTE-01` through `NV-PDTE-15` in H. J and K remain the ownership/concurrency foundation; they are now prerequisites for a later path-tracing, neural-graphics, hardware/driver, and technology-transfer evidence program rather than the final portfolio ceiling.
+The supplied principal graphics engineering role set raises the complete-program evidence bar. The canonical interpretation is defined by `PGE-01` through `PGE-15` in A; H defines the target persona. J and K remain the ownership/concurrency foundation; they are prerequisites for the path-tracing, neural-graphics, hardware/driver, and technology-transfer evidence program rather than the final portfolio ceiling.
 
 | Role requirement | J/K foundation | Additive target after the foundation | Evidence gate |
 |---|---|---|---|
-| `NV-PDTE-01` partner adoption | Narrow packets, providers, editor commands, packages, deterministic tools | Apply one advanced feature to partner-shaped constraints and make adoption/debug/fallback explicit | Integration case study, handoff guide, reduced issue reproducer, measured result |
-| `NV-PDTE-02` path tracing | RT preservation, frame graph, persistent GPU scene, parallel recording | Own one representative path-traced workload from math and scene inputs to backend/hardware result | Paired API validation, reference images, quality/perf/memory/latency captures |
-| `NV-PDTE-03` neural graphics | Tensor-like ABI readiness and clean feature boundaries | Implement one real model/operator renderer feature that replaces or improves a classical path | Real artifact and inference, classical fallback, quality/performance frontier |
-| `NV-PDTE-04` neural algorithm/model tuning | DOD, task DAG, shader/cook pipeline, profiler discipline | Tune model/operator/layout/precision/dispatch from measured bottlenecks | Shapes/layout/precision record, ablation, per-stage profile, retained negative results |
-| `NV-PDTE-05` fluid system performance | Correlated frame identity, pacing, bounded background/frame work | Evaluate rendering plus AI workload contention under product latency and memory budgets | CPU/GPU timeline, p50/p95/p99, frame pacing, input-to-present, memory high-water |
-| `NV-PDTE-06` hardware/driver collaboration | Explicit RHI, capability state, native validation, incident practice | Classify current architecture/driver behavior and create a minimal external-quality reproducer | Exact adapter/driver/config, captures, disassembly/counters where useful, scoped conclusion |
-| `NV-PDTE-07` C++/debugging | Ownership architecture, SOLID/DOD gates, incident reports | Apply the same bar to neural/path-tracing implementation and integration code | Reviewable code, tests, sanitizer/native validation, implementation-shape reconciliation |
-| `NV-PDTE-08` mathematics | Deterministic algorithms and shader correctness | Derive estimators, transforms, filters, gradients, metrics, stability, and cost models | Math/reference note, executable values, error bounds, prediction versus measurement |
-| `NV-PDTE-09` APIs/shaders | D3D12/Vulkan and HLSL/Slang/DXIL/SPIR-V contracts | Demonstrate feature parity/fallback and shader/kernel inspection on the chosen feature | Backend captures, shader disassembly/reflection, state/synchronization explanation |
-| `NV-PDTE-10` CPU/GPU architecture | Topology, cache, false sharing, waves, bandwidth, queue analysis | Connect counters/disassembly and workload scaling to a concrete optimization decision | Causal A/B experiments and architecture-specific conclusion |
-| `NV-PDTE-11` AI fundamentals/tools | Structured immutable inputs and verified code process | Document model/data/loss/generalization/export/deployment and verify AI-assisted work independently | Model card/provenance, validation split, export tests, code/math/source review |
-| `NV-PDTE-12` training/inference | Bounded offline tasks and runtime publication | Profile training/offline preparation separately from low-latency inference | Precision/batch/memory/concurrency sweeps and deterministic published artifact |
-| `NV-PDTE-13` innovation/communication/leadership | Teach-backs, evidence reports, honest limitations | Test one bounded GPU/research hypothesis, keep or delete it from evidence, then turn completed strategic work into adoption, demo, whitepaper and talk material | Hypothesis/rejected alternatives, product/deletion decision, reproducible live demo, concise paper-quality note, talk outline, priority ledger |
-| `NV-PDTE-14` Windows/Linux driver readiness | Windows/D3D12 and Vulkan backend ownership | Preserve a clean platform seam and claim Linux only after a complete native Linux/Vulkan slice | Platform audit; native build/run/validation/capture/package evidence before support wording |
-| `NV-PDTE-15` principal maturity | Full ownership program and adversarial defense | Repeat end-to-end judgment across rendering, neural, performance, driver, and partner concerns | Multiple independently reproducible vertical slices and incidents |
+| `PGE-01` partner adoption | Narrow packets, providers, editor commands, packages, deterministic tools | Apply one advanced feature to partner-shaped constraints and make adoption/debug/fallback explicit | Integration case study, handoff guide, reduced issue reproducer, measured result |
+| `PGE-02` path tracing | RT preservation, frame graph, persistent GPU scene, parallel recording | Own one representative path-traced workload from math and scene inputs to backend/hardware result | Paired API validation, reference images, quality/perf/memory/latency captures |
+| `PGE-03` neural graphics | Tensor-like ABI readiness and clean feature boundaries | Implement one real model/operator renderer feature that replaces or improves a classical path | Real artifact and inference, classical fallback, quality/performance frontier |
+| `PGE-04` neural algorithm/model tuning | DOD, task DAG, shader/cook pipeline, profiler discipline | Tune model/operator/layout/precision/dispatch from measured bottlenecks | Shapes/layout/precision record, ablation, per-stage profile, retained negative results |
+| `PGE-05` fluid system performance | Correlated frame identity, pacing, bounded background/frame work | Evaluate rendering plus AI workload contention under product latency and memory budgets | CPU/GPU timeline, p50/p95/p99, frame pacing, input-to-present, memory high-water |
+| `PGE-06` hardware/driver collaboration | Explicit RHI, capability state, native validation, incident practice | Classify current architecture/driver behavior and create a minimal external-quality reproducer | Exact adapter/driver/config, captures, disassembly/counters where useful, scoped conclusion |
+| `PGE-07` C++/debugging | Ownership architecture, SOLID/DOD gates, incident reports | Apply the same bar to neural/path-tracing implementation and integration code | Reviewable code, tests, sanitizer/native validation, implementation-shape reconciliation |
+| `PGE-08` mathematics | Deterministic algorithms and shader correctness | Derive estimators, transforms, filters, gradients, metrics, stability, and cost models | Math/reference note, executable values, error bounds, prediction versus measurement |
+| `PGE-09` APIs/shaders | D3D12/Vulkan and HLSL/Slang/DXIL/SPIR-V contracts | Demonstrate feature parity/fallback and shader/kernel inspection on the chosen feature | Backend captures, shader disassembly/reflection, state/synchronization explanation |
+| `PGE-10` CPU/GPU architecture | Topology, cache, false sharing, waves, bandwidth, queue analysis | Connect counters/disassembly and workload scaling to a concrete optimization decision | Causal A/B experiments and architecture-specific conclusion |
+| `PGE-11` AI fundamentals/tools | Structured immutable inputs and verified code process | Document model/data/loss/generalization/export/deployment and verify AI-assisted work independently | Model card/provenance, validation split, export tests, code/math/source review |
+| `PGE-12` training/inference | Bounded offline tasks and runtime publication | Profile training/offline preparation separately from low-latency inference | Precision/batch/memory/concurrency sweeps and deterministic published artifact |
+| `PGE-13` innovation/communication/leadership | Teach-backs, evidence reports, honest limitations | Test one bounded GPU/research hypothesis, keep or delete it from evidence, then turn completed strategic work into adoption, demo, whitepaper and talk material | Hypothesis/rejected alternatives, product/deletion decision, reproducible live demo, concise paper-quality note, talk outline, priority ledger |
+| `PGE-14` Windows/Linux driver readiness | Windows/D3D12 and Vulkan backend ownership | Preserve a clean platform seam and claim Linux only after a complete native Linux/Vulkan slice | Platform audit; native build/run/validation/capture/package evidence before support wording |
+| `PGE-15` principal maturity | Full ownership program and adversarial defense | Repeat end-to-end judgment across rendering, neural, performance, driver, and partner concerns | Multiple independently reproducible vertical slices and incidents |
 
 Binding rules:
 
-- Completion of Prompt 29 proves the multithreading and systems foundation, not all `NV-PDTE-*` evidence.
+- Completion of Prompt 29 proves the multithreading and systems foundation, not all `PGE-*` evidence.
 - The final role target requires a real neural graphics result. A mock model, provider switch, tensor container, shader micro-demo, or design note is insufficient.
 - Training/offline model work is isolated from runtime packages. Runtime receives deterministic validated immutable artifacts.
 - Neural quality and performance are inseparable: report a classical baseline, dataset/workload scope, visual failures, quality metric, CPU/GPU latency, memory, and frame pacing.
@@ -4682,13 +4682,13 @@ Exit criteria:
 - D3D12/Vulkan and AMD/NVIDIA captures support causal claims and explicitly record hardware/configuration limitations
 - the owner can explain memory model, OS scheduling, CPU/GPU queue synchronization, frame latency, and production diagnosis under adversarial questioning
 
-### Stage 10 - Principal Developer Technology Evidence
+### Stage 10 - Principal Graphics Engineering Evidence
 
 This stage begins only after Stage 9 and Prompt 29 close the ownership, data, concurrency, renderer, RHI, reliability and evidence foundations. It must not destabilize those contracts.
 
 Goals:
 
-- close `NV-PDTE-01` through `NV-PDTE-15` with real Sparkle work rather than role-shaped scaffolding;
+- close `PGE-01` through `PGE-15` with real Sparkle work rather than role-shaped scaffolding;
 - prove one path-traced workload from math through GPU/driver result;
 - deliver one real neural graphics replacement feature with deterministic training/export and optimized runtime inference;
 - demonstrate partner adoption, architecture/driver diagnosis and principal-quality communication.
@@ -5319,9 +5319,9 @@ This program is complete when all of the following are true:
 - AMD/NVIDIA-relevant captures include optimized-build CPU scheduling, D3D12/Vulkan recording, AMD GPU queue/barrier behavior where hardware is available, and NVIDIA/system CPU-GPU timelines where available; unavailable hardware is stated, never simulated as proof
 - the owner can complete the expert question bank, bounded-queue atomic coding drill, task-DAG analysis, native recording review, and trace diagnosis without relying on memorized slogans
 
-### Principal Developer Technology Evidence
+### Principal Graphics Engineering Evidence
 
-- every `NV-PDTE-01` through `NV-PDTE-15` row has code/capture/artifact evidence, a truthful credential/non-code boundary, or an explicit blocked/unavailable status;
+- every `PGE-01` through `PGE-15` row has code/capture/artifact evidence, a truthful credential/non-code boundary, or an explicit blocked/unavailable status;
 - at least one path-traced workload is defended from math and scene data through shaders, frame graph, RHI, GPU execution, image result and system latency;
 - at least one real neural graphics feature executes a real model/operator path and reports deterministic artifact provenance, classical fallback, visual failures, quality, CPU/GPU latency, memory and frame pacing;
 - training/offline preparation and runtime inference have separate owners, dependency/package surfaces, profiles and optimization decisions;

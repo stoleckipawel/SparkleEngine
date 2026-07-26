@@ -8,6 +8,7 @@
 #include "Camera/RenderCamera.h"
 #include "RayTracing/Scene/RenderRayTracingScene.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
+#include "SceneData/GpuScene/PersistentRenderGpuScene.h"
 #include "SceneData/RenderWorld.h"
 #include "SceneData/RenderSceneGpuData.h"
 
@@ -42,6 +43,7 @@ FrameContext BuildFrameContext(
     const RenderWorld& world,
     const RenderFrameDynamicData& dynamic,
     PersistentRenderGpuScene& gpuScene,
+    std::uint32_t frameIndex,
     const RenderCamera& renderCamera,
     RenderViewportExtent sceneExtent,
     RenderSceneDataBuilder& renderSceneDataBuilder,
@@ -56,7 +58,8 @@ FrameContext BuildFrameContext(
 	{
 		renderRayTracingScene->PlanFrame(frame.sceneData, cameraData.Position);
 	}
-	frame.sceneGpuData = &gpuScene.Update(frame.sceneData);
+	frame.sceneGpuData =
+	    &gpuScene.Update(frame.sceneData, frameIndex);
 	const RhiViewport sceneViewport = FrameContextOperations::BuildSceneViewport(sceneExtent);
 	frame.mainView = perViewDataBuilder.BuildView(cameraData, sceneViewport, FrameContextOperations::BuildSceneScissorRect(sceneExtent));
 	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(

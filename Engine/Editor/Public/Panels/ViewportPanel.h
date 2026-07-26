@@ -22,7 +22,7 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	void SetSideInsets(float leftInsetPixels, float rightInsetPixels) noexcept;
 	void SetRequestedExtent(RenderViewportExtent extent) noexcept;
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
-	void SetSceneColorTextureId(std::uint64_t textureId) noexcept;
+	void SetSceneColorTexture(EditorTextureHandle texture) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
 	InputLayer GetTargetInputLayer() const noexcept { return InputLayer::Gameplay; }
 	bool GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept;
@@ -38,7 +38,7 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	float m_bottomInsetPixels = 0.0f;
 	float m_leftInsetPixels = 320.0f;
 	float m_rightInsetPixels = 456.0f;
-	std::uint64_t m_sceneColorTextureId = 0;
+	EditorTextureHandle m_sceneColorTexture;
 	float m_inputLeft = 0.0f;
 	float m_inputTop = 0.0f;
 	float m_inputRight = 0.0f;

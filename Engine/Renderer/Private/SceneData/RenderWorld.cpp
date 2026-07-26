@@ -1,7 +1,20 @@
 #include "PCH.h"
 #include "SceneData/RenderWorld.h"
 
+#include "SceneData/GpuScene/GpuSceneSlotAllocator.h"
+
 #include <set>
+#include <utility>
+
+RenderWorld::RenderWorld(
+    RhiCommandSubmissionService* submissionService) :
+	m_gpuSceneSlots(
+	    std::make_unique<GpuSceneSlotAllocator>(
+	        submissionService))
+{
+}
+
+RenderWorld::~RenderWorld() noexcept = default;
 
 RenderWorldApplyStatus RenderWorld::Apply(const RenderWorldDelta& delta, std::string& diagnostic)
 {
@@ -10,10 +23,12 @@ RenderWorldApplyStatus RenderWorld::Apply(const RenderWorldDelta& delta, std::st
 
 	if (delta.ResetScene)
 	{
+		for (const auto& [object, proxy] : m_proxies)
+		{
+			(void)object;
+			m_gpuSceneSlots->Retire(proxy.GpuSceneSlot);
+		}
 		m_proxies.clear();
-		m_availableGpuSceneSlots.clear();
-		m_retiredGpuSceneSlots.clear();
-		m_nextGpuSceneSlot = 0;
 		m_historyReset = true;
 	}
 	if (delta.ResetScene || !delta.Creates.empty() || !delta.Updates.empty() ||
@@ -110,9 +125,8 @@ void RenderWorld::ApplyDestroys(const RenderWorldDelta& delta)
 		{
 			continue;
 		}
-		RetireGpuSceneSlot(
-		    proxy->second.GpuSceneSlot,
-		    delta.SequenceNumber);
+		m_gpuSceneSlots->Retire(
+		    proxy->second.GpuSceneSlot);
 		m_proxies.erase(proxy);
 	}
 }
@@ -125,45 +139,7 @@ void RenderWorld::ApplyCreates(const RenderWorldDelta& delta)
 		    RenderProxy{
 		        create.Object,
 		        create.Static,
-		        AllocateGpuSceneSlot(delta.SequenceNumber)});
-}
-
-std::uint32_t RenderWorld::AllocateGpuSceneSlot(
-    std::uint64_t sequenceNumber)
-{
-	constexpr std::uint64_t retirementDistance = 3;
-	for (std::size_t index = 0; index < m_retiredGpuSceneSlots.size();)
-	{
-		const RetiredGpuSceneSlot& retired =
-		    m_retiredGpuSceneSlots[index];
-		if (sequenceNumber <=
-		    retired.SequenceNumber + retirementDistance)
-		{
-			++index;
-			continue;
-		}
-		m_availableGpuSceneSlots.push_back(retired.Slot);
-		m_retiredGpuSceneSlots.erase(
-		    m_retiredGpuSceneSlots.begin() + index);
-	}
-	if (!m_availableGpuSceneSlots.empty())
-	{
-		const std::uint32_t slot =
-		    m_availableGpuSceneSlots.back();
-		m_availableGpuSceneSlots.pop_back();
-		return slot;
-	}
-	return m_nextGpuSceneSlot++;
-}
-
-void RenderWorld::RetireGpuSceneSlot(
-    std::uint32_t slot,
-    std::uint64_t sequenceNumber)
-{
-	m_retiredGpuSceneSlots.push_back(
-	    RetiredGpuSceneSlot{
-	        .Slot = slot,
-	        .SequenceNumber = sequenceNumber});
+		        m_gpuSceneSlots->Allocate()});
 }
 
 void RenderWorld::ApplyUpdates(const RenderWorldDelta& delta)
@@ -187,4 +163,9 @@ const RenderProxy* RenderWorld::Find(RenderObjectId object) const noexcept
 {
 	const auto iterator = m_proxies.find(object);
 	return iterator == m_proxies.end() ? nullptr : &iterator->second;
+}
+
+bool RenderWorld::ConsumeHistoryReset() noexcept
+{
+	return std::exchange(m_historyReset, false);
 }

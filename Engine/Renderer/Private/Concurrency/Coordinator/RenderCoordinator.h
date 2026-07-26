@@ -43,7 +43,6 @@ class RenderCoordinator final
 	void RenderSerialUiFrame(RendererSerialUiCallback composeUi, void* context);
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
-	EditorTextureHandle RegisterEditorTexture(std::uint64_t nativeTextureId);
 	RhiImGuiRenderer& GetSerialImGuiRenderer();
 	CookedShaderReloadResult ReloadCookedShaders();
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
@@ -51,12 +50,9 @@ class RenderCoordinator final
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId);
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics();
-	void WaitForIdle();
 	void BeginSerialHostPresentation(const float clearColor[4]);
 	void BeginSerialHostOverlayPresentation();
 	void EndSerialHostPresentation();
-	ViewportPresentationProduct BeginSerialViewportPresentation(RenderOutputFlags output);
-	void EndSerialViewportPresentation(RenderOutputFlags output);
 	ViewportCaptureId RequestViewportCapture(ViewportCaptureRequest request);
 	bool TryTakeViewportCapture(ViewportCaptureReadback& readback);
 

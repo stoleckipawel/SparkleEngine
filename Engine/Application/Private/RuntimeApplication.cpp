@@ -103,6 +103,8 @@ void RuntimeApplication::Initialize()
 			                          ? RendererExecutionMode::ThreadedZeroAhead
 			                          : RendererExecutionMode::ThreadedOneAhead;
 		rendererConfig.EnableEditorRenderPackets = m_options.EnableEditorRenderPackets;
+		rendererConfig.AssetTaskExecutor = &m_taskRuntime->GetExecutor();
+		rendererConfig.ApplicationTaskScope = &m_taskRuntime->GetApplicationScope();
 		m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, rendererConfig);
 	}
 

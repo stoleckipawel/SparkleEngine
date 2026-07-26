@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <vector>
 
-class GPUMesh;
 struct MeshRenderItem final
 {
 	MeshDraw draw;
@@ -43,7 +42,7 @@ class MeshInstanceBatchBuilder final
   private:
 	struct BatchKey final
 	{
-		const GPUMesh* gpuMesh = nullptr;
+		GpuMeshHandle Mesh;
 		MaterialGpuHandle materialGpuHandle = {};
 		std::uint32_t materialSlot = 0;
 		std::uint64_t skeletonAssetId = 0;

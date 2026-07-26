@@ -19,6 +19,7 @@ void AddRasterizedGBufferPass(
 	parameters->MotionVector = builder.CreateRenderTarget(targets.MotionVector);
 	parameters->DeviceZ = builder.CreateDepthTarget(targets.DeviceZ);
 	parameters->MeshInstances = builder.CreateSRV<MeshInstanceData>(externalResources.Scene.Geometry.MeshInstances);
+	parameters->MeshInstanceSlots = builder.CreateSRV<std::uint32_t>(externalResources.Scene.Geometry.MeshInstanceSlots);
 	parameters->JointMatrices = builder.CreateSRV<JointMatrixData>(externalResources.Scene.Geometry.JointMatrices);
 	parameters->PreviousJointMatrices = builder.CreateSRV<JointMatrixData>(externalResources.Scene.Geometry.PreviousJointMatrices);
 	builder.Draw<GBufferPass>(parameters);

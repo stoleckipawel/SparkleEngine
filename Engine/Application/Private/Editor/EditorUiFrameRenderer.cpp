@@ -11,7 +11,7 @@ void EditorUiFrameRenderer::Render(RuntimeApplication& runtime, Renderer& render
 	const ViewportRenderProducts products = runtime.GetViewportRenderProducts();
 	ui.SetViewportRenderProducts(products);
 	const RenderProduct* sceneColor = products.FindProduct(RenderOutputFlags::SceneColor);
-	ui.SetViewportSceneColorTextureId(
+	ui.SetViewportSceneColorTexture(
 	    sceneColor != nullptr ? sceneColor->EditorTexture : EditorTextureHandle{});
 	ui.Update();
 	renderer.SubmitEditorRenderPacket(ui.ConsumeRenderPacket());

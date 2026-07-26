@@ -1,12 +1,15 @@
 #pragma once
 
+#include "Renderer/Public/Meshes/GpuMeshHandle.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <unordered_map>
 
 class GPUMesh;
+class GPUMeshCache;
 class RayTracingPerformanceDiagnostics;
 class RenderCommandContext;
 class RenderHardwareInterface;
@@ -32,7 +35,9 @@ class RayTracingBlasCache final
 		std::uint32_t reusedBlasCount = 0;
 	};
 
-	explicit RayTracingBlasCache(RenderHardwareInterface& renderHardwareInterface) noexcept;
+	RayTracingBlasCache(
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const GPUMeshCache& meshes) noexcept;
 	~RayTracingBlasCache() noexcept;
 
 	RayTracingBlasCache(const RayTracingBlasCache&) = delete;
@@ -49,7 +54,7 @@ class RayTracingBlasCache final
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,
 	    const MeshDraw& draw,
-	    std::uint32_t renderInstanceIndex,
+	    std::uint32_t gpuSceneSlot,
 	    RayTracingPerformanceDiagnostics* diagnostics = nullptr) noexcept;
 	BuildStats EndFrame() noexcept;
 	void Clear() noexcept;
@@ -57,23 +62,17 @@ class RayTracingBlasCache final
   private:
 	struct SkinnedEntryKey final
 	{
-		const GPUMesh* Mesh = nullptr;
-		std::uint32_t RenderInstanceIndex = 0u;
+		GpuMeshHandle Mesh;
+		std::uint32_t GpuSceneSlot = 0u;
 
-		bool operator==(const SkinnedEntryKey& other) const noexcept
-		{
-			return Mesh == other.Mesh && RenderInstanceIndex == other.RenderInstanceIndex;
-		}
+		bool operator==(
+		    const SkinnedEntryKey& other) const noexcept;
 	};
 
 	struct SkinnedEntryKeyHash final
 	{
-		std::size_t operator()(const SkinnedEntryKey& key) const noexcept
-		{
-			const std::size_t meshHash = std::hash<const GPUMesh*>{}(key.Mesh);
-			const std::size_t instanceHash = std::hash<std::uint32_t>{}(key.RenderInstanceIndex);
-			return meshHash ^ (instanceHash + 0x9e3779b9u + (meshHash << 6u) + (meshHash >> 2u));
-		}
+		std::size_t operator()(
+		    const SkinnedEntryKey& key) const noexcept;
 	};
 
 	struct Entry final
@@ -98,7 +97,7 @@ class RayTracingBlasCache final
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,
 	    const MeshDraw& draw,
-	    std::uint32_t renderInstanceIndex,
+	    std::uint32_t gpuSceneSlot,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
 	bool BuildSkinnedGeometry(
 	    const RenderSceneData& sceneData,
@@ -113,7 +112,8 @@ class RayTracingBlasCache final
 	BlasHandle BuildHandle(const Entry& entry) const noexcept;
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
-	std::unordered_map<const GPUMesh*, Entry> m_entries;
+	const GPUMeshCache* m_meshes = nullptr;
+	std::map<GpuMeshHandle, Entry> m_entries;
 	std::unordered_map<SkinnedEntryKey, Entry, SkinnedEntryKeyHash> m_skinnedEntries;
 	BuildStats m_currentFrameStats = {};
 };

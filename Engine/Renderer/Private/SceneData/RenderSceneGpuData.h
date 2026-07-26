@@ -1,50 +1,55 @@
 #pragma once
 
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
-#include "Resources/OwnedStructuredBuffer.h"
+#include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "ShaderData/RenderViewLightingData.h"
 
 #include <cstdint>
-#include <memory>
 
 class FrameGraph;
 class FrameGraphBuilder;
-class RhiResourceService;
-struct RenderSceneData;
+
+struct RenderSceneGpuBuffer final
+{
+	RhiOwnedResourceHandle Resource = {};
+	std::uint64_t SizeInBytes = 0;
+	std::uint32_t StrideInBytes = 0;
+
+	bool IsValid() const noexcept;
+	explicit operator bool() const noexcept;
+};
 
 struct RenderSceneGpuLightingData final
 {
 	ViewLightingData Constants = {};
-	OwnedStructuredBuffer DirectionalLights;
-	OwnedStructuredBuffer PointLights;
-	OwnedStructuredBuffer SpotLights;
-	OwnedStructuredBuffer RectLights;
+	RenderSceneGpuBuffer DirectionalLights;
+	RenderSceneGpuBuffer PointLights;
+	RenderSceneGpuBuffer SpotLights;
+	RenderSceneGpuBuffer RectLights;
 };
 
 struct RenderSceneGpuGeometryData final
 {
-	OwnedStructuredBuffer MeshInstances;
-	OwnedStructuredBuffer JointMatrices;
-	OwnedStructuredBuffer PreviousJointMatrices;
+	RenderSceneGpuBuffer MeshInstances;
+	RenderSceneGpuBuffer MeshInstanceSlots;
+	RenderSceneGpuBuffer JointMatrices;
+	RenderSceneGpuBuffer PreviousJointMatrices;
 
-	bool HasMeshInstances() const noexcept { return MeshInstances.IsValid(); }
-	bool HasSkinning() const noexcept { return JointMatrices.IsValid() && PreviousJointMatrices.IsValid(); }
+	bool HasMeshInstances() const noexcept;
+	bool HasSkinning() const noexcept;
 };
 
 struct RenderSceneGpuRayTracingData final
 {
-	OwnedStructuredBuffer Vertices;
-	OwnedStructuredBuffer SkinInfluences;
-	OwnedStructuredBuffer Indices;
-	OwnedStructuredBuffer Instances;
-	OwnedStructuredBuffer Materials;
+	RenderSceneGpuBuffer Vertices;
+	RenderSceneGpuBuffer SkinInfluences;
+	RenderSceneGpuBuffer Indices;
+	RenderSceneGpuBuffer Instances;
+	RenderSceneGpuBuffer Materials;
 	std::uint32_t InstanceCount = 0u;
 	std::uint32_t MaterialCount = 0u;
 
-	bool IsValid() const noexcept
-	{
-		return Vertices && SkinInfluences && Indices && Instances && Materials && InstanceCount > 0u && MaterialCount > 0u;
-	}
+	bool IsValid() const noexcept;
 };
 
 struct RenderSceneGpuData final
@@ -65,6 +70,7 @@ struct RenderSceneGpuLightingResources final
 struct RenderSceneGpuGeometryResources final
 {
 	FrameGraphBufferHandle MeshInstances = FrameGraphBufferHandle::Invalid();
+	FrameGraphBufferHandle MeshInstanceSlots = FrameGraphBufferHandle::Invalid();
 	FrameGraphBufferHandle JointMatrices = FrameGraphBufferHandle::Invalid();
 	FrameGraphBufferHandle PreviousJointMatrices = FrameGraphBufferHandle::Invalid();
 };
@@ -83,24 +89,6 @@ struct RenderSceneGpuResources final
 	RenderSceneGpuLightingResources Lighting = {};
 	RenderSceneGpuGeometryResources Geometry = {};
 	RenderSceneGpuRayTracingResources RayTracing = {};
-};
-
-class PersistentRenderGpuScene final
-{
-  public:
-	explicit PersistentRenderGpuScene(
-	    RhiResourceService& resourceService);
-	~PersistentRenderGpuScene() noexcept;
-
-	PersistentRenderGpuScene(const PersistentRenderGpuScene&) = delete;
-	PersistentRenderGpuScene& operator=(const PersistentRenderGpuScene&) = delete;
-
-	const RenderSceneGpuData& Update(const RenderSceneData& sceneData);
-	void Reset() noexcept;
-
-  private:
-	struct Impl;
-	std::unique_ptr<Impl> m_impl;
 };
 
 RenderSceneGpuResources DeclareRenderSceneGpuResources(FrameGraphBuilder& builder);

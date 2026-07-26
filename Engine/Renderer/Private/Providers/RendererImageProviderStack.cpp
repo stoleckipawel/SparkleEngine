@@ -70,12 +70,6 @@ void RendererImageProviderStack::Initialize(RenderHardwareInterface& renderHardw
 	m_resetHistoryPending = true;
 }
 
-void RendererImageProviderStack::Refresh(RenderHardwareInterface& renderHardware)
-{
-	Shutdown();
-	Initialize(renderHardware);
-}
-
 void RendererImageProviderStack::Shutdown() noexcept
 {
 	if (m_upscaler != nullptr)

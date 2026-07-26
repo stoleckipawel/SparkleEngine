@@ -195,6 +195,44 @@ bool D3D12ResourceService::CreateStructuredBufferResource(
 	return static_cast<bool>(outResource);
 }
 
+bool D3D12ResourceService::WriteBufferResource(
+    RhiOwnedResourceHandle resource,
+    std::size_t destinationOffsetInBytes,
+    const void* data,
+    std::size_t sizeInBytes) noexcept
+{
+	D3D12GpuAllocationRecord* const record =
+	    GetD3D12GpuAllocationRecord(resource);
+	if (record == nullptr || record->Resource == nullptr || data == nullptr ||
+	    sizeInBytes == 0 ||
+	    destinationOffsetInBytes > record->Resource->GetDesc().Width ||
+	    sizeInBytes > record->Resource->GetDesc().Width - destinationOffsetInBytes)
+	{
+		return false;
+	}
+
+	void* mappedData = nullptr;
+	const D3D12_RANGE readRange{0, 0};
+	if (FAILED(record->Resource->Map(0, &readRange, &mappedData)))
+	{
+		return false;
+	}
+
+	record->IsMapped = true;
+	record->CpuMappedAddress = mappedData;
+	std::memcpy(
+	    static_cast<std::byte*>(mappedData) + destinationOffsetInBytes,
+	    data,
+	    sizeInBytes);
+	const D3D12_RANGE writtenRange{
+	    destinationOffsetInBytes,
+	    destinationOffsetInBytes + sizeInBytes};
+	record->Resource->Unmap(0, &writtenRange);
+	record->IsMapped = false;
+	record->CpuMappedAddress = nullptr;
+	return true;
+}
+
 bool D3D12ResourceService::CreateIndexBuffer(
     const void* data,
     std::size_t sizeInBytes,

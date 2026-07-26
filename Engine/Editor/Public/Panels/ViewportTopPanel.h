@@ -3,12 +3,15 @@
 #include "../../../Renderer/Public/Debug/RenderViewMode.h"
 
 class LevelManager;
+class EngineRenderingSettingsSection;
 
 class ViewportTopPanel final
 {
   public:
-	ViewportTopPanel(LevelManager* levelManager = nullptr) noexcept;
-	~ViewportTopPanel() = default;
+	ViewportTopPanel(
+	    LevelManager* levelManager = nullptr,
+	    EngineRenderingSettingsSection* renderingSettings = nullptr) noexcept;
+	~ViewportTopPanel() noexcept;
 
 	ViewportTopPanel(const ViewportTopPanel&) = delete;
 	ViewportTopPanel(ViewportTopPanel&&) = delete;
@@ -23,13 +26,16 @@ class ViewportTopPanel final
   private:
 	static const char* GetViewModeLabel(RenderViewMode viewMode) noexcept;
 	static void DrawViewModeCategory(const char* label) noexcept;
-	static void DrawViewModeOption(RenderViewMode option, RenderViewMode currentViewMode) noexcept;
+	void DrawViewModeOption(
+	    RenderViewMode option,
+	    RenderViewMode currentViewMode) noexcept;
 
 	void BuildLevelName() const noexcept;
 	void BuildViewModeCombo(bool disableInteraction) noexcept;
 	void BuildPerformanceStats() const noexcept;
 
 	LevelManager* m_levelManager = nullptr;
+	EngineRenderingSettingsSection* m_renderingSettings = nullptr;
 	float m_leftPixels = 0.0f;
 	float m_topPixels = 0.0f;
 	float m_widthPixels = 0.0f;

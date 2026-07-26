@@ -62,9 +62,9 @@ Advanced-graphics implication:
 
 - The repo should show fewer systems, deeper ownership, and stronger evidence. A reviewer should see graphics API control, shader/compiler expertise, performance reasoning, a real neural-graphics result, driver/hardware diagnosis, and adoption-quality communication without needing to read thousands of lines of diagnostic scaffolding.
 
-## Principal Developer Technology Repository Contract
+## Principal Graphics Engineering Repository Contract
 
-The canonical `NV-PDTE-01` through `NV-PDTE-15` requirements live in [H. Advanced Graphics Engineer Persona](H_AdvancedGraphicsEngineerPersona.md). This repository map applies them to physical ownership:
+The canonical `PGE-01` through `PGE-15` requirements live in [A. Principal Graphics Engineering Requirements](A_PrincipalRenderingRequirements.md). This repository map applies them to physical ownership:
 
 | Repository surface | Required principal-level evidence | Structural constraint |
 |---|---|---|

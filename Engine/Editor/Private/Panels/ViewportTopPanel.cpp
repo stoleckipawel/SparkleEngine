@@ -3,7 +3,7 @@
 
 #include "Level/Level.h"
 #include "Level/LevelManager.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 
@@ -60,10 +60,15 @@ class ViewportTopPanelOperations final
 	}
 };
 
-ViewportTopPanel::ViewportTopPanel(LevelManager* levelManager) noexcept
+ViewportTopPanel::ViewportTopPanel(
+    LevelManager* levelManager,
+    EngineRenderingSettingsSection* renderingSettings) noexcept :
+	m_renderingSettings(renderingSettings)
 {
 	SetLevelManager(levelManager);
 }
+
+ViewportTopPanel::~ViewportTopPanel() noexcept = default;
 
 void ViewportTopPanel::SetLevelManager(LevelManager* levelManager) noexcept
 {
@@ -139,7 +144,10 @@ void ViewportTopPanel::DrawViewModeOption(RenderViewMode option, RenderViewMode 
 	const std::string optionLabel = UiUtil::MakeIconLabel(ViewportTopPanelOperations::GetViewModeIcon(option), GetViewModeLabel(option));
 	if (ImGui::Selectable(optionLabel.c_str(), selected))
 	{
-		CVarRenderViewMode.Set(option);
+		if (m_renderingSettings != nullptr)
+		{
+			m_renderingSettings->SetRenderViewMode(option);
+		}
 	}
 
 	if (selected)
@@ -163,7 +171,10 @@ void ViewportTopPanel::BuildLevelName() const noexcept
 
 void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 {
-	RenderViewMode currentViewMode = CVarRenderViewMode.Get();
+	RenderViewMode currentViewMode =
+	    m_renderingSettings != nullptr
+	        ? m_renderingSettings->GetState().ViewMode
+	        : RenderViewMode::Lit;
 	if (currentViewMode >= RenderViewMode::Count)
 	{
 		currentViewMode = RenderViewMode::Lit;

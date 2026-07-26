@@ -72,9 +72,10 @@ void ViewportPanel::SetRenderProducts(const ViewportRenderProducts& renderProduc
 	m_renderProducts = renderProducts;
 }
 
-void ViewportPanel::SetSceneColorTextureId(std::uint64_t textureId) noexcept
+void ViewportPanel::SetSceneColorTexture(
+    EditorTextureHandle texture) noexcept
 {
-	m_sceneColorTextureId = textureId;
+	m_sceneColorTexture = texture;
 }
 
 const ViewportRenderRequest& ViewportPanel::GetRenderRequest() const noexcept
@@ -146,7 +147,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	UpdateRequestedExtent(availableRegion.x, availableRegion.y);
 
 	const RenderProduct* sceneColor = m_renderProducts.FindProduct(RenderOutputFlags::SceneColor);
-	if (m_sceneColorTextureId == 0 || sceneColor == nullptr)
+	if (!m_sceneColorTexture || sceneColor == nullptr)
 	{
 		BuildEmptyState();
 	}
@@ -163,7 +164,10 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 			ImGui::SetCursorPosY(start.y + ((availableRegion.y - imageSize.y) * 0.5f));
 		}
 
-		ImGui::Image(static_cast<ImTextureID>(m_sceneColorTextureId), imageSize);
+		ImGui::Image(
+		    static_cast<ImTextureID>(
+		        m_sceneColorTexture.Pack()),
+		    imageSize);
 	}
 
 	ImGui::EndChild();

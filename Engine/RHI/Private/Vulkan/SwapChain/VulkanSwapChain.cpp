@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <format>
 #include <limits>
+#include <utility>
 
 static const auto g_vulkanSwapChainLogger = Logging::GetOrCreateLogger("RHI.Vulkan.SwapChain");
 
@@ -44,29 +45,28 @@ bool VulkanSwapChain::AcquireNextImage(std::uint32_t frameIndex) noexcept
 		return false;
 	}
 
-	for (std::uint32_t attempt = 0; attempt < 2; ++attempt)
+	const VkResult result = vkAcquireNextImageKHR(
+	    m_rhi.GetDevice(),
+	    m_swapChain,
+	    std::numeric_limits<std::uint64_t>::max(),
+	    GetImageAvailableSemaphore(frameIndex),
+	    VK_NULL_HANDLE,
+	    &m_currentBackBufferIndex);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		const VkResult result = vkAcquireNextImageKHR(
-		    m_rhi.GetDevice(),
-		    m_swapChain,
-		    std::numeric_limits<std::uint64_t>::max(),
-		    GetImageAvailableSemaphore(frameIndex),
-		    VK_NULL_HANDLE,
-		    &m_currentBackBufferIndex);
-		if (result == VK_ERROR_OUT_OF_DATE_KHR && attempt == 0)
-		{
-			Resize();
-			continue;
-		}
-		if (result == VK_SUBOPTIMAL_KHR || VulkanResult::Succeeded(result))
-		{
-			return true;
-		}
-
-		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkAcquireNextImageKHR", result));
+		m_resizeRequested = true;
 		return false;
 	}
+	if (result == VK_SUBOPTIMAL_KHR || VulkanResult::Succeeded(result))
+	{
+		return true;
+	}
 
+	Diagnostics::Fail(
+	    g_vulkanSwapChainLogger,
+	    __FILE__,
+	    __LINE__,
+	    VulkanResult::FormatFailure("vkAcquireNextImageKHR", result));
 	return false;
 }
 
@@ -91,7 +91,7 @@ bool VulkanSwapChain::Present(VkSemaphore renderFinishedSemaphore) noexcept
 	const VkResult result = m_rhi.GetCommandQueue(ERhiQueueType::Graphics).Present(presentInfo);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
-		Resize();
+		m_resizeRequested = true;
 		return true;
 	}
 	if (!VulkanResult::Succeeded(result))
@@ -99,12 +99,6 @@ bool VulkanSwapChain::Present(VkSemaphore renderFinishedSemaphore) noexcept
 		Diagnostics::Fail(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkQueuePresentKHR", result));
 	}
 	return false;
-}
-
-void VulkanSwapChain::Resize() noexcept
-{
-	m_rhi.WaitForIdle();
-	ResizeAfterDeviceIdle();
 }
 
 void VulkanSwapChain::ResizeAfterDeviceIdle() noexcept
@@ -137,6 +131,11 @@ VkImage VulkanSwapChain::GetCurrentBackBufferImage() const noexcept
 VkImageView VulkanSwapChain::GetCurrentBackBufferImageView() const noexcept
 {
 	return GetBackBufferImageView(m_currentBackBufferIndex);
+}
+
+bool VulkanSwapChain::ConsumeResizeRequest() noexcept
+{
+	return std::exchange(m_resizeRequested, false);
 }
 
 VkSemaphore VulkanSwapChain::GetImageAvailableSemaphore(std::uint32_t frameIndex) const noexcept

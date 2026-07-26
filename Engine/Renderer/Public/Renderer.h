@@ -38,7 +38,6 @@ class SPARKLE_RENDERER_API Renderer final
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings) noexcept;
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
-	EditorTextureHandle RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept;
 
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
@@ -48,12 +47,9 @@ class SPARKLE_RENDERER_API Renderer final
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	void RenderSerialUiFrame(RendererSerialUiCallback composeUi, void* context) noexcept;
-	void WaitForIdle() noexcept;
 	void BeginHostPresentation(const float clearColor[4]) noexcept;
 	void BeginHostOverlayPresentation() noexcept;
 	void EndHostPresentation() noexcept;
-	ViewportPresentationProduct BeginViewportPresentation(RenderOutputFlags output) noexcept;
-	void EndViewportPresentation(RenderOutputFlags output) noexcept;
 	ViewportCaptureId RequestViewportCapture(ViewportCaptureRequest request) noexcept;
 	bool TryTakeViewportCapture(ViewportCaptureReadback& readback) noexcept;
 

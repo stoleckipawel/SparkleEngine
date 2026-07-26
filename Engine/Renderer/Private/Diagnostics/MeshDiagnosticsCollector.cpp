@@ -127,10 +127,12 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 		            .Source =
 		                MeshDrawSourceIdentity{
 		                    .GpuSceneSlot = proxy.GpuSceneSlot},
-		                    .Geometry =
-		                        MeshDrawGeometry{
-		                            .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy.Static.MeshKind),
-		                            .GpuMesh = gpuMesh}},
+		            .Geometry =
+		                MeshDrawGeometry{
+		                    .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy.Static.MeshKind),
+		                    .Mesh = gpuMesh != nullptr
+		                                ? gpuMesh->GetHandle()
+		                                : GpuMeshHandle{}}},
 		        .instanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(proxy.Static.InstanceGroupIndex)});
 	}
 

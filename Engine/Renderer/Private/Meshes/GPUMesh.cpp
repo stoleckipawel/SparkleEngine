@@ -36,6 +36,11 @@ class GPUMeshOperations final
 	}
 };
 
+GPUMesh::GPUMesh(GpuMeshHandle handle) noexcept :
+	m_handle(handle)
+{
+}
+
 GPUMesh::~GPUMesh() noexcept
 {
 	if (m_renderHardwareInterface != nullptr)

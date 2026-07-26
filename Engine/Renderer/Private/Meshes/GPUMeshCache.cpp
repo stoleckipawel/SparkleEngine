@@ -2,6 +2,7 @@
 #include "Meshes/GPUMeshCache.h"
 
 #include "Meshes/GPUMeshUploadDescBuilder.h"
+#include "GameFramework/Public/Rendering/RenderAssetHandles.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Meshes/Mesh.h"
 
@@ -11,10 +12,17 @@ GPUMeshCache::GPUMeshCache(RenderHardwareInterface& renderHardwareInterface) noe
 {
 }
 
-GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
-{
-	const Mesh* key = &cpuMesh;
+GPUMeshCache::~GPUMeshCache() noexcept = default;
 
+GPUMesh* GPUMeshCache::GetOrUpload(const ImmutableRenderMeshHandle& mesh)
+{
+	if (!mesh.IsValid())
+	{
+		return nullptr;
+	}
+
+	const Mesh& cpuMesh = *mesh.GetResource();
+	const CacheKey key{mesh.GetAssetId(), mesh.GetGeneration()};
 	auto it = m_cache.find(key);
 	if (it != m_cache.end() && !cpuMesh.IsGeometryDirty())
 	{
@@ -29,7 +37,13 @@ GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 	}
 
 	GPUMesh* result = gpuMesh.get();
+	if (it != m_cache.end() && it->second != nullptr)
+	{
+		m_handles.erase(it->second->GetHandle().Value);
+	}
 	m_cache.insert_or_assign(key, std::move(gpuMesh));
+	m_handles[result->GetHandle().Value] = result;
+	m_sourceHandles[&cpuMesh] = result->GetHandle();
 
 	return result;
 }
@@ -46,20 +60,29 @@ GpuMeshHandle GPUMeshCache::AllocateHandle() noexcept
 
 void GPUMeshCache::Clear() noexcept
 {
+	m_sourceHandles.clear();
+	m_handles.clear();
 	m_cache.clear();
 }
 
 bool GPUMeshCache::Contains(const Mesh& cpuMesh) const noexcept
 {
-	return m_cache.contains(&cpuMesh);
+	return m_sourceHandles.contains(&cpuMesh);
 }
 
 const GPUMesh* GPUMeshCache::Find(const Mesh& cpuMesh) const noexcept
 {
-	if (auto it = m_cache.find(&cpuMesh); it != m_cache.end())
+	const auto source = m_sourceHandles.find(&cpuMesh);
+	return source != m_sourceHandles.end() ? Resolve(source->second) : nullptr;
+}
+
+const GPUMesh* GPUMeshCache::Resolve(GpuMeshHandle handle) const noexcept
+{
+	if (!handle)
 	{
-		return it->second.get();
+		return nullptr;
 	}
 
-	return nullptr;
+	const auto mesh = m_handles.find(handle.Value);
+	return mesh != m_handles.end() ? mesh->second : nullptr;
 }

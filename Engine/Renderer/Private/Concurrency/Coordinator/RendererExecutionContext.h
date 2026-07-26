@@ -12,15 +12,15 @@ class RendererSystemRoot;
 class RhiImGuiRenderer;
 class Window;
 struct RendererBackendConfiguration;
+struct RendererExecutionConfig;
 
 class RendererExecutionContext final
 {
   public:
-	RendererExecutionContext(Window& window, const RendererBackendConfiguration& backendConfiguration);
 	RendererExecutionContext(
 	    Window& window,
 	    const RendererBackendConfiguration& backendConfiguration,
-	    bool enableEditorRenderPackets);
+	    const RendererExecutionConfig& executionConfig);
 	~RendererExecutionContext() noexcept;
 
 	void ExecuteFrame(RenderFramePacket packet) noexcept;

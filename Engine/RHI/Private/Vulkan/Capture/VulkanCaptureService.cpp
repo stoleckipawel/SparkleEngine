@@ -118,6 +118,7 @@ struct VulkanCaptureService::PendingReadback final
 	std::uint64_t ByteCount = 0;
 	std::uint32_t RowPitch = 0;
 	RhiBmpSourceFormat Format = RhiBmpSourceFormat::Rgba8Unorm;
+	bool Cancelled = false;
 };
 
 VulkanCaptureService::VulkanCaptureService(VulkanRhi& rhi) noexcept :
@@ -147,6 +148,7 @@ VulkanCaptureService::~VulkanCaptureService() noexcept
 RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(
     const RhiTextureCaptureRequest& request) noexcept
 {
+	DrainCancelledReadbacks();
 	if (m_rhi == nullptr || !request.Resource ||
 	    request.Width == 0 || request.Height == 0)
 	{
@@ -321,6 +323,7 @@ bool VulkanCaptureService::TryTakeTextureReadback(
     RhiCaptureTicket ticket,
     RhiCaptureReadback& readback) noexcept
 {
+	DrainCancelledReadbacks();
 	PendingReadback* pending = FindPending(ticket);
 	if (pending == nullptr || m_rhi == nullptr ||
 	    !m_rhi->GetCommandQueue(ERhiQueueType::Graphics)
@@ -381,12 +384,8 @@ void VulkanCaptureService::CancelTextureReadback(
 		{
 			continue;
 		}
-		if (m_rhi != nullptr && pending->Submission.IsValid())
-		{
-			m_rhi->GetCommandQueue(ERhiQueueType::Graphics)
-			    .WaitForSubmission(pending->Submission.Value);
-		}
-		ReleasePending(index);
+		pending->Cancelled = true;
+		DrainCancelledReadbacks();
 		return;
 	}
 }
@@ -402,6 +401,28 @@ VulkanCaptureService::PendingReadback* VulkanCaptureService::FindPending(
 		}
 	}
 	return nullptr;
+}
+
+void VulkanCaptureService::DrainCancelledReadbacks() noexcept
+{
+	if (m_rhi == nullptr)
+	{
+		return;
+	}
+	for (std::size_t index = 0;
+	     index < m_pendingReadbacks.size();)
+	{
+		const std::unique_ptr<PendingReadback>& pending =
+		    m_pendingReadbacks[index];
+		if (!pending || !pending->Cancelled ||
+		    !m_rhi->GetCommandQueue(ERhiQueueType::Graphics)
+		         .IsSubmissionComplete(pending->Submission.Value))
+		{
+			++index;
+			continue;
+		}
+		ReleasePending(index);
+	}
 }
 
 void VulkanCaptureService::ReleasePending(std::size_t index) noexcept

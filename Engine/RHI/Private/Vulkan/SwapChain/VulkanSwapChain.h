@@ -25,8 +25,8 @@ class VulkanSwapChain final
 
 	bool AcquireNextImage(std::uint32_t frameIndex) noexcept;
 	bool Present(VkSemaphore renderFinishedSemaphore) noexcept;
-	void Resize() noexcept;
 	void ResizeAfterDeviceIdle() noexcept;
+	bool ConsumeResizeRequest() noexcept;
 
 	std::uint32_t GetCurrentBackBufferIndex() const noexcept { return m_currentBackBufferIndex; }
 	RhiResourceHandle GetCurrentBackBufferResource() const noexcept;
@@ -75,4 +75,5 @@ class VulkanSwapChain final
 	std::vector<BackBufferRecord> m_backBuffers;
 	std::array<VkSemaphore, RhiFrameConstants::FramesInFlight> m_imageAvailableSemaphores{};
 	std::uint32_t m_currentBackBufferIndex = 0;
+	bool m_resizeRequested = false;
 };

@@ -28,8 +28,7 @@ class RenderSceneDataBuilder final
 	void BuildMaterials(const RenderWorld& world, RenderSceneData& sceneData) const;
 	void BuildSky(const RenderWorld& world, RenderSceneData& sceneData) const;
 
-	MaterialCacheManager* m_materialCache = nullptr;
-	GPUMeshCache* m_gpuMeshCache = nullptr;
-	TextureManager* m_textureManager = nullptr;
+	MaterialCacheManager& m_materialCache;
+	TextureManager& m_textureManager;
 	std::unique_ptr<RenderMeshDrawBuilder> m_meshDrawBuilder;
 };
