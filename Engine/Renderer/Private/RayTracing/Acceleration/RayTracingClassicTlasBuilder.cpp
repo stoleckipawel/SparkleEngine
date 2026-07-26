@@ -196,6 +196,8 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 				++stats.Candidates.RejectedBlasCount;
 				continue;
 			}
+
+			cmd.TrackResource(blas.resource);
 			if (blas.builtThisFrame)
 			{
 				builtBlasResources.insert(blas.resource.Value);
@@ -279,6 +281,8 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	                    ? ERhiClassicTlasBuildMode::BuildAllowUpdate
 	                    : ERhiClassicTlasBuildMode::Build);
 	const char* const tlasEventName = canRefit ? "Classic TLAS Refit" : "Classic TLAS Build";
+	TrackBuildResources(cmd);
+
 	{
 		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope(tlasEventName) : ScopedGpuScope{};
 		cmd.BuildTopLevelAccelerationStructure(
@@ -295,6 +299,21 @@ RayTracingClassicTlasBuilder::BuildStats RayTracingClassicTlasBuilder::Build(
 	    .instanceCount = stats.Build.InstanceCount};
 	stats.Build.Built = m_tlas.IsValid();
 	return stats;
+}
+
+void RayTracingClassicTlasBuilder::TrackBuildResources(
+    RenderCommandContext& cmd) const noexcept
+{
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return;
+	}
+
+	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
+
+	cmd.TrackResource(resources.GetResourceHandle(m_instanceBuffer));
+	cmd.TrackResource(resources.GetResourceHandle(m_scratchBuffer));
+	cmd.TrackResource(resources.GetResourceHandle(m_accelerationStructureBuffer));
 }
 
 void RayTracingClassicTlasBuilder::Clear() noexcept

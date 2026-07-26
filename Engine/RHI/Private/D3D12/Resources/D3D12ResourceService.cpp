@@ -299,6 +299,7 @@ void D3D12ResourceService::ReleaseOwnedResource(RhiOwnedResourceHandle resource)
 	}
 
 	DrainCompletedResourceReleases();
+	ownedRecord->PendingRelease = true;
 	m_pendingOwnedResourceReleases.push_back(PendingOwnedResourceRelease{.Record = std::move(ownedRecord)});
 }
 
@@ -329,7 +330,8 @@ void D3D12ResourceService::DrainCompletedResourceReleases() noexcept
 	    [&completedValues](const PendingOwnedResourceRelease& pendingRelease)
 	    {
 		    return pendingRelease.Record == nullptr ||
-		           (pendingRelease.Record->RecordingReferenceCount == 0 &&
+		           (pendingRelease.Record->RecordingReferenceCount.load(
+		                std::memory_order_relaxed) == 0 &&
 		            pendingRelease.Record->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingOwnedResourceReleases.erase(eraseBegin, m_pendingOwnedResourceReleases.end());
@@ -340,7 +342,8 @@ void D3D12ResourceService::DrainCompletedResourceReleases() noexcept
 	    [&completedValues](const PendingOwnedMemoryBlockRelease& pendingRelease)
 	    {
 		    return pendingRelease.Record == nullptr ||
-		           (pendingRelease.Record->RecordingReferenceCount == 0 &&
+		           (pendingRelease.Record->RecordingReferenceCount.load(
+		                std::memory_order_relaxed) == 0 &&
 		            pendingRelease.Record->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingOwnedMemoryBlockReleases.erase(heapEraseBegin, m_pendingOwnedMemoryBlockReleases.end());
@@ -470,48 +473,31 @@ bool D3D12ResourceService::SupportsUnorderedAccess(RhiResourceHandle resource) c
 	return ResourceSupportsUnorderedAccess(static_cast<ID3D12Resource*>(resource.Value));
 }
 
-void D3D12ResourceService::BeginResourceTracking(RhiResourceHandle resource) noexcept
+D3D12RecordingResourceUseToken D3D12ResourceService::BeginResourceTracking(
+    RhiResourceHandle resource,
+    bool coordinatorRecording) noexcept
 {
 	if (m_memoryAllocator == nullptr || !resource)
 	{
-		return;
+		return {};
 	}
 
-	D3D12GpuAllocationRecord* record =
-	    m_memoryAllocator->FindAllocationRecord(static_cast<ID3D12Resource*>(resource.Value));
-	if (record == nullptr)
+	D3D12RecordingResourceUseToken use =
+	    m_memoryAllocator->RetainRecordingResource(resource);
+	if (!use && coordinatorRecording)
 	{
-		return;
+		use = m_memoryAllocator->RetainCoordinatorRecordingResource(resource);
 	}
-	++record->RecordingReferenceCount;
-	if (record->ParentHeap != nullptr)
-	{
-		++record->ParentHeap->RecordingReferenceCount;
-	}
+	return use;
 }
 
 void D3D12ResourceService::EndResourceTracking(
-	RhiResourceHandle resource,
-	RhiSubmissionToken submissionToken) noexcept
+    D3D12RecordingResourceUseToken use,
+    RhiSubmissionToken submissionToken) noexcept
 {
-	if (m_memoryAllocator == nullptr || !resource)
+	if (m_memoryAllocator != nullptr)
 	{
-		return;
-	}
-
-	D3D12GpuAllocationRecord* record =
-	    m_memoryAllocator->FindAllocationRecord(static_cast<ID3D12Resource*>(resource.Value));
-	if (record == nullptr)
-	{
-		return;
-	}
-	record->RecordingReferenceCount = record->RecordingReferenceCount > 0 ? record->RecordingReferenceCount - 1 : 0;
-	record->LastUse.MarkUsed(submissionToken);
-	if (record->ParentHeap != nullptr)
-	{
-		D3D12GpuHeapRecord& heap = *record->ParentHeap;
-		heap.RecordingReferenceCount = heap.RecordingReferenceCount > 0 ? heap.RecordingReferenceCount - 1 : 0;
-		heap.LastUse.MarkUsed(submissionToken);
+		m_memoryAllocator->ReleaseRecordingResource(use, submissionToken);
 	}
 }
 

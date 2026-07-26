@@ -7,6 +7,7 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/SwapChain/D3D12SwapChain.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "D3D12/Resources/D3D12UploadService.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 
@@ -35,6 +36,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	void WaitForIdle() noexcept override;
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame() noexcept override;
+	void PrepareCommandRecording() noexcept override;
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	RenderCommandList& BeginCurrentGraphicsCommandList() noexcept override;
@@ -204,6 +206,11 @@ void D3D12RenderDeviceServices::BeginFrame() noexcept
 	m_commandRecordingContext->BeginFrame(frameIndex);
 	m_uploadService->BeginFrame();
 	(void)BeginCurrentGraphicsCommandList();
+}
+
+void D3D12RenderDeviceServices::PrepareCommandRecording() noexcept
+{
+	m_rhi->GetMemoryAllocator().PublishRecordingReadView();
 }
 
 RenderCommandList& D3D12RenderDeviceServices::GetCurrentGraphicsCommandList() noexcept

@@ -4888,6 +4888,67 @@ Editor model and commands:
 
 ### Advanced Feature Preservation Tests
 
+#### Prompt 21 capability-gated preservation matrix
+
+Prompt 21 uses the existing launch controls, renderer capability reports, frame-graph diagnostics, native validation, capture path, and external profilers. It does not add a test-only engine API or a feature-specific scheduler. A comparable run is identified by one frozen input signature:
+
+- scene generation and ordered render-world delta sequence
+- camera transform, projection, cut/teleport state, render/display extent, and fixed frame count
+- rendering/view/provider settings, PTLAS preference, classic TLAS refit setting, and capture frame
+- logical `FrameId` sequence, renderer-derived jitter/sample policy, and reference-lighting sample/reset state
+- cooked shader-package generation and provider-generation/key
+- identical content revision, executable/configuration, backend validation state, and driver/hardware for paired mode rows
+
+Changing any field starts a new comparison set. Completion order, worker identity, command-list identity, and native pointer values are never part of the signature.
+
+The execution dimension is:
+
+| Mode ID | Renderer owner mode | `r.FrameGraph.ParallelRecording` | Expected recording behavior |
+|---|---|---:|---|
+| `M0` | serial | `false` | one same-plan command object per compiled submission batch; serial oracle |
+| `M1` | serial | `true` | eligible typed-shader chunks may use SparkleTasks; coordinator islands remain serial |
+| `M2` | threaded zero-ahead | `false` | render-owner thread, same-plan serial recording |
+| `M3` | threaded zero-ahead | `true` | render-owner thread plus eligible parallel chunk recording |
+| `M4` | threaded one-ahead | `false` | bounded one-frame CPU lead, same-plan serial recording |
+| `M5` | threaded one-ahead | `true` | bounded one-frame CPU lead plus eligible parallel chunk recording |
+
+Each mode runs with `task.SerialExecution=true`, then `task.WorkerCount=1`, `2`, and representative `N`. Zero/one-worker rows are truthful serial fallbacks because parallel chunk recording requires at least two FrameCritical workers. GPU timestamp collection is a separately gated serial-recording row: `r.Diagnostics.GpuTiming=true` intentionally selects the single-command-object path until timestamp-query allocation is safe across recording contexts. GPU event markers remain command-list local in all modes.
+
+The backend/feature dimension is:
+
+| Feature row | Eligibility gate | Required identity/evidence |
+|---|---|---|
+| raster | backend and presentation operational | compiled pass/batch order, material/pipeline selection, opaque batching, transparent-sensitive order where present, barriers/waits/submission order, markers, output image |
+| classic TLAS | core RT plus classic build support; PTLAS preference off | BLAS input identity, initial build, refit/rebuild decision, add/remove, asset replacement, trace result, scratch/result/instance last-use token |
+| PTLAS | PTLAS provider supported, requested, and a shader-access path usable by the selected advanced features | partition/stable instance identity, operations, BLAS inputs, storage/scratch/operation-buffer lifetime, trace result; never count classic fallback as PTLAS |
+| reservoir lighting | inline ray-query/TLAS and material/light inputs supported | stable render-object/light ordering, sample/weight histories, reset identity, output image |
+| reference lighting | reference mode and its RT inputs supported | sample index/seed policy, accumulation count, invalidation hash/reset, output image |
+| temporal/provider | provider supported, enabled, initialized, and operational for the backend | motion/depth convention, jitter/exposure/history, frame/provider tags, affinity, resize/reload, frame-generation/present order, classical fallback |
+| shader ABI/reload | cooked package and backend target available | package/reflection/layout identity, coherent generation per recording run, failed replacement retains the previous generation |
+| capture/debug | selected product format and backend capture/debug capability available | bounded request, source frame identity, copy/readback token, encode result, markers, timestamps where gated, object names |
+
+Use exactly four row dispositions:
+
+- **PASS**: native validation, deterministic plan/order comparison, required state/identity checks, and image tolerance passed.
+- **FAIL**: an applicable invariant failed; fix it in the existing owner and rerun the complete paired set.
+- **UNSUPPORTED**: the backend capability report or missing optional provider/dependency says the feature cannot execute.
+- **BLOCKED**: a named external prerequisite such as unavailable hardware, optional content, driver tooling, or an intentionally deferred shader-access path prevents execution.
+
+The source audit establishes these pre-run dispositions without claiming hardware results:
+
+| Backend/path | Source disposition before manual execution | Runtime disposition for this repository pass |
+|---|---|---|
+| D3D12 raster, classic TLAS, reservoir/reference, temporal, shader, capture/debug | applicable rows share the compiled plan, recording executor, ordered submission, and token retirement owners | **BLOCKED** — native D3D12 validation, captures, images, timings, reload/resize stress, and hardware results were not run during the source-only integration pass |
+| D3D12 PTLAS | **UNSUPPORTED** when NVAPI/provider/device capability is false; applicable only when the report selects descriptor-capable PTLAS | **BLOCKED** — requires a reporting NVIDIA device/provider plus manual native validation |
+| Vulkan raster, classic TLAS, reservoir/reference, temporal, shader, capture/debug | applicable rows share the same common recording/submission architecture and Vulkan recording leases | **BLOCKED** — Vulkan validation/synchronization validation, captures, images, timings, reload/resize stress, and hardware results were not run during the source-only integration pass |
+| Vulkan PTLAS | **UNSUPPORTED** when the native provider is absent; **BLOCKED** when native PTLAS is present but the selected advanced-feature set lacks the required descriptor TLAS path | **BLOCKED** — requires matching NVIDIA Vulkan capability and completion of the explicitly named descriptor-access prerequisite; classic fallback is not a PTLAS pass |
+| optional image providers | **UNSUPPORTED** when compile/runtime dependency or backend capability is absent; otherwise applicable through the existing external-provider serial island | **BLOCKED** — provider SDK/hardware/failure-recovery matrix remains a manual external prerequisite |
+| Bistro and San Miguel workload rows | architecture-ready but optional content is absent from the repository | **BLOCKED** — acquire the external content packs under the workload doctrine; do not substitute Sponza and label it as those workloads |
+
+The current BLAS owner has no compaction query/copy capability, and the current PTLAS renderer path emits CPU-packed write-instance operations with `AllowInstanceUpdates=false`. BLAS compaction and PTLAS source/update rows are therefore **UNSUPPORTED** in this matrix; initial/rebuild, add/remove, replacement, trace, and lifetime rows remain distinct. This is capability truth, not permission to count a rebuild as an update or to add a new algorithm during Prompt 21.
+
+For each applicable manual run, record the matrix key and disposition beside the captured evidence. Required stress order is warm-up, baseline capture, transform/light/material change, add/remove, asset replacement, shader reload success/failure, resize/minimize/recreate, provider failure/recovery where available, capture, delayed GPU completion, level reload, and shutdown. Compare `M1`/`M3`/`M5` to their paired `M0`/`M2`/`M4` oracle using the same compiled frame-graph plan. CPU task completion is never accepted as retirement evidence; the owning queue submission token must settle.
+
 Ray tracing:
 
 - classic TLAS and PTLAS capability truth per backend
@@ -5582,7 +5643,7 @@ Task controls live in the dedicated private `Concurrency/TaskRuntimeCVars.cpp` s
 | `task.WorkerCount` | `0` | `ApplicationTaskRuntime`; 0 selects one Background worker until Prompt 25 establishes measured host/rendering capacity, explicit 1/2/N remain experiments |
 | `task.SerialExecution` | `false` | `ApplicationTaskRuntime`; true selects the zero-worker deterministic serial oracle |
 | `r.ThreadedRenderer` | `false` | Prompt 13 owner transition |
-| `r.ParallelCommandRecording` | `false` | Prompt 20 comparison |
+| `r.FrameGraph.ParallelRecording` | `true` | Prompt 20 recording-mode comparison; set false for the same-plan serial oracle |
 | `r.RenderPipelineDepth` | `0` | Prompt 13; initially only synchronous 0 and bounded-ahead 1 |
 
 Accepted spellings are `--cvar=name=value`, `--cvar name=value`, and `--set-cvar name=value`. Switch spelling is case-insensitive; registry names are canonical and case-sensitive. Invalid/unknown assignments leave values unchanged. There is no shipping UI or persisted setting.

@@ -11,6 +11,7 @@
 #include "Validation/RhiContract.h"
 
 #include <array>
+#include <cassert>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@ D3D12RenderCommandList::D3D12RenderCommandList(
     ERhiQueueType queueType) noexcept :
     m_owner(&owner), m_commandList(commandList), m_queueType(queueType)
 {
+	m_recordingResourceUses.reserve(32);
 }
 
 ERhiBackendApi D3D12RenderCommandList::GetBackendApi() const noexcept
@@ -31,7 +33,9 @@ void D3D12RenderCommandList::OnResourceTrackingStarted(RhiResourceHandle resourc
 {
 	if (m_owner != nullptr)
 	{
-		m_owner->BeginResourceTracking(resource);
+		const D3D12RecordingResourceUseToken use =
+		    m_owner->BeginResourceTracking(resource, m_recordingOwner.IsCoordinator());
+		m_recordingResourceUses.push_back(RecordingResourceUse{.Resource = resource, .Token = use});
 	}
 }
 
@@ -41,7 +45,17 @@ void D3D12RenderCommandList::OnResourceTrackingFinished(
 {
 	if (m_owner != nullptr)
 	{
-		m_owner->EndResourceTracking(resource, submissionToken);
+		assert(m_recordingResourceReleaseIndex < m_recordingResourceUses.size());
+		const RecordingResourceUse& use =
+		    m_recordingResourceUses[m_recordingResourceReleaseIndex++];
+		assert(use.Resource.Value == resource.Value);
+		m_owner->EndResourceTracking(use.Token, submissionToken);
+
+		if (m_recordingResourceReleaseIndex == m_recordingResourceUses.size())
+		{
+			m_recordingResourceUses.clear();
+			m_recordingResourceReleaseIndex = 0;
+		}
 	}
 }
 

@@ -3,6 +3,7 @@
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 
 #include "Core/Public/Formatting/HexFormat.h"
+#include "D3D12/Memory/D3D12RecordingResourceTable.h"
 
 #include <D3D12MemAlloc.h>
 
@@ -125,7 +126,8 @@ class D3D12GpuMemoryAllocatorImplementation final
 };
 
 D3D12GpuMemoryAllocator::D3D12GpuMemoryAllocator(IDXGIAdapter* adapter, ID3D12Device* device) noexcept :
-    m_impl(std::make_unique<Impl>())
+    m_impl(std::make_unique<Impl>()),
+    m_recordingResources(std::make_unique<D3D12RecordingResourceTable>())
 {
 	if (adapter == nullptr || device == nullptr)
 	{
@@ -441,6 +443,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateAliasin
 	record->Allocation = heap.Allocation;
 	record->Allocation->AddRef();
 	record->ParentHeap = &heap;
+	record->Owner = this;
 	record->Category = RhiMemoryCategory::TransientResource;
 	record->ResidencyClass = RhiMemoryResidencyClass::Transient;
 	record->DebugName = std::wstring(debugName);
@@ -449,6 +452,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateAliasin
 	{
 		record->Resource->SetName(record->DebugName.c_str());
 	}
+	RegisterAllocationRecord(*record);
 
 	return record;
 }
@@ -497,9 +501,45 @@ D3D12GpuAllocationRecord* D3D12GpuMemoryAllocator::FindAllocationRecord(ID3D12Re
 	    m_impl->liveRecords.end(),
 	    [resource](const D3D12GpuAllocationRecord* candidate) noexcept
 	    {
-		    return candidate != nullptr && candidate->Resource.Get() == resource;
+		    return candidate != nullptr &&
+		           !candidate->PendingRelease &&
+		           candidate->Resource.Get() == resource;
 	    });
 	return record != m_impl->liveRecords.end() ? *record : nullptr;
+}
+
+void D3D12GpuMemoryAllocator::PublishRecordingReadView() noexcept
+{
+	m_owner.AssertAccess();
+	if (m_impl != nullptr)
+	{
+		m_recordingResources->Publish(m_impl->liveRecords);
+	}
+}
+
+D3D12RecordingResourceUseToken
+D3D12GpuMemoryAllocator::RetainRecordingResource(
+    RhiResourceHandle resource) const noexcept
+{
+	return m_recordingResources->Retain(resource);
+}
+
+D3D12RecordingResourceUseToken
+D3D12GpuMemoryAllocator::RetainCoordinatorRecordingResource(
+    RhiResourceHandle resource) const noexcept
+{
+	D3D12GpuAllocationRecord* const record =
+	    FindAllocationRecord(static_cast<ID3D12Resource*>(resource.Value));
+	return record != nullptr
+	           ? m_recordingResources->Retain(*record)
+	           : D3D12RecordingResourceUseToken{};
+}
+
+void D3D12GpuMemoryAllocator::ReleaseRecordingResource(
+    D3D12RecordingResourceUseToken use,
+    RhiSubmissionToken submissionToken) const noexcept
+{
+	m_recordingResources->Release(use, submissionToken);
 }
 
 void D3D12GpuMemoryAllocator::RegisterAllocationRecord(D3D12GpuAllocationRecord& record) noexcept

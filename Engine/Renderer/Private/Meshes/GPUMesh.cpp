@@ -138,6 +138,14 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPU
 
 void GPUMesh::Bind(RenderCommandContext& cmd) const noexcept
 {
+	if (m_renderHardwareInterface != nullptr)
+	{
+		RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
+
+		cmd.TrackResource(resources.GetResourceHandle(m_vertexBuffer));
+		cmd.TrackResource(resources.GetResourceHandle(m_indexBuffer));
+	}
+
 	cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
 	cmd.BindVertexBuffer(GetVertexBufferView());
 	cmd.BindIndexBuffer(GetIndexBufferView());
@@ -155,10 +163,19 @@ RhiIndexBufferView GPUMesh::GetIndexBufferView() const noexcept
 
 RhiRayTracingGeometryDesc GPUMesh::GetRayTracingGeometry() const noexcept
 {
+	RhiResourceService* const resources =
+	    m_renderHardwareInterface != nullptr ? &m_renderHardwareInterface->GetResourceService() : nullptr;
+	const RhiResourceHandle vertexResource =
+	    resources != nullptr ? resources->GetResourceHandle(m_vertexBuffer) : RhiResourceHandle{};
+	const RhiResourceHandle indexResource =
+	    resources != nullptr ? resources->GetResourceHandle(m_indexBuffer) : RhiResourceHandle{};
+
 	return RhiRayTracingGeometryDesc{
+	    .VertexResource = vertexResource,
 	    .VertexBuffer = m_vertexBufferView.BufferLocation,
 	    .VertexStrideInBytes = m_vertexBufferView.StrideInBytes,
 	    .VertexCount = m_vertexCount,
+	    .IndexResource = indexResource,
 	    .IndexBuffer = m_indexBufferView.BufferLocation,
 	    .IndexCount = m_indexCount,
 	    .IndexFormat = m_indexBufferView.Format,

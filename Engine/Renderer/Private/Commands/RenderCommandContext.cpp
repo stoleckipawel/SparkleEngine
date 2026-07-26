@@ -236,6 +236,14 @@ void RenderCommandContext::BuildPartitionedTopLevelAccelerationStructure(const R
 	}
 }
 
+void RenderCommandContext::TrackResource(RhiResourceHandle resource) noexcept
+{
+	if (m_commandList != nullptr)
+	{
+		m_commandList->TrackResource(resource);
+	}
+}
+
 bool RenderCommandContext::SupportsDiagnosticScopes() const noexcept
 {
 	return m_commandList->SupportsDiagnosticScopes();

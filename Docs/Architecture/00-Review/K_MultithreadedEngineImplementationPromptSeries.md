@@ -184,7 +184,7 @@ Concurrency correctness must be encoded at the narrowest reusable ownership boun
 - add only essential correctness assertions, failure diagnostics, and profiler labels with a concrete vendor/API precedent and a falsifying use; no per-item log spam, speculative counters, or diagnostic mirrors of ordinary state;
 - prompt-specific unit tests, stress harnesses, fault injectors, and boundary-check scripts are disposable verification scaffolding: create them, run the required gate, preserve the command/result and invariant learned, then delete their source, CMake targets, fixtures, generated data, and dedicated test directories before handoff. Do not leave Sparkle with a parallel maintained test product. Existing reusable product validation or an owner-approved permanent test facility may be used, but a prompt does not create one implicitly;
 - do not run a full repository build, all scenes, all backends, and heavyweight captures after every prompt or every edit. At the end of an ordinary code prompt, run the smallest affected target compile and focused deterministic test once. Full D3D12/Vulkan product builds and representative-scene matrices belong to integration gates 00, 05, 13, 20–22, and 29, or when the changed ABI/backend boundary specifically requires them;
-- performance captures belong to measurement prompts 05, 23–25, 28, and 29. Other prompts reuse the last compatible baseline and add a new capture only when their acceptance claim depends on timing;
+- performance captures belong to measurement prompts 05, 23, 25, 28, and 29. Other prompts reuse the last compatible baseline and add a new capture only when their acceptance claim depends on timing;
 - documentation-only prompts run link/search/format checks, not product builds.
 
 The completion report must say why each validation action was proportionate and confirm that the touched product functions contain no local class/struct declarations. More logs, assertions, targets, and repeated full builds are not stronger evidence when they do not cross the changed invariant.
@@ -344,12 +344,12 @@ Every completed prompt returns this report:
 | 21 | advanced-feature preservation closure | 20 |
 | 22 | tools/editor/reliability/package closure and legacy deletion | 14, 16, 21 |
 | 23 | initial full-system performance characterization and tuning | 22 |
-| 24 | atomic protocol and scheduler-pathology hardening | 23 |
-| 25 | CPU topology, worker policy, contention, and false-sharing characterization | 24 |
-| 26 | reduction, scan/compaction, partition, and deterministic merge in real paths | 25 |
-| 27 | staged I/O and cold-cache PSO/resource-creation hitch control | 26 |
+| 24 | atomic publication and wait-protocol correctness closure | 23 |
+| 25 | conservative worker-budget and oversubscription policy | 23 |
+| 26 | deterministic fan-in closure and evidence gate for parallel algorithms | 22, 23 |
+| 27 | staged I/O and cold-cache PSO/resource-creation hitch control | 16, 22, 23, 25 |
 | 28 | GPU queue concurrency, frame pacing, and correlated latency | 27 |
-| 29 | production forensics, expert defense, and final portfolio release | 28 |
+| 29 | production forensics, expert defense, and final portfolio release | 24, 26, 28 |
 | 30 | path-tracing, mathematics, performance-model and partner-workload baseline | 29 |
 | 31 | neural feature selection, data/model provenance, training/export and artifact contract | 30 |
 | 32 | renderer-owned neural inference integration with classical fallback | 31 |
@@ -362,16 +362,16 @@ This ledger is a completeness check, not a substitute for reading J. A prompt ma
 
 | J design/learning area | Primary implementation prompts | Closure evidence |
 |---|---|---|
-| ownership, memory ordering, publication, lifetime, failure vocabulary | 00-03, 24 | ownership ledger, scheduler/protocol stress, atomic state-machine teach-back |
-| engine-owned job system and structured concurrency | 01-04, 24-25 | serial executor equivalence, 0/1/2/N/topology stress, shutdown/cancellation/pathology tests |
+| ownership, memory ordering, publication, lifetime, failure vocabulary | 00-03, 22, 24 | ownership ledger, targeted publication/wait stress, documented production invariants |
+| engine-owned job system and structured concurrency | 01-04, 22, 24-25 | serial executor equivalence, 0/1/2/N stress, shutdown/cancellation tests, bounded worker budget |
 | ECS/DOD foundations without framework sprawl | 05-08 | storage/query tests, deterministic command playback, scene conversion and change journal |
 | game-system graph and useful simulation parallelism | 08-10 | dependency validation, serial/parallel equivalence, animation/skinning measurements |
 | transactional loading and asset work | 04, 09, 16, 22, 27 | deterministic outputs, generation/cancellation/cold-cache tests, no partial publication |
 | editor ownership, undo/redo, operations, UI affinity | 09-11, 14, 22 | immutable models, semantic commands, lifecycle and cancellation stress |
-| immutable game/render boundary and bounded pipelining | 12-14, 24, 28 | packet replay, atomic `RenderFrameQueue` tests, input-to-present and backpressure evidence |
+| immutable game/render boundary and bounded pipelining | 12-14, 24, 28 | packet replay, `RenderFrameQueue` publication/reuse tests, input-to-present and backpressure evidence |
 | persistent render/GPU scene and lifetime-safe residency | 15-16 | dirty-range updates, generation retirement, delayed-GPU stress |
 | renderer preparation task graph | 17 | serial/parallel equivalence, critical-path and granularity evidence |
-| view visibility/LOD, light classification, shadow planning/caster lists, retained/dynamic draw preparation | 15, 17, 26 | stable visible/light/caster/draw sets, cache invalidation, transparent order, large-scene critical path |
+| view visibility/LOD, light classification, shadow planning/caster lists, retained/dynamic draw preparation | 15, 17 | stable visible/light/caster/draw sets, cache invalidation, transparent order, large-scene critical path |
 | D3D12 and Vulkan native recording ownership | 18-20 | native validation, token/reset misuse tests, worker migration stress |
 | frame-graph authority, barriers, recording groups, submission | 20 | compiled plan inspection, serial/parallel execution of the same plan |
 | command preparation versus native recording versus optional software translation versus aggregation/submission batching | 17-20, 28 | representation/owner ledger, direct-path parity, list/group/batch metrics, explicit RHI-thread ADR rejection |
@@ -382,8 +382,8 @@ This ledger is a completeness check, not a substitute for reading J. A prompt ma
 | AI fundamentals and independently verified AI-assisted engineering | 31-34 | provenance/model card, train/validation boundary, optimization decisions and code/math/source verification |
 | principal communication, organization and prioritization | 29-30, 34 | adoption guide, priority/deletion ledger, incident/review record, live demo, whitepaper-quality note and talk outline |
 | tools, packages, public-surface reduction, legacy deletion | 04, 22 | repository audit-to-zero, reproducible products/packages, closed deletion ledgers |
-| reduction/scan/compaction and deterministic parallel algorithms | 06, 10, 15, 26 | serial oracle, randomized edge cases, stable merge and crossover measurements |
-| CPU topology, OS scheduling, contention and oversubscription | 03, 23-25 | optimized system traces, topology metadata, worker-count and third-party-thread matrix |
+| deterministic task-local fan-in and evidence-gated parallel algorithms | 06, 10, 15, 22, 26 | stable keys/order, randomized completion, serial oracle only for a measured retained optimization |
+| worker budget, OS scheduling and oversubscription | 03, 23, 25 | representative worker-count sweep, explicit override, third-party capacity inventory, conservative default |
 | staged I/O, PSO/resource creation and first-run hitch policy | 04, 09, 16, 27 | bounded stage stress, cold/warm cache evidence, memory/late/miss/fallback metrics |
 | shader workers, graphics/compute/RT pipeline creation, buffer/image/view creation, allocation/binding and descriptor writes | 16, 18-19, 27 | separate stage ownership, native safety audit, key deduplication, cold-cache memory/concurrency matrix |
 | GPU queue overlap, presentation pacing and latency | 13, 20, 28 | correlated frame markers, graphics/compute/copy timelines, pacing and CPU-lead results |
@@ -455,8 +455,10 @@ This is the minimum hazard pre-mortem scope. A prompt must add any other MT ID m
 | 18–20 | MT-09–10, MT-13, MT-19–21, MT-25–27, MT-29, MT-32–41, MT-43 | exclusive backend leases, token reset, native validation, same compiled order, group-size/list/submit/memory sweep, no worker submit/wait |
 | 21 | MT-01–13, MT-19–21, MT-27, MT-29, MT-32–43 | full advanced-feature/backend parity matrix, deterministic identity/order, delayed-GPU lifetime, provider affinity, reload/resize/capture stress |
 | 22 | MT-01–44 | repository audit-to-zero, closure of every applicable falsification test, no duplicate/legacy mechanism |
-| 23–25 | MT-17–28, MT-35, MT-38, MT-41–44 | topology and worker matrix, contention/cache/context-switch traces, crossover/negative scaling, profiler-overhead control |
-| 26–27 | MT-04–07, MT-13, MT-16, MT-19–31, MT-33, MT-36–37, MT-41–43 | deterministic parallel algorithm oracle, bounded staged I/O, cold-cache PSO/resource state machine, generation rejection |
+| 23 | MT-17–28, MT-35, MT-38, MT-41–44 | representative full-system characterization, crossover/negative scaling, profiler-overhead control |
+| 24 | MT-01–15, MT-23, MT-25–27, MT-29, MT-41–44 | targeted publication/wait/reuse state proof, lost-wake/cancellation/shutdown stress, no speculative lock-free path |
+| 25 | MT-17–19, MT-22, MT-24–28, MT-41–44 | conservative total worker budget, explicit override, third-party oversubscription check, evidence-gated contention diagnosis |
+| 26–27 | MT-04–07, MT-13, MT-16, MT-19–31, MT-33, MT-36–37, MT-41–43 | deterministic fan-in verification, bounded staged I/O, cold-cache PSO/resource state machine, generation rejection |
 | 28 | MT-17–18, MT-24–27, MT-32–43 | correlated CPU/task/queue/present identity, queue overlap proof, provider ownership, pacing/backpressure and input-latency matrix |
 | 29 | MT-01–44 | injected incidents, independent reproduction, final zero-unclassified audit, live design/code/trace defense |
 | 30 | MT-23, MT-28–29, MT-32–43 | deterministic path-tracing workload, math/reference oracle, paired API capture, exact hardware/driver baseline, partner reproduction |
@@ -2230,7 +2232,7 @@ Rule 13 access inventory:
 
 | Data path | Authority, derived ownership, and layout | Stable identity and deterministic transform | Exact precedent and measured falsifier |
 |---|---|---|---|
-| compiled frame-graph plan -> recording preparation | `FrameGraph` remains order/state authority; `RhiCommandSubmissionService::PrepareCommandRecording` asks the backend owner to publish final descriptor/resource read views after transient materialization | one publication point precedes all batch recording; D3D12 uses the base no-op and Vulkan publishes its derived tables | AMD RPS compiled-range ownership and NVRHI explicit command-list preparation; falsified by execute-time registry mutation, lazy pipeline/layout creation, or a worker observing a newly mutated owner vector |
+| compiled frame-graph plan -> recording preparation | `FrameGraph` remains order/state authority; `RhiCommandSubmissionService::PrepareCommandRecording` asks the backend owner to publish final descriptor/resource read views after transient materialization | one publication point precedes all batch recording; Vulkan publishes descriptor/resource views and D3D12 publishes its resource-retention view | AMD RPS compiled-range ownership and NVRHI explicit command-list preparation; falsified by execute-time registry mutation, lazy pipeline/layout creation, or a worker observing a newly mutated owner vector |
 | queue/frame/owner request -> lease | `VulkanCommandRecordingContext` owns a fixed `frame slot * queue type * context index` matrix; the coordinator selects one available slot and publishes only the common move-only lease | `(queue type, frame slot, context ID)` plus partition/task identity; acquisition order is deterministic within the precreated row and the actual thread is bound separately on first use | Vulkan command-pool external-synchronization rules and NVIDIA command-buffer guidance; falsified by two live leases naming one context or a pool touched from two recording threads |
 | lease -> command pool/buffer | each slot owns one queue-family-specific transient command pool, one primary command buffer, and one `VulkanRenderCommandList`; first use on the exclusive worker resets the completed pool, begins the primary buffer with `ONE_TIME_SUBMIT`, and binds the actual thread | slot state is `Available -> Recording -> Closed -> Submitted` or `Discarded`; the coordinator alone waits exact retirement and authorizes reuse, while native reset/begin/end stay on the exclusive recording worker | NVIDIA Vulkan dos/don'ts and AMD RPS per-thread command-buffer recording; falsified by CPU-frame-end reset, second-thread begin/close, or reset before the retirement token completes |
 | lease -> transient descriptors | each slot owns one `VulkanRecordingDescriptorPool`; descriptor sets are allocated only by that exclusive command list and the pool is reset with its slot | fixed 256-set bound; supported descriptor kinds are capability-gated, including classic and partitioned AS descriptors; the common lease reports capacity while Vulkan keeps layout-dependent `VkDescriptorSet` allocation behind its command list rather than fabricating a D3D12-style descriptor range | Vulkan descriptor-pool external-synchronization rules; falsified by a worker entering `m_registryMutex`, two slots sharing one pool, unbounded growth, or exhaustion returning a usable set |
@@ -2479,6 +2481,82 @@ Positive patterns: feature identity preservation, capability-gated matrix, same-
 Forbidden: intra-pass scaling, feature-specific scheduling, test-only production API, feature demotion, fake capability success, CPU task completion used as GPU lifetime.
 ~~~
 
+### Prompt 21 integration record
+
+Prerequisite disposition: Prompt 20 is source-complete under its recorded runtime-manual policy. Prompt 21 did not change the compiled plan, queue policy, GPU algorithms, feature settings, workload resolution, or recording granularity.
+
+PGE classification:
+
+| Requirement | Disposition | Evidence expected/produced |
+|---|---|---|
+| `PGE-01` rendering portfolio | preserve | raster, RT, reservoir/reference, temporal/provider, shader, and capture paths remain one product renderer; no feature was removed to make recording pass |
+| `PGE-02` renderer/architecture ownership | advance | one capability matrix binds render-owner mode, recording mode, worker count, backend, feature capability, and identical input signature |
+| `PGE-03` neural rendering/ML systems | preserve | provider and shader structured-resource seams remain; no ML runtime, task, or claim was introduced |
+| `PGE-04` research publication | not applicable | no new algorithm or publication claim is made |
+| `PGE-05` low-level graphics correctness | preserve | compiled barriers, queue waits, submission order, native validation obligations, markers, and timestamp gating retain their Prompt 20 owners |
+| `PGE-06` advanced rendering | advance | classic TLAS/PTLAS, BLAS inputs, reservoir/reference identity, temporal state, and shader/provider preservation are traced separately |
+| `PGE-07` C++ engineering | advance | hidden GPU-address lifetimes are attached to command-list resource use; D3D12 publishes an immutable recording lookup, retains through opaque tokens and narrow atomics, and keeps record mutation serialized |
+| `PGE-08` applied mathematics | preserve | renderer-owned jitter/sample/reset and numerical settings are compared unchanged; no math method is altered |
+| `PGE-09` explicit APIs | advance | D3D12/Vulkan resource lifetime and PTLAS capability selection are explicit; unsupported/blocked states do not masquerade as another AS path |
+| `PGE-10` CPU/GPU architecture | advance | CPU recording completion remains distinct from queue-token last use for raster geometry and BLAS/TLAS input, scratch, operation, and result resources |
+| `PGE-11` ML fundamentals/AI verification | preserve | no ML claim is made; AI-assisted changes were independently traced through resource creation, recording, aggregation, submission, release, and both backends |
+| `PGE-12` training/inference workloads | not applicable | no training or inference workload is touched |
+| `PGE-13` productization/communication | advance | J now defines exact modes, capability gates, frozen inputs, row dispositions, stress order, and unavailable evidence without adding a report framework |
+| `PGE-14` platform breadth | preserve | D3D12 and Vulkan source paths are paired; no unrun hardware, driver, Linux, or provider result is claimed |
+| `PGE-15` principal judgment | advance | the matrix produced bounded lifetime/capability fixes in current owners and rejected feature schedulers, test APIs, algorithm changes, and fake parity |
+
+Rule 13 access inventory:
+
+| Data path | Authority, ownership, and layout | Stable identity and deterministic transform | Exact precedent and measured falsifier |
+|---|---|---|---|
+| launch/CVar state -> execution mode | application launch owns serial/zero-ahead/one-ahead selection; renderer owns the one canonical parallel-recording control | `M0`-`M5` in J plus fixed worker-count row; the CVar changes recording only, not the compiled graph | existing `RendererExecutionConfig`, SparkleTasks controls, and Prompt 20 same-plan oracle; falsified by two controls selecting the same behavior or a mode changing plan/order |
+| registered passes/resources -> compiled plan -> recording/submission | frame graph remains authoritative; the plan is cold ordered AoS and recording results use fixed chunk slots | pass/group/chunk/batch indices and `SubmissionOrderKey`; aggregation ignores task completion order | AMD RPS-style compiled ranges and D3D12/Vulkan ordered submission rules already recorded in J; falsified by mode-dependent plan/barrier/wait/submission identity |
+| render proxies/lights -> prepared arrays -> reservoir/reference shaders | `RenderWorld` and deterministic preparation own stable `RenderObjectId` order; shader passes read immutable frame data | render-object ID plus prepared slot, frame/history identity, and reference invalidation hash | existing render-world/preparation and history owners; falsified by worker completion changing light order, reservoir weights, sample count, or reset |
+| mesh handles -> raster vertex/index binding | `GPUMesh` owns immutable buffers and now binds both views and command-list resource use as one capability | `GpuMeshHandle` and underlying `RhiResourceHandle`; draw order remains batch order | D3D12/Vulkan pending-command-buffer resource lifetime rules and existing `RenderCommandList::TrackResource`; falsified by asset replacement reclaiming a bound buffer before its submission token |
+| mesh geometry -> BLAS build | geometry desc owns vertex/index address plus resource identity; BLAS cache owns scratch/result and build decision | mesh/gpu-scene identity, geometry values, and BLAS resource handle; build inputs are tracked before native recording | DXR/Vulkan AS build input lifetime rules and existing BLAS cache; falsified by unload/rebuild reclaiming geometry, scratch, or result while recording/GPU work is pending |
+| BLAS set -> classic TLAS build/update | classic builder owns deterministic instance array, instance upload, scratch/result, and refit decision | stable GPU-scene instance ID, BLAS handle, count, flags, and transform; every referenced BLAS is tracked even when reused | DXR/Vulkan TLAS build/update contracts; falsified by reused BLAS or instance/scratch/result release before the graphics token settles |
+| partition plan/BLAS set -> PTLAS operation/build | PTLAS strategy owns instance writes and storage/scratch/operation buffers; backend owns native encoding | stable instance/partition IDs and provider capability; classic fallback is a different row, never PTLAS success | NVIDIA PTLAS operation/storage contracts and existing D3D12 NVAPI/Vulkan NV providers; falsified by provider mismatch, changed partition identity, or early operation/storage release |
+| D3D12 live allocation records -> recording retention view | allocator mutation and pending-release ownership remain render-owner-only; `D3D12RecordingResourceTable` publishes a sorted immutable resource-to-record projection and exposes only opaque retained-use tokens to an exclusive command list | native resource identity is the sorted lookup key; pending releases are excluded from the next publication; publication and command-list references keep allocation/parent-heap records alive | existing Vulkan recording read-view pattern, J LC-14, and D3D12 deferred release; falsified by a worker entering `recordsMutex`, observing owner-vector mutation, republishing a pending record, or destruction while a read view/use token exists |
+| worker command-list resource use -> deferred release | command list owns a private unique-resource vector paired with backend-private retained-use tokens; allocation/heap recording references are atomic, final last-use marking and destruction remain coordinator-owned | native resource identity plus exact `RhiSubmissionToken`; reference count is lifetime only, never ordering | existing Vulkan/D3D12 recording read views and deferred-release owners; falsified by reference underflow, mismatch between tracked resources and tokens, or release before token completion |
+| backend feature query -> renderer TLAS selection | backend query owns supported/access truth; renderer strategy consumes the same descriptor-capable selection contract | backend/provider enum plus static capability reason and active build result | current capability-report/strategy owners; falsified by reporting classic while descriptor-capable PTLAS is selected, or counting classic fallback as PTLAS |
+| shader packages -> pass runtimes -> retired generation | `PipelineStateManager` prewarms one coherent runtime generation before recording and retains the old generation by all-queue last use | shader package generation and pass type; failed replacement keeps current generation | existing immutable shader runtime publication; falsified by one recording run observing mixed layout/pipeline generations or early retirement |
+| provider stack -> external-provider passes -> retired provider generation | render owner creates/evaluates/destroys providers; external callbacks remain coordinator serial islands; replaced stacks retain all-queue last use | provider selection key/generation and frame tag | provider API affinity contracts and existing retired-provider owner; falsified by worker provider call, wrong frame tag, or callback/destruction before GPU completion |
+| viewport product -> capture request/readback/result | frame pipeline owns bounded three-entry requests; backend capture owns copy/readback token; editor/tool receives owned pixels/result | request ID, expected `FrameId`, frame/provider generation, artifact path | D3D12/Vulkan copy/readback completion contracts and existing capture service; falsified by device-idle routine path, stale-frame acceptance, unbounded queue, or late callback |
+
+Defects fixed by the matrix:
+
+1. Raster mesh bindings and ray-tracing geometry/build inputs used raw GPU addresses without consistently attaching every underlying allocation to the submitting command list. `GPUMesh::Bind`, BLAS build, classic TLAS build, and PTLAS build now track the precise vertex, index, BLAS, instance, scratch, operation, and result resources they use.
+2. D3D12 recording-time resource retention still asserted render-owner access, entered the allocator record mutex from workers, and used non-atomic recording reference counts even though Prompt 20 records eligible command lists on workers. The render owner now publishes a sorted immutable recording view after transient materialization; workers perform lock-free lookup and retain opaque use tokens through narrow relaxed atomics. Last-use publication, release scans, resource destruction, and allocator mutation remain on the coordinator. Pending releases are excluded from later publications, aliasing resources participate in the same table, and discarding a closed unsubmitted list releases its retained uses immediately.
+3. D3D12/Vulkan provider summaries retained obsolete “renderer selection not wired” states. Descriptor-capable requested PTLAS now reports selected; Vulkan native PTLAS without the advanced-feature descriptor path reports that named prerequisite and remains classic rather than claiming PTLAS.
+4. The application still registered unused `r.ParallelCommandRecording` beside renderer-owned `r.FrameGraph.ParallelRecording`. The dormant alias is deleted and J names the one actual control.
+
+Capacity, lifetime, and performance ledger: the change adds no scheduler, task, queue, command object, GPU resource, descriptor allocation, report buffer, or feature table. Each command list retains only the unique resources it already uses. D3D12 publishes one compact sorted entry per live non-pending allocation at the existing recording-preparation boundary; old views retire through shared immutable-view ownership. Each allocation and parent heap carries one atomic recording count, with increments once per publication entry and once per unique command-list use; final token marking occurs once at submission. Matrix falsifiers are Prompt 20 recording/list/descriptor/transient/GPU-time and submission-latency evidence plus publication bytes/time, zero worker contention on `recordsMutex`, resource-tracking count/cost, delayed-GPU release latency, and image/order parity. No speedup is required or claimed.
+
+Rule 12/16 and implementation-shape reconciliation: `D3D12RecordingResourceTable.*` is a filename-aligned private Memory capability beside the existing Vulkan counterpart, and `D3D12RecordingResourceUseToken.h` owns its matching opaque value; the module's recursive private-source discovery requires no manual CMake list. `RenderCommandContext` remains the narrow renderer command capability; `GPUMesh` owns raster geometry binding; BLAS/classic-TLAS/PTLAS owners retain their build-specific lifetime declarations; backend RHI device owners retain capability selection; D3D12 device services publish, the allocator owns records/table, resource service adapts retention, and command lists own per-recording tokens. New substantive functions are declared in headers and defined in `.cpp`; no function-local type, anonymous namespace, nested feature scheduler, role-only class, or diagnostic/logging surface was added.
+
+Preservation and deletion ledger: the same frame graph, pass callbacks, recording plan, leases, serial islands, SparkleTasks executor, submission batches, queues, shader algorithms, provider calls, temporal histories, presentation, and capture path serve every mode. Deleted items are the unused `r.ParallelCommandRecording` alias and obsolete PTLAS “selection not wired” capability spellings. No serial feature implementation, compatibility AS path, test API, bundle/secondary-buffer policy, feature worker system, intra-pass chunking, or new validation framework remains.
+
+Required completion report:
+
+1. **Outcome** — Prompt 21 is source-complete: J owns one capability-gated matrix, and the source defects it exposed in GPU lifetime retention, D3D12 worker recording, capability truth, and duplicate controls are fixed in existing owners.
+2. **Repository audit** — renderer modes, task controls, frame-graph compiler/recording/submission, raster mesh binding, BLAS/classic-TLAS/PTLAS, reservoir/reference/temporal state, shader generations, providers, capture, deferred release, and both backend capability paths were traced.
+3. **Ownership** — frame graph owns GPU order, command lists own recorded resource use, RHI allocation records own token retirement, feature owners own semantic identity, and capability reports own support truth.
+4. **Files changed by responsibility** — J/K evidence, application control deletion, renderer command/mesh/RT lifetime declarations, D3D12 recording-view publication/retention, and D3D12/Vulkan TLAS selection are the only changed responsibility groups.
+5. **Orchestration/capability refinement** — mode selection reads as launch mode plus canonical recording switch; feature build functions read as resolve inputs, track exact resources, encode native work, and publish existing results.
+6. **SOLID/DRY reconciliation** — one resource-tracking mechanism and one recording/submission architecture serve all features/modes; common behavior was not copied into feature schedulers or backend-specific test paths.
+7. **Preservation ledger** — raster order, RT providers, reservoir/reference lighting, temporal state, providers, shader ABI/reload, capture/debug, markers, timestamps through their serial capability gate, and both backends retain current product behavior.
+8. **Deletion ledger** — unused parallel-recording control and stale PTLAS capability reasons are removed; no compatibility adapter was introduced.
+9. **Structure reconciliation** — all modified types remain in their existing owning module/folder; the new private D3D12 recording table mirrors the existing Vulkan ownership split and filenames match primary owners; no move or explicit CMake update is warranted.
+10. **Implementation-shape reconciliation** — headers contain declarations/data/accessors/templates only; substantive behavior is in `.cpp`; no local type, anonymous namespace, giant switchboard, diagnostics expansion, or noisy validation layer was added.
+11. **DOD reconciliation** — the access inventory records authorities, resource identities, deterministic transforms, layout/capacity effects, lifetimes, precedents, and concrete falsifiers.
+12. **Concurrency reconciliation** — SparkleTasks remains the only worker runtime; workers record exclusive leases, resolve immutable recording views without allocator locking, and retain resources atomically; only the coordinator publishes views, aggregates, submits, marks token last use, polls release, mutates records, and destroys.
+13. **Validation** — static ownership/call-site/alias/capability/resource-lifetime searches and diff checks were performed without a build. The J matrix records every unrun native row as blocked or unsupported rather than pass.
+14. **Performance** — no worker enters the D3D12 allocation-record mutex; immutable-view publication is the one bounded per-run derived-data cost and its bytes/time join the exact manual regression evidence, with no unrun gain claimed.
+15. **Naming audit** — canonical `RenderCommandContext`, `RenderCommandList`, recording group/chunk/batch/lease, `RhiSubmissionToken`, classic TLAS/PTLAS, and `r.FrameGraph.ParallelRecording` remain; rejected duplicate/compatibility spellings are absent.
+16. **Limitations and unavailable evidence** — no build, executable, native validation, debugger capture, image comparison, timestamp result, hardware/provider run, delayed-GPU stress, Bistro/San Miguel content, or Linux result is claimed. BLAS compaction, PTLAS source/update, and Vulkan advanced-feature descriptor PTLAS are explicitly unsupported/blocked rather than passed through rebuild/classic fallback. These named rows remain manual/external prerequisites in J.
+17. **Acceptance status** — **PASS** under the user-authorized source-complete/runtime-manual policy. No known source-stage Prompt 21 gap remains; hardware rows keep honest blocked/unsupported dispositions until manually executed.
+18. **PGE reconciliation** — `PGE-02/06/07/09/10/13/15` advance, `PGE-01/03/05/08/11/14` are preserved, and `PGE-04/12` are not applicable; no feature demotion, fake capability success, role-only scaffolding, or unsupported performance/platform claim remains.
+
 ## Prompt 22 — Reliability, Tools, Packages, and Deletion Closure
 
 Target CL Title: `SparkleEngine: Close Multithreading Reliability, Tooling, and Legacy Deletions`
@@ -2508,7 +2586,7 @@ Required implementation:
 6. Delete all old paths listed in prior prompts: futures/pools, old Entity/controller/object storage, duplicate Scene* state, raw snapshot/render host path, direct UI/renderer mutations, idle reload, full GPU rebuild, single-context-only recording path.
 7. Audit public headers: no worker queues, ECS storage, caches, task timings, recording pools, or broad observation APIs.
 8. Run include/dependency boundary checks and reduce unnecessary module/public dependencies.
-9. Reconcile every J LC ledger row and every newly discovered primitive. Retained items require file-local owner/invariant/lock-order/blocking documentation and a falsifying stress test; replaced items have no call sites; deferral past this prompt is forbidden except expert hardening of an already-correct retained protocol in Prompt 24.
+9. Reconcile every J LC ledger row and every newly discovered primitive. Retained items require file-local owner/invariant/lock-order/blocking documentation and a falsifying stress test; replaced items have no call sites. Prompt 24 may perform only targeted publication/wait/reuse proof or a concrete fix identified by this audit or Prompt 23; it is not permission to reopen closed utility protocols.
 10. Prove no arbitrary callback, Qt/UI access, provider/driver call, blocking I/O, GPU wait, logging/formatting, or destruction occurs under an engine lock. Enumerated API-mandated exceptions require a narrow critical section, re-entry analysis, and test.
 11. Recheck the concrete legacy hotspots: InputSystem callback registry; Logger/Timer; ShaderRecook; LauncherBackend/ProcessRunner/AssetCookerToolProcess; Streamline; D3D12/Vulkan queue, descriptor, upload, allocation-record, validation-message, fence/timeline, swap-chain, and idle paths.
 12. Run the repository-wide naming reconciliation from J. Classify semantic uses of `Job`, `WorkItem`, `TaskRun`, bare `TaskNode`, `RenderFrameMailbox`, service-type `RenderThread`, `RenderThreadCommands`, `RecordingContextLease`, `WorkerRecordingContext`, misleading `RHIThread`, and unqualified cross-module `Queue`/`Context`. Delete rejected planned aliases; retain unrelated third-party/native terms only outside Sparkle ownership or behind an accurately named wrapper.
@@ -2554,7 +2632,7 @@ Non-negotiable repository rules:
 - Search and consolidate existing docs rather than adding another architecture/policy document. Update J, K, and the owned concise product overview only where necessary.
 - Performance tuning must not restore duplication, bypass ownership, or demote advanced features.
 - Refactor touched tuning knobs/configuration into one coherent owner and delete experiments that lose.
-- Pre-mortem MT-17–28, MT-35, MT-38, and MT-41–44. NVIDIA and AMD explicitly warn that more logical-core workers can reduce game performance through cache/chiplet/SMT contention, locks/atomics, false sharing, context switches, and power behavior; no worker-count formula passes without a workload/topology matrix.
+- Pre-mortem MT-17–28, MT-35, MT-38, and MT-41–44. NVIDIA and AMD explicitly warn that more workers can reduce game performance through oversubscription, cache pressure, synchronization, context switches, and power behavior; no automatic worker count passes without a representative Sparkle workload sweep.
 
 Required implementation:
 1. Tune worker count, FrameCritical/Background budgets, task grains, ECS query ranges, `RenderFrameQueue` depth policy, recording group/chunk size, upload/descriptor page sizes, and residency budgets using tiny and representative large scenes.
@@ -2562,8 +2640,8 @@ Required implementation:
 3. Collect CPU/GPU p50/p95/p99, critical paths, backpressure, task overhead/utilization, ECS query/storage/churn, upload/resource churn, lists/barriers/descriptors/transient memory, RT timings, tool throughput/peak memory, input-to-present.
 4. Attribute gains separately to removed work, CPU task parallelism, game/render pipeline, GPU queue behavior, and shader/GPU changes.
 5. Retain serial/small-work policies where parallel overhead loses; document negative results.
-6. Record hardware metadata available through existing platform/profiler surfaces: physical/logical processor counts, relevant cache/topology facts, GPU/driver, memory, OS, power profile, build and third-party worker settings.
-7. Identify concrete candidates for Prompts 24-28: one atomic protocol, one scheduler/topology pathology, one useful reduction/scan/partition workload, one streaming/PSO hitch path, and one GPU queue/latency experiment.
+6. Record hardware metadata already available through existing platform/profiler surfaces: processor count, GPU/driver, memory, OS, power profile, build and relevant third-party worker settings. Do not add a topology subsystem to enrich the report.
+7. Identify only measured correctness risks or material bottlenecks for Prompts 24-28. A later prompt may close with verification and no production code when its hypothesized problem is absent; do not manufacture one atomic experiment, scheduler pathology, parallel algorithm, streaming feature, or queue experiment per prompt.
 8. Perform preliminary teach-back on memory publication, task scheduling, ECS/DOD, render pipeline, GPU lifetime and native recording; record weak areas for the later expert prompts.
 
 Validation:
@@ -2579,156 +2657,148 @@ Acceptance gate:
 - Reference evidence shows correctness, tradeoffs, limitations, and causality—not only FPS or thread count.
 - Representative large workloads improve where expected; tiny cases remain within budget.
 - CPU gains do not cause unjustified GPU/memory/latency/backend regressions.
-- Every Prompt 24-28 candidate names an existing Sparkle path and falsifiable success/failure criteria; no résumé-only subsystem is proposed.
+- Every retained Prompt 24-28 change names an existing Sparkle path and falsifiable success/failure criteria; prompts without a current problem close without production-code expansion.
 
-Positive patterns: causal measurement, reproducibility, honest limits, negative-result retention, topology/configuration metadata.
+Positive patterns: causal measurement, reproducibility, honest limits, negative-result retention, configuration metadata.
 Forbidden: premature portfolio-complete claim, cherry-picked FPS, one-backend claim, generated report product, tuning by thread count alone, unsupported “production parity” language.
 ~~~
 
-## Prompt 24 — Harden Atomic Protocols and Scheduler Failure Modes
+## Prompt 24 — Close Atomic Publication and Wait-Protocol Correctness
 
-Target CL Title: `SparkleTasks: Harden Atomic Protocols and Scheduler Failure Modes`
+Target CL Title: `SparkleTasks: Close Production Publication and Wait Protocols`
 
 ~~~text
 Implement Prompt 24 only after Prompt 23 passes.
 
 Objective:
-Turn the task/packet runtime's real atomic and sleeping protocols into explainable state machines with reference implementations, lifetime proof, and adversarial failure tests. Improve current production owners; do not add a generic lock-free library.
+Prove that Sparkle's existing task, frame-packet, generation-publication, and wait/reuse protocols are correct through cancellation, shutdown, delayed consumers, and object lifetime. Fix concrete defects in their current owners; do not create a lock-free research project or a second implementation of a working protocol.
 
 Non-negotiable repository rules:
 - Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
-- Inspect every atomic, condition variable, semaphore, queue state, generation counter and wait predicate before adding a primitive; record use/extend/replace/add decisions.
-- Revisit retained legacy synchronization from LC-06/07/09/10/13-15/18: Logger publication, Timer pause flag, ProcessRunner only if any atomic remains, D3D12 linear/high-water state only if retained, queue submission values, Vulkan validation messages, allocation retirement, and native wait serialization. `relaxed` must name the independent invariant it serves.
-- Apply daily refactoring to converge duplicated flags/wake paths and remove obsolete synchronization exposed by the audit.
-- Keep protocols private to their owner. No public queue internals, generic concurrent containers, hazard-pointer framework, or test-only shipping API.
+- Start from Prompt 22's synchronization inventory and Prompt 23's measured risks. Re-audit only production protocols that publish payload, govern reuse/lifetime, park/wake workers or coordinators, or were touched by a required fix; identity-only counters and unrelated cold flags need a concise classification, not a new test framework.
+- Prefer the simplest correct owner-local mechanism. A mutex and predicate condition variable are acceptable; atomics require a clear invariant and publication edge. Do not weaken or replace a correct locked protocol merely to demonstrate memory-order knowledge.
+- Apply daily refactoring only where the audit exposes duplicate flags, wake paths, speculative atomics, or ambiguous ownership.
+- Keep protocols private to their owner. No public queue internals, generic concurrent containers, hazard-pointer framework, formal model-checker integration, duplicate SC production path, or test-only shipping API.
 - Preserve serial/threaded modes, all lifecycle behavior and both rendering backends.
 
 Required implementation:
-1. Audit SparkleTasks ready/injection/worker-sleep/execution-completion state, `RenderFrameQueue` slots, change-journal cursors, generation handles, and retirement queues. For each atomic, document protected invariant and memory-order edge.
-2. Select at least one real publication/reuse protocol (prefer `RenderFrameQueue`) and provide a mutex/condition-variable oracle plus a sequentially consistent atomic reference in tests.
-3. Make the production acquire/release or locked protocol behaviorally equivalent. Draw publish, claim, acknowledge, reuse and close/shutdown transitions; keep GPU retirement separate.
-4. Exercise compare-exchange expected-value behavior, generation wrap policy and ABA/stale-handle rejection. If a raw reclaimable pointer exists in a lock-free path, replace it with owned/indexed storage or stop for an explicit reclamation design.
-5. Make every condition-variable wait predicate-based; prove notification cannot be lost when submission races parking or shutdown. Avoid spinning except for an already measured bounded handoff.
-6. Inject worker-wait/nested-child exhaustion, cancellation-versus-start/complete, close-while-full/empty, thundering-herd wake, long-task starvation and priority-inversion scenarios. Fix ownership/dependency/lane policy rather than hiding them with recursive locks or arbitrary priority.
-7. Add concise developer assertions for illegal state transitions, double consume/reuse, stale generation and worker blocking.
-8. Teach back atomicity, modification order, synchronizes-with, relaxed/acquire/release/SC, progress guarantees, ABA and reclamation using the implemented protocol.
-9. For each retained mutex/atomic pair, verify the atomic does not appear to publish lock-protected adjacent state and that lock-free readers cannot observe a torn logical snapshot. Remove atomics with no real cross-thread caller rather than preserving speculative thread safety.
+1. Audit the real publication/lifetime paths: SparkleTasks ready/sleep/completion state, `RenderFrameQueue` publish/consume/retire/reuse, render-control completion, shader/asset generation publication, and GPU retirement tokens. For each retained atomic or wait, state its owner, protected invariant, payload/lifetime edge, and why its memory order or lock is sufficient.
+2. Verify `RenderFrameQueue` state transitions and payload publication: acquire, publish, consume, retire/cancel, reuse, close, and settle. Sequence identity must reject stale tickets, and CPU task completion must remain distinct from GPU last-use completion.
+3. Verify every condition-variable wait uses owner state in a predicate and that notify-before-park, park-before-notify, close, cancellation, and shutdown cannot lose progress. Workers must not block on nested task completion, GPU completion, or ordinary file/process I/O.
+4. Exercise targeted scheduler races already relevant to the runtime: cancellation versus start/settle, shutdown with queued/running work, empty/full frame queue with delayed producer/consumer, and repeated close. Use 0/1/2/N workers and randomized short delays.
+5. Test stale generation/handle rejection and wrap policy only for actual reusable bounded identities. If a lock-free path reclaims raw pointers, replace it with owned/indexed storage or stop for an explicit reclamation design.
+6. Remove speculative cross-thread atomics with no real concurrent caller. Add narrow private assertions only where they expose illegal state transitions, double consume/reuse, or stale identity.
+7. Fix any failure in the existing owner and delete the replaced wake/flag path. If the targeted stress passes and the audit finds no defect, close with evidence and no production-code change.
 
 Validation:
-- Oracle, SC reference and production protocol deliver identical sequence/result/close behavior across randomized delays and millions of tiny wraparound transitions.
-- 0/1/2/N workers; producers/consumers delayed at every state; cancellation and shutdown repeated under sanitizer-supported and optimized configurations.
+- Targeted state/result/close behavior remains deterministic across randomized delays and repeated 0/1/2/N runs.
+- Cancellation, shutdown, delayed producer/consumer, stale ticket/generation, and notify/park order are stressed under sanitizer-supported and optimized configurations where available.
 - No lost/duplicate packet or task, deadlock, leaked scope, stale access, busy idle loop or validation regression.
-- Repository search shows no duplicate state flag/wake protocol or new unowned concurrent primitive.
-- Timer pause and Logger initialization/level behavior have explicit writer/reader/lifetime contracts; any retained allocator/queue atomic has reset/submission ownership and wrap policy tested.
+- Repository search shows no duplicate state flag/wake protocol introduced by the fixes and no new unowned concurrent primitive.
 
 Acceptance gate:
 - L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
-- Every production atomic has a stated invariant and sufficient memory-order/lifetime proof.
-- No atomic remains solely because old code once anticipated concurrency; no atomic flag is treated as publication of unrelated fields.
-- Reference implementations can falsify the optimized protocol and remain in the existing test surface.
-- Scheduler failure modes settle predictably and leave no compatibility synchronization path.
+- Every production publication, wait, and reuse protocol in scope has a stated invariant and sufficient memory-order/lock/lifetime proof.
+- No atomic remains solely because old code once anticipated concurrency, and no atomic flag is treated as publication of unrelated fields.
+- Targeted cancellation, shutdown, delayed-consumer, stale-identity, and lost-wake tests settle predictably.
+- No duplicate reference protocol, generic concurrency framework, or compatibility synchronization path remains.
 
-Positive patterns: explicit state machines, reference-first weakening, bounded generations, predicate waits, fault injection, ownership repair.
-Forbidden: “works on x64,” relaxed-by-default, raw-pointer lock-free reclamation by hope, busy waiting, public queue snapshots, generic lock-free framework.
+Positive patterns: explicit owner state, predicate waits, bounded identities, targeted race tests, simplest-correct mechanism, ownership repair.
+Forbidden: “works on x64,” relaxed-by-default, lock-free rewrite for prestige, raw-pointer reclamation by hope, busy waiting, public queue snapshots, generic lock-free framework.
 ~~~
 
-## Prompt 25 — Characterize CPU Topology, Worker Policy, Contention, and False Sharing
+## Prompt 25 — Establish a Conservative Worker and Oversubscription Policy
 
-Target CL Title: `SparkleTasks: Tune Worker Policy for CPU Topology and Contention`
+Target CL Title: `SparkleTasks: Establish a Conservative Worker Budget`
 
 ~~~text
-Implement Prompt 25 only after Prompt 24 passes.
+Implement Prompt 25 only after Prompt 23 passes. Prompt 24 is an independent correctness closure, not a worker-policy prerequisite.
 
 Objective:
-Make SparkleTasks scale from low-core machines to high-core/SMT/chiplet/heterogeneous systems through evidence-driven worker policy, while keeping topology handling private and OS-neutral by default.
+Choose one simple, bounded SparkleTasks worker budget that behaves well on current representative rendering/tool workloads, retains explicit serial/1/2/N overrides, and avoids obvious nested-pool oversubscription. Do not build a CPU-topology, affinity, or scheduler-tuning subsystem.
 
 Non-negotiable repository rules:
 - Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
-- Inspect existing platform CPU queries, launch settings, profiler metadata and external-library thread controls before adding topology code or configuration.
-- Use NVIDIA's thread-limiting and AMD's Ryzen/core-detection guidance as hypothesis sources, not universal constants. Pre-mortem MT-17–28 and MT-41–44, including SMT siblings, cache/chiplet traffic, false sharing, context switches, nested workers, power/frequency, and profiling perturbation.
-- Apply daily refactoring so worker count, lane budgets and overrides have one owner and one documented precedence.
-- Let the OS schedule by default. Affinity, CPU Sets, QoS and priority are diagnostic experiments unless repeated traces prove a product policy.
-- Do not add a public topology service, affinity manager, benchmark-report generator or per-subsystem pool.
+- Inspect existing worker CVars, lane counts, platform concurrency query and third-party-library controls before adding policy.
+- Treat vendor topology guidance as a warning against maximizing thread count, not a requirement to detect SMT, cache/chiplet domains, processor groups, or heterogeneous cores.
+- Refactor only as needed so the total CPU-worker budget, lane allocation and explicit override have one owner and documented precedence.
+- Let the OS schedule. Affinity, CPU Sets, QoS, priority and per-workload worker pools are outside this prompt.
+- Do not add a public/private topology service, affinity manager, false-sharing framework, benchmark-report generator or per-subsystem pool.
 
 Required implementation:
-1. Record available physical/logical processor, processor-group, SMT/cache-domain and heterogeneous-core metadata in existing benchmark/capture context. Gracefully mark unavailable facts.
-2. Replace any unconditional `hardware_concurrency()-k` assumption with one private WorkerPolicy that supports serial, explicit count and measured capped automatic policy. Preserve a user/developer override through the existing settings mechanism.
-3. Run compute-heavy, cache/gather-heavy, mixed critical-chain and foreground-plus-compiler/decode workloads at 0/1/2, physical-core-like, logical-core-like and selected capped N counts.
-4. Capture task ready/running time, utilization, steals/failures, context switches, migrations, wakeups, p50/p95/p99 frame time, throughput, CPU frequency where available and background completion.
-5. Detect and repair scheduler/`RenderFrameQueue` false sharing using layout/counter evidence. Separate true contention, bandwidth saturation, cache-domain traffic, and scheduling/preemption hypotheses.
-6. Inventory third-party compiler/compression/provider worker counts and enforce existing lane/concurrency budgets so foreground work is not oversubscribed.
-7. Run bounded affinity/QoS/priority experiments only to diagnose a captured problem; retain them only if cross-machine evidence and fallback behavior justify the complexity.
-8. Document negative scaling and select defaults/thresholds per workload class without hard-coding one machine's optimum.
+1. Audit the current application configuration, including the fact that lane counts contribute to one total runnable-worker population. Define one private total CPU-worker budget with deterministic serial and explicit 1/2/N overrides; automatic mode uses a conservative cap derived from the already available processor count.
+2. Allocate that budget across existing FrameCritical/Background lanes without silently multiplying the requested worker count per lane. Keep BlockingIo bounded separately because it may block, and do not create new lanes or pools.
+3. Sweep serial, 1, 2, automatic and one larger explicit N on the fast regression scene plus one representative Tier 1 rendering or tool workload when available. Record frame/operation p50/p95/p99, task critical path/ready time, background completion and idle wake behavior through existing surfaces.
+4. Inventory material third-party workers active during the selected compiler/decode/provider workload. Bound outer Sparkle concurrency only when simultaneous-work evidence shows oversubscription; do not wrap every library in a new control layer.
+5. Select one default that is conservative across the measured workloads and retain the explicit override for investigation. Record negative scaling without adding per-machine or per-workload policy tables.
+6. Investigate contention, false sharing, migrations or cache topology only when Prompt 23 or this sweep exposes a material unexplained regression. A captured issue may justify a focused fix; absence of such evidence closes those topics as not applicable.
 
 Validation:
-- Matrix on at least one low/moderate-core and one high-core or logically constrained configuration; if hardware is unavailable, use OS core limits and state the limitation.
-- Optimized build system trace through WPA/ETW, AMD uProf, Nsight Systems or an equivalent primary scheduler view; engine scopes correlate with threads/tasks.
-- Idle engine does not produce excessive wakes; critical owner threads are not delayed by known background lock holders.
-- Selected policy improves or preserves p95/p99 versus the old automatic choice on representative workloads and does not starve background completion.
+- Reproducible optimized-build sweep on the primary supported machine; a logically constrained or second machine is supporting evidence only, not a prerequisite for a local engine default.
+- Idle engine does not produce excessive wakes; frame-critical work, background completion and shutdown remain live.
+- Selected automatic policy improves or preserves representative p95/p99 versus the current default and avoids obvious total-worker multiplication.
+- Explicit serial/1/2/N overrides remain deterministic and do not require topology or affinity APIs.
 
 Acceptance gate:
 - L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
-- Worker policy responds to measured workload/topology rather than maximizing logical threads.
-- Contention/false-sharing claims have counter or controlled-layout evidence.
-- No permanent hard affinity or priority policy remains without a documented cross-machine win and safe fallback.
+- One private owner resolves the total worker budget, lane allocation and explicit override.
+- The automatic policy is conservative and justified by representative Sparkle measurements rather than logical-core maximization.
+- No topology service, affinity/priority policy, per-workload policy table, speculative padding, or per-subsystem pool is introduced.
 
-Positive patterns: topology metadata, worker sweeps, ready-time analysis, capped budgets, neutral defaults, negative-result retention.
-Forbidden: logical-core worship, pin-everything policy, priority as correctness, synthetic-only tuning, one-machine constants, hidden third-party oversubscription.
+Positive patterns: one total budget, small representative sweep, explicit override, bounded blocking lane, negative-result retention.
+Forbidden: logical-core worship, topology framework, pin-everything policy, priority as correctness, synthetic-only tuning, per-machine constants, hidden worker multiplication.
 ~~~
 
-## Prompt 26 — Integrate Reduction, Scan/Compaction, Partition, and Deterministic Merge
+## Prompt 26 — Close Deterministic Fan-In and Evidence-Gate Parallel Algorithms
 
-Target CL Title: `SparkleEngine: Add Parallel Reduction, Compaction, Partition, and Deterministic Merge`
+Target CL Title: `SparkleEngine: Prove Deterministic Parallel Fan-In`
 
 ~~~text
-Implement Prompt 26 only after Prompt 25 passes.
+Implement Prompt 26 only after Prompts 22 and 23 pass. Prompt 25's worker-budget choice is not required to verify deterministic fan-in.
 
 Objective:
-Demonstrate parallel-algorithm depth beyond parallel_for by improving real Sparkle data paths with serial oracles, deterministic contracts and measured crossover thresholds.
+Prove that existing task-local results merge deterministically into ECS, renderer/GPU-scene and cooker outputs. Add or parallelize a reduction, scan/compaction or partition algorithm only when Prompt 23 identifies a material current bottleneck and the retained implementation wins representative measurements.
 
 Non-negotiable repository rules:
 - Apply `Docs/Architecture/00-Review/L_SparkleEngineIntegrationStyleGuide.md` in full. Treat its ownership, implementation-shape, DOD, concurrency, rendering, naming, validation, structure, principal graphics engineering, and completion-report gates as acceptance criteria. Before editing, list the applicable `PGE-01` through `PGE-15` requirements from A, interpret them through H, and classify each as advance, preserve, not applicable, or blocked with expected evidence. Inspect the current repository, reconcile the whole touched ownership path, verify any AI-assisted work independently, delete replaced paths in the same change, reject role-only scaffolding, and report any justified exception explicitly with its owner, scope, evidence, and deletion or review gate.
 - Apply Rule 13: audit every data source, transform, stream, packet, cache, table, upload, and hot traversal touched by this prompt; record the concrete access inventory, authoritative/derived ownership, layout decision, stable identity, deterministic transform, exact source precedent, and measured falsifier.
 - Apply Rule 12: audit touched/new files for module and folder ownership, public/private placement, filename-to-primary-type alignment, and nearby misplaced counterparts; complete bounded moves/renames with includes, CMake, and documentation updated before the gate.
 - Enforce J's canonical concurrency/rendering vocabulary and Rule 10: search canonical terms plus rejected aliases in the touched scope, use one responsibility per name, and delete temporary compatibility spellings before the gate.
-- Search ECS queries/commands, GPU-scene dirty updates, renderer preparation and cooker package/layout code for existing reductions, append loops, sorts, prefix offsets and merge helpers.
-- Extend or replace existing algorithms; do not add a generic parallel-algorithm framework or duplicate buffers/helpers.
-- Apply daily refactoring to remove shared append state, repeated sorting/offset logic and allocations exposed in the selected paths.
+- Search ECS commands, GPU-scene dirty updates, renderer preparation and cooker publication for task-local outputs, shared append state, sorts, offsets and merge helpers.
+- Verify or simplify existing algorithms first. Do not add a generic parallel-algorithm framework, algorithm quota, duplicate serial/parallel product paths, or buffers/helpers without a selected measured consumer.
+- Apply daily refactoring only to remove nondeterministic/shared append state, repeated ordering logic or avoidable allocations exposed by the selected real path.
 - Preserve byte/state determinism where required and declare explicitly where floating-point equivalence, rather than bitwise identity, is acceptable.
 
 Required implementation:
-1. Select at least three current consumers covering: a reduction, a compaction/scan or task-local list merge, and stable bucket/partition/merge. Prefer transformed bounds, GPU-scene dirty ranges, renderer draw preparation, ECS command merge and cooker record offsets/keys.
-2. Build/retain a simple serial oracle for each consumer and define empty, capacity, ordering, floating-point and cancellation semantics.
-3. Implement task-local partial reduction with a defined merge tree/order. Do not contend on one atomic accumulator for normal data.
-4. Implement compaction using either task-local lists plus ordered merge or count/prefix-scan/scatter. Justify the choice by size/skew/allocation evidence.
-5. Implement stable key/tie-break partition/bucketing/merge so work-stealing completion order cannot change packages, entity-command commit or render identity.
-6. Test 0/1, just below/above grain, all/none selected, duplicate keys, skewed buckets, maximum capacity, randomized inputs and cancellation between phases.
-7. Measure scheduling overhead, allocations, bytes moved, cache behavior where available, critical path and crossover. Keep serial paths for small or losing workloads.
-8. Teach back map, reduction, scan, filter/compaction, partition, DAG and pipeline patterns; explain determinism and associativity costs.
+1. Inventory existing parallel producers and their fan-in points: ECS structural commands, renderer preparation, GPU-scene dirty publication and deterministic cooker/package outputs. Record the authoritative ordering key, tie-break, capacity/failure behavior and cancellation boundary for each applicable path.
+2. Re-run existing serial/parallel equivalence and deterministic-output tests with randomized task delays and 0/1/2/N workers. Completion order must not change entity commands, render IDs/draw order, dirty ranges, RT identities or cooked bytes.
+3. Fix any shared append, completion-order merge, unstable tie-break or duplicate ordering helper in its existing owner. Prefer task-local results plus one straightforward ordered merge.
+4. If Prompt 23 selected a measured reduction/scan/compaction/partition bottleneck, prototype the smallest owner-local alternative with a serial oracle, explicit empty/capacity/cancellation semantics and a measured small-work threshold. Retain it only if representative critical-path improvement justifies its allocation/code cost; otherwise delete it.
+5. If no such bottleneck exists, record the algorithm optimization as not applicable and make no production-code addition. Knowing where scan/reduction would fit is sufficient; Sparkle does not need one of each pattern.
 
 Validation:
-- Randomized property/reference tests compare every parallel result with its serial oracle across 1/2/N workers and repeated steal-order perturbation.
-- Cooker products remain byte-deterministic; ECS command playback and render IDs remain stable; floating-point tolerance/order is documented where applicable.
-- D3D12/Vulkan images and feature matrix remain correct for affected renderer/GPU-scene paths.
-- Performance evidence shows why each retained parallel algorithm beats or usefully complements the serial path at representative scale.
+- Existing deterministic products compare across 0/1/2/N workers and repeated completion-order perturbation.
+- Cooker products remain byte-deterministic; ECS command playback, render IDs/draw order, GPU-scene dirty publication and RT identity remain stable where applicable.
+- D3D12/Vulkan images and the advanced-feature matrix remain correct for any affected renderer/GPU-scene path.
+- Any newly retained parallel algorithm has a serial oracle and representative crossover/critical-path evidence; otherwise no new algorithm is required.
 
 Acceptance gate:
 - L Sections 19-21 (reconciliation, acceptance checklist, and required completion report) and Section 24 (Principal Graphics Engineering review gate) pass for the entire touched changelist, including directly affected neighboring ownership paths; no undocumented exception remains.
 - The binding Prompt 13-29 changelist design gate passes for the entire prompt changelist, including touched neighboring counterparts.
-- At least three real paths demonstrate distinct parallel patterns without a new framework or shipping demo subsystem.
-- Output ownership and merge order are explicit; no hot shared append/accumulator is left by convenience.
-- Losing variants are deleted and nearby duplicate algorithms are converged.
+- Applicable production fan-in points have explicit output ownership, stable ordering and deterministic cancellation/failure behavior.
+- No task completion order controls product identity, and no hot shared append/accumulator remains in a measured path by convenience.
+- There is no parallel-pattern quota. Losing prototypes are deleted, and an absent measured candidate closes with no production-code expansion.
 
-Positive patterns: serial oracle, task-local partials, stable keys, explicit scan phases, randomized properties, measured crossover.
-Forbidden: atomic append everywhere, nondeterministic package order, assuming floating-point associativity, benchmark-only consumer, parallelism below crossover.
+Positive patterns: task-local results, one ordered fan-in, stable keys, randomized completion, serial oracle for measured changes, honest non-applicability.
+Forbidden: algorithm collection for prestige, atomic append everywhere, nondeterministic package order, assuming floating-point associativity, benchmark-only consumer, parallelism below crossover.
 ~~~
 
 ## Prompt 27 — Complete Staged I/O and Cold-Cache PSO/Resource Hitch Control
@@ -2736,7 +2806,7 @@ Forbidden: atomic append everywhere, nondeterministic package order, assuming fl
 Target CL Title: `SparkleEngine: Add Staged I/O and Cold-Cache Hitch Control`
 
 ~~~text
-Implement Prompt 27 only after Prompt 26 passes.
+Implement Prompt 27 only after Prompts 16, 22, 23, and 25 pass. Prompt 26 is an independent deterministic-fan-in closure, not an I/O/PSO prerequisite.
 
 Objective:
 Turn current loading, cooking, shader reload and render resource creation into one bounded staged pipeline that distinguishes I/O completion, decode/build, shader compilation, native pipeline/resource creation, upload, owner commit and readiness; control first-run PSO/resource hitches without introducing a second cache or blocking recording.
@@ -2840,7 +2910,7 @@ Forbidden: two queues imply overlap, FPS-only latency claim, vendor-only frame i
 Target CL Title: `SparkleEngine: Complete Production Forensics and Portfolio Release`
 
 ~~~text
-Implement Prompt 29 only after Prompt 28 passes.
+Implement Prompt 29 only after Prompts 24, 26, and 28 pass.
 
 Objective:
 Prove the completed architecture can be diagnosed, defended and reproduced at an AMD/NVIDIA graphics/systems interview bar, then release a concise honest portfolio without adding an interview-only product surface.

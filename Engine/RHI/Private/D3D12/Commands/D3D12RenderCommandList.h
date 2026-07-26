@@ -1,9 +1,12 @@
 #pragma once
 
 #include "Commands/RenderCommandList.h"
+#include "Commands/RhiCommandRecordingLease.h"
+#include "D3D12/Memory/D3D12RecordingResourceUseToken.h"
 
 #include <d3d12.h>
 #include <cstdint>
+#include <vector>
 
 class D3D12RenderHardwareInterface;
 class D3D12RecordingUploadPage;
@@ -89,6 +92,15 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void UnorderedAccessBarrier(RhiResourceHandle resource) noexcept override;
 
   private:
+	friend class D3D12CommandRecordingContext;
+
+	struct RecordingResourceUse final
+	{
+		RhiResourceHandle Resource;
+		D3D12RecordingResourceUseToken Token;
+	};
+
+	void SetRecordingOwner(RhiCommandRecordingOwner owner) noexcept { m_recordingOwner = owner; }
 	void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept override;
 	void OnResourceTrackingFinished(
 	    RhiResourceHandle resource,
@@ -98,4 +110,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 	ID3D12GraphicsCommandList7* m_commandList = nullptr;
 	D3D12RecordingUploadPage* m_recordingUploadPage = nullptr;
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
+	RhiCommandRecordingOwner m_recordingOwner = {};
+	std::vector<RecordingResourceUse> m_recordingResourceUses;
+	std::size_t m_recordingResourceReleaseIndex = 0;
 };

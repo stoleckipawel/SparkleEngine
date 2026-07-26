@@ -90,6 +90,7 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	    RayTracingBlasCache& blasCache,
 	    RayTracingTopLevelScenePlanner* scenePlanner,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
+	void TrackBuildResources(RenderCommandContext& cmd) const noexcept;
 	void InvalidatePartitionedTlasSceneState() noexcept;
 	void ReleasePartitionedTlasResources() noexcept;
 

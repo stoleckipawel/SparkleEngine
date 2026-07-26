@@ -1,6 +1,7 @@
 #pragma once
 
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
+#include "D3D12/Memory/D3D12RecordingResourceUseToken.h"
 #include "Device/RenderHardwareInterface.h"
 
 #include <memory>
@@ -100,8 +101,12 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
-	void BeginResourceTracking(RhiResourceHandle resource) noexcept;
-	void EndResourceTracking(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept;
+	D3D12RecordingResourceUseToken BeginResourceTracking(
+	    RhiResourceHandle resource,
+	    bool coordinatorRecording) noexcept;
+	void EndResourceTracking(
+	    D3D12RecordingResourceUseToken use,
+	    RhiSubmissionToken submissionToken) noexcept;
 	bool BuildPartitionedTopLevelAccelerationStructure(
 	    ID3D12GraphicsCommandList7* commandList,
 	    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;

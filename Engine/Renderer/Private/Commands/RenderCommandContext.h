@@ -90,6 +90,7 @@ class RenderCommandContext final
 	    RhiGpuVirtualAddress resultGpuAddress,
 	    ERhiClassicTlasBuildMode buildMode = ERhiClassicTlasBuildMode::Build) noexcept;
 	void BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept;
+	void TrackResource(RhiResourceHandle resource) noexcept;
 	bool SupportsDiagnosticScopes() const noexcept;
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 	void EndDiagnosticScope() noexcept;

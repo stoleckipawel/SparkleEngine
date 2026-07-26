@@ -7,6 +7,7 @@
 #include <d3d12.h>
 #include <wrl/client.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -31,9 +32,10 @@ struct D3D12GpuAllocationRecord final
 	std::wstring DebugName;
 	D3D12GpuMemoryAllocator* Owner = nullptr;
 	bool IsMapped = false;
+	bool PendingRelease = false;
 	void* CpuMappedAddress = nullptr;
 	RhiSubmissionState LastUse;
-	std::uint32_t RecordingReferenceCount = 0;
+	std::atomic<std::uint32_t> RecordingReferenceCount = 0;
 
 	D3D12GpuAllocationRecord() noexcept = default;
 	~D3D12GpuAllocationRecord() noexcept;
@@ -55,7 +57,7 @@ struct D3D12GpuHeapRecord final
 	D3D12GpuMemoryAllocator* Owner = nullptr;
 	std::uint32_t AliasingResourceCount = 0;
 	RhiSubmissionState LastUse;
-	std::uint32_t RecordingReferenceCount = 0;
+	std::atomic<std::uint32_t> RecordingReferenceCount = 0;
 
 	D3D12GpuHeapRecord() noexcept = default;
 	~D3D12GpuHeapRecord() noexcept;

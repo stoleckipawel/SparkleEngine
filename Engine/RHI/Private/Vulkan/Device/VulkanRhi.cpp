@@ -883,12 +883,47 @@ void VulkanRhi::BuildRayTracingCapabilities() noexcept
 	                                            m_cmdBuildPartitionedAccelerationStructures == nullptr
 	                                        ? "vulkan-nv-ptlas-functions-not-loaded"
 	                                        : "vulkan-nv-ptlas-provider-ready"))))};
-	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
-	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::ClassicTlas,
-	    .SelectedTopLevelProviderReason =
-	        CVarRayTracingPreferPartitionedTlas.Get() && m_rayTracingCapabilities.Groups.PartitionedTlas.Supported
-	            ? "partitioned-tlas-supported-but-renderer-selection-not-wired"
-	            : "classic-tlas-baseline-selected"};
+	SelectRayTracingTopLevelProvider();
+}
+
+void VulkanRhi::SelectRayTracingTopLevelProvider() noexcept
+{
+	RhiRayTracingProviderCapabilities& provider =
+	    m_rayTracingCapabilities.Groups.Provider;
+	if (!m_rayTracingCapabilities.SupportsRayTracing)
+	{
+		provider = RhiRayTracingProviderCapabilities{
+		    .SelectedTopLevelProvider =
+		        ERhiRayTracingTopLevelProvider::None,
+		    .SelectedTopLevelProviderReason =
+		        "ray-tracing-unavailable"};
+		return;
+	}
+
+	const RhiPartitionedTlasCapabilities& partitionedTlas =
+	    m_rayTracingCapabilities.Groups.PartitionedTlas;
+	const bool partitionedTlasRequested =
+	    CVarRayTracingPreferPartitionedTlas.Get();
+	const bool partitionedTlasSelected =
+	    partitionedTlasRequested &&
+	    partitionedTlas.Supported &&
+	    partitionedTlas.SupportsDescriptorAccess;
+	const char* selectionReason = "classic-tlas-selected";
+	if (partitionedTlasSelected)
+	{
+		selectionReason = "vulkan-nv-ptlas-selected";
+	}
+	else if (partitionedTlasRequested && partitionedTlas.Supported)
+	{
+		selectionReason = "vulkan-ptlas-descriptor-path-unavailable";
+	}
+
+	provider = RhiRayTracingProviderCapabilities{
+	    .SelectedTopLevelProvider =
+	        partitionedTlasSelected
+	            ? ERhiRayTracingTopLevelProvider::PartitionedTlas
+	            : ERhiRayTracingTopLevelProvider::ClassicTlas,
+	    .SelectedTopLevelProviderReason = selectionReason};
 }
 
 void VulkanRhi::NameBootstrapObjects() noexcept

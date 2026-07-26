@@ -130,6 +130,8 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 			++result.Stats.Candidates.RejectedBlasCount;
 			continue;
 		}
+
+		cmd.TrackResource(blas.resource);
 		if (blas.builtThisFrame)
 		{
 			builtBlasResources.insert(blas.resource.Value);
@@ -219,6 +221,8 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		cmd.UnorderedAccessBarrier(RhiResourceHandle{resourceValue});
 	}
 
+	TrackBuildResources(cmd);
+
 	{
 		auto tlasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope("Partitioned TLAS Build") : ScopedGpuScope{};
 		cmd.BuildPartitionedTopLevelAccelerationStructure(
@@ -235,4 +239,19 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	m_partitionedResources.InstanceCount = nativeWriteCount;
 	m_partitionedResources.Built = true;
 	return result;
+}
+
+void RayTracingPartitionedTlasStrategy::TrackBuildResources(
+    RenderCommandContext& cmd) const noexcept
+{
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return;
+	}
+
+	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
+
+	cmd.TrackResource(resources.GetResourceHandle(m_partitionedResources.Storage));
+	cmd.TrackResource(resources.GetResourceHandle(m_partitionedResources.Scratch));
+	cmd.TrackResource(resources.GetResourceHandle(m_partitionedResources.NativeOperationData));
 }

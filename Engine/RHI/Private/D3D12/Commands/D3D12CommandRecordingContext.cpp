@@ -51,6 +51,7 @@ RhiCommandRecordingLease D3D12CommandRecordingContext::Acquire(
 	const RhiSubmissionToken reusableAfter = slot.RetirementToken;
 	slot.RetirementToken = {};
 	slot.RecordingOwner = owner;
+	slot.CommandList->SetRecordingOwner(owner);
 	slot.RecordingThread = {};
 	slot.State = SlotState::Recording;
 
@@ -364,6 +365,7 @@ void D3D12CommandRecordingContext::ReleaseSlot(CommandSlot& slot) noexcept
 
 	if (slot.State == SlotState::Closed)
 	{
+		slot.CommandList->ResetTrackedResources();
 		ResetSlot(slot);
 	}
 }

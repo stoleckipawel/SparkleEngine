@@ -273,15 +273,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		m_rayTracingCapabilities.Groups.PartitionedTlas.SupportsD3D12PublicDxrPartitionedTlas = false;
 		m_rayTracingCapabilities.Groups.PartitionedTlas.SupportsD3D12PublicDxrHeaders = false;
 
-		const bool partitionedTlasRequestedAndSupported =
-		    CVarRayTracingPreferPartitionedTlas.Get() && m_rayTracingCapabilities.Groups.PartitionedTlas.Supported;
-		m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
-		    .SelectedTopLevelProvider =
-		        m_rayTracingCapabilities.SupportsRayTracing ? ERhiRayTracingTopLevelProvider::ClassicTlas : ERhiRayTracingTopLevelProvider::None,
-		    .SelectedTopLevelProviderReason =
-		        partitionedTlasRequestedAndSupported
-		            ? "d3d12-nvapi-ptlas-supported-but-renderer-selection-not-wired"
-		            : (m_rayTracingCapabilities.SupportsRayTracing ? "classic-tlas-baseline-selected" : "ray-tracing-unavailable")};
+		SelectRayTracingTopLevelProvider();
 
 	}
 	else
@@ -327,14 +319,39 @@ void D3D12Rhi::RefreshPartitionedTlasCommandListCapability() noexcept
 		partitionedTlas.CapabilityStatusReason = "d3d12-nvapi-ptlas-standard-supported";
 	}
 
-	const bool partitionedTlasRequestedAndSupported = CVarRayTracingPreferPartitionedTlas.Get() && partitionedTlas.Supported;
-	if (m_rayTracingCapabilities.SupportsRayTracing)
+	SelectRayTracingTopLevelProvider();
+}
+
+void D3D12Rhi::SelectRayTracingTopLevelProvider() noexcept
+{
+	RhiRayTracingProviderCapabilities& provider =
+	    m_rayTracingCapabilities.Groups.Provider;
+	if (!m_rayTracingCapabilities.SupportsRayTracing)
 	{
-		m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::ClassicTlas;
-		m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProviderReason =
-		    partitionedTlasRequestedAndSupported ? "d3d12-nvapi-ptlas-supported-but-renderer-selection-not-wired"
-		                                         : "classic-tlas-baseline-selected";
+		provider = RhiRayTracingProviderCapabilities{
+		    .SelectedTopLevelProvider =
+		        ERhiRayTracingTopLevelProvider::None,
+		    .SelectedTopLevelProviderReason =
+		        "ray-tracing-unavailable"};
+		return;
 	}
+
+	const RhiPartitionedTlasCapabilities& partitionedTlas =
+	    m_rayTracingCapabilities.Groups.PartitionedTlas;
+	const bool partitionedTlasSelected =
+	    CVarRayTracingPreferPartitionedTlas.Get() &&
+	    partitionedTlas.Supported &&
+	    partitionedTlas.SupportsDescriptorAccess;
+
+	provider = RhiRayTracingProviderCapabilities{
+	    .SelectedTopLevelProvider =
+	        partitionedTlasSelected
+	            ? ERhiRayTracingTopLevelProvider::PartitionedTlas
+	            : ERhiRayTracingTopLevelProvider::ClassicTlas,
+	    .SelectedTopLevelProviderReason =
+	        partitionedTlasSelected
+	            ? "d3d12-nvapi-ptlas-selected"
+	            : "classic-tlas-selected"};
 }
 
 void D3D12Rhi::CreateCommandQueues()

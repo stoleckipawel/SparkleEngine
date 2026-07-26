@@ -126,6 +126,7 @@ class VulkanRhi final
 	void LoadDeviceDebugFunctions() noexcept;
 	void LoadRayTracingFunctions() noexcept;
 	void BuildRayTracingCapabilities() noexcept;
+	void SelectRayTracingTopLevelProvider() noexcept;
 	void NameBootstrapObjects() noexcept;
 	void LogBootstrapSummary() noexcept;
 	void PushDiagnosticMessage(ERhiDiagnosticMessageSeverity severity, ERhiDiagnosticMessageCategory category, std::string text) noexcept;

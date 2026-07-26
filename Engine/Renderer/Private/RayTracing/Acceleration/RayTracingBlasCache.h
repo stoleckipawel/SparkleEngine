@@ -108,6 +108,10 @@ class RayTracingBlasCache final
 	    const RhiRayTracingGeometryDesc& geometry,
 	    const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo,
 	    Entry& entry) noexcept;
+	void TrackBuildResources(
+	    RenderCommandContext& cmd,
+	    const RhiRayTracingGeometryDesc& geometry,
+	    const Entry& entry) const noexcept;
 	bool GeometryMatches(const Entry& entry, const RhiRayTracingGeometryDesc& geometry) const noexcept;
 	BlasHandle BuildHandle(const Entry& entry) const noexcept;
 

@@ -184,8 +184,7 @@ void GBufferMeshBatchDrawer::DrawBatch(
 		return;
 	}
 
-	cmd.BindVertexBuffer(gpuMesh.GetVertexBufferView());
-	cmd.BindIndexBuffer(gpuMesh.GetIndexBufferView());
+	gpuMesh.Bind(cmd);
 
 	GBufferPass::DrawParameterInstance drawParameters(
 	    drawParameterMetadata);

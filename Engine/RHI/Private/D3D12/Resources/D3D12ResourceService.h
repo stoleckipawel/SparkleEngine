@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/RhiCapabilities.h"
+#include "D3D12/Memory/D3D12RecordingResourceUseToken.h"
 #include "Resources/RhiResourceService.h"
 
 #include <cstdint>
@@ -97,8 +98,12 @@ class D3D12ResourceService final : public RhiResourceService
 	friend class D3D12RenderHardwareInterface;
 	void DrainCompletedResourceReleases() noexcept;
 	void FlushDeferredResourceReleases() noexcept;
-	void BeginResourceTracking(RhiResourceHandle resource) noexcept;
-	void EndResourceTracking(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept;
+	D3D12RecordingResourceUseToken BeginResourceTracking(
+	    RhiResourceHandle resource,
+	    bool coordinatorRecording) noexcept;
+	void EndResourceTracking(
+	    D3D12RecordingResourceUseToken use,
+	    RhiSubmissionToken submissionToken) noexcept;
 
 	struct PendingOwnedResourceRelease
 	{

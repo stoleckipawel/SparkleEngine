@@ -22,9 +22,15 @@ class RayTracingBlasCacheOperations final
   public:
 	static bool GeometryEquals(const RhiRayTracingGeometryDesc& left, const RhiRayTracingGeometryDesc& right) noexcept
 	{
-		return left.VertexBuffer == right.VertexBuffer && left.VertexStrideInBytes == right.VertexStrideInBytes &&
-		       left.VertexCount == right.VertexCount && left.IndexBuffer == right.IndexBuffer && left.IndexCount == right.IndexCount &&
-		       left.IndexFormat == right.IndexFormat && left.Opaque == right.Opaque;
+		return left.VertexResource.Value == right.VertexResource.Value &&
+		       left.VertexBuffer == right.VertexBuffer &&
+		       left.VertexStrideInBytes == right.VertexStrideInBytes &&
+		       left.VertexCount == right.VertexCount &&
+		       left.IndexResource.Value == right.IndexResource.Value &&
+		       left.IndexBuffer == right.IndexBuffer &&
+		       left.IndexCount == right.IndexCount &&
+		       left.IndexFormat == right.IndexFormat &&
+		       left.Opaque == right.Opaque;
 	}
 
 	static std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
@@ -252,6 +258,8 @@ RayTracingBlasCache::BlasHandle RayTracingBlasCache::BuildBlas(
 	}
 
 	entry.geometry = geometry;
+	TrackBuildResources(cmd, geometry, entry);
+
 	{
 		auto blasGpuScope = diagnostics != nullptr ? diagnostics->BeginGpuScope("BLAS Build") : ScopedGpuScope{};
 		cmd.BuildBottomLevelAccelerationStructure(
@@ -452,10 +460,14 @@ bool RayTracingBlasCache::BuildSkinnedGeometry(
 	}
 
 	const RhiIndexBufferView indexBufferView = gpuMesh.GetIndexBufferView();
+	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
+
 	outGeometry = RhiRayTracingGeometryDesc{
+	    .VertexResource = resources.GetResourceHandle(entry.dynamicVertexBuffer),
 	    .VertexBuffer = entry.dynamicVertexBufferView.BufferLocation,
 	    .VertexStrideInBytes = entry.dynamicVertexBufferView.StrideInBytes,
 	    .VertexCount = static_cast<std::uint32_t>(skinnedPositions.size()),
+	    .IndexResource = resources.GetResourceHandle(gpuMesh.GetIndexBufferResource()),
 	    .IndexBuffer = indexBufferView.BufferLocation,
 	    .IndexCount = gpuMesh.GetIndexCount(),
 	    .IndexFormat = indexBufferView.Format,
@@ -518,6 +530,24 @@ bool RayTracingBlasCache::EnsureEntryResources(
 	}
 
 	return true;
+}
+
+void RayTracingBlasCache::TrackBuildResources(
+    RenderCommandContext& cmd,
+    const RhiRayTracingGeometryDesc& geometry,
+    const Entry& entry) const noexcept
+{
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return;
+	}
+
+	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
+
+	cmd.TrackResource(geometry.VertexResource);
+	cmd.TrackResource(geometry.IndexResource);
+	cmd.TrackResource(resources.GetResourceHandle(entry.scratchBuffer));
+	cmd.TrackResource(resources.GetResourceHandle(entry.accelerationStructureBuffer));
 }
 
 bool RayTracingBlasCache::GeometryMatches(const Entry& entry, const RhiRayTracingGeometryDesc& geometry) const noexcept

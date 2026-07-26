@@ -200,7 +200,8 @@ void D3D12UploadService::DrainCompletedTextureUploads() noexcept
 	    [&completedValues](const PendingTextureUpload& upload)
 	    {
 		    return upload.StagingResource == nullptr ||
-		           (upload.StagingResource->RecordingReferenceCount == 0 &&
+		           (upload.StagingResource->RecordingReferenceCount.load(
+		                std::memory_order_relaxed) == 0 &&
 		            upload.StagingResource->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingTextureUploads.erase(firstPending, m_pendingTextureUploads.end());

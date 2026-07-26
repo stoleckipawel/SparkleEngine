@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Resources/RhiResourceDesc.h"
+#include "../Resources/RhiResourceHandles.h"
 
 #include <cstdint>
 
@@ -27,9 +28,11 @@ enum class ERhiRayTracingAccelerationStructureType : std::uint8_t
 
 struct RhiRayTracingGeometryDesc
 {
+	RhiResourceHandle VertexResource = {};
 	RhiGpuVirtualAddress VertexBuffer = 0;
 	std::uint32_t VertexStrideInBytes = 0;
 	std::uint32_t VertexCount = 0;
+	RhiResourceHandle IndexResource = {};
 	RhiGpuVirtualAddress IndexBuffer = 0;
 	std::uint32_t IndexCount = 0;
 	RhiIndexFormat IndexFormat = RhiIndexFormat::UInt32;

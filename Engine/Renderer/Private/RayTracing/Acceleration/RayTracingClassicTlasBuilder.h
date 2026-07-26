@@ -64,6 +64,7 @@ class RayTracingClassicTlasBuilder final
 	    const RenderSceneData& sceneData,
 	    const MeshDraw& draw) noexcept;
 	static std::array<float, 12> BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
+	void TrackBuildResources(RenderCommandContext& cmd) const noexcept;
 	void ReleaseResources() noexcept;
 	bool EnsureResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo) noexcept;
 

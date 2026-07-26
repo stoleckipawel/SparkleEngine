@@ -96,6 +96,7 @@ class D3D12Rhi final
 	void CreateMemoryAllocator();
 	void CheckRayTracingSupport() noexcept;
 	void RefreshPartitionedTlasCommandListCapability() noexcept;
+	void SelectRayTracingTopLevelProvider() noexcept;
 	void CreateCommandQueues();
 	void DisableExternalFeatureHooks() noexcept;
 
