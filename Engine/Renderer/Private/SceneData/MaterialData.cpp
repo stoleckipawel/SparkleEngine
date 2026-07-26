@@ -2,6 +2,14 @@
 #include "SceneData/MaterialData.h"
 #include "Scene/Materials/MaterialDesc.h"
 
+MaterialGpuHandle::operator bool() const noexcept
+{
+	return Index != UINT32_MAX && Generation != 0u;
+}
+
+bool MaterialGpuHandle::operator==(
+    const MaterialGpuHandle&) const noexcept = default;
+
 MaterialData MaterialData::FromDesc(const MaterialDesc& desc)
 {
 	MaterialData mat = {};
@@ -34,4 +42,20 @@ MaterialData MaterialData::FromDesc(const MaterialDesc& desc)
 	setTextureFlag(TextureGroup::SubsurfaceStrength);
 
 	return mat;
+}
+
+PerObjectPSConstantBufferData MaterialData::ToPerObjectPSData() const
+{
+	PerObjectPSConstantBufferData data{};
+	data.BaseColor = baseColor;
+	data.EmissiveColor = emissiveColor;
+	data.Metallic = metallic;
+	data.Roughness = roughness;
+	data.F0 = f0;
+	data.AlphaCutoff = alphaCutoff;
+	data.AlphaMode = alphaMode;
+	data.TextureFlags = textureFlags;
+	data.SubsurfaceColor = subsurfaceColor;
+	data.SubsurfaceStrength = subsurfaceStrength;
+	return data;
 }

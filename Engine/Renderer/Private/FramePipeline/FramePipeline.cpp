@@ -8,7 +8,7 @@
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 #include "Editor/EditorRenderPacketPlayer.h"
 #include "Editor/EditorTextureRegistry.h"
-#include "Frame/Builders/BuildFrameContext.h"
+#include "Frame/Builders/FrameContextBuilder.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Core/FrameContext.h"
@@ -30,7 +30,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
-#include "SceneData/Builders/RenderSceneDataBuilder.h"
+#include "SceneData/Preparation/RenderPreparationGraph.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/GpuScene/PersistentRenderGpuScene.h"
 #include "SceneData/Input/RenderInputConsumer.h"
@@ -458,35 +458,50 @@ void FramePipeline::RenderEditorPacket(const EditorRenderPacket& packet) noexcep
 
 void FramePipeline::RecordFrame() noexcept
 {
-	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
-	const RayTracedShadowSettings shadowSettings{
-	    .NormalBias = CVarRayTracedShadowNormalBias.Get(),
-	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get()};
-	const bool rayTracedShadowsEnabled = CVarRayTracedShadowsEnabled.Get();
-	RenderRayTracingScene* activeRayTracingScene = m_systems->GetRenderRayTracingScene();
 	const RenderFrameDynamicData& dynamic = m_renderInputConsumer->GetDynamicData();
+	RenderRayTracingScene* activeRayTracingScene = m_systems->GetRenderRayTracingScene();
+
+	ApplyRenderInputHistoryReset(dynamic);
+	FrameContext& frame = PrepareFrameContext(dynamic, activeRayTracingScene);
+	UpdateLightingHistory(frame);
+	SetupImageProviderFrame(frame, dynamic);
+	BindRayTracingScene(frame, activeRayTracingScene);
+	BindSkyTexture(frame);
+	BindRenderSceneGpuResources(*m_frameGraph, m_frameResources.External.Scene, *frame.sceneGpuData);
+	ExecuteFrameGraph(frame, activeRayTracingScene);
+}
+
+void FramePipeline::ApplyRenderInputHistoryReset(const RenderFrameDynamicData& dynamic) noexcept
+{
 	if (dynamic.Metadata.ResetHistory || m_systems->GetRenderWorld().ConsumeHistoryReset())
 	{
 		ResetTemporalState(dynamic.Metadata.CameraCut ? "Render input camera cut" : "Render input generation reset");
 	}
+}
 
-	const std::uint32_t frameIndex =
-	    renderHardwareInterface.GetCurrentFrameIndex();
-	std::unique_ptr<FrameContext>& frameSlot =
-	    m_frameContexts[frameIndex];
+FrameContext& FramePipeline::PrepareFrameContext(
+    const RenderFrameDynamicData& dynamic,
+    RenderRayTracingScene* activeRayTracingScene)
+{
+	const std::uint32_t frameIndex = m_systems->GetRenderHardwareInterface().GetCurrentFrameIndex();
+	std::unique_ptr<FrameContext>& frameSlot = m_frameContexts[frameIndex];
 	frameSlot = std::make_unique<FrameContext>(
-	    BuildFrameContext(
+	    FrameContextBuilder::Build(
 	        m_systems->GetRenderWorld(),
 	        dynamic,
 	        *m_gpuScene,
 	        frameIndex,
 	        m_systems->GetRenderCamera(),
 	        m_frameGraphRenderExtent,
-	        m_systems->GetRenderSceneDataBuilder(),
+	        m_systems->GetRenderPreparationGraph(),
 	        activeRayTracingScene,
 	        m_systems->GetPerViewDataBuilder(),
 	        m_systems->GetTemporalDataBuilder()));
-	FrameContext& frame = *frameSlot;
+	return *frameSlot;
+}
+
+void FramePipeline::UpdateLightingHistory(FrameContext& frame)
+{
 	if (GetLightingMode() == LightingMode::RestirPathTraced)
 	{
 		const std::uint64_t invalidationHash = BuildRestirLightingHistoryInvalidationHash(frame);
@@ -510,10 +525,17 @@ void FramePipeline::RecordFrame() noexcept
 		}
 		m_previousReferenceLightingHistoryInvalidationHash = invalidationHash;
 	}
+
 	if (frame.mainView.perTemporalData.HistoryValid == 0u)
 	{
 		InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
 	}
+}
+
+void FramePipeline::SetupImageProviderFrame(
+    const FrameContext& frame,
+    const RenderFrameDynamicData& dynamic)
+{
 	m_systems->GetImageProviders().SetupFrame(
 	    ImageProviderFrameContext{
 	        .RenderExtent = m_frameGraphRenderExtent,
@@ -524,7 +546,12 @@ void FramePipeline::RecordFrame() noexcept
 	        .TemporalData = frame.mainView.perTemporalData,
 	        .TemporalState = frame.mainView.temporalState,
 	        .ResetHistory = frame.mainView.perTemporalData.HistoryValid == 0u});
+}
 
+void FramePipeline::BindRayTracingScene(
+    FrameContext& frame,
+    RenderRayTracingScene* activeRayTracingScene)
+{
 	if (m_frameGraph != nullptr && m_frameResources.SceneTlas.IsValid())
 	{
 		if (activeRayTracingScene != nullptr)
@@ -547,7 +574,10 @@ void FramePipeline::RecordFrame() noexcept
 			m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameResources.SceneTlas);
 		}
 	}
+}
 
+void FramePipeline::BindSkyTexture(const FrameContext& frame)
+{
 	if (frame.sceneData.sky.HasTexture())
 	{
 		const RendererTexture& skyTexture = *frame.sceneData.sky.texture;
@@ -566,18 +596,28 @@ void FramePipeline::RecordFrame() noexcept
 	{
 		m_frameGraph->ClearPersistentTextureBinding(m_frameResources.External.Sky);
 	}
-	BindRenderSceneGpuResources(
-	    *m_frameGraph,
-	    m_frameResources.External.Scene,
-	    *frame.sceneGpuData);
+}
+
+void FramePipeline::ExecuteFrameGraph(
+    FrameContext& frame,
+    RenderRayTracingScene* activeRayTracingScene)
+{
+	RenderHardwareInterface& renderHardwareInterface = m_systems->GetRenderHardwareInterface();
+	const RayTracedShadowSettings shadowSettings{
+	    .NormalBias = CVarRayTracedShadowNormalBias.Get(),
+	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get()};
+	const bool rayTracedShadowsEnabled = CVarRayTracedShadowsEnabled.Get();
+
 	m_frameGraph->Setup(frame);
 	const FrameGraphPlan& compiledPlan = m_frameGraph->Compile();
+
 	const RenderRayTracingPassServices rayTracingPassServices{
 	    .Scene = activeRayTracingScene,
 	    .CapabilityReport = activeRayTracingScene != nullptr ? &activeRayTracingScene->GetCapabilities() : nullptr,
 	    .ShadowSettings = &shadowSettings,
 	    .ShadowsEnabled = rayTracedShadowsEnabled};
 	const RendererImageProviderPassServices imageProviderPassServices = m_systems->GetImageProviders().BuildPassServices();
+
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
 	    .RuntimeManager = m_systems->GetPipelineStateManager(),

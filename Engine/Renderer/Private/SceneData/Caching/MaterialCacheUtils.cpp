@@ -1,8 +1,6 @@
 #include "PCH.h"
 #include "MaterialCacheUtils.h"
 
-static const auto g_materialCacheUtilsLogger = Logging::GetOrCreateLogger("Renderer.MaterialCache");
-
 namespace MaterialCacheUtils
 {
 	static bool TextureReferenceEquals(const MaterialDesc& left, const MaterialDesc& right, TextureGroup textureGroup)
@@ -50,13 +48,6 @@ namespace MaterialCacheUtils
 			return materialSlot;
 		}
 
-		SPDLOG_LOGGER_WARN(
-		    g_materialCacheUtilsLogger,
-		    "{}",
-		    std::format(
-		        "MaterialCacheUtils::ResolveMaterialSlot: Material {} is out of range ({} materials); falling back to material 0",
-		        materialSlot,
-		        materialCount));
 		return 0;
 	}
 

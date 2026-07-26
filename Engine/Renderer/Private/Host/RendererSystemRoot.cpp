@@ -18,7 +18,7 @@
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "RHI/Public/CVars/RHICVars.h"
 #include "SceneData/RenderWorld.h"
-#include "SceneData/Builders/RenderSceneDataBuilder.h"
+#include "SceneData/Preparation/RenderPreparationGraph.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "Textures/TextureManager.h"
 #include "Window/Window.h"
@@ -192,7 +192,12 @@ void RendererSystemRoot::InitializeSceneSystems(
 	    assetTaskExecutor,
 	    applicationTaskScope);
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
-	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache, *m_textureManager);
+	m_renderPreparationGraph =
+	    std::make_unique<RenderPreparationGraph>(
+	        assetTaskExecutor,
+	        *m_materialCacheManager,
+	        *m_gpuMeshCache,
+	        *m_textureManager);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
 

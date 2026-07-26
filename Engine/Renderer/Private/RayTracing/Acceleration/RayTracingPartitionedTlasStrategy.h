@@ -4,9 +4,13 @@
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RHI/Public/RayTracing/RhiPartitionedTlasDesc.h"
 
+#include <DirectXMath.h>
+
+#include <array>
 #include <cstdint>
 
 class RenderHardwareInterface;
+struct MeshDraw;
 struct RayTracingPtlasPartitionPlan;
 
 class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAccelerationStructureStrategy
@@ -53,6 +57,28 @@ class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAcceler
 	};
 
 	bool CanUseActivePartitionedTlasProvider() const noexcept;
+	static bool IsUsablePartitionPlan(
+	    const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
+	static std::uint32_t ResolveInstanceCapacity(
+	    const RenderSceneData& sceneData) noexcept;
+	static std::uint32_t ResolvePartitionCount(
+	    const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
+	static std::uint32_t ResolveMaxInstancesPerPartition(
+	    std::uint32_t instanceCapacity,
+	    const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
+	static bool CanUsePartitionedTlasProvider(
+	    const RayTracingCapabilityReport& capabilityReport) noexcept;
+	static const char* ResolveInactiveProviderReason(
+	    const RayTracingCapabilityReport& capabilityReport) noexcept;
+	static const char* ResolveActiveProviderReason() noexcept;
+	static RayTracingSceneTlasShaderAccessMode
+	ResolveActiveShaderAccessMode(
+	    const RayTracingCapabilityReport& capabilityReport) noexcept;
+	static std::array<float, 12> BuildInstanceTransform(
+	    const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
+	static RhiPartitionedTlasInstanceFlags ResolveInstanceFlags(
+	    const RenderSceneData& sceneData,
+	    const MeshDraw& draw) noexcept;
 	bool EnsurePartitionedTlasResources(const RenderSceneData& sceneData, const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
 	RhiPartitionedTlasDesc BuildPartitionedTlasLayout(
 	    const RenderSceneData& sceneData,

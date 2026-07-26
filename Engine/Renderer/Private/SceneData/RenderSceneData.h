@@ -6,7 +6,9 @@
 #include "Renderer/Public/SceneData/SpotLight.h"
 #include "SceneData/MaterialData.h"
 #include "SceneData/RenderLightCollection.h"
+#include "SceneData/RenderMeshWorldBounds.h"
 #include "SceneData/RenderMeshWorkloadSummary.h"
+#include "SceneData/RenderRayTracingWorkPlan.h"
 #include "SceneData/RenderSkyData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
 #include "Rendering/RenderObjectId.h"
@@ -22,10 +24,7 @@ struct ResolvedMaterialTextureTable final
 	std::uint32_t DescriptorCount = 0u;
 	std::uint64_t Generation = 0u;
 
-	constexpr explicit operator bool() const noexcept
-	{
-		return static_cast<bool>(Binding) && DescriptorCount != 0u && Generation != 0u;
-	}
+	explicit operator bool() const noexcept;
 };
 
 struct RenderSceneData
@@ -38,12 +37,15 @@ struct RenderSceneData
 	RenderLightCollection<RectLight> rectLights;
 	RenderSkyData sky;
 	std::vector<MeshDraw> meshInstances;
+	std::vector<RenderMeshWorldBounds> meshWorldBounds;
+	std::vector<std::uint32_t> rasterMeshInstanceIndices;
 	std::vector<MeshInstanceBatch> meshInstanceBatches;
 	std::vector<DirectX::XMFLOAT4X4> jointMatrices;
 	std::vector<DirectX::XMFLOAT4X4> previousJointMatrices;
 	std::vector<float> morphWeights;
 	std::vector<float> previousMorphWeights;
 	RenderMeshWorkloadSummary meshWorkload;
+	RenderRayTracingWorkPlan rayTracingWork;
 	std::vector<MaterialData> materials;
 	ResolvedMaterialTextureTable materialTextureTable = {};
 };

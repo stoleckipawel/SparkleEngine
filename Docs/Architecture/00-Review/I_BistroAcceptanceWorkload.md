@@ -54,6 +54,20 @@ Bistro is large enough to expose problems that the current Sponza loop may hide:
 
 The list above defines categories to inventory; it is not a claim that every original asset or every advanced BRDF lobe is already supported.
 
+## Bistro Source-Scene Structure
+
+Bistro is one recognizable content family, but the official archive intentionally distributes separate render scenes:
+
+| Source scene | Meaning | Sparkle use |
+| --- | --- | --- |
+| `BistroExterior` | Complete street/building exterior. | Primary scale, outdoor-lighting, foliage, visibility, streaming, and exterior hero workload. |
+| `BistroInterior` | Original interior scene. | Baseline interior geometry/material/reference variant. |
+| `BistroInterior_Wine` | Modified version of the original interior with filled wine glasses and additional material parameters in the accompanying scene description. | Preferred difficult-material interior variant and interior hero candidate; it replaces rather than supplements `BistroInterior`. |
+
+These are not currently proven to be spatially aligned pieces of one seamless Sparkle world. Preserve them as variants in one `Bistro` family and benchmark them separately. Add a combined `BistroFull` level only after asset inspection proves compatible coordinates, scale, overlap, entrances, lighting, and acceptable duplicate content. Do not manually force them together merely to claim a continuous traversal.
+
+The source README also distinguishes emissive surfaces intended for ray-traced illumination from analytic lights intended for raster rendering. The lighting configuration must prevent accidental double lighting.
+
 ## Why San Miguel Is Required Too
 
 San Miguel is an iconic rendering-research scene: it appeared on the cover of the second edition of *Physically Based Rendering* and remains in use throughout the book. The maintained 523 MB 2.0 archive provides corrected high- and lower-polygon OBJ/PNG versions under Creative Commons Attribution 3.0.
@@ -98,7 +112,7 @@ No document may upgrade these facts into an implemented or verified Tier 1 claim
 
 ### In scope
 
-- complete Bistro exterior/interior and San Miguel high/low ingestion;
+- complete Bistro exterior/original-interior/wine-interior and San Miguel high/low ingestion;
 - deterministic asset conversion/cooking with an inventory report;
 - an explicit material support and fallback matrix;
 - raster and ray/path-traced reference views;
@@ -139,15 +153,17 @@ Sparkle does not currently expose OBJ as a source-import extension. For San Migu
 
 ## Target Showcase Entries
 
-Commit the small level/catalog/configuration records; keep the media external.
+Commit the small level/catalog/configuration records; keep the media external. The launcher should group records by scene family so benchmark variants do not look like unrelated worlds.
 
-| Level ID | Pack | Variant | Default behavior |
+| Logical family | Stable variant ID | Pack | Meaning and default behavior |
 | --- | --- | --- | --- |
-| `Sponza` | core | fast regression | Required startup fallback and CI/smoke route. |
-| `BistroExterior` | `Bistro` | complete exterior | Selectable when the external pack is present; primary hero and scale route. |
-| `BistroInterior` | `Bistro` | interior with the declared complete prop set | Selectable when present; primary indirect-lighting/material route. |
-| `SanMiguelHigh` | `SanMiguel` | corrected high-detail scene | Selectable when present; secondary hero/reference route. |
-| `SanMiguelLow` | `SanMiguel` | matched lower-polygon scene | Selectable when present; controlled scaling and lower-end fallback experiment. |
+| `Sponza` | `Sponza` | core | Required startup fallback and CI/smoke route. |
+| `Bistro` | `BistroExterior` | `Bistro` | Selectable when present; primary exterior hero and scale route. |
+| `Bistro` | `BistroInterior` | `Bistro` | Original interior baseline. |
+| `Bistro` | `BistroInteriorWine` | `Bistro` | Modified wine/material interior; preferred difficult-material and interior hero variant after validation. |
+| `Bistro` | `BistroFull` | `Bistro` | Conditional future combined level; unavailable until spatial composition is verified. |
+| `SanMiguel` | `SanMiguelHigh` | `SanMiguel` | Same hacienda composition at high detail; default user-facing and hero/reference variant. |
+| `SanMiguel` | `SanMiguelLow` | `SanMiguel` | Same composition at reduced geometry; controlled scaling and lower-end fallback experiment. |
 
 Target pack roots remain project-owned and predictable:
 
@@ -160,7 +176,7 @@ When a pack is absent, the launcher/level picker should show it as unavailable w
 
 The first deliverable for each Tier 1 scene is an importer/cooker inspection report, not a beauty shot. Build the reusable inspection path on Bistro, then run the same path on San Miguel without adding a scene-specific importer branch.
 
-The inventory must report for Bistro exterior, Bistro interior, San Miguel high detail, and San Miguel low detail separately:
+The inventory must report for Bistro exterior, Bistro original interior, Bistro wine interior, San Miguel high detail, and San Miguel low detail separately:
 
 - source files, nodes, mesh primitives, instances, vertices, indices, and triangles;
 - materials and deduplicated material variants;
@@ -236,7 +252,7 @@ The lighting contract accounts for:
 | Diffuse indirect light | Compare reference multi-bounce transport with the real-time ReSTIR/path solution in deep interior and arcade crops; show convergence and leaks. |
 | Glossy/specular response | Validate roughness/F0, normal mapping, reflection visibility, energy behavior, and denoising on metal/glass/paint/wood close-ups. |
 | Alpha/transmission | Separate alpha mask, composited transparency, and physical transmission. Never use blend opacity as evidence of refractive transport. |
-| Exposure/display | Freeze auto/manual exposure policy, adaptation timing, tone mapper, gamut/color space, output transfer, and door-transition behavior. |
+| Exposure/display | Freeze auto/manual exposure policy, adaptation timing, tone mapper, gamut/color space, output transfer, and the explicitly labeled exterior/interior scene-switch behavior. |
 | Temporal behavior | Evaluate camera motion, disocclusion, history rejection, ghosting, fireflies, and recovery time on both scenes. |
 
 Required reference paths:
@@ -275,7 +291,7 @@ The exact transforms are frozen only after the source is loaded, but the route p
 | `BIS-EXT-WIDE` | Exterior scale, long visibility, sunlight, sky/exposure, draw and ray pressure. | Hero still, raster/path split, GPU capture, memory table. |
 | `BIS-EXT-FOLIAGE` | Alpha-tested foliage/signage, fine geometry, temporal stability, overdraw and any-hit pressure. | Slow pan video, alpha/material debug view, before/after profile. |
 | `BIS-EXT-MARKET` | Dense materials, glass/metal/paint, local lights and reflections. | Material contact sheet and reflection/denoising crops. |
-| `BIS-DOOR-TRANSITION` | Indoor/outdoor exposure, streaming/residency, disocclusion, history rejection. | Continuous traversal with frame-time and residency trace. |
+| `BIS-ENTRY-PAIR` | Matched exterior-entry and interior-entry views; exposure, scene-switch/loading, residency, and history reset. | Explicit two-scene sequence with frame-time/residency trace; never present it as a seamless walk unless `BistroFull` is validated. |
 | `BIS-INT-WIDE` | Indirect lighting, shadowed interior, many props, material variety. | Hero still, reference comparison, convergence study. |
 | `BIS-INT-CLOSE` | Wine/glass/fabric/food/wood detail and difficult material response. | Lobe/fallback explanation and specialist close-ups. |
 | `BIS-INT-MOTION` | Temporal denoising/reconstruction under geometry and lighting change. | Baseline/neural side-by-side video and temporal metric plot. |
@@ -285,7 +301,7 @@ The exact transforms are frozen only after the source is loaded, but the route p
 | `SMG-WALK` | Cross-scene temporal behavior, culling, residency, and neural generalization. | Deterministic traversal, frame-time trace, baseline/neural comparison. |
 | `SMG-HIGH-LOW` | Controlled geometry scaling with the matched high/low versions. | Same camera/settings on both variants; CPU extraction, draw/dispatch, memory, BLAS/TLAS, traversal, and quality delta. |
 
-At least one Bistro route must traverse rather than teleport between exterior and interior. Camera scripts for both scenes must be deterministic and usable by benchmark, screenshot, capture, and video workflows.
+Camera scripts for all source-scene variants must be deterministic and usable by benchmark, screenshot, capture, and video workflows. Exterior-to-interior presentation uses an explicit scene cut or load transition until `BistroFull` passes its composition gate. San Miguel high and low use identical camera transforms and settings.
 
 ## Performance Contract
 
@@ -300,7 +316,7 @@ Provisional gates, to be revised once the first honest baseline is captured:
 | Raster/hybrid interactive | 2560×1440 | p95 GPU frame ≤ 16.67 ms | p95 GPU frame ≤ 12.5 ms | Includes full declared material/lighting envelope after warm-up. |
 | Ray/path interactive | 1920×1080 | p95 GPU frame ≤ 33.33 ms | p95 GPU frame ≤ 16.67 ms | Fixed sample budget plus reconstruction/denoising. |
 | Reference | 1920×1080 or higher | deterministic convergence | lower time-to-quality | Not required to be real-time. |
-| Door traversal | 2560×1440 | no incorrect/missing resident asset | no hitch > 50 ms after initial load | Report worst frame and cause; do not average it away. |
+| Bistro entry pair / scene switch | 2560×1440 | no incorrect/missing resident asset or stale history | no hitch > 50 ms after the target scene is warm | Report the cold switch separately from warm traversal; do not imply one continuous level. |
 | San Miguel cross-scene check | same settings as corresponding Bistro mode | correct output and complete metrics | within the declared quality/performance envelope | A different cost distribution is expected and must be explained, not normalized away. |
 
 The benchmark protocol records:
@@ -335,7 +351,7 @@ Complete at least three studies; they must be selected from the measured top cos
 Preferred study classes:
 
 - CPU scene extraction/culling/command generation versus GPU-driven alternatives;
-- texture cooking, upload, residency, descriptor access, and door-transition hitches;
+- texture cooking, upload, residency, descriptor access, and exterior/interior scene-switch hitches;
 - raster material/overdraw/pipeline variation, especially alpha-tested geometry;
 - ray-tracing BLAS/TLAS organization, compaction, instance strategy, build cost, memory, and traversal;
 - direct/indirect lighting sample allocation and time-to-quality;
@@ -380,7 +396,7 @@ The public front page shows only:
 - one exterior hero result;
 - one interior hero result;
 - one San Miguel hero result that proves cross-scene breadth;
-- one continuous 60–90 second traversal;
+- one 60–90 second sequence that labels Bistro scene cuts and keeps San Miguel high/low comparisons camera-matched;
 - three headline measurements with hardware/configuration;
 - links to the case studies, captures, code landmarks, and limitations.
 
@@ -392,7 +408,7 @@ The articles are written from completed evidence:
 
 1. **Making Bistro Reproducible** — asset provenance, deterministic conversion, material losses, and first correct frame.
 2. **One Bistro Frame, Two Explicit APIs** — workload structure, backend differences, capture-led incident, and scoped conclusions.
-3. **Where Bistro Actually Spends a Frame** — CPU/GPU/memory/RT-build distributions and the top causal optimizations.
+3. **Where Bistro Actually Spends a Frame** — exterior/interior-variant CPU/GPU/memory/RT-build distributions and the top causal optimizations.
 4. **Reference to Real Time** — path-traced ground truth, sampling, reconstruction, time-to-quality, and temporal failure.
 5. **From Model Graph to GPU Shader** — operator math, layout/precision/fusion, numerical validation, classical fallback, and held-out generalization.
 6. **What Was Deleted** — rejected optimizations, removed scaffolding, simplified boundaries, and product judgment.
@@ -424,7 +440,7 @@ Scene-adoption rule:
 | Deadline | Scene gate |
 | --- | --- |
 | End of week 2 | Provenance manifest, immutable source archive, automated inspection, import/cook baseline, and complete loss/warning inventory. |
-| End of week 4 | Bistro exterior/interior load deterministically; frozen cameras; no silent missing assets; first material support matrix. San Miguel provenance plus pre/post-conversion high/low inventories are complete. |
+| End of week 4 | Bistro exterior/original-interior/wine-interior variants load deterministically; frozen cameras; no silent missing assets; first material support matrix. San Miguel provenance plus pre/post-conversion high/low inventories are complete. |
 | End of week 6 | Correct Bistro raster/hybrid baseline and high-sample references; San Miguel high/low content loads through the same pipeline with its first reference camera and controlled scaling record; material/debug contact sheet and honest unsupported lists exist. |
 | End of week 9 | Deterministic routes, benchmark harness, first D3D12/Vulkan captures, bottleneck ranking, and one difficult incident log. |
 | End of week 14 | Neural data/reference generation with disjoint splits, classical baseline, model card, and held-out-scene protocol. |
@@ -436,7 +452,7 @@ Scene-adoption rule:
 
 Bistro is complete for the six-month portfolio only when:
 
-- Bistro exterior/interior and San Miguel high/low content are reproducibly acquired, converted or imported, cooked, and launched;
+- Bistro exterior/original-interior/wine-interior and San Miguel high/low content are reproducibly acquired, converted or imported, cooked, and launched;
 - each Tier 1 inventory accounts for every material and texture and classifies every loss;
 - the flagship cameras have deterministic high-sample references;
 - raster/hybrid and ray/path modes meet their declared correctness and measured performance budgets or clearly report the remaining miss;

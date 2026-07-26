@@ -184,7 +184,9 @@ RenderGpuGeometryPayloads RenderGpuScenePayloadBuilder::BuildGeometry(
 	}
 	payloads.MeshInstances.resize(meshInstanceCapacity);
 	payloads.MeshInstanceSlots.reserve(
-	    std::max<std::size_t>(sceneData.meshInstances.size(), 1));
+	    std::max<std::size_t>(
+	        sceneData.rasterMeshInstanceIndices.size(),
+	        1));
 	for (const MeshDraw& draw : sceneData.meshInstances)
 	{
 		payloads.MeshInstances[draw.Source.GpuSceneSlot] =
@@ -216,8 +218,16 @@ RenderGpuGeometryPayloads RenderGpuScenePayloadBuilder::BuildGeometry(
 		        .MorphTargetVertexCount =
 		            draw.Morph.VertexCount,
 		        .DebugData = draw.Source.GpuSceneSlot};
-		payloads.MeshInstanceSlots.push_back(
-		    draw.Source.GpuSceneSlot);
+	}
+	for (const std::uint32_t drawIndex :
+	     sceneData.rasterMeshInstanceIndices)
+	{
+		if (drawIndex < sceneData.meshInstances.size())
+		{
+			payloads.MeshInstanceSlots.push_back(
+			    sceneData.meshInstances[drawIndex]
+			        .Source.GpuSceneSlot);
+		}
 	}
 	if (payloads.MeshInstanceSlots.empty())
 	{
@@ -276,10 +286,12 @@ RenderGpuGeometryPayloads RenderGpuScenePayloadBuilder::BuildGeometry(
 RenderGpuRayTracingPayloads
 RenderGpuScenePayloadBuilder::BuildRayTracing(
     const RenderSceneData& sceneData,
-    const GPUMeshCache& meshes)
+	const GPUMeshCache& meshes)
 {
 	RenderGpuRayTracingPayloads payloads;
-	if (sceneData.meshInstances.empty() ||
+	const RenderRayTracingWorkPlan& work =
+	    sceneData.rayTracingWork;
+	if (work.BlasInputs.empty() ||
 	    sceneData.materials.empty())
 	{
 		return payloads;
@@ -327,26 +339,36 @@ RenderGpuScenePayloadBuilder::BuildRayTracing(
 	}
 
 	std::uint32_t instanceCapacity = 1;
-	for (const MeshDraw& draw : sceneData.meshInstances)
+	for (const RenderRayTracingBlasInput& input :
+	     work.BlasInputs)
 	{
 		instanceCapacity =
 		    std::max(
 		        instanceCapacity,
-		        draw.Source.GpuSceneSlot + 1u);
+		        input.GpuSceneSlot + 1u);
 	}
 	payloads.Instances.resize(instanceCapacity);
 
 	std::unordered_map<const GPUMesh*, RenderGpuMeshHitDataOffsets>
 	    meshOffsets;
 	std::uint32_t validInstanceCount = 0;
-	for (const MeshDraw& draw : sceneData.meshInstances)
+	for (const RenderRayTracingBlasInput& input :
+	     work.BlasInputs)
 	{
+		if (input.MeshInstanceIndex >=
+		    sceneData.meshInstances.size())
+		{
+			continue;
+		}
+		const MeshDraw& draw =
+		    sceneData.meshInstances[
+		        input.MeshInstanceIndex];
 		const MaterialData* material =
 		    draw.Material.Slot < sceneData.materials.size()
 		        ? &sceneData.materials[draw.Material.Slot]
 		        : nullptr;
 		RayTracingHitInstance& instance =
-		    payloads.Instances[draw.Source.GpuSceneSlot];
+		    payloads.Instances[input.GpuSceneSlot];
 		if (material == nullptr)
 		{
 			instance = BuildRejectedInstance(

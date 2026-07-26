@@ -15,25 +15,53 @@
 #include <unordered_set>
 #include <vector>
 
-namespace RayTracingPartitionedTlasStrategyDetails
+std::array<float, 12>
+RayTracingPartitionedTlasStrategy::BuildInstanceTransform(
+    const DirectX::XMFLOAT4X4& worldMatrix) noexcept
 {
-	std::array<float, 12> BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept
-	{
-		return {
-		    worldMatrix._11,
-		    worldMatrix._12,
-		    worldMatrix._13,
-		    worldMatrix._14,
-		    worldMatrix._21,
-		    worldMatrix._22,
-		    worldMatrix._23,
-		    worldMatrix._24,
-		    worldMatrix._31,
-		    worldMatrix._32,
-		    worldMatrix._33,
-		    worldMatrix._34};
-	}
+	return {
+	    worldMatrix._11,
+	    worldMatrix._12,
+	    worldMatrix._13,
+	    worldMatrix._14,
+	    worldMatrix._21,
+	    worldMatrix._22,
+	    worldMatrix._23,
+	    worldMatrix._24,
+	    worldMatrix._31,
+	    worldMatrix._32,
+	    worldMatrix._33,
+	    worldMatrix._34};
+}
 
+RhiPartitionedTlasInstanceFlags
+RayTracingPartitionedTlasStrategy::ResolveInstanceFlags(
+    const RenderSceneData& sceneData,
+    const MeshDraw& draw) noexcept
+{
+	RhiPartitionedTlasInstanceFlags flags =
+	    RhiPartitionedTlasInstanceFlags::None;
+	if (draw.Material.Slot >= sceneData.materials.size())
+	{
+		return flags;
+	}
+	const MaterialData& material =
+	    sceneData.materials[draw.Material.Slot];
+	if (material.doubleSided)
+	{
+		flags =
+		    flags |
+		    RhiPartitionedTlasInstanceFlags::
+		        TriangleFacingCullDisable;
+	}
+	if (material.alphaMode == 1u)
+	{
+		flags =
+		    flags |
+		    RhiPartitionedTlasInstanceFlags::
+		        ForceNoOpaque;
+	}
+	return flags;
 }
 
 RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStrategy::BuildPartitionedTlas(
@@ -46,7 +74,8 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 	RayTracingTopLevelAccelerationStructureBuildResult result{};
 	result.ActiveProvider = ERhiRayTracingTopLevelProvider::PartitionedTlas;
 	result.ActiveProviderReason = GetActiveProviderReason();
-	result.Stats.Candidates.InstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
+	const RenderRayTracingWorkPlan& work = sceneData.rayTracingWork;
+	result.Stats.Candidates.InstanceCount = static_cast<std::uint32_t>(work.PartitionedTlasBlasInputIndices.size());
 
 	if (!CanUseActivePartitionedTlasProvider())
 	{
@@ -63,32 +92,26 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		result.ActiveProviderReason = "partitioned-tlas-resource-setup-failed-after-frame-prepare";
 		return result;
 	}
-	auto resolveInstanceFlags = [&](const MeshDraw& draw) noexcept
-	{
-		RhiPartitionedTlasInstanceFlags flags = RhiPartitionedTlasInstanceFlags::None;
-		if (draw.Material.Slot >= sceneData.materials.size())
-		{
-			return flags;
-		}
-		const MaterialData& material = sceneData.materials[draw.Material.Slot];
-		if (material.doubleSided)
-		{
-			flags = flags | RhiPartitionedTlasInstanceFlags::TriangleFacingCullDisable;
-		}
-		if (material.alphaMode == 1u)
-		{
-			flags = flags | RhiPartitionedTlasInstanceFlags::ForceNoOpaque;
-		}
-		return flags;
-	};
-
 	std::vector<RhiPartitionedTlasInstanceWriteDesc> instanceWrites;
 	std::unordered_set<void*> builtBlasResources;
-	instanceWrites.reserve(sceneData.meshInstances.size());
-	for (std::uint32_t renderInstanceIndex = 0; renderInstanceIndex < static_cast<std::uint32_t>(sceneData.meshInstances.size());
-	     ++renderInstanceIndex)
+	instanceWrites.reserve(
+	    work.PartitionedTlasBlasInputIndices.size());
+	for (const std::uint32_t blasInputIndex :
+	     work.PartitionedTlasBlasInputIndices)
 	{
-		const MeshDraw& draw = sceneData.meshInstances[renderInstanceIndex];
+		if (blasInputIndex >= work.BlasInputs.size())
+		{
+			continue;
+		}
+		const RenderRayTracingBlasInput& input =
+		    work.BlasInputs[blasInputIndex];
+		if (input.MeshInstanceIndex >=
+		    sceneData.meshInstances.size())
+		{
+			continue;
+		}
+		const MeshDraw& draw =
+		    sceneData.meshInstances[input.MeshInstanceIndex];
 		if (!draw.Geometry.Mesh)
 		{
 			++result.Stats.Candidates.MissingGpuMeshCount;
@@ -100,7 +123,7 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		        cmd,
 		        sceneData,
 		        draw,
-		        draw.Source.GpuSceneSlot,
+		        input.GpuSceneSlot,
 		        diagnostics);
 		if (!blas.IsValid())
 		{
@@ -113,7 +136,10 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 		}
 
 		const RayTracingPtlasPartitionEntry* entry =
-		    partitionPlan != nullptr ? partitionPlan->FindByRenderInstance(renderInstanceIndex) : nullptr;
+		    partitionPlan != nullptr
+		        ? partitionPlan->FindByRenderInstance(
+		              input.MeshInstanceIndex)
+		        : nullptr;
 		if (entry != nullptr && !entry->Valid)
 		{
 			continue;
@@ -121,13 +147,18 @@ RayTracingTopLevelAccelerationStructureBuildResult RayTracingPartitionedTlasStra
 
 		instanceWrites.push_back(
 		    RhiPartitionedTlasInstanceWriteDesc{
-		        .Transform = RayTracingPartitionedTlasStrategyDetails::BuildInstanceTransform(draw.Transform.WorldMatrix),
+		        .Transform =
+		            BuildInstanceTransform(
+		                draw.Transform.WorldMatrix),
 		        .ExplicitBoundingBox = {},
-		        .InstanceID = draw.Source.GpuSceneSlot,
+		        .InstanceID = input.GpuSceneSlot,
 		        .InstanceMask = 0xFFu,
 		        .InstanceContributionToHitGroupIndex = 0u,
-		        .Flags = resolveInstanceFlags(draw),
-		        .InstanceIndex = draw.Source.GpuSceneSlot,
+		        .Flags =
+		            ResolveInstanceFlags(
+		                sceneData,
+		                draw),
+		        .InstanceIndex = input.GpuSceneSlot,
 		        .PartitionIndex = entry != nullptr ? entry->Assignment.PartitionId : 0u,
 		        .AccelerationStructure = blas.gpuAddress});
 	}

@@ -114,8 +114,12 @@ class RayTracingPtlasPartitionPlanner final
 	static DirectX::XMFLOAT3 TransformPoint(
 	    const DirectX::XMFLOAT3& point,
 	    const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
-	static InstanceBounds ComputeInstanceWorldBounds(const MeshDraw& draw) noexcept;
-	static DirectX::XMFLOAT3 ComputeInstancePartitionPosition(const MeshDraw& draw) noexcept;
+	static InstanceBounds ComputeInstanceWorldBounds(
+	    const RenderSceneData& sceneData,
+	    std::uint32_t renderInstanceIndex) noexcept;
+	static DirectX::XMFLOAT3 ComputeInstancePartitionPosition(
+	    const RenderSceneData& sceneData,
+	    std::uint32_t renderInstanceIndex) noexcept;
 	static SceneBounds ComputeSceneBounds(const RenderSceneData& sceneData) noexcept;
 	static std::uint32_t QuantizeAxis(
 	    float value,

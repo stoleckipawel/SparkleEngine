@@ -57,7 +57,7 @@ The scene decision is binding in [I. Bistro and San Miguel Acceptance Workloads]
 | Capability | Current level | Repository fact | Next truthful gate |
 | --- | ---: | --- | --- |
 | Sponza fast loop | `E2.5` | Required startup level and committed glTF/textures exist; raster and RT-related paths are exercised in prior focused validation. | Freeze visual references and short automated regression thresholds. |
-| Bistro catalog/product intent | `E1` | `Levels.catalog` declares an unavailable external optional pack rooted at `Assets/Meshes/Bistro`. | Record provenance, acquire immutable source, create deterministic import/cook inventory, and add explicit exterior/interior levels. |
+| Bistro catalog/product intent | `E1` | `Levels.catalog` declares an unavailable external optional pack rooted at `Assets/Meshes/Bistro`. | Record provenance, acquire immutable source, create deterministic import/cook inventory, and add grouped exterior/original-interior/wine-interior variants. |
 | Bistro material correctness | `E0` | No Bistro content or support/fallback matrix exists. | Account for every source material/texture, render debug contact sheets, and compare frozen cameras to a high-sample reference. |
 | Bistro performance evidence | `E0` | No load, route, capture, timing distribution, memory high-water, residency trace, or AS record exists. | Run the protocol in I and complete three causal bottleneck studies. |
 | San Miguel support | `E0` | No catalog entry, content pack, level, deterministic route, or reference exists. | Add high/low variants as an external optional pack through the same inventory pipeline; publish correct raster/reference views, controlled geometry-scaling benchmark, and high-detail hero result. |

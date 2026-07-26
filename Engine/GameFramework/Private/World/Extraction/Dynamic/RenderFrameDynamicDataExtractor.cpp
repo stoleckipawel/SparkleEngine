@@ -10,6 +10,7 @@
 #include "World/Resources/GameWorldResourceStores.h"
 #include "World/WorldReadView.h"
 
+#include <algorithm>
 #include <limits>
 #include <map>
 #include <utility>
@@ -77,7 +78,14 @@ namespace ECS
 			         : RenderAnimationAssetHandle{},
 			     pose.skinningMatrices});
 		}
-
+		std::sort(
+		    dynamic.Skinning.begin(),
+		    dynamic.Skinning.end(),
+		    [](const RenderSkinningData& lhs,
+		       const RenderSkinningData& rhs)
+		    {
+			    return lhs.Object < rhs.Object;
+		    });
 	}
 
 	void RenderFrameDynamicDataExtractor::ExtractMorphWeights(

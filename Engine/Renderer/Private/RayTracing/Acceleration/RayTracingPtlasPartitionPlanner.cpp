@@ -71,8 +71,30 @@ DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::TransformPoint(
 	}
 
 RayTracingPtlasPartitionPlanner::InstanceBounds RayTracingPtlasPartitionPlanner::ComputeInstanceWorldBounds(
-    const MeshDraw& draw) noexcept
+    const RenderSceneData& sceneData,
+    std::uint32_t renderInstanceIndex) noexcept
 	{
+		if (renderInstanceIndex <
+		    sceneData.meshWorldBounds.size())
+		{
+			const RenderMeshWorldBounds& prepared =
+			    sceneData.meshWorldBounds[
+			        renderInstanceIndex];
+			if (prepared.Valid)
+			{
+				return InstanceBounds{
+				    .Min = prepared.Min,
+				    .Max = prepared.Max,
+				    .Valid = true};
+			}
+		}
+		if (renderInstanceIndex >=
+		    sceneData.meshInstances.size())
+		{
+			return {};
+		}
+		const MeshDraw& draw =
+		    sceneData.meshInstances[renderInstanceIndex];
 		if (!draw.Geometry.Mesh || !draw.Geometry.HasLocalBounds)
 		{
 			const DirectX::XMFLOAT3 position{draw.Transform.WorldMatrix._41, draw.Transform.WorldMatrix._42, draw.Transform.WorldMatrix._43};
@@ -112,9 +134,13 @@ RayTracingPtlasPartitionPlanner::InstanceBounds RayTracingPtlasPartitionPlanner:
 	}
 
 DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::ComputeInstancePartitionPosition(
-    const MeshDraw& draw) noexcept
+    const RenderSceneData& sceneData,
+    std::uint32_t renderInstanceIndex) noexcept
 	{
-		const InstanceBounds bounds = ComputeInstanceWorldBounds(draw);
+		const InstanceBounds bounds =
+		    ComputeInstanceWorldBounds(
+		        sceneData,
+		        renderInstanceIndex);
 		return DirectX::XMFLOAT3{
 		    0.5f * (bounds.Min.x + bounds.Max.x),
 		    0.5f * (bounds.Min.y + bounds.Max.y),
@@ -125,9 +151,23 @@ RayTracingPtlasPartitionPlanner::SceneBounds RayTracingPtlasPartitionPlanner::Co
     const RenderSceneData& sceneData) noexcept
 	{
 		SceneBounds bounds{};
-		for (const MeshDraw& draw : sceneData.meshInstances)
+		for (const std::uint32_t blasInputIndex :
+		     sceneData.rayTracingWork
+		         .PartitionedTlasBlasInputIndices)
 		{
-			const InstanceBounds instanceBounds = ComputeInstanceWorldBounds(draw);
+			if (blasInputIndex >=
+			    sceneData.rayTracingWork.BlasInputs.size())
+			{
+				continue;
+			}
+			const std::uint32_t renderInstanceIndex =
+			    sceneData.rayTracingWork
+			        .BlasInputs[blasInputIndex]
+			        .MeshInstanceIndex;
+			const InstanceBounds instanceBounds =
+			    ComputeInstanceWorldBounds(
+			        sceneData,
+			        renderInstanceIndex);
 			if (instanceBounds.Valid)
 			{
 				ExpandSceneBounds(bounds, instanceBounds.Min);
@@ -232,7 +272,9 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	plan.Counts.PartitionCount = plan.Counts.GridPartitionCount + (hasGlobalPartition ? 1u : 0u);
 	plan.Counts.GlobalPartitionIndex = hasGlobalPartition ? plan.Counts.GridPartitionCount : kRayTracingPtlasInvalidEntryIndex;
 
-	if (sceneData.meshInstances.empty())
+	const RenderRayTracingWorkPlan& work =
+	    sceneData.rayTracingWork;
+	if (work.PartitionedTlasBlasInputIndices.empty())
 	{
 		m_previousInstances.clear();
 		m_partitionStates.clear();
@@ -260,22 +302,49 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 	}
 
 	std::unordered_set<std::uint32_t> seenStableIndices;
-	seenStableIndices.reserve(sceneData.meshInstances.size());
+	seenStableIndices.reserve(
+	    work.PartitionedTlasBlasInputIndices.size());
 	std::uint32_t maxStableIndex = 0;
-	for (const MeshDraw& draw : sceneData.meshInstances)
+	for (const std::uint32_t blasInputIndex :
+	     work.PartitionedTlasBlasInputIndices)
 	{
-		maxStableIndex = (std::max)(maxStableIndex, draw.Source.GpuSceneSlot);
+		if (blasInputIndex < work.BlasInputs.size())
+		{
+			maxStableIndex =
+			    (std::max)(
+			        maxStableIndex,
+			        work.BlasInputs[blasInputIndex]
+			            .GpuSceneSlot);
+		}
 	}
 	std::vector<PreviousInstanceState> nextPrevious(static_cast<std::size_t>(maxStableIndex) + 1u);
 	std::vector<ObservedInstance> observedInstances;
-	observedInstances.reserve(sceneData.meshInstances.size());
+	observedInstances.reserve(
+	    work.PartitionedTlasBlasInputIndices.size());
 
-	for (std::uint32_t renderInstanceIndex = 0; renderInstanceIndex < static_cast<std::uint32_t>(sceneData.meshInstances.size());
-	     ++renderInstanceIndex)
+	for (const std::uint32_t blasInputIndex :
+	     work.PartitionedTlasBlasInputIndices)
 	{
+		if (blasInputIndex >= work.BlasInputs.size())
+		{
+			continue;
+		}
+		const RenderRayTracingBlasInput& input =
+		    work.BlasInputs[blasInputIndex];
+		const std::uint32_t renderInstanceIndex =
+		    input.MeshInstanceIndex;
+		if (renderInstanceIndex >=
+		    sceneData.meshInstances.size())
+		{
+			continue;
+		}
 		const MeshDraw& draw = sceneData.meshInstances[renderInstanceIndex];
-		const std::uint32_t stableIndex = draw.Source.GpuSceneSlot;
-		const DirectX::XMFLOAT3 position = ComputeInstancePartitionPosition(draw);
+		const std::uint32_t stableIndex =
+		    input.GpuSceneSlot;
+		const DirectX::XMFLOAT3 position =
+		    ComputeInstancePartitionPosition(
+		        sceneData,
+		        renderInstanceIndex);
 		const std::uint32_t localPartitionId =
 		    plan.Validation.HasPartitionOverflow
 		        ? 0u
@@ -323,7 +392,8 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
 		return plan;
 	}
 
-	plan.Indices.Entries.reserve(sceneData.meshInstances.size());
+	plan.Indices.Entries.reserve(
+	    work.PartitionedTlasBlasInputIndices.size());
 	std::vector<std::uint32_t> partitionInstanceCounts(plan.Counts.PartitionCount, 0u);
 
 	for (const ObservedInstance& observed : observedInstances)

@@ -29,6 +29,8 @@ class FrameGraph;
 class RendererSystemRoot;
 class RenderInputConsumer;
 class PersistentRenderGpuScene;
+class RenderRayTracingScene;
+struct RenderFrameDynamicData;
 struct TimeInfo;
 
 struct FrameResolutionExtents final
@@ -91,6 +93,21 @@ class FramePipeline final
 	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
+	void ApplyRenderInputHistoryReset(const RenderFrameDynamicData& dynamic) noexcept;
+	FrameContext& PrepareFrameContext(
+	    const RenderFrameDynamicData& dynamic,
+	    RenderRayTracingScene* activeRayTracingScene);
+	void UpdateLightingHistory(FrameContext& frame);
+	void SetupImageProviderFrame(
+	    const FrameContext& frame,
+	    const RenderFrameDynamicData& dynamic);
+	void BindRayTracingScene(
+	    FrameContext& frame,
+	    RenderRayTracingScene* activeRayTracingScene);
+	void BindSkyTexture(const FrameContext& frame);
+	void ExecuteFrameGraph(
+	    FrameContext& frame,
+	    RenderRayTracingScene* activeRayTracingScene);
 	void ResetTemporalState(std::string_view reason) noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;

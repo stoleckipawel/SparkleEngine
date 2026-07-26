@@ -29,8 +29,8 @@ struct MaterialGpuHandle final
 	std::uint32_t Index = UINT32_MAX;
 	std::uint64_t Generation = 0u;
 
-	constexpr explicit operator bool() const noexcept { return Index != UINT32_MAX && Generation != 0u; }
-	constexpr bool operator==(const MaterialGpuHandle&) const noexcept = default;
+	explicit operator bool() const noexcept;
+	bool operator==(const MaterialGpuHandle&) const noexcept;
 };
 
 struct MaterialData
@@ -60,20 +60,5 @@ struct MaterialData
 	RhiDescriptorTableBinding rasterTextureTable = {};
 
 	static MaterialData FromDesc(const MaterialDesc& desc);
-
-	PerObjectPSConstantBufferData ToPerObjectPSData() const
-	{
-		PerObjectPSConstantBufferData data{};
-		data.BaseColor = baseColor;
-		data.EmissiveColor = emissiveColor;
-		data.Metallic = metallic;
-		data.Roughness = roughness;
-		data.F0 = f0;
-		data.AlphaCutoff = alphaCutoff;
-		data.AlphaMode = alphaMode;
-		data.TextureFlags = textureFlags;
-		data.SubsurfaceColor = subsurfaceColor;
-		data.SubsurfaceStrength = subsurfaceStrength;
-		return data;
-	}
+	PerObjectPSConstantBufferData ToPerObjectPSData() const;
 };

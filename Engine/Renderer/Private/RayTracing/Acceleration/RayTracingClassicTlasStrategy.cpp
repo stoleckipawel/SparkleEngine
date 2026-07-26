@@ -36,7 +36,10 @@ RayTracingSceneFrameData RayTracingClassicTlasStrategy::Prepare(
 {
 	(void)scenePlanner;
 	RayTracingSceneFrameData frameData{};
-	const std::uint32_t estimatedInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
+	const std::uint32_t estimatedInstanceCount =
+	    static_cast<std::uint32_t>(
+	        sceneData.rayTracingWork
+	            .ClassicTlasBlasInputIndices.size());
 	if (estimatedInstanceCount == 0)
 	{
 		m_classicTlasBuilder.Clear();

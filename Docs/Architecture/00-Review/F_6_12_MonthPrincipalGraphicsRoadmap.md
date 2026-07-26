@@ -342,7 +342,7 @@ The target is a hypothesis. If the hardware cannot meet it, publish the measured
   - ten-slide talk;
   - 90-second comparison video;
   - ten-minute narrated deep dive.
-- Publish the Bistro exterior/interior hero pair, the San Miguel hero, and the deterministic Bistro door traversal without forcing reviewers through the editor.
+- Publish the Bistro exterior/interior hero pair, the San Miguel hero, and a deterministic Bistro sequence that explicitly labels the exterior/interior scene cut unless a combined level has separately passed its composition gate.
 
 ### Gate
 

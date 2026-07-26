@@ -23,7 +23,7 @@ class RenderHardwareInterface;
 class RendererMemoryMonitor;
 class RendererImageProviderStack;
 class RenderRayTracingScene;
-class RenderSceneDataBuilder;
+class RenderPreparationGraph;
 class RhiImGuiRenderer;
 class RenderWorld;
 class TemporalDataBuilder;
@@ -63,7 +63,7 @@ class RendererSystemRoot final
 	GPUMeshCache& GetGpuMeshCache() noexcept { return *m_gpuMeshCache; }
 	TextureManager& GetTextureManager() noexcept { return *m_textureManager; }
 	MaterialCacheManager& GetMaterialCacheManager() noexcept { return *m_materialCacheManager; }
-	RenderSceneDataBuilder& GetRenderSceneDataBuilder() noexcept { return *m_renderSceneDataBuilder; }
+	RenderPreparationGraph& GetRenderPreparationGraph() noexcept { return *m_renderPreparationGraph; }
 	RenderRayTracingScene* GetRenderRayTracingScene() noexcept { return m_renderRayTracingScene.get(); }
 	const RenderRayTracingScene* GetRenderRayTracingScene() const noexcept { return m_renderRayTracingScene.get(); }
 	PerViewDataBuilder& GetPerViewDataBuilder() noexcept { return *m_perViewDataBuilder; }
@@ -100,7 +100,7 @@ class RendererSystemRoot final
 	std::unique_ptr<GPUMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureManager> m_textureManager;
 	std::unique_ptr<MaterialCacheManager> m_materialCacheManager;
-	std::unique_ptr<RenderSceneDataBuilder> m_renderSceneDataBuilder;
+	std::unique_ptr<RenderPreparationGraph> m_renderPreparationGraph;
 	std::unique_ptr<RenderRayTracingScene> m_renderRayTracingScene;
 	std::unique_ptr<PerViewDataBuilder> m_perViewDataBuilder;
 	std::unique_ptr<TemporalDataBuilder> m_temporalDataBuilder;

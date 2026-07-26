@@ -2,7 +2,7 @@
 
 Status: binding integration and review contract
 Applies to: owned code in `Engine`, `Tools`, `Projects`, build files, shaders, tests, and directly related documentation
-Last consolidated: 2026-07-24
+Last consolidated: 2026-07-26
 
 ## Purpose
 
@@ -266,6 +266,20 @@ Commit deterministic results
 Publish immutable output
 ```
 
+The top-level workflow MUST remain visible without reading its mechanisms. A reviewer should be able to understand the order and policy by reading the orchestration function alone, then navigate to a named function or capability only when implementation detail is needed.
+
+When an orchestration function contains more than one logical stage, extract each nontrivial stage into a responsibility-bearing member or capability function. This applies even when the extracted function has one caller. Typical stage boundaries include:
+
+- resolve or acquire inputs;
+- derive capacity or policy;
+- build topology;
+- wire prerequisites;
+- execute work;
+- merge or commit results;
+- publish or retire state.
+
+Do not combine topology capacity selection, node construction, dependency wiring, execution, and state publication in one function. Do not require a reader to scan task descriptors, loops, allocation mechanics, or backend branches to discover the high-level workflow.
+
 An orchestrator MUST NOT accumulate:
 
 - parsing/decoding algorithms;
@@ -524,6 +538,14 @@ Public aggregate and serialized field spelling MUST follow the owning contract c
 
 Additional rules:
 
+- Use blank lines to expose logical stages inside a function. Keep consecutive initialization or mutation of one record together; place one blank line before the next distinct operation, loop, branch, commit, or publication stage.
+- Do not turn a function into an undifferentiated wall of statements. Whitespace is part of the ownership narrative: acquire, transform, commit, and publish should be visually distinct.
+- Do not insert arbitrary blank lines inside one cohesive initialization sequence or split a condition from the operation it governs.
+- Keep a declaration, call, assignment, return type, and function signature on one line when it fits comfortably within the configured 140-column limit and remains readable.
+- Wrap because the expression is genuinely long or its elements benefit from one-per-line review, not merely because a shorter visual column was used elsewhere.
+- Once a call or aggregate must wrap, group its arguments and fields by meaning and avoid stair-step fragmentation of simple member access, casts, names, and ternaries.
+- Formatting is not a substitute for decomposition. If compact formatting still leaves several independently meaningful stages in one function, extract named behavior.
+- During every touched-file review, inspect the complete modified file for dense unnamed sequential regions and mixed orchestration/mechanism. Improve the bounded file while preserving behavior; record any neighboring god unit that cannot safely move in the current change.
 - use `final` when a concrete class is not designed for inheritance;
 - delete unsupported copy/move operations explicitly where ownership requires it;
 - use `noexcept` where the operation's real contract supports it, not as decoration;
@@ -1416,6 +1438,8 @@ A change is ready only when the answer to each applicable question is yes.
 - Are substantive capabilities in dedicated files where appropriate?
 - Are headers declaration-only except templates and trivial accessors?
 - Are all nontrivial bodies in `.cpp`?
+- Do blank lines expose logical stages without fragmenting cohesive initialization?
+- Do signatures and ordinary expressions remain compact when they fit the configured column limit?
 - Are there no function-local class/struct definitions?
 - Are there no anonymous namespaces?
 - Were arbitrary `Detail`/`Internal`/`Helpers` ownership namespaces avoided?
@@ -1557,6 +1581,8 @@ The following are rejected unless a prompt explicitly establishes and closes a n
 - duplicate GUID/runtime-ID authorities or hot GUID lookup;
 - public cache/queue/task diagnostics;
 - validation/logging boilerplate in orchestration;
+- orchestration presented as one wall of mechanism statements;
+- needless line fragmentation of signatures, calls, casts, member access, or short expressions;
 - nontrivial header function definitions;
 - function-local class/struct definitions;
 - anonymous namespaces;

@@ -8,7 +8,7 @@
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshData.h"
-#include "SceneData/Builders/MeshInstanceBatchBuilder.h"
+#include "SceneData/Preparation/MeshInstanceBatchBuilder.h"
 #include "SceneData/RenderMeshClassificationConversion.h"
 #include "SceneData/RenderWorld.h"
 
@@ -19,6 +19,17 @@
 MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& world, const GPUMeshCache* gpuMeshCache)
 {
 	MeshDiagnosticsSnapshot snapshot;
+	CollectRows(world, gpuMeshCache, snapshot);
+	SortRows(snapshot);
+	snapshot.GeometryInstancing = CaptureGeometryInstancing(world, gpuMeshCache);
+	return snapshot;
+}
+
+void MeshDiagnosticsCollector::CollectRows(
+    const RenderWorld& world,
+    const GPUMeshCache* gpuMeshCache,
+    MeshDiagnosticsSnapshot& snapshot)
+{
 	snapshot.Rows.reserve(world.GetProxies().size());
 
 	std::unordered_map<const Mesh*, std::size_t> rowIndices;
@@ -62,7 +73,10 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 			row->FirstMaterialSlot = materialHandle.GetIndex();
 		}
 	}
+}
 
+void MeshDiagnosticsCollector::SortRows(MeshDiagnosticsSnapshot& snapshot)
+{
 	std::sort(
 	    snapshot.Rows.begin(),
 	    snapshot.Rows.end(),
@@ -82,13 +96,25 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 		    }
 		    return lhs.MeshRuntimeId < rhs.MeshRuntimeId;
 	    });
+}
 
+MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInstancing(
+    const RenderWorld& world,
+    const GPUMeshCache* gpuMeshCache)
+{
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(world.GetProxies().size());
+
+	std::vector<MeshDraw> draws;
+	draws.reserve(world.GetProxies().size());
+
 	std::vector<RenderMeshInstanceGroup> renderInstanceGroups;
 	for (const RenderMeshInstanceGroupData& group : world.GetInstanceGroups())
+	{
 		renderInstanceGroups.push_back({RenderMeshClassificationConversion::ToRenderMeshInstanceGroupKind(group.Kind), group.InstanceCount});
-	MeshGeometryInstancingDiagnostics& instancingDiagnostics = snapshot.GeometryInstancing;
+	}
+
+	MeshGeometryInstancingDiagnostics instancingDiagnostics;
 	instancingDiagnostics.RuntimeInstanceGroupCount = static_cast<std::uint32_t>(renderInstanceGroups.size());
 	for (const RenderMeshInstanceGroup& group : renderInstanceGroups)
 	{
@@ -101,6 +127,7 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 			++instancingDiagnostics.RuntimeSharedMeshReferenceGroupCount;
 		}
 	}
+
 	for (const auto& [object, proxy] : world.GetProxies())
 	{
 		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
@@ -111,60 +138,87 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const RenderWorld& wor
 
 		const GPUMesh* gpuMesh = gpuMeshCache != nullptr ? gpuMeshCache->Find(*mesh) : nullptr;
 
+		const std::uint32_t drawIndex = static_cast<std::uint32_t>(draws.size());
+		draws.push_back(
+		    MeshDraw{
+		        .Transform =
+		            MeshDrawTransform{
+		                .WorldMatrix =
+		                    MathUtils::IdentityFloat4x4(),
+		                .WorldInvTranspose = {}},
+		        .Material =
+		            MeshDrawMaterial{
+		                .Slot =
+		                    proxy.Static.Material.IsValid()
+		                        ? proxy.Static.Material.GetIndex()
+		                        : 0u},
+		        .Skinning =
+		            MeshDrawSkinning{
+		                .SkeletonAssetId =
+		                    proxy.Static.Skeleton.GetAssetId()},
+		        .Source =
+		            MeshDrawSourceIdentity{
+		                .GpuSceneSlot = proxy.GpuSceneSlot},
+		        .Geometry =
+		            MeshDrawGeometry{
+		                .MeshKind =
+		                    RenderMeshClassificationConversion::
+		                        ToRenderMeshKind(
+		                            proxy.Static.MeshKind),
+		                .Mesh =
+		                    gpuMesh != nullptr
+		                        ? gpuMesh->GetHandle()
+		                        : GpuMeshHandle{}}});
 		renderItems.push_back(
 		    MeshRenderItem{
-		        .draw = MeshDraw{
-		            .Transform =
-		                MeshDrawTransform{
-		                    .WorldMatrix = MathUtils::IdentityFloat4x4(),
-		                    .WorldInvTranspose = {}},
-		            .Material =
-		                MeshDrawMaterial{
-		                    .Slot = proxy.Static.Material.IsValid() ? proxy.Static.Material.GetIndex() : 0u},
-		            .Skinning =
-		                MeshDrawSkinning{
-		                    .SkeletonAssetId = proxy.Static.Skeleton.GetAssetId()},
-		            .Source =
-		                MeshDrawSourceIdentity{
-		                    .GpuSceneSlot = proxy.GpuSceneSlot},
-		            .Geometry =
-		                MeshDrawGeometry{
-		                    .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(proxy.Static.MeshKind),
-		                    .Mesh = gpuMesh != nullptr
-		                                ? gpuMesh->GetHandle()
-		                                : GpuMeshHandle{}}},
-		        .instanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(proxy.Static.InstanceGroupIndex)});
+		        .Object = object,
+		        .DrawIndex = drawIndex,
+		        .InstanceGroupIndex =
+		            RenderMeshClassificationConversion::
+		                ToRenderMeshInstanceGroupIndex(
+		                    proxy.Static.InstanceGroupIndex),
+		        .Classification =
+		            RenderMaterialClassification::Opaque});
 	}
 
 	MeshInstanceBatchBuilder batchBuilder;
-	MeshGeometryInstancingDiagnostics batchDiagnostics = batchBuilder.Build(
+	MeshGeometryInstancingDiagnostics diagnostics = batchBuilder.Build(
 	    renderItems,
+	    draws,
 	    renderInstanceGroups,
 	    MeshInstanceBatchBuildOptions{
-	        .enableAutoBatching = CVarRendererMeshAutoBatching.Get(),
-	        .requireMaterialBindingSet = false,
-	        .collectDiagnostics = true})
-	                                  .diagnostics;
-	batchDiagnostics.RuntimeInstanceGroupCount = instancingDiagnostics.RuntimeInstanceGroupCount;
-	batchDiagnostics.RuntimeAuthoredGroupCount = instancingDiagnostics.RuntimeAuthoredGroupCount;
-	batchDiagnostics.RuntimeSharedMeshReferenceGroupCount = instancingDiagnostics.RuntimeSharedMeshReferenceGroupCount;
-	snapshot.GeometryInstancing = batchDiagnostics;
-
-	return snapshot;
+	        .EnableAutoBatching = CVarRendererMeshAutoBatching.Get(),
+	        .RequireMaterialBindingSet = false,
+	        .CollectDiagnostics = true})
+	                                  .Diagnostics;
+	diagnostics.RuntimeInstanceGroupCount = instancingDiagnostics.RuntimeInstanceGroupCount;
+	diagnostics.RuntimeAuthoredGroupCount = instancingDiagnostics.RuntimeAuthoredGroupCount;
+	diagnostics.RuntimeSharedMeshReferenceGroupCount = instancingDiagnostics.RuntimeSharedMeshReferenceGroupCount;
+	return diagnostics;
 }
 
 MeshPreviewGeometry MeshDiagnosticsCollector::CapturePreview(const RenderWorld& world, std::uintptr_t meshRuntimeId)
 {
 	MeshPreviewGeometry geometry;
-	if (meshRuntimeId == 0) return geometry;
+	if (meshRuntimeId == 0)
+	{
+		return geometry;
+	}
+
 	for (const auto& [object, proxy] : world.GetProxies())
 	{
 		const Mesh* mesh = proxy.Static.Mesh.GetResource().get();
-		if (mesh == nullptr || reinterpret_cast<std::uintptr_t>(mesh) != meshRuntimeId) continue;
+		if (mesh == nullptr || reinterpret_cast<std::uintptr_t>(mesh) != meshRuntimeId)
+		{
+			continue;
+		}
+
 		const MeshData& data = mesh->GetMeshData();
 		geometry.Vertices.reserve(data.vertices.size());
 		for (const VertexData& vertex : data.vertices)
+		{
 			geometry.Vertices.push_back({vertex.position.x, vertex.position.y, vertex.position.z});
+		}
 		geometry.Indices.assign(data.indices.begin(), data.indices.end());
 		break;
 	}

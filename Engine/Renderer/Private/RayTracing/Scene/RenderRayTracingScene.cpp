@@ -61,7 +61,9 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 	}
 	EnsureTopLevelAccelerationStructureStrategyMatchesRuntimeMode();
 
-	const std::uint32_t estimatedInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
+	const std::uint32_t estimatedInstanceCount =
+	    static_cast<std::uint32_t>(
+	        sceneData.rayTracingWork.BlasInputs.size());
 	if (estimatedInstanceCount == 0)
 	{
 		m_topLevelAccelerationStructureStrategy->Clear();
@@ -85,7 +87,7 @@ void RenderRayTracingScene::Build(
 		return;
 	}
 
-	if (sceneData.meshInstances.empty())
+	if (sceneData.rayTracingWork.BlasInputs.empty())
 	{
 		return;
 	}
