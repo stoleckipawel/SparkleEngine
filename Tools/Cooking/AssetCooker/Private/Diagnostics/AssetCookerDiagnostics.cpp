@@ -1,20 +1,11 @@
 #include "AssetCookerDiagnostics.h"
 
+#include <iterator>
 #include <utility>
-
-void AssetCookerDiagnostics::AddInfo(AssetCookerCategory category, std::string message)
-{
-	Add(AssetCookerDiagnosticSeverity_Info, category, std::move(message), std::string());
-}
-
-void AssetCookerDiagnostics::AddWarning(AssetCookerCategory category, std::string message)
-{
-	Add(AssetCookerDiagnosticSeverity_Warning, category, std::move(message), std::string());
-}
 
 void AssetCookerDiagnostics::AddError(AssetCookerCategory category, std::string message)
 {
-	Add(AssetCookerDiagnosticSeverity_Error, category, std::move(message), std::string());
+	Add(category, std::move(message), std::string());
 }
 
 void AssetCookerDiagnostics::AddError(
@@ -22,12 +13,15 @@ void AssetCookerDiagnostics::AddError(
     std::string message,
     const std::filesystem::path& sourcePath)
 {
-	Add(AssetCookerDiagnosticSeverity_Error, category, std::move(message), sourcePath.string());
+	Add(category, std::move(message), sourcePath.string());
 }
 
-const std::vector<AssetCookerDiagnosticRecord>& AssetCookerDiagnostics::GetRecords() const noexcept
+void AssetCookerDiagnostics::Append(std::vector<AssetCookerDiagnosticRecord> additionalRecords)
 {
-	return records;
+	records.insert(
+	    records.end(),
+	    std::make_move_iterator(additionalRecords.begin()),
+	    std::make_move_iterator(additionalRecords.end()));
 }
 
 std::vector<AssetCookerDiagnosticRecord> AssetCookerDiagnostics::ReleaseRecords()
@@ -36,13 +30,11 @@ std::vector<AssetCookerDiagnosticRecord> AssetCookerDiagnostics::ReleaseRecords(
 }
 
 void AssetCookerDiagnostics::Add(
-    AssetCookerDiagnosticSeverity severity,
     AssetCookerCategory category,
     std::string message,
     std::string sourcePath)
 {
 	AssetCookerDiagnosticRecord record;
-	record.severity = severity;
 	record.category = category;
 	record.message = std::move(message);
 	record.sourcePath = std::move(sourcePath);

@@ -34,6 +34,7 @@
 #include <vector>
 
 class RenderCommandContext;
+class RenderCommandList;
 class RhiCommandSubmissionService;
 class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;

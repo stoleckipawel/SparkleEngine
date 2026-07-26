@@ -130,6 +130,15 @@ void VulkanDescriptorManager::ReleaseDescriptorTable(RhiDescriptorTableHandle ta
 	m_allocator.ReleaseDescriptorTable(tableHandle);
 }
 
+void VulkanDescriptorManager::WriteSamplerDescriptor(
+    RhiDescriptorTableHandle table,
+    VkSampler sampler) noexcept
+{
+	m_allocator.WriteSamplerDescriptor(
+	    GetDescriptorTableCpuHandle(table),
+	    sampler);
+}
+
 RhiDescriptorTableBinding VulkanDescriptorManager::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept
 {
 	return m_samplerLibrary != nullptr ? m_samplerLibrary->GetSharedSamplerBinding(samplerDesc) : RhiDescriptorTableBinding{};

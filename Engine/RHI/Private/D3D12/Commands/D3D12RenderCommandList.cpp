@@ -424,13 +424,23 @@ void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(
     RhiGpuVirtualAddress scratchGpuAddress,
     RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
+	const D3D12_GPU_VIRTUAL_ADDRESS vertexBufferAddress =
+	    ResolveRayTracingBufferAddress(geometry.VertexBuffer);
+		
+	const D3D12_GPU_VIRTUAL_ADDRESS indexBufferAddress =
+	    ResolveRayTracingBufferAddress(geometry.IndexBuffer);
 	if (m_commandList == nullptr ||
 	    !RhiContract::IsRayTracingGeometryDescUsable(geometry) ||
+	    vertexBufferAddress == 0 ||
+	    indexBufferAddress == 0 ||
 	    !RhiContract::IsRayTracingGpuAddressPresent(scratchGpuAddress) ||
 	    !RhiContract::IsRayTracingGpuAddressPresent(resultGpuAddress))
 	{
 		return;
 	}
+
+	TrackResource(geometry.VertexBuffer.Resource);
+	TrackResource(geometry.IndexBuffer.Resource);
 
 	D3D12_RAYTRACING_GEOMETRY_DESC nativeGeometry{};
 	nativeGeometry.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
@@ -440,8 +450,8 @@ void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(
 	nativeGeometry.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
 	nativeGeometry.Triangles.IndexCount = geometry.IndexCount;
 	nativeGeometry.Triangles.VertexCount = geometry.VertexCount;
-	nativeGeometry.Triangles.IndexBuffer = geometry.IndexBuffer;
-	nativeGeometry.Triangles.VertexBuffer.StartAddress = geometry.VertexBuffer;
+	nativeGeometry.Triangles.IndexBuffer = indexBufferAddress;
+	nativeGeometry.Triangles.VertexBuffer.StartAddress = vertexBufferAddress;
 	nativeGeometry.Triangles.VertexBuffer.StrideInBytes = geometry.VertexStrideInBytes;
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
@@ -456,6 +466,13 @@ void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(
 	buildDesc.ScratchAccelerationStructureData = scratchGpuAddress;
 	buildDesc.DestAccelerationStructureData = resultGpuAddress;
 	m_commandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS D3D12RenderCommandList::ResolveRayTracingBufferAddress(
+    const RhiRayTracingBufferBinding& binding) noexcept
+{
+	ID3D12Resource* const resource = static_cast<ID3D12Resource*>(binding.Resource.Value);
+	return resource != nullptr ? resource->GetGPUVirtualAddress() + binding.OffsetInBytes : 0;
 }
 
 void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(

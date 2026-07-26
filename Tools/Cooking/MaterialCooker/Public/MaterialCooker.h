@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CookedMaterialAssetBuild.h"
+#include "Core/Public/Files/FileUtils.h"
 #include "SourceImportResult.h"
 #include "TextureCookRequestList.h"
 
@@ -21,8 +22,9 @@ public:
 	    const SourceImportResult& importResult,
 	    std::vector<TextureCookRequest>& outRequests,
 	    std::string& outErrorMessage);
-	static bool WriteMaterialAssets(
+	static bool StageMaterialAssets(
 	    const std::vector<CookedMaterialAssetBuild>& materialAssets,
+	    std::vector<Files::FilePublication>& outPublication,
 	    std::string& outErrorMessage);
 
 private:

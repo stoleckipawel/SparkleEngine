@@ -1,15 +1,17 @@
 #include "PCH.h"
-#include "Rendering/EditorRenderPacketBuilder.h"
+#include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 
 #include <imgui.h>
 
-EditorRenderPacket EditorRenderPacketBuilder::Build(
+UiRenderPacket ImGuiRenderPacketBuilder::Build(
     const ImDrawData& drawData,
+    UiPresentationMode presentationMode,
     std::uint64_t viewportGeneration)
 {
 	m_packet = {};
 	m_packet.UiFrameId = ImGui::GetFrameCount();
 	m_packet.ViewportGeneration = viewportGeneration;
+	m_packet.PresentationMode = presentationMode;
 	m_packet.DisplayPosition[0] = drawData.DisplayPos.x;
 	m_packet.DisplayPosition[1] = drawData.DisplayPos.y;
 	m_packet.DisplaySize[0] = drawData.DisplaySize.x;
@@ -28,7 +30,7 @@ EditorRenderPacket EditorRenderPacketBuilder::Build(
 	return std::move(m_packet);
 }
 
-void EditorRenderPacketBuilder::Reserve(const ImDrawData& drawData)
+void ImGuiRenderPacketBuilder::Reserve(const ImDrawData& drawData)
 {
 	m_packet.Vertices.reserve(drawData.TotalVtxCount);
 	m_packet.Indices.reserve(drawData.TotalIdxCount);
@@ -44,9 +46,9 @@ void EditorRenderPacketBuilder::Reserve(const ImDrawData& drawData)
 	m_packet.Commands.reserve(commandCount);
 }
 
-void EditorRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
+void ImGuiRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 {
-	EditorDrawList packetList{
+	UiDrawList packetList{
 	    .VertexOffset = static_cast<std::uint32_t>(m_packet.Vertices.size()),
 	    .VertexCount = static_cast<std::uint32_t>(drawList.VtxBuffer.size()),
 	    .IndexOffset = static_cast<std::uint32_t>(m_packet.Indices.size()),
@@ -56,7 +58,7 @@ void EditorRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 
 	for (const ImDrawVert& vertex : drawList.VtxBuffer)
 	{
-		m_packet.Vertices.push_back(EditorDrawVertex{
+		m_packet.Vertices.push_back(UiDrawVertex{
 		    .Position = {vertex.pos.x, vertex.pos.y},
 		    .Uv = {vertex.uv.x, vertex.uv.y},
 		    .Color = vertex.col});
@@ -69,15 +71,15 @@ void EditorRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 	{
 		const std::uint64_t packedTextureHandle =
 		    static_cast<std::uint64_t>(command.GetTexID());
-		m_packet.Commands.push_back(EditorDrawCommand{
+		m_packet.Commands.push_back(UiDrawCommand{
 		    .ClipRect = {command.ClipRect.x, command.ClipRect.y, command.ClipRect.z, command.ClipRect.w},
 		    .TextureHandle = EditorTextureHandle::Unpack(packedTextureHandle),
 		    .ElementCount = command.ElemCount,
 		    .IndexOffset = command.IdxOffset,
 		    .VertexOffset = static_cast<std::int32_t>(command.VtxOffset),
 		    .Kind = command.UserCallback == ImDrawCallback_ResetRenderState
-		                ? EditorDrawCommandKind::ResetRenderState
-		                : EditorDrawCommandKind::Draw});
+		                ? UiDrawCommandKind::ResetRenderState
+		                : UiDrawCommandKind::Draw});
 	}
 	m_packet.DrawLists.push_back(packetList);
 }

@@ -13,7 +13,7 @@ class RuntimeConsoleHost final
   public:
 	using RuntimeUpdate = std::function<void()>;
 
-	RuntimeConsoleHost(Timer& timer, Window& window, Renderer& renderer);
+	RuntimeConsoleHost(Timer& timer, Window& window);
 	~RuntimeConsoleHost() noexcept;
 
 	RuntimeConsoleHost(const RuntimeConsoleHost&) = delete;
@@ -24,8 +24,5 @@ class RuntimeConsoleHost final
 	void TickFrame(Renderer& renderer, RuntimeUpdate updateRuntime);
 
   private:
-	void RenderFrameWithOverlay(Renderer& renderer, RuntimeUpdate& updateRuntime);
-	void RenderFrameWithoutOverlay(Renderer& renderer, RuntimeUpdate& updateRuntime);
-
 	std::unique_ptr<RuntimeConsoleOverlay> m_overlay;
 };

@@ -21,22 +21,41 @@ class CookedMeshAssetWriterOperations final
 		return metadataPath;
 	}
 
-	static bool WriteMeshMetadata(const CookedMeshAssetBuild& meshAsset, std::string& outErrorMessage)
+	static bool WriteMeshMetadata(
+	    const CookedMeshAssetBuild& meshAsset,
+	    const std::filesystem::path& outputPath,
+	    std::string& outErrorMessage)
 	{
 		Json::ObjectWriter writer;
 		writer.WriteString("schema", "cooked-mesh-metadata-v1");
 		writer.WriteHexUInt64("assetId", meshAsset.assetId);
 		writer.WriteString("displayName", meshAsset.displayName);
 		writer.WriteString("source", meshAsset.sourcePath.generic_string());
-		return Files::TryWriteAllTextAtomic(BuildCookedMeshMetadataPath(meshAsset.assetId), writer.Finish(), outErrorMessage);
+		return Files::TryWriteAllText(outputPath, writer.Finish(), outErrorMessage);
 	}
 };
 
-bool CookedMeshAssetWriter::WriteMeshAssets(const std::vector<CookedMeshAssetBuild>& meshAssets, std::string& outErrorMessage)
+bool CookedMeshAssetWriter::StageMeshAssets(
+    const std::vector<CookedMeshAssetBuild>& meshAssets,
+    std::vector<Files::FilePublication>& outPublication,
+    std::string& outErrorMessage)
 {
 	for (const CookedMeshAssetBuild& meshAsset : meshAssets)
 	{
 		const std::filesystem::path outputPath = Paths::CookedMeshAsset(meshAsset.assetId);
+		const std::filesystem::path stagedOutputPath =
+		    Files::BuildTemporaryPath(outputPath, ".cook-generation");
+		const std::filesystem::path metadataPath =
+		    CookedMeshAssetWriterOperations::BuildCookedMeshMetadataPath(meshAsset.assetId);
+		const std::filesystem::path stagedMetadataPath =
+		    Files::BuildTemporaryPath(metadataPath, ".cook-generation");
+
+		Files::CleanupTemporaryFile(stagedOutputPath);
+		Files::CleanupTemporaryFile(stagedMetadataPath);
+
+		outPublication.push_back({stagedOutputPath, outputPath});
+		outPublication.push_back({stagedMetadataPath, metadataPath});
+
 		const Assets::CookedMeshAssetHeader header{
 		    .fileHeader = {Assets::kCookedMeshAssetMagic, Assets::kCookedMeshAssetVersion},
 		    .vertexCount = static_cast<std::uint32_t>(meshAsset.vertices.size()),
@@ -52,8 +71,9 @@ bool CookedMeshAssetWriter::WriteMeshAssets(const std::vector<CookedMeshAssetBui
 		    .flags = (meshAsset.HasSkinInfluences() ? Assets::CookedMeshAssetFlag_HasSkinInfluences : 0u) |
 		             (meshAsset.HasMorphTargets() ? Assets::CookedMeshAssetFlag_HasMorphTargets : 0u),
 		    .assetKind = meshAsset.assetKind};
+
 		std::ofstream output;
-		if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
+		if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, outErrorMessage))
 		{
 			return false;
 		}
@@ -68,15 +88,19 @@ bool CookedMeshAssetWriter::WriteMeshAssets(const std::vector<CookedMeshAssetBui
 			return false;
 		}
 
-		if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))
+		if (!Files::TryCloseOutput(output, stagedOutputPath, outErrorMessage))
 		{
 			return false;
 		}
 
-		if (!CookedMeshAssetWriterOperations::WriteMeshMetadata(meshAsset, outErrorMessage))
+		if (!CookedMeshAssetWriterOperations::WriteMeshMetadata(
+		        meshAsset,
+		        stagedMetadataPath,
+		        outErrorMessage))
 		{
 			return false;
 		}
+
 	}
 
 	outErrorMessage.clear();

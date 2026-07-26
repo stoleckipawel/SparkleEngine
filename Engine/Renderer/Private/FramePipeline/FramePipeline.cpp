@@ -6,7 +6,7 @@
 #include "Frame/RhiFrameConstants.h"
 #include "Debug/RendererCVars.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
-#include "Editor/EditorRenderPacketPlayer.h"
+#include "UI/UiRenderPacketPlayer.h"
 #include "Editor/EditorTextureRegistry.h"
 #include "Frame/Builders/FrameContextBuilder.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
@@ -47,9 +47,9 @@
 
 FramePipeline::FramePipeline(
     RendererSystemRoot& systems,
-    bool enableEditorRenderPackets) noexcept :
+    bool enableUiRenderPackets) noexcept :
 	m_systems(&systems),
-	m_ownsEditorUiBackend(enableEditorRenderPackets)
+	m_ownsUiBackend(enableUiRenderPackets)
 {
 	m_windowExtent = {
 	    static_cast<std::uint32_t>(systems.GetWindow().GetWidth()),
@@ -61,9 +61,9 @@ FramePipeline::FramePipeline(
 	    systems.GetRenderHardwareInterface().GetResourceService(),
 	    systems.GetGpuMeshCache());
 		
-	m_editorRenderPacketPlayer = std::make_unique<EditorRenderPacketPlayer>();
+	m_uiRenderPacketPlayer = std::make_unique<UiRenderPacketPlayer>();
 	m_editorTextureRegistry = std::make_unique<EditorTextureRegistry>();
-	if (m_ownsEditorUiBackend)
+	if (m_ownsUiBackend)
 	{
 		(void) m_systems->GetImGuiRenderer().Initialize();
 	}
@@ -95,7 +95,7 @@ void FramePipeline::FinalizeRenderInputMetadata(RenderInputFrame& input) const n
 
 FramePipeline::~FramePipeline() noexcept
 {
-	if (m_ownsEditorUiBackend)
+	if (m_ownsUiBackend)
 	{
 		m_systems->GetImGuiRenderer().Shutdown();
 	}
@@ -117,27 +117,14 @@ void FramePipeline::RequestResize(RenderViewportExtent extent, bool minimized) n
 	m_bResizePending = true;
 }
 
-void FramePipeline::RenderSerialUiFrame(
-    const TimeInfo& timing,
-    RendererSerialUiCallback composeUi,
-    void* context) noexcept
-{
-	BeginFrame();
-	SetupFrame(timing);
-	RecordFrame();
-	if (composeUi != nullptr) composeUi(context);
-	SubmitFrame();
-	EndFrame();
-}
-
 void FramePipeline::OnRender(
     const TimeInfo& timing,
-    const EditorRenderPacket& editorUi) noexcept
+    const UiRenderPacket& ui) noexcept
 {
 	BeginFrame();
 	SetupFrame(timing);
 	RecordFrame();
-	RenderEditorPacket(editorUi);
+	RenderUiPacket(ui);
 	SubmitFrame();
 	EndFrame();
 }
@@ -468,7 +455,23 @@ void FramePipeline::RefreshViewportRenderProducts() noexcept
 	}
 }
 
-void FramePipeline::RenderEditorPacket(const EditorRenderPacket& packet) noexcept
+void FramePipeline::RenderUiPacket(const UiRenderPacket& packet) noexcept
+{
+	switch (packet.PresentationMode)
+	{
+		case UiPresentationMode::HostOverlay:
+			RenderHostOverlayUi(packet);
+			break;
+		case UiPresentationMode::EditorViewport:
+			RenderEditorViewportUi(packet);
+			break;
+		case UiPresentationMode::None:
+		default:
+			break;
+	}
+}
+
+void FramePipeline::RenderEditorViewportUi(const UiRenderPacket& packet) noexcept
 {
 	if (!BeginViewportEditorTexturePresentation(
 	        RenderOutputFlags::SceneColor))
@@ -489,16 +492,35 @@ void FramePipeline::RenderEditorPacket(const EditorRenderPacket& packet) noexcep
 	RhiPresentationService& hostPresentation =
 	    m_systems->GetRenderHardwareInterface().GetPresentationService();
 	hostPresentation.BeginPresentRenderPass(clearColor);
-	RhiImGuiRenderer& imguiRenderer = m_systems->GetImGuiRenderer();
-	imguiRenderer.PrepareResources();
-	m_editorTextureRegistry->PublishFontTexture(imguiRenderer.GetFontTextureId());
-	m_editorRenderPacketPlayer->Render(
-	    packet,
-	    *m_editorTextureRegistry,
-	    imguiRenderer);
+	PlayUiPacket(packet);
 	hostPresentation.EndPresentRenderPass();
 	EndViewportEditorTexturePresentation(
 	    RenderOutputFlags::SceneColor);
+}
+
+void FramePipeline::RenderHostOverlayUi(const UiRenderPacket& packet) noexcept
+{
+	if (!packet.HasDrawData())
+	{
+		return;
+	}
+
+	RhiPresentationService& presentation =
+	    m_systems->GetRenderHardwareInterface().GetPresentationService();
+	presentation.BeginPresentOverlayPass();
+	PlayUiPacket(packet);
+	presentation.EndPresentRenderPass();
+}
+
+void FramePipeline::PlayUiPacket(const UiRenderPacket& packet) noexcept
+{
+	RhiImGuiRenderer& imguiRenderer = m_systems->GetImGuiRenderer();
+	imguiRenderer.PrepareResources();
+	m_editorTextureRegistry->PublishFontTexture(imguiRenderer.GetFontTextureId());
+	m_uiRenderPacketPlayer->Render(
+	    packet,
+	    *m_editorTextureRegistry,
+	    imguiRenderer);
 }
 
 void FramePipeline::RecordFrame() noexcept

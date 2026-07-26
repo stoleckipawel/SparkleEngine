@@ -31,7 +31,7 @@ void EditorApplication::Initialize()
 	{
 		RuntimeApplicationOptions runtimeOptions = m_runtimeOptions;
 		runtimeOptions.EnableRuntimeConsole = false;
-		runtimeOptions.EnableEditorRenderPackets = true;
+		runtimeOptions.EnableUiRenderPackets = true;
 		m_runtimeApplication = std::make_unique<RuntimeApplication>(std::move(runtimeOptions));
 	}
 
@@ -53,7 +53,7 @@ void EditorApplication::Initialize()
 	if (!m_ui)
 	{
 		Renderer& renderer = m_runtimeApplication->GetRenderer();
-		GameWorld& world = *m_runtimeApplication->GetGameWorld();
+		GameWorld& world = m_runtimeApplication->GetWorldForEditor();
 		m_ui = std::make_unique<UI>(EditorHostServices{
 		    .RuntimeTimer = m_runtimeApplication->GetTimer(),
 		    .Levels = m_runtimeApplication->GetLevelManager(),

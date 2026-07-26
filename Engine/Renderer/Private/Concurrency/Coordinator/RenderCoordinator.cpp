@@ -4,9 +4,6 @@
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
 #include "FramePipeline/FramePipeline.h"
 #include "Host/RendererSystemRoot.h"
-#include "RHI/Public/Device/RenderDeviceServices.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "RHI/Public/Presentation/RhiPresentationService.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
@@ -70,10 +67,10 @@ void RenderCoordinator::StageRenderInput(RenderInputFrame input)
 	m_pendingInput = std::move(input);
 }
 
-void RenderCoordinator::StageEditorRenderPacket(EditorRenderPacket packet)
+void RenderCoordinator::StageUiRenderPacket(UiRenderPacket packet)
 {
 	m_producerOwner.AssertAccess();
-	m_pendingEditorUi = std::move(packet);
+	m_pendingUi = std::move(packet);
 }
 
 void RenderCoordinator::SubmitRenderingSettings(EngineRenderingSettingsState settings)
@@ -105,9 +102,9 @@ void RenderCoordinator::RenderFrame()
 		RenderFramePacket packet{
 		    .Input = std::move(*m_pendingInput),
 		    .Timing = m_timer->GetTimeInfo(),
-		    .EditorUi = m_pendingEditorUi ? std::move(*m_pendingEditorUi) : EditorRenderPacket{}};
+		    .Ui = m_pendingUi ? std::move(*m_pendingUi) : UiRenderPacket{}};
 		m_pendingInput.reset();
-		m_pendingEditorUi.reset();
+		m_pendingUi.reset();
 		GetSerialContext().ExecuteFrame(std::move(packet));
 		PublishReadState();
 		return;
@@ -118,9 +115,9 @@ void RenderCoordinator::RenderFrame()
 	RenderFramePacket packet{
 	    .Input = std::move(*m_pendingInput),
 	    .Timing = m_timer->GetTimeInfo(),
-	    .EditorUi = m_pendingEditorUi ? std::move(*m_pendingEditorUi) : EditorRenderPacket{}};
+	    .Ui = m_pendingUi ? std::move(*m_pendingUi) : UiRenderPacket{}};
 	m_pendingInput.reset();
-	m_pendingEditorUi.reset();
+	m_pendingUi.reset();
 	if (!m_frameQueue->Publish(*ticket, std::move(packet)))
 	{
 		(void) m_frameQueue->Cancel(*ticket);
@@ -135,28 +132,12 @@ void RenderCoordinator::RenderFrame()
 		(void) m_frameQueue->WaitUntilReusable(*ticket);
 }
 
-void RenderCoordinator::RenderSerialUiFrame(
-    RendererSerialUiCallback composeUi,
-    void* context)
-{
-	m_producerOwner.AssertAccess();
-	StageInputInSerialContext();
-	GetSerialContext().RenderSerialUiFrame(m_timer->GetTimeInfo(), composeUi, context);
-	PublishReadState();
-}
-
 ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 {
 	m_producerOwner.AssertAccess();
 	if (!m_config.IsThreaded()) return GetSerialContext().GetPipeline().GetViewportRenderProducts();
 	std::lock_guard lock(m_readStateMutex);
 	return m_publishedViewportProducts;
-}
-
-RhiImGuiRenderer& RenderCoordinator::GetSerialImGuiRenderer()
-{
-	m_producerOwner.AssertAccess();
-	return GetSerialContext().GetSystems().GetImGuiRenderer();
 }
 
 CookedShaderReloadResult RenderCoordinator::ReloadCookedShaders()
@@ -209,24 +190,6 @@ RendererMemoryDiagnosticsSnapshot RenderCoordinator::CaptureMemoryDiagnostics()
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<RendererMemoryDiagnosticsSnapshot>(SubmitSynchronousControl(
 	    RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Memory, 0, completion}, completion));
-}
-
-void RenderCoordinator::BeginSerialHostPresentation(const float clearColor[4])
-{
-	m_producerOwner.AssertAccess();
-	GetSerialContext().GetSystems().GetRenderHardwareInterface().GetPresentationService().BeginPresentRenderPass(clearColor);
-}
-
-void RenderCoordinator::BeginSerialHostOverlayPresentation()
-{
-	m_producerOwner.AssertAccess();
-	GetSerialContext().GetSystems().GetRenderHardwareInterface().GetPresentationService().BeginPresentOverlayPass();
-}
-
-void RenderCoordinator::EndSerialHostPresentation()
-{
-	m_producerOwner.AssertAccess();
-	GetSerialContext().GetSystems().GetRenderHardwareInterface().GetPresentationService().EndPresentRenderPass();
 }
 
 ViewportCaptureId RenderCoordinator::RequestViewportCapture(
@@ -442,13 +405,6 @@ void RenderCoordinator::SubmitResize()
 		(void) SubmitControl(command);
 	else if (m_context)
 		m_context->GetPipeline().RequestResize(command.Extent, command.Minimized);
-}
-
-void RenderCoordinator::StageInputInSerialContext()
-{
-	if (!m_pendingInput) return;
-	GetSerialContext().StageSerialInput(std::move(*m_pendingInput));
-	m_pendingInput.reset();
 }
 
 RendererExecutionContext& RenderCoordinator::GetSerialContext()

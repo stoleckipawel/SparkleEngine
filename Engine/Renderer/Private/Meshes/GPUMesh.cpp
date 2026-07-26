@@ -171,12 +171,10 @@ RhiRayTracingGeometryDesc GPUMesh::GetRayTracingGeometry() const noexcept
 	    resources != nullptr ? resources->GetResourceHandle(m_indexBuffer) : RhiResourceHandle{};
 
 	return RhiRayTracingGeometryDesc{
-	    .VertexResource = vertexResource,
-	    .VertexBuffer = m_vertexBufferView.BufferLocation,
+	    .VertexBuffer = RhiRayTracingBufferBinding{.Resource = vertexResource},
 	    .VertexStrideInBytes = m_vertexBufferView.StrideInBytes,
 	    .VertexCount = m_vertexCount,
-	    .IndexResource = indexResource,
-	    .IndexBuffer = m_indexBufferView.BufferLocation,
+	    .IndexBuffer = RhiRayTracingBufferBinding{.Resource = indexResource},
 	    .IndexCount = m_indexCount,
 	    .IndexFormat = m_indexBufferView.Format,
 	    .Opaque = true};

@@ -15,7 +15,6 @@ enum class AssetCookerPlanStep
 
 struct AssetCookerSceneEntry final
 {
-	std::string origin;
 	std::string relativePath;
 	std::filesystem::path sourcePath;
 };
@@ -30,7 +29,4 @@ struct AssetCookerProjectCookPlan final
 	std::filesystem::path cookedRoot;
 	std::vector<AssetCookerSceneEntry> sceneEntries;
 	std::vector<AssetCookerPlanStep> steps;
-	int engineSceneCount = 0;
-	int projectSceneCount = 0;
-	int overriddenEngineSceneCount = 0;
 };

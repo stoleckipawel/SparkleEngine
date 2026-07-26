@@ -4,7 +4,6 @@
 #include "Concurrency/FrameQueue/RenderFrameQueue.h"
 #include "Host/RendererBackendConfiguration.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
-#include "RendererSerialUiCallback.h"
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 
@@ -18,7 +17,6 @@
 #include <vector>
 
 class RendererExecutionContext;
-class RhiImGuiRenderer;
 class Timer;
 class Window;
 
@@ -36,23 +34,18 @@ class RenderCoordinator final
 	RenderCoordinator& operator=(const RenderCoordinator&) = delete;
 
 	void StageRenderInput(RenderInputFrame input);
-	void StageEditorRenderPacket(EditorRenderPacket packet);
+	void StageUiRenderPacket(UiRenderPacket packet);
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings);
 	void SubmitViewportRequest(const ViewportRenderRequest& request);
 	void RenderFrame();
-	void RenderSerialUiFrame(RendererSerialUiCallback composeUi, void* context);
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
-	RhiImGuiRenderer& GetSerialImGuiRenderer();
 	CookedShaderReloadResult ReloadCookedShaders();
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics();
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId);
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics();
-	void BeginSerialHostPresentation(const float clearColor[4]);
-	void BeginSerialHostOverlayPresentation();
-	void EndSerialHostPresentation();
 	ViewportCaptureId RequestViewportCapture(ViewportCaptureRequest request);
 	bool TryTakeViewportCapture(ViewportCaptureReadback& readback);
 
@@ -75,7 +68,6 @@ class RenderCoordinator final
 	bool SubmitControl(RenderControlPayload payload);
 	RenderControlResult SubmitSynchronousControl(RenderControlPayload payload, const std::shared_ptr<RenderControlCompletion>& completion);
 	void SubmitResize();
-	void StageInputInSerialContext();
 	RendererExecutionContext& GetSerialContext();
 	const RendererExecutionContext& GetSerialContext() const;
 
@@ -90,7 +82,7 @@ class RenderCoordinator final
 	std::thread m_renderThread;
 	ScopedEventHandle m_resizeHandle;
 	std::optional<RenderInputFrame> m_pendingInput;
-	std::optional<EditorRenderPacket> m_pendingEditorUi;
+	std::optional<UiRenderPacket> m_pendingUi;
 	std::uint64_t m_nextControlSequence = 1;
 	std::uint64_t m_lastConsumedControlSequence = 0;
 	mutable std::mutex m_startMutex;

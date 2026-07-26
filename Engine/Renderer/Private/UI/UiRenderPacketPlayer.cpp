@@ -1,26 +1,26 @@
 #include "PCH.h"
-#include "Editor/EditorRenderPacketPlayer.h"
+#include "UI/UiRenderPacketPlayer.h"
 
 #include "Editor/EditorTextureRegistry.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
 
 #include <imgui.h>
 
-struct EditorRenderPacketPlayer::PlaybackStorage final
+struct UiRenderPacketPlayer::PlaybackStorage final
 {
 	std::vector<std::unique_ptr<ImDrawList>> DrawLists;
 	ImDrawData DrawData;
 };
 
-EditorRenderPacketPlayer::EditorRenderPacketPlayer() :
+UiRenderPacketPlayer::UiRenderPacketPlayer() :
 	m_storage(std::make_unique<PlaybackStorage>())
 {
 }
 
-EditorRenderPacketPlayer::~EditorRenderPacketPlayer() noexcept = default;
+UiRenderPacketPlayer::~UiRenderPacketPlayer() noexcept = default;
 
-void EditorRenderPacketPlayer::Render(
-    const EditorRenderPacket& packet,
+void UiRenderPacketPlayer::Render(
+    const UiRenderPacket& packet,
     const EditorTextureRegistry& textures,
     RhiImGuiRenderer& renderer)
 {
@@ -39,7 +39,7 @@ void EditorRenderPacketPlayer::Render(
 	renderer.RenderDrawData(&m_storage->DrawData);
 }
 
-void EditorRenderPacketPlayer::PrepareDrawLists(std::size_t drawListCount)
+void UiRenderPacketPlayer::PrepareDrawLists(std::size_t drawListCount)
 {
 	while (m_storage->DrawLists.size() < drawListCount)
 	{
@@ -47,9 +47,9 @@ void EditorRenderPacketPlayer::PrepareDrawLists(std::size_t drawListCount)
 	}
 }
 
-void EditorRenderPacketPlayer::CopyDrawList(
-    const EditorRenderPacket& packet,
-    const EditorDrawList& packetList,
+void UiRenderPacketPlayer::CopyDrawList(
+    const UiRenderPacket& packet,
+    const UiDrawList& packetList,
     std::size_t drawListIndex,
     const EditorTextureRegistry& textures)
 {
@@ -60,7 +60,7 @@ void EditorRenderPacketPlayer::CopyDrawList(
 
 	for (std::uint32_t index = 0; index < packetList.VertexCount; ++index)
 	{
-		const EditorDrawVertex& source = packet.Vertices[packetList.VertexOffset + index];
+		const UiDrawVertex& source = packet.Vertices[packetList.VertexOffset + index];
 		drawList.VtxBuffer[index] = ImDrawVert{
 		    .pos = {source.Position[0], source.Position[1]},
 		    .uv = {source.Uv[0], source.Uv[1]},
@@ -73,7 +73,7 @@ void EditorRenderPacketPlayer::CopyDrawList(
 	}
 	for (std::uint32_t index = 0; index < packetList.CommandCount; ++index)
 	{
-		const EditorDrawCommand& source = packet.Commands[packetList.CommandOffset + index];
+		const UiDrawCommand& source = packet.Commands[packetList.CommandOffset + index];
 		ImDrawCmd& command = drawList.CmdBuffer[index];
 		command.ClipRect = {
 		    source.ClipRect[0],
@@ -86,13 +86,13 @@ void EditorRenderPacketPlayer::CopyDrawList(
 		command.IdxOffset = source.IndexOffset;
 		command.VtxOffset = static_cast<unsigned int>(source.VertexOffset);
 		command.UserCallback =
-		    source.Kind == EditorDrawCommandKind::ResetRenderState
+		    source.Kind == UiDrawCommandKind::ResetRenderState
 		        ? ImDrawCallback_ResetRenderState
 		        : nullptr;
 	}
 }
 
-void EditorRenderPacketPlayer::PrepareDrawData(const EditorRenderPacket& packet)
+void UiRenderPacketPlayer::PrepareDrawData(const UiRenderPacket& packet)
 {
 	ImDrawData& drawData = m_storage->DrawData;
 	drawData.Valid = true;

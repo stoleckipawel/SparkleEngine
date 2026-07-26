@@ -21,7 +21,7 @@
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/Model/EditorSceneModelBuilder.h"
 #include "Scene/Transactions/EditorTransactionManager.h"
-#include "Rendering/EditorRenderPacketBuilder.h"
+#include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
@@ -137,7 +137,7 @@ UI::UI(EditorHostServices hostServices) :
 	    .WorldGeneration = std::move(hostServices.WorldGeneration),
 	    .MaterialVariants = std::move(hostServices.MaterialVariants)});
 	m_transactions = std::make_unique<EditorTransactionManager>(std::move(hostServices.SubmitWorldEdit));
-	m_renderPacketBuilder = std::make_unique<EditorRenderPacketBuilder>();
+	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
 	InitializeImGuiContext();
 	SetupDPIScaling();
 
@@ -403,7 +403,7 @@ void UI::BuildCenterWorkspace(bool disableInteraction, float mainMenuBarHeight)
 	}
 }
 
-EditorRenderPacket UI::ConsumeRenderPacket()
+UiRenderPacket UI::ConsumeRenderPacket()
 {
 	return std::move(m_renderPacket);
 }
@@ -486,8 +486,10 @@ void UI::Update()
 
 	NewFrame();
 	Build();
-	m_renderPacket =
-	    m_renderPacketBuilder->Build(*ImGui::GetDrawData(), m_viewportGeneration);
+	m_renderPacket = m_renderPacketBuilder->Build(
+	    *ImGui::GetDrawData(),
+	    UiPresentationMode::EditorViewport,
+	    m_viewportGeneration);
 }
 
 UI::~UI() noexcept

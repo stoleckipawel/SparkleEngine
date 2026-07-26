@@ -181,11 +181,13 @@ RenderCommandList& D3D12CommandRecordingContext::GetCurrentCommandList(
 }
 
 RenderCommandList* D3D12CommandRecordingContext::TryGetCurrentCommandList(
-    ERhiQueueType queueType,
-    std::uint32_t frameIndex) noexcept
+	ERhiQueueType queueType,
+	std::uint32_t frameIndex) noexcept
 {
 	QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
-	return frameState.CurrentLease != nullptr ? &frameState.CurrentLease->GetCommandList() : nullptr;
+	return frameState.CurrentLease.has_value()
+	           ? &frameState.CurrentLease->GetCommandList()
+	           : nullptr;
 }
 
 D3D12CommandRecordingContext::QueueFrameState& D3D12CommandRecordingContext::GetQueueFrameState(

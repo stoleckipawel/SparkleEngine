@@ -19,7 +19,7 @@ RendererExecutionContext::RendererExecutionContext(
 	    *executionConfig.ApplicationTaskScope);
 	m_pipeline = std::make_unique<FramePipeline>(
 	    *m_systems,
-	    executionConfig.EnableEditorRenderPackets);
+	    executionConfig.EnableUiRenderPackets);
 	m_systems->PostLoad();
 }
 
@@ -35,7 +35,7 @@ void RendererExecutionContext::ExecuteFrame(RenderFramePacket packet) noexcept
 {
 	m_owner.AssertAccess();
 	m_pipeline->SubmitRenderInput(std::move(packet.Input));
-	m_pipeline->OnRender(packet.Timing, packet.EditorUi);
+	m_pipeline->OnRender(packet.Timing, packet.Ui);
 }
 
 void RendererExecutionContext::ExecuteControl(const RenderControlPayload& payload) noexcept
@@ -67,21 +67,6 @@ void RendererExecutionContext::ExecuteControl(const RenderControlPayload& payloa
 		    }
 	    },
 	    payload);
-}
-
-void RendererExecutionContext::StageSerialInput(RenderInputFrame input) noexcept
-{
-	m_owner.AssertAccess();
-	m_pipeline->SubmitRenderInput(std::move(input));
-}
-
-void RendererExecutionContext::RenderSerialUiFrame(
-    const TimeInfo& timing,
-    RendererSerialUiCallback composeUi,
-    void* context) noexcept
-{
-	m_owner.AssertAccess();
-	m_pipeline->RenderSerialUiFrame(timing, composeUi, context);
 }
 
 RendererSystemRoot& RendererExecutionContext::GetSystems() noexcept

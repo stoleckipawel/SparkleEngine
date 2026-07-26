@@ -8,13 +8,21 @@
 
 #include <fstream>
 
-bool CookedSkeletonAssetWriter::WriteSkeletonAssets(
+bool CookedSkeletonAssetWriter::StageSkeletonAssets(
     const std::vector<CookedSkeletonAssetBuild>& skeletonAssets,
+    std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
 {
 	for (const CookedSkeletonAssetBuild& skeletonAsset : skeletonAssets)
 	{
 		const std::filesystem::path outputPath = Paths::CookedSkeletonAsset(skeletonAsset.assetId);
+		const std::filesystem::path stagedOutputPath =
+		    Files::BuildTemporaryPath(outputPath, ".cook-generation");
+
+		Files::CleanupTemporaryFile(stagedOutputPath);
+
+		outPublication.push_back({stagedOutputPath, outputPath});
+
 		const Assets::CookedSkeletonAssetHeader header{
 		    .fileHeader = {Assets::kCookedSkeletonAssetMagic, Assets::kCookedSkeletonAssetVersion},
 		    .jointCount = static_cast<std::uint32_t>(skeletonAsset.joints.size()),
@@ -22,7 +30,7 @@ bool CookedSkeletonAssetWriter::WriteSkeletonAssets(
 		    .flags = 0};
 
 		std::ofstream output;
-		if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
+		if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, outErrorMessage))
 		{
 			return false;
 		}
@@ -33,10 +41,11 @@ bool CookedSkeletonAssetWriter::WriteSkeletonAssets(
 			return false;
 		}
 
-		if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))
+		if (!Files::TryCloseOutput(output, stagedOutputPath, outErrorMessage))
 		{
 			return false;
 		}
+
 	}
 
 	outErrorMessage.clear();

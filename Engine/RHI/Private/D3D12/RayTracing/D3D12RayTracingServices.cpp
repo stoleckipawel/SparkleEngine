@@ -75,8 +75,8 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBotto
 	nativeGeometry.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
 	nativeGeometry.Triangles.IndexCount = geometry.IndexCount;
 	nativeGeometry.Triangles.VertexCount = geometry.VertexCount;
-	nativeGeometry.Triangles.IndexBuffer = geometry.IndexBuffer;
-	nativeGeometry.Triangles.VertexBuffer.StartAddress = geometry.VertexBuffer;
+	nativeGeometry.Triangles.IndexBuffer = 0;
+	nativeGeometry.Triangles.VertexBuffer.StartAddress = 0;
 	nativeGeometry.Triangles.VertexBuffer.StrideInBytes = geometry.VertexStrideInBytes;
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};

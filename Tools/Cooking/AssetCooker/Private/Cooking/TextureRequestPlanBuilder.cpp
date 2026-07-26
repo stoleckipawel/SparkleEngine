@@ -28,21 +28,25 @@ class TextureRequestPlanBuilderImplementation final
 	{
 		std::vector<TextureCookRequest> sceneRequests;
 		std::string errorMessage;
-		const bool collected = ImportedSceneCooker::ImportAndVisit(
-		    sceneEntry,
-		    AssetCookerCategory_Textures,
-		    diagnostics,
-		    [&](const SourceImportResult& importResult)
-		    {
-			    if (!MaterialCooker::CollectTextureCookRequests(importResult, sceneRequests, errorMessage))
-			    {
-				    diagnostics.AddError(AssetCookerCategory_Textures, errorMessage, sceneEntry.sourcePath);
-				    return false;
-			    }
-			    return true;
-		    });
-		if (!collected)
+		SourceImportResult importResult;
+		if (!ImportedSceneCooker::Import(
+				    sceneEntry,
+				    AssetCookerCategory_Textures,
+				    diagnostics,
+		    importResult))
 		{
+			return SceneRequestCollectionResult::RecoverableFailure;
+		}
+
+		if (!MaterialCooker::CollectTextureCookRequests(
+		        importResult,
+		        sceneRequests,
+		        errorMessage))
+		{
+			diagnostics.AddError(
+			    AssetCookerCategory_Textures,
+			    errorMessage,
+			    sceneEntry.sourcePath);
 			return SceneRequestCollectionResult::RecoverableFailure;
 		}
 
@@ -81,8 +85,7 @@ bool TextureRequestPlanBuilder::Build(
 		    "texture-references",
 		    sceneIndex + 1u,
 		    plan.sceneEntries.size(),
-		    sceneEntry.relativePath,
-		    {ToolConsole::Field("origin", sceneEntry.origin)});
+		    sceneEntry.relativePath);
 		const TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult collectionResult = TextureRequestPlanBuilderImplementation::CollectSceneRequests(sceneEntry, diagnostics, requestSet);
 		if (collectionResult == TextureRequestPlanBuilderImplementation::SceneRequestCollectionResult::FatalFailure)
 		{

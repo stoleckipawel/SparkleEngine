@@ -44,9 +44,9 @@ InputSystem& RuntimeApplication::GetInputSystem() noexcept
 	return *m_inputSystem;
 }
 
-GameWorld* RuntimeApplication::GetGameWorld() const noexcept
+GameWorld& RuntimeApplication::GetWorldForEditor() noexcept
 {
-	return m_gameWorld.get();
+	return *m_gameWorld;
 }
 
 LevelManager* RuntimeApplication::GetLevelManager() const noexcept
@@ -85,9 +85,9 @@ void RuntimeApplication::Initialize()
 		m_taskRuntime = std::make_unique<ApplicationTaskRuntime>();
 		m_gameWorld = std::make_unique<GameWorld>(m_taskRuntime->GetExecutor());
 		m_cameraInputIntentCollector = std::make_unique<CameraInputIntentCollector>(*m_inputSystem, *m_window);
-		if (m_options.WorldSetupCallback)
+		if (m_options.EnableOscillatingMeshMotion)
 		{
-			m_options.WorldSetupCallback(*m_gameWorld);
+			m_gameWorld->EnableOscillatingMeshMotion();
 		}
 		m_levelManager = std::make_unique<LevelManager>(
 		    *m_gameWorld,
@@ -102,7 +102,8 @@ void RuntimeApplication::Initialize()
 			rendererConfig.Mode = ConcurrencyLaunchCVars::ResolveRenderPipelineDepth() == 0
 			                          ? RendererExecutionMode::ThreadedZeroAhead
 			                          : RendererExecutionMode::ThreadedOneAhead;
-		rendererConfig.EnableEditorRenderPackets = m_options.EnableEditorRenderPackets;
+		rendererConfig.EnableUiRenderPackets =
+		    m_options.EnableUiRenderPackets || m_options.EnableRuntimeConsole;
 		rendererConfig.AssetTaskExecutor = &m_taskRuntime->GetExecutor();
 		rendererConfig.ApplicationTaskScope = &m_taskRuntime->GetApplicationScope();
 		m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, rendererConfig);
@@ -110,7 +111,7 @@ void RuntimeApplication::Initialize()
 
 	if (m_options.EnableRuntimeConsole)
 	{
-		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(*m_timer, *m_window, *m_renderer);
+		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(*m_timer, *m_window);
 	}
 	m_isInitialized = true;
 }

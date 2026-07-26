@@ -8,13 +8,15 @@
 
 class AssetCookerService final
 {
- public:
+  public:
 	AssetCookerService(const char* repositoryRoot, const char* projectName, const char* configuration);
 
 	AssetCookerServiceResult Cook(const char* projectName, const char* configuration, AssetCookerCategory category);
-	AssetCookerCapabilities QueryCapabilities() const noexcept;
 
   private:
+	static bool HasText(const char* text) noexcept;
+	static bool IsAllProjects(std::string_view projectName) noexcept;
+
 	bool ResolveRepositoryRoot(AssetCookerDiagnostics& diagnostics, std::filesystem::path& outRepositoryRoot) const;
 	std::string ResolveProjectName(const char* requestProjectName) const;
 	std::string ResolveConfiguration(const char* requestConfiguration) const;

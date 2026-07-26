@@ -2,7 +2,7 @@
 
 #include <memory>
 
-class Frustum;
+struct Frustum;
 class GPUMeshCache;
 class MaterialCacheManager;
 class RenderWorld;

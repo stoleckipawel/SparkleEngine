@@ -165,15 +165,23 @@ bool MaterialCooker::CollectTextureCookRequests(
 	return true;
 }
 
-bool MaterialCooker::WriteMaterialAssets(
+bool MaterialCooker::StageMaterialAssets(
     const std::vector<CookedMaterialAssetBuild>& materialAssets,
+    std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
 {
 	for (const CookedMaterialAssetBuild& materialAsset : materialAssets)
 	{
 		const std::filesystem::path outputPath = Paths::CookedMaterialAsset(materialAsset.assetId);
+		const std::filesystem::path stagedOutputPath =
+		    Files::BuildTemporaryPath(outputPath, ".cook-generation");
+
+		Files::CleanupTemporaryFile(stagedOutputPath);
+
+		outPublication.push_back({stagedOutputPath, outputPath});
+
 		std::ofstream output;
-		if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
+		if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, outErrorMessage))
 		{
 			return false;
 		}
@@ -225,10 +233,11 @@ bool MaterialCooker::WriteMaterialAssets(
 			}
 		}
 
-		if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))
+		if (!Files::TryCloseOutput(output, stagedOutputPath, outErrorMessage))
 		{
 			return false;
 		}
+
 	}
 
 	outErrorMessage.clear();

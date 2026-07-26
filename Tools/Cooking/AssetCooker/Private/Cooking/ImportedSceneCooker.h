@@ -3,22 +3,35 @@
 #include "Diagnostics/AssetCookerDiagnostics.h"
 #include "Planning/ProjectCookPlan.h"
 
-#include <functional>
+#include "CookedSceneBuild.h"
+#include "SourceImportResult.h"
 
-class SourceImportResult;
-
-namespace ImportedSceneCooker
+struct ImportedSceneCookProduct final
 {
-	using SceneVisitor = std::function<bool(const SourceImportResult&)>;
+	SourceImportResult Import;
+	CookedSceneBuild Scene;
+};
 
-	bool ImportAndVisit(
+class ImportedSceneCooker final
+{
+  public:
+	static bool Import(
 	    const AssetCookerSceneEntry& sceneEntry,
 	    AssetCookerCategory category,
 	    AssetCookerDiagnostics& diagnostics,
-	    const SceneVisitor& visitor);
+	    SourceImportResult& outImport);
+	static bool Build(
+	    const AssetCookerSceneEntry& sceneEntry,
+	    AssetCookerDiagnostics& diagnostics,
+	    ImportedSceneCookProduct& outProduct);
+	static void Report(
+	    const AssetCookerSceneEntry& sceneEntry,
+	    const ImportedSceneCookProduct& product);
 
-	bool Cook(
+  private:
+	static bool BuildCookedScene(
 	    const AssetCookerSceneEntry& sceneEntry,
 	    const SourceImportResult& importResult,
+	    CookedSceneBuild& build,
 	    AssetCookerDiagnostics& diagnostics);
-}
+};

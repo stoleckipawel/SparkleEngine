@@ -2,172 +2,11 @@
 #include "Core/Public/FileSystemUtils.h"
 #include "Level/LevelRegistry.h"
 
-#include "Core/Public/Strings/StringUtils.h"
+#include "Core/Public/Projects/ProjectLevelCatalog.h"
 #include "Level/Level.h"
 #include "Level/Parsing/LevelParser.h"
 
-#include <fstream>
-#include <unordered_map>
-
 static const auto g_levelRegistryLogger = Logging::GetOrCreateLogger("GameFramework.LevelRegistry");
-
-class LevelRegistryImplementation final
-{
-  public:
-	static constexpr const char* kLevelCatalogFileName = "Levels.catalog";
-
-	struct LevelCatalogEntry final
-	{
-		std::filesystem::path sourcePath;
-		std::string optionalPackId;
-		bool startupDefault = false;
-	};
-
-	struct OptionalContentPack final
-	{
-		std::filesystem::path path;
-		bool available = true;
-	};
-
-	struct LevelCatalog final
-	{
-		std::vector<LevelCatalogEntry> levels;
-		std::unordered_map<std::string, OptionalContentPack> optionalPacks;
-	};
-
-	enum class LevelCatalogSection
-	{
-		None,
-		Level,
-		OptionalPack
-	};
-
-	static std::filesystem::path ResolveProjectPath(const std::filesystem::path& projectRoot, std::string_view value)
-	{
-		std::filesystem::path path{Strings::UnquoteCopy(value)};
-		if (path.is_relative())
-		{
-			path = projectRoot / path;
-		}
-		return path.lexically_normal();
-	}
-
-	static bool OptionalPackAvailable(const LevelCatalog& catalog, const std::filesystem::path& projectRoot, std::string_view optionalPackId)
-	{
-		if (optionalPackId.empty())
-		{
-			return true;
-		}
-
-		const auto packIt = catalog.optionalPacks.find(std::string(optionalPackId));
-		if (packIt == catalog.optionalPacks.end() || !packIt->second.available)
-		{
-			return false;
-		}
-
-		if (packIt->second.path.empty())
-		{
-			return true;
-		}
-
-		const std::filesystem::path packPath =
-		    packIt->second.path.is_relative() ? (projectRoot / packIt->second.path) : packIt->second.path;
-		std::error_code errorCode;
-		return std::filesystem::exists(packPath.lexically_normal(), errorCode);
-	}
-
-	static bool LoadLevelCatalog(const std::filesystem::path& projectRoot, LevelCatalog& outCatalog)
-	{
-		const std::filesystem::path catalogPath = projectRoot / kLevelCatalogFileName;
-		std::ifstream input(catalogPath);
-		if (!input.is_open())
-		{
-			return false;
-		}
-
-		LevelCatalogSection section = LevelCatalogSection::None;
-		LevelCatalogEntry* currentLevel = nullptr;
-		std::string currentOptionalPackId;
-		for (std::string line; std::getline(input, line);)
-		{
-			line = Strings::TrimCopy(line);
-			if (line.empty() || line[0] == '#' || line[0] == ';')
-			{
-				continue;
-			}
-
-			if (line == "[Level]")
-			{
-				currentOptionalPackId.clear();
-				section = LevelCatalogSection::Level;
-				currentLevel = &outCatalog.levels.emplace_back();
-				continue;
-			}
-			if (line == "[OptionalPack]")
-			{
-				currentLevel = nullptr;
-				currentOptionalPackId.clear();
-				section = LevelCatalogSection::OptionalPack;
-				continue;
-			}
-
-			std::string_view key;
-			std::string_view value;
-			if (!Strings::TrySplitKeyValue(line, '=', key, value))
-			{
-				continue;
-			}
-
-			if (section == LevelCatalogSection::Level && currentLevel != nullptr)
-			{
-				if (key == "Source")
-				{
-					currentLevel->sourcePath = ResolveProjectPath(projectRoot, value);
-				}
-				else if (key == "OptionalPack")
-				{
-					currentLevel->optionalPackId = Strings::UnquoteCopy(value);
-				}
-				else if (key == "StartupDefault")
-				{
-					bool startupDefault = false;
-					if (Strings::TryParseBool(value, startupDefault))
-					{
-						currentLevel->startupDefault = startupDefault;
-					}
-				}
-				continue;
-			}
-
-			if (section == LevelCatalogSection::OptionalPack)
-			{
-				if (key == "Id")
-				{
-					currentOptionalPackId = Strings::UnquoteCopy(value);
-					outCatalog.optionalPacks.try_emplace(currentOptionalPackId);
-				}
-				else if (!currentOptionalPackId.empty())
-				{
-					OptionalContentPack& pack = outCatalog.optionalPacks[currentOptionalPackId];
-					if (key == "Root" || key == "Path")
-					{
-						pack.path = std::filesystem::path{Strings::UnquoteCopy(value)};
-					}
-					else if (key == "Available")
-					{
-						bool available = true;
-						if (Strings::TryParseBool(value, available))
-						{
-							pack.available = available;
-						}
-					}
-				}
-			}
-		}
-
-		return true;
-	}
-};
 
 LevelRegistry::LevelRegistry()
 {
@@ -179,13 +18,14 @@ LevelRegistry::~LevelRegistry() noexcept = default;
 void LevelRegistry::DiscoverLevels()
 {
 	const std::filesystem::path projectRoot = Filesystem::GetProjectPath();
-	LevelRegistryImplementation::LevelCatalog catalog;
-	if (LevelRegistryImplementation::LoadLevelCatalog(projectRoot, catalog))
+	ProjectLevelCatalog catalog;
+	std::string catalogError;
+	if (ProjectLevelCatalogFile::Load(projectRoot, catalog, catalogError))
 	{
 		std::string startupDefaultLevelName;
-		for (const LevelRegistryImplementation::LevelCatalogEntry& entry : catalog.levels)
+		for (const ProjectLevelCatalogEntry& entry : catalog.levels)
 		{
-			if (entry.sourcePath.empty() || !LevelRegistryImplementation::OptionalPackAvailable(catalog, projectRoot, entry.optionalPackId))
+			if (!catalog.IsLevelReady(projectRoot, entry))
 			{
 				continue;
 			}
@@ -220,7 +60,10 @@ void LevelRegistry::DiscoverLevels()
 		return;
 	}
 
-	SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Required level catalog not found at '{}'", (projectRoot / LevelRegistryImplementation::kLevelCatalogFileName).string());
+	SPDLOG_LOGGER_WARN(
+	    g_levelRegistryLogger,
+	    "LevelRegistry: {}",
+	    catalogError);
 }
 
 void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)

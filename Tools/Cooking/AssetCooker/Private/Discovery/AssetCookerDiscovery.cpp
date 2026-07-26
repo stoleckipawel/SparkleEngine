@@ -1,342 +1,25 @@
 #include "AssetCookerDiscovery.h"
 
+#include "CatalogedLevelSceneReader.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "Core/Public/Strings/StringUtils.h"
+#include "Core/Public/Projects/ProjectLevelCatalog.h"
 #include "SourceSceneImporter.h"
 
 #include <algorithm>
-#include <cctype>
-#include <fstream>
-#include <map>
-#include <set>
-#include <string>
-#include <string_view>
+#include <array>
+#include <optional>
 #include <system_error>
 #include <utility>
-#include <vector>
-
-enum class AssetCookerDiscovery::CatalogSection
-{
-	None,
-	Level,
-	OptionalPack
-};
-
-struct AssetCookerDiscovery::CatalogLevel final
-{
-	std::filesystem::path SourcePath;
-	bool DefaultIncluded = true;
-	std::string OptionalPackId;
-};
-
-static bool AssetCookerPathExists(const std::filesystem::path& path)
-{
-	std::error_code errorCode;
-	return std::filesystem::exists(path, errorCode);
-}
-
-static std::string AssetCookerToLower(std::string value)
-{
-	std::transform(
-	    value.begin(),
-	    value.end(),
-	    value.begin(),
-	    [](unsigned char character) -> char
-	    {
-		    return static_cast<char>(std::tolower(character));
-	    });
-	return value;
-}
-
-static bool AssetCookerSceneEntryAllowed(
-    const std::filesystem::path& relativePath,
-    const std::set<std::string>* allowedSceneIds)
-{
-	if (allowedSceneIds == nullptr || allowedSceneIds->empty())
-	{
-		return allowedSceneIds == nullptr;
-	}
-
-	std::filesystem::path sceneIdPath = relativePath;
-	sceneIdPath.replace_extension();
-	return allowedSceneIds->contains(AssetCookerToLower(sceneIdPath.generic_string()));
-}
-
-static bool AssetCookerCategoryNeedsScenes(AssetCookerCategory category)
-{
-	return category == AssetCookerCategory_All || category == AssetCookerCategory_Textures ||
-	       category == AssetCookerCategory_SceneAssets || category == AssetCookerCategory_Texture ||
-	       category == AssetCookerCategory_Mesh || category == AssetCookerCategory_Material ||
-	       category == AssetCookerCategory_Scene;
-}
-
-static void AssetCookerAddPlanSteps(AssetCookerCategory category, std::vector<AssetCookerPlanStep>& outSteps)
-{
-	outSteps.clear();
-	if (category == AssetCookerCategory_All)
-	{
-		outSteps.push_back(AssetCookerPlanStep::Shaders);
-		outSteps.push_back(AssetCookerPlanStep::Textures);
-		outSteps.push_back(AssetCookerPlanStep::SceneAssets);
-		return;
-	}
-
-	if (category == AssetCookerCategory_Shaders || category == AssetCookerCategory_Shader)
-	{
-		outSteps.push_back(AssetCookerPlanStep::Shaders);
-		return;
-	}
-
-	if (category == AssetCookerCategory_Textures || category == AssetCookerCategory_Texture)
-	{
-		outSteps.push_back(AssetCookerPlanStep::Textures);
-		return;
-	}
-
-	outSteps.push_back(AssetCookerPlanStep::SceneAssets);
-}
-
-static void AssetCookerCollectSceneEntries(
-    const std::filesystem::path& root,
-    std::string_view origin,
-    const std::set<std::string>* allowedSceneIds,
-    std::map<std::string, AssetCookerSceneEntry>& entriesByKey,
-    int& sourceCount,
-    int& overrideCount)
-{
-	if (!AssetCookerPathExists(root))
-	{
-		return;
-	}
-
-	std::error_code iteratorError;
-	std::filesystem::recursive_directory_iterator iterator(
-	    root,
-	    std::filesystem::directory_options::skip_permission_denied,
-	    iteratorError);
-	std::filesystem::recursive_directory_iterator endIterator;
-	for (; iterator != endIterator; iterator.increment(iteratorError))
-	{
-		if (iteratorError)
-		{
-			iteratorError.clear();
-			continue;
-		}
-
-		std::error_code statusError;
-		if (!iterator->is_regular_file(statusError) || !SourceSceneImporter::SupportsSourceScenePath(iterator->path()))
-		{
-			continue;
-		}
-
-		std::error_code relativeError;
-		const std::filesystem::path relativePath = std::filesystem::relative(iterator->path(), root, relativeError);
-		if (relativeError)
-		{
-			continue;
-		}
-
-		if (!AssetCookerSceneEntryAllowed(relativePath, allowedSceneIds))
-		{
-			continue;
-		}
-
-		++sourceCount;
-		AssetCookerSceneEntry entry;
-		entry.origin = std::string(origin);
-		entry.relativePath = relativePath.generic_string();
-		entry.sourcePath = std::filesystem::absolute(iterator->path()).lexically_normal();
-
-		const std::string key = AssetCookerToLower(entry.relativePath);
-		const auto existingEntry = entriesByKey.find(key);
-		if (existingEntry != entriesByKey.end() && existingEntry->second.origin == "Engine" && entry.origin == "Project")
-		{
-			++overrideCount;
-		}
-
-		entriesByKey[key] = std::move(entry);
-	}
-}
-
-static void AssetCookerCollectLevelSceneIds(const std::filesystem::path& levelPath, std::set<std::string>& outSceneIds)
-{
-	std::ifstream input(levelPath);
-	if (!input.is_open())
-	{
-		return;
-	}
-
-	bool inSceneAssetsSection = false;
-	for (std::string line; std::getline(input, line);)
-	{
-		line = Strings::TrimCopy(line);
-		if (line.empty() || line[0] == '#' || line[0] == ';')
-		{
-			continue;
-		}
-
-		if (line.front() == '[' && line.back() == ']')
-		{
-			inSceneAssetsSection = (line == "[SceneAssets]");
-			continue;
-		}
-
-		if (!inSceneAssetsSection)
-		{
-			continue;
-		}
-
-		std::string_view key;
-		std::string_view value;
-		if (Strings::TrySplitKeyValue(line, '=', key, value) && key == "Asset")
-		{
-			outSceneIds.insert(AssetCookerToLower(Strings::UnquoteCopy(value)));
-		}
-	}
-}
-
-static bool AssetCookerOptionalPackAvailable(
-    const std::filesystem::path& projectRoot,
-    const std::map<std::string, std::pair<std::filesystem::path, bool>>& optionalPacks,
-    std::string_view optionalPackId)
-{
-	if (optionalPackId.empty())
-	{
-		return true;
-	}
-
-	const auto packIt = optionalPacks.find(std::string(optionalPackId));
-	if (packIt == optionalPacks.end() || !packIt->second.second)
-	{
-		return false;
-	}
-
-	if (packIt->second.first.empty())
-	{
-		return true;
-	}
-
-	const std::filesystem::path packPath =
-	    packIt->second.first.is_relative() ? (projectRoot / packIt->second.first) : packIt->second.first;
-	return AssetCookerPathExists(packPath.lexically_normal());
-}
-
-bool AssetCookerDiscovery::CollectCatalogDefaultSceneIds(
-    const std::filesystem::path& projectRoot,
-    std::set<std::string>& outSceneIds)
-{
-	const std::filesystem::path catalogPath = projectRoot / "Levels.catalog";
-	std::ifstream input(catalogPath);
-	if (!input.is_open())
-	{
-		return false;
-	}
-
-	std::vector<CatalogLevel> catalogLevels;
-	std::map<std::string, std::pair<std::filesystem::path, bool>> optionalPacks;
-	CatalogSection section = CatalogSection::None;
-	CatalogLevel* currentLevel = nullptr;
-	std::string currentOptionalPackId;
-
-	for (std::string line; std::getline(input, line);)
-	{
-		line = Strings::TrimCopy(line);
-		if (line.empty() || line[0] == '#' || line[0] == ';')
-		{
-			continue;
-		}
-
-		if (line == "[Level]")
-		{
-			section = CatalogSection::Level;
-			currentLevel = &catalogLevels.emplace_back();
-			currentOptionalPackId.clear();
-			continue;
-		}
-		if (line == "[OptionalPack]")
-		{
-			section = CatalogSection::OptionalPack;
-			currentLevel = nullptr;
-			currentOptionalPackId.clear();
-			continue;
-		}
-
-		std::string_view key;
-		std::string_view value;
-		if (!Strings::TrySplitKeyValue(line, '=', key, value))
-		{
-			continue;
-		}
-
-		if (section == CatalogSection::Level && currentLevel != nullptr)
-		{
-			if (key == "Source")
-			{
-				currentLevel->SourcePath = projectRoot / std::filesystem::path(Strings::UnquoteCopy(value));
-			}
-			else if (key == "Default")
-			{
-				bool defaultIncluded = true;
-				if (Strings::TryParseBool(value, defaultIncluded))
-				{
-					currentLevel->DefaultIncluded = defaultIncluded;
-				}
-			}
-			else if (key == "OptionalPack")
-			{
-				currentLevel->OptionalPackId = Strings::UnquoteCopy(value);
-			}
-			continue;
-		}
-
-		if (section == CatalogSection::OptionalPack)
-		{
-			if (key == "Id")
-			{
-				currentOptionalPackId = Strings::UnquoteCopy(value);
-				optionalPacks.try_emplace(currentOptionalPackId, std::filesystem::path(), true);
-			}
-			else if (!currentOptionalPackId.empty())
-			{
-				auto& pack = optionalPacks[currentOptionalPackId];
-				if (key == "Root" || key == "Path")
-				{
-					pack.first = std::filesystem::path(Strings::UnquoteCopy(value));
-				}
-				else if (key == "Available")
-				{
-					bool available = true;
-					if (Strings::TryParseBool(value, available))
-					{
-						pack.second = available;
-					}
-				}
-			}
-		}
-	}
-
-	for (const CatalogLevel& level : catalogLevels)
-	{
-		if (!level.DefaultIncluded || level.SourcePath.empty() ||
-		    !AssetCookerOptionalPackAvailable(projectRoot, optionalPacks, level.OptionalPackId))
-		{
-			continue;
-		}
-
-		AssetCookerCollectLevelSceneIds(level.SourcePath.lexically_normal(), outSceneIds);
-	}
-
-	return true;
-}
 
 bool AssetCookerDiscovery::TryFindRepositoryRoot(
     const std::filesystem::path& startPath,
     std::filesystem::path& outRepositoryRoot)
 {
-	std::error_code errorCode;
-	std::filesystem::path currentPath = Paths::Normalize(startPath.empty() ? std::filesystem::current_path(errorCode) : startPath);
-	if (errorCode)
+	std::error_code error;
+	std::filesystem::path currentPath =
+	    Paths::Normalize(startPath.empty() ? std::filesystem::current_path(error) : startPath);
+	if (error)
 	{
 		return false;
 	}
@@ -347,16 +30,10 @@ bool AssetCookerDiscovery::TryFindRepositoryRoot(
 
 	const std::optional<std::filesystem::path> workspaceRoot =
 	    Filesystem::FindAncestorWithMarker(currentPath, Filesystem::kWorkspaceMarker);
-	if (!workspaceRoot)
-	{
-		return false;
-	}
-
-	const std::filesystem::path engineRoot = *workspaceRoot / "Engine";
-	const bool hasEngineMarker = AssetCookerPathExists(engineRoot / std::string(Filesystem::kEngineMarker));
-	const bool hasProjectsDirectory = AssetCookerPathExists(*workspaceRoot / "Projects");
-	const bool hasToolsDirectory = AssetCookerPathExists(*workspaceRoot / "Tools");
-	if (!hasEngineMarker || !hasProjectsDirectory || !hasToolsDirectory)
+	if (!workspaceRoot ||
+	    !PathExists(*workspaceRoot / "Engine" / std::string(Filesystem::kEngineMarker)) ||
+	    !PathExists(*workspaceRoot / "Projects") ||
+	    !PathExists(*workspaceRoot / "Tools"))
 	{
 		return false;
 	}
@@ -367,21 +44,9 @@ bool AssetCookerDiscovery::TryFindRepositoryRoot(
 
 bool AssetCookerDiscovery::ValidateConfiguration(std::string_view configuration)
 {
-	return configuration == "DebugEditor" || configuration == "DebugGame" || configuration == "DevelopmentEditor" ||
-	       configuration == "DevelopmentGame" || configuration == "ShippingEditor" || configuration == "ShippingGame";
-}
-
-static std::string AssetCookerResolveToolConfiguration(std::string_view configuration)
-{
-	std::string toolConfiguration(configuration);
-	constexpr std::string_view gameSuffix = "Game";
-	if (toolConfiguration.size() >= gameSuffix.size() &&
-	    std::string_view(toolConfiguration).substr(toolConfiguration.size() - gameSuffix.size()) == gameSuffix)
-	{
-		toolConfiguration.resize(toolConfiguration.size() - gameSuffix.size());
-		toolConfiguration += "Editor";
-	}
-	return toolConfiguration;
+	return configuration == "DebugEditor" || configuration == "DebugGame" ||
+	       configuration == "DevelopmentEditor" || configuration == "DevelopmentGame" ||
+	       configuration == "ShippingEditor" || configuration == "ShippingGame";
 }
 
 std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
@@ -390,28 +55,20 @@ std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
 {
 	std::vector<std::string> projects;
 	const std::filesystem::path projectsRoot = repositoryRoot / "Projects";
-	if (!AssetCookerPathExists(projectsRoot))
+	if (!PathExists(projectsRoot))
 	{
 		diagnostics.AddError(AssetCookerCategory_All, "Projects directory was not found.", projectsRoot);
 		return projects;
 	}
 
 	std::error_code iteratorError;
-	for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsRoot, iteratorError))
+	for (const std::filesystem::directory_entry& entry :
+	     std::filesystem::directory_iterator(projectsRoot, iteratorError))
 	{
 		std::error_code statusError;
-		if (!entry.is_directory(statusError))
-		{
-			continue;
-		}
-
 		const std::string projectName = entry.path().filename().string();
-		if (projectName == "TemplateProject")
-		{
-			continue;
-		}
-
-		if (AssetCookerPathExists(entry.path() / std::string(Filesystem::kProjectMarker)))
+		if (entry.is_directory(statusError) && projectName != "TemplateProject" &&
+		    PathExists(entry.path() / std::string(Filesystem::kProjectMarker)))
 		{
 			projects.push_back(projectName);
 		}
@@ -422,7 +79,6 @@ std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
 	{
 		diagnostics.AddError(AssetCookerCategory_All, "No runnable projects were found under Projects.");
 	}
-
 	return projects;
 }
 
@@ -434,16 +90,17 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
     AssetCookerProjectCookPlan& outPlan,
     AssetCookerDiagnostics& diagnostics)
 {
-	outPlan = AssetCookerProjectCookPlan();
+	outPlan = {};
 	outPlan.projectName = std::string(projectName);
 	outPlan.configuration = std::string(configuration);
-	outPlan.toolConfiguration = AssetCookerResolveToolConfiguration(configuration);
+	outPlan.toolConfiguration = ResolveToolConfiguration(configuration);
 	outPlan.repositoryRoot = repositoryRoot;
 	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
-	outPlan.cookedRoot = repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
-	AssetCookerAddPlanSteps(category, outPlan.steps);
+	outPlan.cookedRoot =
+	    repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
+	AddPlanSteps(category, outPlan.steps);
 
-	if (!AssetCookerPathExists(outPlan.projectRoot / std::string(Filesystem::kProjectMarker)))
+	if (!PathExists(outPlan.projectRoot / std::string(Filesystem::kProjectMarker)))
 	{
 		diagnostics.AddError(
 		    AssetCookerCategory_All,
@@ -452,41 +109,219 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 		return false;
 	}
 
-	if (AssetCookerCategoryNeedsScenes(category))
+	if (!CategoryNeedsScenes(category))
 	{
-		std::map<std::string, AssetCookerSceneEntry> entriesByKey;
-		int overrideCount = 0;
-		AssetCookerCollectSceneEntries(
-		    repositoryRoot / "Engine" / "Assets" / "Meshes",
-		    "Engine",
-		    nullptr,
-		    entriesByKey,
-		    outPlan.engineSceneCount,
-		    overrideCount);
-		std::set<std::string> catalogProjectSceneIds;
-		const bool catalogFound = CollectCatalogDefaultSceneIds(outPlan.projectRoot, catalogProjectSceneIds);
-		AssetCookerCollectSceneEntries(
-		    outPlan.projectRoot / "Assets" / "Meshes",
-		    "Project",
-		    catalogFound ? &catalogProjectSceneIds : nullptr,
-		    entriesByKey,
-		    outPlan.projectSceneCount,
-		    overrideCount);
-		outPlan.overriddenEngineSceneCount = overrideCount;
+		return true;
+	}
 
-		for (const auto& entryByKey : entriesByKey)
+	std::vector<std::string> sceneIds;
+	if (!CollectSceneIds(
+	        outPlan.projectRoot,
+	        sceneIds,
+	        diagnostics))
+	{
+		return false;
+	}
+
+	for (const std::string& sceneId : sceneIds)
+	{
+		AssetCookerSceneEntry entry;
+		if (!ResolveSceneEntry(outPlan.projectRoot, sceneId, entry, diagnostics))
 		{
-			outPlan.sceneEntries.push_back(entryByKey.second);
+			return false;
+		}
+		outPlan.sceneEntries.push_back(std::move(entry));
+	}
+
+	if (outPlan.sceneEntries.empty())
+	{
+		diagnostics.AddError(category, "The default level catalog contains no source scene assets.");
+		return false;
+	}
+	return true;
+}
+
+bool AssetCookerDiscovery::PathExists(const std::filesystem::path& path)
+{
+	std::error_code error;
+	return std::filesystem::exists(path, error) && !error;
+}
+
+bool AssetCookerDiscovery::CategoryNeedsScenes(AssetCookerCategory category) noexcept
+{
+	return category == AssetCookerCategory_All ||
+	       category == AssetCookerCategory_Textures ||
+	       category == AssetCookerCategory_SceneAssets;
+}
+
+void AssetCookerDiscovery::AddPlanSteps(
+    AssetCookerCategory category,
+    std::vector<AssetCookerPlanStep>& outSteps)
+{
+	outSteps.clear();
+	if (category == AssetCookerCategory_All)
+	{
+		outSteps = {
+		    AssetCookerPlanStep::Shaders,
+		    AssetCookerPlanStep::Textures,
+		    AssetCookerPlanStep::SceneAssets};
+		return;
+	}
+
+	outSteps.push_back(
+	    category == AssetCookerCategory_Shaders
+	        ? AssetCookerPlanStep::Shaders
+	        : category == AssetCookerCategory_Textures
+	              ? AssetCookerPlanStep::Textures
+	              : AssetCookerPlanStep::SceneAssets);
+}
+
+std::string AssetCookerDiscovery::ResolveToolConfiguration(std::string_view configuration)
+{
+	std::string toolConfiguration(configuration);
+	constexpr std::string_view gameSuffix = "Game";
+	if (toolConfiguration.ends_with(gameSuffix))
+	{
+		toolConfiguration.resize(toolConfiguration.size() - gameSuffix.size());
+		toolConfiguration += "Editor";
+	}
+	return toolConfiguration;
+}
+
+bool AssetCookerDiscovery::CollectSceneIds(
+    const std::filesystem::path& projectRoot,
+    std::vector<std::string>& outSceneIds,
+    AssetCookerDiagnostics& diagnostics)
+{
+	ProjectLevelCatalog catalog;
+	std::string errorMessage;
+	if (!ProjectLevelCatalogFile::Load(
+	        projectRoot,
+	        catalog,
+	        errorMessage))
+	{
+		diagnostics.AddError(
+		    AssetCookerCategory_SceneAssets,
+		    std::move(errorMessage));
+		return false;
+	}
+
+	outSceneIds.clear();
+	for (const ProjectLevelCatalogEntry& level : catalog.levels)
+	{
+		if (!level.defaultIncluded && !level.required)
+		{
+			continue;
 		}
 
-		if (outPlan.sceneEntries.empty())
+		if (!catalog.IsLevelReady(projectRoot, level))
+		{
+			if (level.required)
+			{
+				diagnostics.AddError(
+				    AssetCookerCategory_SceneAssets,
+				    "Required catalog level is unavailable: " + level.id,
+				    level.sourcePath);
+				return false;
+			}
+			continue;
+		}
+
+		if (!CatalogedLevelSceneReader::AppendSceneIds(
+		        level.sourcePath,
+		        outSceneIds,
+		        errorMessage))
 		{
 			diagnostics.AddError(
-			    category,
-			    "No supported source scenes were found under engine or project mesh roots.");
+			    AssetCookerCategory_SceneAssets,
+			    std::move(errorMessage),
+			    level.sourcePath);
 			return false;
 		}
 	}
 
+	std::sort(outSceneIds.begin(), outSceneIds.end());
+	outSceneIds.erase(
+	    std::unique(outSceneIds.begin(), outSceneIds.end()),
+	    outSceneIds.end());
+	return true;
+}
+
+bool AssetCookerDiscovery::ResolveSceneEntry(
+    const std::filesystem::path& projectRoot,
+    std::string_view sceneId,
+    AssetCookerSceneEntry& outEntry,
+    AssetCookerDiagnostics& diagnostics)
+{
+	const std::filesystem::path meshRoot =
+	    Paths::Normalize(projectRoot / "Assets" / "Meshes");
+	const std::filesystem::path relativeBase =
+	    std::filesystem::path(sceneId).lexically_normal();
+	const std::array<std::wstring_view, 3> extensions = {L".gltf", L".glb", L".fbx"};
+
+	if (relativeBase.empty() ||
+	    relativeBase.is_absolute() ||
+	    relativeBase.generic_string().starts_with(".."))
+	{
+		diagnostics.AddError(
+		    AssetCookerCategory_SceneAssets,
+		    "Catalog scene id must remain under the project mesh root: " +
+		        std::string(sceneId));
+		return false;
+	}
+
+	std::filesystem::path sourcePath;
+	const std::filesystem::path exactCandidate =
+	    Paths::Normalize(meshRoot / relativeBase);
+	if (SourceSceneImporter::SupportsSourceScenePath(relativeBase) &&
+	    Paths::IsUnderRoot(exactCandidate, meshRoot) &&
+	    PathExists(exactCandidate))
+	{
+		sourcePath = exactCandidate;
+	}
+	else
+	{
+		for (std::wstring_view extension : extensions)
+		{
+			std::filesystem::path candidate = exactCandidate;
+			candidate.replace_extension(extension);
+			if (!Paths::IsUnderRoot(candidate, meshRoot) ||
+			    !PathExists(candidate))
+			{
+				continue;
+			}
+			if (!sourcePath.empty())
+			{
+				diagnostics.AddError(
+				    AssetCookerCategory_SceneAssets,
+				    "Catalog scene id resolves to more than one source file: " + std::string(sceneId));
+				return false;
+			}
+			sourcePath = std::move(candidate);
+		}
+	}
+
+	if (sourcePath.empty())
+	{
+		diagnostics.AddError(
+		    AssetCookerCategory_SceneAssets,
+		    "Catalog scene source was not found: " + std::string(sceneId),
+		    meshRoot / relativeBase);
+		return false;
+	}
+
+	const std::optional<std::filesystem::path> relativePath =
+	    Paths::TryMakeRelativeUnderRoot(sourcePath, meshRoot);
+	if (!relativePath)
+	{
+		diagnostics.AddError(
+		    AssetCookerCategory_SceneAssets,
+		    "Resolved scene source escaped the project mesh root.",
+		    sourcePath);
+		return false;
+	}
+
+	outEntry.relativePath = relativePath->generic_string();
+	outEntry.sourcePath = sourcePath;
 	return true;
 }

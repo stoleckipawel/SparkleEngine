@@ -140,10 +140,35 @@ bool SceneCooker::BuildManifest(
 	outErrorMessage.clear();
 	return true;
 }
-bool SceneCooker::WriteSceneManifestAndRegistry(const CookedSceneBuild& build, std::string& outErrorMessage)
+bool SceneCooker::StageManifestsAndRegistry(
+    std::span<const CookedSceneBuild* const> builds,
+    std::vector<Files::FilePublication>& outPublication,
+    std::string& outErrorMessage)
 {
+	for (const CookedSceneBuild* build : builds)
+	{
+		if (build == nullptr || !StageManifest(*build, outPublication, outErrorMessage))
+		{
+			return false;
+		}
+	}
+
+	return StageRegistry(builds, outPublication, outErrorMessage);
+}
+
+bool SceneCooker::StageManifest(
+    const CookedSceneBuild& build,
+    std::vector<Files::FilePublication>& outPublication,
+    std::string& outErrorMessage)
+{
+	const std::filesystem::path stagedPath =
+	    Files::BuildTemporaryPath(build.identity.manifestPath, ".cook-generation");
+
+	Files::CleanupTemporaryFile(stagedPath);
+	outPublication.push_back({stagedPath, build.identity.manifestPath});
+
 	std::ofstream manifestOutput;
-	if (!Files::TryOpenBinaryOutput(build.identity.manifestPath, manifestOutput, outErrorMessage))
+	if (!Files::TryOpenBinaryOutput(stagedPath, manifestOutput, outErrorMessage))
 	{
 		return false;
 	}
@@ -164,12 +189,7 @@ bool SceneCooker::WriteSceneManifestAndRegistry(const CookedSceneBuild& build, s
 		return false;
 	}
 
-	if (!Files::TryCloseOutput(manifestOutput, build.identity.manifestPath, outErrorMessage))
-	{
-		return false;
-	}
-
-	if (!UpdateSceneAssetRegistry(build, outErrorMessage))
+	if (!Files::TryCloseOutput(manifestOutput, stagedPath, outErrorMessage))
 	{
 		return false;
 	}
@@ -223,29 +243,67 @@ bool SceneCooker::BuildSceneAssetId(
 	return true;
 }
 
-bool SceneCooker::UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::string& outErrorMessage)
+bool SceneCooker::StageRegistry(
+    std::span<const CookedSceneBuild* const> builds,
+    std::vector<Files::FilePublication>& outPublication,
+    std::string& outErrorMessage)
 {
-	const std::filesystem::path manifestRoot = Filesystem::GetCookedSceneManifestRootPath();
-	const std::optional<std::filesystem::path> manifestRelativePath =
-	    Paths::TryMakeRelativeUnderRoot(build.identity.manifestPath, manifestRoot);
-	if (!manifestRelativePath)
-	{
-		outErrorMessage = "Failed to derive a relative cooked scene manifest path for scene asset id '" + build.identity.assetId + "'";
-		return false;
-	}
-
-	Assets::SceneAssetRegistry sceneAssetRegistry;
-	if (!sceneAssetRegistry.Load(outErrorMessage))
+	Assets::SceneAssetRegistry registry;
+	if (!registry.Load(outErrorMessage))
 	{
 		return false;
 	}
 
-	sceneAssetRegistry.Upsert(build.identity.assetId, *manifestRelativePath);
-	if (!sceneAssetRegistry.Save(outErrorMessage))
+	for (const CookedSceneBuild* build : builds)
+	{
+		std::filesystem::path manifestRelativePath;
+		if (build == nullptr ||
+		    !ResolveManifestRelativePath(
+		        *build,
+		        manifestRelativePath,
+		        outErrorMessage))
+		{
+			return false;
+		}
+
+		registry.Upsert(build->identity.assetId, std::move(manifestRelativePath));
+	}
+
+	const std::filesystem::path registryPath =
+	    Filesystem::GetSceneAssetRegistryPath();
+	const std::filesystem::path stagedPath =
+	    Files::BuildTemporaryPath(registryPath, ".cook-generation");
+
+	Files::CleanupTemporaryFile(stagedPath);
+	outPublication.push_back({stagedPath, registryPath});
+
+	if (!registry.Save(stagedPath, outErrorMessage))
 	{
 		return false;
 	}
 
+	outErrorMessage.clear();
+	return true;
+}
+
+bool SceneCooker::ResolveManifestRelativePath(
+    const CookedSceneBuild& build,
+    std::filesystem::path& outRelativePath,
+    std::string& outErrorMessage)
+{
+	const std::optional<std::filesystem::path> relativePath =
+	    Paths::TryMakeRelativeUnderRoot(
+	        build.identity.manifestPath,
+	        Filesystem::GetCookedSceneManifestRootPath());
+	if (!relativePath)
+	{
+		outErrorMessage =
+		    "Failed to derive a relative cooked scene manifest path for scene asset id '" +
+		    build.identity.assetId + "'";
+		return false;
+	}
+
+	outRelativePath = *relativePath;
 	outErrorMessage.clear();
 	return true;
 }

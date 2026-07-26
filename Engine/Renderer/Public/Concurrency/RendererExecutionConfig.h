@@ -17,7 +17,7 @@ enum class RendererExecutionMode : std::uint8_t
 struct SPARKLE_RENDERER_API RendererExecutionConfig final
 {
 	RendererExecutionMode Mode = RendererExecutionMode::Serial;
-	bool EnableEditorRenderPackets = false;
+	bool EnableUiRenderPackets = false;
 	TaskExecutor* AssetTaskExecutor = nullptr;
 	TaskScope* ApplicationTaskScope = nullptr;
 

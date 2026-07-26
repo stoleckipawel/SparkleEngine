@@ -10,8 +10,7 @@
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "ShaderData/PerFrameConstantBufferData.h"
 #include "Rendering/RenderInputFrame.h"
-#include "RendererSerialUiCallback.h"
-#include "Renderer/Public/Editor/EditorRenderPacket.h"
+#include "Renderer/Public/UI/UiRenderPacket.h"
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
 
@@ -22,7 +21,7 @@
 #include <vector>
 
 class FrameExecutionDiagnostics;
-class EditorRenderPacketPlayer;
+class UiRenderPacketPlayer;
 class EditorTextureRegistry;
 struct FrameContext;
 class FrameGraph;
@@ -44,7 +43,7 @@ struct FrameResolutionExtents final
 class FramePipeline final
 {
   public:
-	FramePipeline(RendererSystemRoot& systems, bool enableEditorRenderPackets) noexcept;
+	FramePipeline(RendererSystemRoot& systems, bool enableUiRenderPackets) noexcept;
 	~FramePipeline() noexcept;
 
 	FramePipeline(const FramePipeline&) = delete;
@@ -57,11 +56,7 @@ class FramePipeline final
 	void RequestResize(RenderViewportExtent extent, bool minimized) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }
 
-	void RenderSerialUiFrame(
-	    const TimeInfo& timing,
-	    RendererSerialUiCallback composeUi,
-	    void* context) noexcept;
-	void OnRender(const TimeInfo& timing, const EditorRenderPacket& editorUi) noexcept;
+	void OnRender(const TimeInfo& timing, const UiRenderPacket& ui) noexcept;
 
 	bool BeginViewportCapture(
 	    ViewportCaptureId id,
@@ -101,7 +96,10 @@ class FramePipeline final
 	    RenderOutputFlags output) noexcept;
 	void EndViewportEditorTexturePresentation(
 	    RenderOutputFlags output) noexcept;
-	void RenderEditorPacket(const EditorRenderPacket& packet) noexcept;
+	void RenderUiPacket(const UiRenderPacket& packet) noexcept;
+	void RenderEditorViewportUi(const UiRenderPacket& packet) noexcept;
+	void RenderHostOverlayUi(const UiRenderPacket& packet) noexcept;
+	void PlayUiPacket(const UiRenderPacket& packet) noexcept;
 	FrameGraphResourceHandle ResolveRenderProductResourceHandle(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState after) noexcept;
 	void RecordFrame() noexcept;
@@ -150,7 +148,7 @@ class FramePipeline final
 	std::optional<std::uint64_t> m_previousRestirLightingHistoryInvalidationHash;
 	std::unique_ptr<RenderInputConsumer> m_renderInputConsumer;
 	std::unique_ptr<PersistentRenderGpuScene> m_gpuScene;
-	std::unique_ptr<EditorRenderPacketPlayer> m_editorRenderPacketPlayer;
+	std::unique_ptr<UiRenderPacketPlayer> m_uiRenderPacketPlayer;
 	std::unique_ptr<EditorTextureRegistry> m_editorTextureRegistry;
 	struct PendingViewportCapture final
 	{
@@ -165,5 +163,5 @@ class FramePipeline final
 	GBufferMode m_gBufferMode = GBufferMode::Rasterized;
 	LightingMode m_lightingMode = LightingMode::RestirPathTraced;
 	ImageProviderGraphKey m_imageProviderFrameGraphKey = {};
-	bool m_ownsEditorUiBackend = false;
+	bool m_ownsUiBackend = false;
 };

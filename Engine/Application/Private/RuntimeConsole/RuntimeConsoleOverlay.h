@@ -2,6 +2,7 @@
 
 #include "Core/Public/Console/ConsoleCommandRegistry.h"
 #include "Core/Public/Events/ScopedEventHandle.h"
+#include "Renderer/Public/UI/UiRenderPacket.h"
 
 #include <Windows.h>
 #include <array>
@@ -10,7 +11,7 @@
 #include <vector>
 
 class ConsoleSession;
-class RhiImGuiRenderer;
+class ImGuiRenderPacketBuilder;
 class Timer;
 class Window;
 struct ImGuiInputTextCallbackData;
@@ -20,7 +21,7 @@ struct WindowMessageEvent;
 class RuntimeConsoleOverlay final
 {
   public:
-	RuntimeConsoleOverlay(Timer& timer, Window& window, RhiImGuiRenderer& imguiRenderer);
+	RuntimeConsoleOverlay(Timer& timer, Window& window);
 	~RuntimeConsoleOverlay() noexcept;
 
 	RuntimeConsoleOverlay(const RuntimeConsoleOverlay&) = delete;
@@ -29,7 +30,7 @@ class RuntimeConsoleOverlay final
 	RuntimeConsoleOverlay& operator=(RuntimeConsoleOverlay&&) = delete;
 
 	void Update();
-	void Render() noexcept;
+	UiRenderPacket ConsumeRenderPacket();
 	bool IsVisible() const noexcept { return m_isVisible; }
 
   private:
@@ -37,7 +38,6 @@ class RuntimeConsoleOverlay final
 	bool ProcessWindowMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 	bool InitializeImGuiContext();
 	bool InitializeWin32Backend();
-	bool InitializeGraphicsBackend();
 	void SetupDPIScaling() noexcept;
 	bool IsReady() const noexcept;
 	void ToggleVisibility() noexcept;
@@ -60,10 +60,11 @@ class RuntimeConsoleOverlay final
 
 	Timer* m_timer = nullptr;
 	Window* m_window = nullptr;
-	RhiImGuiRenderer* m_imguiRenderer = nullptr;
 	ScopedEventHandle m_windowMessageHandle;
 	ConsoleCommandRegistry m_commandRegistry;
 	std::unique_ptr<ConsoleSession> m_consoleSession;
+	std::unique_ptr<ImGuiRenderPacketBuilder> m_renderPacketBuilder;
+	UiRenderPacket m_renderPacket;
 	std::array<char, 512> m_inputBuffer{};
 	std::array<char, 128> m_filterBuffer{};
 	std::size_t m_seenOutputCount = 0;
@@ -72,5 +73,4 @@ class RuntimeConsoleOverlay final
 	bool m_focusInput = false;
 	bool m_isImGuiContextInitialized = false;
 	bool m_isWin32BackendInitialized = false;
-	bool m_isGraphicsBackendInitialized = false;
 };

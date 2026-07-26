@@ -3,44 +3,20 @@
 #include "../Discovery/AssetCookerDiscovery.h"
 #include "../Dispatch/AssetCookerDispatcher.h"
 
-#include <iostream>
-
-static bool AssetCookerHasText(const char* text)
-{
-	return text != nullptr && text[0] != '\0';
-}
-
-static bool AssetCookerIsAllProjects(std::string_view projectName)
-{
-	return projectName.empty() || projectName == "ALL" || projectName == "All" || projectName == "all";
-}
-
 AssetCookerService::AssetCookerService(const char* repositoryRoot, const char* projectName, const char* configuration)
 {
-	if (AssetCookerHasText(repositoryRoot))
+	if (HasText(repositoryRoot))
 	{
 		configuredRepositoryRoot = std::filesystem::path(repositoryRoot);
 	}
-	if (AssetCookerHasText(projectName))
+	if (HasText(projectName))
 	{
 		configuredProjectName = projectName;
 	}
-	if (AssetCookerHasText(configuration))
+	if (HasText(configuration))
 	{
 		configuredConfiguration = configuration;
 	}
-}
-
-AssetCookerCapabilities AssetCookerService::QueryCapabilities() const noexcept
-{
-	AssetCookerCapabilities capabilities = {};
-	capabilities.supportsProjectCook = 1;
-	capabilities.supportsSelectedRecook = 1;
-	capabilities.supportsShaderCook = 1;
-	capabilities.supportsTextureCook = 1;
-	capabilities.supportsSceneAssetCook = 1;
-	capabilities.supportsHotReloadOutputs = 1;
-	return capabilities;
 }
 
 AssetCookerServiceResult AssetCookerService::Cook(
@@ -72,7 +48,7 @@ AssetCookerServiceResult AssetCookerService::Cook(
 
 	std::vector<std::string> projects;
 	const std::string resolvedProjectName = ResolveProjectName(projectName);
-	if (AssetCookerIsAllProjects(resolvedProjectName))
+	if (IsAllProjects(resolvedProjectName))
 	{
 		projects = AssetCookerDiscovery::DiscoverProjects(repositoryRoot, diagnostics);
 		if (projects.empty())
@@ -127,6 +103,16 @@ AssetCookerServiceResult AssetCookerService::Cook(
 	return result;
 }
 
+bool AssetCookerService::HasText(const char* text) noexcept
+{
+	return text != nullptr && text[0] != '\0';
+}
+
+bool AssetCookerService::IsAllProjects(std::string_view projectName) noexcept
+{
+	return projectName.empty() || projectName == "ALL" || projectName == "All" || projectName == "all";
+}
+
 bool AssetCookerService::ResolveRepositoryRoot(
     AssetCookerDiagnostics& diagnostics,
     std::filesystem::path& outRepositoryRoot) const
@@ -150,7 +136,7 @@ bool AssetCookerService::ResolveRepositoryRoot(
 
 std::string AssetCookerService::ResolveProjectName(const char* requestProjectName) const
 {
-	if (AssetCookerHasText(requestProjectName))
+	if (HasText(requestProjectName))
 	{
 		return requestProjectName;
 	}
@@ -159,7 +145,7 @@ std::string AssetCookerService::ResolveProjectName(const char* requestProjectNam
 
 std::string AssetCookerService::ResolveConfiguration(const char* requestConfiguration) const
 {
-	if (AssetCookerHasText(requestConfiguration))
+	if (HasText(requestConfiguration))
 	{
 		return requestConfiguration;
 	}

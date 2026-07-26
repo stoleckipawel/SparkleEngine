@@ -16,7 +16,7 @@ namespace Assets
 	{
 	  public:
 		bool Load(std::string& outErrorMessage);
-		bool Save(std::string& outErrorMessage) const;
+		bool Save(const std::filesystem::path& outputPath, std::string& outErrorMessage) const;
 		void Upsert(std::string sceneAssetId, std::filesystem::path sceneManifestRelativePath);
 		std::map<std::string, std::filesystem::path, std::less<>> ReleaseEntries() noexcept;
 

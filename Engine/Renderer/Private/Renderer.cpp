@@ -33,11 +33,6 @@ ViewportRenderProducts Renderer::GetViewportRenderProducts() const
 	return m_state->Coordinator.GetViewportRenderProducts();
 }
 
-RhiImGuiRenderer& Renderer::GetImGuiRenderer() noexcept
-{
-	return m_state->Coordinator.GetSerialImGuiRenderer();
-}
-
 CookedShaderReloadResult Renderer::ReloadCookedShaders() noexcept
 {
 	return m_state->Coordinator.ReloadCookedShaders();
@@ -63,11 +58,6 @@ RendererMemoryDiagnosticsSnapshot Renderer::CaptureMemoryDiagnostics() const
 	return m_state->Coordinator.CaptureMemoryDiagnostics();
 }
 
-void Renderer::RenderSerialUiFrame(RendererSerialUiCallback composeUi, void* context) noexcept
-{
-	m_state->Coordinator.RenderSerialUiFrame(composeUi, context);
-}
-
 MeshPreviewGeometry Renderer::CaptureMeshPreview(std::uintptr_t meshRuntimeId) const
 {
 	return m_state->Coordinator.CaptureMeshPreview(meshRuntimeId);
@@ -78,29 +68,14 @@ void Renderer::SubmitRenderInput(RenderInputFrame input) noexcept
 	m_state->Coordinator.StageRenderInput(std::move(input));
 }
 
-void Renderer::SubmitEditorRenderPacket(EditorRenderPacket packet) noexcept
+void Renderer::SubmitUiRenderPacket(UiRenderPacket packet) noexcept
 {
-	m_state->Coordinator.StageEditorRenderPacket(std::move(packet));
+	m_state->Coordinator.StageUiRenderPacket(std::move(packet));
 }
 
 void Renderer::SubmitRenderingSettings(EngineRenderingSettingsState settings) noexcept
 {
 	m_state->Coordinator.SubmitRenderingSettings(std::move(settings));
-}
-
-void Renderer::BeginHostPresentation(const float clearColor[4]) noexcept
-{
-	m_state->Coordinator.BeginSerialHostPresentation(clearColor);
-}
-
-void Renderer::BeginHostOverlayPresentation() noexcept
-{
-	m_state->Coordinator.BeginSerialHostOverlayPresentation();
-}
-
-void Renderer::EndHostPresentation() noexcept
-{
-	m_state->Coordinator.EndSerialHostPresentation();
 }
 
 ViewportCaptureId Renderer::RequestViewportCapture(

@@ -65,8 +65,12 @@ class VulkanDescriptorManager final : public RhiDescriptorService
 	friend class VulkanRenderCommandList;
 	friend class VulkanRenderDeviceServices;
 	friend class VulkanRenderHardwareInterface;
+	friend class VulkanSamplerLibrary;
 
 	void PublishRecordingReadView() noexcept;
+	void WriteSamplerDescriptor(
+	    RhiDescriptorTableHandle table,
+	    VkSampler sampler) noexcept;
 	NativeTextureViewInfo ResolveNativeTextureViewInfo(
 	    RhiResourceViewHandle view,
 	    RhiResourceHandle resource,

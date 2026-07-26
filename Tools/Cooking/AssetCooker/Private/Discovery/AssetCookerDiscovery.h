@@ -4,7 +4,6 @@
 #include "../Planning/ProjectCookPlan.h"
 
 #include <filesystem>
-#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -26,10 +25,19 @@ class AssetCookerDiscovery final
 	    AssetCookerDiagnostics& diagnostics);
 
   private:
-	enum class CatalogSection;
-	struct CatalogLevel;
-
-	static bool CollectCatalogDefaultSceneIds(
+	static bool PathExists(const std::filesystem::path& path);
+	static bool CategoryNeedsScenes(AssetCookerCategory category) noexcept;
+	static void AddPlanSteps(
+	    AssetCookerCategory category,
+	    std::vector<AssetCookerPlanStep>& outSteps);
+	static std::string ResolveToolConfiguration(std::string_view configuration);
+	static bool CollectSceneIds(
 	    const std::filesystem::path& projectRoot,
-	    std::set<std::string>& outSceneIds);
+	    std::vector<std::string>& outSceneIds,
+	    AssetCookerDiagnostics& diagnostics);
+	static bool ResolveSceneEntry(
+	    const std::filesystem::path& projectRoot,
+	    std::string_view sceneId,
+	    AssetCookerSceneEntry& outEntry,
+	    AssetCookerDiagnostics& diagnostics);
 };

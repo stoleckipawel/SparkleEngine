@@ -23,8 +23,9 @@
 #include "SparkleLauncher/MaintenanceOperations.h"
 #include "SparkleLauncher/SourceDependencyState.h"
 
+#include "Core/Public/Projects/ProjectLevelCatalog.h"
+
 #include <QtCore/QCoreApplication>
-#include <QtCore/QHash>
 #include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QSignalBlocker>
@@ -49,49 +50,13 @@
 
 #include <cstdint>
 #include <algorithm>
-#include <cctype>
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
 #include <system_error>
 #include <vector>
 
 namespace SparkleLauncher
 {
-
-		enum class LevelCatalogSection
-		{
-			None,
-			Level,
-			OptionalPack
-		};
-
-		struct LauncherLevelCatalogEntry
-		{
-			QString Id;
-			QString DisplayName;
-			std::filesystem::path SourcePath;
-			QString OptionalPackId;
-			bool DefaultIncluded = false;
-			bool Required = false;
-			bool StartupDefault = false;
-		};
-
-		struct LauncherOptionalPackEntry
-		{
-			QString Id;
-			QString DisplayName;
-			std::filesystem::path RootPath;
-			bool Available = true;
-			bool External = false;
-		};
-
-		struct LauncherLevelCatalog
-		{
-			bool Loaded = false;
-			QVector<LauncherLevelCatalogEntry> Levels;
-			QHash<QString, LauncherOptionalPackEntry> OptionalPacks;
-		};
 
 		struct LauncherStartupLevelOption
 		{
@@ -102,190 +67,24 @@ namespace SparkleLauncher
 			bool StartupDefault = false;
 		};
 
-		QString TrimCatalogValue(std::string_view value)
-		{
-			QString text = QString::fromStdString(std::string(value)).trimmed();
-			if (text.size() >= 2 && ((text.front() == '"' && text.back() == '"') || (text.front() == '\'' && text.back() == '\'')))
-			{
-				text = text.mid(1, text.size() - 2);
-			}
-			return text;
-		}
-
-		bool TryParseCatalogBool(std::string_view value, bool& outValue)
-		{
-			const QString normalized = TrimCatalogValue(value).toLower();
-			if (normalized == "true" || normalized == "1" || normalized == "yes" || normalized == "on")
-			{
-				outValue = true;
-				return true;
-			}
-			if (normalized == "false" || normalized == "0" || normalized == "no" || normalized == "off")
-			{
-				outValue = false;
-				return true;
-			}
-			return false;
-		}
-
-		bool TrySplitCatalogKeyValue(const std::string& line, std::string_view& outKey, std::string_view& outValue)
-		{
-			const std::size_t separator = line.find('=');
-			if (separator == std::string::npos)
-			{
-				return false;
-			}
-			outKey = std::string_view(line).substr(0, separator);
-			outValue = std::string_view(line).substr(separator + 1);
-			while (!outKey.empty() && std::isspace(static_cast<unsigned char>(outKey.front())))
-			{
-				outKey.remove_prefix(1);
-			}
-			while (!outKey.empty() && std::isspace(static_cast<unsigned char>(outKey.back())))
-			{
-				outKey.remove_suffix(1);
-			}
-			while (!outValue.empty() && std::isspace(static_cast<unsigned char>(outValue.front())))
-			{
-				outValue.remove_prefix(1);
-			}
-			while (!outValue.empty() && std::isspace(static_cast<unsigned char>(outValue.back())))
-			{
-				outValue.remove_suffix(1);
-			}
-			return !outKey.empty();
-		}
-
-		bool WriteCatalogLines(const std::filesystem::path& catalogPath, const std::vector<std::string>& lines)
-		{
-			std::ofstream output(catalogPath, std::ios::binary | std::ios::trunc);
-			if (!output.is_open())
-			{
-				return false;
-			}
-
-			for (const std::string& line : lines)
-			{
-				output << line << '\n';
-			}
-			return true;
-		}
-
-		std::string TrimCatalogLine(std::string line)
-		{
-			line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](unsigned char character) {
-				return !std::isspace(character);
-			}));
-			line.erase(std::find_if(line.rbegin(), line.rend(), [](unsigned char character) {
-				return !std::isspace(character);
-			}).base(), line.end());
-			return line;
-		}
-
-		bool SetCatalogSectionBool(
-		    const std::filesystem::path& projectRoot,
-		    std::string_view sectionHeader,
-		    const QString& id,
-		    std::string_view keyName,
-		    bool enabled)
-		{
-			const std::filesystem::path catalogPath = projectRoot / "Levels.catalog";
-			std::ifstream input(catalogPath, std::ios::binary);
-			if (!input.is_open() || id.trimmed().isEmpty())
-			{
-				return false;
-			}
-
-			std::vector<std::string> lines;
-			for (std::string line; std::getline(input, line);)
-			{
-				if (!line.empty() && line.back() == '\r')
-				{
-					line.pop_back();
-				}
-				lines.push_back(std::move(line));
-			}
-			input.close();
-
-			const QString targetId = id.trimmed();
-			const std::string sectionText(sectionHeader);
-			const std::string keyText(keyName);
-			const std::string valueLine = keyText + " = " + (enabled ? "true" : "false");
-			bool inRequestedSection = false;
-			bool inTargetEntry = false;
-			bool targetFound = false;
-			for (std::size_t lineIndex = 0; lineIndex < lines.size(); ++lineIndex)
-			{
-				const std::string trimmed = TrimCatalogLine(lines[lineIndex]);
-				if (trimmed.empty() || trimmed.front() == '#' || trimmed.front() == ';')
-				{
-					continue;
-				}
-
-				if (trimmed.front() == '[' && trimmed.back() == ']')
-				{
-					if (inTargetEntry)
-					{
-						lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(lineIndex), valueLine);
-						return WriteCatalogLines(catalogPath, lines);
-					}
-					inRequestedSection = trimmed == sectionText;
-					inTargetEntry = false;
-					continue;
-				}
-
-				if (!inRequestedSection)
-				{
-					continue;
-				}
-
-				std::string_view key;
-				std::string_view value;
-				if (!TrySplitCatalogKeyValue(trimmed, key, value))
-				{
-					continue;
-				}
-
-				if (key == "Id")
-				{
-					inTargetEntry = TrimCatalogValue(value) == targetId;
-					targetFound = inTargetEntry;
-					continue;
-				}
-
-				if (inTargetEntry && key == keyName)
-				{
-					lines[lineIndex] = valueLine;
-					return WriteCatalogLines(catalogPath, lines);
-				}
-			}
-
-			if (inTargetEntry)
-			{
-				lines.push_back(valueLine);
-				return WriteCatalogLines(catalogPath, lines);
-			}
-			return targetFound;
-		}
-
 		bool SetLevelDefaultIncluded(const std::filesystem::path& projectRoot, const QString& levelId, bool enabled)
 		{
-			return SetCatalogSectionBool(projectRoot, "[Level]", levelId, "Default", enabled);
+			std::string errorMessage;
+			return ProjectLevelCatalogFile::SetLevelDefaultIncluded(
+			    projectRoot,
+			    levelId.toStdString(),
+			    enabled,
+			    errorMessage);
 		}
 
 		bool SetOptionalPackAvailable(const std::filesystem::path& projectRoot, const QString& packId, bool enabled)
 		{
-			return SetCatalogSectionBool(projectRoot, "[OptionalPack]", packId, "Available", enabled);
-		}
-
-		std::filesystem::path ResolveCatalogPath(const std::filesystem::path& projectRoot, std::string_view value)
-		{
-			std::filesystem::path path{TrimCatalogValue(value).toStdString()};
-			if (path.is_relative())
-			{
-				path = projectRoot / path;
-			}
-			return path.lexically_normal();
+			std::string errorMessage;
+			return ProjectLevelCatalogFile::SetOptionalContentPackAvailable(
+			    projectRoot,
+			    packId.toStdString(),
+			    enabled,
+			    errorMessage);
 		}
 
 		bool CatalogPathExists(const std::filesystem::path& path)
@@ -294,9 +93,10 @@ namespace SparkleLauncher
 			return std::filesystem::exists(path, errorCode) && !errorCode;
 		}
 
-		QString DisplayNameOrId(const QString& displayName, const QString& id)
+		QString DisplayNameOrId(std::string_view displayName, std::string_view id)
 		{
-			return displayName.trimmed().isEmpty() ? id : displayName;
+			return QString::fromStdString(
+			    std::string(displayName.empty() ? id : displayName));
 		}
 
 		const LauncherProjectSummary* FindActiveProject(const LauncherProjectModel& projectModel)
@@ -312,141 +112,9 @@ namespace SparkleLauncher
 			return nullptr;
 		}
 
-		LauncherLevelCatalog LoadLauncherLevelCatalog(const std::filesystem::path& projectRoot)
+		bool LevelSynced(const ProjectLevelCatalogEntry& level)
 		{
-			LauncherLevelCatalog catalog;
-			std::ifstream input(projectRoot / "Levels.catalog");
-			if (!input.is_open())
-			{
-				return catalog;
-			}
-
-			catalog.Loaded = true;
-			LevelCatalogSection section = LevelCatalogSection::None;
-			LauncherLevelCatalogEntry* currentLevel = nullptr;
-			QString currentOptionalPackId;
-			for (std::string line; std::getline(input, line);)
-			{
-				line = TrimCatalogLine(std::move(line));
-				if (line.empty() || line.front() == '#' || line.front() == ';')
-				{
-					continue;
-				}
-
-				if (line == "[Level]")
-				{
-					currentOptionalPackId.clear();
-					section = LevelCatalogSection::Level;
-					currentLevel = &catalog.Levels.emplace_back();
-					continue;
-				}
-				if (line == "[OptionalPack]")
-				{
-					currentLevel = nullptr;
-					currentOptionalPackId.clear();
-					section = LevelCatalogSection::OptionalPack;
-					continue;
-				}
-
-				std::string_view key;
-				std::string_view value;
-				if (!TrySplitCatalogKeyValue(line, key, value))
-				{
-					continue;
-				}
-
-				if (section == LevelCatalogSection::Level && currentLevel != nullptr)
-				{
-					if (key == "Id")
-					{
-						currentLevel->Id = TrimCatalogValue(value);
-					}
-					else if (key == "DisplayName")
-					{
-						currentLevel->DisplayName = TrimCatalogValue(value);
-					}
-					else if (key == "Source")
-					{
-						currentLevel->SourcePath = ResolveCatalogPath(projectRoot, value);
-					}
-					else if (key == "OptionalPack")
-					{
-						currentLevel->OptionalPackId = TrimCatalogValue(value);
-					}
-					else if (key == "Default")
-					{
-						TryParseCatalogBool(value, currentLevel->DefaultIncluded);
-					}
-					else if (key == "Required")
-					{
-						TryParseCatalogBool(value, currentLevel->Required);
-					}
-					else if (key == "StartupDefault")
-					{
-						TryParseCatalogBool(value, currentLevel->StartupDefault);
-					}
-					continue;
-				}
-
-				if (section == LevelCatalogSection::OptionalPack)
-				{
-					if (key == "Id")
-					{
-						currentOptionalPackId = TrimCatalogValue(value);
-						LauncherOptionalPackEntry entry;
-						entry.Id = currentOptionalPackId;
-						catalog.OptionalPacks.insert(currentOptionalPackId, entry);
-					}
-					else if (!currentOptionalPackId.isEmpty())
-					{
-						LauncherOptionalPackEntry& pack = catalog.OptionalPacks[currentOptionalPackId];
-						if (key == "DisplayName")
-						{
-							pack.DisplayName = TrimCatalogValue(value);
-						}
-						else if (key == "Root" || key == "Path")
-						{
-							pack.RootPath = ResolveCatalogPath(projectRoot, value);
-						}
-						else if (key == "Available")
-						{
-							TryParseCatalogBool(value, pack.Available);
-						}
-						else if (key == "External")
-						{
-							TryParseCatalogBool(value, pack.External);
-						}
-					}
-				}
-			}
-
-			return catalog;
-		}
-
-		bool OptionalPackReady(const LauncherLevelCatalog& catalog, const LauncherLevelCatalogEntry& level)
-		{
-			if (level.OptionalPackId.isEmpty())
-			{
-				return true;
-			}
-
-			const auto packIt = catalog.OptionalPacks.find(level.OptionalPackId);
-			if (packIt == catalog.OptionalPacks.end() || !packIt->Available)
-			{
-				return false;
-			}
-
-			return packIt->RootPath.empty() || CatalogPathExists(packIt->RootPath);
-		}
-
-		bool LevelReady(const LauncherLevelCatalog& catalog, const LauncherLevelCatalogEntry& level)
-		{
-			return !level.Id.isEmpty() && !level.SourcePath.empty() && CatalogPathExists(level.SourcePath) && OptionalPackReady(catalog, level);
-		}
-
-		bool LevelSynced(const LauncherLevelCatalogEntry& level)
-		{
-			return level.Required || level.DefaultIncluded;
+			return level.required || level.defaultIncluded;
 		}
 
 		QVector<LauncherStartupLevelOption> BuildStartupLevelEntries(const LauncherProjectSummary* activeProject)
@@ -457,30 +125,34 @@ namespace SparkleLauncher
 				return options;
 			}
 
-			const LauncherLevelCatalog catalog = LoadLauncherLevelCatalog(activeProject->RootPath);
-			if (!catalog.Loaded)
+			ProjectLevelCatalog catalog;
+			std::string errorMessage;
+			if (!ProjectLevelCatalogFile::Load(
+			        activeProject->RootPath,
+			        catalog,
+			        errorMessage))
 			{
 				return options;
 			}
 
-			const auto addLevel = [&catalog, &options](const LauncherLevelCatalogEntry& level) {
+			const auto addLevel = [&catalog, &options, activeProject](const ProjectLevelCatalogEntry& level) {
 				options.push_back(LauncherStartupLevelOption{
-				    .DisplayName = DisplayNameOrId(level.DisplayName, level.Id),
-				    .Id = level.Id,
+				    .DisplayName = DisplayNameOrId(level.displayName, level.id),
+				    .Id = QString::fromStdString(level.id),
 				    .Synced = LevelSynced(level),
-				    .Ready = LevelReady(catalog, level),
-				    .StartupDefault = level.StartupDefault});
+				    .Ready = catalog.IsLevelReady(activeProject->RootPath, level),
+				    .StartupDefault = level.startupDefault});
 			};
-			for (const LauncherLevelCatalogEntry& level : catalog.Levels)
+			for (const ProjectLevelCatalogEntry& level : catalog.levels)
 			{
-				if (level.StartupDefault)
+				if (level.startupDefault)
 				{
 					addLevel(level);
 				}
 			}
-			for (const LauncherLevelCatalogEntry& level : catalog.Levels)
+			for (const ProjectLevelCatalogEntry& level : catalog.levels)
 			{
-				if (!level.StartupDefault)
+				if (!level.startupDefault)
 				{
 					addLevel(level);
 				}
@@ -551,19 +223,24 @@ namespace SparkleLauncher
 			return;
 		}
 
-		const LauncherLevelCatalog catalog = LoadLauncherLevelCatalog(activeProject->RootPath);
-		if (!catalog.Loaded)
+		ProjectLevelCatalog catalog;
+		std::string catalogError;
+		if (!ProjectLevelCatalogFile::Load(
+		        activeProject->RootPath,
+		        catalog,
+		        catalogError))
 		{
 			AddNoOptionsMessage(*levelLayout, "The active project has no Levels.catalog.");
 			return;
 		}
 
-		for (const LauncherLevelCatalogEntry& level : catalog.Levels)
+		for (const ProjectLevelCatalogEntry& level : catalog.levels)
 		{
-			const bool ready = LevelReady(catalog, level);
+			const bool ready =
+			    catalog.IsLevelReady(activeProject->RootPath, level);
 			const bool synced = LevelSynced(level);
 			QStringList traits;
-			if (level.Required)
+			if (level.required)
 			{
 				traits.push_back("required");
 			}
@@ -571,22 +248,29 @@ namespace SparkleLauncher
 			{
 				traits.push_back("synced");
 			}
-			if (level.StartupDefault)
+			if (level.startupDefault)
 			{
 				traits.push_back("startup default");
 			}
-			if (!level.OptionalPackId.isEmpty())
+			if (!level.optionalContentPackId.empty())
 			{
-				traits.push_back(QStringLiteral("pack %1").arg(level.OptionalPackId));
+				traits.push_back(
+				    QStringLiteral("pack %1")
+				        .arg(QString::fromStdString(level.optionalContentPackId)));
 			}
 			const QString detail = QStringLiteral("%1%2")
-			                           .arg(RelativeProjectPath(activeProject->RootPath, level.SourcePath))
+			                           .arg(RelativeProjectPath(activeProject->RootPath, level.sourcePath))
 			                           .arg(traits.empty() ? QString() : QStringLiteral(" | %1").arg(traits.join(", ")));
-			QCheckBox* syncBox = new QCheckBox(level.Required ? QStringLiteral("Required") : QStringLiteral("Sync"), this);
+			QCheckBox* syncBox =
+			    new QCheckBox(
+			        level.required
+			            ? QStringLiteral("Required")
+			            : QStringLiteral("Sync"),
+			        this);
 			syncBox->setChecked(synced);
-			syncBox->setEnabled(!level.Required);
+			syncBox->setEnabled(!level.required);
 			RegisterFocusable(syncBox);
-			connect(syncBox, &QCheckBox::toggled, this, [this, projectRoot = activeProject->RootPath, levelId = level.Id, syncBox](bool checked) {
+			connect(syncBox, &QCheckBox::toggled, this, [this, projectRoot = activeProject->RootPath, levelId = QString::fromStdString(level.id), syncBox](bool checked) {
 				if (!SetLevelDefaultIncluded(projectRoot, levelId, checked))
 				{
 					const QSignalBlocker blocker(syncBox);
@@ -597,14 +281,14 @@ namespace SparkleLauncher
 			});
 			AddStatusRow(
 			    *levelLayout,
-			    DisplayNameOrId(level.DisplayName, level.Id),
-			    !synced ? "Off" : ready ? (level.Required ? "Required" : "Synced") : "Missing",
+			    DisplayNameOrId(level.displayName, level.id),
+			    !synced ? "Off" : ready ? (level.required ? "Required" : "Synced") : "Missing",
 			    detail,
-			    !synced ? "neutral" : ready ? "ok" : (level.Required ? "bad" : "warning"),
+			    !synced ? "neutral" : ready ? "ok" : (level.required ? "bad" : "warning"),
 			    syncBox);
 		}
 
-		if (catalog.OptionalPacks.empty())
+		if (catalog.optionalContentPacks.empty())
 		{
 			return;
 		}
@@ -614,24 +298,26 @@ namespace SparkleLauncher
 		    "Optional content packs",
 		    "External or optional content roots referenced by level sync groups.",
 		    true);
-		for (const LauncherOptionalPackEntry& pack : catalog.OptionalPacks)
+		for (const auto& [packId, pack] : catalog.optionalContentPacks)
 		{
-			const bool rootReady = pack.RootPath.empty() || CatalogPathExists(pack.RootPath);
-			const bool ready = pack.Available && rootReady;
+			const bool rootReady =
+			    pack.rootPath.empty() ||
+			    CatalogPathExists(pack.rootPath);
+			const bool ready = pack.available && rootReady;
 			QStringList traits;
-			if (pack.External)
+			if (pack.external)
 			{
 				traits.push_back("external");
 			}
-			if (!pack.Available)
+			if (!pack.available)
 			{
 				traits.push_back("not synced");
 			}
 			QCheckBox* syncBox = new QCheckBox(QStringLiteral("Sync"), this);
-			syncBox->setChecked(pack.Available);
+			syncBox->setChecked(pack.available);
 			RegisterFocusable(syncBox);
-			connect(syncBox, &QCheckBox::toggled, this, [this, projectRoot = activeProject->RootPath, packId = pack.Id, syncBox](bool checked) {
-				if (!SetOptionalPackAvailable(projectRoot, packId, checked))
+			connect(syncBox, &QCheckBox::toggled, this, [this, projectRoot = activeProject->RootPath, capturedPackId = QString::fromStdString(packId), syncBox](bool checked) {
+				if (!SetOptionalPackAvailable(projectRoot, capturedPackId, checked))
 				{
 					const QSignalBlocker blocker(syncBox);
 					syncBox->setChecked(!checked);
@@ -641,12 +327,12 @@ namespace SparkleLauncher
 			});
 			AddStatusRow(
 			    *packLayout,
-			    DisplayNameOrId(pack.DisplayName, pack.Id),
-			    !pack.Available ? "Off" : ready ? "Present" : (pack.External ? "External" : "Missing"),
+			    DisplayNameOrId(pack.displayName, pack.id),
+			    !pack.available ? "Off" : ready ? "Present" : (pack.external ? "External" : "Missing"),
 			    QStringLiteral("%1%2")
-			        .arg(RelativeProjectPath(activeProject->RootPath, pack.RootPath))
+			        .arg(RelativeProjectPath(activeProject->RootPath, pack.rootPath))
 			        .arg(traits.empty() ? QString() : QStringLiteral(" | %1").arg(traits.join(", "))),
-			    !pack.Available ? "neutral" : ready ? "ok" : "warning",
+			    !pack.available ? "neutral" : ready ? "ok" : "warning",
 			    syncBox);
 		}
 	}

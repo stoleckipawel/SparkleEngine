@@ -1,9 +1,8 @@
 #include "AssetCookerStageExecutor.h"
 
 #include "AssetCookerToolProcess.h"
-#include "Cooking/ImportedSceneCooker.h"
+#include "Cooking/AssetCookerSceneBatch.h"
 #include "Cooking/TextureRequestPlanBuilder.h"
-#include "SourceSceneImporter.h"
 #include "ToolConsole.h"
 
 #include <algorithm>
@@ -64,14 +63,12 @@ class AssetCookerStageExecutorImplementation final
 	    std::vector<AssetCookerOutputRecord>& outputs,
 	    AssetCookerCategory category,
 	    std::string assetId,
-	    std::filesystem::path path,
-	    std::string reloadHint)
+	    std::filesystem::path path)
 	{
 		AssetCookerOutputRecord output;
 		output.category = category;
 		output.assetId = std::move(assetId);
 		output.path = path.string();
-		output.reloadHint = std::move(reloadHint);
 		outputs.push_back(std::move(output));
 	}
 
@@ -91,14 +88,12 @@ class AssetCookerStageExecutorImplementation final
 		    outputs,
 		    AssetCookerCategory_Shaders,
 		    "shader-packages",
-		    plan.cookedRoot / "Shaders" / "Packages",
-		    "Reload shader packages and affected pipelines.");
+		    plan.cookedRoot / "Shaders" / "Packages");
 		AppendOutput(
 		    outputs,
 		    AssetCookerCategory_Shaders,
 		    "shader-registry",
-		    plan.cookedRoot / "Shaders" / "ShaderPackageRegistry.sreg",
-		    "Reload shader package registry.");
+		    plan.cookedRoot / "Shaders" / "ShaderPackageRegistry.sreg");
 		return true;
 	}
 
@@ -139,8 +134,7 @@ class AssetCookerStageExecutorImplementation final
 		    outputs,
 		    AssetCookerCategory_Textures,
 		    "textures",
-		    plan.cookedRoot / "Textures",
-		    "Reload changed cooked textures.");
+		    plan.cookedRoot / "Textures");
 		return true;
 	}
 
@@ -149,40 +143,8 @@ class AssetCookerStageExecutorImplementation final
 	    AssetCookerDiagnostics& diagnostics,
 	    std::vector<AssetCookerOutputRecord>& outputs)
 	{
-		std::size_t failedSceneCount = 0;
-		std::size_t cookedSceneCount = 0;
-		for (const AssetCookerSceneEntry& sceneEntry : plan.sceneEntries)
+		if (!AssetCookerSceneBatch::Execute(plan.sceneEntries, diagnostics))
 		{
-			ToolConsole::Progress(
-			    std::cout,
-			    "Cooking",
-			    "scene",
-			    cookedSceneCount + 1u,
-			    plan.sceneEntries.size(),
-			    sceneEntry.relativePath,
-			    {ToolConsole::Field("origin", sceneEntry.origin)});
-
-			const bool cooked = ImportedSceneCooker::ImportAndVisit(
-			    sceneEntry,
-			    AssetCookerCategory_SceneAssets,
-			    diagnostics,
-			    [&](const SourceImportResult& importResult)
-			    {
-				    return ImportedSceneCooker::Cook(sceneEntry, importResult, diagnostics);
-			    });
-			if (!cooked)
-			{
-				++failedSceneCount;
-				continue;
-			}
-			++cookedSceneCount;
-		}
-
-		if (failedSceneCount != 0)
-		{
-			diagnostics.AddError(
-			    AssetCookerCategory_SceneAssets,
-			    "Scene, mesh, and material asset cooking failed for " + std::to_string(failedSceneCount) + " scene(s).");
 			return false;
 		}
 
@@ -190,20 +152,17 @@ class AssetCookerStageExecutorImplementation final
 		    outputs,
 		    AssetCookerCategory_SceneAssets,
 		    "scene-manifests",
-		    plan.cookedRoot / "SceneManifests",
-		    "Reload changed scenes and referenced cooked assets.");
+		    plan.cookedRoot / "SceneManifests");
 		AppendOutput(
 		    outputs,
-		    AssetCookerCategory_Mesh,
+		    AssetCookerCategory_Meshes,
 		    "meshes",
-		    plan.cookedRoot / "Meshes",
-		    "Reload changed cooked meshes.");
+		    plan.cookedRoot / "Meshes");
 		AppendOutput(
 		    outputs,
-		    AssetCookerCategory_Material,
+		    AssetCookerCategory_Materials,
 		    "materials",
-		    plan.cookedRoot / "Materials",
-		    "Reload changed cooked materials.");
+		    plan.cookedRoot / "Materials");
 		return true;
 	}
 };

@@ -3,7 +3,6 @@
 #include "Concurrency/Control/RenderControlCommand.h"
 #include "Concurrency/FrameQueue/RenderFramePacket.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
-#include "RendererSerialUiCallback.h"
 
 #include <memory>
 
@@ -25,11 +24,6 @@ class RendererExecutionContext final
 
 	void ExecuteFrame(RenderFramePacket packet) noexcept;
 	void ExecuteControl(const RenderControlPayload& payload) noexcept;
-	void StageSerialInput(RenderInputFrame input) noexcept;
-	void RenderSerialUiFrame(
-	    const TimeInfo& timing,
-	    RendererSerialUiCallback composeUi,
-	    void* context) noexcept;
 
 	RendererSystemRoot& GetSystems() noexcept;
 	const RendererSystemRoot& GetSystems() const noexcept;

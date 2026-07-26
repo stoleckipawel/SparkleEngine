@@ -8,7 +8,6 @@
 
 struct AssetCookerDiagnosticRecord final
 {
-	AssetCookerDiagnosticSeverity severity = AssetCookerDiagnosticSeverity_Info;
 	AssetCookerCategory category = AssetCookerCategory_All;
 	std::string message;
 	std::string sourcePath;
@@ -19,7 +18,6 @@ struct AssetCookerOutputRecord final
 	AssetCookerCategory category = AssetCookerCategory_All;
 	std::string assetId;
 	std::string path;
-	std::string reloadHint;
 };
 
 struct AssetCookerServiceResult final
@@ -33,20 +31,14 @@ struct AssetCookerServiceResult final
 class AssetCookerDiagnostics final
 {
   public:
-	void AddInfo(AssetCookerCategory category, std::string message);
-	void AddWarning(AssetCookerCategory category, std::string message);
 	void AddError(AssetCookerCategory category, std::string message);
 	void AddError(AssetCookerCategory category, std::string message, const std::filesystem::path& sourcePath);
 
-	const std::vector<AssetCookerDiagnosticRecord>& GetRecords() const noexcept;
+	void Append(std::vector<AssetCookerDiagnosticRecord> records);
 	std::vector<AssetCookerDiagnosticRecord> ReleaseRecords();
 
   private:
-	void Add(
-	    AssetCookerDiagnosticSeverity severity,
-	    AssetCookerCategory category,
-	    std::string message,
-	    std::string sourcePath);
+	void Add(AssetCookerCategory category, std::string message, std::string sourcePath);
 
 	std::vector<AssetCookerDiagnosticRecord> records;
 };

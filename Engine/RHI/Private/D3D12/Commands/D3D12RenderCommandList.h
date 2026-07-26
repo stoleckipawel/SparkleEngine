@@ -101,6 +101,8 @@ class D3D12RenderCommandList final : public RenderCommandList
 	};
 
 	void SetRecordingOwner(RhiCommandRecordingOwner owner) noexcept { m_recordingOwner = owner; }
+	static D3D12_GPU_VIRTUAL_ADDRESS ResolveRayTracingBufferAddress(
+	    const RhiRayTracingBufferBinding& binding) noexcept;
 	void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept override;
 	void OnResourceTrackingFinished(
 	    RhiResourceHandle resource,

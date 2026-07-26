@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
-#include <utility>
 #include <vector>
 
 struct CookedSkeletonAssetBuild final
@@ -77,16 +76,6 @@ struct CookedSceneBuild final
 	CookedSceneBuildStatus status;
 
 	bool Succeeded() const noexcept { return status.Succeeded(); }
-
-	void ApplyMeshOutput(MeshCookOutput&& meshOutput)
-	{
-		manifest.meshAssetReferences = std::move(meshOutput.assetReferences);
-		outputs.meshAssets = std::move(meshOutput.assets);
-	}
-
-	void ApplyMaterialOutput(MaterialCookOutput&& materialOutput)
-	{
-		manifest.materialAssetReferences = std::move(materialOutput.assetReferences);
-		outputs.materialAssets = std::move(materialOutput.assets);
-	}
+	void ApplyMeshOutput(MeshCookOutput&& meshOutput);
+	void ApplyMaterialOutput(MaterialCookOutput&& materialOutput);
 };

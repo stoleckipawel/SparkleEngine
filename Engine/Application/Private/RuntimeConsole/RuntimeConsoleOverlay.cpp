@@ -4,7 +4,7 @@
 #include "Core/Public/Console/ConsoleBuiltinCommands.h"
 #include "Core/Public/Console/ConsoleSession.h"
 #include "Core/Public/Strings/StringUtils.h"
-#include "RHI/Public/UI/RhiImGuiRenderer.h"
+#include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
@@ -16,11 +16,12 @@
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window, RhiImGuiRenderer& imguiRenderer) :
-	m_timer(&timer), m_window(&window), m_imguiRenderer(&imguiRenderer)
+RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window) :
+	m_timer(&timer), m_window(&window)
 {
 	ConsoleBuiltinCommands::Register(m_commandRegistry);
 	m_consoleSession = std::make_unique<ConsoleSession>(m_commandRegistry, ConsoleCommandContext{.Scope = ConsoleCommandScope::Runtime});
+	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
 	m_consoleSession->AddOutput(ConsoleCommandSeverity::Info, "Runtime console ready. Press tilde to close.");
 
 	if (!InitializeImGuiContext())
@@ -31,11 +32,6 @@ RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window, RhiIm
 	SetupDPIScaling();
 
 	if (!InitializeWin32Backend())
-	{
-		return;
-	}
-
-	if (!InitializeGraphicsBackend())
 	{
 		return;
 	}
@@ -51,12 +47,6 @@ RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window, RhiIm
 RuntimeConsoleOverlay::~RuntimeConsoleOverlay() noexcept
 {
 	m_windowMessageHandle.Reset();
-
-	if (m_isGraphicsBackendInitialized)
-	{
-		m_imguiRenderer->Shutdown();
-		m_isGraphicsBackendInitialized = false;
-	}
 
 	if (m_isWin32BackendInitialized)
 	{
@@ -112,6 +102,7 @@ bool RuntimeConsoleOverlay::InitializeImGuiContext()
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.Fonts->SetTexID(static_cast<ImTextureID>(EditorTextureHandle::FontAtlas().Pack()));
 	ImGui::StyleColorsDark();
 	return true;
 }
@@ -128,17 +119,6 @@ bool RuntimeConsoleOverlay::InitializeWin32Backend()
 	return true;
 }
 
-bool RuntimeConsoleOverlay::InitializeGraphicsBackend()
-{
-	if (m_imguiRenderer == nullptr)
-	{
-		return false;
-	}
-
-	m_isGraphicsBackendInitialized = m_imguiRenderer->Initialize();
-	return m_isGraphicsBackendInitialized;
-}
-
 void RuntimeConsoleOverlay::SetupDPIScaling() noexcept
 {
 	ImGui_ImplWin32_EnableDpiAwareness();
@@ -150,7 +130,8 @@ void RuntimeConsoleOverlay::SetupDPIScaling() noexcept
 
 bool RuntimeConsoleOverlay::IsReady() const noexcept
 {
-	return m_isImGuiContextInitialized && m_isWin32BackendInitialized && m_isGraphicsBackendInitialized && m_consoleSession != nullptr;
+	return m_isImGuiContextInitialized && m_isWin32BackendInitialized &&
+	       m_consoleSession != nullptr && m_renderPacketBuilder != nullptr;
 }
 
 void RuntimeConsoleOverlay::ToggleVisibility() noexcept
@@ -173,7 +154,6 @@ void RuntimeConsoleOverlay::Update()
 		io.DisplaySize = ImVec2(static_cast<float>(m_window->GetWidth()), static_cast<float>(m_window->GetHeight()));
 	}
 
-	m_imguiRenderer->BeginFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	if (m_isVisible)
@@ -181,16 +161,14 @@ void RuntimeConsoleOverlay::Update()
 		BuildUI();
 	}
 	ImGui::Render();
+	m_renderPacket = m_renderPacketBuilder->Build(
+	    *ImGui::GetDrawData(),
+	    UiPresentationMode::HostOverlay);
 }
 
-void RuntimeConsoleOverlay::Render() noexcept
+UiRenderPacket RuntimeConsoleOverlay::ConsumeRenderPacket()
 {
-	if (!IsReady() || !m_isVisible)
-	{
-		return;
-	}
-
-	m_imguiRenderer->RenderDrawData(ImGui::GetDrawData());
+	return std::move(m_renderPacket);
 }
 
 void RuntimeConsoleOverlay::BuildUI()

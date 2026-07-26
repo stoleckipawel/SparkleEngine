@@ -31,11 +31,11 @@ VkAccelerationStructureGeometryKHR VulkanRayTracingServices::BuildBottomLevelGeo
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
 	    .pNext = nullptr,
 	    .vertexFormat = VK_FORMAT_R32G32B32_SFLOAT,
-	    .vertexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.VertexBuffer},
+	    .vertexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0},
 	    .vertexStride = geometry.VertexStrideInBytes,
 	    .maxVertex = geometry.VertexCount > 0 ? geometry.VertexCount - 1u : 0u,
 	    .indexType = VulkanTypeConversions::ToVkIndexType(geometry.IndexFormat),
-	    .indexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.IndexBuffer},
+	    .indexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0},
 	    .transformData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0}};
 	return VkAccelerationStructureGeometryKHR{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,

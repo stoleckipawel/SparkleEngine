@@ -4,7 +4,6 @@
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 
 class Timer;
@@ -18,6 +17,7 @@ class TaskExecutor;
 class TaskScope;
 class ApplicationTaskRuntime;
 class CameraInputIntentCollector;
+class EditorApplication;
 
 enum class RuntimeApplicationFrameResult : std::uint8_t
 {
@@ -30,8 +30,8 @@ struct RuntimeApplicationOptions final
 {
 	bool EnableRuntimeConsole = true;
 	bool AllowThreadedRenderer = true;
-	bool EnableEditorRenderPackets = false;
-	std::function<void(GameWorld&)> WorldSetupCallback;
+	bool EnableUiRenderPackets = false;
+	bool EnableOscillatingMeshMotion = false;
 };
 
 class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
@@ -54,7 +54,6 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	Timer& GetTimer() noexcept;
 	Window& GetWindow() noexcept;
 	InputSystem& GetInputSystem() noexcept;
-	GameWorld* GetGameWorld() const noexcept;
 	LevelManager* GetLevelManager() const noexcept;
 	Renderer& GetRenderer() noexcept;
 	TaskExecutor& GetTaskExecutor() noexcept;
@@ -63,7 +62,10 @@ class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 	void Shutdown() override;
 
   private:
+	friend class EditorApplication;
+
 	static bool WantsImGuiInputCapture() noexcept;
+	GameWorld& GetWorldForEditor() noexcept;
 
 	std::unique_ptr<Timer> m_timer;
 	std::unique_ptr<Window> m_window;

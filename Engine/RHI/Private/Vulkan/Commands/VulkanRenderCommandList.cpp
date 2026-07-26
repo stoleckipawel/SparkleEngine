@@ -14,6 +14,7 @@
 #include "Vulkan/Resources/VulkanRecordingUploadPage.h"
 #include "Vulkan/VulkanTypeConversions.h"
 #include "Interop/RhiInteropService.h"
+#include "Validation/RhiContract.h"
 
 #include <algorithm>
 #include <cassert>
@@ -740,12 +741,22 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
     RhiGpuVirtualAddress scratchGpuAddress,
     RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
+	const VkDeviceAddress vertexBufferAddress =
+	    ResolveRayTracingBufferAddress(geometry.VertexBuffer);
+	const VkDeviceAddress indexBufferAddress =
+	    ResolveRayTracingBufferAddress(geometry.IndexBuffer);
 	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr ||
-	    m_rhi->GetCmdBuildAccelerationStructures() == nullptr || scratchGpuAddress == 0 || resultGpuAddress == 0)
+	    m_rhi->GetCmdBuildAccelerationStructures() == nullptr ||
+	    !RhiContract::IsRayTracingGeometryDescUsable(geometry) ||
+	    vertexBufferAddress == 0 || indexBufferAddress == 0 ||
+	    scratchGpuAddress == 0 || resultGpuAddress == 0)
 	{
 		return;
 	}
 	EndDynamicRenderingIfNeeded();
+
+	TrackResource(geometry.VertexBuffer.Resource);
+	TrackResource(geometry.IndexBuffer.Resource);
 
 	VulkanRecordingResource resultResource;
 	if (!ResolveAddress(resultGpuAddress, resultResource) ||
@@ -760,11 +771,11 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
 	    .pNext = nullptr,
 	    .vertexFormat = VK_FORMAT_R32G32B32_SFLOAT,
-	    .vertexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.VertexBuffer},
+	    .vertexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = vertexBufferAddress},
 	    .vertexStride = geometry.VertexStrideInBytes,
 	    .maxVertex = geometry.VertexCount > 0 ? geometry.VertexCount - 1u : 0u,
 	    .indexType = VulkanTypeConversions::ToVkIndexType(geometry.IndexFormat),
-	    .indexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.IndexBuffer},
+	    .indexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = indexBufferAddress},
 	    .transformData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0}};
 	const VkAccelerationStructureGeometryKHR nativeGeometry{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
@@ -1316,6 +1327,20 @@ bool VulkanRenderCommandList::ResolveResource(
 	return m_memoryAllocator->ResolveRecordingResource(resource, outResource) ||
 	       (IsCoordinatorRecording() &&
 	        m_memoryAllocator->ResolveCoordinatorRecordingResource(resource, outResource));
+}
+
+VkDeviceAddress VulkanRenderCommandList::ResolveRayTracingBufferAddress(
+    const RhiRayTracingBufferBinding& binding) const noexcept
+{
+	VulkanRecordingResource resource;
+	if (!ResolveResource(binding.Resource, resource) ||
+	    resource.Buffer == VK_NULL_HANDLE ||
+	    resource.BufferDeviceAddress == 0)
+	{
+		return 0;
+	}
+
+	return resource.BufferDeviceAddress + binding.OffsetInBytes;
 }
 
 bool VulkanRenderCommandList::ResolveAddress(

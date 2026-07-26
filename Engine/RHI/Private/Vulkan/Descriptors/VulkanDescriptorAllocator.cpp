@@ -588,7 +588,7 @@ VulkanDescriptorAllocator::EditTableEntries(DescriptorTableRecord& record)
 		record.Entries =
 		    std::make_shared<std::vector<DescriptorEntry>>();
 	}
-	else if (!record.Entries.unique())
+	else if (record.Entries.use_count() != 1)
 	{
 		record.Entries =
 		    std::make_shared<std::vector<DescriptorEntry>>(
@@ -606,7 +606,7 @@ VulkanDescriptorAllocator::EditRegisteredDescriptors()
 		m_registeredDescriptors =
 		    std::make_shared<std::vector<DescriptorEntry>>();
 	}
-	else if (!m_registeredDescriptors.unique())
+	else if (m_registeredDescriptors.use_count() != 1)
 	{
 		m_registeredDescriptors =
 		    std::make_shared<std::vector<DescriptorEntry>>(

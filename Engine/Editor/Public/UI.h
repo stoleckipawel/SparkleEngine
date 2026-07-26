@@ -4,7 +4,7 @@
 #include "Renderer/Public/Diagnostics/MeshPreviewGeometry.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
-#include "../../Renderer/Public/Editor/EditorRenderPacket.h"
+#include "../../Renderer/Public/UI/UiRenderPacket.h"
 #include "../../Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
@@ -81,7 +81,7 @@ class SPARKLE_EDITOR_API UI final
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
 	bool ConsumeViewportCaptureRequest() noexcept;
-	EditorRenderPacket ConsumeRenderPacket();
+	UiRenderPacket ConsumeRenderPacket();
 
 	void Update();
 
@@ -142,8 +142,8 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<class EditorSceneModelBuilder> m_sceneModelBuilder;
 	std::unique_ptr<class EditorTransactionManager> m_transactions;
 	std::shared_ptr<const class EditorSceneModel> m_sceneModel;
-	std::unique_ptr<class EditorRenderPacketBuilder> m_renderPacketBuilder;
-	EditorRenderPacket m_renderPacket;
+	std::unique_ptr<class ImGuiRenderPacketBuilder> m_renderPacketBuilder;
+	UiRenderPacket m_renderPacket;
 	std::uint64_t m_viewportGeneration = 0;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;

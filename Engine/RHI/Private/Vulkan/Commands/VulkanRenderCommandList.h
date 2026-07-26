@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Commands/RenderCommandList.h"
+#include "Commands/RhiCommandRecordingLease.h"
 #include "Vulkan/Diagnostics/VulkanDebugEvents.h"
 #include "Vulkan/Memory/VulkanRecordingResource.h"
 #include "Vulkan/VulkanIncludes.h"
@@ -159,6 +160,8 @@ class VulkanRenderCommandList final : public RenderCommandList
 	bool ResolveResource(
 	    RhiResourceHandle resource,
 	    VulkanRecordingResource& outResource) const noexcept;
+	VkDeviceAddress ResolveRayTracingBufferAddress(
+	    const RhiRayTracingBufferBinding& binding) const noexcept;
 	bool ResolveAddress(
 	    RhiGpuVirtualAddress address,
 	    VulkanRecordingResource& outResource) const noexcept;

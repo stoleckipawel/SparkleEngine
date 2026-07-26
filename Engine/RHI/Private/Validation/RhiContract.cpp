@@ -77,8 +77,9 @@ bool RhiContract::IsResourceViewDescUsable(const RhiResourceViewDesc& desc) noex
 
 bool RhiContract::IsRayTracingGeometryDescUsable(const RhiRayTracingGeometryDesc& geometry) noexcept
 {
-	return geometry.VertexBuffer != 0 && geometry.IndexBuffer != 0 && geometry.VertexStrideInBytes >= sizeof(float) * 3u &&
-	       geometry.VertexCount != 0 && geometry.IndexCount != 0 && geometry.IndexCount % 3u == 0;
+	return geometry.VertexBuffer.Resource && geometry.IndexBuffer.Resource &&
+	       geometry.VertexStrideInBytes >= sizeof(float) * 3u && geometry.VertexCount != 0 &&
+	       geometry.IndexCount != 0 && geometry.IndexCount % 3u == 0;
 }
 
 bool RhiContract::IsRayTracingInstanceListUsable(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount) noexcept

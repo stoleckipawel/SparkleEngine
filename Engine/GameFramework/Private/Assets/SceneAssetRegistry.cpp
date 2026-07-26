@@ -97,21 +97,26 @@ namespace Assets
 		return true;
 	}
 
-	bool SceneAssetRegistry::Save(std::string& outErrorMessage) const
+	bool SceneAssetRegistry::Save(
+	    const std::filesystem::path& outputPath,
+	    std::string& outErrorMessage) const
 	{
-		const std::filesystem::path registryPath = Filesystem::GetSceneAssetRegistryPath();
 		std::error_code errorCode;
-		std::filesystem::create_directories(registryPath.parent_path(), errorCode);
+		std::filesystem::create_directories(outputPath.parent_path(), errorCode);
 		if (errorCode)
 		{
-			outErrorMessage = "Failed to create scene asset registry directory '" + registryPath.parent_path().string() + "'";
+			outErrorMessage =
+			    "Failed to create scene asset registry directory '" +
+			    outputPath.parent_path().string() + "'";
 			return false;
 		}
 
-		std::ofstream output(registryPath, std::ios::trunc);
+		std::ofstream output(outputPath, std::ios::trunc);
 		if (!output.is_open())
 		{
-			outErrorMessage = "Failed to open scene asset registry for writing '" + registryPath.string() + "'";
+			outErrorMessage =
+			    "Failed to open scene asset registry for writing '" +
+			    outputPath.string() + "'";
 			return false;
 		}
 
@@ -125,7 +130,9 @@ namespace Assets
 
 		if (!output.good())
 		{
-			outErrorMessage = "Failed while writing scene asset registry '" + registryPath.string() + "'";
+			outErrorMessage =
+			    "Failed while writing scene asset registry '" +
+			    outputPath.string() + "'";
 			return false;
 		}
 

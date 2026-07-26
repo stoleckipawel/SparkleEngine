@@ -48,7 +48,7 @@ RhiDescriptorTableBinding VulkanSamplerLibrary::GetSharedSamplerBinding(const Rh
 	}
 
 	const RhiDescriptorTableHandle table = m_descriptorManager.AllocateDescriptorTable(ERhiDescriptorAllocatorType::Sampler, 1);
-	m_descriptorManager.GetAllocator().WriteSamplerDescriptor(m_descriptorManager.GetDescriptorTableCpuHandle(table), sampler);
+	m_descriptorManager.WriteSamplerDescriptor(table, sampler);
 	m_samplerRecords.push_back(SamplerRecord{.Desc = samplerDesc, .Sampler = sampler, .Table = table});
 	return RhiDescriptorTableBinding{.Table = table, .DescriptorIndex = 0};
 }

@@ -21,13 +21,21 @@ class CookedAnimationAssetWriterOperations final
 	}
 };
 
-bool CookedAnimationAssetWriter::WriteAnimationAssets(
+bool CookedAnimationAssetWriter::StageAnimationAssets(
     const std::vector<CookedAnimationAssetBuild>& animationAssets,
+    std::vector<Files::FilePublication>& outPublication,
     std::string& outErrorMessage)
 {
 	for (const CookedAnimationAssetBuild& animationAsset : animationAssets)
 	{
 		const std::filesystem::path outputPath = Paths::CookedAnimationAsset(animationAsset.assetId);
+		const std::filesystem::path stagedOutputPath =
+		    Files::BuildTemporaryPath(outputPath, ".cook-generation");
+
+		Files::CleanupTemporaryFile(stagedOutputPath);
+
+		outPublication.push_back({stagedOutputPath, outputPath});
+
 		Assets::CookedAnimationAssetHeader header{
 		    .fileHeader = {Assets::kCookedAnimationAssetMagic, Assets::kCookedAnimationAssetVersion},
 		    .targetSkeletonAssetId = animationAsset.targetSkeletonAssetId,
@@ -41,7 +49,7 @@ bool CookedAnimationAssetWriter::WriteAnimationAssets(
 		CookedAnimationAssetWriterOperations::CopyName(animationAsset.name, header.name);
 
 		std::ofstream output;
-		if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
+		if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, outErrorMessage))
 		{
 			return false;
 		}
@@ -53,10 +61,11 @@ bool CookedAnimationAssetWriter::WriteAnimationAssets(
 			return false;
 		}
 
-		if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))
+		if (!Files::TryCloseOutput(output, stagedOutputPath, outErrorMessage))
 		{
 			return false;
 		}
+
 	}
 
 	outErrorMessage.clear();
